@@ -1,0 +1,16 @@
+src/constants.ts
+  h_33f63fd75d0bd5 38
+package.json
+  h_33f63fd75d0bd5 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.13",
+  "base_commit_sha": "729636dd90be83e9be800d21ed53c022dcf60dda",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
