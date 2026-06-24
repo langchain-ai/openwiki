@@ -1,0 +1,56 @@
+src/constants.ts
+  s_a90cebfcc677d2::t_5b1c732b3de1ef 8-12
+src/cli.tsx
+  s_a90cebfcc677d2::t_335878509bc192 2189,2214,2262,2264-2386,2462-2465,2469-2486,2651
+  s_a90cebfcc677d2::t_efd2d60f74835e 2190,2215,2247-2261
+  s_a90cebfcc677d2::t_62acb24c6b52a4 737-738,772,791,795,801-802,806-810,813,864-866,868-879
+  s_a90cebfcc677d2::t_a42ba91ebc7ebe 1806-1809,2619
+  s_a90cebfcc677d2::t_b83870c00fb6ba 2167,2169,2191-2197
+  s_a90cebfcc677d2::t_0227b18ead2aac 23,99,255,2616
+  s_a90cebfcc677d2::t_9cd6849b50226a 151-164,435,477,838,1094,1105,1271-1277,1281,1400,1435-1438
+  s_a90cebfcc677d2::t_ae72d21f1071f0 2634,2639-2650
+  s_a90cebfcc677d2::t_0cbaf13672164f 2613
+src/agent/types.ts
+  s_a90cebfcc677d2::t_1a50549374bc9a 37
+  s_a90cebfcc677d2::t_a42ba91ebc7ebe 10
+  s_a90cebfcc677d2::t_64c06467493441 44
+src/agent/index.ts
+  s_a90cebfcc677d2::t_45d85a9377c19c 1136,1138-1140,1146-1152
+  s_a90cebfcc677d2::t_735673508d2e22 55-61,70-82,85-128,213-225
+  s_a90cebfcc677d2::t_412c62f995d84d 83-84,919,997-999
+  s_a90cebfcc677d2::t_a4de567b673eb9 52-54,62-69,129-134
+  s_a90cebfcc677d2::t_92365ea7fc0ff8 167,233,241-248,253-254
+  s_a90cebfcc677d2::t_88ac037ab69062 226-227,351,458,918,920-996,1000-1088,1090-1135,1137,1141-1145,1153-1157,1159-1183
+  s_a90cebfcc677d2::t_1ffa82436a8ce7 1089,1158
+  s_a90cebfcc677d2::t_a594809ed6d0d8 21,138-143,337-338,343-344,349-350
+  s_a90cebfcc677d2::t_90a55191d0ad3f 147,277-281,284-290
+  s_a90cebfcc677d2::t_7b4de5635767f9 353-367
+  s_a90cebfcc677d2::t_a42ba91ebc7ebe 369,386,408-414,425,438,452-456
+  s_a90cebfcc677d2::t_deded2e68415c9 457
+  s_a90cebfcc677d2::t_cccae846978f03 249-252
+src/agent/prompt.ts
+  s_a90cebfcc677d2::t_a42ba91ebc7ebe 33,37
+  s_a90cebfcc677d2::t_22ac247a509d0e 152-154
+  s_a90cebfcc677d2::t_b735ee98ea1cd9 20,24,26-30,70,118-119
+  s_a90cebfcc677d2::t_cc7ddd0afaf784 18,25,31-32,34-36,38-55,82,91,114-116,128
+  s_a90cebfcc677d2::t_c4160562346c57 21-23,87
+src/agent/utils.ts
+  s_a90cebfcc677d2::t_c65ca550c59082 25,38,65-68,84,90-96,99-100,105,107-121,136,146-149
+  s_a90cebfcc677d2::t_125422998c383e 101-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "ceded101c7128a340ce9a6f8a0b5d472cfd127bf",
+  "prompts": {},
+  "sessions": {
+    "s_a90cebfcc677d2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee15e-5abb-7811-905f-f202d90254e3",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
