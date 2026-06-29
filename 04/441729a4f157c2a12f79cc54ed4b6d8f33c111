@@ -1,0 +1,20 @@
+src/cli.tsx
+  s_fe8c9d72e4a49f::t_597d99cafe01b4 92,96,345-350,435-447,2760-2765,2783-2786,2793-2794
+  s_fe8c9d72e4a49f::t_ed266d6977e037 2787-2789,2795
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "04441729a4f157c2a12f79cc54ed4b6d8f33c111",
+  "prompts": {},
+  "sessions": {
+    "s_fe8c9d72e4a49f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019edc13-0920-78e0-a374-dda4523ed88e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
