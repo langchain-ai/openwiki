@@ -1,0 +1,19 @@
+src/constants.ts
+  s_fe8c9d72e4a49f::t_db2e93d77cdc6a 76-77,90,102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "0fa14304a5e5c784a70dd2c5cdd77abc55a43f46",
+  "prompts": {},
+  "sessions": {
+    "s_fe8c9d72e4a49f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019edc13-0920-78e0-a374-dda4523ed88e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
