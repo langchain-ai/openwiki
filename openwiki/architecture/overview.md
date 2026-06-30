@@ -28,7 +28,13 @@ For non-chat runs, the agent receives a `RunContext` that includes last-update m
 - `git diff --name-status HEAD`
 - a change window since the previous successful OpenWiki update when metadata exists
 
-The agent then uses a DeepAgents `LocalShellBackend` rooted at the repository, but configured with `virtualMode: true`, `maxOutputBytes: 100_000`, and a 120 second timeout.
+The agent then uses a DeepAgents `LocalShellBackend` rooted at the repository, configured with `virtualMode: true`, `maxOutputBytes: 100_000`, `rootDir` set to the repository working directory, and a 120 second timeout.
+
+A SQLite checkpointer (`SqliteSaver` from `@langchain/langgraph-checkpoint-sqlite`) persists conversation threads at `~/.openwiki/openwiki.sqlite`. The checkpoint file is set to `0o600` permissions after each run. Thread IDs are derived from the repository path plus a random run ID, allowing follow-up messages within the same session to reuse conversation state.
+
+## Content snapshot and metadata gating
+
+After a non-chat run completes, the agent does not unconditionally write `.last-update.json`. Instead, `src/agent/utils.ts` computes a SHA-256 hash of all files in `openwiki/` (excluding `.last-update.json` itself) before and after the run. Metadata is written only when the content hash changed. If the agent made no modifications to the wiki, the metadata file is left untouched and the run is logged as `metadata=skipped openwiki=unchanged`.
 
 ## Why the architecture is shaped this way
 
@@ -37,7 +43,11 @@ The current design reflects a documentation product rather than a general-purpos
 - The CLI owns user experience and credential bootstrap so the tool is install-and-run friendly.
 - Git evidence is collected in the host process before the agent starts so the model sees stable repository context.
 - Update metadata is written only after successful non-chat runs, which lets later updates diff from the last known good state.
-- Model fallback is handled in the agent runtime, allowing OpenWiki to retry across a small set of models when OpenRouter returns server-side errors.
+- Model fallback is handled in the agent runtime, allowing OpenWiki to retry across a small set of models when OpenRouter returns server-side errors. The default model is `z-ai/glm-5.2` (defined in `src/constants.ts`); fallback models are `openai/gpt-5.4-mini` and `anthropic/claude-sonnet-4-6`.
+
+## Agent-instruction file management
+
+The system prompt (`src/agent/prompt.ts`) instructs the agent to create or update a top-level `/AGENTS.md` (and `/CLAUDE.md` if it exists) with an OpenWiki reference section on every init/update run. This section links to `openwiki/quickstart.md` and tells coding agents to read the wiki first. This is the only source-code modification the agent is allowed to make outside `openwiki/`.
 
 ## Major extension points
 
@@ -63,6 +73,7 @@ The current design reflects a documentation product rather than a general-purpos
 - `src/agent/index.ts`
 - `src/agent/prompt.ts`
 - `src/agent/utils.ts`
+- `src/agent/types.ts`
 - `src/constants.ts`
 - `package.json`
-- Git evidence: commits `7bfaeb2`, `1473a12`, `ceded10`, `4f7bb4c`
+- Git evidence: commit `405ea96` (initial commit, single-commit repo)

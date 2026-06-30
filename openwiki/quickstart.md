@@ -20,15 +20,19 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 ## Key source files
 
 - `README.md` — user-facing installation and usage summary.
+- `DEVELOPMENT.md` — local development setup, linking the CLI globally, and dry-run instructions.
 - `package.json` — bin entrypoint, scripts, and dependencies.
 - `src/cli.tsx` — Ink UI, command execution, and run lifecycle.
 - `src/commands.ts` — CLI parsing and help content.
 - `src/agent/index.ts` — agent runtime, model fallback, and metadata writes.
 - `src/agent/prompt.ts` — prompt assembly and documentation-run instructions.
-- `src/agent/utils.ts` — git evidence collection and `.last-update.json` handling.
+- `src/agent/utils.ts` — git evidence collection, content snapshot, and `.last-update.json` handling.
+- `src/agent/types.ts` — shared types (`OpenWikiCommand`, `RunContext`, `UpdateMetadata`, `OpenWikiRunEvent`).
 - `src/env.ts` — `~/.openwiki/.env` persistence and credential diagnostics.
 - `src/credentials.tsx` — interactive setup flow for API keys and model selection.
-- `.github/workflows/openwiki-update.yml` — scheduled automation example.
+- `src/constants.ts` — default model (`z-ai/glm-5.2`), fallback models, env keys, and wiki directory names.
+- `.github/workflows/openwiki-update.yml` — scheduled automation in CI.
+- `examples/openwiki-update.yml` — copyable scheduled update workflow for external repos.
 
 ## Documentation map
 
@@ -42,16 +46,22 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - The repository is intentionally focused: the main product surface is the CLI plus the documentation-generation agent.
 - Treat `openwiki/` in this repo as generated documentation output from a future OpenWiki run, not as application source.
 - When changing behavior, verify both the CLI parser and the agent prompt/runtime, because user-visible semantics are split across `src/commands.ts`, `src/cli.tsx`, and `src/agent/*`.
+- The agent prompt (`src/agent/prompt.ts`) instructs OpenWiki to create or update a top-level `/AGENTS.md` (and `/CLAUDE.md` if present) with an OpenWiki reference section on every init/update run. This is the only source-code modification allowed outside `openwiki/`.
+- See `DEVELOPMENT.md` for local development setup including `pnpm link --global` and `OPENWIKI_DEV=1 openwiki --dry-run`.
 
 ## Source map
 
 - `README.md`
+- `DEVELOPMENT.md`
 - `package.json`
 - `src/cli.tsx`
 - `src/commands.ts`
 - `src/agent/index.ts`
 - `src/agent/prompt.ts`
 - `src/agent/utils.ts`
+- `src/agent/types.ts`
+- `src/constants.ts`
 - `src/env.ts`
 - `.github/workflows/openwiki-update.yml`
-- Git evidence: commits `7bfaeb2`, `1473a12`, `4f7bb4c`, `ceded10`
+- `examples/openwiki-update.yml`
+- Git evidence: commit `405ea96` (initial commit, single-commit repo)
