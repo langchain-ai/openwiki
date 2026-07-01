@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
-import { ChatOpenAI } from "@langchain/openai";
-import { ChatOpenRouter } from "@langchain/openrouter";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
@@ -15,7 +12,6 @@ import type {
   OpenWikiRunResult,
 } from "./types.js";
 import {
-  ANTHROPIC_API_KEY_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
@@ -25,9 +21,8 @@ import {
   isValidModelId,
   normalizeModelId,
   OPENAI_API_KEY_ENV_KEY,
+  ANTHROPIC_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
-  OPENROUTER_BASE_URL,
-  OPENROUTER_FALLBACK_MODEL_IDS,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   resolveConfiguredProvider,
@@ -38,6 +33,14 @@ import {
   createRunContext,
   writeLastUpdateMetadata,
 } from "./utils.js";
+import { createModel, shouldUseOpenAiResponsesApi } from "./model.js";
+import { createModelRoute } from "./model-route.js";
+import {
+  attachProviderDebugInfo,
+  installProviderDebugFetch,
+  type ProviderFetchCapture,
+  type ProviderFetchFailure,
+} from "./provider-debug.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -70,7 +73,12 @@ export async function runOpenWikiAgent(
   const modelId = resolveModelId(options, provider);
   emitDebug(options, `model=${modelId}`);
 
-  const debugFetchCapture = installOpenRouterDebugFetch(options);
+  const debugFetchCapture = installProviderDebugFetch({
+    onDebug: options.debug
+      ? (message) => emitDebug(options, message)
+      : undefined,
+  });
+  const tracerWarningFilter = installLangChainTracerWarningFilter();
 
   try {
     return await runOpenWikiAgentWithModelFallbacks(
@@ -82,10 +90,11 @@ export async function runOpenWikiAgent(
       debugFetchCapture,
     );
   } catch (error) {
-    attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
+    attachProviderDebugInfo(error, debugFetchCapture.getLastFailure());
     throw error;
   } finally {
     debugFetchCapture.restore();
+    tracerWarningFilter.restore();
   }
 }
 
@@ -95,7 +104,7 @@ async function runOpenWikiAgentWithModelFallbacks(
   options: OpenWikiRunOptions,
   provider: OpenWikiProvider,
   modelId: string,
-  debugFetchCapture: OpenRouterFetchCapture,
+  debugFetchCapture: ProviderFetchCapture,
 ): Promise<OpenWikiRunResult> {
   const modelAttempts = createModelRoute(provider, modelId);
   let lastError: unknown = null;
@@ -123,7 +132,7 @@ async function runOpenWikiAgentWithModelFallbacks(
     } catch (error) {
       const failure = debugFetchCapture.getLastFailure();
 
-      attachOpenRouterDebugInfo(error, failure);
+      attachProviderDebugInfo(error, failure);
       lastError = error;
 
       if (
@@ -164,6 +173,12 @@ async function runOpenWikiAgentCore(
   emitDebug(options, "openwiki.snapshot=created");
   const model = await createModel(provider, modelId);
   emitDebug(options, `model.provider=${provider}`);
+  if (provider === "openai" && shouldUseOpenAiResponsesApi(modelId)) {
+    emitDebug(
+      options,
+      "model.openai.useResponsesApi=true (required for deepagents read_file binary content with gpt-5/o-series)",
+    );
+  }
   if (provider === "openrouter") {
     emitDebug(
       options,
@@ -338,6 +353,49 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
     type: "debug",
     message,
   });
+  process.stderr.write(`[openwiki:debug] ${message}\n`);
+}
+
+function installLangChainTracerWarningFilter(): { restore: () => void } {
+  const originalConsoleError = console.error;
+
+  console.error = (...args: Parameters<typeof console.error>) => {
+    if (isLangChainTracerEndWarning(args)) {
+      return;
+    }
+
+    originalConsoleError(...args);
+  };
+
+  return {
+    restore: () => {
+      console.error = originalConsoleError;
+    },
+  };
+}
+
+function isLangChainTracerEndWarning(
+  args: Parameters<typeof console.error>,
+): boolean {
+  const message = args.map(formatConsoleErrorArg).join(" ");
+
+  return (
+    message.includes("Error in handler LangChainTracer") &&
+    /handle(?:Tool|Chain|LLM)End/u.test(message) &&
+    /No (?:tool|chain|LLM) run to end/u.test(message)
+  );
+}
+
+function formatConsoleErrorArg(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (value instanceof Error) {
+    return value.message;
+  }
+
+  return "";
 }
 
 function isFileNotFoundError(error: unknown): boolean {
@@ -377,52 +435,8 @@ function resolveModelId(
   return modelId;
 }
 
-async function createModel(provider: OpenWikiProvider, modelId: string) {
-  if (provider === "anthropic") {
-    return new ChatAnthropic(modelId, {
-      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    });
-  }
-
-  if (provider === "openrouter") {
-    const models = createModelRoute(provider, modelId);
-
-    return new ChatOpenRouter({
-      apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
-      baseURL: OPENROUTER_BASE_URL,
-      model: modelId,
-      models,
-      route: "fallback",
-      siteName: "OpenWiki",
-    });
-  }
-
-  const providerConfig = getProviderConfig(provider);
-
-  return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: providerConfig.baseURL
-      ? {
-          baseURL: providerConfig.baseURL,
-        }
-      : undefined,
-    model: modelId,
-  });
-}
-
-function createModelRoute(
-  provider: OpenWikiProvider,
-  modelId: string,
-): string[] {
-  if (provider !== "openrouter") {
-    return [modelId];
-  }
-
-  return Array.from(new Set([modelId, ...OPENROUTER_FALLBACK_MODEL_IDS]));
-}
-
 function shouldRetryOpenRouterServerError(
-  failure: OpenRouterFetchFailure | null,
+  failure: ProviderFetchFailure | null,
   attemptIndex: number,
   attemptCount: number,
 ): boolean {
@@ -988,272 +1002,6 @@ function describeValueShape(value: unknown): string {
   }
 
   return typeof value;
-}
-
-type OpenRouterFetchCapture = {
-  clearLastFailure: () => void;
-  getLastFailure: () => OpenRouterFetchFailure | null;
-  restore: () => void;
-};
-
-type OpenRouterFetchFailure = {
-  fetchError?: string;
-  request: OpenRouterRequestSummary;
-  response?: OpenRouterResponseSummary;
-};
-
-type OpenRouterRequestSummary = {
-  bodyBytes?: number;
-  messageChars?: number;
-  messageCount?: number;
-  method: string;
-  model?: string;
-  stream?: boolean;
-  toolCount?: number;
-  toolNames?: string[];
-  url: string;
-};
-
-type OpenRouterResponseSummary = {
-  bodyPreview: string;
-  headers: Record<string, string>;
-  status: number;
-  statusText: string;
-};
-
-const OPENROUTER_DEBUG_PROPERTY = "openRouterDebug";
-const OPENROUTER_DEBUG_BODY_LIMIT = 4_000;
-
-function installOpenRouterDebugFetch(
-  options: OpenWikiRunOptions,
-): OpenRouterFetchCapture {
-  const originalFetch = globalThis.fetch;
-  let lastFailure: OpenRouterFetchFailure | null = null;
-
-  globalThis.fetch = (async (input, init) => {
-    if (!isOpenRouterFetchInput(input)) {
-      return originalFetch(input, init);
-    }
-
-    const request = summarizeOpenRouterRequest(input, init);
-
-    try {
-      const response = await originalFetch(input, init);
-
-      if (!response.ok) {
-        lastFailure = {
-          request,
-          response: {
-            bodyPreview: await readResponseBodyPreview(response),
-            headers: getSafeResponseHeaders(response.headers),
-            status: response.status,
-            statusText: response.statusText,
-          },
-        };
-        emitDebug(
-          options,
-          `openrouter.http status=${response.status} statusText=${JSON.stringify(
-            response.statusText,
-          )}`,
-        );
-      }
-
-      return response;
-    } catch (error) {
-      lastFailure = {
-        fetchError: error instanceof Error ? error.message : String(error),
-        request,
-      };
-      throw error;
-    }
-  }) satisfies typeof fetch;
-
-  return {
-    clearLastFailure: () => {
-      lastFailure = null;
-    },
-    getLastFailure: () => lastFailure,
-    restore: () => {
-      globalThis.fetch = originalFetch;
-    },
-  };
-}
-
-function attachOpenRouterDebugInfo(
-  error: unknown,
-  failure: OpenRouterFetchFailure | null,
-): void {
-  if (!failure || !isRecord(error)) {
-    return;
-  }
-
-  error[OPENROUTER_DEBUG_PROPERTY] = failure;
-}
-
-function isOpenRouterFetchInput(input: Parameters<typeof fetch>[0]): boolean {
-  const url = getFetchInputUrl(input);
-
-  return (
-    url !== null &&
-    url.startsWith(OPENROUTER_BASE_URL) &&
-    url.includes("/chat/completions")
-  );
-}
-
-function getFetchInputUrl(input: Parameters<typeof fetch>[0]): string | null {
-  if (typeof input === "string") {
-    return input;
-  }
-
-  if (input instanceof URL) {
-    return input.toString();
-  }
-
-  return "url" in input && typeof input.url === "string" ? input.url : null;
-}
-
-function summarizeOpenRouterRequest(
-  input: Parameters<typeof fetch>[0],
-  init: Parameters<typeof fetch>[1],
-): OpenRouterRequestSummary {
-  const body = typeof init?.body === "string" ? init.body : null;
-  const parsedBody = parseJsonRecord(body);
-  const toolNames = getOpenRouterToolNames(parsedBody?.tools);
-
-  return {
-    bodyBytes: body === null ? undefined : Buffer.byteLength(body, "utf8"),
-    messageChars: getOpenRouterMessageChars(parsedBody?.messages),
-    messageCount: Array.isArray(parsedBody?.messages)
-      ? parsedBody.messages.length
-      : undefined,
-    method: init?.method ?? "GET",
-    model: typeof parsedBody?.model === "string" ? parsedBody.model : undefined,
-    stream:
-      typeof parsedBody?.stream === "boolean" ? parsedBody.stream : undefined,
-    toolCount: toolNames.length,
-    toolNames: toolNames.slice(0, 20),
-    url: formatOpenRouterDebugUrl(getFetchInputUrl(input) ?? "unknown"),
-  };
-}
-
-function parseJsonRecord(value: string | null): Record<string, unknown> | null {
-  if (value === null) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(value) as unknown;
-
-    return isRecord(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function getOpenRouterToolNames(tools: unknown): string[] {
-  if (!Array.isArray(tools)) {
-    return [];
-  }
-
-  return tools
-    .map((tool) => {
-      if (!isRecord(tool) || !isRecord(tool.function)) {
-        return null;
-      }
-
-      return typeof tool.function.name === "string" ? tool.function.name : null;
-    })
-    .filter((name): name is string => name !== null);
-}
-
-function getOpenRouterMessageChars(messages: unknown): number | undefined {
-  if (!Array.isArray(messages)) {
-    return undefined;
-  }
-
-  return messages.reduce((total, message) => {
-    if (!isRecord(message)) {
-      return total;
-    }
-
-    return total + countMessageContentChars(message.content);
-  }, 0);
-}
-
-function countMessageContentChars(content: unknown): number {
-  if (typeof content === "string") {
-    return content.length;
-  }
-
-  if (Array.isArray(content)) {
-    return content.reduce(
-      (total, block) => total + countMessageContentChars(block),
-      0,
-    );
-  }
-
-  if (!isRecord(content)) {
-    return 0;
-  }
-
-  return Object.entries(content).reduce((total, [key, value]) => {
-    if (key === "text" || key === "content") {
-      return total + countMessageContentChars(value);
-    }
-
-    return total;
-  }, 0);
-}
-
-async function readResponseBodyPreview(response: Response): Promise<string> {
-  try {
-    const body = await response.clone().text();
-    const sanitizedBody = sanitizeOpenRouterResponseBody(body);
-
-    return sanitizedBody.length <= OPENROUTER_DEBUG_BODY_LIMIT
-      ? sanitizedBody
-      : `${sanitizedBody.slice(0, OPENROUTER_DEBUG_BODY_LIMIT - 3)}...`;
-  } catch (error) {
-    return `Unable to read response body: ${
-      error instanceof Error ? error.message : String(error)
-    }`;
-  }
-}
-
-function sanitizeOpenRouterResponseBody(body: string): string {
-  return body.replace(
-    /"([^"]*(?:api[-_]?key|authorization|bearer|password|secret|token|user_id)[^"]*)"\s*:\s*"[^"]*"/giu,
-    (_, key: string) => `${JSON.stringify(key)}:"[REDACTED]"`,
-  );
-}
-
-function getSafeResponseHeaders(headers: Headers): Record<string, string> {
-  const safeHeaders: Record<string, string> = {};
-
-  for (const key of ["cf-ray", "content-type", "request-id", "x-request-id"]) {
-    const value = headers.get(key);
-
-    if (value) {
-      safeHeaders[key] = value;
-    }
-  }
-
-  return safeHeaders;
-}
-
-function formatOpenRouterDebugUrl(value: string): string {
-  try {
-    const url = new URL(value);
-
-    url.username = "";
-    url.password = "";
-    url.search = "";
-    url.hash = "";
-
-    return url.toString();
-  } catch {
-    return value;
-  }
 }
 
 function formatEnvironmentDebug(): string {

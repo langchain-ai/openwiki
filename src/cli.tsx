@@ -21,6 +21,7 @@ import {
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+import { hasAttachedProviderDebug } from "./agent/provider-debug.js";
 import {
   type OpenWikiRunEvent,
   type OpenWikiRunResult,
@@ -2620,7 +2621,7 @@ function getErrorDiagnostics(error: unknown): ErrorDiagnostic[] {
   addOpenRouterMetadataDiagnostics(diagnostics, error, "");
   addAttachedDebugDiagnostics(diagnostics, error, "");
 
-  if (debugMode) {
+  if (debugMode || hasAttachedProviderDebug(error)) {
     addSafeObjectDiagnostics(diagnostics, error, "");
     addSafeNestedDiagnostics(diagnostics, error, "cause");
     addSafeNestedDiagnostics(diagnostics, error, "error");
@@ -2680,16 +2681,18 @@ function addAttachedDebugDiagnostics(
   value: Record<string, unknown>,
   prefix: string,
 ): void {
-  const debugValue = value.openRouterDebug;
+  for (const debugKey of ["providerDebug", "openRouterDebug"] as const) {
+    const debugValue = value[debugKey];
 
-  if (debugValue === undefined || debugValue === null) {
-    return;
+    if (debugValue === undefined || debugValue === null) {
+      continue;
+    }
+
+    diagnostics.push({
+      label: prefix ? `${prefix}.${debugKey}` : debugKey,
+      value: formatDiagnosticMetadataValue(debugValue),
+    });
   }
-
-  diagnostics.push({
-    label: prefix ? `${prefix}.openRouterDebug` : "openRouterDebug",
-    value: formatDiagnosticMetadataValue(debugValue),
-  });
 }
 
 function addOpenRouterMetadataDiagnostics(
