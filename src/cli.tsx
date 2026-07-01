@@ -70,6 +70,11 @@ type RunState =
       errorDiagnostics?: ErrorDiagnostic[];
     };
 
+type ConfigState =
+  | { status: "editing" }
+  | { status: "saved"; result: InitSetupResult }
+  | { status: "error"; message: string };
+
 type RunLogItem = {
   actionCount?: number;
   activeToolCallIds?: string[];
@@ -136,6 +141,9 @@ function App({ command }: AppProps) {
   const activeRunLog = useRef<RunLogItem[]>([]);
   const [runState, setRunState] = useState<RunState>({ status: "idle" });
   const [completedRuns, setCompletedRuns] = useState<CompletedRun[]>([]);
+  const [configState, setConfigState] = useState<ConfigState>({
+    status: "editing",
+  });
   const [activeUserMessage, setActiveUserMessage] = useState<string | null>(
     command.kind === "run" ? command.userMessage : null,
   );
@@ -225,13 +233,13 @@ function App({ command }: AppProps) {
       return;
     }
 
-    if (command.dryRun) {
-      process.exitCode = 0;
-      app.exit();
+    if (command.kind !== "run") {
       return;
     }
 
-    if (command.kind !== "run") {
+    if (command.dryRun) {
+      process.exitCode = 0;
+      app.exit();
       return;
     }
 
@@ -389,8 +397,92 @@ function App({ command }: AppProps) {
     }
   }, [app, autoExitOnSuccess, runState.status]);
 
+  // `--config` is a settings editor: once the setup flow resolves, render the
+  // outcome one last time and exit without ever invoking the agent.
+  useEffect(() => {
+    if (command.kind !== "config") {
+      return;
+    }
+
+    if (configState.status === "saved") {
+      process.exitCode = 0;
+      app.exit();
+      return;
+    }
+
+    if (configState.status === "error") {
+      process.exitCode = 1;
+      app.exit();
+    }
+  }, [app, command.kind, configState.status]);
+
   if (command.kind === "help") {
     return <HelpView />;
+  }
+
+  if (command.kind === "config") {
+    if (configState.status === "editing") {
+      return (
+        <InitSetup
+          reconfigure
+          modelIdOverride={null}
+          onComplete={(result) => {
+            if (result.modelId) {
+              setSessionModelId(result.modelId);
+            }
+            if (result.provider) {
+              setSessionProvider(result.provider);
+            }
+
+            setConfigState({ status: "saved", result });
+          }}
+          onError={(message) => {
+            setConfigState({ status: "error", message });
+          }}
+        />
+      );
+    }
+
+    if (configState.status === "error") {
+      return (
+        <Box flexDirection="column">
+          <Header modelId={displayModelId} subtitle="Configuration failed" />
+          <StatusLine tone="error" label="Error" value={configState.message} />
+        </Box>
+      );
+    }
+
+    const { result } = configState;
+    const savedAnything =
+      result.savedApiKey ||
+      result.savedProvider ||
+      result.savedModelId ||
+      result.savedLangSmithKey;
+
+    return (
+      <Box flexDirection="column">
+        <Header
+          modelId={result.modelId ?? displayModelId}
+          subtitle="Configuration saved"
+        />
+        <StatusLine
+          tone={savedAnything ? "success" : "muted"}
+          label="Credentials"
+          value={savedAnything ? "saved" : "unchanged"}
+        />
+        {result.provider ? (
+          <StatusLine
+            tone="muted"
+            label="Provider"
+            value={getProviderLabel(result.provider)}
+          />
+        ) : null}
+        {result.modelId ? (
+          <StatusLine tone="muted" label="Model" value={result.modelId} />
+        ) : null}
+        <StatusLine tone="muted" label="Next" value="run openwiki to start" />
+      </Box>
+    );
   }
 
   if (command.kind === "error") {
@@ -3022,7 +3114,10 @@ function Rows({ rows }: RowsProps) {
 const argv = process.argv.slice(2);
 const parsedCommand = parseCommand(argv);
 
-if (parsedCommand.kind === "run" && !parsedCommand.dryRun) {
+if (
+  (parsedCommand.kind === "run" && !parsedCommand.dryRun) ||
+  parsedCommand.kind === "config"
+) {
   await loadOpenWikiEnv();
 }
 
@@ -3112,6 +3207,14 @@ function writePrintErrorDiagnostics(error: unknown): void {
 }
 
 function resolveStartupCommand(command: CliCommand): CliCommand {
+  if (command.kind === "config" && !process.stdin.isTTY) {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "openwiki --config requires an interactive terminal.",
+    };
+  }
+
   if (
     command.kind === "run" &&
     !command.dryRun &&

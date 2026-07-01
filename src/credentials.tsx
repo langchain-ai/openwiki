@@ -27,6 +27,10 @@ export type InitSetupResult = {
 
 type InitSetupProps = {
   modelIdOverride?: string | null;
+  // When true, walk every step even if values already exist, so the user can
+  // change settings. Empty input on the API key / LangSmith steps means "keep
+  // the current value" so existing credentials are never nulled out.
+  reconfigure?: boolean;
   onComplete: (result: InitSetupResult) => void;
   onError: (message: string) => void;
 };
@@ -50,10 +54,17 @@ export function needsCredentialSetup(
 
 export function InitSetup({
   modelIdOverride = null,
+  reconfigure = false,
   onComplete,
   onError,
 }: InitSetupProps) {
   const initialProvider = resolveConfiguredProvider();
+  const currentSavedModelId =
+    modelIdOverride ?? process.env[OPENWIKI_MODEL_ID_ENV_KEY] ?? null;
+  // Only surface the saved model as a "keep current" option for the provider it
+  // belongs to; switching providers should fall back to that provider's default.
+  const injectedModelIdFor = (p: OpenWikiProvider): string | null =>
+    reconfigure && p === initialProvider ? currentSavedModelId : null;
   const [step, setStep] = useState<PromptStep | null>(null);
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -66,9 +77,8 @@ export function InitSetup({
   const [modelSelectionIndex, setModelSelectionIndex] = useState(() =>
     getModelSelectionIndex(
       initialProvider,
-      modelIdOverride ??
-        process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
-        getDefaultModelId(initialProvider),
+      currentSavedModelId ?? getDefaultModelId(initialProvider),
+      injectedModelIdFor(initialProvider),
     ),
   );
   const [isCustomModelInput, setIsCustomModelInput] = useState(false);
@@ -76,7 +86,11 @@ export function InitSetup({
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const initialStep = getInitialStep(modelIdOverride, initialProvider);
+    const initialStep = getInitialStep(
+      modelIdOverride,
+      initialProvider,
+      reconfigure,
+    );
 
     if (initialStep === null) {
       onComplete({
@@ -96,14 +110,13 @@ export function InitSetup({
     setModelSelectionIndex(
       getModelSelectionIndex(
         initialProvider,
-        modelIdOverride ??
-          process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
-          getDefaultModelId(initialProvider),
+        currentSavedModelId ?? getDefaultModelId(initialProvider),
+        injectedModelIdFor(initialProvider),
       ),
     );
     setIsCustomModelInput(false);
     setStep(initialStep);
-  }, [initialProvider, modelIdOverride, onComplete]);
+  }, [initialProvider, modelIdOverride, reconfigure, onComplete]);
 
   useInput((inputValue, key) => {
     if (isSaving || step === null) {
@@ -137,7 +150,8 @@ export function InitSetup({
           moveSelectionIndex(
             index,
             key.upArrow ? -1 : 1,
-            getModelSelectionOptions(provider).length,
+            getModelSelectionOptions(provider, injectedModelIdFor(provider))
+              .length,
           ),
         );
         return;
@@ -175,12 +189,14 @@ export function InitSetup({
         SELECTABLE_OPENWIKI_PROVIDERS[providerSelectionIndex] ??
         DEFAULT_PROVIDER;
 
+      const injectedModelId = injectedModelIdFor(selectedProvider);
       setProvider(selectedProvider);
       setProviderSelectionIndex(getProviderSelectionIndex(selectedProvider));
       setModelSelectionIndex(
         getModelSelectionIndex(
           selectedProvider,
-          getDefaultModelId(selectedProvider),
+          injectedModelId ?? getDefaultModelId(selectedProvider),
+          injectedModelId,
         ),
       );
       setIsCustomModelInput(false);
@@ -188,6 +204,7 @@ export function InitSetup({
       const nextStep = getNextStepAfterProvider(
         selectedProvider,
         modelIdOverride,
+        reconfigure,
       );
 
       if (nextStep) {
@@ -206,15 +223,47 @@ export function InitSetup({
 
     if (step === "api-key") {
       const trimmedInput = input.trim();
+      const hasExistingKey = Boolean(
+        process.env[getProviderApiKeyEnvKey(provider)],
+      );
 
+      // In reconfigure mode, an empty entry keeps the current key rather than
+      // erroring — but only when there is a current key to keep (e.g. the user
+      // did not just switch to a provider that has no saved key).
       if (trimmedInput.length === 0) {
+        if (reconfigure && hasExistingKey) {
+          setInput("");
+          const nextStep = getNextStepAfterApiKey(
+            provider,
+            modelIdOverride,
+            reconfigure,
+          );
+
+          if (nextStep) {
+            setStep(nextStep);
+            return;
+          }
+
+          await completeSetup({
+            nextApiKey: null,
+            nextLangSmithKey: langSmithKey,
+            nextModelId: modelId,
+            nextProvider: provider,
+          });
+          return;
+        }
+
         setError(`${getProviderApiKeyEnvKey(provider)} is required.`);
         return;
       }
 
       setApiKey(trimmedInput);
       setInput("");
-      const nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
+      const nextStep = getNextStepAfterApiKey(
+        provider,
+        modelIdOverride,
+        reconfigure,
+      );
 
       if (nextStep) {
         setStep(nextStep);
@@ -236,6 +285,7 @@ export function InitSetup({
         modelSelectionIndex,
         input,
         isCustomModelInput,
+        injectedModelIdFor(provider),
       );
 
       if (!selectedModelId) {
@@ -253,7 +303,7 @@ export function InitSetup({
       setInput("");
       setIsCustomModelInput(false);
 
-      if (process.env.LANGSMITH_API_KEY === undefined) {
+      if (reconfigure || process.env.LANGSMITH_API_KEY === undefined) {
         setStep("langsmith");
         return;
       }
@@ -268,7 +318,12 @@ export function InitSetup({
     }
 
     if (step === "langsmith") {
-      const nextLangSmithKey = input.trim();
+      const trimmedInput = input.trim();
+      // Fresh setup keeps its existing behavior (empty saves an empty value so
+      // the optional step is not asked again). In reconfigure mode an empty
+      // entry keeps the current LangSmith key instead of clearing it.
+      const nextLangSmithKey =
+        trimmedInput.length > 0 ? trimmedInput : reconfigure ? null : "";
 
       setLangSmithKey(nextLangSmithKey);
       setInput("");
@@ -415,10 +470,12 @@ export function InitSetup({
         {step ? (
           <Prompt
             input={input}
+            injectedModelId={injectedModelIdFor(provider)}
             isCustomModelInput={isCustomModelInput}
             modelSelectionIndex={modelSelectionIndex}
             provider={provider}
             providerSelectionIndex={providerSelectionIndex}
+            reconfigure={reconfigure}
             step={step}
           />
         ) : (
@@ -426,7 +483,7 @@ export function InitSetup({
         )}
       </SetupPanel>
 
-      {needsCredentialPrompt ? (
+      {needsCredentialPrompt || reconfigure ? (
         <Text color="gray">Secrets are masked and saved only after setup.</Text>
       ) : null}
 
@@ -512,21 +569,27 @@ function SetupPanel({ title, children }: SetupPanelProps) {
 
 type PromptProps = {
   input: string;
+  injectedModelId: string | null;
   isCustomModelInput: boolean;
   modelSelectionIndex: number;
   provider: OpenWikiProvider;
   providerSelectionIndex: number;
+  reconfigure: boolean;
   step: PromptStep;
 };
 
 function Prompt({
   input,
+  injectedModelId,
   isCustomModelInput,
   modelSelectionIndex,
   provider,
   providerSelectionIndex,
+  reconfigure,
   step,
 }: PromptProps) {
+  const canKeepCurrentKey =
+    reconfigure && Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
   if (step === "provider") {
     return (
       <Box flexDirection="column">
@@ -554,7 +617,11 @@ function Prompt({
           <Text color="gray">$</Text> {getProviderApiKeyEnvKey(provider)}={" "}
           <Text color="yellow">{mask(input)}</Text>
         </Text>
-        <Text color="gray">Press Enter to save it.</Text>
+        <Text color="gray">
+          {canKeepCurrentKey
+            ? "Press Enter to keep the current key, or paste a new one."
+            : "Press Enter to save it."}
+        </Text>
       </Box>
     );
   }
@@ -579,26 +646,28 @@ function Prompt({
           Choose {getProviderArticle(provider)} {getProviderLabel(provider)}{" "}
           model.
         </Text>
-        {getModelSelectionOptions(provider).map((option, index) => {
-          if (option.kind === "custom") {
+        {getModelSelectionOptions(provider, injectedModelId).map(
+          (option, index) => {
+            if (option.kind === "custom") {
+              return (
+                <Text key="custom">
+                  <SelectionMarker isSelected={index === modelSelectionIndex} />{" "}
+                  Custom model ID
+                </Text>
+              );
+            }
+
             return (
-              <Text key="custom">
+              <Text key={option.id}>
                 <SelectionMarker isSelected={index === modelSelectionIndex} />{" "}
-                Custom model ID
+                {option.label} <Text color="gray">{option.id}</Text>
+                {option.id === getDefaultModelId(provider) ? (
+                  <Text color="gray"> default</Text>
+                ) : null}
               </Text>
             );
-          }
-
-          return (
-            <Text key={option.id}>
-              <SelectionMarker isSelected={index === modelSelectionIndex} />{" "}
-              {option.label} <Text color="gray">{option.id}</Text>
-              {option.id === getDefaultModelId(provider) ? (
-                <Text color="gray"> default</Text>
-              ) : null}
-            </Text>
-          );
-        })}
+          },
+        )}
         <Text color="gray">Use up/down arrows, then press Enter.</Text>
       </Box>
     );
@@ -606,10 +675,19 @@ function Prompt({
 
   if (step === "langsmith") {
     return (
-      <Text>
-        <Text color="gray">$</Text> LANGSMITH_API_KEY optional={" "}
-        <Text color="yellow">{mask(input)}</Text>
-      </Text>
+      <Box flexDirection="column">
+        <Text>
+          <Text color="gray">$</Text> LANGSMITH_API_KEY optional={" "}
+          <Text color="yellow">{mask(input)}</Text>
+        </Text>
+        {reconfigure &&
+        process.env.LANGSMITH_API_KEY !== undefined &&
+        process.env.LANGSMITH_API_KEY.length > 0 ? (
+          <Text color="gray">
+            Press Enter to keep the current key, or paste a new one.
+          </Text>
+        ) : null}
+      </Box>
     );
   }
 
@@ -625,7 +703,14 @@ function SelectionMarker({ isSelected }: { isSelected: boolean }) {
 function getInitialStep(
   modelIdOverride: string | null,
   provider: OpenWikiProvider,
+  reconfigure: boolean,
 ): PromptStep | null {
+  // Reconfigure always starts from the top and walks every step so the user
+  // can change any setting; only-missing steps are for first-time setup.
+  if (reconfigure) {
+    return "provider";
+  }
+
   if (process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined) {
     return "provider";
   }
@@ -651,21 +736,24 @@ function getInitialStep(
 function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
+  reconfigure: boolean,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (reconfigure || !process.env[getProviderApiKeyEnvKey(provider)]) {
     return "api-key";
   }
 
-  return getNextStepAfterApiKey(provider, modelIdOverride);
+  return getNextStepAfterApiKey(provider, modelIdOverride, reconfigure);
 }
 
 function getNextStepAfterApiKey(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
+  reconfigure: boolean,
 ): PromptStep | null {
   if (
-    modelIdOverride === null &&
-    process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined
+    reconfigure ||
+    (modelIdOverride === null &&
+      process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined)
   ) {
     return "model";
   }
@@ -712,13 +800,29 @@ type ModelSelectionOption =
 
 function getModelSelectionOptions(
   provider: OpenWikiProvider,
+  currentModelId?: string | null,
 ): ModelSelectionOption[] {
+  const presets = getProviderModelOptions(provider).map((model) => ({
+    id: model.id,
+    kind: "preset" as const,
+    label: model.label,
+  }));
+
+  // Reconfigure passes the currently-saved model. When it is not one of the
+  // provider presets (e.g. a custom model set via --modelId or /model), surface
+  // it as a selectable option so pressing Enter keeps it instead of silently
+  // switching to the first preset.
+  const hasCurrent =
+    currentModelId !== undefined &&
+    currentModelId !== null &&
+    currentModelId.length > 0 &&
+    !presets.some((preset) => preset.id === currentModelId);
+
   return [
-    ...getProviderModelOptions(provider).map((model) => ({
-      id: model.id,
-      kind: "preset" as const,
-      label: model.label,
-    })),
+    ...(hasCurrent
+      ? [{ id: currentModelId, kind: "preset" as const, label: "current" }]
+      : []),
+    ...presets,
     { kind: "custom" },
   ];
 }
@@ -728,9 +832,12 @@ function getSelectedModelId(
   selectedIndex: number,
   input: string,
   isCustomInput: boolean,
+  currentModelId?: string | null,
 ): string | "custom" | null {
   if (!isCustomInput) {
-    const selectedOption = getModelSelectionOptions(provider)[selectedIndex];
+    const selectedOption = getModelSelectionOptions(provider, currentModelId)[
+      selectedIndex
+    ];
 
     if (!selectedOption) {
       return null;
@@ -755,8 +862,12 @@ function getProviderSelectionIndex(provider: OpenWikiProvider): number {
 function getModelSelectionIndex(
   provider: OpenWikiProvider,
   selectedModelId: string,
+  currentModelId?: string | null,
 ): number {
-  const selectedIndex = getModelSelectionOptions(provider).findIndex(
+  const selectedIndex = getModelSelectionOptions(
+    provider,
+    currentModelId,
+  ).findIndex(
     (option) => option.kind === "preset" && option.id === selectedModelId,
   );
 

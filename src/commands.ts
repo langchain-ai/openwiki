@@ -19,6 +19,7 @@ export type HelpContent = {
 
 export type CliCommand =
   | { kind: "help"; exitCode: 0 }
+  | { kind: "config"; exitCode: 0 }
   | {
       kind: "run";
       exitCode: 0;
@@ -43,6 +44,7 @@ export function parseCommand(argv: string[]): CliCommand {
   let dryRun = false;
   let modelId: string | null = null;
   let print = false;
+  let config = false;
   let command: OpenWikiCommand = "chat";
   const userMessageParts: string[] = [];
 
@@ -68,6 +70,11 @@ export function parseCommand(argv: string[]): CliCommand {
 
     if (arg === "--print" || arg === "-p") {
       print = true;
+      continue;
+    }
+
+    if (arg === "--config") {
+      config = true;
       continue;
     }
 
@@ -143,6 +150,19 @@ export function parseCommand(argv: string[]): CliCommand {
     userMessageParts.length > 0 ? userMessageParts.join(" ") : null;
   const shouldStart = command !== "chat" || userMessage !== null;
 
+  if (config) {
+    if (command !== "chat" || userMessage !== null || print) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message:
+          "--config cannot be combined with --init, --update, --print, or a message.",
+      };
+    }
+
+    return { kind: "config", exitCode: 0 };
+  }
+
   if (print && !shouldStart) {
     return {
       kind: "error",
@@ -178,6 +198,7 @@ export const helpContent: HelpContent = {
     "openwiki [--modelId <model>] [message]",
     "openwiki --init [message]",
     "openwiki --update [message]",
+    "openwiki --config",
   ],
   commands: [
     {
@@ -193,6 +214,11 @@ export const helpContent: HelpContent = {
     {
       label: "--update",
       description: "Update existing OpenWiki documentation.",
+    },
+    {
+      label: "--config",
+      description:
+        "Reconfigure provider, API key, model, and LangSmith without running the agent.",
     },
     {
       label: "-p, --print",
@@ -213,6 +239,7 @@ export const helpContent: HelpContent = {
     "openwiki",
     "openwiki --init",
     "openwiki --update",
+    "openwiki --config",
     'openwiki "What can you do?"',
     'openwiki -p "Summarize what OpenWiki can do"',
     "openwiki --modelId gpt-5.5",
