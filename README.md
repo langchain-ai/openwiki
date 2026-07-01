@@ -12,8 +12,9 @@ npm install -g openwiki
 
 ## Quick Start
 
+Initialize OpenWiki, configure your model and API key, then generate documentation
+
 ```sh
-# Initialize OpenWiki, configure your model and API key, then generate documentation
 openwiki --init
 ```
 
