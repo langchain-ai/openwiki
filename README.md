@@ -10,6 +10,19 @@ OpenWiki is a CLI that writes and maintains agent documentation for your codebas
 npm install -g openwiki
 ```
 
+## Quick Start
+
+```sh
+# Initialize OpenWiki, configure your model and API key, then generate documentation
+openwiki --init
+```
+
+Then to ensure your documentation stays up-to-date, add the GitHub action to your repository to automatically open a PR once a day with documentation updates:
+
+[openwiki-update.yml](./examples/openwiki-update.yml)
+
+Copy the contents of that file into `.github/workflows/openwiki-update.yml` in your repository.
+
 ## Usage
 
 ```sh
@@ -27,11 +40,13 @@ openwiki --help
 
 `openwiki` creates initial documentation in `openwiki/` when no wiki exists. If `openwiki/` already exists, it refreshes that documentation from repository changes. By default, the CLI stays open after each run so you can send follow-up messages. Use `-p` or `--print` for a one-shot non-interactive run that prints the final assistant output.
 
-On the first interactive run, OpenWiki asks for an OpenRouter API key, lets you pick a default model, and saves both to `~/.openwiki/.env`. A LangSmith API key can also be provided optionally to enable tracing your OpenWiki runs.
+On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
 
-See [`examples/openwiki-update.yml`](./examples/openwiki-update.yml) for a GitHub Actions workflow you can copy into a repository for scheduled updates.
+These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.
 
 ## Customizing
 
-OpenWiki runs on OpenRouter models, meaning you can use any model that OpenRouter supports (although we suggest using models with good reasoning and agentic capabilities).
-You can pick what model to use by running `/model` in the CLI, and selecting from the list of available models, or setting your own custom model ID.
+OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+
+If there's an inference provider or model you'd like to see added, please open a PR!
+
