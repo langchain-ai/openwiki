@@ -54,6 +54,17 @@ Update existing documentation:
 openwiki --update
 ```
 
+Reconfigure your provider, API key, model, or LangSmith key without running the
+agent (for example, to switch to a different key):
+
+```sh
+openwiki --config
+```
+
+`--config` walks the setup prompts even when credentials already exist. Press
+Enter on the API key or LangSmith prompt to keep the current value; only what you
+retype is changed.
+
 Show help:
 
 ```sh
