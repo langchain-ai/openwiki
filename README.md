@@ -18,9 +18,7 @@ Initialize OpenWiki, configure your model and API key, then generate documentati
 openwiki --init
 ```
 
-Then to ensure your documentation stays up-to-date, add the GitHub action to your repository to automatically open a PR once a day with documentation updates:
-
-[openwiki-update.yml](./examples/openwiki-update.yml)
+Then to ensure your documentation stays up-to-date, add the GitHub action to your repository to automatically open a PR once a day with documentation updates: [openwiki-update.yml](./examples/openwiki-update.yml)
 
 Copy the contents of that file into `.github/workflows/openwiki-update.yml` in your repository.
 
