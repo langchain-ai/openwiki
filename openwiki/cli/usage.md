@@ -41,15 +41,15 @@ If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires a provid
 
 The interactive UI supports the following slash commands (defined in `src/cli.tsx`):
 
-| Command     | Description                              |
-| ----------- | ---------------------------------------- |
-| `/provider` | Switch the model provider                |
-| `/model`    | Switch the current provider model        |
-| `/init`     | Run an initial OpenWiki documentation pass |
-| `/update`   | Update existing OpenWiki documentation   |
+| Command     | Description                                 |
+| ----------- | ------------------------------------------- |
+| `/provider` | Switch the model provider                   |
+| `/model`    | Switch the current provider model           |
+| `/init`     | Run an initial OpenWiki documentation pass  |
+| `/update`   | Update existing OpenWiki documentation      |
 | `/clear`    | Start a fresh thread and clear chat history |
-| `/help`     | Show slash command help                  |
-| `/exit`     | Quit the CLI                             |
+| `/help`     | Show slash command help                     |
+| `/exit`     | Quit the CLI                                |
 
 The UI persists provider and model selection back to `~/.openwiki/.env` through `saveOpenWikiEnv()`.
 
