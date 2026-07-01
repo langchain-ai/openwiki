@@ -37,6 +37,20 @@ If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires a provid
 - completed-run history and error display,
 - exit handling for help, errors, and explicit `/exit` messages.
 
+### Slash commands
+
+The interactive UI supports the following slash commands (defined in `src/cli.tsx`):
+
+| Command     | Description                              |
+| ----------- | ---------------------------------------- |
+| `/provider` | Switch the model provider                |
+| `/model`    | Switch the current provider model        |
+| `/init`     | Run an initial OpenWiki documentation pass |
+| `/update`   | Update existing OpenWiki documentation   |
+| `/clear`    | Start a fresh thread and clear chat history |
+| `/help`     | Show slash command help                  |
+| `/exit`     | Quit the CLI                             |
+
 The UI persists provider and model selection back to `~/.openwiki/.env` through `saveOpenWikiEnv()`.
 
 ## Credentials and onboarding
