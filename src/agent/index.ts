@@ -5,6 +5,7 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
+import type { Event as ProtocolEvent } from "@langchain/protocol";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
@@ -200,15 +201,14 @@ async function runOpenWikiAgentCore(
     ],
   };
 
-  emitDebug(options, "stream=opening modes=messages,tools subgraphs=true");
-  const stream = await agent.stream(input, {
+  emitDebug(options, "stream=opening protocol=events version=v3");
+  const stream = await agent.streamEvents(input, {
     configurable: {
       thread_id: threadId,
     },
-    streamMode: ["messages", "tools"],
-    subgraphs: true,
+    version: "v3",
   });
-  emitDebug(options, "stream=started modes=messages,tools subgraphs=true");
+  emitDebug(options, "stream=started protocol=events version=v3");
 
   let unhandledChunkCount = 0;
 
@@ -217,7 +217,11 @@ async function runOpenWikiAgentCore(
 
     if (event) {
       options.onEvent?.(event);
-    } else if (options.debug && unhandledChunkCount < 3) {
+    } else if (
+      options.debug &&
+      !isProtocolStreamEvent(chunk) &&
+      unhandledChunkCount < 3
+    ) {
       emitDebug(
         options,
         `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
@@ -436,96 +440,42 @@ function shouldRetryOpenRouterServerError(
   );
 }
 
-type NormalizedStreamEvent = {
-  isSubgraph: boolean;
-  mode: string;
-  payload: unknown;
-};
-
 function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
-  const streamEvent = normalizeStreamEvent(chunk);
-
-  if (!streamEvent) {
+  if (!isProtocolStreamEvent(chunk)) {
     return null;
   }
 
-  if (streamEvent.mode === "messages") {
-    const text = extractMessageText(streamEvent.payload);
+  if (chunk.method === "messages") {
+    const text = extractMessageText(chunk.params.data);
 
     return text.length > 0
       ? {
-          source: streamEvent.isSubgraph ? "subgraph" : "main",
+          source: isSubgraphProtocolEvent(chunk) ? "subgraph" : "main",
           type: "text",
           text,
         }
       : null;
   }
 
-  if (streamEvent.mode === "tools") {
-    return parseToolStreamEvent(streamEvent.payload);
+  if (chunk.method === "tools") {
+    return parseToolStreamEvent(chunk.params.data);
   }
 
   return null;
 }
 
-function normalizeStreamEvent(chunk: unknown): NormalizedStreamEvent | null {
-  if (Array.isArray(chunk)) {
-    if (chunk.length < 2) {
-      return null;
-    }
-
-    const [mode, payload] = normalizeStreamChunk(chunk);
-
-    return typeof mode === "string"
-      ? {
-          isSubgraph: isSubgraphStreamChunk(chunk),
-          mode,
-          payload,
-        }
-      : null;
-  }
-
-  if (!isRecord(chunk)) {
-    return null;
-  }
-
-  const toolEvent = getStringRecordValue(chunk, "event");
-
-  if (toolEvent?.startsWith("on_tool_")) {
-    return {
-      isSubgraph: false,
-      mode: "tools",
-      payload: chunk,
-    };
-  }
-
-  const method = getStringRecordValue(chunk, "method");
-
-  if (!method) {
-    return null;
-  }
-
-  return {
-    isSubgraph: false,
-    mode: method,
-    payload: getProtocolEventPayload(chunk),
-  };
+function isProtocolStreamEvent(value: unknown): value is ProtocolEvent {
+  return (
+    isRecord(value) &&
+    value.type === "event" &&
+    typeof value.method === "string" &&
+    isRecord(value.params) &&
+    "data" in value.params
+  );
 }
 
-function normalizeStreamChunk(chunk: unknown[]): [unknown, unknown] {
-  if (Array.isArray(chunk[0]) && chunk.length >= 3) {
-    return [chunk[1], chunk[2]];
-  }
-
-  return [chunk[0], chunk[1]];
-}
-
-function isSubgraphStreamChunk(chunk: unknown[]): boolean {
-  if (!Array.isArray(chunk[0]) || chunk.length < 3) {
-    return false;
-  }
-
-  return chunk[0].length > 1;
+function isSubgraphProtocolEvent(event: ProtocolEvent): boolean {
+  return event.params.namespace.length > 1;
 }
 
 function extractMessageText(payload: unknown): string {
@@ -830,24 +780,6 @@ function isMessageRole(value: unknown): value is string {
     value === "system" ||
     value === "tool"
   );
-}
-
-function getProtocolEventPayload(event: Record<string, unknown>): unknown {
-  const params = event.params;
-
-  if (isRecord(params) && "data" in params) {
-    return params.data;
-  }
-
-  if ("data" in event) {
-    return event.data;
-  }
-
-  if ("payload" in event) {
-    return event.payload;
-  }
-
-  return event;
 }
 
 function parseToolStreamEvent(payload: unknown): OpenWikiRunEvent | null {

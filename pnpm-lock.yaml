@@ -23,6 +23,9 @@ importers:
       '@langchain/openrouter':
         specifier: ^0.4.3
         version: 0.4.3(@langchain/core@1.2.1(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)(zod@4.4.3)
+      '@langchain/protocol':
+        specifier: ^0.0.18
+        version: 0.0.18
       deepagents:
         specifier: ^1.10.5
         version: 1.10.5(langsmith@0.7.10(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(react@18.3.1)(ws@8.21.0)
