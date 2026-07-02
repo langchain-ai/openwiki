@@ -3035,6 +3035,7 @@ const parsedCommand = parseCommand(argv);
 
 if (parsedCommand.kind === "run" && !parsedCommand.dryRun) {
   await loadOpenWikiEnv();
+  applyCommandEnvOverrides(parsedCommand);
 }
 
 const command = resolveStartupCommand(parsedCommand);
@@ -3206,6 +3207,29 @@ function writePrintErrorDiagnostics(error: unknown): void {
 
   for (const diagnostic of diagnostics) {
     process.stderr.write(`${diagnostic.label}: ${diagnostic.value}\n`);
+  }
+}
+
+function applyCommandEnvOverrides(command: CliCommand): void {
+  if (command.kind !== "run" || command.dryRun) {
+    return;
+  }
+
+  if (command.provider) {
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] = command.provider;
+  }
+
+  if (command.modelId) {
+    process.env[OPENWIKI_MODEL_ID_ENV_KEY] = command.modelId;
+  }
+
+  if (command.baseUrl) {
+    const provider = command.provider ?? resolveConfiguredProvider();
+    const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
+
+    if (baseUrlEnvKey) {
+      process.env[baseUrlEnvKey] = command.baseUrl;
+    }
   }
 }
 
