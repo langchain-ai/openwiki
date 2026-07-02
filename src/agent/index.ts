@@ -5,10 +5,6 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
-import type { BaseMessage, MessageContent } from "@langchain/core/messages";
-import type { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
-import type { ChatGenerationChunk, ChatResult } from "@langchain/core/outputs";
-import type { BaseChatModelCallOptions } from "@langchain/core/language_models/chat_models";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
@@ -76,6 +72,10 @@ export async function runOpenWikiAgent(
   emitDebug(options, `model=${modelId}`);
 
   const debugFetchCapture = installOpenRouterDebugFetch(options);
+  const customBaseURL = process.env[OPENAI_BASE_URL_ENV_KEY];
+  const restoreFileBlockScrubber = customBaseURL
+    ? installFileBlockScrubber(customBaseURL)
+    : null;
 
   try {
     return await runOpenWikiAgentWithModelFallbacks(
@@ -91,6 +91,7 @@ export async function runOpenWikiAgent(
     throw error;
   } finally {
     debugFetchCapture.restore();
+    restoreFileBlockScrubber?.();
   }
 }
 
@@ -383,77 +384,111 @@ function resolveModelId(
 }
 
 /**
- * Strips file content blocks (base64-encoded binary files sent by DeepAgents)
- * down to their decoded text content before sending to the API. Required for
- * models/gateways that don't support multimodal file content blocks (e.g. GLM-5.2
- * via Azure APIM), which reject messages containing {type:'file',...} parts.
+ * Installs a global fetch interceptor that rewrites chat completion request
+ * bodies destined for a custom base URL, converting any file content blocks
+ * (base64 binary files sent by DeepAgents) into plain text strings before
+ * the request leaves the process.
+ *
+ * This operates at the HTTP level so it catches all code paths regardless of
+ * which internal LangChain method DeepAgents uses to invoke the model.
+ *
+ * Returns a cleanup function that restores the original fetch.
  */
-class TextOnlyChatOpenAI extends ChatOpenAI {
-  override async _generate(
-    messages: BaseMessage[],
-    options: BaseChatModelCallOptions,
-    runManager?: CallbackManagerForLLMRun,
-  ): Promise<ChatResult> {
-    return super._generate(
-      messages.map(stripFileBlocks),
-      options,
-      runManager,
-    );
-  }
+function installFileBlockScrubber(baseURL: string): () => void {
+  const originalFetch = globalThis.fetch;
 
-  override async *_streamResponseChunks(
-    messages: BaseMessage[],
-    options: BaseChatModelCallOptions,
-    runManager?: CallbackManagerForLLMRun,
-  ): AsyncGenerator<ChatGenerationChunk> {
-    yield* super._streamResponseChunks(
-      messages.map(stripFileBlocks),
-      options,
-      runManager,
-    );
-  }
+  globalThis.fetch = (async (
+    input: Parameters<typeof fetch>[0],
+    init?: Parameters<typeof fetch>[1],
+  ) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : (input as Request).url;
+
+    if (
+      typeof url === "string" &&
+      url.startsWith(baseURL) &&
+      url.includes("/chat/completions") &&
+      init?.body &&
+      typeof init.body === "string"
+    ) {
+      try {
+        const parsed = JSON.parse(init.body) as Record<string, unknown>;
+
+        if (Array.isArray(parsed.messages)) {
+          parsed.messages = (
+            parsed.messages as Array<Record<string, unknown>>
+          ).map(scrubMessageContent);
+
+          init = { ...init, body: JSON.stringify(parsed) };
+        }
+      } catch {
+        // Not JSON — pass through unchanged
+      }
+    }
+
+    return originalFetch(input, init);
+  }) satisfies typeof fetch;
+
+  return () => {
+    globalThis.fetch = originalFetch;
+  };
 }
 
-function stripFileBlocks(message: BaseMessage): BaseMessage {
-  if (typeof message.content === "string") {
+function scrubMessageContent(
+  message: Record<string, unknown>,
+): Record<string, unknown> {
+  const { content } = message;
+
+  if (!Array.isArray(content)) {
     return message;
   }
 
-  const parts = message.content as MessageContent;
-
-  if (!Array.isArray(parts)) {
-    return message;
-  }
-
-  const stripped = parts.map((part) => {
+  const scrubbed = (content as Array<unknown>).map((part) => {
     if (
       typeof part === "object" &&
       part !== null &&
       "type" in part &&
-      part.type === "file" &&
+      (part as Record<string, unknown>).type === "file" &&
       "data" in part &&
-      typeof part.data === "string"
+      typeof (part as Record<string, unknown>).data === "string"
     ) {
-      const text = Buffer.from(part.data, "base64").toString("utf8");
+      const text = Buffer.from(
+        (part as Record<string, unknown>).data as string,
+        "base64",
+      ).toString("utf8");
 
-      return { type: "text" as const, text };
+      return { type: "text", text };
     }
 
     return part;
   });
 
-  // Collapse to a plain string when every part is text — many gateways
-  // (e.g. GLM-5.2 via Azure APIM) reject array content on non-human messages.
-  const allText = stripped.every(
-    (p) => typeof p === "object" && p !== null && "type" in p && p.type === "text",
+  // Collapse all-text arrays to a plain string — strict gateways like GLM-5.2
+  // via Azure APIM reject array content even when every element is text.
+  const allText = scrubbed.every(
+    (p) =>
+      typeof p === "object" &&
+      p !== null &&
+      (p as Record<string, unknown>).type === "text",
   );
 
-  message.content = allText
-    ? stripped.map((p) => (p as { type: "text"; text: string }).text).join("")
-    : stripped;
-
-  return message;
+  return {
+    ...message,
+    content: allText
+      ? scrubbed
+          .map((p) => (p as Record<string, unknown>).text as string)
+          .join("")
+      : scrubbed,
+  };
 }
+
+// Keep TextOnlyChatOpenAI as a thin subclass (no overrides needed now that
+// the fetch interceptor handles everything at the wire level).
+class TextOnlyChatOpenAI extends ChatOpenAI {}
 
 async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
