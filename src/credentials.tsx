@@ -27,11 +27,17 @@ export type InitSetupResult = {
 
 type InitSetupProps = {
   modelIdOverride?: string | null;
+  reconfigure?: boolean;
   onComplete: (result: InitSetupResult) => void;
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "langsmith" | "model" | "provider";
+type PromptStep =
+  | "api-key"
+  | "langsmith"
+  | "model"
+  | "provider"
+  | "custom-base-url";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
@@ -41,6 +47,7 @@ export function needsCredentialSetup(
 
   return (
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
+    (provider === "custom" && !process.env.OPENWIKI_CUSTOM_BASE_URL) ||
     !process.env[apiKeyEnvKey] ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
@@ -50,6 +57,7 @@ export function needsCredentialSetup(
 
 export function InitSetup({
   modelIdOverride = null,
+  reconfigure = false,
   onComplete,
   onError,
 }: InitSetupProps) {
@@ -57,6 +65,7 @@ export function InitSetup({
   const [step, setStep] = useState<PromptStep | null>(null);
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [customBaseUrl, setCustomBaseUrl] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -76,7 +85,11 @@ export function InitSetup({
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const initialStep = getInitialStep(modelIdOverride, initialProvider);
+    const initialStep = getInitialStep(
+      modelIdOverride,
+      initialProvider,
+      reconfigure,
+    );
 
     if (initialStep === null) {
       onComplete({
@@ -103,7 +116,7 @@ export function InitSetup({
     );
     setIsCustomModelInput(false);
     setStep(initialStep);
-  }, [initialProvider, modelIdOverride, onComplete]);
+  }, [initialProvider, modelIdOverride, reconfigure, onComplete]);
 
   useInput((inputValue, key) => {
     if (isSaving || step === null) {
@@ -188,6 +201,7 @@ export function InitSetup({
       const nextStep = getNextStepAfterProvider(
         selectedProvider,
         modelIdOverride,
+        reconfigure,
       );
 
       if (nextStep) {
@@ -197,9 +211,63 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextCustomBaseUrl: customBaseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: selectedProvider,
+      });
+      return;
+    }
+
+    if (step === "custom-base-url") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        const existingBaseUrl = process.env.OPENWIKI_CUSTOM_BASE_URL;
+        if (reconfigure && existingBaseUrl) {
+          setCustomBaseUrl(null);
+          setInput("");
+          const nextStep = getNextStepAfterCustomBaseUrl(
+            provider,
+            modelIdOverride,
+            reconfigure,
+          );
+          if (nextStep) {
+            setStep(nextStep);
+            return;
+          }
+          await completeSetup({
+            nextApiKey: apiKey,
+            nextCustomBaseUrl: null,
+            nextLangSmithKey: langSmithKey,
+            nextModelId: modelId,
+            nextProvider: provider,
+          });
+          return;
+        }
+        setError("OPENWIKI_CUSTOM_BASE_URL is required.");
+        return;
+      }
+
+      setCustomBaseUrl(trimmedInput);
+      setInput("");
+      const nextStep = getNextStepAfterCustomBaseUrl(
+        provider,
+        modelIdOverride,
+        reconfigure,
+      );
+
+      if (nextStep) {
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextCustomBaseUrl: trimmedInput,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
       });
       return;
     }
@@ -208,13 +276,39 @@ export function InitSetup({
       const trimmedInput = input.trim();
 
       if (trimmedInput.length === 0) {
+        const existingKey = process.env[getProviderApiKeyEnvKey(provider)];
+        if (reconfigure && existingKey) {
+          setApiKey(null);
+          setInput("");
+          const nextStep = getNextStepAfterApiKey(
+            provider,
+            modelIdOverride,
+            reconfigure,
+          );
+          if (nextStep) {
+            setStep(nextStep);
+            return;
+          }
+          await completeSetup({
+            nextApiKey: null,
+            nextCustomBaseUrl: customBaseUrl,
+            nextLangSmithKey: langSmithKey,
+            nextModelId: modelId,
+            nextProvider: provider,
+          });
+          return;
+        }
         setError(`${getProviderApiKeyEnvKey(provider)} is required.`);
         return;
       }
 
       setApiKey(trimmedInput);
       setInput("");
-      const nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
+      const nextStep = getNextStepAfterApiKey(
+        provider,
+        modelIdOverride,
+        reconfigure,
+      );
 
       if (nextStep) {
         setStep(nextStep);
@@ -223,6 +317,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: trimmedInput,
+        nextCustomBaseUrl: customBaseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -253,13 +348,14 @@ export function InitSetup({
       setInput("");
       setIsCustomModelInput(false);
 
-      if (process.env.LANGSMITH_API_KEY === undefined) {
+      if (reconfigure || process.env.LANGSMITH_API_KEY === undefined) {
         setStep("langsmith");
         return;
       }
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextCustomBaseUrl: customBaseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
         nextProvider: provider,
@@ -268,13 +364,21 @@ export function InitSetup({
     }
 
     if (step === "langsmith") {
-      const nextLangSmithKey = input.trim();
+      let nextLangSmithKey: string | null = input.trim();
+      const hasExisting = process.env.LANGSMITH_API_KEY !== undefined;
+
+      if (reconfigure && hasExisting && nextLangSmithKey.length === 0) {
+        nextLangSmithKey = null;
+      } else if (nextLangSmithKey.toLowerCase() === "none") {
+        nextLangSmithKey = "";
+      }
 
       setLangSmithKey(nextLangSmithKey);
       setInput("");
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextCustomBaseUrl: customBaseUrl,
         nextLangSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -284,6 +388,7 @@ export function InitSetup({
 
   type CompleteSetupOptions = {
     nextApiKey: string | null;
+    nextCustomBaseUrl?: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
@@ -291,6 +396,7 @@ export function InitSetup({
 
   async function completeSetup({
     nextApiKey,
+    nextCustomBaseUrl,
     nextLangSmithKey,
     nextModelId,
     nextProvider,
@@ -310,6 +416,10 @@ export function InitSetup({
         updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
       }
 
+      if (nextCustomBaseUrl !== undefined && nextCustomBaseUrl !== null) {
+        updates.OPENWIKI_CUSTOM_BASE_URL = nextCustomBaseUrl;
+      }
+
       if (nextModelId !== null) {
         updates[OPENWIKI_MODEL_ID_ENV_KEY] = nextModelId;
       }
@@ -320,6 +430,9 @@ export function InitSetup({
         if (nextLangSmithKey.length > 0) {
           updates.LANGCHAIN_PROJECT = "openwiki";
           updates.LANGCHAIN_TRACING_V2 = "true";
+        } else {
+          updates.LANGCHAIN_PROJECT = "";
+          updates.LANGCHAIN_TRACING_V2 = "";
         }
       }
 
@@ -367,6 +480,23 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
+        {provider === "custom" ? (
+          <SetupStep
+            label="Custom base URL"
+            state={
+              process.env.OPENWIKI_CUSTOM_BASE_URL
+                ? "done"
+                : step === "custom-base-url"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              process.env.OPENWIKI_CUSTOM_BASE_URL
+                ? process.env.OPENWIKI_CUSTOM_BASE_URL
+                : `save OPENWIKI_CUSTOM_BASE_URL to ${openWikiEnvPath}`
+            }
+          />
+        ) : null}
         <SetupStep
           label="Provider key"
           state={
@@ -546,15 +676,47 @@ function Prompt({
     );
   }
 
-  if (step === "api-key") {
+  if (step === "custom-base-url") {
+    const hasExisting = process.env.OPENWIKI_CUSTOM_BASE_URL !== undefined;
     return (
       <Box flexDirection="column">
-        <Text>Paste your {getProviderLabel(provider)} API key.</Text>
+        <Text>
+          {hasExisting
+            ? "Paste a new custom OpenAI-compatible API base URL, or press Enter to keep current URL."
+            : "Paste your custom OpenAI-compatible API base URL (e.g., http://localhost:11434/v1)."}
+        </Text>
+        <Text>
+          <Text color="gray">$</Text> OPENWIKI_CUSTOM_BASE_URL={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          {hasExisting
+            ? "Press Enter to keep current URL."
+            : "Press Enter to save."}
+        </Text>
+      </Box>
+    );
+  }
+
+  if (step === "api-key") {
+    const hasExisting =
+      process.env[getProviderApiKeyEnvKey(provider)] !== undefined;
+    return (
+      <Box flexDirection="column">
+        <Text>
+          {hasExisting
+            ? `Paste a new ${getProviderApiKeyEnvKey(provider)}, or press Enter to keep current key.`
+            : `Paste your ${getProviderLabel(provider)} API key.`}
+        </Text>
         <Text>
           <Text color="gray">$</Text> {getProviderApiKeyEnvKey(provider)}={" "}
           <Text color="yellow">{mask(input)}</Text>
         </Text>
-        <Text color="gray">Press Enter to save it.</Text>
+        <Text color="gray">
+          {hasExisting
+            ? "Press Enter to keep current key."
+            : "Press Enter to save."}
+        </Text>
       </Box>
     );
   }
@@ -605,11 +767,24 @@ function Prompt({
   }
 
   if (step === "langsmith") {
+    const hasExisting = process.env.LANGSMITH_API_KEY !== undefined;
     return (
-      <Text>
-        <Text color="gray">$</Text> LANGSMITH_API_KEY optional={" "}
-        <Text color="yellow">{mask(input)}</Text>
-      </Text>
+      <Box flexDirection="column">
+        <Text>
+          {hasExisting
+            ? "Paste a new LangSmith API key, or press Enter to keep current key."
+            : "Paste an optional LangSmith API key."}
+        </Text>
+        <Text>
+          <Text color="gray">$</Text> LANGSMITH_API_KEY={" "}
+          <Text color="yellow">{mask(input)}</Text>
+        </Text>
+        <Text color="gray">
+          {hasExisting
+            ? "Press Enter to keep current key. Type 'none' or leave empty to disable."
+            : "Press Enter to save (optional)."}
+        </Text>
+      </Box>
     );
   }
 
@@ -625,9 +800,18 @@ function SelectionMarker({ isSelected }: { isSelected: boolean }) {
 function getInitialStep(
   modelIdOverride: string | null,
   provider: OpenWikiProvider,
+  reconfigure = false,
 ): PromptStep | null {
+  if (reconfigure) {
+    return "provider";
+  }
+
   if (process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined) {
     return "provider";
+  }
+
+  if (provider === "custom" && !process.env.OPENWIKI_CUSTOM_BASE_URL) {
+    return "custom-base-url";
   }
 
   if (!process.env[getProviderApiKeyEnvKey(provider)]) {
@@ -651,26 +835,48 @@ function getInitialStep(
 function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
+  reconfigure = false,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (
+    provider === "custom" &&
+    (reconfigure || !process.env.OPENWIKI_CUSTOM_BASE_URL)
+  ) {
+    return "custom-base-url";
+  }
+
+  if (reconfigure || !process.env[getProviderApiKeyEnvKey(provider)]) {
     return "api-key";
   }
 
-  return getNextStepAfterApiKey(provider, modelIdOverride);
+  return getNextStepAfterApiKey(provider, modelIdOverride, reconfigure);
+}
+
+function getNextStepAfterCustomBaseUrl(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  reconfigure = false,
+): PromptStep | null {
+  if (reconfigure || !process.env[getProviderApiKeyEnvKey(provider)]) {
+    return "api-key";
+  }
+
+  return getNextStepAfterApiKey(provider, modelIdOverride, reconfigure);
 }
 
 function getNextStepAfterApiKey(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
+  reconfigure = false,
 ): PromptStep | null {
   if (
-    modelIdOverride === null &&
-    process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined
+    reconfigure ||
+    (modelIdOverride === null &&
+      process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined)
   ) {
     return "model";
   }
 
-  if (process.env.LANGSMITH_API_KEY === undefined) {
+  if (reconfigure || process.env.LANGSMITH_API_KEY === undefined) {
     return "langsmith";
   }
 
@@ -776,7 +982,11 @@ function moveSelectionIndex(
 }
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "custom"
+    ? "a"
+    : "an";
 }
 
 function sanitizeInputChunk(value: string): string {

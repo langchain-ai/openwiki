@@ -15,7 +15,9 @@ export type OpenWikiProvider =
   | "baseten"
   | "fireworks"
   | "openai"
-  | "openrouter";
+  | "openrouter"
+  | "gemini"
+  | "custom";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -37,6 +39,8 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "fireworks",
   "openai",
   "anthropic",
+  "gemini",
+  "custom",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -91,6 +95,23 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
     ],
+  },
+  gemini: {
+    apiKeyEnvKey: "GEMINI_API_KEY",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+    label: "Gemini",
+    modelOptions: [
+      { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+      { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+    ],
+  },
+  custom: {
+    apiKeyEnvKey: "OPENWIKI_CUSTOM_API_KEY",
+    get baseURL() {
+      return process.env.OPENWIKI_CUSTOM_BASE_URL || "";
+    },
+    label: "Custom (OpenAI-compatible)",
+    modelOptions: [{ id: "custom-model", label: "Custom Model" }],
   },
 };
 

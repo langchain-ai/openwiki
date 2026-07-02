@@ -19,6 +19,7 @@ export type HelpContent = {
 
 export type CliCommand =
   | { kind: "help"; exitCode: 0 }
+  | { kind: "config"; exitCode: 0 }
   | {
       kind: "run";
       exitCode: 0;
@@ -48,6 +49,14 @@ export function parseCommand(argv: string[]): CliCommand {
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
+
+    if (arg === "--help" || arg === "-h") {
+      return { kind: "help", exitCode: 0 };
+    }
+
+    if (arg === "--config") {
+      return { kind: "config", exitCode: 0 };
+    }
 
     if (arg === "--help" || arg === "-h") {
       return { kind: "help", exitCode: 0 };
@@ -178,6 +187,7 @@ export const helpContent: HelpContent = {
     "openwiki [--modelId <model>] [message]",
     "openwiki --init [message]",
     "openwiki --update [message]",
+    "openwiki --config",
   ],
   commands: [
     {
@@ -193,6 +203,11 @@ export const helpContent: HelpContent = {
     {
       label: "--update",
       description: "Update existing OpenWiki documentation.",
+    },
+    {
+      label: "--config",
+      description:
+        "Configure or update model provider, API keys, and defaults.",
     },
     {
       label: "-p, --print",
@@ -213,6 +228,7 @@ export const helpContent: HelpContent = {
     "openwiki",
     "openwiki --init",
     "openwiki --update",
+    "openwiki --config",
     'openwiki "What can you do?"',
     'openwiki -p "Summarize what OpenWiki can do"',
     "openwiki --modelId gpt-5.5",
