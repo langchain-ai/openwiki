@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatOllama } from "@langchain/ollama";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -22,9 +23,12 @@ import {
   getProviderApiKeyEnvKey,
   getProviderConfig,
   getProviderLabel,
+  hasOptionalApiKey,
   isValidModelId,
   normalizeModelId,
+  OLLAMA_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
   OPENROUTER_FALLBACK_MODEL_IDS,
@@ -351,7 +355,7 @@ function isFileNotFoundError(error: unknown): boolean {
 function ensureProviderKey(provider: OpenWikiProvider): void {
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
-  if (!process.env[apiKeyEnvKey]) {
+  if (!process.env[apiKeyEnvKey] && !hasOptionalApiKey(provider)) {
     throw new Error(
       `${apiKeyEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
     );
@@ -384,6 +388,18 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
     });
   }
 
+  if (provider === "ollama") {
+    const providerConfig = getProviderConfig(provider);
+
+    return new ChatOllama({
+      baseUrl:
+        process.env[OLLAMA_BASE_URL_ENV_KEY] ??
+        providerConfig.baseURL ??
+        "http://localhost:11434",
+      model: modelId,
+    });
+  }
+
   if (provider === "openrouter") {
     const models = createModelRoute(provider, modelId);
 
@@ -398,12 +414,14 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   const providerConfig = getProviderConfig(provider);
+  const baseURL =
+    process.env[OPENAI_BASE_URL_ENV_KEY] ?? providerConfig.baseURL;
 
   return new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: providerConfig.baseURL
+    configuration: baseURL
       ? {
-          baseURL: providerConfig.baseURL,
+          baseURL,
         }
       : undefined,
     model: modelId,
