@@ -298,6 +298,38 @@ export function InitSetup({
     setIsSaving(true);
 
     try {
+      // Validação ativa de credenciais
+      if (nextProvider === "gemini" || nextProvider === "gemini-enterprise") {
+        const testModelId = nextModelId ?? getDefaultModelId(nextProvider);
+        const testApiKey =
+          nextApiKey ?? process.env[getProviderApiKeyEnvKey(nextProvider)];
+
+        let testModel;
+        if (nextProvider === "gemini") {
+          const { ChatGoogle } = await import("@langchain/google");
+          testModel = new ChatGoogle({
+            apiKey: testApiKey,
+            model: testModelId,
+            platformType: "gai",
+          });
+        } else {
+          const { ChatGoogle } = await import("@langchain/google");
+          if (testApiKey) {
+            process.env.GOOGLE_CLOUD_PROJECT = testApiKey;
+          }
+          testModel = new ChatGoogle({
+            model: testModelId,
+            platformType: "gcp",
+            location: process.env.GOOGLE_CLOUD_LOCATION ?? "us-central1",
+          });
+        }
+
+        // Executa uma chamada barata de validação
+        await testModel.invoke([{ role: "user", content: "ping" }], {
+          timeout: 5000,
+        });
+      }
+
       const updates: Record<string, string> = {};
       const providerEnvChanged =
         process.env[OPENWIKI_PROVIDER_ENV_KEY] !== nextProvider;
@@ -368,7 +400,11 @@ export function InitSetup({
           detail={getProviderSetupDetail(provider)}
         />
         <SetupStep
-          label="Provider key"
+          label={
+            getProviderApiKeyEnvKey(provider) === "GOOGLE_CLOUD_PROJECT"
+              ? "GCP Project ID"
+              : "Provider key"
+          }
           state={
             process.env[getProviderApiKeyEnvKey(provider)]
               ? "done"
@@ -379,7 +415,9 @@ export function InitSetup({
           detail={
             process.env[getProviderApiKeyEnvKey(provider)]
               ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
+              : getProviderApiKeyEnvKey(provider) === "GOOGLE_CLOUD_PROJECT"
+                ? `save Project ID to ${openWikiEnvPath}`
+                : `save key to ${openWikiEnvPath}`
           }
         />
         <SetupStep
@@ -547,12 +585,21 @@ function Prompt({
   }
 
   if (step === "api-key") {
+    const isGcpProject =
+      getProviderApiKeyEnvKey(provider) === "GOOGLE_CLOUD_PROJECT";
+    const label = isGcpProject
+      ? "Google Cloud Project ID"
+      : `${getProviderLabel(provider)} API key`;
+    const action = isGcpProject ? "Enter" : "Paste";
+    const displayInput = isGcpProject ? input : mask(input);
     return (
       <Box flexDirection="column">
-        <Text>Paste your {getProviderLabel(provider)} API key.</Text>
+        <Text>
+          {action} your {label}.
+        </Text>
         <Text>
           <Text color="gray">$</Text> {getProviderApiKeyEnvKey(provider)}={" "}
-          <Text color="yellow">{mask(input)}</Text>
+          <Text color="yellow">{displayInput}</Text>
         </Text>
         <Text color="gray">Press Enter to save it.</Text>
       </Box>
@@ -776,7 +823,12 @@ function moveSelectionIndex(
 }
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "gemini" ||
+    provider === "gemini-enterprise"
+    ? "a"
+    : "an";
 }
 
 function sanitizeInputChunk(value: string): string {
