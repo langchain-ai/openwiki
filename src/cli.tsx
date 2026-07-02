@@ -443,6 +443,7 @@ function App({ command }: AppProps) {
           subtitle="Credential setup"
         />
         {runState.result.savedApiKey ||
+        runState.result.savedBaseURL ||
         runState.result.savedProvider ||
         runState.result.savedModelId ||
         runState.result.savedLangSmithKey ? (

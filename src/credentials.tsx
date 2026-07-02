@@ -4,8 +4,12 @@ import {
   DEFAULT_PROVIDER,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
+  getProviderBaseUrlEnvKey,
+  getProviderConfig,
   getProviderLabel,
   getProviderModelOptions,
+  hasOptionalApiKey,
+  hasConfigurableBaseUrl,
   isValidModelId,
   normalizeModelId,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -20,6 +24,7 @@ export type InitSetupResult = {
   modelId: string | null;
   provider: OpenWikiProvider | null;
   savedApiKey: boolean;
+  savedBaseURL: boolean;
   savedLangSmithKey: boolean;
   savedModelId: boolean;
   savedProvider: boolean;
@@ -31,17 +36,21 @@ type InitSetupProps = {
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "langsmith" | "model" | "provider";
+type PromptStep = "api-key" | "base-url" | "langsmith" | "model" | "provider";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
 ): boolean {
   const provider = resolveConfiguredProvider();
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+  const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
 
   return (
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
-    !process.env[apiKeyEnvKey] ||
+    (!hasOptionalApiKey(provider) && !process.env[apiKeyEnvKey]) ||
+    (baseUrlEnvKey !== undefined &&
+      process.env[baseUrlEnvKey] === undefined &&
+      getProviderConfig(provider).baseURL === undefined) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined
@@ -57,6 +66,7 @@ export function InitSetup({
   const [step, setStep] = useState<PromptStep | null>(null);
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [baseURL, setBaseURL] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -84,6 +94,7 @@ export function InitSetup({
           modelIdOverride ?? process.env[OPENWIKI_MODEL_ID_ENV_KEY] ?? null,
         provider: initialProvider,
         savedApiKey: false,
+        savedBaseURL: false,
         savedLangSmithKey: false,
         savedModelId: false,
         savedProvider: false,
@@ -197,6 +208,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextBaseURL: baseURL,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: selectedProvider,
@@ -207,12 +219,24 @@ export function InitSetup({
     if (step === "api-key") {
       const trimmedInput = input.trim();
 
-      if (trimmedInput.length === 0) {
+      if (trimmedInput.length === 0 && !hasOptionalApiKey(provider)) {
         setError(`${getProviderApiKeyEnvKey(provider)} is required.`);
         return;
       }
 
-      setApiKey(trimmedInput);
+      const nextApiKey =
+        trimmedInput.length > 0
+          ? trimmedInput
+          : hasOptionalApiKey(provider)
+            ? "ollama"
+            : null;
+
+      if (nextApiKey === null) {
+        setError(`${getProviderApiKeyEnvKey(provider)} is required.`);
+        return;
+      }
+
+      setApiKey(nextApiKey);
       setInput("");
       const nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
 
@@ -222,7 +246,33 @@ export function InitSetup({
       }
 
       await completeSetup({
-        nextApiKey: trimmedInput,
+        nextApiKey,
+        nextBaseURL: baseURL,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
+      });
+      return;
+    }
+
+    if (step === "base-url") {
+      const trimmedInput = input.trim();
+      const defaultBaseURL = getProviderConfig(provider).baseURL;
+      const nextBaseURL =
+        trimmedInput.length > 0 ? trimmedInput : (defaultBaseURL ?? null);
+
+      setBaseURL(nextBaseURL);
+      setInput("");
+      const nextStep = getNextStepAfterBaseURL(provider, modelIdOverride);
+
+      if (nextStep) {
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseURL,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -260,6 +310,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextBaseURL: baseURL,
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
         nextProvider: provider,
@@ -275,6 +326,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextBaseURL: baseURL,
         nextLangSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -284,6 +336,7 @@ export function InitSetup({
 
   type CompleteSetupOptions = {
     nextApiKey: string | null;
+    nextBaseURL: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
@@ -291,6 +344,7 @@ export function InitSetup({
 
   async function completeSetup({
     nextApiKey,
+    nextBaseURL,
     nextLangSmithKey,
     nextModelId,
     nextProvider,
@@ -308,6 +362,12 @@ export function InitSetup({
 
       if (nextApiKey !== null) {
         updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+      }
+
+      const baseUrlEnvKey = getProviderBaseUrlEnvKey(nextProvider);
+
+      if (baseUrlEnvKey !== undefined && nextBaseURL !== null) {
+        updates[baseUrlEnvKey] = nextBaseURL;
       }
 
       if (nextModelId !== null) {
@@ -335,6 +395,7 @@ export function InitSetup({
           null,
         provider: nextProvider,
         savedApiKey: nextApiKey !== null,
+        savedBaseURL: baseUrlEnvKey !== undefined && nextBaseURL !== null,
         savedLangSmithKey:
           nextLangSmithKey !== null && nextLangSmithKey.length > 0,
         savedModelId: nextModelId !== null,
@@ -350,6 +411,11 @@ export function InitSetup({
   }
 
   const needsCredentialPrompt = needsCredentialSetup(modelIdOverride);
+  const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
+  const baseURLValue =
+    baseURL ??
+    process.env[baseUrlEnvKey ?? ""] ??
+    getProviderConfig(provider).baseURL;
 
   return (
     <Box flexDirection="column">
@@ -377,11 +443,30 @@ export function InitSetup({
                 : "pending"
           }
           detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
+            hasOptionalApiKey(provider)
+              ? "optional (press Enter to skip)"
+              : process.env[getProviderApiKeyEnvKey(provider)]
+                ? "available from environment"
+                : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
           }
         />
+        {hasConfigurableBaseUrl(provider) ? (
+          <SetupStep
+            label="Base URL"
+            state={
+              process.env[baseUrlEnvKey ?? ""]
+                ? "done"
+                : step === "base-url"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              baseURLValue
+                ? baseURLValue
+                : `save ${baseUrlEnvKey ?? ""} to ${openWikiEnvPath}`
+            }
+          />
+        ) : null}
         <SetupStep
           label="Model"
           state={
@@ -549,10 +634,36 @@ function Prompt({
   if (step === "api-key") {
     return (
       <Box flexDirection="column">
-        <Text>Paste your {getProviderLabel(provider)} API key.</Text>
+        <Text>
+          Paste your {getProviderLabel(provider)} API key
+          {hasOptionalApiKey(provider) ? " (optional)" : ""}.
+        </Text>
         <Text>
           <Text color="gray">$</Text> {getProviderApiKeyEnvKey(provider)}={" "}
           <Text color="yellow">{mask(input)}</Text>
+        </Text>
+        <Text color="gray">
+          {hasOptionalApiKey(provider)
+            ? "Press Enter to skip or save it."
+            : "Press Enter to save it."}
+        </Text>
+      </Box>
+    );
+  }
+
+  if (step === "base-url") {
+    const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
+    const defaultBaseURL = getProviderConfig(provider).baseURL;
+
+    return (
+      <Box flexDirection="column">
+        <Text>
+          Paste your {getProviderLabel(provider)} base URL
+          {defaultBaseURL ? ` (default: ${defaultBaseURL})` : ""}.
+        </Text>
+        <Text>
+          <Text color="gray">$</Text> {baseUrlEnvKey ?? ""}={" "}
+          <Text color="yellow">{input || defaultBaseURL || ""}</Text>
         </Text>
         <Text color="gray">Press Enter to save it.</Text>
       </Box>
@@ -630,8 +741,21 @@ function getInitialStep(
     return "provider";
   }
 
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (
+    !hasOptionalApiKey(provider) &&
+    !process.env[getProviderApiKeyEnvKey(provider)]
+  ) {
     return "api-key";
+  }
+
+  const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
+
+  if (
+    baseUrlEnvKey !== undefined &&
+    process.env[baseUrlEnvKey] === undefined &&
+    getProviderConfig(provider).baseURL === undefined
+  ) {
+    return "base-url";
   }
 
   if (
@@ -652,14 +776,44 @@ function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (
+    !hasOptionalApiKey(provider) &&
+    !process.env[getProviderApiKeyEnvKey(provider)]
+  ) {
     return "api-key";
   }
 
-  return getNextStepAfterApiKey(provider, modelIdOverride);
+  const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
+
+  if (
+    baseUrlEnvKey !== undefined &&
+    process.env[baseUrlEnvKey] === undefined &&
+    getProviderConfig(provider).baseURL === undefined
+  ) {
+    return "base-url";
+  }
+
+  return getNextStepAfterBaseURL(provider, modelIdOverride);
 }
 
 function getNextStepAfterApiKey(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+): PromptStep | null {
+  const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
+
+  if (
+    baseUrlEnvKey !== undefined &&
+    process.env[baseUrlEnvKey] === undefined &&
+    getProviderConfig(provider).baseURL === undefined
+  ) {
+    return "base-url";
+  }
+
+  return getNextStepAfterBaseURL(provider, modelIdOverride);
+}
+
+function getNextStepAfterBaseURL(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
