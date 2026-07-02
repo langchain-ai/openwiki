@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { BaseMessage } from "@langchain/core/messages";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -377,6 +378,89 @@ function resolveModelId(
   return modelId;
 }
 
+function modelPrefersResponsesAPI(model: string): boolean {
+  if (model.includes("gpt-5.2-pro")) return true;
+  if (model.includes("gpt-5.4-pro")) return true;
+  if (model.includes("gpt-5.5-pro")) return true;
+  if (model.includes("codex")) return true;
+  return false;
+}
+
+function sanitizeMessagesForOpenAI(
+  messages: BaseMessage[],
+  model: string,
+): BaseMessage[] {
+  const prefersResponses = modelPrefersResponsesAPI(model);
+
+  if (prefersResponses) {
+    return messages;
+  }
+
+  return messages.map((message) => {
+    if (!message.content) {
+      return message;
+    }
+
+    if (typeof message.content === "string") {
+      return message;
+    }
+
+    if (Array.isArray(message.content)) {
+      const sanitizedContent = message.content.map((block) => {
+        if (typeof block === "object" && block !== null) {
+          const b = block as Record<string, unknown>;
+          if (b.type === "file") {
+            return {
+              type: "text",
+              text: `[Binary file content: ${b.mimeType || "unknown"}]`,
+            };
+          }
+        }
+        return block;
+      });
+
+      const clonedMessage = Object.create(Object.getPrototypeOf(message));
+      Object.assign(clonedMessage, message, { content: sanitizedContent });
+      return clonedMessage;
+    }
+
+    return message;
+  });
+}
+
+class SanitizedChatOpenAI extends ChatOpenAI {
+  private sanitize(messages: BaseMessage[]): BaseMessage[] {
+    return sanitizeMessagesForOpenAI(messages, this.model);
+  }
+
+  async _generate(...args: Parameters<ChatOpenAI["_generate"]>) {
+    const [messages, options, runManager] = args;
+    return super._generate(this.sanitize(messages), options, runManager);
+  }
+
+  async *_streamChatModelEvents(
+    ...args: Parameters<ChatOpenAI["_streamChatModelEvents"]>
+  ) {
+    const [messages, options, runManager] = args;
+    yield* super._streamChatModelEvents(
+      this.sanitize(messages),
+      options,
+      runManager,
+    );
+  }
+
+  async *_streamResponseChunks(
+    ...args: Parameters<ChatOpenAI["_streamResponseChunks"]>
+  ) {
+    const [messages, options, runManager] = args;
+    yield* super._streamResponseChunks(
+      this.sanitize(messages),
+      options,
+      runManager,
+    );
+  }
+}
+
 async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
     return new ChatAnthropic(modelId, {
@@ -399,7 +483,7 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
 
   const providerConfig = getProviderConfig(provider);
 
-  return new ChatOpenAI({
+  return new SanitizedChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
     configuration: providerConfig.baseURL
       ? {

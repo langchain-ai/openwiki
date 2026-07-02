@@ -147,12 +147,12 @@ function App({ command }: AppProps) {
       command.kind === "run" && command.shouldStart ? command.command : null,
     );
   const shouldRunInteractiveCredentialSetup =
-    command.kind === "run" &&
-    resolvedCommand !== null &&
-    !command.dryRun &&
+    (command.kind === "config" ||
+      (command.kind === "run" && resolvedCommand !== null)) &&
+    !(command.kind === "run" && command.dryRun) &&
     process.stdin.isTTY &&
     runState.status === "idle" &&
-    needsCredentialSetup(sessionModelId);
+    (command.kind === "config" || needsCredentialSetup(sessionModelId));
   const displayModelId = sessionModelId ?? startupModelId;
 
   function submitChatMessage(message: string) {
@@ -219,13 +219,20 @@ function App({ command }: AppProps) {
   }, []);
 
   useEffect(() => {
+    if (command.kind === "config" && runState.status === "init-setup-saved") {
+      process.exitCode = 0;
+      app.exit();
+    }
+  }, [command.kind, runState.status, app]);
+
+  useEffect(() => {
     if (command.kind === "help" || command.kind === "error") {
       process.exitCode = command.exitCode;
       app.exit();
       return;
     }
 
-    if (command.dryRun) {
+    if (command.kind === "run" && command.dryRun) {
       process.exitCode = 0;
       app.exit();
       return;
@@ -417,7 +424,8 @@ function App({ command }: AppProps) {
   if (shouldRunInteractiveCredentialSetup) {
     return (
       <InitSetup
-        modelIdOverride={command.modelId}
+        modelIdOverride={command.kind === "run" ? command.modelId : null}
+        reconfigure={command.kind === "config"}
         onComplete={(result) => {
           if (result.modelId) {
             setSessionModelId(result.modelId);
@@ -462,7 +470,11 @@ function App({ command }: AppProps) {
             value={runState.result.modelId}
           />
         ) : null}
-        <StatusLine tone="active" label="Next" value="starting openwiki" />
+        {command.kind === "config" ? (
+          <StatusLine tone="success" label="Setup" value="complete" />
+        ) : (
+          <StatusLine tone="active" label="Next" value="starting openwiki" />
+        )}
       </Box>
     );
   }
@@ -3022,7 +3034,10 @@ function Rows({ rows }: RowsProps) {
 const argv = process.argv.slice(2);
 const parsedCommand = parseCommand(argv);
 
-if (parsedCommand.kind === "run" && !parsedCommand.dryRun) {
+if (
+  (parsedCommand.kind === "run" && !parsedCommand.dryRun) ||
+  parsedCommand.kind === "config"
+) {
   await loadOpenWikiEnv();
 }
 

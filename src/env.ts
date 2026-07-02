@@ -36,6 +36,9 @@ const managedEnvKeys = [
   OPENAI_API_KEY_ENV_KEY,
   ANTHROPIC_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  "GEMINI_API_KEY",
+  "OPENWIKI_CUSTOM_API_KEY",
+  "OPENWIKI_CUSTOM_BASE_URL",
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   "LANGSMITH_API_KEY",
@@ -77,6 +80,9 @@ export async function getCredentialDiagnostics(): Promise<
     createCredentialDiagnostic(OPENAI_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(ANTHROPIC_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENROUTER_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic("GEMINI_API_KEY", fileEnv),
+    createCredentialDiagnostic("OPENWIKI_CUSTOM_API_KEY", fileEnv),
+    createCredentialDiagnostic("OPENWIKI_CUSTOM_BASE_URL", fileEnv),
     createCredentialDiagnostic(OPENWIKI_MODEL_ID_ENV_KEY, fileEnv),
     createCredentialDiagnostic("LANGSMITH_API_KEY", fileEnv),
   ];
@@ -129,6 +135,17 @@ function createCredentialDiagnostic(
     };
   }
 
+  const warnings =
+    key === OPENWIKI_MODEL_ID_ENV_KEY
+      ? getModelWarnings(value)
+      : key === OPENWIKI_PROVIDER_ENV_KEY
+        ? getProviderWarnings(value)
+        : getCredentialWarnings(value);
+
+  if (source === "process.env over ~/.openwiki/.env") {
+    warnings.push("shadowed by exported shell variable");
+  }
+
   return {
     key,
     source,
@@ -137,12 +154,7 @@ function createCredentialDiagnostic(
       key === OPENWIKI_MODEL_ID_ENV_KEY || key === OPENWIKI_PROVIDER_ENV_KEY
         ? JSON.stringify(value)
         : createCredentialPreview(value),
-    warnings:
-      key === OPENWIKI_MODEL_ID_ENV_KEY
-        ? getModelWarnings(value)
-        : key === OPENWIKI_PROVIDER_ENV_KEY
-          ? getProviderWarnings(value)
-          : getCredentialWarnings(value),
+    warnings,
   };
 }
 
