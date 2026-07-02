@@ -301,21 +301,21 @@ export function InitSetup({
       // Active credential validation
       if (nextProvider === "gemini" || nextProvider === "gemini-enterprise") {
         const testModelId = nextModelId ?? getDefaultModelId(nextProvider);
-        const testApiKey =
+        const resolvedValue =
           nextApiKey ?? process.env[getProviderApiKeyEnvKey(nextProvider)];
 
         let testModel;
         if (nextProvider === "gemini") {
           const { ChatGoogle } = await import("@langchain/google");
           testModel = new ChatGoogle({
-            apiKey: testApiKey,
+            apiKey: resolvedValue,
             model: testModelId,
             platformType: "gai",
           });
         } else {
           const { ChatGoogle } = await import("@langchain/google");
-          if (testApiKey) {
-            process.env.GOOGLE_CLOUD_PROJECT = testApiKey;
+          if (resolvedValue) {
+            process.env.GOOGLE_CLOUD_PROJECT = resolvedValue;
           }
           testModel = new ChatGoogle({
             model: testModelId,
