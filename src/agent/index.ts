@@ -13,6 +13,7 @@ import {
   createDeepAgent,
   FilesystemBackend,
 } from "deepagents";
+import { ProxyAgent, setGlobalDispatcher } from "undici";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
   DEBUG_ENV_KEYS,
@@ -45,6 +46,8 @@ import type {
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
+  ANTHROPIC_FOUNDRY_BASE_URL_ENV_KEY,
+  ANTHROPIC_FOUNDRY_RESOURCE_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
   getDefaultModelId,
   getMissingProviderEnvKey,
@@ -64,6 +67,7 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
+  OPENWIKI_PROXY_ENV_KEY,
   providerRequiresBaseUrl,
   providerRequiresRegion,
   providerRequiresSecretKey,
@@ -72,6 +76,7 @@ import {
   resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
+  resolveProxyUrl,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
@@ -102,6 +107,7 @@ export async function runOpenWikiAgent(
   await syncBundledSkills();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
+  installGlobalProxy(options);
 
   if (command === "update" && shouldCheckUpdateNoop(options)) {
     const noopStatus = await getUpdateNoopStatus(cwd);
@@ -517,6 +523,24 @@ export function resolveModelId(
   return modelId;
 }
 
+let globalProxyInstalled = false;
+
+function installGlobalProxy(options: OpenWikiRunOptions): void {
+  if (globalProxyInstalled) {
+    return;
+  }
+
+  const proxyUrl = resolveProxyUrl();
+
+  if (proxyUrl === null) {
+    return;
+  }
+
+  setGlobalDispatcher(new ProxyAgent(proxyUrl));
+  globalProxyInstalled = true;
+  emitDebug(options, `proxy=set ${formatUrlDebugValue(proxyUrl)}`);
+}
+
 function createModel(
   provider: OpenWikiProvider,
   modelId: string,
@@ -531,7 +555,7 @@ function createModel(
     });
   }
 
-  if (provider === "anthropic") {
+  if (provider === "anthropic" || provider === "anthropic-foundry") {
     const baseURL = resolveProviderBaseUrl(provider);
 
     return new ChatAnthropic(modelId, {
@@ -1448,7 +1472,9 @@ function formatDebugValue(key: string, value: string | undefined): string {
   if (
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
-    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+    key === ANTHROPIC_FOUNDRY_BASE_URL_ENV_KEY ||
+    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||
+    key === OPENWIKI_PROXY_ENV_KEY
   ) {
     return formatUrlDebugValue(value);
   }
@@ -1461,6 +1487,7 @@ function formatDebugValue(key: string, value: string | undefined): string {
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
+    key === ANTHROPIC_FOUNDRY_RESOURCE_ENV_KEY ||
     key === BEDROCK_AWS_REGION_ENV_KEY
   ) {
     return `set(value=${JSON.stringify(value)})`;

@@ -17,6 +17,9 @@ export const OPENAI_CHATGPT_EMAIL_ENV_KEY = "OPENAI_CHATGPT_EMAIL";
 export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
+export const ANTHROPIC_FOUNDRY_API_KEY_ENV_KEY = "ANTHROPIC_FOUNDRY_API_KEY";
+export const ANTHROPIC_FOUNDRY_BASE_URL_ENV_KEY = "ANTHROPIC_FOUNDRY_BASE_URL";
+export const ANTHROPIC_FOUNDRY_RESOURCE_ENV_KEY = "ANTHROPIC_FOUNDRY_RESOURCE";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
@@ -61,11 +64,13 @@ export const OPENWIKI_X_CLIENT_ID_ENV_KEY = "OPENWIKI_X_CLIENT_ID";
 export const OPENWIKI_X_CLIENT_SECRET_ENV_KEY = "OPENWIKI_X_CLIENT_SECRET";
 export const OPENWIKI_X_REFRESH_TOKEN_ENV_KEY = "OPENWIKI_X_REFRESH_TOKEN";
 export const OPENWIKI_TAVILY_API_KEY_ENV_KEY = "TAVILY_API_KEY";
+export const OPENWIKI_PROXY_ENV_KEY = "OPENWIKI_PROXY";
 export const DEFAULT_PROVIDER = "openai";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
+  | "anthropic-foundry"
   | "baseten"
   | "bedrock"
   | "fireworks"
@@ -102,6 +107,17 @@ const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
   { id: "gpt-5.6-sol", label: "5.6 Sol" },
   { id: "gpt-5.5", label: "5.5" },
   { id: "gpt-5.4-mini", label: "5.4 mini" },
+];
+
+/**
+ * Model options offered by Anthropic. Shared by the `anthropic` (API key) and
+ * `anthropic-foundry` (Azure AI Foundry) providers so the two always expose an
+ * identical model list.
+ */
+const ANTHROPIC_MODEL_OPTIONS: ProviderModelOption[] = [
+  { id: "claude-haiku-4-5", label: "Haiku" },
+  { id: "claude-sonnet-5", label: "Sonnet" },
+  { id: "claude-opus-4-8", label: "Opus" },
 ];
 
 type ProviderConfig = {
@@ -163,6 +179,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
   "anthropic",
+  "anthropic-foundry",
   "vertex",
   "openrouter",
   "openai-compatible",
@@ -257,11 +274,14 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     apiKeyEnvKey: ANTHROPIC_API_KEY_ENV_KEY,
     baseUrlEnvKey: ANTHROPIC_BASE_URL_ENV_KEY,
     label: "Anthropic",
-    modelOptions: [
-      { id: "claude-haiku-4-5", label: "Haiku" },
-      { id: "claude-sonnet-5", label: "Sonnet" },
-      { id: "claude-opus-4-8", label: "Opus" },
-    ],
+    modelOptions: ANTHROPIC_MODEL_OPTIONS,
+  },
+  "anthropic-foundry": {
+    apiKeyEnvKey: ANTHROPIC_FOUNDRY_API_KEY_ENV_KEY,
+    baseUrlEnvKey: ANTHROPIC_FOUNDRY_BASE_URL_ENV_KEY,
+    requiresBaseUrl: true,
+    label: "Anthropic on Azure AI Foundry",
+    modelOptions: ANTHROPIC_MODEL_OPTIONS,
   },
   vertex: {
     projectEnvKey: GOOGLE_CLOUD_PROJECT_ENV_KEY,
@@ -414,6 +434,23 @@ export function resolveProviderBaseUrl(
   const override = config.baseUrlEnvKey ? env[config.baseUrlEnvKey] : undefined;
   const trimmedOverride = override?.trim();
 
+  // Azure AI Foundry exposes a per-resource Anthropic endpoint. Accept a full
+  // base URL (normalized so a pasted `.../v1/messages` endpoint still works) or
+  // derive it from the shorthand resource name.
+  if (provider === "anthropic-foundry") {
+    if (trimmedOverride) {
+      return normalizeBaseURL(trimmedOverride);
+    }
+
+    const resource = env[ANTHROPIC_FOUNDRY_RESOURCE_ENV_KEY]?.trim();
+
+    if (resource) {
+      return `https://${resource}.services.ai.azure.com/anthropic`;
+    }
+
+    return config.baseURL;
+  }
+
   if (trimmedOverride) {
     return trimmedOverride;
   }
@@ -480,6 +517,52 @@ export function isValidBaseUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Normalizes a user-supplied Anthropic base URL so a pasted messages endpoint
+ * (e.g. `.../anthropic/v1/messages`) collapses to the base the Anthropic SDK
+ * expects (`.../anthropic`), since the SDK appends `/v1/messages` itself.
+ */
+export function normalizeBaseURL(value: string): string {
+  let normalized = value.trim();
+
+  normalized = normalized.replace(/\/v1\/messages\/?$/u, "");
+  normalized = normalized.replace(/\/v1\/?$/u, "");
+  normalized = normalized.replace(/\/+$/u, "");
+
+  return normalized;
+}
+
+/**
+ * Resolves the outbound HTTP proxy URL from the environment, honoring
+ * OpenWiki's own override first, then the conventional proxy variables. A bare
+ * `host:port` is normalized to an `http://` URL. Returns `null` when no proxy
+ * is configured.
+ */
+export function resolveProxyUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  const rawProxy =
+    env[OPENWIKI_PROXY_ENV_KEY] ??
+    env.HTTPS_PROXY ??
+    env.https_proxy ??
+    env.HTTP_PROXY ??
+    env.http_proxy ??
+    env.ALL_PROXY ??
+    env.all_proxy;
+
+  if (rawProxy === undefined) {
+    return null;
+  }
+
+  const proxy = rawProxy.trim();
+
+  if (proxy.length === 0) {
+    return null;
+  }
+
+  return /^[a-z][a-z0-9+.-]*:\/\//iu.test(proxy) ? proxy : `http://${proxy}`;
 }
 
 export function getProviderModelOptions(

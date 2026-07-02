@@ -202,7 +202,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and Google Vertex AI (Claude models) out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, Anthropic on Azure AI Foundry, and Google Vertex AI (Claude models) out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -330,6 +330,20 @@ OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
 ```
 
 The value must be a positive integer. If the value is unset, OpenWiki defaults to 3 retries.
+
+### Anthropic on Azure AI Foundry
+
+The `anthropic-foundry` provider serves Anthropic models through Azure AI Foundry's Anthropic-compatible endpoint. In addition to the API key, it needs your Foundry endpoint, configured with the same environment variables the official Foundry clients use:
+
+- `ANTHROPIC_FOUNDRY_API_KEY` — your Foundry API key.
+- `ANTHROPIC_FOUNDRY_BASE_URL` — the full base URL, e.g. `https://<resource>.services.ai.azure.com/anthropic`.
+- `ANTHROPIC_FOUNDRY_RESOURCE` — alternative to the base URL; OpenWiki builds `https://<resource>.services.ai.azure.com/anthropic` from the resource name.
+
+The model ID for `anthropic-foundry` is your Foundry deployment name (for example, `claude-sonnet-5`).
+
+### Proxy support
+
+If your network requires an outbound HTTP proxy, set one of `OPENWIKI_PROXY`, `HTTPS_PROXY`, `HTTP_PROXY`, or `ALL_PROXY` (a bare `host:port` is assumed to be `http://`). OpenWiki routes all provider requests through the proxy.
 
 If there's an inference provider or model you'd like to see added, please open a PR!
 

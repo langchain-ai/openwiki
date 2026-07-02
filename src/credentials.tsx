@@ -7,6 +7,7 @@ import { Box, Text, useInput, useStdout } from "ink";
 import { configureAuthProvider } from "./auth/configure.js";
 import { runOAuthAuth } from "./auth/oauth.js";
 import {
+  ANTHROPIC_FOUNDRY_RESOURCE_ENV_KEY,
   DEFAULT_PROVIDER,
   DEFAULT_VERTEX_LOCATION,
   getDefaultModelId,
@@ -22,6 +23,7 @@ import {
   providerRequiresApiKey,
   isValidBaseUrl,
   isValidModelId,
+  normalizeBaseURL,
   normalizeProvider,
   normalizeModelId,
   OPENAI_CHATGPT_EMAIL_ENV_KEY,
@@ -437,7 +439,48 @@ function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
 function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
   const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
 
-  return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
+  if (baseUrlEnvKey && process.env[baseUrlEnvKey]) {
+    return true;
+  }
+
+  // Azure AI Foundry can also be configured via a shorthand resource name.
+  return (
+    provider === "anthropic-foundry" &&
+    Boolean(process.env[ANTHROPIC_FOUNDRY_RESOURCE_ENV_KEY])
+  );
+}
+
+/**
+ * Resolves the base URL a provider should be configured with from onboarding
+ * input. For Azure AI Foundry this also accepts a bare resource name (expanded
+ * to the Foundry endpoint) and normalizes a pasted `.../v1/messages` URL.
+ * Returns `null` when the input is not a usable base URL.
+ */
+function resolveBaseUrlInput(
+  provider: OpenWikiProvider,
+  input: string,
+): string | null {
+  const trimmed = input.trim();
+
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  if (provider === "anthropic-foundry") {
+    if (
+      !trimmed.includes("/") &&
+      !trimmed.includes(".") &&
+      /^[A-Za-z0-9][A-Za-z0-9-]*$/u.test(trimmed)
+    ) {
+      return `https://${trimmed}.services.ai.azure.com/anthropic`;
+    }
+
+    const normalized = normalizeBaseURL(trimmed);
+
+    return isValidBaseUrl(normalized) ? normalized : null;
+  }
+
+  return isValidBaseUrl(trimmed) ? trimmed : null;
 }
 
 function needsSecretKeyStep(provider: OpenWikiProvider): boolean {
@@ -1410,12 +1453,18 @@ export function InitSetup({
         return;
       }
 
-      if (!isValidBaseUrl(trimmedInput)) {
-        setError("Enter a valid http(s) base URL.");
+      const resolvedBaseUrl = resolveBaseUrlInput(provider, trimmedInput);
+
+      if (!resolvedBaseUrl) {
+        setError(
+          provider === "anthropic-foundry"
+            ? "Enter a valid https base URL or Azure resource name."
+            : "Enter a valid http(s) base URL.",
+        );
         return;
       }
 
-      setBaseUrl(trimmedInput);
+      setBaseUrl(resolvedBaseUrl);
       setInput("");
       const nextStep = getNextStepAfterBaseUrl(
         provider,
@@ -1435,7 +1484,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
-        nextBaseUrl: trimmedInput,
+        nextBaseUrl: resolvedBaseUrl,
         nextSecretKey: secretKey,
         nextRegion: region,
         nextGcpLocation: gcpLocation,
@@ -2711,16 +2760,23 @@ function Prompt({
   }
 
   if (step === "base-url") {
+    const isFoundry = provider === "anthropic-foundry";
+
     return (
       <Box flexDirection="column">
-        <Text>Enter the {getProviderLabel(provider)} base URL.</Text>
+        <Text>
+          {isFoundry
+            ? `Paste your ${getProviderLabel(provider)} base URL or resource name.`
+            : `Enter the ${getProviderLabel(provider)} base URL.`}
+        </Text>
         <Text>
           <Text color="gray">$</Text> {getProviderBaseUrlEnvKey(provider)}={" "}
           <Text color="yellow">{input}</Text>
         </Text>
         <Text color="gray">
-          For example an OpenAI-compatible gateway endpoint (such as a LiteLLM
-          gateway). Press Enter to save it.
+          {isFoundry
+            ? "e.g. https://my-resource.services.ai.azure.com/anthropic — press Enter to save."
+            : "For example an OpenAI-compatible gateway endpoint (such as a LiteLLM gateway). Press Enter to save it."}
         </Text>
       </Box>
     );
@@ -3724,7 +3780,7 @@ function getNextStepAfterBaseUrl(
 }
 
 function getNextStepAfterRegion(
-  provider: OpenWikiProvider,
+  _provider: OpenWikiProvider,
   modelIdOverride: string | null,
   onboardingConfig: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,

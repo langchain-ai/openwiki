@@ -6,7 +6,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 
 - Launches an interactive Ink-based terminal app for chatting with the OpenWiki agent.
 - Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
-- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), OpenRouter, Anthropic, Baseten, Fireworks, NVIDIA NIM, any OpenAI-compatible gateway, and Google Vertex AI (Claude models) — each with their own credentials and model list (Vertex uses Google ADC instead of an API key).
+- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), OpenRouter, Anthropic, Anthropic on Azure AI Foundry (provider `anthropic-foundry`, Anthropic-compatible endpoint with a configurable base URL), Baseten, Fireworks, NVIDIA NIM, any OpenAI-compatible gateway, and Google Vertex AI (Claude models) — each with their own credentials and model list (Vertex uses Google ADC instead of an API key).
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
@@ -61,6 +61,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - Treat `openwiki/` in this repo as generated documentation output from a future OpenWiki run, not as application source.
 - When changing behavior, verify both the CLI parser and the agent prompt/runtime, because user-visible semantics are split across `src/commands.ts`, `src/cli.tsx`, and `src/agent/*`.
 - Provider support is centralized in `src/constants.ts`. Adding or changing a provider means updating `PROVIDER_CONFIGS`, the `OpenWikiProvider` type, the `SELECTABLE_OPENWIKI_PROVIDERS` list, and the model-creation branch in `src/agent/index.ts`. OAuth-based providers also need an entry in `src/auth/` if they use browser-login flows.
+- The `anthropic-foundry` provider serves Anthropic models on Azure AI Foundry's Anthropic-compatible endpoint, so it reuses `ChatAnthropic` with a per-resource base URL from `ANTHROPIC_FOUNDRY_BASE_URL` (or `ANTHROPIC_FOUNDRY_RESOURCE`). It shares the same preset model options as the `anthropic` provider. Outbound requests can be routed through an HTTP proxy via `OPENWIKI_PROXY`/`HTTPS_PROXY` using a global `undici` dispatcher.
 
 ## Source map
 
