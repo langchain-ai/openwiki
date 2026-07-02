@@ -298,7 +298,7 @@ export function InitSetup({
     setIsSaving(true);
 
     try {
-      // Validação ativa de credenciais
+      // Active credential validation
       if (nextProvider === "gemini" || nextProvider === "gemini-enterprise") {
         const testModelId = nextModelId ?? getDefaultModelId(nextProvider);
         const testApiKey =
@@ -324,7 +324,7 @@ export function InitSetup({
           });
         }
 
-        // Executa uma chamada barata de validação
+        // Execute a lightweight validation call
         await testModel.invoke([{ role: "user", content: "ping" }], {
           timeout: 5000,
         });
