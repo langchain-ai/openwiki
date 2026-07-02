@@ -25,6 +25,7 @@ import {
   isValidModelId,
   normalizeModelId,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
   OPENROUTER_FALLBACK_MODEL_IDS,
@@ -398,12 +399,18 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   const providerConfig = getProviderConfig(provider);
+  const apiKey = process.env[getProviderApiKeyEnvKey(provider)];
+  const baseURL = process.env[OPENAI_BASE_URL_ENV_KEY] ?? providerConfig.baseURL;
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: providerConfig.baseURL
+    apiKey,
+    configuration: baseURL
       ? {
-          baseURL: providerConfig.baseURL,
+          baseURL,
+          // Azure APIM and similar gateways use api-key instead of Authorization: Bearer
+          defaultHeaders: process.env[OPENAI_BASE_URL_ENV_KEY]
+            ? { "api-key": apiKey }
+            : undefined,
         }
       : undefined,
     model: modelId,
@@ -1262,6 +1269,7 @@ function formatEnvironmentDebug(): string {
     BASETEN_API_KEY_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
+    OPENAI_BASE_URL_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,
