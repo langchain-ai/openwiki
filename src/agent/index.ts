@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatBedrockConverse } from "@langchain/aws";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -17,6 +18,8 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  BEDROCK_REGION_ENV_KEY,
+  DEFAULT_BEDROCK_REGION,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
@@ -413,6 +416,14 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+    });
+  }
+
+  if (provider === "bedrock") {
+    return new ChatBedrockConverse({
+      bedrockBearerToken: process.env[getProviderApiKeyEnvKey(provider)],
+      model: modelId,
+      region: process.env[BEDROCK_REGION_ENV_KEY] ?? DEFAULT_BEDROCK_REGION,
     });
   }
 
