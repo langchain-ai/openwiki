@@ -17,12 +17,15 @@ import type {
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
+  DEFAULT_LITELLM_BASE_URL,
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderConfig,
   getProviderLabel,
   isValidModelId,
+  LITELLM_API_KEY_ENV_KEY,
+  LITELLM_BASE_URL_ENV_KEY,
   normalizeModelId,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -394,6 +397,17 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       models,
       route: "fallback",
       siteName: "OpenWiki",
+    });
+  }
+
+  if (provider === "litellm") {
+    const baseURL =
+      process.env[LITELLM_BASE_URL_ENV_KEY] ?? DEFAULT_LITELLM_BASE_URL;
+
+    return new ChatOpenAI({
+      apiKey: process.env[LITELLM_API_KEY_ENV_KEY] ?? "no-key",
+      configuration: { baseURL },
+      model: modelId,
     });
   }
 
@@ -1261,6 +1275,8 @@ function formatEnvironmentDebug(): string {
     OPENWIKI_PROVIDER_ENV_KEY,
     BASETEN_API_KEY_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
+    LITELLM_API_KEY_ENV_KEY,
+    LITELLM_BASE_URL_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
