@@ -10,6 +10,7 @@ import {
   type HelpRow,
 } from "./commands.js";
 import {
+  completeCredentialSetup,
   InitSetup,
   needsCredentialSetup,
   type InitSetupResult,
@@ -31,8 +32,11 @@ import {
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
+  getProviderBaseUrlEnvKey,
+  getProviderConfig,
   getProviderLabel,
   getProviderModelOptions,
+  hasOptionalApiKey,
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
@@ -152,7 +156,11 @@ function App({ command }: AppProps) {
     !command.dryRun &&
     process.stdin.isTTY &&
     runState.status === "idle" &&
-    needsCredentialSetup(sessionModelId);
+    needsCredentialSetup(
+      sessionModelId,
+      command.kind === "run" ? command.provider : null,
+      command.kind === "run" ? command.baseUrl : null,
+    );
   const displayModelId = sessionModelId ?? startupModelId;
 
   function submitChatMessage(message: string) {
@@ -417,7 +425,8 @@ function App({ command }: AppProps) {
   if (shouldRunInteractiveCredentialSetup) {
     return (
       <InitSetup
-        modelIdOverride={command.modelId}
+        baseUrlOverride={command.kind === "run" ? command.baseUrl : null}
+        modelIdOverride={command.kind === "run" ? command.modelId : null}
         onComplete={(result) => {
           if (result.modelId) {
             setSessionModelId(result.modelId);
@@ -431,6 +440,7 @@ function App({ command }: AppProps) {
         onError={(message) => {
           setRunState({ status: "error", message });
         }}
+        providerOverride={command.kind === "run" ? command.provider : null}
       />
     );
   }
@@ -443,6 +453,7 @@ function App({ command }: AppProps) {
           subtitle="Credential setup"
         />
         {runState.result.savedApiKey ||
+        runState.result.savedBaseURL ||
         runState.result.savedProvider ||
         runState.result.savedModelId ||
         runState.result.savedLangSmithKey ? (
@@ -3024,6 +3035,7 @@ const parsedCommand = parseCommand(argv);
 
 if (parsedCommand.kind === "run" && !parsedCommand.dryRun) {
   await loadOpenWikiEnv();
+  applyCommandEnvOverrides(parsedCommand);
 }
 
 const command = resolveStartupCommand(parsedCommand);
@@ -3031,6 +3043,13 @@ const command = resolveStartupCommand(parsedCommand);
 if (shouldPrintStartupError(argv, parsedCommand, command)) {
   process.stderr.write(`${command.message}\n`);
   process.exitCode = command.exitCode;
+} else if (
+  command.kind === "run" &&
+  command.command === "init" &&
+  !command.dryRun &&
+  !process.stdin.isTTY
+) {
+  await runNonInteractiveInit(command);
 } else if (command.kind === "run" && command.print && !command.dryRun) {
   await runPrintCommand(command);
 } else {
@@ -3052,6 +3071,86 @@ function shouldPrintStartupError(
       !process.stdin.isTTY ||
       (parsedCommand.kind === "run" && parsedCommand.shouldStart))
   );
+}
+
+async function runNonInteractiveInit(
+  command: Extract<CliCommand, { kind: "run" }>,
+): Promise<void> {
+  try {
+    const provider = command.provider ?? resolveConfiguredProvider();
+    const modelId =
+      command.modelId ??
+      process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
+      getDefaultModelId(provider);
+    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+    const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
+    const providerConfig = getProviderConfig(provider);
+
+    if (!command.provider && !command.modelId && !command.baseUrl) {
+      process.stderr.write(
+        "Non-interactive init requires --provider, --model, and/or --base-url.\n",
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    if (baseUrlEnvKey !== undefined) {
+      const configuredBaseUrl =
+        command.baseUrl ?? process.env[baseUrlEnvKey] ?? providerConfig.baseURL;
+
+      if (!configuredBaseUrl) {
+        process.stderr.write(
+          `Non-interactive init requires --base-url for ${getProviderLabel(provider)}.\n`,
+        );
+        process.exitCode = 1;
+        return;
+      }
+    }
+
+    const apiKey = hasOptionalApiKey(provider)
+      ? (process.env[apiKeyEnvKey] ?? "ollama")
+      : process.env[apiKeyEnvKey];
+
+    if (!apiKey && !hasOptionalApiKey(provider)) {
+      process.stderr.write(
+        `${apiKeyEnvKey} is required for non-interactive ${getProviderLabel(provider)} init.\n`,
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    const result = await completeCredentialSetup({
+      nextApiKey: apiKey ?? null,
+      nextBaseURL:
+        command.baseUrl ??
+        process.env[baseUrlEnvKey ?? ""] ??
+        providerConfig.baseURL ??
+        null,
+      nextLangSmithKey: process.env.LANGSMITH_API_KEY ?? "",
+      nextModelId: modelId,
+      nextProvider: provider,
+    });
+
+    process.stdout.write(
+      [
+        "OpenWiki credentials saved.",
+        result.savedProvider ? `provider: ${getProviderLabel(provider)}` : "",
+        result.savedModelId ? `model: ${modelId}` : "",
+        result.savedBaseURL && baseUrlEnvKey
+          ? `${baseUrlEnvKey}: ${process.env[baseUrlEnvKey]}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n") + "\n",
+    );
+
+    process.exitCode = 0;
+  } catch (error) {
+    process.stderr.write(
+      `Failed to save OpenWiki credentials: ${getErrorMessage(error)}\n`,
+    );
+    process.exitCode = 1;
+  }
 }
 
 function shouldAutoExitStartupRun(command: CliCommand): boolean {
@@ -3111,11 +3210,35 @@ function writePrintErrorDiagnostics(error: unknown): void {
   }
 }
 
+function applyCommandEnvOverrides(command: CliCommand): void {
+  if (command.kind !== "run" || command.dryRun) {
+    return;
+  }
+
+  if (command.provider) {
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] = command.provider;
+  }
+
+  if (command.modelId) {
+    process.env[OPENWIKI_MODEL_ID_ENV_KEY] = command.modelId;
+  }
+
+  if (command.baseUrl) {
+    const provider = command.provider ?? resolveConfiguredProvider();
+    const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
+
+    if (baseUrlEnvKey) {
+      process.env[baseUrlEnvKey] = command.baseUrl;
+    }
+  }
+}
+
 function resolveStartupCommand(command: CliCommand): CliCommand {
   if (
     command.kind === "run" &&
     !command.dryRun &&
     command.shouldStart &&
+    command.command !== "init" &&
     (command.print || !process.stdin.isTTY)
   ) {
     const provider = resolveConfiguredProvider();

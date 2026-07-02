@@ -48,6 +48,13 @@ Initialize OpenWiki:
 openwiki --init
 ```
 
+Initialize and skip interactive prompts by providing the provider, base URL, and model up front:
+
+```sh
+openwiki --init --provider openai --model gpt-5.5
+openwiki --init --provider ollama --base-url http://localhost:11434 --model llama3.1
+```
+
 Update existing documentation:
 
 ```sh
@@ -70,6 +77,6 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, Anthropic and Ollama out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
 
 If there's an inference provider or model you'd like to see added, please open a PR!

@@ -1,4 +1,10 @@
-import { isValidModelId, normalizeModelId } from "./constants.js";
+import {
+  isValidModelId,
+  isValidProvider,
+  normalizeModelId,
+  normalizeProvider,
+  type OpenWikiProvider,
+} from "./constants.js";
 import type { OpenWikiCommand } from "./agent/types.js";
 
 export type HelpRow = {
@@ -22,10 +28,12 @@ export type CliCommand =
   | {
       kind: "run";
       exitCode: 0;
+      baseUrl: string | null;
       command: OpenWikiCommand;
       dryRun: boolean;
       modelId: string | null;
       print: boolean;
+      provider: OpenWikiProvider | null;
       shouldStart: boolean;
       userMessage: string | null;
     }
@@ -40,9 +48,11 @@ export function parseCommand(argv: string[]): CliCommand {
     return { kind: "help", exitCode: 0 };
   }
 
+  let baseUrl: string | null = null;
   let dryRun = false;
   let modelId: string | null = null;
   let print = false;
+  let provider: OpenWikiProvider | null = null;
   let command: OpenWikiCommand = "chat";
   const userMessageParts: string[] = [];
 
@@ -86,7 +96,7 @@ export function parseCommand(argv: string[]): CliCommand {
       continue;
     }
 
-    if (arg === "--modelId" || arg === "--model-id") {
+    if (arg === "--modelId" || arg === "--model-id" || arg === "--model") {
       const nextArg = argv[index + 1];
 
       if (!nextArg || nextArg.startsWith("-")) {
@@ -112,7 +122,11 @@ export function parseCommand(argv: string[]): CliCommand {
       continue;
     }
 
-    if (arg.startsWith("--modelId=") || arg.startsWith("--model-id=")) {
+    if (
+      arg.startsWith("--modelId=") ||
+      arg.startsWith("--model-id=") ||
+      arg.startsWith("--model=")
+    ) {
       const [, rawModelId = ""] = arg.split("=", 2);
       const parsedModelId = normalizeModelId(rawModelId);
 
@@ -125,6 +139,87 @@ export function parseCommand(argv: string[]): CliCommand {
       }
 
       modelId = parsedModelId;
+      continue;
+    }
+
+    if (arg === "--provider") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${arg} requires a provider ID.`,
+        };
+      }
+
+      const parsedProvider = normalizeProvider(nextArg);
+
+      if (!parsedProvider || !isValidProvider(parsedProvider)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid provider ID: ${nextArg}`,
+        };
+      }
+
+      provider = parsedProvider;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--provider=")) {
+      const [, rawProvider = ""] = arg.split("=", 2);
+      const parsedProvider = normalizeProvider(rawProvider);
+
+      if (!parsedProvider || !isValidProvider(parsedProvider)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid provider ID: ${rawProvider}`,
+        };
+      }
+
+      provider = parsedProvider;
+      continue;
+    }
+
+    if (arg === "--base-url" || arg === "--baseurl") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${arg} requires a URL.`,
+        };
+      }
+
+      if (!isValidBaseUrl(nextArg)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid base URL: ${nextArg}`,
+        };
+      }
+
+      baseUrl = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--base-url=") || arg.startsWith("--baseurl=")) {
+      const [, rawBaseUrl = ""] = arg.split("=", 2);
+
+      if (!isValidBaseUrl(rawBaseUrl)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid base URL: ${rawBaseUrl}`,
+        };
+      }
+
+      baseUrl = rawBaseUrl;
       continue;
     }
 
@@ -151,16 +246,30 @@ export function parseCommand(argv: string[]): CliCommand {
     };
   }
 
+  if (baseUrl !== null && command !== "init") {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "--base-url is only valid with --init.",
+    };
+  }
+
   return {
     kind: "run",
     exitCode: 0,
+    baseUrl,
     command,
     dryRun,
     modelId,
     print,
+    provider,
     shouldStart,
     userMessage,
   };
+}
+
+function isValidBaseUrl(value: string): boolean {
+  return value.trim().length > 0 && /^https?:\/\//iu.test(value);
 }
 
 export function isDevelopmentMode(): boolean {
@@ -174,9 +283,9 @@ export const helpContent: HelpContent = {
   description:
     "Run a documentation agent that generates and maintains a project wiki.",
   usage: [
-    "openwiki [--modelId <model>]",
-    "openwiki [--modelId <model>] [message]",
-    "openwiki --init [message]",
+    "openwiki [--model <model>]",
+    "openwiki [--model <model>] [message]",
+    "openwiki --init [--provider <id>] [--base-url <url>] [--model <model>] [message]",
     "openwiki --update [message]",
   ],
   commands: [
@@ -199,8 +308,16 @@ export const helpContent: HelpContent = {
       description: "Run once and print the final assistant output.",
     },
     {
-      label: "--modelId <id>",
-      description: "Use a model ID for this run.",
+      label: "--provider <id>",
+      description: "Provider for --init (skips provider prompt).",
+    },
+    {
+      label: "--base-url <url> / --baseurl <url>",
+      description: "Base URL for --init (skips base URL prompt).",
+    },
+    {
+      label: "--model <id>",
+      description: "Use a model ID for this run (also --modelId, --model-id).",
     },
   ],
   developmentOptions: [
@@ -212,11 +329,13 @@ export const helpContent: HelpContent = {
   examples: [
     "openwiki",
     "openwiki --init",
+    "openwiki --init --provider openai --model gpt-5.5",
+    "openwiki --init --provider ollama --base-url http://localhost:11434 --model llama3.1",
     "openwiki --update",
     'openwiki "What can you do?"',
     'openwiki -p "Summarize what OpenWiki can do"',
-    "openwiki --modelId gpt-5.5",
-    'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
+    "openwiki --model gpt-5.5",
+    'openwiki --update --model gpt-5.5 "Please document the API routes first"',
   ],
   developmentExamples: ["openwiki --dry-run"],
 };

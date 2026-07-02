@@ -5,6 +5,9 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const OLLAMA_API_KEY_ENV_KEY = "OLLAMA_API_KEY";
+export const OLLAMA_BASE_URL_ENV_KEY = "OLLAMA_BASE_URL";
+export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -14,6 +17,7 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
+  | "ollama"
   | "openai"
   | "openrouter";
 
@@ -27,6 +31,7 @@ export type ProviderModelOption = {
 type ProviderConfig = {
   apiKeyEnvKey: string;
   baseURL?: string;
+  baseURLEnvKey?: string;
   label: string;
   modelOptions: ProviderModelOption[];
 };
@@ -35,6 +40,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openrouter",
   "baseten",
   "fireworks",
+  "ollama",
   "openai",
   "anthropic",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
@@ -63,10 +69,23 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   },
   openai: {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
+    baseURLEnvKey: OPENAI_BASE_URL_ENV_KEY,
     label: "OpenAI",
     modelOptions: [
       { id: "gpt-5.4-mini", label: "5.4 mini" },
       { id: "gpt-5.5", label: "5.5" },
+    ],
+  },
+  ollama: {
+    apiKeyEnvKey: OLLAMA_API_KEY_ENV_KEY,
+    baseURL: "http://localhost:11434",
+    baseURLEnvKey: OLLAMA_BASE_URL_ENV_KEY,
+    label: "Ollama",
+    modelOptions: [
+      { id: "llama3.1", label: "Llama 3.1" },
+      { id: "llama3", label: "Llama 3" },
+      { id: "mistral", label: "Mistral" },
+      { id: "qwen2.5", label: "Qwen 2.5" },
     ],
   },
   anthropic: {
@@ -116,6 +135,23 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
 
 export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+export function getProviderBaseUrlEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).baseURLEnvKey;
+}
+
+export function hasOptionalApiKey(provider: OpenWikiProvider): boolean {
+  return provider === "ollama";
+}
+
+export function hasConfigurableBaseUrl(provider: OpenWikiProvider): boolean {
+  return (
+    getProviderConfig(provider).baseURLEnvKey !== undefined ||
+    getProviderConfig(provider).baseURL !== undefined
+  );
 }
 
 export function getProviderModelOptions(

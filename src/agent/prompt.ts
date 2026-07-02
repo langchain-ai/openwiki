@@ -30,6 +30,7 @@ Run discipline:
 
 Subagent discipline:
 - You may use the task tool to parallelize read-only research during init and update runs when the repository has multiple substantial domains.
+- When calling the task tool, set subagent_type to exactly 'general-purpose'. No other values are valid.
 - Default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.
 - Subagents must only inspect and summarize. They must not create, edit, delete, or move files, and they must not write to ${OPEN_WIKI_DIR}/.
 - Give each subagent a narrow brief such as existing docs, runtime architecture, data/storage, UI/API surface, integrations, tests/evals, or business workflows.
