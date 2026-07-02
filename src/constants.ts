@@ -5,6 +5,9 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const LITELLM_API_KEY_ENV_KEY = "LITELLM_API_KEY";
+export const LITELLM_BASE_URL_ENV_KEY = "LITELLM_BASE_URL";
+export const DEFAULT_LITELLM_BASE_URL = "http://localhost:4000";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -14,6 +17,7 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
+  | "litellm"
   | "openai"
   | "openrouter";
 
@@ -35,6 +39,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openrouter",
   "baseten",
   "fireworks",
+  "litellm",
   "openai",
   "anthropic",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
@@ -59,6 +64,17 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
         id: "accounts/fireworks/models/kimi-k2p7-code",
         label: "Kimi K2.7 Code",
       },
+    ],
+  },
+  litellm: {
+    apiKeyEnvKey: LITELLM_API_KEY_ENV_KEY,
+    baseURL: DEFAULT_LITELLM_BASE_URL,
+    label: "LiteLLM",
+    modelOptions: [
+      { id: "gpt-4o", label: "GPT-4o" },
+      { id: "gpt-4o-mini", label: "GPT-4o mini" },
+      { id: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
+      { id: "gemini/gemini-2.0-flash", label: "Gemini 2.0 Flash" },
     ],
   },
   openai: {

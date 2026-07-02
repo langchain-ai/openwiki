@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import {
+  DEFAULT_LITELLM_BASE_URL,
   DEFAULT_PROVIDER,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderLabel,
   getProviderModelOptions,
   isValidModelId,
+  LITELLM_BASE_URL_ENV_KEY,
   normalizeModelId,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
@@ -31,7 +33,7 @@ type InitSetupProps = {
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "langsmith" | "model" | "provider";
+type PromptStep = "api-key" | "base-url" | "langsmith" | "model" | "provider";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
@@ -57,6 +59,7 @@ export function InitSetup({
   const [step, setStep] = useState<PromptStep | null>(null);
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [baseUrl, setBaseUrl] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -197,9 +200,37 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: selectedProvider,
+      });
+      return;
+    }
+
+    if (step === "base-url") {
+      const trimmedInput = input.trim();
+      const resolvedBaseUrl =
+        trimmedInput.length > 0 ? trimmedInput : DEFAULT_LITELLM_BASE_URL;
+
+      setBaseUrl(resolvedBaseUrl);
+      setInput("");
+
+      const nextStep = !process.env[getProviderApiKeyEnvKey(provider)]
+        ? "api-key"
+        : getNextStepAfterApiKey(provider, modelIdOverride);
+
+      if (nextStep) {
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: resolvedBaseUrl,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
       });
       return;
     }
@@ -223,6 +254,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: trimmedInput,
+        nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -260,6 +292,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
         nextProvider: provider,
@@ -275,6 +308,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
         nextLangSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -284,6 +318,7 @@ export function InitSetup({
 
   type CompleteSetupOptions = {
     nextApiKey: string | null;
+    nextBaseUrl: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
@@ -291,6 +326,7 @@ export function InitSetup({
 
   async function completeSetup({
     nextApiKey,
+    nextBaseUrl,
     nextLangSmithKey,
     nextModelId,
     nextProvider,
@@ -304,6 +340,10 @@ export function InitSetup({
 
       if (providerEnvChanged) {
         updates[OPENWIKI_PROVIDER_ENV_KEY] = nextProvider;
+      }
+
+      if (nextBaseUrl !== null) {
+        updates[LITELLM_BASE_URL_ENV_KEY] = nextBaseUrl;
       }
 
       if (nextApiKey !== null) {
@@ -367,6 +407,22 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
+        {provider === "litellm" ? (
+          <SetupStep
+            label="LiteLLM URL"
+            state={
+              process.env[LITELLM_BASE_URL_ENV_KEY]
+                ? "done"
+                : step === "base-url"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              process.env[LITELLM_BASE_URL_ENV_KEY] ??
+              `default ${DEFAULT_LITELLM_BASE_URL}`
+            }
+          />
+        ) : null}
         <SetupStep
           label="Provider key"
           state={
@@ -546,6 +602,22 @@ function Prompt({
     );
   }
 
+  if (step === "base-url") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter your LiteLLM server base URL.</Text>
+        <Text>
+          <Text color="gray">$</Text> {LITELLM_BASE_URL_ENV_KEY}={" "}
+          <Text color="yellow">{input || DEFAULT_LITELLM_BASE_URL}</Text>
+        </Text>
+        <Text color="gray">
+          Press Enter to use default ({DEFAULT_LITELLM_BASE_URL}), or type a
+          custom URL first.
+        </Text>
+      </Box>
+    );
+  }
+
   if (step === "api-key") {
     return (
       <Box flexDirection="column">
@@ -652,6 +724,10 @@ function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
+  if (provider === "litellm" && !process.env[LITELLM_BASE_URL_ENV_KEY]) {
+    return "base-url";
+  }
+
   if (!process.env[getProviderApiKeyEnvKey(provider)]) {
     return "api-key";
   }

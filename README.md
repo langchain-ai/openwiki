@@ -70,6 +70,8 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Anthropic, OpenAI, Fireworks, Baseten, and LiteLLM out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+
+For LiteLLM, you can point OpenWiki at any LiteLLM proxy or gateway instance by specifying the base URL during setup (defaults to `http://localhost:4000`).
 
 If there's an inference provider or model you'd like to see added, please open a PR!
