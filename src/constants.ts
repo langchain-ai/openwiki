@@ -4,6 +4,9 @@ export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
+export const BEDROCK_API_KEY_ENV_KEY = "AWS_BEARER_TOKEN_BEDROCK";
+export const BEDROCK_REGION_ENV_KEY = "AWS_REGION";
+export const DEFAULT_BEDROCK_REGION = "us-east-1";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
@@ -13,6 +16,7 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "bedrock"
   | "fireworks"
   | "openai"
   | "openrouter";
@@ -37,6 +41,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "fireworks",
   "openai",
   "anthropic",
+  "bedrock",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -76,6 +81,18 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-haiku-4-5", label: "Haiku" },
       { id: "claude-sonnet-5", label: "Sonnet" },
       { id: "claude-opus-4.8", label: "Opus" },
+    ],
+  },
+  bedrock: {
+    apiKeyEnvKey: BEDROCK_API_KEY_ENV_KEY,
+    label: "Amazon Bedrock",
+    modelOptions: [
+      {
+        id: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+        label: "Claude Haiku",
+      },
+      { id: "global.anthropic.claude-sonnet-5", label: "Claude Sonnet" },
+      { id: "global.anthropic.claude-opus-4-8", label: "Claude Opus" },
     ],
   },
   openrouter: {

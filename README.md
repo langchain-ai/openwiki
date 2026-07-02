@@ -70,6 +70,8 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, Anthropic and Amazon Bedrock out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+
+For Amazon Bedrock, generate a [Bedrock API key](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html) in the Bedrock console and provide it as the API key (`AWS_BEARER_TOKEN_BEDROCK`). Requests go to `us-east-1` by default; set `AWS_REGION` to target a different region. The pre-defined models use `global.` cross-region inference profile IDs, which route to any region with capacity — use a custom model ID (e.g. a `us.`/`eu.` geo profile or an in-region model ID) if you have data-residency requirements.
 
 If there's an inference provider or model you'd like to see added, please open a PR!

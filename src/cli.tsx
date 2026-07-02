@@ -28,6 +28,7 @@ import {
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
+  BEDROCK_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -1506,7 +1507,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        "Enter a valid provider: openrouter, baseten, fireworks, openai, anthropic, or bedrock.",
       );
       return;
     }
@@ -2924,6 +2925,7 @@ function sanitizeDiagnosticText(value: string): string {
     FIREWORKS_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
+    BEDROCK_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
     "LANGSMITH_API_KEY",
   ]) {

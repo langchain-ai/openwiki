@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatBedrockConverse } from "@langchain/aws";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -17,6 +18,9 @@ import type {
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
+  BEDROCK_API_KEY_ENV_KEY,
+  BEDROCK_REGION_ENV_KEY,
+  DEFAULT_BEDROCK_REGION,
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -381,6 +385,14 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    });
+  }
+
+  if (provider === "bedrock") {
+    return new ChatBedrockConverse({
+      bedrockBearerToken: process.env[getProviderApiKeyEnvKey(provider)],
+      model: modelId,
+      region: process.env[BEDROCK_REGION_ENV_KEY] ?? DEFAULT_BEDROCK_REGION,
     });
   }
 
@@ -1263,6 +1275,7 @@ function formatEnvironmentDebug(): string {
     FIREWORKS_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
+    BEDROCK_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,
     "LANGCHAIN_TRACING_V2",
