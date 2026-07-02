@@ -442,7 +442,15 @@ function stripFileBlocks(message: BaseMessage): BaseMessage {
     return part;
   });
 
-  message.content = stripped;
+  // Collapse to a plain string when every part is text — many gateways
+  // (e.g. GLM-5.2 via Azure APIM) reject array content on non-human messages.
+  const allText = stripped.every(
+    (p) => typeof p === "object" && p !== null && "type" in p && p.type === "text",
+  );
+
+  message.content = allText
+    ? stripped.map((p) => (p as { type: "text"; text: string }).text).join("")
+    : stripped;
 
   return message;
 }
