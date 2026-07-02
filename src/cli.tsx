@@ -417,7 +417,8 @@ function App({ command }: AppProps) {
   if (shouldRunInteractiveCredentialSetup) {
     return (
       <InitSetup
-        modelIdOverride={command.modelId}
+        baseUrlOverride={command.kind === "run" ? command.baseUrl : null}
+        modelIdOverride={command.kind === "run" ? command.modelId : null}
         onComplete={(result) => {
           if (result.modelId) {
             setSessionModelId(result.modelId);
@@ -431,6 +432,7 @@ function App({ command }: AppProps) {
         onError={(message) => {
           setRunState({ status: "error", message });
         }}
+        providerOverride={command.kind === "run" ? command.provider : null}
       />
     );
   }
