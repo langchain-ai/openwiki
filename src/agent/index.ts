@@ -3,10 +3,17 @@ import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatOllama } from "@langchain/ollama";
+import { BaseMessage, ToolMessage } from "@langchain/core/messages";
+import type { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
-import { createDeepAgent, LocalShellBackend } from "deepagents";
+import {
+  createDeepAgent,
+  GENERAL_PURPOSE_SUBAGENT,
+  LocalShellBackend,
+} from "deepagents";
+import type { SubAgent } from "deepagents";
 import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
@@ -184,6 +191,7 @@ async function runOpenWikiAgentCore(
   const agent = createDeepAgent({
     model,
     tools: [],
+    subagents: createSubagentTypeAliases(),
     checkpointer,
     backend: new LocalShellBackend({
       maxOutputBytes: 100_000,
@@ -251,6 +259,16 @@ async function runOpenWikiAgentCore(
     command,
     model: modelId,
   };
+}
+
+function createSubagentTypeAliases(): SubAgent[] {
+  return [
+    {
+      ...GENERAL_PURPOSE_SUBAGENT,
+      name: "general-pattern",
+      description: `${GENERAL_PURPOSE_SUBAGENT.description} (alias for general-purpose)`,
+    },
+  ];
 }
 
 function createAttemptOptions(
@@ -391,7 +409,7 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "ollama") {
     const providerConfig = getProviderConfig(provider);
 
-    return new ChatOllama({
+    return new SafeChatOllama({
       baseUrl:
         process.env[OLLAMA_BASE_URL_ENV_KEY] ??
         providerConfig.baseURL ??
@@ -425,6 +443,68 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
         }
       : undefined,
     model: modelId,
+  });
+}
+
+class SafeChatOllama extends ChatOllama {
+  async _generate(
+    messages: BaseMessage[],
+    options: this["ParsedCallOptions"],
+    runManager?: CallbackManagerForLLMRun,
+  ) {
+    return super._generate(
+      normalizeOllamaToolMessages(messages),
+      options,
+      runManager,
+    );
+  }
+
+  async *_streamResponseChunks(
+    messages: BaseMessage[],
+    options: this["ParsedCallOptions"],
+    runManager?: CallbackManagerForLLMRun,
+  ) {
+    yield* super._streamResponseChunks(
+      normalizeOllamaToolMessages(messages),
+      options,
+      runManager,
+    );
+  }
+}
+
+function normalizeOllamaToolMessages(messages: BaseMessage[]): BaseMessage[] {
+  return messages.map((message) => {
+    if (
+      !(message instanceof ToolMessage) ||
+      typeof message.content === "string"
+    ) {
+      return message;
+    }
+
+    const content = Array.isArray(message.content)
+      ? message.content
+          .map((block) => {
+            if (typeof block === "string") {
+              return block;
+            }
+
+            if (isRecord(block) && typeof block.text === "string") {
+              return block.text;
+            }
+
+            return JSON.stringify(block);
+          })
+          .join("\n")
+      : JSON.stringify(message.content);
+
+    return new ToolMessage({
+      content,
+      name: message.name,
+      tool_call_id: message.tool_call_id,
+      additional_kwargs: message.additional_kwargs,
+      response_metadata: message.response_metadata,
+      id: message.id,
+    });
   });
 }
 
