@@ -60,7 +60,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "gpt-5.5", label: "GPT 5.5" },
       { id: "gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "claude-sonnet-5", label: "Claude Sonnet 5" },
-      { id: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
+      { id: "claude-haiku-4.5", label: "Claude Haiku 4.5" },
     ],
   },
   fireworks: {

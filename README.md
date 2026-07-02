@@ -76,7 +76,10 @@ OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, Anthropic and GitHub C
 
 The GitHub Copilot provider routes inference through the OpenAI-compatible Copilot API (`https://api.githubcopilot.com`), so teams can reuse an existing Copilot subscription instead of provisioning a separate inference API key.
 
-1. Install and authenticate the [GitHub Copilot CLI](https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli), or generate a Copilot API token for your organization.
+1. Get a token from a Copilot-enabled GitHub account. Supported token types (the same ones the GitHub Copilot CLI accepts):
+   - a GitHub CLI OAuth token — `gh auth login` then `gh auth token`,
+   - an OAuth token from an authenticated GitHub Copilot CLI session, or
+   - a fine-grained personal access token (v2) with the **"Copilot Requests"** account permission. Classic PATs (`ghp_...`) are not supported.
 2. Set the token as `COPILOT_API_KEY` (OpenWiki will prompt for it when you select GitHub Copilot during `openwiki --init`).
 3. Select `GitHub Copilot` as the provider and choose a model (for example `gpt-5.5`).
 

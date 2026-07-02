@@ -31,6 +31,7 @@ import {
   OPENROUTER_FALLBACK_MODEL_IDS,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_VERSION,
   resolveConfiguredProvider,
   type OpenWikiProvider,
 } from "../constants.js";
@@ -378,6 +379,14 @@ function resolveModelId(
   return modelId;
 }
 
+// The Copilot API accepts GitHub OAuth tokens (for example from `gh auth
+// token` or an authenticated GitHub Copilot CLI session) and fine-grained
+// personal access tokens with the "Copilot Requests" permission.
+const COPILOT_DEFAULT_HEADERS = {
+  "Copilot-Integration-Id": "vscode-chat",
+  "Editor-Version": `OpenWiki/${OPENWIKI_VERSION}`,
+};
+
 async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
     return new ChatAnthropic(modelId, {
@@ -399,6 +408,17 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   const providerConfig = getProviderConfig(provider);
+
+  if (provider === "copilot") {
+    return new ChatOpenAI({
+      apiKey: process.env[COPILOT_API_KEY_ENV_KEY],
+      configuration: {
+        baseURL: providerConfig.baseURL,
+        defaultHeaders: COPILOT_DEFAULT_HEADERS,
+      },
+      model: modelId,
+    });
+  }
 
   return new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
