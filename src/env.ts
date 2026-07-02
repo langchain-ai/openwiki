@@ -7,6 +7,7 @@ import {
   FIREWORKS_API_KEY_ENV_KEY,
   isValidModelId,
   normalizeProvider,
+  NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -33,6 +34,7 @@ export type CredentialDiagnostic = {
 const managedEnvKeys = [
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   ANTHROPIC_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -74,6 +76,7 @@ export async function getCredentialDiagnostics(): Promise<
     createCredentialDiagnostic(OPENWIKI_PROVIDER_ENV_KEY, fileEnv),
     createCredentialDiagnostic(BASETEN_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(FIREWORKS_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(NVIDIA_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENAI_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(ANTHROPIC_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENROUTER_API_KEY_ENV_KEY, fileEnv),

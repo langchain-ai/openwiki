@@ -36,6 +36,7 @@ import {
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
+  NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -1506,7 +1507,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        "Enter a valid provider: openrouter, baseten, fireworks, nvidia, openai, or anthropic.",
       );
       return;
     }
@@ -2922,6 +2923,7 @@ function sanitizeDiagnosticText(value: string): string {
   for (const key of [
     BASETEN_API_KEY_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
+    NVIDIA_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
