@@ -48,6 +48,13 @@ Initialize OpenWiki:
 openwiki --init
 ```
 
+Initialize and skip interactive prompts by providing the provider, base URL, and model up front:
+
+```sh
+openwiki --init --provider openai --model gpt-5.5
+openwiki --init --provider ollama --base-url http://localhost:11434 --model llama3.1
+```
+
 Update existing documentation:
 
 ```sh

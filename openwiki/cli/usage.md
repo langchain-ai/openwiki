@@ -9,13 +9,14 @@ From `src/commands.ts` and `README.md`, the supported entry patterns are:
 - `openwiki` — open the interactive chat UI.
 - `openwiki "message"` — send a chat message immediately, then stay open.
 - `openwiki --init [message]` — generate initial OpenWiki documentation.
+- `openwiki --init --provider <id> --base-url <url> --model <id>` — generate documentation with credentials pre-selected (interactive prompts are skipped for supplied values).
 - `openwiki --update [message]` — refresh existing OpenWiki documentation.
 - `openwiki -p, --print` — run once and print the final assistant output (non-interactive).
 - `openwiki --modelId <id>` / `--model-id <id>` — choose a model ID for the run.
 - `openwiki --help` / `-h` — print usage, options, and examples.
 - `openwiki --dry-run` — development-only option that avoids invoking the agent.
 
-The parser rejects incompatible combinations such as `--init` and `--update` together, and it requires a message or command when `--print` is used.
+The parser rejects incompatible combinations such as `--init` and `--update` together, and it requires a message or command when `--print` is used. `--base-url` accepts either `--base-url` or `--baseurl`.
 
 ### Auto-exit for init/update
 
