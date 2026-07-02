@@ -5,6 +5,7 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
+import { ChatGoogle } from "@langchain/google";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
@@ -378,6 +379,22 @@ function resolveModelId(
 }
 
 async function createModel(provider: OpenWikiProvider, modelId: string) {
+  if (provider === "gemini") {
+    return new ChatGoogle({
+      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      model: modelId,
+      platformType: "gai",
+    });
+  }
+
+  if (provider === "gemini-enterprise") {
+    return new ChatGoogle({
+      model: modelId,
+      platformType: "gcp",
+      location: process.env.GOOGLE_CLOUD_LOCATION ?? "us-central1",
+    });
+  }
+
   if (provider === "anthropic") {
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],

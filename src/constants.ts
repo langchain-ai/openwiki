@@ -5,6 +5,8 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const GEMINI_API_KEY_ENV_KEY = "GEMINI_API_KEY";
+export const GOOGLE_CLOUD_PROJECT_ENV_KEY = "GOOGLE_CLOUD_PROJECT";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -15,7 +17,9 @@ export type OpenWikiProvider =
   | "baseten"
   | "fireworks"
   | "openai"
-  | "openrouter";
+  | "openrouter"
+  | "gemini"
+  | "gemini-enterprise";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -33,13 +37,33 @@ type ProviderConfig = {
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openrouter",
+  "gemini",
+  "gemini-enterprise",
   "baseten",
   "fireworks",
   "openai",
   "anthropic",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
+const GEMINI_MODELS = [
+  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
+  { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview" },
+  { id: "gemini-3.0-flash", label: "Gemini 3.0 Flash" },
+  { id: "gemini-3.0-pro", label: "Gemini 3.0 Pro" },
+  { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+];
+
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
+  gemini: {
+    apiKeyEnvKey: GEMINI_API_KEY_ENV_KEY,
+    label: "Gemini (AI Studio)",
+    modelOptions: GEMINI_MODELS,
+  },
+  "gemini-enterprise": {
+    apiKeyEnvKey: GOOGLE_CLOUD_PROJECT_ENV_KEY,
+    label: "Gemini Enterprise (Vertex AI)",
+    modelOptions: GEMINI_MODELS,
+  },
   baseten: {
     apiKeyEnvKey: BASETEN_API_KEY_ENV_KEY,
     baseURL: "https://inference.baseten.co/v1",
