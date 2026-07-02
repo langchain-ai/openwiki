@@ -42,10 +42,32 @@ type PromptStep = "api-key" | "base-url" | "langsmith" | "model" | "provider";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
+  providerOverride: OpenWikiProvider | null = null,
+  baseUrlOverride: string | null = null,
 ): boolean {
-  const provider = resolveConfiguredProvider();
+  const configuredProvider = resolveConfiguredProvider();
+  const provider = providerOverride ?? configuredProvider;
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
   const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
+
+  if (providerOverride !== null && providerOverride !== configuredProvider) {
+    return true;
+  }
+
+  if (
+    baseUrlOverride !== null &&
+    baseUrlEnvKey !== undefined &&
+    process.env[baseUrlEnvKey] !== baseUrlOverride
+  ) {
+    return true;
+  }
+
+  if (
+    modelIdOverride !== null &&
+    process.env[OPENWIKI_MODEL_ID_ENV_KEY] !== modelIdOverride
+  ) {
+    return true;
+  }
 
   return (
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
@@ -57,6 +79,81 @@ export function needsCredentialSetup(
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined
   );
+}
+
+export type CredentialSetupResult = {
+  nextApiKey: string | null;
+  nextBaseURL: string | null;
+  nextLangSmithKey: string | null;
+  nextModelId: string | null;
+  nextProvider: OpenWikiProvider;
+  savedApiKey: boolean;
+  savedBaseURL: boolean;
+  savedLangSmithKey: boolean;
+  savedModelId: boolean;
+  savedProvider: boolean;
+};
+
+export async function completeCredentialSetup({
+  nextApiKey,
+  nextBaseURL,
+  nextLangSmithKey,
+  nextModelId,
+  nextProvider,
+}: {
+  nextApiKey: string | null;
+  nextBaseURL: string | null;
+  nextLangSmithKey: string | null;
+  nextModelId: string | null;
+  nextProvider: OpenWikiProvider;
+}): Promise<CredentialSetupResult> {
+  const updates: Record<string, string> = {};
+  const providerEnvChanged =
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] !== nextProvider;
+
+  if (providerEnvChanged) {
+    updates[OPENWIKI_PROVIDER_ENV_KEY] = nextProvider;
+  }
+
+  if (nextApiKey !== null) {
+    updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+  }
+
+  const nextBaseUrlEnvKey = getProviderBaseUrlEnvKey(nextProvider);
+
+  if (nextBaseUrlEnvKey !== undefined && nextBaseURL !== null) {
+    updates[nextBaseUrlEnvKey] = nextBaseURL;
+  }
+
+  if (nextModelId !== null) {
+    updates[OPENWIKI_MODEL_ID_ENV_KEY] = nextModelId;
+  }
+
+  if (nextLangSmithKey !== null) {
+    updates.LANGSMITH_API_KEY = nextLangSmithKey;
+
+    if (nextLangSmithKey.length > 0) {
+      updates.LANGCHAIN_PROJECT = "openwiki";
+      updates.LANGCHAIN_TRACING_V2 = "true";
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await saveOpenWikiEnv(updates);
+  }
+
+  return {
+    nextApiKey,
+    nextBaseURL,
+    nextLangSmithKey,
+    nextModelId,
+    nextProvider,
+    savedApiKey: nextApiKey !== null,
+    savedBaseURL: nextBaseUrlEnvKey !== undefined && nextBaseURL !== null,
+    savedLangSmithKey: nextLangSmithKey !== null && nextLangSmithKey.length > 0,
+    savedModelId: nextModelId !== null,
+    savedProvider: providerEnvChanged,
+  };
 }
 
 export function InitSetup({
@@ -378,64 +475,24 @@ export function InitSetup({
     nextProvider: OpenWikiProvider;
   };
 
-  async function completeSetup({
-    nextApiKey,
-    nextBaseURL,
-    nextLangSmithKey,
-    nextModelId,
-    nextProvider,
-  }: CompleteSetupOptions) {
+  async function completeSetup(options: CompleteSetupOptions) {
     setIsSaving(true);
 
     try {
-      const updates: Record<string, string> = {};
-      const providerEnvChanged =
-        process.env[OPENWIKI_PROVIDER_ENV_KEY] !== nextProvider;
-
-      if (providerEnvChanged) {
-        updates[OPENWIKI_PROVIDER_ENV_KEY] = nextProvider;
-      }
-
-      if (nextApiKey !== null) {
-        updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
-      }
-
-      const nextBaseUrlEnvKey = getProviderBaseUrlEnvKey(nextProvider);
-
-      if (nextBaseUrlEnvKey !== undefined && nextBaseURL !== null) {
-        updates[nextBaseUrlEnvKey] = nextBaseURL;
-      }
-
-      if (nextModelId !== null) {
-        updates[OPENWIKI_MODEL_ID_ENV_KEY] = nextModelId;
-      }
-
-      if (nextLangSmithKey !== null) {
-        updates.LANGSMITH_API_KEY = nextLangSmithKey;
-
-        if (nextLangSmithKey.length > 0) {
-          updates.LANGCHAIN_PROJECT = "openwiki";
-          updates.LANGCHAIN_TRACING_V2 = "true";
-        }
-      }
-
-      if (Object.keys(updates).length > 0) {
-        await saveOpenWikiEnv(updates);
-      }
+      const result = await completeCredentialSetup(options);
 
       onComplete({
         modelId:
-          nextModelId ??
+          result.nextModelId ??
           effectiveModelIdOverride ??
           process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
           null,
-        provider: nextProvider,
-        savedApiKey: nextApiKey !== null,
-        savedBaseURL: nextBaseUrlEnvKey !== undefined && nextBaseURL !== null,
-        savedLangSmithKey:
-          nextLangSmithKey !== null && nextLangSmithKey.length > 0,
-        savedModelId: nextModelId !== null || effectiveModelIdOverride !== null,
-        savedProvider: providerEnvChanged,
+        provider: result.nextProvider,
+        savedApiKey: result.savedApiKey,
+        savedBaseURL: result.savedBaseURL,
+        savedLangSmithKey: result.savedLangSmithKey,
+        savedModelId: result.savedModelId,
+        savedProvider: result.savedProvider,
       });
     } catch (saveError) {
       onError(
