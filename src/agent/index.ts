@@ -5,6 +5,10 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
+import type { BaseMessage, MessageContent } from "@langchain/core/messages";
+import type { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
+import type { ChatGenerationChunk, ChatResult } from "@langchain/core/outputs";
+import type { BaseChatModelCallOptions } from "@langchain/core/language_models/chat_models";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
@@ -378,6 +382,71 @@ function resolveModelId(
   return modelId;
 }
 
+/**
+ * Strips file content blocks (base64-encoded binary files sent by DeepAgents)
+ * down to their decoded text content before sending to the API. Required for
+ * models/gateways that don't support multimodal file content blocks (e.g. GLM-5.2
+ * via Azure APIM), which reject messages containing {type:'file',...} parts.
+ */
+class TextOnlyChatOpenAI extends ChatOpenAI {
+  override async _generate(
+    messages: BaseMessage[],
+    options: BaseChatModelCallOptions,
+    runManager?: CallbackManagerForLLMRun,
+  ): Promise<ChatResult> {
+    return super._generate(
+      messages.map(stripFileBlocks),
+      options,
+      runManager,
+    );
+  }
+
+  override async *_streamResponseChunks(
+    messages: BaseMessage[],
+    options: BaseChatModelCallOptions,
+    runManager?: CallbackManagerForLLMRun,
+  ): AsyncGenerator<ChatGenerationChunk> {
+    yield* super._streamResponseChunks(
+      messages.map(stripFileBlocks),
+      options,
+      runManager,
+    );
+  }
+}
+
+function stripFileBlocks(message: BaseMessage): BaseMessage {
+  if (typeof message.content === "string") {
+    return message;
+  }
+
+  const parts = message.content as MessageContent;
+
+  if (!Array.isArray(parts)) {
+    return message;
+  }
+
+  const stripped = parts.map((part) => {
+    if (
+      typeof part === "object" &&
+      part !== null &&
+      "type" in part &&
+      part.type === "file" &&
+      "data" in part &&
+      typeof part.data === "string"
+    ) {
+      const text = Buffer.from(part.data, "base64").toString("utf8");
+
+      return { type: "text" as const, text };
+    }
+
+    return part;
+  });
+
+  message.content = stripped;
+
+  return message;
+}
+
 async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
     return new ChatAnthropic(modelId, {
@@ -400,21 +469,26 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
 
   const providerConfig = getProviderConfig(provider);
   const apiKey = process.env[getProviderApiKeyEnvKey(provider)];
-  const baseURL = process.env[OPENAI_BASE_URL_ENV_KEY] ?? providerConfig.baseURL;
+  const customBaseURL = process.env[OPENAI_BASE_URL_ENV_KEY];
+  const baseURL = customBaseURL ?? providerConfig.baseURL;
 
-  return new ChatOpenAI({
+  const modelParams = {
     apiKey,
     configuration: baseURL
       ? {
           baseURL,
           // Azure APIM and similar gateways use api-key instead of Authorization: Bearer
-          defaultHeaders: process.env[OPENAI_BASE_URL_ENV_KEY]
-            ? { "api-key": apiKey }
-            : undefined,
+          defaultHeaders: customBaseURL ? { "api-key": apiKey } : undefined,
         }
       : undefined,
     model: modelId,
-  });
+  };
+
+  // Use TextOnlyChatOpenAI for custom base URLs — third-party gateways typically
+  // don't support multimodal file content blocks that DeepAgents sends for binary files.
+  return customBaseURL
+    ? new TextOnlyChatOpenAI(modelParams)
+    : new ChatOpenAI(modelParams);
 }
 
 function createModelRoute(
