@@ -50,10 +50,14 @@ import {
 
 // DeepSeek API rewriter: flattens array content into text to avoid 400 errors
 // on non-text content blocks (file, image, etc.)
-let deepseekFetchRewriterInstalled = false;
+// Uses Symbol.for() to ensure idempotency across module instances
+const DEEPSEEK_FETCH_REWRITER_KEY = Symbol.for(
+  "openwiki.deepseekFetchRewriterInstalled",
+);
 
 function installDeepSeekFetchRewriter() {
-  if (deepseekFetchRewriterInstalled) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((globalThis as any)[DEEPSEEK_FETCH_REWRITER_KEY]) {
     return;
   }
 
@@ -106,7 +110,8 @@ function installDeepSeekFetchRewriter() {
     return originalFetch.call(globalThis, input, init);
   };
 
-  deepseekFetchRewriterInstalled = true;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any)[DEEPSEEK_FETCH_REWRITER_KEY] = true;
 }
 
 export async function runOpenWikiAgent(

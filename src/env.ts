@@ -81,6 +81,7 @@ export async function getCredentialDiagnostics(): Promise<
   return [
     createCredentialDiagnostic(OPENWIKI_PROVIDER_ENV_KEY, fileEnv),
     createCredentialDiagnostic(BASETEN_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(DEEPSEEK_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(FIREWORKS_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENAI_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENAI_COMPATIBLE_API_KEY_ENV_KEY, fileEnv),
