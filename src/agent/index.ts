@@ -3,6 +3,7 @@ import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ToolMessage } from "@langchain/core/messages";
+import type { StructuredTool } from "@langchain/core/tools";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -160,13 +161,17 @@ async function runOpenWikiAgentWithModelFallbacks(
 }
 
 /**
- * deepagents' read_file tool returns non-text, non-image/audio/video files as a
- * generic `{ type: "file", mimeType, data }` content block. When mimeType isn't
- * "application/pdf", Anthropic's API rejects the resulting document content block
- * (it only accepts application/pdf for base64 documents), crashing the whole run.
- * Extensionless files (Dockerfile, LICENSE, CHANGELOG, ...) hit this because
- * deepagents' MIME lookup defaults unknown extensions to application/octet-stream.
- * Swap those blocks for a text placeholder instead of sending them to the model.
+ * deepagents' read_file tool returns binary files as one of `{ type: "file" }`,
+ * `{ type: "image" }`, `{ type: "audio" }`, or `{ type: "video" }` content
+ * blocks (based on the file's extension-derived mimeType), each carrying that
+ * mimeType and base64 data. Anthropic's API only accepts a narrow subset of
+ * these: "file"/document blocks must be application/pdf, "image" blocks must
+ * be one of a handful of raster formats, and it has no audio or video content
+ * block type at all. Anything outside that subset — including extensionless
+ * files (Dockerfile, LICENSE, CHANGELOG, ...), which deepagents' MIME lookup
+ * defaults to application/octet-stream — gets rejected by the API and crashes
+ * the whole run. Swap those blocks for a text placeholder instead of sending
+ * them to the model.
  */
 const sanitizeBinaryFileToolResultsMiddleware = createMiddleware({
   name: "SanitizeBinaryFileToolResults",
@@ -178,10 +183,10 @@ const sanitizeBinaryFileToolResultsMiddleware = createMiddleware({
     }
 
     result.content = result.content.map((block) =>
-      isUnsupportedBinaryFileBlock(block)
+      isUnsupportedMultimodalBlock(block)
         ? {
             type: "text",
-            text: `[OpenWiki] Skipped binary file (mime type "${block.mimeType}"): unsupported for inline preview. Anthropic's document content blocks only accept "application/pdf".`,
+            text: `[OpenWiki] Skipped ${block.type} content (mime type "${block.mimeType}"): unsupported for inline preview by this model.`,
           }
         : block,
     );
@@ -190,16 +195,38 @@ const sanitizeBinaryFileToolResultsMiddleware = createMiddleware({
   },
 });
 
-function isUnsupportedBinaryFileBlock(
+/** Raster image formats Anthropic's "image" content blocks accept (e.g. not HEIC/HEIF). */
+const ANTHROPIC_SUPPORTED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+]);
+
+function isUnsupportedMultimodalBlock(
   block: unknown,
-): block is { type: "file"; mimeType: string } {
-  return (
-    typeof block === "object" &&
-    block !== null &&
-    (block as { type?: unknown }).type === "file" &&
-    typeof (block as { mimeType?: unknown }).mimeType === "string" &&
-    (block as { mimeType: string }).mimeType !== "application/pdf"
-  );
+): block is { type: string; mimeType: string } {
+  if (typeof block !== "object" || block === null) {
+    return false;
+  }
+
+  const type = (block as { type?: unknown }).type;
+  const mimeType = (block as { mimeType?: unknown }).mimeType;
+
+  if (typeof mimeType !== "string") {
+    return false;
+  }
+
+  if (type === "file") {
+    return mimeType !== "application/pdf";
+  }
+
+  if (type === "image") {
+    return !ANTHROPIC_SUPPORTED_IMAGE_MIME_TYPES.has(mimeType);
+  }
+
+  // Anthropic's Messages API has no audio or video content block type.
+  return type === "audio" || type === "video";
 }
 
 /**
@@ -212,14 +239,23 @@ function isUnsupportedBinaryFileBlock(
  * instead of hardcoding the bare `GENERAL_PURPOSE_SUBAGENT` — otherwise we'd
  * silently drop any model-specific prompt tuning for other users' models.
  *
+ * `tools` should be the same array passed to the main agent's `createDeepAgent`
+ * call: deepagents' own auto-add path threads the main agent's tools through to
+ * the GP subagent, but once we redeclare the subagent ourselves its `tools`
+ * field is locked in as-is (no fallback to the main agent's tools), so we have
+ * to pass them through explicitly too. (There's no equivalent `skills` wiring
+ * yet since the main agent doesn't set `skills` either — if it ever does, that
+ * needs to be threaded through here the same way.)
+ *
  * Returns `null` when the resolved profile explicitly disables the GP
  * subagent, matching deepagents' own auto-add condition.
  */
 function createGeneralPurposeSubagentWithSanitizer(
   provider: OpenWikiProvider,
   modelId: string,
+  tools: StructuredTool[],
 ): SubAgent | null {
-  const harnessProfile = getHarnessProfile(`${provider}:${modelId}`);
+  const harnessProfile = resolveOpenWikiHarnessProfile(provider, modelId);
   const generalPurposeConfig = harnessProfile?.generalPurposeSubagent;
 
   if (generalPurposeConfig?.enabled === false) {
@@ -233,8 +269,59 @@ function createGeneralPurposeSubagentWithSanitizer(
     systemPrompt:
       generalPurposeConfig?.systemPrompt ??
       applyHarnessProfilePrompt(harnessProfile, GENERAL_PURPOSE_SUBAGENT.systemPrompt),
+    tools,
     middleware: [sanitizeBinaryFileToolResultsMiddleware],
   };
+}
+
+/**
+ * Maps an OpenWiki provider to the model-class-based provider hint deepagents'
+ * internal harness-profile resolution uses. deepagents only recognizes a
+ * model instance's provider by class name (ChatAnthropic -> "anthropic",
+ * ChatOpenAI -> "openai", ChatGoogleGenerativeAI -> "google"). `createModel`
+ * below instantiates ChatOpenAI for openai/baseten/fireworks alike, and
+ * ChatOpenRouter (unrecognized by deepagents) for openrouter — so those must
+ * map the same way here, or profile lookups silently diverge from what
+ * deepagents itself resolves for the main agent.
+ */
+function toHarnessProfileProviderHint(
+  provider: OpenWikiProvider,
+): string | undefined {
+  if (provider === "anthropic") {
+    return "anthropic";
+  }
+
+  if (provider === "openrouter") {
+    return undefined;
+  }
+
+  return "openai";
+}
+
+/** Mirrors deepagents' internal (unexported) `resolveHarnessProfile` resolution order. */
+function resolveOpenWikiHarnessProfile(
+  provider: OpenWikiProvider,
+  modelId: string,
+): HarnessProfile | undefined {
+  const providerHint = toHarnessProfileProviderHint(provider);
+
+  if (providerHint && !modelId.includes(":")) {
+    const profile = getHarnessProfile(`${providerHint}:${modelId}`);
+
+    if (profile) {
+      return profile;
+    }
+  }
+
+  if (modelId.includes(":")) {
+    const profile = getHarnessProfile(modelId);
+
+    if (profile) {
+      return profile;
+    }
+  }
+
+  return providerHint ? getHarnessProfile(providerHint) : undefined;
 }
 
 /** Mirrors deepagents' internal (unexported) prompt-assembly rule for a resolved harness profile. */
@@ -276,13 +363,15 @@ async function runOpenWikiAgentCore(
   emitDebug(options, `checkpointer=${formatUrlDebugValue(checkpointPath)}`);
   const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
   emitDebug(options, `thread=${threadId}`);
+  const mainAgentTools: StructuredTool[] = [];
   const generalPurposeSubagent = createGeneralPurposeSubagentWithSanitizer(
     provider,
     modelId,
+    mainAgentTools,
   );
   const agent = createDeepAgent({
     model,
-    tools: [],
+    tools: mainAgentTools,
     checkpointer,
     backend: new LocalShellBackend({
       maxOutputBytes: 100_000,
