@@ -11,6 +11,17 @@ const execFileAsync = promisify(execFile);
 
 export type OpenWikiContentSnapshot = string;
 
+export type UpdateNoopStatus =
+  | {
+      shouldSkip: true;
+      gitHead: string;
+      model: string;
+    }
+  | {
+      shouldSkip: false;
+      reason: string;
+    };
+
 /**
  * Builds the per-run context the prompt uses to reason about prior docs and git changes.
  */
@@ -30,6 +41,43 @@ export async function createRunContext(
   return {
     lastUpdate,
     gitSummary: await createGitSummary(command, cwd, lastUpdate),
+  };
+}
+
+export async function getUpdateNoopStatus(
+  cwd: string,
+): Promise<UpdateNoopStatus> {
+  const lastUpdate = await readLastUpdate(cwd);
+
+  if (!lastUpdate?.gitHead) {
+    return { shouldSkip: false, reason: "missing previous update git head" };
+  }
+
+  const head = await getGitHead(cwd);
+
+  if (!head || head !== lastUpdate.gitHead) {
+    return { shouldSkip: false, reason: "git head changed" };
+  }
+
+  const status = await runGit(cwd, [
+    "status",
+    "--short",
+    "--untracked-files=all",
+  ]);
+  const meaningfulStatus = status
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .filter((line) => !isUpdateMetadataStatusLine(line));
+
+  if (meaningfulStatus.length > 0) {
+    return { shouldSkip: false, reason: "worktree has changes" };
+  }
+
+  return {
+    shouldSkip: true,
+    gitHead: head,
+    model: lastUpdate.model,
   };
 }
 
@@ -281,6 +329,16 @@ async function runGit(cwd: string, args: string[]): Promise<string> {
 function formatGitSection(command: string, output: string): string {
   return [`$ ${command}`, output.length > 0 ? output : "(no output)"].join(
     "\n",
+  );
+}
+
+function isUpdateMetadataStatusLine(line: string): boolean {
+  const statusPath = line.length > 3 ? line.slice(3).trim() : line.trim();
+  const normalizedPath = statusPath.replace(/\\/gu, "/");
+
+  return (
+    normalizedPath === UPDATE_METADATA_PATH ||
+    normalizedPath.endsWith(` -> ${UPDATE_METADATA_PATH}`)
   );
 }
 

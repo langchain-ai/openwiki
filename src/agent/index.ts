@@ -35,6 +35,7 @@ import {
 } from "../constants.js";
 import {
   createOpenWikiContentSnapshot,
+  getUpdateNoopStatus,
   createRunContext,
   writeLastUpdateMetadata,
 } from "./utils.js";
@@ -56,6 +57,26 @@ export async function runOpenWikiAgent(
   await loadOpenWikiEnv();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
+
+  if (command === "update") {
+    const noopStatus = await getUpdateNoopStatus(cwd);
+
+    if (noopStatus.shouldSkip) {
+      const message =
+        "No repository changes detected since the last OpenWiki update; skipping agent run.";
+      emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
+      options.onEvent?.({ type: "text", text: message });
+
+      return {
+        command,
+        model: noopStatus.model,
+        skipped: true,
+      };
+    }
+
+    emitDebug(options, `update.noop=false reason=${noopStatus.reason}`);
+  }
+
   const provider = resolveConfiguredProvider();
   const providerConfig = getProviderConfig(provider);
   emitDebug(options, `provider=${provider}`);
