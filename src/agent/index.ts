@@ -5,7 +5,12 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
-import { createDeepAgent, LocalShellBackend } from "deepagents";
+import { createMiddleware } from "langchain";
+import {
+  createDeepAgent,
+  LocalShellBackend,
+  registerHarnessProfile,
+} from "deepagents";
 import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
@@ -164,6 +169,7 @@ async function runOpenWikiAgentCore(
   emitDebug(options, "openwiki.snapshot=created");
   const model = await createModel(provider, modelId);
   emitDebug(options, `model.provider=${provider}`);
+  configureDeepAgentHarness(provider, modelId);
   if (provider === "openrouter") {
     emitDebug(
       options,
@@ -180,6 +186,7 @@ async function runOpenWikiAgentCore(
   const agent = createDeepAgent({
     model,
     tools: [],
+    middleware: createOpenWikiMiddleware(),
     checkpointer,
     backend: new LocalShellBackend({
       maxOutputBytes: 100_000,
@@ -378,16 +385,15 @@ function resolveModelId(
 }
 
 async function createModel(provider: OpenWikiProvider, modelId: string) {
+  let model;
   if (provider === "anthropic") {
-    return new ChatAnthropic(modelId, {
+    model = new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
     });
-  }
-
-  if (provider === "openrouter") {
+  } else if (provider === "openrouter") {
     const models = createModelRoute(provider, modelId);
 
-    return new ChatOpenRouter({
+    model = new ChatOpenRouter({
       apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
@@ -395,30 +401,97 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       route: "fallback",
       siteName: "OpenWiki",
     });
+  } else {
+    const providerConfig = getProviderConfig(provider);
+
+    model = new ChatOpenAI({
+      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      configuration: providerConfig.baseURL
+        ? {
+            baseURL: providerConfig.baseURL,
+          }
+        : undefined,
+      model: modelId,
+    });
   }
 
-  const providerConfig = getProviderConfig(provider);
+  // Set the profile property to help limit transcript size when using OpenRouter (opt-in)
+  if (
+    provider === "openrouter" &&
+    process.env.OPENWIKI_OPENROUTER_MAX_INPUT_TOKENS
+  ) {
+    const rawVal = process.env.OPENWIKI_OPENROUTER_MAX_INPUT_TOKENS;
+    const parsedVal = parseInt(rawVal, 10);
+    if (Number.isFinite(parsedVal)) {
+      Object.defineProperty(model, "profile", {
+        value: { maxInputTokens: parsedVal },
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
+    }
+  }
 
-  return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: providerConfig.baseURL
-      ? {
-          baseURL: providerConfig.baseURL,
-        }
-      : undefined,
-    model: modelId,
-  });
+  return model;
 }
 
 function createModelRoute(
   provider: OpenWikiProvider,
   modelId: string,
 ): string[] {
-  if (provider !== "openrouter") {
+  if (provider !== "openrouter" || isModelFallbackDisabled()) {
     return [modelId];
   }
 
   return Array.from(new Set([modelId, ...OPENROUTER_FALLBACK_MODEL_IDS]));
+}
+
+function isModelFallbackDisabled(): boolean {
+  return process.env.OPENWIKI_DISABLE_MODEL_FALLBACK === "1";
+}
+
+function configureDeepAgentHarness(
+  provider: OpenWikiProvider,
+  modelId: string,
+): void {
+  if (!isSubagentDisabled()) {
+    return;
+  }
+
+  const profile = {
+    excludedTools: ["task"],
+    generalPurposeSubagent: {
+      enabled: false,
+    },
+  };
+
+  registerHarnessProfile(provider, profile);
+
+  if (!modelId.includes(":")) {
+    registerHarnessProfile(`${provider}:${modelId}`, profile);
+  }
+}
+
+function isSubagentDisabled(): boolean {
+  return process.env.OPENWIKI_DISABLE_SUBAGENTS === "1";
+}
+
+function createOpenWikiMiddleware() {
+  if (!isSubagentDisabled()) {
+    return [];
+  }
+
+  return [
+    createMiddleware({
+      name: "OpenWikiToolExclusionMiddleware",
+      wrapModelCall: async (request, handler) => {
+        return handler({
+          ...request,
+          tools: request.tools?.filter((tool) => tool.name !== "task"),
+        });
+      },
+    }),
+  ];
 }
 
 function shouldRetryOpenRouterServerError(

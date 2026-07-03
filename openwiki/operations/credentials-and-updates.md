@@ -20,6 +20,10 @@ The file stores provider configuration and API keys:
 - `OPENWIKI_MODEL_ID` — the default model ID
 - Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`
 - Optional LangSmith settings: `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`
+- Run-hardening options:
+  - `OPENWIKI_DISABLE_MODEL_FALLBACK` — set to `1` to disable OpenRouter fallback routing
+  - `OPENWIKI_DISABLE_SUBAGENTS` — set to `1` to disable subagent task delegation entirely
+  - `OPENWIKI_OPENROUTER_MAX_INPUT_TOKENS` — set a custom input token cap (suggested: `15000` for constrained models) for OpenRouter models to force early summarization and prevent HTTP 500 payload errors on large transcripts
 
 The loader merges those values into `process.env`, while preferring existing process-level values over file values. Deprecated keys (`OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT`) are skipped on load and removed on save.
 
