@@ -387,6 +387,7 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   if (provider === "deepseek") {
+    installDeepSeekFetchRewriter();
     return new ChatOpenAI({
       apiKey: process.env[DEEPSEEK_API_KEY_ENV_KEY],
       configuration: {
@@ -1035,6 +1036,75 @@ type OpenRouterResponseSummary = {
 
 const OPENROUTER_DEBUG_PROPERTY = "openRouterDebug";
 const OPENROUTER_DEBUG_BODY_LIMIT = 4_000;
+
+const DEEPSEEK_FETCH_REWRITER_INSTALLED = Symbol.for(
+  "openwiki.deepseekFetchRewriterInstalled",
+);
+
+function installDeepSeekFetchRewriter(): void {
+  const flaggedGlobal = globalThis as { [key: symbol]: boolean };
+
+  if (flaggedGlobal[DEEPSEEK_FETCH_REWRITER_INSTALLED]) {
+    return;
+  }
+  flaggedGlobal[DEEPSEEK_FETCH_REWRITER_INSTALLED] = true;
+
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = (async (input, init) => {
+    const url = getFetchInputUrl(input);
+
+    if (
+      url === null ||
+      !url.includes("api.deepseek.com") ||
+      !init ||
+      typeof init.body !== "string"
+    ) {
+      return originalFetch(input, init);
+    }
+
+    let parsedBody: unknown;
+    try {
+      parsedBody = JSON.parse(init.body);
+    } catch {
+      return originalFetch(input, init);
+    }
+
+    if (!isRecord(parsedBody) || !Array.isArray(parsedBody.messages)) {
+      return originalFetch(input, init);
+    }
+
+    const rewrittenMessages = parsedBody.messages.map((message) =>
+      rewriteMessageContentForDeepSeek(message),
+    );
+
+    return originalFetch(input, {
+      ...init,
+      body: JSON.stringify({ ...parsedBody, messages: rewrittenMessages }),
+    });
+  }) satisfies typeof fetch;
+}
+
+function rewriteMessageContentForDeepSeek(message: unknown): unknown {
+  if (!isRecord(message) || !Array.isArray(message.content)) {
+    return message;
+  }
+
+  const textParts: string[] = [];
+  for (const block of message.content) {
+    if (
+      isRecord(block) &&
+      block.type === "text" &&
+      typeof block.text === "string"
+    ) {
+      textParts.push(block.text);
+    } else if (isRecord(block) && typeof block.type === "string") {
+      textParts.push(`[omitted ${block.type} block]`);
+    }
+  }
+
+  return { ...message, content: textParts.join("\n") };
+}
 
 function installOpenRouterDebugFetch(
   options: OpenWikiRunOptions,
