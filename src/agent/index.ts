@@ -17,6 +17,8 @@ import type {
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
+  DEEPSEEK_API_KEY_ENV_KEY,
+  DEEPSEEK_BASE_URL,
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -381,6 +383,16 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    });
+  }
+
+  if (provider === "deepseek") {
+    return new ChatOpenAI({
+      apiKey: process.env[DEEPSEEK_API_KEY_ENV_KEY],
+      configuration: {
+        baseURL: DEEPSEEK_BASE_URL,
+      },
+      model: modelId,
     });
   }
 
