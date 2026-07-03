@@ -4,6 +4,7 @@ export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
+export const DEEPSEEK_API_KEY_ENV_KEY = "DEEPSEEK_API_KEY";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
@@ -13,6 +14,7 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "deepseek"
   | "fireworks"
   | "openai"
   | "openrouter";
@@ -34,6 +36,7 @@ type ProviderConfig = {
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openrouter",
   "baseten",
+  "deepseek",
   "fireworks",
   "openai",
   "anthropic",
@@ -47,6 +50,15 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
       { id: "moonshotai/Kimi-K2.7-Code", label: "Kimi K2.7 Code" },
+    ],
+  },
+  deepseek: {
+    apiKeyEnvKey: DEEPSEEK_API_KEY_ENV_KEY,
+    baseURL: "https://api.deepseek.com/v1",
+    label: "DeepSeek",
+    modelOptions: [
+      { id: "deepseek-chat", label: "DeepSeek V3" },
+      { id: "deepseek-reasoner", label: "DeepSeek R1" },
     ],
   },
   fireworks: {
