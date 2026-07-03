@@ -2,10 +2,19 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { ToolMessage } from "@langchain/core/messages";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
-import { createDeepAgent, LocalShellBackend } from "deepagents";
+import {
+  createDeepAgent,
+  GENERAL_PURPOSE_SUBAGENT,
+  getHarnessProfile,
+  LocalShellBackend,
+  type HarnessProfile,
+  type SubAgent,
+} from "deepagents";
+import { createMiddleware } from "langchain";
 import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
@@ -150,6 +159,96 @@ async function runOpenWikiAgentWithModelFallbacks(
     : new Error("OpenWiki run failed after model fallback attempts.");
 }
 
+/**
+ * deepagents' read_file tool returns non-text, non-image/audio/video files as a
+ * generic `{ type: "file", mimeType, data }` content block. When mimeType isn't
+ * "application/pdf", Anthropic's API rejects the resulting document content block
+ * (it only accepts application/pdf for base64 documents), crashing the whole run.
+ * Extensionless files (Dockerfile, LICENSE, CHANGELOG, ...) hit this because
+ * deepagents' MIME lookup defaults unknown extensions to application/octet-stream.
+ * Swap those blocks for a text placeholder instead of sending them to the model.
+ */
+const sanitizeBinaryFileToolResultsMiddleware = createMiddleware({
+  name: "SanitizeBinaryFileToolResults",
+  wrapToolCall: async (request, handler) => {
+    const result = await handler(request);
+
+    if (!(result instanceof ToolMessage) || !Array.isArray(result.content)) {
+      return result;
+    }
+
+    result.content = result.content.map((block) =>
+      isUnsupportedBinaryFileBlock(block)
+        ? {
+            type: "text",
+            text: `[OpenWiki] Skipped binary file (mime type "${block.mimeType}"): unsupported for inline preview. Anthropic's document content blocks only accept "application/pdf".`,
+          }
+        : block,
+    );
+
+    return result;
+  },
+});
+
+function isUnsupportedBinaryFileBlock(
+  block: unknown,
+): block is { type: "file"; mimeType: string } {
+  return (
+    typeof block === "object" &&
+    block !== null &&
+    (block as { type?: unknown }).type === "file" &&
+    typeof (block as { mimeType?: unknown }).mimeType === "string" &&
+    (block as { mimeType: string }).mimeType !== "application/pdf"
+  );
+}
+
+/**
+ * deepagents auto-adds the general-purpose subagent using a harness profile
+ * resolved for the configured model (e.g. registered prompt suffixes for
+ * specific Anthropic/OpenAI models), and that subagent doesn't inherit the
+ * main agent's `middleware`. To attach our sanitizer to it we have to
+ * redeclare it ourselves (deepagents' documented pattern for customizing the
+ * GP subagent), which means reproducing that same profile-aware default
+ * instead of hardcoding the bare `GENERAL_PURPOSE_SUBAGENT` — otherwise we'd
+ * silently drop any model-specific prompt tuning for other users' models.
+ *
+ * Returns `null` when the resolved profile explicitly disables the GP
+ * subagent, matching deepagents' own auto-add condition.
+ */
+function createGeneralPurposeSubagentWithSanitizer(
+  provider: OpenWikiProvider,
+  modelId: string,
+): SubAgent | null {
+  const harnessProfile = getHarnessProfile(`${provider}:${modelId}`);
+  const generalPurposeConfig = harnessProfile?.generalPurposeSubagent;
+
+  if (generalPurposeConfig?.enabled === false) {
+    return null;
+  }
+
+  return {
+    ...GENERAL_PURPOSE_SUBAGENT,
+    description:
+      generalPurposeConfig?.description ?? GENERAL_PURPOSE_SUBAGENT.description,
+    systemPrompt:
+      generalPurposeConfig?.systemPrompt ??
+      applyHarnessProfilePrompt(harnessProfile, GENERAL_PURPOSE_SUBAGENT.systemPrompt),
+    middleware: [sanitizeBinaryFileToolResultsMiddleware],
+  };
+}
+
+/** Mirrors deepagents' internal (unexported) prompt-assembly rule for a resolved harness profile. */
+function applyHarnessProfilePrompt(
+  profile: HarnessProfile | undefined,
+  basePrompt: string,
+): string {
+  const prompt = profile?.baseSystemPrompt ?? basePrompt;
+
+  return profile?.systemPromptSuffix !== undefined
+    ? `${prompt}\n\n${profile.systemPromptSuffix}`
+    : prompt;
+}
+
 async function runOpenWikiAgentCore(
   command: OpenWikiCommand,
   cwd: string,
@@ -177,6 +276,10 @@ async function runOpenWikiAgentCore(
   emitDebug(options, `checkpointer=${formatUrlDebugValue(checkpointPath)}`);
   const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
   emitDebug(options, `thread=${threadId}`);
+  const generalPurposeSubagent = createGeneralPurposeSubagentWithSanitizer(
+    provider,
+    modelId,
+  );
   const agent = createDeepAgent({
     model,
     tools: [],
@@ -188,6 +291,8 @@ async function runOpenWikiAgentCore(
       virtualMode: true,
     }),
     systemPrompt: createSystemPrompt(command),
+    middleware: [sanitizeBinaryFileToolResultsMiddleware],
+    subagents: generalPurposeSubagent ? [generalPurposeSubagent] : [],
   });
   emitDebug(options, "agent=created");
 
