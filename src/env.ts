@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
+  ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   isValidModelId,
@@ -35,6 +36,7 @@ const managedEnvKeys = [
   FIREWORKS_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   ANTHROPIC_API_KEY_ENV_KEY,
+  ANTHROPIC_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -76,6 +78,7 @@ export async function getCredentialDiagnostics(): Promise<
     createCredentialDiagnostic(FIREWORKS_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENAI_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(ANTHROPIC_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(ANTHROPIC_BASE_URL_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENROUTER_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENWIKI_MODEL_ID_ENV_KEY, fileEnv),
     createCredentialDiagnostic("LANGSMITH_API_KEY", fileEnv),
@@ -134,7 +137,9 @@ function createCredentialDiagnostic(
     source,
     length: value.length,
     preview:
-      key === OPENWIKI_MODEL_ID_ENV_KEY || key === OPENWIKI_PROVIDER_ENV_KEY
+      key === OPENWIKI_MODEL_ID_ENV_KEY ||
+      key === OPENWIKI_PROVIDER_ENV_KEY ||
+      key === ANTHROPIC_BASE_URL_ENV_KEY
         ? JSON.stringify(value)
         : createCredentialPreview(value),
     warnings:

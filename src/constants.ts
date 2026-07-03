@@ -4,6 +4,7 @@ export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
+export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
@@ -116,6 +117,29 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
 
 export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+/**
+ * Resolves the base URL a provider should talk to, letting an environment
+ * variable override the built-in default. Today only the Anthropic provider
+ * exposes an override (via ANTHROPIC_BASE_URL) so it can be pointed at an
+ * OpenAI-compatible gateway (LiteLLM), AWS Bedrock, GCP Vertex AI, or a
+ * self-hosted proxy. Returns `undefined` when no base URL is configured, so
+ * the underlying client falls back to the provider's public API.
+ */
+export function resolveProviderBaseURL(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  if (provider === "anthropic") {
+    const override = env[ANTHROPIC_BASE_URL_ENV_KEY]?.trim();
+
+    if (override) {
+      return override;
+    }
+  }
+
+  return getProviderConfig(provider).baseURL;
 }
 
 export function getProviderModelOptions(

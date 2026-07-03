@@ -31,6 +31,7 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   resolveConfiguredProvider,
+  resolveProviderBaseURL,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
@@ -379,8 +380,11 @@ function resolveModelId(
 
 async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
+    const anthropicApiUrl = resolveProviderBaseURL(provider);
+
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      ...(anthropicApiUrl ? { anthropicApiUrl } : {}),
     });
   }
 
@@ -397,13 +401,13 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
     });
   }
 
-  const providerConfig = getProviderConfig(provider);
+  const baseURL = resolveProviderBaseURL(provider);
 
   return new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: providerConfig.baseURL
+    configuration: baseURL
       ? {
-          baseURL: providerConfig.baseURL,
+          baseURL,
         }
       : undefined,
     model: modelId,

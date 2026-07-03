@@ -72,4 +72,25 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
 
+### Anthropic base URL (gateways, Bedrock, Vertex)
+
+The Anthropic provider talks to `api.anthropic.com` by default. To route it
+somewhere else — an OpenAI/Anthropic-compatible gateway such as
+[LiteLLM](https://docs.litellm.ai/), AWS Bedrock or GCP Vertex AI through a
+compatible proxy, or a self-hosted endpoint — set `ANTHROPIC_BASE_URL`:
+
+```sh
+# ~/.openwiki/.env
+OPENWIKI_PROVIDER="anthropic"
+OPENWIKI_MODEL_ID="claude-sonnet-5"
+ANTHROPIC_API_KEY="..."          # key/token your gateway expects
+ANTHROPIC_BASE_URL="https://your-gateway.example.com/anthropic"
+```
+
+`ANTHROPIC_BASE_URL` overrides the default and is threaded into the underlying
+`ChatAnthropic` client as `anthropicApiUrl`. Leave it unset to use Anthropic's
+public API. This is the path for enterprise deployments that must route model
+traffic through their own cloud contract or gateway rather than direct API
+billing.
+
 If there's an inference provider or model you'd like to see added, please open a PR!
