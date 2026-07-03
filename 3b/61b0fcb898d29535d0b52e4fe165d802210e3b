@@ -1,0 +1,39 @@
+src/constants.ts
+  s_53366a76aa6b6f::t_f2279767edbaea 37,58,92,121,175-185
+src/agent/prompt.ts
+  s_53366a76aa6b6f::t_bb93a748365f0b 38,41
+src/connectors/sources/gmail.ts
+  s_53366a76aa6b6f::t_e269bddafa4180 127,129,145,329,333,336
+  s_53366a76aa6b6f::t_cb157bc6a31462 1-126,128,130-144,146-275,282-328,330-332,334-335,337-420,424-470
+  s_53366a76aa6b6f::t_3d89fda9bc762a 276-281,421-423
+src/connectors/registry.ts
+  s_53366a76aa6b6f::t_246634f602fee4 2,22
+README.md
+  s_53366a76aa6b6f::t_479ad90429ab3c 107,112
+  s_53366a76aa6b6f::t_c6361e8c9131ac 121
+src/connectors/mcp-runtime.ts
+  s_53366a76aa6b6f::t_8ba49a03724025 20,38
+src/auth/configure.ts
+  s_53366a76aa6b6f::t_d4aa5ea5826863 132-147,149,194-195
+  s_53366a76aa6b6f::t_3d89fda9bc762a 2
+src/cli.tsx
+  s_53366a76aa6b6f::t_1c83eb1a406d7f 1605
+src/connectors/tools.ts
+  s_53366a76aa6b6f::t_41fe569816dccf 44,68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3b61b0fcb898d29535d0b52e4fe165d802210e3b",
+  "prompts": {},
+  "sessions": {
+    "s_53366a76aa6b6f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f1f27-d324-7112-9da9-3b3bff11b54e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
