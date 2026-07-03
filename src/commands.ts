@@ -28,6 +28,9 @@ export type CliCommand =
       print: boolean;
       shouldStart: boolean;
       userMessage: string | null;
+      apiKey: string | null;
+      baseUrl: string | null;
+      provider: string | null;
     }
   | {
       kind: "error";
@@ -42,6 +45,9 @@ export function parseCommand(argv: string[]): CliCommand {
 
   let dryRun = false;
   let modelId: string | null = null;
+  let provider: string | null = null;
+  let apiKey: string | null = null;
+  let baseUrl: string | null = null;
   let print = false;
   let command: OpenWikiCommand = "chat";
   const userMessageParts: string[] = [];
@@ -128,6 +134,72 @@ export function parseCommand(argv: string[]): CliCommand {
       continue;
     }
 
+    if (arg === "--provider") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${arg} requires a provider.`,
+        };
+      }
+
+      provider = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--provider=")) {
+      const [, val = ""] = arg.split("=", 2);
+      provider = val;
+      continue;
+    }
+
+    if (arg === "--apiKey" || arg === "--api-key") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${arg} requires an API key.`,
+        };
+      }
+
+      apiKey = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--apiKey=") || arg.startsWith("--api-key=")) {
+      const [, val = ""] = arg.split("=", 2);
+      apiKey = val;
+      continue;
+    }
+
+    if (arg === "--baseUrl" || arg === "--base-url") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${arg} requires a base URL.`,
+        };
+      }
+
+      baseUrl = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--baseUrl=") || arg.startsWith("--base-url=")) {
+      const [, val = ""] = arg.split("=", 2);
+      baseUrl = val;
+      continue;
+    }
+
     if (arg.startsWith("-")) {
       return {
         kind: "error",
@@ -160,6 +232,9 @@ export function parseCommand(argv: string[]): CliCommand {
     print,
     shouldStart,
     userMessage,
+    apiKey,
+    baseUrl,
+    provider,
   };
 }
 
@@ -201,6 +276,18 @@ export const helpContent: HelpContent = {
     {
       label: "--modelId <id>",
       description: "Use a model ID for this run.",
+    },
+    {
+      label: "--provider <provider>",
+      description: "Use a model provider.",
+    },
+    {
+      label: "--apiKey <key>",
+      description: "Override the API key for the provider.",
+    },
+    {
+      label: "--baseUrl <url>",
+      description: "Override the base URL for the provider.",
     },
   ],
   developmentOptions: [

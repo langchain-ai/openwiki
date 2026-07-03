@@ -1602,13 +1602,7 @@ type ChatInputMenuState =
   | { kind: "none" };
 
 type SlashCommandId =
-  | "clear"
-  | "exit"
-  | "help"
-  | "init"
-  | "model"
-  | "provider"
-  | "update";
+  "clear" | "exit" | "help" | "init" | "model" | "provider" | "update";
 
 type SlashCommandOption = {
   description: string;
@@ -3023,7 +3017,17 @@ const argv = process.argv.slice(2);
 const parsedCommand = parseCommand(argv);
 
 if (parsedCommand.kind === "run" && !parsedCommand.dryRun) {
+  if (parsedCommand.provider) {
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] = parsedCommand.provider;
+  }
   await loadOpenWikiEnv();
+  const provider = resolveConfiguredProvider();
+  if (parsedCommand.apiKey) {
+    process.env[getProviderApiKeyEnvKey(provider)] = parsedCommand.apiKey;
+  }
+  if (parsedCommand.baseUrl) {
+    process.env[`${provider.toUpperCase()}_BASE_URL`] = parsedCommand.baseUrl;
+  }
 }
 
 const command = resolveStartupCommand(parsedCommand);

@@ -379,17 +379,26 @@ function resolveModelId(
 
 async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
+    const customBaseUrl =
+      process.env.ANTHROPIC_BASE_URL ??
+      process.env.ANTHROPIC_API_BASE ??
+      process.env.ANTHROPIC_API_URL;
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      anthropicApiUrl: customBaseUrl,
     });
   }
 
   if (provider === "openrouter") {
     const models = createModelRoute(provider, modelId);
+    const customBaseUrl =
+      process.env.OPENROUTER_BASE_URL ??
+      process.env.OPENROUTER_API_BASE ??
+      OPENROUTER_BASE_URL;
 
     return new ChatOpenRouter({
       apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
-      baseURL: OPENROUTER_BASE_URL,
+      baseURL: customBaseUrl,
       model: modelId,
       models,
       route: "fallback",
@@ -398,12 +407,16 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   const providerConfig = getProviderConfig(provider);
+  const customBaseUrl =
+    process.env[`${provider.toUpperCase()}_BASE_URL`] ??
+    process.env[`${provider.toUpperCase()}_API_BASE`] ??
+    providerConfig.baseURL;
 
   return new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: providerConfig.baseURL
+    configuration: customBaseUrl
       ? {
-          baseURL: providerConfig.baseURL,
+          baseURL: customBaseUrl,
         }
       : undefined,
     model: modelId,

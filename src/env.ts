@@ -41,13 +41,20 @@ const managedEnvKeys = [
   "LANGSMITH_API_KEY",
   "LANGCHAIN_PROJECT",
   "LANGCHAIN_TRACING_V2",
+  "OPENAI_BASE_URL",
+  "OPENAI_API_BASE",
+  "ANTHROPIC_BASE_URL",
+  "ANTHROPIC_API_BASE",
+  "ANTHROPIC_API_URL",
+  "BASETEN_BASE_URL",
+  "BASETEN_API_BASE",
+  "FIREWORKS_BASE_URL",
+  "FIREWORKS_API_BASE",
+  "OPENROUTER_BASE_URL",
+  "OPENROUTER_API_BASE",
 ];
 
-const deprecatedEnvKeys = [
-  "OPENAI_BASE_URL",
-  "OPENAI_ORG_ID",
-  "OPENAI_PROJECT",
-];
+const deprecatedEnvKeys = ["OPENAI_ORG_ID", "OPENAI_PROJECT"];
 
 export async function loadOpenWikiEnv(): Promise<EnvMap> {
   const env = await readOpenWikiEnv();
@@ -73,10 +80,15 @@ export async function getCredentialDiagnostics(): Promise<
   return [
     createCredentialDiagnostic(OPENWIKI_PROVIDER_ENV_KEY, fileEnv),
     createCredentialDiagnostic(BASETEN_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic("BASETEN_BASE_URL", fileEnv),
     createCredentialDiagnostic(FIREWORKS_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic("FIREWORKS_BASE_URL", fileEnv),
     createCredentialDiagnostic(OPENAI_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic("OPENAI_BASE_URL", fileEnv),
     createCredentialDiagnostic(ANTHROPIC_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic("ANTHROPIC_BASE_URL", fileEnv),
     createCredentialDiagnostic(OPENROUTER_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic("OPENROUTER_BASE_URL", fileEnv),
     createCredentialDiagnostic(OPENWIKI_MODEL_ID_ENV_KEY, fileEnv),
     createCredentialDiagnostic("LANGSMITH_API_KEY", fileEnv),
   ];
@@ -134,7 +146,11 @@ function createCredentialDiagnostic(
     source,
     length: value.length,
     preview:
-      key === OPENWIKI_MODEL_ID_ENV_KEY || key === OPENWIKI_PROVIDER_ENV_KEY
+      key === OPENWIKI_MODEL_ID_ENV_KEY ||
+      key === OPENWIKI_PROVIDER_ENV_KEY ||
+      key.endsWith("_BASE_URL") ||
+      key.endsWith("_API_BASE") ||
+      key.endsWith("_API_URL")
         ? JSON.stringify(value)
         : createCredentialPreview(value),
     warnings:
