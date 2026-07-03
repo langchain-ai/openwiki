@@ -18,6 +18,8 @@ import {
   ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
+  DEEPSEEK_API_KEY_ENV_KEY,
+  DEEPSEEK_BASE_URL,
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -45,6 +47,67 @@ import {
   shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
+
+// DeepSeek API rewriter: flattens array content into text to avoid 400 errors
+// on non-text content blocks (file, image, etc.)
+let deepseekFetchRewriterInstalled = false;
+
+function installDeepSeekFetchRewriter() {
+  if (deepseekFetchRewriterInstalled) {
+    return;
+  }
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async function (
+    input: string | URL | Request,
+    init?: RequestInit,
+  ): Promise<Response> {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
+
+    if (!url.includes("api.deepseek.com")) {
+      return originalFetch.call(globalThis, input, init);
+    }
+
+    if (init?.body) {
+      try {
+        const body =
+          typeof init.body === "string" ? JSON.parse(init.body) : null;
+
+        if (body?.messages && Array.isArray(body.messages)) {
+          body.messages = body.messages.map((msg: { content: unknown }) => {
+            if (Array.isArray(msg.content)) {
+              const textParts = msg.content
+                .filter((block: { type: string }) => block.type === "text")
+                .map((block: { text: string }) => block.text);
+
+              const nonTextTypes = msg.content
+                .filter((block: { type: string }) => block.type !== "text")
+                .map(
+                  (block: { type: string }) => `[omitted ${block.type} block]`,
+                );
+
+              msg.content = [...textParts, ...nonTextTypes].join("\n") || "";
+            }
+            return msg;
+          });
+
+          init.body = JSON.stringify(body);
+        }
+      } catch {
+        // If body parsing fails, pass through unchanged
+      }
+    }
+
+    return originalFetch.call(globalThis, input, init);
+  };
+
+  deepseekFetchRewriterInstalled = true;
+}
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -88,6 +151,12 @@ export async function runOpenWikiAgent(
   const provider = resolveConfiguredProvider();
   const providerBaseUrl = resolveProviderBaseUrl(provider);
   emitDebug(options, `provider=${provider}`);
+
+  // Install DeepSeek fetch rewriter only when using DeepSeek provider
+  if (provider === "deepseek") {
+    installDeepSeekFetchRewriter();
+  }
+
   if (providerBaseUrl) {
     emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
   }
@@ -438,6 +507,16 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       models,
       route: "fallback",
       siteName: "OpenWiki",
+    });
+  }
+
+  if (provider === "deepseek") {
+    return new ChatOpenAI({
+      apiKey: process.env[DEEPSEEK_API_KEY_ENV_KEY],
+      configuration: {
+        baseURL: DEEPSEEK_BASE_URL,
+      },
+      model: modelId,
     });
   }
 
@@ -1310,6 +1389,7 @@ function formatEnvironmentDebug(): string {
     OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     ANTHROPIC_BASE_URL_ENV_KEY,
+    DEEPSEEK_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,
     "LANGCHAIN_TRACING_V2",
