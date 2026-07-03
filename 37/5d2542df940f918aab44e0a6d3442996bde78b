@@ -1,0 +1,29 @@
+src/cli.tsx
+  s_53366a76aa6b6f::t_d84e34220a73ef 43,419,423,3795,3799-3800
+  s_53366a76aa6b6f::t_438c62817ad324 166,302
+  s_53366a76aa6b6f::t_744ef4aa8ed9ce 67,838
+src/agent/prompt.ts
+  s_53366a76aa6b6f::t_e15c55d9ab4ebc 52,65,68,70,73
+  s_53366a76aa6b6f::t_7abbcce3ad5ac0 67,71-72
+  s_53366a76aa6b6f::t_62b46cc817b6c9 18,27-32,66,69,159,212,306,308-310,315-318,320-322,324,331,333
+  s_53366a76aa6b6f::t_db8986c281cc4b 39,106-107,123,140,145
+  s_53366a76aa6b6f::t_d6e2eb243fb5ea 74
+src/agent/index.ts
+  s_53366a76aa6b6f::t_8a04b31d5475a4 12,48,51-52,54,85,167,296,299,303,319
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "375d2542df940f918aab44e0a6d3442996bde78b",
+  "prompts": {},
+  "sessions": {
+    "s_53366a76aa6b6f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f1f27-d324-7112-9da9-3b3bff11b54e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
