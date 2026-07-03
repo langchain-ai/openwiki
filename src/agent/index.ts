@@ -159,6 +159,7 @@ async function runOpenWikiAgentCore(
 ): Promise<OpenWikiRunResult> {
   const context = await createRunContext(command, cwd);
   emitDebug(options, "context=created");
+  emitDebug(options, `ignore.patterns=${context.ignoredPaths.length}`);
   const openWikiSnapshotBefore =
     command === "chat" ? null : await createOpenWikiContentSnapshot(cwd);
   emitDebug(options, "openwiki.snapshot=created");
@@ -187,7 +188,7 @@ async function runOpenWikiAgentCore(
       timeout: 120,
       virtualMode: true,
     }),
-    systemPrompt: createSystemPrompt(command),
+    systemPrompt: createSystemPrompt(command, context.ignoredPaths),
   });
   emitDebug(options, "agent=created");
 

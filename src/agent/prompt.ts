@@ -1,4 +1,8 @@
-import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
+import {
+  OPEN_WIKI_DIR,
+  OPENWIKI_IGNORE_PATH,
+  UPDATE_METADATA_PATH,
+} from "../constants.js";
 import { OpenWikiCommand, RunContext, UpdateMetadata } from "./types.js";
 
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
@@ -9,7 +13,28 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   return JSON.stringify(lastUpdate, null, 2);
 }
 
-export function createSystemPrompt(command: OpenWikiCommand): string {
+function createExclusionInstructions(ignoredPaths: string[]): string {
+  if (ignoredPaths.length === 0) {
+    return "";
+  }
+
+  return `
+Exclusions discipline:
+- The repository owner listed paths in ${OPENWIKI_IGNORE_PATH} that must be hidden from documentation. Treat each quoted entry as a path or glob pattern relative to the repository root; the quotes are not part of the pattern.
+- Excluded paths:
+${ignoredPaths.map((ignoredPath) => `  - ${JSON.stringify(ignoredPath)}`).join("\n")}
+- Do not list, read, glob, or grep excluded paths, do not run shell commands against them, and do not ask subagents to inspect them.
+- Excluded paths may still appear in git change summaries. Ignore them there; changes under excluded paths never require documentation updates.
+- Do not document excluded paths. Do not mention their contents, structure, or purpose anywhere in ${OPEN_WIKI_DIR}/ or in top-level agent instruction files.
+- During update runs, if existing documentation covers an excluded path, remove that content instead of refreshing it.
+- If an excluded path seems essential to explain the repository, document the surrounding behavior without describing the excluded path.
+`;
+}
+
+export function createSystemPrompt(
+  command: OpenWikiCommand,
+  ignoredPaths: string[] = [],
+): string {
   return `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
 
@@ -27,7 +52,7 @@ Run discipline:
 - Create a strong first-pass wiki that is accurate and navigable, then stop. The wiki can be refined in later update runs.
 - Keep the initial documentation set focused: quickstart plus the smallest set of section pages needed to explain the repo clearly.
 - Do not run commands that search outside the target repository.
-
+${createExclusionInstructions(ignoredPaths)}
 Subagent discipline:
 - You may use the task tool to parallelize read-only research during init and update runs when the repository has multiple substantial domains.
 - Default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.

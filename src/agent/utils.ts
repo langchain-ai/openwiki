@@ -3,7 +3,11 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
+import {
+  OPEN_WIKI_DIR,
+  OPENWIKI_IGNORE_PATH,
+  UPDATE_METADATA_PATH,
+} from "../constants.js";
 import type { OpenWikiCommand, RunContext, UpdateMetadata } from "./types.js";
 import type { Dirent } from "node:fs";
 
@@ -19,17 +23,20 @@ export async function createRunContext(
   cwd: string,
 ): Promise<RunContext> {
   const lastUpdate = await readLastUpdate(cwd);
+  const ignoredPaths = await readIgnoredPaths(cwd);
 
   if (command === "chat") {
     return {
       lastUpdate,
       gitSummary: "Not applicable for chat.",
+      ignoredPaths,
     };
   }
 
   return {
     lastUpdate,
     gitSummary: await createGitSummary(command, cwd, lastUpdate),
+    ignoredPaths,
   };
 }
 
@@ -69,6 +76,67 @@ export async function createOpenWikiContentSnapshot(
   await addDirectoryToSnapshot(hash, openWikiDir, "");
 
   return hash.digest("hex");
+}
+
+const MAX_IGNORED_PATHS = 200;
+const MAX_IGNORED_PATH_LENGTH = 200;
+
+/**
+ * Reads user-defined documentation exclusions from .openwikiignore at the repo root.
+ */
+async function readIgnoredPaths(cwd: string): Promise<string[]> {
+  const ignoreFile = path.join(cwd, OPENWIKI_IGNORE_PATH);
+  let rawIgnoreContent: string;
+
+  try {
+    rawIgnoreContent = await readFile(ignoreFile, "utf8");
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return [];
+    }
+
+    throw error;
+  }
+
+  const lines = rawIgnoreContent.split("\n").map((line) => line.trim());
+  const patterns: string[] = [];
+
+  for (const [lineIndex, line] of lines.entries()) {
+    if (line.length === 0 || line.startsWith("#")) {
+      continue;
+    }
+
+    if (line.startsWith("!")) {
+      throw new Error(
+        `${OPENWIKI_IGNORE_PATH}:${lineIndex + 1}: negation patterns are not supported. Remove the leading "!" or delete the line.`,
+      );
+    }
+
+    if (line.length > MAX_IGNORED_PATH_LENGTH) {
+      throw new Error(
+        `${OPENWIKI_IGNORE_PATH}:${lineIndex + 1}: pattern is longer than ${MAX_IGNORED_PATH_LENGTH} characters. Shorten or remove it.`,
+      );
+    }
+
+    // eslint-disable-next-line no-control-regex
+    if (/[\u0000-\u001f]/.test(line)) {
+      throw new Error(
+        `${OPENWIKI_IGNORE_PATH}:${lineIndex + 1}: pattern contains control characters. Remove them.`,
+      );
+    }
+
+    patterns.push(line);
+  }
+
+  const uniquePatterns = Array.from(new Set(patterns));
+
+  if (uniquePatterns.length > MAX_IGNORED_PATHS) {
+    throw new Error(
+      `${OPENWIKI_IGNORE_PATH} lists ${uniquePatterns.length} patterns; the maximum is ${MAX_IGNORED_PATHS}. Consolidate entries with broader glob patterns.`,
+    );
+  }
+
+  return uniquePatterns;
 }
 
 /**

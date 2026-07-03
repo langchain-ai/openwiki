@@ -68,6 +68,19 @@ On the first interactive run, OpenWiki will have you configure your inference pr
 
 These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.
 
+## Excluding Folders From Documentation
+
+To keep parts of your repository out of the wiki, add a `.openwikiignore` file to the repository root. Each line is a path or glob pattern relative to the repository root. Blank lines and lines starting with `#` are ignored. Negation patterns (lines starting with `!`) are not supported.
+
+```
+# Internal tooling that should not be documented
+scripts/internal
+vendor/
+**/legacy/**
+```
+
+OpenWiki will not explore or document excluded paths, and update runs remove existing wiki content that covers newly excluded paths.
+
 ## Customizing
 
 OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
