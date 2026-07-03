@@ -320,6 +320,11 @@ export function InitSetup({
         if (nextLangSmithKey.length > 0) {
           updates.LANGCHAIN_PROJECT = "openwiki";
           updates.LANGCHAIN_TRACING_V2 = "true";
+        } else {
+          // Blank input must act as an off switch: without this, a
+          // LANGCHAIN_TRACING_V2=true saved by an earlier setup stays in
+          // ~/.openwiki/.env and tracing silently remains enabled.
+          updates.LANGCHAIN_TRACING_V2 = "false";
         }
       }
 
