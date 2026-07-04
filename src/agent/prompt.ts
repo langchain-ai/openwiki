@@ -27,6 +27,7 @@ Run discipline:
 - Create a strong first-pass wiki that is accurate and navigable, then stop. The wiki can be refined in later update runs.
 - Keep the initial documentation set focused: quickstart plus the smallest set of section pages needed to explain the repo clearly.
 - Do not run commands that search outside the target repository.
+- To create a new file, always use write_file. Never use edit_file for file creation; edit_file is only for modifying existing files.
 
 Subagent discipline:
 - You may use the task tool to parallelize read-only research during init and update runs when the repository has multiple substantial domains.
