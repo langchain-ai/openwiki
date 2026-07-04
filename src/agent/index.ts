@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
-import { BaseMessage } from "@langchain/core/messages";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -386,79 +385,97 @@ function modelPrefersResponsesAPI(model: string): boolean {
   return false;
 }
 
-function sanitizeMessagesForOpenAI(
-  messages: BaseMessage[],
-  model: string,
-): BaseMessage[] {
+function sanitizeMessagesForOpenAI(messages: unknown, model: string): unknown {
   const prefersResponses = modelPrefersResponsesAPI(model);
 
   if (prefersResponses) {
     return messages;
   }
 
-  return messages.map((message) => {
-    if (!message.content) {
-      return message;
-    }
+  if (typeof messages === "string") {
+    return messages;
+  }
 
-    if (typeof message.content === "string") {
-      return message;
-    }
+  if (Array.isArray(messages)) {
+    return messages.map((message) => sanitizeSingleMessage(message));
+  }
 
-    if (Array.isArray(message.content)) {
-      const sanitizedContent = message.content.map((block) => {
-        if (typeof block === "object" && block !== null) {
-          const b = block as Record<string, unknown>;
-          if (b.type === "file") {
-            return {
-              type: "text",
-              text: `[Binary file content: ${b.mimeType || "unknown"}]`,
-            };
-          }
-        }
-        return block;
-      });
-
-      const clonedMessage = Object.create(Object.getPrototypeOf(message));
-      Object.assign(clonedMessage, message, { content: sanitizedContent });
-      return clonedMessage;
-    }
-
-    return message;
-  });
+  return sanitizeSingleMessage(messages);
 }
 
-class SanitizedChatOpenAI extends ChatOpenAI {
-  private sanitize(messages: BaseMessage[]): BaseMessage[] {
-    return sanitizeMessagesForOpenAI(messages, this.model);
+function sanitizeSingleMessage(message: unknown): unknown {
+  if (typeof message !== "object" || message === null) {
+    return message;
   }
 
-  async _generate(...args: Parameters<ChatOpenAI["_generate"]>) {
-    const [messages, options, runManager] = args;
-    return super._generate(this.sanitize(messages), options, runManager);
+  const msg = message as Record<string, unknown>;
+
+  if (!msg.content) {
+    return message;
   }
 
-  async *_streamChatModelEvents(
-    ...args: Parameters<ChatOpenAI["_streamChatModelEvents"]>
-  ) {
-    const [messages, options, runManager] = args;
-    yield* super._streamChatModelEvents(
-      this.sanitize(messages),
-      options,
-      runManager,
-    );
+  if (typeof msg.content === "string") {
+    return message;
   }
 
-  async *_streamResponseChunks(
-    ...args: Parameters<ChatOpenAI["_streamResponseChunks"]>
-  ) {
-    const [messages, options, runManager] = args;
-    yield* super._streamResponseChunks(
-      this.sanitize(messages),
-      options,
-      runManager,
-    );
+  if (Array.isArray(msg.content)) {
+    const sanitizedContent = msg.content.map((block) => {
+      if (typeof block === "object" && block !== null) {
+        const b = block as Record<string, unknown>;
+        if (b.type === "file") {
+          return {
+            type: "text",
+            text: `[Binary file content: ${b.mimeType || "unknown"}]`,
+          };
+        }
+      }
+      return block;
+    });
+
+    const clonedMessage = Object.create(Object.getPrototypeOf(message));
+    Object.assign(clonedMessage, message, { content: sanitizedContent });
+    return clonedMessage;
   }
+
+  return message;
+}
+
+function wrapModelWithSanitizer(model: ChatOpenAI): ChatOpenAI {
+  return new Proxy(model, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+      if (typeof value === "function") {
+        return function (this: unknown, ...args: unknown[]) {
+          if (
+            typeof prop === "string" &&
+            [
+              "invoke",
+              "stream",
+              "batch",
+              "_generate",
+              "_streamResponseChunks",
+              "_streamChatModelEvents",
+            ].includes(prop)
+          ) {
+            const messages = args[0];
+            if (messages !== undefined) {
+              if (prop === "batch") {
+                if (Array.isArray(messages)) {
+                  args[0] = messages.map((msgs) =>
+                    sanitizeMessagesForOpenAI(msgs, target.model),
+                  );
+                }
+              } else {
+                args[0] = sanitizeMessagesForOpenAI(messages, target.model);
+              }
+            }
+          }
+          return Reflect.apply(value, this === receiver ? target : this, args);
+        };
+      }
+      return value;
+    },
+  });
 }
 
 async function createModel(provider: OpenWikiProvider, modelId: string) {
@@ -483,7 +500,7 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
 
   const providerConfig = getProviderConfig(provider);
 
-  return new SanitizedChatOpenAI({
+  const model = new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
     configuration: providerConfig.baseURL
       ? {
@@ -492,6 +509,8 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       : undefined,
     model: modelId,
   });
+
+  return wrapModelWithSanitizer(model);
 }
 
 function createModelRoute(
