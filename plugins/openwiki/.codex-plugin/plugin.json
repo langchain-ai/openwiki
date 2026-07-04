@@ -1,0 +1,28 @@
+{
+  "name": "openwiki",
+  "version": "0.0.1",
+  "description": "Agent-native OpenWiki documentation workflows for Codex.",
+  "author": {
+    "name": "LangChain"
+  },
+  "homepage": "https://github.com/langchain-ai/openwiki",
+  "repository": "https://github.com/langchain-ai/openwiki",
+  "license": "MIT",
+  "keywords": ["documentation", "wiki", "agents", "codex"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OpenWiki",
+    "shortDescription": "Generate and maintain repository docs with Codex.",
+    "longDescription": "Run the OpenWiki documentation workflow with Codex's native model and tools, without configuring a separate OpenWiki provider API key.",
+    "developerName": "LangChain",
+    "category": "Productivity",
+    "capabilities": ["Write", "Interactive"],
+    "websiteURL": "https://github.com/langchain-ai/openwiki",
+    "defaultPrompt": [
+      "Initialize OpenWiki documentation for this repo.",
+      "Update the OpenWiki docs from recent changes.",
+      "Answer this from the OpenWiki docs."
+    ],
+    "brandColor": "#0F766E"
+  }
+}

@@ -22,6 +22,49 @@ Then to ensure your documentation stays up-to-date, add the GitHub action to you
 
 Copy the contents of that file into `.github/workflows/openwiki-update.yml` in your repository.
 
+## Codex and Claude Code
+
+OpenWiki also ships as an agent-native plugin for Codex CLI and Claude Code CLI. This path follows the same documentation workflow as the `openwiki` CLI, but it uses the model already available inside Codex or Claude Code, so it does not require a separate OpenWiki provider API key.
+
+### Codex CLI
+
+Add this repository as a Codex plugin marketplace:
+
+```sh
+codex plugin marketplace add langchain-ai/openwiki --sparse .agents/plugins --sparse plugins/openwiki
+```
+
+Then start Codex, open `/plugins`, select the OpenWiki marketplace, and install the `openwiki` plugin. Invoke it naturally with `@openwiki`, for example:
+
+```text
+@openwiki initialize documentation for this repository
+@openwiki update the OpenWiki docs from recent changes
+@openwiki answer this from the existing OpenWiki docs: how does auth work?
+```
+
+For local development, run `codex plugin marketplace add .` from this repository instead.
+
+### Claude Code CLI
+
+Add this repository as a Claude Code plugin marketplace and install the plugin:
+
+```sh
+claude plugin marketplace add langchain-ai/openwiki --sparse .claude-plugin plugins/openwiki
+claude plugin install openwiki@openwiki
+```
+
+Then run Claude Code and invoke the skill as:
+
+```text
+/openwiki:openwiki init
+/openwiki:openwiki update
+/openwiki:openwiki how is the CLI structured?
+```
+
+For local development, either run `claude --plugin-dir ./plugins/openwiki` or add the current checkout with `claude plugin marketplace add .`.
+
+The plugin writes documentation under `openwiki/`, preserves the same `quickstart.md` entrypoint, updates `AGENTS.md` and/or `CLAUDE.md` with the standard OpenWiki reference section when appropriate, and writes `openwiki/.last-update.json` only when documentation content changes.
+
 ## Usage
 
 Start the interactive CLI:
