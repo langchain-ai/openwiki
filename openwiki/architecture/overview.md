@@ -40,7 +40,7 @@ The agent runtime resolves the provider via `resolveConfiguredProvider()` in `sr
 
 Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 
-- **anthropic** → `ChatAnthropic` with the Anthropic API key.
+- **anthropic / zai** → `ChatAnthropic` with the provider's API key and optional `anthropicApiUrl` from `PROVIDER_CONFIGS` (`zai` points at the Z.AI GLM Coding Plan Anthropic endpoint).
 - **openrouter** → `ChatOpenRouter` with `route: "fallback"` and a list of fallback models.
 - **baseten / fireworks / openai** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
 

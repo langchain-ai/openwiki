@@ -31,6 +31,7 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   resolveConfiguredProvider,
+  ZAI_API_KEY_ENV_KEY,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
@@ -378,9 +379,12 @@ function resolveModelId(
 }
 
 async function createModel(provider: OpenWikiProvider, modelId: string) {
-  if (provider === "anthropic") {
+  if (provider === "anthropic" || provider === "zai") {
+    const providerConfig = getProviderConfig(provider);
+
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      anthropicApiUrl: providerConfig.baseURL,
     });
   }
 
@@ -1264,6 +1268,7 @@ function formatEnvironmentDebug(): string {
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    ZAI_API_KEY_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,
     "LANGCHAIN_TRACING_V2",
     "LANGCHAIN_PROJECT",

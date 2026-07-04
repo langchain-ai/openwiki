@@ -44,6 +44,7 @@ import {
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
   OPENWIKI_VERSION,
+  ZAI_API_KEY_ENV_KEY,
   type OpenWikiProvider,
 } from "./constants.js";
 import type { OpenWikiCommand } from "./agent/types.js";
@@ -2925,6 +2926,7 @@ function sanitizeDiagnosticText(value: string): string {
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    ZAI_API_KEY_ENV_KEY,
     "LANGSMITH_API_KEY",
   ]) {
     const secret = process.env[key];

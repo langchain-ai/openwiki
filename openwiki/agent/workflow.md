@@ -23,7 +23,7 @@ Chat runs skip metadata writes entirely.
 
 `createModel()` in `src/agent/index.ts` branches by provider:
 
-- **anthropic**: `new ChatAnthropic(modelId, { apiKey })` — uses `@langchain/anthropic` directly.
+- **anthropic / zai**: `new ChatAnthropic(modelId, { apiKey, anthropicApiUrl })` — uses `@langchain/anthropic` directly (`zai` sets `anthropicApiUrl` to the Z.AI GLM Coding Plan Anthropic endpoint, `https://api.z.ai/api/anthropic`).
 - **openrouter**: `new ChatOpenRouter({ apiKey, baseURL, model, models, route: "fallback", siteName: "OpenWiki" })` — passes a fallback model list so OpenRouter can route around server-side failures.
 - **baseten / fireworks / openai**: `new ChatOpenAI({ apiKey, configuration: { baseURL? }, model })` — OpenAI-compatible clients using the provider's custom base URL when configured.
 
