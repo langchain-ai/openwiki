@@ -75,7 +75,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [
       { id: "claude-haiku-4-5", label: "Haiku" },
       { id: "claude-sonnet-5", label: "Sonnet" },
-      { id: "claude-opus-4.8", label: "Opus" },
+      { id: "claude-opus-4-8", label: "Opus" },
     ],
   },
   openrouter: {
