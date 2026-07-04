@@ -4,6 +4,7 @@ export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
+export const DEEPSEEK_API_KEY_ENV_KEY = "DEEPSEEK_API_KEY";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
@@ -13,6 +14,7 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "deepseek"
   | "fireworks"
   | "openai"
   | "openrouter";
@@ -34,12 +36,22 @@ type ProviderConfig = {
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openrouter",
   "baseten",
+  "deepseek",
   "fireworks",
   "openai",
   "anthropic",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
+  deepseek: {
+    apiKeyEnvKey: DEEPSEEK_API_KEY_ENV_KEY,
+    baseURL: "https://api.deepseek.com/v1",
+    label: "DeepSeek",
+    modelOptions: [
+      { id: "deepseek-chat", label: "DeepSeek V3" },
+      { id: "deepseek-reasoner", label: "DeepSeek R1" },
+    ],
+  },
   baseten: {
     apiKeyEnvKey: BASETEN_API_KEY_ENV_KEY,
     baseURL: "https://inference.baseten.co/v1",
@@ -149,7 +161,8 @@ export function resolveConfiguredProvider(
 ): OpenWikiProvider {
   return (
     normalizeProvider(env[OPENWIKI_PROVIDER_ENV_KEY]) ??
-    (env[OPENROUTER_API_KEY_ENV_KEY] ? "openrouter" : DEFAULT_PROVIDER)
+    (env[DEEPSEEK_API_KEY_ENV_KEY] ? "deepseek" :
+     env[OPENROUTER_API_KEY_ENV_KEY] ? "openrouter" : DEFAULT_PROVIDER)
   );
 }
 
