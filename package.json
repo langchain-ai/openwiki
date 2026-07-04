@@ -43,7 +43,7 @@
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.3",
     "@langchain/openai": "^1.5.3",
     "@langchain/openrouter": "^0.4.3",
-    "deepagents": "^1.10.5",
+    "deepagents": "https://pkg.pr.new/deepagents@63aa2e1",
     "ink": "^5.1.0",
     "langchain": "^1.5.1",
     "marked": "^18.0.5",
