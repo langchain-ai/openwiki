@@ -44,7 +44,6 @@ const managedEnvKeys = [
 ];
 
 const deprecatedEnvKeys = [
-  "OPENAI_BASE_URL",
   "OPENAI_ORG_ID",
   "OPENAI_PROJECT",
 ];
