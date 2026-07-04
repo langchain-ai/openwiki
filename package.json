@@ -38,32 +38,26 @@
     "start": "node dist/cli.js"
   },
   "dependencies": {
-    "@langchain/anthropic": "^1.5.1",
-    "@langchain/core": "^1.2.1",
-    "@langchain/langgraph-checkpoint-sqlite": "^1.0.3",
-    "@langchain/openai": "^1.5.3",
-    "@langchain/openrouter": "^0.4.3",
-    "deepagents": "^1.10.5",
-    "ink": "^5.1.0",
-    "langchain": "^1.5.1",
-    "marked": "^18.0.5",
-    "react": "^18.3.1"
+    "@langchain/anthropic": "1.5.1",
+    "@langchain/core": "1.2.1",
+    "@langchain/langgraph-checkpoint-sqlite": "1.0.3",
+    "@langchain/openai": "1.5.3",
+    "@langchain/openrouter": "0.4.3",
+    "deepagents": "1.10.5",
+    "ink": "5.2.1",
+    "langchain": "1.5.1",
+    "marked": "18.0.5",
+    "react": "18.3.1"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^22.10.2",
-    "@types/react": "^18.3.17",
-    "eslint": "^10.5.0",
-    "prettier": "^3.8.4",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.62.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild"
-    ]
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.19.21",
+    "@types/react": "18.3.31",
+    "eslint": "10.5.0",
+    "prettier": "3.8.4",
+    "tsx": "4.22.4",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.62.0"
   },
   "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8"
 }

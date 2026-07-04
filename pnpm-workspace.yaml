@@ -1,0 +1,21 @@
+# Harden against supply chain attacks as per https://pnpm.io/supply-chain-security.
+
+# Fail if a package's trust level has decreased.
+trustPolicy: no-downgrade
+
+# Ignore trust check for packages older than 30 days (pre-provenance).
+trustPolicyIgnoreAfter: 43200  # minutes (30 days)
+
+# Prevent git/raw tarball transitive deps.
+blockExoticSubdeps: true
+
+# Require dependencies to be at least 1 week old.
+minimumReleaseAge: 10080  # 1 weeks (in minutes)
+
+# Allow build-only lifecycle scripts for these packages
+allowBuilds:
+  - better-sqlite3
+  - esbuild
+
+# Fail if any dependency runs an unauthorised lifecycle script.
+strictDepBuilds: true

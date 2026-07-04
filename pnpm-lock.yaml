@@ -9,59 +9,59 @@ importers:
   .:
     dependencies:
       '@langchain/anthropic':
-        specifier: ^1.5.1
+        specifier: 1.5.1
         version: 1.5.1(@langchain/core@1.2.1(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))
       '@langchain/core':
-        specifier: ^1.2.1
+        specifier: 1.2.1
         version: 1.2.1(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)
       '@langchain/langgraph-checkpoint-sqlite':
-        specifier: ^1.0.3
+        specifier: 1.0.3
         version: 1.0.3(@langchain/core@1.2.1(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(@langchain/langgraph-checkpoint@1.1.2(@langchain/core@1.2.1(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)))
       '@langchain/openai':
-        specifier: ^1.5.3
+        specifier: 1.5.3
         version: 1.5.3(@langchain/core@1.2.1(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)
       '@langchain/openrouter':
-        specifier: ^0.4.3
+        specifier: 0.4.3
         version: 0.4.3(@langchain/core@1.2.1(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(ws@8.21.0)(zod@4.4.3)
       deepagents:
-        specifier: ^1.10.5
+        specifier: 1.10.5
         version: 1.10.5(langsmith@0.7.10(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(react@18.3.1)(ws@8.21.0)
       ink:
-        specifier: ^5.1.0
+        specifier: 5.2.1
         version: 5.2.1(@types/react@18.3.31)(react@18.3.1)
       langchain:
-        specifier: ^1.5.1
+        specifier: 1.5.1
         version: 1.5.1(@langchain/core@1.2.1(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(openai@6.44.0(ws@8.21.0)(zod@4.4.3))(react@18.3.1)(ws@8.21.0)
       marked:
-        specifier: ^18.0.5
+        specifier: 18.0.5
         version: 18.0.5
       react:
-        specifier: ^18.3.1
+        specifier: 18.3.1
         version: 18.3.1
     devDependencies:
       '@eslint/js':
-        specifier: ^10.0.1
+        specifier: 10.0.1
         version: 10.0.1(eslint@10.5.0)
       '@types/node':
-        specifier: ^22.10.2
+        specifier: 22.19.21
         version: 22.19.21
       '@types/react':
-        specifier: ^18.3.17
+        specifier: 18.3.31
         version: 18.3.31
       eslint:
-        specifier: ^10.5.0
+        specifier: 10.5.0
         version: 10.5.0
       prettier:
-        specifier: ^3.8.4
+        specifier: 3.8.4
         version: 3.8.4
       tsx:
-        specifier: ^4.19.2
+        specifier: 4.22.4
         version: 4.22.4
       typescript:
-        specifier: ^5.7.2
+        specifier: 5.9.3
         version: 5.9.3
       typescript-eslint:
-        specifier: ^8.62.0
+        specifier: 8.62.0
         version: 8.62.0(eslint@10.5.0)(typescript@5.9.3)
 
 packages:
