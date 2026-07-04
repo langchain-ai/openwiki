@@ -17,6 +17,7 @@ import type {
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
+  DEEPSEEK_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -399,7 +400,7 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
 
   const providerConfig = getProviderConfig(provider);
 
-  return new ChatOpenAI({
+  const chatOpenAI = new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
     configuration: providerConfig.baseURL
       ? {
@@ -408,6 +409,72 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       : undefined,
     model: modelId,
   });
+
+  if (provider === "deepseek") {
+    return createDeepSeekModel(chatOpenAI, modelId);
+  }
+
+  return chatOpenAI;
+}
+
+/** Creates a ChatOpenAI model that strips `file` content blocks
+ * from outgoing messages, which DeepSeek's API rejects.
+ * Uses chat/completions endpoint-level request interception. */
+function createDeepSeekModel(
+  _original: ChatOpenAI,
+  modelId: string,
+): ChatOpenAI {
+  const baseURL = getProviderConfig("deepseek").baseURL!;
+  const apiKey = process.env[DEEPSEEK_API_KEY_ENV_KEY];
+
+  const originalFetch = globalThis.fetch;
+  const deepseekChatPath = "/v1/chat/completions";
+
+  globalThis.fetch = (async (input, init) => {
+    const url = typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : input.url;
+
+    if (url.includes(deepseekChatPath) && init?.body) {
+      try {
+        const body = JSON.parse(init.body as string);
+        if (Array.isArray(body.messages)) {
+          body.messages = body.messages.map(stripFileFromMessageContent);
+          init = { ...init, body: JSON.stringify(body) };
+        }
+      } catch {
+        // If body isn't JSON or parse fails, send as-is
+      }
+    }
+
+    return originalFetch(input, init);
+  }) satisfies typeof fetch;
+
+  return new ChatOpenAI({
+    apiKey,
+    configuration: { baseURL },
+    model: modelId,
+  });
+}
+
+/** Recursively strips any content block with type `file` from a message
+ * object in the OpenAI chat completion request format. */
+function stripFileFromMessageContent(
+  message: Record<string, unknown>,
+): Record<string, unknown> {
+  const content = message.content;
+  if (Array.isArray(content)) {
+    const filtered = content.filter(
+      (block: unknown) =>
+        typeof block !== "object" ||
+        block === null ||
+        (block as Record<string, unknown>).type !== "file",
+    );
+    return { ...message, content: filtered };
+  }
+  return message;
 }
 
 function createModelRoute(
