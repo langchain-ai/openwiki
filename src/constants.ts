@@ -5,6 +5,10 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const OLLAMA_API_KEY_ENV_KEY = "OLLAMA_API_KEY";
+export const OLLAMA_BASE_URL_ENV_KEY = "OLLAMA_BASE_URL";
+export const OLLAMA_DEFAULT_BASE_URL = "http://localhost:11434/v1";
+export const OLLAMA_DEFAULT_API_KEY = "ollama";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -14,6 +18,7 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
+  | "ollama"
   | "openai"
   | "openrouter";
 
@@ -37,6 +42,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "fireworks",
   "openai",
   "anthropic",
+  "ollama",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -92,6 +98,17 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
     ],
   },
+  ollama: {
+    apiKeyEnvKey: OLLAMA_API_KEY_ENV_KEY,
+    baseURL: OLLAMA_DEFAULT_BASE_URL,
+    label: "Ollama",
+    modelOptions: [
+      { id: "qwen2.5-coder:32b", label: "Qwen2.5 Coder 32B" },
+      { id: "qwen2.5-coder:7b", label: "Qwen2.5 Coder 7B" },
+      { id: "deepseek-coder-v2:16b", label: "DeepSeek Coder V2 16B" },
+      { id: "llama3.1:8b", label: "Llama 3.1 8B" },
+    ],
+  },
 };
 
 export const DEFAULT_MODEL_ID =
@@ -116,6 +133,49 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
 
 export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+const LOCAL_OLLAMA_HOSTS = new Set([
+  "localhost",
+  "127.0.0.1",
+  "::1",
+  "0.0.0.0",
+]);
+
+/**
+ * Ollama is keyless only when it points at a local daemon. When OLLAMA_BASE_URL
+ * is overridden to a remote host (e.g. Ollama Cloud at https://ollama.com/v1),
+ * a real OLLAMA_API_KEY is required, just like any other remote provider.
+ */
+export function ollamaUsesLocalBaseURL(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  const override = env[OLLAMA_BASE_URL_ENV_KEY]?.trim();
+
+  if (!override) {
+    return true;
+  }
+
+  try {
+    const host = new URL(override).hostname.toLowerCase();
+    const normalized =
+      host.startsWith("[") && host.endsWith("]") ? host.slice(1, -1) : host;
+
+    return LOCAL_OLLAMA_HOSTS.has(normalized);
+  } catch {
+    return false;
+  }
+}
+
+export function getProviderDefaultApiKey(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  if (provider !== "ollama") {
+    return null;
+  }
+
+  return ollamaUsesLocalBaseURL(env) ? OLLAMA_DEFAULT_API_KEY : null;
 }
 
 export function getProviderModelOptions(

@@ -7,6 +7,8 @@ import {
   FIREWORKS_API_KEY_ENV_KEY,
   isValidModelId,
   normalizeProvider,
+  OLLAMA_API_KEY_ENV_KEY,
+  OLLAMA_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -36,6 +38,8 @@ const managedEnvKeys = [
   OPENAI_API_KEY_ENV_KEY,
   ANTHROPIC_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OLLAMA_API_KEY_ENV_KEY,
+  OLLAMA_BASE_URL_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   "LANGSMITH_API_KEY",
@@ -77,6 +81,8 @@ export async function getCredentialDiagnostics(): Promise<
     createCredentialDiagnostic(OPENAI_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(ANTHROPIC_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENROUTER_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(OLLAMA_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(OLLAMA_BASE_URL_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENWIKI_MODEL_ID_ENV_KEY, fileEnv),
     createCredentialDiagnostic("LANGSMITH_API_KEY", fileEnv),
   ];
@@ -188,7 +194,7 @@ function getCredentialWarnings(value: string): string[] {
     warnings.push("contains quote character");
   }
 
-  if (/\[[^\]]+\]/u.test(value)) {
+  if (/\[[^\]]+\]/u.test(value) && !/^https?:\/\//iu.test(value)) {
     warnings.push("contains bracketed suffix/text");
   }
 

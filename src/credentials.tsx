@@ -4,6 +4,7 @@ import {
   DEFAULT_PROVIDER,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
+  getProviderDefaultApiKey,
   getProviderLabel,
   getProviderModelOptions,
   isValidModelId,
@@ -41,7 +42,7 @@ export function needsCredentialSetup(
 
   return (
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
-    !process.env[apiKeyEnvKey] ||
+    (providerRequiresApiKey(provider) && !process.env[apiKeyEnvKey]) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined
@@ -369,18 +370,8 @@ export function InitSetup({
         />
         <SetupStep
           label="Provider key"
-          state={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "done"
-              : step === "api-key"
-                ? "current"
-                : "pending"
-          }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
+          state={getProviderKeyState(provider, step)}
+          detail={getProviderKeyDetail(provider)}
         />
         <SetupStep
           label="Model"
@@ -630,7 +621,10 @@ function getInitialStep(
     return "provider";
   }
 
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (
+    providerRequiresApiKey(provider) &&
+    !process.env[getProviderApiKeyEnvKey(provider)]
+  ) {
     return "api-key";
   }
 
@@ -652,7 +646,10 @@ function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (
+    providerRequiresApiKey(provider) &&
+    !process.env[getProviderApiKeyEnvKey(provider)]
+  ) {
     return "api-key";
   }
 
@@ -777,6 +774,37 @@ function moveSelectionIndex(
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
   return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+}
+
+function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
+  return getProviderDefaultApiKey(provider) === null;
+}
+
+function getProviderKeyState(
+  provider: OpenWikiProvider,
+  step: PromptStep | null,
+): "current" | "done" | "optional" | "pending" {
+  if (process.env[getProviderApiKeyEnvKey(provider)]) {
+    return "done";
+  }
+
+  if (!providerRequiresApiKey(provider)) {
+    return "optional";
+  }
+
+  return step === "api-key" ? "current" : "pending";
+}
+
+function getProviderKeyDetail(provider: OpenWikiProvider): string {
+  if (process.env[getProviderApiKeyEnvKey(provider)]) {
+    return "available from environment";
+  }
+
+  if (!providerRequiresApiKey(provider)) {
+    return "optional — Ollama runs without a key";
+  }
+
+  return `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`;
 }
 
 function sanitizeInputChunk(value: string): string {

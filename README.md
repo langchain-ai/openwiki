@@ -70,6 +70,8 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, Anthropic, and Ollama out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+
+Ollama runs locally and needs no API key by default (it connects to `http://localhost:11434/v1`). To use a remote daemon or [Ollama Cloud](https://docs.ollama.com/cloud), set `OLLAMA_BASE_URL` (e.g. `https://ollama.com/v1`) and `OLLAMA_API_KEY` in `~/.openwiki/.env`.
 
 If there's an inference provider or model you'd like to see added, please open a PR!

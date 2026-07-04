@@ -31,6 +31,7 @@ import {
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
+  getProviderDefaultApiKey,
   getProviderLabel,
   getProviderModelOptions,
   isValidModelId,
@@ -241,7 +242,11 @@ function App({ command }: AppProps) {
 
     const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (
+      !process.env[apiKeyEnvKey] &&
+      getProviderDefaultApiKey(sessionProvider) === null &&
+      !process.stdin.isTTY
+    ) {
       setRunState({
         status: "error",
         message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
@@ -1506,7 +1511,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        "Enter a valid provider: openrouter, baseten, fireworks, openai, anthropic, or ollama.",
       );
       return;
     }
@@ -1521,7 +1526,7 @@ function ChatInput({
       setNotice(
         `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
           provider,
-        )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
+        )}. ${getProviderKeyNotice(provider)}`,
       );
     } catch (saveError) {
       setError(
@@ -3120,7 +3125,9 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
   ) {
     const provider = resolveConfiguredProvider();
     const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+    const hasProviderKey =
+      Boolean(process.env[apiKeyEnvKey]) ||
+      getProviderDefaultApiKey(provider) !== null;
 
     if (!hasProviderKey) {
       return {
@@ -3145,4 +3152,14 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
   }
 
   return command;
+}
+
+function getProviderKeyNotice(provider: OpenWikiProvider): string {
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  if (getProviderDefaultApiKey(provider) === null) {
+    return `Ensure ${apiKeyEnvKey} is set.`;
+  }
+
+  return `Set ${apiKeyEnvKey} only for remote Ollama or Ollama Cloud.`;
 }

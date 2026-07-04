@@ -21,9 +21,13 @@ import {
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderConfig,
+  getProviderDefaultApiKey,
   getProviderLabel,
   isValidModelId,
   normalizeModelId,
+  OLLAMA_API_KEY_ENV_KEY,
+  OLLAMA_BASE_URL_ENV_KEY,
+  OLLAMA_DEFAULT_BASE_URL,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
@@ -57,13 +61,10 @@ export async function runOpenWikiAgent(
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
   const provider = resolveConfiguredProvider();
-  const providerConfig = getProviderConfig(provider);
+  const providerBaseURL = resolveProviderBaseURL(provider);
   emitDebug(options, `provider=${provider}`);
-  if (providerConfig.baseURL) {
-    emitDebug(
-      options,
-      `provider.baseUrl=${JSON.stringify(providerConfig.baseURL)}`,
-    );
+  if (providerBaseURL) {
+    emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseURL)}`);
   }
   ensureProviderKey(provider);
   emitDebug(options, `credentials=${provider} key present`);
@@ -349,6 +350,10 @@ function isFileNotFoundError(error: unknown): boolean {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
+  if (getProviderDefaultApiKey(provider) !== null) {
+    return;
+  }
+
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   if (!process.env[apiKeyEnvKey]) {
@@ -397,17 +402,30 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
     });
   }
 
-  const providerConfig = getProviderConfig(provider);
+  const baseURL = resolveProviderBaseURL(provider);
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: providerConfig.baseURL
+    apiKey:
+      process.env[getProviderApiKeyEnvKey(provider)] ||
+      getProviderDefaultApiKey(provider) ||
+      undefined,
+    configuration: baseURL
       ? {
-          baseURL: providerConfig.baseURL,
+          baseURL,
         }
       : undefined,
     model: modelId,
   });
+}
+
+function resolveProviderBaseURL(
+  provider: OpenWikiProvider,
+): string | undefined {
+  if (provider === "ollama") {
+    return process.env[OLLAMA_BASE_URL_ENV_KEY] || OLLAMA_DEFAULT_BASE_URL;
+  }
+
+  return getProviderConfig(provider).baseURL;
 }
 
 function createModelRoute(
@@ -1264,6 +1282,8 @@ function formatEnvironmentDebug(): string {
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    OLLAMA_API_KEY_ENV_KEY,
+    OLLAMA_BASE_URL_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,
     "LANGCHAIN_TRACING_V2",
     "LANGCHAIN_PROJECT",
