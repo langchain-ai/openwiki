@@ -27,7 +27,6 @@ import {
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
-  OPENROUTER_FALLBACK_MODEL_IDS,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   resolveConfiguredProvider,
@@ -73,7 +72,7 @@ export async function runOpenWikiAgent(
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
   try {
-    return await runOpenWikiAgentWithModelFallbacks(
+    return await runOpenWikiAgentWithRetries(
       command,
       cwd,
       options,
@@ -89,7 +88,12 @@ export async function runOpenWikiAgent(
   }
 }
 
-async function runOpenWikiAgentWithModelFallbacks(
+// The user-selected model is authoritative: we never silently switch to a
+// different model. On a transient OpenRouter 5xx we retry the same model a
+// bounded number of times; every other error surfaces immediately.
+const MAX_RUN_ATTEMPTS = 2;
+
+async function runOpenWikiAgentWithRetries(
   command: OpenWikiCommand,
   cwd: string,
   options: OpenWikiRunOptions,
@@ -97,10 +101,9 @@ async function runOpenWikiAgentWithModelFallbacks(
   modelId: string,
   debugFetchCapture: OpenRouterFetchCapture,
 ): Promise<OpenWikiRunResult> {
-  const modelAttempts = createModelRoute(provider, modelId);
   let lastError: unknown = null;
 
-  for (const [attemptIndex, attemptModelId] of modelAttempts.entries()) {
+  for (let attemptIndex = 0; attemptIndex < MAX_RUN_ATTEMPTS; attemptIndex++) {
     const attemptOptions = createAttemptOptions(options, attemptIndex);
 
     debugFetchCapture.clearLastFailure();
@@ -108,7 +111,7 @@ async function runOpenWikiAgentWithModelFallbacks(
     if (attemptIndex > 0) {
       emitDebug(
         options,
-        `model.retry attempt=${attemptIndex + 1} model=${attemptModelId}`,
+        `model.retry attempt=${attemptIndex + 1} model=${modelId}`,
       );
     }
 
@@ -118,7 +121,7 @@ async function runOpenWikiAgentWithModelFallbacks(
         cwd,
         attemptOptions,
         provider,
-        attemptModelId,
+        modelId,
       );
     } catch (error) {
       const failure = debugFetchCapture.getLastFailure();
@@ -130,7 +133,7 @@ async function runOpenWikiAgentWithModelFallbacks(
         !shouldRetryOpenRouterServerError(
           failure,
           attemptIndex,
-          modelAttempts.length,
+          MAX_RUN_ATTEMPTS,
         )
       ) {
         throw error;
@@ -138,16 +141,14 @@ async function runOpenWikiAgentWithModelFallbacks(
 
       emitDebug(
         options,
-        `model.retrying status=${failure?.response?.status ?? "unknown"} next=${
-          modelAttempts[attemptIndex + 1]
-        }`,
+        `model.retrying status=${failure?.response?.status ?? "unknown"} model=${modelId}`,
       );
     }
   }
 
   throw lastError instanceof Error
     ? lastError
-    : new Error("OpenWiki run failed after model fallback attempts.");
+    : new Error("OpenWiki run failed after retry attempts.");
 }
 
 async function runOpenWikiAgentCore(
@@ -165,12 +166,7 @@ async function runOpenWikiAgentCore(
   const model = await createModel(provider, modelId);
   emitDebug(options, `model.provider=${provider}`);
   if (provider === "openrouter") {
-    emitDebug(
-      options,
-      `openrouter.route=fallback models=${JSON.stringify(
-        createModelRoute(provider, modelId),
-      )}`,
-    );
+    emitDebug(options, `openrouter.route=none model=${modelId}`);
   }
   emitDebug(options, "model=initialized");
   const checkpointer = await createCheckpointer();
@@ -385,14 +381,10 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   if (provider === "openrouter") {
-    const models = createModelRoute(provider, modelId);
-
     return new ChatOpenRouter({
       apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
-      models,
-      route: "fallback",
       siteName: "OpenWiki",
     });
   }
@@ -408,17 +400,6 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       : undefined,
     model: modelId,
   });
-}
-
-function createModelRoute(
-  provider: OpenWikiProvider,
-  modelId: string,
-): string[] {
-  if (provider !== "openrouter") {
-    return [modelId];
-  }
-
-  return Array.from(new Set([modelId, ...OPENROUTER_FALLBACK_MODEL_IDS]));
 }
 
 function shouldRetryOpenRouterServerError(
