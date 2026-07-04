@@ -450,6 +450,26 @@ function isModelFallbackDisabled(): boolean {
   return process.env.OPENWIKI_DISABLE_MODEL_FALLBACK === "1";
 }
 
+// The subagent delegation tool. Excluded from the model both via the harness
+// profile (below) and via runtime middleware so the same name is enforced in
+// one place.
+const SUBAGENT_TASK_TOOL_NAME = "task";
+
+/**
+ * The harness profile applied when subagents are disabled: it drops the task
+ * tool and turns off the general-purpose subagent. Pure and exported so the
+ * disabled shape can be asserted in tests without touching the global harness
+ * registry.
+ */
+export function buildSubagentDisabledProfile() {
+  return {
+    excludedTools: [SUBAGENT_TASK_TOOL_NAME],
+    generalPurposeSubagent: {
+      enabled: false,
+    },
+  };
+}
+
 function configureDeepAgentHarness(
   provider: OpenWikiProvider,
   modelId: string,
@@ -458,12 +478,7 @@ function configureDeepAgentHarness(
     return;
   }
 
-  const profile = {
-    excludedTools: ["task"],
-    generalPurposeSubagent: {
-      enabled: false,
-    },
-  };
+  const profile = buildSubagentDisabledProfile();
 
   registerHarnessProfile(provider, profile);
 
@@ -472,11 +487,11 @@ function configureDeepAgentHarness(
   }
 }
 
-function isSubagentDisabled(): boolean {
+export function isSubagentDisabled(): boolean {
   return process.env.OPENWIKI_DISABLE_SUBAGENTS === "1";
 }
 
-function createOpenWikiMiddleware() {
+export function createOpenWikiMiddleware() {
   if (!isSubagentDisabled()) {
     return [];
   }
@@ -487,7 +502,9 @@ function createOpenWikiMiddleware() {
       wrapModelCall: async (request, handler) => {
         return handler({
           ...request,
-          tools: request.tools?.filter((tool) => tool.name !== "task"),
+          tools: request.tools?.filter(
+            (tool) => tool.name !== SUBAGENT_TASK_TOOL_NAME,
+          ),
         });
       },
     }),
