@@ -4,7 +4,12 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
-import type { OpenWikiCommand, RunContext, UpdateMetadata } from "./types.js";
+import type {
+  OpenWikiCommand,
+  OpenWikiRunOptions,
+  RunContext,
+  UpdateMetadata,
+} from "./types.js";
 import type { Dirent } from "node:fs";
 
 const execFileAsync = promisify(execFile);
@@ -55,8 +60,8 @@ export async function getUpdateNoopStatus(
 
   const head = await getGitHead(cwd);
 
-  if (!head || head !== lastUpdate.gitHead) {
-    return { shouldSkip: false, reason: "git head changed" };
+  if (!head) {
+    return { shouldSkip: false, reason: "missing current git head" };
   }
 
   const status = await runGit(cwd, [
@@ -74,11 +79,29 @@ export async function getUpdateNoopStatus(
     return { shouldSkip: false, reason: "worktree has changes" };
   }
 
+  if (head !== lastUpdate.gitHead) {
+    const committedPaths = await getChangedPathsSinceLastUpdate(
+      cwd,
+      lastUpdate.gitHead,
+    );
+
+    if (
+      committedPaths.length === 0 ||
+      committedPaths.some((changedPath) => !isOpenWikiPath(changedPath))
+    ) {
+      return { shouldSkip: false, reason: "git head changed" };
+    }
+  }
+
   return {
     shouldSkip: true,
     gitHead: head,
     model: lastUpdate.model,
   };
+}
+
+export function shouldCheckUpdateNoop(options: OpenWikiRunOptions): boolean {
+  return !options.userMessage?.trim();
 }
 
 /**
@@ -340,6 +363,28 @@ function isUpdateMetadataStatusLine(line: string): boolean {
     normalizedPath === UPDATE_METADATA_PATH ||
     normalizedPath.endsWith(` -> ${UPDATE_METADATA_PATH}`)
   );
+}
+
+async function getChangedPathsSinceLastUpdate(
+  cwd: string,
+  gitHead: string,
+): Promise<string[]> {
+  const diff = await runGit(cwd, ["diff", "--name-only", `${gitHead}..HEAD`]);
+
+  return diff
+    .split("\n")
+    .map((line) => normalizeGitPath(line))
+    .filter(Boolean);
+}
+
+function isOpenWikiPath(changedPath: string): boolean {
+  return (
+    changedPath === OPEN_WIKI_DIR || changedPath.startsWith(`${OPEN_WIKI_DIR}/`)
+  );
+}
+
+function normalizeGitPath(value: string): string {
+  return value.trim().replace(/\\/gu, "/");
 }
 
 function isFileNotFoundError(error: unknown): boolean {

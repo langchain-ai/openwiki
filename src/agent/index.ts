@@ -37,6 +37,7 @@ import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
   createRunContext,
+  shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
 
@@ -58,7 +59,7 @@ export async function runOpenWikiAgent(
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
-  if (command === "update") {
+  if (command === "update" && shouldCheckUpdateNoop(options)) {
     const noopStatus = await getUpdateNoopStatus(cwd);
 
     if (noopStatus.shouldSkip) {
@@ -75,6 +76,8 @@ export async function runOpenWikiAgent(
     }
 
     emitDebug(options, `update.noop=false reason=${noopStatus.reason}`);
+  } else if (command === "update") {
+    emitDebug(options, "update.noop=false reason=user message provided");
   }
 
   const provider = resolveConfiguredProvider();

@@ -36,7 +36,7 @@
     "prebuild": "pnpm run clean",
     "prepack": "pnpm run build",
     "start": "node dist/cli.js",
-    "test": "tsx --test test/**/*.test.ts"
+    "test": "vitest run"
   },
   "dependencies": {
     "@langchain/anthropic": "^1.5.1",
@@ -58,7 +58,8 @@
     "prettier": "^3.8.4",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.62.0"
+    "typescript-eslint": "^8.62.0",
+    "vitest": "^4.1.9"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
