@@ -191,12 +191,6 @@ async function runOpenWikiAgentCore(
     handleToolErrors: true,
   });
 
-  // Programmatically guarantee handleToolErrors is set to true on the tools node bound toolNode
-  const toolsNode = (agent.graph as any).nodes?.tools;
-  if (toolsNode?.bound) {
-    toolsNode.bound.handleToolErrors = true;
-  }
-
   emitDebug(options, "agent=created");
 
   const input = {

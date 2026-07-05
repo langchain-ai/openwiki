@@ -35,7 +35,8 @@
     "lint:check": "eslint .",
     "prebuild": "pnpm run clean",
     "prepack": "pnpm run build",
-    "start": "node dist/cli.js"
+    "start": "node dist/cli.js",
+    "test": "tsx tests/agent_error.test.ts"
   },
   "dependencies": {
     "@langchain/anthropic": "^1.5.1",
