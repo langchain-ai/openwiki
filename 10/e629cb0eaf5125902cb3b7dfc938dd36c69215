@@ -1,0 +1,22 @@
+examples/openwiki-update.yml
+  s_b149eed69ae1d0::t_5cc78677c0fc0b 30-31
+README.md
+  s_b149eed69ae1d0::t_32b7a435e9afc3 21-32,37-42,77-82,89-92
+  s_b149eed69ae1d0::t_7172d50c319c94 93-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "10e629cb0eaf5125902cb3b7dfc938dd36c69215",
+  "prompts": {},
+  "sessions": {
+    "s_b149eed69ae1d0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f346d-38ae-7683-8830-335b48ccddb7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
