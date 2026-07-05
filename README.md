@@ -10,6 +10,8 @@ OpenWiki is a CLI that writes and maintains documentation for your codebase, bui
 npm install -g openwiki
 ```
 
+OpenWiki requires Node.js 20 or newer. The project currently runs CI on Node.js 22. If you encounter installation or runtime issues with Node.js 24, switch to Node.js 22 and reinstall OpenWiki.
+
 ## Quick Start
 
 Initialize OpenWiki, configure your model and API key, then generate documentation
