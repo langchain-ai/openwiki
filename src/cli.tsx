@@ -44,8 +44,11 @@ import {
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
   OPENWIKI_VERSION,
+  LANGFUSE_PUBLIC_KEY_ENV_KEY,
+  LANGFUSE_SECRET_KEY_ENV_KEY,
   type OpenWikiProvider,
 } from "./constants.js";
+import { isLangfuseConfigured } from "./tracing.js";
 import type { OpenWikiCommand } from "./agent/types.js";
 
 type RunState =
@@ -446,7 +449,8 @@ function App({ command }: AppProps) {
         runState.result.savedProvider ||
         runState.result.savedBaseUrl ||
         runState.result.savedModelId ||
-        runState.result.savedLangSmithKey ? (
+        runState.result.savedLangSmithKey ||
+        runState.result.savedLangfuseKey ? (
           <StatusLine tone="success" label="Credentials" value="saved" />
         ) : null}
         {runState.result.provider ? (
@@ -726,6 +730,7 @@ function Header({
   const tracingEnabled =
     process.env.LANGCHAIN_TRACING_V2 === "true" &&
     Boolean(process.env.LANGSMITH_API_KEY);
+  const langfuseTracingEnabled = isLangfuseConfigured();
 
   if (compact) {
     return (
@@ -745,6 +750,13 @@ function Header({
           </Text>
           <Text color={tracingEnabled ? "green" : "gray"}>
             LangSmith tracing {tracingEnabled ? "enabled" : "disabled"}
+          </Text>
+          <Text color="gray"> - </Text>
+          <Text color={langfuseTracingEnabled ? "green" : "gray"}>
+            {langfuseTracingEnabled ? "* " : "- "}
+          </Text>
+          <Text color={langfuseTracingEnabled ? "green" : "gray"}>
+            Langfuse tracing {langfuseTracingEnabled ? "enabled" : "disabled"}
           </Text>
           <Text color="gray"> - </Text>
           <Text color="cyan">{subtitle}</Text>
@@ -796,6 +808,13 @@ function Header({
         </Text>
         <Text color={tracingEnabled ? "green" : "gray"}>
           LangSmith tracing {tracingEnabled ? "enabled" : "disabled"}
+        </Text>
+        <Text color="gray"> - </Text>
+        <Text color={langfuseTracingEnabled ? "green" : "gray"}>
+          {langfuseTracingEnabled ? "* " : "- "}
+        </Text>
+        <Text color={langfuseTracingEnabled ? "green" : "gray"}>
+          Langfuse tracing {langfuseTracingEnabled ? "enabled" : "disabled"}
         </Text>
         <Text color="gray"> - </Text>
         <Text color="cyan">{subtitle}</Text>
@@ -2927,6 +2946,8 @@ function sanitizeDiagnosticText(value: string): string {
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
     "LANGSMITH_API_KEY",
+    LANGFUSE_SECRET_KEY_ENV_KEY,
+    LANGFUSE_PUBLIC_KEY_ENV_KEY,
   ]) {
     const secret = process.env[key];
 
@@ -2942,6 +2963,8 @@ function sanitizeDiagnosticText(value: string): string {
     )
     .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gu, "Bearer [REDACTED]")
     .replace(/\bsk-or-v1-[A-Za-z0-9_-]+/gu, "[REDACTED:OPENROUTER_API_KEY]")
+    .replace(/\bsk-lf-[A-Za-z0-9_-]+/gu, "[REDACTED:LANGFUSE_SECRET_KEY]")
+    .replace(/\bpk-lf-[A-Za-z0-9_-]+/gu, "[REDACTED:LANGFUSE_PUBLIC_KEY]")
     .replace(/\bsk-[A-Za-z0-9_-]+/gu, "[REDACTED:API_KEY]")
     .replace(/\bls[v_][A-Za-z0-9_-]+/gu, "[REDACTED:LANGSMITH_API_KEY]");
 }

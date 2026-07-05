@@ -25,6 +25,7 @@ export type InitSetupResult = {
   savedApiKey: boolean;
   savedBaseUrl: boolean;
   savedLangSmithKey: boolean;
+  savedLangfuseKey: boolean;
   savedModelId: boolean;
   savedProvider: boolean;
 };
@@ -35,7 +36,15 @@ type InitSetupProps = {
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "base-url" | "langsmith" | "model" | "provider";
+type PromptStep =
+  | "api-key"
+  | "base-url"
+  | "langfuse-base-url"
+  | "langfuse-public"
+  | "langfuse-secret"
+  | "langsmith"
+  | "model"
+  | "provider";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
@@ -49,7 +58,8 @@ export function needsCredentialSetup(
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
-    process.env.LANGSMITH_API_KEY === undefined
+    process.env.LANGSMITH_API_KEY === undefined ||
+    process.env.LANGFUSE_PUBLIC_KEY === undefined
   );
 }
 
@@ -79,6 +89,12 @@ export function InitSetup({
   const [baseUrl, setBaseUrl] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
+  const [langfusePublicKey, setLangfusePublicKey] = useState<string | null>(
+    null,
+  );
+  const [langfuseSecretKey, setLangfuseSecretKey] = useState<string | null>(
+    null,
+  );
   const [input, setInput] = useState("");
   const [providerSelectionIndex, setProviderSelectionIndex] = useState(() =>
     getProviderSelectionIndex(initialProvider),
@@ -106,6 +122,7 @@ export function InitSetup({
         savedApiKey: false,
         savedBaseUrl: false,
         savedLangSmithKey: false,
+        savedLangfuseKey: false,
         savedModelId: false,
         savedProvider: false,
       });
@@ -343,10 +360,81 @@ export function InitSetup({
       setLangSmithKey(nextLangSmithKey);
       setInput("");
 
+      if (process.env.LANGFUSE_PUBLIC_KEY === undefined) {
+        setStep("langfuse-public");
+        return;
+      }
+
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
         nextLangSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
+      });
+      return;
+    }
+
+    if (step === "langfuse-public") {
+      const nextLangfusePublicKey = input.trim();
+
+      setLangfusePublicKey(nextLangfusePublicKey);
+      setInput("");
+
+      if (nextLangfusePublicKey.length === 0) {
+        // Blank input disables Langfuse and skips the remaining Langfuse steps.
+        await completeSetup({
+          nextApiKey: apiKey,
+          nextBaseUrl: baseUrl,
+          nextLangSmithKey: langSmithKey,
+          nextLangfusePublicKey: "",
+          nextLangfuseSecretKey: null,
+          nextLangfuseBaseUrl: null,
+          nextModelId: modelId,
+          nextProvider: provider,
+        });
+        return;
+      }
+
+      setStep("langfuse-secret");
+      return;
+    }
+
+    if (step === "langfuse-secret") {
+      const nextLangfuseSecretKey = input.trim();
+
+      if (nextLangfuseSecretKey.length === 0) {
+        setError("LANGFUSE_SECRET_KEY is required when a public key is set.");
+        return;
+      }
+
+      setLangfuseSecretKey(nextLangfuseSecretKey);
+      setInput("");
+      setStep("langfuse-base-url");
+      return;
+    }
+
+    if (step === "langfuse-base-url") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length > 0 && !isValidBaseUrl(trimmedInput)) {
+        setError(
+          "Enter a valid http(s) base URL, or leave blank for the default.",
+        );
+        return;
+      }
+
+      const nextLangfuseBaseUrl = trimmedInput.length > 0 ? trimmedInput : null;
+
+      setInput("");
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextLangSmithKey: langSmithKey,
+        nextLangfusePublicKey: langfusePublicKey,
+        nextLangfuseSecretKey: langfuseSecretKey,
+        nextLangfuseBaseUrl,
         nextModelId: modelId,
         nextProvider: provider,
       });
@@ -357,6 +445,9 @@ export function InitSetup({
     nextApiKey: string | null;
     nextBaseUrl: string | null;
     nextLangSmithKey: string | null;
+    nextLangfusePublicKey?: string | null;
+    nextLangfuseSecretKey?: string | null;
+    nextLangfuseBaseUrl?: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
   };
@@ -365,6 +456,9 @@ export function InitSetup({
     nextApiKey,
     nextBaseUrl,
     nextLangSmithKey,
+    nextLangfusePublicKey = null,
+    nextLangfuseSecretKey = null,
+    nextLangfuseBaseUrl = null,
     nextModelId,
     nextProvider,
   }: CompleteSetupOptions) {
@@ -409,6 +503,22 @@ export function InitSetup({
         }
       }
 
+      if (nextLangfusePublicKey !== null) {
+        // A blank public key is saved as an empty marker so setup does not
+        // prompt for Langfuse again; a real key enables Langfuse tracing.
+        updates.LANGFUSE_PUBLIC_KEY = nextLangfusePublicKey;
+
+        if (nextLangfusePublicKey.length > 0) {
+          if (nextLangfuseSecretKey) {
+            updates.LANGFUSE_SECRET_KEY = nextLangfuseSecretKey;
+          }
+
+          if (nextLangfuseBaseUrl) {
+            updates.LANGFUSE_BASE_URL = nextLangfuseBaseUrl;
+          }
+        }
+      }
+
       if (Object.keys(updates).length > 0) {
         await saveOpenWikiEnv(updates);
       }
@@ -424,6 +534,8 @@ export function InitSetup({
         savedBaseUrl: nextBaseUrl !== null,
         savedLangSmithKey:
           nextLangSmithKey !== null && nextLangSmithKey.length > 0,
+        savedLangfuseKey:
+          nextLangfusePublicKey !== null && nextLangfusePublicKey.length > 0,
         savedModelId: nextModelId !== null,
         savedProvider: providerEnvChanged,
       });
@@ -510,6 +622,23 @@ export function InitSetup({
             process.env.LANGSMITH_API_KEY !== undefined
               ? "available from environment"
               : "optional tracing key"
+          }
+        />
+        <SetupStep
+          label="Langfuse"
+          state={
+            process.env.LANGFUSE_PUBLIC_KEY !== undefined
+              ? "done"
+              : step === "langfuse-public" ||
+                  step === "langfuse-secret" ||
+                  step === "langfuse-base-url"
+                ? "current"
+                : "optional"
+          }
+          detail={
+            process.env.LANGFUSE_PUBLIC_KEY !== undefined
+              ? "available from environment"
+              : "optional tracing keys"
           }
         />
         <SetupStep label="OpenWiki" state="done" detail="agent setup" />
@@ -733,6 +862,48 @@ function Prompt({
     );
   }
 
+  if (step === "langfuse-public") {
+    return (
+      <Box flexDirection="column">
+        <Text>Paste your Langfuse public key to trace runs (optional).</Text>
+        <Text>
+          <Text color="gray">$</Text> LANGFUSE_PUBLIC_KEY optional={" "}
+          <Text color="yellow">{mask(input)}</Text>
+        </Text>
+        <Text color="gray">Leave blank to skip Langfuse tracing.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "langfuse-secret") {
+    return (
+      <Box flexDirection="column">
+        <Text>Paste your Langfuse secret key.</Text>
+        <Text>
+          <Text color="gray">$</Text> LANGFUSE_SECRET_KEY={" "}
+          <Text color="yellow">{mask(input)}</Text>
+        </Text>
+        <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "langfuse-base-url") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter your Langfuse base URL (optional).</Text>
+        <Text>
+          <Text color="gray">$</Text> LANGFUSE_BASE_URL={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          Leave blank to use Langfuse Cloud, or set the URL of your Langfuse
+          instance. Press Enter to continue.
+        </Text>
+      </Box>
+    );
+  }
+
   return null;
 }
 
@@ -767,6 +938,10 @@ function getInitialStep(
 
   if (process.env.LANGSMITH_API_KEY === undefined) {
     return "langsmith";
+  }
+
+  if (process.env.LANGFUSE_PUBLIC_KEY === undefined) {
+    return "langfuse-public";
   }
 
   return null;
@@ -807,6 +982,10 @@ function getNextStepAfterBaseUrl(
 
   if (process.env.LANGSMITH_API_KEY === undefined) {
     return "langsmith";
+  }
+
+  if (process.env.LANGFUSE_PUBLIC_KEY === undefined) {
+    return "langfuse-public";
   }
 
   return null;

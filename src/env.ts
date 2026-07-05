@@ -7,6 +7,9 @@ import {
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   isValidModelId,
+  LANGFUSE_BASE_URL_ENV_KEY,
+  LANGFUSE_PUBLIC_KEY_ENV_KEY,
+  LANGFUSE_SECRET_KEY_ENV_KEY,
   normalizeProvider,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
@@ -47,6 +50,9 @@ const managedEnvKeys = [
   "LANGSMITH_API_KEY",
   "LANGCHAIN_PROJECT",
   "LANGCHAIN_TRACING_V2",
+  LANGFUSE_PUBLIC_KEY_ENV_KEY,
+  LANGFUSE_SECRET_KEY_ENV_KEY,
+  LANGFUSE_BASE_URL_ENV_KEY,
 ];
 
 const deprecatedEnvKeys = [
@@ -88,6 +94,9 @@ export async function getCredentialDiagnostics(): Promise<
     createCredentialDiagnostic(OPENROUTER_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENWIKI_MODEL_ID_ENV_KEY, fileEnv),
     createCredentialDiagnostic("LANGSMITH_API_KEY", fileEnv),
+    createCredentialDiagnostic(LANGFUSE_PUBLIC_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(LANGFUSE_SECRET_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(LANGFUSE_BASE_URL_ENV_KEY, fileEnv),
   ];
 }
 
@@ -178,7 +187,8 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
-    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||
+    key === LANGFUSE_BASE_URL_ENV_KEY
   );
 }
 

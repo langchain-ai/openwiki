@@ -47,9 +47,10 @@ The first interactive run can prompt for:
 - the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`),
 - a **base URL** for providers that require one (the openai-compatible provider prompts for `OPENAI_COMPATIBLE_BASE_URL`),
 - a **model ID** stored as `OPENWIKI_MODEL_ID` — chosen from the provider's model list or a custom ID,
-- optional `LANGSMITH_API_KEY` for tracing.
+- optional `LANGSMITH_API_KEY` for LangSmith tracing,
+- optional Langfuse tracing keys (`LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and an optional `LANGFUSE_BASE_URL`).
 
-If a LangSmith key is provided, onboarding also enables `LANGCHAIN_PROJECT=openwiki` and `LANGCHAIN_TRACING_V2=true`.
+If a LangSmith key is provided, onboarding also enables `LANGCHAIN_PROJECT=openwiki` and `LANGCHAIN_TRACING_V2=true`. If Langfuse keys are provided, runs are traced to Langfuse; `LANGFUSE_BASE_URL` is optional and defaults to Langfuse Cloud, so the same setup works for managed and self-hosted instances.
 
 `src/credentials.tsx` determines whether setup is needed and walks the user through the missing values using arrow-key selection menus for provider and model. See [Credentials and updates](../operations/credentials-and-updates.md) for details.
 

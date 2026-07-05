@@ -45,6 +45,16 @@ import {
   shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
+import {
+  createLangfuseCallbackHandler,
+  flushLangfuseTracing,
+  startLangfuseTracing,
+} from "../tracing.js";
+import {
+  LANGFUSE_BASE_URL_ENV_KEY,
+  LANGFUSE_PUBLIC_KEY_ENV_KEY,
+  LANGFUSE_SECRET_KEY_ENV_KEY,
+} from "../constants.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -204,6 +214,12 @@ async function runOpenWikiAgentCore(
   emitDebug(options, `checkpointer=${formatUrlDebugValue(checkpointPath)}`);
   const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
   emitDebug(options, `thread=${threadId}`);
+  const langfuseTracingEnabled = startLangfuseTracing();
+  emitDebug(
+    options,
+    `langfuse.tracing=${langfuseTracingEnabled ? "enabled" : "disabled"}`,
+  );
+  const langfuseCallbackHandler = createLangfuseCallbackHandler();
   const agent = createDeepAgent({
     model,
     tools: [],
@@ -234,23 +250,32 @@ async function runOpenWikiAgentCore(
     },
     streamMode: ["messages", "tools"],
     subgraphs: true,
+    ...(langfuseCallbackHandler
+      ? { callbacks: [langfuseCallbackHandler] }
+      : {}),
   });
   emitDebug(options, "stream=started modes=messages,tools subgraphs=true");
 
   let unhandledChunkCount = 0;
 
-  for await (const chunk of stream) {
-    const event = parseStreamEvent(chunk);
+  try {
+    for await (const chunk of stream) {
+      const event = parseStreamEvent(chunk);
 
-    if (event) {
-      options.onEvent?.(event);
-    } else if (options.debug && unhandledChunkCount < 3) {
-      emitDebug(
-        options,
-        `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
-      );
-      unhandledChunkCount += 1;
+      if (event) {
+        options.onEvent?.(event);
+      } else if (options.debug && unhandledChunkCount < 3) {
+        emitDebug(
+          options,
+          `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
+        );
+        unhandledChunkCount += 1;
+      }
     }
+  } finally {
+    // Export buffered spans even if the stream errors, so short-lived runs
+    // (for example --print in CI) do not drop the trace.
+    await flushLangfuseTracing();
   }
   emitDebug(options, "stream=completed");
   await chmodIfExists(checkpointPath, 0o600);
@@ -1315,6 +1340,9 @@ function formatEnvironmentDebug(): string {
     "LANGCHAIN_TRACING_V2",
     "LANGCHAIN_PROJECT",
     "LANGCHAIN_ENDPOINT",
+    LANGFUSE_PUBLIC_KEY_ENV_KEY,
+    LANGFUSE_SECRET_KEY_ENV_KEY,
+    LANGFUSE_BASE_URL_ENV_KEY,
   ];
 
   return keys
@@ -1330,12 +1358,17 @@ function formatDebugValue(key: string, value: string | undefined): string {
   if (
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
-    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||
+    key === LANGFUSE_BASE_URL_ENV_KEY
   ) {
     return formatUrlDebugValue(value);
   }
 
-  if (key.endsWith("_API_KEY")) {
+  if (
+    key.endsWith("_API_KEY") ||
+    key === LANGFUSE_SECRET_KEY_ENV_KEY ||
+    key === LANGFUSE_PUBLIC_KEY_ENV_KEY
+  ) {
     return `set(length=${value.length})`;
   }
 

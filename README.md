@@ -64,7 +64,7 @@ openwiki --help
 
 `openwiki` will automatically append prompting to your `AGENTS.md` and/or `CLAUDE.md` files to instruct your coding agent to reference it when searching for context. If the file does not already exist in your repository, OpenWiki will create it for you.
 
-On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
+On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set up tracing for your OpenWiki runs with either LangSmith or Langfuse (both optional).
 
 These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.
 
@@ -100,5 +100,33 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
+
+## Tracing
+
+OpenWiki can trace runs to either LangSmith or Langfuse. Configure either (or
+neither) during the first interactive run, or set the environment variables
+directly.
+
+### LangSmith
+
+Set a LangSmith API key to trace runs to a LangSmith project named `openwiki`:
+
+```bash
+LANGSMITH_API_KEY=your-langsmith-key
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_PROJECT=openwiki
+```
+
+### Langfuse
+
+Set your Langfuse keys to trace runs to Langfuse. `LANGFUSE_BASE_URL` is
+optional and defaults to Langfuse Cloud; point it at your own Langfuse instance
+to use a self-hosted deployment — no other change is required:
+
+```bash
+LANGFUSE_PUBLIC_KEY=your-langfuse-public-key
+LANGFUSE_SECRET_KEY=your-langfuse-secret-key
+LANGFUSE_BASE_URL=https://cloud.langfuse.com
+```
 
 If there's an inference provider or model you'd like to see added, please open a PR!

@@ -21,6 +21,7 @@ The file stores provider configuration and API keys:
 - Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`
 - Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API) and `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint)
 - Optional LangSmith settings: `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`
+- Optional Langfuse settings: `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL` (the base URL is optional and defaults to Langfuse Cloud; set it to trace to a self-hosted instance)
 
 The loader merges those values into `process.env`, while preferring existing process-level values over file values. Deprecated keys (`OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT`) are skipped on load and removed on save.
 
@@ -30,6 +31,7 @@ The loader merges those values into `process.env`, while preferring existing pro
 - prompts for the provider's API key,
 - prompts for a model choice (arrow-key selection from the provider's model list, or a custom model ID),
 - optionally prompts for a LangSmith key,
+- optionally prompts for Langfuse keys (public key, secret key, and an optional base URL),
 - writes the results with restrictive file permissions,
 - removes deprecated OpenAI-related environment variables when saving.
 
@@ -43,7 +45,7 @@ The setup flow runs for **all** interactive commands (chat, init, and update) wh
 2. Otherwise, if `OPENROUTER_API_KEY` is present, default to `openrouter`.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openrouter`).
 
-`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var, the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing value triggers the interactive flow.
+`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var, the provider's API key, a model ID (unless overridden), a LangSmith key, and a Langfuse public key are all present. Any missing value triggers the interactive flow.
 
 ## Model and credential diagnostics
 
@@ -57,7 +59,7 @@ The env layer also produces diagnostics for the CLI UI. Those diagnostics report
 - invalid model IDs,
 - invalid provider values.
 
-Diagnostics cover all six provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, and base URLs are shown in full).
+Diagnostics cover all six provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), `LANGSMITH_API_KEY`, and the Langfuse keys (`LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL`). This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, and base URLs are shown in full).
 
 ## Update metadata
 
