@@ -122,7 +122,10 @@ export function InitSetup({
           getDefaultModelId(initialProvider),
       ),
     );
-    setIsCustomModelInput(false);
+    setIsCustomModelInput(
+      initialStep === "model" &&
+        shouldStartWithCustomModelInput(initialProvider),
+    );
     setStep(initialStep);
   }, [initialProvider, modelIdOverride, onComplete]);
 
@@ -204,7 +207,6 @@ export function InitSetup({
           getDefaultModelId(selectedProvider),
         ),
       );
-      setIsCustomModelInput(false);
       setInput("");
       const nextStep = getNextStepAfterProvider(
         selectedProvider,
@@ -212,6 +214,10 @@ export function InitSetup({
       );
 
       if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" &&
+            shouldStartWithCustomModelInput(selectedProvider),
+        );
         setStep(nextStep);
         return;
       }
@@ -239,6 +245,9 @@ export function InitSetup({
       const nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
 
       if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
         setStep(nextStep);
         return;
       }
@@ -273,6 +282,9 @@ export function InitSetup({
       const nextStep = getNextStepAfterBaseUrl(provider, modelIdOverride);
 
       if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
         setStep(nextStep);
         return;
       }
@@ -839,6 +851,10 @@ function getModelSelectionOptions(
     })),
     { kind: "custom" },
   ];
+}
+
+function shouldStartWithCustomModelInput(provider: OpenWikiProvider): boolean {
+  return getProviderModelOptions(provider).length === 0;
 }
 
 function getSelectedModelId(
