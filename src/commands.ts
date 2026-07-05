@@ -30,6 +30,11 @@ export type CliCommand =
       userMessage: string | null;
     }
   | {
+      kind: "config";
+      exitCode: 0;
+      modelId: string | null;
+    }
+  | {
       kind: "error";
       exitCode: 1;
       message: string;
@@ -84,6 +89,14 @@ export function parseCommand(argv: string[]): CliCommand {
 
       command = nextCommand;
       continue;
+    }
+
+    if (arg === "--config") {
+      return {
+        kind: "config",
+        exitCode: 0,
+        modelId,
+      };
     }
 
     if (arg === "--modelId" || arg === "--model-id") {
@@ -178,6 +191,7 @@ export const helpContent: HelpContent = {
     "openwiki [--modelId <model>] [message]",
     "openwiki --init [message]",
     "openwiki --update [message]",
+    "openwiki --config",
   ],
   commands: [
     {
@@ -199,6 +213,11 @@ export const helpContent: HelpContent = {
       description: "Run once and print the final assistant output.",
     },
     {
+      label: "--config",
+      description:
+        "Open interactive configuration to change provider, model, and API keys.",
+    },
+    {
       label: "--modelId <id>",
       description: "Use a model ID for this run.",
     },
@@ -215,6 +234,8 @@ export const helpContent: HelpContent = {
     "openwiki --update",
     'openwiki "What can you do?"',
     'openwiki -p "Summarize what OpenWiki can do"',
+    "openwiki --config",
+    "openwiki --config --modelId claude-sonnet-5",
     "openwiki --modelId gpt-5.5",
     'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
   ],

@@ -225,7 +225,7 @@ function App({ command }: AppProps) {
       return;
     }
 
-    if (command.dryRun) {
+    if (command.kind === "run" && command.dryRun) {
       process.exitCode = 0;
       app.exit();
       return;
@@ -412,6 +412,10 @@ function App({ command }: AppProps) {
         userMessage={command.userMessage}
       />
     );
+  }
+
+  if (command.kind === "config") {
+    return <ConfigView modelIdOverride={command.modelId} />;
   }
 
   if (shouldRunInteractiveCredentialSetup) {
@@ -3019,10 +3023,93 @@ function Rows({ rows }: RowsProps) {
   );
 }
 
+type ConfigViewProps = {
+  modelIdOverride: string | null;
+};
+
+function ConfigView({ modelIdOverride }: ConfigViewProps) {
+  const app = useApp();
+  const [showSummary, setShowSummary] = useState(false);
+  const [configResult, setConfigResult] = useState<InitSetupResult | null>(
+    null,
+  );
+
+  useInput(() => {
+    if (showSummary) {
+      app.exit();
+    }
+  });
+
+  useEffect(() => {
+    if (showSummary) {
+      const timer = setTimeout(() => app.exit(), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSummary, app]);
+
+  if (showSummary && configResult) {
+    return (
+      <Box flexDirection="column">
+        <Header
+          modelId={configResult.modelId ?? getDefaultModelId(
+            configResult.provider ?? resolveConfiguredProvider(),
+          )}
+          subtitle="Configuration saved"
+        />
+        {configResult.savedProvider ? (
+          <StatusLine
+            tone="muted"
+            label="Provider"
+            value={
+              configResult.provider
+                ? getProviderLabel(configResult.provider)
+                : "unchanged"
+            }
+          />
+        ) : null}
+        {configResult.savedModelId ? (
+          <StatusLine
+            tone="muted"
+            label="Model"
+            value={configResult.modelId ?? "unchanged"}
+          />
+        ) : null}
+        {configResult.savedApiKey ? (
+          <StatusLine tone="success" label="API key" value="saved" />
+        ) : null}
+        <StatusLine
+          tone="active"
+          label="Press any key"
+          value="to exit"
+        />
+      </Box>
+    );
+  }
+
+  return (
+    <InitSetup
+      modelIdOverride={modelIdOverride}
+      forceConfig
+      onComplete={(result) => {
+        setConfigResult(result);
+        setShowSummary(true);
+      }}
+      onError={(message) => {
+        process.exitCode = 1;
+        app.exit();
+      }}
+    />
+  );
+}
+
 const argv = process.argv.slice(2);
 const parsedCommand = parseCommand(argv);
 
 if (parsedCommand.kind === "run" && !parsedCommand.dryRun) {
+  await loadOpenWikiEnv();
+}
+
+if (parsedCommand.kind === "config") {
   await loadOpenWikiEnv();
 }
 

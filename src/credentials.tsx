@@ -27,6 +27,7 @@ export type InitSetupResult = {
 
 type InitSetupProps = {
   modelIdOverride?: string | null;
+  forceConfig?: boolean;
   onComplete: (result: InitSetupResult) => void;
   onError: (message: string) => void;
 };
@@ -50,6 +51,7 @@ export function needsCredentialSetup(
 
 export function InitSetup({
   modelIdOverride = null,
+  forceConfig = false,
   onComplete,
   onError,
 }: InitSetupProps) {
@@ -76,7 +78,9 @@ export function InitSetup({
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const initialStep = getInitialStep(modelIdOverride, initialProvider);
+    const initialStep = forceConfig
+      ? "provider"
+      : getInitialStep(modelIdOverride, initialProvider);
 
     if (initialStep === null) {
       onComplete({
@@ -103,7 +107,7 @@ export function InitSetup({
     );
     setIsCustomModelInput(false);
     setStep(initialStep);
-  }, [initialProvider, modelIdOverride, onComplete]);
+  }, [forceConfig, initialProvider, modelIdOverride, onComplete]);
 
   useInput((inputValue, key) => {
     if (isSaving || step === null) {
