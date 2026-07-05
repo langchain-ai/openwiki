@@ -5,7 +5,6 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
-export const OPENCODE_API_KEY_ENV_KEY = "OPENCODE_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -16,7 +15,6 @@ export type OpenWikiProvider =
   | "baseten"
   | "fireworks"
   | "openai"
-  | "opencode"
   | "openrouter";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
@@ -39,7 +37,6 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "fireworks",
   "openai",
   "anthropic",
-  "opencode",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -79,15 +76,6 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-haiku-4-5", label: "Haiku" },
       { id: "claude-sonnet-5", label: "Sonnet" },
       { id: "claude-opus-4.8", label: "Opus" },
-    ],
-  },
-  opencode: {
-    apiKeyEnvKey: OPENCODE_API_KEY_ENV_KEY,
-    baseURL: "http://127.0.0.1:4096/v1",
-    label: "OpenCode",
-    modelOptions: [
-      { id: "opencode/big-pickle", label: "Big Pickle" },
-      { id: "opencode/deepseek-v4-flash-free", label: "DeepSeek V4 Flash Free" },
     ],
   },
   openrouter: {
