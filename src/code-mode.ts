@@ -80,12 +80,8 @@ jobs:
       - name: Run OpenWiki
         run: openwiki code --update --print
         env:
-          OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}
           OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
-          ANTHROPIC_API_KEY: \${{ secrets.ANTHROPIC_API_KEY }}
-          FIREWORKS_API_KEY: \${{ secrets.FIREWORKS_API_KEY }}
-          BASETEN_API_KEY: \${{ secrets.BASETEN_API_KEY }}
-          OPENWIKI_MODEL_ID: \${{ vars.OPENWIKI_MODEL_ID }}
+          OPENWIKI_MODEL_ID: z-ai/glm-5.2
           LANGSMITH_API_KEY: \${{ secrets.LANGSMITH_API_KEY }}
           LANGCHAIN_PROJECT: openwiki
           LANGCHAIN_TRACING_V2: "true"
