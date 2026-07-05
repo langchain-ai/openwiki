@@ -7,7 +7,6 @@ export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const QWEN_API_KEY_ENV_KEY = "QWEN_API_KEY";
-export const QWEN_CN_API_KEY_ENV_KEY = "QWEN_CN_API_KEY";
 export const OPENWIKI_CUSTOM_BASE_URL_ENV_KEY = "OPENWIKI_CUSTOM_BASE_URL";
 export const OPENWIKI_CUSTOM_API_KEY_ENV_KEY = "OPENWIKI_CUSTOM_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
@@ -23,7 +22,6 @@ export type OpenWikiProvider =
   | "openai"
   | "openrouter"
   | "qwen"
-  | "qwen-cn"
   | "custom";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
@@ -48,7 +46,6 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "anthropic",
   "qwen",
-  "qwen-cn",
   "custom",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
@@ -109,18 +106,6 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     apiKeyEnvKey: QWEN_API_KEY_ENV_KEY,
     baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     label: "Qwen (International)",
-    modelOptions: [
-      { id: "qwen3.7-max", label: "Qwen 3.7 Max" },
-      { id: "qwen3.7-plus", label: "Qwen 3.7 Plus" },
-      { id: "qwen3.6-max", label: "Qwen 3.6 Max" },
-      { id: "qwen3.6-plus", label: "Qwen 3.6 Plus" },
-      { id: "qwen3.6-flash", label: "Qwen 3.6 Flash" },
-    ],
-  },
-  "qwen-cn": {
-    apiKeyEnvKey: QWEN_CN_API_KEY_ENV_KEY,
-    baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    label: "Qwen (China)",
     modelOptions: [
       { id: "qwen3.7-max", label: "Qwen 3.7 Max" },
       { id: "qwen3.7-plus", label: "Qwen 3.7 Plus" },

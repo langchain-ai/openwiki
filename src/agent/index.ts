@@ -34,7 +34,6 @@ import {
   OPENWIKI_CUSTOM_API_KEY_ENV_KEY,
   OPENWIKI_CUSTOM_BASE_URL_ENV_KEY,
   QWEN_API_KEY_ENV_KEY,
-  QWEN_CN_API_KEY_ENV_KEY,
   resolveConfiguredProvider,
   type OpenWikiProvider,
 } from "../constants.js";
@@ -1285,7 +1284,6 @@ function formatEnvironmentDebug(): string {
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
     QWEN_API_KEY_ENV_KEY,
-    QWEN_CN_API_KEY_ENV_KEY,
     OPENWIKI_CUSTOM_BASE_URL_ENV_KEY,
     OPENWIKI_CUSTOM_API_KEY_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,

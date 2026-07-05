@@ -873,7 +873,6 @@ function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
     || provider === "deepseek"
     || provider === "fireworks"
     || provider === "qwen"
-    || provider === "qwen-cn"
     ? "a"
     : "an";
 }
