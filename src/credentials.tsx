@@ -6,8 +6,10 @@ import {
   getProviderApiKeyEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  isValidEndpointUrl,
   isValidModelId,
   normalizeModelId,
+  OPENWIKI_CUSTOM_BASE_URL_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   type OpenWikiProvider,
@@ -31,7 +33,7 @@ type InitSetupProps = {
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "langsmith" | "model" | "provider";
+type PromptStep = "api-key" | "endpoint" | "langsmith" | "model" | "provider";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
@@ -41,6 +43,8 @@ export function needsCredentialSetup(
 
   return (
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
+    (provider === "custom" &&
+      !process.env[OPENWIKI_CUSTOM_BASE_URL_ENV_KEY]) ||
     !process.env[apiKeyEnvKey] ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
@@ -57,6 +61,7 @@ export function InitSetup({
   const [step, setStep] = useState<PromptStep | null>(null);
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [customBaseUrl, setCustomBaseUrl] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -197,9 +202,37 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextCustomBaseUrl: customBaseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: selectedProvider,
+      });
+      return;
+    }
+
+    if (step === "endpoint") {
+      const trimmedInput = input.trim();
+
+      if (!isValidEndpointUrl(trimmedInput)) {
+        setError("Enter a valid HTTP/HTTPS endpoint URL (e.g. https://my-proxy.com/v1).");
+        return;
+      }
+
+      setCustomBaseUrl(trimmedInput);
+      setInput("");
+      const nextStep = getNextStepAfterEndpoint(provider, modelIdOverride);
+
+      if (nextStep) {
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextCustomBaseUrl: trimmedInput,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
       });
       return;
     }
@@ -223,6 +256,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: trimmedInput,
+        nextCustomBaseUrl: customBaseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -260,6 +294,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextCustomBaseUrl: customBaseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
         nextProvider: provider,
@@ -275,6 +310,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextCustomBaseUrl: customBaseUrl,
         nextLangSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -284,6 +320,7 @@ export function InitSetup({
 
   type CompleteSetupOptions = {
     nextApiKey: string | null;
+    nextCustomBaseUrl: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
@@ -291,6 +328,7 @@ export function InitSetup({
 
   async function completeSetup({
     nextApiKey,
+    nextCustomBaseUrl,
     nextLangSmithKey,
     nextModelId,
     nextProvider,
@@ -304,6 +342,10 @@ export function InitSetup({
 
       if (providerEnvChanged) {
         updates[OPENWIKI_PROVIDER_ENV_KEY] = nextProvider;
+      }
+
+      if (nextCustomBaseUrl !== null) {
+        updates[OPENWIKI_CUSTOM_BASE_URL_ENV_KEY] = nextCustomBaseUrl;
       }
 
       if (nextApiKey !== null) {
@@ -367,6 +409,23 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
+        {provider === "custom" ? (
+          <SetupStep
+            label="Endpoint"
+            state={
+              process.env[OPENWIKI_CUSTOM_BASE_URL_ENV_KEY]
+                ? "done"
+                : step === "endpoint"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              process.env[OPENWIKI_CUSTOM_BASE_URL_ENV_KEY]
+                ? process.env[OPENWIKI_CUSTOM_BASE_URL_ENV_KEY]
+                : `save ${OPENWIKI_CUSTOM_BASE_URL_ENV_KEY} to ${openWikiEnvPath}`
+            }
+          />
+        ) : null}
         <SetupStep
           label="Provider key"
           state={
@@ -546,6 +605,20 @@ function Prompt({
     );
   }
 
+  if (step === "endpoint") {
+    return (
+      <Box flexDirection="column">
+        <Text>Paste your OpenAI-compatible endpoint URL.</Text>
+        <Text>
+          <Text color="gray">$</Text> {OPENWIKI_CUSTOM_BASE_URL_ENV_KEY}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">Example: https://my-proxy.com/v1</Text>
+        <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
   if (step === "api-key") {
     return (
       <Box flexDirection="column">
@@ -630,6 +703,10 @@ function getInitialStep(
     return "provider";
   }
 
+  if (provider === "custom" && !process.env[OPENWIKI_CUSTOM_BASE_URL_ENV_KEY]) {
+    return "endpoint";
+  }
+
   if (!process.env[getProviderApiKeyEnvKey(provider)]) {
     return "api-key";
   }
@@ -649,6 +726,21 @@ function getInitialStep(
 }
 
 function getNextStepAfterProvider(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+): PromptStep | null {
+  if (provider === "custom" && !process.env[OPENWIKI_CUSTOM_BASE_URL_ENV_KEY]) {
+    return "endpoint";
+  }
+
+  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+    return "api-key";
+  }
+
+  return getNextStepAfterApiKey(provider, modelIdOverride);
+}
+
+function getNextStepAfterEndpoint(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
@@ -776,7 +868,14 @@ function moveSelectionIndex(
 }
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+  return provider === "baseten"
+    || provider === "custom"
+    || provider === "deepseek"
+    || provider === "fireworks"
+    || provider === "qwen"
+    || provider === "qwen-cn"
+    ? "a"
+    : "an";
 }
 
 function sanitizeInputChunk(value: string): string {

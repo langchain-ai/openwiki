@@ -17,6 +17,7 @@ import type {
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
+  DEEPSEEK_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -30,6 +31,10 @@ import {
   OPENROUTER_FALLBACK_MODEL_IDS,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_CUSTOM_API_KEY_ENV_KEY,
+  OPENWIKI_CUSTOM_BASE_URL_ENV_KEY,
+  QWEN_API_KEY_ENV_KEY,
+  QWEN_CN_API_KEY_ENV_KEY,
   resolveConfiguredProvider,
   type OpenWikiProvider,
 } from "../constants.js";
@@ -394,6 +399,20 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       models,
       route: "fallback",
       siteName: "OpenWiki",
+    });
+  }
+
+  if (provider === "custom") {
+    const baseURL = process.env[OPENWIKI_CUSTOM_BASE_URL_ENV_KEY];
+
+    if (!baseURL) {
+      throw new Error(`${OPENWIKI_CUSTOM_BASE_URL_ENV_KEY} is required for custom provider.`);
+    }
+
+    return new ChatOpenAI({
+      apiKey: process.env[OPENWIKI_CUSTOM_API_KEY_ENV_KEY],
+      configuration: { baseURL },
+      model: modelId,
     });
   }
 
@@ -1260,10 +1279,15 @@ function formatEnvironmentDebug(): string {
   const keys = [
     OPENWIKI_PROVIDER_ENV_KEY,
     BASETEN_API_KEY_ENV_KEY,
+    DEEPSEEK_API_KEY_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    QWEN_API_KEY_ENV_KEY,
+    QWEN_CN_API_KEY_ENV_KEY,
+    OPENWIKI_CUSTOM_BASE_URL_ENV_KEY,
+    OPENWIKI_CUSTOM_API_KEY_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,
     "LANGCHAIN_TRACING_V2",
     "LANGCHAIN_PROJECT",

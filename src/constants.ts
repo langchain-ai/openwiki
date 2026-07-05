@@ -1,10 +1,15 @@
 export const OPEN_WIKI_DIR = "openwiki";
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
+export const DEEPSEEK_API_KEY_ENV_KEY = "DEEPSEEK_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const QWEN_API_KEY_ENV_KEY = "QWEN_API_KEY";
+export const QWEN_CN_API_KEY_ENV_KEY = "QWEN_CN_API_KEY";
+export const OPENWIKI_CUSTOM_BASE_URL_ENV_KEY = "OPENWIKI_CUSTOM_BASE_URL";
+export const OPENWIKI_CUSTOM_API_KEY_ENV_KEY = "OPENWIKI_CUSTOM_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -13,9 +18,13 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "deepseek"
   | "fireworks"
   | "openai"
-  | "openrouter";
+  | "openrouter"
+  | "qwen"
+  | "qwen-cn"
+  | "custom";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -34,12 +43,30 @@ type ProviderConfig = {
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openrouter",
   "baseten",
+  "deepseek",
   "fireworks",
   "openai",
   "anthropic",
+  "qwen",
+  "qwen-cn",
+  "custom",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
+  custom: {
+    apiKeyEnvKey: OPENWIKI_CUSTOM_API_KEY_ENV_KEY,
+    label: "Custom",
+    modelOptions: [],
+  },
+  deepseek: {
+    apiKeyEnvKey: DEEPSEEK_API_KEY_ENV_KEY,
+    baseURL: "https://api.deepseek.com/v1",
+    label: "DeepSeek",
+    modelOptions: [
+      { id: "deepseek-v4-flash", label: "V4 Flash" },
+      { id: "deepseek-v4-pro", label: "V4 Pro" },
+    ],
+  },
   baseten: {
     apiKeyEnvKey: BASETEN_API_KEY_ENV_KEY,
     baseURL: "https://inference.baseten.co/v1",
@@ -76,6 +103,30 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-haiku-4-5", label: "Haiku" },
       { id: "claude-sonnet-5", label: "Sonnet" },
       { id: "claude-opus-4.8", label: "Opus" },
+    ],
+  },
+  qwen: {
+    apiKeyEnvKey: QWEN_API_KEY_ENV_KEY,
+    baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    label: "Qwen (International)",
+    modelOptions: [
+      { id: "qwen3.7-max", label: "Qwen 3.7 Max" },
+      { id: "qwen3.7-plus", label: "Qwen 3.7 Plus" },
+      { id: "qwen3.6-max", label: "Qwen 3.6 Max" },
+      { id: "qwen3.6-plus", label: "Qwen 3.6 Plus" },
+      { id: "qwen3.6-flash", label: "Qwen 3.6 Flash" },
+    ],
+  },
+  "qwen-cn": {
+    apiKeyEnvKey: QWEN_CN_API_KEY_ENV_KEY,
+    baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    label: "Qwen (China)",
+    modelOptions: [
+      { id: "qwen3.7-max", label: "Qwen 3.7 Max" },
+      { id: "qwen3.7-plus", label: "Qwen 3.7 Plus" },
+      { id: "qwen3.6-max", label: "Qwen 3.6 Max" },
+      { id: "qwen3.6-plus", label: "Qwen 3.6 Plus" },
+      { id: "qwen3.6-flash", label: "Qwen 3.6 Flash" },
     ],
   },
   openrouter: {
@@ -169,3 +220,12 @@ export function isValidModelId(value: string): boolean {
 }
 
 export const OPENWIKI_VERSION = "0.0.1";
+
+export function isValidEndpointUrl(value: string): boolean {
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
