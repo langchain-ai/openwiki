@@ -22,6 +22,7 @@ import {
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
 import type { AuthProviderId } from "./auth/types.js";
+import type { OpenWikiRunMode } from "./commands.js";
 import type { ConnectorId } from "./connectors/types.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
 import { openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
@@ -54,6 +55,7 @@ export type InitSetupResult = {
 };
 
 type InitSetupProps = {
+  mode: OpenWikiRunMode;
   modelIdOverride?: string | null;
   onComplete: (result: InitSetupResult) => void;
   onError: (message: string) => void;
@@ -124,7 +126,7 @@ type ModelSelectionOption =
       kind: "custom";
     };
 
-type OnboardingTemplate = {
+type OnboardingMode = {
   description: string;
   id: string;
   name: string;
@@ -147,9 +149,9 @@ const ONBOARDING_TEMPLATES = [
   {
     description:
       "A personal assistant wiki that builds memory from email, notes, social/research sources, and web search so you can ask about projects, priorities, people, and recurring context.",
-    id: "second-brain",
-    name: "Second Brain",
-    sourceIds: ["google", "notion", "web-search", "hackernews", "x"],
+    id: "brain",
+    name: "Brain",
+    sourceIds: ["git-repo", "google", "notion", "web-search", "hackernews", "x"],
     suggestedSources: [
       "Gmail",
       "Notion",
@@ -160,7 +162,7 @@ const ONBOARDING_TEMPLATES = [
     suggestedGoal:
       "A second brain for personal assistance. Track active projects, people, organizations, decisions, commitments, follow-ups, useful links, recurring themes, and fresh external signals. Organize the wiki so a personal assistant can answer what changed, what matters, what needs attention, and where supporting evidence came from. Be selective: summarize durable context and explicit action items, not every raw item.",
   },
-] as const satisfies readonly OnboardingTemplate[];
+] as const satisfies readonly OnboardingMode[];
 
 const SOURCE_OPTIONS = [
   {
@@ -295,21 +297,26 @@ const FINAL_OPTIONS = [
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
+  mode: OpenWikiRunMode = "brain",
 ): boolean {
   const provider = resolveConfiguredProvider();
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
-  return (
+  const needsCredentials =
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
     !process.env[apiKeyEnvKey] ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
-    process.env.LANGSMITH_API_KEY === undefined ||
-    !isOpenWikiOnboardingCompleteSync()
+    process.env.LANGSMITH_API_KEY === undefined;
+
+  return (
+    needsCredentials ||
+    (mode === "brain" && !isOpenWikiOnboardingCompleteSync())
   );
 }
 
 export function InitSetup({
+  mode,
   modelIdOverride = null,
   onComplete,
   onError,
@@ -359,8 +366,8 @@ export function InitSetup({
   const [isAuthRunning, setIsAuthRunning] = useState(false);
 
   const activeSourceOptions = useMemo(
-    () => getTemplateSourceOptions(onboardingConfig.templateId),
-    [onboardingConfig.templateId],
+    () => getTemplateSourceOptions(getConfigModeId(onboardingConfig)),
+    [onboardingConfig.modeId, onboardingConfig.templateId],
   );
   const selectedSource = getSourceOption(selectedSourceId);
   const suggestedCronExpression = useMemo(
@@ -377,16 +384,21 @@ export function InitSetup({
     let cancelled = false;
 
     readOpenWikiOnboardingConfig()
-      .then((config) => {
+      .then(async (config) => {
         if (cancelled) {
           return;
         }
 
-        setOnboardingConfig(config);
+        const configForMode = ensureRunModeConfig(config, mode);
+        if (configForMode !== config) {
+          await saveOpenWikiOnboardingConfig(configForMode);
+        }
+        setOnboardingConfig(configForMode);
         const initialStep = getInitialStep(
           modelIdOverride,
           initialProvider,
-          config,
+          configForMode,
+          mode,
         );
 
         if (initialStep === null) {
@@ -417,7 +429,7 @@ export function InitSetup({
         );
         setIsCustomModelInput(false);
         if (initialStep === "wiki-goal") {
-          setInput(getTemplateGoal(config.templateId));
+          setInput(getTemplateGoal(getConfigModeId(config)));
         }
         setStep(initialStep);
       })
@@ -430,7 +442,7 @@ export function InitSetup({
     return () => {
       cancelled = true;
     };
-  }, [initialProvider, modelIdOverride, onComplete, onError]);
+  }, [initialProvider, mode, modelIdOverride, onComplete, onError]);
 
   useInput((inputValue, key) => {
     if (isSaving || isAuthRunning || step === null) {
@@ -634,6 +646,7 @@ export function InitSetup({
         selectedProvider,
         modelIdOverride,
         onboardingConfig,
+        mode,
       );
 
       if (nextStep) {
@@ -664,6 +677,7 @@ export function InitSetup({
         provider,
         modelIdOverride,
         onboardingConfig,
+        mode,
       );
 
       if (nextStep) {
@@ -758,6 +772,8 @@ export function InitSetup({
         ONBOARDING_TEMPLATES[templateSelectionIndex] ?? ONBOARDING_TEMPLATES[0];
       const nextConfig = {
         ...onboardingConfig,
+        modeId: selectedTemplate.id,
+        modeName: selectedTemplate.name,
         templateId: selectedTemplate.id,
         templateName: selectedTemplate.name,
       };
@@ -884,7 +900,7 @@ export function InitSetup({
         return;
       }
 
-      await saveGlobalIngestionSchedule(suggestedCronExpression);
+      await saveModeSchedule(suggestedCronExpression);
       return;
     }
 
@@ -896,7 +912,7 @@ export function InitSetup({
         return;
       }
 
-      await saveGlobalIngestionSchedule(validation.expression);
+      await saveModeSchedule(validation.expression);
       return;
     }
 
@@ -996,13 +1012,18 @@ export function InitSetup({
   async function continueAfterCredentials(options: CompleteSetupOptions) {
     await saveCredentialUpdates(options);
 
-    if (!onboardingConfig.templateId) {
+    if (mode === "code") {
+      await completeSetup(options);
+      return;
+    }
+
+    if (!getConfigModeId(onboardingConfig)) {
       setStep("template");
       return;
     }
 
     if (!onboardingConfig.wikiGoal) {
-      setInput(getTemplateGoal(onboardingConfig.templateId));
+      setInput(getTemplateGoal(getConfigModeId(onboardingConfig)));
       setStep("wiki-goal");
       return;
     }
@@ -1215,7 +1236,7 @@ export function InitSetup({
     return connectorConfig;
   }
 
-  async function saveGlobalIngestionSchedule(cronExpression: string) {
+  async function saveModeSchedule(cronExpression: string) {
     setIsSaving(true);
 
     try {
@@ -1357,7 +1378,7 @@ export function InitSetup({
           }
         />
         <SetupStep
-          label="Template"
+          label="Mode"
           state={
             onboardingConfig.templateId
               ? "done"
@@ -1365,7 +1386,7 @@ export function InitSetup({
                 ? "current"
                 : "pending"
           }
-          detail={onboardingConfig.templateName ?? "choose a starting point"}
+          detail={getConfigModeName(onboardingConfig) ?? "choose a mode"}
         />
         <SetupStep
           label="Wiki scope"
@@ -1627,7 +1648,7 @@ function Prompt({
 
     return (
       <Box flexDirection="column">
-        <Text>Choose a starting point for this wiki.</Text>
+        <Text>Choose how OpenWiki should run.</Text>
         {ONBOARDING_TEMPLATES.map((template, index) => (
           <Text key={template.id}>
             <SelectionMarker isSelected={index === templateSelectionIndex} />{" "}
@@ -1656,8 +1677,8 @@ function Prompt({
     return (
       <Box flexDirection="column">
         <Text>Customize what this wiki should understand.</Text>
-        {onboardingConfig.templateName ? (
-          <Text color="gray">Template: {onboardingConfig.templateName}</Text>
+        {getConfigModeName(onboardingConfig) ? (
+          <Text color="gray">Mode: {getConfigModeName(onboardingConfig)}</Text>
         ) : null}
         <Text color="gray">
           Edit the brief below. Keep what is useful, delete what is not.
@@ -1679,7 +1700,7 @@ function Prompt({
 
     return (
       <Box flexDirection="column">
-        <Text>Configure sources for this template.</Text>
+        <Text>Configure sources for this mode.</Text>
         {sourceOptions.map((source, index) => (
           <Text key={source.id}>
             <SelectionMarker isSelected={index === sourceSelectionIndex} />{" "}
@@ -1805,8 +1826,16 @@ function Prompt({
   if (step === "global-cron-mode") {
     return (
       <Box flexDirection="column">
-        <Text>When should OpenWiki run all ingestion?</Text>
-        <Text color="gray">All configured sources run sequentially at this time.</Text>
+        <Text>
+          {isCodeMode(onboardingConfig)
+            ? "When should GitHub Actions refresh this code wiki?"
+            : "When should OpenWiki run all ingestion?"}
+        </Text>
+        <Text color="gray">
+          {isCodeMode(onboardingConfig)
+            ? "OpenWiki will write a scheduled GitHub Actions workflow for this repository."
+            : "All configured sources run sequentially at this time."}
+        </Text>
         <Text color="gray">Suggested: {suggestedCronDescription}</Text>
         {CRON_MODE_OPTIONS.map((option, index) => (
           <Text key={option}>
@@ -1823,7 +1852,11 @@ function Prompt({
     const validation = validateCronExpression(input);
     return (
       <Box flexDirection="column">
-        <Text>Enter one cron schedule for all ingestion.</Text>
+        <Text>
+          {isCodeMode(onboardingConfig)
+            ? "Enter one GitHub Actions cron schedule for this code wiki."
+            : "Enter one cron schedule for all ingestion."}
+        </Text>
         <SegmentedCronInput
           activeFieldIndex={cronFieldSelectionIndex}
           expression={input}
@@ -1879,7 +1912,7 @@ function Prompt({
     );
     return (
       <Box flexDirection="column">
-        <Text>Some sources for this template are not configured yet.</Text>
+        <Text>Some sources for this mode are not configured yet.</Text>
         {missingSources.map((source) => (
           <Text color="gray" key={source.id}>
             - {source.displayName}
@@ -2222,6 +2255,7 @@ function getInitialStep(
   modelIdOverride: string | null,
   provider: OpenWikiProvider,
   onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
 ): PromptStep | null {
   if (process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined) {
     return "provider";
@@ -2242,7 +2276,11 @@ function getInitialStep(
     return "langsmith";
   }
 
-  if (!onboardingConfig.templateId) {
+  if (mode === "code") {
+    return null;
+  }
+
+  if (!getConfigModeId(onboardingConfig)) {
     return "template";
   }
 
@@ -2265,18 +2303,20 @@ function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
   onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
 ): PromptStep | null {
   if (!process.env[getProviderApiKeyEnvKey(provider)]) {
     return "api-key";
   }
 
-  return getNextStepAfterApiKey(provider, modelIdOverride, onboardingConfig);
+  return getNextStepAfterApiKey(provider, modelIdOverride, onboardingConfig, mode);
 }
 
 function getNextStepAfterApiKey(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
   onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
 ): PromptStep | null {
   if (
     modelIdOverride === null &&
@@ -2289,7 +2329,11 @@ function getNextStepAfterApiKey(
     return "langsmith";
   }
 
-  if (!onboardingConfig.templateId) {
+  if (mode === "code") {
+    return null;
+  }
+
+  if (!getConfigModeId(onboardingConfig)) {
     return "template";
   }
 
@@ -2308,10 +2352,44 @@ function getNextStepAfterApiKey(
   return null;
 }
 
+function ensureRunModeConfig(
+  config: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+): OpenWikiOnboardingConfig {
+  if (mode !== "brain" || getConfigModeId(config) === "brain") {
+    return config;
+  }
+
+  const brainMode = ONBOARDING_TEMPLATES.find((option) => option.id === "brain");
+  if (!brainMode) {
+    return config;
+  }
+
+  return {
+    ...config,
+    modeId: brainMode.id,
+    modeName: brainMode.name,
+    templateId: brainMode.id,
+    templateName: brainMode.name,
+  };
+}
+
 function getSourceOption(sourceId: ConnectorId): SourceSetupOption {
   return (
     SOURCE_OPTIONS.find((source) => source.id === sourceId) ?? SOURCE_OPTIONS[0]
   );
+}
+
+function getConfigModeId(config: OpenWikiOnboardingConfig): string | undefined {
+  return config.modeId ?? config.templateId;
+}
+
+function getConfigModeName(config: OpenWikiOnboardingConfig): string | undefined {
+  return config.modeName ?? config.templateName;
+}
+
+function isCodeMode(config: OpenWikiOnboardingConfig): boolean {
+  return getConfigModeId(config) === "code";
 }
 
 function needsEnvValue(secretInput: SourceSecretInput): boolean {

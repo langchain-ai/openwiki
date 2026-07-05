@@ -45,6 +45,8 @@ export type OpenWikiPowerManagementConfig = {
 export type OpenWikiOnboardingConfig = {
   completedAt?: string;
   ingestionSchedule?: OnboardingSourceScheduleConfig;
+  modeId?: string;
+  modeName?: string;
   powerManagement?: OpenWikiPowerManagementConfig;
   sourceInstances: OnboardingSourceInstanceConfig[];
   sources: Partial<Record<ConnectorId, OnboardingSourceConfig>>;
@@ -135,12 +137,22 @@ function normalizeOnboardingConfig(value: unknown): OpenWikiOnboardingConfig {
     config.wikiGoal = value.wikiGoal;
   }
 
+  if (typeof value.modeId === "string") {
+    config.modeId = value.modeId;
+  }
+
+  if (typeof value.modeName === "string") {
+    config.modeName = value.modeName;
+  }
+
   if (typeof value.templateId === "string") {
     config.templateId = value.templateId;
+    config.modeId ??= value.templateId;
   }
 
   if (typeof value.templateName === "string") {
     config.templateName = value.templateName;
+    config.modeName ??= value.templateName;
   }
 
   if (isObject(value.ingestionSchedule)) {

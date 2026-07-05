@@ -303,34 +303,34 @@ function getOutputPromptConfig(
   }
 
   return {
-    docsLocation: "~/.openwiki/wiki",
+    docsLocation: "the target repository's openwiki/ directory",
     filesystemRootInstruction:
-      "Filesystem tools are rooted at the target repository for source inspection only. The canonical generated wiki is ~/.openwiki/wiki, not a repository-local openwiki/ directory. Use shell execute narrowly against ~/.openwiki/wiki for wiki reads or writes when this repository-source mode is used.",
+      "Filesystem tools are rooted at the target repository. Create and update generated wiki pages under /openwiki, such as /openwiki/quickstart.md, /openwiki/architecture/overview.md, or /openwiki/source-map.md.",
     gitDisciplineInstruction:
       "During repository-source updates, inspect relevant commits and git history for the configured local repository only when it helps explain source changes.",
     initialHistoryInstruction:
       "Use git evidence during init to understand how important files and workflows came to be. Prefer recent commits and targeted git blame/show on high-signal files.",
     initialInventoryInstruction:
       "First build a repository inventory: existing docs, graph/app entrypoints, package/config files, major domain folders, tests/evals, data/schema files, skill/playbook files, and operational scripts.",
-    metadataPath: "~/.openwiki/wiki/.last-update.json",
-    planPath: "~/.openwiki/wiki/_plan.md",
-    quickstartPath: "~/.openwiki/wiki/quickstart.md",
-    removePlanCommand: "rm -f ~/.openwiki/wiki/_plan.md",
+    metadataPath: "/openwiki/.last-update.json",
+    planPath: "/openwiki/_plan.md",
+    quickstartPath: "/openwiki/quickstart.md",
+    removePlanCommand: "rm -f ./openwiki/_plan.md",
     rootAgentInstructions: `Root agent instruction files:
-- Do not create or update repository /AGENTS.md or /CLAUDE.md files during normal local-wiki runs.
-- Do not add references that point future agents to a repository-local openwiki/ directory.
-- If the user explicitly asks to update repository agent instructions, point them to the canonical generated wiki at ~/.openwiki/wiki.`,
+- Do not create or update repository /AGENTS.md or /CLAUDE.md files during normal code wiki runs.
+- Keep generated wiki content under the repository /openwiki directory.
+- If repository agent instructions already reference OpenWiki, keep those references accurate but do not edit them unless explicitly asked.`,
     searchBoundaryInstruction:
-      "Do not run broad commands that search outside the target repository. The only routine exception is narrow wiki inspection under ~/.openwiki/wiki.",
+      "Do not run broad commands that search outside the target repository.",
     sectionDirectoryInstruction:
       "When the repository is large enough to need section directories, create one directory per major section, for example architecture/, workflows/, domain/, api/, data-models/, operations/, integrations/, testing/, or similar names that fit the repo.",
     subjectLabel: "this repository",
     updateEvidenceInstruction:
       "Always use git-oriented repository evidence to understand recent changes. Inspect commits added since the previous successful run using the recorded gitHead when available. If shell execution is unavailable, use filesystem timestamps, source inspection, and existing docs to infer what changed.",
     writeBoundaryInstruction:
-      "Do not modify source code. Do not write generated wiki pages under a repository-local openwiki/ directory; generated wiki content belongs under ~/.openwiki/wiki.",
+      "Do not modify source code. Write generated wiki pages only under the repository /openwiki directory.",
     writePathExample:
-      "shell execute paths under ~/.openwiki/wiki, for example ~/.openwiki/wiki/quickstart.md. In local-wiki mode, use virtual paths such as /quickstart.md instead.",
+      "virtual paths under /openwiki, for example /openwiki/quickstart.md or /openwiki/architecture/overview.md.",
   };
 }
 

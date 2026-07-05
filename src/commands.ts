@@ -9,6 +9,8 @@ export type HelpRow = {
   description: string;
 };
 
+export type OpenWikiRunMode = "brain" | "code";
+
 export type HelpContent = {
   title: string;
   description: string;
@@ -55,6 +57,7 @@ export type CliCommand =
       exitCode: 0;
       command: OpenWikiCommand;
       dryRun: boolean;
+      mode: OpenWikiRunMode;
       modelId: string | null;
       print: boolean;
       shouldStart: boolean;
@@ -314,6 +317,14 @@ export function parseCommand(argv: string[]): CliCommand {
     }
   }
 
+  if (argv[0] === "code" || argv[0] === "brain") {
+    return parseRunCommand(argv.slice(1), argv[0]);
+  }
+
+  return parseRunCommand(argv, "brain");
+}
+
+function parseRunCommand(argv: string[], mode: OpenWikiRunMode): CliCommand {
   let dryRun = false;
   let modelId: string | null = null;
   let print = false;
@@ -430,6 +441,7 @@ export function parseCommand(argv: string[]): CliCommand {
     exitCode: 0,
     command,
     dryRun,
+    mode,
     modelId,
     print,
     shouldStart,
@@ -448,6 +460,8 @@ export const helpContent: HelpContent = {
   description:
     "Run an agent that generates and maintains a project or local knowledge wiki.",
   usage: [
+    "openwiki code [--init|--update] [message]",
+    "openwiki brain [--init|--update] [message]",
     "openwiki [--modelId <model>]",
     "openwiki [--modelId <model>] [message]",
     "openwiki --init [message]",
@@ -464,8 +478,18 @@ export const helpContent: HelpContent = {
   ],
   commands: [
     {
+      label: "openwiki code",
+      description:
+        "Run OpenWiki for the current repository, writing docs under repo openwiki/ and using GitHub Actions for recurrence.",
+    },
+    {
+      label: "openwiki brain",
+      description:
+        "Run OpenWiki as a local second brain over configured sources, writing to ~/.openwiki/wiki.",
+    },
+    {
       label: "openwiki",
-      description: "Open the interactive OpenWiki chat.",
+      description: "Open the interactive OpenWiki brain chat.",
     },
     {
       label: "openwiki auth <provider>",
