@@ -380,7 +380,9 @@ function resolveModelId(
 async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
     // Strip provider prefix if present (e.g., "anthropic/claude-sonnet-5" -> "claude-sonnet-5")
-    const bareModelId = modelId.includes('/') ? modelId.split('/').pop()! : modelId;
+    const bareModelId = modelId.startsWith("anthropic/") 
+  ? modelId.slice("anthropic/".length) 
+  : modelId;
     return new ChatAnthropic(bareModelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
     });
