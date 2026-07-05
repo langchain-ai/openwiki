@@ -70,6 +70,6 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, Anthropic and OpenCode out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
 
 If there's an inference provider or model you'd like to see added, please open a PR!
