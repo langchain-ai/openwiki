@@ -63,7 +63,7 @@ Then run Claude Code and invoke the skill as:
 
 For local development, either run `claude --plugin-dir ./plugins/openwiki` or add the current checkout with `claude plugin marketplace add .`.
 
-The plugin writes documentation under `openwiki/`, preserves the same `quickstart.md` entrypoint, updates `AGENTS.md` and/or `CLAUDE.md` with the standard OpenWiki reference section when appropriate, and writes `openwiki/.last-update.json` only when documentation content changes.
+The plugin writes documentation under `openwiki/`, preserves the same `quickstart.md` entrypoint, and writes `openwiki/.last-update.json` only when documentation content changes. It does not create or modify `AGENTS.md` or `CLAUDE.md` by default; explicitly ask it to update agent instruction files if you want the standard OpenWiki reference section added.
 
 ## Usage
 

@@ -49,6 +49,11 @@ def main() -> int:
 
     agent_ref_parser = subparsers.add_parser("agent-reference")
     agent_ref_parser.add_argument("--repo", default=".")
+    agent_ref_parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="create or update top-level AGENTS.md/CLAUDE.md files",
+    )
 
     args = parser.parse_args()
     repo = Path(args.repo).resolve()
@@ -72,7 +77,7 @@ def main() -> int:
         return 0
 
     if args.command == "agent-reference":
-        result = ensure_agent_reference(repo)
+        result = ensure_agent_reference(repo, apply=args.apply)
         print(json.dumps(result, indent=2))
         return 0
 
@@ -264,7 +269,7 @@ def write_metadata(
     if before_snapshot == after_snapshot:
         return {
             "changed": False,
-            "metadataPath": str(METADATA_PATH),
+            "metadataPath": METADATA_PATH.as_posix(),
             "reason": "openwiki content snapshot did not change",
         }
 
@@ -280,27 +285,30 @@ def write_metadata(
 
     return {
         "changed": True,
-        "metadataPath": str(METADATA_PATH),
+        "metadataPath": METADATA_PATH.as_posix(),
         "metadata": metadata,
     }
 
 
-def ensure_agent_reference(repo: Path) -> dict[str, Any]:
+def ensure_agent_reference(repo: Path, apply: bool = False) -> dict[str, Any]:
     candidates = [repo / "AGENTS.md", repo / "CLAUDE.md"]
     existing = [path for path in candidates if path.exists()]
     targets = existing or [repo / "AGENTS.md"]
     results: dict[str, str] = {}
 
     for target in targets:
-        results[target.name] = ensure_agent_reference_file(target)
+        results[target.name] = ensure_agent_reference_file(target, apply=apply)
 
     return results
 
 
-def ensure_agent_reference_file(path: Path) -> str:
+def ensure_agent_reference_file(path: Path, apply: bool = False) -> str:
     try:
         content = path.read_text(encoding="utf-8")
     except FileNotFoundError:
+        if not apply:
+            return "would_create"
+
         path.write_text(OPENWIKI_SECTION, encoding="utf-8")
         return "created"
 
@@ -315,6 +323,9 @@ def ensure_agent_reference_file(path: Path) -> str:
         updated = replace_openwiki_section(content, OPENWIKI_SECTION)
 
     if updated != content:
+        if not apply:
+            return "would_update"
+
         path.write_text(updated, encoding="utf-8")
         return "updated"
 

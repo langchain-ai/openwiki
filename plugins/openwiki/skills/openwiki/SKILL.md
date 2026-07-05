@@ -45,7 +45,7 @@ For large or unfamiliar repositories, use 1-2 read-only subagents when available
 ## Documentation structure
 
 - Write all persistent documentation under `openwiki/`.
-- Do not modify source code outside `openwiki/`. The only allowed exceptions are top-level `AGENTS.md` and `CLAUDE.md`, and only for the OpenWiki reference section described below.
+- Do not modify source code outside `openwiki/`. The only allowed exceptions are top-level `AGENTS.md` and `CLAUDE.md`, and only when the user explicitly asks to add or refresh the OpenWiki reference section described below.
 - `openwiki/quickstart.md` is required and must be the entrypoint.
 - The quickstart must include a high-level repository overview and links to every major section.
 - Keep the initial wiki focused: quickstart plus the smallest useful set of section pages. For small repositories, prefer quickstart plus at most 1-2 supporting pages.
@@ -63,11 +63,11 @@ For init and update:
 2. Create a temporary `openwiki/_plan.md` listing intended wiki pages, source evidence for each page, and remaining questions.
 3. Write or edit the final documentation.
 4. Delete `openwiki/_plan.md` before finishing.
-5. Ensure top-level agent instruction files reference OpenWiki unless the user explicitly says not to:
+5. Do not create or update top-level agent instruction files unless the user explicitly asks for that behavior:
    - Only consider top-level `AGENTS.md` and `CLAUDE.md`.
-   - If either exists, add or update the standard OpenWiki section there.
-   - If both exist, ensure both contain the same section.
-   - If neither exists, create top-level `AGENTS.md` containing only the standard section.
+   - If the user opts in and either exists, add or update the standard OpenWiki section there.
+   - If the user opts in and both exist, ensure both contain the same section.
+   - If the user opts in and neither exists, create top-level `AGENTS.md` containing only the standard section.
    - Preserve surrounding instructions and do not make formatting-only edits if an existing section is semantically correct.
 
 Use this exact OpenWiki section content when a section is missing or stale:
@@ -86,13 +86,17 @@ OpenWiki includes repository overview, architecture notes, workflows, domain con
 When working in this repository, read the OpenWiki quickstart first, then follow its links to the relevant architecture, workflow, domain, operation, and testing notes.
 ```
 
-The helper can update these files deterministically:
+The helper reports the action it would take without writing by default:
 
 ```bash
 python <plugin-root>/skills/openwiki/scripts/openwiki_support.py agent-reference --repo .
 ```
 
-Do not run this command if the user asked not to touch agent instruction files.
+Only apply those changes when the user explicitly asks to update agent instruction files:
+
+```bash
+python <plugin-root>/skills/openwiki/scripts/openwiki_support.py agent-reference --repo . --apply
+```
 
 ## Init behavior
 
@@ -138,4 +142,4 @@ If the before and after snapshots match, do not write metadata.
 
 ## Final response
 
-For init/update, summarize which docs changed, whether agent instruction files were updated, whether `.last-update.json` was written, and any caveats. For chat, answer the question and cite the OpenWiki/source paths used.
+For init/update, summarize which docs changed, whether agent instruction files were skipped or updated, whether `.last-update.json` was written, and any caveats. For chat, answer the question and cite the OpenWiki/source paths used.
