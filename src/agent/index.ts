@@ -7,6 +7,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
+import { OpenCodeModel } from "./opencode-model.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
   OpenWikiCommand,
@@ -25,6 +26,7 @@ import {
   isValidModelId,
   normalizeModelId,
   OPENAI_API_KEY_ENV_KEY,
+  OPENCODE_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
   OPENROUTER_FALLBACK_MODEL_IDS,
@@ -162,7 +164,7 @@ async function runOpenWikiAgentCore(
   const openWikiSnapshotBefore =
     command === "chat" ? null : await createOpenWikiContentSnapshot(cwd);
   emitDebug(options, "openwiki.snapshot=created");
-  const model = await createModel(provider, modelId);
+  const model = await createModel(provider, modelId, cwd);
   emitDebug(options, `model.provider=${provider}`);
   if (provider === "openrouter") {
     emitDebug(
@@ -377,7 +379,7 @@ function resolveModelId(
   return modelId;
 }
 
-async function createModel(provider: OpenWikiProvider, modelId: string) {
+async function createModel(provider: OpenWikiProvider, modelId: string, cwd?: string) {
   if (provider === "anthropic") {
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
@@ -395,6 +397,14 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       route: "fallback",
       siteName: "OpenWiki",
     });
+  }
+
+  if (provider === "opencode") {
+    return new OpenCodeModel(
+      "http://127.0.0.1:4096",
+      cwd ?? process.cwd(),
+      modelId,
+    );
   }
 
   const providerConfig = getProviderConfig(provider);
