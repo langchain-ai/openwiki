@@ -41,6 +41,7 @@
     "@langchain/anthropic": "^1.5.1",
     "@langchain/core": "^1.2.1",
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.3",
+    "@langchain/ollama": "^1.3.0",
     "@langchain/openai": "^1.5.3",
     "@langchain/openrouter": "^0.4.3",
     "deepagents": "^1.10.5",

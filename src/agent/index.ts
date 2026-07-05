@@ -1,8 +1,12 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
+import { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
+import { BaseMessage } from "@langchain/core/messages";
+import { ChatGenerationChunk, ChatResult } from "@langchain/core/outputs";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
+import { ChatOllama } from "@langchain/ollama";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
@@ -22,8 +26,13 @@ import {
   getProviderApiKeyEnvKey,
   getProviderConfig,
   getProviderLabel,
+  getProviderRequiresApiKey,
   isValidModelId,
   normalizeModelId,
+  OLLAMA_BASE_URL_ENV_KEY,
+  OLLAMA_DEFAULT_BASE_URL,
+  OLLAMA_DEFAULT_NUM_CTX,
+  OLLAMA_NUM_CTX_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
@@ -349,6 +358,10 @@ function isFileNotFoundError(error: unknown): boolean {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
+  if (!getProviderRequiresApiKey(provider)) {
+    return;
+  }
+
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   if (!process.env[apiKeyEnvKey]) {
@@ -377,10 +390,62 @@ function resolveModelId(
   return modelId;
 }
 
+class SafeChatOllama extends ChatOllama {
+  private cleanMessages(messages: BaseMessage[]): BaseMessage[] {
+    return messages.map((msg) => {
+      if (msg._getType() === "tool" && typeof msg.content !== "string") {
+        return Object.assign(Object.create(Object.getPrototypeOf(msg)), msg, {
+          content:
+            typeof msg.content === "object"
+              ? JSON.stringify(msg.content)
+              : String(msg.content),
+        });
+      }
+      return msg;
+    });
+  }
+
+  override async _generate(
+    messages: BaseMessage[],
+    options: this["ParsedCallOptions"],
+    runManager?: CallbackManagerForLLMRun,
+  ): Promise<ChatResult> {
+    return super._generate(this.cleanMessages(messages), options, runManager);
+  }
+
+  override async *_streamResponseChunks(
+    messages: BaseMessage[],
+    options: this["ParsedCallOptions"],
+    runManager?: CallbackManagerForLLMRun,
+  ): AsyncGenerator<ChatGenerationChunk> {
+    yield* super._streamResponseChunks(
+      this.cleanMessages(messages),
+      options,
+      runManager,
+    );
+  }
+}
+
 async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    });
+  }
+
+  if (provider === "ollama") {
+    const baseUrl =
+      process.env[OLLAMA_BASE_URL_ENV_KEY] ?? OLLAMA_DEFAULT_BASE_URL;
+    const rawNumCtx = process.env[OLLAMA_NUM_CTX_ENV_KEY];
+    const numCtx =
+      rawNumCtx !== undefined
+        ? parseInt(rawNumCtx, 10)
+        : OLLAMA_DEFAULT_NUM_CTX;
+
+    return new SafeChatOllama({
+      model: modelId,
+      baseUrl,
+      numCtx: Number.isFinite(numCtx) ? numCtx : OLLAMA_DEFAULT_NUM_CTX,
     });
   }
 

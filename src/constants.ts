@@ -9,11 +9,16 @@ export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+export const OLLAMA_BASE_URL_ENV_KEY = "OLLAMA_BASE_URL";
+export const OLLAMA_NUM_CTX_ENV_KEY = "OLLAMA_NUM_CTX";
+export const OLLAMA_DEFAULT_BASE_URL = "http://localhost:11434";
+export const OLLAMA_DEFAULT_NUM_CTX = 8192;
 
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
+  | "ollama"
   | "openai"
   | "openrouter";
 
@@ -29,6 +34,7 @@ type ProviderConfig = {
   baseURL?: string;
   label: string;
   modelOptions: ProviderModelOption[];
+  requiresApiKey: boolean;
 };
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
@@ -37,6 +43,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "fireworks",
   "openai",
   "anthropic",
+  "ollama",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -48,6 +55,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
       { id: "moonshotai/Kimi-K2.7-Code", label: "Kimi K2.7 Code" },
     ],
+    requiresApiKey: true,
   },
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
@@ -60,6 +68,17 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
         label: "Kimi K2.7 Code",
       },
     ],
+    requiresApiKey: true,
+  },
+  ollama: {
+    apiKeyEnvKey: "",
+    label: "Ollama",
+    modelOptions: [
+      { id: "gemma4:26b-a4b-it-qat", label: "Gemma 4 26B" },
+      { id: "nemotron3:33b", label: "Nemotron3 33B" },
+      { id: "qwen3.6:27b", label: "Qwen3.6 27B" },
+    ],
+    requiresApiKey: false,
   },
   openai: {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
@@ -68,6 +87,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "gpt-5.4-mini", label: "5.4 mini" },
       { id: "gpt-5.5", label: "5.5" },
     ],
+    requiresApiKey: true,
   },
   anthropic: {
     apiKeyEnvKey: ANTHROPIC_API_KEY_ENV_KEY,
@@ -77,6 +97,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-sonnet-5", label: "Sonnet" },
       { id: "claude-opus-4.8", label: "Opus" },
     ],
+    requiresApiKey: true,
   },
   openrouter: {
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,
@@ -91,6 +112,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
     ],
+    requiresApiKey: true,
   },
 };
 
@@ -116,6 +138,10 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
 
 export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+export function getProviderRequiresApiKey(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).requiresApiKey;
 }
 
 export function getProviderModelOptions(

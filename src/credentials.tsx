@@ -6,8 +6,13 @@ import {
   getProviderApiKeyEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  getProviderRequiresApiKey,
   isValidModelId,
   normalizeModelId,
+  OLLAMA_BASE_URL_ENV_KEY,
+  OLLAMA_DEFAULT_BASE_URL,
+  OLLAMA_DEFAULT_NUM_CTX,
+  OLLAMA_NUM_CTX_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   type OpenWikiProvider,
@@ -31,7 +36,8 @@ type InitSetupProps = {
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "langsmith" | "model" | "provider";
+type PromptStep =
+  "api-key" | "langsmith" | "model" | "ollama-options" | "provider";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
@@ -41,7 +47,7 @@ export function needsCredentialSetup(
 
   return (
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
-    !process.env[apiKeyEnvKey] ||
+    (getProviderRequiresApiKey(provider) && !process.env[apiKeyEnvKey]) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined
@@ -59,6 +65,8 @@ export function InitSetup({
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
+  const [ollamaBaseUrl, setOllamaBaseUrl] = useState("");
+  const [ollamaNumCtx, setOllamaNumCtx] = useState("");
   const [input, setInput] = useState("");
   const [providerSelectionIndex, setProviderSelectionIndex] = useState(() =>
     getProviderSelectionIndex(initialProvider),
@@ -125,6 +133,26 @@ export function InitSetup({
 
       if (key.return) {
         void submit();
+      }
+
+      return;
+    }
+
+    if (step === "ollama-options") {
+      if (key.return) {
+        void submit();
+        return;
+      }
+
+      if (key.backspace || key.delete) {
+        setInput((value) => value.slice(0, -1));
+        return;
+      }
+
+      const sanitizedChunk = sanitizeInputChunk(inputValue);
+
+      if (sanitizedChunk && !key.ctrl && !key.meta) {
+        setInput((value) => value + sanitizedChunk);
       }
 
       return;
@@ -200,6 +228,46 @@ export function InitSetup({
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: selectedProvider,
+      });
+      return;
+    }
+
+    if (step === "ollama-options") {
+      const trimmedBaseUrl = input.trim();
+      const nextBaseUrl = trimmedBaseUrl.length > 0 ? trimmedBaseUrl : null;
+
+      // Store current input as base URL, then reset for num_ctx prompt.
+      // We use a two-field sub-step driven by ollamaBaseUrl/ollamaNumCtx state.
+      if (ollamaBaseUrl === "" && ollamaNumCtx === "") {
+        // First field: base URL
+        setOllamaBaseUrl(nextBaseUrl ?? OLLAMA_DEFAULT_BASE_URL);
+        setInput("");
+        // Stay on same step to collect num_ctx
+        return;
+      }
+
+      // Second field: num_ctx
+      const trimmedNumCtx = input.trim();
+      const nextNumCtx =
+        trimmedNumCtx.length > 0
+          ? trimmedNumCtx
+          : String(OLLAMA_DEFAULT_NUM_CTX);
+
+      setOllamaNumCtx(nextNumCtx);
+      setInput("");
+
+      const nextStep = getNextStepAfterOllamaOptions(modelIdOverride);
+
+      if (nextStep) {
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: null,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
       });
       return;
     }
@@ -314,6 +382,18 @@ export function InitSetup({
         updates[OPENWIKI_MODEL_ID_ENV_KEY] = nextModelId;
       }
 
+      if (nextProvider === "ollama") {
+        const resolvedBaseUrl =
+          ollamaBaseUrl.length > 0 ? ollamaBaseUrl : OLLAMA_DEFAULT_BASE_URL;
+        const resolvedNumCtx =
+          ollamaNumCtx.length > 0
+            ? ollamaNumCtx
+            : String(OLLAMA_DEFAULT_NUM_CTX);
+
+        updates[OLLAMA_BASE_URL_ENV_KEY] = resolvedBaseUrl;
+        updates[OLLAMA_NUM_CTX_ENV_KEY] = resolvedNumCtx;
+      }
+
       if (nextLangSmithKey !== null) {
         updates.LANGSMITH_API_KEY = nextLangSmithKey;
 
@@ -367,21 +447,39 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
-        <SetupStep
-          label="Provider key"
-          state={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "done"
-              : step === "api-key"
-                ? "current"
-                : "pending"
-          }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
-        />
+        {provider === "ollama" ? (
+          <SetupStep
+            label="Ollama options"
+            state={
+              process.env[OLLAMA_NUM_CTX_ENV_KEY]
+                ? "done"
+                : step === "ollama-options"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              process.env[OLLAMA_NUM_CTX_ENV_KEY]
+                ? `num_ctx=${process.env[OLLAMA_NUM_CTX_ENV_KEY]}`
+                : `default num_ctx=${OLLAMA_DEFAULT_NUM_CTX}`
+            }
+          />
+        ) : (
+          <SetupStep
+            label="Provider key"
+            state={
+              process.env[getProviderApiKeyEnvKey(provider)]
+                ? "done"
+                : step === "api-key"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              process.env[getProviderApiKeyEnvKey(provider)]
+                ? "available from environment"
+                : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
+            }
+          />
+        )}
         <SetupStep
           label="Model"
           state={
@@ -417,6 +515,7 @@ export function InitSetup({
             input={input}
             isCustomModelInput={isCustomModelInput}
             modelSelectionIndex={modelSelectionIndex}
+            ollamaBaseUrl={ollamaBaseUrl}
             provider={provider}
             providerSelectionIndex={providerSelectionIndex}
             step={step}
@@ -514,6 +613,7 @@ type PromptProps = {
   input: string;
   isCustomModelInput: boolean;
   modelSelectionIndex: number;
+  ollamaBaseUrl: string;
   provider: OpenWikiProvider;
   providerSelectionIndex: number;
   step: PromptStep;
@@ -523,6 +623,7 @@ function Prompt({
   input,
   isCustomModelInput,
   modelSelectionIndex,
+  ollamaBaseUrl,
   provider,
   providerSelectionIndex,
   step,
@@ -555,6 +656,43 @@ function Prompt({
           <Text color="yellow">{mask(input)}</Text>
         </Text>
         <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "ollama-options") {
+    const isBaseUrlPhase = ollamaBaseUrl === "";
+
+    if (isBaseUrlPhase) {
+      return (
+        <Box flexDirection="column">
+          <Text bold>Ollama base URL</Text>
+          <Text>
+            <Text color="gray">$</Text> {OLLAMA_BASE_URL_ENV_KEY}={" "}
+            <Text color="yellow">
+              {input.length > 0 ? input : OLLAMA_DEFAULT_BASE_URL}
+            </Text>
+          </Text>
+          <Text color="gray">
+            Press Enter to accept default ({OLLAMA_DEFAULT_BASE_URL}).
+          </Text>
+        </Box>
+      );
+    }
+
+    return (
+      <Box flexDirection="column">
+        <Text bold>Ollama context window (num_ctx)</Text>
+        <Text>
+          <Text color="gray">$</Text> {OLLAMA_NUM_CTX_ENV_KEY}={" "}
+          <Text color="yellow">
+            {input.length > 0 ? input : String(OLLAMA_DEFAULT_NUM_CTX)}
+          </Text>
+        </Text>
+        <Text color="gray">
+          Larger values use more VRAM. Press Enter to accept default (
+          {OLLAMA_DEFAULT_NUM_CTX}).
+        </Text>
       </Box>
     );
   }
@@ -630,8 +768,18 @@ function getInitialStep(
     return "provider";
   }
 
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (
+    getProviderRequiresApiKey(provider) &&
+    !process.env[getProviderApiKeyEnvKey(provider)]
+  ) {
     return "api-key";
+  }
+
+  if (
+    provider === "ollama" &&
+    process.env[OLLAMA_NUM_CTX_ENV_KEY] === undefined
+  ) {
+    return "ollama-options";
   }
 
   if (
@@ -652,11 +800,38 @@ function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (
+    getProviderRequiresApiKey(provider) &&
+    !process.env[getProviderApiKeyEnvKey(provider)]
+  ) {
     return "api-key";
   }
 
+  if (
+    provider === "ollama" &&
+    process.env[OLLAMA_NUM_CTX_ENV_KEY] === undefined
+  ) {
+    return "ollama-options";
+  }
+
   return getNextStepAfterApiKey(provider, modelIdOverride);
+}
+
+function getNextStepAfterOllamaOptions(
+  modelIdOverride: string | null,
+): PromptStep | null {
+  if (
+    modelIdOverride === null &&
+    process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined
+  ) {
+    return "model";
+  }
+
+  if (process.env.LANGSMITH_API_KEY === undefined) {
+    return "langsmith";
+  }
+
+  return null;
 }
 
 function getNextStepAfterApiKey(
