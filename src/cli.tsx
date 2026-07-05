@@ -153,6 +153,8 @@ function App({ command }: AppProps) {
     process.stdin.isTTY &&
     runState.status === "idle" &&
     needsCredentialSetup(sessionModelId);
+  const shouldRunConfigSetup =
+    command.kind === "config" && runState.status === "idle";
   const displayModelId = sessionModelId ?? startupModelId;
 
   function submitChatMessage(message: string) {
@@ -225,13 +227,13 @@ function App({ command }: AppProps) {
       return;
     }
 
-    if (command.dryRun) {
-      process.exitCode = 0;
-      app.exit();
+    if (command.kind !== "run") {
       return;
     }
 
-    if (command.kind !== "run") {
+    if (command.dryRun) {
+      process.exitCode = 0;
+      app.exit();
       return;
     }
 
@@ -383,11 +385,17 @@ function App({ command }: AppProps) {
       return;
     }
 
+    if (runState.status === "init-setup-saved" && command.kind === "config") {
+      process.exitCode = 0;
+      app.exit();
+      return;
+    }
+
     if (runState.status === "success" && autoExitOnSuccess) {
       process.exitCode = 0;
       app.exit();
     }
-  }, [app, autoExitOnSuccess, runState.status]);
+  }, [app, autoExitOnSuccess, command.kind, runState.status]);
 
   if (command.kind === "help") {
     return <HelpView />;
@@ -400,6 +408,27 @@ function App({ command }: AppProps) {
         <StatusLine tone="error" label="Error" value={command.message} />
         <HelpView />
       </Box>
+    );
+  }
+
+  if (shouldRunConfigSetup) {
+    return (
+      <InitSetup
+        forceReconfigure
+        onComplete={(result) => {
+          if (result.modelId) {
+            setSessionModelId(result.modelId);
+          }
+          if (result.provider) {
+            setSessionProvider(result.provider);
+          }
+
+          setRunState({ status: "init-setup-saved", result });
+        }}
+        onError={(message) => {
+          setRunState({ status: "error", message });
+        }}
+      />
     );
   }
 
@@ -463,7 +492,11 @@ function App({ command }: AppProps) {
             value={runState.result.modelId}
           />
         ) : null}
-        <StatusLine tone="active" label="Next" value="starting openwiki" />
+        <StatusLine
+          tone="active"
+          label="Next"
+          value={command.kind === "config" ? "done" : "starting openwiki"}
+        />
       </Box>
     );
   }
@@ -3023,7 +3056,10 @@ function Rows({ rows }: RowsProps) {
 const argv = process.argv.slice(2);
 const parsedCommand = parseCommand(argv);
 
-if (parsedCommand.kind === "run" && !parsedCommand.dryRun) {
+if (
+  (parsedCommand.kind === "run" && !parsedCommand.dryRun) ||
+  parsedCommand.kind === "config"
+) {
   await loadOpenWikiEnv();
 }
 
@@ -3113,6 +3149,14 @@ function writePrintErrorDiagnostics(error: unknown): void {
 }
 
 function resolveStartupCommand(command: CliCommand): CliCommand {
+  if (command.kind === "config" && !process.stdin.isTTY) {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "openwiki --config requires an interactive terminal.",
+    };
+  }
+
   if (
     command.kind === "run" &&
     !command.dryRun &&

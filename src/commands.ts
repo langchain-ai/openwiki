@@ -18,6 +18,7 @@ export type HelpContent = {
 };
 
 export type CliCommand =
+  | { kind: "config"; exitCode: 0 }
   | { kind: "help"; exitCode: 0 }
   | {
       kind: "run";
@@ -38,6 +39,18 @@ export type CliCommand =
 export function parseCommand(argv: string[]): CliCommand {
   if (argv[0] === "--help" || argv[0] === "-h") {
     return { kind: "help", exitCode: 0 };
+  }
+
+  if (argv.includes("--config")) {
+    if (argv.length > 1) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: "--config cannot be combined with other options or messages.",
+      };
+    }
+
+    return { kind: "config", exitCode: 0 };
   }
 
   let dryRun = false;
@@ -176,6 +189,7 @@ export const helpContent: HelpContent = {
   usage: [
     "openwiki [--modelId <model>]",
     "openwiki [--modelId <model>] [message]",
+    "openwiki --config",
     "openwiki --init [message]",
     "openwiki --update [message]",
   ],
@@ -186,6 +200,10 @@ export const helpContent: HelpContent = {
     },
   ],
   options: [
+    {
+      label: "--config",
+      description: "Configure or update saved provider credentials.",
+    },
     {
       label: "--init",
       description: "Generate initial OpenWiki documentation.",
@@ -211,6 +229,7 @@ export const helpContent: HelpContent = {
   ],
   examples: [
     "openwiki",
+    "openwiki --config",
     "openwiki --init",
     "openwiki --update",
     'openwiki "What can you do?"',

@@ -30,6 +30,7 @@ export type InitSetupResult = {
 };
 
 type InitSetupProps = {
+  forceReconfigure?: boolean;
   modelIdOverride?: string | null;
   onComplete: (result: InitSetupResult) => void;
   onError: (message: string) => void;
@@ -68,6 +69,7 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
 }
 
 export function InitSetup({
+  forceReconfigure = false,
   modelIdOverride = null,
   onComplete,
   onError,
@@ -96,7 +98,11 @@ export function InitSetup({
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const initialStep = getInitialStep(modelIdOverride, initialProvider);
+    const initialStep = getInitialStep(
+      modelIdOverride,
+      initialProvider,
+      forceReconfigure,
+    );
 
     if (initialStep === null) {
       onComplete({
@@ -127,7 +133,7 @@ export function InitSetup({
         shouldStartWithCustomModelInput(initialProvider),
     );
     setStep(initialStep);
-  }, [initialProvider, modelIdOverride, onComplete]);
+  }, [forceReconfigure, initialProvider, modelIdOverride, onComplete]);
 
   useInput((inputValue, key) => {
     if (isSaving || step === null) {
@@ -211,6 +217,7 @@ export function InitSetup({
       const nextStep = getNextStepAfterProvider(
         selectedProvider,
         modelIdOverride,
+        forceReconfigure,
       );
 
       if (nextStep) {
@@ -242,7 +249,11 @@ export function InitSetup({
 
       setApiKey(trimmedInput);
       setInput("");
-      const nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
+      const nextStep = getNextStepAfterApiKey(
+        provider,
+        modelIdOverride,
+        forceReconfigure,
+      );
 
       if (nextStep) {
         setIsCustomModelInput(
@@ -279,7 +290,11 @@ export function InitSetup({
 
       setBaseUrl(trimmedInput);
       setInput("");
-      const nextStep = getNextStepAfterBaseUrl(provider, modelIdOverride);
+      const nextStep = getNextStepAfterBaseUrl(
+        provider,
+        modelIdOverride,
+        forceReconfigure,
+      );
 
       if (nextStep) {
         setIsCustomModelInput(
@@ -322,7 +337,7 @@ export function InitSetup({
       setInput("");
       setIsCustomModelInput(false);
 
-      if (process.env.LANGSMITH_API_KEY === undefined) {
+      if (forceReconfigure || process.env.LANGSMITH_API_KEY === undefined) {
         setStep("langsmith");
         return;
       }
@@ -446,10 +461,10 @@ export function InitSetup({
         <SetupStep
           label="Provider"
           state={
-            process.env[OPENWIKI_PROVIDER_ENV_KEY]
-              ? "done"
-              : step === "provider"
-                ? "current"
+            step === "provider"
+              ? "current"
+              : process.env[OPENWIKI_PROVIDER_ENV_KEY]
+                ? "done"
                 : "pending"
           }
           detail={getProviderSetupDetail(provider)}
@@ -457,10 +472,10 @@ export function InitSetup({
         <SetupStep
           label="Provider key"
           state={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "done"
-              : step === "api-key"
-                ? "current"
+            step === "api-key"
+              ? "current"
+              : process.env[getProviderApiKeyEnvKey(provider)]
+                ? "done"
                 : "pending"
           }
           detail={
@@ -489,10 +504,10 @@ export function InitSetup({
         <SetupStep
           label="Model"
           state={
-            modelIdOverride || process.env[OPENWIKI_MODEL_ID_ENV_KEY]
-              ? "done"
-              : step === "model"
-                ? "current"
+            step === "model"
+              ? "current"
+              : modelIdOverride || process.env[OPENWIKI_MODEL_ID_ENV_KEY]
+                ? "done"
                 : "pending"
           }
           detail={getModelSetupDetail(modelIdOverride, provider)}
@@ -500,10 +515,10 @@ export function InitSetup({
         <SetupStep
           label="LangSmith"
           state={
-            process.env.LANGSMITH_API_KEY !== undefined
-              ? "done"
-              : step === "langsmith"
-                ? "current"
+            step === "langsmith"
+              ? "current"
+              : process.env.LANGSMITH_API_KEY !== undefined
+                ? "done"
                 : "optional"
           }
           detail={
@@ -530,7 +545,7 @@ export function InitSetup({
         )}
       </SetupPanel>
 
-      {needsCredentialPrompt ? (
+      {forceReconfigure || needsCredentialPrompt ? (
         <Text color="gray">Secrets are masked and saved only after setup.</Text>
       ) : null}
 
@@ -745,7 +760,12 @@ function SelectionMarker({ isSelected }: { isSelected: boolean }) {
 function getInitialStep(
   modelIdOverride: string | null,
   provider: OpenWikiProvider,
+  forceReconfigure = false,
 ): PromptStep | null {
+  if (forceReconfigure) {
+    return "provider";
+  }
+
   if (process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined) {
     return "provider";
   }
@@ -775,29 +795,40 @@ function getInitialStep(
 function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
+  forceReconfigure = false,
 ): PromptStep | null {
+  if (forceReconfigure) {
+    return "api-key";
+  }
+
   if (!process.env[getProviderApiKeyEnvKey(provider)]) {
     return "api-key";
   }
 
-  return getNextStepAfterApiKey(provider, modelIdOverride);
+  return getNextStepAfterApiKey(provider, modelIdOverride, forceReconfigure);
 }
 
 function getNextStepAfterApiKey(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
+  forceReconfigure = false,
 ): PromptStep | null {
   if (needsBaseUrlStep(provider)) {
     return "base-url";
   }
 
-  return getNextStepAfterBaseUrl(provider, modelIdOverride);
+  return getNextStepAfterBaseUrl(provider, modelIdOverride, forceReconfigure);
 }
 
 function getNextStepAfterBaseUrl(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
+  forceReconfigure = false,
 ): PromptStep | null {
+  if (forceReconfigure) {
+    return "model";
+  }
+
   if (
     modelIdOverride === null &&
     process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined

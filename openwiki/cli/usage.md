@@ -10,6 +10,7 @@ From `src/commands.ts` and `README.md`, the supported entry patterns are:
 - `openwiki "message"` — send a chat message immediately, then stay open.
 - `openwiki --init [message]` — generate initial OpenWiki documentation.
 - `openwiki --update [message]` — refresh existing OpenWiki documentation.
+- `openwiki --config` — re-run provider, API key, model, and optional LangSmith setup without starting an agent run.
 - `openwiki -p, --print` — run once and print the final assistant output (non-interactive).
 - `openwiki --modelId <id>` / `--model-id <id>` — choose a model ID for the run.
 - `openwiki --help` / `-h` — print usage, options, and examples.
