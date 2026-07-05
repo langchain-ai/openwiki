@@ -5,17 +5,20 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const ZAI_API_KEY_ENV_KEY = "ZAI_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+export const ZAI_BASE_URL = "https://api.z.ai/api/coding/paas/v4";
 
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
   | "openai"
-  | "openrouter";
+  | "openrouter"
+  | "zai";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -37,6 +40,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "fireworks",
   "openai",
   "anthropic",
+  "zai",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -77,6 +81,12 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-sonnet-5", label: "Sonnet" },
       { id: "claude-opus-4.8", label: "Opus" },
     ],
+  },
+  zai: {
+    apiKeyEnvKey: ZAI_API_KEY_ENV_KEY,
+    baseURL: ZAI_BASE_URL,
+    label: "Z.AI",
+    modelOptions: [{ id: "glm-5.2", label: "GLM 5.2" }],
   },
   openrouter: {
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,

@@ -31,6 +31,8 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   resolveConfiguredProvider,
+  ZAI_API_KEY_ENV_KEY,
+  ZAI_BASE_URL,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
@@ -71,6 +73,12 @@ export async function runOpenWikiAgent(
   emitDebug(options, `model=${modelId}`);
 
   const debugFetchCapture = installOpenRouterDebugFetch(options);
+  // Z.AI's streaming endpoint occasionally emits a final tool-call chunk with no
+  // assistant role, which langchain assembles into a ChatMessageChunk that
+  // deepagents rejects. The normalizer backfills the role so the agent loop
+  // (--init/--update) completes. Only installed for the zai provider.
+  const restoreZaiFetch =
+    provider === "zai" ? installZaiStreamingNormalizer(options) : null;
 
   try {
     return await runOpenWikiAgentWithModelFallbacks(
@@ -86,6 +94,7 @@ export async function runOpenWikiAgent(
     throw error;
   } finally {
     debugFetchCapture.restore();
+    restoreZaiFetch?.restore();
   }
 }
 
@@ -394,6 +403,16 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       models,
       route: "fallback",
       siteName: "OpenWiki",
+    });
+  }
+
+  if (provider === "zai") {
+    return new ChatOpenAI({
+      apiKey: process.env[ZAI_API_KEY_ENV_KEY],
+      configuration: {
+        baseURL: ZAI_BASE_URL,
+      },
+      model: modelId,
     });
   }
 
@@ -1021,9 +1040,262 @@ type OpenRouterResponseSummary = {
   statusText: string;
 };
 
+// Z.AI fetch normalizer
+//
+// GLM's coding-plan endpoint is OpenAI-compatible but stricter than the
+// providers deepagents was built around. Two response/request shapes that the
+// agent loop produces crash `--init`/`--update`; this normalizer patches both,
+// scoped to api.z.ai so other providers are unaffected.
+//
+// 1. RESPONSE — streaming role-less tool-call chunks. GLM sometimes ends a
+//    tool-call turn with an SSE chunk whose `delta` has no `role` field (e.g. a
+//    trailing usage-only chunk with `finish_reason: "tool_calls"`). LangChain's
+//    completions converter maps a role-less assistant delta to the generic
+//    `ChatMessageChunk`, which deepagents' `patchToolCallsMiddleware` rejects
+//    with "expected AIMessage or Command, got object". We backfill
+//    `role: "assistant"` on assistant-turn chunks that are missing one.
+//
+// 2. REQUEST — non-text content blocks. The agent loop emits Anthropic-style
+//    array content (text plus non-text blocks such as tool/file payloads) on
+//    later turns. GLM's chat-completions endpoint rejects every non-text block
+//    variant with `400 ...content[0].type type error`. We flatten array content
+//    into a single text string, replacing each non-text block with a placeholder
+//    so GLM never sees an unsupported type. (GLM cannot consume those blocks
+//    anyway; if it ever needs them it would be a follow-up.)
+type ZaiFetchRestore = {
+  restore: () => void;
+};
+
+function installZaiStreamingNormalizer(
+  options: OpenWikiRunOptions,
+): ZaiFetchRestore {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = (async (input, init) => {
+    const url = getZaiFetchUrl(input);
+
+    if (url === null || !url.includes("api.z.ai")) {
+      return originalFetch(input, init);
+    }
+
+    // REQUEST-SIDE: flatten non-text content blocks before sending.
+    const normalizedInit = normalizeZaiRequestInit(init, options);
+
+    const response = await originalFetch(input, normalizedInit);
+    const contentType = response.headers.get("content-type") ?? "";
+
+    // RESPONSE-SIDE: only streaming chat-completion responses need role
+    // normalization. Non-streaming (JSON) and non-event content types pass
+    // through unchanged.
+    if (
+      !contentType.includes("text/event-stream") &&
+      !contentType.includes("application/x-ndjson")
+    ) {
+      return response;
+    }
+
+    const originalBody = await response.text();
+    const normalizedBody = normalizeZaiStreamingBody(originalBody);
+
+    if (normalizedBody === originalBody) {
+      // Nothing changed; hand back a body the caller can re-read.
+      return new Response(originalBody, {
+        headers: response.headers,
+        status: response.status,
+        statusText: response.statusText,
+      });
+    }
+
+    emitDebug(options, "zai.streaming normalized tool-call chunk roles");
+
+    const headers = new Headers(response.headers);
+    // The rewritten body may differ in length from the original; fall back to
+    // chunked framing by dropping the static content-length so clients stream.
+    headers.delete("content-length");
+
+    return new Response(normalizedBody, {
+      headers,
+      status: response.status,
+      statusText: response.statusText,
+    });
+  }) satisfies typeof fetch;
+
+  return {
+    restore: () => {
+      globalThis.fetch = originalFetch;
+    },
+  };
+}
+
+function normalizeZaiRequestInit(
+  init: RequestInit | undefined,
+  options: OpenWikiRunOptions,
+): RequestInit | undefined {
+  if (init?.body === undefined || typeof init.body !== "string") {
+    return init;
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(init.body) as unknown;
+  } catch {
+    return init;
+  }
+
+  if (!isRecord(parsed) || !Array.isArray(parsed.messages)) {
+    return init;
+  }
+
+  let changed = false;
+
+  for (const message of parsed.messages) {
+    if (!isRecord(message) || !Array.isArray(message.content)) {
+      continue;
+    }
+
+    const flattened = flattenZaiContentBlocks(message.content);
+
+    if (flattened !== null) {
+      message.content = flattened;
+      changed = true;
+    }
+  }
+
+  if (!changed) {
+    return init;
+  }
+
+  emitDebug(options, "zai.request flattened non-text content blocks");
+
+  return { ...init, body: JSON.stringify(parsed) };
+}
+
+// Returns a single text string if the blocks contain any non-text payload
+// (which GLM rejects), or null if the content is already plain text and can be
+// left untouched.
+function flattenZaiContentBlocks(blocks: unknown[]): string | null {
+  let hasNonText = false;
+  const parts: string[] = [];
+
+  for (const block of blocks) {
+    if (!isRecord(block)) {
+      hasNonText = true;
+      parts.push("[omitted non-text content]");
+      continue;
+    }
+
+    const type = typeof block.type === "string" ? block.type : "unknown";
+
+    if (type === "text" && typeof block.text === "string") {
+      parts.push(block.text);
+      continue;
+    }
+
+    hasNonText = true;
+    parts.push(`[omitted ${type} block]`);
+  }
+
+  return hasNonText ? parts.join("\n") : null;
+}
+
+function getZaiFetchUrl(input: Parameters<typeof fetch>[0]): string | null {
+  if (typeof input === "string") {
+    return input;
+  }
+
+  if (input instanceof URL) {
+    return input.toString();
+  }
+
+  return "url" in input && typeof input.url === "string" ? input.url : null;
+}
+
+function normalizeZaiStreamingBody(body: string): string {
+  const lines = body.split(/\r?\n/u);
+  let changed = false;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+
+    if (typeof line !== "string" || !line.startsWith("data:")) {
+      continue;
+    }
+
+    const payload = line.slice(5).trim();
+
+    if (payload.length === 0 || payload === "[DONE]") {
+      continue;
+    }
+
+    const normalized = normalizeZaiSsePayload(payload);
+
+    if (normalized !== null && normalized !== payload) {
+      lines[i] = `data: ${normalized}`;
+      changed = true;
+    }
+  }
+
+  return changed ? lines.join("\n") : body;
+}
+
+function normalizeZaiSsePayload(payload: string): string | null {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(payload) as unknown;
+  } catch {
+    return null;
+  }
+
+  if (!isRecord(parsed)) {
+    return null;
+  }
+
+  const choices = parsed.choices;
+
+  if (!Array.isArray(choices) || choices.length === 0) {
+    return null;
+  }
+
+  let patched = false;
+
+  for (const choice of choices) {
+    if (!isRecord(choice) || !isRecord(choice.delta)) {
+      continue;
+    }
+
+    // A chunk belongs to an assistant turn if it carries tool calls, ends with a
+    // tool-call finish reason, or already declares the assistant role. Any such
+    // chunk that is missing a role is ambiguous to langchain's converter and is
+    // normalized to "assistant".
+    const isAssistantTurn =
+      Array.isArray(choice.delta.tool_calls) ||
+      choice.finish_reason === "tool_calls" ||
+      choice.delta.role === "assistant" ||
+      (typeof choice.delta.content === "string" &&
+        !("role" in choice.delta) &&
+        hasReasoningContent(choice.delta));
+
+    if (isAssistantTurn && choice.delta.role === undefined) {
+      choice.delta.role = "assistant";
+      patched = true;
+    }
+  }
+
+  return patched ? JSON.stringify(parsed) : null;
+}
+
+function hasReasoningContent(delta: Record<string, unknown>): boolean {
+  return (
+    "reasoning_content" in delta &&
+    typeof delta.reasoning_content === "string" &&
+    delta.reasoning_content.length > 0
+  );
+}
+
 const OPENROUTER_DEBUG_PROPERTY = "openRouterDebug";
 const OPENROUTER_DEBUG_BODY_LIMIT = 4_000;
-
 function installOpenRouterDebugFetch(
   options: OpenWikiRunOptions,
 ): OpenRouterFetchCapture {
@@ -1264,6 +1536,7 @@ function formatEnvironmentDebug(): string {
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    ZAI_API_KEY_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,
     "LANGCHAIN_TRACING_V2",
     "LANGCHAIN_PROJECT",
