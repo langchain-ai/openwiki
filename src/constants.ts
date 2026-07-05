@@ -3,6 +3,8 @@ export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
+export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
+export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
@@ -16,6 +18,7 @@ export type OpenWikiProvider =
   | "baseten"
   | "fireworks"
   | "openai"
+  | "openai-compatible"
   | "openrouter";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
@@ -33,6 +36,11 @@ type ProviderConfig = {
    * with an alternative base URL (e.g. a self-hosted or proxied endpoint).
    */
   baseUrlEnvKey?: string;
+  /**
+   * When true, the provider has no default endpoint and requires a base URL to
+   * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
+   */
+  requiresBaseUrl?: boolean;
   label: string;
   modelOptions: ProviderModelOption[];
 };
@@ -42,6 +50,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "baseten",
   "fireworks",
   "openai",
+  "openai-compatible",
   "anthropic",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
@@ -74,6 +83,13 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "gpt-5.4-mini", label: "5.4 mini" },
       { id: "gpt-5.5", label: "5.5" },
     ],
+  },
+  "openai-compatible": {
+    apiKeyEnvKey: OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
+    baseUrlEnvKey: OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+    requiresBaseUrl: true,
+    label: "OpenAI-compatible",
+    modelOptions: [],
   },
   anthropic: {
     apiKeyEnvKey: ANTHROPIC_API_KEY_ENV_KEY,
@@ -144,6 +160,32 @@ export function resolveProviderBaseUrl(
   }
 
   return config.baseURL;
+}
+
+export function getProviderBaseUrlEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).baseUrlEnvKey;
+}
+
+export function providerRequiresBaseUrl(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).requiresBaseUrl === true;
+}
+
+export function isValidBaseUrl(value: string): boolean {
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) {
+    return false;
+  }
+
+  try {
+    const url = new URL(trimmed);
+
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 export function getProviderModelOptions(
