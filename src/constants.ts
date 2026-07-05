@@ -11,11 +11,7 @@ export const DEFAULT_PROVIDER = "openrouter";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type OpenWikiProvider =
-  | "anthropic"
-  | "baseten"
-  | "fireworks"
-  | "openai"
-  | "openrouter";
+  "anthropic" | "baseten" | "fireworks" | "openai" | "openrouter";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -75,7 +71,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [
       { id: "claude-haiku-4-5", label: "Haiku" },
       { id: "claude-sonnet-5", label: "Sonnet" },
-      { id: "claude-opus-4.8", label: "Opus" },
+      { id: "claude-opus-4-8", label: "Opus" },
     ],
   },
   openrouter: {
@@ -86,7 +82,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "z-ai/glm-5.2", label: "GLM 5.2" },
       { id: "openrouter/fusion", label: "OpenRouter Fusion" },
       { id: "moonshotai/kimi-k2.7-code", label: "Kimi K2.7 Code" },
-      { id: "anthropic/claude-opus-4.8", label: "Claude Opus" },
+      { id: "anthropic/claude-opus-4-8", label: "Claude Opus" },
       { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
