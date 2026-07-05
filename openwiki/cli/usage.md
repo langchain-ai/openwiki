@@ -43,8 +43,9 @@ The UI persists provider and model selection back to `~/.openwiki/.env` through 
 
 The first interactive run can prompt for:
 
-- a **provider** (`OPENWIKI_PROVIDER`) — openrouter, baseten, fireworks, openai, or anthropic,
-- the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`),
+- a **provider** (`OPENWIKI_PROVIDER`) — openrouter, baseten, fireworks, openai, openai-compatible, or anthropic,
+- the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`),
+- a **base URL** for providers that require one (the openai-compatible provider prompts for `OPENAI_COMPATIBLE_BASE_URL`),
 - a **model ID** stored as `OPENWIKI_MODEL_ID` — chosen from the provider's model list or a custom ID,
 - optional `LANGSMITH_API_KEY` for tracing.
 
@@ -56,15 +57,46 @@ If a LangSmith key is provided, onboarding also enables `LANGCHAIN_PROJECT=openw
 
 Providers and their model options are defined in `PROVIDER_CONFIGS` in `src/constants.ts`:
 
-| Provider   | Env key              | Base URL                                | Models                                                                |
-| ---------- | -------------------- | --------------------------------------- | --------------------------------------------------------------------- |
-| openrouter | `OPENROUTER_API_KEY` | `https://openrouter.ai/api/v1`          | GLM 5.2, Fusion, Kimi K2.7 Code, Claude Opus/Sonnet, GPT 5.4 mini/5.5 |
-| baseten    | `BASETEN_API_KEY`    | `https://inference.baseten.co/v1`       | GLM 5.2, Kimi K2.7 Code                                               |
-| fireworks  | `FIREWORKS_API_KEY`  | `https://api.fireworks.ai/inference/v1` | GLM 5.2, Kimi K2.7 Code                                               |
-| openai     | `OPENAI_API_KEY`     | (default)                               | GPT 5.4 mini, GPT 5.5                                                 |
-| anthropic  | `ANTHROPIC_API_KEY`  | (default)                               | Haiku, Sonnet, Opus                                                   |
+| Provider          | Env key                     | Base URL                                | Models                                                                |
+| ----------------- | --------------------------- | --------------------------------------- | --------------------------------------------------------------------- |
+| openrouter        | `OPENROUTER_API_KEY`        | `https://openrouter.ai/api/v1`          | GLM 5.2, Fusion, Kimi K2.7 Code, Claude Opus/Sonnet, GPT 5.4 mini/5.5 |
+| baseten           | `BASETEN_API_KEY`           | `https://inference.baseten.co/v1`       | GLM 5.2, Kimi K2.7 Code                                               |
+| fireworks         | `FIREWORKS_API_KEY`         | `https://api.fireworks.ai/inference/v1` | GLM 5.2, Kimi K2.7 Code                                               |
+| openai            | `OPENAI_API_KEY`            | (default)                               | GPT 5.4 mini, GPT 5.5                                                 |
+| openai-compatible | `OPENAI_COMPATIBLE_API_KEY` | `OPENAI_COMPATIBLE_BASE_URL` (required) | custom model ID only                                                  |
+| anthropic         | `ANTHROPIC_API_KEY`         | (default, or `ANTHROPIC_BASE_URL`)      | Haiku, Sonnet, Opus                                                   |
 
 The default provider is `openrouter`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, falling back to openrouter if `OPENROUTER_API_KEY` is set, then to `DEFAULT_PROVIDER`.
+
+### Alternative base URLs
+
+Set `ANTHROPIC_BASE_URL` to route the anthropic provider at an alternative,
+Anthropic-compatible endpoint (for example a self-hosted or proxied gateway)
+instead of the default API. When set, it is passed to `ChatAnthropic` as
+`anthropicApiUrl`; the `ANTHROPIC_API_KEY` is still sent as the request
+credential.
+
+### OpenAI-compatible provider
+
+The `openai-compatible` provider targets any OpenAI-compatible chat-completions
+endpoint. It has no default endpoint, so `OPENAI_COMPATIBLE_BASE_URL` is
+**required** (the interactive setup prompts for it, and a run aborts early if it
+is missing). This is useful for OpenAI-compatible LLM endpoints such as those
+exposed by a LiteLLM gateway, which lets you reach whatever upstream providers
+the gateway fronts through a single OpenAI-shaped API.
+Because the provider has no preset model
+list, set `OPENWIKI_MODEL_ID` (or pick "custom model ID" in setup) to whatever
+name the gateway exposes.
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=<gateway key>
+OPENAI_COMPATIBLE_BASE_URL=https://<gateway>/v1
+OPENWIKI_MODEL_ID=<model name the gateway exposes>
+```
+
+Base URLs are resolved by `resolveProviderBaseUrl()` in `src/constants.ts`, which
+prefers a provider's `baseUrlEnvKey` override over the built-in default.
 
 ## Help text and validation
 
@@ -81,6 +113,8 @@ The help content is centralized in `src/commands.ts` and is used by the CLI UI. 
 - Then update any user-visible text in `src/cli.tsx` and `README.md`.
 - If new options affect run behavior, make sure `src/agent/index.ts` and `src/credentials.tsx` still receive the right inputs.
 - If adding a provider, update `PROVIDER_CONFIGS` and `SELECTABLE_OPENWIKI_PROVIDERS` in `src/constants.ts`, `managedEnvKeys` in `src/env.ts`, and the `createModel` branch in `src/agent/index.ts`.
+- To let a provider accept an alternative base URL, set `baseUrlEnvKey` on its `PROVIDER_CONFIGS` entry, add that key to `managedEnvKeys` in `src/env.ts`, and read it through `resolveProviderBaseUrl()` in the provider's `createModel` branch.
+- To require a user-supplied base URL (a provider with no default endpoint, like `openai-compatible`), also set `requiresBaseUrl: true`. `ensureProviderBaseUrl()` in `src/agent/index.ts` enforces it at runtime, and the interactive setup adds a base-URL step for such providers.
 - Re-check the `package.json` bin entry and scripts if the entrypoint changes.
 
 ## Source map
