@@ -1,4 +1,5 @@
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import type { BindToolsInput } from "@langchain/core/language_models/chat_models";
 import {
   AIMessage,
   BaseMessage,
@@ -7,6 +8,7 @@ import {
 } from "@langchain/core/messages";
 import { ChatResult } from "@langchain/core/outputs";
 import { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
+import type { Runnable } from "@langchain/core/runnables";
 import { createOpencodeClient } from "@opencode-ai/sdk";
 import type { Part } from "@opencode-ai/sdk";
 
@@ -99,6 +101,29 @@ export class OpenCodeModel extends BaseChatModel {
         },
       ],
     };
+  }
+
+  bindTools(
+    tools: BindToolsInput[],
+  ): Runnable {
+    const toolDicts = tools.map((t) => ({
+      type: "function" as const,
+      function: {
+        name: "name" in t ? (t as { name: string }).name : "",
+        description:
+          "description" in t
+            ? (t as { description?: string }).description
+            : undefined,
+        parameters:
+          "schema" in t
+            ? (t as { schema?: Record<string, unknown> }).schema
+            : undefined,
+      },
+    }));
+
+    return this.withConfig({
+      tools: toolDicts,
+    } as this["ParsedCallOptions"]);
   }
 
   _llmType(): string {
