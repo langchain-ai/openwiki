@@ -15,7 +15,8 @@ export type OpenWikiProvider =
   | "baseten"
   | "fireworks"
   | "openai"
-  | "openrouter";
+  | "openrouter"
+  | "bedrock";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -37,9 +38,36 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "fireworks",
   "openai",
   "anthropic",
+  "bedrock",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
+  bedrock: {
+    apiKeyEnvKey: "AWS_SECRET_ACCESS_KEY",
+    label: "AWS Bedrock",
+    modelOptions: [
+      {
+        id: "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+        label: "Claude 3.5 Sonnet v2 (US Cross-Region)",
+      },
+      {
+        id: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        label: "Claude 3.5 Sonnet v2",
+      },
+      {
+        id: "anthropic.claude-3-5-sonnet-20240620-v1:0",
+        label: "Claude 3.5 Sonnet v1",
+      },
+      {
+        id: "anthropic.claude-3-5-haiku-20241022-v1:0",
+        label: "Claude 3.5 Haiku",
+      },
+      {
+        id: "amazon.nova-pro-v1:0",
+        label: "Amazon Nova Pro",
+      },
+    ],
+  },
   baseten: {
     apiKeyEnvKey: BASETEN_API_KEY_ENV_KEY,
     baseURL: "https://inference.baseten.co/v1",

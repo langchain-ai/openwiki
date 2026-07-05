@@ -31,12 +31,30 @@ type InitSetupProps = {
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "langsmith" | "model" | "provider";
+type PromptStep =
+  | "api-key"
+  | "langsmith"
+  | "model"
+  | "provider"
+  | "aws-region"
+  | "aws-access-key"
+  | "aws-secret-key";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
 ): boolean {
   const provider = resolveConfiguredProvider();
+
+  if (provider === "bedrock") {
+    return (
+      process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
+      (!process.env.AWS_REGION && !process.env.AWS_DEFAULT_REGION) ||
+      (modelIdOverride === null &&
+        process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
+      process.env.LANGSMITH_API_KEY === undefined
+    );
+  }
+
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   return (
@@ -57,6 +75,9 @@ export function InitSetup({
   const [step, setStep] = useState<PromptStep | null>(null);
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [awsRegion, setAwsRegion] = useState<string | null>(null);
+  const [awsAccessKey, setAwsAccessKey] = useState<string | null>(null);
+  const [awsSecretKey, setAwsSecretKey] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -197,6 +218,9 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
+        nextAwsRegion: awsRegion,
+        nextAwsAccessKey: awsAccessKey,
+        nextAwsSecretKey: awsSecretKey,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: selectedProvider,
@@ -223,6 +247,96 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: trimmedInput,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
+      });
+      return;
+    }
+
+    if (step === "aws-region") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError("AWS region is required.");
+        return;
+      }
+
+      setAwsRegion(trimmedInput);
+      setInput("");
+      
+      let nextStep: PromptStep | null;
+      if (!process.env.AWS_ACCESS_KEY_ID && !awsAccessKey) {
+        nextStep = "aws-access-key";
+      } else if (!process.env.AWS_SECRET_ACCESS_KEY && !awsSecretKey) {
+        nextStep = "aws-secret-key";
+      } else {
+        nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
+      }
+
+      if (nextStep) {
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextAwsRegion: trimmedInput,
+        nextAwsAccessKey: awsAccessKey,
+        nextAwsSecretKey: awsSecretKey,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
+      });
+      return;
+    }
+
+    if (step === "aws-access-key") {
+      const trimmedInput = input.trim();
+      setAwsAccessKey(trimmedInput || null);
+      setInput("");
+
+      let nextStep: PromptStep | null;
+      if (!process.env.AWS_SECRET_ACCESS_KEY && !awsSecretKey) {
+        nextStep = "aws-secret-key";
+      } else {
+        nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
+      }
+
+      if (nextStep) {
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextAwsRegion: awsRegion,
+        nextAwsAccessKey: trimmedInput || null,
+        nextAwsSecretKey: awsSecretKey,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
+      });
+      return;
+    }
+
+    if (step === "aws-secret-key") {
+      const trimmedInput = input.trim();
+      setAwsSecretKey(trimmedInput || null);
+      setInput("");
+
+      const nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
+
+      if (nextStep) {
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextAwsRegion: awsRegion,
+        nextAwsAccessKey: awsAccessKey,
+        nextAwsSecretKey: trimmedInput || null,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -284,6 +398,9 @@ export function InitSetup({
 
   type CompleteSetupOptions = {
     nextApiKey: string | null;
+    nextAwsRegion?: string | null;
+    nextAwsAccessKey?: string | null;
+    nextAwsSecretKey?: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
@@ -291,6 +408,9 @@ export function InitSetup({
 
   async function completeSetup({
     nextApiKey,
+    nextAwsRegion,
+    nextAwsAccessKey,
+    nextAwsSecretKey,
     nextLangSmithKey,
     nextModelId,
     nextProvider,
@@ -306,8 +426,23 @@ export function InitSetup({
         updates[OPENWIKI_PROVIDER_ENV_KEY] = nextProvider;
       }
 
-      if (nextApiKey !== null) {
-        updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+      if (nextProvider === "bedrock") {
+        const finalRegion = nextAwsRegion !== undefined ? nextAwsRegion : awsRegion;
+        if (finalRegion) {
+          updates.AWS_REGION = finalRegion;
+        }
+        const finalAccessKey = nextAwsAccessKey !== undefined ? nextAwsAccessKey : awsAccessKey;
+        if (finalAccessKey) {
+          updates.AWS_ACCESS_KEY_ID = finalAccessKey;
+        }
+        const finalSecretKey = nextAwsSecretKey !== undefined ? nextAwsSecretKey : awsSecretKey;
+        if (finalSecretKey) {
+          updates.AWS_SECRET_ACCESS_KEY = finalSecretKey;
+        }
+      } else {
+        if (nextApiKey !== null) {
+          updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+        }
       }
 
       if (nextModelId !== null) {
@@ -334,7 +469,7 @@ export function InitSetup({
           process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
           null,
         provider: nextProvider,
-        savedApiKey: nextApiKey !== null,
+        savedApiKey: nextProvider === "bedrock" ? (nextAwsSecretKey !== undefined || nextAwsAccessKey !== undefined) : (nextApiKey !== null),
         savedLangSmithKey:
           nextLangSmithKey !== null && nextLangSmithKey.length > 0,
         savedModelId: nextModelId !== null,
@@ -367,21 +502,71 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
-        <SetupStep
-          label="Provider key"
-          state={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "done"
-              : step === "api-key"
-                ? "current"
-                : "pending"
-          }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
-        />
+        {provider === "bedrock" ? (
+          <>
+            <SetupStep
+              label="AWS Region"
+              state={
+                process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || awsRegion
+                  ? "done"
+                  : step === "aws-region"
+                    ? "current"
+                    : "pending"
+              }
+              detail={
+                process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || awsRegion
+                  ? (process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || awsRegion || "")
+                  : `save AWS_REGION to ${openWikiEnvPath}`
+              }
+            />
+            <SetupStep
+              label="AWS Access Key"
+              state={
+                process.env.AWS_ACCESS_KEY_ID || awsAccessKey
+                  ? "done"
+                  : step === "aws-access-key"
+                    ? "current"
+                    : "optional"
+              }
+              detail={
+                process.env.AWS_ACCESS_KEY_ID || awsAccessKey
+                  ? "available from environment"
+                  : `optional AWS_ACCESS_KEY_ID in ${openWikiEnvPath}`
+              }
+            />
+            <SetupStep
+              label="AWS Secret Key"
+              state={
+                process.env.AWS_SECRET_ACCESS_KEY || awsSecretKey
+                  ? "done"
+                  : step === "aws-secret-key"
+                    ? "current"
+                    : "optional"
+              }
+              detail={
+                process.env.AWS_SECRET_ACCESS_KEY || awsSecretKey
+                  ? "available from environment"
+                  : `optional AWS_SECRET_ACCESS_KEY in ${openWikiEnvPath}`
+              }
+            />
+          </>
+        ) : (
+          <SetupStep
+            label="Provider key"
+            state={
+              process.env[getProviderApiKeyEnvKey(provider)]
+                ? "done"
+                : step === "api-key"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              process.env[getProviderApiKeyEnvKey(provider)]
+                ? "available from environment"
+                : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
+            }
+          />
+        )}
         <SetupStep
           label="Model"
           state={
@@ -559,6 +744,45 @@ function Prompt({
     );
   }
 
+  if (step === "aws-region") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter your AWS Region (e.g. us-east-1).</Text>
+        <Text>
+          <Text color="gray">$</Text> AWS_REGION={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "aws-access-key") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter your AWS Access Key ID (optional, press Enter to skip if using IAM roles).</Text>
+        <Text>
+          <Text color="gray">$</Text> AWS_ACCESS_KEY_ID={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "aws-secret-key") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter your AWS Secret Access Key (optional, press Enter to skip if using IAM roles).</Text>
+        <Text>
+          <Text color="gray">$</Text> AWS_SECRET_ACCESS_KEY={" "}
+          <Text color="yellow">{mask(input)}</Text>
+        </Text>
+        <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
   if (step === "model") {
     if (isCustomModelInput) {
       return (
@@ -630,8 +854,14 @@ function getInitialStep(
     return "provider";
   }
 
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
+  if (provider === "bedrock") {
+    if (!process.env.AWS_REGION && !process.env.AWS_DEFAULT_REGION) {
+      return "aws-region";
+    }
+  } else {
+    if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+      return "api-key";
+    }
   }
 
   if (
@@ -652,8 +882,20 @@ function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
+  if (provider === "bedrock") {
+    if (!process.env.AWS_REGION && !process.env.AWS_DEFAULT_REGION) {
+      return "aws-region";
+    }
+    if (!process.env.AWS_ACCESS_KEY_ID) {
+      return "aws-access-key";
+    }
+    if (!process.env.AWS_SECRET_ACCESS_KEY) {
+      return "aws-secret-key";
+    }
+  } else {
+    if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+      return "api-key";
+    }
   }
 
   return getNextStepAfterApiKey(provider, modelIdOverride);

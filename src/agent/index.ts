@@ -349,6 +349,14 @@ function isFileNotFoundError(error: unknown): boolean {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
+  if (provider === "bedrock") {
+    if (!process.env.AWS_REGION && !process.env.AWS_DEFAULT_REGION) {
+      throw new Error(
+        `AWS_REGION or AWS_DEFAULT_REGION is required to run OpenWiki with AWS Bedrock.`,
+      );
+    }
+    return;
+  }
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   if (!process.env[apiKeyEnvKey]) {
@@ -378,6 +386,20 @@ function resolveModelId(
 }
 
 async function createModel(provider: OpenWikiProvider, modelId: string) {
+  if (provider === "bedrock") {
+    const { ChatBedrockConverse } = await import("@langchain/aws");
+
+    return new ChatBedrockConverse({
+      model: modelId,
+      region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION,
+      credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY ? {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        sessionToken: process.env.AWS_SESSION_TOKEN,
+      } : undefined,
+    });
+  }
+
   if (provider === "anthropic") {
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],

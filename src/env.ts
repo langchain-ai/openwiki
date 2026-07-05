@@ -41,6 +41,10 @@ const managedEnvKeys = [
   "LANGSMITH_API_KEY",
   "LANGCHAIN_PROJECT",
   "LANGCHAIN_TRACING_V2",
+  "AWS_REGION",
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "AWS_SESSION_TOKEN",
 ];
 
 const deprecatedEnvKeys = [
@@ -77,6 +81,9 @@ export async function getCredentialDiagnostics(): Promise<
     createCredentialDiagnostic(OPENAI_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(ANTHROPIC_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENROUTER_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic("AWS_REGION", fileEnv),
+    createCredentialDiagnostic("AWS_ACCESS_KEY_ID", fileEnv),
+    createCredentialDiagnostic("AWS_SECRET_ACCESS_KEY", fileEnv),
     createCredentialDiagnostic(OPENWIKI_MODEL_ID_ENV_KEY, fileEnv),
     createCredentialDiagnostic("LANGSMITH_API_KEY", fileEnv),
   ];

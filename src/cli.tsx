@@ -239,14 +239,24 @@ function App({ command }: AppProps) {
       return;
     }
 
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
+    if (sessionProvider === "bedrock") {
+      if (!process.env.AWS_REGION && !process.env.AWS_DEFAULT_REGION && !process.stdin.isTTY) {
+        setRunState({
+          status: "error",
+          message: `AWS_REGION or AWS_DEFAULT_REGION is required. Run openwiki in an interactive terminal to save credentials.`,
+        });
+        return;
+      }
+    } else {
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
-      setRunState({
-        status: "error",
-        message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
-      });
-      return;
+      if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+        setRunState({
+          status: "error",
+          message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
+        });
+        return;
+      }
     }
 
     if (shouldRunInteractiveCredentialSetup) {
@@ -1506,7 +1516,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        "Enter a valid provider: openrouter, baseten, fireworks, openai, anthropic, or bedrock.",
       );
       return;
     }
@@ -1519,9 +1529,13 @@ function ChatInput({
       await onProviderSelect(provider);
       resetInput();
       setNotice(
-        `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
-          provider,
-        )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
+        provider === "bedrock"
+          ? `Provider switched to AWS Bedrock with model ${getDefaultModelId(
+              provider,
+            )}. Ensure AWS_REGION is set.`
+          : `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
+              provider,
+            )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
       );
     } catch (saveError) {
       setError(
@@ -3119,15 +3133,26 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
     (command.print || !process.stdin.isTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+    if (provider === "bedrock") {
+      const hasAwsRegion = Boolean(process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION);
+      if (!hasAwsRegion) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `AWS_REGION or AWS_DEFAULT_REGION is required for non-interactive AWS Bedrock runs. Run openwiki in an interactive terminal to save credentials.`,
+        };
+      }
+    } else {
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+      const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
 
-    if (!hasProviderKey) {
-      return {
-        kind: "error",
-        exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
-      };
+      if (!hasProviderKey) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        };
+      }
     }
   }
 
