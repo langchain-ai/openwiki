@@ -119,7 +119,9 @@ export function describeCronExpression(expression: string): string {
 export function getSuggestedCronExpression(
   config: OpenWikiOnboardingConfig,
 ): string {
-  return config.ingestionSchedule?.expression ?? `0 ${DEFAULT_FIRST_HOUR} * * *`;
+  return (
+    config.ingestionSchedule?.expression ?? `0 ${DEFAULT_FIRST_HOUR} * * *`
+  );
 }
 
 export async function installConnectorSchedule({
@@ -205,7 +207,9 @@ export async function listConnectorSchedules(
       description: schedule.description,
       displayName: "All ingestion",
       expression: schedule.expression,
-      launchAgentLoaded: schedule.pausedAt ? false : await isLaunchAgentLoaded(),
+      launchAgentLoaded: schedule.pausedAt
+        ? false
+        : await isLaunchAgentLoaded(),
       launchAgentPath,
       launchAgentPlistExists: launchAgentPath
         ? await pathExists(launchAgentPath)
@@ -222,7 +226,11 @@ export async function pauseConnectorSchedules(
   config: OpenWikiOnboardingConfig,
   target: ScheduleTarget,
 ): Promise<ScheduleMutationResult> {
-  if (target !== "all" || !config.ingestionSchedule || config.ingestionSchedule.pausedAt) {
+  if (
+    target !== "all" ||
+    !config.ingestionSchedule ||
+    config.ingestionSchedule.pausedAt
+  ) {
     return {
       config,
       connectorIds: [],
@@ -263,7 +271,11 @@ export async function resumeConnectorSchedules({
   cwd: string;
   target: ScheduleTarget;
 }): Promise<ScheduleMutationResult> {
-  if (target !== "all" || !config.ingestionSchedule || !config.ingestionSchedule.pausedAt) {
+  if (
+    target !== "all" ||
+    !config.ingestionSchedule ||
+    !config.ingestionSchedule.pausedAt
+  ) {
     return {
       config,
       connectorIds: [],
@@ -501,7 +513,9 @@ async function cancelOpenWikiPowerSchedule(): Promise<PowerScheduleInstallResult
 }
 
 function hasActiveIngestionSchedule(config: OpenWikiOnboardingConfig): boolean {
-  return Boolean(config.ingestionSchedule && !config.ingestionSchedule.pausedAt);
+  return Boolean(
+    config.ingestionSchedule && !config.ingestionSchedule.pausedAt,
+  );
 }
 
 function cloneOnboardingConfig(

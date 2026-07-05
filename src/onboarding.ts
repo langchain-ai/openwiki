@@ -98,7 +98,9 @@ export async function saveOpenWikiOnboardingConfig(
 export function isOnboardingComplete(
   config: OpenWikiOnboardingConfig,
 ): boolean {
-  return Boolean(config.completedAt && config.wikiGoal && config.ingestionSchedule);
+  return Boolean(
+    config.completedAt && config.wikiGoal && config.ingestionSchedule,
+  );
 }
 
 export function isOpenWikiOnboardingCompleteSync(): boolean {
@@ -178,7 +180,10 @@ function normalizeOnboardingConfig(value: unknown): OpenWikiOnboardingConfig {
 
   if (Array.isArray(value.sourceInstances)) {
     for (const sourceValue of value.sourceInstances) {
-      if (!isObject(sourceValue) || typeof sourceValue.connectorId !== "string") {
+      if (
+        !isObject(sourceValue) ||
+        typeof sourceValue.connectorId !== "string"
+      ) {
         continue;
       }
 
@@ -189,12 +194,16 @@ function normalizeOnboardingConfig(value: unknown): OpenWikiOnboardingConfig {
       const id =
         typeof sourceValue.id === "string" && sourceValue.id.trim().length > 0
           ? sourceValue.id
-          : createSourceInstanceId(sourceValue.connectorId, config.sourceInstances.length);
+          : createSourceInstanceId(
+              sourceValue.connectorId,
+              config.sourceInstances.length,
+            );
       config.sourceInstances.push({
         ...normalizeSourceConfig(sourceValue),
         connectorId: sourceValue.connectorId,
         id,
-        name: typeof sourceValue.name === "string" ? sourceValue.name : undefined,
+        name:
+          typeof sourceValue.name === "string" ? sourceValue.name : undefined,
       });
     }
   }
@@ -250,8 +259,7 @@ function normalizeSourceScheduleConfig(
   value: Record<string, unknown>,
 ): OnboardingSourceScheduleConfig {
   return {
-    description:
-      typeof value.description === "string" ? value.description : "",
+    description: typeof value.description === "string" ? value.description : "",
     expression: typeof value.expression === "string" ? value.expression : "",
     launchAgentPath:
       typeof value.launchAgentPath === "string"
@@ -284,7 +292,10 @@ function deriveLegacySources(
   return sources;
 }
 
-function createSourceInstanceId(connectorId: ConnectorId, index: number): string {
+function createSourceInstanceId(
+  connectorId: ConnectorId,
+  index: number,
+): string {
   return `${connectorId}-${index + 1}`;
 }
 

@@ -105,6 +105,8 @@ OpenWiki CLI reference:
 - \`openwiki "message"\` sends a chat message immediately, then keeps the chat open.
 - \`openwiki --init [message]\` initializes the local OpenWiki knowledge base under ~/.openwiki/wiki.
 - \`openwiki --update [message]\` updates the local OpenWiki knowledge base under ~/.openwiki/wiki.
+- \`openwiki --mode code --init [message]\` initializes repository documentation under openwiki/.
+- \`openwiki --mode brain --init [message]\` initializes the local second-brain wiki under ~/.openwiki/wiki. Bare interactive \`openwiki --init\` asks the user to choose Brain or Code mode.
 - \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.
 - \`openwiki --modelId <id>\` selects a model ID for that run.
 - \`openwiki --help\` prints current usage, options, and examples.

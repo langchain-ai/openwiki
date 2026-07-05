@@ -27,7 +27,12 @@ import type {
 
 const INGESTION_WINDOW_HOURS = 24;
 
-export type IngestionTarget = ConnectorId | "all";
+export type IngestionTarget = ConnectorId | "all" | SourceInstanceTarget;
+
+export type SourceInstanceTarget = {
+  kind: "source-instance";
+  id: string;
+};
 
 export type SourceIngestionResult = {
   agentResult?: OpenWikiRunResult;
@@ -60,10 +65,20 @@ export async function runOpenWikiIngestion(
   await ensureOpenWikiHome();
   const config = await readOpenWikiOnboardingConfig();
   const registry = createConnectorRegistry();
-  const sourceInstances = resolveIngestionSourceInstances(options.target, config, {
-    scheduledOnly: options.scheduledOnly ?? false,
-  });
+  const sourceInstances = resolveIngestionSourceInstances(
+    options.target,
+    config,
+    {
+      scheduledOnly: options.scheduledOnly ?? false,
+    },
+  );
   const results: SourceIngestionResult[] = [];
+
+  if (options.target !== "all" && sourceInstances.length === 0) {
+    throw new Error(
+      `No configured ingestion source matched ${formatTarget(options.target)}.`,
+    );
+  }
 
   for (const sourceConfig of sourceInstances) {
     const connector = registry[sourceConfig.connectorId];
@@ -88,7 +103,16 @@ export function parseIngestionTarget(value: string): IngestionTarget | null {
     return "all";
   }
 
-  return isConnectorId(value) ? value : null;
+  if (isConnectorId(value)) {
+    return value;
+  }
+
+  return isSafeSourceInstanceId(value)
+    ? {
+        kind: "source-instance",
+        id: value,
+      }
+    : null;
 }
 
 async function runSourceIngestion({
@@ -106,7 +130,10 @@ async function runSourceIngestion({
   modelId?: string | null;
   sourceConfig: OnboardingSourceInstanceConfig;
 }): Promise<SourceIngestionResult> {
-  emitText(emit, `\nStarting ${getSourceDisplayName(connector, sourceConfig)} ingestion.\n`);
+  emitText(
+    emit,
+    `\nStarting ${getSourceDisplayName(connector, sourceConfig)} ingestion.\n`,
+  );
 
   try {
     const deterministicPull = isDeterministicConnector(connector)
@@ -186,12 +213,31 @@ function resolveIngestionSourceInstances(
       return false;
     }
 
-    if (scheduledOnly && (!config.ingestionSchedule || config.ingestionSchedule.pausedAt)) {
+    if (
+      scheduledOnly &&
+      (!config.ingestionSchedule || config.ingestionSchedule.pausedAt)
+    ) {
       return false;
     }
 
-    return target === "all" || sourceConfig.connectorId === target;
+    if (target === "all") {
+      return true;
+    }
+
+    if (typeof target === "string") {
+      return sourceConfig.connectorId === target;
+    }
+
+    return sourceConfig.id === target.id;
   });
+}
+
+function isSafeSourceInstanceId(value: string): boolean {
+  return /^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/u.test(value);
+}
+
+function formatTarget(target: IngestionTarget): string {
+  return typeof target === "object" ? target.id : target;
 }
 
 function getSourceDisplayName(

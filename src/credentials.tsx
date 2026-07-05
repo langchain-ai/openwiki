@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { homedir } from "node:os";
 import path from "node:path";
 import { Box, Text, useInput, useStdout } from "ink";
 import { configureAuthProvider } from "./auth/configure.js";
@@ -43,6 +44,7 @@ import {
 } from "./schedules.js";
 
 export type InitSetupResult = {
+  mode: OpenWikiRunMode;
   modelId: string | null;
   onboardingCompleted: boolean;
   provider: OpenWikiProvider | null;
@@ -55,6 +57,7 @@ export type InitSetupResult = {
 };
 
 type InitSetupProps = {
+  allowModeSelection?: boolean;
   mode: OpenWikiRunMode;
   modelIdOverride?: string | null;
   onComplete: (result: InitSetupResult) => void;
@@ -67,6 +70,7 @@ type PromptStep =
   | "langsmith"
   | "model"
   | "provider"
+  | "run-mode"
   | "source-auth"
   | "global-cron-custom"
   | "global-cron-mode"
@@ -74,6 +78,7 @@ type PromptStep =
   | "source-description"
   | "source-description-custom"
   | "source-menu"
+  | "source-path"
   | "source-confirm-continue"
   | "source-secret"
   | "template"
@@ -151,7 +156,14 @@ const ONBOARDING_TEMPLATES = [
       "A personal assistant wiki that builds memory from email, notes, social/research sources, and web search so you can ask about projects, priorities, people, and recurring context.",
     id: "brain",
     name: "Brain",
-    sourceIds: ["git-repo", "google", "notion", "web-search", "hackernews", "x"],
+    sourceIds: [
+      "git-repo",
+      "google",
+      "notion",
+      "web-search",
+      "hackernews",
+      "x",
+    ],
     suggestedSources: [
       "Gmail",
       "Notion",
@@ -164,6 +176,25 @@ const ONBOARDING_TEMPLATES = [
   },
 ] as const satisfies readonly OnboardingMode[];
 
+const RUN_MODE_OPTIONS = [
+  {
+    description:
+      "Build a local second-brain wiki in ~/.openwiki/wiki from configured sources.",
+    id: "brain",
+    name: "Brain",
+  },
+  {
+    description:
+      "Build repository documentation in ./openwiki for this codebase.",
+    id: "code",
+    name: "Code",
+  },
+] as const satisfies readonly {
+  description: string;
+  id: OpenWikiRunMode;
+  name: string;
+}[];
+
 const SOURCE_OPTIONS = [
   {
     displayName: "Local Git repository",
@@ -173,8 +204,8 @@ const SOURCE_OPTIONS = [
     ],
     id: "git-repo",
     instructions: [
-      "Run OpenWiki from the local repository you want it to read.",
-      "The default setup uses the current working directory as the first local Git source.",
+      "Choose the local repository directory OpenWiki should read.",
+      "The default is the current working directory, and you can replace it with another path.",
       "You can add more repositories later in the connector config file.",
     ],
     secretInputs: [],
@@ -316,6 +347,7 @@ export function needsCredentialSetup(
 }
 
 export function InitSetup({
+  allowModeSelection = false,
   mode,
   modelIdOverride = null,
   onComplete,
@@ -324,6 +356,7 @@ export function InitSetup({
   const { stdout } = useStdout();
   const initialProvider = resolveConfiguredProvider();
   const [step, setStep] = useState<PromptStep | null>(null);
+  const [selectedMode, setSelectedMode] = useState<OpenWikiRunMode>(mode);
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
@@ -347,6 +380,9 @@ export function InitSetup({
         process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
         getDefaultModelId(initialProvider),
     ),
+  );
+  const [runModeSelectionIndex, setRunModeSelectionIndex] = useState(() =>
+    getRunModeSelectionIndex(mode),
   );
   const [sourceSelectionIndex, setSourceSelectionIndex] = useState(0);
   const [sourceDescriptionSelectionIndex, setSourceDescriptionSelectionIndex] =
@@ -389,7 +425,9 @@ export function InitSetup({
           return;
         }
 
-        const configForMode = ensureRunModeConfig(config, mode);
+        const configForMode = allowModeSelection
+          ? config
+          : ensureRunModeConfig(config, mode);
         if (configForMode !== config) {
           await saveOpenWikiOnboardingConfig(configForMode);
         }
@@ -399,10 +437,12 @@ export function InitSetup({
           initialProvider,
           configForMode,
           mode,
+          allowModeSelection,
         );
 
         if (initialStep === null) {
           onComplete({
+            mode,
             modelId:
               modelIdOverride ?? process.env[OPENWIKI_MODEL_ID_ENV_KEY] ?? null,
             onboardingCompleted: true,
@@ -442,7 +482,14 @@ export function InitSetup({
     return () => {
       cancelled = true;
     };
-  }, [initialProvider, mode, modelIdOverride, onComplete, onError]);
+  }, [
+    allowModeSelection,
+    initialProvider,
+    modelIdOverride,
+    onComplete,
+    onError,
+    mode,
+  ]);
 
   useInput((inputValue, key) => {
     if (isSaving || isAuthRunning || step === null) {
@@ -469,6 +516,19 @@ export function InitSetup({
             index,
             key.upArrow ? -1 : 1,
             getModelSelectionOptions(provider).length,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (step === "run-mode") {
+      handleMenuInput(key, () =>
+        setRunModeSelectionIndex((index) =>
+          moveSelectionIndex(
+            index,
+            key.upArrow ? -1 : 1,
+            RUN_MODE_OPTIONS.length,
           ),
         ),
       );
@@ -627,6 +687,45 @@ export function InitSetup({
     setError(null);
     setNotice(null);
 
+    if (step === "run-mode") {
+      const selectedOption =
+        RUN_MODE_OPTIONS[runModeSelectionIndex] ?? RUN_MODE_OPTIONS[0];
+
+      setSelectedMode(selectedOption.id);
+      setRunModeSelectionIndex(getRunModeSelectionIndex(selectedOption.id));
+      setInput("");
+      const nextOnboardingConfig = ensureRunModeConfig(
+        onboardingConfig,
+        selectedOption.id,
+      );
+
+      if (nextOnboardingConfig !== onboardingConfig) {
+        await saveConfig(nextOnboardingConfig);
+      }
+
+      const nextStep = getInitialStep(
+        modelIdOverride,
+        provider,
+        nextOnboardingConfig,
+        selectedOption.id,
+        false,
+      );
+
+      if (nextStep) {
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
+        runMode: selectedOption.id,
+      });
+      return;
+    }
+
     if (step === "provider") {
       const selectedProvider =
         SELECTABLE_OPENWIKI_PROVIDERS[providerSelectionIndex] ??
@@ -646,7 +745,7 @@ export function InitSetup({
         selectedProvider,
         modelIdOverride,
         onboardingConfig,
-        mode,
+        selectedMode,
       );
 
       if (nextStep) {
@@ -659,6 +758,7 @@ export function InitSetup({
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: selectedProvider,
+        runMode: selectedMode,
       });
       return;
     }
@@ -677,7 +777,7 @@ export function InitSetup({
         provider,
         modelIdOverride,
         onboardingConfig,
-        mode,
+        selectedMode,
       );
 
       if (nextStep) {
@@ -690,6 +790,7 @@ export function InitSetup({
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
+        runMode: selectedMode,
       });
       return;
     }
@@ -727,6 +828,7 @@ export function InitSetup({
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
         nextProvider: provider,
+        runMode: selectedMode,
       });
       return;
     }
@@ -742,6 +844,7 @@ export function InitSetup({
         nextLangSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
+        runMode: selectedMode,
       });
       return;
     }
@@ -785,7 +888,9 @@ export function InitSetup({
 
     if (step === "source-menu") {
       if (sourceSelectionIndex >= activeSourceOptions.length) {
-        if (getConnectedSourceCount(onboardingConfig, activeSourceOptions) > 0) {
+        if (
+          getConnectedSourceCount(onboardingConfig, activeSourceOptions) > 0
+        ) {
           setStep("final");
           return;
         }
@@ -871,6 +976,25 @@ export function InitSetup({
       return;
     }
 
+    if (step === "source-path") {
+      const repoPath = normalizeLocalPath(input);
+
+      if (repoPath.length === 0) {
+        setError("Enter a local repository directory.");
+        return;
+      }
+
+      try {
+        const connectorConfig = await configureLocalGitRepo(repoPath);
+        setSourceState((state) => ({ ...state, connectorConfig }));
+        setInput("");
+        setStep("source-description");
+      } catch (setupError) {
+        setError(getErrorMessage(setupError));
+      }
+      return;
+    }
+
     if (step === "source-description") {
       if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
         setInput("");
@@ -953,6 +1077,7 @@ export function InitSetup({
       };
       await saveConfig(nextConfig);
       onComplete({
+        mode: selectedMode,
         modelId:
           modelId ??
           modelIdOverride ??
@@ -976,10 +1101,6 @@ export function InitSetup({
         ? getStaticSourceConfig(selectedSourceId, description)
         : sourceState.connectorConfig;
 
-    if (selectedSourceId === "web-search" || selectedSourceId === "hackernews") {
-      await configureStaticSource(selectedSourceId, description);
-    }
-
     const sourceInstanceId = createSourceInstanceId(
       selectedSourceId,
       onboardingConfig,
@@ -990,9 +1111,16 @@ export function InitSetup({
       connectorId: selectedSourceId,
       id: sourceInstanceId,
       ingestionGoal: description.length > 0 ? description : undefined,
-      name: createSourceInstanceName(selectedSource, description, onboardingConfig),
+      name: createSourceInstanceName(
+        selectedSource,
+        description,
+        onboardingConfig,
+      ),
     };
-    const nextConfig = addSourceInstanceConfig(onboardingConfig, sourceInstance);
+    const nextConfig = addSourceInstanceConfig(
+      onboardingConfig,
+      sourceInstance,
+    );
     await saveConfig(nextConfig);
     setSourceState((state) => ({
       ...state,
@@ -1007,12 +1135,13 @@ export function InitSetup({
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
+    runMode: OpenWikiRunMode;
   };
 
   async function continueAfterCredentials(options: CompleteSetupOptions) {
     await saveCredentialUpdates(options);
 
-    if (mode === "code") {
+    if (options.runMode === "code") {
       await completeSetup(options);
       return;
     }
@@ -1053,6 +1182,7 @@ export function InitSetup({
         null,
       onboardingCompleted: isOnboardingComplete(onboardingConfig),
       provider: options.nextProvider,
+      mode: options.runMode,
       runIngestionNow: false,
       savedApiKey: options.nextApiKey !== null,
       savedLangSmithKey:
@@ -1115,11 +1245,6 @@ export function InitSetup({
     try {
       if (selectedSource.id === "git-repo") {
         await configureLocalGitRepo();
-      } else if (
-        selectedSource.id === "web-search" ||
-        selectedSource.id === "hackernews"
-      ) {
-        await configureStaticSource(selectedSource.id);
       } else if (selectedSource.authProvider) {
         const authResult = await runOAuthAuth(selectedSource.authProvider, {
           onAuthorizationUrl: ({ copiedToClipboard, openedBrowser, url }) => {
@@ -1158,11 +1283,14 @@ export function InitSetup({
 
     try {
       if (source.id === "git-repo") {
-        const connectorConfig = await configureLocalGitRepo();
-        setSourceState((state) => ({ ...state, connectorConfig }));
+        setInput(getDefaultLocalGitRepoPath());
+        setStep("source-path");
+        return;
       } else if (source.id === "web-search" || source.id === "hackernews") {
-        const connectorConfig = await configureStaticSource(source.id);
-        setSourceState((state) => ({ ...state, connectorConfig }));
+        setSourceState((state) => ({
+          ...state,
+          connectorConfig: getStaticSourceConfig(source.id, ""),
+        }));
       }
 
       setStep("source-description");
@@ -1178,50 +1306,32 @@ export function InitSetup({
     setStep("source-menu");
   }
 
-  async function configureLocalGitRepo(): Promise<Record<string, unknown>> {
+  async function configureLocalGitRepo(
+    repoPathInput = getDefaultLocalGitRepoPath(),
+  ): Promise<Record<string, unknown>> {
     const sourceId = "git-repo";
-    const repoId = sanitizeRepoId(
-      process.cwd().split(/[\\/]/u).pop() ?? "repo",
-    );
+    const repoPath = normalizeLocalPath(repoPathInput);
+    const repoId = sanitizeRepoId(path.basename(repoPath) || "repo");
     const configPath = getConnectorConfigPath(sourceId);
     const connectorConfig = {
       repos: [
         {
           id: repoId,
-          path: process.cwd(),
+          path: repoPath,
         },
       ],
     };
-    await import("node:fs/promises").then(({ chmod, mkdir, writeFile }) =>
-      mkdir(path.dirname(configPath), {
-        recursive: true,
-        mode: 0o700,
-      }).then(async () => {
-        await writeFile(
-          configPath,
-          `${JSON.stringify(connectorConfig, null, 2)}\n`,
-          {
-            encoding: "utf8",
-            mode: 0o600,
-          },
-        );
-        await chmod(configPath, 0o600);
-      }),
-    );
-    return connectorConfig;
-  }
+    await import("node:fs/promises").then(
+      async ({ chmod, mkdir, stat, writeFile }) => {
+        const repoStat = await stat(repoPath);
+        if (!repoStat.isDirectory()) {
+          throw new Error(`${repoPath} is not a directory.`);
+        }
 
-  async function configureStaticSource(
-    sourceId: ConnectorId,
-    query = "",
-  ): Promise<Record<string, unknown>> {
-    const configPath = getConnectorConfigPath(sourceId);
-    const connectorConfig = getStaticSourceConfig(sourceId, query);
-    await import("node:fs/promises").then(({ chmod, mkdir, writeFile }) =>
-      mkdir(path.dirname(configPath), {
-        recursive: true,
-        mode: 0o700,
-      }).then(async () => {
+        await mkdir(path.dirname(configPath), {
+          recursive: true,
+          mode: 0o700,
+        });
         await writeFile(
           configPath,
           `${JSON.stringify(connectorConfig, null, 2)}\n`,
@@ -1231,7 +1341,7 @@ export function InitSetup({
           },
         );
         await chmod(configPath, 0o600);
-      }),
+      },
     );
     return connectorConfig;
   }
@@ -1291,7 +1401,10 @@ export function InitSetup({
       };
       await saveConfig(nextConfig);
       setSourceSelectionIndex(0);
-      setSourceState({ secretValues: {}, savedScheduleWarning: result.warning });
+      setSourceState({
+        secretValues: {},
+        savedScheduleWarning: result.warning,
+      });
       setInput("");
       setStep("source-menu");
     } catch (powerError) {
@@ -1378,60 +1491,81 @@ export function InitSetup({
           }
         />
         <SetupStep
-          label="Mode"
+          label="Run mode"
           state={
-            onboardingConfig.templateId
-              ? "done"
-              : step === "template"
+            allowModeSelection
+              ? step === "run-mode"
                 ? "current"
-                : "pending"
+                : "done"
+              : "done"
           }
-          detail={getConfigModeName(onboardingConfig) ?? "choose a mode"}
+          detail={getRunModeName(selectedMode)}
         />
+        {selectedMode === "brain" ? (
+          <SetupStep
+            label="Brain profile"
+            state={
+              onboardingConfig.templateId
+                ? "done"
+                : step === "template"
+                  ? "current"
+                  : "pending"
+            }
+            detail={getConfigModeName(onboardingConfig) ?? "choose a profile"}
+          />
+        ) : null}
         <SetupStep
           label="Wiki scope"
           state={
-            onboardingConfig.wikiGoal
+            selectedMode === "code"
               ? "done"
-              : step === "wiki-goal"
-                ? "current"
-                : "pending"
+              : onboardingConfig.wikiGoal
+                ? "done"
+                : step === "wiki-goal"
+                  ? "current"
+                  : "pending"
           }
           detail={
-            onboardingConfig.wikiGoal
-              ? "saved"
-              : `save onboarding profile to ${openWikiOnboardingPath}`
+            selectedMode === "code"
+              ? "repository openwiki/"
+              : onboardingConfig.wikiGoal
+                ? "saved"
+                : `save onboarding profile to ${openWikiOnboardingPath}`
           }
         />
-        <SetupStep
-          label="Schedule"
-          state={
-            onboardingConfig.ingestionSchedule
-              ? "done"
-              : isScheduleStep(step)
-                ? "current"
-                : "pending"
-          }
-          detail={
-            onboardingConfig.ingestionSchedule
-              ? onboardingConfig.ingestionSchedule.description
-              : "choose one time for all ingestion"
-          }
-        />
-        <SetupStep
-          label="Sources"
-          state={
-            getConnectedSourceCount(onboardingConfig, activeSourceOptions) > 0
-              ? "done"
-              : isSourceStep(step)
-                ? "current"
-                : "pending"
-          }
-          detail={`${getConnectedSourceCount(
-            onboardingConfig,
-            activeSourceOptions,
-          )} setup(s) configured`}
-        />
+        {selectedMode === "brain" ? (
+          <SetupStep
+            label="Schedule"
+            state={
+              onboardingConfig.ingestionSchedule
+                ? "done"
+                : isScheduleStep(step)
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              onboardingConfig.ingestionSchedule
+                ? onboardingConfig.ingestionSchedule.description
+                : "choose one time for all ingestion"
+            }
+          />
+        ) : null}
+        {selectedMode === "brain" ? (
+          <SetupStep
+            label="Sources"
+            state={
+              getConnectedSourceCount(onboardingConfig, activeSourceOptions) > 0
+                ? "done"
+                : isSourceStep(step)
+                  ? "current"
+                  : "pending"
+            }
+            detail={`${getConnectedSourceCount(
+              onboardingConfig,
+              activeSourceOptions,
+            )} setup(s) configured`}
+          />
+        ) : null}
       </Box>
 
       <SetupPanel title="Prompt">
@@ -1448,6 +1582,7 @@ export function InitSetup({
             powerModeSelectionIndex={powerModeSelectionIndex}
             provider={provider}
             providerSelectionIndex={providerSelectionIndex}
+            runModeSelectionIndex={runModeSelectionIndex}
             secretInputIndex={secretInputIndex}
             selectedSource={selectedSource}
             sourceOptions={activeSourceOptions}
@@ -1509,6 +1644,7 @@ function Prompt({
   powerModeSelectionIndex,
   provider,
   providerSelectionIndex,
+  runModeSelectionIndex,
   secretInputIndex,
   selectedSource,
   sourceOptions,
@@ -1532,6 +1668,7 @@ function Prompt({
   powerModeSelectionIndex: number;
   provider: OpenWikiProvider;
   providerSelectionIndex: number;
+  runModeSelectionIndex: number;
   secretInputIndex: number;
   selectedSource: SourceSetupOption;
   sourceOptions: readonly SourceSetupOption[];
@@ -1544,6 +1681,28 @@ function Prompt({
   suggestedCronExpression: string;
   templateSelectionIndex: number;
 }) {
+  if (step === "run-mode") {
+    const selectedMode =
+      RUN_MODE_OPTIONS[runModeSelectionIndex] ?? RUN_MODE_OPTIONS[0];
+
+    return (
+      <Box flexDirection="column">
+        <Text>Choose what OpenWiki should initialize.</Text>
+        {RUN_MODE_OPTIONS.map((option, index) => (
+          <Text key={option.id}>
+            <SelectionMarker isSelected={index === runModeSelectionIndex} />{" "}
+            {option.name} <Text color="gray">({option.id})</Text>
+          </Text>
+        ))}
+        <Box flexDirection="column" marginTop={1}>
+          <Text bold>{selectedMode.name}</Text>
+          <Text color="gray">{selectedMode.description}</Text>
+        </Box>
+        <Text color="gray">Use up/down arrows, then press Enter.</Text>
+      </Box>
+    );
+  }
+
   if (step === "provider") {
     return (
       <Box flexDirection="column">
@@ -1696,21 +1855,38 @@ function Prompt({
   }
 
   if (step === "source-menu") {
-    const configuredCount = getConnectedSourceCount(onboardingConfig, sourceOptions);
+    const configuredCount = getConnectedSourceCount(
+      onboardingConfig,
+      sourceOptions,
+    );
 
     return (
       <Box flexDirection="column">
         <Text>Configure sources for this mode.</Text>
-        {sourceOptions.map((source, index) => (
-          <Text key={source.id}>
-            <SelectionMarker isSelected={index === sourceSelectionIndex} />{" "}
-            {source.displayName}{" "}
-            <SourceConnectionStatus
-              count={getSourceInstanceCount(onboardingConfig, source.id)}
-              isConfigured={getSourceInstanceCount(onboardingConfig, source.id) > 0}
-            />
-          </Text>
-        ))}
+        {sourceOptions.map((source, index) => {
+          const sourceInstances = getSourceInstances(
+            onboardingConfig,
+            source.id,
+          );
+          return (
+            <Box flexDirection="column" key={source.id}>
+              <Text>
+                <SelectionMarker isSelected={index === sourceSelectionIndex} />{" "}
+                {getSourceMenuLabel(source, sourceInstances.length)}{" "}
+                <SourceConnectionStatus
+                  count={sourceInstances.length}
+                  isConfigured={sourceInstances.length > 0}
+                />
+              </Text>
+              {sourceInstances.map((sourceInstance) => (
+                <Text color="gray" key={sourceInstance.id}>
+                  {"  "}- {sourceInstance.name ?? sourceInstance.id}{" "}
+                  <Text color="gray">({sourceInstance.id})</Text>
+                </Text>
+              ))}
+            </Box>
+          );
+        })}
         <Box flexDirection="column" marginTop={1}>
           <Text color="gray">Next</Text>
           <Text>
@@ -1724,6 +1900,25 @@ function Prompt({
           </Text>
         </Box>
         <Text color="gray">Use up/down arrows, then press Enter.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "source-path") {
+    return (
+      <Box flexDirection="column">
+        <Text>Choose the local Git repository directory.</Text>
+        <Text color="gray">
+          Default is the directory where you started OpenWiki. Edit it to use a
+          different checkout.
+        </Text>
+        <BorderedInput
+          maxDisplayWidth={inputDisplayWidth}
+          marginTop={1}
+          prefix="path="
+          value={input}
+        />
+        <Text color="gray">Press Enter to save this source.</Text>
       </Box>
     );
   }
@@ -2256,7 +2451,12 @@ function getInitialStep(
   provider: OpenWikiProvider,
   onboardingConfig: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
+  allowModeSelection: boolean,
 ): PromptStep | null {
+  if (allowModeSelection) {
+    return "run-mode";
+  }
+
   if (process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined) {
     return "provider";
   }
@@ -2309,7 +2509,12 @@ function getNextStepAfterProvider(
     return "api-key";
   }
 
-  return getNextStepAfterApiKey(provider, modelIdOverride, onboardingConfig, mode);
+  return getNextStepAfterApiKey(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+  );
 }
 
 function getNextStepAfterApiKey(
@@ -2360,7 +2565,9 @@ function ensureRunModeConfig(
     return config;
   }
 
-  const brainMode = ONBOARDING_TEMPLATES.find((option) => option.id === "brain");
+  const brainMode = ONBOARDING_TEMPLATES.find(
+    (option) => option.id === "brain",
+  );
   if (!brainMode) {
     return config;
   }
@@ -2374,6 +2581,15 @@ function ensureRunModeConfig(
   };
 }
 
+function getRunModeSelectionIndex(mode: OpenWikiRunMode): number {
+  const index = RUN_MODE_OPTIONS.findIndex((option) => option.id === mode);
+  return index === -1 ? 0 : index;
+}
+
+function getRunModeName(mode: OpenWikiRunMode): string {
+  return RUN_MODE_OPTIONS.find((option) => option.id === mode)?.name ?? mode;
+}
+
 function getSourceOption(sourceId: ConnectorId): SourceSetupOption {
   return (
     SOURCE_OPTIONS.find((source) => source.id === sourceId) ?? SOURCE_OPTIONS[0]
@@ -2384,7 +2600,9 @@ function getConfigModeId(config: OpenWikiOnboardingConfig): string | undefined {
   return config.modeId ?? config.templateId;
 }
 
-function getConfigModeName(config: OpenWikiOnboardingConfig): string | undefined {
+function getConfigModeName(
+  config: OpenWikiOnboardingConfig,
+): string | undefined {
   return config.modeName ?? config.templateName;
 }
 
@@ -2430,9 +2648,16 @@ function getSourceInstanceCount(
   config: OpenWikiOnboardingConfig,
   sourceId: ConnectorId,
 ): number {
+  return getSourceInstances(config, sourceId).length;
+}
+
+function getSourceInstances(
+  config: OpenWikiOnboardingConfig,
+  sourceId: ConnectorId,
+): OpenWikiOnboardingConfig["sourceInstances"] {
   return config.sourceInstances.filter(
     (sourceInstance) => sourceInstance.connectorId === sourceId,
-  ).length;
+  );
 }
 
 function getConnectedSourceCount(
@@ -2579,6 +2804,15 @@ function getTemplateGoal(templateId: string | undefined): string {
     ONBOARDING_TEMPLATES.find((template) => template.id === templateId)
       ?.suggestedGoal ?? ""
   );
+}
+
+function getSourceMenuLabel(
+  source: SourceSetupOption,
+  sourceInstanceCount: number,
+): string {
+  return sourceInstanceCount > 0
+    ? `Add another ${source.displayName}`
+    : `Add ${source.displayName}`;
 }
 
 function getTemplateSourceOptions(
@@ -2744,6 +2978,27 @@ function sanitizeCronInputChunk(value: string): string {
 
 function sanitizeRepoId(value: string): string {
   return value.replace(/[^A-Za-z0-9._-]/gu, "-").slice(0, 80) || "repo";
+}
+
+function getDefaultLocalGitRepoPath(): string {
+  return process.cwd();
+}
+
+function normalizeLocalPath(value: string): string {
+  const trimmedValue = value.trim();
+  if (trimmedValue.length === 0) {
+    return "";
+  }
+
+  if (trimmedValue === "~") {
+    return homedir();
+  }
+
+  if (trimmedValue.startsWith("~/") || trimmedValue.startsWith("~\\")) {
+    return path.resolve(homedir(), trimmedValue.slice(2));
+  }
+
+  return path.resolve(trimmedValue);
 }
 
 function getStaticSourceConfig(

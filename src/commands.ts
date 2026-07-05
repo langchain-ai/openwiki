@@ -10,6 +10,7 @@ export type HelpRow = {
 };
 
 export type OpenWikiRunMode = "brain" | "code";
+type CronTarget = Extract<IngestionTarget, string>;
 
 export type HelpContent = {
   title: string;
@@ -49,7 +50,7 @@ export type CliCommand =
       kind: "cron";
       action: "delete" | "list" | "pause" | "resume";
       exitCode: 0;
-      target: IngestionTarget | null;
+      target: CronTarget | null;
     }
   | { kind: "help"; exitCode: 0 }
   | {
@@ -58,6 +59,7 @@ export type CliCommand =
       command: OpenWikiCommand;
       dryRun: boolean;
       mode: OpenWikiRunMode;
+      modeSource: OpenWikiRunModeSource;
       modelId: string | null;
       print: boolean;
       shouldStart: boolean;
@@ -68,6 +70,8 @@ export type CliCommand =
       exitCode: 1;
       message: string;
     };
+
+export type OpenWikiRunModeSource = "default" | "option" | "positional";
 
 export function parseCommand(argv: string[]): CliCommand {
   if (argv[0] === "--help" || argv[0] === "-h") {
@@ -202,7 +206,7 @@ export function parseCommand(argv: string[]): CliCommand {
         kind: "error",
         exitCode: 1,
         message:
-          "Usage: openwiki ingest <source|all> [--print] [--modelId <id>]",
+          "Usage: openwiki ingest <source|source-instance|all> [--print] [--modelId <id>]",
       };
     }
 
@@ -291,7 +295,7 @@ export function parseCommand(argv: string[]): CliCommand {
 
     if (argv[1] === "pause" || argv[1] === "resume" || argv[1] === "delete") {
       const target = parseIngestionTarget(argv[2] ?? "");
-      if (!target || argv.length > 3) {
+      if (!target || typeof target !== "string" || argv.length > 3) {
         return {
           kind: "error",
           exitCode: 1,
@@ -317,15 +321,21 @@ export function parseCommand(argv: string[]): CliCommand {
     }
   }
 
-  if (argv[0] === "code" || argv[0] === "brain") {
-    return parseRunCommand(argv.slice(1), argv[0]);
+  if (isOpenWikiRunMode(argv[0])) {
+    return parseRunCommand(argv.slice(1), argv[0], "positional");
   }
 
-  return parseRunCommand(argv, "brain");
+  return parseRunCommand(argv, "brain", "default");
 }
 
-function parseRunCommand(argv: string[], mode: OpenWikiRunMode): CliCommand {
+function parseRunCommand(
+  argv: string[],
+  initialMode: OpenWikiRunMode,
+  initialModeSource: OpenWikiRunModeSource,
+): CliCommand {
   let dryRun = false;
+  let mode = initialMode;
+  let modeSource = initialModeSource;
   let modelId: string | null = null;
   let print = false;
   let command: OpenWikiCommand = "chat";
@@ -368,6 +378,57 @@ function parseRunCommand(argv: string[], mode: OpenWikiRunMode): CliCommand {
       }
 
       command = nextCommand;
+      continue;
+    }
+
+    if (arg === "--mode") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--mode requires brain or code.",
+        };
+      }
+
+      if (!isOpenWikiRunMode(nextArg)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid mode: ${nextArg}. Expected brain or code.`,
+        };
+      }
+
+      const modeResult = resolveExplicitMode(mode, modeSource, nextArg);
+      if (modeResult.kind === "error") {
+        return modeResult;
+      }
+
+      mode = modeResult.mode;
+      modeSource = "option";
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--mode=")) {
+      const [, rawMode = ""] = arg.split("=", 2);
+
+      if (!isOpenWikiRunMode(rawMode)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid mode: ${rawMode}. Expected brain or code.`,
+        };
+      }
+
+      const modeResult = resolveExplicitMode(mode, modeSource, rawMode);
+      if (modeResult.kind === "error") {
+        return modeResult;
+      }
+
+      mode = modeResult.mode;
+      modeSource = "option";
       continue;
     }
 
@@ -442,11 +503,36 @@ function parseRunCommand(argv: string[], mode: OpenWikiRunMode): CliCommand {
     command,
     dryRun,
     mode,
+    modeSource,
     modelId,
     print,
     shouldStart,
     userMessage,
   };
+}
+
+function resolveExplicitMode(
+  currentMode: OpenWikiRunMode,
+  modeSource: OpenWikiRunModeSource,
+  nextMode: OpenWikiRunMode,
+):
+  | { kind: "ok"; mode: OpenWikiRunMode }
+  | { kind: "error"; exitCode: 1; message: string } {
+  if (currentMode === nextMode || modeSource === "default") {
+    return { kind: "ok", mode: nextMode };
+  }
+
+  return {
+    kind: "error",
+    exitCode: 1,
+    message: `Conflicting modes: ${currentMode} and ${nextMode}.`,
+  };
+}
+
+function isOpenWikiRunMode(
+  value: string | undefined,
+): value is OpenWikiRunMode {
+  return value === "brain" || value === "code";
 }
 
 export function isDevelopmentMode(): boolean {
@@ -462,6 +548,7 @@ export const helpContent: HelpContent = {
   usage: [
     "openwiki code [--init|--update] [message]",
     "openwiki brain [--init|--update] [message]",
+    "openwiki --mode <brain|code> [--init|--update] [message]",
     "openwiki [--modelId <model>]",
     "openwiki [--modelId <model>] [message]",
     "openwiki --init [message]",
@@ -469,7 +556,7 @@ export const helpContent: HelpContent = {
     "openwiki auth <provider>",
     "openwiki auth configure <provider> [--force]",
     "openwiki auth tools <provider>",
-    "openwiki ingest <source|all>",
+    "openwiki ingest <source|source-instance|all>",
     "openwiki cron list",
     "openwiki cron pause <source|all>",
     "openwiki cron resume <source|all>",
@@ -506,9 +593,9 @@ export const helpContent: HelpContent = {
       description: "List available MCP tools for a configured auth provider.",
     },
     {
-      label: "openwiki ingest <source|all>",
+      label: "openwiki ingest <source|source-instance|all>",
       description:
-        "Run source-specific ingestion and wiki update runs for one source or all configured sources.",
+        "Run ingestion and wiki update runs for one connector, one source instance, or all configured sources.",
     },
     {
       label: "openwiki cron list",
@@ -546,6 +633,11 @@ export const helpContent: HelpContent = {
         "Update existing OpenWiki documentation and ingest configured connectors when relevant.",
     },
     {
+      label: "--mode <brain|code>",
+      description:
+        "Choose local second-brain mode or repository code-documentation mode.",
+    },
+    {
       label: "-p, --print",
       description: "Run once and print the final assistant output.",
     },
@@ -563,7 +655,9 @@ export const helpContent: HelpContent = {
   examples: [
     "openwiki",
     "openwiki --init",
+    "openwiki --init --mode code",
     "openwiki --update",
+    "openwiki --update --mode brain",
     'openwiki "What can you do?"',
     'openwiki -p "Summarize what OpenWiki can do"',
     "openwiki --modelId gpt-5.5",
@@ -571,6 +665,7 @@ export const helpContent: HelpContent = {
     'openwiki --update "Refresh the wiki from configured connectors"',
     "openwiki ingest all",
     "openwiki ingest web-search",
+    "openwiki ingest web-search-2",
     "openwiki cron list",
     "openwiki cron pause web-search",
     "openwiki cron resume web-search",

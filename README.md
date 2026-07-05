@@ -48,6 +48,14 @@ Initialize OpenWiki:
 openwiki --init
 ```
 
+The interactive init flow asks whether to initialize Brain mode or Code mode.
+
+Initialize repository code documentation instead of the default local brain wiki:
+
+```sh
+openwiki --init --mode code
+```
+
 Update existing documentation:
 
 ```sh
@@ -95,6 +103,8 @@ ignore that HTTPS override and keep using the local loopback callback,
 
 `openwiki` creates initial repository documentation in `openwiki/` when no wiki exists. Source ingestion runs and scheduled connector updates maintain the local general-purpose wiki in `~/.openwiki/wiki/`. By default, the CLI stays open after each run so you can send follow-up messages. Use `-p` or `--print` for a one-shot non-interactive run that prints the final assistant output.
 
+Use `--mode brain` for the local second-brain wiki or `--mode code` for repository documentation. Bare interactive `openwiki --init` prompts for a mode; non-interactive runs and `openwiki --update` default to brain mode.
+
 `openwiki` will automatically append prompting to your `AGENTS.md` and/or `CLAUDE.md` files to instruct your coding agent to reference it when searching for context. If the file does not already exist in your repository, OpenWiki will create it for you.
 
 On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
@@ -104,6 +114,13 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 ## Local Connectors
 
 OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `~/.openwiki/wiki/` from those local files.
+
+You can configure the same connector more than once. For example, add one Web
+Search source for AI research and another for NBA news; OpenWiki stores them as
+separate source instances such as `web-search-1` and `web-search-2`. Run all
+instances with `openwiki ingest all`, all instances for one connector with
+`openwiki ingest web-search`, or one instance with
+`openwiki ingest web-search-2`.
 
 - `git-repo` reads configured local repository paths and writes compact manifests.
 - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
