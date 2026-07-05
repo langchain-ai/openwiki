@@ -70,6 +70,35 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+
+### Alternative base URLs
+
+To route the Anthropic provider at an alternative, Anthropic-compatible endpoint
+(for example a self-hosted or proxied gateway) instead of the default API, set
+`ANTHROPIC_BASE_URL` alongside `ANTHROPIC_API_KEY`:
+
+```bash
+OPENWIKI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=your-key
+ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
+```
+
+### OpenAI-compatible endpoints
+
+The `openai-compatible` provider targets any OpenAI-compatible chat-completions
+endpoint via a required base URL. This can be used for OpenAI-compatible LLM
+endpoints like those exposed by a LiteLLM gateway when it is used as a gateway —
+letting you reach whatever upstream providers the gateway fronts through a single
+OpenAI-shaped API. Set the model ID to whatever name the gateway exposes:
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=your-gateway-key
+OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
+OPENWIKI_MODEL_ID=your-gateway-model-name
+```
+
+Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
 If there's an inference provider or model you'd like to see added, please open a PR!
