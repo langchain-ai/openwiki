@@ -24,7 +24,11 @@ import {
   getProviderBaseUrlEnvKey,
   getProviderLabel,
   isValidModelId,
+  LMSTUDIO_API_KEY_ENV_KEY,
+  LMSTUDIO_BASE_URL_ENV_KEY,
   normalizeModelId,
+  OLLAMA_API_KEY_ENV_KEY,
+  OLLAMA_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -33,9 +37,15 @@ import {
   OPENROUTER_FALLBACK_MODEL_IDS,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  providerRequiresApiKey,
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
+  resolveProviderApiKey,
   resolveProviderBaseUrl,
+  VLLM_API_KEY_ENV_KEY,
+  VLLM_BASE_URL_ENV_KEY,
+  ZAI_API_KEY_ENV_KEY,
+  ZAI_BASE_URL_ENV_KEY,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
@@ -376,6 +386,10 @@ function isFileNotFoundError(error: unknown): boolean {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
+  if (!providerRequiresApiKey(provider)) {
+    return;
+  }
+
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   if (!process.env[apiKeyEnvKey]) {
@@ -444,7 +458,7 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   const baseURL = resolveProviderBaseUrl(provider);
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey: resolveProviderApiKey(provider),
     configuration: baseURL
       ? {
           baseURL,
@@ -1311,6 +1325,14 @@ function formatEnvironmentDebug(): string {
     ANTHROPIC_API_KEY_ENV_KEY,
     ANTHROPIC_BASE_URL_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    ZAI_API_KEY_ENV_KEY,
+    ZAI_BASE_URL_ENV_KEY,
+    OLLAMA_API_KEY_ENV_KEY,
+    OLLAMA_BASE_URL_ENV_KEY,
+    LMSTUDIO_API_KEY_ENV_KEY,
+    LMSTUDIO_BASE_URL_ENV_KEY,
+    VLLM_API_KEY_ENV_KEY,
+    VLLM_BASE_URL_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,
     "LANGCHAIN_TRACING_V2",
     "LANGCHAIN_PROJECT",
@@ -1327,11 +1349,7 @@ function formatDebugValue(key: string, value: string | undefined): string {
     return "unset";
   }
 
-  if (
-    key === "LANGCHAIN_ENDPOINT" ||
-    key === ANTHROPIC_BASE_URL_ENV_KEY ||
-    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
-  ) {
+  if (key === "LANGCHAIN_ENDPOINT" || key.endsWith("_BASE_URL")) {
     return formatUrlDebugValue(value);
   }
 

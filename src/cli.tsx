@@ -34,17 +34,22 @@ import {
   getProviderLabel,
   getProviderModelOptions,
   isValidModelId,
+  LMSTUDIO_API_KEY_ENV_KEY,
   normalizeModelId,
   normalizeProvider,
+  OLLAMA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPEN_WIKI_DIR,
+  providerRequiresApiKey,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
   OPENWIKI_VERSION,
+  VLLM_API_KEY_ENV_KEY,
   type OpenWikiProvider,
+  ZAI_API_KEY_ENV_KEY,
 } from "./constants.js";
 import type { OpenWikiCommand } from "./agent/types.js";
 
@@ -241,7 +246,11 @@ function App({ command }: AppProps) {
 
     const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (
+      providerRequiresApiKey(sessionProvider) &&
+      !process.env[apiKeyEnvKey] &&
+      !process.stdin.isTTY
+    ) {
       setRunState({
         status: "error",
         message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
@@ -1507,7 +1516,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        `Enter a valid provider: ${SELECTABLE_OPENWIKI_PROVIDERS.join(", ")}.`,
       );
       return;
     }
@@ -2926,6 +2935,10 @@ function sanitizeDiagnosticText(value: string): string {
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    ZAI_API_KEY_ENV_KEY,
+    OLLAMA_API_KEY_ENV_KEY,
+    LMSTUDIO_API_KEY_ENV_KEY,
+    VLLM_API_KEY_ENV_KEY,
     "LANGSMITH_API_KEY",
   ]) {
     const secret = process.env[key];
@@ -3121,7 +3134,9 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
   ) {
     const provider = resolveConfiguredProvider();
     const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+    const hasProviderKey = providerRequiresApiKey(provider)
+      ? Boolean(process.env[apiKeyEnvKey])
+      : true;
 
     if (!hasProviderKey) {
       return {

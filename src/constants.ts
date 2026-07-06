@@ -8,18 +8,34 @@ export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const ZAI_API_KEY_ENV_KEY = "ZAI_API_KEY";
+export const ZAI_BASE_URL_ENV_KEY = "ZAI_BASE_URL";
+export const OLLAMA_API_KEY_ENV_KEY = "OLLAMA_API_KEY";
+export const OLLAMA_BASE_URL_ENV_KEY = "OLLAMA_BASE_URL";
+export const LMSTUDIO_API_KEY_ENV_KEY = "LMSTUDIO_API_KEY";
+export const LMSTUDIO_BASE_URL_ENV_KEY = "LMSTUDIO_BASE_URL";
+export const VLLM_API_KEY_ENV_KEY = "VLLM_API_KEY";
+export const VLLM_BASE_URL_ENV_KEY = "VLLM_BASE_URL";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
+// Placeholder credential for local servers (Ollama/LM Studio/vLLM) that ignore
+// auth; ChatOpenAI requires a non-empty key even when none is needed.
+export const DEFAULT_LOCAL_API_KEY = "openwiki";
+
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
+  | "lmstudio"
+  | "ollama"
   | "openai"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "vllm"
+  | "zai";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -41,17 +57,26 @@ type ProviderConfig = {
    * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
    */
   requiresBaseUrl?: boolean;
+  /**
+   * When false, the provider needs no API key (local servers); a placeholder
+   * credential is sent and onboarding skips the key step. Defaults to true.
+   */
+  requiresApiKey?: boolean;
   label: string;
   modelOptions: ProviderModelOption[];
 };
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openrouter",
+  "zai",
   "baseten",
   "fireworks",
   "openai",
   "openai-compatible",
   "anthropic",
+  "ollama",
+  "lmstudio",
+  "vllm",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -115,6 +140,43 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
     ],
   },
+  zai: {
+    apiKeyEnvKey: ZAI_API_KEY_ENV_KEY,
+    baseURL: "https://api.z.ai/api/paas/v4",
+    baseUrlEnvKey: ZAI_BASE_URL_ENV_KEY,
+    label: "z.ai",
+    modelOptions: [
+      { id: "glm-5.2", label: "GLM 5.2" },
+      { id: "glm-4.6", label: "GLM 4.6" },
+    ],
+  },
+  ollama: {
+    apiKeyEnvKey: OLLAMA_API_KEY_ENV_KEY,
+    baseURL: "http://localhost:11434/v1",
+    baseUrlEnvKey: OLLAMA_BASE_URL_ENV_KEY,
+    requiresApiKey: false,
+    label: "Ollama",
+    modelOptions: [
+      { id: "llama3.1", label: "Llama 3.1" },
+      { id: "qwen2.5", label: "Qwen 2.5" },
+    ],
+  },
+  lmstudio: {
+    apiKeyEnvKey: LMSTUDIO_API_KEY_ENV_KEY,
+    baseURL: "http://localhost:1234/v1",
+    baseUrlEnvKey: LMSTUDIO_BASE_URL_ENV_KEY,
+    requiresApiKey: false,
+    label: "LM Studio",
+    modelOptions: [],
+  },
+  vllm: {
+    apiKeyEnvKey: VLLM_API_KEY_ENV_KEY,
+    baseURL: "http://localhost:8000/v1",
+    baseUrlEnvKey: VLLM_BASE_URL_ENV_KEY,
+    requiresApiKey: false,
+    label: "vLLM",
+    modelOptions: [],
+  },
 };
 
 export const DEFAULT_MODEL_ID =
@@ -139,6 +201,22 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
 
 export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+/** Local servers (ollama/lmstudio/vllm) accept any placeholder credential. */
+export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).requiresApiKey !== false;
+}
+
+/** Returns the configured key, or DEFAULT_LOCAL_API_KEY for keyless providers. */
+export function resolveProviderApiKey(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  return (
+    env[getProviderApiKeyEnvKey(provider)] ||
+    (providerRequiresApiKey(provider) ? undefined : DEFAULT_LOCAL_API_KEY)
+  );
 }
 
 /**

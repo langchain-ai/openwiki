@@ -7,13 +7,21 @@ import {
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   isValidModelId,
+  LMSTUDIO_API_KEY_ENV_KEY,
+  LMSTUDIO_BASE_URL_ENV_KEY,
   normalizeProvider,
+  OLLAMA_API_KEY_ENV_KEY,
+  OLLAMA_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  VLLM_API_KEY_ENV_KEY,
+  VLLM_BASE_URL_ENV_KEY,
+  ZAI_API_KEY_ENV_KEY,
+  ZAI_BASE_URL_ENV_KEY,
 } from "./constants.js";
 
 export const openWikiEnvDir = path.join(os.homedir(), ".openwiki");
@@ -42,6 +50,14 @@ const managedEnvKeys = [
   ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  ZAI_API_KEY_ENV_KEY,
+  ZAI_BASE_URL_ENV_KEY,
+  OLLAMA_API_KEY_ENV_KEY,
+  OLLAMA_BASE_URL_ENV_KEY,
+  LMSTUDIO_API_KEY_ENV_KEY,
+  LMSTUDIO_BASE_URL_ENV_KEY,
+  VLLM_API_KEY_ENV_KEY,
+  VLLM_BASE_URL_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   "LANGSMITH_API_KEY",
@@ -86,6 +102,14 @@ export async function getCredentialDiagnostics(): Promise<
     createCredentialDiagnostic(ANTHROPIC_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(ANTHROPIC_BASE_URL_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENROUTER_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(ZAI_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(ZAI_BASE_URL_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(OLLAMA_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(OLLAMA_BASE_URL_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(LMSTUDIO_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(LMSTUDIO_BASE_URL_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(VLLM_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(VLLM_BASE_URL_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENWIKI_MODEL_ID_ENV_KEY, fileEnv),
     createCredentialDiagnostic("LANGSMITH_API_KEY", fileEnv),
   ];
@@ -177,8 +201,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
   return (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
-    key === ANTHROPIC_BASE_URL_ENV_KEY ||
-    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+    key.endsWith("_BASE_URL")
   );
 }
 
