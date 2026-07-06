@@ -21,14 +21,12 @@ import {
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+import { getErrorMessage, sanitizeDiagnosticText } from "./diagnostics.js";
 import {
   type OpenWikiRunEvent,
   type OpenWikiRunResult,
 } from "./agent/types.js";
 import {
-  ANTHROPIC_API_KEY_ENV_KEY,
-  BASETEN_API_KEY_ENV_KEY,
-  FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderLabel,
@@ -36,10 +34,8 @@ import {
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
-  OPENAI_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
-  OPENROUTER_API_KEY_ENV_KEY,
   OPEN_WIKI_DIR,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
@@ -2885,65 +2881,6 @@ function isDiagnosticValue(value: unknown): value is string | number | boolean {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
-}
-
-function getErrorMessage(error: unknown): string {
-  const message =
-    error instanceof Error ? error.message : "OpenWiki agent run failed.";
-
-  if (isOpenRouterServerError(error, message)) {
-    return "OpenRouter/provider returned 500 Internal Server Error. Try retrying or switching models with /model. Run with OPENWIKI_DEBUG=1 to show provider metadata.";
-  }
-
-  return sanitizeDiagnosticText(message);
-}
-
-function isOpenRouterServerError(error: unknown, message: string): boolean {
-  if (isRecord(error)) {
-    const status = error.statusCode ?? error.status;
-    const name = error instanceof Error ? error.name : null;
-
-    if (
-      (status === 500 || status === "500") &&
-      (name === "OpenRouterError" || "metadata" in error)
-    ) {
-      return true;
-    }
-  }
-
-  return /OpenRouterError/iu.test(String(error)) ||
-    /Internal Server Error/iu.test(message)
-    ? /\b500\b|Internal Server Error/iu.test(message)
-    : false;
-}
-
-function sanitizeDiagnosticText(value: string): string {
-  let sanitized = value;
-
-  for (const key of [
-    BASETEN_API_KEY_ENV_KEY,
-    FIREWORKS_API_KEY_ENV_KEY,
-    OPENAI_API_KEY_ENV_KEY,
-    ANTHROPIC_API_KEY_ENV_KEY,
-    OPENROUTER_API_KEY_ENV_KEY,
-    "LANGSMITH_API_KEY",
-  ]) {
-    const secret = process.env[key];
-
-    if (secret && secret.length > 0) {
-      sanitized = sanitized.split(secret).join(`[REDACTED:${key}]`);
-    }
-  }
-
-  return sanitized
-    .replace(
-      /(Incorrect API key provided:\s*)([^\s.]+)/giu,
-      "$1[REDACTED:API_KEY]",
-    )
-    .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gu, "Bearer [REDACTED]")
-    .replace(/\bsk-or-v1-[A-Za-z0-9_-]+/gu, "[REDACTED:OPENROUTER_API_KEY]")
-    .replace(/\bsk-[A-Za-z0-9_-]+/gu, "[REDACTED:API_KEY]")
-    .replace(/\bls[v_][A-Za-z0-9_-]+/gu, "[REDACTED:LANGSMITH_API_KEY]");
 }
 
 function sanitizeHeaderValue(value: string, maxLength = 80): string {
