@@ -51,10 +51,13 @@ export const OPENWIKI_X_REFRESH_TOKEN_ENV_KEY = "OPENWIKI_X_REFRESH_TOKEN";
 export const OPENWIKI_TAVILY_API_KEY_ENV_KEY = "TAVILY_API_KEY";
 export const DEFAULT_PROVIDER = "openai";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+export const EDENAI_API_KEY_ENV_KEY = "EDENAI_API_KEY";
+export const EDENAI_BASE_URL = "https://api.edenai.run/v3";
 
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "edenai"
   | "fireworks"
   | "openai"
   | "openai-chatgpt"
@@ -103,12 +106,23 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai-chatgpt",
   "anthropic",
   "openrouter",
+  "edenai",
   "openai-compatible",
   "fireworks",
   "baseten",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
+  edenai: {
+    apiKeyEnvKey: EDENAI_API_KEY_ENV_KEY,
+    baseURL: EDENAI_BASE_URL,
+    label: "Eden AI",
+    modelOptions: [
+      { id: "openai/gpt-4o-mini", label: "GPT-4o mini" },
+      { id: "anthropic/claude-sonnet-4-5", label: "Claude Sonnet" },
+      { id: "mistral/mistral-large-latest", label: "Mistral Large" },
+    ],
+  },
   baseten: {
     apiKeyEnvKey: BASETEN_API_KEY_ENV_KEY,
     baseURL: "https://inference.baseten.co/v1",

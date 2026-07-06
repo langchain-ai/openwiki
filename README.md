@@ -173,7 +173,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Fireworks, Baseten, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.5`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Eden AI, Fireworks, Baseten, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.5`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 

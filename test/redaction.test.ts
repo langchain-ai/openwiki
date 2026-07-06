@@ -9,10 +9,12 @@ import { sanitizeOpenRouterResponseBody } from "../src/agent/index.ts";
 describe("sanitizeDiagnosticText", () => {
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
   const originalOpenAiCompatibleKey = process.env.OPENAI_COMPATIBLE_API_KEY;
+  const originalEdenAiKey = process.env.EDENAI_API_KEY;
 
   beforeEach(() => {
     delete process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_COMPATIBLE_API_KEY;
+    delete process.env.EDENAI_API_KEY;
   });
 
   afterEach(() => {
@@ -26,6 +28,12 @@ describe("sanitizeDiagnosticText", () => {
     } else {
       process.env.OPENAI_COMPATIBLE_API_KEY = originalOpenAiCompatibleKey;
     }
+
+    if (originalEdenAiKey === undefined) {
+      delete process.env.EDENAI_API_KEY;
+    } else {
+      process.env.EDENAI_API_KEY = originalEdenAiKey;
+    }
   });
 
   test("redacts the exact value of a secret set in the environment", () => {
@@ -37,6 +45,17 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("super-secret-value-12345");
     expect(result).toContain("[REDACTED:OPENAI_API_KEY]");
+  });
+
+  test("redacts the exact value of the Eden AI key set in the environment", () => {
+    process.env.EDENAI_API_KEY = "eden-secret-value-98765";
+
+    const result = sanitizeDiagnosticText(
+      "Eden AI request failed with key eden-secret-value-98765 attached",
+    );
+
+    expect(result).not.toContain("eden-secret-value-98765");
+    expect(result).toContain("[REDACTED:EDENAI_API_KEY]");
   });
 
   test("redacts OpenAI-style sk- tokens", () => {
