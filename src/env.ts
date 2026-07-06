@@ -7,6 +7,8 @@ import {
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   isValidModelId,
+  LITELLM_API_KEY_ENV_KEY,
+  LITELLM_BASE_URL_ENV_KEY,
   normalizeProvider,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
@@ -36,6 +38,8 @@ export type CredentialDiagnostic = {
 const managedEnvKeys = [
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  LITELLM_API_KEY_ENV_KEY,
+  LITELLM_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -80,6 +84,8 @@ export async function getCredentialDiagnostics(): Promise<
     createCredentialDiagnostic(OPENWIKI_PROVIDER_ENV_KEY, fileEnv),
     createCredentialDiagnostic(BASETEN_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(FIREWORKS_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(LITELLM_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(LITELLM_BASE_URL_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENAI_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENAI_COMPATIBLE_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENAI_COMPATIBLE_BASE_URL_ENV_KEY, fileEnv),
@@ -178,6 +184,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === LITELLM_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   );
 }

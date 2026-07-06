@@ -31,6 +31,7 @@ import {
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
+  LITELLM_API_KEY_ENV_KEY,
   getProviderLabel,
   getProviderModelOptions,
   isValidModelId,
@@ -1507,7 +1508,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        "Enter a valid provider: openrouter, baseten, fireworks, litellm, openai, openai-compatible, or anthropic.",
       );
       return;
     }
@@ -2923,6 +2924,7 @@ function sanitizeDiagnosticText(value: string): string {
   for (const key of [
     BASETEN_API_KEY_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
+    LITELLM_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,

@@ -2,6 +2,8 @@ export const OPEN_WIKI_DIR = "openwiki";
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
+export const LITELLM_API_KEY_ENV_KEY = "LITELLM_API_KEY";
+export const LITELLM_BASE_URL_ENV_KEY = "LITELLM_BASE_URL";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
@@ -17,6 +19,7 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
+  | "litellm"
   | "openai"
   | "openai-compatible"
   | "openrouter";
@@ -49,6 +52,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openrouter",
   "baseten",
   "fireworks",
+  "litellm",
   "openai",
   "openai-compatible",
   "anthropic",
@@ -83,6 +87,13 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "gpt-5.4-mini", label: "5.4 mini" },
       { id: "gpt-5.5", label: "5.5" },
     ],
+  },
+  litellm: {
+    apiKeyEnvKey: LITELLM_API_KEY_ENV_KEY,
+    baseUrlEnvKey: LITELLM_BASE_URL_ENV_KEY,
+    requiresBaseUrl: true,
+    label: "LiteLLM",
+    modelOptions: [],
   },
   "openai-compatible": {
     apiKeyEnvKey: OPENAI_COMPATIBLE_API_KEY_ENV_KEY,

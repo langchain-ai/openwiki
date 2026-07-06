@@ -24,6 +24,8 @@ import {
   getProviderBaseUrlEnvKey,
   getProviderLabel,
   isValidModelId,
+  LITELLM_API_KEY_ENV_KEY,
+  LITELLM_BASE_URL_ENV_KEY,
   normalizeModelId,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
@@ -1305,6 +1307,8 @@ function formatEnvironmentDebug(): string {
     OPENWIKI_PROVIDER_ENV_KEY,
     BASETEN_API_KEY_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
+    LITELLM_API_KEY_ENV_KEY,
+    LITELLM_BASE_URL_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
     OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
     OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -1330,6 +1334,7 @@ function formatDebugValue(key: string, value: string | undefined): string {
   if (
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === LITELLM_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   ) {
     return formatUrlDebugValue(value);
