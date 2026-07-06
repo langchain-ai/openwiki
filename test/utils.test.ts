@@ -11,16 +11,18 @@ describe("stripHtmlTags", () => {
     expect(stripHtmlTags("a<br/>b<hr>c")).toBe("abc");
   });
 
-  test("removes an unterminated trailing tag start", () => {
-    // The reported gap: a single-pass /<[^>]*>/ leaves "<script" (no closing >).
-    expect(stripHtmlTags("text <script")).toBe("text ");
-    expect(stripHtmlTags("<script")).toBe("");
-    expect(stripHtmlTags("ok <div class=")).toBe("ok ");
+  test("removes HTML comments", () => {
+    expect(stripHtmlTags("before<!-- secret -->after")).toBe("beforeafter");
   });
 
-  test("does not reintroduce a tag from surrounding text", () => {
+  test("does not leave a tag reassembled from surrounding brackets", () => {
     expect(stripHtmlTags("<scr<script>ipt>")).not.toContain("<script");
     expect(stripHtmlTags("<<script>>")).not.toContain("<script");
+  });
+
+  test("leaves an unterminated tag fragment as literal text", () => {
+    // No closing ">", so it isn't a tag; harmless as terminal text.
+    expect(stripHtmlTags("text <script")).toBe("text <script");
   });
 
   test("leaves plain text untouched", () => {

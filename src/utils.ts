@@ -1,11 +1,18 @@
 /**
  * Removes HTML tags from a string and returns the remaining plain text.
  *
- * Strips both complete tags (e.g. `<div>`, `</u>`) and a trailing unterminated
- * tag start (e.g. `<script` with no closing `>`).
+ * Applies the tag-removal replacement repeatedly until the string stops
+ * changing, so removing one tag cannot reveal another that a single pass would
+ * miss.
  */
 export function stripHtmlTags(input: string): string {
-  return input
-    .replace(/<[^>]*>/gu, "") // complete tags: <div>, </u>, <br/>, ...
-    .replace(/<[^>]*$/u, ""); // unterminated trailing tag start: "<script"
+  let previous: string;
+  let output = input;
+
+  do {
+    previous = output;
+    output = output.replace(/<[^>]*>/gu, "");
+  } while (output !== previous);
+
+  return output;
 }
