@@ -1,0 +1,25 @@
+src/agent/prompt.ts
+  s_0a49fbee75b215::t_47a9aa9223c9cf 296,298-299,301-303,338-340,342
+src/ingestion.ts
+  s_0a49fbee75b215::t_01c06766754bdf 373
+  s_0a49fbee75b215::t_e5df9bef2372df 335,339,341,353,358
+openwiki/agent/workflow.md
+  s_0a49fbee75b215::t_22442a028b60cb 53-57,65-69
+  s_0a49fbee75b215::t_b6cc8d570db9bf 70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "003ca911f47cb99eb2c8c0f9a36f428e4dab087d",
+  "prompts": {},
+  "sessions": {
+    "s_0a49fbee75b215": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3846-9f8c-7833-b477-085e5084e802",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
