@@ -112,6 +112,20 @@ process.stdin.on("end", () => {
 });
 `;
 
+const BOB_RESUME_STUB = `#!/usr/bin/env node
+if (process.argv.includes("--version")) {
+  console.log("1.0.3-stub");
+  process.exit(0);
+}
+let input = "";
+process.stdin.on("data", (chunk) => (input += chunk));
+process.stdin.on("end", () => {
+  console.log(JSON.stringify({ type: "init", timestamp: "t", session_id: "bob-resume-session", model: "bob-model" }));
+  console.log(JSON.stringify({ type: "message", timestamp: "t", role: "assistant", content: "stdin-bytes:" + input.length + " argv:" + JSON.stringify(process.argv.slice(2)), delta: true }));
+  console.log(JSON.stringify({ type: "result", timestamp: "t", status: "success", stats: {} }));
+});
+`;
+
 // Writes its own pid to OPENWIKI_TEST_PID_FILE before hanging, so an outside
 // process can identify and check on the detached grandchild.
 const HANG_STUB_WITH_PID = `#!/usr/bin/env node
@@ -431,6 +445,42 @@ describe("runAgentCli", () => {
       name: "write_to_file",
       status: "finished",
     });
+  });
+
+  test("resumes an ibm-bob session with nothing on stdin and the composed payload on argv", async () => {
+    process.env[IBM_BOB_BINARY_ENV_KEY] = await writeStub(
+      stubDir,
+      "bob-resume-stub",
+      BOB_RESUME_STUB,
+    );
+    const events: OpenWikiRunEvent[] = [];
+
+    await runAgentCli(
+      ibmBobAdapter,
+      getAgentCliProviderConfig("ibm-bob"),
+      { ...baseSpec, resumeSessionId: "bob-resume-1" },
+      { onEvent: (event) => events.push(event) },
+    );
+
+    const text = events.find((event) => event.type === "text");
+    expect(text).toBeDefined();
+
+    const match = /^stdin-bytes:(\d+) argv:(.+)$/.exec(
+      (text as { text: string }).text,
+    );
+
+    expect(match).not.toBeNull();
+
+    const [, stdinByteCount, argvJson] = match as [string, string, string];
+
+    expect(Number.parseInt(stdinByteCount, 10)).toBe(0);
+
+    const argv = JSON.parse(argvJson) as string[];
+
+    expect(argv[argv.indexOf("--resume") + 1]).toBe("bob-resume-1");
+    expect(argv[argv.indexOf("-p") + 1]).toBe(
+      `${baseSpec.systemPrompt}\n\n${baseSpec.prompt}`,
+    );
   });
 });
 

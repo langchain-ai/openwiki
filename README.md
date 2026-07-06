@@ -92,8 +92,7 @@ Requirements and notes:
   `claude` once to complete the subscription login.
 - No API key is stored. Runs execute through the Claude Code CLI in headless
   mode with a documentation-scoped tool allowlist, using your existing login.
-- Set `OPENWIKI_CLAUDE_CODE_BINARY` to point at a non-default binary location,
-  and `OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS` to change the 30-minute run timeout.
+- Set `OPENWIKI_CLAUDE_CODE_BINARY` to point at a non-default binary location.
 
 **IBM Bob (Bob Shell):**
 
@@ -109,8 +108,11 @@ OPENWIKI_MODEL_ID=default   # or any model id your Bob backend accepts
 - Runs execute through `bob` in headless mode (`--approval-mode auto_edit`
   with Bob's `execute_command` shell tool enabled), using your existing
   login. Bob's `--allowed-tools` flag matches tool names only, so shell
-  approval cannot be scoped to specific commands; Bob confines writes to the
-  repository directory it was started in. No API key is stored.
+  approval cannot be scoped to specific commands. Bob confines its file edit
+  tools to the directory it was started in, but allowed shell commands run
+  as ordinary, unsandboxed subprocesses — the same trust model as OpenWiki's
+  API-provider path (`LocalShellBackend`), which also executes model-driven
+  shell commands on the host. No API key is stored.
 - Set `OPENWIKI_IBM_BOB_BINARY` to point at a non-default binary location.
 
 Notes for both agents:
@@ -120,6 +122,8 @@ Notes for both agents:
 - LangSmith tracing does not apply to delegated runs.
 - macOS and Linux only for now: process-group management and binary
   resolution for the subscription providers are POSIX-specific.
+- Set `OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS` to change the 30-minute run
+  timeout for either agent.
 
 ### Alternative base URLs
 

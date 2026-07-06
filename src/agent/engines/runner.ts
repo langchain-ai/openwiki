@@ -149,6 +149,10 @@ export async function runAgentCli(
     // run failure is then reported through the close/result path with the
     // stderr tail.
   });
+  // `??` (not `||`) is load-bearing here: an adapter's `buildStdin` may
+  // deliberately return `""` (e.g. ibm-bob on resume, where the payload
+  // rides `-p` in buildArgs instead) and that empty string must still win
+  // over `spec.prompt` so nothing extra is written to stdin.
   child.stdin.write(adapter.buildStdin?.(spec) ?? spec.prompt);
   child.stdin.end();
 

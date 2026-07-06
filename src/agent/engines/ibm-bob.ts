@@ -21,15 +21,17 @@ const execFileAsync = promisify(execFile);
  * (`rm -f openwiki/_plan.md`) and for the agent to gather git evidence.
  * Bob Shell's file read/edit tools are auto-approved by --approval-mode
  * auto_edit rather than listed here; network tools stay unapproved on
- * purpose (headless runs cannot answer their confirmation prompts). This
- * unscoped shell grant matches the existing trust posture of the API-provider
- * path, where LocalShellBackend already executes arbitrary model-driven
- * shell commands in the working tree; Bob additionally confines writes to
- * the directory it was started in -- the runner spawns the CLI with cwd set
- * to the repository root and never passes --include-directories, so that
- * boundary is exactly the target repository. Bob refuses non-default
- * approval modes in untrusted folders, so the repository must be trusted in
- * Bob (run `bob` there once).
+ * purpose (headless runs cannot answer their confirmation prompts). Bob
+ * confines its file *edit* tools to the directory it was started in -- the
+ * runner spawns the CLI with cwd set to the repository root and never passes
+ * --include-directories, so that boundary is exactly the target repository
+ * -- but allowed shell commands (`execute_command`) run as ordinary,
+ * unsandboxed subprocesses with no such confinement (verified live: Bob's
+ * shell tool wrote a file outside the repository). That is the same trust
+ * model as OpenWiki's API-provider path, where LocalShellBackend also
+ * executes arbitrary model-driven shell commands on the host with no
+ * sandboxing. Bob refuses non-default approval modes in untrusted folders,
+ * so the repository must be trusted in Bob (run `bob` there once).
  */
 export const IBM_BOB_ALLOWED_TOOLS = "execute_command";
 
@@ -69,6 +71,10 @@ export const ibmBobAdapter: AgentCliAdapter = {
       // Bob rejects a resumed session unless the message arrives via -p;
       // its stdin detection for that check doesn't work, and an empty -p
       // value is also rejected, so the composed payload must ride here.
+      // That means the full payload (system prompt + user prompt) is
+      // visible in process listings and subject to OS command-line/arg-size
+      // limits on resume, unlike the fresh-run path where it travels on
+      // stdin -- an accepted tradeoff since Bob requires a non-empty -p.
       args.push("-p", composePayload(spec));
     }
 

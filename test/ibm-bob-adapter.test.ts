@@ -51,7 +51,7 @@ describe("ibmBobAdapter.buildArgs", () => {
     );
   });
 
-  test("never passes the prompt as an argument", () => {
+  test("never passes the prompt as an argument on a fresh run", () => {
     const args = ibmBobAdapter.buildArgs(baseSpec);
 
     expect(args).not.toContain("-p");
