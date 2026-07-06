@@ -22,6 +22,7 @@ import {
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
 import { getErrorMessage, sanitizeDiagnosticText } from "./diagnostics.js";
+import { stripHtmlTags } from "./utils.js";
 import {
   type OpenWikiRunEvent,
   type OpenWikiRunResult,
@@ -1172,7 +1173,7 @@ function renderHtmlToken(token: Token): React.ReactNode {
     return <Text underline>{underlineMatch[1]}</Text>;
   }
 
-  return text.replace(/<[^>]*>/gu, "");
+  return stripHtmlTags(text);
 }
 
 function ChatHistory({ runs }: { runs: CompletedRun[] }) {
