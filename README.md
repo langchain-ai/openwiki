@@ -107,8 +107,10 @@ OPENWIKI_MODEL_ID=default   # or any model id your Bob backend accepts
   and trust the folder when prompted — Bob refuses write-enabled headless
   runs in untrusted folders.
 - Runs execute through `bob` in headless mode (`--approval-mode auto_edit`
-  with a read-only-git shell allowlist), using your existing login. No API
-  key is stored.
+  with Bob's `execute_command` shell tool enabled), using your existing
+  login. Bob's `--allowed-tools` flag matches tool names only, so shell
+  approval cannot be scoped to specific commands; Bob confines writes to the
+  repository directory it was started in. No API key is stored.
 - Set `OPENWIKI_IBM_BOB_BINARY` to point at a non-default binary location.
 
 Notes for both agents:

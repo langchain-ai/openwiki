@@ -45,7 +45,7 @@ The runner:
 
 The Claude Code adapter (`src/agent/engines/claude-code.ts`) runs `claude -p --output-format stream-json` with `--permission-mode acceptEdits` and a documentation-scoped `--allowedTools` allowlist: read/search tools, write/edit tools, read-only git commands, and the single exact `rm` needed to delete the temporary plan file. Network tools are deliberately excluded. A model ID of `default` means "use the subscription's default model" (no `--model` flag is passed).
 
-The ibm-bob adapter uses Bob Shell's `--approval-mode auto_edit`, pins `--chat-mode advanced`, and prepends the system prompt to the stdin payload because Bob has no append-system-prompt flag; resumed follow-ups pass the same payload via `-p` instead, which Bob requires (its stdin detection for that check doesn't work, so stdin is left empty on resume to avoid Bob concatenating the payload twice).
+The ibm-bob adapter uses Bob Shell's `--approval-mode auto_edit`, pins `--chat-mode advanced`, and prepends the system prompt to the stdin payload because Bob has no append-system-prompt flag; resumed follow-ups pass the same payload via `-p` instead, which Bob requires (its stdin detection for that check doesn't work, so stdin is left empty on resume to avoid Bob concatenating the payload twice). Its `--allowed-tools` allowlist (`IBM_BOB_ALLOWED_TOOLS` in `src/agent/engines/ibm-bob.ts`) grants the bare `execute_command` tool name -- Bob's Roo-style shell tool -- rather than a command-scoped list like Claude Code's: Bob's `--allowed-tools` flag matches tool names only, with no command-level scoping, so shell approval there is all-or-nothing.
 
 After the engine run, the same content-snapshot check applies: `.last-update.json` is written only if the `openwiki/` hash changed.
 

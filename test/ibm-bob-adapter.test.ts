@@ -62,8 +62,8 @@ describe("ibmBobAdapter.buildArgs", () => {
   test("allowed tools stay documentation-shaped", () => {
     const tools = IBM_BOB_ALLOWED_TOOLS.split(",");
 
-    expect(tools).toContain("run_shell_command(git log)");
-    expect(tools).toContain("run_shell_command(rm -f openwiki/_plan.md)");
+    expect(tools).toContain("execute_command");
+    expect(IBM_BOB_ALLOWED_TOOLS).not.toContain("run_shell_command");
     expect(IBM_BOB_ALLOWED_TOOLS).not.toContain("web_fetch");
     expect(IBM_BOB_ALLOWED_TOOLS).not.toContain("google_web_search");
   });

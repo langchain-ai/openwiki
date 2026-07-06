@@ -11,25 +11,27 @@ import type {
 const execFileAsync = promisify(execFile);
 
 /**
- * Documentation-shaped shell allowlist: read-only git plus the single exact
- * rm needed to clean up the temporary plan file. Bob Shell's file read/edit
- * tools are auto-approved by --approval-mode auto_edit rather than listed
- * here; network tools stay unapproved on purpose (headless runs cannot answer
- * their confirmation prompts). Bob confines writes to the directory it was
- * started in; the runner spawns the CLI with cwd set to the repository root
- * and never passes --include-directories, so that boundary is exactly the
- * target repository. Bob refuses non-default approval modes in untrusted
- * folders, so the repository must be trusted in Bob (run `bob` there once).
+ * Bob Shell's shell tool uses a Roo-style tool name, `execute_command`, and
+ * its --allowed-tools flag matches tool names only -- there is no
+ * command-level scoping, so parameterized entries like
+ * `execute_command(rm -f ...)` never match and shell approval is all-or-
+ * nothing (verified live: the exact-command form was rejected, the bare name
+ * works). Shell is otherwise hard-blocked under --approval-mode auto_edit,
+ * and allowing it is needed for cleanup of the temporary plan file
+ * (`rm -f openwiki/_plan.md`) and for the agent to gather git evidence.
+ * Bob Shell's file read/edit tools are auto-approved by --approval-mode
+ * auto_edit rather than listed here; network tools stay unapproved on
+ * purpose (headless runs cannot answer their confirmation prompts). This
+ * unscoped shell grant matches the existing trust posture of the API-provider
+ * path, where LocalShellBackend already executes arbitrary model-driven
+ * shell commands in the working tree; Bob additionally confines writes to
+ * the directory it was started in -- the runner spawns the CLI with cwd set
+ * to the repository root and never passes --include-directories, so that
+ * boundary is exactly the target repository. Bob refuses non-default
+ * approval modes in untrusted folders, so the repository must be trusted in
+ * Bob (run `bob` there once).
  */
-export const IBM_BOB_ALLOWED_TOOLS = [
-  "run_shell_command(git log)",
-  "run_shell_command(git show)",
-  "run_shell_command(git diff)",
-  "run_shell_command(git status)",
-  "run_shell_command(git blame)",
-  "run_shell_command(git rev-parse)",
-  "run_shell_command(rm -f openwiki/_plan.md)",
-].join(",");
+export const IBM_BOB_ALLOWED_TOOLS = "execute_command";
 
 export const ibmBobAdapter: AgentCliAdapter = {
   id: "ibm-bob",
