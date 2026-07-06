@@ -9,6 +9,7 @@ import type { Event as ProtocolEvent } from "@langchain/protocol";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
+import { createMiddleware, ToolMessage } from "langchain";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
   OpenWikiCommand,
@@ -41,6 +42,19 @@ import {
   shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
+
+const RECOVERABLE_FILE_TOOL_ARGUMENTS = {
+  read_file: ["file_path", "offset", "limit"],
+  write_file: ["file_path", "content"],
+  edit_file: ["file_path", "old_string", "new_string", "replace_all"],
+} as const;
+
+type RecoverableFileToolName = keyof typeof RECOVERABLE_FILE_TOOL_ARGUMENTS;
+
+type RecoverableFileToolSchemaError = {
+  toolName: RecoverableFileToolName;
+  requiredArguments: string[];
+};
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -128,6 +142,7 @@ async function runOpenWikiAgentCore(
     model,
     tools: [],
     checkpointer,
+    middleware: [createFileToolSchemaRecoveryMiddleware()],
     backend: new LocalShellBackend({
       maxOutputBytes: 100_000,
       rootDir: cwd,
@@ -196,6 +211,100 @@ async function runOpenWikiAgentCore(
   return {
     command,
     model: modelId,
+  };
+}
+
+export function createFileToolSchemaRecoveryMiddleware() {
+  return createMiddleware({
+    name: "OpenWikiFileToolSchemaRecovery",
+    wrapToolCall: async (request, handler) => {
+      try {
+        return await handler(request);
+      } catch (error) {
+        const toolName = request.toolCall?.name;
+        const recovery = classifyRecoverableFileToolSchemaError(
+          toolName,
+          error,
+        );
+
+        if (recovery === null) {
+          throw error;
+        }
+
+        return new ToolMessage({
+          content: formatRecoverableFileToolSchemaError(recovery),
+          status: "error",
+          tool_call_id: request.toolCall?.id ?? "unknown",
+        });
+      }
+    },
+  });
+}
+
+export function classifyRecoverableFileToolSchemaError(
+  toolName: string | undefined,
+  error: unknown,
+): RecoverableFileToolSchemaError | null {
+  if (!isRecoverableFileToolName(toolName)) {
+    return null;
+  }
+
+  const message = getErrorMessage(error);
+  const isSchemaError =
+    message.includes("Received tool input did not match expected schema") ||
+    message.includes("Invalid input:");
+
+  if (!isSchemaError) {
+    return null;
+  }
+
+  return {
+    toolName,
+    requiredArguments: [...RECOVERABLE_FILE_TOOL_ARGUMENTS[toolName]],
+  };
+}
+
+function formatRecoverableFileToolSchemaError(
+  recovery: RecoverableFileToolSchemaError,
+): string {
+  const requiredArguments = recovery.requiredArguments
+    .map((name) => `\`${name}\``)
+    .join(", ");
+
+  return [
+    `Your \`${recovery.toolName}\` call was rejected because its input did not match the expected schema.`,
+    `Retry the same tool with valid arguments. Accepted arguments: ${requiredArguments}.`,
+    "For filesystem tools, use repository-rooted virtual paths such as `/openwiki/quickstart.md`.",
+  ].join(" ");
+}
+
+function isRecoverableFileToolName(
+  toolName: string | undefined,
+): toolName is RecoverableFileToolName {
+  return toolName !== undefined && toolName in RECOVERABLE_FILE_TOOL_ARGUMENTS;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+}
+
+function createAttemptOptions(
+  options: OpenWikiRunOptions,
+  attemptIndex: number,
+): OpenWikiRunOptions {
+  if (attemptIndex === 0) {
+    return options;
+  }
+
+  return {
+    ...options,
+    threadId: options.threadId
+      ? `${options.threadId}-retry-${attemptIndex}`
+      : undefined,
   };
 }
 
