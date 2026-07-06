@@ -7,8 +7,8 @@ export type HelpRow = {
 };
 
 export type HelpContent = {
-  title: string;
   description: string;
+  title: string;
   usage: string[];
   commands: HelpRow[];
   options: HelpRow[];
@@ -20,20 +20,20 @@ export type HelpContent = {
 export type CliCommand =
   | { kind: "help"; exitCode: 0 }
   | {
-      kind: "run";
-      exitCode: 0;
-      command: OpenWikiCommand;
-      dryRun: boolean;
-      modelId: string | null;
-      print: boolean;
-      shouldStart: boolean;
-      userMessage: string | null;
-    }
+    kind: "run";
+    exitCode: 0;
+    command: OpenWikiCommand;
+    dryRun: boolean;
+    modelId: string | null;
+    print: boolean;
+    shouldStart: boolean;
+    userMessage: string | null;
+  }
   | {
-      kind: "error";
-      exitCode: 1;
-      message: string;
-    };
+    kind: "error";
+    exitCode: 1;
+    message: string;
+  };
 
 export function parseCommand(argv: string[]): CliCommand {
   if (argv[0] === "--help" || argv[0] === "-h") {
