@@ -11,6 +11,7 @@ import {
   normalizeProvider,
   providerRequiresBaseUrl,
   resolveProviderBaseUrl,
+  SELECTABLE_OPENWIKI_PROVIDERS,
 } from "../src/constants.ts";
 import { getCredentialDiagnostics } from "../src/env.ts";
 
@@ -56,6 +57,10 @@ describe("agent-cli provider kinds", () => {
 
   test("label reads as a subscription provider", () => {
     expect(getProviderLabel("claude-code")).toBe("Claude Code (subscription)");
+  });
+
+  test("claude-code is selectable in the provider menu", () => {
+    expect(SELECTABLE_OPENWIKI_PROVIDERS).toContain("claude-code");
   });
 
   test("credential diagnostics include the claude-code binary override", async () => {

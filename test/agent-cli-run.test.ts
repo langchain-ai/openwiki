@@ -27,6 +27,28 @@ process.stdin.on("end", () => {
 });
 `;
 
+// Records every invocation's args and stdin prompt as one JSON line per call
+// in <repo>/stub-called-args.json, so a test can inspect exactly what a
+// follow-up (resume) run sent the vendor CLI.
+const RESUME_TRACKING_STUB = `#!/usr/bin/env node
+import { appendFileSync } from "node:fs";
+if (process.argv.includes("--version")) {
+  console.log("0.0.0-stub");
+  process.exit(0);
+}
+let input = "";
+process.stdin.on("data", (chunk) => (input += chunk));
+process.stdin.on("end", () => {
+  appendFileSync(
+    "stub-called-args.json",
+    JSON.stringify({ args: process.argv.slice(2), prompt: input }) + "\\n",
+  );
+  console.log(JSON.stringify({ type: "system", subtype: "init", session_id: "stub-session" }));
+  console.log(JSON.stringify({ type: "assistant", message: { role: "assistant", content: [{ type: "text", text: "ok" }] } }));
+  console.log(JSON.stringify({ type: "result", subtype: "success", is_error: false, result: "done" }));
+});
+`;
+
 async function git(cwd: string, args: string[]): Promise<string> {
   const { stdout } = await execFileAsync("git", args, { cwd });
   return stdout.trim();
@@ -108,5 +130,50 @@ describe("runOpenWikiAgent with an agent-cli provider", () => {
     await expect(
       readFile(path.join(repo, "openwiki", ".last-update.json"), "utf8"),
     ).rejects.toThrow();
+  }, 30_000);
+
+  test("follow-up run resumes the vendor session and sends only the trimmed user message", async () => {
+    const repo = await createFixtureRepo();
+    const resumeStubDir = await mkdtemp(
+      path.join(tmpdir(), "openwiki-resume-stub-"),
+    );
+    const resumeStubPath = path.join(resumeStubDir, "resume-stub.mjs");
+    await writeFile(resumeStubPath, RESUME_TRACKING_STUB, "utf8");
+    await chmod(resumeStubPath, 0o755);
+    process.env[CLAUDE_CODE_BINARY_ENV_KEY] = resumeStubPath;
+
+    const events: OpenWikiRunEvent[] = [];
+    const onEvent = (event: OpenWikiRunEvent) => events.push(event);
+
+    const firstResult = await runOpenWikiAgent("chat", repo, {
+      threadId: "t1",
+      userMessage: "hello",
+      onEvent,
+    });
+    expect(firstResult.command).toBe("chat");
+
+    await runOpenWikiAgent("chat", repo, {
+      threadId: "t1",
+      isFollowup: true,
+      userMessage: "again",
+    });
+
+    const callLines = (
+      await readFile(path.join(repo, "stub-called-args.json"), "utf8")
+    )
+      .trim()
+      .split("\n");
+    const calls = callLines.map(
+      (line) => JSON.parse(line) as { args: string[]; prompt: string },
+    );
+
+    expect(calls).toHaveLength(2);
+
+    const [, secondCall] = calls;
+    const resumeFlagIndex = secondCall.args.indexOf("--resume");
+
+    expect(resumeFlagIndex).toBeGreaterThanOrEqual(0);
+    expect(secondCall.args[resumeFlagIndex + 1]).toBe("stub-session");
+    expect(secondCall.prompt).toBe("again");
   }, 30_000);
 });

@@ -11,6 +11,71 @@ type RunResult = { ok: boolean; errorMessage?: string } | null;
 
 const threadSessionIds = new Map<string, string>();
 
+// Detached agent-CLI children (see the `spawn` call below) live in their own
+// process group so the timeout path can kill the whole group with
+// `process.kill(-pid)`. That same detachment means Node's normal child-reaping
+// on parent exit does NOT apply: if this process is killed or crashes while a
+// run is in flight, the vendor CLI (and anything it spawned) would otherwise
+// be orphaned and keep running under init. This set tracks the process-group
+// ids (equal to the child's pid, since it is the group leader) of every
+// currently-live detached run so the exit/signal handlers below can clean
+// them up.
+const liveProcessGroupIds = new Set<number>();
+let cleanupHandlersRegistered = false;
+
+/** Exposed for tests only: observe tracked process-group ids indirectly. */
+export function getLiveProcessGroupIdsForTesting(): ReadonlySet<number> {
+  return liveProcessGroupIds;
+}
+
+function killLiveProcessGroups(): void {
+  for (const pid of liveProcessGroupIds) {
+    try {
+      process.kill(-pid, "SIGKILL");
+    } catch {
+      // Already gone.
+    }
+  }
+}
+
+/**
+ * Registers process-level cleanup exactly once, on the first spawn. Handlers
+ * must never throw (they run during process teardown) and must never change
+ * process-exit behavior when nothing is tracked: signal handlers kill any
+ * live groups, then remove themselves and re-raise the same signal so the
+ * default disposition (and thus the process's exit code/signal) is preserved.
+ */
+function registerCleanupHandlersOnce(): void {
+  if (cleanupHandlersRegistered) {
+    return;
+  }
+
+  cleanupHandlersRegistered = true;
+
+  process.on("exit", () => {
+    try {
+      killLiveProcessGroups();
+    } catch {
+      // Never throw from an exit handler.
+    }
+  });
+
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+    const onSignal = () => {
+      try {
+        killLiveProcessGroups();
+      } catch {
+        // Never throw from a signal handler.
+      } finally {
+        process.removeListener(signal, onSignal);
+        process.kill(process.pid, signal);
+      }
+    };
+
+    process.on(signal, onSignal);
+  }
+}
+
 export function getThreadSessionId(threadId: string): string | undefined {
   return threadSessionIds.get(threadId);
 }
@@ -66,6 +131,12 @@ export async function runAgentCli(
     detached: true,
     stdio: ["pipe", "pipe", "pipe"],
   });
+
+  registerCleanupHandlersOnce();
+
+  if (child.pid !== undefined) {
+    liveProcessGroupIds.add(child.pid);
+  }
 
   const timeout = setTimeout(() => {
     timedOut = true;
@@ -144,7 +215,12 @@ export async function runAgentCli(
   let spawnErrorMessage: string | undefined;
 
   const exitCode = await new Promise<number | null>((resolve) => {
-    child.on("close", (code) => resolve(code));
+    child.on("close", (code) => {
+      if (child.pid !== undefined) {
+        liveProcessGroupIds.delete(child.pid);
+      }
+      resolve(code);
+    });
     child.on("error", (error) => {
       spawnErrorMessage = error.message;
       resolve(null);

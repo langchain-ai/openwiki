@@ -95,6 +95,8 @@ Requirements and notes:
 - Local runs only for now: the scheduled GitHub Action still needs an API-key
   provider.
 - LangSmith tracing does not apply to delegated runs.
+- macOS and Linux only for now: process-group management and binary
+  resolution for the claude-code provider are POSIX-specific.
 
 ### Alternative base URLs
 

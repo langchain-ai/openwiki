@@ -1,6 +1,10 @@
-import { chmod, mkdtemp, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { chmod, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import {
   getAgentCliProviderConfig,
@@ -9,12 +13,36 @@ import {
 import { claudeCodeAdapter } from "../src/agent/engines/claude-code.ts";
 import { getAgentCliAdapter } from "../src/agent/engines/index.ts";
 import {
+  getLiveProcessGroupIdsForTesting,
   getThreadSessionId,
   runAgentCli,
   setThreadSessionId,
 } from "../src/agent/engines/runner.ts";
 import type { EngineRunSpec } from "../src/agent/engines/types.ts";
 import type { OpenWikiRunEvent } from "../src/agent/types.ts";
+
+const execFileAsync = promisify(execFile);
+
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
+const TSX_BIN = path.join(REPO_ROOT, "node_modules", ".bin", "tsx");
+const RUNNER_MODULE_PATH = path.join(
+  REPO_ROOT,
+  "src",
+  "agent",
+  "engines",
+  "runner.ts",
+);
+const CLAUDE_CODE_ADAPTER_MODULE_PATH = path.join(
+  REPO_ROOT,
+  "src",
+  "agent",
+  "engines",
+  "claude-code.ts",
+);
+const CONSTANTS_MODULE_PATH = path.join(REPO_ROOT, "src", "constants.ts");
 
 const SUCCESS_STUB = `#!/usr/bin/env node
 if (process.argv.includes("--version")) {
@@ -66,6 +94,18 @@ if (process.argv.includes("--version")) {
 process.exit(0);
 `;
 
+// Writes its own pid to OPENWIKI_TEST_PID_FILE before hanging, so an outside
+// process can identify and check on the detached grandchild.
+const HANG_STUB_WITH_PID = `#!/usr/bin/env node
+import { writeFileSync } from "node:fs";
+if (process.argv.includes("--version")) {
+  console.log("0.0.0-stub");
+  process.exit(0);
+}
+writeFileSync(process.env.OPENWIKI_TEST_PID_FILE, String(process.pid));
+setInterval(() => {}, 1000);
+`;
+
 async function writeStub(
   dir: string,
   name: string,
@@ -75,6 +115,80 @@ async function writeStub(
   await writeFile(stubPath, content, "utf8");
   await chmod(stubPath, 0o755);
   return stubPath;
+}
+
+/**
+ * Source for a standalone script (run via tsx as a real, separate OS process)
+ * that starts a detached agent-cli run against a hang stub and then exits
+ * without ever awaiting or otherwise cleaning up that run — mirroring a crash
+ * or a forceful kill of the OpenWiki process while a run is in flight. The
+ * outside test spawns this as a child, lets it exit, and then checks whether
+ * the grandchild (the hang stub) was cleaned up.
+ */
+function buildOrphanCheckWrapperSource(): string {
+  return `
+import { existsSync } from "node:fs";
+import { runAgentCli } from ${JSON.stringify(RUNNER_MODULE_PATH)};
+import { claudeCodeAdapter } from ${JSON.stringify(CLAUDE_CODE_ADAPTER_MODULE_PATH)};
+import { getAgentCliProviderConfig } from ${JSON.stringify(CONSTANTS_MODULE_PATH)};
+
+const spec = {
+  command: "init",
+  cwd: process.cwd(),
+  modelId: "default",
+  prompt: "hang please",
+  systemPrompt: "sys",
+};
+
+runAgentCli(
+  claudeCodeAdapter,
+  getAgentCliProviderConfig("claude-code"),
+  spec,
+  {},
+).catch(() => {});
+
+const pidFile = process.env.OPENWIKI_TEST_PID_FILE;
+
+// Failsafe: if the stub never manages to start (and write its pid file),
+// don't hang the outer test forever.
+setTimeout(() => {
+  process.exit(1);
+}, 5000).unref();
+
+(function poll() {
+  if (pidFile && existsSync(pidFile)) {
+    process.exit(0);
+    return;
+  }
+  setTimeout(poll, 50);
+})();
+`;
+}
+
+async function isProcessAlive(pid: number): Promise<boolean> {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code !== "ESRCH";
+  }
+}
+
+async function waitForProcessExit(
+  pid: number,
+  timeoutMs: number,
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if (!(await isProcessAlive(pid))) {
+      return true;
+    }
+
+    await delay(50);
+  }
+
+  return !(await isProcessAlive(pid));
 }
 
 const baseSpec: EngineRunSpec = {
@@ -197,6 +311,37 @@ describe("runAgentCli", () => {
     ).rejects.toThrow(/timed out after 1 seconds/);
   }, 15_000);
 
+  test("tracks the child's process group while live and untracks it once the run closes", async () => {
+    process.env[CLAUDE_CODE_BINARY_ENV_KEY] = await writeStub(
+      stubDir,
+      "stub-hang-tracking",
+      HANG_STUB,
+    );
+    process.env.OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS = "1";
+
+    expect(getLiveProcessGroupIdsForTesting().size).toBe(0);
+
+    const runPromise = runAgentCli(
+      claudeCodeAdapter,
+      getAgentCliProviderConfig("claude-code"),
+      baseSpec,
+      {},
+    );
+
+    const deadline = Date.now() + 2000;
+    while (
+      getLiveProcessGroupIdsForTesting().size === 0 &&
+      Date.now() < deadline
+    ) {
+      await delay(20);
+    }
+
+    expect(getLiveProcessGroupIdsForTesting().size).toBe(1);
+
+    await expect(runPromise).rejects.toThrow(/timed out after 1 seconds/);
+    expect(getLiveProcessGroupIdsForTesting().size).toBe(0);
+  }, 15_000);
+
   test("rejects instead of crashing when the child exits without reading a large prompt", async () => {
     process.env[CLAUDE_CODE_BINARY_ENV_KEY] = await writeStub(
       stubDir,
@@ -221,4 +366,41 @@ describe("thread session map", () => {
     setThreadSessionId("thread-x", "sess-1");
     expect(getThreadSessionId("thread-x")).toBe("sess-1");
   });
+});
+
+describe("detached process-group cleanup on process exit", () => {
+  test("kills the vendor CLI's process group when the parent process exits mid-run", async () => {
+    const pidFile = path.join(stubDir, "grandchild.pid");
+    process.env[CLAUDE_CODE_BINARY_ENV_KEY] = await writeStub(
+      stubDir,
+      "stub-hang-orphan",
+      HANG_STUB_WITH_PID,
+    );
+
+    const wrapperPath = path.join(stubDir, "orphan-check-wrapper.ts");
+    await writeFile(wrapperPath, buildOrphanCheckWrapperSource(), "utf8");
+
+    // Runs a separate Node process (via tsx) that starts a detached run
+    // against the hang stub and then calls process.exit() without awaiting
+    // or cancelling that run -- simulating the parent OpenWiki process being
+    // killed or crashing mid-run. If the runner's exit handler is missing or
+    // broken, the stub keeps running as an orphan under init.
+    await execFileAsync(TSX_BIN, [wrapperPath], {
+      cwd: stubDir,
+      env: {
+        ...process.env,
+        OPENWIKI_TEST_PID_FILE: pidFile,
+      },
+      timeout: 15_000,
+    });
+
+    const grandchildPid = Number.parseInt(
+      (await readFile(pidFile, "utf8")).trim(),
+      10,
+    );
+    expect(Number.isInteger(grandchildPid)).toBe(true);
+
+    const died = await waitForProcessExit(grandchildPid, 3000);
+    expect(died).toBe(true);
+  }, 20_000);
 });
