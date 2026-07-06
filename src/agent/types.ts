@@ -2,6 +2,7 @@ export type OpenWikiCommand = "chat" | "init" | "update";
 
 export type OpenWikiRunResult = {
   command: OpenWikiCommand;
+  hadToolError?: boolean;
   model: string;
   skipped?: boolean;
 };

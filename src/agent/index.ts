@@ -233,12 +233,17 @@ async function runOpenWikiAgentCore(
   });
   emitDebug(options, "stream=started modes=messages,tools subgraphs=true");
 
+  let hadToolError = false;
   let unhandledChunkCount = 0;
 
   for await (const chunk of stream) {
     const event = parseStreamEvent(chunk);
 
     if (event) {
+      if (event.type === "tool_end" && event.status === "error") {
+        hadToolError = true;
+      }
+
       options.onEvent?.(event);
     } else if (options.debug && unhandledChunkCount < 3) {
       emitDebug(
@@ -253,6 +258,7 @@ async function runOpenWikiAgentCore(
 
   if (
     command !== "chat" &&
+    !hadToolError &&
     openWikiSnapshotBefore !== (await createOpenWikiContentSnapshot(cwd))
   ) {
     await writeLastUpdateMetadata(command, cwd, modelId);
@@ -262,12 +268,15 @@ async function runOpenWikiAgentCore(
       options,
       command === "chat"
         ? "metadata=skipped command=chat"
-        : "metadata=skipped openwiki=unchanged",
+        : hadToolError
+          ? "metadata=skipped tool_error=true"
+          : "metadata=skipped openwiki=unchanged",
     );
   }
 
   return {
     command,
+    ...(hadToolError ? { hadToolError } : {}),
     model: modelId,
   };
 }

@@ -21,6 +21,7 @@ import {
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+import { getRunExitCode } from "./agent/result.js";
 import { getErrorMessage, sanitizeDiagnosticText } from "./diagnostics.js";
 import {
   type OpenWikiRunEvent,
@@ -380,7 +381,7 @@ function App({ command }: AppProps) {
     }
 
     if (runState.status === "success" && autoExitOnSuccess) {
-      process.exitCode = 0;
+      process.exitCode = getRunExitCode(runState.result);
       app.exit();
     }
   }, [app, autoExitOnSuccess, runState.status]);
@@ -3008,7 +3009,7 @@ async function runPrintCommand(
   try {
     const output: string[] = [];
 
-    await runOpenWikiAgent(command.command, process.cwd(), {
+    const result = await runOpenWikiAgent(command.command, process.cwd(), {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
       modelId: command.modelId,
@@ -3027,7 +3028,7 @@ async function runPrintCommand(
       process.stdout.write(`${text}\n`);
     }
 
-    process.exitCode = 0;
+    process.exitCode = getRunExitCode(result);
   } catch (error) {
     process.stderr.write(`${getErrorMessage(error)}\n`);
     writePrintErrorDiagnostics(error);
