@@ -26,6 +26,7 @@ import {
   isValidModelId,
   normalizeModelId,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -1306,6 +1307,7 @@ function formatEnvironmentDebug(): string {
     BASETEN_API_KEY_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
+    OPENAI_BASE_URL_ENV_KEY,
     OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
     OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
@@ -1330,6 +1332,7 @@ function formatDebugValue(key: string, value: string | undefined): string {
   if (
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   ) {
     return formatUrlDebugValue(value);

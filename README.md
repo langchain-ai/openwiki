@@ -84,6 +84,15 @@ ANTHROPIC_API_KEY=your-key
 ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 ```
 
+The OpenAI provider can be routed the same way, for example to an auditing
+proxy or an OpenAI-compatible gateway, by setting `OPENAI_BASE_URL`:
+
+```bash
+OPENWIKI_PROVIDER=openai
+OPENAI_API_KEY=your-key
+OPENAI_BASE_URL=https://your-gateway.example.com/v1
+```
+
 ### OpenAI-compatible endpoints
 
 The `openai-compatible` provider targets any OpenAI-compatible chat-completions

@@ -9,6 +9,7 @@ import {
   isValidModelId,
   normalizeProvider,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -37,6 +38,7 @@ const managedEnvKeys = [
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   ANTHROPIC_API_KEY_ENV_KEY,
@@ -49,11 +51,7 @@ const managedEnvKeys = [
   "LANGCHAIN_TRACING_V2",
 ];
 
-const deprecatedEnvKeys = [
-  "OPENAI_BASE_URL",
-  "OPENAI_ORG_ID",
-  "OPENAI_PROJECT",
-];
+const deprecatedEnvKeys = ["OPENAI_ORG_ID", "OPENAI_PROJECT"];
 
 export async function loadOpenWikiEnv(): Promise<EnvMap> {
   const env = await readOpenWikiEnv();
@@ -81,6 +79,7 @@ export async function getCredentialDiagnostics(): Promise<
     createCredentialDiagnostic(BASETEN_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(FIREWORKS_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENAI_API_KEY_ENV_KEY, fileEnv),
+    createCredentialDiagnostic(OPENAI_BASE_URL_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENAI_COMPATIBLE_API_KEY_ENV_KEY, fileEnv),
     createCredentialDiagnostic(OPENAI_COMPATIBLE_BASE_URL_ENV_KEY, fileEnv),
     createCredentialDiagnostic(ANTHROPIC_API_KEY_ENV_KEY, fileEnv),
@@ -178,6 +177,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   );
 }
