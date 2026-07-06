@@ -6,7 +6,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 
 - Launches an interactive Ink-based terminal app for chatting with the OpenWiki agent.
 - Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
-- Supports multiple model providers — OpenRouter (default), Anthropic, OpenAI, Baseten, and Fireworks — each with their own API key and model list.
+- Supports multiple model providers — OpenRouter (default), Anthropic, OpenAI, Baseten, and Fireworks — each with their own API key and model list, plus subscription agent-CLI providers such as Claude Code that run without an API key.
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
@@ -47,7 +47,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - The repository is intentionally focused: the main product surface is the CLI plus the documentation-generation agent.
 - Treat `openwiki/` in this repo as generated documentation output from a future OpenWiki run, not as application source.
 - When changing behavior, verify both the CLI parser and the agent prompt/runtime, because user-visible semantics are split across `src/commands.ts`, `src/cli.tsx`, and `src/agent/*`.
-- Provider support is centralized in `src/constants.ts`. Adding or changing a provider means updating `PROVIDER_CONFIGS`, the `OpenWikiProvider` type, and the model-creation branch in `src/agent/index.ts`.
+- Provider support is centralized in `src/constants.ts`. API providers (`kind: "api"`) add a `PROVIDER_CONFIGS` entry, the `OpenWikiProvider` type member, and a model-creation branch in `src/agent/index.ts`. Subscription agent-CLI providers (`kind: "agent-cli"`) add a config entry plus an adapter in `src/agent/engines/` registered in `src/agent/engines/index.ts`.
 
 ## Source map
 

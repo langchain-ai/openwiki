@@ -73,6 +73,29 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
 
+### Use your coding-agent subscription (no API key)
+
+If you already pay for a subscription coding agent, OpenWiki can delegate
+documentation runs to it instead of calling a metered API. The first supported
+agent is Claude Code:
+
+```bash
+OPENWIKI_PROVIDER=claude-code
+OPENWIKI_MODEL_ID=default   # or sonnet / opus / haiku
+```
+
+Requirements and notes:
+
+- Install Claude Code (`npm install -g @anthropic-ai/claude-code`) and run
+  `claude` once to complete the subscription login.
+- No API key is stored. Runs execute through the Claude Code CLI in headless
+  mode with a documentation-scoped tool allowlist, using your existing login.
+- Set `OPENWIKI_CLAUDE_CODE_BINARY` to point at a non-default binary location,
+  and `OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS` to change the 30-minute run timeout.
+- Local runs only for now: the scheduled GitHub Action still needs an API-key
+  provider.
+- LangSmith tracing does not apply to delegated runs.
+
 ### Alternative base URLs
 
 To route the Anthropic provider at an alternative, Anthropic-compatible endpoint
