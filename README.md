@@ -94,9 +94,6 @@ Requirements and notes:
   mode with a documentation-scoped tool allowlist, using your existing login.
 - Set `OPENWIKI_CLAUDE_CODE_BINARY` to point at a non-default binary location,
   and `OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS` to change the 30-minute run timeout.
-- Local runs only for now: the scheduled GitHub Action still needs an API-key
-  provider.
-- LangSmith tracing does not apply to delegated runs.
 
 **IBM Bob (Bob Shell):**
 
@@ -113,6 +110,12 @@ OPENWIKI_MODEL_ID=default   # or any model id your Bob backend accepts
   with a read-only-git shell allowlist), using your existing login. No API
   key is stored.
 - Set `OPENWIKI_IBM_BOB_BINARY` to point at a non-default binary location.
+
+Notes for both agents:
+
+- Local runs only for now: the scheduled GitHub Action still needs an API-key
+  provider.
+- LangSmith tracing does not apply to delegated runs.
 - macOS and Linux only for now: process-group management and binary
   resolution for the subscription providers are POSIX-specific.
 

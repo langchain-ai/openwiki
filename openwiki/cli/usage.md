@@ -121,6 +121,23 @@ Set `OPENWIKI_CLAUDE_CODE_BINARY` to point at a non-default binary and
 [Agent workflow](../agent/workflow.md) for how the engine executes runs and
 which tools it allows.
 
+### IBM Bob subscription provider
+
+The `ibm-bob` provider runs documentation runs through an installed Bob Shell
+CLI (`bob`) using your IBMid subscription login instead of a metered API key:
+
+```bash
+OPENWIKI_PROVIDER=ibm-bob
+OPENWIKI_MODEL_ID=default   # the only preset option; the subscription default
+```
+
+Run `bob` once in the target repository to complete the IBMid login and trust
+the folder when prompted — Bob refuses write-enabled headless runs in untrusted
+folders. Set `OPENWIKI_IBM_BOB_BINARY` to point at a non-default binary and
+`OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS` to change the 30-minute run timeout. See
+[Agent workflow](../agent/workflow.md) for how the engine executes runs and
+which tools it allows.
+
 ## Help text and validation
 
 The help content is centralized in `src/commands.ts` and is used by the CLI UI. Model validation is intentionally strict:
