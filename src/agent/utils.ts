@@ -4,6 +4,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
+import { loadIgnoreRules, shouldIgnore, type IgnoreRule } from "../ignore.js";
 import type {
   OpenWikiCommand,
   OpenWikiRunOptions,
@@ -136,8 +137,9 @@ export async function createOpenWikiContentSnapshot(
 ): Promise<OpenWikiContentSnapshot> {
   const openWikiDir = path.join(cwd, OPEN_WIKI_DIR);
   const hash = createHash("sha256");
+  const ignoreRules = await loadIgnoreRules(cwd);
 
-  await addDirectoryToSnapshot(hash, openWikiDir, "");
+  await addDirectoryToSnapshot(hash, openWikiDir, "", ignoreRules);
 
   return hash.digest("hex");
 }
@@ -180,11 +182,13 @@ async function readLastUpdate(cwd: string): Promise<UpdateMetadata | null> {
 
 /**
  * Recursively adds stable file paths and bytes to the OpenWiki content snapshot.
+ * Respects .openwikiignore rules to skip matching files and directories.
  */
 async function addDirectoryToSnapshot(
   hash: ReturnType<typeof createHash>,
   directory: string,
   relativeDirectory: string,
+  ignoreRules: IgnoreRule[],
 ): Promise<void> {
   let entries: Dirent[];
 
@@ -209,9 +213,16 @@ async function addDirectoryToSnapshot(
       continue;
     }
 
+    // Check .openwikiignore rules
+    const normalizedRelativePath = relativePath.replace(/\\/gu, "/");
+
+    if (shouldIgnore(`${normalizedRelativePath}/`, ignoreRules)) {
+      continue;
+    }
+
     if (entry.isDirectory()) {
       hash.update(`dir:${relativePath}\0`);
-      await addDirectoryToSnapshot(hash, entryPath, relativePath);
+      await addDirectoryToSnapshot(hash, entryPath, relativePath, ignoreRules);
       continue;
     }
 

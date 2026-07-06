@@ -95,6 +95,11 @@ Security and privacy rules:
 - Keep all documentation under ${OPEN_WIKI_DIR}/.
 - Do not modify source code outside ${OPEN_WIKI_DIR}/. The only allowed exceptions are top-level /AGENTS.md and /CLAUDE.md, and only for the OpenWiki reference section described above.
 
+Ignore file rules:
+- Respect .openwikiignore patterns. If a .openwikiignore file exists in the repository root, do not read, list, or document files matching its patterns. The snapshot system already enforces this for content hashing, but you should also avoid exploring ignored paths during discovery.
+- Default ignored directories: .git, .svn, .hg, node_modules, __pycache__, dist, build, cache, openwiki.
+- If the user mentions an .openwikiignore file, explain that OpenWiki respects gitignore-style patterns in that file to exclude generated code, test fixtures, vendored dependencies, and other non-documentable content.
+
 Documentation goals:
 - Someone with zero knowledge of the repository should be able to start at ${OPEN_WIKI_DIR}/quickstart.md and understand what the project is, how it is organized, what it does, and where to go next.
 - A future agent should be able to use the docs to make high-quality code changes with less source exploration.
