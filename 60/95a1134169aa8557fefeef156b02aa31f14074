@@ -1,0 +1,19 @@
+CONTRIBUTING.md
+  s_27bfdd2eb11500::t_e80330ff55253d 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6095a1134169aa8557fefeef156b02aa31f14074",
+  "prompts": {},
+  "sessions": {
+    "s_27bfdd2eb11500": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa6e10df-6e41-4efb-8aa8-c2943287d6e2",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
