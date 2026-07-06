@@ -26,11 +26,12 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli.tsx` — Ink UI, command execution, auto-exit, and run lifecycle.
 - `src/commands.ts` — CLI parsing and help content.
 - `src/agent/index.ts` — agent runtime, provider-specific model creation, fallback, and metadata writes.
+- `src/agent/engines/` — subscription agent-CLI engine: adapter types, generic runner, and the Claude Code adapter.
 - `src/agent/prompt.ts` — prompt assembly, documentation-run instructions, and AGENTS.md/CLAUDE.md insertion rules.
 - `src/agent/utils.ts` — git evidence collection, content snapshot, and `.last-update.json` handling.
 - `src/agent/types.ts` — shared agent types (`OpenWikiCommand`, `RunContext`, `UpdateMetadata`, run options/events).
 - `src/env.ts` — `~/.openwiki/.env` persistence and credential diagnostics.
-- `src/credentials.tsx` — interactive onboarding flow for provider selection, API keys, and model selection.
+- `src/credentials.tsx` — interactive onboarding flow for provider selection, API keys, and model selection (step sequencing in `src/credentials-flow.ts`).
 - `src/constants.ts` — provider configs, model options, env keys, and validation helpers.
 - `examples/openwiki-update.yml` — GitHub Actions scheduled automation example.
 - `examples/openwiki-update.gitlab-ci.yml` — GitLab CI scheduled automation example.

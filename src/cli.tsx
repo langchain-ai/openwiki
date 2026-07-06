@@ -34,6 +34,7 @@ import {
   getProviderApiKeyEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  isAgentCliProvider,
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
@@ -238,14 +239,16 @@ function App({ command }: AppProps) {
       return;
     }
 
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
+    if (!isAgentCliProvider(sessionProvider)) {
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
-      setRunState({
-        status: "error",
-        message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
-      });
-      return;
+      if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+        setRunState({
+          status: "error",
+          message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
+        });
+        return;
+      }
     }
 
     if (shouldRunInteractiveCredentialSetup) {

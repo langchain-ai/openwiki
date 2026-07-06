@@ -4,13 +4,15 @@ OpenWiki has a small but layered architecture:
 
 1. `src/cli.tsx` provides the interactive terminal application and orchestrates runs, including auto-exit for init/update.
 2. `src/commands.ts` parses argv and defines help text and supported options.
-3. `src/credentials.tsx` manages interactive onboarding for provider selection, API keys, model selection, and optional LangSmith tracing.
+3. `src/credentials.tsx` manages interactive onboarding for provider selection, API keys, model selection, and optional LangSmith tracing; `src/credentials-flow.ts` holds the pure step-sequencing logic (which setup steps a provider needs, including the install-check step for agent-CLI providers).
 4. `src/env.ts` reads and writes `~/.openwiki/.env` and surfaces credential diagnostics for all supported providers.
-5. `src/agent/index.ts` runs the documentation agent, resolves the provider, creates the appropriate model client, collects Git context, and writes update metadata.
-6. `src/agent/prompt.ts` builds the system and user prompts that tell the model how to behave.
-7. `src/agent/utils.ts` gathers Git evidence, computes an OpenWiki content snapshot, and records `.last-update.json` after successful init/update runs.
-8. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
-9. `src/agent/types.ts` defines shared types: `OpenWikiCommand`, `RunContext`, `UpdateMetadata`, and run option/event interfaces.
+5. `src/agent/index.ts` runs the documentation agent, resolves the provider, creates the appropriate model client or dispatches to an agent-CLI engine, collects Git context, and writes update metadata.
+6. `src/agent/engines/` implements the agent-CLI engine: adapter types, a generic process runner, and the Claude Code adapter (see [Agent workflow](../agent/workflow.md)).
+7. `src/agent/prompt.ts` builds the system and user prompts that tell the model how to behave, with per-engine variants.
+8. `src/agent/utils.ts` gathers Git evidence, computes an OpenWiki content snapshot, detects no-op updates, and records `.last-update.json` after successful init/update runs.
+9. `src/agent/tool-format.ts` formats tool-call names and arguments for display, shared by both engines.
+10. `src/constants.ts` centralizes provider configs (API and agent-CLI kinds), model options, environment keys, validation helpers, and the wiki directory names.
+11. `src/agent/types.ts` defines shared types: `OpenWikiCommand`, `RunContext`, `UpdateMetadata`, and run option/event interfaces.
 
 ## Runtime shape
 
@@ -38,7 +40,9 @@ The agent runtime resolves the provider via `resolveConfiguredProvider()` in `sr
 2. Otherwise, if `OPENROUTER_API_KEY` is present, default to `openrouter`.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openrouter`).
 
-Model creation branches by provider in `src/agent/index.ts` (`createModel`):
+Providers come in two kinds (`PROVIDER_CONFIGS` in `src/constants.ts`): `kind: "api"` providers use an API key and a LangChain model client, while `kind: "agent-cli"` providers (currently `claude-code`) delegate the whole run to an installed subscription coding-agent CLI — no API key, no model client. Agent-CLI runs are dispatched before model creation; see [Agent workflow](../agent/workflow.md) for the engine details.
+
+For API providers, model creation branches by provider in `src/agent/index.ts` (`createModel`):
 
 - **anthropic** → `ChatAnthropic` with the Anthropic API key.
 - **openrouter** → `ChatOpenRouter` with the selected model ID.
@@ -51,7 +55,7 @@ The agent uses a DeepAgents `LocalShellBackend` rooted at the repository, config
 
 ### Content snapshot and metadata writes
 
-After a non-chat run completes, `src/agent/utils.ts` computes a SHA-256 snapshot of the `openwiki/` directory (excluding `.last-update.json`). Metadata is written **only if the snapshot changed** — a no-op update that leaves docs untouched will not update `.last-update.json`. This prevents endless update loops in scheduled workflows.
+After a non-chat run completes, `src/agent/utils.ts` computes a SHA-256 snapshot of the `openwiki/` directory (excluding `.last-update.json`). Metadata is written **only if the snapshot changed** — a no-op update that leaves docs untouched will not update `.last-update.json`. This prevents endless update loops in scheduled workflows. Update runs without a user message are additionally skipped before the agent starts when the repository has no changes since the recorded `gitHead` (see [Agent workflow](../agent/workflow.md) for the exact conditions).
 
 ### Auto-exit behavior
 
@@ -72,7 +76,7 @@ The current design reflects a documentation product rather than a general-purpos
 
 - Add or refine CLI commands in `src/commands.ts` and the corresponding UI behavior in `src/cli.tsx`.
 - Change onboarding or local credential storage in `src/credentials.tsx` and `src/env.ts`.
-- Add a new model provider by extending `PROVIDER_CONFIGS` and `OpenWikiProvider` in `src/constants.ts`, then adding a branch in `createModel` in `src/agent/index.ts`.
+- Add a new API provider by extending `PROVIDER_CONFIGS` and `OpenWikiProvider` in `src/constants.ts`, then adding a branch in `createModel` in `src/agent/index.ts`. Add a subscription agent-CLI provider by adding a `kind: "agent-cli"` config entry plus an adapter in `src/agent/engines/` registered in `src/agent/engines/index.ts`.
 - Adjust model defaults, validation, or fallback lists in `src/constants.ts`.
 - Extend the documentation prompt or Git evidence in `src/agent/prompt.ts` and `src/agent/utils.ts`.
 - Modify run persistence or snapshot behavior in `src/agent/utils.ts`.
