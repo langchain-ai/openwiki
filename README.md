@@ -103,3 +103,7 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
 If there's an inference provider or model you'd like to see added, please open a PR!
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR. We intentionally keep PRs tightly scoped to one change each, and PRs that bundle unrelated changes may be closed with a request to split them.
