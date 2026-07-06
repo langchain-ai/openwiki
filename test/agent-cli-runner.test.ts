@@ -9,8 +9,10 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import {
   getAgentCliProviderConfig,
   CLAUDE_CODE_BINARY_ENV_KEY,
+  IBM_BOB_BINARY_ENV_KEY,
 } from "../src/constants.ts";
 import { claudeCodeAdapter } from "../src/agent/engines/claude-code.ts";
+import { ibmBobAdapter } from "../src/agent/engines/ibm-bob.ts";
 import { getAgentCliAdapter } from "../src/agent/engines/index.ts";
 import {
   getLiveProcessGroupIdsForTesting,
@@ -92,6 +94,22 @@ if (process.argv.includes("--version")) {
   process.exit(0);
 }
 process.exit(0);
+`;
+
+const BOB_SUCCESS_STUB = `#!/usr/bin/env node
+if (process.argv.includes("--version")) {
+  console.log("1.0.3-stub");
+  process.exit(0);
+}
+let input = "";
+process.stdin.on("data", (chunk) => (input += chunk));
+process.stdin.on("end", () => {
+  console.log(JSON.stringify({ type: "init", timestamp: "t", session_id: "bob-session", model: "bob-model" }));
+  console.log(JSON.stringify({ type: "message", timestamp: "t", role: "assistant", content: "stdin-bytes:" + input.length, delta: true }));
+  console.log(JSON.stringify({ type: "tool_use", timestamp: "t", tool_name: "write_to_file", tool_id: "bob-tool-1", parameters: { path: "openwiki/quickstart.md" } }));
+  console.log(JSON.stringify({ type: "tool_result", timestamp: "t", tool_id: "bob-tool-1", status: "success", output: "ok" }));
+  console.log(JSON.stringify({ type: "result", timestamp: "t", status: "success", stats: {} }));
+});
 `;
 
 // Writes its own pid to OPENWIKI_TEST_PID_FILE before hanging, so an outside
@@ -206,6 +224,7 @@ beforeEach(async () => {
   stubDir = await mkdtemp(path.join(tmpdir(), "openwiki-stub-"));
   for (const key of [
     CLAUDE_CODE_BINARY_ENV_KEY,
+    IBM_BOB_BINARY_ENV_KEY,
     "OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS",
   ]) {
     savedEnv[key] = process.env[key];
@@ -221,8 +240,9 @@ afterEach(() => {
 });
 
 describe("getAgentCliAdapter", () => {
-  test("returns the claude-code adapter and rejects api providers", () => {
+  test("returns the registered adapters and rejects api providers", () => {
     expect(getAgentCliAdapter("claude-code")).toBe(claudeCodeAdapter);
+    expect(getAgentCliAdapter("ibm-bob")).toBe(ibmBobAdapter);
     expect(() => getAgentCliAdapter("openai")).toThrow(/openai/);
   });
 });
@@ -383,6 +403,34 @@ describe("runAgentCli", () => {
       .length;
     const text = events.find((event) => event.type === "text");
     expect(text).toMatchObject({ text: `prompt-bytes:${expectedBytes}` });
+  });
+
+  test("runs the ibm-bob adapter end-to-end with composed stdin and patched tool names", async () => {
+    process.env[IBM_BOB_BINARY_ENV_KEY] = await writeStub(
+      stubDir,
+      "bob-stub",
+      BOB_SUCCESS_STUB,
+    );
+    const events: OpenWikiRunEvent[] = [];
+
+    const outcome = await runAgentCli(
+      ibmBobAdapter,
+      getAgentCliProviderConfig("ibm-bob"),
+      baseSpec,
+      { onEvent: (event) => events.push(event) },
+    );
+
+    expect(outcome.sessionId).toBe("bob-session");
+    const expectedBytes = `${baseSpec.systemPrompt}\n\n${baseSpec.prompt}`
+      .length;
+    const text = events.find((event) => event.type === "text");
+    expect(text).toMatchObject({ text: `stdin-bytes:${expectedBytes}` });
+    const toolEnd = events.find((event) => event.type === "tool_end");
+    expect(toolEnd).toMatchObject({
+      id: "bob-tool-1",
+      name: "write_to_file",
+      status: "finished",
+    });
   });
 });
 
