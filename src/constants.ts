@@ -9,6 +9,7 @@ export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const CLAUDE_CODE_BINARY_ENV_KEY = "OPENWIKI_CLAUDE_CODE_BINARY";
+export const IBM_BOB_BINARY_ENV_KEY = "OPENWIKI_IBM_BOB_BINARY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -19,6 +20,7 @@ export type OpenWikiProvider =
   | "baseten"
   | "claude-code"
   | "fireworks"
+  | "ibm-bob"
   | "openai"
   | "openai-compatible"
   | "openrouter";
@@ -69,6 +71,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai-compatible",
   "anthropic",
   "claude-code",
+  "ibm-bob",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -108,6 +111,15 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
         label: "Kimi K2.7 Code",
       },
     ],
+  },
+  "ibm-bob": {
+    kind: "agent-cli",
+    binaryEnvKey: IBM_BOB_BINARY_ENV_KEY,
+    defaultBinary: "bob",
+    installHint:
+      "Install Bob Shell (curl -fsSL https://bob.ibm.com/download/bobshell.sh | bash), run `bob` once in this repository to complete the IBMid login, and trust the folder when prompted.",
+    label: "IBM Bob (subscription)",
+    modelOptions: [{ id: "default", label: "Subscription default" }],
   },
   openai: {
     kind: "api",

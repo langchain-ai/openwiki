@@ -6,6 +6,8 @@ import {
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderLabel,
+  getProviderModelOptions,
+  IBM_BOB_BINARY_ENV_KEY,
   isAgentCliProvider,
   isValidModelId,
   normalizeProvider,
@@ -89,5 +91,56 @@ describe("formatProviderSwitchNotice", () => {
     expect(notice).not.toContain("API key");
     expect(notice).not.toContain("_API_KEY");
     expect(notice).toContain("login");
+  });
+});
+
+describe("ibm-bob provider entry", () => {
+  test("ibm-bob is a valid, selectable provider id", () => {
+    expect(normalizeProvider("ibm-bob")).toBe("ibm-bob");
+    expect(normalizeProvider("IBM-BOB")).toBe("ibm-bob");
+    expect(isAgentCliProvider("ibm-bob")).toBe(true);
+    expect(SELECTABLE_OPENWIKI_PROVIDERS).toContain("ibm-bob");
+  });
+
+  test("agent-cli config exposes the bob binary, override key, and install hint", () => {
+    const config = getAgentCliProviderConfig("ibm-bob");
+
+    expect(config.kind).toBe("agent-cli");
+    expect(config.defaultBinary).toBe("bob");
+    expect(config.binaryEnvKey).toBe(IBM_BOB_BINARY_ENV_KEY);
+    expect(IBM_BOB_BINARY_ENV_KEY).toBe("OPENWIKI_IBM_BOB_BINARY");
+    expect(config.installHint).toContain("bob");
+    expect(config.installHint).toContain("trust");
+  });
+
+  test("only the subscription default model is offered", () => {
+    expect(getDefaultModelId("ibm-bob")).toBe("default");
+    expect(getProviderModelOptions("ibm-bob")).toEqual([
+      { id: "default", label: "Subscription default" },
+    ]);
+  });
+
+  test("label reads as a subscription provider", () => {
+    expect(getProviderLabel("ibm-bob")).toBe("IBM Bob (subscription)");
+  });
+
+  test("api-key helper rejects ibm-bob", () => {
+    expect(() => getProviderApiKeyEnvKey("ibm-bob")).toThrow(/ibm-bob/);
+  });
+
+  test("switch notice mentions the CLI login instead of a key", () => {
+    const notice = formatProviderSwitchNotice("ibm-bob");
+
+    expect(notice).toContain("Provider switched to IBM Bob (subscription)");
+    expect(notice).not.toContain("_API_KEY");
+    expect(notice).toContain("login");
+  });
+
+  test("credential diagnostics include the ibm-bob binary override", async () => {
+    const diagnostics = await getCredentialDiagnostics();
+
+    expect(diagnostics.map((diagnostic) => diagnostic.key)).toContain(
+      IBM_BOB_BINARY_ENV_KEY,
+    );
   });
 });
