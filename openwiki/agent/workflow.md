@@ -45,7 +45,7 @@ The runner:
 
 The Claude Code adapter (`src/agent/engines/claude-code.ts`) runs `claude -p --output-format stream-json` with `--permission-mode acceptEdits` and a documentation-scoped `--allowedTools` allowlist: read/search tools, write/edit tools, read-only git commands, and the single exact `rm` needed to delete the temporary plan file. Network tools are deliberately excluded. A model ID of `default` means "use the subscription's default model" (no `--model` flag is passed).
 
-The ibm-bob adapter uses Bob Shell's `--approval-mode auto_edit`, pins `--chat-mode advanced`, and prepends the system prompt to the stdin payload because Bob has no append-system-prompt flag.
+The ibm-bob adapter uses Bob Shell's `--approval-mode auto_edit`, pins `--chat-mode advanced`, and prepends the system prompt to the stdin payload because Bob has no append-system-prompt flag; resumed follow-ups pass the same payload via `-p` instead, which Bob requires (its stdin detection for that check doesn't work, so stdin is left empty on resume to avoid Bob concatenating the payload twice).
 
 After the engine run, the same content-snapshot check applies: `.last-update.json` is written only if the `openwiki/` hash changed.
 

@@ -64,6 +64,10 @@ export const ibmBobAdapter: AgentCliAdapter = {
 
     if (spec.resumeSessionId) {
       args.push("--resume", spec.resumeSessionId);
+      // Bob rejects a resumed session unless the message arrives via -p;
+      // its stdin detection for that check doesn't work, and an empty -p
+      // value is also rejected, so the composed payload must ride here.
+      args.push("-p", composePayload(spec));
     }
 
     return args;
@@ -71,8 +75,14 @@ export const ibmBobAdapter: AgentCliAdapter = {
 
   buildStdin(spec: EngineRunSpec): string {
     // Bob Shell has no --append-system-prompt equivalent, so the system
-    // prompt travels as a preamble of the stdin payload.
-    return `${spec.systemPrompt}\n\n${spec.prompt}`;
+    // prompt travels as a preamble of the stdin payload. On resume the
+    // payload instead goes via -p (see buildArgs), so stdin stays empty --
+    // sending it on both would make Bob concatenate the payload twice.
+    if (spec.resumeSessionId) {
+      return "";
+    }
+
+    return composePayload(spec);
   },
 
   parseEvent(line: unknown): AgentCliEvent[] {
@@ -195,4 +205,8 @@ function parseMessageEvent(line: Record<string, unknown>): AgentCliEvent[] {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function composePayload(spec: EngineRunSpec): string {
+  return `${spec.systemPrompt}\n\n${spec.prompt}`;
 }

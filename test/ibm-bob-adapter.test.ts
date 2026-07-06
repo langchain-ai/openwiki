@@ -45,6 +45,10 @@ describe("ibmBobAdapter.buildArgs", () => {
     });
 
     expect(args[args.indexOf("--resume") + 1]).toBe("bob-sess-1");
+    expect(args).toContain("-p");
+    expect(args[args.indexOf("-p") + 1]).toBe(
+      "You are OpenWiki.\n\nInitialize docs.",
+    );
   });
 
   test("never passes the prompt as an argument", () => {
@@ -70,6 +74,15 @@ describe("ibmBobAdapter.buildStdin", () => {
     expect(ibmBobAdapter.buildStdin?.(baseSpec)).toBe(
       "You are OpenWiki.\n\nInitialize docs.",
     );
+  });
+
+  test("returns an empty string when resuming, since -p carries the payload", () => {
+    expect(
+      ibmBobAdapter.buildStdin?.({
+        ...baseSpec,
+        resumeSessionId: "bob-sess-1",
+      }),
+    ).toBe("");
   });
 });
 
