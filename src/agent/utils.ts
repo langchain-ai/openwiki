@@ -1,9 +1,16 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  readdir,
+  readFile,
+  realpath,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
+import { loadIgnoreRules, shouldIgnore, type IgnoreRule } from "../ignore.js";
 import type {
   OpenWikiCommand,
   OpenWikiRunOptions,
@@ -11,6 +18,63 @@ import type {
   UpdateMetadata,
 } from "./types.js";
 import type { Dirent } from "node:fs";
+
+/**
+ * Directories to skip during snapshot traversal.
+ * These contain compiled artifacts, vendored dependencies, or version control data.
+ */
+const SNAPSHOT_EXCLUDED_DIRS = new Set([
+  "__pycache__",
+  "node_modules",
+  ".git",
+  ".svn",
+  ".hg",
+  "dist",
+  "build",
+  "cache",
+  ".next",
+  ".nuxt",
+  "coverage",
+]);
+
+/**
+ * File extensions to skip during snapshot traversal.
+ * These are binary files, compiled artifacts, or media that should not be hashed.
+ */
+const SNAPSHOT_EXCLUDED_EXTENSIONS = new Set([
+  ".pyc",
+  ".pyo",
+  ".class",
+  ".o",
+  ".so",
+  ".dll",
+  ".exe",
+  ".bin",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".ico",
+  ".woff",
+  ".woff2",
+  ".ttf",
+  ".eot",
+  ".pdf",
+  ".zip",
+  ".tar",
+  ".gz",
+  ".bz2",
+  ".7z",
+  ".rar",
+  ".mp3",
+  ".mp4",
+  ".avi",
+  ".mov",
+  ".wav",
+  ".ogg",
+  ".webp",
+  ".avif",
+]);
 
 const execFileAsync = promisify(execFile);
 
@@ -136,8 +200,9 @@ export async function createOpenWikiContentSnapshot(
 ): Promise<OpenWikiContentSnapshot> {
   const openWikiDir = path.join(cwd, OPEN_WIKI_DIR);
   const hash = createHash("sha256");
+  const ignoreRules = await loadIgnoreRules(cwd);
 
-  await addDirectoryToSnapshot(hash, openWikiDir, "");
+  await addDirectoryToSnapshot(hash, openWikiDir, "", ignoreRules, new Set());
 
   return hash.digest("hex");
 }
@@ -179,13 +244,38 @@ async function readLastUpdate(cwd: string): Promise<UpdateMetadata | null> {
 }
 
 /**
+ * Maximum directory depth for snapshot traversal to prevent stack overflow.
+ */
+const MAX_SNAPSHOT_DEPTH = 20;
+
+/**
  * Recursively adds stable file paths and bytes to the OpenWiki content snapshot.
+ * Tracks visited real paths to detect symlink cycles.
  */
 async function addDirectoryToSnapshot(
   hash: ReturnType<typeof createHash>,
   directory: string,
   relativeDirectory: string,
+  ignoreRules: IgnoreRule[],
+  visited?: Set<string>,
+  depth: number = 0,
 ): Promise<void> {
+  if (depth > MAX_SNAPSHOT_DEPTH) {
+    return;
+  }
+
+  const realDir = await realpath(directory).catch(() => null);
+
+  if (!realDir) {
+    return;
+  }
+
+  if (visited?.has(realDir)) {
+    return;
+  }
+
+  visited?.add(realDir);
+
   let entries: Dirent[];
 
   try {
@@ -209,13 +299,41 @@ async function addDirectoryToSnapshot(
       continue;
     }
 
+    if (entry.isDirectory() && SNAPSHOT_EXCLUDED_DIRS.has(entry.name)) {
+      continue;
+    }
+
+    // Check .openwikiignore rules
+    const normalizedRelativePath = relativePath.replace(/\\/gu, "/");
+
+    if (shouldIgnore(`${normalizedRelativePath}/`, ignoreRules)) {
+      continue;
+    }
+
     if (entry.isDirectory()) {
+      if (entry.isSymbolicLink()) {
+        continue;
+      }
+
       hash.update(`dir:${relativePath}\0`);
-      await addDirectoryToSnapshot(hash, entryPath, relativePath);
+      await addDirectoryToSnapshot(
+        hash,
+        entryPath,
+        relativePath,
+        ignoreRules,
+        visited,
+        depth + 1,
+      );
       continue;
     }
 
     if (!entry.isFile()) {
+      continue;
+    }
+
+    if (
+      SNAPSHOT_EXCLUDED_EXTENSIONS.has(path.extname(entry.name).toLowerCase())
+    ) {
       continue;
     }
 

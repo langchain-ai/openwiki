@@ -23,6 +23,8 @@ Run discipline:
 - Shell execute commands run on the host. If you use execute, run commands from the target repository directory and keep them inside that repository.
 - Do not exhaustively read every file. Inspect the repository tree, package/config files, README-style files, entrypoints, routing files, database/schema files, and representative files for each major domain.
 - Do not call glob with **/* from the repository root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.
+- Never read binary files or directories containing compiled artifacts. Skip these directories entirely: __pycache__, .pyc, .pyo, .class, .o, .so, .dll, .exe, .bin, .git/objects, .svn, .hg. Skip binary media files: .png, .jpg, .jpeg, .gif, .ico, .woff, .woff2, .ttf, .eot, .pdf, .zip, .tar, .gz. Reading binary content will crash the LLM API.
+- Do not follow symbolic links. Use ls -l or check for symlinks before recursing into directories. Symlink cycles will crash the tool with ELOOP.
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
 - Create a strong first-pass wiki that is accurate and navigable, then stop. The wiki can be refined in later update runs.
 - Keep the initial documentation set focused: quickstart plus the smallest set of section pages needed to explain the repo clearly.
@@ -94,6 +96,11 @@ Security and privacy rules:
 - If a secret-bearing file appears relevant, document only that such configuration exists and where non-sensitive setup should be described.
 - Keep all documentation under ${OPEN_WIKI_DIR}/.
 - Do not modify source code outside ${OPEN_WIKI_DIR}/. The only allowed exceptions are top-level /AGENTS.md and /CLAUDE.md, and only for the OpenWiki reference section described above.
+
+Ignore file rules:
+- Respect .openwikiignore patterns. If a .openwikiignore file exists in the repository root, do not read, list, or document files matching its patterns. The snapshot system already enforces this for content hashing, but you should also avoid exploring ignored paths during discovery.
+- Default ignored directories: .git, .svn, .hg, node_modules, __pycache__, dist, build, cache, openwiki.
+- If the user mentions an .openwikiignore file, explain that OpenWiki respects gitignore-style patterns in that file to exclude generated code, test fixtures, vendored dependencies, and other non-documentable content.
 
 Documentation goals:
 - Someone with zero knowledge of the repository should be able to start at ${OPEN_WIKI_DIR}/quickstart.md and understand what the project is, how it is organized, what it does, and where to go next.
