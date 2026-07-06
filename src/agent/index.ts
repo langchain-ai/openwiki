@@ -6,7 +6,14 @@ import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
-import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
+import { loadOpenWikiEnv, openWikiEnvDir, saveOpenWikiEnv } from "../env.js";
+import {
+  CODEX_ORIGINATOR,
+  CODEX_RESPONSES_BASE_URL,
+  isChatGptTokenExpired,
+  refreshChatGptTokens,
+  type CodexTokens,
+} from "./openai-chatgpt-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
   OpenWikiCommand,
@@ -26,6 +33,10 @@ import {
   isValidModelId,
   normalizeModelId,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
+  OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
+  OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -428,6 +439,36 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
     });
   }
 
+  if (provider === "openai-chatgpt") {
+    const tokens = await resolveChatGptTokens();
+
+    // Reuse LangChain's existing ChatOpenAI Responses-API integration (correct
+    // tool-calling + SSE parsing for DeepAgents) pointed at the Codex backend:
+    // - useResponsesApi routes to POST {baseURL}/responses
+    // - zdrEnabled forces `store: false`, which the Codex backend requires
+    // - defaultHeaders carry the account id / originator / beta header
+    return new ChatOpenAI({
+      apiKey: tokens.access,
+      model: modelId,
+      useResponsesApi: true,
+      zdrEnabled: true,
+      // The Codex backend rejects non-streaming requests
+      // ("Stream must be set to true"), so force the streaming transport for
+      // every generation — including the non-streaming `.invoke()` calls
+      // DeepAgents' agent node issues internally.
+      streaming: true,
+      configuration: {
+        baseURL: CODEX_RESPONSES_BASE_URL,
+        defaultHeaders: {
+          "chatgpt-account-id": tokens.accountId,
+          originator: CODEX_ORIGINATOR,
+          "OpenAI-Beta": "responses=experimental",
+        },
+        fetch: createCodexFetch(),
+      },
+    });
+  }
+
   if (provider === "openrouter") {
     const models = createModelRoute(provider, modelId);
 
@@ -452,6 +493,80 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       : undefined,
     model: modelId,
   });
+}
+
+/**
+ * Reads the persisted ChatGPT OAuth tokens and refreshes them once at startup
+ * when expired/near-expiry, persisting the rotated tokens back to
+ * `~/.openwiki/.env`. This is a short-lived CLI process, so a single
+ * refresh-at-startup is sufficient — there is no background refresh loop.
+ */
+async function resolveChatGptTokens(): Promise<CodexTokens> {
+  const access = process.env[OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY];
+  const refresh = process.env[OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY];
+  const accountId = process.env[OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY];
+
+  if (!access || !refresh || !accountId) {
+    throw new Error(
+      "ChatGPT login is incomplete. Run `openwiki --init` to sign in with your ChatGPT account.",
+    );
+  }
+
+  const expiresAtMs = Number(process.env[OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY]);
+
+  if (!isChatGptTokenExpired(expiresAtMs)) {
+    return { access, refresh, expiresAtMs, accountId };
+  }
+
+  const refreshed = await refreshChatGptTokens(refresh);
+
+  await saveOpenWikiEnv({
+    [OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY]: refreshed.access,
+    [OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY]: refreshed.refresh,
+    [OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY]: String(refreshed.expiresAtMs),
+    [OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY]: refreshed.accountId,
+  });
+
+  return refreshed;
+}
+
+/**
+ * The Codex backend rejects `system`-role input items ("System messages are not
+ * allowed"); it expects system content under the `developer` role — the role
+ * `@langchain/openai` already uses for genuine `SystemMessage`s on gpt-5 models.
+ * DeepAgents injects its system prompt as a plain `system`-role message, so we
+ * rewrite those to `developer` on the way out. Scoped to this client's
+ * `configuration.fetch`, so it never touches the agent loop or streaming code.
+ */
+function createCodexFetch(): typeof fetch {
+  return async (input, init) => {
+    if (init?.body != null && typeof init.body === "string") {
+      try {
+        const payload = JSON.parse(init.body) as {
+          input?: Array<{ role?: string } | null>;
+        };
+
+        if (Array.isArray(payload.input)) {
+          let changed = false;
+
+          for (const item of payload.input) {
+            if (item && item.role === "system") {
+              item.role = "developer";
+              changed = true;
+            }
+          }
+
+          if (changed) {
+            init = { ...init, body: JSON.stringify(payload) };
+          }
+        }
+      } catch {
+        // Non-JSON body: forward unchanged.
+      }
+    }
+
+    return globalThis.fetch(input, init);
+  };
 }
 
 function createModelRoute(

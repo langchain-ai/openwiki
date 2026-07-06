@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import {
@@ -10,13 +11,23 @@ import {
   isValidBaseUrl,
   isValidModelId,
   normalizeModelId,
+  OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
+  OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
+  OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
+  providerUsesOAuth,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
+import {
+  type CodexTokens,
+  isChatGptTokenExpired,
+  loginWithChatGPT,
+} from "./agent/openai-chatgpt-oauth.js";
 import { openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
 
 export type InitSetupResult = {
@@ -35,22 +46,54 @@ type InitSetupProps = {
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "base-url" | "langsmith" | "model" | "provider";
+type PromptStep =
+  | "api-key"
+  | "base-url"
+  | "langsmith"
+  | "model"
+  | "oauth-login"
+  | "provider";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
 ): boolean {
   const provider = resolveConfiguredProvider();
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   return (
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
-    !process.env[apiKeyEnvKey] ||
+    needsCredentialStep(provider) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined
   );
+}
+
+/**
+ * Whether the provider still needs its primary credential collected. For
+ * `oauth` providers this is a valid, non-expired stored token; for everyone
+ * else it is a pasted API key.
+ */
+function needsCredentialStep(provider: OpenWikiProvider): boolean {
+  return providerUsesOAuth(provider)
+    ? !hasValidStoredToken(provider)
+    : !process.env[getProviderApiKeyEnvKey(provider)];
+}
+
+/** The step that collects the provider's primary credential. */
+function credentialStep(provider: OpenWikiProvider): PromptStep {
+  return providerUsesOAuth(provider) ? "oauth-login" : "api-key";
+}
+
+function hasValidStoredToken(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (!env[getProviderApiKeyEnvKey(provider)]) {
+    return false;
+  }
+
+  return !isChatGptTokenExpired(Number(env[OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY]));
 }
 
 function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
@@ -65,6 +108,52 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
   const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
 
   return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
+}
+
+function isCredentialConfigured(provider: OpenWikiProvider): boolean {
+  return providerUsesOAuth(provider)
+    ? hasValidStoredToken(provider)
+    : Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
+}
+
+function getCredentialSetupDetail(provider: OpenWikiProvider): string {
+  if (providerUsesOAuth(provider)) {
+    return isCredentialConfigured(provider)
+      ? "signed in with ChatGPT"
+      : "sign in with your ChatGPT account";
+  }
+
+  return isCredentialConfigured(provider)
+    ? "available from environment"
+    : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`;
+}
+
+/**
+ * Opens the login URL in the user's default browser. Best-effort: on
+ * headless/SSH hosts the URL is also rendered as text for manual use.
+ */
+function openLoginUrl(url: string): void {
+  const command =
+    process.platform === "darwin"
+      ? "open"
+      : process.platform === "win32"
+        ? "start"
+        : "xdg-open";
+
+  try {
+    const child = spawn(command, [url], {
+      stdio: "ignore",
+      detached: true,
+      shell: process.platform === "win32",
+    });
+
+    child.on("error", () => {
+      // No browser available (headless/SSH); the URL is shown as text.
+    });
+    child.unref();
+  } catch {
+    // Ignore spawn failures; the URL is still rendered for manual use.
+  }
 }
 
 export function InitSetup({
@@ -94,6 +183,10 @@ export function InitSetup({
   const [isCustomModelInput, setIsCustomModelInput] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [oauthTokens, setOauthTokens] = useState<CodexTokens | null>(null);
+  const [loginUrl, setLoginUrl] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginAttempt, setLoginAttempt] = useState(0);
 
   useEffect(() => {
     const initialStep = getInitialStep(modelIdOverride, initialProvider);
@@ -129,8 +222,87 @@ export function InitSetup({
     setStep(initialStep);
   }, [initialProvider, modelIdOverride, onComplete]);
 
+  // Drive the browser OAuth login whenever the wizard enters the oauth-login
+  // step (or the user retries after a failure). Runs outside the keypress
+  // handler because it awaits a browser round-trip.
+  useEffect(() => {
+    if (step !== "oauth-login") {
+      return;
+    }
+
+    let cancelled = false;
+
+    setIsLoggingIn(true);
+    setLoginUrl(null);
+    setError(null);
+
+    void (async () => {
+      try {
+        const tokens = await loginWithChatGPT((url) => {
+          if (cancelled) {
+            return;
+          }
+
+          setLoginUrl(url);
+          openLoginUrl(url);
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        setOauthTokens(tokens);
+        setIsLoggingIn(false);
+
+        const nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
+
+        if (nextStep) {
+          setIsCustomModelInput(
+            nextStep === "model" && shouldStartWithCustomModelInput(provider),
+          );
+          setStep(nextStep);
+          return;
+        }
+
+        await completeSetup({
+          nextApiKey: apiKey,
+          nextBaseUrl: baseUrl,
+          nextLangSmithKey: langSmithKey,
+          nextModelId: modelId,
+          nextProvider: provider,
+          nextOAuthTokens: tokens,
+        });
+      } catch (loginError) {
+        if (cancelled) {
+          return;
+        }
+
+        setIsLoggingIn(false);
+        setError(
+          loginError instanceof Error
+            ? loginError.message
+            : "ChatGPT login failed.",
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, loginAttempt]);
+
   useInput((inputValue, key) => {
     if (isSaving || step === null) {
+      return;
+    }
+
+    if (step === "oauth-login") {
+      // Ignore typed input; the login runs in the effect above. Enter retries
+      // once a previous attempt has failed.
+      if (key.return && !isLoggingIn) {
+        setLoginAttempt((attempt) => attempt + 1);
+      }
+
       return;
     }
 
@@ -359,6 +531,7 @@ export function InitSetup({
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
+    nextOAuthTokens?: CodexTokens | null;
   };
 
   async function completeSetup({
@@ -367,6 +540,7 @@ export function InitSetup({
     nextLangSmithKey,
     nextModelId,
     nextProvider,
+    nextOAuthTokens = oauthTokens,
   }: CompleteSetupOptions) {
     setIsSaving(true);
 
@@ -381,6 +555,15 @@ export function InitSetup({
 
       if (nextApiKey !== null) {
         updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+      }
+
+      if (nextOAuthTokens) {
+        updates[OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY] = nextOAuthTokens.access;
+        updates[OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY] = nextOAuthTokens.refresh;
+        updates[OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY] = String(
+          nextOAuthTokens.expiresAtMs,
+        );
+        updates[OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY] = nextOAuthTokens.accountId;
       }
 
       if (nextBaseUrl !== null) {
@@ -420,7 +603,7 @@ export function InitSetup({
           process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
           null,
         provider: nextProvider,
-        savedApiKey: nextApiKey !== null,
+        savedApiKey: nextApiKey !== null || nextOAuthTokens != null,
         savedBaseUrl: nextBaseUrl !== null,
         savedLangSmithKey:
           nextLangSmithKey !== null && nextLangSmithKey.length > 0,
@@ -455,19 +638,15 @@ export function InitSetup({
           detail={getProviderSetupDetail(provider)}
         />
         <SetupStep
-          label="Provider key"
+          label={providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"}
           state={
-            process.env[getProviderApiKeyEnvKey(provider)]
+            isCredentialConfigured(provider)
               ? "done"
-              : step === "api-key"
+              : step === credentialStep(provider)
                 ? "current"
                 : "pending"
           }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
+          detail={getCredentialSetupDetail(provider)}
         />
         {providerRequiresBaseUrl(provider) ? (
           <SetupStep
@@ -520,6 +699,8 @@ export function InitSetup({
           <Prompt
             input={input}
             isCustomModelInput={isCustomModelInput}
+            isLoggingIn={isLoggingIn}
+            loginUrl={loginUrl}
             modelSelectionIndex={modelSelectionIndex}
             provider={provider}
             providerSelectionIndex={providerSelectionIndex}
@@ -617,6 +798,8 @@ function SetupPanel({ title, children }: SetupPanelProps) {
 type PromptProps = {
   input: string;
   isCustomModelInput: boolean;
+  isLoggingIn: boolean;
+  loginUrl: string | null;
   modelSelectionIndex: number;
   provider: OpenWikiProvider;
   providerSelectionIndex: number;
@@ -626,11 +809,39 @@ type PromptProps = {
 function Prompt({
   input,
   isCustomModelInput,
+  isLoggingIn,
+  loginUrl,
   modelSelectionIndex,
   provider,
   providerSelectionIndex,
   step,
 }: PromptProps) {
+  if (step === "oauth-login") {
+    return (
+      <Box flexDirection="column">
+        <Text>
+          Sign in with your {getProviderLabel(provider)} account to authorize
+          OpenWiki.
+        </Text>
+        {loginUrl ? (
+          <Box flexDirection="column">
+            <Text color="gray">
+              Opening your browser. If it does not open, visit this URL:
+            </Text>
+            <Text color="cyan">{loginUrl}</Text>
+          </Box>
+        ) : (
+          <Text color="gray">Starting the ChatGPT login...</Text>
+        )}
+        <Text color="gray">
+          {isLoggingIn
+            ? "Waiting for you to finish signing in..."
+            : "Login failed. Press Enter to try again."}
+        </Text>
+      </Box>
+    );
+  }
+
   if (step === "provider") {
     return (
       <Box flexDirection="column">
@@ -742,7 +953,7 @@ function SelectionMarker({ isSelected }: { isSelected: boolean }) {
   );
 }
 
-function getInitialStep(
+export function getInitialStep(
   modelIdOverride: string | null,
   provider: OpenWikiProvider,
 ): PromptStep | null {
@@ -750,8 +961,8 @@ function getInitialStep(
     return "provider";
   }
 
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
+  if (needsCredentialStep(provider)) {
+    return credentialStep(provider);
   }
 
   if (needsBaseUrlStep(provider)) {
@@ -772,12 +983,12 @@ function getInitialStep(
   return null;
 }
 
-function getNextStepAfterProvider(
+export function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
+  if (needsCredentialStep(provider)) {
+    return credentialStep(provider);
   }
 
   return getNextStepAfterApiKey(provider, modelIdOverride);
