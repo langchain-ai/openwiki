@@ -185,25 +185,16 @@ async function readLastUpdate(cwd: string): Promise<UpdateMetadata | null> {
 }
 
 /**
- * Maximum directory depth for snapshot traversal to prevent stack overflow.
- */
-const MAX_SNAPSHOT_DEPTH = 20;
-
-/**
  * Recursively adds stable file paths and bytes to the OpenWiki content snapshot.
- * Tracks visited real paths to detect symlink cycles.
+ * Tracks visited real paths via realpath() to detect symlink cycles and avoid
+ * duplicate traversal of hardlinked directories.
  */
 async function addDirectoryToSnapshot(
   hash: ReturnType<typeof createHash>,
   directory: string,
   relativeDirectory: string,
   visited?: Set<string>,
-  depth: number = 0,
 ): Promise<void> {
-  if (depth > MAX_SNAPSHOT_DEPTH) {
-    return;
-  }
-
   const realDir = await realpath(directory).catch(() => null);
 
   if (!realDir) {
@@ -240,12 +231,8 @@ async function addDirectoryToSnapshot(
     }
 
     if (entry.isDirectory()) {
-      if (entry.isSymbolicLink()) {
-        continue;
-      }
-
       hash.update(`dir:${relativePath}\0`);
-      await addDirectoryToSnapshot(hash, entryPath, relativePath, visited, depth + 1);
+      await addDirectoryToSnapshot(hash, entryPath, relativePath, visited);
       continue;
     }
 
