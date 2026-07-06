@@ -443,13 +443,51 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
 
   const baseURL = resolveProviderBaseUrl(provider);
 
+  // Define a localized scoped fetch client rewriter for DeepSeek
+  const customFetch = async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+    let url = "";
+    if (typeof input === "string") {
+      url = input;
+    } else if (input instanceof URL) {
+      url = input.toString();
+    } else if (input && typeof input === "object" && "url" in input) {
+      url = (input as Request).url;
+    }
+
+    // Only intercept requests heading to api.deepseek.com
+    if (url.includes("api.deepseek.com") && init?.body && typeof init.body === "string") {
+      try {
+        const payload = JSON.parse(init.body);
+        if (Array.isArray(payload.messages)) {
+          for (const msg of payload.messages) {
+            if (Array.isArray(msg.content)) {
+              // Flatten array blocks to pure text, omitting non-text items
+              let flattenedText = "";
+              for (const block of msg.content) {
+                if (block && typeof block === "object" && block.type === "text") {
+                  flattenedText += block.text || "";
+                } else {
+                  flattenedText += "[omitted block]";
+                }
+              }
+              msg.content = flattenedText || "";
+            }
+          }
+        }
+        init.body = JSON.stringify(payload);
+      } catch {
+        // Fallback gracefully if JSON parsing fails
+      }
+    }
+    return fetch(input, init);
+  };
+
   return new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: baseURL
-      ? {
-          baseURL,
-        }
-      : undefined,
+    configuration: {
+      ...(baseURL ? { baseURL } : {}),
+      fetch: customFetch, // Strictly scope the rewriter wrapper here!
+    },
     model: modelId,
   });
 }
