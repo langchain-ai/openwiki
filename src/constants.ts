@@ -239,3 +239,42 @@ export function isValidModelId(value: string): boolean {
 }
 
 export const OPENWIKI_VERSION = "0.0.1";
+
+/**
+ * NEW FEATURES ADDED BELOW
+ */
+
+/**
+ * Resolves the final model identifier to use based on the environment configuration,
+ * fallback rules, and validity checks.
+ */
+export function resolveConfiguredModelId(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const envModelId = env[OPENWIKI_MODEL_ID_ENV_KEY];
+  
+  if (envModelId && isValidModelId(envModelId)) {
+    return normalizeModelId(envModelId);
+  }
+
+  if (provider === "openrouter" && OPENROUTER_FALLBACK_MODEL_IDS.length > 0) {
+    return OPENROUTER_FALLBACK_MODEL_IDS[0];
+  }
+
+  return getDefaultModelId(provider);
+}
+
+/**
+ * Verifies if a given model ID is explicitly recognized/supported within the 
+ * defined model options of a specific provider.
+ */
+export function isSupportedProviderModel(
+  provider: OpenWikiProvider,
+  modelId: string,
+): boolean {
+  const options = getProviderModelOptions(provider);
+  const normalized = normalizeModelId(modelId);
+  
+  return options.some((option) => option.id === normalized);
+}
