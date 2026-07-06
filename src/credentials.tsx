@@ -42,7 +42,8 @@ type PromptStep =
   | "provider"
   | "aws-region"
   | "aws-access-key"
-  | "aws-secret-key";
+  | "aws-secret-key"
+  | "base-url";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
@@ -59,7 +60,7 @@ export function needsCredentialSetup(
     );
   }
 
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider) as string;
 
   return (
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
@@ -97,6 +98,7 @@ export function InitSetup({
   const [awsRegion, setAwsRegion] = useState<string | null>(null);
   const [awsAccessKey, setAwsAccessKey] = useState<string | null>(null);
   const [awsSecretKey, setAwsSecretKey] = useState<string | null>(null);
+  const [baseUrl, setBaseUrl] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -257,9 +259,10 @@ export function InitSetup({
 
     if (step === "api-key") {
       const trimmedInput = input.trim();
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(provider) ?? "API key";
 
       if (trimmedInput.length === 0) {
-        setError(`${getProviderApiKeyEnvKey(provider)} is required.`);
+        setError(`${apiKeyEnvKey} is required.`);
         return;
       }
 
@@ -326,7 +329,7 @@ export function InitSetup({
       const trimmedInput = input.trim();
 
       if (trimmedInput.length === 0) {
-        setError("AWS region is required.");
+        setError("AWS region is required (AWS_REGION or AWS_DEFAULT_REGION).");
         return;
       }
 
@@ -471,7 +474,7 @@ export function InitSetup({
     nextAwsRegion?: string | null;
     nextAwsAccessKey?: string | null;
     nextAwsSecretKey?: string | null;
-    nextBaseUrl: string | null;
+    nextBaseUrl?: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
@@ -513,15 +516,16 @@ export function InitSetup({
         }
       } else {
         if (nextApiKey !== null) {
-          updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+          updates[getProviderApiKeyEnvKey(nextProvider) as string] = nextApiKey;
         }
       }
 
-      if (nextBaseUrl !== null) {
+      const finalBaseUrl = nextBaseUrl !== undefined ? nextBaseUrl : baseUrl;
+      if (finalBaseUrl !== null) {
         const baseUrlEnvKey = getProviderBaseUrlEnvKey(nextProvider);
 
         if (baseUrlEnvKey) {
-          updates[baseUrlEnvKey] = nextBaseUrl;
+          updates[baseUrlEnvKey] = finalBaseUrl;
         }
       }
 
@@ -555,8 +559,7 @@ export function InitSetup({
           null,
         provider: nextProvider,
         savedApiKey: nextProvider === "bedrock" ? (nextAwsSecretKey !== undefined || nextAwsAccessKey !== undefined) : (nextApiKey !== null),
-        savedApiKey: nextApiKey !== null,
-        savedBaseUrl: nextBaseUrl !== null,
+        savedBaseUrl: finalBaseUrl !== null,
         savedLangSmithKey:
           nextLangSmithKey !== null && nextLangSmithKey.length > 0,
         savedModelId: nextModelId !== null,
@@ -603,7 +606,7 @@ export function InitSetup({
               detail={
                 process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || awsRegion
                   ? (process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || awsRegion || "")
-                  : `save AWS_REGION to ${openWikiEnvPath}`
+                  : `save AWS_REGION or AWS_DEFAULT_REGION to ${openWikiEnvPath}`
               }
             />
             <SetupStep
@@ -638,27 +641,28 @@ export function InitSetup({
             />
           </>
         ) : (
-          <SetupStep
-            label="Provider key"
-            state={
-              process.env[getProviderApiKeyEnvKey(provider)]
-                ? "done"
-                : step === "api-key"
-        <SetupStep
-          label="Provider key"
-          state={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "done"
-              : step === "api-key"
-                ? "current"
-                : "pending"
-          }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
-        />
+          (() => {
+            const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+            if (!apiKeyEnvKey) return null;
+            return (
+              <SetupStep
+                label="Provider key"
+                state={
+                  process.env[apiKeyEnvKey]
+                    ? "done"
+                    : step === "api-key"
+                      ? "current"
+                      : "pending"
+                }
+                detail={
+                  process.env[apiKeyEnvKey]
+                    ? "available from environment"
+                    : `save ${apiKeyEnvKey} to ${openWikiEnvPath}`
+                }
+              />
+            );
+          })()
+        )}
         {providerRequiresBaseUrl(provider) ? (
           <SetupStep
             label="Base URL"
@@ -670,12 +674,6 @@ export function InitSetup({
                   : "pending"
             }
             detail={
-              process.env[getProviderApiKeyEnvKey(provider)]
-                ? "available from environment"
-                : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-            }
-          />
-        )}
               isBaseUrlConfigured(provider)
                 ? "available from environment"
                 : `save ${getProviderBaseUrlEnvKey(provider)} to ${openWikiEnvPath}`
@@ -894,6 +892,10 @@ function Prompt({
           <Text color="yellow">{mask(input)}</Text>
         </Text>
         <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
   if (step === "base-url") {
     return (
       <Box flexDirection="column">
@@ -986,7 +988,8 @@ function getInitialStep(
       return "aws-region";
     }
   } else {
-    if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+    if (apiKeyEnvKey && !process.env[apiKeyEnvKey]) {
       return "api-key";
     }
   }
@@ -1024,7 +1027,8 @@ function getNextStepAfterProvider(
       return "aws-secret-key";
     }
   } else {
-    if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+    if (apiKeyEnvKey && !process.env[apiKeyEnvKey]) {
       return "api-key";
     }
   }

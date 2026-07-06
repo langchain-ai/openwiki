@@ -248,7 +248,7 @@ function App({ command }: AppProps) {
         return;
       }
     } else {
-      const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider) as string;
 
       if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
         setRunState({
@@ -3126,7 +3126,7 @@ function writePrintErrorDiagnostics(error: unknown): void {
   }
 }
 
-function resolveStartupCommand(command: CliCommand): CliCommand {
+export function resolveStartupCommand(command: CliCommand): CliCommand {
   if (
     command.kind === "run" &&
     !command.dryRun &&
@@ -3144,7 +3144,7 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
         };
       }
     } else {
-      const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(provider) as string;
       const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
 
       if (!hasProviderKey) {

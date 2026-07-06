@@ -375,7 +375,7 @@ function isFileNotFoundError(error: unknown): boolean {
   );
 }
 
-function ensureProviderKey(provider: OpenWikiProvider): void {
+export function ensureProviderKey(provider: OpenWikiProvider): void {
   if (provider === "bedrock") {
     if (!process.env.AWS_REGION && !process.env.AWS_DEFAULT_REGION) {
       throw new Error(
@@ -384,7 +384,7 @@ function ensureProviderKey(provider: OpenWikiProvider): void {
     }
     return;
   }
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider) as string;
 
   if (!process.env[apiKeyEnvKey]) {
     throw new Error(
@@ -426,7 +426,7 @@ function resolveModelId(
   return modelId;
 }
 
-async function createModel(provider: OpenWikiProvider, modelId: string) {
+export async function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "bedrock") {
     const { ChatBedrockConverse } = await import("@langchain/aws");
 
@@ -445,7 +445,7 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
     const baseURL = resolveProviderBaseUrl(provider);
 
     return new ChatAnthropic(modelId, {
-      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      apiKey: process.env[getProviderApiKeyEnvKey(provider) as string],
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
     });
   }
@@ -466,7 +466,7 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   const baseURL = resolveProviderBaseUrl(provider);
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey: process.env[getProviderApiKeyEnvKey(provider) as string],
     configuration: baseURL
       ? {
           baseURL,

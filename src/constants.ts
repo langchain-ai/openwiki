@@ -18,6 +18,7 @@ export type OpenWikiProvider =
   | "baseten"
   | "fireworks"
   | "openai"
+  | "openai-compatible"
   | "openrouter"
   | "bedrock";
 
@@ -29,7 +30,7 @@ export type ProviderModelOption = {
 };
 
 type ProviderConfig = {
-  apiKeyEnvKey: string;
+  apiKeyEnvKey?: string;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -57,7 +58,6 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   bedrock: {
-    apiKeyEnvKey: "AWS_SECRET_ACCESS_KEY",
     label: "AWS Bedrock",
     modelOptions: [
       {
@@ -164,8 +164,8 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).label;
 }
 
-export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
-  return getProviderConfig(provider).apiKeyEnvKey;
+export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string | null {
+  return getProviderConfig(provider).apiKeyEnvKey ?? null;
 }
 
 /**
