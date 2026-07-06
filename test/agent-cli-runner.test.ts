@@ -358,6 +358,32 @@ describe("runAgentCli", () => {
       ),
     ).rejects.toThrow(/run failed/);
   });
+
+  test("sends the adapter-composed stdin payload when buildStdin is present", async () => {
+    process.env[CLAUDE_CODE_BINARY_ENV_KEY] = await writeStub(
+      stubDir,
+      "stub-stdin",
+      SUCCESS_STUB,
+    );
+    const events: OpenWikiRunEvent[] = [];
+    const adapterWithStdin = {
+      ...claudeCodeAdapter,
+      buildStdin: (spec: EngineRunSpec) =>
+        `${spec.systemPrompt}\n\n${spec.prompt}`,
+    };
+
+    await runAgentCli(
+      adapterWithStdin,
+      getAgentCliProviderConfig("claude-code"),
+      baseSpec,
+      { onEvent: (event) => events.push(event) },
+    );
+
+    const expectedBytes = `${baseSpec.systemPrompt}\n\n${baseSpec.prompt}`
+      .length;
+    const text = events.find((event) => event.type === "text");
+    expect(text).toMatchObject({ text: `prompt-bytes:${expectedBytes}` });
+  });
 });
 
 describe("thread session map", () => {

@@ -149,7 +149,7 @@ export async function runAgentCli(
     // run failure is then reported through the close/result path with the
     // stderr tail.
   });
-  child.stdin.write(spec.prompt);
+  child.stdin.write(adapter.buildStdin?.(spec) ?? spec.prompt);
   child.stdin.end();
 
   child.stderr.setEncoding("utf8");

@@ -24,9 +24,14 @@ export type AgentCliInstallStatus = {
 };
 
 export type AgentCliAdapter = {
-  id: "claude-code";
+  id: "claude-code" | "ibm-bob";
   detectInstall(binary: string): Promise<AgentCliInstallStatus>;
   buildArgs(spec: EngineRunSpec): string[];
+  /**
+   * Composes the full stdin payload for vendors without a system-prompt
+   * flag. When absent, the runner sends spec.prompt unchanged.
+   */
+  buildStdin?(spec: EngineRunSpec): string;
   /** Parses one NDJSON line of vendor output; unknown lines return []. */
   parseEvent(line: unknown): AgentCliEvent[];
 };
