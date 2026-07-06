@@ -12,6 +12,36 @@ import type {
 } from "./types.js";
 import type { Dirent } from "node:fs";
 
+/**
+ * Directories to skip during snapshot traversal.
+ * These contain compiled artifacts, vendored dependencies, or version control data.
+ */
+const SNAPSHOT_EXCLUDED_DIRS = new Set([
+  "__pycache__",
+  "node_modules",
+  ".git",
+  ".svn",
+  ".hg",
+  "dist",
+  "build",
+  "cache",
+]);
+
+/**
+ * File extensions to skip during snapshot traversal.
+ * These are binary files or compiled artifacts that should not be hashed.
+ */
+const SNAPSHOT_EXCLUDED_EXTENSIONS = new Set([
+  ".pyc",
+  ".pyo",
+  ".class",
+  ".o",
+  ".so",
+  ".dll",
+  ".exe",
+  ".bin",
+]);
+
 const execFileAsync = promisify(execFile);
 
 export type OpenWikiContentSnapshot = string;
@@ -209,6 +239,13 @@ async function addDirectoryToSnapshot(
       continue;
     }
 
+    if (
+      entry.isDirectory() &&
+      SNAPSHOT_EXCLUDED_DIRS.has(entry.name)
+    ) {
+      continue;
+    }
+
     if (entry.isDirectory()) {
       hash.update(`dir:${relativePath}\0`);
       await addDirectoryToSnapshot(hash, entryPath, relativePath);
@@ -216,6 +253,12 @@ async function addDirectoryToSnapshot(
     }
 
     if (!entry.isFile()) {
+      continue;
+    }
+
+    if (
+      SNAPSHOT_EXCLUDED_EXTENSIONS.has(path.extname(entry.name).toLowerCase())
+    ) {
       continue;
     }
 

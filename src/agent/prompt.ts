@@ -23,6 +23,7 @@ Run discipline:
 - Shell execute commands run on the host. If you use execute, run commands from the target repository directory and keep them inside that repository.
 - Do not exhaustively read every file. Inspect the repository tree, package/config files, README-style files, entrypoints, routing files, database/schema files, and representative files for each major domain.
 - Do not call glob with **/* from the repository root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.
+- Never read binary files or directories containing compiled artifacts. Skip these directories entirely: __pycache__, .pyc, .pyo, .class, .o, .so, .dll, .exe, .bin, .git/objects, .svn, .hg. Reading binary content will crash the LLM API with a 400 error.
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
 - Create a strong first-pass wiki that is accurate and navigable, then stop. The wiki can be refined in later update runs.
 - Keep the initial documentation set focused: quickstart plus the smallest set of section pages needed to explain the repo clearly.
