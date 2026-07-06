@@ -3,7 +3,6 @@ import {
   mkdir,
   writeFile,
   symlink,
-  chmod,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
