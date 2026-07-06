@@ -1,0 +1,39 @@
+scripts/validate-openwiki-auth.mjs
+  s_0a49fbee75b215::t_4c76e83d7b7f28 87-88,137-140,530-532
+  s_0a49fbee75b215::t_85f98353afbc96 1-50,52-66,71-86,89-90,92-93,98-107,109-124,130-136,141-178,180-209,215-378,394-529,533-581
+  s_0a49fbee75b215::t_427a1e1f954161 51,67-70,91,94-97,108,125-129,179,210-214,379-393
+package.json
+  s_0a49fbee75b215::t_85f98353afbc96 34
+src/auth/tokens.ts
+  s_0a49fbee75b215::t_d801d1fed45f43 1-25,29-161,163-204,206-216,218-225,231-246,249-256,260-303
+  s_0a49fbee75b215::t_80e0b7e38d9689 162
+  s_0a49fbee75b215::t_49d4017e3f48ef 26,28,205,257-259
+  s_0a49fbee75b215::t_24185f345d4718 27,217,226-230,247-248
+src/connectors/sources/gmail.ts
+  s_0a49fbee75b215::t_80e0b7e38d9689 6-8,281
+  s_0a49fbee75b215::t_d801d1fed45f43 119
+  s_0a49fbee75b215::t_9de4adcb257b5e 5
+src/connectors/sources/x.ts
+  s_0a49fbee75b215::t_d801d1fed45f43 16,93,105
+src/connectors/mcp-client.ts
+  s_0a49fbee75b215::t_d801d1fed45f43 3-6,295,331,354
+  s_0a49fbee75b215::t_49d4017e3f48ef 733,735-739,741-745,748-751,766-786
+src/connectors/sources/slack.ts
+  s_0a49fbee75b215::t_2ea61966ec1668 2,184,196
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6c6a212a07de67566f24171cef6e1f32c67ea2d1",
+  "prompts": {},
+  "sessions": {
+    "s_0a49fbee75b215": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3846-9f8c-7833-b477-085e5084e802",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
