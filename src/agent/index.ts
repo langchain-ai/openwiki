@@ -50,33 +50,14 @@ import {
 
 // DeepSeek API rewriter: flattens array content into text to avoid 400 errors
 // on non-text content blocks (file, image, etc.)
-// Uses Symbol.for() to ensure idempotency across module instances
-const DEEPSEEK_FETCH_REWRITER_KEY = Symbol.for(
-  "openwiki.deepseekFetchRewriterInstalled",
-);
-
-function installDeepSeekFetchRewriter() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((globalThis as any)[DEEPSEEK_FETCH_REWRITER_KEY]) {
-    return;
-  }
-
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async function (
+// Returns a fetch function scoped to a single model instance.
+export function createDeepSeekFetchRewriter(
+  originalFetch: typeof globalThis.fetch = globalThis.fetch,
+): typeof globalThis.fetch {
+  return async function (
     input: string | URL | Request,
     init?: RequestInit,
   ): Promise<Response> {
-    const url =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.href
-          : input.url;
-
-    if (!url.includes("api.deepseek.com")) {
-      return originalFetch.call(globalThis, input, init);
-    }
-
     if (init?.body) {
       try {
         const body =
@@ -107,11 +88,8 @@ function installDeepSeekFetchRewriter() {
       }
     }
 
-    return originalFetch.call(globalThis, input, init);
+    return originalFetch(input, init);
   };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (globalThis as any)[DEEPSEEK_FETCH_REWRITER_KEY] = true;
 }
 
 export async function runOpenWikiAgent(
@@ -156,11 +134,6 @@ export async function runOpenWikiAgent(
   const provider = resolveConfiguredProvider();
   const providerBaseUrl = resolveProviderBaseUrl(provider);
   emitDebug(options, `provider=${provider}`);
-
-  // Install DeepSeek fetch rewriter only when using DeepSeek provider
-  if (provider === "deepseek") {
-    installDeepSeekFetchRewriter();
-  }
 
   if (providerBaseUrl) {
     emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
@@ -520,6 +493,7 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
       apiKey: process.env[DEEPSEEK_API_KEY_ENV_KEY],
       configuration: {
         baseURL: DEEPSEEK_BASE_URL,
+        fetch: createDeepSeekFetchRewriter(),
       },
       model: modelId,
     });
