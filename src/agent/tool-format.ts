@@ -30,7 +30,10 @@ export function formatToolValue(value: unknown): string {
   return JSON.stringify(value) ?? String(value);
 }
 
-export function createSyntheticToolCallId(name: string, input: unknown): string {
+export function createSyntheticToolCallId(
+  name: string,
+  input: unknown,
+): string {
   return `${name}:${formatToolValue(input)}`;
 }
 

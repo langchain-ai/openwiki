@@ -7,7 +7,9 @@ describe("createSystemPrompt engines", () => {
 
     expect(prompt).toContain("Use virtual paths such as /README.md");
     expect(prompt).toContain("read_file");
-    expect(prompt).toContain("Use /openwiki/_plan.md when writing this temporary plan");
+    expect(prompt).toContain(
+      "Use /openwiki/_plan.md when writing this temporary plan",
+    );
     expect(prompt).toContain(
       "When writing required documentation with filesystem tools, use /openwiki/... paths",
     );

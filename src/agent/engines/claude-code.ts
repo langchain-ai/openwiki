@@ -148,14 +148,24 @@ function parseMessageContent(
       continue;
     }
 
-    if (role === "assistant" && block.type === "text" && typeof block.text === "string" && block.text.length > 0) {
+    if (
+      role === "assistant" &&
+      block.type === "text" &&
+      typeof block.text === "string" &&
+      block.text.length > 0
+    ) {
       events.push({
         type: "openwiki",
         event: { source: "main", type: "text", text: block.text },
       });
     }
 
-    if (role === "assistant" && block.type === "tool_use" && typeof block.id === "string" && typeof block.name === "string") {
+    if (
+      role === "assistant" &&
+      block.type === "tool_use" &&
+      typeof block.id === "string" &&
+      typeof block.name === "string"
+    ) {
       events.push({
         type: "openwiki",
         event: {
@@ -168,7 +178,11 @@ function parseMessageContent(
       });
     }
 
-    if (role === "user" && block.type === "tool_result" && typeof block.tool_use_id === "string") {
+    if (
+      role === "user" &&
+      block.type === "tool_result" &&
+      typeof block.tool_use_id === "string"
+    ) {
       events.push({
         type: "openwiki",
         event: {
