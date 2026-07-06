@@ -58,6 +58,14 @@ if (process.argv.includes("--version")) {
 setInterval(() => {}, 1000);
 `;
 
+const EXIT_WITHOUT_READING_STDIN_STUB = `#!/usr/bin/env node
+if (process.argv.includes("--version")) {
+  console.log("0.0.0-stub");
+  process.exit(0);
+}
+process.exit(0);
+`;
+
 async function writeStub(
   dir: string,
   name: string,
@@ -188,6 +196,23 @@ describe("runAgentCli", () => {
       ),
     ).rejects.toThrow(/timed out after 1 seconds/);
   }, 15_000);
+
+  test("rejects instead of crashing when the child exits without reading a large prompt", async () => {
+    process.env[CLAUDE_CODE_BINARY_ENV_KEY] = await writeStub(
+      stubDir,
+      "stub-exit-early",
+      EXIT_WITHOUT_READING_STDIN_STUB,
+    );
+
+    await expect(
+      runAgentCli(
+        claudeCodeAdapter,
+        getAgentCliProviderConfig("claude-code"),
+        { ...baseSpec, prompt: "x".repeat(1024 * 1024) },
+        {},
+      ),
+    ).rejects.toThrow(/run failed/);
+  });
 });
 
 describe("thread session map", () => {

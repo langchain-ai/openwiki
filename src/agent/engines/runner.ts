@@ -72,6 +72,12 @@ export async function runAgentCli(
     killProcessGroup(child.pid);
   }, timeoutSeconds * 1000);
 
+  child.stdin.on("error", () => {
+    // EPIPE and friends: the child exited before consuming stdin. Swallow the
+    // stream error (an uncaught "error" event would crash the process); the
+    // run failure is then reported through the close/result path with the
+    // stderr tail.
+  });
   child.stdin.write(spec.prompt);
   child.stdin.end();
 
@@ -135,9 +141,14 @@ export async function runAgentCli(
     }
   });
 
+  let spawnErrorMessage: string | undefined;
+
   const exitCode = await new Promise<number | null>((resolve) => {
     child.on("close", (code) => resolve(code));
-    child.on("error", () => resolve(null));
+    child.on("error", (error) => {
+      spawnErrorMessage = error.message;
+      resolve(null);
+    });
   });
 
   clearTimeout(timeout);
@@ -155,7 +166,13 @@ export async function runAgentCli(
   }
 
   throw new Error(
-    formatRunFailure(providerConfig, finalResult, exitCode, stderrTail),
+    formatRunFailure(
+      providerConfig,
+      finalResult,
+      exitCode,
+      stderrTail,
+      spawnErrorMessage,
+    ),
   );
 }
 
@@ -164,10 +181,13 @@ function formatRunFailure(
   result: RunResult,
   exitCode: number | null,
   stderrTail: string,
+  spawnErrorMessage?: string,
 ): string {
   const summary =
     result?.errorMessage ??
-    `${providerConfig.label} run failed (exit code ${exitCode ?? "unknown"}) without reporting a result.`;
+    (spawnErrorMessage !== undefined
+      ? `${providerConfig.label} run failed to start: ${spawnErrorMessage}`
+      : `${providerConfig.label} run failed (exit code ${exitCode ?? "unknown"}) without reporting a result.`);
   const stderr = stderrTail.trim();
   const loginHint = /login|api key|authenticat/iu.test(`${summary} ${stderr}`)
     ? ` ${providerConfig.installHint}`
