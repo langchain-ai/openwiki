@@ -21,6 +21,7 @@ The file stores provider configuration and API keys:
 - Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`
 - Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API) and `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint)
 - `OPENWIKI_CLAUDE_CODE_BINARY` — optional binary override for the claude-code agent-CLI provider (which stores no API key; runs use the Claude Code subscription login)
+- `OPENWIKI_IBM_BOB_BINARY` — optional binary override for the ibm-bob agent-CLI provider (which stores no API key; runs use the Bob Shell IBMid login)
 - Optional LangSmith settings: `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`
 
 The loader merges those values into `process.env`, while preferring existing process-level values over file values. Deprecated keys (`OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT`) are skipped on load and removed on save.
@@ -60,7 +61,7 @@ The env layer also produces diagnostics for the CLI UI. Those diagnostics report
 - invalid model IDs,
 - invalid provider values.
 
-Diagnostics cover all six provider API keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), `OPENWIKI_CLAUDE_CODE_BINARY`, and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, base URLs, and binary path are shown in full).
+Diagnostics cover all six provider API keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), `OPENWIKI_CLAUDE_CODE_BINARY`, `OPENWIKI_IBM_BOB_BINARY`, and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, base URLs, and binary path are shown in full).
 
 ## Update metadata
 

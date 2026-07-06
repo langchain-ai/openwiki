@@ -76,8 +76,10 @@ OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible p
 ### Use your coding-agent subscription (no API key)
 
 If you already pay for a subscription coding agent, OpenWiki can delegate
-documentation runs to it instead of calling a metered API. The first supported
-agent is Claude Code:
+documentation runs to it instead of calling a metered API. Two agents are
+supported: Claude Code and IBM Bob (Bob Shell).
+
+**Claude Code:**
 
 ```bash
 OPENWIKI_PROVIDER=claude-code
@@ -95,8 +97,24 @@ Requirements and notes:
 - Local runs only for now: the scheduled GitHub Action still needs an API-key
   provider.
 - LangSmith tracing does not apply to delegated runs.
+
+**IBM Bob (Bob Shell):**
+
+```bash
+OPENWIKI_PROVIDER=ibm-bob
+OPENWIKI_MODEL_ID=default   # or any model id your Bob backend accepts
+```
+
+- Install Bob Shell (`curl -fsSL https://bob.ibm.com/download/bobshell.sh | bash`),
+  then run `bob` once in the target repository to complete the IBMid login
+  and trust the folder when prompted — Bob refuses write-enabled headless
+  runs in untrusted folders.
+- Runs execute through `bob` in headless mode (`--approval-mode auto_edit`
+  with a read-only-git shell allowlist), using your existing login. No API
+  key is stored.
+- Set `OPENWIKI_IBM_BOB_BINARY` to point at a non-default binary location.
 - macOS and Linux only for now: process-group management and binary
-  resolution for the claude-code provider are POSIX-specific.
+  resolution for the subscription providers are POSIX-specific.
 
 ### Alternative base URLs
 

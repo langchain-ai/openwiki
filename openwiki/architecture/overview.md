@@ -7,7 +7,7 @@ OpenWiki has a small but layered architecture:
 3. `src/credentials.tsx` manages interactive onboarding for provider selection, API keys, model selection, and optional LangSmith tracing; `src/credentials-flow.ts` holds the pure step-sequencing logic (which setup steps a provider needs, including the install-check step for agent-CLI providers).
 4. `src/env.ts` reads and writes `~/.openwiki/.env` and surfaces credential diagnostics for all supported providers.
 5. `src/agent/index.ts` runs the documentation agent, resolves the provider, creates the appropriate model client or dispatches to an agent-CLI engine, collects Git context, and writes update metadata.
-6. `src/agent/engines/` implements the agent-CLI engine: adapter types, a generic process runner, and the Claude Code adapter (see [Agent workflow](../agent/workflow.md)).
+6. `src/agent/engines/` implements the agent-CLI engine: adapter types, a generic process runner, and the Claude Code and IBM Bob adapters (see [Agent workflow](../agent/workflow.md)).
 7. `src/agent/prompt.ts` builds the system and user prompts that tell the model how to behave, with per-engine variants.
 8. `src/agent/utils.ts` gathers Git evidence, computes an OpenWiki content snapshot, detects no-op updates, and records `.last-update.json` after successful init/update runs.
 9. `src/agent/tool-format.ts` formats tool-call names and arguments for display, shared by both engines.
@@ -40,7 +40,7 @@ The agent runtime resolves the provider via `resolveConfiguredProvider()` in `sr
 2. Otherwise, if `OPENROUTER_API_KEY` is present, default to `openrouter`.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openrouter`).
 
-Providers come in two kinds (`PROVIDER_CONFIGS` in `src/constants.ts`): `kind: "api"` providers use an API key and a LangChain model client, while `kind: "agent-cli"` providers (currently `claude-code`) delegate the whole run to an installed subscription coding-agent CLI — no API key, no model client. Agent-CLI runs are dispatched before model creation; see [Agent workflow](../agent/workflow.md) for the engine details.
+Providers come in two kinds (`PROVIDER_CONFIGS` in `src/constants.ts`): `kind: "api"` providers use an API key and a LangChain model client, while `kind: "agent-cli"` providers (currently `claude-code` and `ibm-bob`) delegate the whole run to an installed subscription coding-agent CLI — no API key, no model client. Agent-CLI runs are dispatched before model creation; see [Agent workflow](../agent/workflow.md) for the engine details.
 
 For API providers, model creation branches by provider in `src/agent/index.ts` (`createModel`):
 

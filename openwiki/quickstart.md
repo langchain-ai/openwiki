@@ -6,7 +6,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 
 - Launches an interactive Ink-based terminal app for chatting with the OpenWiki agent.
 - Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
-- Supports multiple model providers — OpenRouter (default), Anthropic, OpenAI, Baseten, and Fireworks — each with their own API key and model list, plus subscription agent-CLI providers such as Claude Code that run without an API key.
+- Supports multiple model providers — OpenRouter (default), Anthropic, OpenAI, Baseten, and Fireworks — each with their own API key and model list, plus subscription agent-CLI providers such as Claude Code and IBM Bob that run without an API key.
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
@@ -26,7 +26,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli.tsx` — Ink UI, command execution, auto-exit, and run lifecycle.
 - `src/commands.ts` — CLI parsing and help content.
 - `src/agent/index.ts` — agent runtime, provider-specific model creation, fallback, and metadata writes.
-- `src/agent/engines/` — subscription agent-CLI engine: adapter types, generic runner, and the Claude Code adapter.
+- `src/agent/engines/` — subscription agent-CLI engine: adapter types, generic runner, and the Claude Code and IBM Bob adapters.
 - `src/agent/prompt.ts` — prompt assembly, documentation-run instructions, and AGENTS.md/CLAUDE.md insertion rules.
 - `src/agent/utils.ts` — git evidence collection, content snapshot, and `.last-update.json` handling.
 - `src/agent/types.ts` — shared agent types (`OpenWikiCommand`, `RunContext`, `UpdateMetadata`, run options/events).
