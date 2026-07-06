@@ -214,7 +214,8 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
-    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||
+    key === BEDROCK_REGION_ENV_KEY
   );
 }
 
