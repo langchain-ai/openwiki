@@ -8,7 +8,7 @@ This allows us to keep reviews fast and the repo history clean.
 Pull requests should be well scoped and every one should do exactly one thing.
 
 Fixing a bug that's part of the change you're making is fine but if you find
-yourself fixing something *unrelated* along the way, open a separate PR for it.
+yourself fixing something _unrelated_ along the way, open a separate PR for it.
 
 ### What "tightly scoped" means
 
