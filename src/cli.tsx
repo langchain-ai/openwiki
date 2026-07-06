@@ -30,6 +30,7 @@ import {
   type OpenWikiRunResult,
 } from "./agent/types.js";
 import {
+  formatProviderSwitchNotice,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderLabel,
@@ -1521,11 +1522,7 @@ function ChatInput({
     try {
       await onProviderSelect(provider);
       resetInput();
-      setNotice(
-        `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
-          provider,
-        )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
-      );
+      setNotice(formatProviderSwitchNotice(provider));
     } catch (saveError) {
       setError(
         saveError instanceof Error

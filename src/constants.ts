@@ -267,6 +267,21 @@ export function getDefaultModelId(provider: OpenWikiProvider): string {
   return getProviderModelOptions(provider)[0]?.id ?? DEFAULT_MODEL_ID;
 }
 
+/**
+ * Composes the in-session notice shown after switching providers. Agent CLI
+ * providers have no API key, so their notice points at the local CLI login
+ * instead of an API-key environment variable.
+ */
+export function formatProviderSwitchNotice(provider: OpenWikiProvider): string {
+  const switched = `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(provider)}.`;
+
+  if (isAgentCliProvider(provider)) {
+    return `${switched} Runs use the local agent CLI login.`;
+  }
+
+  return `${switched} Ensure ${getProviderApiKeyEnvKey(provider)} is set.`;
+}
+
 export function normalizeProvider(
   value: string | null | undefined,
 ): OpenWikiProvider | null {

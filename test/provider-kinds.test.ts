@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   CLAUDE_CODE_BINARY_ENV_KEY,
+  formatProviderSwitchNotice,
   getAgentCliProviderConfig,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -63,5 +64,25 @@ describe("agent-cli provider kinds", () => {
     expect(diagnostics.map((diagnostic) => diagnostic.key)).toContain(
       CLAUDE_CODE_BINARY_ENV_KEY,
     );
+  });
+});
+
+describe("formatProviderSwitchNotice", () => {
+  test("api providers get the API-key reminder", () => {
+    const notice = formatProviderSwitchNotice("anthropic");
+
+    expect(notice).toContain("Provider switched to Anthropic");
+    expect(notice).toContain(getDefaultModelId("anthropic"));
+    expect(notice).toContain("Ensure ANTHROPIC_API_KEY is set.");
+  });
+
+  test("agent-cli providers do not throw and mention the CLI login instead of a key", () => {
+    const notice = formatProviderSwitchNotice("claude-code");
+
+    expect(notice).toContain("Provider switched to Claude Code (subscription)");
+    expect(notice).toContain(getDefaultModelId("claude-code"));
+    expect(notice).not.toContain("API key");
+    expect(notice).not.toContain("_API_KEY");
+    expect(notice).toContain("login");
   });
 });
