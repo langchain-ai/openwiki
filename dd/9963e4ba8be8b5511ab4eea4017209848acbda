@@ -1,0 +1,19 @@
+.github/workflows/openwiki-update.yml
+  s_27bfdd2eb11500::t_6f887d9e8a1a98 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "dd9963e4ba8be8b5511ab4eea4017209848acbda",
+  "prompts": {},
+  "sessions": {
+    "s_27bfdd2eb11500": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa6e10df-6e41-4efb-8aa8-c2943287d6e2",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
