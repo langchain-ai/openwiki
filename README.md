@@ -101,4 +101,62 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
+### Local LLMs (Ollama, LM Studio, 9Router)
+
+OpenWiki supports local LLM endpoints out of the box. These providers run entirely on your machine — no data leaves your network, and there's zero inference cost.
+
+#### Ollama
+
+[Ollama](https://ollama.com) is the most popular local LLM runner. Install it, pull a model, and point OpenWiki at it:
+
+```bash
+# Pull a model first
+ollama pull llama3.2
+
+# Configure OpenWiki
+export OPENWIKI_PROVIDER=ollama
+export OPENWIKI_MODEL_ID=llama3.2
+
+openwiki --init
+```
+
+Ollama exposes an OpenAI-compatible API at `http://localhost:11434/v1` by default. No API key is required.
+
+#### LM Studio
+
+[LM Studio](https://lmstudio.ai) provides a GUI for downloading and running local models:
+
+1. Download and install LM Studio
+2. Load a model from the Models tab
+3. Start the local server (default: `http://localhost:1234/v1`)
+
+Then configure OpenWiki:
+
+```bash
+export OPENWIKI_PROVIDER=lmstudio
+export OPENWIKI_MODEL_ID=llama-3.2-8b-instruct
+
+openwiki --init
+```
+
+No API key is required.
+
+#### 9Router
+
+[9Router](https://www.npmjs.com/package/9router) is a local-first AI gateway that provides a unified OpenAI-compatible API for multiple backends (local + cloud), with load balancing, fallback chains, and rate limiting:
+
+```bash
+# Install and start 9Router
+npm install -g 9router
+9router start
+
+# Configure OpenWiki
+export OPENWIKI_PROVIDER=9router
+export OPENWIKI_MODEL_ID=openai/gpt-5.4-mini
+
+openwiki --init
+```
+
+9Router exposes its API at `http://localhost:4000/v1` by default. No API key is required for local-only backends.
+
 If there's an inference provider or model you'd like to see added, please open a PR!

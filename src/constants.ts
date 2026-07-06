@@ -7,6 +7,12 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
+export const OLLAMA_API_KEY_ENV_KEY = "OLLAMA_API_KEY";
+export const OLLAMA_BASE_URL = "http://localhost:11434/v1";
+export const LMSTUDIO_API_KEY_ENV_KEY = "LMSTUDIO_API_KEY";
+export const LMSTUDIO_BASE_URL = "http://localhost:1234/v1";
+export const NINE_ROUTER_API_KEY_ENV_KEY = "NINE_ROUTER_API_KEY";
+export const NINE_ROUTER_BASE_URL = "http://localhost:4000/v1";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
@@ -20,9 +26,12 @@ export type OpenWikiProvider =
   | "baseten"
   | "deepseek"
   | "fireworks"
+  | "lmstudio"
+  | "ollama"
   | "openai"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "9router";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -56,6 +65,9 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-compatible",
   "anthropic",
+  "ollama",
+  "lmstudio",
+  "9router",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -103,6 +115,41 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     requiresBaseUrl: true,
     label: "OpenAI-compatible",
     modelOptions: [],
+  },
+  ollama: {
+    apiKeyEnvKey: OLLAMA_API_KEY_ENV_KEY,
+    baseURL: OLLAMA_BASE_URL,
+    label: "Ollama",
+    modelOptions: [
+      { id: "llama3.2", label: "Llama 3.2" },
+      { id: "mistral", label: "Mistral" },
+      { id: "qwen2.5", label: "Qwen 2.5" },
+      { id: "deepseek-r1", label: "DeepSeek R1" },
+      { id: "codellama", label: "CodeLlama" },
+      { id: "phi3", label: "Phi-3" },
+    ],
+  },
+  lmstudio: {
+    apiKeyEnvKey: LMSTUDIO_API_KEY_ENV_KEY,
+    baseURL: LMSTUDIO_BASE_URL,
+    label: "LM Studio",
+    modelOptions: [
+      { id: "llama-3.2-8b-instruct", label: "Llama 3.2 8B" },
+      { id: "mistral-7b-instruct", label: "Mistral 7B" },
+      { id: "qwen2.5-7b-instruct", label: "Qwen 2.5 7B" },
+      { id: "deepseek-r1-distill-qwen-7b", label: "DeepSeek R1 7B" },
+    ],
+  },
+  "9router": {
+    apiKeyEnvKey: NINE_ROUTER_API_KEY_ENV_KEY,
+    baseURL: NINE_ROUTER_BASE_URL,
+    label: "9Router",
+    modelOptions: [
+      { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
+      { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet 5" },
+      { id: "deepseek/deepseek-chat", label: "DeepSeek V3" },
+      { id: "meta-llama/llama-3.1-8b-instruct", label: "Llama 3.1 8B" },
+    ],
   },
   anthropic: {
     apiKeyEnvKey: ANTHROPIC_API_KEY_ENV_KEY,
@@ -183,6 +230,16 @@ export function getProviderBaseUrlEnvKey(
 
 export function providerRequiresBaseUrl(provider: OpenWikiProvider): boolean {
   return getProviderConfig(provider).requiresBaseUrl === true;
+}
+
+/**
+ * Returns true when the provider is a local endpoint that does not require a
+ * real API key.  For these providers a missing or empty key is acceptable and
+ * the SDK should skip the Authorization header rather than sending an empty
+ * bearer token.
+ */
+export function isLocalProvider(provider: OpenWikiProvider): boolean {
+  return provider === "ollama" || provider === "lmstudio" || provider === "9router";
 }
 
 export function isValidBaseUrl(value: string): boolean {

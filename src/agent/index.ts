@@ -25,6 +25,7 @@ import {
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
+  isLocalProvider,
   isValidModelId,
   normalizeModelId,
   OPENAI_API_KEY_ENV_KEY,
@@ -423,6 +424,13 @@ function isFileNotFoundError(error: unknown): boolean {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
+  // Local providers (Ollama, LM Studio, 9Router) don't require a real API key.
+  // A missing or empty key is acceptable; the SDK will skip the Authorization
+  // header or use a dummy value.
+  if (isLocalProvider(provider)) {
+    return;
+  }
+
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   if (!process.env[apiKeyEnvKey]) {
@@ -501,8 +509,15 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
 
   const baseURL = resolveProviderBaseUrl(provider);
 
+  // Local providers (Ollama, LM Studio, 9Router) don't require a real API key.
+  // ChatOpenAI requires a non-empty apiKey to construct the Authorization header,
+  // so we use a dummy value for local endpoints that skip auth.
+  const apiKey = isLocalProvider(provider)
+    ? (process.env[getProviderApiKeyEnvKey(provider)] || "local")
+    : process.env[getProviderApiKeyEnvKey(provider)];
+
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey,
     configuration: baseURL
       ? {
           baseURL,
@@ -1371,6 +1386,9 @@ function formatEnvironmentDebug(): string {
     DEEPSEEK_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,
+    "OLLAMA_API_KEY",
+    "LMSTUDIO_API_KEY",
+    "NINE_ROUTER_API_KEY",
     "LANGCHAIN_TRACING_V2",
     "LANGCHAIN_PROJECT",
     "LANGCHAIN_ENDPOINT",
