@@ -41,6 +41,11 @@ import {
   shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
+import {
+  createSyntheticToolCallId,
+  formatToolArgs,
+  formatToolCallName,
+} from "./tool-format.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -745,54 +750,6 @@ function parseToolStreamEvent(payload: unknown): OpenWikiRunEvent | null {
   }
 
   return null;
-}
-
-function formatToolCallName(name: string): string {
-  return name === "execute" ? "Execute" : name;
-}
-
-function formatToolArgs(input: unknown): string {
-  const value = parseStringifiedJson(input);
-
-  if (isRecord(value)) {
-    return Object.entries(value)
-      .map(([key, argValue]) => `${key}=${formatToolValue(argValue)}`)
-      .join(", ");
-  }
-
-  if (Array.isArray(value)) {
-    return value.map(formatToolValue).join(", ");
-  }
-
-  if (value === undefined || value === null) {
-    return "";
-  }
-
-  return formatToolValue(value);
-}
-
-function formatToolValue(value: unknown): string {
-  if (typeof value === "string") {
-    return JSON.stringify(value);
-  }
-
-  return JSON.stringify(value) ?? String(value);
-}
-
-function parseStringifiedJson(value: unknown): unknown {
-  if (typeof value !== "string") {
-    return value;
-  }
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return value;
-  }
-}
-
-function createSyntheticToolCallId(name: string, input: unknown): string {
-  return `${name}:${formatToolValue(input)}`;
 }
 
 function getStringRecordValue(
