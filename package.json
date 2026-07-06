@@ -31,7 +31,6 @@
     "dev": "tsx src/cli.tsx",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "validate:auth": "node scripts/validate-openwiki-auth.mjs",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
     "prebuild": "pnpm run clean",

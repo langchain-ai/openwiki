@@ -48,6 +48,16 @@ The user prompt changes with the command:
 - `update` includes last update metadata and a Git change summary.
 - `chat` just forwards the user message.
 
+### Local brain open questions
+
+Local brain runs use `~/.openwiki/wiki/open-questions.md` as a compact working queue, not a long source dump. The file should use three sections:
+
+- `Active`: unresolved questions with `Owner`, `Seen`, `Evidence`, and optional `Notes`.
+- `Answered`: previously open questions with `Evidence` linking to the canonical answer or source evidence, plus `Answered`.
+- `Stale`: dropped questions with `Why` and `Last seen`.
+
+The agent should read `open-questions.md` at the start of each local-wiki run when it exists, use the run's evidence to answer known questions, and return to the file at the end to add new unresolved questions or move answered ones out of `Active`. Answered entries should link to the answer evidence rather than duplicating an answer summary that can drift.
+
 ## Git evidence and update metadata
 
 `src/agent/utils.ts` is responsible for the repository evidence that the prompt sees:

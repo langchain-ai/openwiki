@@ -347,14 +347,25 @@ function getWindowedGmailQuery(
   const normalizedQuery = getGmailQuery(query);
   const hours = normalizeWindowHours(windowHours);
 
-  if (
-    hours === null ||
-    /(?:newer|older|after|before):/iu.test(normalizedQuery)
-  ) {
+  if (hours === null) {
     return normalizedQuery;
   }
 
-  return `${normalizedQuery} newer_than:${Math.max(1, Math.ceil(hours / 24))}d`;
+  const windowQuery = `newer_than:${Math.max(1, Math.ceil(hours / 24))}d`;
+  const baseQuery = stripGmailDateOperators(normalizedQuery);
+
+  return baseQuery.length > 0 ? `${baseQuery} ${windowQuery}` : windowQuery;
+}
+
+function stripGmailDateOperators(query: string): string {
+  return query
+    .split(/\s+/u)
+    .filter(
+      (token) =>
+        !/^(?:newer_than|older_than|newer|older|after|before):.+/iu.test(token),
+    )
+    .join(" ")
+    .trim();
 }
 
 function normalizeWindowHours(windowHours: number | undefined): number | null {
