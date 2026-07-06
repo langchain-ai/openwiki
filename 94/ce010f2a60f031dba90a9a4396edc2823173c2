@@ -1,0 +1,37 @@
+src/ingestion.ts
+  s_0a49fbee75b215::t_01f4a1affe7e7f 286-288,299,319-321,328,333-337,340-377
+  s_0a49fbee75b215::t_42e57d4286ff5b 338-339
+  s_0a49fbee75b215::t_a56c0fbd81c418 378
+openwiki/agent/workflow.md
+  s_0a49fbee75b215::t_066e5020444a4b 51-60
+src/connectors/sources/gmail.ts
+  s_0a49fbee75b215::t_4696001bea41d7 365
+  s_0a49fbee75b215::t_7c376217f7e002 350,354-364,366-368
+src/agent/prompt.ts
+  s_0a49fbee75b215::t_11236ce25a9e29 52,66
+  h_33f63fd75d0bd5 301-324
+  s_0a49fbee75b215::t_85764790dafc18 264,292-295,297-299,328-336,368
+  s_0a49fbee75b215::t_4b9f9785b42354 296,300,325-327,337
+  s_0a49fbee75b215::t_9874d4c3474984 67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "94ce010f2a60f031dba90a9a4396edc2823173c2",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0a49fbee75b215": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3846-9f8c-7833-b477-085e5084e802",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
