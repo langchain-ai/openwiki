@@ -1,6 +1,8 @@
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
 import { OpenWikiCommand, RunContext, UpdateMetadata } from "./types.js";
 
+export type PromptEngine = "deepagents" | "agent-cli";
+
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   if (lastUpdate === null) {
     return "No previous OpenWiki update metadata was found.";
@@ -9,18 +11,19 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   return JSON.stringify(lastUpdate, null, 2);
 }
 
-export function createSystemPrompt(command: OpenWikiCommand): string {
+export function createSystemPrompt(
+  command: OpenWikiCommand,
+  engine: PromptEngine = "deepagents",
+): string {
   return `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
 
 Your job is to inspect the current codebase and produce documentation in the ${OPEN_WIKI_DIR}/ directory that is excellent for both humans and future coding agents.
 
-Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use git through shell execute when it provides useful history. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in source files, existing docs, or git evidence you have inspected.
+${createToolingGuidance(engine)}
 
 Run discipline:
-- Filesystem tools are rooted at the target repository. Use virtual paths such as /README.md, /agent/..., /server/..., and /openwiki/quickstart.md with ls, read_file, write_file, edit_file, glob, and grep.
-- Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
-- Shell execute commands run on the host. If you use execute, run commands from the target repository directory and keep them inside that repository.
+${createPathDiscipline(engine)}
 - Do not exhaustively read every file. Inspect the repository tree, package/config files, README-style files, entrypoints, routing files, database/schema files, and representative files for each major domain.
 - Do not call glob with **/* from the repository root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
@@ -38,8 +41,7 @@ Subagent discipline:
 
 Planning discipline:
 - After discovery and before writing final documentation, create a temporary ${OPEN_WIKI_DIR}/_plan.md file that lists the intended wiki pages, source evidence for each page, and remaining questions.
-- Use /openwiki/_plan.md when writing this temporary plan with filesystem tools.
-- Before completing the run, delete ${OPEN_WIKI_DIR}/_plan.md. If there is no filesystem delete tool, use shell execute from the repository root, for example rm -f openwiki/_plan.md.
+${createPlanningPathNotes(engine)}
 - Do not leave ${OPEN_WIKI_DIR}/_plan.md in the final wiki.
 
 Git discipline:
@@ -119,7 +121,7 @@ Section quality rules:
 Required documentation structure:
 - ${OPEN_WIKI_DIR}/quickstart.md must be the entrypoint.
 - ${OPEN_WIKI_DIR}/quickstart.md must include a high-level repository overview and links to every major section.
-- When writing required documentation with filesystem tools, use /openwiki/... paths, for example /openwiki/quickstart.md.
+- ${createDocPathNote(engine)}
 - When the repository is large enough to need section directories, create one directory per major section, for example architecture/, workflows/, domain/, api/, data-models/, operations/, integrations/, testing/, or similar names that fit the repo.
 - Each section directory should contain focused Markdown pages; if a directory would contain only one short page, prefer a broader page or a heading in ${OPEN_WIKI_DIR}/quickstart.md.
 - Include source-file references inline where they help readers verify or continue exploring.
@@ -129,6 +131,48 @@ Required documentation structure:
 Mode-specific behavior:
 ${createModeInstructions(command)}
 `.trim();
+}
+
+function createToolingGuidance(engine: PromptEngine): string {
+  if (engine === "agent-cli") {
+    return "Use only the tools available to you. Prefer your built-in file search and read tools for discovery and targeted reads. Use git through your shell tool when it provides useful history. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in source files, existing docs, or git evidence you have inspected.";
+  }
+
+  return "Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use git through shell execute when it provides useful history. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in source files, existing docs, or git evidence you have inspected.";
+}
+
+function createPathDiscipline(engine: PromptEngine): string {
+  if (engine === "agent-cli") {
+    return `
+- Your working directory is the target repository root. Use repository-relative paths such as README.md, src/..., and openwiki/quickstart.md with your file tools.
+- Do not read or modify files outside the target repository.
+- Shell commands run on the host. Run them from the repository root and keep them inside the repository.`.trim();
+  }
+
+  return `
+- Filesystem tools are rooted at the target repository. Use virtual paths such as /README.md, /agent/..., /server/..., and /openwiki/quickstart.md with ls, read_file, write_file, edit_file, glob, and grep.
+- Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
+- Shell execute commands run on the host. If you use execute, run commands from the target repository directory and keep them inside that repository.`.trim();
+}
+
+function createPlanningPathNotes(engine: PromptEngine): string {
+  if (engine === "agent-cli") {
+    return `
+- Write this temporary plan to openwiki/_plan.md with your file tools.
+- Before completing the run, delete ${OPEN_WIKI_DIR}/_plan.md using your shell tool: rm -f openwiki/_plan.md.`.trim();
+  }
+
+  return `
+- Use /openwiki/_plan.md when writing this temporary plan with filesystem tools.
+- Before completing the run, delete ${OPEN_WIKI_DIR}/_plan.md. If there is no filesystem delete tool, use shell execute from the repository root, for example rm -f openwiki/_plan.md.`.trim();
+}
+
+function createDocPathNote(engine: PromptEngine): string {
+  if (engine === "agent-cli") {
+    return "When writing required documentation, use repository-relative openwiki/... paths, for example openwiki/quickstart.md.";
+  }
+
+  return "When writing required documentation with filesystem tools, use /openwiki/... paths, for example /openwiki/quickstart.md.";
 }
 
 export function createModeInstructions(command: OpenWikiCommand): string {
