@@ -16,26 +16,33 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
+  ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
-  getProviderConfig,
+  getProviderBaseUrlEnvKey,
   getProviderLabel,
   isValidModelId,
   normalizeModelId,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
+  OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
   OPENROUTER_FALLBACK_MODEL_IDS,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  providerRequiresBaseUrl,
   resolveConfiguredProvider,
+  resolveProviderBaseUrl,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
   createOpenWikiContentSnapshot,
+  getUpdateNoopStatus,
   createRunContext,
+  shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
 
@@ -56,17 +63,37 @@ export async function runOpenWikiAgent(
   await loadOpenWikiEnv();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
+
+  if (command === "update" && shouldCheckUpdateNoop(options)) {
+    const noopStatus = await getUpdateNoopStatus(cwd);
+
+    if (noopStatus.shouldSkip) {
+      const message =
+        "No repository changes detected since the last OpenWiki update; skipping agent run.";
+      emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
+      options.onEvent?.({ type: "text", text: message });
+
+      return {
+        command,
+        model: noopStatus.model,
+        skipped: true,
+      };
+    }
+
+    emitDebug(options, `update.noop=false reason=${noopStatus.reason}`);
+  } else if (command === "update") {
+    emitDebug(options, "update.noop=false reason=user message provided");
+  }
+
   const provider = resolveConfiguredProvider();
-  const providerConfig = getProviderConfig(provider);
+  const providerBaseUrl = resolveProviderBaseUrl(provider);
   emitDebug(options, `provider=${provider}`);
-  if (providerConfig.baseURL) {
-    emitDebug(
-      options,
-      `provider.baseUrl=${JSON.stringify(providerConfig.baseURL)}`,
-    );
+  if (providerBaseUrl) {
+    emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
   }
   ensureProviderKey(provider);
   emitDebug(options, `credentials=${provider} key present`);
+  ensureProviderBaseUrl(provider);
   const modelId = resolveModelId(options, provider);
   emitDebug(options, `model=${modelId}`);
 
@@ -366,6 +393,20 @@ function ensureProviderKey(provider: OpenWikiProvider): void {
   }
 }
 
+function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
+  if (!providerRequiresBaseUrl(provider)) {
+    return;
+  }
+
+  if (!resolveProviderBaseUrl(provider)) {
+    const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider) ?? "base URL";
+
+    throw new Error(
+      `${baseUrlEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+    );
+  }
+}
+
 function resolveModelId(
   options: OpenWikiRunOptions,
   provider: OpenWikiProvider,
@@ -401,8 +442,11 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   if (provider === "anthropic") {
+    const baseURL = resolveProviderBaseUrl(provider);
+
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
     });
   }
 
@@ -419,13 +463,13 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
     });
   }
 
-  const providerConfig = getProviderConfig(provider);
+  const baseURL = resolveProviderBaseUrl(provider);
 
   return new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: providerConfig.baseURL
+    configuration: baseURL
       ? {
-          baseURL: providerConfig.baseURL,
+          baseURL,
         }
       : undefined,
     model: modelId,
@@ -1284,7 +1328,10 @@ function formatEnvironmentDebug(): string {
     BASETEN_API_KEY_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
+    OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
+    OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
+    ANTHROPIC_BASE_URL_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
     OPENWIKI_MODEL_ID_ENV_KEY,
     "LANGCHAIN_TRACING_V2",
@@ -1302,7 +1349,11 @@ function formatDebugValue(key: string, value: string | undefined): string {
     return "unset";
   }
 
-  if (key === "LANGCHAIN_ENDPOINT") {
+  if (
+    key === "LANGCHAIN_ENDPOINT" ||
+    key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+  ) {
     return formatUrlDebugValue(value);
   }
 

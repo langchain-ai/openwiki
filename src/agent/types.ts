@@ -3,6 +3,7 @@ export type OpenWikiCommand = "chat" | "init" | "update";
 export type OpenWikiRunResult = {
   command: OpenWikiCommand;
   model: string;
+  skipped?: boolean;
 };
 
 export type OpenWikiRunEvent =
