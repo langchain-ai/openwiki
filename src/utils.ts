@@ -1,9 +1,9 @@
 /**
  * Removes HTML tags from a string and returns the remaining plain text.
  *
- * Applies the tag-removal replacement repeatedly until the string stops
- * changing, so removing one tag cannot reveal another that a single pass would
- * miss.
+ * Well-formed tags are removed by stripping `<...>` spans repeatedly until the
+ * string stops changing. Any leftover angle brackets are then removed individually,
+ * so neither a complete nor a partial tag can survive.
  */
 export function stripHtmlTags(input: string): string {
   let previous: string;
@@ -14,5 +14,5 @@ export function stripHtmlTags(input: string): string {
     output = output.replace(/<[^>]*>/gu, "");
   } while (output !== previous);
 
-  return output;
+  return output.replace(/[<>]/gu, "");
 }

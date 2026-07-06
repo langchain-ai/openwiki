@@ -15,14 +15,23 @@ describe("stripHtmlTags", () => {
     expect(stripHtmlTags("before<!-- secret -->after")).toBe("beforeafter");
   });
 
-  test("does not leave a tag reassembled from surrounding brackets", () => {
-    expect(stripHtmlTags("<scr<script>ipt>")).not.toContain("<script");
-    expect(stripHtmlTags("<<script>>")).not.toContain("<script");
+  test("strips an unterminated tag fragment, leaving no angle brackets", () => {
+    expect(stripHtmlTags("text <script")).toBe("text script");
+    expect(stripHtmlTags("<script")).toBe("script");
   });
 
-  test("leaves an unterminated tag fragment as literal text", () => {
-    // No closing ">", so it isn't a tag; harmless as terminal text.
-    expect(stripHtmlTags("text <script")).toBe("text <script");
+  test("never leaves an angle bracket in the output", () => {
+    for (const input of [
+      "<div>hi</div>",
+      "text <script",
+      "<scr<script>ipt>",
+      "<<script>>",
+      "a < b > c",
+    ]) {
+      const output = stripHtmlTags(input);
+      expect(output).not.toContain("<");
+      expect(output).not.toContain(">");
+    }
   });
 
   test("leaves plain text untouched", () => {
