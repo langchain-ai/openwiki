@@ -1,14 +1,22 @@
 import { describe, expect, test } from "vitest";
 import {
   DEFAULT_MODEL_ID,
+  DEFAULT_OPENAI_COMPATIBLE_AUTH_MODE,
   DEFAULT_PROVIDER,
+  describeMissingCredential,
   getDefaultModelId,
+  getProviderApiKeyEnvKey,
+  hasProviderCredential,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
   normalizeModelId,
   normalizeProvider,
+  OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
+  providerRequiresApiKey,
   resolveConfiguredProvider,
+  resolveOpenAICompatibleAuthMode,
   resolveProviderBaseUrl,
 } from "../src/constants.ts";
 
@@ -141,4 +149,75 @@ describe("getDefaultModelId", () => {
       expect(getDefaultModelId("openai-compatible")).toBe(DEFAULT_MODEL_ID);
     },
   );
+});
+
+describe("openai-compatible auth mode", () => {
+  test("resolves to api-key by default when unset or blank", () => {
+    expect(resolveOpenAICompatibleAuthMode({})).toBe("api-key");
+    expect(
+      resolveOpenAICompatibleAuthMode({ OPENAI_COMPATIBLE_AUTH: "   " }),
+    ).toBe("api-key");
+    expect(DEFAULT_OPENAI_COMPATIBLE_AUTH_MODE).toBe("api-key");
+  });
+
+  test("resolves explicit modes case-insensitively", () => {
+    expect(
+      resolveOpenAICompatibleAuthMode({ OPENAI_COMPATIBLE_AUTH: "entra-id" }),
+    ).toBe("entra-id");
+    expect(
+      resolveOpenAICompatibleAuthMode({ OPENAI_COMPATIBLE_AUTH: " Entra-ID " }),
+    ).toBe("entra-id");
+    expect(
+      resolveOpenAICompatibleAuthMode({ OPENAI_COMPATIBLE_AUTH: "api-key" }),
+    ).toBe("api-key");
+  });
+
+  test("returns null for an explicitly-set invalid mode", () => {
+    expect(
+      resolveOpenAICompatibleAuthMode({ OPENAI_COMPATIBLE_AUTH: "entraid" }),
+    ).toBeNull();
+    expect(
+      resolveOpenAICompatibleAuthMode({ OPENAI_COMPATIBLE_AUTH: "bogus" }),
+    ).toBeNull();
+  });
+});
+
+describe("providerRequiresApiKey / hasProviderCredential", () => {
+  test("openai-compatible needs a key in api-key mode", () => {
+    expect(providerRequiresApiKey("openai-compatible", {})).toBe(true);
+    expect(hasProviderCredential("openai-compatible", {})).toBe(false);
+    expect(
+      hasProviderCredential("openai-compatible", {
+        [OPENAI_COMPATIBLE_API_KEY_ENV_KEY]: "k",
+      }),
+    ).toBe(true);
+  });
+
+  test("openai-compatible needs no key in entra-id mode", () => {
+    const env = { [OPENAI_COMPATIBLE_AUTH_ENV_KEY]: "entra-id" };
+
+    expect(providerRequiresApiKey("openai-compatible", env)).toBe(false);
+    expect(hasProviderCredential("openai-compatible", env)).toBe(true);
+  });
+
+  test("other providers always require their key", () => {
+    expect(providerRequiresApiKey("openai", {})).toBe(true);
+    expect(hasProviderCredential("openai", {})).toBe(false);
+    expect(hasProviderCredential("openai", { OPENAI_API_KEY: "k" })).toBe(true);
+  });
+});
+
+describe("describeMissingCredential", () => {
+  test("names the entra-id alternative for openai-compatible", () => {
+    const message = describeMissingCredential("openai-compatible");
+
+    expect(message).toContain(OPENAI_COMPATIBLE_API_KEY_ENV_KEY);
+    expect(message).toContain(`${OPENAI_COMPATIBLE_AUTH_ENV_KEY}=entra-id`);
+  });
+
+  test("is just the API key env var for other providers", () => {
+    expect(describeMissingCredential("openai")).toBe(
+      getProviderApiKeyEnvKey("openai"),
+    );
+  });
 });

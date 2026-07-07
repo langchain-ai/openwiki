@@ -28,10 +28,12 @@ import {
   type OpenWikiRunResult,
 } from "./agent/types.js";
 import {
+  describeMissingCredential,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  hasProviderCredential,
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
@@ -236,12 +238,10 @@ function App({ command }: AppProps) {
       return;
     }
 
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
-
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (!hasProviderCredential(sessionProvider) && !process.stdin.isTTY) {
       setRunState({
         status: "error",
-        message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${describeMissingCredential(sessionProvider)} is required. Run openwiki in an interactive terminal to save credentials.`,
       });
       return;
     }
@@ -3058,14 +3058,12 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
     (command.print || !process.stdin.isTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
 
-    if (!hasProviderKey) {
+    if (!hasProviderCredential(provider)) {
       return {
         kind: "error",
         exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${describeMissingCredential(provider)} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
       };
     }
   }

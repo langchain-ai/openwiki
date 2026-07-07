@@ -5,6 +5,7 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
+export const OPENAI_COMPATIBLE_AUTH_ENV_KEY = "OPENAI_COMPATIBLE_AUTH";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
@@ -142,6 +143,57 @@ export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
 }
 
 /**
+ * Whether the provider needs a static API key configured to run. Normally true,
+ * but the openai-compatible provider in a token-based auth mode (e.g.
+ * `entra-id`) authenticates without one.
+ */
+export function providerRequiresApiKey(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (provider === "openai-compatible") {
+    return resolveOpenAICompatibleAuthMode(env) === "api-key";
+  }
+
+  return true;
+}
+
+/**
+ * Whether the provider has a usable credential configured: a static API key,
+ * or a non-key auth mode (e.g. openai-compatible with `entra-id`) that obtains
+ * its token at request time.
+ */
+export function hasProviderCredential(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (!providerRequiresApiKey(provider, env)) {
+    return true;
+  }
+
+  return Boolean(env[getProviderApiKeyEnvKey(provider)]);
+}
+
+/**
+ * Describes the missing-credential requirement for a provider, naming every way
+ * to satisfy it. For openai-compatible this includes the token-based auth mode
+ * (`entra-id`) alongside the static API key, so users who cannot (or do not want
+ * to) store a key learn about the alternative.
+ */
+export function describeMissingCredential(provider: OpenWikiProvider): string {
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  if (provider === "openai-compatible") {
+    return (
+      `${apiKeyEnvKey}, or ${OPENAI_COMPATIBLE_AUTH_ENV_KEY}=entra-id ` +
+      "to authenticate with a Microsoft Entra ID token,"
+    );
+  }
+
+  return apiKeyEnvKey;
+}
+
+/**
  * Resolves the base URL for a provider, preferring an alternative base URL from
  * the provider's configured environment variable over the built-in default.
  * Returns `undefined` when neither is set, so callers fall back to the SDK's
@@ -170,6 +222,61 @@ export function getProviderBaseUrlEnvKey(
 
 export function providerRequiresBaseUrl(provider: OpenWikiProvider): boolean {
   return getProviderConfig(provider).requiresBaseUrl === true;
+}
+
+/**
+ * How the openai-compatible provider authenticates against its endpoint:
+ * - `api-key` — a static bearer key sent as the OpenAI API key (default),
+ * - `entra-id` — a Microsoft Entra ID access token, fetched (and refreshed)
+ *   via Azure `DefaultAzureCredential`, for endpoints that accept Entra ID
+ *   tokens such as Azure OpenAI's OpenAI-compatible `/openai/v1` API.
+ *
+ * The mode is an extension point: additional token-based mechanisms can be
+ * added here without introducing per-cloud providers.
+ */
+export type OpenAICompatibleAuthMode = "api-key" | "entra-id";
+
+export const DEFAULT_OPENAI_COMPATIBLE_AUTH_MODE: OpenAICompatibleAuthMode =
+  "api-key";
+
+const OPENAI_COMPATIBLE_AUTH_MODES: readonly OpenAICompatibleAuthMode[] = [
+  "api-key",
+  "entra-id",
+];
+
+export function isValidOpenAICompatibleAuthMode(
+  value: string,
+): value is OpenAICompatibleAuthMode {
+  return (OPENAI_COMPATIBLE_AUTH_MODES as readonly string[]).includes(value);
+}
+
+export function normalizeOpenAICompatibleAuthMode(
+  value: string | null | undefined,
+): OpenAICompatibleAuthMode | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const mode = value.trim().toLowerCase();
+
+  return isValidOpenAICompatibleAuthMode(mode) ? mode : null;
+}
+
+/**
+ * Resolves the configured openai-compatible auth mode, falling back to the
+ * default (`api-key`) when the variable is unset. An explicitly-set but invalid
+ * value returns `null` so callers can surface a configuration error.
+ */
+export function resolveOpenAICompatibleAuthMode(
+  env: NodeJS.ProcessEnv = process.env,
+): OpenAICompatibleAuthMode | null {
+  const raw = env[OPENAI_COMPATIBLE_AUTH_ENV_KEY];
+
+  if (raw === undefined || raw.trim().length === 0) {
+    return DEFAULT_OPENAI_COMPATIBLE_AUTH_MODE;
+  }
+
+  return normalizeOpenAICompatibleAuthMode(raw);
 }
 
 export function isValidBaseUrl(value: string): boolean {

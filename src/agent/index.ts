@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
+import {
+  DefaultAzureCredential,
+  getBearerTokenProvider,
+} from "@azure/identity";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
@@ -17,12 +21,15 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  describeMissingCredential,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
+  hasProviderCredential,
   isValidModelId,
   normalizeModelId,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
@@ -31,6 +38,7 @@ import {
   OPENWIKI_PROVIDER_ENV_KEY,
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
+  resolveOpenAICompatibleAuthMode,
   resolveProviderBaseUrl,
   type OpenWikiProvider,
 } from "../constants.js";
@@ -87,6 +95,7 @@ export async function runOpenWikiAgent(
   if (providerBaseUrl) {
     emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
   }
+  ensureProviderAuthMode(provider);
   ensureProviderKey(provider);
   emitDebug(options, `credentials=${provider} key present`);
   ensureProviderBaseUrl(provider);
@@ -364,13 +373,13 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-
-  if (!process.env[apiKeyEnvKey]) {
-    throw new Error(
-      `${apiKeyEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
-    );
+  if (hasProviderCredential(provider)) {
+    return;
   }
+
+  throw new Error(
+    `${describeMissingCredential(provider)} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+  );
 }
 
 function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
@@ -383,6 +392,18 @@ function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
 
     throw new Error(
       `${baseUrlEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+    );
+  }
+}
+
+function ensureProviderAuthMode(provider: OpenWikiProvider): void {
+  if (provider !== "openai-compatible") {
+    return;
+  }
+
+  if (resolveOpenAICompatibleAuthMode() === null) {
+    throw new Error(
+      `${OPENAI_COMPATIBLE_AUTH_ENV_KEY} must be one of: api-key, entra-id.`,
     );
   }
 }
@@ -432,7 +453,7 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
   const baseURL = resolveProviderBaseUrl(provider);
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey: resolveOpenAIApiKey(provider),
     configuration: baseURL
       ? {
           baseURL,
@@ -440,6 +461,32 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
       : undefined,
     model: modelId,
   });
+}
+
+const AZURE_COGNITIVE_SERVICES_SCOPE =
+  "https://cognitiveservices.azure.com/.default";
+
+/**
+ * Resolves the API key for an OpenAI-shaped client. For the openai-compatible
+ * provider in `entra-id` auth mode, returns a token provider function (invoked
+ * before every request, so tokens refresh automatically) backed by Azure
+ * `DefaultAzureCredential`. Otherwise returns the static API key from the
+ * environment.
+ */
+function resolveOpenAIApiKey(
+  provider: OpenWikiProvider,
+): string | (() => Promise<string>) | undefined {
+  if (
+    provider === "openai-compatible" &&
+    resolveOpenAICompatibleAuthMode() === "entra-id"
+  ) {
+    return getBearerTokenProvider(
+      new DefaultAzureCredential(),
+      AZURE_COGNITIVE_SERVICES_SCOPE,
+    );
+  }
+
+  return process.env[getProviderApiKeyEnvKey(provider)];
 }
 
 function createModelRoute(
