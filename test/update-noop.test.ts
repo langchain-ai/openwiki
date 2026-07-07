@@ -4,6 +4,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
+import { createOpenWikiIgnoreRules } from "../src/agent/openwiki-ignore.ts";
 import {
   getUpdateNoopStatus,
   shouldCheckUpdateNoop,
@@ -70,6 +71,25 @@ describe("getUpdateNoopStatus", () => {
     const status = await getUpdateNoopStatus(repo);
 
     expect(status.shouldSkip).toBe(false);
+  });
+
+  test("skips update when worktree changes only touch ignored paths", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+    await mkdir(path.join(repo, "private"));
+    await writeFile(
+      path.join(repo, "private", "notes.md"),
+      "Ignored\n",
+      "utf8",
+    );
+
+    const status = await getUpdateNoopStatus(
+      repo,
+      createOpenWikiIgnoreRules("private/\n"),
+    );
+
+    expect(status.shouldSkip).toBe(true);
   });
 
   test("skips update when commits since the last run only touch OpenWiki files", async () => {
