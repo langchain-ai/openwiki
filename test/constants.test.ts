@@ -18,6 +18,7 @@ describe("isValidModelId", () => {
     expect(isValidModelId("z-ai/glm-5.2")).toBe(true);
     expect(isValidModelId("accounts/fireworks/models/glm-5p2")).toBe(true);
     expect(isValidModelId("gpt-5.4-mini")).toBe(true);
+    expect(isValidModelId("nvidia/nemotron-3-super-120b-a12b")).toBe(true);
   });
 
   test("rejects empty, whitespace-only, and over-long ids", () => {
@@ -56,6 +57,7 @@ describe("normalizeProvider / isValidProvider", () => {
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
+    expect(isValidProvider("nvidia")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
   });
 });
@@ -88,6 +90,9 @@ describe("resolveProviderBaseUrl", () => {
   test("returns the built-in default when no override is set", () => {
     expect(resolveProviderBaseUrl("openrouter", {})).toBe(
       "https://openrouter.ai/api/v1",
+    );
+    expect(resolveProviderBaseUrl("nvidia", {})).toBe(
+      "https://integrate.api.nvidia.com/v1",
     );
   });
 
@@ -128,6 +133,9 @@ describe("isValidBaseUrl", () => {
 describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
+    expect(getDefaultModelId("nvidia")).toBe(
+      "nvidia/nemotron-3-super-120b-a12b",
+    );
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
   });
 
