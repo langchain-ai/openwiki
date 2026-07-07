@@ -1,5 +1,17 @@
-import { describe, expect, test } from "vitest";
-import { formatEnv, parseEnv } from "../src/env.ts";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import {
+  CREDENTIAL_DIAGNOSTIC_ENV_KEYS,
+  formatEnv,
+  getCredentialDiagnostics,
+  MANAGED_ENV_KEYS,
+  parseEnv,
+} from "../src/env.ts";
+import {
+  AZURE_OPENAI_API_KEY_ENV_KEY,
+  AZURE_OPENAI_API_VERSION_ENV_KEY,
+  AZURE_OPENAI_ENDPOINT_ENV_KEY,
+  AZURE_OPENAI_USE_AD_TOKEN_ENV_KEY,
+} from "../src/constants.ts";
 
 describe("parseEnv", () => {
   test("parses simple KEY=value lines", () => {
@@ -83,5 +95,93 @@ describe("parseEnv <-> formatEnv round-trip", () => {
     };
 
     expect(parseEnv(formatEnv(original))).toEqual(original);
+  });
+});
+
+describe("azure env keys", () => {
+  const AZURE_KEYS = [
+    AZURE_OPENAI_API_KEY_ENV_KEY,
+    AZURE_OPENAI_ENDPOINT_ENV_KEY,
+    AZURE_OPENAI_API_VERSION_ENV_KEY,
+    AZURE_OPENAI_USE_AD_TOKEN_ENV_KEY,
+  ];
+
+  test("are managed and surfaced in credential diagnostics", () => {
+    for (const key of AZURE_KEYS) {
+      expect(MANAGED_ENV_KEYS).toContain(key);
+      expect(CREDENTIAL_DIAGNOSTIC_ENV_KEYS).toContain(key);
+    }
+  });
+
+  test("survive a format -> parse round-trip", () => {
+    const original = {
+      [AZURE_OPENAI_ENDPOINT_ENV_KEY]: "https://foobar.openai.azure.com/",
+      [AZURE_OPENAI_API_VERSION_ENV_KEY]: "2024-12-01-preview",
+      [AZURE_OPENAI_API_KEY_ENV_KEY]: "super-secret-key",
+      [AZURE_OPENAI_USE_AD_TOKEN_ENV_KEY]: "true",
+    };
+
+    expect(parseEnv(formatEnv(original))).toEqual(original);
+  });
+});
+
+describe("azure credential diagnostics masking", () => {
+  const originalValues: Record<string, string | undefined> = {};
+  const AZURE_KEYS = [
+    AZURE_OPENAI_API_KEY_ENV_KEY,
+    AZURE_OPENAI_ENDPOINT_ENV_KEY,
+    AZURE_OPENAI_API_VERSION_ENV_KEY,
+    AZURE_OPENAI_USE_AD_TOKEN_ENV_KEY,
+  ];
+
+  beforeEach(() => {
+    for (const key of AZURE_KEYS) {
+      originalValues[key] = process.env[key];
+    }
+    process.env[AZURE_OPENAI_ENDPOINT_ENV_KEY] =
+      "https://foobar.openai.azure.com/";
+    process.env[AZURE_OPENAI_API_VERSION_ENV_KEY] = "2024-12-01-preview";
+    process.env[AZURE_OPENAI_USE_AD_TOKEN_ENV_KEY] = "true";
+    process.env[AZURE_OPENAI_API_KEY_ENV_KEY] = "super-secret-azure-key-12345";
+  });
+
+  afterEach(() => {
+    for (const key of AZURE_KEYS) {
+      if (originalValues[key] === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = originalValues[key];
+      }
+    }
+  });
+
+  test("shows endpoint, api version, and the AD-token flag in the clear", async () => {
+    const diagnostics = await getCredentialDiagnostics();
+    const byKey = new Map(diagnostics.map((d) => [d.key, d]));
+
+    expect(byKey.get(AZURE_OPENAI_ENDPOINT_ENV_KEY)?.preview).toBe(
+      JSON.stringify("https://foobar.openai.azure.com/"),
+    );
+    expect(byKey.get(AZURE_OPENAI_API_VERSION_ENV_KEY)?.preview).toBe(
+      JSON.stringify("2024-12-01-preview"),
+    );
+    expect(byKey.get(AZURE_OPENAI_USE_AD_TOKEN_ENV_KEY)?.preview).toBe(
+      JSON.stringify("true"),
+    );
+  });
+
+  test("masks the API key", async () => {
+    const diagnostics = await getCredentialDiagnostics();
+    const keyDiagnostic = diagnostics.find(
+      (d) => d.key === AZURE_OPENAI_API_KEY_ENV_KEY,
+    );
+
+    expect(keyDiagnostic).toBeDefined();
+    expect(keyDiagnostic?.preview).not.toContain("super-secret-azure-key");
+    // Non-secret values render as JSON.stringify of the raw value; the key must
+    // not, so it is neither the raw value nor its plain JSON form.
+    expect(keyDiagnostic?.preview).not.toBe(
+      JSON.stringify("super-secret-azure-key-12345"),
+    );
   });
 });
