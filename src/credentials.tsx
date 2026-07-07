@@ -5,6 +5,7 @@ import {
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
+  getProviderEndpointEnvKey,
   getProviderLabel,
   getProviderModelOptions,
   isValidBaseUrl,
@@ -13,6 +14,7 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   type OpenWikiProvider,
+  providerRequiresApiKey,
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
@@ -35,22 +37,44 @@ type InitSetupProps = {
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "base-url" | "langsmith" | "model" | "provider";
+type PromptStep =
+  | "api-key"
+  | "base-url"
+  | "endpoint"
+  | "langsmith"
+  | "model"
+  | "provider";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
 ): boolean {
   const provider = resolveConfiguredProvider();
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   return (
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
-    !process.env[apiKeyEnvKey] ||
+    needsEndpointStep(provider) ||
+    needsApiKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined
   );
+}
+
+function needsApiKeyStep(provider: OpenWikiProvider): boolean {
+  if (!providerRequiresApiKey(provider)) {
+    return false;
+  }
+
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  return apiKeyEnvKey ? !process.env[apiKeyEnvKey] : false;
+}
+
+function needsEndpointStep(provider: OpenWikiProvider): boolean {
+  const endpointEnvKey = getProviderEndpointEnvKey(provider);
+
+  return endpointEnvKey ? !process.env[endpointEnvKey] : false;
 }
 
 function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
@@ -67,6 +91,47 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
   return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
 }
 
+function isEndpointConfigured(provider: OpenWikiProvider): boolean {
+  const endpointEnvKey = getProviderEndpointEnvKey(provider);
+
+  return endpointEnvKey ? Boolean(process.env[endpointEnvKey]) : false;
+}
+
+function getProviderKeyStepState(
+  provider: OpenWikiProvider,
+  step: PromptStep | null,
+): "current" | "done" | "optional" | "pending" {
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  if (apiKeyEnvKey && process.env[apiKeyEnvKey]) {
+    return "done";
+  }
+
+  if (step === "api-key") {
+    return "current";
+  }
+
+  // Providers that authenticate without a key (e.g. azure via Entra ID) treat
+  // the key step as optional rather than a blocking pending step.
+  return providerRequiresApiKey(provider) ? "pending" : "optional";
+}
+
+function getProviderKeyStepDetail(provider: OpenWikiProvider): string {
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  if (apiKeyEnvKey && process.env[apiKeyEnvKey]) {
+    return "available from environment";
+  }
+
+  if (!providerRequiresApiKey(provider)) {
+    return apiKeyEnvKey
+      ? `optional — omit to use Entra ID auth, or save ${apiKeyEnvKey} for key-based auth`
+      : "not required for this provider";
+  }
+
+  return `save ${apiKeyEnvKey} to ${openWikiEnvPath}`;
+}
+
 export function InitSetup({
   modelIdOverride = null,
   onComplete,
@@ -77,6 +142,7 @@ export function InitSetup({
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState<string | null>(null);
+  const [endpoint, setEndpoint] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -225,9 +291,48 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextEndpoint: endpoint,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: selectedProvider,
+      });
+      return;
+    }
+
+    if (step === "endpoint") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError(
+          `${getProviderEndpointEnvKey(provider) ?? "Endpoint"} is required.`,
+        );
+        return;
+      }
+
+      if (!isValidBaseUrl(trimmedInput)) {
+        setError("Enter a valid http(s) endpoint URL.");
+        return;
+      }
+
+      setEndpoint(trimmedInput);
+      setInput("");
+      const nextStep = getNextStepAfterEndpoint(provider, modelIdOverride);
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextEndpoint: trimmedInput,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
       });
       return;
     }
@@ -255,6 +360,7 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: trimmedInput,
         nextBaseUrl: baseUrl,
+        nextEndpoint: endpoint,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -292,6 +398,7 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: trimmedInput,
+        nextEndpoint: endpoint,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -330,6 +437,7 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextEndpoint: endpoint,
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
         nextProvider: provider,
@@ -346,6 +454,7 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextEndpoint: endpoint,
         nextLangSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
@@ -356,6 +465,7 @@ export function InitSetup({
   type CompleteSetupOptions = {
     nextApiKey: string | null;
     nextBaseUrl: string | null;
+    nextEndpoint: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
@@ -364,6 +474,7 @@ export function InitSetup({
   async function completeSetup({
     nextApiKey,
     nextBaseUrl,
+    nextEndpoint,
     nextLangSmithKey,
     nextModelId,
     nextProvider,
@@ -380,7 +491,19 @@ export function InitSetup({
       }
 
       if (nextApiKey !== null) {
-        updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+        const apiKeyEnvKey = getProviderApiKeyEnvKey(nextProvider);
+
+        if (apiKeyEnvKey) {
+          updates[apiKeyEnvKey] = nextApiKey;
+        }
+      }
+
+      if (nextEndpoint !== null) {
+        const endpointEnvKey = getProviderEndpointEnvKey(nextProvider);
+
+        if (endpointEnvKey) {
+          updates[endpointEnvKey] = nextEndpoint;
+        }
       }
 
       if (nextBaseUrl !== null) {
@@ -454,20 +577,27 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
+        {getProviderEndpointEnvKey(provider) ? (
+          <SetupStep
+            label="Endpoint"
+            state={
+              isEndpointConfigured(provider)
+                ? "done"
+                : step === "endpoint"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              isEndpointConfigured(provider)
+                ? "available from environment"
+                : `save ${getProviderEndpointEnvKey(provider)} to ${openWikiEnvPath}`
+            }
+          />
+        ) : null}
         <SetupStep
           label="Provider key"
-          state={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "done"
-              : step === "api-key"
-                ? "current"
-                : "pending"
-          }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
+          state={getProviderKeyStepState(provider, step)}
+          detail={getProviderKeyStepDetail(provider)}
         />
         {providerRequiresBaseUrl(provider) ? (
           <SetupStep
@@ -650,6 +780,22 @@ function Prompt({
     );
   }
 
+  if (step === "endpoint") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter your {getProviderLabel(provider)} endpoint.</Text>
+        <Text>
+          <Text color="gray">$</Text> {getProviderEndpointEnvKey(provider)}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          The resource endpoint, e.g. https://your-resource.openai.azure.com/.
+          Press Enter to save it.
+        </Text>
+      </Box>
+    );
+  }
+
   if (step === "api-key") {
     return (
       <Box flexDirection="column">
@@ -750,33 +896,25 @@ function getInitialStep(
     return "provider";
   }
 
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
-  }
-
-  if (needsBaseUrlStep(provider)) {
-    return "base-url";
-  }
-
-  if (
-    modelIdOverride === null &&
-    process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined
-  ) {
-    return "model";
-  }
-
-  if (process.env.LANGSMITH_API_KEY === undefined) {
-    return "langsmith";
-  }
-
-  return null;
+  return getNextStepAfterProvider(provider, modelIdOverride);
 }
 
 function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (needsEndpointStep(provider)) {
+    return "endpoint";
+  }
+
+  return getNextStepAfterEndpoint(provider, modelIdOverride);
+}
+
+function getNextStepAfterEndpoint(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+): PromptStep | null {
+  if (needsApiKeyStep(provider)) {
     return "api-key";
   }
 

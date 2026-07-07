@@ -8,6 +8,11 @@ export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const AZURE_OPENAI_API_KEY_ENV_KEY = "AZURE_OPENAI_API_KEY";
+export const AZURE_OPENAI_ENDPOINT_ENV_KEY = "AZURE_OPENAI_ENDPOINT";
+export const AZURE_OPENAI_API_VERSION_ENV_KEY = "AZURE_OPENAI_API_VERSION";
+export const AZURE_OPENAI_USE_AD_TOKEN_ENV_KEY = "AZURE_OPENAI_USE_AD_TOKEN";
+export const DEFAULT_AZURE_OPENAI_API_VERSION = "2024-12-01-preview";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -15,6 +20,7 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
+  | "azure"
   | "baseten"
   | "fireworks"
   | "openai"
@@ -29,7 +35,12 @@ export type ProviderModelOption = {
 };
 
 type ProviderConfig = {
-  apiKeyEnvKey: string;
+  /**
+   * Environment variable holding the provider's API key. Absent when the
+   * provider can authenticate without an API key (e.g. Microsoft Entra ID
+   * bearer tokens for Azure OpenAI).
+   */
+  apiKeyEnvKey?: string;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -41,6 +52,13 @@ type ProviderConfig = {
    * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
    */
   requiresBaseUrl?: boolean;
+  /**
+   * Environment variable holding the provider endpoint required to run it
+   * (e.g. an Azure OpenAI resource endpoint). Unlike {@link ProviderConfig.baseUrlEnvKey}
+   * this is mandatory, and the provider authenticates against it with either an
+   * API key or a bearer token rather than an OpenAI-style base URL.
+   */
+  endpointEnvKey?: string;
   label: string;
   modelOptions: ProviderModelOption[];
 };
@@ -52,6 +70,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-compatible",
   "anthropic",
+  "azure",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -101,6 +120,16 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-opus-4-8", label: "Opus" },
     ],
   },
+  azure: {
+    apiKeyEnvKey: AZURE_OPENAI_API_KEY_ENV_KEY,
+    endpointEnvKey: AZURE_OPENAI_ENDPOINT_ENV_KEY,
+    label: "Azure OpenAI",
+    // Azure routes by deployment name, not base model. OpenWiki carries that
+    // deployment name through OPENWIKI_MODEL_ID (as the openai-compatible
+    // provider does for gateway model names), so there are no presets — the
+    // deployment name is always user-supplied.
+    modelOptions: [],
+  },
   openrouter: {
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,
     baseURL: OPENROUTER_BASE_URL,
@@ -137,8 +166,101 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).label;
 }
 
-export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
+export function getProviderApiKeyEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+export function getProviderEndpointEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).endpointEnvKey;
+}
+
+/**
+ * Whether the provider can authenticate with a Microsoft Entra ID bearer token
+ * (via `DefaultAzureCredential`) instead of an API key. For such providers the
+ * API key is optional — a token is used when no key is present.
+ */
+export function providerSupportsAdToken(provider: OpenWikiProvider): boolean {
+  return provider === "azure";
+}
+
+/**
+ * Whether the provider strictly requires its API key to run. False for
+ * providers with no API key at all, and for providers that can fall back to a
+ * bearer token (see {@link providerSupportsAdToken}).
+ */
+export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
+  return (
+    getProviderConfig(provider).apiKeyEnvKey !== undefined &&
+    !providerSupportsAdToken(provider)
+  );
+}
+
+/**
+ * Resolves whether the azure provider should authenticate with an Entra ID
+ * bearer token rather than an API key: when `AZURE_OPENAI_USE_AD_TOKEN` is
+ * truthy, or when no `AZURE_OPENAI_API_KEY` is set (the token is the default
+ * fallback, matching the "no key" story).
+ */
+export function azureUsesAdToken(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  const flag = env[AZURE_OPENAI_USE_AD_TOKEN_ENV_KEY]?.trim().toLowerCase();
+
+  if (flag === "true" || flag === "1" || flag === "yes") {
+    return true;
+  }
+
+  return !env[AZURE_OPENAI_API_KEY_ENV_KEY];
+}
+
+/**
+ * Returns the first required-but-unset environment variable for a provider (its
+ * endpoint, then its API key when strictly required), or `null` when the
+ * provider has everything it needs to run. Base URL requirements are checked
+ * separately via {@link providerRequiresBaseUrl}.
+ */
+export function getMissingProviderEnvKey(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  const config = getProviderConfig(provider);
+
+  if (config.endpointEnvKey && !env[config.endpointEnvKey]) {
+    return config.endpointEnvKey;
+  }
+
+  if (
+    config.apiKeyEnvKey &&
+    !env[config.apiKeyEnvKey] &&
+    providerRequiresApiKey(provider)
+  ) {
+    return config.apiKeyEnvKey;
+  }
+
+  return null;
+}
+
+/**
+ * A human-readable hint for providers whose credentials live outside the
+ * OpenWiki env file, appended to missing-credential error messages.
+ */
+export function getProviderCredentialHint(
+  provider: OpenWikiProvider,
+): string | null {
+  if (provider === "azure") {
+    return (
+      "Without an API key, the azure provider authenticates with a Microsoft " +
+      "Entra ID bearer token via DefaultAzureCredential — sign in with " +
+      "`az login`, or provide managed/workload identity, or set " +
+      `${AZURE_OPENAI_API_KEY_ENV_KEY} for key-based auth.`
+    );
+  }
+
+  return null;
 }
 
 /**

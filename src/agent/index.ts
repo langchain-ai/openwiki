@@ -1,9 +1,13 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
+import {
+  DefaultAzureCredential,
+  getBearerTokenProvider,
+} from "@azure/identity";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
-import { ChatOpenAI } from "@langchain/openai";
+import { AzureChatOpenAI, ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
@@ -17,9 +21,16 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  AZURE_OPENAI_API_KEY_ENV_KEY,
+  AZURE_OPENAI_API_VERSION_ENV_KEY,
+  AZURE_OPENAI_ENDPOINT_ENV_KEY,
+  azureUsesAdToken,
+  DEFAULT_AZURE_OPENAI_API_VERSION,
   getDefaultModelId,
+  getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
+  getProviderCredentialHint,
   getProviderLabel,
   isValidModelId,
   normalizeModelId,
@@ -87,8 +98,8 @@ export async function runOpenWikiAgent(
   if (providerBaseUrl) {
     emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
   }
-  ensureProviderKey(provider);
-  emitDebug(options, `credentials=${provider} key present`);
+  ensureProviderCredentials(provider);
+  emitDebug(options, `credentials=${provider} present`);
   ensureProviderBaseUrl(provider);
   const modelId = resolveModelId(options, provider);
   emitDebug(options, `model=${modelId}`);
@@ -363,12 +374,15 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
   });
 }
 
-function ensureProviderKey(provider: OpenWikiProvider): void {
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+function ensureProviderCredentials(provider: OpenWikiProvider): void {
+  const missingEnvKey = getMissingProviderEnvKey(provider);
 
-  if (!process.env[apiKeyEnvKey]) {
+  if (missingEnvKey) {
+    const hint = getProviderCredentialHint(provider);
+
     throw new Error(
-      `${apiKeyEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      `${missingEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.` +
+        (hint ? ` ${hint}` : ""),
     );
   }
 }
@@ -409,9 +423,10 @@ function resolveModelId(
 function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
     const baseURL = resolveProviderBaseUrl(provider);
+    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
     return new ChatAnthropic(modelId, {
-      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      apiKey: apiKeyEnvKey ? process.env[apiKeyEnvKey] : undefined,
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
     });
   }
@@ -429,10 +444,15 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
     });
   }
 
+  if (provider === "azure") {
+    return createAzureModel(modelId);
+  }
+
   const baseURL = resolveProviderBaseUrl(provider);
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey: apiKeyEnvKey ? process.env[apiKeyEnvKey] : undefined,
     configuration: baseURL
       ? {
           baseURL,
@@ -440,6 +460,48 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
       : undefined,
     model: modelId,
   });
+}
+
+/**
+ * Azure OpenAI routes by deployment name (carried through `OPENWIKI_MODEL_ID`)
+ * against a resource endpoint. Authentication is either an API key or, when no
+ * key is configured, a Microsoft Entra ID bearer token resolved through
+ * `DefaultAzureCredential` — the token provider is invoked on every request, so
+ * long agent runs refresh the token automatically.
+ */
+function createAzureModel(modelId: string) {
+  const azureOpenAIEndpoint = process.env[AZURE_OPENAI_ENDPOINT_ENV_KEY];
+  const azureOpenAIApiVersion =
+    process.env[AZURE_OPENAI_API_VERSION_ENV_KEY]?.trim() ||
+    DEFAULT_AZURE_OPENAI_API_VERSION;
+
+  if (azureUsesAdToken()) {
+    return new AzureChatOpenAI({
+      azureADTokenProvider: createAzureADTokenProvider(),
+      azureOpenAIApiDeploymentName: modelId,
+      azureOpenAIApiVersion,
+      azureOpenAIEndpoint,
+      model: modelId,
+    });
+  }
+
+  return new AzureChatOpenAI({
+    azureOpenAIApiKey: process.env[AZURE_OPENAI_API_KEY_ENV_KEY],
+    azureOpenAIApiDeploymentName: modelId,
+    azureOpenAIApiVersion,
+    azureOpenAIEndpoint,
+    model: modelId,
+  });
+}
+
+const AZURE_COGNITIVE_SERVICES_SCOPE =
+  "https://cognitiveservices.azure.com/.default";
+
+function createAzureADTokenProvider(): () => Promise<string> {
+  return getBearerTokenProvider(
+    new DefaultAzureCredential(),
+    AZURE_COGNITIVE_SERVICES_SCOPE,
+  );
 }
 
 function createModelRoute(

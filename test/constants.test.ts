@@ -1,15 +1,25 @@
 import { describe, expect, test } from "vitest";
 import {
+  AZURE_OPENAI_API_KEY_ENV_KEY,
+  AZURE_OPENAI_ENDPOINT_ENV_KEY,
+  azureUsesAdToken,
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER,
   getDefaultModelId,
+  getMissingProviderEnvKey,
+  getProviderApiKeyEnvKey,
+  getProviderCredentialHint,
+  getProviderEndpointEnvKey,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
   normalizeModelId,
   normalizeProvider,
+  providerRequiresApiKey,
+  providerSupportsAdToken,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  SELECTABLE_OPENWIKI_PROVIDERS,
 } from "../src/constants.ts";
 
 describe("isValidModelId", () => {
@@ -141,4 +151,89 @@ describe("getDefaultModelId", () => {
       expect(getDefaultModelId("openai-compatible")).toBe(DEFAULT_MODEL_ID);
     },
   );
+});
+
+describe("azure provider", () => {
+  test("is selectable and a valid provider", () => {
+    expect(SELECTABLE_OPENWIKI_PROVIDERS).toContain("azure");
+    expect(isValidProvider("azure")).toBe(true);
+    expect(normalizeProvider("Azure")).toBe("azure");
+  });
+
+  test("declares an API key and an endpoint env key", () => {
+    expect(getProviderApiKeyEnvKey("azure")).toBe(AZURE_OPENAI_API_KEY_ENV_KEY);
+    expect(getProviderEndpointEnvKey("azure")).toBe(
+      AZURE_OPENAI_ENDPOINT_ENV_KEY,
+    );
+  });
+
+  test("supports Entra ID token auth, so the API key is not strictly required", () => {
+    expect(providerSupportsAdToken("azure")).toBe(true);
+    expect(providerRequiresApiKey("azure")).toBe(false);
+    // Providers with only an API key still require it.
+    expect(providerRequiresApiKey("openai")).toBe(true);
+    expect(providerSupportsAdToken("openai")).toBe(false);
+  });
+
+  test("getMissingProviderEnvKey gates on the endpoint, not the key", () => {
+    // No endpoint → endpoint is the missing key even with a key present.
+    expect(
+      getMissingProviderEnvKey("azure", {
+        [AZURE_OPENAI_API_KEY_ENV_KEY]: "k",
+      }),
+    ).toBe(AZURE_OPENAI_ENDPOINT_ENV_KEY);
+
+    // Endpoint present, no key → satisfied (token auth is the fallback).
+    expect(
+      getMissingProviderEnvKey("azure", {
+        [AZURE_OPENAI_ENDPOINT_ENV_KEY]: "https://r.openai.azure.com/",
+      }),
+    ).toBeNull();
+
+    // Endpoint + key present → satisfied.
+    expect(
+      getMissingProviderEnvKey("azure", {
+        [AZURE_OPENAI_ENDPOINT_ENV_KEY]: "https://r.openai.azure.com/",
+        [AZURE_OPENAI_API_KEY_ENV_KEY]: "k",
+      }),
+    ).toBeNull();
+  });
+
+  test("azureUsesAdToken prefers the flag, then falls back when no key is set", () => {
+    // No key at all → token auth.
+    expect(azureUsesAdToken({})).toBe(true);
+    // Key present, no flag → key auth.
+    expect(azureUsesAdToken({ [AZURE_OPENAI_API_KEY_ENV_KEY]: "k" })).toBe(
+      false,
+    );
+    // Key present but flag forces token auth.
+    expect(
+      azureUsesAdToken({
+        [AZURE_OPENAI_API_KEY_ENV_KEY]: "k",
+        AZURE_OPENAI_USE_AD_TOKEN: "true",
+      }),
+    ).toBe(true);
+    expect(
+      azureUsesAdToken({
+        [AZURE_OPENAI_API_KEY_ENV_KEY]: "k",
+        AZURE_OPENAI_USE_AD_TOKEN: "1",
+      }),
+    ).toBe(true);
+    // Unrecognized flag value with a key → key auth.
+    expect(
+      azureUsesAdToken({
+        [AZURE_OPENAI_API_KEY_ENV_KEY]: "k",
+        AZURE_OPENAI_USE_AD_TOKEN: "maybe",
+      }),
+    ).toBe(false);
+  });
+
+  test("exposes an Entra ID credential hint for azure only", () => {
+    expect(getProviderCredentialHint("azure")).toMatch(/Entra ID/u);
+    expect(getProviderCredentialHint("openai")).toBeNull();
+  });
+
+  test("has no preset models (deployment name comes from OPENWIKI_MODEL_ID)", () => {
+    expect(getDefaultModelId("azure")).toBe(DEFAULT_MODEL_ID);
+  });
 });

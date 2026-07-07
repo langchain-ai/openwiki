@@ -29,9 +29,13 @@ import {
 } from "./agent/types.js";
 import {
   getDefaultModelId,
+  getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
+  getProviderCredentialHint,
+  getProviderEndpointEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  providerSupportsAdToken,
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
@@ -236,12 +240,16 @@ function App({ command }: AppProps) {
       return;
     }
 
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
+    const missingEnvKey = getMissingProviderEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (missingEnvKey && !process.stdin.isTTY) {
+      const hint = getProviderCredentialHint(sessionProvider);
+
       setRunState({
         status: "error",
-        message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
+        message:
+          `${missingEnvKey} is required. Run openwiki in an interactive terminal to save credentials.` +
+          (hint ? ` ${hint}` : ""),
       });
       return;
     }
@@ -1519,7 +1527,7 @@ function ChatInput({
       setNotice(
         `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
           provider,
-        )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
+        )}. ${describeProviderCredentialRequirement(provider)}`,
       );
     } catch (saveError) {
       setError(
@@ -3050,6 +3058,32 @@ function writePrintErrorDiagnostics(error: unknown): void {
   }
 }
 
+function describeProviderCredentialRequirement(
+  provider: OpenWikiProvider,
+): string {
+  const endpointEnvKey = getProviderEndpointEnvKey(provider);
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+  const requirements: string[] = [];
+
+  if (endpointEnvKey) {
+    requirements.push(`${endpointEnvKey} is set`);
+  }
+
+  if (apiKeyEnvKey) {
+    requirements.push(
+      providerSupportsAdToken(provider)
+        ? `${apiKeyEnvKey} is set (or sign in with \`az login\` for Entra ID auth)`
+        : `${apiKeyEnvKey} is set`,
+    );
+  }
+
+  if (requirements.length === 0) {
+    return "";
+  }
+
+  return `Ensure ${requirements.join(" and ")}.`;
+}
+
 function resolveStartupCommand(command: CliCommand): CliCommand {
   if (
     command.kind === "run" &&
@@ -3058,14 +3092,17 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
     (command.print || !process.stdin.isTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+    const missingEnvKey = getMissingProviderEnvKey(provider);
 
-    if (!hasProviderKey) {
+    if (missingEnvKey) {
+      const hint = getProviderCredentialHint(provider);
+
       return {
         kind: "error",
         exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        message:
+          `${missingEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.` +
+          (hint ? ` ${hint}` : ""),
       };
     }
   }

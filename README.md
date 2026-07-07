@@ -71,7 +71,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, Anthropic, and Azure OpenAI out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
 
 ### Alternative base URLs
 
@@ -99,6 +99,43 @@ OPENAI_COMPATIBLE_API_KEY=your-gateway-key
 OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
+
+### Azure OpenAI
+
+The `azure` provider targets an Azure OpenAI resource. It routes by **deployment
+name**, which OpenWiki takes from `OPENWIKI_MODEL_ID` (set it to your Azure
+deployment name, not the base model). `AZURE_OPENAI_ENDPOINT` is required;
+`AZURE_OPENAI_API_VERSION` is optional and defaults to a recent preview version.
+
+Authentication works two ways:
+
+- **Microsoft Entra ID (default when no key is set).** OpenWiki uses
+  `DefaultAzureCredential`, so any of the standard mechanisms work: an
+  `az login` session, environment credentials, or managed/workload identity
+  when running on Azure or in CI. No API key is stored.
+
+  ```bash
+  OPENWIKI_PROVIDER=azure
+  AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+  OPENWIKI_MODEL_ID=your-deployment-name
+  # AZURE_OPENAI_API_VERSION=2024-12-01-preview   # optional
+  ```
+
+  The credential needs the `Cognitive Services OpenAI User` role on the
+  resource. For CI, authenticate before the update job runs (for example with
+  [`azure/login`](https://github.com/Azure/login) via OIDC/workload identity).
+
+- **API key.** Set `AZURE_OPENAI_API_KEY` to use key-based auth instead:
+
+  ```bash
+  OPENWIKI_PROVIDER=azure
+  AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+  AZURE_OPENAI_API_KEY=your-azure-openai-key
+  OPENWIKI_MODEL_ID=your-deployment-name
+  ```
+
+  When a key is present it is used by default; set `AZURE_OPENAI_USE_AD_TOKEN=true`
+  to force Entra ID auth even when a key is configured.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
