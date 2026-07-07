@@ -18,6 +18,7 @@ import type {
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
   COPILOT_API_KEY_ENV_KEY,
+  COPILOT_BASE_URL_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
@@ -1326,6 +1327,7 @@ function formatDebugValue(key: string, value: string | undefined): string {
   if (
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === COPILOT_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   ) {
     return formatUrlDebugValue(value);

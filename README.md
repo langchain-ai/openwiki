@@ -104,6 +104,17 @@ ANTHROPIC_API_KEY=your-key
 ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 ```
 
+Similarly, to route the GitHub Copilot provider at an alternative endpoint
+(for example a GitHub Enterprise Cloud data-residency host or a proxied
+gateway) instead of the default `https://api.githubcopilot.com`, set
+`COPILOT_BASE_URL` alongside `COPILOT_API_KEY`:
+
+```bash
+OPENWIKI_PROVIDER=copilot
+COPILOT_API_KEY=your-copilot-token
+COPILOT_BASE_URL=https://your-tenant.ghe.com/api/copilot
+```
+
 ### OpenAI-compatible endpoints
 
 The `openai-compatible` provider targets any OpenAI-compatible chat-completions

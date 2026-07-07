@@ -8,9 +8,11 @@ import { sanitizeOpenRouterResponseBody } from "../src/agent/index.ts";
 
 describe("sanitizeDiagnosticText", () => {
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
+  const originalCopilotKey = process.env.COPILOT_API_KEY;
 
   beforeEach(() => {
     delete process.env.OPENAI_API_KEY;
+    delete process.env.COPILOT_API_KEY;
   });
 
   afterEach(() => {
@@ -18,6 +20,12 @@ describe("sanitizeDiagnosticText", () => {
       delete process.env.OPENAI_API_KEY;
     } else {
       process.env.OPENAI_API_KEY = originalOpenAiKey;
+    }
+
+    if (originalCopilotKey === undefined) {
+      delete process.env.COPILOT_API_KEY;
+    } else {
+      process.env.COPILOT_API_KEY = originalCopilotKey;
     }
   });
 
@@ -30,6 +38,17 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("super-secret-value-12345");
     expect(result).toContain("[REDACTED:OPENAI_API_KEY]");
+  });
+
+  test("redacts the exact value of COPILOT_API_KEY when set", () => {
+    process.env.COPILOT_API_KEY = "ghu_secret-value-67890";
+
+    const result = sanitizeDiagnosticText(
+      "request failed with key ghu_secret-value-67890 attached",
+    );
+
+    expect(result).not.toContain("ghu_secret-value-67890");
+    expect(result).toContain("[REDACTED:COPILOT_API_KEY]");
   });
 
   test("redacts OpenAI-style sk- tokens", () => {
