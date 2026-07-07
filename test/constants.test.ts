@@ -3,7 +3,10 @@ import {
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
+  DEFAULT_VERTEX_LOCATION,
   getDefaultModelId,
+  getMissingProviderEnvKey,
+  getProviderApiKeyEnvKey,
   getProviderModelOptions,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
@@ -13,10 +16,12 @@ import {
   NEBIUS_BASE_URL,
   normalizeModelId,
   normalizeProvider,
+  providerRequiresApiKey,
   providerRequiresRegion,
   providerRequiresSecretKey,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
 } from "../src/constants.ts";
@@ -41,9 +46,14 @@ describe("isValidModelId", () => {
     expect(isValidModelId("http://evil.example/model")).toBe(false);
   });
 
+  test("accepts @-versioned Vertex AI model ids", () => {
+    expect(isValidModelId("claude-haiku-4-5@20251001")).toBe(true);
+  });
+
   test("rejects ids starting with a non-alphanumeric character", () => {
     expect(isValidModelId("-leading-dash")).toBe(false);
     expect(isValidModelId("/leading-slash")).toBe(false);
+    expect(isValidModelId("@leading-at")).toBe(false);
   });
 
   test("normalizeModelId trims surrounding whitespace", () => {
@@ -56,6 +66,7 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(normalizeProvider("  Anthropic ")).toBe("anthropic");
     expect(normalizeProvider("OPENROUTER")).toBe("openrouter");
     expect(normalizeProvider(" Nebius ")).toBe("nebius");
+    expect(normalizeProvider(" Vertex ")).toBe("vertex");
   });
 
   test("returns null for unknown or nullish providers", () => {
@@ -69,6 +80,7 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(isValidProvider("nebius")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
     expect(isValidProvider("nvidia")).toBe(true);
+    expect(isValidProvider("vertex")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
   });
 });
@@ -222,6 +234,68 @@ describe("bedrock provider (IAM access key + secret key + region)", () => {
   });
 });
 
+describe("providerRequiresApiKey / getProviderApiKeyEnvKey", () => {
+  test("vertex authenticates without an API key", () => {
+    expect(providerRequiresApiKey("vertex")).toBe(false);
+    expect(getProviderApiKeyEnvKey("vertex")).toBeUndefined();
+  });
+
+  test("key-based providers still require one", () => {
+    expect(providerRequiresApiKey("anthropic")).toBe(true);
+    expect(providerRequiresApiKey("openrouter")).toBe(true);
+    expect(getProviderApiKeyEnvKey("anthropic")).toBe("ANTHROPIC_API_KEY");
+  });
+});
+
+describe("getMissingProviderEnvKey", () => {
+  test("reports the missing API key for key-based providers", () => {
+    expect(getMissingProviderEnvKey("anthropic", {})).toBe("ANTHROPIC_API_KEY");
+    expect(
+      getMissingProviderEnvKey("anthropic", { ANTHROPIC_API_KEY: "k" }),
+    ).toBeNull();
+  });
+
+  test("reports the missing GCP project for vertex", () => {
+    expect(getMissingProviderEnvKey("vertex", {})).toBe("GOOGLE_CLOUD_PROJECT");
+    expect(
+      getMissingProviderEnvKey("vertex", { GOOGLE_CLOUD_PROJECT: "proj" }),
+    ).toBeNull();
+  });
+
+  test("does not require the optional vertex location", () => {
+    expect(
+      getMissingProviderEnvKey("vertex", {
+        GOOGLE_CLOUD_PROJECT: "proj",
+        GOOGLE_CLOUD_LOCATION: undefined,
+      }),
+    ).toBeNull();
+  });
+});
+
+describe("resolveProviderLocation", () => {
+  test("defaults vertex to the global endpoint", () => {
+    expect(resolveProviderLocation("vertex", {})).toBe(DEFAULT_VERTEX_LOCATION);
+  });
+
+  test("prefers a trimmed env override over the default", () => {
+    expect(
+      resolveProviderLocation("vertex", {
+        GOOGLE_CLOUD_LOCATION: " europe-west1 ",
+      }),
+    ).toBe("europe-west1");
+  });
+
+  test("ignores a whitespace-only override", () => {
+    expect(
+      resolveProviderLocation("vertex", { GOOGLE_CLOUD_LOCATION: "   " }),
+    ).toBe(DEFAULT_VERTEX_LOCATION);
+  });
+
+  test("returns undefined for providers without a location concept", () => {
+    expect(resolveProviderLocation("openai", {})).toBeUndefined();
+  });
+});
+
 describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
@@ -229,6 +303,7 @@ describe("getDefaultModelId", () => {
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
+    expect(getDefaultModelId("vertex")).toBe("claude-haiku-4-5@20251001");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
   });
 

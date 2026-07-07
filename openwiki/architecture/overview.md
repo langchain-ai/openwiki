@@ -46,11 +46,14 @@ The agent runtime resolves the provider via `resolveConfiguredProvider()` in `sr
 
 Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 
+- **vertex** → `ChatAnthropic` with a custom `createClient` returning an `AnthropicVertex` client (`@anthropic-ai/vertex-sdk`) configured from `GOOGLE_CLOUD_PROJECT` and `resolveProviderLocation()` (default `global`); auth is Google Application Default Credentials, no API key.
 - **anthropic** → `ChatAnthropic` with the Anthropic API key.
 - **openai-chatgpt** → `ChatOpenAI` with `useResponsesApi: true`, `zdrEnabled: true`, `streaming: true`, pointed at the Codex backend (`CODEX_RESPONSES_BASE_URL`) with account-id/originator/beta headers. Tokens are refreshed before model creation via `ensureFreshChatGptTokens()`.
 - **openrouter** → `ChatOpenRouter` with the selected model ID.
 - **openai** → `ChatOpenAI` with `useResponsesApi: true`.
 - **baseten / fireworks / nvidia / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
+
+Credential gating before model creation uses `getMissingProviderEnvKey()` in `src/constants.ts`, which requires the provider's API key — or `GOOGLE_CLOUD_PROJECT` for vertex — and powers the same check in the CLI's non-interactive gates and the onboarding flow.
 
 ### DeepAgents backend
 

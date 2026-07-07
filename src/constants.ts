@@ -22,6 +22,11 @@ export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
   "BEDROCK_AWS_SECRET_ACCESS_KEY";
 export const BEDROCK_AWS_REGION_ENV_KEY = "BEDROCK_AWS_REGION";
+export const GOOGLE_CLOUD_PROJECT_ENV_KEY = "GOOGLE_CLOUD_PROJECT";
+export const GOOGLE_CLOUD_LOCATION_ENV_KEY = "GOOGLE_CLOUD_LOCATION";
+export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
+  "GOOGLE_APPLICATION_CREDENTIALS";
+export const DEFAULT_VERTEX_LOCATION = "global";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
@@ -69,7 +74,8 @@ export type OpenWikiProvider =
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "vertex";
 
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
@@ -99,7 +105,12 @@ const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
 ];
 
 type ProviderConfig = {
-  apiKeyEnvKey: string;
+  /**
+   * Environment variable holding the provider's API key. Absent when the
+   * provider authenticates without an API key (e.g. Google Application
+   * Default Credentials for Vertex AI).
+   */
+  apiKeyEnvKey?: string;
   /**
    * Authentication method for the provider. Omitted entries are implicitly
    * {@link ProviderAuthMethod} `"api-key"`. `"oauth"` providers replace the
@@ -117,6 +128,17 @@ type ProviderConfig = {
    * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
    */
   requiresBaseUrl?: boolean;
+  /**
+   * Environment variable holding the cloud project identifier required to
+   * run the provider (e.g. a Google Cloud project ID).
+   */
+  projectEnvKey?: string;
+  /**
+   * Environment variable that overrides {@link ProviderConfig.defaultLocation}
+   * with an alternative cloud location/region.
+   */
+  locationEnvKey?: string;
+  defaultLocation?: string;
   label: string;
   modelOptions: ProviderModelOption[];
   /**
@@ -141,6 +163,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
   "anthropic",
+  "vertex",
   "openrouter",
   "openai-compatible",
   "bedrock",
@@ -240,6 +263,17 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-opus-4-8", label: "Opus" },
     ],
   },
+  vertex: {
+    projectEnvKey: GOOGLE_CLOUD_PROJECT_ENV_KEY,
+    locationEnvKey: GOOGLE_CLOUD_LOCATION_ENV_KEY,
+    defaultLocation: DEFAULT_VERTEX_LOCATION,
+    label: "Google Vertex AI (Claude)",
+    modelOptions: [
+      { id: "claude-haiku-4-5@20251001", label: "Haiku" },
+      { id: "claude-sonnet-5", label: "Sonnet" },
+      { id: "claude-opus-4-8", label: "Opus" },
+    ],
+  },
   openrouter: {
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,
     baseURL: OPENROUTER_BASE_URL,
@@ -271,7 +305,9 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).label;
 }
 
-export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
+export function getProviderApiKeyEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
   return getProviderConfig(provider).apiKeyEnvKey;
 }
 
@@ -283,6 +319,85 @@ export function getProviderAuthMethod(
 
 export function providerUsesOAuth(provider: OpenWikiProvider): boolean {
   return getProviderAuthMethod(provider) === "oauth";
+}
+
+export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).apiKeyEnvKey !== undefined;
+}
+
+export function getProviderProjectEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).projectEnvKey;
+}
+
+export function getProviderLocationEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).locationEnvKey;
+}
+
+/**
+ * Returns the first required-but-unset environment variable for a provider
+ * (its API key, or its cloud project for providers that authenticate without
+ * one), or `null` when the provider has everything it needs to run. Base URL
+ * requirements are checked separately via {@link providerRequiresBaseUrl}.
+ */
+export function getMissingProviderEnvKey(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  const config = getProviderConfig(provider);
+
+  if (config.apiKeyEnvKey && !env[config.apiKeyEnvKey]) {
+    return config.apiKeyEnvKey;
+  }
+
+  if (config.projectEnvKey && !env[config.projectEnvKey]) {
+    return config.projectEnvKey;
+  }
+
+  return null;
+}
+
+/**
+ * Resolves the cloud location for a provider, preferring the provider's
+ * configured environment variable over its built-in default. Returns
+ * `undefined` for providers without a location concept.
+ */
+export function resolveProviderLocation(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const config = getProviderConfig(provider);
+  const override = config.locationEnvKey
+    ? env[config.locationEnvKey]
+    : undefined;
+  const trimmedOverride = override?.trim();
+
+  if (trimmedOverride) {
+    return trimmedOverride;
+  }
+
+  return config.defaultLocation;
+}
+
+/**
+ * A human-readable hint for providers whose credentials live outside the
+ * OpenWiki env file, appended to missing-credential error messages.
+ */
+export function getProviderCredentialHint(
+  provider: OpenWikiProvider,
+): string | null {
+  if (provider === "vertex") {
+    return (
+      "Authenticate to Google Cloud with Application Default Credentials " +
+      "(gcloud auth application-default login) or set " +
+      `${GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY} to a service account key file.`
+    );
+  }
+
+  return null;
 }
 
 /**
@@ -458,7 +573,7 @@ export function isValidModelId(value: string): boolean {
   return (
     modelId.length > 0 &&
     modelId.length <= 120 &&
-    /^[A-Za-z0-9][A-Za-z0-9._:/+-]*$/u.test(modelId) &&
+    /^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
     !modelId.includes("://")
   );
 }

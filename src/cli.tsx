@@ -64,9 +64,12 @@ import {
 } from "./schedules.js";
 import {
   getDefaultModelId,
+  getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
+  getProviderCredentialHint,
   getProviderLabel,
   getProviderModelOptions,
+  getProviderProjectEnvKey,
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
@@ -398,12 +401,16 @@ function App({ command }: AppProps) {
       return;
     }
 
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
+    const missingEnvKey = getMissingProviderEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (missingEnvKey && !process.stdin.isTTY) {
+      const hint = getProviderCredentialHint(sessionProvider);
+
       setRunState({
         status: "error",
-        message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${missingEnvKey} is required. Run openwiki in an interactive terminal to save credentials.${
+          hint ? ` ${hint}` : ""
+        }`,
       });
       return;
     }
@@ -672,6 +679,8 @@ function App({ command }: AppProps) {
         runState.result.savedBaseUrl ||
         runState.result.savedRegion ||
         runState.result.savedSecretKey ||
+        runState.result.savedGcpProject ||
+        runState.result.savedGcpLocation ||
         runState.result.savedModelId ||
         runState.result.savedLangSmithKey ? (
           <StatusLine tone="success" label="Credentials" value="saved" />
@@ -1776,10 +1785,23 @@ function ChatInput({
         return;
       }
 
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(currentProvider);
+
+      if (!apiKeyEnvKey) {
+        const hint = getProviderCredentialHint(currentProvider);
+
+        setError(
+          `${getProviderLabel(currentProvider)} does not use an API key.${
+            hint ? ` ${hint}` : ""
+          }`,
+        );
+        return;
+      }
+
       setError(null);
       setNotice(`Paste your ${getProviderLabel(currentProvider)} API key.`);
       setSecretInputMode({
-        envKey: getProviderApiKeyEnvKey(currentProvider),
+        envKey: apiKeyEnvKey,
         kind: "api-key",
         label: `${getProviderLabel(currentProvider)} API key`,
         provider: currentProvider,
@@ -1897,7 +1919,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openai, openrouter, baseten, fireworks, nebius, nvidia, or anthropic.",
+        `Enter a valid provider: ${SELECTABLE_OPENWIKI_PROVIDERS.join(", ")}.`,
       );
       return;
     }
@@ -1909,12 +1931,17 @@ function ChatInput({
     try {
       await onProviderSelect(provider);
       resetInput();
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+      const requirement = apiKeyEnvKey
+        ? `Ensure ${apiKeyEnvKey} is set.`
+        : `Ensure ${getProviderProjectEnvKey(provider)} is set. ${getProviderCredentialHint(provider) ?? ""}`.trim();
       const modelNotice =
         getProviderModelOptions(provider).length > 0
           ? ` with model ${getDefaultModelId(provider)}`
           : ". Set a model with /model";
+
       setNotice(
-        `Provider switched to ${getProviderLabel(provider)}${modelNotice}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
+        `Provider switched to ${getProviderLabel(provider)}${modelNotice}. ${requirement}`,
       );
     } catch (saveError) {
       setError(
