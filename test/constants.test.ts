@@ -8,7 +8,9 @@ import {
   isValidProvider,
   normalizeModelId,
   normalizeProvider,
+  OPENWIKI_MODEL_HEADERS_ENV_KEY,
   resolveConfiguredProvider,
+  resolveModelHeaders,
   resolveProviderBaseUrl,
 } from "../src/constants.ts";
 
@@ -108,6 +110,41 @@ describe("resolveProviderBaseUrl", () => {
 
   test("returns undefined for a provider with no default and no override", () => {
     expect(resolveProviderBaseUrl("openai", {})).toBeUndefined();
+  });
+});
+
+describe("resolveModelHeaders", () => {
+  test("returns undefined when no model headers are configured", () => {
+    expect(resolveModelHeaders({})).toBeUndefined();
+    expect(
+      resolveModelHeaders({ [OPENWIKI_MODEL_HEADERS_ENV_KEY]: "   " }),
+    ).toBeUndefined();
+  });
+
+  test("parses JSON object headers from the configured env var", () => {
+    expect(
+      resolveModelHeaders({
+        [OPENWIKI_MODEL_HEADERS_ENV_KEY]:
+          '{"X-Tenant-ID":"tenant-a","x-api-key":"secret"}',
+      }),
+    ).toEqual({
+      "X-Tenant-ID": "tenant-a",
+      "x-api-key": "secret",
+    });
+  });
+
+  test("rejects invalid or non-string model headers", () => {
+    expect(() =>
+      resolveModelHeaders({
+        [OPENWIKI_MODEL_HEADERS_ENV_KEY]: "not json",
+      }),
+    ).toThrow(/OPENWIKI_MODEL_HEADERS/u);
+
+    expect(() =>
+      resolveModelHeaders({
+        [OPENWIKI_MODEL_HEADERS_ENV_KEY]: '{"x-number":123}',
+      }),
+    ).toThrow(/string header values/u);
   });
 });
 

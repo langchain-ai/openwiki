@@ -27,10 +27,12 @@ import {
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
   OPENROUTER_FALLBACK_MODEL_IDS,
+  OPENWIKI_MODEL_HEADERS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
+  resolveModelHeaders,
   resolveProviderBaseUrl,
   type OpenWikiProvider,
 } from "../constants.js";
@@ -406,40 +408,78 @@ function resolveModelId(
   return modelId;
 }
 
-function createModel(provider: OpenWikiProvider, modelId: string) {
+export function createModel(provider: OpenWikiProvider, modelId: string) {
+  const modelHeaders = resolveModelHeaders();
+
   if (provider === "anthropic") {
     const baseURL = resolveProviderBaseUrl(provider);
 
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+      ...(modelHeaders
+        ? { clientOptions: { defaultHeaders: modelHeaders } }
+        : {}),
     });
   }
 
   if (provider === "openrouter") {
     const models = createModelRoute(provider, modelId);
 
-    return new ChatOpenRouter({
-      apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
-      baseURL: OPENROUTER_BASE_URL,
-      model: modelId,
-      models,
-      route: "fallback",
-      siteName: "OpenWiki",
-    });
+    return addOpenRouterModelHeaders(
+      new ChatOpenRouter({
+        apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
+        baseURL: OPENROUTER_BASE_URL,
+        model: modelId,
+        models,
+        route: "fallback",
+        siteName: "OpenWiki",
+      }),
+      modelHeaders,
+    );
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
+  const configuration =
+    baseURL || modelHeaders
+      ? {
+          ...(baseURL ? { baseURL } : {}),
+          ...(modelHeaders ? { defaultHeaders: modelHeaders } : {}),
+        }
+      : undefined;
 
   return new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: baseURL
-      ? {
-          baseURL,
-        }
-      : undefined,
+    ...(configuration ? { configuration } : {}),
     model: modelId,
   });
+}
+
+function addOpenRouterModelHeaders(
+  model: ChatOpenRouter,
+  modelHeaders: Record<string, string> | undefined,
+): ChatOpenRouter {
+  if (!modelHeaders) {
+    return model;
+  }
+
+  const modelWithHeaders = model as unknown as {
+    buildHeaders?: () => Record<string, string>;
+  };
+  const buildHeaders = modelWithHeaders.buildHeaders?.bind(model);
+
+  if (!buildHeaders) {
+    throw new Error(
+      "OPENWIKI_MODEL_HEADERS cannot be applied to this ChatOpenRouter version.",
+    );
+  }
+
+  modelWithHeaders.buildHeaders = () => ({
+    ...buildHeaders(),
+    ...modelHeaders,
+  });
+
+  return model;
 }
 
 function createModelRoute(
@@ -1308,6 +1348,10 @@ function formatDebugValue(key: string, value: string | undefined): string {
   }
 
   if (key.endsWith("_API_KEY")) {
+    return `set(length=${value.length})`;
+  }
+
+  if (key === OPENWIKI_MODEL_HEADERS_ENV_KEY) {
     return `set(length=${value.length})`;
   }
 

@@ -98,6 +98,20 @@ OPENWIKI_MODEL_ID=<model name the gateway exposes>
 Base URLs are resolved by `resolveProviderBaseUrl()` in `src/constants.ts`, which
 prefers a provider's `baseUrlEnvKey` override over the built-in default.
 
+### Custom model request headers
+
+Set `OPENWIKI_MODEL_HEADERS` to a JSON object when a gateway needs extra HTTP
+headers on model calls:
+
+```bash
+OPENWIKI_MODEL_HEADERS='{"X-Tenant-ID":"tenant-a","x-api-key":"gateway-secret"}'
+```
+
+`resolveModelHeaders()` validates the JSON shape and requires every header value
+to be a string. The parsed headers are passed to OpenAI-compatible, OpenAI,
+Anthropic, and OpenRouter model clients. Diagnostics treat the full value and
+individual header values as sensitive.
+
 ## Help text and validation
 
 The help content is centralized in `src/commands.ts` and is used by the CLI UI. Model validation is intentionally strict:

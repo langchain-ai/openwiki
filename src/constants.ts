@@ -10,6 +10,7 @@ export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
+export const OPENWIKI_MODEL_HEADERS_ENV_KEY = "OPENWIKI_MODEL_HEADERS";
 export const DEFAULT_PROVIDER = "openrouter";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
@@ -160,6 +161,58 @@ export function resolveProviderBaseUrl(
   }
 
   return config.baseURL;
+}
+
+export function resolveModelHeaders(
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, string> | undefined {
+  const rawHeaders = env[OPENWIKI_MODEL_HEADERS_ENV_KEY]?.trim();
+
+  if (!rawHeaders) {
+    return undefined;
+  }
+
+  let parsedHeaders: unknown;
+
+  try {
+    parsedHeaders = JSON.parse(rawHeaders);
+  } catch {
+    throw new Error(
+      `${OPENWIKI_MODEL_HEADERS_ENV_KEY} must be a JSON object with string header values.`,
+    );
+  }
+
+  if (
+    typeof parsedHeaders !== "object" ||
+    parsedHeaders === null ||
+    Array.isArray(parsedHeaders)
+  ) {
+    throw new Error(
+      `${OPENWIKI_MODEL_HEADERS_ENV_KEY} must be a JSON object with string header values.`,
+    );
+  }
+
+  const headers: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(parsedHeaders)) {
+    const headerName = key.trim();
+
+    if (!headerName) {
+      throw new Error(
+        `${OPENWIKI_MODEL_HEADERS_ENV_KEY} contains an empty header name.`,
+      );
+    }
+
+    if (typeof value !== "string") {
+      throw new Error(
+        `${OPENWIKI_MODEL_HEADERS_ENV_KEY} must contain only string header values.`,
+      );
+    }
+
+    headers[headerName] = value;
+  }
+
+  return Object.keys(headers).length > 0 ? headers : undefined;
 }
 
 export function getProviderBaseUrlEnvKey(

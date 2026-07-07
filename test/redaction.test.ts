@@ -4,13 +4,16 @@ import {
   isOpenRouterServerError,
   sanitizeDiagnosticText,
 } from "../src/diagnostics.ts";
+import { OPENWIKI_MODEL_HEADERS_ENV_KEY } from "../src/constants.ts";
 import { sanitizeOpenRouterResponseBody } from "../src/agent/index.ts";
 
 describe("sanitizeDiagnosticText", () => {
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
+  const originalModelHeaders = process.env.OPENWIKI_MODEL_HEADERS;
 
   beforeEach(() => {
     delete process.env.OPENAI_API_KEY;
+    delete process.env.OPENWIKI_MODEL_HEADERS;
   });
 
   afterEach(() => {
@@ -18,6 +21,12 @@ describe("sanitizeDiagnosticText", () => {
       delete process.env.OPENAI_API_KEY;
     } else {
       process.env.OPENAI_API_KEY = originalOpenAiKey;
+    }
+
+    if (originalModelHeaders === undefined) {
+      delete process.env.OPENWIKI_MODEL_HEADERS;
+    } else {
+      process.env.OPENWIKI_MODEL_HEADERS = originalModelHeaders;
     }
   });
 
@@ -60,6 +69,19 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("lsv_1234abcd");
     expect(result).toContain("[REDACTED:LANGSMITH_API_KEY]");
+  });
+
+  test("redacts configured model header values", () => {
+    process.env.OPENWIKI_MODEL_HEADERS =
+      '{"x-api-key":"gateway-secret","X-Tenant-ID":"tenant-a"}';
+
+    const result = sanitizeDiagnosticText(
+      "request failed for gateway-secret and tenant-a",
+    );
+
+    expect(result).not.toContain("gateway-secret");
+    expect(result).not.toContain("tenant-a");
+    expect(result).toContain(`[REDACTED:${OPENWIKI_MODEL_HEADERS_ENV_KEY}]`);
   });
 
   test('redacts "Incorrect API key provided: …" phrasing', () => {
