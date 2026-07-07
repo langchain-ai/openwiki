@@ -2,7 +2,10 @@ import { describe, expect, test } from "vitest";
 import {
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER,
+  describeProviderCredentialEnvKeys,
   getDefaultModelId,
+  getProviderCredentialEnvKeys,
+  hasProviderCredential,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
@@ -122,6 +125,50 @@ describe("isValidBaseUrl", () => {
     expect(isValidBaseUrl("   ")).toBe(false);
     expect(isValidBaseUrl("not a url")).toBe(false);
     expect(isValidBaseUrl("ftp://example.com")).toBe(false);
+  });
+});
+
+describe("provider credentials", () => {
+  test("anthropic accepts the API key or a Claude Code OAuth token", () => {
+    expect(getProviderCredentialEnvKeys("anthropic")).toEqual([
+      "ANTHROPIC_API_KEY",
+      "CLAUDE_CODE_OAUTH_TOKEN",
+    ]);
+    expect(hasProviderCredential("anthropic", { ANTHROPIC_API_KEY: "k" })).toBe(
+      true,
+    );
+    expect(
+      hasProviderCredential("anthropic", { CLAUDE_CODE_OAUTH_TOKEN: "t" }),
+    ).toBe(true);
+    expect(hasProviderCredential("anthropic", {})).toBe(false);
+  });
+
+  test("other providers only accept their API key", () => {
+    expect(getProviderCredentialEnvKeys("openrouter")).toEqual([
+      "OPENROUTER_API_KEY",
+    ]);
+    expect(
+      hasProviderCredential("openrouter", { CLAUDE_CODE_OAUTH_TOKEN: "t" }),
+    ).toBe(false);
+    expect(
+      hasProviderCredential("openrouter", { OPENROUTER_API_KEY: "k" }),
+    ).toBe(true);
+  });
+
+  test("ignores empty-string values", () => {
+    expect(
+      hasProviderCredential("anthropic", {
+        ANTHROPIC_API_KEY: "",
+        CLAUDE_CODE_OAUTH_TOKEN: "",
+      }),
+    ).toBe(false);
+  });
+
+  test("describeProviderCredentialEnvKeys joins the alternatives", () => {
+    expect(describeProviderCredentialEnvKeys("anthropic")).toBe(
+      "ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN",
+    );
+    expect(describeProviderCredentialEnvKeys("openai")).toBe("OPENAI_API_KEY");
   });
 });
 
