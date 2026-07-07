@@ -2,6 +2,8 @@ import {
   ANTHROPIC_API_KEY_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  LM_STUDIO_API_KEY_ENV_KEY,
+  OLLAMA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
 } from "./constants.js";
@@ -24,6 +26,8 @@ export function sanitizeDiagnosticText(value: string): string {
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    OLLAMA_API_KEY_ENV_KEY,
+    LM_STUDIO_API_KEY_ENV_KEY,
     "LANGSMITH_API_KEY",
   ]) {
     const secret = process.env[key];

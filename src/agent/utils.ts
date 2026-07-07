@@ -8,6 +8,11 @@ import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
 } from "../fs-errors.js";
+import {
+  isPathIgnored,
+  loadOpenWikiIgnore,
+  type IgnoreRules,
+} from "../openwiki-ignore.js";
 import type {
   OpenWikiCommand,
   OpenWikiRunOptions,
@@ -68,6 +73,8 @@ export async function getUpdateNoopStatus(
     return { shouldSkip: false, reason: "missing current git head" };
   }
 
+  const ignoreRules = await loadOpenWikiIgnore(cwd);
+
   const status = await runGit(cwd, [
     "status",
     "--short",
@@ -77,7 +84,8 @@ export async function getUpdateNoopStatus(
     .split("\n")
     .map((line) => line.trimEnd())
     .filter(Boolean)
-    .filter((line) => !isUpdateMetadataStatusLine(line));
+    .filter((line) => !isUpdateMetadataStatusLine(line))
+    .filter((line) => !isIgnoredStatusLine(line, ignoreRules));
 
   if (meaningfulStatus.length > 0) {
     return { shouldSkip: false, reason: "worktree has changes" };
@@ -87,6 +95,7 @@ export async function getUpdateNoopStatus(
     const committedPaths = await getChangedPathsSinceLastUpdate(
       cwd,
       lastUpdate.gitHead,
+      ignoreRules,
     );
 
     if (
@@ -133,15 +142,17 @@ export async function writeLastUpdateMetadata(
 }
 
 /**
- * Hashes OpenWiki content, excluding run metadata, to detect real documentation changes.
+ * Hashes OpenWiki content, excluding run metadata and ignored paths,
+ * to detect real documentation changes.
  */
 export async function createOpenWikiContentSnapshot(
   cwd: string,
 ): Promise<OpenWikiContentSnapshot> {
   const openWikiDir = path.join(cwd, OPEN_WIKI_DIR);
+  const ignoreRules = await loadOpenWikiIgnore(cwd);
   const hash = createHash("sha256");
 
-  await addDirectoryToSnapshot(hash, openWikiDir, "");
+  await addDirectoryToSnapshot(hash, openWikiDir, "", ignoreRules);
 
   return hash.digest("hex");
 }
@@ -189,6 +200,7 @@ async function addDirectoryToSnapshot(
   hash: ReturnType<typeof createHash>,
   directory: string,
   relativeDirectory: string,
+  ignoreRules: IgnoreRules,
 ): Promise<void> {
   let entries: Dirent[];
 
@@ -214,12 +226,19 @@ async function addDirectoryToSnapshot(
     }
 
     if (entry.isDirectory()) {
+      if (isPathIgnored(relativePath, ignoreRules)) {
+        continue;
+      }
       hash.update(`dir:${relativePath}\0`);
-      await addDirectoryToSnapshot(hash, entryPath, relativePath);
+      await addDirectoryToSnapshot(hash, entryPath, relativePath, ignoreRules);
       continue;
     }
 
     if (!entry.isFile()) {
+      continue;
+    }
+
+    if (isPathIgnored(relativePath, ignoreRules)) {
       continue;
     }
 
@@ -369,16 +388,42 @@ function isUpdateMetadataStatusLine(line: string): boolean {
   );
 }
 
+/**
+ * True when a git status --short line refers to a path matching the
+ * active .openwikiignore rules. Directory-only patterns (trailing `/`)
+ * are matched via ancestor-path propagation, so files inside an ignored
+ * directory are properly filtered.
+ */
+function isIgnoredStatusLine(line: string, rules: IgnoreRules): boolean {
+  const statusPath = line.length > 3 ? line.slice(3).trim() : line.trim();
+  const normalizedPath = normalizeGitPath(statusPath);
+
+  if (normalizedPath.length === 0) {
+    return false;
+  }
+
+  // Strip rename-arrow suffixes: "from -> to"
+  const arrowIndex = normalizedPath.indexOf(" -> ");
+  const singlePath =
+    arrowIndex === -1
+      ? normalizedPath
+      : normalizedPath.slice(arrowIndex + 4);
+
+  return isPathIgnored(singlePath, rules);
+}
+
 async function getChangedPathsSinceLastUpdate(
   cwd: string,
   gitHead: string,
+  ignoreRules: IgnoreRules = [],
 ): Promise<string[]> {
   const diff = await runGit(cwd, ["diff", "--name-only", `${gitHead}..HEAD`]);
 
   return diff
     .split("\n")
     .map((line) => normalizeGitPath(line))
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((changedPath) => !isPathIgnored(changedPath, ignoreRules));
 }
 
 function isOpenWikiPath(changedPath: string): boolean {

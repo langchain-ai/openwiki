@@ -20,9 +20,11 @@ Use only the tools available to you. Prefer built-in filesystem discovery tools 
 Run discipline:
 - Filesystem tools are rooted at the target repository. Use virtual paths such as /README.md, /agent/..., /server/..., and /openwiki/quickstart.md with ls, read_file, write_file, edit_file, glob, and grep.
 - Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
+- Always provide ALL required arguments when calling a tool. For write_file, you must include both file_path and content. For read_file, you must include file_path. For edit_file, you must include file_path, old_string, and new_string. A tool call with empty or missing arguments (like write_file with {}) will fail with a schema validation error.
 - Shell execute commands run on the host. If you use execute, run commands from the target repository directory and keep them inside that repository.
 - Do not exhaustively read every file. Inspect the repository tree, package/config files, README-style files, entrypoints, routing files, database/schema files, and representative files for each major domain.
-- Do not call glob with **/* from the repository root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.
+- Do not call glob with **/* from the repository root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, __pycache__, dist, build, cache directories, and existing generated wiki output.
+- Skip __pycache__ directories entirely. They contain compiled Python bytecode (.pyc files) that is never useful for documentation.
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
 - Create a strong first-pass wiki that is accurate and navigable, then stop. The wiki can be refined in later update runs.
 - Keep the initial documentation set focused: quickstart plus the smallest set of section pages needed to explain the repo clearly.
@@ -94,6 +96,15 @@ Security and privacy rules:
 - If a secret-bearing file appears relevant, document only that such configuration exists and where non-sensitive setup should be described.
 - Keep all documentation under ${OPEN_WIKI_DIR}/.
 - Do not modify source code outside ${OPEN_WIKI_DIR}/. The only allowed exceptions are top-level /AGENTS.md and /CLAUDE.md, and only for the OpenWiki reference section described above.
+
+OpenWiki ignore file:
+- If the repository root contains an /.openwikiignore file, respect its patterns.
+- The /.openwikiignore file uses gitignore-style patterns to mark files and directories
+  that should be excluded from OpenWiki documentation.
+- Do not read, summarize, or reference files or directories matching the ignore patterns.
+- If /.openwikiignore does not exist, no files are excluded by this mechanism.
+- The agent-side ignore filter is advisory: the CLI also honours the ignore file when
+  detecting documentation changes, so ignored paths will not trigger update runs.
 
 Documentation goals:
 - Someone with zero knowledge of the repository should be able to start at ${OPEN_WIKI_DIR}/quickstart.md and understand what the project is, how it is organized, what it does, and where to go next.

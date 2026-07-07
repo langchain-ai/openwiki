@@ -8,6 +8,10 @@ export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const OLLAMA_API_KEY_ENV_KEY = "OLLAMA_API_KEY";
+export const OLLAMA_BASE_URL_ENV_KEY = "OLLAMA_BASE_URL";
+export const LM_STUDIO_API_KEY_ENV_KEY = "LM_STUDIO_API_KEY";
+export const LM_STUDIO_BASE_URL_ENV_KEY = "LM_STUDIO_BASE_URL";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -17,6 +21,8 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
+  | "lm-studio"
+  | "ollama"
   | "openai"
   | "openai-compatible"
   | "openrouter";
@@ -41,6 +47,11 @@ type ProviderConfig = {
    * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
    */
   requiresBaseUrl?: boolean;
+  /**
+   * When true, the provider requires an API key to be set via
+   * {@link ProviderConfig.apiKeyEnvKey}. Defaults to true.
+   */
+  requiresApiKey?: boolean;
   label: string;
   modelOptions: ProviderModelOption[];
 };
@@ -50,10 +61,14 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "baseten",
   "fireworks",
   "openai",
-  "openai-compatible",
   "anthropic",
+  "ollama",
+  "lm-studio",
+  "openai-compatible",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
+// Ollama defaults: http://localhost:11434/v1 (OpenAI-compatible endpoint)
+// LM Studio defaults: http://localhost:1234/v1 (OpenAI-compatible endpoint)
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   baseten: {
     apiKeyEnvKey: BASETEN_API_KEY_ENV_KEY,
@@ -75,6 +90,22 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
         label: "Kimi K2.7 Code",
       },
     ],
+  },
+  "lm-studio": {
+    apiKeyEnvKey: LM_STUDIO_API_KEY_ENV_KEY,
+    baseURL: "http://localhost:1234/v1",
+    baseUrlEnvKey: LM_STUDIO_BASE_URL_ENV_KEY,
+    requiresApiKey: false,
+    label: "LM Studio",
+    modelOptions: [],
+  },
+  ollama: {
+    apiKeyEnvKey: OLLAMA_API_KEY_ENV_KEY,
+    baseURL: "http://localhost:11434/v1",
+    baseUrlEnvKey: OLLAMA_BASE_URL_ENV_KEY,
+    requiresApiKey: false,
+    label: "Ollama",
+    modelOptions: [],
   },
   openai: {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
@@ -238,4 +269,6 @@ export function isValidModelId(value: string): boolean {
   );
 }
 
+// Note: when changing this, also update the version in package.json.
+// Both should stay in sync to reflect the current release.
 export const OPENWIKI_VERSION = "0.0.1";

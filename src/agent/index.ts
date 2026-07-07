@@ -5,6 +5,10 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
+import { ToolMessage } from "@langchain/core/messages";
+import type { BaseMessage } from "@langchain/core/messages";
+import type { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
+import type { ChatResult, ChatGenerationChunk } from "@langchain/core/outputs";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
@@ -20,6 +24,7 @@ import {
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
+  getProviderConfig,
   getProviderLabel,
   isValidModelId,
   normalizeModelId,
@@ -233,20 +238,55 @@ async function runOpenWikiAgentCore(
   });
   emitDebug(options, "stream=started modes=messages,tools subgraphs=true");
 
+  let lastToolCallId: string | undefined;
+  let lastToolName: string | undefined;
   let unhandledChunkCount = 0;
 
-  for await (const chunk of stream) {
-    const event = parseStreamEvent(chunk);
+  try {
+    for await (const chunk of stream) {
+      const event = parseStreamEvent(chunk);
 
-    if (event) {
-      options.onEvent?.(event);
-    } else if (options.debug && unhandledChunkCount < 3) {
-      emitDebug(
-        options,
-        `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
-      );
-      unhandledChunkCount += 1;
+      // Track the most recently started tool so we can emit a targeted
+      // error event if the stream fails mid-execution.
+      if (event?.type === "tool_start") {
+        lastToolCallId = event.id;
+        lastToolName = event.name;
+      }
+
+      if (event) {
+        options.onEvent?.(event);
+      } else if (options.debug && unhandledChunkCount < 3) {
+        emitDebug(
+          options,
+          `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
+        );
+        unhandledChunkCount += 1;
+      }
     }
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+
+    emitDebug(options, `stream.error ${errorMessage}`);
+
+    // Emit a tool_end error event for the last tracked tool so the UI
+    // marks it as failed rather than leaving it spinning indefinitely.
+    if (lastToolCallId) {
+      options.onEvent?.({
+        type: "tool_end",
+        id: lastToolCallId,
+        name: lastToolName ?? "tool",
+        status: "error",
+      });
+    }
+
+    // Emit the error as text so the user sees what went wrong.
+    options.onEvent?.({
+      type: "text",
+      text: `\n\n**Tool execution error:** ${errorMessage}`,
+    });
+
+    throw error;
   }
   emitDebug(options, "stream=completed");
   await chmodIfExists(checkpointPath, 0o600);
@@ -364,6 +404,13 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
+  const config = getProviderConfig(provider);
+
+  // Local providers (Ollama, LM Studio) do not require API keys.
+  if (config.requiresApiKey === false) {
+    return;
+  }
+
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   if (!process.env[apiKeyEnvKey]) {
@@ -410,7 +457,7 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
     const baseURL = resolveProviderBaseUrl(provider);
 
-    return new ChatAnthropic(modelId, {
+    return new SafeDocumentChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
     });
@@ -430,8 +477,7 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
-
-  return new ChatOpenAI({
+  const baseConfig = {
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
     configuration: baseURL
       ? {
@@ -439,7 +485,330 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
         }
       : undefined,
     model: modelId,
-  });
+  };
+
+  // For OpenAI-compatible providers (openai-compatible, ollama, lm-studio),
+  // wrap ChatOpenAI with a subclass that strips non-text content blocks from
+  // tool messages. This prevents "raw file block leaks" that occur when
+  // LangChain wraps binary tool results in file content blocks that the
+  // OpenAI API rejects in tool role messages.
+  if (
+    provider === "openai-compatible" ||
+    provider === "ollama" ||
+    provider === "lm-studio"
+  ) {
+    return new SafeToolMessageChatOpenAI(baseConfig);
+  }
+
+  return new ChatOpenAI(baseConfig);
+}
+
+/**
+ * A ChatAnthropic subclass that sanitizes non-PDF file/document blocks
+ * from tool messages before they are sent to the Anthropic API.
+ *
+ * The Anthropic Messages API **only** accepts `application/pdf` as a valid
+ * media type for document blocks. When deepagents reads a file with an
+ * unknown extension (e.g. `Makefile`, `Dockerfile`, `uv.lock`), it defaults
+ * the MIME type to `application/octet-stream`. LangChain's Anthropic converter
+ * creates `{type: "document", source: {type: "base64", media_type: "application/octet-stream"}}`
+ * blocks from this, which the Anthropic API rejects with 400:
+ *   "media_type: Input should be 'application/pdf'"
+ *
+ * By replacing non-PDF file/document blocks in tool messages with a text
+ * description before they reach the converter, we prevent this crash while
+ * preserving PDF document support.
+ */
+class SafeDocumentChatAnthropic extends ChatAnthropic {
+  /**
+   * Returns true for mime types the Anthropic API supports in document blocks:
+   * PDF, or empty/undefined (which defaults to PDF).
+   */
+  private static _isAllowedAnthropicDocumentMimeType(
+    mimeType: string | undefined | null,
+  ): boolean {
+    return (
+      !mimeType ||
+      mimeType === "application/pdf" ||
+      mimeType.startsWith("image/")
+    );
+  }
+
+  /**
+   * Checks if a content block is a file/document block that would fail the
+   * Anthropic API.
+   */
+  private static _isUnsupportedAnthropicFileBlock(
+    block: unknown,
+  ): boolean {
+    if (typeof block !== "object" || block === null) return false;
+
+    // Data content block (LangChain internal format via isDataContentBlock)
+    if (
+      "source_type" in block &&
+      block.source_type === "base64" &&
+      "mime_type" in block
+    ) {
+      return !SafeDocumentChatAnthropic._isAllowedAnthropicDocumentMimeType(
+        typeof block.mime_type === "string" ? block.mime_type : undefined,
+      );
+    }
+
+    if (!("type" in block)) return false;
+
+    // File content block (OpenAI-compatible format used by deepagents)
+    if (block.type === "file") {
+      const mimeType =
+        "mimeType" in block && typeof block.mimeType === "string"
+          ? block.mimeType
+          : "mime_type" in block && typeof block.mime_type === "string"
+            ? block.mime_type
+            : undefined;
+
+      return !SafeDocumentChatAnthropic._isAllowedAnthropicDocumentMimeType(
+        mimeType,
+      );
+    }
+
+    // Document block already in Anthropic format
+    if (
+      block.type === "document" &&
+      "source" in block &&
+      typeof block.source === "object" &&
+      block.source !== null
+    ) {
+      const source = block.source as Record<string, unknown>;
+
+      if (source.type === "base64") {
+        const mediaType =
+          "media_type" in source && typeof source.media_type === "string"
+            ? source.media_type
+            : undefined;
+
+        return !SafeDocumentChatAnthropic._isAllowedAnthropicDocumentMimeType(
+          mediaType,
+        );
+      }
+
+      if (source.type === "text") {
+        const mediaType =
+          "media_type" in source && typeof source.media_type === "string"
+            ? source.media_type
+            : undefined;
+
+        return (
+          mediaType !== undefined &&
+          mediaType !== "" &&
+          mediaType !== "text/plain"
+        );
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Strips or replaces non-PDF file/document content blocks from tool
+   * messages so they pass Anthropic API validation.
+   */
+  private _sanitizeToolMessages(
+    messages: BaseMessage[],
+  ): BaseMessage[] {
+    return messages.map((msg) => {
+      if (!ToolMessage.isInstance(msg)) return msg;
+
+      const content = msg.content;
+      if (typeof content === "string" || !Array.isArray(content)) {
+        return msg;
+      }
+
+      const hasUnsupportedBlock = content.some((block) =>
+        SafeDocumentChatAnthropic._isUnsupportedAnthropicFileBlock(block),
+      );
+
+      if (!hasUnsupportedBlock) return msg;
+
+      const sanitizedContent = content.map((block) => {
+        if (
+          SafeDocumentChatAnthropic._isUnsupportedAnthropicFileBlock(block)
+        ) {
+          const mimeType = _extractUnsupportedMimeType(block);
+
+          return {
+            type: "text",
+            text: `[Binary file content omitted — Anthropic only supports PDF document blocks (received: ${mimeType})]`,
+          };
+        }
+
+        return block;
+      });
+
+      return new ToolMessage({
+        content: sanitizedContent,
+        tool_call_id: msg.tool_call_id,
+        name: msg.name,
+        status: msg.status,
+        additional_kwargs: msg.additional_kwargs,
+        response_metadata: msg.response_metadata,
+        id: msg.id,
+      });
+    });
+  }
+
+  override async _generate(
+    messages: BaseMessage[],
+    options: this["ParsedCallOptions"],
+    runManager?: CallbackManagerForLLMRun,
+  ): Promise<ChatResult> {
+    return super._generate(
+      this._sanitizeToolMessages(messages),
+      options,
+      runManager,
+    );
+  }
+
+  override async *_streamResponseChunks(
+    messages: BaseMessage[],
+    options: this["ParsedCallOptions"],
+    runManager?: CallbackManagerForLLMRun,
+  ): AsyncGenerator<ChatGenerationChunk> {
+    yield* super._streamResponseChunks(
+      this._sanitizeToolMessages(messages),
+      options,
+      runManager,
+    );
+  }
+}
+
+/**
+ * A ChatOpenAI subclass that strips non-text content blocks from tool messages
+ * before they are serialized for the API.
+ *
+ * LangChain's ChatOpenAI converter (non-v1 path) converts data content blocks
+ * (e.g., file blocks) via `completionsApiContentBlockConverter.fromStandardFileBlock`,
+ * producing `{type: "file", file: {file_data: "data:...,base64,...", filename: "..."}}`
+ * parts inside tool messages. The OpenAI Chat Completions API rejects non-text
+ * content in tool role messages, which breaks proxies like LiteLLM/Bedrock with
+ * errors like "BadRequestError: file_data and file_id cannot both be None".
+ *
+ * By filtering tool message content to only text blocks before messages reach
+ * the converter, we prevent this leak while preserving all other functionality.
+ */
+class SafeToolMessageChatOpenAI extends ChatOpenAI {
+  /**
+   * Strips non-text content blocks from tool messages.
+   * Shared between _generate and _streamResponseChunks overrides.
+   */
+  private _sanitizeToolMessages(
+    messages: BaseMessage[],
+  ): BaseMessage[] {
+    return messages.map((msg) => {
+      if (!ToolMessage.isInstance(msg)) {
+        return msg;
+      }
+
+      const content = msg.content;
+
+      // If content is already a string, nothing to fix
+      if (typeof content === "string") {
+        return msg;
+      }
+
+      // content is an array of content blocks — keep only text blocks
+      if (Array.isArray(content)) {
+        const textBlocks = content.filter(
+          (block) =>
+            typeof block === "object" &&
+            block !== null &&
+            "type" in block &&
+            block.type === "text",
+        );
+        const textContent = textBlocks
+          .map((block) =>
+            typeof block === "object" &&
+            block !== null &&
+            "text" in block &&
+            typeof block.text === "string"
+              ? block.text
+              : "",
+          )
+          .join("\n");
+
+        return new ToolMessage({
+          content: textContent || "",
+          tool_call_id: msg.tool_call_id,
+          name: msg.name,
+          status: msg.status,
+          additional_kwargs: msg.additional_kwargs,
+          response_metadata: msg.response_metadata,
+          id: msg.id,
+        });
+      }
+
+      return msg;
+    });
+  }
+
+  override async _generate(
+    messages: BaseMessage[],
+    options: this["ParsedCallOptions"],
+    runManager?: CallbackManagerForLLMRun,
+  ): Promise<ChatResult> {
+    return super._generate(
+      this._sanitizeToolMessages(messages),
+      options,
+      runManager,
+    );
+  }
+
+  override async *_streamResponseChunks(
+    messages: BaseMessage[],
+    options: this["ParsedCallOptions"],
+    runManager?: CallbackManagerForLLMRun,
+  ): AsyncGenerator<ChatGenerationChunk> {
+    yield* super._streamResponseChunks(
+      this._sanitizeToolMessages(messages),
+      options,
+      runManager,
+    );
+  }
+}
+
+/**
+ * Extracts the unsupported MIME type from a file/document block for error
+ * reporting. Returns "unknown" if the type cannot be determined.
+ */
+function _extractUnsupportedMimeType(block: Record<string, unknown>): string {
+  if (
+    "mimeType" in block &&
+    typeof block.mimeType === "string"
+  ) {
+    return block.mimeType;
+  }
+
+  if (
+    "mime_type" in block &&
+    typeof block.mime_type === "string"
+  ) {
+    return block.mime_type;
+  }
+
+  if (
+    "source" in block &&
+    typeof block.source === "object" &&
+    block.source !== null
+  ) {
+    const source = block.source as Record<string, unknown>;
+
+    if (
+      "media_type" in source &&
+      typeof source.media_type === "string"
+    ) {
+      return source.media_type;
+    }
+  }
+
+  return "unknown";
 }
 
 function createModelRoute(

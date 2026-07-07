@@ -1503,9 +1503,10 @@ function ChatInput({
     const provider = normalizeProvider(rawProvider);
 
     if (provider === null) {
-      setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
-      );
+      const validProviders = SELECTABLE_OPENWIKI_PROVIDERS.map(
+        (p) => getProviderLabel(p).toLowerCase(),
+      ).join(", ");
+      setError(`Enter a valid provider: ${validProviders}.`);
       return;
     }
 
@@ -2566,7 +2567,7 @@ function truncateToDisplayLines(
 }
 
 function formatCwd(cwd: string): string {
-  const home = process.env.HOME;
+  const home = process.env.HOME ?? process.env.USERPROFILE;
 
   if (home && cwd.startsWith(home)) {
     return `~${cwd.slice(home.length)}`;
