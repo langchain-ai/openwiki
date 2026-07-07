@@ -523,4 +523,116 @@ describe("parseCommand — cron", () => {
     const result = parseCommand(["cron", "pause", "all", "extra"]);
     expect(result.kind).toBe("error");
   });
+
+
+});
+
+describe("parseCommand — config", () => {
+  test("config list works with default, list, show subcommands", () => {
+    expect(parseCommand(["config"])).toEqual({
+      kind: "config",
+      exitCode: 0,
+      action: { type: "list" },
+    });
+
+    expect(parseCommand(["config", "list"])).toEqual({
+      kind: "config",
+      exitCode: 0,
+      action: { type: "list" },
+    });
+
+    expect(parseCommand(["config", "show"])).toEqual({
+      kind: "config",
+      exitCode: 0,
+      action: { type: "list" },
+    });
+  });
+
+  test("config set works with valid key and value", () => {
+    expect(
+      parseCommand([
+        "config",
+        "set",
+        "OPENAI_COMPATIBLE_API_KEY",
+        "sk-new-key",
+      ]),
+    ).toEqual({
+      kind: "config",
+      exitCode: 0,
+      action: {
+        type: "set",
+        key: "OPENAI_COMPATIBLE_API_KEY",
+        value: "sk-new-key",
+      },
+    });
+
+    expect(
+      parseCommand([
+        "config",
+        "set",
+        "openai_compatible_api_key",
+        "sk-new-key",
+      ]),
+    ).toEqual({
+      kind: "config",
+      exitCode: 0,
+      action: {
+        type: "set",
+        key: "OPENAI_COMPATIBLE_API_KEY",
+        value: "sk-new-key",
+      },
+    });
+  });
+
+  test("config set fails on invalid key or missing value", () => {
+    // Missing key
+    expect(parseCommand(["config", "set"]).kind).toBe("error");
+    // Invalid key
+    expect(parseCommand(["config", "set", "INVALID_KEY", "val"]).kind).toBe(
+      "error",
+    );
+    // Missing value
+    expect(
+      parseCommand(["config", "set", "OPENAI_COMPATIBLE_API_KEY"]).kind,
+    ).toBe("error");
+  });
+
+  test("config delete works with delete, unset, remove subcommands", () => {
+    expect(
+      parseCommand(["config", "delete", "OPENAI_COMPATIBLE_API_KEY"]),
+    ).toEqual({
+      kind: "config",
+      exitCode: 0,
+      action: { type: "delete", key: "OPENAI_COMPATIBLE_API_KEY" },
+    });
+
+    expect(
+      parseCommand(["config", "unset", "openai_compatible_api_key"]),
+    ).toEqual({
+      kind: "config",
+      exitCode: 0,
+      action: { type: "delete", key: "OPENAI_COMPATIBLE_API_KEY" },
+    });
+
+    expect(
+      parseCommand(["config", "remove", "openai_compatible_api_key"]),
+    ).toEqual({
+      kind: "config",
+      exitCode: 0,
+      action: { type: "delete", key: "OPENAI_COMPATIBLE_API_KEY" },
+    });
+  });
+
+  test("config delete fails on invalid or missing key", () => {
+    // Missing key
+    expect(parseCommand(["config", "delete"]).kind).toBe("error");
+    // Invalid key
+    expect(parseCommand(["config", "delete", "INVALID_KEY"]).kind).toBe(
+      "error",
+    );
+  });
+
+  test("unknown config subcommand fails", () => {
+    expect(parseCommand(["config", "unknown"]).kind).toBe("error");
+  });
 });
