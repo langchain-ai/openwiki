@@ -5,7 +5,8 @@ export type ConnectorId =
   | "notion"
   | "slack"
   | "web-search"
-  | "x";
+  | "x"
+  | "langsmith";
 
 export type ConnectorBackend =
   "direct-api" | "local-git" | "mcp-http" | "mcp-stdio";
