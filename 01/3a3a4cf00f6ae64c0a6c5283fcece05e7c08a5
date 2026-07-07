@@ -1,0 +1,27 @@
+openwiki/agent/workflow.md
+  s_2859e30e668c29::t_59837a888c3bb5 27-29
+  s_2859e30e668c29::t_e56e0b16a6fd76 77,79-81
+src/agent/index.ts
+  s_2859e30e668c29::t_d46162bac0944b 345
+openwiki/architecture/overview.md
+  s_2859e30e668c29::t_51a481a6f9395b 67
+  s_2859e30e668c29::t_b71536783cee9a 44-46
+openwiki/cli/usage.md
+  s_2859e30e668c29::t_f4ad76ffab46b3 107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "013a3a4cf00f6ae64c0a6c5283fcece05e7c08a5",
+  "prompts": {},
+  "sessions": {
+    "s_2859e30e668c29": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3ede-685b-72b1-a56d-01cf16ae4eed",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
