@@ -73,9 +73,7 @@ describe("isPathIgnored", () => {
 
   test("ignores a file inside a directory-only pattern", () => {
     // node_modules/ is directory-only — files inside it are also ignored
-    expect(
-      isPathIgnored("node_modules/something.js", basicRules),
-    ).toBe(true);
+    expect(isPathIgnored("node_modules/something.js", basicRules)).toBe(true);
   });
 
   test("negation re-includes an otherwise ignored path", () => {

@@ -17,10 +17,7 @@ export const OPENWIKI_IGNORE_FILENAME = ".openwikiignore";
  * - `__pycache__/`: Python compiled bytecode caches (.pyc files)
  * - `*.pyc`: Standalone Python compiled bytecode files
  */
-export const DEFAULT_IGNORE_PATTERNS: string[] = [
-  "__pycache__/",
-  "*.pyc",
-];
+export const DEFAULT_IGNORE_PATTERNS: string[] = ["__pycache__/", "*.pyc"];
 
 /**
  * A compiled ignore rule: a pattern converted to a RegExp with optional negation.
@@ -221,7 +218,11 @@ function compileGlobToRegex(pattern: string): RegExp {
       continue;
     }
 
-    if (char === "*" && working[i + 1] === "*" && working[i + 2] === undefined) {
+    if (
+      char === "*" &&
+      working[i + 1] === "*" &&
+      working[i + 2] === undefined
+    ) {
       // Trailing ** matches everything including /
       regexStr += ".*";
       i += 2;

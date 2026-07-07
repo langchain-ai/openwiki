@@ -264,8 +264,7 @@ async function runOpenWikiAgentCore(
       }
     }
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     emitDebug(options, `stream.error ${errorMessage}`);
 
@@ -538,9 +537,7 @@ class SafeDocumentChatAnthropic extends ChatAnthropic {
    * Checks if a content block is a file/document block that would fail the
    * Anthropic API.
    */
-  private static _isUnsupportedAnthropicFileBlock(
-    block: unknown,
-  ): boolean {
+  private static _isUnsupportedAnthropicFileBlock(block: unknown): boolean {
     if (typeof block !== "object" || block === null) return false;
 
     // Data content block (LangChain internal format via isDataContentBlock)
@@ -611,9 +608,7 @@ class SafeDocumentChatAnthropic extends ChatAnthropic {
    * Strips or replaces non-PDF file/document content blocks from tool
    * messages so they pass Anthropic API validation.
    */
-  private _sanitizeToolMessages(
-    messages: BaseMessage[],
-  ): BaseMessage[] {
+  private _sanitizeToolMessages(messages: BaseMessage[]): BaseMessage[] {
     return messages.map((msg) => {
       if (!ToolMessage.isInstance(msg)) return msg;
 
@@ -629,9 +624,7 @@ class SafeDocumentChatAnthropic extends ChatAnthropic {
       if (!hasUnsupportedBlock) return msg;
 
       const sanitizedContent = content.map((block) => {
-        if (
-          SafeDocumentChatAnthropic._isUnsupportedAnthropicFileBlock(block)
-        ) {
+        if (SafeDocumentChatAnthropic._isUnsupportedAnthropicFileBlock(block)) {
           const mimeType = _extractUnsupportedMimeType(block);
 
           return {
@@ -699,9 +692,7 @@ class SafeToolMessageChatOpenAI extends ChatOpenAI {
    * Strips non-text content blocks from tool messages.
    * Shared between _generate and _streamResponseChunks overrides.
    */
-  private _sanitizeToolMessages(
-    messages: BaseMessage[],
-  ): BaseMessage[] {
+  private _sanitizeToolMessages(messages: BaseMessage[]): BaseMessage[] {
     return messages.map((msg) => {
       if (!ToolMessage.isInstance(msg)) {
         return msg;
@@ -779,17 +770,11 @@ class SafeToolMessageChatOpenAI extends ChatOpenAI {
  * reporting. Returns "unknown" if the type cannot be determined.
  */
 function _extractUnsupportedMimeType(block: Record<string, unknown>): string {
-  if (
-    "mimeType" in block &&
-    typeof block.mimeType === "string"
-  ) {
+  if ("mimeType" in block && typeof block.mimeType === "string") {
     return block.mimeType;
   }
 
-  if (
-    "mime_type" in block &&
-    typeof block.mime_type === "string"
-  ) {
+  if ("mime_type" in block && typeof block.mime_type === "string") {
     return block.mime_type;
   }
 
@@ -800,10 +785,7 @@ function _extractUnsupportedMimeType(block: Record<string, unknown>): string {
   ) {
     const source = block.source as Record<string, unknown>;
 
-    if (
-      "media_type" in source &&
-      typeof source.media_type === "string"
-    ) {
+    if ("media_type" in source && typeof source.media_type === "string") {
       return source.media_type;
     }
   }

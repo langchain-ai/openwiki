@@ -1503,8 +1503,8 @@ function ChatInput({
     const provider = normalizeProvider(rawProvider);
 
     if (provider === null) {
-      const validProviders = SELECTABLE_OPENWIKI_PROVIDERS.map(
-        (p) => getProviderLabel(p).toLowerCase(),
+      const validProviders = SELECTABLE_OPENWIKI_PROVIDERS.map((p) =>
+        getProviderLabel(p).toLowerCase(),
       ).join(", ");
       setError(`Enter a valid provider: ${validProviders}.`);
       return;

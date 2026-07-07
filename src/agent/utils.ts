@@ -405,9 +405,7 @@ function isIgnoredStatusLine(line: string, rules: IgnoreRules): boolean {
   // Strip rename-arrow suffixes: "from -> to"
   const arrowIndex = normalizedPath.indexOf(" -> ");
   const singlePath =
-    arrowIndex === -1
-      ? normalizedPath
-      : normalizedPath.slice(arrowIndex + 4);
+    arrowIndex === -1 ? normalizedPath : normalizedPath.slice(arrowIndex + 4);
 
   return isPathIgnored(singlePath, rules);
 }
