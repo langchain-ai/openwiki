@@ -40,6 +40,9 @@ describe("parseEnv", () => {
     expect(parseEnv("OPENWIKI_MODEL_ID=gpt-5.5\n")).toEqual({
       OPENWIKI_MODEL_ID: "gpt-5.5",
     });
+    expect(parseEnv("OPENWIKI_DOCS_DIR=docs/openwiki\n")).toEqual({
+      OPENWIKI_DOCS_DIR: "docs/openwiki",
+    });
   });
 });
 
@@ -56,6 +59,7 @@ describe("formatEnv", () => {
       ZZZ_CUSTOM: "z",
       AAA_CUSTOM: "a",
       OPENWIKI_PROVIDER: "anthropic",
+      OPENWIKI_DOCS_DIR: "docs/openwiki",
       ANTHROPIC_API_KEY: "k",
     });
     const keys = formatted
@@ -68,6 +72,7 @@ describe("formatEnv", () => {
     expect(keys).toEqual([
       "ANTHROPIC_API_KEY",
       "OPENWIKI_PROVIDER",
+      "OPENWIKI_DOCS_DIR",
       "AAA_CUSTOM",
       "ZZZ_CUSTOM",
     ]);
@@ -80,6 +85,7 @@ describe("parseEnv <-> formatEnv round-trip", () => {
       OPENAI_API_KEY: 'weird "value" with\nnewline and \\ backslash',
       ANTHROPIC_BASE_URL: "https://gateway.example/anthropic",
       OPENWIKI_MODEL_ID: "claude-opus-4-8",
+      OPENWIKI_DOCS_DIR: "docs/openwiki",
     };
 
     expect(parseEnv(formatEnv(original))).toEqual(original);

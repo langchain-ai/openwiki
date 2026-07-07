@@ -3,7 +3,7 @@
 OpenWiki has two operational concerns that matter for both users and maintainers:
 
 1. local credential storage in `~/.openwiki/.env`, and
-2. persisted update metadata in `openwiki/.last-update.json`.
+2. persisted update metadata in the configured docs directory (`openwiki/.last-update.json` by default).
 
 It also ships with GitHub Actions and GitLab CI workflow examples for scheduled updates.
 
@@ -18,6 +18,7 @@ The file stores provider configuration and API keys:
 
 - `OPENWIKI_PROVIDER` — the selected model provider
 - `OPENWIKI_MODEL_ID` — the default model ID
+- `OPENWIKI_DOCS_DIR` — optional repository-relative docs directory, defaulting to `openwiki`
 - Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`
 - Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API) and `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint)
 - Optional LangSmith settings: `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`
@@ -57,18 +58,18 @@ The env layer also produces diagnostics for the CLI UI. Those diagnostics report
 - invalid model IDs,
 - invalid provider values.
 
-Diagnostics cover all six provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, and base URLs are shown in full).
+Diagnostics cover all six provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, `OPENWIKI_DOCS_DIR`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, docs directory, and base URLs are shown in full).
 
 ## Update metadata
 
-After successful `init` or `update` runs where the `openwiki/` content changed, `src/agent/utils.ts` writes `openwiki/.last-update.json` with:
+After successful `init` or `update` runs where docs content changed, `src/agent/utils.ts` writes `.last-update.json` inside the configured docs directory with:
 
 - `updatedAt`
 - `command`
 - `gitHead`
 - `model`
 
-The content-change check uses `createOpenWikiContentSnapshot()`, which hashes the `openwiki/` directory (excluding `.last-update.json`). If the hash is identical before and after the run, metadata is not written. This prevents scheduled update loops from updating the timestamp when no documentation changed.
+The content-change check uses `createOpenWikiContentSnapshot()`, which hashes the configured docs directory (excluding `.last-update.json`). If the hash is identical before and after the run, metadata is not written. This prevents scheduled update loops from updating the timestamp when no documentation changed.
 
 Update runs use this metadata to build a change summary since the previous successful OpenWiki execution — preferring `gitHead` for a precise commit range, falling back to `updatedAt` for a time-based range.
 
@@ -82,7 +83,7 @@ The repository includes `examples/openwiki-update.yml` as a copyable GitHub Acti
 - installs OpenWiki globally,
 - runs `openwiki --update --print`,
 - passes `OPENROUTER_API_KEY`, `OPENWIKI_MODEL_ID`, and `LANGSMITH_API_KEY` from GitHub secrets,
-- opens a pull request with `peter-evans/create-pull-request` scoped to the `openwiki` directory.
+- opens a pull request with `peter-evans/create-pull-request` scoped to `OPENWIKI_DOCS_DIR`, defaulting to the `openwiki` directory.
 
 The workflow is a good reference for automated maintenance. The repo also contains a `checks.yml` workflow for CI (lint/format checks).
 
@@ -91,8 +92,8 @@ The repository also includes `examples/openwiki-update.gitlab-ci.yml` as a copya
 - runs from a scheduled pipeline or a manually triggered web pipeline,
 - installs OpenWiki globally in a Node.js 22 container,
 - runs `openwiki --update --print`,
-- skips the rest of the job when `openwiki/` did not change,
-- commits changes to a generated `openwiki/update-$CI_PIPELINE_ID` branch,
+- skips the rest of the job when `OPENWIKI_DOCS_DIR` (default `openwiki/`) did not change,
+- commits docs changes to a generated `openwiki/update-$CI_PIPELINE_ID` branch,
 - pushes that branch back to the GitLab project, and
 - creates a merge request targeting the project's default branch through the GitLab API.
 

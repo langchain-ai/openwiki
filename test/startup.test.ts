@@ -10,6 +10,7 @@ import type { CliCommand } from "../src/commands.ts";
 const execFileAsync = promisify(execFile);
 const originalProvider = process.env.OPENWIKI_PROVIDER;
 const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
+const originalOpenWikiDocsDir = process.env.OPENWIKI_DOCS_DIR;
 
 async function git(cwd: string, args: string[]): Promise<string> {
   const { stdout } = await execFileAsync("git", args, { cwd });
@@ -66,6 +67,7 @@ function updatePrintCommand(
 beforeEach(() => {
   process.env.OPENWIKI_PROVIDER = "openrouter";
   delete process.env.OPENROUTER_API_KEY;
+  delete process.env.OPENWIKI_DOCS_DIR;
 });
 
 afterEach(() => {
@@ -75,9 +77,26 @@ afterEach(() => {
   if (originalOpenRouterKey === undefined)
     delete process.env.OPENROUTER_API_KEY;
   else process.env.OPENROUTER_API_KEY = originalOpenRouterKey;
+
+  if (originalOpenWikiDocsDir === undefined)
+    delete process.env.OPENWIKI_DOCS_DIR;
+  else process.env.OPENWIKI_DOCS_DIR = originalOpenWikiDocsDir;
 });
 
 describe("resolveStartupCommand", () => {
+  test("fails fast when OPENWIKI_DOCS_DIR is unsafe", async () => {
+    process.env.OPENWIKI_DOCS_DIR = "../openwiki";
+
+    const result = await resolveStartupCommand(updatePrintCommand(), {
+      isStdinTTY: false,
+    });
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toContain("OPENWIKI_DOCS_DIR");
+    }
+  });
+
   test("fails fast for non-TTY interactive chat without a message", async () => {
     const result = await resolveStartupCommand(
       {

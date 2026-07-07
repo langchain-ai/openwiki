@@ -3,7 +3,9 @@ import type { CliCommand } from "./commands.js";
 import {
   getProviderApiKeyEnvKey,
   resolveConfiguredProvider,
+  resolveOpenWikiDir,
 } from "./constants.js";
+import { getErrorMessage } from "./diagnostics.js";
 
 type ResolveStartupCommandOptions = {
   cwd?: string;
@@ -15,6 +17,18 @@ export async function resolveStartupCommand(
   options: ResolveStartupCommandOptions = {},
 ): Promise<CliCommand> {
   const isStdinTTY = options.isStdinTTY ?? Boolean(process.stdin.isTTY);
+
+  if (command.kind === "run") {
+    try {
+      resolveOpenWikiDir();
+    } catch (error) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: getErrorMessage(error),
+      };
+    }
+  }
 
   if (
     command.kind === "run" &&

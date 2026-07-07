@@ -3,7 +3,11 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
+import {
+  getUpdateMetadataPath,
+  resolveOpenWikiDir,
+  UPDATE_METADATA_FILE,
+} from "../constants.js";
 import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
@@ -37,8 +41,9 @@ export type UpdateNoopStatus =
 export async function createRunContext(
   command: OpenWikiCommand,
   cwd: string,
+  openWikiDir = resolveOpenWikiDir(),
 ): Promise<RunContext> {
-  const lastUpdate = await readLastUpdate(cwd);
+  const lastUpdate = await readLastUpdate(cwd, openWikiDir);
 
   if (command === "chat") {
     return {
@@ -55,8 +60,9 @@ export async function createRunContext(
 
 export async function getUpdateNoopStatus(
   cwd: string,
+  openWikiDir = resolveOpenWikiDir(),
 ): Promise<UpdateNoopStatus> {
-  const lastUpdate = await readLastUpdate(cwd);
+  const lastUpdate = await readLastUpdate(cwd, openWikiDir);
 
   if (!lastUpdate?.gitHead) {
     return { shouldSkip: false, reason: "missing previous update git head" };
@@ -77,7 +83,7 @@ export async function getUpdateNoopStatus(
     .split("\n")
     .map((line) => line.trimEnd())
     .filter(Boolean)
-    .filter((line) => !isUpdateMetadataStatusLine(line));
+    .filter((line) => !isUpdateMetadataStatusLine(line, openWikiDir));
 
   if (meaningfulStatus.length > 0) {
     return { shouldSkip: false, reason: "worktree has changes" };
@@ -91,7 +97,9 @@ export async function getUpdateNoopStatus(
 
     if (
       committedPaths.length === 0 ||
-      committedPaths.some((changedPath) => !isOpenWikiPath(changedPath))
+      committedPaths.some(
+        (changedPath) => !isOpenWikiPath(changedPath, openWikiDir),
+      )
     ) {
       return { shouldSkip: false, reason: "git head changed" };
     }
@@ -115,8 +123,9 @@ export async function writeLastUpdateMetadata(
   command: OpenWikiCommand,
   cwd: string,
   modelId: string,
+  openWikiDir = resolveOpenWikiDir(),
 ): Promise<void> {
-  const metadataFile = path.join(cwd, UPDATE_METADATA_PATH);
+  const metadataFile = path.join(cwd, getUpdateMetadataPath(openWikiDir));
   const metadata: UpdateMetadata = {
     updatedAt: new Date().toISOString(),
     command,
@@ -137,11 +146,12 @@ export async function writeLastUpdateMetadata(
  */
 export async function createOpenWikiContentSnapshot(
   cwd: string,
+  openWikiDir = resolveOpenWikiDir(),
 ): Promise<OpenWikiContentSnapshot> {
-  const openWikiDir = path.join(cwd, OPEN_WIKI_DIR);
+  const openWikiRoot = path.join(cwd, openWikiDir);
   const hash = createHash("sha256");
 
-  await addDirectoryToSnapshot(hash, openWikiDir, "");
+  await addDirectoryToSnapshot(hash, openWikiRoot, "");
 
   return hash.digest("hex");
 }
@@ -149,8 +159,11 @@ export async function createOpenWikiContentSnapshot(
 /**
  * Reads prior run metadata if it exists and is structurally valid.
  */
-async function readLastUpdate(cwd: string): Promise<UpdateMetadata | null> {
-  const metadataFile = path.join(cwd, UPDATE_METADATA_PATH);
+async function readLastUpdate(
+  cwd: string,
+  openWikiDir: string,
+): Promise<UpdateMetadata | null> {
+  const metadataFile = path.join(cwd, getUpdateMetadataPath(openWikiDir));
 
   try {
     const rawMetadata = await readFile(metadataFile, "utf8");
@@ -207,9 +220,12 @@ async function addDirectoryToSnapshot(
     left.name.localeCompare(right.name),
   )) {
     const entryPath = path.join(directory, entry.name);
-    const relativePath = path.join(relativeDirectory, entry.name);
+    const relativePath =
+      relativeDirectory.length > 0
+        ? `${relativeDirectory}/${entry.name}`
+        : entry.name;
 
-    if (relativePath === path.basename(UPDATE_METADATA_PATH)) {
+    if (relativePath === UPDATE_METADATA_FILE) {
       continue;
     }
 
@@ -359,13 +375,17 @@ function formatGitSection(command: string, output: string): string {
   );
 }
 
-function isUpdateMetadataStatusLine(line: string): boolean {
+function isUpdateMetadataStatusLine(
+  line: string,
+  openWikiDir: string,
+): boolean {
   const statusPath = line.length > 3 ? line.slice(3).trim() : line.trim();
   const normalizedPath = statusPath.replace(/\\/gu, "/");
+  const metadataPath = getUpdateMetadataPath(openWikiDir);
 
   return (
-    normalizedPath === UPDATE_METADATA_PATH ||
-    normalizedPath.endsWith(` -> ${UPDATE_METADATA_PATH}`)
+    normalizedPath === metadataPath ||
+    normalizedPath.endsWith(` -> ${metadataPath}`)
   );
 }
 
@@ -381,9 +401,9 @@ async function getChangedPathsSinceLastUpdate(
     .filter(Boolean);
 }
 
-function isOpenWikiPath(changedPath: string): boolean {
+function isOpenWikiPath(changedPath: string, openWikiDir: string): boolean {
   return (
-    changedPath === OPEN_WIKI_DIR || changedPath.startsWith(`${OPEN_WIKI_DIR}/`)
+    changedPath === openWikiDir || changedPath.startsWith(`${openWikiDir}/`)
   );
 }
 

@@ -1,5 +1,9 @@
+import path from "node:path";
+
 export const OPEN_WIKI_DIR = "openwiki";
-export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
+export const OPENWIKI_DOCS_DIR_ENV_KEY = "OPENWIKI_DOCS_DIR";
+export const UPDATE_METADATA_FILE = ".last-update.json";
+export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/${UPDATE_METADATA_FILE}`;
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
@@ -218,6 +222,69 @@ export function resolveConfiguredProvider(
   );
 }
 
+export function resolveOpenWikiDir(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const configuredDir = env[OPENWIKI_DOCS_DIR_ENV_KEY];
+
+  if (configuredDir === undefined || configuredDir.trim().length === 0) {
+    return OPEN_WIKI_DIR;
+  }
+
+  return normalizeOpenWikiDir(configuredDir);
+}
+
+export function normalizeOpenWikiDir(value: string): string {
+  const trimmed = value.trim();
+  const withForwardSlashes = trimmed.replace(/\\/gu, "/");
+
+  if (
+    trimmed.length === 0 ||
+    trimmed.includes("\0") ||
+    path.posix.isAbsolute(withForwardSlashes) ||
+    path.win32.isAbsolute(trimmed)
+  ) {
+    throw createOpenWikiDirError();
+  }
+
+  const normalized = path.posix
+    .normalize(withForwardSlashes)
+    .replace(/\/+$/u, "");
+
+  if (
+    normalized === "." ||
+    normalized === ".." ||
+    normalized.startsWith("../")
+  ) {
+    throw createOpenWikiDirError();
+  }
+
+  const hasUnsafeSegment = normalized
+    .split("/")
+    .some((segment) => !/^[A-Za-z0-9._-]+$/u.test(segment));
+
+  if (hasUnsafeSegment) {
+    throw createOpenWikiDirError();
+  }
+
+  return normalized;
+}
+
+export function isValidOpenWikiDir(value: string): boolean {
+  try {
+    normalizeOpenWikiDir(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getUpdateMetadataPath(
+  openWikiDir = resolveOpenWikiDir(),
+): string {
+  return `${openWikiDir}/${UPDATE_METADATA_FILE}`;
+}
+
 export function normalizeModelId(value: string): string {
   return value.trim();
 }
@@ -234,3 +301,11 @@ export function isValidModelId(value: string): boolean {
 }
 
 export const OPENWIKI_VERSION = "0.0.4";
+
+function createOpenWikiDirError(): Error {
+  return new Error(
+    `${OPENWIKI_DOCS_DIR_ENV_KEY} must be a repo-relative directory such as ` +
+      `"openwiki" or "docs/openwiki"; absolute paths, unsafe characters, and ` +
+      "paths that escape the repository are not allowed.",
+  );
+}
