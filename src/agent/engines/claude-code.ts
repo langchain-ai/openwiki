@@ -106,7 +106,7 @@ export const claudeCodeAdapter: AgentCliAdapter = {
             ? undefined
             : typeof line.result === "string" && line.result.length > 0
               ? line.result
-              : `Claude Code run ended with ${String(line.subtype ?? "an unknown error")}.`,
+              : `Claude Code run ended with ${typeof line.subtype === "string" ? line.subtype : "an unknown error"}.`,
         },
       ];
     }

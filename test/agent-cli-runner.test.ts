@@ -165,7 +165,7 @@ setTimeout(() => {
 `;
 }
 
-async function isProcessAlive(pid: number): Promise<boolean> {
+function isProcessAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;
@@ -181,14 +181,14 @@ async function waitForProcessExit(
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
-    if (!(await isProcessAlive(pid))) {
+    if (!isProcessAlive(pid)) {
       return true;
     }
 
     await delay(50);
   }
 
-  return !(await isProcessAlive(pid));
+  return !isProcessAlive(pid);
 }
 
 const baseSpec: EngineRunSpec = {
