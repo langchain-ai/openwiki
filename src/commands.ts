@@ -48,6 +48,7 @@ export function parseCommand(argv: string[]): CliCommand {
   let dryRun = false;
   let modelId: string | null = null;
   let print = false;
+  let configSeen = false;
   let command: OpenWikiCommand = "chat";
   const userMessageParts: string[] = [];
 
@@ -92,11 +93,8 @@ export function parseCommand(argv: string[]): CliCommand {
     }
 
     if (arg === "--config") {
-      return {
-        kind: "config",
-        exitCode: 0,
-        modelId,
-      };
+      configSeen = true;
+      continue;
     }
 
     if (arg === "--modelId" || arg === "--model-id") {
@@ -155,6 +153,24 @@ export function parseCommand(argv: string[]): CliCommand {
   const userMessage =
     userMessageParts.length > 0 ? userMessageParts.join(" ") : null;
   const shouldStart = command !== "chat" || userMessage !== null;
+
+  if (configSeen) {
+    if (command !== "chat") {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: "--config cannot be combined with --init or --update.",
+      };
+    }
+    if (userMessage !== null) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: "--config does not accept a message prompt.",
+      };
+    }
+    return { kind: "config", exitCode: 0, modelId };
+  }
 
   if (print && !shouldStart) {
     return {
