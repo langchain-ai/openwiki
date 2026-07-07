@@ -205,7 +205,16 @@ export function normalizeProvider(
     return null;
   }
 
-  const provider = value.trim().toLowerCase();
+  let provider = value.trim();
+  
+  if (
+    (provider.startsWith('"') && provider.endsWith('"')) ||
+    (provider.startsWith("'") && provider.endsWith("'"))
+  ) {
+    provider = provider.slice(1, -1).trim();
+  }
+  
+  provider = provider.toLowerCase();
 
   return isValidProvider(provider) ? provider : null;
 }
