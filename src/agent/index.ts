@@ -395,6 +395,15 @@ function resolveModelId(
     options.modelId ??
     process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
     getDefaultModelId(provider);
+
+  if (!rawModelId) {
+    throw new Error(
+      `${OPENWIKI_MODEL_ID_ENV_KEY} is required to run OpenWiki with ${getProviderLabel(
+        provider,
+      )}. Use --modelId <id> or set ${OPENWIKI_MODEL_ID_ENV_KEY}.`,
+    );
+  }
+
   const modelId = normalizeModelId(rawModelId);
 
   if (!isValidModelId(modelId)) {

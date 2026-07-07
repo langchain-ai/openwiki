@@ -194,8 +194,8 @@ export function getProviderModelOptions(
   return getProviderConfig(provider).modelOptions;
 }
 
-export function getDefaultModelId(provider: OpenWikiProvider): string {
-  return getProviderModelOptions(provider)[0]?.id ?? DEFAULT_MODEL_ID;
+export function getDefaultModelId(provider: OpenWikiProvider): string | null {
+  return getProviderModelOptions(provider)[0]?.id ?? null;
 }
 
 export function normalizeProvider(

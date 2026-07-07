@@ -88,7 +88,8 @@ export function InitSetup({
       initialProvider,
       modelIdOverride ??
         process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
-        getDefaultModelId(initialProvider),
+        getDefaultModelId(initialProvider) ??
+        "",
     ),
   );
   const [isCustomModelInput, setIsCustomModelInput] = useState(false);
@@ -119,7 +120,8 @@ export function InitSetup({
         initialProvider,
         modelIdOverride ??
           process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
-          getDefaultModelId(initialProvider),
+          getDefaultModelId(initialProvider) ??
+          "",
       ),
     );
     setIsCustomModelInput(
@@ -204,7 +206,7 @@ export function InitSetup({
       setModelSelectionIndex(
         getModelSelectionIndex(
           selectedProvider,
-          getDefaultModelId(selectedProvider),
+          getDefaultModelId(selectedProvider) ?? "",
         ),
       );
       setInput("");
@@ -832,7 +834,11 @@ function getModelSetupDetail(
     return process.env[OPENWIKI_MODEL_ID_ENV_KEY] ?? "";
   }
 
-  return `default ${getDefaultModelId(provider)}`;
+  const defaultModelId = getDefaultModelId(provider);
+
+  return defaultModelId
+    ? `default ${defaultModelId}`
+    : "custom model ID required";
 }
 
 type ModelSelectionOption =

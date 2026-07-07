@@ -21,6 +21,7 @@ export const openWikiEnvDir = path.join(os.homedir(), ".openwiki");
 export const openWikiEnvPath = path.join(openWikiEnvDir, ".env");
 
 type EnvMap = Record<string, string>;
+type EnvUpdates = Record<string, string | null | undefined>;
 
 export type CredentialDiagnostic = {
   key: string;
@@ -123,12 +124,17 @@ export async function getCredentialDiagnostics(): Promise<
   );
 }
 
-export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
+export async function saveOpenWikiEnv(updates: EnvUpdates): Promise<void> {
   const currentEnv = await readOpenWikiEnv();
-  const nextEnv = {
-    ...currentEnv,
-    ...updates,
-  };
+  const nextEnv = { ...currentEnv };
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (value === null || value === undefined) {
+      delete nextEnv[key];
+    } else {
+      nextEnv[key] = value;
+    }
+  }
 
   for (const key of deprecatedEnvKeys) {
     delete nextEnv[key];
@@ -147,7 +153,11 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
   await chmod(openWikiEnvPath, 0o600);
 
   for (const [key, value] of Object.entries(updates)) {
-    process.env[key] = value;
+    if (value === null || value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
   }
 }
 

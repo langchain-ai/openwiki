@@ -131,14 +131,7 @@ describe("getDefaultModelId", () => {
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
   });
 
-  test(
-    "openai-compatible has no presets, so it falls back to the global " +
-      "DEFAULT_MODEL_ID (a known cross-provider quirk documented here)",
-    () => {
-      // This asserts CURRENT behavior: openai-compatible has an empty
-      // modelOptions list, so getDefaultModelId yields an OpenRouter id.
-      // If this ever changes intentionally, update this test.
-      expect(getDefaultModelId("openai-compatible")).toBe(DEFAULT_MODEL_ID);
-    },
-  );
+  test("returns null when a provider has no preset default model", () => {
+    expect(getDefaultModelId("openai-compatible")).toBeNull();
+  });
 });

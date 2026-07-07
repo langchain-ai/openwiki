@@ -628,7 +628,8 @@ function DryRunView({
           label="Model"
           value={
             modelId ??
-            `saved setting or ${getDefaultModelId(resolveConfiguredProvider())}`
+            process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
+            `saved setting or ${getDefaultModelLabel(resolveConfiguredProvider())}`
           }
         />
         <StatusLine tone="muted" label="Agent" value="not invoked" />
@@ -711,7 +712,8 @@ function Header({
   const displayModelId = sanitizeHeaderValue(
     modelId ??
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
-      getDefaultModelId(resolveConfiguredProvider()),
+      getDefaultModelId(resolveConfiguredProvider()) ??
+      "custom model ID required",
     Math.max(8, terminalColumns - 12),
   );
   const displayProvider = getProviderLabel(resolveConfiguredProvider());
@@ -1504,7 +1506,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        "Enter a valid provider: openrouter, baseten, fireworks, openai, openai-compatible, or anthropic.",
       );
       return;
     }
@@ -1516,10 +1518,19 @@ function ChatInput({
     try {
       await onProviderSelect(provider);
       resetInput();
+      const defaultModelId = getDefaultModelId(provider);
       setNotice(
-        `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
-          provider,
-        )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
+        defaultModelId
+          ? `Provider switched to ${getProviderLabel(
+              provider,
+            )} with model ${defaultModelId}. Ensure ${getProviderApiKeyEnvKey(
+              provider,
+            )} is set.`
+          : `Provider switched to ${getProviderLabel(
+              provider,
+            )}. Set a custom model with /model <model-id> and ensure ${getProviderApiKeyEnvKey(
+              provider,
+            )} is set.`,
       );
     } catch (saveError) {
       setError(
@@ -1712,7 +1723,7 @@ function SlashMenu({
             description={
               provider === currentProvider
                 ? "current"
-                : `default model ${getDefaultModelId(provider)}`
+                : getProviderModelMenuDescription(provider)
             }
             isSelected={index === menuState.selectedIndex}
             key={provider}
@@ -2587,8 +2598,21 @@ function getDisplayModelId(modelId: string | null): string {
   return (
     modelId ??
     process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
-    getDefaultModelId(resolveConfiguredProvider())
+    getDefaultModelId(resolveConfiguredProvider()) ??
+    "custom model ID required"
   );
+}
+
+function getDefaultModelLabel(provider: OpenWikiProvider): string {
+  return getDefaultModelId(provider) ?? "custom model ID required";
+}
+
+function getProviderModelMenuDescription(provider: OpenWikiProvider): string {
+  const defaultModelId = getDefaultModelId(provider);
+
+  return defaultModelId
+    ? `default model ${defaultModelId}`
+    : "custom model ID required";
 }
 
 function getErrorDiagnostics(error: unknown): ErrorDiagnostic[] {
