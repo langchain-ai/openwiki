@@ -420,10 +420,17 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   if (provider === "bedrock") {
+    const thinkingOverride = bedrockThinkingOverride(modelId);
+
     return new ChatBedrockConverse({
       bedrockBearerToken: process.env[getProviderApiKeyEnvKey(provider)],
+      maxTokens: 64000,
       model: modelId,
       region: process.env[BEDROCK_REGION_ENV_KEY] ?? DEFAULT_BEDROCK_REGION,
+      streamIdleTimeout: 300000,
+      ...(thinkingOverride
+        ? { additionalModelRequestFields: thinkingOverride }
+        : {}),
     });
   }
 
@@ -451,6 +458,29 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
       : undefined,
     model: modelId,
   });
+}
+
+/**
+ * Disables extended thinking on Bedrock Claude models. Replaying assistant
+ * turns that contain reasoningContent blocks back to the Bedrock Converse API
+ * fails validation in @langchain/aws's history marshalling, which breaks
+ * multi-turn tool-calling loops; disabling thinking is the reliable
+ * workaround until that is fixed upstream. Models whose thinking is always on
+ * (Sonnet 5 and later) reject an explicit disable, so no override is sent for
+ * them or for non-Claude models.
+ */
+function bedrockThinkingOverride(
+  modelId: string,
+): { thinking: { type: "disabled" } } | undefined {
+  if (!modelId.includes("anthropic.claude")) {
+    return undefined;
+  }
+
+  if (/sonnet-5|opus-5|haiku-5|fable|mythos/u.test(modelId)) {
+    return undefined;
+  }
+
+  return { thinking: { type: "disabled" } };
 }
 
 function createModelRoute(
