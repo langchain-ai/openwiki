@@ -72,6 +72,24 @@ describe("formatEnv", () => {
       "ZZZ_CUSTOM",
     ]);
   });
+
+  test("orders the Bedrock AWS keys as managed keys, region before token", () => {
+    const formatted = formatEnv({
+      AWS_BEARER_TOKEN_BEDROCK: "t",
+      AWS_REGION: "us-east-1",
+      OPENWIKI_PROVIDER: "bedrock",
+    });
+    const keys = formatted
+      .trimEnd()
+      .split("\n")
+      .map((line) => line.slice(0, line.indexOf("=")));
+
+    expect(keys).toEqual([
+      "AWS_REGION",
+      "AWS_BEARER_TOKEN_BEDROCK",
+      "OPENWIKI_PROVIDER",
+    ]);
+  });
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {

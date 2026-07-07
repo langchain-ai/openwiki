@@ -29,9 +29,10 @@ import {
 } from "./agent/types.js";
 import {
   getDefaultModelId,
-  getProviderApiKeyEnvKey,
+  getProviderCredentialEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  hasProviderRunCredentials,
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
@@ -236,12 +237,12 @@ function App({ command }: AppProps) {
       return;
     }
 
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
+    const credentialEnvKey = getProviderCredentialEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (!hasProviderRunCredentials(sessionProvider) && !process.stdin.isTTY) {
       setRunState({
         status: "error",
-        message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${credentialEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
       });
       return;
     }
@@ -442,6 +443,7 @@ function App({ command }: AppProps) {
         {runState.result.savedApiKey ||
         runState.result.savedProvider ||
         runState.result.savedBaseUrl ||
+        runState.result.savedRegion ||
         runState.result.savedModelId ||
         runState.result.savedLangSmithKey ? (
           <StatusLine tone="success" label="Credentials" value="saved" />
@@ -1504,7 +1506,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        "Enter a valid provider: openrouter, baseten, fireworks, openai, anthropic, or bedrock.",
       );
       return;
     }
@@ -1519,7 +1521,7 @@ function ChatInput({
       setNotice(
         `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
           provider,
-        )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
+        )}. Ensure ${getProviderCredentialEnvKey(provider)} is set.`,
       );
     } catch (saveError) {
       setError(
@@ -3058,14 +3060,14 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
     (command.print || !process.stdin.isTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
 
-    if (!hasProviderKey) {
+    if (!hasProviderRunCredentials(provider)) {
+      const credentialEnvKey = getProviderCredentialEnvKey(provider);
+
       return {
         kind: "error",
         exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${credentialEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
       };
     }
   }

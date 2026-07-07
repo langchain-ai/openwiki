@@ -71,7 +71,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, Anthropic, and AWS Bedrock out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
 
 ### Alternative base URLs
 
@@ -101,6 +101,30 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
+
+### AWS Bedrock
+
+The `bedrock` provider runs models through the Amazon Bedrock Converse API. It
+requires an AWS region, and authenticates through the standard AWS credential
+chain — IAM roles, SSO, a shared `~/.aws` profile, or `AWS_ACCESS_KEY_ID` /
+`AWS_SECRET_ACCESS_KEY` environment variables. Alternatively, set a Bedrock API
+key via `AWS_BEARER_TOKEN_BEDROCK`. OpenWiki only stores `AWS_REGION` (and the
+optional Bedrock API key) in `~/.openwiki/.env`; static AWS keys are left to the
+AWS credential chain.
+
+The preset models are **global** cross-region inference profiles (e.g.
+`global.anthropic.claude-sonnet-5`), which work from any region so the defaults
+are region-agnostic. You can also pick "custom model ID" during setup and paste
+any Bedrock model or inference-profile ID valid for your region (for example a
+region-specific `eu.` / `us.` profile), but not a full ARN.
+
+```bash
+OPENWIKI_PROVIDER=bedrock
+AWS_REGION=us-east-1
+OPENWIKI_MODEL_ID=global.anthropic.claude-sonnet-5
+# Optional Bedrock API key; otherwise the AWS credential chain is used:
+# AWS_BEARER_TOKEN_BEDROCK=your-bedrock-api-key
+```
 
 If there's an inference provider or model you'd like to see added, please open a PR!
 

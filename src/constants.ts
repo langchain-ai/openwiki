@@ -8,6 +8,8 @@ export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const AWS_REGION_ENV_KEY = "AWS_REGION";
+export const AWS_BEARER_TOKEN_BEDROCK_ENV_KEY = "AWS_BEARER_TOKEN_BEDROCK";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -16,6 +18,7 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "bedrock"
   | "fireworks"
   | "openai"
   | "openai-compatible"
@@ -28,8 +31,22 @@ export type ProviderModelOption = {
   label: string;
 };
 
+export type ProviderAuthKind = "api-key" | "aws";
+
 type ProviderConfig = {
   apiKeyEnvKey: string;
+  /**
+   * How the provider authenticates. Defaults to `"api-key"`: a single required
+   * key in {@link ProviderConfig.apiKeyEnvKey}. `"aws"` providers (Bedrock)
+   * authenticate through the AWS credential chain and only require a region;
+   * their {@link ProviderConfig.apiKeyEnvKey} is an *optional* Bedrock API key.
+   */
+  auth?: ProviderAuthKind;
+  /**
+   * Environment variable holding the AWS region for `"aws"` providers. Required
+   * at runtime for such providers.
+   */
+  regionEnvKey?: string;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -52,6 +69,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-compatible",
   "anthropic",
+  "bedrock",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -101,6 +119,22 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-opus-4-8", label: "Opus" },
     ],
   },
+  bedrock: {
+    apiKeyEnvKey: AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
+    auth: "aws",
+    regionEnvKey: AWS_REGION_ENV_KEY,
+    label: "AWS Bedrock",
+    modelOptions: [
+      {
+        id: "global.anthropic.claude-sonnet-5",
+        label: "Claude Sonnet 5 (global)",
+      },
+      {
+        id: "global.anthropic.claude-opus-4-8",
+        label: "Claude Opus 4.8 (global)",
+      },
+    ],
+  },
   openrouter: {
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,
     baseURL: OPENROUTER_BASE_URL,
@@ -139,6 +173,70 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
 
 export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+export function getProviderAuthKind(
+  provider: OpenWikiProvider,
+): ProviderAuthKind {
+  return getProviderConfig(provider).auth ?? "api-key";
+}
+
+export function providerUsesAwsCredentials(
+  provider: OpenWikiProvider,
+): boolean {
+  return getProviderAuthKind(provider) === "aws";
+}
+
+export function getProviderRegionEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).regionEnvKey;
+}
+
+export function resolveProviderRegion(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const regionEnvKey = getProviderRegionEnvKey(provider);
+
+  if (!regionEnvKey) {
+    return undefined;
+  }
+
+  return env[regionEnvKey]?.trim() || undefined;
+}
+
+/**
+ * The environment variable a provider must have set for a non-interactive run:
+ * the region for AWS-credential providers (their static keys come from the AWS
+ * chain), or the single API key for every other provider.
+ */
+export function getProviderCredentialEnvKey(
+  provider: OpenWikiProvider,
+): string {
+  if (providerUsesAwsCredentials(provider)) {
+    return (
+      getProviderRegionEnvKey(provider) ?? getProviderApiKeyEnvKey(provider)
+    );
+  }
+
+  return getProviderApiKeyEnvKey(provider);
+}
+
+/**
+ * Whether a provider has the credentials it needs to run without interactive
+ * setup: a resolvable region for AWS-credential providers (other AWS creds are
+ * left to the AWS credential chain), or the single API key otherwise.
+ */
+export function hasProviderRunCredentials(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (providerUsesAwsCredentials(provider)) {
+    return Boolean(resolveProviderRegion(provider, env));
+  }
+
+  return Boolean(env[getProviderApiKeyEnvKey(provider)]);
 }
 
 /**

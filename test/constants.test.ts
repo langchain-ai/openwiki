@@ -3,13 +3,19 @@ import {
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER,
   getDefaultModelId,
+  getProviderAuthKind,
+  getProviderCredentialEnvKey,
+  getProviderRegionEnvKey,
+  hasProviderRunCredentials,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
   normalizeModelId,
   normalizeProvider,
+  providerUsesAwsCredentials,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  resolveProviderRegion,
 } from "../src/constants.ts";
 
 describe("isValidModelId", () => {
@@ -56,7 +62,66 @@ describe("normalizeProvider / isValidProvider", () => {
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
+    expect(isValidProvider("bedrock")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
+  });
+});
+
+describe("bedrock provider", () => {
+  test("is registered with AWS-credential auth and a region env key", () => {
+    expect(isValidProvider("bedrock")).toBe(true);
+    expect(getProviderAuthKind("bedrock")).toBe("aws");
+    expect(providerUsesAwsCredentials("bedrock")).toBe(true);
+    expect(getProviderRegionEnvKey("bedrock")).toBe("AWS_REGION");
+  });
+
+  test("other providers default to api-key auth", () => {
+    expect(getProviderAuthKind("anthropic")).toBe("api-key");
+    expect(providerUsesAwsCredentials("openrouter")).toBe(false);
+    expect(getProviderRegionEnvKey("openai")).toBeUndefined();
+  });
+
+  test("defaults to a global Bedrock inference profile that passes validation", () => {
+    const defaultModel = getDefaultModelId("bedrock");
+
+    expect(defaultModel).toBe("global.anthropic.claude-sonnet-5");
+    expect(isValidModelId(defaultModel)).toBe(true);
+    expect(isValidModelId("global.anthropic.claude-opus-4-8")).toBe(true);
+  });
+
+  test("resolveProviderRegion trims and treats blank as unset", () => {
+    expect(
+      resolveProviderRegion("bedrock", { AWS_REGION: "  us-east-1 " }),
+    ).toBe("us-east-1");
+    expect(
+      resolveProviderRegion("bedrock", { AWS_REGION: "   " }),
+    ).toBeUndefined();
+    expect(resolveProviderRegion("bedrock", {})).toBeUndefined();
+    expect(
+      resolveProviderRegion("anthropic", { AWS_REGION: "x" }),
+    ).toBeUndefined();
+  });
+});
+
+describe("run credentials", () => {
+  test("bedrock run credentials depend on region, not the API key", () => {
+    expect(getProviderCredentialEnvKey("bedrock")).toBe("AWS_REGION");
+    expect(hasProviderRunCredentials("bedrock", {})).toBe(false);
+    expect(
+      hasProviderRunCredentials("bedrock", { AWS_REGION: "us-east-1" }),
+    ).toBe(true);
+    // A Bedrock API key alone (no region) is not enough to run.
+    expect(
+      hasProviderRunCredentials("bedrock", { AWS_BEARER_TOKEN_BEDROCK: "t" }),
+    ).toBe(false);
+  });
+
+  test("api-key providers depend on their single key", () => {
+    expect(getProviderCredentialEnvKey("anthropic")).toBe("ANTHROPIC_API_KEY");
+    expect(hasProviderRunCredentials("anthropic", {})).toBe(false);
+    expect(
+      hasProviderRunCredentials("anthropic", { ANTHROPIC_API_KEY: "k" }),
+    ).toBe(true);
   });
 });
 

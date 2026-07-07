@@ -7,14 +7,18 @@ import {
   getProviderBaseUrlEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  getProviderRegionEnvKey,
   isValidBaseUrl,
   isValidModelId,
   normalizeModelId,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   type OpenWikiProvider,
+  type ProviderModelOption,
   providerRequiresBaseUrl,
+  providerUsesAwsCredentials,
   resolveConfiguredProvider,
+  resolveProviderRegion,
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
 import { openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
@@ -27,6 +31,7 @@ export type InitSetupResult = {
   savedLangSmithKey: boolean;
   savedModelId: boolean;
   savedProvider: boolean;
+  savedRegion: boolean;
 };
 
 type InitSetupProps = {
@@ -35,22 +40,44 @@ type InitSetupProps = {
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "base-url" | "langsmith" | "model" | "provider";
+type PromptStep =
+  | "api-key"
+  | "base-url"
+  | "bedrock-key"
+  | "langsmith"
+  | "model"
+  | "provider"
+  | "region";
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
 ): boolean {
   const provider = resolveConfiguredProvider();
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   return (
     process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
-    !process.env[apiKeyEnvKey] ||
+    needsProviderCredentialStep(provider) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined
   );
+}
+
+function needsProviderCredentialStep(provider: OpenWikiProvider): boolean {
+  if (providerUsesAwsCredentials(provider)) {
+    return needsRegionStep(provider);
+  }
+
+  return !process.env[getProviderApiKeyEnvKey(provider)];
+}
+
+function needsRegionStep(provider: OpenWikiProvider): boolean {
+  if (!providerUsesAwsCredentials(provider)) {
+    return false;
+  }
+
+  return !resolveProviderRegion(provider);
 }
 
 function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
@@ -77,6 +104,7 @@ export function InitSetup({
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState<string | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -85,7 +113,7 @@ export function InitSetup({
   );
   const [modelSelectionIndex, setModelSelectionIndex] = useState(() =>
     getModelSelectionIndex(
-      initialProvider,
+      getProviderModelOptions(initialProvider),
       modelIdOverride ??
         process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
         getDefaultModelId(initialProvider),
@@ -94,6 +122,8 @@ export function InitSetup({
   const [isCustomModelInput, setIsCustomModelInput] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const modelOptions = getProviderModelOptions(provider);
 
   useEffect(() => {
     const initialStep = getInitialStep(modelIdOverride, initialProvider);
@@ -108,6 +138,7 @@ export function InitSetup({
         savedLangSmithKey: false,
         savedModelId: false,
         savedProvider: false,
+        savedRegion: false,
       });
       return;
     }
@@ -116,7 +147,7 @@ export function InitSetup({
     setProviderSelectionIndex(getProviderSelectionIndex(initialProvider));
     setModelSelectionIndex(
       getModelSelectionIndex(
-        initialProvider,
+        getProviderModelOptions(initialProvider),
         modelIdOverride ??
           process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
           getDefaultModelId(initialProvider),
@@ -124,7 +155,9 @@ export function InitSetup({
     );
     setIsCustomModelInput(
       initialStep === "model" &&
-        shouldStartWithCustomModelInput(initialProvider),
+        shouldStartWithCustomModelInput(
+          getProviderModelOptions(initialProvider),
+        ),
     );
     setStep(initialStep);
   }, [initialProvider, modelIdOverride, onComplete]);
@@ -161,7 +194,7 @@ export function InitSetup({
           moveSelectionIndex(
             index,
             key.upArrow ? -1 : 1,
-            getModelSelectionOptions(provider).length,
+            getModelSelectionOptions(modelOptions).length,
           ),
         );
         return;
@@ -203,7 +236,7 @@ export function InitSetup({
       setProviderSelectionIndex(getProviderSelectionIndex(selectedProvider));
       setModelSelectionIndex(
         getModelSelectionIndex(
-          selectedProvider,
+          getProviderModelOptions(selectedProvider),
           getDefaultModelId(selectedProvider),
         ),
       );
@@ -216,7 +249,9 @@ export function InitSetup({
       if (nextStep) {
         setIsCustomModelInput(
           nextStep === "model" &&
-            shouldStartWithCustomModelInput(selectedProvider),
+            shouldStartWithCustomModelInput(
+              getProviderModelOptions(selectedProvider),
+            ),
         );
         setStep(nextStep);
         return;
@@ -228,6 +263,7 @@ export function InitSetup({
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: selectedProvider,
+        nextRegion: region,
       });
       return;
     }
@@ -246,7 +282,8 @@ export function InitSetup({
 
       if (nextStep) {
         setIsCustomModelInput(
-          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+          nextStep === "model" &&
+            shouldStartWithCustomModelInput(getProviderModelOptions(provider)),
         );
         setStep(nextStep);
         return;
@@ -258,6 +295,51 @@ export function InitSetup({
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
+        nextRegion: region,
+      });
+      return;
+    }
+
+    if (step === "region") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError(
+          `${getProviderRegionEnvKey(provider) ?? "AWS_REGION"} is required.`,
+        );
+        return;
+      }
+
+      setRegion(trimmedInput);
+      setInput("");
+      setStep("bedrock-key");
+      return;
+    }
+
+    if (step === "bedrock-key") {
+      const trimmedInput = input.trim();
+      const nextApiKey = trimmedInput.length > 0 ? trimmedInput : null;
+
+      setApiKey(nextApiKey);
+      setInput("");
+      const nextStep = getNextStepAfterBaseUrl(provider, modelIdOverride);
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" &&
+            shouldStartWithCustomModelInput(getProviderModelOptions(provider)),
+        );
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey,
+        nextBaseUrl: baseUrl,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextProvider: provider,
+        nextRegion: region,
       });
       return;
     }
@@ -283,7 +365,8 @@ export function InitSetup({
 
       if (nextStep) {
         setIsCustomModelInput(
-          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+          nextStep === "model" &&
+            shouldStartWithCustomModelInput(getProviderModelOptions(provider)),
         );
         setStep(nextStep);
         return;
@@ -295,13 +378,14 @@ export function InitSetup({
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
+        nextRegion: region,
       });
       return;
     }
 
     if (step === "model") {
       const selectedModelId = getSelectedModelId(
-        provider,
+        modelOptions,
         modelSelectionIndex,
         input,
         isCustomModelInput,
@@ -333,6 +417,7 @@ export function InitSetup({
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
         nextProvider: provider,
+        nextRegion: region,
       });
       return;
     }
@@ -349,6 +434,7 @@ export function InitSetup({
         nextLangSmithKey,
         nextModelId: modelId,
         nextProvider: provider,
+        nextRegion: region,
       });
     }
   }
@@ -359,6 +445,7 @@ export function InitSetup({
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextProvider: OpenWikiProvider;
+    nextRegion: string | null;
   };
 
   async function completeSetup({
@@ -367,6 +454,7 @@ export function InitSetup({
     nextLangSmithKey,
     nextModelId,
     nextProvider,
+    nextRegion,
   }: CompleteSetupOptions) {
     setIsSaving(true);
 
@@ -388,6 +476,14 @@ export function InitSetup({
 
         if (baseUrlEnvKey) {
           updates[baseUrlEnvKey] = nextBaseUrl;
+        }
+      }
+
+      if (nextRegion !== null) {
+        const regionEnvKey = getProviderRegionEnvKey(nextProvider);
+
+        if (regionEnvKey) {
+          updates[regionEnvKey] = nextRegion;
         }
       }
 
@@ -426,6 +522,7 @@ export function InitSetup({
           nextLangSmithKey !== null && nextLangSmithKey.length > 0,
         savedModelId: nextModelId !== null,
         savedProvider: providerEnvChanged,
+        savedRegion: nextRegion !== null,
       });
     } catch (saveError) {
       onError(
@@ -454,38 +551,75 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
-        <SetupStep
-          label="Provider key"
-          state={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "done"
-              : step === "api-key"
-                ? "current"
-                : "pending"
-          }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
-        />
-        {providerRequiresBaseUrl(provider) ? (
-          <SetupStep
-            label="Base URL"
-            state={
-              isBaseUrlConfigured(provider)
-                ? "done"
-                : step === "base-url"
-                  ? "current"
-                  : "pending"
-            }
-            detail={
-              isBaseUrlConfigured(provider)
-                ? "available from environment"
-                : `save ${getProviderBaseUrlEnvKey(provider)} to ${openWikiEnvPath}`
-            }
-          />
-        ) : null}
+        {providerUsesAwsCredentials(provider) ? (
+          <>
+            <SetupStep
+              label="Region"
+              state={
+                resolveProviderRegion(provider)
+                  ? "done"
+                  : step === "region"
+                    ? "current"
+                    : "pending"
+              }
+              detail={
+                resolveProviderRegion(provider)
+                  ? "available from environment"
+                  : `save ${getProviderRegionEnvKey(provider)} to ${openWikiEnvPath}`
+              }
+            />
+            <SetupStep
+              label="Bedrock API key"
+              state={
+                process.env[getProviderApiKeyEnvKey(provider)]
+                  ? "done"
+                  : step === "bedrock-key"
+                    ? "current"
+                    : "optional"
+              }
+              detail={
+                process.env[getProviderApiKeyEnvKey(provider)]
+                  ? "available from environment"
+                  : "optional; otherwise the AWS credential chain is used"
+              }
+            />
+          </>
+        ) : (
+          <>
+            <SetupStep
+              label="Provider key"
+              state={
+                process.env[getProviderApiKeyEnvKey(provider)]
+                  ? "done"
+                  : step === "api-key"
+                    ? "current"
+                    : "pending"
+              }
+              detail={
+                process.env[getProviderApiKeyEnvKey(provider)]
+                  ? "available from environment"
+                  : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
+              }
+            />
+            {providerRequiresBaseUrl(provider) ? (
+              <SetupStep
+                label="Base URL"
+                state={
+                  isBaseUrlConfigured(provider)
+                    ? "done"
+                    : step === "base-url"
+                      ? "current"
+                      : "pending"
+                }
+                detail={
+                  isBaseUrlConfigured(provider)
+                    ? "available from environment"
+                    : `save ${getProviderBaseUrlEnvKey(provider)} to ${openWikiEnvPath}`
+                }
+              />
+            ) : null}
+          </>
+        )}
         <SetupStep
           label="Model"
           state={
@@ -520,6 +654,7 @@ export function InitSetup({
           <Prompt
             input={input}
             isCustomModelInput={isCustomModelInput}
+            modelOptions={modelOptions}
             modelSelectionIndex={modelSelectionIndex}
             provider={provider}
             providerSelectionIndex={providerSelectionIndex}
@@ -617,6 +752,7 @@ function SetupPanel({ title, children }: SetupPanelProps) {
 type PromptProps = {
   input: string;
   isCustomModelInput: boolean;
+  modelOptions: ProviderModelOption[];
   modelSelectionIndex: number;
   provider: OpenWikiProvider;
   providerSelectionIndex: number;
@@ -626,6 +762,7 @@ type PromptProps = {
 function Prompt({
   input,
   isCustomModelInput,
+  modelOptions,
   modelSelectionIndex,
   provider,
   providerSelectionIndex,
@@ -679,6 +816,37 @@ function Prompt({
     );
   }
 
+  if (step === "region") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter the AWS region for {getProviderLabel(provider)}.</Text>
+        <Text>
+          <Text color="gray">$</Text> {getProviderRegionEnvKey(provider)}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">For example us-east-1. Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "bedrock-key") {
+    return (
+      <Box flexDirection="column">
+        <Text>
+          Paste a Bedrock API key, or leave blank to use AWS credentials.
+        </Text>
+        <Text>
+          <Text color="gray">$</Text> {getProviderApiKeyEnvKey(provider)}{" "}
+          optional= <Text color="yellow">{mask(input)}</Text>
+        </Text>
+        <Text color="gray">
+          Leave blank to authenticate through the AWS credential chain (IAM
+          role, SSO, profile, or access keys). Press Enter to continue.
+        </Text>
+      </Box>
+    );
+  }
+
   if (step === "model") {
     if (isCustomModelInput) {
       return (
@@ -699,7 +867,7 @@ function Prompt({
           Choose {getProviderArticle(provider)} {getProviderLabel(provider)}{" "}
           model.
         </Text>
-        {getModelSelectionOptions(provider).map((option, index) => {
+        {getModelSelectionOptions(modelOptions).map((option, index) => {
           if (option.kind === "custom") {
             return (
               <Text key="custom">
@@ -750,6 +918,14 @@ function getInitialStep(
     return "provider";
   }
 
+  if (providerUsesAwsCredentials(provider)) {
+    if (needsRegionStep(provider)) {
+      return "region";
+    }
+
+    return getNextStepAfterBaseUrl(provider, modelIdOverride);
+  }
+
   if (!process.env[getProviderApiKeyEnvKey(provider)]) {
     return "api-key";
   }
@@ -776,6 +952,14 @@ function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
+  if (providerUsesAwsCredentials(provider)) {
+    if (needsRegionStep(provider)) {
+      return "region";
+    }
+
+    return getNextStepAfterBaseUrl(provider, modelIdOverride);
+  }
+
   if (!process.env[getProviderApiKeyEnvKey(provider)]) {
     return "api-key";
   }
@@ -846,10 +1030,10 @@ type ModelSelectionOption =
     };
 
 function getModelSelectionOptions(
-  provider: OpenWikiProvider,
+  models: ProviderModelOption[],
 ): ModelSelectionOption[] {
   return [
-    ...getProviderModelOptions(provider).map((model) => ({
+    ...models.map((model) => ({
       id: model.id,
       kind: "preset" as const,
       label: model.label,
@@ -858,18 +1042,20 @@ function getModelSelectionOptions(
   ];
 }
 
-function shouldStartWithCustomModelInput(provider: OpenWikiProvider): boolean {
-  return getProviderModelOptions(provider).length === 0;
+function shouldStartWithCustomModelInput(
+  models: ProviderModelOption[],
+): boolean {
+  return models.length === 0;
 }
 
 function getSelectedModelId(
-  provider: OpenWikiProvider,
+  models: ProviderModelOption[],
   selectedIndex: number,
   input: string,
   isCustomInput: boolean,
 ): string | null {
   if (!isCustomInput) {
-    const selectedOption = getModelSelectionOptions(provider)[selectedIndex];
+    const selectedOption = getModelSelectionOptions(models)[selectedIndex];
 
     if (!selectedOption) {
       return null;
@@ -892,10 +1078,10 @@ function getProviderSelectionIndex(provider: OpenWikiProvider): number {
 }
 
 function getModelSelectionIndex(
-  provider: OpenWikiProvider,
+  models: ProviderModelOption[],
   selectedModelId: string,
 ): number {
-  const selectedIndex = getModelSelectionOptions(provider).findIndex(
+  const selectedIndex = getModelSelectionOptions(models).findIndex(
     (option) => option.kind === "preset" && option.id === selectedModelId,
   );
 
