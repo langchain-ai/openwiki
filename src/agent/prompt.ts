@@ -4,6 +4,7 @@ import {
   RunContext,
   UpdateMetadata,
 } from "./types.js";
+import type { OpenWikiIgnoreRules } from "./openwiki-ignore.js";
 
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   if (lastUpdate === null) {
@@ -17,6 +18,7 @@ export function createSystemPrompt(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
   language?: string,
+  ignoreRules?: OpenWikiIgnoreRules,
 ): string {
   const output = getOutputPromptConfig(outputMode);
   const languageInstructions = createLanguageInstructions(language);
@@ -40,6 +42,7 @@ Run discipline:
 - Create a strong first-pass wiki that is accurate and navigable, then stop. The wiki can be refined in later update runs.
 - Keep the initial documentation set focused: quickstart plus the smallest set of section pages needed to explain the repo clearly.
 - ${output.searchBoundaryInstruction}
+${createOpenWikiIgnoreInstructions(ignoreRules)}
 
 Connector ingestion discipline:
 - OpenWiki has built-in local connectors for git-repo, notion, x, google, web-search, hackernews, and slack. Use openwiki_list_connectors to inspect connector capabilities, config paths, required env var names, and raw data paths.
@@ -227,6 +230,28 @@ Diagram discipline:
 - Add a diagram wherever a page documents a request or runtime flow, a call sequence, a lifecycle or state machine, or a data model. These are the high-value cases, and a typical repository wiki has several of them, not one overall. Skip pages that are navigation, reference tables, or configuration. Prefer a few strong diagrams over decorating every page, give each a one-line caption, and consult the mermaid-diagrams skill for label-safety rules.
 - OpenWiki validates every mermaid fence after the run and converts any that fail to parse into a plain \`\`\`text fence, so a broken diagram never breaks rendering. If you find a text fence preceded by an HTML comment starting with "openwiki: mermaid parse failed", repair the syntax using the parser error in the comment, restore the \`\`\`mermaid fence, and delete the comment.
 `;
+}
+
+function createOpenWikiIgnoreInstructions(
+  ignoreRules?: OpenWikiIgnoreRules,
+): string {
+  if (!ignoreRules?.isActive) {
+    return "";
+  }
+
+  const patterns = ignoreRules.patterns
+    .map((pattern) => `  - ${JSON.stringify(pattern)}`)
+    .join("\n");
+
+  return `
+
+.openwikiignore discipline:
+- This repository has .openwikiignore rules. Treat matching paths as out of scope.
+- Filesystem tools enforce these rules; if a tool reports an excluded path, do not retry through shell execute.
+- Shell execute is restricted while .openwikiignore is active. Use the provided Git summary plus ls, read_file, glob, and grep for repository discovery so exclusions remain enforced.
+- Do not document excluded paths or infer details about their contents.
+- Active patterns:
+${patterns}`;
 }
 
 export function createModeInstructions(
