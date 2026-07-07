@@ -1,0 +1,200 @@
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { parseCommand } from "../src/commands.ts";
+
+// parseCommand's --dry-run gate consults isDevelopmentMode(), which reads
+// NODE_ENV / OPENWIKI_DEV. Pin both to a non-development state per test and
+// restore afterward.
+const originalNodeEnv = process.env.NODE_ENV;
+const originalDevFlag = process.env.OPENWIKI_DEV;
+
+beforeEach(() => {
+  delete process.env.NODE_ENV;
+  delete process.env.OPENWIKI_DEV;
+});
+
+afterEach(() => {
+  if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+  else process.env.NODE_ENV = originalNodeEnv;
+  if (originalDevFlag === undefined) delete process.env.OPENWIKI_DEV;
+  else process.env.OPENWIKI_DEV = originalDevFlag;
+});
+
+describe("parseCommand — help", () => {
+  test("--help and -h return a help command", () => {
+    expect(parseCommand(["--help"])).toEqual({ kind: "help", exitCode: 0 });
+    expect(parseCommand(["-h"])).toEqual({ kind: "help", exitCode: 0 });
+  });
+
+  test("--help anywhere in argv wins", () => {
+    expect(parseCommand(["--init", "--help"]).kind).toBe("help");
+  });
+});
+
+describe("parseCommand — chat default", () => {
+  test("no args is an interactive chat that should not auto-start", () => {
+    const result = parseCommand([]);
+
+    expect(result).toMatchObject({
+      kind: "run",
+      command: "chat",
+      shouldStart: false,
+      userMessage: null,
+      print: false,
+      dryRun: false,
+      modelId: null,
+    });
+  });
+
+  test("a positional message becomes the user message and starts", () => {
+    const result = parseCommand(["Document", "the", "API"]);
+
+    expect(result).toMatchObject({
+      kind: "run",
+      command: "chat",
+      userMessage: "Document the API",
+      shouldStart: true,
+    });
+  });
+});
+
+describe("parseCommand — init/update", () => {
+  test("--init selects the init command and starts", () => {
+    expect(parseCommand(["--init"])).toMatchObject({
+      kind: "run",
+      command: "init",
+      shouldStart: true,
+    });
+  });
+
+  test("--update selects the update command and starts", () => {
+    expect(parseCommand(["--update"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      shouldStart: true,
+    });
+  });
+
+  test("--init and --update together is an error", () => {
+    const result = parseCommand(["--init", "--update"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.exitCode).toBe(1);
+      expect(result.message).toMatch(/cannot be used together/u);
+    }
+  });
+
+  test("repeating the same command flag is allowed", () => {
+    expect(parseCommand(["--init", "--init"]).kind).toBe("run");
+  });
+});
+
+describe("parseCommand — print", () => {
+  test("--print with a message runs and prints", () => {
+    expect(parseCommand(["-p", "hello"])).toMatchObject({
+      kind: "run",
+      print: true,
+      userMessage: "hello",
+      shouldStart: true,
+    });
+  });
+
+  test("--print with --init is valid", () => {
+    expect(parseCommand(["--print", "--init"])).toMatchObject({
+      kind: "run",
+      print: true,
+      command: "init",
+    });
+  });
+
+  test("--print with nothing to run is an error", () => {
+    const result = parseCommand(["-p"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/requires a message/u);
+    }
+  });
+});
+
+describe("parseCommand — --modelId", () => {
+  test("space-separated valid model id", () => {
+    expect(parseCommand(["--modelId", "claude-opus-4-8"])).toMatchObject({
+      kind: "run",
+      modelId: "claude-opus-4-8",
+    });
+  });
+
+  test("--model-id alias works", () => {
+    expect(parseCommand(["--model-id", "gpt-5.5"])).toMatchObject({
+      modelId: "gpt-5.5",
+    });
+  });
+
+  test("equals form: --modelId=<id>", () => {
+    expect(parseCommand(["--modelId=z-ai/glm-5.2"])).toMatchObject({
+      modelId: "z-ai/glm-5.2",
+    });
+  });
+
+  test("missing value is an error", () => {
+    const result = parseCommand(["--modelId"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/requires a model ID/u);
+    }
+  });
+
+  test("a following flag is treated as a missing value", () => {
+    const result = parseCommand(["--modelId", "--init"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/requires a model ID/u);
+    }
+  });
+
+  test("invalid model id (contains ://) is an error", () => {
+    const result = parseCommand(["--modelId", "http://evil"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Invalid model ID/u);
+    }
+  });
+
+  test("invalid model id via equals form is an error", () => {
+    expect(parseCommand(["--modelId="]).kind).toBe("error");
+  });
+});
+
+describe("parseCommand — unknown options and dry-run gating", () => {
+  test("an unknown --flag is an error", () => {
+    const result = parseCommand(["--nope"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Unknown option/u);
+    }
+  });
+
+  test("--dry-run is rejected outside development mode", () => {
+    const result = parseCommand(["--dry-run"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Unknown option/u);
+    }
+  });
+
+  test("--dry-run is accepted in development mode", () => {
+    process.env.OPENWIKI_DEV = "1";
+
+    expect(parseCommand(["--dry-run", "--init"])).toMatchObject({
+      kind: "run",
+      dryRun: true,
+      command: "init",
+    });
+  });
+});

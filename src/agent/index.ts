@@ -6,7 +6,8 @@ import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
-import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
+import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
+import { isFileNotFoundError } from "../fs-errors.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
   OpenWikiCommand,
@@ -15,18 +16,13 @@ import type {
   OpenWikiRunResult,
 } from "./types.js";
 import {
-  ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
-  BASETEN_API_KEY_ENV_KEY,
-  FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
   isValidModelId,
   normalizeModelId,
-  OPENAI_API_KEY_ENV_KEY,
-  OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
@@ -189,7 +185,7 @@ async function runOpenWikiAgentCore(
   const openWikiSnapshotBefore =
     command === "chat" ? null : await createOpenWikiContentSnapshot(cwd);
   emitDebug(options, "openwiki.snapshot=created");
-  const model = await createModel(provider, modelId);
+  const model = createModel(provider, modelId);
   emitDebug(options, `model.provider=${provider}`);
   if (provider === "openrouter") {
     emitDebug(
@@ -862,7 +858,7 @@ function getMessageRole(value: Record<string, unknown>): string | null {
   }
 
   try {
-    const role = getType.call(value);
+    const role: unknown = getType.call(value);
 
     return isMessageRole(role) ? role : null;
   } catch {
@@ -1237,7 +1233,7 @@ function getOpenRouterMessageChars(messages: unknown): number | undefined {
     return undefined;
   }
 
-  return messages.reduce((total, message) => {
+  return messages.reduce<number>((total, message) => {
     if (!isRecord(message)) {
       return total;
     }
@@ -1252,7 +1248,7 @@ function countMessageContentChars(content: unknown): number {
   }
 
   if (Array.isArray(content)) {
-    return content.reduce(
+    return content.reduce<number>(
       (total, block) => total + countMessageContentChars(block),
       0,
     );
@@ -1286,7 +1282,7 @@ async function readResponseBodyPreview(response: Response): Promise<string> {
   }
 }
 
-function sanitizeOpenRouterResponseBody(body: string): string {
+export function sanitizeOpenRouterResponseBody(body: string): string {
   return body.replace(
     /"([^"]*(?:api[-_]?key|authorization|bearer|password|secret|token|user_id)[^"]*)"\s*:\s*"[^"]*"/giu,
     (_, key: string) => `${JSON.stringify(key)}:"[REDACTED]"`,
@@ -1323,25 +1319,9 @@ function formatOpenRouterDebugUrl(value: string): string {
 }
 
 function formatEnvironmentDebug(): string {
-  const keys = [
-    OPENWIKI_PROVIDER_ENV_KEY,
-    BASETEN_API_KEY_ENV_KEY,
-    FIREWORKS_API_KEY_ENV_KEY,
-    OPENAI_API_KEY_ENV_KEY,
-    OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
-    OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
-    ANTHROPIC_API_KEY_ENV_KEY,
-    ANTHROPIC_BASE_URL_ENV_KEY,
-    OPENROUTER_API_KEY_ENV_KEY,
-    OPENWIKI_MODEL_ID_ENV_KEY,
-    "LANGCHAIN_TRACING_V2",
-    "LANGCHAIN_PROJECT",
-    "LANGCHAIN_ENDPOINT",
-  ];
-
-  return keys
-    .map((key) => `${key}:${formatDebugValue(key, process.env[key])}`)
-    .join(" ");
+  return DEBUG_ENV_KEYS.map(
+    (key) => `${key}:${formatDebugValue(key, process.env[key])}`,
+  ).join(" ");
 }
 
 function formatDebugValue(key: string, value: string | undefined): string {

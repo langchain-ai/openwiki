@@ -136,7 +136,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "z-ai/glm-5.2", label: "GLM 5.2" },
       { id: "openrouter/fusion", label: "OpenRouter Fusion" },
       { id: "moonshotai/kimi-k2.7-code", label: "Kimi K2.7 Code" },
-      { id: "anthropic/claude-opus-4.8", label: "Claude Opus" },
+      { id: "anthropic/claude-opus-4-8", label: "Claude Opus" },
       { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
