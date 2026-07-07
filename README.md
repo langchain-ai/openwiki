@@ -100,6 +100,11 @@ OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
 
+You can also omit `OPENWIKI_PROVIDER` for non-interactive runs: if
+`OPENAI_COMPATIBLE_API_KEY` and `OPENAI_COMPATIBLE_BASE_URL` are set (and no
+`OPENROUTER_API_KEY` is present), OpenWiki will infer the `openai-compatible`
+provider automatically.
+
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
 If there's an inference provider or model you'd like to see added, please open a PR!

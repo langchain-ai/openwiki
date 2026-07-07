@@ -41,7 +41,8 @@ The setup flow runs for **all** interactive commands (chat, init, and update) wh
 
 1. If `OPENWIKI_PROVIDER` is set and valid, use it.
 2. Otherwise, if `OPENROUTER_API_KEY` is present, default to `openrouter`.
-3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openrouter`).
+3. Otherwise, if another provider's API key is present, use that provider. Providers that require a base URL (such as `openai-compatible`) are only inferred when the required base URL env var is also set.
+4. Otherwise, fall back to `DEFAULT_PROVIDER` (`openrouter`).
 
 `needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var, the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing value triggers the interactive flow.
 

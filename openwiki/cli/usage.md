@@ -66,7 +66,12 @@ Providers and their model options are defined in `PROVIDER_CONFIGS` in `src/cons
 | openai-compatible | `OPENAI_COMPATIBLE_API_KEY` | `OPENAI_COMPATIBLE_BASE_URL` (required) | custom model ID only                                                  |
 | anthropic         | `ANTHROPIC_API_KEY`         | (default, or `ANTHROPIC_BASE_URL`)      | Haiku, Sonnet, Opus                                                   |
 
-The default provider is `openrouter`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, falling back to openrouter if `OPENROUTER_API_KEY` is set, then to `DEFAULT_PROVIDER`.
+The default provider is `openrouter`. `resolveConfiguredProvider()` picks the provider in this order:
+
+1. `OPENWIKI_PROVIDER` if it is set and valid.
+2. `openrouter` if `OPENROUTER_API_KEY` is present (preserves the historical default).
+3. Any other provider whose API key is present, requiring a base URL for providers that need one. This means non-interactive runs work with only `OPENAI_COMPATIBLE_API_KEY` and `OPENAI_COMPATIBLE_BASE_URL` set.
+4. `DEFAULT_PROVIDER` (`openrouter`) when nothing is configured.
 
 ### Alternative base URLs
 
