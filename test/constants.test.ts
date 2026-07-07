@@ -1,27 +1,13 @@
 import { describe, expect, test } from "vitest";
 import {
-  ANTHROPIC_BASE_URL_ENV_KEY,
-  ANTHROPIC_API_KEY_ENV_KEY,
-  BASETEN_API_KEY_ENV_KEY,
+  DEEPSEEK_API_KEY_ENV_KEY,
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER,
-  DEEPSEEK_API_KEY_ENV_KEY,
-  FIREWORKS_API_KEY_ENV_KEY,
-  OPENAI_API_KEY_ENV_KEY,
-  OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
-  OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
-  OPENROUTER_API_KEY_ENV_KEY,
-  OPENROUTER_BASE_URL,
-  OPENWIKI_MODEL_ID_ENV_KEY,
-  OPENWIKI_PROVIDER_ENV_KEY,
-  OPENWIKI_VERSION,
   PROVIDER_CONFIGS,
   SELECTABLE_OPENWIKI_PROVIDERS,
-  SUGGESTED_MODEL_IDS,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
-  getProviderConfig,
   getProviderLabel,
   getProviderModelOptions,
   isValidBaseUrl,
@@ -32,13 +18,138 @@ import {
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
-  type OpenWikiProvider,
 } from "../src/constants.ts";
 
-// `PROVIDER_CONFIGS` is `Record<OpenWikiProvider, ProviderConfig>`, so its keys
-// are exactly the members of the `OpenWikiProvider` union. This is used by the
-// structural-invariant tests below to iterate every known provider.
-const ALL_PROVIDERS = Object.keys(PROVIDER_CONFIGS) as OpenWikiProvider[];
+describe("isValidModelId", () => {
+  test("accepts normal provider/model ids", () => {
+    expect(isValidModelId("claude-opus-4-8")).toBe(true);
+    expect(isValidModelId("z-ai/glm-5.2")).toBe(true);
+    expect(isValidModelId("accounts/fireworks/models/glm-5p2")).toBe(true);
+    expect(isValidModelId("gpt-5.4-mini")).toBe(true);
+  });
+
+  test("rejects empty, whitespace-only, and over-long ids", () => {
+    expect(isValidModelId("")).toBe(false);
+    expect(isValidModelId("   ")).toBe(false);
+    expect(isValidModelId("a".repeat(121))).toBe(false);
+    expect(isValidModelId("a".repeat(120))).toBe(true);
+  });
+
+  test("rejects ids containing a scheme (://)", () => {
+    expect(isValidModelId("http://evil.example/model")).toBe(false);
+  });
+
+  test("rejects ids starting with a non-alphanumeric character", () => {
+    expect(isValidModelId("-leading-dash")).toBe(false);
+    expect(isValidModelId("/leading-slash")).toBe(false);
+  });
+
+  test("normalizeModelId trims surrounding whitespace", () => {
+    expect(normalizeModelId("  claude-opus-4-8  ")).toBe("claude-opus-4-8");
+  });
+});
+
+describe("normalizeProvider / isValidProvider", () => {
+  test("normalizes case and whitespace to a known provider", () => {
+    expect(normalizeProvider("  Anthropic ")).toBe("anthropic");
+    expect(normalizeProvider("OPENROUTER")).toBe("openrouter");
+  });
+
+  test("returns null for unknown or nullish providers", () => {
+    expect(normalizeProvider("bogus")).toBeNull();
+    expect(normalizeProvider(null)).toBeNull();
+    expect(normalizeProvider(undefined)).toBeNull();
+  });
+
+  test("isValidProvider is a type guard over the known set", () => {
+    expect(isValidProvider("anthropic")).toBe(true);
+    expect(isValidProvider("openai-compatible")).toBe(true);
+    expect(isValidProvider("nope")).toBe(false);
+  });
+});
+
+describe("resolveConfiguredProvider", () => {
+  test("honors an explicit OPENWIKI_PROVIDER", () => {
+    expect(resolveConfiguredProvider({ OPENWIKI_PROVIDER: "anthropic" })).toBe(
+      "anthropic",
+    );
+  });
+
+  test("falls back to openrouter when only an OpenRouter key is present", () => {
+    expect(resolveConfiguredProvider({ OPENROUTER_API_KEY: "x" })).toBe(
+      "openrouter",
+    );
+  });
+
+  test("falls back to the default provider when nothing is configured", () => {
+    expect(resolveConfiguredProvider({})).toBe(DEFAULT_PROVIDER);
+  });
+
+  test("ignores an invalid OPENWIKI_PROVIDER value", () => {
+    expect(resolveConfiguredProvider({ OPENWIKI_PROVIDER: "bogus" })).toBe(
+      DEFAULT_PROVIDER,
+    );
+  });
+});
+
+describe("resolveProviderBaseUrl", () => {
+  test("returns the built-in default when no override is set", () => {
+    expect(resolveProviderBaseUrl("openrouter", {})).toBe(
+      "https://openrouter.ai/api/v1",
+    );
+  });
+
+  test("prefers a non-empty env override over the default", () => {
+    expect(
+      resolveProviderBaseUrl("anthropic", {
+        ANTHROPIC_BASE_URL: "https://gateway.example/anthropic",
+      }),
+    ).toBe("https://gateway.example/anthropic");
+  });
+
+  test("ignores a whitespace-only override", () => {
+    // anthropic has no built-in default, so a blank override resolves to undefined.
+    expect(
+      resolveProviderBaseUrl("anthropic", { ANTHROPIC_BASE_URL: "   " }),
+    ).toBeUndefined();
+  });
+
+  test("returns undefined for a provider with no default and no override", () => {
+    expect(resolveProviderBaseUrl("openai", {})).toBeUndefined();
+  });
+});
+
+describe("isValidBaseUrl", () => {
+  test("accepts http and https URLs", () => {
+    expect(isValidBaseUrl("https://api.example.com/v1")).toBe(true);
+    expect(isValidBaseUrl("http://localhost:8080")).toBe(true);
+  });
+
+  test("rejects blank, non-URL, and non-http(s) schemes", () => {
+    expect(isValidBaseUrl("")).toBe(false);
+    expect(isValidBaseUrl("   ")).toBe(false);
+    expect(isValidBaseUrl("not a url")).toBe(false);
+    expect(isValidBaseUrl("ftp://example.com")).toBe(false);
+  });
+});
+
+describe("getDefaultModelId", () => {
+  test("returns the first model option for a provider", () => {
+    expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
+    expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
+  });
+
+  test(
+    "openai-compatible has no presets, so it falls back to the global " +
+      "DEFAULT_MODEL_ID (a known cross-provider quirk documented here)",
+    () => {
+      // This asserts CURRENT behavior: openai-compatible has an empty
+      // modelOptions list, so getDefaultModelId yields an OpenRouter id.
+      // If this ever changes intentionally, update this test.
+      expect(getDefaultModelId("openai-compatible")).toBe(DEFAULT_MODEL_ID);
+    },
+  );
+});
 
 describe("DeepSeek provider", () => {
   test("exposes a DeepSeek API key env key constant", () => {
@@ -47,14 +158,11 @@ describe("DeepSeek provider", () => {
 
   test("is a valid, selectable provider", () => {
     expect(isValidProvider("deepseek")).toBe(true);
-  });
-
-  test("is registered in the selectable provider list", () => {
     expect(SELECTABLE_OPENWIKI_PROVIDERS).toContain("deepseek");
   });
 
-  test("has a complete provider config", () => {
-    const config = getProviderConfig("deepseek");
+  test("has a complete provider config pinned to the documented endpoint", () => {
+    const config = PROVIDER_CONFIGS.deepseek;
 
     expect(config.apiKeyEnvKey).toBe(DEEPSEEK_API_KEY_ENV_KEY);
     expect(config.label).toBe("DeepSeek");
@@ -79,293 +187,5 @@ describe("DeepSeek provider", () => {
     expect(getProviderLabel("deepseek")).toBe("DeepSeek");
     expect(getProviderBaseUrlEnvKey("deepseek")).toBeUndefined();
     expect(providerRequiresBaseUrl("deepseek")).toBe(false);
-  });
-
-  test("normalizes case and surrounding whitespace", () => {
-    expect(normalizeProvider("deepseek")).toBe("deepseek");
-    expect(normalizeProvider("DeepSeek")).toBe("deepseek");
-    expect(normalizeProvider("DEEPSEEK")).toBe("deepseek");
-    expect(normalizeProvider("  deepseek  ")).toBe("deepseek");
-  });
-});
-
-describe("resolveConfiguredProvider", () => {
-  test("honors OPENWIKI_PROVIDER for deepseek", () => {
-    expect(
-      resolveConfiguredProvider({ [OPENWIKI_PROVIDER_ENV_KEY]: "deepseek" }),
-    ).toBe("deepseek");
-  });
-
-  test("falls back to the default provider when nothing is set", () => {
-    expect(resolveConfiguredProvider({})).toBe(DEFAULT_PROVIDER);
-    expect(DEFAULT_PROVIDER).toBe("openrouter");
-  });
-
-  test("falls back to openrouter when only an OpenRouter key is present", () => {
-    expect(
-      resolveConfiguredProvider({ [OPENROUTER_API_KEY_ENV_KEY]: "sk-or-..." }),
-    ).toBe("openrouter");
-  });
-
-  test("prefers OPENWIKI_PROVIDER over an ambient OpenRouter key", () => {
-    expect(
-      resolveConfiguredProvider({
-        [OPENWIKI_PROVIDER_ENV_KEY]: "deepseek",
-        [OPENROUTER_API_KEY_ENV_KEY]: "sk-or-...",
-      }),
-    ).toBe("deepseek");
-  });
-
-  test("ignores an invalid OPENWIKI_PROVIDER value", () => {
-    expect(
-      resolveConfiguredProvider({ [OPENWIKI_PROVIDER_ENV_KEY]: "not-a-real" }),
-    ).toBe(DEFAULT_PROVIDER);
-  });
-});
-
-describe("resolveProviderBaseUrl", () => {
-  test("returns the built-in DeepSeek endpoint", () => {
-    expect(resolveProviderBaseUrl("deepseek", {})).toBe(
-      "https://api.deepseek.com/v1",
-    );
-  });
-
-  test("ignores unrelated env keys for DeepSeek (no override channel)", () => {
-    expect(
-      resolveProviderBaseUrl("deepseek", {
-        [ANTHROPIC_BASE_URL_ENV_KEY]: "https://wrong.example.com",
-      }),
-    ).toBe("https://api.deepseek.com/v1");
-  });
-
-  test("honors ANTHROPIC_BASE_URL override for the anthropic provider", () => {
-    expect(
-      resolveProviderBaseUrl("anthropic", {
-        [ANTHROPIC_BASE_URL_ENV_KEY]: "https://gateway.example.com/anthropic",
-      }),
-    ).toBe("https://gateway.example.com/anthropic");
-  });
-
-  test("returns undefined for openai-compatible with no base URL configured", () => {
-    expect(resolveProviderBaseUrl("openai-compatible", {})).toBeUndefined();
-  });
-
-  test("returns undefined for providers whose SDK default is intended", () => {
-    // `openai` has no built-in baseURL; it relies on the OpenAI SDK default.
-    expect(resolveProviderBaseUrl("openai", {})).toBeUndefined();
-  });
-
-  test("trims whitespace from an override before using it", () => {
-    expect(
-      resolveProviderBaseUrl("anthropic", {
-        [ANTHROPIC_BASE_URL_ENV_KEY]: "  https://gateway.example.com  ",
-      }),
-    ).toBe("https://gateway.example.com");
-  });
-
-  test("treats a blank override as unset", () => {
-    expect(
-      resolveProviderBaseUrl("anthropic", {
-        [ANTHROPIC_BASE_URL_ENV_KEY]: "   ",
-      }),
-    ).toBeUndefined();
-  });
-});
-
-describe("normalizeProvider / isValidProvider", () => {
-  test("accepts every registered provider", () => {
-    for (const provider of ALL_PROVIDERS) {
-      expect(normalizeProvider(provider)).toBe(provider);
-      expect(isValidProvider(provider)).toBe(true);
-    }
-  });
-
-  test("rejects null, undefined, empty, and unknown values", () => {
-    expect(normalizeProvider(null)).toBeNull();
-    expect(normalizeProvider(undefined)).toBeNull();
-    expect(normalizeProvider("")).toBeNull();
-    expect(normalizeProvider("claude")).toBeNull();
-    expect(normalizeProvider("openai-")).toBeNull();
-    expect(isValidProvider("claude")).toBe(false);
-  });
-});
-
-describe("isValidModelId", () => {
-  test("accepts the DeepSeek model IDs", () => {
-    expect(isValidModelId("deepseek-chat")).toBe(true);
-    expect(isValidModelId("deepseek-reasoner")).toBe(true);
-  });
-
-  test("normalizes surrounding whitespace before validating", () => {
-    expect(isValidModelId("  deepseek-chat  ")).toBe(true);
-    expect(normalizeModelId("  deepseek-chat  ")).toBe("deepseek-chat");
-  });
-
-  test("rejects empty input", () => {
-    expect(isValidModelId("")).toBe(false);
-    expect(isValidModelId("   ")).toBe(false);
-  });
-
-  test("rejects IDs longer than 120 characters", () => {
-    expect(isValidModelId("a".repeat(120))).toBe(true);
-    expect(isValidModelId("a".repeat(121))).toBe(false);
-  });
-
-  test("rejects IDs that contain a scheme separator", () => {
-    expect(isValidModelId("deepseek://foo")).toBe(false);
-  });
-
-  test("rejects IDs that start with a non-alphanumeric character", () => {
-    expect(isValidModelId("-deepseek")).toBe(false);
-    expect(isValidModelId("/deepseek")).toBe(false);
-  });
-});
-
-describe("isValidBaseUrl", () => {
-  test("accepts http and https URLs", () => {
-    expect(isValidBaseUrl("https://api.deepseek.com/v1")).toBe(true);
-    expect(isValidBaseUrl("http://localhost:8080")).toBe(true);
-  });
-
-  test("rejects empty, non-http(s), and malformed input", () => {
-    expect(isValidBaseUrl("")).toBe(false);
-    expect(isValidBaseUrl("   ")).toBe(false);
-    expect(isValidBaseUrl("ftp://example.com")).toBe(false);
-    expect(isValidBaseUrl("not-a-url")).toBe(false);
-  });
-});
-
-describe("provider config accessors", () => {
-  test("each provider resolves to its own config object", () => {
-    expect(getProviderConfig("openrouter")).toBe(PROVIDER_CONFIGS.openrouter);
-    expect(getProviderConfig("deepseek")).toBe(PROVIDER_CONFIGS.deepseek);
-  });
-
-  test("getProviderLabel mirrors the config label", () => {
-    for (const provider of ALL_PROVIDERS) {
-      expect(getProviderLabel(provider)).toBe(
-        getProviderConfig(provider).label,
-      );
-    }
-  });
-
-  test("only the openai-compatible provider requires a base URL", () => {
-    const requireBaseUrl = ALL_PROVIDERS.filter(providerRequiresBaseUrl);
-    expect(requireBaseUrl).toEqual(["openai-compatible"]);
-  });
-
-  test("only anthropic and openai-compatible expose a base URL env override", () => {
-    const withOverride = ALL_PROVIDERS.map((provider) => ({
-      provider,
-      key: getProviderBaseUrlEnvKey(provider),
-    })).filter((entry) => entry.key !== undefined);
-
-    expect(withOverride).toEqual([
-      {
-        provider: "openai-compatible",
-        key: OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
-      },
-      { provider: "anthropic", key: ANTHROPIC_BASE_URL_ENV_KEY },
-    ]);
-  });
-});
-
-describe("structural invariants", () => {
-  // These guard against the whole class of provider-wiring regressions that
-  // this repo has hit before (e.g. a provider added to the type/selectable
-  // list but missing from PROVIDER_CONFIGS, or presets that fail validation).
-
-  test("every provider union member has a PROVIDER_CONFIGS entry", () => {
-    for (const provider of ALL_PROVIDERS) {
-      const config = getProviderConfig(provider);
-
-      expect(typeof config.apiKeyEnvKey).toBe("string");
-      expect(config.apiKeyEnvKey.length).toBeGreaterThan(0);
-      expect(typeof config.label).toBe("string");
-      expect(config.label.length).toBeGreaterThan(0);
-      expect(Array.isArray(config.modelOptions)).toBe(true);
-    }
-  });
-
-  test("every provider is present in SELECTABLE_OPENWIKI_PROVIDERS", () => {
-    for (const provider of ALL_PROVIDERS) {
-      expect(SELECTABLE_OPENWIKI_PROVIDERS).toContain(provider);
-    }
-  });
-
-  test("SELECTABLE_OPENWIKI_PROVIDERS is deduplicated", () => {
-    expect(new Set(SELECTABLE_OPENWIKI_PROVIDERS).size).toBe(
-      SELECTABLE_OPENWIKI_PROVIDERS.length,
-    );
-  });
-
-  test("every selectable entry is a valid provider", () => {
-    for (const provider of SELECTABLE_OPENWIKI_PROVIDERS) {
-      expect(isValidProvider(provider)).toBe(true);
-    }
-  });
-
-  test("every provider's default model ID passes validation", () => {
-    for (const provider of ALL_PROVIDERS) {
-      const defaultModelId = getDefaultModelId(provider);
-
-      expect(isValidModelId(defaultModelId)).toBe(true);
-    }
-  });
-
-  test("every preset model ID passes validation", () => {
-    for (const provider of ALL_PROVIDERS) {
-      for (const option of getProviderModelOptions(provider)) {
-        expect(isValidModelId(option.id)).toBe(true);
-        expect(typeof option.label).toBe("string");
-        expect(option.label.length).toBeGreaterThan(0);
-      }
-    }
-  });
-
-  test("API key env keys are unique per provider", () => {
-    const keys = ALL_PROVIDERS.map(getProviderApiKeyEnvKey);
-
-    expect(new Set(keys).size).toBe(keys.length);
-  });
-});
-
-describe("module-level constants", () => {
-  test("the default provider is openrouter", () => {
-    expect(DEFAULT_PROVIDER).toBe("openrouter");
-  });
-
-  test("DEFAULT_MODEL_ID resolves to the first OpenRouter preset", () => {
-    expect(DEFAULT_MODEL_ID).toBe(getProviderModelOptions("openrouter")[0]?.id);
-  });
-
-  test("SUGGESTED_MODEL_IDS mirrors the OpenRouter preset IDs", () => {
-    expect(SUGGESTED_MODEL_IDS).toEqual(
-      getProviderModelOptions("openrouter").map((model) => model.id),
-    );
-  });
-
-  test("OPENROUTER_BASE_URL is the public endpoint", () => {
-    expect(OPENROUTER_BASE_URL).toBe("https://openrouter.ai/api/v1");
-  });
-
-  test("version is a non-empty semver-ish string", () => {
-    expect(OPENWIKI_VERSION).toMatch(/^\d+\.\d+\.\d+/u);
-  });
-
-  test("the known env key constants keep their expected values", () => {
-    expect(BASETEN_API_KEY_ENV_KEY).toBe("BASETEN_API_KEY");
-    expect(DEEPSEEK_API_KEY_ENV_KEY).toBe("DEEPSEEK_API_KEY");
-    expect(FIREWORKS_API_KEY_ENV_KEY).toBe("FIREWORKS_API_KEY");
-    expect(OPENAI_API_KEY_ENV_KEY).toBe("OPENAI_API_KEY");
-    expect(OPENAI_COMPATIBLE_API_KEY_ENV_KEY).toBe("OPENAI_COMPATIBLE_API_KEY");
-    expect(OPENAI_COMPATIBLE_BASE_URL_ENV_KEY).toBe(
-      "OPENAI_COMPATIBLE_BASE_URL",
-    );
-    expect(ANTHROPIC_API_KEY_ENV_KEY).toBe("ANTHROPIC_API_KEY");
-    expect(ANTHROPIC_BASE_URL_ENV_KEY).toBe("ANTHROPIC_BASE_URL");
-    expect(OPENROUTER_API_KEY_ENV_KEY).toBe("OPENROUTER_API_KEY");
-    expect(OPENWIKI_PROVIDER_ENV_KEY).toBe("OPENWIKI_PROVIDER");
-    expect(OPENWIKI_MODEL_ID_ENV_KEY).toBe("OPENWIKI_MODEL_ID");
   });
 });

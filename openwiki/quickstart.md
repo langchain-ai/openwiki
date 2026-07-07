@@ -10,7 +10,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
-- Optionally schedules automated updates through a GitHub Actions workflow.
+- Optionally schedules automated updates through GitHub Actions or GitLab CI.
 
 ## Start here
 
@@ -32,7 +32,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/env.ts` — `~/.openwiki/.env` persistence and credential diagnostics.
 - `src/credentials.tsx` — interactive onboarding flow for provider selection, API keys, and model selection.
 - `src/constants.ts` — provider configs, model options, env keys, and validation helpers.
-- `.github/workflows/openwiki-update.yml` — scheduled automation example.
+- `examples/openwiki-update.yml` — GitHub Actions scheduled automation example.
+- `examples/openwiki-update.gitlab-ci.yml` — GitLab CI scheduled automation example.
 
 ## Documentation map
 
@@ -61,5 +62,6 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/env.ts`
 - `src/credentials.tsx`
 - `src/constants.ts`
-- `.github/workflows/openwiki-update.yml`
+- `examples/openwiki-update.yml`
+- `examples/openwiki-update.gitlab-ci.yml`
 - Git evidence: commits `ceded10`, `f89b05d`, `a82759f`, `dfa73cc`, `fd3a702`, `8278c36`, `0fa1430`

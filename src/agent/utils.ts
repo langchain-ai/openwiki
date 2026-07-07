@@ -4,6 +4,10 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
+import {
+  isExpectedSnapshotRaceError,
+  isFileNotFoundError,
+} from "../fs-errors.js";
 import type {
   OpenWikiCommand,
   OpenWikiRunOptions,
@@ -385,24 +389,6 @@ function isOpenWikiPath(changedPath: string): boolean {
 
 function normalizeGitPath(value: string): string {
   return value.trim().replace(/\\/gu, "/");
-}
-
-function isFileNotFoundError(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    "code" in error &&
-    (error as NodeJS.ErrnoException).code === "ENOENT"
-  );
-}
-
-function isExpectedSnapshotRaceError(error: unknown): boolean {
-  if (!(error instanceof Error) || !("code" in error)) {
-    return false;
-  }
-
-  return ["EISDIR", "ENOENT", "ENOTDIR"].includes(
-    (error as NodeJS.ErrnoException).code ?? "",
-  );
 }
 
 function isExecError(

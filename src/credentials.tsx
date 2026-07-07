@@ -867,7 +867,7 @@ function getSelectedModelId(
   selectedIndex: number,
   input: string,
   isCustomInput: boolean,
-): string | "custom" | null {
+): string | null {
   if (!isCustomInput) {
     const selectedOption = getModelSelectionOptions(provider)[selectedIndex];
 
