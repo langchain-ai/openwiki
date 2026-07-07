@@ -1,0 +1,19 @@
+src/agent/index.ts
+  s_2859e30e668c29::t_beb2117c5f0625 98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7b68e1644e045c27ffd8ad2755fd8c36ac4f6261",
+  "prompts": {},
+  "sessions": {
+    "s_2859e30e668c29": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3ede-685b-72b1-a56d-01cf16ae4eed",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
