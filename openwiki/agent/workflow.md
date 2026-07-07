@@ -13,7 +13,7 @@ The documentation agent is implemented in `src/agent/`. It takes a command (`cha
 5. Snapshot the current `openwiki/` content hash (before the run).
 6. Build the system prompt and user prompt.
 7. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
-8. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
+8. Create a DeepAgents backend rooted at the repository with a SQLite checkpointer. OpenWiki uses `TextSniffingLocalShellBackend` (`src/agent/text-sniffing-backend.ts`), a `LocalShellBackend` subclass that content-sniffs files the extension-based MIME lookup would treat as binary — valid UTF-8 files with unmapped extensions (terraform.tfvars, .tf, .hcl, .lock, ...) are returned as readable text instead of base64 blocks.
 9. Stream messages and tool events back to the CLI.
 10. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed**.
 
