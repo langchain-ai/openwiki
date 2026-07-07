@@ -7,6 +7,7 @@ export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
+export const CLAUDE_CODE_OAUTH_TOKEN_ENV_KEY = "CLAUDE_CODE_OAUTH_TOKEN";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
@@ -30,6 +31,13 @@ export type ProviderModelOption = {
 
 type ProviderConfig = {
   apiKeyEnvKey: string;
+  /**
+   * Environment variable holding an OAuth bearer token that can authenticate
+   * the provider instead of {@link ProviderConfig.apiKeyEnvKey} (e.g. a Claude
+   * Code OAuth token from `claude setup-token`). The API key wins when both
+   * are set.
+   */
+  oauthTokenEnvKey?: string;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -93,6 +101,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   },
   anthropic: {
     apiKeyEnvKey: ANTHROPIC_API_KEY_ENV_KEY,
+    oauthTokenEnvKey: CLAUDE_CODE_OAUTH_TOKEN_ENV_KEY,
     baseUrlEnvKey: ANTHROPIC_BASE_URL_ENV_KEY,
     label: "Anthropic",
     modelOptions: [
@@ -139,6 +148,42 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
 
 export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+export function getProviderOauthTokenEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).oauthTokenEnvKey;
+}
+
+/**
+ * Environment variables that can each, on their own, authenticate the
+ * provider: the API key first, then the OAuth token where the provider
+ * supports one.
+ */
+export function getProviderCredentialEnvKeys(
+  provider: OpenWikiProvider,
+): string[] {
+  const config = getProviderConfig(provider);
+
+  return config.oauthTokenEnvKey
+    ? [config.apiKeyEnvKey, config.oauthTokenEnvKey]
+    : [config.apiKeyEnvKey];
+}
+
+export function hasProviderCredential(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return getProviderCredentialEnvKeys(provider).some((key) =>
+    Boolean(env[key]),
+  );
+}
+
+export function describeProviderCredentialEnvKeys(
+  provider: OpenWikiProvider,
+): string {
+  return getProviderCredentialEnvKeys(provider).join(" or ");
 }
 
 /**

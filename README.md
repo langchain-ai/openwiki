@@ -73,6 +73,19 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
 
+### Claude Code OAuth token
+
+The Anthropic provider also accepts a Claude Code OAuth token instead of a raw
+API key. Generate one with `claude setup-token` and set it as
+`CLAUDE_CODE_OAUTH_TOKEN` (in the environment or `~/.openwiki/.env`):
+
+```bash
+OPENWIKI_PROVIDER=anthropic
+CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
+```
+
+When both are set, `ANTHROPIC_API_KEY` takes precedence.
+
 ### Alternative base URLs
 
 To route the Anthropic provider at an alternative, Anthropic-compatible endpoint

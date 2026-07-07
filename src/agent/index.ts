@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
+import Anthropic from "@anthropic-ai/sdk";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
@@ -17,10 +18,13 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  describeProviderCredentialEnvKeys,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
+  getProviderOauthTokenEnvKey,
+  hasProviderCredential,
   isValidModelId,
   normalizeModelId,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -364,11 +368,9 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-
-  if (!process.env[apiKeyEnvKey]) {
+  if (!hasProviderCredential(provider)) {
     throw new Error(
-      `${apiKeyEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      `${describeProviderCredentialEnvKeys(provider)} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
     );
   }
 }
@@ -409,9 +411,36 @@ function resolveModelId(
 function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
     const baseURL = resolveProviderBaseUrl(provider);
+    const apiKey = process.env[getProviderApiKeyEnvKey(provider)];
+    const oauthTokenEnvKey = getProviderOauthTokenEnvKey(provider);
+    const oauthToken = oauthTokenEnvKey
+      ? process.env[oauthTokenEnvKey]
+      : undefined;
+
+    if (!apiKey && oauthToken) {
+      // Claude Code OAuth tokens (`claude setup-token`) authenticate via an
+      // `Authorization: Bearer` header plus the OAuth beta header, which
+      // ChatAnthropic's own `apiKey` path cannot produce — so the underlying
+      // Anthropic client is constructed directly. `apiKey: null` keeps the
+      // SDK from also sending an `x-api-key` header, which the API rejects
+      // when both are present.
+      return new ChatAnthropic(modelId, {
+        createClient: (clientOptions) =>
+          new Anthropic({
+            ...clientOptions,
+            apiKey: null,
+            authToken: oauthToken,
+            defaultHeaders: {
+              ...clientOptions.defaultHeaders,
+              "anthropic-beta": "oauth-2025-04-20",
+            },
+          }),
+        ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+      });
+    }
 
     return new ChatAnthropic(modelId, {
-      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      apiKey,
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
     });
   }

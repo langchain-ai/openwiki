@@ -19,6 +19,7 @@ The file stores provider configuration and API keys:
 - `OPENWIKI_PROVIDER` — the selected model provider
 - `OPENWIKI_MODEL_ID` — the default model ID
 - Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`
+- `CLAUDE_CODE_OAUTH_TOKEN` — a Claude Code OAuth token (`claude setup-token`) that authenticates the anthropic provider instead of `ANTHROPIC_API_KEY`; the API key wins when both are set
 - Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API) and `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint)
 - Optional LangSmith settings: `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`
 
@@ -57,7 +58,7 @@ The env layer also produces diagnostics for the CLI UI. Those diagnostics report
 - invalid model IDs,
 - invalid provider values.
 
-Diagnostics cover all six provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, and base URLs are shown in full).
+Diagnostics cover all six provider keys plus `CLAUDE_CODE_OAUTH_TOKEN`, `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, and base URLs are shown in full).
 
 ## Update metadata
 
