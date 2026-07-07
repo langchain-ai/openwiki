@@ -21,6 +21,7 @@ import {
   OPENAI_CHATGPT_PLAN_ENV_KEY,
   OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY,
   OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY,
+  OPENWIKI_LANGSMITH_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_TAVILY_API_KEY_ENV_KEY,
@@ -190,6 +191,7 @@ const ONBOARDING_TEMPLATES = [
       "web-search",
       "hackernews",
       "x",
+      "langsmith",
     ],
     suggestedSources: [
       "Gmail",
@@ -330,6 +332,28 @@ const SOURCE_OPTIONS = [
       {
         envKey: OPENWIKI_X_CLIENT_ID_ENV_KEY,
         label: "X OAuth client ID",
+      },
+    ],
+  },
+  {
+    displayName: "LangSmith",
+    examples: [
+      "Track production agent errors and latency regressions.",
+      "Summarize which chains or prompts are failing and why.",
+      "Verify whether a shipped fix actually reduced the error rate.",
+      "Watch token/cost trends across projects over time.",
+    ],
+    id: "langsmith",
+    instructions: [
+      "Create a LangSmith API key under Settings > API Keys.",
+      "Paste the API key below.",
+      "List the LangSmith project names to monitor in the connector config or the goal screen.",
+    ],
+    secretInputs: [
+      {
+        envKey: OPENWIKI_LANGSMITH_API_KEY_ENV_KEY,
+        label: "LangSmith API key",
+        secret: true,
       },
     ],
   },
