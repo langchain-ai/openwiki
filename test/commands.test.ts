@@ -42,6 +42,7 @@ describe("parseCommand — chat default", () => {
       print: false,
       dryRun: false,
       modelId: null,
+      runner: "deepagents",
     });
   });
 
@@ -104,6 +105,16 @@ describe("parseCommand — print", () => {
       kind: "run",
       print: true,
       command: "init",
+    });
+  });
+
+  test("--codex selects the Codex runner", () => {
+    expect(parseCommand(["--codex", "--update", "--print"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      print: true,
+      runner: "codex",
+      shouldStart: true,
     });
   });
 

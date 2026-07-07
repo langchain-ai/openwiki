@@ -21,6 +21,7 @@ import {
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+import { runOpenWikiWithCodex } from "./codex-runner.js";
 import { getErrorMessage, sanitizeDiagnosticText } from "./diagnostics.js";
 import { stripHtmlTags } from "./utils.js";
 import {
@@ -145,6 +146,7 @@ function App({ command }: AppProps) {
     );
   const shouldRunInteractiveCredentialSetup =
     command.kind === "run" &&
+    command.runner !== "codex" &&
     resolvedCommand !== null &&
     !command.dryRun &&
     process.stdin.isTTY &&
@@ -238,7 +240,11 @@ function App({ command }: AppProps) {
 
     const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (
+      command.runner !== "codex" &&
+      !process.env[apiKeyEnvKey] &&
+      !process.stdin.isTTY
+    ) {
       setRunState({
         status: "error",
         message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
@@ -288,7 +294,10 @@ function App({ command }: AppProps) {
         });
     }
 
-    runOpenWikiAgent(resolvedCommand, process.cwd(), {
+    const runAgent =
+      command.runner === "codex" ? runOpenWikiWithCodex : runOpenWikiAgent;
+
+    runAgent(resolvedCommand, process.cwd(), {
       debug: isDebugMode(),
       isFollowup: activeMessageIsFollowup,
       modelId: sessionModelId,
@@ -405,6 +414,7 @@ function App({ command }: AppProps) {
       <DryRunView
         command={command.command}
         modelId={command.modelId}
+        runner={command.runner}
         shouldStart={command.shouldStart}
         userMessage={command.userMessage}
       />
@@ -600,11 +610,13 @@ function HelpView() {
 function DryRunView({
   command,
   modelId,
+  runner,
   shouldStart,
   userMessage,
 }: {
   command: OpenWikiCommand;
   modelId: string | null;
+  runner: "codex" | "deepagents";
   shouldStart: boolean;
   userMessage: string | null;
 }) {
@@ -617,6 +629,7 @@ function DryRunView({
           label="Command"
           value={`openwiki ${command}`}
         />
+        <StatusLine tone="muted" label="Runner" value={runner} />
         <StatusLine tone="muted" label="Mode" value={command} />
         <StatusLine
           tone="muted"
@@ -3008,8 +3021,10 @@ async function runPrintCommand(
 ): Promise<void> {
   try {
     const output: string[] = [];
+    const runAgent =
+      command.runner === "codex" ? runOpenWikiWithCodex : runOpenWikiAgent;
 
-    await runOpenWikiAgent(command.command, process.cwd(), {
+    await runAgent(command.command, process.cwd(), {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
       modelId: command.modelId,
@@ -3054,6 +3069,7 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
   if (
     command.kind === "run" &&
     !command.dryRun &&
+    command.runner !== "codex" &&
     command.shouldStart &&
     (command.print || !process.stdin.isTTY)
   ) {

@@ -43,6 +43,12 @@ Run a single command and exit:
 openwiki -p "Summarize what you can do"
 ```
 
+Run through the local Codex CLI instead of model provider API credentials:
+
+```sh
+openwiki --codex --update --print
+```
+
 Initialize OpenWiki:
 
 ```sh
@@ -68,6 +74,17 @@ openwiki --help
 On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
 
 These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.
+
+### Codex runner
+
+Use `--codex` to run OpenWiki through `codex exec` with your local Codex CLI authentication instead of provider API keys. This is useful when Codex is already authenticated with ChatGPT-managed access:
+
+```sh
+openwiki --codex --init --print
+openwiki --codex --update --print
+```
+
+The Codex runner uses `codex --cd <repo> --sandbox workspace-write --ask-for-approval never exec --ephemeral` and writes only inside the target repository. If you also pass `--modelId`, OpenWiki forwards it to Codex as `--model`.
 
 ## Customizing
 

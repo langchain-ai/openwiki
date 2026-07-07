@@ -26,6 +26,7 @@ export type CliCommand =
       dryRun: boolean;
       modelId: string | null;
       print: boolean;
+      runner: "codex" | "deepagents";
       shouldStart: boolean;
       userMessage: string | null;
     }
@@ -43,6 +44,7 @@ export function parseCommand(argv: string[]): CliCommand {
   let dryRun = false;
   let modelId: string | null = null;
   let print = false;
+  let runner: "codex" | "deepagents" = "deepagents";
   let command: OpenWikiCommand = "chat";
   const userMessageParts: string[] = [];
 
@@ -68,6 +70,11 @@ export function parseCommand(argv: string[]): CliCommand {
 
     if (arg === "--print" || arg === "-p") {
       print = true;
+      continue;
+    }
+
+    if (arg === "--codex") {
+      runner = "codex";
       continue;
     }
 
@@ -158,6 +165,7 @@ export function parseCommand(argv: string[]): CliCommand {
     dryRun,
     modelId,
     print,
+    runner,
     shouldStart,
     userMessage,
   };
@@ -178,6 +186,8 @@ export const helpContent: HelpContent = {
     "openwiki [--modelId <model>] [message]",
     "openwiki --init [message]",
     "openwiki --update [message]",
+    "openwiki --codex --init [message]",
+    "openwiki --codex --update [message]",
   ],
   commands: [
     {
@@ -202,6 +212,11 @@ export const helpContent: HelpContent = {
       label: "--modelId <id>",
       description: "Use a model ID for this run.",
     },
+    {
+      label: "--codex",
+      description:
+        "Run through local codex exec instead of provider API credentials.",
+    },
   ],
   developmentOptions: [
     {
@@ -217,6 +232,7 @@ export const helpContent: HelpContent = {
     'openwiki -p "Summarize what OpenWiki can do"',
     "openwiki --modelId gpt-5.5",
     'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
+    "openwiki --codex --update --print",
   ],
   developmentExamples: ["openwiki --dry-run"],
 };
