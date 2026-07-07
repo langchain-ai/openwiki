@@ -26,7 +26,6 @@ import {
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
-  OPENROUTER_FALLBACK_MODEL_IDS,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   providerRequiresBaseUrl,
@@ -96,81 +95,13 @@ export async function runOpenWikiAgent(
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
   try {
-    return await runOpenWikiAgentWithModelFallbacks(
-      command,
-      cwd,
-      options,
-      provider,
-      modelId,
-      debugFetchCapture,
-    );
+    return await runOpenWikiAgentCore(command, cwd, options, provider, modelId);
   } catch (error) {
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
     throw error;
   } finally {
     debugFetchCapture.restore();
   }
-}
-
-async function runOpenWikiAgentWithModelFallbacks(
-  command: OpenWikiCommand,
-  cwd: string,
-  options: OpenWikiRunOptions,
-  provider: OpenWikiProvider,
-  modelId: string,
-  debugFetchCapture: OpenRouterFetchCapture,
-): Promise<OpenWikiRunResult> {
-  const modelAttempts = createModelRoute(provider, modelId);
-  let lastError: unknown = null;
-
-  for (const [attemptIndex, attemptModelId] of modelAttempts.entries()) {
-    const attemptOptions = createAttemptOptions(options, attemptIndex);
-
-    debugFetchCapture.clearLastFailure();
-
-    if (attemptIndex > 0) {
-      emitDebug(
-        options,
-        `model.retry attempt=${attemptIndex + 1} model=${attemptModelId}`,
-      );
-    }
-
-    try {
-      return await runOpenWikiAgentCore(
-        command,
-        cwd,
-        attemptOptions,
-        provider,
-        attemptModelId,
-      );
-    } catch (error) {
-      const failure = debugFetchCapture.getLastFailure();
-
-      attachOpenRouterDebugInfo(error, failure);
-      lastError = error;
-
-      if (
-        !shouldRetryOpenRouterServerError(
-          failure,
-          attemptIndex,
-          modelAttempts.length,
-        )
-      ) {
-        throw error;
-      }
-
-      emitDebug(
-        options,
-        `model.retrying status=${failure?.response?.status ?? "unknown"} next=${
-          modelAttempts[attemptIndex + 1]
-        }`,
-      );
-    }
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("OpenWiki run failed after model fallback attempts.");
 }
 
 async function runOpenWikiAgentCore(
@@ -187,14 +118,6 @@ async function runOpenWikiAgentCore(
   emitDebug(options, "openwiki.snapshot=created");
   const model = createModel(provider, modelId);
   emitDebug(options, `model.provider=${provider}`);
-  if (provider === "openrouter") {
-    emitDebug(
-      options,
-      `openrouter.route=fallback models=${JSON.stringify(
-        createModelRoute(provider, modelId),
-      )}`,
-    );
-  }
   emitDebug(options, "model=initialized");
   const checkpointer = await createCheckpointer();
   emitDebug(options, `checkpointer=${formatUrlDebugValue(checkpointPath)}`);
@@ -269,22 +192,6 @@ async function runOpenWikiAgentCore(
   return {
     command,
     model: modelId,
-  };
-}
-
-function createAttemptOptions(
-  options: OpenWikiRunOptions,
-  attemptIndex: number,
-): OpenWikiRunOptions {
-  if (attemptIndex === 0) {
-    return options;
-  }
-
-  return {
-    ...options,
-    threadId: options.threadId
-      ? `${options.threadId}-retry-${attemptIndex}`
-      : undefined,
   };
 }
 
@@ -417,14 +324,10 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   if (provider === "openrouter") {
-    const models = createModelRoute(provider, modelId);
-
     return new ChatOpenRouter({
       apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
-      models,
-      route: "fallback",
       siteName: "OpenWiki",
     });
   }
@@ -440,32 +343,6 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
       : undefined,
     model: modelId,
   });
-}
-
-function createModelRoute(
-  provider: OpenWikiProvider,
-  modelId: string,
-): string[] {
-  if (provider !== "openrouter") {
-    return [modelId];
-  }
-
-  return Array.from(new Set([modelId, ...OPENROUTER_FALLBACK_MODEL_IDS]));
-}
-
-function shouldRetryOpenRouterServerError(
-  failure: OpenRouterFetchFailure | null,
-  attemptIndex: number,
-  attemptCount: number,
-): boolean {
-  const status = failure?.response?.status;
-
-  return (
-    attemptIndex < attemptCount - 1 &&
-    typeof status === "number" &&
-    status >= 500 &&
-    status < 600
-  );
 }
 
 type NormalizedStreamEvent = {
