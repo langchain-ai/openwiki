@@ -7,6 +7,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
+import { anthropicMultimodalCompatMiddleware } from "./anthropic-compat.js";
 import { isFileNotFoundError } from "../fs-errors.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
@@ -210,6 +211,8 @@ async function runOpenWikiAgentCore(
       timeout: 120,
       virtualMode: true,
     }),
+    middleware:
+      provider === "anthropic" ? [anthropicMultimodalCompatMiddleware] : [],
     systemPrompt: createSystemPrompt(command),
   });
   emitDebug(options, "agent=created");
