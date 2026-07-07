@@ -342,6 +342,7 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
         }
       : undefined,
     model: modelId,
+    useResponsesApi: provider === "openai",
   });
 }
 
