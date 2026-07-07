@@ -8,6 +8,11 @@ import { ChatOpenRouter } from "@langchain/openrouter";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
+import {
+  initOpenTelemetry,
+  shutdownOpenTelemetry,
+  type OpenTelemetryHandle,
+} from "../otel.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
   OpenWikiCommand,
@@ -93,6 +98,16 @@ export async function runOpenWikiAgent(
   const modelId = resolveModelId(options, provider);
   emitDebug(options, `model=${modelId}`);
 
+  let otel: OpenTelemetryHandle | null = null;
+  try {
+    otel = await initOpenTelemetry();
+    if (otel) {
+      emitDebug(options, "otel=initialized tracing_mode=otel");
+    }
+  } catch (error) {
+    emitDebug(options, `otel.init.failed ${formatOtelError(error)}`);
+  }
+
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
   try {
@@ -108,8 +123,17 @@ export async function runOpenWikiAgent(
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
     throw error;
   } finally {
+    try {
+      await shutdownOpenTelemetry(otel);
+    } catch (error) {
+      emitDebug(options, `otel.flush.failed ${formatOtelError(error)}`);
+    }
     debugFetchCapture.restore();
   }
+}
+
+function formatOtelError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 async function runOpenWikiAgentWithModelFallbacks(
