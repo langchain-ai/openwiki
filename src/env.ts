@@ -12,8 +12,10 @@ import {
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_MODEL_HEADERS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  resolveModelHeaders,
 } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
 
@@ -53,6 +55,7 @@ export const MANAGED_ENV_KEYS = [
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_MODEL_HEADERS_ENV_KEY,
   "LANGSMITH_API_KEY",
   "LANGCHAIN_PROJECT",
   "LANGCHAIN_TRACING_V2",
@@ -174,15 +177,15 @@ function createCredentialDiagnostic(
     key,
     source,
     length: value.length,
-    preview: isNonSecretDiagnosticKey(key)
-      ? JSON.stringify(value)
-      : createCredentialPreview(value),
+    preview: createDiagnosticPreview(key, value),
     warnings:
       key === OPENWIKI_MODEL_ID_ENV_KEY
         ? getModelWarnings(value)
         : key === OPENWIKI_PROVIDER_ENV_KEY
           ? getProviderWarnings(value)
-          : getCredentialWarnings(value),
+          : key === OPENWIKI_MODEL_HEADERS_ENV_KEY
+            ? getModelHeadersWarnings(value)
+            : getCredentialWarnings(value),
   };
 }
 
@@ -212,6 +215,18 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   );
+}
+
+function createDiagnosticPreview(key: string, value: string): string {
+  if (isNonSecretDiagnosticKey(key)) {
+    return JSON.stringify(value);
+  }
+
+  if (key === OPENWIKI_MODEL_HEADERS_ENV_KEY) {
+    return value.length === 0 ? '""' : "<set>";
+  }
+
+  return createCredentialPreview(value);
 }
 
 function createCredentialPreview(value: string): string {
@@ -250,6 +265,16 @@ function getModelWarnings(value: string): string[] {
 
 function getProviderWarnings(value: string): string[] {
   return normalizeProvider(value) === null ? ["invalid provider"] : [];
+}
+
+function getModelHeadersWarnings(value: string): string[] {
+  try {
+    resolveModelHeaders({ [OPENWIKI_MODEL_HEADERS_ENV_KEY]: value });
+
+    return [];
+  } catch (error) {
+    return [error instanceof Error ? error.message : "invalid model headers"];
+  }
 }
 
 async function readOpenWikiEnv(): Promise<EnvMap> {

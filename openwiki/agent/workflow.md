@@ -23,11 +23,15 @@ Chat runs skip metadata writes entirely.
 
 `createModel()` in `src/agent/index.ts` branches by provider:
 
-- **anthropic**: `new ChatAnthropic(modelId, { apiKey, anthropicApiUrl? })` — uses `@langchain/anthropic` directly. When `ANTHROPIC_BASE_URL` is set, the resolved alternative base URL is passed as `anthropicApiUrl` so requests can be routed to a self-hosted or proxied Anthropic-compatible endpoint instead of the default API.
-- **openrouter**: `new ChatOpenRouter({ apiKey, baseURL, model, models, route: "fallback", siteName: "OpenWiki" })` — passes a fallback model list so OpenRouter can route around server-side failures.
-- **baseten / fireworks / openai / openai-compatible**: `new ChatOpenAI({ apiKey, configuration: { baseURL? }, model })` — OpenAI-compatible clients using the provider's base URL when configured. The `openai-compatible` provider has no default endpoint; its base URL is user-supplied via `OPENAI_COMPATIBLE_BASE_URL` and required (`requiresBaseUrl: true`), which lets OpenWiki target any OpenAI-compatible gateway (for example a LiteLLM gateway fronting upstream providers).
+- **anthropic**: `new ChatAnthropic(modelId, { apiKey, anthropicApiUrl?, clientOptions: { defaultHeaders? } })` — uses `@langchain/anthropic` directly. When `ANTHROPIC_BASE_URL` is set, the resolved alternative base URL is passed as `anthropicApiUrl` so requests can be routed to a self-hosted or proxied Anthropic-compatible endpoint instead of the default API.
+- **openrouter**: `new ChatOpenRouter({ apiKey, baseURL, model, models, route: "fallback", siteName: "OpenWiki" })` — passes a fallback model list so OpenRouter can route around server-side failures. Extra headers from `OPENWIKI_MODEL_HEADERS` are merged into the OpenRouter request headers after construction.
+- **baseten / fireworks / openai / openai-compatible**: `new ChatOpenAI({ apiKey, configuration: { baseURL?, defaultHeaders? }, model })` — OpenAI-compatible clients using the provider's base URL when configured. The `openai-compatible` provider has no default endpoint; its base URL is user-supplied via `OPENAI_COMPATIBLE_BASE_URL` and required (`requiresBaseUrl: true`), which lets OpenWiki target any OpenAI-compatible gateway (for example a LiteLLM gateway fronting upstream providers).
 
 Base URLs are resolved through `resolveProviderBaseUrl()` in `src/constants.ts`, which prefers a provider's alternative base URL environment variable (`baseUrlEnvKey`) over the built-in default before falling back to the SDK's own default endpoint. Providers marked `requiresBaseUrl` are validated at startup by `ensureProviderBaseUrl()`.
+
+Extra model request headers are resolved through `resolveModelHeaders()` from the
+optional `OPENWIKI_MODEL_HEADERS` JSON object. Invalid JSON or non-string header
+values fail fast before the model client is invoked.
 
 ## Prompting strategy
 

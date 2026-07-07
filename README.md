@@ -102,6 +102,18 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
+### Custom model request headers
+
+If your model gateway requires additional request headers, set
+`OPENWIKI_MODEL_HEADERS` to a JSON object whose values are strings:
+
+```bash
+OPENWIKI_MODEL_HEADERS='{"X-Tenant-ID":"tenant-a","x-api-key":"gateway-secret"}'
+```
+
+OpenWiki passes these headers to OpenAI-compatible, OpenAI, Anthropic, and
+OpenRouter model calls. Header values are treated as sensitive in diagnostics.
+
 If there's an inference provider or model you'd like to see added, please open a PR!
 
 ## Contributing
