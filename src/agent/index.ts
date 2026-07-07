@@ -465,9 +465,9 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
  * turns that contain reasoningContent blocks back to the Bedrock Converse API
  * fails validation in @langchain/aws's history marshalling, which breaks
  * multi-turn tool-calling loops; disabling thinking is the reliable
- * workaround until that is fixed upstream. Models whose thinking is always on
- * (Sonnet 5 and later) reject an explicit disable, so no override is sent for
- * them or for non-Claude models.
+ * workaround until that is fixed upstream. Fable/Mythos-class models reject
+ * an explicit disable (verified for Sonnet 5, which accepts it — see #40
+ * review), so no override is sent for them or for non-Claude models.
  */
 function bedrockThinkingOverride(
   modelId: string,
@@ -476,7 +476,7 @@ function bedrockThinkingOverride(
     return undefined;
   }
 
-  if (/sonnet-5|opus-5|haiku-5|fable|mythos/u.test(modelId)) {
+  if (/fable|mythos/u.test(modelId)) {
     return undefined;
   }
 
