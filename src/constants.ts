@@ -8,6 +8,8 @@ export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
+  "GOOGLE_APPLICATION_CREDENTIALS";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -19,7 +21,8 @@ export type OpenWikiProvider =
   | "fireworks"
   | "openai"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "vertexai";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -52,6 +55,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-compatible",
   "anthropic",
+  "vertexai",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -113,6 +117,15 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
+    ],
+  },
+  vertexai: {
+    apiKeyEnvKey: GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
+    label: "Vertex AI",
+    modelOptions: [
+      { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+      { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+      { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
     ],
   },
 };

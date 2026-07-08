@@ -45,6 +45,7 @@ describe("normalizeProvider / isValidProvider", () => {
   test("normalizes case and whitespace to a known provider", () => {
     expect(normalizeProvider("  Anthropic ")).toBe("anthropic");
     expect(normalizeProvider("OPENROUTER")).toBe("openrouter");
+    expect(normalizeProvider("VertexAI")).toBe("vertexai");
   });
 
   test("returns null for unknown or nullish providers", () => {
@@ -56,6 +57,7 @@ describe("normalizeProvider / isValidProvider", () => {
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
+    expect(isValidProvider("vertexai")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
   });
 });
@@ -141,4 +143,14 @@ describe("getDefaultModelId", () => {
       expect(getDefaultModelId("openai-compatible")).toBe(DEFAULT_MODEL_ID);
     },
   );
+
+  test("returns first Gemini model for vertexai", () => {
+    expect(getDefaultModelId("vertexai")).toBe("gemini-2.5-flash");
+  });
+});
+
+describe("resolveProviderBaseUrl for vertexai", () => {
+  test("returns undefined for vertexai (uses ADC, no base URL needed)", () => {
+    expect(resolveProviderBaseUrl("vertexai", {})).toBeUndefined();
+  });
 });

@@ -236,12 +236,15 @@ export function InitSetup({
     if (step === "api-key") {
       const trimmedInput = input.trim();
 
-      if (trimmedInput.length === 0) {
+      // Vertex AI allows empty input (uses Application Default Credentials)
+      if (trimmedInput.length === 0 && provider !== "vertexai") {
         setError(`${getProviderApiKeyEnvKey(provider)} is required.`);
         return;
       }
 
-      setApiKey(trimmedInput);
+      // For vertexai with empty input, we skip saving the credential
+      const nextApiKey = trimmedInput.length > 0 ? trimmedInput : null;
+      setApiKey(nextApiKey);
       setInput("");
       const nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
 
@@ -254,7 +257,7 @@ export function InitSetup({
       }
 
       await completeSetup({
-        nextApiKey: trimmedInput,
+        nextApiKey,
         nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
@@ -652,6 +655,24 @@ function Prompt({
   }
 
   if (step === "api-key") {
+    if (provider === "vertexai") {
+      return (
+        <Box flexDirection="column">
+          <Text>
+            Paste path to service account JSON, or press Enter to use
+            Application Default Credentials.
+          </Text>
+          <Text>
+            <Text color="gray">$</Text> {getProviderApiKeyEnvKey(provider)}={" "}
+            <Text color="yellow">{input}</Text>
+          </Text>
+          <Text color="gray">
+            ADC uses gcloud auth application-default login or GCE metadata.
+          </Text>
+        </Box>
+      );
+    }
+
     return (
       <Box flexDirection="column">
         <Text>Paste your {getProviderLabel(provider)} API key.</Text>
@@ -920,7 +941,11 @@ function moveSelectionIndex(
 }
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "vertexai"
+    ? "a"
+    : "an";
 }
 
 function sanitizeInputChunk(value: string): string {

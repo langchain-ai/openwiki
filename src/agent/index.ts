@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatVertexAI } from "@langchain/google-vertexai";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -10,7 +11,6 @@ import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
-import { createToolSchemaRecoveryMiddleware } from "./tool-recovery.js";
 import type {
   OpenWikiCommand,
   OpenWikiRunEvent,
@@ -129,7 +129,6 @@ async function runOpenWikiAgentCore(
     model,
     tools: [],
     checkpointer,
-    middleware: [createToolSchemaRecoveryMiddleware()],
     backend: new LocalShellBackend({
       maxOutputBytes: 100_000,
       rootDir: cwd,
@@ -277,6 +276,12 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
+  // Vertex AI uses Application Default Credentials which can work without
+  // an explicit GOOGLE_APPLICATION_CREDENTIALS env var
+  if (provider === "vertexai") {
+    return;
+  }
+
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   if (!process.env[apiKeyEnvKey]) {
@@ -335,6 +340,12 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
       siteName: "OpenWiki",
+    });
+  }
+
+  if (provider === "vertexai") {
+    return new ChatVertexAI({
+      model: modelId,
     });
   }
 
