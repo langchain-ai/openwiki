@@ -34,6 +34,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
+    "postinstall": "chmod +x dist/cli.js 2>/dev/null || true",
     "prebuild": "pnpm run clean",
     "prepack": "pnpm run build",
     "start": "node dist/cli.js",

@@ -29,6 +29,7 @@ export type CliCommand =
       shouldStart: boolean;
       userMessage: string | null;
     }
+  | { kind: "config"; exitCode: 0 }
   | {
       kind: "error";
       exitCode: 1;
@@ -38,6 +39,10 @@ export type CliCommand =
 export function parseCommand(argv: string[]): CliCommand {
   if (argv[0] === "--help" || argv[0] === "-h") {
     return { kind: "help", exitCode: 0 };
+  }
+
+  if (argv[0] === "/config") {
+    return { kind: "config", exitCode: 0 };
   }
 
   let dryRun = false;
@@ -178,11 +183,16 @@ export const helpContent: HelpContent = {
     "openwiki [--modelId <model>] [message]",
     "openwiki --init [message]",
     "openwiki --update [message]",
+    "openwiki /config",
   ],
   commands: [
     {
       label: "openwiki",
       description: "Open the interactive OpenWiki chat.",
+    },
+    {
+      label: "/config",
+      description: "Configure LangSmith settings.",
     },
   ],
   options: [
@@ -217,6 +227,7 @@ export const helpContent: HelpContent = {
     'openwiki -p "Summarize what OpenWiki can do"',
     "openwiki --modelId gpt-5.5",
     'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
+    "openwiki /config",
   ],
   developmentExamples: ["openwiki --dry-run"],
 };
