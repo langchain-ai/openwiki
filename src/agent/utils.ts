@@ -4,12 +4,32 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
-import type { OpenWikiCommand, RunContext, UpdateMetadata } from "./types.js";
+import {
+  isExpectedSnapshotRaceError,
+  isFileNotFoundError,
+} from "../fs-errors.js";
+import type {
+  OpenWikiCommand,
+  OpenWikiRunOptions,
+  RunContext,
+  UpdateMetadata,
+} from "./types.js";
 import type { Dirent } from "node:fs";
 
 const execFileAsync = promisify(execFile);
 
 export type OpenWikiContentSnapshot = string;
+
+export type UpdateNoopStatus =
+  | {
+      shouldSkip: true;
+      gitHead: string;
+      model: string;
+    }
+  | {
+      shouldSkip: false;
+      reason: string;
+    };
 
 /**
  * Builds the per-run context the prompt uses to reason about prior docs and git changes.
@@ -31,6 +51,61 @@ export async function createRunContext(
     lastUpdate,
     gitSummary: await createGitSummary(command, cwd, lastUpdate),
   };
+}
+
+export async function getUpdateNoopStatus(
+  cwd: string,
+): Promise<UpdateNoopStatus> {
+  const lastUpdate = await readLastUpdate(cwd);
+
+  if (!lastUpdate?.gitHead) {
+    return { shouldSkip: false, reason: "missing previous update git head" };
+  }
+
+  const head = await getGitHead(cwd);
+
+  if (!head) {
+    return { shouldSkip: false, reason: "missing current git head" };
+  }
+
+  const status = await runGit(cwd, [
+    "status",
+    "--short",
+    "--untracked-files=all",
+  ]);
+  const meaningfulStatus = status
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .filter((line) => !isUpdateMetadataStatusLine(line));
+
+  if (meaningfulStatus.length > 0) {
+    return { shouldSkip: false, reason: "worktree has changes" };
+  }
+
+  if (head !== lastUpdate.gitHead) {
+    const committedPaths = await getChangedPathsSinceLastUpdate(
+      cwd,
+      lastUpdate.gitHead,
+    );
+
+    if (
+      committedPaths.length === 0 ||
+      committedPaths.some((changedPath) => !isOpenWikiPath(changedPath))
+    ) {
+      return { shouldSkip: false, reason: "git head changed" };
+    }
+  }
+
+  return {
+    shouldSkip: true,
+    gitHead: head,
+    model: lastUpdate.model,
+  };
+}
+
+export function shouldCheckUpdateNoop(options: OpenWikiRunOptions): boolean {
+  return !options.userMessage?.trim();
 }
 
 /**
@@ -284,22 +359,36 @@ function formatGitSection(command: string, output: string): string {
   );
 }
 
-function isFileNotFoundError(error: unknown): boolean {
+function isUpdateMetadataStatusLine(line: string): boolean {
+  const statusPath = line.length > 3 ? line.slice(3).trim() : line.trim();
+  const normalizedPath = statusPath.replace(/\\/gu, "/");
+
   return (
-    error instanceof Error &&
-    "code" in error &&
-    (error as NodeJS.ErrnoException).code === "ENOENT"
+    normalizedPath === UPDATE_METADATA_PATH ||
+    normalizedPath.endsWith(` -> ${UPDATE_METADATA_PATH}`)
   );
 }
 
-function isExpectedSnapshotRaceError(error: unknown): boolean {
-  if (!(error instanceof Error) || !("code" in error)) {
-    return false;
-  }
+async function getChangedPathsSinceLastUpdate(
+  cwd: string,
+  gitHead: string,
+): Promise<string[]> {
+  const diff = await runGit(cwd, ["diff", "--name-only", `${gitHead}..HEAD`]);
 
-  return ["EISDIR", "ENOENT", "ENOTDIR"].includes(
-    (error as NodeJS.ErrnoException).code ?? "",
+  return diff
+    .split("\n")
+    .map((line) => normalizeGitPath(line))
+    .filter(Boolean);
+}
+
+function isOpenWikiPath(changedPath: string): boolean {
+  return (
+    changedPath === OPEN_WIKI_DIR || changedPath.startsWith(`${OPEN_WIKI_DIR}/`)
   );
+}
+
+function normalizeGitPath(value: string): string {
+  return value.trim().replace(/\\/gu, "/");
 }
 
 function isExecError(
