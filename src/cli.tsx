@@ -3055,6 +3055,20 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
   if (
     command.kind === "run" &&
     !command.dryRun &&
+    !command.shouldStart &&
+    !process.stdin.isTTY
+  ) {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message:
+        "Interactive chat requires a terminal. Pass a message or use --init or --update for non-interactive runs.",
+    };
+  }
+
+  if (
+    command.kind === "run" &&
+    !command.dryRun &&
     command.shouldStart &&
     (command.print || !process.stdin.isTTY)
   ) {
