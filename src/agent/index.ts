@@ -10,7 +10,9 @@ import { loadOpenWikiEnv, openWikiEnvDir, saveOpenWikiEnv } from "../env.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
+  codexTokensToEnv,
   isChatGptTokenExpired,
+  readCodexTokensFromEnv,
   refreshChatGptTokens,
   type CodexTokens,
 } from "./openai-chatgpt-oauth.js";
@@ -33,12 +35,6 @@ import {
   isValidModelId,
   normalizeModelId,
   OPENAI_API_KEY_ENV_KEY,
-  OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
-  OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
-  OPENAI_CHATGPT_EMAIL_ENV_KEY,
-  OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
-  OPENAI_CHATGPT_PLAN_ENV_KEY,
-  OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -504,43 +500,21 @@ async function createModel(provider: OpenWikiProvider, modelId: string) {
  * refresh-at-startup is sufficient — there is no background refresh loop.
  */
 async function resolveChatGptTokens(): Promise<CodexTokens> {
-  const access = process.env[OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY];
-  const refresh = process.env[OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY];
-  const accountId = process.env[OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY];
+  const tokens = readCodexTokensFromEnv();
 
-  if (!access || !refresh || !accountId) {
+  if (!tokens) {
     throw new Error(
       "ChatGPT login is incomplete. Run `openwiki --init` to sign in with your ChatGPT account.",
     );
   }
 
-  const expiresAtMs = Number(process.env[OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY]);
-
-  if (!isChatGptTokenExpired(expiresAtMs)) {
-    return {
-      access,
-      refresh,
-      expiresAtMs,
-      accountId,
-      email: process.env[OPENAI_CHATGPT_EMAIL_ENV_KEY] ?? null,
-      planType: process.env[OPENAI_CHATGPT_PLAN_ENV_KEY] ?? null,
-    };
+  if (!isChatGptTokenExpired(tokens.expiresAtMs)) {
+    return tokens;
   }
 
-  const refreshed = await refreshChatGptTokens(refresh);
+  const refreshed = await refreshChatGptTokens(tokens.refresh);
 
-  await saveOpenWikiEnv({
-    [OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY]: refreshed.access,
-    [OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY]: refreshed.refresh,
-    [OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY]: String(refreshed.expiresAtMs),
-    [OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY]: refreshed.accountId,
-    ...(refreshed.email
-      ? { [OPENAI_CHATGPT_EMAIL_ENV_KEY]: refreshed.email }
-      : {}),
-    ...(refreshed.planType
-      ? { [OPENAI_CHATGPT_PLAN_ENV_KEY]: refreshed.planType }
-      : {}),
-  });
+  await saveOpenWikiEnv(codexTokensToEnv(refreshed));
 
   return refreshed;
 }

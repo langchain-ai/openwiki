@@ -1,9 +1,13 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   CHATGPT_TOKEN_REFRESH_THRESHOLD_MS,
+  type CodexTokens,
+  codexTokensToEnv,
   decodeChatGptIdentity,
+  formatChatGptAccount,
   isChatGptTokenExpired,
   parseManualCallbackInput,
+  readCodexTokensFromEnv,
   refreshChatGptTokens,
 } from "../src/agent/openai-chatgpt-oauth.ts";
 
@@ -165,6 +169,72 @@ describe("decodeChatGptIdentity", () => {
       email: null,
       planType: null,
     });
+  });
+});
+
+describe("codex token env contract", () => {
+  const tokens: CodexTokens = {
+    access: "access-1",
+    refresh: "refresh-1",
+    expiresAtMs: 1_700_000_000_000,
+    accountId: "acct_1",
+    email: "dev@example.com",
+    planType: "plus",
+  };
+
+  test("round-trips tokens through the environment", () => {
+    const env = codexTokensToEnv(tokens);
+
+    expect(env).toEqual({
+      OPENAI_CHATGPT_ACCESS_TOKEN: "access-1",
+      OPENAI_CHATGPT_REFRESH_TOKEN: "refresh-1",
+      OPENAI_CHATGPT_EXPIRES_AT: "1700000000000",
+      OPENAI_CHATGPT_ACCOUNT_ID: "acct_1",
+      OPENAI_CHATGPT_EMAIL: "dev@example.com",
+      OPENAI_CHATGPT_PLAN: "plus",
+    });
+    expect(readCodexTokensFromEnv(env)).toEqual(tokens);
+  });
+
+  test("omits email and plan when they are unknown", () => {
+    const env = codexTokensToEnv({ ...tokens, email: null, planType: null });
+
+    expect(env).not.toHaveProperty("OPENAI_CHATGPT_EMAIL");
+    expect(env).not.toHaveProperty("OPENAI_CHATGPT_PLAN");
+    expect(readCodexTokensFromEnv(env)).toEqual({
+      ...tokens,
+      email: null,
+      planType: null,
+    });
+  });
+
+  test("reads back null when a required field is missing", () => {
+    for (const key of [
+      "OPENAI_CHATGPT_ACCESS_TOKEN",
+      "OPENAI_CHATGPT_REFRESH_TOKEN",
+      "OPENAI_CHATGPT_ACCOUNT_ID",
+    ]) {
+      const env: NodeJS.ProcessEnv = codexTokensToEnv(tokens);
+      delete env[key];
+
+      expect(readCodexTokensFromEnv(env)).toBeNull();
+    }
+  });
+
+  test("reads back null from an empty environment", () => {
+    expect(readCodexTokensFromEnv({})).toBeNull();
+  });
+});
+
+describe("formatChatGptAccount", () => {
+  test("combines email and capitalized plan", () => {
+    expect(formatChatGptAccount("a@b.com", "plus")).toBe("a@b.com (Plus)");
+  });
+
+  test("falls back to whichever claim is present", () => {
+    expect(formatChatGptAccount("a@b.com", null)).toBe("a@b.com");
+    expect(formatChatGptAccount(null, "pro")).toBe("Pro");
+    expect(formatChatGptAccount(null, null)).toBeNull();
   });
 });
 

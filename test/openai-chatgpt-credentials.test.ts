@@ -11,6 +11,8 @@ const MANAGED_KEYS = [
   "LANGSMITH_API_KEY",
   "OPENAI_API_KEY",
   "OPENAI_CHATGPT_ACCESS_TOKEN",
+  "OPENAI_CHATGPT_REFRESH_TOKEN",
+  "OPENAI_CHATGPT_ACCOUNT_ID",
   "OPENAI_CHATGPT_EXPIRES_AT",
 ] as const;
 
@@ -27,11 +29,18 @@ function set(key: string, value: string | undefined): void {
   }
 }
 
+/** Stores a complete token set, as a real login would. */
+function storeChatGptTokens(expiresAt: string = FAR_FUTURE): void {
+  set("OPENAI_CHATGPT_ACCESS_TOKEN", "access-token");
+  set("OPENAI_CHATGPT_REFRESH_TOKEN", "refresh-token");
+  set("OPENAI_CHATGPT_ACCOUNT_ID", "acct_1");
+  set("OPENAI_CHATGPT_EXPIRES_AT", expiresAt);
+}
+
 /** Configure a fully signed-in ChatGPT session with model + langsmith set. */
 function configureValidChatGptSession(): void {
   set("OPENWIKI_PROVIDER", "openai-chatgpt");
-  set("OPENAI_CHATGPT_ACCESS_TOKEN", "access-token");
-  set("OPENAI_CHATGPT_EXPIRES_AT", FAR_FUTURE);
+  storeChatGptTokens();
   set("OPENWIKI_MODEL_ID", "gpt-5.5");
   set("LANGSMITH_API_KEY", "");
 }
@@ -63,8 +72,17 @@ describe("oauth credential step transitions", () => {
 
   test("routes to oauth-login when the stored token is expired", () => {
     set("OPENWIKI_PROVIDER", "openai-chatgpt");
+    storeChatGptTokens(PAST);
+
+    expect(getInitialStep(null, "openai-chatgpt")).toBe("oauth-login");
+    expect(needsCredentialSetup(null)).toBe(true);
+  });
+
+  test("routes to oauth-login when the stored token set is incomplete", () => {
+    // An access token alone cannot call the Codex backend (no account id).
+    set("OPENWIKI_PROVIDER", "openai-chatgpt");
     set("OPENAI_CHATGPT_ACCESS_TOKEN", "access-token");
-    set("OPENAI_CHATGPT_EXPIRES_AT", PAST);
+    set("OPENAI_CHATGPT_EXPIRES_AT", FAR_FUTURE);
 
     expect(getInitialStep(null, "openai-chatgpt")).toBe("oauth-login");
     expect(needsCredentialSetup(null)).toBe(true);
@@ -72,8 +90,7 @@ describe("oauth credential step transitions", () => {
 
   test("skips oauth-login when a valid token is stored", () => {
     set("OPENWIKI_PROVIDER", "openai-chatgpt");
-    set("OPENAI_CHATGPT_ACCESS_TOKEN", "access-token");
-    set("OPENAI_CHATGPT_EXPIRES_AT", FAR_FUTURE);
+    storeChatGptTokens();
 
     // No model configured yet, so setup continues at the model step.
     expect(getInitialStep(null, "openai-chatgpt")).toBe("model");
@@ -102,8 +119,7 @@ describe("forceModel re-asks the model after a provider change", () => {
   test("goes to model even when a model id is already stored", () => {
     // Credential present so the credential step is skipped; model id stored.
     set("OPENWIKI_PROVIDER", "openai-chatgpt");
-    set("OPENAI_CHATGPT_ACCESS_TOKEN", "access-token");
-    set("OPENAI_CHATGPT_EXPIRES_AT", FAR_FUTURE);
+    storeChatGptTokens();
     set("OPENWIKI_MODEL_ID", "gpt-5.4-mini");
     set("LANGSMITH_API_KEY", "");
 
@@ -117,8 +133,7 @@ describe("forceModel re-asks the model after a provider change", () => {
 
   test("a per-run model override still suppresses the model step", () => {
     set("OPENWIKI_PROVIDER", "openai-chatgpt");
-    set("OPENAI_CHATGPT_ACCESS_TOKEN", "access-token");
-    set("OPENAI_CHATGPT_EXPIRES_AT", FAR_FUTURE);
+    storeChatGptTokens();
     set("LANGSMITH_API_KEY", "");
 
     expect(

@@ -11,12 +11,8 @@ import {
   isValidBaseUrl,
   isValidModelId,
   normalizeModelId,
-  OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
-  OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
   OPENAI_CHATGPT_EMAIL_ENV_KEY,
-  OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
   OPENAI_CHATGPT_PLAN_ENV_KEY,
-  OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   type OpenWikiProvider,
@@ -28,8 +24,11 @@ import {
 import {
   type ChatGptLoginHandle,
   type CodexTokens,
+  codexTokensToEnv,
+  formatChatGptAccount,
   isChatGptTokenExpired,
   loginWithChatGPT,
+  readCodexTokensFromEnv,
 } from "./agent/openai-chatgpt-oauth.js";
 import { openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
 
@@ -79,7 +78,7 @@ export function needsCredentialSetup(
  */
 function needsCredentialStep(provider: OpenWikiProvider): boolean {
   return providerUsesOAuth(provider)
-    ? !hasValidStoredToken(provider)
+    ? !hasValidStoredToken()
     : !process.env[getProviderApiKeyEnvKey(provider)];
 }
 
@@ -88,15 +87,10 @@ function credentialStep(provider: OpenWikiProvider): PromptStep {
   return providerUsesOAuth(provider) ? "oauth-login" : "api-key";
 }
 
-function hasValidStoredToken(
-  provider: OpenWikiProvider,
-  env: NodeJS.ProcessEnv = process.env,
-): boolean {
-  if (!env[getProviderApiKeyEnvKey(provider)]) {
-    return false;
-  }
+function hasValidStoredToken(env: NodeJS.ProcessEnv = process.env): boolean {
+  const tokens = readCodexTokensFromEnv(env);
 
-  return !isChatGptTokenExpired(Number(env[OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY]));
+  return tokens !== null && !isChatGptTokenExpired(tokens.expiresAtMs);
 }
 
 function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
@@ -115,7 +109,7 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
 
 function isCredentialConfigured(provider: OpenWikiProvider): boolean {
   return providerUsesOAuth(provider)
-    ? hasValidStoredToken(provider)
+    ? hasValidStoredToken()
     : Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
 }
 
@@ -141,22 +135,6 @@ function getCredentialSetupDetail(
     : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`;
 }
 
-/** Formats a `email (Plan)` label from decoded ChatGPT identity claims. */
-function formatChatGptAccount(
-  email: string | null,
-  planType: string | null,
-): string | null {
-  const plan = planType
-    ? planType.charAt(0).toUpperCase() + planType.slice(1)
-    : null;
-
-  if (email && plan) {
-    return `${email} (${plan})`;
-  }
-
-  return email ?? plan ?? null;
-}
-
 /**
  * Copies text to the terminal's clipboard using the OSC 52 escape sequence.
  * Unlike shelling out to `pbcopy`/`xclip` (which would target the remote host
@@ -174,21 +152,26 @@ function copyToClipboard(text: string): void {
 /**
  * Opens the login URL in the user's default browser. Best-effort: on
  * headless/SSH hosts the URL is also rendered as text for manual use.
+ *
+ * Windows needs `cmd /c start` rather than a shell, because under `shell: true`
+ * cmd treats the `&` separating the auth URL's query params as a command
+ * separator and mangles the URL. The empty `""` is `start`'s window-title
+ * argument (without it, `start` would consume the quoted URL as the title), and
+ * `windowsVerbatimArguments` stops Node from re-quoting what we already quoted.
  */
 function openLoginUrl(url: string): void {
-  const command =
-    process.platform === "darwin"
-      ? "open"
-      : process.platform === "win32"
-        ? "start"
-        : "xdg-open";
-
   try {
-    const child = spawn(command, [url], {
-      stdio: "ignore",
-      detached: true,
-      shell: process.platform === "win32",
-    });
+    const child =
+      process.platform === "win32"
+        ? spawn("cmd", ["/c", "start", '""', `"${url}"`], {
+            stdio: "ignore",
+            detached: true,
+            windowsVerbatimArguments: true,
+          })
+        : spawn(process.platform === "darwin" ? "open" : "xdg-open", [url], {
+            stdio: "ignore",
+            detached: true,
+          });
 
     child.on("error", () => {
       // No browser available (headless/SSH); the URL is shown as text.
@@ -671,20 +654,7 @@ export function InitSetup({
       }
 
       if (nextOAuthTokens) {
-        updates[OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY] = nextOAuthTokens.access;
-        updates[OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY] = nextOAuthTokens.refresh;
-        updates[OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY] = String(
-          nextOAuthTokens.expiresAtMs,
-        );
-        updates[OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY] = nextOAuthTokens.accountId;
-
-        if (nextOAuthTokens.email) {
-          updates[OPENAI_CHATGPT_EMAIL_ENV_KEY] = nextOAuthTokens.email;
-        }
-
-        if (nextOAuthTokens.planType) {
-          updates[OPENAI_CHATGPT_PLAN_ENV_KEY] = nextOAuthTokens.planType;
-        }
+        Object.assign(updates, codexTokensToEnv(nextOAuthTokens));
       }
 
       if (nextBaseUrl !== null) {

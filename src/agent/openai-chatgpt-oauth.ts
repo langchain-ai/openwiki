@@ -1,5 +1,13 @@
 import { createHash, randomBytes } from "node:crypto";
 import http from "node:http";
+import {
+  OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
+  OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  OPENAI_CHATGPT_EMAIL_ENV_KEY,
+  OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
+  OPENAI_CHATGPT_PLAN_ENV_KEY,
+  OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
+} from "../constants.js";
 
 /**
  * ChatGPT/Codex OAuth client.
@@ -47,6 +55,77 @@ export interface ChatGptIdentity {
   accountId: string | null;
   email: string | null;
   planType: string | null;
+}
+
+/**
+ * The single source of truth for how {@link CodexTokens} maps onto the
+ * `~/.openwiki/.env` keys. Both the credential wizard and the agent's
+ * refresh-at-startup write tokens through this, so the env contract lives next
+ * to the type it serializes.
+ */
+export function codexTokensToEnv(tokens: CodexTokens): Record<string, string> {
+  return {
+    [OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY]: tokens.access,
+    [OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY]: tokens.refresh,
+    [OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY]: String(tokens.expiresAtMs),
+    [OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY]: tokens.accountId,
+    ...(tokens.email ? { [OPENAI_CHATGPT_EMAIL_ENV_KEY]: tokens.email } : {}),
+    ...(tokens.planType
+      ? { [OPENAI_CHATGPT_PLAN_ENV_KEY]: tokens.planType }
+      : {}),
+  };
+}
+
+/**
+ * Reads persisted {@link CodexTokens} back out of the environment. Returns
+ * `null` unless the three fields required to call the Codex backend (access
+ * token, refresh token, account id) are all present.
+ */
+export function readCodexTokensFromEnv(
+  env: NodeJS.ProcessEnv = process.env,
+): CodexTokens | null {
+  const access = env[OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY];
+  const refresh = env[OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY];
+  const accountId = env[OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY];
+
+  if (!access || !refresh || !accountId) {
+    return null;
+  }
+
+  return {
+    access,
+    refresh,
+    accountId,
+    expiresAtMs: Number(env[OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY]),
+    email: env[OPENAI_CHATGPT_EMAIL_ENV_KEY] ?? null,
+    planType: env[OPENAI_CHATGPT_PLAN_ENV_KEY] ?? null,
+  };
+}
+
+/** Formats an `email (Plan)` label from decoded ChatGPT identity claims. */
+export function formatChatGptAccount(
+  email: string | null,
+  planType: string | null,
+): string | null {
+  const plan = planType
+    ? planType.charAt(0).toUpperCase() + planType.slice(1)
+    : null;
+
+  if (email && plan) {
+    return `${email} (${plan})`;
+  }
+
+  return email ?? plan ?? null;
+}
+
+/** {@link formatChatGptAccount} for the identity persisted in the environment. */
+export function formatChatGptAccountFromEnv(
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  return formatChatGptAccount(
+    env[OPENAI_CHATGPT_EMAIL_ENV_KEY] ?? null,
+    env[OPENAI_CHATGPT_PLAN_ENV_KEY] ?? null,
+  );
 }
 
 function base64url(buf: Buffer): string {
