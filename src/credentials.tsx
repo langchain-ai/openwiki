@@ -10,6 +10,7 @@ import {
   getProviderModelOptions,
   isValidBaseUrl,
   isValidModelId,
+  normalizeProvider,
   normalizeModelId,
   OPENAI_CHATGPT_EMAIL_ENV_KEY,
   OPENAI_CHATGPT_PLAN_ENV_KEY,
@@ -62,7 +63,7 @@ export function needsCredentialSetup(
   const provider = resolveConfiguredProvider();
 
   return (
-    process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
+    !hasValidConfiguredProvider() ||
     needsCredentialStep(provider) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
@@ -741,7 +742,7 @@ export function InitSetup({
         <SetupStep
           label="Provider"
           state={
-            process.env[OPENWIKI_PROVIDER_ENV_KEY]
+            hasValidConfiguredProvider()
               ? "done"
               : step === "provider"
                 ? "current"
@@ -1111,7 +1112,7 @@ export function getInitialStep(
   modelIdOverride: string | null,
   provider: OpenWikiProvider,
 ): PromptStep | null {
-  if (process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined) {
+  if (!hasValidConfiguredProvider()) {
     return "provider";
   }
 
@@ -1184,11 +1185,15 @@ function getNextStepAfterBaseUrl(
 }
 
 function getProviderSetupDetail(provider: OpenWikiProvider): string {
-  if (process.env[OPENWIKI_PROVIDER_ENV_KEY]) {
+  if (hasValidConfiguredProvider()) {
     return getProviderLabel(provider);
   }
 
   return `default ${getProviderLabel(DEFAULT_PROVIDER)}`;
+}
+
+function hasValidConfiguredProvider(): boolean {
+  return normalizeProvider(process.env[OPENWIKI_PROVIDER_ENV_KEY]) !== null;
 }
 
 function getModelSetupDetail(
@@ -1238,7 +1243,7 @@ function getSelectedModelId(
   selectedIndex: number,
   input: string,
   isCustomInput: boolean,
-): string | "custom" | null {
+): string | null {
   if (!isCustomInput) {
     const selectedOption = getModelSelectionOptions(provider)[selectedIndex];
 

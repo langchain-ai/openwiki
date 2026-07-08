@@ -44,11 +44,12 @@ function stubTokenResponse(
   body: unknown,
   status = 200,
 ): ReturnType<typeof vi.fn> {
-  const fetchMock = vi.fn(
-    async () =>
+  const fetchMock = vi.fn(() =>
+    Promise.resolve(
       new Response(typeof body === "string" ? body : JSON.stringify(body), {
         status,
       }),
+    ),
   );
 
   vi.stubGlobal("fetch", fetchMock);
@@ -83,9 +84,12 @@ describe("refreshChatGptTokens", () => {
     expect(tokens.expiresAtMs).toBeGreaterThanOrEqual(before + 3600 * 1000);
     expect(tokens.expiresAtMs).toBeLessThanOrEqual(Date.now() + 3600 * 1000);
 
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, init] = fetchMock.mock.calls[0] as [
+      string,
+      { body: URLSearchParams },
+    ];
     expect(url).toBe("https://auth.openai.com/oauth/token");
-    const sentBody = String(init.body);
+    const sentBody = init.body.toString();
     expect(sentBody).toContain("grant_type=refresh_token");
     expect(sentBody).toContain("refresh_token=refresh-prev");
   });

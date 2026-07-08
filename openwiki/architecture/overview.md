@@ -41,8 +41,9 @@ The agent runtime resolves the provider via `resolveConfiguredProvider()` in `sr
 Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 
 - **anthropic** → `ChatAnthropic` with the Anthropic API key.
-- **openrouter** → `ChatOpenRouter` with `route: "fallback"` and a list of fallback models.
-- **baseten / fireworks / openai** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
+- **openrouter** → `ChatOpenRouter` with the selected model ID.
+- **openai** → `ChatOpenAI` with `useResponsesApi: true`.
+- **baseten / fireworks / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
 
 ### DeepAgents backend
 
@@ -63,7 +64,7 @@ The current design reflects a documentation product rather than a general-purpos
 - The CLI owns user experience and credential bootstrap so the tool is install-and-run friendly.
 - Git evidence is collected in the host process before the agent starts so the model sees stable repository context.
 - Provider support is centralized in `src/constants.ts` so adding a provider is a single-config change plus a model-creation branch.
-- Model fallback is handled in the agent runtime, allowing OpenWiki to retry across a small set of models when OpenRouter returns server-side errors.
+- Model execution is fail-fast: if the selected provider/model request fails, OpenWiki surfaces that error instead of continuing with another model.
 - The content-snapshot check prevents metadata churn when an update run produces no documentation changes, which is important for scheduled CI workflows.
 - Auto-exit for init/update makes the CLI usable in both interactive and one-shot contexts without requiring `--print`.
 

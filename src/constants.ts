@@ -141,7 +141,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "z-ai/glm-5.2", label: "GLM 5.2" },
       { id: "openrouter/fusion", label: "OpenRouter Fusion" },
       { id: "moonshotai/kimi-k2.7-code", label: "Kimi K2.7 Code" },
-      { id: "anthropic/claude-opus-4.8", label: "Claude Opus" },
+      { id: "anthropic/claude-opus-4-8", label: "Claude Opus" },
       { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
@@ -151,11 +151,6 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
 
 export const DEFAULT_MODEL_ID =
   PROVIDER_CONFIGS[DEFAULT_PROVIDER].modelOptions[0]?.id ?? "zai-org/GLM-5.2";
-
-export const OPENROUTER_FALLBACK_MODEL_IDS = [
-  "openai/gpt-5.4-mini",
-  "anthropic/claude-sonnet-5",
-];
 
 export const SUGGESTED_MODEL_IDS = PROVIDER_CONFIGS[
   DEFAULT_PROVIDER
@@ -280,4 +275,4 @@ export function isValidModelId(value: string): boolean {
   );
 }
 
-export const OPENWIKI_VERSION = "0.0.1";
+export const OPENWIKI_VERSION = "0.0.2";
