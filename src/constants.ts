@@ -10,6 +10,36 @@ export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
+export const OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY =
+  "OPENWIKI_GOOGLE_ACCESS_TOKEN";
+export const OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY = "OPENWIKI_GOOGLE_CLIENT_ID";
+export const OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY =
+  "OPENWIKI_GOOGLE_CLIENT_SECRET";
+export const OPENWIKI_GOOGLE_REFRESH_TOKEN_ENV_KEY =
+  "OPENWIKI_GOOGLE_REFRESH_TOKEN";
+export const OPENWIKI_GMAIL_ACCESS_TOKEN_ENV_KEY =
+  "OPENWIKI_GMAIL_ACCESS_TOKEN";
+export const OPENWIKI_GMAIL_REFRESH_TOKEN_ENV_KEY =
+  "OPENWIKI_GMAIL_REFRESH_TOKEN";
+export const OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY =
+  "OPENWIKI_NOTION_MCP_ACCESS_TOKEN";
+export const OPENWIKI_NOTION_MCP_CLIENT_ID_ENV_KEY =
+  "OPENWIKI_NOTION_MCP_CLIENT_ID";
+export const OPENWIKI_NOTION_MCP_REFRESH_TOKEN_ENV_KEY =
+  "OPENWIKI_NOTION_MCP_REFRESH_TOKEN";
+export const OPENWIKI_NOTION_TOKEN_ENV_KEY = "OPENWIKI_NOTION_TOKEN";
+export const OPENWIKI_SLACK_BOT_TOKEN_ENV_KEY = "OPENWIKI_SLACK_BOT_TOKEN";
+export const OPENWIKI_SLACK_CLIENT_ID_ENV_KEY = "OPENWIKI_SLACK_CLIENT_ID";
+export const OPENWIKI_SLACK_CLIENT_SECRET_ENV_KEY =
+  "OPENWIKI_SLACK_CLIENT_SECRET";
+export const OPENWIKI_SLACK_USER_TOKEN_ENV_KEY = "OPENWIKI_SLACK_USER_TOKEN";
+export const OPENWIKI_X_ACCESS_TOKEN_ENV_KEY = "OPENWIKI_X_ACCESS_TOKEN";
+export const OPENWIKI_X_CLIENT_ID_ENV_KEY = "OPENWIKI_X_CLIENT_ID";
+export const OPENWIKI_X_CLIENT_SECRET_ENV_KEY = "OPENWIKI_X_CLIENT_SECRET";
+export const OPENWIKI_X_REFRESH_TOKEN_ENV_KEY = "OPENWIKI_X_REFRESH_TOKEN";
+export const OPENWIKI_TAVILY_API_KEY_ENV_KEY = "TAVILY_API_KEY";
+export const OPENWIKI_LANGSMITH_API_KEY_ENV_KEY = "OPENWIKI_LANGSMITH_API_KEY";
+export const OPENWIKI_DIAGRAMS_ENV_KEY = "OPENWIKI_DIAGRAMS";
 export const DEFAULT_PROVIDER = "openrouter";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
@@ -191,6 +221,26 @@ export function getProviderModelOptions(
 
 export function getDefaultModelId(provider: OpenWikiProvider): string {
   return getProviderModelOptions(provider)[0]?.id ?? DEFAULT_MODEL_ID;
+}
+
+export type DiagramFormat = "mermaid" | null;
+
+export function resolveDiagramFormat(
+  env: NodeJS.ProcessEnv = process.env,
+): DiagramFormat {
+  const value = env[OPENWIKI_DIAGRAMS_ENV_KEY];
+
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "mermaid") {
+    return "mermaid";
+  }
+
+  return null;
 }
 
 export function normalizeProvider(

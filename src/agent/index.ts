@@ -31,6 +31,7 @@ import {
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  resolveDiagramFormat,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
