@@ -49,7 +49,7 @@
     "@langchain/protocol": "^0.0.18",
     "deepagents": "^1.10.7",
     "ink": "^5.1.0",
-    "langchain": "^1.5.1",
+    "langchain": "^1.5.3",
     "marked": "^18.0.5",
     "react": "^18.3.1"
   },
