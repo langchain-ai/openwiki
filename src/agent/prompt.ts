@@ -1,11 +1,6 @@
 import type { DiagramFormat } from "../constants.js";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
-import {
-  OpenWikiCommand,
-  OpenWikiOutputMode,
-  RunContext,
-  UpdateMetadata,
-} from "./types.js";
+import { OpenWikiCommand, RunContext, UpdateMetadata } from "./types.js";
 
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   if (lastUpdate === null) {
@@ -17,10 +12,8 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
 
 export function createSystemPrompt(
   command: OpenWikiCommand,
-  outputMode: OpenWikiOutputMode = "local-wiki",
   diagramFormat: DiagramFormat = null,
 ): string {
-  const output = getOutputPromptConfig(outputMode);
   const diagramSection = createDiagramInstructions(diagramFormat);
   return `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
@@ -139,7 +132,7 @@ Required documentation structure:
 - Track the last successful documentation update in ${UPDATE_METADATA_PATH}.
 
 Mode-specific behavior:
-${createModeInstructions(command, outputMode)}
+${createModeInstructions(command)}
 
 ${diagramSection}
 `.trim();

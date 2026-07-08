@@ -112,6 +112,8 @@ async function runOpenWikiAgentCore(
   provider: OpenWikiProvider,
   modelId: string,
 ): Promise<OpenWikiRunResult> {
+  const diagramFormat = resolveDiagramFormat();
+  emitDebug(options, `diagrams=${diagramFormat ?? "disabled"}`);
   const context = await createRunContext(command, cwd);
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
@@ -134,7 +136,7 @@ async function runOpenWikiAgentCore(
       timeout: 120,
       virtualMode: true,
     }),
-    systemPrompt: createSystemPrompt(command),
+    systemPrompt: createSystemPrompt(command, diagramFormat),
   });
   emitDebug(options, "agent=created");
 
