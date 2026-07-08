@@ -25,6 +25,7 @@ export type CliCommand =
       command: OpenWikiCommand;
       dryRun: boolean;
       modelId: string | null;
+      noAgentInstructions: boolean;
       print: boolean;
       shouldStart: boolean;
       userMessage: string | null;
@@ -42,6 +43,7 @@ export function parseCommand(argv: string[]): CliCommand {
 
   let dryRun = false;
   let modelId: string | null = null;
+  let noAgentInstructions = false;
   let print = false;
   let command: OpenWikiCommand = "chat";
   const userMessageParts: string[] = [];
@@ -68,6 +70,11 @@ export function parseCommand(argv: string[]): CliCommand {
 
     if (arg === "--print" || arg === "-p") {
       print = true;
+      continue;
+    }
+
+    if (arg === "--no-agent-instructions") {
+      noAgentInstructions = true;
       continue;
     }
 
@@ -157,6 +164,7 @@ export function parseCommand(argv: string[]): CliCommand {
     command,
     dryRun,
     modelId,
+    noAgentInstructions,
     print,
     shouldStart,
     userMessage,
@@ -215,6 +223,10 @@ export const helpContent: HelpContent = {
     {
       label: "-p, --print",
       description: "Run once and print the final assistant output.",
+    },
+    {
+      label: "--no-agent-instructions",
+      description: "Do not add OpenWiki references to AGENTS.md or CLAUDE.md.",
     },
     {
       label: "--modelId <id>",

@@ -1,6 +1,10 @@
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
 import { OpenWikiCommand, RunContext, UpdateMetadata } from "./types.js";
 
+type SystemPromptOptions = {
+  noAgentInstructions?: boolean;
+};
+
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   if (lastUpdate === null) {
     return "No previous OpenWiki update metadata was found.";
@@ -9,7 +13,12 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   return JSON.stringify(lastUpdate, null, 2);
 }
 
-export function createSystemPrompt(command: OpenWikiCommand): string {
+export function createSystemPrompt(
+  command: OpenWikiCommand,
+  options: SystemPromptOptions = {},
+): string {
+  const noAgentInstructions = options.noAgentInstructions === true;
+
   return `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
 
@@ -54,28 +63,7 @@ Existing documentation discipline:
 - Summarize and link to existing docs when they are still useful instead of duplicating them wholesale.
 - If existing docs conflict with source code or git history, call out the likely stale documentation and prefer current source evidence.
 
-Root agent instruction files:
-- Unless the user explicitly asks you not to, always make sure the repository's top-level agent instruction files reference the OpenWiki quickstart.
-- Only consider top-level /AGENTS.md and /CLAUDE.md for this step. Do not edit nested AGENTS.md or CLAUDE.md files.
-- If /AGENTS.md or /CLAUDE.md exists, add or update the OpenWiki reference section there. If both exist, ensure the same section is added to both (duplicated).
-- If neither exists, create top-level /AGENTS.md containing only the OpenWiki reference section.
-- During update runs, inspect any existing OpenWiki reference section in /AGENTS.md and/or /CLAUDE.md and refresh it only if the section is missing or semantically stale. This check is required even when the wiki itself is otherwise current.
-- Preserve surrounding instructions in existing files. Replace/update an existing OpenWiki reference section instead of adding duplicates.
-- Do not edit /AGENTS.md or /CLAUDE.md only to normalize formatting, blank lines, wrapping, or punctuation if the existing OpenWiki section is already semantically correct.
-- Use this exact section structure every time:
-
-\`\`\`markdown
-## OpenWiki
-
-This repository has documentation located in the /openwiki directory.
-
-Start here:
-- [OpenWiki quickstart](openwiki/quickstart.md)
-
-OpenWiki includes repository overview, architecture notes, workflows, domain concepts, operations, integrations, testing guidance, and source maps.
-
-When working in this repository, read the OpenWiki quickstart first, then follow its links to the relevant architecture, workflow, domain, operation, and testing notes.
-\`\`\`
+${createAgentInstructionFileInstructions(noAgentInstructions)}
 
 OpenWiki CLI reference:
 - \`openwiki\` opens the interactive chat interface and waits for user input.
@@ -93,7 +81,7 @@ Security and privacy rules:
 - Do not read .env files. .env.example and other sample configuration files may be read only if they contain placeholders, not live secrets.
 - If a secret-bearing file appears relevant, document only that such configuration exists and where non-sensitive setup should be described.
 - Keep all documentation under ${OPEN_WIKI_DIR}/.
-- Do not modify source code outside ${OPEN_WIKI_DIR}/. The only allowed exceptions are top-level /AGENTS.md and /CLAUDE.md, and only for the OpenWiki reference section described above.
+${createWriteBoundaryInstruction(noAgentInstructions)}
 
 Documentation goals:
 - Someone with zero knowledge of the repository should be able to start at ${OPEN_WIKI_DIR}/quickstart.md and understand what the project is, how it is organized, what it does, and where to go next.
@@ -129,6 +117,52 @@ Required documentation structure:
 Mode-specific behavior:
 ${createModeInstructions(command)}
 `.trim();
+}
+
+function createAgentInstructionFileInstructions(
+  noAgentInstructions: boolean,
+): string {
+  if (noAgentInstructions) {
+    return `
+Root agent instruction files:
+- Do not create, edit, append, or refresh top-level /AGENTS.md or /CLAUDE.md.
+- Do not add OpenWiki references, quickstart links, generated sections, or other documentation guidance to /AGENTS.md or /CLAUDE.md during this run.
+- Keep all generated documentation and update metadata under ${OPEN_WIKI_DIR}/.
+`.trim();
+  }
+
+  return `
+Root agent instruction files:
+- Unless the user explicitly asks you not to, always make sure the repository's top-level agent instruction files reference the OpenWiki quickstart.
+- Only consider top-level /AGENTS.md and /CLAUDE.md for this step. Do not edit nested AGENTS.md or CLAUDE.md files.
+- If /AGENTS.md or /CLAUDE.md exists, add or update the OpenWiki reference section there. If both exist, ensure the same section is added to both (duplicated).
+- If neither exists, create top-level /AGENTS.md containing only the OpenWiki reference section.
+- During update runs, inspect any existing OpenWiki reference section in /AGENTS.md and/or /CLAUDE.md and refresh it only if the section is missing or semantically stale. This check is required even when the wiki itself is otherwise current.
+- Preserve surrounding instructions in existing files. Replace/update an existing OpenWiki reference section instead of adding duplicates.
+- Do not edit /AGENTS.md or /CLAUDE.md only to normalize formatting, blank lines, wrapping, or punctuation if the existing OpenWiki section is already semantically correct.
+- Use this exact section structure every time:
+
+\`\`\`markdown
+## OpenWiki
+
+This repository has documentation located in the /openwiki directory.
+
+Start here:
+- [OpenWiki quickstart](openwiki/quickstart.md)
+
+OpenWiki includes repository overview, architecture notes, workflows, domain concepts, operations, integrations, testing guidance, and source maps.
+
+When working in this repository, read the OpenWiki quickstart first, then follow its links to the relevant architecture, workflow, domain, operation, and testing notes.
+\`\`\`
+`.trim();
+}
+
+function createWriteBoundaryInstruction(noAgentInstructions: boolean): string {
+  if (noAgentInstructions) {
+    return `- Do not modify files outside ${OPEN_WIKI_DIR}/. In particular, do not create, edit, append, or refresh top-level /AGENTS.md or /CLAUDE.md.`;
+  }
+
+  return `- Do not modify source code outside ${OPEN_WIKI_DIR}/. The only allowed exceptions are top-level /AGENTS.md and /CLAUDE.md, and only for the OpenWiki reference section described above.`;
 }
 
 export function createModeInstructions(command: OpenWikiCommand): string {

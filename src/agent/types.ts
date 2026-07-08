@@ -34,6 +34,7 @@ export type OpenWikiRunOptions = {
   debug?: boolean;
   isFollowup?: boolean;
   modelId?: string | null;
+  noAgentInstructions?: boolean;
   onEvent?: (event: OpenWikiRunEvent) => void;
   threadId?: string;
   userMessage?: string | null;
