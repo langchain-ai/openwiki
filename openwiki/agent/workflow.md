@@ -23,9 +23,10 @@ Chat runs skip metadata writes entirely.
 
 `createModel()` in `src/agent/index.ts` branches by provider:
 
-- **anthropic**: `new ChatAnthropic(modelId, { apiKey, anthropicApiUrl? })` — uses `@langchain/anthropic` directly. When `ANTHROPIC_BASE_URL` is set, the resolved alternative base URL is passed as `anthropicApiUrl` so requests can be routed to a self-hosted or proxied Anthropic-compatible endpoint instead of the default API. For the anthropic provider, `createDeepAgent` also attaches `anthropicMultimodalCompatMiddleware` (`src/agent/anthropic-compat.ts`), which rewrites tool-result content blocks the Anthropic API rejects (non-PDF base64 `file` documents, unsupported image types, audio, video) into text placeholders before each model call, so reading a binary file cannot fail the run with a 400.
-- **openrouter**: `new ChatOpenRouter({ apiKey, baseURL, model, models, route: "fallback", siteName: "OpenWiki" })` — passes a fallback model list so OpenRouter can route around server-side failures.
-- **baseten / fireworks / openai / openai-compatible**: `new ChatOpenAI({ apiKey, configuration: { baseURL? }, model })` — OpenAI-compatible clients using the provider's base URL when configured. The `openai-compatible` provider has no default endpoint; its base URL is user-supplied via `OPENAI_COMPATIBLE_BASE_URL` and required (`requiresBaseUrl: true`), which lets OpenWiki target any OpenAI-compatible gateway (for example a LiteLLM gateway fronting upstream providers).
+- **anthropic**: `new ChatAnthropic(modelId, { apiKey, anthropicApiUrl? })` — uses `@langchain/anthropic` directly. When `ANTHROPIC_BASE_URL` is set, the resolved alternative base URL is passed as `anthropicApiUrl` so requests can be routed to a self-hosted or proxied Anthropic-compatible endpoint instead of the default API. For the anthropic provider, `createDeepAgent` also attaches `anthropicMultimodalCompatMiddleware` (`src/agent/anthropic-compat.ts`), which rewrites tool-result content blocks the Anthropic API rejects (non-PDF base64 `file` documents, unsupported image types, audio, video) before each model call: blocks whose bytes decode as UTF-8 text are restored to their text contents (truncated past 256 KB), and only genuine binary data falls back to a short text placeholder, so reading such a file cannot fail the run with a 400.
+- **openrouter**: `new ChatOpenRouter({ apiKey, baseURL, model, siteName: "OpenWiki" })` — uses the selected OpenRouter model directly.
+- **openai**: `new ChatOpenAI({ apiKey, model, useResponsesApi: true })` — uses OpenAI's Responses API for official OpenAI calls.
+- **baseten / fireworks / openai-compatible**: `new ChatOpenAI({ apiKey, configuration: { baseURL? }, model })` — OpenAI-compatible clients using the provider's base URL when configured. The `openai-compatible` provider has no default endpoint; its base URL is user-supplied via `OPENAI_COMPATIBLE_BASE_URL` and required (`requiresBaseUrl: true`), which lets OpenWiki target any OpenAI-compatible gateway (for example a LiteLLM gateway fronting upstream providers).
 
 Base URLs are resolved through `resolveProviderBaseUrl()` in `src/constants.ts`, which prefers a provider's alternative base URL environment variable (`baseUrlEnvKey`) over the built-in default before falling back to the SDK's own default endpoint. Providers marked `requiresBaseUrl` are validated at startup by `ensureProviderBaseUrl()`.
 
@@ -73,15 +74,11 @@ That metadata is later used to scope update runs.
 
 `createOpenWikiContentSnapshot()` computes a SHA-256 hash of the entire `openwiki/` directory tree (excluding `.last-update.json`). The agent runtime takes a snapshot before and after the run. If they match — meaning the model made no documentation changes — the metadata file is not updated. This prevents scheduled update loops from churning the metadata when the wiki is already current.
 
-## Model fallback and retries
+## Model errors
 
-The agent runtime includes a retry strategy for OpenRouter:
-
-- the selected model is tried first,
-- server-side OpenRouter failures (HTTP 5xx) fall back through `OPENROUTER_FALLBACK_MODEL_IDS`,
-- retries keep the same command and repository context but use a modified thread ID to avoid checkpointer collisions.
-
-Non-OpenRouter providers do not use the fallback list — only the selected model is attempted.
+The agent runtime uses only the selected provider and model for a run. If that
+request fails, OpenWiki surfaces the provider error and stops instead of
+retrying with another model.
 
 ## Why this matters
 
