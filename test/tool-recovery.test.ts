@@ -1,11 +1,7 @@
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
-import {
-  BaseChatModel,
-  type BaseChatModelParams,
-} from "@langchain/core/language_models/chat_models";
+import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import {
   AIMessage,
   type BaseMessage,
@@ -28,7 +24,7 @@ class ScriptedChatModel extends BaseChatModel {
   callCount = 0;
 
   constructor(responses: AIMessage[]) {
-    super({} as BaseChatModelParams);
+    super({});
     this.responses = responses;
   }
 
@@ -41,17 +37,13 @@ class ScriptedChatModel extends BaseChatModel {
     return this;
   }
 
-  async _generate(
-    _messages: BaseMessage[],
-    _options: this["ParsedCallOptions"],
-    _runManager?: CallbackManagerForLLMRun,
-  ): Promise<ChatResult> {
+  _generate(): Promise<ChatResult> {
     const message =
       this.responses[Math.min(this.callCount, this.responses.length - 1)];
     this.callCount += 1;
     const text = typeof message.content === "string" ? message.content : "";
 
-    return { generations: [{ text, message }] };
+    return Promise.resolve({ generations: [{ text, message }] });
   }
 }
 
@@ -114,11 +106,11 @@ describe("tool schema recovery middleware (integration)", () => {
     );
     expect(toolMessage).toBeDefined();
     expect(toolMessage?.status).toBe("error");
-    expect(String(toolMessage?.content)).toContain("write_file");
+    expect(toolMessage?.content).toContain("write_file");
 
     // The loop completed with the model's final answer.
     const finalAnswer = messages.at(-1);
     expect(finalAnswer && AIMessage.isInstance(finalAnswer)).toBe(true);
-    expect(String(finalAnswer?.content)).toContain("Done.");
+    expect(finalAnswer?.content).toContain("Done.");
   });
 });
