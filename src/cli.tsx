@@ -44,10 +44,12 @@ import {
   type OpenWikiProvider,
 } from "./constants.js";
 import type { OpenWikiCommand } from "./agent/types.js";
+import { ConfigSetup, type ConfigSetupResult } from "./config.js";
 
 type RunState =
   | { status: "idle" }
   | { status: "init-setup-saved"; result: InitSetupResult }
+  | { status: "config" }
   | {
       status: "running";
       command: OpenWikiCommand;
@@ -159,6 +161,11 @@ function App({ command }: AppProps) {
       return;
     }
 
+    if (message.trim() === "/config") {
+      setRunState({ status: "config" });
+      return;
+    }
+
     setActiveUserMessage(message);
     setActiveMessageIsFollowup(true);
     setResolvedCommand("chat");
@@ -219,6 +226,10 @@ function App({ command }: AppProps) {
     if (command.kind === "help" || command.kind === "error") {
       process.exitCode = command.exitCode;
       app.exit();
+      return;
+    }
+
+    if (command.kind === "config") {
       return;
     }
 
@@ -400,6 +411,25 @@ function App({ command }: AppProps) {
     );
   }
 
+  if (command.kind === "config") {
+    return (
+      <Box flexDirection="column">
+        <Header modelId={null} subtitle="Configuration" />
+        <ConfigSetup
+          onComplete={() => {
+            process.exitCode = 0;
+            app.exit();
+          }}
+          onError={(message) => {
+            process.exitCode = 1;
+            process.stderr.write(`${message}\n`);
+            app.exit();
+          }}
+        />
+      </Box>
+    );
+  }
+
   if (command.kind === "run" && command.dryRun) {
     return (
       <DryRunView
@@ -461,6 +491,22 @@ function App({ command }: AppProps) {
           />
         ) : null}
         <StatusLine tone="active" label="Next" value="starting openwiki" />
+      </Box>
+    );
+  }
+
+  if (runState.status === "config") {
+    return (
+      <Box flexDirection="column">
+        <ChatHistory runs={completedRuns} />
+        <ConfigSetup
+          onComplete={() => {
+            setRunState({ status: "idle" });
+          }}
+          onError={(message) => {
+            setRunState({ status: "error", message });
+          }}
+        />
       </Box>
     );
   }
@@ -1429,10 +1475,16 @@ function ChatInput({
       return;
     }
 
+    if (option.id === "config") {
+      resetInput();
+      onSubmit("/config");
+      return;
+    }
+
     if (option.id === "help") {
       resetInput();
       setNotice(
-        "Slash commands: /provider, /model, /init, /update, /clear, /help, /exit. Use arrows to select.",
+        "Slash commands: /provider, /model, /init, /update, /config, /clear, /help, /exit. Use arrows to select.",
       );
       return;
     }
@@ -1601,6 +1653,7 @@ type ChatInputMenuState =
 
 type SlashCommandId =
   | "clear"
+  | "config"
   | "exit"
   | "help"
   | "init"
@@ -1645,6 +1698,11 @@ const slashCommandOptions: SlashCommandOption[] = [
     description: "Update existing OpenWiki documentation",
     id: "update",
     label: "/update",
+  },
+  {
+    description: "Manage LangSmith configuration",
+    id: "config",
+    label: "/config",
   },
   {
     description: "Start a fresh thread and clear chat history",

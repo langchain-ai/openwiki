@@ -5,9 +5,10 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
-import { createDeepAgent, LocalShellBackend } from "deepagents";
+import { createDeepAgent } from "deepagents";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
+import { OpenWikiShellBackend } from "./backend.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
   OpenWikiCommand,
@@ -127,7 +128,7 @@ async function runOpenWikiAgentCore(
     model,
     tools: [],
     checkpointer,
-    backend: new LocalShellBackend({
+    backend: new OpenWikiShellBackend({
       maxOutputBytes: 100_000,
       rootDir: cwd,
       timeout: 120,
