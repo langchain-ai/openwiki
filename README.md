@@ -104,6 +104,22 @@ Base URLs (and all credentials) can be set in your environment or stored in `~/.
 
 If there's an inference provider or model you'd like to see added, please open a PR!
 
+### OpenTelemetry (OTLP) tracing
+
+By default, tracing is sent to LangSmith. To export agent-run traces to an
+OpenTelemetry backend instead (for example a self-hosted collector), set
+`LANGSMITH_TRACING_MODE=otel` and point the OTLP exporter at your endpoint.
+OpenWiki initializes the tracer provider on startup and flushes it before exit,
+so traces from short-lived (e.g. CI) runs are not dropped:
+
+```bash
+LANGSMITH_TRACING=true
+LANGSMITH_TRACING_MODE=otel
+OTEL_EXPORTER_OTLP_ENDPOINT=https://your-collector.example.com/v1/traces
+# optional, for authenticated collectors:
+OTEL_EXPORTER_OTLP_HEADERS=x-api-key=your-key
+```
+
 ## Contributing
 
 Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR. We intentionally keep PRs tightly scoped to one change each, and PRs that bundle unrelated changes may be closed with a request to split them.
