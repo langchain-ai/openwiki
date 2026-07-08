@@ -352,7 +352,7 @@ type NormalizedStreamEvent = {
   payload: unknown;
 };
 
-function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
+export function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
   const streamEvent = normalizeStreamEvent(chunk);
 
   if (!streamEvent) {
@@ -647,7 +647,12 @@ function extractContentBlockText(block: unknown, seen: Set<object>): string {
 
   const type = getStringRecordValue(block, "type");
 
-  if (type?.includes("tool") || type?.includes("reasoning")) {
+  if (
+    type?.includes("tool") ||
+    type?.includes("reasoning") ||
+    type?.includes("file") ||
+    type?.includes("image")
+  ) {
     return "";
   }
 
