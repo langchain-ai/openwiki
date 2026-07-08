@@ -17,10 +17,13 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  DEEPSEEK_API_KEY_ENV_KEY,
+  DEEPSEEK_BASE_URL,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
+  isLocalProvider,
   isValidModelId,
   normalizeModelId,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -40,6 +43,50 @@ import {
   shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
+
+// DeepSeek API rewriter: flattens array content into text to avoid 400 errors
+// on non-text content blocks (file, image, etc.)
+// Returns a fetch function scoped to a single model instance.
+export function createDeepSeekFetchRewriter(
+  originalFetch: typeof globalThis.fetch = globalThis.fetch,
+): typeof globalThis.fetch {
+  return async function (
+    input: string | URL | Request,
+    init?: RequestInit,
+  ): Promise<Response> {
+    if (init?.body) {
+      try {
+        const body =
+          typeof init.body === "string" ? JSON.parse(init.body) : null;
+
+        if (body?.messages && Array.isArray(body.messages)) {
+          body.messages = body.messages.map((msg: { content: unknown }) => {
+            if (Array.isArray(msg.content)) {
+              const textParts = msg.content
+                .filter((block: { type: string }) => block.type === "text")
+                .map((block: { text: string }) => block.text);
+
+              const nonTextTypes = msg.content
+                .filter((block: { type: string }) => block.type !== "text")
+                .map(
+                  (block: { type: string }) => `[omitted ${block.type} block]`,
+                );
+
+              msg.content = [...textParts, ...nonTextTypes].join("\n") || "";
+            }
+            return msg;
+          });
+
+          init.body = JSON.stringify(body);
+        }
+      } catch {
+        // If body parsing fails, pass through unchanged
+      }
+    }
+
+    return originalFetch(input, init);
+  };
+}
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -271,6 +318,13 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
+  // Local providers (Ollama, LM Studio, 9Router) don't require a real API key.
+  // A missing or empty key is acceptable; the SDK will skip the Authorization
+  // header or use a dummy value.
+  if (isLocalProvider(provider)) {
+    return;
+  }
+
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   if (!process.env[apiKeyEnvKey]) {
@@ -332,10 +386,28 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
     });
   }
 
+  if (provider === "deepseek") {
+    return new ChatOpenAI({
+      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      configuration: {
+        baseURL: resolveProviderBaseUrl(provider),
+        fetch: createDeepSeekFetchRewriter(),
+      },
+      model: modelId,
+    });
+  }
+
   const baseURL = resolveProviderBaseUrl(provider);
 
+  // Local providers (Ollama, LM Studio, 9Router) don't require a real API key.
+  // ChatOpenAI requires a non-empty apiKey to construct the Authorization header,
+  // so we use a dummy value for local endpoints that skip auth.
+  const apiKey = isLocalProvider(provider)
+    ? (process.env[getProviderApiKeyEnvKey(provider)] || "local")
+    : process.env[getProviderApiKeyEnvKey(provider)];
+
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey,
     configuration: baseURL
       ? {
           baseURL,
