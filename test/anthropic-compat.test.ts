@@ -11,14 +11,25 @@ function toolMessage(content: unknown): ToolMessage {
 
 const PNG_BASE64 = "iVBORw0KGgo=";
 
+// Decodes to bytes containing a NUL (0x00), i.e. genuine binary data.
+const BINARY_BASE64 = Buffer.from([0x89, 0x50, 0x00, 0x1a]).toString("base64");
+
+function textFileBlock(text: string, mimeType = "application/octet-stream") {
+  return {
+    type: "file",
+    mimeType,
+    data: Buffer.from(text, "utf-8").toString("base64"),
+  };
+}
+
 describe("sanitizeMessagesForAnthropic", () => {
-  test("replaces non-PDF file blocks with a text placeholder", () => {
+  test("replaces binary file blocks with a text placeholder", () => {
     const [sanitized] = sanitizeMessagesForAnthropic([
       toolMessage([
         {
           type: "file",
           mimeType: "application/octet-stream",
-          data: PNG_BASE64,
+          data: BINARY_BASE64,
         },
       ]),
     ]);
@@ -27,7 +38,33 @@ describe("sanitizeMessagesForAnthropic", () => {
 
     expect(block.type).toBe("text");
     expect(block.text).toContain("application/octet-stream");
-    expect(block.text).not.toContain(PNG_BASE64);
+    expect(block.text).not.toContain(BINARY_BASE64);
+  });
+
+  test("decodes text file blocks (e.g. .gitignore) to their contents", () => {
+    const contents = "node_modules/\ndist/\n.env\n";
+    const [sanitized] = sanitizeMessagesForAnthropic([
+      toolMessage([textFileBlock(contents)]),
+    ]);
+
+    const [block] = sanitized.content as Array<{ type: string; text: string }>;
+
+    expect(block.type).toBe("text");
+    expect(block.text).toBe(contents);
+  });
+
+  test("truncates very large text file blocks but keeps their prefix", () => {
+    const big = "a".repeat(300 * 1024);
+    const [sanitized] = sanitizeMessagesForAnthropic([
+      toolMessage([textFileBlock(big, "text/plain")]),
+    ]);
+
+    const [block] = sanitized.content as Array<{ type: string; text: string }>;
+
+    expect(block.type).toBe("text");
+    expect(block.text.startsWith("a".repeat(1024))).toBe(true);
+    expect(block.text).toContain("truncated");
+    expect(block.text.length).toBeLessThan(big.length);
   });
 
   test("keeps PDF file blocks and supported image blocks", () => {

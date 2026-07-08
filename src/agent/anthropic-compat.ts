@@ -15,6 +15,10 @@ type MultimodalContentBlock = {
   data?: unknown;
 };
 
+// Files larger than this are truncated when decoded to text, so a huge
+// extensionless text file can't blow up the prompt.
+const MAX_DECODED_TEXT_BYTES = 256 * 1024;
+
 /**
  * The Anthropic Messages API only accepts a base64 `document` block when its
  * media type is `application/pdf`, and only accepts JPEG/PNG/GIF/WebP images.
@@ -24,9 +28,11 @@ type MultimodalContentBlock = {
  * type, so a single read of such a file fails the whole run with a 400
  * (`document.source.base64.media_type: Input should be 'application/pdf'`).
  *
- * This middleware rewrites those unsupported blocks in tool results into a
- * short text placeholder before each Anthropic model call, so the agent is
- * told the file is unreadable binary data instead of the run crashing.
+ * Many of those `file` blocks are really plain text the tool just couldn't
+ * classify (`.gitignore`, `Dockerfile`, `LICENSE`, lock files, …). This
+ * middleware decodes such blocks back to their text contents so the agent can
+ * actually use them, and only falls back to a short placeholder for genuine
+ * binary data (or unsupported image/audio/video) that the API would reject.
  */
 export const anthropicMultimodalCompatMiddleware = createMiddleware({
   name: "AnthropicMultimodalCompat",
@@ -52,16 +58,20 @@ function sanitizeMessage(message: BaseMessage): BaseMessage {
 
   let changed = false;
   const content = message.content.map((block) => {
-    if (isBlockUnsupportedByAnthropic(block)) {
-      changed = true;
-
-      return {
-        type: "text" as const,
-        text: describeOmittedBlock(block),
-      };
+    if (!isBlockUnsupportedByAnthropic(block)) {
+      return block;
     }
 
-    return block;
+    changed = true;
+
+    // Prefer the file's real text contents when the bytes decode cleanly;
+    // otherwise tell the agent it's unreadable binary.
+    const decoded = decodeTextBlock(block);
+
+    return {
+      type: "text" as const,
+      text: decoded ?? describeOmittedBlock(block),
+    };
   });
 
   if (!changed) {
@@ -103,6 +113,50 @@ function isBlockUnsupportedByAnthropic(block: unknown): boolean {
   }
 
   return false;
+}
+
+/**
+ * Decodes a base64 `file` block back to text when its bytes are genuinely
+ * textual, returning `null` for binary data (and for non-`file` blocks such
+ * as images/audio/video, which are never text). Detection rejects any NUL
+ * byte or invalid UTF-8, which reliably separates text files from binaries.
+ */
+function decodeTextBlock(block: unknown): string | null {
+  const { type, mimeType, data } = block as MultimodalContentBlock;
+
+  if (type !== "file" || typeof data !== "string") {
+    return null;
+  }
+
+  let bytes: Buffer;
+  try {
+    bytes = Buffer.from(data, "base64");
+  } catch {
+    return null;
+  }
+
+  if (bytes.length === 0 || bytes.includes(0)) {
+    return null;
+  }
+
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return null;
+  }
+
+  if (bytes.length <= MAX_DECODED_TEXT_BYTES) {
+    return text;
+  }
+
+  // Truncate by character count (not bytes) to avoid splitting a code point.
+  const mime = typeof mimeType === "string" ? mimeType : "unknown type";
+
+  return (
+    `${text.slice(0, MAX_DECODED_TEXT_BYTES)}\n\n[file content truncated: ` +
+    `${mime}, ${bytes.length} bytes total.]`
+  );
 }
 
 function describeOmittedBlock(block: unknown): string {
