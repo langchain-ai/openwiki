@@ -10,6 +10,7 @@ import {
   type CliCommand,
   type HelpRow,
 } from "./commands.js";
+import { resolveStartupCommand } from "./startup.js";
 import {
   InitSetup,
   needsCredentialSetup,
@@ -2984,7 +2985,10 @@ if (parsedCommand.kind === "run" && !parsedCommand.dryRun) {
   await loadOpenWikiEnv();
 }
 
-const command = resolveStartupCommand(parsedCommand);
+const command = await resolveStartupCommand(parsedCommand, {
+  cwd: process.cwd(),
+  isStdinTTY: Boolean(process.stdin.isTTY),
+});
 
 if (shouldPrintStartupError(argv, parsedCommand, command)) {
   process.stderr.write(`${command.message}\n`);
@@ -3067,54 +3071,4 @@ function writePrintErrorDiagnostics(error: unknown): void {
   for (const diagnostic of diagnostics) {
     process.stderr.write(`${diagnostic.label}: ${diagnostic.value}\n`);
   }
-}
-
-function resolveStartupCommand(command: CliCommand): CliCommand {
-  if (
-    command.kind === "run" &&
-    !command.dryRun &&
-    !command.shouldStart &&
-    !process.stdin.isTTY
-  ) {
-    return {
-      kind: "error",
-      exitCode: 1,
-      message:
-        "Interactive chat requires a terminal. Pass a message or use --init or --update for non-interactive runs.",
-    };
-  }
-
-  if (
-    command.kind === "run" &&
-    !command.dryRun &&
-    command.shouldStart &&
-    (command.print || !process.stdin.isTTY)
-  ) {
-    const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
-
-    if (!hasProviderKey) {
-      return {
-        kind: "error",
-        exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
-      };
-    }
-  }
-
-  if (
-    command.kind === "run" &&
-    !command.dryRun &&
-    command.userMessage !== null &&
-    command.userMessage.trim().length === 0
-  ) {
-    return {
-      kind: "error",
-      exitCode: 1,
-      message: "User message cannot be empty.",
-    };
-  }
-
-  return command;
 }
