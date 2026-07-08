@@ -43,7 +43,7 @@ The setup flow runs for **all** interactive commands (chat, init, and update) wh
 2. Otherwise, if `OPENROUTER_API_KEY` is present, default to `openrouter`.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openrouter`).
 
-`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var, the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing value triggers the interactive flow.
+`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var is valid and whether the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing or invalid provider value triggers the interactive flow.
 
 ## Model and credential diagnostics
 
