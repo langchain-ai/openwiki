@@ -15,6 +15,12 @@ type MultimodalContentBlock = {
   data?: unknown;
 };
 
+function isMultimodalContentBlock(
+  block: unknown,
+): block is MultimodalContentBlock {
+  return typeof block === "object" && block !== null;
+}
+
 // Files larger than this are truncated when decoded to text, so a huge
 // extensionless text file can't blow up the prompt.
 const MAX_DECODED_TEXT_BYTES = 256 * 1024;
@@ -91,11 +97,11 @@ function sanitizeMessage(message: BaseMessage): BaseMessage {
 }
 
 function isBlockUnsupportedByAnthropic(block: unknown): boolean {
-  if (typeof block !== "object" || block === null) {
+  if (!isMultimodalContentBlock(block)) {
     return false;
   }
 
-  const { type, mimeType } = block as MultimodalContentBlock;
+  const { type, mimeType } = block;
 
   if (type === "audio" || type === "video") {
     return true;
@@ -122,7 +128,11 @@ function isBlockUnsupportedByAnthropic(block: unknown): boolean {
  * byte or invalid UTF-8, which reliably separates text files from binaries.
  */
 function decodeTextBlock(block: unknown): string | null {
-  const { type, mimeType, data } = block as MultimodalContentBlock;
+  if (!isMultimodalContentBlock(block)) {
+    return null;
+  }
+
+  const { type, mimeType, data } = block;
 
   if (type !== "file" || typeof data !== "string") {
     return null;
@@ -159,8 +169,8 @@ function decodeTextBlock(block: unknown): string | null {
   );
 }
 
-function describeOmittedBlock(block: unknown): string {
-  const { type, mimeType, data } = block as MultimodalContentBlock;
+function describeOmittedBlock(block: MultimodalContentBlock): string {
+  const { type, mimeType, data } = block;
   const kind = typeof type === "string" ? type : "binary";
   const mime = typeof mimeType === "string" ? mimeType : "unknown type";
   const approximateBytes =
