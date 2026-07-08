@@ -1,0 +1,6 @@
+# Supply-chain hardening (see https://pnpm.io/supply-chain-security).
+#
+# Delay installing newly published versions so that a compromised release has
+# time to be detected and pulled before it can enter the dependency tree.
+# Value is in minutes; 10080 = 1 week.
+minimumReleaseAge: 10080

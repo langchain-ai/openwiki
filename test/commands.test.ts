@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { parseCommand } from "../src/commands.ts";
+import { parseCommand, shouldRunNonInteractively } from "../src/commands.ts";
 
 // parseCommand's --dry-run gate consults isDevelopmentMode(), which reads
 // NODE_ENV / OPENWIKI_DEV. Pin both to a non-development state per test and
@@ -196,5 +196,55 @@ describe("parseCommand — unknown options and dry-run gating", () => {
       dryRun: true,
       command: "init",
     });
+  });
+});
+
+describe("shouldRunNonInteractively", () => {
+  test("--init and --update without --print bypass the UI when stdin is not a TTY", () => {
+    expect(shouldRunNonInteractively(parseCommand(["--init"]), false)).toBe(
+      true,
+    );
+    expect(shouldRunNonInteractively(parseCommand(["--update"]), false)).toBe(
+      true,
+    );
+  });
+
+  test("a one-shot chat message bypasses the UI when stdin is not a TTY", () => {
+    expect(
+      shouldRunNonInteractively(parseCommand(["Document the API"]), false),
+    ).toBe(true);
+  });
+
+  test("--init on a TTY keeps the interactive UI", () => {
+    expect(shouldRunNonInteractively(parseCommand(["--init"]), true)).toBe(
+      false,
+    );
+  });
+
+  test("--print bypasses the UI regardless of TTY", () => {
+    expect(
+      shouldRunNonInteractively(parseCommand(["--init", "--print"]), true),
+    ).toBe(true);
+    expect(
+      shouldRunNonInteractively(parseCommand(["--init", "--print"]), false),
+    ).toBe(true);
+  });
+
+  test("interactive chat without a message still uses the UI path", () => {
+    expect(shouldRunNonInteractively(parseCommand([]), false)).toBe(false);
+    expect(shouldRunNonInteractively(parseCommand([]), true)).toBe(false);
+  });
+
+  test("dry-run, help, and error commands never run non-interactively", () => {
+    process.env.OPENWIKI_DEV = "1";
+    expect(
+      shouldRunNonInteractively(parseCommand(["--dry-run", "--init"]), false),
+    ).toBe(false);
+    expect(shouldRunNonInteractively(parseCommand(["--help"]), false)).toBe(
+      false,
+    );
+    expect(shouldRunNonInteractively(parseCommand(["--nope"]), false)).toBe(
+      false,
+    );
   });
 });
