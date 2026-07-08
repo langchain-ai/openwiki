@@ -9,6 +9,7 @@ import {
   getProviderModelOptions,
   isValidBaseUrl,
   isValidModelId,
+  normalizeProvider,
   normalizeModelId,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
@@ -57,7 +58,7 @@ export function needsCredentialSetup(
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   return (
-    process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined ||
+    !hasValidConfiguredProvider() ||
     !process.env[apiKeyEnvKey] ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
@@ -544,7 +545,7 @@ export function InitSetup({
         <SetupStep
           label="Provider"
           state={
-            process.env[OPENWIKI_PROVIDER_ENV_KEY]
+            hasValidConfiguredProvider()
               ? "done"
               : step === "provider"
                 ? "current"
@@ -915,7 +916,7 @@ function getInitialStep(
   modelIdOverride: string | null,
   provider: OpenWikiProvider,
 ): PromptStep | null {
-  if (process.env[OPENWIKI_PROVIDER_ENV_KEY] === undefined) {
+  if (!hasValidConfiguredProvider()) {
     return "provider";
   }
 
@@ -982,11 +983,15 @@ function getNextStepAfterBaseUrl(
 }
 
 function getProviderSetupDetail(provider: OpenWikiProvider): string {
-  if (process.env[OPENWIKI_PROVIDER_ENV_KEY]) {
+  if (hasValidConfiguredProvider()) {
     return getProviderLabel(provider);
   }
 
   return `default ${getProviderLabel(DEFAULT_PROVIDER)}`;
+}
+
+function hasValidConfiguredProvider(): boolean {
+  return normalizeProvider(process.env[OPENWIKI_PROVIDER_ENV_KEY]) !== null;
 }
 
 function getModelSetupDetail(
