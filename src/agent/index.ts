@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
+import { AnthropicVertex } from "@anthropic-ai/vertex-sdk";
 import { ChatAnthropic } from "@langchain/anthropic";
-import { ChatVertexAI } from "@langchain/google-vertexai";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -344,8 +344,11 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
   }
 
   if (provider === "vertexai") {
-    return new ChatVertexAI({
+    const vertexClient = new AnthropicVertex();
+
+    return new ChatAnthropic({
       model: modelId,
+      createClient: () => vertexClient,
     });
   }
 

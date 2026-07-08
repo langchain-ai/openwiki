@@ -41,8 +41,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@anthropic-ai/vertex-sdk": "^0.19.0",
     "@langchain/anthropic": "^1.5.1",
-    "@langchain/google-vertexai": "^0.2.0",
     "@langchain/core": "^1.2.1",
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.3",
     "@langchain/openai": "^1.5.3",

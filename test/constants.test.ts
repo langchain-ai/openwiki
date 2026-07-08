@@ -144,8 +144,8 @@ describe("getDefaultModelId", () => {
     },
   );
 
-  test("returns first Gemini model for vertexai", () => {
-    expect(getDefaultModelId("vertexai")).toBe("gemini-2.5-flash");
+  test("returns first Claude model for vertexai", () => {
+    expect(getDefaultModelId("vertexai")).toBe("claude-sonnet-4-6");
   });
 });
 

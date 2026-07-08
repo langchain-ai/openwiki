@@ -123,9 +123,9 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     apiKeyEnvKey: GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
     label: "Vertex AI",
     modelOptions: [
-      { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-      { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
-      { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
+      { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+      { id: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
+      { id: "claude-opus-4-8", label: "Claude Opus 4.8" },
     ],
   },
 };
