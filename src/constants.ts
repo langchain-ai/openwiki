@@ -120,11 +120,6 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
 export const DEFAULT_MODEL_ID =
   PROVIDER_CONFIGS[DEFAULT_PROVIDER].modelOptions[0]?.id ?? "zai-org/GLM-5.2";
 
-export const OPENROUTER_FALLBACK_MODEL_IDS = [
-  "openai/gpt-5.4-mini",
-  "anthropic/claude-sonnet-5",
-];
-
 export const SUGGESTED_MODEL_IDS = PROVIDER_CONFIGS[
   DEFAULT_PROVIDER
 ].modelOptions.map((model) => model.id);
