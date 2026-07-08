@@ -37,8 +37,10 @@ export async function resolveStartupCommand(
     (command.print || !isStdinTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+    // Vertex AI can use Application Default Credentials without an explicit env var
+    const hasProviderKey =
+      provider === "vertexai" ||
+      Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
 
     if (!hasProviderKey) {
       if (
@@ -51,6 +53,7 @@ export async function resolveStartupCommand(
         return command;
       }
 
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
       return {
         kind: "error",
         exitCode: 1,

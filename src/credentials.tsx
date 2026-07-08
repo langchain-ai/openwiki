@@ -44,9 +44,12 @@ export function needsCredentialSetup(
   const provider = resolveConfiguredProvider();
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
+  // Vertex AI can use Application Default Credentials without an explicit env var
+  const needsApiKey = provider !== "vertexai" && !process.env[apiKeyEnvKey];
+
   return (
     !hasValidConfiguredProvider() ||
-    !process.env[apiKeyEnvKey] ||
+    needsApiKey ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
