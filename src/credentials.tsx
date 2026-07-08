@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import {
   DEFAULT_PROVIDER,
@@ -24,6 +24,7 @@ import {
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
 import {
+  type ChatGptLoginHandle,
   type CodexTokens,
   isChatGptTokenExpired,
   loginWithChatGPT,
@@ -202,6 +203,7 @@ export function InitSetup({
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginAttempt, setLoginAttempt] = useState(0);
   const [copied, setCopied] = useState(false);
+  const loginHandleRef = useRef<ChatGptLoginHandle | null>(null);
 
   useEffect(() => {
     const initialStep = getInitialStep(modelIdOverride, initialProvider);
@@ -250,18 +252,27 @@ export function InitSetup({
     setIsLoggingIn(true);
     setLoginUrl(null);
     setCopied(false);
+    setInput("");
     setError(null);
+    loginHandleRef.current = null;
 
     void (async () => {
       try {
-        const tokens = await loginWithChatGPT((url) => {
-          if (cancelled) {
-            return;
-          }
+        const tokens = await loginWithChatGPT(
+          (url) => {
+            if (cancelled) {
+              return;
+            }
 
-          setLoginUrl(url);
-          openLoginUrl(url);
-        });
+            setLoginUrl(url);
+            openLoginUrl(url);
+          },
+          (handle) => {
+            if (!cancelled) {
+              loginHandleRef.current = handle;
+            }
+          },
+        );
 
         if (cancelled) {
           return;
@@ -313,10 +324,11 @@ export function InitSetup({
     }
 
     if (step === "oauth-login") {
-      // Ignore typed input; the login runs in the effect above. `c` copies the
-      // URL to the local clipboard (via OSC 52, so it works over SSH). Enter
-      // retries once a previous attempt has failed.
+      // With nothing typed yet, `c` copies the URL to the local clipboard (via
+      // OSC 52, so it works over SSH). Once the user starts pasting a URL/code,
+      // `c` is treated as literal text so it isn't swallowed.
       if (
+        input.length === 0 &&
         (inputValue === "c" || inputValue === "C") &&
         !key.ctrl &&
         !key.meta
@@ -329,8 +341,29 @@ export function InitSetup({
         return;
       }
 
-      if (key.return && !isLoggingIn) {
-        setLoginAttempt((attempt) => attempt + 1);
+      if (key.return) {
+        const pasted = input.trim();
+
+        if (pasted.length > 0) {
+          submitManualLogin(pasted);
+        } else if (!isLoggingIn) {
+          // Nothing pasted: Enter retries a fresh login attempt.
+          setLoginAttempt((attempt) => attempt + 1);
+        }
+
+        return;
+      }
+
+      if (key.backspace || key.delete) {
+        setInput((value) => value.slice(0, -1));
+        return;
+      }
+
+      const sanitizedInput = sanitizeInputChunk(inputValue);
+
+      if (sanitizedInput && !key.ctrl && !key.meta) {
+        setError(null);
+        setInput((value) => value + sanitizedInput);
       }
 
       return;
@@ -649,6 +682,27 @@ export function InitSetup({
     }
   }
 
+  function submitManualLogin(pasted: string): void {
+    const handle = loginHandleRef.current;
+
+    if (!handle) {
+      setError("Login is still starting — try again in a moment.");
+      return;
+    }
+
+    const errorMessage = handle.submitManual(pasted);
+
+    if (errorMessage) {
+      setError(errorMessage);
+      return;
+    }
+
+    // Accepted: the pending login promise resolves with this code and the
+    // effect above advances the wizard once the token exchange finishes.
+    setInput("");
+    setError(null);
+  }
+
   const needsCredentialPrompt = needsCredentialSetup(modelIdOverride);
 
   return (
@@ -729,6 +783,7 @@ export function InitSetup({
         // with `│` side borders, which makes it impossible to select/copy.
         <OAuthLoginPrompt
           copied={copied}
+          input={input}
           isLoggingIn={isLoggingIn}
           loginUrl={loginUrl}
           provider={provider}
@@ -836,6 +891,7 @@ function SetupPanel({ title, children }: SetupPanelProps) {
 
 type OAuthLoginPromptProps = {
   copied: boolean;
+  input: string;
   isLoggingIn: boolean;
   loginUrl: string | null;
   provider: OpenWikiProvider;
@@ -843,6 +899,7 @@ type OAuthLoginPromptProps = {
 
 function OAuthLoginPrompt({
   copied,
+  input,
   isLoggingIn,
   loginUrl,
   provider,
@@ -864,17 +921,31 @@ function OAuthLoginPrompt({
           <Text color="cyan">{loginUrl}</Text>
           <Text color="gray">
             Press <Text bold>c</Text> to copy the URL
-            {copied ? <Text color="green"> (copied)</Text> : null} · Enter to
-            retry
+            {copied ? <Text color="green"> (copied)</Text> : null}
           </Text>
+          <Box flexDirection="column" marginTop={1}>
+            <Text color="gray">
+              If the browser can&apos;t reach this machine (e.g. a remote/SSH
+              host), paste the URL you were redirected to — or the code — and
+              press Enter:
+            </Text>
+            <Text>
+              <Text color="gray">&gt; </Text>
+              {input.length > 0 ? (
+                <Text color="yellow">{input}</Text>
+              ) : (
+                <Text color="gray">(paste here)</Text>
+              )}
+            </Text>
+          </Box>
         </Box>
       ) : (
         <Text color="gray">Starting the ChatGPT login...</Text>
       )}
       <Text color="gray">
         {isLoggingIn
-          ? "Waiting for you to finish signing in..."
-          : "Login failed. Press Enter to try again."}
+          ? "Waiting for browser sign-in or pasted URL..."
+          : "Login failed. Press Enter to retry."}
       </Text>
     </Box>
   );

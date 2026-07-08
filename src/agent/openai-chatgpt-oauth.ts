@@ -133,8 +133,53 @@ async function exchangeToken(body: URLSearchParams): Promise<CodexTokens> {
  * the local callback server is listening: open a browser tab and/or print the
  * URL for headless use. Resolves with the exchanged tokens.
  */
+export interface ChatGptLoginHandle {
+  /**
+   * Complete the login from a manually pasted value — either the full redirect
+   * URL the browser landed on (`http://localhost:1455/auth/callback?code=…`) or
+   * the bare `code`. Returns `null` on success, or a human-readable error string
+   * if the input can't be used (so it can be shown inline without aborting).
+   */
+  submitManual(input: string): string | null;
+}
+
+/**
+ * Extracts the `code`/`state` from a manually pasted value. Accepts a full
+ * redirect URL, a bare query string (`code=…&state=…`), or a bare code.
+ */
+export function parseManualCallbackInput(input: string): {
+  code: string | null;
+  state: string | null;
+} {
+  const trimmed = input.trim();
+
+  if (/^https?:\/\//iu.test(trimmed)) {
+    try {
+      const url = new URL(trimmed);
+
+      return {
+        code: url.searchParams.get("code"),
+        state: url.searchParams.get("state"),
+      };
+    } catch {
+      return { code: null, state: null };
+    }
+  }
+
+  if (trimmed.includes("code=")) {
+    const params = new URLSearchParams(
+      trimmed.startsWith("?") ? trimmed.slice(1) : trimmed,
+    );
+
+    return { code: params.get("code"), state: params.get("state") };
+  }
+
+  return { code: trimmed.length > 0 ? trimmed : null, state: null };
+}
+
 export async function loginWithChatGPT(
   openUrl: (url: string) => void,
+  onReady?: (handle: ChatGptLoginHandle) => void,
 ): Promise<CodexTokens> {
   const { verifier, challenge } = generatePkce();
   const state = randomBytes(16).toString("hex");
@@ -152,6 +197,28 @@ export async function loginWithChatGPT(
   authUrl.searchParams.set("originator", CODEX_ORIGINATOR);
 
   const code = await new Promise<string>((resolve, reject) => {
+    let settled = false;
+
+    const finish = (authCode: string): void => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      server.close();
+      resolve(authCode);
+    };
+
+    const fail = (error: Error): void => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      server.close();
+      reject(error);
+    };
+
     const server = http.createServer((req, res) => {
       const url = new URL(req.url ?? "", `http://localhost:${CALLBACK_PORT}`);
 
@@ -160,10 +227,10 @@ export async function loginWithChatGPT(
         return;
       }
 
+      // Bad requests don't abort the login — the manual-paste path may still
+      // complete it — so respond with an error but keep waiting.
       if (url.searchParams.get("state") !== state) {
         res.writeHead(400).end("State mismatch");
-        server.close();
-        reject(new Error("OAuth state mismatch"));
         return;
       }
 
@@ -171,8 +238,6 @@ export async function loginWithChatGPT(
 
       if (!authCode) {
         res.writeHead(400).end("Missing authorization code");
-        server.close();
-        reject(new Error("Missing authorization code"));
         return;
       }
 
@@ -181,16 +246,32 @@ export async function loginWithChatGPT(
         .end(
           "<html><body>OpenWiki login complete — you can close this tab.</body></html>",
         );
-      server.close();
-      resolve(authCode);
+      finish(authCode);
     });
 
     // Loopback only: never bind an unauthenticated code-capture endpoint to a
     // public interface.
-    server.listen(CALLBACK_PORT, "localhost", () =>
-      openUrl(authUrl.toString()),
-    );
-    server.on("error", reject);
+    server.listen(CALLBACK_PORT, "localhost", () => {
+      openUrl(authUrl.toString());
+      onReady?.({
+        submitManual(rawInput) {
+          const { code: manualCode, state: manualState } =
+            parseManualCallbackInput(rawInput);
+
+          if (!manualCode) {
+            return "Could not find an authorization code in that input.";
+          }
+
+          if (manualState !== null && manualState !== state) {
+            return "State mismatch — paste the URL from this login attempt.";
+          }
+
+          finish(manualCode);
+          return null;
+        },
+      });
+    });
+    server.on("error", fail);
   });
 
   return exchangeToken(

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   CHATGPT_TOKEN_REFRESH_THRESHOLD_MS,
   isChatGptTokenExpired,
+  parseManualCallbackInput,
   refreshChatGptTokens,
 } from "../src/agent/openai-chatgpt-oauth.ts";
 
@@ -116,5 +117,46 @@ describe("isChatGptTokenExpired", () => {
 
   test("treats a non-numeric expiry as expired", () => {
     expect(isChatGptTokenExpired(Number.NaN, now)).toBe(true);
+  });
+});
+
+describe("parseManualCallbackInput", () => {
+  test("extracts code and state from a full redirect URL", () => {
+    expect(
+      parseManualCallbackInput(
+        "http://localhost:1455/auth/callback?code=ac_123&scope=openid&state=abc",
+      ),
+    ).toEqual({ code: "ac_123", state: "abc" });
+  });
+
+  test("extracts code and state from a bare query string", () => {
+    expect(parseManualCallbackInput("code=ac_123&state=abc")).toEqual({
+      code: "ac_123",
+      state: "abc",
+    });
+    expect(parseManualCallbackInput("?code=ac_123&state=abc")).toEqual({
+      code: "ac_123",
+      state: "abc",
+    });
+  });
+
+  test("treats a bare value as the code with no state", () => {
+    expect(parseManualCallbackInput("  ac_123  ")).toEqual({
+      code: "ac_123",
+      state: null,
+    });
+  });
+
+  test("returns null code for empty input", () => {
+    expect(parseManualCallbackInput("   ")).toEqual({
+      code: null,
+      state: null,
+    });
+  });
+
+  test("returns null code when a URL has no code param", () => {
+    expect(
+      parseManualCallbackInput("http://localhost:1455/auth/callback?state=abc"),
+    ).toEqual({ code: null, state: "abc" });
   });
 });
