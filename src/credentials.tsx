@@ -129,6 +129,20 @@ function getCredentialSetupDetail(provider: OpenWikiProvider): string {
 }
 
 /**
+ * Copies text to the terminal's clipboard using the OSC 52 escape sequence.
+ * Unlike shelling out to `pbcopy`/`xclip` (which would target the remote host
+ * over SSH), OSC 52 is interpreted by the user's local terminal emulator, so
+ * the URL lands on the machine where the browser actually runs. Requires a
+ * terminal with OSC 52 support (iTerm2, kitty, WezTerm, tmux with
+ * `set-clipboard on`, etc.).
+ */
+function copyToClipboard(text: string): void {
+  const encoded = Buffer.from(text, "utf8").toString("base64");
+
+  process.stdout.write(`\u001b]52;c;${encoded}\u0007`);
+}
+
+/**
  * Opens the login URL in the user's default browser. Best-effort: on
  * headless/SSH hosts the URL is also rendered as text for manual use.
  */
@@ -187,6 +201,7 @@ export function InitSetup({
   const [loginUrl, setLoginUrl] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginAttempt, setLoginAttempt] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const initialStep = getInitialStep(modelIdOverride, initialProvider);
@@ -234,6 +249,7 @@ export function InitSetup({
 
     setIsLoggingIn(true);
     setLoginUrl(null);
+    setCopied(false);
     setError(null);
 
     void (async () => {
@@ -297,8 +313,22 @@ export function InitSetup({
     }
 
     if (step === "oauth-login") {
-      // Ignore typed input; the login runs in the effect above. Enter retries
-      // once a previous attempt has failed.
+      // Ignore typed input; the login runs in the effect above. `c` copies the
+      // URL to the local clipboard (via OSC 52, so it works over SSH). Enter
+      // retries once a previous attempt has failed.
+      if (
+        (inputValue === "c" || inputValue === "C") &&
+        !key.ctrl &&
+        !key.meta
+      ) {
+        if (loginUrl) {
+          copyToClipboard(loginUrl);
+          setCopied(true);
+        }
+
+        return;
+      }
+
       if (key.return && !isLoggingIn) {
         setLoginAttempt((attempt) => attempt + 1);
       }
@@ -694,22 +724,31 @@ export function InitSetup({
         <SetupStep label="OpenWiki" state="done" detail="agent setup" />
       </Box>
 
-      <SetupPanel title="Prompt">
-        {step ? (
-          <Prompt
-            input={input}
-            isCustomModelInput={isCustomModelInput}
-            isLoggingIn={isLoggingIn}
-            loginUrl={loginUrl}
-            modelSelectionIndex={modelSelectionIndex}
-            provider={provider}
-            providerSelectionIndex={providerSelectionIndex}
-            step={step}
-          />
-        ) : (
-          <Text>Inspecting OpenWiki setup...</Text>
-        )}
-      </SetupPanel>
+      {step === "oauth-login" ? (
+        // Rendered outside the bordered panel so the long URL is not wrapped
+        // with `│` side borders, which makes it impossible to select/copy.
+        <OAuthLoginPrompt
+          copied={copied}
+          isLoggingIn={isLoggingIn}
+          loginUrl={loginUrl}
+          provider={provider}
+        />
+      ) : (
+        <SetupPanel title="Prompt">
+          {step ? (
+            <Prompt
+              input={input}
+              isCustomModelInput={isCustomModelInput}
+              modelSelectionIndex={modelSelectionIndex}
+              provider={provider}
+              providerSelectionIndex={providerSelectionIndex}
+              step={step}
+            />
+          ) : (
+            <Text>Inspecting OpenWiki setup...</Text>
+          )}
+        </SetupPanel>
+      )}
 
       {needsCredentialPrompt ? (
         <Text color="gray">Secrets are masked and saved only after setup.</Text>
@@ -795,11 +834,55 @@ function SetupPanel({ title, children }: SetupPanelProps) {
   );
 }
 
+type OAuthLoginPromptProps = {
+  copied: boolean;
+  isLoggingIn: boolean;
+  loginUrl: string | null;
+  provider: OpenWikiProvider;
+};
+
+function OAuthLoginPrompt({
+  copied,
+  isLoggingIn,
+  loginUrl,
+  provider,
+}: OAuthLoginPromptProps) {
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Text bold color="cyan">
+        ChatGPT login
+      </Text>
+      <Text>
+        Sign in with your {getProviderLabel(provider)} account to authorize
+        OpenWiki.
+      </Text>
+      {loginUrl ? (
+        <Box flexDirection="column" marginTop={1}>
+          <Text color="gray">
+            Opening your browser. If it does not open, copy this URL:
+          </Text>
+          <Text color="cyan">{loginUrl}</Text>
+          <Text color="gray">
+            Press <Text bold>c</Text> to copy the URL
+            {copied ? <Text color="green"> (copied)</Text> : null} · Enter to
+            retry
+          </Text>
+        </Box>
+      ) : (
+        <Text color="gray">Starting the ChatGPT login...</Text>
+      )}
+      <Text color="gray">
+        {isLoggingIn
+          ? "Waiting for you to finish signing in..."
+          : "Login failed. Press Enter to try again."}
+      </Text>
+    </Box>
+  );
+}
+
 type PromptProps = {
   input: string;
   isCustomModelInput: boolean;
-  isLoggingIn: boolean;
-  loginUrl: string | null;
   modelSelectionIndex: number;
   provider: OpenWikiProvider;
   providerSelectionIndex: number;
@@ -809,39 +892,11 @@ type PromptProps = {
 function Prompt({
   input,
   isCustomModelInput,
-  isLoggingIn,
-  loginUrl,
   modelSelectionIndex,
   provider,
   providerSelectionIndex,
   step,
 }: PromptProps) {
-  if (step === "oauth-login") {
-    return (
-      <Box flexDirection="column">
-        <Text>
-          Sign in with your {getProviderLabel(provider)} account to authorize
-          OpenWiki.
-        </Text>
-        {loginUrl ? (
-          <Box flexDirection="column">
-            <Text color="gray">
-              Opening your browser. If it does not open, visit this URL:
-            </Text>
-            <Text color="cyan">{loginUrl}</Text>
-          </Box>
-        ) : (
-          <Text color="gray">Starting the ChatGPT login...</Text>
-        )}
-        <Text color="gray">
-          {isLoggingIn
-            ? "Waiting for you to finish signing in..."
-            : "Login failed. Press Enter to try again."}
-        </Text>
-      </Box>
-    );
-  }
-
   if (step === "provider") {
     return (
       <Box flexDirection="column">
