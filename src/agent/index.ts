@@ -10,7 +10,6 @@ import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
-import { createToolSchemaRecoveryMiddleware } from "./tool-recovery.js";
 import type {
   OpenWikiCommand,
   OpenWikiRunEvent,
@@ -129,7 +128,6 @@ async function runOpenWikiAgentCore(
     model,
     tools: [],
     checkpointer,
-    middleware: [createToolSchemaRecoveryMiddleware()],
     backend: new LocalShellBackend({
       maxOutputBytes: 100_000,
       rootDir: cwd,
