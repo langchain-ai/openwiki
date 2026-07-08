@@ -6,6 +6,7 @@ import {
   helpContent,
   isDevelopmentMode,
   parseCommand,
+  shouldRunNonInteractively,
   type CliCommand,
   type HelpRow,
 } from "./commands.js";
@@ -2970,7 +2971,7 @@ const command = resolveStartupCommand(parsedCommand);
 if (shouldPrintStartupError(argv, parsedCommand, command)) {
   process.stderr.write(`${command.message}\n`);
   process.exitCode = command.exitCode;
-} else if (command.kind === "run" && command.print && !command.dryRun) {
+} else if (shouldRunNonInteractively(command, process.stdin.isTTY === true)) {
   await runPrintCommand(command);
 } else {
   render(<App command={command} />);
@@ -3051,6 +3052,20 @@ function writePrintErrorDiagnostics(error: unknown): void {
 }
 
 function resolveStartupCommand(command: CliCommand): CliCommand {
+  if (
+    command.kind === "run" &&
+    !command.dryRun &&
+    !command.shouldStart &&
+    !process.stdin.isTTY
+  ) {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message:
+        "Interactive chat requires a terminal. Pass a message or use --init or --update for non-interactive runs.",
+    };
+  }
+
   if (
     command.kind === "run" &&
     !command.dryRun &&
