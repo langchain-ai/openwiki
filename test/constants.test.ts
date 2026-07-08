@@ -55,6 +55,7 @@ describe("normalizeProvider / isValidProvider", () => {
 
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
+    expect(isValidProvider("litellm")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
   });
@@ -106,6 +107,14 @@ describe("resolveProviderBaseUrl", () => {
     ).toBeUndefined();
   });
 
+  test("resolves LiteLLM base URL from its required env var", () => {
+    expect(
+      resolveProviderBaseUrl("litellm", {
+        LITELLM_BASE_URL: "https://litellm.example.com/v1",
+      }),
+    ).toBe("https://litellm.example.com/v1");
+  });
+
   test("returns undefined for a provider with no default and no override", () => {
     expect(resolveProviderBaseUrl("openai", {})).toBeUndefined();
   });
@@ -139,6 +148,7 @@ describe("getDefaultModelId", () => {
       // modelOptions list, so getDefaultModelId yields an OpenRouter id.
       // If this ever changes intentionally, update this test.
       expect(getDefaultModelId("openai-compatible")).toBe(DEFAULT_MODEL_ID);
+      expect(getDefaultModelId("litellm")).toBe(DEFAULT_MODEL_ID);
     },
   );
 });

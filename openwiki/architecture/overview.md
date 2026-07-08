@@ -43,7 +43,7 @@ Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 - **anthropic** → `ChatAnthropic` with the Anthropic API key.
 - **openrouter** → `ChatOpenRouter` with the selected model ID.
 - **openai** → `ChatOpenAI` with `useResponsesApi: true`.
-- **baseten / fireworks / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
+- **baseten / fireworks / openai-compatible / litellm** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
 
 ### DeepAgents backend
 

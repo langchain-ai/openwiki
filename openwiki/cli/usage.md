@@ -43,9 +43,9 @@ The UI persists provider and model selection back to `~/.openwiki/.env` through 
 
 The first interactive run can prompt for:
 
-- a **provider** (`OPENWIKI_PROVIDER`) — openrouter, baseten, fireworks, openai, openai-compatible, or anthropic,
-- the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`),
-- a **base URL** for providers that require one (the openai-compatible provider prompts for `OPENAI_COMPATIBLE_BASE_URL`),
+- a **provider** (`OPENWIKI_PROVIDER`) — openrouter, baseten, fireworks, openai, openai-compatible, litellm, or anthropic,
+- the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `LITELLM_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`),
+- a **base URL** for providers that require one (the openai-compatible provider prompts for `OPENAI_COMPATIBLE_BASE_URL`; the LiteLLM provider prompts for `LITELLM_BASE_URL`),
 - a **model ID** stored as `OPENWIKI_MODEL_ID` — chosen from the provider's model list or a custom ID,
 - optional `LANGSMITH_API_KEY` for tracing.
 
@@ -64,6 +64,7 @@ Providers and their model options are defined in `PROVIDER_CONFIGS` in `src/cons
 | fireworks         | `FIREWORKS_API_KEY`         | `https://api.fireworks.ai/inference/v1` | GLM 5.2, Kimi K2.7 Code                                               |
 | openai            | `OPENAI_API_KEY`            | (default)                               | GPT 5.4 mini, GPT 5.5                                                 |
 | openai-compatible | `OPENAI_COMPATIBLE_API_KEY` | `OPENAI_COMPATIBLE_BASE_URL` (required) | custom model ID only                                                  |
+| litellm           | `LITELLM_API_KEY`           | `LITELLM_BASE_URL` (required)           | custom model ID only                                                  |
 | anthropic         | `ANTHROPIC_API_KEY`         | (default, or `ANTHROPIC_BASE_URL`)      | Haiku, Sonnet, Opus                                                   |
 
 The default provider is `openrouter`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, falling back to openrouter if `OPENROUTER_API_KEY` is set, then to `DEFAULT_PROVIDER`.
@@ -76,7 +77,7 @@ instead of the default API. When set, it is passed to `ChatAnthropic` as
 `anthropicApiUrl`; the `ANTHROPIC_API_KEY` is still sent as the request
 credential.
 
-### OpenAI-compatible provider
+### OpenAI-compatible and LiteLLM providers
 
 The `openai-compatible` provider targets any OpenAI-compatible chat-completions
 endpoint. It has no default endpoint, so `OPENAI_COMPATIBLE_BASE_URL` is
@@ -93,6 +94,15 @@ OPENWIKI_PROVIDER=openai-compatible
 OPENAI_COMPATIBLE_API_KEY=<gateway key>
 OPENAI_COMPATIBLE_BASE_URL=https://<gateway>/v1
 OPENWIKI_MODEL_ID=<model name the gateway exposes>
+```
+
+For LiteLLM proxy deployments, use the first-class `litellm` provider profile:
+
+```bash
+OPENWIKI_PROVIDER=litellm
+LITELLM_API_KEY=<proxy key>
+LITELLM_BASE_URL=https://<litellm-proxy>/v1
+OPENWIKI_MODEL_ID=<model name the proxy exposes>
 ```
 
 Base URLs are resolved by `resolveProviderBaseUrl()` in `src/constants.ts`, which

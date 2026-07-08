@@ -8,9 +8,11 @@ import { sanitizeOpenRouterResponseBody } from "../src/agent/index.ts";
 
 describe("sanitizeDiagnosticText", () => {
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
+  const originalLiteLlmKey = process.env.LITELLM_API_KEY;
 
   beforeEach(() => {
     delete process.env.OPENAI_API_KEY;
+    delete process.env.LITELLM_API_KEY;
   });
 
   afterEach(() => {
@@ -18,6 +20,11 @@ describe("sanitizeDiagnosticText", () => {
       delete process.env.OPENAI_API_KEY;
     } else {
       process.env.OPENAI_API_KEY = originalOpenAiKey;
+    }
+    if (originalLiteLlmKey === undefined) {
+      delete process.env.LITELLM_API_KEY;
+    } else {
+      process.env.LITELLM_API_KEY = originalLiteLlmKey;
     }
   });
 
@@ -30,6 +37,17 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("super-secret-value-12345");
     expect(result).toContain("[REDACTED:OPENAI_API_KEY]");
+  });
+
+  test("redacts the exact value of a LiteLLM key set in the environment", () => {
+    process.env.LITELLM_API_KEY = "litellm-secret-value-12345";
+
+    const result = sanitizeDiagnosticText(
+      "proxy rejected litellm-secret-value-12345",
+    );
+
+    expect(result).not.toContain("litellm-secret-value-12345");
+    expect(result).toContain("[REDACTED:LITELLM_API_KEY]");
   });
 
   test("redacts OpenAI-style sk- tokens", () => {

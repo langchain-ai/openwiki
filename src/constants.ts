@@ -5,6 +5,8 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
+export const LITELLM_API_KEY_ENV_KEY = "LITELLM_API_KEY";
+export const LITELLM_BASE_URL_ENV_KEY = "LITELLM_BASE_URL";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
@@ -17,6 +19,7 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
+  | "litellm"
   | "openai"
   | "openai-compatible"
   | "openrouter";
@@ -51,6 +54,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "fireworks",
   "openai",
   "openai-compatible",
+  "litellm",
   "anthropic",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
@@ -89,6 +93,13 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     baseUrlEnvKey: OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
     requiresBaseUrl: true,
     label: "OpenAI-compatible",
+    modelOptions: [],
+  },
+  litellm: {
+    apiKeyEnvKey: LITELLM_API_KEY_ENV_KEY,
+    baseUrlEnvKey: LITELLM_BASE_URL_ENV_KEY,
+    requiresBaseUrl: true,
+    label: "LiteLLM",
     modelOptions: [],
   },
   anthropic: {
