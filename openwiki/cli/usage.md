@@ -104,8 +104,7 @@ The help content is centralized in `src/commands.ts` and is used by the CLI UI. 
 
 - model IDs are trimmed,
 - they must match the allowed character pattern (`/^[A-Za-z0-9][A-Za-z0-9._:/+-]*$/u`),
-- URLs are rejected,
-- fallback models for OpenRouter are defined in `OPENROUTER_FALLBACK_MODEL_IDS` in `src/constants.ts`.
+- URLs are rejected.
 
 ## What to change when editing the CLI
 

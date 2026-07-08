@@ -5,7 +5,7 @@ OpenWiki has two operational concerns that matter for both users and maintainers
 1. local credential storage in `~/.openwiki/.env`, and
 2. persisted update metadata in `openwiki/.last-update.json`.
 
-It also ships with a GitHub Actions workflow example for scheduled updates.
+It also ships with GitHub Actions and GitLab CI workflow examples for scheduled updates.
 
 ## Local credential storage
 
@@ -43,7 +43,7 @@ The setup flow runs for **all** interactive commands (chat, init, and update) wh
 2. Otherwise, if `OPENROUTER_API_KEY` is present, default to `openrouter`.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openrouter`).
 
-`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var, the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing value triggers the interactive flow.
+`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var is valid and whether the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing or invalid provider value triggers the interactive flow.
 
 ## Model and credential diagnostics
 
@@ -72,9 +72,9 @@ The content-change check uses `createOpenWikiContentSnapshot()`, which hashes th
 
 Update runs use this metadata to build a change summary since the previous successful OpenWiki execution — preferring `gitHead` for a precise commit range, falling back to `updatedAt` for a time-based range.
 
-## GitHub Actions workflow
+## Scheduled CI workflows
 
-The repository includes `.github/workflows/openwiki-update.yml` as a copyable scheduled update workflow. It:
+The repository includes `examples/openwiki-update.yml` as a copyable GitHub Actions scheduled update workflow. It:
 
 - runs on schedule (daily at 08:00 UTC) and on manual dispatch,
 - checks out the repository,
@@ -85,6 +85,18 @@ The repository includes `.github/workflows/openwiki-update.yml` as a copyable sc
 - opens a pull request with `peter-evans/create-pull-request` scoped to the `openwiki` directory.
 
 The workflow is a good reference for automated maintenance. The repo also contains a `checks.yml` workflow for CI (lint/format checks).
+
+The repository also includes `examples/openwiki-update.gitlab-ci.yml` as a copyable GitLab CI scheduled update job. It:
+
+- runs from a scheduled pipeline or a manually triggered web pipeline,
+- installs OpenWiki globally in a Node.js 22 container,
+- runs `openwiki --update --print`,
+- skips the rest of the job when `openwiki/` did not change,
+- commits changes to a generated `openwiki/update-$CI_PIPELINE_ID` branch,
+- pushes that branch back to the GitLab project, and
+- creates a merge request targeting the project's default branch through the GitLab API.
+
+GitLab users should configure protected CI/CD variables for the model provider key, for example `OPENROUTER_API_KEY`, and `OPENWIKI_GITLAB_TOKEN`. The GitLab token needs permission to push a branch and create merge requests in the target project.
 
 ## Things to watch when changing operations
 
@@ -102,6 +114,7 @@ The workflow is a good reference for automated maintenance. The repo also contai
 - `src/constants.ts`
 - `src/agent/utils.ts`
 - `src/agent/index.ts`
-- `.github/workflows/openwiki-update.yml`
+- `examples/openwiki-update.yml`
+- `examples/openwiki-update.gitlab-ci.yml`
 - `README.md`
 - Git evidence: commits `ceded10`, `f89b05d`, `8278c36`, `0fa1430`

@@ -18,9 +18,10 @@ Initialize OpenWiki, configure your model and API key, then generate documentati
 openwiki --init
 ```
 
-Then to ensure your documentation stays up-to-date, add the GitHub action to your repository to automatically open a PR once a day with documentation updates: [openwiki-update.yml](./examples/openwiki-update.yml)
+Then to ensure your documentation stays up-to-date, add the CI workflow for your Git provider to automatically open a PR or merge request with documentation updates:
 
-Copy the contents of that file into `.github/workflows/openwiki-update.yml` in your repository.
+- GitHub Actions: copy [openwiki-update.yml](./examples/openwiki-update.yml) into `.github/workflows/openwiki-update.yml`.
+- GitLab CI: copy [openwiki-update.gitlab-ci.yml](./examples/openwiki-update.gitlab-ci.yml) into `.gitlab-ci.yml` or include it from your existing GitLab pipeline.
 
 ## Usage
 
@@ -160,3 +161,7 @@ openwiki --init
 9Router exposes its API at `http://localhost:4000/v1` by default. No API key is required for local-only backends.
 
 If there's an inference provider or model you'd like to see added, please open a PR!
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR. We intentionally keep PRs tightly scoped to one change each, and PRs that bundle unrelated changes may be closed with a request to split them.
