@@ -131,7 +131,7 @@ async function ingest(
   ).toISOString();
   const maxErrorRuns = clampLimit(options.limit, config.maxErrorRuns, 100);
   const maxRootRuns = clampLimit(options.limit, config.maxRootRuns, 100);
-  const maxFieldChars = Math.max(100, config.maxFieldChars ?? 2000);
+  const maxFieldChars = clampLimit(options.limit, config.maxFieldChars, 5000);
   const nextCursors: Record<string, string> = {};
   const projectResults: ProjectPullResult[] = [];
 
