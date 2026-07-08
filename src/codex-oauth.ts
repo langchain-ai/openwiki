@@ -421,6 +421,102 @@ function base64Url(value: Buffer): string {
   return value.toString("base64url");
 }
 
+function createCodexResponsesFetch(fetchImpl: typeof fetch | undefined): typeof fetch {
+  const nextFetch = fetchImpl ?? fetch;
+
+  return async (input, init) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+
+    if (!url.includes(`${CODEX_BACKEND_BASE_URL}/responses`)) {
+      return nextFetch(input, init);
+    }
+
+    const body = typeof init?.body === "string" ? init.body : null;
+
+    if (body === null) {
+      return nextFetch(input, init);
+    }
+
+    const payload = sanitizeCodexResponsesPayload(body);
+
+    return nextFetch(input, {
+      ...init,
+      body: payload,
+    });
+  };
+}
+
+function sanitizeCodexResponsesPayload(body: string): string {
+  let payload: unknown;
+
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    return body;
+  }
+
+  if (!isRecord(payload) || !Array.isArray(payload.input)) {
+    return body;
+  }
+
+  const liftedInstructions: string[] = [];
+  const input = payload.input.filter((item) => {
+    if (!isRecord(item)) {
+      return true;
+    }
+
+    const role = item.role;
+
+    if (role !== "system" && role !== "developer") {
+      return true;
+    }
+
+    liftedInstructions.push(flattenResponsesInputContent(item.content));
+    return false;
+  });
+
+  if (liftedInstructions.length === 0) {
+    return body;
+  }
+
+  return JSON.stringify({
+    ...payload,
+    input,
+    instructions: [payload.instructions, ...liftedInstructions]
+      .filter((value): value is string => typeof value === "string" && value.length > 0)
+      .join("\n\n"),
+  });
+}
+
+function flattenResponsesInputContent(content: unknown): string {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (!Array.isArray(content)) {
+    return "";
+  }
+
+  return content
+    .map((item) => {
+      if (typeof item === "string") {
+        return item;
+      }
+
+      if (isRecord(item) && typeof item.text === "string") {
+        return item.text;
+      }
+
+      return "";
+    })
+    .join("");
+}
+
 type CodexChatOpenAIFields = ConstructorParameters<typeof ChatOpenAI>[0] & {
   codexCredentials: CodexOAuthCredentials;
 };
@@ -438,8 +534,10 @@ export class CodexChatOpenAI extends ChatOpenAI {
         defaultHeaders: {
           ...chatFields.configuration?.defaultHeaders,
           "ChatGPT-Account-Id": codexCredentials.accountId,
-          originator: "openwiki",
+          originator: "codex_cli_rs",
+          "user-agent": "codex_cli_rs/0.0.0",
         },
+        fetch: createCodexResponsesFetch(chatFields.configuration?.fetch),
       },
       modelKwargs: {
         ...chatFields.modelKwargs,

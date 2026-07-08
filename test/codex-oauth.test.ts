@@ -366,6 +366,7 @@ describe("CodexChatOpenAI", () => {
   test("routes requests to the Codex backend responses API and lifts system messages into instructions", async () => {
     let capturedBody = "";
     let capturedUrl = "";
+    let capturedOriginator = "";
     const fetchMock = vi.fn<typeof fetch>((input, init) => {
       capturedUrl =
         typeof input === "string"
@@ -374,6 +375,7 @@ describe("CodexChatOpenAI", () => {
             ? input.toString()
             : input.url;
       capturedBody = typeof init?.body === "string" ? init.body : "";
+      capturedOriginator = getHeaderValue(init?.headers, "originator");
 
       return Promise.resolve(
         new Response("{\"error\":\"stop\"}", {
@@ -405,6 +407,7 @@ describe("CodexChatOpenAI", () => {
     }).rejects.toThrow();
 
     expect(capturedUrl).toBe(`${CODEX_BACKEND_BASE_URL}/responses`);
+    expect(capturedOriginator).toBe("codex_cli_rs");
     const payload = JSON.parse(capturedBody) as {
       input: Array<{ role?: string }>;
       instructions?: string;
@@ -413,6 +416,37 @@ describe("CodexChatOpenAI", () => {
     expect(payload.input.map((item) => item.role)).toEqual(["user"]);
   });
 });
+
+function getHeaderValue(headers: unknown, key: string): string {
+  if (headers instanceof Headers) {
+    return headers.get(key) ?? "";
+  }
+
+  if (Array.isArray(headers)) {
+    for (const pair of headers) {
+      if (
+        Array.isArray(pair) &&
+        typeof pair[0] === "string" &&
+        typeof pair[1] === "string" &&
+        pair[0].toLowerCase() === key
+      ) {
+        return pair[1];
+      }
+    }
+
+    return "";
+  }
+
+  if (headers && typeof headers === "object") {
+    for (const [name, value] of Object.entries(headers)) {
+      if (name.toLowerCase() === key && typeof value === "string") {
+        return value;
+      }
+    }
+  }
+
+  return "";
+}
 
 type SavedCodexAuth = {
   pending?: {
