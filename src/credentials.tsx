@@ -154,8 +154,8 @@ const ONBOARDING_TEMPLATES = [
   {
     description:
       "A personal assistant wiki that builds memory from email, notes, social/research sources, and web search so you can ask about projects, priorities, people, and recurring context.",
-    id: "brain",
-    name: "Brain",
+    id: "personal",
+    name: "Personal",
     sourceIds: [
       "git-repo",
       "google",
@@ -172,16 +172,16 @@ const ONBOARDING_TEMPLATES = [
       "X/Twitter",
     ],
     suggestedGoal:
-      "A second brain for personal assistance. Track active projects, people, organizations, decisions, commitments, follow-ups, useful links, recurring themes, and fresh external signals. Organize the wiki so a personal assistant can answer what changed, what matters, what needs attention, and where supporting evidence came from. Be selective: summarize durable context and explicit action items, not every raw item.",
+      "Your personal brain. Track active projects, people, organizations, decisions, commitments, follow-ups, useful links, recurring themes, and fresh external signals. Organize the wiki so a personal assistant can answer what changed, what matters, what needs attention, and where supporting evidence came from. Be selective: summarize durable context and explicit action items, not every raw item.",
   },
 ] as const satisfies readonly OnboardingMode[];
 
 const RUN_MODE_OPTIONS = [
   {
     description:
-      "Build a local second-brain wiki in ~/.openwiki/wiki from configured sources.",
-    id: "brain",
-    name: "Brain",
+      "Build a local personal brain wiki in ~/.openwiki/wiki from configured sources.",
+    id: "personal",
+    name: "Personal",
   },
   {
     description:
@@ -328,7 +328,7 @@ const FINAL_OPTIONS = [
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
-  mode: OpenWikiRunMode = "brain",
+  mode: OpenWikiRunMode = "personal",
 ): boolean {
   const provider = resolveConfiguredProvider();
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
@@ -342,7 +342,7 @@ export function needsCredentialSetup(
 
   return (
     needsCredentials ||
-    (mode === "brain" && !isOpenWikiOnboardingCompleteSync())
+    (mode === "personal" && !isOpenWikiOnboardingCompleteSync())
   );
 }
 
@@ -1501,9 +1501,9 @@ export function InitSetup({
           }
           detail={getRunModeName(selectedMode)}
         />
-        {selectedMode === "brain" ? (
+        {selectedMode === "personal" ? (
           <SetupStep
-            label="Brain profile"
+            label="Personal profile"
             state={
               onboardingConfig.templateId
                 ? "done"
@@ -1533,7 +1533,7 @@ export function InitSetup({
                 : `save onboarding profile to ${openWikiOnboardingPath}`
           }
         />
-        {selectedMode === "brain" ? (
+        {selectedMode === "personal" ? (
           <SetupStep
             label="Schedule"
             state={
@@ -1550,7 +1550,7 @@ export function InitSetup({
             }
           />
         ) : null}
-        {selectedMode === "brain" ? (
+        {selectedMode === "personal" ? (
           <SetupStep
             label="Sources"
             state={
@@ -2561,23 +2561,23 @@ function ensureRunModeConfig(
   config: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
 ): OpenWikiOnboardingConfig {
-  if (mode !== "brain" || getConfigModeId(config) === "brain") {
+  if (mode !== "personal" || getConfigModeId(config) === "personal") {
     return config;
   }
 
-  const brainMode = ONBOARDING_TEMPLATES.find(
-    (option) => option.id === "brain",
+  const personalMode = ONBOARDING_TEMPLATES.find(
+    (option) => option.id === "personal",
   );
-  if (!brainMode) {
+  if (!personalMode) {
     return config;
   }
 
   return {
     ...config,
-    modeId: brainMode.id,
-    modeName: brainMode.name,
-    templateId: brainMode.id,
-    templateName: brainMode.name,
+    modeId: personalMode.id,
+    modeName: personalMode.name,
+    templateId: personalMode.id,
+    templateName: personalMode.name,
   };
 }
 

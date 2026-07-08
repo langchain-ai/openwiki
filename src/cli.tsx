@@ -157,7 +157,7 @@ const OPENWIKI_LOGO_WIDTH = Math.max(
 function App({ command }: AppProps) {
   const app = useApp();
   const startupModelId = command.kind === "run" ? command.modelId : null;
-  const startupRunMode = command.kind === "run" ? command.mode : "brain";
+  const startupRunMode = command.kind === "run" ? command.mode : "personal";
   const [runMode, setRunMode] = useState<OpenWikiRunMode>(startupRunMode);
   const runtimeCwd = getRunModeCwd(runMode);
   const runtimeOutputMode = getRunModeOutputMode(runMode);
