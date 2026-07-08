@@ -7,12 +7,12 @@ The documentation agent is implemented in `src/agent/`. It takes a command (`cha
 `src/agent/index.ts` follows this sequence for non-chat runs:
 
 1. Load `~/.openwiki/.env` into `process.env`.
-2. Resolve the provider via `resolveConfiguredProvider()` and ensure the provider's API key exists.
+2. Resolve the provider via `resolveConfiguredProvider()` and ensure credentials exist: API-key providers require their env key, while `codex-oauth` reads and refreshes OpenWiki-managed OAuth tokens from `~/.openwiki/codex-oauth.json`.
 3. Resolve the model ID from CLI input, `OPENWIKI_MODEL_ID`, or the provider's default model.
 4. Create a run context from Git state and prior update metadata.
 5. Snapshot the current `openwiki/` content hash (before the run).
 6. Build the system prompt and user prompt.
-7. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
+7. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, `ChatOpenAI`, or the Codex OAuth `ChatOpenAI` wrapper).
 8. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
 9. Stream messages and tool events back to the CLI.
 10. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed**.
@@ -24,6 +24,7 @@ Chat runs skip metadata writes entirely.
 `createModel()` in `src/agent/index.ts` branches by provider:
 
 - **anthropic**: `new ChatAnthropic(modelId, { apiKey, anthropicApiUrl? })` — uses `@langchain/anthropic` directly. When `ANTHROPIC_BASE_URL` is set, the resolved alternative base URL is passed as `anthropicApiUrl` so requests can be routed to a self-hosted or proxied Anthropic-compatible endpoint instead of the default API.
+- **codex-oauth**: `new CodexChatOpenAI({ codexCredentials, model })` — reads OpenWiki-managed OAuth tokens from `~/.openwiki/codex-oauth.json`, refreshes near-expiry tokens, targets `https://chatgpt.com/backend-api/codex` through the Responses API, forces streaming and `store: false`, and lifts system/developer messages into top-level `instructions`.
 - **openrouter**: `new ChatOpenRouter({ apiKey, baseURL, model, siteName: "OpenWiki" })` — uses the selected OpenRouter model directly.
 - **openai**: `new ChatOpenAI({ apiKey, model, useResponsesApi: true })` — uses OpenAI's Responses API for official OpenAI calls.
 - **baseten / fireworks / openai-compatible**: `new ChatOpenAI({ apiKey, configuration: { baseURL? }, model })` — OpenAI-compatible clients using the provider's base URL when configured. The `openai-compatible` provider has no default endpoint; its base URL is user-supplied via `OPENAI_COMPATIBLE_BASE_URL` and required (`requiresBaseUrl: true`), which lets OpenWiki target any OpenAI-compatible gateway (for example a LiteLLM gateway fronting upstream providers).
@@ -96,7 +97,7 @@ The agent is not just a generic chat wrapper. It is intentionally constrained so
 - Be careful with `.last-update.json` semantics, because update runs use it to decide what changed since the previous successful run.
 - The content-snapshot check means a no-op update will not update metadata. If you change the snapshot logic, ensure `.last-update.json` is still excluded.
 - Credential loading happens before model resolution; changes there affect both onboarding and agent startup.
-- When adding a provider, add a branch in `createModel()` and ensure the API key env key is checked in `ensureProviderKey()`.
+- When adding a provider, add a branch in `createModel()` and ensure `ensureProviderCredentials()` validates the correct credential source instead of assuming every provider has an API-key env var.
 - The DeepAgents backend is configured with `virtualMode: true`, which is important for documentation-only behavior.
 
 ## Source map

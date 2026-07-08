@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { createInterface } from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 import React, { useEffect, useRef, useState } from "react";
 import { Box, render, Text, useApp, useInput } from "ink";
 import { marked, type Token, type Tokens } from "marked";
@@ -21,6 +23,10 @@ import {
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+import {
+  completeCodexOAuthLogin,
+  startCodexOAuthLogin,
+} from "./codex-oauth.js";
 import { getErrorMessage, sanitizeDiagnosticText } from "./diagnostics.js";
 import { stripHtmlTags } from "./utils.js";
 import {
@@ -38,6 +44,8 @@ import {
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPEN_WIKI_DIR,
+  providerUsesApiKey,
+  providerUsesCodexOAuth,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
   OPENWIKI_VERSION,
@@ -216,7 +224,7 @@ function App({ command }: AppProps) {
   }, []);
 
   useEffect(() => {
-    if (command.kind === "help" || command.kind === "error") {
+    if (command.kind === "help" || command.kind === "error" || command.kind === "login") {
       process.exitCode = command.exitCode;
       app.exit();
       return;
@@ -238,7 +246,12 @@ function App({ command }: AppProps) {
 
     const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (
+      providerUsesApiKey(sessionProvider) &&
+      apiKeyEnvKey &&
+      !process.env[apiKeyEnvKey] &&
+      !process.stdin.isTTY
+    ) {
       setRunState({
         status: "error",
         message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
@@ -1503,9 +1516,7 @@ function ChatInput({
     const provider = normalizeProvider(rawProvider);
 
     if (provider === null) {
-      setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
-      );
+      setError(`Enter a valid provider: ${SELECTABLE_OPENWIKI_PROVIDERS.join(", ")}.`);
       return;
     }
 
@@ -1516,11 +1527,7 @@ function ChatInput({
     try {
       await onProviderSelect(provider);
       resetInput();
-      setNotice(
-        `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
-          provider,
-        )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
-      );
+      setNotice(createProviderSelectionNotice(provider));
     } catch (saveError) {
       setError(
         saveError instanceof Error
@@ -1980,6 +1987,18 @@ function getCurrentProviderOptionIndex(
   );
 
   return matchingIndex === -1 ? 0 : matchingIndex;
+}
+
+function createProviderSelectionNotice(provider: OpenWikiProvider): string {
+  const modelId = getDefaultModelId(provider);
+
+  if (providerUsesCodexOAuth(provider)) {
+    return `Provider switched to ${getProviderLabel(provider)} with model ${modelId}. Run \`openwiki login codex-oauth\` if OAuth is not configured.`;
+  }
+
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  return `Provider switched to ${getProviderLabel(provider)} with model ${modelId}. Ensure ${apiKeyEnvKey ?? "the provider API key"} is set.`;
 }
 
 function getModelMenuOptions(
@@ -2967,7 +2986,9 @@ if (parsedCommand.kind === "run" && !parsedCommand.dryRun) {
 
 const command = resolveStartupCommand(parsedCommand);
 
-if (shouldPrintStartupError(argv, parsedCommand, command)) {
+if (parsedCommand.kind === "login") {
+  await runCodexOAuthLogin();
+} else if (shouldPrintStartupError(argv, parsedCommand, command)) {
   process.stderr.write(`${command.message}\n`);
   process.exitCode = command.exitCode;
 } else if (command.kind === "run" && command.print && !command.dryRun) {
@@ -3001,6 +3022,28 @@ function shouldAutoExitStartupRun(command: CliCommand): boolean {
     command.shouldStart &&
     (command.command === "init" || command.command === "update")
   );
+}
+
+async function runCodexOAuthLogin(): Promise<void> {
+  try {
+    const login = await startCodexOAuthLogin();
+    process.stdout.write("Open this URL in your browser:\n\n");
+    process.stdout.write(`${login.authorizeUrl}\n\n`);
+    const readline = createInterface({ input, output });
+    const callbackUrl = await readline.question(
+      "Paste the full callback URL after login: ",
+    );
+    readline.close();
+    const credentials = await completeCodexOAuthLogin(callbackUrl);
+    process.stdout.write(
+      `Codex OAuth saved for account ${credentials.accountId}.\n`,
+    );
+    process.exitCode = 0;
+  } catch (error) {
+    process.stderr.write(`${getErrorMessage(error)}\n`);
+    writePrintErrorDiagnostics(error);
+    process.exitCode = 1;
+  }
 }
 
 async function runPrintCommand(
@@ -3059,13 +3102,15 @@ function resolveStartupCommand(command: CliCommand): CliCommand {
   ) {
     const provider = resolveConfiguredProvider();
     const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+    const hasProviderKey =
+      !providerUsesApiKey(provider) ||
+      (apiKeyEnvKey !== null && Boolean(process.env[apiKeyEnvKey]));
 
     if (!hasProviderKey) {
       return {
         kind: "error",
         exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${apiKeyEnvKey ?? "Provider API key"} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
       };
     }
   }

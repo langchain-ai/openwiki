@@ -4,8 +4,8 @@ OpenWiki has a small but layered architecture:
 
 1. `src/cli.tsx` provides the interactive terminal application and orchestrates runs, including auto-exit for init/update.
 2. `src/commands.ts` parses argv and defines help text and supported options.
-3. `src/credentials.tsx` manages interactive onboarding for provider selection, API keys, model selection, and optional LangSmith tracing.
-4. `src/env.ts` reads and writes `~/.openwiki/.env` and surfaces credential diagnostics for all supported providers.
+3. `src/credentials.tsx` manages interactive onboarding for provider selection, API keys when applicable, model selection, and optional LangSmith tracing.
+4. `src/env.ts` reads and writes `~/.openwiki/.env` and surfaces credential diagnostics for OpenWiki-managed providers.
 5. `src/agent/index.ts` runs the documentation agent, resolves the provider, creates the appropriate model client, collects Git context, and writes update metadata.
 6. `src/agent/prompt.ts` builds the system and user prompts that tell the model how to behave.
 7. `src/agent/utils.ts` gathers Git evidence, computes an OpenWiki content snapshot, and records `.last-update.json` after successful init/update runs.
@@ -41,6 +41,7 @@ The agent runtime resolves the provider via `resolveConfiguredProvider()` in `sr
 Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 
 - **anthropic** → `ChatAnthropic` with the Anthropic API key.
+- **codex-oauth** → `CodexChatOpenAI`, which uses OpenWiki-managed OAuth tokens from `~/.openwiki/codex-oauth.json`, refreshes them when needed, and targets `https://chatgpt.com/backend-api/codex`.
 - **openrouter** → `ChatOpenRouter` with the selected model ID.
 - **openai** → `ChatOpenAI` with `useResponsesApi: true`.
 - **baseten / fireworks / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
@@ -72,7 +73,7 @@ The current design reflects a documentation product rather than a general-purpos
 
 - Add or refine CLI commands in `src/commands.ts` and the corresponding UI behavior in `src/cli.tsx`.
 - Change onboarding or local credential storage in `src/credentials.tsx` and `src/env.ts`.
-- Add a new model provider by extending `PROVIDER_CONFIGS` and `OpenWikiProvider` in `src/constants.ts`, then adding a branch in `createModel` in `src/agent/index.ts`.
+- Add a new model provider by extending `PROVIDER_CONFIGS` and `OpenWikiProvider` in `src/constants.ts`, then adding the credential source and `createModel` branch in `src/agent/index.ts`.
 - Adjust model defaults, validation, or fallback lists in `src/constants.ts`.
 - Extend the documentation prompt or Git evidence in `src/agent/prompt.ts` and `src/agent/utils.ts`.
 - Modify run persistence or snapshot behavior in `src/agent/utils.ts`.
@@ -83,7 +84,7 @@ The current design reflects a documentation product rather than a general-purpos
 - Credential setup writes to a real home-directory file, so permission handling matters.
 - The agent is expected to work from repository-local virtual paths like `/README.md` and `/openwiki/quickstart.md`; the prompt explicitly warns about this.
 - `openwiki/` in the target repository is both the docs output location and the metadata location for `.last-update.json`.
-- When adding a provider, update `managedEnvKeys` in `src/env.ts` so diagnostics and env formatting cover the new key.
+- When adding an API-key provider, update `managedEnvKeys` in `src/env.ts` so diagnostics and env formatting cover the new key. External credential-store providers, such as `codex-oauth`, should keep their credential source explicit instead.
 - The content-snapshot logic excludes `.last-update.json`; if new metadata files are added under `openwiki/`, decide whether they should be excluded too.
 
 ## Source map

@@ -14,7 +14,7 @@ It also ships with GitHub Actions and GitLab CI workflow examples for scheduled 
 - directory: `~/.openwiki` (mode `0o700`)
 - file: `~/.openwiki/.env` (mode `0o600`)
 
-The file stores provider configuration and API keys:
+The file stores provider configuration and OpenWiki-managed credentials:
 
 - `OPENWIKI_PROVIDER` — the selected model provider
 - `OPENWIKI_MODEL_ID` — the default model ID
@@ -22,18 +22,20 @@ The file stores provider configuration and API keys:
 - Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API) and `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint)
 - Optional LangSmith settings: `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`
 
+The `codex-oauth` provider is the exception: OpenWiki stores only `OPENWIKI_PROVIDER=codex-oauth` and the model selection in `~/.openwiki/.env`; OAuth tokens are stored separately in `~/.openwiki/codex-oauth.json` with restrictive permissions.
+
 The loader merges those values into `process.env`, while preferring existing process-level values over file values. Deprecated keys (`OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT`) are skipped on load and removed on save.
 
 `src/credentials.tsx` provides the interactive bootstrap flow when required:
 
 - prompts for a provider (arrow-key selection menu),
-- prompts for the provider's API key,
+- prompts for the provider's API key only when the selected provider uses one,
 - prompts for a model choice (arrow-key selection from the provider's model list, or a custom model ID),
 - optionally prompts for a LangSmith key,
 - writes the results with restrictive file permissions,
 - removes deprecated OpenAI-related environment variables when saving.
 
-The setup flow runs for **all** interactive commands (chat, init, and update) when credentials are missing — not just chat. In non-interactive mode (no TTY or `--print`), missing provider keys produce an error instead of a prompt.
+The setup flow runs for **all** interactive commands (chat, init, and update) when credentials are missing — not just chat. In non-interactive mode (no TTY or `--print`), missing API-provider keys or missing Codex OAuth credentials produce an error instead of a prompt.
 
 ## Provider resolution
 
@@ -43,7 +45,7 @@ The setup flow runs for **all** interactive commands (chat, init, and update) wh
 2. Otherwise, if `OPENROUTER_API_KEY` is present, default to `openrouter`.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openrouter`).
 
-`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var is valid and whether the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing or invalid provider value triggers the interactive flow.
+`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var is valid and whether the provider's API key when applicable, a model ID (unless overridden), and a LangSmith key are all present. Any missing or invalid provider value triggers the interactive flow; `codex-oauth` deliberately skips the API-key step.
 
 ## Model and credential diagnostics
 
@@ -57,7 +59,7 @@ The env layer also produces diagnostics for the CLI UI. Those diagnostics report
 - invalid model IDs,
 - invalid provider values.
 
-Diagnostics cover all six provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, and base URLs are shown in full).
+Diagnostics cover all six provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), and `LANGSMITH_API_KEY`. Codex OAuth token contents are not surfaced because they live in `~/.openwiki/codex-oauth.json`, not `~/.openwiki/.env`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, and base URLs are shown in full).
 
 ## Update metadata
 
@@ -104,7 +106,7 @@ GitLab users should configure protected CI/CD variables for the model provider k
 - Never document real secret values; only document the presence and purpose of the configuration.
 - If update metadata semantics change, update both the agent runtime and the docs that explain how update runs are scoped.
 - Scheduled automation depends on the same CLI entrypoint as local users, so workflow changes should be validated against `package.json` and the CLI help text.
-- When adding a provider, update `managedEnvKeys` in `src/env.ts` so the env file is formatted correctly and diagnostics cover the new key.
+- When adding an API-key provider, update `managedEnvKeys` in `src/env.ts` so the env file is formatted correctly and diagnostics cover the new key. Providers backed by external credential stores, such as `codex-oauth`, should document that source instead of adding a fake API-key env var.
 - The content-snapshot check means CI runs that produce no changes will not update `.last-update.json` or open a PR with metadata-only changes.
 
 ## Source map

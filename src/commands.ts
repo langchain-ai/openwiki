@@ -30,6 +30,11 @@ export type CliCommand =
       userMessage: string | null;
     }
   | {
+      kind: "login";
+      exitCode: 0;
+      provider: "codex-oauth";
+    }
+  | {
       kind: "error";
       exitCode: 1;
       message: string;
@@ -38,6 +43,18 @@ export type CliCommand =
 export function parseCommand(argv: string[]): CliCommand {
   if (argv[0] === "--help" || argv[0] === "-h") {
     return { kind: "help", exitCode: 0 };
+  }
+
+  if (argv[0] === "login") {
+    if (argv[1] === "codex-oauth" && argv.length === 2) {
+      return { kind: "login", exitCode: 0, provider: "codex-oauth" };
+    }
+
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "Usage: openwiki login codex-oauth",
+    };
   }
 
   let dryRun = false;
@@ -178,11 +195,16 @@ export const helpContent: HelpContent = {
     "openwiki [--modelId <model>] [message]",
     "openwiki --init [message]",
     "openwiki --update [message]",
+    "openwiki login codex-oauth",
   ],
   commands: [
     {
       label: "openwiki",
       description: "Open the interactive OpenWiki chat.",
+    },
+    {
+      label: "openwiki login codex-oauth",
+      description: "Start Codex OAuth login and save tokens locally.",
     },
   ],
   options: [
@@ -216,6 +238,7 @@ export const helpContent: HelpContent = {
     'openwiki "What can you do?"',
     'openwiki -p "Summarize what OpenWiki can do"',
     "openwiki --modelId gpt-5.5",
+    "openwiki login codex-oauth",
     'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
   ],
   developmentExamples: ["openwiki --dry-run"],

@@ -8,6 +8,11 @@ import { ChatOpenRouter } from "@langchain/openrouter";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
+import {
+  CodexChatOpenAI,
+  resolveCodexOAuthCredentials,
+  type CodexOAuthCredentials,
+} from "../codex-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
   OpenWikiCommand,
@@ -29,6 +34,8 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   providerRequiresBaseUrl,
+  providerUsesApiKey,
+  providerUsesCodexOAuth,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
   type OpenWikiProvider,
@@ -86,8 +93,8 @@ export async function runOpenWikiAgent(
   if (providerBaseUrl) {
     emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
   }
-  ensureProviderKey(provider);
-  emitDebug(options, `credentials=${provider} key present`);
+  const codexOAuthCredentials = await ensureProviderCredentials(provider);
+  emitDebug(options, `credentials=${provider} present`);
   ensureProviderBaseUrl(provider);
   const modelId = resolveModelId(options, provider);
   emitDebug(options, `model=${modelId}`);
@@ -95,7 +102,14 @@ export async function runOpenWikiAgent(
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
   try {
-    return await runOpenWikiAgentCore(command, cwd, options, provider, modelId);
+    return await runOpenWikiAgentCore(
+      command,
+      cwd,
+      options,
+      provider,
+      modelId,
+      codexOAuthCredentials,
+    );
   } catch (error) {
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
     throw error;
@@ -104,19 +118,21 @@ export async function runOpenWikiAgent(
   }
 }
 
+
 async function runOpenWikiAgentCore(
   command: OpenWikiCommand,
   cwd: string,
   options: OpenWikiRunOptions,
   provider: OpenWikiProvider,
   modelId: string,
+  codexOAuthCredentials: CodexOAuthCredentials | null,
 ): Promise<OpenWikiRunResult> {
   const context = await createRunContext(command, cwd);
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
     command === "chat" ? null : await createOpenWikiContentSnapshot(cwd);
   emitDebug(options, "openwiki.snapshot=created");
-  const model = createModel(provider, modelId);
+  const model = createModel(provider, modelId, codexOAuthCredentials);
   emitDebug(options, `model.provider=${provider}`);
   emitDebug(options, "model=initialized");
   const checkpointer = await createCheckpointer();
@@ -270,14 +286,26 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
   });
 }
 
-function ensureProviderKey(provider: OpenWikiProvider): void {
+async function ensureProviderCredentials(
+  provider: OpenWikiProvider,
+): Promise<CodexOAuthCredentials | null> {
+  if (providerUsesCodexOAuth(provider)) {
+    return resolveCodexOAuthCredentials();
+  }
+
+  if (!providerUsesApiKey(provider)) {
+    return null;
+  }
+
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
-  if (!process.env[apiKeyEnvKey]) {
+  if (!apiKeyEnvKey || !process.env[apiKeyEnvKey]) {
     throw new Error(
-      `${apiKeyEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      `${apiKeyEnvKey ?? "Provider API key"} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
     );
   }
+
+  return null;
 }
 
 function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
@@ -313,13 +341,29 @@ function resolveModelId(
   return modelId;
 }
 
-function createModel(provider: OpenWikiProvider, modelId: string) {
+function createModel(
+  provider: OpenWikiProvider,
+  modelId: string,
+  codexOAuthCredentials: CodexOAuthCredentials | null = null,
+) {
   if (provider === "anthropic") {
+    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
     const baseURL = resolveProviderBaseUrl(provider);
 
     return new ChatAnthropic(modelId, {
-      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      apiKey: apiKeyEnvKey ? process.env[apiKeyEnvKey] : undefined,
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+    });
+  }
+
+  if (provider === "codex-oauth") {
+    if (!codexOAuthCredentials) {
+      throw new Error("Codex OAuth credentials are required.");
+    }
+
+    return new CodexChatOpenAI({
+      codexCredentials: codexOAuthCredentials,
+      model: modelId,
     });
   }
 
@@ -332,10 +376,11 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
     });
   }
 
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
   const baseURL = resolveProviderBaseUrl(provider);
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey: apiKeyEnvKey ? process.env[apiKeyEnvKey] : undefined,
     configuration: baseURL
       ? {
           baseURL,

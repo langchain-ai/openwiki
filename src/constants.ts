@@ -12,10 +12,12 @@ export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+export const CODEX_OAUTH_BASE_URL = "https://chatgpt.com/backend-api/codex";
 
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "codex-oauth"
   | "fireworks"
   | "openai"
   | "openai-compatible"
@@ -29,7 +31,7 @@ export type ProviderModelOption = {
 };
 
 type ProviderConfig = {
-  apiKeyEnvKey: string;
+  apiKeyEnvKey?: string;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -43,10 +45,12 @@ type ProviderConfig = {
   requiresBaseUrl?: boolean;
   label: string;
   modelOptions: ProviderModelOption[];
+  usesCodexOAuth?: boolean;
 };
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openrouter",
+  "codex-oauth",
   "baseten",
   "fireworks",
   "openai",
@@ -63,6 +67,15 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
       { id: "moonshotai/Kimi-K2.7-Code", label: "Kimi K2.7 Code" },
     ],
+  },
+  "codex-oauth": {
+    baseURL: CODEX_OAUTH_BASE_URL,
+    label: "Codex OAuth",
+    modelOptions: [
+      { id: "gpt-5.5", label: "GPT 5.5" },
+      { id: "gpt-5.4-mini", label: "GPT 5.4 mini" },
+    ],
+    usesCodexOAuth: true,
   },
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
@@ -132,8 +145,18 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).label;
 }
 
-export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
-  return getProviderConfig(provider).apiKeyEnvKey;
+export function getProviderApiKeyEnvKey(
+  provider: OpenWikiProvider,
+): string | null {
+  return getProviderConfig(provider).apiKeyEnvKey ?? null;
+}
+
+export function providerUsesApiKey(provider: OpenWikiProvider): boolean {
+  return getProviderApiKeyEnvKey(provider) !== null;
+}
+
+export function providerUsesCodexOAuth(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).usesCodexOAuth === true;
 }
 
 /**

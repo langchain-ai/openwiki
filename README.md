@@ -12,7 +12,7 @@ npm install -g openwiki
 
 ## Quick Start
 
-Initialize OpenWiki, configure your model and API key, then generate documentation
+Initialize OpenWiki, configure your model provider, then generate documentation
 
 ```sh
 openwiki --init
@@ -65,13 +65,13 @@ openwiki --help
 
 `openwiki` will automatically append prompting to your `AGENTS.md` and/or `CLAUDE.md` files to instruct your coding agent to reference it when searching for context. If the file does not already exist in your repository, OpenWiki will create it for you.
 
-On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
+On the first interactive run, OpenWiki will have you configure your inference provider, credentials when the provider needs an API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
 
-These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.
+These configuration options and OpenWiki-managed secrets will be saved to `~/.openwiki/.env` on your local machine. The `codex-oauth` provider stores its OAuth tokens separately in `~/.openwiki/codex-oauth.json` with restrictive permissions.
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Codex OAuth, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.7 Code, GPT 5.5, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
 
 ### Alternative base URLs
 
@@ -84,6 +84,22 @@ OPENWIKI_PROVIDER=anthropic
 ANTHROPIC_API_KEY=your-key
 ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 ```
+
+### Codex OAuth
+
+The `codex-oauth` provider manages its own Codex OAuth login. Run the login
+command once, open the printed URL, then paste the final callback URL back into
+the terminal:
+
+```bash
+openwiki login codex-oauth
+OPENWIKI_PROVIDER=codex-oauth
+OPENWIKI_MODEL_ID=gpt-5.5
+```
+
+OpenWiki stores OAuth tokens in `~/.openwiki/codex-oauth.json`, refreshes
+near-expiry access tokens automatically, and sends Responses API requests to
+`https://chatgpt.com/backend-api/codex`.
 
 ### OpenAI-compatible endpoints
 
