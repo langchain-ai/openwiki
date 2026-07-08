@@ -5,3 +5,5 @@ coverage/
 *.log
 *.tgz
 .DS_Store
+
+openwiki-guidelines.md

@@ -102,6 +102,17 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
+### Repository guidelines
+
+To customize generated documentation for a specific repository, copy
+[`openwiki-guidelines.example.md`](./openwiki-guidelines.example.md) to
+`openwiki-guidelines.md` in the repository root and add documentation
+preferences such as audience, language, scope, or style. OpenWiki reads that
+file during `--init` and `--update` and applies it as guidance without allowing
+it to override security, privacy, or repository-boundary rules. To protect the
+agent context window, only the first 32 KiB of this file are included in the
+prompt.
+
 If there's an inference provider or model you'd like to see added, please open a PR!
 
 ## Contributing

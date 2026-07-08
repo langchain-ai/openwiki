@@ -1,5 +1,7 @@
 export const OPEN_WIKI_DIR = "openwiki";
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
+export const OPENWIKI_GUIDELINES_FILE_NAME = "openwiki-guidelines.md";
+export const OPENWIKI_GUIDELINES_MAX_BYTES = 32 * 1024;
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";

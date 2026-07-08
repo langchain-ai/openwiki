@@ -12,10 +12,11 @@ The documentation agent is implemented in `src/agent/`. It takes a command (`cha
 4. Create a run context from Git state and prior update metadata.
 5. Snapshot the current `openwiki/` content hash (before the run).
 6. Build the system prompt and user prompt.
-7. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
-8. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
-9. Stream messages and tool events back to the CLI.
-10. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed**.
+7. Read optional root-level `openwiki-guidelines.md` content and add it to the system prompt with guardrails.
+8. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
+9. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
+10. Stream messages and tool events back to the CLI.
+11. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed**.
 
 Chat runs skip metadata writes entirely.
 
@@ -44,6 +45,13 @@ Base URLs are resolved through `resolveProviderBaseUrl()` in `src/constants.ts`,
 - use git history for init and update runs,
 - respect the temporary plan file and update metadata requirements,
 - ensure top-level `/AGENTS.md` and/or `/CLAUDE.md` reference the OpenWiki quickstart (inserting or refreshing a standardized section).
+
+If the target repository includes `openwiki-guidelines.md` at its root,
+OpenWiki appends the file's contents as repository-specific documentation
+preferences. Those guidelines can steer language, audience, scope, and style,
+but they cannot override security, privacy, path, or tool-use constraints.
+OpenWiki reads at most the first 32 KiB of the file and adds a prompt/debug
+notice if the file is truncated.
 
 The user prompt changes with the command:
 

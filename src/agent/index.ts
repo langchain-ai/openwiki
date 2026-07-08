@@ -9,7 +9,11 @@ import type { Event as ProtocolEvent } from "@langchain/protocol";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
-import { createSystemPrompt, createUserPrompt } from "./prompt.js";
+import {
+  createSystemPrompt,
+  createUserPrompt,
+  readOpenWikiGuidelines,
+} from "./prompt.js";
 import type {
   OpenWikiCommand,
   OpenWikiRunEvent,
@@ -124,6 +128,13 @@ async function runOpenWikiAgentCore(
   emitDebug(options, `checkpointer=${formatUrlDebugValue(checkpointPath)}`);
   const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
   emitDebug(options, `thread=${threadId}`);
+  const customGuidelines = await readOpenWikiGuidelines(cwd);
+  emitDebug(
+    options,
+    customGuidelines === null
+      ? "guidelines=not-found"
+      : `guidelines=${customGuidelines.truncated ? "truncated" : "loaded"} bytes=${customGuidelines.sizeBytes} maxBytes=${customGuidelines.maxBytes}`,
+  );
   const agent = createDeepAgent({
     model,
     tools: [],
@@ -134,7 +145,7 @@ async function runOpenWikiAgentCore(
       timeout: 120,
       virtualMode: true,
     }),
-    systemPrompt: createSystemPrompt(command),
+    systemPrompt: createSystemPrompt(command, { customGuidelines }),
   });
   emitDebug(options, "agent=created");
 
