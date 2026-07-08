@@ -37,6 +37,16 @@ export interface CodexTokens {
   /** Absolute expiry time of the access token, in epoch milliseconds. */
   expiresAtMs: number;
   accountId: string;
+  /** Signed-in account email, decoded from the token (best-effort). */
+  email: string | null;
+  /** ChatGPT plan (e.g. `plus`, `pro`, `team`), decoded from the token. */
+  planType: string | null;
+}
+
+export interface ChatGptIdentity {
+  accountId: string | null;
+  email: string | null;
+  planType: string | null;
 }
 
 function base64url(buf: Buffer): string {
@@ -55,33 +65,50 @@ function generatePkce(): { verifier: string; challenge: string } {
 }
 
 /**
- * Decodes the mandatory `chatgpt_account_id` claim from the access-token JWT.
- * No signature verification: these are our own credentials, read only for the
- * account-id header the Codex backend requires.
+ * Decodes identity claims from the access-token JWT: the mandatory
+ * `chatgpt_account_id` (required for the Codex request header) plus the
+ * best-effort `chatgpt_plan_type` and profile `email` used only for display.
+ * No signature verification: these are our own credentials, read for our own
+ * bookkeeping.
  */
-function decodeAccountId(accessToken: string): string | null {
+export function decodeChatGptIdentity(accessToken: string): ChatGptIdentity {
+  const empty: ChatGptIdentity = {
+    accountId: null,
+    email: null,
+    planType: null,
+  };
   const parts = accessToken.split(".");
 
   if (parts.length !== 3) {
-    return null;
+    return empty;
   }
 
   try {
     const payload = JSON.parse(
       Buffer.from(parts[1], "base64url").toString("utf8"),
     ) as Record<string, unknown>;
-    const auth = payload["https://api.openai.com/auth"];
 
-    if (typeof auth !== "object" || auth === null) {
-      return null;
-    }
+    const auth = asRecord(payload["https://api.openai.com/auth"]);
+    const profile = asRecord(payload["https://api.openai.com/profile"]);
 
-    const accountId = (auth as Record<string, unknown>).chatgpt_account_id;
-
-    return typeof accountId === "string" ? accountId : null;
+    return {
+      accountId: asString(auth?.chatgpt_account_id),
+      email: asString(profile?.email),
+      planType: asString(auth?.chatgpt_plan_type),
+    };
   } catch {
-    return null;
+    return empty;
   }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
 }
 
 async function exchangeToken(body: URLSearchParams): Promise<CodexTokens> {
@@ -114,9 +141,9 @@ async function exchangeToken(body: URLSearchParams): Promise<CodexTokens> {
   }
 
   const access = json.access_token as string;
-  const accountId = decodeAccountId(access);
+  const identity = decodeChatGptIdentity(access);
 
-  if (!accountId) {
+  if (!identity.accountId) {
     throw new Error("Failed to extract account id from ChatGPT access token.");
   }
 
@@ -124,7 +151,9 @@ async function exchangeToken(body: URLSearchParams): Promise<CodexTokens> {
     access,
     refresh: json.refresh_token as string,
     expiresAtMs: Date.now() + (json.expires_in as number) * 1000,
-    accountId,
+    accountId: identity.accountId,
+    email: identity.email,
+    planType: identity.planType,
   };
 }
 

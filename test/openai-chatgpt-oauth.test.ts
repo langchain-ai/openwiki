@@ -1,21 +1,36 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   CHATGPT_TOKEN_REFRESH_THRESHOLD_MS,
+  decodeChatGptIdentity,
   isChatGptTokenExpired,
   parseManualCallbackInput,
   refreshChatGptTokens,
 } from "../src/agent/openai-chatgpt-oauth.ts";
 
-function makeAccessToken(accountId: string | null): string {
+function makeAccessToken(
+  accountId: string | null,
+  extra: { email?: string; planType?: string } = {},
+): string {
   const header = Buffer.from(JSON.stringify({ alg: "none" })).toString(
     "base64url",
   );
+  const auth: Record<string, unknown> = {};
+
+  if (accountId !== null) {
+    auth.chatgpt_account_id = accountId;
+  }
+
+  if (extra.planType !== undefined) {
+    auth.chatgpt_plan_type = extra.planType;
+  }
+
   const payload = Buffer.from(
-    JSON.stringify(
-      accountId === null
-        ? { "https://api.openai.com/auth": {} }
-        : { "https://api.openai.com/auth": { chatgpt_account_id: accountId } },
-    ),
+    JSON.stringify({
+      "https://api.openai.com/auth": auth,
+      ...(extra.email !== undefined
+        ? { "https://api.openai.com/profile": { email: extra.email } }
+        : {}),
+    }),
   ).toString("base64url");
 
   return `${header}.${payload}.signature`;
@@ -42,8 +57,11 @@ afterEach(() => {
 });
 
 describe("refreshChatGptTokens", () => {
-  test("parses tokens and decodes the account id from the access JWT", async () => {
-    const access = makeAccessToken("acct_abc123");
+  test("parses tokens and decodes identity from the access JWT", async () => {
+    const access = makeAccessToken("acct_abc123", {
+      email: "dev@example.com",
+      planType: "plus",
+    });
     const fetchMock = stubTokenResponse({
       access_token: access,
       refresh_token: "refresh-next",
@@ -56,6 +74,8 @@ describe("refreshChatGptTokens", () => {
     expect(tokens.access).toBe(access);
     expect(tokens.refresh).toBe("refresh-next");
     expect(tokens.accountId).toBe("acct_abc123");
+    expect(tokens.email).toBe("dev@example.com");
+    expect(tokens.planType).toBe("plus");
     expect(tokens.expiresAtMs).toBeGreaterThanOrEqual(before + 3600 * 1000);
     expect(tokens.expiresAtMs).toBeLessThanOrEqual(Date.now() + 3600 * 1000);
 
@@ -117,6 +137,34 @@ describe("isChatGptTokenExpired", () => {
 
   test("treats a non-numeric expiry as expired", () => {
     expect(isChatGptTokenExpired(Number.NaN, now)).toBe(true);
+  });
+});
+
+describe("decodeChatGptIdentity", () => {
+  test("decodes account id, email, and plan", () => {
+    const token = makeAccessToken("acct_1", {
+      email: "a@b.com",
+      planType: "pro",
+    });
+
+    expect(decodeChatGptIdentity(token)).toEqual({
+      accountId: "acct_1",
+      email: "a@b.com",
+      planType: "pro",
+    });
+  });
+
+  test("returns nulls for missing claims or malformed tokens", () => {
+    expect(decodeChatGptIdentity(makeAccessToken("acct_1"))).toEqual({
+      accountId: "acct_1",
+      email: null,
+      planType: null,
+    });
+    expect(decodeChatGptIdentity("not-a-jwt")).toEqual({
+      accountId: null,
+      email: null,
+      planType: null,
+    });
   });
 });
 

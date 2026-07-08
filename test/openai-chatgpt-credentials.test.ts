@@ -97,3 +97,32 @@ describe("api-key providers keep the pasted-key step", () => {
     expect(getNextStepAfterProvider("openai", null)).toBe("api-key");
   });
 });
+
+describe("forceModel re-asks the model after a provider change", () => {
+  test("goes to model even when a model id is already stored", () => {
+    // Credential present so the credential step is skipped; model id stored.
+    set("OPENWIKI_PROVIDER", "openai-chatgpt");
+    set("OPENAI_CHATGPT_ACCESS_TOKEN", "access-token");
+    set("OPENAI_CHATGPT_EXPIRES_AT", FAR_FUTURE);
+    set("OPENWIKI_MODEL_ID", "gpt-5.4-mini");
+    set("LANGSMITH_API_KEY", "");
+
+    // Without force, a stored model is kept (no model step).
+    expect(getNextStepAfterProvider("openai-chatgpt", null)).toBeNull();
+    // With force (provider was just changed), the model step is shown again.
+    expect(getNextStepAfterProvider("openai-chatgpt", null, true)).toBe(
+      "model",
+    );
+  });
+
+  test("a per-run model override still suppresses the model step", () => {
+    set("OPENWIKI_PROVIDER", "openai-chatgpt");
+    set("OPENAI_CHATGPT_ACCESS_TOKEN", "access-token");
+    set("OPENAI_CHATGPT_EXPIRES_AT", FAR_FUTURE);
+    set("LANGSMITH_API_KEY", "");
+
+    expect(
+      getNextStepAfterProvider("openai-chatgpt", "gpt-5.5", true),
+    ).toBeNull();
+  });
+});

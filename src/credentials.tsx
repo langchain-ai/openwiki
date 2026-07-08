@@ -13,7 +13,9 @@ import {
   normalizeModelId,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  OPENAI_CHATGPT_EMAIL_ENV_KEY,
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
+  OPENAI_CHATGPT_PLAN_ENV_KEY,
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
@@ -117,16 +119,42 @@ function isCredentialConfigured(provider: OpenWikiProvider): boolean {
     : Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
 }
 
-function getCredentialSetupDetail(provider: OpenWikiProvider): string {
+function getCredentialSetupDetail(
+  provider: OpenWikiProvider,
+  tokens: CodexTokens | null = null,
+): string {
   if (providerUsesOAuth(provider)) {
-    return isCredentialConfigured(provider)
-      ? "signed in with ChatGPT"
-      : "sign in with your ChatGPT account";
+    if (!isCredentialConfigured(provider) && !tokens) {
+      return "sign in with your ChatGPT account";
+    }
+
+    const account = formatChatGptAccount(
+      tokens?.email ?? process.env[OPENAI_CHATGPT_EMAIL_ENV_KEY] ?? null,
+      tokens?.planType ?? process.env[OPENAI_CHATGPT_PLAN_ENV_KEY] ?? null,
+    );
+
+    return account ? `signed in as ${account}` : "signed in with ChatGPT";
   }
 
   return isCredentialConfigured(provider)
     ? "available from environment"
     : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`;
+}
+
+/** Formats a `email (Plan)` label from decoded ChatGPT identity claims. */
+function formatChatGptAccount(
+  email: string | null,
+  planType: string | null,
+): string | null {
+  const plan = planType
+    ? planType.charAt(0).toUpperCase() + planType.slice(1)
+    : null;
+
+  if (email && plan) {
+    return `${email} (${plan})`;
+  }
+
+  return email ?? plan ?? null;
 }
 
 /**
@@ -203,6 +231,9 @@ export function InitSetup({
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginAttempt, setLoginAttempt] = useState(0);
   const [copied, setCopied] = useState(false);
+  // Set when the user (re)selects a provider in the wizard, so the model step
+  // is shown again even if a (possibly stale) model id is already stored.
+  const [forceModelStep, setForceModelStep] = useState(false);
   const loginHandleRef = useRef<ChatGptLoginHandle | null>(null);
 
   useEffect(() => {
@@ -281,7 +312,11 @@ export function InitSetup({
         setOauthTokens(tokens);
         setIsLoggingIn(false);
 
-        const nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
+        const nextStep = getNextStepAfterApiKey(
+          provider,
+          modelIdOverride,
+          forceModelStep,
+        );
 
         if (nextStep) {
           setIsCustomModelInput(
@@ -443,9 +478,16 @@ export function InitSetup({
         ),
       );
       setInput("");
+      // If the provider changed, re-confirm the model even when one is already
+      // stored (it may belong to the previous provider).
+      const providerChanged =
+        process.env[OPENWIKI_PROVIDER_ENV_KEY] !== selectedProvider;
+
+      setForceModelStep(providerChanged);
       const nextStep = getNextStepAfterProvider(
         selectedProvider,
         modelIdOverride,
+        providerChanged,
       );
 
       if (nextStep) {
@@ -477,7 +519,11 @@ export function InitSetup({
 
       setApiKey(trimmedInput);
       setInput("");
-      const nextStep = getNextStepAfterApiKey(provider, modelIdOverride);
+      const nextStep = getNextStepAfterApiKey(
+        provider,
+        modelIdOverride,
+        forceModelStep,
+      );
 
       if (nextStep) {
         setIsCustomModelInput(
@@ -514,7 +560,11 @@ export function InitSetup({
 
       setBaseUrl(trimmedInput);
       setInput("");
-      const nextStep = getNextStepAfterBaseUrl(provider, modelIdOverride);
+      const nextStep = getNextStepAfterBaseUrl(
+        provider,
+        modelIdOverride,
+        forceModelStep,
+      );
 
       if (nextStep) {
         setIsCustomModelInput(
@@ -627,6 +677,14 @@ export function InitSetup({
           nextOAuthTokens.expiresAtMs,
         );
         updates[OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY] = nextOAuthTokens.accountId;
+
+        if (nextOAuthTokens.email) {
+          updates[OPENAI_CHATGPT_EMAIL_ENV_KEY] = nextOAuthTokens.email;
+        }
+
+        if (nextOAuthTokens.planType) {
+          updates[OPENAI_CHATGPT_PLAN_ENV_KEY] = nextOAuthTokens.planType;
+        }
       }
 
       if (nextBaseUrl !== null) {
@@ -724,13 +782,13 @@ export function InitSetup({
         <SetupStep
           label={providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"}
           state={
-            isCredentialConfigured(provider)
+            isCredentialConfigured(provider) || oauthTokens
               ? "done"
               : step === credentialStep(provider)
                 ? "current"
                 : "pending"
           }
-          detail={getCredentialSetupDetail(provider)}
+          detail={getCredentialSetupDetail(provider, oauthTokens)}
         />
         {providerRequiresBaseUrl(provider) ? (
           <SetupStep
@@ -1112,32 +1170,38 @@ export function getInitialStep(
 export function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
+  forceModel = false,
 ): PromptStep | null {
   if (needsCredentialStep(provider)) {
     return credentialStep(provider);
   }
 
-  return getNextStepAfterApiKey(provider, modelIdOverride);
+  return getNextStepAfterApiKey(provider, modelIdOverride, forceModel);
 }
 
 function getNextStepAfterApiKey(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
+  forceModel = false,
 ): PromptStep | null {
   if (needsBaseUrlStep(provider)) {
     return "base-url";
   }
 
-  return getNextStepAfterBaseUrl(provider, modelIdOverride);
+  return getNextStepAfterBaseUrl(provider, modelIdOverride, forceModel);
 }
 
 function getNextStepAfterBaseUrl(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
+  forceModel = false,
 ): PromptStep | null {
+  // Ask for the model when none is configured, or when the provider was just
+  // (re)selected in the wizard — the stored model id may belong to the old
+  // provider, so re-confirm it (unless a per-run --modelId override is set).
   if (
     modelIdOverride === null &&
-    process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined
+    (forceModel || process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined)
   ) {
     return "model";
   }

@@ -114,14 +114,17 @@ OPENWIKI_PROVIDER=openai-chatgpt openwiki --init
 ```
 
 The wizard opens `https://auth.openai.com` in your browser (and also prints the
-URL for headless/SSH use, where you can open it on another machine). After you
-sign in with your ChatGPT account, OpenWiki captures the OAuth callback and
-stores the resulting access token, refresh token, expiry, and account id in
-`~/.openwiki/.env` (`OPENAI_CHATGPT_ACCESS_TOKEN`,
-`OPENAI_CHATGPT_REFRESH_TOKEN`, `OPENAI_CHATGPT_EXPIRES_AT`,
-`OPENAI_CHATGPT_ACCOUNT_ID`). These are managed for you — the access token is
-refreshed automatically when it expires, so you normally never edit them by
-hand. Treat the refresh token like a password.
+URL for headless/SSH use, where you can open it on another machine — or paste the
+redirect URL back into the terminal to finish without a callback). After you sign
+in with your ChatGPT account, OpenWiki captures the OAuth callback, shows the
+signed-in email and plan, and then continues to model and LangSmith selection
+just like the other providers. It stores the resulting access token, refresh
+token, expiry, account id, email, and plan in `~/.openwiki/.env`
+(`OPENAI_CHATGPT_ACCESS_TOKEN`, `OPENAI_CHATGPT_REFRESH_TOKEN`,
+`OPENAI_CHATGPT_EXPIRES_AT`, `OPENAI_CHATGPT_ACCOUNT_ID`, `OPENAI_CHATGPT_EMAIL`,
+`OPENAI_CHATGPT_PLAN`). These are managed for you — the access token is refreshed
+automatically when it expires, so you normally never edit them by hand. Treat the
+refresh token like a password.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 

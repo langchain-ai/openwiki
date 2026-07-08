@@ -37,6 +37,8 @@ import {
   normalizeModelId,
   normalizeProvider,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_CHATGPT_EMAIL_ENV_KEY,
+  OPENAI_CHATGPT_PLAN_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -699,6 +701,19 @@ function ErrorDiagnosticsPanel({
   );
 }
 
+/** Builds an `email (Plan)` label from the persisted ChatGPT identity, if any. */
+function formatChatGptAccountLabel(): string | null {
+  const email = process.env[OPENAI_CHATGPT_EMAIL_ENV_KEY];
+  const plan = process.env[OPENAI_CHATGPT_PLAN_ENV_KEY];
+  const planLabel = plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : null;
+
+  if (email && planLabel) {
+    return `${email} (${planLabel})`;
+  }
+
+  return email ?? planLabel ?? null;
+}
+
 function Header({
   compact = false,
   modelId,
@@ -717,7 +732,12 @@ function Header({
       getDefaultModelId(resolveConfiguredProvider()),
     Math.max(8, terminalColumns - 12),
   );
-  const displayProvider = getProviderLabel(resolveConfiguredProvider());
+  const configuredProvider = resolveConfiguredProvider();
+  const displayProvider = getProviderLabel(configuredProvider);
+  const chatGptAccount =
+    configuredProvider === "openai-chatgpt"
+      ? formatChatGptAccountLabel()
+      : null;
   const displayDirectory = sanitizeHeaderValue(
     formatCwd(process.cwd()),
     Math.max(8, terminalColumns - 17),
@@ -736,6 +756,12 @@ function Header({
           <Text color="gray">v{OPENWIKI_VERSION}</Text>{" "}
           <Text color="gray">provider: </Text>
           <Text color="white">{displayProvider}</Text>{" "}
+          {chatGptAccount ? (
+            <>
+              <Text color="gray">account: </Text>
+              <Text color="white">{chatGptAccount}</Text>{" "}
+            </>
+          ) : null}
           <Text color="gray">model: </Text>
           <Text color="white">{displayModelId}</Text>
         </Text>
@@ -781,6 +807,12 @@ function Header({
           <Text color="gray">provider: </Text>
           <Text color="white">{displayProvider}</Text>
         </Text>
+        {chatGptAccount ? (
+          <Text>
+            <Text color="gray">account: </Text>
+            <Text color="white">{chatGptAccount}</Text>
+          </Text>
+        ) : null}
         <Text>
           <Text color="gray">model: </Text>
           <Text color="white">{displayModelId}</Text>

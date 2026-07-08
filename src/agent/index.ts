@@ -35,7 +35,9 @@ import {
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  OPENAI_CHATGPT_EMAIL_ENV_KEY,
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
+  OPENAI_CHATGPT_PLAN_ENV_KEY,
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -515,7 +517,14 @@ async function resolveChatGptTokens(): Promise<CodexTokens> {
   const expiresAtMs = Number(process.env[OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY]);
 
   if (!isChatGptTokenExpired(expiresAtMs)) {
-    return { access, refresh, expiresAtMs, accountId };
+    return {
+      access,
+      refresh,
+      expiresAtMs,
+      accountId,
+      email: process.env[OPENAI_CHATGPT_EMAIL_ENV_KEY] ?? null,
+      planType: process.env[OPENAI_CHATGPT_PLAN_ENV_KEY] ?? null,
+    };
   }
 
   const refreshed = await refreshChatGptTokens(refresh);
@@ -525,6 +534,12 @@ async function resolveChatGptTokens(): Promise<CodexTokens> {
     [OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY]: refreshed.refresh,
     [OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY]: String(refreshed.expiresAtMs),
     [OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY]: refreshed.accountId,
+    ...(refreshed.email
+      ? { [OPENAI_CHATGPT_EMAIL_ENV_KEY]: refreshed.email }
+      : {}),
+    ...(refreshed.planType
+      ? { [OPENAI_CHATGPT_PLAN_ENV_KEY]: refreshed.planType }
+      : {}),
   });
 
   return refreshed;
