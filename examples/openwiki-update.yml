@@ -18,23 +18,19 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          node-version: "22"
+          go-version: "1.22"
 
-      - name: Install OpenWiki
-        run: npm install --global openwiki
+      - name: Build OpenWiki headless CLI
+        run: go build -o openwiki ./go/cmd/openwiki
 
       - name: Run OpenWiki
-        run: openwiki --update --print
+        run: ./openwiki --update --print
         env:
-          # TODO: Replace with your preferred inference provider and model
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENWIKI_MODEL_ID: z-ai/glm-5.2
-          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
-          LANGCHAIN_PROJECT: openwiki
-          LANGCHAIN_TRACING_V2: "true"
 
       - name: Create OpenWiki update pull request
         uses: peter-evans/create-pull-request@v7

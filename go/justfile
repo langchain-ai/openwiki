@@ -1,0 +1,33 @@
+# OpenWiki headless CLI task runner
+# Install just: https://github.com/casey/just
+
+default: build
+
+binary := "bin/openwiki"
+
+# Build the headless CLI binary
+build:
+    go build -o {{binary}} ./cmd/openwiki
+
+# Run all tests
+test:
+    go test ./...
+
+# Run tests with verbose output
+test-v:
+    go test -v ./...
+
+# Run go vet
+vet:
+    go vet ./...
+
+# Build and run checks
+check: vet test build
+
+# Remove build artifacts
+clean:
+    rm -rf bin/
+
+# Install binary to GOPATH/bin
+install: build
+    cp {{binary}} "${GOPATH:-$HOME/go}/bin/openwiki"
