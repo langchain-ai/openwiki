@@ -35,6 +35,7 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   resolveConfiguredProvider,
+  resolveDiagramFormat,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
@@ -165,6 +166,8 @@ async function runOpenWikiAgentCore(
   modelId: string,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
+  const diagramFormat = resolveDiagramFormat();
+  emitDebug(options, `diagrams=${diagramFormat ?? "disabled"}`);
   const context = await createRunContext(command, cwd, outputMode);
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
@@ -197,7 +200,7 @@ async function runOpenWikiAgentCore(
       timeout: 120,
       virtualMode: true,
     }),
-    systemPrompt: createSystemPrompt(command, outputMode),
+    systemPrompt: createSystemPrompt(command, outputMode, diagramFormat),
   });
   emitDebug(options, "agent=created");
 

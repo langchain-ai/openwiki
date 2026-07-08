@@ -36,6 +36,7 @@ export const OPENWIKI_X_CLIENT_SECRET_ENV_KEY = "OPENWIKI_X_CLIENT_SECRET";
 export const OPENWIKI_X_REFRESH_TOKEN_ENV_KEY = "OPENWIKI_X_REFRESH_TOKEN";
 export const OPENWIKI_TAVILY_API_KEY_ENV_KEY = "TAVILY_API_KEY";
 export const OPENWIKI_LANGSMITH_API_KEY_ENV_KEY = "OPENWIKI_LANGSMITH_API_KEY";
+export const OPENWIKI_DIAGRAMS_ENV_KEY = "OPENWIKI_DIAGRAMS";
 export const DEFAULT_PROVIDER = "openai";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
@@ -151,6 +152,26 @@ export function getProviderModelOptions(
 
 export function getDefaultModelId(provider: OpenWikiProvider): string {
   return getProviderModelOptions(provider)[0]?.id ?? DEFAULT_MODEL_ID;
+}
+
+export type DiagramFormat = "mermaid" | null;
+
+export function resolveDiagramFormat(
+  env: NodeJS.ProcessEnv = process.env,
+): DiagramFormat {
+  const value = env[OPENWIKI_DIAGRAMS_ENV_KEY];
+
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "mermaid") {
+    return "mermaid";
+  }
+
+  return null;
 }
 
 export function normalizeProvider(

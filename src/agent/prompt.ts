@@ -1,3 +1,4 @@
+import type { DiagramFormat } from "../constants.js";
 import {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -16,8 +17,10 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
 export function createSystemPrompt(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
+  diagramFormat: DiagramFormat = null,
 ): string {
   const output = getOutputPromptConfig(outputMode);
+  const diagramSection = createDiagramInstructions(diagramFormat);
 
   return `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
@@ -158,6 +161,8 @@ Required documentation structure:
 
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
+
+${diagramSection}
 `.trim();
 }
 
@@ -210,6 +215,36 @@ export function createModeInstructions(
 - Updates may be a no-op. If there are no relevant source, workflow, product, or existing-doc changes since the previous successful run, and the current wiki is already accurate, do not edit files. Say that the wiki is already current.
 - The CLI will record successful run metadata in ${output.metadataPath} after you finish.
 `.trim();
+}
+
+function createDiagramInstructions(diagramFormat: DiagramFormat): string {
+  if (diagramFormat === null) {
+    return "";
+  }
+
+  if (diagramFormat === "mermaid") {
+    return `
+Diagram discipline (Mermaid):
+- When OPENWIKI_DIAGRAMS=mermaid is set, embed source-grounded Mermaid diagrams in fenced \`\`\`mermaid code blocks where they materially aid understanding.
+- Prefer diagram types that match the content:
+  - Sequence diagrams for runtime request flows, authentication flows, API call sequences, and multi-component interactions.
+  - ER diagrams for data models, database schemas, and entity relationships.
+  - Flowcharts for control flow, decision logic, and process workflows.
+  - State diagrams for lifecycles, status machines, and state transitions.
+- Ground every diagram in source files you have actually inspected. Do not invent entities, relationships, or flows.
+- During --update runs, treat stale diagrams as stale claims, not "existing structure to preserve." Regenerate diagrams when the underlying source has changed.
+- Follow Mermaid label-safety rules so blocks render correctly on GitHub, Obsidian, and VS Code:
+  - Do not use semicolons inside node labels, edge labels, or message labels. Semicolons are Mermaid statement separators.
+  - Do not use unescaped pipe characters inside node labels. Pipes delimit table columns in Mermaid.
+  - Do not use unescaped angle brackets (< or >) inside labels unless they are valid Mermaid syntax.
+  - For complex labels, wrap text in double quotes or use HTML entities.
+- Keep diagrams concise. If a diagram would have more than ~20 nodes, consider splitting it or using a simpler representation.
+- Do not add diagrams to every page. Use them only where they provide clear value over prose and tables.
+- Place diagrams near the relevant explanation, not in a separate "diagrams" section.
+`.trim();
+  }
+
+  return "";
 }
 
 export function createUserPrompt(
