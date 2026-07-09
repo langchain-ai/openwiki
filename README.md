@@ -15,7 +15,11 @@ npm install -g openwiki
 Initialize OpenWiki, configure your model and API key, then generate documentation
 
 ```sh
+# Personal brain mode
 openwiki personal --init
+
+# Code brain mode
+openwiki code --init
 ```
 
 OpenWiki has two modes:

@@ -170,7 +170,7 @@ The repository includes `examples/openwiki-update.yml` as a copyable GitHub Acti
 - checks out the repository,
 - installs Node.js 22,
 - installs OpenWiki globally,
-- runs `openwiki --update --print`,
+- runs `openwiki code --update --print`,
 - passes `OPENROUTER_API_KEY`, `OPENWIKI_MODEL_ID`, and `LANGSMITH_API_KEY` from GitHub secrets,
 - opens a pull request with `peter-evans/create-pull-request` scoped to the `openwiki` directory.
 
@@ -180,7 +180,7 @@ The repository also includes `examples/openwiki-update.gitlab-ci.yml` as a copya
 
 - runs from a scheduled pipeline or a manually triggered web pipeline,
 - installs OpenWiki globally in a Node.js 22 container,
-- runs `openwiki --update --print`,
+- runs `openwiki code --update --print`,
 - skips the rest of the job when `openwiki/` did not change,
 - commits changes to a generated `openwiki/update-$CI_PIPELINE_ID` branch,
 - pushes that branch back to the GitLab project, and

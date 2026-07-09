@@ -28,7 +28,9 @@ afterEach(async () => {
   }
 
   await Promise.all(
-    tempHomes.splice(0).map((home) => rm(home, { force: true, recursive: true })),
+    tempHomes
+      .splice(0)
+      .map((home) => rm(home, { force: true, recursive: true })),
   );
 });
 
@@ -84,7 +86,9 @@ describe("OpenWiki onboarding instructions", () => {
       "utf8",
     );
 
-    await expect(onboarding.readOpenWikiOnboardingConfig()).resolves.toMatchObject({
+    await expect(
+      onboarding.readOpenWikiOnboardingConfig(),
+    ).resolves.toMatchObject({
       wikiGoal: "Markdown instructions win.",
     });
 
