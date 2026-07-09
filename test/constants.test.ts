@@ -3,12 +3,16 @@ import {
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER,
   getDefaultModelId,
+  getUpdateMetadataPath,
   isValidBaseUrl,
   isValidModelId,
+  isValidOpenWikiDir,
   isValidProvider,
   normalizeModelId,
+  normalizeOpenWikiDir,
   normalizeProvider,
   resolveConfiguredProvider,
+  resolveOpenWikiDir,
   resolveProviderBaseUrl,
 } from "../src/constants.ts";
 
@@ -80,6 +84,44 @@ describe("resolveConfiguredProvider", () => {
   test("ignores an invalid OPENWIKI_PROVIDER value", () => {
     expect(resolveConfiguredProvider({ OPENWIKI_PROVIDER: "bogus" })).toBe(
       DEFAULT_PROVIDER,
+    );
+  });
+});
+
+describe("resolveOpenWikiDir", () => {
+  test("defaults to openwiki when unset or blank", () => {
+    expect(resolveOpenWikiDir({})).toBe("openwiki");
+    expect(resolveOpenWikiDir({ OPENWIKI_DOCS_DIR: "   " })).toBe("openwiki");
+  });
+
+  test("normalizes a safe relative directory", () => {
+    expect(
+      resolveOpenWikiDir({ OPENWIKI_DOCS_DIR: " ./docs//openwiki/ " }),
+    ).toBe("docs/openwiki");
+    expect(normalizeOpenWikiDir("docs\\openwiki")).toBe("docs/openwiki");
+  });
+
+  test("rejects absolute directories and directories escaping the repo", () => {
+    expect(() =>
+      resolveOpenWikiDir({ OPENWIKI_DOCS_DIR: "/tmp/openwiki" }),
+    ).toThrow(/OPENWIKI_DOCS_DIR/u);
+    expect(() =>
+      resolveOpenWikiDir({ OPENWIKI_DOCS_DIR: "../openwiki" }),
+    ).toThrow(/OPENWIKI_DOCS_DIR/u);
+    expect(() =>
+      resolveOpenWikiDir({ OPENWIKI_DOCS_DIR: "docs/../../openwiki" }),
+    ).toThrow(/OPENWIKI_DOCS_DIR/u);
+  });
+
+  test("rejects unsafe path characters", () => {
+    expect(isValidOpenWikiDir("docs/openwiki")).toBe(true);
+    expect(isValidOpenWikiDir("docs/open wiki")).toBe(false);
+    expect(isValidOpenWikiDir("docs:openwiki")).toBe(false);
+  });
+
+  test("builds metadata paths under the resolved docs directory", () => {
+    expect(getUpdateMetadataPath("docs/openwiki")).toBe(
+      "docs/openwiki/.last-update.json",
     );
   });
 });

@@ -9,7 +9,7 @@ OpenWiki has a small but layered architecture:
 5. `src/agent/index.ts` runs the documentation agent, resolves the provider, creates the appropriate model client, collects Git context, and writes update metadata.
 6. `src/agent/prompt.ts` builds the system and user prompts that tell the model how to behave.
 7. `src/agent/utils.ts` gathers Git evidence, computes an OpenWiki content snapshot, and records `.last-update.json` after successful init/update runs.
-8. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
+8. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and docs-directory resolution.
 9. `src/agent/types.ts` defines shared types: `OpenWikiCommand`, `RunContext`, `UpdateMetadata`, and run option/event interfaces.
 
 ## Runtime shape
@@ -51,7 +51,7 @@ The agent uses a DeepAgents `LocalShellBackend` rooted at the repository, config
 
 ### Content snapshot and metadata writes
 
-After a non-chat run completes, `src/agent/utils.ts` computes a SHA-256 snapshot of the `openwiki/` directory (excluding `.last-update.json`). Metadata is written **only if the snapshot changed** — a no-op update that leaves docs untouched will not update `.last-update.json`. This prevents endless update loops in scheduled workflows.
+After a non-chat run completes, `src/agent/utils.ts` computes a SHA-256 snapshot of the configured docs directory, defaulting to `openwiki/` and excluding `.last-update.json`. Metadata is written **only if the snapshot changed** — a no-op update that leaves docs untouched will not update `.last-update.json`. This prevents endless update loops in scheduled workflows.
 
 ### Auto-exit behavior
 
@@ -81,10 +81,10 @@ The current design reflects a documentation product rather than a general-purpos
 
 - `src/cli.tsx` and `src/commands.ts` must stay aligned; help text and parser behavior are intentionally coupled.
 - Credential setup writes to a real home-directory file, so permission handling matters.
-- The agent is expected to work from repository-local virtual paths like `/README.md` and `/openwiki/quickstart.md`; the prompt explicitly warns about this.
-- `openwiki/` in the target repository is both the docs output location and the metadata location for `.last-update.json`.
-- When adding a provider, update `managedEnvKeys` in `src/env.ts` so diagnostics and env formatting cover the new key.
-- The content-snapshot logic excludes `.last-update.json`; if new metadata files are added under `openwiki/`, decide whether they should be excluded too.
+- The agent is expected to work from repository-local virtual paths like `/README.md` and the configured quickstart path, such as `/openwiki/quickstart.md`; the prompt explicitly warns about this.
+- The configured docs directory (`openwiki/` by default) is both the docs output location and the metadata location for `.last-update.json`.
+- When adding a provider or managed configuration key, update `managedEnvKeys` in `src/env.ts` so diagnostics and env formatting cover the new key.
+- The content-snapshot logic excludes `.last-update.json`; if new metadata files are added under the docs directory, decide whether they should be excluded too.
 
 ## Source map
 

@@ -7,15 +7,16 @@ The documentation agent is implemented in `src/agent/`. It takes a command (`cha
 `src/agent/index.ts` follows this sequence for non-chat runs:
 
 1. Load `~/.openwiki/.env` into `process.env`.
-2. Resolve the provider via `resolveConfiguredProvider()` and ensure the provider's API key exists.
-3. Resolve the model ID from CLI input, `OPENWIKI_MODEL_ID`, or the provider's default model.
-4. Create a run context from Git state and prior update metadata.
-5. Snapshot the current `openwiki/` content hash (before the run).
-6. Build the system prompt and user prompt.
-7. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
-8. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
-9. Stream messages and tool events back to the CLI.
-10. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed**.
+2. Resolve the docs directory from `OPENWIKI_DOCS_DIR`, defaulting to `openwiki/`.
+3. Resolve the provider via `resolveConfiguredProvider()` and ensure the provider's API key exists.
+4. Resolve the model ID from CLI input, `OPENWIKI_MODEL_ID`, or the provider's default model.
+5. Create a run context from Git state and prior update metadata.
+6. Snapshot the current docs directory content hash (before the run).
+7. Build the system prompt and user prompt.
+8. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
+9. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
+10. Stream messages and tool events back to the CLI.
+11. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `.last-update.json` inside the configured docs directory **only if the content changed**.
 
 Chat runs skip metadata writes entirely.
 
@@ -34,7 +35,7 @@ Base URLs are resolved through `resolveProviderBaseUrl()` in `src/constants.ts`,
 
 `src/agent/prompt.ts` encodes the product rules directly into the system prompt. The agent is instructed to:
 
-- inspect the current codebase and write documentation under `openwiki/`,
+- inspect the current codebase and write documentation under the configured docs directory (`openwiki/` by default),
 - use filesystem discovery tools and git history rather than inventing facts,
 - keep the initial wiki focused and navigable,
 - avoid thin/slim pages — merge stubs into broader pages rather than creating many small directories,
@@ -72,7 +73,7 @@ That metadata is later used to scope update runs.
 
 ### Content snapshot
 
-`createOpenWikiContentSnapshot()` computes a SHA-256 hash of the entire `openwiki/` directory tree (excluding `.last-update.json`). The agent runtime takes a snapshot before and after the run. If they match — meaning the model made no documentation changes — the metadata file is not updated. This prevents scheduled update loops from churning the metadata when the wiki is already current.
+`createOpenWikiContentSnapshot()` computes a SHA-256 hash of the configured docs directory tree (excluding `.last-update.json`). The agent runtime takes a snapshot before and after the run. If they match — meaning the model made no documentation changes — the metadata file is not updated. This prevents scheduled update loops from churning the metadata when the wiki is already current.
 
 ## Model errors
 
@@ -93,7 +94,7 @@ The agent is not just a generic chat wrapper. It is intentionally constrained so
 ## Things to watch when changing agent behavior
 
 - Keep the prompt in sync with the actual filesystem tools and path conventions used by the CLI.
-- Be careful with `.last-update.json` semantics, because update runs use it to decide what changed since the previous successful run.
+- Be careful with `.last-update.json` semantics and the configured docs directory, because update runs use them to decide what changed since the previous successful run.
 - The content-snapshot check means a no-op update will not update metadata. If you change the snapshot logic, ensure `.last-update.json` is still excluded.
 - Credential loading happens before model resolution; changes there affect both onboarding and agent startup.
 - When adding a provider, add a branch in `createModel()` and ensure the API key env key is checked in `ensureProviderKey()`.

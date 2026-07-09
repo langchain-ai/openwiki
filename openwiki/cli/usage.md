@@ -25,6 +25,10 @@ When `--init` or `--update` is run in a TTY (without `--print`), the CLI starts 
 
 If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires a provider API key to be already saved in `~/.openwiki/.env` or present in the environment. It will error with a clear message if the key is missing, rather than prompting interactively.
 
+### Documentation directory
+
+OpenWiki writes docs to `openwiki/` by default. Set `OPENWIKI_DOCS_DIR` to a repository-relative directory such as `docs/openwiki` to use a different docs root. The value is normalized and rejected if it is absolute, contains unsafe path characters, or can escape the repository; update metadata is written as `.last-update.json` inside that directory.
+
 ## Interactive behavior
 
 `src/cli.tsx` is the Ink-based app shell. It handles:
@@ -114,6 +118,7 @@ The help content is centralized in `src/commands.ts` and is used by the CLI UI. 
 - If adding a provider, update `PROVIDER_CONFIGS` and `SELECTABLE_OPENWIKI_PROVIDERS` in `src/constants.ts`, `managedEnvKeys` in `src/env.ts`, and the `createModel` branch in `src/agent/index.ts`.
 - To let a provider accept an alternative base URL, set `baseUrlEnvKey` on its `PROVIDER_CONFIGS` entry, add that key to `managedEnvKeys` in `src/env.ts`, and read it through `resolveProviderBaseUrl()` in the provider's `createModel` branch.
 - To require a user-supplied base URL (a provider with no default endpoint, like `openai-compatible`), also set `requiresBaseUrl: true`. `ensureProviderBaseUrl()` in `src/agent/index.ts` enforces it at runtime, and the interactive setup adds a base-URL step for such providers.
+- To change the docs root behavior, update `resolveOpenWikiDir()` in `src/constants.ts` and keep `src/agent/index.ts`, `src/agent/prompt.ts`, `src/agent/utils.ts`, and the scheduled workflow examples aligned.
 - Re-check the `package.json` bin entry and scripts if the entrypoint changes.
 
 ## Source map

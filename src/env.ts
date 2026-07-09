@@ -6,12 +6,14 @@ import {
   ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  isValidOpenWikiDir,
   isValidModelId,
   normalizeProvider,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_DOCS_DIR_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
 } from "./constants.js";
@@ -53,6 +55,7 @@ export const MANAGED_ENV_KEYS = [
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_DOCS_DIR_ENV_KEY,
   "LANGSMITH_API_KEY",
   "LANGCHAIN_PROJECT",
   "LANGCHAIN_TRACING_V2",
@@ -67,7 +70,7 @@ const NON_CREDENTIAL_ENV_KEYS = new Set<string>([
 
 /**
  * Managed keys surfaced (in display order) in the credential diagnostics panel:
- * the provider/model settings and every credential, but not the LangChain
+ * the provider/model/docs settings and every credential, but not the LangChain
  * project/tracing settings. Derived from {@link MANAGED_ENV_KEYS} so a new
  * credential key automatically appears in diagnostics.
  */
@@ -182,7 +185,9 @@ function createCredentialDiagnostic(
         ? getModelWarnings(value)
         : key === OPENWIKI_PROVIDER_ENV_KEY
           ? getProviderWarnings(value)
-          : getCredentialWarnings(value),
+          : key === OPENWIKI_DOCS_DIR_ENV_KEY
+            ? getOpenWikiDirWarnings(value)
+            : getCredentialWarnings(value),
   };
 }
 
@@ -209,6 +214,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
   return (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
+    key === OPENWIKI_DOCS_DIR_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   );
@@ -250,6 +256,14 @@ function getModelWarnings(value: string): string[] {
 
 function getProviderWarnings(value: string): string[] {
   return normalizeProvider(value) === null ? ["invalid provider"] : [];
+}
+
+function getOpenWikiDirWarnings(value: string): string[] {
+  if (value.trim().length === 0) {
+    return [];
+  }
+
+  return isValidOpenWikiDir(value) ? [] : ["invalid docs directory"];
 }
 
 async function readOpenWikiEnv(): Promise<EnvMap> {

@@ -39,8 +39,8 @@ import {
   normalizeProvider,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
-  OPEN_WIKI_DIR,
   resolveConfiguredProvider,
+  resolveOpenWikiDir,
   SELECTABLE_OPENWIKI_PROVIDERS,
   OPENWIKI_VERSION,
   type OpenWikiProvider,
@@ -635,7 +635,11 @@ function DryRunView({
         />
         <StatusLine tone="muted" label="Agent" value="not invoked" />
         <StatusLine tone="muted" label="Writes" value="no files or metadata" />
-        <StatusLine tone="muted" label="Output" value={`${OPEN_WIKI_DIR}/`} />
+        <StatusLine
+          tone="muted"
+          label="Output"
+          value={`${resolveOpenWikiDir()}/`}
+        />
         <StatusLine
           tone="muted"
           label="Startup"

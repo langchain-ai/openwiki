@@ -27,10 +27,12 @@ import {
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
+  OPENWIKI_DOCS_DIR_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
+  resolveOpenWikiDir,
   resolveProviderBaseUrl,
   type OpenWikiProvider,
 } from "../constants.js";
@@ -59,9 +61,11 @@ export async function runOpenWikiAgent(
   await loadOpenWikiEnv();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
+  const openWikiDir = resolveOpenWikiDir();
+  emitDebug(options, `openwiki.dir=${openWikiDir}`);
 
   if (command === "update" && shouldCheckUpdateNoop(options)) {
-    const noopStatus = await getUpdateNoopStatus(cwd);
+    const noopStatus = await getUpdateNoopStatus(cwd, openWikiDir);
 
     if (noopStatus.shouldSkip) {
       const message =
@@ -96,7 +100,14 @@ export async function runOpenWikiAgent(
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
   try {
-    return await runOpenWikiAgentCore(command, cwd, options, provider, modelId);
+    return await runOpenWikiAgentCore(
+      command,
+      cwd,
+      options,
+      provider,
+      modelId,
+      openWikiDir,
+    );
   } catch (error) {
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
     throw error;
@@ -111,11 +122,14 @@ async function runOpenWikiAgentCore(
   options: OpenWikiRunOptions,
   provider: OpenWikiProvider,
   modelId: string,
+  openWikiDir: string,
 ): Promise<OpenWikiRunResult> {
-  const context = await createRunContext(command, cwd);
+  const context = await createRunContext(command, cwd, openWikiDir);
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
-    command === "chat" ? null : await createOpenWikiContentSnapshot(cwd);
+    command === "chat"
+      ? null
+      : await createOpenWikiContentSnapshot(cwd, openWikiDir);
   emitDebug(options, "openwiki.snapshot=created");
   const model = createModel(provider, modelId);
   emitDebug(options, `model.provider=${provider}`);
@@ -134,7 +148,7 @@ async function runOpenWikiAgentCore(
       timeout: 120,
       virtualMode: true,
     }),
-    systemPrompt: createSystemPrompt(command),
+    systemPrompt: createSystemPrompt(command, openWikiDir),
   });
   emitDebug(options, "agent=created");
 
@@ -142,7 +156,13 @@ async function runOpenWikiAgentCore(
     messages: [
       {
         role: "user",
-        content: createRunUserMessage(command, cwd, context, options),
+        content: createRunUserMessage(
+          command,
+          cwd,
+          context,
+          options,
+          openWikiDir,
+        ),
       },
     ],
   };
@@ -180,9 +200,10 @@ async function runOpenWikiAgentCore(
 
   if (
     command !== "chat" &&
-    openWikiSnapshotBefore !== (await createOpenWikiContentSnapshot(cwd))
+    openWikiSnapshotBefore !==
+      (await createOpenWikiContentSnapshot(cwd, openWikiDir))
   ) {
-    await writeLastUpdateMetadata(command, cwd, modelId);
+    await writeLastUpdateMetadata(command, cwd, modelId, openWikiDir);
     emitDebug(options, "metadata=written");
   } else {
     emitDebug(
@@ -206,13 +227,16 @@ function createRunUserMessage(
   cwd: string,
   context: Awaited<ReturnType<typeof createRunContext>>,
   options: OpenWikiRunOptions,
+  openWikiDir: string,
 ): string {
   if (options.isFollowup === true && options.userMessage?.trim()) {
     return options.userMessage.trim();
   }
 
+  const quickstartPath = `/${openWikiDir}/quickstart.md`;
+
   return `
-${createUserPrompt(command, context, options.userMessage ?? null)}
+${createUserPrompt(command, context, options.userMessage ?? null, openWikiDir)}
 
 Repository root:
 ${cwd}
@@ -220,7 +244,7 @@ ${cwd}
 Runtime note:
 - Treat the repository root above as the only project you are documenting.
 - Filesystem tools use a virtual root: / means ${cwd}.
-- For ls, read_file, write_file, edit_file, glob, and grep, use virtual paths such as /README.md, /agent/agents/main.py, and /openwiki/quickstart.md.
+- For ls, read_file, write_file, edit_file, glob, and grep, use virtual paths such as /README.md, /agent/agents/main.py, and ${quickstartPath}.
 - Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.
 - Shell execute commands run on the host. For execute, use cd ${cwd} before repository commands.
 - Do not search parent directories or unrelated repositories.
@@ -1121,7 +1145,11 @@ function formatDebugValue(key: string, value: string | undefined): string {
     return `set(length=${value.length})`;
   }
 
-  if (key === OPENWIKI_MODEL_ID_ENV_KEY || key === OPENWIKI_PROVIDER_ENV_KEY) {
+  if (
+    key === OPENWIKI_MODEL_ID_ENV_KEY ||
+    key === OPENWIKI_PROVIDER_ENV_KEY ||
+    key === OPENWIKI_DOCS_DIR_ENV_KEY
+  ) {
     return `set(value=${JSON.stringify(value)})`;
   }
 
