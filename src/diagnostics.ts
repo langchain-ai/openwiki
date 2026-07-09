@@ -5,6 +5,7 @@ import {
   MERGE_GATEWAY_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  resolveConfiguredProvider,
 } from "./constants.js";
 
 /**
@@ -75,15 +76,50 @@ export function isOpenRouterServerError(
 }
 
 /**
- * Produces a user-facing error message: a friendly note for provider 500s,
- * otherwise the error's own message with any secrets redacted.
+ * Recognizes a Merge Gateway 402 Payment Required response — the Gateway's
+ * budget-exhausted signal — so an actionable message can be shown. Only fires
+ * when Merge Gateway is the configured provider, so other providers' 402s
+ * (e.g. OpenRouter's insufficient-credits error) are not mislabeled.
  */
-export function getErrorMessage(error: unknown): string {
+export function isMergeGatewayBudgetError(
+  error: unknown,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (resolveConfiguredProvider(env) !== "merge-gateway") {
+    return false;
+  }
+
+  if (isRecord(error)) {
+    const status = error.statusCode ?? error.status;
+
+    if (status === 402 || status === "402") {
+      return true;
+    }
+  }
+
+  return /\b402\b|Payment Required/iu.test(String(error));
+}
+
+/**
+ * Produces a user-facing error message: a friendly note for provider 500s and
+ * Merge Gateway budget errors, otherwise the error's own message with any
+ * secrets redacted.
+ */
+export function getErrorMessage(
+  error: unknown,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
   const message =
     error instanceof Error ? error.message : "OpenWiki agent run failed.";
 
+  if (isMergeGatewayBudgetError(error, env)) {
+    return "Merge Gateway returned 402 Payment Required: your Gateway budget is exhausted. Review your plan at https://gateway.merge.dev, or switch providers with /model. Run with OPENWIKI_DEBUG=1 to show provider metadata.";
+  }
+
   if (isOpenRouterServerError(error, message)) {
-    return "OpenRouter/provider returned 500 Internal Server Error. Try retrying or switching models with /model. Run with OPENWIKI_DEBUG=1 to show provider metadata.";
+    return resolveConfiguredProvider(env) === "merge-gateway"
+      ? "Merge Gateway/provider returned 500 Internal Server Error. Try retrying or switching models with /model. Run with OPENWIKI_DEBUG=1 to show provider metadata."
+      : "OpenRouter/provider returned 500 Internal Server Error. Try retrying or switching models with /model. Run with OPENWIKI_DEBUG=1 to show provider metadata.";
   }
 
   return sanitizeDiagnosticText(message);

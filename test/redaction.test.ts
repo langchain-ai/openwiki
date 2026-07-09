@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import {
   getErrorMessage,
+  isMergeGatewayBudgetError,
   isOpenRouterServerError,
   sanitizeDiagnosticText,
 } from "../src/diagnostics.ts";
@@ -111,6 +112,40 @@ describe("isOpenRouterServerError", () => {
   });
 });
 
+describe("isMergeGatewayBudgetError", () => {
+  const mergeEnv = { OPENWIKI_PROVIDER: "merge-gateway" };
+
+  test("detects a 402 status object when Merge Gateway is configured", () => {
+    const error = Object.assign(new Error("Payment Required"), {
+      status: 402,
+    });
+
+    expect(isMergeGatewayBudgetError(error, mergeEnv)).toBe(true);
+  });
+
+  test("detects a 402 from the message text", () => {
+    expect(
+      isMergeGatewayBudgetError(new Error("402 Payment Required"), mergeEnv),
+    ).toBe(true);
+  });
+
+  test("is false when another provider is configured", () => {
+    const error = Object.assign(new Error("Payment Required"), {
+      status: 402,
+    });
+
+    expect(
+      isMergeGatewayBudgetError(error, { OPENWIKI_PROVIDER: "openrouter" }),
+    ).toBe(false);
+  });
+
+  test("is false for a non-402 error", () => {
+    expect(isMergeGatewayBudgetError(new Error("bad request"), mergeEnv)).toBe(
+      false,
+    );
+  });
+});
+
 describe("getErrorMessage", () => {
   test("returns a friendly, actionable message for provider 500s", () => {
     const error = Object.assign(new Error("500"), {
@@ -120,6 +155,30 @@ describe("getErrorMessage", () => {
 
     expect(getErrorMessage(error)).toMatch(/500 Internal Server Error/u);
     expect(getErrorMessage(error)).toMatch(/\/model/u);
+  });
+
+  test("returns an actionable message for Merge Gateway 402 budget errors", () => {
+    const error = Object.assign(new Error("402 Payment Required"), {
+      status: 402,
+    });
+    const message = getErrorMessage(error, {
+      OPENWIKI_PROVIDER: "merge-gateway",
+    });
+
+    expect(message).toMatch(/402 Payment Required/u);
+    expect(message).toMatch(/gateway\.merge\.dev/u);
+  });
+
+  test("labels provider 500s as Merge Gateway when it is configured", () => {
+    const error = Object.assign(new Error("500 Internal Server Error"), {
+      status: 500,
+      metadata: {},
+    });
+    const message = getErrorMessage(error, {
+      OPENWIKI_PROVIDER: "merge-gateway",
+    });
+
+    expect(message).toMatch(/Merge Gateway\/provider returned 500/u);
   });
 
   test("falls back to a generic message for non-Error values", () => {
