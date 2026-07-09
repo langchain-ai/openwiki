@@ -69,6 +69,17 @@ Providers and their model options are defined in `PROVIDER_CONFIGS` in `src/cons
 
 The default provider is `openai`, and the default model is `gpt-5.5`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, then falls back to the first configured provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, and finally `DEFAULT_PROVIDER`.
 
+### Provider retry attempts
+
+Set `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` to override the number of retries after
+the first provider request. The value must be a positive integer:
+
+```bash
+OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
+```
+
+If the value is unset, OpenWiki defaults to 3 retries.
+
 ### Alternative base URLs
 
 Set `ANTHROPIC_BASE_URL` to route the anthropic provider at an alternative,

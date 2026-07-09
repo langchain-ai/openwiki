@@ -34,9 +34,11 @@ import {
   OPENROUTER_BASE_URL,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  resolveProviderRetryAttempts,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
@@ -100,6 +102,8 @@ export async function runOpenWikiAgent(
   ensureProviderBaseUrl(provider);
   const modelId = resolveModelId(options, provider);
   emitDebug(options, `model=${modelId}`);
+  const providerRetryAttempts = resolveProviderRetryAttempts();
+  emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
 
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
@@ -110,6 +114,7 @@ export async function runOpenWikiAgent(
       options,
       provider,
       modelId,
+      providerRetryAttempts,
     );
   } catch (error) {
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
@@ -125,6 +130,7 @@ async function runOpenWikiAgentCore(
   options: OpenWikiRunOptions,
   provider: OpenWikiProvider,
   modelId: string,
+  providerRetryAttempts: number,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
   const context = await createRunContext(command, cwd, outputMode);
@@ -134,7 +140,7 @@ async function runOpenWikiAgentCore(
       ? null
       : await createOpenWikiContentSnapshot(cwd, outputMode);
   emitDebug(options, "openwiki.snapshot=created");
-  const model = createModel(provider, modelId);
+  const model = createModel(provider, modelId, providerRetryAttempts);
   emitDebug(options, `model.provider=${provider}`);
   emitDebug(options, "model=initialized");
   const checkpointer = await createCheckpointer();
@@ -352,13 +358,20 @@ function resolveModelId(
   return modelId;
 }
 
-function createModel(provider: OpenWikiProvider, modelId: string) {
+function createModel(
+  provider: OpenWikiProvider,
+  modelId: string,
+  providerRetryAttempts: number,
+) {
+  const retryOptions = { maxRetries: providerRetryAttempts };
+
   if (provider === "anthropic") {
     const baseURL = resolveProviderBaseUrl(provider);
 
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+      ...retryOptions,
     });
   }
 
@@ -368,6 +381,7 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
       siteName: "OpenWiki",
+      ...retryOptions,
     });
   }
 
@@ -382,6 +396,7 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
       : undefined,
     model: modelId,
     useResponsesApi: provider === "openai",
+    ...retryOptions,
   });
 }
 
@@ -1156,7 +1171,11 @@ function formatDebugValue(key: string, value: string | undefined): string {
     return `set(length=${value.length})`;
   }
 
-  if (key === OPENWIKI_MODEL_ID_ENV_KEY || key === OPENWIKI_PROVIDER_ENV_KEY) {
+  if (
+    key === OPENWIKI_MODEL_ID_ENV_KEY ||
+    key === OPENWIKI_PROVIDER_ENV_KEY ||
+    key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
+  ) {
     return `set(value=${JSON.stringify(value)})`;
   }
 

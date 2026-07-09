@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   DEFAULT_MODEL_ID,
+  DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
   getDefaultModelId,
   isValidBaseUrl,
@@ -10,6 +11,7 @@ import {
   normalizeProvider,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  resolveProviderRetryAttempts,
 } from "../src/constants.ts";
 
 describe("isValidModelId", () => {
@@ -108,6 +110,37 @@ describe("resolveProviderBaseUrl", () => {
 
   test("returns undefined for a provider with no default and no override", () => {
     expect(resolveProviderBaseUrl("openai", {})).toBeUndefined();
+  });
+});
+
+describe("resolveProviderRetryAttempts", () => {
+  test("uses the OpenWiki default when no override is set", () => {
+    expect(resolveProviderRetryAttempts({})).toBe(
+      DEFAULT_PROVIDER_RETRY_ATTEMPTS,
+    );
+  });
+
+  test("accepts positive integer retry counts", () => {
+    expect(
+      resolveProviderRetryAttempts({
+        OPENWIKI_PROVIDER_RETRY_ATTEMPTS: "1",
+      }),
+    ).toBe(1);
+    expect(
+      resolveProviderRetryAttempts({
+        OPENWIKI_PROVIDER_RETRY_ATTEMPTS: " 3 ",
+      }),
+    ).toBe(3);
+  });
+
+  test("rejects invalid retry counts", () => {
+    for (const value of ["", "   ", "0", "-1", "1.5", "abc", "1e2"]) {
+      expect(() =>
+        resolveProviderRetryAttempts({
+          OPENWIKI_PROVIDER_RETRY_ATTEMPTS: value,
+        }),
+      ).toThrow(/OPENWIKI_PROVIDER_RETRY_ATTEMPTS/u);
+    }
   });
 });
 

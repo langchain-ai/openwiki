@@ -204,6 +204,17 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
+### Provider retry attempts
+
+OpenWiki uses LangChain's built-in retry handling for transient provider errors.
+To override the number of retries after the first provider request, set `OPENWIKI_PROVIDER_RETRY_ATTEMPTS`:
+
+```bash
+OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
+```
+
+The value must be a positive integer. If the value is unset, OpenWiki defaults to 3 retries.
+
 If there's an inference provider or model you'd like to see added, please open a PR!
 
 ## Contributing
