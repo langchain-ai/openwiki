@@ -6,12 +6,13 @@ import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import { createDeepAgent, LocalShellBackend } from "deepagents";
+import { createDeepAgent } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import { ensureWriteConnectorSkill } from "../connectors/write-connector-skill.js";
 import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
 import { openWikiLocalWikiDir } from "../openwiki-home.js";
+import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
   OpenWikiCommand,
@@ -144,8 +145,10 @@ async function runOpenWikiAgentCore(
     model,
     tools: createOpenWikiConnectorTools(),
     checkpointer,
-    backend: new LocalShellBackend({
+    backend: new OpenWikiLocalShellBackend({
+      docsOnly: command !== "chat",
       maxOutputBytes: 100_000,
+      outputMode,
       rootDir: cwd,
       timeout: 120,
       virtualMode: true,
