@@ -1,6 +1,6 @@
 {
   "name": "openwiki",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "A CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase.",
   "license": "MIT",
   "type": "module",
@@ -27,7 +27,7 @@
   "scripts": {
     "openwiki": "node dist/cli.js",
     "build": "tsc -p tsconfig.json",
-    "clean": "rm -rf dist",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
     "dev": "tsx src/cli.tsx",
     "format": "prettier --write .",
@@ -46,9 +46,10 @@
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.3",
     "@langchain/openai": "^1.5.3",
     "@langchain/openrouter": "^0.4.3",
-    "deepagents": "^1.10.5",
+    "@langchain/protocol": "^0.0.18",
+    "deepagents": "^1.10.7",
     "ink": "^5.1.0",
-    "langchain": "^1.5.1",
+    "langchain": "^1.5.3",
     "marked": "^18.0.5",
     "react": "^18.3.1"
   },

@@ -163,6 +163,24 @@ export function parseCommand(argv: string[]): CliCommand {
   };
 }
 
+/**
+ * True when a run must bypass the Ink UI and use the non-interactive path:
+ * either the user asked for print mode, or stdin is not a TTY (CI, cron,
+ * pipes), where Ink's raw-mode input is unavailable and rendering the UI
+ * fails. Interactive chat without a message still requires a TTY, so it is
+ * excluded.
+ */
+export function shouldRunNonInteractively(
+  command: CliCommand,
+  stdinIsTTY: boolean,
+): command is Extract<CliCommand, { kind: "run" }> {
+  return (
+    command.kind === "run" &&
+    !command.dryRun &&
+    (command.print || (!stdinIsTTY && command.shouldStart))
+  );
+}
+
 export function isDevelopmentMode(): boolean {
   return (
     process.env.NODE_ENV === "development" || process.env.OPENWIKI_DEV === "1"
