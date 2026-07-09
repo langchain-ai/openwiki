@@ -20,20 +20,23 @@ The file stores provider configuration and API keys:
 - `OPENWIKI_MODEL_ID` — the default model ID
 - Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`
 - Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API) and `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint)
+- `OPENWIKI_CLAUDE_CODE_BINARY` — optional binary override for the claude-code agent-CLI provider (which stores no API key; runs use the Claude Code subscription login)
 - Optional LangSmith settings: `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`
 
 The loader merges those values into `process.env`, while preferring existing process-level values over file values. Deprecated keys (`OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT`) are skipped on load and removed on save.
 
-`src/credentials.tsx` provides the interactive bootstrap flow when required:
+`src/credentials.tsx` provides the interactive bootstrap flow when required (step sequencing lives in `src/credentials-flow.ts`):
 
 - prompts for a provider (arrow-key selection menu),
-- prompts for the provider's API key,
+- prompts for the provider's API key — or, for agent-CLI providers like claude-code, runs an install check (`claude --version`) instead and skips the API-key and LangSmith steps,
 - prompts for a model choice (arrow-key selection from the provider's model list, or a custom model ID),
 - optionally prompts for a LangSmith key,
 - writes the results with restrictive file permissions,
 - removes deprecated OpenAI-related environment variables when saving.
 
-The setup flow runs for **all** interactive commands (chat, init, and update) when credentials are missing — not just chat. In non-interactive mode (no TTY or `--print`), missing provider keys produce an error instead of a prompt.
+Leaving the LangSmith prompt blank explicitly writes `LANGCHAIN_TRACING_V2=false`, so a blank answer acts as an off switch even when an earlier setup had enabled tracing.
+
+The setup flow runs for **all** interactive commands (chat, init, and update) when credentials are missing — not just chat. In non-interactive mode (no TTY or `--print`), missing provider keys produce an error instead of a prompt; agent-CLI providers are exempt because they have no API key.
 
 ## Provider resolution
 
@@ -43,7 +46,7 @@ The setup flow runs for **all** interactive commands (chat, init, and update) wh
 2. Otherwise, if `OPENROUTER_API_KEY` is present, default to `openrouter`.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openrouter`).
 
-`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var is valid and whether the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing or invalid provider value triggers the interactive flow.
+`needsCredentialSetup()` in `src/credentials-flow.ts` checks whether the provider env var is valid and whether the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing or invalid provider value triggers the interactive flow. For agent-CLI providers, only a valid provider env var and a model ID are required.
 
 ## Model and credential diagnostics
 
@@ -57,7 +60,7 @@ The env layer also produces diagnostics for the CLI UI. Those diagnostics report
 - invalid model IDs,
 - invalid provider values.
 
-Diagnostics cover all six provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, and base URLs are shown in full).
+Diagnostics cover all six provider API keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), `OPENWIKI_CLAUDE_CODE_BINARY`, and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, base URLs, and binary path are shown in full).
 
 ## Update metadata
 
@@ -70,7 +73,7 @@ After successful `init` or `update` runs where the `openwiki/` content changed, 
 
 The content-change check uses `createOpenWikiContentSnapshot()`, which hashes the `openwiki/` directory (excluding `.last-update.json`). If the hash is identical before and after the run, metadata is not written. This prevents scheduled update loops from updating the timestamp when no documentation changed.
 
-Update runs use this metadata to build a change summary since the previous successful OpenWiki execution — preferring `gitHead` for a precise commit range, falling back to `updatedAt` for a time-based range.
+Update runs use this metadata to build a change summary since the previous successful OpenWiki execution — preferring `gitHead` for a precise commit range, falling back to `updatedAt` for a time-based range. Update runs without a user message are also skipped before the agent starts when nothing changed since the recorded `gitHead` — see [Agent workflow](../agent/workflow.md) for the conditions. This matters for scheduled CI: an unchanged repository costs no model tokens at all.
 
 ## Scheduled CI workflows
 

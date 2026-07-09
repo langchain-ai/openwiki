@@ -30,10 +30,12 @@ import {
   type OpenWikiRunResult,
 } from "./agent/types.js";
 import {
+  formatProviderSwitchNotice,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  isAgentCliProvider,
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
@@ -238,14 +240,16 @@ function App({ command }: AppProps) {
       return;
     }
 
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
+    if (!isAgentCliProvider(sessionProvider)) {
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
-      setRunState({
-        status: "error",
-        message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
-      });
-      return;
+      if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+        setRunState({
+          status: "error",
+          message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
+        });
+        return;
+      }
     }
 
     if (shouldRunInteractiveCredentialSetup) {
@@ -1506,7 +1510,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        `Enter a valid provider: ${SELECTABLE_OPENWIKI_PROVIDERS.join(", ")}.`,
       );
       return;
     }
@@ -1518,11 +1522,7 @@ function ChatInput({
     try {
       await onProviderSelect(provider);
       resetInput();
-      setNotice(
-        `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
-          provider,
-        )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
-      );
+      setNotice(formatProviderSwitchNotice(provider));
     } catch (saveError) {
       setError(
         saveError instanceof Error

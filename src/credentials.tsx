@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import {
   DEFAULT_PROVIDER,
+  getAgentCliProviderConfig,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  isAgentCliProvider,
   isValidBaseUrl,
   isValidModelId,
-  normalizeProvider,
   normalizeModelId,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
@@ -19,6 +20,21 @@ import {
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
 import { openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
+import {
+  getInitialStep,
+  getNextStepAfterAgentCheck,
+  getNextStepAfterApiKey,
+  getNextStepAfterBaseUrl,
+  getNextStepAfterModel,
+  getNextStepAfterProvider,
+  hasValidConfiguredProvider,
+  isBaseUrlConfigured,
+  needsCredentialSetup,
+  type PromptStep,
+} from "./credentials-flow.js";
+import { getAgentCliAdapter } from "./agent/engines/index.js";
+
+export { needsCredentialSetup } from "./credentials-flow.js";
 
 export type InitSetupResult = {
   modelId: string | null;
@@ -36,37 +52,10 @@ type InitSetupProps = {
   onError: (message: string) => void;
 };
 
-type PromptStep = "api-key" | "base-url" | "langsmith" | "model" | "provider";
-
-export function needsCredentialSetup(
-  modelIdOverride: string | null = null,
-): boolean {
-  const provider = resolveConfiguredProvider();
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-
-  return (
-    !hasValidConfiguredProvider() ||
-    !process.env[apiKeyEnvKey] ||
-    needsBaseUrlStep(provider) ||
-    (modelIdOverride === null &&
-      process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
-    process.env.LANGSMITH_API_KEY === undefined
-  );
-}
-
-function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
-  if (!providerRequiresBaseUrl(provider)) {
-    return false;
-  }
-
-  return !isBaseUrlConfigured(provider);
-}
-
-function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
-  const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
-
-  return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
-}
+type AgentCheckState =
+  | { status: "checking" }
+  | { status: "found"; version: string }
+  | { status: "missing"; message: string };
 
 export function InitSetup({
   modelIdOverride = null,
@@ -95,6 +84,10 @@ export function InitSetup({
   const [isCustomModelInput, setIsCustomModelInput] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [agentCheck, setAgentCheck] = useState<AgentCheckState>({
+    status: "checking",
+  });
+  const [agentCheckAttempt, setAgentCheckAttempt] = useState(0);
 
   useEffect(() => {
     const initialStep = getInitialStep(modelIdOverride, initialProvider);
@@ -129,6 +122,40 @@ export function InitSetup({
     );
     setStep(initialStep);
   }, [initialProvider, modelIdOverride, onComplete]);
+
+  useEffect(() => {
+    if (step !== "agent-check") {
+      return;
+    }
+
+    let cancelled = false;
+
+    setAgentCheck({ status: "checking" });
+
+    void (async () => {
+      const config = getAgentCliProviderConfig(provider);
+      const binary =
+        process.env[config.binaryEnvKey]?.trim() || config.defaultBinary;
+      const status = await getAgentCliAdapter(provider).detectInstall(binary);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (status.found) {
+        setAgentCheck({
+          status: "found",
+          version: status.version ?? "unknown",
+        });
+      } else {
+        setAgentCheck({ status: "missing", message: config.installHint });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, provider, agentCheckAttempt]);
 
   useInput((inputValue, key) => {
     if (isSaving || step === null) {
@@ -170,6 +197,16 @@ export function InitSetup({
 
       if (key.return) {
         void submit();
+      }
+
+      return;
+    }
+
+    if (step === "agent-check") {
+      if (key.return && agentCheck.status === "found") {
+        void submit();
+      } else if (key.return && agentCheck.status === "missing") {
+        setAgentCheckAttempt((attempt) => attempt + 1);
       }
 
       return;
@@ -229,6 +266,29 @@ export function InitSetup({
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextProvider: selectedProvider,
+      });
+      return;
+    }
+
+    if (step === "agent-check") {
+      if (agentCheck.status !== "found") {
+        return;
+      }
+
+      const nextStep = getNextStepAfterAgentCheck(provider, modelIdOverride);
+
+      if (nextStep) {
+        setIsCustomModelInput(false);
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: null,
+        nextBaseUrl: null,
+        nextLangSmithKey: null,
+        nextModelId: modelId,
+        nextProvider: provider,
       });
       return;
     }
@@ -323,8 +383,10 @@ export function InitSetup({
       setInput("");
       setIsCustomModelInput(false);
 
-      if (process.env.LANGSMITH_API_KEY === undefined) {
-        setStep("langsmith");
+      const nextStep = getNextStepAfterModel(provider);
+
+      if (nextStep) {
+        setStep(nextStep);
         return;
       }
 
@@ -455,21 +517,39 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
-        <SetupStep
-          label="Provider key"
-          state={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "done"
-              : step === "api-key"
-                ? "current"
-                : "pending"
-          }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
-        />
+        {isAgentCliProvider(provider) ? (
+          <SetupStep
+            label="Agent CLI"
+            state={
+              agentCheck.status === "found"
+                ? "done"
+                : step === "agent-check"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              agentCheck.status === "found"
+                ? `found version ${agentCheck.version}`
+                : "verify the subscription agent CLI is installed"
+            }
+          />
+        ) : (
+          <SetupStep
+            label="Provider key"
+            state={
+              process.env[getProviderApiKeyEnvKey(provider)]
+                ? "done"
+                : step === "api-key"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              process.env[getProviderApiKeyEnvKey(provider)]
+                ? "available from environment"
+                : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
+            }
+          />
+        )}
         {providerRequiresBaseUrl(provider) ? (
           <SetupStep
             label="Base URL"
@@ -498,27 +578,30 @@ export function InitSetup({
           }
           detail={getModelSetupDetail(modelIdOverride, provider)}
         />
-        <SetupStep
-          label="LangSmith"
-          state={
-            process.env.LANGSMITH_API_KEY !== undefined
-              ? "done"
-              : step === "langsmith"
-                ? "current"
-                : "optional"
-          }
-          detail={
-            process.env.LANGSMITH_API_KEY !== undefined
-              ? "available from environment"
-              : "optional tracing key"
-          }
-        />
+        {isAgentCliProvider(provider) ? null : (
+          <SetupStep
+            label="LangSmith"
+            state={
+              process.env.LANGSMITH_API_KEY !== undefined
+                ? "done"
+                : step === "langsmith"
+                  ? "current"
+                  : "optional"
+            }
+            detail={
+              process.env.LANGSMITH_API_KEY !== undefined
+                ? "available from environment"
+                : "optional tracing key"
+            }
+          />
+        )}
         <SetupStep label="OpenWiki" state="done" detail="agent setup" />
       </Box>
 
       <SetupPanel title="Prompt">
         {step ? (
           <Prompt
+            agentCheck={agentCheck}
             input={input}
             isCustomModelInput={isCustomModelInput}
             modelSelectionIndex={modelSelectionIndex}
@@ -616,6 +699,7 @@ function SetupPanel({ title, children }: SetupPanelProps) {
 }
 
 type PromptProps = {
+  agentCheck: AgentCheckState;
   input: string;
   isCustomModelInput: boolean;
   modelSelectionIndex: number;
@@ -625,6 +709,7 @@ type PromptProps = {
 };
 
 function Prompt({
+  agentCheck,
   input,
   isCustomModelInput,
   modelSelectionIndex,
@@ -647,6 +732,35 @@ function Prompt({
           </Text>
         ))}
         <Text color="gray">Use up/down arrows, then press Enter.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "agent-check") {
+    if (agentCheck.status === "checking") {
+      return <Text>Checking for the {getProviderLabel(provider)} CLI...</Text>;
+    }
+
+    if (agentCheck.status === "found") {
+      return (
+        <Box flexDirection="column">
+          <Text>
+            Found the {getProviderLabel(provider)} CLI{" "}
+            <Text color="green">{agentCheck.version}</Text>.
+          </Text>
+          <Text color="gray">
+            No API key needed — runs use your subscription login. Press Enter to
+            continue.
+          </Text>
+        </Box>
+      );
+    }
+
+    return (
+      <Box flexDirection="column">
+        <Text color="red">Agent CLI not found.</Text>
+        <Text>{agentCheck.message}</Text>
+        <Text color="gray">Press Enter to check again.</Text>
       </Box>
     );
   }
@@ -743,86 +857,12 @@ function SelectionMarker({ isSelected }: { isSelected: boolean }) {
   );
 }
 
-function getInitialStep(
-  modelIdOverride: string | null,
-  provider: OpenWikiProvider,
-): PromptStep | null {
-  if (!hasValidConfiguredProvider()) {
-    return "provider";
-  }
-
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
-  }
-
-  if (needsBaseUrlStep(provider)) {
-    return "base-url";
-  }
-
-  if (
-    modelIdOverride === null &&
-    process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined
-  ) {
-    return "model";
-  }
-
-  if (process.env.LANGSMITH_API_KEY === undefined) {
-    return "langsmith";
-  }
-
-  return null;
-}
-
-function getNextStepAfterProvider(
-  provider: OpenWikiProvider,
-  modelIdOverride: string | null,
-): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
-  }
-
-  return getNextStepAfterApiKey(provider, modelIdOverride);
-}
-
-function getNextStepAfterApiKey(
-  provider: OpenWikiProvider,
-  modelIdOverride: string | null,
-): PromptStep | null {
-  if (needsBaseUrlStep(provider)) {
-    return "base-url";
-  }
-
-  return getNextStepAfterBaseUrl(provider, modelIdOverride);
-}
-
-function getNextStepAfterBaseUrl(
-  provider: OpenWikiProvider,
-  modelIdOverride: string | null,
-): PromptStep | null {
-  if (
-    modelIdOverride === null &&
-    process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined
-  ) {
-    return "model";
-  }
-
-  if (process.env.LANGSMITH_API_KEY === undefined) {
-    return "langsmith";
-  }
-
-  return null;
-}
-
 function getProviderSetupDetail(provider: OpenWikiProvider): string {
   if (hasValidConfiguredProvider()) {
     return getProviderLabel(provider);
   }
 
   return `default ${getProviderLabel(DEFAULT_PROVIDER)}`;
-}
-
-function hasValidConfiguredProvider(): boolean {
-  return normalizeProvider(process.env[OPENWIKI_PROVIDER_ENV_KEY]) !== null;
 }
 
 function getModelSetupDetail(
@@ -920,7 +960,11 @@ function moveSelectionIndex(
 }
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "claude-code"
+    ? "a"
+    : "an";
 }
 
 function sanitizeInputChunk(value: string): string {

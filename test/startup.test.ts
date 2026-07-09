@@ -152,4 +152,13 @@ describe("resolveStartupCommand", () => {
       expect(result.message).toContain("OPENROUTER_API_KEY is required");
     }
   });
+
+  test("does not require an API key for agent CLI providers", async () => {
+    process.env.OPENWIKI_PROVIDER = "claude-code";
+
+    const command = updatePrintCommand({ command: "init" });
+    const result = await resolveStartupCommand(command, { isStdinTTY: false });
+
+    expect(result).toBe(command);
+  });
 });
