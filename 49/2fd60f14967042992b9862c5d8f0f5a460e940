@@ -1,0 +1,33 @@
+openwiki/operations/credentials-and-updates.md
+  s_2859e30e668c29::t_cf5622df3e0fd7 3
+  s_2859e30e668c29::t_ebf1bc0ca5c518 6-8,81-82
+  s_2859e30e668c29::t_ddb8c00c481836 83
+src/onboarding.ts
+  s_2859e30e668c29::t_26f98627b65c5f 11-14,75,78-80,82,85-88,99-101,104,111-118,135-136,139-140,146-166
+  s_2859e30e668c29::t_817fe556280840 81,138
+  s_2859e30e668c29::t_d9ba1f3e912c29 167
+test/onboarding.test.ts
+  s_2859e30e668c29::t_b084eda6bd1c70 66,93-94
+  s_2859e30e668c29::t_0f494f6ccd1063 1-65,67-92,95-96
+README.md
+  s_2859e30e668c29::t_c49d2397025c42 162-164
+pnpm-workspace.yaml
+  s_2859e30e668c29::t_68b69dfcea4dbb 7
+  s_2859e30e668c29::t_d0a4635834a2ab 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "492fd60f14967042992b9862c5d8f0f5a460e940",
+  "prompts": {},
+  "sessions": {
+    "s_2859e30e668c29": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3ede-685b-72b1-a56d-01cf16ae4eed",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
