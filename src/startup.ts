@@ -2,6 +2,7 @@ import { shouldCheckUpdateNoop, getUpdateNoopStatus } from "./agent/utils.js";
 import type { CliCommand } from "./commands.js";
 import {
   getProviderApiKeyEnvKey,
+  isAgentCliProvider,
   resolveConfiguredProvider,
 } from "./constants.js";
 
@@ -37,25 +38,31 @@ export async function resolveStartupCommand(
     (command.print || !isStdinTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
 
-    if (!hasProviderKey) {
-      if (
-        command.print &&
-        (await canSkipCleanUpdateBeforeCredentials(
-          command,
-          options.cwd ?? process.cwd(),
-        ))
-      ) {
-        return command;
+    // Agent CLI providers authenticate through the vendor CLI's own login,
+    // so there is no API key to require here; a missing or logged-out CLI
+    // surfaces through the engine runner's install hint instead.
+    if (!isAgentCliProvider(provider)) {
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+      const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+
+      if (!hasProviderKey) {
+        if (
+          command.print &&
+          (await canSkipCleanUpdateBeforeCredentials(
+            command,
+            options.cwd ?? process.cwd(),
+          ))
+        ) {
+          return command;
+        }
+
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        };
       }
-
-      return {
-        kind: "error",
-        exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
-      };
     }
   }
 

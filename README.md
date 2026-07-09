@@ -73,6 +73,58 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
 
+### Use your coding-agent subscription (no API key)
+
+If you already pay for a subscription coding agent, OpenWiki can delegate
+documentation runs to it instead of calling a metered API. Two agents are
+supported: Claude Code and IBM Bob (Bob Shell).
+
+**Claude Code:**
+
+```bash
+OPENWIKI_PROVIDER=claude-code
+OPENWIKI_MODEL_ID=default   # or sonnet / opus / haiku
+```
+
+Requirements and notes:
+
+- Install Claude Code (`npm install -g @anthropic-ai/claude-code`) and run
+  `claude` once to complete the subscription login.
+- No API key is stored. Runs execute through the Claude Code CLI in headless
+  mode with a documentation-scoped tool allowlist, using your existing login.
+- Set `OPENWIKI_CLAUDE_CODE_BINARY` to point at a non-default binary location.
+
+**IBM Bob (Bob Shell):**
+
+```bash
+OPENWIKI_PROVIDER=ibm-bob
+OPENWIKI_MODEL_ID=default   # or any model id your Bob backend accepts
+```
+
+- Install Bob Shell (`curl -fsSL https://bob.ibm.com/download/bobshell.sh | bash`),
+  then run `bob` once in the target repository to complete the IBMid login
+  and trust the folder when prompted — Bob refuses write-enabled headless
+  runs in untrusted folders.
+- Runs execute through `bob` in headless mode (`--approval-mode auto_edit`
+  with Bob's `execute_command` shell tool enabled), using your existing
+  login. Bob's `--allowed-tools` flag matches tool names only, so shell
+  approval cannot be scoped to specific commands. Bob confines its file edit
+  tools to the directory it was started in, but allowed shell commands run
+  as ordinary, unsandboxed subprocesses — the same trust model as OpenWiki's
+  API-provider path (`LocalShellBackend`), which also executes model-driven
+  shell commands on the host. No API key is stored.
+- Set `OPENWIKI_IBM_BOB_BINARY` to point at a non-default binary location.
+
+Notes for both agents:
+
+- Local runs only for now: the scheduled GitHub Action still needs an API-key
+  provider.
+- LangSmith tracing does not apply to delegated runs.
+- macOS and Linux only for now: process-group management and binary
+  resolution for the subscription providers are POSIX-specific.
+- Set `OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS` to change the 30-minute run
+  timeout for either agent.
+
 ### Alternative base URLs
 
 To route the Anthropic provider at an alternative, Anthropic-compatible endpoint

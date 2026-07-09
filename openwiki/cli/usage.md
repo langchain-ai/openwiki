@@ -21,9 +21,13 @@ The parser rejects incompatible combinations such as `--init` and `--update` tog
 
 When `--init` or `--update` is run in a TTY (without `--print`), the CLI starts the run, streams agent output, and **exits automatically on success** (`shouldAutoExitStartupRun` in `src/cli.tsx`). This means `openwiki --init` behaves like a one-shot command while still showing a live UI. Chat runs and `--print` runs are not affected — chat stays open for follow-ups, and `--print` writes to stdout and exits.
 
+### Update runs on an unchanged repository
+
+`openwiki --update` (without a message) skips the agent run entirely and reports that no repository changes were detected when the repository is unchanged since the last recorded update. See [Agent workflow](../agent/workflow.md) for the exact conditions.
+
 ### Non-interactive mode
 
-If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires a provider API key to be already saved in `~/.openwiki/.env` or present in the environment. It will error with a clear message if the key is missing, rather than prompting interactively.
+If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires a provider API key to be already saved in `~/.openwiki/.env` or present in the environment. It will error with a clear message if the key is missing, rather than prompting interactively. Agent-CLI providers such as `claude-code` and `ibm-bob` are exempt from this check — they need the vendor CLI installed and logged in instead of an API key.
 
 ## Interactive behavior
 
@@ -43,13 +47,15 @@ The UI persists provider and model selection back to `~/.openwiki/.env` through 
 
 The first interactive run can prompt for:
 
-- a **provider** (`OPENWIKI_PROVIDER`) — openrouter, baseten, fireworks, openai, openai-compatible, or anthropic,
+- a **provider** (`OPENWIKI_PROVIDER`) — openrouter, baseten, fireworks, openai, openai-compatible, anthropic, claude-code, or ibm-bob,
 - the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`),
 - a **base URL** for providers that require one (the openai-compatible provider prompts for `OPENAI_COMPATIBLE_BASE_URL`),
 - a **model ID** stored as `OPENWIKI_MODEL_ID` — chosen from the provider's model list or a custom ID,
 - optional `LANGSMITH_API_KEY` for tracing.
 
 If a LangSmith key is provided, onboarding also enables `LANGCHAIN_PROJECT=openwiki` and `LANGCHAIN_TRACING_V2=true`.
+
+Selecting the **claude-code** provider replaces the API-key step with an install check: the setup verifies the Claude Code CLI is runnable (`claude --version`), then asks only for a model choice (subscription default, sonnet, opus, or haiku). No API key or LangSmith step applies — runs use the existing subscription login. Selecting the **ibm-bob** provider behaves the same way but verifies Bob Shell (`bob --version`) and only offers the subscription default model, since ibm-bob has no other model options.
 
 `src/credentials.tsx` determines whether setup is needed and walks the user through the missing values using arrow-key selection menus for provider and model. See [Credentials and updates](../operations/credentials-and-updates.md) for details.
 
@@ -65,6 +71,8 @@ Providers and their model options are defined in `PROVIDER_CONFIGS` in `src/cons
 | openai            | `OPENAI_API_KEY`            | (default)                               | GPT 5.4 mini, GPT 5.5                                                 |
 | openai-compatible | `OPENAI_COMPATIBLE_API_KEY` | `OPENAI_COMPATIBLE_BASE_URL` (required) | custom model ID only                                                  |
 | anthropic         | `ANTHROPIC_API_KEY`         | (default, or `ANTHROPIC_BASE_URL`)      | Haiku, Sonnet, Opus                                                   |
+| claude-code       | none (subscription login)   | n/a — local CLI                         | default, sonnet, opus, haiku                                          |
+| ibm-bob           | none (subscription login)   | n/a — local CLI                         | default                                                               |
 
 The default provider is `openrouter`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, falling back to openrouter if `OPENROUTER_API_KEY` is set, then to `DEFAULT_PROVIDER`.
 
@@ -98,6 +106,38 @@ OPENWIKI_MODEL_ID=<model name the gateway exposes>
 Base URLs are resolved by `resolveProviderBaseUrl()` in `src/constants.ts`, which
 prefers a provider's `baseUrlEnvKey` override over the built-in default.
 
+### Claude Code subscription provider
+
+The `claude-code` provider runs documentation runs through an installed Claude
+Code CLI using your subscription login instead of a metered API key:
+
+```bash
+OPENWIKI_PROVIDER=claude-code
+OPENWIKI_MODEL_ID=default   # or sonnet / opus / haiku
+```
+
+Set `OPENWIKI_CLAUDE_CODE_BINARY` to point at a non-default binary and
+`OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS` to change the 30-minute run timeout. See
+[Agent workflow](../agent/workflow.md) for how the engine executes runs and
+which tools it allows.
+
+### IBM Bob subscription provider
+
+The `ibm-bob` provider runs documentation runs through an installed Bob Shell
+CLI (`bob`) using your IBMid subscription login instead of a metered API key:
+
+```bash
+OPENWIKI_PROVIDER=ibm-bob
+OPENWIKI_MODEL_ID=default   # the only preset option; the subscription default
+```
+
+Run `bob` once in the target repository to complete the IBMid login and trust
+the folder when prompted — Bob refuses write-enabled headless runs in untrusted
+folders. Set `OPENWIKI_IBM_BOB_BINARY` to point at a non-default binary and
+`OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS` to change the 30-minute run timeout. See
+[Agent workflow](../agent/workflow.md) for how the engine executes runs and
+which tools it allows.
+
 ## Help text and validation
 
 The help content is centralized in `src/commands.ts` and is used by the CLI UI. Model validation is intentionally strict:
@@ -111,7 +151,7 @@ The help content is centralized in `src/commands.ts` and is used by the CLI UI. 
 - Update parser behavior in `src/commands.ts` first.
 - Then update any user-visible text in `src/cli.tsx` and `README.md`.
 - If new options affect run behavior, make sure `src/agent/index.ts` and `src/credentials.tsx` still receive the right inputs.
-- If adding a provider, update `PROVIDER_CONFIGS` and `SELECTABLE_OPENWIKI_PROVIDERS` in `src/constants.ts`, `managedEnvKeys` in `src/env.ts`, and the `createModel` branch in `src/agent/index.ts`.
+- If adding an API provider, update `PROVIDER_CONFIGS` and `SELECTABLE_OPENWIKI_PROVIDERS` in `src/constants.ts`, `managedEnvKeys` in `src/env.ts`, and the `createModel` branch in `src/agent/index.ts`. For agent-CLI providers, add a `kind: "agent-cli"` config entry and register an adapter in `src/agent/engines/index.ts` instead of a `createModel` branch.
 - To let a provider accept an alternative base URL, set `baseUrlEnvKey` on its `PROVIDER_CONFIGS` entry, add that key to `managedEnvKeys` in `src/env.ts`, and read it through `resolveProviderBaseUrl()` in the provider's `createModel` branch.
 - To require a user-supplied base URL (a provider with no default endpoint, like `openai-compatible`), also set `requiresBaseUrl: true`. `ensureProviderBaseUrl()` in `src/agent/index.ts` enforces it at runtime, and the interactive setup adds a base-URL step for such providers.
 - Re-check the `package.json` bin entry and scripts if the entrypoint changes.

@@ -6,7 +6,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 
 - Launches an interactive Ink-based terminal app for chatting with the OpenWiki agent.
 - Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
-- Supports multiple model providers — OpenRouter (default), Anthropic, OpenAI, Baseten, and Fireworks — each with their own API key and model list.
+- Supports multiple model providers — OpenRouter (default), Anthropic, OpenAI, Baseten, and Fireworks — each with their own API key and model list, plus subscription agent-CLI providers such as Claude Code and IBM Bob that run without an API key.
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
@@ -26,11 +26,12 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli.tsx` — Ink UI, command execution, auto-exit, and run lifecycle.
 - `src/commands.ts` — CLI parsing and help content.
 - `src/agent/index.ts` — agent runtime, provider-specific model creation, fallback, and metadata writes.
+- `src/agent/engines/` — subscription agent-CLI engine: adapter types, generic runner, and the Claude Code and IBM Bob adapters.
 - `src/agent/prompt.ts` — prompt assembly, documentation-run instructions, and AGENTS.md/CLAUDE.md insertion rules.
 - `src/agent/utils.ts` — git evidence collection, content snapshot, and `.last-update.json` handling.
 - `src/agent/types.ts` — shared agent types (`OpenWikiCommand`, `RunContext`, `UpdateMetadata`, run options/events).
 - `src/env.ts` — `~/.openwiki/.env` persistence and credential diagnostics.
-- `src/credentials.tsx` — interactive onboarding flow for provider selection, API keys, and model selection.
+- `src/credentials.tsx` — interactive onboarding flow for provider selection, API keys, and model selection (step sequencing in `src/credentials-flow.ts`).
 - `src/constants.ts` — provider configs, model options, env keys, and validation helpers.
 - `examples/openwiki-update.yml` — GitHub Actions scheduled automation example.
 - `examples/openwiki-update.gitlab-ci.yml` — GitLab CI scheduled automation example.
@@ -47,7 +48,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - The repository is intentionally focused: the main product surface is the CLI plus the documentation-generation agent.
 - Treat `openwiki/` in this repo as generated documentation output from a future OpenWiki run, not as application source.
 - When changing behavior, verify both the CLI parser and the agent prompt/runtime, because user-visible semantics are split across `src/commands.ts`, `src/cli.tsx`, and `src/agent/*`.
-- Provider support is centralized in `src/constants.ts`. Adding or changing a provider means updating `PROVIDER_CONFIGS`, the `OpenWikiProvider` type, and the model-creation branch in `src/agent/index.ts`.
+- Provider support is centralized in `src/constants.ts`. API providers (`kind: "api"`) add a `PROVIDER_CONFIGS` entry, the `OpenWikiProvider` type member, and a model-creation branch in `src/agent/index.ts`. Subscription agent-CLI providers (`kind: "agent-cli"`) add a config entry plus an adapter in `src/agent/engines/` registered in `src/agent/engines/index.ts`.
 
 ## Source map
 
