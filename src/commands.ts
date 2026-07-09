@@ -9,7 +9,7 @@ export type HelpRow = {
   description: string;
 };
 
-export type OpenWikiRunMode = "brain" | "code";
+export type OpenWikiRunMode = "personal" | "code";
 type CronTarget = Extract<IngestionTarget, string>;
 
 export type HelpContent = {
@@ -325,7 +325,7 @@ export function parseCommand(argv: string[]): CliCommand {
     return parseRunCommand(argv.slice(1), argv[0], "positional");
   }
 
-  return parseRunCommand(argv, "brain", "default");
+  return parseRunCommand(argv, "personal", "default");
 }
 
 function parseRunCommand(
@@ -388,7 +388,7 @@ function parseRunCommand(
         return {
           kind: "error",
           exitCode: 1,
-          message: "--mode requires brain or code.",
+          message: "--mode requires personal or code.",
         };
       }
 
@@ -396,7 +396,7 @@ function parseRunCommand(
         return {
           kind: "error",
           exitCode: 1,
-          message: `Invalid mode: ${nextArg}. Expected brain or code.`,
+          message: `Invalid mode: ${nextArg}. Expected personal or code.`,
         };
       }
 
@@ -418,7 +418,7 @@ function parseRunCommand(
         return {
           kind: "error",
           exitCode: 1,
-          message: `Invalid mode: ${rawMode}. Expected brain or code.`,
+          message: `Invalid mode: ${rawMode}. Expected personal or code.`,
         };
       }
 
@@ -494,7 +494,7 @@ function parseRunCommand(
       kind: "error",
       exitCode: 1,
       message:
-        "openwiki --init requires a mode.\n\nRun one of:\n  openwiki brain --init  Build a local second-brain wiki in ~/.openwiki/wiki.\n  openwiki code --init   Build repository documentation in ./openwiki.",
+        "openwiki --init requires a mode.\n\nRun one of:\n  openwiki personal --init  Build your local personal brain wiki in ~/.openwiki/wiki.\n  openwiki code --init   Build repository documentation in ./openwiki.",
     };
   }
 
@@ -541,7 +541,7 @@ function resolveExplicitMode(
 function isOpenWikiRunMode(
   value: string | undefined,
 ): value is OpenWikiRunMode {
-  return value === "brain" || value === "code";
+  return value === "personal" || value === "code";
 }
 
 export function isDevelopmentMode(): boolean {
@@ -556,8 +556,8 @@ export const helpContent: HelpContent = {
     "Run an agent that generates and maintains a project or local knowledge wiki.",
   usage: [
     "openwiki code [--init|--update] [message]",
-    "openwiki brain [--init|--update] [message]",
-    "openwiki --mode <brain|code> [--init|--update] [message]",
+    "openwiki personal [--init|--update] [message]",
+    "openwiki --mode <personal|code> [--init|--update] [message]",
     "openwiki [--modelId <model>]",
     "openwiki [--modelId <model>] [message]",
     "openwiki --update [message]",
@@ -578,13 +578,13 @@ export const helpContent: HelpContent = {
         "Run OpenWiki for the current repository, writing docs under repo openwiki/ and using GitHub Actions for recurrence.",
     },
     {
-      label: "openwiki brain",
+      label: "openwiki personal",
       description:
-        "Run OpenWiki as a local second brain over configured sources, writing to ~/.openwiki/wiki.",
+        "Run OpenWiki as your local personal brain over configured sources, writing to ~/.openwiki/wiki.",
     },
     {
       label: "openwiki",
-      description: "Open the interactive OpenWiki brain chat.",
+      description: "Open the interactive OpenWiki personal brain chat.",
     },
     {
       label: "openwiki auth <provider>",
@@ -634,7 +634,7 @@ export const helpContent: HelpContent = {
     {
       label: "--init",
       description:
-        "Generate initial OpenWiki documentation for a selected mode. Use openwiki brain --init or openwiki code --init.",
+        "Generate initial OpenWiki documentation for a selected mode. Use openwiki personal --init or openwiki code --init.",
     },
     {
       label: "--update",
@@ -642,9 +642,9 @@ export const helpContent: HelpContent = {
         "Update existing OpenWiki documentation and ingest configured connectors when relevant.",
     },
     {
-      label: "--mode <brain|code>",
+      label: "--mode <personal|code>",
       description:
-        "Choose local second-brain mode or repository code-documentation mode.",
+        "Choose the personal brain (local, over configured sources) or the code brain (repository docs).",
     },
     {
       label: "-p, --print",
@@ -663,10 +663,10 @@ export const helpContent: HelpContent = {
   ],
   examples: [
     "openwiki",
-    "openwiki brain --init",
+    "openwiki personal --init",
     "openwiki code --init",
     "openwiki --update",
-    "openwiki --update --mode brain",
+    "openwiki --update --mode personal",
     'openwiki "What can you do?"',
     'openwiki -p "Summarize what OpenWiki can do"',
     "openwiki --modelId gpt-5.5",
