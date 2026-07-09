@@ -8,15 +8,20 @@ export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const MERGE_GATEWAY_API_KEY_ENV_KEY = "MERGE_GATEWAY_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+// Merge Gateway's OpenAI-compatible chat-completions endpoint. Model IDs use
+// the same provider-prefixed format as OpenRouter (e.g. anthropic/claude-sonnet-5).
+export const MERGE_GATEWAY_BASE_URL = "https://api-gateway.merge.dev/v1/openai";
 
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
+  | "merge-gateway"
   | "openai"
   | "openai-compatible"
   | "openrouter";
@@ -47,6 +52,7 @@ type ProviderConfig = {
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openrouter",
+  "merge-gateway",
   "baseten",
   "fireworks",
   "openai",
@@ -99,6 +105,17 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-haiku-4-5", label: "Haiku" },
       { id: "claude-sonnet-5", label: "Sonnet" },
       { id: "claude-opus-4-8", label: "Opus" },
+    ],
+  },
+  "merge-gateway": {
+    apiKeyEnvKey: MERGE_GATEWAY_API_KEY_ENV_KEY,
+    baseURL: MERGE_GATEWAY_BASE_URL,
+    label: "Merge Gateway",
+    modelOptions: [
+      { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
+      { id: "anthropic/claude-opus-4-8", label: "Claude Opus" },
+      { id: "openai/gpt-5.5", label: "GPT 5.5" },
+      { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
     ],
   },
   openrouter: {

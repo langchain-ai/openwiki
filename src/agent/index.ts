@@ -23,6 +23,7 @@ import {
   getProviderBaseUrlEnvKey,
   getProviderLabel,
   isValidModelId,
+  MERGE_GATEWAY_BASE_URL,
   normalizeModelId,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -894,7 +895,7 @@ function installOpenRouterDebugFetch(
         };
         emitDebug(
           options,
-          `openrouter.http status=${response.status} statusText=${JSON.stringify(
+          `${getDebugFetchSource(input)} status=${response.status} statusText=${JSON.stringify(
             response.statusText,
           )}`,
         );
@@ -932,14 +933,23 @@ function attachOpenRouterDebugInfo(
   error[OPENROUTER_DEBUG_PROPERTY] = failure;
 }
 
+// Matches chat-completions requests to either gateway with a fixed, known base
+// URL (OpenRouter and Merge Gateway) so failures can be captured for debugging.
 function isOpenRouterFetchInput(input: Parameters<typeof fetch>[0]): boolean {
   const url = getFetchInputUrl(input);
 
   return (
     url !== null &&
-    url.startsWith(OPENROUTER_BASE_URL) &&
+    (url.startsWith(OPENROUTER_BASE_URL) ||
+      url.startsWith(MERGE_GATEWAY_BASE_URL)) &&
     url.includes("/chat/completions")
   );
+}
+
+function getDebugFetchSource(input: Parameters<typeof fetch>[0]): string {
+  return getFetchInputUrl(input)?.startsWith(MERGE_GATEWAY_BASE_URL)
+    ? "merge-gateway.http"
+    : "openrouter.http";
 }
 
 function getFetchInputUrl(input: Parameters<typeof fetch>[0]): string | null {

@@ -71,7 +71,19 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Merge Gateway, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+
+### Merge Gateway
+
+The `merge-gateway` provider routes requests through Merge Gateway's
+OpenAI-compatible endpoint. Model IDs use the same provider-prefixed format as
+OpenRouter (for example `anthropic/claude-sonnet-5` or `openai/gpt-5.5`):
+
+```bash
+OPENWIKI_PROVIDER=merge-gateway
+MERGE_GATEWAY_API_KEY=your-key
+OPENWIKI_MODEL_ID=anthropic/claude-sonnet-5
+```
 
 ### Alternative base URLs
 
