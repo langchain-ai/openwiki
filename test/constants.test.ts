@@ -56,6 +56,7 @@ describe("normalizeProvider / isValidProvider", () => {
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
+    expect(isValidProvider("merge-gateway")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
   });
 });
@@ -88,6 +89,9 @@ describe("resolveProviderBaseUrl", () => {
   test("returns the built-in default when no override is set", () => {
     expect(resolveProviderBaseUrl("openrouter", {})).toBe(
       "https://openrouter.ai/api/v1",
+    );
+    expect(resolveProviderBaseUrl("merge-gateway", {})).toBe(
+      "https://api-gateway.merge.dev/v1/openai",
     );
   });
 
@@ -128,6 +132,9 @@ describe("isValidBaseUrl", () => {
 describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
+    expect(getDefaultModelId("merge-gateway")).toBe(
+      "anthropic/claude-sonnet-5",
+    );
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
   });
 
