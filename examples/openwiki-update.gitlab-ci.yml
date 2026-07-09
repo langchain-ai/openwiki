@@ -10,7 +10,7 @@ openwiki_update:
     - git config user.name "${GITLAB_USER_NAME:-OpenWiki Bot}"
     - git config user.email "${GITLAB_USER_EMAIL:-openwiki@example.com}"
   script:
-    - openwiki --update --print
+    - openwiki code --update --print
     - |
       if git diff --quiet -- openwiki; then
         echo "OpenWiki is already up to date."

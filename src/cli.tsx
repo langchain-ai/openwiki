@@ -3,12 +3,21 @@ import React, { useEffect, useRef, useState } from "react";
 import { Box, render, Text, useApp, useInput } from "ink";
 import { marked, type Token, type Tokens } from "marked";
 import {
+  configureAuthProvider,
+  listAuthProviderTools,
+  shouldDiscoverToolsAfterAuth,
+} from "./auth/configure.js";
+import { startNgrokTunnel } from "./auth/ngrok.js";
+import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
+import { ensureCodeModeRepoSetup } from "./code-mode.js";
+import {
   helpContent,
   isDevelopmentMode,
   parseCommand,
   shouldRunNonInteractively,
   type CliCommand,
   type HelpRow,
+  type OpenWikiRunMode,
 } from "./commands.js";
 import { resolveStartupCommand } from "./startup.js";
 import {
@@ -30,6 +39,25 @@ import {
   type OpenWikiRunResult,
 } from "./agent/types.js";
 import {
+  runOpenWikiIngestion,
+  type OpenWikiIngestionResult,
+} from "./ingestion.js";
+import {
+  readOpenWikiOnboardingConfig,
+  saveOpenWikiOnboardingConfig,
+} from "./onboarding.js";
+import { openWikiLocalWikiDir } from "./openwiki-home.js";
+import {
+  deleteConnectorSchedules,
+  getSavedPowerScheduleStatus,
+  listConnectorSchedules,
+  pauseConnectorSchedules,
+  resumeConnectorSchedules,
+  type ConnectorScheduleStatus,
+  type PowerScheduleStatus,
+  type ScheduleMutationResult,
+} from "./schedules.js";
+import {
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderLabel,
@@ -39,17 +67,28 @@ import {
   normalizeProvider,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
-  OPEN_WIKI_DIR,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
   OPENWIKI_VERSION,
   type OpenWikiProvider,
 } from "./constants.js";
-import type { OpenWikiCommand } from "./agent/types.js";
+import type { OpenWikiCommand, OpenWikiOutputMode } from "./agent/types.js";
 
 type RunState =
   | { status: "idle" }
+  | { status: "setup-complete-exit"; result: InitSetupResult }
   | { status: "init-setup-saved"; result: InitSetupResult }
+  | {
+      status: "ingestion-running";
+      log: RunLogItem[];
+      credentialDiagnostics?: CredentialDiagnostic[];
+    }
+  | {
+      status: "ingestion-success";
+      result: OpenWikiIngestionResult;
+      log: RunLogItem[];
+      credentialDiagnostics?: CredentialDiagnostic[];
+    }
   | {
       status: "running";
       command: OpenWikiCommand;
@@ -117,6 +156,10 @@ const OPENWIKI_LOGO_WIDTH = Math.max(
 function App({ command }: AppProps) {
   const app = useApp();
   const startupModelId = command.kind === "run" ? command.modelId : null;
+  const startupRunMode = command.kind === "run" ? command.mode : "personal";
+  const [runMode, setRunMode] = useState<OpenWikiRunMode>(startupRunMode);
+  const runtimeCwd = getRunModeCwd(runMode);
+  const runtimeOutputMode = getRunModeOutputMode(runMode);
   const startupProvider = resolveConfiguredProvider();
   const autoExitOnSuccess = shouldAutoExitStartupRun(command);
   const [sessionProvider, setSessionProvider] =
@@ -125,7 +168,8 @@ function App({ command }: AppProps) {
     startupModelId,
   );
   const activeRunId = useRef(0);
-  const sessionThreadId = useRef(createOpenWikiThreadId(process.cwd()));
+  const sessionThreadId = useRef(createOpenWikiThreadId(runtimeCwd));
+  const sessionThreadMode = useRef<OpenWikiRunMode>(runMode);
   const mountedRef = useRef(false);
   const nextLogId = useRef(1);
   const nextCompletedRunId = useRef(1);
@@ -151,7 +195,7 @@ function App({ command }: AppProps) {
     !command.dryRun &&
     process.stdin.isTTY &&
     runState.status === "idle" &&
-    needsCredentialSetup(sessionModelId);
+    needsCredentialSetup(sessionModelId, runMode);
   const displayModelId = sessionModelId ?? startupModelId;
 
   function submitChatMessage(message: string) {
@@ -177,9 +221,91 @@ function App({ command }: AppProps) {
     setRunState({ status: "idle" });
   }
 
+  function startIngestionRun(modelId: string | null) {
+    const runId = activeRunId.current + 1;
+    activeRunId.current = runId;
+    activeRunCredentialDiagnostics.current = undefined;
+    activeRunLog.current = [];
+    setResolvedCommand(null);
+    setActiveUserMessage(
+      "Run source-specific OpenWiki ingestion for configured sources.",
+    );
+    setActiveMessageIsFollowup(false);
+    setRunState({
+      status: "ingestion-running",
+      log: [],
+    });
+
+    void runOpenWikiIngestion(process.cwd(), {
+      debug: isDebugMode(),
+      modelId,
+      target: "all",
+      onEvent: (event) => {
+        if (!mountedRef.current || activeRunId.current !== runId) {
+          return;
+        }
+
+        activeRunLog.current = appendRunLogEvent(
+          activeRunLog.current,
+          event,
+          nextLogId,
+        );
+        setRunState((currentState) =>
+          currentState.status === "ingestion-running"
+            ? {
+                ...currentState,
+                log: activeRunLog.current,
+              }
+            : currentState,
+        );
+      },
+    })
+      .then((result) => {
+        if (!mountedRef.current || activeRunId.current !== runId) {
+          return;
+        }
+
+        if (
+          result.results.some((sourceResult) => sourceResult.status === "error")
+        ) {
+          process.exitCode = 1;
+        }
+
+        setRunState({
+          status: "ingestion-success",
+          result,
+          log: activeRunLog.current,
+          credentialDiagnostics: activeRunCredentialDiagnostics.current,
+        });
+      })
+      .catch((error: unknown) => {
+        if (!mountedRef.current || activeRunId.current !== runId) {
+          return;
+        }
+
+        const errorDiagnostics = getErrorDiagnostics(error);
+        const message = getErrorMessage(error);
+
+        void getCredentialDiagnostics()
+          .catch(() => undefined)
+          .then((credentialDiagnostics) => {
+            if (!mountedRef.current || activeRunId.current !== runId) {
+              return;
+            }
+
+            setRunState({
+              status: "error",
+              message,
+              credentialDiagnostics,
+              errorDiagnostics,
+            });
+          });
+      });
+  }
+
   function clearSession() {
     activeRunId.current += 1;
-    sessionThreadId.current = createOpenWikiThreadId(process.cwd());
+    sessionThreadId.current = createOpenWikiThreadId(runtimeCwd);
     activeRunCredentialDiagnostics.current = undefined;
     activeRunLog.current = [];
     nextLogId.current = 1;
@@ -218,13 +344,28 @@ function App({ command }: AppProps) {
   }, []);
 
   useEffect(() => {
+    if (sessionThreadMode.current === runMode) {
+      return;
+    }
+
+    sessionThreadId.current = createOpenWikiThreadId(runtimeCwd);
+    sessionThreadMode.current = runMode;
+  }, [runMode, runtimeCwd]);
+
+  useEffect(() => {
     if (command.kind === "help" || command.kind === "error") {
       process.exitCode = command.exitCode;
       app.exit();
       return;
     }
 
-    if (command.dryRun) {
+    if (command.kind === "auth") {
+      process.exitCode = command.exitCode;
+      app.exit();
+      return;
+    }
+
+    if (command.kind === "run" && command.dryRun) {
       process.exitCode = 0;
       app.exit();
       return;
@@ -290,32 +431,41 @@ function App({ command }: AppProps) {
         });
     }
 
-    runOpenWikiAgent(resolvedCommand, process.cwd(), {
-      debug: isDebugMode(),
-      isFollowup: activeMessageIsFollowup,
-      modelId: sessionModelId,
-      threadId: sessionThreadId.current,
-      userMessage: activeUserMessage,
-      onEvent: (event) => {
-        if (!mountedRef.current || activeRunId.current !== runId) {
-          return;
-        }
+    const setupPromise =
+      runMode === "code"
+        ? ensureCodeModeRepoSetup(runtimeCwd)
+        : Promise.resolve();
 
-        activeRunLog.current = appendRunLogEvent(
-          activeRunLog.current,
-          event,
-          nextLogId,
-        );
-        setRunState((currentState) =>
-          currentState.status === "running"
-            ? {
-                ...currentState,
-                log: activeRunLog.current,
-              }
-            : currentState,
-        );
-      },
-    })
+    setupPromise
+      .then(() =>
+        runOpenWikiAgent(resolvedCommand, runtimeCwd, {
+          debug: isDebugMode(),
+          isFollowup: activeMessageIsFollowup,
+          modelId: sessionModelId,
+          outputMode: runtimeOutputMode,
+          threadId: sessionThreadId.current,
+          userMessage: activeUserMessage,
+          onEvent: (event) => {
+            if (!mountedRef.current || activeRunId.current !== runId) {
+              return;
+            }
+
+            activeRunLog.current = appendRunLogEvent(
+              activeRunLog.current,
+              event,
+              nextLogId,
+            );
+            setRunState((currentState) =>
+              currentState.status === "running"
+                ? {
+                    ...currentState,
+                    log: activeRunLog.current,
+                  }
+                : currentState,
+            );
+          },
+        }),
+      )
       .then((result) => {
         if (!mountedRef.current || activeRunId.current !== runId) {
           return;
@@ -369,7 +519,10 @@ function App({ command }: AppProps) {
     activeMessageIsFollowup,
     activeUserMessage,
     resolvedCommand,
+    runMode,
     runState.status,
+    runtimeCwd,
+    runtimeOutputMode,
     sessionModelId,
     sessionProvider,
     shouldRunInteractiveCredentialSetup,
@@ -385,8 +538,18 @@ function App({ command }: AppProps) {
     if (runState.status === "success" && autoExitOnSuccess) {
       process.exitCode = 0;
       app.exit();
+      return;
     }
-  }, [app, autoExitOnSuccess, runState.status]);
+
+    if (runState.status === "ingestion-success" && autoExitOnSuccess) {
+      process.exitCode = runState.result.results.some(
+        (sourceResult) => sourceResult.status === "error",
+      )
+        ? 1
+        : 0;
+      app.exit();
+    }
+  }, [app, autoExitOnSuccess, runState]);
 
   if (command.kind === "help") {
     return <HelpView />;
@@ -416,13 +579,38 @@ function App({ command }: AppProps) {
   if (shouldRunInteractiveCredentialSetup) {
     return (
       <InitSetup
+        allowModeSelection={false}
+        mode={command.mode}
         modelIdOverride={command.modelId}
         onComplete={(result) => {
+          if (result.mode !== runMode) {
+            const nextRuntimeCwd = getRunModeCwd(result.mode);
+            sessionThreadId.current = createOpenWikiThreadId(nextRuntimeCwd);
+            sessionThreadMode.current = result.mode;
+            setRunMode(result.mode);
+          }
+
           if (result.modelId) {
             setSessionModelId(result.modelId);
           }
           if (result.provider) {
             setSessionProvider(result.provider);
+          }
+
+          if (!result.shouldContinueToRun) {
+            activeRunId.current += 1;
+            setResolvedCommand(null);
+            setActiveUserMessage(null);
+            setActiveMessageIsFollowup(false);
+            setRunState({ status: "setup-complete-exit", result });
+            process.exitCode = 0;
+            app.exit();
+            return;
+          }
+
+          if (result.runIngestionNow) {
+            startIngestionRun(result.modelId ?? sessionModelId);
+            return;
           }
 
           setRunState({ status: "init-setup-saved", result });
@@ -467,6 +655,22 @@ function App({ command }: AppProps) {
     );
   }
 
+  if (runState.status === "setup-complete-exit") {
+    return (
+      <Box flexDirection="column">
+        <Header
+          modelId={runState.result.modelId ?? displayModelId}
+          subtitle="Setup complete"
+        />
+        <StatusLine
+          tone="success"
+          label="Setup"
+          value="saved; waiting for scheduled ingestion"
+        />
+      </Box>
+    );
+  }
+
   if (runState.status === "running") {
     return (
       <Box flexDirection="column">
@@ -474,6 +678,38 @@ function App({ command }: AppProps) {
         <RunView
           command={runState.command}
           credentialDiagnostics={runState.credentialDiagnostics}
+          log={runState.log}
+          message={activeUserMessage}
+          modelId={displayModelId}
+        />
+      </Box>
+    );
+  }
+
+  if (runState.status === "ingestion-running") {
+    return (
+      <Box flexDirection="column">
+        <ChatHistory runs={completedRuns} />
+        <RunView
+          command="update"
+          credentialDiagnostics={runState.credentialDiagnostics}
+          log={runState.log}
+          message={activeUserMessage}
+          modelId={displayModelId}
+        />
+      </Box>
+    );
+  }
+
+  if (runState.status === "ingestion-success") {
+    return (
+      <Box flexDirection="column">
+        <Header modelId={displayModelId} subtitle="Ingestion complete" />
+        <IngestionSummary result={runState.result} />
+        <RunView
+          command="update"
+          credentialDiagnostics={runState.credentialDiagnostics}
+          done
           log={runState.log}
           message={activeUserMessage}
           modelId={displayModelId}
@@ -635,7 +871,7 @@ function DryRunView({
         />
         <StatusLine tone="muted" label="Agent" value="not invoked" />
         <StatusLine tone="muted" label="Writes" value="no files or metadata" />
-        <StatusLine tone="muted" label="Output" value={`${OPEN_WIKI_DIR}/`} />
+        <StatusLine tone="muted" label="Output" value="~/.openwiki/wiki" />
         <StatusLine
           tone="muted"
           label="Startup"
@@ -830,6 +1066,21 @@ function StatusLine({ tone, label, value }: StatusLineProps) {
       </Text>{" "}
       <Text color={tone === "muted" ? "gray" : undefined}>{value}</Text>
     </Text>
+  );
+}
+
+function IngestionSummary({ result }: { result: OpenWikiIngestionResult }) {
+  return (
+    <Panel title="Source Runs">
+      {result.results.map((sourceResult) => (
+        <StatusLine
+          key={sourceResult.sourceInstanceId}
+          label={sourceResult.displayName}
+          tone={sourceResult.status === "error" ? "error" : "success"}
+          value={`${sourceResult.status}; ${sourceResult.rawFiles.length} raw file(s)`}
+        />
+      ))}
+    </Panel>
   );
 }
 
@@ -1240,10 +1491,16 @@ function ChatInput({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [secretInputMode, setSecretInputMode] =
+    useState<SecretInputMode | null>(null);
   const input = inputState.value;
   const cursorPosition = inputState.cursorPosition;
 
   useEffect(() => {
+    if (secretInputMode !== null) {
+      return;
+    }
+
     setMenuState((currentState) =>
       syncMenuStateForInput(
         input,
@@ -1252,10 +1509,46 @@ function ChatInput({
         currentProvider,
       ),
     );
-  }, [currentModelId, currentProvider, input]);
+  }, [currentModelId, currentProvider, input, secretInputMode]);
 
   useInput((inputValue, key) => {
     if (isSaving) {
+      return;
+    }
+
+    if (secretInputMode !== null) {
+      if (isEscapeInput(inputValue, key)) {
+        resetInput();
+        setSecretInputMode(null);
+        setNotice("Credential update canceled.");
+        return;
+      }
+
+      if (key.return) {
+        void saveSecretInput();
+        return;
+      }
+
+      if (key.backspace || isRawBackspaceInput(inputValue)) {
+        setInputState(deleteBeforeInputCursor);
+        return;
+      }
+
+      if (key.delete) {
+        setInputState(
+          inputValue.length === 0
+            ? deleteBeforeInputCursor
+            : deleteAtInputCursor,
+        );
+        return;
+      }
+
+      if (inputValue && !key.ctrl && !key.meta) {
+        setError(null);
+        setNotice(null);
+        setInputState((state) => applyRawInputValue(state, inputValue));
+      }
+
       return;
     }
 
@@ -1278,7 +1571,7 @@ function ChatInput({
       return;
     }
 
-    if (inputValue === "\u001b" && menuState.kind !== "none") {
+    if (isEscapeInput(inputValue, key) && menuState.kind !== "none") {
       resetInput();
       return;
     }
@@ -1418,6 +1711,47 @@ function ChatInput({
       return;
     }
 
+    if (option.id === "api-key") {
+      if (args && args.length > 0) {
+        setError(
+          "Use the masked prompt for API keys; do not pass keys inline.",
+        );
+        return;
+      }
+
+      setError(null);
+      setNotice(`Paste your ${getProviderLabel(currentProvider)} API key.`);
+      setSecretInputMode({
+        envKey: getProviderApiKeyEnvKey(currentProvider),
+        kind: "api-key",
+        label: `${getProviderLabel(currentProvider)} API key`,
+        provider: currentProvider,
+      });
+      setInputState({ cursorPosition: 0, value: "" });
+      setMenuState({ kind: "none" });
+      return;
+    }
+
+    if (option.id === "langsmith-key") {
+      if (args && args.length > 0) {
+        setError(
+          "Use the masked prompt for LangSmith keys; do not pass keys inline.",
+        );
+        return;
+      }
+
+      setError(null);
+      setNotice("Paste your LangSmith API key, or press Enter empty to clear.");
+      setSecretInputMode({
+        envKey: "LANGSMITH_API_KEY",
+        kind: "langsmith-key",
+        label: "LangSmith API key",
+      });
+      setInputState({ cursorPosition: 0, value: "" });
+      setMenuState({ kind: "none" });
+      return;
+    }
+
     if (option.id === "init" || option.id === "update") {
       resetInput();
       onCommandRun(option.id, args);
@@ -1434,7 +1768,7 @@ function ChatInput({
     if (option.id === "help") {
       resetInput();
       setNotice(
-        "Slash commands: /provider, /model, /init, /update, /clear, /help, /exit. Use arrows to select.",
+        "Slash commands: /provider, /model, /api-key, /langsmith-key, /init, /update, /clear, /help, /exit. Use arrows to select.",
       );
       return;
     }
@@ -1506,7 +1840,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        "Enter a valid provider: openai, openrouter, baseten, fireworks, or anthropic.",
       );
       return;
     }
@@ -1534,6 +1868,49 @@ function ChatInput({
     }
   }
 
+  async function saveSecretInput() {
+    if (secretInputMode === null) {
+      return;
+    }
+
+    const nextValue = input.trim();
+    if (secretInputMode.kind === "api-key" && nextValue.length === 0) {
+      setError(`${secretInputMode.envKey} is required.`);
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setNotice(null);
+
+    try {
+      if (secretInputMode.kind === "langsmith-key") {
+        await saveOpenWikiEnv({
+          LANGCHAIN_PROJECT: nextValue.length > 0 ? "openwiki" : "",
+          LANGCHAIN_TRACING_V2: nextValue.length > 0 ? "true" : "false",
+          LANGSMITH_API_KEY: nextValue,
+        });
+      } else {
+        await saveOpenWikiEnv({
+          [secretInputMode.envKey]: nextValue,
+        });
+      }
+
+      const savedLabel = secretInputMode.label;
+      resetInput();
+      setSecretInputMode(null);
+      setNotice(`${savedLabel} saved.`);
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to save credential.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   function resetInput() {
     setInputState({ cursorPosition: 0, value: "" });
     setMenuState({ kind: "none" });
@@ -1555,7 +1932,12 @@ function ChatInput({
       <Box borderStyle="single" borderColor="blue" paddingX={1}>
         <Text>
           <Text color="blue">{">"}</Text>{" "}
-          {input.length > 0 ? (
+          {secretInputMode !== null ? (
+            <>
+              <Text color="gray">{secretInputMode.envKey}=</Text>
+              <Text color="yellow">{formatSecretInputSummary(input)}</Text>
+            </>
+          ) : input.length > 0 ? (
             <>
               {beforeCursor}
               <InputCursor />
@@ -1571,11 +1953,24 @@ function ChatInput({
       </Box>
       <Text>
         <Text color="gray">
-          enter to send - / for commands - /exit to quit - cwd{" "}
-          {formatCwd(process.cwd())}
+          {secretInputMode !== null
+            ? "enter to save - esc to cancel - input is masked"
+            : `enter to send - / for commands - /exit to quit - cwd ${formatCwd(
+                process.cwd(),
+              )}`}
         </Text>
       </Text>
-      {menuState.kind !== "none" ? (
+      {secretInputMode !== null ? (
+        <Box flexDirection="column" marginTop={1}>
+          <Text color="gray">{secretInputMode.label}</Text>
+          <Text>
+            Saving to <Text color="cyan">{secretInputMode.envKey}</Text>
+          </Text>
+          {secretInputMode.kind === "langsmith-key" ? (
+            <Text color="gray">Press Enter empty to clear LangSmith.</Text>
+          ) : null}
+        </Box>
+      ) : menuState.kind !== "none" ? (
         <SlashMenu
           currentModelId={currentModelId}
           currentProvider={currentProvider}
@@ -1595,6 +1990,13 @@ type ChatInputState = {
   value: string;
 };
 
+type SecretInputMode = {
+  envKey: string;
+  kind: "api-key" | "langsmith-key";
+  label: string;
+  provider?: OpenWikiProvider;
+};
+
 type ChatInputMenuState =
   | { kind: "commands"; selectedIndex: number }
   | { kind: "model"; selectedIndex: number }
@@ -1602,10 +2004,12 @@ type ChatInputMenuState =
   | { kind: "none" };
 
 type SlashCommandId =
+  | "api-key"
   | "clear"
   | "exit"
   | "help"
   | "init"
+  | "langsmith-key"
   | "model"
   | "provider"
   | "update";
@@ -1637,6 +2041,16 @@ const slashCommandOptions: SlashCommandOption[] = [
     description: "Switch the current provider model",
     id: "model",
     label: "/model",
+  },
+  {
+    description: "Set the API key for the current provider",
+    id: "api-key",
+    label: "/api-key",
+  },
+  {
+    description: "Set or clear the LangSmith API key",
+    id: "langsmith-key",
+    label: "/langsmith-key",
   },
   {
     description: "Run an initial OpenWiki documentation pass",
@@ -1878,6 +2292,13 @@ function isRawBackspaceInput(inputValue: string): boolean {
   return inputValue === "\u007f" || inputValue === "\b";
 }
 
+function isEscapeInput(
+  inputValue: string,
+  key: Parameters<Parameters<typeof useInput>[0]>[1],
+): boolean {
+  return key.escape || inputValue === "\u001b";
+}
+
 function syncMenuStateForInput(
   input: string,
   currentState: ChatInputMenuState,
@@ -2056,6 +2477,10 @@ function wrapMenuIndex(index: number, itemCount: number): number {
 
 function InputCursor() {
   return <Text color="cyan">|</Text>;
+}
+
+function formatSecretInputSummary(value: string): string {
+  return value.length === 0 ? "[empty]" : `[hidden, ${value.length} chars]`;
 }
 
 function PromptBlock({ message }: { message: string }) {
@@ -2963,7 +3388,13 @@ function Rows({ rows }: RowsProps) {
 const argv = process.argv.slice(2);
 const parsedCommand = parseCommand(argv);
 
-if (parsedCommand.kind === "run" && !parsedCommand.dryRun) {
+if (
+  (parsedCommand.kind === "run" && !parsedCommand.dryRun) ||
+  parsedCommand.kind === "auth" ||
+  parsedCommand.kind === "cron" ||
+  parsedCommand.kind === "ingest" ||
+  parsedCommand.kind === "ngrok"
+) {
   await loadOpenWikiEnv();
 }
 
@@ -2972,13 +3403,343 @@ const command = await resolveStartupCommand(parsedCommand, {
   isStdinTTY: Boolean(process.stdin.isTTY),
 });
 
-if (shouldPrintStartupError(argv, parsedCommand, command)) {
+if (command.kind === "auth") {
+  await runAuthCommand(command);
+} else if (command.kind === "ngrok") {
+  await runNgrokCommand(command);
+} else if (command.kind === "cron") {
+  await runCronCommand(command);
+} else if (command.kind === "ingest") {
+  await runIngestCommand(command);
+} else if (shouldPrintStartupError(argv, parsedCommand, command)) {
   process.stderr.write(`${command.message}\n`);
   process.exitCode = command.exitCode;
 } else if (shouldRunNonInteractively(command, process.stdin.isTTY === true)) {
   await runPrintCommand(command);
 } else {
   render(<App command={command} />);
+}
+
+async function runNgrokCommand(
+  command: Extract<CliCommand, { kind: "ngrok" }>,
+): Promise<void> {
+  try {
+    await startNgrokTunnel({
+      port: command.port,
+      url: command.url,
+    });
+    process.exitCode = 0;
+  } catch (error) {
+    process.stderr.write(`${getErrorMessage(error)}\n`);
+    process.exitCode = 1;
+  }
+}
+
+async function runCronCommand(
+  command: Extract<CliCommand, { kind: "cron" }>,
+): Promise<void> {
+  try {
+    const config = await readOpenWikiOnboardingConfig();
+
+    if (command.action !== "list") {
+      if (!command.target) {
+        throw new Error(`Target is required for cron ${command.action}.`);
+      }
+
+      const result =
+        command.action === "pause"
+          ? await pauseConnectorSchedules(config, command.target)
+          : command.action === "resume"
+            ? await resumeConnectorSchedules({
+                config,
+                cwd: process.cwd(),
+                target: command.target,
+              })
+            : await deleteConnectorSchedules(config, command.target);
+
+      await saveOpenWikiOnboardingConfig(result.config);
+      process.stdout.write(
+        formatScheduleMutationResult(command.action, result),
+      );
+      await printCronSchedules(result.config);
+      process.exitCode = 0;
+      return;
+    }
+
+    await printCronSchedules(config);
+    process.exitCode = 0;
+  } catch (error) {
+    process.stderr.write(`${getErrorMessage(error)}\n`);
+    process.exitCode = 1;
+  }
+}
+
+async function printCronSchedules(
+  config: Awaited<ReturnType<typeof readOpenWikiOnboardingConfig>>,
+): Promise<void> {
+  const schedules = await listConnectorSchedules(config);
+  const powerSchedule = getSavedPowerScheduleStatus(config);
+
+  process.stdout.write(formatScheduleHeader(schedules.length));
+  process.stdout.write(formatPowerScheduleStatus(powerSchedule));
+
+  if (schedules.length === 0) {
+    process.stdout.write("No connector schedules are configured.\n");
+    return;
+  }
+
+  for (const schedule of schedules) {
+    process.stdout.write(formatScheduleStatus(schedule));
+  }
+}
+
+function formatScheduleMutationResult(
+  action: "delete" | "pause" | "resume",
+  result: ScheduleMutationResult,
+): string {
+  const actionLabel =
+    action === "delete" ? "Deleted" : action === "pause" ? "Paused" : "Resumed";
+  const changed =
+    result.connectorIds.length > 0 ? result.connectorIds.join(", ") : "none";
+  const skipped =
+    result.skippedConnectorIds.length > 0
+      ? result.skippedConnectorIds.join(", ")
+      : "none";
+  const rows = [
+    [`${actionLabel}`, changed],
+    ["Skipped", skipped],
+  ];
+
+  if (result.powerSchedule) {
+    rows.push([
+      "Mac wake",
+      result.powerSchedule.enabled ? "configured" : "not configured",
+    ]);
+  }
+
+  const labelWidth = Math.max(...rows.map(([label]) => label.length));
+  const body = rows
+    .map(([label, value]) => `  ${label.padEnd(labelWidth)} : ${value}`)
+    .join("\n");
+  const warnings =
+    result.warnings.length > 0
+      ? `\n${result.warnings.map((warning) => `  Warning : ${warning}`).join("\n")}`
+      : "";
+
+  return ["", "Cron update", "-----------", body + warnings, ""].join("\n");
+}
+
+function formatScheduleHeader(scheduleCount: number): string {
+  const title = "OpenWiki Schedules";
+  const summary =
+    scheduleCount === 1
+      ? "1 connector schedule configured"
+      : `${scheduleCount} connector schedules configured`;
+
+  return [
+    "",
+    "=".repeat(title.length),
+    title,
+    "=".repeat(title.length),
+    summary,
+    "",
+  ].join("\n");
+}
+
+function formatPowerScheduleStatus(
+  schedule: PowerScheduleStatus | null,
+): string {
+  const divider = "-".repeat(22);
+
+  if (!schedule) {
+    return [
+      divider,
+      "Mac Wake Window",
+      divider,
+      "  Status : not configured",
+      "",
+      "",
+    ].join("\n");
+  }
+
+  const rows = [
+    ["Status", schedule.enabled ? "configured" : "disabled"],
+    ["Days", schedule.days || "unknown"],
+    ["Wake", schedule.wakeTime || "unknown"],
+    ["Sleep", schedule.sleepTime || "unknown"],
+    ["Updated", schedule.updatedAt],
+  ];
+
+  if (schedule.warning) {
+    rows.push(["Warning", schedule.warning]);
+  }
+
+  const labelWidth = Math.max(...rows.map(([label]) => label.length));
+  const body = rows
+    .map(([label, value]) => `  ${label.padEnd(labelWidth)} : ${value}`)
+    .join("\n");
+
+  return [divider, "Mac Wake Window", divider, body, "", ""].join("\n");
+}
+
+function formatScheduleStatus(schedule: ConnectorScheduleStatus): string {
+  const launchdStatus =
+    schedule.pausedAt !== undefined
+      ? "paused"
+      : schedule.launchAgentPath === undefined
+        ? "not installed"
+        : schedule.launchAgentLoaded
+          ? "loaded"
+          : schedule.launchAgentPlistExists
+            ? "plist exists, not loaded"
+            : "plist missing";
+  const rows = [
+    ["Schedule", schedule.description],
+    ["Cron", schedule.expression],
+    ["Launchd", launchdStatus],
+    ["Updated", schedule.updatedAt],
+  ];
+
+  if (schedule.pausedAt) {
+    rows.push(["Paused", schedule.pausedAt]);
+  }
+
+  if (schedule.launchAgentPath) {
+    rows.push(["Plist", schedule.launchAgentPath]);
+  }
+
+  if (schedule.warning) {
+    rows.push(["Warning", schedule.warning]);
+  }
+
+  const labelWidth = Math.max(...rows.map(([label]) => label.length));
+  const body = rows
+    .map(([label, value]) => `  ${label.padEnd(labelWidth)} : ${value}`)
+    .join("\n");
+  const scheduleLabel = schedule.displayName ?? schedule.sourceInstanceId;
+  const divider = "-".repeat(Math.max(18, scheduleLabel.length + 10));
+
+  return [
+    divider,
+    `Source : ${scheduleLabel}`,
+    ...(schedule.connectorId ? [`Connector : ${schedule.connectorId}`] : []),
+    divider,
+    body,
+    "",
+  ].join("\n");
+}
+
+async function runIngestCommand(
+  command: Extract<CliCommand, { kind: "ingest" }>,
+): Promise<void> {
+  try {
+    const result = await runOpenWikiIngestion(process.cwd(), {
+      debug: isDebugMode(),
+      modelId: command.modelId,
+      scheduledOnly: command.scheduledOnly,
+      target: command.target,
+      onEvent: (event) => {
+        if (event.type === "text" && event.source !== "subgraph") {
+          process.stdout.write(event.text);
+        }
+      },
+    });
+
+    process.stdout.write("\nIngestion summary\n");
+    for (const sourceResult of result.results) {
+      process.stdout.write(
+        `- ${sourceResult.displayName}: ${sourceResult.status}; ${sourceResult.rawFiles.length} raw file(s)\n`,
+      );
+    }
+
+    process.exitCode = result.results.some(
+      (sourceResult) => sourceResult.status === "error",
+    )
+      ? 1
+      : 0;
+  } catch (error) {
+    process.stderr.write(`${getErrorMessage(error)}\n`);
+    writePrintErrorDiagnostics(error);
+    process.exitCode = 1;
+  }
+}
+
+async function runAuthCommand(
+  command: Extract<CliCommand, { kind: "auth" }>,
+): Promise<void> {
+  try {
+    if (command.action === "list") {
+      process.stdout.write(`${formatAuthProviderList()}\n`);
+      process.exitCode = 0;
+      return;
+    }
+
+    if (command.provider === null) {
+      throw new Error("Auth provider is required.");
+    }
+
+    if (command.action === "configure") {
+      const result = await configureAuthProvider(command.provider, {
+        force: command.force,
+      });
+      process.stdout.write(
+        `${result.status === "exists" ? "Config already exists" : `Config ${result.status}`}: ${result.configPath}\n`,
+      );
+      for (const nextStep of result.nextSteps) {
+        process.stdout.write(`- ${nextStep}\n`);
+      }
+      process.exitCode = 0;
+      return;
+    }
+
+    if (command.action === "tools") {
+      const result = await listAuthProviderTools(command.provider);
+      process.stdout.write(
+        `Tools for ${result.provider} (${result.configPath})\n`,
+      );
+      process.stdout.write(`Wrote discovery: ${result.rawFile}\n`);
+      process.stdout.write(`${JSON.stringify(result.tools, null, 2)}\n`);
+      process.exitCode = 0;
+      return;
+    }
+
+    const result = await runOAuthAuth(command.provider);
+    process.stdout.write(
+      `Saved ${result.provider} auth values: ${result.savedEnvKeys.join(", ")}\n`,
+    );
+    const configureResult = await configureAuthProvider(command.provider, {
+      force: command.force,
+    });
+    process.stdout.write(
+      `${configureResult.status === "exists" ? "Config already exists" : `Config ${configureResult.status}`}: ${configureResult.configPath}\n`,
+    );
+    for (const nextStep of configureResult.nextSteps) {
+      process.stdout.write(`- ${nextStep}\n`);
+    }
+
+    if (shouldDiscoverToolsAfterAuth(command.provider)) {
+      try {
+        const toolsResult = await listAuthProviderTools(command.provider);
+        process.stdout.write(
+          `Discovered ${toolsResult.tools.length} MCP tool(s); wrote ${toolsResult.rawFile}\n`,
+        );
+        const toolNames = toolsResult.tools
+          .map((tool) => tool.name)
+          .slice(0, 20);
+        if (toolNames.length > 0) {
+          process.stdout.write(`Tools: ${toolNames.join(", ")}\n`);
+        }
+      } catch (error) {
+        process.stdout.write(
+          `MCP tool discovery skipped: ${getErrorMessage(error)}\n`,
+        );
+      }
+    }
+    process.exitCode = 0;
+  } catch (error) {
+    process.stderr.write(`${getErrorMessage(error)}\n`);
+    process.exitCode = 1;
+  }
 }
 
 function argvRequestsPrint(argv: string[]): boolean {
@@ -2994,8 +3755,17 @@ function shouldPrintStartupError(
     command.kind === "error" &&
     (argvRequestsPrint(argv) ||
       !process.stdin.isTTY ||
+      command.message.startsWith("openwiki --init requires a mode.") ||
       (parsedCommand.kind === "run" && parsedCommand.shouldStart))
   );
+}
+
+function getRunModeCwd(mode: OpenWikiRunMode): string {
+  return mode === "code" ? process.cwd() : openWikiLocalWikiDir;
+}
+
+function getRunModeOutputMode(mode: OpenWikiRunMode): OpenWikiOutputMode {
+  return mode === "code" ? "repository" : "local-wiki";
 }
 
 function shouldAutoExitStartupRun(command: CliCommand): boolean {
@@ -3014,11 +3784,19 @@ async function runPrintCommand(
   try {
     const output: string[] = [];
 
-    await runOpenWikiAgent(command.command, process.cwd(), {
+    const runtimeCwd = getRunModeCwd(command.mode);
+    const runtimeOutputMode = getRunModeOutputMode(command.mode);
+
+    if (command.mode === "code") {
+      await ensureCodeModeRepoSetup(runtimeCwd);
+    }
+
+    await runOpenWikiAgent(command.command, runtimeCwd, {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
       modelId: command.modelId,
-      threadId: createOpenWikiThreadId(process.cwd()),
+      outputMode: runtimeOutputMode,
+      threadId: createOpenWikiThreadId(runtimeCwd),
       userMessage: command.userMessage,
       onEvent: (event) => {
         if (event.type === "text" && event.source !== "subgraph") {

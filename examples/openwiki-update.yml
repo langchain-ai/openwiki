@@ -27,7 +27,8 @@ jobs:
         run: npm install --global openwiki
 
       - name: Run OpenWiki
-        run: openwiki --update --print
+        # --update also handles the first run for code docs when env vars are set.
+        run: openwiki code --update --print
         env:
           # TODO: Replace with your preferred inference provider and model
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
