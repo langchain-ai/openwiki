@@ -189,8 +189,12 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
   });
   await chmod(openWikiEnvPath, 0o600);
 
+  // Only update process.env for keys that weren't already set in the shell
+  // (shell environment takes precedence over file values)
   for (const [key, value] of Object.entries(updates)) {
-    process.env[key] = value;
+    if (process.env[key] === undefined) {
+      process.env[key] = value;
+    }
   }
 }
 
