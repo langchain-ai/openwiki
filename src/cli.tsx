@@ -34,6 +34,7 @@ import {
   getProviderApiKeyEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  hasProviderCredentials,
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
@@ -240,10 +241,12 @@ function App({ command }: AppProps) {
 
     const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (!hasProviderCredentials(sessionProvider) && !process.stdin.isTTY) {
       setRunState({
         status: "error",
-        message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${
+          apiKeyEnvKey ?? `${getProviderLabel(sessionProvider)} credentials`
+        } is required. Run openwiki in an interactive terminal to save credentials.`,
       });
       return;
     }
@@ -445,7 +448,8 @@ function App({ command }: AppProps) {
         runState.result.savedProvider ||
         runState.result.savedBaseUrl ||
         runState.result.savedModelId ||
-        runState.result.savedLangSmithKey ? (
+        runState.result.savedLangSmithKey ||
+        runState.result.savedRegion ? (
           <StatusLine tone="success" label="Credentials" value="saved" />
         ) : null}
         {runState.result.provider ? (
@@ -1506,7 +1510,7 @@ function ChatInput({
 
     if (provider === null) {
       setError(
-        "Enter a valid provider: openrouter, baseten, fireworks, openai, or anthropic.",
+        "Enter a valid provider: openrouter, baseten, fireworks, openai, openai-compatible, anthropic, or bedrock.",
       );
       return;
     }
@@ -1521,7 +1525,7 @@ function ChatInput({
       setNotice(
         `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
           provider,
-        )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
+        )}. Ensure ${providerCredentialNotice(provider)} is set.`,
       );
     } catch (saveError) {
       setError(
@@ -2591,6 +2595,16 @@ function getDisplayModelId(modelId: string | null): string {
     process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
     getDefaultModelId(resolveConfiguredProvider())
   );
+}
+
+function providerCredentialNotice(provider: OpenWikiProvider): string {
+  if (provider === "bedrock") {
+    return "AWS_BEDROCK_REGION is set and AWS credentials (e.g. via AWS_PROFILE/SSO) are available";
+  }
+
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  return apiKeyEnvKey ?? "provider credentials";
 }
 
 function getErrorDiagnostics(error: unknown): ErrorDiagnostic[] {

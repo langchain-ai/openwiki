@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatBedrockConverse } from "@langchain/aws";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -22,6 +23,8 @@ import {
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
+  getProviderRegionEnvKey,
+  hasProviderCredentials,
   isValidModelId,
   normalizeModelId,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -32,6 +35,7 @@ import {
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  resolveProviderRegion,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
@@ -87,8 +91,8 @@ export async function runOpenWikiAgent(
   if (providerBaseUrl) {
     emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
   }
-  ensureProviderKey(provider);
-  emitDebug(options, `credentials=${provider} key present`);
+  ensureProviderCredentials(provider);
+  emitDebug(options, `provider=${provider} credentials present`);
   ensureProviderBaseUrl(provider);
   const modelId = resolveModelId(options, provider);
   emitDebug(options, `model=${modelId}`);
@@ -274,14 +278,25 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
   });
 }
 
-function ensureProviderKey(provider: OpenWikiProvider): void {
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+function ensureProviderCredentials(provider: OpenWikiProvider): void {
+  if (hasProviderCredentials(provider)) {
+    return;
+  }
 
-  if (!process.env[apiKeyEnvKey]) {
+  if (provider === "bedrock") {
+    const regionEnvKey = getProviderRegionEnvKey(provider) ?? "AWS region";
+
     throw new Error(
-      `${apiKeyEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      `${regionEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}. AWS credentials (including SSO) are resolved from the environment, AWS_PROFILE, or the default AWS credential chain.`,
     );
   }
+
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+  const envKey = apiKeyEnvKey ?? `${getProviderLabel(provider)} API key`;
+
+  throw new Error(
+    `${envKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+  );
 }
 
 function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
@@ -322,7 +337,7 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
     const baseURL = resolveProviderBaseUrl(provider);
 
     return new ChatAnthropic(modelId, {
-      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      apiKey: process.env[getProviderApiKeyEnvKey(provider) ?? ""],
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
     });
   }
@@ -336,10 +351,24 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
     });
   }
 
+  if (provider === "bedrock") {
+    const region = resolveProviderRegion(provider);
+
+    if (!region) {
+      const regionEnvKey = getProviderRegionEnvKey(provider) ?? "AWS region";
+
+      throw new Error(
+        `${regionEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      );
+    }
+
+    return new ChatBedrockConverse(modelId, { region });
+  }
+
   const baseURL = resolveProviderBaseUrl(provider);
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey: process.env[getProviderApiKeyEnvKey(provider) ?? ""],
     configuration: baseURL
       ? {
           baseURL,

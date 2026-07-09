@@ -10,12 +10,15 @@ export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
+export const AWS_BEDROCK_REGION_ENV_KEY = "AWS_BEDROCK_REGION";
+export const AWS_REGION_ENV_KEY = "AWS_REGION";
 export const DEFAULT_PROVIDER = "openrouter";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "bedrock"
   | "fireworks"
   | "openai"
   | "openai-compatible"
@@ -29,7 +32,12 @@ export type ProviderModelOption = {
 };
 
 type ProviderConfig = {
-  apiKeyEnvKey: string;
+  /**
+   * Environment variable holding the provider's API key. Optional: providers
+   * that authenticate via a credential chain (e.g. AWS Bedrock via the AWS SDK
+   * default provider chain, including SSO) leave this unset.
+   */
+  apiKeyEnvKey?: string;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -41,6 +49,17 @@ type ProviderConfig = {
    * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
    */
   requiresBaseUrl?: boolean;
+  /**
+   * Environment variable holding the provider's region (e.g. an AWS Bedrock
+   * region). Read at runtime and, when {@link ProviderConfig.requiresRegion} is
+   * set, prompted for during onboarding.
+   */
+  regionEnvKey?: string;
+  /**
+   * When true, the provider requires a region to be supplied via
+   * {@link ProviderConfig.regionEnvKey}.
+   */
+  requiresRegion?: boolean;
   label: string;
   modelOptions: ProviderModelOption[];
 };
@@ -52,6 +71,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-compatible",
   "anthropic",
+  "bedrock",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -62,6 +82,25 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
       { id: "moonshotai/Kimi-K2.7-Code", label: "Kimi K2.7 Code" },
+    ],
+  },
+  bedrock: {
+    label: "AWS Bedrock",
+    regionEnvKey: AWS_BEDROCK_REGION_ENV_KEY,
+    requiresRegion: true,
+    modelOptions: [
+      {
+        id: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        label: "Claude Sonnet 4.5",
+      },
+      {
+        id: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        label: "Claude Haiku 4.5",
+      },
+      {
+        id: "us.anthropic.claude-opus-4-1-20250805-v1:0",
+        label: "Claude Opus 4.1",
+      },
     ],
   },
   fireworks: {
@@ -132,7 +171,9 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).label;
 }
 
-export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
+export function getProviderApiKeyEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
   return getProviderConfig(provider).apiKeyEnvKey;
 }
 
@@ -165,6 +206,77 @@ export function getProviderBaseUrlEnvKey(
 
 export function providerRequiresBaseUrl(provider: OpenWikiProvider): boolean {
   return getProviderConfig(provider).requiresBaseUrl === true;
+}
+
+export function getProviderRegionEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).regionEnvKey;
+}
+
+export function providerRequiresRegion(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).requiresRegion === true;
+}
+
+/**
+ * Resolves the region for a region-scoped provider (e.g. AWS Bedrock), honoring
+ * a provider-specific region env var first and falling back to the standard
+ * AWS_REGION for Bedrock. Returns `undefined` when no region is configured.
+ */
+export function resolveProviderRegion(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const config = getProviderConfig(provider);
+  const override = config.regionEnvKey ? env[config.regionEnvKey] : undefined;
+  const trimmedOverride = override?.trim();
+
+  if (trimmedOverride) {
+    return trimmedOverride;
+  }
+
+  if (provider === "bedrock") {
+    for (const key of [AWS_REGION_ENV_KEY, "AWS_DEFAULT_REGION"]) {
+      const awsRegion = env[key]?.trim();
+
+      if (awsRegion) {
+        return awsRegion;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+export function isValidRegion(value: string): boolean {
+  const region = value.trim();
+
+  return (
+    region.length > 0 &&
+    region.length <= 64 &&
+    /^[a-z][a-z0-9-]*$/iu.test(region) &&
+    !region.includes("://")
+  );
+}
+
+/**
+ * True when the provider's required credential is available. For API-key
+ * providers this checks the provider's API key env var; for Bedrock (which
+ * authenticates via the AWS SDK default credential chain, including SSO) this
+ * only checks that a region is configured — AWS credentials themselves are
+ * resolved at call time from the environment/profile/role.
+ */
+export function hasProviderCredentials(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (provider === "bedrock") {
+    return Boolean(resolveProviderRegion(provider, env));
+  }
+
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  return apiKeyEnvKey ? Boolean(env[apiKeyEnvKey]) : false;
 }
 
 export function isValidBaseUrl(value: string): boolean {

@@ -2,6 +2,8 @@ import { shouldCheckUpdateNoop, getUpdateNoopStatus } from "./agent/utils.js";
 import type { CliCommand } from "./commands.js";
 import {
   getProviderApiKeyEnvKey,
+  getProviderLabel,
+  hasProviderCredentials,
   resolveConfiguredProvider,
 } from "./constants.js";
 
@@ -38,7 +40,7 @@ export async function resolveStartupCommand(
   ) {
     const provider = resolveConfiguredProvider();
     const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+    const hasProviderKey = hasProviderCredentials(provider);
 
     if (!hasProviderKey) {
       if (
@@ -51,10 +53,13 @@ export async function resolveStartupCommand(
         return command;
       }
 
+      const credentialName =
+        apiKeyEnvKey ?? `${getProviderLabel(provider)} credentials`;
+
       return {
         kind: "error",
         exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${credentialName} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
       };
     }
   }

@@ -25,6 +25,9 @@ export function sanitizeDiagnosticText(value: string): string {
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
     "LANGSMITH_API_KEY",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_SESSION_TOKEN",
   ]) {
     const secret = process.env[key];
 
@@ -41,7 +44,9 @@ export function sanitizeDiagnosticText(value: string): string {
     .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gu, "Bearer [REDACTED]")
     .replace(/\bsk-or-v1-[A-Za-z0-9_-]+/gu, "[REDACTED:OPENROUTER_API_KEY]")
     .replace(/\bsk-[A-Za-z0-9_-]+/gu, "[REDACTED:API_KEY]")
-    .replace(/\bls[v_][A-Za-z0-9_-]+/gu, "[REDACTED:LANGSMITH_API_KEY]");
+    .replace(/\bls[v_][A-Za-z0-9_-]+/gu, "[REDACTED:LANGSMITH_API_KEY]")
+    .replace(/\bAKIA[0-9A-Z]{16}\b/gu, "[REDACTED:AWS_ACCESS_KEY_ID]")
+    .replace(/\bASIA[0-9A-Z]{16}\b/gu, "[REDACTED:AWS_ACCESS_KEY_ID]");
 }
 
 /**
