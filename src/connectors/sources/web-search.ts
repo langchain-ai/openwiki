@@ -177,7 +177,10 @@ async function ingest(
 
 function normalizeStringArray(value: unknown): string[] {
   return Array.isArray(value)
-    ? value.filter((item): item is string => item.trim().length > 0)
+    ? value.filter(
+        (item): item is string =>
+          typeof item === "string" && item.trim().length > 0,
+      )
     : [];
 }
 

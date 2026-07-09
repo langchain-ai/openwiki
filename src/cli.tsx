@@ -58,9 +58,6 @@ import {
   type ScheduleMutationResult,
 } from "./schedules.js";
 import {
-  ANTHROPIC_API_KEY_ENV_KEY,
-  BASETEN_API_KEY_ENV_KEY,
-  FIREWORKS_API_KEY_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderLabel,
@@ -68,11 +65,8 @@ import {
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
-  OPENAI_API_KEY_ENV_KEY,
-  OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
-  OPEN_WIKI_DIR,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
   OPENWIKI_VERSION,

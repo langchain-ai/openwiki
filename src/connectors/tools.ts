@@ -2,7 +2,8 @@ import {
   DynamicStructuredTool,
   type StructuredToolInterface,
 } from "@langchain/core/tools";
-import { readdir, readFile, stat } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
+import { open, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import {
   getConnectorConfigPath,
@@ -303,21 +304,30 @@ async function readRawItem(
   maxBytes: number,
 ) {
   const filePath = resolveConnectorRawPath(connectorId, relativePath);
-  const fileStat = await stat(filePath);
-
-  if (!fileStat.isFile()) {
-    throw new Error("Raw item path must point to a file.");
-  }
-
-  const content = await readFile(filePath, "utf8");
-  const limit = Math.max(1, Math.min(maxBytes, 500_000));
-
-  return {
-    connectorId,
-    content: content.slice(0, limit),
+  const fileHandle = await open(
     filePath,
-    truncated: content.length > limit,
-  };
+    fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW,
+  );
+
+  try {
+    const fileStat = await fileHandle.stat();
+
+    if (!fileStat.isFile()) {
+      throw new Error("Raw item path must point to a file.");
+    }
+
+    const content = await fileHandle.readFile("utf8");
+    const limit = Math.max(1, Math.min(maxBytes, 500_000));
+
+    return {
+      connectorId,
+      content: content.slice(0, limit),
+      filePath,
+      truncated: content.length > limit,
+    };
+  } finally {
+    await fileHandle.close();
+  }
 }
 
 async function listFiles(

@@ -365,15 +365,19 @@ async function listHttpMcpTools(
 }
 
 function extractTools(value: unknown): McpToolDescriptor[] {
+  return extractToolValues(value)
+    .map(normalizeMcpTool)
+    .filter((tool): tool is McpToolDescriptor => tool !== null);
+}
+
+function extractToolValues(value: unknown): unknown[] {
   if (
     value !== null &&
     typeof value === "object" &&
     "tools" in value &&
-    Array.isArray((value as { tools: unknown }).tools)
+    Array.isArray(value.tools)
   ) {
-    return (value as { tools: unknown[] }).tools
-      .map(normalizeMcpTool)
-      .filter((tool): tool is McpToolDescriptor => tool !== null);
+    return value.tools;
   }
 
   return [];
@@ -733,7 +737,7 @@ function resolveChildEnv(
 async function resolveHeaders(
   headers: Record<string, string>,
 ): Promise<Record<string, string>> {
-  const resolvedEntries = [];
+  const resolvedEntries: Array<[string, string]> = [];
 
   for (const [key, value] of Object.entries(headers)) {
     resolvedEntries.push([

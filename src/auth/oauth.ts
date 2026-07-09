@@ -601,7 +601,7 @@ function execFilePromise(
   return new Promise((resolve, reject) => {
     const childProcess = execFile(command, args, (error) => {
       if (error) {
-        reject(error);
+        reject(new Error(error.message, { cause: error }));
         return;
       }
 

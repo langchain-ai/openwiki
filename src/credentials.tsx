@@ -1004,14 +1004,14 @@ export function InitSetup({
         return;
       }
 
-      await continueAfterSourceCredentialSetup(source);
+      continueAfterSourceCredentialSetup(source);
       return;
     }
 
     if (step === "source-secret") {
       const currentSecretInput = selectedSource.secretInputs[secretInputIndex];
       if (!currentSecretInput) {
-        await continueAfterSourceCredentialSetup(selectedSource);
+        continueAfterSourceCredentialSetup(selectedSource);
         return;
       }
 
@@ -1047,7 +1047,7 @@ export function InitSetup({
       }
 
       await saveOpenWikiEnv(nextSecretValues);
-      await continueAfterSourceCredentialSetup(selectedSource);
+      continueAfterSourceCredentialSetup(selectedSource);
       return;
     }
 
@@ -1372,7 +1372,7 @@ export function InitSetup({
     }
   }
 
-  async function continueAfterSourceCredentialSetup(source: SourceSetupOption) {
+  function continueAfterSourceCredentialSetup(source: SourceSetupOption) {
     if (source.authProvider) {
       setStep("source-auth");
       return;
