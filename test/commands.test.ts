@@ -264,3 +264,45 @@ describe("shouldRunNonInteractively", () => {
     );
   });
 });
+
+describe("parseCommand — cron", () => {
+  test("cron list returns a list command", () => {
+    expect(parseCommand(["cron", "list"])).toMatchObject({
+      kind: "cron",
+      action: "list",
+      target: null,
+    });
+  });
+
+  test("cron pause with a source instance id is rejected", () => {
+    const result = parseCommand(["cron", "pause", "web-search-1"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron resume with a source instance id is rejected", () => {
+    const result = parseCommand(["cron", "resume", "web-search-1"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron delete with a source instance id is rejected", () => {
+    const result = parseCommand(["cron", "delete", "web-search-1"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron pause with 'all' is accepted", () => {
+    expect(parseCommand(["cron", "pause", "all"])).toMatchObject({
+      kind: "cron",
+      action: "pause",
+    });
+  });
+
+  test("cron pause with no target is an error", () => {
+    const result = parseCommand(["cron", "pause"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron pause with extra arguments is an error", () => {
+    const result = parseCommand(["cron", "pause", "all", "extra"]);
+    expect(result.kind).toBe("error");
+  });
+});
