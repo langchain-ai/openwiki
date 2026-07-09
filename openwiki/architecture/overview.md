@@ -35,8 +35,8 @@ For non-chat runs, the agent receives a `RunContext` that includes last-update m
 The agent runtime resolves the provider via `resolveConfiguredProvider()` in `src/constants.ts`:
 
 1. If `OPENWIKI_PROVIDER` is set and valid, use it.
-2. Otherwise, if `OPENROUTER_API_KEY` is present, default to `openrouter`.
-3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openrouter`).
+2. Otherwise, use the first available provider API key in this order: OpenAI, OpenRouter, Anthropic, Baseten, then Fireworks.
+3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.5`).
 
 Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 

@@ -65,10 +65,10 @@ type ProviderConfig = {
 };
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
+  "openai",
   "openrouter",
   "baseten",
   "fireworks",
-  "openai",
   "openai-compatible",
   "anthropic",
   "bedrock",
@@ -119,8 +119,8 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
     label: "OpenAI",
     modelOptions: [
-      { id: "gpt-5.4-mini", label: "5.4 mini" },
       { id: "gpt-5.5", label: "5.5" },
+      { id: "gpt-5.4-mini", label: "5.4 mini" },
     ],
   },
   "openai-compatible": {
@@ -157,7 +157,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
 };
 
 export const DEFAULT_MODEL_ID =
-  PROVIDER_CONFIGS[DEFAULT_PROVIDER].modelOptions[0]?.id ?? "zai-org/GLM-5.2";
+  PROVIDER_CONFIGS[DEFAULT_PROVIDER].modelOptions[0]?.id ?? "gpt-5.5";
 
 export const SUGGESTED_MODEL_IDS = PROVIDER_CONFIGS[
   DEFAULT_PROVIDER
@@ -326,7 +326,19 @@ export function resolveConfiguredProvider(
 ): OpenWikiProvider {
   return (
     normalizeProvider(env[OPENWIKI_PROVIDER_ENV_KEY]) ??
-    (env[OPENROUTER_API_KEY_ENV_KEY] ? "openrouter" : DEFAULT_PROVIDER)
+    (env[OPENAI_API_KEY_ENV_KEY]
+      ? "openai"
+      : env[OPENAI_COMPATIBLE_API_KEY_ENV_KEY]
+        ? "openai-compatible"
+        : env[OPENROUTER_API_KEY_ENV_KEY]
+          ? "openrouter"
+          : env[ANTHROPIC_API_KEY_ENV_KEY]
+            ? "anthropic"
+            : env[BASETEN_API_KEY_ENV_KEY]
+              ? "baseten"
+              : env[FIREWORKS_API_KEY_ENV_KEY]
+                ? "fireworks"
+                : DEFAULT_PROVIDER)
   );
 }
 
@@ -345,4 +357,4 @@ export function isValidModelId(value: string): boolean {
   );
 }
 
-export const OPENWIKI_VERSION = "0.0.4";
+export const OPENWIKI_VERSION = "0.1.0";

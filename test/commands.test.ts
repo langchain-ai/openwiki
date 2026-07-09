@@ -58,12 +58,22 @@ describe("parseCommand — chat default", () => {
 });
 
 describe("parseCommand — init/update", () => {
-  test("--init selects the init command and starts", () => {
-    expect(parseCommand(["--init"])).toMatchObject({
+  test("personal --init selects the init command and starts", () => {
+    expect(parseCommand(["personal", "--init"])).toMatchObject({
       kind: "run",
       command: "init",
+      mode: "personal",
       shouldStart: true,
     });
+  });
+
+  test("bare --init requires an explicit mode", () => {
+    const result = parseCommand(["--init"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/requires a mode/u);
+    }
   });
 
   test("--update selects the update command and starts", () => {
@@ -85,7 +95,7 @@ describe("parseCommand — init/update", () => {
   });
 
   test("repeating the same command flag is allowed", () => {
-    expect(parseCommand(["--init", "--init"]).kind).toBe("run");
+    expect(parseCommand(["personal", "--init", "--init"]).kind).toBe("run");
   });
 });
 
@@ -99,8 +109,8 @@ describe("parseCommand — print", () => {
     });
   });
 
-  test("--print with --init is valid", () => {
-    expect(parseCommand(["--print", "--init"])).toMatchObject({
+  test("--print with explicit-mode --init is valid", () => {
+    expect(parseCommand(["personal", "--print", "--init"])).toMatchObject({
       kind: "run",
       print: true,
       command: "init",
@@ -191,7 +201,7 @@ describe("parseCommand — unknown options and dry-run gating", () => {
   test("--dry-run is accepted in development mode", () => {
     process.env.OPENWIKI_DEV = "1";
 
-    expect(parseCommand(["--dry-run", "--init"])).toMatchObject({
+    expect(parseCommand(["personal", "--dry-run", "--init"])).toMatchObject({
       kind: "run",
       dryRun: true,
       command: "init",
@@ -201,9 +211,9 @@ describe("parseCommand — unknown options and dry-run gating", () => {
 
 describe("shouldRunNonInteractively", () => {
   test("--init and --update without --print bypass the UI when stdin is not a TTY", () => {
-    expect(shouldRunNonInteractively(parseCommand(["--init"]), false)).toBe(
-      true,
-    );
+    expect(
+      shouldRunNonInteractively(parseCommand(["personal", "--init"]), false),
+    ).toBe(true);
     expect(shouldRunNonInteractively(parseCommand(["--update"]), false)).toBe(
       true,
     );
@@ -216,17 +226,23 @@ describe("shouldRunNonInteractively", () => {
   });
 
   test("--init on a TTY keeps the interactive UI", () => {
-    expect(shouldRunNonInteractively(parseCommand(["--init"]), true)).toBe(
-      false,
-    );
+    expect(
+      shouldRunNonInteractively(parseCommand(["personal", "--init"]), true),
+    ).toBe(false);
   });
 
   test("--print bypasses the UI regardless of TTY", () => {
     expect(
-      shouldRunNonInteractively(parseCommand(["--init", "--print"]), true),
+      shouldRunNonInteractively(
+        parseCommand(["personal", "--init", "--print"]),
+        true,
+      ),
     ).toBe(true);
     expect(
-      shouldRunNonInteractively(parseCommand(["--init", "--print"]), false),
+      shouldRunNonInteractively(
+        parseCommand(["personal", "--init", "--print"]),
+        false,
+      ),
     ).toBe(true);
   });
 
