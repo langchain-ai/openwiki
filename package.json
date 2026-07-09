@@ -1,6 +1,6 @@
 {
   "name": "openwiki",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "A CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase.",
   "license": "MIT",
   "type": "module",
@@ -44,14 +44,18 @@
     "@langchain/anthropic": "^1.5.1",
     "@langchain/core": "^1.2.1",
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.3",
-    "@langchain/openai": "^1.5.3",
+    "@langchain/openai": "^1.5.5",
     "@langchain/openrouter": "^0.4.3",
     "@langchain/protocol": "^0.0.18",
-    "deepagents": "^1.10.6",
+    "@langchain/tavily": "1.2.0",
+    "cron-parser": "5.6.1",
+    "cronstrue": "3.24.0",
+    "deepagents": "^1.10.7",
     "ink": "^5.1.0",
-    "langchain": "^1.5.1",
+    "langchain": "^1.5.3",
     "marked": "^18.0.5",
-    "react": "^18.3.1"
+    "react": "^18.3.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
