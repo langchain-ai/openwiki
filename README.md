@@ -159,8 +159,9 @@ Connector secrets are referenced by env var name and stored in `~/.openwiki/.env
 
 First-run onboarding also lets users choose a wiki template, customize its scope,
 and save per-source ingestion notes and source schedules in
-`~/.openwiki/onboarding.json`. On macOS, source schedules are installed as user
-LaunchAgents under `~/Library/LaunchAgents/` and write logs under
+`~/.openwiki/onboarding.json`. The global personal wiki instructions are saved
+in `~/.openwiki/INSTRUCTIONS.md`. On macOS, source schedules are installed as
+user LaunchAgents under `~/Library/LaunchAgents/` and write logs under
 `~/.openwiki/logs/`.
 
 See the OpenWiki operations docs for credential storage and provider setup

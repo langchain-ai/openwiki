@@ -8,6 +8,10 @@ export const openWikiOnboardingPath = path.join(
   openWikiHomeDir,
   "onboarding.json",
 );
+export const openWikiInstructionsPath = path.join(
+  openWikiHomeDir,
+  "INSTRUCTIONS.md",
+);
 
 export type OnboardingSourceScheduleConfig = {
   description: string;
@@ -68,12 +72,20 @@ export async function readOpenWikiOnboardingConfig(): Promise<OpenWikiOnboarding
   await ensureOpenWikiHome();
 
   try {
-    return normalizeOnboardingConfig(
+    const config = normalizeOnboardingConfig(
       JSON.parse(await readFile(openWikiOnboardingPath, "utf8")),
     );
+
+    return {
+      ...config,
+      wikiGoal: await readWikiInstructions(),
+    };
   } catch (error) {
     if (isFileNotFoundError(error)) {
-      return createEmptyOnboardingConfig();
+      const wikiGoal = await readWikiInstructions();
+      return wikiGoal
+        ? { ...createEmptyOnboardingConfig(), wikiGoal }
+        : createEmptyOnboardingConfig();
     }
 
     throw error;
@@ -84,15 +96,26 @@ export async function saveOpenWikiOnboardingConfig(
   config: OpenWikiOnboardingConfig,
 ): Promise<void> {
   await ensureOpenWikiHome();
+  const normalizedConfig = normalizeOnboardingConfig(config);
+  const { wikiGoal, ...jsonConfig } = normalizedConfig;
+
   await writeFile(
     openWikiOnboardingPath,
-    `${JSON.stringify(normalizeOnboardingConfig(config), null, 2)}\n`,
+    `${JSON.stringify(jsonConfig, null, 2)}\n`,
     {
       encoding: "utf8",
       mode: 0o600,
     },
   );
   await chmod(openWikiOnboardingPath, 0o600);
+
+  if (wikiGoal?.trim()) {
+    await writeFile(openWikiInstructionsPath, `${wikiGoal.trim()}\n`, {
+      encoding: "utf8",
+      mode: 0o600,
+    });
+    await chmod(openWikiInstructionsPath, 0o600);
+  }
 }
 
 export function isOnboardingComplete(
@@ -109,14 +132,37 @@ export function isOpenWikiOnboardingCompleteSync(): boolean {
   }
 
   try {
-    return isOnboardingComplete(
-      normalizeOnboardingConfig(
-        JSON.parse(readFileSync(openWikiOnboardingPath, "utf8")),
-      ),
+    const config = normalizeOnboardingConfig(
+      JSON.parse(readFileSync(openWikiOnboardingPath, "utf8")),
     );
+    const wikiGoal = readWikiInstructionsSync();
+
+    return isOnboardingComplete({ ...config, wikiGoal });
   } catch {
     return false;
   }
+}
+
+async function readWikiInstructions(): Promise<string | undefined> {
+  try {
+    const content = (await readFile(openWikiInstructionsPath, "utf8")).trim();
+    return content.length > 0 ? content : undefined;
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return undefined;
+    }
+
+    throw error;
+  }
+}
+
+function readWikiInstructionsSync(): string | undefined {
+  if (!existsSync(openWikiInstructionsPath)) {
+    return undefined;
+  }
+
+  const content = readFileSync(openWikiInstructionsPath, "utf8").trim();
+  return content.length > 0 ? content : undefined;
 }
 
 function normalizeOnboardingConfig(value: unknown): OpenWikiOnboardingConfig {

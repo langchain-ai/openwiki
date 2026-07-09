@@ -1,10 +1,11 @@
 # Credentials and updates
 
-OpenWiki has two operational concerns that matter for both users and maintainers:
+OpenWiki has four operational concerns that matter for both users and maintainers:
 
 1. local credential storage in `~/.openwiki/.env`, and
-2. persisted onboarding/schedule metadata in `~/.openwiki/onboarding.json`,
-3. persisted update metadata in `openwiki/.last-update.json`.
+2. persisted personal wiki instructions in `~/.openwiki/INSTRUCTIONS.md`,
+3. persisted onboarding/schedule metadata in `~/.openwiki/onboarding.json`,
+4. persisted update metadata in `openwiki/.last-update.json`.
 
 It also ships with GitHub Actions and GitLab CI workflow examples for scheduled updates.
 
@@ -71,12 +72,14 @@ Notion, Gmail, X/Twitter, Web Search, and Hacker News. Non-secret setup
 preferences are stored in `~/.openwiki/onboarding.json`:
 
 - the selected template ID/name,
-- the user's wiki scope/intent,
 - which sources have been connected,
 - optional per-source ingestion guidance,
 - per-source cron expressions and plain-English schedule descriptions,
 - macOS LaunchAgent paths when schedule installation succeeds,
 - optional macOS `pmset` wake/sleep window metadata.
+
+The user's global personal wiki scope/intent is stored as Markdown in
+`~/.openwiki/INSTRUCTIONS.md` so it can be edited directly.
 
 OAuth tokens and client secrets are not stored in this file. They remain in
 `~/.openwiki/.env`.

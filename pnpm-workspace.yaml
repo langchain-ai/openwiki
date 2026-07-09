@@ -2,7 +2,9 @@ allowBuilds:
   better-sqlite3: true
   esbuild: true
 minimumReleaseAgeExclude:
+  - "@langchain/openai"
   - "@langchain/openai@1.5.4"
+  - "@langchain/openai@1.5.5"
   - "@vitest/coverage-v8@4.1.10"
   - "@vitest/expect@4.1.10"
   - "@vitest/mocker@4.1.10"
