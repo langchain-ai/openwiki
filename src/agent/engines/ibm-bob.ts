@@ -165,7 +165,7 @@ export const ibmBobAdapter: AgentCliAdapter = {
             ? undefined
             : typeof error?.message === "string" && error.message.length > 0
               ? error.message
-              : `IBM Bob run ended with ${String(line.status ?? "an unknown error")}.`,
+              : `IBM Bob run ended with ${typeof line.status === "string" ? line.status : "an unknown error"}.`,
         },
       ];
     }
