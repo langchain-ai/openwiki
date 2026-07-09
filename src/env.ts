@@ -356,6 +356,7 @@ function parseEnvValue(value: string): string {
     return value
       .slice(1, -1)
       .replace(/\\n/gu, "\n")
+      .replace(/\\r/gu, "\r")
       .replace(/\\"/gu, '"')
       .replace(/\\\\/gu, "\\");
   }
@@ -378,5 +379,6 @@ function formatEnvValue(value: string): string {
   return `"${value
     .replace(/\\/gu, "\\\\")
     .replace(/"/gu, '\\"')
-    .replace(/\n/gu, "\\n")}"`;
+    .replace(/\n/gu, "\\n")
+    .replace(/\r/gu, "\\r")}"`;
 }
