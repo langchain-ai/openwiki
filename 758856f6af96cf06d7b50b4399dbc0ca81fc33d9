@@ -1,0 +1,37 @@
+src/credentials.tsx
+  s_2859e30e668c29::t_cff54fd6aac971 1007,1014,1050
+  s_2859e30e668c29::t_3f53241c42dd35 1375
+pnpm-workspace.yaml
+  s_2859e30e668c29::t_e594ff8114097e 1
+  s_2859e30e668c29::t_d212dfc78f6d88 2-3
+  s_2859e30e668c29::t_a5574d45f59fa1 4-18
+src/connectors/sources/web-search.ts
+  s_2859e30e668c29::t_c5324e7e207529 180-183
+src/connectors/sources/hackernews.ts
+  s_2859e30e668c29::t_671749a9127c3f 270-273
+src/connectors/tools.ts
+  s_2859e30e668c29::t_203122e697a33e 6,312-313,315-317,319-329
+  s_2859e30e668c29::t_51d84031dc85a6 5,307-310
+  s_2859e30e668c29::t_d82345fd73ad7c 330
+src/connectors/mcp-client.ts
+  s_2859e30e668c29::t_7c9fd787fd5ebf 368-373,378,380
+  s_2859e30e668c29::t_669c4103fe8efc 740
+src/auth/oauth.ts
+  s_2859e30e668c29::t_aa14f4e70a9398 604
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "758856f6af96cf06d7b50b4399dbc0ca81fc33d9",
+  "prompts": {},
+  "sessions": {
+    "s_2859e30e668c29": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3ede-685b-72b1-a56d-01cf16ae4eed",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
