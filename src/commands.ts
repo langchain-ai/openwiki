@@ -84,11 +84,15 @@ export function parseCommand(argv: string[]): CliCommand {
         ? "configure"
         : argv[1] === "tools"
           ? "tools"
-          : "oauth";
+          : argv[1] === "list"
+            ? "list"
+            : "oauth";
     const provider =
       action === "configure" || action === "tools"
         ? argv[2]
-        : (argv[1] ?? "list");
+        : action === "list"
+          ? null
+          : (argv[1] ?? "list");
     const optionArgs =
       action === "configure" || action === "tools"
         ? argv.slice(3)
@@ -104,7 +108,7 @@ export function parseCommand(argv: string[]): CliCommand {
       };
     }
 
-    if (provider === "list" && action === "oauth") {
+    if (action === "list") {
       return {
         kind: "auth",
         action: "list",
