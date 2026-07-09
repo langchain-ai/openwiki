@@ -14,10 +14,12 @@ import {
   helpContent,
   isDevelopmentMode,
   parseCommand,
+  shouldRunNonInteractively,
   type CliCommand,
   type HelpRow,
   type OpenWikiRunMode,
 } from "./commands.js";
+import { resolveStartupCommand } from "./startup.js";
 import {
   InitSetup,
   needsCredentialSetup,
@@ -30,6 +32,8 @@ import {
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+import { getErrorMessage, sanitizeDiagnosticText } from "./diagnostics.js";
+import { stripHtmlTags } from "./utils.js";
 import {
   type OpenWikiRunEvent,
   type OpenWikiRunResult,
@@ -65,9 +69,10 @@ import {
   normalizeModelId,
   normalizeProvider,
   OPENAI_API_KEY_ENV_KEY,
-  OPENWIKI_MODEL_ID_ENV_KEY,
-  OPENWIKI_PROVIDER_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_MODEL_ID_ENV_KEY,
+  OPEN_WIKI_DIR,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
   OPENWIKI_VERSION,
@@ -632,6 +637,7 @@ function App({ command }: AppProps) {
         />
         {runState.result.savedApiKey ||
         runState.result.savedProvider ||
+        runState.result.savedBaseUrl ||
         runState.result.savedModelId ||
         runState.result.savedLangSmithKey ? (
           <StatusLine tone="success" label="Credentials" value="saved" />
@@ -1426,7 +1432,7 @@ function renderHtmlToken(token: Token): React.ReactNode {
     return <Text underline>{underlineMatch[1]}</Text>;
   }
 
-  return text.replace(/<[^>]*>/gu, "");
+  return stripHtmlTags(text);
 }
 
 function ChatHistory({ runs }: { runs: CompletedRun[] }) {
@@ -3311,65 +3317,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function getErrorMessage(error: unknown): string {
-  const message =
-    error instanceof Error ? error.message : "OpenWiki agent run failed.";
-
-  if (isOpenRouterServerError(error, message)) {
-    return "OpenRouter/provider returned 500 Internal Server Error. Try retrying or switching models with /model. Run with OPENWIKI_DEBUG=1 to show provider metadata.";
-  }
-
-  return sanitizeDiagnosticText(message);
-}
-
-function isOpenRouterServerError(error: unknown, message: string): boolean {
-  if (isRecord(error)) {
-    const status = error.statusCode ?? error.status;
-    const name = error instanceof Error ? error.name : null;
-
-    if (
-      (status === 500 || status === "500") &&
-      (name === "OpenRouterError" || "metadata" in error)
-    ) {
-      return true;
-    }
-  }
-
-  return /OpenRouterError/iu.test(String(error)) ||
-    /Internal Server Error/iu.test(message)
-    ? /\b500\b|Internal Server Error/iu.test(message)
-    : false;
-}
-
-function sanitizeDiagnosticText(value: string): string {
-  let sanitized = value;
-
-  for (const key of [
-    BASETEN_API_KEY_ENV_KEY,
-    FIREWORKS_API_KEY_ENV_KEY,
-    OPENAI_API_KEY_ENV_KEY,
-    ANTHROPIC_API_KEY_ENV_KEY,
-    OPENROUTER_API_KEY_ENV_KEY,
-    "LANGSMITH_API_KEY",
-  ]) {
-    const secret = process.env[key];
-
-    if (secret && secret.length > 0) {
-      sanitized = sanitized.split(secret).join(`[REDACTED:${key}]`);
-    }
-  }
-
-  return sanitized
-    .replace(
-      /(Incorrect API key provided:\s*)([^\s.]+)/giu,
-      "$1[REDACTED:API_KEY]",
-    )
-    .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gu, "Bearer [REDACTED]")
-    .replace(/\bsk-or-v1-[A-Za-z0-9_-]+/gu, "[REDACTED:OPENROUTER_API_KEY]")
-    .replace(/\bsk-[A-Za-z0-9_-]+/gu, "[REDACTED:API_KEY]")
-    .replace(/\bls[v_][A-Za-z0-9_-]+/gu, "[REDACTED:LANGSMITH_API_KEY]");
-}
-
 function sanitizeHeaderValue(value: string, maxLength = 80): string {
   const compactValue = stripControlCharacters(value)
     .replace(/[^\S\n]+/gu, " ")
@@ -3457,7 +3404,10 @@ if (
   await loadOpenWikiEnv();
 }
 
-const command = resolveStartupCommand(parsedCommand);
+const command = await resolveStartupCommand(parsedCommand, {
+  cwd: process.cwd(),
+  isStdinTTY: Boolean(process.stdin.isTTY),
+});
 
 if (command.kind === "auth") {
   await runAuthCommand(command);
@@ -3470,7 +3420,7 @@ if (command.kind === "auth") {
 } else if (shouldPrintStartupError(argv, parsedCommand, command)) {
   process.stderr.write(`${command.message}\n`);
   process.exitCode = command.exitCode;
-} else if (command.kind === "run" && command.print && !command.dryRun) {
+} else if (shouldRunNonInteractively(command, process.stdin.isTTY === true)) {
   await runPrintCommand(command);
 } else {
   render(<App command={command} />);
@@ -3887,40 +3837,4 @@ function writePrintErrorDiagnostics(error: unknown): void {
   for (const diagnostic of diagnostics) {
     process.stderr.write(`${diagnostic.label}: ${diagnostic.value}\n`);
   }
-}
-
-function resolveStartupCommand(command: CliCommand): CliCommand {
-  if (
-    command.kind === "run" &&
-    !command.dryRun &&
-    command.shouldStart &&
-    (command.print || !process.stdin.isTTY)
-  ) {
-    const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
-
-    if (!hasProviderKey) {
-      return {
-        kind: "error",
-        exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
-      };
-    }
-  }
-
-  if (
-    command.kind === "run" &&
-    !command.dryRun &&
-    command.userMessage !== null &&
-    command.userMessage.trim().length === 0
-  ) {
-    return {
-      kind: "error",
-      exitCode: 1,
-      message: "User message cannot be empty.",
-    };
-  }
-
-  return command;
 }

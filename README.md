@@ -15,23 +15,24 @@ npm install -g openwiki
 Initialize OpenWiki, configure your model and API key, then generate documentation
 
 ```sh
-openwiki brain --init
+openwiki personal --init
 ```
 
 OpenWiki has two modes:
 
-- **Brain mode** builds a local second-brain wiki in `~/.openwiki/wiki` from
+- **Personal mode** builds a local personal brain wiki in `~/.openwiki/wiki` from
   configured sources like local repositories, Gmail, Notion, Web Search, Hacker
   News, and X/Twitter.
 - **Code mode** builds repository documentation in `openwiki/` for the current
   codebase.
 
-Choose `openwiki brain --init` for a local second-brain wiki or
+Choose `openwiki personal --init` for a local personal brain wiki or
 `openwiki code --init` for repository documentation.
 
-Then to ensure your documentation stays up-to-date, add the GitHub action to your repository to automatically open a PR once a day with documentation updates: [openwiki-update.yml](./examples/openwiki-update.yml)
+Then to ensure your documentation stays up-to-date, add the CI workflow for your Git provider to automatically open a PR or merge request with documentation updates:
 
-Copy the contents of that file into `.github/workflows/openwiki-update.yml` in your repository.
+- GitHub Actions: copy [openwiki-update.yml](./examples/openwiki-update.yml) into `.github/workflows/openwiki-update.yml`.
+- GitLab CI: copy [openwiki-update.gitlab-ci.yml](./examples/openwiki-update.gitlab-ci.yml) into `.gitlab-ci.yml` or include it from your existing GitLab pipeline.
 
 For repository documentation in GitHub Actions, use
 `openwiki code --update --print`. You do not need to run `--init` in CI:
@@ -62,7 +63,7 @@ openwiki -p "Summarize what you can do"
 Initialize OpenWiki:
 
 ```sh
-openwiki brain --init
+openwiki personal --init
 ```
 
 Initialize repository code documentation:
@@ -124,7 +125,7 @@ ignore that HTTPS override and keep using the local loopback callback,
 
 `openwiki` creates initial repository documentation in `openwiki/` when no wiki exists. Source ingestion runs and scheduled connector updates maintain the local general-purpose wiki in `~/.openwiki/wiki/`. By default, the CLI stays open after each run so you can send follow-up messages. Use `-p` or `--print` for a one-shot non-interactive run that prints the final assistant output.
 
-Use `openwiki brain --init` for the local second-brain wiki or `openwiki code --init` for repository documentation. Bare `openwiki --init` is no longer supported because init needs an explicit mode. `openwiki --update` defaults to brain mode unless you pass `code`, `brain`, or `--mode`.
+Use `openwiki personal --init` for the local personal brain wiki or `openwiki code --init` for repository documentation. Bare `openwiki --init` is no longer supported because init needs an explicit mode. `openwiki --update` defaults to personal mode unless you pass `code`, `personal`, or `--mode`.
 
 `openwiki` will automatically append prompting to your `AGENTS.md` and/or `CLAUDE.md` files to instruct your coding agent to reference it when searching for context. If the file does not already exist in your repository, OpenWiki will create it for you.
 
@@ -167,6 +168,39 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI, OpenRouter, Fireworks, Baseten and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.5`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI, OpenRouter, Fireworks, Baseten, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.5`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+
+### Alternative base URLs
+
+To route the Anthropic provider at an alternative, Anthropic-compatible endpoint
+(for example a self-hosted or proxied gateway) instead of the default API, set
+`ANTHROPIC_BASE_URL` alongside `ANTHROPIC_API_KEY`:
+
+```bash
+OPENWIKI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=your-key
+ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
+```
+
+### OpenAI-compatible endpoints
+
+The `openai-compatible` provider targets any OpenAI-compatible chat-completions
+endpoint via a required base URL. This can be used for OpenAI-compatible LLM
+endpoints like those exposed by a LiteLLM gateway when it is used as a gateway —
+letting you reach whatever upstream providers the gateway fronts through a single
+OpenAI-shaped API. Set the model ID to whatever name the gateway exposes:
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=your-gateway-key
+OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
+OPENWIKI_MODEL_ID=your-gateway-model-name
+```
+
+Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
 If there's an inference provider or model you'd like to see added, please open a PR!
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR. We intentionally keep PRs tightly scoped to one change each, and PRs that bundle unrelated changes may be closed with a request to split them.

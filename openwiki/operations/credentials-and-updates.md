@@ -6,7 +6,7 @@ OpenWiki has two operational concerns that matter for both users and maintainers
 2. persisted onboarding/schedule metadata in `~/.openwiki/onboarding.json`,
 3. persisted update metadata in `openwiki/.last-update.json`.
 
-It also ships with a GitHub Actions workflow example for scheduled updates.
+It also ships with GitHub Actions and GitLab CI workflow examples for scheduled updates.
 
 ## Local credential storage
 
@@ -19,7 +19,8 @@ The file stores provider configuration and API keys:
 
 - `OPENWIKI_PROVIDER` — the selected model provider
 - `OPENWIKI_MODEL_ID` — the default model ID
-- Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`
+- Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`
+- Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API) and `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint)
 - Connector API keys: `TAVILY_API_KEY` for Web Search
 - Optional LangSmith settings: `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`
 - Optional OAuth callback settings: `OPENWIKI_OAUTH_CALLBACK_PORT` controls the
@@ -129,7 +130,7 @@ saved repeat `pmset` schedule and marks the saved wake window disabled.
 2. Otherwise, use the first available provider API key in this order: OpenAI, OpenRouter, Anthropic, Baseten, then Fireworks.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.5`).
 
-`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var, the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing value triggers the interactive flow.
+`needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var is valid and whether the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing or invalid provider value triggers the interactive flow.
 
 ## Model and credential diagnostics
 
@@ -143,7 +144,7 @@ The env layer also produces diagnostics for the CLI UI. Those diagnostics report
 - invalid model IDs,
 - invalid provider values.
 
-Diagnostics cover all five provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values.
+Diagnostics cover all six provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, and base URLs are shown in full).
 
 ## Update metadata
 
@@ -158,9 +159,9 @@ The content-change check uses `createOpenWikiContentSnapshot()`, which hashes th
 
 Update runs use this metadata to build a change summary since the previous successful OpenWiki execution — preferring `gitHead` for a precise commit range, falling back to `updatedAt` for a time-based range.
 
-## GitHub Actions workflow
+## Scheduled CI workflows
 
-The repository includes `.github/workflows/openwiki-update.yml` as a copyable scheduled update workflow. It:
+The repository includes `examples/openwiki-update.yml` as a copyable GitHub Actions scheduled update workflow. It:
 
 - runs on schedule (daily at 08:00 UTC) and on manual dispatch,
 - checks out the repository,
@@ -171,6 +172,18 @@ The repository includes `.github/workflows/openwiki-update.yml` as a copyable sc
 - opens a pull request with `peter-evans/create-pull-request` scoped to the `openwiki` directory.
 
 The workflow is a good reference for automated maintenance. The repo also contains a `checks.yml` workflow for CI (lint/format checks).
+
+The repository also includes `examples/openwiki-update.gitlab-ci.yml` as a copyable GitLab CI scheduled update job. It:
+
+- runs from a scheduled pipeline or a manually triggered web pipeline,
+- installs OpenWiki globally in a Node.js 22 container,
+- runs `openwiki --update --print`,
+- skips the rest of the job when `openwiki/` did not change,
+- commits changes to a generated `openwiki/update-$CI_PIPELINE_ID` branch,
+- pushes that branch back to the GitLab project, and
+- creates a merge request targeting the project's default branch through the GitLab API.
+
+GitLab users should configure protected CI/CD variables for the model provider key, for example `OPENROUTER_API_KEY`, and `OPENWIKI_GITLAB_TOKEN`. The GitLab token needs permission to push a branch and create merge requests in the target project.
 
 ## Things to watch when changing operations
 
@@ -188,6 +201,7 @@ The workflow is a good reference for automated maintenance. The repo also contai
 - `src/constants.ts`
 - `src/agent/utils.ts`
 - `src/agent/index.ts`
-- `.github/workflows/openwiki-update.yml`
+- `examples/openwiki-update.yml`
+- `examples/openwiki-update.gitlab-ci.yml`
 - `README.md`
 - Git evidence: commits `ceded10`, `f89b05d`, `8278c36`, `0fa1430`

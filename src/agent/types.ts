@@ -4,6 +4,7 @@ export type OpenWikiOutputMode = "local-wiki" | "repository";
 export type OpenWikiRunResult = {
   command: OpenWikiCommand;
   model: string;
+  skipped?: boolean;
 };
 
 export type OpenWikiRunEvent =

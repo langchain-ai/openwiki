@@ -5,10 +5,12 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
+import type { Event as ProtocolEvent } from "@langchain/protocol";
 import { createDeepAgent, LocalShellBackend } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import { ensureWriteConnectorSkill } from "../connectors/write-connector-skill.js";
-import { loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
+import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
+import { isFileNotFoundError } from "../fs-errors.js";
 import { openWikiLocalWikiDir } from "../openwiki-home.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
@@ -19,27 +21,28 @@ import type {
   OpenWikiRunResult,
 } from "./types.js";
 import {
-  ANTHROPIC_API_KEY_ENV_KEY,
-  BASETEN_API_KEY_ENV_KEY,
-  FIREWORKS_API_KEY_ENV_KEY,
+  ANTHROPIC_BASE_URL_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
-  getProviderConfig,
+  getProviderBaseUrlEnvKey,
   getProviderLabel,
   isValidModelId,
   normalizeModelId,
-  OPENAI_API_KEY_ENV_KEY,
+  OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
-  OPENROUTER_FALLBACK_MODEL_IDS,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  providerRequiresBaseUrl,
   resolveConfiguredProvider,
+  resolveProviderBaseUrl,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
   createOpenWikiContentSnapshot,
+  getUpdateNoopStatus,
   createRunContext,
+  shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
 
@@ -63,30 +66,49 @@ export async function runOpenWikiAgent(
   await ensureWriteConnectorSkill();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
+
+  if (command === "update" && shouldCheckUpdateNoop(options)) {
+    const noopStatus = await getUpdateNoopStatus(cwd);
+
+    if (noopStatus.shouldSkip) {
+      const message =
+        "No repository changes detected since the last OpenWiki update; skipping agent run.";
+      emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
+      options.onEvent?.({ type: "text", text: message });
+
+      return {
+        command,
+        model: noopStatus.model,
+        skipped: true,
+      };
+    }
+
+    emitDebug(options, `update.noop=false reason=${noopStatus.reason}`);
+  } else if (command === "update") {
+    emitDebug(options, "update.noop=false reason=user message provided");
+  }
+
   const provider = resolveConfiguredProvider();
-  const providerConfig = getProviderConfig(provider);
+  const providerBaseUrl = resolveProviderBaseUrl(provider);
   emitDebug(options, `provider=${provider}`);
-  if (providerConfig.baseURL) {
-    emitDebug(
-      options,
-      `provider.baseUrl=${JSON.stringify(providerConfig.baseURL)}`,
-    );
+  if (providerBaseUrl) {
+    emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
   }
   ensureProviderKey(provider);
   emitDebug(options, `credentials=${provider} key present`);
+  ensureProviderBaseUrl(provider);
   const modelId = resolveModelId(options, provider);
   emitDebug(options, `model=${modelId}`);
 
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
   try {
-    return await runOpenWikiAgentWithModelFallbacks(
+    return await runOpenWikiAgentCore(
       command,
       runtimeCwd,
       options,
       provider,
       modelId,
-      debugFetchCapture,
     );
   } catch (error) {
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
@@ -94,67 +116,6 @@ export async function runOpenWikiAgent(
   } finally {
     debugFetchCapture.restore();
   }
-}
-
-async function runOpenWikiAgentWithModelFallbacks(
-  command: OpenWikiCommand,
-  cwd: string,
-  options: OpenWikiRunOptions,
-  provider: OpenWikiProvider,
-  modelId: string,
-  debugFetchCapture: OpenRouterFetchCapture,
-): Promise<OpenWikiRunResult> {
-  const modelAttempts = createModelRoute(provider, modelId);
-  let lastError: unknown = null;
-
-  for (const [attemptIndex, attemptModelId] of modelAttempts.entries()) {
-    const attemptOptions = createAttemptOptions(options, attemptIndex);
-
-    debugFetchCapture.clearLastFailure();
-
-    if (attemptIndex > 0) {
-      emitDebug(
-        options,
-        `model.retry attempt=${attemptIndex + 1} model=${attemptModelId}`,
-      );
-    }
-
-    try {
-      return await runOpenWikiAgentCore(
-        command,
-        cwd,
-        attemptOptions,
-        provider,
-        attemptModelId,
-      );
-    } catch (error) {
-      const failure = debugFetchCapture.getLastFailure();
-
-      attachOpenRouterDebugInfo(error, failure);
-      lastError = error;
-
-      if (
-        !shouldRetryOpenRouterServerError(
-          failure,
-          attemptIndex,
-          modelAttempts.length,
-        )
-      ) {
-        throw error;
-      }
-
-      emitDebug(
-        options,
-        `model.retrying status=${failure?.response?.status ?? "unknown"} next=${
-          modelAttempts[attemptIndex + 1]
-        }`,
-      );
-    }
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("OpenWiki run failed after model fallback attempts.");
 }
 
 async function runOpenWikiAgentCore(
@@ -172,16 +133,8 @@ async function runOpenWikiAgentCore(
       ? null
       : await createOpenWikiContentSnapshot(cwd, outputMode);
   emitDebug(options, "openwiki.snapshot=created");
-  const model = await createModel(provider, modelId);
+  const model = createModel(provider, modelId);
   emitDebug(options, `model.provider=${provider}`);
-  if (provider === "openrouter") {
-    emitDebug(
-      options,
-      `openrouter.route=fallback models=${JSON.stringify(
-        createModelRoute(provider, modelId),
-      )}`,
-    );
-  }
   emitDebug(options, "model=initialized");
   const checkpointer = await createCheckpointer();
   emitDebug(options, `checkpointer=${formatUrlDebugValue(checkpointPath)}`);
@@ -210,15 +163,14 @@ async function runOpenWikiAgentCore(
     ],
   };
 
-  emitDebug(options, "stream=opening modes=messages,tools subgraphs=true");
-  const stream = await agent.stream(input, {
+  emitDebug(options, "stream=opening protocol=events version=v3");
+  const stream = await agent.streamEvents(input, {
     configurable: {
       thread_id: threadId,
     },
-    streamMode: ["messages", "tools"],
-    subgraphs: true,
+    version: "v3",
   });
-  emitDebug(options, "stream=started modes=messages,tools subgraphs=true");
+  emitDebug(options, "stream=started protocol=events version=v3");
 
   let unhandledChunkCount = 0;
 
@@ -227,7 +179,11 @@ async function runOpenWikiAgentCore(
 
     if (event) {
       options.onEvent?.(event);
-    } else if (options.debug && unhandledChunkCount < 3) {
+    } else if (
+      options.debug &&
+      !isProtocolStreamEvent(chunk) &&
+      unhandledChunkCount < 3
+    ) {
       emitDebug(
         options,
         `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
@@ -257,22 +213,6 @@ async function runOpenWikiAgentCore(
   return {
     command,
     model: modelId,
-  };
-}
-
-function createAttemptOptions(
-  options: OpenWikiRunOptions,
-  attemptIndex: number,
-): OpenWikiRunOptions {
-  if (attemptIndex === 0) {
-    return options;
-  }
-
-  return {
-    ...options,
-    threadId: options.threadId
-      ? `${options.threadId}-retry-${attemptIndex}`
-      : undefined,
   };
 }
 
@@ -366,20 +306,26 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
   });
 }
 
-function isFileNotFoundError(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    "code" in error &&
-    (error as NodeJS.ErrnoException).code === "ENOENT"
-  );
-}
-
 function ensureProviderKey(provider: OpenWikiProvider): void {
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   if (!process.env[apiKeyEnvKey]) {
     throw new Error(
       `${apiKeyEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+    );
+  }
+}
+
+function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
+  if (!providerRequiresBaseUrl(provider)) {
+    return;
+  }
+
+  if (!resolveProviderBaseUrl(provider)) {
+    const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider) ?? "base URL";
+
+    throw new Error(
+      `${baseUrlEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
     );
   }
 }
@@ -403,155 +349,75 @@ function resolveModelId(
   return modelId;
 }
 
-async function createModel(provider: OpenWikiProvider, modelId: string) {
+function createModel(provider: OpenWikiProvider, modelId: string) {
   if (provider === "anthropic") {
+    const baseURL = resolveProviderBaseUrl(provider);
+
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
     });
   }
 
   if (provider === "openrouter") {
-    const models = createModelRoute(provider, modelId);
-
     return new ChatOpenRouter({
       apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
-      models,
-      route: "fallback",
       siteName: "OpenWiki",
     });
   }
 
-  const providerConfig = getProviderConfig(provider);
+  const baseURL = resolveProviderBaseUrl(provider);
 
   return new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
-    configuration: providerConfig.baseURL
+    configuration: baseURL
       ? {
-          baseURL: providerConfig.baseURL,
+          baseURL,
         }
       : undefined,
     model: modelId,
+    useResponsesApi: provider === "openai",
   });
 }
 
-function createModelRoute(
-  provider: OpenWikiProvider,
-  modelId: string,
-): string[] {
-  if (provider !== "openrouter") {
-    return [modelId];
-  }
-
-  return Array.from(new Set([modelId, ...OPENROUTER_FALLBACK_MODEL_IDS]));
-}
-
-function shouldRetryOpenRouterServerError(
-  failure: OpenRouterFetchFailure | null,
-  attemptIndex: number,
-  attemptCount: number,
-): boolean {
-  const status = failure?.response?.status;
-
-  return (
-    attemptIndex < attemptCount - 1 &&
-    typeof status === "number" &&
-    status >= 500 &&
-    status < 600
-  );
-}
-
-type NormalizedStreamEvent = {
-  isSubgraph: boolean;
-  mode: string;
-  payload: unknown;
-};
-
 function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
-  const streamEvent = normalizeStreamEvent(chunk);
-
-  if (!streamEvent) {
+  if (!isProtocolStreamEvent(chunk)) {
     return null;
   }
 
-  if (streamEvent.mode === "messages") {
-    const text = extractMessageText(streamEvent.payload);
+  if (chunk.method === "messages") {
+    const text = extractMessageText(chunk.params.data);
 
     return text.length > 0
       ? {
-          source: streamEvent.isSubgraph ? "subgraph" : "main",
+          source: isSubgraphProtocolEvent(chunk) ? "subgraph" : "main",
           type: "text",
           text,
         }
       : null;
   }
 
-  if (streamEvent.mode === "tools") {
-    return parseToolStreamEvent(streamEvent.payload);
+  if (chunk.method === "tools") {
+    return parseToolStreamEvent(chunk.params.data);
   }
 
   return null;
 }
 
-function normalizeStreamEvent(chunk: unknown): NormalizedStreamEvent | null {
-  if (Array.isArray(chunk)) {
-    if (chunk.length < 2) {
-      return null;
-    }
-
-    const [mode, payload] = normalizeStreamChunk(chunk);
-
-    return typeof mode === "string"
-      ? {
-          isSubgraph: isSubgraphStreamChunk(chunk),
-          mode,
-          payload,
-        }
-      : null;
-  }
-
-  if (!isRecord(chunk)) {
-    return null;
-  }
-
-  const toolEvent = getStringRecordValue(chunk, "event");
-
-  if (toolEvent?.startsWith("on_tool_")) {
-    return {
-      isSubgraph: false,
-      mode: "tools",
-      payload: chunk,
-    };
-  }
-
-  const method = getStringRecordValue(chunk, "method");
-
-  if (!method) {
-    return null;
-  }
-
-  return {
-    isSubgraph: false,
-    mode: method,
-    payload: getProtocolEventPayload(chunk),
-  };
+function isProtocolStreamEvent(value: unknown): value is ProtocolEvent {
+  return (
+    isRecord(value) &&
+    value.type === "event" &&
+    typeof value.method === "string" &&
+    isRecord(value.params) &&
+    "data" in value.params
+  );
 }
 
-function normalizeStreamChunk(chunk: unknown[]): [unknown, unknown] {
-  if (Array.isArray(chunk[0]) && chunk.length >= 3) {
-    return [chunk[1], chunk[2]];
-  }
-
-  return [chunk[0], chunk[1]];
-}
-
-function isSubgraphStreamChunk(chunk: unknown[]): boolean {
-  if (!Array.isArray(chunk[0]) || chunk.length < 3) {
-    return false;
-  }
-
-  return chunk[0].length > 1;
+function isSubgraphProtocolEvent(event: ProtocolEvent): boolean {
+  return event.params.namespace.length > 1;
 }
 
 function extractMessageText(payload: unknown): string {
@@ -822,7 +688,7 @@ function getMessageRole(value: Record<string, unknown>): string | null {
   }
 
   try {
-    const role = getType.call(value);
+    const role: unknown = getType.call(value);
 
     return isMessageRole(role) ? role : null;
   } catch {
@@ -856,24 +722,6 @@ function isMessageRole(value: unknown): value is string {
     value === "system" ||
     value === "tool"
   );
-}
-
-function getProtocolEventPayload(event: Record<string, unknown>): unknown {
-  const params = event.params;
-
-  if (isRecord(params) && "data" in params) {
-    return params.data;
-  }
-
-  if ("data" in event) {
-    return event.data;
-  }
-
-  if ("payload" in event) {
-    return event.payload;
-  }
-
-  return event;
 }
 
 function parseToolStreamEvent(payload: unknown): OpenWikiRunEvent | null {
@@ -1197,7 +1045,7 @@ function getOpenRouterMessageChars(messages: unknown): number | undefined {
     return undefined;
   }
 
-  return messages.reduce((total, message) => {
+  return messages.reduce<number>((total, message) => {
     if (!isRecord(message)) {
       return total;
     }
@@ -1212,7 +1060,7 @@ function countMessageContentChars(content: unknown): number {
   }
 
   if (Array.isArray(content)) {
-    return content.reduce(
+    return content.reduce<number>(
       (total, block) => total + countMessageContentChars(block),
       0,
     );
@@ -1246,7 +1094,7 @@ async function readResponseBodyPreview(response: Response): Promise<string> {
   }
 }
 
-function sanitizeOpenRouterResponseBody(body: string): string {
+export function sanitizeOpenRouterResponseBody(body: string): string {
   return body.replace(
     /"([^"]*(?:api[-_]?key|authorization|bearer|password|secret|token|user_id)[^"]*)"\s*:\s*"[^"]*"/giu,
     (_, key: string) => `${JSON.stringify(key)}:"[REDACTED]"`,
@@ -1283,22 +1131,9 @@ function formatOpenRouterDebugUrl(value: string): string {
 }
 
 function formatEnvironmentDebug(): string {
-  const keys = [
-    OPENWIKI_PROVIDER_ENV_KEY,
-    BASETEN_API_KEY_ENV_KEY,
-    FIREWORKS_API_KEY_ENV_KEY,
-    OPENAI_API_KEY_ENV_KEY,
-    ANTHROPIC_API_KEY_ENV_KEY,
-    OPENROUTER_API_KEY_ENV_KEY,
-    OPENWIKI_MODEL_ID_ENV_KEY,
-    "LANGCHAIN_TRACING_V2",
-    "LANGCHAIN_PROJECT",
-    "LANGCHAIN_ENDPOINT",
-  ];
-
-  return keys
-    .map((key) => `${key}:${formatDebugValue(key, process.env[key])}`)
-    .join(" ");
+  return DEBUG_ENV_KEYS.map(
+    (key) => `${key}:${formatDebugValue(key, process.env[key])}`,
+  ).join(" ");
 }
 
 function formatDebugValue(key: string, value: string | undefined): string {
@@ -1306,7 +1141,11 @@ function formatDebugValue(key: string, value: string | undefined): string {
     return "unset";
   }
 
-  if (key === "LANGCHAIN_ENDPOINT") {
+  if (
+    key === "LANGCHAIN_ENDPOINT" ||
+    key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+  ) {
     return formatUrlDebugValue(value);
   }
 
