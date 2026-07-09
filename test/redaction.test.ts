@@ -55,6 +55,13 @@ describe("sanitizeDiagnosticText", () => {
     expect(result).toContain("Bearer [REDACTED]");
   });
 
+  test("redacts Merge Gateway mg_ tokens with the Merge Gateway label", () => {
+    const result = sanitizeDiagnosticText("using mg_deadbeef00 now");
+
+    expect(result).not.toContain("mg_deadbeef00");
+    expect(result).toContain("[REDACTED:MERGE_GATEWAY_API_KEY]");
+  });
+
   test("redacts LangSmith ls_/lsv_ keys", () => {
     const result = sanitizeDiagnosticText("langsmith lsv_1234abcd tracing");
 
