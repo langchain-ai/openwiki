@@ -8,6 +8,7 @@ import {
   isValidProvider,
   normalizeModelId,
   normalizeProvider,
+  providerRequiresApiKey,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
 } from "../src/constants.ts";
@@ -18,6 +19,10 @@ describe("isValidModelId", () => {
     expect(isValidModelId("z-ai/glm-5.2")).toBe(true);
     expect(isValidModelId("accounts/fireworks/models/glm-5p2")).toBe(true);
     expect(isValidModelId("gpt-5.4-mini")).toBe(true);
+    expect(isValidModelId("gemini-2.5-pro")).toBe(true);
+    expect(isValidModelId("anthropic.claude-sonnet-4-20250514-v1:0")).toBe(
+      true,
+    );
   });
 
   test("rejects empty, whitespace-only, and over-long ids", () => {
@@ -56,7 +61,21 @@ describe("normalizeProvider / isValidProvider", () => {
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
+    expect(isValidProvider("vertexai")).toBe(true);
+    expect(isValidProvider("bedrock")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
+  });
+});
+
+describe("providerRequiresApiKey", () => {
+  test("key-based providers require an api key", () => {
+    expect(providerRequiresApiKey("anthropic")).toBe(true);
+    expect(providerRequiresApiKey("openrouter")).toBe(true);
+    expect(providerRequiresApiKey("vertexai")).toBe(true);
+  });
+
+  test("bedrock relies on the AWS default credential chain", () => {
+    expect(providerRequiresApiKey("bedrock")).toBe(false);
   });
 });
 
@@ -129,6 +148,13 @@ describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
+  });
+
+  test("returns the first preset for vertexai and bedrock", () => {
+    expect(getDefaultModelId("vertexai")).toBe("gemini-2.5-flash");
+    expect(getDefaultModelId("bedrock")).toBe(
+      "anthropic.claude-haiku-4-5-20251001-v1:0",
+    );
   });
 
   test(

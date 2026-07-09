@@ -1,5 +1,7 @@
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
+  AWS_ACCESS_KEY_ID_ENV_KEY,
+  AWS_SECRET_ACCESS_KEY_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
@@ -24,6 +26,8 @@ export function sanitizeDiagnosticText(value: string): string {
     OPENAI_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    AWS_ACCESS_KEY_ID_ENV_KEY,
+    AWS_SECRET_ACCESS_KEY_ENV_KEY,
     "LANGSMITH_API_KEY",
   ]) {
     const secret = process.env[key];

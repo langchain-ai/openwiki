@@ -14,6 +14,7 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   type OpenWikiProvider,
+  providerRequiresApiKey,
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
@@ -46,7 +47,8 @@ export function needsCredentialSetup(
 
   return (
     !hasValidConfiguredProvider() ||
-    !process.env[apiKeyEnvKey] ||
+    (providerRequiresApiKey(provider) &&
+      (!apiKeyEnvKey || !process.env[apiKeyEnvKey])) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
@@ -381,7 +383,11 @@ export function InitSetup({
       }
 
       if (nextApiKey !== null) {
-        updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+        const apiKeyEnvKey = getProviderApiKeyEnvKey(nextProvider);
+
+        if (apiKeyEnvKey) {
+          updates[apiKeyEnvKey] = nextApiKey;
+        }
       }
 
       if (nextBaseUrl !== null) {
@@ -455,21 +461,29 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
-        <SetupStep
-          label="Provider key"
-          state={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "done"
-              : step === "api-key"
-                ? "current"
-                : "pending"
-          }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
-        />
+        {needsApiKeyStep(provider) ? (
+          <SetupStep
+            label="Provider key"
+            state={
+              process.env[getProviderApiKeyEnvKey(provider)!]
+                ? "done"
+                : step === "api-key"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              process.env[getProviderApiKeyEnvKey(provider)!]
+                ? "available from environment"
+                : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
+            }
+          />
+        ) : (
+          <SetupStep
+            label="Credentials"
+            state="optional"
+            detail={getExternalCredentialsDetail(provider)}
+          />
+        )}
         {providerRequiresBaseUrl(provider) ? (
           <SetupStep
             label="Base URL"
@@ -751,7 +765,10 @@ function getInitialStep(
     return "provider";
   }
 
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (
+    needsApiKeyStep(provider) &&
+    !process.env[getProviderApiKeyEnvKey(provider)!]
+  ) {
     return "api-key";
   }
 
@@ -773,11 +790,21 @@ function getInitialStep(
   return null;
 }
 
+function needsApiKeyStep(provider: OpenWikiProvider): boolean {
+  return (
+    providerRequiresApiKey(provider) &&
+    getProviderApiKeyEnvKey(provider) !== undefined
+  );
+}
+
 function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
+  if (
+    needsApiKeyStep(provider) &&
+    !process.env[getProviderApiKeyEnvKey(provider)!]
+  ) {
     return "api-key";
   }
 
@@ -920,7 +947,20 @@ function moveSelectionIndex(
 }
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "vertexai" ||
+    provider === "bedrock"
+    ? "a"
+    : "an";
+}
+
+function getExternalCredentialsDetail(provider: OpenWikiProvider): string {
+  if (provider === "bedrock") {
+    return "configured via AWS credentials (aws configure / IAM role)";
+  }
+
+  return "configured via your environment";
 }
 
 function sanitizeInputChunk(value: string): string {

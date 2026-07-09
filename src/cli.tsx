@@ -40,6 +40,7 @@ import {
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPEN_WIKI_DIR,
+  providerRequiresApiKey,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
   OPENWIKI_VERSION,
@@ -240,7 +241,12 @@ function App({ command }: AppProps) {
 
     const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
 
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (
+      apiKeyEnvKey !== undefined &&
+      providerRequiresApiKey(sessionProvider) &&
+      !process.env[apiKeyEnvKey] &&
+      !process.stdin.isTTY
+    ) {
       setRunState({
         status: "error",
         message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,

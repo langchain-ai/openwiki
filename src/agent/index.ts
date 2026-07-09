@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatBedrockConverse } from "@langchain/aws";
+import { ChatVertexAI } from "@langchain/google-vertexai";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -18,10 +20,14 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  AWS_REGION_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
+  GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
+  GOOGLE_CLOUD_PROJECT_ENV_KEY,
+  GOOGLE_VERTEX_LOCATION_ENV_KEY,
   isValidModelId,
   normalizeModelId,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -29,6 +35,7 @@ import {
   OPENROUTER_BASE_URL,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  providerRequiresApiKey,
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
@@ -275,11 +282,15 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
 }
 
 function ensureProviderKey(provider: OpenWikiProvider): void {
+  if (!providerRequiresApiKey(provider)) {
+    return;
+  }
+
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
-  if (!process.env[apiKeyEnvKey]) {
+  if (!apiKeyEnvKey || !process.env[apiKeyEnvKey]) {
     throw new Error(
-      `${apiKeyEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      `${apiKeyEnvKey ?? "API key"} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
     );
   }
 }
@@ -322,8 +333,27 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
     const baseURL = resolveProviderBaseUrl(provider);
 
     return new ChatAnthropic(modelId, {
-      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      apiKey: process.env[getProviderApiKeyEnvKey(provider) ?? ""],
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+    });
+  }
+
+  if (provider === "vertexai") {
+    const project = process.env[GOOGLE_CLOUD_PROJECT_ENV_KEY];
+    const location = process.env[GOOGLE_VERTEX_LOCATION_ENV_KEY];
+
+    return new ChatVertexAI(modelId, {
+      ...(project ? { project } : {}),
+      ...(location ? { location } : {}),
+    });
+  }
+
+  if (provider === "bedrock") {
+    const region = process.env[AWS_REGION_ENV_KEY];
+
+    return new ChatBedrockConverse({
+      model: modelId,
+      ...(region ? { region } : {}),
     });
   }
 
@@ -339,7 +369,7 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
   const baseURL = resolveProviderBaseUrl(provider);
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey: process.env[getProviderApiKeyEnvKey(provider) ?? ""],
     configuration: baseURL
       ? {
           baseURL,
@@ -1115,6 +1145,11 @@ function formatDebugValue(key: string, value: string | undefined): string {
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   ) {
     return formatUrlDebugValue(value);
+  }
+
+  if (key === GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY) {
+    // A path to a service account JSON file, not a secret.
+    return `set(value=${JSON.stringify(value)})`;
   }
 
   if (key.endsWith("_API_KEY")) {

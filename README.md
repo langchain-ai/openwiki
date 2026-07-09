@@ -71,7 +71,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Customizing
 
-OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, and Anthropic out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
+OpenWiki supports OpenRouter, Fireworks, Baseten, OpenAI, an OpenAI-compatible provider, Anthropic, Vertex AI, and AWS Bedrock out of the box. By default, there are a few models pre-defined (GLM 5.2, Kimi K2.6, Sonnet 5, etc) but for each inference provider, OpenWiki will allow you to specify your own custom model ID.
 
 ### Alternative base URLs
 
@@ -101,6 +101,45 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
+
+### Vertex AI
+
+The `vertexai` provider targets Google Cloud Vertex AI using a service account.
+OpenWiki persists the path to your service account JSON key as
+`GOOGLE_APPLICATION_CREDENTIALS` (the same variable the Google Cloud SDK and
+`gcloud auth application-default login` use):
+
+```bash
+OPENWIKI_PROVIDER=vertexai
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+OPENWIKI_MODEL_ID=gemini-2.5-pro
+```
+
+Optionally override the resolved GCP project and Vertex location:
+
+```bash
+GOOGLE_CLOUD_PROJECT=your-gcp-project
+GOOGLE_VERTEX_LOCATION=us-central1
+```
+
+### AWS Bedrock
+
+The `bedrock` provider targets AWS Bedrock via the `Converse` API. Bedrock does
+not use a single persisted API key; instead OpenWiki relies on the standard AWS
+credential chain (`@aws-sdk/credential-provider-node`); configure credentials
+the same way you would for the AWS CLI — environment variables, `aws configure`,
+an IAM role, or a profile:
+
+```bash
+OPENWIKI_PROVIDER=bedrock
+AWS_ACCESS_KEY_ID=your-access-key-id
+AWS_SECRET_ACCESS_KEY=your-secret-access-key
+AWS_REGION=us-east-1
+OPENWIKI_MODEL_ID=anthropic.claude-sonnet-4-20250514-v1:0
+```
+
+The model ID is a Bedrock foundation model ID (for example
+`anthropic.claude-sonnet-4-20250514-v1:0` or `amazon.nova-pro-v1:0`).
 
 If there's an inference provider or model you'd like to see added, please open a PR!
 

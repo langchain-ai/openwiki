@@ -8,6 +8,13 @@ export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
+  "GOOGLE_APPLICATION_CREDENTIALS";
+export const GOOGLE_CLOUD_PROJECT_ENV_KEY = "GOOGLE_CLOUD_PROJECT";
+export const GOOGLE_VERTEX_LOCATION_ENV_KEY = "GOOGLE_VERTEX_LOCATION";
+export const AWS_ACCESS_KEY_ID_ENV_KEY = "AWS_ACCESS_KEY_ID";
+export const AWS_SECRET_ACCESS_KEY_ENV_KEY = "AWS_SECRET_ACCESS_KEY";
+export const AWS_REGION_ENV_KEY = "AWS_REGION";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const DEFAULT_PROVIDER = "openrouter";
@@ -16,10 +23,12 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "bedrock"
   | "fireworks"
   | "openai"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "vertexai";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -29,7 +38,13 @@ export type ProviderModelOption = {
 };
 
 type ProviderConfig = {
-  apiKeyEnvKey: string;
+  /**
+   * Environment variable holding the provider's primary credential. Optional
+   * for providers that authenticate through an external default credential
+   * chain (for example AWS Bedrock, which reads the standard AWS environment
+   * variables or IAM role) instead of a single persisted key.
+   */
+  apiKeyEnvKey?: string;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -41,6 +56,12 @@ type ProviderConfig = {
    * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
    */
   requiresBaseUrl?: boolean;
+  /**
+   * When false, the provider does not require (and OpenWiki does not persist) a
+   * single API key, because it authenticates through an external default
+   * credential chain. Defaults to true.
+   */
+  requiresApiKey?: boolean;
   label: string;
   modelOptions: ProviderModelOption[];
 };
@@ -52,6 +73,8 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-compatible",
   "anthropic",
+  "vertexai",
+  "bedrock",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -101,6 +124,29 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-opus-4-8", label: "Opus" },
     ],
   },
+  vertexai: {
+    apiKeyEnvKey: GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
+    label: "Vertex AI",
+    modelOptions: [
+      { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+      { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+    ],
+  },
+  bedrock: {
+    requiresApiKey: false,
+    label: "Bedrock",
+    modelOptions: [
+      {
+        id: "anthropic.claude-haiku-4-5-20251001-v1:0",
+        label: "Claude Haiku 4.5",
+      },
+      {
+        id: "anthropic.claude-sonnet-4-20250514-v1:0",
+        label: "Claude Sonnet 4",
+      },
+      { id: "amazon.nova-pro-v1:0", label: "Nova Pro" },
+    ],
+  },
   openrouter: {
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,
     baseURL: OPENROUTER_BASE_URL,
@@ -132,8 +178,18 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).label;
 }
 
-export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
+export function getProviderApiKeyEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+/**
+ * Whether the provider needs a single persisted API key. Providers that
+ * authenticate through an external default credential chain return false.
+ */
+export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).requiresApiKey !== false;
 }
 
 /**
