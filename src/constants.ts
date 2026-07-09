@@ -233,4 +233,4 @@ export function isValidModelId(value: string): boolean {
   );
 }
 
-export const OPENWIKI_VERSION = "0.0.3";
+export const OPENWIKI_VERSION = "0.0.4";
