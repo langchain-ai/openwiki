@@ -30,6 +30,8 @@ Chat runs skip metadata writes entirely.
 
 Base URLs are resolved through `resolveProviderBaseUrl()` in `src/constants.ts`, which prefers a provider's alternative base URL environment variable (`baseUrlEnvKey`) over the built-in default before falling back to the SDK's own default endpoint. Providers marked `requiresBaseUrl` are validated at startup by `ensureProviderBaseUrl()`.
 
+Provider retry attempts are resolved through `resolveProviderRetryAttempts()` and passed to the LangChain model client's `maxRetries` option. The value is the number of retries after the first provider request; unset values default to 3 retries.
+
 ## Prompting strategy
 
 `src/agent/prompt.ts` encodes the product rules directly into the system prompt. The agent is instructed to:
@@ -102,9 +104,7 @@ That metadata is later used to scope update runs.
 
 ## Model errors
 
-The agent runtime uses only the selected provider and model for a run. If that
-request fails, OpenWiki surfaces the provider error and stops instead of
-retrying with another model.
+The agent runtime uses only the selected provider and model for a run. Transient request failures use the LangChain model client's retry handling, configurable with `OPENWIKI_PROVIDER_RETRY_ATTEMPTS`. If the selected provider/model still fails, OpenWiki surfaces the provider error and stops instead of retrying with another model.
 
 ## Why this matters
 

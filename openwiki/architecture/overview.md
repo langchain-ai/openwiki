@@ -64,7 +64,7 @@ The current design reflects a documentation product rather than a general-purpos
 - The CLI owns user experience and credential bootstrap so the tool is install-and-run friendly.
 - Git evidence is collected in the host process before the agent starts so the model sees stable repository context.
 - Provider support is centralized in `src/constants.ts` so adding a provider is a single-config change plus a model-creation branch.
-- Model execution is fail-fast: if the selected provider/model request fails, OpenWiki surfaces that error instead of continuing with another model.
+- Model execution is provider-stable: transient request failures can retry through the selected LangChain model client, but OpenWiki surfaces the final error instead of continuing with another model.
 - The content-snapshot check prevents metadata churn when an update run produces no documentation changes, which is important for scheduled CI workflows.
 - Auto-exit for init/update makes the CLI usable in both interactive and one-shot contexts without requiring `--print`.
 

@@ -33,6 +33,8 @@ import {
   OPENWIKI_TAVILY_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
+  resolveProviderRetryAttempts,
 } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
 
@@ -72,6 +74,7 @@ export const MANAGED_ENV_KEYS = [
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   OPENWIKI_NOTION_TOKEN_ENV_KEY,
   OPENWIKI_NOTION_MCP_CLIENT_ID_ENV_KEY,
   OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY,
@@ -222,7 +225,9 @@ function createCredentialDiagnostic(
         ? getModelWarnings(value)
         : key === OPENWIKI_PROVIDER_ENV_KEY
           ? getProviderWarnings(value)
-          : getCredentialWarnings(value),
+          : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
+            ? getRetryAttemptsWarnings(value)
+            : getCredentialWarnings(value),
   };
 }
 
@@ -249,6 +254,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
   return (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
+    key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   );
@@ -290,6 +296,18 @@ function getModelWarnings(value: string): string[] {
 
 function getProviderWarnings(value: string): string[] {
   return normalizeProvider(value) === null ? ["invalid provider"] : [];
+}
+
+function getRetryAttemptsWarnings(value: string): string[] {
+  try {
+    resolveProviderRetryAttempts({
+      [OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY]: value,
+    });
+
+    return [];
+  } catch {
+    return ["invalid retry attempts"];
+  }
 }
 
 async function readOpenWikiEnv(): Promise<EnvMap> {
