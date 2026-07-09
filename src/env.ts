@@ -332,14 +332,17 @@ export function parseEnv(content: string): EnvMap {
       continue;
     }
 
-    const equalsIndex = line.indexOf("=");
+    // Handle "export KEY=value" syntax
+    const lineToParse = line.startsWith("export ") ? line.slice(7) : line;
+
+    const equalsIndex = lineToParse.indexOf("=");
 
     if (equalsIndex <= 0) {
       continue;
     }
 
-    const key = line.slice(0, equalsIndex).trim();
-    const rawValue = line.slice(equalsIndex + 1).trim();
+    const key = lineToParse.slice(0, equalsIndex).trim();
+    const rawValue = lineToParse.slice(equalsIndex + 1).trim();
 
     if (!/^[A-Z_][A-Z0-9_]*$/u.test(key)) {
       continue;
