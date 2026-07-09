@@ -1,6 +1,6 @@
 # OpenWiki
 
-OpenWiki is a CLI that writes and maintains documentation for your codebase, built specifically for agents. It can also ingest local knowledge sources through built-in connectors and synthesize them into a local wiki.
+OpenWiki is a CLI that writes and maintains agent wikis for codebases or purpose memory. It's built specifically for agents, can ingest local knowledge sources through built-in connectors or git repositories and synthesize them into a local wiki.
 
 ![OpenWiki](https://raw.githubusercontent.com/langchain-ai/openwiki/main/static/openwiki.png)
 
