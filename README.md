@@ -202,6 +202,22 @@ OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
 
+By default the provider authenticates with the static `OPENAI_COMPATIBLE_API_KEY`.
+For endpoints that accept a Microsoft Entra ID access token instead of a key —
+such as Azure OpenAI's OpenAI-compatible `/openai/v1` API — set
+`OPENAI_COMPATIBLE_AUTH=entra-id` and omit the API key. OpenWiki then obtains (and
+refreshes) a token via Azure `DefaultAzureCredential`, so any standard mechanism
+works: an `az login` session, environment credentials, or managed / workload
+identity on Azure or in CI. The credential needs the `Cognitive Services OpenAI
+User` role on the resource.
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_BASE_URL=https://your-resource.openai.azure.com/openai/v1
+OPENAI_COMPATIBLE_AUTH=entra-id
+OPENWIKI_MODEL_ID=your-deployment-name
+```
+
 ### OpenAI (ChatGPT login)
 
 The `openai-chatgpt` provider calls OpenAI's Codex backend using your ChatGPT

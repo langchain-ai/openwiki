@@ -1,5 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { formatEnv, parseEnv } from "../src/env.ts";
+import {
+  CREDENTIAL_DIAGNOSTIC_ENV_KEYS,
+  formatEnv,
+  MANAGED_ENV_KEYS,
+  parseEnv,
+} from "../src/env.ts";
+import { OPENAI_COMPATIBLE_AUTH_ENV_KEY } from "../src/constants.ts";
 
 describe("parseEnv", () => {
   test("parses simple KEY=value lines", () => {
@@ -85,5 +91,20 @@ describe("parseEnv <-> formatEnv round-trip", () => {
     };
 
     expect(parseEnv(formatEnv(original))).toEqual(original);
+  });
+});
+
+describe("OPENAI_COMPATIBLE_AUTH env key", () => {
+  const KEY = OPENAI_COMPATIBLE_AUTH_ENV_KEY;
+
+  test("is managed and surfaced in credential diagnostics", () => {
+    expect(MANAGED_ENV_KEYS).toContain(KEY);
+    expect(CREDENTIAL_DIAGNOSTIC_ENV_KEYS).toContain(KEY);
+  });
+
+  test("survives a format -> parse round-trip", () => {
+    expect(parseEnv(formatEnv({ [KEY]: "entra-id" }))).toEqual({
+      [KEY]: "entra-id",
+    });
   });
 });

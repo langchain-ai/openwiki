@@ -1,7 +1,8 @@
 import { shouldCheckUpdateNoop, getUpdateNoopStatus } from "./agent/utils.js";
 import type { CliCommand } from "./commands.js";
 import {
-  getProviderApiKeyEnvKey,
+  describeMissingCredential,
+  hasProviderCredential,
   resolveConfiguredProvider,
 } from "./constants.js";
 
@@ -37,10 +38,8 @@ export async function resolveStartupCommand(
     (command.print || !isStdinTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
 
-    if (!hasProviderKey) {
+    if (!hasProviderCredential(provider)) {
       if (
         command.print &&
         (await canSkipCleanUpdateBeforeCredentials(
@@ -54,7 +53,7 @@ export async function resolveStartupCommand(
       return {
         kind: "error",
         exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${describeMissingCredential(provider)} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
       };
     }
   }

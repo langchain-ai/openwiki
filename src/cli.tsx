@@ -59,10 +59,12 @@ import {
   type ScheduleMutationResult,
 } from "./schedules.js";
 import {
+  describeMissingCredential,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  hasProviderCredential,
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
@@ -380,12 +382,10 @@ function App({ command }: AppProps) {
       return;
     }
 
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(sessionProvider);
-
-    if (!process.env[apiKeyEnvKey] && !process.stdin.isTTY) {
+    if (!hasProviderCredential(sessionProvider) && !process.stdin.isTTY) {
       setRunState({
         status: "error",
-        message: `${apiKeyEnvKey} is required. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${describeMissingCredential(sessionProvider)} is required. Run openwiki in an interactive terminal to save credentials.`,
       });
       return;
     }

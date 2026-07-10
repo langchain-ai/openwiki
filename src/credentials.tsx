@@ -12,6 +12,7 @@ import {
   getProviderBaseUrlEnvKey,
   getProviderLabel,
   getProviderModelOptions,
+  hasProviderCredential,
   isValidBaseUrl,
   isValidModelId,
   normalizeProvider,
@@ -374,7 +375,7 @@ export function needsCredentialSetup(
 function needsCredentialStep(provider: OpenWikiProvider): boolean {
   return providerUsesOAuth(provider)
     ? !hasValidStoredToken()
-    : !process.env[getProviderApiKeyEnvKey(provider)];
+    : !hasProviderCredential(provider);
 }
 
 /** The step that collects the provider's primary credential. */
@@ -405,7 +406,7 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
 function isCredentialConfigured(provider: OpenWikiProvider): boolean {
   return providerUsesOAuth(provider)
     ? hasValidStoredToken()
-    : Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
+    : hasProviderCredential(provider);
 }
 
 function getCredentialSetupDetail(
