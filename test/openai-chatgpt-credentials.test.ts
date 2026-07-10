@@ -102,7 +102,11 @@ describe("oauth credential step transitions", () => {
 
     expect(getInitialStep(null, "openai-chatgpt")).toBeNull();
     expect(getNextStepAfterProvider("openai-chatgpt", null)).toBeNull();
-    expect(needsCredentialSetup(null)).toBe(false);
+    // Use code mode for assertion since the default (personal) mode also checks
+    // whether onboarding is complete by reading ~/.openwiki/onboarding.json,
+    // which would make this test depend on the machine's home directory instead
+    // of just the credential logic.
+    expect(needsCredentialSetup(null, "code")).toBe(false);
   });
 });
 
