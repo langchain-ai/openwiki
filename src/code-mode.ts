@@ -1,16 +1,21 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { isFileNotFoundError } from "./fs-errors.js";
 
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
 const DEFAULT_CODE_MODE_CRON = "0 8 * * *";
+
+// Root agent-instruction files OpenWiki keeps pointed at the generated wiki.
+// Each is created when missing and refreshed in place when already present.
+const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
 
 export async function ensureCodeModeRepoSetup(
   cwd: string,
   cronExpression = DEFAULT_CODE_MODE_CRON,
 ): Promise<void> {
   await writeCodeModeWorkflow(cwd, cronExpression);
-  await writeCodeModeAgentSnippet(cwd);
+  await writeCodeModeAgentSnippets(cwd);
 }
 
 async function writeCodeModeWorkflow(
@@ -27,9 +32,20 @@ async function writeCodeModeWorkflow(
   await writeFile(workflowPath, createCodeModeWorkflow(cronExpression), "utf8");
 }
 
-async function writeCodeModeAgentSnippet(cwd: string): Promise<void> {
-  const agentsPath = path.join(cwd, "AGENTS.md");
+async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
   const snippet = createCodeModeAgentsSnippet();
+
+  await Promise.all(
+    CODE_MODE_AGENT_FILES.map((fileName) =>
+      writeCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
+    ),
+  );
+}
+
+async function writeCodeModeAgentSnippet(
+  agentsPath: string,
+  snippet: string,
+): Promise<void> {
   let currentContent = "";
 
   try {
@@ -89,7 +105,11 @@ jobs:
       - name: Create OpenWiki update pull request
         uses: peter-evans/create-pull-request@v7
         with:
-          add-paths: openwiki
+          add-paths: |
+            openwiki
+            AGENTS.md
+            CLAUDE.md
+            .github/workflows/openwiki-update.yml
           branch: openwiki/update
           commit-message: "docs: update OpenWiki"
           title: "docs: update OpenWiki"
@@ -110,12 +130,4 @@ This repository uses OpenWiki for recurring code documentation. Start with \`ope
 The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
 
 ${OPENWIKI_AGENTS_SNIPPET_END}`;
-}
-
-function isFileNotFoundError(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    "code" in error &&
-    (error as NodeJS.ErrnoException).code === "ENOENT"
-  );
 }
