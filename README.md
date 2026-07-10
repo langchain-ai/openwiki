@@ -131,7 +131,7 @@ ignore that HTTPS override and keep using the local loopback callback,
 
 Use `openwiki personal --init` for the local personal brain wiki or `openwiki code --init` for repository documentation. Bare `openwiki --init` is no longer supported because init needs an explicit mode. `openwiki --update` defaults to personal mode unless you pass `code`, `personal`, or `--mode`.
 
-`openwiki` will automatically append prompting to your `AGENTS.md` and/or `CLAUDE.md` files to instruct your coding agent to reference it when searching for context. If the file does not already exist in your repository, OpenWiki will create it for you.
+On each `code` run, `openwiki` maintains both an `AGENTS.md` and a `CLAUDE.md` at the repository root, adding prompting that instructs your coding agent to reference the wiki when searching for context. Each file is created if it does not already exist. If a file is present, OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of your content untouched (appending the block the first time). The scheduled GitHub Actions workflow includes these files, along with the workflow itself, in the documentation pull request.
 
 On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
 
