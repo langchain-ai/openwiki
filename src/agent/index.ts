@@ -61,6 +61,7 @@ import {
   shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
+import { normalizeOkfBundle } from "./okf/index.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -222,6 +223,11 @@ async function runOpenWikiAgentCore(
   }
   emitDebug(options, "stream=completed");
   await chmodIfExists(checkpointPath, 0o600);
+
+  if (command !== "chat") {
+    await normalizeOkfBundle({ cwd, outputMode, command, model: modelId });
+    emitDebug(options, "okf=normalized");
+  }
 
   if (
     command !== "chat" &&

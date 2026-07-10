@@ -254,7 +254,11 @@ async function addDirectoryToSnapshot(
   }
 }
 
-function getWikiContentRoot(
+/**
+ * Resolves the wiki content root for an output mode: the repository's openwiki/
+ * directory for repository mode, or the wiki root itself for local-wiki.
+ */
+export function getWikiContentRoot(
   cwd: string,
   outputMode: OpenWikiOutputMode,
 ): string {
