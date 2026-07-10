@@ -173,7 +173,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Fireworks, Baseten, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.5`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Fireworks, Baseten, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -207,7 +207,8 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 The `openai-chatgpt` provider calls OpenAI's Codex backend using your ChatGPT
 subscription instead of a metered API key. Model usage draws on your ChatGPT
 Plus/Pro/Team plan's included Codex usage rather than per-token API billing. It
-serves the same models as the `openai` provider (`gpt-5.4-mini`, `gpt-5.5`).
+serves the same models as the `openai` provider (`gpt-5.6-terra`,
+`gpt-5.6-luna`, `gpt-5.6-sol`, `gpt-5.5`, `gpt-5.4-mini`).
 
 Instead of pasting an API key, run the setup wizard and complete a browser
 login:

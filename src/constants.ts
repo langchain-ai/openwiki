@@ -134,6 +134,9 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
     label: "OpenAI",
     modelOptions: [
+      { id: "gpt-5.6-terra", label: "5.6 Terra" },
+      { id: "gpt-5.6-luna", label: "5.6 Luna" },
+      { id: "gpt-5.6-sol", label: "5.6 Sol" },
       { id: "gpt-5.5", label: "5.5" },
       { id: "gpt-5.4-mini", label: "5.4 mini" },
     ],
@@ -143,6 +146,9 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     authMethod: "oauth",
     label: "OpenAI (ChatGPT login)",
     modelOptions: [
+      { id: "gpt-5.6-terra", label: "5.6 Terra" },
+      { id: "gpt-5.6-luna", label: "5.6 Luna" },
+      { id: "gpt-5.6-sol", label: "5.6 Sol" },
       { id: "gpt-5.5", label: "5.5" },
       { id: "gpt-5.4-mini", label: "5.4 mini" },
     ],

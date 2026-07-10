@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   CHATGPT_TOKEN_REFRESH_THRESHOLD_MS,
+  CODEX_ORIGINATOR,
+  CODEX_RESPONSES_LITE_HEADER,
+  CODEX_USER_AGENT,
   type CodexTokens,
   codexTokensToEnv,
+  createCodexHeaders,
+  createCodexResponsesFetch,
+  sanitizeCodexResponsesPayload,
   decodeChatGptIdentity,
   formatChatGptAccount,
   isChatGptTokenExpired,
@@ -59,6 +65,105 @@ function stubTokenResponse(
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe("Codex Responses request headers", () => {
+  test("uses the Codex CLI request identity for the authenticated account", () => {
+    expect(CODEX_ORIGINATOR).toBe("codex_cli_rs");
+    expect(CODEX_USER_AGENT).toBe("codex_cli_rs/0.0.0");
+    expect(createCodexHeaders("acct_123", "gpt-5.5")).toEqual({
+      "chatgpt-account-id": "acct_123",
+      originator: "codex_cli_rs",
+      "user-agent": "codex_cli_rs/0.0.0",
+      "OpenAI-Beta": "responses=experimental",
+    });
+  });
+
+  test("enables Responses Lite for the GPT-5.6 model family", () => {
+    expect(createCodexHeaders("acct_123", "gpt-5.6-luna")).toMatchObject({
+      [CODEX_RESPONSES_LITE_HEADER]: "true",
+    });
+    expect(createCodexHeaders("acct_123", "gpt-5.5")).not.toHaveProperty(
+      CODEX_RESPONSES_LITE_HEADER,
+    );
+  });
+});
+
+describe("Codex Responses payloads", () => {
+  test("lifts system and developer input into instructions", () => {
+    const payload: unknown = JSON.parse(
+      sanitizeCodexResponsesPayload(
+        JSON.stringify({
+          input: [
+            { role: "system", content: "Follow the repository rules." },
+            {
+              role: "developer",
+              content: [{ type: "input_text", text: "Use concise prose." }],
+            },
+            { role: "user", content: "Document this project." },
+          ],
+        }),
+      ),
+    );
+
+    expect(payload).toEqual({
+      input: [{ role: "user", content: "Document this project." }],
+      instructions: "Follow the repository rules.\n\nUse concise prose.",
+    });
+  });
+
+  test("leaves malformed and unrelated payloads unchanged", () => {
+    expect(sanitizeCodexResponsesPayload("not-json")).toBe("not-json");
+    expect(sanitizeCodexResponsesPayload('{"input":"not-an-array"}')).toBe(
+      '{"input":"not-an-array"}',
+    );
+  });
+
+  test("sets Responses Lite at the final fetch boundary for GPT-5.6", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    const fetchCodexResponse = createCodexResponsesFetch(fetchMock);
+
+    await fetchCodexResponse(
+      "https://chatgpt.com/backend-api/codex/responses",
+      {
+        body: JSON.stringify({ model: "gpt-5.6-luna", input: [] }),
+        method: "POST",
+      },
+    );
+
+    const [, init] = fetchMock.mock.calls[0] as [
+      string,
+      { body: string; headers: Headers },
+    ];
+    expect(init.headers.get(CODEX_RESPONSES_LITE_HEADER)).toBe("true");
+    expect(init.headers.get("originator")).toBe(CODEX_ORIGINATOR);
+    expect(init.headers.get("user-agent")).toBe(CODEX_USER_AGENT);
+    expect(JSON.parse(init.body)).toMatchObject({
+      parallel_tool_calls: false,
+      reasoning: { context: "all_turns" },
+    });
+  });
+
+  test("does not enable Responses Lite for older models", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    const fetchCodexResponse = createCodexResponsesFetch(fetchMock);
+
+    await fetchCodexResponse(
+      "https://chatgpt.com/backend-api/codex/responses",
+      {
+        body: JSON.stringify({ model: "gpt-5.5", input: [] }),
+        method: "POST",
+      },
+    );
+
+    const [, init] = fetchMock.mock.calls[0] as [
+      string,
+      { body: string; headers: Headers },
+    ];
+    expect(init.headers.has(CODEX_RESPONSES_LITE_HEADER)).toBe(false);
+    expect(JSON.parse(init.body)).not.toHaveProperty("reasoning.context");
+    expect(JSON.parse(init.body)).not.toHaveProperty("parallel_tool_calls");
+  });
 });
 
 describe("refreshChatGptTokens", () => {

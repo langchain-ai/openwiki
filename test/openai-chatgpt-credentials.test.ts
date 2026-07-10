@@ -102,7 +102,7 @@ describe("oauth credential step transitions", () => {
 
     expect(getInitialStep(null, "openai-chatgpt")).toBeNull();
     expect(getNextStepAfterProvider("openai-chatgpt", null)).toBeNull();
-    expect(needsCredentialSetup(null)).toBe(false);
+    expect(needsCredentialSetup(null, "code")).toBe(false);
   });
 });
 

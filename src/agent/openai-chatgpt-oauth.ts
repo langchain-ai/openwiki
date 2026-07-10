@@ -29,9 +29,130 @@ const SCOPE = "openid profile email offline_access";
 
 /** Base URL for the Codex Responses backend; the OpenAI SDK appends `/responses`. */
 export const CODEX_RESPONSES_BASE_URL = "https://chatgpt.com/backend-api/codex";
+export const CODEX_DEFAULT_INSTRUCTIONS =
+  "You are ChatGPT, a large language model trained by OpenAI.";
 
-/** Free-text client label sent as the `originator` header/param. */
-export const CODEX_ORIGINATOR = "openwiki";
+/** Request identity expected by the Codex Responses backend. */
+export const CODEX_ORIGINATOR = "codex_cli_rs";
+export const CODEX_USER_AGENT = "codex_cli_rs/0.0.0";
+export const CODEX_RESPONSES_LITE_HEADER =
+  "x-openai-internal-codex-responses-lite";
+
+/** Headers required by Codex Responses requests authenticated with ChatGPT OAuth. */
+export function createCodexHeaders(
+  accountId: string,
+  modelId: string,
+): Record<string, string> {
+  return {
+    "chatgpt-account-id": accountId,
+    originator: CODEX_ORIGINATOR,
+    "user-agent": CODEX_USER_AGENT,
+    "OpenAI-Beta": "responses=experimental",
+    ...(modelId.startsWith("gpt-5.6-")
+      ? { [CODEX_RESPONSES_LITE_HEADER]: "true" }
+      : {}),
+  };
+}
+
+/**
+ * Codex rejects system and developer messages in `input`; the Responses API
+ * expects that content in the top-level `instructions` field instead.
+ */
+export function sanitizeCodexResponsesPayload(body: string): string {
+  let payload: unknown;
+
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    return body;
+  }
+
+  if (!isRecord(payload) || !Array.isArray(payload.input)) {
+    return body;
+  }
+
+  const liftedInstructions: string[] = [];
+  const input = payload.input.filter((item) => {
+    if (!isRecord(item)) {
+      return true;
+    }
+
+    if (item.role !== "system" && item.role !== "developer") {
+      return true;
+    }
+
+    liftedInstructions.push(flattenResponsesInputContent(item.content));
+    return false;
+  });
+
+  if (liftedInstructions.length === 0) {
+    return body;
+  }
+
+  return JSON.stringify({
+    ...payload,
+    input,
+    instructions: [payload.instructions, ...liftedInstructions]
+      .filter(
+        (value): value is string =>
+          typeof value === "string" && value.length > 0,
+      )
+      .join("\n\n"),
+  });
+}
+
+export function createCodexResponsesFetch(
+  fetchImpl: typeof fetch = globalThis.fetch,
+): typeof fetch {
+  return async (input, init) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+
+    if (!url.includes(`${CODEX_RESPONSES_BASE_URL}/responses`)) {
+      return fetchImpl(input, init);
+    }
+
+    const body = typeof init?.body === "string" ? init.body : null;
+
+    if (body === null) {
+      return fetchImpl(input, init);
+    }
+
+    const headers = new Headers(init?.headers);
+    let requestBody = sanitizeCodexResponsesPayload(body);
+    headers.set("originator", CODEX_ORIGINATOR);
+    headers.set("user-agent", CODEX_USER_AGENT);
+
+    try {
+      const payload = JSON.parse(requestBody) as Record<string, unknown>;
+
+      if (
+        typeof payload.model === "string" &&
+        payload.model.startsWith("gpt-5.6-")
+      ) {
+        headers.set(CODEX_RESPONSES_LITE_HEADER, "true");
+        payload.reasoning = {
+          ...(isRecord(payload.reasoning) ? payload.reasoning : {}),
+          context: "all_turns",
+        };
+        payload.parallel_tool_calls = false;
+        requestBody = JSON.stringify(payload);
+      }
+    } catch {
+      // Leave malformed payloads untouched for the upstream API to reject.
+    }
+
+    return fetchImpl(input, {
+      ...init,
+      body: requestBody,
+      headers,
+    });
+  };
+}
 
 /**
  * Refresh the access token when it is within this many milliseconds of expiry,
@@ -188,6 +309,30 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 
 function asString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function flattenResponsesInputContent(content: unknown): string {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (!Array.isArray(content)) {
+    return "";
+  }
+
+  return content
+    .map((item) => {
+      if (typeof item === "string") {
+        return item;
+      }
+
+      return isRecord(item) && typeof item.text === "string" ? item.text : "";
+    })
+    .join("");
 }
 
 async function exchangeToken(body: URLSearchParams): Promise<CodexTokens> {
