@@ -4,6 +4,8 @@ import {
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
   getDefaultModelId,
+  getProviderApiKeyEnvKey,
+  getProviderModelOptions,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
@@ -174,4 +176,34 @@ describe("getDefaultModelId", () => {
       expect(getDefaultModelId("openai-compatible")).toBe(DEFAULT_MODEL_ID);
     },
   );
+});
+
+describe("Eden AI provider wiring", () => {
+  test("resolves the Eden AI base URL that the runtime client is built with", () => {
+    expect(resolveProviderBaseUrl("edenai", {})).toBe(
+      "https://api.edenai.run/v3",
+    );
+  });
+
+  test("authenticates through the EDENAI_API_KEY env var", () => {
+    expect(getProviderApiKeyEnvKey("edenai")).toBe("EDENAI_API_KEY");
+  });
+
+  test("is a valid, selectable provider", () => {
+    expect(isValidProvider("edenai")).toBe(true);
+  });
+
+  test("ships provider/model presets that pass model-id validation", () => {
+    const options = getProviderModelOptions("edenai");
+
+    expect(options.length).toBeGreaterThan(0);
+    for (const option of options) {
+      expect(option.id).toContain("/");
+      expect(isValidModelId(option.id)).toBe(true);
+    }
+  });
+
+  test("defaults to its first preset model", () => {
+    expect(getDefaultModelId("edenai")).toBe("openai/gpt-4o-mini");
+  });
 });
