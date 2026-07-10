@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import {
+  findNearestGitRepoRoot,
   getInitialStep,
   getNextStepAfterProvider,
   needsCredentialSetup,
@@ -18,6 +19,21 @@ const MANAGED_KEYS = [
 
 const FAR_FUTURE = String(Date.now() + 60 * 60 * 1000);
 const PAST = String(Date.now() - 60 * 60 * 1000);
+const COMPLETE_ONBOARDING = {
+  completedAt: "2026-01-01T00:00:00.000Z",
+  modeId: "code",
+  modeName: "Code",
+  sourceInstances: [],
+  sources: {},
+  templateId: "code",
+  templateName: "Code",
+  version: 1 as const,
+  wikiGoal: "Maintain a code wiki.",
+};
+const CODE_ONBOARDING_WITHOUT_SCHEDULE = {
+  ...COMPLETE_ONBOARDING,
+  completedAt: undefined,
+};
 
 let snapshot: Record<string, string | undefined>;
 
@@ -97,16 +113,53 @@ describe("oauth credential step transitions", () => {
     expect(getNextStepAfterProvider("openai-chatgpt", null)).toBe("model");
   });
 
-  test("needs no setup once token, model, and langsmith are all set", () => {
+  test("routes code onboarding to repo confirmation once credentials are set", () => {
     configureValidChatGptSession();
 
-    expect(getInitialStep(null, "openai-chatgpt")).toBeNull();
-    expect(getNextStepAfterProvider("openai-chatgpt", null)).toBeNull();
-    // Use code mode for assertion since the default (personal) mode also checks
-    // whether onboarding is complete by reading ~/.openwiki/onboarding.json,
-    // which would make this test depend on the machine's home directory instead
-    // of just the credential logic.
-    expect(needsCredentialSetup(null, "code")).toBe(false);
+    expect(getInitialStep(null, "openai-chatgpt")).toBe("code-repo-confirm");
+    expect(getNextStepAfterProvider("openai-chatgpt", null)).toBe(
+      "code-repo-confirm",
+    );
+  });
+
+  test("incomplete code onboarding skips the schedule step", () => {
+    configureValidChatGptSession();
+
+    expect(
+      getInitialStep(
+        null,
+        "openai-chatgpt",
+        CODE_ONBOARDING_WITHOUT_SCHEDULE,
+        "code",
+      ),
+    ).toBe("code-repo-confirm");
+    expect(
+      getNextStepAfterProvider(
+        "openai-chatgpt",
+        null,
+        CODE_ONBOARDING_WITHOUT_SCHEDULE,
+        "code",
+      ),
+    ).toBe("code-repo-confirm");
+  });
+});
+
+describe("code repo root detection", () => {
+  test("finds the nearest .git parent", async () => {
+    const { mkdtemp, mkdir, rm } = await import("node:fs/promises");
+    const { tmpdir } = await import("node:os");
+    const path = await import("node:path");
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const nested = path.join(repo, "packages", "docs");
+
+    try {
+      await mkdir(path.join(repo, ".git"));
+      await mkdir(nested, { recursive: true });
+
+      expect(findNearestGitRepoRoot(nested)).toBe(repo);
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
   });
 });
 
@@ -128,7 +181,9 @@ describe("forceModel re-asks the model after a provider change", () => {
     set("LANGSMITH_API_KEY", "");
 
     // Without force, a stored model is kept (no model step).
-    expect(getNextStepAfterProvider("openai-chatgpt", null)).toBeNull();
+    expect(
+      getNextStepAfterProvider("openai-chatgpt", null, COMPLETE_ONBOARDING),
+    ).toBeNull();
     // With force (provider was just changed), the model step is shown again.
     expect(
       getNextStepAfterProvider("openai-chatgpt", null, undefined, "code", true),
@@ -144,7 +199,7 @@ describe("forceModel re-asks the model after a provider change", () => {
       getNextStepAfterProvider(
         "openai-chatgpt",
         "gpt-5.5",
-        undefined,
+        COMPLETE_ONBOARDING,
         "code",
         true,
       ),
