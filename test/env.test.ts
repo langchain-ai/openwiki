@@ -55,6 +55,7 @@ describe("formatEnv", () => {
     const formatted = formatEnv({
       ZZZ_CUSTOM: "z",
       AAA_CUSTOM: "a",
+      OPENWIKI_PROVIDER_RETRY_ATTEMPTS: "3",
       OPENWIKI_PROVIDER: "anthropic",
       ANTHROPIC_API_KEY: "k",
     });
@@ -68,6 +69,7 @@ describe("formatEnv", () => {
     expect(keys).toEqual([
       "ANTHROPIC_API_KEY",
       "OPENWIKI_PROVIDER",
+      "OPENWIKI_PROVIDER_RETRY_ATTEMPTS",
       "AAA_CUSTOM",
       "ZZZ_CUSTOM",
     ]);
