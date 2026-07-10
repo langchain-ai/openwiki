@@ -199,7 +199,7 @@ async function exchangeToken(body: URLSearchParams): Promise<CodexTokens> {
 
   if (!res.ok) {
     throw new Error(
-      `ChatGPT token request failed (${res.status}): ${await res.text()}`,
+      `ChatGPT token request failed (${res.status}). Try signing in again.`,
     );
   }
 

@@ -126,9 +126,9 @@ describe("forceModel re-asks the model after a provider change", () => {
     // Without force, a stored model is kept (no model step).
     expect(getNextStepAfterProvider("openai-chatgpt", null)).toBeNull();
     // With force (provider was just changed), the model step is shown again.
-    expect(getNextStepAfterProvider("openai-chatgpt", null, true)).toBe(
-      "model",
-    );
+    expect(
+      getNextStepAfterProvider("openai-chatgpt", null, undefined, "code", true),
+    ).toBe("model");
   });
 
   test("a per-run model override still suppresses the model step", () => {
@@ -137,7 +137,13 @@ describe("forceModel re-asks the model after a provider change", () => {
     set("LANGSMITH_API_KEY", "");
 
     expect(
-      getNextStepAfterProvider("openai-chatgpt", "gpt-5.5", true),
+      getNextStepAfterProvider(
+        "openai-chatgpt",
+        "gpt-5.5",
+        undefined,
+        "code",
+        true,
+      ),
     ).toBeNull();
   });
 });

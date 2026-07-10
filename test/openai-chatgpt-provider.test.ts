@@ -39,8 +39,8 @@ describe("openai-chatgpt provider config", () => {
       getProviderModelOptions("openai"),
     );
     expect(getProviderModelOptions("openai-chatgpt").map((m) => m.id)).toEqual([
-      "gpt-5.4-mini",
       "gpt-5.5",
+      "gpt-5.4-mini",
     ]);
   });
 

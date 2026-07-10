@@ -10,6 +10,7 @@ import {
 } from "../fs-errors.js";
 import type {
   OpenWikiCommand,
+  OpenWikiOutputMode,
   OpenWikiRunOptions,
   RunContext,
   UpdateMetadata,
@@ -17,6 +18,7 @@ import type {
 import type { Dirent } from "node:fs";
 
 const execFileAsync = promisify(execFile);
+const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
 
 export type OpenWikiContentSnapshot = string;
 
@@ -37,13 +39,22 @@ export type UpdateNoopStatus =
 export async function createRunContext(
   command: OpenWikiCommand,
   cwd: string,
+  outputMode: OpenWikiOutputMode = "repository",
 ): Promise<RunContext> {
-  const lastUpdate = await readLastUpdate(cwd);
+  const lastUpdate = await readLastUpdate(cwd, outputMode);
 
   if (command === "chat") {
     return {
       lastUpdate,
       gitSummary: "Not applicable for chat.",
+    };
+  }
+
+  if (outputMode === "local-wiki") {
+    return {
+      lastUpdate,
+      gitSummary:
+        "Local wiki mode: connector source evidence is provided through raw data paths and OpenWiki connector tools. Git repository diff context is not used for this run.",
     };
   }
 
@@ -56,7 +67,7 @@ export async function createRunContext(
 export async function getUpdateNoopStatus(
   cwd: string,
 ): Promise<UpdateNoopStatus> {
-  const lastUpdate = await readLastUpdate(cwd);
+  const lastUpdate = await readLastUpdate(cwd, "repository");
 
   if (!lastUpdate?.gitHead) {
     return { shouldSkip: false, reason: "missing previous update git head" };
@@ -115,12 +126,13 @@ export async function writeLastUpdateMetadata(
   command: OpenWikiCommand,
   cwd: string,
   modelId: string,
+  outputMode: OpenWikiOutputMode = "repository",
 ): Promise<void> {
-  const metadataFile = path.join(cwd, UPDATE_METADATA_PATH);
+  const metadataFile = getMetadataFilePath(cwd, outputMode);
   const metadata: UpdateMetadata = {
     updatedAt: new Date().toISOString(),
     command,
-    gitHead: await getGitHead(cwd),
+    gitHead: outputMode === "repository" ? await getGitHead(cwd) : undefined,
     model: modelId,
   };
 
@@ -137,8 +149,9 @@ export async function writeLastUpdateMetadata(
  */
 export async function createOpenWikiContentSnapshot(
   cwd: string,
+  outputMode: OpenWikiOutputMode = "repository",
 ): Promise<OpenWikiContentSnapshot> {
-  const openWikiDir = path.join(cwd, OPEN_WIKI_DIR);
+  const openWikiDir = getWikiContentRoot(cwd, outputMode);
   const hash = createHash("sha256");
 
   await addDirectoryToSnapshot(hash, openWikiDir, "");
@@ -149,8 +162,11 @@ export async function createOpenWikiContentSnapshot(
 /**
  * Reads prior run metadata if it exists and is structurally valid.
  */
-async function readLastUpdate(cwd: string): Promise<UpdateMetadata | null> {
-  const metadataFile = path.join(cwd, UPDATE_METADATA_PATH);
+async function readLastUpdate(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): Promise<UpdateMetadata | null> {
+  const metadataFile = getMetadataFilePath(cwd, outputMode);
 
   try {
     const rawMetadata = await readFile(metadataFile, "utf8");
@@ -209,7 +225,10 @@ async function addDirectoryToSnapshot(
     const entryPath = path.join(directory, entry.name);
     const relativePath = path.join(relativeDirectory, entry.name);
 
-    if (relativePath === path.basename(UPDATE_METADATA_PATH)) {
+    if (
+      relativePath === path.basename(UPDATE_METADATA_PATH) ||
+      relativePath === LOCAL_WIKI_METADATA_PATH
+    ) {
       continue;
     }
 
@@ -233,6 +252,22 @@ async function addDirectoryToSnapshot(
     hash.update(fileContent);
     hash.update("\0");
   }
+}
+
+function getWikiContentRoot(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): string {
+  return outputMode === "local-wiki" ? cwd : path.join(cwd, OPEN_WIKI_DIR);
+}
+
+function getMetadataFilePath(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): string {
+  return outputMode === "local-wiki"
+    ? path.join(cwd, LOCAL_WIKI_METADATA_PATH)
+    : path.join(cwd, UPDATE_METADATA_PATH);
 }
 
 /**
