@@ -4,6 +4,7 @@ import {
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
   getDefaultModelId,
+  getProviderModelOptions,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
@@ -155,6 +156,18 @@ describe("isValidBaseUrl", () => {
     expect(isValidBaseUrl("   ")).toBe(false);
     expect(isValidBaseUrl("not a url")).toBe(false);
     expect(isValidBaseUrl("ftp://example.com")).toBe(false);
+  });
+});
+
+describe("getProviderModelOptions", () => {
+  test("returns OpenAI models in display order", () => {
+    expect(getProviderModelOptions("openai")).toEqual([
+      { id: "gpt-5.6-terra", label: "5.6 Terra" },
+      { id: "gpt-5.6-luna", label: "5.6 Luna" },
+      { id: "gpt-5.6-sol", label: "5.6 Sol" },
+      { id: "gpt-5.5", label: "5.5" },
+      { id: "gpt-5.4-mini", label: "5.4 mini" },
+    ]);
   });
 });
 
