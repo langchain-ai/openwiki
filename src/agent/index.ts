@@ -13,8 +13,12 @@ import {
   CompositeBackend,
   createDeepAgent,
   FilesystemBackend,
+  type FilesystemPermission,
 } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
+import { createCliInfoTools } from "./tools/cli-info-tools.js";
+import { createGitReadOnlyTools } from "./tools/git-tools.js";
+import { createRepositoryDiscoveryTools } from "./tools/repo-tools.js";
 import {
   DEBUG_ENV_KEYS,
   loadOpenWikiEnv,
@@ -205,29 +209,49 @@ async function runOpenWikiAgentCore(
       ? `checkpointer=${formatUrlDebugValue(checkpointTarget.connString)}`
       : "checkpointer=memory",
   );
-  const wikiBackend = new OpenWikiLocalShellBackend({
-    docsOnly: command !== "chat",
-    maxOutputBytes: 100_000,
-    outputMode,
-    rootDir: cwd,
-    timeout: 120,
-    virtualMode: true,
-  });
+  const isChat = command === "chat";
+  const tools = [
+    ...createOpenWikiConnectorTools(),
+    ...createCliInfoTools(),
+    ...(outputMode === "repository"
+      ? [
+          ...createGitReadOnlyTools({ cwd }),
+          ...createRepositoryDiscoveryTools({ cwd }),
+        ]
+      : []),
+  ];
+
+  // Interactive chat keeps the shell backend for now; automated init/update runs
+  // use a plain FilesystemBackend with native write permissions so no generic
+  // shell execute tool is exposed.
+  const wikiBackend = isChat
+    ? new OpenWikiLocalShellBackend({
+        docsOnly: false,
+        maxOutputBytes: 100_000,
+        outputMode,
+        rootDir: cwd,
+        timeout: 120,
+        virtualMode: true,
+      })
+    : new FilesystemBackend({
+        rootDir: cwd,
+        virtualMode: true,
+      });
   const backend = new CompositeBackend(wikiBackend, {
     "/skills/": new FilesystemBackend({
       rootDir: openWikiSkillsDir,
       virtualMode: true,
     }),
   });
+
+  const permissions = createRunPermissions(isChat, outputMode);
   const agent = createDeepAgent({
     model,
-    tools: createOpenWikiConnectorTools(),
+    tools,
     checkpointer,
     backend,
     skills: ["/skills/"],
-    permissions: [
-      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
-    ],
+    permissions,
     systemPrompt: createSystemPrompt(command, outputMode),
   });
   emitDebug(options, "agent=created");
@@ -335,6 +359,36 @@ export type CheckpointTarget = {
   persistent: boolean;
 };
 
+/**
+ * Builds native filesystem write permissions for a run. Chat is unrestricted;
+ * repository init/update allows writes only under /openwiki (explicit allow
+ * followed by an explicit deny); local-wiki init/update allows writes anywhere
+ * under the wiki virtual root.
+ */
+function createRunPermissions(
+  isChat: boolean,
+  outputMode: OpenWikiOutputMode,
+): FilesystemPermission[] {
+  if (isChat) {
+    return [
+      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
+    ];
+  }
+
+  if (outputMode === "repository") {
+    return [
+      { operations: ["write"], paths: ["/openwiki/**"] },
+      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
+      { operations: ["write"], paths: ["/**"], mode: "deny" },
+    ];
+  }
+
+  return [
+    { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
+    { operations: ["write"], paths: ["/**"] },
+  ];
+}
+
 function createRunUserMessage(
   command: OpenWikiCommand,
   cwd: string,
@@ -358,8 +412,11 @@ ${cwd}
 
 Runtime note:
 - ${formatRuntimeRootInstruction(options.outputMode ?? "local-wiki")}
-- Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.
-- Shell execute commands run on the host. For execute, use cd ${cwd} before commands that should run against this root.
+- Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.${
+    command === "chat"
+      ? `\n- Shell execute commands run on the host. For execute, use cd ${cwd} before commands that should run against this root.`
+      : ""
+  }
 - Do not search parent directories or unrelated directories.
 `.trim();
 }
