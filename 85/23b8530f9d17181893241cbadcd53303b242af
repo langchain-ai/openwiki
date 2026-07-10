@@ -1,0 +1,27 @@
+test/openai-chatgpt-provider.test.ts
+  s_efaf48148b2846::t_f7c92cbde0c145 42-44
+src/constants.ts
+  s_efaf48148b2846::t_40847f44143086 78-90
+  s_efaf48148b2846::t_0fc5210d56fa35 149,155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8523b8530f9d17181893241cbadcd53303b242af",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_efaf48148b2846": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5f5e360a-1881-4731-bdce-9904ef5ff9a3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
