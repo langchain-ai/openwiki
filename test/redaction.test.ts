@@ -8,9 +8,11 @@ import { sanitizeOpenRouterResponseBody } from "../src/agent/index.ts";
 
 describe("sanitizeDiagnosticText", () => {
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
+  const originalOpenAiCompatibleKey = process.env.OPENAI_COMPATIBLE_API_KEY;
 
   beforeEach(() => {
     delete process.env.OPENAI_API_KEY;
+    delete process.env.OPENAI_COMPATIBLE_API_KEY;
   });
 
   afterEach(() => {
@@ -18,6 +20,11 @@ describe("sanitizeDiagnosticText", () => {
       delete process.env.OPENAI_API_KEY;
     } else {
       process.env.OPENAI_API_KEY = originalOpenAiKey;
+    }
+    if (originalOpenAiCompatibleKey === undefined) {
+      delete process.env.OPENAI_COMPATIBLE_API_KEY;
+    } else {
+      process.env.OPENAI_COMPATIBLE_API_KEY = originalOpenAiCompatibleKey;
     }
   });
 
@@ -75,6 +82,17 @@ describe("sanitizeDiagnosticText", () => {
     const message = "Repository has 12 files and the wiki is already current.";
 
     expect(sanitizeDiagnosticText(message)).toBe(message);
+  });
+
+  test("redacts the exact value of OPENAI_COMPATIBLE_API_KEY set in the environment", () => {
+    process.env.OPENAI_COMPATIBLE_API_KEY = "compatible-secret-key-99999";
+
+    const result = sanitizeDiagnosticText(
+      "request failed with key compatible-secret-key-99999 attached",
+    );
+
+    expect(result).not.toContain("compatible-secret-key-99999");
+    expect(result).toContain("[REDACTED:OPENAI_COMPATIBLE_API_KEY]");
   });
 });
 
