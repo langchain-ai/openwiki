@@ -65,6 +65,7 @@ describe("validateBundle", () => {
       outputMode: "repository",
       command: "init",
       model: "test-model",
+      beforeBodyHashes: new Map(),
       now: new Date("2026-07-10T12:00:00.000Z"),
     });
 

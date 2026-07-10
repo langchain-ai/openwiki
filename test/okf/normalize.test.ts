@@ -33,6 +33,7 @@ async function normalize(): Promise<void> {
     outputMode: "repository",
     command: "init",
     model: "test-model",
+    beforeBodyHashes: new Map(),
     now: FIXED_NOW,
   });
 }

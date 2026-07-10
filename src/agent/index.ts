@@ -61,7 +61,7 @@ import {
   shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
-import { normalizeOkfBundle } from "./okf/index.js";
+import { createConceptBodyHashes, normalizeOkfBundle } from "./okf/index.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -161,6 +161,10 @@ async function runOpenWikiAgentCore(
       ? null
       : await createOpenWikiContentSnapshot(cwd, outputMode);
   emitDebug(options, "openwiki.snapshot=created");
+  const beforeBodyHashes =
+    command !== "chat"
+      ? await createConceptBodyHashes(cwd, outputMode)
+      : new Map<string, string>();
   const model = createModel(provider, modelId, providerRetryAttempts);
   emitDebug(options, `model.provider=${provider}`);
   emitDebug(options, "model=initialized");
@@ -225,7 +229,13 @@ async function runOpenWikiAgentCore(
   await chmodIfExists(checkpointPath, 0o600);
 
   if (command !== "chat") {
-    await normalizeOkfBundle({ cwd, outputMode, command, model: modelId });
+    await normalizeOkfBundle({
+      cwd,
+      outputMode,
+      command,
+      model: modelId,
+      beforeBodyHashes,
+    });
     emitDebug(options, "okf=normalized");
   }
 

@@ -1,12 +1,17 @@
 import path from "node:path";
 import { stringify as stringifyYaml } from "yaml";
-import { OKF_INDEX_FILENAME, OKF_VERSION } from "./taxonomy.js";
+import {
+  OKF_INDEX_FILENAME,
+  OKF_LOG_FILENAME,
+  OKF_VERSION,
+} from "./taxonomy.js";
 import {
   ensureTrailingNewline,
   parseFrontmatter,
   stripLeadingBlankLines,
 } from "./frontmatter.js";
-import { readFileOrNull, writeIfDifferent } from "./bundle.js";
+import { readFileOrNull, writeFileAtomic, writeIfDifferent } from "./bundle.js";
+import type { OpenWikiCommand } from "../types.js";
 
 /**
  * A concept page's stamped metadata, used to render the root index.
@@ -31,6 +36,31 @@ export interface ConceptSummary {
    * Stamped description, or undefined when none could be derived.
    */
   description: string | undefined;
+}
+
+/**
+ * A single dated log.md entry.
+ */
+interface LogEntry {
+  /**
+   * ISO YYYY-MM-DD date the entry is grouped under.
+   */
+  date: string;
+
+  /**
+   * The run command (init or update).
+   */
+  command: OpenWikiCommand;
+
+  /**
+   * Number of files the run changed.
+   */
+  changedCount: number;
+
+  /**
+   * Model id that produced the run.
+   */
+  model: string;
 }
 
 /**
@@ -89,4 +119,23 @@ export async function stripNonRootIndexFrontmatter(
       ensureTrailingNewline(stripLeadingBlankLines(body)),
     );
   }
+}
+
+/**
+ * Appends a dated entry to log.md (atomic), grouping same-day entries.
+ */
+export async function appendLogEntry(
+  root: string,
+  entry: LogEntry,
+): Promise<void> {
+  const logPath = path.join(root, OKF_LOG_FILENAME);
+  const existing = (await readFileOrNull(logPath)) ?? "# Log\n";
+  const noun = entry.changedCount === 1 ? "file" : "files";
+  const line = `- **${entry.command}** — ${entry.changedCount} ${noun} updated. Model: ${entry.model}.`;
+  const heading = `## ${entry.date}`;
+  const base = existing.trimEnd();
+  const next = base.includes(`\n${heading}\n`)
+    ? `${base}\n${line}\n`
+    : `${base}\n\n${heading}\n${line}\n`;
+  await writeFileAtomic(logPath, next);
 }
