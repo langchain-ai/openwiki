@@ -5,6 +5,14 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
+export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
+  "OPENAI_CHATGPT_ACCESS_TOKEN";
+export const OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY =
+  "OPENAI_CHATGPT_REFRESH_TOKEN";
+export const OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY = "OPENAI_CHATGPT_EXPIRES_AT";
+export const OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY = "OPENAI_CHATGPT_ACCOUNT_ID";
+export const OPENAI_CHATGPT_EMAIL_ENV_KEY = "OPENAI_CHATGPT_EMAIL";
+export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
@@ -49,8 +57,16 @@ export type OpenWikiProvider =
   | "baseten"
   | "fireworks"
   | "openai"
+  | "openai-chatgpt"
   | "openai-compatible"
   | "openrouter";
+
+/**
+ * How a provider authenticates. Providers default to `"api-key"` (a pasted
+ * secret persisted to a `*_API_KEY` env var); `"oauth"` providers instead run a
+ * browser login flow and persist short-lived access/refresh tokens.
+ */
+export type ProviderAuthMethod = "api-key" | "oauth";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -61,6 +77,12 @@ export type ProviderModelOption = {
 
 type ProviderConfig = {
   apiKeyEnvKey: string;
+  /**
+   * Authentication method for the provider. Omitted entries are implicitly
+   * {@link ProviderAuthMethod} `"api-key"`. `"oauth"` providers replace the
+   * pasted-key setup step with a browser login and store tokens instead.
+   */
+  authMethod?: ProviderAuthMethod;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -78,11 +100,12 @@ type ProviderConfig = {
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
-  "openrouter",
-  "baseten",
-  "fireworks",
-  "openai-compatible",
+  "openai-chatgpt",
   "anthropic",
+  "openrouter",
+  "openai-compatible",
+  "fireworks",
+  "baseten",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -110,6 +133,15 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   openai: {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
     label: "OpenAI",
+    modelOptions: [
+      { id: "gpt-5.5", label: "5.5" },
+      { id: "gpt-5.4-mini", label: "5.4 mini" },
+    ],
+  },
+  "openai-chatgpt": {
+    apiKeyEnvKey: OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
+    authMethod: "oauth",
+    label: "OpenAI (ChatGPT login)",
     modelOptions: [
       { id: "gpt-5.5", label: "5.5" },
       { id: "gpt-5.4-mini", label: "5.4 mini" },
@@ -165,6 +197,16 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
 
 export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+export function getProviderAuthMethod(
+  provider: OpenWikiProvider,
+): ProviderAuthMethod {
+  return getProviderConfig(provider).authMethod ?? "api-key";
+}
+
+export function providerUsesOAuth(provider: OpenWikiProvider): boolean {
+  return getProviderAuthMethod(provider) === "oauth";
 }
 
 /**

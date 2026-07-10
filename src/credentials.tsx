@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { spawn } from "node:child_process";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { homedir } from "node:os";
 import path from "node:path";
 import { Box, Text, useInput, useStdout } from "ink";
@@ -15,6 +16,8 @@ import {
   isValidModelId,
   normalizeProvider,
   normalizeModelId,
+  OPENAI_CHATGPT_EMAIL_ENV_KEY,
+  OPENAI_CHATGPT_PLAN_ENV_KEY,
   OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY,
   OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -23,9 +26,19 @@ import {
   OPENWIKI_X_CLIENT_ID_ENV_KEY,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
+  providerUsesOAuth,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
+import {
+  type ChatGptLoginHandle,
+  type CodexTokens,
+  codexTokensToEnv,
+  formatChatGptAccount,
+  isChatGptTokenExpired,
+  loginWithChatGPT,
+  readCodexTokensFromEnv,
+} from "./agent/openai-chatgpt-oauth.js";
 import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
 import type { ConnectorId } from "./connectors/types.js";
@@ -75,6 +88,7 @@ type PromptStep =
   | "final"
   | "langsmith"
   | "model"
+  | "oauth-login"
   | "provider"
   | "run-mode"
   | "source-auth"
@@ -337,11 +351,10 @@ export function needsCredentialSetup(
   mode: OpenWikiRunMode = "personal",
 ): boolean {
   const provider = resolveConfiguredProvider();
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   const needsCredentials =
     !hasValidConfiguredProvider() ||
-    !process.env[apiKeyEnvKey] ||
+    needsCredentialStep(provider) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
@@ -351,6 +364,28 @@ export function needsCredentialSetup(
     needsCredentials ||
     (mode === "personal" && !isOpenWikiOnboardingCompleteSync())
   );
+}
+
+/**
+ * Whether the provider still needs its primary credential collected. For
+ * `oauth` providers this is a valid, non-expired stored token; for everyone
+ * else it is a pasted API key.
+ */
+function needsCredentialStep(provider: OpenWikiProvider): boolean {
+  return providerUsesOAuth(provider)
+    ? !hasValidStoredToken()
+    : !process.env[getProviderApiKeyEnvKey(provider)];
+}
+
+/** The step that collects the provider's primary credential. */
+function credentialStep(provider: OpenWikiProvider): PromptStep {
+  return providerUsesOAuth(provider) ? "oauth-login" : "api-key";
+}
+
+function hasValidStoredToken(env: NodeJS.ProcessEnv = process.env): boolean {
+  const tokens = readCodexTokensFromEnv(env);
+
+  return tokens !== null && !isChatGptTokenExpired(tokens.expiresAtMs);
 }
 
 function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
@@ -365,6 +400,68 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
   const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
 
   return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
+}
+
+function isCredentialConfigured(provider: OpenWikiProvider): boolean {
+  return providerUsesOAuth(provider)
+    ? hasValidStoredToken()
+    : Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
+}
+
+function getCredentialSetupDetail(
+  provider: OpenWikiProvider,
+  tokens: CodexTokens | null = null,
+): string {
+  if (providerUsesOAuth(provider)) {
+    if (!isCredentialConfigured(provider) && !tokens) {
+      return "sign in with your ChatGPT account";
+    }
+
+    const account = formatChatGptAccount(
+      tokens?.email ?? process.env[OPENAI_CHATGPT_EMAIL_ENV_KEY] ?? null,
+      tokens?.planType ?? process.env[OPENAI_CHATGPT_PLAN_ENV_KEY] ?? null,
+    );
+
+    return account ? `signed in as ${account}` : "signed in with ChatGPT";
+  }
+
+  return isCredentialConfigured(provider)
+    ? "available from environment"
+    : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`;
+}
+
+/**
+ * Copies text to the terminal's clipboard using the OSC 52 escape sequence.
+ * This targets the user's local terminal emulator even when OpenWiki runs over
+ * SSH, unlike shelling out to a host clipboard utility.
+ */
+function copyToClipboard(text: string): void {
+  const encoded = Buffer.from(text, "utf8").toString("base64");
+
+  process.stdout.write(`\u001b]52;c;${encoded}\u0007`);
+}
+
+function openLoginUrl(url: string): void {
+  try {
+    const child =
+      process.platform === "win32"
+        ? spawn("cmd", ["/c", "start", '""', `"${url}"`], {
+            detached: true,
+            stdio: "ignore",
+            windowsVerbatimArguments: true,
+          })
+        : spawn(process.platform === "darwin" ? "open" : "xdg-open", [url], {
+            detached: true,
+            stdio: "ignore",
+          });
+
+    child.on("error", () => {
+      // The URL is also rendered for manual use on headless/SSH machines.
+    });
+    child.unref();
+  } catch {
+    // Ignore spawn failures; the URL is still rendered for manual use.
+  }
 }
 
 export function InitSetup({
@@ -422,6 +519,13 @@ export function InitSetup({
   const [notice, setNotice] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isAuthRunning, setIsAuthRunning] = useState(false);
+  const [oauthTokens, setOauthTokens] = useState<CodexTokens | null>(null);
+  const [loginUrl, setLoginUrl] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginAttempt, setLoginAttempt] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const [forceModelStep, setForceModelStep] = useState(false);
+  const loginHandleRef = useRef<ChatGptLoginHandle | null>(null);
 
   const activeSourceOptions = useMemo(
     () => getTemplateSourceOptions(getConfigModeId(onboardingConfig)),
@@ -517,8 +621,136 @@ export function InitSetup({
     mode,
   ]);
 
+  // Drive the browser OAuth login whenever the wizard enters the oauth-login
+  // step or the user retries after a failure.
+  useEffect(() => {
+    if (step !== "oauth-login") {
+      return;
+    }
+
+    let cancelled = false;
+
+    setIsLoggingIn(true);
+    setLoginUrl(null);
+    setCopied(false);
+    setInput("");
+    setError(null);
+    loginHandleRef.current = null;
+
+    void (async () => {
+      try {
+        const tokens = await loginWithChatGPT(
+          (url) => {
+            if (cancelled) {
+              return;
+            }
+
+            setLoginUrl(url);
+            openLoginUrl(url);
+          },
+          (handle) => {
+            if (!cancelled) {
+              loginHandleRef.current = handle;
+            }
+          },
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        setOauthTokens(tokens);
+        setIsLoggingIn(false);
+
+        const nextStep = getNextStepAfterApiKey(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
+
+        if (nextStep) {
+          setIsCustomModelInput(
+            nextStep === "model" && shouldStartWithCustomModelInput(provider),
+          );
+          setStep(nextStep);
+          return;
+        }
+
+        await completeSetup({
+          nextApiKey: apiKey,
+          nextBaseUrl: baseUrl,
+          nextLangSmithKey: langSmithKey,
+          nextModelId: modelId,
+          nextOAuthTokens: tokens,
+          nextProvider: provider,
+          runMode: selectedMode,
+        });
+      } catch (loginError) {
+        if (cancelled) {
+          return;
+        }
+
+        setIsLoggingIn(false);
+        setError(getErrorMessage(loginError));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, loginAttempt]);
+
   useInput((inputValue, key) => {
-    if (isSaving || isAuthRunning || step === null) {
+    if (
+      isSaving ||
+      isAuthRunning ||
+      (isLoggingIn && step !== "oauth-login") ||
+      step === null
+    ) {
+      return;
+    }
+
+    if (step === "oauth-login") {
+      if (
+        input.length === 0 &&
+        (inputValue === "c" || inputValue === "C") &&
+        !key.ctrl &&
+        !key.meta
+      ) {
+        if (loginUrl) {
+          copyToClipboard(loginUrl);
+          setCopied(true);
+        }
+
+        return;
+      }
+
+      if (key.return) {
+        const pasted = input.trim();
+
+        if (pasted.length > 0) {
+          submitManualLogin(pasted);
+        } else if (!isLoggingIn) {
+          setLoginAttempt((attempt) => attempt + 1);
+        }
+
+        return;
+      }
+
+      if (key.backspace || key.delete) {
+        setInput((value) => value.slice(0, -1));
+        return;
+      }
+
+      const sanitizedInput = sanitizeInputChunk(inputValue);
+
+      if (sanitizedInput && !key.ctrl && !key.meta) {
+        setError(null);
+        setInput((value) => value + sanitizedInput);
+      }
+
       return;
     }
 
@@ -747,6 +979,7 @@ export function InitSetup({
         nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedOption.id,
       });
@@ -767,11 +1000,15 @@ export function InitSetup({
         ),
       );
       setInput("");
+      const providerChanged =
+        process.env[OPENWIKI_PROVIDER_ENV_KEY] !== selectedProvider;
+      setForceModelStep(providerChanged);
       const nextStep = getNextStepAfterProvider(
         selectedProvider,
         modelIdOverride,
         onboardingConfig,
         selectedMode,
+        providerChanged,
       );
 
       if (nextStep) {
@@ -788,6 +1025,7 @@ export function InitSetup({
         nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: selectedProvider,
         runMode: selectedMode,
       });
@@ -809,6 +1047,7 @@ export function InitSetup({
         modelIdOverride,
         onboardingConfig,
         selectedMode,
+        forceModelStep,
       );
 
       if (nextStep) {
@@ -824,6 +1063,7 @@ export function InitSetup({
         nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedMode,
       });
@@ -852,6 +1092,7 @@ export function InitSetup({
         modelIdOverride,
         onboardingConfig,
         selectedMode,
+        forceModelStep,
       );
 
       if (nextStep) {
@@ -867,6 +1108,7 @@ export function InitSetup({
         nextBaseUrl: trimmedInput,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedMode,
       });
@@ -906,6 +1148,7 @@ export function InitSetup({
         nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedMode,
       });
@@ -923,6 +1166,7 @@ export function InitSetup({
         nextBaseUrl: baseUrl,
         nextLangSmithKey,
         nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedMode,
       });
@@ -1166,7 +1410,7 @@ export function InitSetup({
         onboardingCompleted: true,
         provider,
         runIngestionNow,
-        savedApiKey: apiKey !== null,
+        savedApiKey: apiKey !== null || oauthTokens !== null,
         savedBaseUrl: baseUrl !== null,
         savedLangSmithKey: langSmithKey !== null && langSmithKey.length > 0,
         savedModelId: modelId !== null,
@@ -1216,6 +1460,7 @@ export function InitSetup({
     nextBaseUrl: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
+    nextOAuthTokens?: CodexTokens | null;
     nextProvider: OpenWikiProvider;
     runMode: OpenWikiRunMode;
   };
@@ -1266,7 +1511,8 @@ export function InitSetup({
       provider: options.nextProvider,
       mode: options.runMode,
       runIngestionNow: false,
-      savedApiKey: options.nextApiKey !== null,
+      savedApiKey:
+        options.nextApiKey !== null || options.nextOAuthTokens != null,
       savedBaseUrl: options.nextBaseUrl !== null,
       savedLangSmithKey:
         options.nextLangSmithKey !== null &&
@@ -1283,6 +1529,7 @@ export function InitSetup({
     nextBaseUrl,
     nextLangSmithKey,
     nextModelId,
+    nextOAuthTokens = oauthTokens,
     nextProvider,
   }: CompleteSetupOptions) {
     setIsSaving(true);
@@ -1296,6 +1543,10 @@ export function InitSetup({
 
       if (nextApiKey !== null) {
         updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+      }
+
+      if (nextOAuthTokens) {
+        Object.assign(updates, codexTokensToEnv(nextOAuthTokens));
       }
 
       if (nextBaseUrl !== null) {
@@ -1523,9 +1774,28 @@ export function InitSetup({
     }
   }
 
+  function submitManualLogin(pasted: string): void {
+    const handle = loginHandleRef.current;
+
+    if (!handle) {
+      setError("Login is still starting. Try again in a moment.");
+      return;
+    }
+
+    const errorMessage = handle.submitManual(pasted);
+
+    if (errorMessage) {
+      setError(errorMessage);
+      return;
+    }
+
+    setInput("");
+    setError(null);
+  }
+
   const needsCredentialPrompt =
     !hasValidConfiguredProvider() ||
-    !process.env[getProviderApiKeyEnvKey(provider)] ||
+    needsCredentialStep(provider) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
@@ -1548,19 +1818,15 @@ export function InitSetup({
           detail={getProviderSetupDetail(provider)}
         />
         <SetupStep
-          label="Provider key"
+          label={providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"}
           state={
-            process.env[getProviderApiKeyEnvKey(provider)]
+            isCredentialConfigured(provider) || oauthTokens
               ? "done"
-              : step === "api-key"
+              : step === credentialStep(provider)
                 ? "current"
                 : "pending"
           }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
+          detail={getCredentialSetupDetail(provider, oauthTokens)}
         />
         {providerRequiresBaseUrl(provider) ? (
           <SetupStep
@@ -1683,37 +1949,47 @@ export function InitSetup({
         ) : null}
       </Box>
 
-      <SetupPanel title="Prompt">
-        {step ? (
-          <Prompt
-            cronFieldSelectionIndex={cronFieldSelectionIndex}
-            cronModeSelectionIndex={cronModeSelectionIndex}
-            finalSelectionIndex={finalSelectionIndex}
-            input={input}
-            inputDisplayWidth={inputDisplayWidth}
-            isCustomModelInput={isCustomModelInput}
-            modelSelectionIndex={modelSelectionIndex}
-            onboardingConfig={onboardingConfig}
-            powerModeSelectionIndex={powerModeSelectionIndex}
-            provider={provider}
-            providerSelectionIndex={providerSelectionIndex}
-            runModeSelectionIndex={runModeSelectionIndex}
-            secretInputIndex={secretInputIndex}
-            selectedSource={selectedSource}
-            sourceOptions={activeSourceOptions}
-            sourceContinueSelectionIndex={sourceContinueSelectionIndex}
-            sourceDescriptionSelectionIndex={sourceDescriptionSelectionIndex}
-            sourceSelectionIndex={sourceSelectionIndex}
-            sourceState={sourceState}
-            step={step}
-            suggestedCronDescription={suggestedCronDescription}
-            suggestedCronExpression={suggestedCronExpression}
-            templateSelectionIndex={templateSelectionIndex}
-          />
-        ) : (
-          <Text>Inspecting OpenWiki setup...</Text>
-        )}
-      </SetupPanel>
+      {step === "oauth-login" ? (
+        <OAuthLoginPrompt
+          copied={copied}
+          input={input}
+          isLoggingIn={isLoggingIn}
+          loginUrl={loginUrl}
+          provider={provider}
+        />
+      ) : (
+        <SetupPanel title="Prompt">
+          {step ? (
+            <Prompt
+              cronFieldSelectionIndex={cronFieldSelectionIndex}
+              cronModeSelectionIndex={cronModeSelectionIndex}
+              finalSelectionIndex={finalSelectionIndex}
+              input={input}
+              inputDisplayWidth={inputDisplayWidth}
+              isCustomModelInput={isCustomModelInput}
+              modelSelectionIndex={modelSelectionIndex}
+              onboardingConfig={onboardingConfig}
+              powerModeSelectionIndex={powerModeSelectionIndex}
+              provider={provider}
+              providerSelectionIndex={providerSelectionIndex}
+              runModeSelectionIndex={runModeSelectionIndex}
+              secretInputIndex={secretInputIndex}
+              selectedSource={selectedSource}
+              sourceOptions={activeSourceOptions}
+              sourceContinueSelectionIndex={sourceContinueSelectionIndex}
+              sourceDescriptionSelectionIndex={sourceDescriptionSelectionIndex}
+              sourceSelectionIndex={sourceSelectionIndex}
+              sourceState={sourceState}
+              step={step}
+              suggestedCronDescription={suggestedCronDescription}
+              suggestedCronExpression={suggestedCronExpression}
+              templateSelectionIndex={templateSelectionIndex}
+            />
+          ) : (
+            <Text>Inspecting OpenWiki setup...</Text>
+          )}
+        </SetupPanel>
+      )}
 
       {needsCredentialPrompt ? (
         <Text color="gray">Secrets are masked and saved only after setup.</Text>
@@ -2397,6 +2673,67 @@ function OAuthAuthorizationLink({
   );
 }
 
+function OAuthLoginPrompt({
+  copied,
+  input,
+  isLoggingIn,
+  loginUrl,
+  provider,
+}: {
+  copied: boolean;
+  input: string;
+  isLoggingIn: boolean;
+  loginUrl: string | null;
+  provider: OpenWikiProvider;
+}) {
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Text bold color="cyan">
+        ChatGPT login
+      </Text>
+      <Text>
+        Sign in with your {getProviderLabel(provider)} account to authorize
+        OpenWiki.
+      </Text>
+      {loginUrl ? (
+        <Box flexDirection="column" marginTop={1}>
+          <Text color="gray">
+            Opening your browser. If it does not open, copy this URL:
+          </Text>
+          <Text color="cyan" wrap="wrap">
+            {loginUrl}
+          </Text>
+          <Text color="gray">
+            Press <Text bold>c</Text> to copy the URL
+            {copied ? <Text color="green"> (copied)</Text> : null}
+          </Text>
+          <Box flexDirection="column" marginTop={1}>
+            <Text color="gray">
+              If the browser cannot reach this machine, paste the redirect URL
+              or authorization code and press Enter:
+            </Text>
+            <Text>
+              <Text color="gray">&gt; </Text>
+              {input.length > 0 ? (
+                <Text color="yellow">{input}</Text>
+              ) : (
+                <Text color="gray">(paste here)</Text>
+              )}
+            </Text>
+          </Box>
+        </Box>
+      ) : (
+        <Text color="gray">Starting the ChatGPT login...</Text>
+      )}
+      <Text color="gray">
+        {isLoggingIn
+          ? "Waiting for browser sign-in or pasted URL..."
+          : "Login failed. Press Enter to retry."}
+      </Text>
+    </Box>
+  );
+}
+
 function BorderedInput({
   borderColor = "cyan",
   maxDisplayWidth,
@@ -2577,12 +2914,12 @@ function SegmentedCronInput({
   );
 }
 
-function getInitialStep(
+export function getInitialStep(
   modelIdOverride: string | null,
   provider: OpenWikiProvider,
-  onboardingConfig: OpenWikiOnboardingConfig,
-  mode: OpenWikiRunMode,
-  allowModeSelection: boolean,
+  onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
+  mode: OpenWikiRunMode = "code",
+  allowModeSelection = false,
 ): PromptStep | null {
   if (allowModeSelection) {
     return "run-mode";
@@ -2592,8 +2929,8 @@ function getInitialStep(
     return "provider";
   }
 
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
+  if (needsCredentialStep(provider)) {
+    return credentialStep(provider);
   }
 
   if (needsBaseUrlStep(provider)) {
@@ -2634,14 +2971,15 @@ function getInitialStep(
   return null;
 }
 
-function getNextStepAfterProvider(
+export function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
-  onboardingConfig: OpenWikiOnboardingConfig,
-  mode: OpenWikiRunMode,
+  onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
+  mode: OpenWikiRunMode = "code",
+  forceModelStep = false,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
+  if (needsCredentialStep(provider)) {
+    return credentialStep(provider);
   }
 
   return getNextStepAfterApiKey(
@@ -2649,6 +2987,7 @@ function getNextStepAfterProvider(
     modelIdOverride,
     onboardingConfig,
     mode,
+    forceModelStep,
   );
 }
 
@@ -2657,6 +2996,7 @@ function getNextStepAfterApiKey(
   modelIdOverride: string | null,
   onboardingConfig: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
+  forceModelStep = false,
 ): PromptStep | null {
   if (needsBaseUrlStep(provider)) {
     return "base-url";
@@ -2667,6 +3007,7 @@ function getNextStepAfterApiKey(
     modelIdOverride,
     onboardingConfig,
     mode,
+    forceModelStep,
   );
 }
 
@@ -2675,10 +3016,11 @@ function getNextStepAfterBaseUrl(
   modelIdOverride: string | null,
   onboardingConfig: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
+  forceModelStep = false,
 ): PromptStep | null {
   if (
     modelIdOverride === null &&
-    process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined
+    (forceModelStep || process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined)
   ) {
     return "model";
   }
