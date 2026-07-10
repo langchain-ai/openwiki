@@ -150,6 +150,10 @@ import { inStage, inStageSync, tagErrorStage } from "../telemetry/index.js";
 import type { RunTelemetryContext } from "../telemetry/index.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
 
+const OPENAI_COMPATIBLE_MODEL_KWARGS = {
+  enable_thinking: false,
+} as const;
+
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
   cwd = openWikiLocalWikiDir,
@@ -1271,6 +1275,14 @@ export function createModel(
     // than assigning a boolean: `streaming: false` is not the same as omitting
     // the key, because LangChain turns it into `disableStreaming`.
     ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
+    // Thinking-mode models behind OpenAI-compatible gateways hang with no
+    // output, because the reasoning stream never reaches the Chat Completions
+    // transport. Safe to spread last today: no `openai-compatible` model
+    // declares a reasoning capability, so `chatCompletionsReasoningOptions` is
+    // always empty here. Merge the two if that ever stops being true.
+    ...(provider === "openai-compatible"
+      ? { modelKwargs: OPENAI_COMPATIBLE_MODEL_KWARGS }
+      : {}),
     ...retryOptions,
   });
 }
