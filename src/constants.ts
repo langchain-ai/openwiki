@@ -111,6 +111,9 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
     label: "OpenAI",
     modelOptions: [
+      { id: "gpt-5.6-terra", label: "5.6 Terra" },
+      { id: "gpt-5.6-luna", label: "5.6 Luna" },
+      { id: "gpt-5.6-sol", label: "5.6 Sol" },
       { id: "gpt-5.5", label: "5.5" },
       { id: "gpt-5.4-mini", label: "5.4 mini" },
     ],
@@ -149,7 +152,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
 };
 
 export const DEFAULT_MODEL_ID =
-  PROVIDER_CONFIGS[DEFAULT_PROVIDER].modelOptions[0]?.id ?? "gpt-5.5";
+  PROVIDER_CONFIGS[DEFAULT_PROVIDER].modelOptions[0]?.id ?? "gpt-5.6-terra";
 
 export const SUGGESTED_MODEL_IDS = PROVIDER_CONFIGS[
   DEFAULT_PROVIDER
