@@ -1,0 +1,23 @@
+.github/workflows/openwiki-update.yml
+  s_c6b93f6ad09b8d::t_cc180209332c1c 37
+src/code-mode.ts
+  s_c6b93f6ad09b8d::t_cc180209332c1c 106
+examples/openwiki-update.yml
+  s_c6b93f6ad09b8d::t_cc180209332c1c 41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "9a4825314f674177b27acebb9981d0de5e3b53c6",
+  "prompts": {},
+  "sessions": {
+    "s_c6b93f6ad09b8d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f4d94-e4a2-76e0-b4b6-87920497e9d2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
