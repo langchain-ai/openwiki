@@ -22,6 +22,7 @@ import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
   codexTokensToEnv,
+  createCodexFetch,
   isChatGptTokenExpired,
   readCodexTokensFromEnv,
   refreshChatGptTokens,
@@ -464,7 +465,7 @@ function createModel(
           originator: CODEX_ORIGINATOR,
           "OpenAI-Beta": "responses=experimental",
         },
-        fetch: createCodexFetch(),
+        fetch: createCodexFetch(modelId),
       },
     });
   }
@@ -518,45 +519,6 @@ async function ensureFreshChatGptTokens(): Promise<void> {
   await saveOpenWikiEnv(
     codexTokensToEnv(await refreshChatGptTokens(tokens.refresh)),
   );
-}
-
-/**
- * The Codex backend rejects `system`-role input items ("System messages are not
- * allowed"); it expects system content under the `developer` role — the role
- * `@langchain/openai` already uses for genuine `SystemMessage`s on gpt-5 models.
- * DeepAgents injects its system prompt as a plain `system`-role message, so we
- * rewrite those to `developer` on the way out. Scoped to this client's
- * `configuration.fetch`, so it never touches the agent loop or streaming code.
- */
-function createCodexFetch(): typeof fetch {
-  return async (input, init) => {
-    if (init?.body != null && typeof init.body === "string") {
-      try {
-        const payload = JSON.parse(init.body) as {
-          input?: Array<{ role?: string } | null>;
-        };
-
-        if (Array.isArray(payload.input)) {
-          let changed = false;
-
-          for (const item of payload.input) {
-            if (item && item.role === "system") {
-              item.role = "developer";
-              changed = true;
-            }
-          }
-
-          if (changed) {
-            init = { ...init, body: JSON.stringify(payload) };
-          }
-        }
-      } catch {
-        // Non-JSON body: forward unchanged.
-      }
-    }
-
-    return globalThis.fetch(input, init);
-  };
 }
 
 function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {

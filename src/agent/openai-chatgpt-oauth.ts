@@ -33,6 +33,73 @@ export const CODEX_RESPONSES_BASE_URL = "https://chatgpt.com/backend-api/codex";
 /** Free-text client label sent as the `originator` header/param. */
 export const CODEX_ORIGINATOR = "openwiki";
 
+const CODEX_LUNA_MODEL_ID = "gpt-5.6-luna";
+const CODEX_LUNA_ORIGINATOR = "codex_cli_rs";
+const CODEX_LUNA_USER_AGENT = "codex_cli_rs/0.0.0";
+export const CODEX_RESPONSES_LITE_HEADER =
+  "x-openai-internal-codex-responses-lite";
+
+/**
+ * Adapts requests for the ChatGPT-backed Codex endpoint at the final fetch
+ * boundary. LangChain supplies its own user agent after merging configured
+ * headers, while Luna is exposed only to the Codex request identity and uses
+ * the Responses Lite request constraints.
+ */
+export function createCodexFetch(
+  modelId: string,
+  fetchImpl: typeof fetch = globalThis.fetch,
+): typeof fetch {
+  return async (input, init) => {
+    const useLunaProtocol =
+      modelId === CODEX_LUNA_MODEL_ID && isCodexResponsesRequest(input);
+
+    if (init?.body != null && typeof init.body === "string") {
+      try {
+        const payload = JSON.parse(init.body) as {
+          input?: Array<{ role?: string } | null>;
+          parallel_tool_calls?: boolean;
+          reasoning?: unknown;
+        };
+        let changed = false;
+
+        if (Array.isArray(payload.input)) {
+          for (const item of payload.input) {
+            if (item && item.role === "system") {
+              item.role = "developer";
+              changed = true;
+            }
+          }
+        }
+
+        if (useLunaProtocol) {
+          payload.reasoning = {
+            ...(isRecord(payload.reasoning) ? payload.reasoning : {}),
+            context: "all_turns",
+          };
+          payload.parallel_tool_calls = false;
+          changed = true;
+        }
+
+        if (changed) {
+          init = { ...init, body: JSON.stringify(payload) };
+        }
+      } catch {
+        // Non-JSON body: forward unchanged.
+      }
+    }
+
+    if (useLunaProtocol) {
+      const headers = new Headers(init?.headers);
+      headers.set("originator", CODEX_LUNA_ORIGINATOR);
+      headers.set("user-agent", CODEX_LUNA_USER_AGENT);
+      headers.set(CODEX_RESPONSES_LITE_HEADER, "true");
+      init = { ...init, headers };
+    }
+
+    return fetchImpl(input, init);
+  };
+}
+
 /**
  * Refresh the access token when it is within this many milliseconds of expiry,
  * so a token does not lapse mid-run.
@@ -188,6 +255,30 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 
 function asString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isCodexResponsesRequest(input: Parameters<typeof fetch>[0]): boolean {
+  const requestUrl =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : input.url;
+
+  try {
+    const actual = new URL(requestUrl);
+    const expected = new URL(`${CODEX_RESPONSES_BASE_URL}/responses`);
+
+    return (
+      actual.origin === expected.origin && actual.pathname === expected.pathname
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function exchangeToken(body: URLSearchParams): Promise<CodexTokens> {

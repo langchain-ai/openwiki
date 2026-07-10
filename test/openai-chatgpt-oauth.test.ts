@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   CHATGPT_TOKEN_REFRESH_THRESHOLD_MS,
+  CODEX_RESPONSES_LITE_HEADER,
   type CodexTokens,
   codexTokensToEnv,
+  createCodexFetch,
   decodeChatGptIdentity,
   formatChatGptAccount,
   isChatGptTokenExpired,
@@ -59,6 +61,86 @@ function stubTokenResponse(
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe("Codex Responses requests", () => {
+  test("uses the Luna request identity and Responses Lite constraints", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    const codexFetch = createCodexFetch("gpt-5.6-luna", fetchMock);
+
+    await codexFetch("https://chatgpt.com/backend-api/codex/responses", {
+      body: JSON.stringify({
+        input: [{ role: "system", content: "Follow the repository rules." }],
+        parallel_tool_calls: true,
+        reasoning: { effort: "high" },
+      }),
+      headers: { "user-agent": "langchainjs-openai/1.0.0" },
+      method: "POST",
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [
+      string,
+      { body: string; headers: Headers },
+    ];
+    expect(init.headers.get("originator")).toBe("codex_cli_rs");
+    expect(init.headers.get("user-agent")).toBe("codex_cli_rs/0.0.0");
+    expect(init.headers.get(CODEX_RESPONSES_LITE_HEADER)).toBe("true");
+    expect(JSON.parse(init.body)).toEqual({
+      input: [{ role: "developer", content: "Follow the repository rules." }],
+      parallel_tool_calls: false,
+      reasoning: { effort: "high", context: "all_turns" },
+    });
+  });
+
+  test.each(["gpt-5.6-terra", "gpt-5.6-sol", "gpt-5.5"])(
+    "preserves the existing request behavior for %s",
+    async (modelId) => {
+      const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+      const codexFetch = createCodexFetch(modelId, fetchMock);
+
+      await codexFetch("https://chatgpt.com/backend-api/codex/responses", {
+        body: JSON.stringify({
+          input: [{ role: "system", content: "System prompt" }],
+          parallel_tool_calls: true,
+        }),
+        headers: {
+          originator: "openwiki",
+          "user-agent": "langchainjs-openai/1.0.0",
+        },
+        method: "POST",
+      });
+
+      const [, init] = fetchMock.mock.calls[0] as [
+        string,
+        { body: string; headers: Record<string, string> },
+      ];
+      expect(init.headers).toEqual({
+        originator: "openwiki",
+        "user-agent": "langchainjs-openai/1.0.0",
+      });
+      expect(JSON.parse(init.body)).toEqual({
+        input: [{ role: "developer", content: "System prompt" }],
+        parallel_tool_calls: true,
+      });
+    },
+  );
+
+  test("does not apply Luna identity outside the Codex Responses endpoint", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    const codexFetch = createCodexFetch("gpt-5.6-luna", fetchMock);
+
+    await codexFetch("https://example.com/responses", {
+      body: JSON.stringify({ input: [] }),
+      headers: { originator: "openwiki" },
+      method: "POST",
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [
+      string,
+      { headers: Record<string, string> },
+    ];
+    expect(init.headers).toEqual({ originator: "openwiki" });
+  });
 });
 
 describe("refreshChatGptTokens", () => {
