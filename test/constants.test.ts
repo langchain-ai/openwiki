@@ -27,6 +27,7 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   resolveConfiguredProvider,
+  resolveOpenAiCompatibleUseResponsesApi,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
@@ -268,6 +269,30 @@ describe("resolveOpenRouterProviderOnly", () => {
         OPENWIKI_OPENROUTER_PROVIDER_ONLY: "Novita, Fireworks,, Together",
       }),
     ).toEqual(["Novita", "Fireworks", "Together"]);
+  });
+});
+
+describe("resolveOpenAiCompatibleUseResponsesApi", () => {
+  test("defaults to chat completions compatibility", () => {
+    expect(resolveOpenAiCompatibleUseResponsesApi({})).toBe(false);
+  });
+
+  test("only enables responses API for an explicit true opt-in", () => {
+    expect(
+      resolveOpenAiCompatibleUseResponsesApi({
+        OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: "true",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleUseResponsesApi({
+        OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: " TRUE ",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleUseResponsesApi({
+        OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: "false",
+      }),
+    ).toBe(false);
   });
 });
 

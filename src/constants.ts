@@ -12,6 +12,8 @@ export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
+export const OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API";
 export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
   "OPENAI_CHATGPT_ACCESS_TOKEN";
 export const OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY =
@@ -41,6 +43,7 @@ export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
 export const DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3;
+const TRUE_ENV_VALUE = "true";
 export const OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY =
   "OPENWIKI_GOOGLE_ACCESS_TOKEN";
 export const OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY = "OPENWIKI_GOOGLE_CLIENT_ID";
@@ -700,6 +703,15 @@ export function resolveOpenRouterProviderOnly(
     .filter((provider) => provider.length > 0);
 
   return providers.length > 0 ? providers : undefined;
+}
+
+export function resolveOpenAiCompatibleUseResponsesApi(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    env[OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY]?.trim().toLowerCase() ===
+    TRUE_ENV_VALUE
+  );
 }
 
 export function normalizeModelId(value: string): string {
