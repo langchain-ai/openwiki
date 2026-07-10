@@ -11,10 +11,19 @@ npm install -g openwiki
 ```
 
 On Windows, prefer installing OpenWiki with Node.js package managers such as
-`npm` or `pnpm`. `bun install -g openwiki` may need Visual Studio Build Tools
-with the Desktop development with C++ workload because OpenWiki's checkpointing
-dependency uses `better-sqlite3`, a native module that can fall back to local
-compilation under Bun on Windows.
+`npm` or `pnpm`:
+
+```sh
+npm install -g openwiki
+# or
+pnpm add -g openwiki
+```
+
+`bun install -g openwiki` can fall back to compiling OpenWiki's `better-sqlite3`
+checkpointing dependency. Before using that path, install Visual Studio Build
+Tools with the Desktop development with C++ workload. Bun does not run lifecycle
+scripts from installed packages by default, so it cannot display a package-level
+warning before that native dependency build starts.
 
 ## Quick Start
 

@@ -14,9 +14,9 @@ It also ships with GitHub Actions and GitLab CI workflow examples for scheduled 
 On Windows, prefer installing OpenWiki with Node.js package managers such as
 `npm` or `pnpm`. The Bun global-install path can fall back to compiling
 `better-sqlite3`, which requires Visual Studio Build Tools with the Desktop
-development with C++ workload. OpenWiki's package prints an install notice when
-it detects Windows + Bun so users see the supported workaround before the native
-module build output.
+development with C++ workload. Bun does not run lifecycle scripts from installed
+packages by default, so OpenWiki cannot show an install-time warning before that
+native dependency build begins.
 
 ## Local credential storage
 
