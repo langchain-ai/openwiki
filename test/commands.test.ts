@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { parseCommand } from "../src/commands.ts";
+import { parseCommand, shouldRunNonInteractively } from "../src/commands.ts";
 
 // parseCommand's --dry-run gate consults isDevelopmentMode(), which reads
 // NODE_ENV / OPENWIKI_DEV. Pin both to a non-development state per test and
@@ -58,12 +58,22 @@ describe("parseCommand — chat default", () => {
 });
 
 describe("parseCommand — init/update", () => {
-  test("--init selects the init command and starts", () => {
-    expect(parseCommand(["--init"])).toMatchObject({
+  test("personal --init selects the init command and starts", () => {
+    expect(parseCommand(["personal", "--init"])).toMatchObject({
       kind: "run",
       command: "init",
+      mode: "personal",
       shouldStart: true,
     });
+  });
+
+  test("bare --init requires an explicit mode", () => {
+    const result = parseCommand(["--init"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/requires a mode/u);
+    }
   });
 
   test("--update selects the update command and starts", () => {
@@ -85,7 +95,7 @@ describe("parseCommand — init/update", () => {
   });
 
   test("repeating the same command flag is allowed", () => {
-    expect(parseCommand(["--init", "--init"]).kind).toBe("run");
+    expect(parseCommand(["personal", "--init", "--init"]).kind).toBe("run");
   });
 });
 
@@ -99,8 +109,8 @@ describe("parseCommand — print", () => {
     });
   });
 
-  test("--print with --init is valid", () => {
-    expect(parseCommand(["--print", "--init"])).toMatchObject({
+  test("--print with explicit-mode --init is valid", () => {
+    expect(parseCommand(["personal", "--print", "--init"])).toMatchObject({
       kind: "run",
       print: true,
       command: "init",
@@ -191,10 +201,108 @@ describe("parseCommand — unknown options and dry-run gating", () => {
   test("--dry-run is accepted in development mode", () => {
     process.env.OPENWIKI_DEV = "1";
 
-    expect(parseCommand(["--dry-run", "--init"])).toMatchObject({
+    expect(parseCommand(["personal", "--dry-run", "--init"])).toMatchObject({
       kind: "run",
       dryRun: true,
       command: "init",
     });
+  });
+});
+
+describe("shouldRunNonInteractively", () => {
+  test("--init and --update without --print bypass the UI when stdin is not a TTY", () => {
+    expect(
+      shouldRunNonInteractively(parseCommand(["personal", "--init"]), false),
+    ).toBe(true);
+    expect(shouldRunNonInteractively(parseCommand(["--update"]), false)).toBe(
+      true,
+    );
+  });
+
+  test("a one-shot chat message bypasses the UI when stdin is not a TTY", () => {
+    expect(
+      shouldRunNonInteractively(parseCommand(["Document the API"]), false),
+    ).toBe(true);
+  });
+
+  test("--init on a TTY keeps the interactive UI", () => {
+    expect(
+      shouldRunNonInteractively(parseCommand(["personal", "--init"]), true),
+    ).toBe(false);
+  });
+
+  test("--print bypasses the UI regardless of TTY", () => {
+    expect(
+      shouldRunNonInteractively(
+        parseCommand(["personal", "--init", "--print"]),
+        true,
+      ),
+    ).toBe(true);
+    expect(
+      shouldRunNonInteractively(
+        parseCommand(["personal", "--init", "--print"]),
+        false,
+      ),
+    ).toBe(true);
+  });
+
+  test("interactive chat without a message still uses the UI path", () => {
+    expect(shouldRunNonInteractively(parseCommand([]), false)).toBe(false);
+    expect(shouldRunNonInteractively(parseCommand([]), true)).toBe(false);
+  });
+
+  test("dry-run, help, and error commands never run non-interactively", () => {
+    process.env.OPENWIKI_DEV = "1";
+    expect(
+      shouldRunNonInteractively(parseCommand(["--dry-run", "--init"]), false),
+    ).toBe(false);
+    expect(shouldRunNonInteractively(parseCommand(["--help"]), false)).toBe(
+      false,
+    );
+    expect(shouldRunNonInteractively(parseCommand(["--nope"]), false)).toBe(
+      false,
+    );
+  });
+});
+
+describe("parseCommand — cron", () => {
+  test("cron list returns a list command", () => {
+    expect(parseCommand(["cron", "list"])).toMatchObject({
+      kind: "cron",
+      action: "list",
+      target: null,
+    });
+  });
+
+  test("cron pause with a source instance id is rejected", () => {
+    const result = parseCommand(["cron", "pause", "web-search-1"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron resume with a source instance id is rejected", () => {
+    const result = parseCommand(["cron", "resume", "web-search-1"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron delete with a source instance id is rejected", () => {
+    const result = parseCommand(["cron", "delete", "web-search-1"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron pause with 'all' is accepted", () => {
+    expect(parseCommand(["cron", "pause", "all"])).toMatchObject({
+      kind: "cron",
+      action: "pause",
+    });
+  });
+
+  test("cron pause with no target is an error", () => {
+    const result = parseCommand(["cron", "pause"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron pause with extra arguments is an error", () => {
+    const result = parseCommand(["cron", "pause", "all", "extra"]);
+    expect(result.kind).toBe("error");
   });
 });
