@@ -28,18 +28,24 @@ export async function runGitCommand(
   options: RunGitCommandOptions = {},
 ): Promise<GitCommandResult> {
   try {
-    const { stdout, stderr } = await execFileAsync("git", ["--no-pager", ...args], {
-      cwd,
-      timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-      maxBuffer: MAX_BUFFER_BYTES,
-      env: buildGitEnv(),
-      windowsHide: true,
-    });
+    const { stdout, stderr } = await execFileAsync(
+      "git",
+      ["--no-pager", ...args],
+      {
+        cwd,
+        timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+        maxBuffer: MAX_BUFFER_BYTES,
+        env: buildGitEnv(),
+        windowsHide: true,
+      },
+    );
 
     return { output: truncateOutput(combineStreams(stdout, stderr)) };
   } catch (error) {
     if (isExecError(error)) {
-      const combined = truncateOutput(combineStreams(error.stdout, error.stderr));
+      const combined = truncateOutput(
+        combineStreams(error.stdout, error.stderr),
+      );
 
       if (error.killed) {
         return {

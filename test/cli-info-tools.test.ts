@@ -5,10 +5,12 @@ import { getHelpText } from "../src/commands.ts";
 describe("createCliInfoTools", () => {
   test("openwiki_cli_help returns the CLI help text", async () => {
     const tools = createCliInfoTools();
-    const tool = tools.find((candidate) => candidate.name === "openwiki_cli_help");
+    const tool = tools.find(
+      (candidate) => candidate.name === "openwiki_cli_help",
+    );
     expect(tool).toBeDefined();
 
-    const result = await tool!.invoke({});
+    const result: unknown = await tool!.invoke({});
     const output = typeof result === "string" ? result : JSON.stringify(result);
 
     expect(output.length).toBeGreaterThan(0);

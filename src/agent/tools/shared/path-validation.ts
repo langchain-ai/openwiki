@@ -9,7 +9,10 @@ import { isFileNotFoundError } from "../../../fs-errors.js";
  *
  * Rejects `~`, `..` segments, and any path that resolves outside `rootDir`.
  */
-export function resolveWithinRoot(virtualPath: string, rootDir: string): string {
+export function resolveWithinRoot(
+  virtualPath: string,
+  rootDir: string,
+): string {
   if (typeof virtualPath !== "string" || virtualPath.trim().length === 0) {
     throw new Error("Path must be a non-empty string.");
   }
@@ -29,7 +32,10 @@ export function resolveWithinRoot(virtualPath: string, rootDir: string): string 
   const resolvedRoot = path.resolve(rootDir);
   const resolved = path.resolve(resolvedRoot, ...segments);
 
-  if (resolved !== resolvedRoot && !resolved.startsWith(resolvedRoot + path.sep)) {
+  if (
+    resolved !== resolvedRoot &&
+    !resolved.startsWith(resolvedRoot + path.sep)
+  ) {
     throw new Error(`Path escapes the repository root: ${virtualPath}`);
   }
 
@@ -60,7 +66,10 @@ export async function resolveRealPathWithinRoot(
     throw error;
   }
 
-  if (realResolved !== realRoot && !realResolved.startsWith(realRoot + path.sep)) {
+  if (
+    realResolved !== realRoot &&
+    !realResolved.startsWith(realRoot + path.sep)
+  ) {
     throw new Error(
       `Path resolves outside the repository root via symlink: ${virtualPath}`,
     );
@@ -90,7 +99,10 @@ export function isSafeGitRef(ref: string): boolean {
  * Validates a virtual path and returns the repository-relative pathspec (with
  * POSIX separators) suitable for passing to git after `--`.
  */
-export function validateVirtualPath(virtualPath: string, rootDir: string): string {
+export function validateVirtualPath(
+  virtualPath: string,
+  rootDir: string,
+): string {
   const resolved = resolveWithinRoot(virtualPath, rootDir);
   const relative = path.relative(path.resolve(rootDir), resolved);
 

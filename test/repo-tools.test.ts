@@ -21,12 +21,14 @@ async function listFiles(
   tools: StructuredToolInterface[],
   input: Record<string, unknown>,
 ): Promise<{ files: string[]; truncated: boolean; error?: string }> {
-  const result = await getTool(
+  const result: unknown = await getTool(
     tools,
     "openwiki_list_repository_files",
   ).invoke(input);
 
-  return JSON.parse(typeof result === "string" ? result : JSON.stringify(result));
+  return JSON.parse(
+    typeof result === "string" ? result : JSON.stringify(result),
+  ) as { files: string[]; truncated: boolean; error?: string };
 }
 
 describe("createRepositoryDiscoveryTools", () => {
@@ -42,9 +44,15 @@ describe("createRepositoryDiscoveryTools", () => {
 
     await writeFile(path.join(repoDir, "README.md"), "# readme\n");
     await writeFile(path.join(repoDir, "src", "index.ts"), "export {};\n");
-    await writeFile(path.join(repoDir, "src", "nested", "util.ts"), "export {};\n");
+    await writeFile(
+      path.join(repoDir, "src", "nested", "util.ts"),
+      "export {};\n",
+    );
     await writeFile(path.join(repoDir, "src", "styles.css"), "body{}\n");
-    await writeFile(path.join(repoDir, "node_modules", "pkg", "dep.js"), "//\n");
+    await writeFile(
+      path.join(repoDir, "node_modules", "pkg", "dep.js"),
+      "//\n",
+    );
     await writeFile(path.join(repoDir, ".git", "config"), "[core]\n");
 
     tools = createRepositoryDiscoveryTools({ cwd: repoDir });
@@ -94,9 +102,7 @@ describe("createRepositoryDiscoveryTools", () => {
     await mkdir(bigRepo, { recursive: true });
     const writes: Promise<void>[] = [];
     for (let index = 0; index < 5200; index += 1) {
-      writes.push(
-        writeFile(path.join(bigRepo, `file-${index}.txt`), "x"),
-      );
+      writes.push(writeFile(path.join(bigRepo, `file-${index}.txt`), "x"));
     }
     await Promise.all(writes);
 

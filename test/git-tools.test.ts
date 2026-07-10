@@ -35,7 +35,7 @@ async function invoke(
   name: string,
   input: Record<string, unknown>,
 ): Promise<string> {
-  const result = await getTool(tools, name).invoke(input);
+  const result: unknown = await getTool(tools, name).invoke(input);
 
   return typeof result === "string" ? result : JSON.stringify(result);
 }
@@ -155,10 +155,7 @@ describe("createGitReadOnlyTools", () => {
     git(bigRepo, ["init", "--quiet"]);
     git(bigRepo, ["config", "user.email", "test@example.com"]);
     git(bigRepo, ["config", "user.name", "Test User"]);
-    await writeFile(
-      path.join(bigRepo, "big.txt"),
-      `${"x".repeat(150_000)}\n`,
-    );
+    await writeFile(path.join(bigRepo, "big.txt"), `${"x".repeat(150_000)}\n`);
     git(bigRepo, ["add", "big.txt"]);
     git(bigRepo, ["commit", "--quiet", "-m", "big file"]);
 

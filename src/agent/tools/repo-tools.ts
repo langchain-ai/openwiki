@@ -148,15 +148,15 @@ async function collectFiles(
   return files.length >= MAX_ENTRIES;
 }
 
-function normalizeExtensions(extensions: string[] | undefined): Set<string> | null {
+function normalizeExtensions(
+  extensions: string[] | undefined,
+): Set<string> | null {
   if (extensions === undefined || extensions.length === 0) {
     return null;
   }
 
   return new Set(
-    extensions.map((extension) =>
-      extension.replace(/^\./u, "").toLowerCase(),
-    ),
+    extensions.map((extension) => extension.replace(/^\./u, "").toLowerCase()),
   );
 }
 

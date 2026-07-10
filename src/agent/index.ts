@@ -15,10 +15,7 @@ import {
   FilesystemBackend,
   type FilesystemPermission,
 } from "deepagents";
-import { createOpenWikiConnectorTools } from "../connectors/tools.js";
-import { createCliInfoTools } from "./tools/cli-info-tools.js";
-import { createGitReadOnlyTools } from "./tools/git-tools.js";
-import { createRepositoryDiscoveryTools } from "./tools/repo-tools.js";
+import { buildOpenWikiTools } from "./tools/index.js";
 import {
   DEBUG_ENV_KEYS,
   loadOpenWikiEnv,
@@ -210,40 +207,14 @@ async function runOpenWikiAgentCore(
       : "checkpointer=memory",
   );
   const isChat = command === "chat";
-  const tools = [
-    ...createOpenWikiConnectorTools(),
-    ...createCliInfoTools(),
-    ...(outputMode === "repository"
-      ? [
-          ...createGitReadOnlyTools({ cwd }),
-          ...createRepositoryDiscoveryTools({ cwd }),
-        ]
-      : []),
-  ];
-
-  // Interactive chat keeps the shell backend for now; automated init/update runs
-  // use a plain FilesystemBackend with native write permissions so no generic
-  // shell execute tool is exposed.
-  const wikiBackend = isChat
-    ? new OpenWikiLocalShellBackend({
-        docsOnly: false,
-        maxOutputBytes: 100_000,
-        outputMode,
-        rootDir: cwd,
-        timeout: 120,
-        virtualMode: true,
-      })
-    : new FilesystemBackend({
-        rootDir: cwd,
-        virtualMode: true,
-      });
+  const tools = buildOpenWikiTools({ cwd, outputMode, command });
+  const wikiBackend = createRunBackend(isChat, outputMode, cwd);
   const backend = new CompositeBackend(wikiBackend, {
     "/skills/": new FilesystemBackend({
       rootDir: openWikiSkillsDir,
       virtualMode: true,
     }),
   });
-
   const permissions = createRunPermissions(isChat, outputMode);
   const agent = createDeepAgent({
     model,
@@ -360,12 +331,39 @@ export type CheckpointTarget = {
 };
 
 /**
+ * Selects the backend for a run. Interactive chat keeps the shell backend for
+ * now; automated init/update runs use a plain FilesystemBackend so no generic
+ * shell execute tool is exposed.
+ */
+export function createRunBackend(
+  isChat: boolean,
+  outputMode: OpenWikiOutputMode,
+  cwd: string,
+): OpenWikiLocalShellBackend | FilesystemBackend {
+  if (isChat) {
+    return new OpenWikiLocalShellBackend({
+      docsOnly: false,
+      maxOutputBytes: 100_000,
+      outputMode,
+      rootDir: cwd,
+      timeout: 120,
+      virtualMode: true,
+    });
+  }
+
+  return new FilesystemBackend({
+    rootDir: cwd,
+    virtualMode: true,
+  });
+}
+
+/**
  * Builds native filesystem write permissions for a run. Chat is unrestricted;
  * repository init/update allows writes only under /openwiki (explicit allow
  * followed by an explicit deny); local-wiki init/update allows writes anywhere
  * under the wiki virtual root.
  */
-function createRunPermissions(
+export function createRunPermissions(
   isChat: boolean,
   outputMode: OpenWikiOutputMode,
 ): FilesystemPermission[] {

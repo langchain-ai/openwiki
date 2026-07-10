@@ -19,7 +19,7 @@ export function createCliInfoTools(): StructuredToolInterface[] {
         properties: {},
         additionalProperties: false,
       } as const,
-      func: async () => getHelpText(),
+      func: () => Promise.resolve(getHelpText()),
     }),
   ];
 }
