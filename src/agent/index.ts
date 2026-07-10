@@ -84,6 +84,7 @@ import {
   type OpenWikiProvider,
 } from "../constants.js";
 import {
+  cleanupPlanFile,
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
   createRunContext,
@@ -295,6 +296,11 @@ async function runOpenWikiAgentCore(
 
   if (checkpointTarget.persistent) {
     await chmodIfExists(checkpointTarget.connString, 0o600);
+  }
+
+  if (command !== "chat") {
+    await cleanupPlanFile(cwd, outputMode);
+    emitDebug(options, "plan=cleaned");
   }
 
   const metadataWritten = await persistRunMetadataIfChanged(

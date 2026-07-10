@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
@@ -188,6 +188,29 @@ export async function persistRunMetadataIfChanged(
   await writeLastUpdateMetadata(command, cwd, modelId, outputMode);
 
   return true;
+}
+
+/**
+ * Deletes the temporary planning file written during init/update runs. Cleanup
+ * is deterministic and host-side so the agent no longer needs a shell to remove
+ * it. Tolerates a missing file (the plan may never have been written).
+ */
+export async function cleanupPlanFile(
+  cwd: string,
+  outputMode: OpenWikiOutputMode = "repository",
+): Promise<void> {
+  const planPath =
+    outputMode === "local-wiki"
+      ? path.join(cwd, "_plan.md")
+      : path.join(cwd, OPEN_WIKI_DIR, "_plan.md");
+
+  try {
+    await unlink(planPath);
+  } catch (error) {
+    if (!isFileNotFoundError(error)) {
+      throw error;
+    }
+  }
 }
 
 /**
