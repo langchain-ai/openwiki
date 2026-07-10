@@ -131,7 +131,7 @@ ignore that HTTPS override and keep using the local loopback callback,
 
 Use `openwiki personal --init` for the local personal brain wiki or `openwiki code --init` for repository documentation. Bare `openwiki --init` is no longer supported because init needs an explicit mode. `openwiki --update` defaults to personal mode unless you pass `code`, `personal`, or `--mode`.
 
-`openwiki` will automatically append prompting to your `AGENTS.md` and/or `CLAUDE.md` files to instruct your coding agent to reference it when searching for context. If the file does not already exist in your repository, OpenWiki will create it for you.
+On each `code` run, `openwiki` maintains both an `AGENTS.md` and a `CLAUDE.md` at the repository root, adding prompting that instructs your coding agent to reference the wiki when searching for context. Each file is created if it does not already exist. If a file is present, OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of your content untouched (appending the block the first time). The scheduled GitHub Actions workflow includes these files, along with the workflow itself, in the documentation pull request.
 
 On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
 
@@ -173,7 +173,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI, OpenRouter, Fireworks, Baseten, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.5`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Fireworks, Baseten, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.5`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -201,6 +201,35 @@ OPENAI_COMPATIBLE_API_KEY=your-gateway-key
 OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
+
+### OpenAI (ChatGPT login)
+
+The `openai-chatgpt` provider calls OpenAI's Codex backend using your ChatGPT
+subscription instead of a metered API key. Model usage draws on your ChatGPT
+Plus/Pro/Team plan's included Codex usage rather than per-token API billing. It
+serves the same models as the `openai` provider (`gpt-5.4-mini`, `gpt-5.5`).
+
+Instead of pasting an API key, run the setup wizard and complete a browser
+login:
+
+```bash
+OPENWIKI_PROVIDER=openai-chatgpt openwiki code --init
+# or
+OPENWIKI_PROVIDER=openai-chatgpt openwiki personal --init
+```
+
+The wizard opens `https://auth.openai.com` in your browser (and also prints the
+URL for headless/SSH use, where you can open it on another machine — or paste the
+redirect URL back into the terminal to finish without a callback). After you sign
+in with your ChatGPT account, OpenWiki captures the OAuth callback, shows the
+signed-in email and plan, and then continues to model and LangSmith selection
+just like the other providers. It stores the resulting access token, refresh
+token, expiry, account id, email, and plan in `~/.openwiki/.env`
+(`OPENAI_CHATGPT_ACCESS_TOKEN`, `OPENAI_CHATGPT_REFRESH_TOKEN`,
+`OPENAI_CHATGPT_EXPIRES_AT`, `OPENAI_CHATGPT_ACCOUNT_ID`, `OPENAI_CHATGPT_EMAIL`,
+`OPENAI_CHATGPT_PLAN`). These are managed for you — the access token is refreshed
+automatically when it expires, so you normally never edit them by hand. Treat the
+refresh token like a password.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 

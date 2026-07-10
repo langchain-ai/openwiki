@@ -32,6 +32,7 @@ import {
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+import { formatChatGptAccountFromEnv } from "./agent/openai-chatgpt-oauth.js";
 import { getErrorMessage, sanitizeDiagnosticText } from "./diagnostics.js";
 import { stripHtmlTags } from "./utils.js";
 import {
@@ -952,7 +953,12 @@ function Header({
       getDefaultModelId(resolveConfiguredProvider()),
     Math.max(8, terminalColumns - 12),
   );
-  const displayProvider = getProviderLabel(resolveConfiguredProvider());
+  const configuredProvider = resolveConfiguredProvider();
+  const displayProvider = getProviderLabel(configuredProvider);
+  const chatGptAccount =
+    configuredProvider === "openai-chatgpt"
+      ? formatChatGptAccountFromEnv()
+      : null;
   const displayDirectory = sanitizeHeaderValue(
     formatCwd(process.cwd()),
     Math.max(8, terminalColumns - 17),
@@ -971,6 +977,12 @@ function Header({
           <Text color="gray">v{OPENWIKI_VERSION}</Text>{" "}
           <Text color="gray">provider: </Text>
           <Text color="white">{displayProvider}</Text>{" "}
+          {chatGptAccount ? (
+            <>
+              <Text color="gray">account: </Text>
+              <Text color="white">{chatGptAccount}</Text>{" "}
+            </>
+          ) : null}
           <Text color="gray">model: </Text>
           <Text color="white">{displayModelId}</Text>
         </Text>
@@ -1016,6 +1028,12 @@ function Header({
           <Text color="gray">provider: </Text>
           <Text color="white">{displayProvider}</Text>
         </Text>
+        {chatGptAccount ? (
+          <Text>
+            <Text color="gray">account: </Text>
+            <Text color="white">{chatGptAccount}</Text>
+          </Text>
+        ) : null}
         <Text>
           <Text color="gray">model: </Text>
           <Text color="white">{displayModelId}</Text>
