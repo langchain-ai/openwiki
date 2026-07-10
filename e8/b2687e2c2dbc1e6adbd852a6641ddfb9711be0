@@ -1,0 +1,28 @@
+.github/ISSUE_TEMPLATE/bug_report.yml
+  s_466497d4107182::t_4e2dcc37fd6ac3 1-56
+.github/ISSUE_TEMPLATE/feature_request.yml
+  s_466497d4107182::t_86b17b526eb8c8 1-40
+.github/ISSUE_TEMPLATE/config.yml
+  s_466497d4107182::t_6b36a62347446c 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e8b2687e2c2dbc1e6adbd852a6641ddfb9711be0",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_466497d4107182": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6e7a2ee2-e8fe-4a71-bff3-80c383d32feb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
