@@ -1,0 +1,38 @@
+openwiki/.last-update.json
+  s_a57fcbbb51c51c::t_3347b3e65f120c 2,4-5
+openwiki/agent/workflow.md
+  s_a57fcbbb51c51c::t_5385d160106dae 1-7
+openwiki/architecture/overview.md
+  s_a57fcbbb51c51c::t_81d7e567710141 1-7
+openwiki/cli/usage.md
+  s_a57fcbbb51c51c::t_6461f3a521e88d 1-9
+openwiki/index.md
+  s_a57fcbbb51c51c::t_086b9722560e65 1-20
+openwiki/log.md
+  s_a57fcbbb51c51c::t_e3bfcdfa78f0e7 1-4
+openwiki/operations/credentials-and-updates.md
+  s_a57fcbbb51c51c::t_b5241d39baadf0 1-8
+openwiki/quickstart.md
+  s_a57fcbbb51c51c::t_5d9fb26ac26c02 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "87261c107323b6a7b3766cddddb729009e97a562",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a57fcbbb51c51c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a9eadf2f-4fd3-42d7-8435-556597e807c3",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
