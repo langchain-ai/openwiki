@@ -1,0 +1,25 @@
+test/openai-chatgpt-credentials.test.ts
+  s_466497d4107182::t_688dc0fd903048 105-108
+  s_466497d4107182::t_26fefdfcdbf848 109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e51a6778342deb5840e8ddc12890514c47d438d3",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_466497d4107182": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6e7a2ee2-e8fe-4a71-bff3-80c383d32feb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
