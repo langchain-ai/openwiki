@@ -1,0 +1,40 @@
+test/fixtures/okf-bundle/log.md
+  s_a57fcbbb51c51c::t_45aa650cdf5632 1-5
+test/fixtures/okf-bundle/architecture/overview.md
+  s_a57fcbbb51c51c::t_c30a42b05b8536 1-11
+test/fixtures/okf-bundle/domain/orders.md
+  s_a57fcbbb51c51c::t_1b2e0cfd0a8693 1-11
+examples/openwiki-update.yml
+  s_a57fcbbb51c51c::t_d666b9608abbcc 50-54
+test/fixtures/okf-bundle/index.md
+  s_a57fcbbb51c51c::t_c62e778892508c 1-17
+test/fixtures/okf-bundle/quickstart.md
+  s_a57fcbbb51c51c::t_30de23cda5e4eb 1-11
+test/okf/conformance-fixture.test.ts
+  s_a57fcbbb51c51c::t_1b1edd532a1a8f 1-21
+DEVELOPMENT.md
+  s_a57fcbbb51c51c::t_d7d39b5a5fda3b 71-101
+README.md
+  s_a57fcbbb51c51c::t_54f4038136de50 36-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a75d504d1e07e4346948968a20241f32707fbfbf",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a57fcbbb51c51c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a9eadf2f-4fd3-42d7-8435-556597e807c3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
