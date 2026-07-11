@@ -5,6 +5,14 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
+export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
+  "OPENAI_CHATGPT_ACCESS_TOKEN";
+export const OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY =
+  "OPENAI_CHATGPT_REFRESH_TOKEN";
+export const OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY = "OPENAI_CHATGPT_EXPIRES_AT";
+export const OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY = "OPENAI_CHATGPT_ACCOUNT_ID";
+export const OPENAI_CHATGPT_EMAIL_ENV_KEY = "OPENAI_CHATGPT_EMAIL";
+export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
@@ -17,7 +25,38 @@ export const AWS_SECRET_ACCESS_KEY_ENV_KEY = "AWS_SECRET_ACCESS_KEY";
 export const AWS_REGION_ENV_KEY = "AWS_REGION";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
-export const DEFAULT_PROVIDER = "openrouter";
+export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
+  "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
+export const DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3;
+export const OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY =
+  "OPENWIKI_GOOGLE_ACCESS_TOKEN";
+export const OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY = "OPENWIKI_GOOGLE_CLIENT_ID";
+export const OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY =
+  "OPENWIKI_GOOGLE_CLIENT_SECRET";
+export const OPENWIKI_GOOGLE_REFRESH_TOKEN_ENV_KEY =
+  "OPENWIKI_GOOGLE_REFRESH_TOKEN";
+export const OPENWIKI_GMAIL_ACCESS_TOKEN_ENV_KEY =
+  "OPENWIKI_GMAIL_ACCESS_TOKEN";
+export const OPENWIKI_GMAIL_REFRESH_TOKEN_ENV_KEY =
+  "OPENWIKI_GMAIL_REFRESH_TOKEN";
+export const OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY =
+  "OPENWIKI_NOTION_MCP_ACCESS_TOKEN";
+export const OPENWIKI_NOTION_MCP_CLIENT_ID_ENV_KEY =
+  "OPENWIKI_NOTION_MCP_CLIENT_ID";
+export const OPENWIKI_NOTION_MCP_REFRESH_TOKEN_ENV_KEY =
+  "OPENWIKI_NOTION_MCP_REFRESH_TOKEN";
+export const OPENWIKI_NOTION_TOKEN_ENV_KEY = "OPENWIKI_NOTION_TOKEN";
+export const OPENWIKI_SLACK_BOT_TOKEN_ENV_KEY = "OPENWIKI_SLACK_BOT_TOKEN";
+export const OPENWIKI_SLACK_CLIENT_ID_ENV_KEY = "OPENWIKI_SLACK_CLIENT_ID";
+export const OPENWIKI_SLACK_CLIENT_SECRET_ENV_KEY =
+  "OPENWIKI_SLACK_CLIENT_SECRET";
+export const OPENWIKI_SLACK_USER_TOKEN_ENV_KEY = "OPENWIKI_SLACK_USER_TOKEN";
+export const OPENWIKI_X_ACCESS_TOKEN_ENV_KEY = "OPENWIKI_X_ACCESS_TOKEN";
+export const OPENWIKI_X_CLIENT_ID_ENV_KEY = "OPENWIKI_X_CLIENT_ID";
+export const OPENWIKI_X_CLIENT_SECRET_ENV_KEY = "OPENWIKI_X_CLIENT_SECRET";
+export const OPENWIKI_X_REFRESH_TOKEN_ENV_KEY = "OPENWIKI_X_REFRESH_TOKEN";
+export const OPENWIKI_TAVILY_API_KEY_ENV_KEY = "TAVILY_API_KEY";
+export const DEFAULT_PROVIDER = "openai";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type OpenWikiProvider =
@@ -26,9 +65,17 @@ export type OpenWikiProvider =
   | "bedrock"
   | "fireworks"
   | "openai"
+  | "openai-chatgpt"
   | "openai-compatible"
   | "openrouter"
   | "vertexai";
+
+/**
+ * How a provider authenticates. Providers default to `"api-key"` (a pasted
+ * secret persisted to a `*_API_KEY` env var); `"oauth"` providers instead run a
+ * browser login flow and persist short-lived access/refresh tokens.
+ */
+export type ProviderAuthMethod = "api-key" | "oauth";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -36,6 +83,19 @@ export type ProviderModelOption = {
   id: string;
   label: string;
 };
+
+/**
+ * Model options offered by OpenAI. Shared by the `openai` (API key) and
+ * `openai-chatgpt` (OAuth login) providers so the two always expose an
+ * identical model list.
+ */
+const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
+  { id: "gpt-5.6-terra", label: "5.6 Terra" },
+  { id: "gpt-5.6-luna", label: "5.6 Luna" },
+  { id: "gpt-5.6-sol", label: "5.6 Sol" },
+  { id: "gpt-5.5", label: "5.5" },
+  { id: "gpt-5.4-mini", label: "5.4 mini" },
+];
 
 type ProviderConfig = {
   /**
@@ -45,6 +105,12 @@ type ProviderConfig = {
    * variables or IAM role) instead of a single persisted key.
    */
   apiKeyEnvKey?: string;
+  /**
+   * Authentication method for the provider. Omitted entries are implicitly
+   * {@link ProviderAuthMethod} `"api-key"`. `"oauth"` providers replace the
+   * pasted-key setup step with a browser login and store tokens instead.
+   */
+  authMethod?: ProviderAuthMethod;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -67,14 +133,15 @@ type ProviderConfig = {
 };
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
-  "openrouter",
-  "baseten",
-  "fireworks",
   "openai",
-  "openai-compatible",
+  "openai-chatgpt",
   "anthropic",
   "vertexai",
   "bedrock",
+  "openrouter",
+  "openai-compatible",
+  "fireworks",
+  "baseten",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -102,10 +169,13 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   openai: {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
     label: "OpenAI",
-    modelOptions: [
-      { id: "gpt-5.4-mini", label: "5.4 mini" },
-      { id: "gpt-5.5", label: "5.5" },
-    ],
+    modelOptions: OPENAI_MODEL_OPTIONS,
+  },
+  "openai-chatgpt": {
+    apiKeyEnvKey: OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
+    authMethod: "oauth",
+    label: "OpenAI (ChatGPT login)",
+    modelOptions: OPENAI_MODEL_OPTIONS,
   },
   "openai-compatible": {
     apiKeyEnvKey: OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
@@ -164,7 +234,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
 };
 
 export const DEFAULT_MODEL_ID =
-  PROVIDER_CONFIGS[DEFAULT_PROVIDER].modelOptions[0]?.id ?? "zai-org/GLM-5.2";
+  PROVIDER_CONFIGS[DEFAULT_PROVIDER].modelOptions[0]?.id ?? "gpt-5.6-terra";
 
 export const SUGGESTED_MODEL_IDS = PROVIDER_CONFIGS[
   DEFAULT_PROVIDER
@@ -182,6 +252,16 @@ export function getProviderApiKeyEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
   return getProviderConfig(provider).apiKeyEnvKey;
+}
+
+export function getProviderAuthMethod(
+  provider: OpenWikiProvider,
+): ProviderAuthMethod {
+  return getProviderConfig(provider).authMethod ?? "api-key";
+}
+
+export function providerUsesOAuth(provider: OpenWikiProvider): boolean {
+  return getProviderAuthMethod(provider) === "oauth";
 }
 
 /**
@@ -270,8 +350,48 @@ export function resolveConfiguredProvider(
 ): OpenWikiProvider {
   return (
     normalizeProvider(env[OPENWIKI_PROVIDER_ENV_KEY]) ??
-    (env[OPENROUTER_API_KEY_ENV_KEY] ? "openrouter" : DEFAULT_PROVIDER)
+    (env[OPENAI_API_KEY_ENV_KEY]
+      ? "openai"
+      : env[OPENAI_COMPATIBLE_API_KEY_ENV_KEY]
+        ? "openai-compatible"
+        : env[OPENROUTER_API_KEY_ENV_KEY]
+          ? "openrouter"
+          : env[ANTHROPIC_API_KEY_ENV_KEY]
+            ? "anthropic"
+            : env[BASETEN_API_KEY_ENV_KEY]
+              ? "baseten"
+              : env[FIREWORKS_API_KEY_ENV_KEY]
+                ? "fireworks"
+                : DEFAULT_PROVIDER)
   );
+}
+
+export function resolveProviderRetryAttempts(
+  env: NodeJS.ProcessEnv = process.env,
+): number {
+  const rawRetryAttempts = env[OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY];
+
+  if (rawRetryAttempts === undefined) {
+    return DEFAULT_PROVIDER_RETRY_ATTEMPTS;
+  }
+
+  const retryAttempts = rawRetryAttempts.trim();
+
+  if (!/^[1-9]\d*$/u.test(retryAttempts)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  const parsedRetryAttempts = Number(retryAttempts);
+
+  if (!Number.isSafeInteger(parsedRetryAttempts)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  return parsedRetryAttempts;
 }
 
 export function normalizeModelId(value: string): string {
@@ -289,4 +409,4 @@ export function isValidModelId(value: string): boolean {
   );
 }
 
-export const OPENWIKI_VERSION = "0.0.4";
+export const OPENWIKI_VERSION = "0.1.1";
