@@ -30,6 +30,8 @@ Chat runs skip metadata writes entirely.
 
 Base URLs are resolved through `resolveProviderBaseUrl()` in `src/constants.ts`, which prefers a provider's alternative base URL environment variable (`baseUrlEnvKey`) over the built-in default before falling back to the SDK's own default endpoint. Providers marked `requiresBaseUrl` are validated at startup by `ensureProviderBaseUrl()`.
 
+Provider retry attempts are resolved through `resolveProviderRetryAttempts()` and passed to the LangChain model client's `maxRetries` option. The value is the number of retries after the first provider request; unset values default to 3 retries.
+
 ## Prompting strategy
 
 `src/agent/prompt.ts` encodes the product rules directly into the system prompt. The agent is instructed to:
@@ -50,6 +52,32 @@ The user prompt changes with the command:
 - `init` includes the current Git summary and asks for fresh documentation.
 - `update` includes last update metadata and a Git change summary.
 - `chat` just forwards the user message.
+
+### Local brain open questions
+
+Local brain runs use `~/.openwiki/wiki/open-questions.md` as a compact queue for uncertainty about the user's wiki or core memory model, not as a place to copy unresolved questions from every source document. Good open questions are things that would impair future assistance, such as unclear recurring routines, missing locations, uncertain preferences, ambiguous people/org relationships, or contradictions between sources.
+
+Do not add an open question merely because a Notion spec, meeting note, email thread, or source page contains open product/design questions. Keep those on source pages, `themes.md`, or `commitments.md` unless they are explicitly owned by the user or reveal a gap in the user's memory graph. Group similar questions under one topic key instead of creating many same-project entries.
+
+The file should use three sections:
+
+- `Active`: unresolved questions with `Owner`, `Seen`, `Evidence`, and optional `Notes`.
+- `Answered`: previously open questions with `Evidence` linking to the canonical answer or source evidence, plus `Answered`.
+- `Stale`: dropped questions with `Why` and `Last seen`.
+
+The agent should read `open-questions.md` at the start of each local-wiki run when it exists, use the run's evidence to answer known questions, and return to the file at the end to add new unresolved questions or move answered ones out of `Active`. Answered entries should link to the answer evidence rather than duplicating an answer summary that can drift.
+
+### Local brain themes
+
+Local brain runs use `themes.md` as a compact trend index, not as a narrative page. Prefer a Markdown table with `Topic key`, `Theme/Signal`, `First seen`, `Last seen`, `Confidence`, `Sources`, `Evidence count`, `Status`, and `Evidence`. If a table is too cramped, use one short fielded entry per theme.
+
+Each theme should have at most 1-2 short sentences of prose. Keep detailed examples, long context, source-specific item lists, and tweet/feed clusters in `sources/<connector>.md`, then link to that evidence from the theme row. Watchlist entries should be especially terse.
+
+### Local brain commitments and logistics
+
+Local brain runs use `commitments.md` for work commitments, follow-ups, approvals, deadlines, and scheduled work items. Entries should include `Owner` when inferable from evidence: `me`, `team`, `other:<name>`, or `unknown`.
+
+Use `personal-logistics.md` for non-work personal items such as appointments, pickups, travel, household tasks, and life-admin deadlines. Personal logistics should not be mixed into `commitments.md` unless they are also work commitments.
 
 ## Git evidence and update metadata
 
@@ -76,9 +104,7 @@ That metadata is later used to scope update runs.
 
 ## Model errors
 
-The agent runtime uses only the selected provider and model for a run. If that
-request fails, OpenWiki surfaces the provider error and stops instead of
-retrying with another model.
+The agent runtime uses only the selected provider and model for a run. Transient request failures use the LangChain model client's retry handling, configurable with `OPENWIKI_PROVIDER_RETRY_ATTEMPTS`. If the selected provider/model still fails, OpenWiki surfaces the provider error and stops instead of retrying with another model.
 
 ## Why this matters
 
