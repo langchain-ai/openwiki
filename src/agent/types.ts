@@ -34,6 +34,7 @@ export type OpenWikiRunEvent =
 export type OpenWikiRunOptions = {
   debug?: boolean;
   isFollowup?: boolean;
+  maxIterations?: number | null;
   modelId?: string | null;
   onEvent?: (event: OpenWikiRunEvent) => void;
   outputMode?: OpenWikiOutputMode;

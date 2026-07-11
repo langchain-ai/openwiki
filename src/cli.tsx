@@ -249,6 +249,8 @@ function FirstRunNotice() {
 
 function App({ command }: AppProps) {
   const app = useApp();
+  const startupMaxIterations =
+    command.kind === "run" ? command.maxIterations : null;
   const startupModelId = command.kind === "run" ? command.modelId : null;
   const startupRunMode = command.kind === "run" ? command.mode : "personal";
   const [runMode, setRunMode] = useState<OpenWikiRunMode>(startupRunMode);
@@ -553,6 +555,7 @@ function App({ command }: AppProps) {
         runOpenWikiAgent(resolvedCommand, runtimeCwd, {
           debug: isDebugMode(),
           isFollowup: activeMessageIsFollowup,
+          maxIterations: startupMaxIterations,
           modelId: sessionModelId,
           outputMode: runtimeOutputMode,
           threadId: sessionThreadId.current,
@@ -638,6 +641,7 @@ function App({ command }: AppProps) {
     runtimeOutputMode,
     sessionModelId,
     sessionProvider,
+    startupMaxIterations,
     shouldRunInteractiveCredentialSetup,
   ]);
 
@@ -3978,6 +3982,7 @@ async function runPrintCommand(
     await runOpenWikiAgent(command.command, runtimeCwd, {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
+      maxIterations: command.maxIterations,
       modelId: command.modelId,
       outputMode: runtimeOutputMode,
       threadId: createOpenWikiThreadId(runtimeCwd),

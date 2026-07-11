@@ -291,6 +291,35 @@ describe("parseCommand — --modelId", () => {
   });
 });
 
+describe("parseCommand — --max-iterations", () => {
+  test("accepts space-separated and equals forms", () => {
+    expect(parseCommand(["--max-iterations", "12"])).toMatchObject({
+      kind: "run",
+      maxIterations: 12,
+    });
+    expect(parseCommand(["--max-iterations=8"])).toMatchObject({
+      kind: "run",
+      maxIterations: 8,
+    });
+  });
+
+  test("rejects missing, non-integer, and non-positive values", () => {
+    for (const args of [
+      ["--max-iterations"],
+      ["--max-iterations", "0"],
+      ["--max-iterations", "1.5"],
+      ["--max-iterations=not-a-number"],
+    ]) {
+      const result = parseCommand(args);
+
+      expect(result.kind).toBe("error");
+      if (result.kind === "error") {
+        expect(result.message).toMatch(/positive whole number/u);
+      }
+    }
+  });
+});
+
 describe("parseCommand — unknown options and dry-run gating", () => {
   test("an unknown --flag is an error", () => {
     const result = parseCommand(["--nope"]);

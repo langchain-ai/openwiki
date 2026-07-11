@@ -272,12 +272,10 @@ async function runOpenWikiAgentCore(
   };
 
   emitDebug(options, "stream=opening protocol=events version=v3");
-  const stream = await agent.streamEvents(input, {
-    configurable: {
-      thread_id: threadId,
-    },
-    version: "v3",
-  });
+  const stream = await agent.streamEvents(
+    input,
+    createAgentRunConfig(threadId, options.maxIterations),
+  );
   emitDebug(options, "stream=started protocol=events version=v3");
 
   let unhandledChunkCount = 0;
@@ -350,6 +348,21 @@ async function runOpenWikiAgentCore(
   return {
     command,
     model: modelId,
+  };
+}
+
+export function createAgentRunConfig(
+  threadId: string,
+  maxIterations: number | null | undefined,
+) {
+  return {
+    ...(maxIterations === null || maxIterations === undefined
+      ? {}
+      : { recursionLimit: maxIterations }),
+    configurable: {
+      thread_id: threadId,
+    },
+    version: "v3" as const,
   };
 }
 
