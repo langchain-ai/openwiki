@@ -6,12 +6,31 @@ import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import { createDeepAgent, LocalShellBackend } from "deepagents";
-import { DEBUG_ENV_KEYS, loadOpenWikiEnv, openWikiEnvDir } from "../env.js";
+import { createDeepAgent } from "deepagents";
+import { createOpenWikiConnectorTools } from "../connectors/tools.js";
+import { ensureWriteConnectorSkill } from "../connectors/write-connector-skill.js";
+import {
+  DEBUG_ENV_KEYS,
+  loadOpenWikiEnv,
+  openWikiEnvDir,
+  saveOpenWikiEnv,
+} from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
+import { openWikiLocalWikiDir } from "../openwiki-home.js";
+import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
+import {
+  CODEX_ORIGINATOR,
+  CODEX_RESPONSES_BASE_URL,
+  codexTokensToEnv,
+  createCodexFetch,
+  isChatGptTokenExpired,
+  readCodexTokensFromEnv,
+  refreshChatGptTokens,
+} from "./openai-chatgpt-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import type {
   OpenWikiCommand,
+  OpenWikiOutputMode,
   OpenWikiRunEvent,
   OpenWikiRunOptions,
   OpenWikiRunResult,
@@ -29,9 +48,11 @@ import {
   OPENROUTER_BASE_URL,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  resolveProviderRetryAttempts,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
@@ -44,11 +65,13 @@ import {
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
-  cwd = process.cwd(),
+  cwd = openWikiLocalWikiDir,
   options: OpenWikiRunOptions = {},
 ): Promise<OpenWikiRunResult> {
+  const runtimeCwd = options.outputMode ? cwd : openWikiLocalWikiDir;
+
   emitDebug(options, `command=${command}`);
-  emitDebug(options, `cwd=${cwd}`);
+  emitDebug(options, `cwd=${runtimeCwd}`);
   emitDebug(
     options,
     `userMessage=${options.userMessage ? "provided" : "not-provided"}`,
@@ -57,6 +80,7 @@ export async function runOpenWikiAgent(
   emitDebug(options, `env.beforeLoad ${formatEnvironmentDebug()}`);
 
   await loadOpenWikiEnv();
+  await ensureWriteConnectorSkill();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
@@ -90,13 +114,29 @@ export async function runOpenWikiAgent(
   ensureProviderKey(provider);
   emitDebug(options, `credentials=${provider} key present`);
   ensureProviderBaseUrl(provider);
+
+  if (provider === "openai-chatgpt") {
+    // Refresh before the model is built, so `createModel` stays synchronous.
+    await ensureFreshChatGptTokens();
+    emitDebug(options, "chatgpt.token=fresh");
+  }
+
   const modelId = resolveModelId(options, provider);
   emitDebug(options, `model=${modelId}`);
+  const providerRetryAttempts = resolveProviderRetryAttempts();
+  emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
 
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
   try {
-    return await runOpenWikiAgentCore(command, cwd, options, provider, modelId);
+    return await runOpenWikiAgentCore(
+      command,
+      runtimeCwd,
+      options,
+      provider,
+      modelId,
+      providerRetryAttempts,
+    );
   } catch (error) {
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
     throw error;
@@ -111,30 +151,42 @@ async function runOpenWikiAgentCore(
   options: OpenWikiRunOptions,
   provider: OpenWikiProvider,
   modelId: string,
+  providerRetryAttempts: number,
 ): Promise<OpenWikiRunResult> {
-  const context = await createRunContext(command, cwd);
+  const outputMode = options.outputMode ?? "local-wiki";
+  const context = await createRunContext(command, cwd, outputMode);
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
-    command === "chat" ? null : await createOpenWikiContentSnapshot(cwd);
+    command === "chat"
+      ? null
+      : await createOpenWikiContentSnapshot(cwd, outputMode);
   emitDebug(options, "openwiki.snapshot=created");
-  const model = createModel(provider, modelId);
+  const model = createModel(provider, modelId, providerRetryAttempts);
   emitDebug(options, `model.provider=${provider}`);
   emitDebug(options, "model=initialized");
-  const checkpointer = await createCheckpointer();
-  emitDebug(options, `checkpointer=${formatUrlDebugValue(checkpointPath)}`);
   const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
   emitDebug(options, `thread=${threadId}`);
+  const checkpointTarget = resolveCheckpointTarget(command);
+  const checkpointer = await createCheckpointer(checkpointTarget);
+  emitDebug(
+    options,
+    checkpointTarget.persistent
+      ? `checkpointer=${formatUrlDebugValue(checkpointTarget.connString)}`
+      : "checkpointer=memory",
+  );
   const agent = createDeepAgent({
     model,
-    tools: [],
+    tools: createOpenWikiConnectorTools(),
     checkpointer,
-    backend: new LocalShellBackend({
+    backend: new OpenWikiLocalShellBackend({
+      docsOnly: command !== "chat",
       maxOutputBytes: 100_000,
+      outputMode,
       rootDir: cwd,
       timeout: 120,
       virtualMode: true,
     }),
-    systemPrompt: createSystemPrompt(command),
+    systemPrompt: createSystemPrompt(command, outputMode),
   });
   emitDebug(options, "agent=created");
 
@@ -176,13 +228,16 @@ async function runOpenWikiAgentCore(
     }
   }
   emitDebug(options, "stream=completed");
-  await chmodIfExists(checkpointPath, 0o600);
+  if (checkpointTarget.persistent) {
+    await chmodIfExists(checkpointTarget.connString, 0o600);
+  }
 
   if (
     command !== "chat" &&
-    openWikiSnapshotBefore !== (await createOpenWikiContentSnapshot(cwd))
+    openWikiSnapshotBefore !==
+      (await createOpenWikiContentSnapshot(cwd, outputMode))
   ) {
-    await writeLastUpdateMetadata(command, cwd, modelId);
+    await writeLastUpdateMetadata(command, cwd, modelId, outputMode);
     emitDebug(options, "metadata=written");
   } else {
     emitDebug(
@@ -201,6 +256,11 @@ async function runOpenWikiAgentCore(
 
 const checkpointPath = path.join(openWikiEnvDir, "openwiki.sqlite");
 
+export type CheckpointTarget = {
+  connString: string;
+  persistent: boolean;
+};
+
 function createRunUserMessage(
   command: OpenWikiCommand,
   cwd: string,
@@ -212,29 +272,69 @@ function createRunUserMessage(
   }
 
   return `
-${createUserPrompt(command, context, options.userMessage ?? null)}
+${createUserPrompt(
+  command,
+  context,
+  options.userMessage ?? null,
+  options.outputMode ?? "local-wiki",
+)}
 
-Repository root:
+${formatRuntimeRootLabel(options.outputMode ?? "local-wiki")}:
 ${cwd}
 
 Runtime note:
-- Treat the repository root above as the only project you are documenting.
-- Filesystem tools use a virtual root: / means ${cwd}.
-- For ls, read_file, write_file, edit_file, glob, and grep, use virtual paths such as /README.md, /agent/agents/main.py, and /openwiki/quickstart.md.
+- ${formatRuntimeRootInstruction(options.outputMode ?? "local-wiki")}
 - Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.
-- Shell execute commands run on the host. For execute, use cd ${cwd} before repository commands.
-- Do not search parent directories or unrelated repositories.
+- Shell execute commands run on the host. For execute, use cd ${cwd} before commands that should run against this root.
+- Do not search parent directories or unrelated directories.
 `.trim();
 }
 
-async function createCheckpointer(): Promise<SqliteSaver> {
-  await mkdir(openWikiEnvDir, {
+function formatRuntimeRootLabel(outputMode: OpenWikiOutputMode): string {
+  return outputMode === "local-wiki" ? "Local wiki root" : "Repository root";
+}
+
+function formatRuntimeRootInstruction(outputMode: OpenWikiOutputMode): string {
+  if (outputMode === "local-wiki") {
+    return "Filesystem tools use a virtual root: / means the local wiki directory above. Write wiki pages directly under /, for example /quickstart.md, /sources/gmail.md, and /_plan.md. Do not create a nested /openwiki directory.";
+  }
+
+  return "Treat the repository root above as source evidence only. The canonical generated wiki is ~/.openwiki/wiki, not a repository-local openwiki/ directory. Filesystem tools use a virtual root: / means the repository root for source inspection paths such as /README.md, /agent/agents/main.py, and /package.json.";
+}
+
+async function createCheckpointer(
+  target: CheckpointTarget,
+): Promise<SqliteSaver> {
+  if (target.persistent) {
+    await prepareCheckpointDirectory(target.connString);
+  }
+
+  return SqliteSaver.fromConnString(target.connString);
+}
+
+async function prepareCheckpointDirectory(filePath: string): Promise<void> {
+  const checkpointDir = path.dirname(filePath);
+  await mkdir(checkpointDir, {
     recursive: true,
     mode: 0o700,
   });
-  await chmodIfExists(openWikiEnvDir, 0o700);
+  await chmodIfExists(checkpointDir, 0o700);
+}
 
-  return SqliteSaver.fromConnString(checkpointPath);
+export function resolveCheckpointTarget(
+  command: OpenWikiCommand,
+): CheckpointTarget {
+  if (command === "chat") {
+    return {
+      connString: checkpointPath,
+      persistent: true,
+    };
+  }
+
+  return {
+    connString: ":memory:",
+    persistent: false,
+  };
 }
 
 async function chmodIfExists(filePath: string, mode: number): Promise<void> {
@@ -317,13 +417,56 @@ function resolveModelId(
   return modelId;
 }
 
-function createModel(provider: OpenWikiProvider, modelId: string) {
+function createModel(
+  provider: OpenWikiProvider,
+  modelId: string,
+  providerRetryAttempts: number,
+) {
+  const retryOptions = { maxRetries: providerRetryAttempts };
+
   if (provider === "anthropic") {
     const baseURL = resolveProviderBaseUrl(provider);
 
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+      ...retryOptions,
+    });
+  }
+
+  if (provider === "openai-chatgpt") {
+    // Already refreshed by `ensureFreshChatGptTokens()` before the run started.
+    const tokens = readCodexTokensFromEnv();
+
+    if (!tokens) {
+      throw new Error(CHATGPT_LOGIN_INCOMPLETE_MESSAGE);
+    }
+
+    // Reuse LangChain's existing ChatOpenAI Responses-API integration (correct
+    // tool-calling + SSE parsing for DeepAgents) pointed at the Codex backend:
+    // - useResponsesApi routes to POST {baseURL}/responses
+    // - zdrEnabled forces `store: false`, which the Codex backend requires
+    // - defaultHeaders carry the account id / originator / beta header
+    return new ChatOpenAI({
+      apiKey: tokens.access,
+      model: modelId,
+      useResponsesApi: true,
+      zdrEnabled: true,
+      // The Codex backend rejects non-streaming requests
+      // ("Stream must be set to true"), so force the streaming transport for
+      // every generation — including the non-streaming `.invoke()` calls
+      // DeepAgents' agent node issues internally.
+      streaming: true,
+      ...retryOptions,
+      configuration: {
+        baseURL: CODEX_RESPONSES_BASE_URL,
+        defaultHeaders: {
+          "chatgpt-account-id": tokens.accountId,
+          originator: CODEX_ORIGINATOR,
+          "OpenAI-Beta": "responses=experimental",
+        },
+        fetch: createCodexFetch(modelId),
+      },
     });
   }
 
@@ -333,6 +476,7 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
       siteName: "OpenWiki",
+      ...retryOptions,
     });
   }
 
@@ -347,7 +491,34 @@ function createModel(provider: OpenWikiProvider, modelId: string) {
       : undefined,
     model: modelId,
     useResponsesApi: provider === "openai",
+    ...retryOptions,
   });
+}
+
+const CHATGPT_LOGIN_INCOMPLETE_MESSAGE =
+  "ChatGPT login is incomplete. Run `openwiki code --init` or `openwiki personal --init` to sign in with your ChatGPT account.";
+
+/**
+ * Refreshes the persisted ChatGPT OAuth tokens once at startup when they are
+ * expired/near-expiry, writing the rotated tokens back to `~/.openwiki/.env`
+ * (which also updates `process.env`, so `createModel` can stay synchronous).
+ * This is a short-lived CLI process, so a single refresh-at-startup is enough:
+ * there is no background refresh loop.
+ */
+async function ensureFreshChatGptTokens(): Promise<void> {
+  const tokens = readCodexTokensFromEnv();
+
+  if (!tokens) {
+    throw new Error(CHATGPT_LOGIN_INCOMPLETE_MESSAGE);
+  }
+
+  if (!isChatGptTokenExpired(tokens.expiresAtMs)) {
+    return;
+  }
+
+  await saveOpenWikiEnv(
+    codexTokensToEnv(await refreshChatGptTokens(tokens.refresh)),
+  );
 }
 
 function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
@@ -1121,7 +1292,11 @@ function formatDebugValue(key: string, value: string | undefined): string {
     return `set(length=${value.length})`;
   }
 
-  if (key === OPENWIKI_MODEL_ID_ENV_KEY || key === OPENWIKI_PROVIDER_ENV_KEY) {
+  if (
+    key === OPENWIKI_MODEL_ID_ENV_KEY ||
+    key === OPENWIKI_PROVIDER_ENV_KEY ||
+    key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
+  ) {
     return `set(value=${JSON.stringify(value)})`;
   }
 

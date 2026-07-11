@@ -1,3 +1,23 @@
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
+minimumReleaseAgeExclude:
+  - "@langchain/openai"
+  - "@langchain/openai@1.5.4"
+  - "@langchain/openai@1.5.5"
+  - "@vitest/coverage-v8@4.1.10"
+  - "@vitest/expect@4.1.10"
+  - "@vitest/mocker@4.1.10"
+  - "@vitest/pretty-format@4.1.10"
+  - "@vitest/runner@4.1.10"
+  - "@vitest/snapshot@4.1.10"
+  - "@vitest/spy@4.1.10"
+  - "@vitest/utils@4.1.10"
+  - "deepagents@1.10.7"
+  - "langchain@1.5.3"
+  - "node-abi@3.94.0"
+  - "picomatch@4.0.5"
+  - "vitest@4.1.10"
 # Supply-chain hardening (see https://pnpm.io/supply-chain-security).
 #
 # Delay installing newly published versions so that a compromised release has
