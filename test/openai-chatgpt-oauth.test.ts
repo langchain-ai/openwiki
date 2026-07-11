@@ -71,10 +71,21 @@ describe("Codex Responses requests", () => {
     await codexFetch("https://chatgpt.com/backend-api/codex/responses", {
       body: JSON.stringify({
         input: [{ role: "system", content: "Follow the repository rules." }],
+        instructions: "You are a coding agent.",
         parallel_tool_calls: true,
         reasoning: { effort: "high" },
+        tools: [
+          {
+            type: "function",
+            name: "read_file",
+            parameters: { type: "object" },
+          },
+        ],
       }),
-      headers: { "user-agent": "langchainjs-openai/1.0.0" },
+      headers: {
+        authorization: "Bearer test-token",
+        "user-agent": "langchainjs-openai/1.0.0",
+      },
       method: "POST",
     });
 
@@ -85,8 +96,27 @@ describe("Codex Responses requests", () => {
     expect(init.headers.get("originator")).toBe("codex_cli_rs");
     expect(init.headers.get("user-agent")).toBe("codex_cli_rs/0.0.0");
     expect(init.headers.get(CODEX_RESPONSES_LITE_HEADER)).toBe("true");
+    expect(init.headers.get("authorization")).toBe("Bearer test-token");
     expect(JSON.parse(init.body)).toEqual({
-      input: [{ role: "developer", content: "Follow the repository rules." }],
+      input: [
+        {
+          type: "additional_tools",
+          role: "developer",
+          tools: [
+            {
+              type: "function",
+              name: "read_file",
+              parameters: { type: "object" },
+            },
+          ],
+        },
+        {
+          type: "message",
+          role: "developer",
+          content: [{ type: "input_text", text: "You are a coding agent." }],
+        },
+        { role: "developer", content: "Follow the repository rules." },
+      ],
       parallel_tool_calls: false,
       reasoning: { effort: "high", context: "all_turns" },
     });
@@ -140,6 +170,45 @@ describe("Codex Responses requests", () => {
       { headers: Record<string, string> },
     ];
     expect(init.headers).toEqual({ originator: "openwiki" });
+  });
+
+  test("preserves Request headers when adding the Luna headers", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    const codexFetch = createCodexFetch("gpt-5.6-luna", fetchMock);
+    const request = new Request(
+      "https://chatgpt.com/backend-api/codex/responses?stream=true",
+      { headers: { "chatgpt-account-id": "acct_test" }, method: "POST" },
+    );
+
+    await codexFetch(request, {
+      body: JSON.stringify({ input: [] }),
+      headers: { authorization: "Bearer test-token" },
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [Request, { headers: Headers }];
+    expect(init.headers.get("chatgpt-account-id")).toBe("acct_test");
+    expect(init.headers.get("authorization")).toBe("Bearer test-token");
+    expect(init.headers.get(CODEX_RESPONSES_LITE_HEADER)).toBe("true");
+  });
+
+  test("passes non-object JSON bodies through unchanged", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    const codexFetch = createCodexFetch("gpt-5.6-luna", fetchMock);
+
+    await codexFetch("https://chatgpt.com/backend-api/codex/responses", {
+      body: "null",
+      headers: { originator: "openwiki" },
+      method: "POST",
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://chatgpt.com/backend-api/codex/responses",
+      {
+        body: "null",
+        headers: { originator: "openwiki" },
+        method: "POST",
+      },
+    );
   });
 });
 

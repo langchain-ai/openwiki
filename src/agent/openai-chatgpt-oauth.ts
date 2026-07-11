@@ -55,16 +55,17 @@ export function createCodexFetch(
 
     if (init?.body != null && typeof init.body === "string") {
       try {
-        const payload = JSON.parse(init.body) as {
-          input?: Array<{ role?: string } | null>;
-          parallel_tool_calls?: boolean;
-          reasoning?: unknown;
-        };
+        const payload: unknown = JSON.parse(init.body);
+
+        if (!isRecord(payload)) {
+          return fetchImpl(input, init);
+        }
+
         let changed = false;
 
         if (Array.isArray(payload.input)) {
           for (const item of payload.input) {
-            if (item && item.role === "system") {
+            if (isRecord(item) && item.role === "system") {
               item.role = "developer";
               changed = true;
             }
@@ -72,6 +73,33 @@ export function createCodexFetch(
         }
 
         if (useLunaProtocol) {
+          const inputItems: unknown[] = Array.isArray(payload.input)
+            ? payload.input
+            : [];
+          const prefix = [];
+
+          if (Array.isArray(payload.tools)) {
+            prefix.push({
+              type: "additional_tools",
+              role: "developer",
+              tools: payload.tools,
+            });
+          }
+
+          if (
+            typeof payload.instructions === "string" &&
+            payload.instructions.length > 0
+          ) {
+            prefix.push({
+              type: "message",
+              role: "developer",
+              content: [{ type: "input_text", text: payload.instructions }],
+            });
+          }
+
+          payload.input = [...prefix, ...inputItems];
+          delete payload.instructions;
+          delete payload.tools;
           payload.reasoning = {
             ...(isRecord(payload.reasoning) ? payload.reasoning : {}),
             context: "all_turns",
@@ -89,7 +117,12 @@ export function createCodexFetch(
     }
 
     if (useLunaProtocol) {
-      const headers = new Headers(init?.headers);
+      const headers = new Headers(
+        input instanceof Request ? input.headers : undefined,
+      );
+      new Headers(init?.headers).forEach((value, key) =>
+        headers.set(key, value),
+      );
       headers.set("originator", CODEX_LUNA_ORIGINATOR);
       headers.set("user-agent", CODEX_LUNA_USER_AGENT);
       headers.set(CODEX_RESPONSES_LITE_HEADER, "true");
