@@ -16,6 +16,7 @@ export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const REQUESTY_API_KEY_ENV_KEY = "REQUESTY_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
@@ -51,6 +52,7 @@ export const OPENWIKI_X_REFRESH_TOKEN_ENV_KEY = "OPENWIKI_X_REFRESH_TOKEN";
 export const OPENWIKI_TAVILY_API_KEY_ENV_KEY = "TAVILY_API_KEY";
 export const DEFAULT_PROVIDER = "openai";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+export const REQUESTY_BASE_URL = "https://router.requesty.ai/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
@@ -59,7 +61,8 @@ export type OpenWikiProvider =
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "requesty";
 
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
@@ -119,6 +122,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai-compatible",
   "fireworks",
   "baseten",
+  "requesty",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -183,6 +187,18 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
+    ],
+  },
+  requesty: {
+    apiKeyEnvKey: REQUESTY_API_KEY_ENV_KEY,
+    baseURL: REQUESTY_BASE_URL,
+    label: "Requesty",
+    modelOptions: [
+      { id: "openai/gpt-4o-mini", label: "GPT-4o mini" },
+      { id: "openai/gpt-4o", label: "GPT-4o" },
+      { id: "anthropic/claude-sonnet-4-5", label: "Claude Sonnet" },
+      { id: "deepseek/deepseek-chat", label: "DeepSeek Chat" },
+      { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash" },
     ],
   },
 };
@@ -300,13 +316,15 @@ export function resolveConfiguredProvider(
         ? "openai-compatible"
         : env[OPENROUTER_API_KEY_ENV_KEY]
           ? "openrouter"
-          : env[ANTHROPIC_API_KEY_ENV_KEY]
-            ? "anthropic"
-            : env[BASETEN_API_KEY_ENV_KEY]
-              ? "baseten"
-              : env[FIREWORKS_API_KEY_ENV_KEY]
-                ? "fireworks"
-                : DEFAULT_PROVIDER)
+          : env[REQUESTY_API_KEY_ENV_KEY]
+            ? "requesty"
+            : env[ANTHROPIC_API_KEY_ENV_KEY]
+              ? "anthropic"
+              : env[BASETEN_API_KEY_ENV_KEY]
+                ? "baseten"
+                : env[FIREWORKS_API_KEY_ENV_KEY]
+                  ? "fireworks"
+                  : DEFAULT_PROVIDER)
   );
 }
 

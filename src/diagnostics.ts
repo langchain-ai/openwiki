@@ -5,6 +5,7 @@ import {
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  REQUESTY_API_KEY_ENV_KEY,
 } from "./constants.js";
 
 /**
@@ -26,6 +27,7 @@ export function sanitizeDiagnosticText(value: string): string {
     OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    REQUESTY_API_KEY_ENV_KEY,
     "LANGSMITH_API_KEY",
   ]) {
     const secret = process.env[key];

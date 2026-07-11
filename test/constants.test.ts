@@ -76,6 +76,12 @@ describe("resolveConfiguredProvider", () => {
     );
   });
 
+  test("falls back to requesty when only a Requesty key is present", () => {
+    expect(resolveConfiguredProvider({ REQUESTY_API_KEY: "x" })).toBe(
+      "requesty",
+    );
+  });
+
   test("falls back to the default provider when nothing is configured", () => {
     expect(resolveConfiguredProvider({})).toBe(DEFAULT_PROVIDER);
   });
@@ -91,6 +97,9 @@ describe("resolveProviderBaseUrl", () => {
   test("returns the built-in default when no override is set", () => {
     expect(resolveProviderBaseUrl("openrouter", {})).toBe(
       "https://openrouter.ai/api/v1",
+    );
+    expect(resolveProviderBaseUrl("requesty", {})).toBe(
+      "https://router.requesty.ai/v1",
     );
   });
 
