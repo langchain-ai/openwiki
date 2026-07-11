@@ -8,6 +8,10 @@ import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
 } from "../fs-errors.js";
+import {
+  readOpenWikiOnboardingConfig,
+  readRepositoryWikiInstructions,
+} from "../onboarding.js";
 import type {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -42,11 +46,13 @@ export async function createRunContext(
   outputMode: OpenWikiOutputMode = "repository",
 ): Promise<RunContext> {
   const lastUpdate = await readLastUpdate(cwd, outputMode);
+  const wikiGoal = await readRunWikiGoal(cwd, outputMode);
 
   if (command === "chat") {
     return {
       lastUpdate,
       gitSummary: "Not applicable for chat.",
+      wikiGoal,
     };
   }
 
@@ -55,13 +61,26 @@ export async function createRunContext(
       lastUpdate,
       gitSummary:
         "Local wiki mode: connector source evidence is provided through raw data paths and OpenWiki connector tools. Git repository diff context is not used for this run.",
+      wikiGoal,
     };
   }
 
   return {
     lastUpdate,
     gitSummary: await createGitSummary(command, cwd, lastUpdate),
+    wikiGoal,
   };
+}
+
+async function readRunWikiGoal(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): Promise<string | undefined> {
+  if (outputMode === "repository") {
+    return readRepositoryWikiInstructions(cwd);
+  }
+
+  return (await readOpenWikiOnboardingConfig()).wikiGoal;
 }
 
 export async function getUpdateNoopStatus(

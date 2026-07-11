@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { spawn } from "node:child_process";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { homedir } from "node:os";
@@ -48,8 +49,11 @@ import {
   createEmptyOnboardingConfig,
   isOpenWikiOnboardingCompleteSync,
   isOnboardingComplete,
+  isRepositoryCodeOnboardingCompleteSync,
   openWikiOnboardingPath,
   readOpenWikiOnboardingConfig,
+  readRepositoryWikiInstructions,
+  saveRepositoryWikiInstructions,
   saveOpenWikiOnboardingConfig,
   type OpenWikiOnboardingConfig,
 } from "./onboarding.js";
@@ -65,6 +69,7 @@ export type InitSetupResult = {
   modelId: string | null;
   onboardingCompleted: boolean;
   provider: OpenWikiProvider | null;
+  repoRoot?: string;
   runIngestionNow: boolean;
   savedApiKey: boolean;
   savedBaseUrl: boolean;
@@ -85,6 +90,8 @@ type InitSetupProps = {
 type PromptStep =
   | "api-key"
   | "base-url"
+  | "code-repo-confirm"
+  | "code-repo-path"
   | "final"
   | "langsmith"
   | "model"
@@ -169,7 +176,7 @@ const ONBOARDING_TEMPLATES = [
     sourceIds: ["git-repo"],
     suggestedSources: ["Local Git repository"],
     suggestedGoal:
-      "A code wiki for this local repository. Prioritize a concise quickstart, architecture overview, source map, key workflows, domain concepts, operations/runbook notes, testing guidance, and integration points. Keep pages grounded in the repository structure and recent code changes. Prefer practical navigation for engineers over generic summaries.",
+      "A code wiki for this local repository. Prioritize a concise quickstart, architecture overview, source map, key workflows, domain concepts, operations/runbook notes, testing guidance, and integration points. Inspect git history to understand reasoning behind code changes and the progression of the repository. Keep pages grounded in the repository structure and recent code changes. Prefer practical navigation for engineers over generic summaries.",
   },
   {
     description:
@@ -341,10 +348,8 @@ const SOURCE_CONTINUE_OPTIONS = [
   "Go back to connections",
   "Continue without all sources",
 ] as const;
-const FINAL_OPTIONS = [
-  "Run ingestion now",
-  "Wait until scheduled time",
-] as const;
+const FINAL_OPTIONS = ["Run ingestion now", "Run later"] as const;
+const CODE_REPO_OPTIONS = ["Confirm and continue", "Edit path"] as const;
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
@@ -360,10 +365,13 @@ export function needsCredentialSetup(
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined;
 
-  return (
-    needsCredentials ||
-    (mode === "personal" && !isOpenWikiOnboardingCompleteSync())
-  );
+  if (needsCredentials) {
+    return true;
+  }
+
+  return mode === "code"
+    ? !isRepositoryCodeOnboardingCompleteSync(getDefaultCodeRepoRootPath())
+    : !isOpenWikiOnboardingCompleteSync();
 }
 
 /**
@@ -514,6 +522,11 @@ export function InitSetup({
   const [sourceContinueSelectionIndex, setSourceContinueSelectionIndex] =
     useState(0);
   const [finalSelectionIndex, setFinalSelectionIndex] = useState(0);
+  const [codeRepoSelectionIndex, setCodeRepoSelectionIndex] = useState(0);
+  const [codeRepoRoot, setCodeRepoRoot] = useState(() =>
+    getDefaultCodeRepoRootPath(),
+  );
+  const [codeRepoConfirmed, setCodeRepoConfirmed] = useState(false);
   const [isCustomModelInput, setIsCustomModelInput] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -551,11 +564,19 @@ export function InitSetup({
           return;
         }
 
+        const defaultRepoRoot = getDefaultCodeRepoRootPath();
         const configForMode = allowModeSelection
           ? config
-          : ensureRunModeConfig(config, mode);
+          : await hydrateRunModeConfig(
+              ensureRunModeConfig(config, mode),
+              mode,
+              defaultRepoRoot,
+            );
         if (configForMode !== config) {
-          await saveOpenWikiOnboardingConfig(configForMode);
+          await saveOpenWikiOnboardingConfig({
+            ...configForMode,
+            wikiGoal: mode === "code" ? undefined : configForMode.wikiGoal,
+          });
         }
         setOnboardingConfig(configForMode);
         const initialStep = getInitialStep(
@@ -600,6 +621,10 @@ export function InitSetup({
         );
         if (initialStep === "wiki-goal") {
           setInput(getTemplateGoal(getConfigModeId(config)));
+        }
+        if (initialStep === "code-repo-confirm") {
+          setCodeRepoRoot(defaultRepoRoot);
+          setCodeRepoSelectionIndex(0);
         }
         setStep(initialStep);
       })
@@ -793,6 +818,19 @@ export function InitSetup({
       return;
     }
 
+    if (step === "code-repo-confirm") {
+      handleMenuInput(key, () =>
+        setCodeRepoSelectionIndex((index) =>
+          moveSelectionIndex(
+            index,
+            key.upArrow ? -1 : 1,
+            CODE_REPO_OPTIONS.length,
+          ),
+        ),
+      );
+      return;
+    }
+
     if (step === "source-menu") {
       handleMenuInput(key, () =>
         setSourceSelectionIndex((index) =>
@@ -912,6 +950,27 @@ export function InitSetup({
       return;
     }
 
+    if (step === "code-repo-path") {
+      if (key.return) {
+        void submit();
+        return;
+      }
+
+      if (key.backspace || key.delete) {
+        setInput((value) => value.slice(0, -1));
+        return;
+      }
+
+      const sanitizedInput = sanitizeInputChunk(inputValue);
+
+      if (sanitizedInput && !key.ctrl && !key.meta) {
+        setError(null);
+        setInput((value) => value + sanitizedInput);
+      }
+
+      return;
+    }
+
     if (key.return) {
       void submit();
       return;
@@ -983,6 +1042,34 @@ export function InitSetup({
         nextProvider: provider,
         runMode: selectedOption.id,
       });
+      return;
+    }
+
+    if (step === "code-repo-confirm") {
+      const selectedOption =
+        CODE_REPO_OPTIONS[codeRepoSelectionIndex] ?? CODE_REPO_OPTIONS[0];
+
+      if (selectedOption === "Edit path") {
+        setInput(codeRepoRoot);
+        setStep("code-repo-path");
+        return;
+      }
+
+      setCodeRepoConfirmed(true);
+      continueAfterCodeRepoConfirmed(codeRepoRoot);
+      return;
+    }
+
+    if (step === "code-repo-path") {
+      try {
+        const repoRoot = await validateLocalDirectoryPath(input);
+        setCodeRepoRoot(repoRoot);
+        setCodeRepoConfirmed(true);
+        setInput("");
+        continueAfterCodeRepoConfirmed(repoRoot);
+      } catch (pathError) {
+        setError(getErrorMessage(pathError));
+      }
       return;
     }
 
@@ -1185,8 +1272,14 @@ export function InitSetup({
         ...onboardingConfig,
         wikiGoal,
       };
-      await saveConfig(nextConfig);
+      await saveConfigForCurrentMode(nextConfig);
       setInput("");
+
+      if (isCodeMode(nextConfig)) {
+        setStep("final");
+        return;
+      }
+
       setCronModeSelectionIndex(0);
       setCronFieldSelectionIndex(0);
       setCronReplaceCurrentField(true);
@@ -1399,7 +1492,7 @@ export function InitSetup({
         ...onboardingConfig,
         completedAt: new Date().toISOString(),
       };
-      await saveConfig(nextConfig);
+      await saveConfigForCurrentMode(nextConfig);
       onComplete({
         mode: selectedMode,
         modelId:
@@ -1409,6 +1502,10 @@ export function InitSetup({
           null,
         onboardingCompleted: true,
         provider,
+        repoRoot:
+          selectedMode === "code" && codeRepoConfirmed
+            ? codeRepoRoot
+            : undefined,
         runIngestionNow,
         savedApiKey: apiKey !== null || oauthTokens !== null,
         savedBaseUrl: baseUrl !== null,
@@ -1468,8 +1565,10 @@ export function InitSetup({
   async function continueAfterCredentials(options: CompleteSetupOptions) {
     await saveCredentialUpdates(options);
 
-    if (options.runMode === "code") {
-      await completeSetup(options);
+    if (options.runMode === "code" && !isOnboardingComplete(onboardingConfig)) {
+      setCodeRepoRoot(getDefaultCodeRepoRootPath());
+      setCodeRepoSelectionIndex(0);
+      setStep("code-repo-confirm");
       return;
     }
 
@@ -1498,6 +1597,17 @@ export function InitSetup({
     await completeSetup(options);
   }
 
+  function continueAfterCodeRepoConfirmed(repoRoot: string) {
+    if (!onboardingConfig.wikiGoal) {
+      setInput(getTemplateGoal(getConfigModeId(onboardingConfig)));
+      setStep("wiki-goal");
+      return;
+    }
+
+    setCodeRepoRoot(repoRoot);
+    setStep("final");
+  }
+
   async function completeSetup(options: CompleteSetupOptions) {
     await saveCredentialUpdates(options);
 
@@ -1509,6 +1619,10 @@ export function InitSetup({
         null,
       onboardingCompleted: isOnboardingComplete(onboardingConfig),
       provider: options.nextProvider,
+      repoRoot:
+        options.runMode === "code" && codeRepoConfirmed
+          ? codeRepoRoot
+          : undefined,
       mode: options.runMode,
       runIngestionNow: false,
       savedApiKey:
@@ -1774,6 +1888,29 @@ export function InitSetup({
     }
   }
 
+  async function saveConfigForCurrentMode(config: OpenWikiOnboardingConfig) {
+    if (!isCodeMode(config)) {
+      await saveConfig(config);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (config.wikiGoal?.trim()) {
+        await saveRepositoryWikiInstructions(codeRepoRoot, config.wikiGoal);
+      }
+      await saveOpenWikiOnboardingConfig({
+        ...config,
+        wikiGoal: undefined,
+      });
+      setOnboardingConfig(config);
+    } catch (saveError) {
+      onError(getErrorMessage(saveError));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   function submitManualLogin(pasted: string): void {
     const handle = loginHandleRef.current;
 
@@ -1961,6 +2098,8 @@ export function InitSetup({
         <SetupPanel title="Prompt">
           {step ? (
             <Prompt
+              codeRepoRoot={codeRepoRoot}
+              codeRepoSelectionIndex={codeRepoSelectionIndex}
               cronFieldSelectionIndex={cronFieldSelectionIndex}
               cronModeSelectionIndex={cronModeSelectionIndex}
               finalSelectionIndex={finalSelectionIndex}
@@ -1974,6 +2113,7 @@ export function InitSetup({
               providerSelectionIndex={providerSelectionIndex}
               runModeSelectionIndex={runModeSelectionIndex}
               secretInputIndex={secretInputIndex}
+              selectedMode={selectedMode}
               selectedSource={selectedSource}
               sourceOptions={activeSourceOptions}
               sourceContinueSelectionIndex={sourceContinueSelectionIndex}
@@ -2024,6 +2164,8 @@ export function InitSetup({
 }
 
 function Prompt({
+  codeRepoRoot,
+  codeRepoSelectionIndex,
   cronFieldSelectionIndex,
   cronModeSelectionIndex,
   finalSelectionIndex,
@@ -2037,6 +2179,7 @@ function Prompt({
   providerSelectionIndex,
   runModeSelectionIndex,
   secretInputIndex,
+  selectedMode,
   selectedSource,
   sourceOptions,
   sourceContinueSelectionIndex,
@@ -2048,6 +2191,8 @@ function Prompt({
   suggestedCronExpression,
   templateSelectionIndex,
 }: {
+  codeRepoRoot: string;
+  codeRepoSelectionIndex: number;
   cronFieldSelectionIndex: number;
   cronModeSelectionIndex: number;
   finalSelectionIndex: number;
@@ -2061,6 +2206,7 @@ function Prompt({
   providerSelectionIndex: number;
   runModeSelectionIndex: number;
   secretInputIndex: number;
+  selectedMode: OpenWikiRunMode;
   selectedSource: SourceSetupOption;
   sourceOptions: readonly SourceSetupOption[];
   sourceContinueSelectionIndex: number;
@@ -2257,6 +2403,48 @@ function Prompt({
           />
         </Box>
         <Text color="gray">Press Enter to continue.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "code-repo-confirm") {
+    return (
+      <Box flexDirection="column">
+        <Text>Use this repository?</Text>
+        <Box marginTop={1}>
+          <Text color="cyan">{codeRepoRoot}</Text>
+        </Box>
+        <Text color="gray">
+          OpenWiki will run in this directory and write the initial openwiki/
+          folder there.
+        </Text>
+        <Box flexDirection="column" marginTop={1}>
+          {CODE_REPO_OPTIONS.map((option, index) => (
+            <Text key={option}>
+              <SelectionMarker isSelected={index === codeRepoSelectionIndex} />{" "}
+              {option}
+            </Text>
+          ))}
+        </Box>
+        <Text color="gray">Use up/down arrows, then press Enter.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "code-repo-path") {
+    return (
+      <Box flexDirection="column">
+        <Text>Choose the repository directory.</Text>
+        <Text color="gray">
+          Enter an existing directory. OpenWiki will write openwiki/ there.
+        </Text>
+        <BorderedInput
+          maxDisplayWidth={inputDisplayWidth}
+          marginTop={1}
+          prefix="path="
+          value={input}
+        />
+        <Text color="gray">Press Enter to confirm this path.</Text>
       </Box>
     );
   }
@@ -2539,15 +2727,19 @@ function Prompt({
     return (
       <Box flexDirection="column">
         <Text>Setup is complete.</Text>
-        {FINAL_OPTIONS.map((option, index) => (
-          <Text key={option}>
-            <SelectionMarker isSelected={index === finalSelectionIndex} />{" "}
-            {option}
-          </Text>
-        ))}
+        {FINAL_OPTIONS.map((option, index) => {
+          const label = getFinalOptionLabel(option, selectedMode);
+          return (
+            <Text key={option}>
+              <SelectionMarker isSelected={index === finalSelectionIndex} />{" "}
+              {label}
+            </Text>
+          );
+        })}
         <Text color="gray">
-          Run now executes one source-specific ingestion and wiki update per
-          configured source. Waiting exits and lets the saved schedules run.
+          {selectedMode === "code"
+            ? "Run now writes the initial openwiki/ directory. Open chat skips the initial run."
+            : "Run now executes one source-specific ingestion and wiki update per configured source. Run later opens chat so you can start ingestion when you are ready."}
         </Text>
       </Box>
     );
@@ -2571,7 +2763,7 @@ function SetupHeader() {
         </Text>{" "}
         <Text color="gray">first-run setup</Text>
       </Text>
-      <Text>Configure the model, wiki scope, sources, and schedules.</Text>
+      <Text>Configure the model, wiki scope, and sources.</Text>
     </Box>
   );
 }
@@ -2948,8 +3140,8 @@ export function getInitialStep(
     return "langsmith";
   }
 
-  if (mode === "code") {
-    return null;
+  if (mode === "code" && !isOnboardingComplete(onboardingConfig)) {
+    return "code-repo-confirm";
   }
 
   if (!getConfigModeId(onboardingConfig)) {
@@ -2960,7 +3152,7 @@ export function getInitialStep(
     return "wiki-goal";
   }
 
-  if (!onboardingConfig.ingestionSchedule) {
+  if (!isCodeMode(onboardingConfig) && !onboardingConfig.ingestionSchedule) {
     return "global-cron-mode";
   }
 
@@ -3029,8 +3221,8 @@ function getNextStepAfterBaseUrl(
     return "langsmith";
   }
 
-  if (mode === "code") {
-    return null;
+  if (mode === "code" && !isOnboardingComplete(onboardingConfig)) {
+    return "code-repo-confirm";
   }
 
   if (!getConfigModeId(onboardingConfig)) {
@@ -3041,7 +3233,7 @@ function getNextStepAfterBaseUrl(
     return "wiki-goal";
   }
 
-  if (!onboardingConfig.ingestionSchedule) {
+  if (!isCodeMode(onboardingConfig) && !onboardingConfig.ingestionSchedule) {
     return "global-cron-mode";
   }
 
@@ -3056,24 +3248,38 @@ function ensureRunModeConfig(
   config: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
 ): OpenWikiOnboardingConfig {
-  if (mode !== "personal" || getConfigModeId(config) === "personal") {
+  if (getConfigModeId(config) === mode) {
     return config;
   }
 
-  const personalMode = ONBOARDING_TEMPLATES.find(
-    (option) => option.id === "personal",
+  const runModeTemplate = ONBOARDING_TEMPLATES.find(
+    (option) => option.id === mode,
   );
-  if (!personalMode) {
+  if (!runModeTemplate) {
     return config;
   }
 
   return {
     ...config,
-    modeId: personalMode.id,
-    modeName: personalMode.name,
-    templateId: personalMode.id,
-    templateName: personalMode.name,
+    modeId: runModeTemplate.id,
+    modeName: runModeTemplate.name,
+    templateId: runModeTemplate.id,
+    templateName: runModeTemplate.name,
   };
+}
+
+async function hydrateRunModeConfig(
+  config: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+  repoRoot: string,
+): Promise<OpenWikiOnboardingConfig> {
+  if (mode !== "code") {
+    return config;
+  }
+
+  const wikiGoal = await readRepositoryWikiInstructions(repoRoot);
+
+  return wikiGoal ? { ...config, wikiGoal } : config;
 }
 
 function getRunModeSelectionIndex(mode: OpenWikiRunMode): number {
@@ -3348,6 +3554,17 @@ function getSourceDescriptionPrompt(source: SourceSetupOption): string {
   return `Describe what OpenWiki should look for in ${source.displayName}.`;
 }
 
+function getFinalOptionLabel(
+  option: (typeof FINAL_OPTIONS)[number],
+  mode: OpenWikiRunMode,
+): string {
+  if (mode !== "code") {
+    return option;
+  }
+
+  return option === "Run ingestion now" ? "Run OpenWiki now" : "Open chat";
+}
+
 function getSourceDescriptionOptionCount(source: SourceSetupOption): number {
   return source.examples.length + 1;
 }
@@ -3485,6 +3702,44 @@ function sanitizeRepoId(value: string): string {
 
 function getDefaultLocalGitRepoPath(): string {
   return process.cwd();
+}
+
+function getDefaultCodeRepoRootPath(): string {
+  return findNearestGitRepoRoot(process.cwd()) ?? process.cwd();
+}
+
+export function findNearestGitRepoRoot(startPath: string): string | null {
+  let currentPath = path.resolve(startPath);
+
+  while (true) {
+    if (existsSync(path.join(currentPath, ".git"))) {
+      return currentPath;
+    }
+
+    const parentPath = path.dirname(currentPath);
+    if (parentPath === currentPath) {
+      return null;
+    }
+
+    currentPath = parentPath;
+  }
+}
+
+async function validateLocalDirectoryPath(value: string): Promise<string> {
+  const normalizedPath = normalizeLocalPath(value);
+
+  if (normalizedPath.length === 0) {
+    throw new Error("Enter a local directory.");
+  }
+
+  const { stat } = await import("node:fs/promises");
+  const pathStat = await stat(normalizedPath);
+
+  if (!pathStat.isDirectory()) {
+    throw new Error(`${normalizedPath} is not a directory.`);
+  }
+
+  return normalizedPath;
 }
 
 function normalizeLocalPath(value: string): string {
