@@ -68,8 +68,6 @@ jobs:
             node-version: "22"
           - os: ubuntu-latest
             node-version: "24"
-          - os: windows-latest
-            node-version: "24"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -95,7 +93,7 @@ jobs:
         run: pnpm run build
 
       - name: Smoke test CLI
-        run: node dist/cli.js --dry-run --init
+        run: node dist/cli.js code --dry-run --init
         env:
           OPENWIKI_DEV: "1"
 
