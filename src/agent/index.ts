@@ -35,6 +35,13 @@ import {
   readCodexTokensFromEnv,
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
+import { getAgentCliAdapter } from "./engines/index.js";
+import {
+  getThreadSessionId,
+  runAgentCli,
+  setThreadSessionId,
+} from "./engines/runner.js";
+import type { EngineRunSpec } from "./engines/types.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import { syncBundledSkills } from "./skills.js";
 import {
@@ -55,6 +62,7 @@ import type {
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
+  getAgentCliProviderConfig,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -67,6 +75,7 @@ import {
   getProviderSecretKeyEnvKey,
   DEFAULT_VERTEX_LOCATION,
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
+  isAgentCliProvider,
   isValidModelId,
   normalizeModelId,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -153,8 +162,31 @@ export async function runOpenWikiAgent(
 
   try {
     provider = resolveConfiguredProvider();
-    const providerBaseUrl = resolveProviderBaseUrl(provider);
     emitDebug(options, `provider=${provider}`);
+
+    // Agent CLI providers drive a local vendor CLI instead of a LangChain
+    // model, so they skip credential/base-URL resolution entirely.
+    if (isAgentCliProvider(provider)) {
+      modelId = resolveModelId(options, provider);
+      emitDebug(options, `model=${modelId}`);
+
+      const agentCliResult = await runAgentCliRun(
+        command,
+        runtimeCwd,
+        options,
+        provider,
+        modelId,
+      );
+
+      await recordRunSafe(command, options, {
+        provider,
+        outcome: "success",
+      });
+
+      return agentCliResult;
+    }
+
+    const providerBaseUrl = resolveProviderBaseUrl(provider);
     if (providerBaseUrl) {
       emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
     }
@@ -205,14 +237,18 @@ export async function runOpenWikiAgent(
   }
 }
 
-async function runOpenWikiAgentCore(
+type PreparedAgentRun = {
+  context: Awaited<ReturnType<typeof createRunContext>>;
+  openWikiSnapshotBefore: string | null;
+  outputMode: OpenWikiOutputMode;
+  threadId: string;
+};
+
+async function prepareAgentRun(
   command: OpenWikiCommand,
   cwd: string,
   options: OpenWikiRunOptions,
-  provider: OpenWikiProvider,
-  modelId: string,
-  providerRetryAttempts: number,
-): Promise<OpenWikiRunResult> {
+): Promise<PreparedAgentRun> {
   const outputMode = options.outputMode ?? "local-wiki";
   const context = await createRunContext(command, cwd, outputMode);
   emitDebug(options, "context=created");
@@ -221,11 +257,61 @@ async function runOpenWikiAgentCore(
       ? null
       : await createOpenWikiContentSnapshot(cwd, outputMode);
   emitDebug(options, "openwiki.snapshot=created");
+  const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
+  emitDebug(options, `thread=${threadId}`);
+
+  return { context, openWikiSnapshotBefore, outputMode, threadId };
+}
+
+async function finalizeAgentRun(
+  command: OpenWikiCommand,
+  cwd: string,
+  modelId: string,
+  options: OpenWikiRunOptions,
+  prepared: PreparedAgentRun,
+): Promise<OpenWikiRunResult> {
+  const { openWikiSnapshotBefore, outputMode } = prepared;
+
+  await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
+
+  const metadataWritten = await persistRunMetadataIfChanged(
+    command,
+    cwd,
+    modelId,
+    outputMode,
+    openWikiSnapshotBefore,
+  );
+
+  if (metadataWritten) {
+    emitDebug(options, "metadata=written");
+  } else {
+    emitDebug(
+      options,
+      command === "chat"
+        ? "metadata=skipped command=chat"
+        : "metadata=skipped openwiki=unchanged",
+    );
+  }
+
+  return {
+    command,
+    model: modelId,
+  };
+}
+
+async function runOpenWikiAgentCore(
+  command: OpenWikiCommand,
+  cwd: string,
+  options: OpenWikiRunOptions,
+  provider: OpenWikiProvider,
+  modelId: string,
+  providerRetryAttempts: number,
+): Promise<OpenWikiRunResult> {
+  const prepared = await prepareAgentRun(command, cwd, options);
+  const { context, openWikiSnapshotBefore, outputMode, threadId } = prepared;
   const model = createModel(provider, modelId, providerRetryAttempts);
   emitDebug(options, `model.provider=${provider}`);
   emitDebug(options, "model=initialized");
-  const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
-  emitDebug(options, `thread=${threadId}`);
   const checkpointTarget = resolveCheckpointTarget(command);
   const checkpointer = await createCheckpointer(checkpointTarget);
   emitDebug(
@@ -337,31 +423,48 @@ async function runOpenWikiAgentCore(
     await chmodIfExists(checkpointTarget.connString, 0o600);
   }
 
-  await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
+  return finalizeAgentRun(command, cwd, modelId, options, prepared);
+}
 
-  const metadataWritten = await persistRunMetadataIfChanged(
+async function runAgentCliRun(
+  command: OpenWikiCommand,
+  cwd: string,
+  options: OpenWikiRunOptions,
+  provider: OpenWikiProvider,
+  modelId: string,
+): Promise<OpenWikiRunResult> {
+  const prepared = await prepareAgentRun(command, cwd, options);
+  const { context, outputMode, threadId } = prepared;
+  const resumeSessionId =
+    options.isFollowup === true ? getThreadSessionId(threadId) : undefined;
+
+  if (resumeSessionId) {
+    emitDebug(options, `engine.resume session=${resumeSessionId}`);
+  }
+
+  // Path discipline for agent-cli lives in createSystemPrompt(..., "agent-cli");
+  // the user message reuses the same root/cwd framing as DeepAgents.
+  const prompt = `${createSystemPrompt(command, outputMode, "agent-cli")}\n\n---\n\n${createRunUserMessage(command, cwd, context, options)}`;
+  const spec: EngineRunSpec = {
     command,
     cwd,
     modelId,
-    outputMode,
-    openWikiSnapshotBefore,
+    prompt,
+    resumeSessionId,
+  };
+
+  const outcome = await runAgentCli(
+    getAgentCliAdapter(provider),
+    getAgentCliProviderConfig(provider),
+    spec,
+    options,
   );
 
-  if (metadataWritten) {
-    emitDebug(options, "metadata=written");
-  } else {
-    emitDebug(
-      options,
-      command === "chat"
-        ? "metadata=skipped command=chat"
-        : "metadata=skipped openwiki=unchanged",
-    );
+  if (outcome.sessionId) {
+    setThreadSessionId(threadId, outcome.sessionId);
   }
 
-  return {
-    command,
-    model: modelId,
-  };
+  return finalizeAgentRun(command, cwd, modelId, options, prepared);
 }
 
 async function cleanupTemporaryPlanFile(
