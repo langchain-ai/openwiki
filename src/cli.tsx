@@ -63,6 +63,7 @@ import {
   type ScheduleMutationResult,
 } from "./schedules.js";
 import {
+  formatProviderSwitchNotice,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -70,6 +71,7 @@ import {
   getProviderLabel,
   getProviderModelOptions,
   getProviderProjectEnvKey,
+  isAgentCliProvider,
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
@@ -401,18 +403,20 @@ function App({ command }: AppProps) {
       return;
     }
 
-    const missingEnvKey = getMissingProviderEnvKey(sessionProvider);
+    if (!isAgentCliProvider(sessionProvider)) {
+      const missingEnvKey = getMissingProviderEnvKey(sessionProvider);
 
-    if (missingEnvKey && !process.stdin.isTTY) {
-      const hint = getProviderCredentialHint(sessionProvider);
+      if (missingEnvKey && !process.stdin.isTTY) {
+        const hint = getProviderCredentialHint(sessionProvider);
 
-      setRunState({
-        status: "error",
-        message: `${missingEnvKey} is required. Run openwiki in an interactive terminal to save credentials.${
-          hint ? ` ${hint}` : ""
-        }`,
-      });
-      return;
+        setRunState({
+          status: "error",
+          message: `${missingEnvKey} is required. Run openwiki in an interactive terminal to save credentials.${
+            hint ? ` ${hint}` : ""
+          }`,
+        });
+        return;
+      }
     }
 
     if (shouldRunInteractiveCredentialSetup) {
@@ -1778,6 +1782,13 @@ function ChatInput({
     }
 
     if (option.id === "api-key") {
+      if (isAgentCliProvider(currentProvider)) {
+        setError(
+          `${getProviderLabel(currentProvider)} uses the local Grok Build CLI login. Run \`grok login\` instead of pasting an API key.`,
+        );
+        return;
+      }
+
       if (args && args.length > 0) {
         setError(
           "Use the masked prompt for API keys; do not pass keys inline.",
@@ -1931,18 +1942,7 @@ function ChatInput({
     try {
       await onProviderSelect(provider);
       resetInput();
-      const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-      const requirement = apiKeyEnvKey
-        ? `Ensure ${apiKeyEnvKey} is set.`
-        : `Ensure ${getProviderProjectEnvKey(provider)} is set. ${getProviderCredentialHint(provider) ?? ""}`.trim();
-      const modelNotice =
-        getProviderModelOptions(provider).length > 0
-          ? ` with model ${getDefaultModelId(provider)}`
-          : ". Set a model with /model";
-
-      setNotice(
-        `Provider switched to ${getProviderLabel(provider)}${modelNotice}. ${requirement}`,
-      );
+      setNotice(formatProviderSwitchNotice(provider));
     } catch (saveError) {
       setError(
         saveError instanceof Error
