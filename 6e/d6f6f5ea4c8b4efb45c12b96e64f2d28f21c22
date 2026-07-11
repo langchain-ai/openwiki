@@ -1,0 +1,14 @@
+.github/workflows/checks.yml
+  h_f78d33d4280f3f 96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "6ed6f6f5ea4c8b4efb45c12b96e64f2d28f21c22",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
