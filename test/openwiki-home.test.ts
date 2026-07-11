@@ -53,7 +53,7 @@ describe("resolveOpenWikiHomeDir", () => {
     const { createSystemPrompt } = await import("../src/agent/prompt.ts");
 
     expect(createSystemPrompt("chat")).toContain(
-      "C:/openwiki-state/wiki",
+      `${path.resolve("C:/openwiki-state")}/wiki`,
     );
   });
 });
