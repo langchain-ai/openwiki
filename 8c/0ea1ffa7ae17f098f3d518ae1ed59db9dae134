@@ -1,0 +1,26 @@
+src/constants.ts
+  s_a57fcbbb51c51c::t_8305e0a39b57a1 334-336
+test/constants.test.ts
+  s_a57fcbbb51c51c::t_1c6a62ed7db232 81-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "8c0ea1ffa7ae17f098f3d518ae1ed59db9dae134",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a57fcbbb51c51c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a9eadf2f-4fd3-42d7-8435-556597e807c3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
