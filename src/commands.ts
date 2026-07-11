@@ -482,6 +482,20 @@ function parseRunCommand(
       };
     }
 
+    // A mode word in the first positional slot selects the mode even when
+    // flags precede it (e.g. `openwiki --print code --update`), matching the
+    // `openwiki code ...` form. Otherwise it would silently become the user
+    // message and the run would target the default personal wiki.
+    if (
+      isOpenWikiRunMode(arg) &&
+      modeSource === "default" &&
+      userMessageParts.length === 0
+    ) {
+      mode = arg;
+      modeSource = "positional";
+      continue;
+    }
+
     userMessageParts.push(arg);
   }
 
