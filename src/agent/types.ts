@@ -51,4 +51,5 @@ export type UpdateMetadata = {
 export type RunContext = {
   lastUpdate: UpdateMetadata | null;
   gitSummary: string;
+  wikiGoal?: string;
 };

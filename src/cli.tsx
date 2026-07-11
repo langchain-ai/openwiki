@@ -159,7 +159,8 @@ function App({ command }: AppProps) {
   const startupModelId = command.kind === "run" ? command.modelId : null;
   const startupRunMode = command.kind === "run" ? command.mode : "personal";
   const [runMode, setRunMode] = useState<OpenWikiRunMode>(startupRunMode);
-  const runtimeCwd = getRunModeCwd(runMode);
+  const [codeRuntimeCwd, setCodeRuntimeCwd] = useState(process.cwd());
+  const runtimeCwd = getRunModeCwd(runMode, codeRuntimeCwd);
   const runtimeOutputMode = getRunModeOutputMode(runMode);
   const startupProvider = resolveConfiguredProvider();
   const autoExitOnSuccess = shouldAutoExitStartupRun(command);
@@ -186,9 +187,19 @@ function App({ command }: AppProps) {
   const [activeMessageIsFollowup, setActiveMessageIsFollowup] = useState(
     command.kind === "run" && command.command === "chat",
   );
+  const shouldOpenSetupForExplicitModeChat =
+    command.kind === "run" &&
+    !command.dryRun &&
+    !command.shouldStart &&
+    command.modeSource !== "default" &&
+    process.stdin.isTTY &&
+    needsCredentialSetup(sessionModelId, runMode);
   const [resolvedCommand, setResolvedCommand] =
     useState<OpenWikiCommand | null>(
-      command.kind === "run" && command.shouldStart ? command.command : null,
+      command.kind === "run" &&
+        (command.shouldStart || shouldOpenSetupForExplicitModeChat)
+        ? command.command
+        : null,
     );
   const shouldRunInteractiveCredentialSetup =
     command.kind === "run" &&
@@ -584,11 +595,23 @@ function App({ command }: AppProps) {
         mode={command.mode}
         modelIdOverride={command.modelId}
         onComplete={(result) => {
+          const nextCodeRuntimeCwd = result.repoRoot ?? codeRuntimeCwd;
+
+          if (result.repoRoot) {
+            setCodeRuntimeCwd(result.repoRoot);
+          }
+
           if (result.mode !== runMode) {
-            const nextRuntimeCwd = getRunModeCwd(result.mode);
+            const nextRuntimeCwd = getRunModeCwd(
+              result.mode,
+              nextCodeRuntimeCwd,
+            );
             sessionThreadId.current = createOpenWikiThreadId(nextRuntimeCwd);
             sessionThreadMode.current = result.mode;
             setRunMode(result.mode);
+          } else if (result.repoRoot) {
+            sessionThreadId.current = createOpenWikiThreadId(result.repoRoot);
+            sessionThreadMode.current = result.mode;
           }
 
           if (result.modelId) {
@@ -603,9 +626,16 @@ function App({ command }: AppProps) {
             setResolvedCommand(null);
             setActiveUserMessage(null);
             setActiveMessageIsFollowup(false);
-            setRunState({ status: "setup-complete-exit", result });
-            process.exitCode = 0;
-            app.exit();
+            setRunState({ status: "idle" });
+            return;
+          }
+
+          if (result.runIngestionNow && result.mode === "code") {
+            if (command.kind === "run" && !command.shouldStart) {
+              setResolvedCommand("init");
+            }
+            setActiveMessageIsFollowup(false);
+            setRunState({ status: "init-setup-saved", result });
             return;
           }
 
@@ -3778,8 +3808,11 @@ function shouldPrintStartupError(
   );
 }
 
-function getRunModeCwd(mode: OpenWikiRunMode): string {
-  return mode === "code" ? process.cwd() : openWikiLocalWikiDir;
+function getRunModeCwd(
+  mode: OpenWikiRunMode,
+  codeRuntimeCwd = process.cwd(),
+): string {
+  return mode === "code" ? codeRuntimeCwd : openWikiLocalWikiDir;
 }
 
 function getRunModeOutputMode(mode: OpenWikiRunMode): OpenWikiOutputMode {

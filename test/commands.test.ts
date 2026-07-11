@@ -45,6 +45,23 @@ describe("parseCommand — chat default", () => {
     });
   });
 
+  test("explicit mode without a message opens chat without auto-starting", () => {
+    expect(parseCommand(["personal"])).toMatchObject({
+      kind: "run",
+      command: "chat",
+      mode: "personal",
+      modeSource: "positional",
+      shouldStart: false,
+    });
+    expect(parseCommand(["code"])).toMatchObject({
+      kind: "run",
+      command: "chat",
+      mode: "code",
+      modeSource: "positional",
+      shouldStart: false,
+    });
+  });
+
   test("a positional message becomes the user message and starts", () => {
     const result = parseCommand(["Document", "the", "API"]);
 
