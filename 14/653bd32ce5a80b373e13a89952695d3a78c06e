@@ -1,0 +1,20 @@
+src/agent/oauth/pkce.ts
+  h_f78d33d4280f3f 1-21
+src/agent/oauth/flow.ts
+  h_f78d33d4280f3f 1-178
+src/agent/oauth/token-store.ts
+  h_f78d33d4280f3f 1-79
+src/agent/oauth/jwt.ts
+  h_f78d33d4280f3f 1-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "14653bd32ce5a80b373e13a89952695d3a78c06e",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
