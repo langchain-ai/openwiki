@@ -1,7 +1,7 @@
 import { createGitRepoConnector } from "./sources/git-repo.js";
 import { createGmailConnector } from "./sources/gmail.js";
 import { createHackerNewsConnector } from "./sources/hackernews.js";
-import { createLangSmithConnector } from "./sources/langsmith/index.js";
+import { createLangSmithConnector } from "./sources/langsmith.js";
 import { createMcpConnector } from "./sources/mcp.js";
 import { createSlackConnector } from "./sources/slack.js";
 import { createWebSearchConnector } from "./sources/web-search.js";

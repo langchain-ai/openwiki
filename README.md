@@ -170,7 +170,7 @@ instances with `openwiki ingest all`, all instances for one connector with
 - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
 - `web-search` uses Tavily through LangChain and requires `TAVILY_API_KEY`.
 - `hackernews` uses public Hacker News feed and search APIs, with no credentials required.
-- `langsmith` imports recent root runs, errors, optional feedback, and aggregate statistics from a selected tracing project. The source project may be the same project OpenWiki traces to or a different one; OpenWiki's own tagged traces are excluded to prevent feedback loops.
+- `langsmith` imports recent root traces from a selected tracing project. The source project may be the same project OpenWiki traces to or a different one; OpenWiki's own tagged traces are excluded to prevent feedback loops.
 
 Connector secrets are referenced by env var name and stored in `~/.openwiki/.env`; connector config files should never contain raw secret values.
 

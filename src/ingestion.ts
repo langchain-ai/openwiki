@@ -378,8 +378,8 @@ function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
 - Use repository paths, branches, HEADs, dirty status, and recent commits as evidence. Route durable project status, blockers, and follow-ups into canonical pages instead of mirroring repository manifests.`;
     case "langsmith":
       return `
-- Treat LangSmith runs as operational telemetry. Route recurring error patterns, regressions, and latency/cost trends to /themes.md with stable topic keys per project and failure mode. Route concrete fixes and follow-ups to /commitments.md with Owner when inferable.
-- Do not copy stack traces or full run inputs/outputs into the wiki. Keep /sources/langsmith.md as a compact evidence index: project, window, error rate, latency/token stats, and notable run IDs with trace URLs.
+- Treat LangSmith runs as operational telemetry. Route recurring error patterns and regressions to /themes.md with stable topic keys per project and failure mode. Route concrete fixes and follow-ups to /commitments.md with Owner when inferable.
+- Do not copy stack traces or full run inputs/outputs into the wiki. Keep /sources/langsmith.md as a compact evidence index with project, window, notable run IDs, and trace URLs.
 - Treat a single transient error as watchlist. Promote to a theme only when a failure mode recurs across runs or corroborates another source.`;
   }
 }
