@@ -90,6 +90,13 @@ export async function runOpenWikiCliAgent(
     command === "chat"
       ? null
       : await createOpenWikiContentSnapshot(cwd, outputMode);
+  // Baseline for the out-of-wiki write guard: update runs deliberately
+  // proceed on dirty trees, so pre-existing changes must not be attributed
+  // to the CLI agent. null (not a git repo / git failed) disables the guard.
+  const writeGuardBaseline =
+    command !== "chat" && outputMode === "repository"
+      ? await captureGitPorcelain(cwd, options)
+      : null;
 
   emitDebug(options, `cli.engine=${run.provider} model=${run.modelId}`);
 
@@ -125,10 +132,11 @@ export async function runOpenWikiCliAgent(
   // The API backend structurally blocks non-doc writes, but the CLI path only
   // relies on the prompt plus allowedTools/sandbox, and the wiki snapshot above
   // cannot see source-file mutations. Repository runs must only touch openwiki/;
-  // warn (never fail) if the CLI changed anything else. Local-wiki mode writes
-  // the wiki dir itself, so there is nothing to guard.
-  if (command !== "chat" && outputMode === "repository") {
-    await warnOnOutOfWikiWrites(cwd, options);
+  // warn (never fail) if the CLI changed anything else beyond the pre-run
+  // baseline. Local-wiki mode writes the wiki dir itself, so there is nothing
+  // to guard.
+  if (writeGuardBaseline !== null) {
+    await warnOnOutOfWikiWrites(cwd, writeGuardBaseline, options);
   }
 
   return { command, model };
@@ -139,14 +147,28 @@ const WIKI_DIR_PREFIX = "openwiki/";
 const OUT_OF_WIKI_WARNING_LIMIT = 10;
 
 /**
- * Parses `git status --porcelain` (v1) output and returns changed paths that
- * fall OUTSIDE the generated wiki directory (openwiki/). Handles the rename
- * form `R  old -> new` (both sides are checked, so moving a source file into
- * openwiki/ is still flagged) and C-quoted paths (core.quotePath). Duplicate
- * paths are collapsed, preserving first-seen order.
+ * Compares two `git status --porcelain` (v1) captures and returns changed
+ * paths OUTSIDE the generated wiki directory (openwiki/) that appear in the
+ * post-run output but were not already dirty in the pre-run baseline, so
+ * pre-existing dirty-tree changes are never attributed to the CLI agent.
+ * Handles the rename form `R  old -> new` (both sides are checked, so moving
+ * a source file into openwiki/ is still flagged) and C-quoted paths
+ * (core.quotePath). Duplicate paths are collapsed, preserving first-seen
+ * order.
  */
-export function findUnexpectedChanges(porcelainOutput: string): string[] {
-  const unexpected: string[] = [];
+export function findUnexpectedChanges(
+  baselinePorcelain: string,
+  porcelainOutput: string,
+): string[] {
+  const baseline = new Set(collectOutOfWikiPaths(baselinePorcelain));
+
+  return collectOutOfWikiPaths(porcelainOutput).filter(
+    (filePath) => !baseline.has(filePath),
+  );
+}
+
+function collectOutOfWikiPaths(porcelainOutput: string): string[] {
+  const outOfWiki: string[] = [];
 
   for (const rawLine of porcelainOutput.split("\n")) {
     if (rawLine.trim().length === 0) {
@@ -156,25 +178,31 @@ export function findUnexpectedChanges(porcelainOutput: string): string[] {
     for (const filePath of extractPorcelainPaths(rawLine)) {
       if (
         !filePath.startsWith(WIKI_DIR_PREFIX) &&
-        !unexpected.includes(filePath)
+        !outOfWiki.includes(filePath)
       ) {
-        unexpected.push(filePath);
+        outOfWiki.push(filePath);
       }
     }
   }
 
-  return unexpected;
+  return outOfWiki;
 }
 
 function extractPorcelainPaths(line: string): string[] {
   // Porcelain v1 lines are "XY <path>" or "XY <old> -> <new>": two status
   // columns plus a separating space, so the path section starts at index 3.
+  const status = line.slice(0, 2);
   const pathSection = line.slice(3);
-  // Rename/copy entries encode both paths as "old -> new". A path containing
-  // an unquoted " -> " would be C-quoted first, so a plain split is safe.
-  const tokens = pathSection.includes(" -> ")
-    ? pathSection.split(" -> ")
-    : [pathSection];
+  // Rename/copy entries (X or Y is R/C) encode both paths as "old -> new".
+  // Git only C-quotes paths containing control characters, '"', '\', or
+  // non-ASCII bytes, so a filename containing a literal " -> " stays
+  // unquoted; gating the split on rename/copy status keeps such paths intact
+  // on ordinary lines. A rename whose own paths contain " -> " can still
+  // mis-split, which at worst garbles the warning text.
+  const tokens =
+    /[RC]/.test(status) && pathSection.includes(" -> ")
+      ? pathSection.split(" -> ")
+      : [pathSection];
 
   return tokens
     .map((token) => unquotePorcelainPath(token))
@@ -202,25 +230,37 @@ function unquotePorcelainPath(token: string): string {
     .replace(/\\n/g, "\n");
 }
 
-async function warnOnOutOfWikiWrites(
+async function captureGitPorcelain(
   cwd: string,
   options: OpenWikiRunOptions,
-): Promise<void> {
-  let porcelain: string;
-
+): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync("git", ["status", "--porcelain"], {
       cwd,
       timeout: 10_000,
     });
-    porcelain = stdout;
+
+    return stdout;
   } catch (error) {
     // Not a git repo, git missing, or git failed: nothing to guard against.
     emitDebug(options, `cli.write-guard skipped (${getErrorMessage(error)})`);
+
+    return null;
+  }
+}
+
+async function warnOnOutOfWikiWrites(
+  cwd: string,
+  baselinePorcelain: string,
+  options: OpenWikiRunOptions,
+): Promise<void> {
+  const porcelain = await captureGitPorcelain(cwd, options);
+
+  if (porcelain === null) {
     return;
   }
 
-  const unexpected = findUnexpectedChanges(porcelain);
+  const unexpected = findUnexpectedChanges(baselinePorcelain, porcelain);
 
   if (unexpected.length === 0) {
     return;
