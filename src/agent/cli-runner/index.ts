@@ -255,6 +255,14 @@ async function executeCliRunOnce(
       }
     });
 
+    // The CLI can exit before consuming stdin (e.g. an instant auth
+    // failure), so flushing the prompt hits a closed pipe and emits EPIPE
+    // on the stdin stream, which child.on("error") does not cover. Without
+    // a listener that becomes an uncaughtException that crashes the whole
+    // process. Swallow stdin errors and let the close handler settle with
+    // the more informative exit-code/stderr failure.
+    child.stdin.on("error", () => {});
+
     child.stdin.write(adapter.stdinPayload(spec));
     child.stdin.end();
   });

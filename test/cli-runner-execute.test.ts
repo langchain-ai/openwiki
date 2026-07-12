@@ -128,6 +128,29 @@ describe("executeCliRun", () => {
     ).rejects.toThrow(/exit code 2[\s\S]*login required/);
   });
 
+  test("rejects cleanly when the CLI exits without reading a large stdin payload", async () => {
+    // The stub exits immediately and never consumes stdin, so flushing a
+    // payload larger than the pipe buffer hits a closed fd (EPIPE). Without
+    // a stdin error handler that crashes the process instead of rejecting.
+    const dir = await mkdtemp(path.join(os.tmpdir(), "openwiki-stub-cli-"));
+    const scriptPath = path.join(dir, "stub-cli");
+    await writeFile(
+      scriptPath,
+      "#!/usr/bin/env node\nprocess.stderr.write('auth failed');\nprocess.exit(2);\n",
+      "utf8",
+    );
+    await chmod(scriptPath, 0o755);
+
+    const largeSpec: CliRunSpec = {
+      ...SPEC,
+      userPrompt: "U".repeat(1024 * 1024),
+    };
+
+    await expect(
+      executeCliRun(claudeAdapter, largeSpec, {}, scriptPath),
+    ).rejects.toThrow(/exit code 2[\s\S]*auth failed/);
+  });
+
   test("throws when the agent reports an error result", async () => {
     const stub = await makeStubCli([
       JSON.stringify({
