@@ -5,3 +5,17 @@ coverage/
 *.log
 *.tgz
 .DS_Store
+
+.env
+.env.*
+!.env.example
+credentials.json
+token.json
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+
+large_tool_results/

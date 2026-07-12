@@ -9,12 +9,40 @@ import {
   FIREWORKS_API_KEY_ENV_KEY,
   isValidModelId,
   normalizeProvider,
+  NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
+  OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  OPENAI_CHATGPT_EMAIL_ENV_KEY,
+  OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
+  OPENAI_CHATGPT_PLAN_ENV_KEY,
+  OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY,
+  OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY,
+  OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY,
+  OPENWIKI_GOOGLE_REFRESH_TOKEN_ENV_KEY,
+  OPENWIKI_GMAIL_ACCESS_TOKEN_ENV_KEY,
+  OPENWIKI_GMAIL_REFRESH_TOKEN_ENV_KEY,
+  OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY,
+  OPENWIKI_NOTION_MCP_CLIENT_ID_ENV_KEY,
+  OPENWIKI_NOTION_MCP_REFRESH_TOKEN_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_NOTION_TOKEN_ENV_KEY,
+  OPENWIKI_SLACK_BOT_TOKEN_ENV_KEY,
+  OPENWIKI_SLACK_CLIENT_ID_ENV_KEY,
+  OPENWIKI_SLACK_CLIENT_SECRET_ENV_KEY,
+  OPENWIKI_SLACK_USER_TOKEN_ENV_KEY,
+  OPENWIKI_X_ACCESS_TOKEN_ENV_KEY,
+  OPENWIKI_X_CLIENT_ID_ENV_KEY,
+  OPENWIKI_X_CLIENT_SECRET_ENV_KEY,
+  OPENWIKI_X_REFRESH_TOKEN_ENV_KEY,
+  OPENWIKI_TAVILY_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
+  resolveProviderRetryAttempts,
 } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
 
@@ -47,7 +75,14 @@ export const MANAGED_ENV_KEYS = [
   BASETEN_API_KEY_ENV_KEY,
   DEEPSEEK_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
+  OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
+  OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
+  OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  OPENAI_CHATGPT_EMAIL_ENV_KEY,
+  OPENAI_CHATGPT_PLAN_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   ANTHROPIC_API_KEY_ENV_KEY,
@@ -55,6 +90,28 @@ export const MANAGED_ENV_KEYS = [
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
+  OPENWIKI_NOTION_TOKEN_ENV_KEY,
+  OPENWIKI_NOTION_MCP_CLIENT_ID_ENV_KEY,
+  OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY,
+  OPENWIKI_NOTION_MCP_REFRESH_TOKEN_ENV_KEY,
+  OPENWIKI_SLACK_BOT_TOKEN_ENV_KEY,
+  OPENWIKI_SLACK_CLIENT_ID_ENV_KEY,
+  OPENWIKI_SLACK_CLIENT_SECRET_ENV_KEY,
+  OPENWIKI_SLACK_USER_TOKEN_ENV_KEY,
+  OPENWIKI_GMAIL_ACCESS_TOKEN_ENV_KEY,
+  OPENWIKI_GMAIL_REFRESH_TOKEN_ENV_KEY,
+  OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY,
+  OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY,
+  OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY,
+  OPENWIKI_GOOGLE_REFRESH_TOKEN_ENV_KEY,
+  OPENWIKI_X_CLIENT_ID_ENV_KEY,
+  OPENWIKI_X_CLIENT_SECRET_ENV_KEY,
+  OPENWIKI_X_ACCESS_TOKEN_ENV_KEY,
+  OPENWIKI_X_REFRESH_TOKEN_ENV_KEY,
+  OPENWIKI_TAVILY_API_KEY_ENV_KEY,
+  "OPENWIKI_HTTPS_OAUTH_REDIRECT_URI",
+  "OPENWIKI_OAUTH_CALLBACK_PORT",
   "LANGSMITH_API_KEY",
   "LANGCHAIN_PROJECT",
   "LANGCHAIN_TRACING_V2",
@@ -184,7 +241,9 @@ function createCredentialDiagnostic(
         ? getModelWarnings(value)
         : key === OPENWIKI_PROVIDER_ENV_KEY
           ? getProviderWarnings(value)
-          : getCredentialWarnings(value),
+          : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
+            ? getRetryAttemptsWarnings(value)
+            : getCredentialWarnings(value),
   };
 }
 
@@ -211,6 +270,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
   return (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
+    key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   );
@@ -252,6 +312,18 @@ function getModelWarnings(value: string): string[] {
 
 function getProviderWarnings(value: string): string[] {
   return normalizeProvider(value) === null ? ["invalid provider"] : [];
+}
+
+function getRetryAttemptsWarnings(value: string): string[] {
+  try {
+    resolveProviderRetryAttempts({
+      [OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY]: value,
+    });
+
+    return [];
+  } catch {
+    return ["invalid retry attempts"];
+  }
 }
 
 async function readOpenWikiEnv(): Promise<EnvMap> {
@@ -300,6 +372,7 @@ function parseEnvValue(value: string): string {
     return value
       .slice(1, -1)
       .replace(/\\n/gu, "\n")
+      .replace(/\\r/gu, "\r")
       .replace(/\\"/gu, '"')
       .replace(/\\\\/gu, "\\");
   }
@@ -322,5 +395,6 @@ function formatEnvValue(value: string): string {
   return `"${value
     .replace(/\\/gu, "\\\\")
     .replace(/"/gu, '\\"')
-    .replace(/\n/gu, "\\n")}"`;
+    .replace(/\n/gu, "\\n")
+    .replace(/\r/gu, "\\r")}"`;
 }
