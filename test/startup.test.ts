@@ -134,6 +134,28 @@ describe("resolveStartupCommand", () => {
     }
   });
 
+  test("allows non-interactive runs for CLI-auth providers without a key", async () => {
+    process.env.OPENWIKI_PROVIDER = "claude-code";
+    const repo = await createRepoWithOpenWiki();
+
+    // A CLI-auth provider authenticates via its own login (validated at
+    // runtime), so the API-key gate must not block --print runs even when the
+    // update is NOT a clean no-op (source changed) and a message is supplied.
+    await writeFile(
+      path.join(repo, "README.md"),
+      "# Test Repo\nChanged\n",
+      "utf8",
+    );
+
+    const command = updatePrintCommand({ userMessage: "refresh docs" });
+    const result = await resolveStartupCommand(command, {
+      cwd: repo,
+      isStdinTTY: false,
+    });
+
+    expect(result).toBe(command);
+  });
+
   test("still requires credentials when an update message is supplied", async () => {
     const repo = await createRepoWithOpenWiki();
     const head = await git(repo, ["rev-parse", "HEAD"]);

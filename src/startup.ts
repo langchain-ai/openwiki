@@ -2,6 +2,7 @@ import { shouldCheckUpdateNoop, getUpdateNoopStatus } from "./agent/utils.js";
 import type { CliCommand } from "./commands.js";
 import {
   getProviderApiKeyEnvKey,
+  providerUsesCliAuth,
   resolveConfiguredProvider,
 } from "./constants.js";
 
@@ -37,6 +38,14 @@ export async function resolveStartupCommand(
     (command.print || !isStdinTTY)
   ) {
     const provider = resolveConfiguredProvider();
+
+    // CLI-auth providers (claude-code, codex-cli) have no API key: they sign in
+    // through their own CLI login, which is validated at run time by
+    // ensureCliBinaryAvailable. Skip the API-key gate for them.
+    if (providerUsesCliAuth(provider)) {
+      return command;
+    }
+
     const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
     const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
 
