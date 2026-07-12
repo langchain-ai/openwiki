@@ -30,6 +30,42 @@ describe("getCliOutputPromptConfig", () => {
     expect(config.removePlanCommand).toBe("rm -f _plan.md");
     expect(config.filesystemRootInstruction).not.toContain("virtual");
   });
+
+  test("repository write boundary and root agent instructions use real paths", () => {
+    const config = getCliOutputPromptConfig("repository");
+
+    expect(config.writeBoundaryInstruction).not.toMatch(/[\s(]\/openwiki\b/);
+    expect(config.writeBoundaryInstruction).toContain(
+      "under the repository's openwiki/ directory",
+    );
+    expect(config.rootAgentInstructions).not.toMatch(
+      /[\s(]\/(?:openwiki\b|AGENTS\.md|CLAUDE\.md)/,
+    );
+    expect(config.rootAgentInstructions).toContain("openwiki/INSTRUCTIONS.md");
+    expect(config.rootAgentInstructions).toContain(
+      "AGENTS.md or CLAUDE.md files at the repository root",
+    );
+  });
+
+  test("local-wiki write boundary and synthesis block use cwd-relative paths", () => {
+    const config = getCliOutputPromptConfig("local-wiki");
+
+    expect(config.writeBoundaryInstruction).not.toContain("filesystem tools");
+    expect(config.writeBoundaryInstruction).toContain(
+      "current working directory",
+    );
+    expect(config.localWikiSynthesisInstruction).not.toMatch(
+      /[\s(]\/(?:quickstart|open-questions|themes|commitments|personal-logistics)\.md/,
+    );
+    expect(config.localWikiSynthesisInstruction).not.toContain("/sources/");
+    expect(config.localWikiSynthesisInstruction).toContain("- quickstart.md:");
+    expect(config.localWikiSynthesisInstruction).toContain(
+      "- sources/<connector>.md:",
+    );
+    expect(config.localWikiSynthesisInstruction).toContain(
+      "read open-questions.md if it exists",
+    );
+  });
 });
 
 describe("createCliSystemPrompt", () => {
@@ -64,6 +100,33 @@ describe("createCliSystemPrompt", () => {
       createCliSystemPrompt("init", "repository", "codex-cli"),
     ).not.toContain("subagent");
   });
+
+  test("repository system prompt never uses leading-slash wiki paths", () => {
+    const prompt = createCliSystemPrompt("init", "repository", "claude-code");
+
+    expect(prompt).not.toMatch(/[\s(]\/openwiki\b/);
+    expect(prompt).not.toMatch(/[\s(]\/(?:AGENTS|CLAUDE)\.md/);
+    expect(prompt).toContain("openwiki/INSTRUCTIONS.md");
+    expect(prompt).toContain(
+      "AGENTS.md or CLAUDE.md files at the repository root",
+    );
+    expect(prompt).toContain("only under the repository's openwiki/ directory");
+  });
+
+  test("local-wiki system prompt uses the real cwd write boundary", () => {
+    const prompt = createCliSystemPrompt("update", "local-wiki", "claude-code");
+
+    expect(prompt).not.toContain("virtual");
+    expect(prompt).not.toContain("constrained connector tools");
+    expect(prompt).not.toMatch(
+      /[\s(]\/(?:quickstart|open-questions|themes|commitments|personal-logistics|sources|_plan)\b/,
+    );
+    expect(prompt).toContain(
+      "Do not modify files outside the current working directory",
+    );
+    expect(prompt).toContain("rm -f _plan.md");
+    expect(prompt).toContain("such as quickstart.md");
+  });
 });
 
 describe("createCliUserPrompt", () => {
@@ -80,6 +143,37 @@ describe("createCliUserPrompt", () => {
     expect(prompt).toContain("/work/repo");
     expect(prompt).toContain("current working directory");
     expect(prompt).not.toContain("virtual");
+  });
+
+  test("repository runtime note never uses leading-slash wiki paths", () => {
+    const prompt = createCliUserPrompt(
+      "init",
+      "/work/repo",
+      CONTEXT,
+      {},
+      "repository",
+    );
+
+    expect(prompt).not.toMatch(/[\s(]\/openwiki\b/);
+    expect(prompt).toContain("only under the repository's openwiki/ directory");
+  });
+
+  test("local-wiki runtime note uses the real cwd write boundary", () => {
+    const prompt = createCliUserPrompt(
+      "update",
+      "/home/user/.openwiki/wiki",
+      CONTEXT,
+      {},
+      "local-wiki",
+    );
+
+    expect(prompt).toContain("Local wiki root");
+    expect(prompt).toContain("/home/user/.openwiki/wiki");
+    expect(prompt).toContain(
+      "Do not modify files outside the current working directory",
+    );
+    expect(prompt).not.toContain("virtual");
+    expect(prompt).not.toContain("constrained connector tools");
   });
 
   test("followup chat message passes through untouched", () => {

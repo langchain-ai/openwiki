@@ -31,6 +31,14 @@ export function getCliOutputPromptConfig(
       planPath: "openwiki/_plan.md",
       quickstartPath: "openwiki/quickstart.md",
       removePlanCommand: "rm -f openwiki/_plan.md",
+      rootAgentInstructions: `Root agent instruction files:
+- Do not create or update AGENTS.md or CLAUDE.md files at the repository root during normal code wiki runs.
+- Keep generated wiki content under the repository openwiki/ directory.
+- openwiki/INSTRUCTIONS.md is the shared, user-authored OpenWiki brief for this repository. Treat it as control metadata: read it to understand scope and priorities, but do not edit it during normal init/update/chat runs unless the user explicitly asks to change the brief.
+- Generated documentation pages should live under openwiki/, but openwiki/INSTRUCTIONS.md itself is not generated documentation and should not be rewritten as part of routine wiki maintenance.
+- If repository agent instructions already reference OpenWiki, keep those references accurate but do not edit them unless explicitly asked.`,
+      writeBoundaryInstruction:
+        "Do not modify source code. Write generated wiki pages only under the repository's openwiki/ directory.",
       writePathExample:
         "repository-relative paths under openwiki/, for example openwiki/quickstart.md or openwiki/architecture/overview.md",
     };
@@ -41,13 +49,30 @@ export function getCliOutputPromptConfig(
     docsLocation: "the local wiki directory (your current working directory)",
     filesystemRootInstruction:
       "You are running inside the local wiki directory (~/.openwiki/wiki) with your own native file and shell tools. Use real paths relative to the current working directory, such as quickstart.md, sources/gmail.md, and topics/ai-research.md. Do not create a nested openwiki/ directory.",
+    localWikiSynthesisInstruction: toCwdRelativeCanonicalPaths(
+      base.localWikiSynthesisInstruction,
+    ),
     metadataPath: ".last-update.json",
     planPath: "_plan.md",
     quickstartPath: "quickstart.md",
     removePlanCommand: "rm -f _plan.md",
+    writeBoundaryInstruction:
+      "Do not modify files outside the current working directory (~/.openwiki/wiki). The only source data outside this directory that may be inspected is connector raw data or explicit shell reads requested by the source-specific prompt.",
     writePathExample:
       "paths relative to the current working directory, for example quickstart.md or sources/gmail.md",
   };
+}
+
+/**
+ * Rewrites the base config's virtual-root canonical wiki references
+ * (/quickstart.md, /themes.md, /sources/<connector>.md, ...) to cwd-relative
+ * form for CLI runs, preserving the rest of the text verbatim.
+ */
+function toCwdRelativeCanonicalPaths(text: string): string {
+  return text.replace(
+    /(^|[\s(,])\/(quickstart\.md|open-questions\.md|themes\.md|commitments\.md|personal-logistics\.md|sources\/)/g,
+    "$1$2",
+  );
 }
 
 export function createCliSystemPrompt(
