@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, test } from "vitest";
 import { executeCliRun } from "../src/agent/cli-runner/index.ts";
 import { claudeAdapter } from "../src/agent/cli-runner/claude.ts";
+import { codexAdapter } from "../src/agent/cli-runner/codex.ts";
 import type { OpenWikiRunEvent } from "../src/agent/types.ts";
 import type { CliRunSpec } from "../src/agent/cli-runner/types.ts";
 
@@ -16,6 +17,26 @@ const SPEC: CliRunSpec = {
   systemPrompt: "SYSTEM",
   userPrompt: "USER",
 };
+
+/**
+ * Creates an executable node script that writes the given stderr text and
+ * exits nonzero, ignoring stdin.
+ */
+async function makeFailingStubCli(
+  stderr: string,
+  exitCode = 2,
+): Promise<string> {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "openwiki-stub-cli-"));
+  const scriptPath = path.join(dir, "stub-cli");
+  await writeFile(
+    scriptPath,
+    `#!/usr/bin/env node\nprocess.stderr.write(${JSON.stringify(stderr)});\nprocess.exit(${exitCode});\n`,
+    "utf8",
+  );
+  await chmod(scriptPath, 0o755);
+
+  return scriptPath;
+}
 
 /**
  * Creates an executable node script that ignores argv, echoes the given
@@ -164,6 +185,33 @@ describe("executeCliRun", () => {
     await expect(executeCliRun(claudeAdapter, SPEC, {}, stub)).rejects.toThrow(
       /too long/,
     );
+  });
+
+  test("appends a claude login hint on an auth-flavored failure", async () => {
+    const stub = await makeFailingStubCli("Error: Please log in to continue.");
+
+    await expect(executeCliRun(claudeAdapter, SPEC, {}, stub)).rejects.toThrow(
+      /claude \/login/,
+    );
+  });
+
+  test("appends a codex login hint on an auth-flavored failure", async () => {
+    const stub = await makeFailingStubCli("unauthorized: credentials expired");
+
+    await expect(executeCliRun(codexAdapter, SPEC, {}, stub)).rejects.toThrow(
+      /codex login/,
+    );
+  });
+
+  test("does not add a login hint for non-auth failures", async () => {
+    const stub = await makeFailingStubCli("write error: disk full");
+
+    await expect(executeCliRun(claudeAdapter, SPEC, {}, stub)).rejects.toThrow(
+      /disk full/,
+    );
+    await expect(
+      executeCliRun(claudeAdapter, SPEC, {}, stub),
+    ).rejects.not.toThrow(/not signed in/);
   });
 
   test("retries once without resume when a resumed run fails", async () => {

@@ -291,10 +291,13 @@ async function executeCliRunOnce(
     let timedOut = false;
     const toolNames = new Map<string, string>();
 
+    let killTimer: NodeJS.Timeout | null = null;
+
     const timer = setTimeout(() => {
       timedOut = true;
       child.kill("SIGTERM");
-      setTimeout(() => child.kill("SIGKILL"), 5_000).unref();
+      killTimer = setTimeout(() => child.kill("SIGKILL"), 5_000);
+      killTimer.unref();
     }, timeoutMs);
 
     const settle = (error: Error | null) => {
@@ -304,6 +307,10 @@ async function executeCliRunOnce(
 
       settled = true;
       clearTimeout(timer);
+
+      if (killTimer) {
+        clearTimeout(killTimer);
+      }
 
       if (error) {
         reject(error);
@@ -356,13 +363,14 @@ async function executeCliRunOnce(
           ),
         );
       } else if (code !== 0) {
-        settle(
-          new Error(
-            `${spawnCommand} exited with exit code ${code ?? "unknown"}.${
-              stderrTail ? `\nstderr:\n${stderrTail}` : ""
-            }`,
-          ),
-        );
+        const base = `${spawnCommand} exited with exit code ${code ?? "unknown"}.${
+          stderrTail ? `\nstderr:\n${stderrTail}` : ""
+        }`;
+        const hint = AUTH_ERROR_PATTERN.test(stderrTail)
+          ? authLoginHint(adapter.engine)
+          : null;
+
+        settle(new Error(hint ? `${base}\n${hint}` : base));
       } else if (resultError) {
         settle(new Error(`CLI agent failed: ${resultError}`));
       } else {
@@ -381,6 +389,25 @@ async function executeCliRunOnce(
     child.stdin.write(adapter.stdinPayload(spec));
     child.stdin.end();
   });
+}
+
+const AUTH_ERROR_PATTERN =
+  /\b(log ?in|logged ?out|unauthorized|authentication|credential|api key)\b/i;
+
+/**
+ * Returns the engine-specific "sign in" hint appended to auth-flavored CLI
+ * failures, or null for engines without a known login command.
+ */
+function authLoginHint(engine: OpenWikiProvider): string | null {
+  if (engine === "claude-code") {
+    return "If you are not signed in, run: claude /login";
+  }
+
+  if (engine === "codex-cli") {
+    return "If you are not signed in, run: codex login";
+  }
+
+  return null;
 }
 
 function emitDebug(options: OpenWikiRunOptions, message: string): void {
