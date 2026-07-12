@@ -81,6 +81,12 @@ export function createCliSystemPrompt(
   engine: OpenWikiProvider,
 ): string {
   const output = getCliOutputPromptConfig(outputMode);
+  // Parity with the base createSystemPrompt, which renders this block. It is
+  // populated only for local-wiki mode; repository mode leaves it "" so the
+  // trailing separator collapses and no stray blank section is emitted.
+  const localWikiSynthesis = output.localWikiSynthesisInstruction
+    ? `${output.localWikiSynthesisInstruction}\n\n`
+    : "";
 
   return `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
@@ -98,7 +104,7 @@ Run discipline:
 
 ${createDocumentationGoalSections(output)}
 
-${createStewardshipSections(output)}
+${localWikiSynthesis}${createStewardshipSections(output)}
 
 ${createSecuritySection(output)}
 

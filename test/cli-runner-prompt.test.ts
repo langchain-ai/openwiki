@@ -127,6 +127,25 @@ describe("createCliSystemPrompt", () => {
     expect(prompt).toContain("rm -f _plan.md");
     expect(prompt).toContain("such as quickstart.md");
   });
+
+  test("local-wiki system prompt renders the synthesis discipline block", () => {
+    const prompt = createCliSystemPrompt("init", "local-wiki", "claude-code");
+
+    expect(prompt).toContain("Local knowledge synthesis discipline");
+    expect(prompt).toContain("open-questions.md");
+    // The rendered block must use cwd-relative canonical paths, never the
+    // virtual leading-slash form.
+    expect(prompt).not.toMatch(/[\s(]\/open-questions\.md/);
+  });
+
+  test("repository system prompt omits the empty synthesis block cleanly", () => {
+    // Repository mode has an empty synthesis value, so splicing it in must not
+    // introduce a stray blank section (a run of three or more newlines).
+    const prompt = createCliSystemPrompt("init", "repository", "claude-code");
+
+    expect(prompt).not.toContain("Local knowledge synthesis discipline");
+    expect(prompt).not.toMatch(/\n\n\n/);
+  });
 });
 
 describe("createCliUserPrompt", () => {
