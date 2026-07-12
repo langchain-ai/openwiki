@@ -56,11 +56,18 @@ jobs:
         run: pnpm run lint:check
 
   build:
-    name: Build & Typecheck
-    runs-on: ubuntu-latest
+    name: Build, Typecheck & CLI Smoke (${{ matrix.os }}, Node ${{ matrix.node-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        node-version: ["20", "22"]
+        include:
+          - os: ubuntu-latest
+            node-version: "20"
+          - os: ubuntu-latest
+            node-version: "22"
+          - os: ubuntu-latest
+            node-version: "24"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -85,12 +92,17 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Smoke test CLI
+        run: node dist/cli.js code --dry-run --init
+        env:
+          OPENWIKI_DEV: "1"
+
   test:
     name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ["20", "22"]
+        node-version: ["20", "22", "24"]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -111,3 +123,27 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high

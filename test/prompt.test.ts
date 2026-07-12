@@ -4,7 +4,6 @@ import {
   createSystemPrompt,
   createUserPrompt,
 } from "../src/agent/prompt.ts";
-import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../src/constants.ts";
 import type {
   OpenWikiCommand,
   RunContext,
@@ -29,28 +28,30 @@ const sampleLastUpdate: UpdateMetadata = {
 };
 
 describe("createModeInstructions", () => {
-  test("chat mode tells the agent to answer directly and not touch docs", () => {
-    const instructions = createModeInstructions("chat");
+  test("chat mode answers directly without changing documentation", () => {
+    const instructions = createModeInstructions("chat", "repository");
 
     expect(instructions).toContain("interactive chat turn");
     expect(instructions).toContain("Answer the user's message directly");
     expect(instructions).toMatch(
-      /do not create or update OpenWiki documentation/iu,
+      /Do not create or update OpenWiki documentation/iu,
     );
   });
 
-  test("init mode instructs building docs from scratch", () => {
-    const instructions = createModeInstructions("init");
+  test("init mode describes the selected output location", () => {
+    const localInstructions = createModeInstructions("init");
+    const repositoryInstructions = createModeInstructions("init", "repository");
 
-    expect(instructions).toContain("initial documentation run");
-    expect(instructions).toContain("quickstart.md");
-    expect(instructions).toContain(
+    expect(localInstructions).toContain("initial documentation run");
+    expect(localInstructions).toContain("/quickstart.md");
+    expect(repositoryInstructions).toContain("/openwiki/quickstart.md");
+    expect(repositoryInstructions).toContain(
       "Build the documentation structure from scratch",
     );
   });
 
   test("update mode instructs a surgical refresh", () => {
-    const instructions = createModeInstructions("update");
+    const instructions = createModeInstructions("update", "repository");
 
     expect(instructions).toContain("maintenance update run");
     expect(instructions).toContain("Inspect the existing");
@@ -59,50 +60,40 @@ describe("createModeInstructions", () => {
   });
 
   test("every command produces non-empty, distinct instructions", () => {
-    const outputs = COMMANDS.map(createModeInstructions);
+    const outputs = COMMANDS.map((command) =>
+      createModeInstructions(command, "repository"),
+    );
 
-    for (const output of outputs) {
-      expect(output.length).toBeGreaterThan(0);
-    }
-
+    expect(outputs.every((output) => output.length > 0)).toBe(true);
     expect(new Set(outputs).size).toBe(COMMANDS.length);
   });
 });
 
 describe("createSystemPrompt", () => {
-  test("identifies the agent and scopes writes to the OpenWiki directory", () => {
+  test("scopes local-wiki runs to the local wiki root", () => {
     const prompt = createSystemPrompt("init");
 
     expect(prompt).toContain("You are OpenWiki");
-    expect(prompt).toContain(OPEN_WIKI_DIR);
-    expect(prompt).toMatch(/do not modify source code outside.*openwiki/iu);
+    expect(prompt).toContain("~/.openwiki/wiki");
+    expect(prompt).toContain("Do not modify files outside ~/.openwiki/wiki");
+    expect(prompt).toContain("/quickstart.md");
+  });
+
+  test("treats repository instructions as read-only control metadata", () => {
+    const prompt = createSystemPrompt("init", "repository");
+
+    expect(prompt).toContain("/openwiki/INSTRUCTIONS.md");
+    expect(prompt).toContain("shared, user-authored OpenWiki brief");
+    expect(prompt).toContain("do not edit it during normal init/update/chat");
     expect(prompt).toContain("/AGENTS.md");
     expect(prompt).toContain("/CLAUDE.md");
   });
 
-  test("embeds the required AGENTS.md/CLAUDE.md reference section verbatim", () => {
-    // The prompt specifies an exact section structure that must be written into
-    // /AGENTS.md and /CLAUDE.md. Pin the structural anchors so a future edit
-    // can't silently drift the section the agent reproduces.
-    const prompt = createSystemPrompt("init");
-
-    expect(prompt).toContain("## OpenWiki");
-    expect(prompt).toContain("openwiki/quickstart.md");
-    expect(prompt).toContain(
-      "read the OpenWiki quickstart first, then follow its links",
-    );
-  });
-
-  test("includes the security/privacy rules", () => {
-    const prompt = createSystemPrompt("update");
+  test("includes security and CLI reference rules", () => {
+    const prompt = createSystemPrompt("update", "repository");
 
     expect(prompt).toMatch(/do not read or document secret values/iu);
     expect(prompt).toContain(".env");
-  });
-
-  test("includes the CLI reference block for every command", () => {
-    const prompt = createSystemPrompt("chat");
-
     expect(prompt).toContain("--init");
     expect(prompt).toContain("--update");
     expect(prompt).toContain("--print");
@@ -110,78 +101,93 @@ describe("createSystemPrompt", () => {
     expect(prompt).toContain("--help");
   });
 
-  test("references the update metadata path so the agent records runs", () => {
-    for (const command of COMMANDS) {
-      expect(createSystemPrompt(command)).toContain(UPDATE_METADATA_PATH);
-    }
+  test("references the correct update metadata path for each output mode", () => {
+    expect(createSystemPrompt("update")).toContain("/.last-update.json");
+    expect(createSystemPrompt("update", "repository")).toContain(
+      "/openwiki/.last-update.json",
+    );
   });
 
-  test("appends the mode-specific instructions block", () => {
-    const prompt = createSystemPrompt("init");
+  test("appends mode-specific instructions", () => {
+    const prompt = createSystemPrompt("init", "repository");
 
     expect(prompt).toContain("Mode-specific behavior:");
-    expect(prompt).toContain(createModeInstructions("init"));
+    expect(prompt).toContain(createModeInstructions("init", "repository"));
   });
 });
 
 describe("createUserPrompt", () => {
-  test("chat returns the user message (or a default when absent)", () => {
+  test("chat returns the user message or a default", () => {
     expect(
       createUserPrompt("chat", context(), "Why is auth in a separate module?"),
     ).toBe("Why is auth in a separate module?");
-
     expect(createUserPrompt("chat", context())).toBe("Start an OpenWiki chat.");
     expect(createUserPrompt("chat", context(), "   ")).toBe(
       "Start an OpenWiki chat.",
     );
   });
 
-  test("init builds a prompt that embeds the git summary", () => {
+  test("init embeds the repository brief and git summary", () => {
     const prompt = createUserPrompt(
       "init",
-      context({ gitSummary: "M src/auth.ts\nA src/login.ts" }),
+      context({
+        gitSummary: "M src/auth.ts\nA src/login.ts",
+        wikiGoal: "Prioritize architecture and runbooks.",
+      }),
+      null,
+      "repository",
     );
 
-    expect(prompt).toContain("Initialize OpenWiki documentation");
+    expect(prompt).toContain(
+      "Initialize OpenWiki documentation for this repository",
+    );
+    expect(prompt).toContain("Prioritize architecture and runbooks.");
     expect(prompt).toContain("M src/auth.ts\nA src/login.ts");
-    expect(prompt).toContain(`${OPEN_WIKI_DIR}/quickstart.md`);
+    expect(prompt).toContain("/openwiki/quickstart.md");
   });
 
-  test("update builds a prompt that embeds last-update metadata and git summary", () => {
+  test("local init uses the local wiki path", () => {
+    const prompt = createUserPrompt("init", context(), null, "local-wiki");
+
+    expect(prompt).toContain("the local knowledge wiki");
+    expect(prompt).toContain("~/.openwiki/wiki");
+    expect(prompt).toContain("/quickstart.md");
+  });
+
+  test("update embeds metadata and git summary", () => {
     const prompt = createUserPrompt(
       "update",
       context({ lastUpdate: sampleLastUpdate, gitSummary: "recent changes" }),
+      null,
+      "repository",
     );
 
     expect(prompt).toContain("Update the existing OpenWiki documentation");
     expect(prompt).toContain("recent changes");
-    // The full metadata JSON is rendered so the agent can see the prior gitHead.
     expect(prompt).toContain(sampleLastUpdate.gitHead as string);
     expect(prompt).toContain(sampleLastUpdate.model);
+    expect(prompt).toContain("/openwiki/.last-update.json");
   });
 
-  test("update notes when no previous update metadata exists", () => {
-    const prompt = createUserPrompt("update", context({ lastUpdate: null }));
-
-    expect(prompt).toContain("No previous OpenWiki update metadata was found.");
+  test("update notes when no previous metadata exists", () => {
+    expect(createUserPrompt("update", context(), null, "repository")).toContain(
+      "No previous OpenWiki update metadata was found.",
+    );
   });
 
-  test("appends a non-empty user message as an additional instruction", () => {
+  test("appends only a trimmed non-empty user message", () => {
     const prompt = createUserPrompt(
       "update",
       context(),
       "   focus on the API surface   ",
+      "repository",
     );
 
     expect(prompt).toContain("Additional user instruction:");
     expect(prompt).toContain("focus on the API surface");
-    // The trimmed message is used, not the surrounding whitespace.
     expect(prompt).not.toContain("   focus");
-  });
-
-  test("does not append a user-message section when the message is blank", () => {
-    const prompt = createUserPrompt("init", context(), "   ");
-
-    expect(prompt).not.toContain("Additional user instruction:");
+    expect(createUserPrompt("init", context(), "   ")).not.toContain(
+      "Additional user instruction:",
+    );
   });
 });
