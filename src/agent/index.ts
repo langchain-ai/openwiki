@@ -41,6 +41,8 @@ import {
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
+  getProvidersForKnownModelId,
+  isModelIdForOtherProvider,
   isValidModelId,
   normalizeModelId,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -414,7 +416,35 @@ function resolveModelId(
     );
   }
 
+  warnOnProviderModelMismatch(options, provider, modelId);
+
   return modelId;
+}
+
+// Non-fatal: if the configured model is a known model of a different provider
+// (e.g. an Anthropic model left in OPENWIKI_MODEL_ID while the provider is now
+// OpenAI), surface an actionable warning instead of letting the request fail
+// later with an opaque provider-side 400/404. The run still proceeds, since a
+// custom endpoint or gateway may legitimately serve the model.
+function warnOnProviderModelMismatch(
+  options: OpenWikiRunOptions,
+  provider: OpenWikiProvider,
+  modelId: string,
+): void {
+  if (!isModelIdForOtherProvider(modelId, provider)) {
+    return;
+  }
+
+  const otherProviders = getProvidersForKnownModelId(modelId, provider)
+    .map((otherProvider) => getProviderLabel(otherProvider))
+    .join(", ");
+  const message =
+    `Warning: model "${modelId}" is not a known ${getProviderLabel(provider)} model ` +
+    `(it belongs to ${otherProviders}). The request may fail. ` +
+    `Set ${OPENWIKI_MODEL_ID_ENV_KEY} to a ${getProviderLabel(provider)} model, or switch providers.`;
+
+  emitDebug(options, `model.mismatch provider=${provider} model=${modelId}`);
+  options.onEvent?.({ type: "text", text: message });
 }
 
 function createModel(

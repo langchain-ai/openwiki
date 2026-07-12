@@ -5,6 +5,8 @@ import {
   DEFAULT_PROVIDER,
   getDefaultModelId,
   getProviderModelOptions,
+  getProvidersForKnownModelId,
+  isModelIdForOtherProvider,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
@@ -199,4 +201,68 @@ describe("getDefaultModelId", () => {
       expect(getDefaultModelId("openai-compatible")).toBe(DEFAULT_MODEL_ID);
     },
   );
+});
+
+describe("getProvidersForKnownModelId", () => {
+  test("finds the provider(s) whose known models include the id", () => {
+    expect(getProvidersForKnownModelId("claude-opus-4-8", "openai")).toEqual([
+      "anthropic",
+    ]);
+  });
+
+  test("excludes the provider passed in", () => {
+    expect(getProvidersForKnownModelId("claude-opus-4-8", "anthropic")).toEqual(
+      [],
+    );
+  });
+
+  test("uses exact matching, so namespaced overlaps do not false-match", () => {
+    // Anthropic's bare "claude-opus-4-8" must not match OpenRouter's
+    // namespaced "anthropic/claude-opus-4-8" or vice versa.
+    expect(
+      getProvidersForKnownModelId("anthropic/claude-opus-4-8", "openai"),
+    ).toEqual(["openrouter"]);
+    expect(
+      getProvidersForKnownModelId("anthropic/claude-opus-4-8", "openrouter"),
+    ).toEqual([]);
+  });
+
+  test("returns empty for custom / unknown model ids", () => {
+    expect(
+      getProvidersForKnownModelId("my-gateway-model", "openai-compatible"),
+    ).toEqual([]);
+  });
+});
+
+describe("isModelIdForOtherProvider", () => {
+  test("flags a model that clearly belongs to a different provider", () => {
+    expect(isModelIdForOtherProvider("claude-opus-4-8", "openai")).toBe(true);
+  });
+
+  test("does not flag a model that is valid for the configured provider", () => {
+    expect(isModelIdForOtherProvider("claude-opus-4-8", "anthropic")).toBe(
+      false,
+    );
+  });
+
+  test("does not flag shared OpenAI models across openai / openai-chatgpt", () => {
+    const [firstOpenAiModel] = getProviderModelOptions("openai");
+    if (firstOpenAiModel) {
+      expect(
+        isModelIdForOtherProvider(firstOpenAiModel.id, "openai-chatgpt"),
+      ).toBe(false);
+    }
+  });
+
+  test("does not flag custom / unknown model ids", () => {
+    expect(
+      isModelIdForOtherProvider("my-gateway-model", "openai-compatible"),
+    ).toBe(false);
+  });
+
+  test("trims whitespace before comparing", () => {
+    expect(isModelIdForOtherProvider("  claude-opus-4-8  ", "openai")).toBe(
+      true,
+    );
+  });
 });
