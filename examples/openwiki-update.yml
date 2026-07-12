@@ -27,9 +27,11 @@ jobs:
         run: npm install --global openwiki
 
       - name: Run OpenWiki
-        run: openwiki --update --print
+        # --update also handles the first run for code docs when env vars are set.
+        run: openwiki code --update --print
         env:
           # TODO: Replace with your preferred inference provider and model
+          OPENWIKI_PROVIDER: openrouter
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENWIKI_MODEL_ID: z-ai/glm-5.2
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
@@ -37,9 +39,13 @@ jobs:
           LANGCHAIN_TRACING_V2: "true"
 
       - name: Create OpenWiki update pull request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
-          add-paths: openwiki
+          add-paths: |
+            openwiki
+            AGENTS.md
+            CLAUDE.md
+            .github/workflows/openwiki-update.yml
           branch: openwiki/update
           commit-message: "docs: update OpenWiki"
           title: "docs: update OpenWiki"

@@ -18,7 +18,7 @@ Restart your shell, or source the profile file that `pnpm setup` changed. Then
 set up and link this package:
 
 ```sh
-cd /Users/bracesproul/code/lang-chain-ai/projects/agent-docs
+cd /path/to/openwiki
 pnpm install
 pnpm run build
 pnpm link --global
@@ -47,7 +47,7 @@ avoids typing the path to `dist/cli.js`.
 If you do not want to configure pnpm globals, use a shell alias instead:
 
 ```sh
-alias openwiki='node /Users/bracesproul/code/lang-chain-ai/projects/agent-docs/dist/cli.js'
+alias openwiki='node /path/to/openwiki/dist/cli.js'
 ```
 
 That alias can go in `~/.zshrc` if you want it to persist.
