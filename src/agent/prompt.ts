@@ -232,6 +232,9 @@ Inspect the relevant evidence thoroughly, identify the major technical, business
 
 Start with ${output.quickstartPath} as the entrypoint. Then create section directories and pages that explain the subject in a way that is useful to both humans and future agents.
 
+Wiki brief:
+${formatWikiGoal(context.wikiGoal)}
+
 Git context:
 ${context.gitSummary}
 `.trim(),
@@ -248,11 +251,18 @@ Inspect ${output.docsLocation}, identify recent source changes or newly ingested
 Last update metadata:
 ${formatLastUpdate(context.lastUpdate)}
 
+Wiki brief:
+${formatWikiGoal(context.wikiGoal)}
+
 Git change summary:
 ${context.gitSummary}
 `.trim(),
     userMessage,
   );
+}
+
+function formatWikiGoal(wikiGoal: string | undefined): string {
+  return wikiGoal?.trim() || "(not provided)";
 }
 
 type OutputPromptConfig = {
@@ -384,6 +394,8 @@ function getOutputPromptConfig(
     rootAgentInstructions: `Root agent instruction files:
 - Do not create or update repository /AGENTS.md or /CLAUDE.md files during normal code wiki runs.
 - Keep generated wiki content under the repository /openwiki directory.
+- /openwiki/INSTRUCTIONS.md is the shared, user-authored OpenWiki brief for this repository. Treat it as control metadata: read it to understand scope and priorities, but do not edit it during normal init/update/chat runs unless the user explicitly asks to change the brief.
+- Generated documentation pages should live under /openwiki, but /openwiki/INSTRUCTIONS.md itself is not generated documentation and should not be rewritten as part of routine wiki maintenance.
 - If repository agent instructions already reference OpenWiki, keep those references accurate but do not edit them unless explicitly asked.`,
     searchBoundaryInstruction:
       "Do not run broad commands that search outside the target repository.",

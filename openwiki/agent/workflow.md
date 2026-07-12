@@ -24,6 +24,7 @@ Chat runs skip metadata writes entirely.
 `createModel()` in `src/agent/index.ts` branches by provider:
 
 - **anthropic**: `new ChatAnthropic(modelId, { apiKey, anthropicApiUrl? })` — uses `@langchain/anthropic` directly. When `ANTHROPIC_BASE_URL` is set, the resolved alternative base URL is passed as `anthropicApiUrl` so requests can be routed to a self-hosted or proxied Anthropic-compatible endpoint instead of the default API.
+- **openai-chatgpt**: `new ChatOpenAI({ apiKey: tokens.access, model, useResponsesApi: true, zdrEnabled: true, streaming: true, configuration: { baseURL: CODEX_RESPONSES_BASE_URL, defaultHeaders, fetch } })` — uses ChatGPT OAuth tokens instead of an API key. Tokens are refreshed before model creation via `ensureFreshChatGptTokens()` in `src/agent/openai-chatgpt-oauth.ts`. The Codex backend requires `store: false` (`zdrEnabled`) and streaming for all requests. If tokens are missing, the run aborts with a clear message directing the user to sign in.
 - **openrouter**: `new ChatOpenRouter({ apiKey, baseURL, model, siteName: "OpenWiki" })` — uses the selected OpenRouter model directly.
 - **openai**: `new ChatOpenAI({ apiKey, model, useResponsesApi: true })` — uses OpenAI's Responses API for official OpenAI calls.
 - **baseten / fireworks / openai-compatible**: `new ChatOpenAI({ apiKey, configuration: { baseURL? }, model })` — OpenAI-compatible clients using the provider's base URL when configured. The `openai-compatible` provider has no default endpoint; its base URL is user-supplied via `OPENAI_COMPATIBLE_BASE_URL` and required (`requiresBaseUrl: true`), which lets OpenWiki target any OpenAI-compatible gateway (for example a LiteLLM gateway fronting upstream providers).
@@ -122,8 +123,8 @@ The agent is not just a generic chat wrapper. It is intentionally constrained so
 - Be careful with `.last-update.json` semantics, because update runs use it to decide what changed since the previous successful run.
 - The content-snapshot check means a no-op update will not update metadata. If you change the snapshot logic, ensure `.last-update.json` is still excluded.
 - Credential loading happens before model resolution; changes there affect both onboarding and agent startup.
-- When adding a provider, add a branch in `createModel()` and ensure the API key env key is checked in `ensureProviderKey()`.
-- The DeepAgents backend is configured with `virtualMode: true`, which is important for documentation-only behavior.
+- When adding a provider, add a branch in `createModel()` and ensure the API key env key is checked in `ensureProviderKey()`. OAuth-based providers (like `openai-chatgpt`) skip `ensureProviderKey()` and instead require a token refresh step before `createModel()` is called.
+- The DeepAgents backend is configured with `virtualMode: true`, which is important for documentation-only behavior. The custom `OpenWikiLocalShellBackend` in `src/agent/docs-only-backend.ts` adds docs-only write guards that restrict writes to the `openwiki/` directory in docs-only mode.
 
 ## Source map
 
@@ -131,6 +132,8 @@ The agent is not just a generic chat wrapper. It is intentionally constrained so
 - `src/agent/prompt.ts`
 - `src/agent/utils.ts`
 - `src/agent/types.ts`
+- `src/agent/docs-only-backend.ts`
+- `src/agent/openai-chatgpt-oauth.ts`
 - `src/constants.ts`
 - `src/env.ts`
 - Git evidence: commits `ceded10`, `f89b05d`, `dfa73cc`, `a82759f`, `0fa1430`

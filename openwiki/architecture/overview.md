@@ -3,14 +3,20 @@
 OpenWiki has a small but layered architecture:
 
 1. `src/cli.tsx` provides the interactive terminal application and orchestrates runs, including auto-exit for init/update.
-2. `src/commands.ts` parses argv and defines help text and supported options.
+2. `src/commands.ts` parses argv and defines help text and supported options, including `auth`, `ngrok`, `cron`, and `ingest` subcommands.
 3. `src/credentials.tsx` manages interactive onboarding for provider selection, API keys, model selection, and optional LangSmith tracing.
 4. `src/env.ts` reads and writes `~/.openwiki/.env` and surfaces credential diagnostics for all supported providers.
 5. `src/agent/index.ts` runs the documentation agent, resolves the provider, creates the appropriate model client, collects Git context, and writes update metadata.
 6. `src/agent/prompt.ts` builds the system and user prompts that tell the model how to behave.
 7. `src/agent/utils.ts` gathers Git evidence, computes an OpenWiki content snapshot, and records `.last-update.json` after successful init/update runs.
-8. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
-9. `src/agent/types.ts` defines shared types: `OpenWikiCommand`, `RunContext`, `UpdateMetadata`, and run option/event interfaces.
+8. `src/agent/docs-only-backend.ts` provides `OpenWikiLocalShellBackend`, extending DeepAgents `LocalShellBackend` with docs-only write guards and output-mode awareness.
+9. `src/agent/openai-chatgpt-oauth.ts` implements the ChatGPT OAuth login flow, token persistence, and refresh for the `openai-chatgpt` provider.
+10. `src/auth/` contains the connector OAuth system: `oauth.ts` (generic runner), `providers.ts` (provider configs), `configure.ts` (`openwiki auth configure`), `ngrok.ts` (Slack HTTPS tunnel), `tokens.ts` (refresh/validation), and `types.ts`.
+11. `src/connectors/` contains the connector registry, MCP client/runtime, source-specific ingestion modules (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions exposed to the agent.
+12. `src/ingestion.ts` orchestrates source ingestion runs across configured connectors.
+13. `src/code-mode.ts` handles `openwiki code` setup: writes a GitHub Actions workflow and AGENTS.md/CLAUDE.md snippets.
+14. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
+15. `src/agent/types.ts` defines shared types: `OpenWikiCommand`, `RunContext`, `UpdateMetadata`, and run option/event interfaces.
 
 ## Runtime shape
 
@@ -35,12 +41,13 @@ For non-chat runs, the agent receives a `RunContext` that includes last-update m
 The agent runtime resolves the provider via `resolveConfiguredProvider()` in `src/constants.ts`:
 
 1. If `OPENWIKI_PROVIDER` is set and valid, use it.
-2. Otherwise, use the first available provider API key in this order: OpenAI, OpenRouter, Anthropic, Baseten, then Fireworks.
-3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.5`).
+2. Otherwise, use the first available provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, then Fireworks.
+3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.6-terra`).
 
 Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 
 - **anthropic** → `ChatAnthropic` with the Anthropic API key.
+- **openai-chatgpt** → `ChatOpenAI` with `useResponsesApi: true`, `zdrEnabled: true`, `streaming: true`, pointed at the Codex backend (`CODEX_RESPONSES_BASE_URL`) with account-id/originator/beta headers. Tokens are refreshed before model creation via `ensureFreshChatGptTokens()`.
 - **openrouter** → `ChatOpenRouter` with the selected model ID.
 - **openai** → `ChatOpenAI` with `useResponsesApi: true`.
 - **baseten / fireworks / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
@@ -96,6 +103,19 @@ The current design reflects a documentation product rather than a general-purpos
 - `src/agent/prompt.ts`
 - `src/agent/utils.ts`
 - `src/agent/types.ts`
+- `src/agent/docs-only-backend.ts`
+- `src/agent/openai-chatgpt-oauth.ts`
+- `src/auth/oauth.ts`
+- `src/auth/providers.ts`
+- `src/auth/configure.ts`
+- `src/auth/ngrok.ts`
+- `src/auth/tokens.ts`
+- `src/auth/types.ts`
+- `src/connectors/registry.ts`
+- `src/connectors/tools.ts`
+- `src/connectors/types.ts`
+- `src/ingestion.ts`
+- `src/code-mode.ts`
 - `src/constants.ts`
 - `package.json`
 - Git evidence: commits `ceded10`, `f89b05d`, `fd3a702`, `8278c36`, `0fa1430`
