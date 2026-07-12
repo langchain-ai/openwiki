@@ -44,7 +44,12 @@ export async function saveCliSession(
 
   const filePath = cliSessionsPath(baseDir);
   await mkdir(path.dirname(filePath), { recursive: true, mode: 0o700 });
-  await writeFile(filePath, `${JSON.stringify(sessions, null, 2)}\n`, "utf8");
+  await writeFile(filePath, `${JSON.stringify(sessions, null, 2)}\n`, {
+    encoding: "utf8",
+    mode: 0o600,
+  });
+  // Also chmod: writeFile's mode only applies when creating a new file, so an
+  // existing (possibly wider) file keeps its permissions without this.
   await chmod(filePath, 0o600);
 }
 

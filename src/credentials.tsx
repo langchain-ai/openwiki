@@ -3529,8 +3529,13 @@ function getInputDisplayWidth(stdoutColumns: number | undefined): number {
   return Math.max(24, Math.min(96, stdoutColumns - 16));
 }
 
-function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+export function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "claude-code" ||
+    provider === "codex-cli"
+    ? "a"
+    : "an";
 }
 
 function getTemplateGoal(templateId: string | undefined): string {
