@@ -22,6 +22,7 @@ import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
   codexTokensToEnv,
+  createCodexFetch,
   isChatGptTokenExpired,
   readCodexTokensFromEnv,
   refreshChatGptTokens,
@@ -163,10 +164,16 @@ async function runOpenWikiAgentCore(
   const model = createModel(provider, modelId, providerRetryAttempts);
   emitDebug(options, `model.provider=${provider}`);
   emitDebug(options, "model=initialized");
-  const checkpointer = await createCheckpointer();
-  emitDebug(options, `checkpointer=${formatUrlDebugValue(checkpointPath)}`);
   const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
   emitDebug(options, `thread=${threadId}`);
+  const checkpointTarget = resolveCheckpointTarget(command);
+  const checkpointer = await createCheckpointer(checkpointTarget);
+  emitDebug(
+    options,
+    checkpointTarget.persistent
+      ? `checkpointer=${formatUrlDebugValue(checkpointTarget.connString)}`
+      : "checkpointer=memory",
+  );
   const agent = createDeepAgent({
     model,
     tools: createOpenWikiConnectorTools(),
@@ -221,7 +228,9 @@ async function runOpenWikiAgentCore(
     }
   }
   emitDebug(options, "stream=completed");
-  await chmodIfExists(checkpointPath, 0o600);
+  if (checkpointTarget.persistent) {
+    await chmodIfExists(checkpointTarget.connString, 0o600);
+  }
 
   if (
     command !== "chat" &&
@@ -246,6 +255,11 @@ async function runOpenWikiAgentCore(
 }
 
 const checkpointPath = path.join(openWikiEnvDir, "openwiki.sqlite");
+
+export type CheckpointTarget = {
+  connString: string;
+  persistent: boolean;
+};
 
 function createRunUserMessage(
   command: OpenWikiCommand,
@@ -288,14 +302,39 @@ function formatRuntimeRootInstruction(outputMode: OpenWikiOutputMode): string {
   return "Treat the repository root above as source evidence only. The canonical generated wiki is ~/.openwiki/wiki, not a repository-local openwiki/ directory. Filesystem tools use a virtual root: / means the repository root for source inspection paths such as /README.md, /agent/agents/main.py, and /package.json.";
 }
 
-async function createCheckpointer(): Promise<SqliteSaver> {
-  await mkdir(openWikiEnvDir, {
+async function createCheckpointer(
+  target: CheckpointTarget,
+): Promise<SqliteSaver> {
+  if (target.persistent) {
+    await prepareCheckpointDirectory(target.connString);
+  }
+
+  return SqliteSaver.fromConnString(target.connString);
+}
+
+async function prepareCheckpointDirectory(filePath: string): Promise<void> {
+  const checkpointDir = path.dirname(filePath);
+  await mkdir(checkpointDir, {
     recursive: true,
     mode: 0o700,
   });
-  await chmodIfExists(openWikiEnvDir, 0o700);
+  await chmodIfExists(checkpointDir, 0o700);
+}
 
-  return SqliteSaver.fromConnString(checkpointPath);
+export function resolveCheckpointTarget(
+  command: OpenWikiCommand,
+): CheckpointTarget {
+  if (command === "chat") {
+    return {
+      connString: checkpointPath,
+      persistent: true,
+    };
+  }
+
+  return {
+    connString: ":memory:",
+    persistent: false,
+  };
 }
 
 async function chmodIfExists(filePath: string, mode: number): Promise<void> {
@@ -426,7 +465,7 @@ function createModel(
           originator: CODEX_ORIGINATOR,
           "OpenAI-Beta": "responses=experimental",
         },
-        fetch: createCodexFetch(),
+        fetch: createCodexFetch(modelId),
       },
     });
   }
@@ -480,45 +519,6 @@ async function ensureFreshChatGptTokens(): Promise<void> {
   await saveOpenWikiEnv(
     codexTokensToEnv(await refreshChatGptTokens(tokens.refresh)),
   );
-}
-
-/**
- * The Codex backend rejects `system`-role input items ("System messages are not
- * allowed"); it expects system content under the `developer` role — the role
- * `@langchain/openai` already uses for genuine `SystemMessage`s on gpt-5 models.
- * DeepAgents injects its system prompt as a plain `system`-role message, so we
- * rewrite those to `developer` on the way out. Scoped to this client's
- * `configuration.fetch`, so it never touches the agent loop or streaming code.
- */
-function createCodexFetch(): typeof fetch {
-  return async (input, init) => {
-    if (init?.body != null && typeof init.body === "string") {
-      try {
-        const payload = JSON.parse(init.body) as {
-          input?: Array<{ role?: string } | null>;
-        };
-
-        if (Array.isArray(payload.input)) {
-          let changed = false;
-
-          for (const item of payload.input) {
-            if (item && item.role === "system") {
-              item.role = "developer";
-              changed = true;
-            }
-          }
-
-          if (changed) {
-            init = { ...init, body: JSON.stringify(payload) };
-          }
-        }
-      } catch {
-        // Non-JSON body: forward unchanged.
-      }
-    }
-
-    return globalThis.fetch(input, init);
-  };
 }
 
 function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
