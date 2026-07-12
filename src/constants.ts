@@ -2,6 +2,7 @@ export const OPEN_WIKI_DIR = "openwiki";
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
+export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
@@ -56,6 +57,7 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "fireworks"
+  | "nvidia"
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
@@ -119,6 +121,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai-compatible",
   "fireworks",
   "baseten",
+  "nvidia",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -141,6 +144,28 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
         id: "accounts/fireworks/models/kimi-k2p7-code",
         label: "Kimi K2.7 Code",
       },
+    ],
+  },
+  nvidia: {
+    apiKeyEnvKey: NVIDIA_API_KEY_ENV_KEY,
+    baseURL: "https://integrate.api.nvidia.com/v1",
+    label: "NVIDIA NIM",
+    modelOptions: [
+      {
+        id: "nvidia/nemotron-3-super-120b-a12b",
+        label: "Nemotron 3 Super 120B A12B",
+      },
+      {
+        id: "nvidia/nemotron-3-ultra-550b-a55b",
+        label: "Nemotron 3 Ultra 550B A55B",
+      },
+      {
+        id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        label: "Nemotron 3 Nano Omni 30B A3B",
+      },
+      { id: "deepseek-ai/deepseek-v4-pro", label: "DeepSeek V4 Pro" },
+      { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B" },
+      { id: "moonshotai/kimi-k2.6", label: "Kimi K2.6" },
     ],
   },
   openai: {
@@ -306,7 +331,9 @@ export function resolveConfiguredProvider(
               ? "baseten"
               : env[FIREWORKS_API_KEY_ENV_KEY]
                 ? "fireworks"
-                : DEFAULT_PROVIDER)
+                : env[NVIDIA_API_KEY_ENV_KEY]
+                  ? "nvidia"
+                  : DEFAULT_PROVIDER)
   );
 }
 
@@ -353,4 +380,4 @@ export function isValidModelId(value: string): boolean {
   );
 }
 
-export const OPENWIKI_VERSION = "0.1.0";
+export const OPENWIKI_VERSION = "0.1.1";
