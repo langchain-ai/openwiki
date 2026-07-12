@@ -97,4 +97,94 @@ describe("OpenWiki onboarding instructions", () => {
     const config = await onboarding.readOpenWikiOnboardingConfig();
     expect(config.wikiGoal).toBeUndefined();
   });
+
+  test("saves repository wiki instructions under openwiki", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      await onboarding.saveRepositoryWikiInstructions(
+        repo,
+        "Shared repository brief.",
+      );
+
+      await expect(
+        readFile(onboarding.getRepositoryWikiInstructionsPath(repo), "utf8"),
+      ).resolves.toBe("Shared repository brief.\n");
+      await expect(
+        onboarding.readRepositoryWikiInstructions(repo),
+      ).resolves.toBe("Shared repository brief.");
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+});
+
+describe("OpenWiki onboarding completion", () => {
+  test("does not require a schedule for code mode", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+
+    expect(
+      onboarding.isOnboardingComplete({
+        completedAt: "2026-01-01T00:00:00.000Z",
+        modeId: "code",
+        sourceInstances: [],
+        sources: {},
+        templateId: "code",
+        version: 1,
+        wikiGoal: "Maintain a code wiki.",
+      }),
+    ).toBe(true);
+  });
+
+  test("checks repository instructions for completed code mode", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      await onboarding.saveOpenWikiOnboardingConfig({
+        completedAt: "2026-01-01T00:00:00.000Z",
+        modeId: "code",
+        sourceInstances: [],
+        sources: {},
+        templateId: "code",
+        version: 1,
+      });
+
+      expect(onboarding.isRepositoryCodeOnboardingCompleteSync(repo)).toBe(
+        false,
+      );
+
+      await onboarding.saveRepositoryWikiInstructions(
+        repo,
+        "Maintain a shared code wiki.",
+      );
+
+      expect(onboarding.isRepositoryCodeOnboardingCompleteSync(repo)).toBe(
+        true,
+      );
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test("still requires a schedule for personal mode", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+
+    expect(
+      onboarding.isOnboardingComplete({
+        completedAt: "2026-01-01T00:00:00.000Z",
+        modeId: "personal",
+        sourceInstances: [],
+        sources: {},
+        templateId: "personal",
+        version: 1,
+        wikiGoal: "Track projects and commitments.",
+      }),
+    ).toBe(false);
+  });
 });

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
-import { chmod, readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { OPEN_WIKI_DIR } from "./constants.js";
 import { ensureOpenWikiHome, openWikiHomeDir } from "./openwiki-home.js";
 import type { ConnectorId } from "./connectors/types.js";
 
@@ -12,6 +13,7 @@ export const openWikiInstructionsPath = path.join(
   openWikiHomeDir,
   "INSTRUCTIONS.md",
 );
+export const REPOSITORY_INSTRUCTIONS_FILE = "INSTRUCTIONS.md";
 
 export type OnboardingSourceScheduleConfig = {
   description: string;
@@ -118,11 +120,59 @@ export async function saveOpenWikiOnboardingConfig(
   }
 }
 
+export function getRepositoryWikiInstructionsPath(repoRoot: string): string {
+  return path.join(repoRoot, OPEN_WIKI_DIR, REPOSITORY_INSTRUCTIONS_FILE);
+}
+
+export async function readRepositoryWikiInstructions(
+  repoRoot: string,
+): Promise<string | undefined> {
+  try {
+    const content = (
+      await readFile(getRepositoryWikiInstructionsPath(repoRoot), "utf8")
+    ).trim();
+    return content.length > 0 ? content : undefined;
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return undefined;
+    }
+
+    throw error;
+  }
+}
+
+function readRepositoryWikiInstructionsSync(
+  repoRoot: string,
+): string | undefined {
+  const instructionsPath = getRepositoryWikiInstructionsPath(repoRoot);
+
+  if (!existsSync(instructionsPath)) {
+    return undefined;
+  }
+
+  const content = readFileSync(instructionsPath, "utf8").trim();
+  return content.length > 0 ? content : undefined;
+}
+
+export async function saveRepositoryWikiInstructions(
+  repoRoot: string,
+  wikiGoal: string,
+): Promise<void> {
+  const instructionsPath = getRepositoryWikiInstructionsPath(repoRoot);
+  await mkdir(path.dirname(instructionsPath), { recursive: true });
+  await writeFile(instructionsPath, `${wikiGoal.trim()}\n`, {
+    encoding: "utf8",
+    mode: 0o644,
+  });
+}
+
 export function isOnboardingComplete(
   config: OpenWikiOnboardingConfig,
 ): boolean {
   return Boolean(
-    config.completedAt && config.wikiGoal && config.ingestionSchedule,
+    config.completedAt &&
+    config.wikiGoal &&
+    (isCodeModeConfig(config) || config.ingestionSchedule),
   );
 }
 
@@ -138,6 +188,32 @@ export function isOpenWikiOnboardingCompleteSync(): boolean {
     const wikiGoal = readWikiInstructionsSync();
 
     return isOnboardingComplete({ ...config, wikiGoal });
+  } catch {
+    return false;
+  }
+}
+
+export function isRepositoryCodeOnboardingCompleteSync(
+  repoRoot: string,
+): boolean {
+  if (!existsSync(openWikiOnboardingPath)) {
+    return false;
+  }
+
+  try {
+    const config = normalizeOnboardingConfig(
+      JSON.parse(readFileSync(openWikiOnboardingPath, "utf8")),
+    );
+    if (!isCodeModeConfig(config)) {
+      return false;
+    }
+
+    const wikiGoal = readRepositoryWikiInstructionsSync(repoRoot);
+
+    return isOnboardingComplete({
+      ...config,
+      wikiGoal,
+    });
   } catch {
     return false;
   }
@@ -282,6 +358,10 @@ function normalizeOnboardingConfig(value: unknown): OpenWikiOnboardingConfig {
   config.sources = deriveLegacySources(config.sourceInstances);
 
   return config;
+}
+
+function isCodeModeConfig(config: OpenWikiOnboardingConfig): boolean {
+  return (config.modeId ?? config.templateId) === "code";
 }
 
 function normalizeSourceConfig(

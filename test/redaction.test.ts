@@ -9,10 +9,12 @@ import { sanitizeOpenRouterResponseBody } from "../src/agent/index.ts";
 describe("sanitizeDiagnosticText", () => {
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
   const originalOpenAiCompatibleKey = process.env.OPENAI_COMPATIBLE_API_KEY;
+  const originalNvidiaKey = process.env.NVIDIA_API_KEY;
 
   beforeEach(() => {
     delete process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_COMPATIBLE_API_KEY;
+    delete process.env.NVIDIA_API_KEY;
   });
 
   afterEach(() => {
@@ -26,6 +28,12 @@ describe("sanitizeDiagnosticText", () => {
     } else {
       process.env.OPENAI_COMPATIBLE_API_KEY = originalOpenAiCompatibleKey;
     }
+
+    if (originalNvidiaKey === undefined) {
+      delete process.env.NVIDIA_API_KEY;
+    } else {
+      process.env.NVIDIA_API_KEY = originalNvidiaKey;
+    }
   });
 
   test("redacts the exact value of a secret set in the environment", () => {
@@ -37,6 +45,17 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("super-secret-value-12345");
     expect(result).toContain("[REDACTED:OPENAI_API_KEY]");
+  });
+
+  test("redacts the exact value of NVIDIA_API_KEY when set", () => {
+    process.env.NVIDIA_API_KEY = "nvapi-secret-value-67890";
+
+    const result = sanitizeDiagnosticText(
+      "request failed with key nvapi-secret-value-67890 attached",
+    );
+
+    expect(result).not.toContain("nvapi-secret-value-67890");
+    expect(result).toContain("[REDACTED:NVIDIA_API_KEY]");
   });
 
   test("redacts OpenAI-style sk- tokens", () => {
