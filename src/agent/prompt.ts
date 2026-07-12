@@ -155,6 +155,11 @@ Required documentation structure:
 - Source Map sections are optional. Add one only when it materially improves navigation for that page. Prefer inline source references for short pages.
 - Track the last successful documentation update in ${output.metadataPath}.
 
+Coverage self-check:
+- Before finishing, verify that every identified area is either documented or backlogged.
+- Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
+- If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
+
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
 `.trim();
@@ -186,6 +191,7 @@ export function createModeInstructions(
 - If the source material already has substantial docs or prior wiki pages, create a wiki that functions as an opinionated map and synthesis layer over those docs.
 - Create ${output.quickstartPath} first, then the linked section pages.
 - Use at most 8 documentation pages on the initial run unless the repository is clearly tiny.
+- Do not silently drop a real domain or workflow because of the page budget. If it is not fully documented, record it in the \`## Backlog\` section of ${output.quickstartPath} with its area name, source anchor, and a one-line reason.
 - Do not try to document every source file. Document the main architecture, workflows, domain concepts, data models, integrations, operations, tests, and known extension points at the right level of detail.
 - The CLI will record successful run metadata in ${output.metadataPath} after you finish.
 `.trim();
@@ -194,6 +200,7 @@ export function createModeInstructions(
   return `
 - This is a maintenance update run.
 - Inspect the existing ${output.docsLocation} documentation before editing.
+- Read the existing \`## Backlog\` section in ${output.quickstartPath} first, if present.
 - Read ${output.metadataPath} if it exists.
 - If source-specific connector raw data paths are supplied, inspect those files and update the wiki from that local evidence. Do not run all connector ingestions from inside the agent.
 - ${output.updateEvidenceInstruction}
@@ -206,6 +213,8 @@ export function createModeInstructions(
 - Do not include or refresh persistent commit hash lists unless a specific commit explains an important historical decision.
 - Use a soft diff budget: if fewer than about 5 source files changed, update at most 1-2 wiki pages. Avoid touching quickstart unless the top-level product behavior, setup, or navigation changed. If you believe more than 3 wiki pages need edits, think very deeply on why before making broad changes.
 - Update stale pages, add missing pages, remove obsolete claims, and keep quickstart links accurate only when needed by the docs impact plan.
+- Promote a backlog entry when recent changes touch that area or the update has spare documentation budget, then document the area and remove the entry from the backlog.
+- Do not let the backlog grow silently: every identified area must remain either documented or represented by a concise backlog entry with a source anchor and reason.
 - Updates may be a no-op. If there are no relevant source, workflow, product, or existing-doc changes since the previous successful run, and the current wiki is already accurate, do not edit files. Say that the wiki is already current.
 - The CLI will record successful run metadata in ${output.metadataPath} after you finish.
 `.trim();
