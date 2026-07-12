@@ -122,7 +122,122 @@ export async function runOpenWikiCliAgent(
     emitDebug(options, "cli.metadata=written");
   }
 
+  // The API backend structurally blocks non-doc writes, but the CLI path only
+  // relies on the prompt plus allowedTools/sandbox, and the wiki snapshot above
+  // cannot see source-file mutations. Repository runs must only touch openwiki/;
+  // warn (never fail) if the CLI changed anything else. Local-wiki mode writes
+  // the wiki dir itself, so there is nothing to guard.
+  if (command !== "chat" && outputMode === "repository") {
+    await warnOnOutOfWikiWrites(cwd, options);
+  }
+
   return { command, model };
+}
+
+const WIKI_DIR_PREFIX = "openwiki/";
+
+const OUT_OF_WIKI_WARNING_LIMIT = 10;
+
+/**
+ * Parses `git status --porcelain` (v1) output and returns changed paths that
+ * fall OUTSIDE the generated wiki directory (openwiki/). Handles the rename
+ * form `R  old -> new` (both sides are checked, so moving a source file into
+ * openwiki/ is still flagged) and C-quoted paths (core.quotePath). Duplicate
+ * paths are collapsed, preserving first-seen order.
+ */
+export function findUnexpectedChanges(porcelainOutput: string): string[] {
+  const unexpected: string[] = [];
+
+  for (const rawLine of porcelainOutput.split("\n")) {
+    if (rawLine.trim().length === 0) {
+      continue;
+    }
+
+    for (const filePath of extractPorcelainPaths(rawLine)) {
+      if (
+        !filePath.startsWith(WIKI_DIR_PREFIX) &&
+        !unexpected.includes(filePath)
+      ) {
+        unexpected.push(filePath);
+      }
+    }
+  }
+
+  return unexpected;
+}
+
+function extractPorcelainPaths(line: string): string[] {
+  // Porcelain v1 lines are "XY <path>" or "XY <old> -> <new>": two status
+  // columns plus a separating space, so the path section starts at index 3.
+  const pathSection = line.slice(3);
+  // Rename/copy entries encode both paths as "old -> new". A path containing
+  // an unquoted " -> " would be C-quoted first, so a plain split is safe.
+  const tokens = pathSection.includes(" -> ")
+    ? pathSection.split(" -> ")
+    : [pathSection];
+
+  return tokens
+    .map((token) => unquotePorcelainPath(token))
+    .filter((token) => token.length > 0);
+}
+
+function unquotePorcelainPath(token: string): string {
+  const trimmed = token.trim();
+
+  if (
+    !trimmed.startsWith('"') ||
+    !trimmed.endsWith('"') ||
+    trimmed.length < 2
+  ) {
+    return trimmed;
+  }
+
+  // C-style quoting: decode the common escapes. Any octal byte escapes are
+  // left as-is; the openwiki/ prefix check only needs the leading, never-
+  // escaped path segment.
+  return trimmed
+    .slice(1, -1)
+    .replace(/\\([\\"])/g, "$1")
+    .replace(/\\t/g, "\t")
+    .replace(/\\n/g, "\n");
+}
+
+async function warnOnOutOfWikiWrites(
+  cwd: string,
+  options: OpenWikiRunOptions,
+): Promise<void> {
+  let porcelain: string;
+
+  try {
+    const { stdout } = await execFileAsync("git", ["status", "--porcelain"], {
+      cwd,
+      timeout: 10_000,
+    });
+    porcelain = stdout;
+  } catch (error) {
+    // Not a git repo, git missing, or git failed: nothing to guard against.
+    emitDebug(options, `cli.write-guard skipped (${getErrorMessage(error)})`);
+    return;
+  }
+
+  const unexpected = findUnexpectedChanges(porcelain);
+
+  if (unexpected.length === 0) {
+    return;
+  }
+
+  const shown = unexpected.slice(0, OUT_OF_WIKI_WARNING_LIMIT);
+  const overflow = unexpected.length - shown.length;
+  const list = shown.map((filePath) => `  - ${filePath}`).join("\n");
+  const suffix = overflow > 0 ? `\n  ...and ${overflow} more` : "";
+
+  options.onEvent?.({
+    type: "text",
+    text:
+      "WARNING: the CLI agent changed files outside the openwiki/ wiki directory. " +
+      "OpenWiki repository runs should only write generated pages under openwiki/. " +
+      `Review these unexpected changes:\n${list}${suffix}`,
+  });
 }
 
 export async function executeCliRun(
