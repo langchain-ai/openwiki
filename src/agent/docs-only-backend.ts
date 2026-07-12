@@ -2,6 +2,7 @@ import {
   LocalShellBackend,
   type EditResult,
   type LocalShellBackendOptions,
+  type ReadResult,
   type WriteResult,
 } from "deepagents";
 import { OPEN_WIKI_DIR } from "../constants.js";
@@ -20,6 +21,34 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     super(options);
     this.docsOnly = options.docsOnly === true;
     this.outputMode = options.outputMode ?? "repository";
+  }
+
+  override async read(
+    filePath: string,
+    offset?: number,
+    limit?: number,
+  ): Promise<ReadResult> {
+    const result = await super.read(filePath, offset, limit);
+
+    if (result.error !== undefined || typeof result.content === "string") {
+      return result;
+    }
+
+    // Binary reads that are not images become `file`/`audio`/`video` content
+    // blocks in the tool result, which Anthropic and OpenRouter reject with a
+    // 400 — and the checkpointed thread then replays the poisoned message on
+    // every retry. Return a readable error so the agent can move on instead.
+    const mimeType = result.mimeType ?? "application/octet-stream";
+    if (mimeType.startsWith("image/")) {
+      return result;
+    }
+
+    return {
+      error:
+        `Cannot read '${filePath}': binary content (${mimeType}) is not ` +
+        "supported. Skip this file and describe it from its path and " +
+        "surrounding context instead.",
+    };
   }
 
   override async write(

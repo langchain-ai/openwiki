@@ -1,4 +1,4 @@
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
@@ -60,6 +60,60 @@ describe("OpenWikiLocalShellBackend", () => {
     await expect(
       readFile(path.join(rootDir, "quickstart.md"), "utf8"),
     ).resolves.toBe("ok");
+  });
+
+  test("reads text files normally regardless of extension", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await writeFile(path.join(rootDir, "script.jl"), 'println("hi")\n');
+    await writeFile(path.join(rootDir, "Makefile"), "all:\n\techo hi\n");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    const julia = await backend.read("/script.jl");
+    expect(julia.error).toBeUndefined();
+    expect(julia.content).toContain('println("hi")');
+
+    const makefile = await backend.read("/Makefile");
+    expect(makefile.error).toBeUndefined();
+    expect(makefile.content).toContain("echo hi");
+  });
+
+  test("returns a readable error instead of binary content for non-image binary files", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await writeFile(path.join(rootDir, "doc.pdf"), "%PDF-1.4 fake\n");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    const result = await backend.read("/doc.pdf");
+    expect(result.content).toBeUndefined();
+    expect(result.error).toContain("application/pdf");
+    expect(result.error).toContain("Skip this file");
+  });
+
+  test("passes image reads through unchanged", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    // 1x1 transparent PNG
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+      "base64",
+    );
+    await writeFile(path.join(rootDir, "logo.png"), png);
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    const result = await backend.read("/logo.png");
+    expect(result.error).toBeUndefined();
+    expect(result.mimeType).toBe("image/png");
+    expect(ArrayBuffer.isView(result.content)).toBe(true);
   });
 
   test("keeps chat-mode style backends unrestricted when docsOnly is false", async () => {
