@@ -83,26 +83,24 @@ Subagent discipline:
 - Ask each subagent to return concise findings with source paths and notable open questions. The main agent must synthesize the final docs and is responsible for all writes.
 - Treat subagent reports as internal discovery notes. Do not paste subagent reports into the final user-facing response; the final response should summarize completed documentation changes and important caveats.
 
-Planning discipline:
-- After discovery and before writing final documentation, create a temporary ${output.planPath} file that lists the intended wiki pages, source evidence for each page, and remaining questions.
-- Use ${output.planPath} when writing this temporary plan with filesystem tools.
-- Before completing the run, delete ${output.planPath}. If there is no filesystem delete tool, use shell execute from the runtime root, for example ${output.removePlanCommand}.
-- Do not leave ${output.planPath} in the final wiki.
-
-Git discipline:
-- Use git heavily where it helps explain why code exists, not just what code exists.
-- During init, inspect recent commit history and use git log, git show, or git blame selectively on important files to understand how major workflows, entrypoints, and business rules evolved.
-- ${output.gitDisciplineInstruction}
-- Use git status and git diff to account for uncommitted local changes, especially if they touch existing docs or important source files.
-- Do not over-index on ancient history. Focus on recent commits and high-signal history for important files.
-
-Existing documentation discipline:
-- Treat existing README files, docs/ trees, root documentation files, runbooks, and SKILL.md files as primary source material.
-- Summarize and link to existing docs when they are still useful instead of duplicating them wholesale.
-- If existing docs conflict with source code or git history, call out the likely stale documentation and prefer current source evidence.
+${createStewardshipSections(output)}
 
 ${output.rootAgentInstructions}
 
+${OPENWIKI_CLI_REFERENCE}
+
+If the user asks what the CLI can do, asks for commands/options/usage/examples, or asks for more details about OpenWiki itself, run \`openwiki --help\` with the available tools when possible and base your answer on the help output. If you cannot run the command, answer from the CLI reference above and say you could not verify live help output.
+
+${createSecuritySection(output)}
+
+${createDocumentationGoalSections(output)}
+
+Mode-specific behavior:
+${createModeInstructions(command, outputMode)}
+`.trim();
+}
+
+export const OPENWIKI_CLI_REFERENCE = `
 OpenWiki CLI reference:
 - \`openwiki\` opens the interactive chat interface and waits for user input.
 - \`openwiki "message"\` sends a chat message immediately, then keeps the chat open.
@@ -114,16 +112,23 @@ OpenWiki CLI reference:
 - \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.
 - \`openwiki --modelId <id>\` selects a model ID for that run.
 - \`openwiki --help\` prints current usage, options, and examples.
+`.trim();
 
-If the user asks what the CLI can do, asks for commands/options/usage/examples, or asks for more details about OpenWiki itself, run \`openwiki --help\` with the available tools when possible and base your answer on the help output. If you cannot run the command, answer from the CLI reference above and say you could not verify live help output.
-
+export function createSecuritySection(output: OutputPromptConfig): string {
+  return `
 Security and privacy rules:
 - Do not read or document secret values, credentials, private keys, tokens, .env files, or other sensitive material.
 - Do not read .env files. .env.example and other sample configuration files may be read only if they contain placeholders, not live secrets.
 - If a secret-bearing file appears relevant, document only that such configuration exists and where non-sensitive setup should be described.
 - Keep all documentation under ${output.docsLocation}.
 - ${output.writeBoundaryInstruction}
+`.trim();
+}
 
+export function createDocumentationGoalSections(
+  output: OutputPromptConfig,
+): string {
+  return `
 Documentation goals:
 - Someone with zero knowledge of the wiki should be able to start at ${output.quickstartPath} and understand what the knowledge base covers, how it is organized, what it tracks, and where to go next.
 - A future agent should be able to use the docs to answer questions and make high-quality updates with less raw-source exploration.
@@ -159,18 +164,36 @@ Coverage self-check:
 - Before finishing, verify that every identified area is either documented or backlogged.
 - Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
 - If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
+`.trim();
+}
 
-Mode-specific behavior:
-${createModeInstructions(command, outputMode)}
+export function createStewardshipSections(output: OutputPromptConfig): string {
+  return `
+Planning discipline:
+- After discovery and before writing final documentation, create a temporary ${output.planPath} file that lists the intended wiki pages, source evidence for each page, and remaining questions.
+- Use ${output.planPath} when writing this temporary plan with filesystem tools.
+- Before completing the run, delete ${output.planPath}. If there is no filesystem delete tool, use shell execute from the runtime root, for example ${output.removePlanCommand}.
+- Do not leave ${output.planPath} in the final wiki.
+
+Git discipline:
+- Use git heavily where it helps explain why code exists, not just what code exists.
+- During init, inspect recent commit history and use git log, git show, or git blame selectively on important files to understand how major workflows, entrypoints, and business rules evolved.
+- ${output.gitDisciplineInstruction}
+- Use git status and git diff to account for uncommitted local changes, especially if they touch existing docs or important source files.
+- Do not over-index on ancient history. Focus on recent commits and high-signal history for important files.
+
+Existing documentation discipline:
+- Treat existing README files, docs/ trees, root documentation files, runbooks, and SKILL.md files as primary source material.
+- Summarize and link to existing docs when they are still useful instead of duplicating them wholesale.
+- If existing docs conflict with source code or git history, call out the likely stale documentation and prefer current source evidence.
 `.trim();
 }
 
 export function createModeInstructions(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
+  output: OutputPromptConfig = getOutputPromptConfig(outputMode),
 ): string {
-  const output = getOutputPromptConfig(outputMode);
-
   if (command === "chat") {
     return `
 - This is an interactive chat turn.
@@ -225,9 +248,8 @@ export function createUserPrompt(
   context: RunContext,
   userMessage: string | null = null,
   outputMode: OpenWikiOutputMode = "local-wiki",
+  output: OutputPromptConfig = getOutputPromptConfig(outputMode),
 ): string {
-  const output = getOutputPromptConfig(outputMode);
-
   if (command === "chat") {
     return userMessage?.trim() || "Start an OpenWiki chat.";
   }
@@ -274,7 +296,7 @@ function formatWikiGoal(wikiGoal: string | undefined): string {
   return wikiGoal?.trim() || "(not provided)";
 }
 
-type OutputPromptConfig = {
+export type OutputPromptConfig = {
   docsLocation: string;
   filesystemRootInstruction: string;
   gitDisciplineInstruction: string;
@@ -294,7 +316,7 @@ type OutputPromptConfig = {
   writePathExample: string;
 };
 
-function getOutputPromptConfig(
+export function getOutputPromptConfig(
   outputMode: OpenWikiOutputMode,
 ): OutputPromptConfig {
   if (outputMode === "local-wiki") {
