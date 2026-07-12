@@ -2,14 +2,21 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Box, render, Text, useApp, useInput } from "ink";
 import { marked, type Token, type Tokens } from "marked";
-import {
-  configureAuthProvider,
-  listAuthProviderTools,
-  shouldDiscoverToolsAfterAuth,
-} from "./auth/configure.js";
-import { startNgrokTunnel } from "./auth/ngrok.js";
-import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
 import { ensureCodeModeRepoSetup } from "./code-mode.js";
+import { runAuthCommand } from "./cli/commands/auth.js";
+import { runCronCommand } from "./cli/commands/cron.js";
+import { runIngestCommand } from "./cli/commands/ingest.js";
+import { runNgrokCommand } from "./cli/commands/ngrok.js";
+import {
+  getErrorDiagnostics,
+  type ErrorDiagnostic,
+} from "./cli/error-diagnostics.js";
+import { runPrintCommand } from "./cli/run-print.js";
+import {
+  getRunModeCwd,
+  getRunModeOutputMode,
+  shouldAutoExitStartupRun,
+} from "./cli/run-mode.js";
 import {
   helpContent,
   isDevelopmentMode,
@@ -33,8 +40,9 @@ import {
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
 import { formatChatGptAccountFromEnv } from "./agent/openai-chatgpt-oauth.js";
-import { getErrorMessage, sanitizeDiagnosticText } from "./diagnostics.js";
+import { getErrorMessage } from "./diagnostics.js";
 import { stripHtmlTags } from "./utils.js";
+import { formatCwd, isDebugMode, isExitMessage } from "./ui/format.js";
 import {
   type OpenWikiRunEvent,
   type OpenWikiRunResult,
@@ -43,21 +51,6 @@ import {
   runOpenWikiIngestion,
   type OpenWikiIngestionResult,
 } from "./ingestion.js";
-import {
-  readOpenWikiOnboardingConfig,
-  saveOpenWikiOnboardingConfig,
-} from "./onboarding.js";
-import { openWikiLocalWikiDir } from "./openwiki-home.js";
-import {
-  deleteConnectorSchedules,
-  getSavedPowerScheduleStatus,
-  listConnectorSchedules,
-  pauseConnectorSchedules,
-  resumeConnectorSchedules,
-  type ConnectorScheduleStatus,
-  type PowerScheduleStatus,
-  type ScheduleMutationResult,
-} from "./schedules.js";
 import {
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -73,7 +66,7 @@ import {
   OPENWIKI_VERSION,
   type OpenWikiProvider,
 } from "./constants.js";
-import type { OpenWikiCommand, OpenWikiOutputMode } from "./agent/types.js";
+import type { OpenWikiCommand } from "./agent/types.js";
 
 type RunState =
   | { status: "idle" }
@@ -131,11 +124,6 @@ type CompletedRun = {
   log: RunLogItem[];
   message: string | null;
   result: OpenWikiRunResult;
-};
-
-type ErrorDiagnostic = {
-  label: string;
-  value: string;
 };
 
 type AppProps = {
@@ -2995,16 +2983,6 @@ function pickVariantIndex(seed: string): number {
   return hash;
 }
 
-function isExitMessage(message: string): boolean {
-  const normalizedMessage = message.trim().toLowerCase();
-
-  return (
-    normalizedMessage === "/exit" ||
-    normalizedMessage === "exit" ||
-    normalizedMessage === "quit"
-  );
-}
-
 function truncateLogOutput(content: string, label: string): string {
   const terminalColumns = process.stdout.columns ?? 80;
   const availableColumns = Math.max(24, terminalColumns - label.length - 7);
@@ -3040,20 +3018,6 @@ function truncateToDisplayLines(
   return lines.join("\n");
 }
 
-function formatCwd(cwd: string): string {
-  const home = process.env.HOME;
-
-  if (home && cwd.startsWith(home)) {
-    return `~${cwd.slice(home.length)}`;
-  }
-
-  return cwd;
-}
-
-function isDebugMode(): boolean {
-  return process.env.OPENWIKI_DEBUG === "1";
-}
-
 function shouldShowCredentialDiagnostics(): boolean {
   return isDebugMode() || process.env.OPENWIKI_DEBUG_CREDENTIALS === "1";
 }
@@ -3063,295 +3027,6 @@ function getDisplayModelId(modelId: string | null): string {
     modelId ??
     process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
     getDefaultModelId(resolveConfiguredProvider())
-  );
-}
-
-function getErrorDiagnostics(error: unknown): ErrorDiagnostic[] {
-  const diagnostics: ErrorDiagnostic[] = [];
-  const debugMode = isDebugMode();
-
-  if (debugMode && error instanceof Error) {
-    diagnostics.push(
-      { label: "name", value: error.name },
-      { label: "message", value: sanitizeDiagnosticText(error.message) },
-    );
-
-    const messageStatus = error.message.match(/\b([45]\d{2})\b/)?.[1];
-
-    if (messageStatus) {
-      diagnostics.push({
-        label: "httpStatusFromMessage",
-        value: messageStatus,
-      });
-    }
-  }
-
-  if (!isRecord(error)) {
-    return diagnostics;
-  }
-
-  addOpenRouterMetadataDiagnostics(diagnostics, error, "");
-  addAttachedDebugDiagnostics(diagnostics, error, "");
-
-  if (debugMode) {
-    addSafeObjectDiagnostics(diagnostics, error, "");
-    addSafeNestedDiagnostics(diagnostics, error, "cause");
-    addSafeNestedDiagnostics(diagnostics, error, "error");
-    addSafeNestedDiagnostics(diagnostics, error, "response");
-  }
-
-  return dedupeDiagnostics(diagnostics);
-}
-
-function addSafeNestedDiagnostics(
-  diagnostics: ErrorDiagnostic[],
-  value: Record<string, unknown>,
-  key: string,
-): void {
-  const nested = value[key];
-
-  if (!isRecord(nested)) {
-    return;
-  }
-
-  addSafeObjectDiagnostics(diagnostics, nested, key);
-  addOpenRouterMetadataDiagnostics(diagnostics, nested, key);
-  addAttachedDebugDiagnostics(diagnostics, nested, key);
-}
-
-function addSafeObjectDiagnostics(
-  diagnostics: ErrorDiagnostic[],
-  value: Record<string, unknown>,
-  prefix: string,
-): void {
-  for (const key of [
-    "status",
-    "statusCode",
-    "statusText",
-    "code",
-    "type",
-    "param",
-    "request_id",
-    "requestID",
-    "lc_error_code",
-  ]) {
-    const property = value[key];
-
-    if (isDiagnosticValue(property)) {
-      diagnostics.push({
-        label: prefix ? `${prefix}.${key}` : key,
-        value: sanitizeDiagnosticText(String(property)),
-      });
-    }
-  }
-
-  addSafeHeaderDiagnostics(diagnostics, value.headers, prefix);
-}
-
-function addAttachedDebugDiagnostics(
-  diagnostics: ErrorDiagnostic[],
-  value: Record<string, unknown>,
-  prefix: string,
-): void {
-  const debugValue = value.openRouterDebug;
-
-  if (debugValue === undefined || debugValue === null) {
-    return;
-  }
-
-  diagnostics.push({
-    label: prefix ? `${prefix}.openRouterDebug` : "openRouterDebug",
-    value: formatDiagnosticMetadataValue(debugValue),
-  });
-}
-
-function addOpenRouterMetadataDiagnostics(
-  diagnostics: ErrorDiagnostic[],
-  value: Record<string, unknown>,
-  prefix: string,
-): void {
-  const metadata = value.metadata;
-
-  if (!isRecord(metadata)) {
-    return;
-  }
-
-  for (const key of ["provider_name", "is_byok", "finish_reason"]) {
-    const property = metadata[key];
-
-    if (isDiagnosticValue(property)) {
-      diagnostics.push({
-        label: prefix ? `${prefix}.metadata.${key}` : `metadata.${key}`,
-        value: sanitizeDiagnosticText(String(property)),
-      });
-    }
-  }
-
-  addMetadataValueDiagnostic(diagnostics, metadata, "raw", prefix);
-  addPreviousErrorDiagnostics(diagnostics, metadata.previous_errors, prefix);
-}
-
-function addMetadataValueDiagnostic(
-  diagnostics: ErrorDiagnostic[],
-  metadata: Record<string, unknown>,
-  key: string,
-  prefix: string,
-): void {
-  const value = metadata[key];
-
-  if (value === undefined || value === null) {
-    return;
-  }
-
-  diagnostics.push({
-    label: prefix ? `${prefix}.metadata.${key}` : `metadata.${key}`,
-    value: formatDiagnosticMetadataValue(value),
-  });
-}
-
-function addPreviousErrorDiagnostics(
-  diagnostics: ErrorDiagnostic[],
-  previousErrors: unknown,
-  prefix: string,
-): void {
-  if (!Array.isArray(previousErrors)) {
-    return;
-  }
-
-  previousErrors.slice(0, 5).forEach((previousError, index) => {
-    diagnostics.push({
-      label: prefix
-        ? `${prefix}.metadata.previous_errors.${index}`
-        : `metadata.previous_errors.${index}`,
-      value: formatDiagnosticMetadataValue(previousError),
-    });
-  });
-
-  if (previousErrors.length > 5) {
-    diagnostics.push({
-      label: prefix
-        ? `${prefix}.metadata.previous_errors.more`
-        : "metadata.previous_errors.more",
-      value: `${previousErrors.length - 5} more previous provider errors`,
-    });
-  }
-}
-
-function formatDiagnosticMetadataValue(value: unknown): string {
-  if (isDiagnosticValue(value)) {
-    return truncateDiagnosticValue(sanitizeDiagnosticText(String(value)));
-  }
-
-  return truncateDiagnosticValue(sanitizeDiagnosticText(safeStringify(value)));
-}
-
-function safeStringify(value: unknown): string {
-  try {
-    return JSON.stringify(value, createDiagnosticJsonReplacer(), 2);
-  } catch {
-    return String(value);
-  }
-}
-
-function createDiagnosticJsonReplacer() {
-  const seen = new WeakSet<object>();
-
-  return (key: string, value: unknown) => {
-    if (isSecretLikeKey(key)) {
-      return "[REDACTED]";
-    }
-
-    if (typeof value === "object" && value !== null) {
-      if (seen.has(value)) {
-        return "[Circular]";
-      }
-
-      seen.add(value);
-    }
-
-    return value;
-  };
-}
-
-function isSecretLikeKey(key: string): boolean {
-  return /api[-_]?key|authorization|bearer|token|secret|password/iu.test(key);
-}
-
-function truncateDiagnosticValue(value: string): string {
-  const maxLength = 2_000;
-  const normalizedValue = value.trim();
-
-  if (normalizedValue.length <= maxLength) {
-    return normalizedValue;
-  }
-
-  return `${normalizedValue.slice(0, maxLength - 3)}...`;
-}
-
-function addSafeHeaderDiagnostics(
-  diagnostics: ErrorDiagnostic[],
-  headers: unknown,
-  prefix: string,
-): void {
-  if (!isRecord(headers)) {
-    return;
-  }
-
-  for (const key of [
-    "x-request-id",
-    "request-id",
-    "openai-processing-ms",
-    "cf-ray",
-  ]) {
-    const value = getHeaderValue(headers, key);
-
-    if (isDiagnosticValue(value)) {
-      diagnostics.push({
-        label: prefix ? `${prefix}.header.${key}` : `header.${key}`,
-        value: sanitizeDiagnosticText(String(value)),
-      });
-    }
-  }
-}
-
-function getHeaderValue(
-  headers: Record<string, unknown>,
-  key: string,
-): unknown {
-  if (key in headers) {
-    return headers[key];
-  }
-
-  const matchingKey = Object.keys(headers).find(
-    (headerKey) => headerKey.toLowerCase() === key,
-  );
-
-  return matchingKey ? headers[matchingKey] : undefined;
-}
-
-function dedupeDiagnostics(diagnostics: ErrorDiagnostic[]): ErrorDiagnostic[] {
-  const seen = new Set<string>();
-  const deduped: ErrorDiagnostic[] = [];
-
-  for (const diagnostic of diagnostics) {
-    const key = `${diagnostic.label}:${diagnostic.value}`;
-
-    if (seen.has(key)) {
-      continue;
-    }
-
-    seen.add(key);
-    deduped.push(diagnostic);
-  }
-
-  return deduped;
-}
-
-function isDiagnosticValue(value: unknown): value is string | number | boolean {
-  return (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
   );
 }
 
@@ -3468,328 +3143,6 @@ if (command.kind === "auth") {
   render(<App command={command} />);
 }
 
-async function runNgrokCommand(
-  command: Extract<CliCommand, { kind: "ngrok" }>,
-): Promise<void> {
-  try {
-    await startNgrokTunnel({
-      port: command.port,
-      url: command.url,
-    });
-    process.exitCode = 0;
-  } catch (error) {
-    process.stderr.write(`${getErrorMessage(error)}\n`);
-    process.exitCode = 1;
-  }
-}
-
-async function runCronCommand(
-  command: Extract<CliCommand, { kind: "cron" }>,
-): Promise<void> {
-  try {
-    const config = await readOpenWikiOnboardingConfig();
-
-    if (command.action !== "list") {
-      if (!command.target) {
-        throw new Error(`Target is required for cron ${command.action}.`);
-      }
-
-      const result =
-        command.action === "pause"
-          ? await pauseConnectorSchedules(config, command.target)
-          : command.action === "resume"
-            ? await resumeConnectorSchedules({
-                config,
-                cwd: process.cwd(),
-                target: command.target,
-              })
-            : await deleteConnectorSchedules(config, command.target);
-
-      await saveOpenWikiOnboardingConfig(result.config);
-      process.stdout.write(
-        formatScheduleMutationResult(command.action, result),
-      );
-      await printCronSchedules(result.config);
-      process.exitCode = 0;
-      return;
-    }
-
-    await printCronSchedules(config);
-    process.exitCode = 0;
-  } catch (error) {
-    process.stderr.write(`${getErrorMessage(error)}\n`);
-    process.exitCode = 1;
-  }
-}
-
-async function printCronSchedules(
-  config: Awaited<ReturnType<typeof readOpenWikiOnboardingConfig>>,
-): Promise<void> {
-  const schedules = await listConnectorSchedules(config);
-  const powerSchedule = getSavedPowerScheduleStatus(config);
-
-  process.stdout.write(formatScheduleHeader(schedules.length));
-  process.stdout.write(formatPowerScheduleStatus(powerSchedule));
-
-  if (schedules.length === 0) {
-    process.stdout.write("No connector schedules are configured.\n");
-    return;
-  }
-
-  for (const schedule of schedules) {
-    process.stdout.write(formatScheduleStatus(schedule));
-  }
-}
-
-function formatScheduleMutationResult(
-  action: "delete" | "pause" | "resume",
-  result: ScheduleMutationResult,
-): string {
-  const actionLabel =
-    action === "delete" ? "Deleted" : action === "pause" ? "Paused" : "Resumed";
-  const changed =
-    result.connectorIds.length > 0 ? result.connectorIds.join(", ") : "none";
-  const skipped =
-    result.skippedConnectorIds.length > 0
-      ? result.skippedConnectorIds.join(", ")
-      : "none";
-  const rows = [
-    [`${actionLabel}`, changed],
-    ["Skipped", skipped],
-  ];
-
-  if (result.powerSchedule) {
-    rows.push([
-      "Mac wake",
-      result.powerSchedule.enabled ? "configured" : "not configured",
-    ]);
-  }
-
-  const labelWidth = Math.max(...rows.map(([label]) => label.length));
-  const body = rows
-    .map(([label, value]) => `  ${label.padEnd(labelWidth)} : ${value}`)
-    .join("\n");
-  const warnings =
-    result.warnings.length > 0
-      ? `\n${result.warnings.map((warning) => `  Warning : ${warning}`).join("\n")}`
-      : "";
-
-  return ["", "Cron update", "-----------", body + warnings, ""].join("\n");
-}
-
-function formatScheduleHeader(scheduleCount: number): string {
-  const title = "OpenWiki Schedules";
-  const summary =
-    scheduleCount === 1
-      ? "1 connector schedule configured"
-      : `${scheduleCount} connector schedules configured`;
-
-  return [
-    "",
-    "=".repeat(title.length),
-    title,
-    "=".repeat(title.length),
-    summary,
-    "",
-  ].join("\n");
-}
-
-function formatPowerScheduleStatus(
-  schedule: PowerScheduleStatus | null,
-): string {
-  const divider = "-".repeat(22);
-
-  if (!schedule) {
-    return [
-      divider,
-      "Mac Wake Window",
-      divider,
-      "  Status : not configured",
-      "",
-      "",
-    ].join("\n");
-  }
-
-  const rows = [
-    ["Status", schedule.enabled ? "configured" : "disabled"],
-    ["Days", schedule.days || "unknown"],
-    ["Wake", schedule.wakeTime || "unknown"],
-    ["Sleep", schedule.sleepTime || "unknown"],
-    ["Updated", schedule.updatedAt],
-  ];
-
-  if (schedule.warning) {
-    rows.push(["Warning", schedule.warning]);
-  }
-
-  const labelWidth = Math.max(...rows.map(([label]) => label.length));
-  const body = rows
-    .map(([label, value]) => `  ${label.padEnd(labelWidth)} : ${value}`)
-    .join("\n");
-
-  return [divider, "Mac Wake Window", divider, body, "", ""].join("\n");
-}
-
-function formatScheduleStatus(schedule: ConnectorScheduleStatus): string {
-  const launchdStatus =
-    schedule.pausedAt !== undefined
-      ? "paused"
-      : schedule.launchAgentPath === undefined
-        ? "not installed"
-        : schedule.launchAgentLoaded
-          ? "loaded"
-          : schedule.launchAgentPlistExists
-            ? "plist exists, not loaded"
-            : "plist missing";
-  const rows = [
-    ["Schedule", schedule.description],
-    ["Cron", schedule.expression],
-    ["Launchd", launchdStatus],
-    ["Updated", schedule.updatedAt],
-  ];
-
-  if (schedule.pausedAt) {
-    rows.push(["Paused", schedule.pausedAt]);
-  }
-
-  if (schedule.launchAgentPath) {
-    rows.push(["Plist", schedule.launchAgentPath]);
-  }
-
-  if (schedule.warning) {
-    rows.push(["Warning", schedule.warning]);
-  }
-
-  const labelWidth = Math.max(...rows.map(([label]) => label.length));
-  const body = rows
-    .map(([label, value]) => `  ${label.padEnd(labelWidth)} : ${value}`)
-    .join("\n");
-  const scheduleLabel = schedule.displayName ?? schedule.sourceInstanceId;
-  const divider = "-".repeat(Math.max(18, scheduleLabel.length + 10));
-
-  return [
-    divider,
-    `Source : ${scheduleLabel}`,
-    ...(schedule.connectorId ? [`Connector : ${schedule.connectorId}`] : []),
-    divider,
-    body,
-    "",
-  ].join("\n");
-}
-
-async function runIngestCommand(
-  command: Extract<CliCommand, { kind: "ingest" }>,
-): Promise<void> {
-  try {
-    const result = await runOpenWikiIngestion(process.cwd(), {
-      debug: isDebugMode(),
-      modelId: command.modelId,
-      scheduledOnly: command.scheduledOnly,
-      target: command.target,
-      onEvent: (event) => {
-        if (event.type === "text" && event.source !== "subgraph") {
-          process.stdout.write(event.text);
-        }
-      },
-    });
-
-    process.stdout.write("\nIngestion summary\n");
-    for (const sourceResult of result.results) {
-      process.stdout.write(
-        `- ${sourceResult.displayName}: ${sourceResult.status}; ${sourceResult.rawFiles.length} raw file(s)\n`,
-      );
-    }
-
-    process.exitCode = result.results.some(
-      (sourceResult) => sourceResult.status === "error",
-    )
-      ? 1
-      : 0;
-  } catch (error) {
-    process.stderr.write(`${getErrorMessage(error)}\n`);
-    writePrintErrorDiagnostics(error);
-    process.exitCode = 1;
-  }
-}
-
-async function runAuthCommand(
-  command: Extract<CliCommand, { kind: "auth" }>,
-): Promise<void> {
-  try {
-    if (command.action === "list") {
-      process.stdout.write(`${formatAuthProviderList()}\n`);
-      process.exitCode = 0;
-      return;
-    }
-
-    if (command.provider === null) {
-      throw new Error("Auth provider is required.");
-    }
-
-    if (command.action === "configure") {
-      const result = await configureAuthProvider(command.provider, {
-        force: command.force,
-      });
-      process.stdout.write(
-        `${result.status === "exists" ? "Config already exists" : `Config ${result.status}`}: ${result.configPath}\n`,
-      );
-      for (const nextStep of result.nextSteps) {
-        process.stdout.write(`- ${nextStep}\n`);
-      }
-      process.exitCode = 0;
-      return;
-    }
-
-    if (command.action === "tools") {
-      const result = await listAuthProviderTools(command.provider);
-      process.stdout.write(
-        `Tools for ${result.provider} (${result.configPath})\n`,
-      );
-      process.stdout.write(`Wrote discovery: ${result.rawFile}\n`);
-      process.stdout.write(`${JSON.stringify(result.tools, null, 2)}\n`);
-      process.exitCode = 0;
-      return;
-    }
-
-    const result = await runOAuthAuth(command.provider);
-    process.stdout.write(
-      `Saved ${result.provider} auth values: ${result.savedEnvKeys.join(", ")}\n`,
-    );
-    const configureResult = await configureAuthProvider(command.provider, {
-      force: command.force,
-    });
-    process.stdout.write(
-      `${configureResult.status === "exists" ? "Config already exists" : `Config ${configureResult.status}`}: ${configureResult.configPath}\n`,
-    );
-    for (const nextStep of configureResult.nextSteps) {
-      process.stdout.write(`- ${nextStep}\n`);
-    }
-
-    if (shouldDiscoverToolsAfterAuth(command.provider)) {
-      try {
-        const toolsResult = await listAuthProviderTools(command.provider);
-        process.stdout.write(
-          `Discovered ${toolsResult.tools.length} MCP tool(s); wrote ${toolsResult.rawFile}\n`,
-        );
-        const toolNames = toolsResult.tools
-          .map((tool) => tool.name)
-          .slice(0, 20);
-        if (toolNames.length > 0) {
-          process.stdout.write(`Tools: ${toolNames.join(", ")}\n`);
-        }
-      } catch (error) {
-        process.stdout.write(
-          `MCP tool discovery skipped: ${getErrorMessage(error)}\n`,
-        );
-      }
-    }
-    process.exitCode = 0;
-  } catch (error) {
-    process.stderr.write(`${getErrorMessage(error)}\n`);
-    process.exitCode = 1;
-  }
-}
-
 function argvRequestsPrint(argv: string[]): boolean {
   return argv.some((arg) => arg === "-p" || arg === "--print");
 }
@@ -3806,80 +3159,4 @@ function shouldPrintStartupError(
       command.message.startsWith("openwiki --init requires a mode.") ||
       (parsedCommand.kind === "run" && parsedCommand.shouldStart))
   );
-}
-
-function getRunModeCwd(
-  mode: OpenWikiRunMode,
-  codeRuntimeCwd = process.cwd(),
-): string {
-  return mode === "code" ? codeRuntimeCwd : openWikiLocalWikiDir;
-}
-
-function getRunModeOutputMode(mode: OpenWikiRunMode): OpenWikiOutputMode {
-  return mode === "code" ? "repository" : "local-wiki";
-}
-
-function shouldAutoExitStartupRun(command: CliCommand): boolean {
-  return (
-    command.kind === "run" &&
-    !command.dryRun &&
-    !command.print &&
-    command.shouldStart &&
-    (command.command === "init" || command.command === "update")
-  );
-}
-
-async function runPrintCommand(
-  command: Extract<CliCommand, { kind: "run" }>,
-): Promise<void> {
-  try {
-    const output: string[] = [];
-
-    const runtimeCwd = getRunModeCwd(command.mode);
-    const runtimeOutputMode = getRunModeOutputMode(command.mode);
-
-    if (command.mode === "code") {
-      await ensureCodeModeRepoSetup(runtimeCwd);
-    }
-
-    await runOpenWikiAgent(command.command, runtimeCwd, {
-      debug: isDebugMode(),
-      isFollowup: command.command === "chat",
-      modelId: command.modelId,
-      outputMode: runtimeOutputMode,
-      threadId: createOpenWikiThreadId(runtimeCwd),
-      userMessage: command.userMessage,
-      onEvent: (event) => {
-        if (event.type === "text" && event.source !== "subgraph") {
-          output.push(event.text);
-        }
-      },
-    });
-
-    const text = output.join("").trim();
-
-    if (text.length > 0) {
-      process.stdout.write(`${text}\n`);
-    }
-
-    process.exitCode = 0;
-  } catch (error) {
-    process.stderr.write(`${getErrorMessage(error)}\n`);
-    writePrintErrorDiagnostics(error);
-    process.exitCode = 1;
-  }
-}
-
-function writePrintErrorDiagnostics(error: unknown): void {
-  const diagnostics = getErrorDiagnostics(error);
-
-  if (diagnostics.length === 0) {
-    return;
-  }
-
-  process.stderr.write("\nError Diagnostics\n");
-
-  for (const diagnostic of diagnostics) {
-    process.stderr.write(`${diagnostic.label}: ${diagnostic.value}\n`);
-  }
 }
