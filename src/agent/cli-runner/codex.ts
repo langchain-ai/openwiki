@@ -19,6 +19,10 @@ export const codexAdapter: CliEngineAdapter = {
       : ["exec", ...flags, "-"];
   },
 
+  stdinPayload(spec: CliRunSpec): string {
+    return `${spec.systemPrompt}\n\n${spec.userPrompt}`;
+  },
+
   parseLine(line: string): CliParsedEvent[] {
     const trimmed = line.trim();
 

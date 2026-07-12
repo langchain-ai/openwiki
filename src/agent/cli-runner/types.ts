@@ -27,4 +27,6 @@ export type CliEngineAdapter = {
   buildArgs(spec: CliRunSpec): string[];
   /** Parse one stdout line into zero or more parsed events. Must not throw. */
   parseLine(line: string): CliParsedEvent[];
+  /** What to write to the CLI's stdin (the prompt channel). */
+  stdinPayload(spec: CliRunSpec): string;
 };

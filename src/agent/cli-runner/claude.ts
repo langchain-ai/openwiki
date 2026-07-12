@@ -49,6 +49,10 @@ export const claudeAdapter: CliEngineAdapter = {
     return args;
   },
 
+  stdinPayload(spec: CliRunSpec): string {
+    return spec.userPrompt;
+  },
+
   parseLine(line: string): CliParsedEvent[] {
     const trimmed = line.trim();
 

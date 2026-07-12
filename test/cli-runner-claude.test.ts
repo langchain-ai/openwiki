@@ -107,6 +107,12 @@ describe("claudeAdapter.buildArgs", () => {
   });
 });
 
+describe("claudeAdapter.stdinPayload", () => {
+  test("stdin carries only the user prompt", () => {
+    expect(claudeAdapter.stdinPayload(BASE_SPEC)).toBe("USER");
+  });
+});
+
 describe("claudeAdapter.parseLine", () => {
   test("captures session id from system init", () => {
     expect(claudeAdapter.parseLine(INIT_LINE)).toEqual([

@@ -79,6 +79,12 @@ describe("codexAdapter.buildArgs", () => {
   });
 });
 
+describe("codexAdapter.stdinPayload", () => {
+  test("stdin carries system and user prompt combined", () => {
+    expect(codexAdapter.stdinPayload(BASE_SPEC)).toBe("SYSTEM\n\nUSER");
+  });
+});
+
 describe("codexAdapter.parseLine", () => {
   test("captures thread id as session", () => {
     expect(codexAdapter.parseLine(THREAD_LINE)).toEqual([
