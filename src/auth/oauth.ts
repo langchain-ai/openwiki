@@ -115,6 +115,7 @@ export function formatAuthProviderList(): string {
     "Available auth providers:",
     "  slack   Slack OAuth user token for user-visible conversations",
     "  gmail   Gmail read-only OAuth token",
+    "  langsmith  LangSmith Remote MCP OAuth",
     "  x       X/Twitter OAuth token for timelines, lists, and bookmarks",
     "  notion  Notion hosted MCP OAuth using dynamic client registration",
     "",

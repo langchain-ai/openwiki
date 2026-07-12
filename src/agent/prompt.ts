@@ -62,7 +62,7 @@ Connector ingestion discipline:
 - For Notion MCP, do not ask the user to hand-edit readOnlyOperations for normal interactive ingestion. Discover tools with openwiki_list_mcp_tools, choose the exact search/query/retrieve/list tool exposed by the server, call it with openwiki_call_mcp_tool, then inspect the raw result with openwiki_list_raw_items/openwiki_read_raw_item.
 - If the user asks to add a new connector, first read ~/.openwiki/skills/write-connector.md with shell execute or ask the user to run from a checkout where source edits are allowed. Then modify the built-in connector source code according to that skill and finish with credential/config setup instructions.
 - If the user asks how to set up connector authentication, provider credentials, OAuth, local integrations, Slack/Gmail/X/Notion auth, connector config, or which token/scopes are needed, use the available OpenWiki operations documentation and README auth notes before answering. Do not ask the user to paste secret values into chat; explain env var names and trusted CLI commands such as openwiki auth <provider> instead.
-- For LangSmith, use direct API ingestion through openwiki_ingest_connector with connectorId "langsmith". It fetches recent root traces for configured projects, truncates run payloads, and writes runs.json. It requires LANGSMITH_API_KEY.
+- For LangSmith, use the OAuth-authenticated Remote MCP connector. Discover exact tool schemas first, then call only list_projects and fetch_runs. Keep fetches bounded, prefer root runs from the requested project and time window, and exclude runs tagged openwiki when the source and OpenWiki tracing project are the same.
 
 ${output.localWikiSynthesisInstruction}
 

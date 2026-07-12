@@ -137,7 +137,13 @@ export function isOAuthAccessTokenExpired(providerId: AuthProviderId): boolean {
 export function getOAuthProviderIdForAccessTokenEnvKey(
   envKey: string,
 ): AuthProviderId | null {
-  const providerIds: AuthProviderId[] = ["gmail", "notion", "slack", "x"];
+  const providerIds: AuthProviderId[] = [
+    "gmail",
+    "langsmith",
+    "notion",
+    "slack",
+    "x",
+  ];
 
   for (const providerId of providerIds) {
     const provider = getAuthProvider(providerId);

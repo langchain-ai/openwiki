@@ -1,7 +1,6 @@
 import { createGitRepoConnector } from "./sources/git-repo.js";
 import { createGmailConnector } from "./sources/gmail.js";
 import { createHackerNewsConnector } from "./sources/hackernews.js";
-import { createLangSmithConnector } from "./sources/langsmith.js";
 import { createMcpConnector } from "./sources/mcp.js";
 import { createSlackConnector } from "./sources/slack.js";
 import { createWebSearchConnector } from "./sources/web-search.js";
@@ -37,7 +36,13 @@ export function createConnectorRegistry(): Record<
     slack: createSlackConnector(),
     "web-search": createWebSearchConnector(),
     x: createXConnector(),
-    langsmith: createLangSmithConnector(),
+    langsmith: createMcpConnector({
+      description:
+        "LangSmith Remote MCP connector for projects, traces, runs, and conversation history.",
+      displayName: "LangSmith",
+      id: "langsmith",
+      requiredEnv: ["OPENWIKI_LANGSMITH_MCP_ACCESS_TOKEN"],
+    }),
   };
 }
 

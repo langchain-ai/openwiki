@@ -1,54 +1,32 @@
-import type { Run } from "langsmith";
 import { describe, expect, test } from "vitest";
 
-import {
-  compactRun,
-  isOpenWikiRun,
-} from "../src/connectors/sources/langsmith.js";
+import { getAuthProvider } from "../src/auth/providers.js";
+import { isMcpConnectorId } from "../src/connectors/mcp-runtime.js";
 import {
   CONNECTOR_IDS,
   createConnectorRegistry,
 } from "../src/connectors/registry.js";
 
-function run(overrides: Partial<Run> = {}): Run {
-  return {
-    id: "run-1",
-    name: "coding-agent",
-    run_type: "chain",
-    start_time: "2026-07-12T10:00:00Z",
-    trace_id: "trace-1",
-    ...overrides,
-  } as Run;
-}
-
-describe("LangSmith connector", () => {
-  test("is registered as a direct API connector", () => {
-    expect(CONNECTOR_IDS).toContain("langsmith");
-    expect(createConnectorRegistry().langsmith).toMatchObject({
-      backend: "direct-api",
-      requiredEnv: ["LANGSMITH_API_KEY"],
+describe("LangSmith Remote MCP connector", () => {
+  test("uses OAuth dynamic registration against the hosted MCP resource", () => {
+    expect(getAuthProvider("langsmith")).toMatchObject({
+      clientAuth: "none",
+      mcpResourceUrl: "https://api.smith.langchain.com/mcp",
+      tokenMapping: {
+        accessTokenEnvKey: "OPENWIKI_LANGSMITH_MCP_ACCESS_TOKEN",
+        clientIdEnvKey: "OPENWIKI_LANGSMITH_MCP_CLIENT_ID",
+        refreshTokenEnvKey: "OPENWIKI_LANGSMITH_MCP_REFRESH_TOKEN",
+      },
     });
   });
 
-  test("filters OpenWiki traces from shared projects", () => {
-    expect(isOpenWikiRun(run({ tags: ["openwiki"] }))).toBe(true);
-    expect(
-      isOpenWikiRun(run({ extra: { metadata: { openwiki: true } } })),
-    ).toBe(true);
-    expect(isOpenWikiRun(run({ tags: ["coding-agent"] }))).toBe(false);
-  });
-
-  test("compacts trace evidence with provenance", () => {
-    expect(
-      compactRun(
-        run({ inputs: { prompt: "hello" }, outputs: { answer: "done" } }),
-        "https://smith.langchain.com/project",
-      ),
-    ).toMatchObject({
-      id: "run-1",
-      inputs: '{"prompt":"hello"}',
-      outputs: '{"answer":"done"}',
-      traceUrl: "https://smith.langchain.com/project/r/run-1",
+  test("is registered as an OAuth-backed MCP connector", () => {
+    expect(CONNECTOR_IDS).toContain("langsmith");
+    expect(isMcpConnectorId("langsmith")).toBe(true);
+    expect(createConnectorRegistry().langsmith).toMatchObject({
+      id: "langsmith",
+      requiredEnv: ["OPENWIKI_LANGSMITH_MCP_ACCESS_TOKEN"],
+      supportsAgenticDiscovery: true,
     });
   });
 });

@@ -106,7 +106,6 @@ type PromptStep =
   | "source-description-custom"
   | "source-menu"
   | "source-path"
-  | "source-project"
   | "source-confirm-continue"
   | "source-secret"
   | "template"
@@ -336,6 +335,7 @@ const SOURCE_OPTIONS = [
     ],
   },
   {
+    authProvider: "langsmith",
     displayName: "LangSmith",
     examples: [
       "Track production agent errors and latency regressions.",
@@ -345,17 +345,11 @@ const SOURCE_OPTIONS = [
     ],
     id: "langsmith",
     instructions: [
-      "Create a LangSmith API key under Settings > API Keys.",
-      "Paste the same API key OpenWiki uses for tracing, or another key with access to the source project.",
-      "Choose a project to ingest. It may be the same project OpenWiki traces to or a different one.",
+      "OpenWiki connects to the LangSmith Remote MCP using OAuth.",
+      "No API key or OAuth app registration is required.",
+      "Approve access in your browser, then describe which project and traces OpenWiki should ingest.",
     ],
-    secretInputs: [
-      {
-        envKey: "LANGSMITH_API_KEY",
-        label: "LangSmith API key",
-        secret: true,
-      },
-    ],
+    secretInputs: [],
   },
 ] as const satisfies readonly SourceSetupOption[];
 
@@ -1436,23 +1430,6 @@ export function InitSetup({
       return;
     }
 
-    if (step === "source-project") {
-      const project = input.trim();
-
-      if (project.length === 0) {
-        setError("Enter a LangSmith project name.");
-        return;
-      }
-
-      setSourceState((state) => ({
-        ...state,
-        connectorConfig: { enabled: true, projects: [project] },
-      }));
-      setInput("");
-      setStep("source-description");
-      return;
-    }
-
     if (step === "source-description") {
       if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
         setInput("");
@@ -1788,10 +1765,6 @@ export function InitSetup({
       if (source.id === "git-repo") {
         setInput(getDefaultLocalGitRepoPath());
         setStep("source-path");
-        return;
-      } else if (source.id === "langsmith") {
-        setInput(process.env.LANGCHAIN_PROJECT ?? "");
-        setStep("source-project");
         return;
       } else if (source.id === "web-search" || source.id === "hackernews") {
         setSourceState((state) => ({
@@ -2609,24 +2582,6 @@ function Prompt({
             Press Enter to open the authorization URL and wait for the callback.
           </Text>
         )}
-      </Box>
-    );
-  }
-
-  if (step === "source-project") {
-    return (
-      <Box flexDirection="column">
-        <Text>LangSmith project</Text>
-        <Text color="gray">
-          This is independent from OpenWiki&apos;s tracing project. Enter the
-          same project name or a different one.
-        </Text>
-        <BorderedInput
-          maxDisplayWidth={inputDisplayWidth}
-          prefix="project="
-          value={input}
-        />
-        <Text color="gray">Press Enter to continue.</Text>
       </Box>
     );
   }

@@ -125,6 +125,7 @@ Authenticate a connector provider:
 ```sh
 openwiki auth slack
 openwiki auth gmail
+openwiki auth langsmith
 openwiki auth x
 openwiki auth notion
 ```
@@ -170,7 +171,7 @@ instances with `openwiki ingest all`, all instances for one connector with
 - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
 - `web-search` uses Tavily through LangChain and requires `TAVILY_API_KEY`.
 - `hackernews` uses public Hacker News feed and search APIs, with no credentials required.
-- `langsmith` imports recent root traces from a selected tracing project. The source project may be the same project OpenWiki traces to or a different one; OpenWiki's own tagged traces are excluded to prevent feedback loops.
+- `langsmith` connects to the LangSmith Remote MCP with OAuth and exposes read-only project and trace discovery. It requires no pasted API key; source instructions can target the same project OpenWiki traces to or a different one.
 
 Connector secrets are referenced by env var name and stored in `~/.openwiki/.env`; connector config files should never contain raw secret values.
 

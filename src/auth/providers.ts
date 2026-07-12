@@ -1,6 +1,9 @@
 import {
   OPENWIKI_GMAIL_ACCESS_TOKEN_ENV_KEY,
   OPENWIKI_GMAIL_REFRESH_TOKEN_ENV_KEY,
+  OPENWIKI_LANGSMITH_MCP_ACCESS_TOKEN_ENV_KEY,
+  OPENWIKI_LANGSMITH_MCP_CLIENT_ID_ENV_KEY,
+  OPENWIKI_LANGSMITH_MCP_REFRESH_TOKEN_ENV_KEY,
   OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY,
   OPENWIKI_NOTION_MCP_CLIENT_ID_ENV_KEY,
   OPENWIKI_NOTION_MCP_REFRESH_TOKEN_ENV_KEY,
@@ -36,6 +39,20 @@ export const AUTH_PROVIDERS: Record<AuthProviderId, OAuthProviderConfig> = {
       tokenTypeEnvKey: "OPENWIKI_GMAIL_TOKEN_TYPE",
     },
     tokenUrl: "https://oauth2.googleapis.com/token",
+  },
+  langsmith: {
+    clientAuth: "none",
+    displayName: "LangSmith Remote MCP",
+    id: "langsmith",
+    mcpResourceUrl: "https://api.smith.langchain.com/mcp",
+    scopes: [],
+    tokenMapping: {
+      accessTokenEnvKey: OPENWIKI_LANGSMITH_MCP_ACCESS_TOKEN_ENV_KEY,
+      clientIdEnvKey: OPENWIKI_LANGSMITH_MCP_CLIENT_ID_ENV_KEY,
+      expiresAtEnvKey: "OPENWIKI_LANGSMITH_MCP_TOKEN_EXPIRES_AT",
+      refreshTokenEnvKey: OPENWIKI_LANGSMITH_MCP_REFRESH_TOKEN_ENV_KEY,
+      tokenTypeEnvKey: "OPENWIKI_LANGSMITH_MCP_TOKEN_TYPE",
+    },
   },
   notion: {
     clientAuth: "none",

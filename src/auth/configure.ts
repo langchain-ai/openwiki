@@ -1,5 +1,8 @@
 import { chmod, readFile, writeFile } from "node:fs/promises";
-import { OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY } from "../constants.js";
+import {
+  OPENWIKI_LANGSMITH_MCP_ACCESS_TOKEN_ENV_KEY,
+  OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY,
+} from "../constants.js";
 import {
   ensureConnectorHome,
   getConnectorConfigPath,
@@ -100,6 +103,21 @@ function getConnectorIdForProvider(provider: AuthProviderId): ConnectorId {
 }
 
 function getDefaultConfig(provider: AuthProviderId): unknown {
+  if (provider === "langsmith") {
+    return {
+      allowedTools: ["fetch_runs", "list_projects"],
+      enabled: true,
+      readOnlyOperations: [],
+      transport: {
+        headers: {
+          Authorization: `Bearer \${${OPENWIKI_LANGSMITH_MCP_ACCESS_TOKEN_ENV_KEY}}`,
+        },
+        type: "http",
+        url: "https://api.smith.langchain.com/mcp",
+      },
+    };
+  }
+
   if (provider === "notion") {
     return {
       enabled: true,
@@ -177,6 +195,14 @@ function getNextSteps(
       prefix,
       "Run openwiki --update and the agent can discover and call read-only Notion MCP tools automatically.",
       "Use openwiki auth tools notion only when you want to inspect the live MCP tool list yourself.",
+    ];
+  }
+
+  if (provider === "langsmith") {
+    return [
+      prefix,
+      "Run OpenWiki ingestion and the agent can use read-only LangSmith Remote MCP tools.",
+      "Use openwiki auth tools langsmith to inspect the live list_projects and fetch_runs tools.",
     ];
   }
 
