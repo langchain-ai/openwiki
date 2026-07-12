@@ -19,6 +19,7 @@ const MAX_FEEDBACK_PER_RUN = 5;
 const RUN_SELECT_FIELDS = [
   "end_time",
   "error",
+  "extra",
   "id",
   "inputs",
   "name",
@@ -26,6 +27,7 @@ const RUN_SELECT_FIELDS = [
   "run_type",
   "start_time",
   "status",
+  "tags",
   "total_tokens",
 ];
 
@@ -33,6 +35,9 @@ const RUN_SELECT_FIELDS = [
  * Parameters for a root-run query against one project.
  */
 export type RootRunQuery = {
+  /** ISO timestamp captured before ingestion; newer runs are excluded. */
+  endTime: string;
+
   /**
    * When true, only failed runs are returned.
    */
@@ -74,7 +79,7 @@ export type LangSmithApi = {
   fetchFeedback(runIds: string[]): Promise<Feedback[]>;
 
   /**
-   * Queries root runs for one project since a start time, newest first.
+   * Queries root runs for one project since a start time, oldest first.
    */
   queryRootRuns(projectId: string, query: RootRunQuery): Promise<Run[]>;
 
@@ -114,17 +119,26 @@ export function createLangSmithApi(
       return feedback;
     },
 
-    async queryRootRuns(projectId, { errorOnly, limit, startTime }) {
+    async queryRootRuns(projectId, { endTime, errorOnly, limit, startTime }) {
       const runs: Run[] = [];
+      const endTimeMs = new Date(endTime).getTime();
 
       for await (const run of client.listRuns({
         ...(errorOnly ? { error: true } : {}),
         isRoot: true,
-        limit,
+        limit: limit * 2,
+        order: "asc",
         projectId,
         select: RUN_SELECT_FIELDS,
         startTime: new Date(startTime),
       })) {
+        const startTimeMs = run.start_time
+          ? new Date(run.start_time).getTime()
+          : Number.POSITIVE_INFINITY;
+        if (isOpenWikiRun(run) || startTimeMs >= endTimeMs) {
+          continue;
+        }
+
         runs.push(run);
 
         // listRuns paginates lazily; stop as soon as the bound is reached so a
@@ -143,4 +157,18 @@ export function createLangSmithApi(
       return { id: project.id, url };
     },
   };
+}
+
+export function isOpenWikiRun(run: Run): boolean {
+  if (run.tags?.includes("openwiki")) {
+    return true;
+  }
+
+  const extra: unknown = run.extra;
+  const metadata = isRecord(extra) ? extra.metadata : undefined;
+  return isRecord(metadata) && metadata.openwiki === true;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

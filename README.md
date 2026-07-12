@@ -155,7 +155,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Local Connectors
 
-OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `~/.openwiki/wiki/` from those local files.
+OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, LangSmith, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `~/.openwiki/wiki/` from those local files.
 
 You can configure the same connector more than once. For example, add one Web
 Search source for AI research and another for NBA news; OpenWiki stores them as
@@ -170,6 +170,7 @@ instances with `openwiki ingest all`, all instances for one connector with
 - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
 - `web-search` uses Tavily through LangChain and requires `TAVILY_API_KEY`.
 - `hackernews` uses public Hacker News feed and search APIs, with no credentials required.
+- `langsmith` imports recent root runs, errors, optional feedback, and aggregate statistics from a selected tracing project. The source project may be the same project OpenWiki traces to or a different one; OpenWiki's own tagged traces are excluded to prevent feedback loops.
 
 Connector secrets are referenced by env var name and stored in `~/.openwiki/.env`; connector config files should never contain raw secret values.
 

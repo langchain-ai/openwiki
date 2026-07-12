@@ -204,6 +204,12 @@ async function runOpenWikiAgentCore(
     configurable: {
       thread_id: threadId,
     },
+    metadata: {
+      openwiki: true,
+      openwikiCommand: command,
+      openwikiOutputMode: outputMode,
+    },
+    tags: ["openwiki"],
     version: "v3",
   });
   emitDebug(options, "stream=started protocol=events version=v3");

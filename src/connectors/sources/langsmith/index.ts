@@ -26,7 +26,7 @@ const DEFAULT_API_BASE_URL = "https://api.smith.langchain.com";
 /**
  * Env var holding the LangSmith API key. Referenced by name, never read into output.
  */
-const LANGSMITH_API_KEY_ENV = "OPENWIKI_LANGSMITH_API_KEY";
+const LANGSMITH_API_KEY_ENV = "LANGSMITH_API_KEY";
 
 /**
  * Display path of the connector state file, used in result messages.
@@ -104,9 +104,13 @@ async function ingest(
     };
   }
 
-  const projects = (config.projects ?? []).filter(
-    (name) => name.trim().length > 0,
-  );
+  const projects = [
+    ...new Set(
+      (config.projects ?? [])
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0),
+    ),
+  ];
 
   if (projects.length === 0) {
     return {
@@ -126,12 +130,13 @@ async function ingest(
     apiKey,
   );
   const windowHours = normalizeWindowHours(options.windowHours);
+  const windowEnd = new Date().toISOString();
   const windowStart = new Date(
     Date.now() - windowHours * 60 * 60 * 1000,
   ).toISOString();
   const maxErrorRuns = clampLimit(options.limit, config.maxErrorRuns, 100);
   const maxRootRuns = clampLimit(options.limit, config.maxRootRuns, 100);
-  const maxFieldChars = clampLimit(options.limit, config.maxFieldChars, 5000);
+  const maxFieldChars = clampLimit(undefined, config.maxFieldChars, 5000);
   const nextCursors: Record<string, string> = {};
   const projectResults: ProjectPullResult[] = [];
 
@@ -143,29 +148,24 @@ async function ingest(
       const startTime = cursor && cursor > windowStart ? cursor : windowStart;
       const { id: projectId, url: projectUrl } =
         await api.resolveProject(project);
-      const errorRuns = await api.queryRootRuns(projectId, {
-        errorOnly: true,
-        limit: maxErrorRuns,
-        startTime,
-      });
       const recentRuns = await api.queryRootRuns(projectId, {
+        endTime: windowEnd,
         errorOnly: false,
         limit: maxRootRuns,
         startTime,
       });
+      const errorRuns = recentRuns
+        .filter((run) => run.status === "error" || run.error != null)
+        .slice(0, maxErrorRuns);
       const feedback = config.includeFeedback
         ? await api.fetchFeedback(errorRuns.map((run) => run.id))
         : [];
 
-      // A saturated query means the window held more runs than we fetched;
-      // the unfetched (older) runs fall behind the cursor and are never
-      // sampled, so surface it rather than undersampling silently.
-      if (
-        errorRuns.length === maxErrorRuns ||
-        recentRuns.length === maxRootRuns
-      ) {
+      // Runs are fetched oldest-first. Advancing the cursor to this batch's
+      // newest run lets a later ingestion continue through a busy window.
+      if (recentRuns.length === maxRootRuns) {
         warnings.push(
-          `${project}: hit the per-run fetch limit (errors ${errorRuns.length}/${maxErrorRuns}, recent ${recentRuns.length}/${maxRootRuns}); older runs in this window were not sampled.`,
+          `${project}: hit the per-run fetch limit (${recentRuns.length}/${maxRootRuns}); remaining runs will be processed on a later ingestion.`,
         );
       }
 
@@ -195,7 +195,7 @@ async function ingest(
   if (projectResults.length > 0) {
     rawFiles.push(
       await writeRawJson("langsmith", runId, "langsmith-results.json", {
-        fetchedAt: new Date().toISOString(),
+        fetchedAt: windowEnd,
         instanceId: options.instanceId,
         projects: projectResults,
         windowHours,
