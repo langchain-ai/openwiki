@@ -49,6 +49,27 @@ export function sanitizeDiagnosticText(value: string): string {
 }
 
 /**
+ * True when an object key name looks like it holds a credential, so its value
+ * should be redacted before display, logging, or persistence.
+ *
+ * This is a security boundary shared by every redaction path (diagnostics,
+ * OpenRouter response bodies, and MCP tool args/results). The term list is the
+ * union of every term the individual paths previously matched, so a key
+ * redacted by one path is redacted by all of them.
+ */
+/**
+ * The union of every substring that marks a key/field name as secret-bearing.
+ * Single source of truth for all redaction paths — extend this, not the
+ * individual call sites.
+ */
+export const SECRET_KEY_PATTERN_SOURCE =
+  "api[-_]?key|authorization|bearer|token|secret|password|user_id|cookie";
+
+export function isSecretLikeKey(key: string): boolean {
+  return new RegExp(SECRET_KEY_PATTERN_SOURCE, "iu").test(key);
+}
+
+/**
  * Recognizes an OpenRouter/provider 500 response so a friendlier, actionable
  * message can be shown instead of a raw stack trace.
  */

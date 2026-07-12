@@ -16,6 +16,7 @@ import {
   saveOpenWikiEnv,
 } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
+import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir } from "../openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import {
@@ -1234,8 +1235,15 @@ async function readResponseBodyPreview(response: Response): Promise<string> {
 }
 
 export function sanitizeOpenRouterResponseBody(body: string): string {
+  // Redact string values whose JSON key name contains any secret-bearing term
+  // (shared source of truth with isSecretLikeKey / the MCP redactor).
+  const secretJsonKeyPattern = new RegExp(
+    `"([^"]*(?:${SECRET_KEY_PATTERN_SOURCE})[^"]*)"\\s*:\\s*"[^"]*"`,
+    "giu",
+  );
+
   return body.replace(
-    /"([^"]*(?:api[-_]?key|authorization|bearer|password|secret|token|user_id)[^"]*)"\s*:\s*"[^"]*"/giu,
+    secretJsonKeyPattern,
     (_, key: string) => `${JSON.stringify(key)}:"[REDACTED]"`,
   );
 }
