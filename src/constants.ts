@@ -56,6 +56,8 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "claude-code"
+  | "codex-cli"
   | "fireworks"
   | "nvidia"
   | "openai"
@@ -66,9 +68,11 @@ export type OpenWikiProvider =
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
  * secret persisted to a `*_API_KEY` env var); `"oauth"` providers instead run a
- * browser login flow and persist short-lived access/refresh tokens.
+ * browser login flow and persist short-lived access/refresh tokens. `"cli"`
+ * providers delegate the whole agent loop to a locally installed headless CLI
+ * that manages its own authentication, so no key or token is read.
  */
-export type ProviderAuthMethod = "api-key" | "oauth";
+export type ProviderAuthMethod = "api-key" | "oauth" | "cli";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -105,6 +109,12 @@ type ProviderConfig = {
    */
   baseUrlEnvKey?: string;
   /**
+   * Executable name for `"cli"` auth providers. These providers delegate the
+   * whole agent loop to a locally installed headless CLI and never read
+   * `apiKeyEnvKey`.
+   */
+  cliCommand?: string;
+  /**
    * When true, the provider has no default endpoint and requires a base URL to
    * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
    */
@@ -122,6 +132,8 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "fireworks",
   "baseten",
   "nvidia",
+  "claude-code",
+  "codex-cli",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -133,6 +145,25 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
       { id: "moonshotai/Kimi-K2.7-Code", label: "Kimi K2.7 Code" },
     ],
+  },
+  "claude-code": {
+    // Never read: "cli" auth providers skip all API-key checks.
+    apiKeyEnvKey: "OPENWIKI_CLI_AUTH_UNUSED",
+    authMethod: "cli",
+    cliCommand: "claude",
+    label: "Claude Code (CLI)",
+    modelOptions: [
+      { id: "sonnet", label: "Sonnet" },
+      { id: "opus", label: "Opus" },
+      { id: "haiku", label: "Haiku" },
+    ],
+  },
+  "codex-cli": {
+    apiKeyEnvKey: "OPENWIKI_CLI_AUTH_UNUSED",
+    authMethod: "cli",
+    cliCommand: "codex",
+    label: "Codex (CLI)",
+    modelOptions: OPENAI_MODEL_OPTIONS,
   },
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
@@ -239,6 +270,36 @@ export function getProviderAuthMethod(
 
 export function providerUsesOAuth(provider: OpenWikiProvider): boolean {
   return getProviderAuthMethod(provider) === "oauth";
+}
+
+export function providerUsesCliAuth(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).authMethod === "cli";
+}
+
+export function getProviderCliCommand(
+  provider: OpenWikiProvider,
+): string | null {
+  return getProviderConfig(provider).cliCommand ?? null;
+}
+
+export const OPENWIKI_CLI_TIMEOUT_SECONDS_ENV_KEY =
+  "OPENWIKI_CLI_TIMEOUT_SECONDS";
+export const DEFAULT_CLI_TIMEOUT_SECONDS = 1800;
+
+export function resolveCliTimeoutSeconds(
+  env: NodeJS.ProcessEnv = process.env,
+): number {
+  const raw = env[OPENWIKI_CLI_TIMEOUT_SECONDS_ENV_KEY];
+
+  if (raw === undefined) {
+    return DEFAULT_CLI_TIMEOUT_SECONDS;
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+
+  return Number.isFinite(parsed) && parsed > 0
+    ? parsed
+    : DEFAULT_CLI_TIMEOUT_SECONDS;
 }
 
 /**
