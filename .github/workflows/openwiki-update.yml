@@ -36,6 +36,11 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENWIKI_MODEL_ID: z-ai/glm-5.2
+          # To run with GitHub Copilot instead of OpenRouter, set the
+          # COPILOT_API_KEY repository secret (a GitHub OAuth token) and use:
+          # OPENWIKI_PROVIDER: copilot
+          # OPENWIKI_MODEL_ID: claude-sonnet-5
+          # COPILOT_API_KEY: ${{ secrets.COPILOT_API_KEY }}
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
           LANGCHAIN_PROJECT: openwiki
           LANGCHAIN_TRACING_V2: "true"

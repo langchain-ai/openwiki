@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { homedir } from "node:os";
 import path from "node:path";
-import { Box, Text, useInput, useStdout } from "ink";
+import { Box, Text, useInput, useStdin, useStdout } from "ink";
 import { configureAuthProvider } from "./auth/configure.js";
 import { runOAuthAuth } from "./auth/oauth.js";
 import {
@@ -43,6 +43,11 @@ import {
 import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
 import type { ConnectorId } from "./connectors/types.js";
+import {
+  detectGhCliToken,
+  isGhCliAvailable,
+  runGhAuthLogin,
+} from "./copilotAuth.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
 import { openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
 import {
@@ -63,6 +68,14 @@ import {
   installConnectorSchedule,
   validateCronExpression,
 } from "./schedules.js";
+
+type CopilotAuthState =
+  | { kind: "idle" }
+  | { kind: "checking" }
+  | { kind: "detected"; token: string }
+  | { kind: "not-detected"; ghAvailable: boolean }
+  | { kind: "logging-in" }
+  | { kind: "login-failed" };
 
 export type InitSetupResult = {
   mode: OpenWikiRunMode;
@@ -531,6 +544,11 @@ export function InitSetup({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [copilotAuth, setCopilotAuth] = useState<CopilotAuthState>({
+    kind: "idle",
+  });
+  const copilotProbeStarted = useRef(false);
+  const { setRawMode } = useStdin();
   const [isAuthRunning, setIsAuthRunning] = useState(false);
   const [oauthTokens, setOauthTokens] = useState<CodexTokens | null>(null);
   const [loginUrl, setLoginUrl] = useState<string | null>(null);
@@ -727,6 +745,70 @@ export function InitSetup({
     };
   }, [step, loginAttempt]);
 
+  useEffect(() => {
+    if (
+      step !== "api-key" ||
+      provider !== "copilot" ||
+      copilotProbeStarted.current
+    ) {
+      return;
+    }
+
+    copilotProbeStarted.current = true;
+
+    let cancelled = false;
+    setCopilotAuth({ kind: "checking" });
+
+    void (async () => {
+      const token = await detectGhCliToken();
+
+      if (cancelled) {
+        return;
+      }
+
+      if (token) {
+        setCopilotAuth({ kind: "detected", token });
+        return;
+      }
+
+      const ghAvailable = await isGhCliAvailable();
+
+      if (cancelled) {
+        return;
+      }
+
+      setCopilotAuth({ kind: "not-detected", ghAvailable });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, provider]);
+
+  async function launchGhAuthLogin() {
+    setCopilotAuth({ kind: "logging-in" });
+    setRawMode?.(false);
+
+    try {
+      const success = await runGhAuthLogin();
+
+      if (!success) {
+        setCopilotAuth({ kind: "login-failed" });
+        return;
+      }
+
+      const token = await detectGhCliToken();
+
+      setCopilotAuth(
+        token
+          ? { kind: "detected", token }
+          : { kind: "not-detected", ghAvailable: true },
+      );
+    } finally {
+      setRawMode?.(true);
+    }
+  }
+
   useInput((inputValue, key) => {
     if (
       isSaving ||
@@ -776,6 +858,17 @@ export function InitSetup({
         setInput((value) => value + sanitizedInput);
       }
 
+      return;
+    }
+
+    if (
+      step === "api-key" &&
+      provider === "copilot" &&
+      key.tab &&
+      copilotAuth.kind !== "checking" &&
+      copilotAuth.kind !== "logging-in"
+    ) {
+      void launchGhAuthLogin();
       return;
     }
 
@@ -1120,7 +1213,12 @@ export function InitSetup({
     }
 
     if (step === "api-key") {
-      const trimmedInput = input.trim();
+      const trimmedInput =
+        input.trim().length > 0
+          ? input.trim()
+          : provider === "copilot" && copilotAuth.kind === "detected"
+            ? copilotAuth.token
+            : "";
 
       if (trimmedInput.length === 0) {
         setError(`${getProviderApiKeyEnvKey(provider)} is required.`);
@@ -2099,6 +2197,7 @@ export function InitSetup({
           {step ? (
             <Prompt
               codeRepoRoot={codeRepoRoot}
+              copilotAuth={copilotAuth}
               codeRepoSelectionIndex={codeRepoSelectionIndex}
               cronFieldSelectionIndex={cronFieldSelectionIndex}
               cronModeSelectionIndex={cronModeSelectionIndex}
@@ -2166,6 +2265,7 @@ export function InitSetup({
 function Prompt({
   codeRepoRoot,
   codeRepoSelectionIndex,
+  copilotAuth,
   cronFieldSelectionIndex,
   cronModeSelectionIndex,
   finalSelectionIndex,
@@ -2193,6 +2293,7 @@ function Prompt({
 }: {
   codeRepoRoot: string;
   codeRepoSelectionIndex: number;
+  copilotAuth: CopilotAuthState;
   cronFieldSelectionIndex: number;
   cronModeSelectionIndex: number;
   finalSelectionIndex: number;
@@ -2260,6 +2361,10 @@ function Prompt({
   }
 
   if (step === "api-key") {
+    if (provider === "copilot") {
+      return <CopilotAuthPrompt authState={copilotAuth} input={input} />;
+    }
+
     return (
       <Box flexDirection="column">
         <Text>Paste your {getProviderLabel(provider)} API key.</Text>
@@ -2746,6 +2851,78 @@ function Prompt({
   }
 
   return null;
+}
+
+function mask(value: string): string {
+  if (value.length === 0) {
+    return "";
+  }
+
+  return "*".repeat(value.length);
+}
+
+function CopilotAuthPrompt({
+  authState,
+  input,
+}: {
+  authState: CopilotAuthState;
+  input: string;
+}) {
+  if (authState.kind === "idle" || authState.kind === "checking") {
+    return (
+      <Text color="gray">Checking for an existing GitHub CLI session...</Text>
+    );
+  }
+
+  if (authState.kind === "logging-in") {
+    return (
+      <Text color="gray">
+        Running `gh auth login` — follow the prompts in this terminal...
+      </Text>
+    );
+  }
+
+  if (authState.kind === "detected") {
+    return (
+      <Box flexDirection="column">
+        <Text>Detected an existing GitHub CLI session.</Text>
+        <Text color="gray">
+          Press Enter to use it, Tab to sign in again, or paste a different
+          token below.
+        </Text>
+        <Text>
+          <Text color="gray">$</Text> COPILOT_API_KEY={" "}
+          <Text color="yellow">
+            {input.length > 0 ? mask(input) : "<from gh auth token>"}
+          </Text>
+        </Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      <Text>No GitHub CLI session detected.</Text>
+      {authState.kind === "login-failed" ? (
+        <Text color="red">`gh auth login` did not complete successfully.</Text>
+      ) : null}
+      {authState.kind === "not-detected" && authState.ghAvailable ? (
+        <Text color="gray">
+          Press Tab to run `gh auth login`, or paste a GitHub OAuth token below.
+        </Text>
+      ) : (
+        <Text color="gray">
+          Install the GitHub CLI (https://cli.github.com), run `gh auth login`,
+          then paste the output of `gh auth token` below.
+        </Text>
+      )}
+      <Text>
+        <Text color="gray">$</Text> COPILOT_API_KEY={" "}
+        <Text color="yellow">{mask(input)}</Text>
+      </Text>
+      <Text color="gray">Press Enter to save it.</Text>
+    </Box>
+  );
 }
 
 function SetupHeader() {

@@ -1,0 +1,136 @@
+name: GitHub Copilot Provider
+
+on:
+  pull_request:
+    paths:
+      - "src/constants.ts"
+      - "src/env.ts"
+      - "src/agent/**"
+      - ".github/workflows/copilot.yml"
+  workflow_dispatch:
+    inputs:
+      models:
+        description: >-
+          Space-separated model IDs to smoke test. Leave empty to test the
+          models configured for the copilot provider in src/constants.ts.
+        required: false
+        default: ""
+
+jobs:
+  provider-config:
+    name: Provider config check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Validate GitHub Copilot provider config
+        run: |
+          node --input-type=module - <<'EOF'
+          import assert from "node:assert/strict";
+          import {
+            COPILOT_API_KEY_ENV_KEY,
+            getDefaultModelId,
+            getProviderConfig,
+            isValidModelId,
+            isValidProvider,
+            normalizeProvider,
+            SELECTABLE_OPENWIKI_PROVIDERS,
+          } from "./dist/constants.js";
+
+          assert.equal(isValidProvider("copilot"), true);
+          assert.equal(normalizeProvider(" Copilot "), "copilot");
+          assert.ok(SELECTABLE_OPENWIKI_PROVIDERS.includes("copilot"));
+
+          const config = getProviderConfig("copilot");
+          assert.equal(config.apiKeyEnvKey, COPILOT_API_KEY_ENV_KEY);
+          assert.equal(config.apiKeyEnvKey, "COPILOT_API_KEY");
+          assert.equal(config.baseURL, "https://api.githubcopilot.com");
+          assert.equal(config.label, "GitHub Copilot");
+          assert.ok(config.modelOptions.length > 0);
+
+          for (const model of config.modelOptions) {
+            assert.ok(isValidModelId(model.id), `invalid model id: ${model.id}`);
+          }
+
+          assert.equal(getDefaultModelId("copilot"), config.modelOptions[0].id);
+          console.log("GitHub Copilot provider config OK");
+          EOF
+
+  live-smoke:
+    name: Live API smoke test
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Run openwiki with GitHub Copilot
+        env:
+          COPILOT_API_KEY: ${{ secrets.COPILOT_API_KEY }}
+          OPENWIKI_PROVIDER: copilot
+          MODELS_INPUT: ${{ inputs.models }}
+        run: |
+          if [ -z "$COPILOT_API_KEY" ]; then
+            echo "COPILOT_API_KEY secret is not set; skipping."
+            exit 0
+          fi
+
+          if [ -n "$MODELS_INPUT" ]; then
+            models="$MODELS_INPUT"
+          else
+            models=$(node --input-type=module -e "
+              import { getProviderModelOptions } from './dist/constants.js';
+              console.log(getProviderModelOptions('copilot').map((m) => m.id).join(' '));
+            ")
+          fi
+
+          echo "Testing models: $models"
+          failed=0
+
+          for model in $models; do
+            echo "::group::$model"
+            if timeout 300 node dist/cli.js -p "Summarize what you can do" --model-id "$model"; then
+              echo "RESULT: $model OK"
+            else
+              echo "RESULT: $model FAIL"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+
+          exit $failed

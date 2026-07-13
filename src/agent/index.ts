@@ -38,6 +38,8 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  COPILOT_API_KEY_ENV_KEY,
+  COPILOT_BASE_URL_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
@@ -509,6 +511,29 @@ function createModel(
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
+
+  if (provider === "copilot") {
+    const apiKey = process.env[COPILOT_API_KEY_ENV_KEY] ?? "";
+
+    // The Copilot API rejects Personal Access Tokens for third-party
+    // integrations; only GitHub OAuth tokens work here.
+    if (/^(ghp_|github_pat_)/u.test(apiKey)) {
+      throw new Error(
+        `The GitHub Copilot API does not accept Personal Access Tokens. Set ${COPILOT_API_KEY_ENV_KEY} to a GitHub OAuth token from a Copilot-enabled account (for example the output of \`gh auth token\`).`,
+      );
+    }
+
+    return new ChatOpenAI({
+      apiKey,
+      configuration: {
+        baseURL,
+      },
+      model: modelId,
+      // The Copilot API serves GPT-5-family models only through the
+      // Responses API and other models only through chat completions.
+      useResponsesApi: /^gpt-5/u.test(modelId),
+    });
+  }
 
   return new ChatOpenAI({
     apiKey: process.env[getProviderApiKeyEnvKey(provider)],
@@ -1318,6 +1343,7 @@ function formatDebugValue(key: string, value: string | undefined): string {
   if (
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === COPILOT_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   ) {
     return formatUrlDebugValue(value);
