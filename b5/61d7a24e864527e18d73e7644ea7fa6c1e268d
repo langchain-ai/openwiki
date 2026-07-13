@@ -1,0 +1,36 @@
+src/connectors/write-connector-skill.ts
+  s_b18b4a874e661c::t_435aa9282e2948 73
+src/commands.ts
+  s_b18b4a874e661c::t_94d3f38d4329df 492-493,571,652,657,681
+  s_b18b4a874e661c::t_26792f8a7ccb09 328,601-602
+  s_b18b4a874e661c::t_435aa9282e2948 690
+src/agent/prompt.ts
+  s_b18b4a874e661c::t_26792f8a7ccb09 107-109
+  s_b18b4a874e661c::t_94d3f38d4329df 110-111,115
+  s_b18b4a874e661c::t_435aa9282e2948 181
+test/commands.test.ts
+  s_b18b4a874e661c::t_26792f8a7ccb09 40-41,65-71,80-81
+  s_b18b4a874e661c::t_94d3f38d4329df 98-105,108,112-113,118-130
+  s_b18b4a874e661c::t_aa8a871f08e5c0 131-132
+README.md
+  s_b18b4a874e661c::t_94d3f38d4329df 30,33,44-46,89,92,95,98,104,107,113,151
+  s_b18b4a874e661c::t_26792f8a7ccb09 62,74-79,149
+src/auth/configure.ts
+  s_b18b4a874e661c::t_435aa9282e2948 178,202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "b561d7a24e864527e18d73e7644ea7fa6c1e268d",
+  "prompts": {},
+  "sessions": {
+    "s_b18b4a874e661c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5cab-34ea-74a1-88d5-c13ca5725a5b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
