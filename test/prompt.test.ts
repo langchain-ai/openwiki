@@ -53,3 +53,40 @@ describe("documentation coverage guidance", () => {
     }
   });
 });
+
+describe("OKF front matter guidance", () => {
+  test("requires the OKF schema for every Markdown file written in every mode", () => {
+    for (const command of ["chat", "init", "update"] as const) {
+      for (const outputMode of ["local-wiki", "repository"] as const) {
+        const prompt = createSystemPrompt(command, outputMode);
+
+        expect(prompt).toContain("Every Markdown file you create or update");
+        expect(prompt).toContain(
+          "MUST begin with OKF-compliant YAML front matter",
+        );
+        expect(prompt).toContain(
+          "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md",
+        );
+        expect(prompt).toContain("type: <Type name>");
+        expect(prompt).toContain("title: <Optional display name>");
+        expect(prompt).toContain("description: <Optional one-line summary>");
+        expect(prompt).toContain(
+          "resource: <Optional canonical URI for the underlying asset>",
+        );
+        expect(prompt).toContain("tags: [<tag>, <tag>, …]");
+        expect(prompt).not.toMatch(/^timestamp:/m);
+      }
+    }
+  });
+
+  test("requires touched existing Markdown files to become compliant", () => {
+    const prompt = createSystemPrompt("update", "repository");
+
+    expect(prompt).toContain(
+      "When updating an existing Markdown file, preserve accurate content but add or correct its opening front matter",
+    );
+    expect(prompt).toContain(
+      "do not add front matter fields outside the formatter above",
+    );
+  });
+});
