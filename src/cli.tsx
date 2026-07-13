@@ -3799,7 +3799,6 @@ function shouldPrintStartupError(
     command.kind === "error" &&
     (argvRequestsPrint(argv) ||
       !process.stdin.isTTY ||
-      command.message.startsWith("openwiki --init requires a mode.") ||
       (parsedCommand.kind === "run" && parsedCommand.shouldStart))
   );
 }
