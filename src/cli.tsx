@@ -33,7 +33,11 @@ import {
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
 import { formatChatGptAccountFromEnv } from "./agent/openai-chatgpt-oauth.js";
-import { getErrorMessage, sanitizeDiagnosticText } from "./diagnostics.js";
+import {
+  getErrorMessage,
+  isSecretLikeKey,
+  sanitizeDiagnosticText,
+} from "./diagnostics.js";
 import { stripHtmlTags } from "./utils.js";
 import {
   type OpenWikiRunEvent,
@@ -3267,10 +3271,6 @@ function createDiagnosticJsonReplacer() {
 
     return value;
   };
-}
-
-function isSecretLikeKey(key: string): boolean {
-  return /api[-_]?key|authorization|bearer|token|secret|password/iu.test(key);
 }
 
 function truncateDiagnosticValue(value: string): string {

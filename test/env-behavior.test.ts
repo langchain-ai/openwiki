@@ -41,6 +41,12 @@ const KEYS_UNDER_TEST = [
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  // Deprecated / recently un-deprecated OpenAI keys. Cleared in each hook so the
+  // developer's ambient shell (which may export OPENAI_BASE_URL) cannot leak
+  // into these tests, and a loaded value cannot leak back out to other tests.
+  "OPENAI_BASE_URL",
+  "OPENAI_ORG_ID",
+  "OPENAI_PROJECT",
 ] as const;
 
 let originalHome: string | undefined;
@@ -91,12 +97,10 @@ describe("loadOpenWikiEnv", () => {
     expect(process.env[OPENROUTER_API_KEY_ENV_KEY]).toBe("from-process-env");
   });
 
-  test("currently drops deprecated OpenAI keys from process.env", async () => {
-    // Pins the existing behavior: OPENAI_BASE_URL / OPENAI_ORG_ID /
-    // OPENAI_PROJECT are in the deprecated list and are never loaded into
-    // process.env, even when present in ~/.openwiki/.env. Changing this
-    // (e.g. un-deprecating OPENAI_BASE_URL) should be a deliberate decision
-    // that updates this expectation.
+  test("loads OPENAI_BASE_URL but still drops the other deprecated OpenAI keys", async () => {
+    // OPENAI_BASE_URL was un-deprecated (PR #90): it is now loaded from
+    // ~/.openwiki/.env like any other key, so proxy/gateway setups survive.
+    // OPENAI_ORG_ID and OPENAI_PROJECT remain deprecated and are still dropped.
     await mkdir(path.dirname(openWikiEnvPath), { recursive: true });
     await writeFile(
       openWikiEnvPath,
@@ -111,7 +115,7 @@ describe("loadOpenWikiEnv", () => {
 
     await loadOpenWikiEnv();
 
-    expect(process.env.OPENAI_BASE_URL).toBeUndefined();
+    expect(process.env.OPENAI_BASE_URL).toBe("https://gateway.example.com/v1");
     expect(process.env.OPENAI_ORG_ID).toBeUndefined();
     expect(process.env.OPENAI_PROJECT).toBeUndefined();
     expect(process.env[OPENAI_API_KEY_ENV_KEY]).toBe("sk-kept");
