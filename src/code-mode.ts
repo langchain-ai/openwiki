@@ -29,6 +29,20 @@ async function writeCodeModeWorkflow(
     "openwiki-update.yml",
   );
   await mkdir(path.dirname(workflowPath), { recursive: true });
+
+  // Only create the workflow if it doesn't already exist — respect any
+  // customizations the user has made (cron schedule, env vars, fork guards, etc.).
+  try {
+    await readFile(workflowPath, "utf8");
+    // File exists: leave it untouched so user edits survive.
+    return;
+  } catch (error) {
+    if (!isFileNotFoundError(error)) {
+      throw error;
+    }
+    // File not found: fall through to create it.
+  }
+
   await writeFile(workflowPath, createCodeModeWorkflow(cronExpression), "utf8");
 }
 
