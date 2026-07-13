@@ -1,6 +1,6 @@
 {
   "name": "openwiki",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase.",
   "license": "MIT",
   "type": "module",
