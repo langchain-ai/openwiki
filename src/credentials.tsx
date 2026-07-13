@@ -3805,11 +3805,8 @@ function OAuthAuthorizationLink({
       </Text>
       <Text color={copiedToClipboard ? "green" : "gray"}>
         {copiedToClipboard
-          ? "Full URL copied to clipboard. It is also shown below."
-          : "Copy the full raw URL below if the link is not clickable."}
-      </Text>
-      <Text color="gray" wrap="wrap">
-        {url}
+          ? "Full URL copied to clipboard. Use the link above if your terminal supports it."
+          : "Use the terminal link above. If it is not clickable, run this auth command in a plain terminal."}
       </Text>
     </Box>
   );
