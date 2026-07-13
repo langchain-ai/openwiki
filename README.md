@@ -10,6 +10,21 @@ OpenWiki is a CLI that writes and maintains agent wikis for codebases or purpose
 npm install -g openwiki
 ```
 
+On Windows, prefer installing OpenWiki with Node.js package managers such as
+`npm` or `pnpm`:
+
+```sh
+npm install -g openwiki
+# or
+pnpm add -g openwiki
+```
+
+`bun install -g openwiki` can fall back to compiling OpenWiki's `better-sqlite3`
+checkpointing dependency. Before using that path, install Visual Studio Build
+Tools with the Desktop development with C++ workload. Bun does not run lifecycle
+scripts from installed packages by default, so it cannot display a package-level
+warning before that native dependency build starts.
+
 ## Quick Start
 
 Initialize OpenWiki, configure your model and API key, then generate documentation
@@ -37,6 +52,7 @@ Then to ensure your documentation stays up-to-date, add the CI workflow for your
 
 - GitHub Actions: copy [openwiki-update.yml](./examples/openwiki-update.yml) into `.github/workflows/openwiki-update.yml`.
 - GitLab CI: copy [openwiki-update.gitlab-ci.yml](./examples/openwiki-update.gitlab-ci.yml) into `.gitlab-ci.yml` or include it from your existing GitLab pipeline.
+- Bitbucket Pipelines: copy [openwiki-update.bitbucket-pipelines.yml](./examples/openwiki-update.bitbucket-pipelines.yml) into `bitbucket-pipelines.yml`, then schedule the `openwiki-update` custom pipeline from Repository settings > Pipelines > Schedules.
 
 For repository documentation in GitHub Actions, use
 `openwiki code --update --print`. You do not need to run `--init` in CI:
@@ -173,7 +189,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Fireworks, Baseten, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.5`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 

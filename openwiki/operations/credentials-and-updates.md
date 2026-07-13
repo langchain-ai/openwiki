@@ -9,6 +9,15 @@ OpenWiki has four operational concerns that matter for both users and maintainer
 
 It also ships with GitHub Actions and GitLab CI workflow examples for scheduled updates.
 
+## Installation notes
+
+On Windows, prefer installing OpenWiki with Node.js package managers such as
+`npm` or `pnpm`. The Bun global-install path can fall back to compiling
+`better-sqlite3`, which requires Visual Studio Build Tools with the Desktop
+development with C++ workload. Bun does not run lifecycle scripts from installed
+packages by default, so OpenWiki cannot show an install-time warning before that
+native dependency build begins.
+
 ## Local credential storage
 
 `src/env.ts` manages a private environment file under the user's home directory:
@@ -22,6 +31,8 @@ The file stores provider configuration and API keys:
 - `OPENWIKI_MODEL_ID` — the default model ID
 - `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` — optional positive integer retry count for transient provider request failures; defaults to 3 when unset
 - Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`
+- ChatGPT OAuth tokens (for the `openai-chatgpt` provider): `OPENAI_CHATGPT_ACCESS_TOKEN`, `OPENAI_CHATGPT_REFRESH_TOKEN`, `OPENAI_CHATGPT_EXPIRES_AT`, `OPENAI_CHATGPT_ACCOUNT_ID`, `OPENAI_CHATGPT_EMAIL`, `OPENAI_CHATGPT_PLAN`
+- Connector OAuth credentials: `OPENWIKI_GMAIL_ACCESS_TOKEN`, `OPENWIKI_GMAIL_REFRESH_TOKEN`, `OPENWIKI_GOOGLE_CLIENT_ID`, `OPENWIKI_GOOGLE_CLIENT_SECRET`, `OPENWIKI_NOTION_MCP_ACCESS_TOKEN`, `OPENWIKI_NOTION_MCP_CLIENT_ID`, `OPENWIKI_NOTION_MCP_REFRESH_TOKEN`, `OPENWIKI_SLACK_USER_TOKEN`, `OPENWIKI_SLACK_CLIENT_ID`, `OPENWIKI_SLACK_CLIENT_SECRET`, `OPENWIKI_X_ACCESS_TOKEN`, `OPENWIKI_X_CLIENT_ID`, `OPENWIKI_X_CLIENT_SECRET`, `OPENWIKI_X_REFRESH_TOKEN`
 - Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API) and `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint)
 - Connector API keys: `TAVILY_API_KEY` for Web Search
 - Optional LangSmith settings: `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`
@@ -30,6 +41,8 @@ The file stores provider configuration and API keys:
   Slack-only HTTPS callback URL created by `openwiki ngrok start`.
 
 The loader merges those values into `process.env`, while preferring existing process-level values over file values. Deprecated keys (`OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT`) are skipped on load and removed on save.
+
+Values containing newlines or carriage returns are serialized as double-quoted strings with `\n`, `\r`, `\\`, and `\"` escaped by `formatEnvValue()`, and unescaped on load by `parseEnvValue()`. Carriage return escaping is important on Windows, where multi-line env values can contain bare `\r` characters that would otherwise be silently stripped during round-trip serialization.
 
 Slack OAuth can require an HTTPS redirect URL, so `openwiki ngrok start <url>`
 saves `OPENWIKI_HTTPS_OAUTH_REDIRECT_URI`. Other connector OAuth flows, such as
@@ -131,8 +144,8 @@ saved repeat `pmset` schedule and marks the saved wake window disabled.
 `resolveConfiguredProvider()` in `src/constants.ts` determines the active provider:
 
 1. If `OPENWIKI_PROVIDER` is set and valid, use it.
-2. Otherwise, use the first available provider API key in this order: OpenAI, OpenRouter, Anthropic, Baseten, then Fireworks.
-3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.5`).
+2. Otherwise, use the first available provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, then NVIDIA.
+3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.6-terra`).
 
 `needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var is valid and whether the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing or invalid provider value triggers the interactive flow.
 
@@ -148,7 +161,7 @@ The env layer also produces diagnostics for the CLI UI. Those diagnostics report
 - invalid model IDs,
 - invalid provider values.
 
-Diagnostics cover all six provider keys plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, `OPENWIKI_PROVIDER_RETRY_ATTEMPTS`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, retry attempts, and base URLs are shown in full).
+Diagnostics cover all provider keys (including `OPENAI_CHATGPT_ACCESS_TOKEN` and related ChatGPT OAuth tokens), plus `OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`, `OPENWIKI_PROVIDER_RETRY_ATTEMPTS`, the base URLs (`ANTHROPIC_BASE_URL`, `OPENAI_COMPATIBLE_BASE_URL`), connector credentials, and `LANGSMITH_API_KEY`. This makes startup problems easier to diagnose without exposing secret values (non-secret values such as the provider, model ID, retry attempts, and base URLs are shown in full).
 
 ## Update metadata
 
@@ -189,6 +202,17 @@ The repository also includes `examples/openwiki-update.gitlab-ci.yml` as a copya
 
 GitLab users should configure protected CI/CD variables for the model provider key, for example `OPENROUTER_API_KEY`, and `OPENWIKI_GITLAB_TOKEN`. The GitLab token needs permission to push a branch and create merge requests in the target project.
 
+The repository also includes `examples/openwiki-update.bitbucket-pipelines.yml` as a copyable Bitbucket Pipelines scheduled update job. It:
+
+- runs on a custom schedule or manual trigger,
+- installs OpenWiki globally in a Node.js 22 container,
+- runs `openwiki code --update --print`,
+- commits changes to a generated `openwiki/update-$BITBUCKET_BUILD_NUMBER` branch,
+- pushes that branch back to the Bitbucket repository, and
+- creates a pull request targeting the default branch through the Bitbucket API.
+
+Bitbucket users should configure repository variables for the model provider key (for example `OPENROUTER_API_KEY`) and `OPENWIKI_BITBUCKET_TOKEN`. The Bitbucket token needs write permission to push a branch and create pull requests in the target repository.
+
 ## Things to watch when changing operations
 
 - The `.env` file lives outside the repository, so changes to its format should be conservative.
@@ -205,7 +229,16 @@ GitLab users should configure protected CI/CD variables for the model provider k
 - `src/constants.ts`
 - `src/agent/utils.ts`
 - `src/agent/index.ts`
+- `src/agent/openai-chatgpt-oauth.ts`
+- `src/auth/oauth.ts`
+- `src/auth/providers.ts`
+- `src/auth/configure.ts`
+- `src/auth/tokens.ts`
+- `src/onboarding.ts`
+- `src/schedules.ts`
+- `src/code-mode.ts`
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
+- `examples/openwiki-update.bitbucket-pipelines.yml`
 - `README.md`
 - Git evidence: commits `ceded10`, `f89b05d`, `8278c36`, `0fa1430`
