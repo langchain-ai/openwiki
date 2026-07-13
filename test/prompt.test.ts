@@ -90,3 +90,20 @@ describe("OKF front matter guidance", () => {
     );
   });
 });
+
+describe("index finalization guidance", () => {
+  test("requires pending indexes to be finalized after all wiki edits", () => {
+    for (const outputMode of ["local-wiki", "repository"] as const) {
+      const prompt = createSystemPrompt("update", outputMode);
+
+      expect(prompt).toContain("openwiki_get_pending_indexes");
+      expect(prompt).toContain("openwiki_create_or_update_index");
+      expect(prompt).toContain(
+        "100% finished with every non-index wiki write and edit",
+      );
+      expect(prompt).toContain("process every returned path deepest-first");
+      expect(prompt).toContain("until it returns an empty list");
+      expect(prompt).toContain("Do not add `tags` to index.md files");
+    }
+  });
+});

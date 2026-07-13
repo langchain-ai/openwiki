@@ -18,7 +18,10 @@ import {
 import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir } from "../openwiki-home.js";
+import { createOrUpdateIndexTool } from "./create-or-update-index-tool.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
+import { createGetPendingIndexesTool } from "./get-pending-indexes-tool.js";
+import { createOpenWikiIndexStateMiddleware } from "./index-state.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -175,18 +178,24 @@ async function runOpenWikiAgentCore(
       ? `checkpointer=${formatUrlDebugValue(checkpointTarget.connString)}`
       : "checkpointer=memory",
   );
+  const backend = new OpenWikiLocalShellBackend({
+    docsOnly: command !== "chat",
+    maxOutputBytes: 100_000,
+    outputMode,
+    rootDir: cwd,
+    timeout: 120,
+    virtualMode: true,
+  });
   const agent = createDeepAgent({
     model,
-    tools: createOpenWikiConnectorTools(),
+    tools: [
+      ...createOpenWikiConnectorTools(),
+      createGetPendingIndexesTool(backend, outputMode),
+      createOrUpdateIndexTool(backend, outputMode),
+    ],
     checkpointer,
-    backend: new OpenWikiLocalShellBackend({
-      docsOnly: command !== "chat",
-      maxOutputBytes: 100_000,
-      outputMode,
-      rootDir: cwd,
-      timeout: 120,
-      virtualMode: true,
-    }),
+    backend,
+    middleware: [createOpenWikiIndexStateMiddleware()],
     systemPrompt: createSystemPrompt(command, outputMode),
   });
   emitDebug(options, "agent=created");
