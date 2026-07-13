@@ -1,7 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { execFile } from "node:child_process";
 import http from "node:http";
-import { AddressInfo } from "node:net";
 import { loadOpenWikiEnv, saveOpenWikiEnv } from "../env.js";
 import { getAuthProvider } from "./providers.js";
 import type {
@@ -408,12 +407,16 @@ async function createCallbackServer(provider: OAuthProviderConfig): Promise<{
     resolveCode = resolve;
     rejectCode = reject;
   });
+  let callbackBaseUrl: string | null = null;
 
   const server = http.createServer((request, response) => {
-    const requestUrl = new URL(
-      request.url ?? "/",
-      `http://${CALLBACK_HOST}:${(server.address() as AddressInfo).port}`,
-    );
+    if (callbackBaseUrl === null) {
+      response.writeHead(503, getCallbackResponseHeaders());
+      response.end("OpenWiki authorization callback server is not ready.");
+      return;
+    }
+
+    const requestUrl = new URL(request.url ?? "/", callbackBaseUrl);
     const code = requestUrl.searchParams.get("code");
     const state = requestUrl.searchParams.get("state");
     const error = requestUrl.searchParams.get("error");
@@ -448,7 +451,8 @@ async function createCallbackServer(provider: OAuthProviderConfig): Promise<{
   if (!address || typeof address === "string") {
     throw new Error("Could not start OAuth callback server.");
   }
-  const localRedirectUri = `http://${CALLBACK_HOST}:${address.port}/callback`;
+  callbackBaseUrl = `http://${CALLBACK_HOST}:${address.port}`;
+  const localRedirectUri = `${callbackBaseUrl}/callback`;
 
   return {
     close: () => closeCallbackServer(server),
