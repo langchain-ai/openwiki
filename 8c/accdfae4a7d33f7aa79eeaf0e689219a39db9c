@@ -1,0 +1,79 @@
+test/constants.test.ts
+  s_8d4a238c334fd1::t_5218540f127aab 4-7,18
+src/providers/model-factory.ts
+  s_8d4a238c334fd1::t_8a55eaa2d9db2c 12-15,23
+  s_8d4a238c334fd1::t_d9436364204def 11
+src/startup.ts
+  s_8d4a238c334fd1::t_b29555467b7f7d 6
+src/ui/views.tsx
+  s_8d4a238c334fd1::t_373ed369ea7b9b 4-7
+src/commands.ts
+  s_8d4a238c334fd1::t_b29555467b7f7d 1
+src/env.ts
+  s_8d4a238c334fd1::t_9bca90417398e7 43-47
+src/ui/chat-input.tsx
+  s_8d4a238c334fd1::t_b29555467b7f7d 14
+src/providers/config.ts
+  s_8d4a238c334fd1::t_aeccbf08aa4be7 326-329
+  s_8d4a238c334fd1::t_0cf5504335f392 417-419
+  s_8d4a238c334fd1::t_2f509ea0498e0b 275-277
+  s_8d4a238c334fd1::t_4c2e5894641d9e 99-101
+  s_8d4a238c334fd1::t_5a4c2316517a57 44-46,48-50,52-55
+  s_8d4a238c334fd1::t_edc2f5caefe583 39-41
+  s_8d4a238c334fd1::t_36caa1e552c593 72-75
+  s_8d4a238c334fd1::t_2969c9f3d575b2 1-18,22-38,42-43,47,51,56,58-71,76-96,98,102-112,116-203,207-209,213-216,220-223,227-230,234-237,241-246,250-274,278-283,287-290,294-309,313-318,322-325,330-341,345-348,371-373,383-384,389-416,420-423,428-437
+  s_8d4a238c334fd1::t_62b7fca9349057 57
+  s_8d4a238c334fd1::t_a3e2eebda86f80 113-115
+  s_8d4a238c334fd1::t_1341fd17f784ca 204-206
+  s_8d4a238c334fd1::t_6e0be81954517e 217-219
+  s_8d4a238c334fd1::t_6eda92ff938cbb 342-344
+  s_8d4a238c334fd1::t_c941cab455b807 350-366,368-369,374-382
+  s_8d4a238c334fd1::t_b63deda42faeab 385-388
+  s_8d4a238c334fd1::t_21a8a0eb69131c 284-286
+  s_8d4a238c334fd1::t_e776786f579cef 310-312
+  s_8d4a238c334fd1::t_2d68caabfe248c 349,367,370
+  s_8d4a238c334fd1::t_2996383b75c4d6 319-321
+  s_8d4a238c334fd1::t_21c727f479872f 424-427
+  s_8d4a238c334fd1::t_256fe1e2606fb0 210-212
+  s_8d4a238c334fd1::t_dc15550f87ac2d 291-293
+  s_8d4a238c334fd1::t_b39ffa8a88b834 97
+  s_8d4a238c334fd1::t_3b5775c8d7b154 224-226
+  s_8d4a238c334fd1::t_00a6a618273220 238-240
+  s_8d4a238c334fd1::t_ff25f56ca3a2e5 247-249
+  s_8d4a238c334fd1::t_86c069d411d1dd 19-21
+  s_8d4a238c334fd1::t_c3646c0b561935 231-233
+src/ui/header.tsx
+  s_8d4a238c334fd1::t_373ed369ea7b9b 3
+  s_8d4a238c334fd1::t_2df0be523cd4d2 8
+src/ui/app.tsx
+  s_8d4a238c334fd1::t_36245f3883a8bb 14-16,23
+  s_8d4a238c334fd1::t_d0b6fc6a4f8631 13
+src/agent/index.ts
+  s_8d4a238c334fd1::t_47c927bfb4a992 43-47,53
+src/credentials.tsx
+  s_8d4a238c334fd1::t_8f40d9c7196972 19-29,35
+test/openai-chatgpt-provider.test.ts
+  s_8d4a238c334fd1::t_63c1ead07dd352 3-7,16
+  s_8d4a238c334fd1::t_122c667224e399 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "8caccdfae4a7d33f7aa79eeaf0e689219a39db9c",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
