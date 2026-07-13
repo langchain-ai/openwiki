@@ -52,6 +52,7 @@ Then to ensure your documentation stays up-to-date, add the CI workflow for your
 
 - GitHub Actions: copy [openwiki-update.yml](./examples/openwiki-update.yml) into `.github/workflows/openwiki-update.yml`.
 - GitLab CI: copy [openwiki-update.gitlab-ci.yml](./examples/openwiki-update.gitlab-ci.yml) into `.gitlab-ci.yml` or include it from your existing GitLab pipeline.
+- Bitbucket Pipelines: copy [openwiki-update.bitbucket-pipelines.yml](./examples/openwiki-update.bitbucket-pipelines.yml) into `bitbucket-pipelines.yml`, then schedule the `openwiki-update` custom pipeline from Repository settings > Pipelines > Schedules.
 
 For repository documentation in GitHub Actions, use
 `openwiki code --update --print`. You do not need to run `--init` in CI:
