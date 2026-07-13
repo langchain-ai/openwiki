@@ -1,4 +1,5 @@
 export type ConnectorId =
+  | "clickup"
   | "git-repo"
   | "google"
   | "hackernews"

@@ -19,6 +19,7 @@ import {
   normalizeModelId,
   OPENAI_CHATGPT_EMAIL_ENV_KEY,
   OPENAI_CHATGPT_PLAN_ENV_KEY,
+  OPENWIKI_CLICKUP_API_TOKEN_ENV_KEY,
   OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY,
   OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -184,6 +185,7 @@ const ONBOARDING_TEMPLATES = [
     id: "personal",
     name: "Personal",
     sourceIds: [
+      "clickup",
       "git-repo",
       "google",
       "notion",
@@ -192,6 +194,7 @@ const ONBOARDING_TEMPLATES = [
       "x",
     ],
     suggestedSources: [
+      "ClickUp",
       "Gmail",
       "Notion",
       "Web Search (Tavily)",
@@ -311,6 +314,27 @@ const SOURCE_OPTIONS = [
       "Describe the topics, keywords, users, or story types OpenWiki should watch on the next screen.",
     ],
     secretInputs: [],
+  },
+  {
+    displayName: "ClickUp",
+    examples: [
+      "Track active tasks, subtasks, and project status across workspaces.",
+      "Capture task comments, decisions, and due dates for project context.",
+    ],
+    id: "clickup",
+    instructions: [
+      "Create a ClickUp personal API token in your ClickUp settings.",
+      "Go to Settings > Apps > Generate API Token.",
+      "Paste the API token below.",
+      "After connecting, you can configure workspace/space/list scoping in the connector config.",
+    ],
+    secretInputs: [
+      {
+        envKey: OPENWIKI_CLICKUP_API_TOKEN_ENV_KEY,
+        label: "ClickUp API token",
+        secret: true,
+      },
+    ],
   },
   {
     authProvider: "x",
