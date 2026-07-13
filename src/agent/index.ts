@@ -6,7 +6,8 @@ import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import { createDeepAgent } from "deepagents";
+import { createDeepAgent, registerHarnessProfile } from "deepagents";
+import { createMiddleware } from "langchain";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import { ensureWriteConnectorSkill } from "../connectors/write-connector-skill.js";
 import {
@@ -46,6 +47,7 @@ import {
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
+  OPENROUTER_FALLBACK_MODEL_IDS,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
@@ -163,6 +165,13 @@ async function runOpenWikiAgentCore(
   emitDebug(options, "openwiki.snapshot=created");
   const model = createModel(provider, modelId, providerRetryAttempts);
   emitDebug(options, `model.provider=${provider}`);
+  configureDeepAgentHarness(provider, modelId);
+  if (provider === "openrouter") {
+    emitDebug(
+      options,
+      `openrouter.route=fallback models=${JSON.stringify(createModelRoute(provider, modelId))}`,
+    );
+  }
   emitDebug(options, "model=initialized");
   const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
   emitDebug(options, `thread=${threadId}`);
@@ -177,6 +186,7 @@ async function runOpenWikiAgentCore(
   const agent = createDeepAgent({
     model,
     tools: createOpenWikiConnectorTools(),
+    middleware: createOpenWikiMiddleware(),
     checkpointer,
     backend: new OpenWikiLocalShellBackend({
       docsOnly: command !== "chat",
@@ -471,13 +481,17 @@ function createModel(
   }
 
   if (provider === "openrouter") {
-    return new ChatOpenRouter({
+    const model = new ChatOpenRouter({
       apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
+      models: createModelRoute(provider, modelId),
+      route: "fallback",
       siteName: "OpenWiki",
       ...retryOptions,
     });
+    applyOpenRouterMaxInputTokens(model);
+    return model;
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
@@ -493,6 +507,127 @@ function createModel(
     useResponsesApi: provider === "openai",
     ...retryOptions,
   });
+}
+
+export function isModelFallbackDisabled(): boolean {
+  return process.env.OPENWIKI_DISABLE_MODEL_FALLBACK === "1";
+}
+
+/**
+ * The OpenRouter `models` list tried in order via `route: "fallback"`. Opt out
+ * with `OPENWIKI_DISABLE_MODEL_FALLBACK=1` for deterministic single-model runs.
+ */
+export function createModelRoute(
+  provider: OpenWikiProvider,
+  modelId: string,
+): string[] {
+  if (provider !== "openrouter" || isModelFallbackDisabled()) {
+    return [modelId];
+  }
+
+  return Array.from(new Set([modelId, ...OPENROUTER_FALLBACK_MODEL_IDS]));
+}
+
+/**
+ * Parses `OPENWIKI_OPENROUTER_MAX_INPUT_TOKENS`. Returns `undefined` when
+ * unset or non-numeric, so the opt-in cap is a no-op unless a valid value is
+ * configured. Pure so the parsing edge cases are testable without a real
+ * model instance.
+ */
+export function resolveOpenRouterMaxInputTokens(
+  raw: string | undefined,
+): number | undefined {
+  if (!raw) {
+    return undefined;
+  }
+
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/**
+ * Sets a `maxInputTokens` profile on the OpenRouter model instance (opt-in via
+ * `OPENWIKI_OPENROUTER_MAX_INPUT_TOKENS`) so DeepAgents' summarization
+ * middleware triggers early enough to stay under OpenRouter's payload limit
+ * on constrained/budget models, instead of failing with an HTTP 500 on large
+ * transcripts. `defineProperty` avoids crashing on a frozen/non-extensible
+ * model instance.
+ */
+function applyOpenRouterMaxInputTokens(model: ChatOpenRouter): void {
+  const maxInputTokens = resolveOpenRouterMaxInputTokens(
+    process.env.OPENWIKI_OPENROUTER_MAX_INPUT_TOKENS,
+  );
+  if (maxInputTokens === undefined) {
+    return;
+  }
+
+  Object.defineProperty(model, "profile", {
+    value: { maxInputTokens },
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+}
+
+// The subagent delegation tool. Excluded from the model both via the harness
+// profile (below) and via runtime middleware so the same name is enforced in
+// one place.
+const SUBAGENT_TASK_TOOL_NAME = "task";
+
+/**
+ * The harness profile applied when subagents are disabled: it drops the task
+ * tool and turns off the general-purpose subagent. Pure and exported so the
+ * disabled shape can be asserted in tests without touching the global harness
+ * registry.
+ */
+export function buildSubagentDisabledProfile() {
+  return {
+    excludedTools: [SUBAGENT_TASK_TOOL_NAME],
+    generalPurposeSubagent: {
+      enabled: false,
+    },
+  };
+}
+
+function configureDeepAgentHarness(
+  provider: OpenWikiProvider,
+  modelId: string,
+): void {
+  if (!isSubagentDisabled()) {
+    return;
+  }
+
+  const profile = buildSubagentDisabledProfile();
+
+  registerHarnessProfile(provider, profile);
+
+  if (!modelId.includes(":")) {
+    registerHarnessProfile(`${provider}:${modelId}`, profile);
+  }
+}
+
+export function isSubagentDisabled(): boolean {
+  return process.env.OPENWIKI_DISABLE_SUBAGENTS === "1";
+}
+
+export function createOpenWikiMiddleware() {
+  if (!isSubagentDisabled()) {
+    return [];
+  }
+
+  return [
+    createMiddleware({
+      name: "OpenWikiToolExclusionMiddleware",
+      wrapModelCall: async (request, handler) => {
+        return handler({
+          ...request,
+          tools: request.tools?.filter(
+            (tool) => tool.name !== SUBAGENT_TASK_TOOL_NAME,
+          ),
+        });
+      },
+    }),
+  ];
 }
 
 const CHATGPT_LOGIN_INCOMPLETE_MESSAGE =

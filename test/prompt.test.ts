@@ -1,6 +1,22 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { createSystemPrompt, createUserPrompt } from "../src/agent/prompt.ts";
 import type { RunContext } from "../src/agent/types.ts";
+
+const SUBAGENT_ENV_KEY = "OPENWIKI_DISABLE_SUBAGENTS";
+let previousSubagentValue: string | undefined;
+
+beforeEach(() => {
+  previousSubagentValue = process.env[SUBAGENT_ENV_KEY];
+  delete process.env[SUBAGENT_ENV_KEY];
+});
+
+afterEach(() => {
+  if (previousSubagentValue === undefined) {
+    delete process.env[SUBAGENT_ENV_KEY];
+  } else {
+    process.env[SUBAGENT_ENV_KEY] = previousSubagentValue;
+  }
+});
 
 describe("createUserPrompt", () => {
   test("includes the wiki brief for repository init runs", () => {
@@ -51,5 +67,33 @@ describe("documentation coverage guidance", () => {
         "Before finishing, verify that every identified area is either documented or backlogged",
       );
     }
+  });
+});
+
+describe("run discipline", () => {
+  test("excludes openwiki.* variant directories from discovery", () => {
+    expect(createSystemPrompt("init", "repository")).toContain(
+      "Do not read, write, or search any openwiki.* variant directories",
+    );
+  });
+});
+
+describe("subagent discipline", () => {
+  test("permits subagent delegation by default", () => {
+    const prompt = createSystemPrompt("init", "repository");
+    expect(prompt).toContain(
+      "You may use the task tool to parallelize read-only research",
+    );
+  });
+
+  test("OPENWIKI_DISABLE_SUBAGENTS=1 tells the agent not to delegate", () => {
+    process.env[SUBAGENT_ENV_KEY] = "1";
+    const prompt = createSystemPrompt("init", "repository");
+    expect(prompt).toContain(
+      "Do not use the task tool or delegate research to subagents",
+    );
+    expect(prompt).not.toContain(
+      "You may use the task tool to parallelize read-only research",
+    );
   });
 });

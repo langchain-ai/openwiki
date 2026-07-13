@@ -39,6 +39,10 @@ The file stores provider configuration and API keys:
 - Optional OAuth callback settings: `OPENWIKI_OAUTH_CALLBACK_PORT` controls the
   local callback port, and `OPENWIKI_HTTPS_OAUTH_REDIRECT_URI` stores the
   Slack-only HTTPS callback URL created by `openwiki ngrok start`.
+- Run-hardening options (all opt-in; unset, behavior is unchanged):
+  - `OPENWIKI_OPENROUTER_MAX_INPUT_TOKENS` — sets a `maxInputTokens` profile on OpenRouter models so DeepAgents' summarization middleware triggers early enough to stay under OpenRouter's payload limit on constrained/budget models, instead of failing with an HTTP 500 on large transcripts. Suggested value for constrained models: `15000`.
+  - `OPENWIKI_DISABLE_MODEL_FALLBACK` — set to `1` to disable OpenRouter's `route: "fallback"` model list for deterministic single-model runs.
+  - `OPENWIKI_DISABLE_SUBAGENTS` — set to `1` to disable subagent task delegation entirely, for runs where transcript growth from subagent fan-out is the binding constraint.
 
 The loader merges those values into `process.env`, while preferring existing process-level values over file values. Deprecated keys (`OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT`) are skipped on load and removed on save.
 
