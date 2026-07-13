@@ -19,16 +19,23 @@ import {
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
-  getProviderModelOptions,
   isValidBaseUrl,
-  isValidModelId,
-  normalizeModelId,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
   providerUsesOAuth,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./providers/config.js";
+import {
+  getModelSelectionIndex,
+  getModelSelectionOptions,
+  getModelSetupDetail,
+  getProviderArticle,
+  getProviderSelectionIndex,
+  getProviderSetupDetail,
+  getSelectedModelId,
+  shouldStartWithCustomModelInput,
+} from "./providers/model-selection.js";
 import {
   type ChatGptLoginHandle,
   type CodexTokens,
@@ -135,16 +142,6 @@ type PromptInputKey = {
   tab?: boolean;
   upArrow?: boolean;
 };
-
-type ModelSelectionOption =
-  | {
-      id: string;
-      kind: "preset";
-      label: string;
-    }
-  | {
-      kind: "custom";
-    };
 
 type OnboardingMode = {
   description: string;
@@ -3147,86 +3144,6 @@ function isScheduleStep(step: PromptStep | null): boolean {
   return Boolean(step?.startsWith("global-"));
 }
 
-function getProviderSetupDetail(provider: OpenWikiProvider): string {
-  if (hasValidConfiguredProvider()) {
-    return getProviderLabel(provider);
-  }
-
-  return `default ${getProviderLabel(DEFAULT_PROVIDER)}`;
-}
-
-function getModelSetupDetail(
-  modelIdOverride: string | null,
-  provider: OpenWikiProvider,
-): string {
-  if (modelIdOverride) {
-    return `using ${modelIdOverride} for this run`;
-  }
-
-  if (process.env[OPENWIKI_MODEL_ID_ENV_KEY]) {
-    return process.env[OPENWIKI_MODEL_ID_ENV_KEY] ?? "";
-  }
-
-  return `default ${getDefaultModelId(provider)}`;
-}
-
-function getModelSelectionOptions(
-  provider: OpenWikiProvider,
-): ModelSelectionOption[] {
-  return [
-    ...getProviderModelOptions(provider).map((model) => ({
-      id: model.id,
-      kind: "preset" as const,
-      label: model.label,
-    })),
-    { kind: "custom" },
-  ];
-}
-
-function shouldStartWithCustomModelInput(provider: OpenWikiProvider): boolean {
-  return getProviderModelOptions(provider).length === 0;
-}
-
-function getSelectedModelId(
-  provider: OpenWikiProvider,
-  selectedIndex: number,
-  input: string,
-  isCustomInput: boolean,
-): string | null {
-  if (!isCustomInput) {
-    const selectedOption = getModelSelectionOptions(provider)[selectedIndex];
-
-    if (!selectedOption) {
-      return null;
-    }
-
-    return selectedOption.kind === "custom" ? "custom" : selectedOption.id;
-  }
-
-  const normalizedModelId = normalizeModelId(input);
-
-  return isValidModelId(normalizedModelId) ? normalizedModelId : null;
-}
-
-function getProviderSelectionIndex(provider: OpenWikiProvider): number {
-  const selectedIndex = SELECTABLE_OPENWIKI_PROVIDERS.findIndex(
-    (providerOption) => providerOption === provider,
-  );
-
-  return selectedIndex === -1 ? 0 : selectedIndex;
-}
-
-function getModelSelectionIndex(
-  provider: OpenWikiProvider,
-  selectedModelId: string,
-): number {
-  const selectedIndex = getModelSelectionOptions(provider).findIndex(
-    (option) => option.kind === "preset" && option.id === selectedModelId,
-  );
-
-  return selectedIndex === -1 ? 0 : selectedIndex;
-}
-
 function moveSelectionIndex(
   currentIndex: number,
   offset: number,
@@ -3247,10 +3164,6 @@ function getInputDisplayWidth(stdoutColumns: number | undefined): number {
   }
 
   return Math.max(24, Math.min(96, stdoutColumns - 16));
-}
-
-function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
 }
 
 function getTemplateGoal(templateId: string | undefined): string {
