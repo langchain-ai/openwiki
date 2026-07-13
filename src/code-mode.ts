@@ -96,6 +96,7 @@ jobs:
       - name: Run OpenWiki
         run: openwiki code --update --print
         env:
+          OPENWIKI_PROVIDER: openrouter
           OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
           OPENWIKI_MODEL_ID: z-ai/glm-5.2
           LANGSMITH_API_KEY: \${{ secrets.LANGSMITH_API_KEY }}

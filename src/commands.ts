@@ -325,7 +325,7 @@ export function parseCommand(argv: string[]): CliCommand {
     return parseRunCommand(argv.slice(1), argv[0], "positional");
   }
 
-  return parseRunCommand(argv, "personal", "default");
+  return parseRunCommand(argv, "code", "default");
 }
 
 function parseRunCommand(
@@ -503,13 +503,8 @@ function parseRunCommand(
     userMessageParts.length > 0 ? userMessageParts.join(" ") : null;
   const shouldStart = command !== "chat" || userMessage !== null;
 
-  if (command === "init" && modeSource === "default") {
-    return {
-      kind: "error",
-      exitCode: 1,
-      message:
-        "openwiki --init requires a mode.\n\nRun one of:\n  openwiki personal --init  Build your local personal brain wiki in ~/.openwiki/wiki.\n  openwiki code --init   Build repository documentation in ./openwiki.",
-    };
+  if (command !== "chat" && modeSource === "default") {
+    mode = "code";
   }
 
   if (print && !shouldStart) {
@@ -587,6 +582,7 @@ export const helpContent: HelpContent = {
   description:
     "Run an agent that generates and maintains a project or local knowledge wiki.",
   usage: [
+    "openwiki [--init|--update] [message]",
     "openwiki code [--init|--update] [message]",
     "openwiki personal [--init|--update] [message]",
     "openwiki --mode <personal|code> [--init|--update] [message]",
@@ -616,7 +612,8 @@ export const helpContent: HelpContent = {
     },
     {
       label: "openwiki",
-      description: "Open the interactive OpenWiki personal brain chat.",
+      description:
+        "Open the interactive OpenWiki code chat for the current repository.",
     },
     {
       label: "openwiki auth <provider>",
@@ -666,12 +663,12 @@ export const helpContent: HelpContent = {
     {
       label: "--init",
       description:
-        "Generate initial OpenWiki documentation for a selected mode. Use openwiki personal --init or openwiki code --init.",
+        "Generate initial OpenWiki documentation. Defaults to code mode; use personal to initialize the local personal brain.",
     },
     {
       label: "--update",
       description:
-        "Update existing OpenWiki documentation and ingest configured connectors when relevant.",
+        "Update existing OpenWiki documentation. Defaults to code mode; use personal to update the local personal brain.",
     },
     {
       label: "--mode <personal|code>",
@@ -695,6 +692,7 @@ export const helpContent: HelpContent = {
   ],
   examples: [
     "openwiki",
+    "openwiki --init",
     "openwiki personal --init",
     "openwiki code --init",
     "openwiki --update",
@@ -703,7 +701,7 @@ export const helpContent: HelpContent = {
     'openwiki -p "Summarize what OpenWiki can do"',
     "openwiki --modelId gpt-5.5",
     'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
-    'openwiki --update "Refresh the wiki from configured connectors"',
+    'openwiki personal --update "Refresh the wiki from configured connectors"',
     "openwiki ingest all",
     "openwiki ingest web-search",
     "openwiki ingest web-search-2",

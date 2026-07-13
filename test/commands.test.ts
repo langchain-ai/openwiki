@@ -37,6 +37,8 @@ describe("parseCommand — chat default", () => {
     expect(result).toMatchObject({
       kind: "run",
       command: "chat",
+      mode: "code",
+      modeSource: "default",
       shouldStart: false,
       userMessage: null,
       print: false,
@@ -60,6 +62,13 @@ describe("parseCommand — chat default", () => {
       modeSource: "positional",
       shouldStart: false,
     });
+    expect(parseCommand(["--mode", "personal"])).toMatchObject({
+      kind: "run",
+      command: "chat",
+      mode: "personal",
+      modeSource: "option",
+      shouldStart: false,
+    });
   });
 
   test("a positional message becomes the user message and starts", () => {
@@ -68,6 +77,8 @@ describe("parseCommand — chat default", () => {
     expect(result).toMatchObject({
       kind: "run",
       command: "chat",
+      mode: "code",
+      modeSource: "default",
       userMessage: "Document the API",
       shouldStart: true,
     });
@@ -141,20 +152,38 @@ describe("parseCommand — init/update", () => {
     });
   });
 
-  test("bare --init requires an explicit mode", () => {
-    const result = parseCommand(["--init"]);
-
-    expect(result.kind).toBe("error");
-    if (result.kind === "error") {
-      expect(result.message).toMatch(/requires a mode/u);
-    }
+  test("bare --init defaults to code mode", () => {
+    expect(parseCommand(["--init"])).toMatchObject({
+      kind: "run",
+      command: "init",
+      mode: "code",
+      modeSource: "default",
+      shouldStart: true,
+    });
   });
 
-  test("--update selects the update command and starts", () => {
+  test("bare --update defaults to code mode", () => {
     expect(parseCommand(["--update"])).toMatchObject({
       kind: "run",
       command: "update",
+      mode: "code",
+      modeSource: "default",
       shouldStart: true,
+    });
+  });
+
+  test("explicit personal mode overrides the one-shot default", () => {
+    expect(parseCommand(["personal", "--init"])).toMatchObject({
+      kind: "run",
+      command: "init",
+      mode: "personal",
+      modeSource: "positional",
+    });
+    expect(parseCommand(["--update", "--mode", "personal"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      mode: "personal",
+      modeSource: "option",
     });
   });
 
