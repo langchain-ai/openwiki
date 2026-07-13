@@ -144,7 +144,7 @@ saved repeat `pmset` schedule and marks the saved wake window disabled.
 `resolveConfiguredProvider()` in `src/constants.ts` determines the active provider:
 
 1. If `OPENWIKI_PROVIDER` is set and valid, use it.
-2. Otherwise, use the first available provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, then Fireworks.
+2. Otherwise, use the first available provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, then NVIDIA.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.6-terra`).
 
 `needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var is valid and whether the provider's API key, a model ID (unless overridden), and a LangSmith key are all present. Any missing or invalid provider value triggers the interactive flow.
@@ -202,6 +202,17 @@ The repository also includes `examples/openwiki-update.gitlab-ci.yml` as a copya
 
 GitLab users should configure protected CI/CD variables for the model provider key, for example `OPENROUTER_API_KEY`, and `OPENWIKI_GITLAB_TOKEN`. The GitLab token needs permission to push a branch and create merge requests in the target project.
 
+The repository also includes `examples/openwiki-update.bitbucket-pipelines.yml` as a copyable Bitbucket Pipelines scheduled update job. It:
+
+- runs on a custom schedule or manual trigger,
+- installs OpenWiki globally in a Node.js 22 container,
+- runs `openwiki code --update --print`,
+- commits changes to a generated `openwiki/update-$BITBUCKET_BUILD_NUMBER` branch,
+- pushes that branch back to the Bitbucket repository, and
+- creates a pull request targeting the default branch through the Bitbucket API.
+
+Bitbucket users should configure repository variables for the model provider key (for example `OPENROUTER_API_KEY`) and `OPENWIKI_BITBUCKET_TOKEN`. The Bitbucket token needs write permission to push a branch and create pull requests in the target repository.
+
 ## Things to watch when changing operations
 
 - The `.env` file lives outside the repository, so changes to its format should be conservative.
@@ -228,5 +239,6 @@ GitLab users should configure protected CI/CD variables for the model provider k
 - `src/code-mode.ts`
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
+- `examples/openwiki-update.bitbucket-pipelines.yml`
 - `README.md`
 - Git evidence: commits `ceded10`, `f89b05d`, `8278c36`, `0fa1430`
