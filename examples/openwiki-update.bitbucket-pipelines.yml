@@ -14,13 +14,13 @@ pipelines:
             - git config user.email "${BITBUCKET_USER_EMAIL:-openwiki@example.com}"
             - openwiki code --update --print
             - |
-              if git diff --quiet -- openwiki; then
+              if git diff --quiet -- openwiki AGENTS.md CLAUDE.md .github/workflows/openwiki-update.yml; then
                 echo "OpenWiki is already up to date."
                 exit 0
               fi
             - export OPENWIKI_BRANCH="openwiki/update-${BITBUCKET_BUILD_NUMBER}"
             - git checkout -b "$OPENWIKI_BRANCH"
-            - git add openwiki
+            - git add openwiki AGENTS.md CLAUDE.md .github/workflows/openwiki-update.yml
             - git commit -m "docs: update OpenWiki"
             - git push "https://x-token-auth:${OPENWIKI_BITBUCKET_TOKEN}@bitbucket.org/${BITBUCKET_WORKSPACE}/${BITBUCKET_REPO_SLUG}.git" "$OPENWIKI_BRANCH"
             - |
