@@ -375,7 +375,7 @@ export function isValidModelId(value: string): boolean {
   return (
     modelId.length > 0 &&
     modelId.length <= 120 &&
-    /^[A-Za-z0-9][A-Za-z0-9._:/+-]*$/u.test(modelId) &&
+    /^[@A-Za-z0-9][A-Za-z0-9._:/+-]*$/u.test(modelId) &&
     !modelId.includes("://")
   );
 }
