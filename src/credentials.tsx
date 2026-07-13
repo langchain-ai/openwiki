@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { existsSync } from "node:fs";
+import { spawn } from "node:child_process";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { homedir } from "node:os";
 import path from "node:path";
 import { Box, Text, useInput, useStdout } from "ink";
@@ -15,6 +17,8 @@ import {
   isValidModelId,
   normalizeProvider,
   normalizeModelId,
+  OPENAI_CHATGPT_EMAIL_ENV_KEY,
+  OPENAI_CHATGPT_PLAN_ENV_KEY,
   OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY,
   OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -23,9 +27,19 @@ import {
   OPENWIKI_X_CLIENT_ID_ENV_KEY,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
+  providerUsesOAuth,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
+import {
+  type ChatGptLoginHandle,
+  type CodexTokens,
+  codexTokensToEnv,
+  formatChatGptAccount,
+  isChatGptTokenExpired,
+  loginWithChatGPT,
+  readCodexTokensFromEnv,
+} from "./agent/openai-chatgpt-oauth.js";
 import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
 import type { ConnectorId } from "./connectors/types.js";
@@ -35,8 +49,11 @@ import {
   createEmptyOnboardingConfig,
   isOpenWikiOnboardingCompleteSync,
   isOnboardingComplete,
+  isRepositoryCodeOnboardingCompleteSync,
   openWikiOnboardingPath,
   readOpenWikiOnboardingConfig,
+  readRepositoryWikiInstructions,
+  saveRepositoryWikiInstructions,
   saveOpenWikiOnboardingConfig,
   type OpenWikiOnboardingConfig,
 } from "./onboarding.js";
@@ -52,6 +69,7 @@ export type InitSetupResult = {
   modelId: string | null;
   onboardingCompleted: boolean;
   provider: OpenWikiProvider | null;
+  repoRoot?: string;
   runIngestionNow: boolean;
   savedApiKey: boolean;
   savedBaseUrl: boolean;
@@ -72,9 +90,12 @@ type InitSetupProps = {
 type PromptStep =
   | "api-key"
   | "base-url"
+  | "code-repo-confirm"
+  | "code-repo-path"
   | "final"
   | "langsmith"
   | "model"
+  | "oauth-login"
   | "provider"
   | "run-mode"
   | "source-auth"
@@ -155,7 +176,7 @@ const ONBOARDING_TEMPLATES = [
     sourceIds: ["git-repo"],
     suggestedSources: ["Local Git repository"],
     suggestedGoal:
-      "A code wiki for this local repository. Prioritize a concise quickstart, architecture overview, source map, key workflows, domain concepts, operations/runbook notes, testing guidance, and integration points. Keep pages grounded in the repository structure and recent code changes. Prefer practical navigation for engineers over generic summaries.",
+      "A code wiki for this local repository. Prioritize a concise quickstart, architecture overview, source map, key workflows, domain concepts, operations/runbook notes, testing guidance, and integration points. Inspect git history to understand reasoning behind code changes and the progression of the repository. Keep pages grounded in the repository structure and recent code changes. Prefer practical navigation for engineers over generic summaries.",
   },
   {
     description:
@@ -327,30 +348,52 @@ const SOURCE_CONTINUE_OPTIONS = [
   "Go back to connections",
   "Continue without all sources",
 ] as const;
-const FINAL_OPTIONS = [
-  "Run ingestion now",
-  "Wait until scheduled time",
-] as const;
+const FINAL_OPTIONS = ["Run ingestion now", "Run later"] as const;
+const CODE_REPO_OPTIONS = ["Confirm and continue", "Edit path"] as const;
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
   mode: OpenWikiRunMode = "personal",
 ): boolean {
   const provider = resolveConfiguredProvider();
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
 
   const needsCredentials =
     !hasValidConfiguredProvider() ||
-    !process.env[apiKeyEnvKey] ||
+    needsCredentialStep(provider) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined;
 
-  return (
-    needsCredentials ||
-    (mode === "personal" && !isOpenWikiOnboardingCompleteSync())
-  );
+  if (needsCredentials) {
+    return true;
+  }
+
+  return mode === "code"
+    ? !isRepositoryCodeOnboardingCompleteSync(getDefaultCodeRepoRootPath())
+    : !isOpenWikiOnboardingCompleteSync();
+}
+
+/**
+ * Whether the provider still needs its primary credential collected. For
+ * `oauth` providers this is a valid, non-expired stored token; for everyone
+ * else it is a pasted API key.
+ */
+function needsCredentialStep(provider: OpenWikiProvider): boolean {
+  return providerUsesOAuth(provider)
+    ? !hasValidStoredToken()
+    : !process.env[getProviderApiKeyEnvKey(provider)];
+}
+
+/** The step that collects the provider's primary credential. */
+function credentialStep(provider: OpenWikiProvider): PromptStep {
+  return providerUsesOAuth(provider) ? "oauth-login" : "api-key";
+}
+
+function hasValidStoredToken(env: NodeJS.ProcessEnv = process.env): boolean {
+  const tokens = readCodexTokensFromEnv(env);
+
+  return tokens !== null && !isChatGptTokenExpired(tokens.expiresAtMs);
 }
 
 function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
@@ -365,6 +408,68 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
   const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
 
   return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
+}
+
+function isCredentialConfigured(provider: OpenWikiProvider): boolean {
+  return providerUsesOAuth(provider)
+    ? hasValidStoredToken()
+    : Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
+}
+
+function getCredentialSetupDetail(
+  provider: OpenWikiProvider,
+  tokens: CodexTokens | null = null,
+): string {
+  if (providerUsesOAuth(provider)) {
+    if (!isCredentialConfigured(provider) && !tokens) {
+      return "sign in with your ChatGPT account";
+    }
+
+    const account = formatChatGptAccount(
+      tokens?.email ?? process.env[OPENAI_CHATGPT_EMAIL_ENV_KEY] ?? null,
+      tokens?.planType ?? process.env[OPENAI_CHATGPT_PLAN_ENV_KEY] ?? null,
+    );
+
+    return account ? `signed in as ${account}` : "signed in with ChatGPT";
+  }
+
+  return isCredentialConfigured(provider)
+    ? "available from environment"
+    : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`;
+}
+
+/**
+ * Copies text to the terminal's clipboard using the OSC 52 escape sequence.
+ * This targets the user's local terminal emulator even when OpenWiki runs over
+ * SSH, unlike shelling out to a host clipboard utility.
+ */
+function copyToClipboard(text: string): void {
+  const encoded = Buffer.from(text, "utf8").toString("base64");
+
+  process.stdout.write(`\u001b]52;c;${encoded}\u0007`);
+}
+
+function openLoginUrl(url: string): void {
+  try {
+    const child =
+      process.platform === "win32"
+        ? spawn("cmd", ["/c", "start", '""', `"${url}"`], {
+            detached: true,
+            stdio: "ignore",
+            windowsVerbatimArguments: true,
+          })
+        : spawn(process.platform === "darwin" ? "open" : "xdg-open", [url], {
+            detached: true,
+            stdio: "ignore",
+          });
+
+    child.on("error", () => {
+      // The URL is also rendered for manual use on headless/SSH machines.
+    });
+    child.unref();
+  } catch {
+    // Ignore spawn failures; the URL is still rendered for manual use.
+  }
 }
 
 export function InitSetup({
@@ -417,11 +522,23 @@ export function InitSetup({
   const [sourceContinueSelectionIndex, setSourceContinueSelectionIndex] =
     useState(0);
   const [finalSelectionIndex, setFinalSelectionIndex] = useState(0);
+  const [codeRepoSelectionIndex, setCodeRepoSelectionIndex] = useState(0);
+  const [codeRepoRoot, setCodeRepoRoot] = useState(() =>
+    getDefaultCodeRepoRootPath(),
+  );
+  const [codeRepoConfirmed, setCodeRepoConfirmed] = useState(false);
   const [isCustomModelInput, setIsCustomModelInput] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isAuthRunning, setIsAuthRunning] = useState(false);
+  const [oauthTokens, setOauthTokens] = useState<CodexTokens | null>(null);
+  const [loginUrl, setLoginUrl] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginAttempt, setLoginAttempt] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const [forceModelStep, setForceModelStep] = useState(false);
+  const loginHandleRef = useRef<ChatGptLoginHandle | null>(null);
 
   const activeSourceOptions = useMemo(
     () => getTemplateSourceOptions(getConfigModeId(onboardingConfig)),
@@ -447,11 +564,19 @@ export function InitSetup({
           return;
         }
 
+        const defaultRepoRoot = getDefaultCodeRepoRootPath();
         const configForMode = allowModeSelection
           ? config
-          : ensureRunModeConfig(config, mode);
+          : await hydrateRunModeConfig(
+              ensureRunModeConfig(config, mode),
+              mode,
+              defaultRepoRoot,
+            );
         if (configForMode !== config) {
-          await saveOpenWikiOnboardingConfig(configForMode);
+          await saveOpenWikiOnboardingConfig({
+            ...configForMode,
+            wikiGoal: mode === "code" ? undefined : configForMode.wikiGoal,
+          });
         }
         setOnboardingConfig(configForMode);
         const initialStep = getInitialStep(
@@ -497,6 +622,10 @@ export function InitSetup({
         if (initialStep === "wiki-goal") {
           setInput(getTemplateGoal(getConfigModeId(config)));
         }
+        if (initialStep === "code-repo-confirm") {
+          setCodeRepoRoot(defaultRepoRoot);
+          setCodeRepoSelectionIndex(0);
+        }
         setStep(initialStep);
       })
       .catch((loadError: unknown) => {
@@ -517,8 +646,136 @@ export function InitSetup({
     mode,
   ]);
 
+  // Drive the browser OAuth login whenever the wizard enters the oauth-login
+  // step or the user retries after a failure.
+  useEffect(() => {
+    if (step !== "oauth-login") {
+      return;
+    }
+
+    let cancelled = false;
+
+    setIsLoggingIn(true);
+    setLoginUrl(null);
+    setCopied(false);
+    setInput("");
+    setError(null);
+    loginHandleRef.current = null;
+
+    void (async () => {
+      try {
+        const tokens = await loginWithChatGPT(
+          (url) => {
+            if (cancelled) {
+              return;
+            }
+
+            setLoginUrl(url);
+            openLoginUrl(url);
+          },
+          (handle) => {
+            if (!cancelled) {
+              loginHandleRef.current = handle;
+            }
+          },
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        setOauthTokens(tokens);
+        setIsLoggingIn(false);
+
+        const nextStep = getNextStepAfterApiKey(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
+
+        if (nextStep) {
+          setIsCustomModelInput(
+            nextStep === "model" && shouldStartWithCustomModelInput(provider),
+          );
+          setStep(nextStep);
+          return;
+        }
+
+        await completeSetup({
+          nextApiKey: apiKey,
+          nextBaseUrl: baseUrl,
+          nextLangSmithKey: langSmithKey,
+          nextModelId: modelId,
+          nextOAuthTokens: tokens,
+          nextProvider: provider,
+          runMode: selectedMode,
+        });
+      } catch (loginError) {
+        if (cancelled) {
+          return;
+        }
+
+        setIsLoggingIn(false);
+        setError(getErrorMessage(loginError));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, loginAttempt]);
+
   useInput((inputValue, key) => {
-    if (isSaving || isAuthRunning || step === null) {
+    if (
+      isSaving ||
+      isAuthRunning ||
+      (isLoggingIn && step !== "oauth-login") ||
+      step === null
+    ) {
+      return;
+    }
+
+    if (step === "oauth-login") {
+      if (
+        input.length === 0 &&
+        (inputValue === "c" || inputValue === "C") &&
+        !key.ctrl &&
+        !key.meta
+      ) {
+        if (loginUrl) {
+          copyToClipboard(loginUrl);
+          setCopied(true);
+        }
+
+        return;
+      }
+
+      if (key.return) {
+        const pasted = input.trim();
+
+        if (pasted.length > 0) {
+          submitManualLogin(pasted);
+        } else if (!isLoggingIn) {
+          setLoginAttempt((attempt) => attempt + 1);
+        }
+
+        return;
+      }
+
+      if (key.backspace || key.delete) {
+        setInput((value) => value.slice(0, -1));
+        return;
+      }
+
+      const sanitizedInput = sanitizeInputChunk(inputValue);
+
+      if (sanitizedInput && !key.ctrl && !key.meta) {
+        setError(null);
+        setInput((value) => value + sanitizedInput);
+      }
+
       return;
     }
 
@@ -555,6 +812,19 @@ export function InitSetup({
             index,
             key.upArrow ? -1 : 1,
             RUN_MODE_OPTIONS.length,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (step === "code-repo-confirm") {
+      handleMenuInput(key, () =>
+        setCodeRepoSelectionIndex((index) =>
+          moveSelectionIndex(
+            index,
+            key.upArrow ? -1 : 1,
+            CODE_REPO_OPTIONS.length,
           ),
         ),
       );
@@ -680,6 +950,27 @@ export function InitSetup({
       return;
     }
 
+    if (step === "code-repo-path") {
+      if (key.return) {
+        void submit();
+        return;
+      }
+
+      if (key.backspace || key.delete) {
+        setInput((value) => value.slice(0, -1));
+        return;
+      }
+
+      const sanitizedInput = sanitizeInputChunk(inputValue);
+
+      if (sanitizedInput && !key.ctrl && !key.meta) {
+        setError(null);
+        setInput((value) => value + sanitizedInput);
+      }
+
+      return;
+    }
+
     if (key.return) {
       void submit();
       return;
@@ -747,9 +1038,38 @@ export function InitSetup({
         nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedOption.id,
       });
+      return;
+    }
+
+    if (step === "code-repo-confirm") {
+      const selectedOption =
+        CODE_REPO_OPTIONS[codeRepoSelectionIndex] ?? CODE_REPO_OPTIONS[0];
+
+      if (selectedOption === "Edit path") {
+        setInput(codeRepoRoot);
+        setStep("code-repo-path");
+        return;
+      }
+
+      setCodeRepoConfirmed(true);
+      continueAfterCodeRepoConfirmed(codeRepoRoot);
+      return;
+    }
+
+    if (step === "code-repo-path") {
+      try {
+        const repoRoot = await validateLocalDirectoryPath(input);
+        setCodeRepoRoot(repoRoot);
+        setCodeRepoConfirmed(true);
+        setInput("");
+        continueAfterCodeRepoConfirmed(repoRoot);
+      } catch (pathError) {
+        setError(getErrorMessage(pathError));
+      }
       return;
     }
 
@@ -767,11 +1087,15 @@ export function InitSetup({
         ),
       );
       setInput("");
+      const providerChanged =
+        process.env[OPENWIKI_PROVIDER_ENV_KEY] !== selectedProvider;
+      setForceModelStep(providerChanged);
       const nextStep = getNextStepAfterProvider(
         selectedProvider,
         modelIdOverride,
         onboardingConfig,
         selectedMode,
+        providerChanged,
       );
 
       if (nextStep) {
@@ -788,6 +1112,7 @@ export function InitSetup({
         nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: selectedProvider,
         runMode: selectedMode,
       });
@@ -809,6 +1134,7 @@ export function InitSetup({
         modelIdOverride,
         onboardingConfig,
         selectedMode,
+        forceModelStep,
       );
 
       if (nextStep) {
@@ -824,6 +1150,7 @@ export function InitSetup({
         nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedMode,
       });
@@ -852,6 +1179,7 @@ export function InitSetup({
         modelIdOverride,
         onboardingConfig,
         selectedMode,
+        forceModelStep,
       );
 
       if (nextStep) {
@@ -867,6 +1195,7 @@ export function InitSetup({
         nextBaseUrl: trimmedInput,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedMode,
       });
@@ -906,6 +1235,7 @@ export function InitSetup({
         nextBaseUrl: baseUrl,
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedMode,
       });
@@ -923,6 +1253,7 @@ export function InitSetup({
         nextBaseUrl: baseUrl,
         nextLangSmithKey,
         nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedMode,
       });
@@ -941,8 +1272,14 @@ export function InitSetup({
         ...onboardingConfig,
         wikiGoal,
       };
-      await saveConfig(nextConfig);
+      await saveConfigForCurrentMode(nextConfig);
       setInput("");
+
+      if (isCodeMode(nextConfig)) {
+        setStep("final");
+        return;
+      }
+
       setCronModeSelectionIndex(0);
       setCronFieldSelectionIndex(0);
       setCronReplaceCurrentField(true);
@@ -1155,7 +1492,7 @@ export function InitSetup({
         ...onboardingConfig,
         completedAt: new Date().toISOString(),
       };
-      await saveConfig(nextConfig);
+      await saveConfigForCurrentMode(nextConfig);
       onComplete({
         mode: selectedMode,
         modelId:
@@ -1165,8 +1502,12 @@ export function InitSetup({
           null,
         onboardingCompleted: true,
         provider,
+        repoRoot:
+          selectedMode === "code" && codeRepoConfirmed
+            ? codeRepoRoot
+            : undefined,
         runIngestionNow,
-        savedApiKey: apiKey !== null,
+        savedApiKey: apiKey !== null || oauthTokens !== null,
         savedBaseUrl: baseUrl !== null,
         savedLangSmithKey: langSmithKey !== null && langSmithKey.length > 0,
         savedModelId: modelId !== null,
@@ -1216,6 +1557,7 @@ export function InitSetup({
     nextBaseUrl: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
+    nextOAuthTokens?: CodexTokens | null;
     nextProvider: OpenWikiProvider;
     runMode: OpenWikiRunMode;
   };
@@ -1223,8 +1565,10 @@ export function InitSetup({
   async function continueAfterCredentials(options: CompleteSetupOptions) {
     await saveCredentialUpdates(options);
 
-    if (options.runMode === "code") {
-      await completeSetup(options);
+    if (options.runMode === "code" && !isOnboardingComplete(onboardingConfig)) {
+      setCodeRepoRoot(getDefaultCodeRepoRootPath());
+      setCodeRepoSelectionIndex(0);
+      setStep("code-repo-confirm");
       return;
     }
 
@@ -1253,6 +1597,17 @@ export function InitSetup({
     await completeSetup(options);
   }
 
+  function continueAfterCodeRepoConfirmed(repoRoot: string) {
+    if (!onboardingConfig.wikiGoal) {
+      setInput(getTemplateGoal(getConfigModeId(onboardingConfig)));
+      setStep("wiki-goal");
+      return;
+    }
+
+    setCodeRepoRoot(repoRoot);
+    setStep("final");
+  }
+
   async function completeSetup(options: CompleteSetupOptions) {
     await saveCredentialUpdates(options);
 
@@ -1264,9 +1619,14 @@ export function InitSetup({
         null,
       onboardingCompleted: isOnboardingComplete(onboardingConfig),
       provider: options.nextProvider,
+      repoRoot:
+        options.runMode === "code" && codeRepoConfirmed
+          ? codeRepoRoot
+          : undefined,
       mode: options.runMode,
       runIngestionNow: false,
-      savedApiKey: options.nextApiKey !== null,
+      savedApiKey:
+        options.nextApiKey !== null || options.nextOAuthTokens != null,
       savedBaseUrl: options.nextBaseUrl !== null,
       savedLangSmithKey:
         options.nextLangSmithKey !== null &&
@@ -1283,6 +1643,7 @@ export function InitSetup({
     nextBaseUrl,
     nextLangSmithKey,
     nextModelId,
+    nextOAuthTokens = oauthTokens,
     nextProvider,
   }: CompleteSetupOptions) {
     setIsSaving(true);
@@ -1296,6 +1657,10 @@ export function InitSetup({
 
       if (nextApiKey !== null) {
         updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+      }
+
+      if (nextOAuthTokens) {
+        Object.assign(updates, codexTokensToEnv(nextOAuthTokens));
       }
 
       if (nextBaseUrl !== null) {
@@ -1523,9 +1888,51 @@ export function InitSetup({
     }
   }
 
+  async function saveConfigForCurrentMode(config: OpenWikiOnboardingConfig) {
+    if (!isCodeMode(config)) {
+      await saveConfig(config);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (config.wikiGoal?.trim()) {
+        await saveRepositoryWikiInstructions(codeRepoRoot, config.wikiGoal);
+      }
+      await saveOpenWikiOnboardingConfig({
+        ...config,
+        wikiGoal: undefined,
+      });
+      setOnboardingConfig(config);
+    } catch (saveError) {
+      onError(getErrorMessage(saveError));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function submitManualLogin(pasted: string): void {
+    const handle = loginHandleRef.current;
+
+    if (!handle) {
+      setError("Login is still starting. Try again in a moment.");
+      return;
+    }
+
+    const errorMessage = handle.submitManual(pasted);
+
+    if (errorMessage) {
+      setError(errorMessage);
+      return;
+    }
+
+    setInput("");
+    setError(null);
+  }
+
   const needsCredentialPrompt =
     !hasValidConfiguredProvider() ||
-    !process.env[getProviderApiKeyEnvKey(provider)] ||
+    needsCredentialStep(provider) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
@@ -1548,19 +1955,15 @@ export function InitSetup({
           detail={getProviderSetupDetail(provider)}
         />
         <SetupStep
-          label="Provider key"
+          label={providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"}
           state={
-            process.env[getProviderApiKeyEnvKey(provider)]
+            isCredentialConfigured(provider) || oauthTokens
               ? "done"
-              : step === "api-key"
+              : step === credentialStep(provider)
                 ? "current"
                 : "pending"
           }
-          detail={
-            process.env[getProviderApiKeyEnvKey(provider)]
-              ? "available from environment"
-              : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`
-          }
+          detail={getCredentialSetupDetail(provider, oauthTokens)}
         />
         {providerRequiresBaseUrl(provider) ? (
           <SetupStep
@@ -1683,37 +2086,50 @@ export function InitSetup({
         ) : null}
       </Box>
 
-      <SetupPanel title="Prompt">
-        {step ? (
-          <Prompt
-            cronFieldSelectionIndex={cronFieldSelectionIndex}
-            cronModeSelectionIndex={cronModeSelectionIndex}
-            finalSelectionIndex={finalSelectionIndex}
-            input={input}
-            inputDisplayWidth={inputDisplayWidth}
-            isCustomModelInput={isCustomModelInput}
-            modelSelectionIndex={modelSelectionIndex}
-            onboardingConfig={onboardingConfig}
-            powerModeSelectionIndex={powerModeSelectionIndex}
-            provider={provider}
-            providerSelectionIndex={providerSelectionIndex}
-            runModeSelectionIndex={runModeSelectionIndex}
-            secretInputIndex={secretInputIndex}
-            selectedSource={selectedSource}
-            sourceOptions={activeSourceOptions}
-            sourceContinueSelectionIndex={sourceContinueSelectionIndex}
-            sourceDescriptionSelectionIndex={sourceDescriptionSelectionIndex}
-            sourceSelectionIndex={sourceSelectionIndex}
-            sourceState={sourceState}
-            step={step}
-            suggestedCronDescription={suggestedCronDescription}
-            suggestedCronExpression={suggestedCronExpression}
-            templateSelectionIndex={templateSelectionIndex}
-          />
-        ) : (
-          <Text>Inspecting OpenWiki setup...</Text>
-        )}
-      </SetupPanel>
+      {step === "oauth-login" ? (
+        <OAuthLoginPrompt
+          copied={copied}
+          input={input}
+          isLoggingIn={isLoggingIn}
+          loginUrl={loginUrl}
+          provider={provider}
+        />
+      ) : (
+        <SetupPanel title="Prompt">
+          {step ? (
+            <Prompt
+              codeRepoRoot={codeRepoRoot}
+              codeRepoSelectionIndex={codeRepoSelectionIndex}
+              cronFieldSelectionIndex={cronFieldSelectionIndex}
+              cronModeSelectionIndex={cronModeSelectionIndex}
+              finalSelectionIndex={finalSelectionIndex}
+              input={input}
+              inputDisplayWidth={inputDisplayWidth}
+              isCustomModelInput={isCustomModelInput}
+              modelSelectionIndex={modelSelectionIndex}
+              onboardingConfig={onboardingConfig}
+              powerModeSelectionIndex={powerModeSelectionIndex}
+              provider={provider}
+              providerSelectionIndex={providerSelectionIndex}
+              runModeSelectionIndex={runModeSelectionIndex}
+              secretInputIndex={secretInputIndex}
+              selectedMode={selectedMode}
+              selectedSource={selectedSource}
+              sourceOptions={activeSourceOptions}
+              sourceContinueSelectionIndex={sourceContinueSelectionIndex}
+              sourceDescriptionSelectionIndex={sourceDescriptionSelectionIndex}
+              sourceSelectionIndex={sourceSelectionIndex}
+              sourceState={sourceState}
+              step={step}
+              suggestedCronDescription={suggestedCronDescription}
+              suggestedCronExpression={suggestedCronExpression}
+              templateSelectionIndex={templateSelectionIndex}
+            />
+          ) : (
+            <Text>Inspecting OpenWiki setup...</Text>
+          )}
+        </SetupPanel>
+      )}
 
       {needsCredentialPrompt ? (
         <Text color="gray">Secrets are masked and saved only after setup.</Text>
@@ -1748,6 +2164,8 @@ export function InitSetup({
 }
 
 function Prompt({
+  codeRepoRoot,
+  codeRepoSelectionIndex,
   cronFieldSelectionIndex,
   cronModeSelectionIndex,
   finalSelectionIndex,
@@ -1761,6 +2179,7 @@ function Prompt({
   providerSelectionIndex,
   runModeSelectionIndex,
   secretInputIndex,
+  selectedMode,
   selectedSource,
   sourceOptions,
   sourceContinueSelectionIndex,
@@ -1772,6 +2191,8 @@ function Prompt({
   suggestedCronExpression,
   templateSelectionIndex,
 }: {
+  codeRepoRoot: string;
+  codeRepoSelectionIndex: number;
   cronFieldSelectionIndex: number;
   cronModeSelectionIndex: number;
   finalSelectionIndex: number;
@@ -1785,6 +2206,7 @@ function Prompt({
   providerSelectionIndex: number;
   runModeSelectionIndex: number;
   secretInputIndex: number;
+  selectedMode: OpenWikiRunMode;
   selectedSource: SourceSetupOption;
   sourceOptions: readonly SourceSetupOption[];
   sourceContinueSelectionIndex: number;
@@ -1981,6 +2403,48 @@ function Prompt({
           />
         </Box>
         <Text color="gray">Press Enter to continue.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "code-repo-confirm") {
+    return (
+      <Box flexDirection="column">
+        <Text>Use this repository?</Text>
+        <Box marginTop={1}>
+          <Text color="cyan">{codeRepoRoot}</Text>
+        </Box>
+        <Text color="gray">
+          OpenWiki will run in this directory and write the initial openwiki/
+          folder there.
+        </Text>
+        <Box flexDirection="column" marginTop={1}>
+          {CODE_REPO_OPTIONS.map((option, index) => (
+            <Text key={option}>
+              <SelectionMarker isSelected={index === codeRepoSelectionIndex} />{" "}
+              {option}
+            </Text>
+          ))}
+        </Box>
+        <Text color="gray">Use up/down arrows, then press Enter.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "code-repo-path") {
+    return (
+      <Box flexDirection="column">
+        <Text>Choose the repository directory.</Text>
+        <Text color="gray">
+          Enter an existing directory. OpenWiki will write openwiki/ there.
+        </Text>
+        <BorderedInput
+          maxDisplayWidth={inputDisplayWidth}
+          marginTop={1}
+          prefix="path="
+          value={input}
+        />
+        <Text color="gray">Press Enter to confirm this path.</Text>
       </Box>
     );
   }
@@ -2263,15 +2727,19 @@ function Prompt({
     return (
       <Box flexDirection="column">
         <Text>Setup is complete.</Text>
-        {FINAL_OPTIONS.map((option, index) => (
-          <Text key={option}>
-            <SelectionMarker isSelected={index === finalSelectionIndex} />{" "}
-            {option}
-          </Text>
-        ))}
+        {FINAL_OPTIONS.map((option, index) => {
+          const label = getFinalOptionLabel(option, selectedMode);
+          return (
+            <Text key={option}>
+              <SelectionMarker isSelected={index === finalSelectionIndex} />{" "}
+              {label}
+            </Text>
+          );
+        })}
         <Text color="gray">
-          Run now executes one source-specific ingestion and wiki update per
-          configured source. Waiting exits and lets the saved schedules run.
+          {selectedMode === "code"
+            ? "Run now writes the initial openwiki/ directory. Open chat skips the initial run."
+            : "Run now executes one source-specific ingestion and wiki update per configured source. Run later opens chat so you can start ingestion when you are ready."}
         </Text>
       </Box>
     );
@@ -2295,7 +2763,7 @@ function SetupHeader() {
         </Text>{" "}
         <Text color="gray">first-run setup</Text>
       </Text>
-      <Text>Configure the model, wiki scope, sources, and schedules.</Text>
+      <Text>Configure the model, wiki scope, and sources.</Text>
     </Box>
   );
 }
@@ -2392,6 +2860,67 @@ function OAuthAuthorizationLink({
       </Text>
       <Text color="gray" wrap="wrap">
         {url}
+      </Text>
+    </Box>
+  );
+}
+
+function OAuthLoginPrompt({
+  copied,
+  input,
+  isLoggingIn,
+  loginUrl,
+  provider,
+}: {
+  copied: boolean;
+  input: string;
+  isLoggingIn: boolean;
+  loginUrl: string | null;
+  provider: OpenWikiProvider;
+}) {
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Text bold color="cyan">
+        ChatGPT login
+      </Text>
+      <Text>
+        Sign in with your {getProviderLabel(provider)} account to authorize
+        OpenWiki.
+      </Text>
+      {loginUrl ? (
+        <Box flexDirection="column" marginTop={1}>
+          <Text color="gray">
+            Opening your browser. If it does not open, copy this URL:
+          </Text>
+          <Text color="cyan" wrap="wrap">
+            {loginUrl}
+          </Text>
+          <Text color="gray">
+            Press <Text bold>c</Text> to copy the URL
+            {copied ? <Text color="green"> (copied)</Text> : null}
+          </Text>
+          <Box flexDirection="column" marginTop={1}>
+            <Text color="gray">
+              If the browser cannot reach this machine, paste the redirect URL
+              or authorization code and press Enter:
+            </Text>
+            <Text>
+              <Text color="gray">&gt; </Text>
+              {input.length > 0 ? (
+                <Text color="yellow">{input}</Text>
+              ) : (
+                <Text color="gray">(paste here)</Text>
+              )}
+            </Text>
+          </Box>
+        </Box>
+      ) : (
+        <Text color="gray">Starting the ChatGPT login...</Text>
+      )}
+      <Text color="gray">
+        {isLoggingIn
+          ? "Waiting for browser sign-in or pasted URL..."
+          : "Login failed. Press Enter to retry."}
       </Text>
     </Box>
   );
@@ -2577,12 +3106,12 @@ function SegmentedCronInput({
   );
 }
 
-function getInitialStep(
+export function getInitialStep(
   modelIdOverride: string | null,
   provider: OpenWikiProvider,
-  onboardingConfig: OpenWikiOnboardingConfig,
-  mode: OpenWikiRunMode,
-  allowModeSelection: boolean,
+  onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
+  mode: OpenWikiRunMode = "code",
+  allowModeSelection = false,
 ): PromptStep | null {
   if (allowModeSelection) {
     return "run-mode";
@@ -2592,8 +3121,8 @@ function getInitialStep(
     return "provider";
   }
 
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
+  if (needsCredentialStep(provider)) {
+    return credentialStep(provider);
   }
 
   if (needsBaseUrlStep(provider)) {
@@ -2611,8 +3140,8 @@ function getInitialStep(
     return "langsmith";
   }
 
-  if (mode === "code") {
-    return null;
+  if (mode === "code" && !isOnboardingComplete(onboardingConfig)) {
+    return "code-repo-confirm";
   }
 
   if (!getConfigModeId(onboardingConfig)) {
@@ -2623,7 +3152,7 @@ function getInitialStep(
     return "wiki-goal";
   }
 
-  if (!onboardingConfig.ingestionSchedule) {
+  if (!isCodeMode(onboardingConfig) && !onboardingConfig.ingestionSchedule) {
     return "global-cron-mode";
   }
 
@@ -2634,14 +3163,15 @@ function getInitialStep(
   return null;
 }
 
-function getNextStepAfterProvider(
+export function getNextStepAfterProvider(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
-  onboardingConfig: OpenWikiOnboardingConfig,
-  mode: OpenWikiRunMode,
+  onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
+  mode: OpenWikiRunMode = "code",
+  forceModelStep = false,
 ): PromptStep | null {
-  if (!process.env[getProviderApiKeyEnvKey(provider)]) {
-    return "api-key";
+  if (needsCredentialStep(provider)) {
+    return credentialStep(provider);
   }
 
   return getNextStepAfterApiKey(
@@ -2649,6 +3179,7 @@ function getNextStepAfterProvider(
     modelIdOverride,
     onboardingConfig,
     mode,
+    forceModelStep,
   );
 }
 
@@ -2657,6 +3188,7 @@ function getNextStepAfterApiKey(
   modelIdOverride: string | null,
   onboardingConfig: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
+  forceModelStep = false,
 ): PromptStep | null {
   if (needsBaseUrlStep(provider)) {
     return "base-url";
@@ -2667,6 +3199,7 @@ function getNextStepAfterApiKey(
     modelIdOverride,
     onboardingConfig,
     mode,
+    forceModelStep,
   );
 }
 
@@ -2675,10 +3208,11 @@ function getNextStepAfterBaseUrl(
   modelIdOverride: string | null,
   onboardingConfig: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
+  forceModelStep = false,
 ): PromptStep | null {
   if (
     modelIdOverride === null &&
-    process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined
+    (forceModelStep || process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined)
   ) {
     return "model";
   }
@@ -2687,8 +3221,8 @@ function getNextStepAfterBaseUrl(
     return "langsmith";
   }
 
-  if (mode === "code") {
-    return null;
+  if (mode === "code" && !isOnboardingComplete(onboardingConfig)) {
+    return "code-repo-confirm";
   }
 
   if (!getConfigModeId(onboardingConfig)) {
@@ -2699,7 +3233,7 @@ function getNextStepAfterBaseUrl(
     return "wiki-goal";
   }
 
-  if (!onboardingConfig.ingestionSchedule) {
+  if (!isCodeMode(onboardingConfig) && !onboardingConfig.ingestionSchedule) {
     return "global-cron-mode";
   }
 
@@ -2714,24 +3248,38 @@ function ensureRunModeConfig(
   config: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
 ): OpenWikiOnboardingConfig {
-  if (mode !== "personal" || getConfigModeId(config) === "personal") {
+  if (getConfigModeId(config) === mode) {
     return config;
   }
 
-  const personalMode = ONBOARDING_TEMPLATES.find(
-    (option) => option.id === "personal",
+  const runModeTemplate = ONBOARDING_TEMPLATES.find(
+    (option) => option.id === mode,
   );
-  if (!personalMode) {
+  if (!runModeTemplate) {
     return config;
   }
 
   return {
     ...config,
-    modeId: personalMode.id,
-    modeName: personalMode.name,
-    templateId: personalMode.id,
-    templateName: personalMode.name,
+    modeId: runModeTemplate.id,
+    modeName: runModeTemplate.name,
+    templateId: runModeTemplate.id,
+    templateName: runModeTemplate.name,
   };
+}
+
+async function hydrateRunModeConfig(
+  config: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+  repoRoot: string,
+): Promise<OpenWikiOnboardingConfig> {
+  if (mode !== "code") {
+    return config;
+  }
+
+  const wikiGoal = await readRepositoryWikiInstructions(repoRoot);
+
+  return wikiGoal ? { ...config, wikiGoal } : config;
 }
 
 function getRunModeSelectionIndex(mode: OpenWikiRunMode): number {
@@ -3006,6 +3554,17 @@ function getSourceDescriptionPrompt(source: SourceSetupOption): string {
   return `Describe what OpenWiki should look for in ${source.displayName}.`;
 }
 
+function getFinalOptionLabel(
+  option: (typeof FINAL_OPTIONS)[number],
+  mode: OpenWikiRunMode,
+): string {
+  if (mode !== "code") {
+    return option;
+  }
+
+  return option === "Run ingestion now" ? "Run OpenWiki now" : "Open chat";
+}
+
 function getSourceDescriptionOptionCount(source: SourceSetupOption): number {
   return source.examples.length + 1;
 }
@@ -3143,6 +3702,44 @@ function sanitizeRepoId(value: string): string {
 
 function getDefaultLocalGitRepoPath(): string {
   return process.cwd();
+}
+
+function getDefaultCodeRepoRootPath(): string {
+  return findNearestGitRepoRoot(process.cwd()) ?? process.cwd();
+}
+
+export function findNearestGitRepoRoot(startPath: string): string | null {
+  let currentPath = path.resolve(startPath);
+
+  while (true) {
+    if (existsSync(path.join(currentPath, ".git"))) {
+      return currentPath;
+    }
+
+    const parentPath = path.dirname(currentPath);
+    if (parentPath === currentPath) {
+      return null;
+    }
+
+    currentPath = parentPath;
+  }
+}
+
+async function validateLocalDirectoryPath(value: string): Promise<string> {
+  const normalizedPath = normalizeLocalPath(value);
+
+  if (normalizedPath.length === 0) {
+    throw new Error("Enter a local directory.");
+  }
+
+  const { stat } = await import("node:fs/promises");
+  const pathStat = await stat(normalizedPath);
+
+  if (!pathStat.isDirectory()) {
+    throw new Error(`${normalizedPath} is not a directory.`);
+  }
+
+  return normalizedPath;
 }
 
 function normalizeLocalPath(value: string): string {

@@ -45,6 +45,23 @@ describe("parseCommand — chat default", () => {
     });
   });
 
+  test("explicit mode without a message opens chat without auto-starting", () => {
+    expect(parseCommand(["personal"])).toMatchObject({
+      kind: "run",
+      command: "chat",
+      mode: "personal",
+      modeSource: "positional",
+      shouldStart: false,
+    });
+    expect(parseCommand(["code"])).toMatchObject({
+      kind: "run",
+      command: "chat",
+      mode: "code",
+      modeSource: "positional",
+      shouldStart: false,
+    });
+  });
+
   test("a positional message becomes the user message and starts", () => {
     const result = parseCommand(["Document", "the", "API"]);
 
@@ -262,5 +279,47 @@ describe("shouldRunNonInteractively", () => {
     expect(shouldRunNonInteractively(parseCommand(["--nope"]), false)).toBe(
       false,
     );
+  });
+});
+
+describe("parseCommand — cron", () => {
+  test("cron list returns a list command", () => {
+    expect(parseCommand(["cron", "list"])).toMatchObject({
+      kind: "cron",
+      action: "list",
+      target: null,
+    });
+  });
+
+  test("cron pause with a source instance id is rejected", () => {
+    const result = parseCommand(["cron", "pause", "web-search-1"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron resume with a source instance id is rejected", () => {
+    const result = parseCommand(["cron", "resume", "web-search-1"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron delete with a source instance id is rejected", () => {
+    const result = parseCommand(["cron", "delete", "web-search-1"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron pause with 'all' is accepted", () => {
+    expect(parseCommand(["cron", "pause", "all"])).toMatchObject({
+      kind: "cron",
+      action: "pause",
+    });
+  });
+
+  test("cron pause with no target is an error", () => {
+    const result = parseCommand(["cron", "pause"]);
+    expect(result.kind).toBe("error");
+  });
+
+  test("cron pause with extra arguments is an error", () => {
+    const result = parseCommand(["cron", "pause", "all", "extra"]);
+    expect(result.kind).toBe("error");
   });
 });
