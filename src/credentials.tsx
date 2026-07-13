@@ -55,6 +55,12 @@ import {
   needsCredentialStep,
   type PromptStep,
 } from "./config/credentials.js";
+import {
+  CRON_FIELD_LABELS,
+  getCronFields,
+  parseCronFieldPaste,
+  sanitizeCronInputChunk,
+} from "./config/cron.js";
 import type { ConnectorId, SourceSetupOption } from "./connectors/types.js";
 import {
   getSourceDescriptionOptionCount,
@@ -153,7 +159,6 @@ const POWER_MODE_OPTIONS = [
   "Set up Mac wake/sleep window",
   "Skip power setup",
 ] as const;
-const CRON_FIELD_LABELS = ["minute", "hour", "day", "month", "weekday"];
 const SOURCE_CONTINUE_OPTIONS = [
   "Go back to connections",
   "Continue without all sources",
@@ -2956,45 +2961,8 @@ function handleCronEditorInput({
   return true;
 }
 
-function getCronFields(
-  expression: string,
-  fallbackExpression: string,
-): string[] {
-  const source =
-    expression.trim().length > 0 ? expression.trim() : fallbackExpression;
-  const fields = source.split(/\s+/u);
-
-  return CRON_FIELD_LABELS.map((_, index) => fields[index] ?? "");
-}
-
-function parseCronFieldPaste(inputValue: string): string[] {
-  if (inputValue.trim().length === 0) {
-    return [];
-  }
-
-  if (/\s/u.test(inputValue)) {
-    return inputValue
-      .trim()
-      .split(/\s+/u)
-      .map((field) => sanitizeCronInputChunk(field))
-      .filter((field) => field.length > 0);
-  }
-
-  const compactValue = sanitizeCronInputChunk(inputValue);
-
-  if (/^[0-9*]{5}$/u.test(compactValue)) {
-    return compactValue.split("");
-  }
-
-  return [];
-}
-
 function sanitizeInputChunk(value: string): string {
   return value.replace(/[\r\n]/gu, "");
-}
-
-function sanitizeCronInputChunk(value: string): string {
-  return value.replace(/[^A-Za-z0-9*,/?#LW.-]/gu, "");
 }
 
 function sanitizeRepoId(value: string): string {
