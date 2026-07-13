@@ -47,7 +47,10 @@ import {
   readOpenWikiOnboardingConfig,
   saveOpenWikiOnboardingConfig,
 } from "./onboarding.js";
-import { openWikiLocalWikiDir } from "./openwiki-home.js";
+import {
+  openWikiLocalWikiDir,
+  openWikiLocalWikiDisplayPath,
+} from "./openwiki-home.js";
 import {
   deleteConnectorSchedules,
   getSavedPowerScheduleStatus,
@@ -902,7 +905,11 @@ function DryRunView({
         />
         <StatusLine tone="muted" label="Agent" value="not invoked" />
         <StatusLine tone="muted" label="Writes" value="no files or metadata" />
-        <StatusLine tone="muted" label="Output" value="~/.openwiki/wiki" />
+        <StatusLine
+          tone="muted"
+          label="Output"
+          value={openWikiLocalWikiDisplayPath}
+        />
         <StatusLine
           tone="muted"
           label="Startup"

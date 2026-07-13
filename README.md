@@ -153,6 +153,11 @@ On the first interactive run, OpenWiki will have you configure your inference pr
 
 These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.
 
+To run in a container or use a different writable location, set
+`OPENWIKI_CONFIG_DIR` before starting OpenWiki. It relocates the local `.env`,
+personal wiki, connectors, and skills together; the default remains
+`~/.openwiki`.
+
 ## Local Connectors
 
 OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `~/.openwiki/wiki/` from those local files.

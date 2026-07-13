@@ -1,5 +1,4 @@
 import { mkdir, readFile, writeFile, chmod } from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
@@ -44,8 +43,9 @@ import {
   resolveProviderRetryAttempts,
 } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
+import { openWikiHomeDir } from "./openwiki-home.js";
 
-export const openWikiEnvDir = path.join(os.homedir(), ".openwiki");
+export const openWikiEnvDir = openWikiHomeDir;
 export const openWikiEnvPath = path.join(openWikiEnvDir, ".env");
 
 type EnvMap = Record<string, string>;

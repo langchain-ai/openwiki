@@ -16,7 +16,11 @@ import {
   saveOpenWikiEnv,
 } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
-import { openWikiLocalWikiDir } from "../openwiki-home.js";
+import {
+  openWikiHomeDisplayPath,
+  openWikiLocalWikiDir,
+  openWikiLocalWikiDisplayPath,
+} from "../openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import {
   CODEX_ORIGINATOR,
@@ -81,7 +85,7 @@ export async function runOpenWikiAgent(
 
   await loadOpenWikiEnv();
   await ensureWriteConnectorSkill();
-  emitDebug(options, "env=loaded ~/.openwiki/.env");
+  emitDebug(options, `env=loaded ${openWikiHomeDisplayPath}/.env`);
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
   if (command === "update" && shouldCheckUpdateNoop(options)) {
@@ -299,7 +303,7 @@ function formatRuntimeRootInstruction(outputMode: OpenWikiOutputMode): string {
     return "Filesystem tools use a virtual root: / means the local wiki directory above. Write wiki pages directly under /, for example /quickstart.md, /sources/gmail.md, and /_plan.md. Do not create a nested /openwiki directory.";
   }
 
-  return "Treat the repository root above as source evidence only. The canonical generated wiki is ~/.openwiki/wiki, not a repository-local openwiki/ directory. Filesystem tools use a virtual root: / means the repository root for source inspection paths such as /README.md, /agent/agents/main.py, and /package.json.";
+  return `Treat the repository root above as source evidence only. The canonical generated wiki is ${openWikiLocalWikiDisplayPath}, not a repository-local openwiki/ directory. Filesystem tools use a virtual root: / means the repository root for source inspection paths such as /README.md, /agent/agents/main.py, and /package.json.`;
 }
 
 async function createCheckpointer(
