@@ -1,0 +1,23 @@
+test/prompt.test.ts
+  s_f826d2309080ef::t_d12497ac7ba1ff 56-62,64,66-92
+  s_f826d2309080ef::t_822f00e5bf6484 63,65
+src/agent/prompt.ts
+  s_f826d2309080ef::t_f9fd081e3a41c7 155-156
+  s_f826d2309080ef::t_d12497ac7ba1ff 140-154,157-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "3f3c88217b84a37e16b36780f66b21e0d7b75970",
+  "prompts": {},
+  "sessions": {
+    "s_f826d2309080ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ceb-1a04-79b1-bfba-a09d1a336374",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
