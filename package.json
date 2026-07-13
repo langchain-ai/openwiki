@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "bin": {
-    "openwiki": "./dist/cli.js"
+    "openwiki": "./dist/index.js"
   },
   "files": [
     "dist",
@@ -25,7 +25,7 @@
     "cli"
   ],
   "scripts": {
-    "openwiki": "node dist/cli.js",
+    "openwiki": "node dist/index.js",
     "build": "tsc -p tsconfig.json",
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
@@ -36,7 +36,7 @@
     "lint:check": "eslint .",
     "prebuild": "pnpm run clean",
     "prepack": "pnpm run build",
-    "start": "node dist/cli.js",
+    "start": "node dist/index.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
