@@ -115,6 +115,24 @@ describe("parseCommand — init/update", () => {
     });
   });
 
+  test("code --update selects the update command and starts", () => {
+    expect(parseCommand(["code", "--update"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      mode: "code",
+      shouldStart: true,
+    });
+  });
+
+  test("personal --update selects the update command and starts", () => {
+    expect(parseCommand(["personal", "--update"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      mode: "personal",
+      shouldStart: true,
+    });
+  });
+
   test("explicit personal mode overrides the one-shot default", () => {
     expect(parseCommand(["personal", "--init"])).toMatchObject({
       kind: "run",
@@ -260,9 +278,9 @@ describe("shouldRunNonInteractively", () => {
     expect(
       shouldRunNonInteractively(parseCommand(["personal", "--init"]), false),
     ).toBe(true);
-    expect(shouldRunNonInteractively(parseCommand(["--update"]), false)).toBe(
-      true,
-    );
+    expect(
+      shouldRunNonInteractively(parseCommand(["personal", "--update"]), false),
+    ).toBe(true);
   });
 
   test("a one-shot chat message bypasses the UI when stdin is not a TTY", () => {

@@ -111,6 +111,8 @@ OpenWiki CLI reference:
 - \`openwiki --update [message]\` updates repository documentation under openwiki/ (code mode).
 - \`openwiki personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
 - \`openwiki code --init [message]\` initializes repository documentation under openwiki/.
+- \`openwiki personal --update [message]\` updates the local OpenWiki knowledge base under ~/.openwiki/wiki.
+- \`openwiki code --update [message]\` updates repository documentation under openwiki/.
 - \`openwiki --mode code --init [message]\` initializes repository documentation under openwiki/.
 - \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
 - \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.
