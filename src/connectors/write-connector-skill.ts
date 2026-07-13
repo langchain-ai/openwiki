@@ -70,7 +70,7 @@ When done, tell the user:
 - which connector files changed,
 - which env vars to set in ~/.openwiki/.env,
 - what config file to create or edit,
-- how to run openwiki --update to trigger ingestion,
+- how to run openwiki personal --update to trigger ingestion,
 - which scopes/permissions the source provider requires.
 `;
 

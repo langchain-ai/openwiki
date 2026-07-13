@@ -27,14 +27,10 @@ warning before that native dependency build starts.
 
 ## Quick Start
 
-Initialize OpenWiki, configure your model and API key, then generate documentation
+Initialize OpenWiki in code mode, configure your model and API key, then generate documentation:
 
 ```sh
-# Personal brain mode
-openwiki personal --init
-
-# Code brain mode
-openwiki code --init
+openwiki --init
 ```
 
 OpenWiki has two modes:
@@ -45,8 +41,9 @@ OpenWiki has two modes:
 - **Code mode** builds repository documentation in `openwiki/` for the current
   codebase.
 
-Choose `openwiki personal --init` for a local personal brain wiki or
-`openwiki code --init` for repository documentation.
+Bare `openwiki --init` and `openwiki --update` run in code mode. Use
+`openwiki personal --init` or `openwiki personal --update` for the local
+personal brain wiki.
 
 Then to ensure your documentation stays up-to-date, add the CI workflow for your Git provider to automatically open a PR or merge request with documentation updates:
 
@@ -62,7 +59,7 @@ variables.
 
 ## Usage
 
-Start the interactive CLI:
+Start the interactive CLI in code mode for the current repository:
 
 ```sh
 openwiki
@@ -74,6 +71,12 @@ Start OpenWiki with an initial request:
 openwiki "Please generate documentation for this repository"
 ```
 
+Start the interactive local personal brain instead:
+
+```sh
+openwiki personal
+```
+
 Run a single command and exit:
 
 ```sh
@@ -83,31 +86,31 @@ openwiki -p "Summarize what you can do"
 Initialize OpenWiki:
 
 ```sh
+openwiki --init
+```
+
+Initialize the local personal brain wiki:
+
+```sh
 openwiki personal --init
-```
-
-Initialize repository code documentation:
-
-```sh
-openwiki code --init
-```
-
-Update existing documentation:
-
-```sh
-openwiki --update
 ```
 
 Update repository code documentation:
 
 ```sh
-openwiki code --update
+openwiki --update
+```
+
+Update the local personal brain wiki:
+
+```sh
+openwiki personal --update
 ```
 
 Run an update that can ingest configured local connectors first:
 
 ```sh
-openwiki --update "Refresh the wiki from configured connectors"
+openwiki personal --update "Refresh the wiki from configured connectors"
 ```
 
 Show help:
@@ -143,9 +146,9 @@ URL in Slack. If you have a fixed ngrok domain, run
 ignore that HTTPS override and keep using the local loopback callback,
 `http://127.0.0.1:53682/callback`.
 
-`openwiki` creates initial repository documentation in `openwiki/` when no wiki exists. Source ingestion runs and scheduled connector updates maintain the local general-purpose wiki in `~/.openwiki/wiki/`. By default, the CLI stays open after each run so you can send follow-up messages. Use `-p` or `--print` for a one-shot non-interactive run that prints the final assistant output.
+Bare `openwiki` runs in code mode for the current repository. It creates initial repository documentation in `openwiki/` when no wiki exists. Use `openwiki personal` for the local general-purpose wiki in `~/.openwiki/wiki/`. By default, the CLI stays open after each run so you can send follow-up messages. Use `-p` or `--print` for a one-shot non-interactive run that prints the final assistant output.
 
-Use `openwiki personal --init` for the local personal brain wiki or `openwiki code --init` for repository documentation. Bare `openwiki --init` is no longer supported because init needs an explicit mode. `openwiki --update` defaults to personal mode unless you pass `code`, `personal`, or `--mode`.
+Bare `openwiki --init` and `openwiki --update` default to code mode and operate on repository documentation. Use the `personal` positional mode or `--mode personal` to initialize or update the local personal brain wiki.
 
 On each `code` run, `openwiki` maintains both an `AGENTS.md` and a `CLAUDE.md` at the repository root, adding prompting that instructs your coding agent to reference the wiki when searching for context. Each file is created if it does not already exist. If a file is present, OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of your content untouched (appending the block the first time). The scheduled GitHub Actions workflow includes these files, along with the workflow itself, in the documentation pull request.
 
@@ -223,7 +226,7 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 The `openai-chatgpt` provider calls OpenAI's Codex backend using your ChatGPT
 subscription instead of a metered API key. Model usage draws on your ChatGPT
 Plus/Pro/Team plan's included Codex usage rather than per-token API billing. It
-serves the same models as the `openai` provider (`gpt-5.4-mini`, `gpt-5.5`).
+serves the same model list as the `openai` provider.
 
 Instead of pasting an API key, run the setup wizard and complete a browser
 login:
