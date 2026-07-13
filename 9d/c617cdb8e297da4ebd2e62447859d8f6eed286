@@ -1,0 +1,23 @@
+package.json
+  s_1cbe0c2059dfe1::t_23d738f83f8c99 53
+pnpm-workspace.yaml
+  s_1cbe0c2059dfe1::t_9bf17b71f68ef6 16
+pnpm-lock.yaml
+  s_1cbe0c2059dfe1::t_655d51da6f6f83 22,39-40,822-823,1990,2387
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "9dc617cdb8e297da4ebd2e62447859d8f6eed286",
+  "prompts": {},
+  "sessions": {
+    "s_1cbe0c2059dfe1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "76f328c2-a36a-46ae-bb38-771e52c62f66",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
