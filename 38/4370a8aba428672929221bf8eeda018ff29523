@@ -1,0 +1,25 @@
+src/onboarding/setup.ts
+  s_8d4a238c334fd1::t_510d3ca86037f5 288-307
+src/credentials.tsx
+  s_8d4a238c334fd1::t_dc0e8594290ac5 53-54,57,59-60
+  s_8d4a238c334fd1::t_df081dc31bbb4f 94,98
+src/config/credentials.ts
+  s_8d4a238c334fd1::t_df71b33dcc1d3b 2
+  s_8d4a238c334fd1::t_02bf00245a93ec 378-445
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "384370a8aba428672929221bf8eeda018ff29523",
+  "prompts": {},
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
