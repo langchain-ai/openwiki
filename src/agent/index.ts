@@ -59,8 +59,8 @@ import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
   createRunContext,
+  persistRunMetadataIfChanged,
   shouldCheckUpdateNoop,
-  writeLastUpdateMetadata,
 } from "./utils.js";
 
 export async function runOpenWikiAgent(
@@ -210,34 +210,61 @@ async function runOpenWikiAgentCore(
 
   let unhandledChunkCount = 0;
 
-  for await (const chunk of stream) {
-    const event = parseStreamEvent(chunk);
+  try {
+    for await (const chunk of stream) {
+      const event = parseStreamEvent(chunk);
 
-    if (event) {
-      options.onEvent?.(event);
-    } else if (
-      options.debug &&
-      !isProtocolStreamEvent(chunk) &&
-      unhandledChunkCount < 3
-    ) {
+      if (event) {
+        options.onEvent?.(event);
+      } else if (
+        options.debug &&
+        !isProtocolStreamEvent(chunk) &&
+        unhandledChunkCount < 3
+      ) {
+        emitDebug(
+          options,
+          `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
+        );
+        unhandledChunkCount += 1;
+      }
+    }
+    emitDebug(options, "stream=completed");
+  } catch (error) {
+    // Persist metadata even when the stream fails late, so content that was
+    // already generated stays diffable by future updates. Persistence errors
+    // are swallowed here so the original run error propagates.
+    try {
+      const metadataWritten = await persistRunMetadataIfChanged(
+        command,
+        cwd,
+        modelId,
+        outputMode,
+        openWikiSnapshotBefore,
+      );
       emitDebug(
         options,
-        `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
+        metadataWritten ? "metadata=written" : "metadata=skipped",
       );
-      unhandledChunkCount += 1;
+    } catch {
+      emitDebug(options, "metadata=writeFailed");
     }
+
+    throw error;
   }
-  emitDebug(options, "stream=completed");
+
   if (checkpointTarget.persistent) {
     await chmodIfExists(checkpointTarget.connString, 0o600);
   }
 
-  if (
-    command !== "chat" &&
-    openWikiSnapshotBefore !==
-      (await createOpenWikiContentSnapshot(cwd, outputMode))
-  ) {
-    await writeLastUpdateMetadata(command, cwd, modelId, outputMode);
+  const metadataWritten = await persistRunMetadataIfChanged(
+    command,
+    cwd,
+    modelId,
+    outputMode,
+    openWikiSnapshotBefore,
+  );
+
+  if (metadataWritten) {
     emitDebug(options, "metadata=written");
   } else {
     emitDebug(
