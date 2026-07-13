@@ -93,7 +93,7 @@ jobs:
         run: pnpm run build
 
       - name: Smoke test CLI
-        run: node dist/cli.js code --dry-run --init
+        run: node dist/index.js code --dry-run --init
         env:
           OPENWIKI_DEV: "1"
 
