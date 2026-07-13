@@ -5,25 +5,37 @@ should read this before contributing your first PR.
 
 ## Where code lives
 
-OpenWiki is a CLI that runs an Deep Agent to document a repositor (`code` mode) or
-your own notes (`personal` mode).
+OpenWiki is a CLI that runs a Deep Agent to document a repository (`code` mode)
+or your own notes (`personal` mode).
 
 Each directory owns one concern:
 
-| Directory          | Owns                                                                                               |
-| ------------------ | -------------------------------------------------------------------------------------------------- |
-| `src/cli/`         | Argument parsing, dispatch, and the subcommand and `--print` handlers. Keep it thin.               |
-| `src/ui/`          | Ink (terminal React) components. No domain logic.                                                  |
-| `src/providers/`   | The provider registry, provider and model resolution, `createModel`, and model-provider OAuth.     |
-| `src/config/`      | The `~/.openwiki/.env` store, credential logic, the secret registry, and redaction.                |
-| `src/agent/`       | Run orchestration, the prompt, the write-scoping backend, stream parsing, and metadata.            |
-| `src/connectors/`  | The data-source connectors and their OAuth.                                                        |
-| `src/onboarding/`  | Onboarding config persistence (`store.ts`) and the setup wizard's tables and helpers (`setup.ts`). |
-| `src/constants.ts` | Literal values only. No logic.                                                                     |
+| Directory          | Owns                                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/cli/`         | Argument parsing, dispatch, and the subcommand and `--print` handlers. Keep it thin.                                                 |
+| `src/ui/`          | Ink (terminal React) components. No domain logic.                                                                                    |
+| `src/agent/`       | Run orchestration, the prompt, the write-scoping backend, stream parsing, metadata, and model-provider OAuth (ChatGPT/Claude login). |
+| `src/providers/`   | The model-provider registry, provider and model resolution, `createModel`, and the model-selection helpers.                          |
+| `src/connectors/`  | The data-source connectors: their runtimes, the source catalog, and shared connector types.                                          |
+| `src/auth/`        | Connector/source OAuth (Gmail, Notion, Slack, X): the OAuth flow, token storage, and the local callback tunnel.                      |
+| `src/onboarding/`  | Onboarding config persistence (`store.ts`) and the setup wizard's tables and helpers (`setup.ts`).                                   |
+| `src/schedules/`   | Cron parsing and validation, launchd connector schedules, and macOS pmset power windows.                                             |
+| `src/config/`      | Credential and setup-step decisions: credential presence, the setup step machine, and path helpers.                                  |
+| `src/constants.ts` | Literal values only. No logic.                                                                                                       |
 
-You should use your best effort to place any new code goes where its concern already
-lives. If new code doesn't fit into an existing location it may mean creating a new
-or directory.
+Do your best to place new code where its concern already lives. If it doesn't fit
+anywhere, that may mean a new directory, which is worth a conversation rather than
+dropping it into the nearest file.
+
+A few modules still live directly under `src/` rather than in a concern
+directory. `index.tsx` (the CLI entry point) and `constants.ts` belong there.
+The rest are foundational modules used across concerns: `env.ts` (reads and
+writes `~/.openwiki/.env` and owns the secret registry), `diagnostics.ts`
+(user-facing error messages and secret redaction), `openwiki-home.ts` (the
+on-disk layout of the `~/.openwiki` home), plus `ingestion.ts`, `code-mode.ts`,
+`startup.ts`, and small shared helpers (`fs-errors.ts`, `utils.ts`). These are
+candidates to fold into `config/` and `connectors/` over time; until then, add
+new code to the directories above rather than at the root.
 
 ## TypeScript
 
@@ -97,8 +109,8 @@ The rule that matters most here: forgetting something should fail safe, not leak
 Make the safe path the one you get for free. In practice that means:
 
 - Anything that might carry a credential and reaches a user or a log goes through
-  `src/config/redaction.ts` first: error messages, header dumps, and provider
-  response bodies.
+  the redaction in `src/diagnostics.ts` first: error messages, header dumps, and
+  provider response bodies.
 - Secrets are declared once, in the registry. Redaction and diagnostics both
   derive their list from it, so registering a key in one place makes it
   persisted, masked, and redacted everywhere. Never keep a second "these are the
