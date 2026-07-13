@@ -655,7 +655,9 @@ export function isValidModelId(value: string): boolean {
   return (
     modelId.length > 0 &&
     modelId.length <= 120 &&
-    /^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
+    // Leading @ for Cloudflare Workers AI ids (@cf/...); interior @ for
+    // Vertex AI @-versioned ids (e.g. claude-sonnet-4-5@20250929).
+    /^[@A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
     !modelId.includes("://")
   );
 }
