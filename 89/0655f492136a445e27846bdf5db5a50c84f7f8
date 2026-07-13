@@ -1,0 +1,43 @@
+src/credentials.tsx
+  s_8d4a238c334fd1::t_142badec9c7f3e 40-49
+src/ui/app.tsx
+  s_8d4a238c334fd1::t_992cf3b381a800 24-25
+test/openai-chatgpt-credentials.test.ts
+  s_8d4a238c334fd1::t_0af244ecc16777 6-9
+src/config/credentials.ts
+  s_8d4a238c334fd1::t_51564560ece6f5 109-112
+  s_8d4a238c334fd1::t_f069439fab1d63 135-137
+  s_8d4a238c334fd1::t_a08db6419dbe39 142-144
+  s_8d4a238c334fd1::t_5305f2b8b4a8df 31-35
+  s_8d4a238c334fd1::t_929cc98a2aafc8 64,82,93
+  s_8d4a238c334fd1::t_629894920c2105 99-102
+  s_8d4a238c334fd1::t_d663399592c1ea 70-72
+  s_8d4a238c334fd1::t_07cf005f5a8891 149-152
+  s_8d4a238c334fd1::t_4fec040d5be95a 1-30,36-63,65-69,73-78,83-89,94-98,103-108,113-134,138-141,145-148,153-156,161-176
+  s_8d4a238c334fd1::t_bee38c638cda73 79-81
+  s_8d4a238c334fd1::t_b5ace53cba6da0 157-160
+  s_8d4a238c334fd1::t_dd6166ebf7c07b 90-92
+test/credentials.test.ts
+  s_8d4a238c334fd1::t_e468cb38ff465a 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "890655f492136a445e27846bdf5db5a50c84f7f8",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
