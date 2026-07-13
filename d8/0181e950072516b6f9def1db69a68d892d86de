@@ -1,0 +1,41 @@
+src/ui/credentials/prompt.tsx
+  s_8d4a238c334fd1::t_47c940097bb529 20,41,53
+  s_8d4a238c334fd1::t_ad5004d84d6b86 1-2,36
+  s_8d4a238c334fd1::t_c264174e983988 3-19,21-35,37-40,42-52,54-643
+src/ui/credentials/components.tsx
+  s_8d4a238c334fd1::t_cb95c44a789c89 1-381
+src/ui/credentials/types.ts
+  s_8d4a238c334fd1::t_e6e241d67a338c 1-35
+src/ui/types.ts
+  s_8d4a238c334fd1::t_9100591bb3da12 3
+src/ui/app.tsx
+  s_8d4a238c334fd1::t_9100591bb3da12 24
+src/ui/credentials/init-setup.tsx
+  s_8d4a238c334fd1::t_70e13c2b1eba39 72-77
+  s_8d4a238c334fd1::t_bdf9a86fa3e9e3 78-84
+  s_8d4a238c334fd1::t_9100591bb3da12 1-65,86-1974
+  s_8d4a238c334fd1::t_104ae7d9458dbd 85
+  s_8d4a238c334fd1::t_751bc90d1e4eb8 66-71
+src/ui/credentials/input-utils.ts
+  s_8d4a238c334fd1::t_7d9fbbc373d4fd 1-26,30-66,68-91
+  s_8d4a238c334fd1::t_4e4388b176a196 67
+  s_8d4a238c334fd1::t_234ca1f542b74e 27-29
+src/ui/credentials/constants.ts
+  s_8d4a238c334fd1::t_bb7f78b43e857c 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "d80181e950072516b6f9def1db69a68d892d86de",
+  "prompts": {},
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
