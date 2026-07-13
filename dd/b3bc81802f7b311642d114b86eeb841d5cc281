@@ -1,0 +1,22 @@
+test/env-behavior.test.ts
+  s_005aef00a0993e::t_7c71deee9995ea 100-103,118
+  s_005aef00a0993e::t_112fd717f8c489 44-49
+src/env.ts
+  s_005aef00a0993e::t_cfbe167c5dc7ec 151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "ddb3bc81802f7b311642d114b86eeb841d5cc281",
+  "prompts": {},
+  "sessions": {
+    "s_005aef00a0993e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "366e0bd6-73d2-4a7a-bab1-157a1f397b23",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
