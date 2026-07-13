@@ -1,0 +1,44 @@
+src/ui/credentials/init-setup.tsx
+  s_8d4a238c334fd1::t_8dfdd64aaf8ec6 67
+  s_8d4a238c334fd1::t_06406704bc8218 63,66
+  s_8d4a238c334fd1::t_41f29f1d6e9652 124-125
+src/ui/credentials/prompt.tsx
+  s_8d4a238c334fd1::t_4332e1883155a5 53
+src/cli/commands/cron.ts
+  s_8d4a238c334fd1::t_3b3c8947f8ecb5 8,14-18
+src/schedules/connectors.ts
+  s_8d4a238c334fd1::t_1a6ff1b47821ba 21-27,29-32,34-38,40-44,46,48-56,58-61,63-66,68-71,73-76,78-81,83-86,88-91,93-96,98-101,104-106,108,110-117,119-122,124-127,129-133,135-138,140
+  s_8d4a238c334fd1::t_3f446650ff27f2 222-225
+  s_8d4a238c334fd1::t_64f9227c91c27a 255-258
+  s_8d4a238c334fd1::t_4e0b60a18bd36a 299-302
+  s_8d4a238c334fd1::t_89ff2fa763320d 356-359
+  s_8d4a238c334fd1::t_0aefafc18d0097 4,6-17
+  s_8d4a238c334fd1::t_81b3f6b134ab2d 148-152
+src/ui/credentials/components.tsx
+  s_8d4a238c334fd1::t_8dfdd64aaf8ec6 7
+src/schedules/cron.ts
+  s_8d4a238c334fd1::t_e0d9f364f91475 1-188
+src/schedules/power.ts
+  s_8d4a238c334fd1::t_3584e736888895 132-135
+  s_8d4a238c334fd1::t_bfe07ec2d8d6e4 12-19,21-25,27-30,32-35,37-41,43,45-51,53,55-61,63-66,68
+  s_8d4a238c334fd1::t_cb3ae45eb3e8a2 10
+  s_8d4a238c334fd1::t_44e2946cd2b405 70-74
+  s_8d4a238c334fd1::t_b027aafe21fe67 1-9,11,20,26,31,36,42,44,52,54,62,67,69,75-131,136-154,160-386
+  s_8d4a238c334fd1::t_66a68c99cc69a4 155-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "faf3f5bcfca310bd3adbe17aafe155299b6ddb22",
+  "prompts": {},
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
