@@ -3002,11 +3002,7 @@ function pickVariantIndex(seed: string): number {
 function isExitMessage(message: string): boolean {
   const normalizedMessage = message.trim().toLowerCase();
 
-  return (
-    normalizedMessage === "/exit" ||
-    normalizedMessage === "exit" ||
-    normalizedMessage === "quit"
-  );
+  return normalizedMessage === "/exit";
 }
 
 function truncateLogOutput(content: string, label: string): string {
@@ -3803,7 +3799,6 @@ function shouldPrintStartupError(
     command.kind === "error" &&
     (argvRequestsPrint(argv) ||
       !process.stdin.isTTY ||
-      command.message.startsWith("openwiki --init requires a mode.") ||
       (parsedCommand.kind === "run" && parsedCommand.shouldStart))
   );
 }

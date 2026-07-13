@@ -104,13 +104,15 @@ Existing documentation discipline:
 ${output.rootAgentInstructions}
 
 OpenWiki CLI reference:
-- \`openwiki\` opens the interactive chat interface and waits for user input.
-- \`openwiki "message"\` sends a chat message immediately, then keeps the chat open.
+- \`openwiki\` opens the interactive code-mode chat for the current repository and waits for user input.
+- \`openwiki "message"\` sends a code-mode chat message for the current repository immediately, then keeps the chat open.
+- \`openwiki personal\` opens the interactive local personal brain chat.
+- \`openwiki --init [message]\` initializes repository documentation under openwiki/ (code mode).
+- \`openwiki --update [message]\` updates repository documentation under openwiki/ (code mode).
 - \`openwiki personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
 - \`openwiki code --init [message]\` initializes repository documentation under openwiki/.
-- \`openwiki --update [message]\` updates the local OpenWiki knowledge base under ~/.openwiki/wiki.
 - \`openwiki --mode code --init [message]\` initializes repository documentation under openwiki/.
-- \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki. Bare \`openwiki --init\` is not supported because init requires an explicit mode.
+- \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
 - \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.
 - \`openwiki --modelId <id>\` selects a model ID for that run.
 - \`openwiki --help\` prints current usage, options, and examples.
@@ -155,6 +157,11 @@ Required documentation structure:
 - Source Map sections are optional. Add one only when it materially improves navigation for that page. Prefer inline source references for short pages.
 - Track the last successful documentation update in ${output.metadataPath}.
 
+Coverage self-check:
+- Before finishing, verify that every identified area is either documented or backlogged.
+- Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
+- If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
+
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
 `.trim();
@@ -171,7 +178,7 @@ export function createModeInstructions(
 - This is an interactive chat turn.
 - Answer the user's message directly.
 - Do not create or update OpenWiki documentation unless the user explicitly asks you to modify documentation.
-- If the user asks to initialize or update the wiki, explain that they can run openwiki personal --init, openwiki code --init, or openwiki --update, or ask you to make a specific documentation change in chat.
+- If the user asks to initialize or update the wiki, explain that they can run openwiki --init or openwiki --update for repository docs, openwiki personal --init or openwiki personal --update for the local personal brain, or ask you to make a specific documentation change in chat.
 `.trim();
   }
 
@@ -186,6 +193,7 @@ export function createModeInstructions(
 - If the source material already has substantial docs or prior wiki pages, create a wiki that functions as an opinionated map and synthesis layer over those docs.
 - Create ${output.quickstartPath} first, then the linked section pages.
 - Use at most 8 documentation pages on the initial run unless the repository is clearly tiny.
+- Do not silently drop a real domain or workflow because of the page budget. If it is not fully documented, record it in the \`## Backlog\` section of ${output.quickstartPath} with its area name, source anchor, and a one-line reason.
 - Do not try to document every source file. Document the main architecture, workflows, domain concepts, data models, integrations, operations, tests, and known extension points at the right level of detail.
 - The CLI will record successful run metadata in ${output.metadataPath} after you finish.
 `.trim();
@@ -194,6 +202,7 @@ export function createModeInstructions(
   return `
 - This is a maintenance update run.
 - Inspect the existing ${output.docsLocation} documentation before editing.
+- Read the existing \`## Backlog\` section in ${output.quickstartPath} first, if present.
 - Read ${output.metadataPath} if it exists.
 - If source-specific connector raw data paths are supplied, inspect those files and update the wiki from that local evidence. Do not run all connector ingestions from inside the agent.
 - ${output.updateEvidenceInstruction}
@@ -206,6 +215,8 @@ export function createModeInstructions(
 - Do not include or refresh persistent commit hash lists unless a specific commit explains an important historical decision.
 - Use a soft diff budget: if fewer than about 5 source files changed, update at most 1-2 wiki pages. Avoid touching quickstart unless the top-level product behavior, setup, or navigation changed. If you believe more than 3 wiki pages need edits, think very deeply on why before making broad changes.
 - Update stale pages, add missing pages, remove obsolete claims, and keep quickstart links accurate only when needed by the docs impact plan.
+- Promote a backlog entry when recent changes touch that area or the update has spare documentation budget, then document the area and remove the entry from the backlog.
+- Do not let the backlog grow silently: every identified area must remain either documented or represented by a concise backlog entry with a source anchor and reason.
 - Updates may be a no-op. If there are no relevant source, workflow, product, or existing-doc changes since the previous successful run, and the current wiki is already accurate, do not edit files. Say that the wiki is already current.
 - The CLI will record successful run metadata in ${output.metadataPath} after you finish.
 `.trim();

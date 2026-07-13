@@ -78,10 +78,11 @@ Providers and their model options are defined in `PROVIDER_CONFIGS` in `src/cons
 | openrouter        | `OPENROUTER_API_KEY`          | `https://openrouter.ai/api/v1`          | GLM 5.2, Fusion, Kimi K2.7 Code, Claude Opus/Sonnet, GPT 5.4 mini/5.5 |
 | baseten           | `BASETEN_API_KEY`             | `https://inference.baseten.co/v1`       | GLM 5.2, Kimi K2.7 Code                                               |
 | fireworks         | `FIREWORKS_API_KEY`           | `https://api.fireworks.ai/inference/v1` | GLM 5.2, Kimi K2.7 Code                                               |
+| nvidia            | `NVIDIA_API_KEY`              | `https://integrate.api.nvidia.com/v1`   | Nemotron 3 Super/Ultra/Nano, DeepSeek V4 Pro, GPT-OSS 120B, Kimi K2.6 |
 | openai-compatible | `OPENAI_COMPATIBLE_API_KEY`   | `OPENAI_COMPATIBLE_BASE_URL` (required) | custom model ID only                                                  |
 | anthropic         | `ANTHROPIC_API_KEY`           | (default, or `ANTHROPIC_BASE_URL`)      | Haiku, Sonnet, Opus                                                   |
 
-The default provider is `openai`, and the default model is `gpt-5.6-terra`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, then falls back to the first configured provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, and finally `DEFAULT_PROVIDER`.
+The default provider is `openai`, and the default model is `gpt-5.6-terra`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, then falls back to the first configured provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, NVIDIA, and finally `DEFAULT_PROVIDER`.
 
 ### Provider retry attempts
 

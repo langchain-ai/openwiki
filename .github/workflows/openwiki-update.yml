@@ -11,6 +11,13 @@ permissions:
 
 jobs:
   update:
+    # Scheduled (and manually-dispatched) runs only fire in the origin repo by
+    # default, so forking to contribute doesn't silently arm a daily job that
+    # is guaranteed to fail without a configured provider secret. Fork owners
+    # who want scheduled updates on their own fork can opt in without editing
+    # this file by setting the OPENWIKI_ENABLE_SCHEDULED_UPDATE repository
+    # variable (Settings -> Actions -> Variables) to "true".
+    if: github.repository == 'langchain-ai/openwiki' || vars.OPENWIKI_ENABLE_SCHEDULED_UPDATE == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository

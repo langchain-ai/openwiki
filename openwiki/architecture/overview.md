@@ -41,7 +41,7 @@ For non-chat runs, the agent receives a `RunContext` that includes last-update m
 The agent runtime resolves the provider via `resolveConfiguredProvider()` in `src/constants.ts`:
 
 1. If `OPENWIKI_PROVIDER` is set and valid, use it.
-2. Otherwise, use the first available provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, then Fireworks.
+2. Otherwise, use the first available provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, then NVIDIA.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.6-terra`).
 
 Model creation branches by provider in `src/agent/index.ts` (`createModel`):
@@ -50,7 +50,7 @@ Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 - **openai-chatgpt** → `ChatOpenAI` with `useResponsesApi: true`, `zdrEnabled: true`, `streaming: true`, pointed at the Codex backend (`CODEX_RESPONSES_BASE_URL`) with account-id/originator/beta headers. Tokens are refreshed before model creation via `ensureFreshChatGptTokens()`.
 - **openrouter** → `ChatOpenRouter` with the selected model ID.
 - **openai** → `ChatOpenAI` with `useResponsesApi: true`.
-- **baseten / fireworks / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
+- **baseten / fireworks / nvidia / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
 
 ### DeepAgents backend
 

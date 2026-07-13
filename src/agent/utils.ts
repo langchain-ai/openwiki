@@ -164,6 +164,33 @@ export async function writeLastUpdateMetadata(
 }
 
 /**
+ * Persists run metadata when OpenWiki content changed since the given snapshot.
+ * Returns whether metadata was written. Used after both successful and failed
+ * runs so already-generated content stays diffable by future updates.
+ */
+export async function persistRunMetadataIfChanged(
+  command: OpenWikiCommand,
+  cwd: string,
+  modelId: string,
+  outputMode: OpenWikiOutputMode,
+  snapshotBefore: OpenWikiContentSnapshot | null,
+): Promise<boolean> {
+  if (command === "chat" || snapshotBefore === null) {
+    return false;
+  }
+
+  if (
+    snapshotBefore === (await createOpenWikiContentSnapshot(cwd, outputMode))
+  ) {
+    return false;
+  }
+
+  await writeLastUpdateMetadata(command, cwd, modelId, outputMode);
+
+  return true;
+}
+
+/**
  * Hashes OpenWiki content, excluding run metadata, to detect real documentation changes.
  */
 export async function createOpenWikiContentSnapshot(
