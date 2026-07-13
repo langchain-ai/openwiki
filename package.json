@@ -50,7 +50,7 @@
     "@langchain/tavily": "1.2.0",
     "cron-parser": "5.6.1",
     "cronstrue": "3.24.0",
-    "deepagents": "^1.10.7",
+    "deepagents": "^1.10.8",
     "ink": "^5.1.0",
     "langchain": "^1.5.3",
     "marked": "^18.0.5",
