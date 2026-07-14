@@ -1,0 +1,43 @@
+test/frontmatter-validator.test.ts
+  s_f826d2309080ef::t_d581a479d46e7d 9
+  s_f826d2309080ef::t_6d1ec4dbede0d0 84,96-99
+  s_f826d2309080ef::t_2bad137bd6a267 17
+  s_f826d2309080ef::t_8a751b3d96d3f2 1-8,10-16,18-83,85-95,100-165
+src/agent/docs-only-backend.ts
+  s_f826d2309080ef::t_d581a479d46e7d 8
+test/docs-only-backend.test.ts
+  s_f826d2309080ef::t_d581a479d46e7d 9
+src/agent/indexing/utils.ts
+  s_f826d2309080ef::t_673e3451e0a2df 34-48
+  s_f826d2309080ef::t_d581a479d46e7d 6
+src/agent/index.ts
+  s_f826d2309080ef::t_673e3451e0a2df 198
+src/agent/indexing/frontmatter-validator.ts
+  s_f826d2309080ef::t_673e3451e0a2df 1-4,6-22,24-26,28-29,35-54,58-62,66-68,76-87,91-156,161-167,171-194,200-226
+  s_f826d2309080ef::t_db9ea1ce14483c 168
+  s_f826d2309080ef::t_6d1ec4dbede0d0 169-170
+  s_f826d2309080ef::t_6e1c7f984db09e 23,27,30-34,55-57,63-65,69-75,88-90,157-160
+  s_f826d2309080ef::t_2bad137bd6a267 195-199
+  s_f826d2309080ef::t_67dbef329bfb12 5
+test/index-tools.test.ts
+  s_f826d2309080ef::t_d581a479d46e7d 14
+src/agent/indexing/state.ts
+  s_f826d2309080ef::t_673e3451e0a2df 10-11,35-38,43-52
+  s_f826d2309080ef::t_67dbef329bfb12 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "57487bac70ecb55a05a55c27bed284cf294fcce0",
+  "prompts": {},
+  "sessions": {
+    "s_f826d2309080ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ceb-1a04-79b1-bfba-a09d1a336374",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
