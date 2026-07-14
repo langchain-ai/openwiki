@@ -13,7 +13,7 @@ minimumReleaseAgeExclude:
   - "@vitest/snapshot@4.1.10"
   - "@vitest/spy@4.1.10"
   - "@vitest/utils@4.1.10"
-  - "deepagents@1.10.7"
+  - "deepagents@1.10.8"
   - "langchain@1.5.3"
   - "node-abi@3.94.0"
   - "picomatch@4.0.5"

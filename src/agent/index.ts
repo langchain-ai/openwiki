@@ -16,6 +16,7 @@ import {
   saveOpenWikiEnv,
 } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
+import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir } from "../openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import {
@@ -61,8 +62,8 @@ import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
   createRunContext,
+  persistRunMetadataIfChanged,
   shouldCheckUpdateNoop,
-  writeLastUpdateMetadata,
 } from "./utils.js";
 
 export async function runOpenWikiAgent(
@@ -212,34 +213,61 @@ async function runOpenWikiAgentCore(
 
   let unhandledChunkCount = 0;
 
-  for await (const chunk of stream) {
-    const event = parseStreamEvent(chunk);
+  try {
+    for await (const chunk of stream) {
+      const event = parseStreamEvent(chunk);
 
-    if (event) {
-      options.onEvent?.(event);
-    } else if (
-      options.debug &&
-      !isProtocolStreamEvent(chunk) &&
-      unhandledChunkCount < 3
-    ) {
+      if (event) {
+        options.onEvent?.(event);
+      } else if (
+        options.debug &&
+        !isProtocolStreamEvent(chunk) &&
+        unhandledChunkCount < 3
+      ) {
+        emitDebug(
+          options,
+          `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
+        );
+        unhandledChunkCount += 1;
+      }
+    }
+    emitDebug(options, "stream=completed");
+  } catch (error) {
+    // Persist metadata even when the stream fails late, so content that was
+    // already generated stays diffable by future updates. Persistence errors
+    // are swallowed here so the original run error propagates.
+    try {
+      const metadataWritten = await persistRunMetadataIfChanged(
+        command,
+        cwd,
+        modelId,
+        outputMode,
+        openWikiSnapshotBefore,
+      );
       emitDebug(
         options,
-        `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
+        metadataWritten ? "metadata=written" : "metadata=skipped",
       );
-      unhandledChunkCount += 1;
+    } catch {
+      emitDebug(options, "metadata=writeFailed");
     }
+
+    throw error;
   }
-  emitDebug(options, "stream=completed");
+
   if (checkpointTarget.persistent) {
     await chmodIfExists(checkpointTarget.connString, 0o600);
   }
 
-  if (
-    command !== "chat" &&
-    openWikiSnapshotBefore !==
-      (await createOpenWikiContentSnapshot(cwd, outputMode))
-  ) {
-    await writeLastUpdateMetadata(command, cwd, modelId, outputMode);
+  const metadataWritten = await persistRunMetadataIfChanged(
+    command,
+    cwd,
+    modelId,
+    outputMode,
+    openWikiSnapshotBefore,
+  );
+
+  if (metadataWritten) {
     emitDebug(options, "metadata=written");
   } else {
     emitDebug(
@@ -1264,8 +1292,15 @@ async function readResponseBodyPreview(response: Response): Promise<string> {
 }
 
 export function sanitizeOpenRouterResponseBody(body: string): string {
+  // Redact string values whose JSON key name contains any secret-bearing term
+  // (shared source of truth with isSecretLikeKey / the MCP redactor).
+  const secretJsonKeyPattern = new RegExp(
+    `"([^"]*(?:${SECRET_KEY_PATTERN_SOURCE})[^"]*)"\\s*:\\s*"[^"]*"`,
+    "giu",
+  );
+
   return body.replace(
-    /"([^"]*(?:api[-_]?key|authorization|bearer|password|secret|token|user_id)[^"]*)"\s*:\s*"[^"]*"/giu,
+    secretJsonKeyPattern,
     (_, key: string) => `${JSON.stringify(key)}:"[REDACTED]"`,
   );
 }

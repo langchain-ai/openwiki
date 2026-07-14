@@ -12,13 +12,13 @@ openwiki_update:
   script:
     - openwiki code --update --print
     - |
-      if git diff --quiet -- openwiki; then
+      if git diff --quiet -- openwiki AGENTS.md CLAUDE.md .github/workflows/openwiki-update.yml; then
         echo "OpenWiki is already up to date."
         exit 0
       fi
     - export OPENWIKI_BRANCH="openwiki/update-${CI_PIPELINE_ID}"
     - git checkout -b "$OPENWIKI_BRANCH"
-    - git add openwiki
+    - git add openwiki AGENTS.md CLAUDE.md .github/workflows/openwiki-update.yml
     - git commit -m "docs: update OpenWiki"
     - git push "https://oauth2:${OPENWIKI_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" "$OPENWIKI_BRANCH"
     - |
