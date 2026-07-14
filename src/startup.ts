@@ -1,8 +1,14 @@
 import { shouldCheckUpdateNoop, getUpdateNoopStatus } from "./agent/utils.js";
+import { readCodexTokensFromEnv } from "./agent/openai-chatgpt-oauth.js";
 import type { CliCommand } from "./commands.js";
 import {
+  OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
+  OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   getProviderApiKeyEnvKey,
+  providerUsesOAuth,
   resolveConfiguredProvider,
+  type OpenWikiProvider,
 } from "./constants.js";
 
 type ResolveStartupCommandOptions = {
@@ -38,9 +44,12 @@ export async function resolveStartupCommand(
   ) {
     const provider = resolveConfiguredProvider();
     const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+    const hasProviderCredentials = hasNonInteractiveProviderCredentials(
+      provider,
+      process.env,
+    );
 
-    if (!hasProviderKey) {
+    if (!hasProviderCredentials) {
       if (
         command.print &&
         (await canSkipCleanUpdateBeforeCredentials(
@@ -54,7 +63,7 @@ export async function resolveStartupCommand(
       return {
         kind: "error",
         exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${formatCredentialRequirement(provider, apiKeyEnvKey)} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
       };
     }
   }
@@ -73,6 +82,28 @@ export async function resolveStartupCommand(
   }
 
   return command;
+}
+
+function hasNonInteractiveProviderCredentials(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv,
+): boolean {
+  if (!providerUsesOAuth(provider)) {
+    return Boolean(env[getProviderApiKeyEnvKey(provider)]);
+  }
+
+  return readCodexTokensFromEnv(env) !== null;
+}
+
+function formatCredentialRequirement(
+  provider: OpenWikiProvider,
+  apiKeyEnvKey: string,
+): string {
+  if (!providerUsesOAuth(provider)) {
+    return apiKeyEnvKey;
+  }
+
+  return `A complete ChatGPT OAuth token set (${apiKeyEnvKey}, ${OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY}, ${OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY}, ${OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY})`;
 }
 
 async function canSkipCleanUpdateBeforeCredentials(
