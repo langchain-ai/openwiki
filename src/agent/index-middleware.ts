@@ -1,6 +1,7 @@
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import { createMiddleware } from "langchain";
 import path from "node:path";
+import { parse } from "yaml";
 import type { OpenWikiOutputMode } from "./types.js";
 
 const INDEX_FILE = "index.md";
@@ -153,35 +154,38 @@ function parseFrontmatter(
   const block = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(content)?.[1];
   if (!block) throw new Error(`${filePath} lacks YAML front matter.`);
 
-  const fields = new Map<string, string>();
-  for (const line of block.split(/\r?\n/u)) {
-    const field = /^(title|description):\s*(.+?)\s*$/u.exec(line);
-    if (field) fields.set(field[1], parseScalar(field[2], filePath));
+  let fields: unknown;
+  try {
+    fields = parse(block, {
+      maxAliasCount: 100,
+      schema: "core",
+      uniqueKeys: true,
+    }) as unknown;
+  } catch (error) {
+    throw new Error(
+      `${filePath} contains invalid YAML front matter: ${errorMessage(error)}`,
+      { cause: error },
+    );
   }
-  const description = fields.get("description");
-  if (!description) {
+  if (fields === null || typeof fields !== "object" || Array.isArray(fields)) {
+    throw new Error(`${filePath} YAML front matter must be a mapping.`);
+  }
+
+  const { description, title } = fields as Record<string, unknown>;
+  if (typeof description !== "string" || !description.trim()) {
     throw new Error(`${filePath} lacks a non-empty YAML description.`);
+  }
+  if (title !== undefined && typeof title !== "string") {
+    throw new Error(`${filePath} YAML title must be a string.`);
   }
   return {
     description,
-    ...(fields.get("title") ? { title: fields.get("title") } : {}),
+    ...(title ? { title } : {}),
   };
 }
 
-function parseScalar(value: string, filePath: string): string {
-  if (value.startsWith('"')) {
-    try {
-      const parsed: unknown = JSON.parse(value);
-      if (typeof parsed === "string" && parsed) return parsed;
-    } catch {
-      // Fall through to the actionable error below.
-    }
-    throw new Error(`${filePath} contains an invalid quoted YAML string.`);
-  }
-  if (value.startsWith("'") && value.endsWith("'")) {
-    return value.slice(1, -1).replace(/''/gu, "'");
-  }
-  return value.replace(/\s+#.*$/u, "").trim();
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 async function readText(

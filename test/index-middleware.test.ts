@@ -107,6 +107,62 @@ describe("synchronizeWikiIndexes", () => {
     );
   });
 
+  test("parses quoted and folded YAML descriptions", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/quoted.md",
+      "---\ntype: Reference\ntitle: 'Quoted: page'\ndescription: \"A description: with a colon.\"\n---\n",
+    );
+    await backend.write(
+      "/openwiki/folded.md",
+      "---\ntype: Reference\ntitle: Folded\ndescription: >-\n  A folded\n  description.\n---\n",
+    );
+
+    await synchronizeWikiIndexes(backend, "repository");
+
+    const index = await readFile(
+      path.join(rootDir, "openwiki/index.md"),
+      "utf8",
+    );
+    expect(index).toContain(
+      "- [Quoted: page](quoted.md) - A description: with a colon.",
+    );
+    expect(index).toContain("- [Folded](folded.md) - A folded description.");
+  });
+
+  test("rejects malformed and duplicate YAML", async () => {
+    for (const frontmatter of [
+      "type: [unterminated\ndescription: Page",
+      "type: Reference\ndescription: First\ndescription: Second",
+    ]) {
+      const { backend } = await setup();
+      await backend.write("/openwiki/page.md", `---\n${frontmatter}\n---\n`);
+
+      await expect(
+        synchronizeWikiIndexes(backend, "repository"),
+      ).rejects.toThrow(
+        "/openwiki/page.md contains invalid YAML front matter:",
+      );
+    }
+  });
+
+  test.each(["123", "[one, two]", "{ text: nested }"])(
+    "rejects a non-string YAML description: %s",
+    async (description) => {
+      const { backend } = await setup();
+      await backend.write(
+        "/openwiki/page.md",
+        `---\ntype: Reference\ndescription: ${description}\n---\n`,
+      );
+
+      await expect(
+        synchronizeWikiIndexes(backend, "repository"),
+      ).rejects.toThrow(
+        "/openwiki/page.md lacks a non-empty YAML description.",
+      );
+    },
+  );
+
   test("supports the local wiki root and empty directories", async () => {
     const { backend, rootDir } = await setup("local-wiki");
     await backend.write(
