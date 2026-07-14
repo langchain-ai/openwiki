@@ -3505,7 +3505,11 @@ function getInputDisplayWidth(stdoutColumns: number | undefined): number {
 }
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+  return provider === "baseten" ||
+    provider === "deepseek" ||
+    provider === "fireworks"
+    ? "a"
+    : "an";
 }
 
 function getTemplateGoal(templateId: string | undefined): string {

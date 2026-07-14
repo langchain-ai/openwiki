@@ -1,15 +1,22 @@
 import { describe, expect, test } from "vitest";
 import {
+  DEEPSEEK_API_KEY_ENV_KEY,
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
+  PROVIDER_CONFIGS,
+  SELECTABLE_OPENWIKI_PROVIDERS,
   getDefaultModelId,
+  getProviderApiKeyEnvKey,
+  getProviderBaseUrlEnvKey,
+  getProviderLabel,
   getProviderModelOptions,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
   normalizeModelId,
   normalizeProvider,
+  providerRequiresBaseUrl,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
   resolveProviderRetryAttempts,
@@ -199,4 +206,43 @@ describe("getDefaultModelId", () => {
       expect(getDefaultModelId("openai-compatible")).toBe(DEFAULT_MODEL_ID);
     },
   );
+});
+
+describe("DeepSeek provider", () => {
+  test("exposes a DeepSeek API key env key constant", () => {
+    expect(DEEPSEEK_API_KEY_ENV_KEY).toBe("DEEPSEEK_API_KEY");
+  });
+
+  test("is a valid, selectable provider", () => {
+    expect(isValidProvider("deepseek")).toBe(true);
+    expect(SELECTABLE_OPENWIKI_PROVIDERS).toContain("deepseek");
+  });
+
+  test("has a complete provider config pinned to the documented endpoint", () => {
+    const config = PROVIDER_CONFIGS.deepseek;
+
+    expect(config.apiKeyEnvKey).toBe(DEEPSEEK_API_KEY_ENV_KEY);
+    expect(config.label).toBe("DeepSeek");
+    expect(config.baseURL).toBe("https://api.deepseek.com/v1");
+    expect(config.requiresBaseUrl).not.toBe(true);
+    expect(config.baseUrlEnvKey).toBeUndefined();
+  });
+
+  test("ships documented model presets in a stable order", () => {
+    expect(getProviderModelOptions("deepseek")).toEqual([
+      { id: "deepseek-chat", label: "Chat" },
+      { id: "deepseek-reasoner", label: "Reasoner" },
+    ]);
+  });
+
+  test("defaults to the chat model", () => {
+    expect(getDefaultModelId("deepseek")).toBe("deepseek-chat");
+  });
+
+  test("accessors resolve through the shared provider config", () => {
+    expect(getProviderApiKeyEnvKey("deepseek")).toBe(DEEPSEEK_API_KEY_ENV_KEY);
+    expect(getProviderLabel("deepseek")).toBe("DeepSeek");
+    expect(getProviderBaseUrlEnvKey("deepseek")).toBeUndefined();
+    expect(providerRequiresBaseUrl("deepseek")).toBe(false);
+  });
 });
