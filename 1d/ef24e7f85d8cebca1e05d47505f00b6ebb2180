@@ -1,0 +1,42 @@
+src/agent/prompt.ts
+  s_f826d2309080ef::t_4b3a4fa28d66ca 92-93,145
+src/agent/docs-only-backend.ts
+  s_f826d2309080ef::t_b1c64604d9e1d8 10-11
+src/agent/index.ts
+  s_f826d2309080ef::t_4b3a4fa28d66ca 22,189,192-195
+test/docs-only-backend.test.ts
+  s_f826d2309080ef::t_758dcf588cced2 7
+src/agent/frontmatter-validator.ts
+  s_f826d2309080ef::t_3e3f78178af8f3 3-9,41-53,55-57,59-66,75-77,79,91-92,96,139-146,154-155,164-176,190,192,195,198-205
+  s_f826d2309080ef::t_ca7974759cf9b2 147-152
+  s_f826d2309080ef::t_75449110f76189 29,69-70,78,81-84
+package.json
+  s_f826d2309080ef::t_4b3a4fa28d66ca 58
+src/agent/index-middleware.ts
+  s_f826d2309080ef::t_b1c64604d9e1d8 5,25-31
+  s_f826d2309080ef::t_4b3a4fa28d66ca 1-2,4,6,8-9,11,16-17,19-20,22-24,32-39,41-44,48,50-56,59-71,74,76-83,87,97-100,103-105,109-134,136-137,141,144,146-147,149-155,158-187,189-192,195-196,199-206,209-219
+test/prompt.test.ts
+  s_f826d2309080ef::t_4b3a4fa28d66ca 95,100,102
+test/index-middleware.test.ts
+  s_f826d2309080ef::t_4b3a4fa28d66ca 1,4,6-9,12,16,23-25,27-28,31-32,35,37-41,45-50,52-54,58-59,61-68,71-72,74-75,77-79,81-95,98-99,101-102,104-106,108,110-178,180-181
+test/frontmatter-validator.test.ts
+  s_f826d2309080ef::t_758dcf588cced2 4,8,46-48,50-52,80-92,99,107-110,166
+pnpm-lock.yaml
+  s_f826d2309080ef::t_e55af0475ed572 53-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "1def24e7f85d8cebca1e05d47505f00b6ebb2180",
+  "prompts": {},
+  "sessions": {
+    "s_f826d2309080ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ceb-1a04-79b1-bfba-a09d1a336374",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
