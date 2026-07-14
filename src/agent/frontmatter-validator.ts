@@ -20,6 +20,7 @@ export type FrontmatterValidation =
 
 type ReadBackend = Pick<BackendProtocolV2, "readRaw">;
 
+/** Parses and validates leading YAML front matter against the supported OKF fields. */
 export function validateOkfFrontmatter(content: string): FrontmatterValidation {
   const lines = content.split(/\r?\n/u);
   if (lines[0] !== "---") {
@@ -88,6 +89,7 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
   return issues.length === 0 ? { valid: true } : { issues, valid: false };
 }
 
+/** Appends an actionable warning when a wiki write leaves invalid front matter. */
 export async function addFrontmatterWarning<Result>(
   result: Result,
   backend: ReadBackend,
@@ -119,6 +121,7 @@ export async function addFrontmatterWarning<Result>(
   return result;
 }
 
+/** Reads a persisted Markdown file and validates its final front matter. */
 async function validatePersistedFile(
   backend: ReadBackend,
   filePath: string,
@@ -136,6 +139,7 @@ async function validatePersistedFile(
   );
 }
 
+/** Extracts tool messages from direct and Command-like tool results. */
 function getToolMessages(result: unknown): ToolMessage[] {
   if (ToolMessage.isInstance(result)) return [result];
   if (!isRecord(result)) return [];
@@ -161,6 +165,7 @@ function getToolMessages(result: unknown): ToolMessage[] {
     : [];
 }
 
+/** Checks whether a path targets a Markdown file inside the configured wiki. */
 function isWikiMarkdownPath(
   filePath: string,
   outputMode: OpenWikiOutputMode,
@@ -174,6 +179,7 @@ function isWikiMarkdownPath(
   );
 }
 
+/** Formats validation issues as an instruction for the agent to correct the file. */
 function formatWarning(path: string, issues: FrontmatterIssue[]): string {
   const details = issues
     .map(
@@ -184,6 +190,7 @@ function formatWarning(path: string, issues: FrontmatterIssue[]): string {
   return `WARNING: YAML front matter was NOT formatted properly in \`${path}\`.\n${details}\nYou MUST correct this file's YAML front matter before continuing.`;
 }
 
+/** Creates a failed validation result containing one issue. */
 function invalid(
   code: string,
   message: string,
@@ -192,14 +199,17 @@ function invalid(
   return { issues: [issue(code, message, line)], valid: false };
 }
 
+/** Creates a structured front-matter validation issue. */
 function issue(code: string, message: string, line?: number): FrontmatterIssue {
   return { code, ...(line ? { line } : {}), message };
 }
 
+/** Narrows an unknown value to a non-array object record. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/** Converts an unknown thrown value into a readable message. */
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
