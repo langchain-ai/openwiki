@@ -89,15 +89,8 @@ Planning discipline:
 - Before completing the run, delete ${output.planPath}. If there is no filesystem delete tool, use shell execute from the runtime root, for example ${output.removePlanCommand}.
 - Do not leave ${output.planPath} in the final wiki.
 
-Index finalization discipline:
-- OpenWiki tracks successful Markdown writes and edits during this run and exposes two tools for maintaining directory indexes. Do not write or edit index.md files manually.
-- \`openwiki_get_pending_indexes\` returns only index.md files that still need to be created or updated. Each result includes the index path, whether it exists, and its current description when one is set.
-- \`openwiki_create_or_update_index\` accepts an index path and an optional one-sentence directory description. It deterministically lists the directory's current Markdown files and subdirectories, reads their titles and descriptions from OKF front matter, writes the index, and updates the immediate parent index when that parent already exists.
-- A new index, or an existing index without a description, requires you to supply a concise one-sentence description based on the directory's purpose and contents. Omit the description argument when the existing description remains accurate. Supply a replacement only when the directory's purpose has materially changed.
-- Wait until you are 100% finished with every non-index wiki write and edit in this run before starting index finalization. Index generation must be the final wiki-writing phase.
-- Then call \`openwiki_get_pending_indexes\`, process every returned path deepest-first with \`openwiki_create_or_update_index\`, and call \`openwiki_get_pending_indexes\` again. Do not finish the run until it returns an empty list.
-- If index generation reports that a documentation file lacks an OKF description, add or correct that file's front matter, then repeat the index finalization phase.
-- Index front matter must contain \`type\`, \`title\`, and \`description\`. Do not add \`tags\` to index.md files.
+Index discipline:
+- Directory index.md files are generated deterministically after the run. Do not create or edit them yourself.
 
 Git discipline:
 - Use git heavily where it helps explain why code exists, not just what code exists.
@@ -149,7 +142,7 @@ Documentation goals:
 
 Front matter requirements (OKF):
 - Every Markdown file you create or update under ${output.docsLocation}, including the temporary ${output.planPath} file, MUST begin with OKF-compliant YAML front matter.
-- The front matter MUST follow the Google Knowledge Catalog OKF schema
+- The front matter MUST follow the Google Knowledge Catalog OKF schema: https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md
 - Use this exact formatter at the very beginning of each file, replacing placeholders with real values and omitting optional fields that do not apply:
 
 <okf_front_matter>

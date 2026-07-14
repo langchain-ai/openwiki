@@ -6,7 +6,6 @@ import {
   isOpenWikiDocsPath,
   OpenWikiLocalShellBackend,
 } from "../src/agent/docs-only-backend.ts";
-import { MUTATION_PATH_METADATA_KEY } from "../src/agent/indexing/state.ts";
 
 describe("OpenWikiLocalShellBackend", () => {
   test("recognizes only openwiki virtual paths as docs paths", () => {
@@ -77,26 +76,5 @@ describe("OpenWikiLocalShellBackend", () => {
     await expect(
       readFile(path.join(rootDir, "notes.md"), "utf8"),
     ).resolves.toBe("ok");
-  });
-
-  test("marks only successful write and edit results as mutations", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
-    const backend = new OpenWikiLocalShellBackend({
-      docsOnly: true,
-      rootDir,
-      virtualMode: true,
-    });
-
-    const write = await backend.write("/openwiki/page.md", "before");
-    const edit = await backend.edit("/openwiki/page.md", "before", "after");
-    const refused = await backend.write("/outside/page.md", "refused");
-
-    expect(write.metadata?.[MUTATION_PATH_METADATA_KEY]).toBe(
-      "/openwiki/page.md",
-    );
-    expect(edit.metadata?.[MUTATION_PATH_METADATA_KEY]).toBe(
-      "/openwiki/page.md",
-    );
-    expect(refused.metadata).toBeUndefined();
   });
 });

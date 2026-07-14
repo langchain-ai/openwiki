@@ -5,7 +5,6 @@ import {
   type WriteResult,
 } from "deepagents";
 import { OPEN_WIKI_DIR } from "../constants.js";
-import { MUTATION_PATH_METADATA_KEY } from "./indexing/state.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
 type OpenWikiBackendOptions = LocalShellBackendOptions & {
@@ -32,16 +31,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    const result = await super.write(filePath, content);
-
-    if (!result.error) {
-      result.metadata = {
-        ...result.metadata,
-        [MUTATION_PATH_METADATA_KEY]: result.path ?? filePath,
-      };
-    }
-
-    return result;
+    return super.write(filePath, content);
   }
 
   override async edit(
@@ -55,16 +45,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    const result = await super.edit(filePath, oldString, newString, replaceAll);
-
-    if (!result.error) {
-      result.metadata = {
-        ...result.metadata,
-        [MUTATION_PATH_METADATA_KEY]: result.path ?? filePath,
-      };
-    }
-
-    return result;
+    return super.edit(filePath, oldString, newString, replaceAll);
   }
 
   private getDocsOnlyWriteError(filePath: string): string | null {

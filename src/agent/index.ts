@@ -19,9 +19,7 @@ import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir } from "../openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
-import { createOrUpdateIndexTool } from "./indexing/create-or-update-index-tool.js";
-import { createGetPendingIndexesTool } from "./indexing/get-pending-indexes-tool.js";
-import { createOpenWikiIndexStateMiddleware } from "./indexing/state.js";
+import { createOpenWikiIndexMiddleware } from "./index-middleware.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -188,14 +186,13 @@ async function runOpenWikiAgentCore(
   });
   const agent = createDeepAgent({
     model,
-    tools: [
-      ...createOpenWikiConnectorTools(),
-      createGetPendingIndexesTool(backend, outputMode),
-      createOrUpdateIndexTool(backend, outputMode),
-    ],
+    tools: createOpenWikiConnectorTools(),
     checkpointer,
     backend,
-    middleware: [createOpenWikiIndexStateMiddleware()],
+    middleware:
+      command === "chat"
+        ? []
+        : [createOpenWikiIndexMiddleware(backend, outputMode)],
     systemPrompt: createSystemPrompt(command, outputMode),
   });
   emitDebug(options, "agent=created");
