@@ -1,18 +1,23 @@
 import { describe, expect, test } from "vitest";
 import {
+  DEFAULT_CLI_TIMEOUT_SECONDS,
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
   getDefaultModelId,
+  getProviderCliCommand,
   getProviderModelOptions,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
   normalizeModelId,
   normalizeProvider,
+  providerUsesCliAuth,
+  resolveCliTimeoutSeconds,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
   resolveProviderRetryAttempts,
+  SELECTABLE_OPENWIKI_PROVIDERS,
 } from "../src/constants.ts";
 
 describe("isValidModelId", () => {
@@ -199,4 +204,42 @@ describe("getDefaultModelId", () => {
       expect(getDefaultModelId("openai-compatible")).toBe(DEFAULT_MODEL_ID);
     },
   );
+});
+
+describe("cli providers", () => {
+  test("claude-code and codex-cli are valid selectable providers", () => {
+    expect(isValidProvider("claude-code")).toBe(true);
+    expect(isValidProvider("codex-cli")).toBe(true);
+    expect(SELECTABLE_OPENWIKI_PROVIDERS).toContain("claude-code");
+    expect(SELECTABLE_OPENWIKI_PROVIDERS).toContain("codex-cli");
+  });
+
+  test("cli providers use cli auth and expose a cli command", () => {
+    expect(providerUsesCliAuth("claude-code")).toBe(true);
+    expect(providerUsesCliAuth("codex-cli")).toBe(true);
+    expect(providerUsesCliAuth("anthropic")).toBe(false);
+    expect(providerUsesCliAuth("openai-chatgpt")).toBe(false);
+    expect(getProviderCliCommand("claude-code")).toBe("claude");
+    expect(getProviderCliCommand("codex-cli")).toBe("codex");
+    expect(getProviderCliCommand("openai")).toBe(null);
+  });
+
+  test("cli providers have model defaults", () => {
+    expect(getDefaultModelId("claude-code")).toBe("sonnet");
+    expect(getDefaultModelId("codex-cli")).toBe("gpt-5.6-terra");
+    expect(isValidModelId("sonnet")).toBe(true);
+  });
+
+  test("resolveCliTimeoutSeconds falls back on missing or invalid values", () => {
+    expect(resolveCliTimeoutSeconds({})).toBe(DEFAULT_CLI_TIMEOUT_SECONDS);
+    expect(
+      resolveCliTimeoutSeconds({ OPENWIKI_CLI_TIMEOUT_SECONDS: "600" }),
+    ).toBe(600);
+    expect(
+      resolveCliTimeoutSeconds({ OPENWIKI_CLI_TIMEOUT_SECONDS: "abc" }),
+    ).toBe(DEFAULT_CLI_TIMEOUT_SECONDS);
+    expect(
+      resolveCliTimeoutSeconds({ OPENWIKI_CLI_TIMEOUT_SECONDS: "-5" }),
+    ).toBe(DEFAULT_CLI_TIMEOUT_SECONDS);
+  });
 });

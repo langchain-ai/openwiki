@@ -18,6 +18,10 @@ import {
 import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir } from "../openwiki-home.js";
+import {
+  ensureCliBinaryAvailable,
+  runOpenWikiCliAgent,
+} from "./cli-runner/index.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import {
   CODEX_ORIGINATOR,
@@ -51,6 +55,7 @@ import {
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   providerRequiresBaseUrl,
+  providerUsesCliAuth,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
   resolveProviderRetryAttempts,
@@ -112,6 +117,19 @@ export async function runOpenWikiAgent(
   if (providerBaseUrl) {
     emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
   }
+
+  if (providerUsesCliAuth(provider)) {
+    await ensureCliBinaryAvailable(provider);
+    emitDebug(options, `credentials=${provider} cli available`);
+    const cliModelId = resolveModelId(options, provider);
+    emitDebug(options, `model=${cliModelId}`);
+
+    return await runOpenWikiCliAgent(command, runtimeCwd, options, {
+      modelId: cliModelId,
+      provider,
+    });
+  }
+
   ensureProviderKey(provider);
   emitDebug(options, `credentials=${provider} key present`);
   ensureProviderBaseUrl(provider);
@@ -450,6 +468,12 @@ function createModel(
   modelId: string,
   providerRetryAttempts: number,
 ) {
+  if (providerUsesCliAuth(provider)) {
+    throw new Error(
+      "CLI providers are executed by runOpenWikiCliAgent, not createModel.",
+    );
+  }
+
   const retryOptions = { maxRetries: providerRetryAttempts };
 
   if (provider === "anthropic") {

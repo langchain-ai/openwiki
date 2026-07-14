@@ -11,6 +11,7 @@ import {
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
+  getProviderCliCommand,
   getProviderLabel,
   getProviderModelOptions,
   isValidBaseUrl,
@@ -27,6 +28,7 @@ import {
   OPENWIKI_X_CLIENT_ID_ENV_KEY,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
+  providerUsesCliAuth,
   providerUsesOAuth,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
@@ -380,12 +382,21 @@ export function needsCredentialSetup(
  * else it is a pasted API key.
  */
 function needsCredentialStep(provider: OpenWikiProvider): boolean {
+  if (providerUsesCliAuth(provider)) {
+    // CLI providers authenticate through the CLI's own login; the run
+    // itself validates availability with a clear error.
+    return false;
+  }
+
   return providerUsesOAuth(provider)
     ? !hasValidStoredToken()
     : !process.env[getProviderApiKeyEnvKey(provider)];
 }
 
-/** The step that collects the provider's primary credential. */
+/**
+ * The step that collects the provider's primary credential. CLI providers
+ * never reach this because `needsCredentialStep` returns false for them.
+ */
 function credentialStep(provider: OpenWikiProvider): PromptStep {
   return providerUsesOAuth(provider) ? "oauth-login" : "api-key";
 }
@@ -411,6 +422,10 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
 }
 
 function isCredentialConfigured(provider: OpenWikiProvider): boolean {
+  if (providerUsesCliAuth(provider)) {
+    return true;
+  }
+
   return providerUsesOAuth(provider)
     ? hasValidStoredToken()
     : Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
@@ -420,6 +435,10 @@ function getCredentialSetupDetail(
   provider: OpenWikiProvider,
   tokens: CodexTokens | null = null,
 ): string {
+  if (providerUsesCliAuth(provider)) {
+    return `uses your local ${getProviderCliCommand(provider)} login`;
+  }
+
   if (providerUsesOAuth(provider)) {
     if (!isCredentialConfigured(provider) && !tokens) {
       return "sign in with your ChatGPT account";
@@ -1955,7 +1974,13 @@ export function InitSetup({
           detail={getProviderSetupDetail(provider)}
         />
         <SetupStep
-          label={providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"}
+          label={
+            providerUsesCliAuth(provider)
+              ? "CLI login"
+              : providerUsesOAuth(provider)
+                ? "ChatGPT login"
+                : "Provider key"
+          }
           state={
             isCredentialConfigured(provider) || oauthTokens
               ? "done"
@@ -3504,8 +3529,13 @@ function getInputDisplayWidth(stdoutColumns: number | undefined): number {
   return Math.max(24, Math.min(96, stdoutColumns - 16));
 }
 
-function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+export function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "claude-code" ||
+    provider === "codex-cli"
+    ? "a"
+    : "an";
 }
 
 function getTemplateGoal(templateId: string | undefined): string {

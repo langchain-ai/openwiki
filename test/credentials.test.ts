@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { needsCredentialSetup } from "../src/credentials.tsx";
+import {
+  getProviderArticle,
+  needsCredentialSetup,
+} from "../src/credentials.tsx";
 
 const ENV_KEYS = [
   "LANGSMITH_API_KEY",
@@ -32,5 +35,20 @@ describe("needsCredentialSetup", () => {
     process.env.LANGSMITH_API_KEY = "lsv2_placeholder";
 
     expect(needsCredentialSetup()).toBe(true);
+  });
+});
+
+describe("getProviderArticle", () => {
+  test("uses 'a' for the consonant-sounding CLI provider labels", () => {
+    // Labels are "Claude Code (CLI)" and "Codex (CLI)": "a Claude...", "a Codex...".
+    expect(getProviderArticle("claude-code")).toBe("a");
+    expect(getProviderArticle("codex-cli")).toBe("a");
+  });
+
+  test("keeps 'a'/'an' for existing providers", () => {
+    expect(getProviderArticle("baseten")).toBe("a");
+    expect(getProviderArticle("fireworks")).toBe("a");
+    expect(getProviderArticle("openai")).toBe("an");
+    expect(getProviderArticle("anthropic")).toBe("an");
   });
 });

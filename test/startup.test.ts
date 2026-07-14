@@ -134,6 +134,48 @@ describe("resolveStartupCommand", () => {
     }
   });
 
+  test("allows non-interactive runs for CLI-auth providers without a key", async () => {
+    process.env.OPENWIKI_PROVIDER = "claude-code";
+    const repo = await createRepoWithOpenWiki();
+
+    // A CLI-auth provider authenticates via its own login (validated at
+    // runtime), so the API-key gate must not block --print runs even when the
+    // update is NOT a clean no-op (source changed) and a message is supplied.
+    await writeFile(
+      path.join(repo, "README.md"),
+      "# Test Repo\nChanged\n",
+      "utf8",
+    );
+
+    const command = updatePrintCommand({ userMessage: "refresh docs" });
+    const result = await resolveStartupCommand(command, {
+      cwd: repo,
+      isStdinTTY: false,
+    });
+
+    expect(result).toBe(command);
+  });
+
+  test("still rejects whitespace-only messages for CLI-auth providers", async () => {
+    process.env.OPENWIKI_PROVIDER = "claude-code";
+    const repo = await createRepoWithOpenWiki();
+
+    // The CLI-auth exemption covers only the API-key gate; the empty-message
+    // validation must still apply, exactly as it does for api-key providers.
+    const result = await resolveStartupCommand(
+      updatePrintCommand({ userMessage: "   " }),
+      {
+        cwd: repo,
+        isStdinTTY: false,
+      },
+    );
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toBe("User message cannot be empty.");
+    }
+  });
+
   test("still requires credentials when an update message is supplied", async () => {
     const repo = await createRepoWithOpenWiki();
     const head = await git(repo, ["rev-parse", "HEAD"]);

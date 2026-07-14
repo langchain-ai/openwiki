@@ -2,6 +2,7 @@ import { shouldCheckUpdateNoop, getUpdateNoopStatus } from "./agent/utils.js";
 import type { CliCommand } from "./commands.js";
 import {
   getProviderApiKeyEnvKey,
+  providerUsesCliAuth,
   resolveConfiguredProvider,
 } from "./constants.js";
 
@@ -37,25 +38,32 @@ export async function resolveStartupCommand(
     (command.print || !isStdinTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
 
-    if (!hasProviderKey) {
-      if (
-        command.print &&
-        (await canSkipCleanUpdateBeforeCredentials(
-          command,
-          options.cwd ?? process.cwd(),
-        ))
-      ) {
-        return command;
+    // CLI-auth providers (claude-code, codex-cli) have no API key: they sign in
+    // through their own CLI login, which is validated at run time by
+    // ensureCliBinaryAvailable. Skip only the API-key gate for them, so they
+    // still flow through the shared validations below (e.g. empty message).
+    if (!providerUsesCliAuth(provider)) {
+      const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+      const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+
+      if (!hasProviderKey) {
+        if (
+          command.print &&
+          (await canSkipCleanUpdateBeforeCredentials(
+            command,
+            options.cwd ?? process.cwd(),
+          ))
+        ) {
+          return command;
+        }
+
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        };
       }
-
-      return {
-        kind: "error",
-        exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
-      };
     }
   }
 
