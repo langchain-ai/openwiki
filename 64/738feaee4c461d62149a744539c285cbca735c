@@ -1,0 +1,33 @@
+src/agent/indexing/get-pending-indexes-tool.ts
+  s_f826d2309080ef::t_ef00c34e2fdee6 7,16-17
+src/agent/indexing/create-or-update-index-tool.ts
+  s_f826d2309080ef::t_ef00c34e2fdee6 11-12
+src/agent/index.ts
+  s_f826d2309080ef::t_0ffaf865a28542 22-24
+src/agent/docs-only-backend.ts
+  s_f826d2309080ef::t_0ffaf865a28542 8
+test/index-tools.test.ts
+  s_f826d2309080ef::t_0ffaf865a28542 7,9,14
+test/docs-only-backend.test.ts
+  s_f826d2309080ef::t_0ffaf865a28542 9
+src/agent/indexing/utils.ts
+  s_f826d2309080ef::t_ef00c34e2fdee6 3
+src/agent/indexing/state.ts
+  s_f826d2309080ef::t_ef00c34e2fdee6 11-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "64738feaee4c461d62149a744539c285cbca735c",
+  "prompts": {},
+  "sessions": {
+    "s_f826d2309080ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ceb-1a04-79b1-bfba-a09d1a336374",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
