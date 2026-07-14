@@ -41,6 +41,15 @@ describe("parseEnv", () => {
       OPENWIKI_MODEL_ID: "gpt-5.5",
     });
   });
+
+  test("unquotes and unescapes carriage returns in double-quoted values", () => {
+    expect(parseEnv('OPENAI_API_KEY="line1\\rline2"\n')).toEqual({
+      OPENAI_API_KEY: "line1\rline2",
+    });
+    expect(parseEnv('OPENAI_API_KEY="line1\\r\\nline2"\n')).toEqual({
+      OPENAI_API_KEY: "line1\r\nline2",
+    });
+  });
 });
 
 describe("formatEnv", () => {
@@ -48,6 +57,15 @@ describe("formatEnv", () => {
     expect(formatEnv({ OPENAI_API_KEY: "abc" })).toBe('OPENAI_API_KEY="abc"\n');
     expect(formatEnv({ OPENAI_API_KEY: 'a"b\\c\nd' })).toBe(
       'OPENAI_API_KEY="a\\"b\\\\c\\nd"\n',
+    );
+  });
+
+  test("escapes carriage returns in values", () => {
+    expect(formatEnv({ OPENAI_API_KEY: "line1\rline2" })).toBe(
+      'OPENAI_API_KEY="line1\\rline2"\n',
+    );
+    expect(formatEnv({ OPENAI_API_KEY: "line1\r\nline2" })).toBe(
+      'OPENAI_API_KEY="line1\\r\\nline2"\n',
     );
   });
 
@@ -82,6 +100,15 @@ describe("parseEnv <-> formatEnv round-trip", () => {
       OPENAI_API_KEY: 'weird "value" with\nnewline and \\ backslash',
       ANTHROPIC_BASE_URL: "https://gateway.example/anthropic",
       OPENWIKI_MODEL_ID: "claude-opus-4-8",
+    };
+
+    expect(parseEnv(formatEnv(original))).toEqual(original);
+  });
+
+  test("carriage returns survive a format -> parse round-trip", () => {
+    const original = {
+      OPENAI_API_KEY: "value with\r carriage return",
+      ANTHROPIC_BASE_URL: "value with\r\n crlf pair",
     };
 
     expect(parseEnv(formatEnv(original))).toEqual(original);

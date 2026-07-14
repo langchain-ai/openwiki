@@ -8,6 +8,7 @@ import {
   FIREWORKS_API_KEY_ENV_KEY,
   isValidModelId,
   normalizeProvider,
+  NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
@@ -72,6 +73,7 @@ export type CredentialDiagnostic = {
 export const MANAGED_ENV_KEYS = [
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
@@ -146,11 +148,7 @@ export const DEBUG_ENV_KEYS: readonly string[] = [
 
 const managedEnvKeys: readonly string[] = MANAGED_ENV_KEYS;
 
-const deprecatedEnvKeys = [
-  "OPENAI_BASE_URL",
-  "OPENAI_ORG_ID",
-  "OPENAI_PROJECT",
-];
+const deprecatedEnvKeys = ["OPENAI_ORG_ID", "OPENAI_PROJECT"];
 
 export async function loadOpenWikiEnv(): Promise<EnvMap> {
   const env = await readOpenWikiEnv();
@@ -368,6 +366,7 @@ function parseEnvValue(value: string): string {
     return value
       .slice(1, -1)
       .replace(/\\n/gu, "\n")
+      .replace(/\\r/gu, "\r")
       .replace(/\\"/gu, '"')
       .replace(/\\\\/gu, "\\");
   }
@@ -390,5 +389,6 @@ function formatEnvValue(value: string): string {
   return `"${value
     .replace(/\\/gu, "\\\\")
     .replace(/"/gu, '\\"')
-    .replace(/\n/gu, "\\n")}"`;
+    .replace(/\n/gu, "\\n")
+    .replace(/\r/gu, "\\r")}"`;
 }

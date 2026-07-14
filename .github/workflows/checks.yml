@@ -56,11 +56,18 @@ jobs:
         run: pnpm run lint:check
 
   build:
-    name: Build & Typecheck
-    runs-on: ubuntu-latest
+    name: Build, Typecheck & CLI Smoke (${{ matrix.os }}, Node ${{ matrix.node-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        node-version: ["20", "22"]
+        include:
+          - os: ubuntu-latest
+            node-version: "20"
+          - os: ubuntu-latest
+            node-version: "22"
+          - os: ubuntu-latest
+            node-version: "24"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -85,12 +92,17 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Smoke test CLI
+        run: node dist/cli.js code --dry-run --init
+        env:
+          OPENWIKI_DEV: "1"
+
   test:
     name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ["20", "22"]
+        node-version: ["20", "22", "24"]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

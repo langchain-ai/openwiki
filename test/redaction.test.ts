@@ -2,17 +2,68 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import {
   getErrorMessage,
   isOpenRouterServerError,
+  isSecretLikeKey,
   sanitizeDiagnosticText,
 } from "../src/diagnostics.ts";
 import { sanitizeOpenRouterResponseBody } from "../src/agent/index.ts";
 
+describe("isSecretLikeKey", () => {
+  // The shared predicate must be the union of every term the three former
+  // implementations (cli.tsx, agent/index.ts, mcp-runtime.ts) matched, so a key
+  // redacted by one path is redacted by all of them.
+  test.each([
+    "apiKey",
+    "api_key",
+    "api-key",
+    "authorization",
+    "Bearer",
+    "access_token",
+    "refresh_token",
+    "client_secret",
+    "password",
+    "user_id",
+    "Cookie",
+  ])("flags secret-bearing key %s (case-insensitive)", (key) => {
+    expect(isSecretLikeKey(key)).toBe(true);
+    expect(isSecretLikeKey(key.toUpperCase())).toBe(true);
+  });
+
+  test.each(["email", "plan", "model", "count", "name", "url"])(
+    "does not flag benign key %s",
+    (key) => {
+      expect(isSecretLikeKey(key)).toBe(false);
+    },
+  );
+});
+
+describe("sanitizeOpenRouterResponseBody", () => {
+  test("redacts values for the unified secret key set", () => {
+    const body = JSON.stringify({
+      access_token: "should-be-hidden",
+      user_id: "u-123",
+      cookie: "session=abc",
+      model: "gpt-5.5",
+    });
+    const sanitized = sanitizeOpenRouterResponseBody(body);
+
+    expect(sanitized).not.toContain("should-be-hidden");
+    expect(sanitized).not.toContain("u-123");
+    expect(sanitized).not.toContain("session=abc");
+    expect(sanitized).toContain("[REDACTED]");
+    // Non-secret fields are preserved.
+    expect(sanitized).toContain("gpt-5.5");
+  });
+});
+
 describe("sanitizeDiagnosticText", () => {
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
   const originalOpenAiCompatibleKey = process.env.OPENAI_COMPATIBLE_API_KEY;
+  const originalNvidiaKey = process.env.NVIDIA_API_KEY;
 
   beforeEach(() => {
     delete process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_COMPATIBLE_API_KEY;
+    delete process.env.NVIDIA_API_KEY;
   });
 
   afterEach(() => {
@@ -26,6 +77,12 @@ describe("sanitizeDiagnosticText", () => {
     } else {
       process.env.OPENAI_COMPATIBLE_API_KEY = originalOpenAiCompatibleKey;
     }
+
+    if (originalNvidiaKey === undefined) {
+      delete process.env.NVIDIA_API_KEY;
+    } else {
+      process.env.NVIDIA_API_KEY = originalNvidiaKey;
+    }
   });
 
   test("redacts the exact value of a secret set in the environment", () => {
@@ -37,6 +94,17 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("super-secret-value-12345");
     expect(result).toContain("[REDACTED:OPENAI_API_KEY]");
+  });
+
+  test("redacts the exact value of NVIDIA_API_KEY when set", () => {
+    process.env.NVIDIA_API_KEY = "nvapi-secret-value-67890";
+
+    const result = sanitizeDiagnosticText(
+      "request failed with key nvapi-secret-value-67890 attached",
+    );
+
+    expect(result).not.toContain("nvapi-secret-value-67890");
+    expect(result).toContain("[REDACTED:NVIDIA_API_KEY]");
   });
 
   test("redacts OpenAI-style sk- tokens", () => {
