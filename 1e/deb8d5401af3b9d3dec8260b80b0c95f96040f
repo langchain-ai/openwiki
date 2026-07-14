@@ -1,0 +1,19 @@
+src/agent/index-middleware.ts
+  s_f826d2309080ef::t_1ca19224d541bb 18,31,42,69,126,141,156,194,199,210,220,225,234
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "1edeb8d5401af3b9d3dec8260b80b0c95f96040f",
+  "prompts": {},
+  "sessions": {
+    "s_f826d2309080ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ceb-1a04-79b1-bfba-a09d1a336374",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
