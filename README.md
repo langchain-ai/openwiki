@@ -238,12 +238,20 @@ OPENWIKI_PROVIDER=bedrock
 BEDROCK_AWS_ACCESS_KEY_ID=your-access-key-id
 BEDROCK_AWS_SECRET_ACCESS_KEY=your-secret-access-key
 BEDROCK_AWS_REGION=us-east-1
-OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5-20260101-v1:0
+OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
 ```
 
 Which model IDs are available depends on your AWS account and region (which
 foundation models you've enabled in the Bedrock console), so there is no
 preset model list — paste the Bedrock model ID directly, as shown above.
+
+Some newer models only accept on-demand invocation through a cross-region
+inference profile rather than their bare model ID — if you see `ValidationException:
+Invocation of model ID ... with on-demand throughput isn't supported`, prefix
+the model ID with the profile's region code instead, for example
+`us.anthropic.claude-sonnet-5`. Your IAM policy also needs to allow
+`bedrock:InvokeModel`/`InvokeModelWithResponseStream` on both the
+`foundation-model` and `inference-profile` resource types in that case.
 
 ### OpenAI (ChatGPT login)
 
