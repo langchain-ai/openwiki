@@ -52,6 +52,7 @@ import {
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   providerRequiresBaseUrl,
   resolveConfiguredProvider,
+  resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderRetryAttempts,
   type OpenWikiProvider,
@@ -499,10 +500,13 @@ function createModel(
   }
 
   if (provider === "openrouter") {
+    const providerOnly = resolveOpenRouterProviderOnly();
+
     return new ChatOpenRouter({
       apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
+      provider: providerOnly ? { only: providerOnly } : undefined,
       siteName: "OpenWiki",
       ...retryOptions,
     });

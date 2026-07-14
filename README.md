@@ -252,6 +252,18 @@ refresh token like a password.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
+### OpenRouter provider pinning
+
+When OpenRouter serves a model through multiple upstream providers, set
+`OPENWIKI_OPENROUTER_PROVIDER_ONLY` to restrict routing to one provider or a
+comma-separated provider allowlist:
+
+```bash
+OPENWIKI_PROVIDER=openrouter
+OPENROUTER_API_KEY=your-key
+OPENWIKI_OPENROUTER_PROVIDER_ONLY=Novita
+```
+
 ### Provider retry attempts
 
 OpenWiki uses LangChain's built-in retry handling for transient provider errors.
