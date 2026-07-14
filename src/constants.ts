@@ -288,6 +288,39 @@ export function isValidBaseUrl(value: string): boolean {
   }
 }
 
+export function getProviderBaseUrlWarnings(
+  provider: OpenWikiProvider,
+  value: string,
+): string[] {
+  if (!isValidBaseUrl(value)) {
+    return ["invalid base URL"];
+  }
+
+  if (provider === "openai-compatible" && isChatCompletionsEndpointUrl(value)) {
+    return ["use API root URL, not /chat/completions endpoint"];
+  }
+
+  return [];
+}
+
+export function isValidProviderBaseUrl(
+  provider: OpenWikiProvider,
+  value: string,
+): boolean {
+  return getProviderBaseUrlWarnings(provider, value).length === 0;
+}
+
+function isChatCompletionsEndpointUrl(value: string): boolean {
+  try {
+    const url = new URL(value.trim());
+    const normalizedPath = url.pathname.replace(/\/+$/u, "").toLowerCase();
+
+    return normalizedPath.endsWith("/chat/completions");
+  } catch {
+    return false;
+  }
+}
+
 export function getProviderModelOptions(
   provider: OpenWikiProvider,
 ): ProviderModelOption[] {

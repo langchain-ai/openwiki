@@ -6,6 +6,7 @@ import {
   ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  getProviderBaseUrlWarnings,
   isValidModelId,
   normalizeProvider,
   NVIDIA_API_KEY_ENV_KEY,
@@ -237,7 +238,11 @@ function createCredentialDiagnostic(
           ? getProviderWarnings(value)
           : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
             ? getRetryAttemptsWarnings(value)
-            : getCredentialWarnings(value),
+            : key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+              ? getProviderBaseUrlWarnings("openai-compatible", value)
+              : key === ANTHROPIC_BASE_URL_ENV_KEY
+                ? getProviderBaseUrlWarnings("anthropic", value)
+                : getCredentialWarnings(value),
   };
 }
 

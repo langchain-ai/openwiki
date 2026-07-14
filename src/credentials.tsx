@@ -11,9 +11,9 @@ import {
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
+  getProviderBaseUrlWarnings,
   getProviderLabel,
   getProviderModelOptions,
-  isValidBaseUrl,
   isValidModelId,
   normalizeProvider,
   normalizeModelId,
@@ -1167,8 +1167,12 @@ export function InitSetup({
         return;
       }
 
-      if (!isValidBaseUrl(trimmedInput)) {
-        setError("Enter a valid http(s) base URL.");
+      const baseUrlWarnings = getProviderBaseUrlWarnings(
+        provider,
+        trimmedInput,
+      );
+      if (baseUrlWarnings.length > 0) {
+        setError(`Enter a valid base URL: ${baseUrlWarnings.join(", ")}.`);
         return;
       }
 

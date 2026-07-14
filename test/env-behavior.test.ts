@@ -18,6 +18,7 @@ import {
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -37,6 +38,7 @@ import {
 const KEYS_UNDER_TEST = [
   ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -241,6 +243,22 @@ describe("getCredentialDiagnostics", () => {
     );
 
     expect(entry?.warnings).toContain("invalid provider");
+  });
+
+  test("flags an OpenAI-compatible chat completions endpoint as a base URL warning", async () => {
+    await saveOpenWikiEnv({
+      [OPENAI_COMPATIBLE_BASE_URL_ENV_KEY]:
+        "https://gateway.example.com/v1/chat/completions",
+    });
+
+    const diagnostics = await getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+    );
+
+    expect(entry?.warnings).toContain(
+      "use API root URL, not /chat/completions endpoint",
+    );
   });
 
   test("prefers process.env over the file when both are set", async () => {
