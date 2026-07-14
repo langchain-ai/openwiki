@@ -667,6 +667,8 @@ function App({ command }: AppProps) {
         {runState.result.savedApiKey ||
         runState.result.savedProvider ||
         runState.result.savedBaseUrl ||
+        runState.result.savedRegion ||
+        runState.result.savedSecretKey ||
         runState.result.savedModelId ||
         runState.result.savedLangSmithKey ? (
           <StatusLine tone="success" label="Credentials" value="saved" />

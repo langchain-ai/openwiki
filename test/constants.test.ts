@@ -5,14 +5,19 @@ import {
   DEFAULT_PROVIDER,
   getDefaultModelId,
   getProviderModelOptions,
+  getProviderRegionEnvKey,
+  getProviderSecretKeyEnvKey,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
   NEBIUS_BASE_URL,
   normalizeModelId,
   normalizeProvider,
+  providerRequiresRegion,
+  providerRequiresSecretKey,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  resolveProviderRegion,
   resolveProviderRetryAttempts,
 } from "../src/constants.ts";
 
@@ -83,6 +88,12 @@ describe("resolveConfiguredProvider", () => {
 
   test("falls back to nvidia when only an NVIDIA key is present", () => {
     expect(resolveConfiguredProvider({ NVIDIA_API_KEY: "x" })).toBe("nvidia");
+  });
+
+  test("falls back to bedrock when only a Bedrock access key is present", () => {
+    expect(resolveConfiguredProvider({ BEDROCK_AWS_ACCESS_KEY_ID: "x" })).toBe(
+      "bedrock",
+    );
   });
 
   test("falls back to the default provider when nothing is configured", () => {
@@ -181,6 +192,33 @@ describe("getProviderModelOptions", () => {
       { id: "gpt-5.5", label: "5.5" },
       { id: "gpt-5.4-mini", label: "5.4 mini" },
     ]);
+  });
+});
+
+describe("bedrock provider (IAM access key + secret key + region)", () => {
+  test("requires a secret key and a region, unlike API-key providers", () => {
+    expect(providerRequiresSecretKey("bedrock")).toBe(true);
+    expect(providerRequiresRegion("bedrock")).toBe(true);
+    expect(providerRequiresSecretKey("anthropic")).toBe(false);
+    expect(providerRequiresRegion("anthropic")).toBe(false);
+  });
+
+  test("exposes the AWS-flavored env keys", () => {
+    expect(getProviderSecretKeyEnvKey("bedrock")).toBe(
+      "BEDROCK_AWS_SECRET_ACCESS_KEY",
+    );
+    expect(getProviderRegionEnvKey("bedrock")).toBe("BEDROCK_AWS_REGION");
+  });
+
+  test("resolveProviderRegion reads the region env key and trims it", () => {
+    expect(
+      resolveProviderRegion("bedrock", { BEDROCK_AWS_REGION: " us-east-1 " }),
+    ).toBe("us-east-1");
+    expect(resolveProviderRegion("bedrock", {})).toBeUndefined();
+  });
+
+  test("has no preset model list (Bedrock model availability is account/region specific)", () => {
+    expect(getProviderModelOptions("bedrock")).toEqual([]);
   });
 });
 

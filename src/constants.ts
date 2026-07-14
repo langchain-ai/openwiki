@@ -18,6 +18,10 @@ export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
+export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
+  "BEDROCK_AWS_SECRET_ACCESS_KEY";
+export const BEDROCK_AWS_REGION_ENV_KEY = "BEDROCK_AWS_REGION";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
@@ -58,6 +62,7 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "bedrock"
   | "fireworks"
   | "nebius"
   | "nvidia"
@@ -114,6 +119,22 @@ type ProviderConfig = {
   requiresBaseUrl?: boolean;
   label: string;
   modelOptions: ProviderModelOption[];
+  /**
+   * Environment variable holding a second required secret (e.g. an AWS secret
+   * access key paired with {@link ProviderConfig.apiKeyEnvKey} as an access key
+   * ID). Omitted for providers authenticated by a single API key.
+   */
+  secretKeyEnvKey?: string;
+  /**
+   * Environment variable holding the provider's region (e.g. an AWS region).
+   * Only relevant when {@link ProviderConfig.requiresRegion} is true.
+   */
+  regionEnvKey?: string;
+  /**
+   * When true, the provider has no default region and requires one to be
+   * supplied via {@link ProviderConfig.regionEnvKey}.
+   */
+  requiresRegion?: boolean;
 };
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
@@ -122,6 +143,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "anthropic",
   "openrouter",
   "openai-compatible",
+  "bedrock",
   "fireworks",
   "baseten",
   "nebius",
@@ -137,6 +159,18 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
       { id: "moonshotai/Kimi-K2.7-Code", label: "Kimi K2.7 Code" },
     ],
+  },
+  bedrock: {
+    apiKeyEnvKey: BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+    label: "AWS Bedrock",
+    // Available model IDs are account- and region-specific (they depend on
+    // which foundation models are enabled in Bedrock), so there is no safe
+    // preset list here; paste the Bedrock model ID directly, for example
+    // anthropic.claude-sonnet-5-20260101-v1:0.
+    modelOptions: [],
+    secretKeyEnvKey: BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+    regionEnvKey: BEDROCK_AWS_REGION_ENV_KEY,
+    requiresRegion: true,
   },
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
@@ -282,6 +316,41 @@ export function providerRequiresBaseUrl(provider: OpenWikiProvider): boolean {
   return getProviderConfig(provider).requiresBaseUrl === true;
 }
 
+export function getProviderSecretKeyEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).secretKeyEnvKey;
+}
+
+export function providerRequiresSecretKey(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).secretKeyEnvKey !== undefined;
+}
+
+export function getProviderRegionEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).regionEnvKey;
+}
+
+export function providerRequiresRegion(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).requiresRegion === true;
+}
+
+/**
+ * Resolves the configured region for a provider from its region environment
+ * variable. Returns `undefined` when unset, so callers fall back to the SDK's
+ * own region resolution (e.g. `~/.aws/config`).
+ */
+export function resolveProviderRegion(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const regionEnvKey = getProviderRegionEnvKey(provider);
+  const region = regionEnvKey ? env[regionEnvKey]?.trim() : undefined;
+
+  return region ? region : undefined;
+}
+
 export function isValidBaseUrl(value: string): boolean {
   const trimmed = value.trim();
 
@@ -345,7 +414,9 @@ export function resolveConfiguredProvider(
                   ? "nebius"
                   : env[NVIDIA_API_KEY_ENV_KEY]
                     ? "nvidia"
-                    : DEFAULT_PROVIDER)
+                    : env[BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY]
+                      ? "bedrock"
+                      : DEFAULT_PROVIDER)
   );
 }
 
