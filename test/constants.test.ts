@@ -8,6 +8,7 @@ import {
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
+  NEBIUS_BASE_URL,
   normalizeModelId,
   normalizeProvider,
   resolveConfiguredProvider,
@@ -49,6 +50,7 @@ describe("normalizeProvider / isValidProvider", () => {
   test("normalizes case and whitespace to a known provider", () => {
     expect(normalizeProvider("  Anthropic ")).toBe("anthropic");
     expect(normalizeProvider("OPENROUTER")).toBe("openrouter");
+    expect(normalizeProvider(" Nebius ")).toBe("nebius");
   });
 
   test("returns null for unknown or nullish providers", () => {
@@ -59,6 +61,7 @@ describe("normalizeProvider / isValidProvider", () => {
 
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
+    expect(isValidProvider("nebius")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
     expect(isValidProvider("nvidia")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
@@ -98,6 +101,7 @@ describe("resolveProviderBaseUrl", () => {
     expect(resolveProviderBaseUrl("openrouter", {})).toBe(
       "https://openrouter.ai/api/v1",
     );
+    expect(resolveProviderBaseUrl("nebius", {})).toBe(NEBIUS_BASE_URL);
     expect(resolveProviderBaseUrl("nvidia", {})).toBe(
       "https://integrate.api.nvidia.com/v1",
     );
@@ -183,6 +187,7 @@ describe("getProviderModelOptions", () => {
 describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
+    expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K2.6");
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
