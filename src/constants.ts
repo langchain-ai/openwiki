@@ -5,6 +5,7 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
+export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
@@ -237,6 +238,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   },
   openai: {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
+    baseUrlEnvKey: OPENAI_BASE_URL_ENV_KEY,
     label: "OpenAI",
     modelOptions: OPENAI_MODEL_OPTIONS,
   },
