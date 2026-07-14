@@ -1,7 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { execFile } from "node:child_process";
 import http from "node:http";
-import { AddressInfo } from "node:net";
 import { loadOpenWikiEnv, saveOpenWikiEnv } from "../env.js";
 import { getAuthProvider } from "./providers.js";
 import type {
@@ -396,7 +395,9 @@ function mapTokenResponse(
   return updates;
 }
 
-async function createCallbackServer(provider: OAuthProviderConfig): Promise<{
+export async function createCallbackServer(
+  provider: OAuthProviderConfig,
+): Promise<{
   close: () => Promise<void>;
   redirectUri: string;
   waitForCode: (expectedState: string) => Promise<string>;
@@ -410,9 +411,12 @@ async function createCallbackServer(provider: OAuthProviderConfig): Promise<{
   });
 
   const server = http.createServer((request, response) => {
+    // Build the base from the configured port, not server.address(): address()
+    // returns null once close() starts, and trailing browser requests (such as
+    // favicon fetches) can still arrive on accepted connections mid-shutdown.
     const requestUrl = new URL(
       request.url ?? "/",
-      `http://${CALLBACK_HOST}:${(server.address() as AddressInfo).port}`,
+      `http://${CALLBACK_HOST}:${callbackPort}`,
     );
     const code = requestUrl.searchParams.get("code");
     const state = requestUrl.searchParams.get("state");

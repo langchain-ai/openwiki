@@ -33,7 +33,11 @@ import {
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
 import { formatChatGptAccountFromEnv } from "./agent/openai-chatgpt-oauth.js";
-import { getErrorMessage, sanitizeDiagnosticText } from "./diagnostics.js";
+import {
+  getErrorMessage,
+  isSecretLikeKey,
+  sanitizeDiagnosticText,
+} from "./diagnostics.js";
 import { stripHtmlTags } from "./utils.js";
 import {
   type OpenWikiRunEvent,
@@ -2998,11 +3002,7 @@ function pickVariantIndex(seed: string): number {
 function isExitMessage(message: string): boolean {
   const normalizedMessage = message.trim().toLowerCase();
 
-  return (
-    normalizedMessage === "/exit" ||
-    normalizedMessage === "exit" ||
-    normalizedMessage === "quit"
-  );
+  return normalizedMessage === "/exit";
 }
 
 function truncateLogOutput(content: string, label: string): string {
@@ -3271,10 +3271,6 @@ function createDiagnosticJsonReplacer() {
 
     return value;
   };
-}
-
-function isSecretLikeKey(key: string): boolean {
-  return /api[-_]?key|authorization|bearer|token|secret|password/iu.test(key);
 }
 
 function truncateDiagnosticValue(value: string): string {
@@ -3803,7 +3799,6 @@ function shouldPrintStartupError(
     command.kind === "error" &&
     (argvRequestsPrint(argv) ||
       !process.stdin.isTTY ||
-      command.message.startsWith("openwiki --init requires a mode.") ||
       (parsedCommand.kind === "run" && parsedCommand.shouldStart))
   );
 }

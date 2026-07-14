@@ -23,3 +23,33 @@ describe("createUserPrompt", () => {
     expect(prompt).toContain("do not edit it during normal init/update/chat");
   });
 });
+
+describe("documentation coverage guidance", () => {
+  test("init records deferred domains in the quickstart backlog", () => {
+    const prompt = createSystemPrompt("init", "repository");
+
+    expect(prompt).toContain("## Backlog");
+    expect(prompt).toContain("area name, source anchor, and a one-line reason");
+    expect(prompt).toContain(
+      "Do not silently drop a real domain or workflow because of the page budget",
+    );
+  });
+
+  test("update promotes relevant backlog entries instead of dropping them", () => {
+    const prompt = createSystemPrompt("update", "repository");
+
+    expect(prompt).toContain("Read the existing `## Backlog` section");
+    expect(prompt).toContain(
+      "Promote a backlog entry when recent changes touch that area",
+    );
+    expect(prompt).toContain("remove the entry from the backlog");
+  });
+
+  test("all documentation runs perform a coverage self-check", () => {
+    for (const command of ["chat", "init", "update"] as const) {
+      expect(createSystemPrompt(command, "repository")).toContain(
+        "Before finishing, verify that every identified area is either documented or backlogged",
+      );
+    }
+  });
+});
