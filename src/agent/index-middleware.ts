@@ -16,6 +16,7 @@ type IndexBackend = Pick<
 type Directory = { entries: FileInfo[]; path: string };
 type Link = { description?: string; href: string; label: string };
 
+/** Creates middleware that synchronizes deterministic wiki indexes after a run. */
 export function createOpenWikiIndexMiddleware(
   backend: IndexBackend,
   outputMode: OpenWikiOutputMode,
@@ -35,6 +36,7 @@ export function createOpenWikiIndexMiddleware(
   });
 }
 
+/** Synchronizes the index for every directory in the configured wiki. */
 export async function synchronizeWikiIndexes(
   backend: IndexBackend,
   outputMode: OpenWikiOutputMode,
@@ -45,6 +47,7 @@ export async function synchronizeWikiIndexes(
   }
 }
 
+/** Recursively collects visible wiki directories and their entries. */
 async function collectDirectories(
   backend: IndexBackend,
   directoryPath: string,
@@ -71,6 +74,7 @@ async function collectDirectories(
   return [...descendants.flat(), { entries, path: directoryPath }];
 }
 
+/** Builds and writes one directory's index when its content has changed. */
 async function synchronizeDirectory(
   backend: IndexBackend,
   directory: Directory,
@@ -127,6 +131,7 @@ async function synchronizeDirectory(
   }
 }
 
+/** Renders a complete deterministic index document. */
 function renderIndex(
   title: string,
   files: Link[],
@@ -141,6 +146,7 @@ function renderIndex(
   return `---\ntype: Documentation Index\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(`Files and subdirectories in ${title}.`)}\n---\n\n${sections}\n`;
 }
 
+/** Renders a sorted Markdown section for files or subdirectories. */
 function renderLinks(
   heading: string,
   links: Link[],
@@ -155,6 +161,7 @@ function renderLinks(
   return `# ${heading}\n\n${items.join("\n")}`;
 }
 
+/** Parses the title and required description from YAML front matter. */
 function parseFrontmatter(
   content: string,
   filePath: string,
@@ -192,10 +199,12 @@ function parseFrontmatter(
   };
 }
 
+/** Converts an unknown thrown value into a readable message. */
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+/** Reads a text file from the backend or throws an actionable error. */
 async function readText(
   backend: IndexBackend,
   filePath: string,
@@ -206,6 +215,7 @@ async function readText(
   return fileDataToText(result.data?.content, filePath);
 }
 
+/** Converts supported backend file content into text. */
 function fileDataToText(
   content: string | string[] | Uint8Array | undefined,
   filePath: string,
@@ -215,10 +225,12 @@ function fileDataToText(
   throw new Error(`${filePath} is not a text file.`);
 }
 
+/** Extracts an entry's basename from its virtual path. */
 function entryName(entry: FileInfo): string {
   return path.posix.basename(entry.path.replace(/\/$/u, ""));
 }
 
+/** Converts a directory slug into a human-readable title. */
 function titleFromSlug(slug: string): string {
   return slug
     .split(/[-_\s]+/u)
@@ -227,6 +239,7 @@ function titleFromSlug(slug: string): string {
     .join(" ");
 }
 
+/** Escapes a value for use as a Markdown link label. */
 function escapeLabel(value: string): string {
   return value
     .replaceAll("\\", "\\\\")

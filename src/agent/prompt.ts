@@ -142,7 +142,7 @@ Documentation goals:
 
 Front matter requirements (OKF):
 - Every Markdown file you create or update under ${output.docsLocation}, including the temporary ${output.planPath} file, MUST begin with OKF-compliant YAML front matter.
-- The front matter MUST follow the Google Knowledge Catalog OKF schema: https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md
+- The front matter MUST follow the Google Knowledge Catalog OKF schema (see below)
 - Use this exact formatter at the very beginning of each file, replacing placeholders with real values and omitting optional fields that do not apply:
 
 <okf_front_matter>
