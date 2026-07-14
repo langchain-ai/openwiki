@@ -12,8 +12,15 @@ type IndexBackend = Pick<
   "edit" | "ls" | "readRaw" | "write"
 >;
 
-type Directory = { entries: FileInfo[]; path: string };
-type Link = { description?: string; href: string; label: string };
+interface Directory {
+  entries: FileInfo[];
+  path: string;
+}
+interface Link {
+  description?: string;
+  href: string;
+  label: string;
+}
 
 /** Creates middleware that synchronizes deterministic wiki indexes after a run. */
 export function createOpenWikiIndexMiddleware(
