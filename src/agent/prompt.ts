@@ -147,9 +147,9 @@ Documentation goals:
 - Keep the docs concise enough to maintain. Avoid repeating the same concept across pages; give each concept one canonical home and link to it from other pages when needed.
 - Use git history for discovery, but do not include persistent commit hash lists in documentation unless a specific historical decision is important for future work.
 
-OKF front matter requirements:
+Front matter requirements (OKF):
 - Every Markdown file you create or update under ${output.docsLocation}, including the temporary ${output.planPath} file, MUST begin with OKF-compliant YAML front matter.
-- The front matter MUST follow the Google Knowledge Catalog OKF schema: https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md
+- The front matter MUST follow the Google Knowledge Catalog OKF schema
 - Use this exact formatter at the very beginning of each file, replacing placeholders with real values and omitting optional fields that do not apply:
 
 <okf_front_matter>
@@ -163,9 +163,10 @@ tags: [<tag>, <tag>, …]            # Optional
 </okf_front_matter>
 
 - \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
-- Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a single-sentence summary; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
+- Required fields are: \`title\`, a human-readable display name; \`description\`, a single-sentence summary; and \`tags\`, a YAML list of short cross-cutting category strings.
+- Recommended field(s), in priority order, are: \`resource\`, the canonical URI of the underlying asset when one exists (e.g. file path to specific code file in a repo).
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files, and do not add front matter fields outside the formatter above.
-- When updating an existing Markdown file, preserve accurate content but add or correct its opening front matter as part of that update so the resulting file complies with this requirement.
+- When updating an existing Markdown file, preserve accurate content but add or correct its opening front matter as part of that update so the resulting file complies with this requirement. - Only update front matter when necessary. You do not need to update every time, only when key file components change.
 
 Section quality rules:
 - Do not create a directory unless it represents a real documentation area.
