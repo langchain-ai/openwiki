@@ -133,11 +133,11 @@ describe("parseCommand — mode after flags", () => {
   });
 
   test("a mode word after a message word stays part of the message", () => {
-    expect(parseCommand(["document", "code", "paths"])).toMatchObject({
+    expect(parseCommand(["document", "personal", "paths"])).toMatchObject({
       kind: "run",
-      mode: "personal",
+      mode: "code",
       modeSource: "default",
-      userMessage: "document code paths",
+      userMessage: "document personal paths",
     });
   });
 });
