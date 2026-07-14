@@ -152,6 +152,12 @@ Bare `openwiki --init` and `openwiki --update` default to code mode and operate 
 
 On each `code` run, `openwiki` maintains both an `AGENTS.md` and a `CLAUDE.md` at the repository root, adding prompting that instructs your coding agent to reference the wiki when searching for context. Each file is created if it does not already exist. If a file is present, OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of your content untouched (appending the block the first time). The scheduled GitHub Actions workflow includes these files, along with the workflow itself, in the documentation pull request.
 
+Repository-specific wiki instructions are stored separately in
+`openwiki/INSTRUCTIONS.md`. This file is a shared, user-authored brief for the
+repository wiki: OpenWiki reads it for scope and priorities, but it is not
+generated documentation and is not rewritten during normal init, update, or chat
+runs unless you explicitly ask to change the brief.
+
 On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
 
 These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.
