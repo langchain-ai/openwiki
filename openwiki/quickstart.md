@@ -6,11 +6,11 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 
 - Launches an interactive Ink-based terminal app for chatting with the OpenWiki agent.
 - Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
-- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), OpenRouter, Anthropic, Baseten, Fireworks, and any OpenAI-compatible gateway — each with their own API key and model list.
+- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), OpenRouter, Anthropic, Baseten, Fireworks, NVIDIA NIM, and any OpenAI-compatible gateway — each with their own API key and model list.
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
-- Optionally schedules automated updates through GitHub Actions or GitLab CI.
+- Optionally schedules automated updates through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
 
 ## Start here
 
@@ -18,6 +18,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - [CLI usage](./cli/usage.md) — commands, options, model/provider selection, and credential bootstrap.
 - [Agent workflow](./agent/workflow.md) — how documentation runs are assembled and persisted.
 - [Credentials and updates](./operations/credentials-and-updates.md) — local env storage, metadata, and scheduled updates.
+- [Connectors](./integrations/connectors.md) — built-in connector architecture, the seven connectors, and ingestion orchestration.
 
 ## Key source files
 
@@ -44,6 +45,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/constants.ts` — provider configs, model options, env keys, and validation helpers.
 - `examples/openwiki-update.yml` — GitHub Actions scheduled automation example.
 - `examples/openwiki-update.gitlab-ci.yml` — GitLab CI scheduled automation example.
+- `examples/openwiki-update.bitbucket-pipelines.yml` — Bitbucket Pipelines scheduled automation example.
 
 ## Documentation map
 
@@ -51,6 +53,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - [CLI](./cli/usage.md)
 - [Agent](./agent/workflow.md)
 - [Operations](./operations/credentials-and-updates.md)
+- [Connectors](./integrations/connectors.md)
 
 ## Notes for future agents
 
@@ -97,4 +100,5 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/constants.ts`
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
+- `examples/openwiki-update.bitbucket-pipelines.yml`
 - Git evidence: commits `ceded10`, `f89b05d`, `a82759f`, `dfa73cc`, `fd3a702`, `8278c36`, `0fa1430`

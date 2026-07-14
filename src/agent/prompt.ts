@@ -102,13 +102,15 @@ ${createModeInstructions(command, outputMode)}
 
 export const OPENWIKI_CLI_REFERENCE = `
 OpenWiki CLI reference:
-- \`openwiki\` opens the interactive chat interface and waits for user input.
-- \`openwiki "message"\` sends a chat message immediately, then keeps the chat open.
+- \`openwiki\` opens the interactive code-mode chat for the current repository and waits for user input.
+- \`openwiki "message"\` sends a code-mode chat message for the current repository immediately, then keeps the chat open.
+- \`openwiki personal\` opens the interactive local personal brain chat.
+- \`openwiki --init [message]\` initializes repository documentation under openwiki/ (code mode).
+- \`openwiki --update [message]\` updates repository documentation under openwiki/ (code mode).
 - \`openwiki personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
 - \`openwiki code --init [message]\` initializes repository documentation under openwiki/.
-- \`openwiki --update [message]\` updates the local OpenWiki knowledge base under ~/.openwiki/wiki.
 - \`openwiki --mode code --init [message]\` initializes repository documentation under openwiki/.
-- \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki. Bare \`openwiki --init\` is not supported because init requires an explicit mode.
+- \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
 - \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.
 - \`openwiki --modelId <id>\` selects a model ID for that run.
 - \`openwiki --help\` prints current usage, options, and examples.
@@ -199,7 +201,7 @@ export function createModeInstructions(
 - This is an interactive chat turn.
 - Answer the user's message directly.
 - Do not create or update OpenWiki documentation unless the user explicitly asks you to modify documentation.
-- If the user asks to initialize or update the wiki, explain that they can run openwiki personal --init, openwiki code --init, or openwiki --update, or ask you to make a specific documentation change in chat.
+- If the user asks to initialize or update the wiki, explain that they can run openwiki --init or openwiki --update for repository docs, openwiki personal --init or openwiki personal --update for the local personal brain, or ask you to make a specific documentation change in chat.
 `.trim();
   }
 

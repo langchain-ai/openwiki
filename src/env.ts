@@ -148,11 +148,7 @@ export const DEBUG_ENV_KEYS: readonly string[] = [
 
 const managedEnvKeys: readonly string[] = MANAGED_ENV_KEYS;
 
-const deprecatedEnvKeys = [
-  "OPENAI_BASE_URL",
-  "OPENAI_ORG_ID",
-  "OPENAI_PROJECT",
-];
+const deprecatedEnvKeys = ["OPENAI_ORG_ID", "OPENAI_PROJECT"];
 
 export async function loadOpenWikiEnv(): Promise<EnvMap> {
   const env = await readOpenWikiEnv();
