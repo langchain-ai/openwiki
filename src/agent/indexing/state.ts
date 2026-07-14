@@ -8,6 +8,8 @@ import {
 import { createMiddleware } from "langchain";
 import { z } from "zod";
 
+// Persists successful wiki mutations across tool calls in one agent run.
+
 export const MUTATION_PATH_METADATA_KEY = "openwikiMutationPath";
 
 export function mergeEditedWikiPaths(

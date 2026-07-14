@@ -1,6 +1,6 @@
 import type { BackendProtocolV2 } from "deepagents";
 import path from "node:path";
-import type { OpenWikiOutputMode } from "./types.js";
+import type { OpenWikiOutputMode } from "../types.js";
 
 export const INDEX_FILE_NAME = "index.md";
 const EXCLUDED_FILES = new Set([

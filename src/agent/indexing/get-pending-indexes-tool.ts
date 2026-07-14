@@ -4,7 +4,7 @@ import {
   type ToolRuntime,
 } from "@langchain/core/tools";
 import { z } from "zod";
-import type { OpenWikiIndexState } from "./index-state.js";
+import type { OpenWikiIndexState } from "./state.js";
 import {
   deriveIndexTitle,
   getPendingIndexPaths,
@@ -13,8 +13,8 @@ import {
   type PendingIndex,
   readTextIfExists,
   renderIndex,
-} from "./index-utils.js";
-import type { OpenWikiOutputMode } from "./types.js";
+} from "./utils.js";
+import type { OpenWikiOutputMode } from "../types.js";
 
 export function createGetPendingIndexesTool(
   backend: IndexBackend,

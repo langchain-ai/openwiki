@@ -8,8 +8,8 @@ import {
   readTextIfExists,
   renderIndex,
   validateIndexPath,
-} from "./index-utils.js";
-import type { OpenWikiOutputMode } from "./types.js";
+} from "./utils.js";
+import type { OpenWikiOutputMode } from "../types.js";
 
 export function createOrUpdateIndexTool(
   backend: IndexBackend,

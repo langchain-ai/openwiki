@@ -5,7 +5,7 @@ import {
   type WriteResult,
 } from "deepagents";
 import { OPEN_WIKI_DIR } from "../constants.js";
-import { MUTATION_PATH_METADATA_KEY } from "./index-state.js";
+import { MUTATION_PATH_METADATA_KEY } from "./indexing/state.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
 type OpenWikiBackendOptions = LocalShellBackendOptions & {

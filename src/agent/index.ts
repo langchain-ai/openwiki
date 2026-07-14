@@ -18,10 +18,10 @@ import {
 import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir } from "../openwiki-home.js";
-import { createOrUpdateIndexTool } from "./create-or-update-index-tool.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
-import { createGetPendingIndexesTool } from "./get-pending-indexes-tool.js";
-import { createOpenWikiIndexStateMiddleware } from "./index-state.js";
+import { createOrUpdateIndexTool } from "./indexing/create-or-update-index-tool.js";
+import { createGetPendingIndexesTool } from "./indexing/get-pending-indexes-tool.js";
+import { createOpenWikiIndexStateMiddleware } from "./indexing/state.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,

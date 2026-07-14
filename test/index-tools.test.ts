@@ -4,14 +4,14 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
-import { createOrUpdateIndex } from "../src/agent/create-or-update-index-tool.ts";
+import { createOrUpdateIndex } from "../src/agent/indexing/create-or-update-index-tool.ts";
 import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
-import { findPendingIndexes } from "../src/agent/get-pending-indexes-tool.ts";
+import { findPendingIndexes } from "../src/agent/indexing/get-pending-indexes-tool.ts";
 import {
   addEditedPathUpdate,
   mergeEditedWikiPaths,
   MUTATION_PATH_METADATA_KEY,
-} from "../src/agent/index-state.ts";
+} from "../src/agent/indexing/state.ts";
 
 const ROOT_INDEX = "/openwiki/index.md";
 const ARCHITECTURE_INDEX = "/openwiki/architecture/index.md";
