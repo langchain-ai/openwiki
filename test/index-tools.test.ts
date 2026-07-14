@@ -10,8 +10,8 @@ import { findPendingIndexes } from "../src/agent/indexing/get-pending-indexes-to
 import {
   addEditedPathUpdate,
   mergeEditedWikiPaths,
-  MUTATION_PATH_METADATA_KEY,
 } from "../src/agent/indexing/state.ts";
+import { MUTATION_PATH_METADATA_KEY } from "../src/agent/indexing/utils.ts";
 
 const ROOT_INDEX = "/openwiki/index.md";
 const ARCHITECTURE_INDEX = "/openwiki/architecture/index.md";

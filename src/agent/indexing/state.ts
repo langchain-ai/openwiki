@@ -7,10 +7,11 @@ import {
 } from "@langchain/langgraph";
 import { createMiddleware } from "langchain";
 import { z } from "zod";
+import type { OpenWikiOutputMode } from "../types.js";
+import { addFrontmatterWarning } from "./frontmatter-validator.js";
+import { type IndexBackend, MUTATION_PATH_METADATA_KEY } from "./utils.js";
 
 // Persists successful wiki mutations across tool calls in one agent run.
-
-export const MUTATION_PATH_METADATA_KEY = "openwikiMutationPath";
 
 export function mergeEditedWikiPaths(
   current: string[],
@@ -31,13 +32,24 @@ export const OpenWikiIndexStateSchema = new StateSchema({
 
 export type OpenWikiIndexState = typeof OpenWikiIndexStateSchema.State;
 
-export function createOpenWikiIndexStateMiddleware() {
+export function createOpenWikiIndexStateMiddleware(
+  backend: IndexBackend,
+  outputMode: OpenWikiOutputMode,
+) {
   return createMiddleware({
     name: "OpenWikiIndexState",
     stateSchema: OpenWikiIndexStateSchema,
     beforeAgent: () => ({ editedWikiPaths: [] }),
-    wrapToolCall: async (request, handler) =>
-      addEditedPathUpdate(await handler(request)),
+    wrapToolCall: async (request, handler) => {
+      const result = await handler(request);
+      await addFrontmatterWarning(
+        result,
+        backend,
+        outputMode,
+        request.toolCall.name,
+      );
+      return addEditedPathUpdate(result);
+    },
   });
 }
 

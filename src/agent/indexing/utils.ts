@@ -3,6 +3,7 @@ import path from "node:path";
 import type { OpenWikiOutputMode } from "../types.js";
 
 export const INDEX_FILE_NAME = "index.md";
+export const MUTATION_PATH_METADATA_KEY = "openwikiMutationPath";
 const EXCLUDED_FILES = new Set([
   ".last-update.json",
   "_plan.md",
@@ -28,6 +29,21 @@ export type PendingIndex = {
 
 export function getWikiRoot(outputMode: OpenWikiOutputMode): string {
   return outputMode === "local-wiki" ? "/" : "/openwiki";
+}
+
+export function isWikiMarkdownPath(
+  filePath: string,
+  outputMode: OpenWikiOutputMode,
+): boolean {
+  try {
+    const normalized = normalizeVirtualPath(filePath);
+    return (
+      isWithinRoot(normalized, getWikiRoot(outputMode)) &&
+      path.posix.extname(normalized).toLowerCase() === ".md"
+    );
+  } catch {
+    return false;
+  }
 }
 
 export function getPendingIndexPaths(

@@ -195,7 +195,7 @@ async function runOpenWikiAgentCore(
     ],
     checkpointer,
     backend,
-    middleware: [createOpenWikiIndexStateMiddleware()],
+    middleware: [createOpenWikiIndexStateMiddleware(backend, outputMode)],
     systemPrompt: createSystemPrompt(command, outputMode),
   });
   emitDebug(options, "agent=created");
