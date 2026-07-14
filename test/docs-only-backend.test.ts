@@ -4,9 +4,9 @@ import path from "node:path";
 import { describe, expect, test } from "vitest";
 import {
   isOpenWikiDocsPath,
+  MUTATION_PATH_METADATA_KEY,
   OpenWikiLocalShellBackend,
 } from "../src/agent/docs-only-backend.ts";
-import { MUTATION_PATH_METADATA_KEY } from "../src/agent/indexing/utils.ts";
 
 describe("OpenWikiLocalShellBackend", () => {
   test("recognizes only openwiki virtual paths as docs paths", () => {

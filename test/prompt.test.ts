@@ -92,18 +92,14 @@ describe("OKF front matter guidance", () => {
 });
 
 describe("index finalization guidance", () => {
-  test("requires pending indexes to be finalized after all wiki edits", () => {
+  test("tells the agent that indexes are generated automatically", () => {
     for (const outputMode of ["local-wiki", "repository"] as const) {
       const prompt = createSystemPrompt("update", outputMode);
 
-      expect(prompt).toContain("openwiki_get_pending_indexes");
-      expect(prompt).toContain("openwiki_create_or_update_index");
       expect(prompt).toContain(
-        "100% finished with every non-index wiki write and edit",
+        "Directory index.md files are generated deterministically after the run",
       );
-      expect(prompt).toContain("process every returned path deepest-first");
-      expect(prompt).toContain("until it returns an empty list");
-      expect(prompt).toContain("Do not add `tags` to index.md files");
+      expect(prompt).toContain("Do not create or edit them yourself");
     }
   });
 });

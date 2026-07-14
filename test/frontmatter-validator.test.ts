@@ -1,12 +1,11 @@
 import { ToolMessage } from "@langchain/core/messages";
-import { Command } from "@langchain/langgraph";
 import type { BackendProtocolV2 } from "deepagents";
 import { describe, expect, test, vi } from "vitest";
+import { MUTATION_PATH_METADATA_KEY } from "../src/agent/docs-only-backend.ts";
 import {
   addFrontmatterWarning,
   validateOkfFrontmatter,
-} from "../src/agent/indexing/frontmatter-validator.ts";
-import { MUTATION_PATH_METADATA_KEY } from "../src/agent/indexing/utils.ts";
+} from "../src/agent/frontmatter-validator.ts";
 
 function markdown(frontmatter: string): string {
   return `---\n${frontmatter}\n---\n\n# Page\n`;
@@ -44,9 +43,13 @@ describe("validateOkfFrontmatter", () => {
           [
             "type: API Endpoint",
             'title: "Create order"',
-            "description: Creates a completed order.",
+            "description: >-",
+            "  Creates a completed",
+            "  order.",
             "resource: https://example.com/orders",
-            "tags: [api, orders]",
+            "tags:",
+            "  - api",
+            "  - orders",
           ].join("\n"),
         ),
       ),
@@ -74,29 +77,37 @@ describe("validateOkfFrontmatter", () => {
     });
   });
 
-  test("reports malformed, duplicate, unsupported, and mistyped fields", () => {
+  test("reports malformed and duplicate YAML", () => {
+    for (const frontmatter of [
+      "type: [unterminated",
+      "type: Reference\ntype: Playbook",
+    ]) {
+      expect(validateOkfFrontmatter(markdown(frontmatter))).toMatchObject({
+        issues: [{ code: "invalid_yaml" }],
+        valid: false,
+      });
+    }
+  });
+
+  test("reports unsupported and mistyped fields", () => {
     const result = validateOkfFrontmatter(
       markdown(
         [
           "type: Reference",
-          "type: Playbook",
           "timestamp: 2026-07-13",
           "title: [Not a string]",
-          "description: value: needs quoting",
+          "description: 123",
           "tags: docs, api",
-          "not yaml",
         ].join("\n"),
       ),
     );
 
     expect(result).toMatchObject({
       issues: [
-        { code: "duplicate_field", line: 3 },
-        { code: "unsupported_field", line: 4 },
-        { code: "invalid_title", line: 5 },
-        { code: "invalid_description", line: 6 },
-        { code: "invalid_tags", line: 7 },
-        { code: "invalid_yaml_line", line: 8 },
+        { code: "unsupported_field" },
+        { code: "invalid_title" },
+        { code: "invalid_description" },
+        { code: "invalid_tags" },
       ],
       valid: false,
     });
@@ -152,7 +163,7 @@ describe("addFrontmatterWarning", () => {
 
   test("edits tool messages nested in Command results", async () => {
     const message = mutationMessage();
-    const command = new Command({ update: { messages: [message] } });
+    const command = { update: { messages: [message] } };
     await addFrontmatterWarning(
       command,
       backendWith(markdown("title: Missing type")),
