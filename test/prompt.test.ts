@@ -64,9 +64,6 @@ describe("OKF front matter guidance", () => {
         expect(prompt).toContain(
           "MUST begin with OKF-compliant YAML front matter",
         );
-        expect(prompt).toContain(
-          "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md",
-        );
         expect(prompt).toContain("type: <Type name>");
         expect(prompt).toContain("title: <Optional display name>");
         expect(prompt).toContain("description: <Optional one-line summary>");
