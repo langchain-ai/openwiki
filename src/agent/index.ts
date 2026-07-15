@@ -8,9 +8,12 @@ import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import { createDeepAgent } from "deepagents";
+import {
+  CompositeBackend,
+  createDeepAgent,
+  FilesystemBackend,
+} from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
-import { ensureWriteConnectorSkill } from "../connectors/write-connector-skill.js";
 import {
   DEBUG_ENV_KEYS,
   loadOpenWikiEnv,
@@ -19,7 +22,7 @@ import {
 } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
-import { openWikiLocalWikiDir } from "../openwiki-home.js";
+import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { createOpenWikiIndexMiddleware } from "./index-middleware.js";
 import {
@@ -32,6 +35,7 @@ import {
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
+import { syncBundledSkills } from "./skills.js";
 import type {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -96,7 +100,7 @@ export async function runOpenWikiAgent(
   emitDebug(options, `env.beforeLoad ${formatEnvironmentDebug()}`);
 
   await loadOpenWikiEnv();
-  await ensureWriteConnectorSkill();
+  await syncBundledSkills();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
@@ -192,13 +196,19 @@ async function runOpenWikiAgentCore(
       ? `checkpointer=${formatUrlDebugValue(checkpointTarget.connString)}`
       : "checkpointer=memory",
   );
-  const backend = new OpenWikiLocalShellBackend({
+  const wikiBackend = new OpenWikiLocalShellBackend({
     docsOnly: command !== "chat",
     maxOutputBytes: 100_000,
     outputMode,
     rootDir: cwd,
     timeout: 120,
     virtualMode: true,
+  });
+  const backend = new CompositeBackend(wikiBackend, {
+    "/skills/": new FilesystemBackend({
+      rootDir: openWikiSkillsDir,
+      virtualMode: true,
+    }),
   });
   const agent = createDeepAgent({
     model,
@@ -208,7 +218,11 @@ async function runOpenWikiAgentCore(
     middleware:
       command === "chat"
         ? []
-        : [createOpenWikiIndexMiddleware(backend, outputMode)],
+        : [createOpenWikiIndexMiddleware(wikiBackend, outputMode)],
+    skills: ["/skills/"],
+    permissions: [
+      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
+    ],
     systemPrompt: createSystemPrompt(command, outputMode),
   });
   emitDebug(options, "agent=created");

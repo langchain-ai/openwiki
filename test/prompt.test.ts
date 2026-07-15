@@ -87,7 +87,6 @@ describe("OKF front matter guidance", () => {
     );
   });
 });
-
 describe("index finalization guidance", () => {
   test("tells the agent that indexes are generated automatically", () => {
     for (const outputMode of ["local-wiki", "repository"] as const) {
