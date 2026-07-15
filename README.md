@@ -2,6 +2,10 @@
 
 OpenWiki is a CLI that writes and maintains agent wikis for codebases or purpose memory. It's built specifically for agents, can ingest local knowledge sources through built-in connectors or git repositories and synthesize them into a local wiki.
 
+<div align="center">
+  <a href="https://trendshift.io/repositories/70339?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-70339" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/70339/daily" alt="langchain-ai%2Fopenwiki | Trendshift" width="250" height="55"/></a>
+</div>
+
 ![OpenWiki](https://raw.githubusercontent.com/langchain-ai/openwiki/main/static/openwiki.png)
 
 ## Install
@@ -152,6 +156,12 @@ Bare `openwiki --init` and `openwiki --update` default to code mode and operate 
 
 On each `code` run, `openwiki` maintains both an `AGENTS.md` and a `CLAUDE.md` at the repository root, adding prompting that instructs your coding agent to reference the wiki when searching for context. Each file is created if it does not already exist. If a file is present, OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of your content untouched (appending the block the first time). The scheduled GitHub Actions workflow includes these files, along with the workflow itself, in the documentation pull request.
 
+Repository-specific wiki instructions are stored separately in
+`openwiki/INSTRUCTIONS.md`. This file is a shared, user-authored brief for the
+repository wiki: OpenWiki reads it for scope and priorities, but it is not
+generated documentation and is not rewritten during normal init, update, or chat
+runs unless you explicitly ask to change the brief.
+
 On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
 
 These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.
@@ -192,7 +202,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and Google Vertex AI (Claude models) out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -220,6 +230,32 @@ OPENAI_COMPATIBLE_API_KEY=your-gateway-key
 OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
+
+### AWS Bedrock
+
+The `bedrock` provider calls foundation models hosted on AWS Bedrock using IAM
+credentials rather than a single vendor API key. It authenticates with an AWS
+access key ID, a secret access key, and a region:
+
+```bash
+OPENWIKI_PROVIDER=bedrock
+BEDROCK_AWS_ACCESS_KEY_ID=your-access-key-id
+BEDROCK_AWS_SECRET_ACCESS_KEY=your-secret-access-key
+BEDROCK_AWS_REGION=us-east-1
+OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
+```
+
+Which model IDs are available depends on your AWS account and region (which
+foundation models you've enabled in the Bedrock console), so there is no
+preset model list — paste the Bedrock model ID directly, as shown above.
+
+Some newer models only accept on-demand invocation through a cross-region
+inference profile rather than their bare model ID — if you see `ValidationException:
+Invocation of model ID ... with on-demand throughput isn't supported`, prefix
+the model ID with the profile's region code instead, for example
+`us.anthropic.claude-sonnet-5`. Your IAM policy also needs to allow
+`bedrock:InvokeModel`/`InvokeModelWithResponseStream` on both the
+`foundation-model` and `inference-profile` resource types in that case.
 
 ### OpenAI (ChatGPT login)
 
@@ -249,6 +285,38 @@ token, expiry, account id, email, and plan in `~/.openwiki/.env`
 `OPENAI_CHATGPT_PLAN`). These are managed for you — the access token is refreshed
 automatically when it expires, so you normally never edit them by hand. Treat the
 refresh token like a password.
+
+### Google Vertex AI (Claude)
+
+The `vertex` provider runs Anthropic's Claude models through Google Vertex AI.
+It uses no API key — authentication happens with Google Application Default
+Credentials (ADC), so any of the standard mechanisms work:
+
+- a service account key file via `GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json`,
+- user credentials from `gcloud auth application-default login`, or
+- workload identity when running on Google Cloud (GKE, Cloud Run, GCE) or in CI.
+
+```bash
+OPENWIKI_PROVIDER=vertex
+GOOGLE_CLOUD_PROJECT=your-gcp-project
+GOOGLE_CLOUD_LOCATION=global   # optional, defaults to global
+```
+
+The credentials used need Vertex AI access (`roles/aiplatform.user`) in the
+project, and the Claude models you want must be enabled in the Vertex AI Model
+Garden. Regional endpoints (for example `europe-west1` or `us-east5`) can be set
+via `GOOGLE_CLOUD_LOCATION` if you have data-residency requirements; the
+`global` endpoint offers the best availability.
+
+Note that `GOOGLE_CLOUD_PROJECT` (and `GOOGLE_APPLICATION_CREDENTIALS`, if you
+choose to store it there) is persisted to `~/.openwiki/.env` and loaded into the
+OpenWiki process environment at startup when not already set — values already
+present in your shell always win.
+
+For CI, authenticate before the update job runs — for example with
+[`google-github-actions/auth`](https://github.com/google-github-actions/auth)
+(workload identity federation) in GitHub Actions — and set
+`OPENWIKI_PROVIDER=vertex` and `GOOGLE_CLOUD_PROJECT` in the job environment.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 

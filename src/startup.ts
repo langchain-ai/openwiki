@@ -5,7 +5,9 @@ import {
   OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
+  getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
+  getProviderCredentialHint,
   providerUsesOAuth,
   resolveConfiguredProvider,
   type OpenWikiProvider,
@@ -43,13 +45,12 @@ export async function resolveStartupCommand(
     (command.print || !isStdinTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderCredentials = hasNonInteractiveProviderCredentials(
+    const missingEnvKey = getMissingNonInteractiveProviderEnvKey(
       provider,
       process.env,
     );
 
-    if (!hasProviderCredentials) {
+    if (missingEnvKey) {
       if (
         command.print &&
         (await canSkipCleanUpdateBeforeCredentials(
@@ -60,10 +61,14 @@ export async function resolveStartupCommand(
         return command;
       }
 
+      const hint = getProviderCredentialHint(provider);
+
       return {
         kind: "error",
         exitCode: 1,
-        message: `${formatCredentialRequirement(provider, apiKeyEnvKey)} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${formatCredentialRequirement(provider, missingEnvKey)} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.${
+          hint ? ` ${hint}` : ""
+        }`,
       };
     }
   }
@@ -84,15 +89,17 @@ export async function resolveStartupCommand(
   return command;
 }
 
-function hasNonInteractiveProviderCredentials(
+function getMissingNonInteractiveProviderEnvKey(
   provider: OpenWikiProvider,
   env: NodeJS.ProcessEnv,
-): boolean {
+): string | null {
   if (!providerUsesOAuth(provider)) {
-    return Boolean(env[getProviderApiKeyEnvKey(provider)]);
+    return getMissingProviderEnvKey(provider, env);
   }
 
-  return readCodexTokensFromEnv(env) !== null;
+  return readCodexTokensFromEnv(env) === null
+    ? (getProviderApiKeyEnvKey(provider) ?? "ChatGPT OAuth token set")
+    : null;
 }
 
 function formatCredentialRequirement(
