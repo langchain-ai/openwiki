@@ -5,14 +5,20 @@ import {
   DEFAULT_PROVIDER,
   getDefaultModelId,
   getProviderModelOptions,
+  getProviderRegionEnvKey,
+  getProviderSecretKeyEnvKey,
   isValidBaseUrl,
   isValidModelId,
   isValidProvider,
+  NEBIUS_BASE_URL,
   normalizeModelId,
   normalizeProvider,
+  providerRequiresRegion,
+  providerRequiresSecretKey,
   resolveConfiguredProvider,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
+  resolveProviderRegion,
   resolveProviderRetryAttempts,
 } from "../src/constants.ts";
 
@@ -50,6 +56,7 @@ describe("normalizeProvider / isValidProvider", () => {
   test("normalizes case and whitespace to a known provider", () => {
     expect(normalizeProvider("  Anthropic ")).toBe("anthropic");
     expect(normalizeProvider("OPENROUTER")).toBe("openrouter");
+    expect(normalizeProvider(" Nebius ")).toBe("nebius");
   });
 
   test("returns null for unknown or nullish providers", () => {
@@ -60,6 +67,7 @@ describe("normalizeProvider / isValidProvider", () => {
 
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
+    expect(isValidProvider("nebius")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
     expect(isValidProvider("nvidia")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
@@ -83,6 +91,12 @@ describe("resolveConfiguredProvider", () => {
     expect(resolveConfiguredProvider({ NVIDIA_API_KEY: "x" })).toBe("nvidia");
   });
 
+  test("falls back to bedrock when only a Bedrock access key is present", () => {
+    expect(resolveConfiguredProvider({ BEDROCK_AWS_ACCESS_KEY_ID: "x" })).toBe(
+      "bedrock",
+    );
+  });
+
   test("falls back to the default provider when nothing is configured", () => {
     expect(resolveConfiguredProvider({})).toBe(DEFAULT_PROVIDER);
   });
@@ -99,6 +113,7 @@ describe("resolveProviderBaseUrl", () => {
     expect(resolveProviderBaseUrl("openrouter", {})).toBe(
       "https://openrouter.ai/api/v1",
     );
+    expect(resolveProviderBaseUrl("nebius", {})).toBe(NEBIUS_BASE_URL);
     expect(resolveProviderBaseUrl("nvidia", {})).toBe(
       "https://integrate.api.nvidia.com/v1",
     );
@@ -208,9 +223,37 @@ describe("getProviderModelOptions", () => {
   });
 });
 
+describe("bedrock provider (IAM access key + secret key + region)", () => {
+  test("requires a secret key and a region, unlike API-key providers", () => {
+    expect(providerRequiresSecretKey("bedrock")).toBe(true);
+    expect(providerRequiresRegion("bedrock")).toBe(true);
+    expect(providerRequiresSecretKey("anthropic")).toBe(false);
+    expect(providerRequiresRegion("anthropic")).toBe(false);
+  });
+
+  test("exposes the AWS-flavored env keys", () => {
+    expect(getProviderSecretKeyEnvKey("bedrock")).toBe(
+      "BEDROCK_AWS_SECRET_ACCESS_KEY",
+    );
+    expect(getProviderRegionEnvKey("bedrock")).toBe("BEDROCK_AWS_REGION");
+  });
+
+  test("resolveProviderRegion reads the region env key and trims it", () => {
+    expect(
+      resolveProviderRegion("bedrock", { BEDROCK_AWS_REGION: " us-east-1 " }),
+    ).toBe("us-east-1");
+    expect(resolveProviderRegion("bedrock", {})).toBeUndefined();
+  });
+
+  test("has no preset model list (Bedrock model availability is account/region specific)", () => {
+    expect(getProviderModelOptions("bedrock")).toEqual([]);
+  });
+});
+
 describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
+    expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K2.6");
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
