@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
+import { AnthropicVertex } from "@anthropic-ai/vertex-sdk";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatBedrockConverse } from "@langchain/aws";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
@@ -42,15 +43,19 @@ import type {
   OpenWikiRunResult,
 } from "./types.js";
 import {
+  ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
   getDefaultModelId,
+  getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
+  getProviderCredentialHint,
   getProviderLabel,
   getProviderModelOptions,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
+  GOOGLE_CLOUD_PROJECT_ENV_KEY,
   isValidModelId,
   normalizeModelId,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -64,6 +69,7 @@ import {
   providerRequiresSecretKey,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
   type OpenWikiProvider,
@@ -124,8 +130,8 @@ export async function runOpenWikiAgent(
   if (providerBaseUrl) {
     emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
   }
-  ensureProviderKey(provider);
-  emitDebug(options, `credentials=${provider} key present`);
+  ensureProviderCredentials(provider);
+  emitDebug(options, `credentials=${provider} present`);
   ensureProviderBaseUrl(provider);
   ensureProviderSecretKey(provider);
   ensureProviderRegion(provider);
@@ -427,14 +433,20 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
   });
 }
 
-function ensureProviderKey(provider: OpenWikiProvider): void {
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+function ensureProviderCredentials(provider: OpenWikiProvider): void {
+  const missingEnvKey = getMissingProviderEnvKey(provider);
 
-  if (!process.env[apiKeyEnvKey]) {
-    throw new Error(
-      `${apiKeyEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
-    );
+  if (!missingEnvKey) {
+    return;
   }
+
+  const hint = getProviderCredentialHint(provider);
+
+  throw new Error(
+    `${missingEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.${
+      hint ? ` ${hint}` : ""
+    }`,
+  );
 }
 
 function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
@@ -512,11 +524,18 @@ function createModel(
 ) {
   const retryOptions = { maxRetries: providerRetryAttempts };
 
+  if (provider === "vertex") {
+    return new ChatAnthropic(modelId, {
+      createClient: () => createVertexClient(provider),
+      ...retryOptions,
+    });
+  }
+
   if (provider === "anthropic") {
     const baseURL = resolveProviderBaseUrl(provider);
 
     return new ChatAnthropic(modelId, {
-      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      apiKey: getProviderApiKey(provider),
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
       ...retryOptions,
     });
@@ -573,7 +592,7 @@ function createModel(
 
     return new ChatBedrockConverse({
       credentials: {
-        accessKeyId: process.env[getProviderApiKeyEnvKey(provider)] ?? "",
+        accessKeyId: getProviderApiKey(provider) ?? "",
         secretAccessKey: secretKeyEnvKey
           ? (process.env[secretKeyEnvKey] ?? "")
           : "",
@@ -587,7 +606,7 @@ function createModel(
   const baseURL = resolveProviderBaseUrl(provider);
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey: getProviderApiKey(provider),
     configuration: baseURL
       ? {
           baseURL,
@@ -623,6 +642,41 @@ async function ensureFreshChatGptTokens(): Promise<void> {
   await saveOpenWikiEnv(
     codexTokensToEnv(await refreshChatGptTokens(tokens.refresh)),
   );
+}
+
+function getProviderApiKey(provider: OpenWikiProvider): string | undefined {
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  return apiKeyEnvKey ? process.env[apiKeyEnvKey] : undefined;
+}
+
+/**
+ * Constructs the AnthropicVertex client with stray Anthropic credentials
+ * masked: the underlying Anthropic SDK captures ANTHROPIC_API_KEY and
+ * ANTHROPIC_AUTH_TOKEN from the environment at construction time and sends
+ * them as request credentials, displacing the Google OAuth token (observed
+ * as an authentication error when ANTHROPIC_AUTH_TOKEN is set — e.g. left
+ * over from a previous anthropic-provider setup).
+ */
+function createVertexClient(provider: OpenWikiProvider): AnthropicVertex {
+  const savedApiKey = process.env[ANTHROPIC_API_KEY_ENV_KEY];
+  const savedAuthToken = process.env.ANTHROPIC_AUTH_TOKEN;
+  delete process.env[ANTHROPIC_API_KEY_ENV_KEY];
+  delete process.env.ANTHROPIC_AUTH_TOKEN;
+
+  try {
+    return new AnthropicVertex({
+      projectId: process.env[GOOGLE_CLOUD_PROJECT_ENV_KEY],
+      region: resolveProviderLocation(provider),
+    });
+  } finally {
+    if (savedApiKey !== undefined) {
+      process.env[ANTHROPIC_API_KEY_ENV_KEY] = savedApiKey;
+    }
+    if (savedAuthToken !== undefined) {
+      process.env.ANTHROPIC_AUTH_TOKEN = savedAuthToken;
+    }
+  }
 }
 
 function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {

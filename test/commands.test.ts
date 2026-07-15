@@ -250,6 +250,15 @@ describe("parseCommand — --modelId", () => {
     });
   });
 
+  test("@-versioned Vertex AI model id is accepted", () => {
+    expect(
+      parseCommand(["--modelId", "claude-haiku-4-5@20251001"]),
+    ).toMatchObject({
+      kind: "run",
+      modelId: "claude-haiku-4-5@20251001",
+    });
+  });
+
   test("missing value is an error", () => {
     const result = parseCommand(["--modelId"]);
 
