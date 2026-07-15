@@ -512,6 +512,7 @@ function createModel(
   if (provider === "vertex") {
     return new ChatAnthropic(modelId, {
       createClient: () => createVertexClient(provider),
+      ...retryOptions,
     });
   }
 
