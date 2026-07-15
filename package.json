@@ -38,6 +38,7 @@
     "prebuild": "pnpm run clean",
     "prepack": "pnpm run build",
     "start": "node dist/cli.js",
+    "test": "python -m unittest discover -s tests"
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

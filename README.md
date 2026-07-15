@@ -61,6 +61,49 @@ For repository documentation in GitHub Actions, use
 long as the workflow provides the required provider and model environment
 variables.
 
+## Codex and Claude Code
+
+OpenWiki also ships as an agent-native plugin for Codex CLI and Claude Code CLI. This path follows the same documentation workflow as the `openwiki` CLI, but it uses the model already available inside Codex or Claude Code, so it does not require a separate OpenWiki provider API key.
+
+### Codex CLI
+
+Add this repository as a Codex plugin marketplace:
+
+```sh
+codex plugin marketplace add langchain-ai/openwiki --sparse .agents/plugins --sparse plugins/openwiki
+```
+
+Then start Codex, open `/plugins`, select the OpenWiki marketplace, and install the `openwiki` plugin. Invoke it naturally with `@openwiki`, for example:
+
+```text
+@openwiki initialize documentation for this repository
+@openwiki update the OpenWiki docs from recent changes
+@openwiki answer this from the existing OpenWiki docs: how does auth work?
+```
+
+For local development, run `codex plugin marketplace add .` from this repository instead.
+
+### Claude Code CLI
+
+Add this repository as a Claude Code plugin marketplace and install the plugin:
+
+```sh
+claude plugin marketplace add langchain-ai/openwiki --sparse .claude-plugin plugins/openwiki
+claude plugin install openwiki@openwiki
+```
+
+Then run Claude Code and invoke the skill as:
+
+```text
+/openwiki:openwiki init
+/openwiki:openwiki update
+/openwiki:openwiki how is the CLI structured?
+```
+
+For local development, either run `claude --plugin-dir ./plugins/openwiki` or add the current checkout with `claude plugin marketplace add .`.
+
+The plugin writes documentation under `openwiki/`, preserves the same `quickstart.md` entrypoint, and writes `openwiki/.last-update.json` only when documentation content changes. It does not create or modify `AGENTS.md` or `CLAUDE.md` by default; explicitly ask it to update agent instruction files if you want the standard OpenWiki reference section added.
+
 ## Usage
 
 Start the interactive CLI in code mode for the current repository:

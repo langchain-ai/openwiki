@@ -1,0 +1,17 @@
+{
+  "name": "openwiki",
+  "owner": {
+    "name": "LangChain"
+  },
+  "description": "OpenWiki plugins for agent-native repository documentation.",
+  "plugins": [
+    {
+      "name": "openwiki",
+      "displayName": "OpenWiki",
+      "source": "./plugins/openwiki",
+      "description": "Generate, update, and query OpenWiki repository documentation without configuring an OpenWiki provider API key.",
+      "category": "Documentation",
+      "tags": ["documentation", "repository", "agents"]
+    }
+  ]
+}

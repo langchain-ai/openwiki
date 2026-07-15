@@ -1,0 +1,15 @@
+{
+  "name": "openwiki",
+  "displayName": "OpenWiki",
+  "version": "0.0.1",
+  "description": "Generate, update, and query OpenWiki repository documentation without configuring an OpenWiki provider API key.",
+  "author": {
+    "name": "LangChain",
+    "url": "https://github.com/langchain-ai"
+  },
+  "homepage": "https://github.com/langchain-ai/openwiki",
+  "repository": "https://github.com/langchain-ai/openwiki",
+  "license": "MIT",
+  "keywords": ["documentation", "wiki", "agents", "claude-code"],
+  "skills": "./skills/"
+}

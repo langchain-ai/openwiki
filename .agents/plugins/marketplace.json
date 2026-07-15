@@ -1,0 +1,20 @@
+{
+  "name": "openwiki",
+  "interface": {
+    "displayName": "OpenWiki"
+  },
+  "plugins": [
+    {
+      "name": "openwiki",
+      "source": {
+        "source": "local",
+        "path": "./plugins/openwiki"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
