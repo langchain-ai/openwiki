@@ -3,6 +3,10 @@ import type { OpenWikiCommand } from "./agent/types.js";
 import { isAuthProviderId } from "./auth/providers.js";
 import type { AuthProviderId } from "./auth/types.js";
 import { parseIngestionTarget, type IngestionTarget } from "./ingestion.js";
+import {
+  isSupportedIntegrationAgent,
+  supportedIntegrationAgents,
+} from "./integrations/index.js";
 
 export type HelpRow = {
   label: string;
@@ -51,6 +55,12 @@ export type CliCommand =
       action: "delete" | "list" | "pause" | "resume";
       exitCode: 0;
       target: CronTarget | null;
+    }
+  | {
+      kind: "integration";
+      agent: string;
+      exitCode: 0;
+      targetPath: string;
     }
   | { kind: "help"; exitCode: 0 }
   | {
@@ -319,6 +329,57 @@ export function parseCommand(argv: string[]): CliCommand {
           "Usage: openwiki cron list | pause <source|all> | resume <source|all> | delete <source|all>",
       };
     }
+  }
+
+  if (argv[0] === "integration") {
+    const agent = argv[1];
+    const supported = supportedIntegrationAgents().join(", ");
+
+    if (!agent) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Usage: openwiki integration <agent> [path]. Supported agents: ${supported}.`,
+      };
+    }
+
+    if (!isSupportedIntegrationAgent(agent)) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Unknown integration agent: ${agent}. Supported agents: ${supported}.`,
+      };
+    }
+
+    let targetPath = ".";
+    let hasPath = false;
+    for (const arg of argv.slice(2)) {
+      if (arg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Unknown option for integration: ${arg}`,
+        };
+      }
+
+      if (hasPath) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "Usage: openwiki integration <agent> [path]",
+        };
+      }
+
+      targetPath = arg;
+      hasPath = true;
+    }
+
+    return {
+      kind: "integration",
+      agent,
+      exitCode: 0,
+      targetPath,
+    };
   }
 
   if (isOpenWikiRunMode(argv[0])) {
@@ -598,6 +659,7 @@ export const helpContent: HelpContent = {
     "openwiki cron resume <source|all>",
     "openwiki cron delete <source|all>",
     "openwiki ngrok start [url] [--port <port>]",
+    "openwiki integration <agent> [path]",
   ],
   commands: [
     {
@@ -658,6 +720,11 @@ export const helpContent: HelpContent = {
       description:
         "Start an ngrok tunnel for Slack OAuth, optionally using a fixed HTTPS URL.",
     },
+    {
+      label: "openwiki integration <agent> [path]",
+      description:
+        "Scaffold host-agent skills (openwiki-init, openwiki-update) into a repo so the agent maintains openwiki/ docs itself. No model provider or API key needed. Supports claude.",
+    },
   ],
   options: [
     {
@@ -715,6 +782,8 @@ export const helpContent: HelpContent = {
     "openwiki auth tools notion",
     "openwiki ngrok start",
     "openwiki ngrok start https://openwiki.ngrok.app",
+    "openwiki integration claude",
+    "openwiki integration claude ../other-repo",
   ],
   developmentExamples: ["openwiki --dry-run"],
 };

@@ -47,6 +47,7 @@ import {
   runOpenWikiIngestion,
   type OpenWikiIngestionResult,
 } from "./ingestion.js";
+import { getIntegrationWriter } from "./integrations/index.js";
 import {
   readOpenWikiOnboardingConfig,
   saveOpenWikiOnboardingConfig,
@@ -3489,6 +3490,8 @@ if (command.kind === "auth") {
   await runCronCommand(command);
 } else if (command.kind === "ingest") {
   await runIngestCommand(command);
+} else if (command.kind === "integration") {
+  await runIntegrationCommand(command);
 } else if (shouldPrintStartupError(argv, parsedCommand, command)) {
   process.stderr.write(`${command.message}\n`);
   process.exitCode = command.exitCode;
@@ -3738,6 +3741,39 @@ async function runIngestCommand(
   } catch (error) {
     process.stderr.write(`${getErrorMessage(error)}\n`);
     writePrintErrorDiagnostics(error);
+    process.exitCode = 1;
+  }
+}
+
+async function runIntegrationCommand(
+  command: Extract<CliCommand, { kind: "integration" }>,
+): Promise<void> {
+  try {
+    const writer = getIntegrationWriter(command.agent);
+
+    if (!writer) {
+      throw new Error(`Unsupported integration agent: ${command.agent}`);
+    }
+
+    const result = await writer(command.targetPath);
+
+    process.stdout.write(
+      `Scaffolded OpenWiki ${command.agent} skills into ${result.targetDir}\n`,
+    );
+    for (const filePath of result.writtenFiles) {
+      process.stdout.write(`  ${filePath}\n`);
+    }
+
+    if (result.nextSteps.length > 0) {
+      process.stdout.write("\nNext steps\n");
+      for (const step of result.nextSteps) {
+        process.stdout.write(`  - ${step}\n`);
+      }
+    }
+
+    process.exitCode = 0;
+  } catch (error) {
+    process.stderr.write(`${getErrorMessage(error)}\n`);
     process.exitCode = 1;
   }
 }
