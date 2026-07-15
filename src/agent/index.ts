@@ -14,7 +14,6 @@ import {
   FilesystemBackend,
 } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
-import { ensureWriteConnectorSkill } from "../connectors/write-connector-skill.js";
 import {
   DEBUG_ENV_KEYS,
   loadOpenWikiEnv,
@@ -35,6 +34,7 @@ import {
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
+import { syncBundledSkills } from "./skills.js";
 import type {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -99,7 +99,7 @@ export async function runOpenWikiAgent(
   emitDebug(options, `env.beforeLoad ${formatEnvironmentDebug()}`);
 
   await loadOpenWikiEnv();
-  await ensureWriteConnectorSkill();
+  await syncBundledSkills();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
