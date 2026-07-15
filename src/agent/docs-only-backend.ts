@@ -66,6 +66,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   }
 }
 
+/** Carries a successful mutation's file path into the ToolMessage metadata used by the validator. */
 function markMutation<Result extends WriteResult | EditResult>(
   result: Result,
   filePath: string,
