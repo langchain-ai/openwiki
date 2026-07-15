@@ -1,0 +1,76 @@
+src/credentials.tsx
+  s_03fb1c3f8bdd12::t_6aa6d25f0bfc18 2197-2203
+  s_03fb1c3f8bdd12::t_9a37e50ae3ff49 543-548
+  s_03fb1c3f8bdd12::t_0a977e4a16ee87 2425
+  s_03fb1c3f8bdd12::t_1ad7380613cad7 2901-2929
+  s_03fb1c3f8bdd12::t_edc2481728c871 2107-2115
+  s_03fb1c3f8bdd12::t_b406874d3e889b 2121-2125
+  s_03fb1c3f8bdd12::t_d653f0b8b5b96c 3343-3370
+  s_03fb1c3f8bdd12::t_9f487c0f6a73bc 1319
+  s_03fb1c3f8bdd12::t_abc015861d2509 1344
+  s_03fb1c3f8bdd12::t_ae3cb373fac0cf 2158-2160
+  s_03fb1c3f8bdd12::t_25d42ac91e9e34 2052,2054,2056-2057,2059-2066,2070,2072-2082,2084-2085,2087,2094
+  s_03fb1c3f8bdd12::t_66e19dd0dd4fab 2275
+  s_03fb1c3f8bdd12::t_fd142e7b747731 2896-2900
+  s_03fb1c3f8bdd12::t_9a59e9da170bfe 549-563
+  s_03fb1c3f8bdd12::t_484ea0edcaf6b5 2167-2170
+  s_03fb1c3f8bdd12::t_bef9b72bf3660b 2129-2130
+  s_03fb1c3f8bdd12::t_2225434d1eaf61 2051
+  s_03fb1c3f8bdd12::t_929ce66e463f69 2270-2274
+  s_03fb1c3f8bdd12::t_ed6841e1516e31 651-653
+  s_03fb1c3f8bdd12::t_d1642bf671e786 2962-2965
+  s_03fb1c3f8bdd12::t_bbd8dd06cb5439 2044-2046
+  s_03fb1c3f8bdd12::t_0a9180e36cb334 2150-2154
+  s_03fb1c3f8bdd12::t_08fd9b9fa92824 1102
+  s_03fb1c3f8bdd12::t_0333309f0862a2 2259,2261-2269
+  s_03fb1c3f8bdd12::t_4f812e23db9815 3615,3624
+  s_03fb1c3f8bdd12::t_adca8cd217a493 48
+  s_03fb1c3f8bdd12::t_6a1f8015bcba53 1269
+  s_03fb1c3f8bdd12::t_6d7bdb4729c56c 2041-2043,2047-2050
+  s_03fb1c3f8bdd12::t_ef989be271dcf2 2083
+  s_03fb1c3f8bdd12::t_6ec7203ff3aabb 817-829
+  s_03fb1c3f8bdd12::t_41344b15539429 16
+  s_03fb1c3f8bdd12::t_6c3dbb7cfd4ac9 1173
+  s_03fb1c3f8bdd12::t_a7faf3a74a80f3 2088-2091
+  s_03fb1c3f8bdd12::t_834dd81a2c09b5 2930-2946,2954,2958-2961,2966-2970
+  s_03fb1c3f8bdd12::t_def6ed11a8318c 2180-2183
+  s_03fb1c3f8bdd12::t_1d598fcf248d37 2260
+  s_03fb1c3f8bdd12::t_00abd13806dd9e 2067-2069,2071
+  s_03fb1c3f8bdd12::t_227d0fe3a32885 2957
+  s_03fb1c3f8bdd12::t_5c2af8d2ef5c07 755-768
+  s_03fb1c3f8bdd12::t_4828ce113a77db 2099-2104
+  s_03fb1c3f8bdd12::t_097c3fdb50c884 2137-2142
+  s_03fb1c3f8bdd12::t_70d5fc028f4ea8 1223
+  s_03fb1c3f8bdd12::t_49b894a191b37a 769-806
+  s_03fb1c3f8bdd12::t_de4022c11fda31 3622-3623
+  s_03fb1c3f8bdd12::t_9e1c4dffdfbdd8 3641
+  s_03fb1c3f8bdd12::t_73957368dac46c 2086
+src/constants.ts
+  s_03fb1c3f8bdd12::t_a7e86a2c82245a 311-318
+src/cli.tsx
+  s_03fb1c3f8bdd12::t_1daac53d0ee003 806-807
+  s_03fb1c3f8bdd12::t_ef6d7bb43b8dc9 924-946
+src/env.ts
+  s_03fb1c3f8bdd12::t_5d2c6cada52a6f 181-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "e06404b8c37753562da2c4aa991cc08755ccb5bc",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_03fb1c3f8bdd12": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11283806-11ac-4b13-9b4b-021fd278415e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
