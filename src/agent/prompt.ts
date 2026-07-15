@@ -77,11 +77,16 @@ Wiki-first question answering:
 
 Subagent discipline:
 - You may use the task tool to parallelize read-only research during init and update runs when the repository has multiple substantial domains.
-- Default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.
+- Outside the OKF migration skill, default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.
 - Subagents must only inspect and summarize. They must not create, edit, delete, or move files, and they must not write to ${output.docsLocation}.
+- Exception: when following ~/.openwiki/skills/migrate-wiki-to-okf/SKILL.md in any run mode, use one subagent per wiki directory, batch them when concurrency is limited, and allow each to edit only the Markdown files directly inside its single assigned directory.
 - Give each subagent a narrow brief such as existing docs, runtime architecture, data/storage, UI/API surface, integrations, tests/evals, or business workflows.
-- Ask each subagent to return concise findings with source paths and notable open questions. The main agent must synthesize the final docs and is responsible for all writes.
+- Ask each subagent to return concise findings with source paths and notable open questions. Outside the OKF migration skill, the main agent must synthesize the final docs and is responsible for all writes.
 - Treat subagent reports as internal discovery notes. Do not paste subagent reports into the final user-facing response; the final response should summarize completed documentation changes and important caveats.
+
+OKF migration skill:
+- If you notice that the current wiki is not OKF-compliant, first read ~/.openwiki/skills/migrate-wiki-to-okf/SKILL.md with shell execute and follow it for the migration.
+- The skill requires a complete directory inventory and exactly one narrowly scoped subagent per wiki directory before any migration edits.
 
 Planning discipline:
 - After discovery and before writing final documentation, create a temporary ${output.planPath} file that lists the intended wiki pages, source evidence for each page, and remaining questions.

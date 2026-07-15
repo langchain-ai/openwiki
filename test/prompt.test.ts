@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { MIGRATE_WIKI_TO_OKF_SKILL } from "../src/agent/migrate-wiki-to-okf-skill.ts";
 import { createSystemPrompt, createUserPrompt } from "../src/agent/prompt.ts";
 import type { RunContext } from "../src/agent/types.ts";
 
@@ -85,6 +86,31 @@ describe("OKF front matter guidance", () => {
     expect(prompt).toContain(
       "do not add front matter fields outside the formatter above",
     );
+  });
+
+  test("discovers the OKF migration skill and permits its scoped writers", () => {
+    const prompt = createSystemPrompt("update", "repository");
+
+    expect(prompt).toContain("~/.openwiki/skills/migrate-wiki-to-okf/SKILL.md");
+    expect(prompt).toContain("exactly one narrowly scoped subagent");
+    expect(prompt).toContain(
+      "use one subagent per wiki directory, batch them when concurrency is limited",
+    );
+    expect(prompt).toContain("Outside the OKF migration skill, default to 1-2");
+  });
+
+  test("plans and isolates one migration subagent per directory", () => {
+    expect(MIGRATE_WIKI_TO_OKF_SKILL).toContain(
+      "recursively inventory every directory",
+    );
+    expect(MIGRATE_WIKI_TO_OKF_SKILL).toContain(
+      "exactly one subagent for each directory",
+    );
+    expect(MIGRATE_WIKI_TO_OKF_SKILL).toContain(
+      "must not recurse into or modify another directory",
+    );
+    expect(MIGRATE_WIKI_TO_OKF_SKILL).toContain("Never add `timestamp`");
+    expect(MIGRATE_WIKI_TO_OKF_SKILL).toContain("Do not edit `index.md`");
   });
 });
 

@@ -20,6 +20,7 @@ import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir } from "../openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { createOpenWikiIndexMiddleware } from "./index-middleware.js";
+import { ensureMigrateWikiToOkfSkill } from "./migrate-wiki-to-okf-skill.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -83,6 +84,7 @@ export async function runOpenWikiAgent(
 
   await loadOpenWikiEnv();
   await ensureWriteConnectorSkill();
+  await ensureMigrateWikiToOkfSkill();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
