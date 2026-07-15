@@ -6,7 +6,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 
 - Launches an interactive Ink-based terminal app for chatting with the OpenWiki agent.
 - Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
-- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), OpenRouter, Anthropic, Baseten, Fireworks, NVIDIA NIM, and any OpenAI-compatible gateway — each with their own API key and model list.
+- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), OpenRouter, Anthropic, Baseten, Fireworks, NVIDIA NIM, any OpenAI-compatible gateway, and Google Vertex AI (Claude models) — each with their own credentials and model list (Vertex uses Google ADC instead of an API key).
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.

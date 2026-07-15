@@ -2,6 +2,10 @@
 
 OpenWiki is a CLI that writes and maintains agent wikis for codebases or purpose memory. It's built specifically for agents, can ingest local knowledge sources through built-in connectors or git repositories and synthesize them into a local wiki.
 
+<div align="center">
+  <a href="https://trendshift.io/repositories/70339?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-70339" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/70339/daily" alt="langchain-ai%2Fopenwiki | Trendshift" width="250" height="55"/></a>
+</div>
+
 ![OpenWiki](https://raw.githubusercontent.com/langchain-ai/openwiki/main/static/openwiki.png)
 
 ## Install
@@ -198,7 +202,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and Google Vertex AI (Claude models) out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -281,6 +285,38 @@ token, expiry, account id, email, and plan in `~/.openwiki/.env`
 `OPENAI_CHATGPT_PLAN`). These are managed for you — the access token is refreshed
 automatically when it expires, so you normally never edit them by hand. Treat the
 refresh token like a password.
+
+### Google Vertex AI (Claude)
+
+The `vertex` provider runs Anthropic's Claude models through Google Vertex AI.
+It uses no API key — authentication happens with Google Application Default
+Credentials (ADC), so any of the standard mechanisms work:
+
+- a service account key file via `GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json`,
+- user credentials from `gcloud auth application-default login`, or
+- workload identity when running on Google Cloud (GKE, Cloud Run, GCE) or in CI.
+
+```bash
+OPENWIKI_PROVIDER=vertex
+GOOGLE_CLOUD_PROJECT=your-gcp-project
+GOOGLE_CLOUD_LOCATION=global   # optional, defaults to global
+```
+
+The credentials used need Vertex AI access (`roles/aiplatform.user`) in the
+project, and the Claude models you want must be enabled in the Vertex AI Model
+Garden. Regional endpoints (for example `europe-west1` or `us-east5`) can be set
+via `GOOGLE_CLOUD_LOCATION` if you have data-residency requirements; the
+`global` endpoint offers the best availability.
+
+Note that `GOOGLE_CLOUD_PROJECT` (and `GOOGLE_APPLICATION_CREDENTIALS`, if you
+choose to store it there) is persisted to `~/.openwiki/.env` and loaded into the
+OpenWiki process environment at startup when not already set — values already
+present in your shell always win.
+
+For CI, authenticate before the update job runs — for example with
+[`google-github-actions/auth`](https://github.com/google-github-actions/auth)
+(workload identity federation) in GitHub Actions — and set
+`OPENWIKI_PROVIDER=vertex` and `GOOGLE_CLOUD_PROJECT` in the job environment.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
