@@ -156,7 +156,7 @@ tags: [<tag>, <tag>, …]            # Optional
 </okf_front_matter>
 
 - \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
-- Required fields are: \`title\`, a human-readable display name; \`description\`, a single-sentence summary; and \`tags\`, a YAML list of short cross-cutting category strings.
+- Required fields are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary (this should be optimized for search & retrieval); and \`tags\`, a YAML list of short cross-cutting category strings.
 - Recommended field(s), in priority order, are: \`resource\`, the canonical URI of the underlying asset when one exists (e.g. file path to specific code file in a repo).
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files, and do not add front matter fields outside the formatter above.
 - When updating an existing Markdown file, preserve accurate content but add or correct its opening front matter as part of that update so the resulting file complies with this requirement. - Only update front matter when necessary. You do not need to update every time, only when key file components change.
