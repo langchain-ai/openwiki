@@ -82,6 +82,7 @@ import {
   persistRunMetadataIfChanged,
   shouldCheckUpdateNoop,
 } from "./utils.js";
+import { classifyError, recordRunSafe } from "../telemetry/index.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -113,6 +114,11 @@ export async function runOpenWikiAgent(
       emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
       options.onEvent?.({ type: "text", text: message });
 
+      await recordRunSafe(command, options, {
+        provider: resolveConfiguredProvider(),
+        outcome: "noop",
+      });
+
       return {
         command,
         model: noopStatus.model,
@@ -125,33 +131,39 @@ export async function runOpenWikiAgent(
     emitDebug(options, "update.noop=false reason=user message provided");
   }
 
-  const provider = resolveConfiguredProvider();
-  const providerBaseUrl = resolveProviderBaseUrl(provider);
-  emitDebug(options, `provider=${provider}`);
-  if (providerBaseUrl) {
-    emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
-  }
-  ensureProviderCredentials(provider);
-  emitDebug(options, `credentials=${provider} present`);
-  ensureProviderBaseUrl(provider);
-  ensureProviderSecretKey(provider);
-  ensureProviderRegion(provider);
-
-  if (provider === "openai-chatgpt") {
-    // Refresh before the model is built, so `createModel` stays synchronous.
-    await ensureFreshChatGptTokens();
-    emitDebug(options, "chatgpt.token=fresh");
-  }
-
-  const modelId = resolveModelId(options, provider);
-  emitDebug(options, `model=${modelId}`);
-  const providerRetryAttempts = resolveProviderRetryAttempts();
-  emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
-
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
+  // Resolved inside the try so a failure during resolution (missing key,
+  // invalid model, missing base URL) is still recorded. They may be undefined
+  // in the catch if resolution threw before assigning them.
+  let provider: OpenWikiProvider | undefined;
+  let modelId: string | undefined;
+
   try {
-    return await runOpenWikiAgentCore(
+    provider = resolveConfiguredProvider();
+    const providerBaseUrl = resolveProviderBaseUrl(provider);
+    emitDebug(options, `provider=${provider}`);
+    if (providerBaseUrl) {
+      emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
+    }
+    ensureProviderCredentials(provider);
+    emitDebug(options, `credentials=${provider} present`);
+    ensureProviderBaseUrl(provider);
+    ensureProviderSecretKey(provider);
+    ensureProviderRegion(provider);
+
+    if (provider === "openai-chatgpt") {
+      // Refresh before the model is built, so `createModel` stays synchronous.
+      await ensureFreshChatGptTokens();
+      emitDebug(options, "chatgpt.token=fresh");
+    }
+
+    modelId = resolveModelId(options, provider);
+    emitDebug(options, `model=${modelId}`);
+    const providerRetryAttempts = resolveProviderRetryAttempts();
+    emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
+
+    const result = await runOpenWikiAgentCore(
       command,
       runtimeCwd,
       options,
@@ -159,8 +171,22 @@ export async function runOpenWikiAgent(
       modelId,
       providerRetryAttempts,
     );
+
+    await recordRunSafe(command, options, {
+      provider,
+      outcome: "success",
+    });
+
+    return result;
   } catch (error) {
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
+
+    await recordRunSafe(command, options, {
+      provider,
+      outcome: "failure",
+      errorClass: classifyError(error),
+    });
+
     throw error;
   } finally {
     debugFetchCapture.restore();
