@@ -271,12 +271,12 @@ describe("getCredentialDiagnostics", () => {
   });
 
   test("flags an OpenAI-compatible chat completions endpoint as a base URL warning", async () => {
-    await saveOpenWikiEnv({
+    await env.saveOpenWikiEnv({
       [OPENAI_COMPATIBLE_BASE_URL_ENV_KEY]:
         "https://gateway.example.com/v1/chat/completions",
     });
 
-    const diagnostics = await getCredentialDiagnostics();
+    const diagnostics = await env.getCredentialDiagnostics();
     const entry = diagnostics.find(
       (item) => item.key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
     );

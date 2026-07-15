@@ -198,7 +198,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -226,6 +226,32 @@ OPENAI_COMPATIBLE_API_KEY=your-gateway-key
 OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
+
+### AWS Bedrock
+
+The `bedrock` provider calls foundation models hosted on AWS Bedrock using IAM
+credentials rather than a single vendor API key. It authenticates with an AWS
+access key ID, a secret access key, and a region:
+
+```bash
+OPENWIKI_PROVIDER=bedrock
+BEDROCK_AWS_ACCESS_KEY_ID=your-access-key-id
+BEDROCK_AWS_SECRET_ACCESS_KEY=your-secret-access-key
+BEDROCK_AWS_REGION=us-east-1
+OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
+```
+
+Which model IDs are available depends on your AWS account and region (which
+foundation models you've enabled in the Bedrock console), so there is no
+preset model list — paste the Bedrock model ID directly, as shown above.
+
+Some newer models only accept on-demand invocation through a cross-region
+inference profile rather than their bare model ID — if you see `ValidationException:
+Invocation of model ID ... with on-demand throughput isn't supported`, prefix
+the model ID with the profile's region code instead, for example
+`us.anthropic.claude-sonnet-5`. Your IAM policy also needs to allow
+`bedrock:InvokeModel`/`InvokeModelWithResponseStream` on both the
+`foundation-model` and `inference-profile` resource types in that case.
 
 ### OpenAI (ChatGPT login)
 

@@ -14,6 +14,8 @@ import {
   getProviderBaseUrlWarnings,
   getProviderLabel,
   getProviderModelOptions,
+  getProviderRegionEnvKey,
+  getProviderSecretKeyEnvKey,
   isValidModelId,
   normalizeProvider,
   normalizeModelId,
@@ -27,6 +29,8 @@ import {
   OPENWIKI_X_CLIENT_ID_ENV_KEY,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
+  providerRequiresRegion,
+  providerRequiresSecretKey,
   providerUsesOAuth,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
@@ -76,6 +80,8 @@ export type InitSetupResult = {
   savedLangSmithKey: boolean;
   savedModelId: boolean;
   savedProvider: boolean;
+  savedRegion: boolean;
+  savedSecretKey: boolean;
   shouldContinueToRun: boolean;
 };
 
@@ -97,7 +103,9 @@ type PromptStep =
   | "model"
   | "oauth-login"
   | "provider"
+  | "region"
   | "run-mode"
+  | "secret-key"
   | "source-auth"
   | "global-cron-custom"
   | "global-cron-mode"
@@ -360,7 +368,9 @@ export function needsCredentialSetup(
   const needsCredentials =
     !hasValidConfiguredProvider() ||
     needsCredentialStep(provider) ||
+    needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
+    needsRegionStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined;
@@ -408,6 +418,34 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
   const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
 
   return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
+}
+
+function needsSecretKeyStep(provider: OpenWikiProvider): boolean {
+  if (!providerRequiresSecretKey(provider)) {
+    return false;
+  }
+
+  return !isSecretKeyConfigured(provider);
+}
+
+function isSecretKeyConfigured(provider: OpenWikiProvider): boolean {
+  const secretKeyEnvKey = getProviderSecretKeyEnvKey(provider);
+
+  return secretKeyEnvKey ? Boolean(process.env[secretKeyEnvKey]) : false;
+}
+
+function needsRegionStep(provider: OpenWikiProvider): boolean {
+  if (!providerRequiresRegion(provider)) {
+    return false;
+  }
+
+  return !isRegionConfigured(provider);
+}
+
+function isRegionConfigured(provider: OpenWikiProvider): boolean {
+  const regionEnvKey = getProviderRegionEnvKey(provider);
+
+  return regionEnvKey ? Boolean(process.env[regionEnvKey]) : false;
 }
 
 function isCredentialConfigured(provider: OpenWikiProvider): boolean {
@@ -486,6 +524,8 @@ export function InitSetup({
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState<string | null>(null);
+  const [secretKey, setSecretKey] = useState<string | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -600,6 +640,8 @@ export function InitSetup({
             savedLangSmithKey: false,
             savedModelId: false,
             savedProvider: false,
+            savedRegion: false,
+            savedSecretKey: false,
             shouldContinueToRun: true,
           });
           return;
@@ -706,6 +748,8 @@ export function InitSetup({
         await completeSetup({
           nextApiKey: apiKey,
           nextBaseUrl: baseUrl,
+          nextSecretKey: secretKey,
+          nextRegion: region,
           nextLangSmithKey: langSmithKey,
           nextModelId: modelId,
           nextOAuthTokens: tokens,
@@ -1036,6 +1080,8 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1110,6 +1156,8 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1148,6 +1196,50 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: trimmedInput,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
+      return;
+    }
+
+    if (step === "secret-key") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError(
+          `${getProviderSecretKeyEnvKey(provider) ?? "Secret key"} is required.`,
+        );
+        return;
+      }
+
+      setSecretKey(trimmedInput);
+      setInput("");
+      const nextStep = getNextStepAfterSecretKey(
+        provider,
+        modelIdOverride,
+        onboardingConfig,
+        selectedMode,
+        forceModelStep,
+      );
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextSecretKey: trimmedInput,
+        nextRegion: region,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1197,6 +1289,50 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: trimmedInput,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
+      return;
+    }
+
+    if (step === "region") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError(
+          `${getProviderRegionEnvKey(provider) ?? "Region"} is required.`,
+        );
+        return;
+      }
+
+      setRegion(trimmedInput);
+      setInput("");
+      const nextStep = getNextStepAfterRegion(
+        provider,
+        modelIdOverride,
+        onboardingConfig,
+        selectedMode,
+        forceModelStep,
+      );
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: trimmedInput,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1237,6 +1373,8 @@ export function InitSetup({
       await continueAfterCredentials({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
         nextOAuthTokens: oauthTokens,
@@ -1255,6 +1393,8 @@ export function InitSetup({
       await continueAfterCredentials({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
         nextLangSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1516,6 +1656,8 @@ export function InitSetup({
         savedLangSmithKey: langSmithKey !== null && langSmithKey.length > 0,
         savedModelId: modelId !== null,
         savedProvider: process.env[OPENWIKI_PROVIDER_ENV_KEY] !== provider,
+        savedRegion: region !== null,
+        savedSecretKey: secretKey !== null,
         shouldContinueToRun: runIngestionNow,
       });
     }
@@ -1563,6 +1705,8 @@ export function InitSetup({
     nextModelId: string | null;
     nextOAuthTokens?: CodexTokens | null;
     nextProvider: OpenWikiProvider;
+    nextRegion: string | null;
+    nextSecretKey: string | null;
     runMode: OpenWikiRunMode;
   };
 
@@ -1632,6 +1776,8 @@ export function InitSetup({
       savedApiKey:
         options.nextApiKey !== null || options.nextOAuthTokens != null,
       savedBaseUrl: options.nextBaseUrl !== null,
+      savedRegion: options.nextRegion !== null,
+      savedSecretKey: options.nextSecretKey !== null,
       savedLangSmithKey:
         options.nextLangSmithKey !== null &&
         options.nextLangSmithKey.length > 0,
@@ -1649,6 +1795,8 @@ export function InitSetup({
     nextModelId,
     nextOAuthTokens = oauthTokens,
     nextProvider,
+    nextRegion,
+    nextSecretKey,
   }: CompleteSetupOptions) {
     setIsSaving(true);
 
@@ -1672,6 +1820,22 @@ export function InitSetup({
 
         if (baseUrlEnvKey) {
           updates[baseUrlEnvKey] = nextBaseUrl;
+        }
+      }
+
+      if (nextSecretKey !== null) {
+        const secretKeyEnvKey = getProviderSecretKeyEnvKey(nextProvider);
+
+        if (secretKeyEnvKey) {
+          updates[secretKeyEnvKey] = nextSecretKey;
+        }
+      }
+
+      if (nextRegion !== null) {
+        const regionEnvKey = getProviderRegionEnvKey(nextProvider);
+
+        if (regionEnvKey) {
+          updates[regionEnvKey] = nextRegion;
         }
       }
 
@@ -1937,7 +2101,9 @@ export function InitSetup({
   const needsCredentialPrompt =
     !hasValidConfiguredProvider() ||
     needsCredentialStep(provider) ||
+    needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
+    needsRegionStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined;
@@ -1969,6 +2135,23 @@ export function InitSetup({
           }
           detail={getCredentialSetupDetail(provider, oauthTokens)}
         />
+        {providerRequiresSecretKey(provider) ? (
+          <SetupStep
+            label="Secret key"
+            state={
+              isSecretKeyConfigured(provider)
+                ? "done"
+                : step === "secret-key"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              isSecretKeyConfigured(provider)
+                ? "available from environment"
+                : `save ${getProviderSecretKeyEnvKey(provider)} to ${openWikiEnvPath}`
+            }
+          />
+        ) : null}
         {providerRequiresBaseUrl(provider) ? (
           <SetupStep
             label="Base URL"
@@ -1983,6 +2166,23 @@ export function InitSetup({
               isBaseUrlConfigured(provider)
                 ? "available from environment"
                 : `save ${getProviderBaseUrlEnvKey(provider)} to ${openWikiEnvPath}`
+            }
+          />
+        ) : null}
+        {providerRequiresRegion(provider) ? (
+          <SetupStep
+            label="Region"
+            state={
+              isRegionConfigured(provider)
+                ? "done"
+                : step === "region"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              isRegionConfigured(provider)
+                ? "available from environment"
+                : `save ${getProviderRegionEnvKey(provider)} to ${openWikiEnvPath}`
             }
           />
         ) : null}
@@ -2266,11 +2466,27 @@ function Prompt({
   if (step === "api-key") {
     return (
       <Box flexDirection="column">
-        <Text>Paste your {getProviderLabel(provider)} API key.</Text>
+        <Text>Paste your {getApiKeyFieldLabel(provider)}.</Text>
         <BorderedInput
           maxDisplayWidth={inputDisplayWidth}
           marginTop={1}
           prefix={`${getProviderApiKeyEnvKey(provider)}=`}
+          secret
+          value={input}
+        />
+        <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "secret-key") {
+    return (
+      <Box flexDirection="column">
+        <Text>Paste your {getProviderLabel(provider)} secret access key.</Text>
+        <BorderedInput
+          maxDisplayWidth={inputDisplayWidth}
+          marginTop={1}
+          prefix={`${getProviderSecretKeyEnvKey(provider)}=`}
           secret
           value={input}
         />
@@ -2291,6 +2507,19 @@ function Prompt({
           For example an OpenAI-compatible gateway endpoint (such as a LiteLLM
           gateway). Press Enter to save it.
         </Text>
+      </Box>
+    );
+  }
+
+  if (step === "region") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter the {getProviderLabel(provider)} region.</Text>
+        <Text>
+          <Text color="gray">$</Text> {getProviderRegionEnvKey(provider)}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">For example us-east-1. Press Enter to save it.</Text>
       </Box>
     );
   }
@@ -3129,8 +3358,16 @@ export function getInitialStep(
     return credentialStep(provider);
   }
 
+  if (needsSecretKeyStep(provider)) {
+    return "secret-key";
+  }
+
   if (needsBaseUrlStep(provider)) {
     return "base-url";
+  }
+
+  if (needsRegionStep(provider)) {
+    return "region";
   }
 
   if (
@@ -3194,6 +3431,26 @@ function getNextStepAfterApiKey(
   mode: OpenWikiRunMode,
   forceModelStep = false,
 ): PromptStep | null {
+  if (needsSecretKeyStep(provider)) {
+    return "secret-key";
+  }
+
+  return getNextStepAfterSecretKey(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+    forceModelStep,
+  );
+}
+
+function getNextStepAfterSecretKey(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+  forceModelStep = false,
+): PromptStep | null {
   if (needsBaseUrlStep(provider)) {
     return "base-url";
   }
@@ -3208,6 +3465,26 @@ function getNextStepAfterApiKey(
 }
 
 function getNextStepAfterBaseUrl(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+  forceModelStep = false,
+): PromptStep | null {
+  if (needsRegionStep(provider)) {
+    return "region";
+  }
+
+  return getNextStepAfterRegion(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+    forceModelStep,
+  );
+}
+
+function getNextStepAfterRegion(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
   onboardingConfig: OpenWikiOnboardingConfig,
@@ -3408,6 +3685,17 @@ function getProviderSetupDetail(provider: OpenWikiProvider): string {
   }
 
   return `default ${getProviderLabel(DEFAULT_PROVIDER)}`;
+}
+
+/**
+ * Label for the provider's primary credential input. Bedrock authenticates
+ * with an IAM access key ID (paired with a secret access key), not a single
+ * opaque API key, so its prompt reads differently from every other provider.
+ */
+function getApiKeyFieldLabel(provider: OpenWikiProvider): string {
+  return provider === "bedrock"
+    ? `${getProviderLabel(provider)} access key ID`
+    : `${getProviderLabel(provider)} API key`;
 }
 
 function hasValidConfiguredProvider(): boolean {

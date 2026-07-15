@@ -85,6 +85,63 @@ describe("parseCommand — chat default", () => {
   });
 });
 
+describe("parseCommand — mode after flags", () => {
+  test("a mode word after a flag is still recognized as the mode", () => {
+    expect(parseCommand(["--print", "code", "--update"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      mode: "code",
+      modeSource: "positional",
+      userMessage: null,
+    });
+    expect(parseCommand(["--update", "personal"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      mode: "personal",
+      modeSource: "positional",
+      userMessage: null,
+    });
+  });
+
+  test("mode after a flag satisfies the --init mode requirement", () => {
+    expect(parseCommand(["--print", "code", "--init"])).toMatchObject({
+      kind: "run",
+      command: "init",
+      mode: "code",
+    });
+  });
+
+  test("a mode word is only promoted once; later ones join the message", () => {
+    expect(
+      parseCommand(["--update", "personal", "code", "docs"]),
+    ).toMatchObject({
+      kind: "run",
+      mode: "personal",
+      userMessage: "code docs",
+    });
+  });
+
+  test("a mode word after an explicit --mode stays part of the message", () => {
+    expect(parseCommand(["--mode", "code", "personal", "notes"])).toMatchObject(
+      {
+        kind: "run",
+        mode: "code",
+        modeSource: "option",
+        userMessage: "personal notes",
+      },
+    );
+  });
+
+  test("a mode word after a message word stays part of the message", () => {
+    expect(parseCommand(["document", "personal", "paths"])).toMatchObject({
+      kind: "run",
+      mode: "code",
+      modeSource: "default",
+      userMessage: "document personal paths",
+    });
+  });
+});
+
 describe("parseCommand — init/update", () => {
   test("personal --init selects the init command and starts", () => {
     expect(parseCommand(["personal", "--init"])).toMatchObject({
