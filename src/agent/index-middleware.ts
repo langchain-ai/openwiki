@@ -8,17 +8,19 @@ import type { OpenWikiOutputMode } from "./types.js";
 const INDEX_FILE = "index.md";
 const EXCLUDED_FILES = new Set([INDEX_FILE, "_plan.md", "INSTRUCTIONS.md"]);
 
-type IndexBackend = Pick<
-  BackendProtocolV2,
-  "edit" | "ls" | "readRaw" | "write"
->;
-
-type Directory = { entries: FileInfo[]; path: string };
-type Link = { description?: string; href: string; label: string };
+interface Directory {
+  entries: FileInfo[];
+  path: string;
+}
+interface Link {
+  description?: string;
+  href: string;
+  label: string;
+}
 
 /** Creates middleware that synchronizes deterministic wiki indexes after a run. */
 export function createOpenWikiIndexMiddleware(
-  backend: IndexBackend,
+  backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
 ) {
   return createMiddleware({
@@ -38,7 +40,7 @@ export function createOpenWikiIndexMiddleware(
 
 /** Synchronizes the index for every directory in the configured wiki. */
 export async function synchronizeWikiIndexes(
-  backend: IndexBackend,
+  backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
 ): Promise<void> {
   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
@@ -49,7 +51,7 @@ export async function synchronizeWikiIndexes(
 
 /** Recursively collects visible wiki directories and their entries. */
 async function collectDirectories(
-  backend: IndexBackend,
+  backend: BackendProtocolV2,
   directoryPath: string,
   allowMissing = false,
 ): Promise<Directory[]> {
@@ -76,7 +78,7 @@ async function collectDirectories(
 
 /** Builds and writes one directory's index when its content has changed. */
 async function synchronizeDirectory(
-  backend: IndexBackend,
+  backend: BackendProtocolV2,
   directory: Directory,
   root: string,
 ): Promise<void> {
@@ -206,7 +208,7 @@ function errorMessage(error: unknown): string {
 
 /** Reads a text file from the backend or throws an actionable error. */
 async function readText(
-  backend: IndexBackend,
+  backend: BackendProtocolV2,
   filePath: string,
 ): Promise<string> {
   const result = await backend.readRaw(filePath);
