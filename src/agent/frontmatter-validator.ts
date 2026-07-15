@@ -13,7 +13,7 @@ interface FrontmatterIssue {
   code: string;
   line?: number;
   message: string;
-};
+}
 
 interface ValidFrontmatterValidation {
   valid: true;
@@ -24,7 +24,8 @@ interface InvalidFrontmatterValidation {
   valid: false;
 }
 
-export type FrontmatterValidation = ValidFrontmatterValidation | InvalidFrontmatterValidation;
+export type FrontmatterValidation =
+  ValidFrontmatterValidation | InvalidFrontmatterValidation;
 
 type ReadBackend = Pick<BackendProtocolV2, "readRaw">;
 
