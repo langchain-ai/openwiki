@@ -1,0 +1,21 @@
+test/skills.test.ts
+  s_f826d2309080ef::t_fbbf59d53596c1 1-49
+src/agent/skills.ts
+  s_f826d2309080ef::t_fbbf59d53596c1 1,3,13-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "faf78a1ac87a56aa8ee2878f87bce444366111a0",
+  "prompts": {},
+  "sessions": {
+    "s_f826d2309080ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ceb-1a04-79b1-bfba-a09d1a336374",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
