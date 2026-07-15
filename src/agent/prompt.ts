@@ -149,7 +149,7 @@ Front matter requirements (OKF):
 ---
 type: <Type name>                  # REQUIRED
 title: <Optional display name>
-description: <Optional one-line summary>
+description: <Optional one to two sentence summary (optimized for search & retrieval)>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
 ---
