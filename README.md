@@ -428,6 +428,10 @@ OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
 
 The value must be a positive integer. If the value is unset, OpenWiki defaults to 3 retries.
 
+### Diagrams
+
+OpenWiki embeds **Mermaid** diagrams in the generated wiki where they aid understanding — sequence diagrams for runtime flows, ER diagrams for data models, state diagrams for lifecycles, and flowcharts for control flow. Diagrams are grounded in the source, kept in sync on `--update` runs, and follow Mermaid label-safety rules so the fenced blocks render on GitHub and other Mermaid-aware viewers. This is default behavior — no configuration required.
+
 If there's an inference provider or model you'd like to see added, please open a PR!
 
 ## Telemetry

@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { createSystemPrompt } from "../src/agent/prompt.ts";
+import {
+  createDiagramInstructions,
+  createSystemPrompt,
+} from "../src/agent/prompt.ts";
 
 /**
  * Guards against the 0.2 regression where the shared "Canonical wiki location"
@@ -62,4 +65,27 @@ describe("createSystemPrompt openwiki_generated enrichment guidance", () => {
       expect(prompt).toMatch(/remove the `openwiki_generated` field/);
     });
   }
+});
+
+describe("createDiagramInstructions", () => {
+  test("includes Mermaid guidance and the label-safety rule", () => {
+    const text = createDiagramInstructions();
+
+    expect(text).toContain("Diagram discipline:");
+    expect(text).toContain("```mermaid");
+    expect(text).toContain("erDiagram");
+    // The syntax guard that prevents the broken-render failure mode.
+    expect(text.toLowerCase()).toContain("semicolons");
+  });
+});
+
+describe("createSystemPrompt diagram guidance", () => {
+  test("is always present for init and update runs", () => {
+    for (const command of ["init", "update"] as const) {
+      const prompt = createSystemPrompt(command);
+
+      expect(prompt).toContain("Diagram discipline:");
+      expect(prompt).toContain("Mode-specific behavior:");
+    }
+  });
 });

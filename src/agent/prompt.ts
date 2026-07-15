@@ -194,10 +194,21 @@ Coverage self-check:
 - Verify that ${output.planPath} has been deleted. Do not finish while the temporary plan remains in the wiki as a concept.
 - Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
 - If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
-
+${createDiagramInstructions()}
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
 `.trim();
+}
+
+export function createDiagramInstructions(): string {
+  return `
+Diagram discipline:
+- Where a flow, lifecycle, or data model is easier to grasp visually, embed a Mermaid diagram in a fenced \`\`\`mermaid block on the most relevant page: sequenceDiagram for runtime/request flows, stateDiagram for lifecycles, erDiagram for the data model, and flowchart for control flow.
+- Ground every diagram in inspected source. Do not invent participants, states, entities, or relationships the code does not support.
+- Keep diagrams accurate on update runs: if a source change makes an existing diagram stale, update the diagram in the same edit as the surrounding prose. A wrong diagram is a stale claim, not existing structure to preserve.
+- Mermaid label safety: never place semicolons, pipes, or unescaped angle brackets inside node, message, or edge labels; they break rendering. Rephrase the label instead.
+- Prefer a few high-value diagrams over decorating every page, and give each a short caption so its purpose is clear.
+`;
 }
 
 export function createModeInstructions(
