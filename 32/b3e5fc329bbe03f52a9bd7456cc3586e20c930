@@ -1,0 +1,14 @@
+src/agent/prompt.ts
+  h_33f63fd75d0bd5 162
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "32b3e5fc329bbe03f52a9bd7456cc3586e20c930",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
