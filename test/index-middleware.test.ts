@@ -95,16 +95,21 @@ describe("synchronizeWikiIndexes", () => {
     expect(repaired).not.toContain("_plan.md");
   });
 
-  test("fails clearly when a documented file lacks a description", async () => {
-    const { backend } = await setup();
+  test("indexes a valid OKF file without an optional description", async () => {
+    const { backend, rootDir } = await setup();
     await backend.write(
       "/openwiki/page.md",
       "---\ntype: Reference\ntitle: Page\n---\n",
     );
 
-    await expect(synchronizeWikiIndexes(backend, "repository")).rejects.toThrow(
-      "/openwiki/page.md lacks a non-empty YAML description.",
+    await synchronizeWikiIndexes(backend, "repository");
+
+    const index = await readFile(
+      path.join(rootDir, "openwiki/index.md"),
+      "utf8",
     );
+    expect(index).toContain("- [Page](page.md)\n");
+    expect(index).not.toContain("undefined");
   });
 
   test("parses quoted and folded YAML descriptions", async () => {
@@ -158,7 +163,7 @@ describe("synchronizeWikiIndexes", () => {
       await expect(
         synchronizeWikiIndexes(backend, "repository"),
       ).rejects.toThrow(
-        "/openwiki/page.md lacks a non-empty YAML description.",
+        "/openwiki/page.md YAML description must be a non-empty string.",
       );
     },
   );
