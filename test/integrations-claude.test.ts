@@ -1,4 +1,12 @@
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -149,5 +157,37 @@ describe("writeClaudeIntegration", () => {
     await expect(writeClaudeIntegration(missing)).rejects.toThrow(
       /does not exist/u,
     );
+  });
+});
+
+describe("writeClaudeIntegration symlink safety", () => {
+  test("refuses to write through a symlinked SKILL.md leaf, leaving the link target untouched", async () => {
+    const repo = await createTempRepo();
+    const outside = await createTempRepo();
+    const victim = path.join(outside, "victim.txt");
+    await writeFile(victim, "ORIGINAL VICTIM CONTENT\n", "utf8");
+
+    const skillDir = path.join(repo, ".claude", "skills", "openwiki-init");
+    await mkdir(skillDir, { recursive: true });
+    await symlink(victim, path.join(skillDir, "SKILL.md"));
+
+    await expect(writeClaudeIntegration(repo)).rejects.toThrow(/symlink/u);
+    expect(await readFile(victim, "utf8")).toBe("ORIGINAL VICTIM CONTENT\n");
+  });
+
+  test("refuses to write through a symlinked ancestor directory (.claude/skills/<skill>)", async () => {
+    const repo = await createTempRepo();
+    const outsideDir = await createTempRepo();
+
+    await mkdir(path.join(repo, ".claude", "skills"), { recursive: true });
+    await symlink(
+      outsideDir,
+      path.join(repo, ".claude", "skills", "openwiki-init"),
+      "dir",
+    );
+
+    await expect(writeClaudeIntegration(repo)).rejects.toThrow(/symlink/u);
+    // The symlinked-to directory must not have received a SKILL.md.
+    await expect(stat(path.join(outsideDir, "SKILL.md"))).rejects.toThrow();
   });
 });

@@ -1,4 +1,4 @@
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isFileNotFoundError } from "../fs-errors.js";
@@ -65,7 +65,17 @@ export async function writeClaudeIntegration(
       definition.name,
       "SKILL.md",
     );
+    // The target repo is untrusted input: a cloned/checked-out repo can commit
+    // a symlink at any segment of this path. mkdir({recursive:true}) and
+    // writeFile both follow symlinks by default, so without this check a
+    // malicious repo could redirect the write to overwrite an arbitrary
+    // victim-writable file outside the target directory.
+    await assertNoSymlinkInPath(resolvedTarget, skillPath);
     await mkdir(path.dirname(skillPath), { recursive: true });
+    // Re-check the leaf immediately before writing: mkdir only touches
+    // ancestor directories, so a symlink planted at the leaf itself would
+    // otherwise survive the check above undetected until this point.
+    await assertNoSymlinkInPath(resolvedTarget, skillPath);
     await writeFile(skillPath, document, "utf8");
     writtenFiles.push(skillPath);
   }
@@ -79,6 +89,40 @@ export async function writeClaudeIntegration(
       "Run /openwiki-update after source changes to refresh them.",
     ],
   };
+}
+
+// Refuses to proceed if any path segment between `root` and `targetPath`
+// (inclusive of the leaf) already exists as a symlink, so a repo cannot use a
+// planted symlink to redirect our write outside the intended `.claude/skills`
+// tree. Missing segments are fine (they don't exist yet, so nothing to
+// hijack); only an existing symlink is rejected.
+async function assertNoSymlinkInPath(
+  root: string,
+  targetPath: string,
+): Promise<void> {
+  const relative = path.relative(root, targetPath);
+  let current = root;
+
+  for (const segment of relative.split(path.sep)) {
+    current = path.join(current, segment);
+
+    let stats;
+    try {
+      stats = await lstat(current);
+    } catch (error) {
+      if (isFileNotFoundError(error)) {
+        return;
+      }
+
+      throw error;
+    }
+
+    if (stats.isSymbolicLink()) {
+      throw new Error(
+        `Refusing to write through a symlink at ${current}. Remove it and re-run.`,
+      );
+    }
+  }
 }
 
 async function assertDirectory(dir: string): Promise<void> {
