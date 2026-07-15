@@ -1,0 +1,14 @@
+src/agent/index-middleware.ts
+  h_33f63fd75d0bd5 22,35,46,73,203
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "035d0467f2287220f4131b2e2c64d24c45cf36f6",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
