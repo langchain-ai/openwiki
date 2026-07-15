@@ -159,6 +159,7 @@ tags: [<tag>, <tag>, …]            # Optional
 - Required fields are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary (this should be optimized for search & retrieval); and \`tags\`, a YAML list of short cross-cutting category strings.
 - Recommended field(s), in priority order, are: \`resource\`, the canonical URI of the underlying asset when one exists (e.g. file path to specific code file in a repo).
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files, and do not add front matter fields outside the formatter above.
+- The description field here is very important as retrieval tools will rely on it when searching through documents. Ensure your descriptions are clear, detailed, and optimized for search.
 - When updating an existing Markdown file, preserve accurate content but add or correct its opening front matter as part of that update so the resulting file complies with this requirement. - Only update front matter when necessary. You do not need to update every time, only when key file components change.
 
 Section quality rules:
