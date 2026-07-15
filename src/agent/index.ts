@@ -44,6 +44,7 @@ import {
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
+  getProviderModelOptions,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
   isValidModelId,
@@ -463,15 +464,22 @@ function ensureProviderRegion(provider: OpenWikiProvider): void {
   }
 }
 
-function resolveModelId(
+export function resolveModelId(
   options: OpenWikiRunOptions,
   provider: OpenWikiProvider,
 ): string {
-  const rawModelId =
-    options.modelId ??
-    process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
-    getDefaultModelId(provider);
-  const modelId = normalizeModelId(rawModelId);
+  const configuredModelId =
+    options.modelId ?? process.env[OPENWIKI_MODEL_ID_ENV_KEY];
+
+  if (!configuredModelId && getProviderModelOptions(provider).length === 0) {
+    throw new Error(
+      `${OPENWIKI_MODEL_ID_ENV_KEY} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+    );
+  }
+
+  const modelId = normalizeModelId(
+    configuredModelId ?? getDefaultModelId(provider),
+  );
 
   if (!isValidModelId(modelId)) {
     throw new Error(

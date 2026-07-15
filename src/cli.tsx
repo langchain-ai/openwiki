@@ -341,11 +341,14 @@ function App({ command }: AppProps) {
   }
 
   async function selectProvider(provider: OpenWikiProvider) {
-    const modelId = getDefaultModelId(provider);
+    const modelId =
+      getProviderModelOptions(provider).length > 0
+        ? getDefaultModelId(provider)
+        : null;
 
     await saveOpenWikiEnv({
       [OPENWIKI_PROVIDER_ENV_KEY]: provider,
-      [OPENWIKI_MODEL_ID_ENV_KEY]: modelId,
+      ...(modelId ? { [OPENWIKI_MODEL_ID_ENV_KEY]: modelId } : {}),
     });
     setSessionProvider(provider);
     setSessionModelId(modelId);
@@ -1906,10 +1909,12 @@ function ChatInput({
     try {
       await onProviderSelect(provider);
       resetInput();
+      const modelNotice =
+        getProviderModelOptions(provider).length > 0
+          ? ` with model ${getDefaultModelId(provider)}`
+          : ". Set a model with /model";
       setNotice(
-        `Provider switched to ${getProviderLabel(provider)} with model ${getDefaultModelId(
-          provider,
-        )}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
+        `Provider switched to ${getProviderLabel(provider)}${modelNotice}. Ensure ${getProviderApiKeyEnvKey(provider)} is set.`,
       );
     } catch (saveError) {
       setError(
