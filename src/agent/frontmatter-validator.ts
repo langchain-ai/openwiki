@@ -9,14 +9,22 @@ const OKF_STRING_FIELDS = ["type", "title", "description", "resource"];
 const OKF_FIELDS = new Set([...OKF_STRING_FIELDS, "tags"]);
 const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
 
-export type FrontmatterIssue = {
+interface FrontmatterIssue {
   code: string;
   line?: number;
   message: string;
 };
 
-export type FrontmatterValidation =
-  { valid: true } | { issues: FrontmatterIssue[]; valid: false };
+interface ValidFrontmatterValidation {
+  valid: true;
+}
+
+interface InvalidFrontmatterValidation {
+  issues: FrontmatterIssue[];
+  valid: false;
+}
+
+export type FrontmatterValidation = ValidFrontmatterValidation | InvalidFrontmatterValidation;
 
 type ReadBackend = Pick<BackendProtocolV2, "readRaw">;
 
