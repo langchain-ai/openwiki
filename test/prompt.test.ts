@@ -1,6 +1,12 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, test } from "vitest";
 import { createSystemPrompt, createUserPrompt } from "../src/agent/prompt.ts";
 import type { RunContext } from "../src/agent/types.ts";
+
+const migrateWikiToOkfSkill = new URL(
+  "../skills/migrate-wiki-to-okf/SKILL.md",
+  import.meta.url,
+);
 
 describe("createUserPrompt", () => {
   test("includes the wiki brief for repository init runs", () => {
@@ -86,7 +92,32 @@ describe("OKF front matter guidance", () => {
       "do not add front matter fields outside the formatter above",
     );
   });
+
+  test("permits scoped writers for the OKF migration skill", () => {
+    const prompt = createSystemPrompt("update", "repository");
+
+    expect(prompt).toContain("following the migrate-wiki-to-okf skill");
+    expect(prompt).toContain(
+      "use one subagent per wiki directory, batch them when concurrency is limited",
+    );
+    expect(prompt).not.toContain(
+      "~/.openwiki/skills/migrate-wiki-to-okf/SKILL.md",
+    );
+  });
+
+  test("plans and isolates one migration subagent per directory", async () => {
+    const skill = await readFile(migrateWikiToOkfSkill, "utf8");
+
+    expect(skill).toContain("recursively inventory every directory");
+    expect(skill).toContain("exactly one subagent for each directory");
+    expect(skill).toContain(
+      "must not recurse into or modify another directory",
+    );
+    expect(skill).toContain("Never add `timestamp`");
+    expect(skill).toContain("Do not edit `index.md`");
+  });
 });
+
 describe("index finalization guidance", () => {
   test("tells the agent that indexes are generated automatically", () => {
     for (const outputMode of ["local-wiki", "repository"] as const) {
