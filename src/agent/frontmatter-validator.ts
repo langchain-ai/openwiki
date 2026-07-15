@@ -41,7 +41,7 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
 
   let fields: unknown;
   try {
-    fields = parse(lines.slice(1, closingLine).join("\n"), {
+    fields = parse(`\n${lines.slice(1, closingLine).join("\n")}`, {
       maxAliasCount: 100,
       schema: "core",
       uniqueKeys: true,
@@ -144,20 +144,7 @@ function getToolMessages(result: unknown): ToolMessage[] {
   if (ToolMessage.isInstance(result)) return [result];
   if (!isRecord(result)) return [];
 
-  const { update } = result;
-  let messages: unknown;
-  if (Array.isArray(update)) {
-    const entries: unknown[] = update;
-    for (const entry of entries) {
-      if (Array.isArray(entry) && entry[0] === "messages") {
-        const pair: unknown[] = entry;
-        messages = pair[1];
-        break;
-      }
-    }
-  } else if (isRecord(update)) {
-    messages = update.messages;
-  }
+  const messages = isRecord(result.update) ? result.update.messages : undefined;
   return Array.isArray(messages)
     ? messages.filter((message): message is ToolMessage =>
         ToolMessage.isInstance(message),

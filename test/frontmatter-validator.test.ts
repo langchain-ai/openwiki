@@ -87,6 +87,11 @@ describe("validateOkfFrontmatter", () => {
         valid: false,
       });
     }
+    const malformed = validateOkfFrontmatter(
+      markdown("type: Reference\ndescription: [unterminated"),
+    );
+    if (malformed.valid) throw new Error("Expected invalid YAML.");
+    expect(malformed.issues[0].message).toContain("line 3");
   });
 
   test("reports unsupported and mistyped fields", () => {

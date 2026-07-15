@@ -158,22 +158,24 @@ function renderLinks(
   links.sort((left, right) => left.href.localeCompare(right.href));
   const items = links.map(({ description, href, label }) => {
     const link = `- [${escapeLabel(label)}](${href})`;
-    return includeDescription ? `${link} - ${description}` : link;
+    return includeDescription && description
+      ? `${link} - ${description}`
+      : link;
   });
   return `# ${heading}\n\n${items.join("\n")}`;
 }
 
-/** Parses the title and required description from YAML front matter. */
+/** Parses the optional title and description from YAML front matter. */
 function parseFrontmatter(
   content: string,
   filePath: string,
-): { description: string; title?: string } {
+): { description?: string; title?: string } {
   const block = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(content)?.[1];
   if (!block) throw new Error(`${filePath} lacks YAML front matter.`);
 
   let fields: unknown;
   try {
-    fields = parse(block, {
+    fields = parse(`\n${block}`, {
       maxAliasCount: 100,
       schema: "core",
       uniqueKeys: true,
@@ -189,14 +191,17 @@ function parseFrontmatter(
   }
 
   const { description, title } = fields as Record<string, unknown>;
-  if (typeof description !== "string" || !description.trim()) {
-    throw new Error(`${filePath} lacks a non-empty YAML description.`);
+  if (
+    description !== undefined &&
+    (typeof description !== "string" || !description.trim())
+  ) {
+    throw new Error(`${filePath} YAML description must be a non-empty string.`);
   }
   if (title !== undefined && typeof title !== "string") {
     throw new Error(`${filePath} YAML title must be a string.`);
   }
   return {
-    description,
+    ...(description ? { description } : {}),
     ...(title ? { title } : {}),
   };
 }

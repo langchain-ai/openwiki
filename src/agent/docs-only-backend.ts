@@ -33,14 +33,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    const result = await super.write(filePath, content);
-    if (!result.error) {
-      result.metadata = {
-        ...result.metadata,
-        [MUTATION_PATH_METADATA_KEY]: result.path ?? filePath,
-      };
-    }
-    return result;
+    return markMutation(await super.write(filePath, content), filePath);
   }
 
   override async edit(
@@ -54,14 +47,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    const result = await super.edit(filePath, oldString, newString, replaceAll);
-    if (!result.error) {
-      result.metadata = {
-        ...result.metadata,
-        [MUTATION_PATH_METADATA_KEY]: result.path ?? filePath,
-      };
-    }
-    return result;
+    return markMutation(
+      await super.edit(filePath, oldString, newString, replaceAll),
+      filePath,
+    );
   }
 
   private getDocsOnlyWriteError(filePath: string): string | null {
@@ -75,6 +64,19 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
 
     return `OpenWiki repository init/update runs may only write under /${OPEN_WIKI_DIR}/. Refused path: ${filePath}`;
   }
+}
+
+function markMutation<Result extends WriteResult | EditResult>(
+  result: Result,
+  filePath: string,
+): Result {
+  if (!result.error) {
+    result.metadata = {
+      ...result.metadata,
+      [MUTATION_PATH_METADATA_KEY]: result.path ?? filePath,
+    };
+  }
+  return result;
 }
 
 export function isOpenWikiDocsPath(filePath: string): boolean {
