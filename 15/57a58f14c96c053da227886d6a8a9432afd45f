@@ -1,0 +1,30 @@
+test/index-middleware.test.ts
+  s_f826d2309080ef::t_7d0b216a4d6046 98-99,105-109,111-112,166
+test/docs-only-backend.test.ts
+  s_f826d2309080ef::t_def62e67879538 31-32,35-37,46,61-64,67
+src/agent/frontmatter-validator.ts
+  s_f826d2309080ef::t_7d0b216a4d6046 44,147
+src/agent/index-middleware.ts
+  s_f826d2309080ef::t_7d0b216a4d6046 161-163,168,172,178,194-198,204
+test/frontmatter-validator.test.ts
+  s_f826d2309080ef::t_7d0b216a4d6046 90-94
+src/agent/docs-only-backend.ts
+  s_f826d2309080ef::t_def62e67879538 36,50-53,69-79
+  s_f826d2309080ef::t_f043b2beb56fdc 80-81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "1557a58f14c96c053da227886d6a8a9432afd45f",
+  "prompts": {},
+  "sessions": {
+    "s_f826d2309080ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ceb-1a04-79b1-bfba-a09d1a336374",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
