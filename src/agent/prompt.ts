@@ -38,6 +38,7 @@ Run discipline:
 - Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path.
 - Do not exhaustively read every file. For a local knowledge wiki, inspect the existing wiki structure and only the relevant connector evidence or configured local repository paths. For an explicit repository source, inspect the repository tree, package/config files, README-style files, entrypoints, routing files, database/schema files, and representative files for each major domain.
 - Do not call glob with **/* from the root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.
+- Do not read, write, or search any openwiki.* variant directories (anything other than openwiki/ itself); they are testing/validation artifacts, not part of the codebase documentation.
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
 - Create a strong first-pass wiki that is accurate and navigable, then stop. The wiki can be refined in later update runs.
 - Keep the initial documentation set focused: quickstart plus the smallest set of section pages needed to explain the repo clearly.
@@ -75,13 +76,7 @@ Wiki-first question answering:
 - When the wiki answers the question, do not inspect or mention raw connector data.
 - When you do inspect raw data, keep reads narrow: list latest raw items for the relevant connector, open only the specific files needed, and summarize only the minimum evidence required to answer or update the wiki.
 
-Subagent discipline:
-- You may use the task tool to parallelize read-only research during init and update runs when the repository has multiple substantial domains.
-- Default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.
-- Subagents must only inspect and summarize. They must not create, edit, delete, or move files, and they must not write to ${output.docsLocation}.
-- Give each subagent a narrow brief such as existing docs, runtime architecture, data/storage, UI/API surface, integrations, tests/evals, or business workflows.
-- Ask each subagent to return concise findings with source paths and notable open questions. The main agent must synthesize the final docs and is responsible for all writes.
-- Treat subagent reports as internal discovery notes. Do not paste subagent reports into the final user-facing response; the final response should summarize completed documentation changes and important caveats.
+${createSubagentInstructions(output.docsLocation)}
 
 Planning discipline:
 - After discovery and before writing final documentation, create a temporary ${output.planPath} file that lists the intended wiki pages, source evidence for each page, and remaining questions.
@@ -164,6 +159,34 @@ Coverage self-check:
 
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
+`.trim();
+}
+
+/**
+ * Subagent discipline text. When `OPENWIKI_DISABLE_SUBAGENTS=1`, tells the
+ * agent not to delegate to the task tool at all — paired with the
+ * harness-profile/middleware exclusion in `src/agent/index.ts` that actually
+ * removes the tool, for runs where transcript growth from subagent fan-out is
+ * the binding constraint.
+ */
+function createSubagentInstructions(docsLocation: string): string {
+  if (process.env.OPENWIKI_DISABLE_SUBAGENTS === "1") {
+    return `
+Subagent discipline:
+- Do not use the task tool or delegate research to subagents during this run.
+- Perform discovery directly with ls, glob, grep, read_file, and targeted shell execute commands.
+- Keep discovery concise and write documentation as soon as the main architecture, workflows, operations, and tests are understood.
+`.trim();
+  }
+
+  return `
+Subagent discipline:
+- You may use the task tool to parallelize read-only research during init and update runs when the repository has multiple substantial domains.
+- Default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.
+- Subagents must only inspect and summarize. They must not create, edit, delete, or move files, and they must not write to ${docsLocation}.
+- Give each subagent a narrow brief such as existing docs, runtime architecture, data/storage, UI/API surface, integrations, tests/evals, or business workflows.
+- Ask each subagent to return concise findings with source paths and notable open questions. The main agent must synthesize the final docs and is responsible for all writes.
+- Treat subagent reports as internal discovery notes. Do not paste subagent reports into the final user-facing response; the final response should summarize completed documentation changes and important caveats.
 `.trim();
 }
 

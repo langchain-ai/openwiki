@@ -263,6 +263,16 @@ export const SUGGESTED_MODEL_IDS = PROVIDER_CONFIGS[
   DEFAULT_PROVIDER
 ].modelOptions.map((model) => model.id);
 
+/**
+ * Fallback model ids OpenRouter tries, in order, when the primary model
+ * request fails (`route: "fallback"` in `createModel`). Opt out entirely with
+ * `OPENWIKI_DISABLE_MODEL_FALLBACK=1` for deterministic single-model runs.
+ */
+export const OPENROUTER_FALLBACK_MODEL_IDS = [
+  "openai/gpt-5.4-mini",
+  "anthropic/claude-sonnet-5",
+];
+
 export function getProviderConfig(provider: OpenWikiProvider): ProviderConfig {
   return PROVIDER_CONFIGS[provider];
 }
