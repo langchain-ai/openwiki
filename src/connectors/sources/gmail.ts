@@ -83,16 +83,19 @@ async function ingest(
   options: ConnectorIngestOptions = {},
 ): Promise<ConnectorIngestResult> {
   const runId = createRunId();
-  const config = await readConnectorConfig<GmailConfig>("google", {
-    enabled: true,
-    format: "full",
-    includeSpamTrash: false,
-    labelIds: [],
-    maxMessages: 100,
-    metadataHeaders: DEFAULT_METADATA_HEADERS,
-    pageSize: 100,
-    query: "newer_than:1d",
-  });
+  const config = {
+    ...(await readConnectorConfig<GmailConfig>("google", {
+      enabled: true,
+      format: "full",
+      includeSpamTrash: false,
+      labelIds: [],
+      maxMessages: 100,
+      metadataHeaders: DEFAULT_METADATA_HEADERS,
+      pageSize: 100,
+      query: "newer_than:1d",
+    })),
+    ...((options.connectorConfig ?? {}) as GmailConfig),
+  };
   const state = await readConnectorState("google");
   const warnings: string[] = [];
   const rawFiles: string[] = [];
