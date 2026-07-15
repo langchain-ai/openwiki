@@ -1,10 +1,8 @@
 ---
 type: Integration
-title: Citations
-description: OpenWiki ships seven built-in connectors that pull external data
-  into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the
-  documentation agent then reads and synthesizes into wiki ...
-timestamp: 2026-07-10T21:04:04.976Z
+title: OpenWiki Connectors
+description: Overview of OpenWiki's built-in connectors, ingestion architecture, and connector-specific behavior.
+tags: [connectors, integrations, ingestion]
 ---
 
 OpenWiki ships seven built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` also matters for code mode when documenting a different target repo than the one being ingested from).

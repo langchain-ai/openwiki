@@ -1,3 +1,10 @@
+---
+type: Architecture overview
+title: Architecture overview
+description: An overview of OpenWiki's layered architecture, runtime behavior, and extension points.
+tags: [architecture, cli, agents]
+---
+
 # Architecture overview
 
 OpenWiki has a small but layered architecture:

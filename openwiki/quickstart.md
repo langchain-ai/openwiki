@@ -1,3 +1,10 @@
+---
+type: Guide
+title: OpenWiki quickstart
+description: An overview of the OpenWiki CLI, its documentation workflow, and the repository's key components.
+tags: [openwiki, quickstart, cli]
+---
+
 # OpenWiki quickstart
 
 OpenWiki is a TypeScript CLI that writes and maintains documentation for a repository using an agent-driven workflow. The package exposes a single `openwiki` binary, stores local credentials in `~/.openwiki/.env`, and records successful update metadata in `openwiki/.last-update.json`.
