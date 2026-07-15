@@ -15,19 +15,14 @@ interface FrontmatterIssue {
   message: string;
 }
 
-interface ValidFrontmatterValidation {
-  valid: true;
-}
-
-interface InvalidFrontmatterValidation {
-  issues: FrontmatterIssue[];
-  valid: false;
-}
-
 export type FrontmatterValidation =
-  ValidFrontmatterValidation | InvalidFrontmatterValidation;
-
-type ReadBackend = Pick<BackendProtocolV2, "readRaw">;
+  | {
+      valid: true;
+    }
+  | {
+      issues: FrontmatterIssue[];
+      valid: false;
+    };
 
 /** Parses and validates leading YAML front matter against the supported OKF fields. */
 export function validateOkfFrontmatter(content: string): FrontmatterValidation {
@@ -101,7 +96,7 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
 /** Appends an actionable warning when a wiki write leaves invalid front matter. */
 export async function addFrontmatterWarning<Result>(
   result: Result,
-  backend: ReadBackend,
+  backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   toolName: string,
 ): Promise<Result> {
@@ -132,7 +127,7 @@ export async function addFrontmatterWarning<Result>(
 
 /** Reads a persisted Markdown file and validates its final front matter. */
 async function validatePersistedFile(
-  backend: ReadBackend,
+  backend: BackendProtocolV2,
   filePath: string,
 ): Promise<FrontmatterValidation> {
   const read = await backend.readRaw(filePath);

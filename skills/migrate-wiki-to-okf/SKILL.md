@@ -1,30 +1,3 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { ensureOpenWikiHome, openWikiSkillsDir } from "../openwiki-home.js";
-
-const skillDir = path.join(openWikiSkillsDir, "migrate-wiki-to-okf");
-export const migrateWikiToOkfSkillPath = path.join(skillDir, "SKILL.md");
-
-/** Installs the OKF migration skill when it is not already present. */
-export async function ensureMigrateWikiToOkfSkill(): Promise<void> {
-  await ensureOpenWikiHome();
-
-  try {
-    await readFile(migrateWikiToOkfSkillPath, "utf8");
-    return;
-  } catch (error) {
-    if (!isFileNotFoundError(error)) throw error;
-  }
-
-  await mkdir(skillDir, { recursive: true, mode: 0o700 });
-  await writeFile(
-    migrateWikiToOkfSkillPath,
-    `${MIGRATE_WIKI_TO_OKF_SKILL.trim()}\n`,
-    { encoding: "utf8", mode: 0o600 },
-  );
-}
-
-export const MIGRATE_WIKI_TO_OKF_SKILL = `
 ---
 name: migrate-wiki-to-okf
 description: Make an existing OpenWiki fully OKF-compliant. Use when any current wiki Markdown files lack valid OKF YAML front matter or when the user requests an OKF migration.
@@ -49,10 +22,10 @@ Each subagent must:
 - Inspect every non-generated Markdown file directly in its assigned directory.
 - Leave already compliant files unchanged.
 - Add or correct only the leading YAML front matter when needed. Preserve the existing Markdown body.
-- Use a descriptive, self-explanatory \`type\`. Infer \`title\` and a one-sentence \`description\` from the document when useful. Add \`resource\` or \`tags\` only when supported by the document.
-- Never add \`timestamp\` or fields outside this formatter:
+- Use a descriptive, self-explanatory `type`. Infer `title` and a one-sentence `description` from the document when useful. Add `resource` or `tags` only when supported by the document.
+- Never add `timestamp` or fields outside this formatter:
 
-\`\`\`yaml
+```yaml
 ---
 type: <Type name>
 title: <Optional display name>
@@ -60,18 +33,9 @@ description: <Optional one-line summary>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>]
 ---
-\`\`\`
+```
 
-- Do not edit \`index.md\`; OpenWiki regenerates directory indexes deterministically after the run.
+- Do not edit `index.md`; OpenWiki regenerates directory indexes deterministically after the run.
 - Report the files checked, the files changed, and any file whose metadata could not be inferred confidently.
 
 Do not create, delete, move, or reorganize wiki pages during this migration.
-`;
-
-function isFileNotFoundError(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    "code" in error &&
-    (error as NodeJS.ErrnoException).code === "ENOENT"
-  );
-}

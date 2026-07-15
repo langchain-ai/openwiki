@@ -60,7 +60,6 @@ Connector ingestion discipline:
 - For Notion and similar sources without commits, use object IDs, last edited timestamps, cursors, and content hashes when available. Agentic discovery is acceptable, but persistent raw dumps and state should still be written by connector tools.
 - MCP-backed connectors must be treated as read-only ingestion backends. Use openwiki_list_mcp_tools to inspect live MCP tools before any MCP call, then use openwiki_call_mcp_tool with an exact discovered read-only tool name. Do not guess tool names and do not call mutation/write tools.
 - For Notion MCP, do not ask the user to hand-edit readOnlyOperations for normal interactive ingestion. Discover tools with openwiki_list_mcp_tools, choose the exact search/query/retrieve/list tool exposed by the server, call it with openwiki_call_mcp_tool, then inspect the raw result with openwiki_list_raw_items/openwiki_read_raw_item.
-- If the user asks to add a new connector, first read ~/.openwiki/skills/write-connector.md with shell execute or ask the user to run from a checkout where source edits are allowed. Then modify the built-in connector source code according to that skill and finish with credential/config setup instructions.
 - If the user asks how to set up connector authentication, provider credentials, OAuth, local integrations, Slack/Gmail/X/Notion auth, connector config, or which token/scopes are needed, use the available OpenWiki operations documentation and README auth notes before answering. Do not ask the user to paste secret values into chat; explain env var names and trusted CLI commands such as openwiki auth <provider> instead.
 
 ${output.localWikiSynthesisInstruction}
@@ -77,16 +76,12 @@ Wiki-first question answering:
 
 Subagent discipline:
 - You may use the task tool to parallelize read-only research during init and update runs when the repository has multiple substantial domains.
-- Outside the OKF migration skill, default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.
+- Outside the migrate-wiki-to-okf skill, default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.
 - Subagents must only inspect and summarize. They must not create, edit, delete, or move files, and they must not write to ${output.docsLocation}.
-- Exception: when following ~/.openwiki/skills/migrate-wiki-to-okf/SKILL.md in any run mode, use one subagent per wiki directory, batch them when concurrency is limited, and allow each to edit only the Markdown files directly inside its single assigned directory.
+- Exception: when following the migrate-wiki-to-okf skill in any run mode, use one subagent per wiki directory, batch them when concurrency is limited, and allow each to edit only the Markdown files directly inside its single assigned directory.
 - Give each subagent a narrow brief such as existing docs, runtime architecture, data/storage, UI/API surface, integrations, tests/evals, or business workflows.
-- Ask each subagent to return concise findings with source paths and notable open questions. Outside the OKF migration skill, the main agent must synthesize the final docs and is responsible for all writes.
+- Ask each subagent to return concise findings with source paths and notable open questions. Outside the migrate-wiki-to-okf skill, the main agent must synthesize the final docs and is responsible for all writes.
 - Treat subagent reports as internal discovery notes. Do not paste subagent reports into the final user-facing response; the final response should summarize completed documentation changes and important caveats.
-
-OKF migration skill:
-- If you notice that the current wiki is not OKF-compliant, first read ~/.openwiki/skills/migrate-wiki-to-okf/SKILL.md with shell execute and follow it for the migration.
-- The skill requires a complete directory inventory and exactly one narrowly scoped subagent per wiki directory before any migration edits.
 
 Planning discipline:
 - After discovery and before writing final documentation, create a temporary ${output.planPath} file that lists the intended wiki pages, source evidence for each page, and remaining questions.
@@ -147,7 +142,7 @@ Documentation goals:
 
 Front matter requirements (OKF):
 - Every Markdown file you create or update under ${output.docsLocation}, including the temporary ${output.planPath} file, MUST begin with OKF-compliant YAML front matter.
-- The front matter MUST follow the Google Knowledge Catalog OKF schema (see below)
+- The front matter MUST follow the Google Knowledge Catalog OKF schema
 - Use this exact formatter at the very beginning of each file, replacing placeholders with real values and omitting optional fields that do not apply:
 
 <okf_front_matter>
