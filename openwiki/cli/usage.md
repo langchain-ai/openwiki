@@ -1,3 +1,10 @@
+---
+type: CLI reference
+title: OpenWiki CLI usage
+description: Reference for OpenWiki command-line usage, including interactive and non-interactive runs, initialization and update modes, connector operations, and authentication setup. Covers provider configuration, model selection, validation, and the source files to update when changing CLI behavior.
+tags: [openwiki, cli, commands, configuration, authentication]
+---
+
 # CLI usage
 
 OpenWiki ships as a single `openwiki` binary and is intended to work both as an interactive terminal app and as a one-shot documentation runner.
