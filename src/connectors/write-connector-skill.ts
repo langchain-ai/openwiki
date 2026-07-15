@@ -1,11 +1,9 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { ensureOpenWikiHome, openWikiSkillsDir } from "../openwiki-home.js";
 
-export const writeConnectorSkillPath = path.join(
-  openWikiSkillsDir,
-  "write-connector.md",
-);
+const skillDir = path.join(openWikiSkillsDir, "write-connector");
+export const writeConnectorSkillPath = path.join(skillDir, "SKILL.md");
 
 export async function ensureWriteConnectorSkill(): Promise<void> {
   await ensureOpenWikiHome();
@@ -19,6 +17,7 @@ export async function ensureWriteConnectorSkill(): Promise<void> {
     }
   }
 
+  await mkdir(skillDir, { recursive: true, mode: 0o700 });
   await writeFile(
     writeConnectorSkillPath,
     `${WRITE_CONNECTOR_SKILL.trim()}\n`,
@@ -30,9 +29,12 @@ export async function ensureWriteConnectorSkill(): Promise<void> {
 }
 
 const WRITE_CONNECTOR_SKILL = `
-# Write An OpenWiki Connector
+---
+name: write-connector
+description: Add a new built-in OpenWiki source connector. Use when a user asks to create or implement an OpenWiki connector.
+---
 
-Use this skill when a user asks to add a new OpenWiki source connector.
+# Write An OpenWiki Connector
 
 OpenWiki connectors are built-in TypeScript modules in the OSS repository. Do not create a plugin marketplace, dynamic connector package, or runtime-loaded untrusted connector. Add normal source files and tests.
 
