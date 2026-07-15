@@ -1,6 +1,8 @@
 name: Checks
 
 on:
+  push:
+    branches: [main]
   pull_request:
 
 permissions:
@@ -63,8 +65,6 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            node-version: "20"
-          - os: ubuntu-latest
             node-version: "22"
           - os: ubuntu-latest
             node-version: "24"
@@ -102,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ["20", "22", "24"]
+        node-version: ["22", "24"]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -126,6 +126,9 @@ jobs:
 
   audit:
     name: Audit
+    permissions:
+      contents: read
+      security-events: write
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -140,6 +143,14 @@ jobs:
           scan-type: fs
           scan-ref: .
           scanners: vuln
+          format: sarif
+          output: trivy-results.sarif
           severity: HIGH,CRITICAL
           exit-code: "1"
           ignore-unfixed: false
+
+      - name: Upload Trivy results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
