@@ -1,0 +1,29 @@
+src/agent/index.ts
+  s_f826d2309080ef::t_b6f51e3199264a 221
+  s_f826d2309080ef::t_ea476cccac1fbf 11-15,25,38,103,199,207-211,222-225
+  s_f826d2309080ef::t_90ad4e232adc25 212
+package.json
+  s_f826d2309080ef::t_ea476cccac1fbf 15
+skills/write-connector/SKILL.md
+  s_f826d2309080ef::t_ea476cccac1fbf 1-45
+src/agent/prompt.ts
+  s_f826d2309080ef::t_ea476cccac1fbf 144
+src/agent/skills.ts
+  s_f826d2309080ef::t_ea476cccac1fbf 1-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "49ec1d08f067cd482cee385f8fd98906f8c019b7",
+  "prompts": {},
+  "sessions": {
+    "s_f826d2309080ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ceb-1a04-79b1-bfba-a09d1a336374",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
