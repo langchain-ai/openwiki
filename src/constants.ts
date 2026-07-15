@@ -16,6 +16,19 @@ export const OPENAI_CHATGPT_EMAIL_ENV_KEY = "OPENAI_CHATGPT_EMAIL";
 export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
+// Claude Platform on AWS (https://platform.claude.com/docs/en/build-with-claude/claude-platform-on-aws)
+// is a distinct, Anthropic-managed offering fronted by AWS with its own env
+// names, mirroring the official Anthropic SDK/CLI (`ANTHROPIC_AWS_*`, `AWS_REGION`).
+// Its base URL is derived from the workspace's AWS region
+// (`https://aws-external-anthropic.{region}.api.aws`); ANTHROPIC_AWS_BASE_URL is an
+// optional explicit override for proxies/testing. Every request is scoped to a
+// workspace via the required `anthropic-workspace-id` header (workspace IDs look
+// like `wrkspc_…`).
+export const ANTHROPIC_AWS_API_KEY_ENV_KEY = "ANTHROPIC_AWS_API_KEY";
+export const ANTHROPIC_AWS_BASE_URL_ENV_KEY = "ANTHROPIC_AWS_BASE_URL";
+export const ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY = "ANTHROPIC_AWS_WORKSPACE_ID";
+export const AWS_REGION_ENV_KEY = "AWS_REGION";
+export const AWS_DEFAULT_REGION_ENV_KEY = "AWS_DEFAULT_REGION";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
@@ -55,6 +68,7 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
+  | "anthropic-aws"
   | "baseten"
   | "fireworks"
   | "nvidia"
@@ -90,6 +104,17 @@ const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
   { id: "gpt-5.4-mini", label: "5.4 mini" },
 ];
 
+/**
+ * Claude model options. Shared by the first-party `anthropic` provider and the
+ * `anthropic-aws` (Claude Platform on AWS) provider so both expose an identical
+ * model list — both target the same Claude API surface.
+ */
+const CLAUDE_MODEL_OPTIONS: ProviderModelOption[] = [
+  { id: "claude-haiku-4-5", label: "Haiku" },
+  { id: "claude-sonnet-5", label: "Sonnet" },
+  { id: "claude-opus-4-8", label: "Opus" },
+];
+
 type ProviderConfig = {
   apiKeyEnvKey: string;
   /**
@@ -105,8 +130,16 @@ type ProviderConfig = {
    */
   baseUrlEnvKey?: string;
   /**
+   * Derives a base URL from the environment when neither
+   * {@link ProviderConfig.baseUrlEnvKey} override nor {@link ProviderConfig.baseURL}
+   * default applies. Used by `anthropic-aws`, whose endpoint is built from the
+   * workspace's AWS region rather than a fixed URL.
+   */
+  deriveBaseUrl?: (env: NodeJS.ProcessEnv) => string | undefined;
+  /**
    * When true, the provider has no default endpoint and requires a base URL to
-   * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
+   * be supplied via {@link ProviderConfig.baseUrlEnvKey} (or, for `anthropic-aws`,
+   * derived via {@link ProviderConfig.deriveBaseUrl}).
    */
   requiresBaseUrl?: boolean;
   label: string;
@@ -117,6 +150,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
   "anthropic",
+  "anthropic-aws",
   "openrouter",
   "openai-compatible",
   "fireworks",
@@ -190,11 +224,15 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     apiKeyEnvKey: ANTHROPIC_API_KEY_ENV_KEY,
     baseUrlEnvKey: ANTHROPIC_BASE_URL_ENV_KEY,
     label: "Anthropic",
-    modelOptions: [
-      { id: "claude-haiku-4-5", label: "Haiku" },
-      { id: "claude-sonnet-5", label: "Sonnet" },
-      { id: "claude-opus-4-8", label: "Opus" },
-    ],
+    modelOptions: CLAUDE_MODEL_OPTIONS,
+  },
+  "anthropic-aws": {
+    apiKeyEnvKey: ANTHROPIC_AWS_API_KEY_ENV_KEY,
+    baseUrlEnvKey: ANTHROPIC_AWS_BASE_URL_ENV_KEY,
+    deriveBaseUrl: resolveAwsAnthropicBaseUrl,
+    requiresBaseUrl: true,
+    label: "Claude Platform on AWS",
+    modelOptions: CLAUDE_MODEL_OPTIONS,
   },
   openrouter: {
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,
@@ -259,7 +297,43 @@ export function resolveProviderBaseUrl(
     return trimmedOverride;
   }
 
-  return config.baseURL;
+  return config.baseURL ?? config.deriveBaseUrl?.(env);
+}
+
+/**
+ * The AWS region a Claude Platform on AWS workspace is bound to, read from
+ * `AWS_REGION` with a fallback to `AWS_DEFAULT_REGION` (matching the standard AWS
+ * SDK resolution the official Anthropic AWS client uses).
+ */
+export function resolveAwsRegion(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const region = (
+    env[AWS_REGION_ENV_KEY] ?? env[AWS_DEFAULT_REGION_ENV_KEY]
+  )?.trim();
+
+  return region ? region : undefined;
+}
+
+/**
+ * Builds the Claude Platform on AWS gateway base URL for a region, e.g.
+ * `https://aws-external-anthropic.us-west-2.api.aws`.
+ */
+export function buildAwsAnthropicBaseUrl(region: string): string {
+  return `https://aws-external-anthropic.${region}.api.aws`;
+}
+
+/**
+ * Derives the `anthropic-aws` base URL from the configured AWS region, or
+ * `undefined` when no region is set (callers then require an explicit
+ * `ANTHROPIC_AWS_BASE_URL` override).
+ */
+function resolveAwsAnthropicBaseUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const region = resolveAwsRegion(env);
+
+  return region ? buildAwsAnthropicBaseUrl(region) : undefined;
 }
 
 export function getProviderBaseUrlEnvKey(
@@ -325,15 +399,17 @@ export function resolveConfiguredProvider(
         ? "openai-compatible"
         : env[OPENROUTER_API_KEY_ENV_KEY]
           ? "openrouter"
-          : env[ANTHROPIC_API_KEY_ENV_KEY]
-            ? "anthropic"
-            : env[BASETEN_API_KEY_ENV_KEY]
-              ? "baseten"
-              : env[FIREWORKS_API_KEY_ENV_KEY]
-                ? "fireworks"
-                : env[NVIDIA_API_KEY_ENV_KEY]
-                  ? "nvidia"
-                  : DEFAULT_PROVIDER)
+          : env[ANTHROPIC_AWS_API_KEY_ENV_KEY]
+            ? "anthropic-aws"
+            : env[ANTHROPIC_API_KEY_ENV_KEY]
+              ? "anthropic"
+              : env[BASETEN_API_KEY_ENV_KEY]
+                ? "baseten"
+                : env[FIREWORKS_API_KEY_ENV_KEY]
+                  ? "fireworks"
+                  : env[NVIDIA_API_KEY_ENV_KEY]
+                    ? "nvidia"
+                    : DEFAULT_PROVIDER)
   );
 }
 

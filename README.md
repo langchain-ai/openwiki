@@ -192,7 +192,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, and Anthropic out of the box, plus an env-configured `anthropic-aws` provider for [Claude Platform on AWS](#claude-platform-on-aws). The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -205,6 +205,31 @@ OPENWIKI_PROVIDER=anthropic
 ANTHROPIC_API_KEY=your-key
 ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 ```
+
+### Claude Platform on AWS
+
+[Claude Platform on AWS](https://platform.claude.com/docs/en/build-with-claude/claude-platform-on-aws)
+is a distinct, Anthropic-managed offering fronted by AWS (SigV4/API-key auth and
+AWS Marketplace billing) with its own environment variables, separate from the
+first-party `anthropic` provider above. OpenWiki exposes it as the dedicated
+`anthropic-aws` provider. You can pick it in the interactive `openwiki --init`
+setup (it prompts for the API key, AWS region, and workspace ID) or configure it
+directly through environment variables, whose names mirror the official Anthropic
+AWS SDK/CLI:
+
+```bash
+OPENWIKI_PROVIDER=anthropic-aws
+ANTHROPIC_AWS_API_KEY=your-key          # sent as the x-api-key header
+ANTHROPIC_AWS_WORKSPACE_ID=wrkspc_XXXXXXXXXXXXXX  # required; anthropic-workspace-id header
+AWS_REGION=us-west-2                    # base URL is derived from the region
+```
+
+The base URL is built from the workspace's region as
+`https://aws-external-anthropic.{region}.api.aws` (`AWS_DEFAULT_REGION` is used as
+a fallback). To point at a proxy or a non-standard endpoint instead, set an
+explicit `ANTHROPIC_AWS_BASE_URL`, which overrides the region-derived URL. Setting
+`ANTHROPIC_AWS_API_KEY` also auto-selects the `anthropic-aws` provider when
+`OPENWIKI_PROVIDER` is unset.
 
 ### OpenAI-compatible endpoints
 

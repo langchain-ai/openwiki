@@ -17,7 +17,11 @@ import {
 } from "../src/env.ts";
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
+  ANTHROPIC_AWS_API_KEY_ENV_KEY,
+  ANTHROPIC_AWS_BASE_URL_ENV_KEY,
+  ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
+  AWS_REGION_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -37,6 +41,10 @@ import {
 const KEYS_UNDER_TEST = [
   ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
+  ANTHROPIC_AWS_API_KEY_ENV_KEY,
+  ANTHROPIC_AWS_BASE_URL_ENV_KEY,
+  ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY,
+  AWS_REGION_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -219,6 +227,33 @@ describe("getCredentialDiagnostics", () => {
     );
 
     expect(entry?.preview).toBe('"https://gateway.example.com/anthropic"');
+  });
+
+  test("surfaces the Claude Platform on AWS workspace ID verbatim, not masked", async () => {
+    await saveOpenWikiEnv({
+      [ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY]: "wrkspc_XXXXXXXXXXXXXX",
+    });
+
+    const diagnostics = await getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"wrkspc_XXXXXXXXXXXXXX"');
+  });
+
+  test("masks the Claude Platform on AWS API key like other secrets", async () => {
+    await saveOpenWikiEnv({
+      [ANTHROPIC_AWS_API_KEY_ENV_KEY]: "sk-aws-anthropic-secret-123456",
+    });
+
+    const diagnostics = await getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === ANTHROPIC_AWS_API_KEY_ENV_KEY,
+    );
+
+    expect(entry?.preview).not.toContain("sk-aws-anthropic-secret-123456");
+    expect(entry?.length).toBe("sk-aws-anthropic-secret-123456".length);
   });
 
   test("flags an invalid model ID with a warning", async () => {

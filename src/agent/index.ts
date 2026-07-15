@@ -37,7 +37,10 @@ import type {
   OpenWikiRunResult,
 } from "./types.js";
 import {
+  ANTHROPIC_AWS_BASE_URL_ENV_KEY,
+  ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
+  AWS_REGION_ENV_KEY,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
@@ -115,6 +118,7 @@ export async function runOpenWikiAgent(
   ensureProviderKey(provider);
   emitDebug(options, `credentials=${provider} key present`);
   ensureProviderBaseUrl(provider);
+  ensureAwsWorkspaceId(provider);
 
   if (provider === "openai-chatgpt") {
     // Refresh before the model is built, so `createModel` stays synchronous.
@@ -418,10 +422,30 @@ function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
   }
 
   if (!resolveProviderBaseUrl(provider)) {
+    // `anthropic-aws` derives its base URL from AWS_REGION, so surface both ways
+    // to satisfy the requirement instead of just naming the override key.
+    if (provider === "anthropic-aws") {
+      throw new Error(
+        `${AWS_REGION_ENV_KEY} (or an explicit ${ANTHROPIC_AWS_BASE_URL_ENV_KEY}) is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      );
+    }
+
     const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider) ?? "base URL";
 
     throw new Error(
       `${baseUrlEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+    );
+  }
+}
+
+function ensureAwsWorkspaceId(provider: OpenWikiProvider): void {
+  if (provider !== "anthropic-aws") {
+    return;
+  }
+
+  if (!process.env[ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY]?.trim()) {
+    throw new Error(
+      `${ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
     );
   }
 }
@@ -452,12 +476,27 @@ function createModel(
 ) {
   const retryOptions = { maxRetries: providerRetryAttempts };
 
-  if (provider === "anthropic") {
+  if (provider === "anthropic" || provider === "anthropic-aws") {
     const baseURL = resolveProviderBaseUrl(provider);
+    // Claude Platform on AWS scopes every request to a workspace via the
+    // `anthropic-workspace-id` header (its base URL + API key are handled by the
+    // shared config path above). The first-party `anthropic` provider has no
+    // workspace concept, so the header is only sent for `anthropic-aws`.
+    const workspaceId =
+      provider === "anthropic-aws"
+        ? process.env[ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY]?.trim()
+        : undefined;
 
     return new ChatAnthropic(modelId, {
       apiKey: process.env[getProviderApiKeyEnvKey(provider)],
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+      ...(workspaceId
+        ? {
+            clientOptions: {
+              defaultHeaders: { "anthropic-workspace-id": workspaceId },
+            },
+          }
+        : {}),
       ...retryOptions,
     });
   }
@@ -1318,6 +1357,7 @@ function formatDebugValue(key: string, value: string | undefined): string {
   if (
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === ANTHROPIC_AWS_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   ) {
     return formatUrlDebugValue(value);
@@ -1330,7 +1370,11 @@ function formatDebugValue(key: string, value: string | undefined): string {
   if (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
-    key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
+    key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
+    // Non-secret Claude Platform on AWS identifiers: show them verbatim in
+    // debug output, matching how the credential diagnostics panel treats them.
+    key === ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY ||
+    key === AWS_REGION_ENV_KEY
   ) {
     return `set(value=${JSON.stringify(value)})`;
   }

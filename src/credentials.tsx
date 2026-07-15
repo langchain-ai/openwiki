@@ -7,6 +7,8 @@ import { Box, Text, useInput, useStdout } from "ink";
 import { configureAuthProvider } from "./auth/configure.js";
 import { runOAuthAuth } from "./auth/oauth.js";
 import {
+  ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY,
+  AWS_REGION_ENV_KEY,
   DEFAULT_PROVIDER,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -29,6 +31,7 @@ import {
   providerRequiresBaseUrl,
   providerUsesOAuth,
   resolveConfiguredProvider,
+  resolveProviderBaseUrl,
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
 import {
@@ -89,6 +92,8 @@ type InitSetupProps = {
 
 type PromptStep =
   | "api-key"
+  | "aws-region"
+  | "aws-workspace-id"
   | "base-url"
   | "code-repo-confirm"
   | "code-repo-path"
@@ -360,6 +365,8 @@ export function needsCredentialSetup(
   const needsCredentials =
     !hasValidConfiguredProvider() ||
     needsCredentialStep(provider) ||
+    needsAwsRegionStep(provider) ||
+    needsAwsWorkspaceStep(provider) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
@@ -397,6 +404,12 @@ function hasValidStoredToken(env: NodeJS.ProcessEnv = process.env): boolean {
 }
 
 function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
+  // Claude Platform on AWS derives its base URL from the region, so it uses the
+  // dedicated `aws-region` step instead of the generic base-URL prompt.
+  if (isAwsProvider(provider)) {
+    return false;
+  }
+
   if (!providerRequiresBaseUrl(provider)) {
     return false;
   }
@@ -408,6 +421,26 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
   const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
 
   return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
+}
+
+function isAwsProvider(provider: OpenWikiProvider): boolean {
+  return provider === "anthropic-aws";
+}
+
+/**
+ * Claude Platform on AWS needs a region (to build the gateway base URL) unless
+ * one is already resolvable — either `AWS_REGION`/`AWS_DEFAULT_REGION` or an
+ * explicit `ANTHROPIC_AWS_BASE_URL` override.
+ */
+function needsAwsRegionStep(provider: OpenWikiProvider): boolean {
+  return isAwsProvider(provider) && !resolveProviderBaseUrl(provider);
+}
+
+function needsAwsWorkspaceStep(provider: OpenWikiProvider): boolean {
+  return (
+    isAwsProvider(provider) &&
+    !process.env[ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY]?.trim()
+  );
 }
 
 function isCredentialConfigured(provider: OpenWikiProvider): boolean {
@@ -486,6 +519,8 @@ export function InitSetup({
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState<string | null>(null);
+  const [awsRegion, setAwsRegion] = useState<string | null>(null);
+  const [awsWorkspaceId, setAwsWorkspaceId] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -1202,6 +1237,85 @@ export function InitSetup({
       return;
     }
 
+    if (step === "aws-region") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError(`${AWS_REGION_ENV_KEY} is required.`);
+        return;
+      }
+
+      setAwsRegion(trimmedInput);
+      setInput("");
+      const nextStep = getNextStepAfterAwsRegion(
+        provider,
+        modelIdOverride,
+        onboardingConfig,
+        selectedMode,
+        forceModelStep,
+      );
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextAwsRegion: trimmedInput,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
+      return;
+    }
+
+    if (step === "aws-workspace-id") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError(`${ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY} is required.`);
+        return;
+      }
+
+      setAwsWorkspaceId(trimmedInput);
+      setInput("");
+      const nextStep = getNextStepAfterAwsWorkspace(
+        provider,
+        modelIdOverride,
+        onboardingConfig,
+        selectedMode,
+        forceModelStep,
+      );
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextAwsRegion: awsRegion,
+        nextAwsWorkspaceId: trimmedInput,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
+      return;
+    }
+
     if (step === "model") {
       const selectedModelId = getSelectedModelId(
         provider,
@@ -1555,6 +1669,10 @@ export function InitSetup({
   type CompleteSetupOptions = {
     nextApiKey: string | null;
     nextBaseUrl: string | null;
+    // Claude Platform on AWS extras; default to the component state when a call
+    // site does not pass them (mirrors how nextOAuthTokens falls back to state).
+    nextAwsRegion?: string | null;
+    nextAwsWorkspaceId?: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextOAuthTokens?: CodexTokens | null;
@@ -1641,6 +1759,8 @@ export function InitSetup({
   async function saveCredentialUpdates({
     nextApiKey,
     nextBaseUrl,
+    nextAwsRegion = awsRegion,
+    nextAwsWorkspaceId = awsWorkspaceId,
     nextLangSmithKey,
     nextModelId,
     nextOAuthTokens = oauthTokens,
@@ -1669,6 +1789,14 @@ export function InitSetup({
         if (baseUrlEnvKey) {
           updates[baseUrlEnvKey] = nextBaseUrl;
         }
+      }
+
+      if (nextAwsRegion) {
+        updates[AWS_REGION_ENV_KEY] = nextAwsRegion;
+      }
+
+      if (nextAwsWorkspaceId) {
+        updates[ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY] = nextAwsWorkspaceId;
       }
 
       if (nextModelId !== null) {
@@ -1933,6 +2061,8 @@ export function InitSetup({
   const needsCredentialPrompt =
     !hasValidConfiguredProvider() ||
     needsCredentialStep(provider) ||
+    needsAwsRegionStep(provider) ||
+    needsAwsWorkspaceStep(provider) ||
     needsBaseUrlStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
@@ -1965,7 +2095,40 @@ export function InitSetup({
           }
           detail={getCredentialSetupDetail(provider, oauthTokens)}
         />
-        {providerRequiresBaseUrl(provider) ? (
+        {isAwsProvider(provider) ? (
+          <>
+            <SetupStep
+              label="AWS region"
+              state={
+                resolveProviderBaseUrl(provider)
+                  ? "done"
+                  : step === "aws-region"
+                    ? "current"
+                    : "pending"
+              }
+              detail={
+                resolveProviderBaseUrl(provider)
+                  ? "endpoint resolved from region"
+                  : `save ${AWS_REGION_ENV_KEY} to ${openWikiEnvPath}`
+              }
+            />
+            <SetupStep
+              label="Workspace ID"
+              state={
+                process.env[ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY]
+                  ? "done"
+                  : step === "aws-workspace-id"
+                    ? "current"
+                    : "pending"
+              }
+              detail={
+                process.env[ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY]
+                  ? "available from environment"
+                  : `save ${ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY} to ${openWikiEnvPath}`
+              }
+            />
+          </>
+        ) : providerRequiresBaseUrl(provider) ? (
           <SetupStep
             label="Base URL"
             state={
@@ -2286,6 +2449,38 @@ function Prompt({
         <Text color="gray">
           For example an OpenAI-compatible gateway endpoint (such as a LiteLLM
           gateway). Press Enter to save it.
+        </Text>
+      </Box>
+    );
+  }
+
+  if (step === "aws-region") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter your Claude Platform on AWS workspace region.</Text>
+        <Text>
+          <Text color="gray">$</Text> {AWS_REGION_ENV_KEY}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          The gateway endpoint is built from the region (for example
+          `us-west-2`). Press Enter to save it.
+        </Text>
+      </Box>
+    );
+  }
+
+  if (step === "aws-workspace-id") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter your Claude Platform on AWS workspace ID.</Text>
+        <Text>
+          <Text color="gray">$</Text> {ANTHROPIC_AWS_WORKSPACE_ID_ENV_KEY}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          Workspace IDs look like `wrkspc_…` and are sent as the
+          `anthropic-workspace-id` header. Press Enter to save it.
         </Text>
       </Box>
     );
@@ -3125,6 +3320,14 @@ export function getInitialStep(
     return credentialStep(provider);
   }
 
+  if (needsAwsRegionStep(provider)) {
+    return "aws-region";
+  }
+
+  if (needsAwsWorkspaceStep(provider)) {
+    return "aws-workspace-id";
+  }
+
   if (needsBaseUrlStep(provider)) {
     return "base-url";
   }
@@ -3190,10 +3393,54 @@ function getNextStepAfterApiKey(
   mode: OpenWikiRunMode,
   forceModelStep = false,
 ): PromptStep | null {
+  if (needsAwsRegionStep(provider)) {
+    return "aws-region";
+  }
+
+  if (needsAwsWorkspaceStep(provider)) {
+    return "aws-workspace-id";
+  }
+
   if (needsBaseUrlStep(provider)) {
     return "base-url";
   }
 
+  return getNextStepAfterBaseUrl(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+    forceModelStep,
+  );
+}
+
+function getNextStepAfterAwsRegion(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+  forceModelStep = false,
+): PromptStep | null {
+  if (needsAwsWorkspaceStep(provider)) {
+    return "aws-workspace-id";
+  }
+
+  return getNextStepAfterBaseUrl(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+    forceModelStep,
+  );
+}
+
+function getNextStepAfterAwsWorkspace(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+  forceModelStep = false,
+): PromptStep | null {
   return getNextStepAfterBaseUrl(
     provider,
     modelIdOverride,
@@ -3505,7 +3752,11 @@ function getInputDisplayWidth(stdoutColumns: number | undefined): number {
 }
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "anthropic-aws"
+    ? "a"
+    : "an";
 }
 
 function getTemplateGoal(templateId: string | undefined): string {

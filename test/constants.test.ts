@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  buildAwsAnthropicBaseUrl,
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
@@ -10,6 +11,7 @@ import {
   isValidProvider,
   normalizeModelId,
   normalizeProvider,
+  resolveAwsRegion,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
   resolveProviderRetryAttempts,
@@ -59,6 +61,7 @@ describe("normalizeProvider / isValidProvider", () => {
 
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
+    expect(isValidProvider("anthropic-aws")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
     expect(isValidProvider("nvidia")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
@@ -80,6 +83,21 @@ describe("resolveConfiguredProvider", () => {
 
   test("falls back to nvidia when only an NVIDIA key is present", () => {
     expect(resolveConfiguredProvider({ NVIDIA_API_KEY: "x" })).toBe("nvidia");
+  });
+
+  test("auto-selects anthropic-aws when only its API key is present", () => {
+    expect(resolveConfiguredProvider({ ANTHROPIC_AWS_API_KEY: "x" })).toBe(
+      "anthropic-aws",
+    );
+  });
+
+  test("prefers anthropic-aws over first-party anthropic when both keys exist", () => {
+    expect(
+      resolveConfiguredProvider({
+        ANTHROPIC_AWS_API_KEY: "aws",
+        ANTHROPIC_API_KEY: "first-party",
+      }),
+    ).toBe("anthropic-aws");
   });
 
   test("falls back to the default provider when nothing is configured", () => {
@@ -120,6 +138,56 @@ describe("resolveProviderBaseUrl", () => {
 
   test("returns undefined for a provider with no default and no override", () => {
     expect(resolveProviderBaseUrl("openai", {})).toBeUndefined();
+  });
+
+  test("derives the anthropic-aws base URL from AWS_REGION", () => {
+    expect(
+      resolveProviderBaseUrl("anthropic-aws", { AWS_REGION: "us-west-2" }),
+    ).toBe("https://aws-external-anthropic.us-west-2.api.aws");
+  });
+
+  test("derives the anthropic-aws base URL from AWS_DEFAULT_REGION fallback", () => {
+    expect(
+      resolveProviderBaseUrl("anthropic-aws", {
+        AWS_DEFAULT_REGION: "eu-central-1",
+      }),
+    ).toBe("https://aws-external-anthropic.eu-central-1.api.aws");
+  });
+
+  test("prefers an explicit ANTHROPIC_AWS_BASE_URL override over the region", () => {
+    expect(
+      resolveProviderBaseUrl("anthropic-aws", {
+        AWS_REGION: "us-west-2",
+        ANTHROPIC_AWS_BASE_URL: "https://proxy.example/anthropic",
+      }),
+    ).toBe("https://proxy.example/anthropic");
+  });
+
+  test("returns undefined for anthropic-aws with no region and no override", () => {
+    expect(resolveProviderBaseUrl("anthropic-aws", {})).toBeUndefined();
+  });
+});
+
+describe("resolveAwsRegion / buildAwsAnthropicBaseUrl", () => {
+  test("reads AWS_REGION, then AWS_DEFAULT_REGION, trimming whitespace", () => {
+    expect(resolveAwsRegion({ AWS_REGION: " us-west-2 " })).toBe("us-west-2");
+    expect(resolveAwsRegion({ AWS_DEFAULT_REGION: "eu-central-1" })).toBe(
+      "eu-central-1",
+    );
+    expect(
+      resolveAwsRegion({ AWS_REGION: "us-east-1", AWS_DEFAULT_REGION: "x" }),
+    ).toBe("us-east-1");
+  });
+
+  test("returns undefined when neither region var is set or is blank", () => {
+    expect(resolveAwsRegion({})).toBeUndefined();
+    expect(resolveAwsRegion({ AWS_REGION: "   " })).toBeUndefined();
+  });
+
+  test("builds the region-scoped gateway URL", () => {
+    expect(buildAwsAnthropicBaseUrl("ap-northeast-2")).toBe(
+      "https://aws-external-anthropic.ap-northeast-2.api.aws",
+    );
   });
 });
 
