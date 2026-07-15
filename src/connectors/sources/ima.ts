@@ -123,6 +123,9 @@ async function ingest(
       }> = [];
 
       for (const item of list.slice(0, maxResults)) {
+        if (item.media_type === 99) {
+          continue;
+        }
         try {
           const info = await getMediaInfo({
             clientId,
@@ -253,6 +256,9 @@ async function getKnowledgeList({
   knowledgeBaseId: string;
   limit: number;
 }): Promise<KnowledgeListItem[]> {
+  if (!knowledgeBaseId || knowledgeBaseId.trim().length === 0) {
+    return [];
+  }
   const response = await imaApi<{ knowledge_list: KnowledgeListItem[] }>(
     clientId,
     apiKey,
