@@ -216,6 +216,13 @@ async function runOpenWikiAgentCore(
     }),
   });
   const permissions = createRunPermissions(isChat, outputMode);
+  emitDebug(
+    options,
+    `backend.shell=${isChat ? "enabled" : "disabled"} tools.custom=${tools
+      .map((tool) => tool.name)
+      .sort()
+      .join(",")}`,
+  );
   const agent = createDeepAgent({
     model,
     tools,
@@ -368,9 +375,7 @@ export function createRunPermissions(
   outputMode: OpenWikiOutputMode,
 ): FilesystemPermission[] {
   if (isChat) {
-    return [
-      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
-    ];
+    return [{ operations: ["write"], paths: ["/skills/**"], mode: "deny" }];
   }
 
   if (outputMode === "repository") {
