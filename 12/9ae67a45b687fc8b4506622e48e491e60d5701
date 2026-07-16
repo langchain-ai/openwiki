@@ -1,0 +1,24 @@
+openwiki/index.md
+  h_33f63fd75d0bd5 1-11
+openwiki/agent/index.md
+  h_33f63fd75d0bd5 1-3
+openwiki/integrations/index.md
+  h_33f63fd75d0bd5 1-3
+openwiki/architecture/index.md
+  h_33f63fd75d0bd5 1-3
+openwiki/cli/index.md
+  h_33f63fd75d0bd5 1-3
+openwiki/operations/index.md
+  h_33f63fd75d0bd5 1-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "129ae67a45b687fc8b4506622e48e491e60d5701",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
