@@ -9,11 +9,12 @@ import { OPEN_WIKI_DIR } from "../../constants.js";
  */
 export type AgentCliWriteBoundary = "docs-only" | "none";
 
+/**
+ * Directories skipped for performance only. Never skip VCS metadata trees
+ * (`.git`, `.hg`, …) — a docs-only run must not touch them, and the post-run
+ * scanner is the enforcement layer that catches hooks/config writes there.
+ */
 const IGNORED_DIR_NAMES = new Set([
-  ".git",
-  ".hg",
-  ".svn",
-  ".jj",
   "node_modules",
   "dist",
   "build",
@@ -86,7 +87,7 @@ export async function listFilesModifiedSince(
         .replace(/\\/gu, "/");
 
       if (entry.isDirectory()) {
-        if (IGNORED_DIR_NAMES.has(entry.name) || entry.name.startsWith(".git")) {
+        if (IGNORED_DIR_NAMES.has(entry.name)) {
           continue;
         }
 
