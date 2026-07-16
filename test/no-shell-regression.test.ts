@@ -3,7 +3,11 @@ import os from "node:os";
 import path from "node:path";
 import { FilesystemBackend } from "deepagents";
 import { describe, expect, test } from "vitest";
-import { createRunBackend, createRunPermissions } from "../src/agent/index.ts";
+import {
+  createAgentBackend,
+  createRunBackend,
+  createRunPermissions,
+} from "../src/agent/index.ts";
 import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
 import { buildOpenWikiTools } from "../src/agent/tools/index.ts";
 import { createGitReadOnlyTools } from "../src/agent/tools/git-tools.ts";
@@ -24,6 +28,8 @@ describe("no-shell regression", () => {
       const backend = createRunBackend(false, outputMode, "/tmp/root");
       expect(backend).toBeInstanceOf(FilesystemBackend);
       expect(backend).not.toBeInstanceOf(OpenWikiLocalShellBackend);
+      const agentBackend = createAgentBackend(false, backend);
+      expect("execute" in agentBackend).toBe(false);
 
       const names = buildOpenWikiTools({
         cwd: "/tmp/root",

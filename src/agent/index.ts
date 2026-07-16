@@ -26,6 +26,7 @@ import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
+import { FilesystemCompositeBackend } from "./filesystem-composite-backend.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -209,12 +210,7 @@ async function runOpenWikiAgentCore(
   const isChat = command === "chat";
   const tools = buildOpenWikiTools({ cwd, outputMode, command });
   const wikiBackend = createRunBackend(isChat, outputMode, cwd);
-  const backend = new CompositeBackend(wikiBackend, {
-    "/skills/": new FilesystemBackend({
-      rootDir: openWikiSkillsDir,
-      virtualMode: true,
-    }),
-  });
+  const backend = createAgentBackend(isChat, wikiBackend);
   const permissions = createRunPermissions(isChat, outputMode);
   emitDebug(
     options,
@@ -362,6 +358,22 @@ export function createRunBackend(
     rootDir: cwd,
     virtualMode: true,
   });
+}
+
+export function createAgentBackend(
+  isChat: boolean,
+  wikiBackend: OpenWikiLocalShellBackend | FilesystemBackend,
+): CompositeBackend | FilesystemCompositeBackend {
+  const skillsBackend = new FilesystemBackend({
+    rootDir: openWikiSkillsDir,
+    virtualMode: true,
+  });
+
+  return isChat
+    ? new CompositeBackend(wikiBackend, { "/skills/": skillsBackend })
+    : new FilesystemCompositeBackend(wikiBackend, {
+        "/skills/": skillsBackend,
+      });
 }
 
 /**
