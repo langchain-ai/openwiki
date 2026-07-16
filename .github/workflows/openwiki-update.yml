@@ -11,6 +11,12 @@ permissions:
 
 jobs:
   update:
+    # Scheduled runs only fire in the origin repo by default, so contributor
+    # forks do not silently arm a daily job that requires a provider secret.
+    # Fork owners can opt in without editing this file by setting the
+    # OPENWIKI_ENABLE_SCHEDULED_UPDATE repository variable to "true". Manual
+    # dispatch remains available for intentional runs and testing.
+    if: github.event_name == 'workflow_dispatch' || github.repository == 'langchain-ai/openwiki' || vars.OPENWIKI_ENABLE_SCHEDULED_UPDATE == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
