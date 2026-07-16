@@ -30,13 +30,38 @@ export type AgentCliStreamParser = {
   flush(): AgentCliEvent[];
 };
 
+/**
+ * How the runner interprets adapter stdout.
+ * - `ndjson` (default): one JSON object per line (Grok Build streaming-json).
+ * - `text`: plain assistant text lines (Antigravity print mode).
+ */
+export type AgentCliStreamFormat = "ndjson" | "text";
+
+export type AgentCliExitInfo = {
+  exitCode: number | null;
+  stderrTail: string;
+};
+
 export type AgentCliAdapter = {
   id: string;
+  /**
+   * How stdout is interpreted. Defaults to {@link AgentCliStreamFormat} `ndjson`.
+   */
+  streamFormat?: AgentCliStreamFormat;
   detectInstall(binary: string): Promise<AgentCliInstallStatus>;
   /**
    * Builds CLI args. The runner writes `spec.prompt` to a temp file and passes
-   * its path as `promptFilePath` so long system+user prompts do not hit ARG_MAX.
+   * its path as `promptFilePath` so long system+user prompts do not hit ARG_MAX
+   * (adapters that only accept an inline prompt may still read that file).
    */
   buildArgs(spec: EngineRunSpec, promptFilePath: string): string[];
   createParser(): AgentCliStreamParser;
+  /**
+   * Optional post-process after the child exits. Used by plain-text CLIs to
+   * recover session ids from log files, recover empty stdout, and synthesize a
+   * terminal {@link AgentCliEvent} `result` when the stream has no NDJSON end.
+   */
+  afterExit?(info: AgentCliExitInfo): AgentCliEvent[] | Promise<AgentCliEvent[]>;
+  /** Optional cleanup for per-run temp files (log files, etc.). */
+  cleanup?(): void | Promise<void>;
 };

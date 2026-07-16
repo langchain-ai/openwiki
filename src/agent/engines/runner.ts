@@ -146,6 +146,7 @@ export async function runAgentCli(
     });
 
     const streamParser = adapter.createParser();
+    const streamFormat = adapter.streamFormat ?? "ndjson";
 
     const handleParsedEvents = (
       events: ReturnType<typeof streamParser.parse>,
@@ -187,6 +188,16 @@ export async function runAgentCli(
     const lines = createInterface({ input: child.stdout });
 
     lines.on("line", (line) => {
+      if (streamFormat === "text") {
+        // Preserve whitespace-only lines as structure but skip pure empties.
+        if (line.length === 0) {
+          return;
+        }
+
+        handleParsedEvents(streamParser.parse(line));
+        return;
+      }
+
       const trimmed = line.trim();
 
       if (trimmed.length === 0) {
@@ -241,6 +252,12 @@ export async function runAgentCli(
     // Flush any text buffered when the process exits without a terminal `end`.
     handleParsedEvents(streamParser.flush());
 
+    if (adapter.afterExit) {
+      handleParsedEvents(
+        await adapter.afterExit({ exitCode, stderrTail }),
+      );
+    }
+
     clearTimeout(timeout);
 
     if (timedOut) {
@@ -268,6 +285,7 @@ export async function runAgentCli(
     await unlink(promptFilePath).catch(() => {
       // Temp file may already be gone.
     });
+    await adapter.cleanup?.();
   }
 }
 

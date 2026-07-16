@@ -155,3 +155,80 @@ echo '{"type":"end","stopReason":"EndTurn","sessionId":"sess-test-1"}'
     ).rejects.toThrow(/Install the thing/);
   });
 });
+
+describe("runAgentCli text stream format", () => {
+  test("feeds plain stdout lines to the parser and honors afterExit result", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "openwiki-agent-cli-"));
+    const script = path.join(dir, "fake-text-cli.mjs");
+    await writeFile(
+      script,
+      `#!/usr/bin/env node
+process.stdout.write("line one\\n");
+process.stdout.write("line two\\n");
+process.exit(0);
+`,
+      { mode: 0o755 },
+    );
+
+    const events: string[] = [];
+    let afterExitCalled = false;
+
+    const adapter: AgentCliAdapter = {
+      id: "fake-text",
+      streamFormat: "text",
+      detectInstall() {
+        return Promise.resolve({ found: true, version: "0" });
+      },
+      buildArgs() {
+        return [];
+      },
+      createParser() {
+        return {
+          parse(line: unknown) {
+            if (typeof line !== "string") return [];
+            return [
+              {
+                type: "openwiki",
+                event: { source: "main", type: "text", text: line },
+              },
+            ];
+          },
+          flush() {
+            return [];
+          },
+        };
+      },
+      afterExit() {
+        afterExitCalled = true;
+        return [{ type: "result", ok: true }];
+      },
+    };
+
+    const providerConfig: AgentCliProviderConfig = {
+      kind: "agent-cli",
+      binaryEnvKey: "OPENWIKI_FAKE_TEXT_BINARY",
+      defaultBinary: script,
+      installHint: "install fake-text",
+      label: "Fake Text",
+      modelOptions: [],
+    };
+
+    const spec: EngineRunSpec = {
+      command: "chat",
+      cwd: dir,
+      prompt: "hi",
+      modelId: "fake",
+    };
+
+    process.env.OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS = "30";
+
+    await runAgentCli(adapter, providerConfig, spec, {
+      onEvent: (event) => {
+        if (event.type === "text") events.push(event.text);
+      },
+    });
+
+    expect(afterExitCalled).toBe(true);
+    expect(events).toEqual(["line one", "line two"]);
+  });
+});

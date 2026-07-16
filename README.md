@@ -202,7 +202,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), Grok Build (subscription CLI), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and Google Vertex AI (Claude models) out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), Grok Build (subscription CLI), Antigravity (subscription CLI), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and Google Vertex AI (Claude models) out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -360,6 +360,45 @@ use Grok Build interactively. It is not a drop-in for the scheduled GitHub Actio
 or GitLab CI examples, which expect a metered API key and do not have a `grok login`
 session. Runs use `--always-approve` so the CLI can write documentation files;
 treat the model like any coding agent with write access to the repo.
+
+### Antigravity (subscription)
+
+The `antigravity` provider runs documentation jobs through the local
+[Antigravity](https://antigravity.google/product/antigravity-cli) CLI (`agy`) using your existing
+Antigravity session — no separate API key is stored by OpenWiki. OpenWiki
+spawns `agy -p` headlessly with `--dangerously-skip-permissions` and
+`--mode accept-edits` so documentation writes can proceed without a TTY.
+
+Prerequisites:
+
+1. Install the Antigravity CLI and ensure `agy` is on your `PATH` (or set
+   `OPENWIKI_ANTIGRAVITY_BINARY` to the full path). On macOS:
+   `brew install --cask antigravity-cli`.
+2. Sign in with the CLI once so it has a valid session.
+
+```bash
+OPENWIKI_PROVIDER=antigravity openwiki code --init
+# or
+OPENWIKI_PROVIDER=antigravity openwiki personal --init
+```
+
+Optional overrides:
+
+```bash
+# Binary path when `agy` is not on PATH
+OPENWIKI_ANTIGRAVITY_BINARY=/path/to/agy
+
+# Model — must match an exact `agy models` display string
+OPENWIKI_MODEL_ID="Gemini 3.5 Flash (Medium)"
+
+# Overall run timeout in seconds (default 1800). Also drives agy's --print-timeout.
+OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS=1800
+```
+
+**Local / subscription only.** Prefer this provider on a machine where you already
+use Antigravity interactively. It is not a drop-in for the scheduled GitHub Actions
+or GitLab CI examples. Model ids are the human display strings from `agy models`
+(for example `Claude Sonnet 4.6 (Thinking)`), not provider/model slugs.
 
 ### Provider retry attempts
 

@@ -28,6 +28,7 @@ export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
   "GOOGLE_APPLICATION_CREDENTIALS";
 export const DEFAULT_VERTEX_LOCATION = "global";
 export const GROK_BUILD_BINARY_ENV_KEY = "OPENWIKI_GROK_BUILD_BINARY";
+export const ANTIGRAVITY_BINARY_ENV_KEY = "OPENWIKI_ANTIGRAVITY_BINARY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
@@ -67,6 +68,7 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
+  | "antigravity"
   | "baseten"
   | "bedrock"
   | "fireworks"
@@ -186,6 +188,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai-chatgpt",
   "anthropic",
   "grok-build",
+  "antigravity",
   "vertex",
   "openrouter",
   "openai-compatible",
@@ -243,6 +246,32 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [
       { id: "grok-4.5", label: "Grok 4.5" },
       { id: "grok-composer-2.5-fast", label: "Composer 2.5 Fast" },
+    ],
+  },
+  antigravity: {
+    kind: "agent-cli",
+    binaryEnvKey: ANTIGRAVITY_BINARY_ENV_KEY,
+    defaultBinary: "agy",
+    installHint:
+      "Install the Antigravity CLI (`agy`, e.g. `brew install --cask antigravity-cli`) and sign in so OpenWiki can use your local session.",
+    label: "Antigravity (subscription)",
+    // Exact display strings from `agy models` — agy rejects near-miss values
+    // silently (empty stdout, exit 0), so presets must match verbatim.
+    modelOptions: [
+      { id: "Gemini 3.5 Flash (Medium)", label: "Gemini 3.5 Flash (Medium)" },
+      { id: "Gemini 3.5 Flash (High)", label: "Gemini 3.5 Flash (High)" },
+      { id: "Gemini 3.5 Flash (Low)", label: "Gemini 3.5 Flash (Low)" },
+      { id: "Gemini 3.1 Pro (Low)", label: "Gemini 3.1 Pro (Low)" },
+      { id: "Gemini 3.1 Pro (High)", label: "Gemini 3.1 Pro (High)" },
+      {
+        id: "Claude Sonnet 4.6 (Thinking)",
+        label: "Claude Sonnet 4.6 (Thinking)",
+      },
+      {
+        id: "Claude Opus 4.6 (Thinking)",
+        label: "Claude Opus 4.6 (Thinking)",
+      },
+      { id: "GPT-OSS 120B (Medium)", label: "GPT-OSS 120B (Medium)" },
     ],
   },
   nebius: {
@@ -721,7 +750,9 @@ export function isValidModelId(value: string): boolean {
   return (
     modelId.length > 0 &&
     modelId.length <= 120 &&
-    /^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
+    // Spaces and parentheses are allowed so agent-CLI display names
+    // (e.g. Antigravity's `Gemini 3.5 Flash (Medium)`) validate cleanly.
+    /^[A-Za-z0-9][A-Za-z0-9._:/@+\-() ]*$/u.test(modelId) &&
     !modelId.includes("://")
   );
 }

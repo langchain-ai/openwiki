@@ -64,13 +64,13 @@ import {
 } from "./schedules.js";
 import {
   formatProviderSwitchNotice,
+  getAgentCliProviderConfig,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderCredentialHint,
   getProviderLabel,
   getProviderModelOptions,
-  getProviderProjectEnvKey,
   isAgentCliProvider,
   isValidModelId,
   normalizeModelId,
@@ -1784,7 +1784,7 @@ function ChatInput({
     if (option.id === "api-key") {
       if (isAgentCliProvider(currentProvider)) {
         setError(
-          `${getProviderLabel(currentProvider)} uses the local Grok Build CLI login. Run \`grok login\` instead of pasting an API key.`,
+          `${getProviderLabel(currentProvider)} uses a local agent CLI login, not an API key. ${getAgentCliProviderConfig(currentProvider).installHint}`,
         );
         return;
       }

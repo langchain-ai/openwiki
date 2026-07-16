@@ -9,6 +9,7 @@ import { runOAuthAuth } from "./auth/oauth.js";
 import {
   DEFAULT_PROVIDER,
   DEFAULT_VERTEX_LOCATION,
+  getAgentCliProviderConfig,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -490,7 +491,7 @@ function getCredentialSetupDetail(
   tokens: CodexTokens | null = null,
 ): string {
   if (isAgentCliProvider(provider)) {
-    return "uses local Grok Build CLI login (`grok login`)";
+    return getAgentCliProviderConfig(provider).installHint;
   }
 
   if (providerUsesOAuth(provider)) {

@@ -50,6 +50,11 @@ describe("isValidModelId", () => {
     expect(isValidModelId("claude-haiku-4-5@20251001")).toBe(true);
   });
 
+  test("accepts agent-CLI display names with spaces and parentheses", () => {
+    expect(isValidModelId("Gemini 3.5 Flash (Medium)")).toBe(true);
+    expect(isValidModelId("Claude Sonnet 4.6 (Thinking)")).toBe(true);
+  });
+
   test("rejects ids starting with a non-alphanumeric character", () => {
     expect(isValidModelId("-leading-dash")).toBe(false);
     expect(isValidModelId("/leading-slash")).toBe(false);
