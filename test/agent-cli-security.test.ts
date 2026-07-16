@@ -98,6 +98,25 @@ describe("write-boundary helpers", () => {
     expect(disallowed).toContain("evil.ts");
     expect(disallowed).not.toContain("openwiki/ok.md");
   });
+
+  test("findDisallowedWrites detects writes under .git (hooks bypass)", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "openwiki-wb-"));
+    const sinceMs = Date.now() - 1000;
+
+    await mkdir(path.join(dir, ".git", "hooks"), { recursive: true });
+    await mkdir(path.join(dir, "openwiki"), { recursive: true });
+    await writeFile(path.join(dir, "openwiki", "ok.md"), "docs", "utf8");
+    await writeFile(
+      path.join(dir, ".git", "hooks", "pre-commit"),
+      "#!/bin/sh\necho pwned\n",
+      "utf8",
+    );
+
+    const disallowed = await findDisallowedWrites(dir, sinceMs, "docs-only");
+
+    expect(disallowed).toContain(".git/hooks/pre-commit");
+    expect(disallowed).not.toContain("openwiki/ok.md");
+  });
 });
 
 describe("runAgentCli security controls", () => {
@@ -180,7 +199,9 @@ console.log(JSON.stringify({ type: "end", stopReason: "EndTurn", sessionId: "s1"
 
   test("fails docs-only runs that write outside openwiki/", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "openwiki-agent-cli-"));
-    const script = path.join(dir, "write-evil.mjs");
+    // Keep the fake binary outside cwd so the boundary scan does not see it.
+    const binDir = await mkdtemp(path.join(tmpdir(), "openwiki-agent-bin-"));
+    const script = path.join(binDir, "write-evil.mjs");
 
     await writeFile(
       script,
@@ -252,9 +273,88 @@ console.log(JSON.stringify({ type: "end", stopReason: "EndTurn", sessionId: "s2"
     ).rejects.toThrow(/docs-only write boundary/);
   });
 
+  test("fails docs-only runs that write a git hook under .git/", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "openwiki-agent-cli-"));
+    const binDir = await mkdtemp(path.join(tmpdir(), "openwiki-agent-bin-"));
+    const script = path.join(binDir, "write-git-hook.mjs");
+
+    await writeFile(
+      script,
+      `#!/usr/bin/env node
+import { writeFileSync, mkdirSync } from "node:fs";
+import path from "node:path";
+mkdirSync(path.join(process.cwd(), "openwiki"), { recursive: true });
+mkdirSync(path.join(process.cwd(), ".git", "hooks"), { recursive: true });
+writeFileSync(path.join(process.cwd(), "openwiki", "ok.md"), "docs");
+writeFileSync(
+  path.join(process.cwd(), ".git", "hooks", "pre-commit"),
+  "#!/bin/sh\\necho pwned\\n",
+);
+console.log(JSON.stringify({ type: "end", stopReason: "EndTurn", sessionId: "s-git" }));
+`,
+      { mode: 0o755 },
+    );
+
+    process.env.OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS = "30";
+
+    const adapter: AgentCliAdapter = {
+      id: "write-git-hook",
+      detectInstall() {
+        return Promise.resolve({ found: true, version: "0" });
+      },
+      buildArgs() {
+        return [];
+      },
+      createParser() {
+        return {
+          parse(line: unknown) {
+            if (
+              typeof line === "object" &&
+              line !== null &&
+              (line as { type?: string }).type === "end"
+            ) {
+              return [
+                { type: "session", sessionId: "s-git" },
+                { type: "result", ok: true },
+              ];
+            }
+
+            return [];
+          },
+          flush: () => [],
+        };
+      },
+    };
+
+    const providerConfig: AgentCliProviderConfig = {
+      kind: "agent-cli",
+      binaryEnvKey: "OPENWIKI_TEST_WRITE_GIT_HOOK_BINARY",
+      defaultBinary: script,
+      installHint: "n/a",
+      label: "Write Git Hook",
+      modelOptions: [],
+    };
+
+    await expect(
+      runAgentCli(
+        adapter,
+        providerConfig,
+        {
+          command: "init",
+          cwd: dir,
+          modelId: "x",
+          prompt: "init",
+          writeBoundary: "docs-only",
+        },
+        {},
+      ),
+    ).rejects.toThrow(/docs-only write boundary/);
+  });
+
   test("allows docs-only runs that only write under openwiki/", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "openwiki-agent-cli-"));
-    const script = path.join(dir, "write-ok.mjs");
+    const binDir = await mkdtemp(path.join(tmpdir(), "openwiki-agent-bin-"));
+    const script = path.join(binDir, "write-ok.mjs");
 
     await writeFile(
       script,
