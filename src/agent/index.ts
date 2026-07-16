@@ -4,6 +4,7 @@ import path from "node:path";
 import { AnthropicVertex } from "@anthropic-ai/vertex-sdk";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatBedrockConverse } from "@langchain/aws";
+import { ChatGoogle } from "@langchain/google/node";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
@@ -36,6 +37,14 @@ import {
 } from "./openai-chatgpt-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import { syncBundledSkills } from "./skills.js";
+import {
+  createVertexAuthFetch,
+  resolveVertexSurface,
+  stripPublisherPath,
+  toVertexPublisherModel,
+  vertexOpenAIBaseUrl,
+  withAnthropicAuthEnvNeutralized,
+} from "./vertex-surface.js";
 import type {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -44,7 +53,6 @@ import type {
   OpenWikiRunResult,
 } from "./types.js";
 import {
-  ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
   getDefaultModelId,
@@ -56,6 +64,7 @@ import {
   getProviderModelOptions,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
+  DEFAULT_VERTEX_LOCATION,
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
   isValidModelId,
   normalizeModelId,
@@ -82,6 +91,7 @@ import {
   persistRunMetadataIfChanged,
   shouldCheckUpdateNoop,
 } from "./utils.js";
+import { classifyError, recordRunSafe } from "../telemetry/index.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -113,6 +123,11 @@ export async function runOpenWikiAgent(
       emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
       options.onEvent?.({ type: "text", text: message });
 
+      await recordRunSafe(command, options, {
+        provider: resolveConfiguredProvider(),
+        outcome: "noop",
+      });
+
       return {
         command,
         model: noopStatus.model,
@@ -125,33 +140,39 @@ export async function runOpenWikiAgent(
     emitDebug(options, "update.noop=false reason=user message provided");
   }
 
-  const provider = resolveConfiguredProvider();
-  const providerBaseUrl = resolveProviderBaseUrl(provider);
-  emitDebug(options, `provider=${provider}`);
-  if (providerBaseUrl) {
-    emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
-  }
-  ensureProviderCredentials(provider);
-  emitDebug(options, `credentials=${provider} present`);
-  ensureProviderBaseUrl(provider);
-  ensureProviderSecretKey(provider);
-  ensureProviderRegion(provider);
-
-  if (provider === "openai-chatgpt") {
-    // Refresh before the model is built, so `createModel` stays synchronous.
-    await ensureFreshChatGptTokens();
-    emitDebug(options, "chatgpt.token=fresh");
-  }
-
-  const modelId = resolveModelId(options, provider);
-  emitDebug(options, `model=${modelId}`);
-  const providerRetryAttempts = resolveProviderRetryAttempts();
-  emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
-
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
+  // Resolved inside the try so a failure during resolution (missing key,
+  // invalid model, missing base URL) is still recorded. They may be undefined
+  // in the catch if resolution threw before assigning them.
+  let provider: OpenWikiProvider | undefined;
+  let modelId: string | undefined;
+
   try {
-    return await runOpenWikiAgentCore(
+    provider = resolveConfiguredProvider();
+    const providerBaseUrl = resolveProviderBaseUrl(provider);
+    emitDebug(options, `provider=${provider}`);
+    if (providerBaseUrl) {
+      emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
+    }
+    ensureProviderCredentials(provider);
+    emitDebug(options, `credentials=${provider} present`);
+    ensureProviderBaseUrl(provider);
+    ensureProviderSecretKey(provider);
+    ensureProviderRegion(provider);
+
+    if (provider === "openai-chatgpt") {
+      // Refresh before the model is built, so `createModel` stays synchronous.
+      await ensureFreshChatGptTokens();
+      emitDebug(options, "chatgpt.token=fresh");
+    }
+
+    modelId = resolveModelId(options, provider);
+    emitDebug(options, `model=${modelId}`);
+    const providerRetryAttempts = resolveProviderRetryAttempts();
+    emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
+
+    const result = await runOpenWikiAgentCore(
       command,
       runtimeCwd,
       options,
@@ -159,8 +180,22 @@ export async function runOpenWikiAgent(
       modelId,
       providerRetryAttempts,
     );
+
+    await recordRunSafe(command, options, {
+      provider,
+      outcome: "success",
+    });
+
+    return result;
   } catch (error) {
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
+
+    await recordRunSafe(command, options, {
+      provider,
+      outcome: "failure",
+      errorClass: classifyError(error),
+    });
+
     throw error;
   } finally {
     debugFetchCapture.restore();
@@ -522,18 +557,44 @@ export function resolveModelId(
   return modelId;
 }
 
-function createModel(
+export function createModel(
   provider: OpenWikiProvider,
   modelId: string,
   providerRetryAttempts: number,
 ) {
   const retryOptions = { maxRetries: providerRetryAttempts };
 
-  if (provider === "vertex") {
-    return new ChatAnthropic(modelId, {
-      createClient: () => createVertexClient(provider),
+  if (provider === "gemini") {
+    return new ChatGoogle({
+      apiKey: getProviderApiKey(provider),
+      model: modelId,
+      platformType: "gai",
+      // Gemini 3.x thought-signature round-trip; see the constant's comment.
+      ...GEMINI_THOUGHT_SIGNATURE_OPTIONS,
       ...retryOptions,
     });
+  }
+
+  if (provider === "gemini-enterprise") {
+    const projectId = process.env[GOOGLE_CLOUD_PROJECT_ENV_KEY];
+
+    if (!projectId) {
+      throw new Error(
+        `${GOOGLE_CLOUD_PROJECT_ENV_KEY} is required for the gemini-enterprise provider.`,
+      );
+    }
+
+    // resolveProviderLocation prefers GOOGLE_CLOUD_LOCATION, else the
+    // provider's defaultLocation ("global"), so this is always a string.
+    const location =
+      resolveProviderLocation(provider) ?? DEFAULT_VERTEX_LOCATION;
+
+    return createGeminiEnterpriseModel(
+      modelId,
+      projectId,
+      location,
+      retryOptions,
+    );
   }
 
   if (provider === "anthropic") {
@@ -655,32 +716,95 @@ function getProviderApiKey(provider: OpenWikiProvider): string | undefined {
   return apiKeyEnvKey ? process.env[apiKeyEnvKey] : undefined;
 }
 
-/**
- * Constructs the AnthropicVertex client with stray Anthropic credentials
- * masked: the underlying Anthropic SDK captures ANTHROPIC_API_KEY and
- * ANTHROPIC_AUTH_TOKEN from the environment at construction time and sends
- * them as request credentials, displacing the Google OAuth token (observed
- * as an authentication error when ANTHROPIC_AUTH_TOKEN is set — e.g. left
- * over from a previous anthropic-provider setup).
- */
-function createVertexClient(provider: OpenWikiProvider): AnthropicVertex {
-  const savedApiKey = process.env[ANTHROPIC_API_KEY_ENV_KEY];
-  const savedAuthToken = process.env.ANTHROPIC_AUTH_TOKEN;
-  delete process.env[ANTHROPIC_API_KEY_ENV_KEY];
-  delete process.env.ANTHROPIC_AUTH_TOKEN;
+// Placeholder OpenAI API key for the Vertex MaaS surface; overwritten per
+// request by the auth fetch's Authorization header (see createVertexAuthFetch).
+const VERTEX_ADC_PLACEHOLDER_KEY = "vertex-adc";
 
-  try {
-    return new AnthropicVertex({
-      projectId: process.env[GOOGLE_CLOUD_PROJECT_ENV_KEY],
-      region: resolveProviderLocation(provider),
-    });
-  } finally {
-    if (savedApiKey !== undefined) {
-      process.env[ANTHROPIC_API_KEY_ENV_KEY] = savedApiKey;
-    }
-    if (savedAuthToken !== undefined) {
-      process.env.ANTHROPIC_AUTH_TOKEN = savedAuthToken;
-    }
+// Gemini 3.x rejects multi-turn tool calls whose function-call parts lack their
+// `thoughtSignature`. LangChain's streaming aggregator (core stream.js)
+// unconditionally re-emits the message as v1 standard content blocks, which drop
+// that provider-specific signature — so the next turn 400s ("Function call is
+// missing a thought_signature"). Disabling streaming routes the call through
+// invoke()/generate, which honors outputVersion: "v0" and preserves the raw
+// Gemini content parts (signature intact) that the v0 converter round-trips
+// correctly. Both ChatGoogle surfaces (AI Studio `gemini` and enterprise Gemini)
+// must apply this in lockstep, so it lives in one place.
+const GEMINI_THOUGHT_SIGNATURE_OPTIONS = {
+  disableStreaming: true,
+  outputVersion: "v0",
+} as const;
+
+/**
+ * Builds the right LangChain chat model for a Gemini Enterprise (Vertex AI)
+ * model ID. Vertex Model Garden serves different model families over different
+ * API surfaces (native Gemini, Anthropic rawPredict, OpenAI-compatible MaaS),
+ * each needing a different client. Auth is uniform (ADC + project + region);
+ * only the transport differs, keyed off the model ID via resolveVertexSurface.
+ */
+function createGeminiEnterpriseModel(
+  modelId: string,
+  projectId: string,
+  location: string,
+  retryOptions: { maxRetries: number },
+) {
+  switch (resolveVertexSurface(modelId)) {
+    case "anthropic":
+      // No JS-native Claude-on-Vertex chat model exists; bridge via
+      // ChatAnthropic's `createClient` hook + the Anthropic Vertex SDK, which
+      // authenticates through ADC. Providing `createClient` also removes the
+      // ANTHROPIC_API_KEY requirement. The env is neutralized around the
+      // constructor so a stray ANTHROPIC_API_KEY/ANTHROPIC_AUTH_TOKEN cannot
+      // clobber the Google OAuth token (see withAnthropicAuthEnvNeutralized).
+      return new ChatAnthropic(stripPublisherPath(modelId), {
+        createClient: () =>
+          withAnthropicAuthEnvNeutralized(
+            () =>
+              new AnthropicVertex({
+                projectId,
+                region: location,
+              }),
+          ),
+        ...retryOptions,
+      });
+
+    case "openai-maas":
+      // Partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, …) are
+      // reached over Vertex's OpenAI-compatible endpoint. The bearer token is
+      // injected per request by a fetch wrapper (see createVertexAuthFetch);
+      // `apiKey` is a placeholder because that header is overwritten.
+      return new ChatOpenAI({
+        apiKey: VERTEX_ADC_PLACEHOLDER_KEY,
+        configuration: {
+          baseURL: vertexOpenAIBaseUrl(projectId, location),
+          fetch: createVertexAuthFetch(),
+        },
+        model: toVertexPublisherModel(modelId),
+        ...retryOptions,
+      });
+
+    default:
+      return new ChatGoogle({
+        // Gemini/Gemma over generateContent wants the bare model ID; normalize a
+        // fully publisher-pathed ID (publishers/google/models/gemini-…) the same
+        // way the anthropic and maas branches normalize theirs.
+        model: stripPublisherPath(modelId),
+        platformType: "gcp",
+        // Gemini 3.x thought-signature round-trip; see the constant's comment.
+        ...GEMINI_THOUGHT_SIGNATURE_OPTIONS,
+        // Force ADC + project auth. The node client resolves
+        // `apiKey ?? GOOGLE_API_KEY`, and when an API key is present it both
+        // sends the X-Goog-Api-Key header and flips to Vertex Express mode — so
+        // a stray GOOGLE_API_KEY in the environment would silently hijack this
+        // enterprise path. An empty string is treated as "no API key"
+        // (hasApiKey() checks `!== ""`), which blocks that fallback.
+        apiKey: "",
+        location,
+        // Pass the project explicitly rather than relying on ambient
+        // process.env, using the `/node` entrypoint where googleAuthOptions is
+        // typed (the default entrypoint types authOptions as `never`).
+        googleAuthOptions: { projectId },
+        ...retryOptions,
+      });
   }
 }
 

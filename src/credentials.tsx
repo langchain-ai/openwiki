@@ -396,8 +396,8 @@ export function needsCredentialSetup(
 /**
  * Whether the provider still needs its primary credential collected. For
  * `oauth` providers this is a valid, non-expired stored token; for API-key
- * providers it is a pasted key; for keyless providers (vertex) it is the
- * required GCP project id.
+ * providers it is a pasted key; for keyless providers (gemini-enterprise) it is
+ * the required GCP project id.
  */
 function needsCredentialStep(provider: OpenWikiProvider): boolean {
   return providerUsesOAuth(provider)
@@ -4038,8 +4038,9 @@ function getInputDisplayWidth(stdoutColumns: number | undefined): number {
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
   return provider === "baseten" ||
     provider === "fireworks" ||
-    provider === "nebius" ||
-    provider === "vertex"
+    provider === "gemini" ||
+    provider === "gemini-enterprise" ||
+    provider === "nebius"
     ? "a"
     : "an";
 }

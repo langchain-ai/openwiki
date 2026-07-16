@@ -2,6 +2,10 @@
 
 OpenWiki is a CLI that writes and maintains agent wikis for codebases or purpose memory. It's built specifically for agents, can ingest local knowledge sources through built-in connectors or git repositories and synthesize them into a local wiki.
 
+<div align="center">
+  <a href="https://trendshift.io/repositories/70339?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-70339" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/70339/daily" alt="langchain-ai%2Fopenwiki | Trendshift" width="250" height="55"/></a>
+</div>
+
 ![OpenWiki](https://raw.githubusercontent.com/langchain-ai/openwiki/main/static/openwiki.png)
 
 ## Install
@@ -56,6 +60,10 @@ For repository documentation in GitHub Actions, use
 `--update` will create the initial `openwiki/` docs if they do not exist yet, as
 long as the workflow provides the required provider and model environment
 variables.
+
+Scheduled/CI runs send anonymous reliability telemetry. See [Telemetry](#telemetry)
+for what is collected and how to turn it off (uncomment `OPENWIKI_TELEMETRY_DISABLED`
+in the example workflow).
 
 ## Usage
 
@@ -198,7 +206,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and Google Vertex AI (Claude models) out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -282,27 +290,46 @@ token, expiry, account id, email, and plan in `~/.openwiki/.env`
 automatically when it expires, so you normally never edit them by hand. Treat the
 refresh token like a password.
 
-### Google Vertex AI (Claude)
+### Gemini (AI Studio)
 
-The `vertex` provider runs Anthropic's Claude models through Google Vertex AI.
-It uses no API key — authentication happens with Google Application Default
-Credentials (ADC), so any of the standard mechanisms work:
+The `gemini` provider runs Google's Gemini models through the AI Studio API with
+a single API key:
+
+```bash
+OPENWIKI_PROVIDER=gemini
+GEMINI_API_KEY=your-ai-studio-key
+```
+
+### Gemini Enterprise (Vertex AI)
+
+The `gemini-enterprise` provider runs models from the Gemini Enterprise Model
+Garden (formerly Vertex AI) — Google's own Gemini/Gemma models, Anthropic's
+Claude, and partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, …). It
+routes each model ID to the right API surface automatically, so one credential
+reaches all of them. It uses no API key — authentication happens with Google
+Application Default Credentials (ADC), so any of the standard mechanisms work:
 
 - a service account key file via `GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json`,
 - user credentials from `gcloud auth application-default login`, or
 - workload identity when running on Google Cloud (GKE, Cloud Run, GCE) or in CI.
 
 ```bash
-OPENWIKI_PROVIDER=vertex
+OPENWIKI_PROVIDER=gemini-enterprise
 GOOGLE_CLOUD_PROJECT=your-gcp-project
 GOOGLE_CLOUD_LOCATION=global   # optional, defaults to global
 ```
 
+Set `OPENWIKI_MODEL_ID` to any Model Garden model. Gemini and Claude ship as
+preset options; partner/open-weight models are reached by pasting their model ID
+(for example `publishers/meta/models/llama-3.3-70b-instruct-maas`).
+
 The credentials used need Vertex AI access (`roles/aiplatform.user`) in the
-project, and the Claude models you want must be enabled in the Vertex AI Model
-Garden. Regional endpoints (for example `europe-west1` or `us-east5`) can be set
-via `GOOGLE_CLOUD_LOCATION` if you have data-residency requirements; the
-`global` endpoint offers the best availability.
+project, and the models you want must be enabled in the Model Garden. The
+`global` endpoint serves Gemini and Claude and offers the best availability;
+regional endpoints (for example `europe-west1` or `us-east5`) can be set via
+`GOOGLE_CLOUD_LOCATION` for data-residency requirements. Partner/open-weight
+(MaaS) models are region-specific, so set `GOOGLE_CLOUD_LOCATION` explicitly when
+using them.
 
 Note that `GOOGLE_CLOUD_PROJECT` (and `GOOGLE_APPLICATION_CREDENTIALS`, if you
 choose to store it there) is persisted to `~/.openwiki/.env` and loaded into the
@@ -312,7 +339,8 @@ present in your shell always win.
 For CI, authenticate before the update job runs — for example with
 [`google-github-actions/auth`](https://github.com/google-github-actions/auth)
 (workload identity federation) in GitHub Actions — and set
-`OPENWIKI_PROVIDER=vertex` and `GOOGLE_CLOUD_PROJECT` in the job environment.
+`OPENWIKI_PROVIDER=gemini-enterprise` and `GOOGLE_CLOUD_PROJECT` in the job
+environment.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
@@ -328,6 +356,54 @@ OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
 The value must be a positive integer. If the value is unset, OpenWiki defaults to 3 retries.
 
 If there's an inference provider or model you'd like to see added, please open a PR!
+
+## Telemetry
+
+OpenWiki collects anonymous, aggregate usage data so we can understand how the
+tool is used and improve it. Telemetry is on by default and easy to turn off.
+
+**What is collected**, on a single `openwiki_run` event, keyed by a random
+install ID stored locally in `~/.openwiki/install-id`:
+
+- Every run: the command (init / update) and the outcome (success / failure /
+  no-op), plus a coarse error category on failure (never the error message).
+  Interactive chat, `auth`, and `ingest` are not recorded.
+- At setup (on init only): which brain mode (code / personal), the model
+  provider, and which connectors you configured (connector names only, never
+  their contents).
+
+**What is never collected:** file contents, repository data or names,
+credentials, prompts, model output, connector payloads, error messages, file
+paths, URLs, model IDs, run duration, your IP address, or any personal
+information. Geoip enrichment is disabled and your IP is never stored. Events
+are grouped by your random install ID so we can measure repeat usage, but that
+ID contains no personal data.
+
+**Scheduled/CI runs** are collected as anonymous reliability data (tagged so
+they can be told apart from human runs), under a shared CI identifier rather than
+a per-machine install ID, and never counted as distinct installs. To disable in
+CI, set `OPENWIKI_TELEMETRY_DISABLED=1` in your workflow environment.
+
+To see exactly what a run would send, add `--telemetry-file=<path>` to any run.
+
+### Opting out
+
+Set either environment variable:
+
+```sh
+export OPENWIKI_TELEMETRY_DISABLED=1
+# or the cross-tool standard:
+export DO_NOT_TRACK=1
+```
+
+To disable permanently, add `OPENWIKI_TELEMETRY_DISABLED=1` to `~/.openwiki/.env`.
+In CI, set it in the workflow environment (config files do not persist on
+ephemeral runners).
+
+### Seeing exactly what is sent
+
+Add `--telemetry-file=<path>` to any run to also write the exact payload to a
+local JSON file.
 
 ## Contributing
 
