@@ -6,7 +6,12 @@ import path from "node:path";
 import { createInterface } from "node:readline";
 import type { AgentCliProviderConfig } from "../../constants.js";
 import type { OpenWikiRunOptions } from "../types.js";
+import { buildAgentCliChildEnv } from "./child-env.js";
 import type { AgentCliAdapter, EngineRunSpec } from "./types.js";
+import {
+  findDisallowedWrites,
+  formatDisallowedWritesError,
+} from "./write-boundary.js";
 
 const DEFAULT_TIMEOUT_SECONDS = 1800;
 const STDERR_TAIL_LIMIT = 4000;
@@ -122,10 +127,17 @@ export async function runAgentCli(
     return result;
   }
 
+  // Capture the write-boundary clock before spawn so any file the child
+  // creates/touches can be detected by mtime after the run.
+  const writeBoundary = spec.writeBoundary ?? "none";
+  const writeBoundarySinceMs = Date.now();
+
   try {
     const child = spawn(binary, adapter.buildArgs(spec, promptFilePath), {
       cwd: spec.cwd,
       detached: true,
+      // Scrub credentials loaded into process.env by loadOpenWikiEnv().
+      env: buildAgentCliChildEnv(),
       stdio: ["ignore", "pipe", "pipe"],
     });
 
@@ -269,6 +281,20 @@ export async function runAgentCli(
     const finalResult = readResult();
 
     if (finalResult?.ok) {
+      if (writeBoundary !== "none") {
+        const disallowed = await findDisallowedWrites(
+          spec.cwd,
+          writeBoundarySinceMs,
+          writeBoundary,
+        );
+
+        if (disallowed.length > 0) {
+          throw new Error(
+            formatDisallowedWritesError(providerConfig.label, disallowed),
+          );
+        }
+      }
+
       return outcome;
     }
 

@@ -1,4 +1,5 @@
 import type { OpenWikiCommand, OpenWikiRunEvent } from "../types.js";
+import type { AgentCliWriteBoundary } from "./write-boundary.js";
 
 export type EngineRunSpec = {
   command: OpenWikiCommand;
@@ -8,6 +9,12 @@ export type EngineRunSpec = {
   /** Vendor session id to resume for interactive follow-ups. */
   resumeSessionId?: string;
   modelId: string;
+  /**
+   * Post-run filesystem write policy. Defaults to `none`.
+   * Repository init/update sets `docs-only` so the runner rejects runs that
+   * touch paths outside `openwiki/` (plus root AGENTS.md / CLAUDE.md).
+   */
+  writeBoundary?: AgentCliWriteBoundary;
 };
 
 export type AgentCliEvent =
