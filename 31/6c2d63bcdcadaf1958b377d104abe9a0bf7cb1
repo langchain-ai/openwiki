@@ -1,0 +1,19 @@
+src/agent/prompt.ts
+  s_5a538780241a08::t_4240d475640632 87-88,144-152,197-198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "316c2d63bcdcadaf1958b377d104abe9a0bf7cb1",
+  "prompts": {},
+  "sessions": {
+    "s_5a538780241a08": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6872-54d2-7121-bdfe-103024dcbd51",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": null
+    }
+  }
+}
