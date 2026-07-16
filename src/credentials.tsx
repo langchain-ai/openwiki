@@ -8,11 +8,18 @@ import { configureAuthProvider } from "./auth/configure.js";
 import { runOAuthAuth } from "./auth/oauth.js";
 import {
   DEFAULT_PROVIDER,
+  DEFAULT_VERTEX_LOCATION,
   getDefaultModelId,
+  getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
   getProviderLabel,
+  getProviderLocationEnvKey,
   getProviderModelOptions,
+  getProviderProjectEnvKey,
+  getProviderRegionEnvKey,
+  getProviderSecretKeyEnvKey,
+  providerRequiresApiKey,
   isValidBaseUrl,
   isValidModelId,
   normalizeProvider,
@@ -27,6 +34,8 @@ import {
   OPENWIKI_X_CLIENT_ID_ENV_KEY,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
+  providerRequiresRegion,
+  providerRequiresSecretKey,
   providerUsesOAuth,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
@@ -73,9 +82,13 @@ export type InitSetupResult = {
   runIngestionNow: boolean;
   savedApiKey: boolean;
   savedBaseUrl: boolean;
+  savedGcpLocation: boolean;
+  savedGcpProject: boolean;
   savedLangSmithKey: boolean;
   savedModelId: boolean;
   savedProvider: boolean;
+  savedRegion: boolean;
+  savedSecretKey: boolean;
   shouldContinueToRun: boolean;
 };
 
@@ -93,11 +106,15 @@ type PromptStep =
   | "code-repo-confirm"
   | "code-repo-path"
   | "final"
+  | "gcp-location"
+  | "gcp-project"
   | "langsmith"
   | "model"
   | "oauth-login"
   | "provider"
+  | "region"
   | "run-mode"
+  | "secret-key"
   | "source-auth"
   | "global-cron-custom"
   | "global-cron-mode"
@@ -360,7 +377,9 @@ export function needsCredentialSetup(
   const needsCredentials =
     !hasValidConfiguredProvider() ||
     needsCredentialStep(provider) ||
+    needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
+    needsRegionStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined;
@@ -376,24 +395,35 @@ export function needsCredentialSetup(
 
 /**
  * Whether the provider still needs its primary credential collected. For
- * `oauth` providers this is a valid, non-expired stored token; for everyone
- * else it is a pasted API key.
+ * `oauth` providers this is a valid, non-expired stored token; for API-key
+ * providers it is a pasted key; for keyless providers (gemini-enterprise) it is
+ * the required GCP project id.
  */
 function needsCredentialStep(provider: OpenWikiProvider): boolean {
   return providerUsesOAuth(provider)
     ? !hasValidStoredToken()
-    : !process.env[getProviderApiKeyEnvKey(provider)];
+    : getMissingProviderEnvKey(provider) !== null;
 }
 
 /** The step that collects the provider's primary credential. */
 function credentialStep(provider: OpenWikiProvider): PromptStep {
-  return providerUsesOAuth(provider) ? "oauth-login" : "api-key";
+  if (providerUsesOAuth(provider)) {
+    return "oauth-login";
+  }
+
+  return providerRequiresApiKey(provider) ? "api-key" : "gcp-project";
 }
 
 function hasValidStoredToken(env: NodeJS.ProcessEnv = process.env): boolean {
   const tokens = readCodexTokensFromEnv(env);
 
   return tokens !== null && !isChatGptTokenExpired(tokens.expiresAtMs);
+}
+
+function needsGcpProjectStep(provider: OpenWikiProvider): boolean {
+  const projectEnvKey = getProviderProjectEnvKey(provider);
+
+  return projectEnvKey ? !process.env[projectEnvKey] : false;
 }
 
 function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
@@ -410,10 +440,38 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
   return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
 }
 
+function needsSecretKeyStep(provider: OpenWikiProvider): boolean {
+  if (!providerRequiresSecretKey(provider)) {
+    return false;
+  }
+
+  return !isSecretKeyConfigured(provider);
+}
+
+function isSecretKeyConfigured(provider: OpenWikiProvider): boolean {
+  const secretKeyEnvKey = getProviderSecretKeyEnvKey(provider);
+
+  return secretKeyEnvKey ? Boolean(process.env[secretKeyEnvKey]) : false;
+}
+
+function needsRegionStep(provider: OpenWikiProvider): boolean {
+  if (!providerRequiresRegion(provider)) {
+    return false;
+  }
+
+  return !isRegionConfigured(provider);
+}
+
+function isRegionConfigured(provider: OpenWikiProvider): boolean {
+  const regionEnvKey = getProviderRegionEnvKey(provider);
+
+  return regionEnvKey ? Boolean(process.env[regionEnvKey]) : false;
+}
+
 function isCredentialConfigured(provider: OpenWikiProvider): boolean {
   return providerUsesOAuth(provider)
     ? hasValidStoredToken()
-    : Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
+    : getMissingProviderEnvKey(provider) === null;
 }
 
 function getCredentialSetupDetail(
@@ -433,9 +491,13 @@ function getCredentialSetupDetail(
     return account ? `signed in as ${account}` : "signed in with ChatGPT";
   }
 
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
   return isCredentialConfigured(provider)
     ? "available from environment"
-    : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`;
+    : apiKeyEnvKey
+      ? `save ${apiKeyEnvKey} to ${openWikiEnvPath}`
+      : "configure Google Cloud credentials";
 }
 
 /**
@@ -486,6 +548,10 @@ export function InitSetup({
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState<string | null>(null);
+  const [secretKey, setSecretKey] = useState<string | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
+  const [gcpProject, setGcpProject] = useState<string | null>(null);
+  const [gcpLocation, setGcpLocation] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -597,9 +663,13 @@ export function InitSetup({
             runIngestionNow: false,
             savedApiKey: false,
             savedBaseUrl: false,
+            savedGcpLocation: false,
+            savedGcpProject: false,
             savedLangSmithKey: false,
             savedModelId: false,
             savedProvider: false,
+            savedRegion: false,
+            savedSecretKey: false,
             shouldContinueToRun: true,
           });
           return;
@@ -706,6 +776,10 @@ export function InitSetup({
         await completeSetup({
           nextApiKey: apiKey,
           nextBaseUrl: baseUrl,
+          nextSecretKey: secretKey,
+          nextRegion: region,
+          nextGcpLocation: gcpLocation,
+          nextGcpProject: gcpProject,
           nextLangSmithKey: langSmithKey,
           nextModelId: modelId,
           nextOAuthTokens: tokens,
@@ -1036,6 +1110,10 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1110,6 +1188,10 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1123,7 +1205,9 @@ export function InitSetup({
       const trimmedInput = input.trim();
 
       if (trimmedInput.length === 0) {
-        setError(`${getProviderApiKeyEnvKey(provider)} is required.`);
+        setError(
+          `${getProviderApiKeyEnvKey(provider) ?? "API key"} is required.`,
+        );
         return;
       }
 
@@ -1148,6 +1232,165 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: trimmedInput,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
+      return;
+    }
+
+    if (step === "secret-key") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError(
+          `${getProviderSecretKeyEnvKey(provider) ?? "Secret key"} is required.`,
+        );
+        return;
+      }
+
+      setSecretKey(trimmedInput);
+      setInput("");
+      const nextStep = getNextStepAfterSecretKey(
+        provider,
+        modelIdOverride,
+        onboardingConfig,
+        selectedMode,
+        forceModelStep,
+      );
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextSecretKey: trimmedInput,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
+      return;
+    }
+
+    if (step === "region") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError(
+          `${getProviderRegionEnvKey(provider) ?? "Region"} is required.`,
+        );
+        return;
+      }
+
+      setRegion(trimmedInput);
+      setInput("");
+      const nextStep = getNextStepAfterRegion(
+        provider,
+        modelIdOverride,
+        onboardingConfig,
+        selectedMode,
+        forceModelStep,
+      );
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: trimmedInput,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
+      return;
+    }
+
+    if (step === "gcp-project") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError(
+          `${getProviderProjectEnvKey(provider) ?? "GCP project"} is required.`,
+        );
+        return;
+      }
+
+      if (/\s/u.test(trimmedInput)) {
+        setError("Enter a valid Google Cloud project ID (no spaces).");
+        return;
+      }
+
+      setGcpProject(trimmedInput);
+      setInput("");
+      setStep("gcp-location");
+      return;
+    }
+
+    if (step === "gcp-location") {
+      const trimmedInput = input.trim();
+
+      if (/\s/u.test(trimmedInput)) {
+        setError(
+          `Enter a valid location (no spaces), or leave blank for ${DEFAULT_VERTEX_LOCATION}.`,
+        );
+        return;
+      }
+
+      const nextGcpLocation = trimmedInput.length > 0 ? trimmedInput : null;
+
+      setGcpLocation(nextGcpLocation);
+      setInput("");
+      const nextStep = getNextStepAfterGcpLocation(
+        provider,
+        modelIdOverride,
+        onboardingConfig,
+        selectedMode,
+        forceModelStep,
+      );
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1193,6 +1436,10 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: trimmedInput,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1233,6 +1480,10 @@ export function InitSetup({
       await continueAfterCredentials({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
         nextModelId: selectedModelId,
         nextOAuthTokens: oauthTokens,
@@ -1251,6 +1502,10 @@ export function InitSetup({
       await continueAfterCredentials({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1509,9 +1764,13 @@ export function InitSetup({
         runIngestionNow,
         savedApiKey: apiKey !== null || oauthTokens !== null,
         savedBaseUrl: baseUrl !== null,
+        savedGcpLocation: gcpLocation !== null,
+        savedGcpProject: gcpProject !== null,
         savedLangSmithKey: langSmithKey !== null && langSmithKey.length > 0,
         savedModelId: modelId !== null,
         savedProvider: process.env[OPENWIKI_PROVIDER_ENV_KEY] !== provider,
+        savedRegion: region !== null,
+        savedSecretKey: secretKey !== null,
         shouldContinueToRun: runIngestionNow,
       });
     }
@@ -1555,10 +1814,14 @@ export function InitSetup({
   type CompleteSetupOptions = {
     nextApiKey: string | null;
     nextBaseUrl: string | null;
+    nextGcpLocation: string | null;
+    nextGcpProject: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextOAuthTokens?: CodexTokens | null;
     nextProvider: OpenWikiProvider;
+    nextRegion: string | null;
+    nextSecretKey: string | null;
     runMode: OpenWikiRunMode;
   };
 
@@ -1628,6 +1891,10 @@ export function InitSetup({
       savedApiKey:
         options.nextApiKey !== null || options.nextOAuthTokens != null,
       savedBaseUrl: options.nextBaseUrl !== null,
+      savedRegion: options.nextRegion !== null,
+      savedSecretKey: options.nextSecretKey !== null,
+      savedGcpLocation: options.nextGcpLocation !== null,
+      savedGcpProject: options.nextGcpProject !== null,
       savedLangSmithKey:
         options.nextLangSmithKey !== null &&
         options.nextLangSmithKey.length > 0,
@@ -1641,10 +1908,14 @@ export function InitSetup({
   async function saveCredentialUpdates({
     nextApiKey,
     nextBaseUrl,
+    nextGcpLocation,
+    nextGcpProject,
     nextLangSmithKey,
     nextModelId,
     nextOAuthTokens = oauthTokens,
     nextProvider,
+    nextRegion,
+    nextSecretKey,
   }: CompleteSetupOptions) {
     setIsSaving(true);
 
@@ -1656,7 +1927,11 @@ export function InitSetup({
       }
 
       if (nextApiKey !== null) {
-        updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+        const apiKeyEnvKey = getProviderApiKeyEnvKey(nextProvider);
+
+        if (apiKeyEnvKey) {
+          updates[apiKeyEnvKey] = nextApiKey;
+        }
       }
 
       if (nextOAuthTokens) {
@@ -1668,6 +1943,38 @@ export function InitSetup({
 
         if (baseUrlEnvKey) {
           updates[baseUrlEnvKey] = nextBaseUrl;
+        }
+      }
+
+      if (nextSecretKey !== null) {
+        const secretKeyEnvKey = getProviderSecretKeyEnvKey(nextProvider);
+
+        if (secretKeyEnvKey) {
+          updates[secretKeyEnvKey] = nextSecretKey;
+        }
+      }
+
+      if (nextRegion !== null) {
+        const regionEnvKey = getProviderRegionEnvKey(nextProvider);
+
+        if (regionEnvKey) {
+          updates[regionEnvKey] = nextRegion;
+        }
+      }
+
+      if (nextGcpProject !== null) {
+        const projectEnvKey = getProviderProjectEnvKey(nextProvider);
+
+        if (projectEnvKey) {
+          updates[projectEnvKey] = nextGcpProject;
+        }
+      }
+
+      if (nextGcpLocation !== null) {
+        const locationEnvKey = getProviderLocationEnvKey(nextProvider);
+
+        if (locationEnvKey) {
+          updates[locationEnvKey] = nextGcpLocation;
         }
       }
 
@@ -1933,10 +2240,15 @@ export function InitSetup({
   const needsCredentialPrompt =
     !hasValidConfiguredProvider() ||
     needsCredentialStep(provider) ||
+    needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
+    needsRegionStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined;
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+  const projectEnvKey = getProviderProjectEnvKey(provider);
+  const locationEnvKey = getProviderLocationEnvKey(provider);
 
   return (
     <Box flexDirection="column">
@@ -1954,17 +2266,72 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
-        <SetupStep
-          label={providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"}
-          state={
-            isCredentialConfigured(provider) || oauthTokens
-              ? "done"
-              : step === credentialStep(provider)
-                ? "current"
-                : "pending"
-          }
-          detail={getCredentialSetupDetail(provider, oauthTokens)}
-        />
+        {providerUsesOAuth(provider) || apiKeyEnvKey ? (
+          <SetupStep
+            label={
+              providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"
+            }
+            state={
+              isCredentialConfigured(provider) || oauthTokens
+                ? "done"
+                : step === credentialStep(provider)
+                  ? "current"
+                  : "pending"
+            }
+            detail={getCredentialSetupDetail(provider, oauthTokens)}
+          />
+        ) : null}
+        {providerRequiresSecretKey(provider) ? (
+          <SetupStep
+            label="Secret key"
+            state={
+              isSecretKeyConfigured(provider)
+                ? "done"
+                : step === "secret-key"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              isSecretKeyConfigured(provider)
+                ? "available from environment"
+                : `save ${getProviderSecretKeyEnvKey(provider)} to ${openWikiEnvPath}`
+            }
+          />
+        ) : null}
+        {projectEnvKey ? (
+          <SetupStep
+            label="GCP project"
+            state={
+              process.env[projectEnvKey]
+                ? "done"
+                : step === "gcp-project"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              process.env[projectEnvKey]
+                ? "available from environment"
+                : `save ${projectEnvKey} to ${openWikiEnvPath}`
+            }
+          />
+        ) : null}
+        {projectEnvKey && locationEnvKey ? (
+          <SetupStep
+            label="GCP location"
+            state={
+              process.env[locationEnvKey]
+                ? "done"
+                : step === "gcp-location"
+                  ? "current"
+                  : "optional"
+            }
+            detail={
+              process.env[locationEnvKey]
+                ? "available from environment"
+                : `optional, defaults to ${DEFAULT_VERTEX_LOCATION}`
+            }
+          />
+        ) : null}
         {providerRequiresBaseUrl(provider) ? (
           <SetupStep
             label="Base URL"
@@ -1979,6 +2346,23 @@ export function InitSetup({
               isBaseUrlConfigured(provider)
                 ? "available from environment"
                 : `save ${getProviderBaseUrlEnvKey(provider)} to ${openWikiEnvPath}`
+            }
+          />
+        ) : null}
+        {providerRequiresRegion(provider) ? (
+          <SetupStep
+            label="Region"
+            state={
+              isRegionConfigured(provider)
+                ? "done"
+                : step === "region"
+                  ? "current"
+                  : "pending"
+            }
+            detail={
+              isRegionConfigured(provider)
+                ? "available from environment"
+                : `save ${getProviderRegionEnvKey(provider)} to ${openWikiEnvPath}`
             }
           />
         ) : null}
@@ -2262,7 +2646,7 @@ function Prompt({
   if (step === "api-key") {
     return (
       <Box flexDirection="column">
-        <Text>Paste your {getProviderLabel(provider)} API key.</Text>
+        <Text>Paste your {getApiKeyFieldLabel(provider)}.</Text>
         <BorderedInput
           maxDisplayWidth={inputDisplayWidth}
           marginTop={1}
@@ -2271,6 +2655,57 @@ function Prompt({
           value={input}
         />
         <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "secret-key") {
+    return (
+      <Box flexDirection="column">
+        <Text>Paste your {getProviderLabel(provider)} secret access key.</Text>
+        <BorderedInput
+          maxDisplayWidth={inputDisplayWidth}
+          marginTop={1}
+          prefix={`${getProviderSecretKeyEnvKey(provider)}=`}
+          secret
+          value={input}
+        />
+        <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "gcp-project") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter the Google Cloud project ID with Vertex AI access.</Text>
+        <Text>
+          <Text color="gray">$</Text> {getProviderProjectEnvKey(provider)}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          OpenWiki authenticates with Google Application Default Credentials
+          (run: gcloud auth application-default login). Press Enter to save it.
+        </Text>
+      </Box>
+    );
+  }
+
+  if (step === "gcp-location") {
+    return (
+      <Box flexDirection="column">
+        <Text>
+          Enter a Vertex AI location, or press Enter to use{" "}
+          {DEFAULT_VERTEX_LOCATION}.
+        </Text>
+        <Text>
+          <Text color="gray">$</Text> {getProviderLocationEnvKey(provider)}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          For example global, europe-west1, or us-east5. Press Enter to
+          continue.
+        </Text>
       </Box>
     );
   }
@@ -2287,6 +2722,19 @@ function Prompt({
           For example an OpenAI-compatible gateway endpoint (such as a LiteLLM
           gateway). Press Enter to save it.
         </Text>
+      </Box>
+    );
+  }
+
+  if (step === "region") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter the {getProviderLabel(provider)} region.</Text>
+        <Text>
+          <Text color="gray">$</Text> {getProviderRegionEnvKey(provider)}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">For example us-east-1. Press Enter to save it.</Text>
       </Box>
     );
   }
@@ -3125,8 +3573,20 @@ export function getInitialStep(
     return credentialStep(provider);
   }
 
+  if (needsSecretKeyStep(provider)) {
+    return "secret-key";
+  }
+
+  if (needsGcpProjectStep(provider)) {
+    return "gcp-project";
+  }
+
   if (needsBaseUrlStep(provider)) {
     return "base-url";
+  }
+
+  if (needsRegionStep(provider)) {
+    return "region";
   }
 
   if (
@@ -3190,6 +3650,46 @@ function getNextStepAfterApiKey(
   mode: OpenWikiRunMode,
   forceModelStep = false,
 ): PromptStep | null {
+  if (needsSecretKeyStep(provider)) {
+    return "secret-key";
+  }
+
+  return getNextStepAfterSecretKey(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+    forceModelStep,
+  );
+}
+
+function getNextStepAfterSecretKey(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+  forceModelStep = false,
+): PromptStep | null {
+  if (needsGcpProjectStep(provider)) {
+    return "gcp-project";
+  }
+
+  return getNextStepAfterGcpLocation(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+    forceModelStep,
+  );
+}
+
+function getNextStepAfterGcpLocation(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
+  mode: OpenWikiRunMode = "code",
+  forceModelStep = false,
+): PromptStep | null {
   if (needsBaseUrlStep(provider)) {
     return "base-url";
   }
@@ -3204,6 +3704,26 @@ function getNextStepAfterApiKey(
 }
 
 function getNextStepAfterBaseUrl(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+  forceModelStep = false,
+): PromptStep | null {
+  if (needsRegionStep(provider)) {
+    return "region";
+  }
+
+  return getNextStepAfterRegion(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+    forceModelStep,
+  );
+}
+
+function getNextStepAfterRegion(
   provider: OpenWikiProvider,
   modelIdOverride: string | null,
   onboardingConfig: OpenWikiOnboardingConfig,
@@ -3406,6 +3926,17 @@ function getProviderSetupDetail(provider: OpenWikiProvider): string {
   return `default ${getProviderLabel(DEFAULT_PROVIDER)}`;
 }
 
+/**
+ * Label for the provider's primary credential input. Bedrock authenticates
+ * with an IAM access key ID (paired with a secret access key), not a single
+ * opaque API key, so its prompt reads differently from every other provider.
+ */
+function getApiKeyFieldLabel(provider: OpenWikiProvider): string {
+  return provider === "bedrock"
+    ? `${getProviderLabel(provider)} access key ID`
+    : `${getProviderLabel(provider)} API key`;
+}
+
 function hasValidConfiguredProvider(): boolean {
   return normalizeProvider(process.env[OPENWIKI_PROVIDER_ENV_KEY]) !== null;
 }
@@ -3505,7 +4036,13 @@ function getInputDisplayWidth(stdoutColumns: number | undefined): number {
 }
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "gemini" ||
+    provider === "gemini-enterprise" ||
+    provider === "nebius"
+    ? "a"
+    : "an";
 }
 
 function getTemplateGoal(templateId: string | undefined): string {
