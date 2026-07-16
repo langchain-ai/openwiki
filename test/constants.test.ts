@@ -66,7 +66,7 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(normalizeProvider("  Anthropic ")).toBe("anthropic");
     expect(normalizeProvider("OPENROUTER")).toBe("openrouter");
     expect(normalizeProvider(" Nebius ")).toBe("nebius");
-    expect(normalizeProvider(" Vertex ")).toBe("vertex");
+    expect(normalizeProvider(" Gemini-Enterprise ")).toBe("gemini-enterprise");
   });
 
   test("returns null for unknown or nullish providers", () => {
@@ -80,7 +80,8 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(isValidProvider("nebius")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
     expect(isValidProvider("nvidia")).toBe(true);
-    expect(isValidProvider("vertex")).toBe(true);
+    expect(isValidProvider("gemini")).toBe(true);
+    expect(isValidProvider("gemini-enterprise")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
   });
 });
@@ -89,6 +90,24 @@ describe("resolveConfiguredProvider", () => {
   test("honors an explicit OPENWIKI_PROVIDER", () => {
     expect(resolveConfiguredProvider({ OPENWIKI_PROVIDER: "anthropic" })).toBe(
       "anthropic",
+    );
+  });
+
+  test("honors an explicit gemini / gemini-enterprise provider", () => {
+    expect(resolveConfiguredProvider({ OPENWIKI_PROVIDER: "gemini" })).toBe(
+      "gemini",
+    );
+    expect(
+      resolveConfiguredProvider({ OPENWIKI_PROVIDER: "gemini-enterprise" }),
+    ).toBe("gemini-enterprise");
+  });
+
+  test("does NOT auto-select gemini from GEMINI_API_KEY alone", () => {
+    // The Google providers are explicit-only (like the removed vertex provider);
+    // a bare GEMINI_API_KEY falls through to the default rather than selecting
+    // gemini. Pinned so a future change can't silently flip it.
+    expect(resolveConfiguredProvider({ GEMINI_API_KEY: "x" })).toBe(
+      DEFAULT_PROVIDER,
     );
   });
 
@@ -235,9 +254,9 @@ describe("bedrock provider (IAM access key + secret key + region)", () => {
 });
 
 describe("providerRequiresApiKey / getProviderApiKeyEnvKey", () => {
-  test("vertex authenticates without an API key", () => {
-    expect(providerRequiresApiKey("vertex")).toBe(false);
-    expect(getProviderApiKeyEnvKey("vertex")).toBeUndefined();
+  test("gemini-enterprise authenticates without an API key", () => {
+    expect(providerRequiresApiKey("gemini-enterprise")).toBe(false);
+    expect(getProviderApiKeyEnvKey("gemini-enterprise")).toBeUndefined();
   });
 
   test("key-based providers still require one", () => {
@@ -255,16 +274,20 @@ describe("getMissingProviderEnvKey", () => {
     ).toBeNull();
   });
 
-  test("reports the missing GCP project for vertex", () => {
-    expect(getMissingProviderEnvKey("vertex", {})).toBe("GOOGLE_CLOUD_PROJECT");
+  test("reports the missing GCP project for gemini-enterprise", () => {
+    expect(getMissingProviderEnvKey("gemini-enterprise", {})).toBe(
+      "GOOGLE_CLOUD_PROJECT",
+    );
     expect(
-      getMissingProviderEnvKey("vertex", { GOOGLE_CLOUD_PROJECT: "proj" }),
+      getMissingProviderEnvKey("gemini-enterprise", {
+        GOOGLE_CLOUD_PROJECT: "proj",
+      }),
     ).toBeNull();
   });
 
-  test("does not require the optional vertex location", () => {
+  test("does not require the optional gemini-enterprise location", () => {
     expect(
-      getMissingProviderEnvKey("vertex", {
+      getMissingProviderEnvKey("gemini-enterprise", {
         GOOGLE_CLOUD_PROJECT: "proj",
         GOOGLE_CLOUD_LOCATION: undefined,
       }),
@@ -273,13 +296,15 @@ describe("getMissingProviderEnvKey", () => {
 });
 
 describe("resolveProviderLocation", () => {
-  test("defaults vertex to the global endpoint", () => {
-    expect(resolveProviderLocation("vertex", {})).toBe(DEFAULT_VERTEX_LOCATION);
+  test("defaults gemini-enterprise to the global endpoint", () => {
+    expect(resolveProviderLocation("gemini-enterprise", {})).toBe(
+      DEFAULT_VERTEX_LOCATION,
+    );
   });
 
   test("prefers a trimmed env override over the default", () => {
     expect(
-      resolveProviderLocation("vertex", {
+      resolveProviderLocation("gemini-enterprise", {
         GOOGLE_CLOUD_LOCATION: " europe-west1 ",
       }),
     ).toBe("europe-west1");
@@ -287,7 +312,9 @@ describe("resolveProviderLocation", () => {
 
   test("ignores a whitespace-only override", () => {
     expect(
-      resolveProviderLocation("vertex", { GOOGLE_CLOUD_LOCATION: "   " }),
+      resolveProviderLocation("gemini-enterprise", {
+        GOOGLE_CLOUD_LOCATION: "   ",
+      }),
     ).toBe(DEFAULT_VERTEX_LOCATION);
   });
 
@@ -303,7 +330,8 @@ describe("getDefaultModelId", () => {
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
-    expect(getDefaultModelId("vertex")).toBe("claude-haiku-4-5@20251001");
+    expect(getDefaultModelId("gemini")).toBe("gemini-3.5-flash");
+    expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.5-flash");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
   });
 
