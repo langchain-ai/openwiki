@@ -202,7 +202,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and Google Vertex AI (Claude models) out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), Grok Build (subscription CLI), Antigravity (subscription CLI), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and Google Vertex AI (Claude models) out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -319,6 +319,86 @@ For CI, authenticate before the update job runs — for example with
 `OPENWIKI_PROVIDER=vertex` and `GOOGLE_CLOUD_PROJECT` in the job environment.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
+
+### Grok Build (subscription)
+
+The `grok-build` provider runs documentation jobs through the local [Grok Build](https://grok.com)
+CLI (`grok`) using your Grok subscription login — no xAI API key required. OpenWiki
+spawns `grok` headlessly with `--always-approve` and `--output-format streaming-json`,
+and model usage draws on the same session as interactive Grok Build.
+
+Prerequisites:
+
+1. Install the Grok Build CLI and ensure `grok` is on your `PATH` (or set
+   `OPENWIKI_GROK_BUILD_BINARY` to the full path).
+2. Run `grok login` once so the CLI has a valid subscription session.
+
+```bash
+OPENWIKI_PROVIDER=grok-build openwiki code --init
+# or
+OPENWIKI_PROVIDER=grok-build openwiki personal --init
+```
+
+Optional overrides:
+
+```bash
+# Binary path when `grok` is not on PATH
+OPENWIKI_GROK_BUILD_BINARY=/path/to/grok
+
+# Model (defaults to grok-4.5)
+OPENWIKI_MODEL_ID=grok-4.5
+
+# Max agent turns for a documentation run (default 50)
+OPENWIKI_GROK_BUILD_MAX_TURNS=50
+
+# Overall run timeout in seconds (default 1800)
+OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS=1800
+```
+
+**Local / subscription only.** Prefer this provider on a machine where you already
+use Grok Build interactively. It is not a drop-in for the scheduled GitHub Actions
+or GitLab CI examples, which expect a metered API key and do not have a `grok login`
+session. Runs use `--always-approve` so the CLI can write documentation files;
+treat the model like any coding agent with write access to the repo.
+
+### Antigravity (subscription)
+
+The `antigravity` provider runs documentation jobs through the local
+[Antigravity](https://antigravity.google/product/antigravity-cli) CLI (`agy`) using your existing
+Antigravity session — no separate API key is stored by OpenWiki. OpenWiki
+spawns `agy -p` headlessly with `--dangerously-skip-permissions` and
+`--mode accept-edits` so documentation writes can proceed without a TTY.
+
+Prerequisites:
+
+1. Install the Antigravity CLI and ensure `agy` is on your `PATH` (or set
+   `OPENWIKI_ANTIGRAVITY_BINARY` to the full path). On macOS:
+   `brew install --cask antigravity-cli`.
+2. Sign in with the CLI once so it has a valid session.
+
+```bash
+OPENWIKI_PROVIDER=antigravity openwiki code --init
+# or
+OPENWIKI_PROVIDER=antigravity openwiki personal --init
+```
+
+Optional overrides:
+
+```bash
+# Binary path when `agy` is not on PATH
+OPENWIKI_ANTIGRAVITY_BINARY=/path/to/agy
+
+# Model — must match an exact `agy models` display string
+OPENWIKI_MODEL_ID="Gemini 3.5 Flash (Medium)"
+
+# Overall run timeout in seconds (default 1800). Also drives agy's --print-timeout.
+OPENWIKI_AGENT_CLI_TIMEOUT_SECONDS=1800
+```
+
+**Local / subscription only.** Prefer this provider on a machine where you already
+use Antigravity interactively. It is not a drop-in for the scheduled GitHub Actions
+or GitLab CI examples. Model ids are the human display strings from `agy models`
+(for example `Claude Sonnet 4.6 (Thinking)`), not provider/model slugs.
 
 ### Provider retry attempts
 

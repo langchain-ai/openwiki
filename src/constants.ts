@@ -27,6 +27,8 @@ export const GOOGLE_CLOUD_LOCATION_ENV_KEY = "GOOGLE_CLOUD_LOCATION";
 export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
   "GOOGLE_APPLICATION_CREDENTIALS";
 export const DEFAULT_VERTEX_LOCATION = "global";
+export const GROK_BUILD_BINARY_ENV_KEY = "OPENWIKI_GROK_BUILD_BINARY";
+export const ANTIGRAVITY_BINARY_ENV_KEY = "OPENWIKI_ANTIGRAVITY_BINARY";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
@@ -66,9 +68,11 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
+  | "antigravity"
   | "baseten"
   | "bedrock"
   | "fireworks"
+  | "grok-build"
   | "nebius"
   | "nvidia"
   | "openai"
@@ -80,9 +84,10 @@ export type OpenWikiProvider =
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
  * secret persisted to a `*_API_KEY` env var); `"oauth"` providers instead run a
- * browser login flow and persist short-lived access/refresh tokens.
+ * browser login flow and persist short-lived access/refresh tokens;
+ * `"cli-login"` providers use a local vendor CLI session (no OpenWiki secret).
  */
-export type ProviderAuthMethod = "api-key" | "oauth";
+export type ProviderAuthMethod = "api-key" | "oauth" | "cli-login";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -104,7 +109,8 @@ const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
   { id: "gpt-5.4-mini", label: "5.4 mini" },
 ];
 
-type ProviderConfig = {
+export type ApiProviderConfig = {
+  kind: "api";
   /**
    * Environment variable holding the provider's API key. Absent when the
    * provider authenticates without an API key (e.g. Google Application
@@ -119,13 +125,13 @@ type ProviderConfig = {
   authMethod?: ProviderAuthMethod;
   baseURL?: string;
   /**
-   * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
+   * Environment variable that, when set, overrides {@link ApiProviderConfig.baseURL}
    * with an alternative base URL (e.g. a self-hosted or proxied endpoint).
    */
   baseUrlEnvKey?: string;
   /**
    * When true, the provider has no default endpoint and requires a base URL to
-   * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
+   * be supplied via {@link ApiProviderConfig.baseUrlEnvKey}.
    */
   requiresBaseUrl?: boolean;
   /**
@@ -134,7 +140,7 @@ type ProviderConfig = {
    */
   projectEnvKey?: string;
   /**
-   * Environment variable that overrides {@link ProviderConfig.defaultLocation}
+   * Environment variable that overrides {@link ApiProviderConfig.defaultLocation}
    * with an alternative cloud location/region.
    */
   locationEnvKey?: string;
@@ -143,26 +149,46 @@ type ProviderConfig = {
   modelOptions: ProviderModelOption[];
   /**
    * Environment variable holding a second required secret (e.g. an AWS secret
-   * access key paired with {@link ProviderConfig.apiKeyEnvKey} as an access key
+   * access key paired with {@link ApiProviderConfig.apiKeyEnvKey} as an access key
    * ID). Omitted for providers authenticated by a single API key.
    */
   secretKeyEnvKey?: string;
   /**
    * Environment variable holding the provider's region (e.g. an AWS region).
-   * Only relevant when {@link ProviderConfig.requiresRegion} is true.
+   * Only relevant when {@link ApiProviderConfig.requiresRegion} is true.
    */
   regionEnvKey?: string;
   /**
    * When true, the provider has no default region and requires one to be
-   * supplied via {@link ProviderConfig.regionEnvKey}.
+   * supplied via {@link ApiProviderConfig.regionEnvKey}.
    */
   requiresRegion?: boolean;
 };
+
+/**
+ * Subscription-authenticated local agent CLIs (for example Grok Build). These
+ * providers have no API key; OpenWiki spawns the vendor binary and uses the
+ * CLI's own login session.
+ */
+export type AgentCliProviderConfig = {
+  kind: "agent-cli";
+  /** Environment variable that overrides the default binary path. */
+  binaryEnvKey: string;
+  defaultBinary: string;
+  /** Shown when the binary is missing or not logged in. */
+  installHint: string;
+  label: string;
+  modelOptions: ProviderModelOption[];
+};
+
+export type ProviderConfig = ApiProviderConfig | AgentCliProviderConfig;
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
   "anthropic",
+  "grok-build",
+  "antigravity",
   "vertex",
   "openrouter",
   "openai-compatible",
@@ -175,6 +201,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   baseten: {
+    kind: "api",
     apiKeyEnvKey: BASETEN_API_KEY_ENV_KEY,
     baseURL: "https://inference.baseten.co/v1",
     label: "Baseten",
@@ -184,6 +211,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     ],
   },
   bedrock: {
+    kind: "api",
     apiKeyEnvKey: BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
     label: "AWS Bedrock",
     // Available model IDs are account- and region-specific (they depend on
@@ -196,6 +224,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     requiresRegion: true,
   },
   fireworks: {
+    kind: "api",
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
     baseURL: "https://api.fireworks.ai/inference/v1",
     label: "Fireworks",
@@ -207,13 +236,53 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       },
     ],
   },
+  "grok-build": {
+    kind: "agent-cli",
+    binaryEnvKey: GROK_BUILD_BINARY_ENV_KEY,
+    defaultBinary: "grok",
+    installHint:
+      "Install the Grok Build CLI, then run `grok login` so OpenWiki can use your subscription session.",
+    label: "Grok Build (subscription)",
+    modelOptions: [
+      { id: "grok-4.5", label: "Grok 4.5" },
+      { id: "grok-composer-2.5-fast", label: "Composer 2.5 Fast" },
+    ],
+  },
+  antigravity: {
+    kind: "agent-cli",
+    binaryEnvKey: ANTIGRAVITY_BINARY_ENV_KEY,
+    defaultBinary: "agy",
+    installHint:
+      "Install the Antigravity CLI (`agy`, e.g. `brew install --cask antigravity-cli`) and sign in so OpenWiki can use your local session.",
+    label: "Antigravity (subscription)",
+    // Exact display strings from `agy models` — agy rejects near-miss values
+    // silently (empty stdout, exit 0), so presets must match verbatim.
+    modelOptions: [
+      { id: "Gemini 3.5 Flash (Medium)", label: "Gemini 3.5 Flash (Medium)" },
+      { id: "Gemini 3.5 Flash (High)", label: "Gemini 3.5 Flash (High)" },
+      { id: "Gemini 3.5 Flash (Low)", label: "Gemini 3.5 Flash (Low)" },
+      { id: "Gemini 3.1 Pro (Low)", label: "Gemini 3.1 Pro (Low)" },
+      { id: "Gemini 3.1 Pro (High)", label: "Gemini 3.1 Pro (High)" },
+      {
+        id: "Claude Sonnet 4.6 (Thinking)",
+        label: "Claude Sonnet 4.6 (Thinking)",
+      },
+      {
+        id: "Claude Opus 4.6 (Thinking)",
+        label: "Claude Opus 4.6 (Thinking)",
+      },
+      { id: "GPT-OSS 120B (Medium)", label: "GPT-OSS 120B (Medium)" },
+    ],
+  },
   nebius: {
+    kind: "api",
     apiKeyEnvKey: NEBIUS_API_KEY_ENV_KEY,
     baseURL: NEBIUS_BASE_URL,
     label: "Nebius Token Factory",
     modelOptions: [{ id: "moonshotai/Kimi-K2.6", label: "Kimi K2.6" }],
   },
   nvidia: {
+    kind: "api",
     apiKeyEnvKey: NVIDIA_API_KEY_ENV_KEY,
     baseURL: "https://integrate.api.nvidia.com/v1",
     label: "NVIDIA NIM",
@@ -236,17 +305,20 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     ],
   },
   openai: {
+    kind: "api",
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
     label: "OpenAI",
     modelOptions: OPENAI_MODEL_OPTIONS,
   },
   "openai-chatgpt": {
+    kind: "api",
     apiKeyEnvKey: OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
     authMethod: "oauth",
     label: "OpenAI (ChatGPT login)",
     modelOptions: OPENAI_MODEL_OPTIONS,
   },
   "openai-compatible": {
+    kind: "api",
     apiKeyEnvKey: OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
     baseUrlEnvKey: OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
     requiresBaseUrl: true,
@@ -254,6 +326,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [],
   },
   anthropic: {
+    kind: "api",
     apiKeyEnvKey: ANTHROPIC_API_KEY_ENV_KEY,
     baseUrlEnvKey: ANTHROPIC_BASE_URL_ENV_KEY,
     label: "Anthropic",
@@ -264,6 +337,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     ],
   },
   vertex: {
+    kind: "api",
     projectEnvKey: GOOGLE_CLOUD_PROJECT_ENV_KEY,
     locationEnvKey: GOOGLE_CLOUD_LOCATION_ENV_KEY,
     defaultLocation: DEFAULT_VERTEX_LOCATION,
@@ -275,6 +349,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     ],
   },
   openrouter: {
+    kind: "api",
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,
     baseURL: OPENROUTER_BASE_URL,
     label: "OpenRouter",
@@ -305,16 +380,50 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).label;
 }
 
+export function isAgentCliProvider(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).kind === "agent-cli";
+}
+
+export function getAgentCliProviderConfig(
+  provider: OpenWikiProvider,
+): AgentCliProviderConfig {
+  const config = getProviderConfig(provider);
+
+  if (config.kind !== "agent-cli") {
+    throw new Error(`${provider} is not an agent CLI provider.`);
+  }
+
+  return config;
+}
+
+function getApiProviderConfig(provider: OpenWikiProvider): ApiProviderConfig {
+  const config = getProviderConfig(provider);
+
+  if (config.kind !== "api") {
+    throw new Error(
+      `${provider} is an agent CLI provider and has no API key configuration.`,
+    );
+  }
+
+  return config;
+}
+
 export function getProviderApiKeyEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
-  return getProviderConfig(provider).apiKeyEnvKey;
+  return getApiProviderConfig(provider).apiKeyEnvKey;
 }
 
 export function getProviderAuthMethod(
   provider: OpenWikiProvider,
 ): ProviderAuthMethod {
-  return getProviderConfig(provider).authMethod ?? "api-key";
+  const config = getProviderConfig(provider);
+
+  if (config.kind === "agent-cli") {
+    return "cli-login";
+  }
+
+  return config.authMethod ?? "api-key";
 }
 
 export function providerUsesOAuth(provider: OpenWikiProvider): boolean {
@@ -322,19 +431,57 @@ export function providerUsesOAuth(provider: OpenWikiProvider): boolean {
 }
 
 export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
-  return getProviderConfig(provider).apiKeyEnvKey !== undefined;
+  const config = getProviderConfig(provider);
+
+  return config.kind === "api" && config.apiKeyEnvKey !== undefined;
+}
+
+/**
+ * Composes the in-session notice shown after switching providers. Agent CLI
+ * providers have no API key, so their notice points at the local CLI login
+ * instead of an API-key environment variable.
+ */
+export function formatProviderSwitchNotice(provider: OpenWikiProvider): string {
+  const modelOptions = getProviderModelOptions(provider);
+  const modelNotice =
+    modelOptions.length > 0
+      ? ` with model ${getDefaultModelId(provider)}`
+      : ". Set a model with /model";
+  const switched = `Provider switched to ${getProviderLabel(provider)}${modelNotice}.`;
+
+  if (isAgentCliProvider(provider)) {
+    return `${switched} Runs use the local agent CLI login.`;
+  }
+
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  if (apiKeyEnvKey) {
+    return `${switched} Ensure ${apiKeyEnvKey} is set.`;
+  }
+
+  const projectEnvKey = getProviderProjectEnvKey(provider);
+  const hint = getProviderCredentialHint(provider);
+  const requirement = projectEnvKey
+    ? `Ensure ${projectEnvKey} is set.${hint ? ` ${hint}` : ""}`
+    : (hint ?? "");
+
+  return requirement ? `${switched} ${requirement}` : switched;
 }
 
 export function getProviderProjectEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
-  return getProviderConfig(provider).projectEnvKey;
+  const config = getProviderConfig(provider);
+
+  return config.kind === "api" ? config.projectEnvKey : undefined;
 }
 
 export function getProviderLocationEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
-  return getProviderConfig(provider).locationEnvKey;
+  const config = getProviderConfig(provider);
+
+  return config.kind === "api" ? config.locationEnvKey : undefined;
 }
 
 /**
@@ -342,12 +489,18 @@ export function getProviderLocationEnvKey(
  * (its API key, or its cloud project for providers that authenticate without
  * one), or `null` when the provider has everything it needs to run. Base URL
  * requirements are checked separately via {@link providerRequiresBaseUrl}.
+ * Agent CLI providers never report a missing key here — auth is the vendor CLI
+ * login, which is checked when the binary is spawned.
  */
 export function getMissingProviderEnvKey(
   provider: OpenWikiProvider,
   env: NodeJS.ProcessEnv = process.env,
 ): string | null {
   const config = getProviderConfig(provider);
+
+  if (config.kind === "agent-cli") {
+    return null;
+  }
 
   if (config.apiKeyEnvKey && !env[config.apiKeyEnvKey]) {
     return config.apiKeyEnvKey;
@@ -370,6 +523,11 @@ export function resolveProviderLocation(
   env: NodeJS.ProcessEnv = process.env,
 ): string | undefined {
   const config = getProviderConfig(provider);
+
+  if (config.kind !== "api") {
+    return undefined;
+  }
+
   const override = config.locationEnvKey
     ? env[config.locationEnvKey]
     : undefined;
@@ -397,6 +555,10 @@ export function getProviderCredentialHint(
     );
   }
 
+  if (isAgentCliProvider(provider)) {
+    return getAgentCliProviderConfig(provider).installHint;
+  }
+
   return null;
 }
 
@@ -411,6 +573,11 @@ export function resolveProviderBaseUrl(
   env: NodeJS.ProcessEnv = process.env,
 ): string | undefined {
   const config = getProviderConfig(provider);
+
+  if (config.kind !== "api") {
+    return undefined;
+  }
+
   const override = config.baseUrlEnvKey ? env[config.baseUrlEnvKey] : undefined;
   const trimmedOverride = override?.trim();
 
@@ -424,31 +591,41 @@ export function resolveProviderBaseUrl(
 export function getProviderBaseUrlEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
-  return getProviderConfig(provider).baseUrlEnvKey;
+  const config = getProviderConfig(provider);
+
+  return config.kind === "api" ? config.baseUrlEnvKey : undefined;
 }
 
 export function providerRequiresBaseUrl(provider: OpenWikiProvider): boolean {
-  return getProviderConfig(provider).requiresBaseUrl === true;
+  const config = getProviderConfig(provider);
+
+  return config.kind === "api" && config.requiresBaseUrl === true;
 }
 
 export function getProviderSecretKeyEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
-  return getProviderConfig(provider).secretKeyEnvKey;
+  const config = getProviderConfig(provider);
+
+  return config.kind === "api" ? config.secretKeyEnvKey : undefined;
 }
 
 export function providerRequiresSecretKey(provider: OpenWikiProvider): boolean {
-  return getProviderConfig(provider).secretKeyEnvKey !== undefined;
+  return getProviderSecretKeyEnvKey(provider) !== undefined;
 }
 
 export function getProviderRegionEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
-  return getProviderConfig(provider).regionEnvKey;
+  const config = getProviderConfig(provider);
+
+  return config.kind === "api" ? config.regionEnvKey : undefined;
 }
 
 export function providerRequiresRegion(provider: OpenWikiProvider): boolean {
-  return getProviderConfig(provider).requiresRegion === true;
+  const config = getProviderConfig(provider);
+
+  return config.kind === "api" && config.requiresRegion === true;
 }
 
 /**
@@ -573,7 +750,9 @@ export function isValidModelId(value: string): boolean {
   return (
     modelId.length > 0 &&
     modelId.length <= 120 &&
-    /^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
+    // Spaces and parentheses are allowed so agent-CLI display names
+    // (e.g. Antigravity's `Gemini 3.5 Flash (Medium)`) validate cleanly.
+    /^[A-Za-z0-9][A-Za-z0-9._:/@+\-() ]*$/u.test(modelId) &&
     !modelId.includes("://")
   );
 }

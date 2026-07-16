@@ -245,7 +245,9 @@ describe("getCredentialDiagnostics", () => {
   });
 
   test("flags an invalid model ID with a warning", async () => {
-    await env.saveOpenWikiEnv({ [OPENWIKI_MODEL_ID_ENV_KEY]: "bad model id" });
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_MODEL_ID_ENV_KEY]: "http://evil.example/model",
+    });
 
     const diagnostics = await env.getCredentialDiagnostics();
     const entry = diagnostics.find(

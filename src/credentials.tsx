@@ -9,6 +9,7 @@ import { runOAuthAuth } from "./auth/oauth.js";
 import {
   DEFAULT_PROVIDER,
   DEFAULT_VERTEX_LOCATION,
+  getAgentCliProviderConfig,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -19,6 +20,7 @@ import {
   getProviderProjectEnvKey,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
+  isAgentCliProvider,
   providerRequiresApiKey,
   isValidBaseUrl,
   isValidModelId,
@@ -397,9 +399,14 @@ export function needsCredentialSetup(
  * Whether the provider still needs its primary credential collected. For
  * `oauth` providers this is a valid, non-expired stored token; for API-key
  * providers it is a pasted key; for keyless providers (vertex) it is the
- * required GCP project id.
+ * required GCP project id. Agent CLI providers authenticate through the
+ * vendor CLI login and never collect a credential here.
  */
 function needsCredentialStep(provider: OpenWikiProvider): boolean {
+  if (isAgentCliProvider(provider)) {
+    return false;
+  }
+
   return providerUsesOAuth(provider)
     ? !hasValidStoredToken()
     : getMissingProviderEnvKey(provider) !== null;
@@ -469,6 +476,11 @@ function isRegionConfigured(provider: OpenWikiProvider): boolean {
 }
 
 function isCredentialConfigured(provider: OpenWikiProvider): boolean {
+  if (isAgentCliProvider(provider)) {
+    // Auth is the local vendor CLI login; OpenWiki does not hold a key.
+    return true;
+  }
+
   return providerUsesOAuth(provider)
     ? hasValidStoredToken()
     : getMissingProviderEnvKey(provider) === null;
@@ -478,6 +490,10 @@ function getCredentialSetupDetail(
   provider: OpenWikiProvider,
   tokens: CodexTokens | null = null,
 ): string {
+  if (isAgentCliProvider(provider)) {
+    return getAgentCliProviderConfig(provider).installHint;
+  }
+
   if (providerUsesOAuth(provider)) {
     if (!isCredentialConfigured(provider) && !tokens) {
       return "sign in with your ChatGPT account";
@@ -1889,7 +1905,9 @@ export function InitSetup({
       mode: options.runMode,
       runIngestionNow: false,
       savedApiKey:
-        options.nextApiKey !== null || options.nextOAuthTokens != null,
+        isAgentCliProvider(options.nextProvider) ||
+        options.nextApiKey !== null ||
+        options.nextOAuthTokens != null,
       savedBaseUrl: options.nextBaseUrl !== null,
       savedRegion: options.nextRegion !== null,
       savedSecretKey: options.nextSecretKey !== null,
@@ -2246,7 +2264,9 @@ export function InitSetup({
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     process.env.LANGSMITH_API_KEY === undefined;
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+  const apiKeyEnvKey = isAgentCliProvider(provider)
+    ? undefined
+    : getProviderApiKeyEnvKey(provider);
   const projectEnvKey = getProviderProjectEnvKey(provider);
   const locationEnvKey = getProviderLocationEnvKey(provider);
 
@@ -2266,7 +2286,13 @@ export function InitSetup({
           }
           detail={getProviderSetupDetail(provider)}
         />
-        {providerUsesOAuth(provider) || apiKeyEnvKey ? (
+        {isAgentCliProvider(provider) ? (
+          <SetupStep
+            label="CLI login"
+            state="done"
+            detail={getCredentialSetupDetail(provider, oauthTokens)}
+          />
+        ) : providerUsesOAuth(provider) || apiKeyEnvKey ? (
           <SetupStep
             label={
               providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"

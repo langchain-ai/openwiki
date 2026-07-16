@@ -3,6 +3,7 @@ import type { CliCommand } from "./commands.js";
 import {
   getMissingProviderEnvKey,
   getProviderCredentialHint,
+  isAgentCliProvider,
   resolveConfiguredProvider,
 } from "./constants.js";
 
@@ -38,28 +39,34 @@ export async function resolveStartupCommand(
     (command.print || !isStdinTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const missingEnvKey = getMissingProviderEnvKey(provider);
 
-    if (missingEnvKey) {
-      if (
-        command.print &&
-        (await canSkipCleanUpdateBeforeCredentials(
-          command,
-          options.cwd ?? process.cwd(),
-        ))
-      ) {
-        return command;
+    // Agent CLI providers authenticate through the vendor CLI's own login,
+    // so there is no API key to require here; a missing or logged-out CLI
+    // surfaces through the engine runner's install hint instead.
+    if (!isAgentCliProvider(provider)) {
+      const missingEnvKey = getMissingProviderEnvKey(provider);
+
+      if (missingEnvKey) {
+        if (
+          command.print &&
+          (await canSkipCleanUpdateBeforeCredentials(
+            command,
+            options.cwd ?? process.cwd(),
+          ))
+        ) {
+          return command;
+        }
+
+        const hint = getProviderCredentialHint(provider);
+
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${missingEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.${
+            hint ? ` ${hint}` : ""
+          }`,
+        };
       }
-
-      const hint = getProviderCredentialHint(provider);
-
-      return {
-        kind: "error",
-        exitCode: 1,
-        message: `${missingEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.${
-          hint ? ` ${hint}` : ""
-        }`,
-      };
     }
   }
 
