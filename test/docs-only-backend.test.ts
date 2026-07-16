@@ -7,6 +7,10 @@ import {
   OpenWikiLocalShellBackend,
 } from "../src/agent/docs-only-backend.ts";
 
+// OpenWikiLocalShellBackend is now used only for interactive chat runs. Automated
+// init/update runs use FilesystemBackend with native permissions (see
+// test/no-shell-regression.test.ts). These tests still cover the shell backend's
+// docs-only write guard because chat continues to rely on it.
 describe("OpenWikiLocalShellBackend", () => {
   test("recognizes only openwiki virtual paths as docs paths", () => {
     expect(isOpenWikiDocsPath("/openwiki/architecture.md")).toBe(true);

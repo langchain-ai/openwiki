@@ -34,6 +34,14 @@ import {
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
 import { formatChatGptAccountFromEnv } from "./agent/openai-chatgpt-oauth.js";
 import {
+  formatToolDebugEvent,
+  formatToolNameUsage,
+  formatToolUsageSummary,
+  incrementToolNameUsage,
+  incrementToolUsage,
+  type ToolUsageCounts,
+} from "./agent/tool-observability.js";
+import {
   getErrorMessage,
   isSecretLikeKey,
   sanitizeDiagnosticText,
@@ -126,7 +134,10 @@ type RunLogItem = {
   latestDoneContent?: string;
   status?: "done" | "error" | "running";
   toolCallId?: string;
+  toolCallIds?: string[];
   toolName?: string;
+  toolNameUsage?: Record<string, number>;
+  toolUsage?: ToolUsageCounts;
   type: "debug" | "text" | "tool";
   content: string;
 };
@@ -1249,6 +1260,7 @@ function RunLogLine({
           {isActive && item.call ? (
             <Text color="gray"> {truncateLogOutput(item.call, "")}</Text>
           ) : null}
+          <ToolUsageDetail item={item} />
         </Box>
       );
     }
@@ -1264,6 +1276,7 @@ function RunLogLine({
               {item.content}
             </Text>
           </Text>
+          <ToolUsageDetail item={item} />
         </Box>
       );
     }
@@ -1274,6 +1287,7 @@ function RunLogLine({
           <Text color="green">{"* "}</Text>
           <Text color="gray">{item.content}</Text>
         </Text>
+        <ToolUsageDetail item={item} />
       </Box>
     );
   }
@@ -1295,6 +1309,13 @@ function RunLogLine({
       </Box>
     </Box>
   );
+}
+
+function ToolUsageDetail({ item }: { item: RunLogItem }) {
+  if (!isDebugMode()) return null;
+
+  const names = formatToolNameUsage(item.toolNameUsage);
+  return names ? <Text color="gray"> Tools: {names}</Text> : null;
 }
 
 function getActiveRunningToolLogId(log: RunLogItem[]): number | null {
@@ -2644,6 +2665,14 @@ function appendToolStartLogItem(
   event: Extract<OpenWikiRunEvent, { type: "tool_start" }>,
   nextLogId: React.MutableRefObject<number>,
 ): RunLogItem[] {
+  if (
+    log.some(
+      (item) => item.type === "tool" && item.toolCallIds?.includes(event.id),
+    )
+  ) {
+    return log;
+  }
+
   const toolDisplay = createToolDisplay(event);
   const nextLog = [...log];
   const previous = nextLog.at(-1);
@@ -2663,12 +2692,16 @@ function appendToolStartLogItem(
         actionCount,
         errorCount,
         latestDoneContent,
+        incrementToolUsage(previous.toolUsage, event.name),
       ),
       errorCount,
       latestDoneContent,
       status: "running",
       toolCallId: event.id,
+      toolCallIds: [...(previous.toolCallIds ?? []), event.id],
       toolName: event.name,
+      toolNameUsage: incrementToolNameUsage(previous.toolNameUsage, event.name),
+      toolUsage: incrementToolUsage(previous.toolUsage, event.name),
     };
 
     return nextLog;
@@ -2687,7 +2720,10 @@ function appendToolStartLogItem(
       latestDoneContent: toolDisplay.done,
       status: "running",
       toolCallId: event.id,
+      toolCallIds: [event.id],
       toolName: event.name,
+      toolNameUsage: incrementToolNameUsage(undefined, event.name),
+      toolUsage: incrementToolUsage(undefined, event.name),
       type: "tool",
     },
   ];
@@ -2730,6 +2766,7 @@ function completeToolGroupItem(
         actionCount,
         errorCount,
         latestDoneContent,
+        item.toolUsage,
       ),
       errorCount,
       status: "running",
@@ -2740,11 +2777,17 @@ function completeToolGroupItem(
     ...item,
     activeToolCallIds,
     call: undefined,
-    content: formatToolGroupDone(actionCount, errorCount, latestDoneContent),
+    content: formatToolGroupDone(
+      actionCount,
+      errorCount,
+      latestDoneContent,
+      item.toolUsage,
+    ),
     doneContent: formatToolGroupDone(
       actionCount,
       errorCount,
       latestDoneContent,
+      item.toolUsage,
     ),
     errorCount,
     status: errorCount > 0 ? "error" : "done",
@@ -2801,20 +2844,21 @@ function formatToolGroupDone(
   actionCount: number,
   errorCount: number,
   latestDoneContent?: string,
+  toolUsage?: ToolUsageCounts,
 ): string {
   if (actionCount <= 1 && errorCount === 0) {
-    return latestDoneContent ?? "Ran 1 action";
+    return `${latestDoneContent ?? "Ran 1 action"}${formatToolUsageSummary(toolUsage)}`;
   }
 
   if (errorCount > 0) {
-    return `Ran ${formatCount(actionCount, "action", "actions")} with ${formatCount(
+    return `Ran ${formatCount(actionCount, "action", "actions")}${formatToolUsageSummary(toolUsage)} with ${formatCount(
       errorCount,
       "failure",
       "failures",
     )}`;
   }
 
-  return `Ran ${formatCount(actionCount, "action", "actions")}`;
+  return `Ran ${formatCount(actionCount, "action", "actions")}${formatToolUsageSummary(toolUsage)}`;
 }
 
 type ToolDisplay = {
@@ -3881,6 +3925,11 @@ async function runPrintCommand(
       onEvent: (event) => {
         if (event.type === "text" && event.source !== "subgraph") {
           output.push(event.text);
+        }
+
+        if (isDebugMode()) {
+          const toolDebug = formatToolDebugEvent(event);
+          if (toolDebug) process.stderr.write(`${toolDebug}\n`);
         }
       },
     });

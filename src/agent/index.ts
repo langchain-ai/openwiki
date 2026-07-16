@@ -13,8 +13,9 @@ import {
   CompositeBackend,
   createDeepAgent,
   FilesystemBackend,
+  type FilesystemPermission,
 } from "deepagents";
-import { createOpenWikiConnectorTools } from "../connectors/tools.js";
+import { buildOpenWikiTools } from "./tools/index.js";
 import {
   DEBUG_ENV_KEYS,
   loadOpenWikiEnv,
@@ -25,6 +26,7 @@ import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
+import { FilesystemCompositeBackend } from "./filesystem-composite-backend.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -84,6 +86,7 @@ import {
   type OpenWikiProvider,
 } from "../constants.js";
 import {
+  cleanupPlanFile,
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
   createRunContext,
@@ -204,29 +207,25 @@ async function runOpenWikiAgentCore(
       ? `checkpointer=${formatUrlDebugValue(checkpointTarget.connString)}`
       : "checkpointer=memory",
   );
-  const wikiBackend = new OpenWikiLocalShellBackend({
-    docsOnly: command !== "chat",
-    maxOutputBytes: 100_000,
-    outputMode,
-    rootDir: cwd,
-    timeout: 120,
-    virtualMode: true,
-  });
-  const backend = new CompositeBackend(wikiBackend, {
-    "/skills/": new FilesystemBackend({
-      rootDir: openWikiSkillsDir,
-      virtualMode: true,
-    }),
-  });
+  const isChat = command === "chat";
+  const tools = buildOpenWikiTools({ cwd, outputMode, command });
+  const wikiBackend = createRunBackend(isChat, outputMode, cwd);
+  const backend = createAgentBackend(isChat, wikiBackend);
+  const permissions = createRunPermissions(isChat, outputMode);
+  emitDebug(
+    options,
+    `backend.shell=${isChat ? "enabled" : "disabled"} tools.custom=${tools
+      .map((tool) => tool.name)
+      .sort()
+      .join(",")}`,
+  );
   const agent = createDeepAgent({
     model,
-    tools: createOpenWikiConnectorTools(),
+    tools,
     checkpointer,
     backend,
     skills: ["/skills/"],
-    permissions: [
-      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
-    ],
+    permissions,
     systemPrompt: createSystemPrompt(command, outputMode),
   });
   emitDebug(options, "agent=created");
@@ -297,6 +296,11 @@ async function runOpenWikiAgentCore(
     await chmodIfExists(checkpointTarget.connString, 0o600);
   }
 
+  if (command !== "chat") {
+    await cleanupPlanFile(cwd, outputMode);
+    emitDebug(options, "plan=cleaned");
+  }
+
   const metadataWritten = await persistRunMetadataIfChanged(
     command,
     cwd,
@@ -329,6 +333,77 @@ export type CheckpointTarget = {
   persistent: boolean;
 };
 
+/**
+ * Selects the backend for a run. Interactive chat keeps the shell backend for
+ * now; automated init/update runs use a plain FilesystemBackend so no generic
+ * shell execute tool is exposed.
+ */
+export function createRunBackend(
+  isChat: boolean,
+  outputMode: OpenWikiOutputMode,
+  cwd: string,
+): OpenWikiLocalShellBackend | FilesystemBackend {
+  if (isChat) {
+    return new OpenWikiLocalShellBackend({
+      docsOnly: false,
+      maxOutputBytes: 100_000,
+      outputMode,
+      rootDir: cwd,
+      timeout: 120,
+      virtualMode: true,
+    });
+  }
+
+  return new FilesystemBackend({
+    rootDir: cwd,
+    virtualMode: true,
+  });
+}
+
+export function createAgentBackend(
+  isChat: boolean,
+  wikiBackend: OpenWikiLocalShellBackend | FilesystemBackend,
+): CompositeBackend | FilesystemCompositeBackend {
+  const skillsBackend = new FilesystemBackend({
+    rootDir: openWikiSkillsDir,
+    virtualMode: true,
+  });
+
+  return isChat
+    ? new CompositeBackend(wikiBackend, { "/skills/": skillsBackend })
+    : new FilesystemCompositeBackend(wikiBackend, {
+        "/skills/": skillsBackend,
+      });
+}
+
+/**
+ * Builds native filesystem write permissions for a run. Chat is unrestricted;
+ * repository init/update allows writes only under /openwiki (explicit allow
+ * followed by an explicit deny); local-wiki init/update allows writes anywhere
+ * under the wiki virtual root.
+ */
+export function createRunPermissions(
+  isChat: boolean,
+  outputMode: OpenWikiOutputMode,
+): FilesystemPermission[] {
+  if (isChat) {
+    return [{ operations: ["write"], paths: ["/skills/**"], mode: "deny" }];
+  }
+
+  if (outputMode === "repository") {
+    return [
+      { operations: ["write"], paths: ["/openwiki/**"] },
+      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
+      { operations: ["write"], paths: ["/**"], mode: "deny" },
+    ];
+  }
+
+  return [
+    { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
+    { operations: ["write"], paths: ["/**"] },
+  ];
+}
+
 function createRunUserMessage(
   command: OpenWikiCommand,
   cwd: string,
@@ -352,8 +427,11 @@ ${cwd}
 
 Runtime note:
 - ${formatRuntimeRootInstruction(options.outputMode ?? "local-wiki")}
-- Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.
-- Shell execute commands run on the host. For execute, use cd ${cwd} before commands that should run against this root.
+- Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.${
+    command === "chat"
+      ? `\n- Shell execute commands run on the host. For execute, use cd ${cwd} before commands that should run against this root.`
+      : ""
+  }
 - Do not search parent directories or unrelated directories.
 `.trim();
 }
