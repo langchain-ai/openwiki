@@ -100,10 +100,14 @@ describe("formatEnv", () => {
 });
 
 describe("MANAGED_ENV_KEYS", () => {
-  test("manages the Google Cloud settings for the vertex provider", () => {
+  test("manages the Google Cloud settings for the gemini-enterprise provider", () => {
     expect(MANAGED_ENV_KEYS).toContain("GOOGLE_CLOUD_PROJECT");
     expect(MANAGED_ENV_KEYS).toContain("GOOGLE_CLOUD_LOCATION");
     expect(MANAGED_ENV_KEYS).toContain("GOOGLE_APPLICATION_CREDENTIALS");
+  });
+
+  test("manages the GEMINI_API_KEY for the gemini (AI Studio) provider", () => {
+    expect(MANAGED_ENV_KEYS).toContain("GEMINI_API_KEY");
   });
 });
 
