@@ -442,15 +442,21 @@ async function runAgentCliRun(
     emitDebug(options, `engine.resume session=${resumeSessionId}`);
   }
 
-  // Path discipline for agent-cli lives in createSystemPrompt(..., "agent-cli");
-  // the user message reuses the same root/cwd framing as DeepAgents.
+  // Path discipline for agent-cli lives in createSystemPrompt(..., "agent-cli")
+  // and a post-run docs-only write-boundary check (see runAgentCli).
+  // The user message reuses the same root/cwd framing as DeepAgents.
   const prompt = `${createSystemPrompt(command, outputMode, "agent-cli")}\n\n---\n\n${createRunUserMessage(command, cwd, context, options)}`;
+  // Repository init/update must not touch application source. Chat and
+  // local-wiki runs either need freeform edits or already use the wiki root as cwd.
+  const writeBoundary =
+    command !== "chat" && outputMode === "repository" ? "docs-only" : "none";
   const spec: EngineRunSpec = {
     command,
     cwd,
     modelId,
     prompt,
     resumeSessionId,
+    writeBoundary,
   };
 
   const outcome = await runAgentCli(
