@@ -52,6 +52,7 @@ import {
   resolveProviderRetryAttempts,
 } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
+import { restrictDirToCurrentUser } from "./windows-acl.js";
 
 export const openWikiEnvDir = path.join(os.homedir(), ".openwiki");
 export const openWikiEnvPath = path.join(openWikiEnvDir, ".env");
@@ -208,6 +209,7 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
     mode: 0o700,
   });
   await chmod(openWikiEnvDir, 0o700);
+  await restrictDirToCurrentUser(openWikiEnvDir);
 
   await writeFile(openWikiEnvPath, formatEnv(nextEnv), {
     encoding: "utf8",
