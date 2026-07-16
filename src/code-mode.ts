@@ -56,14 +56,94 @@ async function writeCodeModeAgentSnippet(
     }
   }
 
-  const startIndex = currentContent.indexOf(OPENWIKI_AGENTS_SNIPPET_START);
-  const endIndex = currentContent.indexOf(OPENWIKI_AGENTS_SNIPPET_END);
-  const nextContent =
-    startIndex !== -1 && endIndex !== -1 && endIndex > startIndex
-      ? `${currentContent.slice(0, startIndex)}${snippet}${currentContent.slice(endIndex + OPENWIKI_AGENTS_SNIPPET_END.length)}`
-      : `${currentContent.trimEnd()}${currentContent.trim().length > 0 ? "\n\n" : ""}${snippet}\n`;
+  const legacyScan = removeLegacyOpenWikiSections(currentContent);
+  const content = legacyScan.content;
+
+  const startIndex = content.indexOf(OPENWIKI_AGENTS_SNIPPET_START);
+  const endIndex = content.indexOf(OPENWIKI_AGENTS_SNIPPET_END);
+
+  let nextContent: string;
+  if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+    nextContent = `${content.slice(0, startIndex)}${snippet}${content.slice(endIndex + OPENWIKI_AGENTS_SNIPPET_END.length)}`;
+  } else if (legacyScan.firstRemovalIndex !== null) {
+    const before = content.slice(0, legacyScan.firstRemovalIndex);
+    const after = content.slice(legacyScan.firstRemovalIndex);
+    nextContent =
+      after.trim().length > 0
+        ? `${before}${snippet}\n\n${after}`
+        : `${before.trimEnd()}${before.trim().length > 0 ? "\n\n" : ""}${snippet}\n`;
+  } else {
+    nextContent = `${content.trimEnd()}${content.trim().length > 0 ? "\n\n" : ""}${snippet}\n`;
+  }
 
   await writeFile(agentsPath, nextContent, "utf8");
+}
+
+// Versions before the managed-block markers wrote a bare "## OpenWiki"
+// section, so refreshes appended a second copy next to it instead of
+// replacing it. Sections are treated as OpenWiki-owned only when they
+// reference the generated wiki entrypoint; same-named user-authored
+// sections are left alone.
+const OPENWIKI_SECTION_SIGNATURE = "openwiki/quickstart.md";
+
+function removeLegacyOpenWikiSections(content: string): {
+  content: string;
+  firstRemovalIndex: number | null;
+} {
+  const startMarkerIndex = content.indexOf(OPENWIKI_AGENTS_SNIPPET_START);
+  const endMarkerIndex = content.indexOf(OPENWIKI_AGENTS_SNIPPET_END);
+  const hasMarkedBlock =
+    startMarkerIndex !== -1 && endMarkerIndex > startMarkerIndex;
+
+  const headingPattern = /^## OpenWiki[ \t]*\r?$/gm;
+  const removals: Array<{ start: number; end: number }> = [];
+
+  for (
+    let match = headingPattern.exec(content);
+    match !== null;
+    match = headingPattern.exec(content)
+  ) {
+    const sectionStart = match.index;
+    const insideMarkedBlock =
+      hasMarkedBlock &&
+      sectionStart > startMarkerIndex &&
+      sectionStart < endMarkerIndex;
+    if (insideMarkedBlock) {
+      continue;
+    }
+
+    const sectionEnd = findLegacySectionEnd(content, headingPattern.lastIndex);
+    const section = content.slice(sectionStart, sectionEnd);
+    if (!section.includes(OPENWIKI_SECTION_SIGNATURE)) {
+      continue;
+    }
+
+    removals.push({ start: sectionStart, end: sectionEnd });
+    headingPattern.lastIndex = sectionEnd;
+  }
+
+  if (removals.length === 0) {
+    return { content, firstRemovalIndex: null };
+  }
+
+  let stripped = "";
+  let cursor = 0;
+  for (const removal of removals) {
+    stripped += content.slice(cursor, removal.start);
+    cursor = removal.end;
+  }
+  stripped += content.slice(cursor);
+
+  return { content: stripped, firstRemovalIndex: removals[0].start };
+}
+
+function findLegacySectionEnd(content: string, fromIndex: number): number {
+  const boundaryPattern = new RegExp(
+    `^(?:#{1,2} |${OPENWIKI_AGENTS_SNIPPET_START})`,
+    "m",
+  );
+  const boundaryOffset = content.slice(fromIndex).search(boundaryPattern);
+  return boundaryOffset === -1 ? content.length : fromIndex + boundaryOffset;
 }
 
 function createCodeModeWorkflow(cronExpression: string): string {
