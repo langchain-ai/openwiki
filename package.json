@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "bin": {
     "openwiki": "./dist/cli.js"
@@ -47,6 +47,7 @@
     "@langchain/anthropic": "^1.5.1",
     "@langchain/aws": "^1.4.2",
     "@langchain/core": "^1.2.1",
+    "@langchain/google": "^0.2.1",
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.3",
     "@langchain/openai": "^1.5.5",
     "@langchain/openrouter": "^0.4.3",
@@ -55,7 +56,8 @@
     "ci-info": "^4.4.0",
     "cron-parser": "5.6.1",
     "cronstrue": "3.24.0",
-    "deepagents": "^1.10.8",
+    "deepagents": "^1.11.0",
+    "google-auth-library": "^10.9.0",
     "ink": "^5.1.0",
     "langchain": "^1.5.3",
     "marked": "^18.0.5",

@@ -2,6 +2,10 @@
 
 OpenWiki is a CLI that writes and maintains agent wikis for codebases or purpose memory. It's built specifically for agents, can ingest local knowledge sources through built-in connectors or git repositories and synthesize them into a local wiki.
 
+<div align="center">
+  <a href="https://trendshift.io/repositories/70339?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-70339" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/70339/daily" alt="langchain-ai%2Fopenwiki | Trendshift" width="250" height="55"/></a>
+</div>
+
 ![OpenWiki](https://raw.githubusercontent.com/langchain-ai/openwiki/main/static/openwiki.png)
 
 ## Install
@@ -202,7 +206,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and Google Vertex AI (Claude models) out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -286,27 +290,46 @@ token, expiry, account id, email, and plan in `~/.openwiki/.env`
 automatically when it expires, so you normally never edit them by hand. Treat the
 refresh token like a password.
 
-### Google Vertex AI (Claude)
+### Gemini (AI Studio)
 
-The `vertex` provider runs Anthropic's Claude models through Google Vertex AI.
-It uses no API key — authentication happens with Google Application Default
-Credentials (ADC), so any of the standard mechanisms work:
+The `gemini` provider runs Google's Gemini models through the AI Studio API with
+a single API key:
+
+```bash
+OPENWIKI_PROVIDER=gemini
+GEMINI_API_KEY=your-ai-studio-key
+```
+
+### Gemini Enterprise (Vertex AI)
+
+The `gemini-enterprise` provider runs models from the Gemini Enterprise Model
+Garden (formerly Vertex AI) — Google's own Gemini/Gemma models, Anthropic's
+Claude, and partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, …). It
+routes each model ID to the right API surface automatically, so one credential
+reaches all of them. It uses no API key — authentication happens with Google
+Application Default Credentials (ADC), so any of the standard mechanisms work:
 
 - a service account key file via `GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json`,
 - user credentials from `gcloud auth application-default login`, or
 - workload identity when running on Google Cloud (GKE, Cloud Run, GCE) or in CI.
 
 ```bash
-OPENWIKI_PROVIDER=vertex
+OPENWIKI_PROVIDER=gemini-enterprise
 GOOGLE_CLOUD_PROJECT=your-gcp-project
 GOOGLE_CLOUD_LOCATION=global   # optional, defaults to global
 ```
 
+Set `OPENWIKI_MODEL_ID` to any Model Garden model. Gemini and Claude ship as
+preset options; partner/open-weight models are reached by pasting their model ID
+(for example `publishers/meta/models/llama-3.3-70b-instruct-maas`).
+
 The credentials used need Vertex AI access (`roles/aiplatform.user`) in the
-project, and the Claude models you want must be enabled in the Vertex AI Model
-Garden. Regional endpoints (for example `europe-west1` or `us-east5`) can be set
-via `GOOGLE_CLOUD_LOCATION` if you have data-residency requirements; the
-`global` endpoint offers the best availability.
+project, and the models you want must be enabled in the Model Garden. The
+`global` endpoint serves Gemini and Claude and offers the best availability;
+regional endpoints (for example `europe-west1` or `us-east5`) can be set via
+`GOOGLE_CLOUD_LOCATION` for data-residency requirements. Partner/open-weight
+(MaaS) models are region-specific, so set `GOOGLE_CLOUD_LOCATION` explicitly when
+using them.
 
 Note that `GOOGLE_CLOUD_PROJECT` (and `GOOGLE_APPLICATION_CREDENTIALS`, if you
 choose to store it there) is persisted to `~/.openwiki/.env` and loaded into the
@@ -316,7 +339,8 @@ present in your shell always win.
 For CI, authenticate before the update job runs — for example with
 [`google-github-actions/auth`](https://github.com/google-github-actions/auth)
 (workload identity federation) in GitHub Actions — and set
-`OPENWIKI_PROVIDER=vertex` and `GOOGLE_CLOUD_PROJECT` in the job environment.
+`OPENWIKI_PROVIDER=gemini-enterprise` and `GOOGLE_CLOUD_PROJECT` in the job
+environment.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 

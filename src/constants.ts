@@ -22,6 +22,7 @@ export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
   "BEDROCK_AWS_SECRET_ACCESS_KEY";
 export const BEDROCK_AWS_REGION_ENV_KEY = "BEDROCK_AWS_REGION";
+export const GEMINI_API_KEY_ENV_KEY = "GEMINI_API_KEY";
 export const GOOGLE_CLOUD_PROJECT_ENV_KEY = "GOOGLE_CLOUD_PROJECT";
 export const GOOGLE_CLOUD_LOCATION_ENV_KEY = "GOOGLE_CLOUD_LOCATION";
 export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
@@ -69,13 +70,14 @@ export type OpenWikiProvider =
   | "baseten"
   | "bedrock"
   | "fireworks"
+  | "gemini"
+  | "gemini-enterprise"
   | "nebius"
   | "nvidia"
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
-  | "openrouter"
-  | "vertex";
+  | "openrouter";
 
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
@@ -102,6 +104,19 @@ const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
   { id: "gpt-5.6-sol", label: "5.6 Sol" },
   { id: "gpt-5.5", label: "5.5" },
   { id: "gpt-5.4-mini", label: "5.4 mini" },
+];
+
+/**
+ * Google's own Gemini models. Offered by the `gemini` (AI Studio) provider and,
+ * on Gemini Enterprise (Vertex AI), served over the native `generateContent`
+ * surface. The `gemini-enterprise` provider additionally reaches Claude and
+ * partner/open-weight Model Garden models by pasting those model IDs directly.
+ */
+const GEMINI_MODELS: ProviderModelOption[] = [
+  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
+  { id: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
+  { id: "gemini-3-flash", label: "Gemini 3 Flash" },
+  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash-Lite" },
 ];
 
 type ProviderConfig = {
@@ -163,7 +178,8 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
   "anthropic",
-  "vertex",
+  "gemini",
+  "gemini-enterprise",
   "openrouter",
   "openai-compatible",
   "bedrock",
@@ -263,15 +279,27 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-opus-4-8", label: "Opus" },
     ],
   },
-  vertex: {
+  gemini: {
+    apiKeyEnvKey: GEMINI_API_KEY_ENV_KEY,
+    label: "Gemini (AI Studio)",
+    modelOptions: GEMINI_MODELS,
+  },
+  "gemini-enterprise": {
+    // Keyless: authenticated by Google Application Default Credentials against a
+    // Cloud project + location, not an API key. Routes by model family to the
+    // right Model Garden surface (Gemini, Claude, or OpenAI-compatible MaaS);
+    // see createGeminiEnterpriseModel / resolveVertexSurface.
     projectEnvKey: GOOGLE_CLOUD_PROJECT_ENV_KEY,
     locationEnvKey: GOOGLE_CLOUD_LOCATION_ENV_KEY,
     defaultLocation: DEFAULT_VERTEX_LOCATION,
-    label: "Google Vertex AI (Claude)",
+    label: "Gemini Enterprise (Vertex AI)",
+    // Google's own Gemini models plus the curated Claude Model Garden IDs. Other
+    // partner/open-weight (MaaS) models are reached by pasting their model ID.
     modelOptions: [
-      { id: "claude-haiku-4-5@20251001", label: "Haiku" },
-      { id: "claude-sonnet-5", label: "Sonnet" },
-      { id: "claude-opus-4-8", label: "Opus" },
+      ...GEMINI_MODELS,
+      { id: "claude-haiku-4-5@20251001", label: "Claude Haiku" },
+      { id: "claude-sonnet-5", label: "Claude Sonnet" },
+      { id: "claude-opus-4-8", label: "Claude Opus" },
     ],
   },
   openrouter: {
@@ -389,7 +417,7 @@ export function resolveProviderLocation(
 export function getProviderCredentialHint(
   provider: OpenWikiProvider,
 ): string | null {
-  if (provider === "vertex") {
+  if (provider === "gemini-enterprise") {
     return (
       "Authenticate to Google Cloud with Application Default Credentials " +
       "(gcloud auth application-default login) or set " +
