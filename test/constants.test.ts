@@ -7,6 +7,7 @@ import {
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
+  getProviderCredentialHint,
   getProviderModelOptions,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
@@ -22,7 +23,6 @@ import {
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
   resolveProviderLocation,
-  resolveProviderRegion,
   resolveProviderRetryAttempts,
 } from "../src/constants.ts";
 
@@ -226,37 +226,46 @@ describe("getProviderModelOptions", () => {
   });
 });
 
-describe("bedrock provider (IAM access key + secret key + region)", () => {
-  test("requires a secret key and a region, unlike API-key providers", () => {
-    expect(providerRequiresSecretKey("bedrock")).toBe(true);
-    expect(providerRequiresRegion("bedrock")).toBe(true);
-    expect(providerRequiresSecretKey("anthropic")).toBe(false);
-    expect(providerRequiresRegion("anthropic")).toBe(false);
-  });
-
-  test("exposes the AWS-flavored env keys", () => {
-    expect(getProviderSecretKeyEnvKey("bedrock")).toBe(
-      "BEDROCK_AWS_SECRET_ACCESS_KEY",
-    );
-    expect(getProviderRegionEnvKey("bedrock")).toBe("BEDROCK_AWS_REGION");
-  });
-
-  test("resolveProviderRegion reads the region env key and trims it", () => {
-    expect(
-      resolveProviderRegion("bedrock", { BEDROCK_AWS_REGION: " us-east-1 " }),
-    ).toBe("us-east-1");
-    expect(resolveProviderRegion("bedrock", {})).toBeUndefined();
+describe("bedrock provider (keyless: AWS default credential chain, like gemini-enterprise's ADC)", () => {
+  test("is keyless — no apiKeyEnvKey, secretKeyEnvKey, or regionEnvKey — so none of these ever block startup", () => {
+    // Bedrock authenticates via the AWS SDK's default credential provider
+    // chain (a shared profile, IRSA, ECS/EC2 instance role, or ambient AWS_*
+    // env vars) by default, the same way gemini-enterprise is keyless and
+    // relies on Google Application Default Credentials.
+    expect(providerRequiresApiKey("bedrock")).toBe(false);
+    expect(getProviderApiKeyEnvKey("bedrock")).toBeUndefined();
+    expect(providerRequiresSecretKey("bedrock")).toBe(false);
+    expect(getProviderSecretKeyEnvKey("bedrock")).toBeUndefined();
+    expect(providerRequiresRegion("bedrock")).toBe(false);
+    expect(getProviderRegionEnvKey("bedrock")).toBeUndefined();
   });
 
   test("has no preset model list (Bedrock model availability is account/region specific)", () => {
     expect(getProviderModelOptions("bedrock")).toEqual([]);
   });
+
+  test("getMissingProviderEnvKey never blocks on bedrock (keyless, no projectEnvKey either)", () => {
+    expect(getMissingProviderEnvKey("bedrock", {})).toBeNull();
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "AKIA...",
+      }),
+    ).toBeNull();
+  });
+
+  test("getProviderCredentialHint documents the default AWS credential chain and the static-key override", () => {
+    expect(getProviderCredentialHint("bedrock")).toMatch(
+      /default credential provider chain/iu,
+    );
+  });
 });
 
 describe("providerRequiresApiKey / getProviderApiKeyEnvKey", () => {
-  test("gemini-enterprise authenticates without an API key", () => {
+  test("gemini-enterprise and bedrock authenticate without an API key", () => {
     expect(providerRequiresApiKey("gemini-enterprise")).toBe(false);
     expect(getProviderApiKeyEnvKey("gemini-enterprise")).toBeUndefined();
+    expect(providerRequiresApiKey("bedrock")).toBe(false);
+    expect(getProviderApiKeyEnvKey("bedrock")).toBeUndefined();
   });
 
   test("key-based providers still require one", () => {

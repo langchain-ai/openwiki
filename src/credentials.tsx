@@ -1213,6 +1213,7 @@ export function InitSetup({
 
       setApiKey(trimmedInput);
       setInput("");
+
       const nextStep = getNextStepAfterApiKey(
         provider,
         modelIdOverride,
@@ -1257,6 +1258,7 @@ export function InitSetup({
 
       setSecretKey(trimmedInput);
       setInput("");
+
       const nextStep = getNextStepAfterSecretKey(
         provider,
         modelIdOverride,
@@ -3927,14 +3929,10 @@ function getProviderSetupDetail(provider: OpenWikiProvider): string {
 }
 
 /**
- * Label for the provider's primary credential input. Bedrock authenticates
- * with an IAM access key ID (paired with a secret access key), not a single
- * opaque API key, so its prompt reads differently from every other provider.
+ * Label for the provider's primary credential input.
  */
 function getApiKeyFieldLabel(provider: OpenWikiProvider): string {
-  return provider === "bedrock"
-    ? `${getProviderLabel(provider)} access key ID`
-    : `${getProviderLabel(provider)} API key`;
+  return `${getProviderLabel(provider)} API key`;
 }
 
 function hasValidConfiguredProvider(): boolean {

@@ -238,15 +238,17 @@ OPENWIKI_MODEL_ID=your-gateway-model-name
 ### AWS Bedrock
 
 The `bedrock` provider calls foundation models hosted on AWS Bedrock using IAM
-credentials rather than a single vendor API key. It authenticates with an AWS
-access key ID, a secret access key, and a region:
+credentials rather than a single vendor API key.
 
 ```bash
 OPENWIKI_PROVIDER=bedrock
+OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
+# optional, static credentials
 BEDROCK_AWS_ACCESS_KEY_ID=your-access-key-id
 BEDROCK_AWS_SECRET_ACCESS_KEY=your-secret-access-key
 BEDROCK_AWS_REGION=us-east-1
-OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
+# or
+# leave empty to use the default AWS credentials chain in runtime environment
 ```
 
 Which model IDs are available depends on your AWS account and region (which

@@ -54,7 +54,9 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -654,17 +656,30 @@ export function createModel(
   }
 
   if (provider === "bedrock") {
-    const secretKeyEnvKey = getProviderSecretKeyEnvKey(provider);
+    // build explicit credentials when static credentials are specified
+    // otherwise use the default AWS credentials chain in runtime environment
+    const accessKeyId = process.env[BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY];
+    const secretAccessKey = process.env[BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY];
+    const credentials =
+      accessKeyId && secretAccessKey
+        ? { accessKeyId, secretAccessKey }
+        : undefined;
+    // ChatBedrockConverse only checks AWS_DEFAULT_REGION on its own (not
+    // AWS_REGION), so BEDROCK_AWS_REGION/AWS_REGION are resolved here and
+    // always passed through explicitly. AWS_REGION is what IRSA/ECS/Lambda
+    // commonly set, so without this fallback the credential-chain path would
+    // still fail with "Please set the AWS_DEFAULT_REGION environment
+    // variable" in those environments.
+    const region =
+      process.env[BEDROCK_AWS_REGION_ENV_KEY]?.trim() ??
+      process.env.AWS_REGION?.trim() ??
+      process.env.AWS_DEFAULT_REGION?.trim() ??
+      undefined;
 
     return new ChatBedrockConverse({
-      credentials: {
-        accessKeyId: getProviderApiKey(provider) ?? "",
-        secretAccessKey: secretKeyEnvKey
-          ? (process.env[secretKeyEnvKey] ?? "")
-          : "",
-      },
+      ...(credentials ? { credentials } : {}),
       model: modelId,
-      region: resolveProviderRegion(provider),
+      ...(region ? { region } : {}),
       ...retryOptions,
     });
   }

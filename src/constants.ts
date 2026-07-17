@@ -200,16 +200,18 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     ],
   },
   bedrock: {
-    apiKeyEnvKey: BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+    // BEDROCK_AWS_ACCESS_KEY_ID/BEDROCK_AWS_SECRET_ACCESS_KEY/
+    // BEDROCK_AWS_REGION remain fully supported as an optional static-key
+    // override, but createModel() in agent/index.ts reads them directly from
+    // process.env rather than through apiKeyEnvKey/secretKeyEnvKey/
+    // regionEnvKey, so none of the generic provider-config machinery here
+    // ever treats them as required.
     label: "AWS Bedrock",
     // Available model IDs are account- and region-specific (they depend on
     // which foundation models are enabled in Bedrock), so there is no safe
     // preset list here; paste the Bedrock model ID directly, for example
     // anthropic.claude-sonnet-5-20260101-v1:0.
     modelOptions: [],
-    secretKeyEnvKey: BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-    regionEnvKey: BEDROCK_AWS_REGION_ENV_KEY,
-    requiresRegion: true,
   },
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
@@ -422,6 +424,15 @@ export function getProviderCredentialHint(
       "Authenticate to Google Cloud with Application Default Credentials " +
       "(gcloud auth application-default login) or set " +
       `${GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY} to a service account key file.`
+    );
+  }
+
+  if (provider === "bedrock") {
+    return (
+      "Uses the AWS default credential provider chain (a shared profile, " +
+      "IRSA, ECS/EC2 instance role, or ambient AWS_* env vars) unless " +
+      `${BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY}/${BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY} ` +
+      "are set."
     );
   }
 
