@@ -53,7 +53,8 @@ import {
 } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
 
-export const openWikiEnvDir = path.join(os.homedir(), ".openwiki");
+export const openWikiEnvDir =
+  process.env.OPENWIKI_HOME ?? path.join(os.homedir(), ".openwiki");
 export const openWikiEnvPath = path.join(openWikiEnvDir, ".env");
 
 type EnvMap = Record<string, string>;
