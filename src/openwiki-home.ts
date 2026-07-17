@@ -2,7 +2,8 @@ import { chmod, mkdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-export const openWikiHomeDir = path.join(os.homedir(), ".openwiki");
+export const openWikiHomeDir =
+  process.env.OPENWIKI_HOME ?? path.join(os.homedir(), ".openwiki");
 export const openWikiConnectorsDir = path.join(openWikiHomeDir, "connectors");
 export const openWikiLocalWikiDir = path.join(openWikiHomeDir, "wiki");
 export const openWikiSkillsDir = path.join(openWikiHomeDir, "skills");
