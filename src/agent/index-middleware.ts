@@ -168,7 +168,7 @@ function renderLinks(
   return `# ${heading}\n\n${items.join("\n")}`;
 }
 
-/** Parses the optional title and description from YAML front matter. */
+/** Parses usable optional display metadata from YAML front matter. */
 function parseFrontmatter(
   content: string,
   filePath: string,
@@ -194,19 +194,18 @@ function parseFrontmatter(
   }
 
   const { description, title } = fields as Record<string, unknown>;
-  if (
-    description !== undefined &&
-    (typeof description !== "string" || !description.trim())
-  ) {
-    throw new Error(`${filePath} YAML description must be a non-empty string.`);
-  }
-  if (title !== undefined && typeof title !== "string") {
-    throw new Error(`${filePath} YAML title must be a string.`);
-  }
+  const usableDescription = usableString(description);
+  const usableTitle = usableString(title);
   return {
-    ...(description ? { description } : {}),
-    ...(title ? { title } : {}),
+    ...(usableDescription ? { description: usableDescription } : {}),
+    ...(usableTitle ? { title: usableTitle } : {}),
   };
+}
+
+/** Returns optional front matter text only when it can be rendered in an index. */
+function usableString(value: unknown): string | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  return value;
 }
 
 /** Converts an unknown thrown value into a readable message. */

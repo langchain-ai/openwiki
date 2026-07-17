@@ -199,20 +199,27 @@ describe("synchronizeWikiIndexes", () => {
     }
   });
 
-  test.each(["123", "[one, two]", "{ text: nested }"])(
-    "rejects a non-string YAML description: %s",
-    async (description) => {
-      const { backend } = await setup();
+  test.each([
+    ["123", "[one, two]"],
+    ["[one, two]", "{ text: nested }"],
+    ["{ text: nested }", ""],
+  ])(
+    "falls back when optional title and description are not usable strings: %s / %s",
+    async (title, description) => {
+      const { backend, rootDir } = await setup();
       await backend.write(
         "/openwiki/page.md",
-        `---\ntype: Reference\ndescription: ${description}\n---\n`,
+        `---\ntype: Reference\ntitle: ${title}\ndescription: ${description}\n---\n`,
       );
 
-      await expect(
-        synchronizeWikiIndexes(backend, "repository"),
-      ).rejects.toThrow(
-        "/openwiki/page.md YAML description must be a non-empty string.",
+      await synchronizeWikiIndexes(backend, "repository");
+
+      const index = await readFile(
+        path.join(rootDir, "openwiki/index.md"),
+        "utf8",
       );
+      expect(index).toContain("- [page](page.md)\n");
+      expect(index).not.toContain(" - ");
     },
   );
 
