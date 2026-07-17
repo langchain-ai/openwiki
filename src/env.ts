@@ -271,6 +271,15 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
     delete nextEnv[key];
   }
 
+  // An empty value means "not set" (e.g. skipping the optional LangSmith key),
+  // so drop the key rather than persisting KEY="" which would later read back
+  // as configured. Also self-heals any empty values left by earlier writes.
+  for (const key of Object.keys(nextEnv)) {
+    if (nextEnv[key] === "") {
+      delete nextEnv[key];
+    }
+  }
+
   await mkdir(openWikiEnvDir, {
     recursive: true,
     mode: 0o700,
@@ -286,7 +295,15 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
   for (const [key, value] of Object.entries(updates)) {
     // A shell export wins at runtime, so don't mask it in process.env; the
     // saved value is only the fallback for when that shell var is unset.
-    if (shellEnvAtStartup?.[key] === undefined) {
+    if (shellEnvAtStartup?.[key] !== undefined) {
+      continue;
+    }
+
+    // Mirror the file: an empty value means "not set", so clear it from
+    // process.env rather than leaving KEY="" (which reads back as configured).
+    if (value === "") {
+      delete process.env[key];
+    } else {
       process.env[key] = value;
     }
   }

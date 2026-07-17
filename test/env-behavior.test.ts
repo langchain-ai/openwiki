@@ -203,6 +203,17 @@ describe("saveOpenWikiEnv", () => {
     const contents = await readFile(env.openWikiEnvPath, "utf8");
     expect(contents).toContain('OPENROUTER_API_KEY="from-wizard"');
   });
+
+  test('drops an empty value instead of persisting KEY=""', async () => {
+    // Skipping an optional key (empty value) must clear it, not save KEY=""
+    // (which would later read back as configured).
+    await env.saveOpenWikiEnv({ [OPENROUTER_API_KEY_ENV_KEY]: "sk-real" });
+    await env.saveOpenWikiEnv({ [OPENROUTER_API_KEY_ENV_KEY]: "" });
+
+    const contents = await readFile(env.openWikiEnvPath, "utf8");
+    expect(contents).not.toContain(OPENROUTER_API_KEY_ENV_KEY);
+    expect(process.env[OPENROUTER_API_KEY_ENV_KEY]).toBeUndefined();
+  });
 });
 
 describe("getShellEnvValue", () => {

@@ -392,7 +392,7 @@ export function needsCredentialSetup(
     needsRegionStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
-    process.env.LANGSMITH_API_KEY === undefined;
+    !process.env.LANGSMITH_API_KEY;
 
   if (needsCredentials) {
     return true;
@@ -2675,7 +2675,7 @@ export function InitSetup({
     needsRegionStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
-    process.env.LANGSMITH_API_KEY === undefined;
+    !process.env.LANGSMITH_API_KEY;
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
   const projectEnvKey = getProviderProjectEnvKey(provider);
   const locationEnvKey = getProviderLocationEnvKey(provider);
@@ -2856,8 +2856,7 @@ export function InitSetup({
             state={resolveStepStatus(
               "langsmith",
               step,
-              langSmithKey !== null ||
-                process.env.LANGSMITH_API_KEY !== undefined,
+              langSmithKey !== null || Boolean(process.env.LANGSMITH_API_KEY),
               "optional",
             )}
             detail={
@@ -2865,7 +2864,7 @@ export function InitSetup({
                 ? langSmithKey.length > 0
                   ? "configured"
                   : "skipped"
-                : process.env.LANGSMITH_API_KEY !== undefined
+                : process.env.LANGSMITH_API_KEY
                   ? "configured"
                   : "not set"
             }
@@ -4104,7 +4103,7 @@ export function getInitialStep(
     return "model";
   }
 
-  if (process.env.LANGSMITH_API_KEY === undefined) {
+  if (!process.env.LANGSMITH_API_KEY) {
     return "langsmith";
   }
 
@@ -4245,7 +4244,7 @@ function getNextStepAfterRegion(
     return "model";
   }
 
-  if (process.env.LANGSMITH_API_KEY === undefined) {
+  if (!process.env.LANGSMITH_API_KEY) {
     return "langsmith";
   }
 
