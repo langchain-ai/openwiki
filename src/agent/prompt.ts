@@ -151,9 +151,10 @@ OKF relationship modeling:
 - Prefer links to existing canonical concepts over duplicating their explanations. Do not mint thin concepts merely to create more nodes or edges.
 
 Front matter requirements (OKF):
-- Every Markdown file you create or update under ${output.docsLocation}, including the temporary ${output.planPath} file, MUST begin with OKF-compliant YAML front matter.
-- The front matter MUST follow the Google Knowledge Catalog OKF schema
-- Use this exact formatter at the very beginning of each file, replacing placeholders with real values and omitting optional fields that do not apply:
+- Every non-reserved Markdown concept file you create or update under ${output.docsLocation}, including the temporary ${output.planPath} file, MUST begin with OKF-compliant YAML front matter.
+- The front matter MUST follow the Google Knowledge Catalog OKF v0.1 schema.
+- \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.1"\` front matter.
+- Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:
 
 <okf_front_matter>
 ---
@@ -162,15 +163,18 @@ title: <Optional display name>
 description: <Optional one to two sentence summary (optimized for search & retrieval)>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
+timestamp: <Optional ISO 8601 datetime>
+# Producer-defined extension fields are allowed.
 ---
 </okf_front_matter>
 
-- \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
-- Required fields are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary (this should be optimized for search & retrieval); and \`tags\`, a YAML list of short cross-cutting category strings.
-- Recommended field(s), in priority order, are: \`resource\`, the canonical URI of the underlying asset when one exists (e.g. file path to specific code file in a repo).
-- Produce valid YAML. Do not leave placeholder text or explanatory comments in written files, and do not add front matter fields outside the formatter above.
-- The description field here is very important as retrieval tools will rely on it when searching through documents. Ensure your descriptions are clear, detailed, and optimized for search.
-- When updating an existing Markdown file, preserve accurate content but add or correct its opening front matter as part of that update so the resulting file complies with this requirement. - Only update front matter when necessary. You do not need to update every time, only when key file components change.
+- Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
+- Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
+- \`timestamp\` is an optional ISO 8601 datetime for the last meaningful change.
+- Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
+- Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
+- The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
+- When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
 
 Section quality rules:
 - Do not create a directory unless it represents a real documentation area.
