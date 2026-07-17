@@ -64,6 +64,7 @@ export type CliCommand =
       print: boolean;
       shouldStart: boolean;
       userMessage: string | null;
+      telemetryFile: string | null;
     }
   | {
       kind: "error";
@@ -339,6 +340,8 @@ function parseRunCommand(
   let modelId: string | null = null;
   let print = false;
   let command: OpenWikiCommand = "chat";
+  let telemetryFile: string | null = null;
+
   const userMessageParts: string[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -474,12 +477,57 @@ function parseRunCommand(
       continue;
     }
 
+    if (arg === "--telemetry-file") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--telemetry-file requires a path.",
+        };
+      }
+
+      telemetryFile = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--telemetry-file=")) {
+      const [, value = ""] = arg.split("=", 2);
+
+      if (value.length === 0) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--telemetry-file requires a path.",
+        };
+      }
+
+      telemetryFile = value;
+      continue;
+    }
+
     if (arg.startsWith("-")) {
       return {
         kind: "error",
         exitCode: 1,
         message: `Unknown option: ${arg}`,
       };
+    }
+
+    // A mode word in the first positional slot selects the mode even when
+    // flags precede it (e.g. `openwiki --print code --update`), matching the
+    // `openwiki code ...` form. Otherwise it would silently become the user
+    // message and the run would target the default personal wiki.
+    if (
+      isOpenWikiRunMode(arg) &&
+      modeSource === "default" &&
+      userMessageParts.length === 0
+    ) {
+      mode = arg;
+      modeSource = "positional";
+      continue;
     }
 
     userMessageParts.push(arg);
@@ -512,6 +560,7 @@ function parseRunCommand(
     print,
     shouldStart,
     userMessage,
+    telemetryFile,
   };
 }
 
@@ -560,6 +609,19 @@ export function shouldRunNonInteractively(
 export function isDevelopmentMode(): boolean {
   return (
     process.env.NODE_ENV === "development" || process.env.OPENWIKI_DEV === "1"
+  );
+}
+
+/**
+ * True for commands that send telemetry and therefore require the one-time
+ * disclosure. Only init/update runs emit the single openwiki_run event; chat,
+ * auth, and ingest record nothing, so those sessions need no disclosure.
+ */
+export function commandEmitsTelemetry(command: CliCommand): boolean {
+  return (
+    command.kind === "run" &&
+    !command.dryRun &&
+    (command.command === "init" || command.command === "update")
   );
 }
 
@@ -668,6 +730,11 @@ export const helpContent: HelpContent = {
     {
       label: "--modelId <id>",
       description: "Use a model ID for this run.",
+    },
+    {
+      label: "--telemetry-file <path>",
+      description:
+        "Write the exact anonymous telemetry payload to a local JSON file.",
     },
   ],
   developmentOptions: [
