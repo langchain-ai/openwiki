@@ -1,0 +1,55 @@
+test/credentials.test.ts
+  s_54e363f268ec2d::t_e5e6ef5be8822b 73-126
+  s_54e363f268ec2d::t_2fd0bec46ca597 4-6
+src/credentials.tsx
+  s_54e363f268ec2d::t_27d31c10edace5 1618-1626
+  s_54e363f268ec2d::t_efca93598439fb 2763-2769,2771
+  s_54e363f268ec2d::t_a73871b11c8869 1429,1450,1480,1506,1553,1631,1675-1678,1683
+  s_54e363f268ec2d::t_ec8cec9bc05fcf 852-865
+  s_54e363f268ec2d::t_97c1eeecb6ab76 492
+  s_54e363f268ec2d::t_7ddefb1ad2dbd4 1438-1440,1442-1445
+  s_54e363f268ec2d::t_8f30a67527dc0f 904-920,925-994,1005-1016,1018,1431,1482,1597,1733
+  s_54e363f268ec2d::t_d0983b2b727332 871
+  s_54e363f268ec2d::t_0f0d0e82c423b7 1545-1548
+  s_54e363f268ec2d::t_9ad2b23d3b7abb 1489-1491,1493-1501
+  s_54e363f268ec2d::t_fda5b6fee01681 1384-1392
+  s_54e363f268ec2d::t_9b3c7708f2c47e 424
+  s_54e363f268ec2d::t_b5b3a30d304d18 472
+  s_54e363f268ec2d::t_66117ce01011ea 416-423,425-471,473-491,493-505
+  s_54e363f268ec2d::t_b415aa4d1b7df4 921-924
+  s_54e363f268ec2d::t_89267936e216c1 1017
+  s_54e363f268ec2d::t_fc1b21510a832c 1019-1021
+  s_54e363f268ec2d::t_2831df813d8b10 1393-1395
+  s_54e363f268ec2d::t_6b4251d0ef1275 1427-1428
+  s_54e363f268ec2d::t_c1bf8d58d3c7b0 1446-1449
+  s_54e363f268ec2d::t_b7d09ae2a4947f 1479
+  s_54e363f268ec2d::t_e3f59416ed66c2 1502-1505
+  s_54e363f268ec2d::t_9bcfc22f02e0c9 1549-1552
+  s_54e363f268ec2d::t_d9bf5533284c21 1598-1599
+  s_54e363f268ec2d::t_0834d0aa7a9aea 1627-1630
+  s_54e363f268ec2d::t_a6137ed4049ff8 1679-1682
+  s_54e363f268ec2d::t_e98df5676b7ae9 1734-1736
+  s_54e363f268ec2d::t_d310304568948b 2772-2774
+  s_54e363f268ec2d::t_bc95a2c884da8e 1022-1024,1317,1396-1397,1404,1456,1462,1512,1520,1559,1637,1689,2775
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "f07c1dc9841171e369871aa61f87d63c42b32e6e",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_54e363f268ec2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ce63c4d8-ec0b-4a45-924e-e2a54e283581",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
