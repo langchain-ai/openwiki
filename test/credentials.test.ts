@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, test } from "vitest";
 import {
   needsCredentialSetup,
+  nextSetupStep,
+  orderedSetupSteps,
+  previousSpineStep,
   resolveStepStatus,
 } from "../src/credentials.tsx";
 
@@ -65,5 +68,59 @@ describe("resolveStepStatus", () => {
     expect(resolveStepStatus("langsmith", "model", true, "optional")).toBe(
       "done",
     );
+  });
+});
+
+describe("orderedSetupSteps", () => {
+  test("openai (code mode): provider, key, model, langsmith, then the tail", () => {
+    expect(orderedSetupSteps("openai", "code", false)).toEqual([
+      "provider",
+      "api-key",
+      "model",
+      "langsmith",
+      "code-repo-confirm",
+    ]);
+  });
+
+  test("run-mode is first only when mode selection is allowed", () => {
+    expect(orderedSetupSteps("openai", "code", true)[0]).toBe("run-mode");
+    expect(orderedSetupSteps("openai", "code", false)).not.toContain(
+      "run-mode",
+    );
+  });
+
+  test("bedrock adds secret-key and region before model", () => {
+    const spine = orderedSetupSteps("bedrock", "code", false);
+    expect(spine).toContain("secret-key");
+    expect(spine).toContain("region");
+    expect(spine.indexOf("secret-key")).toBeLessThan(spine.indexOf("model"));
+    expect(spine.indexOf("region")).toBeLessThan(spine.indexOf("model"));
+  });
+
+  test("personal mode ends at the template tail, not code-repo-confirm", () => {
+    const spine = orderedSetupSteps("openai", "personal", false);
+    expect(spine[spine.length - 1]).toBe("template");
+  });
+
+  test("the spine includes applicable steps regardless of env (reachability)", () => {
+    // api-key is present even when a key is already set, so navigation can
+    // still reach and re-edit it.
+    expect(orderedSetupSteps("openai", "code", false)).toContain("api-key");
+  });
+});
+
+describe("previousSpineStep and nextSetupStep", () => {
+  test("walk backward and forward through the spine", () => {
+    expect(previousSpineStep("model", "openai", "code", false)).toBe("api-key");
+    expect(nextSetupStep("api-key", "openai", "code", false)).toBe("model");
+  });
+
+  test("no-op at the ends and for null", () => {
+    expect(previousSpineStep("provider", "openai", "code", false)).toBe(null);
+    expect(nextSetupStep("code-repo-confirm", "openai", "code", false)).toBe(
+      null,
+    );
+    expect(previousSpineStep(null, "openai", "code", false)).toBe(null);
+    expect(nextSetupStep(null, "openai", "code", false)).toBe(null);
   });
 });

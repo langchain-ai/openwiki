@@ -413,6 +413,96 @@ function credentialStep(provider: OpenWikiProvider): PromptStep {
   return providerRequiresApiKey(provider) ? "api-key" : "gcp-project";
 }
 
+/**
+ * The setup steps that apply to a provider and run mode, in the order the wizard
+ * walks them. Unlike the skip-based waterfall in {@link getInitialStep}, this
+ * includes steps already satisfied by the environment, so navigation can reach
+ * and re-edit an auto-skipped step. The provider's primary credential step
+ * ({@link credentialStep}) is emitted once; for keyless providers that step is
+ * the GCP project, so it is not appended again below.
+ */
+export function orderedSetupSteps(
+  provider: OpenWikiProvider,
+  mode: OpenWikiRunMode,
+  allowModeSelection: boolean,
+): PromptStep[] {
+  const steps: PromptStep[] = [];
+
+  if (allowModeSelection) {
+    steps.push("run-mode");
+  }
+
+  steps.push("provider");
+
+  const primary = credentialStep(provider);
+  steps.push(primary);
+
+  if (providerRequiresSecretKey(provider)) {
+    steps.push("secret-key");
+  }
+  if (getProviderProjectEnvKey(provider) && primary !== "gcp-project") {
+    steps.push("gcp-project");
+  }
+  if (
+    getProviderProjectEnvKey(provider) &&
+    getProviderLocationEnvKey(provider)
+  ) {
+    steps.push("gcp-location");
+  }
+  if (providerRequiresBaseUrl(provider)) {
+    steps.push("base-url");
+  }
+  if (providerRequiresRegion(provider)) {
+    steps.push("region");
+  }
+
+  steps.push("model");
+  steps.push("langsmith");
+
+  steps.push(mode === "code" ? "code-repo-confirm" : "template");
+
+  return steps;
+}
+
+/**
+ * The step before `step` in the applicable spine, or null when `step` is the
+ * first step or is outside the spine (for example the personal-mode source
+ * sub-flow, which manages its own navigation).
+ */
+export function previousSpineStep(
+  step: PromptStep | null,
+  provider: OpenWikiProvider,
+  mode: OpenWikiRunMode,
+  allowModeSelection: boolean,
+): PromptStep | null {
+  if (step === null) {
+    return null;
+  }
+  const spine = orderedSetupSteps(provider, mode, allowModeSelection);
+  const index = spine.indexOf(step);
+  return index > 0 ? spine[index - 1] : null;
+}
+
+/**
+ * The step after `step` in the applicable spine, or null when `step` is the last
+ * spine step or outside it. Drives forward navigation: Enter advances to the
+ * next applicable step in order rather than skipping ones already satisfied by
+ * the environment, so setup reads as a sequential walk.
+ */
+export function nextSetupStep(
+  step: PromptStep | null,
+  provider: OpenWikiProvider,
+  mode: OpenWikiRunMode,
+  allowModeSelection: boolean,
+): PromptStep | null {
+  if (step === null) {
+    return null;
+  }
+  const spine = orderedSetupSteps(provider, mode, allowModeSelection);
+  const index = spine.indexOf(step);
+  return index >= 0 && index + 1 < spine.length ? spine[index + 1] : null;
+}
+
 function hasValidStoredToken(env: NodeJS.ProcessEnv = process.env): boolean {
   const tokens = readCodexTokensFromEnv(env);
 
@@ -759,18 +849,26 @@ export function InitSetup({
         setOauthTokens(tokens);
         setIsLoggingIn(false);
 
-        const nextStep = getNextStepAfterApiKey(
-          provider,
-          modelIdOverride,
-          onboardingConfig,
-          selectedMode,
-          forceModelStep,
-        );
+        const nextStep =
+          nextSetupStep(
+            "oauth-login",
+            provider,
+            selectedMode,
+            allowModeSelection,
+          ) ??
+          getNextStepAfterApiKey(
+            provider,
+            modelIdOverride,
+            onboardingConfig,
+            selectedMode,
+            forceModelStep,
+          );
 
         if (nextStep) {
           setIsCustomModelInput(
             nextStep === "model" && shouldStartWithCustomModelInput(provider),
           );
+          seedInputForStep(nextStep);
           setStep(nextStep);
           return;
         }
@@ -803,6 +901,97 @@ export function InitSetup({
     };
   }, [step, loginAttempt]);
 
+  /**
+   * Pre-fill the input or selection for a step reached via navigation, so a done
+   * step opens ready to edit. Secret steps are pre-filled with the stored key,
+   * which renders as dots (formatSecretInputDisplay), never raw.
+   */
+  function seedInputForStep(target: PromptStep): void {
+    switch (target) {
+      case "provider":
+        setProviderSelectionIndex(getProviderSelectionIndex(provider));
+        break;
+      case "run-mode":
+        setRunModeSelectionIndex(getRunModeSelectionIndex(selectedMode));
+        break;
+      case "model":
+        setModelSelectionIndex(
+          getModelSelectionIndex(
+            provider,
+            modelId ?? getDefaultModelId(provider),
+          ),
+        );
+        // Preset-less providers (e.g. Bedrock) take the model as free text, so
+        // restore the saved id into the field; selection-based providers drive
+        // off the index and keep the input empty.
+        setInput(
+          shouldStartWithCustomModelInput(provider) ? (modelId ?? "") : "",
+        );
+        break;
+      case "api-key": {
+        const envKey = getProviderApiKeyEnvKey(provider);
+        setInput(apiKey ?? (envKey ? (process.env[envKey] ?? "") : ""));
+        break;
+      }
+      case "secret-key": {
+        const envKey = getProviderSecretKeyEnvKey(provider);
+        setInput(secretKey ?? (envKey ? (process.env[envKey] ?? "") : ""));
+        break;
+      }
+      case "base-url":
+        setInput(baseUrl ?? "");
+        break;
+      case "region":
+        setInput(region ?? "");
+        break;
+      case "gcp-project":
+        setInput(gcpProject ?? "");
+        break;
+      case "gcp-location":
+        setInput(gcpLocation ?? "");
+        break;
+      case "langsmith":
+        setInput(langSmithKey ?? "");
+        break;
+      default:
+        setInput("");
+    }
+  }
+
+  /**
+   * Commit the current step's typed value into state so stepping back with Esc
+   * preserves it rather than discarding an unsubmitted edit. Only text-input
+   * steps carry a value here; selection steps commit on their own submit.
+   */
+  function captureInputForStep(from: PromptStep): void {
+    const trimmed = input.trim();
+    switch (from) {
+      case "api-key":
+        if (trimmed) setApiKey(trimmed);
+        break;
+      case "secret-key":
+        if (trimmed) setSecretKey(trimmed);
+        break;
+      case "base-url":
+        if (trimmed) setBaseUrl(trimmed);
+        break;
+      case "region":
+        if (trimmed) setRegion(trimmed);
+        break;
+      case "gcp-project":
+        if (trimmed) setGcpProject(trimmed);
+        break;
+      case "gcp-location":
+        if (trimmed) setGcpLocation(trimmed);
+        break;
+      case "langsmith":
+        setLangSmithKey(trimmed);
+        break;
+      default:
+        break;
+    }
+  }
+
   useInput((inputValue, key) => {
     if (
       isSaving ||
@@ -810,6 +999,26 @@ export function InitSetup({
       (isLoggingIn && step !== "oauth-login") ||
       step === null
     ) {
+      return;
+    }
+
+    // Esc returns to the previous applicable step so no choice is a dead end and
+    // an auto-skipped step stays reachable. It commits the current field first
+    // (so an unsubmitted edit is kept) and is a no-op on the first step.
+    if (key.escape) {
+      const target = previousSpineStep(
+        step,
+        provider,
+        selectedMode,
+        allowModeSelection,
+      );
+      if (target !== null) {
+        captureInputForStep(step);
+        setStep(target);
+        seedInputForStep(target);
+        setError(null);
+        setNotice(null);
+      }
       return;
     }
 
@@ -1105,6 +1314,7 @@ export function InitSetup({
       );
 
       if (nextStep) {
+        seedInputForStep(nextStep);
         setStep(nextStep);
         return;
       }
@@ -1171,19 +1381,27 @@ export function InitSetup({
       const providerChanged =
         process.env[OPENWIKI_PROVIDER_ENV_KEY] !== selectedProvider;
       setForceModelStep(providerChanged);
-      const nextStep = getNextStepAfterProvider(
-        selectedProvider,
-        modelIdOverride,
-        onboardingConfig,
-        selectedMode,
-        providerChanged,
-      );
+      const nextStep =
+        nextSetupStep(
+          "provider",
+          selectedProvider,
+          selectedMode,
+          allowModeSelection,
+        ) ??
+        getNextStepAfterProvider(
+          selectedProvider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          providerChanged,
+        );
 
       if (nextStep) {
         setIsCustomModelInput(
           nextStep === "model" &&
             shouldStartWithCustomModelInput(selectedProvider),
         );
+        seedInputForStep(nextStep);
         setStep(nextStep);
         return;
       }
@@ -1206,34 +1424,42 @@ export function InitSetup({
 
     if (step === "api-key") {
       const trimmedInput = input.trim();
+      // Empty submit keeps an existing key (session or env); only a genuinely
+      // missing key is an error.
+      const nextApiKey = trimmedInput.length > 0 ? trimmedInput : apiKey;
 
-      if (trimmedInput.length === 0) {
+      if (nextApiKey === null && !isCredentialConfigured(provider)) {
         setError(
           `${getProviderApiKeyEnvKey(provider) ?? "API key"} is required.`,
         );
         return;
       }
 
-      setApiKey(trimmedInput);
+      if (trimmedInput.length > 0) {
+        setApiKey(trimmedInput);
+      }
       setInput("");
-      const nextStep = getNextStepAfterApiKey(
-        provider,
-        modelIdOverride,
-        onboardingConfig,
-        selectedMode,
-        forceModelStep,
-      );
+      const nextStep =
+        nextSetupStep("api-key", provider, selectedMode, allowModeSelection) ??
+        getNextStepAfterApiKey(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
 
       if (nextStep) {
         setIsCustomModelInput(
           nextStep === "model" && shouldStartWithCustomModelInput(provider),
         );
+        seedInputForStep(nextStep);
         setStep(nextStep);
         return;
       }
 
       await completeSetup({
-        nextApiKey: trimmedInput,
+        nextApiKey,
         nextBaseUrl: baseUrl,
         nextSecretKey: secretKey,
         nextRegion: region,
@@ -1250,28 +1476,40 @@ export function InitSetup({
 
     if (step === "secret-key") {
       const trimmedInput = input.trim();
+      // Empty submit keeps an existing secret key (see the api-key step).
+      const nextSecretKey = trimmedInput.length > 0 ? trimmedInput : secretKey;
 
-      if (trimmedInput.length === 0) {
+      if (nextSecretKey === null && !isSecretKeyConfigured(provider)) {
         setError(
           `${getProviderSecretKeyEnvKey(provider) ?? "Secret key"} is required.`,
         );
         return;
       }
 
-      setSecretKey(trimmedInput);
+      if (trimmedInput.length > 0) {
+        setSecretKey(trimmedInput);
+      }
       setInput("");
-      const nextStep = getNextStepAfterSecretKey(
-        provider,
-        modelIdOverride,
-        onboardingConfig,
-        selectedMode,
-        forceModelStep,
-      );
+      const nextStep =
+        nextSetupStep(
+          "secret-key",
+          provider,
+          selectedMode,
+          allowModeSelection,
+        ) ??
+        getNextStepAfterSecretKey(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
 
       if (nextStep) {
         setIsCustomModelInput(
           nextStep === "model" && shouldStartWithCustomModelInput(provider),
         );
+        seedInputForStep(nextStep);
         setStep(nextStep);
         return;
       }
@@ -1279,7 +1517,7 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
-        nextSecretKey: trimmedInput,
+        nextSecretKey,
         nextRegion: region,
         nextGcpLocation: gcpLocation,
         nextGcpProject: gcpProject,
@@ -1304,18 +1542,21 @@ export function InitSetup({
 
       setRegion(trimmedInput);
       setInput("");
-      const nextStep = getNextStepAfterRegion(
-        provider,
-        modelIdOverride,
-        onboardingConfig,
-        selectedMode,
-        forceModelStep,
-      );
+      const nextStep =
+        nextSetupStep("region", provider, selectedMode, allowModeSelection) ??
+        getNextStepAfterRegion(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
 
       if (nextStep) {
         setIsCustomModelInput(
           nextStep === "model" && shouldStartWithCustomModelInput(provider),
         );
+        seedInputForStep(nextStep);
         setStep(nextStep);
         return;
       }
@@ -1353,6 +1594,9 @@ export function InitSetup({
 
       setGcpProject(trimmedInput);
       setInput("");
+      // gcp-location always follows gcp-project (gemini-enterprise); seed it so a
+      // previously entered location is restored instead of arriving blank.
+      seedInputForStep("gcp-location");
       setStep("gcp-location");
       return;
     }
@@ -1371,18 +1615,26 @@ export function InitSetup({
 
       setGcpLocation(nextGcpLocation);
       setInput("");
-      const nextStep = getNextStepAfterGcpLocation(
-        provider,
-        modelIdOverride,
-        onboardingConfig,
-        selectedMode,
-        forceModelStep,
-      );
+      const nextStep =
+        nextSetupStep(
+          "gcp-location",
+          provider,
+          selectedMode,
+          allowModeSelection,
+        ) ??
+        getNextStepAfterGcpLocation(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
 
       if (nextStep) {
         setIsCustomModelInput(
           nextStep === "model" && shouldStartWithCustomModelInput(provider),
         );
+        seedInputForStep(nextStep);
         setStep(nextStep);
         return;
       }
@@ -1420,18 +1672,21 @@ export function InitSetup({
 
       setBaseUrl(trimmedInput);
       setInput("");
-      const nextStep = getNextStepAfterBaseUrl(
-        provider,
-        modelIdOverride,
-        onboardingConfig,
-        selectedMode,
-        forceModelStep,
-      );
+      const nextStep =
+        nextSetupStep("base-url", provider, selectedMode, allowModeSelection) ??
+        getNextStepAfterBaseUrl(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
 
       if (nextStep) {
         setIsCustomModelInput(
           nextStep === "model" && shouldStartWithCustomModelInput(provider),
         );
+        seedInputForStep(nextStep);
         setStep(nextStep);
         return;
       }
@@ -1475,24 +1730,10 @@ export function InitSetup({
       setInput("");
       setIsCustomModelInput(false);
 
-      if (process.env.LANGSMITH_API_KEY === undefined) {
-        setStep("langsmith");
-        return;
-      }
-
-      await continueAfterCredentials({
-        nextApiKey: apiKey,
-        nextBaseUrl: baseUrl,
-        nextSecretKey: secretKey,
-        nextRegion: region,
-        nextGcpLocation: gcpLocation,
-        nextGcpProject: gcpProject,
-        nextLangSmithKey: langSmithKey,
-        nextModelId: selectedModelId,
-        nextOAuthTokens: oauthTokens,
-        nextProvider: provider,
-        runMode: selectedMode,
-      });
+      // Sequential: always visit LangSmith next (the next spine step). Seed it
+      // from state so a key entered earlier and stepped past is not dropped.
+      seedInputForStep("langsmith");
+      setStep("langsmith");
       return;
     }
 
@@ -2519,8 +2760,19 @@ export function InitSetup({
         </SetupPanel>
       )}
 
+      {previousSpineStep(step, provider, selectedMode, allowModeSelection) !==
+      null ? (
+        <Box marginLeft={2}>
+          <Text color="gray">esc to go back</Text>
+        </Box>
+      ) : null}
+
       {needsCredentialPrompt ? (
-        <Text color="gray">Secrets are masked and saved only after setup.</Text>
+        <Box marginLeft={2}>
+          <Text color="gray">
+            Secrets are masked and saved only after setup.
+          </Text>
+        </Box>
       ) : null}
       {notice ? (
         <SetupPanel title="Status">
