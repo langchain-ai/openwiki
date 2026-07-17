@@ -1,0 +1,39 @@
+test/prompt.test.ts
+  s_8fb447fde72b26::t_a1049a109edbd5 1-47
+src/agent/prompt.ts
+  s_8fb447fde72b26::t_801ae5f47a3208 335-338
+  s_8fb447fde72b26::t_e5e8b99c0d2e32 27
+  s_8fb447fde72b26::t_f18d42c17acaf8 463-466
+  s_8fb447fde72b26::t_b16b7d49f02554 309
+  s_8fb447fde72b26::t_f3840efd0cb07c 63
+  s_8fb447fde72b26::t_8c96aef3a07073 431-435
+  s_8fb447fde72b26::t_fff8f97ac6740b 418-422
+  s_8fb447fde72b26::t_bb3b499e14d804 325
+pnpm-workspace.yaml
+  s_8fb447fde72b26::t_1dfe25c179f2a3 16
+package.json
+  s_8fb447fde72b26::t_d51d55311d7560 59
+pnpm-lock.yaml
+  s_8fb447fde72b26::t_2d156469a1b07e 54-55,996-997,2900
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "26aae94da593e461b2e764cdd9bbc0ee6dc3ff2f",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8fb447fde72b26": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0d03c489-5158-4869-a367-e12fd350515b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
