@@ -59,7 +59,6 @@ import {
   isOpenWikiOnboardingCompleteSync,
   isOnboardingComplete,
   isRepositoryCodeOnboardingCompleteSync,
-  openWikiOnboardingPath,
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
   saveRepositoryWikiInstructions,
@@ -554,6 +553,9 @@ export function InitSetup({
   const [gcpLocation, setGcpLocation] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
+  // True once the user confirms a provider this session. Provider always holds a
+  // default value, so a null-check cannot detect the in-session choice.
+  const [providerConfirmed, setProviderConfirmed] = useState(false);
   const [input, setInput] = useState("");
   const [onboardingConfig, setOnboardingConfig] =
     useState<OpenWikiOnboardingConfig>(() => createEmptyOnboardingConfig());
@@ -1157,6 +1159,7 @@ export function InitSetup({
         DEFAULT_PROVIDER;
 
       setProvider(selectedProvider);
+      setProviderConfirmed(true);
       setProviderSelectionIndex(getProviderSelectionIndex(selectedProvider));
       setModelSelectionIndex(
         getModelSelectionIndex(
@@ -2254,220 +2257,221 @@ export function InitSetup({
     <Box flexDirection="column">
       <SetupHeader />
 
-      <Box flexDirection="column" marginBottom={1}>
-        <SetupStep
-          label="Provider"
-          state={
-            hasValidConfiguredProvider()
-              ? "done"
-              : step === "provider"
-                ? "current"
-                : "pending"
-          }
-          detail={getProviderSetupDetail(provider)}
-        />
-        {providerUsesOAuth(provider) || apiKeyEnvKey ? (
+      <Box flexDirection="column" marginBottom={1} marginLeft={2}>
+        <Text color="gray">Detected from your command</Text>
+        <Box flexDirection="column" marginLeft={2}>
           <SetupStep
-            label={
-              providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"
-            }
+            label="Run mode"
             state={
-              isCredentialConfigured(provider) || oauthTokens
-                ? "done"
-                : step === credentialStep(provider)
+              allowModeSelection
+                ? step === "run-mode"
                   ? "current"
-                  : "pending"
-            }
-            detail={getCredentialSetupDetail(provider, oauthTokens)}
-          />
-        ) : null}
-        {providerRequiresSecretKey(provider) ? (
-          <SetupStep
-            label="Secret key"
-            state={
-              isSecretKeyConfigured(provider)
-                ? "done"
-                : step === "secret-key"
-                  ? "current"
-                  : "pending"
-            }
-            detail={
-              isSecretKeyConfigured(provider)
-                ? "available from environment"
-                : `save ${getProviderSecretKeyEnvKey(provider)} to ${openWikiEnvPath}`
-            }
-          />
-        ) : null}
-        {projectEnvKey ? (
-          <SetupStep
-            label="GCP project"
-            state={
-              process.env[projectEnvKey]
-                ? "done"
-                : step === "gcp-project"
-                  ? "current"
-                  : "pending"
-            }
-            detail={
-              process.env[projectEnvKey]
-                ? "available from environment"
-                : `save ${projectEnvKey} to ${openWikiEnvPath}`
-            }
-          />
-        ) : null}
-        {projectEnvKey && locationEnvKey ? (
-          <SetupStep
-            label="GCP location"
-            state={
-              process.env[locationEnvKey]
-                ? "done"
-                : step === "gcp-location"
-                  ? "current"
-                  : "optional"
-            }
-            detail={
-              process.env[locationEnvKey]
-                ? "available from environment"
-                : `optional, defaults to ${DEFAULT_VERTEX_LOCATION}`
-            }
-          />
-        ) : null}
-        {providerRequiresBaseUrl(provider) ? (
-          <SetupStep
-            label="Base URL"
-            state={
-              isBaseUrlConfigured(provider)
-                ? "done"
-                : step === "base-url"
-                  ? "current"
-                  : "pending"
-            }
-            detail={
-              isBaseUrlConfigured(provider)
-                ? "available from environment"
-                : `save ${getProviderBaseUrlEnvKey(provider)} to ${openWikiEnvPath}`
-            }
-          />
-        ) : null}
-        {providerRequiresRegion(provider) ? (
-          <SetupStep
-            label="Region"
-            state={
-              isRegionConfigured(provider)
-                ? "done"
-                : step === "region"
-                  ? "current"
-                  : "pending"
-            }
-            detail={
-              isRegionConfigured(provider)
-                ? "available from environment"
-                : `save ${getProviderRegionEnvKey(provider)} to ${openWikiEnvPath}`
-            }
-          />
-        ) : null}
-        <SetupStep
-          label="Model"
-          state={
-            modelIdOverride || process.env[OPENWIKI_MODEL_ID_ENV_KEY]
-              ? "done"
-              : step === "model"
-                ? "current"
-                : "pending"
-          }
-          detail={getModelSetupDetail(modelIdOverride, provider)}
-        />
-        <SetupStep
-          label="LangSmith"
-          state={
-            process.env.LANGSMITH_API_KEY !== undefined
-              ? "done"
-              : step === "langsmith"
-                ? "current"
-                : "optional"
-          }
-          detail={
-            process.env.LANGSMITH_API_KEY !== undefined
-              ? "available from environment"
-              : "optional tracing key"
-          }
-        />
-        <SetupStep
-          label="Run mode"
-          state={
-            allowModeSelection
-              ? step === "run-mode"
-                ? "current"
+                  : "done"
                 : "done"
-              : "done"
-          }
-          detail={getRunModeName(selectedMode)}
-        />
-        {selectedMode === "personal" ? (
-          <SetupStep
-            label="Personal profile"
-            state={
-              onboardingConfig.templateId
-                ? "done"
-                : step === "template"
-                  ? "current"
-                  : "pending"
             }
-            detail={getConfigModeName(onboardingConfig) ?? "choose a profile"}
+            detail={getRunModeName(selectedMode)}
           />
-        ) : null}
-        <SetupStep
-          label="Wiki scope"
-          state={
-            selectedMode === "code"
-              ? "done"
-              : onboardingConfig.wikiGoal
-                ? "done"
-                : step === "wiki-goal"
-                  ? "current"
-                  : "pending"
-          }
-          detail={
-            selectedMode === "code"
-              ? "repository openwiki/"
-              : onboardingConfig.wikiGoal
-                ? "saved"
-                : `save onboarding profile to ${openWikiOnboardingPath}`
-          }
-        />
-        {selectedMode === "personal" ? (
+          {selectedMode === "code" ? (
+            <SetupStep label="Wiki scope" state="done" detail="openwiki/" />
+          ) : null}
+        </Box>
+      </Box>
+
+      <Box flexDirection="column" marginLeft={2}>
+        <Text color="gray">Set up</Text>
+        <Box flexDirection="column" marginLeft={2}>
           <SetupStep
-            label="Schedule"
-            state={
-              onboardingConfig.ingestionSchedule
-                ? "done"
-                : isScheduleStep(step)
-                  ? "current"
-                  : "pending"
-            }
+            label="Provider"
+            state={resolveStepStatus(
+              "provider",
+              step,
+              hasValidConfiguredProvider() || providerConfirmed,
+            )}
+            detail={getProviderLabel(provider)}
+          />
+          {providerUsesOAuth(provider) || apiKeyEnvKey ? (
+            <SetupStep
+              label={
+                providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"
+              }
+              state={resolveStepStatus(
+                credentialStep(provider),
+                step,
+                apiKey !== null ||
+                  isCredentialConfigured(provider) ||
+                  oauthTokens !== null,
+              )}
+              detail={
+                providerUsesOAuth(provider)
+                  ? getCredentialSetupDetail(provider, oauthTokens)
+                  : apiKey !== null || isCredentialConfigured(provider)
+                    ? "configured"
+                    : "not set"
+              }
+            />
+          ) : null}
+          {providerRequiresSecretKey(provider) ? (
+            <SetupStep
+              label="Secret key"
+              state={resolveStepStatus(
+                "secret-key",
+                step,
+                secretKey !== null || isSecretKeyConfigured(provider),
+              )}
+              detail={
+                secretKey !== null || isSecretKeyConfigured(provider)
+                  ? "configured"
+                  : "not set"
+              }
+            />
+          ) : null}
+          {projectEnvKey ? (
+            <SetupStep
+              label="GCP project"
+              state={resolveStepStatus(
+                "gcp-project",
+                step,
+                gcpProject !== null || process.env[projectEnvKey] !== undefined,
+              )}
+              detail={
+                gcpProject ??
+                (process.env[projectEnvKey] ? "configured" : "not set")
+              }
+            />
+          ) : null}
+          {projectEnvKey && locationEnvKey ? (
+            <SetupStep
+              label="GCP location"
+              state={resolveStepStatus(
+                "gcp-location",
+                step,
+                gcpLocation !== null ||
+                  process.env[locationEnvKey] !== undefined,
+                "optional",
+              )}
+              detail={
+                gcpLocation ??
+                (process.env[locationEnvKey]
+                  ? "configured"
+                  : `default ${DEFAULT_VERTEX_LOCATION}`)
+              }
+            />
+          ) : null}
+          {providerRequiresBaseUrl(provider) ? (
+            <SetupStep
+              label="Base URL"
+              state={resolveStepStatus(
+                "base-url",
+                step,
+                baseUrl !== null || isBaseUrlConfigured(provider),
+              )}
+              detail={
+                baseUrl ??
+                (isBaseUrlConfigured(provider) ? "configured" : "not set")
+              }
+            />
+          ) : null}
+          {providerRequiresRegion(provider) ? (
+            <SetupStep
+              label="Region"
+              state={resolveStepStatus(
+                "region",
+                step,
+                region !== null || isRegionConfigured(provider),
+              )}
+              detail={
+                region ??
+                (isRegionConfigured(provider) ? "configured" : "not set")
+              }
+            />
+          ) : null}
+          <SetupStep
+            label="Model"
+            state={resolveStepStatus(
+              "model",
+              step,
+              modelId !== null ||
+                modelIdOverride !== null ||
+                process.env[OPENWIKI_MODEL_ID_ENV_KEY] !== undefined,
+            )}
+            detail={modelId ?? getModelSetupDetail(modelIdOverride, provider)}
+          />
+          <SetupStep
+            label="LangSmith"
+            state={resolveStepStatus(
+              "langsmith",
+              step,
+              langSmithKey !== null ||
+                process.env.LANGSMITH_API_KEY !== undefined,
+              "optional",
+            )}
             detail={
-              onboardingConfig.ingestionSchedule
-                ? onboardingConfig.ingestionSchedule.description
-                : "choose one time for all ingestion"
+              langSmithKey !== null
+                ? langSmithKey.length > 0
+                  ? "configured"
+                  : "skipped"
+                : process.env.LANGSMITH_API_KEY !== undefined
+                  ? "configured"
+                  : "not set"
             }
           />
-        ) : null}
-        {selectedMode === "personal" ? (
-          <SetupStep
-            label="Sources"
-            state={
-              getConnectedSourceCount(onboardingConfig, activeSourceOptions) > 0
-                ? "done"
-                : isSourceStep(step)
-                  ? "current"
-                  : "pending"
-            }
-            detail={`${getConnectedSourceCount(
-              onboardingConfig,
-              activeSourceOptions,
-            )} setup(s) configured`}
-          />
-        ) : null}
+          {selectedMode === "personal" ? (
+            <SetupStep
+              label="Personal profile"
+              state={resolveStepStatus(
+                "template",
+                step,
+                Boolean(onboardingConfig.templateId),
+              )}
+              detail={getConfigModeName(onboardingConfig) ?? "not set"}
+            />
+          ) : null}
+          {selectedMode === "personal" ? (
+            <SetupStep
+              label="Wiki scope"
+              state={resolveStepStatus(
+                "wiki-goal",
+                step,
+                Boolean(onboardingConfig.wikiGoal),
+              )}
+              detail={onboardingConfig.wikiGoal ? "configured" : "not set"}
+            />
+          ) : null}
+          {selectedMode === "personal" ? (
+            <SetupStep
+              label="Schedule"
+              state={
+                onboardingConfig.ingestionSchedule
+                  ? "done"
+                  : isScheduleStep(step)
+                    ? "current"
+                    : "pending"
+              }
+              detail={
+                onboardingConfig.ingestionSchedule
+                  ? onboardingConfig.ingestionSchedule.description
+                  : "not set"
+              }
+            />
+          ) : null}
+          {selectedMode === "personal" ? (
+            <SetupStep
+              label="Sources"
+              state={
+                getConnectedSourceCount(onboardingConfig, activeSourceOptions) >
+                0
+                  ? "done"
+                  : isSourceStep(step)
+                    ? "current"
+                    : "pending"
+              }
+              detail={`${getConnectedSourceCount(
+                onboardingConfig,
+                activeSourceOptions,
+              )} configured`}
+            />
+          ) : null}
+        </Box>
       </Box>
 
       {step === "oauth-login" ? (
@@ -3216,6 +3220,48 @@ function SetupHeader() {
   );
 }
 
+type SetupStepState = "current" | "done" | "optional" | "pending";
+
+/**
+ * Resolve a checklist row's status. The active step wins, so navigating back to
+ * an already-done step shows the current-row cursor rather than a check; a done
+ * step reads done; anything else falls to its resting status.
+ */
+export function resolveStepStatus(
+  id: PromptStep,
+  activeStep: PromptStep | null,
+  done: boolean,
+  resting: "optional" | "pending" = "pending",
+): SetupStepState {
+  if (id === activeStep) {
+    return "current";
+  }
+  if (done) {
+    return "done";
+  }
+  return resting;
+}
+
+/**
+ * Progress glyph per status: a check for done, an arrow for the active row, a
+ * hollow circle for not-started (and optional). Single cell wide so every row's
+ * label column lines up without padding the marker.
+ */
+const STEP_GLYPH: Record<SetupStepState, string> = {
+  done: "✓",
+  current: "❯",
+  optional: "○",
+  pending: "○",
+};
+
+/** Color per status. Optionality is conveyed by the detail text, not the glyph. */
+const STEP_COLOR: Record<SetupStepState, string> = {
+  done: "green",
+  current: "cyan",
+  optional: "gray",
+  pending: "gray",
+};
+
 function SetupStep({
   detail,
   label,
@@ -3223,21 +3269,15 @@ function SetupStep({
 }: {
   detail: string;
   label: string;
-  state: "current" | "done" | "optional" | "pending";
+  state: SetupStepState;
 }) {
-  const color =
-    state === "done"
-      ? "green"
-      : state === "current"
-        ? "yellow"
-        : state === "optional"
-          ? "cyan"
-          : "gray";
-
   return (
     <Text>
-      <Text color={color}>[{state.toUpperCase()}]</Text>{" "}
-      <Text bold>{label.padEnd(16)}</Text> <Text color="gray">{detail}</Text>
+      <Text color={STEP_COLOR[state]}>{STEP_GLYPH[state]}</Text>{" "}
+      <Text bold={state === "current" || state === "done"}>
+        {label.padEnd(16)}
+      </Text>{" "}
+      <Text color="gray">{detail}</Text>
     </Text>
   );
 }
@@ -3487,7 +3527,9 @@ function InputValueWithCursor({
 }
 
 function formatSecretInputDisplay(value: string): string {
-  return value.length === 0 ? "empty" : `hidden (${value.length} chars)`;
+  // Empty renders as nothing (just the cursor); dots for the entered length,
+  // matching the non-secret inputs rather than printing a literal "empty".
+  return "•".repeat(value.length);
 }
 
 function formatTerminalHyperlink(url: string, label: string): string {
@@ -3916,14 +3958,6 @@ function isSourceStep(step: PromptStep | null): boolean {
 
 function isScheduleStep(step: PromptStep | null): boolean {
   return Boolean(step?.startsWith("global-"));
-}
-
-function getProviderSetupDetail(provider: OpenWikiProvider): string {
-  if (hasValidConfiguredProvider()) {
-    return getProviderLabel(provider);
-  }
-
-  return `default ${getProviderLabel(DEFAULT_PROVIDER)}`;
 }
 
 /**
