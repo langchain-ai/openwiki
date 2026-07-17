@@ -1,0 +1,46 @@
+src/diagnostics.ts
+  s_54e363f268ec2d::t_c43716b4793b56 138
+  s_54e363f268ec2d::t_2df4b87644987c 119-137,139-142
+src/cli.tsx
+  s_54e363f268ec2d::t_1ef37fdbb0ef42 31
+  s_54e363f268ec2d::t_d5f278248f7ad2 407-419,433,641-653,667
+  s_54e363f268ec2d::t_d5902aea312df5 3272-3296,4136
+  s_54e363f268ec2d::t_91cfe34a9f643a 4108-4110,4116-4135
+  s_54e363f268ec2d::t_5d4b2d59a81f42 40
+  s_54e363f268ec2d::t_66d804ed170bdd 158-168
+  s_54e363f268ec2d::t_056705a933c4e4 1096-1101,1114-1119
+  s_54e363f268ec2d::t_2f033d77bc753d 949
+  s_54e363f268ec2d::t_7a080991726a3d 126
+  s_54e363f268ec2d::t_ddf8dff17b0a2b 1102-1113,1120-1134
+  s_54e363f268ec2d::t_06b831baf5f72e 4137-4139
+test/commands.test.ts
+  s_54e363f268ec2d::t_e018240f3c6a1c 9,14-15,23-41
+test/diagnostics.test.ts
+  s_54e363f268ec2d::t_06167b038ad7ae 20-24,36
+  s_54e363f268ec2d::t_6fbf569c82d48f 1-19,25-35,37-43
+src/commands.ts
+  s_54e363f268ec2d::t_9ea9a8d0f6ec7b 372-378
+  s_54e363f268ec2d::t_585d4c92c54099 738-741
+  s_54e363f268ec2d::t_75df84e32ac1e5 737
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "1ad3ac8a83610e18389c84ed9d928c46a0364261",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_54e363f268ec2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ce63c4d8-ec0b-4a45-924e-e2a54e283581",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
