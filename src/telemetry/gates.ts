@@ -29,8 +29,8 @@ export function ciSentinelId(): string {
   const provider = ciInfo.name
     ? ciInfo.name
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "")
+        .replace(/[^a-z0-9]+/gu, "-")
+        .replace(/(^-|-$)/gu, "")
     : "unknown";
 
   return `ci-${provider}`;
