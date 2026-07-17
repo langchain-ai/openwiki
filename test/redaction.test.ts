@@ -181,6 +181,26 @@ describe("sanitizeDiagnosticText", () => {
     expect(result).not.toContain("compatible-secret-key-99999");
     expect(result).toContain("[REDACTED:OPENAI_COMPATIBLE_API_KEY]");
   });
+
+  test("redacts the exact value of BEDROCK_AWS_SECRET_ACCESS_KEY set in the environment", () => {
+    const originalSecretKey = process.env.BEDROCK_AWS_SECRET_ACCESS_KEY;
+    process.env.BEDROCK_AWS_SECRET_ACCESS_KEY = "aws-secret-key-abcdef123456";
+
+    try {
+      const result = sanitizeDiagnosticText(
+        "request failed with key aws-secret-key-abcdef123456 attached",
+      );
+
+      expect(result).not.toContain("aws-secret-key-abcdef123456");
+      expect(result).toContain("[REDACTED:BEDROCK_AWS_SECRET_ACCESS_KEY]");
+    } finally {
+      if (originalSecretKey === undefined) {
+        delete process.env.BEDROCK_AWS_SECRET_ACCESS_KEY;
+      } else {
+        process.env.BEDROCK_AWS_SECRET_ACCESS_KEY = originalSecretKey;
+      }
+    }
+  });
 });
 
 describe("isOpenRouterServerError", () => {
