@@ -101,10 +101,12 @@ async function synchronizeDirectory(
     }
 
     const filePath = path.posix.join(directory.path, name);
-    const metadata = parseFrontmatter(
-      await readText(backend, filePath),
+    const content = await ensureFrontmatter(
+      backend,
       filePath,
+      await readText(backend, filePath),
     );
+    const metadata = parseFrontmatter(content, filePath);
     files.push({
       description: metadata.description,
       href: encodeURIComponent(name),
@@ -131,6 +133,81 @@ async function synchronizeDirectory(
   if (result.error) {
     throw new Error(`Unable to write ${indexPath}: ${result.error}`);
   }
+}
+
+/** Adds minimal OKF front matter to legacy Markdown so indexing is zero-touch. */
+async function ensureFrontmatter(
+  backend: BackendProtocolV2,
+  filePath: string,
+  content: string,
+): Promise<string> {
+  if (hasFrontmatterOpening(content)) return content;
+
+  const title =
+    firstHeading(content) ??
+    titleFromSlug(path.posix.basename(filePath, ".md"));
+  const description = firstParagraph(content) ?? `OpenWiki page for ${title}.`;
+  const repaired = `${renderFallbackFrontmatter(title, description)}${content}`;
+  const result = await backend.edit(filePath, content, repaired);
+  if (result.error) {
+    throw new Error(`Unable to add front matter to ${filePath}: ${result.error}`);
+  }
+  return repaired;
+}
+
+/** Checks only for a leading delimiter; malformed YAML still fails in parsing. */
+function hasFrontmatterOpening(content: string): boolean {
+  return /^---\r?\n/u.test(content);
+}
+
+/** Renders minimal supported OpenWiki front matter for legacy pages. */
+function renderFallbackFrontmatter(title: string, description: string): string {
+  return `---\ntype: Reference\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(description)}\n---\n\n`;
+}
+
+/** Extracts the first Markdown heading as display title. */
+function firstHeading(content: string): string | undefined {
+  const match = /^#\s+(.+?)\s*#*\s*$/mu.exec(content);
+  return match?.[1]?.trim() || undefined;
+}
+
+/** Extracts a compact first prose paragraph for index descriptions. */
+function firstParagraph(content: string): string | undefined {
+  const blocks = content.split(/\r?\n\s*\r?\n/u);
+  for (const block of blocks) {
+    const normalized = block
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .join(" ");
+    if (
+      !normalized ||
+      normalized.startsWith("#") ||
+      normalized.startsWith("```") ||
+      normalized.startsWith("|")
+    ) {
+      continue;
+    }
+
+    return truncateDescription(stripMarkdownSyntax(normalized));
+  }
+  return undefined;
+}
+
+/** Removes lightweight inline Markdown markers from synthesized descriptions. */
+function stripMarkdownSyntax(value: string): string {
+  return value
+    .replace(/!\[([^\]]*)\]\([^)]+\)/gu, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/gu, "$1")
+    .replace(/[`*_~]+/gu, "")
+    .trim();
+}
+
+/** Keeps generated descriptions readable in indexes and front matter. */
+function truncateDescription(value: string): string {
+  const maxLength = 180;
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
 /** Renders a complete deterministic index document. */

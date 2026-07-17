@@ -95,6 +95,67 @@ describe("synchronizeWikiIndexes", () => {
     expect(repaired).not.toContain("_plan.md");
   });
 
+  test("adds front matter to legacy Markdown before indexing", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/runtime-provisioning.md",
+      [
+        "# Runtime Provisioning",
+        "",
+        "Explains AMI build, boot-time setup, and PAM hooks.",
+        "",
+        "## Details",
+        "",
+        "More content.",
+      ].join("\n"),
+    );
+
+    await synchronizeWikiIndexes(backend, "repository");
+
+    const page = await readFile(
+      path.join(rootDir, "openwiki/runtime-provisioning.md"),
+      "utf8",
+    );
+    const index = await readFile(
+      path.join(rootDir, "openwiki/index.md"),
+      "utf8",
+    );
+
+    expect(page).toMatch(/^---\ntype: Reference\n/);
+    expect(page).toContain("title: \"Runtime Provisioning\"");
+    expect(page).toContain(
+      'description: "Explains AMI build, boot-time setup, and PAM hooks."',
+    );
+    expect(page).toContain("\n---\n\n# Runtime Provisioning");
+    expect(index).toContain(
+      "- [Runtime Provisioning](runtime-provisioning.md) - Explains AMI build, boot-time setup, and PAM hooks.",
+    );
+  });
+
+  test("uses filename and generic description for empty legacy Markdown", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/source-map.md", "");
+
+    await synchronizeWikiIndexes(backend, "repository");
+
+    const page = await readFile(
+      path.join(rootDir, "openwiki/source-map.md"),
+      "utf8",
+    );
+    const index = await readFile(
+      path.join(rootDir, "openwiki/index.md"),
+      "utf8",
+    );
+
+    expect(page).toContain("title: \"Source Map\"");
+    expect(page).toContain(
+      'description: "OpenWiki page for Source Map."',
+    );
+    expect(index).toContain(
+      "- [Source Map](source-map.md) - OpenWiki page for Source Map.",
+    );
+  });
+
   test("indexes a valid OKF file without an optional description", async () => {
     const { backend, rootDir } = await setup();
     await backend.write(
