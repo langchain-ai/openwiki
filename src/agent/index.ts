@@ -1,15 +1,20 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
+import { AnthropicVertex } from "@anthropic-ai/vertex-sdk";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatBedrockConverse } from "@langchain/aws";
+import { ChatGoogle } from "@langchain/google/node";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import { createDeepAgent } from "deepagents";
+import {
+  CompositeBackend,
+  createDeepAgent,
+  FilesystemBackend,
+} from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
-import { ensureWriteConnectorSkill } from "../connectors/write-connector-skill.js";
 import {
   DEBUG_ENV_KEYS,
   loadOpenWikiEnv,
@@ -18,8 +23,9 @@ import {
 } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
-import { openWikiLocalWikiDir } from "../openwiki-home.js";
+import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
+import { createOpenWikiIndexMiddleware } from "./index-middleware.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -30,6 +36,15 @@ import {
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
+import { syncBundledSkills } from "./skills.js";
+import {
+  createVertexAuthFetch,
+  resolveVertexSurface,
+  stripPublisherPath,
+  toVertexPublisherModel,
+  vertexOpenAIBaseUrl,
+  withAnthropicAuthEnvNeutralized,
+} from "./vertex-surface.js";
 import type {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -41,12 +56,16 @@ import {
   ANTHROPIC_BASE_URL_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
   getDefaultModelId,
+  getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
+  getProviderCredentialHint,
   getProviderLabel,
   getProviderModelOptions,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
+  DEFAULT_VERTEX_LOCATION,
+  GOOGLE_CLOUD_PROJECT_ENV_KEY,
   isValidModelId,
   normalizeModelId,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
@@ -60,6 +79,7 @@ import {
   providerRequiresSecretKey,
   resolveConfiguredProvider,
   resolveProviderBaseUrl,
+  resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
   type OpenWikiProvider,
@@ -71,6 +91,7 @@ import {
   persistRunMetadataIfChanged,
   shouldCheckUpdateNoop,
 } from "./utils.js";
+import { classifyError, recordRunSafe } from "../telemetry/index.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -89,7 +110,7 @@ export async function runOpenWikiAgent(
   emitDebug(options, `env.beforeLoad ${formatEnvironmentDebug()}`);
 
   await loadOpenWikiEnv();
-  await ensureWriteConnectorSkill();
+  await syncBundledSkills();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
@@ -101,6 +122,11 @@ export async function runOpenWikiAgent(
         "No repository changes detected since the last OpenWiki update; skipping agent run.";
       emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
       options.onEvent?.({ type: "text", text: message });
+
+      await recordRunSafe(command, options, {
+        provider: resolveConfiguredProvider(),
+        outcome: "noop",
+      });
 
       return {
         command,
@@ -114,33 +140,39 @@ export async function runOpenWikiAgent(
     emitDebug(options, "update.noop=false reason=user message provided");
   }
 
-  const provider = resolveConfiguredProvider();
-  const providerBaseUrl = resolveProviderBaseUrl(provider);
-  emitDebug(options, `provider=${provider}`);
-  if (providerBaseUrl) {
-    emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
-  }
-  ensureProviderKey(provider);
-  emitDebug(options, `credentials=${provider} key present`);
-  ensureProviderBaseUrl(provider);
-  ensureProviderSecretKey(provider);
-  ensureProviderRegion(provider);
-
-  if (provider === "openai-chatgpt") {
-    // Refresh before the model is built, so `createModel` stays synchronous.
-    await ensureFreshChatGptTokens();
-    emitDebug(options, "chatgpt.token=fresh");
-  }
-
-  const modelId = resolveModelId(options, provider);
-  emitDebug(options, `model=${modelId}`);
-  const providerRetryAttempts = resolveProviderRetryAttempts();
-  emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
-
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
+  // Resolved inside the try so a failure during resolution (missing key,
+  // invalid model, missing base URL) is still recorded. They may be undefined
+  // in the catch if resolution threw before assigning them.
+  let provider: OpenWikiProvider | undefined;
+  let modelId: string | undefined;
+
   try {
-    return await runOpenWikiAgentCore(
+    provider = resolveConfiguredProvider();
+    const providerBaseUrl = resolveProviderBaseUrl(provider);
+    emitDebug(options, `provider=${provider}`);
+    if (providerBaseUrl) {
+      emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
+    }
+    ensureProviderCredentials(provider);
+    emitDebug(options, `credentials=${provider} present`);
+    ensureProviderBaseUrl(provider);
+    ensureProviderSecretKey(provider);
+    ensureProviderRegion(provider);
+
+    if (provider === "openai-chatgpt") {
+      // Refresh before the model is built, so `createModel` stays synchronous.
+      await ensureFreshChatGptTokens();
+      emitDebug(options, "chatgpt.token=fresh");
+    }
+
+    modelId = resolveModelId(options, provider);
+    emitDebug(options, `model=${modelId}`);
+    const providerRetryAttempts = resolveProviderRetryAttempts();
+    emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
+
+    const result = await runOpenWikiAgentCore(
       command,
       runtimeCwd,
       options,
@@ -148,8 +180,22 @@ export async function runOpenWikiAgent(
       modelId,
       providerRetryAttempts,
     );
+
+    await recordRunSafe(command, options, {
+      provider,
+      outcome: "success",
+    });
+
+    return result;
   } catch (error) {
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
+
+    await recordRunSafe(command, options, {
+      provider,
+      outcome: "failure",
+      errorClass: classifyError(error),
+    });
+
     throw error;
   } finally {
     debugFetchCapture.restore();
@@ -185,18 +231,33 @@ async function runOpenWikiAgentCore(
       ? `checkpointer=${formatUrlDebugValue(checkpointTarget.connString)}`
       : "checkpointer=memory",
   );
+  const wikiBackend = new OpenWikiLocalShellBackend({
+    docsOnly: command !== "chat",
+    maxOutputBytes: 100_000,
+    outputMode,
+    rootDir: cwd,
+    timeout: 120,
+    virtualMode: true,
+  });
+  const backend = new CompositeBackend(wikiBackend, {
+    "/skills/": new FilesystemBackend({
+      rootDir: openWikiSkillsDir,
+      virtualMode: true,
+    }),
+  });
   const agent = createDeepAgent({
     model,
     tools: createOpenWikiConnectorTools(),
     checkpointer,
-    backend: new OpenWikiLocalShellBackend({
-      docsOnly: command !== "chat",
-      maxOutputBytes: 100_000,
-      outputMode,
-      rootDir: cwd,
-      timeout: 120,
-      virtualMode: true,
-    }),
+    backend,
+    middleware:
+      command === "chat"
+        ? []
+        : [createOpenWikiIndexMiddleware(wikiBackend, outputMode)],
+    skills: ["/skills/"],
+    permissions: [
+      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
+    ],
     systemPrompt: createSystemPrompt(command, outputMode),
   });
   emitDebug(options, "agent=created");
@@ -412,14 +473,20 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
   });
 }
 
-function ensureProviderKey(provider: OpenWikiProvider): void {
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+function ensureProviderCredentials(provider: OpenWikiProvider): void {
+  const missingEnvKey = getMissingProviderEnvKey(provider);
 
-  if (!process.env[apiKeyEnvKey]) {
-    throw new Error(
-      `${apiKeyEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
-    );
+  if (!missingEnvKey) {
+    return;
   }
+
+  const hint = getProviderCredentialHint(provider);
+
+  throw new Error(
+    `${missingEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.${
+      hint ? ` ${hint}` : ""
+    }`,
+  );
 }
 
 function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
@@ -490,18 +557,51 @@ export function resolveModelId(
   return modelId;
 }
 
-function createModel(
+export function createModel(
   provider: OpenWikiProvider,
   modelId: string,
   providerRetryAttempts: number,
 ) {
   const retryOptions = { maxRetries: providerRetryAttempts };
 
+  if (provider === "gemini") {
+    return new ChatGoogle({
+      apiKey: getProviderApiKey(provider),
+      model: modelId,
+      platformType: "gai",
+      // Gemini 3.x thought-signature round-trip; see the constant's comment.
+      ...GEMINI_THOUGHT_SIGNATURE_OPTIONS,
+      ...retryOptions,
+    });
+  }
+
+  if (provider === "gemini-enterprise") {
+    const projectId = process.env[GOOGLE_CLOUD_PROJECT_ENV_KEY];
+
+    if (!projectId) {
+      throw new Error(
+        `${GOOGLE_CLOUD_PROJECT_ENV_KEY} is required for the gemini-enterprise provider.`,
+      );
+    }
+
+    // resolveProviderLocation prefers GOOGLE_CLOUD_LOCATION, else the
+    // provider's defaultLocation ("global"), so this is always a string.
+    const location =
+      resolveProviderLocation(provider) ?? DEFAULT_VERTEX_LOCATION;
+
+    return createGeminiEnterpriseModel(
+      modelId,
+      projectId,
+      location,
+      retryOptions,
+    );
+  }
+
   if (provider === "anthropic") {
     const baseURL = resolveProviderBaseUrl(provider);
 
     return new ChatAnthropic(modelId, {
-      apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+      apiKey: getProviderApiKey(provider),
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
       ...retryOptions,
     });
@@ -558,7 +658,7 @@ function createModel(
 
     return new ChatBedrockConverse({
       credentials: {
-        accessKeyId: process.env[getProviderApiKeyEnvKey(provider)] ?? "",
+        accessKeyId: getProviderApiKey(provider) ?? "",
         secretAccessKey: secretKeyEnvKey
           ? (process.env[secretKeyEnvKey] ?? "")
           : "",
@@ -572,7 +672,7 @@ function createModel(
   const baseURL = resolveProviderBaseUrl(provider);
 
   return new ChatOpenAI({
-    apiKey: process.env[getProviderApiKeyEnvKey(provider)],
+    apiKey: getProviderApiKey(provider),
     configuration: baseURL
       ? {
           baseURL,
@@ -608,6 +708,104 @@ async function ensureFreshChatGptTokens(): Promise<void> {
   await saveOpenWikiEnv(
     codexTokensToEnv(await refreshChatGptTokens(tokens.refresh)),
   );
+}
+
+function getProviderApiKey(provider: OpenWikiProvider): string | undefined {
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  return apiKeyEnvKey ? process.env[apiKeyEnvKey] : undefined;
+}
+
+// Placeholder OpenAI API key for the Vertex MaaS surface; overwritten per
+// request by the auth fetch's Authorization header (see createVertexAuthFetch).
+const VERTEX_ADC_PLACEHOLDER_KEY = "vertex-adc";
+
+// Gemini 3.x rejects multi-turn tool calls whose function-call parts lack their
+// `thoughtSignature`. LangChain's streaming aggregator (core stream.js)
+// unconditionally re-emits the message as v1 standard content blocks, which drop
+// that provider-specific signature — so the next turn 400s ("Function call is
+// missing a thought_signature"). Disabling streaming routes the call through
+// invoke()/generate, which honors outputVersion: "v0" and preserves the raw
+// Gemini content parts (signature intact) that the v0 converter round-trips
+// correctly. Both ChatGoogle surfaces (AI Studio `gemini` and enterprise Gemini)
+// must apply this in lockstep, so it lives in one place.
+const GEMINI_THOUGHT_SIGNATURE_OPTIONS = {
+  disableStreaming: true,
+  outputVersion: "v0",
+} as const;
+
+/**
+ * Builds the right LangChain chat model for a Gemini Enterprise (Vertex AI)
+ * model ID. Vertex Model Garden serves different model families over different
+ * API surfaces (native Gemini, Anthropic rawPredict, OpenAI-compatible MaaS),
+ * each needing a different client. Auth is uniform (ADC + project + region);
+ * only the transport differs, keyed off the model ID via resolveVertexSurface.
+ */
+function createGeminiEnterpriseModel(
+  modelId: string,
+  projectId: string,
+  location: string,
+  retryOptions: { maxRetries: number },
+) {
+  switch (resolveVertexSurface(modelId)) {
+    case "anthropic":
+      // No JS-native Claude-on-Vertex chat model exists; bridge via
+      // ChatAnthropic's `createClient` hook + the Anthropic Vertex SDK, which
+      // authenticates through ADC. Providing `createClient` also removes the
+      // ANTHROPIC_API_KEY requirement. The env is neutralized around the
+      // constructor so a stray ANTHROPIC_API_KEY/ANTHROPIC_AUTH_TOKEN cannot
+      // clobber the Google OAuth token (see withAnthropicAuthEnvNeutralized).
+      return new ChatAnthropic(stripPublisherPath(modelId), {
+        createClient: () =>
+          withAnthropicAuthEnvNeutralized(
+            () =>
+              new AnthropicVertex({
+                projectId,
+                region: location,
+              }),
+          ),
+        ...retryOptions,
+      });
+
+    case "openai-maas":
+      // Partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, …) are
+      // reached over Vertex's OpenAI-compatible endpoint. The bearer token is
+      // injected per request by a fetch wrapper (see createVertexAuthFetch);
+      // `apiKey` is a placeholder because that header is overwritten.
+      return new ChatOpenAI({
+        apiKey: VERTEX_ADC_PLACEHOLDER_KEY,
+        configuration: {
+          baseURL: vertexOpenAIBaseUrl(projectId, location),
+          fetch: createVertexAuthFetch(),
+        },
+        model: toVertexPublisherModel(modelId),
+        ...retryOptions,
+      });
+
+    default:
+      return new ChatGoogle({
+        // Gemini/Gemma over generateContent wants the bare model ID; normalize a
+        // fully publisher-pathed ID (publishers/google/models/gemini-…) the same
+        // way the anthropic and maas branches normalize theirs.
+        model: stripPublisherPath(modelId),
+        platformType: "gcp",
+        // Gemini 3.x thought-signature round-trip; see the constant's comment.
+        ...GEMINI_THOUGHT_SIGNATURE_OPTIONS,
+        // Force ADC + project auth. The node client resolves
+        // `apiKey ?? GOOGLE_API_KEY`, and when an API key is present it both
+        // sends the X-Goog-Api-Key header and flips to Vertex Express mode — so
+        // a stray GOOGLE_API_KEY in the environment would silently hijack this
+        // enterprise path. An empty string is treated as "no API key"
+        // (hasApiKey() checks `!== ""`), which blocks that fallback.
+        apiKey: "",
+        location,
+        // Pass the project explicitly rather than relying on ambient
+        // process.env, using the `/node` entrypoint where googleAuthOptions is
+        // typed (the default entrypoint types authOptions as `never`).
+        googleAuthOptions: { projectId },
+        ...retryOptions,
+      });
+  }
 }
 
 function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
