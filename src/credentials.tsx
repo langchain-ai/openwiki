@@ -53,7 +53,7 @@ import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
 import type { ConnectorId } from "./connectors/types.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
-import { openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
+import { getShellEnvValue, openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
 import {
   createEmptyOnboardingConfig,
   isOpenWikiOnboardingCompleteSync,
@@ -411,6 +411,27 @@ function credentialStep(provider: OpenWikiProvider): PromptStep {
   }
 
   return providerRequiresApiKey(provider) ? "api-key" : "gcp-project";
+}
+
+/**
+ * Every managed env key the wizard lets you set for a provider, in checklist
+ * order: the provider selection, its credential keys, the model, and the
+ * LangSmith tracing key. Used to detect which of them a shell export is
+ * currently shadowing (a shell var wins at runtime and would silently override
+ * the choice made here). Returns key names only, never values.
+ */
+function getWizardManagedEnvKeys(provider: OpenWikiProvider): string[] {
+  return [
+    OPENWIKI_PROVIDER_ENV_KEY,
+    getProviderApiKeyEnvKey(provider),
+    getProviderSecretKeyEnvKey(provider),
+    getProviderProjectEnvKey(provider),
+    getProviderLocationEnvKey(provider),
+    getProviderBaseUrlEnvKey(provider),
+    getProviderRegionEnvKey(provider),
+    OPENWIKI_MODEL_ID_ENV_KEY,
+    "LANGSMITH_API_KEY",
+  ].filter((key): key is string => key !== undefined);
 }
 
 /**
@@ -2494,9 +2515,35 @@ export function InitSetup({
   const projectEnvKey = getProviderProjectEnvKey(provider);
   const locationEnvKey = getProviderLocationEnvKey(provider);
 
+  // A shell export wins over saved config at runtime. List any wizard-managed
+  // keys present in the shell so their precedence is not a surprise and the
+  // "from shell" rows below are explained. Presence only, not a value compare;
+  // key names only, never values.
+  const shadowedShellKeys = getWizardManagedEnvKeys(provider).filter(
+    (key) => getShellEnvValue(key) !== undefined,
+  );
+  const isSingleShadow = shadowedShellKeys.length === 1;
+  const shadowedShellWarning =
+    shadowedShellKeys.length === 0
+      ? null
+      : `${
+          isSingleShadow ? "This key was" : "These keys were"
+        } detected in your shell and ${
+          isSingleShadow ? "overrides" : "override"
+        } saved config: ${shadowedShellKeys.join(", ")}. Runs use the shell ` +
+        `value${isSingleShadow ? "" : "s"}; unset ${
+          isSingleShadow ? "it" : "them"
+        } to use your saved config.`;
+
   return (
     <Box flexDirection="column">
       <SetupHeader />
+
+      {shadowedShellWarning ? (
+        <Box marginBottom={1} marginLeft={2}>
+          <Text color="yellow">⚠ {shadowedShellWarning}</Text>
+        </Box>
+      ) : null}
 
       <Box flexDirection="column" marginBottom={1} marginLeft={2}>
         <Text color="gray">Detected from your command</Text>
@@ -2545,9 +2592,11 @@ export function InitSetup({
               detail={
                 providerUsesOAuth(provider)
                   ? getCredentialSetupDetail(provider, oauthTokens)
-                  : apiKey !== null || isCredentialConfigured(provider)
-                    ? "configured"
-                    : "not set"
+                  : apiKeyEnvKey && getShellEnvValue(apiKeyEnvKey) !== undefined
+                    ? "from shell"
+                    : apiKey !== null || isCredentialConfigured(provider)
+                      ? "configured"
+                      : "not set"
               }
             />
           ) : null}

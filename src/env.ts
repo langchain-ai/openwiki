@@ -166,7 +166,52 @@ const managedEnvKeys: readonly string[] = MANAGED_ENV_KEYS;
 
 const deprecatedEnvKeys = ["OPENAI_ORG_ID", "OPENAI_PROJECT"];
 
+/**
+ * The shell's values for managed credential keys, captured once before any load
+ * or save wrote to `process.env`. A shell export keeps precedence over
+ * `~/.openwiki/.env` at runtime, so this snapshot lets the wizard tell the user
+ * when a value they save will be shadowed, and keeps {@link saveOpenWikiEnv}
+ * from masking a shell var in-process. Held in memory only; never persisted or
+ * logged.
+ */
+let shellEnvAtStartup: Record<string, string> | undefined;
+
+/**
+ * Snapshot the shell's values for managed credential keys. Idempotent: the
+ * first call wins, so a later load or save cannot capture values OpenWiki
+ * itself seeded into `process.env`.
+ */
+function captureShellEnv(): void {
+  if (shellEnvAtStartup !== undefined) {
+    return;
+  }
+
+  const snapshot: Record<string, string> = {};
+
+  for (const key of CREDENTIAL_DIAGNOSTIC_ENV_KEYS) {
+    const value = process.env[key];
+
+    if (value !== undefined) {
+      snapshot[key] = value;
+    }
+  }
+
+  shellEnvAtStartup = snapshot;
+}
+
+/**
+ * The shell value for a managed key as captured at startup, or `undefined` when
+ * the shell did not set it. Reflects the pre-load snapshot, so it stays stable
+ * even after {@link loadOpenWikiEnv} / {@link saveOpenWikiEnv} mutate
+ * `process.env`.
+ */
+export function getShellEnvValue(key: string): string | undefined {
+  return shellEnvAtStartup?.[key];
+}
+
 export async function loadOpenWikiEnv(): Promise<EnvMap> {
+  captureShellEnv();
+
   const env = await readOpenWikiEnv();
 
   for (const [key, value] of Object.entries(env)) {
@@ -193,6 +238,8 @@ export async function getCredentialDiagnostics(): Promise<
 }
 
 export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
+  captureShellEnv();
+
   const currentEnv = await readOpenWikiEnv();
   const nextEnv = {
     ...currentEnv,
@@ -216,7 +263,11 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
   await chmod(openWikiEnvPath, 0o600);
 
   for (const [key, value] of Object.entries(updates)) {
-    process.env[key] = value;
+    // A shell export wins at runtime, so don't mask it in process.env; the
+    // saved value is only the fallback for when that shell var is unset.
+    if (shellEnvAtStartup?.[key] === undefined) {
+      process.env[key] = value;
+    }
   }
 }
 
