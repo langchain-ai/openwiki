@@ -705,6 +705,10 @@ export function InitSetup({
   const [codeRepoRoot, setCodeRepoRoot] = useState(() =>
     getDefaultCodeRepoRootPath(),
   );
+  // Dedicated buffer for the code-repo-path field, kept separate from the shared
+  // `input` (which seedInputForStep prefills with credentials on other steps) so
+  // a secret never shares the buffer that feeds the thread-id path hash.
+  const [codeRepoPathInput, setCodeRepoPathInput] = useState("");
   const [codeRepoConfirmed, setCodeRepoConfirmed] = useState(false);
   const [isCustomModelInput, setIsCustomModelInput] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1263,7 +1267,7 @@ export function InitSetup({
       }
 
       if (key.backspace || key.delete) {
-        setInput((value) => value.slice(0, -1));
+        setCodeRepoPathInput((value) => value.slice(0, -1));
         return;
       }
 
@@ -1271,7 +1275,7 @@ export function InitSetup({
 
       if (sanitizedInput && !key.ctrl && !key.meta) {
         setError(null);
-        setInput((value) => value + sanitizedInput);
+        setCodeRepoPathInput((value) => value + sanitizedInput);
       }
 
       return;
@@ -1361,7 +1365,7 @@ export function InitSetup({
         CODE_REPO_OPTIONS[codeRepoSelectionIndex] ?? CODE_REPO_OPTIONS[0];
 
       if (selectedOption === "Edit path") {
-        setInput(codeRepoRoot);
+        setCodeRepoPathInput(codeRepoRoot);
         setStep("code-repo-path");
         return;
       }
@@ -1373,10 +1377,10 @@ export function InitSetup({
 
     if (step === "code-repo-path") {
       try {
-        const repoRoot = await validateLocalDirectoryPath(input);
+        const repoRoot = await validateLocalDirectoryPath(codeRepoPathInput);
         setCodeRepoRoot(repoRoot);
         setCodeRepoConfirmed(true);
-        setInput("");
+        setCodeRepoPathInput("");
         continueAfterCodeRepoConfirmed(repoRoot);
       } catch (pathError) {
         setError(getErrorMessage(pathError));
@@ -2776,6 +2780,7 @@ export function InitSetup({
         <SetupPanel title="Prompt">
           {step ? (
             <Prompt
+              codeRepoPathInput={codeRepoPathInput}
               codeRepoRoot={codeRepoRoot}
               codeRepoSelectionIndex={codeRepoSelectionIndex}
               cronFieldSelectionIndex={cronFieldSelectionIndex}
@@ -2853,6 +2858,7 @@ export function InitSetup({
 }
 
 function Prompt({
+  codeRepoPathInput,
   codeRepoRoot,
   codeRepoSelectionIndex,
   cronFieldSelectionIndex,
@@ -2880,6 +2886,7 @@ function Prompt({
   suggestedCronExpression,
   templateSelectionIndex,
 }: {
+  codeRepoPathInput: string;
   codeRepoRoot: string;
   codeRepoSelectionIndex: number;
   cronFieldSelectionIndex: number;
@@ -3195,7 +3202,7 @@ function Prompt({
           maxDisplayWidth={inputDisplayWidth}
           marginTop={1}
           prefix="path="
-          value={input}
+          value={codeRepoPathInput}
         />
         <Text color="gray">Press Enter to confirm this path.</Text>
       </Box>
