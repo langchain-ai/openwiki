@@ -53,7 +53,12 @@ import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
 import type { ConnectorId } from "./connectors/types.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
-import { getShellEnvValue, openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
+import {
+  getSavedEnvValue,
+  getShellEnvValue,
+  openWikiEnvPath,
+  saveOpenWikiEnv,
+} from "./env.js";
 import {
   createEmptyOnboardingConfig,
   isOpenWikiOnboardingCompleteSync,
@@ -97,6 +102,12 @@ type InitSetupProps = {
   modelIdOverride?: string | null;
   onComplete: (result: InitSetupResult) => void;
   onError: (message: string) => void;
+  /**
+   * When true (explicit `--init`), walk every applicable step even when it is
+   * already configured, so the run can review/change any of them. When false
+   * the wizard skips satisfied steps and collects only what is missing.
+   */
+  walkAllSteps?: boolean;
 };
 
 type PromptStep =
@@ -480,28 +491,14 @@ export function orderedSetupSteps(
   steps.push("model");
   steps.push("langsmith");
 
-  steps.push(mode === "code" ? "code-repo-confirm" : "template");
+  // Personal mode's template is fixed by the run mode, so it skips the
+  // Code/Personal chooser and walks straight into the wiki brief. Only code
+  // mode needs a spine step after langsmith (repo confirmation).
+  if (mode === "code") {
+    steps.push("code-repo-confirm");
+  }
 
   return steps;
-}
-
-/**
- * The step before `step` in the applicable spine, or null when `step` is the
- * first step or is outside the spine (for example the personal-mode source
- * sub-flow, which manages its own navigation).
- */
-export function previousSpineStep(
-  step: PromptStep | null,
-  provider: OpenWikiProvider,
-  mode: OpenWikiRunMode,
-  allowModeSelection: boolean,
-): PromptStep | null {
-  if (step === null) {
-    return null;
-  }
-  const spine = orderedSetupSteps(provider, mode, allowModeSelection);
-  const index = spine.indexOf(step);
-  return index > 0 ? spine[index - 1] : null;
 }
 
 /**
@@ -650,10 +647,27 @@ export function InitSetup({
   modelIdOverride = null,
   onComplete,
   onError,
+  walkAllSteps = false,
 }: InitSetupProps) {
   const { stdout } = useStdout();
   const initialProvider = resolveConfiguredProvider();
-  const [step, setStep] = useState<PromptStep | null>(null);
+  const [step, setStepRaw] = useState<PromptStep | null>(null);
+  const navHistory = useRef<PromptStep[]>([]);
+  // Guards the mount effect so the initial step is seeded once per mount, not
+  // re-seeded when the effect re-fires on parent re-renders.
+  const didInitializeRef = useRef(false);
+  /**
+   * Advance to a step, recording the current step on the back-navigation
+   * history unless this is a back move. A ref-backed stack so Esc can retrace
+   * the actual path taken (including the branchy source sub-flow), which a
+   * linear spine cannot model.
+   */
+  function setStep(next: PromptStep | null, opts?: { back?: boolean }): void {
+    if (!opts?.back && step !== null && next !== null && next !== step) {
+      navHistory.current.push(step);
+    }
+    setStepRaw(next);
+  }
   const [selectedMode, setSelectedMode] = useState<OpenWikiRunMode>(mode);
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -743,9 +757,14 @@ export function InitSetup({
 
     readOpenWikiOnboardingConfig()
       .then(async (config) => {
-        if (cancelled) {
+        // Seed the initial step exactly once per mount. onComplete/onError are
+        // inline parent closures in the deps, so this effect re-fires on parent
+        // re-renders; without this guard a re-fire would reset step back to the
+        // first step (getInitialStep with walkAll always returns it).
+        if (cancelled || didInitializeRef.current) {
           return;
         }
+        didInitializeRef.current = true;
 
         const defaultRepoRoot = getDefaultCodeRepoRootPath();
         const configForMode = allowModeSelection
@@ -768,6 +787,7 @@ export function InitSetup({
           configForMode,
           mode,
           allowModeSelection,
+          walkAllSteps,
         );
 
         if (initialStep === null) {
@@ -955,28 +975,97 @@ export function InitSetup({
         break;
       case "api-key": {
         const envKey = getProviderApiKeyEnvKey(provider);
-        setInput(apiKey ?? (envKey ? (process.env[envKey] ?? "") : ""));
+        setInput(apiKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
         break;
       }
       case "secret-key": {
         const envKey = getProviderSecretKeyEnvKey(provider);
-        setInput(secretKey ?? (envKey ? (process.env[envKey] ?? "") : ""));
+        setInput(secretKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
         break;
       }
-      case "base-url":
-        setInput(baseUrl ?? "");
+      case "base-url": {
+        const envKey = getProviderBaseUrlEnvKey(provider);
+        setInput(baseUrl ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
         break;
-      case "region":
-        setInput(region ?? "");
+      }
+      case "region": {
+        const envKey = getProviderRegionEnvKey(provider);
+        setInput(region ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
         break;
-      case "gcp-project":
-        setInput(gcpProject ?? "");
+      }
+      case "gcp-project": {
+        const envKey = getProviderProjectEnvKey(provider);
+        setInput(
+          gcpProject ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""),
+        );
         break;
-      case "gcp-location":
-        setInput(gcpLocation ?? "");
+      }
+      case "gcp-location": {
+        const envKey = getProviderLocationEnvKey(provider);
+        setInput(
+          gcpLocation ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""),
+        );
         break;
+      }
       case "langsmith":
-        setInput(langSmithKey ?? "");
+        // Prefill from state or the saved config (masked as dots), matching the
+        // api-key/secret-key steps, so a walk-through Enter keeps the existing
+        // key instead of submitting empty and clearing it.
+        setInput(langSmithKey ?? getSavedEnvValue("LANGSMITH_API_KEY") ?? "");
+        break;
+      case "template":
+        setTemplateSelectionIndex(
+          Math.max(
+            0,
+            ONBOARDING_TEMPLATES.findIndex(
+              (template) => template.id === getConfigModeId(onboardingConfig),
+            ),
+          ),
+        );
+        setInput("");
+        break;
+      case "wiki-goal":
+        setInput(onboardingConfig.wikiGoal ?? "");
+        break;
+      case "global-cron-mode":
+        setCronModeSelectionIndex(0);
+        setInput("");
+        break;
+      case "global-cron-custom":
+        setInput(
+          onboardingConfig.ingestionSchedule?.expression ??
+            suggestedCronExpression,
+        );
+        setCronFieldSelectionIndex(0);
+        setCronReplaceCurrentField(true);
+        break;
+      case "global-power-mode":
+        setPowerModeSelectionIndex(0);
+        setInput("");
+        break;
+      case "source-menu":
+        // Park the cursor on the "Continue" row so Enter keeps sources as-is.
+        setSourceSelectionIndex(activeSourceOptions.length);
+        setInput("");
+        break;
+      case "source-description":
+        setSourceDescriptionSelectionIndex(0);
+        setInput("");
+        break;
+      case "source-confirm-continue":
+        setSourceContinueSelectionIndex(0);
+        setInput("");
+        break;
+      case "final":
+        setFinalSelectionIndex(0);
+        setInput("");
+        break;
+      case "code-repo-confirm":
+        setCodeRepoSelectionIndex(0);
+        setInput("");
+        break;
+      case "code-repo-path":
+        setCodeRepoPathInput(codeRepoRoot);
         break;
       default:
         setInput("");
@@ -1012,6 +1101,13 @@ export function InitSetup({
       case "langsmith":
         setLangSmithKey(trimmed);
         break;
+      case "wiki-goal":
+        // Keep an unsubmitted goal edit in-session (not yet persisted) so
+        // stepping back and forward does not lose it.
+        if (trimmed) {
+          setOnboardingConfig((config) => ({ ...config, wikiGoal: trimmed }));
+        }
+        break;
       default:
         break;
     }
@@ -1027,19 +1123,15 @@ export function InitSetup({
       return;
     }
 
-    // Esc returns to the previous applicable step so no choice is a dead end and
-    // an auto-skipped step stays reachable. It commits the current field first
-    // (so an unsubmitted edit is kept) and is a no-op on the first step.
+    // Esc retraces the actual path taken via the navigation history stack, so
+    // it works through the branchy source sub-flow too. It commits the current
+    // field first (so an unsubmitted edit is kept) and is a no-op at the start.
     if (key.escape) {
-      const target = previousSpineStep(
-        step,
-        provider,
-        selectedMode,
-        allowModeSelection,
-      );
-      if (target !== null) {
+      const target = navHistory.current[navHistory.current.length - 1];
+      if (target !== undefined) {
         captureInputForStep(step);
-        setStep(target);
+        navHistory.current.pop();
+        setStep(target, { back: true });
         seedInputForStep(target);
         setError(null);
         setNotice(null);
@@ -1845,7 +1937,17 @@ export function InitSetup({
         templateName: selectedTemplate.name,
       };
       await saveConfig(nextConfig);
-      setInput(selectedTemplate.suggestedGoal);
+      // Keep the existing goal when the template is unchanged (so re-walking is
+      // idempotent); use the template's suggested goal when it actually changed.
+      const keepExistingGoal =
+        selectedTemplate.id === getConfigModeId(onboardingConfig) &&
+        onboardingConfig.wikiGoal !== undefined &&
+        onboardingConfig.wikiGoal.length > 0;
+      setInput(
+        keepExistingGoal
+          ? (onboardingConfig.wikiGoal ?? "")
+          : selectedTemplate.suggestedGoal,
+      );
       setStep("wiki-goal");
       return;
     }
@@ -2120,6 +2222,28 @@ export function InitSetup({
   async function continueAfterCredentials(options: CompleteSetupOptions) {
     await saveCredentialUpdates(options);
 
+    // Explicit --init walks the whole tail; enter at its first step rather than
+    // skipping steps that are already configured.
+    if (walkAllSteps) {
+      if (options.runMode === "code") {
+        setCodeRepoRoot(getDefaultCodeRepoRootPath());
+        setCodeRepoSelectionIndex(0);
+        setStep("code-repo-confirm");
+        return;
+      }
+
+      // Personal mode fixes the template from the run mode, so skip the
+      // redundant Code/Personal chooser and walk straight into the wiki brief.
+      // Seed the existing goal so Enter keeps it (idempotent re-walk), else the
+      // template's suggested goal.
+      setInput(
+        onboardingConfig.wikiGoal ??
+          getTemplateGoal(getConfigModeId(onboardingConfig)),
+      );
+      setStep("wiki-goal");
+      return;
+    }
+
     if (options.runMode === "code" && !isOnboardingComplete(onboardingConfig)) {
       setCodeRepoRoot(getDefaultCodeRepoRootPath());
       setCodeRepoSelectionIndex(0);
@@ -2153,13 +2277,19 @@ export function InitSetup({
   }
 
   function continueAfterCodeRepoConfirmed(repoRoot: string) {
-    if (!onboardingConfig.wikiGoal) {
-      setInput(getTemplateGoal(getConfigModeId(onboardingConfig)));
+    setCodeRepoRoot(repoRoot);
+
+    // Walk the wiki-goal step on --init even when set; otherwise only when
+    // unset. Seed the existing goal so Enter keeps it (idempotent).
+    if (walkAllSteps || !onboardingConfig.wikiGoal) {
+      setInput(
+        onboardingConfig.wikiGoal ??
+          getTemplateGoal(getConfigModeId(onboardingConfig)),
+      );
       setStep("wiki-goal");
       return;
     }
 
-    setCodeRepoRoot(repoRoot);
     setStep("final");
   }
 
@@ -2734,17 +2864,6 @@ export function InitSetup({
           />
           {selectedMode === "personal" ? (
             <SetupStep
-              label="Personal profile"
-              state={resolveStepStatus(
-                "template",
-                step,
-                Boolean(onboardingConfig.templateId),
-              )}
-              detail={getConfigModeName(onboardingConfig) ?? "not set"}
-            />
-          ) : null}
-          {selectedMode === "personal" ? (
-            <SetupStep
               label="Wiki scope"
               state={resolveStepStatus(
                 "wiki-goal",
@@ -2758,10 +2877,10 @@ export function InitSetup({
             <SetupStep
               label="Schedule"
               state={
-                onboardingConfig.ingestionSchedule
-                  ? "done"
-                  : isScheduleStep(step)
-                    ? "current"
+                isScheduleStep(step)
+                  ? "current"
+                  : onboardingConfig.ingestionSchedule
+                    ? "done"
                     : "pending"
               }
               detail={
@@ -2775,11 +2894,13 @@ export function InitSetup({
             <SetupStep
               label="Sources"
               state={
-                getConnectedSourceCount(onboardingConfig, activeSourceOptions) >
-                0
-                  ? "done"
-                  : isSourceStep(step)
-                    ? "current"
+                isSourceStep(step)
+                  ? "current"
+                  : getConnectedSourceCount(
+                        onboardingConfig,
+                        activeSourceOptions,
+                      ) > 0
+                    ? "done"
                     : "pending"
               }
               detail={`${getConnectedSourceCount(
@@ -2837,8 +2958,7 @@ export function InitSetup({
         </SetupPanel>
       )}
 
-      {previousSpineStep(step, provider, selectedMode, allowModeSelection) !==
-      null ? (
+      {navHistory.current.length > 0 ? (
         <Box marginLeft={2}>
           <Text color="gray">esc to go back</Text>
         </Box>
@@ -3933,7 +4053,14 @@ export function getInitialStep(
   onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
   mode: OpenWikiRunMode = "code",
   allowModeSelection = false,
+  walkAll = false,
 ): PromptStep | null {
+  if (walkAll) {
+    // Explicit --init: always start at the top and walk every applicable step,
+    // even ones already configured, instead of skipping to the first unset one.
+    return orderedSetupSteps(provider, mode, allowModeSelection)[0] ?? null;
+  }
+
   if (allowModeSelection) {
     return "run-mode";
   }

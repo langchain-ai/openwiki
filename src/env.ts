@@ -209,10 +209,31 @@ export function getShellEnvValue(key: string): string | undefined {
   return shellEnvAtStartup?.[key];
 }
 
+/**
+ * The values saved in `~/.openwiki/.env` as of the first load, before shell
+ * exports win in `process.env`. Lets the setup wizard pre-fill fields from the
+ * saved config rather than `process.env` (which a shell var may shadow), so
+ * editing config never captures a shell override. In memory only.
+ */
+let savedEnvAtStartup: Record<string, string> | undefined;
+
+/**
+ * The saved `~/.openwiki/.env` value for a key as of startup, or `undefined`.
+ * Distinct from {@link getShellEnvValue} (the shell snapshot) and from
+ * `process.env` (shell-over-file at runtime).
+ */
+export function getSavedEnvValue(key: string): string | undefined {
+  return savedEnvAtStartup?.[key];
+}
+
 export async function loadOpenWikiEnv(): Promise<EnvMap> {
   captureShellEnv();
 
   const env = await readOpenWikiEnv();
+
+  if (savedEnvAtStartup === undefined) {
+    savedEnvAtStartup = { ...env };
+  }
 
   for (const [key, value] of Object.entries(env)) {
     if (deprecatedEnvKeys.includes(key)) {

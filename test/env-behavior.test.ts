@@ -228,6 +228,33 @@ describe("getShellEnvValue", () => {
   });
 });
 
+describe("getSavedEnvValue", () => {
+  test("returns the saved file value, not a shadowing shell value", async () => {
+    // The shell shadows the key at runtime...
+    process.env[OPENROUTER_API_KEY_ENV_KEY] = "from-shell";
+    // ...but a different value is saved in the file.
+    await mkdir(path.dirname(env.openWikiEnvPath), { recursive: true });
+    await writeFile(
+      env.openWikiEnvPath,
+      `${OPENROUTER_API_KEY_ENV_KEY}="from-file"\n`,
+      "utf8",
+    );
+
+    await env.loadOpenWikiEnv();
+
+    // process.env keeps the shell value (shell wins)...
+    expect(process.env[OPENROUTER_API_KEY_ENV_KEY]).toBe("from-shell");
+    // ...but the saved snapshot reflects the file, so the wizard seeds config.
+    expect(env.getSavedEnvValue(OPENROUTER_API_KEY_ENV_KEY)).toBe("from-file");
+  });
+
+  test("is undefined for a key absent from the saved file", async () => {
+    await env.loadOpenWikiEnv();
+
+    expect(env.getSavedEnvValue(OPENROUTER_API_KEY_ENV_KEY)).toBeUndefined();
+  });
+});
+
 describe("getCredentialDiagnostics", () => {
   test("includes the provider and each credential key in display order", async () => {
     const diagnostics = await env.getCredentialDiagnostics();

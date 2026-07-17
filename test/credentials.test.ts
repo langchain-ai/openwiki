@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test } from "vitest";
 import {
+  getInitialStep,
   needsCredentialSetup,
   nextSetupStep,
   orderedSetupSteps,
-  previousSpineStep,
   resolveStepStatus,
 } from "../src/credentials.tsx";
 
@@ -97,9 +97,14 @@ describe("orderedSetupSteps", () => {
     expect(spine.indexOf("region")).toBeLessThan(spine.indexOf("model"));
   });
 
-  test("personal mode ends at the template tail, not code-repo-confirm", () => {
+  test("personal mode ends at langsmith with no template chooser or code tail", () => {
+    // The template is fixed by the run mode in personal mode, so the spine
+    // skips the redundant Code/Personal chooser and walks straight into the
+    // wiki brief after langsmith.
     const spine = orderedSetupSteps("openai", "personal", false);
-    expect(spine[spine.length - 1]).toBe("template");
+    expect(spine[spine.length - 1]).toBe("langsmith");
+    expect(spine).not.toContain("template");
+    expect(spine).not.toContain("code-repo-confirm");
   });
 
   test("the spine includes applicable steps regardless of env (reachability)", () => {
@@ -109,18 +114,35 @@ describe("orderedSetupSteps", () => {
   });
 });
 
-describe("previousSpineStep and nextSetupStep", () => {
-  test("walk backward and forward through the spine", () => {
-    expect(previousSpineStep("model", "openai", "code", false)).toBe("api-key");
+describe("getInitialStep", () => {
+  test("walkAll starts at the first spine step regardless of configuration", () => {
+    // walkAll short-circuits the skip-waterfall, so it never returns null even
+    // when everything would otherwise be satisfied.
+    expect(getInitialStep(null, "openai", undefined, "code", false, true)).toBe(
+      "provider",
+    );
+    expect(
+      getInitialStep(null, "bedrock", undefined, "code", false, true),
+    ).toBe("provider");
+  });
+
+  test("walkAll returns run-mode first when mode selection is allowed", () => {
+    expect(getInitialStep(null, "openai", undefined, "code", true, true)).toBe(
+      "run-mode",
+    );
+  });
+});
+
+describe("nextSetupStep", () => {
+  test("walks forward through the spine", () => {
+    expect(nextSetupStep("provider", "openai", "code", false)).toBe("api-key");
     expect(nextSetupStep("api-key", "openai", "code", false)).toBe("model");
   });
 
-  test("no-op at the ends and for null", () => {
-    expect(previousSpineStep("provider", "openai", "code", false)).toBe(null);
+  test("no-op at the end and for null", () => {
     expect(nextSetupStep("code-repo-confirm", "openai", "code", false)).toBe(
       null,
     );
-    expect(previousSpineStep(null, "openai", "code", false)).toBe(null);
     expect(nextSetupStep(null, "openai", "code", false)).toBe(null);
   });
 });

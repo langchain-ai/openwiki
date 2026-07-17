@@ -308,13 +308,19 @@ function App({ command }: AppProps) {
         ? command.command
         : null,
     );
+  // `--init` always opens the full setup walk, even when everything is already
+  // configured, so you can review or change any step. Consumed once the walk
+  // finishes so it does not re-open when the run later returns to idle.
+  const [initWizardConsumed, setInitWizardConsumed] = useState(false);
+  const isInitCommand = command.kind === "run" && command.command === "init";
   const shouldRunInteractiveCredentialSetup =
     command.kind === "run" &&
     resolvedCommand !== null &&
     !command.dryRun &&
     process.stdin.isTTY &&
     runState.status === "idle" &&
-    needsCredentialSetup(sessionModelId, runMode);
+    (needsCredentialSetup(sessionModelId, runMode) ||
+      (isInitCommand && !initWizardConsumed));
   const displayModelId = sessionModelId ?? startupModelId;
 
   function submitChatMessage(message: string) {
@@ -737,7 +743,9 @@ function App({ command }: AppProps) {
         allowModeSelection={false}
         mode={command.mode}
         modelIdOverride={command.modelId}
+        walkAllSteps={isInitCommand}
         onComplete={(result) => {
+          setInitWizardConsumed(true);
           const nextCodeRuntimeCwd = result.repoRoot ?? codeRuntimeCwd;
 
           if (result.repoRoot) {
