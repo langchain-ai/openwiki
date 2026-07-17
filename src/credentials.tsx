@@ -1392,9 +1392,25 @@ export function InitSetup({
       const selectedProvider =
         SELECTABLE_OPENWIKI_PROVIDERS[providerSelectionIndex] ??
         DEFAULT_PROVIDER;
+      // Credentials are provider-specific, so switching providers must not carry
+      // the previous provider's key/secret/etc. across (otherwise seedInputForStep
+      // prefills it and empty-submit-keeps would save it under the new provider).
+      const switchedProvider = selectedProvider !== provider;
 
       setProvider(selectedProvider);
       setProviderConfirmed(true);
+
+      if (switchedProvider) {
+        setApiKey(null);
+        setSecretKey(null);
+        setBaseUrl(null);
+        setRegion(null);
+        setGcpProject(null);
+        setGcpLocation(null);
+        setOauthTokens(null);
+        setModelId(null);
+      }
+
       setProviderSelectionIndex(getProviderSelectionIndex(selectedProvider));
       setModelSelectionIndex(
         getModelSelectionIndex(
@@ -1426,7 +1442,14 @@ export function InitSetup({
           nextStep === "model" &&
             shouldStartWithCustomModelInput(selectedProvider),
         );
-        seedInputForStep(nextStep);
+        // On a switch the closure still holds the old provider/apiKey, so
+        // seedInputForStep would re-seed stale values; leave the field empty and
+        // let a later visit seed from the new provider's own env.
+        if (switchedProvider) {
+          setInput("");
+        } else {
+          seedInputForStep(nextStep);
+        }
         setStep(nextStep);
         return;
       }
