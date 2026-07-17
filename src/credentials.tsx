@@ -959,20 +959,28 @@ export function InitSetup({
       case "run-mode":
         setRunModeSelectionIndex(getRunModeSelectionIndex(selectedMode));
         break;
-      case "model":
-        setModelSelectionIndex(
-          getModelSelectionIndex(
-            provider,
-            modelId ?? getDefaultModelId(provider),
-          ),
-        );
+      case "model": {
+        // Point the cursor at the saved model (or the --modelId override), not
+        // the provider default, so it matches the checklist on a re-walk.
+        const seededModelId =
+          modelId ??
+          modelIdOverride ??
+          getSavedEnvValue(OPENWIKI_MODEL_ID_ENV_KEY) ??
+          getDefaultModelId(provider);
+        setModelSelectionIndex(getModelSelectionIndex(provider, seededModelId));
         // Preset-less providers (e.g. Bedrock) take the model as free text, so
         // restore the saved id into the field; selection-based providers drive
         // off the index and keep the input empty.
         setInput(
-          shouldStartWithCustomModelInput(provider) ? (modelId ?? "") : "",
+          shouldStartWithCustomModelInput(provider)
+            ? (modelId ??
+                modelIdOverride ??
+                getSavedEnvValue(OPENWIKI_MODEL_ID_ENV_KEY) ??
+                "")
+            : "",
         );
         break;
+      }
       case "api-key": {
         const envKey = getProviderApiKeyEnvKey(provider);
         setInput(apiKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
