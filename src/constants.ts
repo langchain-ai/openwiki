@@ -1,4 +1,4 @@
-export const OPEN_WIKI_DIR = "openwiki";
+export const OPEN_WIKI_DIR = process.env.OPENWIKI_OUTPUT_DIR ?? "openwiki";
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
