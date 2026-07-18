@@ -69,8 +69,10 @@ import {
   isValidModelId,
   normalizeModelId,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_EXTRA_HEADERS_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
+  parseOpenAiCompatibleExtraHeaders,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
@@ -670,14 +672,22 @@ export function createModel(
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
+  const extraHeaders =
+    provider === "openai-compatible"
+      ? parseOpenAiCompatibleExtraHeaders(
+          process.env[OPENAI_COMPATIBLE_EXTRA_HEADERS_ENV_KEY],
+        )
+      : undefined;
 
   return new ChatOpenAI({
     apiKey: getProviderApiKey(provider),
-    configuration: baseURL
-      ? {
-          baseURL,
-        }
-      : undefined,
+    configuration:
+      baseURL || extraHeaders
+        ? {
+            ...(baseURL ? { baseURL } : {}),
+            ...(extraHeaders ? { defaultHeaders: extraHeaders } : {}),
+          }
+        : undefined,
     model: modelId,
     useResponsesApi: provider === "openai",
     ...retryOptions,
@@ -1582,7 +1592,10 @@ function formatDebugValue(key: string, value: string | undefined): string {
     return formatUrlDebugValue(value);
   }
 
-  if (key.endsWith("_API_KEY")) {
+  if (
+    key.endsWith("_API_KEY") ||
+    key === OPENAI_COMPATIBLE_EXTRA_HEADERS_ENV_KEY
+  ) {
     return `set(length=${value.length})`;
   }
 

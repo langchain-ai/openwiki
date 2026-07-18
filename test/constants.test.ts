@@ -23,6 +23,7 @@ import {
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
+  parseOpenAiCompatibleExtraHeaders,
   resolveProviderRetryAttempts,
 } from "../src/constants.ts";
 
@@ -197,6 +198,50 @@ describe("resolveProviderRetryAttempts", () => {
         }),
       ).toThrow(/OPENWIKI_PROVIDER_RETRY_ATTEMPTS/u);
     }
+  });
+});
+
+describe("parseOpenAiCompatibleExtraHeaders", () => {
+  test("returns undefined when unset or blank", () => {
+    expect(parseOpenAiCompatibleExtraHeaders(undefined)).toBeUndefined();
+    expect(parseOpenAiCompatibleExtraHeaders("")).toBeUndefined();
+    expect(parseOpenAiCompatibleExtraHeaders("   ")).toBeUndefined();
+    expect(parseOpenAiCompatibleExtraHeaders("{}")).toBeUndefined();
+  });
+
+  test("parses a JSON object of string header values", () => {
+    expect(
+      parseOpenAiCompatibleExtraHeaders(
+        '{"Ocp-Apim-Subscription-Key":"secret","X-Custom":"value"}',
+      ),
+    ).toEqual({
+      "Ocp-Apim-Subscription-Key": "secret",
+      "X-Custom": "value",
+    });
+  });
+
+  test("rejects invalid JSON and non-object payloads", () => {
+    expect(() => parseOpenAiCompatibleExtraHeaders("{")).toThrow(
+      /OPENAI_COMPATIBLE_EXTRA_HEADERS/u,
+    );
+    expect(() => parseOpenAiCompatibleExtraHeaders("[]")).toThrow(
+      /OPENAI_COMPATIBLE_EXTRA_HEADERS/u,
+    );
+    expect(() => parseOpenAiCompatibleExtraHeaders('"x"')).toThrow(
+      /OPENAI_COMPATIBLE_EXTRA_HEADERS/u,
+    );
+    expect(() => parseOpenAiCompatibleExtraHeaders("null")).toThrow(
+      /OPENAI_COMPATIBLE_EXTRA_HEADERS/u,
+    );
+  });
+
+  test("rejects non-string header values and empty header names", () => {
+    expect(() => parseOpenAiCompatibleExtraHeaders('{"X-Custom":123}')).toThrow(
+      /OPENAI_COMPATIBLE_EXTRA_HEADERS/u,
+    );
+    expect(() => parseOpenAiCompatibleExtraHeaders('{"":"value"}')).toThrow(
+      /OPENAI_COMPATIBLE_EXTRA_HEADERS/u,
+    );
   });
 });
 

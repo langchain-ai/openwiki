@@ -109,6 +109,10 @@ describe("MANAGED_ENV_KEYS", () => {
   test("manages the GEMINI_API_KEY for the gemini (AI Studio) provider", () => {
     expect(MANAGED_ENV_KEYS).toContain("GEMINI_API_KEY");
   });
+
+  test("manages OPENAI_COMPATIBLE_EXTRA_HEADERS for gateway auth", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENAI_COMPATIBLE_EXTRA_HEADERS");
+  });
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {
