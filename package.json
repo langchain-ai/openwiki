@@ -56,7 +56,7 @@
     "ci-info": "^4.4.0",
     "cron-parser": "5.6.1",
     "cronstrue": "3.24.0",
-    "deepagents": "^1.11.0",
+    "deepagents": "^1.11.1",
     "google-auth-library": "^10.9.0",
     "ink": "^5.1.0",
     "langchain": "^1.5.3",

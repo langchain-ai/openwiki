@@ -65,6 +65,19 @@ Scheduled/CI runs send anonymous reliability telemetry. See [Telemetry](#telemet
 for what is collected and how to turn it off (uncomment `OPENWIKI_TELEMETRY_DISABLED`
 in the example workflow).
 
+## Open Knowledge Format compatibility
+
+OpenWiki emits [Google Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundles in both code and personal modes.
+
+- Every non-reserved Markdown concept has YAML front matter with a non-empty
+  `type`; all other standard fields are optional.
+- Valid `timestamp` values and producer-defined extension fields are accepted
+  and preserved during updates and migrations.
+- `index.md` and `log.md` are reserved documents rather than concepts. Nested
+  indexes contain no front matter, while the root index declares
+  `okf_version: "0.1"`.
+- Standard Markdown links between concept documents express relationships.
+
 ## Usage
 
 Start the interactive CLI in code mode for the current repository:

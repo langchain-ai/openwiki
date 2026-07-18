@@ -19,11 +19,12 @@ Add or correct OKF front matter across the existing wiki without changing accura
 
 Each subagent must:
 
-- Inspect every non-generated Markdown file directly in its assigned directory.
+- Inspect every non-reserved Markdown concept file directly in its assigned directory.
 - Leave already compliant files unchanged.
 - Add or correct only the leading YAML front matter when needed. Preserve the existing Markdown body.
-- Use a descriptive, self-explanatory `type`. Infer `title` and a one to two sentence `description` (this should be optimized for search & retrieval) from the document when useful. Add `resource` or `tags` only when supported by the document.
-- Never add `timestamp` or fields outside this formatter:
+- Preserve all valid existing front matter fields, including `timestamp` and producer-defined extension fields. Never delete an unknown field merely because OpenWiki did not create it.
+- Require only a non-empty, descriptive `type`. Infer recommended `title` and one to two sentence `description` values when useful. Add `resource`, `tags`, or `timestamp` only when supported by the document and available evidence.
+- Use this standard-field formatter while retaining any existing producer extensions:
 
 ```yaml
 ---
@@ -32,11 +33,12 @@ title: <Optional display name>
 description: <Optional one to two sentence summary (optimized for search & retrieval)>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>]
+timestamp: <Optional ISO 8601 datetime>
 ---
 ```
 
-- Do not edit `index.md`; OpenWiki regenerates directory indexes deterministically after the run.
+- `index.md` and `log.md` are reserved OKF documents. Do not add concept front matter to them or process them as concepts; OpenWiki regenerates directory indexes deterministically after the run.
 - Report the files checked, the files changed, and any file whose metadata could not be inferred confidently.
-- The description field here is very important as retrieval tools will rely on it when searching through documents. Ensure your descriptions are clear, detailed, and optimized for search.
+- The description field is important for retrieval tools. When present, make it clear, detailed, and optimized for search.
 
 Do not create, delete, move, or reorganize wiki pages during this migration.

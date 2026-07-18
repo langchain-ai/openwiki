@@ -46,4 +46,17 @@ describe("replaceSkillDirectories", () => {
       await rm(root, { force: true, recursive: true });
     }
   });
+
+  test("ships OKF migration guidance that preserves valid extensions", async () => {
+    const skill = await readFile(
+      path.join(process.cwd(), "skills/migrate-wiki-to-okf/SKILL.md"),
+      "utf8",
+    );
+
+    expect(skill).toContain("Preserve all valid existing front matter fields");
+    expect(skill).toContain("`index.md` and `log.md` are reserved");
+    expect(skill).toContain("timestamp: <Optional ISO 8601 datetime>");
+    expect(skill).not.toContain("Never add `timestamp`");
+    expect(skill).not.toContain("fields outside this formatter");
+  });
 });

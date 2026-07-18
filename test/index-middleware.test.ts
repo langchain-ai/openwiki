@@ -43,7 +43,8 @@ describe("synchronizeWikiIndexes", () => {
       "utf8",
     );
 
-    expect(rootIndex).toContain("type: Documentation Index");
+    expect(rootIndex).toContain('okf_version: "0.1"');
+    expect(rootIndex).not.toContain("type: Documentation Index");
     expect(rootIndex).not.toMatch(/^tags:/mu);
     expect(rootIndex).toContain("- [Quickstart](quickstart.md) - Start here.");
     expect(rootIndex).toContain(
@@ -53,6 +54,33 @@ describe("synchronizeWikiIndexes", () => {
     expect(architectureIndex).toContain(
       "- [Architecture overview](overview.md) - How the system is structured.",
     );
+  });
+
+  test("uses OKF version frontmatter only at the bundle root", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/quickstart.md",
+      document("Quickstart", "Start here."),
+    );
+    await backend.write(
+      "/openwiki/architecture/overview.md",
+      document("Architecture", "System structure."),
+    );
+
+    await synchronizeWikiIndexes(backend, "repository");
+
+    const rootIndex = await readFile(
+      path.join(rootDir, "openwiki/index.md"),
+      "utf8",
+    );
+    const nestedIndex = await readFile(
+      path.join(rootDir, "openwiki/architecture/index.md"),
+      "utf8",
+    );
+    expect(rootIndex).toMatch(/^---\nokf_version: "0\.1"\n---\n\n# Files/mu);
+    expect(rootIndex).not.toContain("type: Documentation Index");
+    expect(nestedIndex).toMatch(/^# Files/mu);
+    expect(nestedIndex).not.toMatch(/^---/u);
   });
 
   test("does not rewrite an index that is already current", async () => {
@@ -93,6 +121,26 @@ describe("synchronizeWikiIndexes", () => {
     expect(repaired).toContain("Current description.");
     expect(repaired).not.toContain("INSTRUCTIONS.md");
     expect(repaired).not.toContain("_plan.md");
+  });
+
+  test("does not index the reserved OKF log document", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/page.md",
+      document("Page", "Current description."),
+    );
+    await backend.write(
+      "/openwiki/log.md",
+      "# Directory Update Log\n\n## 2026-07-16\n- **Update**: Changed page.\n",
+    );
+
+    await synchronizeWikiIndexes(backend, "repository");
+
+    const index = await readFile(
+      path.join(rootDir, "openwiki/index.md"),
+      "utf8",
+    );
+    expect(index).not.toContain("log.md");
   });
 
   test("indexes a valid OKF file without an optional description", async () => {
@@ -190,6 +238,6 @@ describe("synchronizeWikiIndexes", () => {
     ).resolves.toContain("- [empty](empty/)");
     await expect(
       readFile(path.join(rootDir, "empty/index.md"), "utf8"),
-    ).resolves.toContain('title: "Empty"');
+    ).resolves.toBe("# Files\n");
   });
 });
