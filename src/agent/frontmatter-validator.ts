@@ -5,8 +5,14 @@ import { parse } from "yaml";
 import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
-const OKF_STRING_FIELDS = ["type", "title", "description", "resource"];
-const OKF_FIELDS = new Set([...OKF_STRING_FIELDS, "tags"]);
+const OKF_STRING_FIELDS = [
+  "type",
+  "title",
+  "description",
+  "resource",
+  "timestamp",
+];
+const OKF_RESERVED_FILES = new Set(["index.md", "log.md"]);
 const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
 
 interface FrontmatterIssue {
@@ -24,7 +30,7 @@ export type FrontmatterValidation =
       valid: false;
     };
 
-/** Parses and validates leading YAML front matter against the supported OKF fields. */
+/** Parses and validates OKF front matter while tolerating producer extensions. */
 export function validateOkfFrontmatter(content: string): FrontmatterValidation {
   const lines = content.split(/\r?\n/u);
   if (lines[0] !== "---") {
@@ -57,9 +63,7 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
     return invalid("invalid_yaml_root", "Front matter must be a YAML mapping.");
   }
 
-  const issues = Object.keys(fields)
-    .filter((key) => !OKF_FIELDS.has(key))
-    .map((key) => issue("unsupported_field", `Unsupported field \`${key}\`.`));
+  const issues: FrontmatterIssue[] = [];
 
   if (!Object.hasOwn(fields, "type")) {
     issues.push(issue("missing_type", "Required field `type` is missing."));
@@ -156,7 +160,7 @@ function getToolMessages(result: unknown): ToolMessage[] {
     : [];
 }
 
-/** Checks whether a path targets a Markdown file inside the configured wiki. */
+/** Checks whether a path targets an OKF concept document inside the wiki. */
 function isWikiMarkdownPath(
   filePath: string,
   outputMode: OpenWikiOutputMode,
@@ -166,6 +170,7 @@ function isWikiMarkdownPath(
   );
   return (
     path.posix.extname(normalized).toLowerCase() === ".md" &&
+    !OKF_RESERVED_FILES.has(path.posix.basename(normalized).toLowerCase()) &&
     (outputMode === "local-wiki" || normalized.startsWith("/openwiki/"))
   );
 }

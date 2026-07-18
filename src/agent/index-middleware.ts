@@ -6,7 +6,13 @@ import { addFrontmatterWarning } from "./frontmatter-validator.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
 const INDEX_FILE = "index.md";
-const EXCLUDED_FILES = new Set([INDEX_FILE, "_plan.md", "INSTRUCTIONS.md"]);
+const LOG_FILE = "log.md";
+const EXCLUDED_FILES = new Set([
+  INDEX_FILE,
+  LOG_FILE,
+  "_plan.md",
+  "INSTRUCTIONS.md",
+]);
 
 interface Directory {
   entries: FileInfo[];
@@ -113,11 +119,7 @@ async function synchronizeDirectory(
   }
 
   const indexPath = path.posix.join(directory.path, INDEX_FILE);
-  const title =
-    directory.path === root
-      ? "OpenWiki"
-      : titleFromSlug(path.posix.basename(directory.path));
-  const content = renderIndex(title, files, directories);
+  const content = renderIndex(files, directories, directory.path === root);
   const existing = directory.entries.some(
     (entry) => !entry.is_dir && entryName(entry) === INDEX_FILE,
   )
@@ -135,9 +137,9 @@ async function synchronizeDirectory(
 
 /** Renders a complete deterministic index document. */
 function renderIndex(
-  title: string,
   files: Link[],
   directories: Link[],
+  isRoot: boolean,
 ): string {
   const sections = [
     renderLinks("Files", files, true),
@@ -145,7 +147,8 @@ function renderIndex(
   ]
     .filter(Boolean)
     .join("\n\n");
-  return `---\ntype: Documentation Index\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(`Files and subdirectories in ${title}.`)}\n---\n\n${sections}\n`;
+  const version = isRoot ? '---\nokf_version: "0.1"\n---\n\n' : "";
+  return `${version}${sections || "# Files"}\n`;
 }
 
 /** Renders a sorted Markdown section for files or subdirectories. */
@@ -165,7 +168,7 @@ function renderLinks(
   return `# ${heading}\n\n${items.join("\n")}`;
 }
 
-/** Parses the optional title and description from YAML front matter. */
+/** Parses usable optional display metadata from YAML front matter. */
 function parseFrontmatter(
   content: string,
   filePath: string,
@@ -191,19 +194,18 @@ function parseFrontmatter(
   }
 
   const { description, title } = fields as Record<string, unknown>;
-  if (
-    description !== undefined &&
-    (typeof description !== "string" || !description.trim())
-  ) {
-    throw new Error(`${filePath} YAML description must be a non-empty string.`);
-  }
-  if (title !== undefined && typeof title !== "string") {
-    throw new Error(`${filePath} YAML title must be a string.`);
-  }
+  const usableDescription = usableString(description);
+  const usableTitle = usableString(title);
   return {
-    ...(description ? { description } : {}),
-    ...(title ? { title } : {}),
+    ...(usableDescription ? { description: usableDescription } : {}),
+    ...(usableTitle ? { title: usableTitle } : {}),
   };
+}
+
+/** Returns optional front matter text only when it can be rendered in an index. */
+function usableString(value: unknown): string | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  return value;
 }
 
 /** Converts an unknown thrown value into a readable message. */
@@ -235,15 +237,6 @@ function fileDataToText(
 /** Extracts an entry's basename from its virtual path. */
 function entryName(entry: FileInfo): string {
   return path.posix.basename(entry.path.replace(/\/$/u, ""));
-}
-
-/** Converts a directory slug into a human-readable title. */
-function titleFromSlug(slug: string): string {
-  return slug
-    .split(/[-_\s]+/u)
-    .filter(Boolean)
-    .map((word) => word[0].toUpperCase() + word.slice(1))
-    .join(" ");
 }
 
 /** Escapes a value for use as a Markdown link label. */

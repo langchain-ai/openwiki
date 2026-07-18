@@ -123,7 +123,7 @@ export async function recordRun(details: RunTelemetry): Promise<void> {
  */
 function connectorProperties(configured: string[]): Record<string, true> {
   return Object.fromEntries(
-    configured.map((id) => [`connector_${id.replace(/-/g, "_")}`, true]),
+    configured.map((id) => [`connector_${id.replace(/-/gu, "_")}`, true]),
   );
 }
 
