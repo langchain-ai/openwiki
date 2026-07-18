@@ -2,6 +2,7 @@ export const OPEN_WIKI_DIR = "openwiki";
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
+export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
@@ -17,8 +18,19 @@ export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
+export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
+  "BEDROCK_AWS_SECRET_ACCESS_KEY";
+export const BEDROCK_AWS_REGION_ENV_KEY = "BEDROCK_AWS_REGION";
+export const GEMINI_API_KEY_ENV_KEY = "GEMINI_API_KEY";
+export const GOOGLE_CLOUD_PROJECT_ENV_KEY = "GOOGLE_CLOUD_PROJECT";
+export const GOOGLE_CLOUD_LOCATION_ENV_KEY = "GOOGLE_CLOUD_LOCATION";
+export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
+  "GOOGLE_APPLICATION_CREDENTIALS";
+export const DEFAULT_VERTEX_LOCATION = "global";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
+export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
 export const DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3;
@@ -57,7 +69,11 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
+  | "bedrock"
   | "fireworks"
+  | "gemini"
+  | "gemini-enterprise"
+  | "nebius"
   | "nvidia"
   | "openai"
   | "openai-chatgpt"
@@ -91,8 +107,26 @@ const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
   { id: "gpt-5.4-mini", label: "5.4 mini" },
 ];
 
+/**
+ * Google's own Gemini models. Offered by the `gemini` (AI Studio) provider and,
+ * on Gemini Enterprise (Vertex AI), served over the native `generateContent`
+ * surface. The `gemini-enterprise` provider additionally reaches Claude and
+ * partner/open-weight Model Garden models by pasting those model IDs directly.
+ */
+const GEMINI_MODELS: ProviderModelOption[] = [
+  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
+  { id: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
+  { id: "gemini-3-flash", label: "Gemini 3 Flash" },
+  { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash-Lite" },
+];
+
 type ProviderConfig = {
-  apiKeyEnvKey: string;
+  /**
+   * Environment variable holding the provider's API key. Absent when the
+   * provider authenticates without an API key (e.g. Google Application
+   * Default Credentials for Vertex AI).
+   */
+  apiKeyEnvKey?: string;
   /**
    * Authentication method for the provider. Omitted entries are implicitly
    * {@link ProviderAuthMethod} `"api-key"`. `"oauth"` providers replace the
@@ -110,18 +144,49 @@ type ProviderConfig = {
    * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
    */
   requiresBaseUrl?: boolean;
+  /**
+   * Environment variable holding the cloud project identifier required to
+   * run the provider (e.g. a Google Cloud project ID).
+   */
+  projectEnvKey?: string;
+  /**
+   * Environment variable that overrides {@link ProviderConfig.defaultLocation}
+   * with an alternative cloud location/region.
+   */
+  locationEnvKey?: string;
+  defaultLocation?: string;
   label: string;
   modelOptions: ProviderModelOption[];
+  /**
+   * Environment variable holding a second required secret (e.g. an AWS secret
+   * access key paired with {@link ProviderConfig.apiKeyEnvKey} as an access key
+   * ID). Omitted for providers authenticated by a single API key.
+   */
+  secretKeyEnvKey?: string;
+  /**
+   * Environment variable holding the provider's region (e.g. an AWS region).
+   * Only relevant when {@link ProviderConfig.requiresRegion} is true.
+   */
+  regionEnvKey?: string;
+  /**
+   * When true, the provider has no default region and requires one to be
+   * supplied via {@link ProviderConfig.regionEnvKey}.
+   */
+  requiresRegion?: boolean;
 };
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
   "anthropic",
+  "gemini",
+  "gemini-enterprise",
   "openrouter",
   "openai-compatible",
+  "bedrock",
   "fireworks",
   "baseten",
+  "nebius",
   "nvidia",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
@@ -135,6 +200,18 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "moonshotai/Kimi-K2.7-Code", label: "Kimi K2.7 Code" },
     ],
   },
+  bedrock: {
+    apiKeyEnvKey: BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+    label: "AWS Bedrock",
+    // Available model IDs are account- and region-specific (they depend on
+    // which foundation models are enabled in Bedrock), so there is no safe
+    // preset list here; paste the Bedrock model ID directly, for example
+    // anthropic.claude-sonnet-5-20260101-v1:0.
+    modelOptions: [],
+    secretKeyEnvKey: BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+    regionEnvKey: BEDROCK_AWS_REGION_ENV_KEY,
+    requiresRegion: true,
+  },
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
     baseURL: "https://api.fireworks.ai/inference/v1",
@@ -146,6 +223,12 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
         label: "Kimi K2.7 Code",
       },
     ],
+  },
+  nebius: {
+    apiKeyEnvKey: NEBIUS_API_KEY_ENV_KEY,
+    baseURL: NEBIUS_BASE_URL,
+    label: "Nebius Token Factory",
+    modelOptions: [{ id: "moonshotai/Kimi-K2.6", label: "Kimi K2.6" }],
   },
   nvidia: {
     apiKeyEnvKey: NVIDIA_API_KEY_ENV_KEY,
@@ -197,6 +280,29 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-opus-4-8", label: "Opus" },
     ],
   },
+  gemini: {
+    apiKeyEnvKey: GEMINI_API_KEY_ENV_KEY,
+    label: "Gemini (AI Studio)",
+    modelOptions: GEMINI_MODELS,
+  },
+  "gemini-enterprise": {
+    // Keyless: authenticated by Google Application Default Credentials against a
+    // Cloud project + location, not an API key. Routes by model family to the
+    // right Model Garden surface (Gemini, Claude, or OpenAI-compatible MaaS);
+    // see createGeminiEnterpriseModel / resolveVertexSurface.
+    projectEnvKey: GOOGLE_CLOUD_PROJECT_ENV_KEY,
+    locationEnvKey: GOOGLE_CLOUD_LOCATION_ENV_KEY,
+    defaultLocation: DEFAULT_VERTEX_LOCATION,
+    label: "Gemini Enterprise (Vertex AI)",
+    // Google's own Gemini models plus the curated Claude Model Garden IDs. Other
+    // partner/open-weight (MaaS) models are reached by pasting their model ID.
+    modelOptions: [
+      ...GEMINI_MODELS,
+      { id: "claude-haiku-4-5@20251001", label: "Claude Haiku" },
+      { id: "claude-sonnet-5", label: "Claude Sonnet" },
+      { id: "claude-opus-4-8", label: "Claude Opus" },
+    ],
+  },
   openrouter: {
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,
     baseURL: OPENROUTER_BASE_URL,
@@ -228,7 +334,9 @@ export function getProviderLabel(provider: OpenWikiProvider): string {
   return getProviderConfig(provider).label;
 }
 
-export function getProviderApiKeyEnvKey(provider: OpenWikiProvider): string {
+export function getProviderApiKeyEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
   return getProviderConfig(provider).apiKeyEnvKey;
 }
 
@@ -240,6 +348,85 @@ export function getProviderAuthMethod(
 
 export function providerUsesOAuth(provider: OpenWikiProvider): boolean {
   return getProviderAuthMethod(provider) === "oauth";
+}
+
+export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).apiKeyEnvKey !== undefined;
+}
+
+export function getProviderProjectEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).projectEnvKey;
+}
+
+export function getProviderLocationEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).locationEnvKey;
+}
+
+/**
+ * Returns the first required-but-unset environment variable for a provider
+ * (its API key, or its cloud project for providers that authenticate without
+ * one), or `null` when the provider has everything it needs to run. Base URL
+ * requirements are checked separately via {@link providerRequiresBaseUrl}.
+ */
+export function getMissingProviderEnvKey(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  const config = getProviderConfig(provider);
+
+  if (config.apiKeyEnvKey && !env[config.apiKeyEnvKey]) {
+    return config.apiKeyEnvKey;
+  }
+
+  if (config.projectEnvKey && !env[config.projectEnvKey]) {
+    return config.projectEnvKey;
+  }
+
+  return null;
+}
+
+/**
+ * Resolves the cloud location for a provider, preferring the provider's
+ * configured environment variable over its built-in default. Returns
+ * `undefined` for providers without a location concept.
+ */
+export function resolveProviderLocation(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const config = getProviderConfig(provider);
+  const override = config.locationEnvKey
+    ? env[config.locationEnvKey]
+    : undefined;
+  const trimmedOverride = override?.trim();
+
+  if (trimmedOverride) {
+    return trimmedOverride;
+  }
+
+  return config.defaultLocation;
+}
+
+/**
+ * A human-readable hint for providers whose credentials live outside the
+ * OpenWiki env file, appended to missing-credential error messages.
+ */
+export function getProviderCredentialHint(
+  provider: OpenWikiProvider,
+): string | null {
+  if (provider === "gemini-enterprise") {
+    return (
+      "Authenticate to Google Cloud with Application Default Credentials " +
+      "(gcloud auth application-default login) or set " +
+      `${GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY} to a service account key file.`
+    );
+  }
+
+  return null;
 }
 
 /**
@@ -271,6 +458,41 @@ export function getProviderBaseUrlEnvKey(
 
 export function providerRequiresBaseUrl(provider: OpenWikiProvider): boolean {
   return getProviderConfig(provider).requiresBaseUrl === true;
+}
+
+export function getProviderSecretKeyEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).secretKeyEnvKey;
+}
+
+export function providerRequiresSecretKey(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).secretKeyEnvKey !== undefined;
+}
+
+export function getProviderRegionEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).regionEnvKey;
+}
+
+export function providerRequiresRegion(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).requiresRegion === true;
+}
+
+/**
+ * Resolves the configured region for a provider from its region environment
+ * variable. Returns `undefined` when unset, so callers fall back to the SDK's
+ * own region resolution (e.g. `~/.aws/config`).
+ */
+export function resolveProviderRegion(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const regionEnvKey = getProviderRegionEnvKey(provider);
+  const region = regionEnvKey ? env[regionEnvKey]?.trim() : undefined;
+
+  return region ? region : undefined;
 }
 
 export function isValidBaseUrl(value: string): boolean {
@@ -332,9 +554,13 @@ export function resolveConfiguredProvider(
               ? "baseten"
               : env[FIREWORKS_API_KEY_ENV_KEY]
                 ? "fireworks"
-                : env[NVIDIA_API_KEY_ENV_KEY]
-                  ? "nvidia"
-                  : DEFAULT_PROVIDER)
+                : env[NEBIUS_API_KEY_ENV_KEY]
+                  ? "nebius"
+                  : env[NVIDIA_API_KEY_ENV_KEY]
+                    ? "nvidia"
+                    : env[BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY]
+                      ? "bedrock"
+                      : DEFAULT_PROVIDER)
   );
 }
 
@@ -376,9 +602,9 @@ export function isValidModelId(value: string): boolean {
   return (
     modelId.length > 0 &&
     modelId.length <= 120 &&
-    /^[A-Za-z0-9][A-Za-z0-9._:/+-]*$/u.test(modelId) &&
+    /^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
     !modelId.includes("://")
   );
 }
 
-export const OPENWIKI_VERSION = "0.1.1";
+export const OPENWIKI_VERSION = "0.2.0";
