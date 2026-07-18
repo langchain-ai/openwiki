@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { createAgentRunConfig } from "../src/agent/index.ts";
+import {
+  createAgentRunConfig,
+  createIterationLimitPrompt,
+} from "../src/agent/index.ts";
 
 describe("createAgentRunConfig", () => {
   test("leaves the dependency default in place when no limit is requested", () => {
@@ -15,5 +18,13 @@ describe("createAgentRunConfig", () => {
       recursionLimit: 12,
       version: "v3",
     });
+  });
+
+  test("asks the agent to wrap up before a configured limit is exhausted", () => {
+    expect(createIterationLimitPrompt(5)).toBe("");
+    expect(createIterationLimitPrompt(4)).toContain(
+      "Stop exploring or delegating new work.",
+    );
+    expect(createIterationLimitPrompt(1)).toContain("Only 1 agent graph step");
   });
 });
