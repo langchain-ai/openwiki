@@ -115,6 +115,13 @@ export async function getUpdateNoopStatus(
   }
 
   if (head !== lastUpdate.gitHead) {
+    if (!(await commitExists(cwd, lastUpdate.gitHead))) {
+      return {
+        shouldSkip: false,
+        reason: `recorded git head ${lastUpdate.gitHead} not found (history rewritten or shallow clone)`,
+      };
+    }
+
     const committedPaths = await getChangedPathsSinceLastUpdate(
       cwd,
       lastUpdate.gitHead,
@@ -380,7 +387,12 @@ async function createGitSummary(
   sections.push(formatGitSection("git status --short", status));
   sections.push(formatGitSection("git rev-parse HEAD", head ?? "(unknown)"));
 
-  if (command === "update" && lastUpdate?.gitHead) {
+  const hasUsableGitHead =
+    command === "update" &&
+    lastUpdate?.gitHead !== undefined &&
+    (await commitExists(cwd, lastUpdate.gitHead));
+
+  if (hasUsableGitHead && lastUpdate?.gitHead) {
     const logSinceLastHead = await runGit(cwd, [
       "log",
       `${lastUpdate.gitHead}..HEAD`,
@@ -395,6 +407,12 @@ async function createGitSummary(
       ),
     );
   } else if (command === "update" && lastUpdate?.updatedAt) {
+    if (lastUpdate.gitHead) {
+      sections.push(
+        `Note: recorded git head ${lastUpdate.gitHead} is no longer present (history was rewritten or commit was amended/rebased away). Falling back to time-based change evidence.`,
+      );
+    }
+
     const logSinceLastUpdate = await runGit(cwd, [
       "log",
       "--since",
@@ -439,6 +457,23 @@ async function getGitHead(cwd: string): Promise<string | undefined> {
   const head = await runGit(cwd, ["rev-parse", "HEAD"]);
 
   return head.length > 0 ? head : undefined;
+}
+
+/**
+ * Returns true when the given commit SHA exists in the local object database.
+ * Uses `git cat-file -e <sha>^{commit}` which exits 0 only when the object is
+ * present and is a commit (or resolves to one).  A missing or rewritten commit
+ * (amend/rebase + gc, or a narrow shallow clone) exits non-zero.
+ */
+async function commitExists(cwd: string, sha: string): Promise<boolean> {
+  try {
+    await execFileAsync("git", ["--no-pager", "cat-file", "-e", `${sha}^{commit}`], {
+      cwd,
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
