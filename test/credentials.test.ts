@@ -1,11 +1,17 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import {
+  ensureRunModeConfig,
   getInitialStep,
+  hydrateRunModeConfig,
   needsCredentialSetup,
   nextSetupStep,
   orderedSetupSteps,
   resolveStepStatus,
 } from "../src/credentials.tsx";
+import type { OpenWikiOnboardingConfig } from "../src/onboarding.ts";
 
 const ENV_KEYS = [
   "LANGSMITH_API_KEY",
@@ -38,6 +44,74 @@ describe("needsCredentialSetup", () => {
     process.env.LANGSMITH_API_KEY = "lsv2_placeholder";
 
     expect(needsCredentialSetup()).toBe(true);
+  });
+});
+
+describe("run-mode wiki brief isolation", () => {
+  const personalConfig: OpenWikiOnboardingConfig = {
+    modeId: "personal",
+    modeName: "Personal",
+    sourceInstances: [],
+    sources: {},
+    templateId: "personal",
+    templateName: "Personal",
+    version: 1,
+    wikiGoal: "Track my personal projects and commitments.",
+  };
+
+  test("clears the global personal brief when switching to code mode", () => {
+    expect(ensureRunModeConfig(personalConfig, "code")).toMatchObject({
+      modeId: "code",
+      templateId: "code",
+      wikiGoal: undefined,
+    });
+  });
+
+  test("does not inherit a personal brief for a new code repository", async () => {
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-code-mode-"));
+
+    try {
+      const codeConfig = {
+        ...personalConfig,
+        modeId: "code",
+        modeName: "Code",
+        templateId: "code",
+        templateName: "Code",
+      };
+
+      await expect(
+        hydrateRunModeConfig(codeConfig, "code", repo),
+      ).resolves.toMatchObject({ wikiGoal: undefined });
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test("uses a repository-specific code brief when present", async () => {
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-code-mode-"));
+    const instructionsDir = path.join(repo, "openwiki");
+
+    try {
+      await mkdir(instructionsDir);
+      await writeFile(
+        path.join(instructionsDir, "INSTRUCTIONS.md"),
+        "Document this repository's architecture.\n",
+      );
+
+      await expect(
+        hydrateRunModeConfig(personalConfig, "code", repo),
+      ).resolves.toMatchObject({
+        wikiGoal: "Document this repository's architecture.",
+      });
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test("retains the personal brief in personal mode", async () => {
+    await expect(
+      hydrateRunModeConfig(personalConfig, "personal", "/unused"),
+    ).resolves.toBe(personalConfig);
   });
 });
 

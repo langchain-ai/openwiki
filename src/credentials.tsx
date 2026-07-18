@@ -4271,12 +4271,14 @@ function getNextStepAfterRegion(
   return null;
 }
 
-function ensureRunModeConfig(
+export function ensureRunModeConfig(
   config: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
 ): OpenWikiOnboardingConfig {
   if (getConfigModeId(config) === mode) {
-    return config;
+    return mode === "code" && config.wikiGoal !== undefined
+      ? { ...config, wikiGoal: undefined }
+      : config;
   }
 
   const runModeTemplate = ONBOARDING_TEMPLATES.find(
@@ -4292,10 +4294,11 @@ function ensureRunModeConfig(
     modeName: runModeTemplate.name,
     templateId: runModeTemplate.id,
     templateName: runModeTemplate.name,
+    ...(mode === "code" ? { wikiGoal: undefined } : {}),
   };
 }
 
-async function hydrateRunModeConfig(
+export async function hydrateRunModeConfig(
   config: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
   repoRoot: string,
@@ -4306,7 +4309,7 @@ async function hydrateRunModeConfig(
 
   const wikiGoal = await readRepositoryWikiInstructions(repoRoot);
 
-  return wikiGoal ? { ...config, wikiGoal } : config;
+  return { ...config, wikiGoal };
 }
 
 function getRunModeSelectionIndex(mode: OpenWikiRunMode): number {
