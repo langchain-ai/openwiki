@@ -167,6 +167,7 @@ timestamp: <Optional ISO 8601 datetime>
 - Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
 - When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
+- OpenWiki repairs front matter deterministically after every run, so a page is never rejected for missing or invalid front matter. If a page's front matter contains \`openwiki_generated: true\`, that metadata was code-derived as a fallback: replace it with an accurate \`type\`, \`title\`, and \`description\` grounded in the page body, then remove the \`openwiki_generated\` field.
 
 Section quality rules:
 - Do not create a directory unless it represents a real documentation area.
