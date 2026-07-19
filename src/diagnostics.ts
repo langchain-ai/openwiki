@@ -118,6 +118,30 @@ export function getErrorMessage(error: unknown): string {
   return sanitizeDiagnosticText(message);
 }
 
+/**
+ * Whether a run failure looks like a credential rejection, judged from the HTTP
+ * status (401/403, number or string) and the already-redacted message. Drives
+ * whether the CLI shows the auth "how to fix" panel.
+ */
+export function isAuthError(error: unknown, message: string): boolean {
+  const status = isRecord(error)
+    ? (error.statusCode ?? error.status)
+    : undefined;
+
+  if (
+    status === 401 ||
+    status === 403 ||
+    status === "401" ||
+    status === "403"
+  ) {
+    return true;
+  }
+
+  return /\b40[13]\b|incorrect api key|invalid api key|unauthorized|forbidden|authentication|permission denied|not authorized/iu.test(
+    message,
+  );
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
