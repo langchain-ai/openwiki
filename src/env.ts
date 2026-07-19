@@ -166,8 +166,74 @@ const managedEnvKeys: readonly string[] = MANAGED_ENV_KEYS;
 
 const deprecatedEnvKeys = ["OPENAI_ORG_ID", "OPENAI_PROJECT"];
 
+/**
+ * The shell's values for managed credential keys, captured once before any load
+ * or save wrote to `process.env`. A shell export keeps precedence over
+ * `~/.openwiki/.env` at runtime, so this snapshot lets the wizard tell the user
+ * when a value they save will be shadowed, and keeps {@link saveOpenWikiEnv}
+ * from masking a shell var in-process. Held in memory only; never persisted or
+ * logged.
+ */
+let shellEnvAtStartup: Record<string, string> | undefined;
+
+/**
+ * Snapshot the shell's values for managed credential keys. Idempotent: the
+ * first call wins, so a later load or save cannot capture values OpenWiki
+ * itself seeded into `process.env`.
+ */
+function captureShellEnv(): void {
+  if (shellEnvAtStartup !== undefined) {
+    return;
+  }
+
+  const snapshot: Record<string, string> = {};
+
+  for (const key of CREDENTIAL_DIAGNOSTIC_ENV_KEYS) {
+    const value = process.env[key];
+
+    if (value !== undefined) {
+      snapshot[key] = value;
+    }
+  }
+
+  shellEnvAtStartup = snapshot;
+}
+
+/**
+ * The shell value for a managed key as captured at startup, or `undefined` when
+ * the shell did not set it. Reflects the pre-load snapshot, so it stays stable
+ * even after {@link loadOpenWikiEnv} / {@link saveOpenWikiEnv} mutate
+ * `process.env`.
+ */
+export function getShellEnvValue(key: string): string | undefined {
+  return shellEnvAtStartup?.[key];
+}
+
+/**
+ * The values saved in `~/.openwiki/.env` as of the first load, before shell
+ * exports win in `process.env`. Lets the setup wizard pre-fill fields from the
+ * saved config rather than `process.env` (which a shell var may shadow), so
+ * editing config never captures a shell override. In memory only.
+ */
+let savedEnvAtStartup: Record<string, string> | undefined;
+
+/**
+ * The saved `~/.openwiki/.env` value for a key as of startup, or `undefined`.
+ * Distinct from {@link getShellEnvValue} (the shell snapshot) and from
+ * `process.env` (shell-over-file at runtime).
+ */
+export function getSavedEnvValue(key: string): string | undefined {
+  return savedEnvAtStartup?.[key];
+}
+
 export async function loadOpenWikiEnv(): Promise<EnvMap> {
+  captureShellEnv();
+
   const env = await readOpenWikiEnv();
+
+  if (savedEnvAtStartup === undefined) {
+    savedEnvAtStartup = { ...env };
+  }
 
   for (const [key, value] of Object.entries(env)) {
     if (deprecatedEnvKeys.includes(key)) {
@@ -193,6 +259,8 @@ export async function getCredentialDiagnostics(): Promise<
 }
 
 export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
+  captureShellEnv();
+
   const currentEnv = await readOpenWikiEnv();
   const nextEnv = {
     ...currentEnv,
@@ -201,6 +269,15 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
 
   for (const key of deprecatedEnvKeys) {
     delete nextEnv[key];
+  }
+
+  // An empty value means "not set" (e.g. skipping the optional LangSmith key),
+  // so drop the key rather than persisting KEY="" which would later read back
+  // as configured. Also self-heals any empty values left by earlier writes.
+  for (const key of Object.keys(nextEnv)) {
+    if (nextEnv[key] === "") {
+      delete nextEnv[key];
+    }
   }
 
   await mkdir(openWikiEnvDir, {
@@ -216,7 +293,19 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
   await chmod(openWikiEnvPath, 0o600);
 
   for (const [key, value] of Object.entries(updates)) {
-    process.env[key] = value;
+    // A shell export wins at runtime, so don't mask it in process.env; the
+    // saved value is only the fallback for when that shell var is unset.
+    if (shellEnvAtStartup?.[key] !== undefined) {
+      continue;
+    }
+
+    // Mirror the file: an empty value means "not set", so clear it from
+    // process.env rather than leaving KEY="" (which reads back as configured).
+    if (value === "") {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
   }
 }
 

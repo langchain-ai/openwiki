@@ -28,6 +28,7 @@ import {
 } from "./credentials.js";
 import {
   getCredentialDiagnostics,
+  getShellEnvValue,
   loadOpenWikiEnv,
   saveOpenWikiEnv,
   type CredentialDiagnostic,
@@ -36,6 +37,7 @@ import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
 import { formatChatGptAccountFromEnv } from "./agent/openai-chatgpt-oauth.js";
 import {
   getErrorMessage,
+  isAuthError,
   isSecretLikeKey,
   sanitizeDiagnosticText,
 } from "./diagnostics.js";
@@ -121,6 +123,7 @@ type RunState =
       message: string;
       credentialDiagnostics?: CredentialDiagnostic[];
       errorDiagnostics?: ErrorDiagnostic[];
+      authFix?: AuthFix;
     };
 
 type RunLogItem = {
@@ -150,6 +153,17 @@ type CompletedRun = {
 type ErrorDiagnostic = {
   label: string;
   value: string;
+};
+
+/**
+ * What the "How to fix" panel needs after an auth failure. Key names only, no
+ * secret values: {@link AuthFix.keyFromShell} reflects only whether the failing
+ * provider's API key was sourced from a shell export (which shadows saved
+ * config), so the panel can tell the user to unset it.
+ */
+type AuthFix = {
+  apiKeyEnvKey: string | undefined;
+  keyFromShell: boolean;
 };
 
 type AppProps = {
@@ -294,13 +308,19 @@ function App({ command }: AppProps) {
         ? command.command
         : null,
     );
+  // `--init` always opens the full setup walk, even when everything is already
+  // configured, so you can review or change any step. Consumed once the walk
+  // finishes so it does not re-open when the run later returns to idle.
+  const [initWizardConsumed, setInitWizardConsumed] = useState(false);
+  const isInitCommand = command.kind === "run" && command.command === "init";
   const shouldRunInteractiveCredentialSetup =
     command.kind === "run" &&
     resolvedCommand !== null &&
     !command.dryRun &&
     process.stdin.isTTY &&
     runState.status === "idle" &&
-    needsCredentialSetup(sessionModelId, runMode);
+    (needsCredentialSetup(sessionModelId, runMode) ||
+      (isInitCommand && !initWizardConsumed));
   const displayModelId = sessionModelId ?? startupModelId;
 
   function submitChatMessage(message: string) {
@@ -390,6 +410,19 @@ function App({ command }: AppProps) {
 
         const errorDiagnostics = getErrorDiagnostics(error);
         const message = getErrorMessage(error);
+        const authFix = getAuthFix(error, message, sessionProvider);
+
+        // The full credential dump is opt-in (--debug); by default show only the
+        // concise message, allowlisted error fields, and the how-to-fix panel.
+        if (!shouldShowCredentialDiagnostics()) {
+          setRunState({
+            status: "error",
+            message,
+            errorDiagnostics,
+            authFix,
+          });
+          return;
+        }
 
         void getCredentialDiagnostics()
           .catch(() => undefined)
@@ -403,6 +436,7 @@ function App({ command }: AppProps) {
               message,
               credentialDiagnostics,
               errorDiagnostics,
+              authFix,
             });
           });
       });
@@ -610,6 +644,19 @@ function App({ command }: AppProps) {
 
         const errorDiagnostics = getErrorDiagnostics(error);
         const message = getErrorMessage(error);
+        const authFix = getAuthFix(error, message, sessionProvider);
+
+        // The full credential dump is opt-in (--debug); by default show only the
+        // concise message, allowlisted error fields, and the how-to-fix panel.
+        if (!shouldShowCredentialDiagnostics()) {
+          setRunState({
+            status: "error",
+            message,
+            errorDiagnostics,
+            authFix,
+          });
+          return;
+        }
 
         void getCredentialDiagnostics()
           .catch(() => undefined)
@@ -623,6 +670,7 @@ function App({ command }: AppProps) {
               message,
               credentialDiagnostics,
               errorDiagnostics,
+              authFix,
             });
           });
       });
@@ -695,7 +743,9 @@ function App({ command }: AppProps) {
         allowModeSelection={false}
         mode={command.mode}
         modelIdOverride={command.modelId}
+        walkAllSteps={isInitCommand}
         onComplete={(result) => {
+          setInitWizardConsumed(true);
           const nextCodeRuntimeCwd = result.repoRoot ?? codeRuntimeCwd;
 
           if (result.repoRoot) {
@@ -904,6 +954,7 @@ function App({ command }: AppProps) {
       <Box flexDirection="column">
         <Header modelId={displayModelId} subtitle="Run failed" />
         <StatusLine tone="error" label="Error" value={runState.message} />
+        {runState.authFix ? <AuthFixPanel authFix={runState.authFix} /> : null}
         {runState.credentialDiagnostics ? (
           <CredentialDiagnosticsPanel
             diagnostics={runState.credentialDiagnostics}
@@ -1046,6 +1097,45 @@ function CredentialDiagnosticsPanel({
           </Text>
         </Box>
       ))}
+    </Panel>
+  );
+}
+
+/**
+ * The ordered "how to fix" steps for an auth failure. Shared by the interactive
+ * panel and the --print stderr path so they stay in sync. Names env keys only,
+ * never secret values.
+ */
+function getAuthFixSteps(authFix: AuthFix): string[] {
+  const steps: string[] = [];
+
+  if (authFix.keyFromShell && authFix.apiKeyEnvKey) {
+    steps.push(
+      `${authFix.apiKeyEnvKey} came from your shell, not ~/.openwiki/.env. ` +
+        `Unset it (unset ${authFix.apiKeyEnvKey}) or fix it, then retry.`,
+    );
+  }
+
+  steps.push(
+    "Re-enter your key: re-run openwiki --init, or edit ~/.openwiki/.env.",
+  );
+
+  return steps;
+}
+
+function AuthFixPanel({ authFix }: { authFix: AuthFix }) {
+  const steps = getAuthFixSteps(authFix);
+
+  return (
+    <Panel title="How to fix">
+      <Text>Your provider rejected the credentials for this run.</Text>
+      {steps.map((step, index) => (
+        <Text key={step}>
+          <Text color="cyan">{index + 1}. </Text>
+          {step}
+        </Text>
+      ))}
+      <Text color="gray">For full detail, re-run with --debug.</Text>
     </Panel>
   );
 }
@@ -3187,6 +3277,31 @@ function getDisplayModelId(modelId: string | null): string {
   );
 }
 
+/**
+ * The auth "how to fix" context for a failure, or undefined when it does not
+ * look like an auth error. Names the failing provider's API key env var and
+ * flags whether it came from the shell (a shell export shadows saved config, so
+ * the fix is to unset it). Existence check only, never reads the value.
+ */
+function getAuthFix(
+  error: unknown,
+  message: string,
+  provider: OpenWikiProvider,
+): AuthFix | undefined {
+  if (!isAuthError(error, message)) {
+    return undefined;
+  }
+
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  return {
+    apiKeyEnvKey,
+    keyFromShell:
+      apiKeyEnvKey !== undefined &&
+      getShellEnvValue(apiKeyEnvKey) !== undefined,
+  };
+}
+
 function getErrorDiagnostics(error: unknown): ErrorDiagnostic[] {
   const diagnostics: ErrorDiagnostic[] = [];
   const debugMode = isDebugMode();
@@ -3998,10 +4113,36 @@ async function runPrintCommand(
 
     process.exitCode = 0;
   } catch (error) {
-    process.stderr.write(`${getErrorMessage(error)}\n`);
+    const message = getErrorMessage(error);
+    process.stderr.write(`${message}\n`);
+    writePrintAuthFix(error, message);
     writePrintErrorDiagnostics(error);
     process.exitCode = 1;
   }
+}
+
+/**
+ * Write the concise auth "how to fix" guidance to stderr on a non-interactive
+ * failure, mirroring the interactive panel so CI/print runs get the same help.
+ * No-op unless the failure looks like an auth error. Key names only.
+ */
+function writePrintAuthFix(error: unknown, message: string): void {
+  const authFix = getAuthFix(error, message, resolveConfiguredProvider());
+
+  if (!authFix) {
+    return;
+  }
+
+  process.stderr.write("\nHow to fix\n");
+  process.stderr.write(
+    "Your provider rejected the credentials for this run.\n",
+  );
+
+  getAuthFixSteps(authFix).forEach((step, index) => {
+    process.stderr.write(`${index + 1}. ${step}\n`);
+  });
+
+  process.stderr.write("For full detail, re-run with --debug.\n");
 }
 
 function writePrintErrorDiagnostics(error: unknown): void {
