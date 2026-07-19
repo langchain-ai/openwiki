@@ -393,12 +393,14 @@ function formatRuntimeRootLabel(outputMode: OpenWikiOutputMode): string {
   return outputMode === "local-wiki" ? "Local wiki root" : "Repository root";
 }
 
-function formatRuntimeRootInstruction(outputMode: OpenWikiOutputMode): string {
+export function formatRuntimeRootInstruction(
+  outputMode: OpenWikiOutputMode,
+): string {
   if (outputMode === "local-wiki") {
     return "Filesystem tools use a virtual root: / means the local wiki directory above. Write wiki pages directly under /, for example /quickstart.md, /sources/gmail.md, and /_plan.md. Do not create a nested /openwiki directory.";
   }
 
-  return "Treat the repository root above as source evidence only. The canonical generated wiki is ~/.openwiki/wiki, not a repository-local openwiki/ directory. Filesystem tools use a virtual root: / means the repository root for source inspection paths such as /README.md, /agent/agents/main.py, and /package.json.";
+  return "Filesystem tools use a virtual root: / means the repository root. The generated repository wiki lives under /openwiki, for example /openwiki/quickstart.md and /openwiki/architecture/overview.md. Inspect source files from repository-root paths such as /README.md, /src/agent/index.ts, and /package.json.";
 }
 
 async function createCheckpointer(
