@@ -1,0 +1,29 @@
+src/okf/frontmatter.ts
+  s_8fb447fde72b26::t_f9c6738f92aca7 26-28
+test/okf/frontmatter.test.ts
+  s_8fb447fde72b26::t_52891def056b69 99-100,105-106
+  s_8fb447fde72b26::t_e7f7055b710183 159,166,170,176
+  s_8fb447fde72b26::t_421735e789f9ee 22-23
+  s_8fb447fde72b26::t_5407bc0bd26506 162,182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "98cb3622ed115e3b67759aa7a2c12653dad22cbb",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8fb447fde72b26": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0d03c489-5158-4869-a367-e12fd350515b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
