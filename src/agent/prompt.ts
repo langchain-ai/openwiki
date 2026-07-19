@@ -67,6 +67,10 @@ export function createUserPrompt(
     .replace("{WIKI_GOAL}", context.wikiGoal?.trim() || "(not provided)")
     .replace("{LAST_UPDATE}", formatLastUpdate(context.lastUpdate))
     .replace(
+      "{REPOSITORY_CI_CONTEXT}",
+      formatRepositoryCiSummary(context.ciSummary),
+    )
+    .replace(
       "{ADDITIONAL_USER_REQUEST}",
       userMessage?.trim()
         ? `Additional user instruction:\n${userMessage.trim()}`
@@ -95,6 +99,10 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   }
 
   return JSON.stringify(lastUpdate, null, 2);
+}
+
+function formatRepositoryCiSummary(ciSummary: string | undefined): string {
+  return ciSummary?.trim() || "(not applicable)";
 }
 
 function formatLanguageInstructions(language: string | undefined): string {
