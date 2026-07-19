@@ -1,7 +1,10 @@
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import path from "node:path";
-import { parse } from "yaml";
 import type { OpenWikiOutputMode } from "../agent/types.js";
+import {
+  normalizeConceptContent,
+  parseFrontmatterFields,
+} from "./frontmatter.js";
 
 const INDEX_FILE = "index.md";
 const LOG_FILE = "log.md";
@@ -116,10 +119,16 @@ async function synchronizeDirectory(
     }
 
     const filePath = path.posix.join(directory.path, name);
-    const metadata = parseFrontmatter(
-      await readText(backend, filePath),
-      filePath,
-    );
+    const original = await readText(backend, filePath);
+    const normalized = normalizeConceptContent(original, filePath);
+    if (normalized.changed) {
+      const result = await backend.edit(filePath, original, normalized.content);
+      if (result.error) {
+        throw new Error(`Unable to normalize ${filePath}: ${result.error}`);
+      }
+    }
+
+    const metadata = readIndexMetadata(normalized.content);
     files.push({
       description: metadata.description,
       href: encodeURIComponent(name),
@@ -182,35 +191,16 @@ function renderLinks(
 }
 
 /**
- * Parses usable optional display metadata from YAML front matter.
+ * Reads usable optional display metadata; returns empty on any parse issue.
  */
-function parseFrontmatter(
-  content: string,
-  filePath: string,
-): { description?: string; title?: string } {
-  const block = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(content)?.[1];
-  if (!block) throw new Error(`${filePath} lacks YAML front matter.`);
-
-  let fields: unknown;
-  try {
-    fields = parse(`\n${block}`, {
-      maxAliasCount: 100,
-      schema: "core",
-      uniqueKeys: true,
-    }) as unknown;
-  } catch (error) {
-    throw new Error(
-      `${filePath} contains invalid YAML front matter: ${errorMessage(error)}`,
-      { cause: error },
-    );
-  }
-  if (fields === null || typeof fields !== "object" || Array.isArray(fields)) {
-    throw new Error(`${filePath} YAML front matter must be a mapping.`);
-  }
-
-  const { description, title } = fields as Record<string, unknown>;
-  const usableDescription = usableString(description);
-  const usableTitle = usableString(title);
+function readIndexMetadata(content: string): {
+  description?: string;
+  title?: string;
+} {
+  const fields = parseFrontmatterFields(content);
+  if (!fields) return {};
+  const usableDescription = usableString(fields.description);
+  const usableTitle = usableString(fields.title);
   return {
     ...(usableDescription ? { description: usableDescription } : {}),
     ...(usableTitle ? { title: usableTitle } : {}),
@@ -223,13 +213,6 @@ function parseFrontmatter(
 function usableString(value: unknown): string | undefined {
   if (typeof value !== "string" || !value.trim()) return undefined;
   return value;
-}
-
-/**
- * Converts an unknown thrown value into a readable message.
- */
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 /**

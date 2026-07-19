@@ -188,3 +188,150 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
+
+/**
+ * Splits a Markdown document into its leading front-matter block and body.
+ */
+export function splitFrontmatter(content: string): {
+  block?: string;
+  body: string;
+} {
+  const match = FRONTMATTER_BLOCK.exec(content);
+  if (!match) return { body: content };
+  return { block: match[1], body: content.slice(match[0].length) };
+}
+
+/**
+ * Parses the front-matter block into a field map, or undefined if unusable.
+ */
+export function parseFrontmatterFields(
+  content: string,
+): Record<string, unknown> | undefined {
+  const { block } = splitFrontmatter(content);
+  if (block === undefined) return undefined;
+
+  let fields: unknown;
+  try {
+    fields = parse(`\n${block}`, {
+      maxAliasCount: 100,
+      schema: "core",
+      uniqueKeys: true,
+    }) as unknown;
+  } catch {
+    return undefined;
+  }
+  return fields !== null && typeof fields === "object" && !Array.isArray(fields)
+    ? (fields as Record<string, unknown>)
+    : undefined;
+}
+
+/**
+ * Returns the text of the first ATX H1 in a body, if any.
+ */
+function firstHeading(body: string): string | undefined {
+  const match = /^#\s+(.+?)\s*$/mu.exec(body);
+  return match ? match[1].trim() : undefined;
+}
+
+/**
+ * Returns the first prose paragraph collapsed to one line, skipping leading
+ * heading and blank lines. Unlike a blank-line split, this still finds prose
+ * that directly follows a heading with no blank line between them.
+ */
+function firstParagraph(body: string): string | undefined {
+  const paragraph: string[] = [];
+  for (const raw of body.split(/\r?\n/u)) {
+    const line = raw.trim();
+    if (paragraph.length === 0) {
+      if (!line || line.startsWith("#")) continue;
+      paragraph.push(line);
+    } else {
+      if (!line) break;
+      paragraph.push(line);
+    }
+  }
+  return paragraph.length > 0
+    ? paragraph.join(" ").replace(/\s+/gu, " ")
+    : undefined;
+}
+
+/**
+ * Builds a human-readable title from a Markdown filename.
+ */
+function titleFromFilename(filePath: string): string {
+  const base = filePath.replace(/^.*\//u, "").replace(/\.md$/iu, "");
+  const spaced = base.replace(/[-_]+/gu, " ").trim();
+  return spaced ? spaced.charAt(0).toUpperCase() + spaced.slice(1) : base;
+}
+
+/**
+ * Derives minimal OKF fields from a page body and its path.
+ */
+export function deriveMinimalFrontmatter(
+  body: string,
+  filePath: string,
+): DerivedFrontmatter {
+  const description = firstParagraph(body);
+  return {
+    type: "Reference",
+    title: firstHeading(body) ?? titleFromFilename(filePath),
+    ...(description ? { description } : {}),
+  };
+}
+
+/**
+ * Renders an OKF front-matter block, flagging code-derived metadata.
+ */
+export function renderFrontmatter(
+  fields: DerivedFrontmatter,
+  options: { generated: boolean },
+): string {
+  const lines = [
+    `type: ${JSON.stringify(fields.type)}`,
+    `title: ${JSON.stringify(fields.title)}`,
+  ];
+  if (fields.description) {
+    lines.push(`description: ${JSON.stringify(fields.description)}`);
+  }
+  if (options.generated) lines.push(`${OPENWIKI_GENERATED_FIELD}: true`);
+  return `---\n${lines.join("\n")}\n---\n\n`;
+}
+
+/**
+ * Guarantees a page has valid OKF front matter without destroying good data.
+ *
+ * Rule: if the front matter parses and has a non-empty `type`, the page is left
+ * unchanged. Otherwise (no front matter, unparseable YAML, or a missing `type`)
+ * its front matter is replaced with a minimal block derived from the body and
+ * tagged `openwiki_generated` for later agent review.
+ *
+ * Pages that already have a `type` are kept even when optional fields like
+ * `title` are junk, so an author's `type` and custom fields are never
+ * overwritten; the index generator already ignores unusable optional fields.
+ * Never throws. Returns the new content and whether it changed.
+ */
+export function normalizeConceptContent(
+  content: string,
+  filePath: string,
+): { changed: boolean; content: string } {
+  if (hasUsableConceptType(content)) {
+    return { changed: false, content };
+  }
+  const { body } = splitFrontmatter(content);
+  const derived = deriveMinimalFrontmatter(body, filePath);
+  const front = renderFrontmatter(derived, { generated: true });
+  return { changed: true, content: `${front}${body.replace(/^\s+/u, "")}` };
+}
+
+/**
+ * Reports whether a page already declares a usable OKF `type`, meaning its
+ * front matter parses and `type` is a non-empty string.
+ */
+function hasUsableConceptType(content: string): boolean {
+  const fields = parseFrontmatterFields(content);
+  return (
+    fields !== undefined &&
+    typeof fields.type === "string" &&
+    fields.type.trim() !== ""
+  );
+}

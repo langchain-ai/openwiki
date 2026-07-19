@@ -183,19 +183,24 @@ describe("synchronizeWikiIndexes", () => {
     expect(index).toContain("- [Folded](folded.md) - A folded description.");
   });
 
-  test("rejects malformed and duplicate YAML", async () => {
+  test("normalizes malformed and duplicate YAML instead of throwing", async () => {
     for (const frontmatter of [
       "type: [unterminated\ndescription: Page",
       "type: Reference\ndescription: First\ndescription: Second",
     ]) {
-      const { backend } = await setup();
+      const { backend, rootDir } = await setup();
       await backend.write("/openwiki/page.md", `---\n${frontmatter}\n---\n`);
 
       await expect(
         synchronizeWikiIndexes(backend, "repository"),
-      ).rejects.toThrow(
-        "/openwiki/page.md contains invalid YAML front matter:",
+      ).resolves.toBeUndefined();
+
+      const page = await readFile(
+        path.join(rootDir, "openwiki/page.md"),
+        "utf8",
       );
+      expect(page).toContain('type: "Reference"');
+      expect(page).toContain("openwiki_generated: true");
     }
   });
 
