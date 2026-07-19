@@ -1,6 +1,9 @@
 import type { BackendProtocolV2 } from "deepagents";
 import { parse } from "yaml";
 
+/**
+ * OKF fields that, when present, must be non-empty string values.
+ */
 const OKF_STRING_FIELDS = [
   "type",
   "title",
@@ -8,6 +11,36 @@ const OKF_STRING_FIELDS = [
   "resource",
   "timestamp",
 ];
+
+/**
+ * Extension field flagging front matter OpenWiki derived deterministically.
+ */
+export const OPENWIKI_GENERATED_FIELD = "openwiki_generated";
+
+/**
+ * Matches a leading YAML front-matter block and captures its inner text.
+ */
+const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u;
+
+/**
+ * Minimal OKF fields OpenWiki can derive from a page body.
+ */
+interface DerivedFrontmatter {
+  /**
+   * Optional one-line summary derived from the first prose paragraph.
+   */
+  description?: string;
+
+  /**
+   * Concept title from the first H1, falling back to the filename.
+   */
+  title: string;
+
+  /**
+   * OKF concept type; defaults to "Reference" for derived pages.
+   */
+  type: string;
+}
 
 /**
  * A single structured problem found while validating front matter.
