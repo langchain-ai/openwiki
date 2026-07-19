@@ -6,6 +6,13 @@ import {
 } from "./types.js";
 import type { OpenWikiIgnore } from "./openwiki-ignore.js";
 
+const EMPTY_PROMPT_SECTION = "";
+const REPOSITORY_CI_GROUNDING_INSTRUCTION = `Repository evidence grounding discipline:
+- When documenting this repository's CI, scheduled jobs, or OpenWiki integration, read and cite the checked-out workflow/config files from this repository before changing those docs.
+- Treat this repository's workflow files, package scripts, configuration files, and existing user-authored briefs as the source of truth for this repository's actual automation.
+- The OpenWiki CLI reference and OpenWiki's own README/examples describe the tool's defaults and upstream examples; use them only for generic OpenWiki behavior, never as a substitute for this repository's checked-out configuration.
+- If the repository configuration conflicts with OpenWiki's defaults or examples, document the repository configuration and call the upstream default/example out only when that contrast is directly relevant.`;
+
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   if (lastUpdate === null) {
     return "No previous OpenWiki update metadata was found.";
@@ -116,6 +123,8 @@ Existing documentation discipline:
 - Treat existing README files, docs/ trees, root documentation files, runbooks, and SKILL.md files as primary source material.
 - Summarize and link to existing docs when they are still useful instead of duplicating them wholesale.
 - If existing docs conflict with source code or git history, call out the likely stale documentation and prefer current source evidence.
+
+${output.repositoryEvidenceGroundingInstruction}
 
 ${output.rootAgentInstructions}
 
@@ -358,6 +367,9 @@ Start with ${output.quickstartPath} as the entrypoint. Then create section direc
 Wiki brief:
 ${formatWikiGoal(context.wikiGoal)}
 
+Repository automation context:
+${formatRepositoryCiSummary(context.ciSummary)}
+
 Git context:
 ${context.gitSummary}
 `.trim(),
@@ -377,6 +389,9 @@ ${formatLastUpdate(context.lastUpdate)}
 Wiki brief:
 ${formatWikiGoal(context.wikiGoal)}
 
+Repository automation context:
+${formatRepositoryCiSummary(context.ciSummary)}
+
 Git change summary:
 ${context.gitSummary}
 `.trim(),
@@ -386,6 +401,10 @@ ${context.gitSummary}
 
 function formatWikiGoal(wikiGoal: string | undefined): string {
   return wikiGoal?.trim() || "(not provided)";
+}
+
+function formatRepositoryCiSummary(ciSummary: string | undefined): string {
+  return ciSummary?.trim() || "(not applicable)";
 }
 
 type OutputPromptConfig = {
@@ -400,6 +419,7 @@ type OutputPromptConfig = {
   planPath: string;
   quickstartPath: string;
   rootAgentInstructions: string;
+  repositoryEvidenceGroundingInstruction: string;
   searchBoundaryInstruction: string;
   sectionDirectoryInstruction: string;
   subjectLabel: string;
@@ -493,6 +513,7 @@ function getOutputPromptConfig(
       metadataPath: "/.last-update.json",
       planPath: "/_plan.md",
       quickstartPath: "/quickstart.md",
+      repositoryEvidenceGroundingInstruction: EMPTY_PROMPT_SECTION,
       rootAgentInstructions:
         "Root agent instruction files:\n- Repository /AGENTS.md and /CLAUDE.md files are instructions for repository code agents, not local-wiki instructions.\n- When inspecting a configured local repository as evidence, do not read or follow those files unless the user explicitly asks about their contents.\n- Local wiki mode does not manage repository /AGENTS.md or /CLAUDE.md files.\n- Do not create or edit agent instruction files unless the user explicitly asks for that as a separate repository documentation task.",
       searchBoundaryInstruction:
@@ -533,6 +554,7 @@ function getOutputPromptConfig(
     metadataPath: "/openwiki/.last-update.json",
     planPath: "/openwiki/_plan.md",
     quickstartPath: "/openwiki/quickstart.md",
+    repositoryEvidenceGroundingInstruction: REPOSITORY_CI_GROUNDING_INSTRUCTION,
     rootAgentInstructions: `Root agent instruction files:
 - Do not create or update repository /AGENTS.md or /CLAUDE.md files during normal code wiki runs.
 - Keep generated wiki content under the repository /openwiki directory.
