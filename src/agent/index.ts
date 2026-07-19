@@ -9,6 +9,7 @@ import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
+import { dynamicSystemPromptMiddleware } from "langchain";
 import {
   CompositeBackend,
   createDeepAgent,
@@ -250,10 +251,14 @@ async function runOpenWikiAgentCore(
     tools: createOpenWikiConnectorTools(),
     checkpointer,
     backend,
-    middleware:
-      command === "chat"
+    middleware: [
+      ...(options.maxIterations
+        ? [createIterationLimitPromptMiddleware()]
+        : []),
+      ...(command === "chat"
         ? []
-        : [createOpenWikiIndexMiddleware(wikiBackend, outputMode)],
+        : [createOpenWikiIndexMiddleware(wikiBackend, outputMode)]),
+    ],
     skills: ["/skills/"],
     permissions: [
       { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
@@ -272,12 +277,10 @@ async function runOpenWikiAgentCore(
   };
 
   emitDebug(options, "stream=opening protocol=events version=v3");
-  const stream = await agent.streamEvents(input, {
-    configurable: {
-      thread_id: threadId,
-    },
-    version: "v3",
-  });
+  const stream = await agent.streamEvents(
+    input,
+    createAgentRunConfig(threadId, options.maxIterations),
+  );
   emitDebug(options, "stream=started protocol=events version=v3");
 
   let unhandledChunkCount = 0;
@@ -351,6 +354,45 @@ async function runOpenWikiAgentCore(
     command,
     model: modelId,
   };
+}
+
+export function createAgentRunConfig(
+  threadId: string,
+  maxIterations: number | null | undefined,
+) {
+  return {
+    ...(maxIterations === null || maxIterations === undefined
+      ? {}
+      : { recursionLimit: maxIterations }),
+    configurable: {
+      thread_id: threadId,
+    },
+    version: "v3" as const,
+  };
+}
+
+const ITERATION_WRAP_UP_THRESHOLD = 4;
+
+export function createIterationLimitPrompt(
+  remainingSteps: number | undefined,
+): string {
+  if (
+    remainingSteps === undefined ||
+    remainingSteps > ITERATION_WRAP_UP_THRESHOLD
+  ) {
+    return "";
+  }
+
+  return `\n\n<iteration-limit>\nOnly ${remainingSteps} agent graph step${remainingSteps === 1 ? "" : "s"} remain before this run stops. Stop exploring or delegating new work. Use the remaining steps to complete the most important documentation changes you can, then give a concise final response.\n</iteration-limit>`;
+}
+
+function createIterationLimitPromptMiddleware() {
+  return dynamicSystemPromptMiddleware((state) =>
+    createIterationLimitPrompt(
+      (state as { remainingSteps?: unknown }).remainingSteps as
+        number | undefined,
+    ),
+  );
 }
 
 const checkpointPath = path.join(openWikiEnvDir, "openwiki.sqlite");

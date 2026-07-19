@@ -60,6 +60,7 @@ export type CliCommand =
       dryRun: boolean;
       mode: OpenWikiRunMode;
       modeSource: OpenWikiRunModeSource;
+      maxIterations: number | null;
       modelId: string | null;
       print: boolean;
       shouldStart: boolean;
@@ -337,6 +338,7 @@ function parseRunCommand(
   let dryRun = false;
   let mode = initialMode;
   let modeSource = initialModeSource;
+  let maxIterations: number | null = null;
   let modelId: string | null = null;
   let print = false;
   let command: OpenWikiCommand = "chat";
@@ -468,6 +470,40 @@ function parseRunCommand(
       continue;
     }
 
+    if (arg === "--max-iterations") {
+      const rawMaxIterations = argv[index + 1];
+      const parsedMaxIterations = parseMaxIterations(rawMaxIterations);
+
+      if (parsedMaxIterations === null) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--max-iterations requires a positive whole number.",
+        };
+      }
+
+      maxIterations = parsedMaxIterations;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--max-iterations=")) {
+      const parsedMaxIterations = parseMaxIterations(
+        arg.slice("--max-iterations=".length),
+      );
+
+      if (parsedMaxIterations === null) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--max-iterations requires a positive whole number.",
+        };
+      }
+
+      maxIterations = parsedMaxIterations;
+      continue;
+    }
+
     if (arg.startsWith("--modelId=") || arg.startsWith("--model-id=")) {
       const [, rawModelId = ""] = arg.split("=", 2);
       const parsedModelId = normalizeModelId(rawModelId);
@@ -563,12 +599,23 @@ function parseRunCommand(
     dryRun,
     mode,
     modeSource,
+    maxIterations,
     modelId,
     print,
     shouldStart,
     userMessage,
     telemetryFile,
   };
+}
+
+function parseMaxIterations(value: string | undefined): number | null {
+  if (!value || value.startsWith("-")) {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 function resolveExplicitMode(
@@ -742,6 +789,10 @@ export const helpContent: HelpContent = {
     {
       label: "--modelId <id>",
       description: "Use a model ID for this run.",
+    },
+    {
+      label: "--max-iterations <n>",
+      description: "Bound a run to at most n agent graph steps.",
     },
     {
       label: "--telemetry-file <path>",
