@@ -190,6 +190,80 @@ describe("saveOpenWikiEnv", () => {
 
     expect(process.env[OPENAI_API_KEY_ENV_KEY]).toBe("sk-immediate");
   });
+
+  test("does not mask a shell var in process.env, but still writes the file", async () => {
+    // A shell export present before any load/save wins at runtime, so the save
+    // must not overwrite it in-process; the saved value is only the fallback.
+    process.env[OPENROUTER_API_KEY_ENV_KEY] = "from-shell";
+
+    await env.saveOpenWikiEnv({ [OPENROUTER_API_KEY_ENV_KEY]: "from-wizard" });
+
+    expect(process.env[OPENROUTER_API_KEY_ENV_KEY]).toBe("from-shell");
+
+    const contents = await readFile(env.openWikiEnvPath, "utf8");
+    expect(contents).toContain('OPENROUTER_API_KEY="from-wizard"');
+  });
+
+  test('drops an empty value instead of persisting KEY=""', async () => {
+    // Skipping an optional key (empty value) must clear it, not save KEY=""
+    // (which would later read back as configured).
+    await env.saveOpenWikiEnv({ [OPENROUTER_API_KEY_ENV_KEY]: "sk-real" });
+    await env.saveOpenWikiEnv({ [OPENROUTER_API_KEY_ENV_KEY]: "" });
+
+    const contents = await readFile(env.openWikiEnvPath, "utf8");
+    expect(contents).not.toContain(OPENROUTER_API_KEY_ENV_KEY);
+    expect(process.env[OPENROUTER_API_KEY_ENV_KEY]).toBeUndefined();
+  });
+});
+
+describe("getShellEnvValue", () => {
+  test("reflects the pre-load shell snapshot, stable across later writes", async () => {
+    process.env[OPENAI_API_KEY_ENV_KEY] = "shell-key";
+
+    // The first load/save captures the snapshot.
+    await env.loadOpenWikiEnv();
+
+    expect(env.getShellEnvValue(OPENAI_API_KEY_ENV_KEY)).toBe("shell-key");
+
+    // A key the shell did not set is not in the snapshot, and saving it later
+    // does not retroactively add it (the snapshot is taken once, up front).
+    await env.saveOpenWikiEnv({ [OPENROUTER_API_KEY_ENV_KEY]: "saved" });
+
+    expect(env.getShellEnvValue(OPENROUTER_API_KEY_ENV_KEY)).toBeUndefined();
+  });
+
+  test("is undefined for a key absent from the shell at startup", async () => {
+    await env.loadOpenWikiEnv();
+
+    expect(env.getShellEnvValue(OPENAI_API_KEY_ENV_KEY)).toBeUndefined();
+  });
+});
+
+describe("getSavedEnvValue", () => {
+  test("returns the saved file value, not a shadowing shell value", async () => {
+    // The shell shadows the key at runtime...
+    process.env[OPENROUTER_API_KEY_ENV_KEY] = "from-shell";
+    // ...but a different value is saved in the file.
+    await mkdir(path.dirname(env.openWikiEnvPath), { recursive: true });
+    await writeFile(
+      env.openWikiEnvPath,
+      `${OPENROUTER_API_KEY_ENV_KEY}="from-file"\n`,
+      "utf8",
+    );
+
+    await env.loadOpenWikiEnv();
+
+    // process.env keeps the shell value (shell wins)...
+    expect(process.env[OPENROUTER_API_KEY_ENV_KEY]).toBe("from-shell");
+    // ...but the saved snapshot reflects the file, so the wizard seeds config.
+    expect(env.getSavedEnvValue(OPENROUTER_API_KEY_ENV_KEY)).toBe("from-file");
+  });
+
+  test("is undefined for a key absent from the saved file", async () => {
+    await env.loadOpenWikiEnv();
+
+    expect(env.getSavedEnvValue(OPENROUTER_API_KEY_ENV_KEY)).toBeUndefined();
+  });
 });
 
 describe("getCredentialDiagnostics", () => {

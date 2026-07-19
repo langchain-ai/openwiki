@@ -369,6 +369,13 @@ function parseRunCommand(
       continue;
     }
 
+    if (arg === "--debug") {
+      // isDebugMode() reads OPENWIKI_DEBUG; setting it at parse time is the
+      // least-invasive way to opt into full credential/error diagnostics.
+      process.env.OPENWIKI_DEBUG = "1";
+      continue;
+    }
+
     if (arg === "--init" || arg === "--update") {
       const nextCommand = arg === "--init" ? "init" : "update";
 
@@ -726,6 +733,11 @@ export const helpContent: HelpContent = {
     {
       label: "-p, --print",
       description: "Run once and print the final assistant output.",
+    },
+    {
+      label: "--debug",
+      description:
+        "Show full credential and error diagnostics when a run fails.",
     },
     {
       label: "--modelId <id>",
