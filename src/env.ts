@@ -465,7 +465,10 @@ export function parseEnv(content: string): EnvMap {
     }
 
     // Handle "export KEY=value" syntax
-    const lineToParse = line.startsWith("export ") ? line.slice(7) : line;
+    const exportPrefix = "export ";
+    const lineToParse = line.startsWith(exportPrefix)
+      ? line.slice(exportPrefix.length)
+      : line;
 
     const equalsIndex = lineToParse.indexOf("=");
 

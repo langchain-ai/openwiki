@@ -58,7 +58,9 @@ describe("parseEnv", () => {
   });
 
   test("handles export-prefixed lines with double-quoted values", () => {
-    expect(parseEnv('export ANTHROPIC_BASE_URL="https://api.anthropic.com"\n')).toEqual({
+    expect(
+      parseEnv('export ANTHROPIC_BASE_URL="https://api.anthropic.com"\n'),
+    ).toEqual({
       ANTHROPIC_BASE_URL: "https://api.anthropic.com",
     });
   });
