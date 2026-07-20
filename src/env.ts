@@ -9,6 +9,7 @@ import {
   BEDROCK_AWS_REGION_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  getProviderBaseUrlWarnings,
   GEMINI_API_KEY_ENV_KEY,
   GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
   GOOGLE_CLOUD_LOCATION_ENV_KEY,
@@ -18,6 +19,7 @@ import {
   normalizeProvider,
   NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_BASE_URL_ENV_KEY,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
   OPENAI_CHATGPT_EMAIL_ENV_KEY,
@@ -37,6 +39,7 @@ import {
   OPENWIKI_NOTION_MCP_REFRESH_TOKEN_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_NOTION_TOKEN_ENV_KEY,
+  OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY,
   OPENWIKI_SLACK_BOT_TOKEN_ENV_KEY,
   OPENWIKI_SLACK_CLIENT_ID_ENV_KEY,
   OPENWIKI_SLACK_CLIENT_SECRET_ENV_KEY,
@@ -52,6 +55,7 @@ import {
   resolveProviderRetryAttempts,
 } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
+import { restrictDirToCurrentUser } from "./windows-acl.js";
 
 export const openWikiEnvDir = path.join(os.homedir(), ".openwiki");
 export const openWikiEnvPath = path.join(openWikiEnvDir, ".env");
@@ -84,6 +88,7 @@ export const MANAGED_ENV_KEYS = [
   NEBIUS_API_KEY_ENV_KEY,
   NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
+  OPENAI_BASE_URL_ENV_KEY,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
@@ -99,6 +104,7 @@ export const MANAGED_ENV_KEYS = [
   GOOGLE_CLOUD_LOCATION_ENV_KEY,
   GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY,
   BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
@@ -285,6 +291,7 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
     mode: 0o700,
   });
   await chmod(openWikiEnvDir, 0o700);
+  await restrictDirToCurrentUser(openWikiEnvDir);
 
   await writeFile(openWikiEnvPath, formatEnv(nextEnv), {
     encoding: "utf8",
@@ -342,7 +349,11 @@ function createCredentialDiagnostic(
           ? getProviderWarnings(value)
           : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
             ? getRetryAttemptsWarnings(value)
-            : getCredentialWarnings(value),
+            : key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+              ? getProviderBaseUrlWarnings("openai-compatible", value)
+              : key === ANTHROPIC_BASE_URL_ENV_KEY
+                ? getProviderBaseUrlWarnings("anthropic", value)
+                : getCredentialWarnings(value),
   };
 }
 
@@ -370,7 +381,9 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
+    key === OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||
     key === BEDROCK_AWS_REGION_ENV_KEY ||
     key === GOOGLE_CLOUD_PROJECT_ENV_KEY ||
@@ -451,14 +464,20 @@ export function parseEnv(content: string): EnvMap {
       continue;
     }
 
-    const equalsIndex = line.indexOf("=");
+    // Handle "export KEY=value" syntax
+    const exportPrefix = "export ";
+    const lineToParse = line.startsWith(exportPrefix)
+      ? line.slice(exportPrefix.length)
+      : line;
+
+    const equalsIndex = lineToParse.indexOf("=");
 
     if (equalsIndex <= 0) {
       continue;
     }
 
-    const key = line.slice(0, equalsIndex).trim();
-    const rawValue = line.slice(equalsIndex + 1).trim();
+    const key = lineToParse.slice(0, equalsIndex).trim();
+    const rawValue = lineToParse.slice(equalsIndex + 1).trim();
 
     if (!/^[A-Z_][A-Z0-9_]*$/u.test(key)) {
       continue;

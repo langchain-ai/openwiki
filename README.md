@@ -233,6 +233,19 @@ ANTHROPIC_API_KEY=your-key
 ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 ```
 
+The `openai` provider likewise supports an alternative, OpenAI-compatible
+endpoint (for example a self-hosted or proxied gateway) via `OPENAI_BASE_URL`,
+set alongside `OPENAI_API_KEY`. This is useful for OpenAI-compatible gateways
+that expose the Responses API, since the `openai` provider routes tool calls
+through the Responses API (`/v1/responses`) rather than chat completions:
+
+```bash
+OPENWIKI_PROVIDER=openai
+OPENAI_API_KEY=your-key
+OPENAI_BASE_URL=https://your-gateway.example.com/v1
+OPENWIKI_MODEL_ID=your-model-name
+```
+
 ### OpenAI-compatible endpoints
 
 The `openai-compatible` provider targets any OpenAI-compatible chat-completions
@@ -247,6 +260,41 @@ OPENAI_COMPATIBLE_API_KEY=your-gateway-key
 OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
+
+Local LLM servers that expose OpenAI-compatible chat completions use the same
+provider. The model ID must match a model available from that local server:
+
+```bash
+# Ollama, after `ollama serve` and `ollama pull llama3.2`
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=ollama
+OPENAI_COMPATIBLE_BASE_URL=http://localhost:11434/v1
+OPENWIKI_MODEL_ID=llama3.2
+openwiki --init
+```
+
+```bash
+# LM Studio, after starting the local server from the Developer tab
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=lm-studio
+OPENAI_COMPATIBLE_BASE_URL=http://localhost:1234/v1
+OPENWIKI_MODEL_ID=your-loaded-model-id
+openwiki --init
+```
+
+For local gateways such as 9Router, use the OpenAI-compatible endpoint URL,
+API key, and model ID shown by the gateway:
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=your-local-gateway-key
+OPENAI_COMPATIBLE_BASE_URL=http://localhost:20128/v1
+OPENWIKI_MODEL_ID=your-routed-model-id
+openwiki --init
+```
+
+Some local servers ignore the API key value, but OpenWiki still requires
+`OPENAI_COMPATIBLE_API_KEY` because the OpenAI-compatible client expects one.
 
 ### AWS Bedrock
 
@@ -356,6 +404,18 @@ For CI, authenticate before the update job runs — for example with
 environment.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
+
+### OpenRouter provider pinning
+
+When OpenRouter serves a model through multiple upstream providers, set
+`OPENWIKI_OPENROUTER_PROVIDER_ONLY` to restrict routing to one provider or a
+comma-separated provider allowlist:
+
+```bash
+OPENWIKI_PROVIDER=openrouter
+OPENROUTER_API_KEY=your-key
+OPENWIKI_OPENROUTER_PROVIDER_ONLY=Novita
+```
 
 ### Provider retry attempts
 
