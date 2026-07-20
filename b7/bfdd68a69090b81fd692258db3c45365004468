@@ -4,6 +4,7 @@ test/prompt.test.ts
   s_70ce361ce20830::t_0e3848f065a868 71,76-88,98-101
 test/skills.test.ts
   s_70ce361ce20830::t_763271f9bd7211 50-65
+  s_70ce361ce20830::t_14f5d0e8db9b32 49
 ---
 {
   "schema_version": "authorship/3.0.0",
