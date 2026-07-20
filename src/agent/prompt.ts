@@ -203,11 +203,11 @@ ${createModeInstructions(command, outputMode)}
 export function createDiagramInstructions(): string {
   return `
 Diagram discipline:
-- Where a flow, lifecycle, or data model is easier to grasp visually, embed a Mermaid diagram in a fenced \`\`\`mermaid block on the most relevant page: sequenceDiagram for runtime/request flows, stateDiagram for lifecycles, erDiagram for the data model, and flowchart for control flow.
+- Where a runtime flow, lifecycle, data model, or non-trivial control flow is clearer as a picture than as prose, embed a Mermaid diagram in a fenced \`\`\`mermaid block on the most relevant page. Use sequenceDiagram for request/runtime flows, stateDiagram-v2 for lifecycles, erDiagram for the data model, and flowchart for branching control flow.
 - Ground every diagram in inspected source. Do not invent participants, states, entities, or relationships the code does not support.
-- Keep diagrams accurate on update runs: if a source change makes an existing diagram stale, update the diagram in the same edit as the surrounding prose. A wrong diagram is a stale claim, not existing structure to preserve.
-- Mermaid label safety: never place semicolons, pipes, or unescaped angle brackets inside node, message, or edge labels; they break rendering. Rephrase the label instead.
-- Prefer a few high-value diagrams over decorating every page, and give each a short caption so its purpose is clear.
+- Keep diagrams accurate on update runs. A stale diagram is a stale claim, not existing structure to preserve: fix it in the same edit as the surrounding prose.
+- Prefer a few high-value diagrams over decorating every page, and give each a one-line caption. Consult the mermaid-diagrams skill for label-safety rules.
+- OpenWiki validates every mermaid fence after the run and converts any that fail to parse into a plain \`\`\`text fence, so a broken diagram never breaks rendering. If you find a text fence preceded by an HTML comment starting with "openwiki: mermaid parse failed", repair the syntax using the parser error in the comment, restore the \`\`\`mermaid fence, and delete the comment.
 `;
 }
 

@@ -68,14 +68,24 @@ describe("createSystemPrompt openwiki_generated enrichment guidance", () => {
 });
 
 describe("createDiagramInstructions", () => {
-  test("includes Mermaid guidance and the label-safety rule", () => {
+  test("nudges toward diagrams and defers label-safety to the skill", () => {
     const text = createDiagramInstructions();
 
     expect(text).toContain("Diagram discipline:");
     expect(text).toContain("```mermaid");
-    expect(text).toContain("erDiagram");
-    // The syntax guard that prevents the broken-render failure mode.
-    expect(text.toLowerCase()).toContain("semicolons");
+    // Names each of the four diagram types the skill documents.
+    for (const type of [
+      "sequenceDiagram",
+      "stateDiagram-v2",
+      "erDiagram",
+      "flowchart",
+    ]) {
+      expect(text).toContain(type);
+    }
+    // Detailed syntax rules moved to the skill; the prompt points at it instead
+    // of restating them.
+    expect(text).toContain("mermaid-diagrams skill");
+    expect(text.toLowerCase()).not.toContain("semicolons");
   });
 });
 
@@ -85,6 +95,10 @@ describe("createSystemPrompt diagram guidance", () => {
       const prompt = createSystemPrompt(command);
 
       expect(prompt).toContain("Diagram discipline:");
+      expect(prompt).toContain("```mermaid");
+      // Contract with the post-run degrade pass: the prompt must teach the exact
+      // marker the validator embeds, or the repair loop never triggers.
+      expect(prompt).toContain("openwiki: mermaid parse failed");
       expect(prompt).toContain("Mode-specific behavior:");
     }
   });
