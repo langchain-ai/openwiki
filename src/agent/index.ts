@@ -89,6 +89,7 @@ import {
   getUpdateNoopStatus,
   createRunContext,
   persistRunMetadataIfChanged,
+  removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
 } from "./utils.js";
 import { classifyError, recordRunSafe } from "../telemetry/index.js";
@@ -302,6 +303,12 @@ async function runOpenWikiAgentCore(
     }
     emitDebug(options, "stream=completed");
   } catch (error) {
+    await cleanupTemporaryPlanFile(command, cwd, outputMode, options).catch(
+      () => {
+        emitDebug(options, "plan.cleanup=failed");
+      },
+    );
+
     // Persist metadata even when the stream fails late, so content that was
     // already generated stays diffable by future updates. Persistence errors
     // are swallowed here so the original run error propagates.
@@ -328,6 +335,8 @@ async function runOpenWikiAgentCore(
     await chmodIfExists(checkpointTarget.connString, 0o600);
   }
 
+  await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
+
   const metadataWritten = await persistRunMetadataIfChanged(
     command,
     cwd,
@@ -351,6 +360,23 @@ async function runOpenWikiAgentCore(
     command,
     model: modelId,
   };
+}
+
+async function cleanupTemporaryPlanFile(
+  command: OpenWikiCommand,
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+  options: OpenWikiRunOptions,
+): Promise<void> {
+  if (command === "chat") {
+    return;
+  }
+
+  const removed = await removeTemporaryPlanFile(cwd, outputMode);
+  emitDebug(
+    options,
+    removed ? "plan.cleanup=removed" : "plan.cleanup=skipped missing",
+  );
 }
 
 const checkpointPath = path.join(openWikiEnvDir, "openwiki.sqlite");
