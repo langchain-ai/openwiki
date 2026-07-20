@@ -1,7 +1,11 @@
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  GEMINI_API_KEY_ENV_KEY,
+  NEBIUS_API_KEY_ENV_KEY,
   NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
@@ -22,7 +26,11 @@ export function sanitizeDiagnosticText(value: string): string {
 
   for (const key of [
     BASETEN_API_KEY_ENV_KEY,
+    BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+    BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
+    GEMINI_API_KEY_ENV_KEY,
+    NEBIUS_API_KEY_ENV_KEY,
     NVIDIA_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
     OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
@@ -108,6 +116,30 @@ export function getErrorMessage(error: unknown): string {
   }
 
   return sanitizeDiagnosticText(message);
+}
+
+/**
+ * Whether a run failure looks like a credential rejection, judged from the HTTP
+ * status (401/403, number or string) and the already-redacted message. Drives
+ * whether the CLI shows the auth "how to fix" panel.
+ */
+export function isAuthError(error: unknown, message: string): boolean {
+  const status = isRecord(error)
+    ? (error.statusCode ?? error.status)
+    : undefined;
+
+  if (
+    status === 401 ||
+    status === 403 ||
+    status === "401" ||
+    status === "403"
+  ) {
+    return true;
+  }
+
+  return /\b40[13]\b|incorrect api key|invalid api key|unauthorized|forbidden|authentication|permission denied|not authorized/iu.test(
+    message,
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
