@@ -1,5 +1,7 @@
 # OpenWiki
 
+[English](./README.md) | [中文说明](./README.zh-CN.md)
+
 OpenWiki is a CLI that writes and maintains agent wikis for codebases or purpose memory. It's built specifically for agents, can ingest local knowledge sources through built-in connectors or git repositories and synthesize them into a local wiki.
 
 <div align="center">
