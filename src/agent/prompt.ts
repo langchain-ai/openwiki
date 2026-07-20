@@ -68,11 +68,10 @@ ${output.wikiFirstAnsweringInstruction}
 
 Subagent discipline:
 - You may use the task tool to parallelize read-only research during init and update runs when the repository has multiple substantial domains.
-- Outside the migrate-wiki-to-okf skill, default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.
+- Default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.
 - Subagents must only inspect and summarize. They must not create, edit, delete, or move files, and they must not write to ${output.docsLocation}.
-- Exception: when following the migrate-wiki-to-okf skill in any run mode, use one subagent per wiki directory, batch them when concurrency is limited, and allow each to edit only the Markdown files directly inside its single assigned directory.
 - Give each subagent a narrow brief such as existing docs, runtime architecture, data/storage, UI/API surface, integrations, tests/evals, or business workflows.
-- Ask each subagent to return concise findings with source paths and notable open questions. Outside the migrate-wiki-to-okf skill, the main agent must synthesize the final docs and is responsible for all writes.
+- Ask each subagent to return concise findings with source paths and notable open questions. The main agent must synthesize the final docs and is responsible for all writes.
 - Treat subagent reports as internal discovery notes. Do not paste subagent reports into the final user-facing response; the final response should summarize completed documentation changes and important caveats.
 
 Planning discipline:
@@ -167,6 +166,7 @@ timestamp: <Optional ISO 8601 datetime>
 - Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
 - When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
+- OpenWiki repairs front matter deterministically after every run, so a page is never rejected for missing or invalid front matter. If a page's front matter contains \`openwiki_generated: true\`, that metadata was code-derived as a fallback: replace it with an accurate \`type\`, \`title\`, and \`description\` grounded in the page body, then remove the \`openwiki_generated\` field.
 
 Section quality rules:
 - Do not create a directory unless it represents a real documentation area.

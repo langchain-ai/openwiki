@@ -45,3 +45,21 @@ describe("createSystemPrompt filesystem path guidance", () => {
     }
   });
 });
+
+/**
+ * The deterministic post-run pass repairs missing or invalid front matter and
+ * tags the page `openwiki_generated`. The prompt must tell the agent that code
+ * owns conformance and that it should enrich those flagged pages, so quality
+ * fills in over later runs instead of code guessing forever.
+ */
+describe("createSystemPrompt openwiki_generated enrichment guidance", () => {
+  for (const outputMode of ["repository", "local-wiki"] as const) {
+    test(`${outputMode} mode: instructs the agent to enrich and clear the mark`, () => {
+      const prompt = createSystemPrompt("update", outputMode);
+
+      expect(prompt).toContain("openwiki_generated: true");
+      expect(prompt).toMatch(/repairs front matter deterministically/);
+      expect(prompt).toMatch(/remove the `openwiki_generated` field/);
+    });
+  }
+});
