@@ -2,6 +2,8 @@ src/agent/prompt.ts
   s_70ce361ce20830::t_89d4ef0ca55016 197,203-211
 test/prompt.test.ts
   s_70ce361ce20830::t_89d4ef0ca55016 2-5,51,70-88,90-91
+  s_70ce361ce20830::t_d3bb99b583bd69 69
+  s_70ce361ce20830::t_29213454a2fb1a 89
 README.md
   s_70ce361ce20830::t_89d4ef0ca55016 431-434
 ---
