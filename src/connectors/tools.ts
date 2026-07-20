@@ -18,7 +18,12 @@ import {
   discoverMcpConnectorTools,
   isMcpConnectorId,
 } from "./mcp-runtime.js";
-import type { ConnectorId, ConnectorIngestOptions } from "./types.js";
+import type {
+  ConnectorId,
+  ConnectorIngestOptions,
+  ConnectorIngestResult,
+  ConnectorRuntime,
+} from "./types.js";
 
 export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
   return [
@@ -269,14 +274,41 @@ async function callMcpToolForConnector(
 
 async function ingestAllConnectors() {
   const registry = createConnectorRegistry();
-  const results = [];
+  const connectors = Object.values(registry);
 
-  for (const connector of Object.values(registry)) {
-    results.push(await connector.ingest());
-  }
+  // Run connectors concurrently and isolate failures: one connector that
+  // throws (e.g. an un-refreshable token) must not discard the results of the
+  // connectors that succeeded. Each rejection becomes an `error` result so the
+  // agent still sees everything that ran.
+  const settled = await Promise.allSettled(
+    connectors.map((connector) => connector.ingest()),
+  );
+
+  const results: ConnectorIngestResult[] = settled.map((outcome, index) =>
+    outcome.status === "fulfilled"
+      ? outcome.value
+      : ingestFailureResult(connectors[index], outcome.reason),
+  );
 
   return {
     results,
+  };
+}
+
+function ingestFailureResult(
+  connector: ConnectorRuntime,
+  reason: unknown,
+): ConnectorIngestResult {
+  const message = reason instanceof Error ? reason.message : String(reason);
+
+  return {
+    connectorId: connector.id,
+    message: `${connector.displayName} ingestion failed: ${message}`,
+    rawFiles: [],
+    runId: "",
+    statePath: `~/.openwiki/connectors/${connector.id}/state.json`,
+    status: "error",
+    warnings: [message],
   };
 }
 
