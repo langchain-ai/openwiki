@@ -19,7 +19,8 @@ a fenced ```mermaid block on the most relevant page.
 ## Discipline
 
 - Ground every diagram in inspected source. Do not invent participants, states, entities, or relationships the code does not support.
-- Prefer a few high-value diagrams over decorating every page. One accurate sequence diagram on the architecture page beats a flowchart on every page.
+- Cover the high-value cases: add a diagram wherever a page documents a request or runtime flow, a call sequence, a lifecycle or state machine, or a data model. A repository wiki usually has several such diagrams, not one overall. Skip pages that are navigation, reference tables, or pure configuration.
+- Still prefer a few strong diagrams over decorating every page: one accurate diagram on the page that needs it beats a diagram forced onto every page.
 - Give each diagram a one-line caption directly below it stating what it shows.
 - OpenWiki validates every mermaid fence after your run and converts fences that fail to parse into plain text fences. A degraded diagram is a quality failure; follow the syntax rules below so it does not happen.
 
