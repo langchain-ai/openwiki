@@ -64,6 +64,7 @@ export type CliCommand =
       print: boolean;
       shouldStart: boolean;
       userMessage: string | null;
+      telemetryFile: string | null;
     }
   | {
       kind: "error";
@@ -339,6 +340,8 @@ function parseRunCommand(
   let modelId: string | null = null;
   let print = false;
   let command: OpenWikiCommand = "chat";
+  let telemetryFile: string | null = null;
+
   const userMessageParts: string[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -363,6 +366,13 @@ function parseRunCommand(
 
     if (arg === "--print" || arg === "-p") {
       print = true;
+      continue;
+    }
+
+    if (arg === "--debug") {
+      // isDebugMode() reads OPENWIKI_DEBUG; setting it at parse time is the
+      // least-invasive way to opt into full credential/error diagnostics.
+      process.env.OPENWIKI_DEBUG = "1";
       continue;
     }
 
@@ -474,6 +484,37 @@ function parseRunCommand(
       continue;
     }
 
+    if (arg === "--telemetry-file") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--telemetry-file requires a path.",
+        };
+      }
+
+      telemetryFile = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--telemetry-file=")) {
+      const [, value = ""] = arg.split("=", 2);
+
+      if (value.length === 0) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--telemetry-file requires a path.",
+        };
+      }
+
+      telemetryFile = value;
+      continue;
+    }
+
     if (arg.startsWith("-")) {
       return {
         kind: "error",
@@ -526,6 +567,7 @@ function parseRunCommand(
     print,
     shouldStart,
     userMessage,
+    telemetryFile,
   };
 }
 
@@ -574,6 +616,19 @@ export function shouldRunNonInteractively(
 export function isDevelopmentMode(): boolean {
   return (
     process.env.NODE_ENV === "development" || process.env.OPENWIKI_DEV === "1"
+  );
+}
+
+/**
+ * True for commands that send telemetry and therefore require the one-time
+ * disclosure. Only init/update runs emit the single openwiki_run event; chat,
+ * auth, and ingest record nothing, so those sessions need no disclosure.
+ */
+export function commandEmitsTelemetry(command: CliCommand): boolean {
+  return (
+    command.kind === "run" &&
+    !command.dryRun &&
+    (command.command === "init" || command.command === "update")
   );
 }
 
@@ -680,8 +735,18 @@ export const helpContent: HelpContent = {
       description: "Run once and print the final assistant output.",
     },
     {
+      label: "--debug",
+      description:
+        "Show full credential and error diagnostics when a run fails.",
+    },
+    {
       label: "--modelId <id>",
       description: "Use a model ID for this run.",
+    },
+    {
+      label: "--telemetry-file <path>",
+      description:
+        "Write the exact anonymous telemetry payload to a local JSON file.",
     },
   ],
   developmentOptions: [

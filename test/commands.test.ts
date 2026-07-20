@@ -6,10 +6,13 @@ import { parseCommand, shouldRunNonInteractively } from "../src/commands.ts";
 // restore afterward.
 const originalNodeEnv = process.env.NODE_ENV;
 const originalDevFlag = process.env.OPENWIKI_DEV;
+const originalDebug = process.env.OPENWIKI_DEBUG;
 
 beforeEach(() => {
   delete process.env.NODE_ENV;
   delete process.env.OPENWIKI_DEV;
+  // parseCommand sets OPENWIKI_DEBUG as a side effect of --debug; start clean.
+  delete process.env.OPENWIKI_DEBUG;
 });
 
 afterEach(() => {
@@ -17,6 +20,25 @@ afterEach(() => {
   else process.env.NODE_ENV = originalNodeEnv;
   if (originalDevFlag === undefined) delete process.env.OPENWIKI_DEV;
   else process.env.OPENWIKI_DEV = originalDevFlag;
+  if (originalDebug === undefined) delete process.env.OPENWIKI_DEBUG;
+  else process.env.OPENWIKI_DEBUG = originalDebug;
+});
+
+describe("parseCommand — --debug", () => {
+  test("--debug sets OPENWIKI_DEBUG and still parses the run", () => {
+    expect(process.env.OPENWIKI_DEBUG).toBeUndefined();
+
+    const result = parseCommand(["--debug", "--init"]);
+
+    expect(process.env.OPENWIKI_DEBUG).toBe("1");
+    expect(result).toMatchObject({ kind: "run", command: "init" });
+  });
+
+  test("without --debug, OPENWIKI_DEBUG stays unset", () => {
+    parseCommand(["--init"]);
+
+    expect(process.env.OPENWIKI_DEBUG).toBeUndefined();
+  });
 });
 
 describe("parseCommand — help", () => {

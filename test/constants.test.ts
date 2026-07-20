@@ -22,6 +22,7 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   resolveConfiguredProvider,
+  resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
@@ -199,6 +200,33 @@ describe("resolveProviderRetryAttempts", () => {
         }),
       ).toThrow(/OPENWIKI_PROVIDER_RETRY_ATTEMPTS/u);
     }
+  });
+});
+
+describe("resolveOpenRouterProviderOnly", () => {
+  test("returns undefined when no provider pin is configured", () => {
+    expect(resolveOpenRouterProviderOnly({})).toBeUndefined();
+    expect(
+      resolveOpenRouterProviderOnly({
+        OPENWIKI_OPENROUTER_PROVIDER_ONLY: "   ",
+      }),
+    ).toBeUndefined();
+  });
+
+  test("normalizes a single provider name", () => {
+    expect(
+      resolveOpenRouterProviderOnly({
+        OPENWIKI_OPENROUTER_PROVIDER_ONLY: "  Novita  ",
+      }),
+    ).toEqual(["Novita"]);
+  });
+
+  test("normalizes a comma-separated provider allowlist", () => {
+    expect(
+      resolveOpenRouterProviderOnly({
+        OPENWIKI_OPENROUTER_PROVIDER_ONLY: "Novita, Fireworks,, Together",
+      }),
+    ).toEqual(["Novita", "Fireworks", "Together"]);
   });
 });
 
