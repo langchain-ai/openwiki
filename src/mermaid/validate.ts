@@ -203,8 +203,11 @@ export async function degradeInvalidMermaidFences(
  * Makes a thrown Mermaid parser error safe to embed in a wiki HTML comment.
  *
  * The error first passes through `sanitizeDiagnosticText`, the codebase's
- * secret-redaction boundary, then is reduced to its first two lines, has `--`
- * (which would terminate an HTML comment) collapsed, and is length-capped.
+ * secret-redaction boundary. It is then flattened to one line, keeping the
+ * meaningful lines (the location and the `Expecting ... got ...` diagnosis) and
+ * dropping only the caret-underline noise, since that diagnosis is what lets a
+ * later run actually repair the diagram. Finally `--` (which would terminate an
+ * HTML comment) is collapsed and the result is length-capped.
  *
  * Exported for unit testing; production callers reach it via
  * `findInvalidMermaidFences`.
@@ -212,8 +215,14 @@ export async function degradeInvalidMermaidFences(
 export function sanitizeMermaidError(error: unknown): string {
   const raw = error instanceof Error ? error.message : stringifyUnknown(error);
   const redacted = sanitizeDiagnosticText(raw);
-  const firstLines = redacted.split("\n").slice(0, 2).join(" ").trim();
-  return firstLines.replaceAll("--", "-").slice(0, 300) || "unknown error";
+  const meaningful = redacted
+    .split("\n")
+    // Drop blank lines and caret-underline lines (only whitespace/`-`/`^`).
+    .filter((line) => line.trim() !== "" && !/^[\s^-]+$/u.test(line))
+    .join(" ")
+    .replace(/\s+/gu, " ")
+    .trim();
+  return meaningful.replaceAll("--", "-").slice(0, 400) || "unknown error";
 }
 
 /**

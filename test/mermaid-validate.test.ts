@@ -131,8 +131,21 @@ describe("sanitizeMermaidError", () => {
   });
 
   test("caps length and falls back for empty errors", () => {
-    expect(sanitizeMermaidError(new Error("x".repeat(500))).length).toBe(300);
+    expect(sanitizeMermaidError(new Error("x".repeat(500))).length).toBe(400);
     expect(sanitizeMermaidError(new Error(""))).toBe("unknown error");
+  });
+
+  test("keeps the parser diagnosis and drops caret-underline noise", () => {
+    const err = new Error(
+      "Parse error on line 20:\n... Svc->>Note: notify\n----------^\nExpecting 'ACTOR', got 'note'",
+    );
+    const result = sanitizeMermaidError(err);
+
+    // The `Expecting ... got ...` line is what lets a later run repair the diagram.
+    expect(result).toContain("Expecting 'ACTOR', got 'note'");
+    expect(result).toContain("Parse error on line 20:");
+    // The caret-underline line is dropped.
+    expect(result).not.toContain("^");
   });
 });
 

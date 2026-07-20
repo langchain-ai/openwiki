@@ -33,6 +33,7 @@ These rules prevent the most common render breakages. When in doubt, rephrase th
 - In `flowchart`, wrap any label containing parentheses, brackets, or other punctuation in double quotes: `A["calls foo(bar)"]`.
 - In `flowchart`, never use the bare word `end` as a node id, and never start a node id with `o` or `x` followed by a dash (both are edge-marker syntax); rename the node.
 - In `sequenceDiagram`, participant names with spaces or punctuation need an alias: `participant AS as Auth Service`.
+- Never use a Mermaid reserved word as a participant name, alias, or node id: `note`, `end`, `loop`, `alt`, `opt`, `par`, `and`, `else`, `activate`, `deactivate`, `class`, `state`, `click`, `link`. For example a notification participant must be `Notifier`, not `Note` (which collides with the `note` keyword).
 - In `erDiagram`, entity and attribute names must be single identifier-like tokens; put human phrasing in the relationship label.
 - Keep labels short. Move explanation into the surrounding prose or the caption, not the diagram.
 
