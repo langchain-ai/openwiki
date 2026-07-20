@@ -61,6 +61,23 @@ For repository documentation in GitHub Actions, use
 long as the workflow provides the required provider and model environment
 variables.
 
+Scheduled/CI runs send anonymous reliability telemetry. See [Telemetry](#telemetry)
+for what is collected and how to turn it off (uncomment `OPENWIKI_TELEMETRY_DISABLED`
+in the example workflow).
+
+## Open Knowledge Format compatibility
+
+OpenWiki emits [Google Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundles in both code and personal modes.
+
+- Every non-reserved Markdown concept has YAML front matter with a non-empty
+  `type`; all other standard fields are optional.
+- Valid `timestamp` values and producer-defined extension fields are accepted
+  and preserved during updates and migrations.
+- `index.md` and `log.md` are reserved documents rather than concepts. Nested
+  indexes contain no front matter, while the root index declares
+  `okf_version: "0.1"`.
+- Standard Markdown links between concept documents express relationships.
+
 ## Usage
 
 Start the interactive CLI in code mode for the current repository:
@@ -231,6 +248,41 @@ OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
 
+Local LLM servers that expose OpenAI-compatible chat completions use the same
+provider. The model ID must match a model available from that local server:
+
+```bash
+# Ollama, after `ollama serve` and `ollama pull llama3.2`
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=ollama
+OPENAI_COMPATIBLE_BASE_URL=http://localhost:11434/v1
+OPENWIKI_MODEL_ID=llama3.2
+openwiki --init
+```
+
+```bash
+# LM Studio, after starting the local server from the Developer tab
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=lm-studio
+OPENAI_COMPATIBLE_BASE_URL=http://localhost:1234/v1
+OPENWIKI_MODEL_ID=your-loaded-model-id
+openwiki --init
+```
+
+For local gateways such as 9Router, use the OpenAI-compatible endpoint URL,
+API key, and model ID shown by the gateway:
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=your-local-gateway-key
+OPENAI_COMPATIBLE_BASE_URL=http://localhost:20128/v1
+OPENWIKI_MODEL_ID=your-routed-model-id
+openwiki --init
+```
+
+Some local servers ignore the API key value, but OpenWiki still requires
+`OPENAI_COMPATIBLE_API_KEY` because the OpenAI-compatible client expects one.
+
 ### AWS Bedrock
 
 The `bedrock` provider calls foundation models hosted on AWS Bedrock using IAM
@@ -352,6 +404,54 @@ OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
 The value must be a positive integer. If the value is unset, OpenWiki defaults to 3 retries.
 
 If there's an inference provider or model you'd like to see added, please open a PR!
+
+## Telemetry
+
+OpenWiki collects anonymous, aggregate usage data so we can understand how the
+tool is used and improve it. Telemetry is on by default and easy to turn off.
+
+**What is collected**, on a single `openwiki_run` event, keyed by a random
+install ID stored locally in `~/.openwiki/install-id`:
+
+- Every run: the command (init / update) and the outcome (success / failure /
+  no-op), plus a coarse error category on failure (never the error message).
+  Interactive chat, `auth`, and `ingest` are not recorded.
+- At setup (on init only): which brain mode (code / personal), the model
+  provider, and which connectors you configured (connector names only, never
+  their contents).
+
+**What is never collected:** file contents, repository data or names,
+credentials, prompts, model output, connector payloads, error messages, file
+paths, URLs, model IDs, run duration, your IP address, or any personal
+information. Geoip enrichment is disabled and your IP is never stored. Events
+are grouped by your random install ID so we can measure repeat usage, but that
+ID contains no personal data.
+
+**Scheduled/CI runs** are collected as anonymous reliability data (tagged so
+they can be told apart from human runs), under a shared CI identifier rather than
+a per-machine install ID, and never counted as distinct installs. To disable in
+CI, set `OPENWIKI_TELEMETRY_DISABLED=1` in your workflow environment.
+
+To see exactly what a run would send, add `--telemetry-file=<path>` to any run.
+
+### Opting out
+
+Set either environment variable:
+
+```sh
+export OPENWIKI_TELEMETRY_DISABLED=1
+# or the cross-tool standard:
+export DO_NOT_TRACK=1
+```
+
+To disable permanently, add `OPENWIKI_TELEMETRY_DISABLED=1` to `~/.openwiki/.env`.
+In CI, set it in the workflow environment (config files do not persist on
+ephemeral runners).
+
+### Seeing exactly what is sent
+
+Add `--telemetry-file=<path>` to any run to also write the exact payload to a
+local JSON file.
 
 ## Contributing
 

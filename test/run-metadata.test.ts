@@ -5,7 +5,9 @@ import { describe, expect, test } from "vitest";
 import {
   createOpenWikiContentSnapshot,
   persistRunMetadataIfChanged,
+  removeTemporaryPlanFile,
 } from "../src/agent/utils.ts";
+import type { OpenWikiOutputMode } from "../src/agent/types.ts";
 
 async function createTempRepo(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), "openwiki-run-metadata-"));
@@ -90,6 +92,33 @@ describe("persistRunMetadataIfChanged", () => {
     expect(await readMetadata(cwd, "openwiki/.last-update.json")).toBeNull();
   });
 
+  test("skips when only the temporary plan file changed", async () => {
+    const cwd = await createTempRepo();
+    await mkdir(path.join(cwd, "openwiki"), { recursive: true });
+    await writeFile(path.join(cwd, "openwiki", "index.md"), "# Docs\n", "utf8");
+    const snapshotBefore = await createOpenWikiContentSnapshot(
+      cwd,
+      "repository",
+    );
+
+    await writeFile(
+      path.join(cwd, "openwiki", "_plan.md"),
+      "# Temporary plan\n",
+      "utf8",
+    );
+
+    const written = await persistRunMetadataIfChanged(
+      "update",
+      cwd,
+      "test-model",
+      "repository",
+      snapshotBefore,
+    );
+
+    expect(written).toBe(false);
+    expect(await readMetadata(cwd, "openwiki/.last-update.json")).toBeNull();
+  });
+
   test("skips for chat runs", async () => {
     const cwd = await createTempRepo();
 
@@ -104,4 +133,27 @@ describe("persistRunMetadataIfChanged", () => {
     expect(written).toBe(false);
     expect(await readMetadata(cwd, "openwiki/.last-update.json")).toBeNull();
   });
+});
+
+describe("removeTemporaryPlanFile", () => {
+  test.each([
+    ["repository", path.join("openwiki", "_plan.md")],
+    ["local-wiki", "_plan.md"],
+  ] as const)(
+    "removes the temporary plan file in %s mode",
+    async (outputMode: OpenWikiOutputMode, relativePlanPath: string) => {
+      const cwd = await createTempRepo();
+      const planPath = path.join(cwd, relativePlanPath);
+      await mkdir(path.dirname(planPath), { recursive: true });
+      await writeFile(planPath, "# Temporary plan\n", "utf8");
+
+      await expect(removeTemporaryPlanFile(cwd, outputMode)).resolves.toBe(
+        true,
+      );
+      await expect(readFile(planPath, "utf8")).rejects.toThrow();
+      await expect(removeTemporaryPlanFile(cwd, outputMode)).resolves.toBe(
+        false,
+      );
+    },
+  );
 });
