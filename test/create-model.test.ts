@@ -11,6 +11,9 @@ import { createModel } from "../src/agent/index.ts";
 const PROJECT_KEY = "GOOGLE_CLOUD_PROJECT";
 const LOCATION_KEY = "GOOGLE_CLOUD_LOCATION";
 const GEMINI_KEY = "GEMINI_API_KEY";
+const COMPATIBLE_API_KEY = "OPENAI_COMPATIBLE_API_KEY";
+const COMPATIBLE_BASE_URL = "OPENAI_COMPATIBLE_BASE_URL";
+const COMPATIBLE_EXTRA_HEADERS = "OPENAI_COMPATIBLE_EXTRA_HEADERS";
 
 function modelName(model: unknown): string | undefined {
   return (model as { model?: string }).model;
@@ -135,6 +138,91 @@ describe("createModel gemini (AI Studio)", () => {
     expect(config.disableStreaming).toBe(true);
     expect(config.outputVersion).toBe("v0");
     expect(config._platform).toBe("gai");
+  });
+});
+
+describe("createModel openai-compatible extra headers", () => {
+  let savedApiKey: string | undefined;
+  let savedBaseUrl: string | undefined;
+  let savedExtraHeaders: string | undefined;
+
+  beforeEach(() => {
+    savedApiKey = process.env[COMPATIBLE_API_KEY];
+    savedBaseUrl = process.env[COMPATIBLE_BASE_URL];
+    savedExtraHeaders = process.env[COMPATIBLE_EXTRA_HEADERS];
+    process.env[COMPATIBLE_API_KEY] = "placeholder";
+    process.env[COMPATIBLE_BASE_URL] = "https://gateway.example.com/v1";
+    delete process.env[COMPATIBLE_EXTRA_HEADERS];
+  });
+
+  afterEach(() => {
+    restoreEnv(COMPATIBLE_API_KEY, savedApiKey);
+    restoreEnv(COMPATIBLE_BASE_URL, savedBaseUrl);
+    restoreEnv(COMPATIBLE_EXTRA_HEADERS, savedExtraHeaders);
+  });
+
+  test("merges OPENAI_COMPATIBLE_EXTRA_HEADERS into ChatOpenAI defaultHeaders", () => {
+    process.env[COMPATIBLE_EXTRA_HEADERS] = JSON.stringify({
+      "Ocp-Apim-Subscription-Key": "apim-secret",
+      "X-Tenant": "acme",
+    });
+
+    const model = createModel("openai-compatible", "gateway-model", 0);
+
+    expect(model).toBeInstanceOf(ChatOpenAI);
+    const clientConfig = (
+      model as {
+        clientConfig?: {
+          baseURL?: string;
+          defaultHeaders?: Record<string, string>;
+        };
+      }
+    ).clientConfig;
+    expect(clientConfig?.baseURL).toBe("https://gateway.example.com/v1");
+    expect(clientConfig?.defaultHeaders).toEqual({
+      "Ocp-Apim-Subscription-Key": "apim-secret",
+      "X-Tenant": "acme",
+    });
+  });
+
+  test("omits defaultHeaders when EXTRA_HEADERS is unset", () => {
+    const model = createModel("openai-compatible", "gateway-model", 0);
+
+    expect(model).toBeInstanceOf(ChatOpenAI);
+    const clientConfig = (
+      model as {
+        clientConfig?: { defaultHeaders?: Record<string, string> };
+      }
+    ).clientConfig;
+    expect(clientConfig?.defaultHeaders).toBeUndefined();
+  });
+
+  test("does not apply EXTRA_HEADERS to the openai provider", () => {
+    const savedOpenAiKey = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "openai-test-key";
+    process.env[COMPATIBLE_EXTRA_HEADERS] = JSON.stringify({
+      "Ocp-Apim-Subscription-Key": "should-not-apply",
+    });
+
+    try {
+      const model = createModel("openai", "gpt-5.4-mini", 0);
+      const clientConfig = (
+        model as {
+          clientConfig?: { defaultHeaders?: Record<string, string> };
+        }
+      ).clientConfig;
+      expect(clientConfig?.defaultHeaders).toBeUndefined();
+    } finally {
+      restoreEnv("OPENAI_API_KEY", savedOpenAiKey);
+    }
+  });
+
+  test("throws when EXTRA_HEADERS is invalid JSON", () => {
+    process.env[COMPATIBLE_EXTRA_HEADERS] = "{";
+
+    expect(() => createModel("openai-compatible", "gateway-model", 0)).toThrow(
+      /OPENAI_COMPATIBLE_EXTRA_HEADERS/u,
+    );
   });
 });
 

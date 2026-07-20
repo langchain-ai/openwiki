@@ -7,6 +7,8 @@ export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
+export const OPENAI_COMPATIBLE_EXTRA_HEADERS_ENV_KEY =
+  "OPENAI_COMPATIBLE_EXTRA_HEADERS";
 export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
   "OPENAI_CHATGPT_ACCESS_TOKEN";
 export const OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY =
@@ -589,6 +591,52 @@ export function resolveProviderRetryAttempts(
   }
 
   return parsedRetryAttempts;
+}
+
+/**
+ * Parses `OPENAI_COMPATIBLE_EXTRA_HEADERS` as a JSON object of string header
+ * values for enterprise OpenAI-compatible gateways (e.g. Azure APIM).
+ * Returns undefined when unset or empty so callers can omit defaultHeaders.
+ */
+export function parseOpenAiCompatibleExtraHeaders(
+  raw: string | undefined,
+): Record<string, string> | undefined {
+  if (raw === undefined || raw.trim() === "") {
+    return undefined;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch (error) {
+    throw new Error(
+      `Invalid ${OPENAI_COMPATIBLE_EXTRA_HEADERS_ENV_KEY}. Expected a JSON object of string header values.`,
+      { cause: error },
+    );
+  }
+
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error(
+      `Invalid ${OPENAI_COMPATIBLE_EXTRA_HEADERS_ENV_KEY}. Expected a JSON object of string header values.`,
+    );
+  }
+
+  const headers: Record<string, string> = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    if (key.trim() === "") {
+      throw new Error(
+        `Invalid ${OPENAI_COMPATIBLE_EXTRA_HEADERS_ENV_KEY}. Header names must be non-empty strings.`,
+      );
+    }
+    if (typeof value !== "string") {
+      throw new Error(
+        `Invalid ${OPENAI_COMPATIBLE_EXTRA_HEADERS_ENV_KEY}. Header ${JSON.stringify(key)} must be a string.`,
+      );
+    }
+    headers[key] = value;
+  }
+
+  return Object.keys(headers).length > 0 ? headers : undefined;
 }
 
 export function normalizeModelId(value: string): string {

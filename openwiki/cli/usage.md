@@ -130,6 +130,11 @@ OPENAI_COMPATIBLE_BASE_URL=https://<gateway>/v1
 OPENWIKI_MODEL_ID=<model name the gateway exposes>
 ```
 
+Optional `OPENAI_COMPATIBLE_EXTRA_HEADERS` accepts a JSON object of string
+header values (for example `{"Ocp-Apim-Subscription-Key":"..."}`) and merges
+them into `ChatOpenAI`'s `configuration.defaultHeaders` for gateways that need
+custom auth headers in addition to Bearer credentials.
+
 Base URLs are resolved by `resolveProviderBaseUrl()` in `src/constants.ts`, which
 prefers a provider's `baseUrlEnvKey` override over the built-in default.
 

@@ -248,6 +248,15 @@ OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
 
+For enterprise gateways that require an extra auth header (for example Azure
+APIM's `Ocp-Apim-Subscription-Key`), set `OPENAI_COMPATIBLE_EXTRA_HEADERS` to a
+JSON object of string header values. These are merged into the OpenAI client's
+`defaultHeaders` alongside the normal Bearer API key:
+
+```bash
+OPENAI_COMPATIBLE_EXTRA_HEADERS={"Ocp-Apim-Subscription-Key":"<subscription-key>"}
+```
+
 ### AWS Bedrock
 
 The `bedrock` provider calls foundation models hosted on AWS Bedrock using IAM
