@@ -13,13 +13,16 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   return JSON.stringify(lastUpdate, null, 2);
 }
 
+export type PromptEngine = "deepagents" | "agent-cli";
+
 export function createSystemPrompt(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
+  engine: PromptEngine = "deepagents",
 ): string {
   const output = getOutputPromptConfig(outputMode);
 
-  return `
+  const prompt = `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
 
 Your job is to inspect the relevant source evidence and local OpenWiki knowledge sources, then produce documentation in ${output.docsLocation} that is excellent for both humans and future agents. OpenWiki can maintain a local general-purpose knowledge wiki from connector raw dumps under ~/.openwiki.
@@ -198,8 +201,21 @@ Coverage self-check:
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
 `.trim();
-}
 
+  if (engine === "agent-cli") {
+    return `${prompt}
+
+Agent CLI runtime note:
+- Your working directory is the runtime root for this run.
+- Prefer repository-relative paths with your file tools (for example README.md and openwiki/quickstart.md in code mode).
+- Do not rely on DeepAgents virtual paths that start with a lone /.
+- Do not read or modify files outside the runtime root unless a source-specific instruction explicitly requires it.
+- For init/update documentation runs, write only wiki/docs outputs under openwiki/ (and the OpenWiki blocks in top-level AGENTS.md / CLAUDE.md when required). Do not refactor application source, change tests, or edit unrelated project files.
+`.trim();
+  }
+
+  return prompt;
+}
 export function createModeInstructions(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
