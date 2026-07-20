@@ -233,6 +233,19 @@ ANTHROPIC_API_KEY=your-key
 ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 ```
 
+The `openai` provider likewise supports an alternative, OpenAI-compatible
+endpoint (for example a self-hosted or proxied gateway) via `OPENAI_BASE_URL`,
+set alongside `OPENAI_API_KEY`. This is useful for OpenAI-compatible gateways
+that expose the Responses API, since the `openai` provider routes tool calls
+through the Responses API (`/v1/responses`) rather than chat completions:
+
+```bash
+OPENWIKI_PROVIDER=openai
+OPENAI_API_KEY=your-key
+OPENAI_BASE_URL=https://your-gateway.example.com/v1
+OPENWIKI_MODEL_ID=your-model-name
+```
+
 ### OpenAI-compatible endpoints
 
 The `openai-compatible` provider targets any OpenAI-compatible chat-completions
