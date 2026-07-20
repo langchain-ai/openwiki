@@ -5,6 +5,7 @@ import {
   getOAuthProviderIdForAccessTokenEnvKey,
 } from "../auth/tokens.js";
 import type { McpConnectorConfig, McpReadOnlyOperation } from "./types.js";
+import { fetchWithResilience } from "./http.js";
 
 type JsonRpcRequest = {
   id?: number;
@@ -636,17 +637,23 @@ class HttpJsonRpcClient {
   }
 
   private async post(message: JsonRpcRequest): Promise<JsonRpcResponse> {
-    const response = await fetch(this.url, {
-      body: JSON.stringify(message),
-      headers: {
-        Accept: "application/json, text/event-stream",
-        "Content-Type": "application/json",
-        "MCP-Protocol-Version": "2025-06-18",
-        ...this.headers,
-        ...(this.sessionId ? { "Mcp-Session-Id": this.sessionId } : {}),
+    const response = await fetchWithResilience(
+      this.url,
+      {
+        body: JSON.stringify(message),
+        headers: {
+          Accept: "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2025-06-18",
+          ...this.headers,
+          ...(this.sessionId ? { "Mcp-Session-Id": this.sessionId } : {}),
+        },
+        method: "POST",
       },
-      method: "POST",
-    });
+      // Parity with the stdio client's 60s per-request timeout; a hung remote
+      // MCP server no longer blocks ingestion forever.
+      { timeoutMs: 60_000 },
+    );
 
     const sessionId = response.headers.get("mcp-session-id");
     if (sessionId) {

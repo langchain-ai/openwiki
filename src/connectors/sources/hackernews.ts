@@ -6,6 +6,7 @@ import {
   writeConnectorState,
   writeRawJson,
 } from "../io.js";
+import { fetchWithResilience } from "../http.js";
 import type {
   ConnectorDefinition,
   ConnectorIngestOptions,
@@ -203,7 +204,9 @@ async function ingest(
 }
 
 async function hnFirebaseApi<T>(endpointPath: string): Promise<T> {
-  const response = await fetch(`${HN_FIREBASE_BASE_URL}${endpointPath}`);
+  const response = await fetchWithResilience(
+    `${HN_FIREBASE_BASE_URL}${endpointPath}`,
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -236,7 +239,7 @@ async function searchHackerNews(
     url.searchParams.set("numericFilters", `created_at_i>${earliestUnixTime}`);
   }
 
-  const response = await fetch(url);
+  const response = await fetchWithResilience(url);
   if (!response.ok) {
     throw new Error(
       `Hacker News search request failed: ${response.status} ${response.statusText}`,

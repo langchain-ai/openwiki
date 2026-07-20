@@ -8,6 +8,7 @@ import {
   writeConnectorState,
   writeRawJson,
 } from "../io.js";
+import { fetchWithResilience } from "../http.js";
 import type {
   ConnectorDefinition,
   ConnectorIngestOptions,
@@ -536,14 +537,17 @@ async function slackApi(
   method: string,
   params: Record<string, string | undefined>,
 ): Promise<SlackApiResponse> {
-  const response = await fetch(`${SLACK_API_BASE_URL}/${method}`, {
-    body: new URLSearchParams(removeEmptyValues(params)),
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/x-www-form-urlencoded",
+  const response = await fetchWithResilience(
+    `${SLACK_API_BASE_URL}/${method}`,
+    {
+      body: new URLSearchParams(removeEmptyValues(params)),
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      method: "POST",
     },
-    method: "POST",
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`Slack API request failed: ${response.status}`);
