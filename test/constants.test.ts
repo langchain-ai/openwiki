@@ -5,6 +5,7 @@ import {
   DEFAULT_PROVIDER,
   DEFAULT_VERTEX_LOCATION,
   getDefaultModelId,
+  getProviderBaseUrlWarnings,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderModelOptions,
@@ -13,6 +14,7 @@ import {
   getProvidersForKnownModelId,
   isModelIdForOtherProvider,
   isValidBaseUrl,
+  isValidProviderBaseUrl,
   isValidModelId,
   isValidProvider,
   NEBIUS_BASE_URL,
@@ -22,6 +24,7 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   resolveConfiguredProvider,
+  resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
@@ -35,6 +38,12 @@ describe("isValidModelId", () => {
     expect(isValidModelId("accounts/fireworks/models/glm-5p2")).toBe(true);
     expect(isValidModelId("gpt-5.4-mini")).toBe(true);
     expect(isValidModelId("nvidia/nemotron-3-super-120b-a12b")).toBe(true);
+  });
+
+  test("accepts Cloudflare Workers AI model ids with leading '@'", () => {
+    expect(isValidModelId("@cf/meta/llama-3-8b-instruct")).toBe(true);
+    expect(isValidModelId("@cf/moonshotai/kimi-k2.7-code")).toBe(true);
+    expect(isValidModelId("@cf/qwen/qwen1.5-14b-chat-awq")).toBe(true);
   });
 
   test("rejects empty, whitespace-only, and over-long ids", () => {
@@ -52,10 +61,11 @@ describe("isValidModelId", () => {
     expect(isValidModelId("claude-haiku-4-5@20251001")).toBe(true);
   });
 
-  test("rejects ids starting with a non-alphanumeric character", () => {
+  test("rejects ids starting with a disallowed non-alphanumeric character", () => {
     expect(isValidModelId("-leading-dash")).toBe(false);
     expect(isValidModelId("/leading-slash")).toBe(false);
-    expect(isValidModelId("@leading-at")).toBe(false);
+    // A leading "@" is intentionally allowed for Cloudflare Workers AI ids
+    // (covered above), so it is not rejected here.
   });
 
   test("normalizeModelId trims surrounding whitespace", () => {
@@ -202,6 +212,33 @@ describe("resolveProviderRetryAttempts", () => {
   });
 });
 
+describe("resolveOpenRouterProviderOnly", () => {
+  test("returns undefined when no provider pin is configured", () => {
+    expect(resolveOpenRouterProviderOnly({})).toBeUndefined();
+    expect(
+      resolveOpenRouterProviderOnly({
+        OPENWIKI_OPENROUTER_PROVIDER_ONLY: "   ",
+      }),
+    ).toBeUndefined();
+  });
+
+  test("normalizes a single provider name", () => {
+    expect(
+      resolveOpenRouterProviderOnly({
+        OPENWIKI_OPENROUTER_PROVIDER_ONLY: "  Novita  ",
+      }),
+    ).toEqual(["Novita"]);
+  });
+
+  test("normalizes a comma-separated provider allowlist", () => {
+    expect(
+      resolveOpenRouterProviderOnly({
+        OPENWIKI_OPENROUTER_PROVIDER_ONLY: "Novita, Fireworks,, Together",
+      }),
+    ).toEqual(["Novita", "Fireworks", "Together"]);
+  });
+});
+
 describe("isValidBaseUrl", () => {
   test("accepts http and https URLs", () => {
     expect(isValidBaseUrl("https://api.example.com/v1")).toBe(true);
@@ -213,6 +250,39 @@ describe("isValidBaseUrl", () => {
     expect(isValidBaseUrl("   ")).toBe(false);
     expect(isValidBaseUrl("not a url")).toBe(false);
     expect(isValidBaseUrl("ftp://example.com")).toBe(false);
+  });
+});
+
+describe("isValidProviderBaseUrl", () => {
+  test("accepts OpenAI-compatible API root URLs", () => {
+    expect(
+      isValidProviderBaseUrl(
+        "openai-compatible",
+        "https://gateway.example.com/v1",
+      ),
+    ).toBe(true);
+  });
+
+  test("rejects OpenAI-compatible chat completions endpoint URLs", () => {
+    expect(
+      isValidProviderBaseUrl(
+        "openai-compatible",
+        "https://gateway.example.com/v1/chat/completions",
+      ),
+    ).toBe(false);
+    expect(
+      getProviderBaseUrlWarnings(
+        "openai-compatible",
+        "https://gateway.example.com/v1/chat/completions/",
+      ),
+    ).toContain("use API root URL, not /chat/completions endpoint");
+  });
+
+  test("keeps generic http URL validation for other provider base URLs", () => {
+    expect(isValidProviderBaseUrl("anthropic", "not a url")).toBe(false);
+    expect(
+      getProviderBaseUrlWarnings("anthropic", "https://proxy.example.com"),
+    ).toEqual([]);
   });
 });
 
