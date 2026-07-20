@@ -10,7 +10,7 @@ tags: [operations, credentials, updates, scheduling, ci]
 OpenWiki has four operational concerns that matter for both users and maintainers:
 
 1. local credential storage in `~/.openwiki/.env`, and
-2. persisted personal wiki instructions in `~/.openwiki/INSTRUCTIONS.md`,
+2. persisted personal wiki instructions in `~/.openwiki/INSTRUCTIONS.md` (personal mode) or `<repo>/openwiki/INSTRUCTIONS.md` (code mode),
 3. persisted onboarding/schedule metadata in `~/.openwiki/onboarding.json`,
 4. persisted update metadata in `openwiki/.last-update.json`.
 
@@ -103,7 +103,18 @@ preferences are stored in `~/.openwiki/onboarding.json`:
 The user's global personal wiki scope/intent is stored as Markdown in
 `~/.openwiki/INSTRUCTIONS.md` so it can be edited directly.
 
-OAuth tokens and client secrets are not stored in this file. They remain in
+In **code mode**, the wiki brief is stored at the repository level as
+`<repo>/openwiki/INSTRUCTIONS.md` instead of the global file.
+`saveRepositoryWikiInstructions()` in `src/onboarding.ts` writes the brief
+there during code-mode onboarding, and `isRepositoryCodeOnboardingCompleteSync()`
+checks for its presence when deciding whether onboarding is complete. This
+ensures every new repository gets a proposed default wiki brief even when the
+global onboarding profile is already complete. The agent prompt treats
+`/openwiki/INSTRUCTIONS.md` as user-authored control metadata — it reads it
+for scope and priorities but does not rewrite it during routine wiki
+maintenance.
+
+OAuth tokens and client secrets are not stored in these files. They remain in
 `~/.openwiki/.env`.
 
 ## Local schedules

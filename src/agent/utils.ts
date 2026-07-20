@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
@@ -23,6 +23,7 @@ import type { Dirent } from "node:fs";
 
 const execFileAsync = promisify(execFile);
 const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
+const TEMPORARY_PLAN_FILE = "_plan.md";
 
 export type OpenWikiContentSnapshot = string;
 
@@ -191,6 +192,27 @@ export async function persistRunMetadataIfChanged(
 }
 
 /**
+ * Removes the temporary planning file the agent creates during init/update runs.
+ */
+export async function removeTemporaryPlanFile(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): Promise<boolean> {
+  const planFile = getTemporaryPlanFilePath(cwd, outputMode);
+
+  try {
+    await rm(planFile);
+    return true;
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
+/**
  * Hashes OpenWiki content, excluding run metadata, to detect real documentation changes.
  */
 export async function createOpenWikiContentSnapshot(
@@ -271,10 +293,7 @@ async function addDirectoryToSnapshot(
     const entryPath = path.join(directory, entry.name);
     const relativePath = path.join(relativeDirectory, entry.name);
 
-    if (
-      relativePath === path.basename(UPDATE_METADATA_PATH) ||
-      relativePath === LOCAL_WIKI_METADATA_PATH
-    ) {
+    if (isIgnoredSnapshotPath(relativePath)) {
       continue;
     }
 
@@ -307,6 +326,13 @@ function getWikiContentRoot(
   return outputMode === "local-wiki" ? cwd : path.join(cwd, OPEN_WIKI_DIR);
 }
 
+function getTemporaryPlanFilePath(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): string {
+  return path.join(getWikiContentRoot(cwd, outputMode), TEMPORARY_PLAN_FILE);
+}
+
 function getMetadataFilePath(
   cwd: string,
   outputMode: OpenWikiOutputMode,
@@ -314,6 +340,14 @@ function getMetadataFilePath(
   return outputMode === "local-wiki"
     ? path.join(cwd, LOCAL_WIKI_METADATA_PATH)
     : path.join(cwd, UPDATE_METADATA_PATH);
+}
+
+function isIgnoredSnapshotPath(relativePath: string): boolean {
+  return (
+    relativePath === path.basename(UPDATE_METADATA_PATH) ||
+    relativePath === LOCAL_WIKI_METADATA_PATH ||
+    relativePath === TEMPORARY_PLAN_FILE
+  );
 }
 
 /**

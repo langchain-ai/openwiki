@@ -413,6 +413,11 @@ describe("parseCommand — cron", () => {
     expect(result.kind).toBe("error");
   });
 
+  test("cron pause with a source id is rejected", () => {
+    const result = parseCommand(["cron", "pause", "web-search"]);
+    expect(result.kind).toBe("error");
+  });
+
   test("cron resume with a source instance id is rejected", () => {
     const result = parseCommand(["cron", "resume", "web-search-1"]);
     expect(result.kind).toBe("error");
