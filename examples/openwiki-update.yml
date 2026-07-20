@@ -31,6 +31,9 @@ jobs:
         # --update also handles the first run for code docs when env vars are set.
         run: openwiki code --update --print
         env:
+          # OpenWiki sends anonymous reliability telemetry from CI runs.
+          # Uncomment to disable:
+          # OPENWIKI_TELEMETRY_DISABLED: "1"
           # TODO: Replace with your preferred inference provider and model
           OPENWIKI_PROVIDER: openrouter
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

@@ -67,12 +67,15 @@ async function ingest(
   options: ConnectorIngestOptions = {},
 ): Promise<ConnectorIngestResult> {
   const runId = createRunId();
-  const config = await readConnectorConfig<XConfig>("x", {
-    enabled: false,
-    listIds: [],
-    maxPagesPerStream: 2,
-    streams: DEFAULT_STREAMS,
-  });
+  const config = {
+    ...(await readConnectorConfig<XConfig>("x", {
+      enabled: false,
+      listIds: [],
+      maxPagesPerStream: 2,
+      streams: DEFAULT_STREAMS,
+    })),
+    ...((options.connectorConfig ?? {}) as XConfig),
+  };
   const state = await readConnectorState("x");
   const warnings: string[] = [];
   const rawFiles: string[] = [];
