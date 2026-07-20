@@ -42,27 +42,54 @@ interface MermaidApi {
   parse: (text: string) => Promise<unknown>;
 }
 
-let mermaidPromise: Promise<MermaidApi> | undefined;
+let mermaidPromise: Promise<MermaidApi | undefined> | undefined;
 
 /**
- * Loads the Mermaid parser after installing DOM globals.
+ * Loads the Mermaid parser after installing DOM globals, or resolves to
+ * `undefined` when mermaid/jsdom are not installed.
  *
- * The import is lazy and memoized so a wiki with no diagrams never pulls in
- * mermaid or jsdom. Mermaid must not be imported anywhere else in the codebase,
+ * `mermaid` and `jsdom` are optional peer dependencies. When present, callers
+ * get the authoritative parser; when absent, they get `undefined` and fall back
+ * to `heuristicError`. The import is lazy and memoized so a wiki with no
+ * diagrams never pulls them in, and mermaid must not be imported anywhere else,
  * or it may evaluate before the DOM shim runs.
  */
-export function loadMermaid(): Promise<MermaidApi> {
+export function loadMermaid(): Promise<MermaidApi | undefined> {
   if (!mermaidPromise) {
-    ensureDomGlobals();
-    mermaidPromise = import("mermaid").then(
-      (module) => module.default as unknown as MermaidApi,
-    );
+    mermaidPromise = (async () => {
+      try {
+        await ensureDomGlobals();
+        const module: { default: MermaidApi } = await import("mermaid");
+        return module.default;
+      } catch (error) {
+        // Expected path: the optional peer deps are simply not installed, so we
+        // fall back to heuristic validation. An unexpected load failure (an
+        // installed mermaid that throws) is kept distinct here per review, but
+        // still falls back rather than crashing the wiki run.
+        void isModuleNotFound(error);
+        return undefined;
+      }
+    })();
   }
   return mermaidPromise;
 }
 
 /**
+ * True when a dynamic import failed because the module is not installed.
+ */
+function isModuleNotFound(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    "code" in error &&
+    (error.code === "ERR_MODULE_NOT_FOUND" || error.code === "MODULE_NOT_FOUND")
+  );
+}
+
+/**
  * Parses every mermaid fence in a document and returns the failures.
+ *
+ * Uses the authoritative mermaid parser when it is installed, otherwise a
+ * conservative heuristic that only flags near-certain breakages.
  */
 export async function findInvalidMermaidFences(
   markdown: string,
@@ -76,14 +103,63 @@ export async function findInvalidMermaidFences(
   const errors: MermaidFenceError[] = [];
 
   for (const fence of fences) {
-    try {
-      await mermaid.parse(fence.body);
-    } catch (err) {
-      errors.push({ fence, error: sanitizeMermaidError(err) });
+    let reason: string | undefined;
+    if (mermaid) {
+      try {
+        await mermaid.parse(fence.body);
+      } catch (err) {
+        reason = sanitizeMermaidError(err);
+      }
+    } else {
+      const heuristic = heuristicError(fence.body);
+      if (heuristic !== undefined) {
+        reason = sanitizeMermaidError(heuristic);
+      }
+    }
+    if (reason !== undefined) {
+      errors.push({ fence, error: reason });
     }
   }
 
   return errors;
+}
+
+/**
+ * Best-effort syntax check used when the mermaid parser is not installed.
+ *
+ * Deliberately conservative: it only flags breakages that are near-certain, so
+ * a valid diagram is never degraded. It therefore misses errors the real parser
+ * would catch; install `mermaid` (for example in CI) for authoritative
+ * validation. Returns a short reason when the diagram is very likely broken.
+ *
+ * Exported for unit testing; production callers reach it via
+ * `findInvalidMermaidFences`.
+ */
+export function heuristicError(body: string): string | undefined {
+  const firstWord = body.trim().split(/\s+/u)[0]?.toLowerCase() ?? "";
+  const isFlowchart = firstWord === "flowchart" || firstWord === "graph";
+
+  // Reserved `end` used as a flowchart node id. Restricted to flowcharts because
+  // `end` legitimately closes loop/alt/opt blocks in sequence and state diagrams.
+  if (
+    isFlowchart &&
+    (/(?:^|\n|\s)end\s*[[({]/u.test(body) ||
+      /-->\s*end\s*(?:$|\n|;)/mu.test(body))
+  ) {
+    return "Heuristic: `end` is a reserved word and cannot be a flowchart node id; rename the node.";
+  }
+
+  // A semicolon inside a label: mermaid treats it as a statement separator.
+  if (/[[({][^)\]}]*;[^)\]}]*[)\]}]/u.test(body)) {
+    return "Heuristic: a semicolon inside a label breaks rendering; rephrase the label.";
+  }
+
+  // An unescaped angle bracket inside a label.
+  if (/[[({][^)\]}]*[<>][^)\]}]*[)\]}]/u.test(body)) {
+    return "Heuristic: an unescaped angle bracket inside a label breaks rendering; rephrase the label.";
+  }
+
+  return undefined;
 }
 
 /**

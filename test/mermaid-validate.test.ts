@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import {
   degradeInvalidMermaidFences,
   findInvalidMermaidFences,
+  heuristicError,
   sanitizeMermaidError,
 } from "../src/mermaid/validate.ts";
 
@@ -132,5 +133,53 @@ describe("sanitizeMermaidError", () => {
   test("caps length and falls back for empty errors", () => {
     expect(sanitizeMermaidError(new Error("x".repeat(500))).length).toBe(300);
     expect(sanitizeMermaidError(new Error(""))).toBe("unknown error");
+  });
+});
+
+describe("heuristicError (fallback when mermaid is not installed)", () => {
+  test("flags a reserved `end` node id in a flowchart", () => {
+    expect(heuristicError("flowchart TD\n  A[Start] --> end[The End]")).toMatch(
+      /reserved word/u,
+    );
+    expect(heuristicError("flowchart TD\n  A --> end")).toMatch(
+      /reserved word/u,
+    );
+  });
+
+  test("does not flag `end` when it closes a sequenceDiagram block", () => {
+    const seq = "sequenceDiagram\n  loop retry\n    Alice->>Bob: ping\n  end";
+    expect(heuristicError(seq)).toBeUndefined();
+  });
+
+  test("flags a semicolon inside a label", () => {
+    expect(
+      heuristicError("sequenceDiagram\n  Alice->>Bob: fetch(a; b)"),
+    ).toMatch(/semicolon/u);
+    expect(heuristicError('flowchart TD\n  A["step one; step two"]')).toMatch(
+      /semicolon/u,
+    );
+  });
+
+  test("flags an unescaped angle bracket inside a label", () => {
+    expect(
+      heuristicError("flowchart TD\n  A[returns Promise<User>] --> B"),
+    ).toMatch(/angle bracket/u);
+  });
+
+  test("passes all four valid diagram types", () => {
+    for (const body of [
+      VALID_SEQUENCE,
+      VALID_ER,
+      VALID_STATE,
+      VALID_FLOWCHART,
+    ]) {
+      expect(heuristicError(body)).toBeUndefined();
+    }
+  });
+
+  test("does not false-flag the word `end` inside a label", () => {
+    expect(
+      heuristicError('flowchart TD\n  A["reach the end"] --> B'),
+    ).toBeUndefined();
   });
 });

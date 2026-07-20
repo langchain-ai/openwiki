@@ -59,18 +59,12 @@ importers:
       ink:
         specifier: ^5.1.0
         version: 5.2.1(@types/react@18.3.31)(react@18.3.1)
-      jsdom:
-        specifier: ^29.1.1
-        version: 29.1.1
       langchain:
         specifier: ^1.5.3
         version: 1.5.3(@langchain/core@1.2.1(openai@6.45.0(@aws-sdk/credential-provider-node@3.972.63)(@smithy/signature-v4@5.6.2)(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(openai@6.45.0(@aws-sdk/credential-provider-node@3.972.63)(@smithy/signature-v4@5.6.2)(ws@8.21.0)(zod@4.4.3))(react@18.3.1)(ws@8.21.0)
       marked:
         specifier: ^18.0.5
         version: 18.0.5
-      mermaid:
-        specifier: ^11.16.0
-        version: 11.16.0
       posthog-node:
         specifier: ^5.39.4
         version: 5.40.0
@@ -102,6 +96,12 @@ importers:
       eslint:
         specifier: ^10.5.0
         version: 10.6.0
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
+      mermaid:
+        specifier: ^11.16.0
+        version: 11.16.0
       prettier:
         specifier: ^3.8.4
         version: 3.9.4
