@@ -1396,24 +1396,48 @@ type OpenRouterResponseSummary = {
 const OPENROUTER_DEBUG_PROPERTY = "openRouterDebug";
 const OPENROUTER_DEBUG_BODY_LIMIT = 4_000;
 
-function installOpenRouterDebugFetch(
-  options: OpenWikiRunOptions,
-): OpenRouterFetchCapture {
-  const originalFetch = globalThis.fetch;
-  let lastFailure: OpenRouterFetchFailure | null = null;
+/**
+ * Per-run sink for the most recent OpenRouter HTTP failure. Each run registers
+ * its own so concurrent runs don't share (or clobber) each other's captured
+ * failure. `ChatOpenRouter` (unlike the OpenAI/Codex/Vertex clients) extends
+ * `BaseChatModel` and calls `globalThis.fetch` directly with no injectable
+ * fetch, so a global wrapper is the only interception point — hence the
+ * reference-counted installer below rather than a per-model `configuration.fetch`.
+ */
+type OpenRouterFetchSink = {
+  lastFailure: OpenRouterFetchFailure | null;
+  options: OpenWikiRunOptions;
+};
 
-  globalThis.fetch = (async (input, init) => {
-    if (!isOpenRouterFetchInput(input)) {
-      return originalFetch(input, init);
+const activeOpenRouterSinks = new Set<OpenRouterFetchSink>();
+let openRouterOriginalFetch: typeof fetch | null = null;
+
+function openRouterDebugFetch(
+  input: Parameters<typeof fetch>[0],
+  init?: Parameters<typeof fetch>[1],
+): Promise<Response> {
+  // Captured when the wrapper was installed; the wrapper is only live while at
+  // least one sink is registered, so this is always set here.
+  const baseFetch = openRouterOriginalFetch ?? globalThis.fetch;
+
+  if (!isOpenRouterFetchInput(input)) {
+    return baseFetch(input, init);
+  }
+
+  const request = summarizeOpenRouterRequest(input, init);
+
+  const recordFailure = (failure: OpenRouterFetchFailure): void => {
+    for (const sink of activeOpenRouterSinks) {
+      sink.lastFailure = failure;
     }
+  };
 
-    const request = summarizeOpenRouterRequest(input, init);
-
+  return (async () => {
     try {
-      const response = await originalFetch(input, init);
+      const response = await baseFetch(input, init);
 
       if (!response.ok) {
-        lastFailure = {
+        const failure: OpenRouterFetchFailure = {
           request,
           response: {
             bodyPreview: await readResponseBodyPreview(response),
@@ -1422,31 +1446,63 @@ function installOpenRouterDebugFetch(
             statusText: response.statusText,
           },
         };
-        emitDebug(
-          options,
-          `openrouter.http status=${response.status} statusText=${JSON.stringify(
-            response.statusText,
-          )}`,
-        );
+        recordFailure(failure);
+        for (const sink of activeOpenRouterSinks) {
+          emitDebug(
+            sink.options,
+            `openrouter.http status=${response.status} statusText=${JSON.stringify(
+              response.statusText,
+            )}`,
+          );
+        }
       }
 
       return response;
     } catch (error) {
-      lastFailure = {
+      recordFailure({
         fetchError: error instanceof Error ? error.message : String(error),
         request,
-      };
+      });
       throw error;
     }
-  }) satisfies typeof fetch;
+  })();
+}
+
+/**
+ * Installs the reference-counted OpenRouter debug-fetch wrapper for one run and
+ * returns that run's capture handle. Exported for testing. Safe under
+ * concurrent runs: each caller gets an isolated failure sink and the global
+ * `fetch` is only restored once the last run detaches.
+ */
+export function installOpenRouterDebugFetch(
+  options: OpenWikiRunOptions,
+): OpenRouterFetchCapture {
+  const sink: OpenRouterFetchSink = { lastFailure: null, options };
+
+  // Install the wrapper once, capturing the genuine original fetch. Concurrent
+  // runs share the single wrapper and each detach their own sink; the global
+  // is only restored when the last run leaves, so overlapping install/restore
+  // can no longer leak or lose the patch.
+  if (activeOpenRouterSinks.size === 0) {
+    openRouterOriginalFetch = globalThis.fetch;
+    globalThis.fetch = openRouterDebugFetch;
+  }
+  activeOpenRouterSinks.add(sink);
 
   return {
     clearLastFailure: () => {
-      lastFailure = null;
+      sink.lastFailure = null;
     },
-    getLastFailure: () => lastFailure,
+    getLastFailure: () => sink.lastFailure,
     restore: () => {
-      globalThis.fetch = originalFetch;
+      if (!activeOpenRouterSinks.delete(sink)) {
+        return;
+      }
+
+      if (activeOpenRouterSinks.size === 0 && openRouterOriginalFetch) {
+        globalThis.fetch = openRouterOriginalFetch;
+        openRouterOriginalFetch = null;
+      }
     },
   };
 }
