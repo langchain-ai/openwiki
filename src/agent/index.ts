@@ -621,6 +621,9 @@ function warnOnProviderModelMismatch(
 
   emitDebug(options, `model.mismatch provider=${provider} model=${modelId}`);
   options.onEvent?.({ type: "text", text: message });
+  // Also emit to stderr so the warning survives on failure, where the TUI
+  // re-renders the log away and --print discards buffered streamed text.
+  process.stderr.write(`${message}\n`);
 }
 
 export function createModel(
