@@ -1,9 +1,13 @@
-import { mkdir, mkdtemp, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
 import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
-import { synchronizeWikiIndexes } from "../src/okf/index-sync.ts";
+import { createOpenWikiIndexMiddleware } from "../src/agent/okf-middleware.ts";
+import {
+  migrateWikiConformance,
+  synchronizeWikiIndexes,
+} from "../src/okf/index-sync.ts";
 
 function document(title: string, description: string): string {
   return `---\ntype: Reference\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(description)}\n---\n\n# ${title}\n`;
@@ -244,5 +248,112 @@ describe("synchronizeWikiIndexes", () => {
     await expect(
       readFile(path.join(rootDir, "empty/index.md"), "utf8"),
     ).resolves.toBe("# Files\n");
+  });
+});
+
+describe("migrateWikiConformance", () => {
+  test("stamps legacy pages and leaves conformant pages untouched", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/good.md",
+      document("Good", "Already conformant."),
+    );
+    await backend.write(
+      "/openwiki/architecture/legacy.md",
+      "# Legacy Page\n\nSome body.\n",
+    );
+
+    const goodBefore = await readFile(
+      path.join(rootDir, "openwiki/good.md"),
+      "utf8",
+    );
+    const edit = vi.spyOn(backend, "edit");
+
+    await migrateWikiConformance(backend, "repository");
+
+    // The legacy page gains a minimal, flagged OKF block; its body survives.
+    const legacy = await readFile(
+      path.join(rootDir, "openwiki/architecture/legacy.md"),
+      "utf8",
+    );
+    expect(legacy).toContain('type: "Reference"');
+    expect(legacy).toContain('title: "Legacy Page"');
+    expect(legacy).toContain("openwiki_generated: true");
+    expect(legacy).toContain("Some body.");
+
+    // The conformant page is never rewritten.
+    expect(edit).toHaveBeenCalledTimes(1);
+    await expect(
+      readFile(path.join(rootDir, "openwiki/good.md"), "utf8"),
+    ).resolves.toBe(goodBefore);
+  });
+
+  test("skips reserved files, dotfiles, and dot-directories", async () => {
+    const { backend, rootDir } = await setup();
+    const dir = path.join(rootDir, "openwiki");
+    await mkdir(path.join(dir, ".hidden"), { recursive: true });
+    for (const name of [
+      "index.md",
+      "log.md",
+      "_plan.md",
+      "INSTRUCTIONS.md",
+      ".secret.md",
+    ]) {
+      await writeFile(path.join(dir, name), "# No front matter\n\nBody.\n");
+    }
+    await writeFile(
+      path.join(dir, ".hidden", "buried.md"),
+      "# Buried\n\nBody.\n",
+    );
+
+    const edit = vi.spyOn(backend, "edit");
+    await migrateWikiConformance(backend, "repository");
+
+    expect(edit).not.toHaveBeenCalled();
+    await expect(
+      readFile(path.join(dir, "INSTRUCTIONS.md"), "utf8"),
+    ).resolves.not.toContain("openwiki_generated");
+  });
+
+  test("migrates from the local-wiki root", async () => {
+    const { backend, rootDir } = await setup("local-wiki");
+    await backend.write("/note.md", "# Note\n\nBody.\n");
+
+    await migrateWikiConformance(backend, "local-wiki");
+
+    await expect(
+      readFile(path.join(rootDir, "note.md"), "utf8"),
+    ).resolves.toContain("openwiki_generated: true");
+  });
+
+  test("is a no-op when the wiki root is missing", async () => {
+    const { backend } = await setup("repository");
+
+    // Nothing was written, so /openwiki does not exist.
+    await expect(
+      migrateWikiConformance(backend, "repository"),
+    ).resolves.toBeUndefined();
+  });
+});
+
+describe("createOpenWikiIndexMiddleware beforeAgent", () => {
+  test("migrates existing pages before the agent runs", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/legacy.md", "# Legacy\n\nBody.\n");
+
+    const middleware = createOpenWikiIndexMiddleware(backend, "repository");
+    const beforeAgent =
+      typeof middleware.beforeAgent === "function"
+        ? middleware.beforeAgent
+        : middleware.beforeAgent?.hook;
+    expect(beforeAgent).toBeTypeOf("function");
+    await (beforeAgent as () => Promise<unknown>)();
+
+    const legacy = await readFile(
+      path.join(rootDir, "openwiki/legacy.md"),
+      "utf8",
+    );
+    expect(legacy).toContain('type: "Reference"');
+    expect(legacy).toContain("openwiki_generated: true");
   });
 });

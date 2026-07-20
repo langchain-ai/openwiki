@@ -6,7 +6,7 @@ import {
   validatePersistedFile,
   type FrontmatterIssue,
 } from "../okf/frontmatter.js";
-import { synchronizeWikiIndexes } from "../okf/index-sync.js";
+import { migrateWikiToOkf, synchronizeWikiIndexes } from "../okf/index-sync.js";
 import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
@@ -14,7 +14,9 @@ const OKF_RESERVED_FILES = new Set(["index.md", "log.md"]);
 const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
 
 /**
- * Creates middleware that synchronizes deterministic wiki indexes after a run.
+ * Creates middleware that keeps the wiki OKF-conformant around a run. It
+ * migrates existing pages to valid front matter before the agent starts
+ * and synchronizes indexes after the run.
  */
 export function createOpenWikiIndexMiddleware(
   backend: BackendProtocolV2,
@@ -22,6 +24,9 @@ export function createOpenWikiIndexMiddleware(
 ) {
   return createMiddleware({
     name: "OpenWikiIndexMiddleware",
+    beforeAgent: async () => {
+      await migrateWikiToOkf(backend, outputMode);
+    },
     wrapToolCall: async (request, handler) =>
       addFrontmatterWarning(
         await handler(request),

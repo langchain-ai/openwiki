@@ -64,6 +64,62 @@ export async function synchronizeWikiIndexes(
 }
 
 /**
+ * Normalizes every concept page's OKF front matter across the wiki, without
+ * touching indexes.
+ *
+ * Runs before the agent so an update operates over an already-conformant wiki:
+ * legacy or externally edited pages are migrated to a minimal OKF block (tagged
+ * `openwiki_generated`) up front, letting the agent read clean metadata and
+ * enrich flagged pages in the same run.
+ */
+export async function migrateWikiToOkf(
+  backend: BackendProtocolV2,
+  outputMode: OpenWikiOutputMode,
+): Promise<void> {
+  const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+  for (const directory of await collectDirectories(backend, root, true)) {
+    for (const entry of directory.entries) {
+      const name = entryName(entry);
+      if (
+        entry.is_dir ||
+        !name ||
+        name.startsWith(".") ||
+        path.posix.extname(name).toLowerCase() !== ".md" ||
+        EXCLUDED_FILES.has(name)
+      ) {
+        continue;
+      }
+      await normalizeConceptFile(
+        backend,
+        path.posix.join(directory.path, name),
+      );
+    }
+  }
+}
+
+/**
+ * Normalizes one concept file's OKF front matter in place.
+ *
+ * Reads the file, applies `normalizeConceptContent` and writes the result
+ * back only when it changed. Returns the normalized content so a caller can read
+ * its index metadata without a second read.
+ */
+async function normalizeConceptFile(
+  backend: BackendProtocolV2,
+  filePath: string,
+): Promise<string> {
+  const original = await readText(backend, filePath);
+  const normalized = normalizeConceptContent(original, filePath);
+  if (normalized.changed) {
+    const result = await backend.edit(filePath, original, normalized.content);
+    if (result.error) {
+      throw new Error(`Unable to normalize ${filePath}: ${result.error}`);
+    }
+  }
+  return normalized.content;
+}
+
+/**
  * Recursively collects visible wiki directories and their entries.
  */
 async function collectDirectories(
@@ -119,16 +175,8 @@ async function synchronizeDirectory(
     }
 
     const filePath = path.posix.join(directory.path, name);
-    const original = await readText(backend, filePath);
-    const normalized = normalizeConceptContent(original, filePath);
-    if (normalized.changed) {
-      const result = await backend.edit(filePath, original, normalized.content);
-      if (result.error) {
-        throw new Error(`Unable to normalize ${filePath}: ${result.error}`);
-      }
-    }
-
-    const metadata = readIndexMetadata(normalized.content);
+    const content = await normalizeConceptFile(backend, filePath);
+    const metadata = readIndexMetadata(content);
     files.push({
       description: metadata.description,
       href: encodeURIComponent(name),
