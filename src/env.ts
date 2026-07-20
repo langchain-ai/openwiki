@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, chmod } from "node:fs/promises";
+import { mkdir, readFile, writeFile, chmod, rename } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -293,11 +293,18 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
   await chmod(openWikiEnvDir, 0o700);
   await restrictDirToCurrentUser(openWikiEnvDir);
 
-  await writeFile(openWikiEnvPath, formatEnv(nextEnv), {
+  // Write to a temp file in the same directory and atomically rename it into
+  // place. A plain writeFile opens the existing credential file with O_TRUNC,
+  // so a failure mid-write (ENOSPC, crash, power loss) would leave
+  // ~/.openwiki/.env truncated and every saved token/key lost. The rename
+  // keeps the original intact until the new contents are fully written.
+  const tmpPath = `${openWikiEnvPath}.${process.pid}.tmp`;
+  await writeFile(tmpPath, formatEnv(nextEnv), {
     encoding: "utf8",
     mode: 0o600,
   });
-  await chmod(openWikiEnvPath, 0o600);
+  await chmod(tmpPath, 0o600);
+  await rename(tmpPath, openWikiEnvPath);
 
   for (const [key, value] of Object.entries(updates)) {
     // A shell export wins at runtime, so don't mask it in process.env; the

@@ -216,6 +216,58 @@ describe("saveOpenWikiEnv", () => {
     expect(contents).not.toContain(OPENROUTER_API_KEY_ENV_KEY);
     expect(process.env[OPENROUTER_API_KEY_ENV_KEY]).toBeUndefined();
   });
+
+  test("a failed write leaves the existing credentials intact (atomic swap)", async () => {
+    // Seed the file with real credentials, then force the content write to fail
+    // the way a full disk would (truncate the target, then error). The atomic
+    // temp-file + rename must leave the original ~/.openwiki/.env untouched
+    // rather than truncating it and wiping every saved token.
+    await mkdir(path.dirname(env.openWikiEnvPath), { recursive: true });
+    const original =
+      `${OPENAI_API_KEY_ENV_KEY}=sk-original\n` +
+      `${OPENROUTER_API_KEY_ENV_KEY}="or-original"\n`;
+    await writeFile(env.openWikiEnvPath, original, "utf8");
+
+    // Re-import env against a writeFile that emulates O_TRUNC-then-ENOSPC:
+    // it truncates whatever path it is handed, then throws. mkdir/readFile/
+    // chmod/rename stay real.
+    vi.resetModules();
+    vi.doMock("node:fs/promises", async () => {
+      const actual =
+        await vi.importActual<typeof import("node:fs/promises")>(
+          "node:fs/promises",
+        );
+      return {
+        ...actual,
+        default: actual,
+        writeFile: vi.fn(
+          async (file: Parameters<typeof actual.writeFile>[0]) => {
+            // Open-for-write truncates before the write fails, exactly as a real
+            // disk-full error would.
+            await actual.writeFile(file, "");
+            const error: NodeJS.ErrnoException = new Error(
+              "ENOSPC: no space left on device",
+            );
+            error.code = "ENOSPC";
+            throw error;
+          },
+        ),
+      };
+    });
+
+    try {
+      const failingEnv = await import("../src/env.ts");
+      await expect(
+        failingEnv.saveOpenWikiEnv({ [OPENAI_API_KEY_ENV_KEY]: "sk-new" }),
+      ).rejects.toThrow(/ENOSPC/);
+    } finally {
+      vi.doUnmock("node:fs/promises");
+    }
+
+    // The original file survives: the failed write hit only the temp file and
+    // the rename that would have replaced it never ran.
+    await expect(readFile(env.openWikiEnvPath, "utf8")).resolves.toBe(original);
+  });
 });
 
 describe("getShellEnvValue", () => {
