@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatBedrockConverse } from "@langchain/aws";
 import { ChatGoogle } from "@langchain/google/node";
 import { ChatOpenAI } from "@langchain/openai";
 import { createModel } from "../src/agent/index.ts";
@@ -11,6 +12,9 @@ import { createModel } from "../src/agent/index.ts";
 const PROJECT_KEY = "GOOGLE_CLOUD_PROJECT";
 const LOCATION_KEY = "GOOGLE_CLOUD_LOCATION";
 const GEMINI_KEY = "GEMINI_API_KEY";
+const BEDROCK_ACCESS_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
+const BEDROCK_SECRET_KEY = "BEDROCK_AWS_SECRET_ACCESS_KEY";
+const AWS_REGION_KEY = "AWS_REGION";
 
 function modelName(model: unknown): string | undefined {
   return (model as { model?: string }).model;
@@ -135,6 +139,29 @@ describe("createModel gemini (AI Studio)", () => {
     expect(config.disableStreaming).toBe(true);
     expect(config.outputVersion).toBe("v0");
     expect(config._platform).toBe("gai");
+  });
+});
+
+describe("createModel bedrock credentials", () => {
+  const originalAccessKey = process.env[BEDROCK_ACCESS_KEY];
+  const originalSecretKey = process.env[BEDROCK_SECRET_KEY];
+  const originalRegion = process.env[AWS_REGION_KEY];
+
+  afterEach(() => {
+    restoreEnv(BEDROCK_ACCESS_KEY, originalAccessKey);
+    restoreEnv(BEDROCK_SECRET_KEY, originalSecretKey);
+    restoreEnv(AWS_REGION_KEY, originalRegion);
+  });
+
+  test("uses the AWS SDK default credential chain when static keys are absent", () => {
+    delete process.env[BEDROCK_ACCESS_KEY];
+    delete process.env[BEDROCK_SECRET_KEY];
+    process.env[AWS_REGION_KEY] = "us-east-1";
+
+    const model = createModel("bedrock", "anthropic.claude-sonnet-5", 0);
+
+    expect(model).toBeInstanceOf(ChatBedrockConverse);
+    expect((model as { credentials?: unknown }).credentials).toBeUndefined();
   });
 });
 

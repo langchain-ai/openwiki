@@ -25,6 +25,8 @@ export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
   "BEDROCK_AWS_SECRET_ACCESS_KEY";
 export const BEDROCK_AWS_REGION_ENV_KEY = "BEDROCK_AWS_REGION";
+export const AWS_REGION_ENV_KEY = "AWS_REGION";
+export const AWS_DEFAULT_REGION_ENV_KEY = "AWS_DEFAULT_REGION";
 export const GEMINI_API_KEY_ENV_KEY = "GEMINI_API_KEY";
 export const GOOGLE_CLOUD_PROJECT_ENV_KEY = "GOOGLE_CLOUD_PROJECT";
 export const GOOGLE_CLOUD_LOCATION_ENV_KEY = "GOOGLE_CLOUD_LOCATION";
@@ -357,6 +359,16 @@ export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
   return getProviderConfig(provider).apiKeyEnvKey !== undefined;
 }
 
+/**
+ * Whether the provider can authenticate through its SDK's ambient credential
+ * chain when no credential is stored in the OpenWiki environment file.
+ */
+export function providerAllowsDefaultCredentialChain(
+  provider: OpenWikiProvider,
+): boolean {
+  return provider === "bedrock";
+}
+
 export function getProviderProjectEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
@@ -381,7 +393,11 @@ export function getMissingProviderEnvKey(
 ): string | null {
   const config = getProviderConfig(provider);
 
-  if (config.apiKeyEnvKey && !env[config.apiKeyEnvKey]) {
+  if (
+    config.apiKeyEnvKey &&
+    !env[config.apiKeyEnvKey] &&
+    !providerAllowsDefaultCredentialChain(provider)
+  ) {
     return config.apiKeyEnvKey;
   }
 
@@ -485,17 +501,21 @@ export function providerRequiresRegion(provider: OpenWikiProvider): boolean {
 
 /**
  * Resolves the configured region for a provider from its region environment
- * variable. Returns `undefined` when unset, so callers fall back to the SDK's
- * own region resolution (e.g. `~/.aws/config`).
+ * variable. Bedrock also accepts AWS's standard region variables. Returns
+ * `undefined` when unset.
  */
 export function resolveProviderRegion(
   provider: OpenWikiProvider,
   env: NodeJS.ProcessEnv = process.env,
 ): string | undefined {
   const regionEnvKey = getProviderRegionEnvKey(provider);
-  const region = regionEnvKey ? env[regionEnvKey]?.trim() : undefined;
+  const candidates = [
+    regionEnvKey ? env[regionEnvKey] : undefined,
+    provider === "bedrock" ? env[AWS_REGION_ENV_KEY] : undefined,
+    provider === "bedrock" ? env[AWS_DEFAULT_REGION_ENV_KEY] : undefined,
+  ];
 
-  return region ? region : undefined;
+  return candidates.map((value) => value?.trim()).find(Boolean);
 }
 
 export function isValidBaseUrl(value: string): boolean {

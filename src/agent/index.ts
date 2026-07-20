@@ -78,6 +78,7 @@ import {
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   providerRequiresBaseUrl,
+  providerAllowsDefaultCredentialChain,
   providerRequiresRegion,
   providerRequiresSecretKey,
   resolveConfiguredProvider,
@@ -546,6 +547,13 @@ function ensureProviderSecretKey(provider: OpenWikiProvider): void {
     return;
   }
 
+  if (
+    providerAllowsDefaultCredentialChain(provider) &&
+    !getProviderApiKey(provider)
+  ) {
+    return;
+  }
+
   const secretKeyEnvKey = getProviderSecretKeyEnvKey(provider);
 
   if (secretKeyEnvKey && !process.env[secretKeyEnvKey]) {
@@ -727,14 +735,17 @@ export function createModel(
 
   if (provider === "bedrock") {
     const secretKeyEnvKey = getProviderSecretKeyEnvKey(provider);
+    const accessKeyId = getProviderApiKey(provider);
+    const secretAccessKey = secretKeyEnvKey
+      ? process.env[secretKeyEnvKey]
+      : undefined;
 
     return new ChatBedrockConverse({
-      credentials: {
-        accessKeyId: getProviderApiKey(provider) ?? "",
-        secretAccessKey: secretKeyEnvKey
-          ? (process.env[secretKeyEnvKey] ?? "")
-          : "",
-      },
+      // Omitting credentials delegates to the AWS SDK default provider chain,
+      // which supports IAM roles, shared profiles, and AWS environment vars.
+      ...(accessKeyId && secretAccessKey
+        ? { credentials: { accessKeyId, secretAccessKey } }
+        : {}),
       model: modelId,
       region: resolveProviderRegion(provider),
       ...retryOptions,

@@ -299,8 +299,23 @@ Some local servers ignore the API key value, but OpenWiki still requires
 ### AWS Bedrock
 
 The `bedrock` provider calls foundation models hosted on AWS Bedrock using IAM
-credentials rather than a single vendor API key. It authenticates with an AWS
-access key ID, a secret access key, and a region:
+credentials rather than a single vendor API key. When no static credentials are
+configured, OpenWiki uses the AWS SDK default credential chain. This supports
+an IAM role attached to your compute environment, an AWS profile in
+`~/.aws/credentials`, AWS SSO, and the standard AWS credential environment
+variables.
+
+For an IAM role or profile, set the provider, model, and a region (OpenWiki
+accepts `BEDROCK_AWS_REGION`, `AWS_REGION`, and `AWS_DEFAULT_REGION`, in that
+order):
+
+```bash
+OPENWIKI_PROVIDER=bedrock
+AWS_REGION=us-east-1
+OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
+```
+
+Static access keys remain supported when both values are present:
 
 ```bash
 OPENWIKI_PROVIDER=bedrock

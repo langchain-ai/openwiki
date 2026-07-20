@@ -20,6 +20,7 @@ import {
   getProviderProjectEnvKey,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
+  providerAllowsDefaultCredentialChain,
   providerRequiresApiKey,
   isValidModelId,
   normalizeProvider,
@@ -38,6 +39,7 @@ import {
   providerRequiresSecretKey,
   providerUsesOAuth,
   resolveConfiguredProvider,
+  resolveProviderRegion,
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
 import {
@@ -552,6 +554,13 @@ function needsSecretKeyStep(provider: OpenWikiProvider): boolean {
     return false;
   }
 
+  if (
+    providerAllowsDefaultCredentialChain(provider) &&
+    !process.env[getProviderApiKeyEnvKey(provider) ?? ""]
+  ) {
+    return false;
+  }
+
   return !isSecretKeyConfigured(provider);
 }
 
@@ -566,7 +575,7 @@ function needsRegionStep(provider: OpenWikiProvider): boolean {
     return false;
   }
 
-  return !isRegionConfigured(provider);
+  return !resolveProviderRegion(provider);
 }
 
 function isRegionConfigured(provider: OpenWikiProvider): boolean {
@@ -599,6 +608,13 @@ function getCredentialSetupDetail(
   }
 
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  if (
+    providerAllowsDefaultCredentialChain(provider) &&
+    !process.env[apiKeyEnvKey ?? ""]
+  ) {
+    return "using the AWS default credential chain";
+  }
 
   return isCredentialConfigured(provider)
     ? "available from environment"

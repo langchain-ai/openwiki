@@ -4,6 +4,8 @@ import {
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
   DEFAULT_VERTEX_LOCATION,
+  AWS_DEFAULT_REGION_ENV_KEY,
+  AWS_REGION_ENV_KEY,
   getDefaultModelId,
   getProviderBaseUrlWarnings,
   getMissingProviderEnvKey,
@@ -21,6 +23,7 @@ import {
   normalizeModelId,
   normalizeProvider,
   providerRequiresApiKey,
+  providerAllowsDefaultCredentialChain,
   providerRequiresRegion,
   providerRequiresSecretKey,
   resolveConfiguredProvider,
@@ -299,6 +302,11 @@ describe("getProviderModelOptions", () => {
 });
 
 describe("bedrock provider (IAM access key + secret key + region)", () => {
+  test("allows the AWS SDK default credential chain without static keys", () => {
+    expect(providerAllowsDefaultCredentialChain("bedrock")).toBe(true);
+    expect(getMissingProviderEnvKey("bedrock", {})).toBeNull();
+  });
+
   test("requires a secret key and a region, unlike API-key providers", () => {
     expect(providerRequiresSecretKey("bedrock")).toBe(true);
     expect(providerRequiresRegion("bedrock")).toBe(true);
@@ -318,6 +326,23 @@ describe("bedrock provider (IAM access key + secret key + region)", () => {
       resolveProviderRegion("bedrock", { BEDROCK_AWS_REGION: " us-east-1 " }),
     ).toBe("us-east-1");
     expect(resolveProviderRegion("bedrock", {})).toBeUndefined();
+  });
+
+  test("uses standard AWS region variables when no OpenWiki override is set", () => {
+    expect(
+      resolveProviderRegion("bedrock", { [AWS_REGION_ENV_KEY]: " us-west-2 " }),
+    ).toBe("us-west-2");
+    expect(
+      resolveProviderRegion("bedrock", {
+        [AWS_DEFAULT_REGION_ENV_KEY]: " eu-west-1 ",
+      }),
+    ).toBe("eu-west-1");
+    expect(
+      resolveProviderRegion("bedrock", {
+        BEDROCK_AWS_REGION: "us-east-1",
+        [AWS_REGION_ENV_KEY]: "us-west-2",
+      }),
+    ).toBe("us-east-1");
   });
 
   test("has no preset model list (Bedrock model availability is account/region specific)", () => {
