@@ -1,3 +1,10 @@
+---
+type: Technical documentation
+title: Agent workflow
+description: Explains the OpenWiki documentation agent's command flow, provider and model setup, prompting rules, and update metadata behavior. Documents the agent's Git-grounded workflow, content snapshot safeguards, and source implementation map for maintaining agent behavior.
+tags: [agent, workflow, documentation, providers, update-metadata]
+---
+
 # Agent workflow
 
 The documentation agent is implemented in `src/agent/`. It takes a command (`chat`, `init`, or `update`), gathers repository context, builds prompts, runs a DeepAgents session, and records successful update metadata — but only if the documentation content actually changed.

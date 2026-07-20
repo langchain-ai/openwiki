@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatEnv, parseEnv } from "../src/env.ts";
+import { formatEnv, MANAGED_ENV_KEYS, parseEnv } from "../src/env.ts";
 
 describe("parseEnv", () => {
   test("parses simple KEY=value lines", () => {
@@ -73,8 +73,10 @@ describe("formatEnv", () => {
     const formatted = formatEnv({
       ZZZ_CUSTOM: "z",
       AAA_CUSTOM: "a",
+      NEBIUS_API_KEY: "n",
       OPENWIKI_PROVIDER_RETRY_ATTEMPTS: "3",
       OPENWIKI_PROVIDER: "anthropic",
+      GOOGLE_CLOUD_PROJECT: "proj",
       ANTHROPIC_API_KEY: "k",
     });
     const keys = formatted
@@ -83,14 +85,29 @@ describe("formatEnv", () => {
       .map((line) => line.slice(0, line.indexOf("=")));
 
     // Managed keys keep their MANAGED_ENV_KEYS relative order (ANTHROPIC before
-    // PROVIDER), and the two unknown keys follow, sorted.
+    // GOOGLE_CLOUD_PROJECT before PROVIDER), and the two unknown keys follow,
+    // sorted.
     expect(keys).toEqual([
+      "NEBIUS_API_KEY",
       "ANTHROPIC_API_KEY",
+      "GOOGLE_CLOUD_PROJECT",
       "OPENWIKI_PROVIDER",
       "OPENWIKI_PROVIDER_RETRY_ATTEMPTS",
       "AAA_CUSTOM",
       "ZZZ_CUSTOM",
     ]);
+  });
+});
+
+describe("MANAGED_ENV_KEYS", () => {
+  test("manages the Google Cloud settings for the gemini-enterprise provider", () => {
+    expect(MANAGED_ENV_KEYS).toContain("GOOGLE_CLOUD_PROJECT");
+    expect(MANAGED_ENV_KEYS).toContain("GOOGLE_CLOUD_LOCATION");
+    expect(MANAGED_ENV_KEYS).toContain("GOOGLE_APPLICATION_CREDENTIALS");
+  });
+
+  test("manages the GEMINI_API_KEY for the gemini (AI Studio) provider", () => {
+    expect(MANAGED_ENV_KEYS).toContain("GEMINI_API_KEY");
   });
 });
 

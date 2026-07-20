@@ -6,10 +6,13 @@ import { parseCommand, shouldRunNonInteractively } from "../src/commands.ts";
 // restore afterward.
 const originalNodeEnv = process.env.NODE_ENV;
 const originalDevFlag = process.env.OPENWIKI_DEV;
+const originalDebug = process.env.OPENWIKI_DEBUG;
 
 beforeEach(() => {
   delete process.env.NODE_ENV;
   delete process.env.OPENWIKI_DEV;
+  // parseCommand sets OPENWIKI_DEBUG as a side effect of --debug; start clean.
+  delete process.env.OPENWIKI_DEBUG;
 });
 
 afterEach(() => {
@@ -17,6 +20,25 @@ afterEach(() => {
   else process.env.NODE_ENV = originalNodeEnv;
   if (originalDevFlag === undefined) delete process.env.OPENWIKI_DEV;
   else process.env.OPENWIKI_DEV = originalDevFlag;
+  if (originalDebug === undefined) delete process.env.OPENWIKI_DEBUG;
+  else process.env.OPENWIKI_DEBUG = originalDebug;
+});
+
+describe("parseCommand — --debug", () => {
+  test("--debug sets OPENWIKI_DEBUG and still parses the run", () => {
+    expect(process.env.OPENWIKI_DEBUG).toBeUndefined();
+
+    const result = parseCommand(["--debug", "--init"]);
+
+    expect(process.env.OPENWIKI_DEBUG).toBe("1");
+    expect(result).toMatchObject({ kind: "run", command: "init" });
+  });
+
+  test("without --debug, OPENWIKI_DEBUG stays unset", () => {
+    parseCommand(["--init"]);
+
+    expect(process.env.OPENWIKI_DEBUG).toBeUndefined();
+  });
 });
 
 describe("parseCommand — help", () => {
@@ -81,6 +103,63 @@ describe("parseCommand — chat default", () => {
       modeSource: "default",
       userMessage: "Document the API",
       shouldStart: true,
+    });
+  });
+});
+
+describe("parseCommand — mode after flags", () => {
+  test("a mode word after a flag is still recognized as the mode", () => {
+    expect(parseCommand(["--print", "code", "--update"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      mode: "code",
+      modeSource: "positional",
+      userMessage: null,
+    });
+    expect(parseCommand(["--update", "personal"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      mode: "personal",
+      modeSource: "positional",
+      userMessage: null,
+    });
+  });
+
+  test("mode after a flag satisfies the --init mode requirement", () => {
+    expect(parseCommand(["--print", "code", "--init"])).toMatchObject({
+      kind: "run",
+      command: "init",
+      mode: "code",
+    });
+  });
+
+  test("a mode word is only promoted once; later ones join the message", () => {
+    expect(
+      parseCommand(["--update", "personal", "code", "docs"]),
+    ).toMatchObject({
+      kind: "run",
+      mode: "personal",
+      userMessage: "code docs",
+    });
+  });
+
+  test("a mode word after an explicit --mode stays part of the message", () => {
+    expect(parseCommand(["--mode", "code", "personal", "notes"])).toMatchObject(
+      {
+        kind: "run",
+        mode: "code",
+        modeSource: "option",
+        userMessage: "personal notes",
+      },
+    );
+  });
+
+  test("a mode word after a message word stays part of the message", () => {
+    expect(parseCommand(["document", "personal", "paths"])).toMatchObject({
+      kind: "run",
+      mode: "code",
+      modeSource: "default",
+      userMessage: "document personal paths",
     });
   });
 });
@@ -190,6 +269,15 @@ describe("parseCommand — --modelId", () => {
   test("equals form: --modelId=<id>", () => {
     expect(parseCommand(["--modelId=z-ai/glm-5.2"])).toMatchObject({
       modelId: "z-ai/glm-5.2",
+    });
+  });
+
+  test("@-versioned Vertex AI model id is accepted", () => {
+    expect(
+      parseCommand(["--modelId", "claude-haiku-4-5@20251001"]),
+    ).toMatchObject({
+      kind: "run",
+      modelId: "claude-haiku-4-5@20251001",
     });
   });
 
