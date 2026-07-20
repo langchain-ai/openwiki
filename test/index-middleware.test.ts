@@ -5,7 +5,7 @@ import { describe, expect, test, vi } from "vitest";
 import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
 import { createOpenWikiIndexMiddleware } from "../src/agent/okf-middleware.ts";
 import {
-  migrateWikiConformance,
+  migrateWikiToOkf,
   synchronizeWikiIndexes,
 } from "../src/okf/index-sync.ts";
 
@@ -251,7 +251,7 @@ describe("synchronizeWikiIndexes", () => {
   });
 });
 
-describe("migrateWikiConformance", () => {
+describe("migrateWikiToOkf", () => {
   test("stamps legacy pages and leaves conformant pages untouched", async () => {
     const { backend, rootDir } = await setup();
     await backend.write(
@@ -269,7 +269,7 @@ describe("migrateWikiConformance", () => {
     );
     const edit = vi.spyOn(backend, "edit");
 
-    await migrateWikiConformance(backend, "repository");
+    await migrateWikiToOkf(backend, "repository");
 
     // The legacy page gains a minimal, flagged OKF block; its body survives.
     const legacy = await readFile(
@@ -307,7 +307,7 @@ describe("migrateWikiConformance", () => {
     );
 
     const edit = vi.spyOn(backend, "edit");
-    await migrateWikiConformance(backend, "repository");
+    await migrateWikiToOkf(backend, "repository");
 
     expect(edit).not.toHaveBeenCalled();
     await expect(
@@ -319,7 +319,7 @@ describe("migrateWikiConformance", () => {
     const { backend, rootDir } = await setup("local-wiki");
     await backend.write("/note.md", "# Note\n\nBody.\n");
 
-    await migrateWikiConformance(backend, "local-wiki");
+    await migrateWikiToOkf(backend, "local-wiki");
 
     await expect(
       readFile(path.join(rootDir, "note.md"), "utf8"),
@@ -331,7 +331,7 @@ describe("migrateWikiConformance", () => {
 
     // Nothing was written, so /openwiki does not exist.
     await expect(
-      migrateWikiConformance(backend, "repository"),
+      migrateWikiToOkf(backend, "repository"),
     ).resolves.toBeUndefined();
   });
 });
