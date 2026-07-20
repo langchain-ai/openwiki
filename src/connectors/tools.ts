@@ -3,7 +3,7 @@ import {
   type StructuredToolInterface,
 } from "@langchain/core/tools";
 import { constants as fsConstants } from "node:fs";
-import { open, readdir, stat } from "node:fs/promises";
+import { lstat, open, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import {
   getConnectorConfigPath,
@@ -303,11 +303,10 @@ async function readRawItem(
   relativePath: string,
   maxBytes: number,
 ) {
+  const rawDir = getConnectorRawDir(connectorId);
   const filePath = resolveConnectorRawPath(connectorId, relativePath);
-  const fileHandle = await open(
-    filePath,
-    fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW,
-  );
+  await assertRawItemPathHasNoSymlinks(rawDir, filePath);
+  const fileHandle = await open(filePath, getRawItemOpenFlags());
 
   try {
     const fileStat = await fileHandle.stat();
@@ -352,11 +351,40 @@ async function listFiles(
     if (entry.isDirectory()) {
       files.push(...(await listFiles(rootDir, entryPath)));
     } else if (entry.isFile()) {
-      files.push(path.relative(rootDir, entryPath));
+      files.push(normalizeRawRelativePath(path.relative(rootDir, entryPath)));
     }
   }
 
   return files.sort(compareRawFilePaths);
+}
+
+export function normalizeRawRelativePath(relativePath: string): string {
+  return relativePath.replace(/\\/gu, path.posix.sep);
+}
+
+async function assertRawItemPathHasNoSymlinks(
+  rawDir: string,
+  filePath: string,
+): Promise<void> {
+  const relativePath = path.relative(rawDir, filePath);
+  const parts = relativePath.split(path.sep).filter(Boolean);
+  let currentPath = rawDir;
+
+  for (const part of parts) {
+    currentPath = path.join(currentPath, part);
+    const entryStat = await lstat(currentPath);
+
+    if (entryStat.isSymbolicLink()) {
+      throw new Error("Raw item path must not contain symbolic links.");
+    }
+  }
+}
+
+function getRawItemOpenFlags(): number {
+  return (
+    fsConstants.O_RDONLY |
+    (typeof fsConstants.O_NOFOLLOW === "number" ? fsConstants.O_NOFOLLOW : 0)
+  );
 }
 
 function compareRawFilePaths(left: string, right: string): number {
