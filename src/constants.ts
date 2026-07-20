@@ -710,4 +710,4 @@ export function isValidModelId(value: string): boolean {
   );
 }
 
-export const OPENWIKI_VERSION = "0.2.0";
+export const OPENWIKI_VERSION = "0.2.1";
