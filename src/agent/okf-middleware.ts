@@ -2,6 +2,7 @@ import { ToolMessage } from "@langchain/core/messages";
 import type { BackendProtocolV2 } from "deepagents";
 import { createMiddleware } from "langchain";
 import path from "node:path";
+import { validateWikiMermaid } from "../mermaid/wiki.js";
 import {
   validatePersistedFile,
   type FrontmatterIssue,
@@ -35,6 +36,7 @@ export function createOpenWikiIndexMiddleware(
         request.toolCall.name,
       ),
     afterAgent: async () => {
+      await validateWikiMermaid(backend, outputMode);
       await synchronizeWikiIndexes(backend, outputMode);
     },
   });
