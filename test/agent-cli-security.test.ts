@@ -85,6 +85,15 @@ describe("write-boundary helpers", () => {
     expect(isAllowedDocsOnlyWritePath("package.json")).toBe(false);
   });
 
+  test("allows the git index, which read-only git commands refresh", () => {
+    expect(isAllowedDocsOnlyWritePath(".git/index")).toBe(true);
+  });
+
+  test("still rejects git hook and config writes", () => {
+    expect(isAllowedDocsOnlyWritePath(".git/hooks/pre-commit")).toBe(false);
+    expect(isAllowedDocsOnlyWritePath(".git/config")).toBe(false);
+  });
+
   test("findDisallowedWrites reports files outside the boundary", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "openwiki-wb-"));
     const sinceMs = Date.now() - 1000;

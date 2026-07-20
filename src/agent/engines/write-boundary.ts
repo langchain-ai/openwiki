@@ -46,6 +46,14 @@ export function isAllowedDocsOnlyWritePath(relativePath: string): boolean {
     return true;
   }
 
+  // Read-only git commands (`git status`, `git log`) refresh the index as a
+  // side effect, so an agent exploring the repo trips the scanner without
+  // writing anything. Staging cannot execute code or alter tracked content;
+  // the dangerous `.git` writes (hooks, config) stay rejected.
+  if (normalized === ".git/index") {
+    return true;
+  }
+
   return normalized === "AGENTS.md" || normalized === "CLAUDE.md";
 }
 
