@@ -102,4 +102,15 @@ describe("createSystemPrompt diagram guidance", () => {
       expect(prompt).toContain("Mode-specific behavior:");
     }
   });
+
+  test("update mode permits opportunistically adding a missing diagram", () => {
+    // Surgical-update discipline would otherwise suppress net-new diagrams on an
+    // existing wiki; this carve-out lets diagrams reach already-built wikis.
+    const update = createSystemPrompt("update");
+    expect(update).toContain("adding one is a valuable improvement");
+
+    // The carve-out is scoped to update runs, not repeated in init guidance.
+    const init = createSystemPrompt("init");
+    expect(init).not.toContain("adding one is a valuable improvement");
+  });
 });

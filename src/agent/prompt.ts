@@ -255,6 +255,7 @@ export function createModeInstructions(
 - Only edit pages whose current content is inaccurate, incomplete, or misleading because of the recent changes. Do not refresh every page.
 - Keep each concept in one canonical page. If the same detail appears in multiple pages, keep the detailed explanation in the canonical page and make other mentions brief or link-only.
 - Do not make formatting-only edits. Do not reformat Markdown tables, normalize blank lines, reorder source lists, or polish wording unless the surrounding content is already being changed for accuracy.
+- When updating a page that documents a runtime flow, lifecycle, or data model but has no diagram, adding one is a valuable improvement, not a formatting-only change. Add it opportunistically when you are already editing that area or have spare diff budget, following the diagram discipline above.
 - Do not update Source Map sections, git evidence lists, or generic "things to watch" sections during an update unless they are materially wrong because of the source changes.
 - Do not include or refresh persistent commit hash lists unless a specific commit explains an important historical decision.
 - Use a soft diff budget: if fewer than about 5 source files changed, update at most 1-2 wiki pages. Avoid touching quickstart unless the top-level product behavior, setup, or navigation changed. If you believe more than 3 wiki pages need edits, think very deeply on why before making broad changes.
