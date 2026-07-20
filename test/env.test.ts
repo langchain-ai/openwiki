@@ -50,6 +50,31 @@ describe("parseEnv", () => {
       OPENAI_API_KEY: "line1\r\nline2",
     });
   });
+
+  test("handles export-prefixed lines", () => {
+    expect(parseEnv("export OPENAI_API_KEY=sk-abc\n")).toEqual({
+      OPENAI_API_KEY: "sk-abc",
+    });
+  });
+
+  test("handles export-prefixed lines with double-quoted values", () => {
+    expect(
+      parseEnv('export ANTHROPIC_BASE_URL="https://api.anthropic.com"\n'),
+    ).toEqual({
+      ANTHROPIC_BASE_URL: "https://api.anthropic.com",
+    });
+  });
+
+  test("handles export-prefixed lines alongside regular lines", () => {
+    const content = [
+      "export OPENAI_API_KEY=sk-abc",
+      "ANTHROPIC_API_KEY=sk-def",
+    ].join("\n");
+    expect(parseEnv(content)).toEqual({
+      OPENAI_API_KEY: "sk-abc",
+      ANTHROPIC_API_KEY: "sk-def",
+    });
+  });
 });
 
 describe("formatEnv", () => {

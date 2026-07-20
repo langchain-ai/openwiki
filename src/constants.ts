@@ -706,6 +706,54 @@ export function getDefaultModelId(provider: OpenWikiProvider): string {
   return getProviderModelOptions(provider)[0]?.id ?? DEFAULT_MODEL_ID;
 }
 
+// Returns the list of built-in providers whose known model options include the
+// given model ID by exact match, excluding the provider passed in. Used to warn
+// when a saved model plainly belongs to a different provider (e.g. an Anthropic
+// model left over while the provider is now OpenAI). Exact matching avoids false
+// positives from namespaced overlaps such as OpenRouter's "anthropic/claude-...".
+// Returns an empty array for custom/unknown model IDs, so gateway and
+// OpenAI-compatible model names are never flagged.
+export function getProvidersForKnownModelId(
+  modelId: string,
+  excludeProvider: OpenWikiProvider,
+): OpenWikiProvider[] {
+  const normalized = normalizeModelId(modelId);
+  const providers: OpenWikiProvider[] = [];
+
+  for (const provider of Object.keys(PROVIDER_CONFIGS) as OpenWikiProvider[]) {
+    if (provider === excludeProvider) {
+      continue;
+    }
+    if (
+      getProviderModelOptions(provider).some(
+        (option) => option.id === normalized,
+      )
+    ) {
+      providers.push(provider);
+    }
+  }
+
+  return providers;
+}
+
+// True when the model ID is a known model of some other provider and is NOT a
+// known model of the configured provider — a clear provider/model mismatch.
+export function isModelIdForOtherProvider(
+  modelId: string,
+  provider: OpenWikiProvider,
+): boolean {
+  const normalized = normalizeModelId(modelId);
+  const isKnownForProvider = getProviderModelOptions(provider).some(
+    (option) => option.id === normalized,
+  );
+
+  if (isKnownForProvider) {
+    return false;
+  }
+
+  return getProvidersForKnownModelId(normalized, provider).length > 0;
+}
+
 export function normalizeProvider(
   value: string | null | undefined,
 ): OpenWikiProvider | null {
@@ -804,7 +852,9 @@ export function isValidModelId(value: string): boolean {
   return (
     modelId.length > 0 &&
     modelId.length <= 120 &&
-    /^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
+    // Leading @ for Cloudflare Workers AI ids (@cf/...); interior @ for
+    // Vertex AI @-versioned ids (e.g. claude-sonnet-4-5@20250929).
+    /^[@A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
     !modelId.includes("://")
   );
 }
