@@ -186,21 +186,25 @@ describe("gmail connector honors options.connectorConfig", () => {
     const requests: string[] = [];
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (input: string | URL | Request) => {
+      vi.fn((input: string | URL | Request) => {
         const url = input instanceof Request ? input.url : String(input);
         requests.push(url);
 
         if (new URL(url).pathname.endsWith("/messages")) {
-          return new Response(JSON.stringify({ messages: [{ id: "msg-1" }] }), {
-            headers: { "Content-Type": "application/json" },
-            status: 200,
-          });
+          return Promise.resolve(
+            new Response(JSON.stringify({ messages: [{ id: "msg-1" }] }), {
+              headers: { "Content-Type": "application/json" },
+              status: 200,
+            }),
+          );
         }
 
-        return new Response(JSON.stringify({ id: "msg-1" }), {
-          headers: { "Content-Type": "application/json" },
-          status: 200,
-        });
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: "msg-1" }), {
+            headers: { "Content-Type": "application/json" },
+            status: 200,
+          }),
+        );
       }),
     );
     const connector = await loadGmailConnector(home);
