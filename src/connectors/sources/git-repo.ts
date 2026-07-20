@@ -87,8 +87,13 @@ async function ingest(
     }
 
     const repoPath = path.resolve(repo.path);
+    const previousHead = state.latestIds?.[repo.id];
     try {
-      const manifest = await createRepoManifest(repo.id, repoPath);
+      const manifest = await createRepoManifest(
+        repo.id,
+        repoPath,
+        previousHead,
+      );
       manifests.push(manifest);
     } catch (error) {
       warnings.push(`${repo.id}: ${getErrorMessage(error)}`);
@@ -130,22 +135,50 @@ async function ingest(
 async function createRepoManifest(
   id: string,
   repoPath: string,
+  previousHead?: string,
 ): Promise<GitRepoManifest> {
   const branch = await runGit(repoPath, ["rev-parse", "--abbrev-ref", "HEAD"]);
   const head = await runGit(repoPath, ["rev-parse", "HEAD"]);
+  const status = await runGit(repoPath, ["status", "--short"]);
+
+  // On repeat runs, describe what landed since the last ingestion by diffing
+  // against the recorded head. `previousHead` is unusable on the first run
+  // (undefined), when it matches the current head (nothing new committed), or
+  // when the recorded commit is no longer reachable (history rewritten or a
+  // force-push). In every unusable case we fall back to the working-tree diff
+  // so the manifest still reflects local, uncommitted work.
+  const usablePreviousHead =
+    previousHead && previousHead !== head
+      ? await resolveReachableHead(repoPath, previousHead)
+      : undefined;
+
   const recentCommits = (
-    await runGit(repoPath, [
-      "log",
-      "--max-count=20",
-      "--name-status",
-      "--oneline",
-    ])
+    usablePreviousHead
+      ? await runGit(repoPath, [
+          "log",
+          "--name-status",
+          "--oneline",
+          `${usablePreviousHead}..HEAD`,
+        ])
+      : await runGit(repoPath, [
+          "log",
+          "--max-count=20",
+          "--name-status",
+          "--oneline",
+        ])
   )
     .split(/\r?\n/u)
     .filter(Boolean);
-  const status = await runGit(repoPath, ["status", "--short"]);
+
   const changedFiles = (
-    await runGit(repoPath, ["diff", "--name-status", "HEAD"])
+    usablePreviousHead
+      ? await runGit(repoPath, [
+          "diff",
+          "--name-status",
+          usablePreviousHead,
+          "HEAD",
+        ])
+      : await runGit(repoPath, ["diff", "--name-status", "HEAD"])
   )
     .split(/\r?\n/u)
     .filter(Boolean);
@@ -156,9 +189,32 @@ async function createRepoManifest(
     head,
     id,
     path: repoPath,
+    ...(usablePreviousHead ? { previousHead: usablePreviousHead } : {}),
     recentCommits,
     status,
   };
+}
+
+/**
+ * Returns the recorded head if it still points at a commit in this repository,
+ * otherwise `undefined` (history was rewritten or the commit was garbage
+ * collected, so a diff against it would fail).
+ */
+async function resolveReachableHead(
+  repoPath: string,
+  candidate: string,
+): Promise<string | undefined> {
+  try {
+    await runGit(repoPath, [
+      "rev-parse",
+      "--verify",
+      "--quiet",
+      `${candidate}^{commit}`,
+    ]);
+    return candidate;
+  } catch {
+    return undefined;
+  }
 }
 
 async function runGit(cwd: string, args: string[]): Promise<string> {
