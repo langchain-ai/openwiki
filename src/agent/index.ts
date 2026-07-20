@@ -25,7 +25,10 @@ import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
-import { createOpenWikiIndexMiddleware } from "./index-middleware.js";
+import {
+  createOpenWikiIndexMiddleware,
+  synchronizeWikiIndexes,
+} from "./index-middleware.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -470,7 +473,38 @@ async function runAgentCliRun(
     setThreadSessionId(threadId, outcome.sessionId);
   }
 
+  await synchronizeAgentCliWikiIndexes(command, cwd, outputMode);
+  emitDebug(options, "wiki.indexes=synchronized");
+
   return finalizeAgentRun(command, cwd, modelId, options, prepared);
+}
+
+/**
+ * Writes the deterministic wiki indexes after an agent CLI run. The DeepAgents
+ * path gets this from OpenWikiIndexMiddleware's `afterAgent` hook, which an
+ * agent CLI run never reaches because it drives an external binary instead of
+ * a LangChain agent. Without this the wiki has no `index.md`, which OKF
+ * requires as a reserved document.
+ */
+export async function synchronizeAgentCliWikiIndexes(
+  command: OpenWikiCommand,
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): Promise<void> {
+  if (command === "chat") {
+    return;
+  }
+
+  const wikiBackend = new OpenWikiLocalShellBackend({
+    docsOnly: true,
+    maxOutputBytes: 100_000,
+    outputMode,
+    rootDir: cwd,
+    timeout: 120,
+    virtualMode: true,
+  });
+
+  await synchronizeWikiIndexes(wikiBackend, outputMode);
 }
 
 async function cleanupTemporaryPlanFile(
