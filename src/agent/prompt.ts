@@ -25,11 +25,7 @@ You are OpenWiki, an expert technical writer, software architect, and product an
 
 Your job is to inspect the relevant source evidence and local OpenWiki knowledge sources, then produce documentation in ${output.docsLocation} that is excellent for both humans and future agents. OpenWiki can maintain a local general-purpose knowledge wiki from connector raw dumps under ~/.openwiki.
 
-Canonical wiki location:
-- The generated OpenWiki knowledge base always lives in ~/.openwiki/wiki.
-- When reading the wiki to answer questions, inspect ~/.openwiki/wiki first. Do not assume the repository-local openwiki/ directory is the current wiki.
-- In local-wiki runs, filesystem tools are rooted at ~/.openwiki/wiki and virtual path / means the wiki root. Use paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md.
-- If a runtime is ever rooted somewhere else, use shell execute narrowly against ~/.openwiki/wiki for wiki reads instead of reading a repo-local openwiki/ directory.
+${output.canonicalLocationInstruction}
 
 Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use git through shell execute when it provides useful history. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in source files, existing docs, or git evidence you have inspected.
 
@@ -66,11 +62,7 @@ Connector ingestion discipline:
 
 ${output.localWikiSynthesisInstruction}
 
-Wiki-first question answering:
-- For ordinary chat questions, inspect the generated wiki at ~/.openwiki/wiki first. Use quickstart/index pages, section pages, and targeted grep/glob over the wiki before looking at raw connector dumps.
-- If the user asks you to "look at the wiki", answer "based on the wiki", report "what the wiki says", or otherwise frames the request around the wiki, use only wiki pages unless the wiki cannot support the answer.
-- Assume the synthesized wiki contains the answer most of the time. Do not inspect raw connector data just because it exists.
-- Never treat a repository-local openwiki/ directory as the canonical generated wiki unless the user explicitly asks about that repository documentation directory.
+${output.wikiFirstAnsweringInstruction}
 - Use raw connector data only when the wiki is missing the needed detail, clearly stale, ambiguous, contradicted, the user explicitly asks for source-level evidence, or the question is specifically about the latest uncompiled data since the last wiki update.
 - If a wiki-framed question cannot be answered from the wiki, say what important context is missing before deciding whether raw data is necessary. When appropriate, suggest or run a targeted connector ingestion/update instead of browsing broad raw dumps.
 - When the wiki answers the question, do not inspect or mention raw connector data.
@@ -153,9 +145,10 @@ OKF relationship modeling:
 - Prefer links to existing canonical concepts over duplicating their explanations. Do not mint thin concepts merely to create more nodes or edges.
 
 Front matter requirements (OKF):
-- Every Markdown file you create or update under ${output.docsLocation}, including the temporary ${output.planPath} file, MUST begin with OKF-compliant YAML front matter.
-- The front matter MUST follow the Google Knowledge Catalog OKF schema
-- Use this exact formatter at the very beginning of each file, replacing placeholders with real values and omitting optional fields that do not apply:
+- Every non-reserved Markdown concept file you create or update under ${output.docsLocation}, including the temporary ${output.planPath} file, MUST begin with OKF-compliant YAML front matter.
+- The front matter MUST follow the Google Knowledge Catalog OKF v0.1 schema.
+- \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.1"\` front matter.
+- Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:
 
 <okf_front_matter>
 ---
@@ -164,15 +157,18 @@ title: <Optional display name>
 description: <Optional one to two sentence summary (optimized for search & retrieval)>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
+timestamp: <Optional ISO 8601 datetime>
+# Producer-defined extension fields are allowed.
 ---
 </okf_front_matter>
 
-- \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
-- Required fields are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary (this should be optimized for search & retrieval); and \`tags\`, a YAML list of short cross-cutting category strings.
-- Recommended field(s), in priority order, are: \`resource\`, the canonical URI of the underlying asset when one exists (e.g. file path to specific code file in a repo).
-- Produce valid YAML. Do not leave placeholder text or explanatory comments in written files, and do not add front matter fields outside the formatter above.
-- The description field here is very important as retrieval tools will rely on it when searching through documents. Ensure your descriptions are clear, detailed, and optimized for search.
-- When updating an existing Markdown file, preserve accurate content but add or correct its opening front matter as part of that update so the resulting file complies with this requirement. - Only update front matter when necessary. You do not need to update every time, only when key file components change.
+- Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
+- Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
+- \`timestamp\` is an optional ISO 8601 datetime for the last meaningful change.
+- Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
+- Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
+- The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
+- When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
 
 Section quality rules:
 - Do not create a directory unless it represents a real documentation area.
@@ -338,6 +334,7 @@ function formatWikiGoal(wikiGoal: string | undefined): string {
 }
 
 type OutputPromptConfig = {
+  canonicalLocationInstruction: string;
   docsLocation: string;
   filesystemRootInstruction: string;
   gitDisciplineInstruction: string;
@@ -353,6 +350,7 @@ type OutputPromptConfig = {
   sectionDirectoryInstruction: string;
   subjectLabel: string;
   updateEvidenceInstruction: string;
+  wikiFirstAnsweringInstruction: string;
   writeBoundaryInstruction: string;
   writePathExample: string;
 };
@@ -362,6 +360,10 @@ function getOutputPromptConfig(
 ): OutputPromptConfig {
   if (outputMode === "local-wiki") {
     return {
+      canonicalLocationInstruction: `Canonical wiki location:
+- The generated OpenWiki knowledge base lives in ~/.openwiki/wiki, which the filesystem tools expose as the virtual root /. Reference wiki files by /-rooted virtual paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md.
+- Never type ~, ~/.openwiki/wiki, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep). Those host paths are only valid with shell execute, and only when a source-specific instruction requires it.
+- When reading the wiki to answer questions, inspect the wiki root / first.`,
       docsLocation: "~/.openwiki/wiki (the current virtual filesystem root /)",
       filesystemRootInstruction:
         "Filesystem tools are rooted at ~/.openwiki/wiki. Use virtual paths such as /quickstart.md, /sources/gmail.md, /topics/ai-research.md, and /_plan.md. Do not create a nested /openwiki directory.",
@@ -441,6 +443,11 @@ function getOutputPromptConfig(
       subjectLabel: "the local knowledge wiki",
       updateEvidenceInstruction:
         "Use newly ingested connector raw files, connector tools, source-specific instructions, existing wiki pages, and relevant configured local repository evidence to understand what changed.",
+      wikiFirstAnsweringInstruction: `Wiki-first question answering:
+- For ordinary chat questions, inspect the generated wiki under the virtual root / first. Use quickstart/index pages, section pages, and targeted grep/glob over the wiki before looking at raw connector dumps.
+- If the user asks you to "look at the wiki", answer "based on the wiki", report "what the wiki says", or otherwise frames the request around the wiki, use only wiki pages unless the wiki cannot support the answer.
+- Assume the synthesized wiki contains the answer most of the time. Do not inspect raw connector data just because it exists.
+- Never treat a repository-local openwiki/ directory as the canonical generated wiki unless the user explicitly asks about that repository documentation directory.`,
       writeBoundaryInstruction:
         "Do not modify files outside ~/.openwiki/wiki with filesystem tools. The only source data outside this root that may be inspected is connector raw data through constrained connector tools or explicit shell reads requested by the source-specific prompt.",
       writePathExample:
@@ -449,6 +456,11 @@ function getOutputPromptConfig(
   }
 
   return {
+    canonicalLocationInstruction: `Canonical wiki location:
+- The generated OpenWiki knowledge base lives in the target repository's openwiki/ directory, which the filesystem tools expose under the virtual path /openwiki. Reference wiki files by /-rooted virtual paths such as /openwiki/quickstart.md and /openwiki/architecture/overview.md.
+- In repository runs the wiki is this repo-local /openwiki directory, not ~/.openwiki/wiki.
+- Never type ~, ~/.openwiki/wiki, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep).
+- When reading the wiki to answer questions, inspect /openwiki first.`,
     docsLocation: "the target repository's openwiki/ directory",
     filesystemRootInstruction:
       "Filesystem tools are rooted at the target repository. Create and update generated wiki pages under /openwiki, such as /openwiki/quickstart.md, /openwiki/architecture/overview.md, or /openwiki/source-map.md.",
@@ -476,6 +488,10 @@ function getOutputPromptConfig(
     subjectLabel: "this repository",
     updateEvidenceInstruction:
       "Always use git-oriented repository evidence to understand recent changes. Inspect commits added since the previous successful run using the recorded gitHead when available. If shell execution is unavailable, use filesystem timestamps, source inspection, and existing docs to infer what changed.",
+    wikiFirstAnsweringInstruction: `Wiki-first question answering:
+- For ordinary chat questions, inspect the generated wiki under /openwiki first. Use quickstart/index pages, section pages, and targeted grep/glob over the wiki before looking at source files.
+- If the user asks you to "look at the wiki", answer "based on the wiki", report "what the wiki says", or otherwise frames the request around the wiki, use only /openwiki pages unless the wiki cannot support the answer.
+- Assume the generated wiki contains the answer most of the time. Do not exhaustively read source files just because they exist.`,
     writeBoundaryInstruction:
       "Do not modify source code. Write generated wiki pages only under the repository /openwiki directory.",
     writePathExample:

@@ -61,9 +61,12 @@ import {
   getProviderBaseUrlEnvKey,
   getProviderCredentialHint,
   getProviderLabel,
+  getProviderBaseUrlWarnings,
   getProviderModelOptions,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
+  getProvidersForKnownModelId,
+  isModelIdForOtherProvider,
   DEFAULT_VERTEX_LOCATION,
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
   isValidModelId,
@@ -78,6 +81,7 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   resolveConfiguredProvider,
+  resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
@@ -89,6 +93,7 @@ import {
   getUpdateNoopStatus,
   createRunContext,
   persistRunMetadataIfChanged,
+  removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
 } from "./utils.js";
 import { classifyError, recordRunSafe } from "../telemetry/index.js";
@@ -313,6 +318,12 @@ async function runOpenWikiAgentCore(
     }
     emitDebug(options, "stream=completed");
   } catch (error) {
+    await cleanupTemporaryPlanFile(command, cwd, outputMode, options).catch(
+      () => {
+        emitDebug(options, "plan.cleanup=failed");
+      },
+    );
+
     // Persist metadata even when the stream fails late, so content that was
     // already generated stays diffable by future updates. Persistence errors
     // are swallowed here so the original run error propagates.
@@ -339,6 +350,8 @@ async function runOpenWikiAgentCore(
     await chmodIfExists(checkpointTarget.connString, 0o600);
   }
 
+  await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
+
   const metadataWritten = await persistRunMetadataIfChanged(
     command,
     cwd,
@@ -362,6 +375,23 @@ async function runOpenWikiAgentCore(
     command,
     model: modelId,
   };
+}
+
+async function cleanupTemporaryPlanFile(
+  command: OpenWikiCommand,
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+  options: OpenWikiRunOptions,
+): Promise<void> {
+  if (command === "chat") {
+    return;
+  }
+
+  const removed = await removeTemporaryPlanFile(cwd, outputMode);
+  emitDebug(
+    options,
+    removed ? "plan.cleanup=removed" : "plan.cleanup=skipped missing",
+  );
 }
 
 const checkpointPath = path.join(openWikiEnvDir, "openwiki.sqlite");
@@ -404,12 +434,14 @@ function formatRuntimeRootLabel(outputMode: OpenWikiOutputMode): string {
   return outputMode === "local-wiki" ? "Local wiki root" : "Repository root";
 }
 
-function formatRuntimeRootInstruction(outputMode: OpenWikiOutputMode): string {
+export function formatRuntimeRootInstruction(
+  outputMode: OpenWikiOutputMode,
+): string {
   if (outputMode === "local-wiki") {
     return "Filesystem tools use a virtual root: / means the local wiki directory above. Write wiki pages directly under /, for example /quickstart.md, /sources/gmail.md, and /_plan.md. Do not create a nested /openwiki directory.";
   }
 
-  return "Treat the repository root above as source evidence only. The canonical generated wiki is ~/.openwiki/wiki, not a repository-local openwiki/ directory. Filesystem tools use a virtual root: / means the repository root for source inspection paths such as /README.md, /agent/agents/main.py, and /package.json.";
+  return "Filesystem tools use a virtual root: / means the repository root. The generated repository wiki lives under /openwiki, for example /openwiki/quickstart.md and /openwiki/architecture/overview.md. Inspect source files from repository-root paths such as /README.md, /src/agent/index.ts, and /package.json.";
 }
 
 async function createCheckpointer(
@@ -505,12 +537,18 @@ function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
     return;
   }
 
-  if (!resolveProviderBaseUrl(provider)) {
-    const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider) ?? "base URL";
+  const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider) ?? "base URL";
+  const baseUrl = resolveProviderBaseUrl(provider);
 
+  if (!baseUrl) {
     throw new Error(
       `${baseUrlEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
     );
+  }
+
+  const warnings = getProviderBaseUrlWarnings(provider, baseUrl);
+  if (warnings.length > 0) {
+    throw new Error(`${baseUrlEnvKey} is invalid: ${warnings.join(", ")}.`);
   }
 }
 
@@ -565,7 +603,38 @@ export function resolveModelId(
     );
   }
 
+  warnOnProviderModelMismatch(options, provider, modelId);
+
   return modelId;
+}
+
+// Non-fatal: if the configured model is a known model of a different provider
+// (e.g. an Anthropic model left in OPENWIKI_MODEL_ID while the provider is now
+// OpenAI), surface an actionable warning instead of letting the request fail
+// later with an opaque provider-side 400/404. The run still proceeds, since a
+// custom endpoint or gateway may legitimately serve the model.
+function warnOnProviderModelMismatch(
+  options: OpenWikiRunOptions,
+  provider: OpenWikiProvider,
+  modelId: string,
+): void {
+  if (!isModelIdForOtherProvider(modelId, provider)) {
+    return;
+  }
+
+  const otherProviders = getProvidersForKnownModelId(modelId, provider)
+    .map((otherProvider) => getProviderLabel(otherProvider))
+    .join(", ");
+  const message =
+    `Warning: model "${modelId}" is not a known ${getProviderLabel(provider)} model ` +
+    `(it belongs to ${otherProviders}). The request may fail. ` +
+    `Set ${OPENWIKI_MODEL_ID_ENV_KEY} to a ${getProviderLabel(provider)} model, or switch providers.`;
+
+  emitDebug(options, `model.mismatch provider=${provider} model=${modelId}`);
+  options.onEvent?.({ type: "text", text: message });
+  // Also emit to stderr so the warning survives on failure, where the TUI
+  // re-renders the log away and --print discards buffered streamed text.
+  process.stderr.write(`${message}\n`);
 }
 
 export function createModel(
@@ -655,10 +724,13 @@ export function createModel(
   }
 
   if (provider === "openrouter") {
+    const providerOnly = resolveOpenRouterProviderOnly();
+
     return new ChatOpenRouter({
       apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
+      provider: providerOnly ? { only: providerOnly } : undefined,
       siteName: "OpenWiki",
       ...retryOptions,
     });

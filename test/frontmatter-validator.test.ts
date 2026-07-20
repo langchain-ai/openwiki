@@ -56,6 +56,22 @@ describe("validateOkfFrontmatter", () => {
     ).toEqual({ valid: true });
   });
 
+  test("accepts OKF timestamp and producer-defined extension fields", () => {
+    expect(
+      validateOkfFrontmatter(
+        markdown(
+          [
+            "type: Reference",
+            'timestamp: "2026-07-16T20:00:00Z"',
+            "author: steve",
+            "confidence: 0.95",
+            "status: verified",
+          ].join("\n"),
+        ),
+      ),
+    ).toEqual({ valid: true });
+  });
+
   test("reports deterministic delimiter and required-field issues", () => {
     expect(validateOkfFrontmatter("# Page")).toEqual({
       issues: [
@@ -94,24 +110,25 @@ describe("validateOkfFrontmatter", () => {
     expect(malformed.issues[0].message).toContain("line 3");
   });
 
-  test("reports unsupported and mistyped fields", () => {
+  test("reports mistyped standard fields", () => {
     const result = validateOkfFrontmatter(
       markdown(
         [
           "type: Reference",
-          "timestamp: 2026-07-13",
+          "timestamp: [Not a string]",
           "title: [Not a string]",
           "description: 123",
           "tags: docs, api",
+          "producer_extension: preserved",
         ].join("\n"),
       ),
     );
 
     expect(result).toMatchObject({
       issues: [
-        { code: "unsupported_field" },
         { code: "invalid_title" },
         { code: "invalid_description" },
+        { code: "invalid_timestamp" },
         { code: "invalid_tags" },
       ],
       valid: false,
@@ -164,6 +181,18 @@ describe("addFrontmatterWarning", () => {
       "read_file",
     );
     expect(outsideBackend.readRaw).not.toHaveBeenCalled();
+  });
+
+  test("does not validate reserved index and log documents as concepts", async () => {
+    for (const fileName of ["index.md", "log.md"]) {
+      const backend = backendWith("# Reserved OKF document");
+      const message = mutationMessage(`/openwiki/architecture/${fileName}`);
+
+      await addFrontmatterWarning(message, backend, "repository", "write_file");
+
+      expect(backend.readRaw).not.toHaveBeenCalled();
+      expect(message.content).toBe("Successfully wrote file.");
+    }
   });
 
   test("edits tool messages nested in Command results", async () => {
