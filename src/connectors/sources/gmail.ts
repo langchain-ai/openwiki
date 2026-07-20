@@ -25,9 +25,9 @@ type GmailConfig = {
   enabled?: boolean;
   format?: GmailMessageFormat;
   includeSpamTrash?: boolean;
-  labelIds?: string[];
+  labelIds?: unknown;
   maxMessages?: number;
-  metadataHeaders?: string[];
+  metadataHeaders?: unknown;
   pageSize?: number;
   query?: string;
   readOnlyOperations?: unknown[];
@@ -186,7 +186,7 @@ async function listGmailMessages(
   accessToken: string,
   options: {
     includeSpamTrash?: boolean;
-    labelIds?: string[];
+    labelIds?: unknown;
     maxMessages: number;
     pageSize?: number;
     query?: string;
@@ -246,7 +246,7 @@ async function getGmailMessage(
   messageId: string,
   options: {
     format: GmailMessageFormat;
-    metadataHeaders?: string[];
+    metadataHeaders?: unknown;
   },
 ): Promise<unknown> {
   return await gmailApi(
@@ -402,10 +402,15 @@ function clamp(value: number | undefined, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.trunc(value ?? min)));
 }
 
-function normalizeStringArray(values: string[] | undefined): string[] {
-  return (values ?? [])
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0);
+function normalizeStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value
+        .filter(
+          (item): item is string =>
+            typeof item === "string" && item.trim().length > 0,
+        )
+        .map((item) => item.trim())
+    : [];
 }
 
 function removeEmptyValues(

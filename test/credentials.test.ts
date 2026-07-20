@@ -1,5 +1,17 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import { needsCredentialSetup } from "../src/credentials.tsx";
+import {
+  ensureRunModeConfig,
+  getInitialStep,
+  hydrateRunModeConfig,
+  needsCredentialSetup,
+  nextSetupStep,
+  orderedSetupSteps,
+  resolveStepStatus,
+} from "../src/credentials.tsx";
+import type { OpenWikiOnboardingConfig } from "../src/onboarding.ts";
 
 const ENV_KEYS = [
   "LANGSMITH_API_KEY",
@@ -32,5 +44,179 @@ describe("needsCredentialSetup", () => {
     process.env.LANGSMITH_API_KEY = "lsv2_placeholder";
 
     expect(needsCredentialSetup()).toBe(true);
+  });
+});
+
+describe("run-mode wiki brief isolation", () => {
+  const personalConfig: OpenWikiOnboardingConfig = {
+    modeId: "personal",
+    modeName: "Personal",
+    sourceInstances: [],
+    sources: {},
+    templateId: "personal",
+    templateName: "Personal",
+    version: 1,
+    wikiGoal: "Track my personal projects and commitments.",
+  };
+
+  test("clears the global personal brief when switching to code mode", () => {
+    expect(ensureRunModeConfig(personalConfig, "code")).toMatchObject({
+      modeId: "code",
+      templateId: "code",
+      wikiGoal: undefined,
+    });
+  });
+
+  test("does not inherit a personal brief for a new code repository", async () => {
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-code-mode-"));
+
+    try {
+      const codeConfig = {
+        ...personalConfig,
+        modeId: "code",
+        modeName: "Code",
+        templateId: "code",
+        templateName: "Code",
+      };
+
+      await expect(
+        hydrateRunModeConfig(codeConfig, "code", repo),
+      ).resolves.toMatchObject({ wikiGoal: undefined });
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test("uses a repository-specific code brief when present", async () => {
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-code-mode-"));
+    const instructionsDir = path.join(repo, "openwiki");
+
+    try {
+      await mkdir(instructionsDir);
+      await writeFile(
+        path.join(instructionsDir, "INSTRUCTIONS.md"),
+        "Document this repository's architecture.\n",
+      );
+
+      await expect(
+        hydrateRunModeConfig(personalConfig, "code", repo),
+      ).resolves.toMatchObject({
+        wikiGoal: "Document this repository's architecture.",
+      });
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test("retains the personal brief in personal mode", async () => {
+    await expect(
+      hydrateRunModeConfig(personalConfig, "personal", "/unused"),
+    ).resolves.toBe(personalConfig);
+  });
+});
+
+describe("resolveStepStatus", () => {
+  test("the active step is current, even when it is also done", () => {
+    expect(resolveStepStatus("model", "model", true)).toBe("current");
+    expect(resolveStepStatus("model", "model", false)).toBe("current");
+  });
+
+  test("a completed, non-active step reads done", () => {
+    expect(resolveStepStatus("model", "provider", true)).toBe("done");
+    expect(resolveStepStatus("model", null, true)).toBe("done");
+  });
+
+  test("an unstarted, non-active step falls to its resting status", () => {
+    expect(resolveStepStatus("model", "provider", false)).toBe("pending");
+    expect(resolveStepStatus("model", null, false)).toBe("pending");
+    expect(resolveStepStatus("langsmith", "provider", false, "optional")).toBe(
+      "optional",
+    );
+  });
+
+  test("ordering: active beats done, done beats resting", () => {
+    // Active wins even over a done step (the cursor shows where you are when
+    // you step back onto a completed row).
+    expect(resolveStepStatus("model", "model", true)).toBe("current");
+    // Done wins over an optional resting status.
+    expect(resolveStepStatus("langsmith", "model", true, "optional")).toBe(
+      "done",
+    );
+  });
+});
+
+describe("orderedSetupSteps", () => {
+  test("openai (code mode): provider, key, model, langsmith, then the tail", () => {
+    expect(orderedSetupSteps("openai", "code", false)).toEqual([
+      "provider",
+      "api-key",
+      "model",
+      "langsmith",
+      "code-repo-confirm",
+    ]);
+  });
+
+  test("run-mode is first only when mode selection is allowed", () => {
+    expect(orderedSetupSteps("openai", "code", true)[0]).toBe("run-mode");
+    expect(orderedSetupSteps("openai", "code", false)).not.toContain(
+      "run-mode",
+    );
+  });
+
+  test("bedrock adds secret-key and region before model", () => {
+    const spine = orderedSetupSteps("bedrock", "code", false);
+    expect(spine).toContain("secret-key");
+    expect(spine).toContain("region");
+    expect(spine.indexOf("secret-key")).toBeLessThan(spine.indexOf("model"));
+    expect(spine.indexOf("region")).toBeLessThan(spine.indexOf("model"));
+  });
+
+  test("personal mode ends at langsmith with no template chooser or code tail", () => {
+    // The template is fixed by the run mode in personal mode, so the spine
+    // skips the redundant Code/Personal chooser and walks straight into the
+    // wiki brief after langsmith.
+    const spine = orderedSetupSteps("openai", "personal", false);
+    expect(spine[spine.length - 1]).toBe("langsmith");
+    expect(spine).not.toContain("template");
+    expect(spine).not.toContain("code-repo-confirm");
+  });
+
+  test("the spine includes applicable steps regardless of env (reachability)", () => {
+    // api-key is present even when a key is already set, so navigation can
+    // still reach and re-edit it.
+    expect(orderedSetupSteps("openai", "code", false)).toContain("api-key");
+  });
+});
+
+describe("getInitialStep", () => {
+  test("walkAll starts at the first spine step regardless of configuration", () => {
+    // walkAll short-circuits the skip-waterfall, so it never returns null even
+    // when everything would otherwise be satisfied.
+    expect(getInitialStep(null, "openai", undefined, "code", false, true)).toBe(
+      "provider",
+    );
+    expect(
+      getInitialStep(null, "bedrock", undefined, "code", false, true),
+    ).toBe("provider");
+  });
+
+  test("walkAll returns run-mode first when mode selection is allowed", () => {
+    expect(getInitialStep(null, "openai", undefined, "code", true, true)).toBe(
+      "run-mode",
+    );
+  });
+});
+
+describe("nextSetupStep", () => {
+  test("walks forward through the spine", () => {
+    expect(nextSetupStep("provider", "openai", "code", false)).toBe("api-key");
+    expect(nextSetupStep("api-key", "openai", "code", false)).toBe("model");
+  });
+
+  test("no-op at the end and for null", () => {
+    expect(nextSetupStep("code-repo-confirm", "openai", "code", false)).toBe(
+      null,
+    );
+    expect(nextSetupStep(null, "openai", "code", false)).toBe(null);
   });
 });

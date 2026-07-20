@@ -1,3 +1,10 @@
+---
+type: Architecture overview
+title: OpenWiki Architecture Overview
+description: Explains OpenWiki's layered CLI, agent, provider, connector, authentication, and ingestion architecture, including runtime execution and persistence. Identifies core source modules, extension points, and operational considerations for maintaining OpenWiki.
+tags: [architecture, cli, agent, providers, connectors, ingestion]
+---
+
 # Architecture overview
 
 OpenWiki has a small but layered architecture:
