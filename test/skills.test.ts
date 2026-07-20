@@ -4,6 +4,7 @@ import {
   readFile,
   rm,
   stat,
+  utimes,
   writeFile,
 } from "node:fs/promises";
 import os from "node:os";
@@ -42,6 +43,58 @@ describe("replaceSkillDirectories", () => {
       await expect(
         readFile(path.join(target, "custom", "SKILL.md"), "utf8"),
       ).resolves.toBe("custom");
+    } finally {
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
+  test("serializes concurrent skill replacements", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-skills-"));
+    const source = path.join(root, "source");
+    const target = path.join(root, "target");
+
+    try {
+      await mkdir(path.join(source, "first"), { recursive: true });
+      await mkdir(path.join(source, "second"));
+      await writeFile(path.join(source, "first", "SKILL.md"), "first");
+      await writeFile(path.join(source, "second", "SKILL.md"), "second");
+
+      await Promise.all(
+        Array.from({ length: 25 }, () =>
+          replaceSkillDirectories(source, target),
+        ),
+      );
+
+      await expect(
+        readFile(path.join(target, "first", "SKILL.md"), "utf8"),
+      ).resolves.toBe("first");
+      await expect(
+        readFile(path.join(target, "second", "SKILL.md"), "utf8"),
+      ).resolves.toBe("second");
+    } finally {
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
+  test("recovers an abandoned skill sync lock", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-skills-"));
+    const source = path.join(root, "source");
+    const target = path.join(root, "target");
+    const lock = path.join(target, ".openwiki-skill-sync.lock");
+
+    try {
+      await mkdir(path.join(source, "existing"), { recursive: true });
+      await mkdir(lock, { recursive: true });
+      await writeFile(path.join(source, "existing", "SKILL.md"), "latest");
+      const staleTime = new Date(Date.now() - 10 * 60_000);
+      await utimes(lock, staleTime, staleTime);
+
+      await replaceSkillDirectories(source, target);
+
+      await expect(
+        readFile(path.join(target, "existing", "SKILL.md"), "utf8"),
+      ).resolves.toBe("latest");
+      await expect(stat(lock)).rejects.toMatchObject({ code: "ENOENT" });
     } finally {
       await rm(root, { force: true, recursive: true });
     }
