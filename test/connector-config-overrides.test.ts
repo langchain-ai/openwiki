@@ -10,16 +10,20 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 // `options.connectorConfig` overrides are merged on top of the on-disk config
 // — the bug this PR fixes, where gmail/slack/x silently ignored the overrides.
 //
-// Each connector short-circuits before any network call:
+// Most cases short-circuit before any network call:
 //   1. an `enabled` gate  -> returns status "skipped" when disabled
 //   2. a credentials gate -> returns status "error"   when the token env is unset
 // so the observable effect of the merge is which gate the run stops at, with no
-// `fetch` involved.
+// `fetch` involved. The malformed Gmail array test stubs `fetch` explicitly.
 
 const originalHome = process.env.HOME;
 const tempHomes: string[] = [];
 
 const CONNECTOR_ENV_KEYS = [
+  "OPENWIKI_GMAIL_ACCESS_TOKEN",
+  "OPENWIKI_GMAIL_REFRESH_TOKEN",
+  "OPENWIKI_GMAIL_TOKEN_EXPIRES_AT",
+  "OPENWIKI_GMAIL_TOKEN_TYPE",
   "OPENWIKI_X_ACCESS_TOKEN",
   "OPENWIKI_SLACK_USER_TOKEN",
 ] as const;
@@ -47,6 +51,7 @@ async function writeConnectorConfig(
 
 afterEach(async () => {
   vi.resetModules();
+  vi.unstubAllGlobals();
 
   if (originalHome === undefined) {
     delete process.env.HOME;
@@ -167,5 +172,54 @@ describe("gmail connector honors options.connectorConfig", () => {
     // Merge honored: the override disables the run before any Gmail API call.
     // If the override were ignored (the bug), it would proceed past this gate.
     expect(result.status).toBe("skipped");
+  });
+
+  test("ignores malformed non-array list config instead of crashing", async () => {
+    const home = await createTempHome();
+    await writeConnectorConfig(home, "google", {
+      enabled: true,
+      format: "metadata",
+      labelIds: "INBOX",
+      maxMessages: 1,
+      metadataHeaders: "Subject",
+    });
+    const requests: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL | Request) => {
+        const url = input instanceof Request ? input.url : String(input);
+        requests.push(url);
+
+        if (new URL(url).pathname.endsWith("/messages")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ messages: [{ id: "msg-1" }] }), {
+              headers: { "Content-Type": "application/json" },
+              status: 200,
+            }),
+          );
+        }
+
+        return Promise.resolve(
+          new Response(JSON.stringify({ id: "msg-1" }), {
+            headers: { "Content-Type": "application/json" },
+            status: 200,
+          }),
+        );
+      }),
+    );
+    const connector = await loadGmailConnector(home);
+    process.env.OPENWIKI_GMAIL_ACCESS_TOKEN = "gmail-access-token";
+    process.env.OPENWIKI_GMAIL_REFRESH_TOKEN = "gmail-refresh-token";
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    expect(requests).toHaveLength(2);
+    expect(new URL(requests[0] ?? "").searchParams.getAll("labelIds")).toEqual(
+      [],
+    );
+    expect(
+      new URL(requests[1] ?? "").searchParams.getAll("metadataHeaders"),
+    ).toEqual([]);
   });
 });

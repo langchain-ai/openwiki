@@ -5,6 +5,7 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
+export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
@@ -18,6 +19,8 @@ export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
+  "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
   "BEDROCK_AWS_SECRET_ACCESS_KEY";
@@ -253,6 +256,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   },
   openai: {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
+    baseUrlEnvKey: OPENAI_BASE_URL_ENV_KEY,
     label: "OpenAI",
     modelOptions: OPENAI_MODEL_OPTIONS,
   },
@@ -510,6 +514,39 @@ export function isValidBaseUrl(value: string): boolean {
   }
 }
 
+export function getProviderBaseUrlWarnings(
+  provider: OpenWikiProvider,
+  value: string,
+): string[] {
+  if (!isValidBaseUrl(value)) {
+    return ["invalid base URL"];
+  }
+
+  if (provider === "openai-compatible" && isChatCompletionsEndpointUrl(value)) {
+    return ["use API root URL, not /chat/completions endpoint"];
+  }
+
+  return [];
+}
+
+export function isValidProviderBaseUrl(
+  provider: OpenWikiProvider,
+  value: string,
+): boolean {
+  return getProviderBaseUrlWarnings(provider, value).length === 0;
+}
+
+function isChatCompletionsEndpointUrl(value: string): boolean {
+  try {
+    const url = new URL(value.trim());
+    const normalizedPath = url.pathname.replace(/\/+$/u, "").toLowerCase();
+
+    return normalizedPath.endsWith("/chat/completions");
+  } catch {
+    return false;
+  }
+}
+
 export function getProviderModelOptions(
   provider: OpenWikiProvider,
 ): ProviderModelOption[] {
@@ -518,6 +555,54 @@ export function getProviderModelOptions(
 
 export function getDefaultModelId(provider: OpenWikiProvider): string {
   return getProviderModelOptions(provider)[0]?.id ?? DEFAULT_MODEL_ID;
+}
+
+// Returns the list of built-in providers whose known model options include the
+// given model ID by exact match, excluding the provider passed in. Used to warn
+// when a saved model plainly belongs to a different provider (e.g. an Anthropic
+// model left over while the provider is now OpenAI). Exact matching avoids false
+// positives from namespaced overlaps such as OpenRouter's "anthropic/claude-...".
+// Returns an empty array for custom/unknown model IDs, so gateway and
+// OpenAI-compatible model names are never flagged.
+export function getProvidersForKnownModelId(
+  modelId: string,
+  excludeProvider: OpenWikiProvider,
+): OpenWikiProvider[] {
+  const normalized = normalizeModelId(modelId);
+  const providers: OpenWikiProvider[] = [];
+
+  for (const provider of Object.keys(PROVIDER_CONFIGS) as OpenWikiProvider[]) {
+    if (provider === excludeProvider) {
+      continue;
+    }
+    if (
+      getProviderModelOptions(provider).some(
+        (option) => option.id === normalized,
+      )
+    ) {
+      providers.push(provider);
+    }
+  }
+
+  return providers;
+}
+
+// True when the model ID is a known model of some other provider and is NOT a
+// known model of the configured provider — a clear provider/model mismatch.
+export function isModelIdForOtherProvider(
+  modelId: string,
+  provider: OpenWikiProvider,
+): boolean {
+  const normalized = normalizeModelId(modelId);
+  const isKnownForProvider = getProviderModelOptions(provider).some(
+    (option) => option.id === normalized,
+  );
+
+  if (isKnownForProvider) {
+    return false;
+  }
+
+  return getProvidersForKnownModelId(normalized, provider).length > 0;
 }
 
 export function normalizeProvider(
@@ -591,6 +676,23 @@ export function resolveProviderRetryAttempts(
   return parsedRetryAttempts;
 }
 
+export function resolveOpenRouterProviderOnly(
+  env: NodeJS.ProcessEnv = process.env,
+): string[] | undefined {
+  const rawProviderOnly = env[OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY];
+
+  if (rawProviderOnly === undefined) {
+    return undefined;
+  }
+
+  const providers = rawProviderOnly
+    .split(",")
+    .map((provider) => provider.trim())
+    .filter((provider) => provider.length > 0);
+
+  return providers.length > 0 ? providers : undefined;
+}
+
 export function normalizeModelId(value: string): string {
   return value.trim();
 }
@@ -601,9 +703,11 @@ export function isValidModelId(value: string): boolean {
   return (
     modelId.length > 0 &&
     modelId.length <= 120 &&
-    /^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
+    // Leading @ for Cloudflare Workers AI ids (@cf/...); interior @ for
+    // Vertex AI @-versioned ids (e.g. claude-sonnet-4-5@20250929).
+    /^[@A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
     !modelId.includes("://")
   );
 }
 
-export const OPENWIKI_VERSION = "0.1.2";
+export const OPENWIKI_VERSION = "0.2.1";

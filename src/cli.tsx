@@ -11,6 +11,7 @@ import { startNgrokTunnel } from "./auth/ngrok.js";
 import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
 import { ensureCodeModeRepoSetup } from "./code-mode.js";
 import {
+  commandEmitsTelemetry,
   helpContent,
   isDevelopmentMode,
   parseCommand,
@@ -27,6 +28,7 @@ import {
 } from "./credentials.js";
 import {
   getCredentialDiagnostics,
+  getShellEnvValue,
   loadOpenWikiEnv,
   saveOpenWikiEnv,
   type CredentialDiagnostic,
@@ -35,6 +37,7 @@ import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
 import { formatChatGptAccountFromEnv } from "./agent/openai-chatgpt-oauth.js";
 import {
   getErrorMessage,
+  isAuthError,
   isSecretLikeKey,
   sanitizeDiagnosticText,
 } from "./diagnostics.js";
@@ -82,6 +85,12 @@ import {
   type OpenWikiProvider,
 } from "./constants.js";
 import type { OpenWikiCommand, OpenWikiOutputMode } from "./agent/types.js";
+import {
+  firstRunNoticePending,
+  FIRST_RUN_NOTICE_BODY,
+  FIRST_RUN_NOTICE_OPT_OUT,
+  FIRST_RUN_NOTICE_VERIFY,
+} from "./telemetry/index.js";
 
 type RunState =
   | { status: "idle" }
@@ -115,6 +124,7 @@ type RunState =
       message: string;
       credentialDiagnostics?: CredentialDiagnostic[];
       errorDiagnostics?: ErrorDiagnostic[];
+      authFix?: AuthFix;
     };
 
 type RunLogItem = {
@@ -146,6 +156,17 @@ type ErrorDiagnostic = {
   value: string;
 };
 
+/**
+ * What the "How to fix" panel needs after an auth failure. Key names only, no
+ * secret values: {@link AuthFix.keyFromShell} reflects only whether the failing
+ * provider's API key was sourced from a shell export (which shadows saved
+ * config), so the panel can tell the user to unset it.
+ */
+type AuthFix = {
+  apiKeyEnvKey: string | undefined;
+  keyFromShell: boolean;
+};
+
 type AppProps = {
   command: CliCommand;
 };
@@ -161,6 +182,85 @@ const OPENWIKI_LOGO_LINES = [
 const OPENWIKI_LOGO_WIDTH = Math.max(
   ...OPENWIKI_LOGO_LINES.map((line) => line.length),
 );
+
+/** Frame/wrap width for the plain-text (print/non-TTY) first-run disclosure. */
+const FIRST_RUN_NOTICE_WIDTH = 64;
+
+/** Greedy word-wrap to `width` columns. Input carries no existing newlines. */
+function wrapText(text: string, width: number): string[] {
+  const lines: string[] = [];
+  let line = "";
+
+  for (const word of text.split(/\s+/)) {
+    if (line.length === 0) {
+      line = word;
+    } else if (line.length + 1 + word.length <= width) {
+      line += ` ${word}`;
+    } else {
+      lines.push(line);
+      line = word;
+    }
+  }
+  if (line.length > 0) {
+    lines.push(line);
+  }
+
+  return lines;
+}
+
+/**
+ * The plain-text first-run disclosure for print/non-TTY output: the same copy as
+ * the interactive box (single-sourced in telemetry/config.ts), framed with light
+ * rules and wrapped to a fixed width. Rendered gray when stderr is a TTY, plain
+ * when redirected so a captured log stays free of escape codes.
+ */
+function renderFirstRunNoticeText(color: boolean): string {
+  const label = "OpenWiki telemetry";
+  const width = FIRST_RUN_NOTICE_WIDTH;
+  const topRule = `─── ${label} ${"─".repeat(Math.max(3, width - label.length - 5))}`;
+  const block = [
+    "",
+    topRule,
+    "",
+    ...wrapText(FIRST_RUN_NOTICE_BODY, width),
+    "",
+    ...wrapText(FIRST_RUN_NOTICE_OPT_OUT, width),
+    "",
+    ...wrapText(FIRST_RUN_NOTICE_VERIFY, width),
+    "─".repeat(width),
+    "",
+  ].join("\n");
+
+  return color ? `\u001b[90m${block}\u001b[39m` : block;
+}
+
+/**
+ * The one-time telemetry disclosure, rendered as a box so it sits inline with
+ * the rest of the TUI (mirrors SetupHeader's rounded style). The copy is
+ * single-sourced in telemetry/config.ts; the print/non-TTY path renders the
+ * same wording as plain text via renderFirstRunNoticeText.
+ */
+function FirstRunNotice() {
+  return (
+    <Box
+      borderStyle="round"
+      borderColor="cyan"
+      flexDirection="column"
+      marginBottom={1}
+      paddingX={1}
+    >
+      <Text>
+        <Text bold color="cyan">
+          OpenWiki
+        </Text>{" "}
+        <Text color="gray">telemetry</Text>
+      </Text>
+      <Text color="white">{FIRST_RUN_NOTICE_BODY}</Text>
+      <Text color="white">{FIRST_RUN_NOTICE_OPT_OUT}</Text>
+      <Text color="white">{FIRST_RUN_NOTICE_VERIFY}</Text>
+    </Box>
+  );
+}
 
 function App({ command }: AppProps) {
   const app = useApp();
@@ -209,13 +309,19 @@ function App({ command }: AppProps) {
         ? command.command
         : null,
     );
+  // `--init` always opens the full setup walk, even when everything is already
+  // configured, so you can review or change any step. Consumed once the walk
+  // finishes so it does not re-open when the run later returns to idle.
+  const [initWizardConsumed, setInitWizardConsumed] = useState(false);
+  const isInitCommand = command.kind === "run" && command.command === "init";
   const shouldRunInteractiveCredentialSetup =
     command.kind === "run" &&
     resolvedCommand !== null &&
     !command.dryRun &&
     process.stdin.isTTY &&
     runState.status === "idle" &&
-    needsCredentialSetup(sessionModelId, runMode);
+    (needsCredentialSetup(sessionModelId, runMode) ||
+      (isInitCommand && !initWizardConsumed));
   const displayModelId = sessionModelId ?? startupModelId;
 
   function submitChatMessage(message: string) {
@@ -305,6 +411,19 @@ function App({ command }: AppProps) {
 
         const errorDiagnostics = getErrorDiagnostics(error);
         const message = getErrorMessage(error);
+        const authFix = getAuthFix(error, message, sessionProvider);
+
+        // The full credential dump is opt-in (--debug); by default show only the
+        // concise message, allowlisted error fields, and the how-to-fix panel.
+        if (!shouldShowCredentialDiagnostics()) {
+          setRunState({
+            status: "error",
+            message,
+            errorDiagnostics,
+            authFix,
+          });
+          return;
+        }
 
         void getCredentialDiagnostics()
           .catch(() => undefined)
@@ -318,6 +437,7 @@ function App({ command }: AppProps) {
               message,
               credentialDiagnostics,
               errorDiagnostics,
+              authFix,
             });
           });
       });
@@ -472,6 +592,7 @@ function App({ command }: AppProps) {
           outputMode: runtimeOutputMode,
           threadId: sessionThreadId.current,
           userMessage: activeUserMessage,
+          telemetryFile: command.telemetryFile ?? undefined,
           onEvent: (event) => {
             if (!mountedRef.current || activeRunId.current !== runId) {
               return;
@@ -524,6 +645,19 @@ function App({ command }: AppProps) {
 
         const errorDiagnostics = getErrorDiagnostics(error);
         const message = getErrorMessage(error);
+        const authFix = getAuthFix(error, message, sessionProvider);
+
+        // The full credential dump is opt-in (--debug); by default show only the
+        // concise message, allowlisted error fields, and the how-to-fix panel.
+        if (!shouldShowCredentialDiagnostics()) {
+          setRunState({
+            status: "error",
+            message,
+            errorDiagnostics,
+            authFix,
+          });
+          return;
+        }
 
         void getCredentialDiagnostics()
           .catch(() => undefined)
@@ -537,6 +671,7 @@ function App({ command }: AppProps) {
               message,
               credentialDiagnostics,
               errorDiagnostics,
+              authFix,
             });
           });
       });
@@ -609,7 +744,9 @@ function App({ command }: AppProps) {
         allowModeSelection={false}
         mode={command.mode}
         modelIdOverride={command.modelId}
+        walkAllSteps={isInitCommand}
         onComplete={(result) => {
+          setInitWizardConsumed(true);
           const nextCodeRuntimeCwd = result.repoRoot ?? codeRuntimeCwd;
 
           if (result.repoRoot) {
@@ -818,6 +955,7 @@ function App({ command }: AppProps) {
       <Box flexDirection="column">
         <Header modelId={displayModelId} subtitle="Run failed" />
         <StatusLine tone="error" label="Error" value={runState.message} />
+        {runState.authFix ? <AuthFixPanel authFix={runState.authFix} /> : null}
         {runState.credentialDiagnostics ? (
           <CredentialDiagnosticsPanel
             diagnostics={runState.credentialDiagnostics}
@@ -960,6 +1098,45 @@ function CredentialDiagnosticsPanel({
           </Text>
         </Box>
       ))}
+    </Panel>
+  );
+}
+
+/**
+ * The ordered "how to fix" steps for an auth failure. Shared by the interactive
+ * panel and the --print stderr path so they stay in sync. Names env keys only,
+ * never secret values.
+ */
+function getAuthFixSteps(authFix: AuthFix): string[] {
+  const steps: string[] = [];
+
+  if (authFix.keyFromShell && authFix.apiKeyEnvKey) {
+    steps.push(
+      `${authFix.apiKeyEnvKey} came from your shell, not ~/.openwiki/.env. ` +
+        `Unset it (unset ${authFix.apiKeyEnvKey}) or fix it, then retry.`,
+    );
+  }
+
+  steps.push(
+    "Re-enter your key: re-run openwiki --init, or edit ~/.openwiki/.env.",
+  );
+
+  return steps;
+}
+
+function AuthFixPanel({ authFix }: { authFix: AuthFix }) {
+  const steps = getAuthFixSteps(authFix);
+
+  return (
+    <Panel title="How to fix">
+      <Text>Your provider rejected the credentials for this run.</Text>
+      {steps.map((step, index) => (
+        <Text key={step}>
+          <Text color="cyan">{index + 1}. </Text>
+          {step}
+        </Text>
+      ))}
+      <Text color="gray">For full detail, re-run with --debug.</Text>
     </Panel>
   );
 }
@@ -3101,6 +3278,31 @@ function getDisplayModelId(modelId: string | null): string {
   );
 }
 
+/**
+ * The auth "how to fix" context for a failure, or undefined when it does not
+ * look like an auth error. Names the failing provider's API key env var and
+ * flags whether it came from the shell (a shell export shadows saved config, so
+ * the fix is to unset it). Existence check only, never reads the value.
+ */
+function getAuthFix(
+  error: unknown,
+  message: string,
+  provider: OpenWikiProvider,
+): AuthFix | undefined {
+  if (!isAuthError(error, message)) {
+    return undefined;
+  }
+
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
+  return {
+    apiKeyEnvKey,
+    keyFromShell:
+      apiKeyEnvKey !== undefined &&
+      getShellEnvValue(apiKeyEnvKey) !== undefined,
+  };
+}
+
 function getErrorDiagnostics(error: unknown): ErrorDiagnostic[] {
   const diagnostics: ErrorDiagnostic[] = [];
   const debugMode = isDebugMode();
@@ -3482,6 +3684,14 @@ const command = await resolveStartupCommand(parsedCommand, {
   isStdinTTY: Boolean(process.stdin.isTTY),
 });
 
+// Decide once, before any event is sent, whether this is the first run on this
+// machine (mints the install id). False when suppressed (opt-out or CI) or after
+// the first run. How it is shown depends on the render path below.
+let showFirstRunNotice = false;
+if (commandEmitsTelemetry(command)) {
+  showFirstRunNotice = await firstRunNoticePending();
+}
+
 if (command.kind === "auth") {
   await runAuthCommand(command);
 } else if (command.kind === "ngrok") {
@@ -3496,9 +3706,21 @@ if (command.kind === "auth") {
   process.stderr.write(`${command.message}\n`);
   process.exitCode = command.exitCode;
 } else if (shouldRunNonInteractively(command, process.stdin.isTTY === true)) {
+  // Non-TTY / print mode: framed text on stderr so piped stdout stays clean;
+  // gray only when stderr is a real terminal.
+  if (showFirstRunNotice) {
+    console.error(renderFirstRunNoticeText(process.stderr.isTTY === true));
+  }
   await runPrintCommand(command);
 } else {
-  render(<App command={command} />);
+  // Interactive TUI: render the notice as a box above the app so it matches
+  // the rest of the interface.
+  render(
+    <>
+      {showFirstRunNotice ? <FirstRunNotice /> : null}
+      <App command={command} />
+    </>,
+  );
 }
 
 async function runNgrokCommand(
@@ -3733,11 +3955,11 @@ async function runIngestCommand(
       );
     }
 
-    process.exitCode = result.results.some(
+    const hadError = result.results.some(
       (sourceResult) => sourceResult.status === "error",
-    )
-      ? 1
-      : 0;
+    );
+
+    process.exitCode = hadError ? 1 : 0;
   } catch (error) {
     process.stderr.write(`${getErrorMessage(error)}\n`);
     writePrintErrorDiagnostics(error);
@@ -3784,71 +4006,64 @@ async function runAuthCommand(
   try {
     if (command.action === "list") {
       process.stdout.write(`${formatAuthProviderList()}\n`);
-      process.exitCode = 0;
-      return;
-    }
-
-    if (command.provider === null) {
-      throw new Error("Auth provider is required.");
-    }
-
-    if (command.action === "configure") {
-      const result = await configureAuthProvider(command.provider, {
-        force: command.force,
-      });
-      process.stdout.write(
-        `${result.status === "exists" ? "Config already exists" : `Config ${result.status}`}: ${result.configPath}\n`,
-      );
-      for (const nextStep of result.nextSteps) {
-        process.stdout.write(`- ${nextStep}\n`);
+    } else {
+      if (command.provider === null) {
+        throw new Error("Auth provider is required.");
       }
-      process.exitCode = 0;
-      return;
-    }
 
-    if (command.action === "tools") {
-      const result = await listAuthProviderTools(command.provider);
-      process.stdout.write(
-        `Tools for ${result.provider} (${result.configPath})\n`,
-      );
-      process.stdout.write(`Wrote discovery: ${result.rawFile}\n`);
-      process.stdout.write(`${JSON.stringify(result.tools, null, 2)}\n`);
-      process.exitCode = 0;
-      return;
-    }
-
-    const result = await runOAuthAuth(command.provider);
-    process.stdout.write(
-      `Saved ${result.provider} auth values: ${result.savedEnvKeys.join(", ")}\n`,
-    );
-    const configureResult = await configureAuthProvider(command.provider, {
-      force: command.force,
-    });
-    process.stdout.write(
-      `${configureResult.status === "exists" ? "Config already exists" : `Config ${configureResult.status}`}: ${configureResult.configPath}\n`,
-    );
-    for (const nextStep of configureResult.nextSteps) {
-      process.stdout.write(`- ${nextStep}\n`);
-    }
-
-    if (shouldDiscoverToolsAfterAuth(command.provider)) {
-      try {
-        const toolsResult = await listAuthProviderTools(command.provider);
+      if (command.action === "configure") {
+        const result = await configureAuthProvider(command.provider, {
+          force: command.force,
+        });
         process.stdout.write(
-          `Discovered ${toolsResult.tools.length} MCP tool(s); wrote ${toolsResult.rawFile}\n`,
+          `${result.status === "exists" ? "Config already exists" : `Config ${result.status}`}: ${result.configPath}\n`,
         );
-        const toolNames = toolsResult.tools
-          .map((tool) => tool.name)
-          .slice(0, 20);
-        if (toolNames.length > 0) {
-          process.stdout.write(`Tools: ${toolNames.join(", ")}\n`);
+        for (const nextStep of result.nextSteps) {
+          process.stdout.write(`- ${nextStep}\n`);
         }
-      } catch (error) {
+      } else if (command.action === "tools") {
+        const result = await listAuthProviderTools(command.provider);
         process.stdout.write(
-          `MCP tool discovery skipped: ${getErrorMessage(error)}\n`,
+          `Tools for ${result.provider} (${result.configPath})\n`,
         );
+        process.stdout.write(`Wrote discovery: ${result.rawFile}\n`);
+        process.stdout.write(`${JSON.stringify(result.tools, null, 2)}\n`);
+      } else {
+        const result = await runOAuthAuth(command.provider);
+        process.stdout.write(
+          `Saved ${result.provider} auth values: ${result.savedEnvKeys.join(", ")}\n`,
+        );
+        const configureResult = await configureAuthProvider(command.provider, {
+          force: command.force,
+        });
+        process.stdout.write(
+          `${configureResult.status === "exists" ? "Config already exists" : `Config ${configureResult.status}`}: ${configureResult.configPath}\n`,
+        );
+        for (const nextStep of configureResult.nextSteps) {
+          process.stdout.write(`- ${nextStep}\n`);
+        }
+
+        if (shouldDiscoverToolsAfterAuth(command.provider)) {
+          try {
+            const toolsResult = await listAuthProviderTools(command.provider);
+            process.stdout.write(
+              `Discovered ${toolsResult.tools.length} MCP tool(s); wrote ${toolsResult.rawFile}\n`,
+            );
+            const toolNames = toolsResult.tools
+              .map((tool) => tool.name)
+              .slice(0, 20);
+            if (toolNames.length > 0) {
+              process.stdout.write(`Tools: ${toolNames.join(", ")}\n`);
+            }
+          } catch (error) {
+            process.stdout.write(
+              `MCP tool discovery skipped: ${getErrorMessage(error)}\n`,
+            );
+          }
+        }
       }
     }
+
     process.exitCode = 0;
   } catch (error) {
     process.stderr.write(`${getErrorMessage(error)}\n`);
@@ -3894,6 +4109,10 @@ function shouldAutoExitStartupRun(command: CliCommand): boolean {
   );
 }
 
+/**
+ * Builds the telemetry context for a run from the parsed command. Flag names
+ * only, never argument values.
+ */
 async function runPrintCommand(
   command: Extract<CliCommand, { kind: "run" }>,
 ): Promise<void> {
@@ -3914,6 +4133,7 @@ async function runPrintCommand(
       outputMode: runtimeOutputMode,
       threadId: createOpenWikiThreadId(runtimeCwd),
       userMessage: command.userMessage,
+      telemetryFile: command.telemetryFile ?? undefined,
       onEvent: (event) => {
         if (event.type === "text" && event.source !== "subgraph") {
           output.push(event.text);
@@ -3929,10 +4149,36 @@ async function runPrintCommand(
 
     process.exitCode = 0;
   } catch (error) {
-    process.stderr.write(`${getErrorMessage(error)}\n`);
+    const message = getErrorMessage(error);
+    process.stderr.write(`${message}\n`);
+    writePrintAuthFix(error, message);
     writePrintErrorDiagnostics(error);
     process.exitCode = 1;
   }
+}
+
+/**
+ * Write the concise auth "how to fix" guidance to stderr on a non-interactive
+ * failure, mirroring the interactive panel so CI/print runs get the same help.
+ * No-op unless the failure looks like an auth error. Key names only.
+ */
+function writePrintAuthFix(error: unknown, message: string): void {
+  const authFix = getAuthFix(error, message, resolveConfiguredProvider());
+
+  if (!authFix) {
+    return;
+  }
+
+  process.stderr.write("\nHow to fix\n");
+  process.stderr.write(
+    "Your provider rejected the credentials for this run.\n",
+  );
+
+  getAuthFixSteps(authFix).forEach((step, index) => {
+    process.stderr.write(`${index + 1}. ${step}\n`);
+  });
+
+  process.stderr.write("For full detail, re-run with --debug.\n");
 }
 
 function writePrintErrorDiagnostics(error: unknown): void {
