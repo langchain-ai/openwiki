@@ -90,6 +90,7 @@ import {
   FIRST_RUN_NOTICE_OPT_OUT,
   FIRST_RUN_NOTICE_VERIFY,
 } from "./telemetry/index.js";
+import { buildLangSmithCodeUpdateMessage } from "./connectors/sources/langsmith/code-mode.js";
 
 type RunState =
   | { status: "idle" }
@@ -4090,13 +4091,21 @@ async function runPrintCommand(
       await ensureCodeModeRepoSetup(runtimeCwd);
     }
 
+    const userMessage =
+      command.mode === "code" && command.command !== "chat"
+        ? await buildLangSmithCodeUpdateMessage(
+            runtimeCwd,
+            command.userMessage ?? undefined,
+          )
+        : command.userMessage;
+
     await runOpenWikiAgent(command.command, runtimeCwd, {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
       modelId: command.modelId,
       outputMode: runtimeOutputMode,
       threadId: createOpenWikiThreadId(runtimeCwd),
-      userMessage: command.userMessage,
+      userMessage,
       telemetryFile: command.telemetryFile ?? undefined,
       onEvent: (event) => {
         if (event.type === "text" && event.source !== "subgraph") {
