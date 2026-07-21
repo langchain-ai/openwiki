@@ -395,6 +395,21 @@ describe("resolveProviderLocation", () => {
   });
 });
 
+describe("getProviderModelOptions", () => {
+  test("offers the latest Gemini Flash models on both Gemini providers", () => {
+    const expectedModels = [
+      { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite" },
+      { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
+    ];
+
+    for (const provider of ["gemini", "gemini-enterprise"] as const) {
+      expect(getProviderModelOptions(provider)).toEqual(
+        expect.arrayContaining(expectedModels),
+      );
+    }
+  });
+});
+
 describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
@@ -402,8 +417,8 @@ describe("getDefaultModelId", () => {
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
-    expect(getDefaultModelId("gemini")).toBe("gemini-3.5-flash");
-    expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.5-flash");
+    expect(getDefaultModelId("gemini")).toBe("gemini-3.6-flash");
+    expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
   });
 
