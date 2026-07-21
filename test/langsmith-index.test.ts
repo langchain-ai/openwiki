@@ -62,7 +62,7 @@ function fakeApi(overrides: Partial<LangSmithApi> = {}): LangSmithApi {
 }
 
 /**
- * Sets the committed openwiki/langsmith.json a code-mode ingest reads, or
+ * Sets the committed openwiki/.langsmith.json a code-mode ingest reads, or
  * undefined to model a repo that has not configured langsmith.
  */
 function configureRepo(config: LangSmithRepoConfig | undefined): void {

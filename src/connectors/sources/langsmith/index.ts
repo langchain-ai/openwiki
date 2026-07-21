@@ -105,7 +105,7 @@ export function createLangSmithConnector(): ConnectorRuntime {
 
 /**
  * Loads the effective config for a code-mode run from the repo's committed
- * openwiki/langsmith.json, or a disabled default when the repo has not configured
+ * openwiki/.langsmith.json, or a disabled default when the repo has not configured
  * langsmith (so ingest cleanly skips). Forces includePayloads so full traces land
  * in the ephemeral dump; the committed-wiki privacy rule is enforced by the
  * code-mode guidance, not by dropping payloads here.

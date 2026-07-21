@@ -116,7 +116,7 @@ describe("sanitizeLangSmithApiBaseUrl", () => {
 });
 
 describe("read/write round-trip", () => {
-  test("writes only openwiki/langsmith.json and reads it back", async () => {
+  test("writes only openwiki/.langsmith.json and reads it back", async () => {
     const root = await createTempRepo();
     const config = { includeFeedback: true, projects: [{ name: "prod" }] };
 
@@ -124,10 +124,10 @@ describe("read/write round-trip", () => {
 
     expect(await readdir(root)).toEqual(["openwiki"]);
     expect(await readdir(path.join(root, "openwiki"))).toEqual([
-      "langsmith.json",
+      ".langsmith.json",
     ]);
     expect(getLangSmithRepoConfigPath(root)).toBe(
-      path.join(root, "openwiki", "langsmith.json"),
+      path.join(root, "openwiki", ".langsmith.json"),
     );
     await expect(readLangSmithRepoConfig(root)).resolves.toEqual(config);
   });

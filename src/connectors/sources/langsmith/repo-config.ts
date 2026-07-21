@@ -43,7 +43,7 @@ const ALLOWED_API_HOSTS = new Set([
  * Absolute path of the committed LangSmith config for a repository.
  */
 export function getLangSmithRepoConfigPath(repoRoot: string): string {
-  return path.join(repoRoot, OPEN_WIKI_DIR, "langsmith.json");
+  return path.join(repoRoot, OPEN_WIKI_DIR, ".langsmith.json");
 }
 
 /**

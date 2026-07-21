@@ -31,7 +31,7 @@ export type ConnectorIngestOptions = {
   limit?: number;
   /**
    * Repository root for code-mode connectors whose config is committed to the
-   * repo (e.g. langsmith reads openwiki/langsmith.json under it). Undefined for
+   * repo (e.g. langsmith reads openwiki/.langsmith.json under it). Undefined for
    * personal runs, which read config from ~/.openwiki.
    * @default undefined
    */
