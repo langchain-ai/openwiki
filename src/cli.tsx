@@ -9,7 +9,7 @@ import {
 } from "./auth/configure.js";
 import { startNgrokTunnel } from "./auth/ngrok.js";
 import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
-import { ensureCodeModeRepoSetup } from "./code-mode.js";
+import { ensureCodeModeRepoSetup, runCodeModeConnectors } from "./code-mode.js";
 import {
   commandEmitsTelemetry,
   helpContent,
@@ -583,14 +583,22 @@ function App({ command }: AppProps) {
         : Promise.resolve();
 
     setupPromise
-      .then(() =>
-        runOpenWikiAgent(resolvedCommand, runtimeCwd, {
+      .then(async () => {
+        const userMessage =
+          runMode === "code" && resolvedCommand !== "chat"
+            ? await runCodeModeConnectors(
+                runtimeCwd,
+                activeUserMessage ?? undefined,
+              )
+            : activeUserMessage;
+
+        return runOpenWikiAgent(resolvedCommand, runtimeCwd, {
           debug: isDebugMode(),
           isFollowup: activeMessageIsFollowup,
           modelId: sessionModelId,
           outputMode: runtimeOutputMode,
           threadId: sessionThreadId.current,
-          userMessage: activeUserMessage,
+          userMessage,
           telemetryFile: command.telemetryFile ?? undefined,
           onEvent: (event) => {
             if (!mountedRef.current || activeRunId.current !== runId) {
@@ -611,8 +619,8 @@ function App({ command }: AppProps) {
                 : currentState,
             );
           },
-        }),
-      )
+        });
+      })
       .then((result) => {
         if (!mountedRef.current || activeRunId.current !== runId) {
           return;
@@ -4090,13 +4098,21 @@ async function runPrintCommand(
       await ensureCodeModeRepoSetup(runtimeCwd);
     }
 
+    const userMessage =
+      command.mode === "code" && command.command !== "chat"
+        ? await runCodeModeConnectors(
+            runtimeCwd,
+            command.userMessage ?? undefined,
+          )
+        : command.userMessage;
+
     await runOpenWikiAgent(command.command, runtimeCwd, {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
       modelId: command.modelId,
       outputMode: runtimeOutputMode,
       threadId: createOpenWikiThreadId(runtimeCwd),
-      userMessage: command.userMessage,
+      userMessage,
       telemetryFile: command.telemetryFile ?? undefined,
       onEvent: (event) => {
         if (event.type === "text" && event.source !== "subgraph") {

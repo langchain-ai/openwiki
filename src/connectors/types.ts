@@ -45,6 +45,13 @@ export type ConnectorIngestResult = {
 
 export type ConnectorRuntime = ConnectorDefinition & {
   ingest: (options?: ConnectorIngestOptions) => Promise<ConnectorIngestResult>;
+
+  /**
+   * Code-mode connectors implement this to contribute to a code-mode agent run:
+   * read the repo config, pull, and return a guidance block, or undefined when
+   * this repo has not configured the connector or there is no new evidence.
+   */
+  buildCodeModeGuidance?: (repoRoot: string) => Promise<string | undefined>;
 };
 
 export type ConnectorState = {

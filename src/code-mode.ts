@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { createConnectorRegistry } from "./connectors/registry.js";
 import { isFileNotFoundError } from "./fs-errors.js";
 
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
@@ -16,6 +17,36 @@ export async function ensureCodeModeRepoSetup(
 ): Promise<void> {
   await writeCodeModeWorkflow(cwd, cronExpression);
   await writeCodeModeAgentSnippets(cwd);
+}
+
+/**
+ * Runs every configured code-mode connector for a code-mode agent run and
+ * appends their guidance blocks to the agent's message. Returns the base message
+ * unchanged when nothing contributes, so an unconfigured repo still noop-skips.
+ */
+export async function runCodeModeConnectors(
+  repoRoot: string,
+  baseMessage: string | undefined,
+): Promise<string | undefined> {
+  const blocks: string[] = [];
+
+  for (const connector of Object.values(createConnectorRegistry())) {
+    if (connector.mode !== "code" || !connector.buildCodeModeGuidance) {
+      continue;
+    }
+    const block = await connector.buildCodeModeGuidance(repoRoot);
+    if (block) {
+      blocks.push(block);
+    }
+  }
+
+  if (blocks.length === 0) {
+    return baseMessage;
+  }
+
+  const base = baseMessage?.trim();
+  const joined = blocks.join("\n\n");
+  return base ? `${base}\n\n${joined}` : joined;
 }
 
 async function writeCodeModeWorkflow(
