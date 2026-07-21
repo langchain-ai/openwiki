@@ -52,6 +52,10 @@ import {
 import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
 import type { ConnectorId } from "./connectors/types.js";
+import {
+  ensureCodeModeRepoSetup,
+  type CodeModeAutomation,
+} from "./code-mode.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
 import {
   getSavedEnvValue,
@@ -113,6 +117,7 @@ type InitSetupProps = {
 type PromptStep =
   | "api-key"
   | "base-url"
+  | "code-automation"
   | "code-repo-confirm"
   | "code-repo-path"
   | "final"
@@ -377,6 +382,14 @@ const SOURCE_CONTINUE_OPTIONS = [
 ] as const;
 const FINAL_OPTIONS = ["Run ingestion now", "Run later"] as const;
 const CODE_REPO_OPTIONS = ["Confirm and continue", "Edit path"] as const;
+const CODE_AUTOMATION_OPTIONS = [
+  { id: "github", label: "GitHub Actions" },
+  { id: "gitlab", label: "GitLab CI/CD pipeline" },
+  { id: "none", label: "Do not create a CI file" },
+] as const satisfies readonly {
+  id: CodeModeAutomation;
+  label: string;
+}[];
 
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
@@ -709,6 +722,8 @@ export function InitSetup({
     useState(0);
   const [templateSelectionIndex, setTemplateSelectionIndex] = useState(0);
   const [cronModeSelectionIndex, setCronModeSelectionIndex] = useState(0);
+  const [codeAutomationSelectionIndex, setCodeAutomationSelectionIndex] =
+    useState(0);
   const [powerModeSelectionIndex, setPowerModeSelectionIndex] = useState(0);
   const [cronFieldSelectionIndex, setCronFieldSelectionIndex] = useState(0);
   const [cronReplaceCurrentField, setCronReplaceCurrentField] = useState(true);
@@ -1072,6 +1087,9 @@ export function InitSetup({
         setCodeRepoSelectionIndex(0);
         setInput("");
         break;
+      case "code-automation":
+        setInput("");
+        break;
       case "code-repo-path":
         setCodeRepoPathInput(codeRepoRoot);
         break;
@@ -1235,6 +1253,19 @@ export function InitSetup({
             index,
             key.upArrow ? -1 : 1,
             CODE_REPO_OPTIONS.length,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (step === "code-automation") {
+      handleMenuInput(key, () =>
+        setCodeAutomationSelectionIndex((index) =>
+          moveSelectionIndex(
+            index,
+            key.upArrow ? -1 : 1,
+            CODE_AUTOMATION_OPTIONS.length,
           ),
         ),
       );
@@ -1927,7 +1958,8 @@ export function InitSetup({
       setInput("");
 
       if (isCodeMode(nextConfig)) {
-        setStep("final");
+        setCodeAutomationSelectionIndex(0);
+        setStep("code-automation");
         return;
       }
 
@@ -2146,6 +2178,11 @@ export function InitSetup({
       return;
     }
 
+    if (step === "code-automation") {
+      setStep("final");
+      return;
+    }
+
     if (step === "final") {
       const runIngestionNow =
         FINAL_OPTIONS[finalSelectionIndex] === "Run ingestion now";
@@ -2153,7 +2190,21 @@ export function InitSetup({
         ...onboardingConfig,
         completedAt: new Date().toISOString(),
       };
+
+      if (selectedMode === "code") {
+        const automation =
+          CODE_AUTOMATION_OPTIONS[codeAutomationSelectionIndex]?.id ?? "none";
+
+        try {
+          await ensureCodeModeRepoSetup(codeRepoRoot, automation);
+        } catch (setupError) {
+          setError(getErrorMessage(setupError));
+          return;
+        }
+      }
+
       await saveConfigForCurrentMode(nextConfig);
+
       onComplete({
         mode: selectedMode,
         modelId:
@@ -2302,7 +2353,8 @@ export function InitSetup({
       return;
     }
 
-    setStep("final");
+    setCodeAutomationSelectionIndex(0);
+    setStep("code-automation");
   }
 
   async function completeSetup(options: CompleteSetupOptions) {
@@ -2935,6 +2987,7 @@ export function InitSetup({
         <SetupPanel title="Prompt">
           {step ? (
             <Prompt
+              codeAutomationSelectionIndex={codeAutomationSelectionIndex}
               codeRepoPathInput={codeRepoPathInput}
               codeRepoRoot={codeRepoRoot}
               codeRepoSelectionIndex={codeRepoSelectionIndex}
@@ -3012,6 +3065,7 @@ export function InitSetup({
 }
 
 function Prompt({
+  codeAutomationSelectionIndex,
   codeRepoPathInput,
   codeRepoRoot,
   codeRepoSelectionIndex,
@@ -3040,6 +3094,7 @@ function Prompt({
   suggestedCronExpression,
   templateSelectionIndex,
 }: {
+  codeAutomationSelectionIndex: number;
   codeRepoPathInput: string;
   codeRepoRoot: string;
   codeRepoSelectionIndex: number;
@@ -3317,6 +3372,32 @@ function Prompt({
           />
         </Box>
         <Text color="gray">Press Enter to continue.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "code-automation") {
+    return (
+      <Box flexDirection="column">
+        <Text>Set up automatic OpenWiki updates?</Text>
+        <Text color="gray">
+          Choose a CI provider, or continue without creating a CI file.
+        </Text>
+        <Box flexDirection="column" marginTop={1}>
+          {CODE_AUTOMATION_OPTIONS.map((option, index) => (
+            <Text key={option.id}>
+              <SelectionMarker
+                isSelected={index === codeAutomationSelectionIndex}
+              />{" "}
+              {option.label}
+            </Text>
+          ))}
+        </Box>
+        <Text color="gray">
+          GitHub writes .github/workflows/openwiki-update.yml; GitLab writes
+          .gitlab-ci.yml.
+        </Text>
+        <Text color="gray">Use up/down arrows, then press Enter.</Text>
       </Box>
     );
   }

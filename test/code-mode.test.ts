@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import { ensureCodeModeRepoSetup } from "../src/code-mode.ts";
+import { OPENWIKI_VERSION } from "../src/constants.ts";
 
 const SNIPPET_START = "<!-- OPENWIKI:START -->";
 const SNIPPET_END = "<!-- OPENWIKI:END -->";
@@ -100,10 +101,23 @@ Trailing notes that must survive.
 });
 
 describe("ensureCodeModeRepoSetup workflow", () => {
-  test("generated PR includes agent files and the workflow in add-paths", async () => {
+  test("does not create a CI file without an explicit choice", async () => {
     const repo = await createTempRepo();
 
     await ensureCodeModeRepoSetup(repo);
+
+    expect(
+      await readIfPresent(
+        path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+      ),
+    ).toBeNull();
+    expect(await readIfPresent(path.join(repo, ".gitlab-ci.yml"))).toBeNull();
+  });
+
+  test("GitHub Actions includes agent files and the workflow in add-paths", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, "github");
 
     const workflow = await readIfPresent(
       path.join(repo, ".github", "workflows", "openwiki-update.yml"),
@@ -118,5 +132,29 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     ]) {
       expect(workflow).toContain(managedPath);
     }
+    expect(workflow).toContain("actions/checkout@11bd7190");
+    expect(workflow).toContain(
+      `npm install --global openwiki@${OPENWIKI_VERSION}`,
+    );
+  });
+
+  test("GitLab CI uses the standard filename and GitLab-managed paths", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, "gitlab");
+
+    const pipeline = await readIfPresent(path.join(repo, ".gitlab-ci.yml"));
+    expect(pipeline).not.toBeNull();
+    expect(pipeline).toContain("openwiki_update:");
+    expect(pipeline).toContain("$CI_PIPELINE_SOURCE");
+    expect(pipeline).toContain(
+      "git add openwiki AGENTS.md CLAUDE.md .gitlab-ci.yml",
+    );
+    expect(pipeline).not.toContain(".github/workflows/openwiki-update.yml");
+    expect(
+      await readIfPresent(
+        path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+      ),
+    ).toBeNull();
   });
 });

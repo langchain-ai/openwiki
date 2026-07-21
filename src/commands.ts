@@ -658,7 +658,7 @@ export const helpContent: HelpContent = {
     {
       label: "openwiki code",
       description:
-        "Run OpenWiki for the current repository, writing docs under repo openwiki/ and using GitHub Actions for recurrence.",
+        "Run OpenWiki for the current repository, writing docs under repo openwiki/ with optional GitHub Actions or GitLab CI/CD recurrence.",
     },
     {
       label: "openwiki personal",
