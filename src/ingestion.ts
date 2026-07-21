@@ -344,7 +344,19 @@ ${createConnectorSynthesisGuidance(connectorId)}
 `.trim();
 }
 
+function isPersonalConnectorId(
+  id: ConnectorId,
+): id is Exclude<ConnectorId, "langsmith"> {
+  return id !== "langsmith";
+}
+
 function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
+  // Code-mode connectors (e.g. langsmith) never run through personal ingestion;
+  // their guidance lives in their code-mode wiring, not here.
+  if (!isPersonalConnectorId(connectorId)) {
+    return "";
+  }
+
   switch (connectorId) {
     case "google":
       return `

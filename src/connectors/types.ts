@@ -2,6 +2,7 @@ export type ConnectorId =
   | "git-repo"
   | "google"
   | "hackernews"
+  | "langsmith"
   | "notion"
   | "slack"
   | "web-search"
@@ -15,6 +16,12 @@ export type ConnectorDefinition = {
   description: string;
   displayName: string;
   id: ConnectorId;
+  /**
+   * Which documentation surface the connector feeds. Code-mode connectors (e.g.
+   * langsmith) do not run through personal (local-wiki) ingestion. Absent is
+   * treated as "personal".
+   */
+  mode?: "code" | "personal";
   requiredEnv: string[];
   supportsAgenticDiscovery: boolean;
 };
