@@ -7,6 +7,15 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { resolveStartupCommand } from "../src/startup.ts";
 import type { CliCommand } from "../src/commands.ts";
 import {
+  AWS_ACCESS_KEY_ID_ENV_KEY,
+  AWS_DEFAULT_REGION_ENV_KEY,
+  AWS_REGION_ENV_KEY,
+  AWS_ROLE_ARN_ENV_KEY,
+  AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  AWS_SESSION_TOKEN_ENV_KEY,
+  AWS_WEB_IDENTITY_TOKEN_FILE_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
@@ -17,6 +26,15 @@ import {
 
 const execFileAsync = promisify(execFile);
 const MANAGED_ENV_KEYS = [
+  AWS_ACCESS_KEY_ID_ENV_KEY,
+  AWS_DEFAULT_REGION_ENV_KEY,
+  AWS_REGION_ENV_KEY,
+  AWS_ROLE_ARN_ENV_KEY,
+  AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  AWS_SESSION_TOKEN_ENV_KEY,
+  AWS_WEB_IDENTITY_TOKEN_FILE_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
@@ -102,6 +120,15 @@ beforeEach(() => {
   delete process.env[OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY];
   delete process.env[OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY];
   delete process.env[OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY];
+  delete process.env[AWS_DEFAULT_REGION_ENV_KEY];
+  delete process.env[AWS_ACCESS_KEY_ID_ENV_KEY];
+  delete process.env[AWS_REGION_ENV_KEY];
+  delete process.env[AWS_ROLE_ARN_ENV_KEY];
+  delete process.env[AWS_SECRET_ACCESS_KEY_ENV_KEY];
+  delete process.env[AWS_SESSION_TOKEN_ENV_KEY];
+  delete process.env[AWS_WEB_IDENTITY_TOKEN_FILE_ENV_KEY];
+  delete process.env[BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY];
+  delete process.env[BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY];
 });
 
 afterEach(() => {
@@ -215,6 +242,73 @@ describe("resolveStartupCommand", () => {
 
     expect(result).toBe(command);
   });
+
+  test("allows non-interactive Bedrock startup with OIDC credentials", async () => {
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] = "bedrock";
+    process.env[AWS_ROLE_ARN_ENV_KEY] =
+      "arn:aws:iam::123456789012:role/openwiki";
+    process.env[AWS_WEB_IDENTITY_TOKEN_FILE_ENV_KEY] =
+      "/var/run/secrets/aws/token";
+    process.env[AWS_REGION_ENV_KEY] = "us-east-1";
+
+    const command = updatePrintCommand({ userMessage: "refresh API docs" });
+    const result = await resolveStartupCommand(command, { isStdinTTY: false });
+
+    expect(result).toBe(command);
+  });
+
+  test.each([
+    [
+      BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+      "access",
+      BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+    ],
+    [
+      BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+      "secret",
+      BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+    ],
+  ])(
+    "rejects partial legacy Bedrock credentials when only %s is set",
+    async (configuredKey, configuredValue, missingKey) => {
+      process.env[OPENWIKI_PROVIDER_ENV_KEY] = "bedrock";
+      process.env[configuredKey] = configuredValue;
+
+      const result = await resolveStartupCommand(
+        updatePrintCommand({ userMessage: "refresh API docs" }),
+        { isStdinTTY: false },
+      );
+
+      expect(result.kind).toBe("error");
+      if (result.kind === "error") {
+        expect(result.message).toContain(`${missingKey} is required`);
+        expect(result.message).not.toContain(configuredValue);
+      }
+    },
+  );
+
+  test.each([
+    [AWS_ACCESS_KEY_ID_ENV_KEY, "access", AWS_SECRET_ACCESS_KEY_ENV_KEY],
+    [AWS_SECRET_ACCESS_KEY_ENV_KEY, "secret", AWS_ACCESS_KEY_ID_ENV_KEY],
+  ])(
+    "rejects incomplete standard AWS credentials when only %s is set",
+    async (configuredKey, configuredValue, missingKey) => {
+      process.env[OPENWIKI_PROVIDER_ENV_KEY] = "bedrock";
+      process.env[AWS_REGION_ENV_KEY] = "us-east-1";
+      process.env[configuredKey] = configuredValue;
+
+      const result = await resolveStartupCommand(
+        updatePrintCommand({ userMessage: "refresh API docs" }),
+        { isStdinTTY: false },
+      );
+
+      expect(result.kind).toBe("error");
+      if (result.kind === "error") {
+        expect(result.message).toContain(`${missingKey} is required`);
+        expect(result.message).not.toContain(configuredValue);
+      }
+    },
+  );
 
   test("leaves expired complete ChatGPT OAuth tokens to the agent refresh path", async () => {
     process.env[OPENWIKI_PROVIDER_ENV_KEY] = "openai-chatgpt";

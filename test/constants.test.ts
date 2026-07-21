@@ -9,6 +9,7 @@ import {
   getProviderBaseUrlWarnings,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
+  getProviderAuthMethod,
   getProviderModelOptions,
   getProviderRegionEnvKey,
   FIREWORKS_BASE_URL_ENV_KEY,
@@ -26,6 +27,7 @@ import {
   providerRequiresApiKey,
   providerRequiresRegion,
   providerRequiresSecretKey,
+  providerUsesAwsSdkCredentials,
   resolveConfiguredProvider,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
@@ -136,10 +138,25 @@ describe("resolveConfiguredProvider", () => {
     expect(resolveConfiguredProvider({ NVIDIA_API_KEY: "x" })).toBe("nvidia");
   });
 
-  test("falls back to bedrock when only a Bedrock access key is present", () => {
-    expect(resolveConfiguredProvider({ BEDROCK_AWS_ACCESS_KEY_ID: "x" })).toBe(
-      "bedrock",
-    );
+  test("falls back to bedrock when a complete legacy key pair is present", () => {
+    expect(
+      resolveConfiguredProvider({
+        BEDROCK_AWS_ACCESS_KEY_ID: "access",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBe("bedrock");
+  });
+
+  test("does not auto-select bedrock from partial or ambient AWS config", () => {
+    expect(
+      resolveConfiguredProvider({ BEDROCK_AWS_ACCESS_KEY_ID: "access" }),
+    ).toBe(DEFAULT_PROVIDER);
+    expect(
+      resolveConfiguredProvider({
+        AWS_ROLE_ARN: "arn:aws:iam::123456789012:role/openwiki",
+        AWS_WEB_IDENTITY_TOKEN_FILE: "/var/run/secrets/aws/token",
+      }),
+    ).toBe(DEFAULT_PROVIDER);
   });
 
   test("falls back to the default provider when nothing is configured", () => {
@@ -330,25 +347,49 @@ describe("getProviderModelOptions", () => {
   });
 });
 
-describe("bedrock provider (IAM access key + secret key + region)", () => {
-  test("requires a secret key and a region, unlike API-key providers", () => {
-    expect(providerRequiresSecretKey("bedrock")).toBe(true);
+describe("bedrock provider (AWS SDK credentials + region)", () => {
+  test("uses the AWS SDK credential chain instead of required static keys", () => {
+    expect(getProviderAuthMethod("bedrock")).toBe("aws-sdk");
+    expect(providerUsesAwsSdkCredentials("bedrock")).toBe(true);
+    expect(providerRequiresApiKey("bedrock")).toBe(false);
+    expect(providerRequiresSecretKey("bedrock")).toBe(false);
     expect(providerRequiresRegion("bedrock")).toBe(true);
+    expect(providerUsesAwsSdkCredentials("anthropic")).toBe(false);
     expect(providerRequiresSecretKey("anthropic")).toBe(false);
     expect(providerRequiresRegion("anthropic")).toBe(false);
   });
 
-  test("exposes the AWS-flavored env keys", () => {
+  test("retains the legacy AWS env-key metadata for compatibility", () => {
+    expect(getProviderApiKeyEnvKey("bedrock")).toBe(
+      "BEDROCK_AWS_ACCESS_KEY_ID",
+    );
     expect(getProviderSecretKeyEnvKey("bedrock")).toBe(
       "BEDROCK_AWS_SECRET_ACCESS_KEY",
     );
     expect(getProviderRegionEnvKey("bedrock")).toBe("BEDROCK_AWS_REGION");
   });
 
-  test("resolveProviderRegion reads the region env key and trims it", () => {
+  test("resolves and trims Bedrock region env vars in precedence order", () => {
     expect(
-      resolveProviderRegion("bedrock", { BEDROCK_AWS_REGION: " us-east-1 " }),
+      resolveProviderRegion("bedrock", {
+        BEDROCK_AWS_REGION: " us-east-1 ",
+        AWS_REGION: "us-west-2",
+        AWS_DEFAULT_REGION: "eu-west-1",
+      }),
     ).toBe("us-east-1");
+    expect(
+      resolveProviderRegion("bedrock", {
+        BEDROCK_AWS_REGION: "   ",
+        AWS_REGION: " us-west-2 ",
+        AWS_DEFAULT_REGION: "eu-west-1",
+      }),
+    ).toBe("us-west-2");
+    expect(
+      resolveProviderRegion("bedrock", {
+        AWS_REGION: "   ",
+        AWS_DEFAULT_REGION: " eu-west-1 ",
+      }),
+    ).toBe("eu-west-1");
     expect(resolveProviderRegion("bedrock", {})).toBeUndefined();
   });
 
@@ -394,6 +435,103 @@ describe("getMissingProviderEnvKey", () => {
       getMissingProviderEnvKey("gemini-enterprise", {
         GOOGLE_CLOUD_PROJECT: "proj",
         GOOGLE_CLOUD_LOCATION: undefined,
+      }),
+    ).toBeNull();
+  });
+
+  test("allows Bedrock to delegate credentials to the AWS SDK", () => {
+    expect(getMissingProviderEnvKey("bedrock", {})).toBeNull();
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_ROLE_ARN: "arn:aws:iam::123456789012:role/openwiki",
+        AWS_WEB_IDENTITY_TOKEN_FILE: "/var/run/secrets/aws/token",
+      }),
+    ).toBeNull();
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "access",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBeNull();
+  });
+
+  test("rejects either half of a legacy Bedrock key pair", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "access",
+      }),
+    ).toBe("BEDROCK_AWS_SECRET_ACCESS_KEY");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBe("BEDROCK_AWS_ACCESS_KEY_ID");
+  });
+
+  test("treats blank legacy Bedrock values as incomplete configuration", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "   ",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "   ",
+      }),
+    ).toBe("BEDROCK_AWS_ACCESS_KEY_ID");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "access",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "   ",
+      }),
+    ).toBe("BEDROCK_AWS_SECRET_ACCESS_KEY");
+  });
+
+  test("rejects partial standard AWS environment credentials", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_ACCESS_KEY_ID: "access",
+      }),
+    ).toBe("AWS_SECRET_ACCESS_KEY");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBe("AWS_ACCESS_KEY_ID");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_ACCESS_KEY_ID: "access",
+        AWS_SECRET_ACCESS_KEY: "secret",
+        AWS_SESSION_TOKEN: "session",
+      }),
+    ).toBeNull();
+  });
+
+  test("rejects blank standard credentials but ignores an orphan session token", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_ACCESS_KEY_ID: "   ",
+        AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBe("AWS_ACCESS_KEY_ID");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_SESSION_TOKEN: "session",
+      }),
+    ).toBeNull();
+  });
+
+  test("preserves Bedrock bearer-token precedence", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_BEARER_TOKEN_BEDROCK: "bearer-token",
+        BEDROCK_AWS_ACCESS_KEY_ID: "partial-legacy-access",
+      }),
+    ).toBeNull();
+  });
+
+  test("ignores partial standard AWS credentials when legacy keys take precedence", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "legacy-access",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "legacy-secret",
+        AWS_ACCESS_KEY_ID: "ambient-access-without-secret",
       }),
     ).toBeNull();
   });

@@ -1,8 +1,14 @@
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
+  AWS_ACCESS_KEY_ID_ENV_KEY,
+  AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
+  AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  AWS_SESSION_TOKEN_ENV_KEY,
+  AWS_WEB_IDENTITY_TOKEN_FILE_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
   BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   GEMINI_API_KEY_ENV_KEY,
   NEBIUS_API_KEY_ENV_KEY,
@@ -26,8 +32,14 @@ export function sanitizeDiagnosticText(value: string): string {
 
   for (const key of [
     BASETEN_API_KEY_ENV_KEY,
+    AWS_ACCESS_KEY_ID_ENV_KEY,
+    AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
+    AWS_SECRET_ACCESS_KEY_ENV_KEY,
+    AWS_SESSION_TOKEN_ENV_KEY,
+    AWS_WEB_IDENTITY_TOKEN_FILE_ENV_KEY,
     BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
     BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+    BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
     GEMINI_API_KEY_ENV_KEY,
     NEBIUS_API_KEY_ENV_KEY,
@@ -127,6 +139,7 @@ export function isAuthError(error: unknown, message: string): boolean {
   const status = isRecord(error)
     ? (error.statusCode ?? error.status)
     : undefined;
+  const name = isRecord(error) ? error.name : undefined;
 
   if (
     status === 401 ||
@@ -137,7 +150,16 @@ export function isAuthError(error: unknown, message: string): boolean {
     return true;
   }
 
-  return /\b40[13]\b|incorrect api key|invalid api key|unauthorized|forbidden|authentication|permission denied|not authorized/iu.test(
+  if (
+    name === "CredentialsProviderError" ||
+    name === "InvalidIdentityTokenException" ||
+    name === "ExpiredTokenException" ||
+    name === "IDPRejectedClaimException"
+  ) {
+    return true;
+  }
+
+  return /\b40[13]\b|incorrect api key|invalid api key|unauthorized|forbidden|authentication|permission denied|not authorized|could not load credentials from any providers|invalid identity token|expired token|web identity token.+(?:expired|invalid|not valid)|security token.+invalid/iu.test(
     message,
   );
 }

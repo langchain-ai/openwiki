@@ -1,11 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import {
   getErrorMessage,
+  isAuthError,
   isOpenRouterServerError,
   isSecretLikeKey,
   sanitizeDiagnosticText,
 } from "../src/diagnostics.ts";
-import { sanitizeOpenRouterResponseBody } from "../src/agent/index.ts";
+import {
+  formatEnvironmentDebugValue,
+  sanitizeOpenRouterResponseBody,
+} from "../src/agent/index.ts";
 
 describe("isSecretLikeKey", () => {
   // The shared predicate must be the union of every term the three former
@@ -201,6 +205,46 @@ describe("sanitizeDiagnosticText", () => {
       }
     }
   });
+
+  test.each([
+    ["AWS_ACCESS_KEY_ID", "standard-access-id-123"],
+    ["AWS_SECRET_ACCESS_KEY", "standard-aws-secret-abcdef123456"],
+    ["AWS_SESSION_TOKEN", "standard-aws-session-token-abcdef123456"],
+    ["BEDROCK_AWS_SESSION_TOKEN", "bedrock-session-token-abcdef123456"],
+    ["AWS_WEB_IDENTITY_TOKEN_FILE", "/var/run/secrets/aws/identity-token"],
+  ])("redacts the exact value of %s", (envKey, secretValue) => {
+    const originalValue = process.env[envKey];
+    process.env[envKey] = secretValue;
+
+    try {
+      const result = sanitizeDiagnosticText(
+        `provider error exposed ${secretValue}`,
+      );
+
+      expect(result).not.toContain(secretValue);
+      expect(result).toContain(`[REDACTED:${envKey}]`);
+    } finally {
+      if (originalValue === undefined) {
+        delete process.env[envKey];
+      } else {
+        process.env[envKey] = originalValue;
+      }
+    }
+  });
+});
+
+describe("formatEnvironmentDebugValue", () => {
+  test.each([
+    ["BEDROCK_AWS_ACCESS_KEY_ID", "bedrock-access-id-123"],
+    ["BEDROCK_AWS_SECRET_ACCESS_KEY", "bedrock-secret-abcdef123456"],
+    ["BEDROCK_AWS_SESSION_TOKEN", "bedrock-session-abcdef123456"],
+  ])("does not preview %s", (envKey, secretValue) => {
+    const result = formatEnvironmentDebugValue(envKey, secretValue);
+
+    expect(result).toBe(`set(length=${secretValue.length})`);
+    expect(result).not.toContain(secretValue.slice(0, 6));
+    expect(result).not.toContain(secretValue.slice(-4));
+  });
 });
 
 describe("isOpenRouterServerError", () => {
@@ -247,6 +291,41 @@ describe("getErrorMessage", () => {
   test("redacts secrets in the underlying error message", () => {
     expect(getErrorMessage(new Error("bad token sk-abcDEF123"))).toContain(
       "[REDACTED:API_KEY]",
+    );
+  });
+});
+
+describe("isAuthError", () => {
+  test("recognizes AWS SDK credential-chain exhaustion by error name", () => {
+    const error = Object.assign(
+      new Error("Could not load credentials from any providers"),
+      { name: "CredentialsProviderError" },
+    );
+
+    expect(isAuthError(error, error.message)).toBe(true);
+  });
+
+  test.each([
+    "Could not load credentials from any providers",
+    "The web identity token that was passed is expired or is not valid",
+    "The security token included in the request is invalid",
+  ])("recognizes AWS credential failure: %s", (message) => {
+    expect(isAuthError(new Error(message), message)).toBe(true);
+  });
+
+  test.each([
+    "InvalidIdentityTokenException",
+    "ExpiredTokenException",
+    "IDPRejectedClaimException",
+  ])("recognizes AWS identity error name %s", (name) => {
+    const error = Object.assign(new Error("AWS identity failed"), { name });
+
+    expect(isAuthError(error, error.message)).toBe(true);
+  });
+
+  test("does not classify unrelated provider failures as authentication errors", () => {
+    expect(isAuthError(new Error("model overloaded"), "model overloaded")).toBe(
+      false,
     );
   });
 });
