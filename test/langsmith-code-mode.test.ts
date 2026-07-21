@@ -81,8 +81,10 @@ describe("buildCodeModeGuidance", () => {
   test("returns undefined when the repo has no langsmith config", async () => {
     vi.mocked(readLangSmithRepoConfig).mockResolvedValue(undefined);
 
-    const guidance =
-      await createLangSmithConnector().buildCodeModeGuidance?.("/repo");
+    const guidance = await createLangSmithConnector().buildCodeModeGuidance?.(
+      "/repo",
+      undefined,
+    );
 
     expect(guidance).toBeUndefined();
     expect(createLangSmithApi).not.toHaveBeenCalled();
@@ -106,10 +108,33 @@ describe("buildCodeModeGuidance", () => {
       }),
     );
 
-    const guidance =
-      await createLangSmithConnector().buildCodeModeGuidance?.("/repo");
+    const guidance = await createLangSmithConnector().buildCodeModeGuidance?.(
+      "/repo",
+      undefined,
+    );
 
     expect(guidance).toContain("prod");
     expect(guidance).toContain("openwiki_read_raw_item");
+  });
+
+  test("applies a window floor to the pull when since is provided", async () => {
+    process.env[KEY] = "lsv2_test";
+    vi.mocked(readLangSmithRepoConfig).mockResolvedValue({
+      projects: [{ name: "prod" }],
+    });
+    const listRecentRootRuns = vi.fn(() => Promise.resolve<Run[]>([]));
+    vi.mocked(createLangSmithApi).mockReturnValue(
+      fakeApi({ listRecentRootRuns }),
+    );
+
+    await createLangSmithConnector().buildCodeModeGuidance?.(
+      "/repo",
+      new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    );
+
+    const call = listRecentRootRuns.mock.calls[0];
+    expect(typeof call?.[0]).toBe("string"); // projectId
+    expect(typeof call?.[1]).toBe("string"); // window floor, not undefined
+    expect(call?.[2]).toBe(20); // fixed MAX_TRACES
   });
 });

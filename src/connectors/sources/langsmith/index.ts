@@ -15,7 +15,6 @@ import type {
 } from "../../types.js";
 import type { LangSmithApi } from "./api.js";
 import { createLangSmithApi } from "./api.js";
-import { clampTraces } from "./limits.js";
 import { readLangSmithRepoConfig } from "./repo-config.js";
 import { compactTrace, summarizeSample } from "./runs.js";
 import type {
@@ -41,6 +40,13 @@ const LANGSMITH_API_KEY_ENV = "OPENWIKI_LANGSMITH_API_KEY";
 const STATE_PATH = "~/.openwiki/connectors/langsmith/state.json";
 
 /**
+ * Cap on traces pulled per project. Within the ingestion window we take the most
+ * recent up to this many (each trace is a full tree, so it is the agent's context
+ * budget in trace units). Fixed for v1, not configurable.
+ */
+const MAX_TRACES = 20;
+
+/**
  * Config defaults applied before the user's file and per-run overrides.
  */
 const DEFAULT_CONFIG: LangSmithConfig = {
@@ -48,7 +54,6 @@ const DEFAULT_CONFIG: LangSmithConfig = {
   includeFeedback: false,
   includePayloads: false,
   maxFieldChars: 2000,
-  maxTraces: 10,
   projects: [],
 };
 
@@ -67,7 +72,7 @@ const definition: ConnectorDefinition = {
 };
 
 /**
- * Per-run bounds shared by every project pull (maxTraces is resolved per project).
+ * Per-run bounds shared by every project pull.
  */
 interface PullBounds {
   /**
@@ -104,11 +109,19 @@ export function createLangSmithConnector(): ConnectorRuntime {
  */
 async function buildCodeModeGuidance(
   repoRoot: string,
+  since: string | undefined,
 ): Promise<string | undefined> {
   const repoConfig = await readLangSmithRepoConfig(repoRoot);
   if (!repoConfig || repoConfig.projects.length === 0) {
     return undefined;
   }
+
+  // Window = time since the last update. Undefined/unparseable `since` (the first
+  // run) means no floor: bootstrap with the latest MAX_TRACES traces.
+  const sinceMs = since !== undefined ? Date.parse(since) : Number.NaN;
+  const windowHours = Number.isNaN(sinceMs)
+    ? undefined
+    : Math.max(0, (Date.now() - sinceMs) / (60 * 60 * 1000));
 
   // includePayloads is true here: full traces go into the ephemeral dump only;
   // the committed-wiki privacy rule is enforced by the guidance text.
@@ -118,9 +131,9 @@ async function buildCodeModeGuidance(
       enabled: true,
       includeFeedback: repoConfig.includeFeedback ?? false,
       includePayloads: true,
-      maxTraces: repoConfig.maxTraces,
       projects: repoConfig.projects,
     },
+    windowHours,
   });
 
   if (pull.status !== "success" || pull.rawFiles.length === 0) {
@@ -213,7 +226,14 @@ async function ingest(
     apiKey,
   );
   const state = await readConnectorState("langsmith");
-  const defaultMaxTraces = config.maxTraces ?? 10;
+  // The window is the ingestion floor; the code-mode caller derives it from the
+  // last-update time. Undefined means "no floor" (bootstrap: latest MAX_TRACES).
+  const windowStart =
+    options.windowHours !== undefined
+      ? new Date(
+          Date.now() - options.windowHours * 60 * 60 * 1000,
+        ).toISOString()
+      : undefined;
   const bounds: PullBounds = {
     includeFeedback: config.includeFeedback ?? false,
     includePayloads: config.includePayloads ?? false,
@@ -224,10 +244,8 @@ async function ingest(
   const pulls: ProjectPullResult[] = [];
 
   for (const project of projects) {
-    const maxTraces = clampTraces(project.maxTraces, defaultMaxTraces);
-
     try {
-      const pull = await pullProject(api, project, maxTraces, bounds);
+      const pull = await pullProject(api, project, windowStart, bounds);
       if (pull) {
         pulls.push(pull);
       }
@@ -274,13 +292,17 @@ async function ingest(
 async function pullProject(
   api: LangSmithApi,
   project: LangSmithProjectConfig,
-  maxTraces: number,
+  windowStart: string | undefined,
   bounds: PullBounds,
 ): Promise<ProjectPullResult | undefined> {
   const { id: projectId, url: projectUrl } = await api.resolveProject(
     project.name,
   );
-  const roots = await api.listRecentRootRuns(projectId, maxTraces);
+  const roots = await api.listRecentRootRuns(
+    projectId,
+    windowStart,
+    MAX_TRACES,
+  );
   if (roots.length === 0) {
     return undefined;
   }
@@ -323,10 +345,7 @@ function normalizeProjects(
       (project): project is LangSmithProjectConfig =>
         typeof project?.name === "string" && project.name.trim().length > 0,
     )
-    .map((project) => ({
-      maxTraces: project.maxTraces,
-      name: project.name.trim(),
-    }));
+    .map((project) => ({ name: project.name.trim() }));
 }
 
 /**

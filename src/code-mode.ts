@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createConnectorRegistry } from "./connectors/registry.js";
+import { UPDATE_METADATA_PATH } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
 
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
@@ -28,13 +29,15 @@ export async function runCodeModeConnectors(
   repoRoot: string,
   baseMessage: string | undefined,
 ): Promise<string | undefined> {
+  // The natural window: what has happened since we last documented this repo.
+  const since = await readLastUpdatedAt(repoRoot);
   const blocks: string[] = [];
 
   for (const connector of Object.values(createConnectorRegistry())) {
     if (connector.mode !== "code" || !connector.buildCodeModeGuidance) {
       continue;
     }
-    const block = await connector.buildCodeModeGuidance(repoRoot);
+    const block = await connector.buildCodeModeGuidance(repoRoot, since);
     if (block) {
       blocks.push(block);
     }
@@ -47,6 +50,26 @@ export async function runCodeModeConnectors(
   const base = baseMessage?.trim();
   const joined = blocks.join("\n\n");
   return base ? `${base}\n\n${joined}` : joined;
+}
+
+/**
+ * The last-update timestamp from openwiki/.last-update.json, or undefined when it
+ * is absent (first run) or unreadable. Code-mode connectors use it as the
+ * "what is new since we last documented" window.
+ */
+async function readLastUpdatedAt(
+  repoRoot: string,
+): Promise<string | undefined> {
+  try {
+    const text = await readFile(
+      path.join(repoRoot, UPDATE_METADATA_PATH),
+      "utf8",
+    );
+    const parsed = JSON.parse(text) as { updatedAt?: unknown };
+    return typeof parsed.updatedAt === "string" ? parsed.updatedAt : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 async function writeCodeModeWorkflow(

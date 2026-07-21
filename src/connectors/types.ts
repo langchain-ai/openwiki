@@ -48,10 +48,14 @@ export type ConnectorRuntime = ConnectorDefinition & {
 
   /**
    * Code-mode connectors implement this to contribute to a code-mode agent run:
-   * read the repo config, pull, and return a guidance block, or undefined when
+   * read the repo config, pull data since `since` (the last-update time, or
+   * undefined on the first run), and return a guidance block, or undefined when
    * this repo has not configured the connector or there is no new evidence.
    */
-  buildCodeModeGuidance?: (repoRoot: string) => Promise<string | undefined>;
+  buildCodeModeGuidance?: (
+    repoRoot: string,
+    since: string | undefined,
+  ) => Promise<string | undefined>;
 };
 
 export type ConnectorState = {

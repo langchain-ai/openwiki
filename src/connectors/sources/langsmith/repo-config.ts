@@ -5,21 +5,14 @@ import { isFileNotFoundError } from "../../../fs-errors.js";
 import type { LangSmithProjectConfig } from "./types.js";
 
 /**
- * The repo-committed LangSmith config. Projects are objects so each can carry its
- * own trace budget. Committed so CI and every teammate document the same set.
+ * The repo-committed LangSmith config. Committed so CI and every teammate
+ * document the same set of projects.
  */
 export interface LangSmithRepoConfig {
   /**
    * Projects to document. One entry = one source.
    */
   projects: LangSmithProjectConfig[];
-
-  /**
-   * Default most-recent traces per project; a project may override.
-   *
-   * @default 10
-   */
-  maxTraces?: number;
 
   /**
    * Fetch feedback for the pulled traces.
@@ -99,20 +92,12 @@ export function parseLangSmithRepoConfig(
     if (typeof project.name !== "string" || !project.name.trim()) {
       return undefined;
     }
-    projects.push({
-      name: project.name.trim(),
-      ...(typeof project.maxTraces === "number" && project.maxTraces > 0
-        ? { maxTraces: Math.floor(project.maxTraces) }
-        : {}),
-    });
+    projects.push({ name: project.name.trim() });
   }
 
-  const { apiBaseUrl, includeFeedback, maxTraces } = record;
+  const { apiBaseUrl, includeFeedback } = record;
   return {
     projects,
-    ...(typeof maxTraces === "number" && maxTraces > 0
-      ? { maxTraces: Math.floor(maxTraces) }
-      : {}),
     ...(typeof includeFeedback === "boolean" ? { includeFeedback } : {}),
     ...(typeof apiBaseUrl === "string" && apiBaseUrl.trim()
       ? { apiBaseUrl: apiBaseUrl.trim() }

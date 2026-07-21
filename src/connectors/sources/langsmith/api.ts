@@ -71,10 +71,15 @@ export interface LangSmithApi {
   resolveProject(name: string): Promise<ResolvedProject>;
 
   /**
-   * The most-recent root runs, newest first, capped at limit. Used to pick the
-   * latest trace ids and to summarize the sample.
+   * The most-recent root runs (newest first, capped at limit) since startTime, or
+   * with no lower bound when startTime is undefined. Used to pick the latest trace
+   * ids and to summarize the sample.
    */
-  listRecentRootRuns(projectId: string, limit: number): Promise<Run[]>;
+  listRecentRootRuns(
+    projectId: string,
+    startTime: string | undefined,
+    limit: number,
+  ): Promise<Run[]>;
 
   /**
    * All runs in one trace (root plus descendants), for full-tree compaction.
@@ -110,13 +115,14 @@ export function createLangSmithApi(
       return { id: project.id, url };
     },
 
-    async listRecentRootRuns(projectId, limit) {
+    async listRecentRootRuns(projectId, startTime, limit) {
       return drainCapped(
         client.listRuns({
           isRoot: true,
           limit,
           projectId,
           select: ROOT_SELECT_FIELDS,
+          ...(startTime ? { startTime: new Date(startTime) } : {}),
         }),
         limit,
       );

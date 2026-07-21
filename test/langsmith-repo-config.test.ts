@@ -34,32 +34,27 @@ describe("parseLangSmithRepoConfig", () => {
         JSON.stringify({
           apiBaseUrl: "  https://eu.api.smith.langchain.com  ",
           includeFeedback: true,
-          maxTraces: 15,
-          projects: [{ maxTraces: 20, name: " prod " }, { name: "staging" }],
+          projects: [{ name: " prod " }, { name: "staging" }],
         }),
       ),
     ).toEqual({
       apiBaseUrl: "https://eu.api.smith.langchain.com",
       includeFeedback: true,
-      maxTraces: 15,
-      projects: [{ maxTraces: 20, name: "prod" }, { name: "staging" }],
+      projects: [{ name: "prod" }, { name: "staging" }],
     });
   });
 
-  test("drops non-positive maxTraces (per-project and global)", () => {
+  test("keeps only the name from a project entry, dropping extra keys", () => {
     expect(
       parseLangSmithRepoConfig(
-        JSON.stringify({
-          maxTraces: 0,
-          projects: [{ maxTraces: -5, name: "p" }],
-        }),
+        JSON.stringify({ projects: [{ name: "p", weight: 5 }] }),
       ),
     ).toEqual({ projects: [{ name: "p" }] });
   });
 
   test.each([
     ["a bare-string entry", JSON.stringify({ projects: ["prod"] })],
-    ["an entry missing name", JSON.stringify({ projects: [{ maxTraces: 5 }] })],
+    ["an entry missing name", JSON.stringify({ projects: [{ weight: 5 }] })],
     ["an empty-string name", JSON.stringify({ projects: [{ name: "  " }] })],
     ["non-array projects", JSON.stringify({ projects: "prod" })],
     ["missing projects", "{}"],
@@ -109,12 +104,12 @@ describe("withProject / withoutProject", () => {
   test("withProject adds by name, dedupes, trims, preserves order and fields", () => {
     const base = {
       includeFeedback: true,
-      projects: [{ name: "a" }, { maxTraces: 5, name: "b" }],
+      projects: [{ name: "a" }, { name: "b" }],
     };
 
     expect(withProject(base, "c")).toEqual({
       includeFeedback: true,
-      projects: [{ name: "a" }, { maxTraces: 5, name: "b" }, { name: "c" }],
+      projects: [{ name: "a" }, { name: "b" }, { name: "c" }],
     });
     // Trimmed to an existing name -> unchanged (deduped by name).
     expect(withProject(base, " a ")).toEqual(base);

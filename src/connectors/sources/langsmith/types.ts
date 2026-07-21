@@ -8,13 +8,6 @@ export interface LangSmithProjectConfig {
    * LangSmith project (tracing session) name.
    */
   name: string;
-
-  /**
-   * Most-recent traces to pull for this project.
-   *
-   * @default 10
-   */
-  maxTraces?: number;
 }
 
 /**
@@ -56,13 +49,6 @@ export interface LangSmithConfig {
    * @default 2000
    */
   maxFieldChars?: number;
-
-  /**
-   * Default most-recent traces pulled per project; a project may override.
-   *
-   * @default 10
-   */
-  maxTraces?: number;
 
   /**
    * Projects to document; the connector skips when none are configured.
@@ -189,7 +175,7 @@ export interface Trace {
  */
 export interface SampleStats {
   /**
-   * Number of traces in the sample (the effective maxTraces, or fewer).
+   * Number of traces in the sample (the trace budget, or fewer).
    */
   sampleSize: number;
 

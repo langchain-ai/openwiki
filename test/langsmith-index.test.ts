@@ -169,9 +169,9 @@ describe("ingest per-project behavior", () => {
     expect(dump.projects[0]?.stats.sampleSize).toBe(1);
   });
 
-  test("passes the project's maxTraces to listRecentRootRuns", async () => {
+  test("pulls the fixed MAX_TRACES budget (20), no window floor by default", async () => {
     process.env[KEY] = "lsv2_test";
-    configure({ enabled: true, projects: [{ maxTraces: 5, name: "p" }] });
+    configure({ enabled: true, projects: [{ name: "p" }] });
     const listRecentRootRuns = vi.fn(() => Promise.resolve<Run[]>([]));
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({ listRecentRootRuns }),
@@ -179,6 +179,6 @@ describe("ingest per-project behavior", () => {
 
     await createLangSmithConnector().ingest();
 
-    expect(listRecentRootRuns).toHaveBeenCalledWith("p-id", 5);
+    expect(listRecentRootRuns).toHaveBeenCalledWith("p-id", undefined, 20);
   });
 });

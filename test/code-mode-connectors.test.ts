@@ -1,4 +1,7 @@
-import { describe, expect, test, vi } from "vitest";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("../src/connectors/registry.ts", () => ({
   createConnectorRegistry: vi.fn(),
@@ -7,6 +10,16 @@ vi.mock("../src/connectors/registry.ts", () => ({
 import { runCodeModeConnectors } from "../src/code-mode.ts";
 import { createConnectorRegistry } from "../src/connectors/registry.ts";
 import type { ConnectorRuntime } from "../src/connectors/types.ts";
+
+const tempRoots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(
+    tempRoots
+      .splice(0)
+      .map((root) => rm(root, { force: true, recursive: true })),
+  );
+});
 
 function connector(overrides: Partial<ConnectorRuntime>): ConnectorRuntime {
   return {
@@ -82,5 +95,33 @@ describe("runCodeModeConnectors", () => {
     await expect(runCodeModeConnectors("/repo", undefined)).resolves.toBe(
       "block-A",
     );
+  });
+
+  test("passes the .last-update.json timestamp as the since window", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "openwiki-codemode-"));
+    tempRoots.push(root);
+    await mkdir(path.join(root, "openwiki"), { recursive: true });
+    await writeFile(
+      path.join(root, "openwiki", ".last-update.json"),
+      JSON.stringify({ updatedAt: "2026-07-21T00:00:00.000Z" }),
+      "utf8",
+    );
+    const hook = vi.fn(() => Promise.resolve("block"));
+    registryOf(connector({ buildCodeModeGuidance: hook, mode: "code" }));
+
+    await runCodeModeConnectors(root, "base");
+
+    expect(hook).toHaveBeenCalledWith(root, "2026-07-21T00:00:00.000Z");
+  });
+
+  test("passes undefined since when there is no .last-update.json (first run)", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "openwiki-codemode-"));
+    tempRoots.push(root);
+    const hook = vi.fn(() => Promise.resolve("block"));
+    registryOf(connector({ buildCodeModeGuidance: hook, mode: "code" }));
+
+    await runCodeModeConnectors(root, "base");
+
+    expect(hook).toHaveBeenCalledWith(root, undefined);
   });
 });
