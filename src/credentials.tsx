@@ -51,6 +51,10 @@ import {
 } from "./agent/openai-chatgpt-oauth.js";
 import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
+import {
+  addLangSmithSource,
+  listLangSmithProjectChoices,
+} from "./connectors/sources/langsmith/setup.js";
 import type { ConnectorId } from "./connectors/types.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
 import {
@@ -136,7 +140,8 @@ type PromptStep =
   | "source-confirm-continue"
   | "source-secret"
   | "template"
-  | "wiki-goal";
+  | "wiki-goal"
+  | "source-langsmith-project";
 
 type SourceSetupOption = {
   authProvider?: AuthProviderId;
@@ -200,7 +205,7 @@ const ONBOARDING_TEMPLATES = [
       "Maintain a structured project wiki from a local Git repository, with code-oriented pages for architecture, workflows, source maps, and operational guidance.",
     id: "code",
     name: "Code",
-    sourceIds: ["git-repo"],
+    sourceIds: ["git-repo", "langsmith"],
     suggestedSources: ["Local Git repository"],
     suggestedGoal:
       "A code wiki for this local repository. Prioritize a concise quickstart, architecture overview, source map, key workflows, domain concepts, operations/runbook notes, testing guidance, and integration points. Inspect git history to understand reasoning behind code changes and the progression of the repository. Keep pages grounded in the repository structure and recent code changes. Prefer practical navigation for engineers over generic summaries.",
@@ -357,6 +362,23 @@ const SOURCE_OPTIONS = [
       {
         envKey: OPENWIKI_X_CLIENT_ID_ENV_KEY,
         label: "X OAuth client ID",
+      },
+    ],
+  },
+  {
+    displayName: "LangSmith traces",
+    examples: ["support-bot-prod", "chat-agent"],
+    id: "langsmith",
+    instructions: [
+      "Document how your agent runs, grounded in its LangSmith traces.",
+      "Pick a project; it is written to openwiki/langsmith.json (committed).",
+    ],
+    secretInputs: [
+      {
+        envKey: "OPENWIKI_LANGSMITH_API_KEY",
+        label: "LangSmith API key",
+        optional: true, // falls back to LANGSMITH_API_KEY when tracing is on
+        secret: true,
       },
     ],
   },
@@ -706,6 +728,11 @@ export function InitSetup({
   );
   const [sourceSelectionIndex, setSourceSelectionIndex] = useState(0);
   const [sourceDescriptionSelectionIndex, setSourceDescriptionSelectionIndex] =
+    useState(0);
+  const [langsmithProjectNames, setLangsmithProjectNames] = useState<string[]>(
+    [],
+  );
+  const [langsmithProjectSelectionIndex, setLangsmithProjectSelectionIndex] =
     useState(0);
   const [templateSelectionIndex, setTemplateSelectionIndex] = useState(0);
   const [cronModeSelectionIndex, setCronModeSelectionIndex] = useState(0);
@@ -1248,6 +1275,19 @@ export function InitSetup({
             index,
             key.upArrow ? -1 : 1,
             activeSourceOptions.length + 1,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (step === "source-langsmith-project") {
+      handleMenuInput(key, () =>
+        setLangsmithProjectSelectionIndex((index) =>
+          moveSelectionIndex(
+            index,
+            key.upArrow ? -1 : 1,
+            langsmithProjectNames.length,
           ),
         ),
       );
@@ -2049,6 +2089,23 @@ export function InitSetup({
       return;
     }
 
+    if (step === "source-langsmith-project") {
+      const name = langsmithProjectNames[langsmithProjectSelectionIndex];
+      if (name) {
+        try {
+          await addLangSmithSource(codeRepoRoot, name);
+          setNotice(
+            `Added LangSmith project "${name}" to openwiki/.langsmith.json.`,
+          );
+        } catch (writeError) {
+          setError(getErrorMessage(writeError));
+          return;
+        }
+      }
+      returnToSourceMenu();
+      return;
+    }
+
     if (step === "source-auth") {
       await authorizeSelectedSource();
       return;
@@ -2481,6 +2538,31 @@ export function InitSetup({
   function continueAfterSourceCredentialSetup(source: SourceSetupOption) {
     if (source.authProvider) {
       setStep("source-auth");
+      return;
+    }
+
+    // LangSmith is code-mode only: it never becomes an onboarding source
+    // instance. Load its project list and route to the picker, which writes the
+    // committed openwiki/.langsmith.json rather than ~/.openwiki/onboarding.json.
+    if (source.id === "langsmith") {
+      void (async () => {
+        try {
+          const choices = await listLangSmithProjectChoices();
+          if (!choices.ok) {
+            setError(
+              "Add OPENWIKI_LANGSMITH_API_KEY to ~/.openwiki/.env, then retry.",
+            );
+            setStep("source-menu");
+            return;
+          }
+          setLangsmithProjectNames(choices.names);
+          setLangsmithProjectSelectionIndex(0);
+          setStep("source-langsmith-project");
+        } catch (loadError) {
+          setError(getErrorMessage(loadError));
+          setStep("source-menu");
+        }
+      })();
       return;
     }
 
@@ -2944,6 +3026,8 @@ export function InitSetup({
               input={input}
               inputDisplayWidth={inputDisplayWidth}
               isCustomModelInput={isCustomModelInput}
+              langsmithProjectNames={langsmithProjectNames}
+              langsmithProjectSelectionIndex={langsmithProjectSelectionIndex}
               modelSelectionIndex={modelSelectionIndex}
               onboardingConfig={onboardingConfig}
               powerModeSelectionIndex={powerModeSelectionIndex}
@@ -3021,6 +3105,8 @@ function Prompt({
   input,
   inputDisplayWidth,
   isCustomModelInput,
+  langsmithProjectNames,
+  langsmithProjectSelectionIndex,
   modelSelectionIndex,
   onboardingConfig,
   powerModeSelectionIndex,
@@ -3049,6 +3135,8 @@ function Prompt({
   input: string;
   inputDisplayWidth: number;
   isCustomModelInput: boolean;
+  langsmithProjectNames: string[];
+  langsmithProjectSelectionIndex: number;
   modelSelectionIndex: number;
   onboardingConfig: OpenWikiOnboardingConfig;
   powerModeSelectionIndex: number;
@@ -3506,6 +3594,30 @@ function Prompt({
           />{" "}
           Custom description
         </Text>
+        <Text color="gray">Use up/down arrows, then press Enter.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "source-langsmith-project") {
+    return (
+      <Box flexDirection="column">
+        <Text>Select a LangSmith project to document</Text>
+        <Text color="gray">
+          Writes the project to openwiki/.langsmith.json (committed).
+        </Text>
+        {langsmithProjectNames.length === 0 ? (
+          <Text color="gray">No projects found for this API key.</Text>
+        ) : (
+          langsmithProjectNames.map((name, index) => (
+            <Text key={name}>
+              <SelectionMarker
+                isSelected={index === langsmithProjectSelectionIndex}
+              />{" "}
+              {name}
+            </Text>
+          ))
+        )}
         <Text color="gray">Use up/down arrows, then press Enter.</Text>
       </Box>
     );
