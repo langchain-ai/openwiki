@@ -12,15 +12,19 @@ pipelines:
             - npm install --global openwiki
             - git config user.name "${BITBUCKET_USER_NAME:-OpenWiki Bot}"
             - git config user.email "${BITBUCKET_USER_EMAIL:-openwiki@example.com}"
+            # Keep OpenWiki from writing a GitHub Actions workflow and make the
+            # AGENTS.md/CLAUDE.md wording reference Bitbucket. Detection from the
+            # git remote usually handles this; setting it here is bulletproof.
+            - export OPENWIKI_CI_PROVIDER=bitbucket
             - openwiki code --update --print
             - |
-              if git diff --quiet -- openwiki AGENTS.md CLAUDE.md .github/workflows/openwiki-update.yml; then
+              if git diff --quiet -- openwiki AGENTS.md CLAUDE.md; then
                 echo "OpenWiki is already up to date."
                 exit 0
               fi
             - export OPENWIKI_BRANCH="openwiki/update-${BITBUCKET_BUILD_NUMBER}"
             - git checkout -b "$OPENWIKI_BRANCH"
-            - git add openwiki AGENTS.md CLAUDE.md .github/workflows/openwiki-update.yml
+            - git add openwiki AGENTS.md CLAUDE.md
             - git commit -m "docs: update OpenWiki"
             - git push "https://x-token-auth:${OPENWIKI_BITBUCKET_TOKEN}@bitbucket.org/${BITBUCKET_WORKSPACE}/${BITBUCKET_REPO_SLUG}.git" "$OPENWIKI_BRANCH"
             - |
