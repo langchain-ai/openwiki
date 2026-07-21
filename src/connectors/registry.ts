@@ -5,9 +5,11 @@ import { createMcpConnector } from "./sources/mcp.js";
 import { createSlackConnector } from "./sources/slack.js";
 import { createWebSearchConnector } from "./sources/web-search.js";
 import { createXConnector } from "./sources/x.js";
+import { createConfluenceConnector } from "./sources/confluence.js";
 import type { ConnectorId, ConnectorRuntime } from "./types.js";
 
 export const CONNECTOR_IDS = [
+  "confluence",
   "git-repo",
   "notion",
   "x",
@@ -22,6 +24,7 @@ export function createConnectorRegistry(): Record<
   ConnectorRuntime
 > {
   return {
+    confluence: createConfluenceConnector(),
     "git-repo": createGitRepoConnector(),
     google: createGmailConnector(),
     hackernews: createHackerNewsConnector(),

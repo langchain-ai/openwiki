@@ -150,6 +150,21 @@ function getDefaultConfig(provider: AuthProviderId): unknown {
     };
   }
 
+  if (provider === "confluence") {
+    return {
+      baseUrl: "",
+      bodyFormat: "storage",
+      cqlQueries: [],
+      enabled: false,
+      includeBody: true,
+      maxResults: 50,
+      note: "Set baseUrl to your Confluence Cloud site URL (e.g. https://mycompany.atlassian.net). Blog post ingestion only.",
+      spaceKeys: [],
+      streams: ["recent_blogposts", "space_blogposts", "cql_search"],
+      windowDays: 7,
+    };
+  }
+
   return {
     enabled: true,
     listIds: [],
@@ -193,6 +208,15 @@ function getNextSteps(
       prefix,
       "Gmail direct API ingestion is enabled by default for the last day of mail.",
       "Adjust query/maxMessages/format if you want a different ingestion window or payload size.",
+    ];
+  }
+
+  if (provider === "confluence") {
+    return [
+      prefix,
+      "Set baseUrl in the connector config to your Confluence Cloud site URL (e.g. https://mycompany.atlassian.net).",
+      "Add space keys or CQL queries to customize which blog posts are ingested.",
+      "Run openwiki personal --update after config is complete.",
     ];
   }
 

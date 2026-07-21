@@ -31,6 +31,8 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_TAVILY_API_KEY_ENV_KEY,
+  OPENWIKI_CONFLUENCE_API_TOKEN_ENV_KEY,
+  OPENWIKI_CONFLUENCE_EMAIL_ENV_KEY,
   OPENWIKI_X_CLIENT_ID_ENV_KEY,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
@@ -278,6 +280,30 @@ const SOURCE_OPTIONS = [
       "Approve access in the browser window when it opens.",
     ],
     secretInputs: [],
+  },
+  {
+    displayName: "Confluence",
+    examples: [
+      "Ingest engineering blog posts, product announcements, and team updates.",
+      "Track recently published blog posts across configured spaces.",
+    ],
+    id: "confluence",
+    instructions: [
+      "Create an Atlassian API token at https://id.atlassian.com/manage-profile/security/api-tokens.",
+      "Paste your Atlassian account email and API token below.",
+      "Configure your Confluence site URL and space keys on the next screen.",
+    ],
+    secretInputs: [
+      {
+        envKey: OPENWIKI_CONFLUENCE_EMAIL_ENV_KEY,
+        label: "Atlassian account email",
+      },
+      {
+        envKey: OPENWIKI_CONFLUENCE_API_TOKEN_ENV_KEY,
+        label: "Atlassian API token",
+        secret: true,
+      },
+    ],
   },
   {
     authProvider: "gmail",
@@ -4592,9 +4618,9 @@ function getTemplateSourceOptions(
   const template =
     ONBOARDING_TEMPLATES.find((option) => option.id === templateId) ??
     ONBOARDING_TEMPLATES[0];
-  const sourceIds = new Set(template.sourceIds);
+  const sourceIds = new Set<ConnectorId>(template.sourceIds);
   const sourceOptions = SOURCE_OPTIONS.filter((source) =>
-    sourceIds.has(source.id),
+    sourceIds.has(source.id as ConnectorId),
   );
 
   return sourceOptions.length > 0 ? sourceOptions : SOURCE_OPTIONS;

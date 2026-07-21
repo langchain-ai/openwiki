@@ -1,4 +1,4 @@
-export type AuthProviderId = "gmail" | "notion" | "slack" | "x";
+export type AuthProviderId = "confluence" | "gmail" | "notion" | "slack" | "x";
 
 export type OAuthClientAuth = "client_secret_post" | "none";
 

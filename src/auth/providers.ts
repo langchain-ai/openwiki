@@ -1,4 +1,5 @@
 import {
+  OPENWIKI_CONFLUENCE_API_TOKEN_ENV_KEY,
   OPENWIKI_GMAIL_ACCESS_TOKEN_ENV_KEY,
   OPENWIKI_GMAIL_REFRESH_TOKEN_ENV_KEY,
   OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY,
@@ -17,6 +18,15 @@ import {
 import type { AuthProviderId, OAuthProviderConfig } from "./types.js";
 
 export const AUTH_PROVIDERS: Record<AuthProviderId, OAuthProviderConfig> = {
+  confluence: {
+    clientAuth: "none",
+    displayName: "Confluence",
+    id: "confluence",
+    scopes: [],
+    tokenMapping: {
+      accessTokenEnvKey: OPENWIKI_CONFLUENCE_API_TOKEN_ENV_KEY,
+    },
+  },
   gmail: {
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     clientAuth: "client_secret_post",
