@@ -1,0 +1,33 @@
+.github/workflows/openwiki-update.yml
+  s_70ce361ce20830::t_568970681b04a5 26
+test/code-mode.test.ts
+  s_70ce361ce20830::t_95fc66c9716a41 122-132,134-135
+  s_70ce361ce20830::t_6b03dcba54cd8a 133
+examples/openwiki-update.gitlab-ci.yml
+  s_70ce361ce20830::t_568970681b04a5 10
+examples/openwiki-update.bitbucket-pipelines.yml
+  s_70ce361ce20830::t_568970681b04a5 13
+examples/openwiki-update.yml
+  s_70ce361ce20830::t_568970681b04a5 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "40366c2cca0bd445240416fafe34635223fe2ef2",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
