@@ -737,7 +737,7 @@ export function resolveConfiguredProvider(
                     : hasNonEmptyEnvValue(
                           env,
                           BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                        ) &&
+                        ) ||
                         hasNonEmptyEnvValue(
                           env,
                           BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,

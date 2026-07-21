@@ -147,10 +147,16 @@ describe("resolveConfiguredProvider", () => {
     ).toBe("bedrock");
   });
 
-  test("does not auto-select bedrock from partial or ambient AWS config", () => {
+  test("auto-selects bedrock from partial legacy config for repair", () => {
     expect(
       resolveConfiguredProvider({ BEDROCK_AWS_ACCESS_KEY_ID: "access" }),
-    ).toBe(DEFAULT_PROVIDER);
+    ).toBe("bedrock");
+    expect(
+      resolveConfiguredProvider({ BEDROCK_AWS_SECRET_ACCESS_KEY: "secret" }),
+    ).toBe("bedrock");
+  });
+
+  test("does not auto-select bedrock from ambient AWS config", () => {
     expect(
       resolveConfiguredProvider({
         AWS_ROLE_ARN: "arn:aws:iam::123456789012:role/openwiki",
