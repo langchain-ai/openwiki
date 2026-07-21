@@ -60,6 +60,12 @@ If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires the prov
 
 The UI persists provider and model selection back to `~/.openwiki/.env` through `saveOpenWikiEnv()`.
 
+## Ignoring repository paths
+
+OpenWiki reads `.openwikiignore` from the target repository root before it starts an agent run. The file supports comment lines, blank lines, `*` and `**` globs, directory rules such as `private/`, root-anchored rules such as `/dist`, and `!` negation.
+
+When active rules are present, `src/agent/docs-only-backend.ts` wraps the DeepAgents local shell backend so `read`, `write`, `edit`, `ls`, `glob`, and `grep` respect the ignore list. Shell execute is restricted during the run; use filesystem tools for repository reads so ignored paths remain filtered.
+
 ## Credentials and onboarding
 
 The first interactive run can prompt for:

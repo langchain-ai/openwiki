@@ -15,6 +15,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
 - Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), OpenRouter, Anthropic, Baseten, Fireworks, NVIDIA NIM, any OpenAI-compatible gateway, and Google Vertex AI (Claude models) — each with their own credentials and model list (Vertex uses Google ADC instead of an API key).
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
+- Supports `.openwikiignore` to exclude private, generated, or irrelevant paths from documentation runs.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
 - Optionally schedules automated updates through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
@@ -37,7 +38,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/agent/prompt.ts` — prompt assembly, documentation-run instructions, and AGENTS.md/CLAUDE.md insertion rules.
 - `src/agent/utils.ts` — git evidence collection, content snapshot, and `.last-update.json` handling.
 - `src/agent/types.ts` — shared agent types (`OpenWikiCommand`, `RunContext`, `UpdateMetadata`, run options/events).
-- `src/agent/docs-only-backend.ts` — `OpenWikiLocalShellBackend`, extends DeepAgents `LocalShellBackend` with docs-only write guards and output-mode awareness.
+- `src/agent/docs-only-backend.ts` — `OpenWikiLocalShellBackend`, extends DeepAgents `LocalShellBackend` with docs-only write guards, output-mode awareness, and ignored-path enforcement.
+- `src/agent/openwiki-ignore.ts` — `.openwikiignore` loading and matching.
 - `src/agent/openai-chatgpt-oauth.ts` — ChatGPT OAuth flow, token persistence, and refresh logic for the `openai-chatgpt` provider.
 - `src/auth/oauth.ts` — generic OAuth runner for connector providers (Gmail, Notion, Slack, X).
 - `src/auth/providers.ts` — connector OAuth provider configs (scopes, token URLs, env-key mappings).
@@ -67,6 +69,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - The repository is intentionally focused: the main product surface is the CLI plus the documentation-generation agent.
 - Treat `openwiki/` in this repo as generated documentation output from a future OpenWiki run, not as application source.
 - When changing behavior, verify both the CLI parser and the agent prompt/runtime, because user-visible semantics are split across `src/commands.ts`, `src/cli.tsx`, and `src/agent/*`.
+- Keep `.openwikiignore` enforcement aligned across `src/agent/docs-only-backend.ts`, `src/agent/openwiki-ignore.ts`, `src/agent/prompt.ts`, and `src/agent/utils.ts`; the backend enforces tool access while the prompt and git context keep the run scoped.
 - Provider support is centralized in `src/constants.ts`. Adding or changing a provider means updating `PROVIDER_CONFIGS`, the `OpenWikiProvider` type, the `SELECTABLE_OPENWIKI_PROVIDERS` list, and the model-creation branch in `src/agent/index.ts`. OAuth-based providers also need an entry in `src/auth/` if they use browser-login flows.
 
 ## Source map
@@ -76,6 +79,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli.tsx`
 - `src/commands.ts`
 - `src/agent/index.ts`
+- `src/agent/openwiki-ignore.ts`
 - `src/agent/prompt.ts`
 - `src/agent/utils.ts`
 - `src/agent/types.ts`

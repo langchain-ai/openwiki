@@ -16,14 +16,15 @@ OpenWiki has a small but layered architecture:
 5. `src/agent/index.ts` runs the documentation agent, resolves the provider, creates the appropriate model client, collects Git context, and writes update metadata.
 6. `src/agent/prompt.ts` builds the system and user prompts that tell the model how to behave.
 7. `src/agent/utils.ts` gathers Git evidence, computes an OpenWiki content snapshot, and records `.last-update.json` after successful init/update runs.
-8. `src/agent/docs-only-backend.ts` provides `OpenWikiLocalShellBackend`, extending DeepAgents `LocalShellBackend` with docs-only write guards and output-mode awareness.
-9. `src/agent/openai-chatgpt-oauth.ts` implements the ChatGPT OAuth login flow, token persistence, and refresh for the `openai-chatgpt` provider.
-10. `src/auth/` contains the connector OAuth system: `oauth.ts` (generic runner), `providers.ts` (provider configs), `configure.ts` (`openwiki auth configure`), `ngrok.ts` (Slack HTTPS tunnel), `tokens.ts` (refresh/validation), and `types.ts`.
-11. `src/connectors/` contains the connector registry, MCP client/runtime, source-specific ingestion modules (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions exposed to the agent.
-12. `src/ingestion.ts` orchestrates source ingestion runs across configured connectors.
-13. `src/code-mode.ts` handles `openwiki code` setup: writes a GitHub Actions workflow and AGENTS.md/CLAUDE.md snippets.
-14. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
-15. `src/agent/types.ts` defines shared types: `OpenWikiCommand`, `RunContext`, `UpdateMetadata`, and run option/event interfaces.
+8. `src/agent/docs-only-backend.ts` provides `OpenWikiLocalShellBackend`, extending DeepAgents `LocalShellBackend` with docs-only write guards, output-mode awareness, and `.openwikiignore` enforcement.
+9. `src/agent/openwiki-ignore.ts` loads and matches `.openwikiignore` rules.
+10. `src/agent/openai-chatgpt-oauth.ts` implements the ChatGPT OAuth login flow, token persistence, and refresh for the `openai-chatgpt` provider.
+11. `src/auth/` contains the connector OAuth system: `oauth.ts` (generic runner), `providers.ts` (provider configs), `configure.ts` (`openwiki auth configure`), `ngrok.ts` (Slack HTTPS tunnel), `tokens.ts` (refresh/validation), and `types.ts`.
+12. `src/connectors/` contains the connector registry, MCP client/runtime, source-specific ingestion modules (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions exposed to the agent.
+13. `src/ingestion.ts` orchestrates source ingestion runs across configured connectors.
+14. `src/code-mode.ts` handles `openwiki code` setup: writes a GitHub Actions workflow and AGENTS.md/CLAUDE.md snippets.
+15. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
+16. `src/agent/types.ts` defines shared types: `OpenWikiCommand`, `RunContext`, `UpdateMetadata`, and run option/event interfaces.
 
 ## Runtime shape
 
@@ -64,7 +65,7 @@ Credential gating before model creation uses `getMissingProviderEnvKey()` in `sr
 
 ### DeepAgents backend
 
-The agent uses a DeepAgents `LocalShellBackend` rooted at the repository, configured with `virtualMode: true`, `maxOutputBytes: 100_000`, and a 120 second timeout. A SQLite checkpointer (`~/.openwiki/openwiki.sqlite`) persists conversation threads keyed by a hash of the repository path.
+The agent uses `OpenWikiLocalShellBackend`, a thin wrapper around DeepAgents `LocalShellBackend`, rooted at the current runtime root and configured with `virtualMode: true`, `maxOutputBytes: 100_000`, and a 120 second timeout. The wrapper enforces docs-only writes for repository init/update runs and enforces `.openwikiignore` by filtering filesystem discovery, blocking reads/writes to ignored paths, and restricting shell execute while rules are active. A SQLite checkpointer (`~/.openwiki/openwiki.sqlite`) persists chat conversation threads keyed by a hash of the runtime root.
 
 ### Content snapshot and metadata writes
 
@@ -92,6 +93,7 @@ The current design reflects a documentation product rather than a general-purpos
 - Add a new model provider by extending `PROVIDER_CONFIGS` and `OpenWikiProvider` in `src/constants.ts`, then adding a branch in `createModel` in `src/agent/index.ts`.
 - Adjust model defaults, validation, or fallback lists in `src/constants.ts`.
 - Extend the documentation prompt or Git evidence in `src/agent/prompt.ts` and `src/agent/utils.ts`.
+- Change ignored-path behavior in `src/agent/openwiki-ignore.ts` and `src/agent/docs-only-backend.ts`.
 - Modify run persistence or snapshot behavior in `src/agent/utils.ts`.
 
 ## Things to watch when editing
@@ -110,6 +112,7 @@ The current design reflects a documentation product rather than a general-purpos
 - `src/credentials.tsx`
 - `src/env.ts`
 - `src/agent/index.ts`
+- `src/agent/openwiki-ignore.ts`
 - `src/agent/prompt.ts`
 - `src/agent/utils.ts`
 - `src/agent/types.ts`

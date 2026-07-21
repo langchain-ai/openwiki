@@ -14,15 +14,16 @@ The documentation agent is implemented in `src/agent/`. It takes a command (`cha
 `src/agent/index.ts` follows this sequence for non-chat runs:
 
 1. Load `~/.openwiki/.env` into `process.env`.
-2. Resolve the provider via `resolveConfiguredProvider()` and ensure the provider's API key exists.
-3. Resolve the model ID from CLI input, `OPENWIKI_MODEL_ID`, or the provider's default model.
-4. Create a run context from Git state and prior update metadata.
-5. Snapshot the current `openwiki/` content hash (before the run).
-6. Build the system prompt and user prompt.
-7. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
-8. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
-9. Stream messages and tool events back to the CLI.
-10. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed**.
+2. Load `.openwikiignore` from the target repository root.
+3. Resolve the provider via `resolveConfiguredProvider()` and ensure the provider's API key exists.
+4. Resolve the model ID from CLI input, `OPENWIKI_MODEL_ID`, or the provider's default model.
+5. Create a run context from Git state and prior update metadata.
+6. Snapshot the current `openwiki/` content hash (before the run).
+7. Build the system prompt and user prompt.
+8. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
+9. Create an OpenWiki-wrapped DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
+10. Stream messages and tool events back to the CLI.
+11. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed**.
 
 Chat runs skip metadata writes entirely.
 
@@ -51,6 +52,7 @@ Provider retry attempts are resolved through `resolveProviderRetryAttempts()` an
 - document the repository for both humans and future agents,
 - respect the repository root as the only project in scope,
 - avoid reading secrets or `.env` files,
+- respect `.openwikiignore` when active,
 - use git history for init and update runs,
 - respect the temporary plan file and update metadata requirements,
 - ensure top-level `/AGENTS.md` and/or `/CLAUDE.md` reference the OpenWiki quickstart (inserting or refreshing a standardized section).
@@ -97,6 +99,8 @@ Use `personal-logistics.md` for non-work personal items such as appointments, pi
 - the most recent 20 commits with changed files for init runs (or updates without prior metadata),
 - a diff summary against HEAD.
 
+When `.openwikiignore` has active rules, ignored paths are filtered out of this git evidence before it is included in the prompt. Ignored worktree-only changes also do not force `--update` out of the no-op path.
+
 On successful init/update runs where content changed, the agent writes JSON metadata with:
 
 - `updatedAt`
@@ -136,6 +140,7 @@ The agent is not just a generic chat wrapper. It is intentionally constrained so
 ## Source map
 
 - `src/agent/index.ts`
+- `src/agent/openwiki-ignore.ts`
 - `src/agent/prompt.ts`
 - `src/agent/utils.ts`
 - `src/agent/types.ts`

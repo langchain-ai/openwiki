@@ -12,6 +12,7 @@ import {
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
 } from "../onboarding.js";
+import { OpenWikiIgnoreRules } from "./openwiki-ignore.js";
 import type {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -45,6 +46,7 @@ export async function createRunContext(
   command: OpenWikiCommand,
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
+  ignoreRules = new OpenWikiIgnoreRules([]),
 ): Promise<RunContext> {
   const lastUpdate = await readLastUpdate(cwd, outputMode);
   const wikiGoal = await readRunWikiGoal(cwd, outputMode);
@@ -68,7 +70,7 @@ export async function createRunContext(
 
   return {
     lastUpdate,
-    gitSummary: await createGitSummary(command, cwd, lastUpdate),
+    gitSummary: await createGitSummary(command, cwd, lastUpdate, ignoreRules),
     wikiGoal,
   };
 }
@@ -86,6 +88,7 @@ async function readRunWikiGoal(
 
 export async function getUpdateNoopStatus(
   cwd: string,
+  ignoreRules = new OpenWikiIgnoreRules([]),
 ): Promise<UpdateNoopStatus> {
   const lastUpdate = await readLastUpdate(cwd, "repository");
 
@@ -108,7 +111,8 @@ export async function getUpdateNoopStatus(
     .split("\n")
     .map((line) => line.trimEnd())
     .filter(Boolean)
-    .filter((line) => !isUpdateMetadataStatusLine(line));
+    .filter((line) => !isUpdateMetadataStatusLine(line))
+    .filter((line) => !lineReferencesIgnoredPath(line, ignoreRules));
 
   if (meaningfulStatus.length > 0) {
     return { shouldSkip: false, reason: "worktree has changes" };
@@ -122,7 +126,10 @@ export async function getUpdateNoopStatus(
 
     if (
       committedPaths.length === 0 ||
-      committedPaths.some((changedPath) => !isOpenWikiPath(changedPath))
+      committedPaths.some(
+        (changedPath) =>
+          !isOpenWikiPath(changedPath) && !ignoreRules.ignores(changedPath),
+      )
     ) {
       return { shouldSkip: false, reason: "git head changed" };
     }
@@ -372,21 +379,28 @@ async function createGitSummary(
   command: OpenWikiCommand,
   cwd: string,
   lastUpdate: UpdateMetadata | null,
+  ignoreRules: OpenWikiIgnoreRules,
 ): Promise<string> {
   const sections: string[] = [];
-  const status = await runGit(cwd, ["status", "--short"]);
+  const status = filterGitOutputForIgnore(
+    await runGit(cwd, ["status", "--short"]),
+    ignoreRules,
+  );
   const head = await getGitHead(cwd);
 
   sections.push(formatGitSection("git status --short", status));
   sections.push(formatGitSection("git rev-parse HEAD", head ?? "(unknown)"));
 
   if (command === "update" && lastUpdate?.gitHead) {
-    const logSinceLastHead = await runGit(cwd, [
-      "log",
-      `${lastUpdate.gitHead}..HEAD`,
-      "--name-status",
-      "--oneline",
-    ]);
+    const logSinceLastHead = filterGitOutputForIgnore(
+      await runGit(cwd, [
+        "log",
+        `${lastUpdate.gitHead}..HEAD`,
+        "--name-status",
+        "--oneline",
+      ]),
+      ignoreRules,
+    );
 
     sections.push(
       formatGitSection(
@@ -395,13 +409,16 @@ async function createGitSummary(
       ),
     );
   } else if (command === "update" && lastUpdate?.updatedAt) {
-    const logSinceLastUpdate = await runGit(cwd, [
-      "log",
-      "--since",
-      lastUpdate.updatedAt,
-      "--name-status",
-      "--oneline",
-    ]);
+    const logSinceLastUpdate = filterGitOutputForIgnore(
+      await runGit(cwd, [
+        "log",
+        "--since",
+        lastUpdate.updatedAt,
+        "--name-status",
+        "--oneline",
+      ]),
+      ignoreRules,
+    );
 
     sections.push(
       formatGitSection(
@@ -410,12 +427,15 @@ async function createGitSummary(
       ),
     );
   } else {
-    const recentLog = await runGit(cwd, [
-      "log",
-      "--max-count=20",
-      "--name-status",
-      "--oneline",
-    ]);
+    const recentLog = filterGitOutputForIgnore(
+      await runGit(cwd, [
+        "log",
+        "--max-count=20",
+        "--name-status",
+        "--oneline",
+      ]),
+      ignoreRules,
+    );
 
     if (command === "update") {
       sections.push("No prior OpenWiki update timestamp was found.");
@@ -429,7 +449,10 @@ async function createGitSummary(
     );
   }
 
-  const diff = await runGit(cwd, ["diff", "--name-status", "HEAD"]);
+  const diff = filterGitOutputForIgnore(
+    await runGit(cwd, ["diff", "--name-status", "HEAD"]),
+    ignoreRules,
+  );
   sections.push(formatGitSection("git diff --name-status HEAD", diff));
 
   return sections.join("\n\n");
@@ -504,6 +527,58 @@ function isOpenWikiPath(changedPath: string): boolean {
 
 function normalizeGitPath(value: string): string {
   return value.trim().replace(/\\/gu, "/");
+}
+
+function filterGitOutputForIgnore(
+  output: string,
+  ignoreRules: OpenWikiIgnoreRules,
+): string {
+  if (!ignoreRules.isActive || output.length === 0) {
+    return output;
+  }
+
+  const filteredOutput = output
+    .split("\n")
+    .filter((line) => !lineReferencesIgnoredPath(line, ignoreRules))
+    .join("\n")
+    .trim();
+
+  return filteredOutput.length > 0
+    ? filteredOutput
+    : "(all matching paths are excluded by .openwikiignore)";
+}
+
+function lineReferencesIgnoredPath(
+  line: string,
+  ignoreRules: OpenWikiIgnoreRules,
+): boolean {
+  return extractGitPaths(line).some((changedPath) =>
+    ignoreRules.ignores(changedPath),
+  );
+}
+
+function extractGitPaths(line: string): string[] {
+  const shortStatusMatch = /^(?:[ MARCUD?!]{2})\s+(.+)$/u.exec(line);
+  const nameStatusMatch = /^(?:[ACDMRTUXB]\d*)\s+(.+)$/u.exec(line.trim());
+  const pathsText = shortStatusMatch?.[1] ?? nameStatusMatch?.[1];
+
+  if (!pathsText) {
+    return [];
+  }
+
+  return splitGitPaths(pathsText).map(normalizeGitPath).filter(Boolean);
+}
+
+function splitGitPaths(pathsText: string): string[] {
+  if (pathsText.includes("\t")) {
+    return pathsText.split("\t");
+  }
+
+  if (pathsText.includes(" -> ")) {
+    return pathsText.split(" -> ");
+  }
+
+  return [pathsText];
 }
 
 function isExecError(
