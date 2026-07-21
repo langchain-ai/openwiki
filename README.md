@@ -49,7 +49,10 @@ Bare `openwiki --init` and `openwiki --update` run in code mode. Use
 `openwiki personal --init` or `openwiki personal --update` for the local
 personal brain wiki.
 
-Then to ensure your documentation stays up-to-date, add the CI workflow for your Git provider to automatically open a PR or merge request with documentation updates:
+During interactive code-mode setup, OpenWiki asks whether to create a GitHub
+Actions workflow, a GitLab CI/CD pipeline, or no CI file. The generated workflow
+automatically opens a pull request or merge request with documentation updates.
+You can also add one of the examples manually:
 
 - GitHub Actions: copy [openwiki-update.yml](./examples/openwiki-update.yml) into `.github/workflows/openwiki-update.yml`.
 - GitLab CI: copy [openwiki-update.gitlab-ci.yml](./examples/openwiki-update.gitlab-ci.yml) into `.gitlab-ci.yml` or include it from your existing GitLab pipeline.
@@ -171,7 +174,7 @@ Bare `openwiki` runs in code mode for the current repository. It creates initial
 
 Bare `openwiki --init` and `openwiki --update` default to code mode and operate on repository documentation. Use the `personal` positional mode or `--mode personal` to initialize or update the local personal brain wiki.
 
-On each `code` run, `openwiki` maintains both an `AGENTS.md` and a `CLAUDE.md` at the repository root, adding prompting that instructs your coding agent to reference the wiki when searching for context. Each file is created if it does not already exist. If a file is present, OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of your content untouched (appending the block the first time). The scheduled GitHub Actions workflow includes these files, along with the workflow itself, in the documentation pull request.
+On each `code` run, `openwiki` maintains both an `AGENTS.md` and a `CLAUDE.md` at the repository root, adding prompting that instructs your coding agent to reference the wiki when searching for context. Each file is created if it does not already exist. If a file is present, OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of your content untouched (appending the block the first time). If you opt into GitHub Actions or GitLab CI/CD during setup, the generated CI file includes these agent files in its documentation update.
 
 Repository-specific wiki instructions are stored separately in
 `openwiki/INSTRUCTIONS.md`. This file is a shared, user-authored brief for the

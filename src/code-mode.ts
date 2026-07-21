@@ -1,10 +1,13 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { OPENWIKI_VERSION } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
 
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
 const DEFAULT_CODE_MODE_CRON = "0 8 * * *";
+
+export type CodeModeAutomation = "github" | "gitlab" | "none";
 
 // Root agent-instruction files OpenWiki keeps pointed at the generated wiki.
 // Each is created when missing and refreshed in place when already present.
@@ -12,24 +15,42 @@ const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
 
 export async function ensureCodeModeRepoSetup(
   cwd: string,
+  automation: CodeModeAutomation = "none",
   cronExpression = DEFAULT_CODE_MODE_CRON,
 ): Promise<void> {
-  await writeCodeModeWorkflow(cwd, cronExpression);
+  if (automation === "github") {
+    await writeGitHubActionsWorkflow(cwd, cronExpression);
+  } else if (automation === "gitlab") {
+    await writeGitLabCiWorkflow(cwd);
+  }
+
   await writeCodeModeAgentSnippets(cwd);
 }
 
-async function writeCodeModeWorkflow(
+async function writeGitHubActionsWorkflow(
   cwd: string,
   cronExpression: string,
 ): Promise<void> {
-  const workflowPath = path.join(
+  const workflowPath = resolveRepoPath(
     cwd,
     ".github",
     "workflows",
     "openwiki-update.yml",
   );
   await mkdir(path.dirname(workflowPath), { recursive: true });
-  await writeFile(workflowPath, createCodeModeWorkflow(cronExpression), "utf8");
+  await writeFile(
+    workflowPath,
+    createGitHubActionsWorkflow(cronExpression),
+    "utf8",
+  );
+}
+
+async function writeGitLabCiWorkflow(cwd: string): Promise<void> {
+  await writeFile(
+    resolveRepoPath(cwd, ".gitlab-ci.yml"),
+    createGitLabCiWorkflow(),
+    "utf8",
+  );
 }
 
 async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
@@ -37,9 +58,23 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
 
   await Promise.all(
     CODE_MODE_AGENT_FILES.map((fileName) =>
-      writeCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
+      writeCodeModeAgentSnippet(resolveRepoPath(cwd, fileName), snippet),
     ),
   );
+}
+
+function resolveRepoPath(cwd: string, ...segments: string[]): string {
+  const repoRoot = path.resolve(cwd);
+  const targetPath = path.resolve(repoRoot, ...segments);
+
+  if (
+    targetPath !== repoRoot &&
+    !targetPath.startsWith(`${repoRoot}${path.sep}`)
+  ) {
+    throw new Error(`Refusing to write outside repository root: ${targetPath}`);
+  }
+
+  return targetPath;
 }
 
 async function writeCodeModeAgentSnippet(
@@ -66,7 +101,7 @@ async function writeCodeModeAgentSnippet(
   await writeFile(agentsPath, nextContent, "utf8");
 }
 
-function createCodeModeWorkflow(cronExpression: string): string {
+function createGitHubActionsWorkflow(cronExpression: string): string {
   return `name: OpenWiki Update
 
 on:
@@ -83,15 +118,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
 
       - name: Install OpenWiki
-        run: npm install --global openwiki
+        run: npm install --global openwiki@${OPENWIKI_VERSION}
 
       - name: Run OpenWiki
         run: openwiki code --update --print
@@ -121,6 +156,46 @@ jobs:
 `;
 }
 
+function createGitLabCiWorkflow(): string {
+  return `openwiki_update:
+  image: node:22
+  stage: deploy
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+  before_script:
+    - apt-get update && apt-get install -y git curl
+    - npm install --global openwiki@${OPENWIKI_VERSION}
+    - git config user.name "\${GITLAB_USER_NAME:-OpenWiki Bot}"
+    - git config user.email "\${GITLAB_USER_EMAIL:-openwiki@example.com}"
+  script:
+    - openwiki code --update --print
+    - |
+      if git diff --quiet -- openwiki AGENTS.md CLAUDE.md .gitlab-ci.yml; then
+        echo "OpenWiki is already up to date."
+        exit 0
+      fi
+    - export OPENWIKI_BRANCH="openwiki/update-\${CI_PIPELINE_ID}"
+    - git checkout -b "$OPENWIKI_BRANCH"
+    - git add openwiki AGENTS.md CLAUDE.md .gitlab-ci.yml
+    - git commit -m "docs: update OpenWiki"
+    - git push "https://oauth2:\${OPENWIKI_GITLAB_TOKEN}@\${CI_SERVER_HOST}/\${CI_PROJECT_PATH}.git" "$OPENWIKI_BRANCH"
+    - |
+      curl --fail --request POST \\
+        --header "PRIVATE-TOKEN: \${OPENWIKI_GITLAB_TOKEN}" \\
+        --form "source_branch=\${OPENWIKI_BRANCH}" \\
+        --form "target_branch=\${CI_DEFAULT_BRANCH}" \\
+        --form "title=docs: update OpenWiki" \\
+        --form "description=Automated OpenWiki documentation update generated by the scheduled GitLab pipeline." \\
+        "\${CI_API_V4_URL}/projects/\${CI_PROJECT_ID}/merge_requests"
+  variables:
+    OPENWIKI_PROVIDER: openrouter
+    OPENWIKI_MODEL_ID: z-ai/glm-5.2
+    LANGCHAIN_PROJECT: openwiki
+    LANGCHAIN_TRACING_V2: "true"
+`;
+}
+
 function createCodeModeAgentsSnippet(): string {
   return `${OPENWIKI_AGENTS_SNIPPET_START}
 
@@ -128,7 +203,7 @@ function createCodeModeAgentsSnippet(): string {
 
 This repository uses OpenWiki for recurring code documentation. Start with \`openwiki/quickstart.md\`, then follow its links to architecture, workflows, domain concepts, operations, integrations, testing guidance, and source maps.
 
-The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+The scheduled OpenWiki CI workflow refreshes the repository wiki when configured. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
 
 ${OPENWIKI_AGENTS_SNIPPET_END}`;
 }
