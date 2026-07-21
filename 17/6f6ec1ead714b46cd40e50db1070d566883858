@@ -1,0 +1,39 @@
+src/credentials.tsx
+  s_de3439eecc64d1::t_c6ff3004c883a0 55-58,120,385-392,725-726,1090-1092,1262-1274,1961-1962,2181-2185,2193-2204,2207,2356-2357
+  s_de3439eecc64d1::t_071d346035c0d6 2990,3068,3097
+  s_de3439eecc64d1::t_94e696e5dab179 2205
+  s_de3439eecc64d1::t_86dc19a050eb99 3379-3404
+examples/openwiki-update.gitlab-ci.yml
+  s_de3439eecc64d1::t_4a243e0c2bef49 15,21
+  s_de3439eecc64d1::t_f067ab786f92b4 9
+src/code-mode.ts
+  s_de3439eecc64d1::t_c6ff3004c883a0 121,124
+  s_de3439eecc64d1::t_291f18269a9c91 3,10-11,18,21-26,30,34,41-53,61,66-79,104,129,159-198,206
+test/code-mode.test.ts
+  s_de3439eecc64d1::t_9b1469cc86bd0d 150-152
+  s_de3439eecc64d1::t_94e696e5dab179 6,136-138
+  s_de3439eecc64d1::t_86dc19a050eb99 104,109-121,135,139-149,153-158
+README.md
+  s_de3439eecc64d1::t_4a243e0c2bef49 52-55,177
+examples/openwiki-update.yml
+  s_de3439eecc64d1::t_4a243e0c2bef49 18,23
+  s_de3439eecc64d1::t_f067ab786f92b4 28
+src/commands.ts
+  s_de3439eecc64d1::t_86dc19a050eb99 661
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "176f6ec1ead714b46cd40e50db1070d566883858",
+  "prompts": {},
+  "sessions": {
+    "s_de3439eecc64d1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f85ad-92ae-7051-83a8-07c1271496c8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
