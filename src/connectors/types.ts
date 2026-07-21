@@ -18,10 +18,9 @@ export type ConnectorDefinition = {
   id: ConnectorId;
   /**
    * Which documentation surface the connector feeds. Code-mode connectors (e.g.
-   * langsmith) do not run through personal (local-wiki) ingestion. Absent is
-   * treated as "personal".
+   * langsmith) do not run through personal (local-wiki) ingestion.
    */
-  mode?: "code" | "personal";
+  mode: "code" | "personal";
   requiredEnv: string[];
   supportsAgenticDiscovery: boolean;
 };

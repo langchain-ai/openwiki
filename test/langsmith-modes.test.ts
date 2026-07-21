@@ -25,14 +25,14 @@ describe("connector modes", () => {
   });
 
   test("code-mode connectors get no personal synthesis guidance", () => {
-    // langsmith never runs through personal ingestion, so the synthesis switch
-    // returns an empty string rather than routing it to /themes.md etc.
-    expect(createConnectorSynthesisGuidance("langsmith")).toBe("");
+    // Driven by mode: a code-mode connector returns an empty string rather than
+    // routing to /themes.md etc.
+    expect(createConnectorSynthesisGuidance(registry.langsmith)).toBe("");
   });
 
   test("personal connectors do get synthesis guidance", () => {
-    expect(createConnectorSynthesisGuidance("git-repo").length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      createConnectorSynthesisGuidance(registry["git-repo"]).length,
+    ).toBeGreaterThan(0);
   });
 });
