@@ -1,0 +1,23 @@
+test/constants.test.ts
+  s_05394e87c1fb5f::t_4c5944c08a49c4 398,411
+  s_05394e87c1fb5f::t_794e94cbd7bf1e 399-410,412
+  s_05394e87c1fb5f::t_ae689fb12d1e78 420-421
+src/constants.ts
+  s_05394e87c1fb5f::t_794e94cbd7bf1e 119,121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "e3cbf611f2b90fb9b09ce4777a469f467f8e4d85",
+  "prompts": {},
+  "sessions": {
+    "s_05394e87c1fb5f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f8581-b9c2-7792-8da4-5e64c9b3db87",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
