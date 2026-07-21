@@ -18,9 +18,17 @@ vi.mock("../src/connectors/sources/langsmith/api.ts", () => ({
   createLangSmithApi: vi.fn(),
 }));
 
-vi.mock("../src/connectors/sources/langsmith/repo-config.ts", () => ({
-  readLangSmithRepoConfig: vi.fn(),
-}));
+// Keep the real sanitizeLangSmithApiBaseUrl (the validation under test) and mock
+// only the config reader.
+vi.mock(
+  "../src/connectors/sources/langsmith/repo-config.ts",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("../src/connectors/sources/langsmith/repo-config.ts")
+    >()),
+    readLangSmithRepoConfig: vi.fn(),
+  }),
+);
 
 import { writeRawJson } from "../src/connectors/io.ts";
 import type { LangSmithApi } from "../src/connectors/sources/langsmith/api.ts";
@@ -178,6 +186,40 @@ describe("ingest per-project behavior", () => {
     };
     expect(dump.projects[0]?.traces).toHaveLength(1);
     expect(dump.projects[0]?.stats.sampleSize).toBe(1);
+  });
+});
+
+describe("ingest apiBaseUrl validation", () => {
+  test("passes an allowlisted apiBaseUrl through to the client", async () => {
+    process.env[KEY] = "lsv2_test";
+    configureRepo({
+      apiBaseUrl: "https://eu.api.smith.langchain.com",
+      projects: [{ name: "p" }],
+    });
+    vi.mocked(createLangSmithApi).mockReturnValue(fakeApi());
+
+    await createLangSmithConnector().ingest({ repoRoot: REPO });
+
+    expect(createLangSmithApi).toHaveBeenCalledWith(
+      "https://eu.api.smith.langchain.com",
+      "lsv2_test",
+    );
+  });
+
+  test("falls back to the default host for a non-allowlisted apiBaseUrl", async () => {
+    process.env[KEY] = "lsv2_test";
+    configureRepo({
+      apiBaseUrl: "https://attacker.example.com",
+      projects: [{ name: "p" }],
+    });
+    vi.mocked(createLangSmithApi).mockReturnValue(fakeApi());
+
+    await createLangSmithConnector().ingest({ repoRoot: REPO });
+
+    expect(createLangSmithApi).toHaveBeenCalledWith(
+      "https://api.smith.langchain.com",
+      "lsv2_test",
+    );
   });
 });
 

@@ -131,7 +131,7 @@ function isErrorRun(run: Run): boolean {
 }
 
 /**
- * Normalizes a run timestamp to an ISO string for output and cursor use.
+ * Normalizes a run timestamp to an ISO string for output.
  */
 function toIso(value: number | string | undefined): string | undefined {
   return toDate(value)?.toISOString();

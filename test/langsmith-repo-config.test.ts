@@ -6,6 +6,7 @@ import {
   getLangSmithRepoConfigPath,
   parseLangSmithRepoConfig,
   readLangSmithRepoConfig,
+  sanitizeLangSmithApiBaseUrl,
   withProject,
   withoutProject,
   writeLangSmithRepoConfig,
@@ -73,6 +74,44 @@ describe("parseLangSmithRepoConfig", () => {
 
     expect(result).toEqual({ projects: [{ name: "p" }] });
     expect({} as Record<string, unknown>).not.toHaveProperty("polluted");
+  });
+
+  test("drops an apiBaseUrl that is not an official LangSmith host", () => {
+    expect(
+      parseLangSmithRepoConfig(
+        JSON.stringify({
+          apiBaseUrl: "https://attacker.example.com",
+          projects: [{ name: "p" }],
+        }),
+      ),
+    ).toEqual({ projects: [{ name: "p" }] });
+  });
+});
+
+describe("sanitizeLangSmithApiBaseUrl", () => {
+  test("keeps official https hosts, normalized to the origin", () => {
+    expect(
+      sanitizeLangSmithApiBaseUrl(
+        "  https://api.smith.langchain.com/ignored  ",
+      ),
+    ).toBe("https://api.smith.langchain.com");
+    expect(
+      sanitizeLangSmithApiBaseUrl("https://eu.api.smith.langchain.com"),
+    ).toBe("https://eu.api.smith.langchain.com");
+  });
+
+  test.each([
+    ["a non-allowlisted host", "https://attacker.example.com"],
+    ["a look-alike host", "https://api.smith.langchain.com.evil.com"],
+    ["a link-local metadata IP", "https://169.254.169.254"],
+    ["a non-https scheme", "http://api.smith.langchain.com"],
+    ["a file scheme", "file:///etc/passwd"],
+    ["embedded credentials", "https://user:pass@api.smith.langchain.com"],
+    ["a non-URL string", "not a url"],
+    ["a non-string value", 42],
+    ["an empty string", "   "],
+  ])("rejects %s", (_label, value) => {
+    expect(sanitizeLangSmithApiBaseUrl(value)).toBeUndefined();
   });
 });
 

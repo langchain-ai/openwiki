@@ -14,7 +14,10 @@ import type {
 } from "../../types.js";
 import type { LangSmithApi } from "./api.js";
 import { createLangSmithApi } from "./api.js";
-import { readLangSmithRepoConfig } from "./repo-config.js";
+import {
+  readLangSmithRepoConfig,
+  sanitizeLangSmithApiBaseUrl,
+} from "./repo-config.js";
 import { compactTrace, summarizeSample } from "./runs.js";
 import type {
   LangSmithConfig,
@@ -176,8 +179,10 @@ async function ingest(
     return result(runId, [], [], "skipped", "No LangSmith projects configured");
   }
 
+  // Re-validate at the SDK boundary: the API key rides along in an Authorization
+  // header, so never hand the client a host that is not an official LangSmith one.
   const api = createLangSmithApi(
-    config.apiBaseUrl ?? DEFAULT_API_BASE_URL,
+    sanitizeLangSmithApiBaseUrl(config.apiBaseUrl) ?? DEFAULT_API_BASE_URL,
     apiKey,
   );
   const state = await readConnectorState("langsmith");

@@ -36,4 +36,18 @@ describe("connector modes", () => {
       createConnectorSynthesisGuidance(registry["git-repo"]).length,
     ).toBeGreaterThan(0);
   });
+
+  test("no personal connector receives the langsmith guidance", () => {
+    // The langsmith arm is keyed on connector.id, and langsmith is never a
+    // personal source, so its runtime-evidence guidance cannot leak into a
+    // personal run.
+    for (const id of CONNECTOR_IDS) {
+      if (id === "langsmith") {
+        continue;
+      }
+      expect(createConnectorSynthesisGuidance(registry[id])).not.toContain(
+        "openwiki_read_raw_item",
+      );
+    }
+  });
 });

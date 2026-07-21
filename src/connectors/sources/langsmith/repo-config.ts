@@ -30,10 +30,48 @@ export interface LangSmithRepoConfig {
 }
 
 /**
+ * Official LangSmith API hosts the connector may talk to. The base URL is handed
+ * to the SDK client together with the API key (sent as an Authorization header),
+ * so a committed config must never be able to point it at an arbitrary host.
+ */
+const ALLOWED_API_HOSTS = new Set([
+  "api.smith.langchain.com",
+  "eu.api.smith.langchain.com",
+]);
+
+/**
  * Absolute path of the committed LangSmith config for a repository.
  */
 export function getLangSmithRepoConfigPath(repoRoot: string): string {
   return path.join(repoRoot, OPEN_WIKI_DIR, "langsmith.json");
+}
+
+/**
+ * Returns a normalized apiBaseUrl only when it is an https URL, carries no
+ * embedded credentials, and targets an official LangSmith host; otherwise
+ * undefined so callers fall back to the default host. Because the base URL
+ * receives the user's API key, an unvalidated value from a repo-committed config
+ * would let a malicious PR exfiltrate the key or drive SSRF to an internal host.
+ */
+export function sanitizeLangSmithApiBaseUrl(
+  value: unknown,
+): string | undefined {
+  if (typeof value !== "string" || !value.trim()) {
+    return undefined;
+  }
+  let url: URL;
+  try {
+    url = new URL(value.trim());
+  } catch {
+    return undefined;
+  }
+  if (url.protocol !== "https:" || url.username || url.password) {
+    return undefined;
+  }
+  if (!ALLOWED_API_HOSTS.has(url.hostname)) {
+    return undefined;
+  }
+  return url.origin;
 }
 
 /**
@@ -96,12 +134,11 @@ export function parseLangSmithRepoConfig(
   }
 
   const { apiBaseUrl, includeFeedback } = record;
+  const safeApiBaseUrl = sanitizeLangSmithApiBaseUrl(apiBaseUrl);
   return {
     projects,
     ...(typeof includeFeedback === "boolean" ? { includeFeedback } : {}),
-    ...(typeof apiBaseUrl === "string" && apiBaseUrl.trim()
-      ? { apiBaseUrl: apiBaseUrl.trim() }
-      : {}),
+    ...(safeApiBaseUrl ? { apiBaseUrl: safeApiBaseUrl } : {}),
   };
 }
 
