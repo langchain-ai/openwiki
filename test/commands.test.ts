@@ -445,3 +445,57 @@ describe("parseCommand — cron", () => {
     expect(result.kind).toBe("error");
   });
 });
+
+describe("parseCommand — integration", () => {
+  test("integration claude defaults the target path to the cwd", () => {
+    expect(parseCommand(["integration", "claude"])).toEqual({
+      kind: "integration",
+      agent: "claude",
+      exitCode: 0,
+      targetPath: ".",
+    });
+  });
+
+  test("integration claude <path> captures the target path", () => {
+    expect(parseCommand(["integration", "claude", "../other-repo"])).toEqual({
+      kind: "integration",
+      agent: "claude",
+      exitCode: 0,
+      targetPath: "../other-repo",
+    });
+  });
+
+  test("an unknown integration agent is an error", () => {
+    const result = parseCommand(["integration", "foo"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.exitCode).toBe(1);
+      expect(result.message).toMatch(/Unknown integration agent/u);
+    }
+  });
+
+  test("integration with no agent prints usage", () => {
+    const result = parseCommand(["integration"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Usage: openwiki integration/u);
+    }
+  });
+
+  test("an unknown flag for integration is rejected", () => {
+    const result = parseCommand(["integration", "claude", "--force"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Unknown option for integration/u);
+    }
+  });
+
+  test("a second positional argument is rejected", () => {
+    const result = parseCommand(["integration", "claude", "a", "b"]);
+
+    expect(result.kind).toBe("error");
+  });
+});

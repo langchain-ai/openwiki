@@ -167,6 +167,23 @@ URL in Slack. If you have a fixed ngrok domain, run
 ignore that HTTPS override and keep using the local loopback callback,
 `http://127.0.0.1:53682/callback`.
 
+Export OpenWiki as skills for a host coding agent:
+
+```sh
+openwiki integration claude
+openwiki integration claude ../other-repo
+```
+
+`openwiki integration claude [path]` scaffolds two Claude Code skills,
+`openwiki-init` and `openwiki-update`, into `.claude/skills/` in the target
+repository (defaulting to the current directory). Unlike the other commands,
+this one needs **no model provider or API key** — Claude Code itself is the
+engine. Open the repository in Claude Code and run `/openwiki-init` to generate
+the initial docs under `openwiki/`, then `/openwiki-update` after source changes
+to refresh them. Each slash command accepts an optional repository path
+argument. This covers code mode (repository docs) only; the personal brain and
+connectors still require the OpenWiki runtime.
+
 Bare `openwiki` runs in code mode for the current repository. It creates initial repository documentation in `openwiki/` when no wiki exists. Use `openwiki personal` for the local general-purpose wiki in `~/.openwiki/wiki/`. By default, the CLI stays open after each run so you can send follow-up messages. Use `-p` or `--print` for a one-shot non-interactive run that prints the final assistant output.
 
 Bare `openwiki --init` and `openwiki --update` default to code mode and operate on repository documentation. Use the `personal` positional mode or `--mode personal` to initialize or update the local personal brain wiki.
