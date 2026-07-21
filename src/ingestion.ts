@@ -376,6 +376,10 @@ function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
     case "git-repo":
       return `
 - Use repository paths, branches, HEADs, dirty status, and recent commits as evidence. Route durable project status, blockers, and follow-ups into canonical pages instead of mirroring repository manifests.`;
+    case "langsmith":
+      return `
+- Treat LangSmith evidence as runtime behavior: aggregate run shapes, error rates, and latency/cost, never raw run inputs or outputs.
+- Route recurring failure signatures and eval/latency regressions to /themes.md and durable follow-ups to /commitments.md; keep /sources/langsmith.md a compact stats-and-signatures index.`;
   }
 }
 

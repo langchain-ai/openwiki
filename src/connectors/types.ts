@@ -2,6 +2,7 @@ export type ConnectorId =
   | "git-repo"
   | "google"
   | "hackernews"
+  | "langsmith"
   | "notion"
   | "slack"
   | "web-search"
