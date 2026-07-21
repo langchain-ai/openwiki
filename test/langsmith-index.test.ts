@@ -19,11 +19,7 @@ vi.mock("../src/connectors/sources/langsmith/api.ts", () => ({
   createLangSmithApi: vi.fn(),
 }));
 
-import {
-  readConnectorConfig,
-  writeConnectorState,
-  writeRawJson,
-} from "../src/connectors/io.ts";
+import { readConnectorConfig, writeRawJson } from "../src/connectors/io.ts";
 import type { LangSmithApi } from "../src/connectors/sources/langsmith/api.ts";
 import { createLangSmithApi } from "../src/connectors/sources/langsmith/api.ts";
 import { createLangSmithConnector } from "../src/connectors/sources/langsmith/index.ts";
@@ -146,7 +142,7 @@ describe("ingest per-project behavior", () => {
     expect(result.warnings.join(" ")).not.toContain(leak);
   });
 
-  test("a successful project yields traces + stats and advances the cursor", async () => {
+  test("a successful project yields traces and a sample summary", async () => {
     process.env[KEY] = "lsv2_test";
     configure({ enabled: true, projects: [{ name: "prod" }] });
     const root = run({
@@ -171,13 +167,6 @@ describe("ingest per-project behavior", () => {
     };
     expect(dump.projects[0]?.traces).toHaveLength(1);
     expect(dump.projects[0]?.stats.sampleSize).toBe(1);
-
-    const nextState = vi.mocked(writeConnectorState).mock.calls[0]?.[1] as {
-      latestIds: Record<string, string>;
-    };
-    expect(Object.values(nextState.latestIds)).toContain(
-      "2026-07-21T00:00:00.000Z",
-    );
   });
 
   test("passes the project's maxTraces to listRecentRootRuns", async () => {
@@ -190,10 +179,6 @@ describe("ingest per-project behavior", () => {
 
     await createLangSmithConnector().ingest();
 
-    expect(listRecentRootRuns).toHaveBeenCalledWith(
-      "p-id",
-      expect.any(String),
-      5,
-    );
+    expect(listRecentRootRuns).toHaveBeenCalledWith("p-id", 5);
   });
 });

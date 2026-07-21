@@ -75,14 +75,10 @@ describe("resolveProject", () => {
 });
 
 describe("listRecentRootRuns", () => {
-  test("queries root runs with a Date startTime and caps at limit", async () => {
+  test("queries the latest root runs and caps at limit", async () => {
     sdk.runs = Array.from({ length: 5 }, (_, i) => ({ id: `r-${i}` }));
 
-    const runs = await api().listRecentRootRuns(
-      "proj-1",
-      "2026-07-21T00:00:00.000Z",
-      3,
-    );
+    const runs = await api().listRecentRootRuns("proj-1", 3);
 
     expect(runs).toHaveLength(3);
     const args = sdk.listRunsArgs[0] ?? {};
@@ -90,7 +86,7 @@ describe("listRecentRootRuns", () => {
     expect(args.projectId).toBe("proj-1");
     expect(args.limit).toBe(3);
     expect(args.select).toContain("trace_id");
-    expect(args.startTime).toBeInstanceOf(Date);
+    expect(args).not.toHaveProperty("startTime");
   });
 });
 

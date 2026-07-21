@@ -15,8 +15,8 @@ import type {
 } from "../../types.js";
 import type { LangSmithApi } from "./api.js";
 import { createLangSmithApi } from "./api.js";
-import { clampTraces, normalizeWindowHours } from "./limits.js";
-import { compactTrace, maxStartTime, summarizeSample } from "./runs.js";
+import { clampTraces } from "./limits.js";
+import { compactTrace, summarizeSample } from "./runs.js";
 import type {
   LangSmithConfig,
   LangSmithProjectConfig,
@@ -86,23 +86,6 @@ interface PullBounds {
 }
 
 /**
- * One project's pull plus the cursor to persist.
- */
-interface ProjectPull {
-  /**
-   * Latest run start time seen, stored so the next run skips it.
-   *
-   * @default undefined
-   */
-  cursor?: string;
-
-  /**
-   * Compacted traces, sample summary, and feedback for the project.
-   */
-  result: ProjectPullResult;
-}
-
-/**
  * Builds the LangSmith connector runtime for the connector registry.
  */
 export function createLangSmithConnector(): ConnectorRuntime {
@@ -169,10 +152,6 @@ async function ingest(
     apiKey,
   );
   const state = await readConnectorState("langsmith");
-  const windowHours = normalizeWindowHours(options.windowHours);
-  const windowStart = new Date(
-    Date.now() - windowHours * 60 * 60 * 1000,
-  ).toISOString();
   const defaultMaxTraces = config.maxTraces ?? 10;
   const bounds: PullBounds = {
     includeFeedback: config.includeFeedback ?? false,
@@ -181,27 +160,15 @@ async function ingest(
   };
 
   const warnings: string[] = [];
-  const cursors: Record<string, string> = {};
   const pulls: ProjectPullResult[] = [];
 
   for (const project of projects) {
-    const cursor = state.latestIds?.[cursorKey(project.name)];
-    const startTime = cursor && cursor > windowStart ? cursor : windowStart;
     const maxTraces = clampTraces(project.maxTraces, defaultMaxTraces);
 
     try {
-      const pull = await pullProject(
-        api,
-        project,
-        startTime,
-        maxTraces,
-        bounds,
-      );
+      const pull = await pullProject(api, project, maxTraces, bounds);
       if (pull) {
-        pulls.push(pull.result);
-        if (pull.cursor) {
-          cursors[cursorKey(project.name)] = pull.cursor;
-        }
+        pulls.push(pull);
       }
     } catch (err) {
       warnings.push(
@@ -217,7 +184,6 @@ async function ingest(
             fetchedAt: new Date().toISOString(),
             instanceId: options.instanceId,
             projects: pulls,
-            windowHours,
           }),
         ]
       : [];
@@ -229,7 +195,6 @@ async function ingest(
     status,
     warnings,
   });
-  nextState.latestIds = { ...(nextState.latestIds ?? {}), ...cursors };
   await writeConnectorState("langsmith", nextState);
 
   return result(
@@ -242,20 +207,19 @@ async function ingest(
 }
 
 /**
- * Pulls one project's recent traces, or undefined when it has no new runs.
- * Throws on API failure so the caller can turn it into a per-project warning.
+ * Pulls one project's latest traces, or undefined when it has none. Throws on
+ * API failure so the caller can turn it into a per-project warning.
  */
 async function pullProject(
   api: LangSmithApi,
   project: LangSmithProjectConfig,
-  startTime: string,
   maxTraces: number,
   bounds: PullBounds,
-): Promise<ProjectPull | undefined> {
+): Promise<ProjectPullResult | undefined> {
   const { id: projectId, url: projectUrl } = await api.resolveProject(
     project.name,
   );
-  const roots = await api.listRecentRootRuns(projectId, startTime, maxTraces);
+  const roots = await api.listRecentRootRuns(projectId, maxTraces);
   if (roots.length === 0) {
     return undefined;
   }
@@ -279,14 +243,11 @@ async function pullProject(
     : [];
 
   return {
-    cursor: maxStartTime(roots),
-    result: {
-      feedback,
-      project: project.name,
-      projectId,
-      stats: summarizeSample(roots),
-      traces,
-    },
+    feedback,
+    project: project.name,
+    projectId,
+    stats: summarizeSample(roots),
+    traces,
   };
 }
 
@@ -326,13 +287,6 @@ function result(
     status,
     warnings,
   };
-}
-
-/**
- * State key under which one project's last-seen run start time is stored.
- */
-function cursorKey(project: string): string {
-  return `project:${project}:lastRunStart`;
 }
 
 /**

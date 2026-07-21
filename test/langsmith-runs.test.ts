@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
   compactTrace,
-  maxStartTime,
   summarizeSample,
 } from "../src/connectors/sources/langsmith/runs.ts";
 import type { Run } from "langsmith";
@@ -141,22 +140,5 @@ describe("summarizeSample", () => {
       sampleSize: 0,
       totalTokens: 0,
     });
-  });
-});
-
-describe("maxStartTime", () => {
-  test("returns the latest start time as ISO", () => {
-    expect(
-      maxStartTime([
-        run({ id: "a", start_time: "2026-07-21T00:00:01.000Z" }),
-        run({ id: "b", start_time: "2026-07-21T00:00:03.000Z" }),
-        run({ id: "c", start_time: "2026-07-21T00:00:02.000Z" }),
-      ]),
-    ).toBe("2026-07-21T00:00:03.000Z");
-  });
-
-  test("returns undefined for empty or timestamp-less runs", () => {
-    expect(maxStartTime([])).toBeUndefined();
-    expect(maxStartTime([run({ id: "a" })])).toBeUndefined();
   });
 });

@@ -49,17 +49,6 @@ export function summarizeSample(roots: Run[]): SampleStats {
 }
 
 /**
- * Latest start_time among the given runs, to advance the per-project cursor.
- */
-export function maxStartTime(runs: Run[]): string | undefined {
-  return runs
-    .map((run) => toIso(run.start_time))
-    .filter((value): value is string => value !== undefined)
-    .sort()
-    .at(-1);
-}
-
-/**
  * Compacts one run of a trace tree, keeping structure (type + parent) and, when
  * allowed, truncated payloads.
  */
