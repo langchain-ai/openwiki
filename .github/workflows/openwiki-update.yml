@@ -11,6 +11,12 @@ permissions:
 
 jobs:
   update:
+    # Scheduled runs only fire in the origin repo by default, so contributor
+    # forks do not silently arm a daily job that requires a provider secret.
+    # Fork owners can opt in without editing this file by setting the
+    # OPENWIKI_ENABLE_SCHEDULED_UPDATE repository variable to "true". Manual
+    # dispatch remains available for intentional runs and testing.
+    if: github.event_name == 'workflow_dispatch' || github.repository == 'langchain-ai/openwiki' || vars.OPENWIKI_ENABLE_SCHEDULED_UPDATE == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -33,6 +39,16 @@ jobs:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
           LANGCHAIN_PROJECT: openwiki
           LANGCHAIN_TRACING_V2: "true"
+
+      - name: Restore protected workflow file
+        # `openwiki code --update` regenerates this file from its internal
+        # template on every run, which silently drops the guard above (see
+        # https://github.com/langchain-ai/openwiki/issues/423). Until that's
+        # fixed upstream, discard whatever the agent just wrote here so the
+        # guard always survives, regardless of whether the run above
+        # succeeded or failed.
+        if: always()
+        run: git checkout -- .github/workflows/openwiki-update.yml
 
       - name: Create OpenWiki update pull request
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
