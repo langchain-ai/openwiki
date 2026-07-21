@@ -29,6 +29,13 @@ export type ConnectorIngestOptions = {
   connectorConfig?: Record<string, unknown>;
   instanceId?: string;
   limit?: number;
+  /**
+   * Repository root for code-mode connectors whose config is committed to the
+   * repo (e.g. langsmith reads openwiki/langsmith.json under it). Undefined for
+   * personal runs, which read config from ~/.openwiki.
+   * @default undefined
+   */
+  repoRoot?: string;
   streams?: string[];
   windowHours?: number;
 };
@@ -45,17 +52,6 @@ export type ConnectorIngestResult = {
 
 export type ConnectorRuntime = ConnectorDefinition & {
   ingest: (options?: ConnectorIngestOptions) => Promise<ConnectorIngestResult>;
-
-  /**
-   * Code-mode connectors implement this to contribute to a code-mode agent run:
-   * read the repo config, pull data since `since` (the last-update time, or
-   * undefined on the first run), and return a guidance block, or undefined when
-   * this repo has not configured the connector or there is no new evidence.
-   */
-  buildCodeModeGuidance?: (
-    repoRoot: string,
-    since: string | undefined,
-  ) => Promise<string | undefined>;
 };
 
 export type ConnectorState = {

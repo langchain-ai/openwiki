@@ -7,13 +7,23 @@ vi.mock("../src/connectors/registry.ts", () => ({
   createConnectorRegistry: vi.fn(),
 }));
 
+vi.mock("../src/ingestion.ts", () => ({
+  createConnectorSynthesisGuidance: vi.fn(
+    (c: ConnectorRuntime) => `guidance:${c.displayName}`,
+  ),
+}));
+
 import { runCodeModeConnectors } from "../src/code-mode.ts";
 import { createConnectorRegistry } from "../src/connectors/registry.ts";
-import type { ConnectorRuntime } from "../src/connectors/types.ts";
+import type {
+  ConnectorIngestResult,
+  ConnectorRuntime,
+} from "../src/connectors/types.ts";
 
 const tempRoots: string[] = [];
 
 afterEach(async () => {
+  vi.clearAllMocks();
   await Promise.all(
     tempRoots
       .splice(0)
@@ -21,13 +31,33 @@ afterEach(async () => {
   );
 });
 
+function pullResult(
+  overrides: Partial<ConnectorIngestResult> = {},
+): ConnectorIngestResult {
+  return {
+    connectorId: "langsmith",
+    message: "",
+    rawFiles: ["/raw/langsmith/run-1/results.json"],
+    runId: "run-1",
+    statePath: "",
+    status: "success",
+    warnings: [],
+    ...overrides,
+  };
+}
+
+const succeeds: ConnectorRuntime["ingest"] = () =>
+  Promise.resolve(pullResult());
+const skips: ConnectorRuntime["ingest"] = () =>
+  Promise.resolve(pullResult({ rawFiles: [], status: "skipped" }));
+
 function connector(overrides: Partial<ConnectorRuntime>): ConnectorRuntime {
   return {
     backend: "direct-api",
     description: "",
     displayName: "",
     id: "langsmith",
-    ingest: () => Promise.resolve({} as never),
+    ingest: succeeds,
     mode: "personal",
     requiredEnv: [],
     supportsAgenticDiscovery: false,
@@ -44,84 +74,75 @@ function registryOf(...connectors: ConnectorRuntime[]): void {
 }
 
 describe("runCodeModeConnectors", () => {
-  test("returns the base message when nothing contributes", async () => {
+  test("returns the base message when no code connector produces evidence", async () => {
     registryOf(
-      connector({ mode: "personal" }),
-      connector({
-        buildCodeModeGuidance: () => Promise.resolve(undefined),
-        mode: "code",
-      }),
+      connector({ ingest: succeeds, mode: "personal" }),
+      connector({ ingest: skips, mode: "code" }),
     );
 
     await expect(runCodeModeConnectors("/repo", "base")).resolves.toBe("base");
   });
 
-  test("skips personal-mode connectors and code connectors without the hook", async () => {
-    const personalHook = vi.fn(() => Promise.resolve("nope"));
+  test("never ingests personal-mode connectors", async () => {
+    const personalIngest = vi.fn(succeeds);
     registryOf(
-      connector({ buildCodeModeGuidance: personalHook, mode: "personal" }),
-      connector({ mode: "code" }),
+      connector({ ingest: personalIngest, mode: "personal" }),
+      connector({ ingest: skips, mode: "code" }),
     );
 
-    await expect(runCodeModeConnectors("/repo", "base")).resolves.toBe("base");
-    expect(personalHook).not.toHaveBeenCalled();
+    await runCodeModeConnectors("/repo", "base");
+
+    expect(personalIngest).not.toHaveBeenCalled();
   });
 
-  test("appends each contributing code-mode connector's guidance", async () => {
+  test("appends the guidance of each code connector that produced evidence", async () => {
     registryOf(
-      connector({
-        buildCodeModeGuidance: () => Promise.resolve("block-A"),
-        mode: "code",
-      }),
-      connector({
-        buildCodeModeGuidance: () => Promise.resolve("block-B"),
-        mode: "code",
-      }),
+      connector({ displayName: "A", ingest: succeeds, mode: "code" }),
+      connector({ displayName: "B", ingest: succeeds, mode: "code" }),
     );
 
     await expect(runCodeModeConnectors("/repo", "base")).resolves.toBe(
-      "base\n\nblock-A\n\nblock-B",
+      "base\n\nguidance:A\n\nguidance:B",
     );
   });
 
   test("returns just the guidance when there is no base message", async () => {
-    registryOf(
-      connector({
-        buildCodeModeGuidance: () => Promise.resolve("block-A"),
-        mode: "code",
-      }),
-    );
+    registryOf(connector({ displayName: "A", ingest: succeeds, mode: "code" }));
 
     await expect(runCodeModeConnectors("/repo", undefined)).resolves.toBe(
-      "block-A",
+      "guidance:A",
     );
   });
 
-  test("passes the .last-update.json timestamp as the since window", async () => {
+  test("passes repoRoot and a numeric window from .last-update.json to ingest", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "openwiki-codemode-"));
     tempRoots.push(root);
     await mkdir(path.join(root, "openwiki"), { recursive: true });
     await writeFile(
       path.join(root, "openwiki", ".last-update.json"),
-      JSON.stringify({ updatedAt: "2026-07-21T00:00:00.000Z" }),
+      JSON.stringify({ updatedAt: "2026-07-20T00:00:00.000Z" }),
       "utf8",
     );
-    const hook = vi.fn(() => Promise.resolve("block"));
-    registryOf(connector({ buildCodeModeGuidance: hook, mode: "code" }));
+    const ingest = vi.fn(succeeds);
+    registryOf(connector({ ingest, mode: "code" }));
 
     await runCodeModeConnectors(root, "base");
 
-    expect(hook).toHaveBeenCalledWith(root, "2026-07-21T00:00:00.000Z");
+    const options = ingest.mock.calls[0]?.[0];
+    expect(options?.repoRoot).toBe(root);
+    expect(typeof options?.windowHours).toBe("number");
   });
 
-  test("passes undefined since when there is no .last-update.json (first run)", async () => {
+  test("passes an undefined window when there is no .last-update.json (first run)", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "openwiki-codemode-"));
     tempRoots.push(root);
-    const hook = vi.fn(() => Promise.resolve("block"));
-    registryOf(connector({ buildCodeModeGuidance: hook, mode: "code" }));
+    const ingest = vi.fn(succeeds);
+    registryOf(connector({ ingest, mode: "code" }));
 
     await runCodeModeConnectors(root, "base");
 
-    expect(hook).toHaveBeenCalledWith(root, undefined);
+    const options = ingest.mock.calls[0]?.[0];
+    expect(options?.repoRoot).toBe(root);
+    expect(options?.windowHours).toBeUndefined();
   });
 });

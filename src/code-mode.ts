@@ -3,6 +3,7 @@ import path from "node:path";
 import { createConnectorRegistry } from "./connectors/registry.js";
 import { UPDATE_METADATA_PATH } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
+import { createConnectorSynthesisGuidance } from "./ingestion.js";
 
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
@@ -30,16 +31,22 @@ export async function runCodeModeConnectors(
   baseMessage: string | undefined,
 ): Promise<string | undefined> {
   // The natural window: what has happened since we last documented this repo.
-  const since = await readLastUpdatedAt(repoRoot);
+  const windowHours = windowHoursSince(await readLastUpdatedAt(repoRoot));
   const blocks: string[] = [];
 
   for (const connector of Object.values(createConnectorRegistry())) {
-    if (connector.mode !== "code" || !connector.buildCodeModeGuidance) {
+    if (connector.mode !== "code") {
       continue;
     }
-    const block = await connector.buildCodeModeGuidance(repoRoot, since);
-    if (block) {
-      blocks.push(block);
+    // Code connectors read their committed repo config from repoRoot; a repo that
+    // has not configured the connector skips, so nothing is appended.
+    const pull = await connector.ingest({ repoRoot, windowHours });
+    if (pull.status !== "success" || pull.rawFiles.length === 0) {
+      continue;
+    }
+    const guidance = createConnectorSynthesisGuidance(connector);
+    if (guidance) {
+      blocks.push(guidance);
     }
   }
 
@@ -50,6 +57,18 @@ export async function runCodeModeConnectors(
   const base = baseMessage?.trim();
   const joined = blocks.join("\n\n");
   return base ? `${base}\n\n${joined}` : joined;
+}
+
+/**
+ * Hours elapsed since the last-update timestamp, used as the code-mode ingestion
+ * window. Undefined when `since` is absent or unparseable (first run), meaning
+ * "no floor" so the connector bootstraps with its most recent traces.
+ */
+function windowHoursSince(since: string | undefined): number | undefined {
+  const sinceMs = since !== undefined ? Date.parse(since) : Number.NaN;
+  return Number.isNaN(sinceMs)
+    ? undefined
+    : Math.max(0, (Date.now() - sinceMs) / (60 * 60 * 1000));
 }
 
 /**

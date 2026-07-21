@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("../src/connectors/io.ts", () => ({
   createRunId: () => "run-1",
-  readConnectorConfig: vi.fn(),
   readConnectorState: () => Promise.resolve({ version: 1 }),
   updateStateWithRun: (state: Record<string, unknown>, entry: unknown) => ({
     ...state,
@@ -19,13 +18,20 @@ vi.mock("../src/connectors/sources/langsmith/api.ts", () => ({
   createLangSmithApi: vi.fn(),
 }));
 
-import { readConnectorConfig, writeRawJson } from "../src/connectors/io.ts";
+vi.mock("../src/connectors/sources/langsmith/repo-config.ts", () => ({
+  readLangSmithRepoConfig: vi.fn(),
+}));
+
+import { writeRawJson } from "../src/connectors/io.ts";
 import type { LangSmithApi } from "../src/connectors/sources/langsmith/api.ts";
 import { createLangSmithApi } from "../src/connectors/sources/langsmith/api.ts";
 import { createLangSmithConnector } from "../src/connectors/sources/langsmith/index.ts";
+import type { LangSmithRepoConfig } from "../src/connectors/sources/langsmith/repo-config.ts";
+import { readLangSmithRepoConfig } from "../src/connectors/sources/langsmith/repo-config.ts";
 import type { Run } from "langsmith";
 
 const KEY = "OPENWIKI_LANGSMITH_API_KEY";
+const REPO = "/repo";
 const saved: Record<string, string | undefined> = {};
 
 function run(fields: Record<string, unknown>): Run {
@@ -47,8 +53,12 @@ function fakeApi(overrides: Partial<LangSmithApi> = {}): LangSmithApi {
   };
 }
 
-function configure(config: Record<string, unknown>): void {
-  vi.mocked(readConnectorConfig).mockResolvedValue(config);
+/**
+ * Sets the committed openwiki/langsmith.json a code-mode ingest reads, or
+ * undefined to model a repo that has not configured langsmith.
+ */
+function configureRepo(config: LangSmithRepoConfig | undefined): void {
+  vi.mocked(readLangSmithRepoConfig).mockResolvedValue(config);
 }
 
 beforeEach(() => {
@@ -70,41 +80,42 @@ afterEach(() => {
 });
 
 describe("ingest gating", () => {
-  test("skips when the connector is disabled", async () => {
-    configure({ enabled: false, projects: [{ name: "p" }] });
-
+  test("skips when called without a repoRoot (generic ingest-all)", async () => {
     const result = await createLangSmithConnector().ingest();
+
+    expect(result.status).toBe("skipped");
+    expect(readLangSmithRepoConfig).not.toHaveBeenCalled();
+    expect(createLangSmithApi).not.toHaveBeenCalled();
+  });
+
+  test("skips when the repo has not configured langsmith", async () => {
+    configureRepo(undefined);
+
+    const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
 
     expect(result.status).toBe("skipped");
     expect(createLangSmithApi).not.toHaveBeenCalled();
   });
 
-  test("errors when enabled but no API key is present", async () => {
-    configure({ enabled: true, projects: [{ name: "p" }] });
+  test("errors when configured but no API key is present", async () => {
+    configureRepo({ projects: [{ name: "p" }] });
 
-    const result = await createLangSmithConnector().ingest();
+    const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
 
     expect(result.status).toBe("error");
     expect(result.message).toContain(KEY);
-  });
-
-  test("skips when no projects are configured", async () => {
-    process.env[KEY] = "lsv2_test";
-    configure({ enabled: true, projects: [] });
-
-    expect((await createLangSmithConnector().ingest()).status).toBe("skipped");
   });
 });
 
 describe("ingest per-project behavior", () => {
   test("a project with no recent roots contributes nothing → skipped", async () => {
     process.env[KEY] = "lsv2_test";
-    configure({ enabled: true, projects: [{ name: "quiet" }] });
+    configureRepo({ projects: [{ name: "quiet" }] });
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({ listRecentRootRuns: () => Promise.resolve([]) }),
     );
 
-    const result = await createLangSmithConnector().ingest();
+    const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
 
     expect(result.status).toBe("skipped");
     expect(writeRawJson).not.toHaveBeenCalled();
@@ -112,14 +123,14 @@ describe("ingest per-project behavior", () => {
 
   test("a resolve failure becomes a warning, not a run failure", async () => {
     process.env[KEY] = "lsv2_test";
-    configure({ enabled: true, projects: [{ name: "bad" }] });
+    configureRepo({ projects: [{ name: "bad" }] });
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({
         resolveProject: () => Promise.reject(new Error("project not found")),
       }),
     );
 
-    const result = await createLangSmithConnector().ingest();
+    const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
 
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings[0]).toContain("bad");
@@ -127,7 +138,7 @@ describe("ingest per-project behavior", () => {
 
   test("redacts a leaked LangSmith key in a warning", async () => {
     process.env[KEY] = "lsv2_test";
-    configure({ enabled: true, projects: [{ name: "p" }] });
+    configureRepo({ projects: [{ name: "p" }] });
     const leak = "lsv2_pt_deadbeefSECRET0000";
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({
@@ -136,7 +147,7 @@ describe("ingest per-project behavior", () => {
       }),
     );
 
-    const result = await createLangSmithConnector().ingest();
+    const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
 
     expect(result.warnings[0]).toContain("[REDACTED:LANGSMITH_API_KEY]");
     expect(result.warnings.join(" ")).not.toContain(leak);
@@ -144,7 +155,7 @@ describe("ingest per-project behavior", () => {
 
   test("a successful project yields traces and a sample summary", async () => {
     process.env[KEY] = "lsv2_test";
-    configure({ enabled: true, projects: [{ name: "prod" }] });
+    configureRepo({ projects: [{ name: "prod" }] });
     const root = run({
       id: "run-a",
       start_time: "2026-07-21T00:00:00.000Z",
@@ -158,7 +169,7 @@ describe("ingest per-project behavior", () => {
       }),
     );
 
-    const result = await createLangSmithConnector().ingest();
+    const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
 
     expect(result.status).toBe("success");
     expect(writeRawJson).toHaveBeenCalledTimes(1);
@@ -168,17 +179,34 @@ describe("ingest per-project behavior", () => {
     expect(dump.projects[0]?.traces).toHaveLength(1);
     expect(dump.projects[0]?.stats.sampleSize).toBe(1);
   });
+});
 
+describe("ingest window", () => {
   test("pulls the fixed MAX_TRACES budget (20), no window floor by default", async () => {
     process.env[KEY] = "lsv2_test";
-    configure({ enabled: true, projects: [{ name: "p" }] });
+    configureRepo({ projects: [{ name: "p" }] });
     const listRecentRootRuns = vi.fn(() => Promise.resolve<Run[]>([]));
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({ listRecentRootRuns }),
     );
 
-    await createLangSmithConnector().ingest();
+    await createLangSmithConnector().ingest({ repoRoot: REPO });
 
     expect(listRecentRootRuns).toHaveBeenCalledWith("p-id", undefined, 20);
+  });
+
+  test("applies a window floor to the pull when windowHours is set", async () => {
+    process.env[KEY] = "lsv2_test";
+    configureRepo({ projects: [{ name: "p" }] });
+    const listRecentRootRuns = vi.fn(() => Promise.resolve<Run[]>([]));
+    vi.mocked(createLangSmithApi).mockReturnValue(
+      fakeApi({ listRecentRootRuns }),
+    );
+
+    await createLangSmithConnector().ingest({ repoRoot: REPO, windowHours: 3 });
+
+    const call = listRecentRootRuns.mock.calls[0];
+    expect(typeof call?.[1]).toBe("string"); // window floor, not undefined
+    expect(call?.[2]).toBe(20); // fixed MAX_TRACES
   });
 });

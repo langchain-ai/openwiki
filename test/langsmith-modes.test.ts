@@ -24,10 +24,11 @@ describe("connector modes", () => {
     }
   });
 
-  test("code-mode connectors get no personal synthesis guidance", () => {
-    // Driven by mode: a code-mode connector returns an empty string rather than
-    // routing to /themes.md etc.
-    expect(createConnectorSynthesisGuidance(registry.langsmith)).toBe("");
+  test("langsmith gets runtime-evidence synthesis guidance", () => {
+    const guidance = createConnectorSynthesisGuidance(registry.langsmith);
+
+    expect(guidance).toContain("openwiki_read_raw_item");
+    expect(guidance).toContain("Never copy raw run inputs or outputs");
   });
 
   test("personal connectors do get synthesis guidance", () => {
