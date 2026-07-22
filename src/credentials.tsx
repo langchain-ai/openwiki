@@ -2599,7 +2599,14 @@ export function InitSetup({
     setSourceSelectionIndex(activeSourceOptions.length);
     setSourceState({ secretValues: {} });
     setInput("");
-    setStep("source-menu");
+    // Returning to the menu is a back-navigation: unwind history through the menu
+    // so Escape from the refreshed menu goes to the step BEFORE it (repo-confirm),
+    // not back down into the source's child steps (which would show empty fields).
+    const menuIndex = navHistory.current.lastIndexOf("source-menu");
+    if (menuIndex >= 0) {
+      navHistory.current.length = menuIndex;
+    }
+    setStep("source-menu", { back: true });
   }
 
   async function configureLocalGitRepo(
