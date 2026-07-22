@@ -284,7 +284,7 @@ Source-specific instructions:
 ${ingestionGoal || "(not provided)"}
 
 Reusable synthesis policy:
-${createSourceSynthesisPolicy(connector.id)}
+${createSourceSynthesisPolicy(connector)}
 
 Deterministic pull result:
 - Status: ${deterministicPull.status}
@@ -317,7 +317,7 @@ Source-specific instructions:
 ${ingestionGoal || "(not provided)"}
 
 Reusable synthesis policy:
-${createSourceSynthesisPolicy(connector.id)}
+${createSourceSynthesisPolicy(connector)}
 
 Source config:
 - Connector config path: ${getConnectorConfigPath(connector.id)}
@@ -330,9 +330,9 @@ Instructions:
 `.trim();
 }
 
-function createSourceSynthesisPolicy(connectorId: ConnectorId): string {
+function createSourceSynthesisPolicy(connector: ConnectorRuntime): string {
   return `
-- Synthesize into canonical cross-source files when relevant: /open-questions.md for unresolved memory/wiki questions, /themes.md for recurring trends, /commitments.md for work tasks/follow-ups, /personal-logistics.md for non-work life-admin items, /quickstart.md for high-level navigation/current status, and /sources/${connectorId}.md for compact source evidence.
+- Synthesize into canonical cross-source files when relevant: /open-questions.md for unresolved memory/wiki questions, /themes.md for recurring trends, /commitments.md for work tasks/follow-ups, /personal-logistics.md for non-work life-admin items, /quickstart.md for high-level navigation/current status, and /sources/${connector.id}.md for compact source evidence.
 - Apply confidence labels: confirmed, source-backed, watchlist, or saved-context. Keep weak/watchlist items out of /quickstart.md unless they materially affect current status.
 - Deduplicate with stable topic keys. Update existing themes, open questions, and commitments instead of repeating the same fact in several source pages.
 - Keep /themes.md as a compact index: prefer table rows or one short fielded entry per theme, cap prose at 1-2 short sentences, and move details/examples into source pages.
@@ -340,12 +340,14 @@ function createSourceSynthesisPolicy(connectorId: ConnectorId): string {
 - Keep /open-questions.md for uncertainty about the user's core memory or wiki quality, not unresolved questions that merely appear inside source documents. Group similar questions under one topic key.
 - Keep /open-questions.md concise: Active entries use Owner, Seen, Evidence, and optional Notes; Answered entries use Evidence linking to the answer and Answered date; Stale entries use Why and Last seen.
 - Include Owner in /commitments.md entries when inferable: me, team, other:<name>, or unknown.
-${createConnectorSynthesisGuidance(connectorId)}
+${createConnectorSynthesisGuidance(connector)}
 `.trim();
 }
 
-function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
-  switch (connectorId) {
+export function createConnectorSynthesisGuidance(
+  connector: ConnectorRuntime,
+): string {
+  switch (connector.id) {
     case "google":
       return `
 - For Gmail evidence, classify each candidate item before writing: action_required, scheduled_commitment, decision_or_approval, direct_request, important_update, people_or_org_signal, project_context, security_or_account_notice, newsletter_or_digest, transaction_or_receipt, promotion_or_marketing, personal_logistics, or noise.

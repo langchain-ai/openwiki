@@ -16,10 +16,6 @@ export type ConnectorDefinition = {
   description: string;
   displayName: string;
   id: ConnectorId;
-  /**
-   * Which documentation surface the connector feeds. Code-mode connectors (e.g.
-   * langsmith) do not run through personal (local-wiki) ingestion.
-   */
   mode: "code" | "personal";
   requiredEnv: string[];
   supportsAgenticDiscovery: boolean;
@@ -29,12 +25,6 @@ export type ConnectorIngestOptions = {
   connectorConfig?: Record<string, unknown>;
   instanceId?: string;
   limit?: number;
-  /**
-   * Repository root for code-mode connectors whose config is committed to the
-   * repo (e.g. langsmith reads openwiki/.langsmith.json under it). Undefined for
-   * personal runs, which read config from ~/.openwiki.
-   * @default undefined
-   */
   repoRoot?: string;
   streams?: string[];
   windowHours?: number;
