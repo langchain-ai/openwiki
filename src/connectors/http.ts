@@ -21,7 +21,7 @@ const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_BASE_DELAY_MS = 500;
 const MAX_BACKOFF_DELAY_MS = 20_000;
 
-export type FetchWithResilienceOptions = {
+export interface FetchWithResilienceOptions {
   /** Per-attempt timeout in milliseconds. Default 30s. */
   timeoutMs?: number;
   /** Number of retries after the first attempt. Default 3. */
@@ -39,7 +39,7 @@ export type FetchWithResilienceOptions = {
    * some sandboxes). Override in tests to pin exact delays.
    */
   random?: () => number;
-};
+}
 
 const realSleep = (ms: number): Promise<void> =>
   new Promise((resolve) => {
