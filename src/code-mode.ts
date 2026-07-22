@@ -5,6 +5,7 @@ import { isFileNotFoundError } from "./fs-errors.js";
 import { createConnectorRegistry } from "./connectors/registry.js";
 import { UPDATE_METADATA_PATH } from "./constants.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
+import type { OpenWikiRunEvent } from "./agent/types.js";
 
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
@@ -45,6 +46,7 @@ async function writeCodeModeWorkflow(
 export async function runCodeModeConnectors(
   repoRoot: string,
   baseMessage: string | undefined,
+  onEvent?: (event: OpenWikiRunEvent) => void,
 ): Promise<string | undefined> {
   // The natural window: what has happened since we last documented this repo.
   const windowHours = windowHoursSince(await readLastUpdatedAt(repoRoot));
@@ -54,6 +56,9 @@ export async function runCodeModeConnectors(
     if (connector.mode !== "code") {
       continue;
     }
+    // Surface the pull so the otherwise-silent gap before the agent reads as
+    // progress ("Ingesting from LangSmith…") instead of a hang.
+    emitText(onEvent, `Ingesting from ${connector.displayName}…\n`);
     let pull;
     try {
       // Code connectors read their committed repo config from repoRoot; a repo
@@ -61,8 +66,10 @@ export async function runCodeModeConnectors(
       pull = await connector.ingest({ repoRoot, windowHours });
     } catch {
       // The connector documents software; it must never break the run it feeds.
+      emitText(onEvent, `${connector.displayName} ingestion skipped.\n`);
       continue;
     }
+    emitText(onEvent, `${pull.message}\n`);
     if (pull.status !== "success" || pull.rawFiles.length === 0) {
       continue;
     }
@@ -79,6 +86,17 @@ export async function runCodeModeConnectors(
   const base = baseMessage?.trim();
   const joined = blocks.join("\n\n");
   return base ? `${base}\n\n${joined}` : joined;
+}
+
+/**
+ * Emits a plain progress line to the run log, matching the agent's text events so
+ * connector progress renders in the same stream.
+ */
+function emitText(
+  onEvent: ((event: OpenWikiRunEvent) => void) | undefined,
+  text: string,
+): void {
+  onEvent?.({ source: "main", text, type: "text" });
 }
 
 /**

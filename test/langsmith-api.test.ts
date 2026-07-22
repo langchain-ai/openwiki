@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 /**
  * Hoisted control surface for the mocked LangSmith SDK Client.
@@ -27,7 +27,7 @@ vi.mock("langsmith", () => {
   return { Client };
 });
 
-const { createLangSmithApi } =
+const { createLangSmithApi, isRateLimitError } =
   await import("../src/connectors/sources/langsmith/api.ts");
 
 beforeEach(() => {
@@ -91,5 +91,83 @@ describe("fetchTrace", () => {
 
     expect(sdk.listRunsArgs[0]?.traceId).toBe("trace-1");
     expect(runs).toHaveLength(500);
+  });
+});
+
+describe("isRateLimitError", () => {
+  test.each([
+    [
+      "an SDK 429 message",
+      new Error(
+        "Failed to fetch /runs/query. Received status [429]: Too Many Requests. Rate limit exceeded",
+      ),
+    ],
+    ["a status property", { status: 429 }],
+    ["a rate-limit phrase", new Error("Rate limit exceeded")],
+  ])("detects %s", (_label, error) => {
+    expect(isRateLimitError(error)).toBe(true);
+  });
+
+  test.each([
+    ["a 500", new Error("Received status [500]")],
+    ["a generic error", new Error("boom")],
+    ["a 429-lookalike id", new Error("run 4290 not found")],
+  ])("ignores %s", (_label, error) => {
+    expect(isRateLimitError(error)).toBe(false);
+  });
+});
+
+describe("rate-limit retry", () => {
+  const rateLimit = () =>
+    new Error(
+      "Failed to fetch /sessions. Received status [429]: Too Many Requests. Rate limit exceeded",
+    );
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test("retries a 429 then succeeds", async () => {
+    sdk.readProject
+      .mockRejectedValueOnce(rateLimit())
+      .mockResolvedValue({ id: "p-1" });
+    sdk.getProjectUrl.mockResolvedValue("https://smith/p");
+
+    const promise = api().resolveProject("proj");
+    await vi.runAllTimersAsync();
+
+    await expect(promise).resolves.toEqual({
+      id: "p-1",
+      url: "https://smith/p",
+    });
+    expect(sdk.readProject).toHaveBeenCalledTimes(2);
+  });
+
+  test("gives up after the attempt cap and rethrows", async () => {
+    sdk.readProject.mockRejectedValue(rateLimit());
+
+    const settled = api()
+      .resolveProject("proj")
+      .catch((error: unknown) => error);
+    await vi.runAllTimersAsync();
+
+    expect(String(await settled)).toMatch(/429/u);
+    expect(sdk.readProject).toHaveBeenCalledTimes(5); // MAX_RETRY_ATTEMPTS
+  });
+
+  test("does not retry a non-rate-limit error", async () => {
+    sdk.readProject.mockRejectedValue(new Error("boom 500"));
+
+    const settled = api()
+      .resolveProject("proj")
+      .catch((error: unknown) => error);
+    await vi.runAllTimersAsync();
+
+    expect(String(await settled)).toMatch(/boom/u);
+    expect(sdk.readProject).toHaveBeenCalledTimes(1);
   });
 });

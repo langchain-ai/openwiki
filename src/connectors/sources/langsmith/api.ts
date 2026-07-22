@@ -42,6 +42,23 @@ const ROOT_SELECT_FIELDS = [
 const MAX_TRACE_RUNS = 500;
 
 /**
+ * Retry policy for transient LangSmith rate limits (HTTP 429). Bounded so a
+ * throttled tenant can never hang the run: a handful of attempts with growing
+ * backoff, after which the caller's fail-open turns it into a warning. A busy
+ * tenant is common (tracing writes compete with the connector's reads), so one
+ * 429 should not lose the whole pull.
+ */
+const MAX_RETRY_ATTEMPTS = 5;
+const BASE_RETRY_DELAY_MS = 750;
+
+/**
+ * Per-request timeout. A slow or throttled tenant must fail-open, never hang the
+ * whole update; combined with disabling the SDK's own retry (we own the 429
+ * backoff), this bounds every SDK call so the pull always finishes.
+ */
+const REQUEST_TIMEOUT_MS = 20_000;
+
+/**
  * A resolved LangSmith project: its UUID and canonical UI URL base.
  */
 export interface ResolvedProject {
@@ -91,35 +108,95 @@ export function createLangSmithApi(
   baseUrl: string,
   apiKey: string,
 ): LangSmithApi {
-  const client = new Client({ apiKey, apiUrl: baseUrl });
+  const client = new Client({
+    apiKey,
+    apiUrl: baseUrl,
+    // Bound each request so a slow/throttled tenant can never hang the pull, and
+    // disable the SDK's own retry so it does not churn for minutes inside a single
+    // call and compound our bounded 429 backoff.
+    callerOptions: { maxRetries: 0 },
+    timeout_ms: REQUEST_TIMEOUT_MS,
+  });
 
   return {
     async resolveProject(name) {
-      const project = await client.readProject({ projectName: name });
-      const url = await client.getProjectUrl({ projectId: project.id });
-      return { id: project.id, url };
+      return withRateLimitRetry(async () => {
+        const project = await client.readProject({ projectName: name });
+        const url = await client.getProjectUrl({ projectId: project.id });
+        return { id: project.id, url };
+      });
     },
 
     async listRecentRootRuns(projectId, startTime, limit) {
-      return drainCapped(
-        client.listRuns({
-          isRoot: true,
+      return withRateLimitRetry(() =>
+        drainCapped(
+          client.listRuns({
+            isRoot: true,
+            limit,
+            projectId,
+            select: ROOT_SELECT_FIELDS,
+            ...(startTime ? { startTime: new Date(startTime) } : {}),
+          }),
           limit,
-          projectId,
-          select: ROOT_SELECT_FIELDS,
-          ...(startTime ? { startTime: new Date(startTime) } : {}),
-        }),
-        limit,
+        ),
       );
     },
 
     async fetchTrace(traceId) {
-      return drainCapped(
-        client.listRuns({ select: RUN_SELECT_FIELDS, traceId }),
-        MAX_TRACE_RUNS,
+      return withRateLimitRetry(() =>
+        drainCapped(
+          client.listRuns({ select: RUN_SELECT_FIELDS, traceId }),
+          MAX_TRACE_RUNS,
+        ),
       );
     },
   };
+}
+
+/**
+ * True when the error is a LangSmith rate-limit (HTTP 429). The SDK throws a
+ * plain Error whose message carries the status, e.g. "... Received status [429]:
+ * ... Rate limit exceeded".
+ */
+export function isRateLimitError(error: unknown): boolean {
+  if (
+    error !== null &&
+    typeof error === "object" &&
+    "status" in error &&
+    (error as { status?: unknown }).status === 429
+  ) {
+    return true;
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  return /\b429\b/u.test(message) || /rate limit/iu.test(message);
+}
+
+/**
+ * Runs an operation, retrying only on rate-limit errors with exponential backoff
+ * plus jitter, bounded at MAX_RETRY_ATTEMPTS; any other error rethrows at once.
+ * For the async-generator list calls this restarts the whole capped drain, so a
+ * retry never yields partial or duplicated results.
+ */
+async function withRateLimitRetry<T>(operation: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt >= MAX_RETRY_ATTEMPTS || !isRateLimitError(error)) {
+        throw error;
+      }
+      const backoff = BASE_RETRY_DELAY_MS * 2 ** (attempt - 1);
+      const jitter = Math.floor(Math.random() * BASE_RETRY_DELAY_MS);
+      await sleep(backoff + jitter);
+    }
+  }
+}
+
+/**
+ * Resolves after ms milliseconds.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
