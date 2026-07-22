@@ -28,13 +28,38 @@ export function createOpenWikiIndexMiddleware(
     beforeAgent: async () => {
       await migrateWikiToOkf(backend, outputMode);
     },
-    wrapToolCall: async (request, handler) =>
-      addFrontmatterWarning(
-        await handler(request),
+    wrapToolCall: async (request, handler) => {
+      // Let the tool execute first. If the tool itself throws, the error
+      // propagates through LangChain's composition layer as a
+      // MiddlewareError whose root cause is NOT a ToolInvocationError.
+      // ToolNode.#handleError then re-throws it as fatal because
+      // handleToolErrors !== true. To avoid that crash path, we catch
+      // tool execution errors here and convert them to ToolMessages so
+      // the LLM can see the failure and retry.
+      let result: unknown;
+      try {
+        result = await handler(request);
+      } catch (error) {
+        // Re-throw GraphInterrupt and abort signals untouched — those are
+        // control flow, not tool failures.
+        if (isGraphInterruptLike(error) || isAborted(error)) {
+          throw error;
+        }
+        // Convert the tool error into a ToolMessage. This mirrors
+        // LangChain's defaultHandleToolErrors but runs before the
+        // composition layer wraps it in MiddlewareError.
+        return toolErrorToMessage(error, request.toolCall);
+      }
+
+      // Only post-process successful results — frontmatter validation
+      // must not run on error results (which are already ToolMessages).
+      return addFrontmatterWarning(
+        result,
         backend,
         outputMode,
         request.toolCall.name,
-      ),
+      );
+    },
     afterAgent: async () => {
       await validateWikiMermaid(backend, outputMode);
       await synchronizeWikiIndexes(backend, outputMode);
@@ -44,6 +69,10 @@ export function createOpenWikiIndexMiddleware(
 
 /**
  * Appends an actionable warning when a wiki write leaves invalid front matter.
+ *
+ * Errors from `validatePersistedFile` are caught and swallowed so a
+ * validation failure never crashes the agent run — the original tool
+ * result is returned unchanged.
  */
 export async function addFrontmatterWarning<Result>(
   result: Result,
@@ -65,14 +94,20 @@ export async function addFrontmatterWarning<Result>(
     );
   if (!mutation) return result;
 
-  const validation = await validatePersistedFile(backend, mutation.path);
-  if (validation.valid) return result;
+  try {
+    const validation = await validatePersistedFile(backend, mutation.path);
+    if (validation.valid) return result;
 
-  const warning = formatWarning(mutation.path, validation.issues);
-  mutation.message.content =
-    typeof mutation.message.content === "string"
-      ? `${mutation.message.content}\n\n${warning}`
-      : [...mutation.message.content, { text: warning, type: "text" }];
+    const warning = formatWarning(mutation.path, validation.issues);
+    mutation.message.content =
+      typeof mutation.message.content === "string"
+        ? `${mutation.message.content}\n\n${warning}`
+        : [...mutation.message.content, { text: warning, type: "text" }];
+  } catch {
+    // Swallow validation errors — a failed frontmatter check must not
+    // prevent the tool result from reaching the LLM.
+  }
+
   return result;
 }
 
@@ -126,4 +161,42 @@ function formatWarning(path: string, issues: FrontmatterIssue[]): string {
  */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Returns true when the error is a LangGraph interrupt (graph-level control
+ * flow that must propagate untouched).
+ */
+function isGraphInterruptLike(error: unknown): boolean {
+  if (!isRecord(error)) return false;
+  // LangGraph Interrupt errors carry a `__interrupt` symbol or type marker.
+  if (error.__interrupt === true) return true;
+  if (typeof error.type === "string" && error.type === "interrupt") return true;
+  return false;
+}
+
+/**
+ * Returns true when the error signals an aborted run.
+ */
+function isAborted(error: unknown): boolean {
+  if (!isRecord(error)) return false;
+  if (error.name === "AbortError" || error.name === "CancelledError") return true;
+  return false;
+}
+
+/**
+ * Converts a thrown tool error into a ToolMessage so the LLM sees the
+ * failure message and can retry, instead of the process crashing.
+ */
+function toolErrorToMessage(
+  error: unknown,
+  toolCall: { id: string; name: string },
+): ToolMessage {
+  const message =
+    error instanceof Error ? error.message : String(error);
+  return new ToolMessage({
+    content: `${message}\n Please fix your mistakes.`,
+    tool_call_id: toolCall.id,
+    name: toolCall.name,
+  });
 }
