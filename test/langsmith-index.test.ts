@@ -18,8 +18,7 @@ vi.mock("../src/connectors/sources/langsmith/api.ts", () => ({
   createLangSmithApi: vi.fn(),
 }));
 
-// Keep the real sanitizeLangSmithApiBaseUrl (the validation under test) and mock
-// only the config reader.
+// Keep the real sanitizers (the validation under test) and mock only the reader.
 vi.mock(
   "../src/connectors/sources/langsmith/repo-config.ts",
   async (importOriginal) => ({
@@ -39,7 +38,11 @@ import { readLangSmithRepoConfig } from "../src/connectors/sources/langsmith/rep
 import type { Run } from "langsmith";
 
 const KEY = "OPENWIKI_LANGSMITH_API_KEY";
+const KEY2 = "OPENWIKI_LANGSMITH_API_KEY_2";
+const EU = "https://eu.api.smith.langchain.com";
+const US = "https://api.smith.langchain.com";
 const REPO = "/repo";
+const MANAGED = [KEY, KEY2, "LANGSMITH_API_KEY", "AWS_SECRET_ACCESS_KEY"];
 const saved: Record<string, string | undefined> = {};
 
 function run(fields: Record<string, unknown>): Run {
@@ -51,13 +54,21 @@ function run(fields: Record<string, unknown>): Run {
  */
 function fakeApi(overrides: Partial<LangSmithApi> = {}): LangSmithApi {
   return {
-    fetchFeedback: () => Promise.resolve([]),
     fetchTrace: () => Promise.resolve([]),
     listRecentRootRuns: () => Promise.resolve([]),
     resolveProject: () =>
       Promise.resolve({ id: "p-id", url: "https://smith/p" }),
     ...overrides,
   };
+}
+
+/**
+ * A workspace config entry keyed on KEY with one project unless overridden.
+ */
+function workspace(
+  overrides: Partial<LangSmithRepoConfig["workspaces"][number]> = {},
+): LangSmithRepoConfig["workspaces"][number] {
+  return { apiKeyEnv: KEY, projects: [{ name: "p" }], ...overrides };
 }
 
 /**
@@ -70,10 +81,10 @@ function configureRepo(config: LangSmithRepoConfig | undefined): void {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  saved[KEY] = process.env[KEY];
-  saved.LANGSMITH_API_KEY = process.env.LANGSMITH_API_KEY;
-  delete process.env[KEY];
-  delete process.env.LANGSMITH_API_KEY;
+  for (const key of MANAGED) {
+    saved[key] = process.env[key];
+    delete process.env[key];
+  }
 });
 
 afterEach(() => {
@@ -104,20 +115,40 @@ describe("ingest gating", () => {
     expect(createLangSmithApi).not.toHaveBeenCalled();
   });
 
-  test("errors when configured but no API key is present", async () => {
-    configureRepo({ projects: [{ name: "p" }] });
+  test("a workspace with no key present is a warning, not a run failure", async () => {
+    configureRepo({ workspaces: [workspace()] });
 
     const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
 
-    expect(result.status).toBe("error");
-    expect(result.message).toContain(KEY);
+    expect(result.status).toBe("skipped");
+    expect(result.warnings.join(" ")).toContain(KEY);
+    expect(createLangSmithApi).not.toHaveBeenCalled();
+  });
+
+  test("drops a workspace whose apiKeyEnv is outside the namespace", async () => {
+    // A committed config must not be able to read an unrelated secret. Even with
+    // a value present, the workspace is dropped and the client never built.
+    process.env.AWS_SECRET_ACCESS_KEY = "super-secret";
+    configureRepo({
+      workspaces: [
+        { apiKeyEnv: "AWS_SECRET_ACCESS_KEY", projects: [{ name: "x" }] },
+      ],
+    });
+
+    const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
+
+    expect(result.status).toBe("skipped");
+    expect(createLangSmithApi).not.toHaveBeenCalled();
+    expect(result.warnings.join(" ")).toContain("not an allowed");
   });
 });
 
 describe("ingest per-project behavior", () => {
   test("a project with no recent roots contributes nothing → skipped", async () => {
     process.env[KEY] = "lsv2_test";
-    configureRepo({ projects: [{ name: "quiet" }] });
+    configureRepo({
+      workspaces: [workspace({ projects: [{ name: "quiet" }] })],
+    });
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({ listRecentRootRuns: () => Promise.resolve([]) }),
     );
@@ -130,7 +161,7 @@ describe("ingest per-project behavior", () => {
 
   test("a resolve failure becomes a warning, not a run failure (fail-open)", async () => {
     process.env[KEY] = "lsv2_test";
-    configureRepo({ projects: [{ name: "bad" }] });
+    configureRepo({ workspaces: [workspace({ projects: [{ name: "bad" }] })] });
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({
         resolveProject: () => Promise.reject(new Error("project not found")),
@@ -145,7 +176,7 @@ describe("ingest per-project behavior", () => {
 
   test("redacts a leaked LangSmith key in a warning", async () => {
     process.env[KEY] = "lsv2_test";
-    configureRepo({ projects: [{ name: "p" }] });
+    configureRepo({ workspaces: [workspace()] });
     const leak = "lsv2_pt_deadbeefSECRET0000";
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({
@@ -162,7 +193,9 @@ describe("ingest per-project behavior", () => {
 
   test("a successful project yields traces and a sample summary", async () => {
     process.env[KEY] = "lsv2_test";
-    configureRepo({ projects: [{ name: "prod" }] });
+    configureRepo({
+      workspaces: [workspace({ projects: [{ name: "prod" }] })],
+    });
     const root = run({
       id: "run-a",
       start_time: "2026-07-21T00:00:00.000Z",
@@ -181,17 +214,77 @@ describe("ingest per-project behavior", () => {
     expect(result.status).toBe("success");
     expect(writeRawJson).toHaveBeenCalledTimes(1);
     const dump = vi.mocked(writeRawJson).mock.calls[0]?.[3] as {
-      projects: { stats: { sampleSize: number }; traces: unknown[] }[];
+      projects: {
+        apiBaseUrl: string;
+        stats: { sampleSize: number };
+        traces: unknown[];
+      }[];
     };
     expect(dump.projects[0]?.traces).toHaveLength(1);
     expect(dump.projects[0]?.stats.sampleSize).toBe(1);
+    expect(dump.projects[0]?.apiBaseUrl).toBe(US);
+  });
+});
+
+describe("multiple workspaces", () => {
+  const root = run({
+    id: "r",
+    start_time: "2026-07-21T00:00:00.000Z",
+    status: "success",
+    trace_id: "t",
+  });
+
+  test("pulls each workspace with its own key and host", async () => {
+    process.env[KEY] = "us_key";
+    process.env[KEY2] = "eu_key";
+    configureRepo({
+      workspaces: [
+        workspace({ projects: [{ name: "us-proj" }] }),
+        { apiBaseUrl: EU, apiKeyEnv: KEY2, projects: [{ name: "eu-proj" }] },
+      ],
+    });
+    vi.mocked(createLangSmithApi).mockReturnValue(
+      fakeApi({
+        fetchTrace: () => Promise.resolve([root]),
+        listRecentRootRuns: () => Promise.resolve([root]),
+      }),
+    );
+
+    const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
+
+    expect(result.status).toBe("success");
+    expect(createLangSmithApi).toHaveBeenCalledWith(US, "us_key");
+    expect(createLangSmithApi).toHaveBeenCalledWith(EU, "eu_key");
+  });
+
+  test("a workspace missing its key warns but others still pull (fail-open)", async () => {
+    process.env[KEY] = "us_key"; // KEY2 unset
+    configureRepo({
+      workspaces: [
+        workspace({ projects: [{ name: "us-proj" }] }),
+        { apiBaseUrl: EU, apiKeyEnv: KEY2, projects: [{ name: "eu-proj" }] },
+      ],
+    });
+    vi.mocked(createLangSmithApi).mockReturnValue(
+      fakeApi({
+        fetchTrace: () => Promise.resolve([root]),
+        listRecentRootRuns: () => Promise.resolve([root]),
+      }),
+    );
+
+    const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
+
+    expect(result.status).toBe("success");
+    expect(result.warnings.join(" ")).toContain(KEY2);
+    expect(createLangSmithApi).toHaveBeenCalledTimes(1);
+    expect(createLangSmithApi).toHaveBeenCalledWith(US, "us_key");
   });
 });
 
 describe("ingest window", () => {
   test("pulls the fixed MAX_TRACES budget (20), no window floor by default", async () => {
     process.env[KEY] = "lsv2_test";
-    configureRepo({ projects: [{ name: "p" }] });
+    configureRepo({ workspaces: [workspace()] });
     const listRecentRootRuns = vi.fn(() => Promise.resolve<Run[]>([]));
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({ listRecentRootRuns }),
@@ -204,7 +297,7 @@ describe("ingest window", () => {
 
   test("applies a window floor to the pull when windowHours is set", async () => {
     process.env[KEY] = "lsv2_test";
-    configureRepo({ projects: [{ name: "p" }] });
+    configureRepo({ workspaces: [workspace()] });
     const listRecentRootRuns = vi.fn(() => Promise.resolve<Run[]>([]));
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({ listRecentRootRuns }),
@@ -221,33 +314,23 @@ describe("ingest window", () => {
 describe("ingest apiBaseUrl validation", () => {
   test("passes an allowlisted apiBaseUrl through to the client", async () => {
     process.env[KEY] = "lsv2_test";
-    configureRepo({
-      apiBaseUrl: "https://eu.api.smith.langchain.com",
-      projects: [{ name: "p" }],
-    });
+    configureRepo({ workspaces: [workspace({ apiBaseUrl: EU })] });
     vi.mocked(createLangSmithApi).mockReturnValue(fakeApi());
 
     await createLangSmithConnector().ingest({ repoRoot: REPO });
 
-    expect(createLangSmithApi).toHaveBeenCalledWith(
-      "https://eu.api.smith.langchain.com",
-      "lsv2_test",
-    );
+    expect(createLangSmithApi).toHaveBeenCalledWith(EU, "lsv2_test");
   });
 
   test("falls back to the default host for a non-allowlisted apiBaseUrl", async () => {
     process.env[KEY] = "lsv2_test";
     configureRepo({
-      apiBaseUrl: "https://attacker.example.com",
-      projects: [{ name: "p" }],
+      workspaces: [workspace({ apiBaseUrl: "https://attacker.example.com" })],
     });
     vi.mocked(createLangSmithApi).mockReturnValue(fakeApi());
 
     await createLangSmithConnector().ingest({ repoRoot: REPO });
 
-    expect(createLangSmithApi).toHaveBeenCalledWith(
-      "https://api.smith.langchain.com",
-      "lsv2_test",
-    );
+    expect(createLangSmithApi).toHaveBeenCalledWith(US, "lsv2_test");
   });
 });

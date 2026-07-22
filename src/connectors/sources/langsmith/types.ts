@@ -1,5 +1,3 @@
-import type { Feedback } from "langsmith";
-
 /**
  * One project entry in the config. One project = one source.
  */
@@ -8,54 +6,6 @@ export interface LangSmithProjectConfig {
    * LangSmith project (tracing session) name.
    */
   name: string;
-}
-
-/**
- * The effective connector config assembled for one pull.
- */
-export interface LangSmithConfig {
-  /**
-   * Overrides the API host (EU workspaces: https://eu.api.smith.langchain.com).
-   *
-   * @default "https://api.smith.langchain.com"
-   */
-  apiBaseUrl?: string;
-
-  /**
-   * Whether the connector runs at all.
-   *
-   * @default false
-   */
-  enabled?: boolean;
-
-  /**
-   * Fetch feedback for the pulled traces.
-   *
-   * @default false
-   */
-  includeFeedback?: boolean;
-
-  /**
-   * Include raw run inputs/outputs in the trace dump. Code mode sets it true
-   * because the dump is ephemeral (never committed).
-   *
-   * @default false
-   */
-  includePayloads?: boolean;
-
-  /**
-   * Maximum characters kept per free-text field before truncation.
-   *
-   * @default 2000
-   */
-  maxFieldChars?: number;
-
-  /**
-   * Projects to document; the connector skips when none are configured.
-   *
-   * @default []
-   */
-  projects?: LangSmithProjectConfig[];
 }
 
 /**
@@ -205,6 +155,12 @@ export interface ProjectPullResult {
   project: string;
 
   /**
+   * API host the project was pulled from, so the wiki can attribute a project to
+   * its region/workspace.
+   */
+  apiBaseUrl: string;
+
+  /**
    * Resolved project UUID.
    */
   projectId: string;
@@ -218,9 +174,4 @@ export interface ProjectPullResult {
    * The pulled full traces (most-recent first).
    */
   traces: Trace[];
-
-  /**
-   * Feedback for the pulled traces (empty unless includeFeedback).
-   */
-  feedback: Feedback[];
 }

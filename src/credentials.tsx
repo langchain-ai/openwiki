@@ -52,9 +52,11 @@ import {
 import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
 import {
-  listConfiguredLangSmithSources,
-  setLangSmithProjects,
+  loadLangSmithSetup,
+  nextLangSmithApiKeyEnv,
+  saveLangSmithSetup,
 } from "./connectors/sources/langsmith/setup.js";
+import type { LangSmithRegion } from "./connectors/sources/langsmith/setup.js";
 import type { ConnectorId } from "./connectors/types.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
 import {
@@ -135,7 +137,10 @@ type PromptStep =
   | "global-power-mode"
   | "source-description"
   | "source-description-custom"
+  | "source-langsmith-key"
   | "source-langsmith-projects"
+  | "source-langsmith-region"
+  | "source-langsmith-workspaces"
   | "source-menu"
   | "source-path"
   | "source-confirm-continue"
@@ -253,6 +258,38 @@ const RUN_MODE_OPTIONS = [
   id: OpenWikiRunMode;
   name: string;
 }[];
+
+const LANGSMITH_REGION_OPTIONS = [
+  {
+    description: "US workspaces. The default.",
+    host: "https://api.smith.langchain.com",
+    id: "us",
+    name: "US",
+  },
+  {
+    description: "EU workspaces.",
+    host: "https://eu.api.smith.langchain.com",
+    id: "eu",
+    name: "EU",
+  },
+] as const satisfies readonly {
+  description: string;
+  host: string;
+  id: LangSmithRegion;
+  name: string;
+}[];
+
+/**
+ * One LangSmith workspace as the wizard edits it. `apiKey` holds a value entered
+ * this session (empty = keep the committed key); it is written to ~/.openwiki/.env
+ * under `apiKeyEnv` on completion, never committed.
+ */
+interface LangsmithWorkspaceDraft {
+  apiKeyEnv: string;
+  region: LangSmithRegion;
+  apiKey: string;
+  projects: string[];
+}
 
 const SOURCE_OPTIONS = [
   {
@@ -699,11 +736,26 @@ export function InitSetup({
   const [gcpLocation, setGcpLocation] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
-  const [langsmithSelectedProjects, setLangsmithSelectedProjects] = useState<
-    string[]
+  // LangSmith workspaces as the wizard edits them (region + key + projects),
+  // seeded from the committed config; committed on completion.
+  const [langsmithWorkspaces, setLangsmithWorkspaces] = useState<
+    LangsmithWorkspaceDraft[]
   >([]);
-  // True once the LangSmith projects step was opened this run; guards the
-  // WYSIWYG write so an untouched setup never rewrites openwiki/.langsmith.json.
+  // The workspace currently being added or edited, folded into langsmithWorkspaces
+  // when its projects step is confirmed.
+  const [langsmithDraft, setLangsmithDraft] =
+    useState<LangsmithWorkspaceDraft | null>(null);
+  // Index of the workspace being edited; === langsmithWorkspaces.length for a new
+  // one.
+  const [langsmithEditingIndex, setLangsmithEditingIndex] = useState(0);
+  const [
+    langsmithWorkspaceSelectionIndex,
+    setLangsmithWorkspaceSelectionIndex,
+  ] = useState(0);
+  const [langsmithRegionSelectionIndex, setLangsmithRegionSelectionIndex] =
+    useState(0);
+  // True once the LangSmith workspaces were opened this run; guards the WYSIWYG
+  // write so an untouched setup never rewrites openwiki/.langsmith.json.
   const [langsmithSourcesTouched, setLangsmithSourcesTouched] = useState(false);
   // True once the user confirms a provider this session. Provider always holds a
   // default value, so a null-check cannot detect the in-session choice.
@@ -986,6 +1038,24 @@ export function InitSetup({
       case "run-mode":
         setRunModeSelectionIndex(getRunModeSelectionIndex(selectedMode));
         break;
+      case "source-langsmith-region":
+        setLangsmithRegionSelectionIndex(
+          getLangsmithRegionSelectionIndex(langsmithDraft?.region ?? "us"),
+        );
+        break;
+      case "source-langsmith-key":
+        // Prefill an edited workspace's key from ~/.openwiki/.env so it can be
+        // kept or replaced; a new workspace starts empty.
+        setInput(
+          langsmithDraft?.apiKey ||
+            (langsmithDraft
+              ? (getSavedEnvValue(langsmithDraft.apiKeyEnv) ?? "")
+              : ""),
+        );
+        break;
+      case "source-langsmith-projects":
+        setInput((langsmithDraft?.projects ?? []).join(", "));
+        break;
       case "model": {
         // Point the cursor at the saved model (or the --modelId override), not
         // the provider default, so it matches the checklist on a re-walk.
@@ -1136,16 +1206,29 @@ export function InitSetup({
       case "langsmith":
         setLangSmithKey(trimmed);
         break;
+      case "source-langsmith-key":
+        // Keep an unsubmitted key edit on the draft so Esc does not lose it.
+        setLangsmithDraft((draft) =>
+          draft ? { ...draft, apiKey: trimmed } : draft,
+        );
+        break;
       case "source-langsmith-projects":
-        // Keep an unsubmitted list edit in-session so Esc does not lose it.
-        setLangsmithSelectedProjects([
-          ...new Set(
-            input
-              .split(",")
-              .map((name) => name.trim())
-              .filter((name) => name.length > 0),
-          ),
-        ]);
+        // Keep an unsubmitted list edit on the draft so Esc does not lose it.
+        setLangsmithDraft((draft) =>
+          draft
+            ? {
+                ...draft,
+                projects: [
+                  ...new Set(
+                    input
+                      .split(",")
+                      .map((name) => name.trim())
+                      .filter((name) => name.length > 0),
+                  ),
+                ],
+              }
+            : draft,
+        );
         break;
       case "wiki-goal":
         // Keep an unsubmitted goal edit in-session (not yet persisted) so
@@ -1260,6 +1343,33 @@ export function InitSetup({
             index,
             key.upArrow ? -1 : 1,
             RUN_MODE_OPTIONS.length,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (step === "source-langsmith-workspaces") {
+      handleMenuInput(key, () =>
+        setLangsmithWorkspaceSelectionIndex((index) =>
+          moveSelectionIndex(
+            index,
+            key.upArrow ? -1 : 1,
+            // workspaces + "Add a workspace" + "Done".
+            langsmithWorkspaces.length + 2,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (step === "source-langsmith-region") {
+      handleMenuInput(key, () =>
+        setLangsmithRegionSelectionIndex((index) =>
+          moveSelectionIndex(
+            index,
+            key.upArrow ? -1 : 1,
+            LANGSMITH_REGION_OPTIONS.length,
           ),
         ),
       );
@@ -2118,15 +2228,78 @@ export function InitSetup({
       return;
     }
 
-    if (step === "source-langsmith-projects") {
-      // Parse the comma-separated list into the selection; nothing is written
-      // here, the exact set is committed at the final step.
-      const names = input
-        .split(",")
-        .map((name) => name.trim())
-        .filter((name) => name.length > 0);
-      setLangsmithSelectedProjects([...new Set(names)]);
+    if (step === "source-langsmith-workspaces") {
+      const workspaceCount = langsmithWorkspaces.length;
+      if (langsmithWorkspaceSelectionIndex < workspaceCount) {
+        // Edit an existing workspace: load it into the draft and walk the fields.
+        const existing = langsmithWorkspaces[langsmithWorkspaceSelectionIndex];
+        setLangsmithEditingIndex(langsmithWorkspaceSelectionIndex);
+        setLangsmithDraft({ ...existing });
+        setLangsmithRegionSelectionIndex(
+          getLangsmithRegionSelectionIndex(existing.region),
+        );
+        setStep("source-langsmith-region");
+        return;
+      }
+      if (langsmithWorkspaceSelectionIndex === workspaceCount) {
+        // Add a workspace with a fresh key env var name.
+        setLangsmithEditingIndex(workspaceCount);
+        setLangsmithDraft({
+          apiKey: "",
+          apiKeyEnv: nextLangSmithApiKeyEnv(
+            langsmithWorkspaces.map((workspace) => workspace.apiKeyEnv),
+          ),
+          projects: [],
+          region: "us",
+        });
+        setLangsmithRegionSelectionIndex(
+          getLangsmithRegionSelectionIndex("us"),
+        );
+        setStep("source-langsmith-region");
+        return;
+      }
+      // Done.
       returnToSourceMenu();
+      return;
+    }
+
+    if (step === "source-langsmith-region") {
+      const selectedOption =
+        LANGSMITH_REGION_OPTIONS[langsmithRegionSelectionIndex] ??
+        LANGSMITH_REGION_OPTIONS[0];
+      setLangsmithDraft((draft) =>
+        draft ? { ...draft, region: selectedOption.id } : draft,
+      );
+      seedInputForStep("source-langsmith-key");
+      setStep("source-langsmith-key");
+      return;
+    }
+
+    if (step === "source-langsmith-key") {
+      const nextKey = input.trim();
+      setLangsmithDraft((draft) =>
+        draft ? { ...draft, apiKey: nextKey } : draft,
+      );
+      // setLangsmithDraft has not applied yet this tick, so seed the projects
+      // field from the current draft rather than via seedInputForStep.
+      setInput((langsmithDraft?.projects ?? []).join(", "));
+      setStep("source-langsmith-projects");
+      return;
+    }
+
+    if (step === "source-langsmith-projects") {
+      // Commit the workspace with its exact project set; nothing is written here,
+      // the file + keys are committed at the final step.
+      const names = [
+        ...new Set(
+          input
+            .split(",")
+            .map((name) => name.trim())
+            .filter((name) => name.length > 0),
+        ),
+      ];
+      commitLangsmithWorkspace(names);
+      returnToWorkspacesMenu();
       return;
     }
 
@@ -2204,12 +2377,30 @@ export function InitSetup({
     }
 
     if (step === "final") {
-      // Commit the LangSmith selection as the exact project set (WYSIWYG
-      // add/remove), only when the step was opened — so an aborted or untouched
-      // setup never rewrites openwiki/.langsmith.json.
+      // Commit the LangSmith workspaces as the exact set (WYSIWYG add/edit/remove),
+      // only when the sub-menu was opened — so an aborted or untouched setup never
+      // rewrites openwiki/.langsmith.json.
       if (selectedMode === "code" && langsmithSourcesTouched) {
         try {
-          await setLangSmithProjects(codeRepoRoot, langsmithSelectedProjects);
+          // Freshly-entered keys go to ~/.openwiki/.env (never committed); an empty
+          // apiKey keeps the existing saved key.
+          const keyUpdates: Record<string, string> = {};
+          for (const workspace of langsmithWorkspaces) {
+            if (workspace.apiKey.length > 0) {
+              keyUpdates[workspace.apiKeyEnv] = workspace.apiKey;
+            }
+          }
+          if (Object.keys(keyUpdates).length > 0) {
+            await saveOpenWikiEnv(keyUpdates);
+          }
+          await saveLangSmithSetup(
+            codeRepoRoot,
+            langsmithWorkspaces.map((workspace) => ({
+              apiKeyEnv: workspace.apiKeyEnv,
+              projects: workspace.projects,
+              region: workspace.region,
+            })),
+          );
         } catch (writeError) {
           setError(getErrorMessage(writeError));
           return;
@@ -2362,8 +2553,17 @@ export function InitSetup({
     // and edits build on them (fail-open on the read).
     if (!langsmithPreloadedRef.current) {
       langsmithPreloadedRef.current = true;
-      void listConfiguredLangSmithSources(repoRoot)
-        .then((existing) => setLangsmithSelectedProjects(existing))
+      void loadLangSmithSetup(repoRoot)
+        .then((existing) =>
+          setLangsmithWorkspaces(
+            existing.map((workspace) => ({
+              apiKey: "",
+              apiKeyEnv: workspace.apiKeyEnv,
+              projects: workspace.projects,
+              region: workspace.region,
+            })),
+          ),
+        )
         .catch(() => {});
     }
     // Code mode auto-configures the repo itself; the source menu then offers the
@@ -2569,11 +2769,11 @@ export function InitSetup({
     }
 
     if (source.id === "langsmith") {
-      // Open the text list seeded with the current selection; opening it arms the
+      // Open the workspace sub-menu (add/edit/remove). Opening it arms the
       // WYSIWYG write on completion.
       setLangsmithSourcesTouched(true);
-      setInput(langsmithSelectedProjects.join(", "));
-      setStep("source-langsmith-projects");
+      setLangsmithWorkspaceSelectionIndex(0);
+      setStep("source-langsmith-workspaces");
       return;
     }
 
@@ -2593,6 +2793,48 @@ export function InitSetup({
     } catch (setupError) {
       setError(getErrorMessage(setupError));
     }
+  }
+
+  /**
+   * Folds the in-progress draft into langsmithWorkspaces at the editing index. An
+   * empty project list removes the workspace (WYSIWYG).
+   */
+  function commitLangsmithWorkspace(names: string[]): void {
+    const draft = langsmithDraft;
+    setLangsmithWorkspaces((list) => {
+      const next = [...list];
+      if (names.length === 0) {
+        if (langsmithEditingIndex < next.length) {
+          next.splice(langsmithEditingIndex, 1);
+        }
+        return next;
+      }
+      if (!draft) {
+        return next;
+      }
+      const workspace = { ...draft, projects: names };
+      if (langsmithEditingIndex >= next.length) {
+        next.push(workspace);
+      } else {
+        next[langsmithEditingIndex] = workspace;
+      }
+      return next;
+    });
+  }
+
+  /**
+   * Returns to the workspace sub-menu as a back-navigation: unwind history through
+   * it so Esc from the refreshed sub-menu goes to the source menu, not back down
+   * into the edited workspace's field steps.
+   */
+  function returnToWorkspacesMenu() {
+    setInput("");
+    setLangsmithDraft(null);
+    const index = navHistory.current.lastIndexOf("source-langsmith-workspaces");
+    if (index >= 0) {
+      navHistory.current.length = index;
+    }
+    setStep("source-langsmith-workspaces", { back: true });
   }
 
   function returnToSourceMenu() {
@@ -3044,7 +3286,12 @@ export function InitSetup({
               input={input}
               inputDisplayWidth={inputDisplayWidth}
               isCustomModelInput={isCustomModelInput}
-              langsmithSelectedProjects={langsmithSelectedProjects}
+              langsmithDraft={langsmithDraft}
+              langsmithRegionSelectionIndex={langsmithRegionSelectionIndex}
+              langsmithWorkspaceSelectionIndex={
+                langsmithWorkspaceSelectionIndex
+              }
+              langsmithWorkspaces={langsmithWorkspaces}
               modelSelectionIndex={modelSelectionIndex}
               onboardingConfig={onboardingConfig}
               powerModeSelectionIndex={powerModeSelectionIndex}
@@ -3122,7 +3369,10 @@ function Prompt({
   input,
   inputDisplayWidth,
   isCustomModelInput,
-  langsmithSelectedProjects,
+  langsmithDraft,
+  langsmithRegionSelectionIndex,
+  langsmithWorkspaceSelectionIndex,
+  langsmithWorkspaces,
   modelSelectionIndex,
   onboardingConfig,
   powerModeSelectionIndex,
@@ -3151,7 +3401,10 @@ function Prompt({
   input: string;
   inputDisplayWidth: number;
   isCustomModelInput: boolean;
-  langsmithSelectedProjects: string[];
+  langsmithDraft: LangsmithWorkspaceDraft | null;
+  langsmithRegionSelectionIndex: number;
+  langsmithWorkspaceSelectionIndex: number;
+  langsmithWorkspaces: LangsmithWorkspaceDraft[];
   modelSelectionIndex: number;
   onboardingConfig: OpenWikiOnboardingConfig;
   powerModeSelectionIndex: number;
@@ -3467,16 +3720,16 @@ function Prompt({
   }
 
   if (step === "source-menu") {
-    // LangSmith projects live in state until setup completes (not onboarding
+    // LangSmith workspaces live in state until setup completes (not onboarding
     // source instances), so count them here for the menu's configured display.
-    const langsmithSelectedCount = sourceOptions.some(
+    const langsmithWorkspaceCount = sourceOptions.some(
       (source) => source.id === "langsmith",
     )
-      ? langsmithSelectedProjects.length
+      ? langsmithWorkspaces.length
       : 0;
     const configuredCount =
       getConnectedSourceCount(onboardingConfig, sourceOptions) +
-      langsmithSelectedCount;
+      langsmithWorkspaceCount;
 
     return (
       <Box flexDirection="column">
@@ -3488,7 +3741,7 @@ function Prompt({
             source.id,
           );
           const count = isLangsmith
-            ? langsmithSelectedProjects.length
+            ? langsmithWorkspaces.length
             : sourceInstances.length;
           return (
             <Box flexDirection="column" key={source.id}>
@@ -3501,9 +3754,10 @@ function Prompt({
                 />
               </Text>
               {isLangsmith
-                ? langsmithSelectedProjects.map((name) => (
-                    <Text color="gray" key={name}>
-                      {"  "}- {name}
+                ? langsmithWorkspaces.map((workspace) => (
+                    <Text color="gray" key={workspace.apiKeyEnv}>
+                      {"  "}- {getLangsmithRegionLabel(workspace.region)}:{" "}
+                      {workspace.projects.join(", ")}
                     </Text>
                   ))
                 : sourceInstances.map((sourceInstance) => (
@@ -3647,10 +3901,72 @@ function Prompt({
     );
   }
 
+  if (step === "source-langsmith-workspaces") {
+    const workspaceCount = langsmithWorkspaces.length;
+    return (
+      <Box flexDirection="column">
+        <Text>LangSmith workspaces to document.</Text>
+        <Text color="gray">
+          A LangSmith key is region-bound, so each workspace has its own region
+          and key. Select one to edit (clear its projects to remove it).
+        </Text>
+        {langsmithWorkspaces.map((workspace, index) => (
+          <Text key={workspace.apiKeyEnv}>
+            <SelectionMarker
+              isSelected={index === langsmithWorkspaceSelectionIndex}
+            />{" "}
+            {getLangsmithRegionLabel(workspace.region)}:{" "}
+            {workspace.projects.join(", ")}
+          </Text>
+        ))}
+        <Box flexDirection="column" marginTop={1}>
+          <Text>
+            <SelectionMarker
+              isSelected={langsmithWorkspaceSelectionIndex === workspaceCount}
+            />{" "}
+            Add a workspace
+          </Text>
+          <Text>
+            <SelectionMarker
+              isSelected={
+                langsmithWorkspaceSelectionIndex === workspaceCount + 1
+              }
+            />{" "}
+            Done
+          </Text>
+        </Box>
+        <Text color="gray">Use up/down arrows, then press Enter.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "source-langsmith-key") {
+    const apiKeyEnv = langsmithDraft?.apiKeyEnv ?? "OPENWIKI_LANGSMITH_API_KEY";
+    return (
+      <Box flexDirection="column">
+        <Text>LangSmith API key for this workspace.</Text>
+        <Text color="gray">
+          The connector&apos;s own read key (not your app&apos;s tracing key).
+          Saved to ~/.openwiki/.env as {apiKeyEnv}, never committed.
+        </Text>
+        <BorderedInput
+          maxDisplayWidth={inputDisplayWidth}
+          marginTop={1}
+          prefix={`${apiKeyEnv}=`}
+          secret
+          value={input}
+        />
+        <Text color="gray">
+          Press Enter to confirm (empty keeps the saved key).
+        </Text>
+      </Box>
+    );
+  }
+
   if (step === "source-langsmith-projects") {
     return (
       <Box flexDirection="column">
-        <Text>Which LangSmith projects should this wiki document?</Text>
+        <Text>Which projects should this wiki document in this workspace?</Text>
         <Text color="gray">
           Comma-separated project names (as in LANGCHAIN_PROJECT). Written to
           openwiki/.langsmith.json.
@@ -3661,6 +3977,30 @@ function Prompt({
           value={input}
         />
         <Text color="gray">Press Enter to confirm.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "source-langsmith-region") {
+    const selectedRegion =
+      LANGSMITH_REGION_OPTIONS[langsmithRegionSelectionIndex] ??
+      LANGSMITH_REGION_OPTIONS[0];
+
+    return (
+      <Box flexDirection="column">
+        <Text>Which LangSmith region is this workspace in?</Text>
+        {LANGSMITH_REGION_OPTIONS.map((option, index) => (
+          <Text key={option.id}>
+            <SelectionMarker
+              isSelected={index === langsmithRegionSelectionIndex}
+            />{" "}
+            {option.name} <Text color="gray">({option.host})</Text>
+          </Text>
+        ))}
+        <Box flexDirection="column" marginTop={1}>
+          <Text color="gray">{selectedRegion.description}</Text>
+        </Box>
+        <Text color="gray">Use up/down arrows, then press Enter.</Text>
       </Box>
     );
   }
@@ -4475,6 +4815,18 @@ export async function hydrateRunModeConfig(
 function getRunModeSelectionIndex(mode: OpenWikiRunMode): number {
   const index = RUN_MODE_OPTIONS.findIndex((option) => option.id === mode);
   return index === -1 ? 0 : index;
+}
+
+function getLangsmithRegionSelectionIndex(region: LangSmithRegion): number {
+  const index = LANGSMITH_REGION_OPTIONS.findIndex(
+    (option) => option.id === region,
+  );
+  return index === -1 ? 0 : index;
+}
+
+function getLangsmithRegionLabel(region: LangSmithRegion): string {
+  const option = LANGSMITH_REGION_OPTIONS.find((item) => item.id === region);
+  return option ? `${option.name} (${option.host})` : region;
 }
 
 function getRunModeName(mode: OpenWikiRunMode): string {

@@ -1,5 +1,5 @@
 import { Client } from "langsmith";
-import type { Feedback, Run } from "langsmith";
+import type { Run } from "langsmith";
 
 /**
  * Fields requested for the trace-tree fetch. Explicit so fields we do not list
@@ -35,11 +35,6 @@ const ROOT_SELECT_FIELDS = [
   "total_tokens",
   "trace_id",
 ];
-
-/**
- * Feedback entries fetched per pull, total.
- */
-const MAX_FEEDBACK = 100;
 
 /**
  * Runs fetched per trace tree; a backstop against a pathological deep trace.
@@ -85,11 +80,6 @@ export interface LangSmithApi {
    * All runs in one trace (root plus descendants), for full-tree compaction.
    */
   fetchTrace(traceId: string): Promise<Run[]>;
-
-  /**
-   * Recent feedback entries for the given run ids, bounded.
-   */
-  fetchFeedback(runIds: string[]): Promise<Feedback[]>;
 }
 
 /**
@@ -129,16 +119,12 @@ export function createLangSmithApi(
         MAX_TRACE_RUNS,
       );
     },
-
-    async fetchFeedback(runIds) {
-      return drainCapped(client.listFeedback({ runIds }), MAX_FEEDBACK);
-    },
   };
 }
 
 /**
- * Drains an async run/feedback stream into an array, stopping at cap so a busy
- * project or a deep trace never streams more than the caller asked for.
+ * Drains an async run stream into an array, stopping at cap so a busy project or
+ * a deep trace never streams more than the caller asked for.
  */
 async function drainCapped<T>(
   stream: AsyncIterable<T>,

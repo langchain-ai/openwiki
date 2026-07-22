@@ -5,21 +5,22 @@ import { isFileNotFoundError } from "../../../fs-errors.js";
 import type { LangSmithProjectConfig } from "./types.js";
 
 /**
- * The repo-committed LangSmith config. Committed so CI and every teammate
- * document the same set of projects.
+ * One LangSmith workspace in the committed config: a region (via apiBaseUrl), the
+ * env var naming its API key, and the projects to document there. A LangSmith key
+ * is workspace- and region-bound, so cross-region documentation needs one entry
+ * per workspace, each with its own key.
  */
-export interface LangSmithRepoConfig {
+export interface LangSmithWorkspaceConfig {
   /**
-   * Projects to document. One entry = one source.
+   * Env var name holding this workspace's API key. The key itself is never
+   * committed; only the name lives in the file.
    */
-  projects: LangSmithProjectConfig[];
+  apiKeyEnv: string;
 
   /**
-   * Fetch feedback for the pulled traces.
-   *
-   * @default false
+   * Projects to document in this workspace. One entry = one source.
    */
-  includeFeedback?: boolean;
+  projects: LangSmithProjectConfig[];
 
   /**
    * Non-default API host for EU workspaces.
@@ -27,6 +28,17 @@ export interface LangSmithRepoConfig {
    * @default the connector's default host (https://api.smith.langchain.com)
    */
   apiBaseUrl?: string;
+}
+
+/**
+ * The repo-committed LangSmith config. Committed so CI and every teammate
+ * document the same set of workspaces and projects.
+ */
+export interface LangSmithRepoConfig {
+  /**
+   * Configured workspaces. One entry per LangSmith workspace/region.
+   */
+  workspaces: LangSmithWorkspaceConfig[];
 }
 
 /**
@@ -38,6 +50,14 @@ const ALLOWED_API_HOSTS = new Set([
   "api.smith.langchain.com",
   "eu.api.smith.langchain.com",
 ]);
+
+/**
+ * Env var names a committed config may name as an API-key source. Constrained to
+ * the OpenWiki LangSmith namespace: apiKeyEnv decides which process.env value is
+ * read and sent to the LangSmith host, so without this a committed config could
+ * name an unrelated secret (e.g. AWS_SECRET_ACCESS_KEY) and exfiltrate it.
+ */
+const API_KEY_ENV_PATTERN = /^OPENWIKI_LANGSMITH_API_KEY(_[A-Z0-9]+)?$/;
 
 /**
  * Absolute path of the committed LangSmith config for a repository.
@@ -75,6 +95,19 @@ export function sanitizeLangSmithApiBaseUrl(
 }
 
 /**
+ * Returns the env var name only when it is inside the OpenWiki LangSmith
+ * namespace; otherwise undefined so the workspace is dropped. Guards against a
+ * committed config naming an unrelated secret as the key to send to LangSmith.
+ */
+export function sanitizeLangSmithApiKeyEnv(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return API_KEY_ENV_PATTERN.test(trimmed) ? trimmed : undefined;
+}
+
+/**
  * Reads and validates the committed config, or returns undefined when the file
  * is absent or malformed. Only named keys are read, so unexpected or
  * prototype-polluting keys never take effect.
@@ -95,9 +128,10 @@ export async function readLangSmithRepoConfig(
 }
 
 /**
- * Parses config text into a LangSmithRepoConfig, or undefined when invalid.
- * Every projects entry must be an object with a non-empty string name, and
- * apiBaseUrl is dropped unless it passes the host allowlist.
+ * Parses config text into a LangSmithRepoConfig, or undefined when invalid. Each
+ * workspace must carry an allowlisted apiKeyEnv and well-formed projects; any
+ * workspace failing an allowlist (apiKeyEnv or apiBaseUrl) or shape check is
+ * dropped rather than failing the whole config.
  */
 export function parseLangSmithRepoConfig(
   text: string | undefined,
@@ -118,28 +152,59 @@ export function parseLangSmithRepoConfig(
   }
 
   const record = raw as Record<string, unknown>;
-  if (!Array.isArray(record.projects)) {
+  if (!Array.isArray(record.workspaces)) {
     return undefined;
   }
 
+  const workspaces: LangSmithWorkspaceConfig[] = [];
+  for (const entry of record.workspaces) {
+    const workspace = parseWorkspace(entry);
+    if (workspace) {
+      workspaces.push(workspace);
+    }
+  }
+  return { workspaces };
+}
+
+/**
+ * Validates one workspace entry, copying only known allowlisted fields, or
+ * undefined when it is malformed or fails an allowlist.
+ */
+function parseWorkspace(entry: unknown): LangSmithWorkspaceConfig | undefined {
+  if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
+    return undefined;
+  }
+  const record = entry as Record<string, unknown>;
+
+  const apiKeyEnv = sanitizeLangSmithApiKeyEnv(record.apiKeyEnv);
+  if (!apiKeyEnv) {
+    return undefined;
+  }
+
+  if (!Array.isArray(record.projects)) {
+    return undefined;
+  }
   const projects: LangSmithProjectConfig[] = [];
-  for (const entry of record.projects) {
-    if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
+  for (const entryProject of record.projects) {
+    if (
+      entryProject === null ||
+      typeof entryProject !== "object" ||
+      Array.isArray(entryProject)
+    ) {
       return undefined;
     }
-    const project = entry as Record<string, unknown>;
+    const project = entryProject as Record<string, unknown>;
     if (typeof project.name !== "string" || !project.name.trim()) {
       return undefined;
     }
     projects.push({ name: project.name.trim() });
   }
 
-  const { apiBaseUrl, includeFeedback } = record;
-  const safeApiBaseUrl = sanitizeLangSmithApiBaseUrl(apiBaseUrl);
+  const apiBaseUrl = sanitizeLangSmithApiBaseUrl(record.apiBaseUrl);
   return {
+    apiKeyEnv,
     projects,
-    ...(typeof includeFeedback === "boolean" ? { includeFeedback } : {}),
-    ...(safeApiBaseUrl ? { apiBaseUrl: safeApiBaseUrl } : {}),
+    ...(apiBaseUrl ? { apiBaseUrl } : {}),
   };
 }
 

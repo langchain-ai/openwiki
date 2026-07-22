@@ -14,27 +14,25 @@ import type {
 } from "../../types.js";
 import type { LangSmithApi } from "./api.js";
 import { createLangSmithApi } from "./api.js";
+import type { LangSmithWorkspaceConfig } from "./repo-config.js";
 import {
   readLangSmithRepoConfig,
   sanitizeLangSmithApiBaseUrl,
+  sanitizeLangSmithApiKeyEnv,
 } from "./repo-config.js";
 import { compactTrace, summarizeSample } from "./runs.js";
-import type {
-  LangSmithConfig,
-  LangSmithProjectConfig,
-  ProjectPullResult,
-} from "./types.js";
+import type { LangSmithProjectConfig, ProjectPullResult } from "./types.js";
 
 /**
- * Default LangSmith API host root; EU workspaces override via config.apiBaseUrl.
+ * Default LangSmith API host root; EU workspaces override via apiBaseUrl.
  */
 const DEFAULT_API_BASE_URL = "https://api.smith.langchain.com";
 
 /**
- * Env var holding the LangSmith API key. Referenced by name, never read into
- * output.
+ * The primary API-key env var, named in requiredEnv for display. Additional
+ * workspaces reference their own OPENWIKI_LANGSMITH_API_KEY_<n> vars.
  */
-const LANGSMITH_API_KEY_ENV = "OPENWIKI_LANGSMITH_API_KEY";
+const PRIMARY_API_KEY_ENV = "OPENWIKI_LANGSMITH_API_KEY";
 
 /**
  * Display path of the connector state file, used in result messages.
@@ -49,15 +47,9 @@ const STATE_PATH = "~/.openwiki/connectors/langsmith/state.json";
 const MAX_TRACES = 20;
 
 /**
- * Config defaults applied before the repo config is layered on.
+ * Characters kept per free-text field before truncation.
  */
-const DEFAULT_CONFIG: LangSmithConfig = {
-  enabled: false,
-  includeFeedback: false,
-  includePayloads: false,
-  maxFieldChars: 2000,
-  projects: [],
-};
+const MAX_FIELD_CHARS = 2000;
 
 /**
  * Static connector definition registered with the connector registry.
@@ -69,7 +61,7 @@ const definition: ConnectorDefinition = {
   displayName: "LangSmith",
   id: "langsmith",
   mode: "code",
-  requiredEnv: [LANGSMITH_API_KEY_ENV],
+  requiredEnv: [PRIMARY_API_KEY_ENV],
   supportsAgenticDiscovery: false,
 };
 
@@ -77,11 +69,6 @@ const definition: ConnectorDefinition = {
  * Per-run bounds shared by every project pull.
  */
 interface PullBounds {
-  /**
-   * Fetch feedback for the pulled traces.
-   */
-  includeFeedback: boolean;
-
   /**
    * Include truncated inputs/outputs in the compacted trace runs.
    */
@@ -104,41 +91,23 @@ export function createLangSmithConnector(): ConnectorRuntime {
 }
 
 /**
- * Loads the effective config for a code-mode run from the repo's committed
- * .langsmith.json, or a disabled default when the repo has not configured
- * langsmith (so ingest cleanly skips). Forces includePayloads so full traces land
- * in the ephemeral dump; the committed-wiki privacy rule is enforced by the
- * code-mode guidance, not by dropping payloads here.
+ * Loads the committed workspaces for a code-mode run, or an empty list when the
+ * repo has not configured langsmith (so ingest cleanly skips). Full trace
+ * payloads land in the ephemeral dump; the committed-wiki privacy rule is
+ * enforced by the code-mode guidance, not by dropping payloads here.
  */
-async function loadRepoConfig(repoRoot: string): Promise<LangSmithConfig> {
+async function loadWorkspaces(
+  repoRoot: string,
+): Promise<LangSmithWorkspaceConfig[]> {
   const repoConfig = await readLangSmithRepoConfig(repoRoot);
-  if (!repoConfig || repoConfig.projects.length === 0) {
-    return DEFAULT_CONFIG;
-  }
-
-  return {
-    apiBaseUrl: repoConfig.apiBaseUrl,
-    enabled: true,
-    includeFeedback: repoConfig.includeFeedback ?? false,
-    includePayloads: true,
-    maxFieldChars: DEFAULT_CONFIG.maxFieldChars,
-    projects: repoConfig.projects,
-  };
+  return repoConfig?.workspaces ?? [];
 }
 
 /**
- * Reads the LangSmith API key, preferring the OpenWiki-scoped var and falling
- * back to the ecosystem-standard LANGSMITH_API_KEY. Shell-vs-file precedence is
- * decided by loadOpenWikiEnv (which only fills a key the shell left unset), so by
- * the time this runs process.env already holds "shell over ~/.openwiki/.env".
- */
-function readApiKey(): string | undefined {
-  return process.env[LANGSMITH_API_KEY_ENV] ?? process.env.LANGSMITH_API_KEY;
-}
-
-/**
- * Runs one deterministic LangSmith pull. Per-project failures become warnings
- * rather than run failures, so one bad project name never blocks the others.
+ * Runs one deterministic LangSmith pull across every configured workspace.
+ * Per-workspace (missing key) and per-project (bad name, fetch error) failures
+ * become warnings rather than run failures, so one bad entry never blocks the
+ * others.
  */
 async function ingest(
   options: ConnectorIngestOptions = {},
@@ -151,11 +120,8 @@ async function ingest(
     return result(runId, [], [], "skipped", "LangSmith runs in code mode.");
   }
 
-  const config = await loadRepoConfig(options.repoRoot);
-  const apiKey = readApiKey();
-  const projects = normalizeProjects(config.projects);
-
-  if (!config.enabled) {
+  const workspaces = await loadWorkspaces(options.repoRoot);
+  if (workspaces.length === 0) {
     return result(
       runId,
       [],
@@ -165,26 +131,6 @@ async function ingest(
     );
   }
 
-  if (!apiKey) {
-    return result(
-      runId,
-      [],
-      [],
-      "error",
-      `Missing ${LANGSMITH_API_KEY_ENV}. Add it to ~/.openwiki/.env.`,
-    );
-  }
-
-  if (projects.length === 0) {
-    return result(runId, [], [], "skipped", "No LangSmith projects configured");
-  }
-
-  // Re-validate at the SDK boundary: the API key rides along in an Authorization
-  // header, so never hand the client a host that is not an official LangSmith one.
-  const api = createLangSmithApi(
-    sanitizeLangSmithApiBaseUrl(config.apiBaseUrl) ?? DEFAULT_API_BASE_URL,
-    apiKey,
-  );
   const state = await readConnectorState("langsmith");
   // The window is the ingestion floor; the code-mode caller derives it from the
   // last-update time. Undefined means "no floor" (bootstrap: latest MAX_TRACES).
@@ -195,26 +141,59 @@ async function ingest(
         ).toISOString()
       : undefined;
   const bounds: PullBounds = {
-    includeFeedback: config.includeFeedback ?? false,
-    includePayloads: config.includePayloads ?? false,
-    maxFieldChars: Math.max(100, config.maxFieldChars ?? 2000),
+    includePayloads: true,
+    maxFieldChars: MAX_FIELD_CHARS,
   };
 
   const warnings: string[] = [];
   const pulls: ProjectPullResult[] = [];
+  let projectCount = 0;
 
-  for (const project of projects) {
-    try {
-      const pull = await pullProject(api, project, windowStart, bounds);
-      if (pull) {
-        pulls.push(pull);
-      }
-    } catch (err) {
-      // Fail-open: a bad project name or a fetch error is a warning, never a
-      // throw, so the other projects (and the whole run) still succeed.
+  for (const workspace of workspaces) {
+    // Re-validate at the use boundary (parse already allowlisted both): the API
+    // key rides along in an Authorization header, so never hand the client a host
+    // that is not an official LangSmith one, nor read an env var outside the
+    // OpenWiki LangSmith namespace.
+    const apiBaseUrl =
+      sanitizeLangSmithApiBaseUrl(workspace.apiBaseUrl) ?? DEFAULT_API_BASE_URL;
+    const apiKeyEnv = sanitizeLangSmithApiKeyEnv(workspace.apiKeyEnv);
+    const projects = normalizeProjects(workspace.projects);
+    projectCount += projects.length;
+
+    if (!apiKeyEnv) {
       warnings.push(
-        `${project.name}: ${sanitizeDiagnosticText(errorMessage(err))}`,
+        `${sanitizeDiagnosticText(String(workspace.apiKeyEnv))}: not an allowed LangSmith key env var.`,
       );
+      continue;
+    }
+    const apiKey = process.env[apiKeyEnv];
+    if (!apiKey) {
+      // Fail-open: a workspace whose key is absent is a warning, so the other
+      // workspaces (and the whole run) still succeed.
+      warnings.push(`${apiKeyEnv}: missing key. Add it to ~/.openwiki/.env.`);
+      continue;
+    }
+
+    const api = createLangSmithApi(apiBaseUrl, apiKey);
+    for (const project of projects) {
+      try {
+        const pull = await pullProject(
+          api,
+          project,
+          apiBaseUrl,
+          windowStart,
+          bounds,
+        );
+        if (pull) {
+          pulls.push(pull);
+        }
+      } catch (err) {
+        // Fail-open: a bad project name or a fetch error is a warning, never a
+        // throw, so the other projects (and the whole run) still succeed.
+        warnings.push(
+          `${project.name}: ${sanitizeDiagnosticText(errorMessage(err))}`,
+        );
+      }
     }
   }
 
@@ -243,7 +222,7 @@ async function ingest(
     warnings,
     rawFiles,
     status,
-    `Pulled ${pulls.length} of ${projects.length} LangSmith project(s).`,
+    `Pulled ${pulls.length} of ${projectCount} LangSmith project(s).`,
   );
 }
 
@@ -254,6 +233,7 @@ async function ingest(
 async function pullProject(
   api: LangSmithApi,
   project: LangSmithProjectConfig,
+  apiBaseUrl: string,
   windowStart: string | undefined,
   bounds: PullBounds,
 ): Promise<ProjectPullResult | undefined> {
@@ -283,12 +263,8 @@ async function pullProject(
     }
   }
 
-  const feedback = bounds.includeFeedback
-    ? await api.fetchFeedback(roots.map((run) => run.id))
-    : [];
-
   return {
-    feedback,
+    apiBaseUrl,
     project: project.name,
     projectId,
     stats: summarizeSample(roots),

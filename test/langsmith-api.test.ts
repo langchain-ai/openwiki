@@ -4,9 +4,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
  * Hoisted control surface for the mocked LangSmith SDK Client.
  */
 const sdk = vi.hoisted(() => ({
-  feedback: [] as unknown[],
   getProjectUrl: vi.fn(),
-  listFeedbackArgs: [] as Record<string, unknown>[],
   listRunsArgs: [] as Record<string, unknown>[],
   readProject: vi.fn(),
   runs: [] as unknown[],
@@ -22,11 +20,6 @@ vi.mock("langsmith", () => {
       yield* sdk.runs;
     }
 
-    *listFeedback(args: Record<string, unknown>) {
-      sdk.listFeedbackArgs.push(args);
-      yield* sdk.feedback;
-    }
-
     readProject = sdk.readProject;
     getProjectUrl = sdk.getProjectUrl;
   }
@@ -38,9 +31,7 @@ const { createLangSmithApi } =
   await import("../src/connectors/sources/langsmith/api.ts");
 
 beforeEach(() => {
-  sdk.feedback = [];
   sdk.runs = [];
-  sdk.listFeedbackArgs = [];
   sdk.listRunsArgs = [];
   sdk.getProjectUrl.mockReset();
   sdk.readProject.mockReset();
@@ -100,13 +91,5 @@ describe("fetchTrace", () => {
 
     expect(sdk.listRunsArgs[0]?.traceId).toBe("trace-1");
     expect(runs).toHaveLength(500);
-  });
-});
-
-describe("fetchFeedback", () => {
-  test("caps at MAX_FEEDBACK", async () => {
-    sdk.feedback = Array.from({ length: 150 }, (_, i) => ({ id: `f-${i}` }));
-
-    expect(await api().fetchFeedback(["run-1"])).toHaveLength(100);
   });
 });
