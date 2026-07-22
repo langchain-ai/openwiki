@@ -5,6 +5,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import {
   ensureRunModeConfig,
   getInitialStep,
+  getOAuthAuthorizationStatusText,
   hydrateRunModeConfig,
   needsCredentialSetup,
   nextSetupStep,
@@ -218,5 +219,27 @@ describe("nextSetupStep", () => {
       null,
     );
     expect(nextSetupStep(null, "openai", "code", false)).toBe(null);
+  });
+});
+
+describe("getOAuthAuthorizationStatusText", () => {
+  test("uses a provider-specific fallback command when the URL is not copied", () => {
+    expect(
+      getOAuthAuthorizationStatusText({
+        authProvider: "gmail",
+        copiedToClipboard: false,
+      }),
+    ).toContain("openwiki auth gmail");
+  });
+
+  test("does not expose the raw authorization URL in fallback text", () => {
+    const rawUrl = "https://accounts.google.com/o/oauth2/v2/auth?state=abc";
+
+    expect(
+      getOAuthAuthorizationStatusText({
+        authProvider: "gmail",
+        copiedToClipboard: false,
+      }),
+    ).not.toContain(rawUrl);
   });
 });
