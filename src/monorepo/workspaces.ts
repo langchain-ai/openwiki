@@ -10,9 +10,16 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 
 /**
- * One workspace entry as written in `openwiki/workspaces.json`. `path` is a
- * repository-root-relative POSIX path (no globs at runtime; auto-detect expands
- * globs before writing the manifest). `goal` and `name` are optional overrides.
+ * One entry in the managed `workspaces` list of `openwiki/workspaces.json`.
+ * `path` is a repository-root-relative POSIX path (no globs at runtime;
+ * auto-detect expands globs before writing the manifest).
+ *
+ * The `workspaces` list is DETECTION-OWNED: self-maintaining discovery
+ * regenerates it (path-only, sorted) on every recursive run. Hand-authored
+ * customization lives in the sibling `overrides` map, never on these entries.
+ * `goal`/`name` remain optional here only for backward-compatible reading of the
+ * legacy flat schema (see {@link normalizeManifest}); on read they are migrated
+ * into `overrides`, and the next write emits path-only entries.
  */
 export interface WorkspaceEntry {
   path: string;
@@ -21,12 +28,41 @@ export interface WorkspaceEntry {
 }
 
 /**
- * The parsed `openwiki/workspaces.json` manifest. `version` is 1 for the current
- * explicit-paths schema.
+ * A hand-authored customization for one workspace path, keyed by that path in
+ * the manifest's `overrides` map. This is the single place for all manual edits,
+ * so self-maintaining discovery can regenerate the `workspaces` list wholesale
+ * without clobbering user intent.
+ *
+ * - `goal` / `name`: per-subproject wiki brief and display name overrides.
+ * - `exclude`: when true, the path is NOT documented (no sub-wiki run) even if
+ *   detection surfaces it. It remains listed in `workspaces` so it is not
+ *   re-discovered as new noise; the run set filters it out.
+ * - `include`: when true, the path is force-added to the run set even if
+ *   detection does not surface it (a custom grouping detection cannot find).
+ *   This is also the signal that distinguishes a deliberate manual addition from
+ *   an orphaned override left behind by a deleted project.
+ */
+export interface WorkspaceOverride {
+  goal?: string;
+  name?: string;
+  exclude?: boolean;
+  include?: boolean;
+}
+
+/**
+ * The parsed `openwiki/workspaces.json` manifest. `version` is 1.
+ *
+ * The current schema separates the DETECTION-OWNED `workspaces` list (auto
+ * regenerated each recursive run, sorted, path-only) from the HAND-AUTHORED
+ * `overrides` map (keyed by repo-relative path, never auto-clobbered). The
+ * legacy flat shape (`workspaces:[{path, goal?, name?}]`, no `overrides`) is
+ * still read: {@link normalizeManifest} migrates any per-entry goal/name into
+ * `overrides` in memory, and the next write emits the current shape.
  */
 export interface WorkspaceManifest {
   version: number;
   workspaces: WorkspaceEntry[];
+  overrides?: Record<string, WorkspaceOverride>;
   root?: { goal?: string };
 }
 
@@ -65,17 +101,36 @@ export type RecursionActivation =
   | { kind: "plain"; reason: string };
 
 /**
- * Decides whether to recurse, honoring the product rules:
+ * Decides whether to recurse, honoring the product rules and keeping the
+ * workspace manifest self-maintaining:
  * - `recursive === false`: force off, even if a manifest exists.
- * - a manifest exists: recurse (auto-enabled).
- * - `recursive === true` and no manifest: auto-detect workspaces; if any are
- *   found, WRITE openwiki/workspaces.json (for the user to review) and recurse;
- *   otherwise fall back to a plain run.
- * - otherwise (default, no manifest): plain run.
+ * - otherwise recurse when `--recursive` is set OR a manifest already exists;
+ *   `recursive` unset with no manifest is a plain run.
+ *
+ * On every recursive run, detection is re-run (it is deterministic and fast) and
+ * MERGED with the existing manifest so the manifest stays current as the repo
+ * evolves — new projects auto-appear, deleted ones drop out, and hand-authored
+ * customization survives:
+ * - The managed `workspaces` list is regenerated as the union of the freshly
+ *   detected (pruned-to-resolvable) paths and any override paths marked
+ *   `include: true` (manual additions detection cannot find), sorted, path-only.
+ *   An excluded path detection still surfaces stays listed so it is not
+ *   re-discovered as new noise; it is filtered out of the RUN set downstream.
+ * - The `overrides` map is preserved from the existing manifest, EXCEPT orphans:
+ *   an override whose path is neither detected nor marked `include` (i.e. the
+ *   project it customized was deleted or moved) is dropped and a warning is
+ *   emitted via `onWarn`.
+ * - The result is written back ONLY if it differs from disk (idempotent), so a
+ *   no-op run leaves the file byte-for-byte unchanged and CI produces no
+ *   spurious manifest diff.
+ *
+ * `onWarn` receives a human-readable message for each pruned orphan override;
+ * callers wire it to the run's event stream. It defaults to a no-op.
  */
 export async function resolveRecursionActivation(
   repoRoot: string,
   recursive: boolean | undefined,
+  onWarn: (message: string) => void = () => {},
 ): Promise<RecursionActivation> {
   if (recursive === false) {
     return {
@@ -84,17 +139,39 @@ export async function resolveRecursionActivation(
     };
   }
 
-  const manifest = await readWorkspaceManifest(repoRoot);
-  if (manifest) {
-    return { kind: "recurse", manifest, autoDetected: false };
-  }
+  const existing = await readWorkspaceManifest(repoRoot);
+  const manifestPresent = existing !== null;
 
-  if (recursive !== true) {
+  if (!manifestPresent && recursive !== true) {
     return { kind: "plain", reason: "no openwiki/workspaces.json manifest" };
   }
 
-  const detected = await detectWorkspaces(repoRoot);
-  if (detected.length === 0) {
+  // Detection is deterministic and cheap, so re-run it every recursive run and
+  // merge with the existing manifest. Prune to a resolvable (leaf-only) set:
+  // never persist a manifest that cannot be resolved, or a poisoned
+  // openwiki/workspaces.json would make every future default run auto-recurse
+  // into a throw.
+  const detected = pruneToResolvableWorkspaces(
+    repoRoot,
+    await detectWorkspaces(repoRoot),
+  );
+
+  // Pre-resolve directory existence for every non-detected path the existing
+  // manifest referenced, so mergeManifest can stay pure/synchronous. A manual
+  // grouping detection cannot find is preserved only when its directory really
+  // exists; a removed project's directory is gone, so it is dropped.
+  const existingDirs = await resolveExistingManualDirs(
+    repoRoot,
+    existing,
+    new Set(detected.map((entry) => entry.path)),
+  );
+  const merged = mergeManifest(detected, existing, onWarn, (relativePath) =>
+    existingDirs.has(relativePath),
+  );
+
+  if (!manifestPresent && merged.workspaces.length === 0) {
+    // `--recursive` was requested with no manifest and nothing to document:
+    // fall back to a plain run WITHOUT writing an empty manifest.
     return {
       kind: "plain",
       reason:
@@ -102,17 +179,173 @@ export async function resolveRecursionActivation(
     };
   }
 
-  // Never persist a manifest that cannot be resolved: a poisoned
-  // openwiki/workspaces.json would make every future default run auto-recurse
-  // into a throw, wedging the repo until the user hand-edits it. Prune to a
-  // resolvable (leaf-only) set before writing.
-  const writtenManifest: WorkspaceManifest = {
-    version: 1,
-    workspaces: pruneToResolvableWorkspaces(repoRoot, detected),
-  };
-  await writeWorkspaceManifest(repoRoot, writtenManifest);
+  await writeWorkspaceManifestIfChanged(repoRoot, merged);
 
-  return { kind: "recurse", manifest: writtenManifest, autoDetected: true };
+  return { kind: "recurse", manifest: merged, autoDetected: !manifestPresent };
+}
+
+/**
+ * Merges freshly detected paths with an existing manifest into the canonical,
+ * deterministic manifest to persist. See {@link resolveRecursionActivation} for
+ * the merge rules; this is the pure core (no I/O) so it is easy to reason about
+ * and test.
+ *
+ * `pathExists(relativePath)` reports whether a non-detected path still exists as
+ * a real directory on disk. It is the discriminator that keeps a manual manifest
+ * safe: a workspace path detection cannot surface but whose directory still
+ * exists is a deliberate manual grouping (preserved, promoted to an explicit
+ * `include`); one whose directory is gone is a removed project (dropped — and
+ * warned about only when it carried a hand-authored override, so removals of
+ * plain managed entries stay quiet as the feature intends). Injected (not read
+ * here) so this core stays pure; the caller backs it with a real stat. It
+ * defaults to "nothing extra exists", which matches pure detected-only merges.
+ */
+export function mergeManifest(
+  detected: WorkspaceEntry[],
+  existing: WorkspaceManifest | null,
+  onWarn: (message: string) => void = () => {},
+  pathExists: (relativePath: string) => boolean = () => false,
+): WorkspaceManifest {
+  const byPath = (left: string, right: string): number =>
+    left.localeCompare(right);
+
+  const detectedPaths = [...new Set(detected.map((entry) => entry.path))].sort(
+    byPath,
+  );
+  const detectedSet = new Set(detectedPaths);
+  const overrides = existing?.overrides ?? {};
+
+  // Candidate manual paths: any path the existing manifest referenced (managed
+  // workspace entry OR override key) that detection no longer surfaces. A bare
+  // path-only legacy entry lives ONLY in `workspaces`, so it must be considered
+  // here too — otherwise it would be silently dropped without even a warning.
+  const candidatePaths = new Set<string>();
+  for (const entry of existing?.workspaces ?? []) {
+    if (!detectedSet.has(entry.path)) {
+      candidatePaths.add(entry.path);
+    }
+  }
+  for (const key of Object.keys(overrides)) {
+    if (!detectedSet.has(key)) {
+      candidatePaths.add(key);
+    }
+  }
+
+  // Decide which candidates survive as manual includes. Keep a path that is an
+  // explicit include OR whose directory still exists (a manual grouping). Drop
+  // the rest: warn when the dropped path had a hand-authored override (intent is
+  // being discarded), stay quiet for a plain managed entry that was removed.
+  const survivingIncludes = new Set<string>();
+  for (const candidate of [...candidatePaths].sort(byPath)) {
+    const override = overrides[candidate];
+    if (override?.include === true || pathExists(candidate)) {
+      survivingIncludes.add(candidate);
+    } else if (override) {
+      onWarn(
+        `Dropping orphaned workspace override for "${candidate}": the path is no longer detected or present. Mark it "include": true to keep it.`,
+      );
+    }
+  }
+
+  // Build the managed list detected-first (detected leaves are guaranteed
+  // non-overlapping and always win), then fold in surviving includes only when
+  // they do not overlap an already-accepted path. This restores the "never
+  // persist a manifest that cannot be resolved" invariant for the include union,
+  // which pruneToResolvableWorkspaces (detected-only, upstream) cannot cover.
+  const effectivePaths: string[] = [...detectedPaths];
+  for (const candidate of [...survivingIncludes].sort(byPath)) {
+    const overlaps = effectivePaths.some(
+      (accepted) =>
+        accepted === candidate ||
+        isAncestorPath(candidate, accepted) ||
+        isAncestorPath(accepted, candidate),
+    );
+    if (overlaps) {
+      survivingIncludes.delete(candidate);
+      onWarn(
+        `Ignoring workspace include "${candidate}": it overlaps a detected workspace and would make the manifest unresolvable.`,
+      );
+      continue;
+    }
+    effectivePaths.push(candidate);
+  }
+
+  const workspaces: WorkspaceEntry[] = [...new Set(effectivePaths)]
+    .sort(byPath)
+    .map((relativePath) => ({ path: relativePath }));
+
+  // Kept overrides (sorted for a stable, idempotent write): detected paths keep
+  // their override verbatim; surviving includes are persisted with include:true
+  // (promoting a bare manual entry, or a goal-only legacy entry, into an
+  // explicit include so it is stable and future removal routes through the
+  // orphan warning). Dropped paths carry no override forward.
+  const keptOverrides: Record<string, WorkspaceOverride> = {};
+  for (const key of [
+    ...new Set([...Object.keys(overrides), ...survivingIncludes]),
+  ].sort(byPath)) {
+    if (detectedSet.has(key)) {
+      keptOverrides[key] = overrides[key];
+    } else if (survivingIncludes.has(key)) {
+      keptOverrides[key] = { ...(overrides[key] ?? {}), include: true };
+    }
+  }
+
+  return {
+    version: 1,
+    workspaces,
+    ...(Object.keys(keptOverrides).length > 0
+      ? { overrides: keptOverrides }
+      : {}),
+    ...(existing?.root ? { root: existing.root } : {}),
+  };
+}
+
+/**
+ * Stats every non-detected path referenced by the existing manifest (managed
+ * entries and override keys) and returns the subset whose repo-relative
+ * directory actually exists. mergeManifest uses this to tell a real manual
+ * grouping (keep) from a removed project (drop). Best-effort and safe: paths
+ * that fail validation (absolute/`..`) or are absent simply do not appear.
+ */
+async function resolveExistingManualDirs(
+  repoRoot: string,
+  existing: WorkspaceManifest | null,
+  detectedPaths: Set<string>,
+): Promise<Set<string>> {
+  const candidates = new Set<string>();
+  for (const entry of existing?.workspaces ?? []) {
+    if (!detectedPaths.has(entry.path)) {
+      candidates.add(entry.path);
+    }
+  }
+  for (const key of Object.keys(existing?.overrides ?? {})) {
+    if (!detectedPaths.has(key)) {
+      candidates.add(key);
+    }
+  }
+
+  const present = new Set<string>();
+  await Promise.all(
+    [...candidates].map(async (relativePath) => {
+      let normalized: string;
+      try {
+        normalized = normalizeWorkspacePath(relativePath);
+      } catch {
+        return;
+      }
+      if (normalized === "" || normalized === ".") {
+        return;
+      }
+      const dirStat = await stat(path.join(repoRoot, normalized)).catch(
+        () => null,
+      );
+      if (dirStat?.isDirectory()) {
+        present.add(relativePath);
+      }
+    }),
+  );
+
+  return present;
 }
 
 /**
@@ -136,9 +369,50 @@ function pruneToResolvableWorkspaces(
 }
 
 /**
- * Writes an auto-detected manifest to openwiki/workspaces.json so the user can
- * review and edit the detected workspace set. Written with a comment-free JSON
- * body and a trailing newline.
+ * Serializes a manifest to its canonical, stable on-disk form: fixed top-level
+ * key order (version, workspaces, overrides, root), sorted `workspaces`, sorted
+ * `overrides` keys with fixed field order, undefined/empty fields omitted, and a
+ * trailing newline. Re-serializing an already-canonical manifest is a no-op,
+ * which is what makes the idempotent write check byte-exact.
+ */
+export function serializeManifest(manifest: WorkspaceManifest): string {
+  const canonical: Record<string, unknown> = { version: 1 };
+
+  canonical.workspaces = [...manifest.workspaces]
+    .map((entry) => ({ path: entry.path }))
+    .sort((left, right) => left.path.localeCompare(right.path));
+
+  if (manifest.overrides && Object.keys(manifest.overrides).length > 0) {
+    const overrides: Record<string, WorkspaceOverride> = {};
+    for (const key of Object.keys(manifest.overrides).sort((left, right) =>
+      left.localeCompare(right),
+    )) {
+      const override = manifest.overrides[key];
+      const canonicalOverride: WorkspaceOverride = {};
+      if (override.goal !== undefined) canonicalOverride.goal = override.goal;
+      if (override.name !== undefined) canonicalOverride.name = override.name;
+      if (override.exclude !== undefined) {
+        canonicalOverride.exclude = override.exclude;
+      }
+      if (override.include !== undefined) {
+        canonicalOverride.include = override.include;
+      }
+      overrides[key] = canonicalOverride;
+    }
+    canonical.overrides = overrides;
+  }
+
+  if (manifest.root?.goal !== undefined) {
+    canonical.root = { goal: manifest.root.goal };
+  }
+
+  return `${JSON.stringify(canonical, null, 2)}\n`;
+}
+
+/**
+ * Writes a manifest to openwiki/workspaces.json in canonical form so the user
+ * can review and edit it. Written with a comment-free JSON body and a trailing
+ * newline.
  */
 export async function writeWorkspaceManifest(
   repoRoot: string,
@@ -146,11 +420,30 @@ export async function writeWorkspaceManifest(
 ): Promise<void> {
   const manifestPath = path.join(repoRoot, WORKSPACES_MANIFEST_RELATIVE_PATH);
   await mkdir(path.dirname(manifestPath), { recursive: true });
-  await writeFile(
-    manifestPath,
-    `${JSON.stringify(manifest, null, 2)}\n`,
-    "utf8",
-  );
+  await writeFile(manifestPath, serializeManifest(manifest), "utf8");
+}
+
+/**
+ * Idempotent write: serializes the target manifest and writes it ONLY when the
+ * bytes differ from what is already on disk. A no-op recursive run therefore
+ * leaves openwiki/workspaces.json untouched (same mtime, same bytes), so CI does
+ * not produce a spurious manifest diff. Returns true when a write happened.
+ */
+export async function writeWorkspaceManifestIfChanged(
+  repoRoot: string,
+  manifest: WorkspaceManifest,
+): Promise<boolean> {
+  const manifestPath = path.join(repoRoot, WORKSPACES_MANIFEST_RELATIVE_PATH);
+  const target = serializeManifest(manifest);
+
+  const current = await readFileIfPresent(manifestPath);
+  if (current === target) {
+    return false;
+  }
+
+  await mkdir(path.dirname(manifestPath), { recursive: true });
+  await writeFile(manifestPath, target, "utf8");
+  return true;
 }
 
 /**
@@ -227,6 +520,29 @@ export function normalizeManifest(value: unknown): WorkspaceManifest {
     };
   });
 
+  const overrides = normalizeOverrides(value.overrides);
+
+  // Backward compat: migrate any per-entry goal/name from the legacy flat schema
+  // into the overrides map (keyed by path). An explicit override wins; the entry
+  // only fills fields the override does not already set. This preserves goals a
+  // user hand-wrote in the old shape, since the next write emits path-only
+  // workspace entries and carries all customization in `overrides`.
+  for (const entry of workspaces) {
+    if (entry.goal === undefined && entry.name === undefined) {
+      continue;
+    }
+    const existing = overrides[entry.path] ?? {};
+    overrides[entry.path] = {
+      ...existing,
+      ...(existing.goal === undefined && entry.goal !== undefined
+        ? { goal: entry.goal }
+        : {}),
+      ...(existing.name === undefined && entry.name !== undefined
+        ? { name: entry.name }
+        : {}),
+    };
+  }
+
   const rootGoal =
     isRecord(value.root) && typeof value.root.goal === "string"
       ? value.root.goal
@@ -235,14 +551,48 @@ export function normalizeManifest(value: unknown): WorkspaceManifest {
   return {
     version: 1,
     workspaces,
+    ...(Object.keys(overrides).length > 0 ? { overrides } : {}),
     ...(rootGoal !== undefined ? { root: { goal: rootGoal } } : {}),
   };
+}
+
+/**
+ * Normalizes the untrusted `overrides` map, keeping only recognized fields with
+ * the right types. A missing or non-object `overrides` yields an empty map; a
+ * non-object override value is skipped rather than throwing (the overrides map
+ * is hand-authored and best-effort — a stray value must not wedge the run).
+ */
+function normalizeOverrides(value: unknown): Record<string, WorkspaceOverride> {
+  const overrides: Record<string, WorkspaceOverride> = {};
+  if (!isRecord(value)) {
+    return overrides;
+  }
+
+  for (const [key, raw] of Object.entries(value)) {
+    if (!isRecord(raw)) {
+      continue;
+    }
+    const override: WorkspaceOverride = {};
+    if (typeof raw.goal === "string") override.goal = raw.goal;
+    if (typeof raw.name === "string") override.name = raw.name;
+    if (typeof raw.exclude === "boolean") override.exclude = raw.exclude;
+    if (typeof raw.include === "boolean") override.include = raw.include;
+    overrides[key] = override;
+  }
+
+  return overrides;
 }
 
 /**
  * Validates, normalizes, dedupes, and rejects overlapping workspace entries,
  * returning an ordered recursion plan (leaves first is the caller's concern;
  * this function preserves manifest order after dedupe).
+ *
+ * Overrides are applied per path (keyed by the normalized repo-relative path):
+ * - `exclude: true` produces NO run for that path (it stays listed in
+ *   `workspaces` so it is not re-discovered, but is never documented).
+ * - `goal`/`name` take precedence over any legacy per-entry goal/name; the
+ *   precedence chain is override → legacy entry → none.
  *
  * Rejections (throw):
  * - absolute paths or paths containing `..` segments (escape attempts)
@@ -253,6 +603,7 @@ export function resolveWorkspaceRuns(
   repoRoot: string,
   manifest: WorkspaceManifest,
 ): ResolvedWorkspacePlan {
+  const overrides = manifest.overrides ?? {};
   const seen = new Set<string>();
   const runs: ResolvedWorkspaceRun[] = [];
 
@@ -272,11 +623,22 @@ export function resolveWorkspaceRuns(
     }
     seen.add(relativePath);
 
+    // An excluded path is validated and de-duped like any other (so overlap
+    // checks stay honest) but produces no run — it is listed only so detection
+    // does not re-surface it as new noise.
+    const override = overrides[relativePath];
+    if (override?.exclude === true) {
+      continue;
+    }
+
+    const goal = override?.goal ?? entry.goal;
+    const name = override?.name ?? entry.name;
+
     runs.push({
       relativePath,
       absolutePath: path.resolve(repoRoot, relativePath),
-      goal: entry.goal?.trim() ? entry.goal.trim() : undefined,
-      name: entry.name?.trim() ? entry.name.trim() : undefined,
+      goal: goal?.trim() ? goal.trim() : undefined,
+      name: name?.trim() ? name.trim() : undefined,
     });
   }
 
@@ -821,9 +1183,9 @@ async function readMavenModuleGlobs(repoRoot: string): Promise<string[]> {
   }
 
   const withoutComments = modulesBlock[1].replace(/<!--[\s\S]*?-->/gu, "");
-  return [...withoutComments.matchAll(/<module>\s*([^<]+?)\s*<\/module>/gu)].map(
-    (match) => match[1].replace(/\\/gu, "/"),
-  );
+  return [
+    ...withoutComments.matchAll(/<module>\s*([^<]+?)\s*<\/module>/gu),
+  ].map((match) => match[1].replace(/\\/gu, "/"));
 }
 
 /**

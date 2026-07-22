@@ -66,6 +66,11 @@ export interface RecursiveRunResult {
  * subprojects that depend on it. Dependency-aware invalidation is intentionally
  * out of scope here; see the "no dependency cascade" note in README.md.
  *
+ * The run set comes from resolveWorkspaceRuns, which applies the manifest's
+ * `overrides` map: a path marked `exclude: true` produces NO run here (it is
+ * documented nowhere yet stays listed so self-maintaining discovery does not
+ * re-surface it), and a run's goal/name come from its override when present.
+ *
  * Falls back to a single plain root run (no recursion role) when the manifest
  * resolves to zero workspaces.
  */

@@ -195,14 +195,49 @@ repository root:
 ```json
 {
   "version": 1,
-  "workspaces": [
-    { "path": "packages/api", "name": "API", "goal": "Optional per-subproject brief." },
-    { "path": "packages/web" }
-  ],
+  "workspaces": [{ "path": "packages/api" }, { "path": "packages/web" }],
+  "overrides": {
+    "packages/api": { "name": "API", "goal": "Optional per-subproject brief." },
+    "vendor/thirdparty": { "exclude": true },
+    "tools/custom-grouping": { "include": true, "name": "Tools" }
+  },
   "root": { "goal": "Optional brief for the aggregating root wiki." }
 }
 ```
 
+The manifest has two parts. The `workspaces` list is **managed** — it is
+regenerated from detection on every recursive run, sorted and path-only. All
+hand-authored customization lives in the `overrides` map, keyed by
+repo-relative path, and is never auto-clobbered:
+
+- `goal` / `name`: a per-subproject wiki brief and display name.
+- `exclude: true`: detection still lists the path (so it is not re-discovered as
+  new noise), but no sub-wiki is generated for it.
+- `include: true`: force-add a path detection cannot find (e.g. a custom
+  grouping). This flag is also what distinguishes a deliberate manual addition
+  from an override left behind by a deleted project.
+
+The legacy flat shape (`goal`/`name` written directly on `workspaces` entries)
+is still read: those fields are migrated into `overrides` in memory, and the
+next write emits the current shape without losing them.
+
+- **Self-maintaining discovery.** Detection re-runs on **every** recursive run
+  (it is deterministic and fast) and is merged with the existing manifest, so
+  the manifest stays current as the repo evolves: newly added projects appear
+  automatically, deleted ones drop out, and your `overrides` survive
+  regeneration. The merged manifest is written back **only when it changed** — a
+  no-op run leaves `openwiki/workspaces.json` byte-for-byte unchanged, so
+  scheduled CI runs produce no spurious manifest diff.
+- **Manual entries are preserved, stale ones are pruned.** On the first
+  self-maintaining run, any path you hand-listed that detection cannot surface
+  is kept **if its directory still exists** — it is promoted to an explicit
+  `"include": true` override (carrying any goal/name) so it is stable and
+  self-documenting. A referenced path whose directory is gone is treated as a
+  removed project and dropped; if it carried a hand-authored override, a warning
+  names the pruned path (a plain managed entry is removed quietly). An
+  `"include"` path that would overlap a detected workspace (for example an
+  ancestor of a detected leaf) is ignored with a warning rather than persisted,
+  so a stray include can never wedge future runs.
 - **Activation.** If `openwiki/workspaces.json` is present, recursive mode is
   enabled automatically. Passing `--recursive` with no manifest triggers
   auto-detection of common workspace layouts (pnpm/npm/yarn workspaces, Cargo,
@@ -213,14 +248,14 @@ repository root:
   wiki gets a generated `openwiki/workspaces.md` index linking to every
   sub-wiki; do not hand-edit it.
 - **Incremental updates.** Each subproject is evaluated independently: on
-  `--update`, a subproject's sub-wiki regenerates only when files *within that
-  subproject's own subtree* have changed since it was last documented (tracked in
+  `--update`, a subproject's sub-wiki regenerates only when files _within that
+  subproject's own subtree_ have changed since it was last documented (tracked in
   its own `openwiki/.last-update.json`). Unchanged subprojects are skipped
   without a model call, so scheduled refreshes stay cheap. The root wiki
   regenerates on every run.
 - **Known limitation — no dependency cascade.** Updates do not propagate across
   subprojects. If a shared subproject (for example a common kernel or contracts
-  package) changes, only *that* sub-wiki and the root wiki are refreshed — the
+  package) changes, only _that_ sub-wiki and the root wiki are refreshed — the
   sibling subprojects that depend on it are **not** automatically regenerated,
   even though their documented context may reference the changed code. Until
   dependency-aware invalidation exists, force a full refresh after a significant

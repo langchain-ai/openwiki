@@ -89,6 +89,46 @@ describe("normalizeManifest", () => {
     const manifest = normalizeManifest({ workspaces: [{ path: "a" }] });
     expect(manifest.version).toBe(1);
   });
+
+  test("parses an overrides map, keeping only recognized typed fields", () => {
+    const manifest = normalizeManifest({
+      version: 1,
+      workspaces: [{ path: "a" }],
+      overrides: {
+        a: {
+          goal: "g",
+          name: "N",
+          exclude: true,
+          include: false,
+          bogus: 42,
+        },
+      },
+    });
+    expect(manifest.overrides?.a).toEqual({
+      goal: "g",
+      name: "N",
+      exclude: true,
+      include: false,
+    });
+  });
+
+  test("migrates legacy per-entry goal/name into overrides (explicit override wins)", () => {
+    const manifest = normalizeManifest({
+      version: 1,
+      workspaces: [
+        { path: "a", goal: "legacy a", name: "LegacyA" },
+        { path: "b", goal: "legacy b" },
+      ],
+      overrides: { a: { goal: "explicit a" } },
+    });
+    // Explicit override goal wins; the missing name is filled from the entry.
+    expect(manifest.overrides?.a).toEqual({
+      goal: "explicit a",
+      name: "LegacyA",
+    });
+    // A legacy entry with no override migrates wholesale.
+    expect(manifest.overrides?.b).toEqual({ goal: "legacy b" });
+  });
 });
 
 describe("resolveWorkspaceRuns", () => {
@@ -164,6 +204,34 @@ describe("resolveWorkspaceRuns", () => {
   test("empty workspaces produce an empty plan", () => {
     const plan = resolveWorkspaceRuns(repoRoot, manifest([]));
     expect(plan.runs).toHaveLength(0);
+  });
+
+  test("an override with exclude:true produces no run", () => {
+    const plan = resolveWorkspaceRuns(repoRoot, {
+      version: 1,
+      workspaces: [{ path: "packages/a" }, { path: "packages/b" }],
+      overrides: { "packages/b": { exclude: true } },
+    });
+    expect(plan.runs.map((run) => run.relativePath)).toEqual(["packages/a"]);
+  });
+
+  test("an override goal/name takes precedence over a legacy per-entry value", () => {
+    const plan = resolveWorkspaceRuns(repoRoot, {
+      version: 1,
+      workspaces: [{ path: "packages/a", goal: "entry goal", name: "Entry" }],
+      overrides: { "packages/a": { goal: "override goal", name: "Override" } },
+    });
+    expect(plan.runs[0].goal).toBe("override goal");
+    expect(plan.runs[0].name).toBe("Override");
+  });
+
+  test("falls back to a legacy per-entry goal/name when no override exists", () => {
+    const plan = resolveWorkspaceRuns(repoRoot, {
+      version: 1,
+      workspaces: [{ path: "packages/a", goal: "entry goal", name: "Entry" }],
+    });
+    expect(plan.runs[0].goal).toBe("entry goal");
+    expect(plan.runs[0].name).toBe("Entry");
   });
 });
 
@@ -359,7 +427,7 @@ describe("detectWorkspaces", () => {
       await writeFile(
         path.join(repo, "App.sln"),
         [
-          'Microsoft Visual Studio Solution File, Format Version 12.00',
+          "Microsoft Visual Studio Solution File, Format Version 12.00",
           'Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "src\\Api\\Api.csproj", "{11111111-1111-1111-1111-111111111111}"',
           "EndProject",
           'Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Lib", "src\\Lib\\Lib.vbproj", "{22222222-2222-2222-2222-222222222222}"',
@@ -738,7 +806,11 @@ describe("detectWorkspaces", () => {
 
     test("malformed pom.xml returns no Maven workspaces", async () => {
       const repo = await createTempRepo();
-      await writeFile(path.join(repo, "pom.xml"), "<project>no modules", "utf8");
+      await writeFile(
+        path.join(repo, "pom.xml"),
+        "<project>no modules",
+        "utf8",
+      );
       expect(await detectWorkspaces(repo)).toEqual([]);
     });
   });
@@ -1000,7 +1072,10 @@ describe("detectWorkspaces -> resolveWorkspaceRuns seam", () => {
     await mkdir(path.join(repo, "src/Web"), { recursive: true });
 
     const detected = await detectWorkspaces(repo);
-    const plan = resolveWorkspaceRuns(repo, { version: 1, workspaces: detected });
+    const plan = resolveWorkspaceRuns(repo, {
+      version: 1,
+      workspaces: detected,
+    });
     expect(plan.runs.map((run) => run.relativePath).sort()).toEqual([
       "src/Api",
       "src/Web",
@@ -1032,7 +1107,10 @@ describe("detectWorkspaces -> resolveWorkspaceRuns seam", () => {
     });
 
     const detected = await detectWorkspaces(repo);
-    const plan = resolveWorkspaceRuns(repo, { version: 1, workspaces: detected });
+    const plan = resolveWorkspaceRuns(repo, {
+      version: 1,
+      workspaces: detected,
+    });
     expect(plan.runs.map((run) => run.relativePath).sort()).toEqual([
       "kernel/Core.Domain.Kernel",
       "platform/admission",

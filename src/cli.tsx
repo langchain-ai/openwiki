@@ -618,7 +618,9 @@ function App({ command }: AppProps) {
     const recursiveRunCommand = resolvedCommand;
     const activationPromise: Promise<RecursionActivation> =
       runMode === "code" && recursiveRunCommand !== "chat"
-        ? resolveRecursionActivation(runtimeCwd, command.recursive)
+        ? resolveRecursionActivation(runtimeCwd, command.recursive, (message) =>
+            runOptions.onEvent({ type: "text", text: `\n${message}\n` }),
+          )
         : Promise.resolve({
             kind: "plain",
             reason: "not a code init/update run",
@@ -4135,7 +4137,12 @@ async function runPrintCommand(
     // to code (repository) mode and to init/update runs.
     const activation =
       command.mode === "code" && command.command !== "chat"
-        ? await resolveRecursionActivation(runtimeCwd, command.recursive)
+        ? await resolveRecursionActivation(
+            runtimeCwd,
+            command.recursive,
+            (message) =>
+              runOptions.onEvent({ type: "text", text: `\n${message}\n` }),
+          )
         : ({ kind: "plain", reason: "not a code init/update run" } as const);
 
     if (activation.kind === "recurse") {
