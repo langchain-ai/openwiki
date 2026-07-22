@@ -119,4 +119,18 @@ describe("ensureCodeModeRepoSetup workflow", () => {
       expect(workflow).toContain(managedPath);
     }
   });
+
+  test("pins the openwiki install to a specific version, never unpinned", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    // Installing an unpinned package in a privileged CI context is a supply-chain
+    // risk; the generated workflow must pin openwiki to the shipping version.
+    expect(workflow).toMatch(/npm install --global openwiki@\d+\.\d+\.\d+ /u);
+    expect(workflow).not.toMatch(/--global openwiki(?![@\d])/u);
+  });
 });
