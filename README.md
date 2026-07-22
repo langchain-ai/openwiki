@@ -179,6 +179,54 @@ repository wiki: OpenWiki reads it for scope and priorities, but it is not
 generated documentation and is not rewritten during normal init, update, or chat
 runs unless you explicitly ask to change the brief.
 
+## Monorepos (recursive documentation)
+
+Large monorepos are hard to capture in a single wiki. OpenWiki can instead
+document each subproject in its own nested `openwiki/` sub-wiki, while the
+repository-root wiki links down to them and covers only cross-cutting concerns:
+
+```sh
+openwiki code --update --recursive
+```
+
+Subprojects are read from an `openwiki/workspaces.json` manifest at the
+repository root:
+
+```json
+{
+  "version": 1,
+  "workspaces": [
+    { "path": "packages/api", "name": "API", "goal": "Optional per-subproject brief." },
+    { "path": "packages/web" }
+  ],
+  "root": { "goal": "Optional brief for the aggregating root wiki." }
+}
+```
+
+- **Activation.** If `openwiki/workspaces.json` is present, recursive mode is
+  enabled automatically. Passing `--recursive` with no manifest triggers
+  auto-detection of common workspace layouts (pnpm/npm/yarn workspaces, Cargo,
+  Go, uv, Gradle, Maven, .NET solutions, Bazel), writes a `workspaces.json` for
+  you to review, and proceeds. Pass `--recursive=false` to force a single-repo
+  run even when a manifest exists.
+- **Layout.** Each subproject's docs live at `<subproject>/openwiki/`. The root
+  wiki gets a generated `openwiki/workspaces.md` index linking to every
+  sub-wiki; do not hand-edit it.
+- **Incremental updates.** Each subproject is evaluated independently: on
+  `--update`, a subproject's sub-wiki regenerates only when files *within that
+  subproject's own subtree* have changed since it was last documented (tracked in
+  its own `openwiki/.last-update.json`). Unchanged subprojects are skipped
+  without a model call, so scheduled refreshes stay cheap. The root wiki
+  regenerates on every run.
+- **Known limitation — no dependency cascade.** Updates do not propagate across
+  subprojects. If a shared subproject (for example a common kernel or contracts
+  package) changes, only *that* sub-wiki and the root wiki are refreshed — the
+  sibling subprojects that depend on it are **not** automatically regenerated,
+  even though their documented context may reference the changed code. Until
+  dependency-aware invalidation exists, force a full refresh after a significant
+  shared-code change by removing the relevant `openwiki/.last-update.json` files
+  (or running each affected subproject explicitly).
+
 On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
 
 These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.

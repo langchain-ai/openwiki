@@ -95,8 +95,148 @@ import {
   persistRunMetadataIfChanged,
   removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
+  type GitScope,
 } from "./utils.js";
 import { classifyError, recordRunSafe } from "../telemetry/index.js";
+
+/**
+ * A model resolved once per process. The orchestrator resolves this a single
+ * time and reuses it across every subproject + root run so all runs share one
+ * provider/model/credential validation (and a single ChatGPT token refresh
+ * happens separately, before the loop).
+ */
+export type ResolvedRunModel = {
+  provider: OpenWikiProvider;
+  modelId: string;
+  providerRetryAttempts: number;
+};
+
+/**
+ * Validates provider credentials/base URL/secret/region and resolves the model
+ * ID + retry attempts. Extracted so a single resolution can be shared by both
+ * the single-run path and the recursive orchestrator. Does NOT perform the
+ * ChatGPT token refresh (that is async + env-mutating and must run exactly once
+ * before any run); callers that use ChatGPT must call
+ * {@link refreshChatGptTokensIfNeeded} once before building models.
+ */
+export function resolveRunModel(options: OpenWikiRunOptions): ResolvedRunModel {
+  const provider = resolveConfiguredProvider();
+  const providerBaseUrl = resolveProviderBaseUrl(provider);
+  emitDebug(options, `provider=${provider}`);
+  if (providerBaseUrl) {
+    emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
+  }
+  ensureProviderCredentials(provider);
+  emitDebug(options, `credentials=${provider} present`);
+  ensureProviderBaseUrl(provider);
+  ensureProviderSecretKey(provider);
+  ensureProviderRegion(provider);
+
+  const modelId = resolveModelId(options, provider);
+  emitDebug(options, `model=${modelId}`);
+  const providerRetryAttempts = resolveProviderRetryAttempts();
+  emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
+
+  return { provider, modelId, providerRetryAttempts };
+}
+
+/**
+ * Refreshes ChatGPT OAuth tokens once when the configured provider needs them.
+ * Must be called exactly once before any run in a process (it mutates env).
+ */
+export async function refreshChatGptTokensIfNeeded(
+  provider: OpenWikiProvider,
+  options: OpenWikiRunOptions,
+): Promise<void> {
+  if (provider !== "openai-chatgpt") {
+    return;
+  }
+
+  // Refresh before the model is built, so `createModel` stays synchronous.
+  await ensureFreshChatGptTokens();
+  emitDebug(options, "chatgpt.token=fresh");
+}
+
+/**
+ * Runs one OpenWiki agent invocation with all per-run concerns that live
+ * OUTSIDE the core: the update no-op short-circuit, telemetry recording, the
+ * OpenRouter debug-fetch install/restore, and error debug-info attachment.
+ *
+ * Both {@link runOpenWikiAgent} and the recursive orchestrator drive their runs
+ * through this wrapper so a subproject run behaves identically to a top-level
+ * run. The caller is responsible for the once-per-process work
+ * ({@link loadOpenWikiEnv}, {@link syncBundledSkills}, {@link resolveRunModel},
+ * {@link refreshChatGptTokensIfNeeded}).
+ *
+ * `scope` narrows the git evidence + no-op check to a subtree (see
+ * {@link GitScope}); omit it for byte-identical whole-repo behavior.
+ */
+export async function runOne(
+  command: OpenWikiCommand,
+  cwd: string,
+  options: OpenWikiRunOptions,
+  model: ResolvedRunModel,
+  scope?: GitScope,
+): Promise<OpenWikiRunResult> {
+  if (command === "update" && shouldCheckUpdateNoop(options)) {
+    const noopStatus = await getUpdateNoopStatus(cwd, scope);
+
+    if (noopStatus.shouldSkip) {
+      const message =
+        "No repository changes detected since the last OpenWiki update; skipping agent run.";
+      emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
+      options.onEvent?.({ type: "text", text: message });
+
+      await recordRunSafe(command, options, {
+        provider: model.provider,
+        outcome: "noop",
+      });
+
+      return {
+        command,
+        model: noopStatus.model,
+        skipped: true,
+      };
+    }
+
+    emitDebug(options, `update.noop=false reason=${noopStatus.reason}`);
+  } else if (command === "update") {
+    emitDebug(options, "update.noop=false reason=user message provided");
+  }
+
+  const debugFetchCapture = installOpenRouterDebugFetch(options);
+
+  try {
+    const result = await runOpenWikiAgentCore(
+      command,
+      cwd,
+      options,
+      model.provider,
+      model.modelId,
+      model.providerRetryAttempts,
+      scope,
+    );
+
+    await recordRunSafe(command, options, {
+      provider: model.provider,
+      outcome: "success",
+    });
+
+    return result;
+  } catch (error) {
+    attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
+
+    await recordRunSafe(command, options, {
+      provider: model.provider,
+      outcome: "failure",
+      errorClass: classifyError(error),
+    });
+
+    throw error;
+  } finally {
+    debugFetchCapture.restore();
+  }
+}
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -119,104 +259,55 @@ export async function runOpenWikiAgent(
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
-  if (command === "update" && shouldCheckUpdateNoop(options)) {
-    const noopStatus = await getUpdateNoopStatus(cwd);
+  // The no-op short-circuit lives in runOne, but it must key off runtimeCwd
+  // (which equals cwd for repository runs). runOne handles this via its cwd arg.
 
-    if (noopStatus.shouldSkip) {
-      const message =
-        "No repository changes detected since the last OpenWiki update; skipping agent run.";
-      emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
-      options.onEvent?.({ type: "text", text: message });
-
-      await recordRunSafe(command, options, {
-        provider: resolveConfiguredProvider(),
-        outcome: "noop",
-      });
-
-      return {
-        command,
-        model: noopStatus.model,
-        skipped: true,
-      };
-    }
-
-    emitDebug(options, `update.noop=false reason=${noopStatus.reason}`);
-  } else if (command === "update") {
-    emitDebug(options, "update.noop=false reason=user message provided");
-  }
-
-  const debugFetchCapture = installOpenRouterDebugFetch(options);
-
-  // Resolved inside the try so a failure during resolution (missing key,
-  // invalid model, missing base URL) is still recorded. They may be undefined
-  // in the catch if resolution threw before assigning them.
+  // runOne records its own success/failure telemetry. Anything that throws
+  // BEFORE runOne is entered (credential/model resolution, ChatGPT token
+  // refresh) must still be recorded here exactly once, matching the pre-refactor
+  // behavior where every failure produced a telemetry record.
   let provider: OpenWikiProvider | undefined;
-  let modelId: string | undefined;
+  let enteredRunOne = false;
 
   try {
-    provider = resolveConfiguredProvider();
-    const providerBaseUrl = resolveProviderBaseUrl(provider);
-    emitDebug(options, `provider=${provider}`);
-    if (providerBaseUrl) {
-      emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
-    }
-    ensureProviderCredentials(provider);
-    emitDebug(options, `credentials=${provider} present`);
-    ensureProviderBaseUrl(provider);
-    ensureProviderSecretKey(provider);
-    ensureProviderRegion(provider);
+    const model = resolveRunModel(options);
+    provider = model.provider;
 
-    if (provider === "openai-chatgpt") {
-      // Refresh before the model is built, so `createModel` stays synchronous.
-      await ensureFreshChatGptTokens();
-      emitDebug(options, "chatgpt.token=fresh");
-    }
+    await refreshChatGptTokensIfNeeded(model.provider, options);
 
-    modelId = resolveModelId(options, provider);
-    emitDebug(options, `model=${modelId}`);
-    const providerRetryAttempts = resolveProviderRetryAttempts();
-    emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
-
-    const result = await runOpenWikiAgentCore(
-      command,
-      runtimeCwd,
-      options,
-      provider,
-      modelId,
-      providerRetryAttempts,
-    );
-
-    await recordRunSafe(command, options, {
-      provider,
-      outcome: "success",
-    });
-
-    return result;
+    enteredRunOne = true;
+    return await runOne(command, runtimeCwd, options, model);
   } catch (error) {
-    attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
-
-    await recordRunSafe(command, options, {
-      provider,
-      outcome: "failure",
-      errorClass: classifyError(error),
-    });
+    if (!enteredRunOne) {
+      await recordRunSafe(command, options, {
+        provider,
+        outcome: "failure",
+        errorClass: classifyError(error),
+      });
+    }
 
     throw error;
-  } finally {
-    debugFetchCapture.restore();
   }
 }
 
-async function runOpenWikiAgentCore(
+export async function runOpenWikiAgentCore(
   command: OpenWikiCommand,
   cwd: string,
   options: OpenWikiRunOptions,
   provider: OpenWikiProvider,
   modelId: string,
   providerRetryAttempts: number,
+  scope?: GitScope,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
-  const context = await createRunContext(command, cwd, outputMode);
+  const recursionRole = options.recursionRole;
+  const context = await createRunContext(
+    command,
+    cwd,
+    outputMode,
+    scope,
+    options.wikiGoalOverride,
+  );
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
     command === "chat"
@@ -263,7 +354,7 @@ async function runOpenWikiAgentCore(
     permissions: [
       { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
     ],
-    systemPrompt: createSystemPrompt(command, outputMode),
+    systemPrompt: createSystemPrompt(command, outputMode, recursionRole),
   });
   emitDebug(options, "agent=created");
 
@@ -406,6 +497,7 @@ ${createUserPrompt(
   context,
   options.userMessage ?? null,
   options.outputMode ?? "local-wiki",
+  options.recursionRole,
 )}
 
 ${formatRuntimeRootLabel(options.outputMode ?? "local-wiki")}:

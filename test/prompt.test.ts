@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { createSystemPrompt } from "../src/agent/prompt.ts";
+import { createSystemPrompt, createUserPrompt } from "../src/agent/prompt.ts";
+import type { RunContext } from "../src/agent/types.ts";
 
 /**
  * Guards against the 0.2 regression where the shared "Canonical wiki location"
@@ -62,4 +63,63 @@ describe("createSystemPrompt openwiki_generated enrichment guidance", () => {
       expect(prompt).toMatch(/remove the `openwiki_generated` field/);
     });
   }
+});
+
+describe("createSystemPrompt recursion roles", () => {
+  test("subproject role scopes to one subproject and forbids siblings", () => {
+    const prompt = createSystemPrompt("init", "repository", "subproject");
+    expect(prompt).toContain("Monorepo subproject scope");
+    expect(prompt).toMatch(/scoped to ONE subproject/);
+    expect(prompt).toMatch(/document, read into, or write to sibling/i);
+  });
+
+  test("root role links down and does not deep-document subtrees", () => {
+    const prompt = createSystemPrompt("init", "repository", "root");
+    expect(prompt).toContain("Monorepo root scope");
+    expect(prompt).toMatch(/link DOWN/);
+    expect(prompt).toContain("openwiki/workspaces.md");
+    expect(prompt).toMatch(/Do NOT deep-document/);
+  });
+
+  test("absent role adds no recursion section (backward compatible)", () => {
+    const prompt = createSystemPrompt("init", "repository");
+    expect(prompt).not.toContain("Monorepo subproject scope");
+    expect(prompt).not.toContain("Monorepo root scope");
+  });
+});
+
+describe("createUserPrompt recursion reminders", () => {
+  const context: RunContext = {
+    lastUpdate: null,
+    gitSummary: "(git)",
+    wikiGoal: undefined,
+  };
+
+  test("subproject reminder appears in the init user prompt", () => {
+    const prompt = createUserPrompt(
+      "init",
+      context,
+      null,
+      "repository",
+      "subproject",
+    );
+    expect(prompt).toMatch(/documenting a single subproject/);
+  });
+
+  test("root reminder appears in the update user prompt", () => {
+    const prompt = createUserPrompt(
+      "update",
+      context,
+      null,
+      "repository",
+      "root",
+    );
+    expect(prompt).toMatch(/this is the monorepo root/i);
+    expect(prompt).toContain("openwiki/workspaces.md");
+  });
+
+  test("absent role leaves the user prompt unchanged", () => {
+    const prompt = createUserPrompt("init", context, null, "repository");
+    expect(prompt).not.toMatch(/Recursive monorepo run/);
+  });
 });

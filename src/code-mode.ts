@@ -10,17 +10,32 @@ const DEFAULT_CODE_MODE_CRON = "0 8 * * *";
 // Each is created when missing and refreshed in place when already present.
 const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
 
+/**
+ * Options controlling generated code-mode scaffolding.
+ */
+export type CodeModeRepoSetupOptions = {
+  cronExpression?: string;
+  /**
+   * When true, the generated GitHub Actions workflow runs
+   * `openwiki code --update --recursive --print` so scheduled refreshes keep the
+   * monorepo's per-subproject sub-wikis up to date.
+   */
+  recursive?: boolean;
+};
+
 export async function ensureCodeModeRepoSetup(
   cwd: string,
-  cronExpression = DEFAULT_CODE_MODE_CRON,
+  options: CodeModeRepoSetupOptions = {},
 ): Promise<void> {
-  await writeCodeModeWorkflow(cwd, cronExpression);
+  const cronExpression = options.cronExpression ?? DEFAULT_CODE_MODE_CRON;
+  await writeCodeModeWorkflow(cwd, cronExpression, options.recursive === true);
   await writeCodeModeAgentSnippets(cwd);
 }
 
 async function writeCodeModeWorkflow(
   cwd: string,
   cronExpression: string,
+  recursive: boolean,
 ): Promise<void> {
   const workflowPath = path.join(
     cwd,
@@ -29,7 +44,11 @@ async function writeCodeModeWorkflow(
     "openwiki-update.yml",
   );
   await mkdir(path.dirname(workflowPath), { recursive: true });
-  await writeFile(workflowPath, createCodeModeWorkflow(cronExpression), "utf8");
+  await writeFile(
+    workflowPath,
+    createCodeModeWorkflow(cronExpression, recursive),
+    "utf8",
+  );
 }
 
 async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
@@ -66,7 +85,13 @@ async function writeCodeModeAgentSnippet(
   await writeFile(agentsPath, nextContent, "utf8");
 }
 
-function createCodeModeWorkflow(cronExpression: string): string {
+function createCodeModeWorkflow(
+  cronExpression: string,
+  recursive: boolean,
+): string {
+  const updateCommand = recursive
+    ? "openwiki code --update --recursive --print"
+    : "openwiki code --update --print";
   return `name: OpenWiki Update
 
 on:
@@ -94,7 +119,7 @@ jobs:
         run: npm install --global openwiki
 
       - name: Run OpenWiki
-        run: openwiki code --update --print
+        run: ${updateCommand}
         env:
           OPENWIKI_PROVIDER: openrouter
           OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
@@ -108,6 +133,7 @@ jobs:
         with:
           add-paths: |
             openwiki
+            **/openwiki
             AGENTS.md
             CLAUDE.md
             .github/workflows/openwiki-update.yml

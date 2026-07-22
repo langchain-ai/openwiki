@@ -1,9 +1,37 @@
 import {
   OpenWikiCommand,
   OpenWikiOutputMode,
+  RecursionRole,
   RunContext,
   UpdateMetadata,
 } from "./types.js";
+
+/**
+ * Extra guidance injected into the system prompt for one recursion role in a
+ * monorepo pass. Empty for ordinary single-repo runs.
+ */
+function recursionRoleSystemInstructions(
+  recursionRole: RecursionRole | undefined,
+): string {
+  if (recursionRole === "subproject") {
+    return `
+Monorepo subproject scope:
+- This run is scoped to ONE subproject of a larger monorepo. The virtual root / is THIS subproject's directory, and /openwiki is this subproject's own sub-wiki.
+- Document only this subproject's subtree. Do not document, read into, or write to sibling subprojects or the repository root; the git evidence for this run is already scoped to this subtree.
+- Assume the monorepo root wiki links DOWN to this sub-wiki. Write a self-contained sub-wiki for this subproject; you do not need to re-explain repository-wide concerns that belong in the root wiki.`.trim();
+  }
+
+  if (recursionRole === "root") {
+    return `
+Monorepo root scope:
+- This is the monorepo ROOT run. Each subproject listed in openwiki/workspaces.json has its OWN detailed sub-wiki under <subproject>/openwiki/.
+- Do NOT deep-document the subprojects' internals here. Instead, link DOWN to each subproject's sub-wiki entrypoint (its openwiki/quickstart.md) and describe repository-wide concerns: the overall architecture, how subprojects fit together, shared tooling, and cross-cutting workflows.
+- The file openwiki/workspaces.md is generated deterministically to aggregate links to the sub-wikis. Treat it as generated: link to it from openwiki/quickstart.md, but do not hand-maintain its per-subproject list.
+- The git evidence for this run deliberately excludes the freshly generated nested openwiki/ sub-wikis so you are not tempted to re-document them.`.trim();
+  }
+
+  return "";
+}
 
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   if (lastUpdate === null) {
@@ -16,8 +44,13 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
 export function createSystemPrompt(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
+  recursionRole?: RecursionRole,
 ): string {
   const output = getOutputPromptConfig(outputMode);
+  const recursionInstructions = recursionRoleSystemInstructions(recursionRole);
+  const recursionSection = recursionInstructions
+    ? `\n\n${recursionInstructions}`
+    : "";
 
   return `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
@@ -196,7 +229,7 @@ Coverage self-check:
 - If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
 
 Mode-specific behavior:
-${createModeInstructions(command, outputMode)}
+${createModeInstructions(command, outputMode)}${recursionSection}
 `.trim();
 }
 
@@ -260,8 +293,10 @@ export function createUserPrompt(
   context: RunContext,
   userMessage: string | null = null,
   outputMode: OpenWikiOutputMode = "local-wiki",
+  recursionRole?: RecursionRole,
 ): string {
   const output = getOutputPromptConfig(outputMode);
+  const recursionReminder = recursionRoleUserReminder(recursionRole);
 
   if (command === "chat") {
     return userMessage?.trim() || "Start an OpenWiki chat.";
@@ -280,7 +315,7 @@ Wiki brief:
 ${formatWikiGoal(context.wikiGoal)}
 
 Git context:
-${context.gitSummary}
+${context.gitSummary}${recursionReminder}
 `.trim(),
       userMessage,
     );
@@ -299,7 +334,7 @@ Wiki brief:
 ${formatWikiGoal(context.wikiGoal)}
 
 Git change summary:
-${context.gitSummary}
+${context.gitSummary}${recursionReminder}
 `.trim(),
     userMessage,
   );
@@ -307,6 +342,24 @@ ${context.gitSummary}
 
 function formatWikiGoal(wikiGoal: string | undefined): string {
   return wikiGoal?.trim() || "(not provided)";
+}
+
+/**
+ * A concise reminder appended to the init/update user prompt so the recursion
+ * role is reinforced next to the concrete task, not only in the system prompt.
+ */
+function recursionRoleUserReminder(
+  recursionRole: RecursionRole | undefined,
+): string {
+  if (recursionRole === "subproject") {
+    return "\n\nRecursive monorepo run: you are documenting a single subproject. The virtual root / is this subproject. Document only this subtree and do not touch sibling subprojects or the repository root.";
+  }
+
+  if (recursionRole === "root") {
+    return "\n\nRecursive monorepo run: this is the monorepo root. Link down to each subproject's own openwiki/quickstart.md (aggregated in the generated openwiki/workspaces.md) instead of deep-documenting subprojects.";
+  }
+
+  return "";
 }
 
 type OutputPromptConfig = {
