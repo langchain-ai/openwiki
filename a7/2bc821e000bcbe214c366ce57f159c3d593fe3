@@ -1,0 +1,29 @@
+src/ingestion.ts
+  s_70ce361ce20830::t_73ff989a0323d7 335
+  s_70ce361ce20830::t_edc0bb6c501865 347-349
+  h_f78d33d4280f3f 333,343,350
+  s_70ce361ce20830::t_83295425814d55 287,320
+test/langsmith-modes.test.ts
+  s_70ce361ce20830::t_4f6666ce4795e2 1-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "a72bc821e000bcbe214c366ce57f159c3d593fe3",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
