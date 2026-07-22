@@ -51,6 +51,10 @@ import {
 } from "./agent/openai-chatgpt-oauth.js";
 import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
+import {
+  listConfiguredLangSmithSources,
+  setLangSmithProjects,
+} from "./connectors/sources/langsmith/setup.js";
 import type { ConnectorId } from "./connectors/types.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
 import {
@@ -131,6 +135,7 @@ type PromptStep =
   | "global-power-mode"
   | "source-description"
   | "source-description-custom"
+  | "source-langsmith-projects"
   | "source-menu"
   | "source-path"
   | "source-confirm-continue"
@@ -200,7 +205,7 @@ const ONBOARDING_TEMPLATES = [
       "Maintain a structured project wiki from a local Git repository, with code-oriented pages for architecture, workflows, source maps, and operational guidance.",
     id: "code",
     name: "Code",
-    sourceIds: ["git-repo"],
+    sourceIds: ["langsmith"],
     suggestedSources: ["Local Git repository"],
     suggestedGoal:
       "A code wiki for this local repository. Prioritize a concise quickstart, architecture overview, source map, key workflows, domain concepts, operations/runbook notes, testing guidance, and integration points. Inspect git history to understand reasoning behind code changes and the progression of the repository. Keep pages grounded in the repository structure and recent code changes. Prefer practical navigation for engineers over generic summaries.",
@@ -262,6 +267,18 @@ const SOURCE_OPTIONS = [
       "The default is the current working directory, and you can replace it with another path.",
       "You can add more repositories later in the connector config file.",
     ],
+    secretInputs: [],
+  },
+  {
+    displayName: "LangSmith traces",
+    examples: ["support-bot-prod", "chat-agent"],
+    id: "langsmith",
+    instructions: [
+      "Document how your agent runs, grounded in its LangSmith traces.",
+      "List the projects to document; written to openwiki/.langsmith.json (committed).",
+    ],
+    // No secret input: the LangSmith key is captured by the earlier `langsmith`
+    // spine step (and provided as a CI secret), and used at pull time, not here.
     secretInputs: [],
   },
   {
@@ -678,6 +695,12 @@ export function InitSetup({
   const [gcpLocation, setGcpLocation] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
+  const [langsmithSelectedProjects, setLangsmithSelectedProjects] = useState<
+    string[]
+  >([]);
+  // True once the LangSmith projects step was opened this run; guards the
+  // WYSIWYG write so an untouched setup never rewrites openwiki/.langsmith.json.
+  const [langsmithSourcesTouched, setLangsmithSourcesTouched] = useState(false);
   // True once the user confirms a provider this session. Provider always holds a
   // default value, so a null-check cannot detect the in-session choice.
   const [providerConfirmed, setProviderConfirmed] = useState(false);
@@ -1966,6 +1989,13 @@ export function InitSetup({
 
     if (step === "source-menu") {
       if (sourceSelectionIndex >= activeSourceOptions.length) {
+        // Code mode auto-configures the repo, so its sources are all optional;
+        // "Continue" always advances to the wiki brief rather than nagging.
+        if (isCodeMode(onboardingConfig)) {
+          advanceAfterCodeSources();
+          return;
+        }
+
         if (
           getConnectedSourceCount(onboardingConfig, activeSourceOptions) > 0
         ) {
@@ -2073,6 +2103,18 @@ export function InitSetup({
       return;
     }
 
+    if (step === "source-langsmith-projects") {
+      // Parse the comma-separated list into the selection; nothing is written
+      // here, the exact set is committed at the final step.
+      const names = input
+        .split(",")
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0);
+      setLangsmithSelectedProjects([...new Set(names)]);
+      returnToSourceMenu();
+      return;
+    }
+
     if (step === "source-description") {
       if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
         setInput("");
@@ -2147,6 +2189,17 @@ export function InitSetup({
     }
 
     if (step === "final") {
+      // Commit the LangSmith selection as the exact project set (WYSIWYG
+      // add/remove), only when the step was opened — so an aborted or untouched
+      // setup never rewrites openwiki/.langsmith.json.
+      if (selectedMode === "code" && langsmithSourcesTouched) {
+        try {
+          await setLangSmithProjects(codeRepoRoot, langsmithSelectedProjects);
+        } catch (writeError) {
+          setError(getErrorMessage(writeError));
+          return;
+        }
+      }
       const runIngestionNow =
         FINAL_OPTIONS[finalSelectionIndex] === "Run ingestion now";
       const nextConfig = {
@@ -2290,9 +2343,22 @@ export function InitSetup({
 
   function continueAfterCodeRepoConfirmed(repoRoot: string) {
     setCodeRepoRoot(repoRoot);
+    // Preload committed LangSmith projects so the source menu shows them and edits
+    // build on them (fail-open on the read).
+    void listConfiguredLangSmithSources(repoRoot)
+      .then((existing) => setLangsmithSelectedProjects(existing))
+      .catch(() => {});
+    // Code mode auto-configures the repo itself; the source menu then offers the
+    // optional LangSmith trace sources before the wiki brief.
+    setSourceSelectionIndex(0);
+    setSourceState({ secretValues: {} });
+    setStep("source-menu");
+  }
 
-    // Walk the wiki-goal step on --init even when set; otherwise only when
-    // unset. Seed the existing goal so Enter keeps it (idempotent).
+  // Continues past the code-mode source menu into the wiki brief. Walks wiki-goal
+  // on --init even when set; otherwise only when unset. Seeds the existing goal so
+  // Enter keeps it (idempotent).
+  function advanceAfterCodeSources() {
     if (walkAllSteps || !onboardingConfig.wikiGoal) {
       setInput(
         onboardingConfig.wikiGoal ??
@@ -2481,6 +2547,15 @@ export function InitSetup({
   function continueAfterSourceCredentialSetup(source: SourceSetupOption) {
     if (source.authProvider) {
       setStep("source-auth");
+      return;
+    }
+
+    if (source.id === "langsmith") {
+      // Open the text list seeded with the current selection; opening it arms the
+      // WYSIWYG write on completion.
+      setLangsmithSourcesTouched(true);
+      setInput(langsmithSelectedProjects.join(", "));
+      setStep("source-langsmith-projects");
       return;
     }
 
@@ -2944,6 +3019,7 @@ export function InitSetup({
               input={input}
               inputDisplayWidth={inputDisplayWidth}
               isCustomModelInput={isCustomModelInput}
+              langsmithSelectedProjects={langsmithSelectedProjects}
               modelSelectionIndex={modelSelectionIndex}
               onboardingConfig={onboardingConfig}
               powerModeSelectionIndex={powerModeSelectionIndex}
@@ -3021,6 +3097,7 @@ function Prompt({
   input,
   inputDisplayWidth,
   isCustomModelInput,
+  langsmithSelectedProjects,
   modelSelectionIndex,
   onboardingConfig,
   powerModeSelectionIndex,
@@ -3049,6 +3126,7 @@ function Prompt({
   input: string;
   inputDisplayWidth: number;
   isCustomModelInput: boolean;
+  langsmithSelectedProjects: string[];
   modelSelectionIndex: number;
   onboardingConfig: OpenWikiOnboardingConfig;
   powerModeSelectionIndex: number;
@@ -3364,35 +3442,51 @@ function Prompt({
   }
 
   if (step === "source-menu") {
-    const configuredCount = getConnectedSourceCount(
-      onboardingConfig,
-      sourceOptions,
-    );
+    // LangSmith projects live in state until setup completes (not onboarding
+    // source instances), so count them here for the menu's configured display.
+    const langsmithSelectedCount = sourceOptions.some(
+      (source) => source.id === "langsmith",
+    )
+      ? langsmithSelectedProjects.length
+      : 0;
+    const configuredCount =
+      getConnectedSourceCount(onboardingConfig, sourceOptions) +
+      langsmithSelectedCount;
 
     return (
       <Box flexDirection="column">
         <Text>Configure sources for this mode.</Text>
         {sourceOptions.map((source, index) => {
+          const isLangsmith = source.id === "langsmith";
           const sourceInstances = getSourceInstances(
             onboardingConfig,
             source.id,
           );
+          const count = isLangsmith
+            ? langsmithSelectedProjects.length
+            : sourceInstances.length;
           return (
             <Box flexDirection="column" key={source.id}>
               <Text>
                 <SelectionMarker isSelected={index === sourceSelectionIndex} />{" "}
-                {getSourceMenuLabel(source, sourceInstances.length)}{" "}
+                {getSourceMenuLabel(source, count)}{" "}
                 <SourceConnectionStatus
-                  count={sourceInstances.length}
-                  isConfigured={sourceInstances.length > 0}
+                  count={count}
+                  isConfigured={count > 0}
                 />
               </Text>
-              {sourceInstances.map((sourceInstance) => (
-                <Text color="gray" key={sourceInstance.id}>
-                  {"  "}- {sourceInstance.name ?? sourceInstance.id}{" "}
-                  <Text color="gray">({sourceInstance.id})</Text>
-                </Text>
-              ))}
+              {isLangsmith
+                ? langsmithSelectedProjects.map((name) => (
+                    <Text color="gray" key={name}>
+                      {"  "}- {name}
+                    </Text>
+                  ))
+                : sourceInstances.map((sourceInstance) => (
+                    <Text color="gray" key={sourceInstance.id}>
+                      {"  "}- {sourceInstance.name ?? sourceInstance.id}{" "}
+                      <Text color="gray">({sourceInstance.id})</Text>
+                    </Text>
+                  ))}
             </Box>
           );
         })}
@@ -3524,6 +3618,24 @@ function Prompt({
           value={input}
         />
         <Text color="gray">Optional. Press Enter to continue.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "source-langsmith-projects") {
+    return (
+      <Box flexDirection="column">
+        <Text>Which LangSmith projects should this wiki document?</Text>
+        <Text color="gray">
+          Comma-separated project names (as in LANGCHAIN_PROJECT). Written to
+          openwiki/.langsmith.json.
+        </Text>
+        <BorderedMultilineInput
+          maxDisplayWidth={inputDisplayWidth}
+          marginTop={1}
+          value={input}
+        />
+        <Text color="gray">Press Enter to confirm.</Text>
       </Box>
     );
   }
