@@ -18,11 +18,9 @@ const DEFAULT_API_BASE_URL = "https://api.smith.langchain.com";
 const LANGSMITH_API_KEY_ENV = "OPENWIKI_LANGSMITH_API_KEY";
 
 /**
- * Selectable projects for the setup picker, or a missing-key signal so the
- * wizard prompts for the key instead of calling the API without one.
+ * Result cap for a project search, so a broad substring match stays responsive.
  */
-export type LangSmithProjectChoices =
-  { ok: true; names: string[] } | { ok: false; reason: "missing-key" };
+const SEARCH_LIMIT = 50;
 
 /**
  * Reads the key with the connector's precedence (scoped var, then the
@@ -33,14 +31,23 @@ function readApiKey(): string | undefined {
 }
 
 /**
- * Lists LangSmith project names for the picker, or a missing-key signal.
+ * Searches the workspace for project names matching `query` (a name substring),
+ * server-side and capped at SEARCH_LIMIT, so the picker stays fast on workspaces
+ * with thousands of projects. Returns an empty list for a blank query or a
+ * missing key, so the picker degrades to manual entry rather than enumerating
+ * everything.
  */
-export async function listLangSmithProjectChoices(
+export async function searchLangSmithProjects(
+  query: string,
   apiBaseUrl?: string,
-): Promise<LangSmithProjectChoices> {
+): Promise<string[]> {
+  const trimmed = query.trim();
+  if (!trimmed) {
+    return [];
+  }
   const apiKey = readApiKey();
   if (!apiKey) {
-    return { ok: false, reason: "missing-key" };
+    return [];
   }
   // The key rides along in an Authorization header, so validate any caller-
   // supplied host against the official-host allowlist before the SDK sees it.
@@ -48,7 +55,7 @@ export async function listLangSmithProjectChoices(
     sanitizeLangSmithApiBaseUrl(apiBaseUrl) ?? DEFAULT_API_BASE_URL,
     apiKey,
   );
-  return { names: await api.listProjectNames(), ok: true };
+  return api.listProjectNames({ limit: SEARCH_LIMIT, nameContains: trimmed });
 }
 
 /**
@@ -70,6 +77,33 @@ export async function addLangSmithSource(
 ): Promise<void> {
   const config = await readLangSmithRepoConfig(repoRoot);
   await writeLangSmithRepoConfig(repoRoot, withProject(config, name));
+}
+
+/**
+ * Writes the committed repo file so its projects are exactly `names` (trimmed,
+ * deduped, order preserved), keeping other config fields. This makes the setup
+ * picker WYSIWYG: a project removed from the selection is removed from the file.
+ * A no-op when there is nothing to write and no existing file, so an untouched
+ * setup never creates one.
+ */
+export async function setLangSmithProjects(
+  repoRoot: string,
+  names: string[],
+): Promise<void> {
+  const config = await readLangSmithRepoConfig(repoRoot);
+  const seen = new Set<string>();
+  const projects: { name: string }[] = [];
+  for (const name of names) {
+    const trimmed = name.trim();
+    if (trimmed.length > 0 && !seen.has(trimmed)) {
+      seen.add(trimmed);
+      projects.push({ name: trimmed });
+    }
+  }
+  if (projects.length === 0 && !config) {
+    return;
+  }
+  await writeLangSmithRepoConfig(repoRoot, { ...(config ?? {}), projects });
 }
 
 /**

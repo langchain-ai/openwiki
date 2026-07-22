@@ -25,8 +25,9 @@ import {
 import {
   addLangSmithSource,
   listConfiguredLangSmithSources,
-  listLangSmithProjectChoices,
   removeLangSmithSource,
+  searchLangSmithProjects,
+  setLangSmithProjects,
 } from "../src/connectors/sources/langsmith/setup.ts";
 
 const KEY = "OPENWIKI_LANGSMITH_API_KEY";
@@ -62,26 +63,36 @@ afterEach(() => {
   }
 });
 
-describe("listLangSmithProjectChoices", () => {
-  test("signals missing-key when no key is set", async () => {
-    await expect(listLangSmithProjectChoices()).resolves.toEqual({
-      ok: false,
-      reason: "missing-key",
-    });
+describe("searchLangSmithProjects", () => {
+  test("returns [] for a blank query without calling the API", async () => {
+    process.env[KEY] = "lsv2_test";
+
+    await expect(searchLangSmithProjects("   ")).resolves.toEqual([]);
     expect(createLangSmithApi).not.toHaveBeenCalled();
   });
 
-  test("lists project names when a key is present", async () => {
+  test("returns [] when no key is available", async () => {
+    await expect(searchLangSmithProjects("prod")).resolves.toEqual([]);
+    expect(createLangSmithApi).not.toHaveBeenCalled();
+  });
+
+  test("searches server-side by the trimmed name substring, capped at 50", async () => {
     process.env[KEY] = "lsv2_test";
+    const listProjectNames = vi.fn(
+      (options: { limit?: number; nameContains?: string } = {}) =>
+        Promise.resolve(options.nameContains ? ["prod-1", "prod-2"] : []),
+    );
     vi.mocked(createLangSmithApi).mockReturnValue(
-      fakeApi({
-        listProjectNames: () => Promise.resolve(["prod", "staging"]),
-      }),
+      fakeApi({ listProjectNames }),
     );
 
-    await expect(listLangSmithProjectChoices()).resolves.toEqual({
-      names: ["prod", "staging"],
-      ok: true,
+    await expect(searchLangSmithProjects("  prod  ")).resolves.toEqual([
+      "prod-1",
+      "prod-2",
+    ]);
+    expect(listProjectNames).toHaveBeenCalledWith({
+      limit: 50,
+      nameContains: "prod",
     });
   });
 
@@ -89,9 +100,8 @@ describe("listLangSmithProjectChoices", () => {
     process.env.LANGSMITH_API_KEY = "lsv2_fallback";
     vi.mocked(createLangSmithApi).mockReturnValue(fakeApi());
 
-    const result = await listLangSmithProjectChoices();
+    await searchLangSmithProjects("prod");
 
-    expect(result.ok).toBe(true);
     expect(createLangSmithApi).toHaveBeenCalledTimes(1);
   });
 });
@@ -148,6 +158,54 @@ describe("addLangSmithSource", () => {
     expect(writeLangSmithRepoConfig).toHaveBeenCalledWith(REPO, {
       projects: [{ name: "prod" }],
     });
+  });
+});
+
+describe("setLangSmithProjects", () => {
+  test("writes exactly the given projects, preserving other fields", async () => {
+    vi.mocked(readLangSmithRepoConfig).mockResolvedValue({
+      apiBaseUrl: "https://eu.api.smith.langchain.com",
+      includeFeedback: true,
+      projects: [{ name: "old" }],
+    });
+
+    await setLangSmithProjects(REPO, ["a", "b"]);
+
+    expect(writeLangSmithRepoConfig).toHaveBeenCalledWith(REPO, {
+      apiBaseUrl: "https://eu.api.smith.langchain.com",
+      includeFeedback: true,
+      projects: [{ name: "a" }, { name: "b" }],
+    });
+  });
+
+  test("trims and dedupes, preserving order", async () => {
+    vi.mocked(readLangSmithRepoConfig).mockResolvedValue(undefined);
+
+    await setLangSmithProjects(REPO, ["  prod  ", "prod", "staging"]);
+
+    expect(writeLangSmithRepoConfig).toHaveBeenCalledWith(REPO, {
+      projects: [{ name: "prod" }, { name: "staging" }],
+    });
+  });
+
+  test("empties the project list when the selection is cleared but a config exists", async () => {
+    vi.mocked(readLangSmithRepoConfig).mockResolvedValue({
+      projects: [{ name: "old" }],
+    });
+
+    await setLangSmithProjects(REPO, []);
+
+    expect(writeLangSmithRepoConfig).toHaveBeenCalledWith(REPO, {
+      projects: [],
+    });
+  });
+
+  test("does not create a file when the selection is empty and none exists", async () => {
+    vi.mocked(readLangSmithRepoConfig).mockResolvedValue(undefined);
+
+    await setLangSmithProjects(REPO, []);
+
+    expect(writeLangSmithRepoConfig).not.toHaveBeenCalled();
   });
 });
 

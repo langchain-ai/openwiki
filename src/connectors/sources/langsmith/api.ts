@@ -92,9 +92,14 @@ export interface LangSmithApi {
   fetchFeedback(runIds: string[]): Promise<Feedback[]>;
 
   /**
-   * Project (tracing session) names visible to the key, sorted, for the picker.
+   * Project (tracing session) names visible to the key, sorted. Filtered
+   * server-side by a name substring and capped so the setup picker stays fast on
+   * workspaces with thousands of projects.
    */
-  listProjectNames(): Promise<string[]>;
+  listProjectNames(options?: {
+    limit?: number;
+    nameContains?: string;
+  }): Promise<string[]>;
 }
 
 /**
@@ -139,11 +144,20 @@ export function createLangSmithApi(
       return drainCapped(client.listFeedback({ runIds }), MAX_FEEDBACK);
     },
 
-    async listProjectNames() {
+    async listProjectNames(options = {}) {
+      // includeStats:false skips per-project run aggregates (the slow part).
+      // nameContains filters server-side so a huge workspace never enumerates
+      // every project; limit bounds the returned page.
       const names: string[] = [];
-      for await (const project of client.listProjects()) {
+      for await (const project of client.listProjects({
+        includeStats: false,
+        ...(options.nameContains ? { nameContains: options.nameContains } : {}),
+      })) {
         if (project.name) {
           names.push(project.name);
+        }
+        if (options.limit !== undefined && names.length >= options.limit) {
+          break;
         }
       }
       return names.sort();

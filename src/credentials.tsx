@@ -52,8 +52,9 @@ import {
 import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
 import {
-  addLangSmithSource,
-  listLangSmithProjectChoices,
+  listConfiguredLangSmithSources,
+  searchLangSmithProjects,
+  setLangSmithProjects,
 } from "./connectors/sources/langsmith/setup.js";
 import type { ConnectorId } from "./connectors/types.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
@@ -205,7 +206,7 @@ const ONBOARDING_TEMPLATES = [
       "Maintain a structured project wiki from a local Git repository, with code-oriented pages for architecture, workflows, source maps, and operational guidance.",
     id: "code",
     name: "Code",
-    sourceIds: ["git-repo", "langsmith"],
+    sourceIds: ["langsmith"],
     suggestedSources: ["Local Git repository"],
     suggestedGoal:
       "A code wiki for this local repository. Prioritize a concise quickstart, architecture overview, source map, key workflows, domain concepts, operations/runbook notes, testing guidance, and integration points. Inspect git history to understand reasoning behind code changes and the progression of the repository. Keep pages grounded in the repository structure and recent code changes. Prefer practical navigation for engineers over generic summaries.",
@@ -371,13 +372,15 @@ const SOURCE_OPTIONS = [
     id: "langsmith",
     instructions: [
       "Document how your agent runs, grounded in its LangSmith traces.",
-      "Pick a project; it is written to openwiki/langsmith.json (committed).",
+      "Pick a project; it is written to openwiki/.langsmith.json (committed).",
     ],
+    // Adding a LangSmith source requires the key. Uses the same LANGSMITH_API_KEY
+    // as the optional spine step and CI, so a key entered earlier is not
+    // re-prompted; when it is missing the generic source-secret step asks for it.
     secretInputs: [
       {
-        envKey: "OPENWIKI_LANGSMITH_API_KEY",
+        envKey: "LANGSMITH_API_KEY",
         label: "LangSmith API key",
-        optional: true, // falls back to LANGSMITH_API_KEY when tracing is on
         secret: true,
       },
     ],
@@ -734,6 +737,14 @@ export function InitSetup({
   );
   const [langsmithProjectSelectionIndex, setLangsmithProjectSelectionIndex] =
     useState(0);
+  const [langsmithSelectedProjects, setLangsmithSelectedProjects] = useState<
+    string[]
+  >([]);
+  const [langsmithSearchPending, setLangsmithSearchPending] = useState(false);
+  const [langsmithSearchFailed, setLangsmithSearchFailed] = useState(false);
+  // True once the user has opened the LangSmith picker this run. Guards the
+  // WYSIWYG write: an untouched setup never rewrites openwiki/.langsmith.json.
+  const [langsmithSourcesTouched, setLangsmithSourcesTouched] = useState(false);
   const [templateSelectionIndex, setTemplateSelectionIndex] = useState(0);
   const [cronModeSelectionIndex, setCronModeSelectionIndex] = useState(0);
   const [powerModeSelectionIndex, setPowerModeSelectionIndex] = useState(0);
@@ -768,6 +779,60 @@ export function InitSetup({
     () => getTemplateSourceOptions(getConfigModeId(onboardingConfig)),
     [onboardingConfig.modeId, onboardingConfig.templateId],
   );
+
+  // Debounced server-side project search for the LangSmith picker. Runs only on
+  // that step; a blank filter clears results, so a large workspace is searched by
+  // name rather than enumerated.
+  useEffect(() => {
+    if (step !== "source-langsmith-project") {
+      return;
+    }
+    const query = input.trim();
+    if (query.length === 0) {
+      setLangsmithProjectNames([]);
+      setLangsmithSearchPending(false);
+      setLangsmithSearchFailed(false);
+      return;
+    }
+    let cancelled = false;
+    setLangsmithSearchPending(true);
+    const timer = setTimeout(() => {
+      // Race the search against a timeout: the SDK retries a failed request with
+      // backoff, so without this an offline search would hang on "searching…"
+      // for many seconds instead of surfacing the failure note promptly.
+      let timeoutHandle: ReturnType<typeof setTimeout>;
+      const timeout = new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(
+          () => reject(new Error("search timed out")),
+          6000,
+        );
+      });
+      Promise.race([searchLangSmithProjects(query), timeout])
+        .then((names) => {
+          if (!cancelled) {
+            setLangsmithProjectNames(names);
+            setLangsmithSearchFailed(false);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setLangsmithProjectNames([]);
+            setLangsmithSearchFailed(true);
+          }
+        })
+        .finally(() => {
+          clearTimeout(timeoutHandle);
+          if (!cancelled) {
+            setLangsmithSearchPending(false);
+          }
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [step, input]);
+
   const selectedSource = getSourceOption(selectedSourceId);
   const suggestedCronExpression = useMemo(
     () => getSuggestedCronExpression(onboardingConfig),
@@ -1282,15 +1347,53 @@ export function InitSetup({
     }
 
     if (step === "source-langsmith-project") {
-      handleMenuInput(key, () =>
-        setLangsmithProjectSelectionIndex((index) =>
-          moveSelectionIndex(
-            index,
-            key.upArrow ? -1 : 1,
-            langsmithProjectNames.length,
-          ),
-        ),
+      // Arrows move the windowed list, Tab toggles the highlighted row, Enter
+      // finishes, and printable keys (including Space) filter — so project names
+      // with spaces search and add normally.
+      const rows = getLangsmithPickerRows(
+        langsmithProjectNames,
+        input,
+        langsmithSelectedProjects,
       );
+      if (key.upArrow || key.downArrow) {
+        if (rows.length > 0) {
+          setLangsmithProjectSelectionIndex((index) =>
+            moveSelectionIndex(index, key.upArrow ? -1 : 1, rows.length),
+          );
+        }
+        return;
+      }
+      if (key.return) {
+        returnToSourceMenu();
+        return;
+      }
+      if (key.tab) {
+        const row =
+          rows[Math.min(langsmithProjectSelectionIndex, rows.length - 1)];
+        if (row) {
+          setLangsmithSelectedProjects((selected) =>
+            selected.includes(row.name)
+              ? selected.filter((existing) => existing !== row.name)
+              : [...selected, row.name],
+          );
+          // A manual add clears the search so the box is ready for the next name.
+          if (row.kind === "manual") {
+            setInput("");
+            setLangsmithProjectSelectionIndex(0);
+          }
+        }
+        return;
+      }
+      if (key.backspace || key.delete) {
+        setInput((value) => value.slice(0, -1));
+        setLangsmithProjectSelectionIndex(0);
+        return;
+      }
+      const sanitizedInput = sanitizeInputChunk(inputValue);
+      if (sanitizedInput && !key.ctrl && !key.meta) {
+        setInput((value) => value + sanitizedInput);
+        setLangsmithProjectSelectionIndex(0);
+      }
       return;
     }
 
@@ -2006,6 +2109,13 @@ export function InitSetup({
 
     if (step === "source-menu") {
       if (sourceSelectionIndex >= activeSourceOptions.length) {
+        // Code mode auto-configures the repo, so its sources are all optional;
+        // "Continue" always advances to the wiki brief rather than nagging.
+        if (isCodeMode(onboardingConfig)) {
+          advanceAfterCodeSources();
+          return;
+        }
+
         if (
           getConnectedSourceCount(onboardingConfig, activeSourceOptions) > 0
         ) {
@@ -2086,23 +2196,6 @@ export function InitSetup({
 
       await saveOpenWikiEnv(nextSecretValues);
       continueAfterSourceCredentialSetup(selectedSource);
-      return;
-    }
-
-    if (step === "source-langsmith-project") {
-      const name = langsmithProjectNames[langsmithProjectSelectionIndex];
-      if (name) {
-        try {
-          await addLangSmithSource(codeRepoRoot, name);
-          setNotice(
-            `Added LangSmith project "${name}" to openwiki/.langsmith.json.`,
-          );
-        } catch (writeError) {
-          setError(getErrorMessage(writeError));
-          return;
-        }
-      }
-      returnToSourceMenu();
       return;
     }
 
@@ -2204,6 +2297,12 @@ export function InitSetup({
     }
 
     if (step === "final") {
+      // Commit the LangSmith selection as the exact project set (WYSIWYG
+      // add/remove), but only when the picker was opened — so an aborted or
+      // untouched setup never rewrites openwiki/.langsmith.json.
+      if (selectedMode === "code" && langsmithSourcesTouched) {
+        await setLangSmithProjects(codeRepoRoot, langsmithSelectedProjects);
+      }
       const runIngestionNow =
         FINAL_OPTIONS[finalSelectionIndex] === "Run ingestion now";
       const nextConfig = {
@@ -2347,9 +2446,22 @@ export function InitSetup({
 
   function continueAfterCodeRepoConfirmed(repoRoot: string) {
     setCodeRepoRoot(repoRoot);
+    // Preload the projects already committed to openwiki/.langsmith.json so the
+    // menu and picker show them (pre-checked) and edits build on them.
+    void listConfiguredLangSmithSources(repoRoot).then((existing) => {
+      setLangsmithSelectedProjects(existing);
+    });
+    // Code mode auto-configures the repo itself; the source menu then offers the
+    // optional LangSmith trace sources before the wiki brief.
+    setSourceSelectionIndex(0);
+    setSourceState({ secretValues: {} });
+    setStep("source-menu");
+  }
 
-    // Walk the wiki-goal step on --init even when set; otherwise only when
-    // unset. Seed the existing goal so Enter keeps it (idempotent).
+  // Continues past the code-mode source menu into the wiki brief. Walks wiki-goal
+  // on --init even when set; otherwise only when unset. Seeds the existing goal so
+  // Enter keeps it (idempotent).
+  function advanceAfterCodeSources() {
     if (walkAllSteps || !onboardingConfig.wikiGoal) {
       setInput(
         onboardingConfig.wikiGoal ??
@@ -2545,24 +2657,17 @@ export function InitSetup({
     // instance. Load its project list and route to the picker, which writes the
     // committed openwiki/.langsmith.json rather than ~/.openwiki/onboarding.json.
     if (source.id === "langsmith") {
-      void (async () => {
-        try {
-          const choices = await listLangSmithProjectChoices();
-          if (!choices.ok) {
-            setError(
-              "Add OPENWIKI_LANGSMITH_API_KEY to ~/.openwiki/.env, then retry.",
-            );
-            setStep("source-menu");
-            return;
-          }
-          setLangsmithProjectNames(choices.names);
-          setLangsmithProjectSelectionIndex(0);
-          setStep("source-langsmith-project");
-        } catch (loadError) {
-          setError(getErrorMessage(loadError));
-          setStep("source-menu");
-        }
-      })();
+      // No pre-load: the picker searches server-side as you type (a debounced
+      // effect), which is the only sane approach on a large workspace. The
+      // running multi-select (seeded from the committed config) persists; only
+      // the filter and cursor reset. Opening it arms the WYSIWYG write.
+      setLangsmithSourcesTouched(true);
+      setError(null);
+      setNotice(null);
+      setLangsmithProjectNames([]);
+      setInput("");
+      setLangsmithProjectSelectionIndex(0);
+      setStep("source-langsmith-project");
       return;
     }
 
@@ -3028,6 +3133,9 @@ export function InitSetup({
               isCustomModelInput={isCustomModelInput}
               langsmithProjectNames={langsmithProjectNames}
               langsmithProjectSelectionIndex={langsmithProjectSelectionIndex}
+              langsmithSearchFailed={langsmithSearchFailed}
+              langsmithSearchPending={langsmithSearchPending}
+              langsmithSelectedProjects={langsmithSelectedProjects}
               modelSelectionIndex={modelSelectionIndex}
               onboardingConfig={onboardingConfig}
               powerModeSelectionIndex={powerModeSelectionIndex}
@@ -3107,6 +3215,9 @@ function Prompt({
   isCustomModelInput,
   langsmithProjectNames,
   langsmithProjectSelectionIndex,
+  langsmithSearchFailed,
+  langsmithSearchPending,
+  langsmithSelectedProjects,
   modelSelectionIndex,
   onboardingConfig,
   powerModeSelectionIndex,
@@ -3137,6 +3248,9 @@ function Prompt({
   isCustomModelInput: boolean;
   langsmithProjectNames: string[];
   langsmithProjectSelectionIndex: number;
+  langsmithSearchFailed: boolean;
+  langsmithSearchPending: boolean;
+  langsmithSelectedProjects: string[];
   modelSelectionIndex: number;
   onboardingConfig: OpenWikiOnboardingConfig;
   powerModeSelectionIndex: number;
@@ -3452,35 +3566,51 @@ function Prompt({
   }
 
   if (step === "source-menu") {
-    const configuredCount = getConnectedSourceCount(
-      onboardingConfig,
-      sourceOptions,
-    );
+    // LangSmith projects are not onboarding source instances; they live in state
+    // until setup completes, so count them here for the menu's configured display.
+    const langsmithSelectedCount = sourceOptions.some(
+      (source) => source.id === "langsmith",
+    )
+      ? langsmithSelectedProjects.length
+      : 0;
+    const configuredCount =
+      getConnectedSourceCount(onboardingConfig, sourceOptions) +
+      langsmithSelectedCount;
 
     return (
       <Box flexDirection="column">
         <Text>Configure sources for this mode.</Text>
         {sourceOptions.map((source, index) => {
+          const isLangsmith = source.id === "langsmith";
           const sourceInstances = getSourceInstances(
             onboardingConfig,
             source.id,
           );
+          const count = isLangsmith
+            ? langsmithSelectedProjects.length
+            : sourceInstances.length;
           return (
             <Box flexDirection="column" key={source.id}>
               <Text>
                 <SelectionMarker isSelected={index === sourceSelectionIndex} />{" "}
-                {getSourceMenuLabel(source, sourceInstances.length)}{" "}
+                {getSourceMenuLabel(source, count)}{" "}
                 <SourceConnectionStatus
-                  count={sourceInstances.length}
-                  isConfigured={sourceInstances.length > 0}
+                  count={count}
+                  isConfigured={count > 0}
                 />
               </Text>
-              {sourceInstances.map((sourceInstance) => (
-                <Text color="gray" key={sourceInstance.id}>
-                  {"  "}- {sourceInstance.name ?? sourceInstance.id}{" "}
-                  <Text color="gray">({sourceInstance.id})</Text>
-                </Text>
-              ))}
+              {isLangsmith
+                ? langsmithSelectedProjects.map((name) => (
+                    <Text color="gray" key={name}>
+                      {"  "}- {name}
+                    </Text>
+                  ))
+                : sourceInstances.map((sourceInstance) => (
+                    <Text color="gray" key={sourceInstance.id}>
+                      {"  "}- {sourceInstance.name ?? sourceInstance.id}{" "}
+                      <Text color="gray">({sourceInstance.id})</Text>
+                    </Text>
+                  ))}
             </Box>
           );
         })}
@@ -3600,25 +3730,66 @@ function Prompt({
   }
 
   if (step === "source-langsmith-project") {
+    const rows = getLangsmithPickerRows(
+      langsmithProjectNames,
+      input,
+      langsmithSelectedProjects,
+    );
+    const cursor = Math.max(
+      0,
+      Math.min(langsmithProjectSelectionIndex, rows.length - 1),
+    );
+    const windowSize = 8;
+    const { end, start } = getWindowBounds(rows.length, cursor, windowSize);
     return (
       <Box flexDirection="column">
-        <Text>Select a LangSmith project to document</Text>
-        <Text color="gray">
-          Writes the project to openwiki/.langsmith.json (committed).
+        <Text>
+          Select LangSmith projects to document{" "}
+          <Text color="gray">
+            ({langsmithSelectedProjects.length} selected)
+          </Text>
         </Text>
-        {langsmithProjectNames.length === 0 ? (
-          <Text color="gray">No projects found for this API key.</Text>
-        ) : (
-          langsmithProjectNames.map((name, index) => (
-            <Text key={name}>
-              <SelectionMarker
-                isSelected={index === langsmithProjectSelectionIndex}
-              />{" "}
-              {name}
+        <Text color="gray">
+          Type to search, Tab toggles a project, Enter when done.
+        </Text>
+        <Box marginTop={1}>
+          <Text>Search: </Text>
+          <Text color="cyan">{input.length > 0 ? input : "…"}</Text>
+          {langsmithSearchPending ? (
+            <Text color="gray"> (searching…)</Text>
+          ) : null}
+        </Box>
+        {input.trim().length === 0 ? (
+          <Text color="gray">
+            {langsmithSelectedProjects.length > 0
+              ? "Selected (Tab to remove, or type to search for more):"
+              : "Type part of a project name to search."}
+          </Text>
+        ) : null}
+        {langsmithSearchFailed ? (
+          <Text color="yellow">
+            Can&apos;t reach LangSmith. Type the exact project name, then Tab to
+            add it.
+          </Text>
+        ) : null}
+        {start > 0 ? <Text color="gray"> ↑ {start} more</Text> : null}
+        {rows.slice(start, end).map((row, offset) => {
+          const index = start + offset;
+          const isCursor = index === cursor;
+          const checked = langsmithSelectedProjects.includes(row.name);
+          const label = row.kind === "manual" ? `Add "${row.name}"` : row.name;
+          return (
+            <Text key={`${row.kind}:${row.name}`}>
+              <SelectionMarker isSelected={isCursor} />{" "}
+              <Text color={checked ? "green" : undefined}>
+                {checked ? "✓" : " "} {label}
+              </Text>
             </Text>
-          ))
-        )}
-        <Text color="gray">Use up/down arrows, then press Enter.</Text>
+          );
+        })}
+        {end < rows.length ? (
+          <Text color="gray"> ↓ {rows.length - end} more</Text>
+        ) : null}
       </Box>
     );
   }
@@ -4660,6 +4831,55 @@ function moveSelectionIndex(
   }
 
   return (currentIndex + offset + itemCount) % itemCount;
+}
+
+export type LangsmithPickerRow =
+  { kind: "manual"; name: string } | { kind: "project"; name: string };
+
+/**
+ * Builds the toggleable rows of the LangSmith project picker. An empty search
+ * shows the current selection (so it can be reviewed and removed). A non-empty
+ * search shows an optional "add the typed name" row — so a project missing from
+ * the results, or a failed load, can always be added by hand — followed by the
+ * matching project names. Finishing is Enter, so there is no Done row.
+ */
+export function getLangsmithPickerRows(
+  projectNames: readonly string[],
+  filter: string,
+  selected: readonly string[],
+): LangsmithPickerRow[] {
+  const trimmed = filter.trim();
+  if (trimmed.length === 0) {
+    return selected.map((name) => ({ kind: "project", name }));
+  }
+  const needle = trimmed.toLowerCase();
+  const rows: LangsmithPickerRow[] = [];
+  if (!projectNames.includes(trimmed) && !selected.includes(trimmed)) {
+    rows.push({ kind: "manual", name: trimmed });
+  }
+  for (const name of projectNames) {
+    if (name.toLowerCase().includes(needle)) {
+      rows.push({ kind: "project", name });
+    }
+  }
+  return rows;
+}
+
+/**
+ * The [start, end) slice of `length` rows to show around `selected`, keeping a
+ * window-sized view so a long list stays legible and never scrolls the terminal.
+ */
+export function getWindowBounds(
+  length: number,
+  selected: number,
+  windowSize: number,
+): { end: number; start: number } {
+  if (length <= windowSize) {
+    return { end: length, start: 0 };
+  }
+  const half = Math.floor(windowSize / 2);
+  const start = Math.max(0, Math.min(selected - half, length - windowSize));
+  return { end: start + windowSize, start };
 }
 
 function getInputDisplayWidth(stdoutColumns: number | undefined): number {

@@ -7,6 +7,7 @@ const sdk = vi.hoisted(() => ({
   feedback: [] as unknown[],
   getProjectUrl: vi.fn(),
   listFeedbackArgs: [] as Record<string, unknown>[],
+  listProjectsArgs: [] as Record<string, unknown>[],
   listRunsArgs: [] as Record<string, unknown>[],
   projects: [] as unknown[],
   readProject: vi.fn(),
@@ -28,7 +29,8 @@ vi.mock("langsmith", () => {
       yield* sdk.feedback;
     }
 
-    *listProjects() {
+    *listProjects(args: Record<string, unknown>) {
+      sdk.listProjectsArgs.push(args);
       yield* sdk.projects;
     }
 
@@ -47,6 +49,7 @@ beforeEach(() => {
   sdk.projects = [];
   sdk.runs = [];
   sdk.listFeedbackArgs = [];
+  sdk.listProjectsArgs = [];
   sdk.listRunsArgs = [];
   sdk.getProjectUrl.mockReset();
   sdk.readProject.mockReset();
@@ -118,9 +121,25 @@ describe("fetchFeedback", () => {
 });
 
 describe("listProjectNames", () => {
-  test("returns named projects sorted, dropping unnamed", async () => {
+  test("returns named projects sorted, dropping unnamed; no stats", async () => {
     sdk.projects = [{ name: "beta" }, { name: "" }, { name: "alpha" }, {}];
 
     expect(await api().listProjectNames()).toEqual(["alpha", "beta"]);
+    expect(sdk.listProjectsArgs[0]).toEqual({ includeStats: false });
+  });
+
+  test("passes nameContains and caps the result at limit", async () => {
+    sdk.projects = [{ name: "prod-1" }, { name: "prod-2" }, { name: "prod-3" }];
+
+    const names = await api().listProjectNames({
+      limit: 2,
+      nameContains: "prod",
+    });
+
+    expect(names).toHaveLength(2);
+    expect(sdk.listProjectsArgs[0]).toEqual({
+      includeStats: false,
+      nameContains: "prod",
+    });
   });
 });
