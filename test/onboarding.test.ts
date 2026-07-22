@@ -188,3 +188,163 @@ describe("OpenWiki onboarding completion", () => {
     ).toBe(false);
   });
 });
+
+describe("OpenWiki onboarding schedule migration", () => {
+  test("migrates global ingestionSchedule to source instances", async () => {
+    // Arrange
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    const globalSchedule = {
+      description: "daily at 2am",
+      expression: "0 2 * * *",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    // Write a config with a global ingestionSchedule and source instances without schedules
+    await writeFile(
+      onboarding.openWikiOnboardingPath,
+      `${JSON.stringify({
+        completedAt: "2026-01-01T00:00:00.000Z",
+        ingestionSchedule: globalSchedule,
+        sourceInstances: [
+          {
+            connectorId: "web-search",
+            id: "web-search-1",
+            connectedAt: "2026-01-01T00:00:00.000Z",
+          },
+          {
+            connectorId: "notion",
+            id: "notion-1",
+            connectedAt: "2026-01-01T00:00:00.000Z",
+          },
+        ],
+        sources: {},
+        version: 1,
+      })}\n`,
+      "utf8",
+    );
+
+    // Act
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    // Assert — both instances should now have the global schedule
+    expect(config.sourceInstances[0].schedule).toEqual(globalSchedule);
+    expect(config.sourceInstances[1].schedule).toEqual(globalSchedule);
+  });
+
+  test("preserves existing per-source schedules during migration", async () => {
+    // Arrange
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    const globalSchedule = {
+      description: "daily at 2am",
+      expression: "0 2 * * *",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    const perSourceSchedule = {
+      description: "every hour",
+      expression: "0 * * * *",
+      updatedAt: "2026-06-01T00:00:00.000Z",
+    };
+
+    // Write a config with a global ingestionSchedule and one source with its own schedule
+    await writeFile(
+      onboarding.openWikiOnboardingPath,
+      `${JSON.stringify({
+        completedAt: "2026-01-01T00:00:00.000Z",
+        ingestionSchedule: globalSchedule,
+        sourceInstances: [
+          {
+            connectorId: "web-search",
+            id: "web-search-1",
+            connectedAt: "2026-01-01T00:00:00.000Z",
+            schedule: perSourceSchedule,
+          },
+          {
+            connectorId: "notion",
+            id: "notion-1",
+            connectedAt: "2026-01-01T00:00:00.000Z",
+          },
+        ],
+        sources: {},
+        version: 1,
+      })}\n`,
+      "utf8",
+    );
+
+    // Act
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    // Assert — web-search keeps its own schedule, notion gets the global one
+    expect(config.sourceInstances[0].schedule).toEqual(perSourceSchedule);
+    expect(config.sourceInstances[1].schedule).toEqual(globalSchedule);
+  });
+
+  test("preserves schedule field on source instances after save", async () => {
+    // Arrange
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    const schedule = {
+      description: "every hour",
+      expression: "0 * * * *",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    // Act — save a config with a per-source schedule
+    await onboarding.saveOpenWikiOnboardingConfig({
+      completedAt: "2026-01-01T00:00:00.000Z",
+      modeId: "personal",
+      sourceInstances: [
+        {
+          connectorId: "web-search",
+          id: "web-search-1",
+          connectedAt: "2026-01-01T00:00:00.000Z",
+          schedule,
+        },
+      ],
+      sources: {},
+      templateId: "personal",
+      version: 1,
+    });
+
+    // Assert — read back and verify schedule is preserved
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+    expect(config.sourceInstances[0].schedule).toEqual(schedule);
+  });
+
+  test("backfills global ingestionSchedule from first source instance with schedule", async () => {
+    // Arrange
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    const perSourceSchedule = {
+      description: "every hour",
+      expression: "0 * * * *",
+      updatedAt: "2026-06-01T00:00:00.000Z",
+    };
+
+    // Write a config with NO global ingestionSchedule but a source instance with a schedule
+    await writeFile(
+      onboarding.openWikiOnboardingPath,
+      `${JSON.stringify({
+        completedAt: "2026-01-01T00:00:00.000Z",
+        sourceInstances: [
+          {
+            connectorId: "web-search",
+            id: "web-search-1",
+            connectedAt: "2026-01-01T00:00:00.000Z",
+            schedule: perSourceSchedule,
+          },
+        ],
+        sources: {},
+        version: 1,
+      })}\n`,
+      "utf8",
+    );
+
+    // Act
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    // Assert — global ingestionSchedule should be backfilled from the first source
+    expect(config.ingestionSchedule).toEqual(perSourceSchedule);
+  });
+});

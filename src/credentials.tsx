@@ -2557,6 +2557,7 @@ export function InitSetup({
         connectorId: "git-repo",
         cronExpression,
         cwd: process.cwd(),
+        sourceInstanceId: "git-repo",
       });
       const nextConfig: OpenWikiOnboardingConfig = {
         ...onboardingConfig,

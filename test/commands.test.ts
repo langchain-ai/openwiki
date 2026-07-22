@@ -408,24 +408,67 @@ describe("parseCommand — cron", () => {
     });
   });
 
-  test("cron pause with a source instance id is rejected", () => {
+  test("cron pause with a source instance id is accepted", () => {
     const result = parseCommand(["cron", "pause", "web-search-1"]);
-    expect(result.kind).toBe("error");
+    expect(result).toMatchObject({
+      kind: "cron",
+      action: "pause",
+      target: { kind: "source-instance", id: "web-search-1" },
+    });
   });
 
-  test("cron pause with a source id is rejected", () => {
+  test("cron pause with a connector id is accepted", () => {
     const result = parseCommand(["cron", "pause", "web-search"]);
-    expect(result.kind).toBe("error");
+    expect(result).toMatchObject({
+      kind: "cron",
+      action: "pause",
+      target: "web-search",
+    });
   });
 
-  test("cron resume with a source instance id is rejected", () => {
+  test("cron resume with a source instance id is accepted", () => {
     const result = parseCommand(["cron", "resume", "web-search-1"]);
-    expect(result.kind).toBe("error");
+    expect(result).toMatchObject({
+      kind: "cron",
+      action: "resume",
+      target: { kind: "source-instance", id: "web-search-1" },
+    });
   });
 
-  test("cron delete with a source instance id is rejected", () => {
+  test("cron delete with a source instance id is accepted", () => {
     const result = parseCommand(["cron", "delete", "web-search-1"]);
+    expect(result).toMatchObject({
+      kind: "cron",
+      action: "delete",
+      target: { kind: "source-instance", id: "web-search-1" },
+    });
+  });
+
+  test("cron resume with a connector id is accepted", () => {
+    const result = parseCommand(["cron", "resume", "web-search"]);
+    expect(result).toMatchObject({
+      kind: "cron",
+      action: "resume",
+      target: "web-search",
+    });
+  });
+
+  test("cron delete with a connector id is accepted", () => {
+    const result = parseCommand(["cron", "delete", "web-search"]);
+    expect(result).toMatchObject({
+      kind: "cron",
+      action: "delete",
+      target: "web-search",
+    });
+  });
+
+  test("cron pause with an invalid target is an error", () => {
+    const result = parseCommand(["cron", "pause", "not a real source"]);
     expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.exitCode).toBe(1);
+      expect(result.message).toMatch(/source\|source-instance\|all/u);
+    }
   });
 
   test("cron pause with 'all' is accepted", () => {
