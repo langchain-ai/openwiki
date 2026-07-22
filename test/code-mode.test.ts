@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -100,7 +100,7 @@ Trailing notes that must survive.
 });
 
 describe("ensureCodeModeRepoSetup workflow", () => {
-  test("generated PR includes agent files and the workflow in add-paths", async () => {
+  test("creates workflow when it does not exist", async () => {
     const repo = await createTempRepo();
 
     await ensureCodeModeRepoSetup(repo);
@@ -120,6 +120,58 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     }
   });
 
+  test("preserves existing customized workflow and does not overwrite", async () => {
+    const repo = await createTempRepo();
+    const customWorkflow = `name: OpenWiki Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    if: github.repository == 'my-org/my-repo'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Run OpenWiki
+        run: openwiki code --update --print
+        env:
+          OPENWIKI_PROVIDER: anthropic
+          ANTHROPIC_API_KEY: \${{ secrets.ANTHROPIC_API_KEY }}
+          OPENWIKI_MODEL_ID: claude-sonnet-4-20250514
+`;
+    const workflowDir = path.join(repo, ".github", "workflows");
+    await mkdir(workflowDir, { recursive: true });
+    await writeFile(
+      path.join(workflowDir, "openwiki-update.yml"),
+      customWorkflow,
+      "utf8",
+    );
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const workflow = await readIfPresent(
+      path.join(workflowDir, "openwiki-update.yml"),
+    );
+    // Must preserve the user's customizations, not overwrite with defaults.
+    expect(workflow).toBe(customWorkflow);
+    expect(workflow).toContain('cron: "0 2 * * 1"');
+    expect(workflow).toContain("if: github.repository == 'my-org/my-repo'");
+    expect(workflow).toContain("OPENWIKI_PROVIDER: anthropic");
+    expect(workflow).toContain("claude-sonnet-4-20250514");
+    expect(workflow).toContain("persist-credentials: true");
+  });
+
   test("pins the openwiki install to a specific version, never unpinned", async () => {
     const repo = await createTempRepo();
 
@@ -132,5 +184,20 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     // risk; the generated workflow must pin openwiki to the shipping version.
     expect(workflow).toMatch(/npm install --global openwiki@\d+\.\d+\.\d+ /u);
     expect(workflow).not.toMatch(/--global openwiki(?![@\d])/u);
+  });
+
+  test("is idempotent across repeated runs for workflow", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo);
+    const first = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    await ensureCodeModeRepoSetup(repo);
+    const second = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+
+    expect(second).toEqual(first);
   });
 });
