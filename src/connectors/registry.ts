@@ -41,3 +41,19 @@ export function createConnectorRegistry(): Record<
 export function isConnectorId(value: string): value is ConnectorId {
   return (CONNECTOR_IDS as readonly string[]).includes(value);
 }
+
+/**
+ * Connector ids that require auth and have all required env vars set. Used by
+ * telemetry as an adoption signal.
+ */
+export function getConfiguredConnectorIds(): ConnectorId[] {
+  const registry = createConnectorRegistry();
+
+  return Object.values(registry)
+    .filter(
+      (connector) =>
+        connector.requiredEnv.length > 0 &&
+        connector.requiredEnv.every((key) => Boolean(process.env[key])),
+    )
+    .map((connector) => connector.id);
+}

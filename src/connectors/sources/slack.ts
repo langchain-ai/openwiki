@@ -154,16 +154,19 @@ async function ingest(
   options: ConnectorIngestOptions = {},
 ): Promise<ConnectorIngestResult> {
   const runId = createRunId();
-  const config = await readConnectorConfig<SlackConfig>("slack", {
-    assistantSearchQueries: [],
-    conversationScanLimit: 500,
-    conversationTypes: DEFAULT_CONVERSATION_TYPES,
-    enabled: false,
-    maxConversations: 50,
-    messagesPerConversation: 50,
-    myMessagesSearchLimit: 20,
-    streams: DEFAULT_STREAMS,
-  });
+  const config = {
+    ...(await readConnectorConfig<SlackConfig>("slack", {
+      assistantSearchQueries: [],
+      conversationScanLimit: 500,
+      conversationTypes: DEFAULT_CONVERSATION_TYPES,
+      enabled: false,
+      maxConversations: 50,
+      messagesPerConversation: 50,
+      myMessagesSearchLimit: 20,
+      streams: DEFAULT_STREAMS,
+    })),
+    ...((options.connectorConfig ?? {}) as SlackConfig),
+  };
   const state = await readConnectorState("slack");
   const warnings: string[] = [];
   const rawFiles: string[] = [];
