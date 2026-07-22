@@ -673,6 +673,10 @@ export function InitSetup({
   // Guards the mount effect so the initial step is seeded once per mount, not
   // re-seeded when the effect re-fires on parent re-renders.
   const didInitializeRef = useRef(false);
+  // Seed the LangSmith selection from the committed config only once, so
+  // navigating back and re-confirming the repo does not clobber in-progress edits
+  // (the file is not written until setup completes).
+  const langsmithPreloadedRef = useRef(false);
   /**
    * Advance to a step, recording the current step on the back-navigation
    * history unless this is a back move. A ref-backed stack so Esc can retrace
@@ -1131,6 +1135,17 @@ export function InitSetup({
         break;
       case "langsmith":
         setLangSmithKey(trimmed);
+        break;
+      case "source-langsmith-projects":
+        // Keep an unsubmitted list edit in-session so Esc does not lose it.
+        setLangsmithSelectedProjects([
+          ...new Set(
+            input
+              .split(",")
+              .map((name) => name.trim())
+              .filter((name) => name.length > 0),
+          ),
+        ]);
         break;
       case "wiki-goal":
         // Keep an unsubmitted goal edit in-session (not yet persisted) so
@@ -2343,11 +2358,14 @@ export function InitSetup({
 
   function continueAfterCodeRepoConfirmed(repoRoot: string) {
     setCodeRepoRoot(repoRoot);
-    // Preload committed LangSmith projects so the source menu shows them and edits
-    // build on them (fail-open on the read).
-    void listConfiguredLangSmithSources(repoRoot)
-      .then((existing) => setLangsmithSelectedProjects(existing))
-      .catch(() => {});
+    // Preload committed LangSmith projects (once) so the source menu shows them
+    // and edits build on them (fail-open on the read).
+    if (!langsmithPreloadedRef.current) {
+      langsmithPreloadedRef.current = true;
+      void listConfiguredLangSmithSources(repoRoot)
+        .then((existing) => setLangsmithSelectedProjects(existing))
+        .catch(() => {});
+    }
     // Code mode auto-configures the repo itself; the source menu then offers the
     // optional LangSmith trace sources before the wiki brief.
     setSourceSelectionIndex(0);

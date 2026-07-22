@@ -60,6 +60,7 @@
     "google-auth-library": "^10.9.0",
     "ink": "^5.1.0",
     "langchain": "^1.5.3",
+    "langsmith": "^0.8.3",
     "marked": "^18.0.5",
     "posthog-node": "^5.39.4",
     "react": "^18.3.1",
