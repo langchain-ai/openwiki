@@ -3,16 +3,18 @@ import type { Run } from "langsmith";
 
 /**
  * Fields requested for the trace-tree fetch. Explicit so fields we do not list
- * never leave LangSmith, and so tree structure (parent/trace ids, run type) and
- * payloads are available for compaction.
+ * never leave LangSmith. Deliberately EXCLUDES inputs/outputs: `select` is a
+ * server-side field filter, so omitting them means LangSmith never sends them.
+ * A coding agent's run payloads are enormous (observed ~4 MB/run, ~200 MB/trace)
+ * and would blow the request timeout, and they never reach the committed page.
+ * We keep structure (parent/trace ids, run type, names), timings, tokens, and
+ * the small `error` field (the failure signature we actually document).
  */
 const RUN_SELECT_FIELDS = [
   "end_time",
   "error",
   "id",
-  "inputs",
   "name",
-  "outputs",
   "parent_run_id",
   "run_type",
   "start_time",
@@ -83,14 +85,17 @@ export interface LangSmithApi {
   resolveProject(name: string): Promise<ResolvedProject>;
 
   /**
-   * The most-recent root runs (newest first, capped at limit) since startTime, or
-   * with no lower bound when startTime is undefined. Used to pick the latest trace
-   * ids and to summarize the sample.
+   * Root runs (newest first, capped at limit) since startTime, or with no lower
+   * bound when startTime is undefined. Lean fields only (no payloads) — this is
+   * the recent batch the connector classifies client-side into the
+   * anomaly-weighted sample before fetching full trees.
    */
-  listRecentRootRuns(
+  listRootRuns(
     projectId: string,
-    startTime: string | undefined,
-    limit: number,
+    options: {
+      limit: number;
+      startTime?: string;
+    },
   ): Promise<Run[]>;
 
   /**
@@ -127,12 +132,13 @@ export function createLangSmithApi(
       });
     },
 
-    async listRecentRootRuns(projectId, startTime, limit) {
+    async listRootRuns(projectId, { limit, startTime }) {
       return withRateLimitRetry(() =>
         drainCapped(
           client.listRuns({
             isRoot: true,
             limit,
+            order: "desc",
             projectId,
             select: ROOT_SELECT_FIELDS,
             ...(startTime ? { startTime: new Date(startTime) } : {}),

@@ -20,7 +20,12 @@ import {
   sanitizeLangSmithApiBaseUrl,
   sanitizeLangSmithApiKeyEnv,
 } from "./repo-config.js";
-import { compactTrace, summarizeSample } from "./runs.js";
+import {
+  compactTrace,
+  isErrorRun,
+  selectSampleBuckets,
+  summarizeSample,
+} from "./runs.js";
 import type { LangSmithProjectConfig, ProjectPullResult } from "./types.js";
 
 /**
@@ -40,11 +45,31 @@ const PRIMARY_API_KEY_ENV = "OPENWIKI_LANGSMITH_API_KEY";
 const STATE_PATH = "~/.openwiki/connectors/langsmith/state.json";
 
 /**
- * Cap on traces pulled per project. Within the ingestion window we take the most
- * recent up to this many (each trace is a full tree, so it is the agent's context
- * budget in trace units). Fixed for v1, not configurable.
+ * Cap on traces pulled per project. Within the ingestion window we build an
+ * anomaly-weighted sample of up to this many (each trace is a full tree, so it is
+ * the agent's context budget in trace units). Fixed for v1, not configurable.
  */
 const MAX_TRACES = 20;
+
+/**
+ * Errors get first claim on the trace budget: the sample is anomaly-weighted so
+ * the agent sees failures code review cannot.
+ */
+const ERROR_CAP = 10;
+
+/**
+ * Latency outliers among non-errored runs get the next claim.
+ */
+const OUTLIER_CAP = 5;
+
+/**
+ * Recent lean root runs fetched in ONE unfiltered query, then classified into
+ * buckets client-side. Larger than MAX_TRACES so errors and latency outliers are
+ * picked from more than the newest few. A server-side error:true query is avoided
+ * on purpose: on a busy project it scans history for sparse errors and can exceed
+ * the per-request timeout. Only the selected traces are fetched in full.
+ */
+const SAMPLE_LOOKBACK = 50;
 
 /**
  * Characters kept per free-text field before truncation.
@@ -70,12 +95,7 @@ const definition: ConnectorDefinition = {
  */
 interface PullBounds {
   /**
-   * Include truncated inputs/outputs in the compacted trace runs.
-   */
-  includePayloads: boolean;
-
-  /**
-   * Maximum characters kept per free-text field.
+   * Maximum characters kept per free-text field (the truncated error text).
    */
   maxFieldChars: number;
 }
@@ -141,7 +161,6 @@ async function ingest(
         ).toISOString()
       : undefined;
   const bounds: PullBounds = {
-    includePayloads: true,
     maxFieldChars: MAX_FIELD_CHARS,
   };
 
@@ -183,6 +202,7 @@ async function ingest(
           apiBaseUrl,
           windowStart,
           bounds,
+          warnings,
         );
         if (pull) {
           pulls.push(pull);
@@ -227,8 +247,12 @@ async function ingest(
 }
 
 /**
- * Pulls one project's latest traces, or undefined when it has none. Throws on
- * API failure so the caller can turn it into a per-project warning.
+ * Pulls one project's latest traces, or undefined when it has none. Structural
+ * failures (resolve, list) throw so the caller turns them into a per-project
+ * warning. A single trace fetch that fails is caught here and recorded as a
+ * warning, so one bad trace never sinks the rest of the project's sample. The
+ * sample stats are still returned even if every trace fetch fails, since they
+ * come from the already-fetched root runs.
  */
 async function pullProject(
   api: LangSmithApi,
@@ -236,38 +260,57 @@ async function pullProject(
   apiBaseUrl: string,
   windowStart: string | undefined,
   bounds: PullBounds,
+  warnings: string[],
 ): Promise<ProjectPullResult | undefined> {
   const { id: projectId, url: projectUrl } = await api.resolveProject(
     project.name,
   );
-  const roots = await api.listRecentRootRuns(
-    projectId,
-    windowStart,
-    MAX_TRACES,
+  // Anomaly-weighted sample within the window: one unfiltered recent batch (fast,
+  // no error scan), classified client-side into errors and latency outliers first,
+  // then recent baseline runs. Only the chosen traces are fetched in full.
+  const recentRoots = await api.listRootRuns(projectId, {
+    limit: SAMPLE_LOOKBACK,
+    startTime: windowStart,
+  });
+  const selected = selectSampleBuckets(
+    recentRoots.filter(isErrorRun),
+    recentRoots.filter((run) => !isErrorRun(run)),
+    { errorCap: ERROR_CAP, outlierCap: OUTLIER_CAP, total: MAX_TRACES },
   );
-  if (roots.length === 0) {
+  if (selected.length === 0) {
     return undefined;
   }
 
   const traces = [];
-  for (const root of roots) {
-    const runs = await api.fetchTrace(root.trace_id ?? root.id);
-    const trace = compactTrace(
-      runs,
-      projectUrl,
-      bounds.maxFieldChars,
-      bounds.includePayloads,
-    );
-    if (trace) {
-      traces.push(trace);
+  for (const { bucket, run } of selected) {
+    try {
+      const runs = await api.fetchTrace(run.trace_id ?? run.id);
+      const trace = compactTrace(
+        runs,
+        projectUrl,
+        bucket,
+        bounds.maxFieldChars,
+      );
+      if (trace) {
+        traces.push(trace);
+      }
+    } catch (err) {
+      // Fail-open per trace: a single slow or failed fetch is a warning, not a
+      // throw, so the rest of the project's traces (and the run) still succeed.
+      warnings.push(
+        `${project.name}: skipped a trace: ${sanitizeDiagnosticText(errorMessage(err))}`,
+      );
     }
+  }
+  if (traces.length === 0) {
+    return undefined;
   }
 
   return {
     apiBaseUrl,
     project: project.name,
     projectId,
-    stats: summarizeSample(roots),
+    stats: summarizeSample(selected),
     traces,
   };
 }

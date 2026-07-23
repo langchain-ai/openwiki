@@ -9,6 +9,13 @@ export interface LangSmithProjectConfig {
 }
 
 /**
+ * Why a trace was pulled. The sample is anomaly-weighted, not random: errored
+ * roots and latency outliers are over-represented so the agent sees what code
+ * review cannot, and baseline runs give the normal-operation reference.
+ */
+export type TraceBucket = "error" | "outlier" | "baseline";
+
+/**
  * One compacted run within a trace tree.
  */
 export interface TraceRun {
@@ -79,20 +86,6 @@ export interface TraceRun {
    * @default undefined
    */
   error?: string;
-
-  /**
-   * Truncated inputs, present only when includePayloads is true.
-   *
-   * @default undefined
-   */
-  inputs?: string;
-
-  /**
-   * Truncated outputs, present only when includePayloads is true.
-   *
-   * @default undefined
-   */
-  outputs?: string;
 }
 
 /**
@@ -115,13 +108,21 @@ export interface Trace {
   isError: boolean;
 
   /**
+   * Which sampling bucket selected this trace (error / latency outlier / recent
+   * baseline). Lets the agent read the sample as intentionally biased.
+   */
+  bucket: TraceBucket;
+
+  /**
    * Runs in the trace, root first then by start time.
    */
   runs: TraceRun[];
 }
 
 /**
- * A light summary over the pulled sample. Sample stats, not population stats.
+ * A light summary over the pulled sample. The sample is anomaly-weighted, so
+ * bucket counts are sample composition, NOT fleet rates; medians are computed
+ * over baseline runs only so they reflect normal operation.
  */
 export interface SampleStats {
   /**
@@ -130,19 +131,23 @@ export interface SampleStats {
   sampleSize: number;
 
   /**
-   * Traces in the sample whose root run failed.
+   * How many pulled traces came from each bucket. Composition of a deliberately
+   * biased sample, not an error rate.
    */
-  errorCount: number;
+  bucketCounts: Record<TraceBucket, number>;
 
   /**
-   * Median root-run latency in ms over the sample, or null when empty.
+   * Median root-run latency in ms over the BASELINE bucket only, or null when
+   * there are no baseline runs. Excludes error/outlier buckets so the figure is
+   * a normal-operation reference, not skewed by the over-sampled tail.
    */
-  medianLatencyMs: number | null;
+  baselineMedianLatencyMs: number | null;
 
   /**
-   * Sum of root-run total tokens across the sample.
+   * Median root-run total tokens over the BASELINE bucket only, or null when
+   * there are no baseline runs.
    */
-  totalTokens: number;
+  baselineMedianTokens: number | null;
 }
 
 /**

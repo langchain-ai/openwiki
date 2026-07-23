@@ -59,25 +59,30 @@ describe("resolveProject", () => {
   });
 });
 
-describe("listRecentRootRuns", () => {
-  test("caps at limit and omits startTime when there is no window", async () => {
+describe("listRootRuns", () => {
+  test("caps at limit, orders desc, and omits startTime when there is no window", async () => {
     sdk.runs = Array.from({ length: 5 }, (_, i) => ({ id: `r-${i}` }));
 
-    const runs = await api().listRecentRootRuns("proj-1", undefined, 3);
+    const runs = await api().listRootRuns("proj-1", { limit: 3 });
 
     expect(runs).toHaveLength(3);
     const args = sdk.listRunsArgs[0] ?? {};
     expect(args.isRoot).toBe(true);
     expect(args.projectId).toBe("proj-1");
     expect(args.limit).toBe(3);
+    expect(args.order).toBe("desc");
     expect(args.select).toContain("trace_id");
+    expect(args.select).not.toContain("inputs");
     expect(args).not.toHaveProperty("startTime");
   });
 
   test("passes a Date startTime when a window is given", async () => {
     sdk.runs = [{ id: "a" }];
 
-    await api().listRecentRootRuns("proj-1", "2026-07-21T00:00:00.000Z", 5);
+    await api().listRootRuns("proj-1", {
+      limit: 5,
+      startTime: "2026-07-21T00:00:00.000Z",
+    });
 
     expect(sdk.listRunsArgs[0]?.startTime).toBeInstanceOf(Date);
   });

@@ -55,7 +55,7 @@ function run(fields: Record<string, unknown>): Run {
 function fakeApi(overrides: Partial<LangSmithApi> = {}): LangSmithApi {
   return {
     fetchTrace: () => Promise.resolve([]),
-    listRecentRootRuns: () => Promise.resolve([]),
+    listRootRuns: () => Promise.resolve([]),
     resolveProject: () =>
       Promise.resolve({ id: "p-id", url: "https://smith/p" }),
     ...overrides,
@@ -150,7 +150,7 @@ describe("ingest per-project behavior", () => {
       workspaces: [workspace({ projects: [{ name: "quiet" }] })],
     });
     vi.mocked(createLangSmithApi).mockReturnValue(
-      fakeApi({ listRecentRootRuns: () => Promise.resolve([]) }),
+      fakeApi({ listRootRuns: () => Promise.resolve([]) }),
     );
 
     const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
@@ -205,7 +205,7 @@ describe("ingest per-project behavior", () => {
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({
         fetchTrace: () => Promise.resolve([root]),
-        listRecentRootRuns: () => Promise.resolve([root]),
+        listRootRuns: () => Promise.resolve([root]),
       }),
     );
 
@@ -223,6 +223,87 @@ describe("ingest per-project behavior", () => {
     expect(dump.projects[0]?.traces).toHaveLength(1);
     expect(dump.projects[0]?.stats.sampleSize).toBe(1);
     expect(dump.projects[0]?.apiBaseUrl).toBe(US);
+  });
+
+  test("tags dump traces with their sampling bucket and records bucket counts", async () => {
+    process.env[KEY] = "lsv2_test";
+    configureRepo({
+      workspaces: [workspace({ projects: [{ name: "prod" }] })],
+    });
+    const errorRoot = run({
+      id: "run-err",
+      start_time: "2026-07-21T00:00:00.000Z",
+      status: "error",
+      trace_id: "trace-err",
+    });
+    const normalRoot = run({
+      id: "run-ok",
+      start_time: "2026-07-21T00:00:01.000Z",
+      status: "success",
+      trace_id: "trace-ok",
+    });
+    vi.mocked(createLangSmithApi).mockReturnValue(
+      fakeApi({
+        listRootRuns: () => Promise.resolve([errorRoot, normalRoot]),
+        fetchTrace: (traceId: string) =>
+          Promise.resolve(traceId === "trace-err" ? [errorRoot] : [normalRoot]),
+      }),
+    );
+
+    await createLangSmithConnector().ingest({ repoRoot: REPO });
+
+    const dump = vi.mocked(writeRawJson).mock.calls[0]?.[3] as {
+      projects: {
+        stats: { bucketCounts: Record<string, number> };
+        traces: { bucket: string; isError: boolean }[];
+      }[];
+    };
+    const buckets = dump.projects[0]?.traces.map((t) => t.bucket) ?? [];
+    expect(buckets).toContain("error");
+    expect(dump.projects[0]?.stats.bucketCounts.error).toBe(1);
+    const errorTrace = dump.projects[0]?.traces.find(
+      (t) => t.bucket === "error",
+    );
+    expect(errorTrace?.isError).toBe(true);
+  });
+
+  test("one failed trace fetch warns but the rest of the project still pulls (fail-open)", async () => {
+    process.env[KEY] = "lsv2_test";
+    configureRepo({
+      workspaces: [workspace({ projects: [{ name: "prod" }] })],
+    });
+    const good = run({
+      id: "run-good",
+      start_time: "2026-07-21T00:00:00.000Z",
+      status: "success",
+      trace_id: "trace-good",
+    });
+    const bad = run({
+      id: "run-bad",
+      start_time: "2026-07-21T00:00:01.000Z",
+      status: "success",
+      trace_id: "trace-bad",
+    });
+    vi.mocked(createLangSmithApi).mockReturnValue(
+      fakeApi({
+        listRootRuns: () => Promise.resolve([good, bad]),
+        fetchTrace: (traceId: string) =>
+          traceId === "trace-bad"
+            ? Promise.reject(new Error("trace fetch timed out"))
+            : Promise.resolve([good]),
+      }),
+    );
+
+    const result = await createLangSmithConnector().ingest({ repoRoot: REPO });
+
+    expect(result.status).toBe("success");
+    expect(result.warnings.join(" ")).toContain("skipped a trace");
+    const dump = vi.mocked(writeRawJson).mock.calls[0]?.[3] as {
+      projects: { stats: { sampleSize: number }; traces: unknown[] }[];
+    };
+    // The good trace still lands; stats reflect both roots (fetched fine).
+    expect(dump.projects[0]?.traces).toHaveLength(1);
+    expect(dump.projects[0]?.stats.sampleSize).toBe(2);
   });
 });
 
@@ -246,7 +327,7 @@ describe("multiple workspaces", () => {
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({
         fetchTrace: () => Promise.resolve([root]),
-        listRecentRootRuns: () => Promise.resolve([root]),
+        listRootRuns: () => Promise.resolve([root]),
       }),
     );
 
@@ -268,7 +349,7 @@ describe("multiple workspaces", () => {
     vi.mocked(createLangSmithApi).mockReturnValue(
       fakeApi({
         fetchTrace: () => Promise.resolve([root]),
-        listRecentRootRuns: () => Promise.resolve([root]),
+        listRootRuns: () => Promise.resolve([root]),
       }),
     );
 
@@ -282,32 +363,31 @@ describe("multiple workspaces", () => {
 });
 
 describe("ingest window", () => {
-  test("pulls the fixed MAX_TRACES budget (20), no window floor by default", async () => {
+  test("pulls the SAMPLE_LOOKBACK batch (50), no window floor by default", async () => {
     process.env[KEY] = "lsv2_test";
     configureRepo({ workspaces: [workspace()] });
-    const listRecentRootRuns = vi.fn(() => Promise.resolve<Run[]>([]));
-    vi.mocked(createLangSmithApi).mockReturnValue(
-      fakeApi({ listRecentRootRuns }),
-    );
+    const listRootRuns = vi.fn(() => Promise.resolve<Run[]>([]));
+    vi.mocked(createLangSmithApi).mockReturnValue(fakeApi({ listRootRuns }));
 
     await createLangSmithConnector().ingest({ repoRoot: REPO });
 
-    expect(listRecentRootRuns).toHaveBeenCalledWith("p-id", undefined, 20);
+    const call = listRootRuns.mock.calls[0];
+    expect(call?.[0]).toBe("p-id");
+    expect(call?.[1]?.limit).toBe(50); // SAMPLE_LOOKBACK, classified client-side
+    expect(call?.[1]?.startTime).toBeUndefined(); // no window floor
   });
 
   test("applies a window floor to the pull when windowHours is set", async () => {
     process.env[KEY] = "lsv2_test";
     configureRepo({ workspaces: [workspace()] });
-    const listRecentRootRuns = vi.fn(() => Promise.resolve<Run[]>([]));
-    vi.mocked(createLangSmithApi).mockReturnValue(
-      fakeApi({ listRecentRootRuns }),
-    );
+    const listRootRuns = vi.fn(() => Promise.resolve<Run[]>([]));
+    vi.mocked(createLangSmithApi).mockReturnValue(fakeApi({ listRootRuns }));
 
     await createLangSmithConnector().ingest({ repoRoot: REPO, windowHours: 3 });
 
-    const call = listRecentRootRuns.mock.calls[0];
-    expect(typeof call?.[1]).toBe("string"); // window floor, not undefined
-    expect(call?.[2]).toBe(20); // fixed MAX_TRACES
+    const call = listRootRuns.mock.calls[0];
+    expect(typeof call?.[1]?.startTime).toBe("string"); // window floor, not undefined
+    expect(call?.[1]?.limit).toBe(50); // SAMPLE_LOOKBACK
   });
 });
 

@@ -1,17 +1,90 @@
 import type { Run } from "langsmith";
-import type { SampleStats, Trace, TraceRun } from "./types.js";
+import type { SampleStats, Trace, TraceBucket, TraceRun } from "./types.js";
 
 /**
- * Converts a trace's raw runs into an ordered, compacted tree, or undefined when
- * the trace is empty. Runs are ordered root-first then by start time so the tool
- * sequence is legible. Inputs/outputs are the PII surface and are included only
- * when includePayloads is true.
+ * One selected root run and the bucket that put it in the sample.
+ */
+export interface BucketedRoot {
+  bucket: TraceBucket;
+  run: Run;
+}
+
+/**
+ * Caps for anomaly-weighted selection. `total` is the overall trace budget.
+ */
+export interface SampleCaps {
+  errorCap: number;
+  outlierCap: number;
+  total: number;
+}
+
+/**
+ * Selects the sample from two lean root-run pools within the window, biased
+ * toward anomalies: errors first (up to errorCap), then latency outliers among
+ * the non-errored runs (up to outlierCap, at most a quarter of the non-errored
+ * pool so the bucket stays a genuine tail rather than swallowing a small pull,
+ * and the remaining budget), then the most-recent non-errored runs to backfill
+ * to `total`. With no errors/outliers it degrades to all-baseline — the same
+ * recency behavior as before. Runs are deduped by id; `nonErrorRuns` is assumed
+ * most-recent-first.
+ */
+export function selectSampleBuckets(
+  errorRuns: Run[],
+  nonErrorRuns: Run[],
+  caps: SampleCaps,
+): BucketedRoot[] {
+  const selected: BucketedRoot[] = [];
+  const usedIds = new Set<string>();
+
+  const take = (run: Run, bucket: TraceBucket): void => {
+    if (selected.length >= caps.total || usedIds.has(run.id)) {
+      return;
+    }
+    usedIds.add(run.id);
+    selected.push({ bucket, run });
+  };
+
+  for (const run of errorRuns.slice(0, caps.errorCap)) {
+    take(run, "error");
+  }
+
+  // Keep outliers a genuine tail: never more than the flat cap, the remaining
+  // budget, or a quarter of the non-errored pool (so a small pull stays mostly
+  // baseline instead of being relabeled as outliers).
+  const outlierBudget = Math.min(
+    caps.outlierCap,
+    caps.total - selected.length,
+    Math.floor(nonErrorRuns.length / 4),
+  );
+  const byLatencyDesc = nonErrorRuns
+    .filter((run) => !usedIds.has(run.id))
+    .map((run) => ({ latency: latencyMs(run) ?? -1, run }))
+    .sort((left, right) => right.latency - left.latency)
+    .slice(0, outlierBudget);
+  for (const { run } of byLatencyDesc) {
+    take(run, "outlier");
+  }
+
+  for (const run of nonErrorRuns) {
+    take(run, "baseline");
+  }
+
+  return selected;
+}
+
+/**
+ * Converts a trace's raw runs into an ordered, compacted tree tagged with its
+ * sampling bucket, or undefined when the trace is empty. Runs are ordered
+ * root-first then by start time so the tool sequence is legible. Inputs/outputs
+ * are never fetched (they are enormous for coding-agent traces and never reach
+ * the committed page), so a compacted run is structure, timings, tokens, and the
+ * truncated error text.
  */
 export function compactTrace(
   runs: Run[],
   projectUrl: string,
+  bucket: TraceBucket,
   maxFieldChars: number,
-  includePayloads: boolean,
 ): Trace | undefined {
   if (runs.length === 0) {
     return undefined;
@@ -24,40 +97,56 @@ export function compactTrace(
     traceId: root.trace_id ?? root.id,
     traceUrl: `${projectUrl}/r/${root.id}`,
     isError: isErrorRun(root),
-    runs: ordered.map((run) =>
-      compactTraceRun(run, maxFieldChars, includePayloads),
-    ),
+    bucket,
+    runs: ordered.map((run) => compactTraceRun(run, maxFieldChars)),
   };
 }
 
 /**
- * Light summary over the sampled trace roots. Sample stats over the pulled
- * traces, not population stats: doing the arithmetic here keeps the update
- * agent's job to interpretation.
+ * Light summary over the selected roots. Because the sample is anomaly-weighted,
+ * bucket counts are reported as composition and medians are computed over the
+ * BASELINE bucket only, so they read as normal-operation references rather than
+ * fleet rates skewed by the over-sampled tail.
  */
-export function summarizeSample(roots: Run[]): SampleStats {
-  const latencies = roots
-    .map(latencyMs)
-    .filter((value): value is number => value !== undefined)
-    .sort((left, right) => left - right);
+export function summarizeSample(selected: BucketedRoot[]): SampleStats {
+  const bucketCounts: Record<TraceBucket, number> = {
+    baseline: 0,
+    error: 0,
+    outlier: 0,
+  };
+  const baselineLatencies: number[] = [];
+  const baselineTokens: number[] = [];
+
+  for (const { bucket, run } of selected) {
+    bucketCounts[bucket] += 1;
+    if (bucket !== "baseline") {
+      continue;
+    }
+    const latency = latencyMs(run);
+    if (latency !== undefined) {
+      baselineLatencies.push(latency);
+    }
+    if (typeof run.total_tokens === "number") {
+      baselineTokens.push(run.total_tokens);
+    }
+  }
+
+  baselineLatencies.sort((left, right) => left - right);
+  baselineTokens.sort((left, right) => left - right);
 
   return {
-    sampleSize: roots.length,
-    errorCount: roots.filter(isErrorRun).length,
-    medianLatencyMs: median(latencies),
-    totalTokens: roots.reduce((sum, run) => sum + (run.total_tokens ?? 0), 0),
+    sampleSize: selected.length,
+    bucketCounts,
+    baselineMedianLatencyMs: median(baselineLatencies),
+    baselineMedianTokens: median(baselineTokens),
   };
 }
 
 /**
- * Compacts one run of a trace tree, keeping structure (type + parent) and, when
- * allowed, truncated payloads.
+ * Compacts one run of a trace tree, keeping structure (type + parent), timings,
+ * tokens, and the truncated error text.
  */
-function compactTraceRun(
-  run: Run,
-  maxFieldChars: number,
-  includePayloads: boolean,
-): TraceRun {
+function compactTraceRun(run: Run, maxFieldChars: number): TraceRun {
   return {
     id: run.id,
     parentRunId: run.parent_run_id ?? undefined,
@@ -69,19 +158,21 @@ function compactTraceRun(
     latencyMs: latencyMs(run),
     totalTokens: run.total_tokens,
     error: truncateField(run.error, maxFieldChars),
-    inputs: includePayloads
-      ? truncateField(run.inputs, maxFieldChars)
-      : undefined,
-    outputs: includePayloads
-      ? truncateField(run.outputs, maxFieldChars)
-      : undefined,
   };
 }
 
 /**
- * A run counts as failed when it errored or ended in the error status.
+ * A run counts as failed when it errored or ended in the error status. An
+ * "interrupted" run is NOT a failure: that status marks a human-in-the-loop
+ * pause (a GraphInterrupt awaiting approval), which is normal control flow, and
+ * its error field carries the paused action's args, not a failure signature —
+ * so counting it would both mislabel the sample and drag user data into the
+ * committed error text.
  */
-function isErrorRun(run: Run): boolean {
+export function isErrorRun(run: Run): boolean {
+  if (run.status === "interrupted") {
+    return false;
+  }
   return run.status === "error" || run.error != null;
 }
 
