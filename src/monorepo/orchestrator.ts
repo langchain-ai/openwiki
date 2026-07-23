@@ -87,8 +87,13 @@ export async function runRecursiveOpenWiki(
   await loadOpenWikiEnv();
   await syncBundledSkills();
   // Recursive runs scaffold a workflow that reruns with --recursive so scheduled
-  // refreshes keep every sub-wiki current.
-  await ensureCodeModeRepoSetup(repoRoot, { recursive: true });
+  // refreshes keep every sub-wiki current. As with the non-recursive path, only
+  // `init` creates the workflow; `update` leaves an existing one untouched so
+  // operator customizations survive.
+  await ensureCodeModeRepoSetup(repoRoot, {
+    createWorkflow: command === "init",
+    recursive: true,
+  });
 
   const model = resolveRunModel(options);
   await refreshChatGptTokensIfNeeded(model.provider, options);

@@ -639,7 +639,9 @@ function App({ command }: AppProps) {
         }
 
         if (runMode === "code") {
-          await ensureCodeModeRepoSetup(runtimeCwd);
+          await ensureCodeModeRepoSetup(runtimeCwd, {
+            createWorkflow: resolvedCommand === "init",
+          });
         }
 
         return runOpenWikiAgent(recursiveRunCommand, runtimeCwd, runOptions);
@@ -4154,7 +4156,9 @@ async function runPrintCommand(
       );
     } else {
       if (command.mode === "code") {
-        await ensureCodeModeRepoSetup(runtimeCwd);
+        await ensureCodeModeRepoSetup(runtimeCwd, {
+          createWorkflow: command.command === "init",
+        });
       }
 
       await runOpenWikiAgent(command.command, runtimeCwd, runOptions);

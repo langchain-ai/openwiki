@@ -214,7 +214,7 @@ export function parseCommand(argv: string[]): CliCommand {
         kind: "error",
         exitCode: 1,
         message:
-          "Usage: openwiki ingest <source|source-instance|all> [--print] [--modelId <id>]",
+          "Usage: openwiki ingest <source|source-instance|all> [--scheduled] [--print] [--modelId <id>]",
       };
     }
 
@@ -682,7 +682,7 @@ export const helpContent: HelpContent = {
     "openwiki auth <provider>",
     "openwiki auth configure <provider> [--force]",
     "openwiki auth tools <provider>",
-    "openwiki ingest <source|source-instance|all>",
+    "openwiki ingest <source|source-instance|all> [--scheduled] [--print] [--modelId <id>]",
     "openwiki cron list",
     "openwiki cron pause all",
     "openwiki cron resume all",
@@ -784,6 +784,11 @@ export const helpContent: HelpContent = {
       description: "Use a model ID for this run.",
     },
     {
+      label: "--scheduled",
+      description:
+        "For ingest only: run scheduled-only ingestion for scheduler-managed runs.",
+    },
+    {
       label: "--telemetry-file <path>",
       description:
         "Write the exact anonymous telemetry payload to a local JSON file.",
@@ -808,6 +813,7 @@ export const helpContent: HelpContent = {
     'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
     'openwiki personal --update "Refresh the wiki from configured connectors"',
     "openwiki ingest all",
+    "openwiki ingest all --scheduled --print",
     "openwiki ingest web-search",
     "openwiki ingest web-search-2",
     "openwiki cron list",

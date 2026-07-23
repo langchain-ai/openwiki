@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { parseCommand, shouldRunNonInteractively } from "../src/commands.ts";
+import {
+  getHelpText,
+  parseCommand,
+  shouldRunNonInteractively,
+} from "../src/commands.ts";
 
 // parseCommand's --dry-run gate consults isDevelopmentMode(), which reads
 // NODE_ENV / OPENWIKI_DEV. Pin both to a non-development state per test and
@@ -49,6 +53,17 @@ describe("parseCommand — help", () => {
 
   test("--help anywhere in argv wins", () => {
     expect(parseCommand(["--init", "--help"]).kind).toBe("help");
+  });
+
+  test("help documents scheduled-only ingest usage", () => {
+    const helpText = getHelpText();
+
+    expect(helpText).toContain(
+      "openwiki ingest <source|source-instance|all> [--scheduled] [--print] [--modelId <id>]",
+    );
+    expect(helpText).toContain("--scheduled");
+    expect(helpText).toContain("scheduled-only ingestion");
+    expect(helpText).toContain("openwiki ingest all --scheduled --print");
   });
 });
 
@@ -310,6 +325,38 @@ describe("parseCommand — --modelId", () => {
 
   test("invalid model id via equals form is an error", () => {
     expect(parseCommand(["--modelId="]).kind).toBe("error");
+  });
+});
+
+describe("parseCommand — ingest", () => {
+  test("scheduled launchd ingestion parses as scheduled-only print mode", () => {
+    expect(
+      parseCommand(["ingest", "all", "--scheduled", "--print"]),
+    ).toMatchObject({
+      kind: "ingest",
+      target: "all",
+      scheduledOnly: true,
+      print: true,
+      modelId: null,
+    });
+  });
+
+  test("ingest defaults to non-scheduled mode", () => {
+    expect(parseCommand(["ingest", "web-search"])).toMatchObject({
+      kind: "ingest",
+      target: "web-search",
+      scheduledOnly: false,
+      print: false,
+    });
+  });
+
+  test("invalid ingest targets mention the scheduled flag in usage", () => {
+    const result = parseCommand(["ingest", "@bad"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toContain("[--scheduled]");
+    }
   });
 });
 
