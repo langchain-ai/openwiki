@@ -130,6 +130,19 @@ async function findGitHubWorkflowPaths(cwd: string): Promise<string[]> {
   const workflowsDir = path.join(cwd, GITHUB_WORKFLOWS_DIR);
 
   try {
+    const workflowsDirStat = await lstat(workflowsDir);
+
+    if (!workflowsDirStat.isDirectory()) {
+      return [];
+    }
+
+    const realCwd = await realpath(cwd);
+    const realWorkflowsDir = await realpath(workflowsDir);
+
+    if (!isPathInsideDirectory(realWorkflowsDir, realCwd)) {
+      return [];
+    }
+
     const entries = await readdir(workflowsDir, { withFileTypes: true });
 
     return entries

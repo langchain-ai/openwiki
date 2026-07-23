@@ -12,6 +12,7 @@ const OPENWIKI_WORKFLOW_FILE = "openwiki-update.yml";
 const OPENWIKI_WORKFLOW_PATH = `${GITHUB_WORKFLOW_DIR}/${OPENWIKI_WORKFLOW_FILE}`;
 const GITLAB_CI_PATH = ".gitlab-ci.yml";
 const BITBUCKET_PIPELINES_PATH = "bitbucket-pipelines.yml";
+const EXTERNAL_WORKFLOW_FILE = "leak.yml";
 const ANTHROPIC_PROVIDER_LINE = "OPENWIKI_PROVIDER: anthropic";
 const ANTHROPIC_MODEL_LINE = "OPENWIKI_MODEL_ID: claude-sonnet-5";
 const OPENROUTER_PROVIDER_LINE = "OPENWIKI_PROVIDER: openrouter";
@@ -41,6 +42,13 @@ async function createTempSecretFile(): Promise<string> {
   await writeFile(secretPath, SYMLINK_SECRET_CONTENT, "utf8");
 
   return secretPath;
+}
+
+async function createTempSecretDir(): Promise<string> {
+  const secretDir = await mkdtemp(path.join(tmpdir(), TEMP_SECRET_PREFIX));
+  tempSecretDirs.push(secretDir);
+
+  return secretDir;
 }
 
 afterEach(async () => {
@@ -158,5 +166,22 @@ jobs:
 
     expect(context.ciSummary).not.toContain(SYMLINK_SECRET_CONTENT);
     expect(context.ciSummary).not.toContain(GITLAB_CI_PATH);
+  });
+
+  test("does not follow symlinked GitHub workflows directories", async () => {
+    const repo = await createTempRepo();
+    const secretDir = await createTempSecretDir();
+    await writeFile(
+      path.join(secretDir, EXTERNAL_WORKFLOW_FILE),
+      SYMLINK_SECRET_CONTENT,
+      "utf8",
+    );
+    await mkdir(path.join(repo, ".github"), { recursive: true });
+    await symlink(secretDir, path.join(repo, GITHUB_WORKFLOW_DIR));
+
+    const context = await createRunContext("update", repo, "repository");
+
+    expect(context.ciSummary).not.toContain(SYMLINK_SECRET_CONTENT);
+    expect(context.ciSummary).not.toContain(EXTERNAL_WORKFLOW_FILE);
   });
 });
