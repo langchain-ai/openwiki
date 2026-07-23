@@ -376,6 +376,12 @@ function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
     case "git-repo":
       return `
 - Use repository paths, branches, HEADs, dirty status, and recent commits as evidence. Route durable project status, blockers, and follow-ups into canonical pages instead of mirroring repository manifests.`;
+    case "confluence":
+      return `
+- Treat blog posts as durable context or announcements. Extract major project updates, team changes, and architectural decisions into /themes.md or /commitments.md where actionable.
+- Keep /sources/confluence.md as a compact index of ingested posts.`;
+    default:
+      return "";
   }
 }
 

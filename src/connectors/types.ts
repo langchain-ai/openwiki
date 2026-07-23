@@ -1,4 +1,5 @@
 export type ConnectorId =
+  | "confluence"
   | "git-repo"
   | "google"
   | "hackernews"
