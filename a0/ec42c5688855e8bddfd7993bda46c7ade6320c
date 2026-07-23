@@ -1,0 +1,21 @@
+src/code-mode.ts
+  s_70ce361ce20830::t_6ce6c1aa931b18 239-243
+test/code-mode.test.ts
+  s_70ce361ce20830::t_5236fc3efccb6a 123-137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "a0ec42c5688855e8bddfd7993bda46c7ade6320c",
+  "prompts": {},
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
