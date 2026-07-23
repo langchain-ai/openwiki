@@ -14,129 +14,263 @@ import type {
   ConnectorRuntime,
 } from "../types.js";
 
-type ClickUpConfig = {
+/**
+ * Configuration for the ClickUp connector.
+ * Read from `~/.openwiki/connectors/clickup/config.json`.
+ */
+interface ClickUpConfig {
+  /** Whether the connector is enabled. @default false */
   enabled?: boolean;
+  /** Specific folder IDs to ingest from. If empty, all folders are included. @default [] */
   folderIds?: string[];
+  /** Whether to include subtasks in the ingestion. @default true */
   includeSubtasks?: boolean;
+  /** Specific list IDs to ingest from. If empty, all lists are included. @default [] */
   listIds?: string[];
+  /** Maximum number of tasks to fetch per list (1–1000). @default 100 */
   maxTasksPerList?: number;
+  /** Specific space IDs to ingest from. If empty, all spaces are included. @default [] */
   spaceIds?: string[];
+  /** Additional task fields to include. @default [] */
   taskFields?: string[];
+  /** Time window in hours for incremental sync. @default 168 */
   windowHours?: number;
+  /** Specific workspace IDs to ingest from. If empty, all workspaces are included. @default [] */
   workspaceIds?: string[];
-};
+}
 
-type ClickUpWorkspace = {
+/** A ClickUp workspace (team). */
+interface ClickUpWorkspace {
+  /** Workspace ID. */
   id?: string;
+  /** Workspace name. */
   name?: string;
-};
+}
 
-type ClickUpSpace = {
+/** A ClickUp space within a workspace. */
+interface ClickUpSpace {
+  /** Space ID. */
   id?: string;
+  /** Space name. */
   name?: string;
+  /** Whether the space is private. */
   private?: boolean;
-};
+}
 
-type ClickUpList = {
+/** A ClickUp list within a space. */
+interface ClickUpList {
+  /** List ID. */
   id?: string;
+  /** List name. */
   name?: string;
+  /** Sort order index. */
   orderindex?: number;
+  /** The parent space this list belongs to. */
   space?: { id?: string };
-};
+}
 
-type ClickUpTask = {
+/** A ClickUp task. */
+interface ClickUpTask {
+  /** Assignees on this task. */
   assignees?: ClickUpAssignee[];
+  /** Custom field values. */
   custom_fields?: ClickUpCustomField[];
+  /** Timestamp when the task was closed, or null. */
   date_closed?: number | null;
+  /** Timestamp when the task was created. */
   date_created?: number;
+  /** Timestamp when the task was marked done, or null. */
   date_done?: number | null;
+  /** Timestamp when the task was last updated. */
   date_updated?: number;
+  /** Plain-text task description. */
   description?: string;
+  /** Due date timestamp, or null. */
   due_date?: number | null;
+  /** Task ID. */
   id?: string;
+  /** Link to another task, or null. */
   links_to?: string | null;
+  /** Markdown-formatted task description. */
   markdown_description?: string;
+  /** Task name. */
   name?: string;
+  /** Sort order index. */
   orderindex?: number;
+  /** Task priority. */
   priority?: ClickUpPriority;
+  /** Task status. */
   status?: ClickUpStatus;
+  /** Nested subtasks. */
   subtasks?: ClickUpTask[];
+  /** Tags applied to the task. */
   tags?: ClickUpTag[];
+  /** Plain-text content of the task. */
   text_content?: string;
+  /** ClickUp URL for the task. */
   url?: string;
-};
+}
 
-type ClickUpAssignee = {
+/** A user assigned to a ClickUp task. */
+interface ClickUpAssignee {
+  /** User's display color. */
   color?: string;
+  /** User's email address. */
   email?: string;
+  /** Numeric user ID. */
   id?: number;
+  /** URL of the user's profile photo. */
   profilePhoto?: string;
+  /** Username. */
   username?: string;
-};
+}
 
-type ClickUpCustomField = {
+/** A custom field attached to a ClickUp task. */
+interface ClickUpCustomField {
+  /** Custom field ID. */
   id?: string;
+  /** Custom field name. */
   name?: string;
+  /** Type-specific configuration, including dropdown options. */
   type_config?: {
+    /** Available options for dropdown-type fields. */
     options?: { id?: string; label?: string; orderindex?: number }[];
   };
+  /** The field's value. */
   value?: unknown;
-};
+}
 
-type ClickUpPriority = {
+/** Priority level of a ClickUp task. */
+interface ClickUpPriority {
+  /** Display color for the priority. */
   color?: string;
+  /** Priority ID. */
   id?: string;
+  /** Sort order index. */
   orderindex?: number;
+  /** Priority label (e.g. "urgent", "high"). */
   priority?: string;
-};
+}
 
-type ClickUpStatus = {
+/** Status of a ClickUp task. */
+interface ClickUpStatus {
+  /** Status display color. */
   color?: string;
+  /** Status ID. */
   id?: string;
+  /** Status label (e.g. "to do", "in progress"). */
   status?: string;
+  /** Status type category. */
   type?: string;
-};
+}
 
-type ClickUpTag = {
+/** A tag applied to a ClickUp task. */
+interface ClickUpTag {
+  /** Tag display color. */
   color?: string;
+  /** User ID of the tag creator. */
   creator?: number;
+  /** Tag ID. */
   id?: string;
+  /** Tag name. */
   name?: string;
+  /** Sort order index. */
   orderindex?: number;
-};
+}
 
-type ClickUpComment = {
+/** A comment on a ClickUp task. */
+interface ClickUpComment {
+  /** Plain-text comment body. */
   comment_text?: string;
+  /** Timestamp of the comment as an ISO string. */
   date?: string;
+  /** Comment ID. */
   id?: string;
+  /** Rich-text comment body. */
   text_content?: string;
+  /** The user who posted the comment. */
   user?: ClickUpCommentUser;
-};
+}
 
-type ClickUpCommentUser = {
+/** The user who authored a ClickUp comment. */
+interface ClickUpCommentUser {
+  /** Commenter's email address. */
   email?: string;
+  /** Numeric user ID. */
   id?: number;
+  /** Commenter's username. */
   username?: string;
-};
+}
 
-type ClickUpTaskPage = {
+/** Response shape for the ClickUp task list endpoint. */
+interface ClickUpTaskPage {
+  /** Array of tasks on this page. */
   tasks?: ClickUpTask[];
-};
+}
 
+/** Response shape for the ClickUp workspace (team) endpoint. */
+interface ClickUpWorkspaceResponse {
+  /** Array of workspaces. */
+  teams?: ClickUpWorkspace[];
+}
+
+/** Response shape for the ClickUp space listing endpoint. */
+interface ClickUpSpaceResponse {
+  /** Array of spaces. */
+  spaces?: ClickUpSpace[];
+}
+
+/** Response shape for the ClickUp list listing endpoint. */
+interface ClickUpListResponse {
+  /** Array of lists. */
+  lists?: ClickUpList[];
+}
+
+/** Response shape for the ClickUp task comment endpoint. */
+interface ClickUpCommentResponse {
+  /** Array of comments. */
+  comments?: ClickUpComment[];
+}
+
+/** A task enriched with its comments and resolved subtasks. */
+interface ClickUpEnrichedTask extends ClickUpTask {
+  /** Comments on this task. */
+  comments: ClickUpComment[];
+  /** Number of direct subtasks. */
+  subtaskCount: number;
+  /** Resolved subtask data. */
+  subtasks: ClickUpEnrichedTask[];
+}
+
+/** ClickUp API v2 base URL. */
 const CLICKUP_API_BASE_URL = "https://api.clickup.com/api/v2";
+
+/** Default maximum number of tasks to fetch per list. */
 const DEFAULT_MAX_TASKS_PER_LIST = 100;
+
+/** Default time window in hours for incremental sync (7 days). */
 const DEFAULT_WINDOW_HOURS = 168;
+
+/** Maximum number of retry attempts for rate-limited (429) requests. */
+const MAX_RETRIES = 3;
+
+/** Base delay in milliseconds for exponential backoff. */
+const BASE_RETRY_DELAY_MS = 1000;
 
 const definition: ConnectorDefinition = {
   backend: "direct-api",
   description:
-    "Fetches ClickUp workspaces, tasks, subtasks, comments, and docs through the ClickUp API v2 with a personal API token.",
+    "Fetches ClickUp workspaces, tasks, subtasks, and comments through the ClickUp API v2 with a personal API token.",
   displayName: "ClickUp",
   id: "clickup",
   requiredEnv: [OPENWIKI_CLICKUP_API_TOKEN_ENV_KEY],
   supportsAgenticDiscovery: false,
 };
 
+/**
+ * Creates the ClickUp connector runtime.
+ * @returns A {@link ConnectorRuntime} that can ingest ClickUp data.
+ */
 export function createClickUpConnector(): ConnectorRuntime {
   return {
     ...definition,
@@ -144,6 +278,13 @@ export function createClickUpConnector(): ConnectorRuntime {
   };
 }
 
+/**
+ * Main ingestion entry point. Fetches workspaces, spaces, lists, tasks, and
+ * comments from ClickUp and writes them as raw JSON files.
+ *
+ * @param options - Ingestion options (e.g. window override).
+ * @returns Ingestion result with status, warnings, and output file paths.
+ */
 async function ingest(
   options: ConnectorIngestOptions = {},
 ): Promise<ConnectorIngestResult> {
@@ -296,13 +437,35 @@ async function ingest(
   };
 }
 
+/**
+ * Fetches all workspaces (teams) accessible with the given token.
+ *
+ * @param token - ClickUp personal API token.
+ * @returns Array of workspaces, or an empty array on failure.
+ */
 async function fetchWorkspaces(
   token: string,
 ): Promise<ClickUpWorkspace[]> {
-  const response = await clickUpApi<ClickUpWorkspaceResponse>(token, "/team");
-  return response.teams ?? [];
+  try {
+    const response = await clickUpApi<ClickUpWorkspaceResponse>(token, "/team");
+    return response.teams ?? [];
+  } catch (error) {
+    console.warn(
+      `[clickup] Failed to fetch workspaces: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return [];
+  }
 }
 
+/**
+ * Fetches all lists for a workspace, either by resolving explicit `listIds`
+ * from config or by traversing spaces.
+ *
+ * @param token - ClickUp personal API token.
+ * @param workspaceId - The workspace (team) ID.
+ * @param config - Connector configuration.
+ * @returns Array of lists found in the workspace.
+ */
 async function fetchListsForWorkspace(
   token: string,
   workspaceId: string,
@@ -339,6 +502,15 @@ async function fetchListsForWorkspace(
   return lists;
 }
 
+/**
+ * Fetches spaces for a workspace, either by resolving explicit `spaceIds`
+ * from config or by listing all spaces in the workspace.
+ *
+ * @param token - ClickUp personal API token.
+ * @param workspaceId - The workspace (team) ID.
+ * @param config - Connector configuration.
+ * @returns Array of spaces found in the workspace.
+ */
 async function fetchSpacesForWorkspace(
   token: string,
   workspaceId: string,
@@ -360,24 +532,57 @@ async function fetchSpacesForWorkspace(
     return spaces;
   }
 
-  const response = await clickUpApi<ClickUpSpaceResponse>(
-    token,
-    `/team/${encodeURIComponent(workspaceId)}/space`,
-  );
-  return response.spaces ?? [];
+  try {
+    const response = await clickUpApi<ClickUpSpaceResponse>(
+      token,
+      `/team/${encodeURIComponent(workspaceId)}/space`,
+    );
+    return response.spaces ?? [];
+  } catch (error) {
+    console.warn(
+      `[clickup] Failed to fetch spaces for workspace ${workspaceId}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return [];
+  }
 }
 
+/**
+ * Fetches all lists within a space.
+ *
+ * @param token - ClickUp personal API token.
+ * @param spaceId - The space ID.
+ * @returns Array of lists in the space.
+ */
 async function fetchListsForSpace(
   token: string,
   spaceId: string,
 ): Promise<ClickUpList[]> {
-  const response = await clickUpApi<ClickUpListResponse>(
-    token,
-    `/space/${encodeURIComponent(spaceId)}/list`,
-  );
-  return response.lists ?? [];
+  try {
+    const response = await clickUpApi<ClickUpListResponse>(
+      token,
+      `/space/${encodeURIComponent(spaceId)}/list`,
+    );
+    return response.lists ?? [];
+  } catch (error) {
+    console.warn(
+      `[clickup] Failed to fetch lists for space ${spaceId}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return [];
+  }
 }
 
+/**
+ * Fetches tasks for a list with pagination support. Pages through the ClickUp
+ * API until `maxTasksPerList` tasks have been collected or no more pages remain.
+ *
+ * @param token - ClickUp personal API token.
+ * @param listId - The list ID to fetch tasks from.
+ * @param options - Fetch options.
+ * @param options.maxTasksPerList - Maximum tasks to return.
+ * @param options.sinceDate - If set, only tasks updated/created after this
+ *   timestamp are included.
+ * @returns Array of tasks matching the criteria.
+ */
 async function fetchTasksForList(
   token: string,
   listId: string,
@@ -386,36 +591,67 @@ async function fetchTasksForList(
     sinceDate: number | undefined;
   },
 ): Promise<ClickUpTask[]> {
-  const params: Record<string, string> = {
-    page: "0",
-    subtasks: "true",
-    include_closed: "true",
-  };
+  const allTasks: ClickUpTask[] = [];
+  let page = 0;
 
-  if (options.sinceDate !== undefined) {
-    params.order_by = "updated";
-    // ClickUp uses date_updated for ordering; we filter after fetching
-  }
+  while (allTasks.length < options.maxTasksPerList) {
+    const params: Record<string, string> = {
+      page: String(page),
+      subtasks: "true",
+      include_closed: "true",
+    };
 
-  const response = await clickUpApi<ClickUpTaskPage>(
-    token,
-    `/list/${encodeURIComponent(listId)}/task`,
-    params,
-  );
+    if (options.sinceDate !== undefined) {
+      params.order_by = "updated";
+    }
 
-  let tasks = response.tasks ?? [];
-
-  if (options.sinceDate !== undefined) {
-    tasks = tasks.filter(
-      (task) =>
-        (task.date_updated ?? 0) > options.sinceDate! ||
-        (task.date_created ?? 0) > options.sinceDate!,
+    const response = await clickUpApi<ClickUpTaskPage>(
+      token,
+      `/list/${encodeURIComponent(listId)}/task`,
+      params,
     );
+
+    const tasks = response.tasks ?? [];
+    if (tasks.length === 0) {
+      break;
+    }
+
+    for (const task of tasks) {
+      if (allTasks.length >= options.maxTasksPerList) {
+        break;
+      }
+
+      if (options.sinceDate !== undefined) {
+        const updated = task.date_updated ?? 0;
+        const created = task.date_created ?? 0;
+        if (updated <= options.sinceDate && created <= options.sinceDate) {
+          continue;
+        }
+      }
+
+      allTasks.push(task);
+    }
+
+    // If the API returned fewer tasks than a full page, we've reached the end
+    if (tasks.length < 100) {
+      break;
+    }
+
+    page++;
   }
 
-  return tasks.slice(0, options.maxTasksPerList);
+  return allTasks;
 }
 
+/**
+ * Enriches tasks with their comments and optionally resolves subtask data
+ * recursively.
+ *
+ * @param token - ClickUp personal API token.
+ * @param tasks - Tasks to enrich.
+ * @param includeSubtasks - Whether to recursively enrich subtasks.
+ * @returns Array of enriched tasks with comments and subtask counts.
+ */
 async function enrichTasksWithComments(
   token: string,
   tasks: ClickUpTask[],
@@ -444,6 +680,13 @@ async function enrichTasksWithComments(
   return enriched;
 }
 
+/**
+ * Fetches all comments for a task. Returns an empty array if the request fails.
+ *
+ * @param token - ClickUp personal API token.
+ * @param taskId - The task ID.
+ * @returns Array of comments on the task.
+ */
 async function fetchTaskComments(
   token: string,
   taskId: string,
@@ -459,6 +702,16 @@ async function fetchTaskComments(
   }
 }
 
+/**
+ * Makes an authenticated request to the ClickUp API with automatic retry and
+ * exponential backoff for rate-limited (429) responses.
+ *
+ * @param token - ClickUp personal API token.
+ * @param endpointPath - API path relative to the v2 base URL (e.g. "/team").
+ * @param params - Optional query parameters.
+ * @returns Parsed JSON response of type `T`.
+ * @throws Error if the request fails after all retry attempts.
+ */
 async function clickUpApi<T>(
   token: string,
   endpointPath: string,
@@ -469,44 +722,58 @@ async function clickUpApi<T>(
     url.searchParams.set(key, value);
   }
 
-  const response = await fetch(url, {
-    headers: {
-      Authorization: token,
-      "Content-Type": "application/json",
-    },
-  });
+  let lastError: Error | undefined;
 
-  if (!response.ok) {
-    throw new Error(
-      `ClickUp API request failed: ${response.status} ${response.statusText}`,
-    );
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get("Retry-After");
+      const delayMs = retryAfter
+        ? Number(retryAfter) * 1000
+        : BASE_RETRY_DELAY_MS * Math.pow(2, attempt) + jitter();
+
+      console.warn(
+        `[clickup] Rate limited (429) on ${endpointPath}, retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`,
+      );
+
+      await sleep(delayMs);
+      lastError = new Error(
+        `ClickUp API rate limited: ${response.status} ${response.statusText}`,
+      );
+      continue;
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `ClickUp API request failed: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    return (await response.json()) as T;
   }
 
-  return (await response.json()) as T;
+  throw (
+    lastError ??
+    new Error(`ClickUp API request failed after ${MAX_RETRIES} retries`)
+  );
 }
 
-type ClickUpWorkspaceResponse = {
-  teams?: ClickUpWorkspace[];
-};
-
-type ClickUpSpaceResponse = {
-  spaces?: ClickUpSpace[];
-};
-
-type ClickUpListResponse = {
-  lists?: ClickUpList[];
-};
-
-type ClickUpCommentResponse = {
-  comments?: ClickUpComment[];
-};
-
-type ClickUpEnrichedTask = ClickUpTask & {
-  comments: ClickUpComment[];
-  subtaskCount: number;
-  subtasks: ClickUpEnrichedTask[];
-};
-
+/**
+ * Clamps a numeric value to a valid range, returning a fallback if the value
+ * is undefined or non-finite.
+ *
+ * @param value - The value to clamp.
+ * @param min - Minimum allowed value.
+ * @param max - Maximum allowed value.
+ * @param fallback - Fallback value if `value` is invalid.
+ * @returns The clamped integer.
+ */
 function clamp(
   value: number | undefined,
   min: number,
@@ -520,6 +787,12 @@ function clamp(
   return Math.max(min, Math.min(max, Math.trunc(value ?? fallback)));
 }
 
+/**
+ * Removes entries with undefined or empty string values from a record.
+ *
+ * @param values - Record with potentially empty values.
+ * @returns A new record containing only non-empty string values.
+ */
 function removeEmptyValues(
   values: Record<string, string | undefined>,
 ): Record<string, string> {
@@ -531,6 +804,13 @@ function removeEmptyValues(
   );
 }
 
+/**
+ * Computes the start timestamp for the incremental sync window.
+ *
+ * @param windowHours - Number of hours to look back.
+ * @returns Epoch milliseconds for the window start, or `undefined` if no
+ *   window is configured.
+ */
 function getWindowStartTime(
   windowHours: number | undefined,
 ): number | undefined {
@@ -542,6 +822,13 @@ function getWindowStartTime(
   return Date.now() - hours * 60 * 60 * 1000;
 }
 
+/**
+ * Returns the most recent `date_updated` timestamp across an array of tasks.
+ *
+ * @param tasks - Array of tasks to inspect.
+ * @returns The newest timestamp in epoch milliseconds, or `null` if no tasks
+ *   have a valid timestamp.
+ */
 function getNewestTaskTimestamp(tasks: ClickUpTask[]): number | null {
   let newest = 0;
 
@@ -553,4 +840,23 @@ function getNewestTaskTimestamp(tasks: ClickUpTask[]): number | null {
   }
 
   return newest > 0 ? newest : null;
+}
+
+/**
+ * Returns a random delay in milliseconds (0–999) for jitter in retry logic.
+ *
+ * @returns Random integer between 0 and 999.
+ */
+function jitter(): number {
+  return Math.floor(Math.random() * 1000);
+}
+
+/**
+ * Pauses execution for the specified duration.
+ *
+ * @param ms - Milliseconds to sleep.
+ * @returns A promise that resolves after the delay.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
