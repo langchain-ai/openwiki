@@ -22,6 +22,7 @@ export const OPENAI_CHATGPT_EMAIL_ENV_KEY = "OPENAI_CHATGPT_EMAIL";
 export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
+export const ANTHROPIC_AUTH_TOKEN_ENV_KEY = "ANTHROPIC_AUTH_TOKEN";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
   "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
@@ -141,6 +142,13 @@ type ProviderConfig = {
    * pasted-key setup step with a browser login and store tokens instead.
    */
   authMethod?: ProviderAuthMethod;
+  /**
+   * Environment variable holding a bearer auth token sent as
+   * `Authorization: Bearer <token>`. Some gateways (reached via
+   * {@link ProviderConfig.baseUrlEnvKey}) authenticate this way instead of with
+   * an `x-api-key`, so a base URL + auth token can stand in for the API key.
+   */
+  authTokenEnvKey?: string;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -284,6 +292,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   },
   anthropic: {
     apiKeyEnvKey: ANTHROPIC_API_KEY_ENV_KEY,
+    authTokenEnvKey: ANTHROPIC_AUTH_TOKEN_ENV_KEY,
     baseUrlEnvKey: ANTHROPIC_BASE_URL_ENV_KEY,
     label: "Anthropic",
     modelOptions: [
@@ -358,6 +367,42 @@ export function getProviderAuthMethod(
   return getProviderConfig(provider).authMethod ?? "api-key";
 }
 
+export function getProviderAuthTokenEnvKey(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).authTokenEnvKey;
+}
+
+/**
+ * Resolves the provider's bearer auth token (sent as `Authorization: Bearer`),
+ * trimmed. Returns `undefined` when the provider has no auth-token env var or
+ * the variable is unset/blank.
+ */
+export function resolveProviderAuthToken(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const authTokenEnvKey = getProviderConfig(provider).authTokenEnvKey;
+  const token = authTokenEnvKey ? env[authTokenEnvKey]?.trim() : undefined;
+
+  return token ? token : undefined;
+}
+
+/**
+ * Whether the provider can authenticate with a base URL + bearer auth token in
+ * place of an API key — e.g. a gateway that expects `Authorization: Bearer`
+ * rather than `x-api-key`.
+ */
+export function providerHasAuthTokenCredentials(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    resolveProviderAuthToken(provider, env) !== undefined &&
+    resolveProviderBaseUrl(provider, env) !== undefined
+  );
+}
+
 export function providerUsesOAuth(provider: OpenWikiProvider): boolean {
   return getProviderAuthMethod(provider) === "oauth";
 }
@@ -381,8 +426,11 @@ export function getProviderLocationEnvKey(
 /**
  * Returns the first required-but-unset environment variable for a provider
  * (its API key, or its cloud project for providers that authenticate without
- * one), or `null` when the provider has everything it needs to run. Base URL
- * requirements are checked separately via {@link providerRequiresBaseUrl}.
+ * one), or `null` when the provider has everything it needs to run. Providers
+ * with an {@link ProviderConfig.authTokenEnvKey} can satisfy the API-key
+ * requirement with a base URL + auth token instead (see
+ * {@link providerHasAuthTokenCredentials}). Base URL requirements are checked
+ * separately via {@link providerRequiresBaseUrl}.
  */
 export function getMissingProviderEnvKey(
   provider: OpenWikiProvider,
@@ -391,7 +439,12 @@ export function getMissingProviderEnvKey(
   const config = getProviderConfig(provider);
 
   if (config.apiKeyEnvKey && !env[config.apiKeyEnvKey]) {
-    return config.apiKeyEnvKey;
+    // A base URL + bearer auth token can authenticate in place of the API key
+    // (e.g. a gateway that expects `Authorization: Bearer`), so the API key is
+    // only required when that pair is absent.
+    if (!providerHasAuthTokenCredentials(provider, env)) {
+      return config.apiKeyEnvKey;
+    }
   }
 
   if (config.projectEnvKey && !env[config.projectEnvKey]) {
@@ -641,7 +694,9 @@ export function resolveConfiguredProvider(
         ? "openai-compatible"
         : env[OPENROUTER_API_KEY_ENV_KEY]
           ? "openrouter"
-          : env[ANTHROPIC_API_KEY_ENV_KEY]
+          : env[ANTHROPIC_API_KEY_ENV_KEY] ||
+              (env[ANTHROPIC_AUTH_TOKEN_ENV_KEY] &&
+                env[ANTHROPIC_BASE_URL_ENV_KEY])
             ? "anthropic"
             : env[BASETEN_API_KEY_ENV_KEY]
               ? "baseten"

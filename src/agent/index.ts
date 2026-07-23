@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
+import { Anthropic } from "@anthropic-ai/sdk";
 import { AnthropicVertex } from "@anthropic-ai/vertex-sdk";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatBedrockConverse } from "@langchain/aws";
@@ -86,6 +87,7 @@ import {
   providerRequiresSecretKey,
   resolveConfiguredProvider,
   resolveOpenRouterProviderOnly,
+  resolveProviderAuthToken,
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
@@ -675,10 +677,23 @@ export function createModel(
 
   if (provider === "anthropic") {
     const baseURL = resolveProviderBaseUrl(provider);
+    const apiKey = getProviderApiKey(provider);
+    const authToken = resolveProviderAuthToken(provider);
 
     return new ChatAnthropic(modelId, {
-      apiKey: getProviderApiKey(provider),
+      ...(apiKey ? { apiKey } : {}),
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+      // Send an `Authorization: Bearer <token>` header for gateways that
+      // authenticate that way instead of with `x-api-key`.
+      ...(authToken ? { clientOptions: { authToken } } : {}),
+      // ChatAnthropic throws "Anthropic API key not found" unless an apiKey or
+      // a createClient hook is supplied. With only an auth token configured,
+      // supply the hook so the token alone builds the client — and, because no
+      // apiKey is set, the SDK omits the `x-api-key` header entirely rather
+      // than sending a bogus one alongside the bearer token.
+      ...(authToken && !apiKey
+        ? { createClient: (options) => new Anthropic(options) }
+        : {}),
       ...retryOptions,
     });
   }
