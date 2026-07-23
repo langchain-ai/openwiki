@@ -7,6 +7,7 @@ export const openWikiHomeDir = path.join(os.homedir(), ".openwiki");
 export const openWikiConnectorsDir = path.join(openWikiHomeDir, "connectors");
 export const openWikiLocalWikiDir = path.join(openWikiHomeDir, "wiki");
 export const openWikiSkillsDir = path.join(openWikiHomeDir, "skills");
+export const openWikiHistoryDir = path.join(openWikiHomeDir, "conversation_history");
 
 export function getConnectorDir(connectorId: string): string {
   return path.join(openWikiConnectorsDir, connectorId);
@@ -35,6 +36,7 @@ export async function ensureOpenWikiHome(): Promise<void> {
   await mkdir(openWikiConnectorsDir, { recursive: true, mode: 0o700 });
   await mkdir(openWikiLocalWikiDir, { recursive: true, mode: 0o700 });
   await mkdir(openWikiSkillsDir, { recursive: true, mode: 0o700 });
+  await mkdir(openWikiHistoryDir, { recursive: true, mode: 0o700 });
 }
 
 export async function ensureConnectorHome(connectorId: string): Promise<void> {
