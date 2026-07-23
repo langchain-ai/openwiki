@@ -1,0 +1,26 @@
+src/code-mode.ts
+  s_70ce361ce20830::t_21ec21145d46bb 239-243
+.github/workflows/openwiki-ci-test.yml
+  s_70ce361ce20830::t_ec041330380efa 1-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "889d6db24d0f5d0d6cb5f04d40b2c9be693a3c85",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
