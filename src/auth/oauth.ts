@@ -559,7 +559,11 @@ async function openBrowser(url: string): Promise<boolean> {
     }
 
     if (platform === "win32") {
-      await execFilePromise("cmd", ["/c", "start", "", url]);
+      // "cmd /c start" re-parses the reconstructed command line, so "&" in a
+      // URL acts as a command separator and truncates the authorization URL
+      // at the first query parameter. rundll32's FileProtocolHandler receives
+      // the URL as a verbatim argument and avoids start's title-arg quirk.
+      await execFilePromise("rundll32", ["url.dll,FileProtocolHandler", url]);
       return true;
     }
 

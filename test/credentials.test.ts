@@ -8,6 +8,7 @@ import {
   getOAuthAuthorizationStatusText,
   hydrateRunModeConfig,
   needsCredentialSetup,
+  needsLangSmithStep,
   nextSetupStep,
   orderedSetupSteps,
   resolveStepStatus,
@@ -45,6 +46,35 @@ describe("needsCredentialSetup", () => {
     process.env.LANGSMITH_API_KEY = "lsv2_placeholder";
 
     expect(needsCredentialSetup()).toBe(true);
+  });
+});
+
+describe("needsLangSmithStep", () => {
+  test("is required when neither a key nor a tracing decision is present", () => {
+    // Fresh install: the optional step has never been answered.
+    expect(needsLangSmithStep({})).toBe(true);
+  });
+
+  test("is not required after skipping (no key, tracing recorded as false)", () => {
+    // Skipping strips the empty LANGSMITH_API_KEY but records the decision in
+    // LANGCHAIN_TRACING_V2. This is the state that used to re-nag every run.
+    expect(needsLangSmithStep({ LANGCHAIN_TRACING_V2: "false" })).toBe(false);
+  });
+
+  test("is not required after entering a key (tracing recorded as true)", () => {
+    expect(
+      needsLangSmithStep({
+        LANGSMITH_API_KEY: "lsv2_real",
+        LANGCHAIN_TRACING_V2: "true",
+      }),
+    ).toBe(false);
+  });
+
+  test("is not required when a key is present without a tracing flag", () => {
+    // e.g. a shell-provided LANGSMITH_API_KEY: don't nag someone who has a key.
+    expect(needsLangSmithStep({ LANGSMITH_API_KEY: "lsv2_from_shell" })).toBe(
+      false,
+    );
   });
 });
 
