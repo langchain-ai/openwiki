@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   createDiagramInstructions,
+  createLinkIntegrityInstructions,
   createSystemPrompt,
 } from "../src/agent/prompt.ts";
 
@@ -100,6 +101,16 @@ describe("createDiagramInstructions", () => {
   });
 });
 
+describe("createLinkIntegrityInstructions", () => {
+  test("teaches the post-run broken-link stamp marker for self-repair", () => {
+    const text = createLinkIntegrityInstructions();
+
+    expect(text).toContain("Link integrity:");
+    expect(text).toContain("openwiki: broken internal link");
+    expect(text).toContain("delete the comment");
+  });
+});
+
 describe("createSystemPrompt diagram guidance", () => {
   test("is always present for init and update runs", () => {
     for (const command of ["init", "update"] as const) {
@@ -110,6 +121,8 @@ describe("createSystemPrompt diagram guidance", () => {
       // Contract with the post-run degrade pass: the prompt must teach the exact
       // marker the validator embeds, or the repair loop never triggers.
       expect(prompt).toContain("openwiki: mermaid parse failed");
+      expect(prompt).toContain("Link integrity:");
+      expect(prompt).toContain("openwiki: broken internal link");
       expect(prompt).toContain("Mode-specific behavior:");
     }
   });

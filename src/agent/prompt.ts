@@ -194,10 +194,19 @@ Coverage self-check:
 - Verify that ${output.planPath} has been deleted. Do not finish while the temporary plan remains in the wiki as a concept.
 - Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
 - If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
+${createLinkIntegrityInstructions()}
 ${createDiagramInstructions()}
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
 `.trim();
+}
+
+export function createLinkIntegrityInstructions(): string {
+  return `
+Link integrity:
+- Prefer relative Markdown links to existing wiki pages and stable heading anchors. Do not invent destinations that are not written in the same run.
+- OpenWiki validates relative internal links and heading anchors after the run. Broken links are left in place and marked with an HTML comment starting with "openwiki: broken internal link", so the run completes and a later update can self-correct. If you find such a comment, repair the href or restore the target page using the reason in the comment, then delete the comment.
+`;
 }
 
 export function createDiagramInstructions(): string {
