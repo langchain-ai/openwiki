@@ -194,10 +194,21 @@ Coverage self-check:
 - Verify that ${output.planPath} has been deleted. Do not finish while the temporary plan remains in the wiki as a concept.
 - Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
 - If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
-
+${createDiagramInstructions()}
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
 `.trim();
+}
+
+export function createDiagramInstructions(): string {
+  return `
+Diagram discipline:
+- Where a runtime flow, lifecycle, data model, or non-trivial control flow is clearer as a picture than as prose, embed a Mermaid diagram in a fenced \`\`\`mermaid block on the most relevant page. Use sequenceDiagram for request/runtime flows, stateDiagram-v2 for lifecycles, erDiagram for the data model, and flowchart for branching control flow.
+- Ground every diagram in inspected source. Do not invent participants, states, entities, or relationships the code does not support.
+- Keep diagrams accurate on update runs. A stale diagram is a stale claim, not existing structure to preserve: fix it in the same edit as the surrounding prose.
+- Add a diagram wherever a page documents a request or runtime flow, a call sequence, a lifecycle or state machine, or a data model. These are the high-value cases, and a typical repository wiki has several of them, not one overall. Skip pages that are navigation, reference tables, or configuration. Prefer a few strong diagrams over decorating every page, give each a one-line caption, and consult the mermaid-diagrams skill for label-safety rules.
+- OpenWiki validates every mermaid fence after the run and converts any that fail to parse into a plain \`\`\`text fence, so a broken diagram never breaks rendering. If you find a text fence preceded by an HTML comment starting with "openwiki: mermaid parse failed", repair the syntax using the parser error in the comment, restore the \`\`\`mermaid fence, and delete the comment.
+`;
 }
 
 export function createModeInstructions(
@@ -244,6 +255,7 @@ export function createModeInstructions(
 - Only edit pages whose current content is inaccurate, incomplete, or misleading because of the recent changes. Do not refresh every page.
 - Keep each concept in one canonical page. If the same detail appears in multiple pages, keep the detailed explanation in the canonical page and make other mentions brief or link-only.
 - Do not make formatting-only edits. Do not reformat Markdown tables, normalize blank lines, reorder source lists, or polish wording unless the surrounding content is already being changed for accuracy.
+- When updating a page that documents a runtime flow, lifecycle, or data model but has no diagram, adding one is a valuable improvement, not a formatting-only change. Add it opportunistically when you are already editing that area or have spare diff budget, following the diagram discipline above.
 - Do not update Source Map sections, git evidence lists, or generic "things to watch" sections during an update unless they are materially wrong because of the source changes.
 - Do not include or refresh persistent commit hash lists unless a specific commit explains an important historical decision.
 - Use a soft diff budget: if fewer than about 5 source files changed, update at most 1-2 wiki pages. Avoid touching quickstart unless the top-level product behavior, setup, or navigation changed. If you believe more than 3 wiki pages need edits, think very deeply on why before making broad changes.
