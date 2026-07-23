@@ -194,11 +194,10 @@ describe("orderedSetupSteps", () => {
     );
   });
 
-  test("bedrock adds secret-key and region before model", () => {
+  test("bedrock adds region before model without requiring a secret key", () => {
     const spine = orderedSetupSteps("bedrock", "code", false);
-    expect(spine).toContain("secret-key");
+    expect(spine).not.toContain("secret-key");
     expect(spine).toContain("region");
-    expect(spine.indexOf("secret-key")).toBeLessThan(spine.indexOf("model"));
     expect(spine.indexOf("region")).toBeLessThan(spine.indexOf("model"));
   });
 

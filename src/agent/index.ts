@@ -54,8 +54,12 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  AWS_SESSION_TOKEN_ENV_KEY,
   BASETEN_BASE_URL_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -733,15 +737,8 @@ export function createModel(
   }
 
   if (provider === "bedrock") {
-    const secretKeyEnvKey = getProviderSecretKeyEnvKey(provider);
-
     return new ChatBedrockConverse({
-      credentials: {
-        accessKeyId: getProviderApiKey(provider) ?? "",
-        secretAccessKey: secretKeyEnvKey
-          ? (process.env[secretKeyEnvKey] ?? "")
-          : "",
-      },
+      ...createBedrockCredentialOptions(),
       model: modelId,
       region: resolveProviderRegion(provider),
       ...retryOptions,
@@ -761,6 +758,35 @@ export function createModel(
     useResponsesApi: provider === "openai",
     ...retryOptions,
   });
+}
+
+function createBedrockCredentialOptions():
+  | {
+      credentials: {
+        accessKeyId: string;
+        secretAccessKey: string;
+        sessionToken?: string;
+      };
+    }
+  | Record<string, never> {
+  const accessKeyId = process.env[BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY];
+  const secretAccessKey = process.env[BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY];
+
+  if (!accessKeyId || !secretAccessKey) {
+    return {};
+  }
+
+  const sessionToken =
+    process.env[BEDROCK_AWS_SESSION_TOKEN_ENV_KEY] ??
+    process.env[AWS_SESSION_TOKEN_ENV_KEY];
+
+  return {
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+      ...(sessionToken ? { sessionToken } : {}),
+    },
+  };
 }
 
 const CHATGPT_LOGIN_INCOMPLETE_MESSAGE =

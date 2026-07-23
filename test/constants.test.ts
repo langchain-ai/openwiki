@@ -330,9 +330,9 @@ describe("getProviderModelOptions", () => {
   });
 });
 
-describe("bedrock provider (IAM access key + secret key + region)", () => {
-  test("requires a secret key and a region, unlike API-key providers", () => {
-    expect(providerRequiresSecretKey("bedrock")).toBe(true);
+describe("bedrock provider (AWS SDK credentials + region)", () => {
+  test("requires a region but lets the AWS SDK resolve credentials", () => {
+    expect(providerRequiresSecretKey("bedrock")).toBe(false);
     expect(providerRequiresRegion("bedrock")).toBe(true);
     expect(providerRequiresSecretKey("anthropic")).toBe(false);
     expect(providerRequiresRegion("anthropic")).toBe(false);
@@ -354,6 +354,25 @@ describe("bedrock provider (IAM access key + secret key + region)", () => {
 
   test("has no preset model list (Bedrock model availability is account/region specific)", () => {
     expect(getProviderModelOptions("bedrock")).toEqual([]);
+  });
+
+  test("does not require static Bedrock keys when using the AWS SDK credential chain", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", { BEDROCK_AWS_REGION: "us-west-2" }),
+    ).toBeNull();
+  });
+
+  test("requires a complete static Bedrock key pair when one key is provided", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "access",
+      }),
+    ).toBe("BEDROCK_AWS_SECRET_ACCESS_KEY");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBe("BEDROCK_AWS_ACCESS_KEY_ID");
   });
 });
 

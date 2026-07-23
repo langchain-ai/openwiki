@@ -28,6 +28,8 @@ export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
   "BEDROCK_AWS_SECRET_ACCESS_KEY";
+export const BEDROCK_AWS_SESSION_TOKEN_ENV_KEY = "BEDROCK_AWS_SESSION_TOKEN";
+export const AWS_SESSION_TOKEN_ENV_KEY = "AWS_SESSION_TOKEN";
 export const BEDROCK_AWS_REGION_ENV_KEY = "BEDROCK_AWS_REGION";
 export const GEMINI_API_KEY_ENV_KEY = "GEMINI_API_KEY";
 export const GOOGLE_CLOUD_PROJECT_ENV_KEY = "GOOGLE_CLOUD_PROJECT";
@@ -390,6 +392,21 @@ export function getMissingProviderEnvKey(
 ): string | null {
   const config = getProviderConfig(provider);
 
+  if (provider === "bedrock") {
+    const accessKey = env[BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY];
+    const secretKey = env[BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY];
+
+    if (accessKey && !secretKey) {
+      return BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY;
+    }
+
+    if (!accessKey && secretKey) {
+      return BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY;
+    }
+
+    return null;
+  }
+
   if (config.apiKeyEnvKey && !env[config.apiKeyEnvKey]) {
     return config.apiKeyEnvKey;
   }
@@ -479,6 +496,10 @@ export function getProviderSecretKeyEnvKey(
 }
 
 export function providerRequiresSecretKey(provider: OpenWikiProvider): boolean {
+  if (provider === "bedrock") {
+    return false;
+  }
+
   return getProviderConfig(provider).secretKeyEnvKey !== undefined;
 }
 

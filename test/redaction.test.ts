@@ -201,6 +201,26 @@ describe("sanitizeDiagnosticText", () => {
       }
     }
   });
+
+  test("redacts the exact value of BEDROCK_AWS_SESSION_TOKEN set in the environment", () => {
+    const originalSessionToken = process.env.BEDROCK_AWS_SESSION_TOKEN;
+    process.env.BEDROCK_AWS_SESSION_TOKEN = "aws-session-token-abcdef123456";
+
+    try {
+      const result = sanitizeDiagnosticText(
+        "request failed with token aws-session-token-abcdef123456 attached",
+      );
+
+      expect(result).not.toContain("aws-session-token-abcdef123456");
+      expect(result).toContain("[REDACTED:BEDROCK_AWS_SESSION_TOKEN]");
+    } finally {
+      if (originalSessionToken === undefined) {
+        delete process.env.BEDROCK_AWS_SESSION_TOKEN;
+      } else {
+        process.env.BEDROCK_AWS_SESSION_TOKEN = originalSessionToken;
+      }
+    }
+  });
 });
 
 describe("isOpenRouterServerError", () => {
