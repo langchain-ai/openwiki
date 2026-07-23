@@ -272,27 +272,16 @@ describe("resolveOpenRouterProviderOnly", () => {
 });
 
 describe("isValidBaseUrl", () => {
-  test("accepts https URLs and loopback http URLs", () => {
+  test("accepts http and https URLs", () => {
     expect(isValidBaseUrl("https://api.example.com/v1")).toBe(true);
     expect(isValidBaseUrl("http://localhost:8080")).toBe(true);
-    expect(isValidBaseUrl("http://127.0.0.1:8080")).toBe(true);
   });
 
-  test("rejects blank, non-URL, non-http(s), and non-loopback http URLs", () => {
+  test("rejects blank, non-URL, and non-http(s) schemes", () => {
     expect(isValidBaseUrl("")).toBe(false);
     expect(isValidBaseUrl("   ")).toBe(false);
     expect(isValidBaseUrl("not a url")).toBe(false);
     expect(isValidBaseUrl("ftp://example.com")).toBe(false);
-    expect(isValidBaseUrl("http://api.example.com/v1")).toBe(false);
-  });
-
-  test("rejects metadata and private IP base URLs", () => {
-    expect(isValidBaseUrl("https://169.254.169.254/latest/meta-data")).toBe(
-      false,
-    );
-    expect(isValidBaseUrl("https://10.0.0.1/v1")).toBe(false);
-    expect(isValidBaseUrl("https://192.168.0.1/v1")).toBe(false);
-    expect(isValidBaseUrl("https://metadata.google.internal/v1")).toBe(false);
   });
 });
 

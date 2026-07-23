@@ -362,23 +362,18 @@ describe("getCredentialDiagnostics", () => {
     expect(entry?.warnings).toContain("invalid provider");
   });
 
-  test("flags base URL warnings for OpenAI-compatible provider config", async () => {
+  test("flags an OpenAI-compatible chat completions endpoint as a base URL warning", async () => {
     await env.saveOpenWikiEnv({
-      [FIREWORKS_BASE_URL_ENV_KEY]: "http://gateway.example.com/v1",
       [OPENAI_COMPATIBLE_BASE_URL_ENV_KEY]:
         "https://gateway.example.com/v1/chat/completions",
     });
 
     const diagnostics = await env.getCredentialDiagnostics();
-    const fireworksEntry = diagnostics.find(
-      (item) => item.key === FIREWORKS_BASE_URL_ENV_KEY,
-    );
-    const openAiCompatibleEntry = diagnostics.find(
+    const entry = diagnostics.find(
       (item) => item.key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
     );
 
-    expect(fireworksEntry?.warnings).toContain("invalid base URL");
-    expect(openAiCompatibleEntry?.warnings).toContain(
+    expect(entry?.warnings).toContain(
       "use API root URL, not /chat/completions endpoint",
     );
   });

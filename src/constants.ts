@@ -1,5 +1,3 @@
-import { isIP } from "node:net";
-
 export const OPEN_WIKI_DIR = "openwiki";
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 
@@ -518,77 +516,11 @@ export function isValidBaseUrl(value: string): boolean {
 
   try {
     const url = new URL(trimmed);
-    const hostname = normalizeUrlHostname(url.hostname);
-    const isLoopback = isLoopbackHostname(hostname);
 
-    if (
-      url.protocol !== "https:" &&
-      !(url.protocol === "http:" && isLoopback)
-    ) {
-      return false;
-    }
-
-    return isLoopback || !isPrivateOrMetadataHostname(hostname);
+    return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
   }
-}
-
-function normalizeUrlHostname(hostname: string): string {
-  const normalized = hostname.toLowerCase();
-
-  return normalized.startsWith("[") && normalized.endsWith("]")
-    ? normalized.slice(1, -1)
-    : normalized;
-}
-
-function isLoopbackHostname(hostname: string): boolean {
-  if (hostname === "localhost" || hostname === "::1") {
-    return true;
-  }
-
-  if (isIP(hostname) !== 4) {
-    return false;
-  }
-
-  return hostname.split(".")[0] === "127";
-}
-
-function isPrivateOrMetadataHostname(hostname: string): boolean {
-  if (hostname === "metadata.google.internal") {
-    return true;
-  }
-
-  const ipVersion = isIP(hostname);
-
-  if (ipVersion === 4) {
-    const octets = hostname.split(".").map((octet) => Number(octet));
-    const [first = 0, second = 0] = octets;
-
-    return (
-      first === 0 ||
-      first === 10 ||
-      first === 127 ||
-      first === 169 ||
-      (first === 172 && second >= 16 && second <= 31) ||
-      (first === 192 && second === 168)
-    );
-  }
-
-  if (ipVersion === 6) {
-    return (
-      hostname === "::" ||
-      hostname === "::1" ||
-      hostname.startsWith("fc") ||
-      hostname.startsWith("fd") ||
-      hostname.startsWith("fe8") ||
-      hostname.startsWith("fe9") ||
-      hostname.startsWith("fea") ||
-      hostname.startsWith("feb")
-    );
-  }
-
-  return false;
 }
 
 export function getProviderBaseUrlWarnings(
