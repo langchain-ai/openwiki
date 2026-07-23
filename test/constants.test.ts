@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  BASETEN_BASE_URL_ENV_KEY,
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
@@ -10,6 +11,7 @@ import {
   getProviderApiKeyEnvKey,
   getProviderModelOptions,
   getProviderRegionEnvKey,
+  FIREWORKS_BASE_URL_ENV_KEY,
   getProviderSecretKeyEnvKey,
   getProvidersForKnownModelId,
   isModelIdForOtherProvider,
@@ -18,6 +20,7 @@ import {
   isValidModelId,
   isValidProvider,
   NEBIUS_BASE_URL,
+  NVIDIA_BASE_URL_ENV_KEY,
   normalizeModelId,
   normalizeProvider,
   providerRequiresApiKey,
@@ -169,11 +172,40 @@ describe("resolveProviderBaseUrl", () => {
     ).toBe("https://gateway.example/anthropic");
   });
 
+  test("prefers hosted OpenAI-compatible provider base URL overrides", () => {
+    expect(
+      resolveProviderBaseUrl("baseten", {
+        [BASETEN_BASE_URL_ENV_KEY]: "https://gateway.example/baseten/v1",
+      }),
+    ).toBe("https://gateway.example/baseten/v1");
+    expect(
+      resolveProviderBaseUrl("fireworks", {
+        [FIREWORKS_BASE_URL_ENV_KEY]: "https://gateway.example/fireworks/v1",
+      }),
+    ).toBe("https://gateway.example/fireworks/v1");
+    expect(
+      resolveProviderBaseUrl("nvidia", {
+        [NVIDIA_BASE_URL_ENV_KEY]: "https://gateway.example/nvidia/v1",
+      }),
+    ).toBe("https://gateway.example/nvidia/v1");
+  });
+
   test("ignores a whitespace-only override", () => {
     // anthropic has no built-in default, so a blank override resolves to undefined.
     expect(
       resolveProviderBaseUrl("anthropic", { ANTHROPIC_BASE_URL: "   " }),
     ).toBeUndefined();
+    expect(
+      resolveProviderBaseUrl("baseten", { [BASETEN_BASE_URL_ENV_KEY]: "   " }),
+    ).toBe("https://inference.baseten.co/v1");
+    expect(
+      resolveProviderBaseUrl("fireworks", {
+        [FIREWORKS_BASE_URL_ENV_KEY]: "   ",
+      }),
+    ).toBe("https://api.fireworks.ai/inference/v1");
+    expect(
+      resolveProviderBaseUrl("nvidia", { [NVIDIA_BASE_URL_ENV_KEY]: "   " }),
+    ).toBe("https://integrate.api.nvidia.com/v1");
   });
 
   test("returns undefined for a provider with no default and no override", () => {
