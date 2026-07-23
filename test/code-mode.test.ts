@@ -103,7 +103,7 @@ describe("ensureCodeModeRepoSetup workflow", () => {
   test("generated PR includes agent files and the workflow in add-paths", async () => {
     const repo = await createTempRepo();
 
-    await ensureCodeModeRepoSetup(repo);
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
 
     const workflow = await readIfPresent(
       path.join(repo, ".github", "workflows", "openwiki-update.yml"),
@@ -123,7 +123,7 @@ describe("ensureCodeModeRepoSetup workflow", () => {
   test("pins the openwiki install to a specific version, never unpinned", async () => {
     const repo = await createTempRepo();
 
-    await ensureCodeModeRepoSetup(repo);
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
 
     const workflow = await readIfPresent(
       path.join(repo, ".github", "workflows", "openwiki-update.yml"),
@@ -132,5 +132,44 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     // risk; the generated workflow must pin openwiki to the shipping version.
     expect(workflow).toMatch(/npm install --global openwiki@\d+\.\d+\.\d+ /u);
     expect(workflow).not.toMatch(/--global openwiki(?![@\d])/u);
+  });
+
+  test("does not create a workflow unless explicitly requested", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(
+      await readIfPresent(
+        path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+      ),
+    ).toBeNull();
+  });
+
+  test("preserves a customized workflow when setup runs again", async () => {
+    const repo = await createTempRepo();
+    const workflowPath = path.join(
+      repo,
+      ".github",
+      "workflows",
+      "openwiki-update.yml",
+    );
+    const customizedWorkflow = `name: Custom OpenWiki Update
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update:
+    uses: ./.github/workflows/reusable-openwiki.yml
+    with:
+      model: gpt-5.6-terra
+`;
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+    await writeFile(workflowPath, customizedWorkflow, "utf8");
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+
+    expect(await readIfPresent(workflowPath)).toBe(customizedWorkflow);
   });
 });
