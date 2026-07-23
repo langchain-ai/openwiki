@@ -42,6 +42,7 @@ export const AUTH_PROVIDERS: Record<AuthProviderId, OAuthProviderConfig> = {
     displayName: "Notion MCP",
     id: "notion",
     mcpResourceUrl: "https://mcp.notion.com/mcp",
+    oauthAllowedHosts: ["notion.com"],
     scopes: [],
     tokenMapping: {
       accessTokenEnvKey: OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY,
