@@ -19,13 +19,13 @@ import {
   getWorkspaceSkipReason,
   readWorkspacesState,
   resolveWorkspaceRuns,
-  writeGeneratedFile,
   writeWorkspacesState,
   type ResolvedWorkspacePlan,
   type ResolvedWorkspaceRun,
   type WorkspaceManifest,
   type WorkspacesState,
 } from "./workspaces.js";
+import { writeGeneratedFile } from "../safe-write.js";
 
 const execFileAsync = promisify(execFile);
 

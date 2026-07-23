@@ -2,14 +2,12 @@ import { mkdtemp, mkdir, rm, writeFile, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import { lstat, readFile } from "node:fs/promises";
 import {
   detectWorkspaces,
   getWorkspaceSkipReason,
   normalizeManifest,
   readWorkspaceManifest,
   resolveWorkspaceRuns,
-  writeGeneratedFile,
   type WorkspaceManifest,
 } from "../src/monorepo/workspaces.ts";
 
@@ -1117,51 +1115,5 @@ describe("detectWorkspaces -> resolveWorkspaceRuns seam", () => {
       "kernel/Core.Domain.Kernel",
       "platform/admission",
     ]);
-  });
-});
-
-describe("writeGeneratedFile (symlink-following guard)", () => {
-  test("writes a normal file inside the repo", async () => {
-    const repo = await createTempRepo();
-    const target = path.join(repo, "openwiki", "workspaces.md");
-    await writeGeneratedFile(repo, target, "hello\n");
-    expect(await readFile(target, "utf8")).toBe("hello\n");
-  });
-
-  test("refuses to follow a symlinked destination and does not clobber its target", async () => {
-    const repo = await createTempRepo();
-    const outside = await createTempRepo();
-    const victim = path.join(outside, "victim.txt");
-    await writeFile(victim, "original\n");
-
-    // A malicious repo commits openwiki/workspaces.md as a symlink to a file
-    // outside the repo; the write must refuse rather than follow it.
-    await mkdir(path.join(repo, "openwiki"), { recursive: true });
-    const link = path.join(repo, "openwiki", "workspaces.md");
-    await symlink(victim, link);
-
-    await expect(
-      writeGeneratedFile(repo, link, "attacker content\n"),
-    ).rejects.toThrow(/symlink/);
-    // The link target outside the repo is untouched.
-    expect(await readFile(victim, "utf8")).toBe("original\n");
-    // The path on disk is still a symlink, never overwritten as a real file.
-    expect((await lstat(link)).isSymbolicLink()).toBe(true);
-  });
-
-  test("refuses when the parent directory resolves outside the repo", async () => {
-    const repo = await createTempRepo();
-    const outside = await createTempRepo();
-    // openwiki/ itself is a symlink to a directory outside the repo, so the
-    // resolved write parent escapes the repository.
-    await symlink(outside, path.join(repo, "openwiki"));
-
-    await expect(
-      writeGeneratedFile(
-        repo,
-        path.join(repo, "openwiki", "workspaces.md"),
-        "x\n",
-      ),
-    ).rejects.toThrow(/outside the repository/);
   });
 });

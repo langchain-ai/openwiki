@@ -1,7 +1,8 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { OPENWIKI_VERSION } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
+import { writeGeneratedFile } from "./safe-write.js";
 
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
@@ -44,11 +45,10 @@ async function writeCodeModeWorkflow(
     "workflows",
     "openwiki-update.yml",
   );
-  await mkdir(path.dirname(workflowPath), { recursive: true });
-  await writeFile(
+  await writeGeneratedFile(
+    cwd,
     workflowPath,
     createCodeModeWorkflow(cronExpression, recursive),
-    "utf8",
   );
 }
 
@@ -57,12 +57,13 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
 
   await Promise.all(
     CODE_MODE_AGENT_FILES.map((fileName) =>
-      writeCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
+      writeCodeModeAgentSnippet(cwd, path.join(cwd, fileName), snippet),
     ),
   );
 }
 
 async function writeCodeModeAgentSnippet(
+  repoRoot: string,
   agentsPath: string,
   snippet: string,
 ): Promise<void> {
@@ -83,7 +84,7 @@ async function writeCodeModeAgentSnippet(
       ? `${currentContent.slice(0, startIndex)}${snippet}${currentContent.slice(endIndex + OPENWIKI_AGENTS_SNIPPET_END.length)}`
       : `${currentContent.trimEnd()}${currentContent.trim().length > 0 ? "\n\n" : ""}${snippet}\n`;
 
-  await writeFile(agentsPath, nextContent, "utf8");
+  await writeGeneratedFile(repoRoot, agentsPath, nextContent);
 }
 
 function createCodeModeWorkflow(
