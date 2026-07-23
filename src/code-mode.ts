@@ -236,6 +236,11 @@ jobs:
           OPENWIKI_PROVIDER: openrouter
           OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
           OPENWIKI_MODEL_ID: z-ai/glm-5.2
+          # Required for the LangSmith connector's code-mode pull to authenticate.
+          # For extra workspaces, add OPENWIKI_LANGSMITH_API_KEY_2, _3, ... as repo
+          # secrets and env entries here.
+          OPENWIKI_LANGSMITH_API_KEY: \${{ secrets.OPENWIKI_LANGSMITH_API_KEY }}
+          # Optional: also trace this workflow's own OpenWiki run to LangSmith.
           LANGSMITH_API_KEY: \${{ secrets.LANGSMITH_API_KEY }}
           LANGCHAIN_PROJECT: openwiki
           LANGCHAIN_TRACING_V2: "true"
