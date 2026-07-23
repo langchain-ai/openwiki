@@ -20,6 +20,15 @@ describe("OpenWikiLocalShellBackend", () => {
     );
   });
 
+  test("rejects `..` traversal that escapes the openwiki dir", () => {
+    expect(isOpenWikiDocsPath("/openwiki/../AGENTS.md")).toBe(false);
+    expect(isOpenWikiDocsPath("openwiki/../AGENTS.md")).toBe(false);
+    expect(isOpenWikiDocsPath("/openwiki/../../etc/passwd")).toBe(false);
+    expect(isOpenWikiDocsPath("\\openwiki\\..\\AGENTS.md")).toBe(false);
+    // A `..` that resolves back inside openwiki/ is still allowed.
+    expect(isOpenWikiDocsPath("/openwiki/sub/../architecture.md")).toBe(true);
+  });
+
   test("refuses init/update writes outside openwiki", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
     const backend = new OpenWikiLocalShellBackend({
@@ -47,6 +56,15 @@ describe("OpenWikiLocalShellBackend", () => {
 
     const agentsEdit = await backend.edit("/AGENTS.md", "old", "new");
     expect(agentsEdit.error).toContain("Refused path: /AGENTS.md");
+
+    const traversalWrite = await backend.write("/openwiki/../AGENTS.md", "bad");
+    expect(traversalWrite.error).toContain(
+      "Refused path: /openwiki/../AGENTS.md",
+    );
+    expect(traversalWrite.metadata).toBeUndefined();
+    await expect(
+      readFile(path.join(rootDir, "AGENTS.md"), "utf8"),
+    ).rejects.toThrow();
   });
 
   test("allows local-wiki init/update writes at the wiki virtual root", async () => {
