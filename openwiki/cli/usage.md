@@ -78,20 +78,20 @@ If a LangSmith key is provided, onboarding also enables `LANGCHAIN_PROJECT=openw
 
 Providers and their model options are defined in `PROVIDER_CONFIGS` in `src/constants.ts`:
 
-| Provider          | Env key                                             | Base URL                                       | Models                                                                |
-| ----------------- | --------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------- |
-| openai            | `OPENAI_API_KEY`                                    | (default, or `OPENAI_BASE_URL`)                | 5.6 Terra, 5.6 Luna, 5.6 Sol, 5.5, 5.4 mini                           |
-| openai-chatgpt    | `OPENAI_CHATGPT_ACCESS_TOKEN`                       | (Codex backend)                                | Same as openai (OAuth login, no API key)                              |
-| openrouter        | `OPENROUTER_API_KEY`                                | `https://openrouter.ai/api/v1`                 | GLM 5.2, Fusion, Kimi K2.7 Code, Claude Opus/Sonnet, GPT 5.4 mini/5.5 |
-| anthropic         | `ANTHROPIC_API_KEY`                                 | (default, or `ANTHROPIC_BASE_URL`)             | Haiku, Sonnet, Opus                                                   |
-| gemini            | `GEMINI_API_KEY`                                    | (AI Studio)                                    | Gemini 3.6 Flash, 3.5 Flash/Lite, 3.1 Pro, 3 Flash, 3.1 Flash-Lite   |
-| gemini-enterprise | none (Google ADC) — `GOOGLE_CLOUD_PROJECT` required | per `GOOGLE_CLOUD_LOCATION` (default `global`) | Gemini models + Claude Haiku/Sonnet/Opus on Vertex AI; MaaS by pasting model ID |
-| bedrock           | `BEDROCK_AWS_ACCESS_KEY_ID` + `BEDROCK_AWS_SECRET_ACCESS_KEY` | per `BEDROCK_AWS_REGION` (required) | Account/region-specific; paste Bedrock model ID directly             |
-| baseten           | `BASETEN_API_KEY`                                   | `https://inference.baseten.co/v1`              | GLM 5.2, Kimi K2.7 Code                                               |
-| fireworks         | `FIREWORKS_API_KEY`                                 | `https://api.fireworks.ai/inference/v1`        | GLM 5.2, Kimi K2.7 Code                                               |
-| nebius            | `NEBIUS_API_KEY`                                    | `https://api.tokenfactory.nebius.com/v1/`      | Kimi K2.6                                                             |
-| nvidia            | `NVIDIA_API_KEY`                                    | `https://integrate.api.nvidia.com/v1`          | Nemotron 3 Super/Ultra/Nano, DeepSeek V4 Pro, GPT-OSS 120B, Kimi K2.6 |
-| openai-compatible | `OPENAI_COMPATIBLE_API_KEY`                         | `OPENAI_COMPATIBLE_BASE_URL` (required)        | custom model ID only                                                  |
+| Provider          | Env key                                                       | Base URL                                       | Models                                                                          |
+| ----------------- | ------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------- |
+| openai            | `OPENAI_API_KEY`                                              | (default, or `OPENAI_BASE_URL`)                | 5.6 Terra, 5.6 Luna, 5.6 Sol, 5.5, 5.4 mini                                     |
+| openai-chatgpt    | `OPENAI_CHATGPT_ACCESS_TOKEN`                                 | (Codex backend)                                | Same as openai (OAuth login, no API key)                                        |
+| openrouter        | `OPENROUTER_API_KEY`                                          | `https://openrouter.ai/api/v1`                 | GLM 5.2, Fusion, Kimi K2.7 Code, Claude Opus/Sonnet, GPT 5.4 mini/5.5           |
+| anthropic         | `ANTHROPIC_API_KEY`                                           | (default, or `ANTHROPIC_BASE_URL`)             | Haiku, Sonnet, Opus                                                             |
+| gemini            | `GEMINI_API_KEY`                                              | (AI Studio)                                    | Gemini 3.6 Flash, 3.5 Flash/Lite, 3.1 Pro, 3 Flash, 3.1 Flash-Lite              |
+| gemini-enterprise | none (Google ADC) — `GOOGLE_CLOUD_PROJECT` required           | per `GOOGLE_CLOUD_LOCATION` (default `global`) | Gemini models + Claude Haiku/Sonnet/Opus on Vertex AI; MaaS by pasting model ID |
+| bedrock           | `BEDROCK_AWS_ACCESS_KEY_ID` + `BEDROCK_AWS_SECRET_ACCESS_KEY` | per `BEDROCK_AWS_REGION` (required)            | Account/region-specific; paste Bedrock model ID directly                        |
+| baseten           | `BASETEN_API_KEY`                                             | `https://inference.baseten.co/v1`              | GLM 5.2, Kimi K2.7 Code                                                         |
+| fireworks         | `FIREWORKS_API_KEY`                                           | `https://api.fireworks.ai/inference/v1`        | GLM 5.2, Kimi K2.7 Code                                                         |
+| nebius            | `NEBIUS_API_KEY`                                              | `https://api.tokenfactory.nebius.com/v1/`      | Kimi K2.6                                                                       |
+| nvidia            | `NVIDIA_API_KEY`                                              | `https://integrate.api.nvidia.com/v1`          | Nemotron 3 Super/Ultra/Nano, DeepSeek V4 Pro, GPT-OSS 120B, Kimi K2.6           |
+| openai-compatible | `OPENAI_COMPATIBLE_API_KEY`                                   | `OPENAI_COMPATIBLE_BASE_URL` (required)        | custom model ID only                                                            |
 
 The default provider is `openai`, and the default model is `gpt-5.6-terra`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, then falls back to the first configured provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, Nebius, NVIDIA, Bedrock, and finally `DEFAULT_PROVIDER`.
 
