@@ -116,6 +116,8 @@ const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
  * partner/open-weight Model Garden models by pasting those model IDs directly.
  */
 const GEMINI_MODELS: ProviderModelOption[] = [
+  { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
+  { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite" },
   { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
   { id: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
   { id: "gemini-3-flash", label: "Gemini 3 Flash" },
@@ -710,4 +712,4 @@ export function isValidModelId(value: string): boolean {
   );
 }
 
-export const OPENWIKI_VERSION = "0.2.0";
+export const OPENWIKI_VERSION = "0.2.2";

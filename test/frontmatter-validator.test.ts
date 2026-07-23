@@ -2,10 +2,8 @@ import { ToolMessage } from "@langchain/core/messages";
 import type { BackendProtocolV2 } from "deepagents";
 import { describe, expect, test, vi } from "vitest";
 import { MUTATION_PATH_METADATA_KEY } from "../src/agent/docs-only-backend.ts";
-import {
-  addFrontmatterWarning,
-  validateOkfFrontmatter,
-} from "../src/agent/frontmatter-validator.ts";
+import { addFrontmatterWarning } from "../src/agent/okf-middleware.ts";
+import { validateOkfFrontmatter } from "../src/okf/frontmatter.ts";
 
 function markdown(frontmatter: string): string {
   return `---\n${frontmatter}\n---\n\n# Page\n`;
