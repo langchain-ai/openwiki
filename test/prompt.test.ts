@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { createSystemPrompt } from "../src/agent/prompt.ts";
+import {
+  createDiagramInstructions,
+  createSystemPrompt,
+} from "../src/agent/prompt.ts";
 
 /**
  * Guards against the 0.2 regression where the shared "Canonical wiki location"
@@ -62,4 +65,52 @@ describe("createSystemPrompt openwiki_generated enrichment guidance", () => {
       expect(prompt).toMatch(/remove the `openwiki_generated` field/);
     });
   }
+});
+
+describe("createDiagramInstructions", () => {
+  test("nudges toward diagrams and defers label-safety to the skill", () => {
+    const text = createDiagramInstructions();
+
+    expect(text).toContain("Diagram discipline:");
+    expect(text).toContain("```mermaid");
+    // Names each of the four diagram types the skill documents.
+    for (const type of [
+      "sequenceDiagram",
+      "stateDiagram-v2",
+      "erDiagram",
+      "flowchart",
+    ]) {
+      expect(text).toContain(type);
+    }
+    // Detailed syntax rules moved to the skill; the prompt points at it instead
+    // of restating them.
+    expect(text).toContain("mermaid-diagrams skill");
+    expect(text.toLowerCase()).not.toContain("semicolons");
+  });
+});
+
+describe("createSystemPrompt diagram guidance", () => {
+  test("is always present for init and update runs", () => {
+    for (const command of ["init", "update"] as const) {
+      const prompt = createSystemPrompt(command);
+
+      expect(prompt).toContain("Diagram discipline:");
+      expect(prompt).toContain("```mermaid");
+      // Contract with the post-run degrade pass: the prompt must teach the exact
+      // marker the validator embeds, or the repair loop never triggers.
+      expect(prompt).toContain("openwiki: mermaid parse failed");
+      expect(prompt).toContain("Mode-specific behavior:");
+    }
+  });
+
+  test("update mode permits opportunistically adding a missing diagram", () => {
+    // Surgical-update discipline would otherwise suppress net-new diagrams on an
+    // existing wiki; this carve-out lets diagrams reach already-built wikis.
+    const update = createSystemPrompt("update");
+    expect(update).toContain("adding one is a valuable improvement");
+
+    // The carve-out is scoped to update runs, not repeated in init guidance.
+    const init = createSystemPrompt("init");
+    expect(init).not.toContain("adding one is a valuable improvement");
+  });
 });
