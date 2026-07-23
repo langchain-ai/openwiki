@@ -50,7 +50,7 @@ export type OpenWikiIngestionResult = {
 
 export type OpenWikiIngestionOptions = Pick<
   OpenWikiRunOptions,
-  "debug" | "modelId" | "onEvent"
+  "debug" | "modelId" | "onEvent" | "toolFilter"
 > & {
   scheduledOnly?: boolean;
   target: IngestionTarget;
@@ -91,6 +91,7 @@ export async function runOpenWikiIngestion(
         emit: options.onEvent,
         modelId: options.modelId,
         sourceConfig,
+        toolFilter: options.toolFilter,
       }),
     );
   }
@@ -122,6 +123,7 @@ async function runSourceIngestion({
   emit,
   modelId,
   sourceConfig,
+  toolFilter,
 }: {
   config: OpenWikiOnboardingConfig;
   connector: ConnectorRuntime;
@@ -129,6 +131,7 @@ async function runSourceIngestion({
   emit?: (event: OpenWikiRunEvent) => void;
   modelId?: string | null;
   sourceConfig: OnboardingSourceInstanceConfig;
+  toolFilter?: OpenWikiRunOptions["toolFilter"];
 }): Promise<SourceIngestionResult> {
   emitText(
     emit,
@@ -172,6 +175,7 @@ async function runSourceIngestion({
       onEvent: emit,
       outputMode: "local-wiki",
       threadId: createOpenWikiThreadId(cwd),
+      toolFilter,
       userMessage: createSourceUpdateMessage({
         config,
         connector,

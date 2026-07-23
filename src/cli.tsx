@@ -592,6 +592,7 @@ function App({ command }: AppProps) {
           modelId: sessionModelId,
           outputMode: runtimeOutputMode,
           threadId: sessionThreadId.current,
+          toolFilter: resolveToolFilter(command),
           userMessage: activeUserMessage,
           telemetryFile: command.telemetryFile ?? undefined,
           onEvent: (event) => {
@@ -3940,6 +3941,7 @@ async function runIngestCommand(
       modelId: command.modelId,
       scheduledOnly: command.scheduledOnly,
       target: command.target,
+      toolFilter: resolveToolFilter(command),
       onEvent: (event) => {
         if (event.type === "text" && event.source !== "subgraph") {
           process.stdout.write(event.text);
@@ -4065,6 +4067,39 @@ function getRunModeOutputMode(mode: OpenWikiRunMode): OpenWikiOutputMode {
   return mode === "code" ? "repository" : "local-wiki";
 }
 
+/**
+ * Resolves the connector-tool allow/deny filter for a run, letting a CLI flag
+ * override the CI/CD env var. `--allow-tools`/`--deny-tools` win when present;
+ * otherwise OPENWIKI_ALLOW_TOOLS / OPENWIKI_DENY_TOOLS supply the list so
+ * operators can restrict tools in unattended (CI/cron) runs.
+ */
+function resolveToolFilter(command: {
+  allowTools: string[] | null;
+  denyTools: string[] | null;
+}): { allow: string[] | null; deny: string[] | null } {
+  return {
+    allow: command.allowTools ?? parseEnvList(process.env.OPENWIKI_ALLOW_TOOLS),
+    deny: command.denyTools ?? parseEnvList(process.env.OPENWIKI_DENY_TOOLS),
+  };
+}
+
+/**
+ * Parses a comma-separated env var value into trimmed, non-empty tool names.
+ * Returns null when unset or effectively empty so it behaves like "not set".
+ */
+function parseEnvList(value?: string): string[] | null {
+  if (!value) {
+    return null;
+  }
+
+  const names = value
+    .split(",")
+    .map((name) => name.trim())
+    .filter((name) => name.length > 0);
+
+  return names.length > 0 ? names : null;
+}
+
 function shouldAutoExitStartupRun(command: CliCommand): boolean {
   return (
     command.kind === "run" &&
@@ -4100,6 +4135,7 @@ async function runPrintCommand(
       modelId: command.modelId,
       outputMode: runtimeOutputMode,
       threadId: createOpenWikiThreadId(runtimeCwd),
+      toolFilter: resolveToolFilter(command),
       userMessage: command.userMessage,
       telemetryFile: command.telemetryFile ?? undefined,
       onEvent: (event) => {

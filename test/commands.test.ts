@@ -492,3 +492,128 @@ describe("parseCommand — cron", () => {
     expect(result.kind).toBe("error");
   });
 });
+
+describe("parseCommand — connector tool allow/deny filters", () => {
+  test("--deny-tools space form populates denyTools", () => {
+    expect(parseCommand(["--deny-tools", "a,b"])).toMatchObject({
+      kind: "run",
+      denyTools: ["a", "b"],
+      allowTools: null,
+    });
+  });
+
+  test("--deny-tools= form populates denyTools", () => {
+    expect(parseCommand(["--deny-tools=a,b"])).toMatchObject({
+      kind: "run",
+      denyTools: ["a", "b"],
+      allowTools: null,
+    });
+  });
+
+  test("--allow-tools space form populates allowTools", () => {
+    expect(parseCommand(["--allow-tools", "a,b"])).toMatchObject({
+      kind: "run",
+      allowTools: ["a", "b"],
+      denyTools: null,
+    });
+  });
+
+  test("--allow-tools= form populates allowTools", () => {
+    expect(parseCommand(["--allow-tools=a,b"])).toMatchObject({
+      kind: "run",
+      allowTools: ["a", "b"],
+      denyTools: null,
+    });
+  });
+
+  test("values are trimmed and empties dropped", () => {
+    expect(parseCommand(["--allow-tools", " a , , b "])).toMatchObject({
+      kind: "run",
+      allowTools: ["a", "b"],
+    });
+  });
+
+  test("both filters can be supplied together", () => {
+    expect(parseCommand(["--allow-tools=a,b", "--deny-tools=b"])).toMatchObject(
+      {
+        kind: "run",
+        allowTools: ["a", "b"],
+        denyTools: ["b"],
+      },
+    );
+  });
+
+  test("filters default to null when unset", () => {
+    expect(parseCommand([])).toMatchObject({
+      kind: "run",
+      allowTools: null,
+      denyTools: null,
+    });
+  });
+
+  test("--deny-tools without a value is an error", () => {
+    expect(parseCommand(["--deny-tools"]).kind).toBe("error");
+  });
+
+  test("--allow-tools without a value is an error", () => {
+    expect(parseCommand(["--allow-tools"]).kind).toBe("error");
+  });
+});
+
+describe("parseCommand — ingest connector tool allow/deny filters", () => {
+  test("--deny-tools space form populates denyTools", () => {
+    expect(
+      parseCommand(["ingest", "all", "--deny-tools", "google,slack"]),
+    ).toMatchObject({
+      kind: "ingest",
+      denyTools: ["google", "slack"],
+      allowTools: null,
+    });
+  });
+
+  test("--deny-tools= form populates denyTools", () => {
+    expect(
+      parseCommand(["ingest", "all", "--deny-tools=google,slack"]),
+    ).toMatchObject({
+      kind: "ingest",
+      denyTools: ["google", "slack"],
+      allowTools: null,
+    });
+  });
+
+  test("--allow-tools space form populates allowTools", () => {
+    expect(
+      parseCommand(["ingest", "all", "--allow-tools", "google,slack"]),
+    ).toMatchObject({
+      kind: "ingest",
+      allowTools: ["google", "slack"],
+      denyTools: null,
+    });
+  });
+
+  test("--allow-tools= form populates allowTools", () => {
+    expect(
+      parseCommand(["ingest", "all", "--allow-tools=google,slack"]),
+    ).toMatchObject({
+      kind: "ingest",
+      allowTools: ["google", "slack"],
+      denyTools: null,
+    });
+  });
+
+  test("filters default to null when unset", () => {
+    expect(parseCommand(["ingest", "all"])).toMatchObject({
+      kind: "ingest",
+      allowTools: null,
+      denyTools: null,
+    });
+  });
+
+  test("--deny-tools without a value is an error", () => {
+    expect(parseCommand(["ingest", "all", "--deny-tools"]).kind).toBe("error");
+  });
+
+  test("--allow-tools without a value is an error", () => {
+    expect(parseCommand(["ingest", "all", "--allow-tools"]).kind).toBe("error");
+  });
+});

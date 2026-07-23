@@ -20,8 +20,21 @@ import {
 } from "./mcp-runtime.js";
 import type { ConnectorId, ConnectorIngestOptions } from "./types.js";
 
-export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
-  return [
+/**
+ * Operator-supplied allow/deny list restricting which connector tools are
+ * exposed to the agent (CLI flags or CI/CD env vars). Filtering rule per tool
+ * name: deny wins over allow; an empty/absent allow means "all"; an
+ * empty/absent deny means "none denied".
+ */
+export type ConnectorToolFilter = {
+  allow?: readonly string[] | null;
+  deny?: readonly string[] | null;
+};
+
+export function createOpenWikiConnectorTools(
+  filter?: ConnectorToolFilter,
+): StructuredToolInterface[] {
+  const tools = [
     new DynamicStructuredTool({
       name: "openwiki_list_connectors",
       description:
@@ -198,7 +211,102 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
           ),
         ),
     }),
-  ];
+  ].map(wrapToolErrors);
+
+  return tools.filter((tool) => isToolAllowed(tool.name, filter));
+}
+
+/**
+ * Applies the operator allow/deny filter to a single tool name. Deny always
+ * wins; a non-empty allow list acts as an exclusive whitelist; an empty or
+ * absent allow list means every non-denied tool is included.
+ */
+function isToolAllowed(name: string, filter?: ConnectorToolFilter): boolean {
+  const deny = filter?.deny;
+  if (deny && deny.includes(name)) {
+    return false;
+  }
+
+  const allow = filter?.allow;
+  if (allow && allow.length > 0 && !allow.includes(name)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Wraps a connector tool's `func` so a thrown error becomes a structured,
+ * model-visible tool result string instead of an uncaught throw that aborts the
+ * whole agent run. Abort/cancellation and LangGraph graph-interrupts are
+ * re-thrown untouched via isUncatchableError so the framework's control-flow
+ * signals are never swallowed (see isUncatchableError for why).
+ */
+function wrapToolErrors(
+  tool: StructuredToolInterface,
+): StructuredToolInterface {
+  const dynamicTool = tool as DynamicStructuredTool;
+  type ToolFunc = DynamicStructuredTool["func"];
+  const originalFunc = dynamicTool.func.bind(dynamicTool);
+
+  const wrappedFunc = async (
+    ...args: Parameters<ToolFunc>
+  ): Promise<string> => {
+    try {
+      // Every connector tool func resolves to a stringified JSON tool result.
+      return (await originalFunc(...args)) as string;
+    } catch (error) {
+      // Never convert a control-flow signal (abort / graph-interrupt) into a
+      // benign string: the agent framework relies on these bubbling up to
+      // cancel the run or drive human-in-the-loop pauses.
+      if (isUncatchableError(error)) {
+        throw error;
+      }
+
+      return `Tool error: ${getErrorMessage(error)}`;
+    }
+  };
+
+  dynamicTool.func = wrappedFunc as ToolFunc;
+
+  return tool;
+}
+
+/**
+ * True for errors that must NEVER be caught and downgraded to a tool result:
+ * abort/cancellation signals and LangGraph graph-interrupts (interrupt() for
+ * human-in-the-loop, ParentCommand routing, drains). Swallowing these would
+ * silently defeat cancellation and interrupt-driven control flow that the agent
+ * framework depends on.
+ *
+ * `@langchain/langgraph` is only a transitive dependency here (pnpm strict mode
+ * leaves it unresolvable from this package), so its `isGraphBubbleUp` /
+ * `isGraphInterrupt` guards cannot be imported directly. Instead we mirror their
+ * exact structural predicates: `isGraphBubbleUp` checks `is_bubble_up === true`
+ * (the marker langchain itself uses in MiddlewareError.wrap to avoid wrapping
+ * interrupts), and `isGraphInterrupt` matches the `GraphInterrupt` /
+ * `NodeInterrupt` error names. AbortError is Node/DOM's standard cancellation
+ * signal name.
+ */
+function isUncatchableError(error: unknown): boolean {
+  if (!isRecord(error)) {
+    return false;
+  }
+
+  // AbortController / cancellation.
+  if (error.name === "AbortError") {
+    return true;
+  }
+
+  // LangGraph GraphBubbleUp marker (GraphInterrupt, NodeInterrupt, GraphDrained,
+  // ParentCommand all set this getter to true).
+  if (error.is_bubble_up === true) {
+    return true;
+  }
+
+  // Belt-and-suspenders name check in case a bubble-up error is reconstructed
+  // across a boundary that drops the getter (mirrors isGraphInterrupt).
+  return error.name === "GraphInterrupt" || error.name === "NodeInterrupt";
 }
 
 async function listConnectors() {
@@ -244,7 +352,23 @@ async function ingestConnector(
 ) {
   const registry = createConnectorRegistry();
 
-  return registry[connectorId].ingest(options);
+  // Isolate connector failures: a thrown error (e.g. a missing OAuth refresh
+  // token) is returned as a structured, model-visible error entry rather than
+  // propagating uncaught and killing the run. Abort/interrupt signals must still
+  // bubble up, so rethrow those before downgrading to a structured error.
+  try {
+    return await registry[connectorId].ingest(options);
+  } catch (error) {
+    if (isUncatchableError(error)) {
+      throw error;
+    }
+
+    return {
+      connectorId,
+      status: "error" as const,
+      error: getErrorMessage(error),
+    };
+  }
 }
 
 async function listMcpToolsForConnector(connectorId: ConnectorId) {
@@ -271,8 +395,24 @@ async function ingestAllConnectors() {
   const registry = createConnectorRegistry();
   const results = [];
 
+  // Catch per iteration so one failing connector doesn't abort the rest: push a
+  // structured error entry for the failure and continue with the others. An
+  // abort/interrupt signal is not a connector failure, so rethrow it instead of
+  // recording it as a per-connector error.
   for (const connector of Object.values(registry)) {
-    results.push(await connector.ingest());
+    try {
+      results.push(await connector.ingest());
+    } catch (error) {
+      if (isUncatchableError(error)) {
+        throw error;
+      }
+
+      results.push({
+        connectorId: connector.id,
+        status: "error" as const,
+        error: getErrorMessage(error),
+      });
+    }
   }
 
   return {
@@ -451,6 +591,10 @@ function getStringArrayInput(
 
 function stringifyToolResult(value: unknown): string {
   return JSON.stringify(value, null, 2);
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
