@@ -112,6 +112,7 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     expect(workflow).toContain("add-paths: |");
     for (const managedPath of [
       "openwiki",
+      "**/openwiki",
       "AGENTS.md",
       "CLAUDE.md",
       ".github/workflows/openwiki-update.yml",
@@ -171,5 +172,35 @@ jobs:
     await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
 
     expect(await readIfPresent(workflowPath)).toBe(customizedWorkflow);
+  });
+
+  test("non-recursive workflow uses the plain update command", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    expect(workflow).toContain("run: openwiki code --update --print");
+    expect(workflow).not.toContain("--recursive");
+  });
+
+  test("recursive workflow reruns with --recursive", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, {
+      createWorkflow: true,
+      recursive: true,
+    });
+
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    expect(workflow).toContain(
+      "run: openwiki code --update --recursive --print",
+    );
+    // Nested sub-wikis are staged in the PR.
+    expect(workflow).toContain("**/openwiki");
   });
 });

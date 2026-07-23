@@ -492,3 +492,53 @@ describe("parseCommand — cron", () => {
     expect(result.kind).toBe("error");
   });
 });
+
+describe("parseCommand — --recursive", () => {
+  test("recursive is undefined by default (auto-enable via manifest only)", () => {
+    expect(parseCommand(["--update"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      mode: "code",
+      recursive: undefined,
+    });
+  });
+
+  test("--recursive forces recursion on", () => {
+    expect(parseCommand(["code", "--init", "--recursive"])).toMatchObject({
+      kind: "run",
+      command: "init",
+      mode: "code",
+      recursive: true,
+    });
+    expect(parseCommand(["--update", "--recursive=true"])).toMatchObject({
+      recursive: true,
+    });
+  });
+
+  test("--recursive=false and --no-recursive force recursion off", () => {
+    expect(parseCommand(["--update", "--recursive=false"])).toMatchObject({
+      recursive: false,
+    });
+    expect(parseCommand(["--update", "--no-recursive"])).toMatchObject({
+      recursive: false,
+    });
+  });
+
+  test("--recursive is rejected in personal mode", () => {
+    const result = parseCommand(["personal", "--update", "--recursive"]);
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/only supported in code mode/);
+    }
+  });
+
+  test("--recursive=false is also rejected in personal mode", () => {
+    const result = parseCommand([
+      "--mode",
+      "personal",
+      "--update",
+      "--no-recursive",
+    ]);
+    expect(result.kind).toBe("error");
+  });
+});

@@ -34,6 +34,11 @@ import {
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+import { runRecursiveOpenWiki } from "./monorepo/orchestrator.js";
+import {
+  resolveRecursionActivation,
+  type RecursionActivation,
+} from "./monorepo/workspaces.js";
 import { formatChatGptAccountFromEnv } from "./agent/openai-chatgpt-oauth.js";
 import {
   getErrorMessage,
@@ -577,44 +582,70 @@ function App({ command }: AppProps) {
         });
     }
 
-    const setupPromise =
-      runMode === "code"
-        ? ensureCodeModeRepoSetup(runtimeCwd, {
+    const runOptions = {
+      debug: isDebugMode(),
+      isFollowup: activeMessageIsFollowup,
+      modelId: sessionModelId,
+      outputMode: runtimeOutputMode,
+      threadId: sessionThreadId.current,
+      userMessage: activeUserMessage,
+      telemetryFile: command.telemetryFile ?? undefined,
+      onEvent: (event: OpenWikiRunEvent) => {
+        if (!mountedRef.current || activeRunId.current !== runId) {
+          return;
+        }
+
+        activeRunLog.current = appendRunLogEvent(
+          activeRunLog.current,
+          event,
+          nextLogId,
+        );
+        setRunState((currentState) =>
+          currentState.status === "running"
+            ? {
+                ...currentState,
+                log: activeRunLog.current,
+              }
+            : currentState,
+        );
+      },
+    };
+
+    // Recursive monorepo docs only applies to code-mode init/update runs. The
+    // orchestrator runs subprojects then the root sequentially, emitting a
+    // per-subproject boundary text event so the Ink log shows coherent progress
+    // across the N runs. Chat and personal runs always take the single path.
+    const recursiveRunCommand = resolvedCommand;
+    const activationPromise: Promise<RecursionActivation> =
+      runMode === "code" && recursiveRunCommand !== "chat"
+        ? resolveRecursionActivation(runtimeCwd, command.recursive, (message) =>
+            runOptions.onEvent({ type: "text", text: `\n${message}\n` }),
+          )
+        : Promise.resolve({
+            kind: "plain",
+            reason: "not a code init/update run",
+          });
+
+    activationPromise
+      .then(async (activation) => {
+        if (activation.kind === "recurse") {
+          const recursiveResult = await runRecursiveOpenWiki(
+            recursiveRunCommand,
+            runtimeCwd,
+            runOptions,
+            activation.manifest,
+          );
+          return recursiveResult.rootResult;
+        }
+
+        if (runMode === "code") {
+          await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: resolvedCommand === "init",
-          })
-        : Promise.resolve();
+          });
+        }
 
-    setupPromise
-      .then(() =>
-        runOpenWikiAgent(resolvedCommand, runtimeCwd, {
-          debug: isDebugMode(),
-          isFollowup: activeMessageIsFollowup,
-          modelId: sessionModelId,
-          outputMode: runtimeOutputMode,
-          threadId: sessionThreadId.current,
-          userMessage: activeUserMessage,
-          telemetryFile: command.telemetryFile ?? undefined,
-          onEvent: (event) => {
-            if (!mountedRef.current || activeRunId.current !== runId) {
-              return;
-            }
-
-            activeRunLog.current = appendRunLogEvent(
-              activeRunLog.current,
-              event,
-              nextLogId,
-            );
-            setRunState((currentState) =>
-              currentState.status === "running"
-                ? {
-                    ...currentState,
-                    log: activeRunLog.current,
-                  }
-                : currentState,
-            );
-          },
-        }),
-      )
+        return runOpenWikiAgent(recursiveRunCommand, runtimeCwd, runOptions);
+      })
       .then((result) => {
         if (!mountedRef.current || activeRunId.current !== runId) {
           return;
@@ -4088,13 +4119,7 @@ async function runPrintCommand(
     const runtimeCwd = getRunModeCwd(command.mode);
     const runtimeOutputMode = getRunModeOutputMode(command.mode);
 
-    if (command.mode === "code") {
-      await ensureCodeModeRepoSetup(runtimeCwd, {
-        createWorkflow: command.command === "init",
-      });
-    }
-
-    await runOpenWikiAgent(command.command, runtimeCwd, {
+    const runOptions = {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
       modelId: command.modelId,
@@ -4102,12 +4127,42 @@ async function runPrintCommand(
       threadId: createOpenWikiThreadId(runtimeCwd),
       userMessage: command.userMessage,
       telemetryFile: command.telemetryFile ?? undefined,
-      onEvent: (event) => {
+      onEvent: (event: OpenWikiRunEvent) => {
         if (event.type === "text" && event.source !== "subgraph") {
           output.push(event.text);
         }
       },
-    });
+    };
+
+    // Recursive monorepo docs: the orchestrator handles ensureCodeModeRepoSetup
+    // once and delimits each subproject in the streamed output. It only applies
+    // to code (repository) mode and to init/update runs.
+    const activation =
+      command.mode === "code" && command.command !== "chat"
+        ? await resolveRecursionActivation(
+            runtimeCwd,
+            command.recursive,
+            (message) =>
+              runOptions.onEvent({ type: "text", text: `\n${message}\n` }),
+          )
+        : ({ kind: "plain", reason: "not a code init/update run" } as const);
+
+    if (activation.kind === "recurse") {
+      await runRecursiveOpenWiki(
+        command.command,
+        runtimeCwd,
+        runOptions,
+        activation.manifest,
+      );
+    } else {
+      if (command.mode === "code") {
+        await ensureCodeModeRepoSetup(runtimeCwd, {
+          createWorkflow: command.command === "init",
+        });
+      }
+
+      await runOpenWikiAgent(command.command, runtimeCwd, runOptions);
+    }
 
     const text = output.join("").trim();
 

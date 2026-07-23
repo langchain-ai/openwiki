@@ -179,6 +179,97 @@ repository wiki: OpenWiki reads it for scope and priorities, but it is not
 generated documentation and is not rewritten during normal init, update, or chat
 runs unless you explicitly ask to change the brief.
 
+## Monorepos (recursive documentation)
+
+Large monorepos are hard to capture in a single wiki. OpenWiki can instead
+document each subproject in its own nested `openwiki/` sub-wiki, while the
+repository-root wiki links down to them and covers only cross-cutting concerns:
+
+```sh
+openwiki code --update --recursive
+```
+
+Subprojects are read from an `openwiki/workspaces.json` manifest at the
+repository root:
+
+```json
+{
+  "version": 1,
+  "workspaces": [{ "path": "packages/api" }, { "path": "packages/web" }],
+  "overrides": {
+    "packages/api": { "name": "API", "goal": "Optional per-subproject brief." },
+    "vendor/thirdparty": { "exclude": true },
+    "tools/custom-grouping": { "include": true, "name": "Tools" }
+  },
+  "root": { "goal": "Optional brief for the aggregating root wiki." }
+}
+```
+
+The manifest has two parts. The `workspaces` list is **managed** — it is
+regenerated from detection on every recursive run, sorted and path-only. All
+hand-authored customization lives in the `overrides` map, keyed by
+repo-relative path, and is never auto-clobbered:
+
+- `goal` / `name`: a per-subproject wiki brief and display name.
+- `exclude: true`: detection still lists the path (so it is not re-discovered as
+  new noise), but no sub-wiki is generated for it.
+- `include: true`: force-add a path detection cannot find (e.g. a custom
+  grouping). This flag is also what distinguishes a deliberate manual addition
+  from an override left behind by a deleted project.
+
+The legacy flat shape (`goal`/`name` written directly on `workspaces` entries)
+is still read: those fields are migrated into `overrides` in memory, and the
+next write emits the current shape without losing them.
+
+- **Self-maintaining discovery.** Detection re-runs on **every** recursive run
+  (it is deterministic and fast) and is merged with the existing manifest, so
+  the manifest stays current as the repo evolves: newly added projects appear
+  automatically, deleted ones drop out, and your `overrides` survive
+  regeneration. The merged manifest is written back **only when it changed** — a
+  no-op run leaves `openwiki/workspaces.json` byte-for-byte unchanged, so
+  scheduled CI runs produce no spurious manifest diff.
+- **Manual entries are preserved, stale ones are pruned.** On the first
+  self-maintaining run, any path you hand-listed that detection cannot surface
+  is kept **if its directory still exists** — it is promoted to an explicit
+  `"include": true` override (carrying any goal/name) so it is stable and
+  self-documenting. A referenced path whose directory is gone is treated as a
+  removed project and dropped; if it carried a hand-authored override, a warning
+  names the pruned path (a plain managed entry is removed quietly). An
+  `"include"` path that would overlap a detected workspace (for example an
+  ancestor of a detected leaf) is ignored with a warning rather than persisted,
+  so a stray include can never wedge future runs.
+- **Activation.** If `openwiki/workspaces.json` is present, recursive mode is
+  enabled automatically. Passing `--recursive` with no manifest triggers
+  auto-detection of common workspace layouts (pnpm/npm/yarn workspaces, Cargo,
+  Go, uv, Gradle, Maven, .NET solutions, Bazel), writes a `workspaces.json` for
+  you to review, and proceeds. Pass `--recursive=false` to force a single-repo
+  run even when a manifest exists.
+- **Layout.** Each subproject's docs live at `<subproject>/openwiki/`. The root
+  wiki gets a generated `openwiki/workspaces.md` index linking to every
+  sub-wiki; do not hand-edit it.
+- **Incremental updates.** Each subproject is evaluated independently: on
+  `--update`, a subproject's sub-wiki regenerates only when files _within that
+  subproject's own subtree_ have changed since it was last documented (tracked in
+  its own `openwiki/.last-update.json`). Unchanged subprojects are skipped
+  without a model call, so scheduled refreshes stay cheap. The root wiki
+  regenerates on every run.
+- **No dependency cascade (by design).** Updates do not propagate across
+  subprojects: if a shared subproject (for example a common kernel or contracts
+  package) changes, only _that_ sub-wiki and the root wiki are refreshed, not the
+  siblings that depend on it. This is intentional, not a missing feature. Each
+  subproject run is **isolated to its own subtree** — the filesystem tools are
+  rooted at the subproject directory and its git evidence is scoped with a `-- .`
+  pathspec — so a run cannot read a dependency's source even if it wanted to.
+  Re-running a dependent after an unrelated dependency change would therefore
+  have no new information to incorporate and would just reproduce the same
+  sub-wiki. In practice this is not a gap: when a dependency's _public API_
+  changes, the dependent's own call sites change too, which shows up in the
+  dependent's own subtree diff and regenerates it normally. Only changes to a
+  dependency's _internals_ (invisible to dependents) are skipped, which is the
+  desired behavior. If you still want to force a refresh after a significant
+  shared-code change, remove the relevant `openwiki/.last-update.json` files (or
+  run each affected subproject explicitly).
+
 On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
 
 These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.

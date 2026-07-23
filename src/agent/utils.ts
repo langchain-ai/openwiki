@@ -24,8 +24,56 @@ import type { Dirent } from "node:fs";
 const execFileAsync = promisify(execFile);
 const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
 const TEMPORARY_PLAN_FILE = "_plan.md";
+/**
+ * Per-subproject gitHead tracking written by the recursive orchestrator at the
+ * root wiki. It records generator state, not documentation, so it is excluded
+ * from the content snapshot (so it never triggers a spurious metadata write) and
+ * from generated indexes.
+ */
+export const WORKSPACES_STATE_FILE = ".workspaces-state.json";
 
 export type OpenWikiContentSnapshot = string;
+
+/**
+ * Restricts the git evidence/no-op commands to a subtree of the repository.
+ *
+ * - `subproject`: cwd is the subproject directory and commands use a `-- .`
+ *   pathspec plus `--relative` (on log/diff) so output paths are subproject-
+ *   relative (`openwiki/x.md`, `src/code.ts`). The OpenWiki-prefix check then
+ *   stays keyed off `OPEN_WIKI_DIR` unchanged.
+ * - `root-excluding-nested`: cwd is the repository root and commands exclude any
+ *   nested `openwiki/` directories (so freshly generated sub-wikis are not
+ *   presented as source churn), while the root's own `openwiki/` is preserved.
+ *
+ * When `scope` is undefined the git commands are byte-identical to the
+ * non-recursive behavior (no pathspec, no `--relative`).
+ */
+export type GitScope =
+  { mode: "subproject" } | { mode: "root-excluding-nested" };
+
+/**
+ * Builds the `--relative` flag and trailing pathspec args for a scoped git
+ * command. `useRelative` is only honored for the subproject scope (status stays
+ * cwd-relative and does not take `--relative`).
+ */
+function gitScopeArgs(
+  scope: GitScope | undefined,
+  useRelative: boolean,
+): { relative: string[]; pathspec: string[] } {
+  if (!scope) {
+    return { relative: [], pathspec: [] };
+  }
+
+  if (scope.mode === "subproject") {
+    return {
+      relative: useRelative ? ["--relative"] : [],
+      pathspec: ["--", "."],
+    };
+  }
+
+  // Root scope: keep the root wiki but drop any nested openwiki subtrees.
+  return { relative: [], pathspec: ["--", ".", ":(exclude)**/openwiki/**"] };
+}
 
 export type UpdateNoopStatus =
   | {
@@ -45,9 +93,12 @@ export async function createRunContext(
   command: OpenWikiCommand,
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
+  scope?: GitScope,
+  wikiGoalOverride?: string,
 ): Promise<RunContext> {
   const lastUpdate = await readLastUpdate(cwd, outputMode);
-  const wikiGoal = await readRunWikiGoal(cwd, outputMode);
+  const wikiGoal =
+    wikiGoalOverride?.trim() || (await readRunWikiGoal(cwd, outputMode));
 
   if (command === "chat") {
     return {
@@ -68,7 +119,7 @@ export async function createRunContext(
 
   return {
     lastUpdate,
-    gitSummary: await createGitSummary(command, cwd, lastUpdate),
+    gitSummary: await createGitSummary(command, cwd, lastUpdate, scope),
     wikiGoal,
   };
 }
@@ -86,6 +137,7 @@ async function readRunWikiGoal(
 
 export async function getUpdateNoopStatus(
   cwd: string,
+  scope?: GitScope,
 ): Promise<UpdateNoopStatus> {
   const lastUpdate = await readLastUpdate(cwd, "repository");
 
@@ -99,10 +151,12 @@ export async function getUpdateNoopStatus(
     return { shouldSkip: false, reason: "missing current git head" };
   }
 
+  const { pathspec } = gitScopeArgs(scope, false);
   const status = await runGit(cwd, [
     "status",
     "--short",
     "--untracked-files=all",
+    ...pathspec,
   ]);
   const meaningfulStatus = status
     .split("\n")
@@ -118,6 +172,7 @@ export async function getUpdateNoopStatus(
     const committedPaths = await getChangedPathsSinceLastUpdate(
       cwd,
       lastUpdate.gitHead,
+      scope,
     );
 
     if (
@@ -346,7 +401,8 @@ function isIgnoredSnapshotPath(relativePath: string): boolean {
   return (
     relativePath === path.basename(UPDATE_METADATA_PATH) ||
     relativePath === LOCAL_WIKI_METADATA_PATH ||
-    relativePath === TEMPORARY_PLAN_FILE
+    relativePath === TEMPORARY_PLAN_FILE ||
+    relativePath === WORKSPACES_STATE_FILE
   );
 }
 
@@ -372,9 +428,13 @@ async function createGitSummary(
   command: OpenWikiCommand,
   cwd: string,
   lastUpdate: UpdateMetadata | null,
+  scope?: GitScope,
 ): Promise<string> {
   const sections: string[] = [];
-  const status = await runGit(cwd, ["status", "--short"]);
+  // status stays cwd-relative and does not take `--relative`; log/diff take it.
+  const { pathspec } = gitScopeArgs(scope, false);
+  const { relative, pathspec: relativePathspec } = gitScopeArgs(scope, true);
+  const status = await runGit(cwd, ["status", "--short", ...pathspec]);
   const head = await getGitHead(cwd);
 
   sections.push(formatGitSection("git status --short", status));
@@ -386,6 +446,8 @@ async function createGitSummary(
       `${lastUpdate.gitHead}..HEAD`,
       "--name-status",
       "--oneline",
+      ...relative,
+      ...relativePathspec,
     ]);
 
     sections.push(
@@ -401,6 +463,8 @@ async function createGitSummary(
       lastUpdate.updatedAt,
       "--name-status",
       "--oneline",
+      ...relative,
+      ...relativePathspec,
     ]);
 
     sections.push(
@@ -415,6 +479,8 @@ async function createGitSummary(
       "--max-count=20",
       "--name-status",
       "--oneline",
+      ...relative,
+      ...relativePathspec,
     ]);
 
     if (command === "update") {
@@ -429,7 +495,13 @@ async function createGitSummary(
     );
   }
 
-  const diff = await runGit(cwd, ["diff", "--name-status", "HEAD"]);
+  const diff = await runGit(cwd, [
+    "diff",
+    "--name-status",
+    ...relative,
+    "HEAD",
+    ...relativePathspec,
+  ]);
   sections.push(formatGitSection("git diff --name-status HEAD", diff));
 
   return sections.join("\n\n");
@@ -487,8 +559,16 @@ function isUpdateMetadataStatusLine(line: string): boolean {
 async function getChangedPathsSinceLastUpdate(
   cwd: string,
   gitHead: string,
+  scope?: GitScope,
 ): Promise<string[]> {
-  const diff = await runGit(cwd, ["diff", "--name-only", `${gitHead}..HEAD`]);
+  const { relative, pathspec } = gitScopeArgs(scope, true);
+  const diff = await runGit(cwd, [
+    "diff",
+    "--name-only",
+    ...relative,
+    `${gitHead}..HEAD`,
+    ...pathspec,
+  ]);
 
   return diff
     .split("\n")
