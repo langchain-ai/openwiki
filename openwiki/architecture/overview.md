@@ -21,7 +21,7 @@ OpenWiki has a small but layered architecture:
 10. `src/auth/` contains the connector OAuth system: `oauth.ts` (generic runner), `providers.ts` (provider configs), `configure.ts` (`openwiki auth configure`), `ngrok.ts` (Slack HTTPS tunnel), `tokens.ts` (refresh/validation), and `types.ts`.
 11. `src/connectors/` contains the connector registry, MCP client/runtime, source-specific ingestion modules (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions exposed to the agent.
 12. `src/ingestion.ts` orchestrates source ingestion runs across configured connectors.
-13. `src/code-mode.ts` handles `openwiki code` setup: writes a GitHub Actions workflow and AGENTS.md/CLAUDE.md snippets.
+13. `src/code-mode.ts` handles `openwiki code` setup: creates a GitHub Actions workflow only when it does not already exist (so operator customizations survive `--update` runs), and refreshes AGENTS.md/CLAUDE.md snippets in place.
 14. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
 15. `src/agent/types.ts` defines shared types: `OpenWikiCommand`, `RunContext`, `UpdateMetadata`, and run option/event interfaces.
 
