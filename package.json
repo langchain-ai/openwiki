@@ -1,6 +1,6 @@
 {
   "name": "openwiki",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "A CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase.",
   "license": "MIT",
   "type": "module",
@@ -66,12 +66,27 @@
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
+  "peerDependencies": {
+    "jsdom": "^29.1.1",
+    "mermaid": "^11.16.0"
+  },
+  "peerDependenciesMeta": {
+    "jsdom": {
+      "optional": true
+    },
+    "mermaid": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/jsdom": "^28.0.3",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.17",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.5.0",
+    "jsdom": "^29.1.1",
+    "mermaid": "^11.16.0",
     "prettier": "^3.8.4",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
