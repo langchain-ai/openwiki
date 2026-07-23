@@ -1,9 +1,13 @@
 export const OPEN_WIKI_DIR = "openwiki";
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
+
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
+export const BASETEN_BASE_URL_ENV_KEY = "BASETEN_BASE_URL";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
+export const FIREWORKS_BASE_URL_ENV_KEY = "FIREWORKS_BASE_URL";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
+export const NVIDIA_BASE_URL_ENV_KEY = "NVIDIA_BASE_URL";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
@@ -198,6 +202,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   baseten: {
     apiKeyEnvKey: BASETEN_API_KEY_ENV_KEY,
     baseURL: "https://inference.baseten.co/v1",
+    baseUrlEnvKey: BASETEN_BASE_URL_ENV_KEY,
     label: "Baseten",
     modelOptions: [
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
@@ -219,6 +224,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
     baseURL: "https://api.fireworks.ai/inference/v1",
+    baseUrlEnvKey: FIREWORKS_BASE_URL_ENV_KEY,
     label: "Fireworks",
     modelOptions: [
       { id: "accounts/fireworks/models/glm-5p2", label: "GLM 5.2" },
@@ -237,6 +243,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   nvidia: {
     apiKeyEnvKey: NVIDIA_API_KEY_ENV_KEY,
     baseURL: "https://integrate.api.nvidia.com/v1",
+    baseUrlEnvKey: NVIDIA_BASE_URL_ENV_KEY,
     label: "NVIDIA NIM",
     modelOptions: [
       {

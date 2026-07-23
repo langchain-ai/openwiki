@@ -235,9 +235,12 @@ ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 
 The `openai` provider likewise supports an alternative, OpenAI-compatible
 endpoint (for example a self-hosted or proxied gateway) via `OPENAI_BASE_URL`,
-set alongside `OPENAI_API_KEY`. This is useful for OpenAI-compatible gateways
-that expose the Responses API, since the `openai` provider routes tool calls
-through the Responses API (`/v1/responses`) rather than chat completions:
+set alongside `OPENAI_API_KEY`. Baseten, Fireworks, and NVIDIA NIM can be routed
+through alternate OpenAI-compatible gateways with `BASETEN_BASE_URL`,
+`FIREWORKS_BASE_URL`, and `NVIDIA_BASE_URL`, respectively. This is useful for
+OpenAI-compatible gateways that expose the Responses API, since the `openai`
+provider routes tool calls through the Responses API (`/v1/responses`) rather
+than chat completions:
 
 ```bash
 OPENWIKI_PROVIDER=openai
