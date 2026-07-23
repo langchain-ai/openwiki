@@ -1,6 +1,7 @@
 import { createGitRepoConnector } from "./sources/git-repo.js";
 import { createGmailConnector } from "./sources/gmail.js";
 import { createHackerNewsConnector } from "./sources/hackernews.js";
+import { createImaConnector } from "./sources/ima.js";
 import { createMcpConnector } from "./sources/mcp.js";
 import { createSlackConnector } from "./sources/slack.js";
 import { createWebSearchConnector } from "./sources/web-search.js";
@@ -9,12 +10,13 @@ import type { ConnectorId, ConnectorRuntime } from "./types.js";
 
 export const CONNECTOR_IDS = [
   "git-repo",
-  "notion",
-  "x",
   "google",
-  "web-search",
   "hackernews",
+  "ima",
+  "notion",
   "slack",
+  "web-search",
+  "x",
 ] as const satisfies readonly ConnectorId[];
 
 export function createConnectorRegistry(): Record<
@@ -25,6 +27,7 @@ export function createConnectorRegistry(): Record<
     "git-repo": createGitRepoConnector(),
     google: createGmailConnector(),
     hackernews: createHackerNewsConnector(),
+    ima: createImaConnector(),
     notion: createMcpConnector({
       description:
         "Notion connector backed by the hosted Notion MCP server or another configured read-only MCP server.",
