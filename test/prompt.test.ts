@@ -125,3 +125,32 @@ describe("createSystemPrompt diagram guidance", () => {
     expect(init).not.toContain("adding one is a valuable improvement");
   });
 });
+
+/**
+ * The connector-ingestion discipline block must be gated on whether connector
+ * tools are actually exposed, so a restricted or code-mode run is not told to
+ * call tools it does not have.
+ */
+describe("createSystemPrompt connector ingestion gating", () => {
+  test("omits the connector ingestion discipline when no connector tools are present", () => {
+    const prompt = createSystemPrompt("update", "repository", []);
+
+    expect(prompt).not.toContain("Connector ingestion discipline:");
+    expect(prompt).not.toContain("openwiki_list_connectors");
+  });
+
+  test("includes the connector ingestion discipline when connector tools are present", () => {
+    const prompt = createSystemPrompt("update", "repository", [
+      "openwiki_list_connectors",
+    ]);
+
+    expect(prompt).toContain("Connector ingestion discipline:");
+    expect(prompt).toContain("openwiki_list_connectors");
+  });
+
+  test("includes the connector ingestion discipline by default (no toolset arg)", () => {
+    const prompt = createSystemPrompt("update", "local-wiki");
+
+    expect(prompt).toContain("Connector ingestion discipline:");
+  });
+});

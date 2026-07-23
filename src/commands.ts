@@ -41,6 +41,8 @@ export type CliCommand =
   | {
       kind: "ingest";
       exitCode: 0;
+      allowTools: string[] | null;
+      denyTools: string[] | null;
       modelId: string | null;
       print: boolean;
       scheduledOnly: boolean;
@@ -56,7 +58,9 @@ export type CliCommand =
   | {
       kind: "run";
       exitCode: 0;
+      allowTools: string[] | null;
       command: OpenWikiCommand;
+      denyTools: string[] | null;
       dryRun: boolean;
       mode: OpenWikiRunMode;
       modeSource: OpenWikiRunModeSource;
@@ -211,6 +215,8 @@ export function parseCommand(argv: string[]): CliCommand {
       };
     }
 
+    let allowTools: string[] | null = null;
+    let denyTools: string[] | null = null;
     let modelId: string | null = null;
     let print = false;
     let scheduledOnly = false;
@@ -225,6 +231,50 @@ export function parseCommand(argv: string[]): CliCommand {
 
       if (arg === "--scheduled") {
         scheduledOnly = true;
+        continue;
+      }
+
+      if (arg === "--allow-tools") {
+        const nextArg = optionArgs[index + 1];
+
+        if (!nextArg || nextArg.startsWith("-")) {
+          return {
+            kind: "error",
+            exitCode: 1,
+            message: "--allow-tools requires a comma-separated tool list.",
+          };
+        }
+
+        allowTools = parseToolList(nextArg);
+        index += 1;
+        continue;
+      }
+
+      if (arg.startsWith("--allow-tools=")) {
+        const [, value = ""] = arg.split("=", 2);
+        allowTools = parseToolList(value);
+        continue;
+      }
+
+      if (arg === "--deny-tools") {
+        const nextArg = optionArgs[index + 1];
+
+        if (!nextArg || nextArg.startsWith("-")) {
+          return {
+            kind: "error",
+            exitCode: 1,
+            message: "--deny-tools requires a comma-separated tool list.",
+          };
+        }
+
+        denyTools = parseToolList(nextArg);
+        index += 1;
+        continue;
+      }
+
+      if (arg.startsWith("--deny-tools=")) {
+        const [, value = ""] = arg.split("=", 2);
+        denyTools = parseToolList(value);
         continue;
       }
 
@@ -277,6 +327,8 @@ export function parseCommand(argv: string[]): CliCommand {
     return {
       kind: "ingest",
       exitCode: 0,
+      allowTools,
+      denyTools,
       modelId,
       print,
       scheduledOnly,
@@ -334,6 +386,8 @@ function parseRunCommand(
   initialMode: OpenWikiRunMode,
   initialModeSource: OpenWikiRunModeSource,
 ): CliCommand {
+  let allowTools: string[] | null = null;
+  let denyTools: string[] | null = null;
   let dryRun = false;
   let mode = initialMode;
   let modeSource = initialModeSource;
@@ -515,6 +569,50 @@ function parseRunCommand(
       continue;
     }
 
+    if (arg === "--allow-tools") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--allow-tools requires a comma-separated tool list.",
+        };
+      }
+
+      allowTools = parseToolList(nextArg);
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--allow-tools=")) {
+      const [, value = ""] = arg.split("=", 2);
+      allowTools = parseToolList(value);
+      continue;
+    }
+
+    if (arg === "--deny-tools") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--deny-tools requires a comma-separated tool list.",
+        };
+      }
+
+      denyTools = parseToolList(nextArg);
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--deny-tools=")) {
+      const [, value = ""] = arg.split("=", 2);
+      denyTools = parseToolList(value);
+      continue;
+    }
+
     if (arg.startsWith("-")) {
       return {
         kind: "error",
@@ -559,7 +657,9 @@ function parseRunCommand(
   return {
     kind: "run",
     exitCode: 0,
+    allowTools,
     command,
+    denyTools,
     dryRun,
     mode,
     modeSource,
@@ -569,6 +669,19 @@ function parseRunCommand(
     userMessage,
     telemetryFile,
   };
+}
+
+/**
+ * Splits a comma-separated tool list into trimmed, non-empty names. Returns null
+ * when nothing usable remains so an empty flag value behaves like "unset".
+ */
+function parseToolList(value: string): string[] | null {
+  const names = value
+    .split(",")
+    .map((name) => name.trim())
+    .filter((name) => name.length > 0);
+
+  return names.length > 0 ? names : null;
 }
 
 function resolveExplicitMode(

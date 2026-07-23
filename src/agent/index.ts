@@ -257,9 +257,13 @@ async function runOpenWikiAgentCore(
       virtualMode: true,
     }),
   });
+  // Build the connector toolset once so the same allow/deny-filtered set drives
+  // both what the agent can call and what the system prompt tells it about.
+  const connectorTools = createOpenWikiConnectorTools(options.toolFilter);
+  const connectorToolNames = connectorTools.map((tool) => tool.name);
   const agent = createDeepAgent({
     model,
-    tools: createOpenWikiConnectorTools(),
+    tools: connectorTools,
     checkpointer,
     backend,
     middleware:
@@ -270,7 +274,7 @@ async function runOpenWikiAgentCore(
     permissions: [
       { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
     ],
-    systemPrompt: createSystemPrompt(command, outputMode),
+    systemPrompt: createSystemPrompt(command, outputMode, connectorToolNames),
   });
   emitDebug(options, "agent=created");
 

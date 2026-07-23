@@ -38,6 +38,10 @@ export type OpenWikiRunOptions = {
   onEvent?: (event: OpenWikiRunEvent) => void;
   outputMode?: OpenWikiOutputMode;
   threadId?: string;
+  toolFilter?: {
+    allow?: readonly string[] | null;
+    deny?: readonly string[] | null;
+  };
   userMessage?: string | null;
   telemetryFile?: string;
 };
