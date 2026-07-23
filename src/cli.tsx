@@ -579,7 +579,9 @@ function App({ command }: AppProps) {
 
     const setupPromise =
       runMode === "code"
-        ? ensureCodeModeRepoSetup(runtimeCwd)
+        ? ensureCodeModeRepoSetup(runtimeCwd, {
+            createWorkflow: resolvedCommand === "init",
+          })
         : Promise.resolve();
 
     setupPromise
@@ -4101,7 +4103,9 @@ async function runPrintCommand(
     const runtimeOutputMode = getRunModeOutputMode(command.mode);
 
     if (command.mode === "code") {
-      await ensureCodeModeRepoSetup(runtimeCwd);
+      await ensureCodeModeRepoSetup(runtimeCwd, {
+        createWorkflow: command.command === "init",
+      });
     }
 
     // Code-mode connectors (e.g. langsmith) pull their evidence and augment the

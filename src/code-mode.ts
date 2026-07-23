@@ -15,15 +15,43 @@ const DEFAULT_CODE_MODE_CRON = "0 8 * * *";
 // Each is created when missing and refreshed in place when already present.
 const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
 
+/** Controls which parts of the repo OpenWiki sets up for code mode. */
+export interface CodeModeRepoSetupOptions {
+  /**
+   * Write the scheduled-update workflow file. Only `openwiki code --init`
+   * should create it; `--update` and chat runs leave an existing file alone so
+   * operator customizations (fork guards, pinned actions, custom steps) are
+   * never silently overwritten.
+   */
+  createWorkflow?: boolean;
+  /** Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}. */
+  cronExpression?: string;
+}
+
+/**
+ * Ensure the repo is set up for code mode: refresh the managed agent-instruction
+ * snippets, and, when `options.createWorkflow` is set, create the scheduled-update
+ * workflow if it does not already exist.
+ */
 export async function ensureCodeModeRepoSetup(
   cwd: string,
-  cronExpression = DEFAULT_CODE_MODE_CRON,
+  options: CodeModeRepoSetupOptions = {},
 ): Promise<void> {
-  await writeCodeModeWorkflow(cwd, cronExpression);
+  if (options.createWorkflow) {
+    await ensureCodeModeWorkflow(
+      cwd,
+      options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
+    );
+  }
   await writeCodeModeAgentSnippets(cwd);
 }
 
-async function writeCodeModeWorkflow(
+/**
+ * Create the scheduled-update workflow file only when it is missing. An existing
+ * file is preserved verbatim so repo-specific customizations survive repeated
+ * runs; a plain overwrite would silently strip them.
+ */
+async function ensureCodeModeWorkflow(
   cwd: string,
   cronExpression: string,
 ): Promise<void> {
@@ -33,6 +61,16 @@ async function writeCodeModeWorkflow(
     "workflows",
     "openwiki-update.yml",
   );
+
+  try {
+    await readFile(workflowPath, "utf8");
+    return;
+  } catch (error) {
+    if (!isFileNotFoundError(error)) {
+      throw error;
+    }
+  }
+
   await mkdir(path.dirname(workflowPath), { recursive: true });
   await writeFile(workflowPath, createCodeModeWorkflow(cronExpression), "utf8");
 }
@@ -181,10 +219,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
 
