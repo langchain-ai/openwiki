@@ -16,6 +16,7 @@ import {
 import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
 import { inStage } from "../telemetry/index.js";
 import type { OpenWikiOutputMode } from "./types.js";
+import { validateWikiInternalLinks } from "./wiki-link-validator.js";
 
 const OKF_RESERVED_FILES = new Set(["index.md", "log.md"]);
 const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
@@ -74,6 +75,13 @@ export function createOpenWikiIndexMiddleware(
         "finalize",
         () => synchronizeWikiIndexes(backend, outputMode, labels, conceptType),
         { errorClass: "okf_error", errorDetail: "index_sync" },
+      );
+      // Stamp broken internal links in place (do not fail the run) so a later
+      // update can repair them from the inline openwiki comments.
+      await inStage(
+        "finalize",
+        () => validateWikiInternalLinks(backend, outputMode),
+        { errorClass: "okf_error", errorDetail: "link_validation" },
       );
     },
   });
