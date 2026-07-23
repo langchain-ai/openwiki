@@ -1,14 +1,16 @@
-import { mkdir, readFile, writeFile, chmod } from "node:fs/promises";
+import { mkdir, readFile, writeFile, chmod, rename } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
+  BASETEN_BASE_URL_ENV_KEY,
   BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  FIREWORKS_BASE_URL_ENV_KEY,
   getProviderBaseUrlWarnings,
   GEMINI_API_KEY_ENV_KEY,
   GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
@@ -18,6 +20,7 @@ import {
   NEBIUS_API_KEY_ENV_KEY,
   normalizeProvider,
   NVIDIA_API_KEY_ENV_KEY,
+  NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_BASE_URL_ENV_KEY,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
@@ -84,9 +87,12 @@ export type CredentialDiagnostic = {
  */
 export const MANAGED_ENV_KEYS = [
   BASETEN_API_KEY_ENV_KEY,
+  BASETEN_BASE_URL_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  FIREWORKS_BASE_URL_ENV_KEY,
   NEBIUS_API_KEY_ENV_KEY,
   NVIDIA_API_KEY_ENV_KEY,
+  NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_BASE_URL_ENV_KEY,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
@@ -293,11 +299,18 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
   await chmod(openWikiEnvDir, 0o700);
   await restrictDirToCurrentUser(openWikiEnvDir);
 
-  await writeFile(openWikiEnvPath, formatEnv(nextEnv), {
+  // Write to a temp file in the same directory and atomically rename it into
+  // place. A plain writeFile opens the existing credential file with O_TRUNC,
+  // so a failure mid-write (ENOSPC, crash, power loss) would leave
+  // ~/.openwiki/.env truncated and every saved token/key lost. The rename
+  // keeps the original intact until the new contents are fully written.
+  const tmpPath = `${openWikiEnvPath}.${process.pid}.tmp`;
+  await writeFile(tmpPath, formatEnv(nextEnv), {
     encoding: "utf8",
     mode: 0o600,
   });
-  await chmod(openWikiEnvPath, 0o600);
+  await chmod(tmpPath, 0o600);
+  await rename(tmpPath, openWikiEnvPath);
 
   for (const [key, value] of Object.entries(updates)) {
     // A shell export wins at runtime, so don't mask it in process.env; the
@@ -349,11 +362,8 @@ function createCredentialDiagnostic(
           ? getProviderWarnings(value)
           : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
             ? getRetryAttemptsWarnings(value)
-            : key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
-              ? getProviderBaseUrlWarnings("openai-compatible", value)
-              : key === ANTHROPIC_BASE_URL_ENV_KEY
-                ? getProviderBaseUrlWarnings("anthropic", value)
-                : getCredentialWarnings(value),
+            : (getBaseUrlDiagnosticWarnings(key, value) ??
+              getCredentialWarnings(value)),
   };
 }
 
@@ -376,6 +386,37 @@ function getCredentialSource(
   return "unset";
 }
 
+function getBaseUrlDiagnosticWarnings(
+  key: string,
+  value: string,
+): string[] | undefined {
+  if (key === ANTHROPIC_BASE_URL_ENV_KEY) {
+    return getProviderBaseUrlWarnings("anthropic", value);
+  }
+
+  if (key === BASETEN_BASE_URL_ENV_KEY) {
+    return getProviderBaseUrlWarnings("baseten", value);
+  }
+
+  if (key === FIREWORKS_BASE_URL_ENV_KEY) {
+    return getProviderBaseUrlWarnings("fireworks", value);
+  }
+
+  if (key === NVIDIA_BASE_URL_ENV_KEY) {
+    return getProviderBaseUrlWarnings("nvidia", value);
+  }
+
+  if (key === OPENAI_BASE_URL_ENV_KEY) {
+    return getProviderBaseUrlWarnings("openai", value);
+  }
+
+  if (key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY) {
+    return getProviderBaseUrlWarnings("openai-compatible", value);
+  }
+
+  return undefined;
+}
+
 function isNonSecretDiagnosticKey(key: string): boolean {
   return (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
@@ -383,6 +424,9 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
     key === OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === BASETEN_BASE_URL_ENV_KEY ||
+    key === FIREWORKS_BASE_URL_ENV_KEY ||
+    key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||
     key === BEDROCK_AWS_REGION_ENV_KEY ||

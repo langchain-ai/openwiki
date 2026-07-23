@@ -54,6 +54,7 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  BASETEN_BASE_URL_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
   getDefaultModelId,
   getMissingProviderEnvKey,
@@ -64,6 +65,7 @@ import {
   getProviderBaseUrlWarnings,
   getProviderModelOptions,
   getProviderRegionEnvKey,
+  FIREWORKS_BASE_URL_ENV_KEY,
   getProviderSecretKeyEnvKey,
   getProvidersForKnownModelId,
   isModelIdForOtherProvider,
@@ -71,6 +73,8 @@ import {
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
   isValidModelId,
   normalizeModelId,
+  NVIDIA_BASE_URL_ENV_KEY,
+  OPENAI_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
@@ -158,7 +162,10 @@ export async function runOpenWikiAgent(
     const providerBaseUrl = resolveProviderBaseUrl(provider);
     emitDebug(options, `provider=${provider}`);
     if (providerBaseUrl) {
-      emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
+      emitDebug(
+        options,
+        `provider.baseUrl=${formatUrlDebugValue(providerBaseUrl)}`,
+      );
     }
     ensureProviderCredentials(provider);
     emitDebug(options, `credentials=${provider} present`);
@@ -522,17 +529,17 @@ function ensureProviderCredentials(provider: OpenWikiProvider): void {
 }
 
 function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
-  if (!providerRequiresBaseUrl(provider)) {
-    return;
-  }
-
   const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider) ?? "base URL";
   const baseUrl = resolveProviderBaseUrl(provider);
 
   if (!baseUrl) {
-    throw new Error(
-      `${baseUrlEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
-    );
+    if (providerRequiresBaseUrl(provider)) {
+      throw new Error(
+        `${baseUrlEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      );
+    }
+
+    return;
   }
 
   const warnings = getProviderBaseUrlWarnings(provider, baseUrl);
@@ -1649,6 +1656,10 @@ function formatDebugValue(key: string, value: string | undefined): string {
   if (
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === BASETEN_BASE_URL_ENV_KEY ||
+    key === FIREWORKS_BASE_URL_ENV_KEY ||
+    key === NVIDIA_BASE_URL_ENV_KEY ||
+    key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   ) {
     return formatUrlDebugValue(value);
