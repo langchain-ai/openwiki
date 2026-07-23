@@ -428,6 +428,39 @@ OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
 
 The value must be a positive integer. If the value is unset, OpenWiki defaults to 3 retries.
 
+### Diagrams
+
+OpenWiki embeds **Mermaid** diagrams in the generated wiki wherever they make a
+concept clearer than prose: sequence diagrams for runtime and request flows, ER
+diagrams for data models, state diagrams for lifecycles, and flowcharts for
+control flow. Diagrams are grounded in the inspected source, added where they
+add signal rather than on every page, and kept in sync on `--update` runs. This
+is default behavior; no configuration is required.
+
+**Validation and repair.** After each run, OpenWiki validates every `mermaid`
+fence. A diagram that fails validation is converted in place to a plain `text`
+fence, preceded by a short comment explaining why, so it degrades to readable
+text instead of a broken block. The next `--update` run finds that comment,
+repairs the diagram from the recorded error, and restores the `mermaid` fence,
+so quality recovers over successive runs.
+
+**Validation fidelity is optional.** By default OpenWiki runs a lightweight,
+zero-dependency check that catches the common syntax breakages. It is
+best-effort: a break it does not recognize can still render as an error on
+GitHub until a later run catches it. For authoritative validation that matches
+exactly what GitHub renders, catching every unrenderable diagram, install the
+Mermaid parser wherever you run OpenWiki (for example, in the scheduled GitHub
+Actions workflow that regenerates your wiki):
+
+```bash
+npm install mermaid jsdom
+```
+
+When the parser is present, OpenWiki uses it and no broken diagram ships; when
+it is absent, it falls back to the best-effort check. Diagram generation and the
+degrade-and-repair loop work the same either way, so the parser changes only how
+thoroughly diagrams are checked, never whether they are generated.
+
 If there's an inference provider or model you'd like to see added, please open a PR!
 
 ## Telemetry
