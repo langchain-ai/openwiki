@@ -253,14 +253,22 @@ next write emits the current shape without losing them.
   its own `openwiki/.last-update.json`). Unchanged subprojects are skipped
   without a model call, so scheduled refreshes stay cheap. The root wiki
   regenerates on every run.
-- **Known limitation — no dependency cascade.** Updates do not propagate across
-  subprojects. If a shared subproject (for example a common kernel or contracts
-  package) changes, only _that_ sub-wiki and the root wiki are refreshed — the
-  sibling subprojects that depend on it are **not** automatically regenerated,
-  even though their documented context may reference the changed code. Until
-  dependency-aware invalidation exists, force a full refresh after a significant
-  shared-code change by removing the relevant `openwiki/.last-update.json` files
-  (or running each affected subproject explicitly).
+- **No dependency cascade (by design).** Updates do not propagate across
+  subprojects: if a shared subproject (for example a common kernel or contracts
+  package) changes, only _that_ sub-wiki and the root wiki are refreshed, not the
+  siblings that depend on it. This is intentional, not a missing feature. Each
+  subproject run is **isolated to its own subtree** — the filesystem tools are
+  rooted at the subproject directory and its git evidence is scoped with a `-- .`
+  pathspec — so a run cannot read a dependency's source even if it wanted to.
+  Re-running a dependent after an unrelated dependency change would therefore
+  have no new information to incorporate and would just reproduce the same
+  sub-wiki. In practice this is not a gap: when a dependency's _public API_
+  changes, the dependent's own call sites change too, which shows up in the
+  dependent's own subtree diff and regenerates it normally. Only changes to a
+  dependency's _internals_ (invisible to dependents) are skipped, which is the
+  desired behavior. If you still want to force a refresh after a significant
+  shared-code change, remove the relevant `openwiki/.last-update.json` files (or
+  run each affected subproject explicitly).
 
 On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
 
