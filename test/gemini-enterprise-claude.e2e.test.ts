@@ -1,6 +1,25 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ensureDomGlobals } from "../src/mermaid/dom-shim.ts";
 import { createModel } from "../src/agent/index.ts";
+
+// AnthropicVertex's constructor eagerly kicks off ADC resolution
+// (`new GoogleAuth().getClient()`), whose promise rejects with "Could not load
+// the default credentials" in an unauthenticated CI environment. That rejection
+// lands *after* this test resolves, so Vitest reports it as an unhandled
+// rejection and fails the run even though the test itself passes. Stub
+// google-auth-library so the eager auth lookup resolves to a dummy client. This
+// stubs *only* the credential lookup; the real AnthropicVertex is still
+// constructed, and its browser-environment guard still runs in the base-class
+// `super()` call — before any auth — so the fix remains exercised end-to-end.
+vi.mock("google-auth-library", () => ({
+  GoogleAuth: class {
+    getClient() {
+      return Promise.resolve({
+        getRequestHeaders: () => Promise.resolve({}),
+      });
+    }
+  },
+}));
 
 // End-to-end regression for issue #3, using the REAL Anthropic Vertex SDK (no
 // mock) and the REAL Mermaid DOM shim. The optional Mermaid validation path
