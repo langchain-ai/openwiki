@@ -1,4 +1,5 @@
 import {
+  lstat,
   mkdir,
   readFile,
   readdir,
@@ -414,13 +415,70 @@ export function serializeManifest(manifest: WorkspaceManifest): string {
  * can review and edit it. Written with a comment-free JSON body and a trailing
  * newline.
  */
+/**
+ * Safely writes a generated file that lives inside a repository OpenWiki is
+ * documenting. Both the path AND its contents are attacker-influenced (the repo
+ * under documentation is untrusted input), so a plain `writeFile` is unsafe:
+ * `writeFile` follows symlinks, so a repo that commits the destination as a
+ * symlink (e.g. `openwiki/workspaces.md` -> `~/.bashrc`) would have that target
+ * silently overwritten with generated content when a developer runs recursive
+ * OpenWiki. Guard against it:
+ *
+ * 1. `lstat` the destination and refuse if it is a symlink (do NOT follow it).
+ * 2. `realpath` the parent directory and refuse if it resolves outside the repo
+ *    root (a symlinked ancestor directory would otherwise escape the repo).
+ *
+ * Throws on a rejected path so a malicious layout fails loudly rather than
+ * writing through the link.
+ */
+export async function writeGeneratedFile(
+  repoRoot: string,
+  absolutePath: string,
+  content: string,
+): Promise<void> {
+  const parentDir = path.dirname(absolutePath);
+  await mkdir(parentDir, { recursive: true });
+
+  // The parent must resolve to a real location inside the repo. realpath follows
+  // symlinks, so a symlinked ancestor pointing outside the repo is caught here.
+  const realRepoRoot = await realpath(repoRoot);
+  const realParent = await realpath(parentDir);
+  const relativeParent = path.relative(realRepoRoot, realParent);
+  if (
+    relativeParent !== "" &&
+    (relativeParent.startsWith("..") || path.isAbsolute(relativeParent))
+  ) {
+    throw new Error(
+      `Refusing to write ${JSON.stringify(
+        path.relative(repoRoot, absolutePath),
+      )}: its directory resolves outside the repository (symlink escape).`,
+    );
+  }
+
+  // The destination itself must not be a symlink; writeFile would follow it and
+  // clobber the link target. lstat does not follow the final component.
+  const existing = await lstat(absolutePath).catch(() => null);
+  if (existing?.isSymbolicLink()) {
+    throw new Error(
+      `Refusing to write ${JSON.stringify(
+        path.relative(repoRoot, absolutePath),
+      )}: the destination is a symlink; writing would follow it and overwrite an arbitrary file.`,
+    );
+  }
+
+  await writeFile(absolutePath, content, "utf8");
+}
+
 export async function writeWorkspaceManifest(
   repoRoot: string,
   manifest: WorkspaceManifest,
 ): Promise<void> {
   const manifestPath = path.join(repoRoot, WORKSPACES_MANIFEST_RELATIVE_PATH);
-  await mkdir(path.dirname(manifestPath), { recursive: true });
-  await writeFile(manifestPath, serializeManifest(manifest), "utf8");
+  await writeGeneratedFile(
+    repoRoot,
+    manifestPath,
+    serializeManifest(manifest),
+  );
 }
 
 /**
@@ -441,8 +499,7 @@ export async function writeWorkspaceManifestIfChanged(
     return false;
   }
 
-  await mkdir(path.dirname(manifestPath), { recursive: true });
-  await writeFile(manifestPath, target, "utf8");
+  await writeGeneratedFile(repoRoot, manifestPath, target);
   return true;
 }
 
@@ -1588,8 +1645,11 @@ export async function writeWorkspacesState(
   state: WorkspacesState,
 ): Promise<void> {
   const statePath = path.join(repoRoot, WORKSPACES_STATE_RELATIVE_PATH);
-  await mkdir(path.dirname(statePath), { recursive: true });
-  await writeFile(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+  await writeGeneratedFile(
+    repoRoot,
+    statePath,
+    `${JSON.stringify(state, null, 2)}\n`,
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

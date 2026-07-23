@@ -1,5 +1,4 @@
 import { execFile } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import {
@@ -20,6 +19,7 @@ import {
   getWorkspaceSkipReason,
   readWorkspacesState,
   resolveWorkspaceRuns,
+  writeGeneratedFile,
   writeWorkspacesState,
   type ResolvedWorkspacePlan,
   type ResolvedWorkspaceRun,
@@ -219,7 +219,6 @@ export async function writeRootAggregation(
   plan: ResolvedWorkspacePlan,
 ): Promise<void> {
   const openWikiDir = path.join(repoRoot, "openwiki");
-  await mkdir(openWikiDir, { recursive: true });
 
   const rows = plan.runs
     .map((run) => {
@@ -243,7 +242,11 @@ This monorepo documents each subproject in its own OpenWiki sub-wiki. This page 
 ${rows || "No documented subprojects."}
 `;
 
-  await writeFile(path.join(openWikiDir, "workspaces.md"), content, "utf8");
+  await writeGeneratedFile(
+    repoRoot,
+    path.join(openWikiDir, "workspaces.md"),
+    content,
+  );
 }
 
 /**
