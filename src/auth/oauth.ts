@@ -2,6 +2,11 @@ import { createHash, randomBytes } from "node:crypto";
 import { execFile } from "node:child_process";
 import http from "node:http";
 import { loadOpenWikiEnv, saveOpenWikiEnv } from "../env.js";
+import {
+  discoverAuthorizationServerMetadata,
+  discoverProtectedResourceMetadata,
+  validateOAuthEndpointUrl,
+} from "./oauth-discovery.js";
 import { getAuthProvider } from "./providers.js";
 import type {
   AuthProviderId,
@@ -21,17 +26,6 @@ type TokenResponse = {
   expires_in?: number;
   refresh_token?: string;
   token_type?: string;
-};
-
-type OAuthMetadata = {
-  authorization_endpoint?: string;
-  registration_endpoint?: string;
-  scopes_supported?: string[];
-  token_endpoint?: string;
-};
-
-type ProtectedResourceMetadata = {
-  authorization_servers?: string[];
 };
 
 const CALLBACK_HOST = "127.0.0.1";
@@ -164,8 +158,10 @@ async function registerMcpOAuthClient(
     throw new Error("MCP OAuth provider requires a resource URL.");
   }
 
+  const validationOptions = { allowedHosts: provider.oauthAllowedHosts };
   const protectedMetadata = await discoverProtectedResourceMetadata(
     provider.mcpResourceUrl,
+    validationOptions,
   );
   const authServer = protectedMetadata.authorization_servers?.[0];
 
@@ -175,7 +171,10 @@ async function registerMcpOAuthClient(
     );
   }
 
-  const authMetadata = await discoverAuthorizationServerMetadata(authServer);
+  const authMetadata = await discoverAuthorizationServerMetadata(
+    authServer,
+    validationOptions,
+  );
 
   if (
     !authMetadata.authorization_endpoint ||
@@ -187,7 +186,23 @@ async function registerMcpOAuthClient(
     );
   }
 
-  const registrationResponse = await fetch(authMetadata.registration_endpoint, {
+  const authorizationEndpoint = validateOAuthEndpointUrl(
+    authMetadata.authorization_endpoint,
+    `${provider.displayName} authorization endpoint`,
+    validationOptions,
+  ).toString();
+  const tokenEndpoint = validateOAuthEndpointUrl(
+    authMetadata.token_endpoint,
+    `${provider.displayName} token endpoint`,
+    validationOptions,
+  ).toString();
+  const registrationEndpoint = validateOAuthEndpointUrl(
+    authMetadata.registration_endpoint,
+    `${provider.displayName} registration endpoint`,
+    validationOptions,
+  ).toString();
+
+  const registrationResponse = await fetch(registrationEndpoint, {
     body: JSON.stringify({
       client_name: "OpenWiki",
       grant_types: ["authorization_code", "refresh_token"],
@@ -199,6 +214,7 @@ async function registerMcpOAuthClient(
       "Content-Type": "application/json",
     },
     method: "POST",
+    redirect: "manual",
   });
 
   if (!registrationResponse.ok) {
@@ -218,51 +234,11 @@ async function registerMcpOAuthClient(
   }
 
   return {
-    authUrl: authMetadata.authorization_endpoint,
+    authUrl: authorizationEndpoint,
     clientAuth: "none",
     clientId: registration.client_id,
-    tokenUrl: authMetadata.token_endpoint,
+    tokenUrl: tokenEndpoint,
   };
-}
-
-async function discoverProtectedResourceMetadata(
-  resourceUrl: string,
-): Promise<ProtectedResourceMetadata> {
-  const url = new URL(resourceUrl);
-  const candidates = [
-    `${url.origin}/.well-known/oauth-protected-resource${url.pathname}`,
-    `${url.origin}/.well-known/oauth-protected-resource`,
-  ];
-
-  for (const candidate of candidates) {
-    const response = await fetch(candidate);
-    if (response.ok) {
-      return (await response.json()) as ProtectedResourceMetadata;
-    }
-  }
-
-  throw new Error("Could not discover MCP protected resource metadata.");
-}
-
-async function discoverAuthorizationServerMetadata(
-  issuer: string,
-): Promise<OAuthMetadata> {
-  const issuerUrl = new URL(issuer);
-  const candidates = [
-    `${issuerUrl.origin}/.well-known/oauth-authorization-server${issuerUrl.pathname}`,
-    `${issuerUrl.origin}/.well-known/openid-configuration${issuerUrl.pathname}`,
-    `${issuerUrl.origin}/.well-known/oauth-authorization-server`,
-    `${issuerUrl.origin}/.well-known/openid-configuration`,
-  ];
-
-  for (const candidate of candidates) {
-    const response = await fetch(candidate);
-    if (response.ok) {
-      return (await response.json()) as OAuthMetadata;
-    }
-  }
-
-  throw new Error("Could not discover OAuth authorization server metadata.");
 }
 
 function createAuthorizationUrl(
@@ -272,7 +248,10 @@ function createAuthorizationUrl(
   state: string,
   codeChallenge: string,
 ): string {
-  const authUrl = new URL(registration.authUrl);
+  const authUrl = validateOAuthEndpointUrl(
+    registration.authUrl,
+    `${provider.displayName} authorization endpoint`,
+  );
   authUrl.searchParams.set("client_id", registration.clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("response_type", "code");
@@ -326,14 +305,21 @@ async function exchangeAuthorizationCode({
     body.set("resource", provider.mcpResourceUrl);
   }
 
-  const response = await fetch(registration.tokenUrl, {
-    body,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/x-www-form-urlencoded",
+  const response = await fetch(
+    validateOAuthEndpointUrl(
+      registration.tokenUrl,
+      `${provider.displayName} token endpoint`,
+    ).toString(),
+    {
+      body,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      method: "POST",
+      redirect: "manual",
     },
-    method: "POST",
-  });
+  );
 
   if (!response.ok) {
     throw new Error(
