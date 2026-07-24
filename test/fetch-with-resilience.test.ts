@@ -109,6 +109,33 @@ describe("fetchWithResilience", () => {
     expect(delays).toEqual([2000]);
   });
 
+  test("caps an oversized numeric Retry-After header", async () => {
+    stubFetchSequence([
+      () =>
+        new Response("slow down", {
+          headers: { "retry-after": "86400" },
+          status: 429,
+        }),
+      () => new Response("ok", { status: 200 }),
+    ]);
+
+    const delays: number[] = [];
+    const response = await fetchWithResilience(
+      "https://api.example.com/x",
+      {},
+      {
+        sleep: (ms) => {
+          delays.push(ms);
+          return Promise.resolve();
+        },
+        random: fixedRandom,
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(delays).toEqual([20_000]);
+  });
+
   test("honors an HTTP-date Retry-After header relative to the current time", async () => {
     // The helper passes Date.now() into parseRetryAfterMs, so an HTTP-date
     // header must be turned into a real delay in production (not just in the
@@ -142,6 +169,40 @@ describe("fetchWithResilience", () => {
 
       expect(response.status).toBe(200);
       expect(delays).toEqual([5000]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test("caps an oversized HTTP-date Retry-After header", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+
+    try {
+      stubFetchSequence([
+        () =>
+          new Response("slow down", {
+            headers: { "retry-after": "Fri, 02 Jan 2026 00:00:00 GMT" },
+            status: 429,
+          }),
+        () => new Response("ok", { status: 200 }),
+      ]);
+
+      const delays: number[] = [];
+      const response = await fetchWithResilience(
+        "https://api.example.com/x",
+        {},
+        {
+          sleep: (ms) => {
+            delays.push(ms);
+            return Promise.resolve();
+          },
+          random: fixedRandom,
+        },
+      );
+
+      expect(response.status).toBe(200);
+      expect(delays).toEqual([20_000]);
     } finally {
       vi.useRealTimers();
     }

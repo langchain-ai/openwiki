@@ -8,7 +8,7 @@
  * `fetchWithResilience` adds:
  *   - a per-request wall-clock timeout via `AbortSignal.timeout`,
  *   - bounded exponential backoff with jitter on 429 and 5xx responses,
- *     honoring a numeric or HTTP-date `Retry-After` header when present,
+ *     honoring a numeric or HTTP-date `Retry-After` header within the cap,
  *   - the same backoff on network errors (connection reset, DNS, timeout).
  *
  * Auth failures (401/403) and other 4xx are returned as-is: they are not
@@ -121,8 +121,10 @@ export async function fetchWithResilience(
           response.headers.get("retry-after"),
           Date.now(),
         );
-        const delay =
-          retryAfterMs ?? backoffDelayMs(attempt, baseDelayMs, random);
+        const delay = Math.min(
+          MAX_BACKOFF_DELAY_MS,
+          retryAfterMs ?? backoffDelayMs(attempt, baseDelayMs, random),
+        );
         // Discard the body so the connection can be reused before we retry.
         await response.body?.cancel();
         await sleep(delay);
