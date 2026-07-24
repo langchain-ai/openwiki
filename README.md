@@ -331,7 +331,7 @@ OPENROUTER_API_KEY=your-key
 OPENWIKI_OPENROUTER_PROVIDER_ONLY=Novita
 ```
 
-**Retry attempts.** OpenWiki uses LangChain's retry handling for transient provider errors. Override the retry count (default 3) with `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3` (a positive integer).
+**Retry attempts.** OpenWiki uses LangChain's retry handling for transient provider errors. For OpenAI and OpenAI-compatible transports, this also covers retryable streaming HTTP responses surfaced by the underlying SDK. Override the retry count (default 3) with `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3` (a positive integer).
 
 </details>
 
