@@ -1,9 +1,10 @@
 import type { BackendProtocolV2, FileInfo } from "deepagents";
-import { createMiddleware } from "langchain";
 import path from "node:path";
-import { parse } from "yaml";
-import { addFrontmatterWarning } from "./frontmatter-validator.js";
-import type { OpenWikiOutputMode } from "./types.js";
+import type { OpenWikiOutputMode } from "../agent/types.js";
+import {
+  normalizeConceptContent,
+  parseFrontmatterFields,
+} from "./frontmatter.js";
 
 const INDEX_FILE = "index.md";
 const LOG_FILE = "log.md";
@@ -14,37 +15,44 @@ const EXCLUDED_FILES = new Set([
   "INSTRUCTIONS.md",
 ]);
 
+/**
+ * A wiki directory paired with the entries it directly contains.
+ */
 interface Directory {
+  /**
+   * All immediate entries (files and subdirectories) listed for the directory.
+   */
   entries: FileInfo[];
+
+  /**
+   * Absolute virtual path of the directory within the wiki.
+   */
   path: string;
 }
+
+/**
+ * A rendered index entry pointing at a file or subdirectory.
+ */
 interface Link {
+  /**
+   * Optional one-line description rendered beside file links.
+   */
   description?: string;
+
+  /**
+   * URL-encoded href relative to the containing index.
+   */
   href: string;
+
+  /**
+   * Human-readable link label.
+   */
   label: string;
 }
 
-/** Creates middleware that synchronizes deterministic wiki indexes after a run. */
-export function createOpenWikiIndexMiddleware(
-  backend: BackendProtocolV2,
-  outputMode: OpenWikiOutputMode,
-) {
-  return createMiddleware({
-    name: "OpenWikiIndexMiddleware",
-    wrapToolCall: async (request, handler) =>
-      addFrontmatterWarning(
-        await handler(request),
-        backend,
-        outputMode,
-        request.toolCall.name,
-      ),
-    afterAgent: async () => {
-      await synchronizeWikiIndexes(backend, outputMode);
-    },
-  });
-}
-
-/** Synchronizes the index for every directory in the configured wiki. */
+/**
+ * Synchronizes the index for every directory in the configured wiki.
+ */
 export async function synchronizeWikiIndexes(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
@@ -55,7 +63,65 @@ export async function synchronizeWikiIndexes(
   }
 }
 
-/** Recursively collects visible wiki directories and their entries. */
+/**
+ * Normalizes every concept page's OKF front matter across the wiki, without
+ * touching indexes.
+ *
+ * Runs before the agent so an update operates over an already-conformant wiki:
+ * legacy or externally edited pages are migrated to a minimal OKF block (tagged
+ * `openwiki_generated`) up front, letting the agent read clean metadata and
+ * enrich flagged pages in the same run.
+ */
+export async function migrateWikiToOkf(
+  backend: BackendProtocolV2,
+  outputMode: OpenWikiOutputMode,
+): Promise<void> {
+  const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+  for (const directory of await collectDirectories(backend, root, true)) {
+    for (const entry of directory.entries) {
+      const name = entryName(entry);
+      if (
+        entry.is_dir ||
+        !name ||
+        name.startsWith(".") ||
+        path.posix.extname(name).toLowerCase() !== ".md" ||
+        EXCLUDED_FILES.has(name)
+      ) {
+        continue;
+      }
+      await normalizeConceptFile(
+        backend,
+        path.posix.join(directory.path, name),
+      );
+    }
+  }
+}
+
+/**
+ * Normalizes one concept file's OKF front matter in place.
+ *
+ * Reads the file, applies `normalizeConceptContent` and writes the result
+ * back only when it changed. Returns the normalized content so a caller can read
+ * its index metadata without a second read.
+ */
+async function normalizeConceptFile(
+  backend: BackendProtocolV2,
+  filePath: string,
+): Promise<string> {
+  const original = await readText(backend, filePath);
+  const normalized = normalizeConceptContent(original, filePath);
+  if (normalized.changed) {
+    const result = await backend.edit(filePath, original, normalized.content);
+    if (result.error) {
+      throw new Error(`Unable to normalize ${filePath}: ${result.error}`);
+    }
+  }
+  return normalized.content;
+}
+
+/**
+ * Recursively collects visible wiki directories and their entries.
+ */
 async function collectDirectories(
   backend: BackendProtocolV2,
   directoryPath: string,
@@ -82,7 +148,9 @@ async function collectDirectories(
   return [...descendants.flat(), { entries, path: directoryPath }];
 }
 
-/** Builds and writes one directory's index when its content has changed. */
+/**
+ * Builds and writes one directory's index when its content has changed.
+ */
 async function synchronizeDirectory(
   backend: BackendProtocolV2,
   directory: Directory,
@@ -107,10 +175,8 @@ async function synchronizeDirectory(
     }
 
     const filePath = path.posix.join(directory.path, name);
-    const metadata = parseFrontmatter(
-      await readText(backend, filePath),
-      filePath,
-    );
+    const content = await normalizeConceptFile(backend, filePath);
+    const metadata = readIndexMetadata(content);
     files.push({
       description: metadata.description,
       href: encodeURIComponent(name),
@@ -135,7 +201,9 @@ async function synchronizeDirectory(
   }
 }
 
-/** Renders a complete deterministic index document. */
+/**
+ * Renders a complete deterministic index document.
+ */
 function renderIndex(
   files: Link[],
   directories: Link[],
@@ -151,7 +219,9 @@ function renderIndex(
   return `${version}${sections || "# Files"}\n`;
 }
 
-/** Renders a sorted Markdown section for files or subdirectories. */
+/**
+ * Renders a sorted Markdown section for files or subdirectories.
+ */
 function renderLinks(
   heading: string,
   links: Link[],
@@ -168,52 +238,34 @@ function renderLinks(
   return `# ${heading}\n\n${items.join("\n")}`;
 }
 
-/** Parses usable optional display metadata from YAML front matter. */
-function parseFrontmatter(
-  content: string,
-  filePath: string,
-): { description?: string; title?: string } {
-  const block = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(content)?.[1];
-  if (!block) throw new Error(`${filePath} lacks YAML front matter.`);
-
-  let fields: unknown;
-  try {
-    fields = parse(`\n${block}`, {
-      maxAliasCount: 100,
-      schema: "core",
-      uniqueKeys: true,
-    }) as unknown;
-  } catch (error) {
-    throw new Error(
-      `${filePath} contains invalid YAML front matter: ${errorMessage(error)}`,
-      { cause: error },
-    );
-  }
-  if (fields === null || typeof fields !== "object" || Array.isArray(fields)) {
-    throw new Error(`${filePath} YAML front matter must be a mapping.`);
-  }
-
-  const { description, title } = fields as Record<string, unknown>;
-  const usableDescription = usableString(description);
-  const usableTitle = usableString(title);
+/**
+ * Reads usable optional display metadata; returns empty on any parse issue.
+ */
+function readIndexMetadata(content: string): {
+  description?: string;
+  title?: string;
+} {
+  const fields = parseFrontmatterFields(content);
+  if (!fields) return {};
+  const usableDescription = usableString(fields.description);
+  const usableTitle = usableString(fields.title);
   return {
     ...(usableDescription ? { description: usableDescription } : {}),
     ...(usableTitle ? { title: usableTitle } : {}),
   };
 }
 
-/** Returns optional front matter text only when it can be rendered in an index. */
+/**
+ * Returns optional front matter text only when it can be rendered in an index.
+ */
 function usableString(value: unknown): string | undefined {
   if (typeof value !== "string" || !value.trim()) return undefined;
   return value;
 }
 
-/** Converts an unknown thrown value into a readable message. */
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-/** Reads a text file from the backend or throws an actionable error. */
+/**
+ * Reads a text file from the backend or throws an actionable error.
+ */
 async function readText(
   backend: BackendProtocolV2,
   filePath: string,
@@ -224,7 +276,9 @@ async function readText(
   return fileDataToText(result.data?.content, filePath);
 }
 
-/** Converts supported backend file content into text. */
+/**
+ * Converts supported backend file content into text.
+ */
 function fileDataToText(
   content: string | string[] | Uint8Array | undefined,
   filePath: string,
@@ -234,12 +288,16 @@ function fileDataToText(
   throw new Error(`${filePath} is not a text file.`);
 }
 
-/** Extracts an entry's basename from its virtual path. */
+/**
+ * Extracts an entry's basename from its virtual path.
+ */
 function entryName(entry: FileInfo): string {
   return path.posix.basename(entry.path.replace(/\/$/u, ""));
 }
 
-/** Escapes a value for use as a Markdown link label. */
+/**
+ * Escapes a value for use as a Markdown link label.
+ */
 function escapeLabel(value: string): string {
   return value
     .replaceAll("\\", "\\\\")

@@ -134,6 +134,12 @@ describe("MANAGED_ENV_KEYS", () => {
   test("manages the GEMINI_API_KEY for the gemini (AI Studio) provider", () => {
     expect(MANAGED_ENV_KEYS).toContain("GEMINI_API_KEY");
   });
+
+  test("manages hosted OpenAI-compatible provider base URLs", () => {
+    expect(MANAGED_ENV_KEYS).toContain("BASETEN_BASE_URL");
+    expect(MANAGED_ENV_KEYS).toContain("FIREWORKS_BASE_URL");
+    expect(MANAGED_ENV_KEYS).toContain("NVIDIA_BASE_URL");
+  });
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {

@@ -14,12 +14,13 @@ import type {
 } from "../types.js";
 import { OPENWIKI_X_ACCESS_TOKEN_ENV_KEY } from "../../constants.js";
 import { getOAuthAccessToken } from "../../auth/tokens.js";
+import { normalizeStringArray } from "../config.js";
 
 type XConfig = {
   enabled?: boolean;
-  listIds?: string[];
+  listIds?: unknown;
   maxPagesPerStream?: number;
-  streams?: XStream[];
+  streams?: unknown;
   userId?: string;
 };
 
@@ -52,6 +53,7 @@ const definition: ConnectorDefinition = {
     "Fetches X/Twitter user timelines, mentions, list posts, and bookmarks through X API v2 with OAuth user context.",
   displayName: "X / Twitter",
   id: "x",
+  mode: "personal",
   requiredEnv: [OPENWIKI_X_ACCESS_TOKEN_ENV_KEY],
   supportsAgenticDiscovery: false,
 };
@@ -107,13 +109,14 @@ async function ingest(
 
   const accessToken = await getOAuthAccessToken("x");
   const streams = normalizeStreams(options.streams, config.streams);
+  const listIds = normalizeStringArray(config.listIds);
   const userId = config.userId ?? (await fetchAuthenticatedUserId(accessToken));
   const latestIds = { ...(state.latestIds ?? {}) };
   const startTime = getWindowStartTime(options.windowHours);
 
   for (const stream of streams) {
     if (stream === "list_posts") {
-      for (const listId of config.listIds ?? []) {
+      for (const listId of listIds) {
         const key = `list_posts:${listId}`;
         const pages = await fetchPaginatedX(
           accessToken,
@@ -282,17 +285,26 @@ function getDefaultTweetParams(): Record<string, string> {
 }
 
 function normalizeStreams(
-  optionStreams: string[] | undefined,
+  optionStreams: unknown,
   configStreams: XConfig["streams"],
 ): XStream[] {
-  const requested = optionStreams?.length ? optionStreams : configStreams;
-  const streams = requested?.length ? requested : DEFAULT_STREAMS;
+  const requested =
+    Array.isArray(optionStreams) && optionStreams.length > 0
+      ? optionStreams
+      : configStreams;
+  const streams =
+    Array.isArray(requested) && requested.length > 0
+      ? requested
+      : DEFAULT_STREAMS;
 
   return streams.filter(isXStream);
 }
 
-function isXStream(value: string): value is XStream {
-  return (DEFAULT_STREAMS as readonly string[]).includes(value);
+function isXStream(value: unknown): value is XStream {
+  return (
+    typeof value === "string" &&
+    (DEFAULT_STREAMS as readonly string[]).includes(value)
+  );
 }
 
 function getNewestId(pages: XApiPage[]): string | undefined {
