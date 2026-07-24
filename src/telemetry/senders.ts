@@ -52,6 +52,10 @@ export function buildRunEvent(
   details: RunTelemetry,
   context: RunEventContext,
 ): TelemetryEvent {
+  const openAiCompatibleBaseUrl = sanitizeTelemetryUrl(
+    details.openAiCompatibleBaseUrl,
+  );
+
   return {
     distinctId: context.distinctId,
     event: TELEMETRY_RUN_EVENT,
@@ -61,6 +65,9 @@ export function buildRunEvent(
       ...(details.errorClass ? { error_class: details.errorClass } : {}),
       ...(details.mode ? { mode: details.mode } : {}),
       ...(details.provider ? { provider: details.provider } : {}),
+      ...(openAiCompatibleBaseUrl
+        ? { openai_compatible_base_url: openAiCompatibleBaseUrl }
+        : {}),
       ...connectorProperties(details.configuredConnectors ?? []),
       // True for the published build, false for dev/source/seed runs; lets real
       // usage be separated from local testing and pre-launch seed data.
@@ -125,6 +132,24 @@ function connectorProperties(configured: string[]): Record<string, true> {
   return Object.fromEntries(
     configured.map((id) => [`connector_${id.replace(/-/gu, "_")}`, true]),
   );
+}
+
+function sanitizeTelemetryUrl(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(value);
+    url.username = "";
+    url.password = "";
+    url.search = "";
+    url.hash = "";
+
+    return url.toString();
+  } catch {
+    return undefined;
+  }
 }
 
 async function writeTelemetryFile(

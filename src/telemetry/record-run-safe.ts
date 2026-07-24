@@ -35,6 +35,7 @@ export async function recordRunSafe(
     provider?: OpenWikiProvider;
     outcome: "success" | "failure" | "noop";
     errorClass?: TelemetryErrorClass;
+    openAiCompatibleBaseUrl?: string;
   },
 ): Promise<void> {
   // Chat is deliberately not recorded: it is interactive and would emit one
@@ -55,6 +56,9 @@ export async function recordRunSafe(
       ? {
           mode: outputMode === "repository" ? "code" : "personal",
           provider: facts.provider ?? "unknown",
+          ...(facts.provider === "openai-compatible"
+            ? { openAiCompatibleBaseUrl: facts.openAiCompatibleBaseUrl }
+            : {}),
           configuredConnectors: getConfiguredConnectorIds(),
         }
       : {}),

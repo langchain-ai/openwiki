@@ -483,13 +483,15 @@ install ID stored locally in `~/.openwiki/install-id`:
   no-op), plus a coarse error category on failure (never the error message).
   Interactive chat, `auth`, and `ingest` are not recorded.
 - At setup (on init only): which brain mode (code / personal), the model
-  provider, and which connectors you configured (connector names only, never
-  their contents).
+  provider, the configured base API URL when using the OpenAI-compatible provider
+  (with credentials, query strings, and fragments stripped), and which connectors
+  you configured (connector names only, never their contents).
 
 **What is never collected:** file contents, repository data or names,
 credentials, prompts, model output, connector payloads, error messages, file
-paths, URLs, model IDs, run duration, your IP address, or any personal
-information. Geoip enrichment is disabled and your IP is never stored. Events
+paths, URLs other than the OpenAI-compatible base API URL, model IDs, run
+duration, your IP address, or any personal information. Geoip enrichment is
+disabled and your IP is never stored. Events
 are grouped by your random install ID so we can measure repeat usage, but that
 ID contains no personal data.
 

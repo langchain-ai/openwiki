@@ -32,7 +32,7 @@ export const TELEMETRY_RUN_EVENT = "openwiki_run";
  * box, and the print/non-TTY path frames and wraps them (see cli.tsx).
  */
 export const FIRST_RUN_NOTICE_BODY =
-  "OpenWiki collects anonymous, aggregate usage data: which command you run (init or update), the brain mode and model provider you set up, whether runs succeed or fail (and a general error category), and which connectors you configured. No file contents, repository data, credentials, prompts, model output, IP address, or personal information are ever collected.";
+  "OpenWiki collects anonymous, aggregate usage data: which command you run (init or update), the brain mode and model provider you set up, the configured base API URL when using the OpenAI-compatible provider (without credentials, query strings, or fragments), whether runs succeed or fail (and a general error category), and which connectors you configured. No file contents, repository data, credentials, prompts, model output, IP address, or personal information are ever collected.";
 export const FIRST_RUN_NOTICE_OPT_OUT =
   "Opt out anytime: set OPENWIKI_TELEMETRY_DISABLED=1 (or DO_NOT_TRACK=1). Add it to ~/.openwiki/.env to make it permanent.";
 export const FIRST_RUN_NOTICE_VERIFY =

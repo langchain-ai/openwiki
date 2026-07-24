@@ -31,6 +31,7 @@ import {
   isTelemetryDisabled,
   noticeSuppressed,
 } from "../src/telemetry/gates.ts";
+import { recordRunSafe } from "../src/telemetry/record-run-safe.ts";
 import { recordRun } from "../src/telemetry/senders.ts";
 import type { RunTelemetry } from "../src/telemetry/types.ts";
 
@@ -303,6 +304,71 @@ describe("recordRun connector properties", () => {
     const props = runEvent().properties;
     expect(Object.keys(props).some((key) => key.startsWith("connector_"))).toBe(
       false,
+    );
+  });
+
+  test("init records the sanitized OpenAI-compatible base URL", async () => {
+    await recordRunSafe(
+      "init",
+      {},
+      {
+        provider: "openai-compatible",
+        outcome: "success",
+        openAiCompatibleBaseUrl:
+          "https://user:password@gateway.example.com/v1?token=secret#fragment",
+      },
+    );
+
+    expect(runEvent().properties.openai_compatible_base_url).toBe(
+      "https://gateway.example.com/v1",
+    );
+  });
+
+  test("other providers omit OpenAI-compatible base URL telemetry", async () => {
+    await recordRunSafe(
+      "init",
+      {},
+      {
+        provider: "anthropic",
+        outcome: "success",
+        openAiCompatibleBaseUrl: "https://gateway.example.com/v1",
+      },
+    );
+
+    expect(runEvent().properties).not.toHaveProperty(
+      "openai_compatible_base_url",
+    );
+  });
+
+  test("updates omit OpenAI-compatible base URL telemetry", async () => {
+    await recordRunSafe(
+      "update",
+      {},
+      {
+        provider: "openai-compatible",
+        outcome: "success",
+        openAiCompatibleBaseUrl: "https://gateway.example.com/v1",
+      },
+    );
+
+    expect(runEvent().properties).not.toHaveProperty(
+      "openai_compatible_base_url",
+    );
+  });
+
+  test("invalid OpenAI-compatible base URLs are not sent", async () => {
+    await recordRunSafe(
+      "init",
+      {},
+      {
+        provider: "openai-compatible",
+        outcome: "failure",
+        openAiCompatibleBaseUrl: "not a url with secret-token",
+      },
+    );
+
+    expect(runEvent().properties).not.toHaveProperty(
+      "openai_compatible_base_url",
     );
   });
 

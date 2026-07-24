@@ -67,6 +67,11 @@ export interface RunTelemetry {
   configuredConnectors?: string[];
 
   /**
+   * Base URL configured for the OpenAI-compatible provider. Init only.
+   */
+  openAiCompatibleBaseUrl?: string;
+
+  /**
    * Optional tee target from --telemetry-file.
    */
   telemetryFile?: string;
