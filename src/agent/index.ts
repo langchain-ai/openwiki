@@ -54,6 +54,7 @@ import type {
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
+  BASETEN_BASE_URL_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
   getDefaultModelId,
   getMissingProviderEnvKey,
@@ -64,6 +65,7 @@ import {
   getProviderBaseUrlWarnings,
   getProviderModelOptions,
   getProviderRegionEnvKey,
+  FIREWORKS_BASE_URL_ENV_KEY,
   getProviderSecretKeyEnvKey,
   getProvidersForKnownModelId,
   isModelIdForOtherProvider,
@@ -71,6 +73,8 @@ import {
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
   isValidModelId,
   normalizeModelId,
+  NVIDIA_BASE_URL_ENV_KEY,
+  OPENAI_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
@@ -158,7 +162,10 @@ export async function runOpenWikiAgent(
     const providerBaseUrl = resolveProviderBaseUrl(provider);
     emitDebug(options, `provider=${provider}`);
     if (providerBaseUrl) {
-      emitDebug(options, `provider.baseUrl=${JSON.stringify(providerBaseUrl)}`);
+      emitDebug(
+        options,
+        `provider.baseUrl=${formatUrlDebugValue(providerBaseUrl)}`,
+      );
     }
     ensureProviderCredentials(provider);
     emitDebug(options, `credentials=${provider} present`);
@@ -522,17 +529,17 @@ function ensureProviderCredentials(provider: OpenWikiProvider): void {
 }
 
 function ensureProviderBaseUrl(provider: OpenWikiProvider): void {
-  if (!providerRequiresBaseUrl(provider)) {
-    return;
-  }
-
   const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider) ?? "base URL";
   const baseUrl = resolveProviderBaseUrl(provider);
 
   if (!baseUrl) {
-    throw new Error(
-      `${baseUrlEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
-    );
+    if (providerRequiresBaseUrl(provider)) {
+      throw new Error(
+        `${baseUrlEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      );
+    }
+
+    return;
   }
 
   const warnings = getProviderBaseUrlWarnings(provider, baseUrl);
@@ -827,6 +834,17 @@ function createGeminiEnterpriseModel(
       // ANTHROPIC_API_KEY requirement. The env is neutralized around the
       // constructor so a stray ANTHROPIC_API_KEY/ANTHROPIC_AUTH_TOKEN cannot
       // clobber the Google OAuth token (see withAnthropicAuthEnvNeutralized).
+      //
+      // dangerouslyAllowBrowser: the Anthropic SDK (base of AnthropicVertex)
+      // refuses to construct when it detects `window`/`document`/`navigator` —
+      // its browser-credential-exposure guard. OpenWiki is always a Node CLI/CI
+      // process, but the optional Mermaid validation path installs jsdom DOM
+      // globals process-wide (see src/mermaid/dom-shim.ts), which trips that
+      // guard and aborts the whole run before any docs are generated. ChatAnthropic
+      // passes `dangerouslyAllowBrowser: true` into `createClient`, but this hook
+      // ignores its argument, so the flag is set explicitly here. It is forwarded
+      // to AnthropicVertex only — never the ANTHROPIC_* auth options LangChain
+      // also passes, which would defeat withAnthropicAuthEnvNeutralized.
       return new ChatAnthropic(stripPublisherPath(modelId), {
         createClient: () =>
           withAnthropicAuthEnvNeutralized(
@@ -834,6 +852,7 @@ function createGeminiEnterpriseModel(
               new AnthropicVertex({
                 projectId,
                 region: location,
+                dangerouslyAllowBrowser: true,
               }),
           ),
         ...retryOptions,
@@ -1705,6 +1724,10 @@ function formatDebugValue(key: string, value: string | undefined): string {
   if (
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
+    key === BASETEN_BASE_URL_ENV_KEY ||
+    key === FIREWORKS_BASE_URL_ENV_KEY ||
+    key === NVIDIA_BASE_URL_ENV_KEY ||
+    key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
   ) {
     return formatUrlDebugValue(value);
