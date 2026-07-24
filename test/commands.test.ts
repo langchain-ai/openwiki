@@ -390,6 +390,38 @@ describe("parseCommand — unknown options and dry-run gating", () => {
   });
 });
 
+describe("parseCommand — auth", () => {
+  test("auth tools rejects --force", () => {
+    const result = parseCommand(["auth", "tools", "notion", "--force"]);
+
+    expect(result).toEqual({
+      kind: "error",
+      exitCode: 1,
+      message: "Unknown option for auth: --force",
+    });
+  });
+
+  test("legacy auth configure shorthand accepts --force", () => {
+    expect(parseCommand(["auth", "notion", "--force"])).toMatchObject({
+      kind: "auth",
+      action: "oauth",
+      provider: "notion",
+      force: true,
+    });
+  });
+
+  test("auth configure accepts --force", () => {
+    expect(
+      parseCommand(["auth", "configure", "notion", "--force"]),
+    ).toMatchObject({
+      kind: "auth",
+      action: "configure",
+      provider: "notion",
+      force: true,
+    });
+  });
+});
+
 describe("shouldRunNonInteractively", () => {
   test("--init and --update without --print bypass the UI when stdin is not a TTY", () => {
     expect(

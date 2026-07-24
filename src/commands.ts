@@ -94,8 +94,11 @@ export function parseCommand(argv: string[]): CliCommand {
       action === "configure" || action === "tools"
         ? argv.slice(3)
         : argv.slice(2);
-    const unknownOption = optionArgs.find((arg) => arg !== "--force");
-    const force = optionArgs.includes("--force");
+    const acceptsForce = action !== "tools";
+    const unknownOption = optionArgs.find((arg) =>
+      acceptsForce ? arg !== "--force" : true,
+    );
+    const force = acceptsForce && optionArgs.includes("--force");
 
     if (unknownOption) {
       return {

@@ -42,11 +42,14 @@ export type OpenWikiRunOptions = {
   telemetryFile?: string;
 };
 
+export type UpdateRunStatus = "complete" | "interrupted";
+
 export type UpdateMetadata = {
   updatedAt: string;
   command: OpenWikiCommand;
   gitHead?: string;
   model: string;
+  status?: UpdateRunStatus;
 };
 
 export type RunContext = {
