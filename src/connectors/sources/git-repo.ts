@@ -42,6 +42,7 @@ const definition: ConnectorDefinition = {
     "Reads local cloned Git repositories and writes compact manifests for the update agent.",
   displayName: "Local Git repositories",
   id: "git-repo",
+  mode: "personal",
   requiredEnv: [],
   supportsAgenticDiscovery: true,
 };

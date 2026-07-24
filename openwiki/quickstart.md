@@ -46,7 +46,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/auth/tokens.ts` — token refresh and validation helpers for connector OAuth.
 - `src/connectors/` — connector registry, MCP client/runtime, source-specific ingestion (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions.
 - `src/ingestion.ts` — orchestrates source ingestion runs across configured connectors.
-- `src/code-mode.ts` — `openwiki code` setup: writes GitHub Actions workflow and AGENTS.md/CLAUDE.md snippets.
+- `src/code-mode.ts` — `openwiki code` setup: creates the GitHub Actions workflow only when missing (preserving customizations on update) and refreshes AGENTS.md/CLAUDE.md snippets.
 - `src/env.ts` — `~/.openwiki/.env` persistence and credential diagnostics.
 - `src/credentials.tsx` — interactive onboarding flow for provider selection, API keys, and model selection.
 - `src/constants.ts` — provider configs, model options, env keys, and validation helpers.
