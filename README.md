@@ -167,6 +167,28 @@ URL in Slack. If you have a fixed ngrok domain, run
 ignore that HTTPS override and keep using the local loopback callback,
 `http://127.0.0.1:53682/callback`.
 
+Visualize a generated wiki as an interactive graph with a live docs reader:
+
+```sh
+openwiki visualize
+```
+
+This serves the wiki in `./openwiki` on a local loopback address
+(`127.0.0.1`, never exposed on the network) and opens your browser to an
+interactive node graph backed by a live-reloading markdown reader; edits to the
+wiki files are picked up automatically while the server runs. Pass a path to
+visualize a different wiki directory, `--port <port>` to choose the port (it
+increments on conflict; default `4321`), and `--no-open` to leave the browser
+alone:
+
+```sh
+openwiki visualize openwiki --port 4400 --no-open
+```
+
+The page loads its graph, markdown, and diagram libraries from a public CDN, so
+an internet connection is required even though the server itself is local. Press
+Ctrl-C to stop it.
+
 Bare `openwiki` runs in code mode for the current repository. It creates initial repository documentation in `openwiki/` when no wiki exists. Use `openwiki personal` for the local general-purpose wiki in `~/.openwiki/wiki/`. By default, the CLI stays open after each run so you can send follow-up messages. Use `-p` or `--print` for a one-shot non-interactive run that prints the final assistant output.
 
 Bare `openwiki --init` and `openwiki --update` default to code mode and operate on repository documentation. Use the `personal` positional mode or `--mode personal` to initialize or update the local personal brain wiki.
