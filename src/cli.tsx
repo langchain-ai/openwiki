@@ -31,6 +31,9 @@ import {
   getShellEnvValue,
   loadOpenWikiEnv,
   saveOpenWikiEnv,
+  readOpenWikiEnv,
+  deleteOpenWikiEnv,
+  isNonSecretDiagnosticKey,
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
@@ -3749,6 +3752,8 @@ if (command.kind === "auth") {
     console.error(renderFirstRunNoticeText(process.stderr.isTTY === true));
   }
   await runPrintCommand(command);
+} else if (command.kind === "config") {
+  await runConfigCommand(command);
 } else {
   // Interactive TUI: render the notice as a box above the app so it matches
   // the rest of the interface.
@@ -4211,5 +4216,79 @@ function writePrintErrorDiagnostics(error: unknown): void {
 
   for (const diagnostic of diagnostics) {
     process.stderr.write(`${diagnostic.label}: ${diagnostic.value}\n`);
+  }
+}
+
+function maskValue(key: string, value: string): string {
+  if (isNonSecretDiagnosticKey(key)) {
+    return value;
+  }
+  if (value.length <= 10) {
+    return "*".repeat(value.length);
+  }
+  return `${value.slice(0, 6)}...${value.slice(-4)} (masked)`;
+}
+
+async function runConfigCommand(
+  command: Extract<CliCommand, { kind: "config" }>,
+): Promise<void> {
+  const { action } = command;
+
+  if (action.type === "list") {
+    try {
+      const env = await readOpenWikiEnv();
+      const keys = Object.keys(env);
+
+      if (keys.length === 0) {
+        process.stdout.write("No configuration found.\n");
+        process.exitCode = 0;
+        return;
+      }
+
+      process.stdout.write("OpenWiki Configuration:\n");
+      for (const key of keys) {
+        const value = env[key] ?? "";
+        process.stdout.write(
+          `  ${key}=${JSON.stringify(maskValue(key, value))}\n`,
+        );
+      }
+      process.exitCode = 0;
+    } catch (error) {
+      process.stderr.write(
+        `Failed to list configuration: ${getErrorMessage(error)}\n`,
+      );
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  if (action.type === "set") {
+    try {
+      await saveOpenWikiEnv({ [action.key]: action.value });
+      process.stdout.write(
+        `Saved configuration: ${action.key}=${JSON.stringify(maskValue(action.key, action.value))}\n`,
+      );
+      process.exitCode = 0;
+    } catch (error) {
+      process.stderr.write(
+        `Failed to save configuration: ${getErrorMessage(error)}\n`,
+      );
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  if (action.type === "delete") {
+    try {
+      await deleteOpenWikiEnv([action.key]);
+      process.stdout.write(`Deleted configuration key: ${action.key}\n`);
+      process.exitCode = 0;
+    } catch (error) {
+      process.stderr.write(
+        `Failed to delete configuration: ${getErrorMessage(error)}\n`,
+      );
+      process.exitCode = 1;
+    }
+    return;
   }
 }
