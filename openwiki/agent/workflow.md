@@ -22,7 +22,7 @@ The documentation agent is implemented in `src/agent/`. It takes a command (`cha
 7. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
 8. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
 9. Stream messages and tool events back to the CLI.
-10. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed**.
+10. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed** — or if the previous run was interrupted and this run completed, to clear the stale status. If the run fails mid-stream, the catch block writes metadata with `status: "interrupted"` so the next update retries instead of skipping as a no-op.
 
 Chat runs skip metadata writes entirely.
 
@@ -106,12 +106,13 @@ On successful init/update runs where content changed, the agent writes JSON meta
 - `command`
 - `gitHead`
 - `model`
+- `status` — `"complete"` (default) or `"interrupted"`
 
-That metadata is later used to scope update runs.
+That metadata is later used to scope update runs. When a run fails mid-stream, the catch block in `src/agent/index.ts` calls `persistRunMetadataIfChanged()` with `status: "interrupted"`, so already-generated content stays diffable. `getUpdateNoopStatus()` then sees the interrupted status and does not skip the next update — preventing a possibly partial wiki from being treated as current. Metadata without a `status` field (from older versions) is treated as `"complete"`. A completed retry that changes no content still rewrites metadata to clear the interrupted status.
 
 ### Content snapshot
 
-`createOpenWikiContentSnapshot()` computes a SHA-256 hash of the entire `openwiki/` directory tree (excluding `.last-update.json`). The agent runtime takes a snapshot before and after the run. If they match — meaning the model made no documentation changes — the metadata file is not updated. This prevents scheduled update loops from churning the metadata when the wiki is already current.
+`createOpenWikiContentSnapshot()` computes a SHA-256 hash of the entire `openwiki/` directory tree (excluding `.last-update.json`). The agent runtime takes a snapshot before and after the run. If they match — meaning the model made no documentation changes — the metadata file is not updated, unless the previous run was interrupted and this run completed, in which case metadata is rewritten to clear the stale `"interrupted"` status. This prevents scheduled update loops from churning the metadata when the wiki is already current while still recovering from failed runs.
 
 ## Model errors
 
@@ -130,7 +131,7 @@ The agent is not just a generic chat wrapper. It is intentionally constrained so
 ## Things to watch when changing agent behavior
 
 - Keep the prompt in sync with the actual filesystem tools and path conventions used by the CLI.
-- Be careful with `.last-update.json` semantics, because update runs use it to decide what changed since the previous successful run.
+- Be careful with `.last-update.json` semantics, because update runs use it to decide what changed since the previous successful run. The `status` field (`"complete"` / `"interrupted"`) gates the no-op skip: `getUpdateNoopStatus()` does not skip when the previous run was interrupted, and a completed retry clears the status even without content changes.
 - The content-snapshot check means a no-op update will not update metadata. If you change the snapshot logic, ensure `.last-update.json` is still excluded.
 - Credential loading happens before model resolution; changes there affect both onboarding and agent startup.
 - When adding a provider, add a branch in `createModel()` and ensure the API key env key is checked in `ensureProviderKey()`. OAuth-based providers (like `openai-chatgpt`) skip `ensureProviderKey()` and instead require a token refresh step before `createModel()` is called. Providers without an API key (like `gemini-enterprise`) declare their required env keys (e.g. `projectEnvKey`) in `PROVIDER_CONFIGS` and are gated by `getMissingProviderEnvKey()` instead.
