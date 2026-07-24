@@ -109,6 +109,44 @@ describe("fetchWithResilience", () => {
     expect(delays).toEqual([2000]);
   });
 
+  test("honors an HTTP-date Retry-After header relative to the current time", async () => {
+    // The helper passes Date.now() into parseRetryAfterMs, so an HTTP-date
+    // header must be turned into a real delay in production (not just in the
+    // unit test that supplies `now` explicitly). Pin the clock to make the
+    // expected delta deterministic.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+
+    try {
+      stubFetchSequence([
+        () =>
+          new Response("slow down", {
+            headers: { "retry-after": "Thu, 01 Jan 2026 00:00:05 GMT" },
+            status: 429,
+          }),
+        () => new Response("ok", { status: 200 }),
+      ]);
+
+      const delays: number[] = [];
+      const response = await fetchWithResilience(
+        "https://api.example.com/x",
+        {},
+        {
+          sleep: (ms) => {
+            delays.push(ms);
+            return Promise.resolve();
+          },
+          random: fixedRandom,
+        },
+      );
+
+      expect(response.status).toBe(200);
+      expect(delays).toEqual([5000]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   test("retries transient 5xx up to the limit then returns the last response", async () => {
     const stub = stubFetchSequence([
       () => new Response("err", { status: 503 }),
@@ -167,6 +205,34 @@ describe("fetchWithResilience", () => {
       ),
     ).rejects.toThrow("ECONNRESET");
     expect(stub).toHaveBeenCalledTimes(3);
+  });
+
+  test("defaults to Math.random for real jitter on the backoff delay", async () => {
+    // With no `random` injected the helper must draw from Math.random, so the
+    // backoff delay is jittered rather than a fixed fraction of the ceiling.
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.25);
+    stubFetchSequence([
+      () => new Response("err", { status: 503 }),
+      () => new Response("ok", { status: 200 }),
+    ]);
+
+    const delays: number[] = [];
+    const response = await fetchWithResilience(
+      "https://api.example.com/x",
+      {},
+      {
+        baseDelayMs: 1000,
+        sleep: (ms) => {
+          delays.push(ms);
+          return Promise.resolve();
+        },
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(randomSpy).toHaveBeenCalled();
+    // ceiling = min(20000, 1000 * 2**0) = 1000; 0.25 * 1000 = 250.
+    expect(delays).toEqual([250]);
   });
 
   test("passes an AbortSignal to fetch so a hung request can time out", async () => {

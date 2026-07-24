@@ -34,9 +34,9 @@ export interface FetchWithResilienceOptions {
    */
   sleep?: (ms: number) => Promise<void>;
   /**
-   * Injectable RNG in [0, 1) for jitter. Defaults to a fixed 0.5 so behavior is
-   * deterministic and does not depend on `Math.random` (which is unavailable in
-   * some sandboxes). Override in tests to pin exact delays.
+   * Injectable RNG in [0, 1) for jitter. Defaults to `Math.random` for real
+   * full jitter so concurrent clients de-correlate their retries. Override in
+   * tests to pin exact delays.
    */
   random?: () => number;
 }
@@ -101,7 +101,7 @@ export async function fetchWithResilience(
   const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
   const baseDelayMs = options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
   const sleep = options.sleep ?? realSleep;
-  const random = options.random ?? (() => 0.5);
+  const random = options.random ?? Math.random;
 
   let lastError: unknown;
 
@@ -119,6 +119,7 @@ export async function fetchWithResilience(
       if (attempt < maxRetries && isRetryableStatus(response.status)) {
         const retryAfterMs = parseRetryAfterMs(
           response.headers.get("retry-after"),
+          Date.now(),
         );
         const delay =
           retryAfterMs ?? backoffDelayMs(attempt, baseDelayMs, random);
