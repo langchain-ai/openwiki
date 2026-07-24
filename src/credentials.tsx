@@ -7,6 +7,12 @@ import { Box, Text, useInput, useStdout } from "ink";
 import { configureAuthProvider } from "./auth/configure.js";
 import { runOAuthAuth } from "./auth/oauth.js";
 import {
+  AWS_ACCESS_KEY_ID_ENV_KEY,
+  AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
+  AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  AWS_SESSION_TOKEN_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   DEFAULT_PROVIDER,
   DEFAULT_VERTEX_LOCATION,
   getDefaultModelId,
@@ -19,6 +25,7 @@ import {
   getProviderModelOptions,
   getProviderProjectEnvKey,
   getProviderRegionEnvKey,
+  getProviderRegionEnvKeys,
   getProviderSecretKeyEnvKey,
   providerRequiresApiKey,
   isValidModelId,
@@ -36,8 +43,10 @@ import {
   providerRequiresBaseUrl,
   providerRequiresRegion,
   providerRequiresSecretKey,
+  providerUsesAwsSdkCredentials,
   providerUsesOAuth,
   resolveConfiguredProvider,
+  resolveProviderRegion,
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
 import {
@@ -440,6 +449,7 @@ export function needsCredentialSetup(
 
   const needsCredentials =
     !hasValidConfiguredProvider() ||
+    needsAwsCredentialRepair(provider) ||
     needsCredentialStep(provider) ||
     needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
@@ -457,6 +467,35 @@ export function needsCredentialSetup(
     : !isOpenWikiOnboardingCompleteSync();
 }
 
+function needsAwsCredentialRepair(provider: OpenWikiProvider): boolean {
+  return (
+    providerUsesAwsSdkCredentials(provider) &&
+    getMissingProviderEnvKey(provider) !== null
+  );
+}
+
+function getAwsCredentialRepairMessage(
+  provider: OpenWikiProvider,
+): string | null {
+  if (!providerUsesAwsSdkCredentials(provider)) {
+    return null;
+  }
+
+  const missingEnvKey = getMissingProviderEnvKey(provider);
+
+  if (!missingEnvKey) {
+    return null;
+  }
+
+  const pair =
+    missingEnvKey === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
+    missingEnvKey === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY
+      ? `${BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY} and ${BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY}`
+      : `${AWS_ACCESS_KEY_ID_ENV_KEY} and ${AWS_SECRET_ACCESS_KEY_ENV_KEY}`;
+
+  return `${missingEnvKey} is missing or blank. Set both ${pair}, or unset both in your shell and ${openWikiEnvPath}, then restart OpenWiki.`;
+}
+
 /**
  * Whether the provider still needs its primary credential collected. For
  * `oauth` providers this is a valid, non-expired stored token; for API-key
@@ -464,18 +503,31 @@ export function needsCredentialSetup(
  * the required GCP project id.
  */
 function needsCredentialStep(provider: OpenWikiProvider): boolean {
-  return providerUsesOAuth(provider)
-    ? !hasValidStoredToken()
-    : getMissingProviderEnvKey(provider) !== null;
+  if (providerUsesOAuth(provider)) {
+    return !hasValidStoredToken();
+  }
+
+  return (
+    getMissingProviderEnvKey(provider) !== null &&
+    credentialStep(provider) !== null
+  );
 }
 
 /** The step that collects the provider's primary credential. */
-function credentialStep(provider: OpenWikiProvider): PromptStep {
+function credentialStep(provider: OpenWikiProvider): PromptStep | null {
   if (providerUsesOAuth(provider)) {
     return "oauth-login";
   }
 
-  return providerRequiresApiKey(provider) ? "api-key" : "gcp-project";
+  if (providerUsesAwsSdkCredentials(provider)) {
+    return null;
+  }
+
+  if (providerRequiresApiKey(provider)) {
+    return "api-key";
+  }
+
+  return getProviderProjectEnvKey(provider) ? "gcp-project" : null;
 }
 
 /**
@@ -521,7 +573,9 @@ export function orderedSetupSteps(
   steps.push("provider");
 
   const primary = credentialStep(provider);
-  steps.push(primary);
+  if (primary) {
+    steps.push(primary);
+  }
 
   if (providerRequiresSecretKey(provider)) {
     steps.push("secret-key");
@@ -641,9 +695,7 @@ export function needsLangSmithStep(
 }
 
 function isRegionConfigured(provider: OpenWikiProvider): boolean {
-  const regionEnvKey = getProviderRegionEnvKey(provider);
-
-  return regionEnvKey ? Boolean(process.env[regionEnvKey]) : false;
+  return resolveProviderRegion(provider) !== undefined;
 }
 
 function isCredentialConfigured(provider: OpenWikiProvider): boolean {
@@ -667,6 +719,53 @@ function getCredentialSetupDetail(
     );
 
     return account ? `signed in as ${account}` : "signed in with ChatGPT";
+  }
+
+  if (providerUsesAwsSdkCredentials(provider)) {
+    if (process.env[AWS_BEARER_TOKEN_BEDROCK_ENV_KEY]?.trim()) {
+      return "Bedrock bearer token (takes precedence)";
+    }
+
+    const missingEnvKey = getMissingProviderEnvKey(provider);
+
+    if (missingEnvKey) {
+      if (
+        missingEnvKey === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
+        missingEnvKey === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY
+      ) {
+        return "incomplete legacy Bedrock keys; set both or clear both";
+      }
+
+      if (
+        missingEnvKey === AWS_ACCESS_KEY_ID_ENV_KEY ||
+        missingEnvKey === AWS_SECRET_ACCESS_KEY_ENV_KEY
+      ) {
+        return "incomplete standard AWS credentials; set the full set or unset it";
+      }
+
+      return `incomplete AWS credential configuration (${missingEnvKey})`;
+    }
+
+    const legacyApiKey = getProviderApiKeyEnvKey(provider);
+    const legacySecretKey = getProviderSecretKeyEnvKey(provider);
+    const usesLegacyKeys = Boolean(
+      legacyApiKey &&
+      legacySecretKey &&
+      process.env[legacyApiKey]?.trim() &&
+      process.env[legacySecretKey]?.trim(),
+    );
+
+    const ignoresOrphanSessionToken = Boolean(
+      process.env[AWS_SESSION_TOKEN_ENV_KEY]?.trim() &&
+      !process.env[AWS_ACCESS_KEY_ID_ENV_KEY]?.trim() &&
+      !process.env[AWS_SECRET_ACCESS_KEY_ENV_KEY]?.trim(),
+    );
+
+    return usesLegacyKeys
+      ? "legacy Bedrock keys (take precedence)"
+      : ignoresOrphanSessionToken
+        ? "AWS SDK default credential chain (orphan AWS_SESSION_TOKEN ignored)"
+        : "AWS SDK default credential chain";
   }
 
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
@@ -1845,15 +1944,27 @@ export function InitSetup({
 
     if (step === "region") {
       const trimmedInput = input.trim();
+      const configuredRegion = resolveProviderRegion(provider);
+      const credentialRepairMessage = getAwsCredentialRepairMessage(provider);
 
-      if (trimmedInput.length === 0) {
+      if (credentialRepairMessage) {
+        setError(credentialRepairMessage);
+        return;
+      }
+
+      if (trimmedInput.length === 0 && !configuredRegion) {
+        const regionEnvKeys = getProviderRegionEnvKeys(provider);
         setError(
-          `${getProviderRegionEnvKey(provider) ?? "Region"} is required.`,
+          `Set one of ${regionEnvKeys.join(", ") || "the supported region variables"}.`,
         );
         return;
       }
 
-      setRegion(trimmedInput);
+      const nextRegion = trimmedInput.length > 0 ? trimmedInput : region;
+
+      if (trimmedInput.length > 0) {
+        setRegion(trimmedInput);
+      }
       setInput("");
       const nextStep =
         nextSetupStep("region", provider, selectedMode, allowModeSelection) ??
@@ -1878,7 +1989,7 @@ export function InitSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
         nextSecretKey: secretKey,
-        nextRegion: trimmedInput,
+        nextRegion,
         nextGcpLocation: gcpLocation,
         nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
@@ -3032,6 +3143,7 @@ export function InitSetup({
 
   const needsCredentialPrompt =
     !hasValidConfiguredProvider() ||
+    needsAwsCredentialRepair(provider) ||
     needsCredentialStep(provider) ||
     needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
@@ -3040,6 +3152,7 @@ export function InitSetup({
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     needsLangSmithStep();
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+  const primaryCredentialStep = credentialStep(provider);
   const projectEnvKey = getProviderProjectEnvKey(provider);
   const locationEnvKey = getProviderLocationEnvKey(provider);
 
@@ -3105,13 +3218,21 @@ export function InitSetup({
             )}
             detail={getProviderLabel(provider)}
           />
-          {providerUsesOAuth(provider) || apiKeyEnvKey ? (
+          {providerUsesAwsSdkCredentials(provider) ? (
+            <SetupStep
+              label="AWS credentials"
+              state={
+                getMissingProviderEnvKey(provider) === null ? "done" : "pending"
+              }
+              detail={getCredentialSetupDetail(provider)}
+            />
+          ) : providerUsesOAuth(provider) || primaryCredentialStep ? (
             <SetupStep
               label={
                 providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"
               }
               state={resolveStepStatus(
-                credentialStep(provider),
+                primaryCredentialStep ?? "provider",
                 step,
                 apiKey !== null ||
                   isCredentialConfigured(provider) ||
@@ -3566,14 +3687,26 @@ function Prompt({
   }
 
   if (step === "region") {
+    const resolvedRegion = resolveProviderRegion(provider);
+    const credentialRepairMessage = getAwsCredentialRepairMessage(provider);
+
     return (
       <Box flexDirection="column">
-        <Text>Enter the {getProviderLabel(provider)} region.</Text>
+        {credentialRepairMessage ? (
+          <Text color="yellow">⚠ {credentialRepairMessage}</Text>
+        ) : null}
+        <Text>
+          Enter the {getProviderLabel(provider)} region
+          {resolvedRegion ? `, or press Enter to keep ${resolvedRegion}` : ""}.
+        </Text>
         <Text>
           <Text color="gray">$</Text> {getProviderRegionEnvKey(provider)}={" "}
           <Text color="yellow">{input}</Text>
         </Text>
-        <Text color="gray">For example us-east-1. Press Enter to save it.</Text>
+        <Text color="gray">
+          Uses {getProviderRegionEnvKeys(provider).join(", ")}. For example
+          us-east-1.
+        </Text>
       </Box>
     );
   }
@@ -4593,8 +4726,14 @@ export function getInitialStep(
     return "provider";
   }
 
-  if (needsCredentialStep(provider)) {
-    return credentialStep(provider);
+  if (needsAwsCredentialRepair(provider)) {
+    return "region";
+  }
+
+  const nextCredentialStep = credentialStep(provider);
+
+  if (needsCredentialStep(provider) && nextCredentialStep) {
+    return nextCredentialStep;
   }
 
   if (needsSecretKeyStep(provider)) {
@@ -4654,8 +4793,14 @@ export function getNextStepAfterProvider(
   mode: OpenWikiRunMode = "code",
   forceModelStep = false,
 ): PromptStep | null {
-  if (needsCredentialStep(provider)) {
-    return credentialStep(provider);
+  if (needsAwsCredentialRepair(provider)) {
+    return "region";
+  }
+
+  const nextCredentialStep = credentialStep(provider);
+
+  if (needsCredentialStep(provider) && nextCredentialStep) {
+    return nextCredentialStep;
   }
 
   return getNextStepAfterApiKey(

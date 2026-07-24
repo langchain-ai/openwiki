@@ -7,6 +7,7 @@ import {
   writeRawJson,
 } from "../io.js";
 import { fetchWithResilience } from "../http.js";
+import { normalizeStringArray } from "../config.js";
 import type {
   ConnectorDefinition,
   ConnectorIngestOptions,
@@ -267,15 +268,6 @@ function isHackerNewsFeed(value: string): value is HackerNewsFeed {
     value === "show" ||
     value === "top"
   );
-}
-
-function normalizeStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter(
-        (item): item is string =>
-          typeof item === "string" && item.trim().length > 0,
-      )
-    : [];
 }
 
 function isWithinWindow(
