@@ -410,8 +410,14 @@ function getOutputPromptConfig(
 - Apply confidence labels consistently:
   - confirmed: directly supported by authoritative evidence or repeated high-quality evidence.
   - source-backed: supported by one credible source but not yet independently confirmed.
+  - contested: incompatible claims from credible sources that current evidence does not settle.
   - watchlist: weak, low-signal, early, or potentially transient evidence worth checking again.
   - saved-context: useful context intentionally saved by the user or found in bookmarks, without implying it is true or important.
+- Contested knowledge discipline:
+  - When credible personal-mode sources disagree and no ground truth settles the conflict, preserve both claims in a ## Contested section on the canonical page. Include each claim's source and date when available.
+  - Label the disputed fact contested wherever it appears, including /themes.md Confidence cells. Never present either side as confirmed or source-backed while the conflict remains unsettled.
+  - Add an /open-questions.md entry only when the unresolved conflict would impair future assistance, and link that question to the canonical Contested entry instead of restating both claims.
+  - Never resolve a contested fact by recency alone. Resolve it only when new evidence settles the conflict or shows that a source is stale, then keep a short resolution note with the resolution date, deciding evidence, and superseded claim source.
 - Classify email-like evidence before writing it to the wiki. Use these labels: action_required, scheduled_commitment, decision_or_approval, direct_request, important_update, people_or_org_signal, project_context, security_or_account_notice, newsletter_or_digest, transaction_or_receipt, promotion_or_marketing, personal_logistics, noise.
 - For email-like evidence, also assign priority high, medium, low, or ignore, and durability ephemeral, durable, or recurring. Write only high/medium durable items, action items, scheduled commitments, approvals, personal logistics, and recurring patterns. Keep receipts, promotions, generic newsletters, routine security notices, and noise out of the wiki unless they are actionable, recurrent, or explicitly requested.
 - Route work commitments and follow-ups to /commitments.md with Owner when inferable; route personal logistics to /personal-logistics.md with date/time/location/status when available.
