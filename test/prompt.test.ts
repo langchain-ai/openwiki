@@ -4,6 +4,11 @@ import {
   createSystemPrompt,
 } from "../src/agent/prompt.ts";
 
+const REPOSITORY_CI_GROUNDING_RULE =
+  "When documenting this repository's CI, scheduled jobs, or OpenWiki integration";
+const OPENWIKI_REFERENCE_BOUNDARY =
+  "The OpenWiki CLI reference and OpenWiki's own README/examples describe the tool's defaults";
+
 /**
  * Guards against the 0.2 regression where the shared "Canonical wiki location"
  * and "Wiki-first question answering" blocks hardcoded ~/.openwiki/wiki and
@@ -139,5 +144,20 @@ describe("createSystemPrompt diagram guidance", () => {
     // The carve-out is scoped to update runs, not repeated in init guidance.
     const init = createSystemPrompt("init");
     expect(init).not.toContain("adding one is a valuable improvement");
+  });
+});
+
+describe("createSystemPrompt repository evidence grounding", () => {
+  test("grounds repository update CI documentation in checked-out workflow files", () => {
+    const prompt = createSystemPrompt("update", "repository");
+
+    expect(prompt).toContain(REPOSITORY_CI_GROUNDING_RULE);
+    expect(prompt).toContain(OPENWIKI_REFERENCE_BOUNDARY);
+  });
+
+  test("does not add repository CI grounding rules to local wiki runs", () => {
+    const prompt = createSystemPrompt("update", "local-wiki");
+
+    expect(prompt).not.toContain(REPOSITORY_CI_GROUNDING_RULE);
   });
 });

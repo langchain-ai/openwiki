@@ -1,6 +1,14 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  readdir,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
@@ -25,6 +33,17 @@ import type { Dirent } from "node:fs";
 const execFileAsync = promisify(execFile);
 const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
 const TEMPORARY_PLAN_FILE = "_plan.md";
+const GITHUB_WORKFLOWS_DIR = ".github/workflows";
+const YAML_EXTENSIONS = new Set([".yaml", ".yml"]);
+const REPOSITORY_CI_FILE_PATHS = [".gitlab-ci.yml", "bitbucket-pipelines.yml"];
+const REPOSITORY_CI_CONTEXT_HEADING =
+  "Repository automation context (checked-out CI configuration)";
+const NO_REPOSITORY_CI_CONFIG_MESSAGE =
+  "No checked-out CI configuration files were found in this repository.";
+const BYTES_PER_KIB = 1024;
+const REPOSITORY_CI_CONTEXT_MAX_BYTES = 64 * BYTES_PER_KIB;
+const TRUNCATED_CONTEXT_PREFIX = "[...truncated, ";
+const TRUNCATED_CONTEXT_SUFFIX = " more bytes]";
 
 export type OpenWikiContentSnapshot = string;
 
@@ -69,9 +88,138 @@ export async function createRunContext(
 
   return {
     lastUpdate,
+    ciSummary: await createRepositoryCiSummary(cwd),
     gitSummary: await createGitSummary(command, cwd, lastUpdate),
     wikiGoal,
   };
+}
+
+async function createRepositoryCiSummary(cwd: string): Promise<string> {
+  const ciFilePaths = await findRepositoryCiFilePaths(cwd);
+
+  if (ciFilePaths.length === 0) {
+    return NO_REPOSITORY_CI_CONFIG_MESSAGE;
+  }
+
+  const fileBlocks = await Promise.all(
+    ciFilePaths.map(async (relativePath) => {
+      const content = await readFile(path.join(cwd, relativePath), "utf8");
+
+      return [`--- ${relativePath} ---`, content.trimEnd()].join("\n");
+    }),
+  );
+
+  return truncateTextByBytes(
+    [REPOSITORY_CI_CONTEXT_HEADING, ...fileBlocks].join("\n\n"),
+    REPOSITORY_CI_CONTEXT_MAX_BYTES,
+  );
+}
+
+async function findRepositoryCiFilePaths(cwd: string): Promise<string[]> {
+  const githubWorkflowPaths = await findGitHubWorkflowPaths(cwd);
+  const directCiPaths = await filterExistingFiles(
+    cwd,
+    REPOSITORY_CI_FILE_PATHS,
+  );
+
+  return [...githubWorkflowPaths, ...directCiPaths].sort((left, right) =>
+    left.localeCompare(right),
+  );
+}
+
+async function findGitHubWorkflowPaths(cwd: string): Promise<string[]> {
+  const workflowsDir = path.join(cwd, GITHUB_WORKFLOWS_DIR);
+
+  try {
+    const workflowsDirStat = await lstat(workflowsDir);
+
+    if (!workflowsDirStat.isDirectory()) {
+      return [];
+    }
+
+    const realCwd = await realpath(cwd);
+    const realWorkflowsDir = await realpath(workflowsDir);
+
+    if (!isPathInsideDirectory(realWorkflowsDir, realCwd)) {
+      return [];
+    }
+
+    const entries = await readdir(workflowsDir, { withFileTypes: true });
+
+    return entries
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .filter((fileName) => YAML_EXTENSIONS.has(path.extname(fileName)))
+      .map((fileName) => path.posix.join(GITHUB_WORKFLOWS_DIR, fileName));
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return [];
+    }
+
+    throw error;
+  }
+}
+
+async function filterExistingFiles(
+  cwd: string,
+  relativePaths: string[],
+): Promise<string[]> {
+  const realCwd = await realpath(cwd);
+  const existingPaths = await Promise.all(
+    relativePaths.map(async (relativePath) => {
+      try {
+        const filePath = path.join(cwd, relativePath);
+        const fileStat = await lstat(filePath);
+
+        if (!fileStat.isFile()) {
+          return null;
+        }
+
+        const realFilePath = await realpath(filePath);
+
+        return isPathInsideDirectory(realFilePath, realCwd)
+          ? relativePath
+          : null;
+      } catch (error) {
+        if (isFileNotFoundError(error)) {
+          return null;
+        }
+
+        throw error;
+      }
+    }),
+  );
+
+  return existingPaths.filter((relativePath) => relativePath !== null);
+}
+
+function isPathInsideDirectory(
+  filePath: string,
+  directoryPath: string,
+): boolean {
+  const relativePath = path.relative(directoryPath, filePath);
+
+  return (
+    relativePath.length > 0 &&
+    !relativePath.startsWith("..") &&
+    !path.isAbsolute(relativePath)
+  );
+}
+
+function truncateTextByBytes(text: string, maxBytes: number): string {
+  const buffer = Buffer.from(text, "utf8");
+
+  if (buffer.byteLength <= maxBytes) {
+    return text;
+  }
+
+  const remainingBytes = buffer.byteLength - maxBytes;
+  const truncatedText = buffer.subarray(0, maxBytes).toString("utf8").trimEnd();
+
+  return [
+    truncatedText,
+    `${TRUNCATED_CONTEXT_PREFIX}${remainingBytes}${TRUNCATED_CONTEXT_SUFFIX}`,
+  ].join("\n\n");
 }
 
 async function readRunWikiGoal(
