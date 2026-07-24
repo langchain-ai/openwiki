@@ -1,8 +1,11 @@
 /**
  * The branded single-page visualizer app (LangChain design system). Served as-is
- * at "/". All wiki-sourced content is escaped client-side before innerHTML; the
- * browser libraries load from cdn.jsdelivr.net at pinned exact versions with SRI
- * hashes, so a tampered CDN response is rejected by the browser.
+ * at "/". Scalar wiki fields (title, type, tags) are HTML-escaped client-side
+ * before innerHTML; the page body is rendered as markdown, so any HTML embedded in
+ * a body is contained by the server's Content-Security-Policy (no 'unsafe-inline'
+ * scripts, no inline event handlers, no javascript: URLs) rather than by escaping.
+ * The browser libraries load from cdn.jsdelivr.net at pinned exact versions with
+ * SRI hashes, so a tampered CDN response is rejected by the browser.
  */
 export const PAGE = /* html */ `<!doctype html>
 <html lang="en" data-theme="dark">
@@ -20,6 +23,11 @@ export const PAGE = /* html */ `<!doctype html>
 <script
   src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"
   integrity="sha384-/TQbtLCAerC3jgaim+N78RZSDYV7ryeoBCVqTuzRrFec2akfBkHS7ACQ3PQhvMVi"
+  crossorigin="anonymous"
+></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/dompurify@3.4.12/dist/purify.min.js"
+  integrity="sha384-piCcpDdJ7qVeK4Tv8Z6Hpcr3ZBIgP16TxQTPVfsLFdZ5uDgwc3Y8Ho7oUnqf12qu"
   crossorigin="anonymous"
 ></script>
 <script

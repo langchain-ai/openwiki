@@ -260,6 +260,15 @@ declare const mermaid: {
   run(options: { nodes: NodeListOf<Element> }): void;
 };
 
+/**
+ * The DOMPurify global: strips scripts, inline event handlers, and dangerous URL
+ * schemes from an HTML string before it is assigned to innerHTML. The default
+ * configuration is used, which already removes the injection vectors relevant here.
+ */
+declare const DOMPurify: {
+  sanitize(dirty: string): string;
+};
+
 // --- Module state -----------------------------------------------------------
 
 /**
@@ -669,7 +678,10 @@ function renderReader(id: string): void {
   const back = n.backlinks.length
     ? `<div class="backlinks"><span class="eyebrow">Referenced by</span>${backEls}</div>`
     : "";
-  const html = marked.parse(stripFrontmatter(n.body));
+  // The page body is rendered as markdown, and marked passes raw HTML through, so
+  // sanitize before innerHTML: DOMPurify strips scripts, event handlers, and unsafe
+  // URL schemes. This is defense in depth on top of the server's CSP.
+  const html = DOMPurify.sanitize(marked.parse(stripFrontmatter(n.body)));
   $("#detail").innerHTML =
     `<div class="eyebrow">${escapeHtml(n.type)}</div>` +
     `<h1 class="doc-title">${escapeHtml(n.title)}</h1>` +
