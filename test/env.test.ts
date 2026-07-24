@@ -125,6 +125,10 @@ describe("formatEnv", () => {
 });
 
 describe("MANAGED_ENV_KEYS", () => {
+  test("manages the model output token limit", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_MAX_OUTPUT_TOKENS");
+  });
+
   test("manages the Google Cloud settings for the gemini-enterprise provider", () => {
     expect(MANAGED_ENV_KEYS).toContain("GOOGLE_CLOUD_PROJECT");
     expect(MANAGED_ENV_KEYS).toContain("GOOGLE_CLOUD_LOCATION");
