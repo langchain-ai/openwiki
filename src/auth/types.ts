@@ -11,6 +11,7 @@ export type OAuthProviderConfig = {
   extraAuthParams?: Record<string, string>;
   id: AuthProviderId;
   mcpResourceUrl?: string;
+  oauthAllowedHosts?: string[];
   scopes: string[];
   tokenUrl?: string;
   tokenMapping: OAuthTokenMapping;

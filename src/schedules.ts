@@ -568,7 +568,12 @@ function normalizeCronExpression(expression: string): string {
   return expression.trim().replace(/\s+/gu, " ");
 }
 
-function parseLaunchdCalendarInterval(
+/**
+ * Translates a simple cron expression into a launchd `StartCalendarInterval`,
+ * or `null` when the expression cannot be represented faithfully (callers then
+ * fall back to a "too complex for launchd" warning). Exported for testing.
+ */
+export function parseLaunchdCalendarInterval(
   expression: string,
 ): CalendarInterval | null {
   const parsed = parseSimpleCronFields(expression);
@@ -594,10 +599,22 @@ function parseLaunchdCalendarInterval(
     return null;
   }
 
+  // cron ORs day-of-month and day-of-week when both are restricted ("run on the
+  // 1st OR any Monday"), but launchd ANDs every field in a StartCalendarInterval
+  // ("the 1st AND a Monday"). Emitting a plist with both Day and Weekday set
+  // would silently fire far less often than the cron intends (often never), so
+  // reject the combination and let the caller fall back to the "too complex"
+  // warning path instead of installing a near-dead timer.
+  const dayRestricted = day !== "*";
+  const weekdayRestricted = weekday !== "*";
+  if (dayRestricted && weekdayRestricted) {
+    return null;
+  }
+
   const parsedDay = getSingleCronNumber(day, { max: 31, min: 1 });
   if (parsedDay !== null) {
     interval.Day = parsedDay;
-  } else if (day !== "*") {
+  } else if (dayRestricted) {
     return null;
   }
 
@@ -611,7 +628,7 @@ function parseLaunchdCalendarInterval(
   const parsedWeekday = getSingleCronNumber(weekday, { max: 7, min: 0 });
   if (parsedWeekday !== null) {
     interval.Weekday = parsedWeekday === 7 ? 0 : parsedWeekday;
-  } else if (weekday !== "*") {
+  } else if (weekdayRestricted) {
     return null;
   }
 

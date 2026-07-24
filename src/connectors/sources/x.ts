@@ -52,6 +52,7 @@ const definition: ConnectorDefinition = {
     "Fetches X/Twitter user timelines, mentions, list posts, and bookmarks through X API v2 with OAuth user context.",
   displayName: "X / Twitter",
   id: "x",
+  mode: "personal",
   requiredEnv: [OPENWIKI_X_ACCESS_TOKEN_ENV_KEY],
   supportsAgenticDiscovery: false,
 };
