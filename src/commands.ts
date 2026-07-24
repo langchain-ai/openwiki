@@ -64,6 +64,7 @@ export type CliCommand =
       print: boolean;
       shouldStart: boolean;
       userMessage: string | null;
+      telemetryFile: string | null;
     }
   | {
       kind: "error";
@@ -93,8 +94,11 @@ export function parseCommand(argv: string[]): CliCommand {
       action === "configure" || action === "tools"
         ? argv.slice(3)
         : argv.slice(2);
-    const unknownOption = optionArgs.find((arg) => arg !== "--force");
-    const force = optionArgs.includes("--force");
+    const acceptsForce = action !== "tools";
+    const unknownOption = optionArgs.find((arg) =>
+      acceptsForce ? arg !== "--force" : true,
+    );
+    const force = acceptsForce && optionArgs.includes("--force");
 
     if (unknownOption) {
       return {
@@ -206,7 +210,7 @@ export function parseCommand(argv: string[]): CliCommand {
         kind: "error",
         exitCode: 1,
         message:
-          "Usage: openwiki ingest <source|source-instance|all> [--print] [--modelId <id>]",
+          "Usage: openwiki ingest <source|source-instance|all> [--scheduled] [--print] [--modelId <id>]",
       };
     }
 
@@ -295,11 +299,11 @@ export function parseCommand(argv: string[]): CliCommand {
 
     if (argv[1] === "pause" || argv[1] === "resume" || argv[1] === "delete") {
       const target = parseIngestionTarget(argv[2] ?? "");
-      if (!target || typeof target !== "string" || argv.length > 3) {
+      if (target !== "all" || argv.length > 3) {
         return {
           kind: "error",
           exitCode: 1,
-          message: `Usage: openwiki cron ${argv[1]} <source|all>`,
+          message: `Usage: openwiki cron ${argv[1]} all`,
         };
       }
 
@@ -316,7 +320,7 @@ export function parseCommand(argv: string[]): CliCommand {
         kind: "error",
         exitCode: 1,
         message:
-          "Usage: openwiki cron list | pause <source|all> | resume <source|all> | delete <source|all>",
+          "Usage: openwiki cron list | pause all | resume all | delete all",
       };
     }
   }
@@ -339,6 +343,8 @@ function parseRunCommand(
   let modelId: string | null = null;
   let print = false;
   let command: OpenWikiCommand = "chat";
+  let telemetryFile: string | null = null;
+
   const userMessageParts: string[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -363,6 +369,13 @@ function parseRunCommand(
 
     if (arg === "--print" || arg === "-p") {
       print = true;
+      continue;
+    }
+
+    if (arg === "--debug") {
+      // isDebugMode() reads OPENWIKI_DEBUG; setting it at parse time is the
+      // least-invasive way to opt into full credential/error diagnostics.
+      process.env.OPENWIKI_DEBUG = "1";
       continue;
     }
 
@@ -474,6 +487,37 @@ function parseRunCommand(
       continue;
     }
 
+    if (arg === "--telemetry-file") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--telemetry-file requires a path.",
+        };
+      }
+
+      telemetryFile = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--telemetry-file=")) {
+      const [, value = ""] = arg.split("=", 2);
+
+      if (value.length === 0) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--telemetry-file requires a path.",
+        };
+      }
+
+      telemetryFile = value;
+      continue;
+    }
+
     if (arg.startsWith("-")) {
       return {
         kind: "error",
@@ -526,6 +570,7 @@ function parseRunCommand(
     print,
     shouldStart,
     userMessage,
+    telemetryFile,
   };
 }
 
@@ -577,6 +622,19 @@ export function isDevelopmentMode(): boolean {
   );
 }
 
+/**
+ * True for commands that send telemetry and therefore require the one-time
+ * disclosure. Only init/update runs emit the single openwiki_run event; chat,
+ * auth, and ingest record nothing, so those sessions need no disclosure.
+ */
+export function commandEmitsTelemetry(command: CliCommand): boolean {
+  return (
+    command.kind === "run" &&
+    !command.dryRun &&
+    (command.command === "init" || command.command === "update")
+  );
+}
+
 export const helpContent: HelpContent = {
   title: "OpenWiki",
   description:
@@ -592,11 +650,11 @@ export const helpContent: HelpContent = {
     "openwiki auth <provider>",
     "openwiki auth configure <provider> [--force]",
     "openwiki auth tools <provider>",
-    "openwiki ingest <source|source-instance|all>",
+    "openwiki ingest <source|source-instance|all> [--scheduled] [--print] [--modelId <id>]",
     "openwiki cron list",
-    "openwiki cron pause <source|all>",
-    "openwiki cron resume <source|all>",
-    "openwiki cron delete <source|all>",
+    "openwiki cron pause all",
+    "openwiki cron resume all",
+    "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
   ],
   commands: [
@@ -639,17 +697,17 @@ export const helpContent: HelpContent = {
       description: "List saved connector schedules and local launchd status.",
     },
     {
-      label: "openwiki cron pause <source|all>",
+      label: "openwiki cron pause all",
       description:
         "Pause saved connector schedules and reconcile the Mac wake window.",
     },
     {
-      label: "openwiki cron resume <source|all>",
+      label: "openwiki cron resume all",
       description:
         "Resume paused connector schedules and reconcile the Mac wake window.",
     },
     {
-      label: "openwiki cron delete <source|all>",
+      label: "openwiki cron delete all",
       description:
         "Delete saved connector schedules and remove stale local schedule files.",
     },
@@ -680,8 +738,23 @@ export const helpContent: HelpContent = {
       description: "Run once and print the final assistant output.",
     },
     {
+      label: "--debug",
+      description:
+        "Show full credential and error diagnostics when a run fails.",
+    },
+    {
       label: "--modelId <id>",
       description: "Use a model ID for this run.",
+    },
+    {
+      label: "--scheduled",
+      description:
+        "For ingest only: run scheduled-only ingestion for scheduler-managed runs.",
+    },
+    {
+      label: "--telemetry-file <path>",
+      description:
+        "Write the exact anonymous telemetry payload to a local JSON file.",
     },
   ],
   developmentOptions: [
@@ -703,12 +776,13 @@ export const helpContent: HelpContent = {
     'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
     'openwiki personal --update "Refresh the wiki from configured connectors"',
     "openwiki ingest all",
+    "openwiki ingest all --scheduled --print",
     "openwiki ingest web-search",
     "openwiki ingest web-search-2",
     "openwiki cron list",
-    "openwiki cron pause web-search",
-    "openwiki cron resume web-search",
-    "openwiki cron delete web-search",
+    "openwiki cron pause all",
+    "openwiki cron resume all",
+    "openwiki cron delete all",
     "openwiki auth slack",
     "openwiki auth gmail",
     "openwiki auth notion",

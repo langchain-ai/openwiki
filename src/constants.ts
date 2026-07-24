@@ -1,10 +1,15 @@
 export const OPEN_WIKI_DIR = "openwiki";
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
+
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
+export const BASETEN_BASE_URL_ENV_KEY = "BASETEN_BASE_URL";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
+export const FIREWORKS_BASE_URL_ENV_KEY = "FIREWORKS_BASE_URL";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
+export const NVIDIA_BASE_URL_ENV_KEY = "NVIDIA_BASE_URL";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
+export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
@@ -18,10 +23,22 @@ export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
+  "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
   "BEDROCK_AWS_SECRET_ACCESS_KEY";
+export const BEDROCK_AWS_SESSION_TOKEN_ENV_KEY = "BEDROCK_AWS_SESSION_TOKEN";
 export const BEDROCK_AWS_REGION_ENV_KEY = "BEDROCK_AWS_REGION";
+export const AWS_ACCESS_KEY_ID_ENV_KEY = "AWS_ACCESS_KEY_ID";
+export const AWS_SECRET_ACCESS_KEY_ENV_KEY = "AWS_SECRET_ACCESS_KEY";
+export const AWS_SESSION_TOKEN_ENV_KEY = "AWS_SESSION_TOKEN";
+export const AWS_REGION_ENV_KEY = "AWS_REGION";
+export const AWS_DEFAULT_REGION_ENV_KEY = "AWS_DEFAULT_REGION";
+export const AWS_ROLE_ARN_ENV_KEY = "AWS_ROLE_ARN";
+export const AWS_WEB_IDENTITY_TOKEN_FILE_ENV_KEY =
+  "AWS_WEB_IDENTITY_TOKEN_FILE";
+export const AWS_BEARER_TOKEN_BEDROCK_ENV_KEY = "AWS_BEARER_TOKEN_BEDROCK";
 export const GEMINI_API_KEY_ENV_KEY = "GEMINI_API_KEY";
 export const GOOGLE_CLOUD_PROJECT_ENV_KEY = "GOOGLE_CLOUD_PROJECT";
 export const GOOGLE_CLOUD_LOCATION_ENV_KEY = "GOOGLE_CLOUD_LOCATION";
@@ -82,9 +99,10 @@ export type OpenWikiProvider =
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
  * secret persisted to a `*_API_KEY` env var); `"oauth"` providers instead run a
- * browser login flow and persist short-lived access/refresh tokens.
+ * browser login flow and persist short-lived access/refresh tokens. `"aws-sdk"`
+ * providers delegate authentication to the AWS SDK credential provider chain.
  */
-export type ProviderAuthMethod = "api-key" | "oauth";
+export type ProviderAuthMethod = "api-key" | "aws-sdk" | "oauth";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -113,6 +131,8 @@ const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
  * partner/open-weight Model Garden models by pasting those model IDs directly.
  */
 const GEMINI_MODELS: ProviderModelOption[] = [
+  { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
+  { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite" },
   { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
   { id: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
   { id: "gemini-3-flash", label: "Gemini 3 Flash" },
@@ -121,9 +141,9 @@ const GEMINI_MODELS: ProviderModelOption[] = [
 
 type ProviderConfig = {
   /**
-   * Environment variable holding the provider's API key. Absent when the
-   * provider authenticates without an API key (e.g. Google Application
-   * Default Credentials for Vertex AI).
+   * Environment variable holding the provider's API key, or a legacy access
+   * key override retained by a provider that otherwise delegates credentials.
+   * Absent when the provider has no corresponding environment setting.
    */
   apiKeyEnvKey?: string;
   /**
@@ -157,9 +177,9 @@ type ProviderConfig = {
   label: string;
   modelOptions: ProviderModelOption[];
   /**
-   * Environment variable holding a second required secret (e.g. an AWS secret
-   * access key paired with {@link ProviderConfig.apiKeyEnvKey} as an access key
-   * ID). Omitted for providers authenticated by a single API key.
+   * Environment variable holding a paired secret (e.g. an AWS secret access
+   * key paired with {@link ProviderConfig.apiKeyEnvKey}). Whether the pair is
+   * required depends on the provider's authentication method.
    */
   secretKeyEnvKey?: string;
   /**
@@ -167,9 +187,11 @@ type ProviderConfig = {
    * Only relevant when {@link ProviderConfig.requiresRegion} is true.
    */
   regionEnvKey?: string;
+  /** Additional region variables checked after {@link regionEnvKey}. */
+  regionFallbackEnvKeys?: readonly string[];
   /**
-   * When true, the provider has no default region and requires one to be
-   * supplied via {@link ProviderConfig.regionEnvKey}.
+   * When true, the provider has no default region and requires one of its
+   * supported region environment variables.
    */
   requiresRegion?: boolean;
 };
@@ -193,6 +215,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   baseten: {
     apiKeyEnvKey: BASETEN_API_KEY_ENV_KEY,
     baseURL: "https://inference.baseten.co/v1",
+    baseUrlEnvKey: BASETEN_BASE_URL_ENV_KEY,
     label: "Baseten",
     modelOptions: [
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
@@ -201,6 +224,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   },
   bedrock: {
     apiKeyEnvKey: BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+    authMethod: "aws-sdk",
     label: "AWS Bedrock",
     // Available model IDs are account- and region-specific (they depend on
     // which foundation models are enabled in Bedrock), so there is no safe
@@ -209,11 +233,13 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [],
     secretKeyEnvKey: BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
     regionEnvKey: BEDROCK_AWS_REGION_ENV_KEY,
+    regionFallbackEnvKeys: [AWS_REGION_ENV_KEY, AWS_DEFAULT_REGION_ENV_KEY],
     requiresRegion: true,
   },
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
     baseURL: "https://api.fireworks.ai/inference/v1",
+    baseUrlEnvKey: FIREWORKS_BASE_URL_ENV_KEY,
     label: "Fireworks",
     modelOptions: [
       { id: "accounts/fireworks/models/glm-5p2", label: "GLM 5.2" },
@@ -232,6 +258,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   nvidia: {
     apiKeyEnvKey: NVIDIA_API_KEY_ENV_KEY,
     baseURL: "https://integrate.api.nvidia.com/v1",
+    baseUrlEnvKey: NVIDIA_BASE_URL_ENV_KEY,
     label: "NVIDIA NIM",
     modelOptions: [
       {
@@ -253,6 +280,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   },
   openai: {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
+    baseUrlEnvKey: OPENAI_BASE_URL_ENV_KEY,
     label: "OpenAI",
     modelOptions: OPENAI_MODEL_OPTIONS,
   },
@@ -349,8 +377,17 @@ export function providerUsesOAuth(provider: OpenWikiProvider): boolean {
   return getProviderAuthMethod(provider) === "oauth";
 }
 
+export function providerUsesAwsSdkCredentials(
+  provider: OpenWikiProvider,
+): boolean {
+  return getProviderAuthMethod(provider) === "aws-sdk";
+}
+
 export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
-  return getProviderConfig(provider).apiKeyEnvKey !== undefined;
+  return (
+    getProviderAuthMethod(provider) === "api-key" &&
+    getProviderConfig(provider).apiKeyEnvKey !== undefined
+  );
 }
 
 export function getProviderProjectEnvKey(
@@ -366,16 +403,53 @@ export function getProviderLocationEnvKey(
 }
 
 /**
- * Returns the first required-but-unset environment variable for a provider
- * (its API key, or its cloud project for providers that authenticate without
- * one), or `null` when the provider has everything it needs to run. Base URL
- * requirements are checked separately via {@link providerRequiresBaseUrl}.
+ * Returns the first required-but-unset environment variable for a provider, or
+ * `null` when the provider can proceed. AWS SDK providers accept an absent
+ * legacy key pair, but reject partial or blank legacy and standard AWS key
+ * pairs before credential-chain resolution. Base URL requirements are checked
+ * separately via {@link providerRequiresBaseUrl}.
  */
 export function getMissingProviderEnvKey(
   provider: OpenWikiProvider,
   env: NodeJS.ProcessEnv = process.env,
 ): string | null {
   const config = getProviderConfig(provider);
+
+  if (providerUsesAwsSdkCredentials(provider)) {
+    // @langchain/aws gives the Bedrock bearer token precedence over both
+    // legacy keys and SigV4 credentials. Preserve that existing behavior.
+    if (env[AWS_BEARER_TOKEN_BEDROCK_ENV_KEY]?.trim()) {
+      return null;
+    }
+
+    const legacyPairState = inspectCredentialPair(
+      env,
+      config.apiKeyEnvKey,
+      config.secretKeyEnvKey,
+    );
+
+    if (legacyPairState.missingEnvKey) {
+      return legacyPairState.missingEnvKey;
+    }
+
+    // A complete legacy pair takes precedence inside @langchain/aws, so
+    // unrelated standard AWS env variables cannot affect this provider run.
+    if (legacyPairState.complete) {
+      return null;
+    }
+
+    const standardPairState = inspectCredentialPair(
+      env,
+      AWS_ACCESS_KEY_ID_ENV_KEY,
+      AWS_SECRET_ACCESS_KEY_ENV_KEY,
+    );
+
+    if (standardPairState.missingEnvKey) {
+      return standardPairState.missingEnvKey;
+    }
+
+    return null;
+  }
 
   if (config.apiKeyEnvKey && !env[config.apiKeyEnvKey]) {
     return config.apiKeyEnvKey;
@@ -425,6 +499,13 @@ export function getProviderCredentialHint(
     );
   }
 
+  if (providerUsesAwsSdkCredentials(provider)) {
+    return (
+      "Configure the AWS SDK credential chain with OIDC/web identity, an IAM " +
+      "role, AWS_PROFILE/SSO, or standard AWS environment credentials."
+    );
+  }
+
   return null;
 }
 
@@ -466,7 +547,10 @@ export function getProviderSecretKeyEnvKey(
 }
 
 export function providerRequiresSecretKey(provider: OpenWikiProvider): boolean {
-  return getProviderConfig(provider).secretKeyEnvKey !== undefined;
+  return (
+    !providerUsesAwsSdkCredentials(provider) &&
+    getProviderConfig(provider).secretKeyEnvKey !== undefined
+  );
 }
 
 export function getProviderRegionEnvKey(
@@ -475,23 +559,35 @@ export function getProviderRegionEnvKey(
   return getProviderConfig(provider).regionEnvKey;
 }
 
+export function getProviderRegionEnvKeys(provider: OpenWikiProvider): string[] {
+  const config = getProviderConfig(provider);
+
+  return [config.regionEnvKey, ...(config.regionFallbackEnvKeys ?? [])].filter(
+    (key): key is string => key !== undefined,
+  );
+}
+
 export function providerRequiresRegion(provider: OpenWikiProvider): boolean {
   return getProviderConfig(provider).requiresRegion === true;
 }
 
 /**
- * Resolves the configured region for a provider from its region environment
- * variable. Returns `undefined` when unset, so callers fall back to the SDK's
- * own region resolution (e.g. `~/.aws/config`).
+ * Resolves the configured region for a provider from its supported region
+ * environment variables, in provider-defined precedence order.
  */
 export function resolveProviderRegion(
   provider: OpenWikiProvider,
   env: NodeJS.ProcessEnv = process.env,
 ): string | undefined {
-  const regionEnvKey = getProviderRegionEnvKey(provider);
-  const region = regionEnvKey ? env[regionEnvKey]?.trim() : undefined;
+  for (const regionEnvKey of getProviderRegionEnvKeys(provider)) {
+    const region = env[regionEnvKey]?.trim();
 
-  return region ? region : undefined;
+    if (region) {
+      return region;
+    }
+  }
+
+  return undefined;
 }
 
 export function isValidBaseUrl(value: string): boolean {
@@ -510,6 +606,39 @@ export function isValidBaseUrl(value: string): boolean {
   }
 }
 
+export function getProviderBaseUrlWarnings(
+  provider: OpenWikiProvider,
+  value: string,
+): string[] {
+  if (!isValidBaseUrl(value)) {
+    return ["invalid base URL"];
+  }
+
+  if (provider === "openai-compatible" && isChatCompletionsEndpointUrl(value)) {
+    return ["use API root URL, not /chat/completions endpoint"];
+  }
+
+  return [];
+}
+
+export function isValidProviderBaseUrl(
+  provider: OpenWikiProvider,
+  value: string,
+): boolean {
+  return getProviderBaseUrlWarnings(provider, value).length === 0;
+}
+
+function isChatCompletionsEndpointUrl(value: string): boolean {
+  try {
+    const url = new URL(value.trim());
+    const normalizedPath = url.pathname.replace(/\/+$/u, "").toLowerCase();
+
+    return normalizedPath.endsWith("/chat/completions");
+  } catch {
+    return false;
+  }
+}
+
 export function getProviderModelOptions(
   provider: OpenWikiProvider,
 ): ProviderModelOption[] {
@@ -518,6 +647,54 @@ export function getProviderModelOptions(
 
 export function getDefaultModelId(provider: OpenWikiProvider): string {
   return getProviderModelOptions(provider)[0]?.id ?? DEFAULT_MODEL_ID;
+}
+
+// Returns the list of built-in providers whose known model options include the
+// given model ID by exact match, excluding the provider passed in. Used to warn
+// when a saved model plainly belongs to a different provider (e.g. an Anthropic
+// model left over while the provider is now OpenAI). Exact matching avoids false
+// positives from namespaced overlaps such as OpenRouter's "anthropic/claude-...".
+// Returns an empty array for custom/unknown model IDs, so gateway and
+// OpenAI-compatible model names are never flagged.
+export function getProvidersForKnownModelId(
+  modelId: string,
+  excludeProvider: OpenWikiProvider,
+): OpenWikiProvider[] {
+  const normalized = normalizeModelId(modelId);
+  const providers: OpenWikiProvider[] = [];
+
+  for (const provider of Object.keys(PROVIDER_CONFIGS) as OpenWikiProvider[]) {
+    if (provider === excludeProvider) {
+      continue;
+    }
+    if (
+      getProviderModelOptions(provider).some(
+        (option) => option.id === normalized,
+      )
+    ) {
+      providers.push(provider);
+    }
+  }
+
+  return providers;
+}
+
+// True when the model ID is a known model of some other provider and is NOT a
+// known model of the configured provider — a clear provider/model mismatch.
+export function isModelIdForOtherProvider(
+  modelId: string,
+  provider: OpenWikiProvider,
+): boolean {
+  const normalized = normalizeModelId(modelId);
+  const isKnownForProvider = getProviderModelOptions(provider).some(
+    (option) => option.id === normalized,
+  );
+
+  if (isKnownForProvider) {
+    return false;
+  }
+
+  return getProvidersForKnownModelId(normalized, provider).length > 0;
 }
 
 export function normalizeProvider(
@@ -557,10 +734,57 @@ export function resolveConfiguredProvider(
                   ? "nebius"
                   : env[NVIDIA_API_KEY_ENV_KEY]
                     ? "nvidia"
-                    : env[BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY]
+                    : hasNonEmptyEnvValue(
+                          env,
+                          BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                        ) ||
+                        hasNonEmptyEnvValue(
+                          env,
+                          BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                        )
                       ? "bedrock"
                       : DEFAULT_PROVIDER)
   );
+}
+
+function hasNonEmptyEnvValue(
+  env: NodeJS.ProcessEnv,
+  key: string | undefined,
+): boolean {
+  return key !== undefined && Boolean(env[key]?.trim());
+}
+
+function inspectCredentialPair(
+  env: NodeJS.ProcessEnv,
+  accessKeyEnvKey: string | undefined,
+  secretKeyEnvKey: string | undefined,
+): { complete: boolean; missingEnvKey: string | null } {
+  if (!accessKeyEnvKey || !secretKeyEnvKey) {
+    return { complete: false, missingEnvKey: null };
+  }
+
+  const accessKey = env[accessKeyEnvKey];
+  const secretKey = env[secretKeyEnvKey];
+  const hasAccessKey = Boolean(accessKey?.trim());
+  const hasSecretKey = Boolean(secretKey?.trim());
+
+  if (accessKey !== undefined && !hasAccessKey) {
+    return { complete: false, missingEnvKey: accessKeyEnvKey };
+  }
+
+  if (secretKey !== undefined && !hasSecretKey) {
+    return { complete: false, missingEnvKey: secretKeyEnvKey };
+  }
+
+  if (hasAccessKey && !hasSecretKey) {
+    return { complete: false, missingEnvKey: secretKeyEnvKey };
+  }
+
+  if (hasSecretKey && !hasAccessKey) {
+    return { complete: false, missingEnvKey: accessKeyEnvKey };
+  }
+
+  return { complete: hasAccessKey && hasSecretKey, missingEnvKey: null };
 }
 
 export function resolveProviderRetryAttempts(
@@ -591,6 +815,23 @@ export function resolveProviderRetryAttempts(
   return parsedRetryAttempts;
 }
 
+export function resolveOpenRouterProviderOnly(
+  env: NodeJS.ProcessEnv = process.env,
+): string[] | undefined {
+  const rawProviderOnly = env[OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY];
+
+  if (rawProviderOnly === undefined) {
+    return undefined;
+  }
+
+  const providers = rawProviderOnly
+    .split(",")
+    .map((provider) => provider.trim())
+    .filter((provider) => provider.length > 0);
+
+  return providers.length > 0 ? providers : undefined;
+}
+
 export function normalizeModelId(value: string): string {
   return value.trim();
 }
@@ -601,9 +842,11 @@ export function isValidModelId(value: string): boolean {
   return (
     modelId.length > 0 &&
     modelId.length <= 120 &&
-    /^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
+    // Leading @ for Cloudflare Workers AI ids (@cf/...); interior @ for
+    // Vertex AI @-versioned ids (e.g. claude-sonnet-4-5@20250929).
+    /^[@A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
     !modelId.includes("://")
   );
 }
 
-export const OPENWIKI_VERSION = "0.1.2";
+export const OPENWIKI_VERSION = "0.2.3";

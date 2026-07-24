@@ -50,6 +50,31 @@ describe("parseEnv", () => {
       OPENAI_API_KEY: "line1\r\nline2",
     });
   });
+
+  test("handles export-prefixed lines", () => {
+    expect(parseEnv("export OPENAI_API_KEY=sk-abc\n")).toEqual({
+      OPENAI_API_KEY: "sk-abc",
+    });
+  });
+
+  test("handles export-prefixed lines with double-quoted values", () => {
+    expect(
+      parseEnv('export ANTHROPIC_BASE_URL="https://api.anthropic.com"\n'),
+    ).toEqual({
+      ANTHROPIC_BASE_URL: "https://api.anthropic.com",
+    });
+  });
+
+  test("handles export-prefixed lines alongside regular lines", () => {
+    const content = [
+      "export OPENAI_API_KEY=sk-abc",
+      "ANTHROPIC_API_KEY=sk-def",
+    ].join("\n");
+    expect(parseEnv(content)).toEqual({
+      OPENAI_API_KEY: "sk-abc",
+      ANTHROPIC_API_KEY: "sk-def",
+    });
+  });
 });
 
 describe("formatEnv", () => {
@@ -108,6 +133,12 @@ describe("MANAGED_ENV_KEYS", () => {
 
   test("manages the GEMINI_API_KEY for the gemini (AI Studio) provider", () => {
     expect(MANAGED_ENV_KEYS).toContain("GEMINI_API_KEY");
+  });
+
+  test("manages hosted OpenAI-compatible provider base URLs", () => {
+    expect(MANAGED_ENV_KEYS).toContain("BASETEN_BASE_URL");
+    expect(MANAGED_ENV_KEYS).toContain("FIREWORKS_BASE_URL");
+    expect(MANAGED_ENV_KEYS).toContain("NVIDIA_BASE_URL");
   });
 });
 

@@ -1,3 +1,10 @@
+---
+type: Architecture overview
+title: OpenWiki Architecture Overview
+description: Explains OpenWiki's layered CLI, agent, provider, connector, authentication, and ingestion architecture, including runtime execution and persistence. Identifies core source modules, extension points, and operational considerations for maintaining OpenWiki.
+tags: [architecture, cli, agent, providers, connectors, ingestion]
+---
+
 # Architecture overview
 
 OpenWiki has a small but layered architecture:
@@ -14,7 +21,7 @@ OpenWiki has a small but layered architecture:
 10. `src/auth/` contains the connector OAuth system: `oauth.ts` (generic runner), `providers.ts` (provider configs), `configure.ts` (`openwiki auth configure`), `ngrok.ts` (Slack HTTPS tunnel), `tokens.ts` (refresh/validation), and `types.ts`.
 11. `src/connectors/` contains the connector registry, MCP client/runtime, source-specific ingestion modules (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions exposed to the agent.
 12. `src/ingestion.ts` orchestrates source ingestion runs across configured connectors.
-13. `src/code-mode.ts` handles `openwiki code` setup: writes a GitHub Actions workflow and AGENTS.md/CLAUDE.md snippets.
+13. `src/code-mode.ts` handles `openwiki code` setup: creates a GitHub Actions workflow only when it does not already exist (so operator customizations survive `--update` runs), and refreshes AGENTS.md/CLAUDE.md snippets in place.
 14. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
 15. `src/agent/types.ts` defines shared types: `OpenWikiCommand`, `RunContext`, `UpdateMetadata`, and run option/event interfaces.
 
@@ -41,19 +48,21 @@ For non-chat runs, the agent receives a `RunContext` that includes last-update m
 The agent runtime resolves the provider via `resolveConfiguredProvider()` in `src/constants.ts`:
 
 1. If `OPENWIKI_PROVIDER` is set and valid, use it.
-2. Otherwise, use the first available provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, then NVIDIA.
+2. Otherwise, use the first available provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, Nebius, NVIDIA, then Bedrock.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.6-terra`).
 
 Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 
-- **vertex** → `ChatAnthropic` with a custom `createClient` returning an `AnthropicVertex` client (`@anthropic-ai/vertex-sdk`) configured from `GOOGLE_CLOUD_PROJECT` and `resolveProviderLocation()` (default `global`); auth is Google Application Default Credentials, no API key.
+- **gemini** → `ChatGoogle` with `platformType: "gai"` (AI Studio), using the Gemini API key. Includes Gemini 3.x thought-signature round-trip options.
+- **gemini-enterprise** → `createGeminiEnterpriseModel()`, which routes by model family via `resolveVertexSurface()` in `src/agent/vertex-surface.ts`: Claude models use `ChatAnthropic` with a custom `AnthropicVertex` client (`@anthropic-ai/vertex-sdk`), partner/open-weight models use `ChatOpenAI` against Vertex's OpenAI-compatible MaaS endpoint with a per-request ADC auth fetch, and Gemini/Gemma models use `ChatGoogle` with Google ADC (keyless, `apiKey: ""` to block `GOOGLE_API_KEY` fallback). Auth is Google Application Default Credentials; `GOOGLE_CLOUD_PROJECT` is required and `GOOGLE_CLOUD_LOCATION` is optional (defaults to `global`).
 - **anthropic** → `ChatAnthropic` with the Anthropic API key.
 - **openai-chatgpt** → `ChatOpenAI` with `useResponsesApi: true`, `zdrEnabled: true`, `streaming: true`, pointed at the Codex backend (`CODEX_RESPONSES_BASE_URL`) with account-id/originator/beta headers. Tokens are refreshed before model creation via `ensureFreshChatGptTokens()`.
 - **openrouter** → `ChatOpenRouter` with the selected model ID.
+- **bedrock** → `ChatBedrockConverse` (`@langchain/aws`) with AWS access key ID, secret access key, and a required region.
 - **openai** → `ChatOpenAI` with `useResponsesApi: true`.
-- **baseten / fireworks / nvidia / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
+- **baseten / fireworks / nebius / nvidia / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
 
-Credential gating before model creation uses `getMissingProviderEnvKey()` in `src/constants.ts`, which requires the provider's API key — or `GOOGLE_CLOUD_PROJECT` for vertex — and powers the same check in the CLI's non-interactive gates and the onboarding flow.
+Credential gating before model creation uses `getMissingProviderEnvKey()` in `src/constants.ts`, which requires the provider's API key — or `GOOGLE_CLOUD_PROJECT` for gemini-enterprise — and powers the same check in the CLI's non-interactive gates and the onboarding flow.
 
 ### DeepAgents backend
 

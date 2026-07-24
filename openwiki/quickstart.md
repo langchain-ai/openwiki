@@ -1,3 +1,10 @@
+---
+type: Quickstart Guide
+title: OpenWiki Quickstart
+description: Quickstart reference for the OpenWiki TypeScript CLI, including documentation-generation workflows, supported model providers, and the primary source files. Use it to navigate the repository's architecture, commands, agent runtime, operations, and connectors.
+tags: [openwiki, quickstart, cli, documentation]
+---
+
 # OpenWiki quickstart
 
 OpenWiki is a TypeScript CLI that writes and maintains documentation for a repository using an agent-driven workflow. The package exposes a single `openwiki` binary, stores local credentials in `~/.openwiki/.env`, and records successful update metadata in `openwiki/.last-update.json`.
@@ -6,7 +13,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 
 - Launches an interactive Ink-based terminal app for chatting with the OpenWiki agent.
 - Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
-- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), OpenRouter, Anthropic, Baseten, Fireworks, NVIDIA NIM, any OpenAI-compatible gateway, and Google Vertex AI (Claude models) — each with their own credentials and model list (Vertex uses Google ADC instead of an API key).
+- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), OpenRouter, Anthropic, Gemini (AI Studio), Gemini Enterprise (Vertex AI, keyless via Google ADC), AWS Bedrock, Nebius Token Factory, Baseten, Fireworks, NVIDIA NIM, and any OpenAI-compatible gateway — each with their own credentials and model list (Gemini Enterprise uses Google ADC instead of an API key; Bedrock uses AWS access/secret keys and region).
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
@@ -39,7 +46,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/auth/tokens.ts` — token refresh and validation helpers for connector OAuth.
 - `src/connectors/` — connector registry, MCP client/runtime, source-specific ingestion (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions.
 - `src/ingestion.ts` — orchestrates source ingestion runs across configured connectors.
-- `src/code-mode.ts` — `openwiki code` setup: writes GitHub Actions workflow and AGENTS.md/CLAUDE.md snippets.
+- `src/code-mode.ts` — `openwiki code` setup: creates the GitHub Actions workflow only when missing (preserving customizations on update) and refreshes AGENTS.md/CLAUDE.md snippets.
 - `src/env.ts` — `~/.openwiki/.env` persistence and credential diagnostics.
 - `src/credentials.tsx` — interactive onboarding flow for provider selection, API keys, and model selection.
 - `src/constants.ts` — provider configs, model options, env keys, and validation helpers.
@@ -60,7 +67,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - The repository is intentionally focused: the main product surface is the CLI plus the documentation-generation agent.
 - Treat `openwiki/` in this repo as generated documentation output from a future OpenWiki run, not as application source.
 - When changing behavior, verify both the CLI parser and the agent prompt/runtime, because user-visible semantics are split across `src/commands.ts`, `src/cli.tsx`, and `src/agent/*`.
-- Provider support is centralized in `src/constants.ts`. Adding or changing a provider means updating `PROVIDER_CONFIGS`, the `OpenWikiProvider` type, the `SELECTABLE_OPENWIKI_PROVIDERS` list, and the model-creation branch in `src/agent/index.ts`. OAuth-based providers also need an entry in `src/auth/` if they use browser-login flows.
+- Provider support is centralized in `src/constants.ts`. Adding or changing a provider means updating `PROVIDER_CONFIGS`, the `OpenWikiProvider` type, the `SELECTABLE_OPENWIKI_PROVIDERS` list, and the model-creation branch in `src/agent/index.ts`. OAuth-based providers also need an entry in `src/auth/` if they use browser-login flows. Providers without an API key (like `gemini-enterprise`) declare their required env keys (e.g. `projectEnvKey`) in `PROVIDER_CONFIGS` and are gated by `getMissingProviderEnvKey()` instead.
 
 ## Source map
 

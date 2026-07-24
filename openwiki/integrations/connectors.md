@@ -1,10 +1,8 @@
 ---
 type: Integration
-title: Citations
-description: OpenWiki ships seven built-in connectors that pull external data
-  into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the
-  documentation agent then reads and synthesizes into wiki ...
-timestamp: 2026-07-10T21:04:04.976Z
+title: OpenWiki Connectors
+description: OpenWiki's seven built-in connectors ingest data from Git repositories, Gmail, Hacker News, Notion, Slack, web search, and X into a local raw cache for wiki synthesis. This reference documents connector architecture, read-only MCP safeguards, ingestion orchestration, and source-specific behavior.
+tags: [connectors, integrations, ingestion, mcp]
 ---
 
 OpenWiki ships seven built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` also matters for code mode when documenting a different target repo than the one being ingested from).
@@ -58,18 +56,9 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
 
 `src/schedules.ts` installs source schedules as macOS user LaunchAgents (`~/Library/LaunchAgents/`) with logs under `~/.openwiki/logs/`, and backs the `openwiki cron list|pause|resume|delete` commands (see [CLI usage](/cli/usage.md)).
 
-## Design docs describing connectors that do not exist yet
-
-Two long-form guides at the repository root describe **planned, unimplemented** connectors — do not treat them as current behavior:
-
-- `LANGSMITH-CONNECTOR.md` — a proposed `langsmith` connector (direct-API pull of LangSmith run telemetry: error patterns, latency/token stats, trace URLs). No `langsmith` id exists in `src/connectors/types.ts` today.
-- `CODING-AGENTS-CONNECTOR.md` — a proposed `coding-agents` connector (parses local Claude Code/Codex session logs for episodic "why did this commit happen" context). Depends on the LangSmith guide's shared `src/connectors/limits.ts`, which also does not exist yet.
-
-If asked to implement either, follow the guide's phased checkpoints and confirm current state against `src/connectors/types.ts` first — these are detailed enough to be mistaken for documentation of shipped features.
-
 ## Things to watch when changing connector behavior
 
-- Adding a connector means: extend `ConnectorId` in `types.ts`, add a source file under `src/connectors/sources/`, register it in `registry.ts`, and add its `SOURCE_OPTIONS` entry in `src/credentials.tsx` onboarding — see `~/.openwiki/skills/write-connector.md` (written on demand by `src/connectors/write-connector-skill.ts`) for the full checklist.
+- Adding a connector means: extend `ConnectorId` in `types.ts`, add a source file under `src/connectors/sources/`, register it in `registry.ts`, and add its `SOURCE_OPTIONS` entry in `src/credentials.tsx` onboarding — see `/skills/write-connector/SKILL.md` for the full checklist.
 - Never write secret values into connector config or raw dumps — only env var names and presence booleans.
 - Keep deterministic ingestion (network calls) out of agent-controlled code; the agent only reads what ingestion already wrote to `raw/`.
 - MCP connectors must stay read-only; changes to `mcp-runtime.ts`'s tool-call policy directly affect what a hosted MCP server is allowed to do on OpenWiki's behalf.

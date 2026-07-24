@@ -61,6 +61,23 @@ For repository documentation in GitHub Actions, use
 long as the workflow provides the required provider and model environment
 variables.
 
+Scheduled/CI runs send anonymous reliability telemetry. See [Telemetry](#telemetry)
+for what is collected and how to turn it off (uncomment `OPENWIKI_TELEMETRY_DISABLED`
+in the example workflow).
+
+## Open Knowledge Format compatibility
+
+OpenWiki emits [Google Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundles in both code and personal modes.
+
+- Every non-reserved Markdown concept has YAML front matter with a non-empty
+  `type`; all other standard fields are optional.
+- Valid `timestamp` values and producer-defined extension fields are accepted
+  and preserved during updates and migrations.
+- `index.md` and `log.md` are reserved documents rather than concepts. Nested
+  indexes contain no front matter, while the root index declares
+  `okf_version: "0.1"`.
+- Standard Markdown links between concept documents express relationships.
+
 ## Usage
 
 Start the interactive CLI in code mode for the current repository:
@@ -216,6 +233,22 @@ ANTHROPIC_API_KEY=your-key
 ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 ```
 
+The `openai` provider likewise supports an alternative, OpenAI-compatible
+endpoint (for example a self-hosted or proxied gateway) via `OPENAI_BASE_URL`,
+set alongside `OPENAI_API_KEY`. Baseten, Fireworks, and NVIDIA NIM can be routed
+through alternate OpenAI-compatible gateways with `BASETEN_BASE_URL`,
+`FIREWORKS_BASE_URL`, and `NVIDIA_BASE_URL`, respectively. This is useful for
+OpenAI-compatible gateways that expose the Responses API, since the `openai`
+provider routes tool calls through the Responses API (`/v1/responses`) rather
+than chat completions:
+
+```bash
+OPENWIKI_PROVIDER=openai
+OPENAI_API_KEY=your-key
+OPENAI_BASE_URL=https://your-gateway.example.com/v1
+OPENWIKI_MODEL_ID=your-model-name
+```
+
 ### OpenAI-compatible endpoints
 
 The `openai-compatible` provider targets any OpenAI-compatible chat-completions
@@ -231,11 +264,46 @@ OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
 
+Local LLM servers that expose OpenAI-compatible chat completions use the same
+provider. The model ID must match a model available from that local server:
+
+```bash
+# Ollama, after `ollama serve` and `ollama pull llama3.2`
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=ollama
+OPENAI_COMPATIBLE_BASE_URL=http://localhost:11434/v1
+OPENWIKI_MODEL_ID=llama3.2
+openwiki --init
+```
+
+```bash
+# LM Studio, after starting the local server from the Developer tab
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=lm-studio
+OPENAI_COMPATIBLE_BASE_URL=http://localhost:1234/v1
+OPENWIKI_MODEL_ID=your-loaded-model-id
+openwiki --init
+```
+
+For local gateways such as 9Router, use the OpenAI-compatible endpoint URL,
+API key, and model ID shown by the gateway:
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=your-local-gateway-key
+OPENAI_COMPATIBLE_BASE_URL=http://localhost:20128/v1
+OPENWIKI_MODEL_ID=your-routed-model-id
+openwiki --init
+```
+
+Some local servers ignore the API key value, but OpenWiki still requires
+`OPENAI_COMPATIBLE_API_KEY` because the OpenAI-compatible client expects one.
+
 ### AWS Bedrock
 
 The `bedrock` provider calls foundation models hosted on AWS Bedrock using IAM
-credentials rather than a single vendor API key. It authenticates with an AWS
-access key ID, a secret access key, and a region:
+credentials rather than a single vendor API key. Existing installations can
+continue to provide an AWS access key ID, secret access key, and region:
 
 ```bash
 OPENWIKI_PROVIDER=bedrock
@@ -244,6 +312,11 @@ BEDROCK_AWS_SECRET_ACCESS_KEY=your-secret-access-key
 BEDROCK_AWS_REGION=us-east-1
 OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
 ```
+
+When the explicit Bedrock credentials are not set, OpenWiki uses the AWS SDK
+default credential provider chain, including OIDC/web identity, IAM roles,
+AWS profiles, and ECS/EC2 credentials. The region is resolved from
+`BEDROCK_AWS_REGION`, `AWS_REGION`, or `AWS_DEFAULT_REGION`.
 
 Which model IDs are available depends on your AWS account and region (which
 foundation models you've enabled in the Bedrock console), so there is no
@@ -340,6 +413,18 @@ environment.
 
 Base URLs (and all credentials) can be set in your environment or stored in `~/.openwiki/.env`.
 
+### OpenRouter provider pinning
+
+When OpenRouter serves a model through multiple upstream providers, set
+`OPENWIKI_OPENROUTER_PROVIDER_ONLY` to restrict routing to one provider or a
+comma-separated provider allowlist:
+
+```bash
+OPENWIKI_PROVIDER=openrouter
+OPENROUTER_API_KEY=your-key
+OPENWIKI_OPENROUTER_PROVIDER_ONLY=Novita
+```
+
 ### Provider retry attempts
 
 OpenWiki uses LangChain's built-in retry handling for transient provider errors.
@@ -351,7 +436,88 @@ OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
 
 The value must be a positive integer. If the value is unset, OpenWiki defaults to 3 retries.
 
+### Diagrams
+
+OpenWiki embeds **Mermaid** diagrams in the generated wiki wherever they make a
+concept clearer than prose: sequence diagrams for runtime and request flows, ER
+diagrams for data models, state diagrams for lifecycles, and flowcharts for
+control flow. Diagrams are grounded in the inspected source, added where they
+add signal rather than on every page, and kept in sync on `--update` runs. This
+is default behavior; no configuration is required.
+
+**Validation and repair.** After each run, OpenWiki validates every `mermaid`
+fence. A diagram that fails validation is converted in place to a plain `text`
+fence, preceded by a short comment explaining why, so it degrades to readable
+text instead of a broken block. The next `--update` run finds that comment,
+repairs the diagram from the recorded error, and restores the `mermaid` fence,
+so quality recovers over successive runs.
+
+**Validation fidelity is optional.** By default OpenWiki runs a lightweight,
+zero-dependency check that catches the common syntax breakages. It is
+best-effort: a break it does not recognize can still render as an error on
+GitHub until a later run catches it. For authoritative validation that matches
+exactly what GitHub renders, catching every unrenderable diagram, install the
+Mermaid parser wherever you run OpenWiki (for example, in the scheduled GitHub
+Actions workflow that regenerates your wiki):
+
+```bash
+npm install mermaid jsdom
+```
+
+When the parser is present, OpenWiki uses it and no broken diagram ships; when
+it is absent, it falls back to the best-effort check. Diagram generation and the
+degrade-and-repair loop work the same either way, so the parser changes only how
+thoroughly diagrams are checked, never whether they are generated.
+
 If there's an inference provider or model you'd like to see added, please open a PR!
+
+## Telemetry
+
+OpenWiki collects anonymous, aggregate usage data so we can understand how the
+tool is used and improve it. Telemetry is on by default and easy to turn off.
+
+**What is collected**, on a single `openwiki_run` event, keyed by a random
+install ID stored locally in `~/.openwiki/install-id`:
+
+- Every run: the command (init / update) and the outcome (success / failure /
+  no-op), plus a coarse error category on failure (never the error message).
+  Interactive chat, `auth`, and `ingest` are not recorded.
+- At setup (on init only): which brain mode (code / personal), the model
+  provider, and which connectors you configured (connector names only, never
+  their contents).
+
+**What is never collected:** file contents, repository data or names,
+credentials, prompts, model output, connector payloads, error messages, file
+paths, URLs, model IDs, run duration, your IP address, or any personal
+information. Geoip enrichment is disabled and your IP is never stored. Events
+are grouped by your random install ID so we can measure repeat usage, but that
+ID contains no personal data.
+
+**Scheduled/CI runs** are collected as anonymous reliability data (tagged so
+they can be told apart from human runs), under a shared CI identifier rather than
+a per-machine install ID, and never counted as distinct installs. To disable in
+CI, set `OPENWIKI_TELEMETRY_DISABLED=1` in your workflow environment.
+
+To see exactly what a run would send, add `--telemetry-file=<path>` to any run.
+
+### Opting out
+
+Set either environment variable:
+
+```sh
+export OPENWIKI_TELEMETRY_DISABLED=1
+# or the cross-tool standard:
+export DO_NOT_TRACK=1
+```
+
+To disable permanently, add `OPENWIKI_TELEMETRY_DISABLED=1` to `~/.openwiki/.env`.
+In CI, set it in the workflow environment (config files do not persist on
+ephemeral runners).
+
+### Seeing exactly what is sent
+
+Add `--telemetry-file=<path>` to any run to also write the exact payload to a
+local JSON file.
 
 ## Contributing
 

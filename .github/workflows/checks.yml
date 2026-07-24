@@ -149,8 +149,13 @@ jobs:
           exit-code: "1"
           ignore-unfixed: false
 
+      # Populates the Security tab. Fork PRs run with a read-only GITHUB_TOKEN
+      # that cannot write security events, so this upload fails there ("No
+      # server is currently available"). Skip it on fork PRs only; same-repo PRs
+      # and pushes to main still upload and stay strict. The real gate is Trivy's
+      # `exit-code: 1` above, which runs regardless.
       - name: Upload Trivy results to GitHub Security
-        if: always()
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-results.sarif

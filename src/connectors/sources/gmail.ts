@@ -6,6 +6,7 @@ import {
   getOAuthAccessToken,
   refreshOAuthAccessToken,
 } from "../../auth/tokens.js";
+import { normalizeStringArray } from "../config.js";
 import {
   createRunId,
   readConnectorConfig,
@@ -25,9 +26,9 @@ type GmailConfig = {
   enabled?: boolean;
   format?: GmailMessageFormat;
   includeSpamTrash?: boolean;
-  labelIds?: string[];
+  labelIds?: unknown;
   maxMessages?: number;
-  metadataHeaders?: string[];
+  metadataHeaders?: unknown;
   pageSize?: number;
   query?: string;
   readOnlyOperations?: unknown[];
@@ -65,6 +66,7 @@ const definition: ConnectorDefinition = {
     "Fetches recent Gmail messages through the Gmail API with OAuth user credentials.",
   displayName: "Google / Gmail",
   id: "google",
+  mode: "personal",
   requiredEnv: [
     OPENWIKI_GMAIL_ACCESS_TOKEN_ENV_KEY,
     OPENWIKI_GMAIL_REFRESH_TOKEN_ENV_KEY,
@@ -186,7 +188,7 @@ async function listGmailMessages(
   accessToken: string,
   options: {
     includeSpamTrash?: boolean;
-    labelIds?: string[];
+    labelIds?: unknown;
     maxMessages: number;
     pageSize?: number;
     query?: string;
@@ -246,7 +248,7 @@ async function getGmailMessage(
   messageId: string,
   options: {
     format: GmailMessageFormat;
-    metadataHeaders?: string[];
+    metadataHeaders?: unknown;
   },
 ): Promise<unknown> {
   return await gmailApi(
@@ -400,12 +402,6 @@ function clamp(value: number | undefined, min: number, max: number): number {
   }
 
   return Math.max(min, Math.min(max, Math.trunc(value ?? min)));
-}
-
-function normalizeStringArray(values: string[] | undefined): string[] {
-  return (values ?? [])
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0);
 }
 
 function removeEmptyValues(
