@@ -302,9 +302,14 @@ async function runOpenWikiAgentCore(
   emitDebug(options, "stream=started protocol=events version=v3");
 
   let unhandledChunkCount = 0;
+  let invalidToolCallMessageKeys: ReadonlySet<string> = new Set();
 
   try {
     for await (const chunk of stream) {
+      invalidToolCallMessageKeys = guardTruncatedToolCall(
+        invalidToolCallMessageKeys,
+        chunk,
+      );
       const event = parseStreamEvent(chunk);
 
       if (event) {
@@ -903,6 +908,63 @@ function createGeminiEnterpriseModel(
         ...retryOptions,
       });
   }
+}
+
+/** @internal Exported for focused protocol-event regression tests. */
+export function guardTruncatedToolCall(
+  invalidToolCallMessageKeys: ReadonlySet<string>,
+  chunk: unknown,
+): ReadonlySet<string> {
+  if (
+    !isProtocolStreamEvent(chunk) ||
+    chunk.method !== "messages" ||
+    !isRecord(chunk.params.data)
+  ) {
+    return invalidToolCallMessageKeys;
+  }
+
+  const payload = chunk.params.data;
+  const event = getStringRecordValue(payload, "event");
+  const runId = getStringRecordValue(payload, "run_id");
+
+  if (!runId) {
+    return invalidToolCallMessageKeys;
+  }
+
+  const messageKey = JSON.stringify([
+    chunk.params.namespace,
+    chunk.params.node ?? null,
+    runId,
+  ]);
+
+  if (
+    event === "content-block-finish" &&
+    isRecord(payload.content) &&
+    getStringRecordValue(payload.content, "type") === "invalid_tool_call"
+  ) {
+    return invalidToolCallMessageKeys.has(messageKey)
+      ? invalidToolCallMessageKeys
+      : new Set([...invalidToolCallMessageKeys, messageKey]);
+  }
+
+  if (
+    event !== "message-finish" ||
+    !invalidToolCallMessageKeys.has(messageKey)
+  ) {
+    return invalidToolCallMessageKeys;
+  }
+
+  if (getStringRecordValue(payload, "reason") === "length") {
+    throw new Error(
+      "Model output reached its token limit before completing a tool call. The incomplete tool call was not executed. Retry with a smaller request or a model with a higher output limit.",
+    );
+  }
+
+  return new Set(
+    [...invalidToolCallMessageKeys].filter(
+      (invalidToolCallMessageKey) => invalidToolCallMessageKey !== messageKey,
+    ),
+  );
 }
 
 function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
