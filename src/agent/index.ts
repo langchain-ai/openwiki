@@ -106,6 +106,10 @@ import {
 } from "./utils.js";
 import { classifyError, recordRunSafe } from "../telemetry/index.js";
 
+const OPENAI_COMPATIBLE_MODEL_KWARGS = {
+  enable_thinking: false,
+} as const;
+
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
   cwd = openWikiLocalWikiDir,
@@ -765,6 +769,9 @@ export function createModel(
       : undefined,
     model: modelId,
     useResponsesApi: provider === "openai",
+    ...(provider === "openai-compatible"
+      ? { modelKwargs: OPENAI_COMPATIBLE_MODEL_KWARGS }
+      : {}),
     ...retryOptions,
   });
 }
