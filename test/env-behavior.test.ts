@@ -30,11 +30,12 @@ import {
 // every save in this file would overwrite the developer's real credentials
 // with test fixtures.
 //
-// So, like `test/onboarding.test.ts`, this file must reset the module registry
-// and set HOME **before** dynamically importing the module under test. That
-// way each test gets a module instance whose paths are bound to a throwaway
-// temp directory, keeping these tests fully isolated from the developer's
-// real credentials and machine.
+// So this file resets the module registry and mocks `os.homedir()` **before**
+// dynamically importing the module under test. Changing `HOME` alone is not
+// portable: on Windows, `os.homedir()` resolves from `USERPROFILE` instead.
+// The mock guarantees every test gets a module instance bound to a throwaway
+// directory, keeping the suite isolated from the developer's real credentials
+// and machine on every supported platform.
 //
 // The existing `test/env.test.ts` covers the pure `parseEnv`/`formatEnv`
 // serializers. This file covers the runtime behavior of the three functions
@@ -62,19 +63,25 @@ const KEYS_UNDER_TEST = [
   "OPENAI_PROJECT",
 ] as const;
 
-let originalHome: string | undefined;
 let tempHome: string;
 let env: EnvModule;
 
 beforeEach(async () => {
-  originalHome = process.env.HOME;
   tempHome = await mkdtemp(path.join(tmpdir(), "openwiki-env-behavior-"));
 
-  // Order matters: HOME must point at the temp directory before the module
-  // evaluates, because `openWikiEnvPath` is computed from `os.homedir()` when
-  // `src/env.ts` first loads.
+  // Order matters: src/env.ts computes openWikiEnvPath from os.homedir() as the
+  // module evaluates, so install the mock before the dynamic import.
   vi.resetModules();
-  process.env.HOME = tempHome;
+  vi.doMock("node:os", async () => {
+    const actual = await vi.importActual<typeof import("node:os")>("node:os");
+    return {
+      ...actual,
+      default: {
+        ...actual.default,
+        homedir: () => tempHome,
+      },
+    };
+  });
   env = await import("../src/env.ts");
 
   for (const key of KEYS_UNDER_TEST) {
@@ -83,26 +90,20 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  vi.doUnmock("node:os");
   vi.resetModules();
 
   for (const key of KEYS_UNDER_TEST) {
     delete process.env[key];
   }
 
-  if (originalHome === undefined) {
-    delete process.env.HOME;
-  } else {
-    process.env.HOME = originalHome;
-  }
-
   await rm(tempHome, { recursive: true, force: true });
 });
 
 describe("test isolation", () => {
-  test("resolves the env file inside the test HOME, never the real home", () => {
-    // Regression guard: if `../src/env.ts` is ever imported statically again
-    // (binding `os.homedir()` before the HOME swap), this fails loudly instead
-    // of letting the suite overwrite the developer's real ~/.openwiki/.env.
+  test("resolves the env file inside the mocked home, never the real home", () => {
+    // Regression guard: if the mock is removed or installed too late, this
+    // fails loudly instead of letting the suite overwrite real credentials.
     expect(env.openWikiEnvPath.startsWith(tempHome + path.sep)).toBe(true);
   });
 });
@@ -169,8 +170,19 @@ describe("saveOpenWikiEnv", () => {
     expect(process.env[OPENROUTER_API_KEY_ENV_KEY]).toBe("sk-or-roundtrip");
   });
 
-  test("writes the env file with 0600 permissions", async () => {
+  test("writes the env file with platform-appropriate permissions", async () => {
     await env.saveOpenWikiEnv({ [OPENAI_API_KEY_ENV_KEY]: "sk-test" });
+
+    await expect(readFile(env.openWikiEnvPath, "utf8")).resolves.toContain(
+      "OPENAI_API_KEY=",
+    );
+
+    // Windows security is enforced with an ACL by restrictDirToCurrentUser().
+    // Node's stat mode does not represent those ACLs, so Windows-specific ACL
+    // behavior is covered by test/windows-acl.test.ts instead.
+    if (process.platform === "win32") {
+      return;
+    }
 
     const mode = (await stat(env.openWikiEnvPath)).mode & 0o777;
 
