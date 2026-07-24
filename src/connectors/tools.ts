@@ -200,7 +200,30 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
           ),
         ),
     }),
-  ];
+  ].map(wrapToolErrors);
+}
+
+/**
+ * Wraps a connector tool's func so thrown errors are returned to the model as
+ * a `Tool error: <message>` result instead of propagating. Thrown tool errors
+ * abort the whole agent run before the model can read the (often
+ * model-directed) error message and self-correct — e.g. retrying
+ * openwiki_call_mcp_tool with an exact discovered tool name.
+ */
+function wrapToolErrors<
+  T extends { func: (...args: any[]) => Promise<unknown> },
+>(tool: T): T {
+  const originalFunc = tool.func;
+  tool.func = (async (...args: any[]) => {
+    try {
+      return await originalFunc(...args);
+    } catch (error) {
+      return `Tool error: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+    }
+  }) as T["func"];
+  return tool;
 }
 
 async function listConnectors() {
