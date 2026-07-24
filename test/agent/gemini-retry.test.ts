@@ -8,6 +8,8 @@ const chatGoogleArgs: Array<Record<string, unknown>> = [];
 const chatAnthropicArgs: Array<[string, Record<string, unknown>]> = [];
 const chatOpenAIArgs: Array<Record<string, unknown>> = [];
 const chatOpenRouterArgs: Array<Record<string, unknown>> = [];
+const DISABLED_LANGCHAIN_RETRY_ATTEMPTS = 0;
+const FUNCTION_TYPE = "function";
 
 vi.mock("@langchain/google/node", () => ({
   ChatGoogle: class {
@@ -119,7 +121,7 @@ describe("createModel wires runtime options into provider clients", () => {
     expect(chatAnthropicArgs[0]?.[1].maxTokens).toBe(8192);
   });
 
-  test("gemini-enterprise MaaS surface passes runtime options to ChatOpenAI", () => {
+  test("gemini-enterprise MaaS surface uses fetch retry without stacking LangChain retries", () => {
     createModel(
       "gemini-enterprise",
       "publishers/meta/models/llama-3.3-70b-instruct-maas",
@@ -128,8 +130,14 @@ describe("createModel wires runtime options into provider clients", () => {
     );
 
     expect(chatOpenAIArgs).toHaveLength(1);
-    expect(chatOpenAIArgs[0]?.maxRetries).toBe(2);
+    expect(chatOpenAIArgs[0]?.maxRetries).toBe(
+      DISABLED_LANGCHAIN_RETRY_ATTEMPTS,
+    );
     expect(chatOpenAIArgs[0]?.maxTokens).toBe(8192);
+    expect(
+      (chatOpenAIArgs[0]?.configuration as { fetch?: unknown } | undefined)
+        ?.fetch,
+    ).toBeTypeOf(FUNCTION_TYPE);
   });
 
   test("passes maxTokens to direct non-Google clients", () => {
