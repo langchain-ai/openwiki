@@ -89,6 +89,7 @@ import {
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
   resolveConfiguredProvider,
+  resolveOpenAiCompatibleUseResponsesApi,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
@@ -764,7 +765,10 @@ export function createModel(
         }
       : undefined,
     model: modelId,
-    useResponsesApi: provider === "openai",
+    useResponsesApi:
+      provider === "openai" ||
+      (provider === "openai-compatible" &&
+        resolveOpenAiCompatibleUseResponsesApi()),
     ...retryOptions,
   });
 }
