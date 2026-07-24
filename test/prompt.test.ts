@@ -48,6 +48,22 @@ describe("createSystemPrompt filesystem path guidance", () => {
         );
       });
     }
+
+    test("preserves unresolved source conflicts as contested knowledge", () => {
+      const prompt = createSystemPrompt("update", "local-wiki");
+
+      expect(prompt).toContain("contested:");
+      expect(prompt).toContain("## Contested section");
+      expect(prompt).toContain(
+        "Never resolve a contested fact by recency alone",
+      );
+      expect(prompt).toContain(
+        "Never present either side as confirmed or source-backed while the conflict remains unsettled",
+      );
+      expect(prompt).toContain(
+        "Add an /open-questions.md entry only when the unresolved conflict would impair future assistance",
+      );
+    });
   });
 
   test("both modes forbid typing host/tilde paths into filesystem tools", () => {
