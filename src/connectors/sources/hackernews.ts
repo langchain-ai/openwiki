@@ -6,6 +6,8 @@ import {
   writeConnectorState,
   writeRawJson,
 } from "../io.js";
+import { fetchWithResilience } from "../http.js";
+import { normalizeStringArray } from "../config.js";
 import type {
   ConnectorDefinition,
   ConnectorIngestOptions,
@@ -68,6 +70,7 @@ const definition: ConnectorDefinition = {
     "Fetches Hacker News feeds and query results through public Hacker News APIs.",
   displayName: "Hacker News",
   id: "hackernews",
+  mode: "personal",
   requiredEnv: [],
   supportsAgenticDiscovery: false,
 };
@@ -203,7 +206,9 @@ async function ingest(
 }
 
 async function hnFirebaseApi<T>(endpointPath: string): Promise<T> {
-  const response = await fetch(`${HN_FIREBASE_BASE_URL}${endpointPath}`);
+  const response = await fetchWithResilience(
+    `${HN_FIREBASE_BASE_URL}${endpointPath}`,
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -236,7 +241,7 @@ async function searchHackerNews(
     url.searchParams.set("numericFilters", `created_at_i>${earliestUnixTime}`);
   }
 
-  const response = await fetch(url);
+  const response = await fetchWithResilience(url);
   if (!response.ok) {
     throw new Error(
       `Hacker News search request failed: ${response.status} ${response.statusText}`,
@@ -263,15 +268,6 @@ function isHackerNewsFeed(value: string): value is HackerNewsFeed {
     value === "show" ||
     value === "top"
   );
-}
-
-function normalizeStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter(
-        (item): item is string =>
-          typeof item === "string" && item.trim().length > 0,
-      )
-    : [];
 }
 
 function isWithinWindow(
