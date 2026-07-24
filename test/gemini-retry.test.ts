@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 const chatGoogleArgs: Array<Record<string, unknown>> = [];
 const chatAnthropicArgs: Array<[string, Record<string, unknown>]> = [];
 const chatOpenAIArgs: Array<Record<string, unknown>> = [];
+const DISABLED_LANGCHAIN_RETRY_ATTEMPTS = 0;
+const FUNCTION_TYPE = "function";
 
 vi.mock("@langchain/google/node", () => ({
   ChatGoogle: class {
@@ -92,7 +94,7 @@ describe("createModel wires retry attempts into the Gemini providers", () => {
     expect(chatAnthropicArgs[0]?.[1].maxRetries).toBe(3);
   });
 
-  test("gemini-enterprise MaaS surface passes maxRetries to ChatOpenAI", () => {
+  test("gemini-enterprise MaaS surface uses fetch retry without stacking LangChain retries", () => {
     createModel(
       "gemini-enterprise",
       "publishers/meta/models/llama-3.3-70b-instruct-maas",
@@ -100,7 +102,13 @@ describe("createModel wires retry attempts into the Gemini providers", () => {
     );
 
     expect(chatOpenAIArgs).toHaveLength(1);
-    expect(chatOpenAIArgs[0]?.maxRetries).toBe(2);
+    expect(chatOpenAIArgs[0]?.maxRetries).toBe(
+      DISABLED_LANGCHAIN_RETRY_ATTEMPTS,
+    );
+    expect(
+      (chatOpenAIArgs[0]?.configuration as { fetch?: unknown } | undefined)
+        ?.fetch,
+    ).toBeTypeOf(FUNCTION_TYPE);
   });
 });
 

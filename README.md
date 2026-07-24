@@ -427,8 +427,10 @@ OPENWIKI_OPENROUTER_PROVIDER_ONLY=Novita
 
 ### Provider retry attempts
 
-OpenWiki uses LangChain's built-in retry handling for transient provider errors.
-To override the number of retries after the first provider request, set `OPENWIKI_PROVIDER_RETRY_ATTEMPTS`:
+OpenWiki uses provider retry handling for transient provider errors. For OpenAI
+and OpenAI-compatible transports, this also covers retryable streaming HTTP
+responses surfaced by the underlying SDK. To override the number of retries
+after the first provider request, set `OPENWIKI_PROVIDER_RETRY_ATTEMPTS`:
 
 ```bash
 OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
