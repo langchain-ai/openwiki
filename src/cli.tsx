@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import path from "node:path";
 import React, { useEffect, useRef, useState } from "react";
 import { Box, render, Text, useApp, useInput } from "ink";
 import { marked, type Token, type Tokens } from "marked";
@@ -8,6 +9,7 @@ import {
   shouldDiscoverToolsAfterAuth,
 } from "./auth/configure.js";
 import { startNgrokTunnel } from "./auth/ngrok.js";
+import { runVisualizeServer } from "./visualize/server.js";
 import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
 import { ensureCodeModeRepoSetup, runCodeModeConnectors } from "./code-mode.js";
 import {
@@ -3715,6 +3717,8 @@ if (command.kind === "auth") {
   await runCronCommand(command);
 } else if (command.kind === "ingest") {
   await runIngestCommand(command);
+} else if (command.kind === "visualize") {
+  await runVisualizeCommand(command);
 } else if (shouldPrintStartupError(argv, parsedCommand, command)) {
   process.stderr.write(`${command.message}\n`);
   process.exitCode = command.exitCode;
@@ -3745,6 +3749,26 @@ async function runNgrokCommand(
       url: command.url,
     });
     process.exitCode = 0;
+  } catch (error) {
+    process.stderr.write(`${getErrorMessage(error)}\n`);
+    process.exitCode = 1;
+  }
+}
+
+/**
+ * Start the wiki visualizer server for a resolved wiki directory. Blocks until the
+ * server is stopped with Ctrl-C; surfaces a missing-directory error cleanly.
+ */
+async function runVisualizeCommand(
+  command: Extract<CliCommand, { kind: "visualize" }>,
+): Promise<void> {
+  const wikiRoot = path.resolve(process.cwd(), command.wikiDir);
+  try {
+    await runVisualizeServer({
+      wikiRoot,
+      port: command.port,
+      open: command.open,
+    });
   } catch (error) {
     process.stderr.write(`${getErrorMessage(error)}\n`);
     process.exitCode = 1;
