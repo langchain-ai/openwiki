@@ -10,7 +10,7 @@ export type HelpRow = {
 };
 
 export type OpenWikiRunMode = "personal" | "code";
-type CronTarget = Extract<IngestionTarget, string>;
+type CronTarget = IngestionTarget;
 
 export type HelpContent = {
   title: string;
@@ -298,12 +298,20 @@ export function parseCommand(argv: string[]): CliCommand {
     }
 
     if (argv[1] === "pause" || argv[1] === "resume" || argv[1] === "delete") {
-      const target = parseIngestionTarget(argv[2] ?? "");
-      if (target !== "all" || argv.length > 3) {
+      if (argv.length > 3) {
         return {
           kind: "error",
           exitCode: 1,
-          message: `Usage: openwiki cron ${argv[1]} all`,
+          message: `Usage: openwiki cron ${argv[1]} <source|source-instance|all>`,
+        };
+      }
+
+      const target = parseIngestionTarget(argv[2] ?? "");
+      if (!target) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Usage: openwiki cron ${argv[1]} <source|source-instance|all>`,
         };
       }
 
@@ -320,7 +328,7 @@ export function parseCommand(argv: string[]): CliCommand {
         kind: "error",
         exitCode: 1,
         message:
-          "Usage: openwiki cron list | pause all | resume all | delete all",
+          "Usage: openwiki cron <list|pause|resume|delete> [<source|source-instance|all>]",
       };
     }
   }
@@ -652,9 +660,9 @@ export const helpContent: HelpContent = {
     "openwiki auth tools <provider>",
     "openwiki ingest <source|source-instance|all> [--scheduled] [--print] [--modelId <id>]",
     "openwiki cron list",
-    "openwiki cron pause all",
-    "openwiki cron resume all",
-    "openwiki cron delete all",
+    "openwiki cron pause <source|source-instance|all>",
+    "openwiki cron resume <source|source-instance|all>",
+    "openwiki cron delete <source|source-instance|all>",
     "openwiki ngrok start [url] [--port <port>]",
   ],
   commands: [
@@ -697,19 +705,19 @@ export const helpContent: HelpContent = {
       description: "List saved connector schedules and local launchd status.",
     },
     {
-      label: "openwiki cron pause all",
+      label: "openwiki cron pause <source|source-instance|all>",
       description:
-        "Pause saved connector schedules and reconcile the Mac wake window.",
+        "Pause saved connector schedules for a connector, source instance, or all sources.",
     },
     {
-      label: "openwiki cron resume all",
+      label: "openwiki cron resume <source|source-instance|all>",
       description:
-        "Resume paused connector schedules and reconcile the Mac wake window.",
+        "Resume paused connector schedules for a connector, source instance, or all sources.",
     },
     {
-      label: "openwiki cron delete all",
+      label: "openwiki cron delete <source|source-instance|all>",
       description:
-        "Delete saved connector schedules and remove stale local schedule files.",
+        "Delete saved connector schedules for a connector, source instance, or all sources.",
     },
     {
       label: "openwiki ngrok start [url]",
@@ -781,8 +789,11 @@ export const helpContent: HelpContent = {
     "openwiki ingest web-search-2",
     "openwiki cron list",
     "openwiki cron pause all",
+    "openwiki cron pause web-search",
     "openwiki cron resume all",
+    "openwiki cron resume web-search",
     "openwiki cron delete all",
+    "openwiki cron delete web-search",
     "openwiki auth slack",
     "openwiki auth gmail",
     "openwiki auth notion",

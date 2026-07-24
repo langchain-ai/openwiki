@@ -213,11 +213,15 @@ function resolveIngestionSourceInstances(
       return false;
     }
 
-    if (
-      scheduledOnly &&
-      (!config.ingestionSchedule || config.ingestionSchedule.pausedAt)
-    ) {
-      return false;
+    if (scheduledOnly) {
+      // If no per-source schedule exists, the source is not scheduled — exclude it
+      if (!sourceConfig.schedule) {
+        return false;
+      }
+      // If the per-source schedule is paused, exclude it
+      if (sourceConfig.schedule.pausedAt) {
+        return false;
+      }
     }
 
     if (target === "all") {

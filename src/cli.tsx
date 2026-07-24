@@ -3786,6 +3786,22 @@ async function runCronCommand(
         throw new Error(`Target is required for cron ${command.action}.`);
       }
 
+      // Validate that a source-instance target actually exists in the config.
+      if (
+        typeof command.target === "object" &&
+        command.target.kind === "source-instance"
+      ) {
+        const targetId = command.target.id;
+        const instanceExists = config.sourceInstances.some(
+          (s) => s.id === targetId,
+        );
+        if (!instanceExists) {
+          throw new Error(
+            `No source instance found with ID "${targetId}".`,
+          );
+        }
+      }
+
       const result =
         command.action === "pause"
           ? await pauseConnectorSchedules(config, command.target)
@@ -3833,17 +3849,34 @@ async function printCronSchedules(
   }
 }
 
+function resolveSourceInstanceLabel(
+  sourceInstanceId: string,
+  sourceInstances: { id: string; name?: string; connectorId: string }[],
+): string {
+  const source = sourceInstances.find((s) => s.id === sourceInstanceId);
+  if (source?.name) return source.name;
+  if (source?.connectorId) return source.connectorId;
+  return sourceInstanceId;
+}
+
 function formatScheduleMutationResult(
   action: "delete" | "pause" | "resume",
   result: ScheduleMutationResult,
 ): string {
   const actionLabel =
     action === "delete" ? "Deleted" : action === "pause" ? "Paused" : "Resumed";
+  const sourceInstances = result.config.sourceInstances;
   const changed =
-    result.connectorIds.length > 0 ? result.connectorIds.join(", ") : "none";
+    result.connectorIds.length > 0
+      ? result.connectorIds
+          .map((id) => resolveSourceInstanceLabel(id, sourceInstances))
+          .join(", ")
+      : "none";
   const skipped =
     result.skippedConnectorIds.length > 0
-      ? result.skippedConnectorIds.join(", ")
+      ? result.skippedConnectorIds
+          .map((id) => resolveSourceInstanceLabel(id, sourceInstances))
+          .join(", ")
       : "none";
   const rows = [
     [`${actionLabel}`, changed],
