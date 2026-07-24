@@ -397,4 +397,29 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     // The index pass also ran over the same tree.
     expect(index).toContain("- [Quickstart](quickstart.md) - Start here.");
   });
+
+  test("stamps broken internal links without failing the run", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/quickstart.md",
+      `${document("Quickstart", "Start here.")}\nSee [missing](./missing.md).\n`,
+    );
+
+    const middleware = createOpenWikiIndexMiddleware(backend, "repository");
+    const afterAgent =
+      typeof middleware.afterAgent === "function"
+        ? middleware.afterAgent
+        : middleware.afterAgent?.hook;
+    expect(afterAgent).toBeTypeOf("function");
+    await expect(
+      (afterAgent as () => Promise<unknown>)(),
+    ).resolves.toBeUndefined();
+
+    const page = await readFile(
+      path.join(rootDir, "openwiki/quickstart.md"),
+      "utf8",
+    );
+    expect(page).toContain("openwiki: broken internal link [./missing.md]");
+    expect(page).toContain("See [missing](./missing.md).");
+  });
 });

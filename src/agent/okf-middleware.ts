@@ -10,6 +10,7 @@ import {
 import { migrateWikiToOkf, synchronizeWikiIndexes } from "../okf/index-sync.js";
 import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
 import type { OpenWikiOutputMode } from "./types.js";
+import { validateWikiInternalLinks } from "./wiki-link-validator.js";
 
 const OKF_RESERVED_FILES = new Set(["index.md", "log.md"]);
 const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
@@ -38,6 +39,9 @@ export function createOpenWikiIndexMiddleware(
     afterAgent: async () => {
       await validateWikiMermaid(backend, outputMode);
       await synchronizeWikiIndexes(backend, outputMode);
+      // Stamp broken internal links in place (do not fail the run) so a later
+      // update can repair them from the inline openwiki comments.
+      await validateWikiInternalLinks(backend, outputMode);
     },
   });
 }
