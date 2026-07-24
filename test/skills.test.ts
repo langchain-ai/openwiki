@@ -52,15 +52,18 @@ describe("replaceSkillDirectories", () => {
       path.join(process.cwd(), "skills/mermaid-diagrams/SKILL.md"),
       "utf8",
     );
+    const normalizedSkill = skill.replace(/\r\n/gu, "\n");
 
     // The name/description frontmatter the skill loader keys on.
-    expect(skill.startsWith("---\nname: mermaid-diagrams\n")).toBe(true);
-    expect(skill).toContain("description:");
+    expect(normalizedSkill.startsWith("---\nname: mermaid-diagrams\n")).toBe(
+      true,
+    );
+    expect(normalizedSkill).toContain("description:");
     // The label-safety detail that moved out of the system prompt.
-    expect(skill.toLowerCase()).toContain("semicolons");
-    expect(skill).toContain("erDiagram");
+    expect(normalizedSkill.toLowerCase()).toContain("semicolons");
+    expect(normalizedSkill).toContain("erDiagram");
     // The exact degrade marker the post-run validator embeds, kept in sync so
     // the agent can find and repair a degraded fence.
-    expect(skill).toContain("openwiki: mermaid parse failed");
+    expect(normalizedSkill).toContain("openwiki: mermaid parse failed");
   });
 });

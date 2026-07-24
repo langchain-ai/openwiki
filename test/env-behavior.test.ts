@@ -170,8 +170,19 @@ describe("saveOpenWikiEnv", () => {
     expect(process.env[OPENROUTER_API_KEY_ENV_KEY]).toBe("sk-or-roundtrip");
   });
 
-  test("writes the env file with 0600 permissions", async () => {
+  test("writes the env file with platform-appropriate permissions", async () => {
     await env.saveOpenWikiEnv({ [OPENAI_API_KEY_ENV_KEY]: "sk-test" });
+
+    await expect(readFile(env.openWikiEnvPath, "utf8")).resolves.toContain(
+      "OPENAI_API_KEY=",
+    );
+
+    // Windows security is enforced with an ACL by restrictDirToCurrentUser().
+    // Node's stat mode does not represent those ACLs, so Windows-specific ACL
+    // behavior is covered by test/windows-acl.test.ts instead.
+    if (process.platform === "win32") {
+      return;
+    }
 
     const mode = (await stat(env.openWikiEnvPath)).mode & 0o777;
 
