@@ -50,6 +50,107 @@ describe("persistRunMetadataIfChanged", () => {
     expect(metadata).not.toBeNull();
     expect(metadata?.command).toBe("init");
     expect(metadata?.model).toBe("test-model");
+    expect(metadata?.status).toBe("complete");
+  });
+
+  test("records status interrupted when a failed run persists metadata", async () => {
+    const cwd = await createTempRepo();
+    const snapshotBefore = await createOpenWikiContentSnapshot(
+      cwd,
+      "repository",
+    );
+
+    await mkdir(path.join(cwd, "openwiki"), { recursive: true });
+    await writeFile(path.join(cwd, "openwiki", "index.md"), "# Docs\n", "utf8");
+
+    const written = await persistRunMetadataIfChanged(
+      "update",
+      cwd,
+      "test-model",
+      "repository",
+      snapshotBefore,
+      "interrupted",
+    );
+
+    expect(written).toBe(true);
+    const metadata = await readMetadata(cwd, "openwiki/.last-update.json");
+    expect(metadata?.status).toBe("interrupted");
+  });
+
+  test("clears an interrupted status when a completed run changes nothing", async () => {
+    const cwd = await createTempRepo();
+
+    await mkdir(path.join(cwd, "openwiki"), { recursive: true });
+    await writeFile(path.join(cwd, "openwiki", "index.md"), "# Docs\n", "utf8");
+    const interruptedSnapshot = await createOpenWikiContentSnapshot(
+      cwd,
+      "repository",
+    );
+    await writeFile(
+      path.join(cwd, "openwiki", "index.md"),
+      "# Fixed\n",
+      "utf8",
+    );
+    await persistRunMetadataIfChanged(
+      "update",
+      cwd,
+      "test-model",
+      "repository",
+      interruptedSnapshot,
+      "interrupted",
+    );
+
+    // Retry run completes without writing anything: the snapshot is
+    // unchanged, but the interrupted flag must still be cleared so the
+    // update no-op check can skip again.
+    const retrySnapshot = await createOpenWikiContentSnapshot(
+      cwd,
+      "repository",
+    );
+    const written = await persistRunMetadataIfChanged(
+      "update",
+      cwd,
+      "test-model",
+      "repository",
+      retrySnapshot,
+    );
+
+    expect(written).toBe(true);
+    const metadata = await readMetadata(cwd, "openwiki/.last-update.json");
+    expect(metadata?.status).toBe("complete");
+  });
+
+  test("does not rewrite metadata when nothing changed after a complete run", async () => {
+    const cwd = await createTempRepo();
+
+    await mkdir(path.join(cwd, "openwiki"), { recursive: true });
+    await writeFile(path.join(cwd, "openwiki", "index.md"), "# Docs\n", "utf8");
+    const snapshotBefore = await createOpenWikiContentSnapshot(
+      cwd,
+      "repository",
+    );
+    await writeFile(path.join(cwd, "openwiki", "index.md"), "# Done\n", "utf8");
+    await persistRunMetadataIfChanged(
+      "update",
+      cwd,
+      "test-model",
+      "repository",
+      snapshotBefore,
+    );
+
+    const unchangedSnapshot = await createOpenWikiContentSnapshot(
+      cwd,
+      "repository",
+    );
+    const written = await persistRunMetadataIfChanged(
+      "update",
+      cwd,
+      "test-model",
+      "repository",
+      unchangedSnapshot,
+    );
+
+    expect(written).toBe(false);
   });
 
   test("writes metadata in local-wiki mode when content changed", async () => {

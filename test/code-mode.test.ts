@@ -120,6 +120,21 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     }
   });
 
+  test("wires the LangSmith connector read key into the workflow env", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    // Without this, the scheduled code-mode pull has no connector key in CI and
+    // the LangSmith pull skips every run (the key is the connector's requiredEnv).
+    expect(workflow).toContain(
+      "OPENWIKI_LANGSMITH_API_KEY: ${{ secrets.OPENWIKI_LANGSMITH_API_KEY }}",
+    );
+  });
+
   test("pins the openwiki install to a specific version, never unpinned", async () => {
     const repo = await createTempRepo();
 

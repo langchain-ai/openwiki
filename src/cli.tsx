@@ -9,7 +9,7 @@ import {
 } from "./auth/configure.js";
 import { startNgrokTunnel } from "./auth/ngrok.js";
 import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
-import { ensureCodeModeRepoSetup } from "./code-mode.js";
+import { ensureCodeModeRepoSetup, runCodeModeConnectors } from "./code-mode.js";
 import {
   commandEmitsTelemetry,
   helpContent,
@@ -78,6 +78,7 @@ import {
   normalizeProvider,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  providerUsesAwsSdkCredentials,
   resolveConfiguredProvider,
   SELECTABLE_OPENWIKI_PROVIDERS,
   OPENWIKI_VERSION,
@@ -164,6 +165,7 @@ type ErrorDiagnostic = {
 type AuthFix = {
   apiKeyEnvKey: string | undefined;
   keyFromShell: boolean;
+  provider: OpenWikiProvider;
 };
 
 type AppProps = {
@@ -585,36 +587,50 @@ function App({ command }: AppProps) {
         : Promise.resolve();
 
     setupPromise
-      .then(() =>
-        runOpenWikiAgent(resolvedCommand, runtimeCwd, {
+      .then(async () => {
+        const handleRunEvent = (event: OpenWikiRunEvent): void => {
+          if (!mountedRef.current || activeRunId.current !== runId) {
+            return;
+          }
+
+          activeRunLog.current = appendRunLogEvent(
+            activeRunLog.current,
+            event,
+            nextLogId,
+          );
+          setRunState((currentState) =>
+            currentState.status === "running"
+              ? {
+                  ...currentState,
+                  log: activeRunLog.current,
+                }
+              : currentState,
+          );
+        };
+
+        // Code-mode connectors pull their evidence and augment the agent message
+        // before the run, matching the --print path exactly. They emit progress
+        // into the same run log so the pull is visible rather than a silent gap.
+        const userMessage =
+          runMode === "code" && resolvedCommand !== "chat"
+            ? await runCodeModeConnectors(
+                runtimeCwd,
+                activeUserMessage ?? undefined,
+                handleRunEvent,
+              )
+            : activeUserMessage;
+
+        return runOpenWikiAgent(resolvedCommand, runtimeCwd, {
           debug: isDebugMode(),
           isFollowup: activeMessageIsFollowup,
           modelId: sessionModelId,
           outputMode: runtimeOutputMode,
           threadId: sessionThreadId.current,
-          userMessage: activeUserMessage,
+          userMessage,
           telemetryFile: command.telemetryFile ?? undefined,
-          onEvent: (event) => {
-            if (!mountedRef.current || activeRunId.current !== runId) {
-              return;
-            }
-
-            activeRunLog.current = appendRunLogEvent(
-              activeRunLog.current,
-              event,
-              nextLogId,
-            );
-            setRunState((currentState) =>
-              currentState.status === "running"
-                ? {
-                    ...currentState,
-                    log: activeRunLog.current,
-                  }
-                : currentState,
-            );
-          },
-        }),
-      )
+          onEvent: handleRunEvent,
+        });
+      })
       .then((result) => {
         if (!mountedRef.current || activeRunId.current !== runId) {
           return;
@@ -1110,6 +1126,17 @@ function CredentialDiagnosticsPanel({
  */
 function getAuthFixSteps(authFix: AuthFix): string[] {
   const steps: string[] = [];
+
+  if (providerUsesAwsSdkCredentials(authFix.provider)) {
+    steps.push(
+      "Verify the selected AWS identity with `aws sts get-caller-identity` in the same environment.",
+      "Configure the AWS SDK credential chain (OIDC/workload role, AWS_PROFILE/SSO, or standard AWS credentials) and a Bedrock region, then retry.",
+      "Unset AWS_BEARER_TOKEN_BEDROCK for OIDC/IAM runs; a bearer token takes precedence when present.",
+      "A complete BEDROCK_AWS_ACCESS_KEY_ID/BEDROCK_AWS_SECRET_ACCESS_KEY pair takes precedence; unset both in the shell and remove both from ~/.openwiki/.env to use ambient AWS credentials.",
+    );
+
+    return steps;
+  }
 
   if (authFix.keyFromShell && authFix.apiKeyEnvKey) {
     steps.push(
@@ -1964,6 +1991,13 @@ function ChatInput({
         return;
       }
 
+      if (providerUsesAwsSdkCredentials(currentProvider)) {
+        setError(
+          `${getProviderLabel(currentProvider)} uses the AWS SDK credential chain; /api-key cannot safely configure an access-key pair. ${getProviderCredentialHint(currentProvider) ?? ""} Legacy BEDROCK_AWS_ACCESS_KEY_ID and BEDROCK_AWS_SECRET_ACCESS_KEY values must be configured or removed together in the shell and ~/.openwiki/.env.`.trim(),
+        );
+        return;
+      }
+
       const apiKeyEnvKey = getProviderApiKeyEnvKey(currentProvider);
 
       if (!apiKeyEnvKey) {
@@ -2111,9 +2145,12 @@ function ChatInput({
       await onProviderSelect(provider);
       resetInput();
       const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-      const requirement = apiKeyEnvKey
-        ? `Ensure ${apiKeyEnvKey} is set.`
-        : `Ensure ${getProviderProjectEnvKey(provider)} is set. ${getProviderCredentialHint(provider) ?? ""}`.trim();
+      const requirement = providerUsesAwsSdkCredentials(provider)
+        ? (getProviderCredentialHint(provider) ??
+          "Configure AWS SDK credentials.")
+        : apiKeyEnvKey
+          ? `Ensure ${apiKeyEnvKey} is set.`
+          : `Ensure ${getProviderProjectEnvKey(provider)} is set. ${getProviderCredentialHint(provider) ?? ""}`.trim();
       const modelNotice =
         getProviderModelOptions(provider).length > 0
           ? ` with model ${getDefaultModelId(provider)}`
@@ -3301,6 +3338,7 @@ function getAuthFix(
     keyFromShell:
       apiKeyEnvKey !== undefined &&
       getShellEnvValue(apiKeyEnvKey) !== undefined,
+    provider,
   };
 }
 
@@ -4094,19 +4132,32 @@ async function runPrintCommand(
       });
     }
 
+    // Code-mode connectors (e.g. langsmith) pull their evidence and augment the
+    // agent message before the run, so --print behaves exactly like interactive.
+    const handlePrintEvent = (event: OpenWikiRunEvent): void => {
+      if (event.type === "text" && event.source !== "subgraph") {
+        output.push(event.text);
+      }
+    };
+
+    const userMessage =
+      command.mode === "code" && command.command !== "chat"
+        ? await runCodeModeConnectors(
+            runtimeCwd,
+            command.userMessage ?? undefined,
+            handlePrintEvent,
+          )
+        : command.userMessage;
+
     await runOpenWikiAgent(command.command, runtimeCwd, {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
       modelId: command.modelId,
       outputMode: runtimeOutputMode,
       threadId: createOpenWikiThreadId(runtimeCwd),
-      userMessage: command.userMessage,
+      userMessage,
       telemetryFile: command.telemetryFile ?? undefined,
-      onEvent: (event) => {
-        if (event.type === "text" && event.source !== "subgraph") {
-          output.push(event.text);
-        }
-      },
+      onEvent: handlePrintEvent,
     });
 
     const text = output.join("").trim();
