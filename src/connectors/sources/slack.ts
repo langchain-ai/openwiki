@@ -1,5 +1,6 @@
 import { OPENWIKI_SLACK_USER_TOKEN_ENV_KEY } from "../../constants.js";
 import { getOAuthAccessToken } from "../../auth/tokens.js";
+import { normalizeStringArray } from "../config.js";
 import {
   createRunId,
   readConnectorConfig,
@@ -599,17 +600,6 @@ function normalizeConversationTypes(
       : DEFAULT_CONVERSATION_TYPES;
 
   return types.filter(isSlackConversationType);
-}
-
-function normalizeStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value
-        .filter(
-          (item): item is string =>
-            typeof item === "string" && item.trim().length > 0,
-        )
-        .map((item) => item.trim())
-    : [];
 }
 
 function isSlackStream(value: unknown): value is SlackStream {

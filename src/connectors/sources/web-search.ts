@@ -1,5 +1,6 @@
 import { TavilySearch } from "@langchain/tavily";
 import { OPENWIKI_TAVILY_API_KEY_ENV_KEY } from "../../constants.js";
+import { normalizeStringArray } from "../config.js";
 import {
   createRunId,
   readConnectorConfig,
@@ -174,15 +175,6 @@ async function ingest(
     status: "success",
     warnings,
   };
-}
-
-function normalizeStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter(
-        (item): item is string =>
-          typeof item === "string" && item.trim().length > 0,
-      )
-    : [];
 }
 
 function normalizeSearchDepth(

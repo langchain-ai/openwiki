@@ -14,6 +14,7 @@ import type {
 } from "../types.js";
 import { OPENWIKI_X_ACCESS_TOKEN_ENV_KEY } from "../../constants.js";
 import { getOAuthAccessToken } from "../../auth/tokens.js";
+import { normalizeStringArray } from "../config.js";
 
 type XConfig = {
   enabled?: boolean;
@@ -297,17 +298,6 @@ function normalizeStreams(
       : DEFAULT_STREAMS;
 
   return streams.filter(isXStream);
-}
-
-function normalizeStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value
-        .filter(
-          (item): item is string =>
-            typeof item === "string" && item.trim().length > 0,
-        )
-        .map((item) => item.trim())
-    : [];
 }
 
 function isXStream(value: unknown): value is XStream {
