@@ -1,7 +1,5 @@
 ---
-type: Documentation Index
-title: "OpenWiki"
-description: "Files and subdirectories in OpenWiki."
+okf_version: "0.1"
 ---
 
 # Files

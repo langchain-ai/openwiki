@@ -9,7 +9,7 @@ import {
 } from "./auth/configure.js";
 import { startNgrokTunnel } from "./auth/ngrok.js";
 import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
-import { ensureCodeModeRepoSetup } from "./code-mode.js";
+import { ensureCodeModeRepoSetup, runCodeModeConnectors } from "./code-mode.js";
 import {
   commandEmitsTelemetry,
   helpContent,
@@ -579,40 +579,56 @@ function App({ command }: AppProps) {
 
     const setupPromise =
       runMode === "code"
-        ? ensureCodeModeRepoSetup(runtimeCwd)
+        ? ensureCodeModeRepoSetup(runtimeCwd, {
+            createWorkflow: resolvedCommand === "init",
+          })
         : Promise.resolve();
 
     setupPromise
-      .then(() =>
-        runOpenWikiAgent(resolvedCommand, runtimeCwd, {
+      .then(async () => {
+        const handleRunEvent = (event: OpenWikiRunEvent): void => {
+          if (!mountedRef.current || activeRunId.current !== runId) {
+            return;
+          }
+
+          activeRunLog.current = appendRunLogEvent(
+            activeRunLog.current,
+            event,
+            nextLogId,
+          );
+          setRunState((currentState) =>
+            currentState.status === "running"
+              ? {
+                  ...currentState,
+                  log: activeRunLog.current,
+                }
+              : currentState,
+          );
+        };
+
+        // Code-mode connectors pull their evidence and augment the agent message
+        // before the run, matching the --print path exactly. They emit progress
+        // into the same run log so the pull is visible rather than a silent gap.
+        const userMessage =
+          runMode === "code" && resolvedCommand !== "chat"
+            ? await runCodeModeConnectors(
+                runtimeCwd,
+                activeUserMessage ?? undefined,
+                handleRunEvent,
+              )
+            : activeUserMessage;
+
+        return runOpenWikiAgent(resolvedCommand, runtimeCwd, {
           debug: isDebugMode(),
           isFollowup: activeMessageIsFollowup,
           modelId: sessionModelId,
           outputMode: runtimeOutputMode,
           threadId: sessionThreadId.current,
-          userMessage: activeUserMessage,
+          userMessage,
           telemetryFile: command.telemetryFile ?? undefined,
-          onEvent: (event) => {
-            if (!mountedRef.current || activeRunId.current !== runId) {
-              return;
-            }
-
-            activeRunLog.current = appendRunLogEvent(
-              activeRunLog.current,
-              event,
-              nextLogId,
-            );
-            setRunState((currentState) =>
-              currentState.status === "running"
-                ? {
-                    ...currentState,
-                    log: activeRunLog.current,
-                  }
-                : currentState,
-            );
-          },
-        }),
-      )
+          onEvent: handleRunEvent,
+        });
+      })
       .then((result) => {
         if (!mountedRef.current || activeRunId.current !== runId) {
           return;
@@ -4087,8 +4103,27 @@ async function runPrintCommand(
     const runtimeOutputMode = getRunModeOutputMode(command.mode);
 
     if (command.mode === "code") {
-      await ensureCodeModeRepoSetup(runtimeCwd);
+      await ensureCodeModeRepoSetup(runtimeCwd, {
+        createWorkflow: command.command === "init",
+      });
     }
+
+    // Code-mode connectors (e.g. langsmith) pull their evidence and augment the
+    // agent message before the run, so --print behaves exactly like interactive.
+    const handlePrintEvent = (event: OpenWikiRunEvent): void => {
+      if (event.type === "text" && event.source !== "subgraph") {
+        output.push(event.text);
+      }
+    };
+
+    const userMessage =
+      command.mode === "code" && command.command !== "chat"
+        ? await runCodeModeConnectors(
+            runtimeCwd,
+            command.userMessage ?? undefined,
+            handlePrintEvent,
+          )
+        : command.userMessage;
 
     await runOpenWikiAgent(command.command, runtimeCwd, {
       debug: isDebugMode(),
@@ -4096,13 +4131,9 @@ async function runPrintCommand(
       modelId: command.modelId,
       outputMode: runtimeOutputMode,
       threadId: createOpenWikiThreadId(runtimeCwd),
-      userMessage: command.userMessage,
+      userMessage,
       telemetryFile: command.telemetryFile ?? undefined,
-      onEvent: (event) => {
-        if (event.type === "text" && event.source !== "subgraph") {
-          output.push(event.text);
-        }
-      },
+      onEvent: handlePrintEvent,
     });
 
     const text = output.join("").trim();

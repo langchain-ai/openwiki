@@ -6,6 +6,7 @@ import {
   getOAuthAccessToken,
   refreshOAuthAccessToken,
 } from "../../auth/tokens.js";
+import { normalizeStringArray } from "../config.js";
 import {
   createRunId,
   readConnectorConfig,
@@ -65,6 +66,7 @@ const definition: ConnectorDefinition = {
     "Fetches recent Gmail messages through the Gmail API with OAuth user credentials.",
   displayName: "Google / Gmail",
   id: "google",
+  mode: "personal",
   requiredEnv: [
     OPENWIKI_GMAIL_ACCESS_TOKEN_ENV_KEY,
     OPENWIKI_GMAIL_REFRESH_TOKEN_ENV_KEY,
@@ -400,17 +402,6 @@ function clamp(value: number | undefined, min: number, max: number): number {
   }
 
   return Math.max(min, Math.min(max, Math.trunc(value ?? min)));
-}
-
-function normalizeStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value
-        .filter(
-          (item): item is string =>
-            typeof item === "string" && item.trim().length > 0,
-        )
-        .map((item) => item.trim())
-    : [];
 }
 
 function removeEmptyValues(

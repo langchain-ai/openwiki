@@ -6,6 +6,7 @@ import {
   writeConnectorState,
   writeRawJson,
 } from "../io.js";
+import { normalizeStringArray } from "../config.js";
 import type {
   ConnectorDefinition,
   ConnectorIngestOptions,
@@ -68,6 +69,7 @@ const definition: ConnectorDefinition = {
     "Fetches Hacker News feeds and query results through public Hacker News APIs.",
   displayName: "Hacker News",
   id: "hackernews",
+  mode: "personal",
   requiredEnv: [],
   supportsAgenticDiscovery: false,
 };
@@ -263,15 +265,6 @@ function isHackerNewsFeed(value: string): value is HackerNewsFeed {
     value === "show" ||
     value === "top"
   );
-}
-
-function normalizeStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter(
-        (item): item is string =>
-          typeof item === "string" && item.trim().length > 0,
-      )
-    : [];
 }
 
 function isWithinWindow(
