@@ -93,6 +93,30 @@ describe("raw connector tools", () => {
       }),
     ).rejects.toThrow(/symbolic links/u);
   });
+
+  test("rejects symlink raw directories before listing", async () => {
+    const home = await createTempHome();
+    await createSymlinkRawDir(home, "x");
+    const tools = await loadConnectorTools(home);
+
+    await expect(
+      getTool(tools, "openwiki_list_raw_items").invoke({ connectorId: "x" }),
+    ).rejects.toThrow(/symbolic links/u);
+  });
+
+  test("rejects symlink raw directories before reading", async () => {
+    const home = await createTempHome();
+    const rawItemPath = await createSymlinkRawDir(home, "x");
+    const tools = await loadConnectorTools(home);
+
+    await expect(
+      getTool(tools, "openwiki_read_raw_item").invoke({
+        connectorId: "x",
+        maxBytes: 100,
+        path: rawItemPath,
+      }),
+    ).rejects.toThrow(/symbolic links/u);
+  });
 });
 
 interface RawItemsResult {
@@ -184,6 +208,35 @@ async function createSymlinkRawItem(
   }
 
   return `${runId}/linked`;
+}
+
+async function createSymlinkRawDir(
+  home: string,
+  connectorId: string,
+): Promise<string> {
+  const runId = "2026-07-21T000000Z";
+  const targetDir = path.join(home, "outside-raw");
+  const rawDir = rawPath(home, connectorId);
+
+  await mkdir(path.join(targetDir, runId), { recursive: true });
+  await writeFile(
+    path.join(targetDir, runId, "outside.json"),
+    "outside",
+    "utf8",
+  );
+  await mkdir(path.dirname(rawDir), { recursive: true });
+
+  try {
+    await symlink(targetDir, rawDir, "dir");
+  } catch (error) {
+    if (!isSymlinkPermissionError(error)) {
+      throw error;
+    }
+
+    await symlink(targetDir, rawDir, "junction");
+  }
+
+  return `${runId}/outside.json`;
 }
 
 function rawPath(

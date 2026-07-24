@@ -284,7 +284,9 @@ async function ingestAllConnectors() {
 
 async function listRawItems(connectorId: ConnectorId) {
   const rawDir = getConnectorRawDir(connectorId);
-  const files = await listFiles(rawDir, rawDir);
+  const files = (await assertExistingRawDirHasNoSymlink(rawDir))
+    ? await listFiles(rawDir, rawDir)
+    : [];
   const latestRunId = getLatestRunId(files);
 
   return {
@@ -368,17 +370,38 @@ async function assertRawItemPathHasNoSymlinks(
   rawDir: string,
   filePath: string,
 ): Promise<void> {
+  await assertPathIsNotSymlink(rawDir);
+
   const relativePath = path.relative(rawDir, filePath);
   const parts = relativePath.split(path.sep).filter(Boolean);
   let currentPath = rawDir;
 
   for (const part of parts) {
     currentPath = path.join(currentPath, part);
-    const entryStat = await lstat(currentPath);
+    await assertPathIsNotSymlink(currentPath);
+  }
+}
 
-    if (entryStat.isSymbolicLink()) {
-      throw new Error("Raw item path must not contain symbolic links.");
+async function assertExistingRawDirHasNoSymlink(
+  rawDir: string,
+): Promise<boolean> {
+  try {
+    await assertPathIsNotSymlink(rawDir);
+    return true;
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return false;
     }
+
+    throw error;
+  }
+}
+
+async function assertPathIsNotSymlink(filePath: string): Promise<void> {
+  const entryStat = await lstat(filePath);
+
+  if (entryStat.isSymbolicLink()) {
+    throw new Error("Raw item path must not contain symbolic links.");
   }
 }
 
