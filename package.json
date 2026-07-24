@@ -42,6 +42,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.103.0",
     "@anthropic-ai/vertex-sdk": "^0.19.0",
     "@aws-sdk/client-bedrock-runtime": "^3.1080.0",
     "@langchain/anthropic": "^1.5.1",

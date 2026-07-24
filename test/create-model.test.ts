@@ -138,6 +138,82 @@ describe("createModel gemini (AI Studio)", () => {
   });
 });
 
+describe("createModel anthropic auth token", () => {
+  const API_KEY = "ANTHROPIC_API_KEY";
+  const AUTH_TOKEN = "ANTHROPIC_AUTH_TOKEN";
+  const BASE_URL = "ANTHROPIC_BASE_URL";
+  let saved: Record<string, string | undefined>;
+
+  beforeEach(() => {
+    saved = {
+      [API_KEY]: process.env[API_KEY],
+      [AUTH_TOKEN]: process.env[AUTH_TOKEN],
+      [BASE_URL]: process.env[BASE_URL],
+    };
+    delete process.env[API_KEY];
+    delete process.env[AUTH_TOKEN];
+    delete process.env[BASE_URL];
+  });
+
+  afterEach(() => {
+    for (const [key, value] of Object.entries(saved)) {
+      restoreEnv(key, value);
+    }
+  });
+
+  test("sends only a bearer token (no x-api-key) when the auth token stands alone", () => {
+    process.env[AUTH_TOKEN] = "gateway-token";
+    process.env[BASE_URL] = "https://gateway.example/anthropic";
+
+    const model = createModel("anthropic", "claude-opus-4-8", 0);
+    expect(model).toBeInstanceOf(ChatAnthropic);
+
+    const config = model as {
+      apiKey?: string;
+      clientOptions?: { authToken?: string };
+      createClient?: (options: unknown) => {
+        apiKey: unknown;
+        authToken: unknown;
+      };
+    };
+    // No API key resolved, so ChatAnthropic never sets one on the client.
+    expect(config.apiKey).toBeUndefined();
+    expect(config.clientOptions?.authToken).toBe("gateway-token");
+
+    // Exercising the createClient hook proves the underlying SDK client is
+    // built with the bearer token and a null API key (so no x-api-key header).
+    const client = config.createClient?.({ authToken: "gateway-token" });
+    expect(client?.authToken).toBe("gateway-token");
+    expect(client?.apiKey).toBeNull();
+  });
+
+  test("sends both headers when an API key and auth token are both set", () => {
+    process.env[API_KEY] = "sk-key";
+    process.env[AUTH_TOKEN] = "gateway-token";
+    process.env[BASE_URL] = "https://gateway.example/anthropic";
+
+    const model = createModel("anthropic", "claude-opus-4-8", 0);
+    const config = model as {
+      apiKey?: string;
+      clientOptions?: { authToken?: string };
+    };
+    expect(config.apiKey).toBe("sk-key");
+    expect(config.clientOptions?.authToken).toBe("gateway-token");
+  });
+
+  test("uses only the API key when no auth token is set", () => {
+    process.env[API_KEY] = "sk-key";
+
+    const model = createModel("anthropic", "claude-opus-4-8", 0);
+    const config = model as {
+      apiKey?: string;
+      clientOptions?: { authToken?: string };
+    };
+    expect(config.apiKey).toBe("sk-key");
+    expect(config.clientOptions?.authToken).toBeUndefined();
+  });
+});
+
 function restoreEnv(key: string, value: string | undefined): void {
   if (value === undefined) {
     delete process.env[key];

@@ -28,6 +28,7 @@ import {
   providerRequiresSecretKey,
   resolveConfiguredProvider,
   resolveOpenRouterProviderOnly,
+  resolveProviderAuthToken,
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
@@ -142,6 +143,23 @@ describe("resolveConfiguredProvider", () => {
     );
   });
 
+  test("selects anthropic from a base URL + auth token (no API key)", () => {
+    expect(
+      resolveConfiguredProvider({
+        ANTHROPIC_AUTH_TOKEN: "t",
+        ANTHROPIC_BASE_URL: "https://gateway.example/anthropic",
+      }),
+    ).toBe("anthropic");
+  });
+
+  test("does NOT select anthropic from an auth token without a base URL", () => {
+    // The bearer token only stands in for the key when paired with a gateway
+    // base URL, so a bare token falls through to the default provider.
+    expect(resolveConfiguredProvider({ ANTHROPIC_AUTH_TOKEN: "t" })).toBe(
+      DEFAULT_PROVIDER,
+    );
+  });
+
   test("falls back to the default provider when nothing is configured", () => {
     expect(resolveConfiguredProvider({})).toBe(DEFAULT_PROVIDER);
   });
@@ -210,6 +228,27 @@ describe("resolveProviderBaseUrl", () => {
 
   test("returns undefined for a provider with no default and no override", () => {
     expect(resolveProviderBaseUrl("openai", {})).toBeUndefined();
+  });
+});
+
+describe("resolveProviderAuthToken", () => {
+  test("returns the trimmed anthropic auth token", () => {
+    expect(
+      resolveProviderAuthToken("anthropic", { ANTHROPIC_AUTH_TOKEN: " tok " }),
+    ).toBe("tok");
+  });
+
+  test("returns undefined when unset or blank", () => {
+    expect(resolveProviderAuthToken("anthropic", {})).toBeUndefined();
+    expect(
+      resolveProviderAuthToken("anthropic", { ANTHROPIC_AUTH_TOKEN: "   " }),
+    ).toBeUndefined();
+  });
+
+  test("returns undefined for providers without an auth-token env key", () => {
+    expect(
+      resolveProviderAuthToken("openai", { ANTHROPIC_AUTH_TOKEN: "tok" }),
+    ).toBeUndefined();
   });
 });
 
@@ -376,6 +415,29 @@ describe("getMissingProviderEnvKey", () => {
     expect(
       getMissingProviderEnvKey("anthropic", { ANTHROPIC_API_KEY: "k" }),
     ).toBeNull();
+  });
+
+  test("waives the anthropic API key when a base URL + auth token are set", () => {
+    expect(
+      getMissingProviderEnvKey("anthropic", {
+        ANTHROPIC_AUTH_TOKEN: "t",
+        ANTHROPIC_BASE_URL: "https://gateway.example/anthropic",
+      }),
+    ).toBeNull();
+  });
+
+  test("still requires the anthropic API key when the auth token lacks a base URL", () => {
+    expect(
+      getMissingProviderEnvKey("anthropic", { ANTHROPIC_AUTH_TOKEN: "t" }),
+    ).toBe("ANTHROPIC_API_KEY");
+  });
+
+  test("still requires the anthropic API key when the base URL lacks an auth token", () => {
+    expect(
+      getMissingProviderEnvKey("anthropic", {
+        ANTHROPIC_BASE_URL: "https://gateway.example/anthropic",
+      }),
+    ).toBe("ANTHROPIC_API_KEY");
   });
 
   test("reports the missing GCP project for gemini-enterprise", () => {

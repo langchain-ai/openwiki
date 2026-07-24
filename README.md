@@ -233,6 +233,21 @@ ANTHROPIC_API_KEY=your-key
 ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 ```
 
+Some gateways authenticate with an `Authorization: Bearer <token>` header rather
+than Anthropic's `x-api-key`. For those, set `ANTHROPIC_AUTH_TOKEN` instead of
+`ANTHROPIC_API_KEY`. When `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` are
+both set, `ANTHROPIC_API_KEY` is not required, and OpenWiki sends the token as a
+bearer header without an `x-api-key`:
+
+```bash
+OPENWIKI_PROVIDER=anthropic
+ANTHROPIC_AUTH_TOKEN=your-gateway-token
+ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
+```
+
+If you set both `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN`, OpenWiki sends
+both the `x-api-key` and the bearer header.
+
 The `openai` provider likewise supports an alternative, OpenAI-compatible
 endpoint (for example a self-hosted or proxied gateway) via `OPENAI_BASE_URL`,
 set alongside `OPENAI_API_KEY`. Baseten, Fireworks, and NVIDIA NIM can be routed
