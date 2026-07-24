@@ -94,6 +94,7 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
           connectorId: {
             type: "string",
             enum: [
+              "clickup",
               "git-repo",
               "google",
               "hackernews",
@@ -142,6 +143,7 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
           connectorId: {
             type: "string",
             enum: [
+              "clickup",
               "git-repo",
               "google",
               "hackernews",
@@ -171,6 +173,7 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
           connectorId: {
             type: "string",
             enum: [
+              "clickup",
               "git-repo",
               "google",
               "hackernews",

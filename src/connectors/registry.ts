@@ -1,3 +1,4 @@
+import { createClickUpConnector } from "./sources/clickup.js";
 import { createGitRepoConnector } from "./sources/git-repo.js";
 import { createGmailConnector } from "./sources/gmail.js";
 import { createHackerNewsConnector } from "./sources/hackernews.js";
@@ -9,6 +10,7 @@ import { createXConnector } from "./sources/x.js";
 import type { ConnectorId, ConnectorRuntime } from "./types.js";
 
 export const CONNECTOR_IDS = [
+  "clickup",
   "git-repo",
   "notion",
   "x",
@@ -24,6 +26,7 @@ export function createConnectorRegistry(): Record<
   ConnectorRuntime
 > {
   return {
+    clickup: createClickUpConnector(),
     "git-repo": createGitRepoConnector(),
     google: createGmailConnector(),
     hackernews: createHackerNewsConnector(),
