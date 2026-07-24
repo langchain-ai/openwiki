@@ -39,6 +39,13 @@ export type CliCommand =
       url: string | null;
     }
   | {
+      kind: "visualize";
+      exitCode: 0;
+      wikiDir: string;
+      port: number;
+      open: boolean;
+    }
+  | {
       kind: "ingest";
       exitCode: 0;
       modelId: string | null;
@@ -201,6 +208,64 @@ export function parseCommand(argv: string[]): CliCommand {
       port,
       url,
     };
+  }
+
+  if (argv[0] === "visualize") {
+    let wikiDir = "openwiki";
+    let port = 4321;
+    let open = true;
+    let sawPositional = false;
+    const optionArgs = argv.slice(1);
+
+    for (let index = 0; index < optionArgs.length; index += 1) {
+      const arg = optionArgs[index];
+
+      if (arg === "--no-open") {
+        open = false;
+        continue;
+      }
+
+      if (arg === "--port") {
+        const rawPort = optionArgs[index + 1];
+        if (!rawPort || rawPort.startsWith("-")) {
+          return {
+            kind: "error",
+            exitCode: 1,
+            message: "--port requires a value.",
+          };
+        }
+        port = Number(rawPort);
+        index += 1;
+        continue;
+      }
+
+      if (arg.startsWith("--port=")) {
+        port = Number(arg.slice("--port=".length));
+        continue;
+      }
+
+      if (!arg.startsWith("-") && !sawPositional) {
+        wikiDir = arg;
+        sawPositional = true;
+        continue;
+      }
+
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Unknown option for visualize: ${arg}`,
+      };
+    }
+
+    if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: "--port must be between 1024 and 65535.",
+      };
+    }
+
+    return { kind: "visualize", exitCode: 0, wikiDir, port, open };
   }
 
   if (argv[0] === "ingest") {
@@ -656,6 +721,7 @@ export const helpContent: HelpContent = {
     "openwiki cron resume all",
     "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
+    "openwiki visualize [path] [--port <port>] [--no-open]",
   ],
   commands: [
     {
@@ -716,6 +782,11 @@ export const helpContent: HelpContent = {
       description:
         "Start an ngrok tunnel for Slack OAuth, optionally using a fixed HTTPS URL.",
     },
+    {
+      label: "openwiki visualize [path]",
+      description:
+        "Serve an interactive graph and live docs reader for a generated wiki (defaults to ./openwiki).",
+    },
   ],
   options: [
     {
@@ -756,6 +827,15 @@ export const helpContent: HelpContent = {
       description:
         "Write the exact anonymous telemetry payload to a local JSON file.",
     },
+    {
+      label: "--port <port>",
+      description:
+        "For visualize: port to serve on (default 4321; increments on conflict).",
+    },
+    {
+      label: "--no-open",
+      description: "For visualize: do not open the browser automatically.",
+    },
   ],
   developmentOptions: [
     {
@@ -789,6 +869,8 @@ export const helpContent: HelpContent = {
     "openwiki auth tools notion",
     "openwiki ngrok start",
     "openwiki ngrok start https://openwiki.ngrok.app",
+    "openwiki visualize",
+    "openwiki visualize openwiki --port 4400 --no-open",
   ],
   developmentExamples: ["openwiki --dry-run"],
 };
