@@ -55,7 +55,10 @@ import type {
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_BASE_URL_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -64,8 +67,8 @@ import {
   getProviderLabel,
   getProviderBaseUrlWarnings,
   getProviderModelOptions,
-  getProviderRegionEnvKey,
   FIREWORKS_BASE_URL_ENV_KEY,
+  getProviderRegionEnvKeys,
   getProviderSecretKeyEnvKey,
   getProvidersForKnownModelId,
   isModelIdForOtherProvider,
@@ -84,6 +87,7 @@ import {
   providerRequiresBaseUrl,
   providerRequiresRegion,
   providerRequiresSecretKey,
+  providerUsesAwsSdkCredentials,
   resolveConfiguredProvider,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
@@ -134,7 +138,12 @@ export function resolveRunModel(options: OpenWikiRunOptions): ResolvedRunModel {
     );
   }
   ensureProviderCredentials(provider);
-  emitDebug(options, `credentials=${provider} present`);
+  emitDebug(
+    options,
+    providerUsesAwsSdkCredentials(provider)
+      ? `credentials=${provider} delegated-to-aws-sdk`
+      : `credentials=${provider} present`,
+  );
   ensureProviderBaseUrl(provider);
   ensureProviderSecretKey(provider);
   ensureProviderRegion(provider);
@@ -412,8 +421,10 @@ export async function runOpenWikiAgentCore(
     );
 
     // Persist metadata even when the stream fails late, so content that was
-    // already generated stays diffable by future updates. Persistence errors
-    // are swallowed here so the original run error propagates.
+    // already generated stays diffable by future updates. The run is recorded
+    // as interrupted so the next update is not skipped as a no-op against a
+    // possibly partial wiki. Persistence errors are swallowed here so the
+    // original run error propagates.
     try {
       const metadataWritten = await persistRunMetadataIfChanged(
         command,
@@ -421,6 +432,7 @@ export async function runOpenWikiAgentCore(
         modelId,
         outputMode,
         openWikiSnapshotBefore,
+        "interrupted",
       );
       emitDebug(
         options,
@@ -660,10 +672,12 @@ function ensureProviderRegion(provider: OpenWikiProvider): void {
   }
 
   if (!resolveProviderRegion(provider)) {
-    const regionEnvKey = getProviderRegionEnvKey(provider) ?? "region";
+    const regionEnvKeys = getProviderRegionEnvKeys(provider);
+    const regionRequirement =
+      regionEnvKeys.length > 0 ? regionEnvKeys.join(", ") : "region";
 
     throw new Error(
-      `${regionEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      `One of ${regionRequirement} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
     );
   }
 }
@@ -825,15 +839,7 @@ export function createModel(
   }
 
   if (provider === "bedrock") {
-    const secretKeyEnvKey = getProviderSecretKeyEnvKey(provider);
-
     return new ChatBedrockConverse({
-      credentials: {
-        accessKeyId: getProviderApiKey(provider) ?? "",
-        secretAccessKey: secretKeyEnvKey
-          ? (process.env[secretKeyEnvKey] ?? "")
-          : "",
-      },
       model: modelId,
       region: resolveProviderRegion(provider),
       ...retryOptions,
@@ -1748,11 +1754,14 @@ function formatOpenRouterDebugUrl(value: string): string {
 
 function formatEnvironmentDebug(): string {
   return DEBUG_ENV_KEYS.map(
-    (key) => `${key}:${formatDebugValue(key, process.env[key])}`,
+    (key) => `${key}:${formatEnvironmentDebugValue(key, process.env[key])}`,
   ).join(" ");
 }
 
-function formatDebugValue(key: string, value: string | undefined): string {
+export function formatEnvironmentDebugValue(
+  key: string,
+  value: string | undefined,
+): string {
   if (value === undefined) {
     return "unset";
   }
@@ -1769,7 +1778,12 @@ function formatDebugValue(key: string, value: string | undefined): string {
     return formatUrlDebugValue(value);
   }
 
-  if (key.endsWith("_API_KEY")) {
+  if (
+    key.endsWith("_API_KEY") ||
+    key === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
+    key === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY ||
+    key === BEDROCK_AWS_SESSION_TOKEN_ENV_KEY
+  ) {
     return `set(length=${value.length})`;
   }
 
