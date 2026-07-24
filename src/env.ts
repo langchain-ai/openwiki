@@ -52,9 +52,11 @@ import {
   OPENWIKI_X_CLIENT_SECRET_ENV_KEY,
   OPENWIKI_X_REFRESH_TOKEN_ENV_KEY,
   OPENWIKI_TAVILY_API_KEY_ENV_KEY,
+  OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
+  resolveMaxOutputTokens,
   resolveProviderRetryAttempts,
 } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
@@ -116,6 +118,7 @@ export const MANAGED_ENV_KEYS = [
   BEDROCK_AWS_REGION_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   OPENWIKI_NOTION_TOKEN_ENV_KEY,
   OPENWIKI_NOTION_MCP_CLIENT_ID_ENV_KEY,
@@ -360,10 +363,12 @@ function createCredentialDiagnostic(
         ? getModelWarnings(value)
         : key === OPENWIKI_PROVIDER_ENV_KEY
           ? getProviderWarnings(value)
-          : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
-            ? getRetryAttemptsWarnings(value)
-            : (getBaseUrlDiagnosticWarnings(key, value) ??
-              getCredentialWarnings(value)),
+          : key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY
+            ? getMaxOutputTokensWarnings(value)
+            : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
+              ? getRetryAttemptsWarnings(value)
+              : (getBaseUrlDiagnosticWarnings(key, value) ??
+                getCredentialWarnings(value)),
   };
 }
 
@@ -421,6 +426,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
   return (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
+    key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
     key === OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
@@ -483,6 +489,18 @@ function getRetryAttemptsWarnings(value: string): string[] {
     return [];
   } catch {
     return ["invalid retry attempts"];
+  }
+}
+
+function getMaxOutputTokensWarnings(value: string): string[] {
+  try {
+    resolveMaxOutputTokens({
+      [OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY]: value,
+    });
+
+    return [];
+  } catch {
+    return ["invalid output token limit"];
   }
 }
 

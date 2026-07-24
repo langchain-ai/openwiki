@@ -18,6 +18,7 @@ import {
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
 } from "../src/constants.ts";
@@ -52,6 +53,7 @@ const KEYS_UNDER_TEST = [
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   // Deprecated / recently un-deprecated OpenAI keys. Cleared in each hook so the
@@ -412,6 +414,20 @@ describe("getCredentialDiagnostics", () => {
     );
 
     expect(entry?.warnings).toContain("invalid provider");
+  });
+
+  test("surfaces and validates the output token limit as non-secret", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY]: "0",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"0"');
+    expect(entry?.warnings).toContain("invalid output token limit");
   });
 
   test("flags an OpenAI-compatible chat completions endpoint as a base URL warning", async () => {

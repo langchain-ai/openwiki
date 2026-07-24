@@ -436,6 +436,20 @@ OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
 
 The value must be a positive integer. If the value is unset, OpenWiki defaults to 3 retries.
 
+### Model output token limit
+
+To override the maximum number of tokens generated in a model response, set
+`OPENWIKI_MAX_OUTPUT_TOKENS`:
+
+```bash
+OPENWIKI_MAX_OUTPUT_TOKENS=8192
+```
+
+The value must be a positive integer. If unset, OpenWiki does not override the
+model client's output token limit. Provider and model limits still apply;
+unsupported values may be rejected, while very small values can truncate
+responses or tool calls.
+
 ### Diagrams
 
 OpenWiki embeds **Mermaid** diagrams in the generated wiki wherever they make a

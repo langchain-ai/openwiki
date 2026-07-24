@@ -29,6 +29,7 @@ import {
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
   resolveConfiguredProvider,
+  resolveMaxOutputTokens,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
@@ -263,6 +264,44 @@ describe("resolveProviderRetryAttempts", () => {
           OPENWIKI_PROVIDER_RETRY_ATTEMPTS: value,
         }),
       ).toThrow(/OPENWIKI_PROVIDER_RETRY_ATTEMPTS/u);
+    }
+  });
+});
+
+describe("resolveMaxOutputTokens", () => {
+  test("uses no explicit limit when no override is set", () => {
+    expect(resolveMaxOutputTokens({})).toBeUndefined();
+  });
+
+  test("accepts positive integer output token limits", () => {
+    expect(
+      resolveMaxOutputTokens({
+        OPENWIKI_MAX_OUTPUT_TOKENS: "1",
+      }),
+    ).toBe(1);
+    expect(
+      resolveMaxOutputTokens({
+        OPENWIKI_MAX_OUTPUT_TOKENS: " 8192 ",
+      }),
+    ).toBe(8192);
+  });
+
+  test("rejects invalid output token limits", () => {
+    for (const value of [
+      "",
+      "   ",
+      "0",
+      "-1",
+      "1.5",
+      "abc",
+      "1e2",
+      "9007199254740992",
+    ]) {
+      expect(() =>
+        resolveMaxOutputTokens({
+          OPENWIKI_MAX_OUTPUT_TOKENS: value,
+        }),
+      ).toThrow(/OPENWIKI_MAX_OUTPUT_TOKENS/u);
     }
   });
 });
