@@ -47,6 +47,7 @@ export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
 export const DEFAULT_VERTEX_LOCATION = "global";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
+export const OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY = "OPENWIKI_MAX_OUTPUT_TOKENS";
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
@@ -785,6 +786,34 @@ function inspectCredentialPair(
   }
 
   return { complete: hasAccessKey && hasSecretKey, missingEnvKey: null };
+}
+
+export function resolveMaxOutputTokens(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  const rawMaxOutputTokens = env[OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY];
+
+  if (rawMaxOutputTokens === undefined) {
+    return undefined;
+  }
+
+  const maxOutputTokens = rawMaxOutputTokens.trim();
+
+  if (!/^[1-9]\d*$/u.test(maxOutputTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  const parsedMaxOutputTokens = Number(maxOutputTokens);
+
+  if (!Number.isSafeInteger(parsedMaxOutputTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  return parsedMaxOutputTokens;
 }
 
 export function resolveProviderRetryAttempts(
