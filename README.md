@@ -219,7 +219,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, OmniRoute, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### Alternative base URLs
 
@@ -423,6 +423,38 @@ comma-separated provider allowlist:
 OPENWIKI_PROVIDER=openrouter
 OPENROUTER_API_KEY=your-key
 OPENWIKI_OPENROUTER_PROVIDER_ONLY=Novita
+```
+
+### OmniRoute routing
+
+OmniRoute is a multi-provider gateway that picks the upstream model for you.
+Most routing intent is expressed through the model ID itself, so no extra
+configuration is needed:
+
+```bash
+OPENWIKI_PROVIDER=omniroute
+OMNIROUTE_API_KEY=your-key
+OPENWIKI_MODEL_ID=auto/best-coding
+```
+
+Besides the `auto/*` presets offered during onboarding, you can paste any
+OmniRoute model ID — a category/tier combo such as `auto/reasoning:pro`, or a
+provider-prefixed ID such as `cc/claude-opus-4-6`.
+
+Two settings cover what a model ID cannot express:
+
+```bash
+# Routing preset or pack name (X-OmniRoute-Mode)
+OPENWIKI_OMNIROUTE_MODE=quality
+# Max USD per request (X-OmniRoute-Budget); ignored unless a positive number
+OPENWIKI_OMNIROUTE_BUDGET=0.25
+```
+
+To use a self-hosted OmniRoute gateway instead of the default endpoint, set
+`OMNIROUTE_BASE_URL`:
+
+```bash
+OMNIROUTE_BASE_URL=http://localhost:20128/v1
 ```
 
 ### Provider retry attempts

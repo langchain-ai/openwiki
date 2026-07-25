@@ -8,6 +8,10 @@ export const FIREWORKS_BASE_URL_ENV_KEY = "FIREWORKS_BASE_URL";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
 export const NVIDIA_BASE_URL_ENV_KEY = "NVIDIA_BASE_URL";
+export const OMNIROUTE_API_KEY_ENV_KEY = "OMNIROUTE_API_KEY";
+export const OMNIROUTE_BASE_URL_ENV_KEY = "OMNIROUTE_BASE_URL";
+export const OPENWIKI_OMNIROUTE_MODE_ENV_KEY = "OPENWIKI_OMNIROUTE_MODE";
+export const OPENWIKI_OMNIROUTE_BUDGET_ENV_KEY = "OPENWIKI_OMNIROUTE_BUDGET";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
@@ -81,6 +85,7 @@ export const OPENWIKI_X_REFRESH_TOKEN_ENV_KEY = "OPENWIKI_X_REFRESH_TOKEN";
 export const OPENWIKI_TAVILY_API_KEY_ENV_KEY = "TAVILY_API_KEY";
 export const DEFAULT_PROVIDER = "openai";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+export const OMNIROUTE_BASE_URL = "https://omnirouterapi.virtualpeople.net/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
@@ -91,6 +96,7 @@ export type OpenWikiProvider =
   | "gemini-enterprise"
   | "nebius"
   | "nvidia"
+  | "omniroute"
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
@@ -203,6 +209,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "gemini",
   "gemini-enterprise",
   "openrouter",
+  "omniroute",
   "openai-compatible",
   "bedrock",
   "fireworks",
@@ -328,6 +335,26 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-haiku-4-5@20251001", label: "Claude Haiku" },
       { id: "claude-sonnet-5", label: "Claude Sonnet" },
       { id: "claude-opus-4-8", label: "Claude Opus" },
+    ],
+  },
+  omniroute: {
+    apiKeyEnvKey: OMNIROUTE_API_KEY_ENV_KEY,
+    baseURL: OMNIROUTE_BASE_URL,
+    // OmniRoute also ships as a self-hosted gateway (its docs default to
+    // localhost:20128), so the base URL has to stay overridable.
+    baseUrlEnvKey: OMNIROUTE_BASE_URL_ENV_KEY,
+    label: "OmniRoute",
+    // These are routing aliases, not pinned model versions: OmniRoute resolves
+    // each one to whichever upstream model currently wins for that objective,
+    // so they do not go stale the way a versioned model id would. Provider-
+    // prefixed ids (`cc/claude-opus-4-6`) and category/tier combos
+    // (`auto/reasoning:pro`) can be pasted directly instead.
+    modelOptions: [
+      { id: "auto/best-coding", label: "Auto - Best Coding" },
+      { id: "auto/best-reasoning", label: "Auto - Best Reasoning" },
+      { id: "auto/best-fast", label: "Auto - Fastest" },
+      { id: "auto/cheap", label: "Auto - Cheapest" },
+      { id: "auto/smart", label: "Auto - Smart" },
     ],
   },
   openrouter: {
@@ -734,16 +761,18 @@ export function resolveConfiguredProvider(
                   ? "nebius"
                   : env[NVIDIA_API_KEY_ENV_KEY]
                     ? "nvidia"
-                    : hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                        ) ||
-                        hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-                        )
-                      ? "bedrock"
-                      : DEFAULT_PROVIDER)
+                    : env[OMNIROUTE_API_KEY_ENV_KEY]
+                      ? "omniroute"
+                      : hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                          ) ||
+                          hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                          )
+                        ? "bedrock"
+                        : DEFAULT_PROVIDER)
   );
 }
 
@@ -830,6 +859,43 @@ export function resolveOpenRouterProviderOnly(
     .filter((provider) => provider.length > 0);
 
   return providers.length > 0 ? providers : undefined;
+}
+
+/**
+ * Resolves the OmniRoute routing mode sent as the `X-OmniRoute-Mode` header.
+ * Deliberately not validated against OmniRoute's preset aliases (`fast`,
+ * `balanced`, `quality`, `cheap`, `reliable`, `offline`) because the gateway
+ * also accepts user-defined pack names, so an allowlist would reject valid
+ * configurations.
+ */
+export function resolveOmnirouteMode(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const mode = env[OPENWIKI_OMNIROUTE_MODE_ENV_KEY]?.trim();
+
+  return mode ? mode : undefined;
+}
+
+/**
+ * Resolves the per-request OmniRoute cost cap (USD) sent as the
+ * `X-OmniRoute-Budget` header. Returns a number rather than the raw string so a
+ * malformed value is dropped here instead of being forwarded upstream. Rejects
+ * blank, non-numeric, non-finite, and non-positive input.
+ */
+export function resolveOmnirouteBudget(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  const rawBudget = env[OPENWIKI_OMNIROUTE_BUDGET_ENV_KEY]?.trim();
+
+  if (!rawBudget) {
+    return undefined;
+  }
+
+  // Number() (not parseFloat) so trailing garbage like "1abc" is rejected
+  // rather than silently truncated to 1.
+  const budget = Number(rawBudget);
+
+  return Number.isFinite(budget) && budget > 0 ? budget : undefined;
 }
 
 export function normalizeModelId(value: string): string {

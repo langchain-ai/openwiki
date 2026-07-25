@@ -162,3 +162,23 @@ describe("parseEnv <-> formatEnv round-trip", () => {
     expect(parseEnv(formatEnv(original))).toEqual(original);
   });
 });
+
+describe("OmniRoute managed env keys", () => {
+  test("registers every OmniRoute key so it persists and reaches diagnostics", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OMNIROUTE_API_KEY");
+    expect(MANAGED_ENV_KEYS).toContain("OMNIROUTE_BASE_URL");
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_OMNIROUTE_MODE");
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_OMNIROUTE_BUDGET");
+  });
+
+  test("round-trips OmniRoute settings through formatEnv/parseEnv", () => {
+    const settings = {
+      OMNIROUTE_API_KEY: "key",
+      OMNIROUTE_BASE_URL: "http://localhost:20128/v1",
+      OPENWIKI_OMNIROUTE_MODE: "quality",
+      OPENWIKI_OMNIROUTE_BUDGET: "0.25",
+    };
+
+    expect(parseEnv(formatEnv(settings))).toEqual(settings);
+  });
+});
