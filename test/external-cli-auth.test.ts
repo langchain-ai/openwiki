@@ -8,6 +8,7 @@ vi.mock("node:child_process", () => ({
 }));
 
 import {
+  getExternalCliAuthAdapter,
   resolveExternalCliCredential,
   validateExternalCliCredential,
 } from "../src/external-cli-auth.ts";
@@ -39,10 +40,44 @@ describe("external CLI provider credentials", () => {
     expect(env.COPILOT_API_KEY).toBe("oauth-token");
     expect(execFileMock).toHaveBeenCalledWith(
       "gh",
-      ["auth", "token"],
+      ["auth", "token", "--hostname", "github.com"],
       expect.objectContaining({ timeout: 5_000 }),
       expect.any(Function),
     );
+  });
+
+  test("targets the tenant hostname when COPILOT_BASE_URL points at a GHE.com host", () => {
+    const env: NodeJS.ProcessEnv = {
+      COPILOT_BASE_URL: "https://acme.ghe.com/api/copilot",
+    };
+
+    const adapter = getExternalCliAuthAdapter("copilot", env);
+
+    expect(adapter?.commandArgs).toEqual([
+      "auth",
+      "login",
+      "--hostname",
+      "acme.ghe.com",
+    ]);
+    expect(adapter?.tokenArgs).toEqual([
+      "auth",
+      "token",
+      "--hostname",
+      "acme.ghe.com",
+    ]);
+  });
+
+  test("falls back to github.com for an unparseable COPILOT_BASE_URL", () => {
+    const env: NodeJS.ProcessEnv = { COPILOT_BASE_URL: "not-a-url" };
+
+    const adapter = getExternalCliAuthAdapter("copilot", env);
+
+    expect(adapter?.tokenArgs).toEqual([
+      "auth",
+      "token",
+      "--hostname",
+      "github.com",
+    ]);
   });
 
   test("preserves an explicitly supplied headless credential", async () => {
