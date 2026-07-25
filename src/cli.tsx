@@ -1,7 +1,9 @@
 #!/usr/bin/env node
+import path from "node:path";
 import React, { useEffect, useRef, useState } from "react";
 import { Box, render, Text, useApp, useInput } from "ink";
 import { marked, type Token, type Tokens } from "marked";
+import { writeClaudeCodeSkills } from "./integrations/claude-code.js";
 import {
   configureAuthProvider,
   listAuthProviderTools,
@@ -3739,6 +3741,8 @@ if (command.kind === "auth") {
   await runCronCommand(command);
 } else if (command.kind === "ingest") {
   await runIngestCommand(command);
+} else if (command.kind === "integration") {
+  await runIntegrationCommand(command);
 } else if (shouldPrintStartupError(argv, parsedCommand, command)) {
   process.stderr.write(`${command.message}\n`);
   process.exitCode = command.exitCode;
@@ -3758,6 +3762,29 @@ if (command.kind === "auth") {
       <App command={command} />
     </>,
   );
+}
+
+async function runIntegrationCommand(
+  command: Extract<CliCommand, { kind: "integration" }>,
+): Promise<void> {
+  try {
+    const written = await writeClaudeCodeSkills(command.targetDir);
+    process.stdout.write(
+      `Scaffolded Claude Code skills into ${path.join(command.targetDir, ".claude", "skills")}:\n` +
+        written
+          .map((file) => `  ${path.relative(command.targetDir, file)}`)
+          .join("\n") +
+        "\n\nRun /openwiki-init inside Claude Code to generate the wiki keylessly.\n",
+    );
+    process.exitCode = 0;
+  } catch (error) {
+    process.stderr.write(
+      `Failed to scaffold Claude Code skills: ${
+        error instanceof Error ? error.message : String(error)
+      }\n`,
+    );
+    process.exitCode = 1;
+  }
 }
 
 async function runNgrokCommand(
