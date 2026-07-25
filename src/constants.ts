@@ -266,6 +266,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [
       { id: "gpt-5.5", label: "GPT 5.5" },
       { id: "gpt-5.4-mini", label: "GPT 5.4 mini" },
+      { id: "claude-opus-5", label: "Claude Opus 5" },
       { id: "claude-opus-4.8", label: "Claude Opus 4.8" },
       { id: "claude-sonnet-5", label: "Claude Sonnet 5" },
       { id: "claude-sonnet-4.6", label: "Claude Sonnet 4.6" },
