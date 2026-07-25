@@ -44,6 +44,7 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  providerUsesExternalCliAuth,
   providerUsesOAuth,
   resolveConfiguredProvider,
   resolveProviderRegion,
@@ -68,10 +69,12 @@ import {
 import type { LangSmithRegion } from "./connectors/sources/langsmith/setup.js";
 import type { ConnectorId } from "./connectors/types.js";
 import {
-  detectGhCliToken,
-  isGhCliAvailable,
-  runGhAuthLogin,
-} from "./copilotAuth.js";
+  detectExternalCliCredential,
+  getExternalCliAuthAdapter,
+  isExternalCliAvailable,
+  runExternalCliLogin,
+  type ExternalCliAuthState,
+} from "./external-cli-auth.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
 import {
   getSavedEnvValue,
@@ -96,14 +99,6 @@ import {
   installConnectorSchedule,
   validateCronExpression,
 } from "./schedules.js";
-
-type CopilotAuthState =
-  | { kind: "idle" }
-  | { kind: "checking" }
-  | { kind: "detected"; token: string }
-  | { kind: "not-detected"; ghAvailable: boolean }
-  | { kind: "logging-in" }
-  | { kind: "login-failed" };
 
 export type InitSetupResult = {
   mode: OpenWikiRunMode;
@@ -143,6 +138,7 @@ type PromptStep =
   | "base-url"
   | "code-repo-confirm"
   | "code-repo-path"
+  | "external-cli-auth"
   | "final"
   | "gcp-location"
   | "gcp-project"
@@ -534,6 +530,10 @@ function credentialStep(provider: OpenWikiProvider): PromptStep | null {
 
   if (providerUsesAwsSdkCredentials(provider)) {
     return null;
+  }
+
+  if (providerUsesExternalCliAuth(provider)) {
+    return "external-cli-auth";
   }
 
   if (providerRequiresApiKey(provider)) {
@@ -936,10 +936,10 @@ export function InitSetup({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [copilotAuth, setCopilotAuth] = useState<CopilotAuthState>({
+  const [externalCliAuth, setExternalCliAuth] = useState<ExternalCliAuthState>({
     kind: "idle",
   });
-  const copilotProbeStarted = useRef(false);
+  const externalCliProbeProvider = useRef<OpenWikiProvider | null>(null);
   const { setRawMode } = useStdin();
   const [isAuthRunning, setIsAuthRunning] = useState(false);
   const [oauthTokens, setOauthTokens] = useState<CodexTokens | null>(null);
@@ -1161,37 +1161,37 @@ export function InitSetup({
 
   useEffect(() => {
     if (
-      step !== "api-key" ||
-      provider !== "copilot" ||
-      copilotProbeStarted.current
+      step !== "external-cli-auth" ||
+      !providerUsesExternalCliAuth(provider) ||
+      externalCliProbeProvider.current === provider
     ) {
       return;
     }
 
-    copilotProbeStarted.current = true;
+    externalCliProbeProvider.current = provider;
 
     let cancelled = false;
-    setCopilotAuth({ kind: "checking" });
+    setExternalCliAuth({ kind: "checking" });
 
     void (async () => {
-      const token = await detectGhCliToken();
+      const credential = await detectExternalCliCredential(provider);
 
       if (cancelled) {
         return;
       }
 
-      if (token) {
-        setCopilotAuth({ kind: "detected", token });
+      if (credential) {
+        setExternalCliAuth({ kind: "detected" });
         return;
       }
 
-      const ghAvailable = await isGhCliAvailable();
+      const cliAvailable = await isExternalCliAvailable(provider);
 
       if (cancelled) {
         return;
       }
 
-      setCopilotAuth({ kind: "not-detected", ghAvailable });
+      setExternalCliAuth({ kind: "not-detected", cliAvailable });
     })();
 
     return () => {
@@ -1199,24 +1199,24 @@ export function InitSetup({
     };
   }, [step, provider]);
 
-  async function launchGhAuthLogin() {
-    setCopilotAuth({ kind: "logging-in" });
+  async function launchExternalCliLogin() {
+    setExternalCliAuth({ kind: "logging-in" });
     setRawMode?.(false);
 
     try {
-      const success = await runGhAuthLogin();
+      const success = await runExternalCliLogin(provider);
 
       if (!success) {
-        setCopilotAuth({ kind: "login-failed" });
+        setExternalCliAuth({ kind: "login-failed" });
         return;
       }
 
-      const token = await detectGhCliToken();
+      const credential = await detectExternalCliCredential(provider);
 
-      setCopilotAuth(
-        token
-          ? { kind: "detected", token }
-          : { kind: "not-detected", ghAvailable: true },
+      setExternalCliAuth(
+        credential
+          ? { kind: "detected" }
+          : { kind: "not-detected", cliAvailable: true },
       );
     } finally {
       setRawMode?.(true);
@@ -1277,6 +1277,11 @@ export function InitSetup({
         break;
       }
       case "api-key": {
+        const envKey = getProviderApiKeyEnvKey(provider);
+        setInput(apiKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
+        break;
+      }
+      case "external-cli-auth": {
         const envKey = getProviderApiKeyEnvKey(provider);
         setInput(apiKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
         break;
@@ -1384,6 +1389,7 @@ export function InitSetup({
     const trimmed = input.trim();
     switch (from) {
       case "api-key":
+      case "external-cli-auth":
         if (trimmed) setApiKey(trimmed);
         break;
       case "secret-key":
@@ -1509,13 +1515,12 @@ export function InitSetup({
     }
 
     if (
-      step === "api-key" &&
-      provider === "copilot" &&
+      step === "external-cli-auth" &&
       key.tab &&
-      copilotAuth.kind !== "checking" &&
-      copilotAuth.kind !== "logging-in"
+      externalCliAuth.kind !== "checking" &&
+      externalCliAuth.kind !== "logging-in"
     ) {
-      void launchGhAuthLogin();
+      void launchExternalCliLogin();
       return;
     }
 
@@ -1927,19 +1932,24 @@ export function InitSetup({
       return;
     }
 
-    if (step === "api-key") {
+    if (step === "api-key" || step === "external-cli-auth") {
       const trimmedInput = input.trim();
-      // Empty submit keeps an existing key (session or env); only a genuinely
-      // missing key is an error. For Copilot, an empty submit also picks up a
-      // gh CLI-detected token when the user hasn't typed one over it.
+      const usesExternalCli = step === "external-cli-auth";
+      // Empty submit keeps an existing key (session or env). For an external
+      // CLI session it deliberately saves nothing: the CLI remains the token
+      // owner and the runtime resolves it again for this process only.
       const nextApiKey =
         trimmedInput.length > 0
           ? trimmedInput
-          : provider === "copilot" && copilotAuth.kind === "detected"
-            ? copilotAuth.token
+          : usesExternalCli && externalCliAuth.kind === "detected"
+            ? null
             : apiKey;
 
-      if (nextApiKey === null && !isCredentialConfigured(provider)) {
+      if (
+        nextApiKey === null &&
+        !(usesExternalCli && externalCliAuth.kind === "detected") &&
+        !isCredentialConfigured(provider)
+      ) {
         setError(
           `${getProviderApiKeyEnvKey(provider) ?? "API key"} is required.`,
         );
@@ -1951,7 +1961,7 @@ export function InitSetup({
       }
       setInput("");
       const nextStep =
-        nextSetupStep("api-key", provider, selectedMode, allowModeSelection) ??
+        nextSetupStep(step, provider, selectedMode, allowModeSelection) ??
         getNextStepAfterApiKey(
           provider,
           modelIdOverride,
@@ -3516,7 +3526,7 @@ export function InitSetup({
             <Prompt
               codeRepoPathInput={codeRepoPathInput}
               codeRepoRoot={codeRepoRoot}
-              copilotAuth={copilotAuth}
+              externalCliAuth={externalCliAuth}
               codeRepoSelectionIndex={codeRepoSelectionIndex}
               cronFieldSelectionIndex={cronFieldSelectionIndex}
               cronModeSelectionIndex={cronModeSelectionIndex}
@@ -3601,7 +3611,7 @@ function Prompt({
   codeRepoPathInput,
   codeRepoRoot,
   codeRepoSelectionIndex,
-  copilotAuth,
+  externalCliAuth,
   cronFieldSelectionIndex,
   cronModeSelectionIndex,
   finalSelectionIndex,
@@ -3634,7 +3644,7 @@ function Prompt({
   codeRepoPathInput: string;
   codeRepoRoot: string;
   codeRepoSelectionIndex: number;
-  copilotAuth: CopilotAuthState;
+  externalCliAuth: ExternalCliAuthState;
   cronFieldSelectionIndex: number;
   cronModeSelectionIndex: number;
   finalSelectionIndex: number;
@@ -3706,10 +3716,6 @@ function Prompt({
   }
 
   if (step === "api-key") {
-    if (provider === "copilot") {
-      return <CopilotAuthPrompt authState={copilotAuth} input={input} />;
-    }
-
     return (
       <Box flexDirection="column">
         <Text>Paste your {getApiKeyFieldLabel(provider)}.</Text>
@@ -3722,6 +3728,16 @@ function Prompt({
         />
         <Text color="gray">Press Enter to save it.</Text>
       </Box>
+    );
+  }
+
+  if (step === "external-cli-auth") {
+    return (
+      <ExternalCliAuthPrompt
+        authState={externalCliAuth}
+        input={input}
+        provider={provider}
+      />
     );
   }
 
@@ -4404,23 +4420,35 @@ function mask(value: string): string {
   return "*".repeat(value.length);
 }
 
-function CopilotAuthPrompt({
+function ExternalCliAuthPrompt({
   authState,
   input,
+  provider,
 }: {
-  authState: CopilotAuthState;
+  authState: ExternalCliAuthState;
   input: string;
+  provider: OpenWikiProvider;
 }) {
+  const adapter = getExternalCliAuthAdapter(provider);
+  const envKey = getProviderApiKeyEnvKey(provider) ?? "API key";
+
+  if (!adapter) {
+    return null;
+  }
+
   if (authState.kind === "idle" || authState.kind === "checking") {
     return (
-      <Text color="gray">Checking for an existing GitHub CLI session...</Text>
+      <Text color="gray">
+        Checking for an existing {adapter.credentialDescription}...
+      </Text>
     );
   }
 
   if (authState.kind === "logging-in") {
     return (
       <Text color="gray">
-        Running `gh auth login` — follow the prompts in this terminal...
+        Running `{adapter.loginCommand}` — follow the prompts in this
+        terminal...
       </Text>
     );
   }
@@ -4428,15 +4456,15 @@ function CopilotAuthPrompt({
   if (authState.kind === "detected") {
     return (
       <Box flexDirection="column">
-        <Text>Detected an existing GitHub CLI session.</Text>
+        <Text>Detected an existing {adapter.credentialDescription}.</Text>
         <Text color="gray">
           Press Enter to use it, Tab to sign in again, or paste a different
           token below.
         </Text>
         <Text>
-          <Text color="gray">$</Text> COPILOT_API_KEY={" "}
+          <Text color="gray">$</Text> {envKey}={" "}
           <Text color="yellow">
-            {input.length > 0 ? mask(input) : "<from gh auth token>"}
+            {input.length > 0 ? mask(input) : `<from ${adapter.name}>`}
           </Text>
         </Text>
       </Box>
@@ -4445,22 +4473,24 @@ function CopilotAuthPrompt({
 
   return (
     <Box flexDirection="column">
-      <Text>No GitHub CLI session detected.</Text>
+      <Text>No {adapter.credentialDescription} detected.</Text>
       {authState.kind === "login-failed" ? (
-        <Text color="red">`gh auth login` did not complete successfully.</Text>
+        <Text color="red">
+          `{adapter.loginCommand}` did not complete successfully.
+        </Text>
       ) : null}
-      {authState.kind === "not-detected" && authState.ghAvailable ? (
+      {authState.kind === "not-detected" && authState.cliAvailable ? (
         <Text color="gray">
-          Press Tab to run `gh auth login`, or paste a GitHub OAuth token below.
+          Press Tab to run `{adapter.loginCommand}`, or paste a token below.
         </Text>
       ) : (
         <Text color="gray">
-          Install the GitHub CLI (https://cli.github.com), run `gh auth login`,
-          then paste the output of `gh auth token` below.
+          {adapter.installHint} You can also paste a token below for CI or other
+          headless use.
         </Text>
       )}
       <Text>
-        <Text color="gray">$</Text> COPILOT_API_KEY={" "}
+        <Text color="gray">$</Text> {envKey}={" "}
         <Text color="yellow">{mask(input)}</Text>
       </Text>
       <Text color="gray">Press Enter to save it.</Text>

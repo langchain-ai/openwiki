@@ -105,7 +105,15 @@ export type OpenWikiProvider =
  * browser login flow and persist short-lived access/refresh tokens. `"aws-sdk"`
  * providers delegate authentication to the AWS SDK credential provider chain.
  */
-export type ProviderAuthMethod = "api-key" | "aws-sdk" | "oauth";
+export type ProviderAuthMethod =
+  "api-key" | "aws-sdk" | "external-cli" | "oauth";
+
+/**
+ * A CLI that owns a provider credential and can perform its own interactive
+ * login. The provider config only declares the adapter; its implementation
+ * lives outside this declarative provider registry.
+ */
+export type ExternalCliAuthAdapter = "github-cli";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -155,6 +163,8 @@ type ProviderConfig = {
    * pasted-key setup step with a browser login and store tokens instead.
    */
   authMethod?: ProviderAuthMethod;
+  /** Adapter used when {@link authMethod} is `"external-cli"`. */
+  externalCliAuthAdapter?: ExternalCliAuthAdapter;
   baseURL?: string;
   /**
    * Environment variable that, when set, overrides {@link ProviderConfig.baseURL}
@@ -197,6 +207,12 @@ type ProviderConfig = {
    * supported region environment variables.
    */
   requiresRegion?: boolean;
+  /**
+   * Whether a model family is served through the OpenAI Responses API rather
+   * than chat completions. `true` applies to every model; a pattern applies to
+   * matching model IDs only.
+   */
+  responsesApi?: boolean | RegExp;
 };
 
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
@@ -242,8 +258,10 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   },
   copilot: {
     apiKeyEnvKey: COPILOT_API_KEY_ENV_KEY,
+    authMethod: "external-cli",
     baseURL: "https://api.githubcopilot.com",
     baseUrlEnvKey: COPILOT_BASE_URL_ENV_KEY,
+    externalCliAuthAdapter: "github-cli",
     label: "GitHub Copilot",
     modelOptions: [
       { id: "gpt-5.5", label: "GPT 5.5" },
@@ -255,6 +273,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-fable-5", label: "Claude Fable 5" },
       { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
     ],
+    responsesApi: /^gpt-5/u,
   },
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
@@ -303,6 +322,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     baseUrlEnvKey: OPENAI_BASE_URL_ENV_KEY,
     label: "OpenAI",
     modelOptions: OPENAI_MODEL_OPTIONS,
+    responsesApi: true,
   },
   "openai-chatgpt": {
     apiKeyEnvKey: OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
@@ -403,10 +423,33 @@ export function providerUsesAwsSdkCredentials(
   return getProviderAuthMethod(provider) === "aws-sdk";
 }
 
+export function providerUsesExternalCliAuth(
+  provider: OpenWikiProvider,
+): boolean {
+  return getProviderAuthMethod(provider) === "external-cli";
+}
+
+export function getProviderExternalCliAuthAdapter(
+  provider: OpenWikiProvider,
+): ExternalCliAuthAdapter | undefined {
+  return getProviderConfig(provider).externalCliAuthAdapter;
+}
+
 export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
   return (
     getProviderAuthMethod(provider) === "api-key" &&
     getProviderConfig(provider).apiKeyEnvKey !== undefined
+  );
+}
+
+export function providerUsesResponsesApi(
+  provider: OpenWikiProvider,
+  modelId: string,
+): boolean {
+  const setting = getProviderConfig(provider).responsesApi;
+
+  return (
+    setting === true || (setting instanceof RegExp && setting.test(modelId))
   );
 }
 
@@ -524,6 +567,15 @@ export function getProviderCredentialHint(
       "Configure the AWS SDK credential chain with OIDC/web identity, an IAM " +
       "role, AWS_PROFILE/SSO, or standard AWS environment credentials."
     );
+  }
+
+  if (providerUsesExternalCliAuth(provider)) {
+    const adapter = getProviderExternalCliAuthAdapter(provider);
+
+    return adapter === "github-cli"
+      ? "Authenticate with the GitHub CLI (gh auth login) using a Copilot-enabled account, or set " +
+          `${getProviderApiKeyEnvKey(provider)} for CI and other headless runs.`
+      : null;
   }
 
   return null;

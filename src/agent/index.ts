@@ -59,7 +59,6 @@ import {
   BEDROCK_AWS_REGION_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
-  COPILOT_API_KEY_ENV_KEY,
   COPILOT_BASE_URL_ENV_KEY,
   getDefaultModelId,
   getMissingProviderEnvKey,
@@ -90,6 +89,8 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  providerUsesExternalCliAuth,
+  providerUsesResponsesApi,
   resolveConfiguredProvider,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
@@ -98,6 +99,10 @@ import {
   resolveProviderRetryAttempts,
   type OpenWikiProvider,
 } from "../constants.js";
+import {
+  resolveExternalCliCredential,
+  validateExternalCliCredential,
+} from "../external-cli-auth.js";
 import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
@@ -172,6 +177,11 @@ export async function runOpenWikiAgent(
         options,
         `provider.baseUrl=${formatUrlDebugValue(providerBaseUrl)}`,
       );
+    }
+    await resolveExternalCliCredential(provider);
+    const providerApiKey = getProviderApiKey(provider);
+    if (providerUsesExternalCliAuth(provider) && providerApiKey) {
+      validateExternalCliCredential(provider, providerApiKey);
     }
     ensureProviderCredentials(provider);
     emitDebug(
@@ -758,29 +768,6 @@ export function createModel(
 
   const baseURL = resolveProviderBaseUrl(provider);
 
-  if (provider === "copilot") {
-    const apiKey = process.env[COPILOT_API_KEY_ENV_KEY] ?? "";
-
-    // The Copilot API rejects Personal Access Tokens for third-party
-    // integrations; only GitHub OAuth tokens work here.
-    if (/^(ghp_|github_pat_)/u.test(apiKey)) {
-      throw new Error(
-        `The GitHub Copilot API does not accept Personal Access Tokens. Set ${COPILOT_API_KEY_ENV_KEY} to a GitHub OAuth token from a Copilot-enabled account (for example the output of \`gh auth token\`).`,
-      );
-    }
-
-    return new ChatOpenAI({
-      apiKey,
-      configuration: {
-        baseURL,
-      },
-      model: modelId,
-      // The Copilot API serves GPT-5-family models only through the
-      // Responses API and other models only through chat completions.
-      useResponsesApi: /^gpt-5/u.test(modelId),
-    });
-  }
-
   return new ChatOpenAI({
     apiKey: getProviderApiKey(provider),
     configuration: baseURL
@@ -789,7 +776,7 @@ export function createModel(
         }
       : undefined,
     model: modelId,
-    useResponsesApi: provider === "openai",
+    useResponsesApi: providerUsesResponsesApi(provider, modelId),
     ...retryOptions,
   });
 }

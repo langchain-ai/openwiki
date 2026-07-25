@@ -228,14 +228,13 @@ The GitHub Copilot provider routes inference through the OpenAI-compatible Copil
 1. Select `GitHub Copilot` as the provider during `openwiki --init`. If you already have an active [GitHub CLI](https://cli.github.com) session, OpenWiki detects it automatically and offers to reuse it — no manual token entry needed. Otherwise, press <kbd>Tab</kbd> at the credential prompt to run `gh auth login` right there and sign in.
 2. Choose a model (for example `gpt-5.5`).
 
-You can also set `COPILOT_API_KEY` yourself (a GitHub **OAuth token**, for example the output of `gh auth token`). Personal Access Tokens (classic or fine-grained) are rejected by the Copilot API for third-party integrations and will not work, even though the GitHub Copilot CLI itself accepts them.
+OpenWiki leaves the GitHub CLI token in the GitHub CLI's own credential store; it does not copy that token into `~/.openwiki/.env`. For CI or another headless environment without a GitHub CLI session, set `COPILOT_API_KEY` explicitly to a GitHub **OAuth token**. Personal Access Tokens (classic or fine-grained) are rejected by the Copilot API for third-party integrations and will not work, even though the GitHub Copilot CLI itself accepts them.
 
-The resulting `~/.openwiki/.env` looks like:
+The resulting local provider configuration can stay token-free:
 
 ```env
 OPENWIKI_PROVIDER="copilot"
 OPENWIKI_MODEL_ID="gpt-5.5"
-COPILOT_API_KEY="<your-copilot-token>"
 ```
 
 In CI (such as the scheduled GitHub Actions workflow), set the `COPILOT_API_KEY` repository secret and export `OPENWIKI_PROVIDER=copilot` in the workflow environment.
