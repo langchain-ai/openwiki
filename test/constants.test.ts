@@ -24,11 +24,16 @@ import {
   NVIDIA_BASE_URL_ENV_KEY,
   normalizeModelId,
   normalizeProvider,
+  OMNIROUTE_BASE_URL,
+  OMNIROUTE_BASE_URL_ENV_KEY,
   providerRequiresApiKey,
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  providerUsesOAuth,
   resolveConfiguredProvider,
+  resolveOmnirouteBudget,
+  resolveOmnirouteMode,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
@@ -675,5 +680,147 @@ describe("isModelIdForOtherProvider", () => {
     expect(isModelIdForOtherProvider("  claude-opus-4-8  ", "openai")).toBe(
       true,
     );
+  });
+});
+
+describe("omniroute provider", () => {
+  test("is a recognized, normalizable provider id", () => {
+    expect(normalizeProvider("  OmniRoute ")).toBe("omniroute");
+    expect(normalizeProvider("OMNIROUTE")).toBe("omniroute");
+    expect(isValidProvider("omniroute")).toBe(true);
+  });
+
+  test("defaults to the hosted gateway base URL", () => {
+    expect(resolveProviderBaseUrl("omniroute", {})).toBe(OMNIROUTE_BASE_URL);
+    expect(OMNIROUTE_BASE_URL).toBe(
+      "https://omnirouterapi.virtualpeople.net/v1",
+    );
+  });
+
+  test("honors a self-hosted base URL override", () => {
+    expect(
+      resolveProviderBaseUrl("omniroute", {
+        [OMNIROUTE_BASE_URL_ENV_KEY]: "http://localhost:20128/v1",
+      }),
+    ).toBe("http://localhost:20128/v1");
+  });
+
+  test("authenticates with a plain API key", () => {
+    expect(getProviderApiKeyEnvKey("omniroute")).toBe("OMNIROUTE_API_KEY");
+    expect(getProviderAuthMethod("omniroute")).toBe("api-key");
+    expect(providerRequiresApiKey("omniroute")).toBe(true);
+    expect(providerUsesOAuth("omniroute")).toBe(false);
+    expect(providerUsesAwsSdkCredentials("omniroute")).toBe(false);
+    expect(providerRequiresSecretKey("omniroute")).toBe(false);
+    expect(providerRequiresRegion("omniroute")).toBe(false);
+  });
+
+  test("reports a missing API key until one is set", () => {
+    expect(getMissingProviderEnvKey("omniroute", {})).toBe("OMNIROUTE_API_KEY");
+    expect(
+      getMissingProviderEnvKey("omniroute", { OMNIROUTE_API_KEY: "key" }),
+    ).toBeNull();
+  });
+
+  test("offers auto/* routing aliases and defaults to best-coding", () => {
+    expect(
+      getProviderModelOptions("omniroute").map((model) => model.id),
+    ).toEqual([
+      "auto/best-coding",
+      "auto/best-reasoning",
+      "auto/best-fast",
+      "auto/cheap",
+      "auto/smart",
+    ]);
+    expect(getDefaultModelId("omniroute")).toBe("auto/best-coding");
+  });
+
+  test("is inferred from OMNIROUTE_API_KEY alone", () => {
+    expect(resolveConfiguredProvider({ OMNIROUTE_API_KEY: "key" })).toBe(
+      "omniroute",
+    );
+  });
+
+  test("does not take precedence over already-supported providers", () => {
+    // OmniRoute is appended at the tail of the inference chain, so an existing
+    // user who adds an OmniRoute key keeps their current provider.
+    expect(
+      resolveConfiguredProvider({
+        OPENAI_API_KEY: "key",
+        OMNIROUTE_API_KEY: "key",
+      }),
+    ).toBe("openai");
+    expect(
+      resolveConfiguredProvider({
+        NVIDIA_API_KEY: "key",
+        OMNIROUTE_API_KEY: "key",
+      }),
+    ).toBe("nvidia");
+    // ...but an explicit OPENWIKI_PROVIDER still wins.
+    expect(
+      resolveConfiguredProvider({
+        OPENAI_API_KEY: "key",
+        OMNIROUTE_API_KEY: "key",
+        OPENWIKI_PROVIDER: "omniroute",
+      }),
+    ).toBe("omniroute");
+  });
+});
+
+describe("resolveOmnirouteMode", () => {
+  test("returns undefined when unset or blank", () => {
+    expect(resolveOmnirouteMode({})).toBeUndefined();
+    expect(
+      resolveOmnirouteMode({ OPENWIKI_OMNIROUTE_MODE: "   " }),
+    ).toBeUndefined();
+    expect(
+      resolveOmnirouteMode({ OPENWIKI_OMNIROUTE_MODE: "" }),
+    ).toBeUndefined();
+  });
+
+  test("trims a configured mode", () => {
+    expect(
+      resolveOmnirouteMode({ OPENWIKI_OMNIROUTE_MODE: "  quality " }),
+    ).toBe("quality");
+  });
+
+  test("passes through raw pack names without allowlisting", () => {
+    // OmniRoute accepts preset aliases *and* user-defined pack names, so an
+    // allowlist here would reject valid configurations.
+    expect(
+      resolveOmnirouteMode({ OPENWIKI_OMNIROUTE_MODE: "my-custom-pack" }),
+    ).toBe("my-custom-pack");
+  });
+});
+
+describe("resolveOmnirouteBudget", () => {
+  test("returns undefined when unset", () => {
+    expect(resolveOmnirouteBudget({})).toBeUndefined();
+  });
+
+  test("parses a positive budget", () => {
+    expect(resolveOmnirouteBudget({ OPENWIKI_OMNIROUTE_BUDGET: "0.25" })).toBe(
+      0.25,
+    );
+    expect(resolveOmnirouteBudget({ OPENWIKI_OMNIROUTE_BUDGET: " 2 " })).toBe(
+      2,
+    );
+  });
+
+  test("rejects non-numeric, non-positive, and non-finite values", () => {
+    for (const raw of [
+      "",
+      "   ",
+      "abc",
+      "1abc",
+      "0",
+      "-1",
+      "Infinity",
+      "NaN",
+    ]) {
+      expect(
+        resolveOmnirouteBudget({ OPENWIKI_OMNIROUTE_BUDGET: raw }),
+      ).toBeUndefined();
+    }
   });
 });

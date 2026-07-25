@@ -89,6 +89,8 @@ import {
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
   resolveConfiguredProvider,
+  resolveOmnirouteBudget,
+  resolveOmnirouteMode,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
@@ -755,18 +757,45 @@ export function createModel(
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
+  // OmniRoute needs no dedicated branch: its routing surface is HTTP headers
+  // plus the model id itself (`auto/cheap`, `auto/reasoning:pro`), unlike
+  // OpenRouter's body-level `provider.only`. So it rides the shared
+  // OpenAI-compatible path and only contributes headers.
+  const defaultHeaders =
+    provider === "omniroute" ? buildOmnirouteHeaders() : undefined;
 
   return new ChatOpenAI({
     apiKey: getProviderApiKey(provider),
-    configuration: baseURL
-      ? {
-          baseURL,
-        }
-      : undefined,
+    configuration:
+      baseURL || defaultHeaders
+        ? {
+            ...(baseURL ? { baseURL } : {}),
+            ...(defaultHeaders ? { defaultHeaders } : {}),
+          }
+        : undefined,
     model: modelId,
     useResponsesApi: provider === "openai",
     ...retryOptions,
   });
+}
+
+/**
+ * Builds the optional OmniRoute routing headers, or `undefined` when neither
+ * routing setting is configured. A malformed budget is dropped by
+ * `resolveOmnirouteBudget` rather than forwarded upstream.
+ */
+function buildOmnirouteHeaders(): Record<string, string> | undefined {
+  const mode = resolveOmnirouteMode();
+  const budget = resolveOmnirouteBudget();
+
+  if (mode === undefined && budget === undefined) {
+    return undefined;
+  }
+
+  return {
+    ...(mode === undefined ? {} : { "X-OmniRoute-Mode": mode }),
+    ...(budget === undefined ? {} : { "X-OmniRoute-Budget": String(budget) }),
+  };
 }
 
 const CHATGPT_LOGIN_INCOMPLETE_MESSAGE =

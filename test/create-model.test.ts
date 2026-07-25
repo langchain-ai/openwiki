@@ -138,6 +138,121 @@ describe("createModel gemini (AI Studio)", () => {
   });
 });
 
+describe("createModel omniroute", () => {
+  const API_KEY = "OMNIROUTE_API_KEY";
+  const BASE_URL_KEY = "OMNIROUTE_BASE_URL";
+  const MODE_KEY = "OPENWIKI_OMNIROUTE_MODE";
+  const BUDGET_KEY = "OPENWIKI_OMNIROUTE_BUDGET";
+  const saved: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    for (const key of [API_KEY, BASE_URL_KEY, MODE_KEY, BUDGET_KEY]) {
+      saved[key] = process.env[key];
+      delete process.env[key];
+    }
+
+    process.env[API_KEY] = "test-omniroute-key";
+  });
+
+  afterEach(() => {
+    for (const key of [API_KEY, BASE_URL_KEY, MODE_KEY, BUDGET_KEY]) {
+      restoreEnv(key, saved[key]);
+    }
+  });
+
+  test("targets the hosted gateway with no routing headers by default", () => {
+    const model = createModel("omniroute", "auto/best-coding", 0);
+
+    expect(model).toBeInstanceOf(ChatOpenAI);
+    expect(modelName(model)).toBe("auto/best-coding");
+    expect(clientConfig(model).baseURL).toBe(
+      "https://omnirouterapi.virtualpeople.net/v1",
+    );
+    expect(clientConfig(model).defaultHeaders).toBeUndefined();
+  });
+
+  test("honors a self-hosted base URL override", () => {
+    process.env[BASE_URL_KEY] = "http://localhost:20128/v1";
+
+    const model = createModel("omniroute", "auto/best-coding", 0);
+
+    expect(clientConfig(model).baseURL).toBe("http://localhost:20128/v1");
+  });
+
+  test("sends X-OmniRoute-Mode when a mode is configured", () => {
+    process.env[MODE_KEY] = "quality";
+
+    const headers = clientConfig(
+      createModel("omniroute", "auto/best-coding", 0),
+    ).defaultHeaders;
+
+    expect(headers).toEqual({ "X-OmniRoute-Mode": "quality" });
+  });
+
+  test("sends X-OmniRoute-Budget when a budget is configured", () => {
+    process.env[BUDGET_KEY] = "0.25";
+
+    const headers = clientConfig(
+      createModel("omniroute", "auto/best-coding", 0),
+    ).defaultHeaders;
+
+    expect(headers).toEqual({ "X-OmniRoute-Budget": "0.25" });
+  });
+
+  test("sends both routing headers when both are configured", () => {
+    process.env[MODE_KEY] = "cheap";
+    process.env[BUDGET_KEY] = "2";
+
+    const headers = clientConfig(
+      createModel("omniroute", "auto/cheap", 0),
+    ).defaultHeaders;
+
+    expect(headers).toEqual({
+      "X-OmniRoute-Mode": "cheap",
+      "X-OmniRoute-Budget": "2",
+    });
+  });
+
+  test("drops a malformed budget instead of failing the run", () => {
+    process.env[BUDGET_KEY] = "abc";
+
+    let model: unknown;
+    expect(() => {
+      model = createModel("omniroute", "auto/best-coding", 0);
+    }).not.toThrow();
+    expect(clientConfig(model).defaultHeaders).toBeUndefined();
+  });
+
+  test("does not leak routing headers onto other OpenAI-compatible providers", () => {
+    process.env[MODE_KEY] = "quality";
+    process.env.NEBIUS_API_KEY = "test-nebius-key";
+
+    try {
+      const model = createModel("nebius", "moonshotai/Kimi-K2.6", 0);
+
+      expect(clientConfig(model).defaultHeaders).toBeUndefined();
+    } finally {
+      delete process.env.NEBIUS_API_KEY;
+    }
+  });
+});
+
+function clientConfig(model: unknown): {
+  baseURL?: string;
+  defaultHeaders?: Record<string, string>;
+} {
+  return (
+    (
+      model as {
+        clientConfig?: {
+          baseURL?: string;
+          defaultHeaders?: Record<string, string>;
+        };
+      }
+    ).clientConfig ?? {}
+  );
+}
+
 function restoreEnv(key: string, value: string | undefined): void {
   if (value === undefined) {
     delete process.env[key];

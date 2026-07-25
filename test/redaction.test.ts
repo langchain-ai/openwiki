@@ -64,12 +64,18 @@ describe("sanitizeDiagnosticText", () => {
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
   const originalOpenAiCompatibleKey = process.env.OPENAI_COMPATIBLE_API_KEY;
   const originalNvidiaKey = process.env.NVIDIA_API_KEY;
+  const originalOmnirouteKey = process.env.OMNIROUTE_API_KEY;
+  const originalOmnirouteMode = process.env.OPENWIKI_OMNIROUTE_MODE;
+  const originalOmnirouteBudget = process.env.OPENWIKI_OMNIROUTE_BUDGET;
 
   beforeEach(() => {
     delete process.env.NEBIUS_API_KEY;
     delete process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_COMPATIBLE_API_KEY;
     delete process.env.NVIDIA_API_KEY;
+    delete process.env.OMNIROUTE_API_KEY;
+    delete process.env.OPENWIKI_OMNIROUTE_MODE;
+    delete process.env.OPENWIKI_OMNIROUTE_BUDGET;
   });
 
   afterEach(() => {
@@ -95,6 +101,24 @@ describe("sanitizeDiagnosticText", () => {
     } else {
       process.env.NVIDIA_API_KEY = originalNvidiaKey;
     }
+
+    if (originalOmnirouteKey === undefined) {
+      delete process.env.OMNIROUTE_API_KEY;
+    } else {
+      process.env.OMNIROUTE_API_KEY = originalOmnirouteKey;
+    }
+
+    if (originalOmnirouteMode === undefined) {
+      delete process.env.OPENWIKI_OMNIROUTE_MODE;
+    } else {
+      process.env.OPENWIKI_OMNIROUTE_MODE = originalOmnirouteMode;
+    }
+
+    if (originalOmnirouteBudget === undefined) {
+      delete process.env.OPENWIKI_OMNIROUTE_BUDGET;
+    } else {
+      process.env.OPENWIKI_OMNIROUTE_BUDGET = originalOmnirouteBudget;
+    }
   });
 
   test("redacts the exact value of a secret set in the environment", () => {
@@ -117,6 +141,31 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("nebius-secret-value-12345");
     expect(result).toContain("[REDACTED:NEBIUS_API_KEY]");
+  });
+
+  test("redacts the OmniRoute API key when set in the environment", () => {
+    process.env.OMNIROUTE_API_KEY = "omniroute-secret-value-12345";
+
+    const result = sanitizeDiagnosticText(
+      "request failed with key omniroute-secret-value-12345 attached",
+    );
+
+    expect(result).not.toContain("omniroute-secret-value-12345");
+    expect(result).toContain("[REDACTED:OMNIROUTE_API_KEY]");
+  });
+
+  test("keeps OmniRoute routing settings readable", () => {
+    // Mode and budget are operational config, not credentials. Redacting them
+    // would make routing problems undiagnosable.
+    process.env.OPENWIKI_OMNIROUTE_MODE = "quality";
+    process.env.OPENWIKI_OMNIROUTE_BUDGET = "0.5";
+
+    const result = sanitizeDiagnosticText(
+      "routing with mode quality and budget 0.5",
+    );
+
+    expect(result).toContain("quality");
+    expect(result).toContain("0.5");
   });
 
   test("redacts the exact value of NVIDIA_API_KEY when set", () => {
