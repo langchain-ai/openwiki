@@ -8,6 +8,7 @@ import {
   getOAuthAuthorizationStatusText,
   hydrateRunModeConfig,
   needsCredentialSetup,
+  needsLangSmithStep,
   nextSetupStep,
   orderedSetupSteps,
   resolveStepStatus,
@@ -15,6 +16,17 @@ import {
 import type { OpenWikiOnboardingConfig } from "../src/onboarding.ts";
 
 const ENV_KEYS = [
+  "AWS_ACCESS_KEY_ID",
+  "AWS_DEFAULT_REGION",
+  "AWS_REGION",
+  "AWS_ROLE_ARN",
+  "AWS_SECRET_ACCESS_KEY",
+  "AWS_SESSION_TOKEN",
+  "AWS_WEB_IDENTITY_TOKEN_FILE",
+  "AWS_BEARER_TOKEN_BEDROCK",
+  "BEDROCK_AWS_ACCESS_KEY_ID",
+  "BEDROCK_AWS_REGION",
+  "BEDROCK_AWS_SECRET_ACCESS_KEY",
   "LANGSMITH_API_KEY",
   "OPENROUTER_API_KEY",
   "OPENWIKI_MODEL_ID",
@@ -45,6 +57,35 @@ describe("needsCredentialSetup", () => {
     process.env.LANGSMITH_API_KEY = "lsv2_placeholder";
 
     expect(needsCredentialSetup()).toBe(true);
+  });
+});
+
+describe("needsLangSmithStep", () => {
+  test("is required when neither a key nor a tracing decision is present", () => {
+    // Fresh install: the optional step has never been answered.
+    expect(needsLangSmithStep({})).toBe(true);
+  });
+
+  test("is not required after skipping (no key, tracing recorded as false)", () => {
+    // Skipping strips the empty LANGSMITH_API_KEY but records the decision in
+    // LANGCHAIN_TRACING_V2. This is the state that used to re-nag every run.
+    expect(needsLangSmithStep({ LANGCHAIN_TRACING_V2: "false" })).toBe(false);
+  });
+
+  test("is not required after entering a key (tracing recorded as true)", () => {
+    expect(
+      needsLangSmithStep({
+        LANGSMITH_API_KEY: "lsv2_real",
+        LANGCHAIN_TRACING_V2: "true",
+      }),
+    ).toBe(false);
+  });
+
+  test("is not required when a key is present without a tracing flag", () => {
+    // e.g. a shell-provided LANGSMITH_API_KEY: don't nag someone who has a key.
+    expect(needsLangSmithStep({ LANGSMITH_API_KEY: "lsv2_from_shell" })).toBe(
+      false,
+    );
   });
 });
 
@@ -164,12 +205,17 @@ describe("orderedSetupSteps", () => {
     );
   });
 
-  test("bedrock adds secret-key and region before model", () => {
-    const spine = orderedSetupSteps("bedrock", "code", false);
-    expect(spine).toContain("secret-key");
-    expect(spine).toContain("region");
-    expect(spine.indexOf("secret-key")).toBeLessThan(spine.indexOf("model"));
-    expect(spine.indexOf("region")).toBeLessThan(spine.indexOf("model"));
+  test("bedrock delegates AWS credentials and only prompts for region", () => {
+    delete process.env.BEDROCK_AWS_ACCESS_KEY_ID;
+    delete process.env.BEDROCK_AWS_SECRET_ACCESS_KEY;
+
+    expect(orderedSetupSteps("bedrock", "code", false)).toEqual([
+      "provider",
+      "region",
+      "model",
+      "langsmith",
+      "code-repo-confirm",
+    ]);
   });
 
   test("personal mode ends at langsmith with no template chooser or code tail", () => {
@@ -206,12 +252,61 @@ describe("getInitialStep", () => {
       "run-mode",
     );
   });
+
+  test("bedrock accepts ambient OIDC credentials and a standard AWS region", () => {
+    process.env.OPENWIKI_PROVIDER = "bedrock";
+    process.env.AWS_ROLE_ARN = "arn:aws:iam::123456789012:role/openwiki";
+    process.env.AWS_WEB_IDENTITY_TOKEN_FILE = "/var/run/secrets/aws/token";
+    process.env.AWS_REGION = "us-east-1";
+    delete process.env.AWS_DEFAULT_REGION;
+    delete process.env.AWS_ACCESS_KEY_ID;
+    delete process.env.AWS_SECRET_ACCESS_KEY;
+    delete process.env.AWS_SESSION_TOKEN;
+    delete process.env.AWS_BEARER_TOKEN_BEDROCK;
+    delete process.env.BEDROCK_AWS_ACCESS_KEY_ID;
+    delete process.env.BEDROCK_AWS_SECRET_ACCESS_KEY;
+    delete process.env.BEDROCK_AWS_REGION;
+    delete process.env.OPENWIKI_MODEL_ID;
+
+    expect(getInitialStep(null, "bedrock")).toBe("model");
+  });
+
+  test("bedrock routes incomplete legacy credentials to the repair gate", () => {
+    process.env.OPENWIKI_PROVIDER = "bedrock";
+    process.env.BEDROCK_AWS_ACCESS_KEY_ID = "partial-access";
+    delete process.env.BEDROCK_AWS_SECRET_ACCESS_KEY;
+    process.env.AWS_REGION = "us-east-1";
+    process.env.OPENWIKI_MODEL_ID = "anthropic.claude-sonnet-5";
+    process.env.LANGSMITH_API_KEY = "lsv2_placeholder";
+
+    expect(getInitialStep(null, "bedrock")).toBe("region");
+  });
+
+  test("bedrock routes incomplete standard credentials to the repair gate", () => {
+    process.env.OPENWIKI_PROVIDER = "bedrock";
+    delete process.env.BEDROCK_AWS_ACCESS_KEY_ID;
+    delete process.env.BEDROCK_AWS_SECRET_ACCESS_KEY;
+    process.env.AWS_ACCESS_KEY_ID = "partial-access";
+    delete process.env.AWS_SECRET_ACCESS_KEY;
+    process.env.AWS_REGION = "us-east-1";
+    process.env.OPENWIKI_MODEL_ID = "anthropic.claude-sonnet-5";
+    process.env.LANGSMITH_API_KEY = "lsv2_placeholder";
+
+    expect(getInitialStep(null, "bedrock")).toBe("region");
+  });
 });
 
 describe("nextSetupStep", () => {
   test("walks forward through the spine", () => {
     expect(nextSetupStep("provider", "openai", "code", false)).toBe("api-key");
     expect(nextSetupStep("api-key", "openai", "code", false)).toBe("model");
+  });
+
+  test("moves from bedrock provider selection directly to region", () => {
+    delete process.env.BEDROCK_AWS_ACCESS_KEY_ID;
+    delete process.env.BEDROCK_AWS_SECRET_ACCESS_KEY;
+
+    expect(nextSetupStep("provider", "bedrock", "code", false)).toBe("region");
   });
 
   test("no-op at the end and for null", () => {

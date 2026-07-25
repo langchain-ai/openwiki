@@ -9,7 +9,8 @@ pipelines:
           name: Run OpenWiki update
           script:
             - apt-get update && apt-get install -y git curl
-            - npm install --global openwiki
+            # mermaid + jsdom are optional; they add high-fidelity validation of Mermaid diagrams. Remove if your wiki has none.
+            - npm install --global openwiki mermaid@11.16.0 jsdom@29.1.1
             - git config user.name "${BITBUCKET_USER_NAME:-OpenWiki Bot}"
             - git config user.email "${BITBUCKET_USER_EMAIL:-openwiki@example.com}"
             - openwiki code --update --print

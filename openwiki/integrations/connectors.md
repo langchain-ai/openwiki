@@ -56,18 +56,9 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
 
 `src/schedules.ts` installs source schedules as macOS user LaunchAgents (`~/Library/LaunchAgents/`) with logs under `~/.openwiki/logs/`, and backs the `openwiki cron list|pause|resume|delete` commands (see [CLI usage](/cli/usage.md)).
 
-## Design docs describing connectors that do not exist yet
-
-Two long-form guides at the repository root describe **planned, unimplemented** connectors — do not treat them as current behavior:
-
-- `LANGSMITH-CONNECTOR.md` — a proposed `langsmith` connector (direct-API pull of LangSmith run telemetry: error patterns, latency/token stats, trace URLs). No `langsmith` id exists in `src/connectors/types.ts` today.
-- `CODING-AGENTS-CONNECTOR.md` — a proposed `coding-agents` connector (parses local Claude Code/Codex session logs for episodic "why did this commit happen" context). Depends on the LangSmith guide's shared `src/connectors/limits.ts`, which also does not exist yet.
-
-If asked to implement either, follow the guide's phased checkpoints and confirm current state against `src/connectors/types.ts` first — these are detailed enough to be mistaken for documentation of shipped features.
-
 ## Things to watch when changing connector behavior
 
-- Adding a connector means: extend `ConnectorId` in `types.ts`, add a source file under `src/connectors/sources/`, register it in `registry.ts`, and add its `SOURCE_OPTIONS` entry in `src/credentials.tsx` onboarding — see `~/.openwiki/skills/write-connector.md` (written on demand by `src/connectors/write-connector-skill.ts`) for the full checklist.
+- Adding a connector means: extend `ConnectorId` in `types.ts`, add a source file under `src/connectors/sources/`, register it in `registry.ts`, and add its `SOURCE_OPTIONS` entry in `src/credentials.tsx` onboarding — see `/skills/write-connector/SKILL.md` for the full checklist.
 - Never write secret values into connector config or raw dumps — only env var names and presence booleans.
 - Keep deterministic ingestion (network calls) out of agent-controlled code; the agent only reads what ingestion already wrote to `raw/`.
 - MCP connectors must stay read-only; changes to `mcp-runtime.ts`'s tool-call policy directly affect what a hosted MCP server is allowed to do on OpenWiki's behalf.

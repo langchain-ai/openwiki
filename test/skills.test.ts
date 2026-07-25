@@ -46,4 +46,21 @@ describe("replaceSkillDirectories", () => {
       await rm(root, { force: true, recursive: true });
     }
   });
+
+  test("ships mermaid diagram guidance with loader frontmatter", async () => {
+    const skill = await readFile(
+      path.join(process.cwd(), "skills/mermaid-diagrams/SKILL.md"),
+      "utf8",
+    );
+
+    // The name/description frontmatter the skill loader keys on.
+    expect(skill.startsWith("---\nname: mermaid-diagrams\n")).toBe(true);
+    expect(skill).toContain("description:");
+    // The label-safety detail that moved out of the system prompt.
+    expect(skill.toLowerCase()).toContain("semicolons");
+    expect(skill).toContain("erDiagram");
+    // The exact degrade marker the post-run validator embeds, kept in sync so
+    // the agent can find and repair a degraded fence.
+    expect(skill).toContain("openwiki: mermaid parse failed");
+  });
 });

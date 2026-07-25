@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  BASETEN_BASE_URL_ENV_KEY,
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
@@ -8,8 +9,10 @@ import {
   getProviderBaseUrlWarnings,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
+  getProviderAuthMethod,
   getProviderModelOptions,
   getProviderRegionEnvKey,
+  FIREWORKS_BASE_URL_ENV_KEY,
   getProviderSecretKeyEnvKey,
   getProvidersForKnownModelId,
   isModelIdForOtherProvider,
@@ -18,11 +21,13 @@ import {
   isValidModelId,
   isValidProvider,
   NEBIUS_BASE_URL,
+  NVIDIA_BASE_URL_ENV_KEY,
   normalizeModelId,
   normalizeProvider,
   providerRequiresApiKey,
   providerRequiresRegion,
   providerRequiresSecretKey,
+  providerUsesAwsSdkCredentials,
   resolveConfiguredProvider,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
@@ -133,10 +138,31 @@ describe("resolveConfiguredProvider", () => {
     expect(resolveConfiguredProvider({ NVIDIA_API_KEY: "x" })).toBe("nvidia");
   });
 
-  test("falls back to bedrock when only a Bedrock access key is present", () => {
-    expect(resolveConfiguredProvider({ BEDROCK_AWS_ACCESS_KEY_ID: "x" })).toBe(
-      "bedrock",
-    );
+  test("falls back to bedrock when a complete legacy key pair is present", () => {
+    expect(
+      resolveConfiguredProvider({
+        BEDROCK_AWS_ACCESS_KEY_ID: "access",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBe("bedrock");
+  });
+
+  test("auto-selects bedrock from partial legacy config for repair", () => {
+    expect(
+      resolveConfiguredProvider({ BEDROCK_AWS_ACCESS_KEY_ID: "access" }),
+    ).toBe("bedrock");
+    expect(
+      resolveConfiguredProvider({ BEDROCK_AWS_SECRET_ACCESS_KEY: "secret" }),
+    ).toBe("bedrock");
+  });
+
+  test("does not auto-select bedrock from ambient AWS config", () => {
+    expect(
+      resolveConfiguredProvider({
+        AWS_ROLE_ARN: "arn:aws:iam::123456789012:role/openwiki",
+        AWS_WEB_IDENTITY_TOKEN_FILE: "/var/run/secrets/aws/token",
+      }),
+    ).toBe(DEFAULT_PROVIDER);
   });
 
   test("falls back to the default provider when nothing is configured", () => {
@@ -169,11 +195,40 @@ describe("resolveProviderBaseUrl", () => {
     ).toBe("https://gateway.example/anthropic");
   });
 
+  test("prefers hosted OpenAI-compatible provider base URL overrides", () => {
+    expect(
+      resolveProviderBaseUrl("baseten", {
+        [BASETEN_BASE_URL_ENV_KEY]: "https://gateway.example/baseten/v1",
+      }),
+    ).toBe("https://gateway.example/baseten/v1");
+    expect(
+      resolveProviderBaseUrl("fireworks", {
+        [FIREWORKS_BASE_URL_ENV_KEY]: "https://gateway.example/fireworks/v1",
+      }),
+    ).toBe("https://gateway.example/fireworks/v1");
+    expect(
+      resolveProviderBaseUrl("nvidia", {
+        [NVIDIA_BASE_URL_ENV_KEY]: "https://gateway.example/nvidia/v1",
+      }),
+    ).toBe("https://gateway.example/nvidia/v1");
+  });
+
   test("ignores a whitespace-only override", () => {
     // anthropic has no built-in default, so a blank override resolves to undefined.
     expect(
       resolveProviderBaseUrl("anthropic", { ANTHROPIC_BASE_URL: "   " }),
     ).toBeUndefined();
+    expect(
+      resolveProviderBaseUrl("baseten", { [BASETEN_BASE_URL_ENV_KEY]: "   " }),
+    ).toBe("https://inference.baseten.co/v1");
+    expect(
+      resolveProviderBaseUrl("fireworks", {
+        [FIREWORKS_BASE_URL_ENV_KEY]: "   ",
+      }),
+    ).toBe("https://api.fireworks.ai/inference/v1");
+    expect(
+      resolveProviderBaseUrl("nvidia", { [NVIDIA_BASE_URL_ENV_KEY]: "   " }),
+    ).toBe("https://integrate.api.nvidia.com/v1");
   });
 
   test("returns undefined for a provider with no default and no override", () => {
@@ -298,25 +353,49 @@ describe("getProviderModelOptions", () => {
   });
 });
 
-describe("bedrock provider (IAM access key + secret key + region)", () => {
-  test("requires a secret key and a region, unlike API-key providers", () => {
-    expect(providerRequiresSecretKey("bedrock")).toBe(true);
+describe("bedrock provider (AWS SDK credentials + region)", () => {
+  test("uses the AWS SDK credential chain instead of required static keys", () => {
+    expect(getProviderAuthMethod("bedrock")).toBe("aws-sdk");
+    expect(providerUsesAwsSdkCredentials("bedrock")).toBe(true);
+    expect(providerRequiresApiKey("bedrock")).toBe(false);
+    expect(providerRequiresSecretKey("bedrock")).toBe(false);
     expect(providerRequiresRegion("bedrock")).toBe(true);
+    expect(providerUsesAwsSdkCredentials("anthropic")).toBe(false);
     expect(providerRequiresSecretKey("anthropic")).toBe(false);
     expect(providerRequiresRegion("anthropic")).toBe(false);
   });
 
-  test("exposes the AWS-flavored env keys", () => {
+  test("retains the legacy AWS env-key metadata for compatibility", () => {
+    expect(getProviderApiKeyEnvKey("bedrock")).toBe(
+      "BEDROCK_AWS_ACCESS_KEY_ID",
+    );
     expect(getProviderSecretKeyEnvKey("bedrock")).toBe(
       "BEDROCK_AWS_SECRET_ACCESS_KEY",
     );
     expect(getProviderRegionEnvKey("bedrock")).toBe("BEDROCK_AWS_REGION");
   });
 
-  test("resolveProviderRegion reads the region env key and trims it", () => {
+  test("resolves and trims Bedrock region env vars in precedence order", () => {
     expect(
-      resolveProviderRegion("bedrock", { BEDROCK_AWS_REGION: " us-east-1 " }),
+      resolveProviderRegion("bedrock", {
+        BEDROCK_AWS_REGION: " us-east-1 ",
+        AWS_REGION: "us-west-2",
+        AWS_DEFAULT_REGION: "eu-west-1",
+      }),
     ).toBe("us-east-1");
+    expect(
+      resolveProviderRegion("bedrock", {
+        BEDROCK_AWS_REGION: "   ",
+        AWS_REGION: " us-west-2 ",
+        AWS_DEFAULT_REGION: "eu-west-1",
+      }),
+    ).toBe("us-west-2");
+    expect(
+      resolveProviderRegion("bedrock", {
+        AWS_REGION: "   ",
+        AWS_DEFAULT_REGION: " eu-west-1 ",
+      }),
+    ).toBe("eu-west-1");
     expect(resolveProviderRegion("bedrock", {})).toBeUndefined();
   });
 
@@ -365,6 +444,103 @@ describe("getMissingProviderEnvKey", () => {
       }),
     ).toBeNull();
   });
+
+  test("allows Bedrock to delegate credentials to the AWS SDK", () => {
+    expect(getMissingProviderEnvKey("bedrock", {})).toBeNull();
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_ROLE_ARN: "arn:aws:iam::123456789012:role/openwiki",
+        AWS_WEB_IDENTITY_TOKEN_FILE: "/var/run/secrets/aws/token",
+      }),
+    ).toBeNull();
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "access",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBeNull();
+  });
+
+  test("rejects either half of a legacy Bedrock key pair", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "access",
+      }),
+    ).toBe("BEDROCK_AWS_SECRET_ACCESS_KEY");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBe("BEDROCK_AWS_ACCESS_KEY_ID");
+  });
+
+  test("treats blank legacy Bedrock values as incomplete configuration", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "   ",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "   ",
+      }),
+    ).toBe("BEDROCK_AWS_ACCESS_KEY_ID");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "access",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "   ",
+      }),
+    ).toBe("BEDROCK_AWS_SECRET_ACCESS_KEY");
+  });
+
+  test("rejects partial standard AWS environment credentials", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_ACCESS_KEY_ID: "access",
+      }),
+    ).toBe("AWS_SECRET_ACCESS_KEY");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBe("AWS_ACCESS_KEY_ID");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_ACCESS_KEY_ID: "access",
+        AWS_SECRET_ACCESS_KEY: "secret",
+        AWS_SESSION_TOKEN: "session",
+      }),
+    ).toBeNull();
+  });
+
+  test("rejects blank standard credentials but ignores an orphan session token", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_ACCESS_KEY_ID: "   ",
+        AWS_SECRET_ACCESS_KEY: "secret",
+      }),
+    ).toBe("AWS_ACCESS_KEY_ID");
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_SESSION_TOKEN: "session",
+      }),
+    ).toBeNull();
+  });
+
+  test("preserves Bedrock bearer-token precedence", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        AWS_BEARER_TOKEN_BEDROCK: "bearer-token",
+        BEDROCK_AWS_ACCESS_KEY_ID: "partial-legacy-access",
+      }),
+    ).toBeNull();
+  });
+
+  test("ignores partial standard AWS credentials when legacy keys take precedence", () => {
+    expect(
+      getMissingProviderEnvKey("bedrock", {
+        BEDROCK_AWS_ACCESS_KEY_ID: "legacy-access",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "legacy-secret",
+        AWS_ACCESS_KEY_ID: "ambient-access-without-secret",
+      }),
+    ).toBeNull();
+  });
 });
 
 describe("resolveProviderLocation", () => {
@@ -395,6 +571,21 @@ describe("resolveProviderLocation", () => {
   });
 });
 
+describe("getProviderModelOptions", () => {
+  test("offers the latest Gemini Flash models on both Gemini providers", () => {
+    const expectedModels = [
+      { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite" },
+      { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
+    ];
+
+    for (const provider of ["gemini", "gemini-enterprise"] as const) {
+      expect(getProviderModelOptions(provider)).toEqual(
+        expect.arrayContaining(expectedModels),
+      );
+    }
+  });
+});
+
 describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
@@ -402,8 +593,8 @@ describe("getDefaultModelId", () => {
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
-    expect(getDefaultModelId("gemini")).toBe("gemini-3.5-flash");
-    expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.5-flash");
+    expect(getDefaultModelId("gemini")).toBe("gemini-3.6-flash");
+    expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
   });
 

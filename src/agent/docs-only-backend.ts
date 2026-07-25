@@ -1,3 +1,4 @@
+import path from "node:path";
 import {
   LocalShellBackend,
   type EditResult,
@@ -81,8 +82,11 @@ function markMutation<Result extends WriteResult | EditResult>(
 }
 
 export function isOpenWikiDocsPath(filePath: string): boolean {
-  const normalizedPath = filePath.trim().replace(/\\/gu, "/");
-  const virtualPath = normalizedPath.replace(/^\/+/u, "");
+  const slashed = filePath.trim().replace(/\\/gu, "/");
+  // Collapse `..`/`.` segments before the prefix check so a path like
+  // "/openwiki/../AGENTS.md" cannot escape the openwiki/ confinement.
+  const normalized = path.posix.normalize(`/${slashed.replace(/^\/+/u, "")}`);
+  const virtualPath = normalized.replace(/^\/+/u, "");
 
   return (
     virtualPath === OPEN_WIKI_DIR || virtualPath.startsWith(`${OPEN_WIKI_DIR}/`)

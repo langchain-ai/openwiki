@@ -6,7 +6,13 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 // Anthropic SDK can't send them as an Authorization header that clobbers the
 // Google OAuth token).
 type VertexCall = {
-  options: { projectId?: string; region?: string };
+  options: {
+    projectId?: string;
+    region?: string;
+    dangerouslyAllowBrowser?: boolean;
+    apiKey?: string;
+    authToken?: string;
+  };
   anthropicApiKeyVisible: boolean;
   anthropicAuthTokenVisible: boolean;
 };
@@ -15,7 +21,7 @@ const vertexCalls: VertexCall[] = [];
 
 vi.mock("@anthropic-ai/vertex-sdk", () => ({
   AnthropicVertex: class {
-    constructor(options: { projectId?: string; region?: string }) {
+    constructor(options: VertexCall["options"]) {
       vertexCalls.push({
         options,
         anthropicApiKeyVisible: process.env.ANTHROPIC_API_KEY !== undefined,
@@ -77,6 +83,27 @@ describe("gemini-enterprise Claude surface (createClient)", () => {
     // Project + region flow through.
     expect(call?.options.projectId).toBe("test-project");
     expect(call?.options.region).toBe("us-east5");
+  });
+
+  test("forwards dangerouslyAllowBrowser to AnthropicVertex, and only that flag (not the ANTHROPIC_* auth options)", () => {
+    // The Anthropic SDK refuses to construct once the Mermaid jsdom shim installs
+    // window/document globals unless dangerouslyAllowBrowser is set (that guard's
+    // suppression is proven end-to-end against the real SDK in
+    // gemini-enterprise-claude.e2e.test.ts). Here, with the SDK mocked, assert
+    // only that the flag is forwarded and — critically — that the ANTHROPIC_*
+    // auth options LangChain also hands the hook are NOT forwarded, since that
+    // would send an Authorization header clobbering the Google OAuth token.
+    const model = createModel(
+      "gemini-enterprise",
+      "publishers/anthropic/models/claude-sonnet-4-5@20250929",
+      0,
+    );
+    (model as { createClient?: () => unknown }).createClient?.();
+
+    expect(vertexCalls).toHaveLength(1);
+    expect(vertexCalls[0]?.options.dangerouslyAllowBrowser).toBe(true);
+    expect(vertexCalls[0]?.options.apiKey).toBeUndefined();
+    expect(vertexCalls[0]?.options.authToken).toBeUndefined();
   });
 
   test("restores ANTHROPIC_* env vars after construction", () => {

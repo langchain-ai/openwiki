@@ -9,6 +9,14 @@ import {
   synchronizeWikiIndexes,
 } from "../src/okf/index-sync.ts";
 
+// A flowchart node named `end` is reserved, so this fence fails to parse.
+const BROKEN_MERMAID = [
+  "```mermaid",
+  "flowchart TD",
+  "  A[Start] --> end[The End]",
+  "```",
+].join("\n");
+
 function document(title: string, description: string): string {
   return `---\ntype: Reference\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(description)}\n---\n\n# ${title}\n`;
 }
@@ -355,5 +363,38 @@ describe("createOpenWikiIndexMiddleware beforeAgent", () => {
     );
     expect(legacy).toContain('type: "Reference"');
     expect(legacy).toContain("openwiki_generated: true");
+  });
+});
+
+describe("createOpenWikiIndexMiddleware afterAgent", () => {
+  test("degrades invalid mermaid and synchronizes indexes in one pass", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/quickstart.md",
+      `${document("Quickstart", "Start here.")}\n${BROKEN_MERMAID}\n`,
+    );
+
+    const middleware = createOpenWikiIndexMiddleware(backend, "repository");
+    const afterAgent =
+      typeof middleware.afterAgent === "function"
+        ? middleware.afterAgent
+        : middleware.afterAgent?.hook;
+    expect(afterAgent).toBeTypeOf("function");
+    await (afterAgent as () => Promise<unknown>)();
+
+    const page = await readFile(
+      path.join(rootDir, "openwiki/quickstart.md"),
+      "utf8",
+    );
+    const index = await readFile(
+      path.join(rootDir, "openwiki/index.md"),
+      "utf8",
+    );
+
+    // The mermaid pass ran: the broken fence is now a degraded text fence.
+    expect(page).toContain("```text");
+    expect(page).toContain("openwiki: mermaid parse failed");
+    // The index pass also ran over the same tree.
+    expect(index).toContain("- [Quickstart](quickstart.md) - Start here.");
   });
 });

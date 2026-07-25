@@ -44,7 +44,7 @@ When explicit init (`openwiki personal --init` or `openwiki code --init`) or `--
 
 ### Non-interactive mode
 
-If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires the provider's credentials to be already saved in `~/.openwiki/.env` or present in the environment — the provider API key, or `GOOGLE_CLOUD_PROJECT` for the vertex provider. It will error with a clear message if the value is missing, rather than prompting interactively.
+If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires the provider's credentials to be already saved in `~/.openwiki/.env` or present in the environment — the provider API key, or `GOOGLE_CLOUD_PROJECT` for the gemini-enterprise provider. It will error with a clear message if the value is missing, rather than prompting interactively.
 
 ## Interactive behavior
 
@@ -64,8 +64,8 @@ The UI persists provider and model selection back to `~/.openwiki/.env` through 
 
 The first interactive run can prompt for:
 
-- a **provider** (`OPENWIKI_PROVIDER`) — openai, openai-chatgpt, openrouter, baseten, fireworks, nvidia, openai-compatible, anthropic, or vertex,
-- the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`) — skipped for the vertex provider, which instead prompts for a **GCP project** (`GOOGLE_CLOUD_PROJECT`, required) and a **GCP location** (`GOOGLE_CLOUD_LOCATION`, optional, defaults to `global`),
+- a **provider** (`OPENWIKI_PROVIDER`) — openai, openai-chatgpt, openrouter, anthropic, gemini, gemini-enterprise, bedrock, baseten, fireworks, nebius, nvidia, or openai-compatible,
+- the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`, `GEMINI_API_KEY`, `NEBIUS_API_KEY`) — skipped for the gemini-enterprise provider, which instead prompts for a **GCP project** (`GOOGLE_CLOUD_PROJECT`, required) and a **GCP location** (`GOOGLE_CLOUD_LOCATION`, optional, defaults to `global`), and skipped for the bedrock provider, which instead prompts for AWS access key ID, secret access key, and region,
 - a **base URL** for providers that require one (the openai-compatible provider prompts for `OPENAI_COMPATIBLE_BASE_URL`),
 - a **model ID** stored as `OPENWIKI_MODEL_ID` — chosen from the provider's model list or a custom ID,
 - optional `LANGSMITH_API_KEY` for tracing.
@@ -78,19 +78,22 @@ If a LangSmith key is provided, onboarding also enables `LANGCHAIN_PROJECT=openw
 
 Providers and their model options are defined in `PROVIDER_CONFIGS` in `src/constants.ts`:
 
-| Provider          | Env key                                             | Base URL                                       | Models                                                                |
-| ----------------- | --------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------- |
-| openai            | `OPENAI_API_KEY`                                    | (default)                                      | 5.6 Terra, 5.6 Luna, 5.6 Sol, 5.5, 5.4 mini                           |
-| openai-chatgpt    | `OPENAI_CHATGPT_ACCESS_TOKEN`                       | (Codex backend)                                | Same as openai (OAuth login, no API key)                              |
-| openrouter        | `OPENROUTER_API_KEY`                                | `https://openrouter.ai/api/v1`                 | GLM 5.2, Fusion, Kimi K2.7 Code, Claude Opus/Sonnet, GPT 5.4 mini/5.5 |
-| baseten           | `BASETEN_API_KEY`                                   | `https://inference.baseten.co/v1`              | GLM 5.2, Kimi K2.7 Code                                               |
-| fireworks         | `FIREWORKS_API_KEY`                                 | `https://api.fireworks.ai/inference/v1`        | GLM 5.2, Kimi K2.7 Code                                               |
-| nvidia            | `NVIDIA_API_KEY`                                    | `https://integrate.api.nvidia.com/v1`          | Nemotron 3 Super/Ultra/Nano, DeepSeek V4 Pro, GPT-OSS 120B, Kimi K2.6 |
-| openai-compatible | `OPENAI_COMPATIBLE_API_KEY`                         | `OPENAI_COMPATIBLE_BASE_URL` (required)        | custom model ID only                                                  |
-| anthropic         | `ANTHROPIC_API_KEY`                                 | (default, or `ANTHROPIC_BASE_URL`)             | Haiku, Sonnet, Opus                                                   |
-| vertex            | none (Google ADC) — `GOOGLE_CLOUD_PROJECT` required | per `GOOGLE_CLOUD_LOCATION` (default `global`) | Haiku, Sonnet, Opus (Claude on Vertex AI)                             |
+| Provider          | Env key                                                       | Base URL                                       | Models                                                                          |
+| ----------------- | ------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------- |
+| openai            | `OPENAI_API_KEY`                                              | (default, or `OPENAI_BASE_URL`)                | 5.6 Terra, 5.6 Luna, 5.6 Sol, 5.5, 5.4 mini                                     |
+| openai-chatgpt    | `OPENAI_CHATGPT_ACCESS_TOKEN`                                 | (Codex backend)                                | Same as openai (OAuth login, no API key)                                        |
+| openrouter        | `OPENROUTER_API_KEY`                                          | `https://openrouter.ai/api/v1`                 | GLM 5.2, Fusion, Kimi K2.7 Code, Claude Opus/Sonnet, GPT 5.4 mini/5.5           |
+| anthropic         | `ANTHROPIC_API_KEY`                                           | (default, or `ANTHROPIC_BASE_URL`)             | Haiku, Sonnet, Opus                                                             |
+| gemini            | `GEMINI_API_KEY`                                              | (AI Studio)                                    | Gemini 3.6 Flash, 3.5 Flash/Lite, 3.1 Pro, 3 Flash, 3.1 Flash-Lite              |
+| gemini-enterprise | none (Google ADC) — `GOOGLE_CLOUD_PROJECT` required           | per `GOOGLE_CLOUD_LOCATION` (default `global`) | Gemini models + Claude Haiku/Sonnet/Opus on Vertex AI; MaaS by pasting model ID |
+| bedrock           | `BEDROCK_AWS_ACCESS_KEY_ID` + `BEDROCK_AWS_SECRET_ACCESS_KEY` | per `BEDROCK_AWS_REGION` (required)            | Account/region-specific; paste Bedrock model ID directly                        |
+| baseten           | `BASETEN_API_KEY`                                             | `https://inference.baseten.co/v1`              | GLM 5.2, Kimi K2.7 Code                                                         |
+| fireworks         | `FIREWORKS_API_KEY`                                           | `https://api.fireworks.ai/inference/v1`        | GLM 5.2, Kimi K2.7 Code                                                         |
+| nebius            | `NEBIUS_API_KEY`                                              | `https://api.tokenfactory.nebius.com/v1/`      | Kimi K2.6                                                                       |
+| nvidia            | `NVIDIA_API_KEY`                                              | `https://integrate.api.nvidia.com/v1`          | Nemotron 3 Super/Ultra/Nano, DeepSeek V4 Pro, GPT-OSS 120B, Kimi K2.6           |
+| openai-compatible | `OPENAI_COMPATIBLE_API_KEY`                                   | `OPENAI_COMPATIBLE_BASE_URL` (required)        | custom model ID only                                                            |
 
-The default provider is `openai`, and the default model is `gpt-5.6-terra`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, then falls back to the first configured provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, NVIDIA, and finally `DEFAULT_PROVIDER`.
+The default provider is `openai`, and the default model is `gpt-5.6-terra`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, then falls back to the first configured provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, Nebius, NVIDIA, Bedrock, and finally `DEFAULT_PROVIDER`.
 
 ### Provider retry attempts
 
@@ -133,25 +136,55 @@ OPENWIKI_MODEL_ID=<model name the gateway exposes>
 Base URLs are resolved by `resolveProviderBaseUrl()` in `src/constants.ts`, which
 prefers a provider's `baseUrlEnvKey` override over the built-in default.
 
-### Google Vertex AI (Claude) provider
+### Gemini (AI Studio) provider
 
-The `vertex` provider runs Claude models through Google Vertex AI using the
-existing `ChatAnthropic` class with a custom `AnthropicVertex` client
-(`@anthropic-ai/vertex-sdk`). It has **no API key**: authentication uses Google
-Application Default Credentials (a service account key via
-`GOOGLE_APPLICATION_CREDENTIALS`, `gcloud auth application-default login`, or
-workload identity). `GOOGLE_CLOUD_PROJECT` is required;
+The `gemini` provider uses Google's Gemini models through AI Studio
+(`platformType: "gai"`) with a `GEMINI_API_KEY`. It includes Gemini 3.x
+thought-signature round-trip handling.
+
+```bash
+OPENWIKI_PROVIDER=gemini
+GEMINI_API_KEY=<api key>
+```
+
+### Gemini Enterprise (Vertex AI) provider
+
+The `gemini-enterprise` provider runs models through Google Vertex AI Model
+Garden using Google Application Default Credentials (keyless — a service account
+key via `GOOGLE_APPLICATION_CREDENTIALS`, `gcloud auth application-default
+login`, or workload identity). `GOOGLE_CLOUD_PROJECT` is required;
 `GOOGLE_CLOUD_LOCATION` is optional and defaults to `global` (resolved by
 `resolveProviderLocation()` in `src/constants.ts`).
 
+Model routing is automatic based on the model ID, via `resolveVertexSurface()`
+in `src/agent/vertex-surface.ts`:
+
+- **Claude models** (IDs matching `anthropic`/`claude`) → `ChatAnthropic` with a
+  custom `AnthropicVertex` client (`@anthropic-ai/vertex-sdk`).
+- **Partner/open-weight models** (Llama, Mistral, DeepSeek, Qwen, etc.) →
+  `ChatOpenAI` against Vertex's OpenAI-compatible MaaS endpoint, with a
+  per-request ADC bearer token injected by a custom fetch wrapper.
+- **Gemini/Gemma models** → `ChatGoogle` with ADC and `apiKey: ""` to prevent
+  a stray `GOOGLE_API_KEY` from hijacking the enterprise path.
+
 ```bash
-OPENWIKI_PROVIDER=vertex
+OPENWIKI_PROVIDER=gemini-enterprise
 GOOGLE_CLOUD_PROJECT=<gcp project id>
 GOOGLE_CLOUD_LOCATION=global   # optional
 ```
 
-Vertex Claude model IDs may carry an `@`-versioned suffix (for example
-`claude-haiku-4-5@20251001`), which the model-ID validator accepts.
+Model IDs for Claude may carry an `@`-versioned suffix (for example
+`claude-haiku-4-5@20251001`), which the model-ID validator accepts. MaaS model
+IDs (e.g. `meta/llama-3.3-70b-instruct-maas`) can be pasted directly.
+
+### AWS Bedrock provider
+
+The `bedrock` provider uses `ChatBedrockConverse` (`@langchain/aws`) with AWS
+credentials. It requires an access key ID (`BEDROCK_AWS_ACCESS_KEY_ID`), a
+secret access key (`BEDROCK_AWS_SECRET_ACCESS_KEY`), and a region
+(`BEDROCK_AWS_REGION`). Available model IDs are account- and region-specific,
+so there is no preset model list — paste the Bedrock model ID directly (for
+example `anthropic.claude-sonnet-5-20260101-v1:0`).
 
 ## Help text and validation
 
@@ -166,7 +199,7 @@ The help content is centralized in `src/commands.ts` and is used by the CLI UI. 
 - Update parser behavior in `src/commands.ts` first.
 - Then update any user-visible text in `src/cli.tsx` and `README.md`.
 - If new options affect run behavior, make sure `src/agent/index.ts` and `src/credentials.tsx` still receive the right inputs.
-- If adding a provider, update `PROVIDER_CONFIGS` and `SELECTABLE_OPENWIKI_PROVIDERS` in `src/constants.ts`, `managedEnvKeys` in `src/env.ts`, and the `createModel` branch in `src/agent/index.ts`. OAuth-based providers (like `openai-chatgpt`) additionally need a token refresh flow and a dedicated branch in `createModel` that reads tokens from `process.env`. `apiKeyEnvKey` is optional — a provider without one (like `vertex`) instead declares the env keys it needs (e.g. `projectEnvKey`), and `getMissingProviderEnvKey()` gates runs on whichever required key is absent.
+- If adding a provider, update `PROVIDER_CONFIGS` and `SELECTABLE_OPENWIKI_PROVIDERS` in `src/constants.ts`, `managedEnvKeys` in `src/env.ts`, and the `createModel` branch in `src/agent/index.ts`. OAuth-based providers (like `openai-chatgpt`) additionally need a token refresh flow and a dedicated branch in `createModel` that reads tokens from `process.env`. `apiKeyEnvKey` is optional — a provider without one (like `gemini-enterprise`) instead declares the env keys it needs (e.g. `projectEnvKey`), and `getMissingProviderEnvKey()` gates runs on whichever required key is absent. Providers with a paired secret (like `bedrock`) use `secretKeyEnvKey`, and providers requiring a region use `regionEnvKey` with `requiresRegion: true`.
 - To let a provider accept an alternative base URL, set `baseUrlEnvKey` on its `PROVIDER_CONFIGS` entry, add that key to `managedEnvKeys` in `src/env.ts`, and read it through `resolveProviderBaseUrl()` in the provider's `createModel` branch.
 - To require a user-supplied base URL (a provider with no default endpoint, like `openai-compatible`), also set `requiresBaseUrl: true`. `ensureProviderBaseUrl()` in `src/agent/index.ts` enforces it at runtime, and the interactive setup adds a base-URL step for such providers.
 - Re-check the `package.json` bin entry and scripts if the entrypoint changes.

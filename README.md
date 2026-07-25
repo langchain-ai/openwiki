@@ -235,9 +235,12 @@ ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 
 The `openai` provider likewise supports an alternative, OpenAI-compatible
 endpoint (for example a self-hosted or proxied gateway) via `OPENAI_BASE_URL`,
-set alongside `OPENAI_API_KEY`. This is useful for OpenAI-compatible gateways
-that expose the Responses API, since the `openai` provider routes tool calls
-through the Responses API (`/v1/responses`) rather than chat completions:
+set alongside `OPENAI_API_KEY`. Baseten, Fireworks, and NVIDIA NIM can be routed
+through alternate OpenAI-compatible gateways with `BASETEN_BASE_URL`,
+`FIREWORKS_BASE_URL`, and `NVIDIA_BASE_URL`, respectively. This is useful for
+OpenAI-compatible gateways that expose the Responses API, since the `openai`
+provider routes tool calls through the Responses API (`/v1/responses`) rather
+than chat completions:
 
 ```bash
 OPENWIKI_PROVIDER=openai
@@ -299,8 +302,8 @@ Some local servers ignore the API key value, but OpenWiki still requires
 ### AWS Bedrock
 
 The `bedrock` provider calls foundation models hosted on AWS Bedrock using IAM
-credentials rather than a single vendor API key. It authenticates with an AWS
-access key ID, a secret access key, and a region:
+credentials rather than a single vendor API key. Existing installations can
+continue to provide an AWS access key ID, secret access key, and region:
 
 ```bash
 OPENWIKI_PROVIDER=bedrock
@@ -309,6 +312,11 @@ BEDROCK_AWS_SECRET_ACCESS_KEY=your-secret-access-key
 BEDROCK_AWS_REGION=us-east-1
 OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
 ```
+
+When the explicit Bedrock credentials are not set, OpenWiki uses the AWS SDK
+default credential provider chain, including OIDC/web identity, IAM roles,
+AWS profiles, and ECS/EC2 credentials. The region is resolved from
+`BEDROCK_AWS_REGION`, `AWS_REGION`, or `AWS_DEFAULT_REGION`.
 
 Which model IDs are available depends on your AWS account and region (which
 foundation models you've enabled in the Bedrock console), so there is no
@@ -427,6 +435,39 @@ OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
 ```
 
 The value must be a positive integer. If the value is unset, OpenWiki defaults to 3 retries.
+
+### Diagrams
+
+OpenWiki embeds **Mermaid** diagrams in the generated wiki wherever they make a
+concept clearer than prose: sequence diagrams for runtime and request flows, ER
+diagrams for data models, state diagrams for lifecycles, and flowcharts for
+control flow. Diagrams are grounded in the inspected source, added where they
+add signal rather than on every page, and kept in sync on `--update` runs. This
+is default behavior; no configuration is required.
+
+**Validation and repair.** After each run, OpenWiki validates every `mermaid`
+fence. A diagram that fails validation is converted in place to a plain `text`
+fence, preceded by a short comment explaining why, so it degrades to readable
+text instead of a broken block. The next `--update` run finds that comment,
+repairs the diagram from the recorded error, and restores the `mermaid` fence,
+so quality recovers over successive runs.
+
+**Validation fidelity is optional.** By default OpenWiki runs a lightweight,
+zero-dependency check that catches the common syntax breakages. It is
+best-effort: a break it does not recognize can still render as an error on
+GitHub until a later run catches it. For authoritative validation that matches
+exactly what GitHub renders, catching every unrenderable diagram, install the
+Mermaid parser wherever you run OpenWiki (for example, in the scheduled GitHub
+Actions workflow that regenerates your wiki):
+
+```bash
+npm install mermaid jsdom
+```
+
+When the parser is present, OpenWiki uses it and no broken diagram ships; when
+it is absent, it falls back to the best-effort check. Diagram generation and the
+degrade-and-repair loop work the same either way, so the parser changes only how
+thoroughly diagrams are checked, never whether they are generated.
 
 If there's an inference provider or model you'd like to see added, please open a PR!
 
