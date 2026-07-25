@@ -1,0 +1,37 @@
+name: Copilot external-cli-auth verification (temporary)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  say-hello:
+    name: Ask Sonnet 5 to say hello via the Copilot provider
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Ask Claude Sonnet 5 to say hello
+        env:
+          COPILOT_API_KEY: ${{ secrets.COPILOT_API_KEY }}
+          OPENWIKI_PROVIDER: copilot
+        run: |
+          echo "Model response:"
+          node dist/cli.js -p "just say hello" --model-id claude-sonnet-5
