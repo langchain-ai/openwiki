@@ -351,12 +351,26 @@ async function runOpenWikiAgentCore(
       emitDebug(options, "metadata=writeFailed");
     }
 
+    prunePersistentCheckpointHistory(
+      checkpointTarget,
+      checkpointer,
+      threadId,
+      options,
+    );
+
     throw error;
   }
 
   if (checkpointTarget.persistent) {
     await chmodIfExists(checkpointTarget.connString, 0o600);
   }
+
+  prunePersistentCheckpointHistory(
+    checkpointTarget,
+    checkpointer,
+    threadId,
+    options,
+  );
 
   await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
 
@@ -469,6 +483,66 @@ async function prepareCheckpointDirectory(filePath: string): Promise<void> {
     mode: 0o700,
   });
   await chmodIfExists(checkpointDir, 0o700);
+}
+
+// SqliteSaver.put() only ever inserts new checkpoint rows; nothing in the
+// checkpointer itself prunes older ones. A chat session reuses the same
+// thread_id for every turn, so the sqlite file grows by a full state
+// snapshot on every graph step for as long as the session runs. OpenWiki
+// never resumes a chat turn from anything but the latest checkpoint, so
+// history beyond that is pure waste and safe to discard here.
+export function pruneCheckpointHistory(
+  checkpointer: SqliteSaver,
+  threadId: string,
+): void {
+  checkpointer.db
+    .prepare(
+      `DELETE FROM checkpoints
+       WHERE thread_id = ?
+         AND (checkpoint_ns, checkpoint_id) NOT IN (
+           SELECT checkpoint_ns, checkpoint_id FROM (
+             SELECT checkpoint_ns, checkpoint_id,
+                    ROW_NUMBER() OVER (
+                      PARTITION BY checkpoint_ns ORDER BY checkpoint_id DESC
+                    ) AS rank
+             FROM checkpoints
+             WHERE thread_id = ?
+           )
+           WHERE rank = 1
+         )`,
+    )
+    .run(threadId, threadId);
+
+  checkpointer.db
+    .prepare(
+      `DELETE FROM writes
+       WHERE thread_id = ?
+         AND (checkpoint_ns, checkpoint_id) NOT IN (
+           SELECT checkpoint_ns, checkpoint_id FROM checkpoints WHERE thread_id = ?
+           UNION
+           SELECT checkpoint_ns, parent_checkpoint_id FROM checkpoints
+           WHERE thread_id = ? AND parent_checkpoint_id IS NOT NULL
+         )`,
+    )
+    .run(threadId, threadId, threadId);
+}
+
+function prunePersistentCheckpointHistory(
+  checkpointTarget: CheckpointTarget,
+  checkpointer: SqliteSaver,
+  threadId: string,
+  options: OpenWikiRunOptions,
+): void {
+  if (!checkpointTarget.persistent) {
+    return;
+  }
+
+  try {
+    pruneCheckpointHistory(checkpointer, threadId);
+    emitDebug(options, "checkpoint.pruned");
+  } catch {
+    emitDebug(options, "checkpoint.pruneFailed");
+  }
 }
 
 export function resolveCheckpointTarget(
