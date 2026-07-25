@@ -11,29 +11,30 @@ permissions:
 
 jobs:
   update:
-    # Scheduled (and manually-dispatched) runs only fire in the origin repo by
-    # default, so forking to contribute doesn't silently arm a daily job that
-    # is guaranteed to fail without a configured provider secret. Fork owners
-    # who want scheduled updates on their own fork can opt in without editing
-    # this file by setting the OPENWIKI_ENABLE_SCHEDULED_UPDATE repository
-    # variable (Settings -> Actions -> Variables) to "true".
-    if: github.repository == 'langchain-ai/openwiki' || vars.OPENWIKI_ENABLE_SCHEDULED_UPDATE == 'true'
+    # Scheduled runs only fire in the origin repo by default, so contributor
+    # forks do not silently arm a daily job that requires a provider secret.
+    # Fork owners can opt in without editing this file by setting the
+    # OPENWIKI_ENABLE_SCHEDULED_UPDATE repository variable to "true". Manual
+    # dispatch remains available for intentional runs and testing.
+    if: github.event_name == 'workflow_dispatch' || github.repository == 'langchain-ai/openwiki' || vars.OPENWIKI_ENABLE_SCHEDULED_UPDATE == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
 
       - name: Install OpenWiki
-        run: npm install --global openwiki
+        # mermaid + jsdom are optional; they add high-fidelity validation of Mermaid diagrams. Remove if your wiki has none.
+        run: npm install --global openwiki mermaid@11.16.0 jsdom@29.1.1
 
       - name: Run OpenWiki
         run: openwiki code --update --print
         env:
+          OPENWIKI_PROVIDER: openrouter
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENWIKI_MODEL_ID: z-ai/glm-5.2
           # To run with GitHub Copilot instead of OpenRouter, set the
@@ -44,6 +45,16 @@ jobs:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
           LANGCHAIN_PROJECT: openwiki
           LANGCHAIN_TRACING_V2: "true"
+
+      - name: Restore protected workflow file
+        # `openwiki code --update` regenerates this file from its internal
+        # template on every run, which silently drops the guard above (see
+        # https://github.com/langchain-ai/openwiki/issues/423). Until that's
+        # fixed upstream, discard whatever the agent just wrote here so the
+        # guard always survives, regardless of whether the run above
+        # succeeded or failed.
+        if: always()
+        run: git checkout -- .github/workflows/openwiki-update.yml
 
       - name: Create OpenWiki update pull request
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7

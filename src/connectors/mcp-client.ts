@@ -5,6 +5,7 @@ import {
   getOAuthProviderIdForAccessTokenEnvKey,
 } from "../auth/tokens.js";
 import type { McpConnectorConfig, McpReadOnlyOperation } from "./types.js";
+import { fetchWithResilience } from "./http.js";
 
 type JsonRpcRequest = {
   id?: number;
@@ -170,10 +171,7 @@ async function executeStdioMcp(
   }
 
   const child = spawn(transport.command, transport.args ?? [], {
-    env: {
-      ...process.env,
-      ...resolveChildEnv(transport.env ?? {}),
-    },
+    env: buildChildEnv(transport.env ?? {}),
     shell: false,
     stdio: ["pipe", "pipe", "pipe"],
   });
@@ -220,10 +218,7 @@ async function executeStdioMcpTool(
   }
 
   const child = spawn(transport.command, transport.args ?? [], {
-    env: {
-      ...process.env,
-      ...resolveChildEnv(transport.env ?? {}),
-    },
+    env: buildChildEnv(transport.env ?? {}),
     shell: false,
     stdio: ["pipe", "pipe", "pipe"],
   });
@@ -256,10 +251,7 @@ async function listStdioMcpTools(
   }
 
   const child = spawn(transport.command, transport.args ?? [], {
-    env: {
-      ...process.env,
-      ...resolveChildEnv(transport.env ?? {}),
-    },
+    env: buildChildEnv(transport.env ?? {}),
     shell: false,
     stdio: ["pipe", "pipe", "pipe"],
   });
@@ -645,17 +637,23 @@ class HttpJsonRpcClient {
   }
 
   private async post(message: JsonRpcRequest): Promise<JsonRpcResponse> {
-    const response = await fetch(this.url, {
-      body: JSON.stringify(message),
-      headers: {
-        Accept: "application/json, text/event-stream",
-        "Content-Type": "application/json",
-        "MCP-Protocol-Version": "2025-06-18",
-        ...this.headers,
-        ...(this.sessionId ? { "Mcp-Session-Id": this.sessionId } : {}),
+    const response = await fetchWithResilience(
+      this.url,
+      {
+        body: JSON.stringify(message),
+        headers: {
+          Accept: "application/json, text/event-stream",
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": "2025-06-18",
+          ...this.headers,
+          ...(this.sessionId ? { "Mcp-Session-Id": this.sessionId } : {}),
+        },
+        method: "POST",
       },
-      method: "POST",
-    });
+      // Parity with the stdio client's 60s per-request timeout; a hung remote
+      // MCP server no longer blocks ingestion forever.
+      { timeoutMs: 60_000 },
+    );
 
     const sessionId = response.headers.get("mcp-session-id");
     if (sessionId) {
@@ -732,6 +730,51 @@ function resolveChildEnv(
       return [key, resolveEnvReference(value)];
     }),
   );
+}
+
+// Base environment variables an MCP subprocess may legitimately need to run
+// (locating binaries, resolving the home dir, temp paths, terminal behavior).
+// Deliberately excludes OpenWiki credentials so a spawned MCP server command
+// cannot read the user's API keys and OAuth refresh tokens out of process.env.
+const CHILD_ENV_ALLOWLIST = [
+  "PATH",
+  "HOME",
+  "HOMEPATH",
+  "HOMEDRIVE",
+  "USERPROFILE",
+  "TMPDIR",
+  "TEMP",
+  "TMP",
+  "LANG",
+  "LC_ALL",
+  "LC_CTYPE",
+  "TERM",
+  "TZ",
+  "SystemRoot",
+  "SYSTEMROOT",
+  "ComSpec",
+  "PATHEXT",
+] as const;
+
+// Builds the environment for a spawned stdio MCP subprocess: only an
+// allow-listed set of safe base variables plus the credentials the transport
+// explicitly declares via `transport.env`. The full process.env (which holds
+// every provider API key and OAuth token) is never forwarded.
+// Exported for tests to pin this security invariant.
+export function buildChildEnv(
+  envRefs: Record<string, string>,
+): Record<string, string> {
+  const base: Record<string, string> = {};
+  for (const key of CHILD_ENV_ALLOWLIST) {
+    const value = process.env[key];
+    if (typeof value === "string") {
+      base[key] = value;
+    }
+  }
+  return {
+    ...base,
+    ...resolveChildEnv(envRefs),
+  };
 }
 
 async function resolveHeaders(

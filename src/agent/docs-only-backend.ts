@@ -1,3 +1,4 @@
+import path from "node:path";
 import {
   LocalShellBackend,
   type EditResult,
@@ -6,6 +7,8 @@ import {
 } from "deepagents";
 import { OPEN_WIKI_DIR } from "../constants.js";
 import type { OpenWikiOutputMode } from "./types.js";
+
+export const MUTATION_PATH_METADATA_KEY = "openwikiMutationPath";
 
 type OpenWikiBackendOptions = LocalShellBackendOptions & {
   docsOnly?: boolean;
@@ -31,7 +34,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return super.write(filePath, content);
+    return markMutation(await super.write(filePath, content), filePath);
   }
 
   override async edit(
@@ -45,7 +48,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return super.edit(filePath, oldString, newString, replaceAll);
+    return markMutation(
+      await super.edit(filePath, oldString, newString, replaceAll),
+      filePath,
+    );
   }
 
   private getDocsOnlyWriteError(filePath: string): string | null {
@@ -61,9 +67,26 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   }
 }
 
+/** Carries a successful mutation's file path into the ToolMessage metadata used by the validator. */
+function markMutation<Result extends WriteResult | EditResult>(
+  result: Result,
+  filePath: string,
+): Result {
+  if (!result.error) {
+    result.metadata = {
+      ...result.metadata,
+      [MUTATION_PATH_METADATA_KEY]: result.path ?? filePath,
+    };
+  }
+  return result;
+}
+
 export function isOpenWikiDocsPath(filePath: string): boolean {
-  const normalizedPath = filePath.trim().replace(/\\/gu, "/");
-  const virtualPath = normalizedPath.replace(/^\/+/u, "");
+  const slashed = filePath.trim().replace(/\\/gu, "/");
+  // Collapse `..`/`.` segments before the prefix check so a path like
+  // "/openwiki/../AGENTS.md" cannot escape the openwiki/ confinement.
+  const normalized = path.posix.normalize(`/${slashed.replace(/^\/+/u, "")}`);
+  const virtualPath = normalized.replace(/^\/+/u, "");
 
   return (
     virtualPath === OPEN_WIKI_DIR || virtualPath.startsWith(`${OPEN_WIKI_DIR}/`)

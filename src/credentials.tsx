@@ -7,13 +7,27 @@ import { Box, Text, useInput, useStdin, useStdout } from "ink";
 import { configureAuthProvider } from "./auth/configure.js";
 import { runOAuthAuth } from "./auth/oauth.js";
 import {
+  AWS_ACCESS_KEY_ID_ENV_KEY,
+  AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
+  AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  AWS_SESSION_TOKEN_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   DEFAULT_PROVIDER,
+  DEFAULT_VERTEX_LOCATION,
   getDefaultModelId,
+  getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
+  getProviderBaseUrlWarnings,
   getProviderLabel,
+  getProviderLocationEnvKey,
   getProviderModelOptions,
-  isValidBaseUrl,
+  getProviderProjectEnvKey,
+  getProviderRegionEnvKey,
+  getProviderRegionEnvKeys,
+  getProviderSecretKeyEnvKey,
+  providerRequiresApiKey,
   isValidModelId,
   normalizeProvider,
   normalizeModelId,
@@ -27,8 +41,12 @@ import {
   OPENWIKI_X_CLIENT_ID_ENV_KEY,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
+  providerRequiresRegion,
+  providerRequiresSecretKey,
+  providerUsesAwsSdkCredentials,
   providerUsesOAuth,
   resolveConfiguredProvider,
+  resolveProviderRegion,
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
 import {
@@ -42,6 +60,12 @@ import {
 } from "./agent/openai-chatgpt-oauth.js";
 import type { AuthProviderId } from "./auth/types.js";
 import type { OpenWikiRunMode } from "./commands.js";
+import {
+  loadLangSmithSetup,
+  nextLangSmithApiKeyEnv,
+  saveLangSmithSetup,
+} from "./connectors/sources/langsmith/setup.js";
+import type { LangSmithRegion } from "./connectors/sources/langsmith/setup.js";
 import type { ConnectorId } from "./connectors/types.js";
 import {
   detectGhCliToken,
@@ -49,13 +73,17 @@ import {
   runGhAuthLogin,
 } from "./copilotAuth.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
-import { openWikiEnvPath, saveOpenWikiEnv } from "./env.js";
+import {
+  getSavedEnvValue,
+  getShellEnvValue,
+  openWikiEnvPath,
+  saveOpenWikiEnv,
+} from "./env.js";
 import {
   createEmptyOnboardingConfig,
   isOpenWikiOnboardingCompleteSync,
   isOnboardingComplete,
   isRepositoryCodeOnboardingCompleteSync,
-  openWikiOnboardingPath,
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
   saveRepositoryWikiInstructions,
@@ -86,9 +114,13 @@ export type InitSetupResult = {
   runIngestionNow: boolean;
   savedApiKey: boolean;
   savedBaseUrl: boolean;
+  savedGcpLocation: boolean;
+  savedGcpProject: boolean;
   savedLangSmithKey: boolean;
   savedModelId: boolean;
   savedProvider: boolean;
+  savedRegion: boolean;
+  savedSecretKey: boolean;
   shouldContinueToRun: boolean;
 };
 
@@ -98,6 +130,12 @@ type InitSetupProps = {
   modelIdOverride?: string | null;
   onComplete: (result: InitSetupResult) => void;
   onError: (message: string) => void;
+  /**
+   * When true (explicit `--init`), walk every applicable step even when it is
+   * already configured, so the run can review/change any of them. When false
+   * the wizard skips satisfied steps and collects only what is missing.
+   */
+  walkAllSteps?: boolean;
 };
 
 type PromptStep =
@@ -106,17 +144,25 @@ type PromptStep =
   | "code-repo-confirm"
   | "code-repo-path"
   | "final"
+  | "gcp-location"
+  | "gcp-project"
   | "langsmith"
   | "model"
   | "oauth-login"
   | "provider"
+  | "region"
   | "run-mode"
+  | "secret-key"
   | "source-auth"
   | "global-cron-custom"
   | "global-cron-mode"
   | "global-power-mode"
   | "source-description"
   | "source-description-custom"
+  | "source-langsmith-key"
+  | "source-langsmith-projects"
+  | "source-langsmith-region"
+  | "source-langsmith-workspaces"
   | "source-menu"
   | "source-path"
   | "source-confirm-continue"
@@ -186,7 +232,7 @@ const ONBOARDING_TEMPLATES = [
       "Maintain a structured project wiki from a local Git repository, with code-oriented pages for architecture, workflows, source maps, and operational guidance.",
     id: "code",
     name: "Code",
-    sourceIds: ["git-repo"],
+    sourceIds: ["langsmith"],
     suggestedSources: ["Local Git repository"],
     suggestedGoal:
       "A code wiki for this local repository. Prioritize a concise quickstart, architecture overview, source map, key workflows, domain concepts, operations/runbook notes, testing guidance, and integration points. Inspect git history to understand reasoning behind code changes and the progression of the repository. Keep pages grounded in the repository structure and recent code changes. Prefer practical navigation for engineers over generic summaries.",
@@ -235,6 +281,38 @@ const RUN_MODE_OPTIONS = [
   name: string;
 }[];
 
+const LANGSMITH_REGION_OPTIONS = [
+  {
+    description: "US workspaces. The default.",
+    host: "https://api.smith.langchain.com",
+    id: "us",
+    name: "US",
+  },
+  {
+    description: "EU workspaces.",
+    host: "https://eu.api.smith.langchain.com",
+    id: "eu",
+    name: "EU",
+  },
+] as const satisfies readonly {
+  description: string;
+  host: string;
+  id: LangSmithRegion;
+  name: string;
+}[];
+
+/**
+ * One LangSmith workspace as the wizard edits it. `apiKey` holds a value entered
+ * this session (empty = keep the committed key); it is written to ~/.openwiki/.env
+ * under `apiKeyEnv` on completion, never committed.
+ */
+interface LangsmithWorkspaceDraft {
+  apiKeyEnv: string;
+  region: LangSmithRegion;
+  apiKey: string;
+  projects: string[];
+}
+
 const SOURCE_OPTIONS = [
   {
     displayName: "Local Git repository",
@@ -248,6 +326,18 @@ const SOURCE_OPTIONS = [
       "The default is the current working directory, and you can replace it with another path.",
       "You can add more repositories later in the connector config file.",
     ],
+    secretInputs: [],
+  },
+  {
+    displayName: "LangSmith traces",
+    examples: ["support-bot-prod", "chat-agent"],
+    id: "langsmith",
+    instructions: [
+      "Document how your agent runs, grounded in its LangSmith traces.",
+      "List the projects to document; written to openwiki/.langsmith.json (committed).",
+    ],
+    // No secret input: the LangSmith key is captured by the earlier `langsmith`
+    // spine step (and provided as a CI secret), and used at pull time, not here.
     secretInputs: [],
   },
   {
@@ -372,11 +462,14 @@ export function needsCredentialSetup(
 
   const needsCredentials =
     !hasValidConfiguredProvider() ||
+    needsAwsCredentialRepair(provider) ||
     needsCredentialStep(provider) ||
+    needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
+    needsRegionStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
-    process.env.LANGSMITH_API_KEY === undefined;
+    needsLangSmithStep();
 
   if (needsCredentials) {
     return true;
@@ -387,26 +480,178 @@ export function needsCredentialSetup(
     : !isOpenWikiOnboardingCompleteSync();
 }
 
+function needsAwsCredentialRepair(provider: OpenWikiProvider): boolean {
+  return (
+    providerUsesAwsSdkCredentials(provider) &&
+    getMissingProviderEnvKey(provider) !== null
+  );
+}
+
+function getAwsCredentialRepairMessage(
+  provider: OpenWikiProvider,
+): string | null {
+  if (!providerUsesAwsSdkCredentials(provider)) {
+    return null;
+  }
+
+  const missingEnvKey = getMissingProviderEnvKey(provider);
+
+  if (!missingEnvKey) {
+    return null;
+  }
+
+  const pair =
+    missingEnvKey === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
+    missingEnvKey === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY
+      ? `${BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY} and ${BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY}`
+      : `${AWS_ACCESS_KEY_ID_ENV_KEY} and ${AWS_SECRET_ACCESS_KEY_ENV_KEY}`;
+
+  return `${missingEnvKey} is missing or blank. Set both ${pair}, or unset both in your shell and ${openWikiEnvPath}, then restart OpenWiki.`;
+}
+
 /**
  * Whether the provider still needs its primary credential collected. For
- * `oauth` providers this is a valid, non-expired stored token; for everyone
- * else it is a pasted API key.
+ * `oauth` providers this is a valid, non-expired stored token; for API-key
+ * providers it is a pasted key; for keyless providers (gemini-enterprise) it is
+ * the required GCP project id.
  */
 function needsCredentialStep(provider: OpenWikiProvider): boolean {
-  return providerUsesOAuth(provider)
-    ? !hasValidStoredToken()
-    : !process.env[getProviderApiKeyEnvKey(provider)];
+  if (providerUsesOAuth(provider)) {
+    return !hasValidStoredToken();
+  }
+
+  return (
+    getMissingProviderEnvKey(provider) !== null &&
+    credentialStep(provider) !== null
+  );
 }
 
 /** The step that collects the provider's primary credential. */
-function credentialStep(provider: OpenWikiProvider): PromptStep {
-  return providerUsesOAuth(provider) ? "oauth-login" : "api-key";
+function credentialStep(provider: OpenWikiProvider): PromptStep | null {
+  if (providerUsesOAuth(provider)) {
+    return "oauth-login";
+  }
+
+  if (providerUsesAwsSdkCredentials(provider)) {
+    return null;
+  }
+
+  if (providerRequiresApiKey(provider)) {
+    return "api-key";
+  }
+
+  return getProviderProjectEnvKey(provider) ? "gcp-project" : null;
+}
+
+/**
+ * Every managed env key the wizard lets you set for a provider, in checklist
+ * order: the provider selection, its credential keys, the model, and the
+ * LangSmith tracing key. Used to detect which of them a shell export is
+ * currently shadowing (a shell var wins at runtime and would silently override
+ * the choice made here). Returns key names only, never values.
+ */
+function getWizardManagedEnvKeys(provider: OpenWikiProvider): string[] {
+  return [
+    OPENWIKI_PROVIDER_ENV_KEY,
+    getProviderApiKeyEnvKey(provider),
+    getProviderSecretKeyEnvKey(provider),
+    getProviderProjectEnvKey(provider),
+    getProviderLocationEnvKey(provider),
+    getProviderBaseUrlEnvKey(provider),
+    getProviderRegionEnvKey(provider),
+    OPENWIKI_MODEL_ID_ENV_KEY,
+    "LANGSMITH_API_KEY",
+  ].filter((key): key is string => key !== undefined);
+}
+
+/**
+ * The setup steps that apply to a provider and run mode, in the order the wizard
+ * walks them. Unlike the skip-based waterfall in {@link getInitialStep}, this
+ * includes steps already satisfied by the environment, so navigation can reach
+ * and re-edit an auto-skipped step. The provider's primary credential step
+ * ({@link credentialStep}) is emitted once; for keyless providers that step is
+ * the GCP project, so it is not appended again below.
+ */
+export function orderedSetupSteps(
+  provider: OpenWikiProvider,
+  mode: OpenWikiRunMode,
+  allowModeSelection: boolean,
+): PromptStep[] {
+  const steps: PromptStep[] = [];
+
+  if (allowModeSelection) {
+    steps.push("run-mode");
+  }
+
+  steps.push("provider");
+
+  const primary = credentialStep(provider);
+  if (primary) {
+    steps.push(primary);
+  }
+
+  if (providerRequiresSecretKey(provider)) {
+    steps.push("secret-key");
+  }
+  if (getProviderProjectEnvKey(provider) && primary !== "gcp-project") {
+    steps.push("gcp-project");
+  }
+  if (
+    getProviderProjectEnvKey(provider) &&
+    getProviderLocationEnvKey(provider)
+  ) {
+    steps.push("gcp-location");
+  }
+  if (providerRequiresBaseUrl(provider)) {
+    steps.push("base-url");
+  }
+  if (providerRequiresRegion(provider)) {
+    steps.push("region");
+  }
+
+  steps.push("model");
+  steps.push("langsmith");
+
+  // Personal mode's template is fixed by the run mode, so it skips the
+  // Code/Personal chooser and walks straight into the wiki brief. Only code
+  // mode needs a spine step after langsmith (repo confirmation).
+  if (mode === "code") {
+    steps.push("code-repo-confirm");
+  }
+
+  return steps;
+}
+
+/**
+ * The step after `step` in the applicable spine, or null when `step` is the last
+ * spine step or outside it. Drives forward navigation: Enter advances to the
+ * next applicable step in order rather than skipping ones already satisfied by
+ * the environment, so setup reads as a sequential walk.
+ */
+export function nextSetupStep(
+  step: PromptStep | null,
+  provider: OpenWikiProvider,
+  mode: OpenWikiRunMode,
+  allowModeSelection: boolean,
+): PromptStep | null {
+  if (step === null) {
+    return null;
+  }
+  const spine = orderedSetupSteps(provider, mode, allowModeSelection);
+  const index = spine.indexOf(step);
+  return index >= 0 && index + 1 < spine.length ? spine[index + 1] : null;
 }
 
 function hasValidStoredToken(env: NodeJS.ProcessEnv = process.env): boolean {
   const tokens = readCodexTokensFromEnv(env);
 
   return tokens !== null && !isChatGptTokenExpired(tokens.expiresAtMs);
+}
+
+function needsGcpProjectStep(provider: OpenWikiProvider): boolean {
+  const projectEnvKey = getProviderProjectEnvKey(provider);
+
+  return projectEnvKey ? !process.env[projectEnvKey] : false;
 }
 
 function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
@@ -423,10 +668,53 @@ function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
   return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
 }
 
+function needsSecretKeyStep(provider: OpenWikiProvider): boolean {
+  if (!providerRequiresSecretKey(provider)) {
+    return false;
+  }
+
+  return !isSecretKeyConfigured(provider);
+}
+
+function isSecretKeyConfigured(provider: OpenWikiProvider): boolean {
+  const secretKeyEnvKey = getProviderSecretKeyEnvKey(provider);
+
+  return secretKeyEnvKey ? Boolean(process.env[secretKeyEnvKey]) : false;
+}
+
+function needsRegionStep(provider: OpenWikiProvider): boolean {
+  if (!providerRequiresRegion(provider)) {
+    return false;
+  }
+
+  return !isRegionConfigured(provider);
+}
+
+/**
+ * Whether the optional LangSmith tracing step still needs to be shown.
+ *
+ * The step is optional, so "answered" must include skipping it. Skipping does
+ * not persist `LANGSMITH_API_KEY` — `saveOpenWikiEnv` strips empty values, so
+ * the key is simply absent afterwards. What the step always records instead is
+ * `LANGCHAIN_TRACING_V2` (`"false"` on skip, `"true"` when a key is entered),
+ * which survives because it is non-empty. So the step is unanswered only when
+ * neither a key is present (e.g. from a shell export) nor a tracing decision
+ * has been recorded.
+ */
+export function needsLangSmithStep(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return !env.LANGSMITH_API_KEY && env.LANGCHAIN_TRACING_V2 === undefined;
+}
+
+function isRegionConfigured(provider: OpenWikiProvider): boolean {
+  return resolveProviderRegion(provider) !== undefined;
+}
+
 function isCredentialConfigured(provider: OpenWikiProvider): boolean {
   return providerUsesOAuth(provider)
     ? hasValidStoredToken()
-    : Boolean(process.env[getProviderApiKeyEnvKey(provider)]);
+    : getMissingProviderEnvKey(provider) === null;
 }
 
 function getCredentialSetupDetail(
@@ -446,9 +734,60 @@ function getCredentialSetupDetail(
     return account ? `signed in as ${account}` : "signed in with ChatGPT";
   }
 
+  if (providerUsesAwsSdkCredentials(provider)) {
+    if (process.env[AWS_BEARER_TOKEN_BEDROCK_ENV_KEY]?.trim()) {
+      return "Bedrock bearer token (takes precedence)";
+    }
+
+    const missingEnvKey = getMissingProviderEnvKey(provider);
+
+    if (missingEnvKey) {
+      if (
+        missingEnvKey === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
+        missingEnvKey === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY
+      ) {
+        return "incomplete legacy Bedrock keys; set both or clear both";
+      }
+
+      if (
+        missingEnvKey === AWS_ACCESS_KEY_ID_ENV_KEY ||
+        missingEnvKey === AWS_SECRET_ACCESS_KEY_ENV_KEY
+      ) {
+        return "incomplete standard AWS credentials; set the full set or unset it";
+      }
+
+      return `incomplete AWS credential configuration (${missingEnvKey})`;
+    }
+
+    const legacyApiKey = getProviderApiKeyEnvKey(provider);
+    const legacySecretKey = getProviderSecretKeyEnvKey(provider);
+    const usesLegacyKeys = Boolean(
+      legacyApiKey &&
+      legacySecretKey &&
+      process.env[legacyApiKey]?.trim() &&
+      process.env[legacySecretKey]?.trim(),
+    );
+
+    const ignoresOrphanSessionToken = Boolean(
+      process.env[AWS_SESSION_TOKEN_ENV_KEY]?.trim() &&
+      !process.env[AWS_ACCESS_KEY_ID_ENV_KEY]?.trim() &&
+      !process.env[AWS_SECRET_ACCESS_KEY_ENV_KEY]?.trim(),
+    );
+
+    return usesLegacyKeys
+      ? "legacy Bedrock keys (take precedence)"
+      : ignoresOrphanSessionToken
+        ? "AWS SDK default credential chain (orphan AWS_SESSION_TOKEN ignored)"
+        : "AWS SDK default credential chain";
+  }
+
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+
   return isCredentialConfigured(provider)
     ? "available from environment"
-    : `save ${getProviderApiKeyEnvKey(provider)} to ${openWikiEnvPath}`;
+    : apiKeyEnvKey
+      ? `save ${apiKeyEnvKey} to ${openWikiEnvPath}`
+      : "configure Google Cloud credentials";
 }
 
 /**
@@ -491,16 +830,65 @@ export function InitSetup({
   modelIdOverride = null,
   onComplete,
   onError,
+  walkAllSteps = false,
 }: InitSetupProps) {
   const { stdout } = useStdout();
   const initialProvider = resolveConfiguredProvider();
-  const [step, setStep] = useState<PromptStep | null>(null);
+  const [step, setStepRaw] = useState<PromptStep | null>(null);
+  const navHistory = useRef<PromptStep[]>([]);
+  // Guards the mount effect so the initial step is seeded once per mount, not
+  // re-seeded when the effect re-fires on parent re-renders.
+  const didInitializeRef = useRef(false);
+  // Seed the LangSmith selection from the committed config only once, so
+  // navigating back and re-confirming the repo does not clobber in-progress edits
+  // (the file is not written until setup completes).
+  const langsmithPreloadedRef = useRef(false);
+  /**
+   * Advance to a step, recording the current step on the back-navigation
+   * history unless this is a back move. A ref-backed stack so Esc can retrace
+   * the actual path taken (including the branchy source sub-flow), which a
+   * linear spine cannot model.
+   */
+  function setStep(next: PromptStep | null, opts?: { back?: boolean }): void {
+    if (!opts?.back && step !== null && next !== null && next !== step) {
+      navHistory.current.push(step);
+    }
+    setStepRaw(next);
+  }
   const [selectedMode, setSelectedMode] = useState<OpenWikiRunMode>(mode);
   const [provider, setProvider] = useState<OpenWikiProvider>(initialProvider);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState<string | null>(null);
+  const [secretKey, setSecretKey] = useState<string | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
+  const [gcpProject, setGcpProject] = useState<string | null>(null);
+  const [gcpLocation, setGcpLocation] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
+  // LangSmith workspaces as the wizard edits them (region + key + projects),
+  // seeded from the committed config; committed on completion.
+  const [langsmithWorkspaces, setLangsmithWorkspaces] = useState<
+    LangsmithWorkspaceDraft[]
+  >([]);
+  // The workspace currently being added or edited, folded into langsmithWorkspaces
+  // when its projects step is confirmed.
+  const [langsmithDraft, setLangsmithDraft] =
+    useState<LangsmithWorkspaceDraft | null>(null);
+  // Index of the workspace being edited; === langsmithWorkspaces.length for a new
+  // one.
+  const [langsmithEditingIndex, setLangsmithEditingIndex] = useState(0);
+  const [
+    langsmithWorkspaceSelectionIndex,
+    setLangsmithWorkspaceSelectionIndex,
+  ] = useState(0);
+  const [langsmithRegionSelectionIndex, setLangsmithRegionSelectionIndex] =
+    useState(0);
+  // True once the LangSmith workspaces were opened this run; guards the WYSIWYG
+  // write so an untouched setup never rewrites openwiki/.langsmith.json.
+  const [langsmithSourcesTouched, setLangsmithSourcesTouched] = useState(false);
+  // True once the user confirms a provider this session. Provider always holds a
+  // default value, so a null-check cannot detect the in-session choice.
+  const [providerConfirmed, setProviderConfirmed] = useState(false);
   const [input, setInput] = useState("");
   const [onboardingConfig, setOnboardingConfig] =
     useState<OpenWikiOnboardingConfig>(() => createEmptyOnboardingConfig());
@@ -539,6 +927,10 @@ export function InitSetup({
   const [codeRepoRoot, setCodeRepoRoot] = useState(() =>
     getDefaultCodeRepoRootPath(),
   );
+  // Dedicated buffer for the code-repo-path field, kept separate from the shared
+  // `input` (which seedInputForStep prefills with credentials on other steps) so
+  // a secret never shares the buffer that feeds the thread-id path hash.
+  const [codeRepoPathInput, setCodeRepoPathInput] = useState("");
   const [codeRepoConfirmed, setCodeRepoConfirmed] = useState(false);
   const [isCustomModelInput, setIsCustomModelInput] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -578,9 +970,14 @@ export function InitSetup({
 
     readOpenWikiOnboardingConfig()
       .then(async (config) => {
-        if (cancelled) {
+        // Seed the initial step exactly once per mount. onComplete/onError are
+        // inline parent closures in the deps, so this effect re-fires on parent
+        // re-renders; without this guard a re-fire would reset step back to the
+        // first step (getInitialStep with walkAll always returns it).
+        if (cancelled || didInitializeRef.current) {
           return;
         }
+        didInitializeRef.current = true;
 
         const defaultRepoRoot = getDefaultCodeRepoRootPath();
         const configForMode = allowModeSelection
@@ -603,6 +1000,7 @@ export function InitSetup({
           configForMode,
           mode,
           allowModeSelection,
+          walkAllSteps,
         );
 
         if (initialStep === null) {
@@ -615,9 +1013,13 @@ export function InitSetup({
             runIngestionNow: false,
             savedApiKey: false,
             savedBaseUrl: false,
+            savedGcpLocation: false,
+            savedGcpProject: false,
             savedLangSmithKey: false,
             savedModelId: false,
             savedProvider: false,
+            savedRegion: false,
+            savedSecretKey: false,
             shouldContinueToRun: true,
           });
           return;
@@ -705,18 +1107,26 @@ export function InitSetup({
         setOauthTokens(tokens);
         setIsLoggingIn(false);
 
-        const nextStep = getNextStepAfterApiKey(
-          provider,
-          modelIdOverride,
-          onboardingConfig,
-          selectedMode,
-          forceModelStep,
-        );
+        const nextStep =
+          nextSetupStep(
+            "oauth-login",
+            provider,
+            selectedMode,
+            allowModeSelection,
+          ) ??
+          getNextStepAfterApiKey(
+            provider,
+            modelIdOverride,
+            onboardingConfig,
+            selectedMode,
+            forceModelStep,
+          );
 
         if (nextStep) {
           setIsCustomModelInput(
             nextStep === "model" && shouldStartWithCustomModelInput(provider),
           );
+          seedInputForStep(nextStep);
           setStep(nextStep);
           return;
         }
@@ -724,6 +1134,10 @@ export function InitSetup({
         await completeSetup({
           nextApiKey: apiKey,
           nextBaseUrl: baseUrl,
+          nextSecretKey: secretKey,
+          nextRegion: region,
+          nextGcpLocation: gcpLocation,
+          nextGcpProject: gcpProject,
           nextLangSmithKey: langSmithKey,
           nextModelId: modelId,
           nextOAuthTokens: tokens,
@@ -809,6 +1223,223 @@ export function InitSetup({
     }
   }
 
+  /**
+   * Pre-fill the input or selection for a step reached via navigation, so a done
+   * step opens ready to edit. Secret steps are pre-filled with the stored key,
+   * which renders as dots (formatSecretInputDisplay), never raw.
+   */
+  function seedInputForStep(target: PromptStep): void {
+    switch (target) {
+      case "provider":
+        setProviderSelectionIndex(getProviderSelectionIndex(provider));
+        break;
+      case "run-mode":
+        setRunModeSelectionIndex(getRunModeSelectionIndex(selectedMode));
+        break;
+      case "source-langsmith-region":
+        setLangsmithRegionSelectionIndex(
+          getLangsmithRegionSelectionIndex(langsmithDraft?.region ?? "us"),
+        );
+        break;
+      case "source-langsmith-key":
+        // Prefill an edited workspace's key from ~/.openwiki/.env so it can be
+        // kept or replaced; a new workspace starts empty.
+        setInput(
+          langsmithDraft?.apiKey ||
+            (langsmithDraft
+              ? (getSavedEnvValue(langsmithDraft.apiKeyEnv) ?? "")
+              : ""),
+        );
+        break;
+      case "source-langsmith-projects":
+        setInput((langsmithDraft?.projects ?? []).join(", "));
+        break;
+      case "model": {
+        // Point the cursor at the saved model (or the --modelId override), not
+        // the provider default, so it matches the checklist on a re-walk.
+        const seededModelId =
+          modelId ??
+          modelIdOverride ??
+          getSavedEnvValue(OPENWIKI_MODEL_ID_ENV_KEY) ??
+          getDefaultModelId(provider);
+        setModelSelectionIndex(getModelSelectionIndex(provider, seededModelId));
+        // Preset-less providers (e.g. Bedrock) take the model as free text, so
+        // restore the saved id into the field; selection-based providers drive
+        // off the index and keep the input empty.
+        setInput(
+          shouldStartWithCustomModelInput(provider)
+            ? (modelId ??
+                modelIdOverride ??
+                getSavedEnvValue(OPENWIKI_MODEL_ID_ENV_KEY) ??
+                "")
+            : "",
+        );
+        break;
+      }
+      case "api-key": {
+        const envKey = getProviderApiKeyEnvKey(provider);
+        setInput(apiKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
+        break;
+      }
+      case "secret-key": {
+        const envKey = getProviderSecretKeyEnvKey(provider);
+        setInput(secretKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
+        break;
+      }
+      case "base-url": {
+        const envKey = getProviderBaseUrlEnvKey(provider);
+        setInput(baseUrl ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
+        break;
+      }
+      case "region": {
+        const envKey = getProviderRegionEnvKey(provider);
+        setInput(region ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
+        break;
+      }
+      case "gcp-project": {
+        const envKey = getProviderProjectEnvKey(provider);
+        setInput(
+          gcpProject ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""),
+        );
+        break;
+      }
+      case "gcp-location": {
+        const envKey = getProviderLocationEnvKey(provider);
+        setInput(
+          gcpLocation ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""),
+        );
+        break;
+      }
+      case "langsmith":
+        // Prefill from state or the saved config (masked as dots), matching the
+        // api-key/secret-key steps, so a walk-through Enter keeps the existing
+        // key instead of submitting empty and clearing it.
+        setInput(langSmithKey ?? getSavedEnvValue("LANGSMITH_API_KEY") ?? "");
+        break;
+      case "template":
+        setTemplateSelectionIndex(
+          Math.max(
+            0,
+            ONBOARDING_TEMPLATES.findIndex(
+              (template) => template.id === getConfigModeId(onboardingConfig),
+            ),
+          ),
+        );
+        setInput("");
+        break;
+      case "wiki-goal":
+        setInput(onboardingConfig.wikiGoal ?? "");
+        break;
+      case "global-cron-mode":
+        setCronModeSelectionIndex(0);
+        setInput("");
+        break;
+      case "global-cron-custom":
+        setInput(
+          onboardingConfig.ingestionSchedule?.expression ??
+            suggestedCronExpression,
+        );
+        setCronFieldSelectionIndex(0);
+        setCronReplaceCurrentField(true);
+        break;
+      case "global-power-mode":
+        setPowerModeSelectionIndex(0);
+        setInput("");
+        break;
+      case "source-menu":
+        // Park the cursor on the "Continue" row so Enter keeps sources as-is.
+        setSourceSelectionIndex(activeSourceOptions.length);
+        setInput("");
+        break;
+      case "source-description":
+        setSourceDescriptionSelectionIndex(0);
+        setInput("");
+        break;
+      case "source-confirm-continue":
+        setSourceContinueSelectionIndex(0);
+        setInput("");
+        break;
+      case "final":
+        setFinalSelectionIndex(0);
+        setInput("");
+        break;
+      case "code-repo-confirm":
+        setCodeRepoSelectionIndex(0);
+        setInput("");
+        break;
+      case "code-repo-path":
+        setCodeRepoPathInput(codeRepoRoot);
+        break;
+      default:
+        setInput("");
+    }
+  }
+
+  /**
+   * Commit the current step's typed value into state so stepping back with Esc
+   * preserves it rather than discarding an unsubmitted edit. Only text-input
+   * steps carry a value here; selection steps commit on their own submit.
+   */
+  function captureInputForStep(from: PromptStep): void {
+    const trimmed = input.trim();
+    switch (from) {
+      case "api-key":
+        if (trimmed) setApiKey(trimmed);
+        break;
+      case "secret-key":
+        if (trimmed) setSecretKey(trimmed);
+        break;
+      case "base-url":
+        if (trimmed) setBaseUrl(trimmed);
+        break;
+      case "region":
+        if (trimmed) setRegion(trimmed);
+        break;
+      case "gcp-project":
+        if (trimmed) setGcpProject(trimmed);
+        break;
+      case "gcp-location":
+        if (trimmed) setGcpLocation(trimmed);
+        break;
+      case "langsmith":
+        setLangSmithKey(trimmed);
+        break;
+      case "source-langsmith-key":
+        // Keep an unsubmitted key edit on the draft so Esc does not lose it.
+        setLangsmithDraft((draft) =>
+          draft ? { ...draft, apiKey: trimmed } : draft,
+        );
+        break;
+      case "source-langsmith-projects":
+        // Keep an unsubmitted list edit on the draft so Esc does not lose it.
+        setLangsmithDraft((draft) =>
+          draft
+            ? {
+                ...draft,
+                projects: [
+                  ...new Set(
+                    input
+                      .split(",")
+                      .map((name) => name.trim())
+                      .filter((name) => name.length > 0),
+                  ),
+                ],
+              }
+            : draft,
+        );
+        break;
+      case "wiki-goal":
+        // Keep an unsubmitted goal edit in-session (not yet persisted) so
+        // stepping back and forward does not lose it.
+        if (trimmed) {
+          setOnboardingConfig((config) => ({ ...config, wikiGoal: trimmed }));
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
   useInput((inputValue, key) => {
     if (
       isSaving ||
@@ -816,6 +1447,22 @@ export function InitSetup({
       (isLoggingIn && step !== "oauth-login") ||
       step === null
     ) {
+      return;
+    }
+
+    // Esc retraces the actual path taken via the navigation history stack, so
+    // it works through the branchy source sub-flow too. It commits the current
+    // field first (so an unsubmitted edit is kept) and is a no-op at the start.
+    if (key.escape) {
+      const target = navHistory.current[navHistory.current.length - 1];
+      if (target !== undefined) {
+        captureInputForStep(step);
+        navHistory.current.pop();
+        setStep(target, { back: true });
+        seedInputForStep(target);
+        setError(null);
+        setNotice(null);
+      }
       return;
     }
 
@@ -905,6 +1552,33 @@ export function InitSetup({
             index,
             key.upArrow ? -1 : 1,
             RUN_MODE_OPTIONS.length,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (step === "source-langsmith-workspaces") {
+      handleMenuInput(key, () =>
+        setLangsmithWorkspaceSelectionIndex((index) =>
+          moveSelectionIndex(
+            index,
+            key.upArrow ? -1 : 1,
+            // workspaces + "Add a workspace" + "Done".
+            langsmithWorkspaces.length + 2,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (step === "source-langsmith-region") {
+      handleMenuInput(key, () =>
+        setLangsmithRegionSelectionIndex((index) =>
+          moveSelectionIndex(
+            index,
+            key.upArrow ? -1 : 1,
+            LANGSMITH_REGION_OPTIONS.length,
           ),
         ),
       );
@@ -1050,7 +1724,7 @@ export function InitSetup({
       }
 
       if (key.backspace || key.delete) {
-        setInput((value) => value.slice(0, -1));
+        setCodeRepoPathInput((value) => value.slice(0, -1));
         return;
       }
 
@@ -1058,7 +1732,7 @@ export function InitSetup({
 
       if (sanitizedInput && !key.ctrl && !key.meta) {
         setError(null);
-        setInput((value) => value + sanitizedInput);
+        setCodeRepoPathInput((value) => value + sanitizedInput);
       }
 
       return;
@@ -1122,6 +1796,7 @@ export function InitSetup({
       );
 
       if (nextStep) {
+        seedInputForStep(nextStep);
         setStep(nextStep);
         return;
       }
@@ -1129,6 +1804,10 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1143,7 +1822,7 @@ export function InitSetup({
         CODE_REPO_OPTIONS[codeRepoSelectionIndex] ?? CODE_REPO_OPTIONS[0];
 
       if (selectedOption === "Edit path") {
-        setInput(codeRepoRoot);
+        setCodeRepoPathInput(codeRepoRoot);
         setStep("code-repo-path");
         return;
       }
@@ -1155,10 +1834,10 @@ export function InitSetup({
 
     if (step === "code-repo-path") {
       try {
-        const repoRoot = await validateLocalDirectoryPath(input);
+        const repoRoot = await validateLocalDirectoryPath(codeRepoPathInput);
         setCodeRepoRoot(repoRoot);
         setCodeRepoConfirmed(true);
-        setInput("");
+        setCodeRepoPathInput("");
         continueAfterCodeRepoConfirmed(repoRoot);
       } catch (pathError) {
         setError(getErrorMessage(pathError));
@@ -1170,8 +1849,25 @@ export function InitSetup({
       const selectedProvider =
         SELECTABLE_OPENWIKI_PROVIDERS[providerSelectionIndex] ??
         DEFAULT_PROVIDER;
+      // Credentials are provider-specific, so switching providers must not carry
+      // the previous provider's key/secret/etc. across (otherwise seedInputForStep
+      // prefills it and empty-submit-keeps would save it under the new provider).
+      const switchedProvider = selectedProvider !== provider;
 
       setProvider(selectedProvider);
+      setProviderConfirmed(true);
+
+      if (switchedProvider) {
+        setApiKey(null);
+        setSecretKey(null);
+        setBaseUrl(null);
+        setRegion(null);
+        setGcpProject(null);
+        setGcpLocation(null);
+        setOauthTokens(null);
+        setModelId(null);
+      }
+
       setProviderSelectionIndex(getProviderSelectionIndex(selectedProvider));
       setModelSelectionIndex(
         getModelSelectionIndex(
@@ -1183,19 +1879,34 @@ export function InitSetup({
       const providerChanged =
         process.env[OPENWIKI_PROVIDER_ENV_KEY] !== selectedProvider;
       setForceModelStep(providerChanged);
-      const nextStep = getNextStepAfterProvider(
-        selectedProvider,
-        modelIdOverride,
-        onboardingConfig,
-        selectedMode,
-        providerChanged,
-      );
+      const nextStep =
+        nextSetupStep(
+          "provider",
+          selectedProvider,
+          selectedMode,
+          allowModeSelection,
+        ) ??
+        getNextStepAfterProvider(
+          selectedProvider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          providerChanged,
+        );
 
       if (nextStep) {
         setIsCustomModelInput(
           nextStep === "model" &&
             shouldStartWithCustomModelInput(selectedProvider),
         );
+        // On a switch the closure still holds the old provider/apiKey, so
+        // seedInputForStep would re-seed stale values; leave the field empty and
+        // let a later visit seed from the new provider's own env.
+        if (switchedProvider) {
+          setInput("");
+        } else {
+          seedInputForStep(nextStep);
+        }
         setStep(nextStep);
         return;
       }
@@ -1203,6 +1914,10 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1213,39 +1928,247 @@ export function InitSetup({
     }
 
     if (step === "api-key") {
-      const trimmedInput =
-        input.trim().length > 0
-          ? input.trim()
+      const trimmedInput = input.trim();
+      // Empty submit keeps an existing key (session or env); only a genuinely
+      // missing key is an error. For Copilot, an empty submit also picks up a
+      // gh CLI-detected token when the user hasn't typed one over it.
+      const nextApiKey =
+        trimmedInput.length > 0
+          ? trimmedInput
           : provider === "copilot" && copilotAuth.kind === "detected"
             ? copilotAuth.token
-            : "";
+            : apiKey;
 
-      if (trimmedInput.length === 0) {
-        setError(`${getProviderApiKeyEnvKey(provider)} is required.`);
+      if (nextApiKey === null && !isCredentialConfigured(provider)) {
+        setError(
+          `${getProviderApiKeyEnvKey(provider) ?? "API key"} is required.`,
+        );
         return;
       }
 
-      setApiKey(trimmedInput);
+      if (trimmedInput.length > 0) {
+        setApiKey(trimmedInput);
+      }
       setInput("");
-      const nextStep = getNextStepAfterApiKey(
-        provider,
-        modelIdOverride,
-        onboardingConfig,
-        selectedMode,
-        forceModelStep,
-      );
+      const nextStep =
+        nextSetupStep("api-key", provider, selectedMode, allowModeSelection) ??
+        getNextStepAfterApiKey(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
 
       if (nextStep) {
         setIsCustomModelInput(
           nextStep === "model" && shouldStartWithCustomModelInput(provider),
         );
+        seedInputForStep(nextStep);
         setStep(nextStep);
         return;
       }
 
       await completeSetup({
-        nextApiKey: trimmedInput,
+        nextApiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
+      return;
+    }
+
+    if (step === "secret-key") {
+      const trimmedInput = input.trim();
+      // Empty submit keeps an existing secret key (see the api-key step).
+      const nextSecretKey = trimmedInput.length > 0 ? trimmedInput : secretKey;
+
+      if (nextSecretKey === null && !isSecretKeyConfigured(provider)) {
+        setError(
+          `${getProviderSecretKeyEnvKey(provider) ?? "Secret key"} is required.`,
+        );
+        return;
+      }
+
+      if (trimmedInput.length > 0) {
+        setSecretKey(trimmedInput);
+      }
+      setInput("");
+      const nextStep =
+        nextSetupStep(
+          "secret-key",
+          provider,
+          selectedMode,
+          allowModeSelection,
+        ) ??
+        getNextStepAfterSecretKey(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        seedInputForStep(nextStep);
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextSecretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
+      return;
+    }
+
+    if (step === "region") {
+      const trimmedInput = input.trim();
+      const configuredRegion = resolveProviderRegion(provider);
+      const credentialRepairMessage = getAwsCredentialRepairMessage(provider);
+
+      if (credentialRepairMessage) {
+        setError(credentialRepairMessage);
+        return;
+      }
+
+      if (trimmedInput.length === 0 && !configuredRegion) {
+        const regionEnvKeys = getProviderRegionEnvKeys(provider);
+        setError(
+          `Set one of ${regionEnvKeys.join(", ") || "the supported region variables"}.`,
+        );
+        return;
+      }
+
+      const nextRegion = trimmedInput.length > 0 ? trimmedInput : region;
+
+      if (trimmedInput.length > 0) {
+        setRegion(trimmedInput);
+      }
+      setInput("");
+      const nextStep =
+        nextSetupStep("region", provider, selectedMode, allowModeSelection) ??
+        getNextStepAfterRegion(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        seedInputForStep(nextStep);
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: modelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
+      return;
+    }
+
+    if (step === "gcp-project") {
+      const trimmedInput = input.trim();
+
+      if (trimmedInput.length === 0) {
+        setError(
+          `${getProviderProjectEnvKey(provider) ?? "GCP project"} is required.`,
+        );
+        return;
+      }
+
+      if (/\s/u.test(trimmedInput)) {
+        setError("Enter a valid Google Cloud project ID (no spaces).");
+        return;
+      }
+
+      setGcpProject(trimmedInput);
+      setInput("");
+      // gcp-location always follows gcp-project (gemini-enterprise); seed it so a
+      // previously entered location is restored instead of arriving blank.
+      seedInputForStep("gcp-location");
+      setStep("gcp-location");
+      return;
+    }
+
+    if (step === "gcp-location") {
+      const trimmedInput = input.trim();
+
+      if (/\s/u.test(trimmedInput)) {
+        setError(
+          `Enter a valid location (no spaces), or leave blank for ${DEFAULT_VERTEX_LOCATION}.`,
+        );
+        return;
+      }
+
+      const nextGcpLocation = trimmedInput.length > 0 ? trimmedInput : null;
+
+      setGcpLocation(nextGcpLocation);
+      setInput("");
+      const nextStep =
+        nextSetupStep(
+          "gcp-location",
+          provider,
+          selectedMode,
+          allowModeSelection,
+        ) ??
+        getNextStepAfterGcpLocation(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
+
+      if (nextStep) {
+        setIsCustomModelInput(
+          nextStep === "model" && shouldStartWithCustomModelInput(provider),
+        );
+        seedInputForStep(nextStep);
+        setStep(nextStep);
+        return;
+      }
+
+      await completeSetup({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1265,25 +2188,32 @@ export function InitSetup({
         return;
       }
 
-      if (!isValidBaseUrl(trimmedInput)) {
-        setError("Enter a valid http(s) base URL.");
+      const baseUrlWarnings = getProviderBaseUrlWarnings(
+        provider,
+        trimmedInput,
+      );
+      if (baseUrlWarnings.length > 0) {
+        setError(`Enter a valid base URL: ${baseUrlWarnings.join(", ")}.`);
         return;
       }
 
       setBaseUrl(trimmedInput);
       setInput("");
-      const nextStep = getNextStepAfterBaseUrl(
-        provider,
-        modelIdOverride,
-        onboardingConfig,
-        selectedMode,
-        forceModelStep,
-      );
+      const nextStep =
+        nextSetupStep("base-url", provider, selectedMode, allowModeSelection) ??
+        getNextStepAfterBaseUrl(
+          provider,
+          modelIdOverride,
+          onboardingConfig,
+          selectedMode,
+          forceModelStep,
+        );
 
       if (nextStep) {
         setIsCustomModelInput(
           nextStep === "model" && shouldStartWithCustomModelInput(provider),
         );
+        seedInputForStep(nextStep);
         setStep(nextStep);
         return;
       }
@@ -1291,6 +2221,10 @@ export function InitSetup({
       await completeSetup({
         nextApiKey: apiKey,
         nextBaseUrl: trimmedInput,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1323,20 +2257,10 @@ export function InitSetup({
       setInput("");
       setIsCustomModelInput(false);
 
-      if (process.env.LANGSMITH_API_KEY === undefined) {
-        setStep("langsmith");
-        return;
-      }
-
-      await continueAfterCredentials({
-        nextApiKey: apiKey,
-        nextBaseUrl: baseUrl,
-        nextLangSmithKey: langSmithKey,
-        nextModelId: selectedModelId,
-        nextOAuthTokens: oauthTokens,
-        nextProvider: provider,
-        runMode: selectedMode,
-      });
+      // Sequential: always visit LangSmith next (the next spine step). Seed it
+      // from state so a key entered earlier and stepped past is not dropped.
+      seedInputForStep("langsmith");
+      setStep("langsmith");
       return;
     }
 
@@ -1349,6 +2273,10 @@ export function InitSetup({
       await continueAfterCredentials({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
         nextLangSmithKey,
         nextModelId: modelId,
         nextOAuthTokens: oauthTokens,
@@ -1396,13 +2324,30 @@ export function InitSetup({
         templateName: selectedTemplate.name,
       };
       await saveConfig(nextConfig);
-      setInput(selectedTemplate.suggestedGoal);
+      // Keep the existing goal when the template is unchanged (so re-walking is
+      // idempotent); use the template's suggested goal when it actually changed.
+      const keepExistingGoal =
+        selectedTemplate.id === getConfigModeId(onboardingConfig) &&
+        onboardingConfig.wikiGoal !== undefined &&
+        onboardingConfig.wikiGoal.length > 0;
+      setInput(
+        keepExistingGoal
+          ? (onboardingConfig.wikiGoal ?? "")
+          : selectedTemplate.suggestedGoal,
+      );
       setStep("wiki-goal");
       return;
     }
 
     if (step === "source-menu") {
       if (sourceSelectionIndex >= activeSourceOptions.length) {
+        // Code mode auto-configures the repo, so its sources are all optional;
+        // "Continue" always advances to the wiki brief rather than nagging.
+        if (isCodeMode(onboardingConfig)) {
+          advanceAfterCodeSources();
+          return;
+        }
+
         if (
           getConnectedSourceCount(onboardingConfig, activeSourceOptions) > 0
         ) {
@@ -1510,6 +2455,81 @@ export function InitSetup({
       return;
     }
 
+    if (step === "source-langsmith-workspaces") {
+      const workspaceCount = langsmithWorkspaces.length;
+      if (langsmithWorkspaceSelectionIndex < workspaceCount) {
+        // Edit an existing workspace: load it into the draft and walk the fields.
+        const existing = langsmithWorkspaces[langsmithWorkspaceSelectionIndex];
+        setLangsmithEditingIndex(langsmithWorkspaceSelectionIndex);
+        setLangsmithDraft({ ...existing });
+        setLangsmithRegionSelectionIndex(
+          getLangsmithRegionSelectionIndex(existing.region),
+        );
+        setStep("source-langsmith-region");
+        return;
+      }
+      if (langsmithWorkspaceSelectionIndex === workspaceCount) {
+        // Add a workspace with a fresh key env var name.
+        setLangsmithEditingIndex(workspaceCount);
+        setLangsmithDraft({
+          apiKey: "",
+          apiKeyEnv: nextLangSmithApiKeyEnv(
+            langsmithWorkspaces.map((workspace) => workspace.apiKeyEnv),
+          ),
+          projects: [],
+          region: "us",
+        });
+        setLangsmithRegionSelectionIndex(
+          getLangsmithRegionSelectionIndex("us"),
+        );
+        setStep("source-langsmith-region");
+        return;
+      }
+      // Done.
+      returnToSourceMenu();
+      return;
+    }
+
+    if (step === "source-langsmith-region") {
+      const selectedOption =
+        LANGSMITH_REGION_OPTIONS[langsmithRegionSelectionIndex] ??
+        LANGSMITH_REGION_OPTIONS[0];
+      setLangsmithDraft((draft) =>
+        draft ? { ...draft, region: selectedOption.id } : draft,
+      );
+      seedInputForStep("source-langsmith-key");
+      setStep("source-langsmith-key");
+      return;
+    }
+
+    if (step === "source-langsmith-key") {
+      const nextKey = input.trim();
+      setLangsmithDraft((draft) =>
+        draft ? { ...draft, apiKey: nextKey } : draft,
+      );
+      // setLangsmithDraft has not applied yet this tick, so seed the projects
+      // field from the current draft rather than via seedInputForStep.
+      setInput((langsmithDraft?.projects ?? []).join(", "));
+      setStep("source-langsmith-projects");
+      return;
+    }
+
+    if (step === "source-langsmith-projects") {
+      // Commit the workspace with its exact project set; nothing is written here,
+      // the file + keys are committed at the final step.
+      const names = [
+        ...new Set(
+          input
+            .split(",")
+            .map((name) => name.trim())
+            .filter((name) => name.length > 0),
+        ),
+      ];
+      commitLangsmithWorkspace(names);
+      returnToWorkspacesMenu();
+      return;
+    }
+
     if (step === "source-description") {
       if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
         setInput("");
@@ -1584,6 +2604,35 @@ export function InitSetup({
     }
 
     if (step === "final") {
+      // Commit the LangSmith workspaces as the exact set (WYSIWYG add/edit/remove),
+      // only when the sub-menu was opened — so an aborted or untouched setup never
+      // rewrites openwiki/.langsmith.json.
+      if (selectedMode === "code" && langsmithSourcesTouched) {
+        try {
+          // Freshly-entered keys go to ~/.openwiki/.env (never committed); an empty
+          // apiKey keeps the existing saved key.
+          const keyUpdates: Record<string, string> = {};
+          for (const workspace of langsmithWorkspaces) {
+            if (workspace.apiKey.length > 0) {
+              keyUpdates[workspace.apiKeyEnv] = workspace.apiKey;
+            }
+          }
+          if (Object.keys(keyUpdates).length > 0) {
+            await saveOpenWikiEnv(keyUpdates);
+          }
+          await saveLangSmithSetup(
+            codeRepoRoot,
+            langsmithWorkspaces.map((workspace) => ({
+              apiKeyEnv: workspace.apiKeyEnv,
+              projects: workspace.projects,
+              region: workspace.region,
+            })),
+          );
+        } catch (writeError) {
+          setError(getErrorMessage(writeError));
+          return;
+        }
+      }
       const runIngestionNow =
         FINAL_OPTIONS[finalSelectionIndex] === "Run ingestion now";
       const nextConfig = {
@@ -1607,9 +2656,13 @@ export function InitSetup({
         runIngestionNow,
         savedApiKey: apiKey !== null || oauthTokens !== null,
         savedBaseUrl: baseUrl !== null,
+        savedGcpLocation: gcpLocation !== null,
+        savedGcpProject: gcpProject !== null,
         savedLangSmithKey: langSmithKey !== null && langSmithKey.length > 0,
         savedModelId: modelId !== null,
         savedProvider: process.env[OPENWIKI_PROVIDER_ENV_KEY] !== provider,
+        savedRegion: region !== null,
+        savedSecretKey: secretKey !== null,
         shouldContinueToRun: runIngestionNow,
       });
     }
@@ -1653,15 +2706,41 @@ export function InitSetup({
   type CompleteSetupOptions = {
     nextApiKey: string | null;
     nextBaseUrl: string | null;
+    nextGcpLocation: string | null;
+    nextGcpProject: string | null;
     nextLangSmithKey: string | null;
     nextModelId: string | null;
     nextOAuthTokens?: CodexTokens | null;
     nextProvider: OpenWikiProvider;
+    nextRegion: string | null;
+    nextSecretKey: string | null;
     runMode: OpenWikiRunMode;
   };
 
   async function continueAfterCredentials(options: CompleteSetupOptions) {
     await saveCredentialUpdates(options);
+
+    // Explicit --init walks the whole tail; enter at its first step rather than
+    // skipping steps that are already configured.
+    if (walkAllSteps) {
+      if (options.runMode === "code") {
+        setCodeRepoRoot(getDefaultCodeRepoRootPath());
+        setCodeRepoSelectionIndex(0);
+        setStep("code-repo-confirm");
+        return;
+      }
+
+      // Personal mode fixes the template from the run mode, so skip the
+      // redundant Code/Personal chooser and walk straight into the wiki brief.
+      // Seed the existing goal so Enter keeps it (idempotent re-walk), else the
+      // template's suggested goal.
+      setInput(
+        onboardingConfig.wikiGoal ??
+          getTemplateGoal(getConfigModeId(onboardingConfig)),
+      );
+      setStep("wiki-goal");
+      return;
+    }
 
     if (options.runMode === "code" && !isOnboardingComplete(onboardingConfig)) {
       setCodeRepoRoot(getDefaultCodeRepoRootPath());
@@ -1696,13 +2775,44 @@ export function InitSetup({
   }
 
   function continueAfterCodeRepoConfirmed(repoRoot: string) {
-    if (!onboardingConfig.wikiGoal) {
-      setInput(getTemplateGoal(getConfigModeId(onboardingConfig)));
+    setCodeRepoRoot(repoRoot);
+    // Preload committed LangSmith projects (once) so the source menu shows them
+    // and edits build on them (fail-open on the read).
+    if (!langsmithPreloadedRef.current) {
+      langsmithPreloadedRef.current = true;
+      void loadLangSmithSetup(repoRoot)
+        .then((existing) =>
+          setLangsmithWorkspaces(
+            existing.map((workspace) => ({
+              apiKey: "",
+              apiKeyEnv: workspace.apiKeyEnv,
+              projects: workspace.projects,
+              region: workspace.region,
+            })),
+          ),
+        )
+        .catch(() => {});
+    }
+    // Code mode auto-configures the repo itself; the source menu then offers the
+    // optional LangSmith trace sources before the wiki brief.
+    setSourceSelectionIndex(0);
+    setSourceState({ secretValues: {} });
+    setStep("source-menu");
+  }
+
+  // Continues past the code-mode source menu into the wiki brief. Walks wiki-goal
+  // on --init even when set; otherwise only when unset. Seeds the existing goal so
+  // Enter keeps it (idempotent).
+  function advanceAfterCodeSources() {
+    if (walkAllSteps || !onboardingConfig.wikiGoal) {
+      setInput(
+        onboardingConfig.wikiGoal ??
+          getTemplateGoal(getConfigModeId(onboardingConfig)),
+      );
       setStep("wiki-goal");
       return;
     }
 
-    setCodeRepoRoot(repoRoot);
     setStep("final");
   }
 
@@ -1726,6 +2836,10 @@ export function InitSetup({
       savedApiKey:
         options.nextApiKey !== null || options.nextOAuthTokens != null,
       savedBaseUrl: options.nextBaseUrl !== null,
+      savedRegion: options.nextRegion !== null,
+      savedSecretKey: options.nextSecretKey !== null,
+      savedGcpLocation: options.nextGcpLocation !== null,
+      savedGcpProject: options.nextGcpProject !== null,
       savedLangSmithKey:
         options.nextLangSmithKey !== null &&
         options.nextLangSmithKey.length > 0,
@@ -1739,10 +2853,14 @@ export function InitSetup({
   async function saveCredentialUpdates({
     nextApiKey,
     nextBaseUrl,
+    nextGcpLocation,
+    nextGcpProject,
     nextLangSmithKey,
     nextModelId,
     nextOAuthTokens = oauthTokens,
     nextProvider,
+    nextRegion,
+    nextSecretKey,
   }: CompleteSetupOptions) {
     setIsSaving(true);
 
@@ -1754,7 +2872,11 @@ export function InitSetup({
       }
 
       if (nextApiKey !== null) {
-        updates[getProviderApiKeyEnvKey(nextProvider)] = nextApiKey;
+        const apiKeyEnvKey = getProviderApiKeyEnvKey(nextProvider);
+
+        if (apiKeyEnvKey) {
+          updates[apiKeyEnvKey] = nextApiKey;
+        }
       }
 
       if (nextOAuthTokens) {
@@ -1766,6 +2888,38 @@ export function InitSetup({
 
         if (baseUrlEnvKey) {
           updates[baseUrlEnvKey] = nextBaseUrl;
+        }
+      }
+
+      if (nextSecretKey !== null) {
+        const secretKeyEnvKey = getProviderSecretKeyEnvKey(nextProvider);
+
+        if (secretKeyEnvKey) {
+          updates[secretKeyEnvKey] = nextSecretKey;
+        }
+      }
+
+      if (nextRegion !== null) {
+        const regionEnvKey = getProviderRegionEnvKey(nextProvider);
+
+        if (regionEnvKey) {
+          updates[regionEnvKey] = nextRegion;
+        }
+      }
+
+      if (nextGcpProject !== null) {
+        const projectEnvKey = getProviderProjectEnvKey(nextProvider);
+
+        if (projectEnvKey) {
+          updates[projectEnvKey] = nextGcpProject;
+        }
+      }
+
+      if (nextGcpLocation !== null) {
+        const locationEnvKey = getProviderLocationEnvKey(nextProvider);
+
+        if (locationEnvKey) {
+          updates[locationEnvKey] = nextGcpLocation;
         }
       }
 
@@ -1841,6 +2995,15 @@ export function InitSetup({
       return;
     }
 
+    if (source.id === "langsmith") {
+      // Open the workspace sub-menu (add/edit/remove). Opening it arms the
+      // WYSIWYG write on completion.
+      setLangsmithSourcesTouched(true);
+      setLangsmithWorkspaceSelectionIndex(0);
+      setStep("source-langsmith-workspaces");
+      return;
+    }
+
     try {
       if (source.id === "git-repo") {
         setInput(getDefaultLocalGitRepoPath());
@@ -1859,11 +3022,60 @@ export function InitSetup({
     }
   }
 
+  /**
+   * Folds the in-progress draft into langsmithWorkspaces at the editing index. An
+   * empty project list removes the workspace (WYSIWYG).
+   */
+  function commitLangsmithWorkspace(names: string[]): void {
+    const draft = langsmithDraft;
+    setLangsmithWorkspaces((list) => {
+      const next = [...list];
+      if (names.length === 0) {
+        if (langsmithEditingIndex < next.length) {
+          next.splice(langsmithEditingIndex, 1);
+        }
+        return next;
+      }
+      if (!draft) {
+        return next;
+      }
+      const workspace = { ...draft, projects: names };
+      if (langsmithEditingIndex >= next.length) {
+        next.push(workspace);
+      } else {
+        next[langsmithEditingIndex] = workspace;
+      }
+      return next;
+    });
+  }
+
+  /**
+   * Returns to the workspace sub-menu as a back-navigation: unwind history through
+   * it so Esc from the refreshed sub-menu goes to the source menu, not back down
+   * into the edited workspace's field steps.
+   */
+  function returnToWorkspacesMenu() {
+    setInput("");
+    setLangsmithDraft(null);
+    const index = navHistory.current.lastIndexOf("source-langsmith-workspaces");
+    if (index >= 0) {
+      navHistory.current.length = index;
+    }
+    setStep("source-langsmith-workspaces", { back: true });
+  }
+
   function returnToSourceMenu() {
     setSourceSelectionIndex(activeSourceOptions.length);
     setSourceState({ secretValues: {} });
     setInput("");
-    setStep("source-menu");
+    // Returning to the menu is a back-navigation: unwind history through the menu
+    // so Escape from the refreshed menu goes to the step BEFORE it (repo-confirm),
+    // not back down into the source's child steps (which would show empty fields).
+    const menuIndex = navHistory.current.lastIndexOf("source-menu");
+    if (menuIndex >= 0) {
+      navHistory.current.length = menuIndex;
+    }
+    setStep("source-menu", { back: true });
   }
 
   async function configureLocalGitRepo(
@@ -2030,158 +3242,264 @@ export function InitSetup({
 
   const needsCredentialPrompt =
     !hasValidConfiguredProvider() ||
+    needsAwsCredentialRepair(provider) ||
     needsCredentialStep(provider) ||
+    needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
+    needsRegionStep(provider) ||
     (modelIdOverride === null &&
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
-    process.env.LANGSMITH_API_KEY === undefined;
+    needsLangSmithStep();
+  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+  const primaryCredentialStep = credentialStep(provider);
+  const projectEnvKey = getProviderProjectEnvKey(provider);
+  const locationEnvKey = getProviderLocationEnvKey(provider);
+
+  // A shell export wins over saved config at runtime. List any wizard-managed
+  // keys present in the shell so their precedence is not a surprise and the
+  // "from shell" rows below are explained. Presence only, not a value compare;
+  // key names only, never values.
+  const shadowedShellKeys = getWizardManagedEnvKeys(provider).filter(
+    (key) => getShellEnvValue(key) !== undefined,
+  );
+  const isSingleShadow = shadowedShellKeys.length === 1;
+  const shadowedShellWarning =
+    shadowedShellKeys.length === 0
+      ? null
+      : `${
+          isSingleShadow ? "This key was" : "These keys were"
+        } detected in your shell and ${
+          isSingleShadow ? "overrides" : "override"
+        } saved config: ${shadowedShellKeys.join(", ")}. Runs use the shell ` +
+        `value${isSingleShadow ? "" : "s"}; unset ${
+          isSingleShadow ? "it" : "them"
+        } to use your saved config.`;
 
   return (
     <Box flexDirection="column">
       <SetupHeader />
 
-      <Box flexDirection="column" marginBottom={1}>
-        <SetupStep
-          label="Provider"
-          state={
-            hasValidConfiguredProvider()
-              ? "done"
-              : step === "provider"
-                ? "current"
-                : "pending"
-          }
-          detail={getProviderSetupDetail(provider)}
-        />
-        <SetupStep
-          label={providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"}
-          state={
-            isCredentialConfigured(provider) || oauthTokens
-              ? "done"
-              : step === credentialStep(provider)
-                ? "current"
-                : "pending"
-          }
-          detail={getCredentialSetupDetail(provider, oauthTokens)}
-        />
-        {providerRequiresBaseUrl(provider) ? (
+      {shadowedShellWarning ? (
+        <Box marginBottom={1} marginLeft={2}>
+          <Text color="yellow">⚠ {shadowedShellWarning}</Text>
+        </Box>
+      ) : null}
+
+      <Box flexDirection="column" marginBottom={1} marginLeft={2}>
+        <Text color="gray">Detected from your command</Text>
+        <Box flexDirection="column" marginLeft={2}>
           <SetupStep
-            label="Base URL"
+            label="Run mode"
             state={
-              isBaseUrlConfigured(provider)
-                ? "done"
-                : step === "base-url"
+              allowModeSelection
+                ? step === "run-mode"
                   ? "current"
-                  : "pending"
-            }
-            detail={
-              isBaseUrlConfigured(provider)
-                ? "available from environment"
-                : `save ${getProviderBaseUrlEnvKey(provider)} to ${openWikiEnvPath}`
-            }
-          />
-        ) : null}
-        <SetupStep
-          label="Model"
-          state={
-            modelIdOverride || process.env[OPENWIKI_MODEL_ID_ENV_KEY]
-              ? "done"
-              : step === "model"
-                ? "current"
-                : "pending"
-          }
-          detail={getModelSetupDetail(modelIdOverride, provider)}
-        />
-        <SetupStep
-          label="LangSmith"
-          state={
-            process.env.LANGSMITH_API_KEY !== undefined
-              ? "done"
-              : step === "langsmith"
-                ? "current"
-                : "optional"
-          }
-          detail={
-            process.env.LANGSMITH_API_KEY !== undefined
-              ? "available from environment"
-              : "optional tracing key"
-          }
-        />
-        <SetupStep
-          label="Run mode"
-          state={
-            allowModeSelection
-              ? step === "run-mode"
-                ? "current"
+                  : "done"
                 : "done"
-              : "done"
-          }
-          detail={getRunModeName(selectedMode)}
-        />
-        {selectedMode === "personal" ? (
-          <SetupStep
-            label="Personal profile"
-            state={
-              onboardingConfig.templateId
-                ? "done"
-                : step === "template"
-                  ? "current"
-                  : "pending"
             }
-            detail={getConfigModeName(onboardingConfig) ?? "choose a profile"}
+            detail={getRunModeName(selectedMode)}
           />
-        ) : null}
-        <SetupStep
-          label="Wiki scope"
-          state={
-            selectedMode === "code"
-              ? "done"
-              : onboardingConfig.wikiGoal
-                ? "done"
-                : step === "wiki-goal"
-                  ? "current"
-                  : "pending"
-          }
-          detail={
-            selectedMode === "code"
-              ? "repository openwiki/"
-              : onboardingConfig.wikiGoal
-                ? "saved"
-                : `save onboarding profile to ${openWikiOnboardingPath}`
-          }
-        />
-        {selectedMode === "personal" ? (
+          {selectedMode === "code" ? (
+            <SetupStep label="Wiki scope" state="done" detail="openwiki/" />
+          ) : null}
+        </Box>
+      </Box>
+
+      <Box flexDirection="column" marginLeft={2}>
+        <Text color="gray">Set up</Text>
+        <Box flexDirection="column" marginLeft={2}>
           <SetupStep
-            label="Schedule"
-            state={
-              onboardingConfig.ingestionSchedule
-                ? "done"
-                : isScheduleStep(step)
-                  ? "current"
-                  : "pending"
-            }
+            label="Provider"
+            state={resolveStepStatus(
+              "provider",
+              step,
+              hasValidConfiguredProvider() || providerConfirmed,
+            )}
+            detail={getProviderLabel(provider)}
+          />
+          {providerUsesAwsSdkCredentials(provider) ? (
+            <SetupStep
+              label="AWS credentials"
+              state={
+                getMissingProviderEnvKey(provider) === null ? "done" : "pending"
+              }
+              detail={getCredentialSetupDetail(provider)}
+            />
+          ) : providerUsesOAuth(provider) || primaryCredentialStep ? (
+            <SetupStep
+              label={
+                providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"
+              }
+              state={resolveStepStatus(
+                primaryCredentialStep ?? "provider",
+                step,
+                apiKey !== null ||
+                  isCredentialConfigured(provider) ||
+                  oauthTokens !== null,
+              )}
+              detail={
+                providerUsesOAuth(provider)
+                  ? getCredentialSetupDetail(provider, oauthTokens)
+                  : apiKeyEnvKey && getShellEnvValue(apiKeyEnvKey) !== undefined
+                    ? "from shell"
+                    : apiKey !== null || isCredentialConfigured(provider)
+                      ? "configured"
+                      : "not set"
+              }
+            />
+          ) : null}
+          {providerRequiresSecretKey(provider) ? (
+            <SetupStep
+              label="Secret key"
+              state={resolveStepStatus(
+                "secret-key",
+                step,
+                secretKey !== null || isSecretKeyConfigured(provider),
+              )}
+              detail={
+                secretKey !== null || isSecretKeyConfigured(provider)
+                  ? "configured"
+                  : "not set"
+              }
+            />
+          ) : null}
+          {projectEnvKey ? (
+            <SetupStep
+              label="GCP project"
+              state={resolveStepStatus(
+                "gcp-project",
+                step,
+                gcpProject !== null || process.env[projectEnvKey] !== undefined,
+              )}
+              detail={
+                gcpProject ??
+                (process.env[projectEnvKey] ? "configured" : "not set")
+              }
+            />
+          ) : null}
+          {projectEnvKey && locationEnvKey ? (
+            <SetupStep
+              label="GCP location"
+              state={resolveStepStatus(
+                "gcp-location",
+                step,
+                gcpLocation !== null ||
+                  process.env[locationEnvKey] !== undefined,
+                "optional",
+              )}
+              detail={
+                gcpLocation ??
+                (process.env[locationEnvKey]
+                  ? "configured"
+                  : `default ${DEFAULT_VERTEX_LOCATION}`)
+              }
+            />
+          ) : null}
+          {providerRequiresBaseUrl(provider) ? (
+            <SetupStep
+              label="Base URL"
+              state={resolveStepStatus(
+                "base-url",
+                step,
+                baseUrl !== null || isBaseUrlConfigured(provider),
+              )}
+              detail={
+                baseUrl ??
+                (isBaseUrlConfigured(provider) ? "configured" : "not set")
+              }
+            />
+          ) : null}
+          {providerRequiresRegion(provider) ? (
+            <SetupStep
+              label="Region"
+              state={resolveStepStatus(
+                "region",
+                step,
+                region !== null || isRegionConfigured(provider),
+              )}
+              detail={
+                region ??
+                (isRegionConfigured(provider) ? "configured" : "not set")
+              }
+            />
+          ) : null}
+          <SetupStep
+            label="Model"
+            state={resolveStepStatus(
+              "model",
+              step,
+              modelId !== null ||
+                modelIdOverride !== null ||
+                process.env[OPENWIKI_MODEL_ID_ENV_KEY] !== undefined,
+            )}
+            detail={modelId ?? getModelSetupDetail(modelIdOverride, provider)}
+          />
+          <SetupStep
+            label="LangSmith"
+            state={resolveStepStatus(
+              "langsmith",
+              step,
+              langSmithKey !== null || Boolean(process.env.LANGSMITH_API_KEY),
+              "optional",
+            )}
             detail={
-              onboardingConfig.ingestionSchedule
-                ? onboardingConfig.ingestionSchedule.description
-                : "choose one time for all ingestion"
+              langSmithKey !== null
+                ? langSmithKey.length > 0
+                  ? "configured"
+                  : "skipped"
+                : process.env.LANGSMITH_API_KEY
+                  ? "configured"
+                  : "not set"
             }
           />
-        ) : null}
-        {selectedMode === "personal" ? (
-          <SetupStep
-            label="Sources"
-            state={
-              getConnectedSourceCount(onboardingConfig, activeSourceOptions) > 0
-                ? "done"
-                : isSourceStep(step)
+          {selectedMode === "personal" ? (
+            <SetupStep
+              label="Wiki scope"
+              state={resolveStepStatus(
+                "wiki-goal",
+                step,
+                Boolean(onboardingConfig.wikiGoal),
+              )}
+              detail={onboardingConfig.wikiGoal ? "configured" : "not set"}
+            />
+          ) : null}
+          {selectedMode === "personal" ? (
+            <SetupStep
+              label="Schedule"
+              state={
+                isScheduleStep(step)
                   ? "current"
-                  : "pending"
-            }
-            detail={`${getConnectedSourceCount(
-              onboardingConfig,
-              activeSourceOptions,
-            )} setup(s) configured`}
-          />
-        ) : null}
+                  : onboardingConfig.ingestionSchedule
+                    ? "done"
+                    : "pending"
+              }
+              detail={
+                onboardingConfig.ingestionSchedule
+                  ? onboardingConfig.ingestionSchedule.description
+                  : "not set"
+              }
+            />
+          ) : null}
+          {selectedMode === "personal" ? (
+            <SetupStep
+              label="Sources"
+              state={
+                isSourceStep(step)
+                  ? "current"
+                  : getConnectedSourceCount(
+                        onboardingConfig,
+                        activeSourceOptions,
+                      ) > 0
+                    ? "done"
+                    : "pending"
+              }
+              detail={`${getConnectedSourceCount(
+                onboardingConfig,
+                activeSourceOptions,
+              )} configured`}
+            />
+          ) : null}
+        </Box>
       </Box>
 
       {step === "oauth-login" ? (
@@ -2196,6 +3514,7 @@ export function InitSetup({
         <SetupPanel title="Prompt">
           {step ? (
             <Prompt
+              codeRepoPathInput={codeRepoPathInput}
               codeRepoRoot={codeRepoRoot}
               copilotAuth={copilotAuth}
               codeRepoSelectionIndex={codeRepoSelectionIndex}
@@ -2205,6 +3524,12 @@ export function InitSetup({
               input={input}
               inputDisplayWidth={inputDisplayWidth}
               isCustomModelInput={isCustomModelInput}
+              langsmithDraft={langsmithDraft}
+              langsmithRegionSelectionIndex={langsmithRegionSelectionIndex}
+              langsmithWorkspaceSelectionIndex={
+                langsmithWorkspaceSelectionIndex
+              }
+              langsmithWorkspaces={langsmithWorkspaces}
               modelSelectionIndex={modelSelectionIndex}
               onboardingConfig={onboardingConfig}
               powerModeSelectionIndex={powerModeSelectionIndex}
@@ -2230,8 +3555,18 @@ export function InitSetup({
         </SetupPanel>
       )}
 
+      {navHistory.current.length > 0 ? (
+        <Box marginLeft={2}>
+          <Text color="gray">esc to go back</Text>
+        </Box>
+      ) : null}
+
       {needsCredentialPrompt ? (
-        <Text color="gray">Secrets are masked and saved only after setup.</Text>
+        <Box marginLeft={2}>
+          <Text color="gray">
+            Secrets are masked and saved only after setup.
+          </Text>
+        </Box>
       ) : null}
       {notice ? (
         <SetupPanel title="Status">
@@ -2263,6 +3598,7 @@ export function InitSetup({
 }
 
 function Prompt({
+  codeRepoPathInput,
   codeRepoRoot,
   codeRepoSelectionIndex,
   copilotAuth,
@@ -2272,6 +3608,10 @@ function Prompt({
   input,
   inputDisplayWidth,
   isCustomModelInput,
+  langsmithDraft,
+  langsmithRegionSelectionIndex,
+  langsmithWorkspaceSelectionIndex,
+  langsmithWorkspaces,
   modelSelectionIndex,
   onboardingConfig,
   powerModeSelectionIndex,
@@ -2291,6 +3631,7 @@ function Prompt({
   suggestedCronExpression,
   templateSelectionIndex,
 }: {
+  codeRepoPathInput: string;
   codeRepoRoot: string;
   codeRepoSelectionIndex: number;
   copilotAuth: CopilotAuthState;
@@ -2300,6 +3641,10 @@ function Prompt({
   input: string;
   inputDisplayWidth: number;
   isCustomModelInput: boolean;
+  langsmithDraft: LangsmithWorkspaceDraft | null;
+  langsmithRegionSelectionIndex: number;
+  langsmithWorkspaceSelectionIndex: number;
+  langsmithWorkspaces: LangsmithWorkspaceDraft[];
   modelSelectionIndex: number;
   onboardingConfig: OpenWikiOnboardingConfig;
   powerModeSelectionIndex: number;
@@ -2367,7 +3712,7 @@ function Prompt({
 
     return (
       <Box flexDirection="column">
-        <Text>Paste your {getProviderLabel(provider)} API key.</Text>
+        <Text>Paste your {getApiKeyFieldLabel(provider)}.</Text>
         <BorderedInput
           maxDisplayWidth={inputDisplayWidth}
           marginTop={1}
@@ -2376,6 +3721,57 @@ function Prompt({
           value={input}
         />
         <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "secret-key") {
+    return (
+      <Box flexDirection="column">
+        <Text>Paste your {getProviderLabel(provider)} secret access key.</Text>
+        <BorderedInput
+          maxDisplayWidth={inputDisplayWidth}
+          marginTop={1}
+          prefix={`${getProviderSecretKeyEnvKey(provider)}=`}
+          secret
+          value={input}
+        />
+        <Text color="gray">Press Enter to save it.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "gcp-project") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter the Google Cloud project ID with Vertex AI access.</Text>
+        <Text>
+          <Text color="gray">$</Text> {getProviderProjectEnvKey(provider)}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          OpenWiki authenticates with Google Application Default Credentials
+          (run: gcloud auth application-default login). Press Enter to save it.
+        </Text>
+      </Box>
+    );
+  }
+
+  if (step === "gcp-location") {
+    return (
+      <Box flexDirection="column">
+        <Text>
+          Enter a Vertex AI location, or press Enter to use{" "}
+          {DEFAULT_VERTEX_LOCATION}.
+        </Text>
+        <Text>
+          <Text color="gray">$</Text> {getProviderLocationEnvKey(provider)}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          For example global, europe-west1, or us-east5. Press Enter to
+          continue.
+        </Text>
       </Box>
     );
   }
@@ -2391,6 +3787,31 @@ function Prompt({
         <Text color="gray">
           For example an OpenAI-compatible gateway endpoint (such as a LiteLLM
           gateway). Press Enter to save it.
+        </Text>
+      </Box>
+    );
+  }
+
+  if (step === "region") {
+    const resolvedRegion = resolveProviderRegion(provider);
+    const credentialRepairMessage = getAwsCredentialRepairMessage(provider);
+
+    return (
+      <Box flexDirection="column">
+        {credentialRepairMessage ? (
+          <Text color="yellow">⚠ {credentialRepairMessage}</Text>
+        ) : null}
+        <Text>
+          Enter the {getProviderLabel(provider)} region
+          {resolvedRegion ? `, or press Enter to keep ${resolvedRegion}` : ""}.
+        </Text>
+        <Text>
+          <Text color="gray">$</Text> {getProviderRegionEnvKey(provider)}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          Uses {getProviderRegionEnvKeys(provider).join(", ")}. For example
+          us-east-1.
         </Text>
       </Box>
     );
@@ -2547,7 +3968,7 @@ function Prompt({
           maxDisplayWidth={inputDisplayWidth}
           marginTop={1}
           prefix="path="
-          value={input}
+          value={codeRepoPathInput}
         />
         <Text color="gray">Press Enter to confirm this path.</Text>
       </Box>
@@ -2555,35 +3976,52 @@ function Prompt({
   }
 
   if (step === "source-menu") {
-    const configuredCount = getConnectedSourceCount(
-      onboardingConfig,
-      sourceOptions,
-    );
+    // LangSmith workspaces live in state until setup completes (not onboarding
+    // source instances), so count them here for the menu's configured display.
+    const langsmithWorkspaceCount = sourceOptions.some(
+      (source) => source.id === "langsmith",
+    )
+      ? langsmithWorkspaces.length
+      : 0;
+    const configuredCount =
+      getConnectedSourceCount(onboardingConfig, sourceOptions) +
+      langsmithWorkspaceCount;
 
     return (
       <Box flexDirection="column">
         <Text>Configure sources for this mode.</Text>
         {sourceOptions.map((source, index) => {
+          const isLangsmith = source.id === "langsmith";
           const sourceInstances = getSourceInstances(
             onboardingConfig,
             source.id,
           );
+          const count = isLangsmith
+            ? langsmithWorkspaces.length
+            : sourceInstances.length;
           return (
             <Box flexDirection="column" key={source.id}>
               <Text>
                 <SelectionMarker isSelected={index === sourceSelectionIndex} />{" "}
-                {getSourceMenuLabel(source, sourceInstances.length)}{" "}
+                {getSourceMenuLabel(source, count)}{" "}
                 <SourceConnectionStatus
-                  count={sourceInstances.length}
-                  isConfigured={sourceInstances.length > 0}
+                  count={count}
+                  isConfigured={count > 0}
                 />
               </Text>
-              {sourceInstances.map((sourceInstance) => (
-                <Text color="gray" key={sourceInstance.id}>
-                  {"  "}- {sourceInstance.name ?? sourceInstance.id}{" "}
-                  <Text color="gray">({sourceInstance.id})</Text>
-                </Text>
-              ))}
+              {isLangsmith
+                ? langsmithWorkspaces.map((workspace) => (
+                    <Text color="gray" key={workspace.apiKeyEnv}>
+                      {"  "}- {getLangsmithRegionLabel(workspace.region)}:{" "}
+                      {workspace.projects.join(", ")}
+                    </Text>
+                  ))
+                : sourceInstances.map((sourceInstance) => (
+                    <Text color="gray" key={sourceInstance.id}>
+                      {"  "}- {sourceInstance.name ?? sourceInstance.id}{" "}
+                      <Text color="gray">({sourceInstance.id})</Text>
+                    </Text>
+                  ))}
             </Box>
           );
         })}
@@ -2661,6 +4099,7 @@ function Prompt({
         <Text>{selectedSource.displayName} authorization</Text>
         {sourceState.authUrl ? (
           <OAuthAuthorizationLink
+            authProvider={selectedSource.authProvider}
             copiedToClipboard={Boolean(sourceState.copiedAuthUrlToClipboard)}
             url={sourceState.authUrl}
           />
@@ -2714,6 +4153,110 @@ function Prompt({
           value={input}
         />
         <Text color="gray">Optional. Press Enter to continue.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "source-langsmith-workspaces") {
+    const workspaceCount = langsmithWorkspaces.length;
+    return (
+      <Box flexDirection="column">
+        <Text>LangSmith workspaces to document.</Text>
+        <Text color="gray">
+          A LangSmith key is region-bound, so each workspace has its own region
+          and key. Select one to edit (clear its projects to remove it).
+        </Text>
+        {langsmithWorkspaces.map((workspace, index) => (
+          <Text key={workspace.apiKeyEnv}>
+            <SelectionMarker
+              isSelected={index === langsmithWorkspaceSelectionIndex}
+            />{" "}
+            {getLangsmithRegionLabel(workspace.region)}:{" "}
+            {workspace.projects.join(", ")}
+          </Text>
+        ))}
+        <Box flexDirection="column" marginTop={1}>
+          <Text>
+            <SelectionMarker
+              isSelected={langsmithWorkspaceSelectionIndex === workspaceCount}
+            />{" "}
+            Add a workspace
+          </Text>
+          <Text>
+            <SelectionMarker
+              isSelected={
+                langsmithWorkspaceSelectionIndex === workspaceCount + 1
+              }
+            />{" "}
+            Done
+          </Text>
+        </Box>
+        <Text color="gray">Use up/down arrows, then press Enter.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "source-langsmith-key") {
+    const apiKeyEnv = langsmithDraft?.apiKeyEnv ?? "OPENWIKI_LANGSMITH_API_KEY";
+    return (
+      <Box flexDirection="column">
+        <Text>LangSmith API key for this workspace.</Text>
+        <Text color="gray">
+          The connector&apos;s own read key (not your app&apos;s tracing key).
+          Saved to ~/.openwiki/.env as {apiKeyEnv}, never committed.
+        </Text>
+        <BorderedInput
+          maxDisplayWidth={inputDisplayWidth}
+          marginTop={1}
+          prefix={`${apiKeyEnv}=`}
+          secret
+          value={input}
+        />
+        <Text color="gray">
+          Press Enter to confirm (empty keeps the saved key).
+        </Text>
+      </Box>
+    );
+  }
+
+  if (step === "source-langsmith-projects") {
+    return (
+      <Box flexDirection="column">
+        <Text>Which projects should this wiki document in this workspace?</Text>
+        <Text color="gray">
+          Comma-separated project names (as in LANGCHAIN_PROJECT). Written to
+          openwiki/.langsmith.json.
+        </Text>
+        <BorderedMultilineInput
+          maxDisplayWidth={inputDisplayWidth}
+          marginTop={1}
+          value={input}
+        />
+        <Text color="gray">Press Enter to confirm.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "source-langsmith-region") {
+    const selectedRegion =
+      LANGSMITH_REGION_OPTIONS[langsmithRegionSelectionIndex] ??
+      LANGSMITH_REGION_OPTIONS[0];
+
+    return (
+      <Box flexDirection="column">
+        <Text>Which LangSmith region is this workspace in?</Text>
+        {LANGSMITH_REGION_OPTIONS.map((option, index) => (
+          <Text key={option.id}>
+            <SelectionMarker
+              isSelected={index === langsmithRegionSelectionIndex}
+            />{" "}
+            {option.name} <Text color="gray">({option.host})</Text>
+          </Text>
+        ))}
+        <Box flexDirection="column" marginTop={1}>
+          <Text color="gray">{selectedRegion.description}</Text>
+        </Box>
+        <Text color="gray">Use up/down arrows, then press Enter.</Text>
       </Box>
     );
   }
@@ -2945,6 +4488,48 @@ function SetupHeader() {
   );
 }
 
+type SetupStepState = "current" | "done" | "optional" | "pending";
+
+/**
+ * Resolve a checklist row's status. The active step wins, so navigating back to
+ * an already-done step shows the current-row cursor rather than a check; a done
+ * step reads done; anything else falls to its resting status.
+ */
+export function resolveStepStatus(
+  id: PromptStep,
+  activeStep: PromptStep | null,
+  done: boolean,
+  resting: "optional" | "pending" = "pending",
+): SetupStepState {
+  if (id === activeStep) {
+    return "current";
+  }
+  if (done) {
+    return "done";
+  }
+  return resting;
+}
+
+/**
+ * Progress glyph per status: a check for done, an arrow for the active row, a
+ * hollow circle for not-started (and optional). Single cell wide so every row's
+ * label column lines up without padding the marker.
+ */
+const STEP_GLYPH: Record<SetupStepState, string> = {
+  done: "✓",
+  current: "❯",
+  optional: "○",
+  pending: "○",
+};
+
+/** Color per status. Optionality is conveyed by the detail text, not the glyph. */
+const STEP_COLOR: Record<SetupStepState, string> = {
+  done: "green",
+  current: "cyan",
+  optional: "gray",
+  pending: "gray",
+};
+
 function SetupStep({
   detail,
   label,
@@ -2952,21 +4537,15 @@ function SetupStep({
 }: {
   detail: string;
   label: string;
-  state: "current" | "done" | "optional" | "pending";
+  state: SetupStepState;
 }) {
-  const color =
-    state === "done"
-      ? "green"
-      : state === "current"
-        ? "yellow"
-        : state === "optional"
-          ? "cyan"
-          : "gray";
-
   return (
     <Text>
-      <Text color={color}>[{state.toUpperCase()}]</Text>{" "}
-      <Text bold>{label.padEnd(16)}</Text> <Text color="gray">{detail}</Text>
+      <Text color={STEP_COLOR[state]}>{STEP_GLYPH[state]}</Text>{" "}
+      <Text bold={state === "current" || state === "done"}>
+        {label.padEnd(16)}
+      </Text>{" "}
+      <Text color="gray">{detail}</Text>
     </Text>
   );
 }
@@ -3017,9 +4596,11 @@ function SourceConnectionStatus({
 }
 
 function OAuthAuthorizationLink({
+  authProvider,
   copiedToClipboard,
   url,
 }: {
+  authProvider?: AuthProviderId;
   copiedToClipboard: boolean;
   url: string;
 }) {
@@ -3031,15 +4612,31 @@ function OAuthAuthorizationLink({
         </Text>
       </Text>
       <Text color={copiedToClipboard ? "green" : "gray"}>
-        {copiedToClipboard
-          ? "Full URL copied to clipboard. It is also shown below."
-          : "Copy the full raw URL below if the link is not clickable."}
-      </Text>
-      <Text color="gray" wrap="wrap">
-        {url}
+        {getOAuthAuthorizationStatusText({
+          authProvider,
+          copiedToClipboard,
+        })}
       </Text>
     </Box>
   );
+}
+
+export function getOAuthAuthorizationStatusText({
+  authProvider,
+  copiedToClipboard,
+}: {
+  authProvider?: AuthProviderId;
+  copiedToClipboard: boolean;
+}): string {
+  if (copiedToClipboard) {
+    return "Full URL copied to clipboard. Use the link above if your terminal supports it.";
+  }
+
+  const authCommand = authProvider
+    ? `openwiki auth ${authProvider}`
+    : "openwiki auth <provider>";
+
+  return `Use the terminal link above. If it is not clickable, cancel and run ${authCommand} in a plain terminal.`;
 }
 
 function OAuthLoginPrompt({
@@ -3216,7 +4813,9 @@ function InputValueWithCursor({
 }
 
 function formatSecretInputDisplay(value: string): string {
-  return value.length === 0 ? "empty" : `hidden (${value.length} chars)`;
+  // Empty renders as nothing (just the cursor); dots for the entered length,
+  // matching the non-secret inputs rather than printing a literal "empty".
+  return "•".repeat(value.length);
 }
 
 function formatTerminalHyperlink(url: string, label: string): string {
@@ -3289,7 +4888,14 @@ export function getInitialStep(
   onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
   mode: OpenWikiRunMode = "code",
   allowModeSelection = false,
+  walkAll = false,
 ): PromptStep | null {
+  if (walkAll) {
+    // Explicit --init: always start at the top and walk every applicable step,
+    // even ones already configured, instead of skipping to the first unset one.
+    return orderedSetupSteps(provider, mode, allowModeSelection)[0] ?? null;
+  }
+
   if (allowModeSelection) {
     return "run-mode";
   }
@@ -3298,12 +4904,30 @@ export function getInitialStep(
     return "provider";
   }
 
-  if (needsCredentialStep(provider)) {
-    return credentialStep(provider);
+  if (needsAwsCredentialRepair(provider)) {
+    return "region";
+  }
+
+  const nextCredentialStep = credentialStep(provider);
+
+  if (needsCredentialStep(provider) && nextCredentialStep) {
+    return nextCredentialStep;
+  }
+
+  if (needsSecretKeyStep(provider)) {
+    return "secret-key";
+  }
+
+  if (needsGcpProjectStep(provider)) {
+    return "gcp-project";
   }
 
   if (needsBaseUrlStep(provider)) {
     return "base-url";
+  }
+
+  if (needsRegionStep(provider)) {
+    return "region";
   }
 
   if (
@@ -3313,7 +4937,7 @@ export function getInitialStep(
     return "model";
   }
 
-  if (process.env.LANGSMITH_API_KEY === undefined) {
+  if (!process.env.LANGSMITH_API_KEY) {
     return "langsmith";
   }
 
@@ -3347,8 +4971,14 @@ export function getNextStepAfterProvider(
   mode: OpenWikiRunMode = "code",
   forceModelStep = false,
 ): PromptStep | null {
-  if (needsCredentialStep(provider)) {
-    return credentialStep(provider);
+  if (needsAwsCredentialRepair(provider)) {
+    return "region";
+  }
+
+  const nextCredentialStep = credentialStep(provider);
+
+  if (needsCredentialStep(provider) && nextCredentialStep) {
+    return nextCredentialStep;
   }
 
   return getNextStepAfterApiKey(
@@ -3365,6 +4995,46 @@ function getNextStepAfterApiKey(
   modelIdOverride: string | null,
   onboardingConfig: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
+  forceModelStep = false,
+): PromptStep | null {
+  if (needsSecretKeyStep(provider)) {
+    return "secret-key";
+  }
+
+  return getNextStepAfterSecretKey(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+    forceModelStep,
+  );
+}
+
+function getNextStepAfterSecretKey(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+  forceModelStep = false,
+): PromptStep | null {
+  if (needsGcpProjectStep(provider)) {
+    return "gcp-project";
+  }
+
+  return getNextStepAfterGcpLocation(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+    forceModelStep,
+  );
+}
+
+function getNextStepAfterGcpLocation(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
+  mode: OpenWikiRunMode = "code",
   forceModelStep = false,
 ): PromptStep | null {
   if (needsBaseUrlStep(provider)) {
@@ -3387,6 +5057,26 @@ function getNextStepAfterBaseUrl(
   mode: OpenWikiRunMode,
   forceModelStep = false,
 ): PromptStep | null {
+  if (needsRegionStep(provider)) {
+    return "region";
+  }
+
+  return getNextStepAfterRegion(
+    provider,
+    modelIdOverride,
+    onboardingConfig,
+    mode,
+    forceModelStep,
+  );
+}
+
+function getNextStepAfterRegion(
+  provider: OpenWikiProvider,
+  modelIdOverride: string | null,
+  onboardingConfig: OpenWikiOnboardingConfig,
+  mode: OpenWikiRunMode,
+  forceModelStep = false,
+): PromptStep | null {
   if (
     modelIdOverride === null &&
     (forceModelStep || process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined)
@@ -3394,7 +5084,7 @@ function getNextStepAfterBaseUrl(
     return "model";
   }
 
-  if (process.env.LANGSMITH_API_KEY === undefined) {
+  if (!process.env.LANGSMITH_API_KEY) {
     return "langsmith";
   }
 
@@ -3421,12 +5111,14 @@ function getNextStepAfterBaseUrl(
   return null;
 }
 
-function ensureRunModeConfig(
+export function ensureRunModeConfig(
   config: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
 ): OpenWikiOnboardingConfig {
   if (getConfigModeId(config) === mode) {
-    return config;
+    return mode === "code" && config.wikiGoal !== undefined
+      ? { ...config, wikiGoal: undefined }
+      : config;
   }
 
   const runModeTemplate = ONBOARDING_TEMPLATES.find(
@@ -3442,10 +5134,11 @@ function ensureRunModeConfig(
     modeName: runModeTemplate.name,
     templateId: runModeTemplate.id,
     templateName: runModeTemplate.name,
+    ...(mode === "code" ? { wikiGoal: undefined } : {}),
   };
 }
 
-async function hydrateRunModeConfig(
+export async function hydrateRunModeConfig(
   config: OpenWikiOnboardingConfig,
   mode: OpenWikiRunMode,
   repoRoot: string,
@@ -3456,12 +5149,24 @@ async function hydrateRunModeConfig(
 
   const wikiGoal = await readRepositoryWikiInstructions(repoRoot);
 
-  return wikiGoal ? { ...config, wikiGoal } : config;
+  return { ...config, wikiGoal };
 }
 
 function getRunModeSelectionIndex(mode: OpenWikiRunMode): number {
   const index = RUN_MODE_OPTIONS.findIndex((option) => option.id === mode);
   return index === -1 ? 0 : index;
+}
+
+function getLangsmithRegionSelectionIndex(region: LangSmithRegion): number {
+  const index = LANGSMITH_REGION_OPTIONS.findIndex(
+    (option) => option.id === region,
+  );
+  return index === -1 ? 0 : index;
+}
+
+function getLangsmithRegionLabel(region: LangSmithRegion): string {
+  const option = LANGSMITH_REGION_OPTIONS.find((item) => item.id === region);
+  return option ? `${option.name} (${option.host})` : region;
 }
 
 function getRunModeName(mode: OpenWikiRunMode): string {
@@ -3575,12 +5280,15 @@ function isScheduleStep(step: PromptStep | null): boolean {
   return Boolean(step?.startsWith("global-"));
 }
 
-function getProviderSetupDetail(provider: OpenWikiProvider): string {
-  if (hasValidConfiguredProvider()) {
-    return getProviderLabel(provider);
-  }
-
-  return `default ${getProviderLabel(DEFAULT_PROVIDER)}`;
+/**
+ * Label for the provider's primary credential input. Bedrock authenticates
+ * with an IAM access key ID (paired with a secret access key), not a single
+ * opaque API key, so its prompt reads differently from every other provider.
+ */
+function getApiKeyFieldLabel(provider: OpenWikiProvider): string {
+  return provider === "bedrock"
+    ? `${getProviderLabel(provider)} access key ID`
+    : `${getProviderLabel(provider)} API key`;
 }
 
 function hasValidConfiguredProvider(): boolean {
@@ -3682,7 +5390,13 @@ function getInputDisplayWidth(stdoutColumns: number | undefined): number {
 }
 
 function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
-  return provider === "baseten" || provider === "fireworks" ? "a" : "an";
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "gemini" ||
+    provider === "gemini-enterprise" ||
+    provider === "nebius"
+    ? "a"
+    : "an";
 }
 
 function getTemplateGoal(templateId: string | undefined): string {

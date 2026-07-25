@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, test } from "vitest";
 import {
   isOpenWikiDocsPath,
+  MUTATION_PATH_METADATA_KEY,
   OpenWikiLocalShellBackend,
 } from "../src/agent/docs-only-backend.ts";
 
@@ -19,6 +20,15 @@ describe("OpenWikiLocalShellBackend", () => {
     );
   });
 
+  test("rejects `..` traversal that escapes the openwiki dir", () => {
+    expect(isOpenWikiDocsPath("/openwiki/../AGENTS.md")).toBe(false);
+    expect(isOpenWikiDocsPath("openwiki/../AGENTS.md")).toBe(false);
+    expect(isOpenWikiDocsPath("/openwiki/../../etc/passwd")).toBe(false);
+    expect(isOpenWikiDocsPath("\\openwiki\\..\\AGENTS.md")).toBe(false);
+    // A `..` that resolves back inside openwiki/ is still allowed.
+    expect(isOpenWikiDocsPath("/openwiki/sub/../architecture.md")).toBe(true);
+  });
+
   test("refuses init/update writes outside openwiki", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
     const backend = new OpenWikiLocalShellBackend({
@@ -27,10 +37,12 @@ describe("OpenWikiLocalShellBackend", () => {
       virtualMode: true,
     });
 
-    await expect(
-      backend.write("/openwiki/architecture.md", "ok"),
-    ).resolves.toEqual(
+    const write = await backend.write("/openwiki/architecture.md", "ok");
+    expect(write).toEqual(
       expect.objectContaining({ path: "/openwiki/architecture.md" }),
+    );
+    expect(write.metadata?.[MUTATION_PATH_METADATA_KEY]).toBe(
+      "/openwiki/architecture.md",
     );
     await expect(
       readFile(path.join(rootDir, "openwiki/architecture.md"), "utf8"),
@@ -40,9 +52,19 @@ describe("OpenWikiLocalShellBackend", () => {
     expect(penwikiWrite.error).toContain(
       "Refused path: /penwiki/architecture.md",
     );
+    expect(penwikiWrite.metadata).toBeUndefined();
 
     const agentsEdit = await backend.edit("/AGENTS.md", "old", "new");
     expect(agentsEdit.error).toContain("Refused path: /AGENTS.md");
+
+    const traversalWrite = await backend.write("/openwiki/../AGENTS.md", "bad");
+    expect(traversalWrite.error).toContain(
+      "Refused path: /openwiki/../AGENTS.md",
+    );
+    expect(traversalWrite.metadata).toBeUndefined();
+    await expect(
+      readFile(path.join(rootDir, "AGENTS.md"), "utf8"),
+    ).rejects.toThrow();
   });
 
   test("allows local-wiki init/update writes at the wiki virtual root", async () => {
@@ -54,12 +76,13 @@ describe("OpenWikiLocalShellBackend", () => {
       virtualMode: true,
     });
 
-    await expect(backend.write("/quickstart.md", "ok")).resolves.toEqual(
-      expect.objectContaining({ path: "/quickstart.md" }),
-    );
+    const write = await backend.write("/quickstart.md", "ok");
+    expect(write).toEqual(expect.objectContaining({ path: "/quickstart.md" }));
+    const edit = await backend.edit("/quickstart.md", "ok", "updated");
+    expect(edit.metadata?.[MUTATION_PATH_METADATA_KEY]).toBe("/quickstart.md");
     await expect(
       readFile(path.join(rootDir, "quickstart.md"), "utf8"),
-    ).resolves.toBe("ok");
+    ).resolves.toBe("updated");
   });
 
   test("keeps chat-mode style backends unrestricted when docsOnly is false", async () => {

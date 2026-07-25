@@ -476,7 +476,7 @@ export async function loginWithChatGPT(
       res
         .writeHead(200, { "Content-Type": "text/html" })
         .end(
-          "<html><body>OpenWiki login complete you can close this tab.</body></html>",
+          "<html><body>OpenWiki login complete. You can close this tab.</body></html>",
         );
       finish(authCode);
     });

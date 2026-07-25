@@ -25,6 +25,7 @@ export function createMcpConnector(input: McpConnectorInput): ConnectorRuntime {
   const definition: ConnectorDefinition = {
     ...input,
     backend: "mcp-stdio",
+    mode: "personal",
     supportsAgenticDiscovery: true,
   };
 

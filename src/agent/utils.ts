@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
@@ -18,11 +18,13 @@ import type {
   OpenWikiRunOptions,
   RunContext,
   UpdateMetadata,
+  UpdateRunStatus,
 } from "./types.js";
 import type { Dirent } from "node:fs";
 
 const execFileAsync = promisify(execFile);
 const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
+const TEMPORARY_PLAN_FILE = "_plan.md";
 
 export type OpenWikiContentSnapshot = string;
 
@@ -92,6 +94,10 @@ export async function getUpdateNoopStatus(
     return { shouldSkip: false, reason: "missing previous update git head" };
   }
 
+  if (lastUpdate.status === "interrupted") {
+    return { shouldSkip: false, reason: "previous update was interrupted" };
+  }
+
   const head = await getGitHead(cwd);
 
   if (!head) {
@@ -139,13 +145,16 @@ export function shouldCheckUpdateNoop(options: OpenWikiRunOptions): boolean {
 }
 
 /**
- * Records a successful init/update run so future updates can diff from this git head.
+ * Records an init/update run so future updates can diff from this git head.
+ * Interrupted runs are recorded with status "interrupted" so the update
+ * no-op check knows the wiki may be partial and does not skip the retry.
  */
 export async function writeLastUpdateMetadata(
   command: OpenWikiCommand,
   cwd: string,
   modelId: string,
   outputMode: OpenWikiOutputMode = "repository",
+  status: UpdateRunStatus = "complete",
 ): Promise<void> {
   const metadataFile = getMetadataFilePath(cwd, outputMode);
   const metadata: UpdateMetadata = {
@@ -153,6 +162,7 @@ export async function writeLastUpdateMetadata(
     command,
     gitHead: outputMode === "repository" ? await getGitHead(cwd) : undefined,
     model: modelId,
+    status,
   };
 
   await mkdir(path.dirname(metadataFile), { recursive: true });
@@ -174,6 +184,7 @@ export async function persistRunMetadataIfChanged(
   modelId: string,
   outputMode: OpenWikiOutputMode,
   snapshotBefore: OpenWikiContentSnapshot | null,
+  status: UpdateRunStatus = "complete",
 ): Promise<boolean> {
   if (command === "chat" || snapshotBefore === null) {
     return false;
@@ -182,12 +193,38 @@ export async function persistRunMetadataIfChanged(
   if (
     snapshotBefore === (await createOpenWikiContentSnapshot(cwd, outputMode))
   ) {
-    return false;
+    // A completed run clears a previous interrupted status even when the
+    // content did not change, so the update no-op check can skip again.
+    const lastUpdate = await readLastUpdate(cwd, outputMode);
+    if (status !== "complete" || lastUpdate?.status !== "interrupted") {
+      return false;
+    }
   }
 
-  await writeLastUpdateMetadata(command, cwd, modelId, outputMode);
+  await writeLastUpdateMetadata(command, cwd, modelId, outputMode, status);
 
   return true;
+}
+
+/**
+ * Removes the temporary planning file the agent creates during init/update runs.
+ */
+export async function removeTemporaryPlanFile(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): Promise<boolean> {
+  const planFile = getTemporaryPlanFilePath(cwd, outputMode);
+
+  try {
+    await rm(planFile);
+    return true;
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return false;
+    }
+
+    throw error;
+  }
 }
 
 /**
@@ -231,6 +268,10 @@ async function readLastUpdate(
             ? parsedMetadata.gitHead
             : undefined,
         model: parsedMetadata.model,
+        // Metadata written before the status field existed is treated as
+        // complete so upgrades do not force a spurious re-run.
+        status:
+          parsedMetadata.status === "interrupted" ? "interrupted" : "complete",
       };
     }
 
@@ -271,10 +312,7 @@ async function addDirectoryToSnapshot(
     const entryPath = path.join(directory, entry.name);
     const relativePath = path.join(relativeDirectory, entry.name);
 
-    if (
-      relativePath === path.basename(UPDATE_METADATA_PATH) ||
-      relativePath === LOCAL_WIKI_METADATA_PATH
-    ) {
+    if (isIgnoredSnapshotPath(relativePath)) {
       continue;
     }
 
@@ -307,6 +345,13 @@ function getWikiContentRoot(
   return outputMode === "local-wiki" ? cwd : path.join(cwd, OPEN_WIKI_DIR);
 }
 
+function getTemporaryPlanFilePath(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): string {
+  return path.join(getWikiContentRoot(cwd, outputMode), TEMPORARY_PLAN_FILE);
+}
+
 function getMetadataFilePath(
   cwd: string,
   outputMode: OpenWikiOutputMode,
@@ -314,6 +359,14 @@ function getMetadataFilePath(
   return outputMode === "local-wiki"
     ? path.join(cwd, LOCAL_WIKI_METADATA_PATH)
     : path.join(cwd, UPDATE_METADATA_PATH);
+}
+
+function isIgnoredSnapshotPath(relativePath: string): boolean {
+  return (
+    relativePath === path.basename(UPDATE_METADATA_PATH) ||
+    relativePath === LOCAL_WIKI_METADATA_PATH ||
+    relativePath === TEMPORARY_PLAN_FILE
+  );
 }
 
 /**
