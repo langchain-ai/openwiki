@@ -264,6 +264,9 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     externalCliAuthAdapter: "github-cli",
     label: "GitHub Copilot",
     modelOptions: [
+      { id: "gpt-5.6-terra", label: "GPT 5.6 Terra" },
+      { id: "gpt-5.6-luna", label: "GPT 5.6 Luna" },
+      { id: "gpt-5.6-sol", label: "GPT 5.6 Sol" },
       { id: "gpt-5.5", label: "GPT 5.5" },
       { id: "gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "claude-opus-5", label: "Claude Opus 5" },

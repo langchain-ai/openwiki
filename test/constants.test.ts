@@ -599,7 +599,7 @@ describe("getProviderModelOptions", () => {
 describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
-    expect(getDefaultModelId("copilot")).toBe("gpt-5.5");
+    expect(getDefaultModelId("copilot")).toBe("gpt-5.6-terra");
     expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K2.6");
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
