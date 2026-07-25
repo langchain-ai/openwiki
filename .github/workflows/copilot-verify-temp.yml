@@ -2,6 +2,9 @@ name: Copilot external-cli-auth verification (temporary)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - jyje-add-github-copilot-provider
 
 jobs:
   say-hello:
