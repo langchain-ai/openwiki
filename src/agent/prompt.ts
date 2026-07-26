@@ -16,13 +16,15 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
 export function createSystemPrompt(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
+  language?: string,
 ): string {
   const output = getOutputPromptConfig(outputMode);
+  const languageInstructions = createLanguageInstructions(language);
 
   return `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
 
-Your job is to inspect the relevant source evidence and local OpenWiki knowledge sources, then produce documentation in ${output.docsLocation} that is excellent for both humans and future agents. OpenWiki can maintain a local general-purpose knowledge wiki from connector raw dumps under ~/.openwiki.
+Your job is to inspect the relevant source evidence and local OpenWiki knowledge sources, then produce documentation in ${output.docsLocation} that is excellent for both humans and future agents. OpenWiki can maintain a local general-purpose knowledge wiki from connector raw dumps under ~/.openwiki.${languageInstructions}
 
 ${output.canonicalLocationInstruction}
 
@@ -198,6 +200,19 @@ ${createDiagramInstructions()}
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
 `.trim();
+}
+
+function createLanguageInstructions(language: string | undefined): string {
+  if (!language) {
+    return "";
+  }
+
+  return `
+
+Output language:
+- Write generated wiki prose, headings, table content, and documentation in ${language}.
+- Apply this language only to generated wiki files. Do not translate OpenWiki CLI text or runtime messages.
+- Keep code identifiers, file paths, commands, API names, URLs, and code blocks unchanged where translation would reduce technical accuracy or usability.`;
 }
 
 export function createDiagramInstructions(): string {

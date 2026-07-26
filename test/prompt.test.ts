@@ -4,6 +4,29 @@ import {
   createSystemPrompt,
 } from "../src/agent/prompt.ts";
 
+describe("createSystemPrompt output language", () => {
+  test("instructs the agent to write wiki documentation in the selected language", () => {
+    const prompt = createSystemPrompt("init", "repository", "zh-CN");
+
+    expect(prompt).toContain("Output language:");
+    expect(prompt).toContain(
+      "Write generated wiki prose, headings, table content, and documentation in zh-CN.",
+    );
+    expect(prompt).toContain(
+      "Apply this language only to generated wiki files.",
+    );
+    expect(prompt).toContain(
+      "Keep code identifiers, file paths, commands, API names, URLs, and code blocks unchanged",
+    );
+  });
+
+  test("preserves the existing prompt behavior when no language is supplied", () => {
+    expect(createSystemPrompt("init", "repository")).not.toContain(
+      "Output language:",
+    );
+  });
+});
+
 /**
  * Guards against the 0.2 regression where the shared "Canonical wiki location"
  * and "Wiki-first question answering" blocks hardcoded ~/.openwiki/wiki and

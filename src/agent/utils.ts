@@ -46,14 +46,20 @@ export async function createRunContext(
   command: OpenWikiCommand,
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
+  language?: string | null,
 ): Promise<RunContext> {
   const lastUpdate = await readLastUpdate(cwd, outputMode);
+  const normalizedLanguage = language?.trim() || undefined;
+  const languageContext = normalizedLanguage
+    ? { language: normalizedLanguage }
+    : {};
   const wikiGoal = await readRunWikiGoal(cwd, outputMode);
 
   if (command === "chat") {
     return {
       lastUpdate,
       gitSummary: "Not applicable for chat.",
+      ...languageContext,
       wikiGoal,
     };
   }
@@ -63,6 +69,7 @@ export async function createRunContext(
       lastUpdate,
       gitSummary:
         "Local wiki mode: connector source evidence is provided through raw data paths and OpenWiki connector tools. Git repository diff context is not used for this run.",
+      ...languageContext,
       wikiGoal,
     };
   }
@@ -70,6 +77,7 @@ export async function createRunContext(
   return {
     lastUpdate,
     gitSummary: await createGitSummary(command, cwd, lastUpdate),
+    ...languageContext,
     wikiGoal,
   };
 }

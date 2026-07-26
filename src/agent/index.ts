@@ -232,7 +232,12 @@ async function runOpenWikiAgentCore(
   providerRetryAttempts: number,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
-  const context = await createRunContext(command, cwd, outputMode);
+  const context = await createRunContext(
+    command,
+    cwd,
+    outputMode,
+    options.language,
+  );
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
     command === "chat"
@@ -279,7 +284,7 @@ async function runOpenWikiAgentCore(
     permissions: [
       { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
     ],
-    systemPrompt: createSystemPrompt(command, outputMode),
+    systemPrompt: createSystemPrompt(command, outputMode, context.language),
   });
   emitDebug(options, "agent=created");
 
