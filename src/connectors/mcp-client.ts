@@ -810,16 +810,44 @@ async function resolveTemplateEnvReferences(
     return value;
   }
 
-  let resolvedValue = value;
-  const envRefs = value.matchAll(/\$\{([A-Z_][A-Z0-9_]*)\}/gu);
+  let resolvedValue = "";
+  let cursor = 0;
+  let resolvedAnyReference = false;
+  const envRefs = value.matchAll(/\$\{([^}]*)\}/gu);
 
   for (const match of envRefs) {
+    resolvedAnyReference = true;
+    const matchIndex = match.index;
+    const literalValue = value.slice(cursor, matchIndex);
+    validateHeaderTemplateLiteral(literalValue, key);
+
     const envKey = match[1];
     const envValue = await resolveHeaderEnvReference(envKey);
-    resolvedValue = resolvedValue.replace(match[0], envValue);
+    resolvedValue += literalValue + envValue;
+    cursor = matchIndex + match[0].length;
   }
 
-  return resolvedValue;
+  const remainingValue = value.slice(cursor);
+  validateHeaderTemplateLiteral(remainingValue, key);
+
+  if (!resolvedAnyReference) {
+    throw new Error(`Header ${key} contains a malformed environment template.`);
+  }
+
+  const finalValue = resolvedValue + remainingValue;
+  if (finalValue.includes("${") || finalValue.includes("}")) {
+    throw new Error(
+      `Header ${key} resolved to a value with unresolved template fragments.`,
+    );
+  }
+
+  return finalValue;
+}
+
+function validateHeaderTemplateLiteral(value: string, key: string): void {
+  if (value.includes("${") || value.includes("}")) {
+    throw new Error(`Header ${key} contains a malformed environment template.`);
+  }
 }
 
 async function resolveHeaderEnvReference(envKey: string): Promise<string> {
