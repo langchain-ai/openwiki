@@ -165,6 +165,32 @@ describe("validateWikiInternalLinks", () => {
     expect(report.issuesFound).toBe(0);
   });
 
+  test("stamps wiki-escaping links without reading outside the wiki root", async () => {
+    const { backend, rootDir } = await setupWiki();
+    await mkdir(path.join(rootDir, "etc"), { recursive: true });
+    await writeFile(path.join(rootDir, "etc/passwd"), "secret\n", "utf8");
+    await backend.write(
+      "/openwiki/page.md",
+      "See [x](../../../../etc/passwd#nope).\n",
+    );
+    const readRaw = vi.spyOn(backend, "readRaw");
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report.issuesFound).toBe(1);
+    expect(
+      readRaw.mock.calls.some(
+        ([targetPath]) =>
+          typeof targetPath === "string" && !targetPath.startsWith("/openwiki"),
+      ),
+    ).toBe(false);
+
+    const after = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(after).toContain("openwiki: broken internal link");
+    expect(after).toContain("outside the wiki root");
+    expect(after).not.toMatch(/does not exist in \/etc\/passwd/u);
+  });
+
   test("ignores external links and images", async () => {
     const { backend } = await setupWiki();
     await backend.write(

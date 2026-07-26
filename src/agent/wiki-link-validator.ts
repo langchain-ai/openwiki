@@ -198,6 +198,15 @@ async function validateLink(
   }
 
   const resolvedPath = resolveWikiLinkPath(wikiRoot, sourcePath, linkPath);
+  if (!resolvedPath) {
+    return {
+      href,
+      line,
+      message: `link "${linkPath}" is outside the wiki root`,
+      sourcePath,
+    };
+  }
+
   const isDirectory = resolvedPath.endsWith("/");
   const targetPath = isDirectory
     ? resolvedPath.replace(/\/+$/u, "")
@@ -224,7 +233,7 @@ async function validateLink(
     return {
       href,
       line,
-      message: `heading anchor "${anchor}" does not exist in ${targetPath}`,
+      message: `heading anchor "${anchor}" does not exist in "${linkPath}"`,
       sourcePath,
     };
   }
@@ -341,13 +350,23 @@ function resolveWikiLinkPath(
   wikiRoot: string,
   sourcePath: string,
   linkPath: string,
-): string {
-  if (linkPath.startsWith("/")) {
-    return path.posix.join(wikiRoot, linkPath.slice(1));
-  }
+): string | null {
+  const candidate = path.posix.normalize(
+    linkPath.startsWith("/")
+      ? path.posix.join(wikiRoot, linkPath.slice(1))
+      : path.posix.join(path.posix.dirname(sourcePath), linkPath),
+  );
 
-  return path.posix.normalize(
-    path.posix.join(path.posix.dirname(sourcePath), linkPath),
+  return isPathUnderWikiRoot(wikiRoot, candidate) ? candidate : null;
+}
+
+function isPathUnderWikiRoot(wikiRoot: string, candidate: string): boolean {
+  const root = path.posix.normalize(wikiRoot.replace(/\/+$/u, "") || "/");
+  const resolved = path.posix.normalize(candidate);
+  const relative = path.posix.relative(root, resolved);
+  return (
+    relative === "" ||
+    (!relative.startsWith("..") && !path.posix.isAbsolute(relative))
   );
 }
 
