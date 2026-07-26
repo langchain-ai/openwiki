@@ -13,21 +13,43 @@ export async function readConnectorConfig<T extends object>(
   defaultConfig: T,
 ): Promise<T> {
   await ensureConnectorHome(connectorId);
+  const configPath = getConnectorConfigPath(connectorId);
+
+  let rawConfig: string;
 
   try {
-    return {
-      ...defaultConfig,
-      ...(JSON.parse(
-        await readFile(getConnectorConfigPath(connectorId), "utf8"),
-      ) as T),
-    };
+    rawConfig = await readFile(configPath, "utf8");
   } catch (error) {
     if (isFileNotFoundError(error)) {
       return defaultConfig;
     }
 
-    throw error;
+    throw new Error(
+      `Failed to read connector config for ${connectorId} at ${configPath}: ${getErrorMessage(error)}`,
+      { cause: error },
+    );
   }
+
+  let parsedConfig: unknown;
+  try {
+    parsedConfig = JSON.parse(rawConfig);
+  } catch (error) {
+    throw new Error(
+      `Invalid JSON in connector config for ${connectorId} at ${configPath}: ${getErrorMessage(error)}`,
+      { cause: error },
+    );
+  }
+
+  if (!isJsonObject(parsedConfig)) {
+    throw new Error(
+      `Invalid connector config for ${connectorId} at ${configPath}: expected a JSON object.`,
+    );
+  }
+
+  return {
+    ...defaultConfig,
+    ...parsedConfig,
+  };
 }
 
 export async function readConnectorState(
@@ -105,4 +127,12 @@ function isFileNotFoundError(error: unknown): boolean {
     "code" in error &&
     (error as NodeJS.ErrnoException).code === "ENOENT"
   );
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
