@@ -18,6 +18,7 @@ import type {
   OpenWikiRunOptions,
   RunContext,
   UpdateMetadata,
+  UpdateRunStatus,
 } from "./types.js";
 import type { Dirent } from "node:fs";
 
@@ -93,6 +94,10 @@ export async function getUpdateNoopStatus(
     return { shouldSkip: false, reason: "missing previous update git head" };
   }
 
+  if (lastUpdate.status === "interrupted") {
+    return { shouldSkip: false, reason: "previous update was interrupted" };
+  }
+
   const head = await getGitHead(cwd);
 
   if (!head) {
@@ -140,13 +145,16 @@ export function shouldCheckUpdateNoop(options: OpenWikiRunOptions): boolean {
 }
 
 /**
- * Records a successful init/update run so future updates can diff from this git head.
+ * Records an init/update run so future updates can diff from this git head.
+ * Interrupted runs are recorded with status "interrupted" so the update
+ * no-op check knows the wiki may be partial and does not skip the retry.
  */
 export async function writeLastUpdateMetadata(
   command: OpenWikiCommand,
   cwd: string,
   modelId: string,
   outputMode: OpenWikiOutputMode = "repository",
+  status: UpdateRunStatus = "complete",
 ): Promise<void> {
   const metadataFile = getMetadataFilePath(cwd, outputMode);
   const metadata: UpdateMetadata = {
@@ -154,6 +162,7 @@ export async function writeLastUpdateMetadata(
     command,
     gitHead: outputMode === "repository" ? await getGitHead(cwd) : undefined,
     model: modelId,
+    status,
   };
 
   await mkdir(path.dirname(metadataFile), { recursive: true });
@@ -175,6 +184,7 @@ export async function persistRunMetadataIfChanged(
   modelId: string,
   outputMode: OpenWikiOutputMode,
   snapshotBefore: OpenWikiContentSnapshot | null,
+  status: UpdateRunStatus = "complete",
 ): Promise<boolean> {
   if (command === "chat" || snapshotBefore === null) {
     return false;
@@ -183,10 +193,15 @@ export async function persistRunMetadataIfChanged(
   if (
     snapshotBefore === (await createOpenWikiContentSnapshot(cwd, outputMode))
   ) {
-    return false;
+    // A completed run clears a previous interrupted status even when the
+    // content did not change, so the update no-op check can skip again.
+    const lastUpdate = await readLastUpdate(cwd, outputMode);
+    if (status !== "complete" || lastUpdate?.status !== "interrupted") {
+      return false;
+    }
   }
 
-  await writeLastUpdateMetadata(command, cwd, modelId, outputMode);
+  await writeLastUpdateMetadata(command, cwd, modelId, outputMode, status);
 
   return true;
 }
@@ -253,6 +268,10 @@ async function readLastUpdate(
             ? parsedMetadata.gitHead
             : undefined,
         model: parsedMetadata.model,
+        // Metadata written before the status field existed is treated as
+        // complete so upgrades do not force a spurious re-run.
+        status:
+          parsedMetadata.status === "interrupted" ? "interrupted" : "complete",
       };
     }
 
