@@ -39,6 +39,7 @@ The file stores provider configuration and API keys:
 - `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` — optional positive integer retry count for transient provider request failures; defaults to 3 when unset
 - Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`, `GEMINI_API_KEY`, `NEBIUS_API_KEY`
 - ChatGPT OAuth tokens (for the `openai-chatgpt` provider): `OPENAI_CHATGPT_ACCESS_TOKEN`, `OPENAI_CHATGPT_REFRESH_TOKEN`, `OPENAI_CHATGPT_EXPIRES_AT`, `OPENAI_CHATGPT_ACCOUNT_ID`, `OPENAI_CHATGPT_EMAIL`, `OPENAI_CHATGPT_PLAN`
+- xAI Grok subscription OAuth tokens (for the `xai-grok` provider): `XAI_GROK_ACCESS_TOKEN`, `XAI_GROK_REFRESH_TOKEN`, `XAI_GROK_EXPIRES_AT`. Login uses xAI’s public Grok CLI OAuth client (PKCE, no client secret) against `auth.x.ai`; chat calls go to `https://api.x.ai/v1`. Tokens are never logged. Client id/scopes may change without an official OpenWiki app registration.
 - Connector OAuth credentials: `OPENWIKI_GMAIL_ACCESS_TOKEN`, `OPENWIKI_GMAIL_REFRESH_TOKEN`, `OPENWIKI_GOOGLE_CLIENT_ID`, `OPENWIKI_GOOGLE_CLIENT_SECRET`, `OPENWIKI_NOTION_MCP_ACCESS_TOKEN`, `OPENWIKI_NOTION_MCP_CLIENT_ID`, `OPENWIKI_NOTION_MCP_REFRESH_TOKEN`, `OPENWIKI_SLACK_USER_TOKEN`, `OPENWIKI_SLACK_CLIENT_ID`, `OPENWIKI_SLACK_CLIENT_SECRET`, `OPENWIKI_X_ACCESS_TOKEN`, `OPENWIKI_X_CLIENT_ID`, `OPENWIKI_X_CLIENT_SECRET`, `OPENWIKI_X_REFRESH_TOKEN`
 - Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API), `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint), and `OPENAI_BASE_URL` (optional — overrides the openai provider's default endpoint)
 - AWS Bedrock credentials: `BEDROCK_AWS_ACCESS_KEY_ID`, `BEDROCK_AWS_SECRET_ACCESS_KEY`, `BEDROCK_AWS_REGION` (all required by the bedrock provider)
@@ -74,7 +75,7 @@ queries.
 `src/credentials.tsx` provides the interactive bootstrap flow when required:
 
 - prompts for a provider (arrow-key selection menu),
-- prompts for the provider's API key (skipped for the gemini-enterprise provider, which prompts for a required Google Cloud project ID and an optional location instead; skipped for the bedrock provider, which prompts for AWS access key ID, secret access key, and region instead),
+- prompts for the provider's API key (skipped for OAuth providers such as `openai-chatgpt` and `xai-grok`, which run a browser login instead; skipped for the gemini-enterprise provider, which prompts for a required Google Cloud project ID and an optional location instead; skipped for the bedrock provider, which prompts for AWS access key ID, secret access key, and region instead),
 - prompts for a model choice (arrow-key selection from the provider's model list, or a custom model ID),
 - optionally prompts for a LangSmith key,
 - writes the results with restrictive file permissions,

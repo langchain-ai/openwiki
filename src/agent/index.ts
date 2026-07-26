@@ -35,6 +35,12 @@ import {
   readCodexTokensFromEnv,
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
+import {
+  ensureFreshXaiGrokTokens,
+  readXaiGrokTokensFromEnv,
+  XAI_API_BASE_URL,
+  XAI_GROK_LOGIN_INCOMPLETE_MESSAGE,
+} from "./xai-grok-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import { syncBundledSkills } from "./skills.js";
 import {
@@ -186,6 +192,11 @@ export async function runOpenWikiAgent(
       // Refresh before the model is built, so `createModel` stays synchronous.
       await ensureFreshChatGptTokens();
       emitDebug(options, "chatgpt.token=fresh");
+    }
+
+    if (provider === "xai-grok") {
+      await ensureFreshXaiGrokTokens();
+      emitDebug(options, "xai-grok.token=fresh");
     }
 
     modelId = resolveModelId(options, provider);
@@ -729,6 +740,24 @@ export function createModel(
           "OpenAI-Beta": "responses=experimental",
         },
         fetch: createCodexFetch(modelId),
+      },
+    });
+  }
+
+  if (provider === "xai-grok") {
+    // Already refreshed by `ensureFreshXaiGrokTokens()` before the run started.
+    const tokens = readXaiGrokTokensFromEnv();
+
+    if (!tokens) {
+      throw new Error(XAI_GROK_LOGIN_INCOMPLETE_MESSAGE);
+    }
+
+    return new ChatOpenAI({
+      apiKey: tokens.access,
+      model: modelId,
+      ...retryOptions,
+      configuration: {
+        baseURL: XAI_API_BASE_URL,
       },
     });
   }

@@ -1,10 +1,14 @@
 import { shouldCheckUpdateNoop, getUpdateNoopStatus } from "./agent/utils.js";
 import { readCodexTokensFromEnv } from "./agent/openai-chatgpt-oauth.js";
+import { readXaiGrokTokensFromEnv } from "./agent/xai-grok-oauth.js";
 import type { CliCommand } from "./commands.js";
 import {
   OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
+  XAI_GROK_ACCESS_TOKEN_ENV_KEY,
+  XAI_GROK_EXPIRES_AT_ENV_KEY,
+  XAI_GROK_REFRESH_TOKEN_ENV_KEY,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderCredentialHint,
@@ -97,6 +101,12 @@ function getMissingNonInteractiveProviderEnvKey(
     return getMissingProviderEnvKey(provider, env);
   }
 
+  if (provider === "xai-grok") {
+    return readXaiGrokTokensFromEnv(env) === null
+      ? (getProviderApiKeyEnvKey(provider) ?? "xAI Grok OAuth token set")
+      : null;
+  }
+
   return readCodexTokensFromEnv(env) === null
     ? (getProviderApiKeyEnvKey(provider) ?? "ChatGPT OAuth token set")
     : null;
@@ -108,6 +118,10 @@ function formatCredentialRequirement(
 ): string {
   if (!providerUsesOAuth(provider)) {
     return apiKeyEnvKey;
+  }
+
+  if (provider === "xai-grok") {
+    return `A complete xAI Grok OAuth token set (${XAI_GROK_ACCESS_TOKEN_ENV_KEY}, ${XAI_GROK_REFRESH_TOKEN_ENV_KEY}, ${XAI_GROK_EXPIRES_AT_ENV_KEY})`;
   }
 
   return `A complete ChatGPT OAuth token set (${apiKeyEnvKey}, ${OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY}, ${OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY}, ${OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY})`;
