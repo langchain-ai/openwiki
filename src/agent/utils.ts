@@ -493,8 +493,16 @@ function formatGitSection(command: string, output: string): string {
   );
 }
 
+/**
+ * Matches the two-character status field `git status --short` puts in front of
+ * each path. The field is only one character wide on the first line of a
+ * trimmed run, because `runGit` strips the leading space of an unstaged-only
+ * status such as " M openwiki/.last-update.json".
+ */
+const GIT_STATUS_LINE_PATTERN = /^[ !?ACDMRTU]{1,2} (.+)$/u;
+
 function isUpdateMetadataStatusLine(line: string): boolean {
-  const statusPath = line.length > 3 ? line.slice(3).trim() : line.trim();
+  const statusPath = (GIT_STATUS_LINE_PATTERN.exec(line)?.[1] ?? line).trim();
   const normalizedPath = statusPath.replace(/\\/gu, "/");
 
   return (
