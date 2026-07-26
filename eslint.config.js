@@ -32,4 +32,20 @@ export default tseslint.config(
     files: ["**/*.js"],
     extends: [tseslint.configs.disableTypeChecked],
   },
+  // CommonJS scripts (e.g. the install-time environment check) run directly
+  // under Node, so they need Node globals and CommonJS module semantics.
+  {
+    files: ["**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        __dirname: "readonly",
+        __filename: "readonly",
+        console: "readonly",
+        module: "writable",
+        process: "readonly",
+        require: "readonly",
+      },
+    },
+  },
 );

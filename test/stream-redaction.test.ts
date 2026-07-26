@@ -1,11 +1,13 @@
 import { describe, expect, test } from "vitest";
 import { parseStreamEvent } from "../src/agent/index.ts";
 
-// Helpers to build fake stream chunks in the same shape
-// that the LangGraph `messages` stream mode emits:
-//   ["messages", [messageLike, metadata]]
-// normalizeStreamChunk() extracts [chunk[0], chunk[1]] → ["messages", payload]
-// isStreamMessageTuplePayload() checks that payload[1] has langgraph_node etc.
+// Helpers to build fake stream chunks in the normalized protocol-event shape
+// that `parseStreamEvent` now consumes:
+//   { type: "event", method: "messages", params: { data, namespace } }
+// isProtocolStreamEvent() checks type/method/params.data; the "messages"
+// branch then feeds params.data to extractMessageText, which unwraps the
+// [messageLike, metadata] tuple (isStreamMessageTuplePayload checks that
+// metadata has langgraph_node etc.) and reads the message content blocks.
 
 function makeChunk(contentBlocks: unknown[]): unknown {
   const message = {
@@ -17,8 +19,16 @@ function makeChunk(contentBlocks: unknown[]): unknown {
     langgraph_node: "agent",
     run_id: "fake-run-id",
   };
-  // shape: ["messages", [message, metadata]]
-  return ["messages", [message, metadata]];
+  return {
+    type: "event",
+    method: "messages",
+    params: {
+      // the LangGraph `messages` payload: [message, metadata] tuple
+      data: [message, metadata],
+      // top-level (main graph) namespace, not a subgraph
+      namespace: [],
+    },
+  };
 }
 
 describe("parseStreamEvent – content-block filtering", () => {

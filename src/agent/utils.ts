@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
@@ -8,15 +8,23 @@ import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
 } from "../fs-errors.js";
+import {
+  readOpenWikiOnboardingConfig,
+  readRepositoryWikiInstructions,
+} from "../onboarding.js";
 import type {
   OpenWikiCommand,
+  OpenWikiOutputMode,
   OpenWikiRunOptions,
   RunContext,
   UpdateMetadata,
+  UpdateRunStatus,
 } from "./types.js";
 import type { Dirent } from "node:fs";
 
 const execFileAsync = promisify(execFile);
+const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
+const TEMPORARY_PLAN_FILE = "_plan.md";
 
 export type OpenWikiContentSnapshot = string;
 
@@ -37,29 +45,57 @@ export type UpdateNoopStatus =
 export async function createRunContext(
   command: OpenWikiCommand,
   cwd: string,
+  outputMode: OpenWikiOutputMode = "repository",
 ): Promise<RunContext> {
-  const lastUpdate = await readLastUpdate(cwd);
+  const lastUpdate = await readLastUpdate(cwd, outputMode);
+  const wikiGoal = await readRunWikiGoal(cwd, outputMode);
 
   if (command === "chat") {
     return {
       lastUpdate,
       gitSummary: "Not applicable for chat.",
+      wikiGoal,
+    };
+  }
+
+  if (outputMode === "local-wiki") {
+    return {
+      lastUpdate,
+      gitSummary:
+        "Local wiki mode: connector source evidence is provided through raw data paths and OpenWiki connector tools. Git repository diff context is not used for this run.",
+      wikiGoal,
     };
   }
 
   return {
     lastUpdate,
     gitSummary: await createGitSummary(command, cwd, lastUpdate),
+    wikiGoal,
   };
+}
+
+async function readRunWikiGoal(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): Promise<string | undefined> {
+  if (outputMode === "repository") {
+    return readRepositoryWikiInstructions(cwd);
+  }
+
+  return (await readOpenWikiOnboardingConfig()).wikiGoal;
 }
 
 export async function getUpdateNoopStatus(
   cwd: string,
 ): Promise<UpdateNoopStatus> {
-  const lastUpdate = await readLastUpdate(cwd);
+  const lastUpdate = await readLastUpdate(cwd, "repository");
 
   if (!lastUpdate?.gitHead) {
     return { shouldSkip: false, reason: "missing previous update git head" };
+  }
+
+  if (lastUpdate.status === "interrupted") {
+    return { shouldSkip: false, reason: "previous update was interrupted" };
   }
 
   const head = await getGitHead(cwd);
@@ -109,19 +145,24 @@ export function shouldCheckUpdateNoop(options: OpenWikiRunOptions): boolean {
 }
 
 /**
- * Records a successful init/update run so future updates can diff from this git head.
+ * Records an init/update run so future updates can diff from this git head.
+ * Interrupted runs are recorded with status "interrupted" so the update
+ * no-op check knows the wiki may be partial and does not skip the retry.
  */
 export async function writeLastUpdateMetadata(
   command: OpenWikiCommand,
   cwd: string,
   modelId: string,
+  outputMode: OpenWikiOutputMode = "repository",
+  status: UpdateRunStatus = "complete",
 ): Promise<void> {
-  const metadataFile = path.join(cwd, UPDATE_METADATA_PATH);
+  const metadataFile = getMetadataFilePath(cwd, outputMode);
   const metadata: UpdateMetadata = {
     updatedAt: new Date().toISOString(),
     command,
-    gitHead: await getGitHead(cwd),
+    gitHead: outputMode === "repository" ? await getGitHead(cwd) : undefined,
     model: modelId,
+    status,
   };
 
   await mkdir(path.dirname(metadataFile), { recursive: true });
@@ -133,12 +174,67 @@ export async function writeLastUpdateMetadata(
 }
 
 /**
+ * Persists run metadata when OpenWiki content changed since the given snapshot.
+ * Returns whether metadata was written. Used after both successful and failed
+ * runs so already-generated content stays diffable by future updates.
+ */
+export async function persistRunMetadataIfChanged(
+  command: OpenWikiCommand,
+  cwd: string,
+  modelId: string,
+  outputMode: OpenWikiOutputMode,
+  snapshotBefore: OpenWikiContentSnapshot | null,
+  status: UpdateRunStatus = "complete",
+): Promise<boolean> {
+  if (command === "chat" || snapshotBefore === null) {
+    return false;
+  }
+
+  if (
+    snapshotBefore === (await createOpenWikiContentSnapshot(cwd, outputMode))
+  ) {
+    // A completed run clears a previous interrupted status even when the
+    // content did not change, so the update no-op check can skip again.
+    const lastUpdate = await readLastUpdate(cwd, outputMode);
+    if (status !== "complete" || lastUpdate?.status !== "interrupted") {
+      return false;
+    }
+  }
+
+  await writeLastUpdateMetadata(command, cwd, modelId, outputMode, status);
+
+  return true;
+}
+
+/**
+ * Removes the temporary planning file the agent creates during init/update runs.
+ */
+export async function removeTemporaryPlanFile(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): Promise<boolean> {
+  const planFile = getTemporaryPlanFilePath(cwd, outputMode);
+
+  try {
+    await rm(planFile);
+    return true;
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
+/**
  * Hashes OpenWiki content, excluding run metadata, to detect real documentation changes.
  */
 export async function createOpenWikiContentSnapshot(
   cwd: string,
+  outputMode: OpenWikiOutputMode = "repository",
 ): Promise<OpenWikiContentSnapshot> {
-  const openWikiDir = path.join(cwd, OPEN_WIKI_DIR);
+  const openWikiDir = getWikiContentRoot(cwd, outputMode);
   const hash = createHash("sha256");
 
   await addDirectoryToSnapshot(hash, openWikiDir, "");
@@ -149,8 +245,11 @@ export async function createOpenWikiContentSnapshot(
 /**
  * Reads prior run metadata if it exists and is structurally valid.
  */
-async function readLastUpdate(cwd: string): Promise<UpdateMetadata | null> {
-  const metadataFile = path.join(cwd, UPDATE_METADATA_PATH);
+async function readLastUpdate(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): Promise<UpdateMetadata | null> {
+  const metadataFile = getMetadataFilePath(cwd, outputMode);
 
   try {
     const rawMetadata = await readFile(metadataFile, "utf8");
@@ -169,6 +268,10 @@ async function readLastUpdate(cwd: string): Promise<UpdateMetadata | null> {
             ? parsedMetadata.gitHead
             : undefined,
         model: parsedMetadata.model,
+        // Metadata written before the status field existed is treated as
+        // complete so upgrades do not force a spurious re-run.
+        status:
+          parsedMetadata.status === "interrupted" ? "interrupted" : "complete",
       };
     }
 
@@ -209,7 +312,7 @@ async function addDirectoryToSnapshot(
     const entryPath = path.join(directory, entry.name);
     const relativePath = path.join(relativeDirectory, entry.name);
 
-    if (relativePath === path.basename(UPDATE_METADATA_PATH)) {
+    if (isIgnoredSnapshotPath(relativePath)) {
       continue;
     }
 
@@ -233,6 +336,37 @@ async function addDirectoryToSnapshot(
     hash.update(fileContent);
     hash.update("\0");
   }
+}
+
+function getWikiContentRoot(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): string {
+  return outputMode === "local-wiki" ? cwd : path.join(cwd, OPEN_WIKI_DIR);
+}
+
+function getTemporaryPlanFilePath(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): string {
+  return path.join(getWikiContentRoot(cwd, outputMode), TEMPORARY_PLAN_FILE);
+}
+
+function getMetadataFilePath(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): string {
+  return outputMode === "local-wiki"
+    ? path.join(cwd, LOCAL_WIKI_METADATA_PATH)
+    : path.join(cwd, UPDATE_METADATA_PATH);
+}
+
+function isIgnoredSnapshotPath(relativePath: string): boolean {
+  return (
+    relativePath === path.basename(UPDATE_METADATA_PATH) ||
+    relativePath === LOCAL_WIKI_METADATA_PATH ||
+    relativePath === TEMPORARY_PLAN_FILE
+  );
 }
 
 /**
