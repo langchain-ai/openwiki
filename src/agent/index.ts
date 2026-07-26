@@ -351,26 +351,19 @@ async function runOpenWikiAgentCore(
       emitDebug(options, "metadata=writeFailed");
     }
 
+    throw error;
+  } finally {
     prunePersistentCheckpointHistory(
       checkpointTarget,
       checkpointer,
       threadId,
       options,
     );
-
-    throw error;
   }
 
   if (checkpointTarget.persistent) {
     await chmodIfExists(checkpointTarget.connString, 0o600);
   }
-
-  prunePersistentCheckpointHistory(
-    checkpointTarget,
-    checkpointer,
-    threadId,
-    options,
-  );
 
   await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
 
@@ -495,36 +488,40 @@ export function pruneCheckpointHistory(
   checkpointer: SqliteSaver,
   threadId: string,
 ): void {
-  checkpointer.db
-    .prepare(
-      `DELETE FROM checkpoints
-       WHERE thread_id = ?
-         AND (checkpoint_ns, checkpoint_id) NOT IN (
-           SELECT checkpoint_ns, checkpoint_id FROM (
-             SELECT checkpoint_ns, checkpoint_id,
-                    ROW_NUMBER() OVER (
-                      PARTITION BY checkpoint_ns ORDER BY checkpoint_id DESC
-                    ) AS rank
-             FROM checkpoints
-             WHERE thread_id = ?
-           )
-           WHERE rank = 1
-         )`,
-    )
-    .run(threadId, threadId);
+  const prune = checkpointer.db.transaction((id: string) => {
+    checkpointer.db
+      .prepare(
+        `DELETE FROM checkpoints
+         WHERE thread_id = ?
+           AND (checkpoint_ns, checkpoint_id) NOT IN (
+             SELECT checkpoint_ns, checkpoint_id FROM (
+               SELECT checkpoint_ns, checkpoint_id,
+                      ROW_NUMBER() OVER (
+                        PARTITION BY checkpoint_ns ORDER BY checkpoint_id DESC
+                      ) AS rank
+               FROM checkpoints
+               WHERE thread_id = ?
+             )
+             WHERE rank = 1
+           )`,
+      )
+      .run(id, id);
 
-  checkpointer.db
-    .prepare(
-      `DELETE FROM writes
-       WHERE thread_id = ?
-         AND (checkpoint_ns, checkpoint_id) NOT IN (
-           SELECT checkpoint_ns, checkpoint_id FROM checkpoints WHERE thread_id = ?
-           UNION
-           SELECT checkpoint_ns, parent_checkpoint_id FROM checkpoints
-           WHERE thread_id = ? AND parent_checkpoint_id IS NOT NULL
-         )`,
-    )
-    .run(threadId, threadId, threadId);
+    checkpointer.db
+      .prepare(
+        `DELETE FROM writes
+         WHERE thread_id = ?
+           AND (checkpoint_ns, checkpoint_id) NOT IN (
+             SELECT checkpoint_ns, checkpoint_id FROM checkpoints WHERE thread_id = ?
+             UNION
+             SELECT checkpoint_ns, parent_checkpoint_id FROM checkpoints
+             WHERE thread_id = ? AND parent_checkpoint_id IS NOT NULL
+           )`,
+      )
+      .run(id, id, id);
+  });
+
+  prune(threadId);
 }
 
 function prunePersistentCheckpointHistory(
