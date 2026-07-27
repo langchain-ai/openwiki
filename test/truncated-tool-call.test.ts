@@ -1,5 +1,46 @@
+import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import type { ChatModelStreamEvent } from "@langchain/core/language_models/event";
+import type { ChatResult } from "@langchain/core/outputs";
+import { createDeepAgent } from "deepagents";
 import { describe, expect, test } from "vitest";
 import { guardTruncatedToolCall } from "../src/agent/index.ts";
+
+class TruncatedToolCallChatModel extends BaseChatModel {
+  _llmType() {
+    return "truncated-tool-call-test";
+  }
+
+  bindTools() {
+    return this;
+  }
+
+  _generate(): Promise<ChatResult> {
+    return Promise.reject(new Error("Expected the native event stream."));
+  }
+
+  async *_streamChatModelEvents(): AsyncGenerator<ChatModelStreamEvent> {
+    const events: ChatModelStreamEvent[] = [
+      { event: "message-start", id: "fake-message" },
+      {
+        event: "content-block-finish",
+        index: 0,
+        content: {
+          args: '{"path":"unfinished',
+          error: "Invalid JSON",
+          id: "fake-tool-call",
+          name: "write_file",
+          type: "invalid_tool_call",
+        },
+      },
+      { event: "message-finish", reason: "length" },
+    ];
+
+    for (const event of events) {
+      await Promise.resolve();
+      yield event;
+    }
+  }
+}
 
 type MessageLocation = {
   namespace?: string[];
@@ -169,5 +210,55 @@ describe("guardTruncatedToolCall", () => {
     );
 
     expect(state).toBe(initial);
+  });
+
+  test("fails on a truncated tool call from a deep agent v3 stream", async () => {
+    const agent = createDeepAgent({
+      model: new TruncatedToolCallChatModel({}),
+      middleware: [],
+      systemPrompt: { base: null },
+      tools: [],
+    });
+    const stream = await agent.streamEvents(
+      { messages: [{ content: "test", role: "user" }] },
+      { version: "v3" },
+    );
+    const protocolEvents: Array<{
+      method?: string;
+      params?: { data?: Record<string, unknown> };
+    }> = [];
+
+    for await (const event of stream) {
+      protocolEvents.push(event);
+    }
+
+    const invalidToolCallEvent = protocolEvents.find(
+      (event) =>
+        event.method === "messages" &&
+        event.params?.data?.event === "content-block-finish",
+    );
+    const messageFinishEvent = protocolEvents.find(
+      (event) =>
+        event.method === "messages" &&
+        event.params?.data?.event === "message-finish",
+    );
+
+    expect(invalidToolCallEvent?.params?.data).toMatchObject({
+      content: { type: "invalid_tool_call" },
+    });
+    const runId = invalidToolCallEvent?.params?.data?.run_id;
+    expect(typeof runId).toBe("string");
+    expect(messageFinishEvent?.params?.data).toMatchObject({
+      reason: "length",
+      run_id: runId,
+    });
+    expect(() => {
+      protocolEvents.reduce<ReadonlySet<string>>(
+        (state, event) => guardTruncatedToolCall(state, event),
+        new Set(),
+      );
+    }).toThrow(
+      "Model output reached its token limit before completing a tool call.",
+    );
   });
 });
