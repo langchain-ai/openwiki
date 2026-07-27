@@ -214,6 +214,23 @@ describe("parseCommand — init/update", () => {
     });
   });
 
+  test("--language canonicalizes the locale and sets no warning", () => {
+    expect(parseCommand(["--init", "--language", "PT-br"])).toMatchObject({
+      kind: "run",
+      language: "pt-BR",
+      languageWarning: null,
+    });
+  });
+
+  test("an unrecognized --language is dropped and warned", () => {
+    const result = parseCommand(["--init", "--language", "fake-language"]);
+
+    expect(result).toMatchObject({ kind: "run", language: null });
+    if (result.kind === "run") {
+      expect(result.languageWarning).toContain("fake-language");
+    }
+  });
+
   test("personal --init selects the init command and starts", () => {
     expect(parseCommand(["personal", "--init"])).toMatchObject({
       kind: "run",

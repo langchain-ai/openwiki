@@ -1,5 +1,6 @@
 import { isValidModelId, normalizeModelId } from "./constants.js";
 import type { OpenWikiCommand } from "./agent/types.js";
+import { resolveLanguage } from "./language.js";
 import { isAuthProviderId } from "./auth/providers.js";
 import type { AuthProviderId } from "./auth/types.js";
 import { parseIngestionTarget, type IngestionTarget } from "./ingestion.js";
@@ -59,6 +60,7 @@ export type CliCommand =
       command: OpenWikiCommand;
       dryRun: boolean;
       language: string | null;
+      languageWarning: string | null;
       mode: OpenWikiRunMode;
       modeSource: OpenWikiRunModeSource;
       modelId: string | null;
@@ -565,6 +567,10 @@ function parseRunCommand(
     userMessageParts.length > 0 ? userMessageParts.join(" ") : null;
   const shouldStart = command !== "chat" || userMessage !== null;
 
+  // Canonicalize the requested locale here so an unrecognized value is dropped
+  // (and surfaced as a warning) before it reaches the run or persisted state.
+  const resolvedLanguage = resolveLanguage(language);
+
   if (command !== "chat" && modeSource === "default") {
     mode = "code";
   }
@@ -582,7 +588,8 @@ function parseRunCommand(
     exitCode: 0,
     command,
     dryRun,
-    language,
+    language: resolvedLanguage.language ?? null,
+    languageWarning: resolvedLanguage.warning ?? null,
     mode,
     modeSource,
     modelId,
