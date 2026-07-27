@@ -74,12 +74,11 @@ beforeEach(async () => {
   vi.resetModules();
   vi.doMock("node:os", async () => {
     const actual = await vi.importActual<typeof import("node:os")>("node:os");
+    const homedir = (): string => tempHome;
     return {
       ...actual,
-      default: {
-        ...actual.default,
-        homedir: () => tempHome,
-      },
+      homedir,
+      default: { ...(actual.default as typeof import("node:os")), homedir },
     };
   });
   env = await import("../src/env.ts");

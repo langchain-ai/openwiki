@@ -81,6 +81,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^7.6.12",
     "@types/jsdom": "^28.0.3",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.17",
