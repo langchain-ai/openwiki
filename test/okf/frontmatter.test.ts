@@ -3,7 +3,10 @@ import {
   deriveMinimalFrontmatter,
   normalizeConceptContent,
   parseFrontmatterFields,
+  readFrontmatterField,
+  removeFrontmatterField,
   renderFrontmatter,
+  setFrontmatterField,
   splitFrontmatter,
 } from "../../src/okf/frontmatter.ts";
 
@@ -58,6 +61,18 @@ describe("normalizeConceptContent", () => {
     expect(result.content).toContain("openwiki_generated: true");
   });
 
+  test("stamps a supplied localized concept type on a repaired page", () => {
+    const result = normalizeConceptContent(
+      "# 架构概览\n描述平台。\n",
+      PATH,
+      "参考",
+    );
+
+    expect(result.changed).toBe(true);
+    expect(result.content).toContain('type: "参考"');
+    expect(result.content).not.toContain('type: "Reference"');
+  });
+
   test("regenerates unparseable YAML instead of throwing", () => {
     const result = normalizeConceptContent(
       "---\ntype: [unterminated\n---\n\n# Broken\nProse.\n",
@@ -77,6 +92,129 @@ describe("normalizeConceptContent", () => {
 
     expect(result.changed).toBe(true);
     expect(result.content).toContain("openwiki_generated: true");
+  });
+
+  test("carries a pending-translation marker across a regeneration", () => {
+    // A non-conformant page (no type) is rebuilt, which drops extension fields;
+    // the translation marker must survive so the page is still retried.
+    const result = normalizeConceptContent(
+      '---\ntitle: Orphan\nopenwiki_translation_pending: "zh-CN"\n---\n\n# Orphan\n',
+      PATH,
+    );
+
+    expect(result.changed).toBe(true);
+    expect(result.content).toContain('type: "Reference"');
+    expect(result.content).toContain("openwiki_generated: true");
+    expect(result.content).toContain('openwiki_translation_pending: "zh-CN"');
+  });
+
+  test("preserves a pending-translation marker on a valid page for free", () => {
+    const content =
+      '---\ntype: "参考"\nopenwiki_translation_pending: "zh-CN"\n---\n\n# X\n';
+    const result = normalizeConceptContent(content, PATH);
+
+    expect(result.changed).toBe(false);
+    expect(result.content).toBe(content);
+  });
+});
+
+describe("setFrontmatterField", () => {
+  test("inserts a new field, preserving other lines and extensions", () => {
+    const result = setFrontmatterField(
+      "---\ntype: Reference\ncustom_ext: keep-me\n---\n\n# Page\n",
+      "openwiki_translation_pending",
+      "zh-CN",
+    );
+
+    expect(result).toBe(
+      '---\ntype: Reference\ncustom_ext: keep-me\nopenwiki_translation_pending: "zh-CN"\n---\n\n# Page\n',
+    );
+  });
+
+  test("replaces an existing field's value in place", () => {
+    const result = setFrontmatterField(
+      '---\ntype: Reference\nopenwiki_translation_pending: "en"\n---\n\n# Page\n',
+      "openwiki_translation_pending",
+      "hi",
+    );
+
+    expect(result).toBe(
+      '---\ntype: Reference\nopenwiki_translation_pending: "hi"\n---\n\n# Page\n',
+    );
+  });
+
+  test("prepends a minimal block when the page has no front matter", () => {
+    expect(
+      setFrontmatterField(
+        "# Page\nBody.\n",
+        "openwiki_translation_pending",
+        "hi",
+      ),
+    ).toBe('---\nopenwiki_translation_pending: "hi"\n---\n\n# Page\nBody.\n');
+  });
+
+  test("quotes the value so special characters stay safe", () => {
+    expect(
+      setFrontmatterField("---\ntype: Reference\n---\n\n# P\n", "note", "a: b"),
+    ).toContain('note: "a: b"');
+  });
+});
+
+describe("removeFrontmatterField", () => {
+  test("removes a field while preserving the other lines", () => {
+    expect(
+      removeFrontmatterField(
+        '---\ntype: Reference\nopenwiki_translation_pending: "zh-CN"\ntitle: Page\n---\n\n# Page\n',
+        "openwiki_translation_pending",
+      ),
+    ).toBe("---\ntype: Reference\ntitle: Page\n---\n\n# Page\n");
+  });
+
+  test("returns the content unchanged when the field is absent", () => {
+    const content = "---\ntype: Reference\n---\n\n# Page\n";
+    expect(
+      removeFrontmatterField(content, "openwiki_translation_pending"),
+    ).toBe(content);
+  });
+
+  test("returns the content unchanged when there is no block", () => {
+    const content = "# Page\nNo front matter.\n";
+    expect(
+      removeFrontmatterField(content, "openwiki_translation_pending"),
+    ).toBe(content);
+  });
+
+  test("drops a block that becomes empty", () => {
+    expect(
+      removeFrontmatterField(
+        '---\nopenwiki_translation_pending: "hi"\n---\n\n# Page\n',
+        "openwiki_translation_pending",
+      ),
+    ).toBe("# Page\n");
+  });
+});
+
+describe("readFrontmatterField", () => {
+  test("reads a string field's value", () => {
+    expect(
+      readFrontmatterField(
+        '---\nopenwiki_translation_pending: "zh-CN"\n---\n\n# Page\n',
+        "openwiki_translation_pending",
+      ),
+    ).toBe("zh-CN");
+  });
+
+  test("returns undefined when the field is absent or there is no block", () => {
+    expect(
+      readFrontmatterField("---\ntype: Reference\n---\n", "missing"),
+    ).toBeUndefined();
+    expect(readFrontmatterField("# Page\n", "type")).toBeUndefined();
+  });
+
+  test("returns undefined for a non-string value", () => {
+    expect(
+      readFrontmatterField("---\ncount: 3\n---\n", "count"),
+    ).toBeUndefined();
   });
 });
 
@@ -106,8 +244,12 @@ describe("deriveMinimalFrontmatter", () => {
     ).toEqual({ type: "Reference", title: "Architecture Overview" });
   });
 
-  test("always uses type Reference", () => {
+  test("defaults the type to Reference", () => {
     expect(deriveMinimalFrontmatter("body", PATH).type).toBe("Reference");
+  });
+
+  test("uses a supplied localized concept type", () => {
+    expect(deriveMinimalFrontmatter("body", PATH, "参考").type).toBe("参考");
   });
 });
 

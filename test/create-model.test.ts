@@ -138,6 +138,24 @@ describe("createModel gemini (AI Studio)", () => {
   });
 });
 
+describe("createModel OpenAI-compatible transport selection", () => {
+  test("routes Copilot GPT-5 models through the Responses API", () => {
+    const model = createModel("copilot", "gpt-5.5", 0) as {
+      useResponsesApi?: boolean;
+    };
+
+    expect(model.useResponsesApi).toBe(true);
+  });
+
+  test("keeps non-GPT-5 Copilot models on chat completions", () => {
+    const model = createModel("copilot", "claude-sonnet-5", 0) as {
+      useResponsesApi?: boolean;
+    };
+
+    expect(model.useResponsesApi).toBe(false);
+  });
+});
+
 function restoreEnv(key: string, value: string | undefined): void {
   if (value === undefined) {
     delete process.env[key];
