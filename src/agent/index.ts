@@ -251,6 +251,10 @@ async function resolveRunConfig(
     onProviderResolved(provider);
 
     const providerBaseUrl = resolveProviderBaseUrl(provider);
+    const providerBaseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
+    const providerBaseUrlIsCustom =
+      providerBaseUrlEnvKey !== undefined &&
+      Boolean(process.env[providerBaseUrlEnvKey]?.trim());
     emitDebug(options, `provider=${provider}`);
     if (providerBaseUrl) {
       emitDebug(
@@ -287,6 +291,7 @@ async function resolveRunConfig(
       modelId,
       apiKey: getProviderApiKey(provider),
       baseUrl: providerBaseUrl,
+      baseUrlIsCustom: providerBaseUrlIsCustom,
     });
     if (modelAvailability.status === "unavailable") {
       throw new Error(
