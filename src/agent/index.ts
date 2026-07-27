@@ -24,8 +24,13 @@ import {
 import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
+import { resolveLanguage } from "../language.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
+import {
+  createWikiTranslationMiddleware,
+  resolveTranslationSwitch,
+} from "./translation-middleware.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -283,6 +288,15 @@ async function runOpenWikiAgentCore(
       virtualMode: true,
     }),
   });
+  // An update inherits the wiki's persisted language unless --language requests a
+  // different one. When it does, retranslate every existing page before the agent
+  // runs so the incremental update does not leave a mix of the old and new
+  // language.
+  const translation = resolveTranslationSwitch(
+    command,
+    resolveLanguage(options.language).language,
+    context.lastUpdate?.language,
+  );
   const agent = createDeepAgent({
     model,
     tools: createOpenWikiConnectorTools(),
@@ -291,7 +305,19 @@ async function runOpenWikiAgentCore(
     middleware:
       command === "chat"
         ? []
-        : [createOpenWikiIndexMiddleware(wikiBackend, outputMode)],
+        : [
+            ...(translation
+              ? [
+                  createWikiTranslationMiddleware(
+                    wikiBackend,
+                    outputMode,
+                    model,
+                    translation,
+                  ),
+                ]
+              : []),
+            createOpenWikiIndexMiddleware(wikiBackend, outputMode),
+          ],
     skills: ["/skills/"],
     permissions: [
       { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
