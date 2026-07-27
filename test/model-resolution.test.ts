@@ -52,4 +52,16 @@ describe("resolveModelId", () => {
       resolveModelId({ modelId: "http://evil.example" }, "anthropic"),
     ).toThrow(/Invalid model ID/u);
   });
+
+  test("uses the xai-grok default preset when nothing is configured", () => {
+    delete process.env[OPENWIKI_MODEL_ID_ENV_KEY];
+
+    expect(resolveModelId({}, "xai-grok")).toBe("grok-4.5");
+  });
+
+  test("accepts a custom Grok model id override", () => {
+    process.env[OPENWIKI_MODEL_ID_ENV_KEY] = "grok-custom-id";
+
+    expect(resolveModelId({}, "xai-grok")).toBe("grok-custom-id");
+  });
 });

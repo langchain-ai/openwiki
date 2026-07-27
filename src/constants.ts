@@ -20,6 +20,9 @@ export const OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY = "OPENAI_CHATGPT_EXPIRES_AT";
 export const OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY = "OPENAI_CHATGPT_ACCOUNT_ID";
 export const OPENAI_CHATGPT_EMAIL_ENV_KEY = "OPENAI_CHATGPT_EMAIL";
 export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
+export const XAI_GROK_ACCESS_TOKEN_ENV_KEY = "XAI_GROK_ACCESS_TOKEN";
+export const XAI_GROK_REFRESH_TOKEN_ENV_KEY = "XAI_GROK_REFRESH_TOKEN";
+export const XAI_GROK_EXPIRES_AT_ENV_KEY = "XAI_GROK_EXPIRES_AT";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
@@ -94,7 +97,8 @@ export type OpenWikiProvider =
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "xai-grok";
 
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
@@ -137,6 +141,14 @@ const GEMINI_MODELS: ProviderModelOption[] = [
   { id: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
   { id: "gemini-3-flash", label: "Gemini 3 Flash" },
   { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash-Lite" },
+];
+
+/** Static chat-capable Grok presets for the xAI subscription OAuth provider. */
+const XAI_GROK_MODEL_OPTIONS: ProviderModelOption[] = [
+  { id: "grok-4.5", label: "Grok 4.5" },
+  { id: "grok-code-fast-1", label: "Grok Code Fast 1" },
+  { id: "grok-4-1-fast-reasoning", label: "Grok 4.1 Fast Reasoning" },
+  { id: "grok-4-1-fast-non-reasoning", label: "Grok 4.1 Fast Non-Reasoning" },
 ];
 
 type ProviderConfig = {
@@ -199,6 +211,7 @@ type ProviderConfig = {
 export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
+  "xai-grok",
   "anthropic",
   "gemini",
   "gemini-enterprise",
@@ -289,6 +302,12 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     authMethod: "oauth",
     label: "OpenAI (ChatGPT login)",
     modelOptions: OPENAI_MODEL_OPTIONS,
+  },
+  "xai-grok": {
+    apiKeyEnvKey: XAI_GROK_ACCESS_TOKEN_ENV_KEY,
+    authMethod: "oauth",
+    label: "Grok (xAI subscription)",
+    modelOptions: XAI_GROK_MODEL_OPTIONS,
   },
   "openai-compatible": {
     apiKeyEnvKey: OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
@@ -504,6 +523,14 @@ export function getProviderCredentialHint(
       "Configure the AWS SDK credential chain with OIDC/web identity, an IAM " +
       "role, AWS_PROFILE/SSO, or standard AWS environment credentials."
     );
+  }
+
+  if (provider === "openai-chatgpt") {
+    return "Sign in with your ChatGPT account via `openwiki --init`.";
+  }
+
+  if (provider === "xai-grok") {
+    return "Sign in with your xAI account via `openwiki --init`.";
   }
 
   return null;
