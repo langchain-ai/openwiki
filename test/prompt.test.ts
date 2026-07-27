@@ -1,7 +1,13 @@
 import { describe, expect, test } from "vitest";
 import {
+  coverageSelfCheck,
   createDiagramInstructions,
   createSystemPrompt,
+  documentationGoals,
+  okfFrontMatterRules,
+  okfRelationshipModeling,
+  sectionQualityRules,
+  type MethodologyContext,
 } from "../src/agent/prompt.ts";
 
 /**
@@ -139,5 +145,44 @@ describe("createSystemPrompt diagram guidance", () => {
     // The carve-out is scoped to update runs, not repeated in init guidance.
     const init = createSystemPrompt("init");
     expect(init).not.toContain("adding one is a valuable improvement");
+  });
+});
+
+/**
+ * The methodology blocks were extracted from createSystemPrompt into reusable
+ * functions so an out-of-tree surface (the Claude Code skills renderer) can
+ * share them without copying. These guard that the extraction is behavior-
+ * preserving: createSystemPrompt must still embed each block verbatim, with the
+ * repository surface's own paths.
+ */
+describe("shared methodology extraction is behavior-preserving", () => {
+  // The repository surface's methodology paths (from getOutputPromptConfig).
+  const repo: MethodologyContext = {
+    docsLocation: "the target repository's openwiki/ directory",
+    planPath: "/openwiki/_plan.md",
+    quickstartPath: "/openwiki/quickstart.md",
+  };
+
+  test("repository prompt embeds each extracted block verbatim", () => {
+    const prompt = createSystemPrompt("init", "repository");
+    expect(prompt).toContain(documentationGoals(repo));
+    expect(prompt).toContain(okfRelationshipModeling(repo));
+    expect(prompt).toContain(okfFrontMatterRules(repo, { repairPass: true }));
+    expect(prompt).toContain(sectionQualityRules(repo));
+    expect(prompt).toContain(coverageSelfCheck(repo));
+  });
+
+  test("repairPass toggles the OpenWiki-runtime-only front matter tail", () => {
+    const withRepair = okfFrontMatterRules(repo, { repairPass: true });
+    const without = okfFrontMatterRules(repo, { repairPass: false });
+    expect(withRepair).toContain(
+      "OpenWiki repairs front matter deterministically",
+    );
+    expect(without).not.toContain(
+      "OpenWiki repairs front matter deterministically",
+    );
+    expect(without).toContain("There is no post-run repair pass");
+    // The repair-pass rendering is what the live prompt uses.
+    expect(createSystemPrompt("init", "repository")).toContain(withRepair);
   });
 });

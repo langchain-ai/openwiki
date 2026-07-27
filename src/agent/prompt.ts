@@ -13,6 +13,115 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   return JSON.stringify(lastUpdate, null, 2);
 }
 
+/**
+ * Paths the shared methodology instructions reference. A structural subset of
+ * OutputPromptConfig, so any surface config satisfies it, and lightweight
+ * enough for an out-of-tree caller (e.g. the Claude Code skills renderer) to
+ * construct directly.
+ */
+export interface MethodologyContext {
+  docsLocation: string;
+  planPath: string;
+  quickstartPath: string;
+}
+
+/**
+ * Documentation goals shared across every OpenWiki output surface.
+ */
+export function documentationGoals(output: MethodologyContext): string {
+  return `Documentation goals:
+- Someone with zero knowledge of the wiki should be able to start at ${output.quickstartPath} and understand what the knowledge base covers, how it is organized, what it tracks, and where to go next.
+- A future agent should be able to use the docs to answer questions and make high-quality updates with less raw-source exploration.
+- Capture both technical details and business/product logic.
+- Explain why important code exists, not only what files contain.
+- Prefer clear Markdown with stable links between pages.
+- Organize the docs like human documentation, not a raw file inventory.
+- Include change-oriented guidance for future agents: where to start, what to watch out for, and which tests or checks are relevant when changing each major area.
+- Keep the docs concise enough to maintain. Avoid repeating the same concept across pages; give each concept one canonical home and link to it from other pages when needed.
+- Use git history for discovery, but do not include persistent commit hash lists in documentation unless a specific historical decision is important for future work.`;
+}
+
+/**
+ * OKF concept-graph relationship-modeling rules.
+ */
+export function okfRelationshipModeling(output: MethodologyContext): string {
+  return `OKF relationship modeling:
+- Treat every non-reserved Markdown document as a concept node. Standard Markdown links between concept documents are directed relationship edges; tags, resource fields, directory placement, source-code references, and index.md links do not replace concept-to-concept links.
+- Model meaningful runtime, dependency, ownership, data-flow, security, lifecycle, and user-flow relationships, not only navigation from ${output.quickstartPath}.
+- Put a concept link in the sentence that explains the relationship. Use the surrounding prose to state its meaning, such as \`dispatches to\`, \`depends on\`, \`shares infrastructure with\`, \`is configured through\`, \`is surfaced by\`, or \`is secured by\`.
+- Do not add links solely to increase graph density, and do not automatically add reciprocal links. Add an inverse link only when it helps explain the target concept and is supported by evidence.
+- ${output.quickstartPath} must link to every major concept for navigation, but quickstart and index links do not count toward the semantic relationship audit.
+- When evidence supports it, each substantive concept should connect to at least two other substantive concepts. If a page remains isolated, add its evidence-backed relationships, merge it into a broader concept, or explain why it is genuinely standalone.
+- Prefer links to existing canonical concepts over duplicating their explanations. Do not mint thin concepts merely to create more nodes or edges.`;
+}
+
+/**
+ * OKF front-matter requirements. `repairPass` controls the trailing note:
+ * OpenWiki's runtime repairs front matter deterministically after every run,
+ * but a keyless surface with no post-run pass must get it right in place.
+ */
+export function okfFrontMatterRules(
+  output: MethodologyContext,
+  options: { repairPass: boolean },
+): string {
+  const head = `Front matter requirements (OKF):
+- Every non-reserved Markdown concept file you create or update under ${output.docsLocation}, including the temporary ${output.planPath} file, MUST begin with OKF-compliant YAML front matter.
+- The front matter MUST follow the Google Knowledge Catalog OKF v0.1 schema.
+- \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.1"\` front matter.
+- Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:
+
+<okf_front_matter>
+---
+type: <Type name>                  # REQUIRED
+title: <Optional display name>
+description: <Optional one to two sentence summary (optimized for search & retrieval)>
+resource: <Optional canonical URI for the underlying asset>
+tags: [<tag>, <tag>, …]            # Optional
+timestamp: <Optional ISO 8601 datetime>
+# Producer-defined extension fields are allowed.
+---
+</okf_front_matter>
+
+- Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
+- Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
+- \`timestamp\` is an optional ISO 8601 datetime for the last meaningful change.
+- Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
+- Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
+- The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
+- When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.`;
+  const tail = options.repairPass
+    ? `- OpenWiki repairs front matter deterministically after every run, so a page is never rejected for missing or invalid front matter. If a page's front matter contains \`openwiki_generated: true\`, that metadata was code-derived as a fallback: replace it with an accurate \`type\`, \`title\`, and \`description\` grounded in the page body, then remove the \`openwiki_generated\` field.`
+    : "- There is no post-run repair pass on this surface, so every page must be written with valid OKF front matter in place: front matter that parses with a non-empty `type`. If you encounter a page whose front matter contains `openwiki_generated: true`, that block was code-derived by the OpenWiki CLI as a fallback: replace it with an accurate `type`, `title`, and `description` grounded in the page body, then remove the `openwiki_generated` field.";
+  return `${head}\n${tail}`;
+}
+
+/**
+ * Section quality and page-granularity rules.
+ */
+export function sectionQualityRules(output: MethodologyContext): string {
+  return `Section quality rules:
+- Do not create a directory unless it represents a real documentation area.
+- A section directory should usually contain multiple substantive pages. A single-file directory is acceptable only when that page is substantial, has a clear domain boundary, and is likely to grow.
+- Avoid thin pages. If a page would mostly be a stub, source map, or short note, merge it into ${output.quickstartPath} or a broader section page instead.
+- Prefer headings inside broader pages before creating many small directories.
+- Each page should provide real explanatory value: what the area does, why it exists, where to start, what to watch out for, and key source references.
+- Before finishing an init or update run, review the ${output.docsLocation} tree. Merge, move, or remove low-value single-file directories and stub pages so the wiki remains easy to navigate and maintain.
+- For small scopes with about 10 or fewer primary source items, prefer ${output.quickstartPath} plus at most 1-2 supporting pages. Avoid one-file section directories unless the boundary is clearly useful and likely to grow.
+- Avoid splitting content into separate topic pages unless there is enough distinct, source-specific behavior to justify the split.`;
+}
+
+/**
+ * Final coverage self-check, including the `## Backlog` convention.
+ */
+export function coverageSelfCheck(output: MethodologyContext): string {
+  return `Coverage self-check:
+- Before finishing, verify that every identified area is either documented or backlogged.
+- Audit the concept graph: verify that internal concept links resolve, important cross-domain relationships described in prose are linked, and no concept is orphaned unless it is genuinely standalone.
+- Verify that ${output.planPath} has been deleted. Do not finish while the temporary plan remains in the wiki as a concept.
+- Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
+- If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.`;
+}
+
 export function createSystemPrompt(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
@@ -121,62 +230,13 @@ Security and privacy rules:
 - Keep all documentation under ${output.docsLocation}.
 - ${output.writeBoundaryInstruction}
 
-Documentation goals:
-- Someone with zero knowledge of the wiki should be able to start at ${output.quickstartPath} and understand what the knowledge base covers, how it is organized, what it tracks, and where to go next.
-- A future agent should be able to use the docs to answer questions and make high-quality updates with less raw-source exploration.
-- Capture both technical details and business/product logic.
-- Explain why important code exists, not only what files contain.
-- Prefer clear Markdown with stable links between pages.
-- Organize the docs like human documentation, not a raw file inventory.
-- Include change-oriented guidance for future agents: where to start, what to watch out for, and which tests or checks are relevant when changing each major area.
-- Keep the docs concise enough to maintain. Avoid repeating the same concept across pages; give each concept one canonical home and link to it from other pages when needed.
-- Use git history for discovery, but do not include persistent commit hash lists in documentation unless a specific historical decision is important for future work.
+${documentationGoals(output)}
 
-OKF relationship modeling:
-- Treat every non-reserved Markdown document as a concept node. Standard Markdown links between concept documents are directed relationship edges; tags, resource fields, directory placement, source-code references, and index.md links do not replace concept-to-concept links.
-- Model meaningful runtime, dependency, ownership, data-flow, security, lifecycle, and user-flow relationships, not only navigation from ${output.quickstartPath}.
-- Put a concept link in the sentence that explains the relationship. Use the surrounding prose to state its meaning, such as \`dispatches to\`, \`depends on\`, \`shares infrastructure with\`, \`is configured through\`, \`is surfaced by\`, or \`is secured by\`.
-- Do not add links solely to increase graph density, and do not automatically add reciprocal links. Add an inverse link only when it helps explain the target concept and is supported by evidence.
-- ${output.quickstartPath} must link to every major concept for navigation, but quickstart and index links do not count toward the semantic relationship audit.
-- When evidence supports it, each substantive concept should connect to at least two other substantive concepts. If a page remains isolated, add its evidence-backed relationships, merge it into a broader concept, or explain why it is genuinely standalone.
-- Prefer links to existing canonical concepts over duplicating their explanations. Do not mint thin concepts merely to create more nodes or edges.
+${okfRelationshipModeling(output)}
 
-Front matter requirements (OKF):
-- Every non-reserved Markdown concept file you create or update under ${output.docsLocation}, including the temporary ${output.planPath} file, MUST begin with OKF-compliant YAML front matter.
-- The front matter MUST follow the Google Knowledge Catalog OKF v0.1 schema.
-- \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.1"\` front matter.
-- Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:
+${okfFrontMatterRules(output, { repairPass: true })}
 
-<okf_front_matter>
----
-type: <Type name>                  # REQUIRED
-title: <Optional display name>
-description: <Optional one to two sentence summary (optimized for search & retrieval)>
-resource: <Optional canonical URI for the underlying asset>
-tags: [<tag>, <tag>, …]            # Optional
-timestamp: <Optional ISO 8601 datetime>
-# Producer-defined extension fields are allowed.
----
-</okf_front_matter>
-
-- Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
-- Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
-- \`timestamp\` is an optional ISO 8601 datetime for the last meaningful change.
-- Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
-- Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
-- The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
-- When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
-- OpenWiki repairs front matter deterministically after every run, so a page is never rejected for missing or invalid front matter. If a page's front matter contains \`openwiki_generated: true\`, that metadata was code-derived as a fallback: replace it with an accurate \`type\`, \`title\`, and \`description\` grounded in the page body, then remove the \`openwiki_generated\` field.
-
-Section quality rules:
-- Do not create a directory unless it represents a real documentation area.
-- A section directory should usually contain multiple substantive pages. A single-file directory is acceptable only when that page is substantial, has a clear domain boundary, and is likely to grow.
-- Avoid thin pages. If a page would mostly be a stub, source map, or short note, merge it into ${output.quickstartPath} or a broader section page instead.
-- Prefer headings inside broader pages before creating many small directories.
-- Each page should provide real explanatory value: what the area does, why it exists, where to start, what to watch out for, and key source references.
-- Before finishing an init or update run, review the ${output.docsLocation} tree. Merge, move, or remove low-value single-file directories and stub pages so the wiki remains easy to navigate and maintain.
-- For small scopes with about 10 or fewer primary source items, prefer ${output.quickstartPath} plus at most 1-2 supporting pages. Avoid one-file section directories unless the boundary is clearly useful and likely to grow.
-- Avoid splitting content into separate topic pages unless there is enough distinct, source-specific behavior to justify the split.
+${sectionQualityRules(output)}
 
 Required documentation structure:
 - ${output.quickstartPath} must be the entrypoint.
@@ -188,12 +248,7 @@ Required documentation structure:
 - Source Map sections are optional. Add one only when it materially improves navigation for that page. Prefer inline source references for short pages.
 - Track the last successful documentation update in ${output.metadataPath}.
 
-Coverage self-check:
-- Before finishing, verify that every identified area is either documented or backlogged.
-- Audit the concept graph: verify that internal concept links resolve, important cross-domain relationships described in prose are linked, and no concept is orphaned unless it is genuinely standalone.
-- Verify that ${output.planPath} has been deleted. Do not finish while the temporary plan remains in the wiki as a concept.
-- Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
-- If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
+${coverageSelfCheck(output)}
 ${createDiagramInstructions()}
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}

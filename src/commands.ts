@@ -39,6 +39,12 @@ export type CliCommand =
       url: string | null;
     }
   | {
+      kind: "integration";
+      exitCode: 0;
+      target: "claude";
+      targetDir: string;
+    }
+  | {
       kind: "ingest";
       exitCode: 0;
       modelId: string | null;
@@ -137,6 +143,40 @@ export function parseCommand(argv: string[]): CliCommand {
       exitCode: 0,
       force,
       provider,
+    };
+  }
+
+  if (argv[0] === "integration") {
+    if (argv[1] !== "claude") {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: "Usage: openwiki integration claude [path]",
+      };
+    }
+
+    const rest = argv.slice(2).filter((arg) => arg !== "");
+    const unknownOption = rest.find((arg) => arg.startsWith("-"));
+    if (unknownOption) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Unknown option for integration: ${unknownOption}`,
+      };
+    }
+    if (rest.length > 1) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: "Usage: openwiki integration claude [path]",
+      };
+    }
+
+    return {
+      kind: "integration",
+      exitCode: 0,
+      target: "claude",
+      targetDir: rest[0] ?? ".",
     };
   }
 
@@ -656,6 +696,7 @@ export const helpContent: HelpContent = {
     "openwiki cron resume all",
     "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
+    "openwiki integration claude [path]",
   ],
   commands: [
     {
@@ -715,6 +756,11 @@ export const helpContent: HelpContent = {
       label: "openwiki ngrok start [url]",
       description:
         "Start an ngrok tunnel for Slack OAuth, optionally using a fixed HTTPS URL.",
+    },
+    {
+      label: "openwiki integration claude [path]",
+      description:
+        "Scaffold Claude Code skills that generate and maintain the openwiki/ wiki using Claude Code's own inference (no API key).",
     },
   ],
   options: [
