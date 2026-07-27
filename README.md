@@ -219,7 +219,26 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Z.AI, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+
+### Z.AI
+
+The native `zai` provider calls Z.AI directly; it does not route through
+OpenRouter or the generic `openai-compatible` provider. Set `ZAI_API_KEY` and,
+optionally, a custom coding endpoint. The default model is `glm-5.2` and the
+default endpoint is `https://api.z.ai/api/coding/paas/v4`:
+
+```bash
+OPENWIKI_PROVIDER=zai
+ZAI_API_KEY=your-zai-api-key
+# Optional; overrides the default Z.AI coding endpoint.
+ZAI_BASE_URL=https://api.z.ai/api/coding/paas/v4
+OPENWIKI_MODEL_ID=glm-5.2
+```
+
+Z.AI requests normalize file-content blocks for the Z.AI API only and retry
+HTTP 429 responses up to three times by default. Set
+`ZAI_RATE_LIMIT_MAX_RETRIES=0` to disable those retries.
 
 ### Alternative base URLs
 
