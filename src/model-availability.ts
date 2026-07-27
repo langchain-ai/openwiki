@@ -5,12 +5,12 @@ export type ModelAvailability =
   | { status: "unavailable"; reason: string }
   | { status: "unknown"; reason?: string };
 
-type ModelAvailabilityCheck = {
+interface ModelAvailabilityCheck {
   apiKey?: string;
   baseUrl?: string;
   modelId: string;
   provider: OpenWikiProvider;
-};
+}
 
 type OpenAIModelListResponse = {
   data?: Array<{ id?: unknown }>;
