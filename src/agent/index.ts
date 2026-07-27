@@ -332,8 +332,15 @@ async function runOpenWikiAgentCore(
                     // The pass announces itself with one line in place of the
                     // suppressed per-token translation output. It is routine
                     // progress, so unlike a warning it is not mirrored to stderr.
+                    // The trailing blank line keeps it a distinct Markdown block:
+                    // the TUI coalesces consecutive text events into one
+                    // block-lexed log item, so without it the status would run
+                    // straight into the agent's first streamed line.
                     (message) => {
-                      options.onEvent?.({ type: "text", text: message });
+                      options.onEvent?.({
+                        type: "text",
+                        text: `${message}\n\n`,
+                      });
                     },
                   ),
                 ]
