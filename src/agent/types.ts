@@ -51,6 +51,7 @@ export type UpdateMetadata = {
   gitHead?: string;
   model: string;
   status?: UpdateRunStatus;
+  language?: string;
 };
 
 export type RunContext = {

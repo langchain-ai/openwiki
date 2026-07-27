@@ -359,6 +359,7 @@ async function runOpenWikiAgentCore(
         outputMode,
         openWikiSnapshotBefore,
         "interrupted",
+        context.language,
       );
       emitDebug(
         options,
@@ -383,6 +384,8 @@ async function runOpenWikiAgentCore(
     modelId,
     outputMode,
     openWikiSnapshotBefore,
+    "complete",
+    context.language,
   );
 
   if (metadataWritten) {
