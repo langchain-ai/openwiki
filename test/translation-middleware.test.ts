@@ -160,6 +160,11 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
     // description, and type values, so no reader-facing value is left in the
     // source language.
     expect(calls[0].system).toContain('"title", "description", and "type"');
+    // The field rule must dominate the "keep technical terms unchanged" rule, or
+    // a technical-term-dense description gets left in the source language.
+    expect(calls[0].system).toContain(
+      "dense with product names, feature names, or technical terminology",
+    );
     // Tags are a cross-cutting aggregation key, so they stay canonical: the
     // prompt tells the model to leave the tags values in English.
     expect(calls[0].system).toContain('Leave the "tags" values in English');

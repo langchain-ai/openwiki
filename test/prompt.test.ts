@@ -15,6 +15,11 @@ describe("createSystemPrompt output language", () => {
     expect(prompt).toContain(
       'write the human-readable "title", "description", and "type" values in zh-CN',
     );
+    // The field rule must dominate the "keep technical terms unchanged" rule, or
+    // a technical-term-dense description gets left in the source language.
+    expect(prompt).toContain(
+      "dense with product names, feature names, or technical terminology",
+    );
     // Tags stay canonical (an aggregation key), so they are written in English.
     expect(prompt).toContain('Write the "tags" values in English');
     // Whole-wiki language reconciliation is code-owned: the agent must not
