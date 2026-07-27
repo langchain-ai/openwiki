@@ -21,7 +21,7 @@ The documentation agent is implemented in `src/agent/`. It takes a command (`cha
 6. Build the system prompt and user prompt.
 7. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
 8. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
-9. Stream messages and tool events back to the CLI.
+9. Stream messages and tool events back to the CLI. `parseStreamEvent()` in `src/agent/index.ts` normalizes the LangGraph protocol stream into `OpenWikiRunEvent` objects. `extractContentBlockText()` filters out non-text content blocks — `tool`, `reasoning`, `file`, and `image` types — so raw base64 payloads from file/image blocks never leak into the terminal output. Text blocks pass through normally.
 10. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed** — or if the previous run was interrupted and this run completed, to clear the stale status. If the run fails mid-stream, the catch block writes metadata with `status: "interrupted"` so the next update retries instead of skipping as a no-op.
 
 Chat runs skip metadata writes entirely.

@@ -59,6 +59,7 @@ import {
   BEDROCK_AWS_REGION_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
+  COPILOT_BASE_URL_ENV_KEY,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -88,6 +89,8 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  providerUsesExternalCliAuth,
+  providerUsesResponsesApi,
   resolveConfiguredProvider,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
@@ -96,6 +99,10 @@ import {
   resolveProviderRetryAttempts,
   type OpenWikiProvider,
 } from "../constants.js";
+import {
+  resolveExternalCliCredential,
+  validateExternalCliCredential,
+} from "../external-cli-auth.js";
 import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
@@ -170,6 +177,11 @@ export async function runOpenWikiAgent(
         options,
         `provider.baseUrl=${formatUrlDebugValue(providerBaseUrl)}`,
       );
+    }
+    await resolveExternalCliCredential(provider);
+    const providerApiKey = getProviderApiKey(provider);
+    if (providerUsesExternalCliAuth(provider) && providerApiKey) {
+      validateExternalCliCredential(provider, providerApiKey);
     }
     ensureProviderCredentials(provider);
     emitDebug(
@@ -769,7 +781,7 @@ export function createModel(
         }
       : undefined,
     model: modelId,
-    useResponsesApi: provider === "openai",
+    useResponsesApi: providerUsesResponsesApi(provider, modelId),
     ...retryOptions,
   });
 }
@@ -1688,6 +1700,7 @@ export function formatEnvironmentDebugValue(
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === BASETEN_BASE_URL_ENV_KEY ||
+    key === COPILOT_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
