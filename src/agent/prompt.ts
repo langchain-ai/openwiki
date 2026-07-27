@@ -212,6 +212,7 @@ function createLanguageInstructions(language: string | undefined): string {
 
 Output language:
 - Write generated wiki prose, headings, table content, and documentation in ${language}.
+- OpenWiki has already brought existing pages into ${language} in a separate deterministic pass before you run, so treat the wiki as already in ${language}. Do not translate or rewrite an existing page just because it, or the recorded run metadata, still shows a different language; that whole-wiki reconciliation is code-owned. Write only your own new or changed content in ${language} and leave otherwise-accurate pages alone.
 - In each page's YAML front matter, write the human-readable "title", "description", and "type" values in ${language}. Write the "tags" values in English so they stay stable across languages as cross-cutting aggregation keys. Keep the YAML keys as written, and copy any URL, file path, timestamp, or identifier-like value byte-for-byte.
 - Apply this language only to generated wiki files. Do not translate OpenWiki CLI text or runtime messages.
 - Keep code identifiers, file paths, commands, API names, URLs, and code blocks unchanged where translation would reduce technical accuracy or usability.`;

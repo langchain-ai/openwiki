@@ -17,6 +17,13 @@ describe("createSystemPrompt output language", () => {
     );
     // Tags stay canonical (an aggregation key), so they are written in English.
     expect(prompt).toContain('Write the "tags" values in English');
+    // Whole-wiki language reconciliation is code-owned: the agent must not
+    // re-translate existing pages on a switch, so it never fights the separate
+    // deterministic translation pass or acts on stale language metadata.
+    expect(prompt).toContain(
+      "brought existing pages into zh-CN in a separate deterministic pass",
+    );
+    expect(prompt).toContain("that whole-wiki reconciliation is code-owned");
     expect(prompt).toContain(
       "Apply this language only to generated wiki files.",
     );
