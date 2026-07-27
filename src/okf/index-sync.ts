@@ -1,7 +1,11 @@
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import path from "node:path";
 import type { OpenWikiOutputMode } from "../agent/types.js";
-import { ENGLISH_INDEX_LABELS, type IndexLabels } from "./index-labels.js";
+import {
+  ENGLISH_CONCEPT_TYPE,
+  ENGLISH_INDEX_LABELS,
+  type IndexLabels,
+} from "./index-labels.js";
 import {
   normalizeConceptContent,
   parseFrontmatterFields,
@@ -58,10 +62,11 @@ export async function synchronizeWikiIndexes(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   labels: IndexLabels = ENGLISH_INDEX_LABELS,
+  conceptType: string = ENGLISH_CONCEPT_TYPE,
 ): Promise<void> {
   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
   for (const directory of await collectDirectories(backend, root, true)) {
-    await synchronizeDirectory(backend, directory, root, labels);
+    await synchronizeDirectory(backend, directory, root, labels, conceptType);
   }
 }
 
@@ -77,6 +82,7 @@ export async function synchronizeWikiIndexes(
 export async function migrateWikiToOkf(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
+  conceptType: string = ENGLISH_CONCEPT_TYPE,
 ): Promise<void> {
   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
   for (const directory of await collectDirectories(backend, root, true)) {
@@ -94,6 +100,7 @@ export async function migrateWikiToOkf(
       await normalizeConceptFile(
         backend,
         path.posix.join(directory.path, name),
+        conceptType,
       );
     }
   }
@@ -109,9 +116,10 @@ export async function migrateWikiToOkf(
 async function normalizeConceptFile(
   backend: BackendProtocolV2,
   filePath: string,
+  conceptType: string = ENGLISH_CONCEPT_TYPE,
 ): Promise<string> {
   const original = await readText(backend, filePath);
-  const normalized = normalizeConceptContent(original, filePath);
+  const normalized = normalizeConceptContent(original, filePath, conceptType);
   if (normalized.changed) {
     const result = await backend.edit(filePath, original, normalized.content);
     if (result.error) {
@@ -158,6 +166,7 @@ async function synchronizeDirectory(
   directory: Directory,
   root: string,
   labels: IndexLabels,
+  conceptType: string,
 ): Promise<void> {
   const files: Link[] = [];
   const directories: Link[] = [];
@@ -178,7 +187,7 @@ async function synchronizeDirectory(
     }
 
     const filePath = path.posix.join(directory.path, name);
-    const content = await normalizeConceptFile(backend, filePath);
+    const content = await normalizeConceptFile(backend, filePath, conceptType);
     const metadata = readIndexMetadata(content);
     files.push({
       description: metadata.description,

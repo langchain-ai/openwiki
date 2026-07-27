@@ -94,6 +94,74 @@ export function resolveIndexLabels(language: string | undefined): IndexLabels {
 }
 
 /**
+ * Built-in English fallback for the concept `type` the code derives when a page
+ * has missing or malformed OKF front matter.
+ */
+export const ENGLISH_CONCEPT_TYPE = "Reference";
+
+/**
+ * Localized forms of the derived concept `type` keyed by BCP-47 language tag.
+ *
+ * `deriveMinimalFrontmatter` stamps this single word onto pages whose front
+ * matter it has to repair, so like the index headings it is curated structural
+ * chrome rather than translated prose: the lookup stays deterministic and
+ * model-free, and an unlisted language falls back to English.
+ *
+ * To localize a language, add one entry. As with the index labels, a region tag
+ * may key on its full form while a bare primary-subtag entry supplies the
+ * default for every region of that language.
+ */
+const CONCEPT_TYPE_LABELS: Record<string, string> = {
+  en: ENGLISH_CONCEPT_TYPE,
+  ar: "مرجع",
+  ca: "Referència",
+  cs: "Reference",
+  da: "Reference",
+  de: "Referenz",
+  el: "Αναφορά",
+  es: "Referencia",
+  fr: "Référence",
+  hi: "संदर्भ",
+  hr: "Referenca",
+  id: "Referensi",
+  it: "Riferimento",
+  ja: "リファレンス",
+  ko: "참조",
+  ms: "Rujukan",
+  nb: "Referanse",
+  nl: "Referentie",
+  no: "Referanse",
+  pt: "Referência",
+  ro: "Referință",
+  ru: "Справочник",
+  sk: "Referencia",
+  sr: "Референца",
+  sv: "Referens",
+  th: "อ้างอิง",
+  tr: "Referans",
+  uk: "Довідник",
+  vi: "Tham khảo",
+  zh: "参考",
+  "zh-TW": "參考",
+};
+
+/**
+ * Resolves the derived concept `type` label for a wiki language.
+ *
+ * Uses the same full-tag then primary-subtag then English resolution as
+ * `resolveIndexLabels`, so an unlisted or malformed language degrades to the
+ * English "Reference" rather than failing.
+ */
+export function resolveConceptTypeLabel(language: string | undefined): string {
+  if (!language) return ENGLISH_CONCEPT_TYPE;
+  return (
+    CONCEPT_TYPE_LABELS[language] ??
+    CONCEPT_TYPE_LABELS[primarySubtag(language)] ??
+    ENGLISH_CONCEPT_TYPE
+  );
+}
+
+/**
  * Returns a language tag's primary subtag (for example `zh` for `zh-CN`),
  * echoing the input back when it cannot be parsed.
  */

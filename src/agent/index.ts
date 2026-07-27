@@ -25,7 +25,10 @@ import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
 import { resolveLanguage } from "../language.js";
-import { resolveIndexLabels } from "../okf/index-labels.js";
+import {
+  resolveConceptTypeLabel,
+  resolveIndexLabels,
+} from "../okf/index-labels.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
 import {
@@ -298,9 +301,11 @@ async function runOpenWikiAgentCore(
     resolveLanguage(options.language).language,
     context.lastUpdate?.language,
   );
-  // Localized headings for the deterministic directory indexes. Falls back to
-  // English for any language not in the static map.
+  // Localized headings for the deterministic directory indexes, plus the
+  // localized fallback `type` stamped on pages the code has to repair. Both fall
+  // back to English for any language not in the static maps.
   const indexLabels = resolveIndexLabels(context.language);
+  const conceptType = resolveConceptTypeLabel(context.language);
   const agent = createDeepAgent({
     model,
     tools: createOpenWikiConnectorTools(),
@@ -320,7 +325,12 @@ async function runOpenWikiAgentCore(
                   ),
                 ]
               : []),
-            createOpenWikiIndexMiddleware(wikiBackend, outputMode, indexLabels),
+            createOpenWikiIndexMiddleware(
+              wikiBackend,
+              outputMode,
+              indexLabels,
+              conceptType,
+            ),
           ],
     skills: ["/skills/"],
     permissions: [

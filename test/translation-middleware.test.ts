@@ -118,6 +118,11 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
     ]);
     expect(calls[0].system).toContain("Chinese (China)");
     expect(calls[0].system).toContain("English");
+    // The front matter instruction now covers type and tags, not just title and
+    // description, so no structural value is left in the source language.
+    expect(calls[0].system).toContain(
+      '"title", "description", "type", and "tags"',
+    );
   });
 
   test("skips indexes, logs, control files, and dotfiles", async () => {

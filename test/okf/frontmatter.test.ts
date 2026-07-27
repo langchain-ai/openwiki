@@ -58,6 +58,18 @@ describe("normalizeConceptContent", () => {
     expect(result.content).toContain("openwiki_generated: true");
   });
 
+  test("stamps a supplied localized concept type on a repaired page", () => {
+    const result = normalizeConceptContent(
+      "# 架构概览\n描述平台。\n",
+      PATH,
+      "参考",
+    );
+
+    expect(result.changed).toBe(true);
+    expect(result.content).toContain('type: "参考"');
+    expect(result.content).not.toContain('type: "Reference"');
+  });
+
   test("regenerates unparseable YAML instead of throwing", () => {
     const result = normalizeConceptContent(
       "---\ntype: [unterminated\n---\n\n# Broken\nProse.\n",
@@ -106,8 +118,12 @@ describe("deriveMinimalFrontmatter", () => {
     ).toEqual({ type: "Reference", title: "Architecture Overview" });
   });
 
-  test("always uses type Reference", () => {
+  test("defaults the type to Reference", () => {
     expect(deriveMinimalFrontmatter("body", PATH).type).toBe("Reference");
+  });
+
+  test("uses a supplied localized concept type", () => {
+    expect(deriveMinimalFrontmatter("body", PATH, "参考").type).toBe("参考");
   });
 });
 

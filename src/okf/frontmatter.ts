@@ -241,13 +241,17 @@ function titleFromFilename(filePath: string): string {
 
 /**
  * Derives minimal OKF fields from a page body and its path.
+ *
+ * `conceptType` is the localized fallback stamped as the `type`; it defaults to
+ * English "Reference" for callers that do not localize.
  */
 export function deriveMinimalFrontmatter(
   body: string,
   filePath: string,
+  conceptType: string = "Reference",
 ): DerivedFrontmatter {
   return {
-    type: "Reference",
+    type: conceptType,
     title: firstHeading(body) ?? titleFromFilename(filePath),
   };
 }
@@ -279,16 +283,20 @@ export function renderFrontmatter(
  * `title` are junk, so an author's `type` and custom fields are never
  * overwritten; the index generator already ignores unusable optional fields.
  * Never throws. Returns the new content and whether it changed.
+ *
+ * `conceptType` is the localized fallback used for a repaired page's `type`; it
+ * defaults to English "Reference" for callers that do not localize.
  */
 export function normalizeConceptContent(
   content: string,
   filePath: string,
+  conceptType: string = "Reference",
 ): { changed: boolean; content: string } {
   if (hasUsableConceptType(content)) {
     return { changed: false, content };
   }
   const { body } = splitFrontmatter(content);
-  const derived = deriveMinimalFrontmatter(body, filePath);
+  const derived = deriveMinimalFrontmatter(body, filePath, conceptType);
   const front = renderFrontmatter(derived, { generated: true });
   return { changed: true, content: `${front}${body.replace(/^\s+/u, "")}` };
 }

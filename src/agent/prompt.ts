@@ -211,6 +211,7 @@ function createLanguageInstructions(language: string | undefined): string {
 
 Output language:
 - Write generated wiki prose, headings, table content, and documentation in ${language}.
+- In each page's YAML front matter, write the human-readable "title", "description", "type", and "tags" values in ${language}. Keep the YAML keys and any URL, file-path, timestamp, or identifier-like values unchanged.
 - Apply this language only to generated wiki files. Do not translate OpenWiki CLI text or runtime messages.
 - Keep code identifiers, file paths, commands, API names, URLs, and code blocks unchanged where translation would reduce technical accuracy or usability.`;
 }

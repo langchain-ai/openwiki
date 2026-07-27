@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
 import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
 import { createOpenWikiIndexMiddleware } from "../src/agent/okf-middleware.ts";
+import { ENGLISH_INDEX_LABELS } from "../src/okf/index-labels.ts";
 import {
   migrateWikiToOkf,
   synchronizeWikiIndexes,
@@ -97,6 +98,25 @@ describe("synchronizeWikiIndexes", () => {
     );
     expect(rootIndex).not.toContain("# Files");
     expect(rootIndex).not.toContain("# Directories");
+  });
+
+  test("stamps the localized concept type on a repaired page", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/legacy.md", "# Pregled\n\nTijelo.\n");
+
+    await synchronizeWikiIndexes(
+      backend,
+      "repository",
+      { files: "Datoteke", directories: "Direktoriji" },
+      "Referenca",
+    );
+
+    const legacy = await readFile(
+      path.join(rootDir, "openwiki/legacy.md"),
+      "utf8",
+    );
+    expect(legacy).toContain('type: "Referenca"');
+    expect(legacy).not.toContain('type: "Reference"');
   });
 
   test("uses OKF version frontmatter only at the bundle root", async () => {
@@ -327,6 +347,20 @@ describe("migrateWikiToOkf", () => {
     ).resolves.toBe(goodBefore);
   });
 
+  test("stamps a localized concept type when supplied", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/legacy.md", "# Pregled\n\nTijelo.\n");
+
+    await migrateWikiToOkf(backend, "repository", "Referenca");
+
+    const legacy = await readFile(
+      path.join(rootDir, "openwiki/legacy.md"),
+      "utf8",
+    );
+    expect(legacy).toContain('type: "Referenca"');
+    expect(legacy).not.toContain('type: "Reference"');
+  });
+
   test("skips reserved files, dotfiles, and dot-directories", async () => {
     const { backend, rootDir } = await setup();
     const dir = path.join(rootDir, "openwiki");
@@ -394,6 +428,30 @@ describe("createOpenWikiIndexMiddleware beforeAgent", () => {
     );
     expect(legacy).toContain('type: "Reference"');
     expect(legacy).toContain("openwiki_generated: true");
+  });
+
+  test("migrates using the localized concept type it was created with", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/legacy.md", "# Pregled\n\nTijelo.\n");
+
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Referenca",
+    );
+    const beforeAgent =
+      typeof middleware.beforeAgent === "function"
+        ? middleware.beforeAgent
+        : middleware.beforeAgent?.hook;
+    expect(beforeAgent).toBeTypeOf("function");
+    await (beforeAgent as () => Promise<unknown>)();
+
+    const legacy = await readFile(
+      path.join(rootDir, "openwiki/legacy.md"),
+      "utf8",
+    );
+    expect(legacy).toContain('type: "Referenca"');
   });
 });
 

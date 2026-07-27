@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { resolveIndexLabels } from "../src/okf/index-labels.ts";
+import {
+  resolveConceptTypeLabel,
+  resolveIndexLabels,
+} from "../src/okf/index-labels.ts";
 
 const ENGLISH = { files: "Files", directories: "Directories" };
 
@@ -50,5 +53,32 @@ describe("resolveIndexLabels", () => {
 
   test("degrades to English on a malformed tag", () => {
     expect(resolveIndexLabels("!!")).toEqual(ENGLISH);
+  });
+});
+
+describe("resolveConceptTypeLabel", () => {
+  test("returns English for English, empty, or an unlisted language", () => {
+    expect(resolveConceptTypeLabel(undefined)).toBe("Reference");
+    expect(resolveConceptTypeLabel("en")).toBe("Reference");
+    expect(resolveConceptTypeLabel("en-US")).toBe("Reference");
+    expect(resolveConceptTypeLabel("tlh")).toBe("Reference"); // Klingon: not seeded
+  });
+
+  test("localizes a listed language", () => {
+    expect(resolveConceptTypeLabel("de")).toBe("Referenz");
+    expect(resolveConceptTypeLabel("ja")).toBe("リファレンス");
+  });
+
+  test("falls back from a region tag to its primary subtag", () => {
+    expect(resolveConceptTypeLabel("de-DE")).toBe("Referenz");
+    expect(resolveConceptTypeLabel("zh-CN")).toBe("参考");
+  });
+
+  test("honors a region override", () => {
+    expect(resolveConceptTypeLabel("zh-TW")).toBe("參考");
+  });
+
+  test("degrades to English on a malformed tag", () => {
+    expect(resolveConceptTypeLabel("!!")).toBe("Reference");
   });
 });
