@@ -8,6 +8,7 @@ import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
 } from "../fs-errors.js";
+import { resolveLanguage } from "../language.js";
 import {
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
@@ -18,6 +19,7 @@ import type {
   OpenWikiRunOptions,
   RunContext,
   UpdateMetadata,
+  UpdateRunStatus,
 } from "./types.js";
 import type { Dirent } from "node:fs";
 
@@ -45,14 +47,25 @@ export async function createRunContext(
   command: OpenWikiCommand,
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
+  language?: string | null,
 ): Promise<RunContext> {
   const lastUpdate = await readLastUpdate(cwd, outputMode);
+  // A validated flag wins; otherwise inherit the wiki's persisted language so an
+  // update without --language keeps the existing wiki consistent instead of
+  // producing a mix of the old and new language.
+  const requestedLanguage = resolveLanguage(language).language;
+  // English is materialized as "en" rather than encoded by an absent key, so the
+  // wiki's language is always explicit in metadata and every run inherits a
+  // concrete value.
+  const effectiveLanguage = requestedLanguage ?? lastUpdate?.language ?? "en";
+  const languageContext = { language: effectiveLanguage };
   const wikiGoal = await readRunWikiGoal(cwd, outputMode);
 
   if (command === "chat") {
     return {
       lastUpdate,
       gitSummary: "Not applicable for chat.",
+      ...languageContext,
       wikiGoal,
     };
   }
@@ -62,6 +75,7 @@ export async function createRunContext(
       lastUpdate,
       gitSummary:
         "Local wiki mode: connector source evidence is provided through raw data paths and OpenWiki connector tools. Git repository diff context is not used for this run.",
+      ...languageContext,
       wikiGoal,
     };
   }
@@ -69,6 +83,7 @@ export async function createRunContext(
   return {
     lastUpdate,
     gitSummary: await createGitSummary(command, cwd, lastUpdate),
+    ...languageContext,
     wikiGoal,
   };
 }
@@ -91,6 +106,10 @@ export async function getUpdateNoopStatus(
 
   if (!lastUpdate?.gitHead) {
     return { shouldSkip: false, reason: "missing previous update git head" };
+  }
+
+  if (lastUpdate.status === "interrupted") {
+    return { shouldSkip: false, reason: "previous update was interrupted" };
   }
 
   const head = await getGitHead(cwd);
@@ -140,13 +159,17 @@ export function shouldCheckUpdateNoop(options: OpenWikiRunOptions): boolean {
 }
 
 /**
- * Records a successful init/update run so future updates can diff from this git head.
+ * Records an init/update run so future updates can diff from this git head.
+ * Interrupted runs are recorded with status "interrupted" so the update
+ * no-op check knows the wiki may be partial and does not skip the retry.
  */
 export async function writeLastUpdateMetadata(
   command: OpenWikiCommand,
   cwd: string,
   modelId: string,
   outputMode: OpenWikiOutputMode = "repository",
+  status: UpdateRunStatus = "complete",
+  language?: string,
 ): Promise<void> {
   const metadataFile = getMetadataFilePath(cwd, outputMode);
   const metadata: UpdateMetadata = {
@@ -154,6 +177,8 @@ export async function writeLastUpdateMetadata(
     command,
     gitHead: outputMode === "repository" ? await getGitHead(cwd) : undefined,
     model: modelId,
+    status,
+    ...(language ? { language } : {}),
   };
 
   await mkdir(path.dirname(metadataFile), { recursive: true });
@@ -175,6 +200,8 @@ export async function persistRunMetadataIfChanged(
   modelId: string,
   outputMode: OpenWikiOutputMode,
   snapshotBefore: OpenWikiContentSnapshot | null,
+  status: UpdateRunStatus = "complete",
+  language?: string,
 ): Promise<boolean> {
   if (command === "chat" || snapshotBefore === null) {
     return false;
@@ -183,10 +210,22 @@ export async function persistRunMetadataIfChanged(
   if (
     snapshotBefore === (await createOpenWikiContentSnapshot(cwd, outputMode))
   ) {
-    return false;
+    // A completed run clears a previous interrupted status even when the
+    // content did not change, so the update no-op check can skip again.
+    const lastUpdate = await readLastUpdate(cwd, outputMode);
+    if (status !== "complete" || lastUpdate?.status !== "interrupted") {
+      return false;
+    }
   }
 
-  await writeLastUpdateMetadata(command, cwd, modelId, outputMode);
+  await writeLastUpdateMetadata(
+    command,
+    cwd,
+    modelId,
+    outputMode,
+    status,
+    language,
+  );
 
   return true;
 }
@@ -253,6 +292,14 @@ async function readLastUpdate(
             ? parsedMetadata.gitHead
             : undefined,
         model: parsedMetadata.model,
+        // Metadata written before the status field existed is treated as
+        // complete so upgrades do not force a spurious re-run.
+        status:
+          parsedMetadata.status === "interrupted" ? "interrupted" : "complete",
+        language:
+          typeof parsedMetadata.language === "string"
+            ? parsedMetadata.language
+            : undefined,
       };
     }
 
@@ -474,8 +521,16 @@ function formatGitSection(command: string, output: string): string {
   );
 }
 
+/**
+ * Matches the two-character status field `git status --short` puts in front of
+ * each path. The field is only one character wide on the first line of a
+ * trimmed run, because `runGit` strips the leading space of an unstaged-only
+ * status such as " M openwiki/.last-update.json".
+ */
+const GIT_STATUS_LINE_PATTERN = /^[ !?ACDMRTU]{1,2} (.+)$/u;
+
 function isUpdateMetadataStatusLine(line: string): boolean {
-  const statusPath = line.length > 3 ? line.slice(3).trim() : line.trim();
+  const statusPath = (GIT_STATUS_LINE_PATTERN.exec(line)?.[1] ?? line).trim();
   const normalizedPath = statusPath.replace(/\\/gu, "/");
 
   return (

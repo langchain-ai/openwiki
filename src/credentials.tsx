@@ -3,10 +3,16 @@ import { spawn } from "node:child_process";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { homedir } from "node:os";
 import path from "node:path";
-import { Box, Text, useInput, useStdout } from "ink";
+import { Box, Text, useInput, useStdin, useStdout } from "ink";
 import { configureAuthProvider } from "./auth/configure.js";
 import { runOAuthAuth } from "./auth/oauth.js";
 import {
+  AWS_ACCESS_KEY_ID_ENV_KEY,
+  AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
+  AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  AWS_SESSION_TOKEN_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   DEFAULT_PROVIDER,
   DEFAULT_VERTEX_LOCATION,
   getDefaultModelId,
@@ -19,6 +25,7 @@ import {
   getProviderModelOptions,
   getProviderProjectEnvKey,
   getProviderRegionEnvKey,
+  getProviderRegionEnvKeys,
   getProviderSecretKeyEnvKey,
   providerRequiresApiKey,
   isValidModelId,
@@ -36,8 +43,11 @@ import {
   providerRequiresBaseUrl,
   providerRequiresRegion,
   providerRequiresSecretKey,
+  providerUsesAwsSdkCredentials,
+  providerUsesExternalCliAuth,
   providerUsesOAuth,
   resolveConfiguredProvider,
+  resolveProviderRegion,
   SELECTABLE_OPENWIKI_PROVIDERS,
 } from "./constants.js";
 import {
@@ -58,6 +68,13 @@ import {
 } from "./connectors/sources/langsmith/setup.js";
 import type { LangSmithRegion } from "./connectors/sources/langsmith/setup.js";
 import type { ConnectorId } from "./connectors/types.js";
+import {
+  detectExternalCliCredential,
+  getExternalCliAuthAdapter,
+  isExternalCliAvailable,
+  runExternalCliLogin,
+  type ExternalCliAuthState,
+} from "./external-cli-auth.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
 import {
   getSavedEnvValue,
@@ -121,6 +138,7 @@ type PromptStep =
   | "base-url"
   | "code-repo-confirm"
   | "code-repo-path"
+  | "external-cli-auth"
   | "final"
   | "gcp-location"
   | "gcp-project"
@@ -440,6 +458,7 @@ export function needsCredentialSetup(
 
   const needsCredentials =
     !hasValidConfiguredProvider() ||
+    needsAwsCredentialRepair(provider) ||
     needsCredentialStep(provider) ||
     needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
@@ -457,6 +476,35 @@ export function needsCredentialSetup(
     : !isOpenWikiOnboardingCompleteSync();
 }
 
+function needsAwsCredentialRepair(provider: OpenWikiProvider): boolean {
+  return (
+    providerUsesAwsSdkCredentials(provider) &&
+    getMissingProviderEnvKey(provider) !== null
+  );
+}
+
+function getAwsCredentialRepairMessage(
+  provider: OpenWikiProvider,
+): string | null {
+  if (!providerUsesAwsSdkCredentials(provider)) {
+    return null;
+  }
+
+  const missingEnvKey = getMissingProviderEnvKey(provider);
+
+  if (!missingEnvKey) {
+    return null;
+  }
+
+  const pair =
+    missingEnvKey === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
+    missingEnvKey === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY
+      ? `${BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY} and ${BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY}`
+      : `${AWS_ACCESS_KEY_ID_ENV_KEY} and ${AWS_SECRET_ACCESS_KEY_ENV_KEY}`;
+
+  return `${missingEnvKey} is missing or blank. Set both ${pair}, or unset both in your shell and ${openWikiEnvPath}, then restart OpenWiki.`;
+}
+
 /**
  * Whether the provider still needs its primary credential collected. For
  * `oauth` providers this is a valid, non-expired stored token; for API-key
@@ -464,18 +512,35 @@ export function needsCredentialSetup(
  * the required GCP project id.
  */
 function needsCredentialStep(provider: OpenWikiProvider): boolean {
-  return providerUsesOAuth(provider)
-    ? !hasValidStoredToken()
-    : getMissingProviderEnvKey(provider) !== null;
+  if (providerUsesOAuth(provider)) {
+    return !hasValidStoredToken();
+  }
+
+  return (
+    getMissingProviderEnvKey(provider) !== null &&
+    credentialStep(provider) !== null
+  );
 }
 
 /** The step that collects the provider's primary credential. */
-function credentialStep(provider: OpenWikiProvider): PromptStep {
+function credentialStep(provider: OpenWikiProvider): PromptStep | null {
   if (providerUsesOAuth(provider)) {
     return "oauth-login";
   }
 
-  return providerRequiresApiKey(provider) ? "api-key" : "gcp-project";
+  if (providerUsesAwsSdkCredentials(provider)) {
+    return null;
+  }
+
+  if (providerUsesExternalCliAuth(provider)) {
+    return "external-cli-auth";
+  }
+
+  if (providerRequiresApiKey(provider)) {
+    return "api-key";
+  }
+
+  return getProviderProjectEnvKey(provider) ? "gcp-project" : null;
 }
 
 /**
@@ -521,7 +586,9 @@ export function orderedSetupSteps(
   steps.push("provider");
 
   const primary = credentialStep(provider);
-  steps.push(primary);
+  if (primary) {
+    steps.push(primary);
+  }
 
   if (providerRequiresSecretKey(provider)) {
     steps.push("secret-key");
@@ -641,9 +708,7 @@ export function needsLangSmithStep(
 }
 
 function isRegionConfigured(provider: OpenWikiProvider): boolean {
-  const regionEnvKey = getProviderRegionEnvKey(provider);
-
-  return regionEnvKey ? Boolean(process.env[regionEnvKey]) : false;
+  return resolveProviderRegion(provider) !== undefined;
 }
 
 function isCredentialConfigured(provider: OpenWikiProvider): boolean {
@@ -667,6 +732,53 @@ function getCredentialSetupDetail(
     );
 
     return account ? `signed in as ${account}` : "signed in with ChatGPT";
+  }
+
+  if (providerUsesAwsSdkCredentials(provider)) {
+    if (process.env[AWS_BEARER_TOKEN_BEDROCK_ENV_KEY]?.trim()) {
+      return "Bedrock bearer token (takes precedence)";
+    }
+
+    const missingEnvKey = getMissingProviderEnvKey(provider);
+
+    if (missingEnvKey) {
+      if (
+        missingEnvKey === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
+        missingEnvKey === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY
+      ) {
+        return "incomplete legacy Bedrock keys; set both or clear both";
+      }
+
+      if (
+        missingEnvKey === AWS_ACCESS_KEY_ID_ENV_KEY ||
+        missingEnvKey === AWS_SECRET_ACCESS_KEY_ENV_KEY
+      ) {
+        return "incomplete standard AWS credentials; set the full set or unset it";
+      }
+
+      return `incomplete AWS credential configuration (${missingEnvKey})`;
+    }
+
+    const legacyApiKey = getProviderApiKeyEnvKey(provider);
+    const legacySecretKey = getProviderSecretKeyEnvKey(provider);
+    const usesLegacyKeys = Boolean(
+      legacyApiKey &&
+      legacySecretKey &&
+      process.env[legacyApiKey]?.trim() &&
+      process.env[legacySecretKey]?.trim(),
+    );
+
+    const ignoresOrphanSessionToken = Boolean(
+      process.env[AWS_SESSION_TOKEN_ENV_KEY]?.trim() &&
+      !process.env[AWS_ACCESS_KEY_ID_ENV_KEY]?.trim() &&
+      !process.env[AWS_SECRET_ACCESS_KEY_ENV_KEY]?.trim(),
+    );
+
+    return usesLegacyKeys
+      ? "legacy Bedrock keys (take precedence)"
+      : ignoresOrphanSessionToken
+        ? "AWS SDK default credential chain (orphan AWS_SESSION_TOKEN ignored)"
+        : "AWS SDK default credential chain";
   }
 
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
@@ -824,6 +936,11 @@ export function InitSetup({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [externalCliAuth, setExternalCliAuth] = useState<ExternalCliAuthState>({
+    kind: "idle",
+  });
+  const externalCliProbeProvider = useRef<OpenWikiProvider | null>(null);
+  const { setRawMode } = useStdin();
   const [isAuthRunning, setIsAuthRunning] = useState(false);
   const [oauthTokens, setOauthTokens] = useState<CodexTokens | null>(null);
   const [loginUrl, setLoginUrl] = useState<string | null>(null);
@@ -1042,6 +1159,70 @@ export function InitSetup({
     };
   }, [step, loginAttempt]);
 
+  useEffect(() => {
+    if (
+      step !== "external-cli-auth" ||
+      !providerUsesExternalCliAuth(provider) ||
+      externalCliProbeProvider.current === provider
+    ) {
+      return;
+    }
+
+    externalCliProbeProvider.current = provider;
+
+    let cancelled = false;
+    setExternalCliAuth({ kind: "checking" });
+
+    void (async () => {
+      const credential = await detectExternalCliCredential(provider);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (credential) {
+        setExternalCliAuth({ kind: "detected" });
+        return;
+      }
+
+      const cliAvailable = await isExternalCliAvailable(provider);
+
+      if (cancelled) {
+        return;
+      }
+
+      setExternalCliAuth({ kind: "not-detected", cliAvailable });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, provider]);
+
+  async function launchExternalCliLogin() {
+    setExternalCliAuth({ kind: "logging-in" });
+    setRawMode?.(false);
+
+    try {
+      const success = await runExternalCliLogin(provider);
+
+      if (!success) {
+        setExternalCliAuth({ kind: "login-failed" });
+        return;
+      }
+
+      const credential = await detectExternalCliCredential(provider);
+
+      setExternalCliAuth(
+        credential
+          ? { kind: "detected" }
+          : { kind: "not-detected", cliAvailable: true },
+      );
+    } finally {
+      setRawMode?.(true);
+    }
+  }
+
   /**
    * Pre-fill the input or selection for a step reached via navigation, so a done
    * step opens ready to edit. Secret steps are pre-filled with the stored key,
@@ -1096,6 +1277,11 @@ export function InitSetup({
         break;
       }
       case "api-key": {
+        const envKey = getProviderApiKeyEnvKey(provider);
+        setInput(apiKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
+        break;
+      }
+      case "external-cli-auth": {
         const envKey = getProviderApiKeyEnvKey(provider);
         setInput(apiKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
         break;
@@ -1203,6 +1389,7 @@ export function InitSetup({
     const trimmed = input.trim();
     switch (from) {
       case "api-key":
+      case "external-cli-auth":
         if (trimmed) setApiKey(trimmed);
         break;
       case "secret-key":
@@ -1324,6 +1511,16 @@ export function InitSetup({
         setInput((value) => value + sanitizedInput);
       }
 
+      return;
+    }
+
+    if (
+      step === "external-cli-auth" &&
+      key.tab &&
+      externalCliAuth.kind !== "checking" &&
+      externalCliAuth.kind !== "logging-in"
+    ) {
+      void launchExternalCliLogin();
       return;
     }
 
@@ -1735,13 +1932,24 @@ export function InitSetup({
       return;
     }
 
-    if (step === "api-key") {
+    if (step === "api-key" || step === "external-cli-auth") {
       const trimmedInput = input.trim();
-      // Empty submit keeps an existing key (session or env); only a genuinely
-      // missing key is an error.
-      const nextApiKey = trimmedInput.length > 0 ? trimmedInput : apiKey;
+      const usesExternalCli = step === "external-cli-auth";
+      // Empty submit keeps an existing key (session or env). For an external
+      // CLI session it deliberately saves nothing: the CLI remains the token
+      // owner and the runtime resolves it again for this process only.
+      const nextApiKey =
+        trimmedInput.length > 0
+          ? trimmedInput
+          : usesExternalCli && externalCliAuth.kind === "detected"
+            ? null
+            : apiKey;
 
-      if (nextApiKey === null && !isCredentialConfigured(provider)) {
+      if (
+        nextApiKey === null &&
+        !(usesExternalCli && externalCliAuth.kind === "detected") &&
+        !isCredentialConfigured(provider)
+      ) {
         setError(
           `${getProviderApiKeyEnvKey(provider) ?? "API key"} is required.`,
         );
@@ -1753,7 +1961,7 @@ export function InitSetup({
       }
       setInput("");
       const nextStep =
-        nextSetupStep("api-key", provider, selectedMode, allowModeSelection) ??
+        nextSetupStep(step, provider, selectedMode, allowModeSelection) ??
         getNextStepAfterApiKey(
           provider,
           modelIdOverride,
@@ -1845,15 +2053,27 @@ export function InitSetup({
 
     if (step === "region") {
       const trimmedInput = input.trim();
+      const configuredRegion = resolveProviderRegion(provider);
+      const credentialRepairMessage = getAwsCredentialRepairMessage(provider);
 
-      if (trimmedInput.length === 0) {
+      if (credentialRepairMessage) {
+        setError(credentialRepairMessage);
+        return;
+      }
+
+      if (trimmedInput.length === 0 && !configuredRegion) {
+        const regionEnvKeys = getProviderRegionEnvKeys(provider);
         setError(
-          `${getProviderRegionEnvKey(provider) ?? "Region"} is required.`,
+          `Set one of ${regionEnvKeys.join(", ") || "the supported region variables"}.`,
         );
         return;
       }
 
-      setRegion(trimmedInput);
+      const nextRegion = trimmedInput.length > 0 ? trimmedInput : region;
+
+      if (trimmedInput.length > 0) {
+        setRegion(trimmedInput);
+      }
       setInput("");
       const nextStep =
         nextSetupStep("region", provider, selectedMode, allowModeSelection) ??
@@ -1878,7 +2098,7 @@ export function InitSetup({
         nextApiKey: apiKey,
         nextBaseUrl: baseUrl,
         nextSecretKey: secretKey,
-        nextRegion: trimmedInput,
+        nextRegion,
         nextGcpLocation: gcpLocation,
         nextGcpProject: gcpProject,
         nextLangSmithKey: langSmithKey,
@@ -3032,6 +3252,7 @@ export function InitSetup({
 
   const needsCredentialPrompt =
     !hasValidConfiguredProvider() ||
+    needsAwsCredentialRepair(provider) ||
     needsCredentialStep(provider) ||
     needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
@@ -3040,6 +3261,7 @@ export function InitSetup({
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     needsLangSmithStep();
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
+  const primaryCredentialStep = credentialStep(provider);
   const projectEnvKey = getProviderProjectEnvKey(provider);
   const locationEnvKey = getProviderLocationEnvKey(provider);
 
@@ -3105,13 +3327,21 @@ export function InitSetup({
             )}
             detail={getProviderLabel(provider)}
           />
-          {providerUsesOAuth(provider) || apiKeyEnvKey ? (
+          {providerUsesAwsSdkCredentials(provider) ? (
+            <SetupStep
+              label="AWS credentials"
+              state={
+                getMissingProviderEnvKey(provider) === null ? "done" : "pending"
+              }
+              detail={getCredentialSetupDetail(provider)}
+            />
+          ) : providerUsesOAuth(provider) || primaryCredentialStep ? (
             <SetupStep
               label={
                 providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"
               }
               state={resolveStepStatus(
-                credentialStep(provider),
+                primaryCredentialStep ?? "provider",
                 step,
                 apiKey !== null ||
                   isCredentialConfigured(provider) ||
@@ -3296,6 +3526,7 @@ export function InitSetup({
             <Prompt
               codeRepoPathInput={codeRepoPathInput}
               codeRepoRoot={codeRepoRoot}
+              externalCliAuth={externalCliAuth}
               codeRepoSelectionIndex={codeRepoSelectionIndex}
               cronFieldSelectionIndex={cronFieldSelectionIndex}
               cronModeSelectionIndex={cronModeSelectionIndex}
@@ -3380,6 +3611,7 @@ function Prompt({
   codeRepoPathInput,
   codeRepoRoot,
   codeRepoSelectionIndex,
+  externalCliAuth,
   cronFieldSelectionIndex,
   cronModeSelectionIndex,
   finalSelectionIndex,
@@ -3412,6 +3644,7 @@ function Prompt({
   codeRepoPathInput: string;
   codeRepoRoot: string;
   codeRepoSelectionIndex: number;
+  externalCliAuth: ExternalCliAuthState;
   cronFieldSelectionIndex: number;
   cronModeSelectionIndex: number;
   finalSelectionIndex: number;
@@ -3498,6 +3731,16 @@ function Prompt({
     );
   }
 
+  if (step === "external-cli-auth") {
+    return (
+      <ExternalCliAuthPrompt
+        authState={externalCliAuth}
+        input={input}
+        provider={provider}
+      />
+    );
+  }
+
   if (step === "secret-key") {
     return (
       <Box flexDirection="column">
@@ -3566,14 +3809,26 @@ function Prompt({
   }
 
   if (step === "region") {
+    const resolvedRegion = resolveProviderRegion(provider);
+    const credentialRepairMessage = getAwsCredentialRepairMessage(provider);
+
     return (
       <Box flexDirection="column">
-        <Text>Enter the {getProviderLabel(provider)} region.</Text>
+        {credentialRepairMessage ? (
+          <Text color="yellow">⚠ {credentialRepairMessage}</Text>
+        ) : null}
+        <Text>
+          Enter the {getProviderLabel(provider)} region
+          {resolvedRegion ? `, or press Enter to keep ${resolvedRegion}` : ""}.
+        </Text>
         <Text>
           <Text color="gray">$</Text> {getProviderRegionEnvKey(provider)}={" "}
           <Text color="yellow">{input}</Text>
         </Text>
-        <Text color="gray">For example us-east-1. Press Enter to save it.</Text>
+        <Text color="gray">
+          Uses {getProviderRegionEnvKeys(provider).join(", ")}. For example
+          us-east-1.
+        </Text>
       </Box>
     );
   }
@@ -4157,6 +4412,92 @@ function Prompt({
   return null;
 }
 
+function mask(value: string): string {
+  if (value.length === 0) {
+    return "";
+  }
+
+  return "*".repeat(value.length);
+}
+
+function ExternalCliAuthPrompt({
+  authState,
+  input,
+  provider,
+}: {
+  authState: ExternalCliAuthState;
+  input: string;
+  provider: OpenWikiProvider;
+}) {
+  const adapter = getExternalCliAuthAdapter(provider);
+  const envKey = getProviderApiKeyEnvKey(provider) ?? "API key";
+
+  if (!adapter) {
+    return null;
+  }
+
+  if (authState.kind === "idle" || authState.kind === "checking") {
+    return (
+      <Text color="gray">
+        Checking for an existing {adapter.credentialDescription}...
+      </Text>
+    );
+  }
+
+  if (authState.kind === "logging-in") {
+    return (
+      <Text color="gray">
+        Running `{adapter.loginCommand}` — follow the prompts in this
+        terminal...
+      </Text>
+    );
+  }
+
+  if (authState.kind === "detected") {
+    return (
+      <Box flexDirection="column">
+        <Text>Detected an existing {adapter.credentialDescription}.</Text>
+        <Text color="gray">
+          Press Enter to use it, Tab to sign in again, or paste a different
+          token below.
+        </Text>
+        <Text>
+          <Text color="gray">$</Text> {envKey}={" "}
+          <Text color="yellow">
+            {input.length > 0 ? mask(input) : `<from ${adapter.name}>`}
+          </Text>
+        </Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      <Text>No {adapter.credentialDescription} detected.</Text>
+      {authState.kind === "login-failed" ? (
+        <Text color="red">
+          `{adapter.loginCommand}` did not complete successfully.
+        </Text>
+      ) : null}
+      {authState.kind === "not-detected" && authState.cliAvailable ? (
+        <Text color="gray">
+          Press Tab to run `{adapter.loginCommand}`, or paste a token below.
+        </Text>
+      ) : (
+        <Text color="gray">
+          {adapter.installHint} You can also paste a token below for CI or other
+          headless use.
+        </Text>
+      )}
+      <Text>
+        <Text color="gray">$</Text> {envKey}={" "}
+        <Text color="yellow">{mask(input)}</Text>
+      </Text>
+      <Text color="gray">Press Enter to save it.</Text>
+    </Box>
+  );
+}
+
 function SetupHeader() {
   return (
     <Box
@@ -4593,8 +4934,14 @@ export function getInitialStep(
     return "provider";
   }
 
-  if (needsCredentialStep(provider)) {
-    return credentialStep(provider);
+  if (needsAwsCredentialRepair(provider)) {
+    return "region";
+  }
+
+  const nextCredentialStep = credentialStep(provider);
+
+  if (needsCredentialStep(provider) && nextCredentialStep) {
+    return nextCredentialStep;
   }
 
   if (needsSecretKeyStep(provider)) {
@@ -4654,8 +5001,14 @@ export function getNextStepAfterProvider(
   mode: OpenWikiRunMode = "code",
   forceModelStep = false,
 ): PromptStep | null {
-  if (needsCredentialStep(provider)) {
-    return credentialStep(provider);
+  if (needsAwsCredentialRepair(provider)) {
+    return "region";
+  }
+
+  const nextCredentialStep = credentialStep(provider);
+
+  if (needsCredentialStep(provider) && nextCredentialStep) {
+    return nextCredentialStep;
   }
 
   return getNextStepAfterApiKey(

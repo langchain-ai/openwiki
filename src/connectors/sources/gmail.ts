@@ -6,6 +6,8 @@ import {
   getOAuthAccessToken,
   refreshOAuthAccessToken,
 } from "../../auth/tokens.js";
+import { fetchWithResilience } from "../http.js";
+import { normalizeStringArray } from "../config.js";
 import {
   createRunId,
   readConnectorConfig,
@@ -307,7 +309,7 @@ async function fetchGmail(
     url.searchParams.append(key, value);
   }
 
-  return await fetch(url, {
+  return await fetchWithResilience(url, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -401,17 +403,6 @@ function clamp(value: number | undefined, min: number, max: number): number {
   }
 
   return Math.max(min, Math.min(max, Math.trunc(value ?? min)));
-}
-
-function normalizeStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value
-        .filter(
-          (item): item is string =>
-            typeof item === "string" && item.trim().length > 0,
-        )
-        .map((item) => item.trim())
-    : [];
 }
 
 function removeEmptyValues(

@@ -241,7 +241,25 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and GitHub Copilot out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+
+### GitHub Copilot
+
+The GitHub Copilot provider routes inference through the OpenAI-compatible Copilot API (`https://api.githubcopilot.com`), so teams can reuse an existing Copilot subscription instead of provisioning a separate inference API key.
+
+1. Select `GitHub Copilot` as the provider during `openwiki --init`. If you already have an active [GitHub CLI](https://cli.github.com) session, OpenWiki detects it automatically and offers to reuse it — no manual token entry needed. Otherwise, press <kbd>Tab</kbd> at the credential prompt to run `gh auth login` right there and sign in.
+2. Choose a model (for example `gpt-5.5`).
+
+OpenWiki leaves the GitHub CLI token in the GitHub CLI's own credential store; it does not copy that token into `~/.openwiki/.env`. For CI or another headless environment without a GitHub CLI session, set `COPILOT_API_KEY` explicitly to a GitHub **OAuth token**. Personal Access Tokens (classic or fine-grained) are rejected by the Copilot API for third-party integrations and will not work, even though the GitHub Copilot CLI itself accepts them.
+
+The resulting local provider configuration can stay token-free:
+
+```env
+OPENWIKI_PROVIDER="copilot"
+OPENWIKI_MODEL_ID="gpt-5.5"
+```
+
+In CI (such as the scheduled GitHub Actions workflow), set the `COPILOT_API_KEY` repository secret and export `OPENWIKI_PROVIDER=copilot` in the workflow environment.
 
 ### Alternative base URLs
 
@@ -269,6 +287,17 @@ OPENWIKI_PROVIDER=openai
 OPENAI_API_KEY=your-key
 OPENAI_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-model-name
+```
+
+Similarly, to route the GitHub Copilot provider at an alternative endpoint
+(for example a GitHub Enterprise Cloud data-residency host or a proxied
+gateway) instead of the default `https://api.githubcopilot.com`, set
+`COPILOT_BASE_URL` alongside `COPILOT_API_KEY`:
+
+```bash
+OPENWIKI_PROVIDER=copilot
+COPILOT_API_KEY=your-copilot-token
+COPILOT_BASE_URL=https://your-tenant.ghe.com/api/copilot
 ```
 
 ### OpenAI-compatible endpoints
@@ -324,8 +353,8 @@ Some local servers ignore the API key value, but OpenWiki still requires
 ### AWS Bedrock
 
 The `bedrock` provider calls foundation models hosted on AWS Bedrock using IAM
-credentials rather than a single vendor API key. It authenticates with an AWS
-access key ID, a secret access key, and a region:
+credentials rather than a single vendor API key. Existing installations can
+continue to provide an AWS access key ID, secret access key, and region:
 
 ```bash
 OPENWIKI_PROVIDER=bedrock
@@ -334,6 +363,11 @@ BEDROCK_AWS_SECRET_ACCESS_KEY=your-secret-access-key
 BEDROCK_AWS_REGION=us-east-1
 OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
 ```
+
+When the explicit Bedrock credentials are not set, OpenWiki uses the AWS SDK
+default credential provider chain, including OIDC/web identity, IAM roles,
+AWS profiles, and ECS/EC2 credentials. The region is resolved from
+`BEDROCK_AWS_REGION`, `AWS_REGION`, or `AWS_DEFAULT_REGION`.
 
 Which model IDs are available depends on your AWS account and region (which
 foundation models you've enabled in the Bedrock console), so there is no

@@ -16,13 +16,15 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
 export function createSystemPrompt(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
+  language?: string,
 ): string {
   const output = getOutputPromptConfig(outputMode);
+  const languageInstructions = createLanguageInstructions(language);
 
   return `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
 
-Your job is to inspect the relevant source evidence and local OpenWiki knowledge sources, then produce documentation in ${output.docsLocation} that is excellent for both humans and future agents. OpenWiki can maintain a local general-purpose knowledge wiki from connector raw dumps under ~/.openwiki.
+Your job is to inspect the relevant source evidence and local OpenWiki knowledge sources, then produce documentation in ${output.docsLocation} that is excellent for both humans and future agents. OpenWiki can maintain a local general-purpose knowledge wiki from connector raw dumps under ~/.openwiki.${languageInstructions}
 
 ${output.canonicalLocationInstruction}
 
@@ -167,6 +169,7 @@ timestamp: <Optional ISO 8601 datetime>
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
 - When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
 - OpenWiki repairs front matter deterministically after every run, so a page is never rejected for missing or invalid front matter. If a page's front matter contains \`openwiki_generated: true\`, that metadata was code-derived as a fallback: replace it with an accurate \`type\`, \`title\`, and \`description\` grounded in the page body, then remove the \`openwiki_generated\` field.
+- If a page's front matter contains an \`openwiki_translation_pending\` field, ignore it: it is a translation-system marker that OpenWiki manages automatically. Do not add, edit, remove, or act on it.
 
 Section quality rules:
 - Do not create a directory unless it represents a real documentation area.
@@ -198,6 +201,21 @@ ${createDiagramInstructions()}
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
 `.trim();
+}
+
+function createLanguageInstructions(language: string | undefined): string {
+  if (!language) {
+    return "";
+  }
+
+  return `
+
+Output language:
+- Write generated wiki prose, headings, table content, and documentation in ${language}.
+- OpenWiki has already brought existing pages into ${language} in a separate deterministic pass before you run, so treat the wiki as already in ${language}. Do not translate or rewrite an existing page just because it, or the recorded run metadata, still shows a different language; that whole-wiki reconciliation is code-owned. Write only your own new or changed content in ${language} and leave otherwise-accurate pages alone.
+- In each page's YAML front matter, write the human-readable "title", "description", and "type" values in ${language}. Do this even when the value is dense with product names, feature names, or technical terminology; within those values keep unchanged only literal code identifiers, file paths, commands, and URLs. Write the "tags" values in English so they stay stable across languages as cross-cutting aggregation keys. Keep the YAML keys as written, and copy any URL, file path, timestamp, or identifier-like value byte-for-byte.
+- Apply this language only to generated wiki files. Do not translate OpenWiki CLI text or runtime messages.
+- Keep code identifiers, file paths, commands, API names, URLs, and code blocks unchanged where translation would reduce technical accuracy or usability.`;
 }
 
 export function createDiagramInstructions(): string {
@@ -410,8 +428,14 @@ function getOutputPromptConfig(
 - Apply confidence labels consistently:
   - confirmed: directly supported by authoritative evidence or repeated high-quality evidence.
   - source-backed: supported by one credible source but not yet independently confirmed.
+  - contested: incompatible claims from credible sources that current evidence does not settle.
   - watchlist: weak, low-signal, early, or potentially transient evidence worth checking again.
   - saved-context: useful context intentionally saved by the user or found in bookmarks, without implying it is true or important.
+- Contested knowledge discipline:
+  - When credible personal-mode sources disagree and no ground truth settles the conflict, preserve both claims in a ## Contested section on the canonical page. Include each claim's source and date when available.
+  - Label the disputed fact contested wherever it appears, including /themes.md Confidence cells. Never present either side as confirmed or source-backed while the conflict remains unsettled.
+  - Add an /open-questions.md entry only when the unresolved conflict would impair future assistance, and link that question to the canonical Contested entry instead of restating both claims.
+  - Never resolve a contested fact by recency alone. Resolve it only when new evidence settles the conflict or shows that a source is stale, then keep a short resolution note with the resolution date, deciding evidence, and superseded claim source.
 - Classify email-like evidence before writing it to the wiki. Use these labels: action_required, scheduled_commitment, decision_or_approval, direct_request, important_update, people_or_org_signal, project_context, security_or_account_notice, newsletter_or_digest, transaction_or_receipt, promotion_or_marketing, personal_logistics, noise.
 - For email-like evidence, also assign priority high, medium, low, or ignore, and durability ephemeral, durable, or recurring. Write only high/medium durable items, action items, scheduled commitments, approvals, personal logistics, and recurring patterns. Keep receipts, promotions, generic newsletters, routine security notices, and noise out of the wiki unless they are actionable, recurrent, or explicitly requested.
 - Route work commitments and follow-ups to /commitments.md with Owner when inferable; route personal logistics to /personal-logistics.md with date/time/location/status when available.

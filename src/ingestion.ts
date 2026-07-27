@@ -333,7 +333,8 @@ Instructions:
 function createSourceSynthesisPolicy(connector: ConnectorRuntime): string {
   return `
 - Synthesize into canonical cross-source files when relevant: /open-questions.md for unresolved memory/wiki questions, /themes.md for recurring trends, /commitments.md for work tasks/follow-ups, /personal-logistics.md for non-work life-admin items, /quickstart.md for high-level navigation/current status, and /sources/${connector.id}.md for compact source evidence.
-- Apply confidence labels: confirmed, source-backed, watchlist, or saved-context. Keep weak/watchlist items out of /quickstart.md unless they materially affect current status.
+- Apply confidence labels: confirmed, source-backed, contested, watchlist, or saved-context. Keep weak/watchlist items out of /quickstart.md unless they materially affect current status.
+- When credible sources disagree and no ground truth settles it, label the fact contested and preserve both claims with source and date in a ## Contested section on the canonical page instead of overwriting one side. Never resolve a contested fact by recency alone.
 - Deduplicate with stable topic keys. Update existing themes, open questions, and commitments instead of repeating the same fact in several source pages.
 - Keep /themes.md as a compact index: prefer table rows or one short fielded entry per theme, cap prose at 1-2 short sentences, and move details/examples into source pages.
 - If /open-questions.md exists, read it at the start so known open questions shape evidence review. At the end, return to it to add real newly discovered questions and move answered questions from Active to Answered.

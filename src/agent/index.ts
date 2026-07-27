@@ -24,8 +24,17 @@ import {
 import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
+import { resolveLanguage } from "../language.js";
+import {
+  resolveConceptTypeLabel,
+  resolveIndexLabels,
+} from "../okf/index-labels.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
+import {
+  createWikiTranslationMiddleware,
+  resolveTranslationPlan,
+} from "./translation-middleware.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -55,7 +64,11 @@ import type {
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_BASE_URL_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
+  COPILOT_BASE_URL_ENV_KEY,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -64,8 +77,8 @@ import {
   getProviderLabel,
   getProviderBaseUrlWarnings,
   getProviderModelOptions,
-  getProviderRegionEnvKey,
   FIREWORKS_BASE_URL_ENV_KEY,
+  getProviderRegionEnvKeys,
   getProviderSecretKeyEnvKey,
   getProvidersForKnownModelId,
   isModelIdForOtherProvider,
@@ -84,6 +97,9 @@ import {
   providerRequiresBaseUrl,
   providerRequiresRegion,
   providerRequiresSecretKey,
+  providerUsesAwsSdkCredentials,
+  providerUsesExternalCliAuth,
+  providerUsesResponsesApi,
   resolveConfiguredProvider,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
@@ -92,6 +108,10 @@ import {
   resolveProviderRetryAttempts,
   type OpenWikiProvider,
 } from "../constants.js";
+import {
+  resolveExternalCliCredential,
+  validateExternalCliCredential,
+} from "../external-cli-auth.js";
 import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
@@ -167,8 +187,18 @@ export async function runOpenWikiAgent(
         `provider.baseUrl=${formatUrlDebugValue(providerBaseUrl)}`,
       );
     }
+    await resolveExternalCliCredential(provider);
+    const providerApiKey = getProviderApiKey(provider);
+    if (providerUsesExternalCliAuth(provider) && providerApiKey) {
+      validateExternalCliCredential(provider, providerApiKey);
+    }
     ensureProviderCredentials(provider);
-    emitDebug(options, `credentials=${provider} present`);
+    emitDebug(
+      options,
+      providerUsesAwsSdkCredentials(provider)
+        ? `credentials=${provider} delegated-to-aws-sdk`
+        : `credentials=${provider} present`,
+    );
     ensureProviderBaseUrl(provider);
     ensureProviderSecretKey(provider);
     ensureProviderRegion(provider);
@@ -223,7 +253,12 @@ async function runOpenWikiAgentCore(
   providerRetryAttempts: number,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
-  const context = await createRunContext(command, cwd, outputMode);
+  const context = await createRunContext(
+    command,
+    cwd,
+    outputMode,
+    options.language,
+  );
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
     command === "chat"
@@ -257,6 +292,21 @@ async function runOpenWikiAgentCore(
       virtualMode: true,
     }),
   });
+  // An update inherits the wiki's persisted language unless --language requests a
+  // different one. The plan drives a beforeAgent pass that, on a switch,
+  // retranslates every page so the incremental update does not leave a mix of the
+  // old and new language, and on any update retries pages a prior run left
+  // pending. It is undefined for init and chat, which never translate.
+  const translation = resolveTranslationPlan(
+    command,
+    resolveLanguage(options.language).language,
+    context.lastUpdate?.language,
+  );
+  // Localized headings for the deterministic directory indexes, plus the
+  // localized fallback `type` stamped on pages the code has to repair. Both fall
+  // back to English for any language not in the static maps.
+  const indexLabels = resolveIndexLabels(context.language);
+  const conceptType = resolveConceptTypeLabel(context.language);
   const agent = createDeepAgent({
     model,
     tools: createOpenWikiConnectorTools(),
@@ -265,12 +315,48 @@ async function runOpenWikiAgentCore(
     middleware:
       command === "chat"
         ? []
-        : [createOpenWikiIndexMiddleware(wikiBackend, outputMode)],
+        : [
+            ...(translation
+              ? [
+                  createWikiTranslationMiddleware(
+                    wikiBackend,
+                    outputMode,
+                    model,
+                    translation,
+                    (message) => {
+                      options.onEvent?.({ type: "text", text: message });
+                      // Also emit to stderr so the warning survives the TUI
+                      // re-render and --print's discard of streamed text.
+                      process.stderr.write(`${message}\n`);
+                    },
+                    // The pass announces itself with one line in place of the
+                    // suppressed per-token translation output. It is routine
+                    // progress, so unlike a warning it is not mirrored to stderr.
+                    // The trailing blank line keeps it a distinct Markdown block:
+                    // the TUI coalesces consecutive text events into one
+                    // block-lexed log item, so without it the status would run
+                    // straight into the agent's first streamed line.
+                    (message) => {
+                      options.onEvent?.({
+                        type: "text",
+                        text: `${message}\n\n`,
+                      });
+                    },
+                  ),
+                ]
+              : []),
+            createOpenWikiIndexMiddleware(
+              wikiBackend,
+              outputMode,
+              indexLabels,
+              conceptType,
+            ),
+          ],
     skills: ["/skills/"],
     permissions: [
       { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
     ],
-    systemPrompt: createSystemPrompt(command, outputMode),
+    systemPrompt: createSystemPrompt(command, outputMode, context.language),
   });
   emitDebug(options, "agent=created");
 
@@ -321,8 +407,10 @@ async function runOpenWikiAgentCore(
     );
 
     // Persist metadata even when the stream fails late, so content that was
-    // already generated stays diffable by future updates. Persistence errors
-    // are swallowed here so the original run error propagates.
+    // already generated stays diffable by future updates. The run is recorded
+    // as interrupted so the next update is not skipped as a no-op against a
+    // possibly partial wiki. Persistence errors are swallowed here so the
+    // original run error propagates.
     try {
       const metadataWritten = await persistRunMetadataIfChanged(
         command,
@@ -330,6 +418,8 @@ async function runOpenWikiAgentCore(
         modelId,
         outputMode,
         openWikiSnapshotBefore,
+        "interrupted",
+        context.language,
       );
       emitDebug(
         options,
@@ -340,6 +430,13 @@ async function runOpenWikiAgentCore(
     }
 
     throw error;
+  } finally {
+    prunePersistentCheckpointHistory(
+      checkpointTarget,
+      checkpointer,
+      threadId,
+      options,
+    );
   }
 
   if (checkpointTarget.persistent) {
@@ -354,6 +451,8 @@ async function runOpenWikiAgentCore(
     modelId,
     outputMode,
     openWikiSnapshotBefore,
+    "complete",
+    context.language,
   );
 
   if (metadataWritten) {
@@ -457,6 +556,70 @@ async function prepareCheckpointDirectory(filePath: string): Promise<void> {
     mode: 0o700,
   });
   await chmodIfExists(checkpointDir, 0o700);
+}
+
+// SqliteSaver.put() only ever inserts new checkpoint rows; nothing in the
+// checkpointer itself prunes older ones. A chat session reuses the same
+// thread_id for every turn, so the sqlite file grows by a full state
+// snapshot on every graph step for as long as the session runs. OpenWiki
+// never resumes a chat turn from anything but the latest checkpoint, so
+// history beyond that is pure waste and safe to discard here.
+export function pruneCheckpointHistory(
+  checkpointer: SqliteSaver,
+  threadId: string,
+): void {
+  const prune = checkpointer.db.transaction((id: string) => {
+    checkpointer.db
+      .prepare(
+        `DELETE FROM checkpoints
+         WHERE thread_id = ?
+           AND (checkpoint_ns, checkpoint_id) NOT IN (
+             SELECT checkpoint_ns, checkpoint_id FROM (
+               SELECT checkpoint_ns, checkpoint_id,
+                      ROW_NUMBER() OVER (
+                        PARTITION BY checkpoint_ns ORDER BY checkpoint_id DESC
+                      ) AS rank
+               FROM checkpoints
+               WHERE thread_id = ?
+             )
+             WHERE rank = 1
+           )`,
+      )
+      .run(id, id);
+
+    checkpointer.db
+      .prepare(
+        `DELETE FROM writes
+         WHERE thread_id = ?
+           AND (checkpoint_ns, checkpoint_id) NOT IN (
+             SELECT checkpoint_ns, checkpoint_id FROM checkpoints WHERE thread_id = ?
+             UNION
+             SELECT checkpoint_ns, parent_checkpoint_id FROM checkpoints
+             WHERE thread_id = ? AND parent_checkpoint_id IS NOT NULL
+           )`,
+      )
+      .run(id, id, id);
+  });
+
+  prune(threadId);
+}
+
+function prunePersistentCheckpointHistory(
+  checkpointTarget: CheckpointTarget,
+  checkpointer: SqliteSaver,
+  threadId: string,
+  options: OpenWikiRunOptions,
+): void {
+  if (!checkpointTarget.persistent) {
+    return;
+  }
+
+  try {
+    pruneCheckpointHistory(checkpointer, threadId);
+    emitDebug(options, "checkpoint.pruned");
+  } catch {
+    emitDebug(options, "checkpoint.pruneFailed");
+  }
 }
 
 export function resolveCheckpointTarget(
@@ -568,10 +731,12 @@ function ensureProviderRegion(provider: OpenWikiProvider): void {
   }
 
   if (!resolveProviderRegion(provider)) {
-    const regionEnvKey = getProviderRegionEnvKey(provider) ?? "region";
+    const regionEnvKeys = getProviderRegionEnvKeys(provider);
+    const regionRequirement =
+      regionEnvKeys.length > 0 ? regionEnvKeys.join(", ") : "region";
 
     throw new Error(
-      `${regionEnvKey} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
+      `One of ${regionRequirement} is required to run OpenWiki with ${getProviderLabel(provider)}.`,
     );
   }
 }
@@ -733,15 +898,7 @@ export function createModel(
   }
 
   if (provider === "bedrock") {
-    const secretKeyEnvKey = getProviderSecretKeyEnvKey(provider);
-
     return new ChatBedrockConverse({
-      credentials: {
-        accessKeyId: getProviderApiKey(provider) ?? "",
-        secretAccessKey: secretKeyEnvKey
-          ? (process.env[secretKeyEnvKey] ?? "")
-          : "",
-      },
       model: modelId,
       region: resolveProviderRegion(provider),
       ...retryOptions,
@@ -758,7 +915,7 @@ export function createModel(
         }
       : undefined,
     model: modelId,
-    useResponsesApi: provider === "openai",
+    useResponsesApi: providerUsesResponsesApi(provider, modelId),
     ...retryOptions,
   });
 }
@@ -899,7 +1056,7 @@ function createGeminiEnterpriseModel(
   }
 }
 
-function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
+export function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
   if (!isProtocolStreamEvent(chunk)) {
     return null;
   }
@@ -1146,7 +1303,12 @@ function extractContentBlockText(block: unknown, seen: Set<object>): string {
 
   const type = getStringRecordValue(block, "type");
 
-  if (type?.includes("tool") || type?.includes("reasoning")) {
+  if (
+    type?.includes("tool") ||
+    type?.includes("reasoning") ||
+    type?.includes("file") ||
+    type?.includes("image")
+  ) {
     return "";
   }
 
@@ -1656,11 +1818,14 @@ function formatOpenRouterDebugUrl(value: string): string {
 
 function formatEnvironmentDebug(): string {
   return DEBUG_ENV_KEYS.map(
-    (key) => `${key}:${formatDebugValue(key, process.env[key])}`,
+    (key) => `${key}:${formatEnvironmentDebugValue(key, process.env[key])}`,
   ).join(" ");
 }
 
-function formatDebugValue(key: string, value: string | undefined): string {
+export function formatEnvironmentDebugValue(
+  key: string,
+  value: string | undefined,
+): string {
   if (value === undefined) {
     return "unset";
   }
@@ -1669,6 +1834,7 @@ function formatDebugValue(key: string, value: string | undefined): string {
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === BASETEN_BASE_URL_ENV_KEY ||
+    key === COPILOT_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
@@ -1677,7 +1843,12 @@ function formatDebugValue(key: string, value: string | undefined): string {
     return formatUrlDebugValue(value);
   }
 
-  if (key.endsWith("_API_KEY")) {
+  if (
+    key.endsWith("_API_KEY") ||
+    key === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
+    key === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY ||
+    key === BEDROCK_AWS_SESSION_TOKEN_ENV_KEY
+  ) {
     return `set(length=${value.length})`;
   }
 
