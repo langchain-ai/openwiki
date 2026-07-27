@@ -8,6 +8,7 @@ import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
 } from "../fs-errors.js";
+import { resolveLanguage } from "../language.js";
 import {
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
@@ -46,14 +47,25 @@ export async function createRunContext(
   command: OpenWikiCommand,
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
+  language?: string | null,
 ): Promise<RunContext> {
   const lastUpdate = await readLastUpdate(cwd, outputMode);
+  // A validated flag wins; otherwise inherit the wiki's persisted language so an
+  // update without --language keeps the existing wiki consistent instead of
+  // producing a mix of the old and new language.
+  const requestedLanguage = resolveLanguage(language).language;
+  // English is materialized as "en" rather than encoded by an absent key, so the
+  // wiki's language is always explicit in metadata and every run inherits a
+  // concrete value.
+  const effectiveLanguage = requestedLanguage ?? lastUpdate?.language ?? "en";
+  const languageContext = { language: effectiveLanguage };
   const wikiGoal = await readRunWikiGoal(cwd, outputMode);
 
   if (command === "chat") {
     return {
       lastUpdate,
       gitSummary: "Not applicable for chat.",
+      ...languageContext,
       wikiGoal,
     };
   }
@@ -63,6 +75,7 @@ export async function createRunContext(
       lastUpdate,
       gitSummary:
         "Local wiki mode: connector source evidence is provided through raw data paths and OpenWiki connector tools. Git repository diff context is not used for this run.",
+      ...languageContext,
       wikiGoal,
     };
   }
@@ -70,6 +83,7 @@ export async function createRunContext(
   return {
     lastUpdate,
     gitSummary: await createGitSummary(command, cwd, lastUpdate),
+    ...languageContext,
     wikiGoal,
   };
 }
@@ -155,6 +169,7 @@ export async function writeLastUpdateMetadata(
   modelId: string,
   outputMode: OpenWikiOutputMode = "repository",
   status: UpdateRunStatus = "complete",
+  language?: string,
 ): Promise<void> {
   const metadataFile = getMetadataFilePath(cwd, outputMode);
   const metadata: UpdateMetadata = {
@@ -163,6 +178,7 @@ export async function writeLastUpdateMetadata(
     gitHead: outputMode === "repository" ? await getGitHead(cwd) : undefined,
     model: modelId,
     status,
+    ...(language ? { language } : {}),
   };
 
   await mkdir(path.dirname(metadataFile), { recursive: true });
@@ -185,6 +201,7 @@ export async function persistRunMetadataIfChanged(
   outputMode: OpenWikiOutputMode,
   snapshotBefore: OpenWikiContentSnapshot | null,
   status: UpdateRunStatus = "complete",
+  language?: string,
 ): Promise<boolean> {
   if (command === "chat" || snapshotBefore === null) {
     return false;
@@ -201,7 +218,14 @@ export async function persistRunMetadataIfChanged(
     }
   }
 
-  await writeLastUpdateMetadata(command, cwd, modelId, outputMode, status);
+  await writeLastUpdateMetadata(
+    command,
+    cwd,
+    modelId,
+    outputMode,
+    status,
+    language,
+  );
 
   return true;
 }
@@ -272,6 +296,10 @@ async function readLastUpdate(
         // complete so upgrades do not force a spurious re-run.
         status:
           parsedMetadata.status === "interrupted" ? "interrupted" : "complete",
+        language:
+          typeof parsedMetadata.language === "string"
+            ? parsedMetadata.language
+            : undefined,
       };
     }
 

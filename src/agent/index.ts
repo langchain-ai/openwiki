@@ -24,8 +24,17 @@ import {
 import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
 import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
+import { resolveLanguage } from "../language.js";
+import {
+  resolveConceptTypeLabel,
+  resolveIndexLabels,
+} from "../okf/index-labels.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
+import {
+  createWikiTranslationMiddleware,
+  resolveTranslationPlan,
+} from "./translation-middleware.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -244,7 +253,12 @@ async function runOpenWikiAgentCore(
   providerRetryAttempts: number,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
-  const context = await createRunContext(command, cwd, outputMode);
+  const context = await createRunContext(
+    command,
+    cwd,
+    outputMode,
+    options.language,
+  );
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
     command === "chat"
@@ -278,6 +292,21 @@ async function runOpenWikiAgentCore(
       virtualMode: true,
     }),
   });
+  // An update inherits the wiki's persisted language unless --language requests a
+  // different one. The plan drives a beforeAgent pass that, on a switch,
+  // retranslates every page so the incremental update does not leave a mix of the
+  // old and new language, and on any update retries pages a prior run left
+  // pending. It is undefined for init and chat, which never translate.
+  const translation = resolveTranslationPlan(
+    command,
+    resolveLanguage(options.language).language,
+    context.lastUpdate?.language,
+  );
+  // Localized headings for the deterministic directory indexes, plus the
+  // localized fallback `type` stamped on pages the code has to repair. Both fall
+  // back to English for any language not in the static maps.
+  const indexLabels = resolveIndexLabels(context.language);
+  const conceptType = resolveConceptTypeLabel(context.language);
   const agent = createDeepAgent({
     model,
     tools: createOpenWikiConnectorTools(),
@@ -286,12 +315,48 @@ async function runOpenWikiAgentCore(
     middleware:
       command === "chat"
         ? []
-        : [createOpenWikiIndexMiddleware(wikiBackend, outputMode)],
+        : [
+            ...(translation
+              ? [
+                  createWikiTranslationMiddleware(
+                    wikiBackend,
+                    outputMode,
+                    model,
+                    translation,
+                    (message) => {
+                      options.onEvent?.({ type: "text", text: message });
+                      // Also emit to stderr so the warning survives the TUI
+                      // re-render and --print's discard of streamed text.
+                      process.stderr.write(`${message}\n`);
+                    },
+                    // The pass announces itself with one line in place of the
+                    // suppressed per-token translation output. It is routine
+                    // progress, so unlike a warning it is not mirrored to stderr.
+                    // The trailing blank line keeps it a distinct Markdown block:
+                    // the TUI coalesces consecutive text events into one
+                    // block-lexed log item, so without it the status would run
+                    // straight into the agent's first streamed line.
+                    (message) => {
+                      options.onEvent?.({
+                        type: "text",
+                        text: `${message}\n\n`,
+                      });
+                    },
+                  ),
+                ]
+              : []),
+            createOpenWikiIndexMiddleware(
+              wikiBackend,
+              outputMode,
+              indexLabels,
+              conceptType,
+            ),
+          ],
     skills: ["/skills/"],
     permissions: [
       { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
     ],
-    systemPrompt: createSystemPrompt(command, outputMode),
+    systemPrompt: createSystemPrompt(command, outputMode, context.language),
   });
   emitDebug(options, "agent=created");
 
@@ -354,6 +419,7 @@ async function runOpenWikiAgentCore(
         outputMode,
         openWikiSnapshotBefore,
         "interrupted",
+        context.language,
       );
       emitDebug(
         options,
@@ -378,6 +444,8 @@ async function runOpenWikiAgentCore(
     modelId,
     outputMode,
     openWikiSnapshotBefore,
+    "complete",
+    context.language,
   );
 
   if (metadataWritten) {
