@@ -156,11 +156,13 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
     ]);
     expect(calls[0].system).toContain("Chinese (China)");
     expect(calls[0].system).toContain("English");
-    // The front matter instruction now covers type and tags, not just title and
-    // description, so no structural value is left in the source language.
-    expect(calls[0].system).toContain(
-      '"title", "description", "type", and "tags"',
-    );
+    // The front matter instruction covers the human-readable title,
+    // description, and type values, so no reader-facing value is left in the
+    // source language.
+    expect(calls[0].system).toContain('"title", "description", and "type"');
+    // Tags are a cross-cutting aggregation key, so they stay canonical: the
+    // prompt tells the model to leave the tags values in English.
+    expect(calls[0].system).toContain('Leave the "tags" values in English');
     // Every translation call is tagged so its tokens are excluded from the
     // agent's messages stream and never scroll past in the TUI.
     for (const call of calls) {

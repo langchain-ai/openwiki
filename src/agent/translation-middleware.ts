@@ -360,7 +360,7 @@ Translate the Markdown document provided by the user into ${describeLanguage(
 
 Rules:
 - Translate prose, headings, list items, blockquotes, and table cell text.
-- In the YAML front matter, translate the human-readable "title", "description", "type", and "tags" values. Keep every front matter key and all other values (URLs, file paths, identifiers, timestamps) byte-for-byte unchanged.
+- In the YAML front matter, translate the human-readable "title", "description", and "type" values. Leave the "tags" values in English so they stay stable across pages as cross-cutting aggregation keys. Keep every front matter key as written, and copy all other values (URLs, file paths, identifiers, timestamps) byte-for-byte.
 - Do NOT translate code identifiers, file paths, commands, API names, URLs, or anything inside inline code spans or fenced code blocks.
 - Preserve all Markdown syntax, link targets, mermaid fences, and the document's whitespace and structure.
 - Return ONLY the translated document text, with no explanation, commentary, or surrounding code fences.`;

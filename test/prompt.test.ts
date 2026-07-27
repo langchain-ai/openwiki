@@ -13,8 +13,10 @@ describe("createSystemPrompt output language", () => {
       "Write generated wiki prose, headings, table content, and documentation in zh-CN.",
     );
     expect(prompt).toContain(
-      'write the human-readable "title", "description", "type", and "tags" values in zh-CN',
+      'write the human-readable "title", "description", and "type" values in zh-CN',
     );
+    // Tags stay canonical (an aggregation key), so they are written in English.
+    expect(prompt).toContain('Write the "tags" values in English');
     expect(prompt).toContain(
       "Apply this language only to generated wiki files.",
     );
