@@ -196,6 +196,9 @@ export async function runOpenWikiAgent(
       modelId,
       apiKey: getProviderApiKey(provider),
       baseUrl: providerBaseUrl,
+      baseUrlIsCustom:
+        getProviderBaseUrlEnvKey(provider) !== undefined &&
+        Boolean(process.env[getProviderBaseUrlEnvKey(provider)!]),
     });
     if (modelAvailability.status === "unavailable") {
       throw new Error(
