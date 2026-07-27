@@ -4,6 +4,7 @@ import path from "node:path";
 import { restrictDirToCurrentUser } from "./windows-acl.js";
 
 export const openWikiHomeDir = path.join(os.homedir(), ".openwiki");
+export const openWikiLocksDir = path.join(openWikiHomeDir, "locks");
 export const openWikiConnectorsDir = path.join(openWikiHomeDir, "connectors");
 export const openWikiLocalWikiDir = path.join(openWikiHomeDir, "wiki");
 export const openWikiSkillsDir = path.join(openWikiHomeDir, "skills");
@@ -32,6 +33,7 @@ export async function ensureOpenWikiHome(): Promise<void> {
   await mkdir(openWikiHomeDir, { recursive: true, mode: 0o700 });
   await chmodIfExists(openWikiHomeDir, 0o700);
   await restrictDirToCurrentUser(openWikiHomeDir);
+  await mkdir(openWikiLocksDir, { recursive: true, mode: 0o700 });
   await mkdir(openWikiConnectorsDir, { recursive: true, mode: 0o700 });
   await mkdir(openWikiLocalWikiDir, { recursive: true, mode: 0o700 });
   await mkdir(openWikiSkillsDir, { recursive: true, mode: 0o700 });

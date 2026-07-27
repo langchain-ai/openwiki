@@ -28,6 +28,7 @@ import {
   getProviderRegionEnvKeys,
   getProviderSecretKeyEnvKey,
   providerRequiresApiKey,
+  providerOffersOptionalBaseUrl,
   isValidModelId,
   normalizeProvider,
   normalizeModelId,
@@ -589,7 +590,10 @@ export function orderedSetupSteps(
   ) {
     steps.push("gcp-location");
   }
-  if (providerRequiresBaseUrl(provider)) {
+  if (
+    providerRequiresBaseUrl(provider) ||
+    providerOffersOptionalBaseUrl(provider)
+  ) {
     steps.push("base-url");
   }
   if (providerRequiresRegion(provider)) {
@@ -2082,23 +2086,29 @@ export function InitSetup({
     if (step === "base-url") {
       const trimmedInput = input.trim();
 
-      if (trimmedInput.length === 0) {
+      if (
+        trimmedInput.length === 0 &&
+        !providerOffersOptionalBaseUrl(provider)
+      ) {
         setError(
           `${getProviderBaseUrlEnvKey(provider) ?? "Base URL"} is required.`,
         );
         return;
       }
 
-      const baseUrlWarnings = getProviderBaseUrlWarnings(
-        provider,
-        trimmedInput,
-      );
-      if (baseUrlWarnings.length > 0) {
-        setError(`Enter a valid base URL: ${baseUrlWarnings.join(", ")}.`);
-        return;
+      if (trimmedInput.length > 0) {
+        const baseUrlWarnings = getProviderBaseUrlWarnings(
+          provider,
+          trimmedInput,
+        );
+        if (baseUrlWarnings.length > 0) {
+          setError(`Enter a valid base URL: ${baseUrlWarnings.join(", ")}.`);
+          return;
+        }
       }
 
-      setBaseUrl(trimmedInput);
+      const nextBaseUrl = trimmedInput.length > 0 ? trimmedInput : null;
+      setBaseUrl(nextBaseUrl);
       setInput("");
       const nextStep =
         nextSetupStep("base-url", provider, selectedMode, allowModeSelection) ??
@@ -2121,7 +2131,7 @@ export function InitSetup({
 
       await completeSetup({
         nextApiKey: apiKey,
-        nextBaseUrl: trimmedInput,
+        nextBaseUrl,
         nextSecretKey: secretKey,
         nextRegion: region,
         nextGcpLocation: gcpLocation,
@@ -3296,7 +3306,8 @@ export function InitSetup({
               }
             />
           ) : null}
-          {providerRequiresBaseUrl(provider) ? (
+          {providerRequiresBaseUrl(provider) ||
+          providerOffersOptionalBaseUrl(provider) ? (
             <SetupStep
               label="Base URL"
               state={resolveStepStatus(
@@ -3306,7 +3317,11 @@ export function InitSetup({
               )}
               detail={
                 baseUrl ??
-                (isBaseUrlConfigured(provider) ? "configured" : "not set")
+                (isBaseUrlConfigured(provider)
+                  ? "configured"
+                  : providerOffersOptionalBaseUrl(provider)
+                    ? "default"
+                    : "not set")
               }
             />
           ) : null}
@@ -3679,8 +3694,9 @@ function Prompt({
           <Text color="yellow">{input}</Text>
         </Text>
         <Text color="gray">
-          For example an OpenAI-compatible gateway endpoint (such as a LiteLLM
-          gateway). Press Enter to save it.
+          {providerOffersOptionalBaseUrl(provider)
+            ? "Press Enter to use the default API root, or save a non-default root."
+            : "For example an OpenAI-compatible gateway endpoint (such as a LiteLLM gateway). Press Enter to save it."}
         </Text>
       </Box>
     );

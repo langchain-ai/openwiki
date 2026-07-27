@@ -11,6 +11,8 @@ import {
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
+  getProviderApiKeyEnvKey,
+  getProviderBaseUrlEnvKey,
   getProviderBaseUrlWarnings,
   GEMINI_API_KEY_ENV_KEY,
   GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
@@ -56,6 +58,12 @@ import {
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   resolveProviderRetryAttempts,
+  type OpenWikiProvider,
+  ZAI_API_KEY_ENV_KEY,
+  ZAI_BASE_URL_ENV_KEY,
+  ZAI_RATE_LIMIT_BASE_DELAY_MS_ENV_KEY,
+  ZAI_RATE_LIMIT_MAX_DELAY_MS_ENV_KEY,
+  ZAI_RATE_LIMIT_MAX_RETRIES_ENV_KEY,
 } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
 import { restrictDirToCurrentUser } from "./windows-acl.js";
@@ -111,6 +119,11 @@ export const MANAGED_ENV_KEYS = [
   GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY,
+  ZAI_API_KEY_ENV_KEY,
+  ZAI_BASE_URL_ENV_KEY,
+  ZAI_RATE_LIMIT_MAX_RETRIES_ENV_KEY,
+  ZAI_RATE_LIMIT_BASE_DELAY_MS_ENV_KEY,
+  ZAI_RATE_LIMIT_MAX_DELAY_MS_ENV_KEY,
   BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
@@ -260,13 +273,39 @@ export async function loadOpenWikiEnv(): Promise<EnvMap> {
   return env;
 }
 
-export async function getCredentialDiagnostics(): Promise<
-  CredentialDiagnostic[]
-> {
+export async function getCredentialDiagnostics(
+  options: { provider?: OpenWikiProvider } = {},
+): Promise<CredentialDiagnostic[]> {
   const fileEnv = await readOpenWikiEnv();
+  const keys = options.provider
+    ? getProviderDiagnosticEnvKeys(options.provider)
+    : CREDENTIAL_DIAGNOSTIC_ENV_KEYS;
 
-  return CREDENTIAL_DIAGNOSTIC_ENV_KEYS.map((key) =>
-    createCredentialDiagnostic(key, fileEnv),
+  return keys.map((key) => createCredentialDiagnostic(key, fileEnv));
+}
+
+function getProviderDiagnosticEnvKeys(
+  provider: OpenWikiProvider,
+): readonly string[] {
+  const providerKeys = new Set(
+    [
+      getProviderApiKeyEnvKey(provider),
+      getProviderBaseUrlEnvKey(provider),
+    ].filter((key): key is string => key !== undefined),
+  );
+
+  if (provider === "zai") {
+    providerKeys.add(ZAI_RATE_LIMIT_MAX_RETRIES_ENV_KEY);
+    providerKeys.add(ZAI_RATE_LIMIT_BASE_DELAY_MS_ENV_KEY);
+    providerKeys.add(ZAI_RATE_LIMIT_MAX_DELAY_MS_ENV_KEY);
+  }
+
+  return CREDENTIAL_DIAGNOSTIC_ENV_KEYS.filter(
+    (key) =>
+      key === OPENWIKI_PROVIDER_ENV_KEY ||
+      key === OPENWIKI_MODEL_ID_ENV_KEY ||
+      key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
+      providerKeys.has(key),
   );
 }
 
@@ -414,6 +453,10 @@ function getBaseUrlDiagnosticWarnings(
     return getProviderBaseUrlWarnings("openai-compatible", value);
   }
 
+  if (key === ZAI_BASE_URL_ENV_KEY) {
+    return getProviderBaseUrlWarnings("zai", value);
+  }
+
   return undefined;
 }
 
@@ -429,6 +472,10 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||
+    key === ZAI_BASE_URL_ENV_KEY ||
+    key === ZAI_RATE_LIMIT_MAX_RETRIES_ENV_KEY ||
+    key === ZAI_RATE_LIMIT_BASE_DELAY_MS_ENV_KEY ||
+    key === ZAI_RATE_LIMIT_MAX_DELAY_MS_ENV_KEY ||
     key === BEDROCK_AWS_REGION_ENV_KEY ||
     key === GOOGLE_CLOUD_PROJECT_ENV_KEY ||
     key === GOOGLE_CLOUD_LOCATION_ENV_KEY ||

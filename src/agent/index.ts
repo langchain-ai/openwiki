@@ -15,6 +15,7 @@ import {
   FilesystemBackend,
 } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
+import { withOpenWikiExecutionLock } from "../execution-lock.js";
 import {
   DEBUG_ENV_KEYS,
   loadOpenWikiEnv,
@@ -36,7 +37,9 @@ import {
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
+import { getOpenWikiExecutionLockScope } from "./runtime-lock.js";
 import { syncBundledSkills } from "./skills.js";
+import { createZaiFetch } from "./zai-transport.js";
 import {
   createVertexAuthFetch,
   resolveVertexSurface,
@@ -111,8 +114,18 @@ export async function runOpenWikiAgent(
   cwd = openWikiLocalWikiDir,
   options: OpenWikiRunOptions = {},
 ): Promise<OpenWikiRunResult> {
-  const runtimeCwd = options.outputMode ? cwd : openWikiLocalWikiDir;
+  const lockScope = getOpenWikiExecutionLockScope(command, cwd, options);
 
+  return withOpenWikiExecutionLock(lockScope, () =>
+    runOpenWikiAgentUnlocked(command, lockScope.cwd, options),
+  );
+}
+
+async function runOpenWikiAgentUnlocked(
+  command: OpenWikiCommand,
+  runtimeCwd: string,
+  options: OpenWikiRunOptions,
+): Promise<OpenWikiRunResult> {
   emitDebug(options, `command=${command}`);
   emitDebug(options, `cwd=${runtimeCwd}`);
   emitDebug(
@@ -128,7 +141,7 @@ export async function runOpenWikiAgent(
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
   if (command === "update" && shouldCheckUpdateNoop(options)) {
-    const noopStatus = await getUpdateNoopStatus(cwd);
+    const noopStatus = await getUpdateNoopStatus(runtimeCwd);
 
     if (noopStatus.shouldSkip) {
       const message =
@@ -153,7 +166,8 @@ export async function runOpenWikiAgent(
     emitDebug(options, "update.noop=false reason=user message provided");
   }
 
-  const debugFetchCapture = installOpenRouterDebugFetch(options);
+  let debugFetchCapture: OpenRouterFetchCapture =
+    createNoopOpenRouterFetchCapture();
 
   // Resolved inside the try so a failure during resolution (missing key,
   // invalid model, missing base URL) is still recorded. They may be undefined
@@ -163,6 +177,9 @@ export async function runOpenWikiAgent(
 
   try {
     provider = resolveConfiguredProvider();
+    if (shouldInstallOpenRouterDebugFetch(provider)) {
+      debugFetchCapture = installOpenRouterDebugFetch(options);
+    }
     const providerBaseUrl = resolveProviderBaseUrl(provider);
     emitDebug(options, `provider=${provider}`);
     if (providerBaseUrl) {
@@ -742,6 +759,20 @@ export function createModel(
       model: modelId,
       provider: providerOnly ? { only: providerOnly } : undefined,
       siteName: "OpenWiki",
+      ...retryOptions,
+    });
+  }
+
+  if (provider === "zai") {
+    const baseURL = resolveProviderBaseUrl(provider);
+
+    return new ChatOpenAI({
+      apiKey: getProviderApiKey(provider),
+      configuration: {
+        baseURL,
+        fetch: createZaiFetch({ baseUrl: baseURL }),
+      },
+      model: modelId,
       ...retryOptions,
     });
   }
@@ -1425,6 +1456,20 @@ type OpenRouterResponseSummary = {
 
 const OPENROUTER_DEBUG_PROPERTY = "openRouterDebug";
 const OPENROUTER_DEBUG_BODY_LIMIT = 4_000;
+
+export function shouldInstallOpenRouterDebugFetch(
+  provider: OpenWikiProvider,
+): boolean {
+  return provider === "openrouter";
+}
+
+function createNoopOpenRouterFetchCapture(): OpenRouterFetchCapture {
+  return {
+    clearLastFailure: () => undefined,
+    getLastFailure: () => null,
+    restore: () => undefined,
+  };
+}
 
 function installOpenRouterDebugFetch(
   options: OpenWikiRunOptions,

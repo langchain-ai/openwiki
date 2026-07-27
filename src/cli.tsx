@@ -55,6 +55,7 @@ import {
   saveOpenWikiOnboardingConfig,
 } from "./onboarding.js";
 import { openWikiLocalWikiDir } from "./openwiki-home.js";
+import { getOpenWikiErrorExitCode } from "./execution-lock.js";
 import {
   deleteConnectorSchedules,
   getSavedPowerScheduleStatus,
@@ -410,6 +411,8 @@ function App({ command }: AppProps) {
           return;
         }
 
+        process.exitCode = getOpenWikiErrorExitCode(error);
+
         const errorDiagnostics = getErrorDiagnostics(error);
         const message = getErrorMessage(error);
         const authFix = getAuthFix(error, message, sessionProvider);
@@ -426,7 +429,7 @@ function App({ command }: AppProps) {
           return;
         }
 
-        void getCredentialDiagnostics()
+        void getCredentialDiagnostics({ provider: sessionProvider })
           .catch(() => undefined)
           .then((credentialDiagnostics) => {
             if (!mountedRef.current || activeRunId.current !== runId) {
@@ -558,7 +561,7 @@ function App({ command }: AppProps) {
     });
 
     if (shouldShowCredentialDiagnostics()) {
-      void getCredentialDiagnostics()
+      void getCredentialDiagnostics({ provider: sessionProvider })
         .catch(() => undefined)
         .then((credentialDiagnostics) => {
           if (
@@ -660,6 +663,8 @@ function App({ command }: AppProps) {
           return;
         }
 
+        process.exitCode = getOpenWikiErrorExitCode(error);
+
         const errorDiagnostics = getErrorDiagnostics(error);
         const message = getErrorMessage(error);
         const authFix = getAuthFix(error, message, sessionProvider);
@@ -676,7 +681,7 @@ function App({ command }: AppProps) {
           return;
         }
 
-        void getCredentialDiagnostics()
+        void getCredentialDiagnostics({ provider: sessionProvider })
           .catch(() => undefined)
           .then((credentialDiagnostics) => {
             if (!mountedRef.current || activeRunId.current !== runId) {
@@ -4172,7 +4177,7 @@ async function runPrintCommand(
     process.stderr.write(`${message}\n`);
     writePrintAuthFix(error, message);
     writePrintErrorDiagnostics(error);
-    process.exitCode = 1;
+    process.exitCode = getOpenWikiErrorExitCode(error);
   }
 }
 

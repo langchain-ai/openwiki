@@ -31,6 +31,8 @@ const ENV_KEYS = [
   "OPENROUTER_API_KEY",
   "OPENWIKI_MODEL_ID",
   "OPENWIKI_PROVIDER",
+  "ZAI_API_KEY",
+  "ZAI_BASE_URL",
 ] as const;
 
 const originalEnv = new Map<string, string | undefined>(
@@ -232,6 +234,17 @@ describe("orderedSetupSteps", () => {
     // api-key is present even when a key is already set, so navigation can
     // still reach and re-edit it.
     expect(orderedSetupSteps("openai", "code", false)).toContain("api-key");
+  });
+
+  test("Z.AI collects only its key, optional API root, and model", () => {
+    expect(orderedSetupSteps("zai", "code", false)).toEqual([
+      "provider",
+      "api-key",
+      "base-url",
+      "model",
+      "langsmith",
+      "code-repo-confirm",
+    ]);
   });
 });
 

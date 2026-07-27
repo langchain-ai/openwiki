@@ -84,6 +84,7 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(normalizeProvider("OPENROUTER")).toBe("openrouter");
     expect(normalizeProvider(" Nebius ")).toBe("nebius");
     expect(normalizeProvider(" Gemini-Enterprise ")).toBe("gemini-enterprise");
+    expect(normalizeProvider(" ZAI ")).toBe("zai");
   });
 
   test("returns null for unknown or nullish providers", () => {
@@ -99,6 +100,7 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(isValidProvider("nvidia")).toBe(true);
     expect(isValidProvider("gemini")).toBe(true);
     expect(isValidProvider("gemini-enterprise")).toBe(true);
+    expect(isValidProvider("zai")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
   });
 });
@@ -117,6 +119,16 @@ describe("resolveConfiguredProvider", () => {
     expect(
       resolveConfiguredProvider({ OPENWIKI_PROVIDER: "gemini-enterprise" }),
     ).toBe("gemini-enterprise");
+  });
+
+  test("honors an explicit Z.AI provider independently of gateway credentials", () => {
+    expect(
+      resolveConfiguredProvider({
+        OPENAI_COMPATIBLE_API_KEY: "gateway-key",
+        OPENROUTER_API_KEY: "router-key",
+        OPENWIKI_PROVIDER: "zai",
+      }),
+    ).toBe("zai");
   });
 
   test("does NOT auto-select gemini from GEMINI_API_KEY alone", () => {
@@ -184,6 +196,9 @@ describe("resolveProviderBaseUrl", () => {
     expect(resolveProviderBaseUrl("nebius", {})).toBe(NEBIUS_BASE_URL);
     expect(resolveProviderBaseUrl("nvidia", {})).toBe(
       "https://integrate.api.nvidia.com/v1",
+    );
+    expect(resolveProviderBaseUrl("zai", {})).toBe(
+      "https://api.z.ai/api/coding/paas/v4",
     );
   });
 
@@ -425,6 +440,20 @@ describe("getMissingProviderEnvKey", () => {
     ).toBeNull();
   });
 
+  test("requires ZAI_API_KEY without falling back to gateway credentials", () => {
+    expect(
+      getMissingProviderEnvKey("zai", {
+        OPENAI_COMPATIBLE_API_KEY: "gateway-key",
+        OPENROUTER_API_KEY: "router-key",
+      }),
+    ).toBe("ZAI_API_KEY");
+    expect(
+      getMissingProviderEnvKey("zai", {
+        ZAI_API_KEY: "zai-key",
+      }),
+    ).toBeNull();
+  });
+
   test("reports the missing GCP project for gemini-enterprise", () => {
     expect(getMissingProviderEnvKey("gemini-enterprise", {})).toBe(
       "GOOGLE_CLOUD_PROJECT",
@@ -595,6 +624,7 @@ describe("getDefaultModelId", () => {
     );
     expect(getDefaultModelId("gemini")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.6-flash");
+    expect(getDefaultModelId("zai")).toBe("glm-5.2");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
   });
 

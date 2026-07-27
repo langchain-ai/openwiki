@@ -23,6 +23,13 @@ export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const ZAI_API_KEY_ENV_KEY = "ZAI_API_KEY";
+export const ZAI_BASE_URL_ENV_KEY = "ZAI_BASE_URL";
+export const ZAI_RATE_LIMIT_MAX_RETRIES_ENV_KEY = "ZAI_RATE_LIMIT_MAX_RETRIES";
+export const ZAI_RATE_LIMIT_BASE_DELAY_MS_ENV_KEY =
+  "ZAI_RATE_LIMIT_BASE_DELAY_MS";
+export const ZAI_RATE_LIMIT_MAX_DELAY_MS_ENV_KEY =
+  "ZAI_RATE_LIMIT_MAX_DELAY_MS";
 export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
   "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
@@ -81,6 +88,7 @@ export const OPENWIKI_X_REFRESH_TOKEN_ENV_KEY = "OPENWIKI_X_REFRESH_TOKEN";
 export const OPENWIKI_TAVILY_API_KEY_ENV_KEY = "TAVILY_API_KEY";
 export const DEFAULT_PROVIDER = "openai";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+export const ZAI_DEFAULT_BASE_URL = "https://api.z.ai/api/coding/paas/v4";
 
 export type OpenWikiProvider =
   | "anthropic"
@@ -94,7 +102,8 @@ export type OpenWikiProvider =
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "zai";
 
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
@@ -158,6 +167,8 @@ type ProviderConfig = {
    * with an alternative base URL (e.g. a self-hosted or proxied endpoint).
    */
   baseUrlEnvKey?: string;
+  /** Whether setup may optionally save a non-default base URL. */
+  optionalBaseUrl?: boolean;
   /**
    * When true, the provider has no default endpoint and requires a base URL to
    * be supplied via {@link ProviderConfig.baseUrlEnvKey}.
@@ -202,6 +213,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "anthropic",
   "gemini",
   "gemini-enterprise",
+  "zai",
   "openrouter",
   "openai-compatible",
   "bedrock",
@@ -343,6 +355,14 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
     ],
+  },
+  zai: {
+    apiKeyEnvKey: ZAI_API_KEY_ENV_KEY,
+    baseURL: ZAI_DEFAULT_BASE_URL,
+    baseUrlEnvKey: ZAI_BASE_URL_ENV_KEY,
+    label: "Z.AI",
+    modelOptions: [{ id: "glm-5.2", label: "GLM 5.2" }],
+    optionalBaseUrl: true,
   },
 };
 
@@ -540,6 +560,12 @@ export function providerRequiresBaseUrl(provider: OpenWikiProvider): boolean {
   return getProviderConfig(provider).requiresBaseUrl === true;
 }
 
+export function providerOffersOptionalBaseUrl(
+  provider: OpenWikiProvider,
+): boolean {
+  return getProviderConfig(provider).optionalBaseUrl === true;
+}
+
 export function getProviderSecretKeyEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
@@ -722,28 +748,30 @@ export function resolveConfiguredProvider(
       ? "openai"
       : env[OPENAI_COMPATIBLE_API_KEY_ENV_KEY]
         ? "openai-compatible"
-        : env[OPENROUTER_API_KEY_ENV_KEY]
-          ? "openrouter"
-          : env[ANTHROPIC_API_KEY_ENV_KEY]
-            ? "anthropic"
-            : env[BASETEN_API_KEY_ENV_KEY]
-              ? "baseten"
-              : env[FIREWORKS_API_KEY_ENV_KEY]
-                ? "fireworks"
-                : env[NEBIUS_API_KEY_ENV_KEY]
-                  ? "nebius"
-                  : env[NVIDIA_API_KEY_ENV_KEY]
-                    ? "nvidia"
-                    : hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                        ) ||
-                        hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-                        )
-                      ? "bedrock"
-                      : DEFAULT_PROVIDER)
+        : env[ZAI_API_KEY_ENV_KEY]
+          ? "zai"
+          : env[OPENROUTER_API_KEY_ENV_KEY]
+            ? "openrouter"
+            : env[ANTHROPIC_API_KEY_ENV_KEY]
+              ? "anthropic"
+              : env[BASETEN_API_KEY_ENV_KEY]
+                ? "baseten"
+                : env[FIREWORKS_API_KEY_ENV_KEY]
+                  ? "fireworks"
+                  : env[NEBIUS_API_KEY_ENV_KEY]
+                    ? "nebius"
+                    : env[NVIDIA_API_KEY_ENV_KEY]
+                      ? "nvidia"
+                      : hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                          ) ||
+                          hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                          )
+                        ? "bedrock"
+                        : DEFAULT_PROVIDER)
   );
 }
 

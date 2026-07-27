@@ -37,6 +37,7 @@ const MANAGED_ENV_KEYS = [
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  "ZAI_API_KEY",
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
@@ -138,6 +139,23 @@ afterEach(() => {
 });
 
 describe("resolveStartupCommand", () => {
+  test("fails before a provider request when explicit Z.AI credentials are absent", async () => {
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] = "zai";
+    process.env[OPENROUTER_API_KEY_ENV_KEY] = "router-key";
+    delete process.env.ZAI_API_KEY;
+
+    const result = await resolveStartupCommand(
+      updatePrintCommand({ userMessage: "refresh API docs" }),
+      { isStdinTTY: false },
+    );
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toContain("ZAI_API_KEY is required");
+      expect(result.message).not.toContain("OPENROUTER_API_KEY");
+    }
+  });
+
   test("fails fast for non-TTY interactive chat without a message", async () => {
     const result = await resolveStartupCommand(
       {

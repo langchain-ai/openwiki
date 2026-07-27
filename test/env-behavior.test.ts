@@ -54,6 +54,8 @@ const KEYS_UNDER_TEST = [
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  "ZAI_API_KEY",
+  "ZAI_BASE_URL",
   // Deprecated / recently un-deprecated OpenAI keys. Cleared in each hook so the
   // developer's ambient shell (which may export OPENAI_BASE_URL) cannot leak
   // into these tests, and a loaded value cannot leak back out to other tests.
@@ -327,6 +329,27 @@ describe("getSavedEnvValue", () => {
 });
 
 describe("getCredentialDiagnostics", () => {
+  test("shows only the selected Z.AI credential family and redacts its key", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENROUTER_API_KEY_ENV_KEY]: "router-secret",
+      [OPENWIKI_PROVIDER_ENV_KEY]: "zai",
+      ZAI_API_KEY: "zai-secret",
+      ZAI_BASE_URL: "https://gateway.example/zai",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics({
+      provider: "zai" as never,
+    });
+    const keys = diagnostics.map((item) => item.key);
+    const zaiKey = diagnostics.find((item) => item.key === "ZAI_API_KEY");
+
+    expect(keys).toContain("ZAI_API_KEY");
+    expect(keys).toContain("ZAI_BASE_URL");
+    expect(keys).not.toContain(OPENROUTER_API_KEY_ENV_KEY);
+    expect(keys).not.toContain(OPENAI_COMPATIBLE_BASE_URL_ENV_KEY);
+    expect(zaiKey?.preview).not.toContain("zai-secret");
+  });
+
   test("includes the provider and each credential key in display order", async () => {
     const diagnostics = await env.getCredentialDiagnostics();
     const keys = diagnostics.map((entry) => entry.key);
