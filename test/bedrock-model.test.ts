@@ -69,6 +69,40 @@ describe("createModel Bedrock credentials", () => {
     createModel("bedrock", "anthropic.claude-sonnet-5", 4);
 
     expect(bedrockConstructorArgs[0]).not.toHaveProperty("maxTokens");
+    expect(bedrockConstructorArgs[0]).not.toHaveProperty("streamIdleTimeout");
+  });
+
+  test.each([0, 300000])(
+    "passes streamIdleTimeout: %i to ChatBedrockConverse",
+    (streamIdleTimeout) => {
+      process.env.AWS_REGION = "us-east-1";
+
+      createModel(
+        "bedrock",
+        "anthropic.claude-sonnet-5",
+        4,
+        undefined,
+        streamIdleTimeout,
+      );
+
+      expect(bedrockConstructorArgs[0]).toMatchObject({
+        streamIdleTimeout,
+      });
+    },
+  );
+
+  test("omits streamIdleTimeout when the override is undefined", () => {
+    process.env.AWS_REGION = "us-east-1";
+
+    createModel(
+      "bedrock",
+      "anthropic.claude-sonnet-5",
+      4,
+      undefined,
+      undefined,
+    );
+
+    expect(bedrockConstructorArgs[0]).not.toHaveProperty("streamIdleTimeout");
   });
 
   test("lets LangChain preserve complete legacy credentials and session tokens", () => {

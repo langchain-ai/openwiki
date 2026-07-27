@@ -479,6 +479,20 @@ model client's output token limit. Provider and model limits still apply;
 unsupported values may be rejected, while very small values can truncate
 responses or tool calls.
 
+### Bedrock stream idle timeout
+
+For the Bedrock provider, set `OPENWIKI_STREAM_IDLE_TIMEOUT` to control how
+long the client waits for the first or next streamed response chunk:
+
+```bash
+OPENWIKI_STREAM_IDLE_TIMEOUT=300000
+```
+
+The value is milliseconds and must be an integer from `0` to `2147483647`.
+Set it to `0` to disable the watchdog. If unset, OpenWiki preserves the
+`@langchain/aws` provider default. Prefer a sufficiently long finite timeout
+over disabling the watchdog so a stalled stream cannot hang forever.
+
 ### Diagrams
 
 OpenWiki embeds **Mermaid** diagrams in the generated wiki wherever they make a

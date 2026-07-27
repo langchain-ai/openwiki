@@ -21,6 +21,7 @@ import {
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
 } from "../src/constants.ts";
 
 // `loadOpenWikiEnv`, `saveOpenWikiEnv`, and `getCredentialDiagnostics` all read
@@ -57,6 +58,7 @@ const KEYS_UNDER_TEST = [
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
   // Deprecated / recently un-deprecated OpenAI keys. Cleared in each hook so the
   // developer's ambient shell (which may export OPENAI_BASE_URL) cannot leak
   // into these tests, and a loaded value cannot leak back out to other tests.
@@ -439,6 +441,53 @@ describe("getCredentialDiagnostics", () => {
 
     expect(entry?.preview).toBe('"0"');
     expect(entry?.warnings).toContain("invalid output token limit");
+  });
+
+  test("surfaces and validates the stream idle timeout as non-secret", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_PROVIDER_ENV_KEY]: "bedrock",
+      [OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY]: "-1",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"-1"');
+    expect(entry?.warnings).toContain("invalid stream idle timeout");
+  });
+
+  test("accepts zero as a stream idle timeout that disables the watchdog", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_PROVIDER_ENV_KEY]: "bedrock",
+      [OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY]: "0",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"0"');
+    expect(entry?.warnings).toContain(
+      "stream watchdog disabled; stalled streams may hang indefinitely",
+    );
+  });
+
+  test("does not warn about an inactive Bedrock stream timeout", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_PROVIDER_ENV_KEY]: "openai",
+      [OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY]: "0",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"0"');
+    expect(entry?.warnings).toEqual([]);
   });
 
   test("flags an OpenAI-compatible chat completions endpoint as a base URL warning", async () => {

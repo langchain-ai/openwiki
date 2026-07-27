@@ -35,6 +35,8 @@ import {
   resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
+  resolveStreamIdleTimeout,
+  resolveStreamIdleTimeoutForProvider,
 } from "../src/constants.ts";
 
 describe("isValidModelId", () => {
@@ -313,6 +315,72 @@ describe("resolveMaxOutputTokens", () => {
         }),
       ).toThrow(/OPENWIKI_MAX_OUTPUT_TOKENS/u);
     }
+  });
+});
+
+describe("resolveStreamIdleTimeout", () => {
+  test("uses the provider default when no override is set", () => {
+    expect(resolveStreamIdleTimeout({})).toBeUndefined();
+  });
+
+  test("accepts zero to disable the watchdog and positive millisecond values", () => {
+    expect(
+      resolveStreamIdleTimeout({
+        OPENWIKI_STREAM_IDLE_TIMEOUT: " 0 ",
+      }),
+    ).toBe(0);
+    expect(
+      resolveStreamIdleTimeout({
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "300000",
+      }),
+    ).toBe(300000);
+    expect(
+      resolveStreamIdleTimeout({
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "2147483647",
+      }),
+    ).toBe(2147483647);
+  });
+
+  test("rejects invalid stream idle timeouts", () => {
+    for (const value of [
+      "",
+      "   ",
+      "-1",
+      "1.5",
+      "abc",
+      "1e2",
+      "2147483648",
+      "9007199254740992",
+    ]) {
+      expect(() =>
+        resolveStreamIdleTimeout({
+          OPENWIKI_STREAM_IDLE_TIMEOUT: value,
+        }),
+      ).toThrow(/OPENWIKI_STREAM_IDLE_TIMEOUT/u);
+    }
+  });
+});
+
+describe("resolveStreamIdleTimeoutForProvider", () => {
+  test("ignores a stale Bedrock timeout for other providers", () => {
+    expect(
+      resolveStreamIdleTimeoutForProvider("openai", {
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "invalid",
+      }),
+    ).toBeUndefined();
+  });
+
+  test("validates the timeout when Bedrock is active", () => {
+    expect(
+      resolveStreamIdleTimeoutForProvider("bedrock", {
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "300000",
+      }),
+    ).toBe(300000);
+    expect(() =>
+      resolveStreamIdleTimeoutForProvider("bedrock", {
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "invalid",
+      }),
+    ).toThrow(/OPENWIKI_STREAM_IDLE_TIMEOUT/u);
   });
 });
 

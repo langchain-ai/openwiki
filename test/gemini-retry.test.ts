@@ -83,6 +83,13 @@ describe("createModel wires runtime options into provider clients", () => {
     expect(chatGoogleArgs[0]?.apiKey).toBe("test-gemini-key");
   });
 
+  test("does not pass the Bedrock-only stream idle timeout to ChatGoogle", () => {
+    createModel("gemini", "gemini-3.1-flash-lite", 5, undefined, 300000);
+
+    expect(chatGoogleArgs).toHaveLength(1);
+    expect(chatGoogleArgs[0]).not.toHaveProperty("streamIdleTimeout");
+  });
+
   test("propagates maxRetries: 0 (not coerced to a default)", () => {
     createModel("gemini", "gemini-3.1-pro", 0);
 
