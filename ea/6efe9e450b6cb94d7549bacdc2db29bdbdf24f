@@ -1,0 +1,21 @@
+test/gemini-enterprise-claude.e2e.test.ts
+  s_808572fbdb878e::t_0c411bb427a294 1-4,15-30,33-42,46,48,52,56-57,62-63,66,74-77
+  s_808572fbdb878e::t_905583f445b2da 58-61
+  s_808572fbdb878e::t_c59b9f4d227cac 78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "ea6efe9e450b6cb94d7549bacdc2db29bdbdf24f",
+  "prompts": {},
+  "sessions": {
+    "s_808572fbdb878e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "64eab921-4549-48f4-a899-6ca643f83534",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

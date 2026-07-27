@@ -1,0 +1,30 @@
+src/credentials.tsx
+  s_70ce361ce20830::t_9e7d10214ef031 1139-1149
+  s_70ce361ce20830::t_c2d0c40a1d007e 676-679
+  s_70ce361ce20830::t_925c4bdb8bbeae 2361-2368
+package.json
+  s_70ce361ce20830::t_e967e4d677b260 63
+pnpm-lock.yaml
+  s_70ce361ce20830::t_03b2f2013c6c0a 55,65-67,1780-1781,3010,3880,3888,4323,4336
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "ea2607be5f09773a6ec5d5b78f0f8a0c3748973b",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

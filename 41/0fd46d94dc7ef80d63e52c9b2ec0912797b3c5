@@ -1,0 +1,64 @@
+src/connectors/sources/x.ts
+  s_70ce361ce20830::t_ad0a665bb9876c 55
+src/connectors/sources/mcp.ts
+  s_70ce361ce20830::t_d04a94b040c94c 28
+src/connectors/types.ts
+  s_70ce361ce20830::t_29985164aee684 19-23
+  s_70ce361ce20830::t_3f12c9f14ae6e8 5
+  s_70ce361ce20830::t_4f98bff0f972cc 32-38
+src/connectors/sources/langsmith/index.ts
+  h_f78d33d4280f3f 1-339
+test/langsmith-repo-config.test.ts
+  s_70ce361ce20830::t_9afcbfda72871d 1-136
+  s_70ce361ce20830::t_755e045a6360f3 137-138
+src/connectors/sources/langsmith/repo-config.ts
+  h_f78d33d4280f3f 1-158
+src/connectors/sources/langsmith/runs.ts
+  h_f78d33d4280f3f 1-152
+test/langsmith-runs.test.ts
+  s_70ce361ce20830::t_0a42070be4b0d2 1-145
+  s_70ce361ce20830::t_bc02c28cb5c426 146-148
+test/langsmith-index.test.ts
+  s_70ce361ce20830::t_f510fe362f9371 1-253
+src/connectors/sources/slack.ts
+  s_70ce361ce20830::t_ad0a665bb9876c 142
+src/connectors/sources/git-repo.ts
+  s_70ce361ce20830::t_ad0a665bb9876c 45
+src/connectors/sources/hackernews.ts
+  s_70ce361ce20830::t_ad0a665bb9876c 71
+src/connectors/sources/web-search.ts
+  s_70ce361ce20830::t_ad0a665bb9876c 45
+src/ingestion.ts
+  s_70ce361ce20830::t_3ce72d96bb5c6c 379-384
+src/connectors/sources/gmail.ts
+  s_70ce361ce20830::t_ad0a665bb9876c 68
+src/connectors/registry.ts
+  s_70ce361ce20830::t_d75215ab62954c 4
+  s_70ce361ce20830::t_322df2cf81b562 18
+  s_70ce361ce20830::t_844739f1e69e60 30
+test/langsmith-api.test.ts
+  s_70ce361ce20830::t_3eea116c2a365b 1-112
+src/connectors/sources/langsmith/types.ts
+  h_f78d33d4280f3f 1-226
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "410fd46d94dc7ef80d63e52c9b2ec0912797b3c5",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

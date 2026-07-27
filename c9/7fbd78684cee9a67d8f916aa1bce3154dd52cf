@@ -1,0 +1,74 @@
+src/ingestion.ts
+  s_70ce361ce20830::t_c162ca68a080be 390
+  s_70ce361ce20830::t_9329b1ea2778d8 391
+  s_70ce361ce20830::t_f0672e0353a1dd 384
+  s_70ce361ce20830::t_a4eaa057fce54a 393
+  s_70ce361ce20830::t_108fc0b1da641d 385
+  s_70ce361ce20830::t_bb5a254de76cfb 389
+src/connectors/sources/langsmith/api.ts
+  s_70ce361ce20830::t_2494cfa1e2f652 135,141
+  s_70ce361ce20830::t_3f3245957e9361 6-11
+  s_70ce361ce20830::t_011072bbce08b7 88-91,93,95-98
+test/langsmith-api.test.ts
+  s_70ce361ce20830::t_084528d1fadfa9 62-63,66,73,75,82-85
+src/connectors/sources/langsmith/types.ts
+  s_70ce361ce20830::t_f584eb346e2680 123-125,134-135,137,140-142,144,147-148,150
+  s_70ce361ce20830::t_41c6c805da7c82 12-17
+  s_70ce361ce20830::t_db7079b63ea156 111-115
+  s_70ce361ce20830::t_0e2f7e71e80174 11
+  s_70ce361ce20830::t_0e1aadaa2457a7 110
+test/langsmith-index.test.ts
+  s_70ce361ce20830::t_80a2aa596935c7 228-269
+  s_70ce361ce20830::t_fd225b04f1b941 58,153,208,289,330,352,369,383,388
+  s_70ce361ce20830::t_133462e0ab4fbe 227,270-288,290-307
+  s_70ce361ce20830::t_1f9c3efc2edf8d 366,370,374-377,384,389-390
+test/langsmith-modes.test.ts
+  s_70ce361ce20830::t_4520aa9ff38550 37,39-50
+  s_70ce361ce20830::t_9b64fc43efe2dd 51-57
+  s_70ce361ce20830::t_8b39b56180119f 34-36
+  s_70ce361ce20830::t_0d4a7a506bba08 38
+  s_70ce361ce20830::t_11ccdd9bf56757 58
+test/langsmith-runs.test.ts
+  s_70ce361ce20830::t_50ec5f492dbc1d 86-87,92,96,105-110
+  s_70ce361ce20830::t_65d933b3b7c66b 190-211
+  s_70ce361ce20830::t_1c1a5bb8be8c2d 5,8,15-28,54,59,67,78,83,101,114-118,143-189,216-222,225-229,233,235-237
+  s_70ce361ce20830::t_746725a6d5921b 120-123,126-142
+  s_70ce361ce20830::t_6deed0f5758faf 4
+  s_70ce361ce20830::t_49c3599e5b587f 102
+  s_70ce361ce20830::t_3e356faa4ad169 113
+src/connectors/sources/langsmith/index.ts
+  s_70ce361ce20830::t_2518784a9718c7 48-50,54-72
+  s_70ce361ce20830::t_616678d7e75a90 268-278,280,285,287-291,293,305-307,313
+  s_70ce361ce20830::t_9b98cfa32c6213 98
+  s_70ce361ce20830::t_9eb0d15dd012d0 205
+  s_70ce361ce20830::t_a93af381e258ce 23-28
+  s_70ce361ce20830::t_8f84cf2e31848c 250-255,263,286,294-302
+  s_70ce361ce20830::t_9296068c119e6c 73
+  s_70ce361ce20830::t_ebc5e30e9a9a92 292
+src/connectors/sources/langsmith/runs.ts
+  s_70ce361ce20830::t_027ded7ead54a3 101
+  s_70ce361ce20830::t_6ded5609692bd6 76-81,86,100
+  s_70ce361ce20830::t_4aaec190838662 146-147,149
+  s_70ce361ce20830::t_1a918daec46a90 172
+  s_70ce361ce20830::t_b9290d7dcadd02 106-109,111-135,138-141
+  s_70ce361ce20830::t_3c40d1cc1d5729 24-29,51-58
+  s_70ce361ce20830::t_c063b76a95a483 165-170,173-175
+  s_70ce361ce20830::t_033ba16e53193c 2,5-23,30-50,59-73,75
+  s_70ce361ce20830::t_43679bac79868d 74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "c97fbd78684cee9a67d8f916aa1bce3154dd52cf",
+  "prompts": {},
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
