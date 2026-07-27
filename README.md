@@ -219,7 +219,25 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, and Anthropic out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and GitHub Copilot out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+
+### GitHub Copilot
+
+The GitHub Copilot provider routes inference through the OpenAI-compatible Copilot API (`https://api.githubcopilot.com`), so teams can reuse an existing Copilot subscription instead of provisioning a separate inference API key.
+
+1. Select `GitHub Copilot` as the provider during `openwiki --init`. If you already have an active [GitHub CLI](https://cli.github.com) session, OpenWiki detects it automatically and offers to reuse it — no manual token entry needed. Otherwise, press <kbd>Tab</kbd> at the credential prompt to run `gh auth login` right there and sign in.
+2. Choose a model (for example `gpt-5.5`).
+
+OpenWiki leaves the GitHub CLI token in the GitHub CLI's own credential store; it does not copy that token into `~/.openwiki/.env`. For CI or another headless environment without a GitHub CLI session, set `COPILOT_API_KEY` explicitly to a GitHub **OAuth token**. Personal Access Tokens (classic or fine-grained) are rejected by the Copilot API for third-party integrations and will not work, even though the GitHub Copilot CLI itself accepts them.
+
+The resulting local provider configuration can stay token-free:
+
+```env
+OPENWIKI_PROVIDER="copilot"
+OPENWIKI_MODEL_ID="gpt-5.5"
+```
+
+In CI (such as the scheduled GitHub Actions workflow), set the `COPILOT_API_KEY` repository secret and export `OPENWIKI_PROVIDER=copilot` in the workflow environment.
 
 ### Alternative base URLs
 
@@ -247,6 +265,17 @@ OPENWIKI_PROVIDER=openai
 OPENAI_API_KEY=your-key
 OPENAI_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-model-name
+```
+
+Similarly, to route the GitHub Copilot provider at an alternative endpoint
+(for example a GitHub Enterprise Cloud data-residency host or a proxied
+gateway) instead of the default `https://api.githubcopilot.com`, set
+`COPILOT_BASE_URL` alongside `COPILOT_API_KEY`:
+
+```bash
+OPENWIKI_PROVIDER=copilot
+COPILOT_API_KEY=your-copilot-token
+COPILOT_BASE_URL=https://your-tenant.ghe.com/api/copilot
 ```
 
 ### OpenAI-compatible endpoints
