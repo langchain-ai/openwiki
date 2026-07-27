@@ -19,7 +19,7 @@ OpenWiki has a small but layered architecture:
 8. `src/agent/docs-only-backend.ts` provides `OpenWikiLocalShellBackend`, extending DeepAgents `LocalShellBackend` with docs-only write guards and output-mode awareness.
 9. `src/agent/openai-chatgpt-oauth.ts` implements the ChatGPT OAuth login flow, token persistence, and refresh for the `openai-chatgpt` provider.
 10. `src/auth/` contains the connector OAuth system: `oauth.ts` (generic runner), `providers.ts` (provider configs), `configure.ts` (`openwiki auth configure`), `ngrok.ts` (Slack HTTPS tunnel), `tokens.ts` (refresh/validation), and `types.ts`.
-11. `src/connectors/` contains the connector registry, MCP client/runtime, source-specific ingestion modules (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions exposed to the agent.
+11. `src/connectors/` contains the connector registry, MCP client/runtime, a shared resilient HTTP helper (`http.ts`), source-specific ingestion modules (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions exposed to the agent.
 12. `src/ingestion.ts` orchestrates source ingestion runs across configured connectors.
 13. `src/code-mode.ts` handles `openwiki code` setup: creates a GitHub Actions workflow only when it does not already exist (so operator customizations survive `--update` runs), and refreshes AGENTS.md/CLAUDE.md snippets in place.
 14. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
@@ -126,6 +126,7 @@ The current design reflects a documentation product rather than a general-purpos
 - `src/connectors/registry.ts`
 - `src/connectors/tools.ts`
 - `src/connectors/types.ts`
+- `src/connectors/http.ts`
 - `src/ingestion.ts`
 - `src/code-mode.ts`
 - `src/constants.ts`

@@ -90,6 +90,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/connectors/registry.ts`
 - `src/connectors/tools.ts`
 - `src/connectors/types.ts`
+- `src/connectors/http.ts`
 - `src/connectors/mcp-client.ts`
 - `src/connectors/mcp-runtime.ts`
 - `src/connectors/io.ts`
