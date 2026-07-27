@@ -68,6 +68,37 @@ describe("synchronizeWikiIndexes", () => {
     );
   });
 
+  test("renders localized section headings when labels are supplied", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/quickstart.md",
+      document("Brzi početak", "Počnite ovdje."),
+    );
+    await backend.write(
+      "/openwiki/architecture/overview.md",
+      document("Pregled", "Struktura sustava."),
+    );
+
+    await synchronizeWikiIndexes(backend, "repository", {
+      files: "Datoteke",
+      directories: "Direktoriji",
+    });
+
+    const rootIndex = await readFile(
+      path.join(rootDir, "openwiki/index.md"),
+      "utf8",
+    );
+
+    expect(rootIndex).toContain(
+      "# Datoteke\n\n- [Brzi početak](quickstart.md)",
+    );
+    expect(rootIndex).toContain(
+      "# Direktoriji\n\n- [architecture](architecture/)",
+    );
+    expect(rootIndex).not.toContain("# Files");
+    expect(rootIndex).not.toContain("# Directories");
+  });
+
   test("uses OKF version frontmatter only at the bundle root", async () => {
     const { backend, rootDir } = await setup();
     await backend.write(

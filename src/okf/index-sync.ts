@@ -1,6 +1,7 @@
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import path from "node:path";
 import type { OpenWikiOutputMode } from "../agent/types.js";
+import { ENGLISH_INDEX_LABELS, type IndexLabels } from "./index-labels.js";
 import {
   normalizeConceptContent,
   parseFrontmatterFields,
@@ -56,10 +57,11 @@ interface Link {
 export async function synchronizeWikiIndexes(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
+  labels: IndexLabels = ENGLISH_INDEX_LABELS,
 ): Promise<void> {
   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
   for (const directory of await collectDirectories(backend, root, true)) {
-    await synchronizeDirectory(backend, directory, root);
+    await synchronizeDirectory(backend, directory, root, labels);
   }
 }
 
@@ -155,6 +157,7 @@ async function synchronizeDirectory(
   backend: BackendProtocolV2,
   directory: Directory,
   root: string,
+  labels: IndexLabels,
 ): Promise<void> {
   const files: Link[] = [];
   const directories: Link[] = [];
@@ -185,7 +188,12 @@ async function synchronizeDirectory(
   }
 
   const indexPath = path.posix.join(directory.path, INDEX_FILE);
-  const content = renderIndex(files, directories, directory.path === root);
+  const content = renderIndex(
+    files,
+    directories,
+    directory.path === root,
+    labels,
+  );
   const existing = directory.entries.some(
     (entry) => !entry.is_dir && entryName(entry) === INDEX_FILE,
   )
@@ -208,15 +216,16 @@ function renderIndex(
   files: Link[],
   directories: Link[],
   isRoot: boolean,
+  labels: IndexLabels,
 ): string {
   const sections = [
-    renderLinks("Files", files, true),
-    renderLinks("Directories", directories, false),
+    renderLinks(labels.files, files, true),
+    renderLinks(labels.directories, directories, false),
   ]
     .filter(Boolean)
     .join("\n\n");
   const version = isRoot ? '---\nokf_version: "0.1"\n---\n\n' : "";
-  return `${version}${sections || "# Files"}\n`;
+  return `${version}${sections || `# ${labels.files}`}\n`;
 }
 
 /**

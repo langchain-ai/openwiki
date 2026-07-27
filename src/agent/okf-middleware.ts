@@ -8,6 +8,7 @@ import {
   type FrontmatterIssue,
 } from "../okf/frontmatter.js";
 import { migrateWikiToOkf, synchronizeWikiIndexes } from "../okf/index-sync.js";
+import { ENGLISH_INDEX_LABELS, type IndexLabels } from "../okf/index-labels.js";
 import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
@@ -22,6 +23,7 @@ const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
 export function createOpenWikiIndexMiddleware(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
+  labels: IndexLabels = ENGLISH_INDEX_LABELS,
 ) {
   return createMiddleware({
     name: "OpenWikiIndexMiddleware",
@@ -37,7 +39,7 @@ export function createOpenWikiIndexMiddleware(
       ),
     afterAgent: async () => {
       await validateWikiMermaid(backend, outputMode);
-      await synchronizeWikiIndexes(backend, outputMode);
+      await synchronizeWikiIndexes(backend, outputMode, labels);
     },
   });
 }
