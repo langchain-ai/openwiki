@@ -8,7 +8,7 @@ import {
 } from "../src/agent/utils.ts";
 
 describe("createRunContext output language", () => {
-  test("propagates a selected language and leaves it unset by default", async () => {
+  test("propagates a selected language and defaults to English", async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-run-context-"));
 
     try {
@@ -17,9 +17,9 @@ describe("createRunContext output language", () => {
       ).resolves.toMatchObject({
         language: "zh-CN",
       });
-      expect(
-        await createRunContext("chat", cwd, "repository"),
-      ).not.toHaveProperty("language");
+      expect(await createRunContext("chat", cwd, "repository")).toMatchObject({
+        language: "en",
+      });
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -43,7 +43,7 @@ describe("createRunContext output language", () => {
     try {
       expect(
         await createRunContext("chat", cwd, "local-wiki", "fake-language"),
-      ).not.toHaveProperty("language");
+      ).toMatchObject({ language: "en" });
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }

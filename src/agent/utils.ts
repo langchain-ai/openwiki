@@ -54,10 +54,11 @@ export async function createRunContext(
   // update without --language keeps the existing wiki consistent instead of
   // producing a mix of the old and new language.
   const requestedLanguage = resolveLanguage(language).language;
-  const effectiveLanguage = requestedLanguage ?? lastUpdate?.language;
-  const languageContext = effectiveLanguage
-    ? { language: effectiveLanguage }
-    : {};
+  // English is materialized as "en" rather than encoded by an absent key, so the
+  // wiki's language is always explicit in metadata and every run inherits a
+  // concrete value.
+  const effectiveLanguage = requestedLanguage ?? lastUpdate?.language ?? "en";
+  const languageContext = { language: effectiveLanguage };
   const wikiGoal = await readRunWikiGoal(cwd, outputMode);
 
   if (command === "chat") {
