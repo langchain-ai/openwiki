@@ -26,6 +26,23 @@ const EXCLUDED_FILES = new Set([
 ]);
 
 /**
+ * LangGraph run tag that excludes a model call from the `messages` stream mode.
+ *
+ * The agent is driven with `messages`-mode streaming, which captures every LLM
+ * token in the graph, including the translation calls this middleware makes in
+ * `beforeAgent`. Tagging those calls keeps their raw translated Markdown out of
+ * the token stream so it never scrolls past in the TUI; LangGraph honors this tag
+ * (and the bare `nostream`) when deciding which runs to surface.
+ */
+const NOSTREAM_TAG = "langsmith:nostream";
+
+/**
+ * Single friendly line shown once while the wiki is being translated, in place
+ * of the suppressed per-token translation output.
+ */
+const TRANSLATION_STATUS_MESSAGE = "Translating wiki docs...";
+
+/**
  * What an `update` run should do about the wiki's language before the agent
  * runs.
  *
@@ -123,6 +140,12 @@ function primarySubtag(tag: string | undefined): string {
  * its previous language, stamped with a pending marker so the next update retries
  * it, and reported through `onWarning`. `onWarning` defaults to writing the
  * (already secret-redacted) summary to stderr.
+ *
+ * The raw translated Markdown is kept out of the token stream (see
+ * {@link NOSTREAM_TAG}); `onStatus` is called once instead, with a short line
+ * announcing the pass, so the user sees progress without the flood of tokens. It
+ * fires only when at least one page is actually translated, so a no-op marker
+ * sweep stays silent, and defaults to writing the line to stderr.
  */
 export function createWikiTranslationMiddleware(
   backend: BackendProtocolV2,
@@ -132,11 +155,21 @@ export function createWikiTranslationMiddleware(
   onWarning: (message: string) => void = (message) => {
     process.stderr.write(`${message}\n`);
   },
+  onStatus: (message: string) => void = (message) => {
+    process.stderr.write(`${message}\n`);
+  },
 ) {
   return createMiddleware({
     name: "OpenWikiTranslationMiddleware",
     beforeAgent: async () => {
-      await translateWiki(backend, outputMode, model, plan, onWarning);
+      await translateWiki(
+        backend,
+        outputMode,
+        model,
+        plan,
+        onWarning,
+        onStatus,
+      );
     },
   });
 }
@@ -148,7 +181,9 @@ export function createWikiTranslationMiddleware(
  * marked pending, and any failure (a model or backend error) is caught, the page
  * is stamped for retry, and the run continues rather than aborting. All failures
  * are reported once through `onWarning`, so a single bad page degrades the update
- * gracefully instead of crashing it.
+ * gracefully instead of crashing it. `onStatus` announces the pass once, lazily,
+ * just before the first page is translated, so a sweep that finds nothing to do
+ * prints no status at all.
  */
 async function translateWiki(
   backend: BackendProtocolV2,
@@ -156,9 +191,11 @@ async function translateWiki(
   model: BaseChatModel,
   plan: TranslationPlan,
   onWarning: (message: string) => void,
+  onStatus: (message: string) => void,
 ): Promise<void> {
   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
   const failures: string[] = [];
+  let announced = false;
 
   for (const filePath of await collectMarkdownFiles(backend, root)) {
     let content: string;
@@ -177,6 +214,13 @@ async function translateWiki(
       readFrontmatterField(content, OPENWIKI_TRANSLATION_PENDING_FIELD) !==
       undefined;
     if (!plan.translateAll && !pending) continue;
+
+    // Announce the pass on the first page that will actually be translated, so a
+    // no-op sweep stays silent and the raw token stream stays suppressed.
+    if (!announced) {
+      onStatus(TRANSLATION_STATUS_MESSAGE);
+      announced = true;
+    }
 
     try {
       await translatePage(backend, model, filePath, content, plan);
@@ -272,6 +316,10 @@ async function markPending(
 
 /**
  * Asks the model to translate a Markdown document, returning its raw text.
+ *
+ * The call is tagged with {@link NOSTREAM_TAG} so its tokens are excluded from
+ * the agent's `messages` stream: the translated Markdown is written back through
+ * the backend rather than streamed to the TUI token by token.
  */
 async function translateMarkdown(
   model: BaseChatModel,
@@ -279,10 +327,13 @@ async function translateMarkdown(
   from: string,
   to: string,
 ): Promise<string> {
-  const response = await model.invoke([
-    new SystemMessage(buildTranslationPrompt(from, to)),
-    new HumanMessage(content),
-  ]);
+  const response = await model.invoke(
+    [
+      new SystemMessage(buildTranslationPrompt(from, to)),
+      new HumanMessage(content),
+    ],
+    { tags: [NOSTREAM_TAG] },
+  );
   return extractText(response.content);
 }
 

@@ -30,13 +30,17 @@ function sweep(language: string): TranslationPlan {
  * for each page body, without any network access.
  */
 function fakeModel(translate: (content: string) => string) {
-  const calls: { system: string; human: string }[] = [];
+  const calls: { system: string; human: string; tags: string[] }[] = [];
   const asText = (message: BaseMessage): string =>
     typeof message.content === "string" ? message.content : "";
   const model = {
-    invoke: (messages: BaseMessage[]) => {
+    invoke: (messages: BaseMessage[], options?: { tags?: string[] }) => {
       const [system, human] = messages;
-      calls.push({ system: asText(system), human: asText(human) });
+      calls.push({
+        system: asText(system),
+        human: asText(human),
+        tags: options?.tags ?? [],
+      });
       return Promise.resolve(new AIMessage(translate(asText(human))));
     },
   };
@@ -157,6 +161,55 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
     expect(calls[0].system).toContain(
       '"title", "description", "type", and "tags"',
     );
+    // Every translation call is tagged so its tokens are excluded from the
+    // agent's messages stream and never scroll past in the TUI.
+    for (const call of calls) {
+      expect(call.tags).toContain("langsmith:nostream");
+    }
+  });
+
+  test("announces the pass once when at least one page is translated", async () => {
+    const { backend } = await setup();
+    await backend.write("/openwiki/one.md", "# One\n\nBody.\n");
+    await backend.write("/openwiki/two.md", "# Two\n\nBody.\n");
+
+    const status: string[] = [];
+    const { model } = fakeModel((content) => `T\n${content}`);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+        () => {},
+        (message) => status.push(message),
+      ),
+    );
+
+    // A single line for the whole pass, not one per page.
+    expect(status).toEqual(["Translating wiki docs..."]);
+  });
+
+  test("stays silent on a no-op sweep with nothing to translate", async () => {
+    const { backend } = await setup();
+    await backend.write("/openwiki/one.md", "# One\n\nBody.\n");
+
+    const status: string[] = [];
+    const { model, calls } = fakeModel((content) => `T\n${content}`);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        sweep("en"),
+        () => {},
+        (message) => status.push(message),
+      ),
+    );
+
+    // No pending pages means no model calls and no announcement.
+    expect(calls).toHaveLength(0);
+    expect(status).toEqual([]);
   });
 
   test("keeps translating other pages when one page's write fails and reports it", async () => {

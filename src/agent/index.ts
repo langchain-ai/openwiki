@@ -329,6 +329,12 @@ async function runOpenWikiAgentCore(
                       // re-render and --print's discard of streamed text.
                       process.stderr.write(`${message}\n`);
                     },
+                    // The pass announces itself with one line in place of the
+                    // suppressed per-token translation output. It is routine
+                    // progress, so unlike a warning it is not mirrored to stderr.
+                    (message) => {
+                      options.onEvent?.({ type: "text", text: message });
+                    },
                   ),
                 ]
               : []),
