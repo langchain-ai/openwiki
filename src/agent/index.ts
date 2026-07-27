@@ -33,7 +33,7 @@ import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
 import {
   createWikiTranslationMiddleware,
-  resolveTranslationSwitch,
+  resolveTranslationPlan,
 } from "./translation-middleware.js";
 import {
   CODEX_ORIGINATOR,
@@ -293,10 +293,11 @@ async function runOpenWikiAgentCore(
     }),
   });
   // An update inherits the wiki's persisted language unless --language requests a
-  // different one. When it does, retranslate every existing page before the agent
-  // runs so the incremental update does not leave a mix of the old and new
-  // language.
-  const translation = resolveTranslationSwitch(
+  // different one. The plan drives a beforeAgent pass that, on a switch,
+  // retranslates every page so the incremental update does not leave a mix of the
+  // old and new language, and on any update retries pages a prior run left
+  // pending. It is undefined for init and chat, which never translate.
+  const translation = resolveTranslationPlan(
     command,
     resolveLanguage(options.language).language,
     context.lastUpdate?.language,
@@ -322,6 +323,12 @@ async function runOpenWikiAgentCore(
                     outputMode,
                     model,
                     translation,
+                    (message) => {
+                      options.onEvent?.({ type: "text", text: message });
+                      // Also emit to stderr so the warning survives the TUI
+                      // re-render and --print's discard of streamed text.
+                      process.stderr.write(`${message}\n`);
+                    },
                   ),
                 ]
               : []),

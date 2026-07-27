@@ -120,6 +120,22 @@ describe("createSystemPrompt openwiki_generated enrichment guidance", () => {
   }
 });
 
+/**
+ * The translation middleware is the sole owner of the
+ * `openwiki_translation_pending` marker. The prompt must tell the agent to leave
+ * it alone so the model never adds, edits, or clears a marker code manages.
+ */
+describe("createSystemPrompt translation-marker guidance", () => {
+  for (const outputMode of ["repository", "local-wiki"] as const) {
+    test(`${outputMode} mode: tells the agent to ignore the pending marker`, () => {
+      const prompt = createSystemPrompt("update", outputMode);
+
+      expect(prompt).toContain("openwiki_translation_pending");
+      expect(prompt).toMatch(/Do not add, edit, remove, or act on it/);
+    });
+  }
+});
+
 describe("createDiagramInstructions", () => {
   test("nudges toward diagrams and defers label-safety to the skill", () => {
     const text = createDiagramInstructions();

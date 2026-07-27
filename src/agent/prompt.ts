@@ -169,6 +169,7 @@ timestamp: <Optional ISO 8601 datetime>
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
 - When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
 - OpenWiki repairs front matter deterministically after every run, so a page is never rejected for missing or invalid front matter. If a page's front matter contains \`openwiki_generated: true\`, that metadata was code-derived as a fallback: replace it with an accurate \`type\`, \`title\`, and \`description\` grounded in the page body, then remove the \`openwiki_generated\` field.
+- If a page's front matter contains an \`openwiki_translation_pending\` field, ignore it: it is a translation-system marker that OpenWiki manages automatically. Do not add, edit, remove, or act on it.
 
 Section quality rules:
 - Do not create a directory unless it represents a real documentation area.

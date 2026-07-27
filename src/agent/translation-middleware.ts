@@ -4,11 +4,19 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import { createMiddleware } from "langchain";
 import path from "node:path";
+import { getErrorMessage } from "../diagnostics.js";
+import {
+  OPENWIKI_TRANSLATION_PENDING_FIELD,
+  readFrontmatterField,
+  removeFrontmatterField,
+  setFrontmatterField,
+} from "../okf/frontmatter.js";
 import type { OpenWikiCommand, OpenWikiOutputMode } from "./types.js";
 
 /**
  * Wiki files that are regenerated deterministically (indexes) or are not
- * human-facing prose (logs, scratch plans), so they are never translated.
+ * human-facing prose (logs, scratch plans, the user brief), so they are never
+ * translated.
  */
 const EXCLUDED_FILES = new Set([
   "index.md",
@@ -18,44 +26,67 @@ const EXCLUDED_FILES = new Set([
 ]);
 
 /**
- * The source and target languages for a translate-all pass, as canonical
- * BCP-47 tags (for example `en` and `zh-CN`).
+ * What an `update` run should do about the wiki's language before the agent
+ * runs.
+ *
+ * The plan is resolved once per run and drives the translation middleware: it
+ * says which language every page must end up in, which language to translate
+ * from, and whether the whole wiki needs converting or only pages a prior run
+ * left pending.
  */
-export interface WikiTranslationOptions {
+export interface TranslationPlan {
   /**
-   * The language the wiki is currently written in.
+   * The language every eligible page must end up written in, as a canonical
+   * BCP-47 tag (for example `en` or `zh-CN`).
    */
-  from: string;
+  target: string;
 
   /**
-   * The language every page should be rewritten into.
+   * The language the wiki is currently written in, used as the translation
+   * source hint. Detection is best-effort: a page left pending by an earlier
+   * failed switch may not actually be in this language, so the model is asked to
+   * detect the real source rather than trust this blindly.
    */
-  to: string;
+  source: string;
+
+  /**
+   * When true the run must translate every page (a real language switch); when
+   * false only pages carrying a pending-translation marker are retranslated, and
+   * a wiki with none is left untouched.
+   */
+  translateAll: boolean;
 }
 
 /**
- * Decides whether a run must retranslate the existing wiki, and between which
- * languages.
+ * Resolves the translation plan for a run, or undefined when translation never
+ * applies (any command other than `update`).
  *
- * A translate-all pass is warranted only for an `update` that explicitly
- * requests a language whose primary subtag differs from the wiki's persisted
- * one (an absent persisted language means the wiki is English). Comparing
- * primary subtags avoids a needless full retranslation for a region-only change
- * such as `en` to `en-GB`. Returns the source and target languages when a switch
- * is needed, or `undefined` otherwise.
+ * OpenWiki treats the wiki's language as persisted state: an `update` inherits
+ * it unless `--language` requests a different one. The target is the requested
+ * language, else the persisted one, else English. A full translate-all pass is
+ * warranted only when a language is explicitly requested whose primary subtag
+ * differs from the persisted one; comparing primary subtags avoids a needless
+ * retranslation for a region-only change such as `en` to `en-GB`. Even without a
+ * switch the plan is returned for every update so the middleware can still sweep
+ * pages a prior run left pending.
  */
-export function resolveTranslationSwitch(
+export function resolveTranslationPlan(
   command: OpenWikiCommand,
   requestedLanguage: string | undefined,
   currentWikiLanguage: string | undefined,
-): WikiTranslationOptions | undefined {
-  if (command !== "update" || requestedLanguage === undefined) {
+): TranslationPlan | undefined {
+  if (command !== "update") {
     return undefined;
   }
-  if (primarySubtag(requestedLanguage) === primarySubtag(currentWikiLanguage)) {
-    return undefined;
-  }
-  return { from: currentWikiLanguage ?? "en", to: requestedLanguage };
+
+  const source = currentWikiLanguage ?? "en";
+  return {
+    target: requestedLanguage ?? source,
+    source,
+    translateAll:
+      requestedLanguage !== undefined &&
+      primarySubtag(requestedLanguage) !== primarySubtag(currentWikiLanguage),
+  };
 }
 
 /**
@@ -72,69 +103,171 @@ function primarySubtag(tag: string | undefined): string {
 }
 
 /**
- * Creates middleware that retranslates every existing wiki page before the
- * agent runs.
+ * Creates middleware that brings every existing wiki page into the run's target
+ * language before the agent runs.
  *
- * OpenWiki treats the wiki's language as persisted state: an update inherits it
- * unless `--language` requests a different one. When it differs, the agent's
- * incremental update alone would leave a mix of the old and new language, since
- * it only rewrites pages whose source changed. This `beforeAgent` hook closes
- * that gap by walking the wiki up front and rewriting each page into the target
- * language, so the agent then edits an already-uniform wiki.
+ * OpenWiki treats the wiki's language as persisted state, so an incremental
+ * update alone would leave a mix of the old and new language on a switch, since
+ * the agent only rewrites pages whose source changed. This `beforeAgent` hook
+ * closes that gap. It is mounted on every `update` and does one of three things,
+ * cheapest first: with nothing to do it only walks the tree (zero model calls);
+ * on a plain update it retranslates just the pages a prior run left marked
+ * `openwiki_translation_pending`; on a real language switch it retranslates every
+ * page.
  *
- * The model's output is treated purely as file text and written back through
- * the sandboxed docs-only backend; it is never executed, and every path comes
- * from backend enumeration rather than model output.
+ * The model's output is treated purely as file text and written back through the
+ * sandboxed docs-only backend; it is never executed, and every path comes from
+ * backend enumeration rather than model output.
+ *
+ * A single page's translation failure never aborts the run: the page is left in
+ * its previous language, stamped with a pending marker so the next update retries
+ * it, and reported through `onWarning`. `onWarning` defaults to writing the
+ * (already secret-redacted) summary to stderr.
  */
 export function createWikiTranslationMiddleware(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   model: BaseChatModel,
-  languages: WikiTranslationOptions,
+  plan: TranslationPlan,
+  onWarning: (message: string) => void = (message) => {
+    process.stderr.write(`${message}\n`);
+  },
 ) {
   return createMiddleware({
     name: "OpenWikiTranslationMiddleware",
     beforeAgent: async () => {
-      await translateWiki(backend, outputMode, model, languages);
+      await translateWiki(backend, outputMode, model, plan, onWarning);
     },
   });
 }
 
 /**
- * Rewrites every concept page in the wiki from one language into another.
+ * Brings each concept page into the plan's target language.
+ *
+ * Each page is handled independently: a plain update skips pages that are not
+ * marked pending, and any failure (a model or backend error) is caught, the page
+ * is stamped for retry, and the run continues rather than aborting. All failures
+ * are reported once through `onWarning`, so a single bad page degrades the update
+ * gracefully instead of crashing it.
  */
 async function translateWiki(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   model: BaseChatModel,
-  languages: WikiTranslationOptions,
+  plan: TranslationPlan,
+  onWarning: (message: string) => void,
 ): Promise<void> {
   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+  const failures: string[] = [];
+
   for (const filePath of await collectMarkdownFiles(backend, root)) {
-    await translateFile(backend, model, filePath, languages);
+    let content: string;
+    try {
+      content = await readText(backend, filePath);
+    } catch (error) {
+      // getErrorMessage redacts any provider credential an error may carry
+      // before the path and reason reach stderr or the TUI.
+      failures.push(`- ${filePath}: ${getErrorMessage(error)}`);
+      continue;
+    }
+
+    // On a plain update only retry pages a prior run left pending; a real switch
+    // retranslates every page.
+    const pending =
+      readFrontmatterField(content, OPENWIKI_TRANSLATION_PENDING_FIELD) !==
+      undefined;
+    if (!plan.translateAll && !pending) continue;
+
+    try {
+      await translatePage(backend, model, filePath, content, plan);
+    } catch (error) {
+      const reasons = [getErrorMessage(error)];
+      const stampError = await markPending(
+        backend,
+        filePath,
+        content,
+        plan.target,
+      );
+      if (stampError) {
+        reasons.push(`could not mark it for retry: ${stampError}`);
+      }
+      failures.push(`- ${filePath}: ${reasons.join("; ")}`);
+    }
+  }
+
+  if (failures.length > 0) {
+    onWarning(
+      `OpenWiki could not translate ${failures.length} page(s) into ` +
+        `${describeLanguage(plan.target)}; they keep their previous language ` +
+        `and will be retried on the next update:\n${failures.join("\n")}`,
+    );
   }
 }
 
 /**
- * Translates one concept file in place, skipping writes that would not change
- * the content.
+ * Translates one concept page into the plan's target language and clears any
+ * pending marker on success, writing only when the content changed.
+ *
+ * Throws on a model or backend failure, and on empty model output, so the caller
+ * can stamp the page for retry. A successful translation always drops the pending
+ * marker deterministically, whatever the model returned, so a page that has just
+ * been converted is never left flagged.
  */
-async function translateFile(
+async function translatePage(
   backend: BackendProtocolV2,
   model: BaseChatModel,
   filePath: string,
-  languages: WikiTranslationOptions,
+  original: string,
+  plan: TranslationPlan,
 ): Promise<void> {
-  const original = await readText(backend, filePath);
   if (!original.trim()) return;
 
-  const translated = await translateMarkdown(model, original, languages);
-  if (!translated.trim() || translated.trim() === original.trim()) return;
-
-  const result = await backend.edit(filePath, original, translated);
-  if (result.error) {
-    throw new Error(`Unable to translate ${filePath}: ${result.error}`);
+  const translated = await translateMarkdown(
+    model,
+    original,
+    plan.source,
+    plan.target,
+  );
+  if (!translated.trim()) {
+    throw new Error("the model returned an empty translation");
   }
+
+  const finalized = removeFrontmatterField(
+    translated,
+    OPENWIKI_TRANSLATION_PENDING_FIELD,
+  );
+  if (finalized === original) return;
+
+  const result = await backend.edit(filePath, original, finalized);
+  if (result.error) {
+    throw new Error(`could not write the translation: ${result.error}`);
+  }
+}
+
+/**
+ * Stamps a page with the pending-translation marker so a later update retries
+ * it, preserving all other front matter.
+ *
+ * Returns undefined on success (including when the marker already matched and no
+ * write was needed), or a sanitized reason string when the stamp could not be
+ * written, so the caller can fold it into the surrounding failure report rather
+ * than swallow it.
+ */
+async function markPending(
+  backend: BackendProtocolV2,
+  filePath: string,
+  content: string,
+  target: string,
+): Promise<string | undefined> {
+  const stamped = setFrontmatterField(
+    content,
+    OPENWIKI_TRANSLATION_PENDING_FIELD,
+    target,
+  );
+  if (stamped === content) return undefined;
+
+  const result = await backend.edit(filePath, content, stamped);
+  return result.error ? getErrorMessage(new Error(result.error)) : undefined;
 }
 
 /**
@@ -143,7 +276,8 @@ async function translateFile(
 async function translateMarkdown(
   model: BaseChatModel,
   content: string,
-  { from, to }: WikiTranslationOptions,
+  from: string,
+  to: string,
 ): Promise<string> {
   const response = await model.invoke([
     new SystemMessage(buildTranslationPrompt(from, to)),
@@ -155,12 +289,23 @@ async function translateMarkdown(
 /**
  * Builds the system instruction that constrains the translation to prose while
  * preserving Markdown structure and code.
+ *
+ * The source language is a hint, not a guarantee: a page left pending by an
+ * earlier failed switch may still be in a different language, so the model is
+ * told to detect the real source and to leave content already in the target
+ * language unchanged.
  */
 function buildTranslationPrompt(from: string, to: string): string {
   return `You are a professional technical translator for a software documentation wiki.
-Translate the Markdown document provided by the user from ${describeLanguage(
+Translate the Markdown document provided by the user into ${describeLanguage(
+    to,
+  )}. It is expected to be in ${describeLanguage(
     from,
-  )} into ${describeLanguage(to)}.
+  )}, but detect its actual language and translate any content that is not already in ${describeLanguage(
+    to,
+  )}. If the document is already entirely in ${describeLanguage(
+    to,
+  )}, return it unchanged.
 
 Rules:
 - Translate prose, headings, list items, blockquotes, and table cell text.

@@ -7,8 +7,23 @@ import { describe, expect, test, vi } from "vitest";
 import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
 import {
   createWikiTranslationMiddleware,
-  resolveTranslationSwitch,
+  resolveTranslationPlan,
+  type TranslationPlan,
 } from "../src/agent/translation-middleware.ts";
+
+/**
+ * A translate-all plan (a real language switch) into the given target.
+ */
+function switchTo(target: string, source = "en"): TranslationPlan {
+  return { target, source, translateAll: true };
+}
+
+/**
+ * A plain-update plan that only sweeps pages left pending, never a full pass.
+ */
+function sweep(language: string): TranslationPlan {
+  return { target: language, source: language, translateAll: false };
+}
 
 /**
  * Records every prompt the middleware sends and returns a scripted translation
@@ -53,35 +68,54 @@ async function runBeforeAgent(
   await (beforeAgent as () => Promise<unknown>)();
 }
 
-describe("resolveTranslationSwitch", () => {
-  test("triggers when an update requests a different language", () => {
-    expect(resolveTranslationSwitch("update", "zh-CN", "en")).toEqual({
-      from: "en",
-      to: "zh-CN",
+describe("resolveTranslationPlan", () => {
+  test("requests a full pass when an update switches to a different language", () => {
+    expect(resolveTranslationPlan("update", "zh-CN", "en")).toEqual({
+      target: "zh-CN",
+      source: "en",
+      translateAll: true,
     });
   });
 
   test("treats an absent persisted language as English", () => {
-    expect(resolveTranslationSwitch("update", "zh-CN", undefined)).toEqual({
-      from: "en",
-      to: "zh-CN",
+    expect(resolveTranslationPlan("update", "zh-CN", undefined)).toEqual({
+      target: "zh-CN",
+      source: "en",
+      translateAll: true,
     });
-    expect(
-      resolveTranslationSwitch("update", "en-US", undefined),
-    ).toBeUndefined();
   });
 
-  test("ignores a region-only change with the same primary subtag", () => {
-    expect(resolveTranslationSwitch("update", "en-GB", "en")).toBeUndefined();
-    expect(
-      resolveTranslationSwitch("update", "zh-TW", "zh-CN"),
-    ).toBeUndefined();
+  test("does not switch for a region-only change with the same primary subtag", () => {
+    expect(resolveTranslationPlan("update", "en-GB", "en")).toEqual({
+      target: "en-GB",
+      source: "en",
+      translateAll: false,
+    });
+    expect(resolveTranslationPlan("update", "zh-TW", "zh-CN")).toEqual({
+      target: "zh-TW",
+      source: "zh-CN",
+      translateAll: false,
+    });
   });
 
-  test("does nothing without a requested language or for non-update commands", () => {
-    expect(resolveTranslationSwitch("update", undefined, "en")).toBeUndefined();
-    expect(resolveTranslationSwitch("init", "zh-CN", "en")).toBeUndefined();
-    expect(resolveTranslationSwitch("chat", "zh-CN", "en")).toBeUndefined();
+  test("returns a marker-sweep plan for a plain update with no requested language", () => {
+    // No switch, but still a plan so pending pages get retried, targeting the
+    // persisted language (source and target match).
+    expect(resolveTranslationPlan("update", undefined, "zh-CN")).toEqual({
+      target: "zh-CN",
+      source: "zh-CN",
+      translateAll: false,
+    });
+    expect(resolveTranslationPlan("update", undefined, undefined)).toEqual({
+      target: "en",
+      source: "en",
+      translateAll: false,
+    });
+  });
+
+  test("never applies to non-update commands", () => {
+    expect(resolveTranslationPlan("init", "zh-CN", "en")).toBeUndefined();
+    expect(resolveTranslationPlan("chat", "zh-CN", "en")).toBeUndefined();
   });
 });
 
@@ -99,7 +133,7 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
       backend,
       "repository",
       model,
-      { from: "en", to: "zh-CN" },
+      switchTo("zh-CN"),
     );
     await runBeforeAgent(middleware);
 
@@ -125,6 +159,146 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
     );
   });
 
+  test("keeps translating other pages when one page's write fails and reports it", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/good.md", "# Good\n\nBody.\n");
+    await backend.write("/openwiki/bad.md", "# Bad\n\nBody.\n");
+
+    // Fail every write for one page only; the others must still convert. Both the
+    // translation write and the retry-stamp write are refused here.
+    const realEdit = backend.edit.bind(backend);
+    vi.spyOn(backend, "edit").mockImplementation((filePath, before, after) =>
+      filePath.endsWith("bad.md")
+        ? Promise.resolve({ error: "disk on fire" })
+        : realEdit(filePath, before, after),
+    );
+
+    const warnings: string[] = [];
+    const { model } = fakeModel((content) => `T\n${content}`);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+        (message) => warnings.push(message),
+      ),
+    );
+
+    // The healthy page was still translated despite the sibling failure.
+    await expect(
+      readFile(path.join(rootDir, "openwiki/good.md"), "utf8"),
+    ).resolves.toBe("T\n# Good\n\nBody.\n");
+    // The failing page is left untouched and named in a single warning.
+    await expect(
+      readFile(path.join(rootDir, "openwiki/bad.md"), "utf8"),
+    ).resolves.toBe("# Bad\n\nBody.\n");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("bad.md");
+    expect(warnings[0]).toContain("disk on fire");
+  });
+
+  test("stamps a page for retry when the model fails to translate it", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/good.md", "# Good\n\nBody.\n");
+    await backend.write("/openwiki/bad.md", "# Bad\n\nBody.\n");
+
+    // The model translates every page except the one whose body mentions "Bad".
+    const model = {
+      invoke: (messages: BaseMessage[]) => {
+        const human = messages[1];
+        const text = typeof human.content === "string" ? human.content : "";
+        return text.includes("# Bad")
+          ? Promise.reject(new Error("model exploded"))
+          : Promise.resolve(new AIMessage(`T\n${text}`));
+      },
+    } as unknown as BaseChatModel;
+
+    const warnings: string[] = [];
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+        (message) => warnings.push(message),
+      ),
+    );
+
+    // The healthy page converts; the failed one keeps its body but gains a
+    // pending marker carrying the target language, so a later update retries it.
+    await expect(
+      readFile(path.join(rootDir, "openwiki/good.md"), "utf8"),
+    ).resolves.toBe("T\n# Good\n\nBody.\n");
+    const bad = await readFile(path.join(rootDir, "openwiki/bad.md"), "utf8");
+    expect(bad).toContain('openwiki_translation_pending: "zh-CN"');
+    expect(bad).toContain("# Bad");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("bad.md");
+    expect(warnings[0]).toContain("model exploded");
+  });
+
+  test("on a plain update, retries only pending pages and clears the marker", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/settled.md",
+      '---\ntype: "参考"\ntitle: "已完成"\n---\n\n# 已完成\n',
+    );
+    await backend.write(
+      "/openwiki/pending.md",
+      '---\ntype: "参考"\ntitle: "待翻译"\nopenwiki_translation_pending: "zh-CN"\n---\n\n# 待翻译\n',
+    );
+
+    // Identity model: the pending page is already in the target language, so a
+    // successful pass only needs to strip its marker.
+    const { model, calls } = fakeModel((content) => content);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        sweep("zh-CN"),
+      ),
+    );
+
+    // Only the pending page was sent to the model; the settled page was skipped.
+    expect(calls).toHaveLength(1);
+    expect(calls[0].human).toContain("待翻译");
+
+    // The settled page is byte-for-byte unchanged.
+    await expect(
+      readFile(path.join(rootDir, "openwiki/settled.md"), "utf8"),
+    ).resolves.toBe('---\ntype: "参考"\ntitle: "已完成"\n---\n\n# 已完成\n');
+    // The marker is cleared while the rest of the front matter survives.
+    const pending = await readFile(
+      path.join(rootDir, "openwiki/pending.md"),
+      "utf8",
+    );
+    expect(pending).not.toContain("openwiki_translation_pending");
+    expect(pending).toContain('type: "参考"');
+    expect(pending).toContain('title: "待翻译"');
+  });
+
+  test("on a plain update with no pending pages, calls the model zero times", async () => {
+    const { backend } = await setup();
+    await backend.write("/openwiki/one.md", "# One\n\nBody.\n");
+    await backend.write("/openwiki/two.md", "# Two\n\nBody.\n");
+
+    const edit = vi.spyOn(backend, "edit");
+    const { model, calls } = fakeModel((content) => `X\n${content}`);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        sweep("en"),
+      ),
+    );
+
+    expect(calls).toHaveLength(0);
+    expect(edit).not.toHaveBeenCalled();
+  });
+
   test("skips indexes, logs, control files, and dotfiles", async () => {
     const { backend, rootDir } = await setup();
     const dir = path.join(rootDir, "openwiki");
@@ -138,10 +312,12 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
 
     const { model, calls } = fakeModel((content) => `X\n${content}`);
     await runBeforeAgent(
-      createWikiTranslationMiddleware(backend, "repository", model, {
-        from: "en",
-        to: "hi",
-      }),
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("hi"),
+      ),
     );
 
     // Only the one real concept page is translated.
@@ -162,10 +338,12 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
     const edit = vi.spyOn(backend, "edit");
     const { model } = fakeModel((content) => content);
     await runBeforeAgent(
-      createWikiTranslationMiddleware(backend, "repository", model, {
-        from: "en",
-        to: "zh-CN",
-      }),
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+      ),
     );
 
     expect(edit).not.toHaveBeenCalled();
@@ -177,10 +355,12 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
 
     const { model } = fakeModel((content) => `[hi] ${content}`);
     await runBeforeAgent(
-      createWikiTranslationMiddleware(backend, "local-wiki", model, {
-        from: "en",
-        to: "hi",
-      }),
+      createWikiTranslationMiddleware(
+        backend,
+        "local-wiki",
+        model,
+        switchTo("hi"),
+      ),
     );
 
     await expect(readFile(path.join(rootDir, "note.md"), "utf8")).resolves.toBe(
@@ -194,10 +374,12 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
 
     await expect(
       runBeforeAgent(
-        createWikiTranslationMiddleware(backend, "repository", model, {
-          from: "en",
-          to: "zh-CN",
-        }),
+        createWikiTranslationMiddleware(
+          backend,
+          "repository",
+          model,
+          switchTo("zh-CN"),
+        ),
       ),
     ).resolves.toBeUndefined();
     expect(calls).toHaveLength(0);
