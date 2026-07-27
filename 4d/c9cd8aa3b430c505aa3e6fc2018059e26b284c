@@ -1,0 +1,44 @@
+test/flags.test.ts
+  s_808572fbdb878e::t_9cb47bed329905 1-80
+test/app-frames.characterization.test.tsx
+  s_808572fbdb878e::t_c83e4c4449036e 1-14,16-24,26-30
+  s_808572fbdb878e::t_53b0092d5fe09b 15,25
+src/commands.ts
+  s_808572fbdb878e::t_ae02bd539079cf 6
+  s_808572fbdb878e::t_dfec997cf40609 79-80,85-90,92-95,97-133,135,138,140-141,145-156,158-165,167-185,187-194,196-199,201-203,206-208,212-214,218-224,226-233,235-249,251-261,263-266,268-275,278-285,287-289,292-295,299,303-304,307-341,345,349-354,357-361,364-405
+  s_808572fbdb878e::t_f1617009a446c9 406
+package.json
+  s_808572fbdb878e::t_5025681e7430f0 89
+src/cli.tsx
+  s_808572fbdb878e::t_87f155b78cf9d2 3710-3791
+  s_808572fbdb878e::t_235295bb159506 5-6
+  s_808572fbdb878e::t_95c4e76f5afedd 268
+src/cli/registry.ts
+  s_808572fbdb878e::t_39c7034081e08d 1-38
+test/support/ink.tsx
+  s_808572fbdb878e::t_d1965340d67252 1-52
+test/commands-parse.characterization.test.ts
+  s_808572fbdb878e::t_7cd1295cf16ad7 1-39
+src/cli/flags.ts
+  s_808572fbdb878e::t_22b7154be1b5a0 1-166
+pnpm-lock.yaml
+  s_808572fbdb878e::t_bb130a0dd225ef 102-104,1657-1665,4186-4189
+test/__snapshots__/commands-parse.characterization.test.ts.snap
+  s_808572fbdb878e::t_c04746d900a352 1-229
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "4dc9cd8aa3b430c505aa3e6fc2018059e26b284c",
+  "prompts": {},
+  "sessions": {
+    "s_808572fbdb878e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "64eab921-4549-48f4-a899-6ca643f83534",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

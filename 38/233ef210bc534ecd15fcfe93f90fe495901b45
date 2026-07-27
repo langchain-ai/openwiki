@@ -1,0 +1,58 @@
+src/agent/okf-middleware.ts
+  s_94ccb1fd0cf306::t_44bacb7a3bc81e 31,36,47
+  s_94ccb1fd0cf306::t_6f697a770fd6d7 11-15
+src/agent/translation-middleware.ts
+  s_94ccb1fd0cf306::t_2dcc64163404de 167
+src/okf/index-sync.ts
+  s_94ccb1fd0cf306::t_44e338868b59e8 190
+  s_94ccb1fd0cf306::t_57e6e07478ea2e 85,103
+  s_94ccb1fd0cf306::t_de6f80a13971f7 4-8
+  s_94ccb1fd0cf306::t_4ae0b4eb8f38ab 65,69
+  s_94ccb1fd0cf306::t_763402f2396050 119,122
+  s_94ccb1fd0cf306::t_5eeb12b426a31f 169
+src/okf/frontmatter.ts
+  s_94ccb1fd0cf306::t_0694daaecb0b91 286-288,293,299
+  s_94ccb1fd0cf306::t_367e84ef1a1e78 244-246
+  s_94ccb1fd0cf306::t_b742e0497b6cfd 251,254
+test/okf/frontmatter.test.ts
+  s_94ccb1fd0cf306::t_69b0fc2c018191 121,124-126
+  s_94ccb1fd0cf306::t_4c4031e705dd4d 61,67-72,127
+  s_94ccb1fd0cf306::t_7e51cb0fe0f7c0 62-66
+test/translation-middleware.test.ts
+  s_94ccb1fd0cf306::t_7024328ece9fad 121-125
+test/index-labels.test.ts
+  s_94ccb1fd0cf306::t_65099ffbf21372 2-5
+  s_94ccb1fd0cf306::t_d8ab155e5d35d1 58-84
+src/agent/index.ts
+  s_94ccb1fd0cf306::t_28c0e874571fb5 28-31
+  s_94ccb1fd0cf306::t_86fb7710270e25 304-306,308
+  s_94ccb1fd0cf306::t_26684266ff92e7 328-333
+src/agent/prompt.ts
+  s_94ccb1fd0cf306::t_74bb709def0522 214
+src/okf/index-labels.ts
+  s_94ccb1fd0cf306::t_c96610a9a486f6 96-163
+test/index-middleware.test.ts
+  s_94ccb1fd0cf306::t_00e68a2d4d43fd 350-363
+  s_94ccb1fd0cf306::t_9bcdb35f800517 432-455
+  s_94ccb1fd0cf306::t_30e5d3500ffef0 7
+  s_94ccb1fd0cf306::t_8cc1bee55918b9 103-121
+test/prompt.test.ts
+  s_94ccb1fd0cf306::t_5a1668351682fd 16-17
+  s_94ccb1fd0cf306::t_7bd7ff0e915086 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "38233ef210bc534ecd15fcfe93f90fe495901b45",
+  "prompts": {},
+  "sessions": {
+    "s_94ccb1fd0cf306": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3fe37e4d-4458-46b5-902f-59cf1647b2ee",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

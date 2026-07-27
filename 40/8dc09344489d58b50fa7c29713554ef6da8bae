@@ -1,0 +1,128 @@
+src/language.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-60
+package.json
+  s_e3366b7717efd5::t_38ba95f0d38d64 84
+src/okf/index-labels.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-174
+test/run-context.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-116
+src/commands.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 3,62-63,344,401-416,570-573,591-592,673,763-766
+  s_e3366b7717efd5::t_700bebf1933e4f 767
+src/startup.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 11,16,50,94,97-101
+src/agent/utils.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 11,50,53-61,68,78,86,172,181,204,221-228,299-302,524-531,533
+src/connectors/tools.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 6,287-289,310,312-313,358,365-413
+  s_e3366b7717efd5::t_9e3d98ef92e5f0 414
+src/env.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 12-13,93-94,432
+openwiki/integrations/connectors.md
+  s_e3366b7717efd5::t_38ba95f0d38d64 24-33,78
+test/raw-connector-tools.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-273
+test/copilot-provider.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-27
+src/okf/frontmatter.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 20-37,243-314,334-336,341,344,376-378,383,389,391-398
+test/index-middleware.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 7,72-121,350-363,432-455
+test/prompt.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 7-46,137-148,151
+  s_e3366b7717efd5::t_7bcd2908900e0d 149-150,152
+test/stream-redaction.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-86
+src/agent/okf-middleware.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 11-15,30-31,36,47
+test/okf/frontmatter.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 6-7,9,64-75,96-218,247,250-253
+test/redaction.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 66,73,95-100,119-127
+  s_e3366b7717efd5::t_a0e602aaf2212b 128-129
+src/cli.tsx
+  s_e3366b7717efd5::t_38ba95f0d38d64 626,3735-3739,4161
+test/checkpoint-pruning.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-77
+test/update-noop.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 65-73
+  s_e3366b7717efd5::t_4f95e49d460c2c 59-64
+src/external-cli-auth.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-189
+src/connectors/http.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 11,124-127
+test/language.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-33
+test/hackernews.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-244
+test/constants.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 45,100,186-188,201-205,602
+openwiki/agent/workflow.md
+  s_e3366b7717efd5::t_38ba95f0d38d64 24
+test/translation-middleware.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-447
+test/external-cli-auth.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-97
+openwiki/architecture/overview.md
+  s_e3366b7717efd5::t_38ba95f0d38d64 22,129
+src/credentials.tsx
+  s_e3366b7717efd5::t_38ba95f0d38d64 6,47,71-77,141,535-538,939-943,1162-1225,1284-1288,1392,1517-1526,1935,1937-1946,1948-1952,1964,3529,3614,3647,3734-3743,4415-4499
+  s_e3366b7717efd5::t_1088561f807445 4500
+test/create-model.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 141-158
+src/diagnostics.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 12,44
+src/okf/index-sync.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 5-8,64-65,69,85,103,119,122,168-169,190,200-205,228,231-232,237
+  s_e3366b7717efd5::t_8c1ba9d9747d85 4
+test/env-behavior.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 77,80-81
+src/connectors/sources/hackernews.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 20,23-24,66-79,137-155,215-241,248,255,259,311,313-375,379
+test/index-labels.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-84
+openwiki/.last-update.json
+  s_e3366b7717efd5::t_38ba95f0d38d64 2,4
+test/fetch-with-resilience.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 112-138,177-205,209
+  s_e3366b7717efd5::t_682a6576668925 206-208,210
+src/agent/prompt.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 19,22,27,172,206-218
+  s_e3366b7717efd5::t_873b02a32d224b 219-220
+src/agent/translation-middleware.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 1-455
+src/constants.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 6-7,91,108-116,166-167,210-215,222,259-281,329,430-441,449-459,576-582
+  s_e3366b7717efd5::t_932ec4745d6775 583-584
+test/commands.test.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 68-71,187-233
+src/agent/types.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 37,54,60
+openwiki/quickstart.md
+  s_e3366b7717efd5::t_38ba95f0d38d64 93
+README.md
+  s_e3366b7717efd5::t_38ba95f0d38d64 222-240,270-279
+  s_e3366b7717efd5::t_ddf4e4f1ed8faa 280
+src/agent/index.ts
+  s_e3366b7717efd5::t_38ba95f0d38d64 27-31,34-37,71,101-102,111-114,190-194,256-261,295-309,318-354,359,422,433-439,454-455,561-624,918,1059,1306-1311,1837
+.github/workflows/openwiki-update.yml
+  s_e3366b7717efd5::t_38ba95f0d38d64 40-44
+pnpm-lock.yaml
+  s_e3366b7717efd5::t_fd14c9509bf72f 87-89,678-679,687-688,693-694,699-700,705-706,711-712,717-718,724-725,731-732,738-739,745-746,752-753,759-760,765-766,770-771,776-777,818-820,1816-1817,1822-1823,1828-1829,1834-1835,1840-1841,1846-1847,1853-1854,1860-1861,1867-1868,1874-1875,1880-1881,1886-1887,1968-1969,2100-2101,2171-2172,3137,3145,3148,3151,3154,3157,3160,3163,3166,3169,3172,3175,3178,3181,3188,3191,3238-3241,4362,4365,4368,4371,4374,4377,4380,4383,4386,4389,4392,4395,4399-4409,4492,4595,4597,4667,4669,4672-4686,4881,4883-4884
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "408dc09344489d58b50fa7c29713554ef6da8bae",
+  "prompts": {},
+  "sessions": {
+    "s_e3366b7717efd5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9a2f7328-3a0f-477b-b795-3a8a8da784a0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
