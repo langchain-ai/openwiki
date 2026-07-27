@@ -1,9 +1,9 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { OPENWIKI_VERSION } from "./constants.js";
+import { OPENWIKI_VERSION, UPDATE_METADATA_PATH } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
+import { writeGeneratedFile } from "./safe-write.js";
 import { createConnectorRegistry } from "./connectors/registry.js";
-import { UPDATE_METADATA_PATH } from "./constants.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
 import type { OpenWikiRunEvent } from "./agent/types.js";
 
@@ -26,6 +26,12 @@ export interface CodeModeRepoSetupOptions {
   createWorkflow?: boolean;
   /** Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}. */
   cronExpression?: string;
+  /**
+   * When true, a freshly created workflow runs
+   * `openwiki code --update --recursive --print` so scheduled refreshes keep the
+   * monorepo's per-subproject sub-wikis up to date.
+   */
+  recursive?: boolean;
 }
 
 /**
@@ -41,6 +47,7 @@ export async function ensureCodeModeRepoSetup(
     await ensureCodeModeWorkflow(
       cwd,
       options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
+      options.recursive === true,
     );
   }
   await writeCodeModeAgentSnippets(cwd);
@@ -54,6 +61,7 @@ export async function ensureCodeModeRepoSetup(
 async function ensureCodeModeWorkflow(
   cwd: string,
   cronExpression: string,
+  recursive: boolean,
 ): Promise<void> {
   const workflowPath = path.join(
     cwd,
@@ -71,8 +79,13 @@ async function ensureCodeModeWorkflow(
     }
   }
 
-  await mkdir(path.dirname(workflowPath), { recursive: true });
-  await writeFile(workflowPath, createCodeModeWorkflow(cronExpression), "utf8");
+  // writeGeneratedFile creates the parent directory and refuses to follow a
+  // symlinked destination (CWE-59) — see safe-write.ts.
+  await writeGeneratedFile(
+    cwd,
+    workflowPath,
+    createCodeModeWorkflow(cronExpression, recursive),
+  );
 }
 
 /**
@@ -173,12 +186,13 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
 
   await Promise.all(
     CODE_MODE_AGENT_FILES.map((fileName) =>
-      writeCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
+      writeCodeModeAgentSnippet(cwd, path.join(cwd, fileName), snippet),
     ),
   );
 }
 
 async function writeCodeModeAgentSnippet(
+  repoRoot: string,
   agentsPath: string,
   snippet: string,
 ): Promise<void> {
@@ -199,10 +213,16 @@ async function writeCodeModeAgentSnippet(
       ? `${currentContent.slice(0, startIndex)}${snippet}${currentContent.slice(endIndex + OPENWIKI_AGENTS_SNIPPET_END.length)}`
       : `${currentContent.trimEnd()}${currentContent.trim().length > 0 ? "\n\n" : ""}${snippet}\n`;
 
-  await writeFile(agentsPath, nextContent, "utf8");
+  await writeGeneratedFile(repoRoot, agentsPath, nextContent);
 }
 
-function createCodeModeWorkflow(cronExpression: string): string {
+function createCodeModeWorkflow(
+  cronExpression: string,
+  recursive: boolean,
+): string {
+  const updateCommand = recursive
+    ? "openwiki code --update --recursive --print"
+    : "openwiki code --update --print";
   return `name: OpenWiki Update
 
 on:
@@ -231,7 +251,7 @@ jobs:
         run: npm install --global openwiki@${OPENWIKI_VERSION} mermaid@11.16.0 jsdom@29.1.1
 
       - name: Run OpenWiki
-        run: openwiki code --update --print
+        run: ${updateCommand}
         env:
           OPENWIKI_PROVIDER: openrouter
           OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
@@ -250,6 +270,7 @@ jobs:
         with:
           add-paths: |
             openwiki
+            **/openwiki
             AGENTS.md
             CLAUDE.md
             .github/workflows/openwiki-update.yml

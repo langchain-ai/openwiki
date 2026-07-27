@@ -13,6 +13,8 @@ const EXCLUDED_FILES = new Set([
   LOG_FILE,
   "_plan.md",
   "INSTRUCTIONS.md",
+  "workspaces.json",
+  ".workspaces-state.json",
 ]);
 
 /**

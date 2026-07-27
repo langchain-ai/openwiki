@@ -62,6 +62,13 @@ export type CliCommand =
       modeSource: OpenWikiRunModeSource;
       modelId: string | null;
       print: boolean;
+      /**
+       * Recursive monorepo docs activation. `undefined` = default (auto-enable
+       * only when openwiki/workspaces.json exists); `true` = force on (auto-
+       * detect workspaces and write a manifest when none exists); `false` =
+       * force off even when a manifest exists.
+       */
+      recursive: boolean | undefined;
       shouldStart: boolean;
       userMessage: string | null;
       telemetryFile: string | null;
@@ -342,6 +349,7 @@ function parseRunCommand(
   let modeSource = initialModeSource;
   let modelId: string | null = null;
   let print = false;
+  let recursive: boolean | undefined;
   let command: OpenWikiCommand = "chat";
   let telemetryFile: string | null = null;
 
@@ -369,6 +377,21 @@ function parseRunCommand(
 
     if (arg === "--print" || arg === "-p") {
       print = true;
+      continue;
+    }
+
+    if (arg === "--recursive") {
+      recursive = true;
+      continue;
+    }
+
+    if (arg === "--no-recursive" || arg === "--recursive=false") {
+      recursive = false;
+      continue;
+    }
+
+    if (arg === "--recursive=true") {
+      recursive = true;
       continue;
     }
 
@@ -559,6 +582,17 @@ function parseRunCommand(
     };
   }
 
+  // Recursion is a monorepo (code-mode) concept. The personal brain has no
+  // repository subprojects, so reject the flag there rather than silently
+  // ignoring it.
+  if (recursive !== undefined && mode === "personal") {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "--recursive is only supported in code mode, not personal mode.",
+    };
+  }
+
   return {
     kind: "run",
     exitCode: 0,
@@ -568,6 +602,7 @@ function parseRunCommand(
     modeSource,
     modelId,
     print,
+    recursive,
     shouldStart,
     userMessage,
     telemetryFile,
@@ -736,6 +771,11 @@ export const helpContent: HelpContent = {
     {
       label: "-p, --print",
       description: "Run once and print the final assistant output.",
+    },
+    {
+      label: "--recursive[=false]",
+      description:
+        "Recursive monorepo docs: give each subproject its own openwiki/ sub-wiki and link down from the root. Auto-enabled when openwiki/workspaces.json exists; --recursive auto-detects and writes one; --recursive=false forces off (code mode only).",
     },
     {
       label: "--debug",
