@@ -24,7 +24,12 @@ vi.mock("posthog-node", () => ({ PostHog: posthog.PostHog }));
 import { getConfiguredConnectorIds } from "../src/connectors/registry.ts";
 import { capture as captureEvent } from "../src/telemetry/client.ts";
 import { DEFAULT_POSTHOG_KEY } from "../src/telemetry/config.ts";
-import { classifyError } from "../src/telemetry/errors.ts";
+import {
+  classifyError,
+  describeErrorForTelemetry,
+  readErrorStage,
+  tagErrorStage,
+} from "../src/telemetry/errors.ts";
 import {
   ciSentinelId,
   isCiEnvironment,
@@ -118,6 +123,78 @@ describe("classifyError", () => {
 
     expect(result).toBe("agent_error");
     expect(result).not.toContain("secret");
+  });
+});
+
+describe("classifyError - provider granularity", () => {
+  test("a recognized provider code wins over the status", () => {
+    expect(
+      classifyError({ status: 400, code: "context_length_exceeded" }),
+    ).toBe("provider_context_limit");
+  });
+
+  test("maps the new statuses", () => {
+    expect(classifyError({ status: 529 })).toBe("provider_overloaded");
+    expect(classifyError({ status: 503 })).toBe("provider_overloaded");
+    expect(classifyError({ status: 500 })).toBe("provider_server_error");
+  });
+
+  test("reads a nested response.status", () => {
+    expect(classifyError({ response: { status: 503 } })).toBe(
+      "provider_overloaded",
+    );
+  });
+
+  test("classifies context limit and content filter by message", () => {
+    expect(
+      classifyError(new Error("maximum context length is 200000 tokens")),
+    ).toBe("provider_context_limit");
+    expect(classifyError(new Error("Blocked by content policy"))).toBe(
+      "provider_content_filter",
+    );
+  });
+
+  test("folds any unclassified throw into agent_error", () => {
+    expect(classifyError(new Error("something weird"))).toBe("agent_error");
+    expect(classifyError("boom")).toBe("agent_error");
+    expect(classifyError(undefined)).toBe("agent_error");
+  });
+});
+
+describe("error stage tags", () => {
+  test("first tag wins and never serializes", () => {
+    const error = new Error("x");
+    tagErrorStage(error, "build");
+    tagErrorStage(error, "run");
+
+    expect(readErrorStage(error)).toBe("build");
+    expect(Object.keys(error)).not.toContain(
+      "Symbol(openwiki.telemetry.errorStage)",
+    );
+    expect(JSON.stringify(error)).not.toMatch(/build/u);
+  });
+
+  test("an untagged error reports no stage", () => {
+    expect(readErrorStage(new Error("x"))).toBeUndefined();
+  });
+
+  test("describeErrorForTelemetry assembles class, stage, and status", () => {
+    const error = Object.assign(new Error("nope"), { status: 503 });
+    tagErrorStage(error, "run");
+
+    expect(describeErrorForTelemetry(error)).toEqual({
+      errorClass: "provider_overloaded",
+      errorStage: "run",
+      httpStatus: 503,
+    });
+  });
+
+  test("describeErrorForTelemetry leaves stage and status undefined when absent", () => {
+    expect(describeErrorForTelemetry(new Error("boom"))).toEqual({
+      errorClass: "agent_error",
+      errorStage: undefined,
+      httpStatus: undefined,
+    });
   });
 });
 
