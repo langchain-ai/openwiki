@@ -15,8 +15,10 @@ import {
 
 // These exercise the reachable, non-shelling surface of the schedule lifecycle
 // helpers. Two techniques keep them off child_process:
-//  1. Some branches (invalid/too-complex cron, "no representable power window")
-//     return before any platform check, so they are pure on macOS as-is.
+//  1. Some branches (invalid cron, "no representable power window") return
+//     before any platform check, so they are pure on every host as-is. The
+//     "too complex" branch sits after the darwin guard, so that test stubs the
+//     platform to darwin to reach it (still returns before shelling).
 //  2. The native paths guard on `process.platform === "darwin"`; on every other
 //     platform launchctl/pmset/unload/remove are documented no-ops. We stub the
 //     platform to a non-Darwin value to drive the graceful-degradation paths and
@@ -84,9 +86,14 @@ describe("installConnectorSchedule", () => {
   });
 
   test("returns a 'too complex for launchd' warning for a valid-but-unrepresentable cron", async () => {
+    // The darwin guard precedes the representability check, so on a non-Darwin
+    // host this would return the "macOS-only" warning instead. Force darwin so
+    // the too-complex branch is reached regardless of the CI host OS.
+    stubPlatform("darwin");
+
     // `*/15 2 * * *` parses as cron but has no single-value launchd calendar
     // interval, so install must degrade to a saved-only warning rather than
-    // writing a plist. This branch runs on macOS without shelling.
+    // writing a plist. This branch returns before any shelling.
     const result = await installConnectorSchedule({
       connectorId: "git-repo",
       cronExpression: "*/15 2 * * *",
