@@ -36,7 +36,8 @@ import {
   isTelemetryDisabled,
   noticeSuppressed,
 } from "../src/telemetry/gates.ts";
-import { recordRun } from "../src/telemetry/senders.ts";
+import { buildRunEvent, recordRun } from "../src/telemetry/senders.ts";
+import type { RunEventContext } from "../src/telemetry/senders.ts";
 import type { RunTelemetry } from "../src/telemetry/types.ts";
 
 const ENV_KEYS = [
@@ -403,5 +404,85 @@ describe("recordRun connector properties", () => {
       false,
     );
     expect(props).toMatchObject({ command: "update", outcome: "success" });
+  });
+});
+
+describe("buildRunEvent diagnostics", () => {
+  const baseContext: RunEventContext = {
+    ci: false,
+    production: true,
+    distinctId: "install-abc",
+  };
+
+  test("failure diagnostics ride the payload", () => {
+    // A failure with a tagged stage and a provider status must surface both,
+    // alongside the class, as flat anonymous properties.
+    const event = buildRunEvent(
+      {
+        command: "init",
+        outcome: "failure",
+        errorClass: "provider_overloaded",
+        errorStage: "run",
+        httpStatus: 529,
+      },
+      baseContext,
+    );
+
+    expect(event.properties).toMatchObject({
+      error_class: "provider_overloaded",
+      error_stage: "run",
+      http_status: 529,
+    });
+  });
+
+  test("success omits stage and status", () => {
+    // No failure means no diagnostics: the fields must be absent, not null/0,
+    // so the PostHog null bucket stays meaningful.
+    const event = buildRunEvent(
+      { command: "init", outcome: "success" },
+      baseContext,
+    );
+
+    expect(event.properties).not.toHaveProperty("error_class");
+    expect(event.properties).not.toHaveProperty("error_stage");
+    expect(event.properties).not.toHaveProperty("http_status");
+  });
+
+  test("http_status of 0 would still ride, but omission is by undefined only", () => {
+    // Guard the `!== undefined` check: a (hypothetical) zero status is a real
+    // value and must not be dropped by a falsy test.
+    const event = buildRunEvent(
+      {
+        command: "init",
+        outcome: "failure",
+        errorClass: "agent_error",
+        httpStatus: 0,
+      },
+      baseContext,
+    );
+
+    expect(event.properties.http_status).toBe(0);
+  });
+
+  test("app_version is stamped when the context supplies it", () => {
+    // app_version is a peer of production/ci and rides every event (init or
+    // update) when the caller resolved it.
+    const event = buildRunEvent(
+      { command: "update", outcome: "success" },
+      { ...baseContext, appVersion: "9.9.9" },
+    );
+
+    expect(event.properties).toMatchObject({ app_version: "9.9.9" });
+  });
+
+  test("app_version is omitted when the context could not resolve it", () => {
+    // A failed package.json read leaves appVersion undefined; the field must
+    // simply not appear rather than send an empty string.
+    const event = buildRunEvent(
+      { command: "init", outcome: "success" },
+      baseContext,
+    );
+
+    expect(event.properties).not.toHaveProperty("app_version");
   });
 });

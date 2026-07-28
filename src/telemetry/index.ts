@@ -7,10 +7,17 @@ export {
   FIRST_RUN_NOTICE_OPT_OUT,
   FIRST_RUN_NOTICE_VERIFY,
 } from "./config.js";
-export { classifyError } from "./errors.js";
+export {
+  classifyError,
+  describeErrorForTelemetry,
+  inStage,
+  inStageSync,
+  tagErrorStage,
+} from "./errors.js";
 export { isCiEnvironment, isTelemetryDisabled } from "./gates.js";
 export type {
   RunTelemetry,
   TelemetryErrorClass,
+  TelemetryErrorStage,
   TelemetryMode,
 } from "./types.js";

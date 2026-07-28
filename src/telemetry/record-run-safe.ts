@@ -7,7 +7,7 @@ import { getConfiguredConnectorIds } from "../connectors/registry.js";
 import type { OpenWikiProvider } from "../constants.js";
 
 import { recordRun } from "./senders.js";
-import type { TelemetryErrorClass } from "./types.js";
+import type { TelemetryErrorClass, TelemetryErrorStage } from "./types.js";
 
 /**
  * Translates a finished agent run into the single telemetry event and records
@@ -24,9 +24,10 @@ import type { TelemetryErrorClass } from "./types.js";
  *
  * @param command - Which run lifecycle finished. Only init/update are recorded.
  * @param options - The run options; read for `outputMode` and `telemetryFile`.
- * @param facts - What the run produced: its `outcome`, an optional `errorClass`
- *   (present on failure), and the resolved `provider` (which may be undefined
- *   when resolution failed before the provider was known).
+ * @param facts - What the run produced: its `outcome`, the failure diagnostics
+ *   (`errorClass`, plus an optional `errorStage` and `httpStatus`, all present
+ *   only on failure), and the resolved `provider` (which may be undefined when
+ *   resolution failed before the provider was known).
  */
 export async function recordRunSafe(
   command: OpenWikiCommand,
@@ -35,6 +36,8 @@ export async function recordRunSafe(
     provider?: OpenWikiProvider;
     outcome: "success" | "failure" | "noop";
     errorClass?: TelemetryErrorClass;
+    errorStage?: TelemetryErrorStage;
+    httpStatus?: number;
   },
 ): Promise<void> {
   // Chat is deliberately not recorded: it is interactive and would emit one
@@ -49,6 +52,8 @@ export async function recordRunSafe(
     command,
     outcome: facts.outcome,
     errorClass: facts.errorClass,
+    errorStage: facts.errorStage,
+    httpStatus: facts.httpStatus,
     // Setup choices are captured on init only (the configuration moment); on
     // updates these are omitted entirely.
     ...(command === "init"
