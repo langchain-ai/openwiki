@@ -623,6 +623,7 @@ function App({ command }: AppProps) {
         return runOpenWikiAgent(resolvedCommand, runtimeCwd, {
           debug: isDebugMode(),
           isFollowup: activeMessageIsFollowup,
+          language: command.language,
           modelId: sessionModelId,
           outputMode: runtimeOutputMode,
           threadId: sessionThreadId.current,
@@ -3731,6 +3732,11 @@ if (commandEmitsTelemetry(command)) {
   showFirstRunNotice = await firstRunNoticePending();
 }
 
+if (command.kind === "run" && command.languageWarning) {
+  // stderr keeps piped stdout clean while still warning about an ignored locale.
+  process.stderr.write(`${command.languageWarning}\n`);
+}
+
 if (command.kind === "auth") {
   await runAuthCommand(command);
 } else if (command.kind === "ngrok") {
@@ -4152,6 +4158,7 @@ async function runPrintCommand(
     await runOpenWikiAgent(command.command, runtimeCwd, {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
+      language: command.language,
       modelId: command.modelId,
       outputMode: runtimeOutputMode,
       threadId: createOpenWikiThreadId(runtimeCwd),
