@@ -25,7 +25,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - [CLI usage](./cli/usage.md) — commands, options, model/provider selection, and credential bootstrap.
 - [Agent workflow](./agent/workflow.md) — how documentation runs are assembled and persisted.
 - [Credentials and updates](./operations/credentials-and-updates.md) — local env storage, metadata, and scheduled updates.
-- [Connectors](./integrations/connectors.md) — built-in connector architecture, the seven connectors, and ingestion orchestration.
+- [Connectors](./integrations/connectors.md) — built-in connector architecture, the eight connectors, and ingestion orchestration.
 
 ## Key source files
 

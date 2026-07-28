@@ -1,29 +1,29 @@
 ---
 type: Integration
 title: OpenWiki Connectors
-description: OpenWiki's seven built-in connectors ingest data from Git repositories, Gmail, Hacker News, Notion, Slack, web search, and X into a local raw cache for wiki synthesis. This reference documents connector architecture, read-only MCP safeguards, ingestion orchestration, and source-specific behavior.
+description: OpenWiki's eight built-in connectors ingest data from Git repositories, Gmail, Hacker News, LangSmith, Notion, Slack, web search, and X into a local raw cache for wiki synthesis. This reference documents connector architecture, read-only MCP safeguards, ingestion orchestration, and source-specific behavior.
 tags: [connectors, integrations, ingestion, mcp]
 ---
 
-OpenWiki ships seven built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` also matters for code mode when documenting a different target repo than the one being ingested from).
+OpenWiki ships eight built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` and `langsmith` also matter for code mode when documenting repository source and runtime traces).
 
 ## Connector architecture
 
 All connectors share types in `src/connectors/types.ts`:
 
-- `ConnectorId` — the union of implemented connector ids: `"git-repo" | "google" | "hackernews" | "notion" | "slack" | "web-search" | "x"`. This union is ground truth for what exists today.
+- `ConnectorId` — the union of implemented connector ids: `"git-repo" | "google" | "hackernews" | "langsmith" | "notion" | "slack" | "web-search" | "x"`. This union is ground truth for what exists today.
 - `ConnectorBackend` — `"direct-api" | "local-git" | "mcp-http" | "mcp-stdio"`.
 - `ConnectorDefinition` / `ConnectorRuntime` — id, display name, description, required env var names, whether the connector supports agentic discovery (letting the agent decide what to fetch) vs. deterministic ingestion, and an `ingest()` function.
 - `ConnectorIngestResult` — `{ status: "success" | "skipped" | "error", rawFiles, warnings, runId, statePath, message }`.
 - `ConnectorState` — per-connector cursor/dedup bookkeeping (`lastRunAt`, `latestIds`, last 20 `runs`) persisted at `~/.openwiki/connectors/<id>/state.json`.
 
-`src/connectors/registry.ts` (`createConnectorRegistry()`) wires up all seven; `notion` is built through the generic `createMcpConnector()` factory (`src/connectors/sources/mcp.ts`) rather than a bespoke source file.
+`src/connectors/registry.ts` (`createConnectorRegistry()`) wires up all eight; `notion` is built through the generic `createMcpConnector()` factory (`src/connectors/sources/mcp.ts`) rather than a bespoke source file.
 
 Shared IO helpers live in `src/connectors/io.ts`: `writeRawJson()` writes raw dumps with `0600`/`0700` permissions under `~/.openwiki/connectors/<id>/raw/<runId>/`, and `updateStateWithRun()` maintains the state file.
 
 ### Resilient HTTP (`fetchWithResilience`)
 
-`src/connectors/http.ts` exports `fetchWithResilience()`, a shared wrapper around the global `fetch` used by every direct-API connector (Gmail, Hacker News, Slack, X) and the HTTP MCP client (`mcp-client.ts`). It adds:
+`src/connectors/http.ts` exports `fetchWithResilience()`, a shared wrapper around the global `fetch` used by every direct-API connector that calls remote APIs directly (Gmail, Hacker News, Slack, X) and the HTTP MCP client (`mcp-client.ts`). It adds:
 
 - a per-request wall-clock timeout via `AbortSignal.timeout` (default 30 s), combined with any caller-supplied abort signal so whichever fires first wins;
 - bounded exponential backoff with full jitter (base 500 ms, cap 20 s) on retryable responses — HTTP 429 and 5xx — honoring a numeric or HTTP-date `Retry-After` header when present;
@@ -37,13 +37,14 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
 
 `src/connectors/mcp-client.ts` is a low-level JSON-RPC MCP client (stdio or HTTP transport) implementing `listMcpTools`/`executeMcpTool`/`executeMcpReadOnlyOperations`. `src/connectors/mcp-runtime.ts` wraps it for connector use (currently only `notion`), adding a **read-only tool-call policy**: a tool call is allowed only if it's explicitly listed in `allowedTools`, the MCP server's own `readOnlyHint` annotation is `true`, or (for the hosted `mcp.notion.com/mcp` endpoint specifically) the tool name/description matches a read-only heuristic (search/retrieve/get/list/query/read/fetch/find/lookup/load/children). This is the mechanism that keeps MCP-backed connectors read-only even though the underlying server may expose write tools.
 
-## The seven connectors
+## The eight connectors
 
 | Connector        | Backend                        | Required env                                             | Agentic discovery | What it pulls                                                                                                                                                                                                                                                             |
 | ---------------- | ------------------------------ | -------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `git-repo`       | local-git                      | none                                                     | yes               | Local repos configured in connector config (`repos: [{id, path}]`): branch/HEAD, `git log` (last 20, name-status), `git status --short`, `git diff --name-status HEAD`. Writes `manifest.json`.                                                                           |
 | `google` (Gmail) | direct-api                     | Gmail OAuth access/refresh token env keys                | no                | Gmail API v1 messages; default query `newer_than:1d`, configurable label/format/headers. Writes `gmail-messages.json`.                                                                                                                                                    |
 | `hackernews`     | direct-api                     | none                                                     | no                | Public HN Firebase feeds (`top`/`new`/`best`/`show`/`ask`/`job`) plus Algolia `search_by_date` queries. Writes `hackernews-results.json`.                                                                                                                                 |
+| `langsmith`      | direct-api                     | `OPENWIKI_LANGSMITH_API_KEY` or configured key env names | no                | Recent LangSmith project traces for code-mode runtime evidence: call counts, tool usage, latency, outcomes, and selected sample traces. Writes `langsmith-results.json`.                                                                                                  |
 | `notion`         | mcp-stdio (label; may be HTTP) | `OPENWIKI_NOTION_MCP_ACCESS_TOKEN`                       | yes               | Hosted Notion MCP server (or configured MCP transport); discovers tools (`mcp-tools.json`) or executes configured read-only operations (`mcp-results.json`).                                                                                                              |
 | `slack`          | direct-api                     | Slack user-token env key                                 | no                | `auth.test` identity, `search.messages` self-message search, bounded `conversations.list`/`.history` fallback, `assistant.search.context`. Writes `identity.json`, `my-messages-search.json`, `recent-messages.json`, `my-recent-messages.json`, `assistant-search.json`. |
 | `web-search`     | direct-api                     | `TAVILY_API_KEY` (via `OPENWIKI_TAVILY_API_KEY_ENV_KEY`) | no                | Tavily search (`@langchain/tavily`) for configured queries. Writes `web-search-results.json`.                                                                                                                                                                             |
@@ -52,6 +53,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
 ### Notable per-connector behavior
 
 - **Slack and "latest message" questions**: `my-recent-messages.json` includes a `definitiveForLatestMessage` flag. It is `true` only when the latest message was resolved via `search.messages` (requires the `search:read` user-token scope). If that search is unavailable, the connector falls back to a bounded `conversations.history` scan, sets `definitiveForLatestMessage: false`, and warns that the result is not reliably the user's true latest Slack message. Always check this flag before answering "what did I last say on Slack" from raw Slack data.
+- **LangSmith is code-mode runtime evidence**: it reads committed `openwiki/.langsmith.json` workspace/project configuration and API keys from approved `OPENWIKI_LANGSMITH_*` env vars, then writes bounded trace summaries for documentation synthesis.
 - **X streams and cursors**: each stream (except `bookmarks`) tracks a `since_id` cursor in connector state so repeated ingestion runs are incremental; `list_posts` fans out per configured `listIds`.
 - **Notion is disabled until configured**: `enabled: true` plus a transport must be set in connector config before ingestion does anything beyond tool discovery.
 - **git-repo has no ingest-vs-agent distinction for read access**: it's the only connector marked `supportsAgenticDiscovery: true` alongside `notion`, since a git checkout can be explored freely rather than pulled through a bounded API.

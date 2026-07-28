@@ -91,7 +91,7 @@ templates: Personal Work OS, AI Research Radar, Git Project Wiki, Social Media
   template seeds the wiki scope prompt, and the user can edit it before saving.
 
 Onboarding then walks through source connections for local Git repositories,
-Notion, Gmail, X/Twitter, Web Search, and Hacker News. Non-secret setup
+LangSmith, Notion, Gmail, X/Twitter, Web Search, and Hacker News. Non-secret setup
 preferences are stored in `~/.openwiki/onboarding.json`:
 
 - the selected template ID/name,

@@ -185,7 +185,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
 
 ## Local Connectors
 
-OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `~/.openwiki/wiki/` from those local files.
+OpenWiki's first-run onboarding offers connector setup for local Git repositories, LangSmith, Notion, Gmail, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `~/.openwiki/wiki/` from those local files.
 
 You can configure the same connector more than once. For example, add one Web
 Search source for AI research and another for NBA news; OpenWiki stores them as
@@ -195,6 +195,7 @@ instances with `openwiki ingest all`, all instances for one connector with
 `openwiki ingest web-search-2`.
 
 - `git-repo` reads configured local repository paths and writes compact manifests.
+- `langsmith` pulls recent trace evidence for configured LangSmith projects so code-mode documentation can describe runtime behavior.
 - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
 - `notion` targets the hosted Notion MCP server, so users should authenticate through Notion OAuth instead of pasting a Notion token into OpenWiki.
 - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
