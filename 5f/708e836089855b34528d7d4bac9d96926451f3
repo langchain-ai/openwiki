@@ -1,0 +1,45 @@
+test/connectors/mcp-runtime.test.ts
+  s_ed18fedebfc70d::t_712c8eff165539 36
+  s_ed18fedebfc70d::t_a0bdb3086c2ea3 1-35,37-51,53-76,78-96,98-117,121-126,128-143,145-175,177-195,197-215
+  s_ed18fedebfc70d::t_732dacdf6386f0 118-120
+  s_ed18fedebfc70d::t_f30dc599cf3316 52,77,97,127,144,176,196
+test/auth/ngrok.test.ts
+  s_ed18fedebfc70d::t_2f1a8b0d8cf10f 1-8,12-86
+  s_ed18fedebfc70d::t_732dacdf6386f0 9-11
+test/auth/configure.test.ts
+  s_ed18fedebfc70d::t_50f573006de70d 1-23,28-44,48-100,102-137
+  s_ed18fedebfc70d::t_732dacdf6386f0 24-27,45-47,101
+test/connectors/git-repo.test.ts
+  s_ed18fedebfc70d::t_f30dc599cf3316 156,181
+  s_ed18fedebfc70d::t_00e811c9758dcd 1-62,67-79,82-155,157-180,182-222
+  s_ed18fedebfc70d::t_732dacdf6386f0 63-66,80-81
+test/auth/tokens.test.ts
+  s_ed18fedebfc70d::t_b04f2a87d37b1a 1-95
+test/connectors/web-search.test.ts
+  s_ed18fedebfc70d::t_9585e1d23e634b 1-66,69-95,99-244
+  s_ed18fedebfc70d::t_732dacdf6386f0 67-68,96-98
+test/connectors/mcp.test.ts
+  s_ed18fedebfc70d::t_f30dc599cf3316 105
+  s_ed18fedebfc70d::t_be039dad44e085 55
+  s_ed18fedebfc70d::t_a81168ce621673 1-54,56-104,106-175
+test/telemetry/record-run-safe.test.ts
+  s_ed18fedebfc70d::t_40b31dc5b073eb 1-13,15-28,30-37,39-52,54-143
+  s_ed18fedebfc70d::t_d8f6e9ad35e4cf 14
+  s_ed18fedebfc70d::t_f30dc599cf3316 29,38,53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "5f708e836089855b34528d7d4bac9d96926451f3",
+  "prompts": {},
+  "sessions": {
+    "s_ed18fedebfc70d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dde8f354-6e1c-4dca-96f7-0f6cd5cf3d58",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
