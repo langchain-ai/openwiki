@@ -1,8 +1,12 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import { ensureCodeModeRepoSetup } from "../../src/ingestion/code-mode.ts";
+import {
+  ensureCodeModeRepoSetup,
+  runCodeModeConnectors,
+} from "../../src/ingestion/code-mode.ts";
+import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 
 const SNIPPET_START = "<!-- OPENWIKI:START -->";
 const SNIPPET_END = "<!-- OPENWIKI:END -->";
@@ -246,5 +250,61 @@ jobs:
     await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
 
     expect(await readIfPresent(workflowPath)).toBe(customizedWorkflow);
+  });
+});
+
+describe("runCodeModeConnectors", () => {
+  // The only code-mode connector is LangSmith, which reads committed repo config
+  // and cleanly skips (no network) when a repo has not configured it. That lets
+  // us exercise the loop, the fail-open skip, and the "nothing to append" merge
+  // without reaching a real API. Making a connector succeed needs live creds and
+  // is left to integration tests.
+
+  test("returns the base message unchanged when no connector contributes", async () => {
+    const repo = await createTempRepo();
+    const base = "Base agent instructions.";
+
+    const result = await runCodeModeConnectors(repo, base);
+
+    expect(result).toBe(base);
+  });
+
+  test("returns undefined when there is no base message and nothing contributes", async () => {
+    const repo = await createTempRepo();
+
+    expect(await runCodeModeConnectors(repo, undefined)).toBeUndefined();
+  });
+
+  test("emits progress for the pull it attempts, then the skip reason", async () => {
+    const repo = await createTempRepo();
+    const events: OpenWikiRunEvent[] = [];
+
+    await runCodeModeConnectors(repo, "base", (event) => {
+      events.push(event);
+    });
+
+    const text = events
+      .filter((event) => event.type === "text")
+      .map((event) => event.text)
+      .join("");
+    // The pull is announced so the pre-agent gap reads as progress, and the
+    // unconfigured repo reports the skip rather than silently doing nothing.
+    expect(text).toContain("Ingesting from");
+    expect(text).toContain("LangSmith is not configured for this repository");
+  });
+
+  test("tolerates a present last-update timestamp without failing", async () => {
+    const repo = await createTempRepo();
+    // A valid openwiki/.last-update.json exercises the metadata-read and
+    // numeric-window branch; the unconfigured connector still skips, so the base
+    // message survives unchanged.
+    await mkdir(path.join(repo, "openwiki"), { recursive: true });
+    await writeFile(
+      path.join(repo, "openwiki", ".last-update.json"),
+      JSON.stringify({ updatedAt: new Date().toISOString() }),
+      "utf8",
+    );
+
+    expect(await runCodeModeConnectors(repo, "keep me")).toBe("keep me");
   });
 });

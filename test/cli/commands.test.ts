@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import {
+  commandEmitsTelemetry,
   getHelpText,
   parseCommand,
   shouldRunNonInteractively,
@@ -573,5 +574,391 @@ describe("parseCommand — cron", () => {
   test("cron pause with extra arguments is an error", () => {
     const result = parseCommand(["cron", "pause", "all", "extra"]);
     expect(result.kind).toBe("error");
+  });
+
+  test("an unknown cron subcommand falls through to usage guidance", () => {
+    const result = parseCommand(["cron", "bogus"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/list \| pause all \| resume all/u);
+    }
+  });
+
+  test("cron with no subcommand is an error", () => {
+    expect(parseCommand(["cron"]).kind).toBe("error");
+  });
+
+  test("cron list with an extra argument is rejected", () => {
+    // `list` only matches when it stands alone; a trailing token drops it into
+    // the usage-error branch rather than silently ignoring the extra input.
+    expect(parseCommand(["cron", "list", "extra"]).kind).toBe("error");
+  });
+});
+
+describe("parseCommand — ngrok", () => {
+  test("bare ngrok start uses the default OAuth callback port and no url", () => {
+    expect(parseCommand(["ngrok", "start"])).toEqual({
+      kind: "ngrok",
+      action: "start",
+      exitCode: 0,
+      port: 53682,
+      url: null,
+    });
+  });
+
+  test("a positional url is captured as the fixed tunnel url", () => {
+    expect(
+      parseCommand(["ngrok", "start", "https://openwiki.ngrok.app"]),
+    ).toMatchObject({
+      kind: "ngrok",
+      url: "https://openwiki.ngrok.app",
+      port: 53682,
+    });
+  });
+
+  test("--port accepts a space-separated value", () => {
+    expect(parseCommand(["ngrok", "start", "--port", "8080"])).toMatchObject({
+      kind: "ngrok",
+      port: 8080,
+    });
+  });
+
+  test("--port=<n> equals form is accepted", () => {
+    expect(parseCommand(["ngrok", "start", "--port=9000"])).toMatchObject({
+      kind: "ngrok",
+      port: 9000,
+    });
+  });
+
+  test("url and --port can be combined in either order", () => {
+    expect(
+      parseCommand(["ngrok", "start", "https://x.ngrok.app", "--port", "8080"]),
+    ).toMatchObject({
+      kind: "ngrok",
+      url: "https://x.ngrok.app",
+      port: 8080,
+    });
+  });
+
+  test("ngrok without the start subcommand is an error", () => {
+    const result = parseCommand(["ngrok"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/ngrok start/u);
+    }
+  });
+
+  test("--port with no value is an error", () => {
+    const result = parseCommand(["ngrok", "start", "--port"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/--port requires a value/u);
+    }
+  });
+
+  test("a non-integer port is rejected by the range check", () => {
+    const result = parseCommand(["ngrok", "start", "--port", "abc"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/between 1024 and 65535/u);
+    }
+  });
+
+  test("a privileged port below 1024 is rejected", () => {
+    expect(parseCommand(["ngrok", "start", "--port", "80"]).kind).toBe("error");
+  });
+
+  test("a port above 65535 is rejected", () => {
+    expect(parseCommand(["ngrok", "start", "--port", "70000"]).kind).toBe(
+      "error",
+    );
+  });
+
+  test("a second positional argument is an unknown option", () => {
+    // The url slot only fills once; a second bare token is not silently
+    // dropped but surfaced as an unknown option.
+    const result = parseCommand(["ngrok", "start", "https://a", "https://b"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Unknown option for ngrok/u);
+    }
+  });
+
+  test("an unknown flag is reported", () => {
+    const result = parseCommand(["ngrok", "start", "--nope"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Unknown option for ngrok/u);
+    }
+  });
+});
+
+describe("parseCommand — auth listing and validation", () => {
+  test("bare auth lists providers via the oauth-list branch", () => {
+    expect(parseCommand(["auth"])).toEqual({
+      kind: "auth",
+      action: "list",
+      exitCode: 0,
+      force: false,
+      provider: null,
+    });
+  });
+
+  test("explicit auth list also returns the list command", () => {
+    expect(parseCommand(["auth", "list"])).toMatchObject({
+      kind: "auth",
+      action: "list",
+      provider: null,
+    });
+  });
+
+  test("an unrecognized provider is rejected", () => {
+    const result = parseCommand(["auth", "bogus-provider"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Unknown auth provider: bogus-provider/u);
+    }
+  });
+
+  test("auth configure without a provider prints its usage", () => {
+    const result = parseCommand(["auth", "configure"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/auth configure <provider>/u);
+    }
+  });
+
+  test("auth tools without a provider prints its usage", () => {
+    const result = parseCommand(["auth", "tools"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/auth tools <provider>/u);
+    }
+  });
+
+  test("auth tools with a valid provider parses and never carries force", () => {
+    expect(parseCommand(["auth", "tools", "notion"])).toEqual({
+      kind: "auth",
+      action: "tools",
+      exitCode: 0,
+      force: false,
+      provider: "notion",
+    });
+  });
+});
+
+describe("parseCommand — ingest --modelId", () => {
+  test("space-separated valid model id is normalized onto the ingest run", () => {
+    expect(
+      parseCommand(["ingest", "all", "--modelId", "claude-opus-4-8"]),
+    ).toMatchObject({
+      kind: "ingest",
+      target: "all",
+      modelId: "claude-opus-4-8",
+    });
+  });
+
+  test("--model-id equals form is accepted for ingest", () => {
+    expect(parseCommand(["ingest", "all", "--model-id=gpt-5.5"])).toMatchObject(
+      {
+        kind: "ingest",
+        modelId: "gpt-5.5",
+      },
+    );
+  });
+
+  test("ingest --modelId with no value is an error", () => {
+    const result = parseCommand(["ingest", "all", "--modelId"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/requires a model ID/u);
+    }
+  });
+
+  test("ingest --modelId with an invalid id is rejected, not passed through", () => {
+    const result = parseCommand(["ingest", "all", "--modelId", "http://evil"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Invalid model ID/u);
+    }
+  });
+
+  test("ingest --modelId= equals form with an invalid id is rejected", () => {
+    expect(parseCommand(["ingest", "all", "--modelId=http://evil"]).kind).toBe(
+      "error",
+    );
+  });
+
+  test("an unknown ingest flag is reported", () => {
+    const result = parseCommand(["ingest", "all", "--nope"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Unknown option for ingest/u);
+    }
+  });
+});
+
+describe("parseCommand — --mode option forms and conflicts", () => {
+  test("--mode with no value is an error", () => {
+    const result = parseCommand(["--mode"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/--mode requires personal or code/u);
+    }
+  });
+
+  test("--mode followed by a flag is treated as a missing value", () => {
+    expect(parseCommand(["--mode", "--init"]).kind).toBe("error");
+  });
+
+  test("an invalid --mode value is rejected", () => {
+    const result = parseCommand(["--mode", "hybrid"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Invalid mode: hybrid/u);
+    }
+  });
+
+  test("--mode=<value> equals form selects the mode", () => {
+    expect(parseCommand(["--mode=personal", "--init"])).toMatchObject({
+      kind: "run",
+      mode: "personal",
+      modeSource: "option",
+      command: "init",
+    });
+  });
+
+  test("an invalid --mode= equals value is rejected", () => {
+    expect(parseCommand(["--mode=hybrid"]).kind).toBe("error");
+  });
+
+  test("--mode that contradicts a positional mode is a conflict", () => {
+    // `code` fixes the mode positionally; a later --mode personal cannot
+    // silently override it, so the parser reports the conflict.
+    const result = parseCommand(["code", "--mode", "personal"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/Conflicting modes: code and personal/u);
+    }
+  });
+
+  test("--mode= that contradicts a positional mode is a conflict", () => {
+    expect(parseCommand(["code", "--mode=personal"]).kind).toBe("error");
+  });
+
+  test("--mode restating the same mode is not a conflict", () => {
+    expect(parseCommand(["code", "--mode", "code", "--init"])).toMatchObject({
+      kind: "run",
+      mode: "code",
+      command: "init",
+    });
+  });
+});
+
+describe("parseCommand — --telemetry-file", () => {
+  test("space-separated path is captured alongside the run", () => {
+    expect(
+      parseCommand(["--print", "--telemetry-file", "/tmp/payload.json", "hi"]),
+    ).toMatchObject({
+      kind: "run",
+      telemetryFile: "/tmp/payload.json",
+      userMessage: "hi",
+      print: true,
+    });
+  });
+
+  test("--telemetry-file= equals form is captured", () => {
+    expect(
+      parseCommand(["--init", "--telemetry-file=/tmp/out.json"]),
+    ).toMatchObject({
+      kind: "run",
+      command: "init",
+      telemetryFile: "/tmp/out.json",
+    });
+  });
+
+  test("--telemetry-file with no path is an error", () => {
+    const result = parseCommand(["--telemetry-file"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/--telemetry-file requires a path/u);
+    }
+  });
+
+  test("--telemetry-file followed by a flag is treated as a missing path", () => {
+    expect(parseCommand(["--telemetry-file", "--init"]).kind).toBe("error");
+  });
+
+  test("an empty --telemetry-file= value is an error", () => {
+    const result = parseCommand(["--telemetry-file="]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toMatch(/--telemetry-file requires a path/u);
+    }
+  });
+
+  test("telemetry file defaults to null when the option is absent", () => {
+    expect(parseCommand(["--init"])).toMatchObject({ telemetryFile: null });
+  });
+});
+
+describe("commandEmitsTelemetry", () => {
+  test("init and update runs emit the single telemetry event", () => {
+    expect(commandEmitsTelemetry(parseCommand(["--init"]))).toBe(true);
+    expect(commandEmitsTelemetry(parseCommand(["--update"]))).toBe(true);
+  });
+
+  test("a plain chat run emits nothing", () => {
+    expect(commandEmitsTelemetry(parseCommand(["hello there"]))).toBe(false);
+  });
+
+  test("a dry-run init records nothing because the agent never runs", () => {
+    process.env.OPENWIKI_DEV = "1";
+
+    expect(commandEmitsTelemetry(parseCommand(["--dry-run", "--init"]))).toBe(
+      false,
+    );
+  });
+
+  test("ingest, auth, help, and error commands never emit telemetry", () => {
+    expect(commandEmitsTelemetry(parseCommand(["ingest", "all"]))).toBe(false);
+    expect(commandEmitsTelemetry(parseCommand(["auth", "notion"]))).toBe(false);
+    expect(commandEmitsTelemetry(parseCommand(["--help"]))).toBe(false);
+    expect(commandEmitsTelemetry(parseCommand(["--nope"]))).toBe(false);
+  });
+});
+
+describe("getHelpText — development sections", () => {
+  test("dev-only sections are hidden outside development mode", () => {
+    const helpText = getHelpText();
+
+    expect(helpText).not.toContain("Development Options");
+    expect(helpText).not.toContain("--dry-run");
+  });
+
+  test("development mode reveals the --dry-run option and example", () => {
+    process.env.OPENWIKI_DEV = "1";
+    const helpText = getHelpText();
+
+    expect(helpText).toContain("Development Options");
+    expect(helpText).toContain("--dry-run");
+    expect(helpText).toContain("openwiki --dry-run");
   });
 });
