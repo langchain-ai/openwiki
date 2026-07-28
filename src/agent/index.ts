@@ -13,6 +13,7 @@ import {
   CompositeBackend,
   createDeepAgent,
   FilesystemBackend,
+  type FilesystemPermission,
 } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
@@ -352,9 +353,7 @@ async function runOpenWikiAgentCore(
             ),
           ],
     skills: ["/skills/"],
-    permissions: [
-      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
-    ],
+    permissions: AGENT_FILESYSTEM_PERMISSIONS,
     systemPrompt: createSystemPrompt(command, outputMode, context.language),
   });
   emitDebug(options, "agent=created");
@@ -545,6 +544,26 @@ export function formatRuntimeRootInstruction(
  * default. Keep this mount prefix in sync with that default.
  */
 export const CONVERSATION_HISTORY_MOUNT = "/conversation_history/";
+
+/**
+ * Agent-layer filesystem permissions. Both virtual mounts are read-only for
+ * the model's filesystem tools:
+ *
+ * - `/skills/**` — skills are installed by the CLI, never by the agent.
+ * - `/conversation_history/**` — only the summarization middleware may
+ *   write here. It writes directly through the backend, which agent-layer
+ *   permissions do not affect, so denying tool writes closes the door on
+ *   prompt-injected content being persisted into future sessions' context
+ *   without touching the offload itself.
+ */
+export const AGENT_FILESYSTEM_PERMISSIONS: FilesystemPermission[] = [
+  { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
+  {
+    operations: ["write"],
+    paths: [`${CONVERSATION_HISTORY_MOUNT}**`],
+    mode: "deny",
+  },
+];
 
 /**
  * Wraps the wiki backend with the virtual mounts every agent run layers on
