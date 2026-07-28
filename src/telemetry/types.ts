@@ -1,28 +1,44 @@
 /**
- * Closed set of failure categories. Raw error strings are never sent; only these
- * enum values leave the process. `provider_*` marks an error the model provider's
- * API returned; bare names are our-side or environment failures. `agent_error` is
- * the single catch-all for any failure that matched no rule (including a thrown
- * non-`Error`).
+ * Closed set of failure families, the big bucket a failure falls in. Raw error
+ * strings are never sent; only these enum values leave the process. Each family
+ * pairs with an `errorDetail` (the specific failure inside it) and derives an
+ * `errorOwner` (whose problem it is). `agent_error` is the residual for any
+ * failure that matched no rule (including a thrown non-`Error`); it is the quality
+ * meter and should trend toward zero.
+ *
+ * The full taxonomy (families, per-family detail allowlists, and owner rules) lives
+ * in `taxonomy.ts`.
  */
 export type TelemetryErrorClass =
-  | "missing_credentials"
-  | "missing_config"
-  | "invalid_model"
-  | "provider_auth"
-  | "provider_rate_limit"
-  | "provider_timeout"
-  | "provider_overloaded"
-  | "provider_server_error"
-  | "provider_context_limit"
-  | "provider_quota_exceeded"
-  | "provider_content_filter"
-  | "network"
-  | "output_invalid"
-  | "agent_error"
+  | "config_error"
+  | "filesystem_error"
+  | "provider_error"
+  | "network_error"
+  | "context_limit_error"
+  | "build_error"
+  | "connector_error"
+  | "okf_error"
+  | "checkpointer_error"
   | "tool_error"
-  | "filesystem"
+  | "output_error"
+  | "agent_error"
   | "aborted";
+
+/**
+ * Who owns the fix for a failure, derived from its class, detail, and stage (see
+ * `deriveOwner` in `taxonomy.ts`). This is emitted so the health dashboard can roll
+ * failures up by who has to act, including the cross-owner exceptions (a
+ * `provider_error` with detail `auth` is really the user's key, so it owns to
+ * `environment`) that PostHog cannot derive on its own.
+ *
+ * - `environment`: the user's setup, credentials, or machine.
+ * - `provider`: the provider API failed transiently; retry/backoff.
+ * - `openwiki`: we own the fix, whether a bug or work like chunking.
+ * - `unowned`: the agent/model core failed in a way we have not named yet.
+ * - `control`: the run was cancelled; excluded from failure-rate math.
+ */
+export type TelemetryErrorOwner =
+  "environment" | "provider" | "openwiki" | "unowned" | "control";
 
 /**
  * Ordered pipeline stage a failure was tagged at: config -> build -> run ->
@@ -60,9 +76,29 @@ export interface RunTelemetry {
   outcome: "success" | "failure" | "noop";
 
   /**
-   * Closed-set failure category. Present only when `outcome` is "failure".
+   * Closed-set failure family. Present only when `outcome` is "failure".
    */
   errorClass?: TelemetryErrorClass;
+
+  /**
+   * The specific failure within `errorClass`, from that family's hardcoded
+   * allowlist (see `taxonomy.ts`), e.g. `auth` inside `provider_error`. One shared
+   * property across all families. Anything off the family's allowlist is dropped to
+   * undefined rather than sent raw, so the anonymity envelope stays closed.
+   *
+   * @default undefined - the family has no detail split, or the observed detail was
+   * not on the family's allowlist; the field is omitted rather than sent raw.
+   */
+  errorDetail?: string;
+
+  /**
+   * Who owns the fix, derived from (class, detail, stage) at record time. Emitted
+   * (not left for PostHog to derive) because the owner rules include cross-owner
+   * exceptions PostHog cannot express. Present only when `outcome` is "failure".
+   *
+   * @default undefined - no failure to attribute (the run did not fail).
+   */
+  errorOwner?: TelemetryErrorOwner;
 
   /**
    * Pipeline stage the failure was tagged at. Present only when `outcome` is

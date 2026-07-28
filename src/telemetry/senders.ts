@@ -72,6 +72,12 @@ export function buildRunEvent(
       command: details.command,
       outcome: details.outcome,
       ...(details.errorClass ? { error_class: details.errorClass } : {}),
+      // The specific failure within the family and who owns the fix. Detail is an
+      // allowlisted word (dropped upstream if off-list); owner is derived from
+      // (class, detail, stage) so the dashboard can roll up by who must act,
+      // including the cross-owner exceptions PostHog cannot derive. Failure-only.
+      ...(details.errorDetail ? { error_detail: details.errorDetail } : {}),
+      ...(details.errorOwner ? { error_owner: details.errorOwner } : {}),
       // Where in the pipeline the failure was tagged, and the provider's numeric
       // status if one was present. Both failure-only and omitted when absent, so
       // the null bucket reads as "not instrumented / no status" rather than a

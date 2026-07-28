@@ -86,12 +86,18 @@ import {
   OPENWIKI_VERSION,
   type OpenWikiProvider,
 } from "./constants.js";
-import type { OpenWikiCommand, OpenWikiOutputMode } from "./agent/types.js";
+import type {
+  OpenWikiCommand,
+  OpenWikiOutputMode,
+  OpenWikiRunOptions,
+} from "./agent/types.js";
 import {
   firstRunNoticePending,
   FIRST_RUN_NOTICE_BODY,
   FIRST_RUN_NOTICE_OPT_OUT,
   FIRST_RUN_NOTICE_VERIFY,
+  withRunTelemetry,
+  type RunTelemetryContext,
 } from "./telemetry/index.js";
 
 type RunState =
@@ -581,34 +587,52 @@ function App({ command }: AppProps) {
         });
     }
 
-    const setupPromise =
-      runMode === "code"
-        ? ensureCodeModeRepoSetup(runtimeCwd, {
+    const handleRunEvent = (event: OpenWikiRunEvent): void => {
+      if (!mountedRef.current || activeRunId.current !== runId) {
+        return;
+      }
+
+      activeRunLog.current = appendRunLogEvent(
+        activeRunLog.current,
+        event,
+        nextLogId,
+      );
+      setRunState((currentState) =>
+        currentState.status === "running"
+          ? {
+              ...currentState,
+              log: activeRunLog.current,
+            }
+          : currentState,
+      );
+    };
+
+    const runOptions: OpenWikiRunOptions = {
+      debug: isDebugMode(),
+      isFollowup: activeMessageIsFollowup,
+      language: command.language,
+      modelId: sessionModelId,
+      outputMode: runtimeOutputMode,
+      threadId: sessionThreadId.current,
+      telemetryFile: command.telemetryFile ?? undefined,
+      onEvent: handleRunEvent,
+    };
+
+    // withRunTelemetry is the single boundary that records this run. It wraps repo
+    // setup and the connector pull too (not just the agent), so a throw in either
+    // pre-agent step is recorded rather than reaching only the UI catch below.
+    const telemetryContext: RunTelemetryContext = {};
+
+    withRunTelemetry(
+      resolvedCommand,
+      runOptions,
+      telemetryContext,
+      async () => {
+        if (runMode === "code") {
+          await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: resolvedCommand === "init",
-          })
-        : Promise.resolve();
-
-    setupPromise
-      .then(async () => {
-        const handleRunEvent = (event: OpenWikiRunEvent): void => {
-          if (!mountedRef.current || activeRunId.current !== runId) {
-            return;
-          }
-
-          activeRunLog.current = appendRunLogEvent(
-            activeRunLog.current,
-            event,
-            nextLogId,
-          );
-          setRunState((currentState) =>
-            currentState.status === "running"
-              ? {
-                  ...currentState,
-                  log: activeRunLog.current,
-                }
-              : currentState,
-          );
-        };
+          });
+        }
 
         // Code-mode connectors pull their evidence and augment the agent message
         // before the run, matching the --print path exactly. They emit progress
@@ -622,18 +646,14 @@ function App({ command }: AppProps) {
               )
             : activeUserMessage;
 
-        return runOpenWikiAgent(resolvedCommand, runtimeCwd, {
-          debug: isDebugMode(),
-          isFollowup: activeMessageIsFollowup,
-          language: command.language,
-          modelId: sessionModelId,
-          outputMode: runtimeOutputMode,
-          threadId: sessionThreadId.current,
-          userMessage,
-          telemetryFile: command.telemetryFile ?? undefined,
-          onEvent: handleRunEvent,
-        });
-      })
+        return runOpenWikiAgent(
+          resolvedCommand,
+          runtimeCwd,
+          { ...runOptions, userMessage },
+          telemetryContext,
+        );
+      },
+    )
       .then((result) => {
         if (!mountedRef.current || activeRunId.current !== runId) {
           return;
@@ -4156,40 +4176,59 @@ async function runPrintCommand(
     const runtimeCwd = getRunModeCwd(command.mode);
     const runtimeOutputMode = getRunModeOutputMode(command.mode);
 
-    if (command.mode === "code") {
-      await ensureCodeModeRepoSetup(runtimeCwd, {
-        createWorkflow: command.command === "init",
-      });
-    }
-
-    // Code-mode connectors (e.g. langsmith) pull their evidence and augment the
-    // agent message before the run, so --print behaves exactly like interactive.
     const handlePrintEvent = (event: OpenWikiRunEvent): void => {
       if (event.type === "text" && event.source !== "subgraph") {
         output.push(event.text);
       }
     };
 
-    const userMessage =
-      command.mode === "code" && command.command !== "chat"
-        ? await runCodeModeConnectors(
-            runtimeCwd,
-            command.userMessage ?? undefined,
-            handlePrintEvent,
-          )
-        : command.userMessage;
-
-    await runOpenWikiAgent(command.command, runtimeCwd, {
+    const runOptions: OpenWikiRunOptions = {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
       language: command.language,
       modelId: command.modelId,
       outputMode: runtimeOutputMode,
       threadId: createOpenWikiThreadId(runtimeCwd),
-      userMessage,
       telemetryFile: command.telemetryFile ?? undefined,
       onEvent: handlePrintEvent,
-    });
+    };
+
+    // withRunTelemetry is the single boundary that records this run, wrapping repo
+    // setup and the connector pull as well as the agent so a throw in either
+    // pre-agent step is recorded rather than only surfaced on stderr below.
+    const telemetryContext: RunTelemetryContext = {};
+
+    await withRunTelemetry(
+      command.command,
+      runOptions,
+      telemetryContext,
+      async () => {
+        if (command.mode === "code") {
+          await ensureCodeModeRepoSetup(runtimeCwd, {
+            createWorkflow: command.command === "init",
+          });
+        }
+
+        // Code-mode connectors (e.g. langsmith) pull their evidence and augment
+        // the agent message before the run, so --print behaves exactly like
+        // interactive.
+        const userMessage =
+          command.mode === "code" && command.command !== "chat"
+            ? await runCodeModeConnectors(
+                runtimeCwd,
+                command.userMessage ?? undefined,
+                handlePrintEvent,
+              )
+            : command.userMessage;
+
+        await runOpenWikiAgent(
+          command.command,
+          runtimeCwd,
+          { ...runOptions, userMessage },
+          telemetryContext,
+        );
+      },
+    );
 
     const text = output.join("").trim();
 

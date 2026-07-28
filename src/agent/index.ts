@@ -125,19 +125,15 @@ import {
   removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
 } from "./utils.js";
-import {
-  describeErrorForTelemetry,
-  inStage,
-  inStageSync,
-  recordRunSafe,
-  tagErrorStage,
-} from "../telemetry/index.js";
+import { inStage, inStageSync, tagErrorStage } from "../telemetry/index.js";
+import type { RunTelemetryContext } from "../telemetry/index.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
   cwd = openWikiLocalWikiDir,
   options: OpenWikiRunOptions = {},
+  telemetryContext: RunTelemetryContext = {},
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
   const runtimeCwd = options.outputMode ? cwd : openWikiLocalWikiDir;
@@ -174,10 +170,10 @@ export async function runOpenWikiAgent(
       emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
       options.onEvent?.({ type: "text", text: message });
 
-      await recordRunSafe(command, options, {
-        provider: resolveConfiguredProvider(),
-        outcome: "noop",
-      });
+      // The single telemetry boundary (withRunTelemetry) owns the record; publish
+      // the short-circuit outcome and provider onto the shared context and return.
+      telemetryContext.provider = resolveConfiguredProvider();
+      telemetryContext.outcome = "noop";
 
       return {
         command,
@@ -193,17 +189,16 @@ export async function runOpenWikiAgent(
 
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
-  // Published to this scope the instant the provider is resolved, so a failure
-  // later in resolution still attributes the provider in the failure record. It
-  // stays undefined only if the very first resolution step throws.
-  let provider: OpenWikiProvider | undefined;
-
   try {
+    // Published onto the shared context the instant the provider is resolved, so a
+    // failure later in the run still attributes the provider. It stays undefined
+    // only if the very first resolution step throws. The single telemetry boundary
+    // (withRunTelemetry) reads this context to record the run.
     const config = await resolveRunConfig(options, (resolved) => {
-      provider = resolved;
+      telemetryContext.provider = resolved;
     });
 
-    const result = await runOpenWikiAgentCore(
+    return await runOpenWikiAgentCore(
       command,
       runtimeCwd,
       options,
@@ -212,24 +207,11 @@ export async function runOpenWikiAgent(
       config.providerRetryAttempts,
       openWikiIgnore,
     );
-
-    await recordRunSafe(command, options, {
-      provider: config.provider,
-      outcome: "success",
-    });
-
-    return result;
   } catch (error) {
+    // Enrich the error for the CLI's debug/auth UI, then rethrow. The telemetry
+    // record is owned by withRunTelemetry, which reads the stage/class tags this
+    // error already carries.
     attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
-
-    await recordRunSafe(command, options, {
-      provider,
-      outcome: "failure",
-      // Class, stage, and status in one spread. Stage rides a non-enumerable tag
-      // (config here, or a later stage from runOpenWikiAgentCore); status is a
-      // bare int. No error text ever enters the payload.
-      ...describeErrorForTelemetry(error),
-    });
 
     throw error;
   } finally {
@@ -308,27 +290,36 @@ async function runOpenWikiAgentCore(
   openWikiIgnore: OpenWikiIgnore,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
-  const context = await inStage("build", () =>
-    createRunContext(command, cwd, outputMode, options.language, openWikiIgnore),
+  const context = await inStage(
+    "build",
+    () =>
+      createRunContext(command, cwd, outputMode, options.language, openWikiIgnore),
+    { errorClass: "build_error", errorDetail: "run_context" },
   );
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
     command === "chat"
       ? null
-      : await inStage("build", () =>
-          createOpenWikiContentSnapshot(cwd, outputMode),
+      : await inStage(
+          "build",
+          () => createOpenWikiContentSnapshot(cwd, outputMode),
+          { errorClass: "build_error", errorDetail: "snapshot" },
         );
   emitDebug(options, "openwiki.snapshot=created");
-  const model = inStageSync("build", () =>
-    createModel(provider, modelId, providerRetryAttempts),
+  const model = inStageSync(
+    "build",
+    () => createModel(provider, modelId, providerRetryAttempts),
+    { errorClass: "build_error", errorDetail: "model" },
   );
   emitDebug(options, `model.provider=${provider}`);
   emitDebug(options, "model=initialized");
   const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
   emitDebug(options, `thread=${threadId}`);
   const checkpointTarget = resolveCheckpointTarget(command);
-  const checkpointer = await inStage("build", () =>
-    createCheckpointer(checkpointTarget),
+  const checkpointer = await inStage(
+    "build",
+    () => createCheckpointer(checkpointTarget),
+    { errorClass: "checkpointer_error", errorDetail: "create" },
   );
   emitDebug(
     options,
@@ -361,61 +352,64 @@ async function runOpenWikiAgentCore(
   // back to English for any language not in the static maps.
   const indexLabels = resolveIndexLabels(context.language);
   const conceptType = resolveConceptTypeLabel(context.language);
-  const agent = inStageSync("build", () =>
-    createDeepAgent({
-      model,
-      tools: createOpenWikiConnectorTools(),
-      checkpointer,
-      backend,
-      middleware:
-        command === "chat"
-          ? []
-          : [
-              ...(translation
-                ? [
-                    createWikiTranslationMiddleware(
-                      wikiBackend,
-                      outputMode,
-                      model,
-                      translation,
-                      (message) => {
-                        options.onEvent?.({ type: "text", text: message });
-                        // Also emit to stderr so the warning survives the TUI
-                        // re-render and --print's discard of streamed text.
-                        process.stderr.write(`${message}\n`);
-                      },
-                      // The pass announces itself with one line in place of the
-                      // suppressed per-token translation output. It is routine
-                      // progress, so unlike a warning it is not mirrored to stderr.
-                      // The trailing blank line keeps it a distinct Markdown block:
-                      // the TUI coalesces consecutive text events into one
-                      // block-lexed log item, so without it the status would run
-                      // straight into the agent's first streamed line.
-                      (message) => {
-                        options.onEvent?.({
-                          type: "text",
-                          text: `${message}\n\n`,
-                        });
-                      },
-                    ),
-                  ]
-                : []),
-              createOpenWikiIndexMiddleware(
-                wikiBackend,
-                outputMode,
-                indexLabels,
-                conceptType,
-              ),
-            ],
-      skills: ["/skills/"],
-      permissions: AGENT_FILESYSTEM_PERMISSIONS,
-      systemPrompt: createSystemPrompt(
-        command,
-        outputMode,
-        context.language,
-        openWikiIgnore,
-      ),
-    }),
+  const agent = inStageSync(
+    "build",
+    () =>
+      createDeepAgent({
+        model,
+        tools: createOpenWikiConnectorTools(),
+        checkpointer,
+        backend,
+        middleware:
+          command === "chat"
+            ? []
+            : [
+                ...(translation
+                  ? [
+                      createWikiTranslationMiddleware(
+                        wikiBackend,
+                        outputMode,
+                        model,
+                        translation,
+                        (message) => {
+                          options.onEvent?.({ type: "text", text: message });
+                          // Also emit to stderr so the warning survives the TUI
+                          // re-render and --print's discard of streamed text.
+                          process.stderr.write(`${message}\n`);
+                        },
+                        // The pass announces itself with one line in place of the
+                        // suppressed per-token translation output. It is routine
+                        // progress, so unlike a warning it is not mirrored to stderr.
+                        // The trailing blank line keeps it a distinct Markdown block:
+                        // the TUI coalesces consecutive text events into one
+                        // block-lexed log item, so without it the status would run
+                        // straight into the agent's first streamed line.
+                        (message) => {
+                          options.onEvent?.({
+                            type: "text",
+                            text: `${message}\n\n`,
+                          });
+                        },
+                      ),
+                    ]
+                  : []),
+                createOpenWikiIndexMiddleware(
+                  wikiBackend,
+                  outputMode,
+                  indexLabels,
+                  conceptType,
+                ),
+              ],
+        skills: ["/skills/"],
+        permissions: AGENT_FILESYSTEM_PERMISSIONS,
+        systemPrompt: createSystemPrompt(
+          command,
+          outputMode,
+          context.language,
+          openWikiIgnore,
+        ),
+      }),
+    { errorClass: "build_error", errorDetail: "agent" },
   );
   emitDebug(options, "agent=created");
 
@@ -429,13 +423,16 @@ async function runOpenWikiAgentCore(
   };
 
   emitDebug(options, "stream=opening protocol=events version=v3");
-  const stream = await inStage("build", () =>
-    agent.streamEvents(input, {
-      configurable: {
-        thread_id: threadId,
-      },
-      version: "v3",
-    }),
+  const stream = await inStage(
+    "build",
+    () =>
+      agent.streamEvents(input, {
+        configurable: {
+          thread_id: threadId,
+        },
+        version: "v3",
+      }),
+    { errorClass: "build_error", errorDetail: "stream_open" },
   );
   emitDebug(options, "stream=started protocol=events version=v3");
 
@@ -502,10 +499,21 @@ async function runOpenWikiAgentCore(
     );
   }
 
+  if (checkpointTarget.persistent) {
+    // Locking down the checkpoint file is a checkpointer concern; a filesystem
+    // failure here owns to us, not the user, so it carries its own class rather
+    // than the stage-only tag the metadata write below relies on.
+    await inStage(
+      "finalize",
+      () => chmodIfExists(checkpointTarget.connString, 0o600),
+      { errorClass: "checkpointer_error", errorDetail: "chmod" },
+    );
+  }
+
+  // Stage-only tag: a write failure here classifies from the raw error (a
+  // filesystem code becomes filesystem_error), and deriveOwner's finalize
+  // exception routes that to openwiki since the run reached our own persistence.
   const metadataWritten = await inStage("finalize", async () => {
-    if (checkpointTarget.persistent) {
-      await chmodIfExists(checkpointTarget.connString, 0o600);
-    }
     await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
     return persistRunMetadataIfChanged(
       command,

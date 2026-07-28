@@ -7,7 +7,11 @@ import { getConfiguredConnectorIds } from "../connectors/registry.js";
 import type { OpenWikiProvider } from "../constants.js";
 
 import { recordRun } from "./senders.js";
-import type { TelemetryErrorClass, TelemetryErrorStage } from "./types.js";
+import type {
+  TelemetryErrorClass,
+  TelemetryErrorOwner,
+  TelemetryErrorStage,
+} from "./types.js";
 
 /**
  * Translates a finished agent run into the single telemetry event and records
@@ -25,9 +29,9 @@ import type { TelemetryErrorClass, TelemetryErrorStage } from "./types.js";
  * @param command - Which run lifecycle finished. Only init/update are recorded.
  * @param options - The run options; read for `outputMode` and `telemetryFile`.
  * @param facts - What the run produced: its `outcome`, the failure diagnostics
- *   (`errorClass`, plus an optional `errorStage` and `httpStatus`, all present
- *   only on failure), and the resolved `provider` (which may be undefined when
- *   resolution failed before the provider was known).
+ *   (`errorClass`, plus an optional `errorDetail`, `errorOwner`, `errorStage`, and
+ *   `httpStatus`, all present only on failure), and the resolved `provider` (which
+ *   may be undefined when resolution failed before the provider was known).
  */
 export async function recordRunSafe(
   command: OpenWikiCommand,
@@ -36,6 +40,8 @@ export async function recordRunSafe(
     provider?: OpenWikiProvider;
     outcome: "success" | "failure" | "noop";
     errorClass?: TelemetryErrorClass;
+    errorDetail?: string;
+    errorOwner?: TelemetryErrorOwner;
     errorStage?: TelemetryErrorStage;
     httpStatus?: number;
   },
@@ -52,6 +58,8 @@ export async function recordRunSafe(
     command,
     outcome: facts.outcome,
     errorClass: facts.errorClass,
+    errorDetail: facts.errorDetail,
+    errorOwner: facts.errorOwner,
     errorStage: facts.errorStage,
     httpStatus: facts.httpStatus,
     // Setup choices are captured on init only (the configuration moment); on
