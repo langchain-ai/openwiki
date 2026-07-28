@@ -64,8 +64,8 @@ The UI persists provider and model selection back to `~/.openwiki/.env` through 
 
 The first interactive run can prompt for:
 
-- a **provider** (`OPENWIKI_PROVIDER`) — openai, openai-chatgpt, openrouter, anthropic, gemini, gemini-enterprise, bedrock, baseten, fireworks, nebius, nvidia, or openai-compatible,
-- the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`, `GEMINI_API_KEY`, `NEBIUS_API_KEY`) — skipped for the gemini-enterprise provider, which instead prompts for a **GCP project** (`GOOGLE_CLOUD_PROJECT`, required) and a **GCP location** (`GOOGLE_CLOUD_LOCATION`, optional, defaults to `global`), and skipped for the bedrock provider, which instead prompts for AWS access key ID, secret access key, and region,
+- a **provider** (`OPENWIKI_PROVIDER`) — openai, openai-chatgpt, copilot, openrouter, anthropic, gemini, gemini-enterprise, bedrock, baseten, fireworks, nebius, nvidia, or openai-compatible,
+- the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`, `GEMINI_API_KEY`, `NEBIUS_API_KEY`) — skipped for the gemini-enterprise provider, which instead prompts for a **GCP project** (`GOOGLE_CLOUD_PROJECT`, required) and a **GCP location** (`GOOGLE_CLOUD_LOCATION`, optional, defaults to `global`), and skipped for the bedrock provider, which instead prompts for AWS access key ID, secret access key, and region, and skipped for the copilot provider, which uses the GitHub CLI (`gh auth login`) instead of an API key,
 - a **base URL** for providers that require one (the openai-compatible provider prompts for `OPENAI_COMPATIBLE_BASE_URL`),
 - a **model ID** stored as `OPENWIKI_MODEL_ID` — chosen from the provider's model list or a custom ID,
 - optional `LANGSMITH_API_KEY` for tracing.
@@ -82,6 +82,7 @@ Providers and their model options are defined in `PROVIDER_CONFIGS` in `src/cons
 | ----------------- | ------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------- |
 | openai            | `OPENAI_API_KEY`                                              | (default, or `OPENAI_BASE_URL`)                | 5.6 Terra, 5.6 Luna, 5.6 Sol, 5.5, 5.4 mini                                     |
 | openai-chatgpt    | `OPENAI_CHATGPT_ACCESS_TOKEN`                                 | (Codex backend)                                | Same as openai (OAuth login, no API key)                                        |
+| copilot           | `COPILOT_API_KEY`                                             | `https://api.githubcopilot.com` (or `COPILOT_BASE_URL`) | GPT 5.6 Terra/Luna/Sol, 5.5, 5.4 mini; Claude Opus/Sonnet/Haiku/Fable; Gemini 2.5 Pro |
 | openrouter        | `OPENROUTER_API_KEY`                                          | `https://openrouter.ai/api/v1`                 | GLM 5.2, Fusion, Kimi K2.7 Code, Claude Opus/Sonnet, GPT 5.4 mini/5.5           |
 | anthropic         | `ANTHROPIC_API_KEY`                                           | (default, or `ANTHROPIC_BASE_URL`)             | Haiku, Sonnet, Opus                                                             |
 | gemini            | `GEMINI_API_KEY`                                              | (AI Studio)                                    | Gemini 3.6 Flash, 3.5 Flash/Lite, 3.1 Pro, 3 Flash, 3.1 Flash-Lite              |
@@ -185,6 +186,35 @@ secret access key (`BEDROCK_AWS_SECRET_ACCESS_KEY`), and a region
 (`BEDROCK_AWS_REGION`). Available model IDs are account- and region-specific,
 so there is no preset model list — paste the Bedrock model ID directly (for
 example `anthropic.claude-sonnet-5-20260101-v1:0`).
+
+### GitHub Copilot provider
+
+The `copilot` provider uses the GitHub Copilot API endpoint
+(`https://api.githubcopilot.com`) and authenticates via the GitHub CLI rather
+than a pasted API key. It is configured with `authMethod: "external-cli"` and
+`externalCliAuthAdapter: "github-cli"`, so the interactive onboarding flow runs
+`gh auth login` with a Copilot-enabled account and reads the token via
+`gh auth token`. The token is reused for the current process only — it is never
+written to `~/.openwiki/.env`, so the CLI remains the source of truth.
+
+For CI and other headless runs, set `COPILOT_API_KEY` directly to a GitHub OAuth
+token (not a Personal Access Token — `ghp_` and `github_pat_` tokens are
+rejected by `validateExternalCliCredential()` because the Copilot API does not
+accept them).
+
+The provider's `responsesApi` setting is a regex (`/^gpt-5/u`), so GPT models
+use the OpenAI Responses API while Claude and Gemini models use the standard
+chat completions endpoint.
+
+```bash
+OPENWIKI_PROVIDER=copilot
+# Interactive: run `gh auth login` with a Copilot-enabled account
+# CI: set COPILOT_API_KEY to a GitHub OAuth token
+```
+
+The `--hostname` flag passed to `gh` matches the tenant of the configured base
+URL (if `COPILOT_BASE_URL` points at a GHE.com data-residency host), so the
+reused session authenticates against the correct GitHub instance.
 
 ## Help text and validation
 
