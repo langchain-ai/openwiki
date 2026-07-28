@@ -4,8 +4,8 @@ import {
   isErrorRun,
   selectSampleBuckets,
   summarizeSample,
-} from "../../src/connectors/sources/langsmith/runs.ts";
-import type { BucketedRoot } from "../../src/connectors/sources/langsmith/runs.ts";
+} from "../../../../src/connectors/sources/langsmith/runs.ts";
+import type { BucketedRoot } from "../../../../src/connectors/sources/langsmith/runs.ts";
 import type { Run } from "langsmith";
 
 function run(fields: Record<string, unknown>): Run {

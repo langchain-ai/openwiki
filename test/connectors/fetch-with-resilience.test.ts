@@ -296,6 +296,44 @@ describe("fetchWithResilience", () => {
     expect(delays).toEqual([250]);
   });
 
+  test("combines a caller-provided AbortSignal with the internal timeout", async () => {
+    // When the caller passes its own signal, the helper must merge it with the
+    // per-attempt timeout signal (AbortSignal.any) instead of dropping either.
+    const controller = new AbortController();
+    const stub = vi.fn((_input: unknown, init?: { signal?: AbortSignal }) => {
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      return Promise.resolve(new Response("ok", { status: 200 }));
+    });
+    vi.stubGlobal("fetch", stub);
+
+    const response = await fetchWithResilience(
+      "https://api.example.com/x",
+      { signal: controller.signal },
+      { sleep: noSleep, random: fixedRandom },
+    );
+
+    expect(response.status).toBe(200);
+    expect(stub).toHaveBeenCalledTimes(1);
+  });
+
+  test("wraps a non-Error rejection in an Error when retries are exhausted", async () => {
+    // fetch can reject with a non-Error (e.g. a string); the helper must still
+    // surface a real Error so callers can rely on `.message`. The non-Error
+    // rejection is the exact contract under test here.
+    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+    const stub = vi.fn(() => Promise.reject("string failure"));
+    vi.stubGlobal("fetch", stub);
+
+    await expect(
+      fetchWithResilience(
+        "https://api.example.com/x",
+        {},
+        { maxRetries: 0, sleep: noSleep, random: fixedRandom },
+      ),
+    ).rejects.toThrow("string failure");
+    expect(stub).toHaveBeenCalledTimes(1);
+  });
+
   test("passes an AbortSignal to fetch so a hung request can time out", async () => {
     const stub = vi.fn((_input: unknown, init?: { signal?: AbortSignal }) => {
       expect(init?.signal).toBeInstanceOf(AbortSignal);

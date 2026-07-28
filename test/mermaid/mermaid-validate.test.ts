@@ -135,6 +135,20 @@ describe("sanitizeMermaidError", () => {
     expect(sanitizeMermaidError(new Error(""))).toBe("unknown error");
   });
 
+  test("stringifies non-Error thrown values, falling back on unserializable ones", () => {
+    // A parser can throw a non-Error; the message is derived without itself
+    // throwing so sanitization never crashes the wiki run.
+    expect(sanitizeMermaidError("plain string reason")).toBe(
+      "plain string reason",
+    );
+    expect(sanitizeMermaidError({ detail: "as json" })).toContain("as json");
+
+    // A circular object cannot be JSON-serialized, so String() is the fallback.
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    expect(sanitizeMermaidError(circular)).toBe("[object Object]");
+  });
+
   test("keeps the parser diagnosis and drops caret-underline noise", () => {
     const err = new Error(
       "Parse error on line 20:\n... Svc->>Note: notify\n----------^\nExpecting 'ACTOR', got 'note'",

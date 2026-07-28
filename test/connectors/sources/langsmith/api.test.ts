@@ -28,7 +28,7 @@ vi.mock("langsmith", () => {
 });
 
 const { createLangSmithApi, isRateLimitError } =
-  await import("../../src/connectors/sources/langsmith/api.ts");
+  await import("../../../../src/connectors/sources/langsmith/api.ts");
 
 beforeEach(() => {
   sdk.runs = [];

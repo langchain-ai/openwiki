@@ -128,6 +128,32 @@ describe("getRedirectUriFromNgrokTunnels", () => {
     );
   });
 
+  test("treats a tunnel with no addr as non-matching but still usable as the sole fallback", () => {
+    // A tunnel config lacking an `addr` yields an empty string; the port match
+    // short-circuits to false rather than throwing, and the sole https tunnel
+    // is still returned as the fallback.
+    const payload = tunnels([
+      { addr: undefined, public_url: "https://noaddr.ngrok.app" },
+    ]);
+
+    expect(getRedirectUriFromNgrokTunnels(payload, PORT)).toBe(
+      "https://noaddr.ngrok.app/callback",
+    );
+  });
+
+  test("treats an unparseable addr as non-matching without throwing", () => {
+    // A non-empty addr that is neither a bare port, a `:port` suffix, nor a
+    // parseable URL must fail the port match via the caught URL parse error,
+    // leaving the sole https tunnel as the fallback.
+    const payload = tunnels([
+      { addr: "garbage", public_url: "https://weirdaddr.ngrok.app" },
+    ]);
+
+    expect(getRedirectUriFromNgrokTunnels(payload, PORT)).toBe(
+      "https://weirdaddr.ngrok.app/callback",
+    );
+  });
+
   test("matches a full-url addr by parsing out its port", () => {
     // The addr is a full URL that does not literally end in `:53682`, so the
     // match must come from URL parsing rather than the suffix shortcut.

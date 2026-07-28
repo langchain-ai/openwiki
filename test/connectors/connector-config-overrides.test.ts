@@ -132,6 +132,32 @@ function getRequestUrl(input: string | URL | Request): string {
   return input instanceof Request ? input.url : String(input);
 }
 
+describe("connector io surfaces malformed config and state json", () => {
+  // The io layer swallows only ENOENT (missing file) and rethrows every other
+  // read/parse error, so a corrupt on-disk config or state must abort the run
+  // rather than be silently treated as absent.
+  test("rethrows when config.json is not valid json", async () => {
+    const home = await createTempHome();
+    const dir = path.join(home, ".openwiki", "connectors", "google");
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, "config.json"), "{ not valid json", "utf8");
+    const connector = await loadGmailConnector(home);
+
+    await expect(connector.ingest()).rejects.toThrow();
+  });
+
+  test("rethrows when state.json is not valid json", async () => {
+    const home = await createTempHome();
+    const dir = path.join(home, ".openwiki", "connectors", "google");
+    await mkdir(dir, { recursive: true });
+    await writeConnectorConfig(home, "google", { enabled: true });
+    await writeFile(path.join(dir, "state.json"), "{ not valid json", "utf8");
+    const connector = await loadGmailConnector(home);
+
+    await expect(connector.ingest()).rejects.toThrow();
+  });
+});
+
 describe("x connector honors options.connectorConfig", () => {
   test("skips when on-disk config is disabled and no override is given", async () => {
     const home = await createTempHome();

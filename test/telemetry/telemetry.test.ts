@@ -1,4 +1,4 @@
-import { readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -998,6 +998,27 @@ describe("senders.recordRun", () => {
       sent: false,
     });
     await rm(file, { force: true });
+  test("reports, without throwing, when the tee file cannot be written", async () => {
+    // A tee target under a regular file cannot have its parent directory
+    // created; recordRun must log the failure and carry on, never breaking the
+    // run over a diagnostics file.
+    process.env.OPENWIKI_TELEMETRY_DISABLED = "1";
+    const dir = await mkdtemp(path.join(tmpdir(), "ow-tel-badtee-"));
+    const blocker = path.join(dir, "blocker");
+    await writeFile(blocker, "not a directory");
+    // `blocker` is a file, so mkdir of it as a parent directory fails.
+    const file = path.join(blocker, "out.json");
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(
+      recordRun(runDetails({ telemetryFile: file })),
+    ).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("could not write telemetry file"),
+    );
+    errorSpy.mockRestore();
+    await rm(dir, { recursive: true, force: true });
   });
 });
 
@@ -1051,6 +1072,19 @@ describe("recordRun connector properties", () => {
     await recordRun(runDetails());
 
     expect(runEvent().properties.production).toBe(false);
+  });
+
+  test("carries the error class onto a failed run's event", async () => {
+    // A failure outcome attaches its classified error category so failures can
+    // be split by kind without ever sending the raw message.
+    await recordRun(
+      runDetails({ outcome: "failure", errorClass: "provider_auth" }),
+    );
+
+    expect(runEvent().properties).toMatchObject({
+      outcome: "failure",
+      error_class: "provider_auth",
+    });
   });
 
   test("update runs omit the init-only setup fields", async () => {

@@ -15,7 +15,11 @@ export default defineConfig({
       provider: "v8",
       all: true,
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.d.ts"],
+      // `types.ts` modules are pure `interface`/`type` declarations that emit no
+      // runtime JavaScript, so v8 reports them as 0-of-0 statements and drags the
+      // aggregate down for code that cannot be executed. Exclude them (and .d.ts)
+      // so the denominator reflects only files with real, coverable behavior.
+      exclude: ["src/**/*.d.ts", "src/**/types.ts"],
       reporter: ["text", "text-summary", "html", "json-summary", "lcov"],
     },
   },

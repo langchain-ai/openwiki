@@ -2,12 +2,15 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   CHATGPT_TOKEN_REFRESH_THRESHOLD_MS,
   CODEX_RESPONSES_LITE_HEADER,
+  type ChatGptLoginHandle,
   type CodexTokens,
   codexTokensToEnv,
   createCodexFetch,
   decodeChatGptIdentity,
   formatChatGptAccount,
+  formatChatGptAccountFromEnv,
   isChatGptTokenExpired,
+  loginWithChatGPT,
   parseManualCallbackInput,
   readCodexTokensFromEnv,
   refreshChatGptTokens,
@@ -191,6 +194,27 @@ describe("Codex Responses requests", () => {
     expect(init.headers.get(CODEX_RESPONSES_LITE_HEADER)).toBe("true");
   });
 
+  test("treats an unparseable request URL as not-a-Codex-request", async () => {
+    // isCodexResponsesRequest must swallow a malformed URL rather than throw:
+    // a body it can't classify is forwarded untouched, so Luna framing is never
+    // applied off the Codex endpoint.
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    const codexFetch = createCodexFetch("gpt-5.6-luna", fetchMock);
+
+    await codexFetch("::://not-a-url", {
+      body: JSON.stringify({ input: [{ role: "system", content: "x" }] }),
+      headers: { originator: "openwiki" },
+      method: "POST",
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [
+      string,
+      { headers: Record<string, string> },
+    ];
+    // No Luna headers were added; only the system->developer rewrite applies.
+    expect(init.headers).toEqual({ originator: "openwiki" });
+  });
+
   test("passes non-object JSON bodies through unchanged", async () => {
     const fetchMock = vi.fn(() => Promise.resolve(new Response()));
     const codexFetch = createCodexFetch("gpt-5.6-luna", fetchMock);
@@ -325,6 +349,19 @@ describe("decodeChatGptIdentity", () => {
       planType: null,
     });
   });
+
+  test("returns nulls when a well-formed JWT carries an undecodable payload", () => {
+    // Three segments but a middle segment that is not valid base64url JSON: the
+    // decode must fail closed to empty claims rather than throw, since these are
+    // untrusted token bytes we never signature-verify.
+    const badPayload = Buffer.from("not json", "utf8").toString("base64url");
+
+    expect(decodeChatGptIdentity(`header.${badPayload}.sig`)).toEqual({
+      accountId: null,
+      email: null,
+      planType: null,
+    });
+  });
 });
 
 describe("codex token env contract", () => {
@@ -431,5 +468,96 @@ describe("parseManualCallbackInput", () => {
     expect(
       parseManualCallbackInput("http://localhost:1455/auth/callback?state=abc"),
     ).toEqual({ code: null, state: "abc" });
+  });
+
+  test("returns nulls when an http-looking value is not a parseable URL", () => {
+    // A value that trips the http:// branch but fails URL parsing must degrade to
+    // empty rather than throw, so a fumbled paste is reported inline, not crashed.
+    expect(parseManualCallbackInput("https://")).toEqual({
+      code: null,
+      state: null,
+    });
+  });
+});
+
+describe("formatChatGptAccountFromEnv", () => {
+  test("formats the identity persisted in the environment", () => {
+    expect(
+      formatChatGptAccountFromEnv({
+        OPENAI_CHATGPT_EMAIL: "dev@example.com",
+        OPENAI_CHATGPT_PLAN: "team",
+      }),
+    ).toBe("dev@example.com (Team)");
+  });
+
+  test("returns null when neither identity claim is persisted", () => {
+    expect(formatChatGptAccountFromEnv({})).toBeNull();
+  });
+});
+
+describe("loginWithChatGPT", () => {
+  test("builds the PKCE authorize URL and completes via a manual paste", async () => {
+    // Exercises the browser Authorization Code + PKCE flow end to end without a
+    // real browser: the token exchange fetch is stubbed and the auth code is fed
+    // through the manual-paste handle instead of the loopback redirect. The
+    // loopback callback server still binds (localhost only), but no external
+    // network is touched.
+    const access = makeAccessToken("acct_login", {
+      email: "u@example.com",
+      planType: "pro",
+    });
+    stubTokenResponse({
+      access_token: access,
+      refresh_token: "refresh-login",
+      expires_in: 3600,
+    });
+
+    let openedUrl = "";
+    let loginResult: Promise<CodexTokens> | undefined;
+    const handle = await new Promise<ChatGptLoginHandle>((resolve) => {
+      // The executor runs synchronously, so loginResult is assigned before the
+      // handle (delivered via onReady) is ever used below.
+      loginResult = loginWithChatGPT(
+        (url) => {
+          openedUrl = url;
+        },
+        (h) => resolve(h),
+      );
+    });
+
+    // The authorize URL carries the fixed Codex client id and an S256 challenge,
+    // proving generatePkce/base64url ran and the params were assembled.
+    const parsed = new URL(openedUrl);
+    expect(parsed.origin + parsed.pathname).toBe(
+      "https://auth.openai.com/oauth/authorize",
+    );
+    expect(parsed.searchParams.get("client_id")).toBe(
+      "app_EMoamEEZ73f0CkXaXp7hrann",
+    );
+    expect(parsed.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(parsed.searchParams.get("code_challenge")).toBeTruthy();
+    const state = parsed.searchParams.get("state");
+    expect(state).toBeTruthy();
+
+    // An empty paste and a state-mismatched paste are reported inline without
+    // resolving the login, so a fumbled paste can be retried.
+    expect(handle.submitManual("   ")).toBe(
+      "Could not find an authorization code in that input.",
+    );
+    expect(
+      handle.submitManual(
+        `http://localhost:1455/auth/callback?code=ac_x&state=${state}-wrong`,
+      ),
+    ).toBe("State mismatch — paste the URL from this login attempt.");
+
+    // A bare code (no state) is accepted and completes the exchange.
+    expect(handle.submitManual("ac_good")).toBeNull();
+
+    const tokens = await loginResult!;
+    expect(tokens.access).toBe(access);
+    expect(tokens.refresh).toBe("refresh-login");
+    expect(tokens.accountId).toBe("acct_login");
+    expect(tokens.email).toBe("u@example.com");
+    expect(tokens.planType).toBe("pro");
   });
 });

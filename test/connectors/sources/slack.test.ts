@@ -456,6 +456,59 @@ describe("slack recent-history normalization", () => {
     ]);
   });
 
+  test("treats a non-numeric message timestamp as zero when sorting", async () => {
+    const home = await createTempHome();
+    await writeConnectorConfig(home, {
+      enabled: true,
+      maxConversations: 5,
+      messagesPerConversation: 10,
+      streams: ["recent_messages"],
+    });
+    stubSlack((method, params) => {
+      if (method === "auth.test") {
+        return AUTH_OK;
+      }
+      if (method === "users.info") {
+        return { ok: true, user: { id: "UABC123" } };
+      }
+      if (method === "search.messages") {
+        return { messages: [], ok: true };
+      }
+      if (method === "conversations.list") {
+        return {
+          channels: [{ id: "C1", name: "alpha", updated: 10 }],
+          ok: true,
+          response_metadata: {},
+        };
+      }
+      if (method === "conversations.history" && params.channel === "C1") {
+        // A garbage (non-numeric) ts must be treated as timestamp 0 by the
+        // comparator, sorting below the well-formed message rather than
+        // producing NaN and an unstable order.
+        return {
+          messages: [
+            { text: "bad", ts: "not-a-number", user: "UABC123" },
+            { text: "good", ts: "900.0", user: "UABC123" },
+          ],
+          ok: true,
+        };
+      }
+      return { messages: [], ok: true };
+    });
+    const connector = await loadSlackConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    const dump = (await readRaw(result.rawFiles, "recent-messages.json")) as {
+      userMessages: { message: { text: string } }[];
+    };
+    expect(dump.userMessages.map((entry) => entry.message.text)).toEqual([
+      "good",
+      "bad",
+    ]);
+  });
+
   test("warns and handles a missing timestamp when the user has one message", async () => {
     const home = await createTempHome();
     await writeConnectorConfig(home, {

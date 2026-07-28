@@ -9,7 +9,7 @@ import {
   sanitizeLangSmithApiBaseUrl,
   sanitizeLangSmithApiKeyEnv,
   writeLangSmithRepoConfig,
-} from "../../src/connectors/sources/langsmith/repo-config.ts";
+} from "../../../../src/connectors/sources/langsmith/repo-config.ts";
 
 const tempRoots: string[] = [];
 

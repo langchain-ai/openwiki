@@ -1,9 +1,34 @@
+import type {
+  BackendProtocolV2,
+  EditResult,
+  LsResult,
+  ReadRawResult,
+} from "deepagents";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
 import { OpenWikiLocalShellBackend } from "../../src/agent/docs-only-backend.ts";
 import { validateWikiMermaid } from "../../src/mermaid/wiki.ts";
+
+/**
+ * Builds a minimal stub backend so the read/write error branches, which the
+ * real disk-backed backend does not surface deterministically, can be driven.
+ */
+function stubBackend(handlers: {
+  ls?: (p: string) => LsResult;
+  readRaw?: (p: string) => ReadRawResult;
+  edit?: (p: string) => EditResult;
+}): BackendProtocolV2 {
+  return {
+    ls: vi.fn(handlers.ls ?? (() => ({ files: [] }))),
+    readRaw: vi.fn(handlers.readRaw ?? (() => ({ data: undefined }))),
+    edit: vi.fn(handlers.edit ?? (() => ({}))),
+  } as unknown as BackendProtocolV2;
+}
+
+const BROKEN_BODY = ["flowchart TD", "  A[Start] --> end[The End]"].join("\n");
+const BROKEN_DOC = ["```mermaid", BROKEN_BODY, "```"].join("\n");
 
 const VALID = [
   "```mermaid",
@@ -134,5 +159,93 @@ describe("validateWikiMermaid", () => {
       fencesDegraded: 0,
       repairedFiles: [],
     });
+  });
+});
+
+describe("validateWikiMermaid backend error handling", () => {
+  test("treats a subdirectory that cannot be listed as empty", async () => {
+    // A directory whose listing fails is skipped rather than aborting the scan,
+    // matching the index middleware's tolerance.
+    const backend = stubBackend({
+      ls: (p) =>
+        p === "/openwiki"
+          ? { files: [{ path: "/openwiki/sub/", is_dir: true }] }
+          : { error: "listing denied" },
+    });
+
+    const report = await validateWikiMermaid(backend, "repository");
+    expect(report.filesScanned).toBe(0);
+  });
+
+  test("joins array-shaped file content before scanning", async () => {
+    // Some backends return content as a line array; it must be joined to text,
+    // and a clean file leaves no diff.
+    const backend = stubBackend({
+      ls: () => ({ files: [{ path: "/openwiki/a.md", is_dir: false }] }),
+      readRaw: () => ({
+        data: {
+          content: ["# Title", "", "Prose only, no fences."],
+          mimeType: "text/markdown",
+          created_at: "2026-07-13T00:00:00.000Z",
+          modified_at: "2026-07-13T00:00:00.000Z",
+        },
+      }),
+    });
+
+    const report = await validateWikiMermaid(backend, "repository");
+    expect(report.filesScanned).toBe(1);
+    expect(report.fencesDegraded).toBe(0);
+  });
+
+  test("throws an actionable error when a file cannot be read", async () => {
+    const backend = stubBackend({
+      ls: () => ({ files: [{ path: "/openwiki/a.md", is_dir: false }] }),
+      readRaw: () => ({ error: "read denied" }),
+    });
+
+    await expect(validateWikiMermaid(backend, "repository")).rejects.toThrow(
+      /Unable to read \/openwiki\/a\.md/u,
+    );
+  });
+
+  test("rejects a non-text file rather than mangling it", async () => {
+    // Binary content has no text form to scan, so the scan fails loudly instead
+    // of silently corrupting the file.
+    const backend = stubBackend({
+      ls: () => ({ files: [{ path: "/openwiki/a.md", is_dir: false }] }),
+      readRaw: () => ({
+        data: {
+          content: new Uint8Array([1, 2, 3]),
+          mimeType: "application/octet-stream",
+          created_at: "2026-07-13T00:00:00.000Z",
+          modified_at: "2026-07-13T00:00:00.000Z",
+        },
+      }),
+    });
+
+    await expect(validateWikiMermaid(backend, "repository")).rejects.toThrow(
+      /is not a text file/u,
+    );
+  });
+
+  test("surfaces a rewrite failure for a degraded file", async () => {
+    // When the degraded rewrite cannot be persisted the run fails rather than
+    // leaving a broken diagram unrepaired and unreported.
+    const backend = stubBackend({
+      ls: () => ({ files: [{ path: "/openwiki/a.md", is_dir: false }] }),
+      readRaw: () => ({
+        data: {
+          content: `# Page\n\n${BROKEN_DOC}\n`,
+          mimeType: "text/markdown",
+          created_at: "2026-07-13T00:00:00.000Z",
+          modified_at: "2026-07-13T00:00:00.000Z",
+        },
+      }),
+      edit: () => ({ error: "write denied" }),
+    });
+
+    await expect(validateWikiMermaid(backend, "repository")).rejects.toThrow(
+      /Unable to rewrite \/openwiki\/a\.md/u,
+    );
   });
 });

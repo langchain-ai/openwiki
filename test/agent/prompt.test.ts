@@ -3,7 +3,22 @@ import {
   createDiagramInstructions,
   createLinkIntegrityInstructions,
   createSystemPrompt,
+  createUserPrompt,
 } from "../../src/agent/prompt.ts";
+import type { RunContext } from "../../src/agent/types.ts";
+
+/**
+ * A RunContext with every optional field absent, so a test can opt fields in one
+ * at a time and confirm each fallback (the "(not provided)" wiki goal, the "no
+ * metadata" line) independently.
+ */
+function emptyContext(overrides: Partial<RunContext> = {}): RunContext {
+  return {
+    lastUpdate: null,
+    gitSummary: "no git changes",
+    ...overrides,
+  };
+}
 
 describe("createSystemPrompt output language", () => {
   test("instructs the agent to write wiki documentation in the selected language", () => {
@@ -180,6 +195,91 @@ describe("createLinkIntegrityInstructions", () => {
     expect(text).toContain("Link integrity:");
     expect(text).toContain("openwiki: broken internal link");
     expect(text).toContain("delete the comment");
+  });
+});
+
+describe("createUserPrompt", () => {
+  test("chat returns the user message verbatim, trimmed", () => {
+    expect(createUserPrompt("chat", emptyContext(), "  what changed?  ")).toBe(
+      "what changed?",
+    );
+  });
+
+  test("chat falls back to a default opener when no message is given", () => {
+    // A null or blank chat message must still yield a usable turn rather than an
+    // empty prompt.
+    expect(createUserPrompt("chat", emptyContext(), null)).toBe(
+      "Start an OpenWiki chat.",
+    );
+    expect(createUserPrompt("chat", emptyContext(), "   ")).toBe(
+      "Start an OpenWiki chat.",
+    );
+  });
+
+  test("init embeds the wiki goal and git summary for the resolved subject", () => {
+    const prompt = createUserPrompt(
+      "init",
+      emptyContext({ wikiGoal: "Explain the CLI", gitSummary: "3 files" }),
+      null,
+      "repository",
+    );
+
+    expect(prompt).toContain("Initialize OpenWiki documentation for");
+    // Repository mode resolves the subject to the repo, not the personal brain.
+    expect(prompt).toContain("this repository");
+    expect(prompt).toContain("Explain the CLI");
+    expect(prompt).toContain("3 files");
+    // No user message means no appended instruction block.
+    expect(prompt).not.toContain("Additional user instruction:");
+  });
+
+  test("init uses the personal-brain subject label in local-wiki mode", () => {
+    const prompt = createUserPrompt("init", emptyContext(), null, "local-wiki");
+
+    expect(prompt).toContain("the local knowledge wiki");
+    // With no wiki goal supplied the brief falls back to the placeholder.
+    expect(prompt).toContain("(not provided)");
+  });
+
+  test("update renders the previous-run metadata as pretty JSON", () => {
+    const prompt = createUserPrompt(
+      "update",
+      emptyContext({
+        lastUpdate: {
+          updatedAt: "2026-07-28T00:00:00Z",
+          command: "update",
+          model: "gpt-5",
+        },
+      }),
+      null,
+      "repository",
+    );
+
+    expect(prompt).toContain("Update the existing OpenWiki documentation");
+    // formatLastUpdate serializes the metadata object so the agent can diff
+    // against the recorded run state.
+    expect(prompt).toContain('"model": "gpt-5"');
+    expect(prompt).toContain('"command": "update"');
+  });
+
+  test("update states when no previous metadata exists", () => {
+    const prompt = createUserPrompt("update", emptyContext(), null);
+
+    expect(prompt).toContain("No previous OpenWiki update metadata was found.");
+  });
+
+  test("appends a trimmed user instruction block when a message is supplied", () => {
+    const prompt = createUserPrompt(
+      "init",
+      emptyContext(),
+      "  focus on auth  ",
+      "repository",
+    );
+
+    expect(prompt).toContain("Additional user instruction:");
+    expect(prompt).toContain("focus on auth");
+    // The block is trimmed, so no leading/trailing whitespace leaks through.
+    expect(prompt).not.toContain("  focus on auth  ");
   });
 });
 

@@ -307,6 +307,93 @@ describe("x connector request construction", () => {
     expect(dump.pages).toHaveLength(2);
   });
 
+  test("prefers explicitly requested streams over the configured streams", async () => {
+    const home = await createTempHome();
+    // options.streams (a non-empty array) must override config.streams so a
+    // caller can scope a run to a single stream.
+    await writeConnectorConfig(home, {
+      enabled: true,
+      maxPagesPerStream: 1,
+      streams: ["mentions"],
+      userId: "U1",
+    });
+    const requests = stubFetchByPath(() => ({ data: [], meta: {} }));
+    const connector = await loadXConnector(home);
+
+    const result = await connector.ingest({ streams: ["user_posts"] });
+
+    expect(result.status).toBe("success");
+    expect(requests.map((url) => url.pathname)).toEqual(["/2/users/U1/tweets"]);
+  });
+
+  test("skips writing when a list_posts stream has no configured list ids", async () => {
+    const home = await createTempHome();
+    // With only list_posts selected and no list ids, the stream loop produces
+    // no raw files, so the run reports "skipped" and issues no request.
+    await writeConnectorConfig(home, {
+      enabled: true,
+      listIds: [],
+      maxPagesPerStream: 1,
+      streams: ["list_posts"],
+      userId: "U1",
+    });
+    const requests = stubFetchByPath(() => ({ data: [], meta: {} }));
+    const connector = await loadXConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("skipped");
+    expect(result.rawFiles).toEqual([]);
+    expect(requests).toHaveLength(0);
+  });
+
+  test("keeps the prior since_id when a list page returns no newest_id", async () => {
+    const home = await createTempHome();
+    await writeConnectorConfig(home, {
+      enabled: true,
+      listIds: ["L1"],
+      maxPagesPerStream: 1,
+      streams: ["list_posts"],
+      userId: "U1",
+    });
+    // A prior cursor exists; a page with no newest_id must leave it untouched
+    // rather than clobber the persisted position.
+    await writeConnectorState(home, {
+      latestIds: { "list_posts:L1": "prev" },
+      version: 1,
+    });
+    stubFetchByPath(() => ({ data: [{ id: "a" }], meta: { result_count: 1 } }));
+    const connector = await loadXConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    const state = await readConnectorState(home);
+    expect(state.latestIds?.["list_posts:L1"]).toBe("prev");
+  });
+
+  test("records an empty cursor when a list has no prior id and no newest_id", async () => {
+    const home = await createTempHome();
+    // No prior state and a page without newest_id must resolve the cursor to the
+    // empty-string fallback, which is then pruned from persisted state.
+    await writeConnectorConfig(home, {
+      enabled: true,
+      listIds: ["L1"],
+      maxPagesPerStream: 1,
+      streams: ["list_posts"],
+      userId: "U1",
+    });
+    stubFetchByPath(() => ({ data: [{ id: "a" }], meta: { result_count: 1 } }));
+    const connector = await loadXConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    const state = await readConnectorState(home);
+    // The empty cursor is stripped by removeEmptyValues, so the key is absent.
+    expect(state.latestIds?.["list_posts:L1"]).toBeUndefined();
+  });
+
   test("adds a window start_time derived from windowHours", async () => {
     const home = await createTempHome();
     await writeConnectorConfig(home, {

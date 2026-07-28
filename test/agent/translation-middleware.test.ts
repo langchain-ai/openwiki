@@ -121,6 +121,16 @@ describe("resolveTranslationPlan", () => {
     expect(resolveTranslationPlan("init", "zh-CN", "en")).toBeUndefined();
     expect(resolveTranslationPlan("chat", "zh-CN", "en")).toBeUndefined();
   });
+
+  test("compares malformed language tags by their literal value", () => {
+    // A tag Intl.Locale cannot parse must not crash plan resolution: primarySubtag
+    // falls back to the raw tag, and the switch decision still resolves.
+    expect(resolveTranslationPlan("update", "@@bad", "en")).toEqual({
+      target: "@@bad",
+      source: "en",
+      translateAll: true,
+    });
+  });
 });
 
 describe("createWikiTranslationMiddleware beforeAgent", () => {
@@ -443,5 +453,228 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
       ),
     ).resolves.toBeUndefined();
     expect(calls).toHaveLength(0);
+  });
+
+  test("treats a directory listing error as an empty tree", async () => {
+    const { backend } = await setup();
+    await backend.write("/openwiki/page.md", "# Page\n\nBody.\n");
+    // A backend that cannot enumerate the root yields no files rather than
+    // throwing, so the run degrades to translating nothing.
+    vi.spyOn(backend, "ls").mockResolvedValue({ error: "no such dir" });
+
+    const { model, calls } = fakeModel((content) => `T\n${content}`);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+      ),
+    );
+
+    expect(calls).toHaveLength(0);
+  });
+
+  test("skips a page whose content is only whitespace", async () => {
+    const { backend } = await setup();
+    await backend.write("/openwiki/blank.md", "   \n");
+
+    const { model, calls } = fakeModel((content) => `T\n${content}`);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+      ),
+    );
+
+    // An empty page has no prose to translate, so the model is never called.
+    expect(calls).toHaveLength(0);
+  });
+
+  test("stamps a page for retry when the model returns an empty translation", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/page.md", "# Page\n\nBody.\n");
+
+    const warnings: string[] = [];
+    // A blank model response is a failure, not a valid translation: writing it
+    // would erase the page, so the page must be kept and flagged for retry.
+    const { model } = fakeModel(() => "   ");
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+        (message) => warnings.push(message),
+      ),
+    );
+
+    const after = await readFile(
+      path.join(rootDir, "openwiki/page.md"),
+      "utf8",
+    );
+    expect(after).toContain('openwiki_translation_pending: "zh-CN"');
+    expect(after).toContain("# Page");
+    expect(warnings[0]).toContain("empty translation");
+  });
+
+  test("does not rewrite the pending marker when it already matches", async () => {
+    const { backend, rootDir } = await setup();
+    // The page is already stamped for exactly this target, so a failed retry must
+    // not rewrite an identical marker or report a bogus stamp failure.
+    await backend.write(
+      "/openwiki/page.md",
+      '---\nopenwiki_translation_pending: "zh-CN"\n---\n\n# Body\n',
+    );
+
+    const warnings: string[] = [];
+    const model = {
+      invoke: () => Promise.reject(new Error("model down")),
+    } as unknown as BaseChatModel;
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+        (message) => warnings.push(message),
+      ),
+    );
+
+    const after = await readFile(
+      path.join(rootDir, "openwiki/page.md"),
+      "utf8",
+    );
+    expect(after).toContain('openwiki_translation_pending: "zh-CN"');
+    // markPending was a no-op, so the warning names only the model failure, not a
+    // retry-stamp failure.
+    expect(warnings[0]).toContain("model down");
+    expect(warnings[0]).not.toContain("could not mark it for retry");
+  });
+
+  test("reports an unreadable page through the default stderr warning", async () => {
+    const { backend } = await setup();
+    await backend.write("/openwiki/page.md", "# Page\n\nBody.\n");
+    // A read failure is caught per page; with no onWarning supplied the default
+    // sink writes the (secret-redacted) summary to stderr.
+    vi.spyOn(backend, "readRaw").mockResolvedValue({
+      error: "permission denied",
+    });
+    const stderr = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+
+    const { model, calls } = fakeModel((content) => `T\n${content}`);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+      ),
+    );
+
+    expect(calls).toHaveLength(0);
+    const written = stderr.mock.calls.map((call) => String(call[0])).join("");
+    expect(written).toContain("page.md");
+    expect(written).toContain("permission denied");
+  });
+
+  test("stamps a page whose backend content is not text", async () => {
+    const { backend } = await setup();
+    await backend.write("/openwiki/page.md", "# Page\n\nBody.\n");
+    // A non-string, non-array payload is not translatable prose; the page is
+    // reported and skipped rather than coerced.
+    vi.spyOn(backend, "readRaw").mockResolvedValue({
+      data: { content: 42 as unknown as string },
+    });
+
+    const warnings: string[] = [];
+    const { model } = fakeModel((content) => `T\n${content}`);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+        (message) => warnings.push(message),
+      ),
+    );
+
+    expect(warnings[0]).toContain("not a text file");
+  });
+
+  test("joins array-shaped file content into text before translating", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/page.md", "# A\n\nB\n");
+    // A backend that returns line arrays must be flattened to a single string so
+    // the join round-trips the original file content and the edit applies.
+    vi.spyOn(backend, "readRaw").mockResolvedValue({
+      data: { content: ["# A", "", "B", ""] },
+    });
+
+    const { model, calls } = fakeModel((content) => `T\n${content}`);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+      ),
+    );
+
+    expect(calls[0].human).toBe("# A\n\nB\n");
+    await expect(
+      readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
+    ).resolves.toBe("T\n# A\n\nB\n");
+  });
+
+  test("flattens array model output, keeping text blocks and dropping the rest", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/page.md", "# Page\n\nBody.\n");
+    // The model may answer with structured content blocks; only text blocks (and
+    // bare strings) contribute, non-text blocks are ignored.
+    const model = {
+      invoke: () =>
+        Promise.resolve({
+          content: [
+            "raw ",
+            { type: "text", text: "translated" },
+            { type: "image_url", image_url: "ignored" },
+          ],
+        }),
+    } as unknown as BaseChatModel;
+
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+      ),
+    );
+
+    await expect(
+      readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
+    ).resolves.toBe("raw translated");
+  });
+
+  test("renders a language with no display name as its bare tag in the prompt", async () => {
+    const { backend } = await setup();
+    await backend.write("/openwiki/page.md", "# Page\n\nBody.\n");
+    // describeLanguage must not throw on a tag Intl cannot name; it falls back to
+    // the raw tag so the translation prompt is still well-formed.
+    const { model, calls } = fakeModel((content) => `T\n${content}`);
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(backend, "repository", model, {
+        target: "@@bad",
+        source: "en",
+        translateAll: true,
+      }),
+    );
+
+    expect(calls[0].system).toContain("@@bad");
   });
 });

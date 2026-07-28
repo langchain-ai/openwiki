@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("../../src/connectors/sources/langsmith/repo-config.ts", () => ({
+vi.mock("../../../../src/connectors/sources/langsmith/repo-config.ts", () => ({
   readLangSmithRepoConfig: vi.fn(),
   writeLangSmithRepoConfig: vi.fn(() => Promise.resolve()),
 }));
@@ -8,12 +8,12 @@ vi.mock("../../src/connectors/sources/langsmith/repo-config.ts", () => ({
 import {
   readLangSmithRepoConfig,
   writeLangSmithRepoConfig,
-} from "../../src/connectors/sources/langsmith/repo-config.ts";
+} from "../../../../src/connectors/sources/langsmith/repo-config.ts";
 import {
   loadLangSmithSetup,
   nextLangSmithApiKeyEnv,
   saveLangSmithSetup,
-} from "../../src/connectors/sources/langsmith/setup.ts";
+} from "../../../../src/connectors/sources/langsmith/setup.ts";
 
 const REPO = "/repo";
 const EU = "https://eu.api.smith.langchain.com";

@@ -306,6 +306,81 @@ describe("gmail query windowing", () => {
       "Gmail API request failed: 500",
     );
   });
+
+  test("falls back to the default query when the configured query is blank", async () => {
+    const home = await createTempHome();
+    // An empty query must normalize to the "newer_than:1d" default rather than
+    // send an empty `q` (which Gmail would reject); windowHours is absent so the
+    // base query passes through getWindowedGmailQuery unmodified.
+    await writeConnectorConfig(home, {
+      enabled: true,
+      maxMessages: 1,
+      query: "",
+    });
+    const requests = stubGmail(() => ({ messages: [] }));
+    const connector = await loadGmailConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    const listRequest = requests.find((request) => isListRequest(request.url));
+    expect(listRequest?.url.searchParams.get("q")).toBe("newer_than:1d");
+  });
+});
+
+describe("gmail response normalization edge cases", () => {
+  test("follows nextPageToken and tolerates a page missing its messages array", async () => {
+    const home = await createTempHome();
+    // maxMessages exceeds a single page's yield so the connector must page a
+    // second time. The second page omits `messages` entirely: an untrusted
+    // payload shape that must coerce to an empty list, not throw.
+    await writeConnectorConfig(home, {
+      enabled: true,
+      maxMessages: 5,
+      pageSize: 2,
+    });
+    const requests = stubGmail((url) => {
+      if (isListRequest(url)) {
+        if (url.searchParams.get("pageToken") === "PAGE2") {
+          return {};
+        }
+        return { messages: [{ id: "m1" }], nextPageToken: "PAGE2" };
+      }
+      return { id: "m1" };
+    });
+    const connector = await loadGmailConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    const listRequests = requests.filter((request) =>
+      isListRequest(request.url),
+    );
+    expect(listRequests).toHaveLength(2);
+    // The second list page must carry the token returned by the first.
+    expect(listRequests[1]?.url.searchParams.get("pageToken")).toBe("PAGE2");
+    const dump = await readMessagesDump(result.rawFiles);
+    expect(dump.messageCount).toBe(1);
+  });
+
+  test("normalizes an unknown message format to full", async () => {
+    const home = await createTempHome();
+    // A null format (malformed on-disk config) must fall back to "full" rather
+    // than propagate an invalid value into the message-get request.
+    await writeConnectorConfig(home, {
+      enabled: true,
+      format: null,
+      maxMessages: 1,
+    });
+    stubGmail(() => ({ messages: [] }));
+    const connector = await loadGmailConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    const dump = await readMessagesDump(result.rawFiles);
+    expect(dump.format).toBe("full");
+  });
 });
 
 describe("gmail 401 refresh retry", () => {

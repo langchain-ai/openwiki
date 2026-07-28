@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-vi.mock("../../src/connectors/io.ts", () => ({
+vi.mock("../../../../src/connectors/io.ts", () => ({
   createRunId: () => "run-1",
   readConnectorState: () => Promise.resolve({ version: 1 }),
   updateStateWithRun: (state: Record<string, unknown>, entry: unknown) => ({
@@ -14,27 +14,27 @@ vi.mock("../../src/connectors/io.ts", () => ({
   ),
 }));
 
-vi.mock("../../src/connectors/sources/langsmith/api.ts", () => ({
+vi.mock("../../../../src/connectors/sources/langsmith/api.ts", () => ({
   createLangSmithApi: vi.fn(),
 }));
 
 // Keep the real sanitizers (the validation under test) and mock only the reader.
 vi.mock(
-  "../../src/connectors/sources/langsmith/repo-config.ts",
+  "../../../../src/connectors/sources/langsmith/repo-config.ts",
   async (importOriginal) => ({
     ...(await importOriginal<
-      typeof import("../../src/connectors/sources/langsmith/repo-config.ts")
+      typeof import("../../../../src/connectors/sources/langsmith/repo-config.ts")
     >()),
     readLangSmithRepoConfig: vi.fn(),
   }),
 );
 
-import { writeRawJson } from "../../src/connectors/io.ts";
-import type { LangSmithApi } from "../../src/connectors/sources/langsmith/api.ts";
-import { createLangSmithApi } from "../../src/connectors/sources/langsmith/api.ts";
-import { createLangSmithConnector } from "../../src/connectors/sources/langsmith/index.ts";
-import type { LangSmithRepoConfig } from "../../src/connectors/sources/langsmith/repo-config.ts";
-import { readLangSmithRepoConfig } from "../../src/connectors/sources/langsmith/repo-config.ts";
+import { writeRawJson } from "../../../../src/connectors/io.ts";
+import type { LangSmithApi } from "../../../../src/connectors/sources/langsmith/api.ts";
+import { createLangSmithApi } from "../../../../src/connectors/sources/langsmith/api.ts";
+import { createLangSmithConnector } from "../../../../src/connectors/sources/langsmith/index.ts";
+import type { LangSmithRepoConfig } from "../../../../src/connectors/sources/langsmith/repo-config.ts";
+import { readLangSmithRepoConfig } from "../../../../src/connectors/sources/langsmith/repo-config.ts";
 import type { Run } from "langsmith";
 
 const KEY = "OPENWIKI_LANGSMITH_API_KEY";
