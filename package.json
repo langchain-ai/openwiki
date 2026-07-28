@@ -49,7 +49,7 @@
     "release": "pnpm run stamp:channel && pnpm run build && changeset publish",
     "stamp:channel": "node scripts/stamp-build-channel.cjs",
     "start": "node dist/cli/cli.js",
-    "test": "vitest run",
+    "test": "pnpm run typecheck && pnpm run build && pnpm run coverage",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.client.json"
   },
   "dependencies": {

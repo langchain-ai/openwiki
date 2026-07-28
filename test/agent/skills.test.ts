@@ -9,7 +9,7 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { replaceSkillDirectories } from "../../src/agent/skills.ts";
 
 describe("replaceSkillDirectories", () => {
@@ -105,5 +105,55 @@ describe("replaceSkillDirectories", () => {
     // The exact degrade marker the post-run validator embeds, kept in sync so
     // the agent can find and repair a degraded fence.
     expect(normalizedSkill).toContain("openwiki: mermaid parse failed");
+  });
+});
+
+describe("syncBundledSkills", () => {
+  test("copies the bundled skills into the OpenWiki home", async () => {
+    // openWikiSkillsDir is derived from os.homedir() at module load, so point
+    // HOME (and USERPROFILE for the Windows portability job) at a throwaway home
+    // and re-import both modules so the write lands in the temp tree, not the
+    // developer's real ~/.openwiki.
+    const home = await mkdtemp(path.join(os.tmpdir(), "openwiki-skills-home-"));
+    const originalHome = process.env.HOME;
+    const originalUserProfile = process.env.USERPROFILE;
+    process.env.HOME = home;
+    process.env.USERPROFILE = home;
+    vi.resetModules();
+
+    try {
+      const { syncBundledSkills } = await import("../../src/agent/skills.ts");
+      const { openWikiSkillsDir } =
+        await import("../../src/config/openwiki-home.ts");
+
+      await syncBundledSkills();
+
+      const listDirs = async (dir: string): Promise<string[]> =>
+        (await readdir(dir, { withFileTypes: true }))
+          .filter((entry) => entry.isDirectory())
+          .map((entry) => entry.name)
+          .sort();
+
+      // The source of truth is the repo's bundled skills/ directory; the home
+      // copy must reproduce exactly those skill directories.
+      const bundled = await listDirs(path.join(process.cwd(), "skills"));
+      const copied = await listDirs(openWikiSkillsDir);
+
+      expect(bundled.length).toBeGreaterThan(0);
+      expect(copied).toEqual(bundled);
+    } finally {
+      if (originalHome === undefined) {
+        delete process.env.HOME;
+      } else {
+        process.env.HOME = originalHome;
+      }
+      if (originalUserProfile === undefined) {
+        delete process.env.USERPROFILE;
+      } else {
+        process.env.USERPROFILE = originalUserProfile;
+      }
+      vi.resetModules();
+      await rm(home, { force: true, recursive: true });
+    }
   });
 });

@@ -134,6 +134,28 @@ describe("installOpenWikiPowerSchedule", () => {
     expect(result.warning).toMatch(/no saved schedules/i);
   });
 
+  test("skips when the expression has the wrong number of cron fields", async () => {
+    // A malformed expression fails parseSimpleCronFields inside
+    // parseRepeatScheduleTime, so no repeat window can be derived.
+    const result = await installOpenWikiPowerSchedule(
+      configWithSchedule("0 2 *"),
+    );
+
+    expect(result.enabled).toBe(false);
+    expect(result.warning).toMatch(/no saved schedules/i);
+  });
+
+  test("skips when the minute field is a step it cannot pin to a wake time", async () => {
+    // `*/5` is not a single minute, so parseRepeatScheduleTime returns null even
+    // though day and month are wildcards.
+    const result = await installOpenWikiPowerSchedule(
+      configWithSchedule("*/5 2 * * *"),
+    );
+
+    expect(result.enabled).toBe(false);
+    expect(result.warning).toMatch(/no saved schedules/i);
+  });
+
   test("skips when weekday is a range that maps to no single pmset day", async () => {
     // `1-5` is not a single weekday number, so parsePmsetDays yields null and
     // the whole window is rejected.
@@ -366,6 +388,47 @@ describe("deleteConnectorSchedules", () => {
     expect(result.connectorIds).toEqual(["all"]);
     expect(result.config.ingestionSchedule).toBeUndefined();
     expect(result.powerSchedule).toBeUndefined();
+  });
+
+  test("leaves an already-disabled power schedule untouched and mirrors legacy sources", async () => {
+    stubPlatform("linux");
+
+    // The saved pmset is already disabled, so with no ingestion schedule left
+    // reconciliation returns early without shelling out or rewriting pmset. The
+    // populated sourceInstances also drive cloneOnboardingConfig's legacy-source
+    // derivation (the `sources` map is rebuilt from the instances).
+    const base = configWithSchedule("0 2 * * *");
+    const config: OpenWikiOnboardingConfig = {
+      ...base,
+      sourceInstances: [
+        {
+          connectedAt: "2026-01-01T00:00:00.000Z",
+          connectorId: "git-repo",
+          id: "git-repo-1",
+          ingestionGoal: "index the repo",
+        },
+      ],
+      powerManagement: {
+        pmset: {
+          days: "MTWRFSU",
+          enabled: false,
+          sleepTime: "02:30:00",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+          wakeTime: "01:58:00",
+        },
+      },
+    };
+
+    const result = await deleteConnectorSchedules(config, "all");
+
+    expect(result.config.ingestionSchedule).toBeUndefined();
+    expect(result.powerSchedule).toBeUndefined();
+    expect(result.config.powerManagement?.pmset?.enabled).toBe(false);
+    expect(result.config.sources["git-repo"]).toEqual({
+      connectedAt: "2026-01-01T00:00:00.000Z",
+      connectorConfig: undefined,
+      ingestionGoal: "index the repo",
+    });
   });
 
   test("cancels a saved-and-enabled power schedule when the last schedule is deleted", async () => {

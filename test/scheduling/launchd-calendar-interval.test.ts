@@ -56,4 +56,26 @@ describe("parseLaunchdCalendarInterval", () => {
     expect(parseLaunchdCalendarInterval("*/15 2 * * *")).toBeNull();
     expect(parseLaunchdCalendarInterval("0 2 1-5 * *")).toBeNull();
   });
+
+  test("returns null when the expression does not have exactly five fields", () => {
+    // parseSimpleCronFields rejects a wrong field count outright, so a
+    // four-field ("0 2 * *") or six-field expression can never become a plist.
+    expect(parseLaunchdCalendarInterval("0 2 * *")).toBeNull();
+    expect(parseLaunchdCalendarInterval("0 2 * * * *")).toBeNull();
+  });
+
+  test("returns null for a non-single, non-wildcard hour", () => {
+    // A step hour like `*/2` is neither a single integer nor `*`, so it can't be
+    // pinned to one launchd Hour; refuse rather than silently drop the step.
+    expect(parseLaunchdCalendarInterval("0 */2 * * *")).toBeNull();
+  });
+
+  test("returns null for a non-single, non-wildcard month", () => {
+    expect(parseLaunchdCalendarInterval("0 2 * 1-5 *")).toBeNull();
+  });
+
+  test("returns null for a non-single, non-wildcard weekday", () => {
+    // Weekday `1-5` restricts weekday but maps to no single Weekday integer.
+    expect(parseLaunchdCalendarInterval("0 2 * * 1-5")).toBeNull();
+  });
 });

@@ -1,11 +1,24 @@
-import { describe, expect, test, vi } from "vitest";
+import { EventEmitter } from "node:events";
+import type { MockInstance } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 // startNgrokTunnel persists the resolved redirect config through the env file.
-// It is mocked so the validation-rejection cases below cannot touch disk; those
-// cases all throw during validatePort / normalizeNgrokUrl, before any save or
-// `ngrok` spawn, so no real tunnel process is ever launched here.
+// The save is mocked so no test touches ~/.openwiki/.env: the validation cases
+// throw before any save or `ngrok` spawn, and the tunnel-lifecycle cases below
+// assert on the mock's calls instead of writing real credentials to disk. The
+// mock is hoisted so those cases can inspect exactly what was persisted.
+const saveOpenWikiEnvMock = vi.hoisted(() => vi.fn(() => Promise.resolve()));
 vi.mock("../../src/config/env.ts", () => ({
-  saveOpenWikiEnv: vi.fn(() => Promise.resolve()),
+  saveOpenWikiEnv: saveOpenWikiEnvMock,
+}));
+
+// `startNgrokTunnel` shells out to the real `ngrok` binary via child_process.
+// The spawn is mocked to hand back a controllable fake child so the suite never
+// launches a subprocess, and so it can assert the exact argv and `shell:false`
+// that keep operator-supplied ports/URLs from being reinterpreted by a shell.
+const spawnMock = vi.hoisted(() => vi.fn());
+vi.mock("node:child_process", () => ({
+  spawn: spawnMock,
 }));
 
 import {
@@ -14,6 +27,43 @@ import {
 } from "../../src/auth/ngrok.ts";
 
 const PORT = 53682;
+
+/**
+ * A fake ngrok child process. `waitForNgrokExit` only listens for the "error"
+ * and "exit" events, so an EventEmitter is a faithful stand-in that lets a test
+ * drive either outcome deterministically without a real subprocess.
+ */
+function fakeChild(): EventEmitter {
+  const child = new EventEmitter();
+  spawnMock.mockReturnValue(child);
+  return child;
+}
+
+/**
+ * Drains queued microtasks (via a macrotask boundary) so the mocked `spawn`
+ * runs and `waitForNgrokExit` registers its listeners before the test emits an
+ * exit/error event. `setImmediate` runs only after the microtask queue is fully
+ * drained, so a single await settles the whole promise chain up to the point
+ * where the code parks on the child's exit. It is real-timer safe and never
+ * waits on the wall clock.
+ */
+function flushMicrotasks(): Promise<void> {
+  return new Promise((resolve) => setImmediate(resolve));
+}
+
+/**
+ * Builds a fake `fetch` Response exposing just the `ok`/`json` surface that
+ * `fetchNgrokRedirectUri` consumes from the ngrok local API.
+ */
+function fetchResponse(
+  ok: boolean,
+  body: unknown,
+): { ok: boolean; json: () => Promise<unknown> } {
+  return {
+    ok,
+    json: () => Promise.resolve(body),
+  };
+}
 
 /**
  * Builds an ngrok `/api/tunnels` style payload from tunnel descriptors.
@@ -238,6 +288,266 @@ describe("startNgrokTunnel validation", () => {
     // a bogus authority from being registered as a Slack redirect.
     await expect(startNgrokTunnel({ url: "https://bad_host" })).rejects.toThrow(
       "ngrok custom URL must include a valid DNS hostname.",
+    );
+  });
+});
+
+describe("startNgrokTunnel with a fixed custom url", () => {
+  let stdoutSpy: MockInstance;
+
+  beforeEach(() => {
+    saveOpenWikiEnvMock.mockClear();
+    spawnMock.mockReset();
+    // The production code streams progress to stdout; silence and capture it so
+    // the test output stays clean and the messages can be asserted.
+    stdoutSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    stdoutSpy.mockRestore();
+  });
+
+  test("spawns ngrok with a pinned --url and no shell, then resolves on clean exit", async () => {
+    const child = fakeChild();
+
+    // A bare host (no scheme) exercises the https:// prepend and the success
+    // return of normalizeNgrokUrl.
+    const pending = startNgrokTunnel({ url: "custom.ngrok.app" });
+    await flushMicrotasks();
+
+    // argv-injection safety: the port and pinned URL are passed as discrete argv
+    // entries with shell:false, so a shell can never re-parse them.
+    expect(spawnMock).toHaveBeenCalledWith(
+      "ngrok",
+      ["http", String(PORT), "--url", "https://custom.ngrok.app"],
+      { shell: false, stdio: "inherit" },
+    );
+
+    child.emit("exit", 0);
+
+    await expect(pending).resolves.toEqual({
+      baseUrl: "https://custom.ngrok.app",
+      port: PORT,
+      redirectUri: "https://custom.ngrok.app/callback",
+    });
+
+    // With a pinned URL the redirect is known up front, so it is persisted
+    // directly and the local-API discovery poll is skipped entirely.
+    expect(saveOpenWikiEnvMock).toHaveBeenCalledWith({
+      OPENWIKI_OAUTH_CALLBACK_PORT: String(PORT),
+      OPENWIKI_HTTPS_OAUTH_REDIRECT_URI: "https://custom.ngrok.app/callback",
+    });
+  });
+
+  test("accepts an explicit /callback path on the custom url", async () => {
+    const child = fakeChild();
+
+    const pending = startNgrokTunnel({
+      port: 8080,
+      url: "https://custom.ngrok.app/callback",
+    });
+    await flushMicrotasks();
+
+    expect(spawnMock).toHaveBeenCalledWith(
+      "ngrok",
+      ["http", "8080", "--url", "https://custom.ngrok.app"],
+      { shell: false, stdio: "inherit" },
+    );
+
+    child.emit("exit", 0);
+    await expect(pending).resolves.toMatchObject({
+      redirectUri: "https://custom.ngrok.app/callback",
+    });
+  });
+
+  test("treats a SIGINT shutdown as a clean exit", async () => {
+    // An operator pressing Ctrl-C stops the tunnel intentionally, so the signal
+    // must resolve rather than surface as an ngrok failure.
+    const child = fakeChild();
+
+    const pending = startNgrokTunnel({ url: "https://custom.ngrok.app" });
+    await flushMicrotasks();
+    child.emit("exit", null, "SIGINT");
+
+    await expect(pending).resolves.toMatchObject({ port: PORT });
+  });
+
+  test("rejects when ngrok cannot be spawned", async () => {
+    // A missing binary surfaces as an "error" event; the wrapper wraps it with
+    // context so the caller learns ngrok never started.
+    const child = fakeChild();
+
+    const pending = startNgrokTunnel({ url: "https://custom.ngrok.app" });
+    await flushMicrotasks();
+    child.emit("error", new Error("ENOENT"));
+
+    await expect(pending).rejects.toThrow("Could not start ngrok: ENOENT");
+  });
+
+  test("wraps a non-Error spawn failure with a generic message", async () => {
+    // The "error" payload is typed as Error but is not guaranteed to be one; a
+    // non-Error value must still yield a clean message rather than leaking
+    // undefined from `.message`.
+    const child = fakeChild();
+
+    const pending = startNgrokTunnel({ url: "https://custom.ngrok.app" });
+    await flushMicrotasks();
+    child.emit("error", "boom");
+
+    await expect(pending).rejects.toThrow("Could not start ngrok.");
+  });
+
+  test("rejects when ngrok exits non-zero", async () => {
+    const child = fakeChild();
+
+    const pending = startNgrokTunnel({ url: "https://custom.ngrok.app" });
+    await flushMicrotasks();
+    child.emit("exit", 1, null);
+
+    await expect(pending).rejects.toThrow(
+      "ngrok exited with code=1 signal=null.",
+    );
+  });
+});
+
+describe("startNgrokTunnel with a random url (local-API discovery)", () => {
+  let stdoutSpy: MockInstance;
+  let fetchMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    saveOpenWikiEnvMock.mockClear();
+    spawnMock.mockReset();
+    stdoutSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+  });
+
+  afterEach(() => {
+    stdoutSpy.mockRestore();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  test("spawns ngrok with no --url and discovers the redirect from the ngrok API", async () => {
+    const child = fakeChild();
+    fetchMock.mockResolvedValue(
+      fetchResponse(
+        true,
+        tunnels([
+          { addr: `localhost:${PORT}`, public_url: "https://random.ngrok.app" },
+        ]),
+      ),
+    );
+
+    const pending = startNgrokTunnel({ url: null });
+    await flushMicrotasks();
+
+    // No pinned URL means no `--url` flag; ngrok picks the forwarding host.
+    expect(spawnMock).toHaveBeenCalledWith("ngrok", ["http", String(PORT)], {
+      shell: false,
+      stdio: "inherit",
+    });
+    expect(fetchMock).toHaveBeenCalledWith("http://127.0.0.1:4040/api/tunnels");
+
+    child.emit("exit", 0);
+
+    // The discovered value is only persisted to env; the resolved result keeps
+    // the empty base/redirect that the random-URL branch returns.
+    await expect(pending).resolves.toEqual({
+      baseUrl: "",
+      port: PORT,
+      redirectUri: "",
+    });
+    expect(saveOpenWikiEnvMock).toHaveBeenCalledWith({
+      OPENWIKI_OAUTH_CALLBACK_PORT: String(PORT),
+      OPENWIKI_HTTPS_OAUTH_REDIRECT_URI: "https://random.ngrok.app/callback",
+    });
+  });
+
+  test("retries the poll until the tunnel is ready, tolerating a fetch error and an empty payload", async () => {
+    // The poll loop uses a real 500ms sleep between attempts; fake timers make
+    // the retry deterministic instead of racing the wall clock.
+    vi.useFakeTimers();
+    const child = fakeChild();
+    fetchMock
+      // First attempt: ngrok API not up yet -> fetch rejects (caught -> null).
+      .mockRejectedValueOnce(new Error("ECONNREFUSED"))
+      // Second attempt: API up but no matching tunnel yet -> null redirect.
+      .mockResolvedValueOnce(fetchResponse(true, { tunnels: [] }))
+      // Third attempt: tunnel ready.
+      .mockResolvedValue(
+        fetchResponse(
+          true,
+          tunnels([
+            {
+              addr: `localhost:${PORT}`,
+              public_url: "https://ready.ngrok.app",
+            },
+          ]),
+        ),
+      );
+
+    const pending = startNgrokTunnel({ url: null });
+
+    // Advance across two 500ms sleeps so the third fetch discovers the tunnel.
+    await vi.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    child.emit("exit", 0);
+    await pending;
+
+    expect(saveOpenWikiEnvMock).toHaveBeenCalledWith({
+      OPENWIKI_OAUTH_CALLBACK_PORT: String(PORT),
+      OPENWIKI_HTTPS_OAUTH_REDIRECT_URI: "https://ready.ngrok.app/callback",
+    });
+  });
+
+  test("gives up after the discovery timeout without persisting a redirect", async () => {
+    // A ngrok that never exposes a usable tunnel must not hang the caller: after
+    // the 15s discovery window the poll returns null and the code prints manual
+    // instructions instead of saving a redirect.
+    vi.useFakeTimers();
+    const child = fakeChild();
+    fetchMock.mockResolvedValue(fetchResponse(false, {}));
+
+    const pending = startNgrokTunnel({ url: null });
+
+    // Exhaust the whole 15s discovery budget (30 polls at 500ms apart).
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    child.emit("exit", 0);
+    await pending;
+
+    // Only the initial "clear the redirect" save happened; discovery saved
+    // nothing because no redirect was ever found.
+    expect(saveOpenWikiEnvMock).toHaveBeenCalledTimes(1);
+    expect(saveOpenWikiEnvMock).toHaveBeenCalledWith({
+      OPENWIKI_OAUTH_CALLBACK_PORT: String(PORT),
+      OPENWIKI_HTTPS_OAUTH_REDIRECT_URI: "",
+    });
+  });
+
+  test("ends discovery early when ngrok exits before a tunnel appears", async () => {
+    // The discovery poll races the process exit; if ngrok dies first the race
+    // resolves via the exit and a non-zero code still surfaces as a failure.
+    vi.useFakeTimers();
+    const child = fakeChild();
+    fetchMock.mockResolvedValue(fetchResponse(false, {}));
+
+    const pending = startNgrokTunnel({ url: null });
+    // Drain the pre-spawn microtasks (fake timers stub setImmediate, so advance
+    // by 0 to settle them) until the exit listener is registered, then kill it.
+    await vi.advanceTimersByTimeAsync(0);
+    child.emit("exit", 1, null);
+
+    await expect(pending).rejects.toThrow(
+      "ngrok exited with code=1 signal=null.",
     );
   });
 });
