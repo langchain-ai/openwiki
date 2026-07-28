@@ -6,7 +6,7 @@ import { openWikiHomeDir } from "../openwiki-home.js";
  * Publishable PostHog project key. Safe to ship (client/ingestion key).
  */
 export const DEFAULT_POSTHOG_KEY =
-  "phc_CYLu3ZMxPwqWFrCfUQi48i54btUbAjPLtk5yEuETg7oH";
+  "phc_Cki9DqcLbYkGudQaiaTSAfQZxXvjL6EyoaQjEJGJrwPF";
 export const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 
 /**
