@@ -33,9 +33,11 @@ jobs:
           cache: pnpm
 
       # Trusted publishing performs the OIDC token exchange in the npm CLI, which
-      # requires a recent npm (>= 11.5.1).
+      # requires npm >= 11.5.1. Pinned to an exact version (not the mutable
+      # `latest` dist-tag) so a compromised future npm release cannot run inside
+      # this privileged job (id-token/contents/pull-requests write).
       - name: Upgrade npm for trusted publishing
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.5.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
