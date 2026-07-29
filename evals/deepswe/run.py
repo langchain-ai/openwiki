@@ -408,10 +408,7 @@ def pack_openwiki(artifacts_dir: Path, *, dry_run: bool) -> Path:
     )
     created = sorted(artifacts_dir.glob("openwiki-*.tgz"))
     if len(created) != 1:
-        candidates = sorted(artifacts_dir.glob("openwiki-*.tgz"))
-        if len(candidates) != 1:
-            raise RuntimeError("Could not identify the package produced by pnpm pack")
-        created = candidates
+        raise RuntimeError("Could not identify the package produced by pnpm pack")
     if package_path.exists():
         package_path.unlink()
     created[0].replace(package_path)

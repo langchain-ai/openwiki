@@ -10,63 +10,31 @@ reasoning effort, attempts, and Harbor environment in both conditions:
   same Codex adapter solves the unchanged DeepSWE task. Codex automatically
   loads root `AGENTS.md`; the harness adds no treatment-only task prompt.
 
-The harness pins:
+For reproducibility, the harness pins:
 
 - DeepSWE commit `6db64a40f3318d8659238ff34a8cc4b491c49205`
 - `harbor[langsmith]==0.20.0`
-- `litellm==1.83.14` (Harbor's supported lower bound, pinned to avoid a newer
-  release's local Rust build requirement)
+- `litellm==1.83.14`
 - Codex CLI `0.144.6`
 - the current OpenWiki checkout, packed locally for each treatment run
 
 ## Safety and isolation
 
-DeepSWE uses a separate verifier environment. Its held-out `tests/` and
-`solution/` directories are not present in the agent container. The treatment
-adapter additionally runs OpenWiki against `/tmp/openwiki-source`, a local clone
-of `/app`; OpenWiki never runs from the benchmark task directory and cannot see
-the verifier or reference solution.
-
-The generated wiki and merged `AGENTS.md` are copied into `/app` so Codex sees
-the same layout as a normal local OpenWiki user. They are hidden from Git status,
-and the treatment adapter explicitly excludes `AGENTS.md` and `openwiki/**` from
-the verifier patch.
-
-DeepSWE v1.1 normally requires Pier 0.3's `pre_artifacts.sh` lifecycle to copy
-committed work into its separate verifier. This harness retains Harbor 0.20 for
-the official LangSmith integration, so the shared Codex adapter performs the
-same validated base-to-final-HEAD diff capture into
-`/logs/artifacts/model.patch`. It also configures a fixed repository-local eval
-author so task-required commits succeed. Both baseline and OpenWiki conditions
-use this identical compatibility path.
-
-The treatment installs the packed OpenWiki artifact with dependency lifecycle
-scripts disabled, then explicitly rebuilds and verifies only the existing pinned
-`better-sqlite3` native dependency required by OpenWiki's checkpointer.
+DeepSWE's held-out `tests/` and `solution/` live only in a separate verifier
+environment. OpenWiki runs against an isolated clone of `/app`, then the harness
+copies the generated `openwiki/` and merged root `AGENTS.md` into the agent
+repository. Those treatment files are hidden from Git status and excluded from
+the verifier patch. Both conditions use the same compatibility path to capture
+the base-to-final-HEAD diff for DeepSWE's verifier.
 
 Credentials are injected at runtime by Harbor. They are never written into an
 image, command argument, generated wiki, or result summary. Do not enable Harbor's
 debug mode for credentialed runs.
 
-DeepSWE disables general container internet access. The harness narrowly allows
-the Debian, NodeSource, npm, GitHub release-asset, and OpenAI API hosts needed to
-install and run Codex and OpenWiki's pinned SQLite binding, plus the LangSmith
-API and trace-ingest hosts required by every traced run. The adapter uses the
-task image's existing Node runtime and installs the pinned Codex CLI directly,
-avoiding Harbor's NVM bootstrap.
-When a task image lacks ripgrep, the adapter installs Debian's package after
-disabling only a preconfigured `*nodesource*` apt source inside the disposable
-container; stale NodeSource repositories must not prevent agent setup.
-Parallel runs give agent setup three times Harbor's default deadline so
-concurrent Codex package downloads do not fail before model execution. Override
-this with `--agent-setup-timeout-multiplier` when local registry throughput
-requires a different bound.
-
-For Docker runs, the harness removes inactive per-trial networks after each job
-and checks completed prior jobs for stale networks before launching. Cleanup is
-restricted to networks derived from Harbor result directories, verifies exact
-Docker Compose ownership labels, and skips every network with an attached
-container; it never performs a global Docker network prune.
+Container networking is allowlisted to the package, model, and LangSmith hosts
+needed by the run. Docker runs remove only inactive, label-verified Harbor trial
+networks; they never perform a global network prune. Parallel agent setup uses a
+3x timeout by default, configurable with `--agent-setup-timeout-multiplier`.
 If `OPENAI_BASE_URL` uses another gateway, pass its hostname (not a URL) with
 `--allow-host gateway.example.com`. The separate verifier environment remains
 offline.
@@ -81,37 +49,35 @@ offline.
   by path with `--env-file`
 - `LANGSMITH_API_KEY` available the same way
 
-The project does not add Harbor as a package dependency. `uvx` downloads the
-pinned Apache-2.0 runner and its official LangSmith extra into its tool cache
-when a run starts.
+The project does not add Harbor as a package dependency; `uvx` downloads the
+pinned runner and LangSmith extra into its tool cache.
+
+Run the harness tests in that same pinned environment:
+
+```bash
+uvx --python 3.12 --from 'harbor[langsmith]==0.20.0' \
+  --with 'litellm==1.83.14' \
+  python -m unittest discover -s evals/deepswe -p 'test_*.py'
+```
 
 ## LangSmith datasets, experiments, and traces
 
-Every evaluation command enables Harbor's official `langsmith` plugin. The
-plugin creates or updates one stable dataset named
-`deepswe-openwiki-6db64a40f331` by default. Baseline and OpenWiki jobs use that
-same dataset and create separate, uniquely named experiments whose names begin
-with the corresponding Harbor job name (for example,
-`pilot-01-baseline-seed-0` and `pilot-01-openwiki-seed-0`).
-Ambient Harbor experiment-name/ID overrides are cleared to prevent the two
-conditions from being merged accidentally. See the official
+Every evaluation uses Harbor's official `langsmith` plugin. Baseline and
+OpenWiki jobs share the default `deepswe-openwiki-6db64a40f331` dataset but
+create separate experiments named from their Harbor jobs. Ambient experiment
+overrides are cleared so the conditions cannot merge accidentally. See the
+official
 [LangSmith Harbor integration](https://docs.langchain.com/langsmith/harbor-integrations)
 for the resulting run and feedback schema.
 
-The harness subclasses the official plugin only to omit DeepSWE's count metrics
-(such as `f2p_total`) from LangSmith feedback. Harbor 0.20 otherwise sends all
-numeric rewards as bounded scores, which LangSmith rejects when a count is
-greater than one. Normalized metrics are rounded to LangSmith's supported four
-decimal places, and the primary reward remains a feedback score. All counts
-remain available in trial outputs and local results.
+The local plugin shim sends only bounded verifier rewards as LangSmith feedback,
+rounding scores to four decimal places. DeepSWE count metrics remain in local
+trial outputs instead of being sent as invalid scores.
 
-Each experiment contains one root run per trial, environment/agent/verifier
-phase runs, verifier reward feedback, Harbor error feedback, and reported token
-and cost usage. The OpenWiki condition also enables OpenWiki's LangChain v2
-tracing and routes those generation traces to the OpenWiki experiment. Codex
-CLI itself does not emit native LangSmith LLM/tool spans; Harbor still records
-its agent phase, ATIF trajectory-derived totals, tokens, cost, result, and
-feedback.
+Each experiment includes trial phases, verifier/error feedback, and reported
+token and cost usage. OpenWiki generation traces are routed to the treatment
+experiment. Codex CLI does not emit native LangSmith LLM/tool spans, but Harbor
+records its agent phase and ATIF trajectory totals.
 
 Use `--langsmith-dataset NAME` to override the shared dataset. Self-hosted or
 multi-workspace LangSmith installations can also use `--langsmith-endpoint URL`
@@ -178,10 +144,9 @@ source ~/.zshrc && python3 evals/deepswe/run.py paired \
   --reasoning-effort high
 ```
 
-Use `--task '<glob>'` one or more times to select named tasks. The harness uses
-`--seed` to sample one exact task list and passes that same list to both arms.
-Use `--attempts 3` for repeated trials and `--environment modal` for Harbor's
-hosted parallel environment.
+Use `--task '<glob>'` to select tasks, `--attempts` for repeated trials,
+`--concurrency` for parallel trials, and `--environment modal` for hosted runs.
+Seeded sampling selects one exact task list for both paired arms.
 
 ### Named OpenWiki task suites
 
@@ -200,48 +165,10 @@ python3 evals/deepswe/run.py paired --task-suite openwiki-20
 python3 evals/deepswe/run.py paired --task-suite openwiki-doc-leverage-10
 ```
 
-The `openwiki-doc-leverage-10` suite targets changes where repository
-documentation should have high leverage: ownership and behavior are spread
-across multiple runtime, serialization, integration, CLI, SDK, or delivery
-surfaces. Its members are disjoint from `openwiki-20` so it can provide a fresh
-test of the OpenWiki hypothesis:
-
-- `aiomonitor-task-snapshots-diff`
-- `bandit-incremental-cache-control`
-- `dynamodb-toolbox-conditional-attribute-requirements`
-- `fastapi-deprecation-response-headers`
-- `go-genai-streamed-function-args`
-- `goreleaser-retry-publish-auditing`
-- `gql-incremental-graphql-delivery`
-- `igel-persist-feature-schema`
-- `onedump-dump-encryption-pipeline`
-- `testem-bail-on-test-failure`
-
-The 15 tasks added to `openwiki-20` are not exposed as a separate runnable
-suite. They were selected from the user-provided `gpt-5.6-terra [medium]`
-leaderboard export. Across their 42 listed trials they had an 81% failure rate,
-40.8 mean steps, and $0.88 mean reported cost. The local harness uses high
-reasoning, so these figures are selection signals rather than expected results.
-The export did not include token counts; reported cost and steps are only
-proxies for token intensity.
-
-| Task                                       | Repository / language         | Terra-medium signal    | What it stresses                                                   |
-| ------------------------------------------ | ----------------------------- | ---------------------- | ------------------------------------------------------------------ |
-| `adaptix-name-mapping-aliases`             | Adaptix / Python              | 1/4 failed, 47.0 steps | High-cost positive control; mapping and serialization seams        |
-| `dynamodb-toolbox-lazy-recursive-schemas`  | DynamoDB Toolbox / TypeScript | 4/4 failed, 40.8 steps | Recursive types, DTO round trips, JSON Schema, update expressions  |
-| `pebble-durability-wait-apis`              | Pebble / Go                   | 2/2 failed, 45.5 steps | Concurrency, durability callbacks, waits, metrics, reset behavior  |
-| `scriggo-method-declarations`              | Scriggo / Go                  | 2/2 failed, 44.0 steps | Compiler/runtime method sets and interface dispatch                |
-| `helm-unified-manifest-stream`             | Helm / Go                     | 1/4 failed, 42.8 steps | Large-repo positive control across multiple command paths          |
-| `fastapi-implicit-head-options`            | FastAPI / Python              | 2/3 failed, 38.7 steps | Routing inheritance, configuration, HEAD/OPTIONS semantics         |
-| `boa-hierarchical-evaluation-cancellation` | Boa / Rust                    | 3/3 failed, 38.0 steps | Nested cancellation and async lifecycle propagation                |
-| `bandit-structured-nosec-directives`       | Bandit / Python               | 2/2 failed, 39.0 steps | Parser state, scoped directives, selector semantics                |
-| `effect-sse-httpapi-streaming`             | Effect / TypeScript           | 3/3 failed, 42.3 steps | Large monorepo; server/client streaming and public API propagation |
-| `katex-multicolumn-array-spans`            | KaTeX / JavaScript            | 2/2 failed, 40.5 steps | Parser-to-layout invariants and error handling                     |
-| `prometheus-transactional-reload-status`   | Prometheus / Go               | 1/2 failed, 36.5 steps | Large repo; transactions, rollback, persistence, HTTP status       |
-| `opa-template-string-reconstruction`       | OPA / Go                      | 3/3 failed, 39.7 steps | Compiler AST reconstruction and syntax preservation                |
-| `oxvg-structural-selector-preservation`    | OXVG / Rust                   | 3/3 failed, 39.7 steps | Optimizer correctness under structural CSS selectors               |
-| `kgateway-consistent-hash-policy`          | kgateway / Go                 | 2/2 failed, 38.5 steps | Kubernetes API-to-runtime translation and merge behavior           |
-| `python-statemachine-state-data-scoping`   | python-statemachine / Python  | 3/3 failed, 36.3 steps | Hierarchical state ownership, history, isolation, lifecycle resets |
+`koota-5` is the small iteration suite, `openwiki-20` is the broader
+cross-repository suite, and `openwiki-doc-leverage-10` contains disjoint tasks
+whose ownership and behavior span multiple runtime, serialization, integration,
+CLI, SDK, or delivery surfaces. The exact members are pinned in `run.py`.
 
 When the packed OpenWiki checkout exposes `openwiki-retrieval-mcp`, treatment
 runs register it inside Codex's isolated home. This capability check keeps the
@@ -249,14 +176,9 @@ eval harness runnable against `main` and earlier OpenWiki revisions that do not
 yet ship retrieval tools; those revisions still receive their generated wiki
 and root `AGENTS.md` without an MCP server.
 
-When available, retrieval exposes two read-only workflows over `/app` and
-`/app/openwiki`: `search` with `all`, `wiki`, `source_code`, and `tests` scopes,
-and `change_surface` for bounded wiki guidance, cross-boundary source/test
-mapping, evidence gaps, and wiki provenance. Search automatically combines
-exact, BM25, semantic-vector, and OKF graph ranking. Local deterministic vectors
-are the default. Pass `--retrieval-embedding-provider openai` to opt into
-bounded `text-embedding-3-small` reranking; provider failures fall back to local
-vectors.
+When available, retrieval provides read-only `search` and `change_surface`
+workflows over `/app` and `/app/openwiki`. Local vectors are the default; pass
+`--retrieval-embedding-provider openai` to opt into hosted reranking.
 
 If runs already exist, summarize them without invoking Harbor:
 
