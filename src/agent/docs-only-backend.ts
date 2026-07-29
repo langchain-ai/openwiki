@@ -22,23 +22,88 @@ import {
 } from "./openwiki-ignore.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
+/**
+ * ToolMessage metadata key under which a successful mutation records the path it wrote.
+ */
 export const MUTATION_PATH_METADATA_KEY = "openwikiMutationPath";
 
+/**
+ * Options for {@link OpenWikiLocalShellBackend}, extending the deepagents shell backend options.
+ */
 type OpenWikiBackendOptions = LocalShellBackendOptions & {
+  /**
+   * Confine writes to the `openwiki/` docs tree.
+   *
+   * @default false
+   */
   docsOnly?: boolean;
+
+  /**
+   * Rules that exclude paths from all agent filesystem/shell access.
+   *
+   * @default an inactive ruleset (no exclusions)
+   */
   ignoreRules?: OpenWikiIgnoreRules;
+
+  /**
+   * The doc-generation output target, which relaxes the docs-only write check
+   * for `local-wiki` runs.
+   *
+   * @default "repository"
+   */
   outputMode?: OpenWikiOutputMode;
 };
 
+/**
+ * Shell commands the agent may still run while `.openwikiignore` rules are active.
+ *
+ * This is a deliberate allowlist, not a denylist. While rules are active we
+ * cannot statically prove what an arbitrary shell command reads (variable
+ * expansion, command substitution, `find -exec`, `cd` + relative paths,
+ * `git show HEAD:<path>`, and so on all defeat naive command scanning), so the
+ * safe default is to deny shell and permit only these few commands that the
+ * agent workflow needs and that cannot exfiltrate an ignored path. Each entry
+ * is fully anchored (`^...$`) so it cannot be prefixed or chained with a second
+ * command. Discovery and reads must instead go through the gated filesystem
+ * tools. See {@link isAllowedShellCommandWithIgnore}.
+ */
 const allowedIgnoredShellCommands = [
   /^pwd$/u,
   /^git\s+(?:--no-pager\s+)?rev-parse\s+HEAD$/u,
   /^rm\s+-f\s+(?:\.\/)?openwiki\/_plan\.md$/u,
 ];
 
+/**
+ * Filesystem/shell backend that enforces OpenWiki's access boundaries for the
+ * doc-generation agent.
+ *
+ * It wraps the deepagents `LocalShellBackend` and layers on two independent
+ * constraints:
+ *
+ * 1. `.openwikiignore` exclusion: reads/writes/edits of an ignored path are hard
+ *    denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop
+ *    ignored entries; uploads/downloads reject ignored paths; and shell
+ *    `execute` is restricted to a small allowlist while any rule is active.
+ * 2. Docs-only confinement (`docsOnly`): in repository mode, writes are limited
+ *    to the `openwiki/` tree via {@link isOpenWikiDocsPath}.
+ *
+ * Both are security boundaries against an agent that may be prompt-injected via
+ * untrusted repository content, so path checks canonicalize before matching.
+ */
 export class OpenWikiLocalShellBackend extends LocalShellBackend {
+  /**
+   * Whether writes are confined to the `openwiki/` docs tree (repository mode).
+   */
   private readonly docsOnly: boolean;
+
+  /**
+   * The active `.openwikiignore` ruleset gating every path this backend touches.
+   */
   private readonly ignoreRules: OpenWikiIgnoreRules;
+
+  /**
+   * The doc-generation output target; `local-wiki` relaxes the docs-only write check.
+   */
   private readonly outputMode: OpenWikiOutputMode;
 
   constructor(options: OpenWikiBackendOptions) {
@@ -48,6 +113,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     this.outputMode = options.outputMode ?? "repository";
   }
 
+  /**
+   * Read a file, hard-denying the read if the path is excluded by `.openwikiignore`.
+   */
   override async read(
     filePath: string,
     offset?: number,
@@ -62,6 +130,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return super.read(filePath, offset, limit);
   }
 
+  /**
+   * Read raw bytes, hard-denying the read if the path is excluded by `.openwikiignore`.
+   */
   override async readRaw(filePath: string): Promise<ReadRawResult> {
     const error = this.getIgnoredPathError(filePath);
 
@@ -72,6 +143,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return super.readRaw(filePath);
   }
 
+  /**
+   * Write a file, denying if the path is excluded by `.openwikiignore` or falls
+   * outside the docs tree in docs-only mode. On success, records the mutated
+   * path in the result metadata for the validator.
+   */
   override async write(
     filePath: string,
     content: string,
@@ -87,6 +163,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return markMutation(await super.write(filePath, content), filePath);
   }
 
+  /**
+   * Edit a file in place, applying the same `.openwikiignore` and docs-only
+   * checks as {@link write} and recording the mutated path on success.
+   */
   override async edit(
     filePath: string,
     oldString: string,
@@ -107,6 +187,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     );
   }
 
+  /**
+   * List a directory, denying if the directory itself is excluded and otherwise
+   * filtering out any ignored entries so they never surface to the agent.
+   */
   override async ls(dirPath: string): Promise<LsResult> {
     const error = this.getIgnoredPathError(dirPath, true);
 
@@ -122,6 +206,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     };
   }
 
+  /**
+   * Search file contents, short-circuiting to no matches if the search root is
+   * an ignored directory and filtering out matches under any ignored path.
+   */
   override async grep(
     pattern: string,
     dirPath?: string | null,
@@ -139,6 +227,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     };
   }
 
+  /**
+   * Expand a glob, short-circuiting to no results if the search root is an
+   * ignored directory and filtering out any ignored files from the results.
+   */
   override async glob(
     pattern: string,
     searchPath?: string,
@@ -155,6 +247,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     };
   }
 
+  /**
+   * Upload files, returning `permission_denied` for any ignored path while still
+   * uploading the allowed ones. Results are returned in the original input order.
+   */
   override async uploadFiles(
     files: Array<[string, Uint8Array]>,
   ): Promise<FileUploadResponse[]> {
@@ -182,6 +278,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     });
   }
 
+  /**
+   * Download files, returning `permission_denied` for any ignored path while
+   * still downloading the allowed ones. Results preserve the input order.
+   */
   override async downloadFiles(
     paths: string[],
   ): Promise<FileDownloadResponse[]> {
@@ -213,6 +313,12 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     });
   }
 
+  /**
+   * Run a shell command. While any `.openwikiignore` rule is active, only the
+   * {@link allowedIgnoredShellCommands} allowlist may run; anything else is
+   * refused (exit code 1) with guidance to use the gated filesystem tools,
+   * since arbitrary shell cannot be proven not to read an ignored path.
+   */
   override async execute(command: string): Promise<ExecuteResponse> {
     if (
       this.ignoreRules.isActive &&
@@ -228,6 +334,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return super.execute(command);
   }
 
+  /**
+   * Return a refusal message when a write escapes the docs tree in docs-only
+   * mode, or `null` if the write is allowed. Always allows in `local-wiki` mode
+   * or when the path is under `openwiki/`.
+   */
   private getDocsOnlyWriteError(filePath: string): string | null {
     if (
       !this.docsOnly ||
@@ -240,6 +351,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return `OpenWiki repository init/update runs may only write under /${OPEN_WIKI_DIR}/. Refused path: ${filePath}`;
   }
 
+  /**
+   * Return a refusal message when a path is excluded by `.openwikiignore`, or
+   * `null` if it is allowed.
+   */
   private getIgnoredPathError(
     filePath: string,
     isDirectory = false,
@@ -251,16 +366,24 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return `Path is excluded by ${OPENWIKI_IGNORE_FILE}: ${filePath}`;
   }
 
+  /**
+   * Whether a directory entry should be filtered out of discovery results.
+   */
   private isIgnoredFile(file: FileInfo): boolean {
     return this.ignoreRules.ignores(file.path, file.is_dir === true);
   }
 
+  /**
+   * Whether a grep hit should be filtered out because its file is ignored.
+   */
   private isIgnoredMatch(match: GrepMatch): boolean {
     return this.ignoreRules.ignores(match.path);
   }
 }
 
-/** Carries a successful mutation's file path into the ToolMessage metadata used by the validator. */
+/**
+ * Carries a successful mutation's file path into the ToolMessage metadata used by the validator.
+ */
 function markMutation<Result extends WriteResult | EditResult>(
   result: Result,
   filePath: string,
@@ -274,6 +397,13 @@ function markMutation<Result extends WriteResult | EditResult>(
   return result;
 }
 
+/**
+ * Whether a path resolves to somewhere inside the `openwiki/` docs tree.
+ *
+ * The path is canonicalized (backslashes, leading slashes, and `.`/`..`
+ * segments collapsed) before the prefix check so a path such as
+ * `/openwiki/../AGENTS.md` cannot escape the confinement.
+ */
 export function isOpenWikiDocsPath(filePath: string): boolean {
   const slashed = filePath.trim().replace(/\\/gu, "/");
   // Collapse `..`/`.` segments before the prefix check so a path like
@@ -286,6 +416,10 @@ export function isOpenWikiDocsPath(filePath: string): boolean {
   );
 }
 
+/**
+ * Whether a shell command is on the {@link allowedIgnoredShellCommands} allowlist
+ * and may therefore run while `.openwikiignore` rules are active.
+ */
 function isAllowedShellCommandWithIgnore(command: string): boolean {
   const trimmedCommand = command.trim();
 

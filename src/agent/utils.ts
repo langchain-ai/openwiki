@@ -43,6 +43,9 @@ export type UpdateNoopStatus =
 
 /**
  * Builds the per-run context the prompt uses to reason about prior docs and git changes.
+ *
+ * Paths excluded by `ignoreRules` are stripped from the git evidence so the
+ * agent never sees changes under an ignored path.
  */
 export async function createRunContext(
   command: OpenWikiCommand,
@@ -101,6 +104,13 @@ async function readRunWikiGoal(
   return (await readOpenWikiOnboardingConfig()).wikiGoal;
 }
 
+/**
+ * Decides whether an `update` run can be skipped because nothing meaningful changed.
+ *
+ * Working-tree and committed changes that only touch `openwiki/` or paths
+ * excluded by `ignoreRules` do not count as meaningful, so an ignored path
+ * changing on its own never forces a rebuild.
+ */
 export async function getUpdateNoopStatus(
   cwd: string,
   ignoreRules = new OpenWikiIgnoreRules([]),
@@ -421,6 +431,9 @@ async function readSnapshotFile(filePath: string): Promise<Buffer | null> {
 
 /**
  * Produces the git evidence block passed to init/update prompts.
+ *
+ * Lines that reference a path excluded by `ignoreRules` are filtered out of
+ * every git section (status, log, diff) before the block is assembled.
  */
 async function createGitSummary(
   command: OpenWikiCommand,
@@ -584,6 +597,13 @@ function normalizeGitPath(value: string): string {
   return value.trim().replace(/\\/gu, "/");
 }
 
+/**
+ * Strips lines that reference an ignored path from a block of git output.
+ *
+ * Returns the input unchanged when no rules are active. When filtering removes
+ * every line, returns a placeholder so the prompt records that matching paths
+ * existed but were excluded, rather than showing a misleadingly empty section.
+ */
 function filterGitOutputForIgnore(
   output: string,
   ignoreRules: OpenWikiIgnoreRules,
@@ -603,6 +623,9 @@ function filterGitOutputForIgnore(
     : "(all matching paths are excluded by .openwikiignore)";
 }
 
+/**
+ * Whether a single line of git output names at least one ignored path.
+ */
 function lineReferencesIgnoredPath(
   line: string,
   ignoreRules: OpenWikiIgnoreRules,
@@ -612,6 +635,15 @@ function lineReferencesIgnoredPath(
   );
 }
 
+/**
+ * Pulls the file path(s) out of one line of `git status --short` or
+ * `--name-status` output.
+ *
+ * Handles both the two-column short-status format and the letter-prefixed
+ * name-status format, and returns an empty array for lines that carry no path
+ * (such as `--oneline` commit headers). Rename lines yield both the old and new
+ * paths so that either side matching a rule excludes the line.
+ */
 function extractGitPaths(line: string): string[] {
   const shortStatusMatch = /^(?:[ MARCUD?!]{2})\s+(.+)$/u.exec(line);
   const nameStatusMatch = /^(?:[ACDMRTUXB]\d*)\s+(.+)$/u.exec(line.trim());
@@ -624,6 +656,12 @@ function extractGitPaths(line: string): string[] {
   return splitGitPaths(pathsText).map(normalizeGitPath).filter(Boolean);
 }
 
+/**
+ * Splits the path portion of a git line into individual paths.
+ *
+ * `--name-status` separates a rename's source and target with a tab, while
+ * `git status --short` uses ` -> `; a plain single path is returned as-is.
+ */
 function splitGitPaths(pathsText: string): string[] {
   if (pathsText.includes("\t")) {
     return pathsText.split("\t");

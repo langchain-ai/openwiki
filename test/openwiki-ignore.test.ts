@@ -59,6 +59,24 @@ secrets/
     expect(rules.ignores("src/build/index.js")).toBe(false);
     expect(rules.ignores("src/index.ts")).toBe(false);
   });
+
+  test("canonicalizes ./ and ../ so anchored rules cannot be bypassed", () => {
+    const rules = createOpenWikiIgnoreRules(`
+/secrets
+`);
+
+    // Baseline: the plainly-spelled path is excluded.
+    expect(rules.ignores("secrets/token.txt")).toBe(true);
+    expect(rules.ignores("/secrets/token.txt")).toBe(true);
+
+    // Equivalent spellings that must resolve to the same excluded path.
+    expect(rules.ignores("./secrets/token.txt")).toBe(true);
+    expect(rules.ignores("secrets/../secrets/token.txt")).toBe(true);
+    expect(rules.ignores("./secrets/../secrets/token.txt")).toBe(true);
+
+    // A path that genuinely resolves elsewhere stays allowed.
+    expect(rules.ignores("secrets/../public.txt")).toBe(false);
+  });
 });
 
 describe("OpenWikiLocalShellBackend", () => {
@@ -89,6 +107,62 @@ describe("OpenWikiLocalShellBackend", () => {
 
     const grep = await backend.grep("hidden-token", "/");
     expect(grep.matches).toEqual([]);
+  });
+
+  test("blocks reads of ignored paths spelled with ./ or ../", async () => {
+    const { backend } = await createIgnoredRepo();
+
+    const dotSlashRead = await backend.read("/./secrets/token.txt");
+    expect(dotSlashRead.error).toContain(".openwikiignore");
+    expect(dotSlashRead.content).toBeUndefined();
+
+    const traversalRead = await backend.read("/secrets/../secrets/token.txt");
+    expect(traversalRead.error).toContain(".openwikiignore");
+    expect(traversalRead.content).toBeUndefined();
+  });
+
+  test("refuses writes and edits to ignored paths", async () => {
+    const { backend } = await createIgnoredRepo();
+
+    const write = await backend.write("/secrets/token.txt", "overwrite\n");
+    expect(write.error).toContain(".openwikiignore");
+
+    const edit = await backend.edit(
+      "/secrets/token.txt",
+      "hidden-token",
+      "leaked",
+    );
+    expect(edit.error).toContain(".openwikiignore");
+  });
+
+  test("denies uploads and downloads of ignored paths while allowing others", async () => {
+    const { backend } = await createIgnoredRepo();
+
+    const uploads = await backend.uploadFiles([
+      ["secrets/token.txt", new TextEncoder().encode("x")],
+      ["public.txt", new TextEncoder().encode("y")],
+    ]);
+    const uploadByPath = new Map(
+      uploads.map((result) => [result.path, result]),
+    );
+    expect(uploadByPath.get("secrets/token.txt")?.error).toBe(
+      "permission_denied",
+    );
+    expect(uploadByPath.get("public.txt")?.error).not.toBe("permission_denied");
+
+    const downloads = await backend.downloadFiles([
+      "secrets/token.txt",
+      "public.txt",
+    ]);
+    const downloadByPath = new Map(
+      downloads.map((result) => [result.path, result]),
+    );
+    expect(downloadByPath.get("secrets/token.txt")?.error).toBe(
+      "permission_denied",
+    );
+    expect(downloadByPath.get("public.txt")?.error).not.toBe(
+      "permission_denied",
+    );
   });
 
   test("restricts shell execute while ignore rules are active", async () => {
