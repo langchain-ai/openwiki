@@ -925,4 +925,4 @@ export function isValidModelId(value: string): boolean {
   );
 }
 
-export const OPENWIKI_VERSION = "0.2.3";
+export const OPENWIKI_VERSION = "0.2.4";
