@@ -1,0 +1,14 @@
+evals/deepswe/run.py
+  h_33f63fd75d0bd5 38,112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "1a2893f627fa5b3e30a270a7b5a7ce0b63e40ab6",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
