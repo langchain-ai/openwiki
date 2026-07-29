@@ -1593,28 +1593,38 @@ const OPENROUTER_DEBUG_BODY_LIMIT = 4_000;
 let debugFetchDepth = 0;
 let debugFetchReal: typeof globalThis.fetch | null = null;
 let debugFetchWrapper: typeof globalThis.fetch | null = null;
-const activeDebugCaptures = new Set<{
+type DebugCaptureSlot = {
   lastFailure: OpenRouterFetchFailure | null;
-}>();
+  options: OpenWikiRunOptions;
+};
 
-function recordDebugFailure(failure: OpenRouterFetchFailure): void {
+const activeDebugCaptures = new Set<DebugCaptureSlot>();
+
+function recordDebugFailure(
+  failure: OpenRouterFetchFailure,
+  note?: string,
+): void {
   // A process-global fetch cannot be attributed to the run that issued it, so
   // every concurrently-open capture records it. Runs read their slot from the
   // catch block that just failed, so in practice the reader is the owner; a
   // second concurrent run seeing a stray failure is strictly better than the
   // previous behaviour of leaking the wrapper. Per-provider
   // `configuration.fetch` injection would attribute precisely — see the issue.
+  //
+  // Debug output goes to each slot's OWN options: one shared wrapper must not
+  // log a second run's failures at the first run's debug level.
   for (const capture of activeDebugCaptures) {
     capture.lastFailure = failure;
+    if (note) {
+      emitDebug(capture.options, note);
+    }
   }
 }
 
 export function installOpenRouterDebugFetch(
   options: OpenWikiRunOptions,
 ): OpenRouterFetchCapture {
-  const slot: { lastFailure: OpenRouterFetchFailure | null } = {
-    lastFailure: null,
-  };
+  const slot: DebugCaptureSlot = { lastFailure: null, options };
   activeDebugCaptures.add(slot);
 
   if (debugFetchDepth === 0) {
@@ -1632,17 +1642,16 @@ export function installOpenRouterDebugFetch(
         const response = await realFetch(input, init);
 
         if (!response.ok) {
-          recordDebugFailure({
-            request,
-            response: {
-              bodyPreview: await readResponseBodyPreview(response),
-              headers: getSafeResponseHeaders(response.headers),
-              status: response.status,
-              statusText: response.statusText,
+          recordDebugFailure(
+            {
+              request,
+              response: {
+                bodyPreview: await readResponseBodyPreview(response),
+                headers: getSafeResponseHeaders(response.headers),
+                status: response.status,
+                statusText: response.statusText,
+              },
             },
-          });
-          emitDebug(
-            options,
             `openrouter.http status=${response.status} statusText=${JSON.stringify(
               response.statusText,
             )}`,

@@ -106,6 +106,39 @@ describe("installOpenRouterDebugFetch reentrancy", () => {
     expect(globalThis.fetch).toBe(foreign);
   });
 
+  test("each run's debug output honours its own options, not the first installer's", async () => {
+    const realFetch = vi.fn(() =>
+      Promise.resolve(new Response("nope", { status: 500 })),
+    );
+    vi.stubGlobal("fetch", realFetch);
+
+    // Run A has debug OFF and installs first, so it owns the shared wrapper.
+    const quiet: string[] = [];
+    const loud: string[] = [];
+    const a = installOpenRouterDebugFetch({
+      debug: false,
+      onEvent: (event: { message?: string }) => quiet.push(event.message ?? ""),
+    } as unknown as Parameters<typeof installOpenRouterDebugFetch>[0]);
+    // Run B has debug ON and installs second.
+    const b = installOpenRouterDebugFetch({
+      debug: true,
+      onEvent: (event: { message?: string }) => loud.push(event.message ?? ""),
+    } as unknown as Parameters<typeof installOpenRouterDebugFetch>[0]);
+
+    await globalThis.fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+    });
+
+    // B asked for debug, so B must have received it. Capturing options in the
+    // wrapper closure would have routed everything through A instead.
+    expect(loud.some((line) => line.includes("openrouter.http"))).toBe(true);
+    // A asked for no debug and must have stayed quiet.
+    expect(quiet).toEqual([]);
+
+    a.restore();
+    b.restore();
+  });
+
   test("non-OpenRouter requests pass straight through to the real fetch", async () => {
     const real = vi.fn(() => Promise.resolve(new Response("ok")));
     vi.stubGlobal("fetch", real);
