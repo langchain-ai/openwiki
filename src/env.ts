@@ -19,6 +19,8 @@ import {
   GOOGLE_CLOUD_LOCATION_ENV_KEY,
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
   isValidModelId,
+  MINIMAX_API_KEY_ENV_KEY,
+  MINIMAX_BASE_URL_ENV_KEY,
   NEBIUS_API_KEY_ENV_KEY,
   normalizeProvider,
   NVIDIA_API_KEY_ENV_KEY,
@@ -94,6 +96,8 @@ export const MANAGED_ENV_KEYS = [
   COPILOT_BASE_URL_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
+  MINIMAX_API_KEY_ENV_KEY,
+  MINIMAX_BASE_URL_ENV_KEY,
   NEBIUS_API_KEY_ENV_KEY,
   NVIDIA_API_KEY_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
@@ -406,6 +410,10 @@ function getBaseUrlDiagnosticWarnings(
     return getProviderBaseUrlWarnings("fireworks", value);
   }
 
+  if (key === MINIMAX_BASE_URL_ENV_KEY) {
+    return getProviderBaseUrlWarnings("minimax", value);
+  }
+
   if (key === NVIDIA_BASE_URL_ENV_KEY) {
     return getProviderBaseUrlWarnings("nvidia", value);
   }
@@ -431,6 +439,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === BASETEN_BASE_URL_ENV_KEY ||
     key === COPILOT_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
+    key === MINIMAX_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||

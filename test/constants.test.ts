@@ -34,6 +34,13 @@ import {
   resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
+  MINIMAX_API_KEY_ENV_KEY,
+  MINIMAX_BASE_URL_ENV_KEY,
+  PROVIDER_CONFIGS,
+  SELECTABLE_OPENWIKI_PROVIDERS,
+  getProviderBaseUrlEnvKey,
+  getProviderLabel,
+  providerRequiresBaseUrl,
 } from "../src/constants.ts";
 
 describe("isValidModelId", () => {
@@ -686,5 +693,60 @@ describe("isModelIdForOtherProvider", () => {
     expect(isModelIdForOtherProvider("  claude-opus-4-8  ", "openai")).toBe(
       true,
     );
+  });
+});
+
+describe("MiniMax provider", () => {
+  test("exposes MiniMax API key and base URL env key constants", () => {
+    expect(MINIMAX_API_KEY_ENV_KEY).toBe("MINIMAX_API_KEY");
+    expect(MINIMAX_BASE_URL_ENV_KEY).toBe("MINIMAX_BASE_URL");
+  });
+
+  test("is a valid, selectable provider", () => {
+    expect(isValidProvider("minimax")).toBe(true);
+    expect(SELECTABLE_OPENWIKI_PROVIDERS).toContain("minimax");
+  });
+
+  test("has a complete provider config pinned to the global endpoint", () => {
+    const config = PROVIDER_CONFIGS.minimax;
+
+    expect(config.apiKeyEnvKey).toBe(MINIMAX_API_KEY_ENV_KEY);
+    expect(config.label).toBe("MiniMax");
+    expect(config.baseURL).toBe("https://api.minimax.io/v1");
+    expect(config.baseUrlEnvKey).toBe(MINIMAX_BASE_URL_ENV_KEY);
+    expect(config.requiresBaseUrl).not.toBe(true);
+  });
+
+  test("ships documented model presets in a stable order", () => {
+    expect(getProviderModelOptions("minimax")).toEqual([
+      { id: "MiniMax-M3", label: "M3" },
+      { id: "MiniMax-M2.7", label: "M2.7" },
+    ]);
+  });
+
+  test("defaults to the flagship model", () => {
+    expect(getDefaultModelId("minimax")).toBe("MiniMax-M3");
+  });
+
+  test("accessors resolve through the shared provider config", () => {
+    expect(getProviderApiKeyEnvKey("minimax")).toBe(MINIMAX_API_KEY_ENV_KEY);
+    expect(getProviderLabel("minimax")).toBe("MiniMax");
+    expect(getProviderBaseUrlEnvKey("minimax")).toBe(MINIMAX_BASE_URL_ENV_KEY);
+    expect(providerRequiresBaseUrl("minimax")).toBe(false);
+  });
+
+  test("defaults to the global base URL and honors a regional override", () => {
+    expect(resolveProviderBaseUrl("minimax", {})).toBe(
+      "https://api.minimax.io/v1",
+    );
+    expect(
+      resolveProviderBaseUrl("minimax", {
+        [MINIMAX_BASE_URL_ENV_KEY]: "https://api.minimaxi.com/v1",
+      }),
+    ).toBe("https://api.minimaxi.com/v1");
+  });
+
+  test("falls back to minimax when only a MiniMax key is present", () => {
+    expect(resolveConfiguredProvider({ MINIMAX_API_KEY: "x" })).toBe("minimax");
   });
 });

@@ -7,6 +7,8 @@ export const COPILOT_API_KEY_ENV_KEY = "COPILOT_API_KEY";
 export const COPILOT_BASE_URL_ENV_KEY = "COPILOT_BASE_URL";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const FIREWORKS_BASE_URL_ENV_KEY = "FIREWORKS_BASE_URL";
+export const MINIMAX_API_KEY_ENV_KEY = "MINIMAX_API_KEY";
+export const MINIMAX_BASE_URL_ENV_KEY = "MINIMAX_BASE_URL";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
 export const NVIDIA_BASE_URL_ENV_KEY = "NVIDIA_BASE_URL";
@@ -92,6 +94,7 @@ export type OpenWikiProvider =
   | "fireworks"
   | "gemini"
   | "gemini-enterprise"
+  | "minimax"
   | "nebius"
   | "nvidia"
   | "openai"
@@ -227,6 +230,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "bedrock",
   "fireworks",
   "baseten",
+  "minimax",
   "nebius",
   "nvidia",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
@@ -290,6 +294,18 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
         id: "accounts/fireworks/models/kimi-k2p7-code",
         label: "Kimi K2.7 Code",
       },
+    ],
+  },
+  minimax: {
+    apiKeyEnvKey: MINIMAX_API_KEY_ENV_KEY,
+    // Defaults to the global endpoint; set MINIMAX_BASE_URL to target another
+    // documented region (for example https://api.minimaxi.com/v1).
+    baseURL: "https://api.minimax.io/v1",
+    baseUrlEnvKey: MINIMAX_BASE_URL_ENV_KEY,
+    label: "MiniMax",
+    modelOptions: [
+      { id: "MiniMax-M3", label: "M3" },
+      { id: "MiniMax-M2.7", label: "M2.7" },
     ],
   },
   nebius: {
@@ -810,16 +826,18 @@ export function resolveConfiguredProvider(
                   ? "nebius"
                   : env[NVIDIA_API_KEY_ENV_KEY]
                     ? "nvidia"
-                    : hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                        ) ||
-                        hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-                        )
-                      ? "bedrock"
-                      : DEFAULT_PROVIDER)
+                    : env[MINIMAX_API_KEY_ENV_KEY]
+                      ? "minimax"
+                      : hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                          ) ||
+                          hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                          )
+                        ? "bedrock"
+                        : DEFAULT_PROVIDER)
   );
 }
 

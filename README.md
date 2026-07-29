@@ -219,7 +219,7 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and GitHub Copilot out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, MiniMax, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and GitHub Copilot out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
 
 ### GitHub Copilot
 
@@ -253,9 +253,12 @@ ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 
 The `openai` provider likewise supports an alternative, OpenAI-compatible
 endpoint (for example a self-hosted or proxied gateway) via `OPENAI_BASE_URL`,
-set alongside `OPENAI_API_KEY`. Baseten, Fireworks, and NVIDIA NIM can be routed
-through alternate OpenAI-compatible gateways with `BASETEN_BASE_URL`,
-`FIREWORKS_BASE_URL`, and `NVIDIA_BASE_URL`, respectively. This is useful for
+set alongside `OPENAI_API_KEY`. Baseten, Fireworks, NVIDIA NIM, and MiniMax can
+be routed through alternate OpenAI-compatible gateways with `BASETEN_BASE_URL`,
+`FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, and `MINIMAX_BASE_URL`, respectively.
+MiniMax defaults to its global endpoint (`https://api.minimax.io/v1`); set
+`MINIMAX_BASE_URL=https://api.minimaxi.com/v1` to use the other documented
+region. This is useful for
 OpenAI-compatible gateways that expose the Responses API, since the `openai`
 provider routes tool calls through the Responses API (`/v1/responses`) rather
 than chat completions:

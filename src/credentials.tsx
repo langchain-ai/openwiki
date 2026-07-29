@@ -5424,6 +5424,7 @@ function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
     provider === "fireworks" ||
     provider === "gemini" ||
     provider === "gemini-enterprise" ||
+    provider === "minimax" ||
     provider === "nebius"
     ? "a"
     : "an";
