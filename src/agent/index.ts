@@ -91,9 +91,11 @@ import {
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
+  OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
+  OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
   providerRequiresBaseUrl,
   providerRequiresRegion,
   providerRequiresSecretKey,
@@ -101,11 +103,13 @@ import {
   providerUsesExternalCliAuth,
   providerUsesResponsesApi,
   resolveConfiguredProvider,
+  resolveMaxOutputTokens,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
+  resolveStreamIdleTimeoutForProvider,
   type OpenWikiProvider,
 } from "../constants.js";
 import {
@@ -213,6 +217,16 @@ export async function runOpenWikiAgent(
     emitDebug(options, `model=${modelId}`);
     const providerRetryAttempts = resolveProviderRetryAttempts();
     emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
+    const maxOutputTokens = resolveMaxOutputTokens();
+    emitDebug(
+      options,
+      `model.maxOutputTokens=${maxOutputTokens ?? "provider-default"}`,
+    );
+    const streamIdleTimeout = resolveStreamIdleTimeoutForProvider(provider);
+    emitDebug(
+      options,
+      `model.streamIdleTimeout=${streamIdleTimeout ?? "provider-default"}`,
+    );
 
     const result = await runOpenWikiAgentCore(
       command,
@@ -221,6 +235,8 @@ export async function runOpenWikiAgent(
       provider,
       modelId,
       providerRetryAttempts,
+      maxOutputTokens,
+      streamIdleTimeout,
     );
 
     await recordRunSafe(command, options, {
@@ -251,6 +267,8 @@ async function runOpenWikiAgentCore(
   provider: OpenWikiProvider,
   modelId: string,
   providerRetryAttempts: number,
+  maxOutputTokens: number | undefined,
+  streamIdleTimeout: number | undefined,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
   const context = await createRunContext(
@@ -265,7 +283,13 @@ async function runOpenWikiAgentCore(
       ? null
       : await createOpenWikiContentSnapshot(cwd, outputMode);
   emitDebug(options, "openwiki.snapshot=created");
-  const model = createModel(provider, modelId, providerRetryAttempts);
+  const model = createModel(
+    provider,
+    modelId,
+    providerRetryAttempts,
+    maxOutputTokens,
+    streamIdleTimeout,
+  );
   emitDebug(options, `model.provider=${provider}`);
   emitDebug(options, "model=initialized");
   const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
@@ -802,8 +826,16 @@ export function createModel(
   provider: OpenWikiProvider,
   modelId: string,
   providerRetryAttempts: number,
+  maxOutputTokens?: number,
+  streamIdleTimeout?: number,
 ) {
   const retryOptions = { maxRetries: providerRetryAttempts };
+  const maxTokensOptions =
+    maxOutputTokens === undefined ? {} : { maxTokens: maxOutputTokens };
+  const googleMaxOutputTokensOptions =
+    maxOutputTokens === undefined ? {} : { maxOutputTokens };
+  const streamIdleTimeoutOptions =
+    streamIdleTimeout === undefined ? {} : { streamIdleTimeout };
 
   if (provider === "gemini") {
     return new ChatGoogle({
@@ -812,6 +844,7 @@ export function createModel(
       platformType: "gai",
       // Gemini 3.x thought-signature round-trip; see the constant's comment.
       ...GEMINI_THOUGHT_SIGNATURE_OPTIONS,
+      ...googleMaxOutputTokensOptions,
       ...retryOptions,
     });
   }
@@ -835,6 +868,7 @@ export function createModel(
       projectId,
       location,
       retryOptions,
+      maxOutputTokens,
     );
   }
 
@@ -844,6 +878,7 @@ export function createModel(
     return new ChatAnthropic(modelId, {
       apiKey: getProviderApiKey(provider),
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+      ...maxTokensOptions,
       ...retryOptions,
     });
   }
@@ -871,6 +906,7 @@ export function createModel(
       // every generation — including the non-streaming `.invoke()` calls
       // DeepAgents' agent node issues internally.
       streaming: true,
+      ...maxTokensOptions,
       ...retryOptions,
       configuration: {
         baseURL: CODEX_RESPONSES_BASE_URL,
@@ -893,6 +929,7 @@ export function createModel(
       model: modelId,
       provider: providerOnly ? { only: providerOnly } : undefined,
       siteName: "OpenWiki",
+      ...maxTokensOptions,
       ...retryOptions,
     });
   }
@@ -901,6 +938,8 @@ export function createModel(
     return new ChatBedrockConverse({
       model: modelId,
       region: resolveProviderRegion(provider),
+      ...maxTokensOptions,
+      ...streamIdleTimeoutOptions,
       ...retryOptions,
     });
   }
@@ -916,6 +955,7 @@ export function createModel(
       : undefined,
     model: modelId,
     useResponsesApi: providerUsesResponsesApi(provider, modelId),
+    ...maxTokensOptions,
     ...retryOptions,
   });
 }
@@ -982,7 +1022,13 @@ function createGeminiEnterpriseModel(
   projectId: string,
   location: string,
   retryOptions: { maxRetries: number },
+  maxOutputTokens?: number,
 ) {
+  const maxTokensOptions =
+    maxOutputTokens === undefined ? {} : { maxTokens: maxOutputTokens };
+  const googleMaxOutputTokensOptions =
+    maxOutputTokens === undefined ? {} : { maxOutputTokens };
+
   switch (resolveVertexSurface(modelId)) {
     case "anthropic":
       // No JS-native Claude-on-Vertex chat model exists; bridge via
@@ -1012,6 +1058,7 @@ function createGeminiEnterpriseModel(
                 dangerouslyAllowBrowser: true,
               }),
           ),
+        ...maxTokensOptions,
         ...retryOptions,
       });
 
@@ -1027,6 +1074,7 @@ function createGeminiEnterpriseModel(
           fetch: createVertexAuthFetch(),
         },
         model: toVertexPublisherModel(modelId),
+        ...maxTokensOptions,
         ...retryOptions,
       });
 
@@ -1051,6 +1099,7 @@ function createGeminiEnterpriseModel(
         // process.env, using the `/node` entrypoint where googleAuthOptions is
         // typed (the default entrypoint types authOptions as `never`).
         googleAuthOptions: { projectId },
+        ...googleMaxOutputTokensOptions,
         ...retryOptions,
       });
   }
@@ -1855,6 +1904,8 @@ export function formatEnvironmentDebugValue(
   if (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
+    key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY ||
+    key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
     key === BEDROCK_AWS_REGION_ENV_KEY
   ) {

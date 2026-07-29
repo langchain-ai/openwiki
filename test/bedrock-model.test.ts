@@ -51,15 +51,58 @@ describe("createModel Bedrock credentials", () => {
     process.env.AWS_WEB_IDENTITY_TOKEN_FILE = "/path/that/must/not/be/read";
     process.env.AWS_REGION = "us-east-1";
 
-    createModel("bedrock", "anthropic.claude-sonnet-5", 4);
+    createModel("bedrock", "anthropic.claude-sonnet-5", 4, 8192);
 
     expect(bedrockConstructorArgs).toHaveLength(1);
     expect(bedrockConstructorArgs[0]).toMatchObject({
       maxRetries: 4,
+      maxTokens: 8192,
       model: "anthropic.claude-sonnet-5",
       region: "us-east-1",
     });
     expect(bedrockConstructorArgs[0]).not.toHaveProperty("credentials");
+  });
+
+  test("preserves the provider default when no output token limit is set", () => {
+    process.env.AWS_REGION = "us-east-1";
+
+    createModel("bedrock", "anthropic.claude-sonnet-5", 4);
+
+    expect(bedrockConstructorArgs[0]).not.toHaveProperty("maxTokens");
+    expect(bedrockConstructorArgs[0]).not.toHaveProperty("streamIdleTimeout");
+  });
+
+  test.each([0, 300000])(
+    "passes streamIdleTimeout: %i to ChatBedrockConverse",
+    (streamIdleTimeout) => {
+      process.env.AWS_REGION = "us-east-1";
+
+      createModel(
+        "bedrock",
+        "anthropic.claude-sonnet-5",
+        4,
+        undefined,
+        streamIdleTimeout,
+      );
+
+      expect(bedrockConstructorArgs[0]).toMatchObject({
+        streamIdleTimeout,
+      });
+    },
+  );
+
+  test("omits streamIdleTimeout when the override is undefined", () => {
+    process.env.AWS_REGION = "us-east-1";
+
+    createModel(
+      "bedrock",
+      "anthropic.claude-sonnet-5",
+      4,
+      undefined,
+      undefined,
+    );
+
+    expect(bedrockConstructorArgs[0]).not.toHaveProperty("streamIdleTimeout");
   });
 
   test("lets LangChain preserve complete legacy credentials and session tokens", () => {

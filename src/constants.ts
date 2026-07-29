@@ -49,6 +49,10 @@ export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
 export const DEFAULT_VERTEX_LOCATION = "global";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
+export const OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY = "OPENWIKI_MAX_OUTPUT_TOKENS";
+export const OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY =
+  "OPENWIKI_STREAM_IDLE_TIMEOUT";
+const MAX_STREAM_IDLE_TIMEOUT_MS = 2_147_483_647;
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
@@ -861,6 +865,73 @@ function inspectCredentialPair(
   }
 
   return { complete: hasAccessKey && hasSecretKey, missingEnvKey: null };
+}
+
+export function resolveMaxOutputTokens(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  const rawMaxOutputTokens = env[OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY];
+
+  if (rawMaxOutputTokens === undefined) {
+    return undefined;
+  }
+
+  const maxOutputTokens = rawMaxOutputTokens.trim();
+
+  if (!/^[1-9]\d*$/u.test(maxOutputTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  const parsedMaxOutputTokens = Number(maxOutputTokens);
+
+  if (!Number.isSafeInteger(parsedMaxOutputTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  return parsedMaxOutputTokens;
+}
+
+/** Milliseconds to wait for the first or next Bedrock stream chunk. 0 disables the watchdog. */
+export function resolveStreamIdleTimeout(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  const rawStreamIdleTimeout = env[OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY];
+
+  if (rawStreamIdleTimeout === undefined) {
+    return undefined;
+  }
+
+  const streamIdleTimeout = rawStreamIdleTimeout.trim();
+
+  if (!/^\d+$/u.test(streamIdleTimeout)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY}. Expected an integer from 0 to ${MAX_STREAM_IDLE_TIMEOUT_MS} milliseconds.`,
+    );
+  }
+
+  const parsedStreamIdleTimeout = Number(streamIdleTimeout);
+
+  if (
+    !Number.isSafeInteger(parsedStreamIdleTimeout) ||
+    parsedStreamIdleTimeout > MAX_STREAM_IDLE_TIMEOUT_MS
+  ) {
+    throw new Error(
+      `Invalid ${OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY}. Expected an integer from 0 to ${MAX_STREAM_IDLE_TIMEOUT_MS} milliseconds.`,
+    );
+  }
+
+  return parsedStreamIdleTimeout;
+}
+
+export function resolveStreamIdleTimeoutForProvider(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  return provider === "bedrock" ? resolveStreamIdleTimeout(env) : undefined;
 }
 
 export function resolveProviderRetryAttempts(

@@ -29,11 +29,14 @@ import {
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
   resolveConfiguredProvider,
+  resolveMaxOutputTokens,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
+  resolveStreamIdleTimeout,
+  resolveStreamIdleTimeoutForProvider,
 } from "../src/constants.ts";
 
 describe("isValidModelId", () => {
@@ -274,6 +277,110 @@ describe("resolveProviderRetryAttempts", () => {
         }),
       ).toThrow(/OPENWIKI_PROVIDER_RETRY_ATTEMPTS/u);
     }
+  });
+});
+
+describe("resolveMaxOutputTokens", () => {
+  test("uses no explicit limit when no override is set", () => {
+    expect(resolveMaxOutputTokens({})).toBeUndefined();
+  });
+
+  test("accepts positive integer output token limits", () => {
+    expect(
+      resolveMaxOutputTokens({
+        OPENWIKI_MAX_OUTPUT_TOKENS: "1",
+      }),
+    ).toBe(1);
+    expect(
+      resolveMaxOutputTokens({
+        OPENWIKI_MAX_OUTPUT_TOKENS: " 8192 ",
+      }),
+    ).toBe(8192);
+  });
+
+  test("rejects invalid output token limits", () => {
+    for (const value of [
+      "",
+      "   ",
+      "0",
+      "-1",
+      "1.5",
+      "abc",
+      "1e2",
+      "9007199254740992",
+    ]) {
+      expect(() =>
+        resolveMaxOutputTokens({
+          OPENWIKI_MAX_OUTPUT_TOKENS: value,
+        }),
+      ).toThrow(/OPENWIKI_MAX_OUTPUT_TOKENS/u);
+    }
+  });
+});
+
+describe("resolveStreamIdleTimeout", () => {
+  test("uses the provider default when no override is set", () => {
+    expect(resolveStreamIdleTimeout({})).toBeUndefined();
+  });
+
+  test("accepts zero to disable the watchdog and positive millisecond values", () => {
+    expect(
+      resolveStreamIdleTimeout({
+        OPENWIKI_STREAM_IDLE_TIMEOUT: " 0 ",
+      }),
+    ).toBe(0);
+    expect(
+      resolveStreamIdleTimeout({
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "300000",
+      }),
+    ).toBe(300000);
+    expect(
+      resolveStreamIdleTimeout({
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "2147483647",
+      }),
+    ).toBe(2147483647);
+  });
+
+  test("rejects invalid stream idle timeouts", () => {
+    for (const value of [
+      "",
+      "   ",
+      "-1",
+      "1.5",
+      "abc",
+      "1e2",
+      "2147483648",
+      "9007199254740992",
+    ]) {
+      expect(() =>
+        resolveStreamIdleTimeout({
+          OPENWIKI_STREAM_IDLE_TIMEOUT: value,
+        }),
+      ).toThrow(/OPENWIKI_STREAM_IDLE_TIMEOUT/u);
+    }
+  });
+});
+
+describe("resolveStreamIdleTimeoutForProvider", () => {
+  test("ignores a stale Bedrock timeout for other providers", () => {
+    expect(
+      resolveStreamIdleTimeoutForProvider("openai", {
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "invalid",
+      }),
+    ).toBeUndefined();
+  });
+
+  test("validates the timeout when Bedrock is active", () => {
+    expect(
+      resolveStreamIdleTimeoutForProvider("bedrock", {
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "300000",
+      }),
+    ).toBe(300000);
+    expect(() =>
+      resolveStreamIdleTimeoutForProvider("bedrock", {
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "invalid",
+      }),
+    ).toThrow(/OPENWIKI_STREAM_IDLE_TIMEOUT/u);
   });
 });
 
