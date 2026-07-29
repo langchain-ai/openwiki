@@ -1,0 +1,28 @@
+src/agent/docs-only-backend.ts
+  s_efb9139c29a715::t_e6eeefd06bd4af 251-255,261,274
+  s_efb9139c29a715::t_781867024dbf09 373-384
+  s_efb9139c29a715::t_f1b898f3552a71 372
+test/openwiki-ignore.test.ts
+  s_efb9139c29a715::t_54634ab7905539 168-196
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "6ad0393e0c22f0db168aacebe3d259945a2d405b",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_efb9139c29a715": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "76a2f8c8-d541-46e8-90c3-a27b8a31aa1f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
