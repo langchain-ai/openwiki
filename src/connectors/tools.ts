@@ -18,7 +18,12 @@ import {
   discoverMcpConnectorTools,
   isMcpConnectorId,
 } from "./mcp-runtime.js";
-import type { ConnectorId, ConnectorIngestOptions } from "./types.js";
+import type {
+  ConnectorId,
+  ConnectorIngestOptions,
+  ConnectorIngestResult,
+  ConnectorRuntime,
+} from "./types.js";
 
 export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
   return [
@@ -269,17 +274,41 @@ async function callMcpToolForConnector(
   return await callMcpConnectorTool(connectorId, toolName, args);
 }
 
-async function ingestAllConnectors() {
-  const registry = createConnectorRegistry();
-  const results = [];
+export async function ingestAllConnectors(
+  // Injectable so the isolation contract can be tested without real connectors.
+  registry: Record<string, ConnectorRuntime> = createConnectorRegistry(),
+) {
+  const results: ConnectorIngestResult[] = [];
 
+  // Per-connector isolation (#412). A single throw - an un-refreshable token,
+  // a 429 - used to propagate out of this loop, so `results` was never returned
+  // and every connector that had already succeeded was discarded. The result
+  // type already models failure via status: "error", so a failed connector
+  // reports itself instead of taking the run down.
   for (const connector of Object.values(registry)) {
-    results.push(await connector.ingest());
+    try {
+      results.push(await connector.ingest());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      results.push({
+        connectorId: connector.id,
+        message: `Ingestion failed: ${message}`,
+        rawFiles: [],
+        runId: "",
+        statePath: getConnectorStatePathLabel(connector.id),
+        status: "error",
+        warnings: [message],
+      });
+    }
   }
 
   return {
     results,
   };
+}
+
+function getConnectorStatePathLabel(connectorId: ConnectorId): string {
+  return `~/.openwiki/connectors/${connectorId}/state.json`;
 }
 
 async function listRawItems(connectorId: ConnectorId) {

@@ -115,52 +115,65 @@ async function ingest(
   const latestIds = { ...(state.latestIds ?? {}) };
   const startTime = getWindowStartTime(options.windowHours);
 
+  // Per-stream isolation (#412). A single stream failure - a 429 on mentions, a
+  // deleted list - used to throw out of ingest(), which orphaned the rawFiles
+  // already written and skipped writeConnectorState entirely, so latestIds never
+  // advanced and the next run re-fetched everything. Mirrors the per-item
+  // try/catch in hackernews.ts and git-repo.ts.
   for (const stream of streams) {
     if (stream === "list_posts") {
       for (const listId of listIds) {
         const key = `list_posts:${listId}`;
-        const pages = await fetchPaginatedX(
-          accessToken,
-          `/lists/${encodeURIComponent(listId)}/tweets`,
-          {
-            since_id: latestIds[key],
-            start_time: startTime,
-          },
-          config.maxPagesPerStream,
-        );
-        latestIds[key] = getNewestId(pages) ?? latestIds[key] ?? "";
-        rawFiles.push(
-          await writeRawJson("x", runId, `list-${listId}.json`, {
-            fetchedAt: new Date().toISOString(),
-            listId,
-            pages,
-            stream,
-            windowHours: normalizeWindowHours(options.windowHours),
-          }),
-        );
+        try {
+          const pages = await fetchPaginatedX(
+            accessToken,
+            `/lists/${encodeURIComponent(listId)}/tweets`,
+            {
+              since_id: latestIds[key],
+              start_time: startTime,
+            },
+            config.maxPagesPerStream,
+          );
+          latestIds[key] = getNewestId(pages) ?? latestIds[key] ?? "";
+          rawFiles.push(
+            await writeRawJson("x", runId, `list-${listId}.json`, {
+              fetchedAt: new Date().toISOString(),
+              listId,
+              pages,
+              stream,
+              windowHours: normalizeWindowHours(options.windowHours),
+            }),
+          );
+        } catch (error) {
+          warnings.push(`${key}: ${getErrorMessage(error)}`);
+        }
       }
       continue;
     }
 
     const key = stream;
-    const pages = await fetchPaginatedX(
-      accessToken,
-      getStreamPath(stream, userId),
-      stream === "bookmarks"
-        ? {}
-        : { since_id: latestIds[key], start_time: startTime },
-      config.maxPagesPerStream,
-    );
-    latestIds[key] = getNewestId(pages) ?? latestIds[key] ?? "";
-    rawFiles.push(
-      await writeRawJson("x", runId, `${stream}.json`, {
-        fetchedAt: new Date().toISOString(),
-        pages,
-        stream,
-        userId,
-        windowHours: normalizeWindowHours(options.windowHours),
-      }),
-    );
+    try {
+      const pages = await fetchPaginatedX(
+        accessToken,
+        getStreamPath(stream, userId),
+        stream === "bookmarks"
+          ? {}
+          : { since_id: latestIds[key], start_time: startTime },
+        config.maxPagesPerStream,
+      );
+      latestIds[key] = getNewestId(pages) ?? latestIds[key] ?? "";
+      rawFiles.push(
+        await writeRawJson("x", runId, `${stream}.json`, {
+          fetchedAt: new Date().toISOString(),
+          pages,
+          stream,
+          userId,
+          windowHours: normalizeWindowHours(options.windowHours),
+        }),
+      );
+    } catch (error) {
+      warnings.push(`${key}: ${getErrorMessage(error)}`);
+    }
   }
 
   const nextState = updateStateWithRun(
@@ -355,4 +368,8 @@ function getNestedString(value: unknown, path: string[]): string | null {
   }
 
   return typeof current === "string" ? current : null;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
