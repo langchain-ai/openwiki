@@ -382,6 +382,15 @@ async function runOpenWikiAgentCore(
 
   try {
     for await (const chunk of stream) {
+      // A truncated tool call is not a "no text" chunk to skip: the write the
+      // model asked for never happened, so the run must fail loudly rather than
+      // finish looking successful (#458). Throwing here lands in the catch
+      // below, which records the run as interrupted and cleans up.
+      const truncation = detectTruncatedOutput(chunk);
+      if (truncation) {
+        throw new Error(truncation);
+      }
+
       const event = parseStreamEvent(chunk);
 
       if (event) {
@@ -1054,6 +1063,74 @@ function createGeminiEnterpriseModel(
         ...retryOptions,
       });
   }
+}
+
+/**
+ * Detect a model output-token truncation that silently dropped work (#458).
+ *
+ * When a model hits its output limit while streaming a large tool call, the v3
+ * stream reports it two ways:
+ *
+ *   content-block-finish  content.type = "invalid_tool_call"
+ *   message-finish        reason       = "length"
+ *
+ * Both were classified as "no text to emit" and ignored. The incomplete tool
+ * call is never executed, so a requested `write_file` / `edit_file` simply does
+ * not happen — and the run could still finish reporting success, leaving the
+ * file change missing with nothing in the output saying why.
+ *
+ * Returns an actionable message when the chunk carries either signal, else null.
+ */
+export function detectTruncatedOutput(chunk: unknown): string | null {
+  if (!isProtocolStreamEvent(chunk) || chunk.method !== "messages") {
+    return null;
+  }
+
+  const payload = chunk.params.data;
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  const event = getStringRecordValue(payload, "event");
+
+  if (event === "content-block-finish") {
+    const content: unknown = payload.content;
+    const type = isRecord(content)
+      ? getStringRecordValue(content, "type")
+      : null;
+
+    if (type === "invalid_tool_call") {
+      const name = isRecord(content)
+        ? (getStringRecordValue(content, "name") ?? "a tool")
+        : "a tool";
+
+      return (
+        `The model ran out of output tokens while emitting a call to ${name}, ` +
+        `so the call was incomplete and was not executed. Any file write or ` +
+        `edit it requested did not happen. Retry with a smaller scope, or raise ` +
+        `the model's output token limit.`
+      );
+    }
+
+    return null;
+  }
+
+  if (event === "message-finish") {
+    const reason =
+      getStringRecordValue(payload, "reason") ??
+      getStringRecordValue(payload, "finish_reason");
+
+    if (reason === "length") {
+      return (
+        "The model stopped because it reached its output token limit, so the " +
+        "response is truncated and any tool call it was emitting was not " +
+        "executed. Retry with a smaller scope, or raise the model's output " +
+        "token limit."
+      );
+    }
+  }
+
+  return null;
 }
 
 export function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
