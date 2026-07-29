@@ -330,7 +330,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     ) {
       return {
         exitCode: 1,
-        output: `Shell execute is restricted while ${OPENWIKI_IGNORE_FILE} is active. Use filesystem tools so ignored paths stay excluded.`,
+        output: `Shell execute is restricted while ${OPENWIKI_IGNORE_FILE} is active. Use the file tools instead (read_file, ls, glob, grep) so ignored paths stay excluded.`,
         truncated: false,
       };
     }
