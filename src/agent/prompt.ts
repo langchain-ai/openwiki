@@ -22,6 +22,28 @@ export function createSystemPrompt(
 ): string {
   const output = getOutputPromptConfig(outputMode);
   const languageInstructions = createLanguageInstructions(language);
+  const ignoreActive = openWikiIgnore?.isActive === true;
+
+  // When .openwikiignore is active the execute allowlist refuses shell-based
+  // discovery, so the prompt must steer to the file tools and the provided git
+  // summary instead of git/rg. When inactive these keep today's wording exactly,
+  // so the common no-ignore run is unchanged.
+  const gitHistoryHint = ignoreActive
+    ? "Use the provided git summary for repository history. "
+    : "Use git through shell execute when it provides useful history. ";
+  const discoveryHint = ignoreActive
+    ? "- Do not call glob with **/* from the root. Use targeted ls, glob, and grep by directory and extension, skipping .git, node_modules, dist, build, cache directories, and existing generated wiki output."
+    : "- Do not call glob with **/* from the root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.";
+  const gitDiscipline = ignoreActive
+    ? `Git discipline:
+- A filtered git summary of repository history is provided in your context. Use it to explain why code exists, not just what it does, focusing on recent, high-signal changes.
+- The summary already excludes .openwikiignore paths. Do not run git or other shell commands to reconstruct history; shell discovery is unavailable while .openwikiignore is active.`
+    : `Git discipline:
+- Use git heavily where it helps explain why code exists, not just what code exists.
+- During init, inspect recent commit history and use git log, git show, or git blame selectively on important files to understand how major workflows, entrypoints, and business rules evolved.
+- ${output.gitDisciplineInstruction}
+- Use git status and git diff to account for uncommitted local changes, especially if they touch existing docs or important source files.
+- Do not over-index on ancient history. Focus on recent commits and high-signal history for important files.`;
 
   return `
 You are OpenWiki, an expert technical writer, software architect, and product analyst.
@@ -30,14 +52,14 @@ Your job is to inspect the relevant source evidence and local OpenWiki knowledge
 
 ${output.canonicalLocationInstruction}
 
-Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use git through shell execute when it provides useful history. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in source files, existing docs, or git evidence you have inspected.
+Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. ${gitHistoryHint}Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in source files, existing docs, or git evidence you have inspected.
 
 Run discipline:
 - ${output.filesystemRootInstruction}
 - Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
 - Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path.
 - Do not exhaustively read every file. For a local knowledge wiki, inspect the existing wiki structure and only the relevant connector evidence or configured local repository paths. For an explicit repository source, inspect the repository tree, package/config files, README-style files, entrypoints, routing files, database/schema files, and representative files for each major domain.
-- Do not call glob with **/* from the root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.
+${discoveryHint}
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
 - Create a strong first-pass wiki that is accurate and navigable, then stop. The wiki can be refined in later update runs.
 - Keep the initial documentation set focused: quickstart plus the smallest set of section pages needed to explain the repo clearly.
@@ -83,18 +105,12 @@ Planning discipline:
 - After discovery and before writing final documentation, create a temporary ${output.planPath} file that lists the intended wiki pages, source evidence for each page, the evidence-backed relationships between concepts, and remaining questions.
 - In the plan, record each relationship as source concept -> relationship meaning -> target concept so cross-links are designed before pages are written.
 - Use ${output.planPath} when writing this temporary plan with filesystem tools.
-- Before completing the run, delete ${output.planPath}. If there is no filesystem delete tool, use shell execute from the runtime root, for example ${output.removePlanCommand}.
-- Do not leave ${output.planPath} in the final wiki.
+- The temporary ${output.planPath} is removed automatically after the run, so you do not need to delete it. Do not treat it as a wiki concept or link to it from other pages.
 
 Index discipline:
 - Directory index.md files are generated deterministically after the run. Do not create or edit them yourself.
 
-Git discipline:
-- Use git heavily where it helps explain why code exists, not just what code exists.
-- During init, inspect recent commit history and use git log, git show, or git blame selectively on important files to understand how major workflows, entrypoints, and business rules evolved.
-- ${output.gitDisciplineInstruction}
-- Use git status and git diff to account for uncommitted local changes, especially if they touch existing docs or important source files.
-- Do not over-index on ancient history. Focus on recent commits and high-signal history for important files.
+${gitDiscipline}
 
 Existing documentation discipline:
 - Treat existing README files, docs/ trees, root documentation files, runbooks, and SKILL.md files as primary source material.
@@ -197,7 +213,6 @@ Required documentation structure:
 Coverage self-check:
 - Before finishing, verify that every identified area is either documented or backlogged.
 - Audit the concept graph: verify that internal concept links resolve, important cross-domain relationships described in prose are linked, and no concept is orphaned unless it is genuinely standalone.
-- Verify that ${output.planPath} has been deleted. Do not finish while the temporary plan remains in the wiki as a concept.
 - Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
 - If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
 ${createDiagramInstructions()}
@@ -248,7 +263,7 @@ function createOpenWikiIgnoreInstructions(
 .openwikiignore discipline:
 - This repository has .openwikiignore rules. Treat matching paths as out of scope.
 - Filesystem tools enforce these rules; if a tool reports an excluded path, do not retry through shell execute.
-- Shell execute is restricted while .openwikiignore is active. Use the provided Git summary plus ls, read_file, glob, and grep for repository discovery so exclusions remain enforced.
+- For repository discovery use the provided git summary plus ls, read_file, glob, and grep; these keep exclusions enforced. Shell execute is limited to a few maintenance commands while .openwikiignore is active, so do not use it to read files or reconstruct git history.
 - Do not document excluded paths or infer details about their contents.
 - Active patterns:
 ${patterns}`;
@@ -375,7 +390,6 @@ type OutputPromptConfig = {
   metadataPath: string;
   planPath: string;
   quickstartPath: string;
-  removePlanCommand: string;
   rootAgentInstructions: string;
   searchBoundaryInstruction: string;
   sectionDirectoryInstruction: string;
@@ -470,7 +484,6 @@ function getOutputPromptConfig(
       metadataPath: "/.last-update.json",
       planPath: "/_plan.md",
       quickstartPath: "/quickstart.md",
-      removePlanCommand: "rm -f ./_plan.md",
       rootAgentInstructions:
         "Root agent instruction files:\n- Repository /AGENTS.md and /CLAUDE.md files are instructions for repository code agents, not local-wiki instructions.\n- When inspecting a configured local repository as evidence, do not read or follow those files unless the user explicitly asks about their contents.\n- Local wiki mode does not manage repository /AGENTS.md or /CLAUDE.md files.\n- Do not create or edit agent instruction files unless the user explicitly asks for that as a separate repository documentation task.",
       searchBoundaryInstruction:
@@ -511,7 +524,6 @@ function getOutputPromptConfig(
     metadataPath: "/openwiki/.last-update.json",
     planPath: "/openwiki/_plan.md",
     quickstartPath: "/openwiki/quickstart.md",
-    removePlanCommand: "rm -f ./openwiki/_plan.md",
     rootAgentInstructions: `Root agent instruction files:
 - Do not create or update repository /AGENTS.md or /CLAUDE.md files during normal code wiki runs.
 - Keep generated wiki content under the repository /openwiki directory.
