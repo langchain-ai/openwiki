@@ -12,9 +12,8 @@ from unittest.mock import Mock, patch
 
 from requests import HTTPError, Response
 
-import deepswe_langsmith
-import openwiki_codex
-import run as deepswe_run
+from evals.deepswe import deepswe_langsmith, openwiki_codex
+from evals.deepswe import run as deepswe_run
 
 
 class DeepSWEHarnessTests(unittest.TestCase):

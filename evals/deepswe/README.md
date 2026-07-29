@@ -57,7 +57,7 @@ Run the harness tests in that same pinned environment:
 ```bash
 uvx --python 3.12 --from 'harbor[langsmith]==0.20.0' \
   --with 'litellm==1.83.14' \
-  python -m unittest discover -s evals/deepswe -p 'test_*.py'
+  python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'
 ```
 
 ## LangSmith datasets, experiments, and traces
