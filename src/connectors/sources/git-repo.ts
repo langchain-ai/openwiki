@@ -89,7 +89,11 @@ async function ingest(
 
     const repoPath = path.resolve(repo.path);
     try {
-      const manifest = await createRepoManifest(repo.id, repoPath);
+      const manifest = await createRepoManifest(
+        repo.id,
+        repoPath,
+        state.latestIds?.[repo.id],
+      );
       manifests.push(manifest);
     } catch (error) {
       warnings.push(`${repo.id}: ${getErrorMessage(error)}`);
@@ -131,6 +135,7 @@ async function ingest(
 async function createRepoManifest(
   id: string,
   repoPath: string,
+  previousHead?: string,
 ): Promise<GitRepoManifest> {
   const branch = await runGit(repoPath, ["rev-parse", "--abbrev-ref", "HEAD"]);
   const head = await runGit(repoPath, ["rev-parse", "HEAD"]);
@@ -145,11 +150,11 @@ async function createRepoManifest(
     .split(/\r?\n/u)
     .filter(Boolean);
   const status = await runGit(repoPath, ["status", "--short"]);
-  const changedFiles = (
-    await runGit(repoPath, ["diff", "--name-status", "HEAD"])
-  )
-    .split(/\r?\n/u)
-    .filter(Boolean);
+  const { changedFiles, resolvedPreviousHead } = await diffSinceLastRun(
+    repoPath,
+    head,
+    previousHead,
+  );
 
   return {
     branch,
@@ -157,9 +162,69 @@ async function createRepoManifest(
     head,
     id,
     path: repoPath,
+    previousHead: resolvedPreviousHead,
     recentCommits,
     status,
   };
+}
+
+/**
+ * Files that changed since the previous ingestion run.
+ *
+ * `git diff --name-status HEAD` reports only *uncommitted* working-tree
+ * changes, so the manifest used to describe the developer's dirty tree while
+ * the ingestion orchestrator presented it to the agent as the recent-changes
+ * window (#409). The connector already persists each repo's head in
+ * `state.latestIds`; this reads it back and diffs `previousHead..HEAD`.
+ *
+ * Falls back to the working-tree diff when there is no usable prior head — a
+ * first run has no baseline, and a head that no longer resolves (rebase, force
+ * push, gc) must not abort ingestion. Uncommitted work is still reported
+ * separately via `status`.
+ */
+export async function diffSinceLastRun(
+  repoPath: string,
+  head: string,
+  previousHead?: string,
+): Promise<{ changedFiles: string[]; resolvedPreviousHead?: string }> {
+  const splitNames = (out: string): string[] =>
+    out.split(/\r?\n/u).filter(Boolean);
+
+  if (!previousHead) {
+    return {
+      changedFiles: splitNames(
+        await runGit(repoPath, ["diff", "--name-status", "HEAD"]),
+      ),
+    };
+  }
+
+  if (previousHead === head) {
+    // Nothing landed since the last run. An empty window is the honest answer;
+    // a dirty tree is not a "change since last run".
+    return { changedFiles: [], resolvedPreviousHead: previousHead };
+  }
+
+  try {
+    return {
+      changedFiles: splitNames(
+        await runGit(repoPath, [
+          "diff",
+          "--name-status",
+          `${previousHead}..${head}`,
+        ]),
+      ),
+      resolvedPreviousHead: previousHead,
+    };
+  } catch {
+    // The recorded head is gone from this repo. Degrade to the working tree
+    // rather than failing the whole repo, and omit previousHead so the manifest
+    // does not claim a window it could not compute.
+    return {
+      changedFiles: splitNames(
+        await runGit(repoPath, ["diff", "--name-status", "HEAD"]),
+      ),
+    };
+  }
 }
 
 async function runGit(cwd: string, args: string[]): Promise<string> {
