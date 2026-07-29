@@ -1,0 +1,14 @@
+src/telemetry/config.ts
+  h_f78d33d4280f3f 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "3125f366a0461efbbf1de1c3d1d47466cc92d4fe",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
