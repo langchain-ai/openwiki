@@ -251,6 +251,8 @@ secrets/
 
 When `.openwikiignore` has active rules, OpenWiki filters filesystem discovery and restricts shell execute so ignored paths stay out of the run.
 
+This is a read boundary: ignored paths are never read, scanned, or reproduced in the generated docs. It does not guarantee a topic will never be mentioned, since the agent may still infer an ignored area from other allowed evidence such as tests, the README, commit messages, or the existing wiki.
+
 ### Alternative base URLs
 
 To route the Anthropic provider at an alternative, Anthropic-compatible endpoint
