@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
-import { createOpenWikiIgnoreRules } from "../src/agent/openwiki-ignore.ts";
+import { OpenWikiIgnore } from "../src/agent/openwiki-ignore.ts";
 
 async function createIgnoredRepo(): Promise<{
   backend: OpenWikiLocalShellBackend;
@@ -22,13 +22,13 @@ async function createIgnoredRepo(): Promise<{
     "utf8",
   );
 
-  const ignoreRules = createOpenWikiIgnoreRules(`
+  const openWikiIgnore = OpenWikiIgnore.parse(`
 secrets/
 *.log
 !logs/keep.log
 `);
   const backend = new OpenWikiLocalShellBackend({
-    ignoreRules,
+    openWikiIgnore,
     maxOutputBytes: 100_000,
     rootDir: repo,
     timeout: 120,
@@ -42,7 +42,7 @@ secrets/
 
 describe(".openwikiignore rules", () => {
   test("matches comments, directory rules, globs, negation, and root anchoring", () => {
-    const rules = createOpenWikiIgnoreRules(`
+    const rules = OpenWikiIgnore.parse(`
 # ignored paths
 secrets/
 *.log
@@ -61,7 +61,7 @@ secrets/
   });
 
   test("canonicalizes ./ and ../ so anchored rules cannot be bypassed", () => {
-    const rules = createOpenWikiIgnoreRules(`
+    const rules = OpenWikiIgnore.parse(`
 /secrets
 `);
 

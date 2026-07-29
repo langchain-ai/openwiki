@@ -4,7 +4,7 @@ import {
   RunContext,
   UpdateMetadata,
 } from "./types.js";
-import type { OpenWikiIgnoreRules } from "./openwiki-ignore.js";
+import type { OpenWikiIgnore } from "./openwiki-ignore.js";
 
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   if (lastUpdate === null) {
@@ -18,7 +18,7 @@ export function createSystemPrompt(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
   language?: string,
-  ignoreRules?: OpenWikiIgnoreRules,
+  openWikiIgnore?: OpenWikiIgnore,
 ): string {
   const output = getOutputPromptConfig(outputMode);
   const languageInstructions = createLanguageInstructions(language);
@@ -42,7 +42,7 @@ Run discipline:
 - Create a strong first-pass wiki that is accurate and navigable, then stop. The wiki can be refined in later update runs.
 - Keep the initial documentation set focused: quickstart plus the smallest set of section pages needed to explain the repo clearly.
 - ${output.searchBoundaryInstruction}
-${createOpenWikiIgnoreInstructions(ignoreRules)}
+${createOpenWikiIgnoreInstructions(openWikiIgnore)}
 
 Connector ingestion discipline:
 - OpenWiki has built-in local connectors for git-repo, notion, x, google, web-search, hackernews, and slack. Use openwiki_list_connectors to inspect connector capabilities, config paths, required env var names, and raw data paths.
@@ -233,13 +233,13 @@ Diagram discipline:
 }
 
 function createOpenWikiIgnoreInstructions(
-  ignoreRules?: OpenWikiIgnoreRules,
+  openWikiIgnore?: OpenWikiIgnore,
 ): string {
-  if (!ignoreRules?.isActive) {
+  if (!openWikiIgnore?.isActive) {
     return "";
   }
 
-  const patterns = ignoreRules.patterns
+  const patterns = openWikiIgnore.patterns
     .map((pattern) => `  - ${JSON.stringify(pattern)}`)
     .join("\n");
 

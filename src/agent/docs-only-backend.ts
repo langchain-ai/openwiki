@@ -4,10 +4,8 @@ import {
   type EditResult,
   type ExecuteResponse,
   type FileDownloadResponse,
-  type FileInfo,
   type FileUploadResponse,
   type GlobResult,
-  type GrepMatch,
   type GrepResult,
   type LocalShellBackendOptions,
   type LsResult,
@@ -16,10 +14,7 @@ import {
   type WriteResult,
 } from "deepagents";
 import { OPEN_WIKI_DIR } from "../constants.js";
-import {
-  OPENWIKI_IGNORE_FILE,
-  OpenWikiIgnoreRules,
-} from "./openwiki-ignore.js";
+import { OPENWIKI_IGNORE_FILE, OpenWikiIgnore } from "./openwiki-ignore.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
 /**
@@ -43,7 +38,7 @@ type OpenWikiBackendOptions = LocalShellBackendOptions & {
    *
    * @default an inactive ruleset (no exclusions)
    */
-  ignoreRules?: OpenWikiIgnoreRules;
+  openWikiIgnore?: OpenWikiIgnore;
 
   /**
    * The doc-generation output target, which relaxes the docs-only write check
@@ -99,7 +94,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   /**
    * The active `.openwikiignore` ruleset gating every path this backend touches.
    */
-  private readonly ignoreRules: OpenWikiIgnoreRules;
+  private readonly openWikiIgnore: OpenWikiIgnore;
 
   /**
    * The doc-generation output target; `local-wiki` relaxes the docs-only write check.
@@ -109,7 +104,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   constructor(options: OpenWikiBackendOptions) {
     super(options);
     this.docsOnly = options.docsOnly === true;
-    this.ignoreRules = options.ignoreRules ?? new OpenWikiIgnoreRules([]);
+    this.openWikiIgnore = options.openWikiIgnore ?? new OpenWikiIgnore([]);
     this.outputMode = options.outputMode ?? "repository";
   }
 
@@ -202,7 +197,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
 
     return {
       ...result,
-      files: result.files?.filter((file) => !this.isIgnoredFile(file)),
+      files: result.files?.filter(
+        (file) => !this.openWikiIgnore.ignores(file.path, file.is_dir === true),
+      ),
     };
   }
 
@@ -215,7 +212,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     dirPath?: string | null,
     glob?: string | null,
   ): Promise<GrepResult> {
-    if (dirPath && this.ignoreRules.ignores(dirPath, true)) {
+    if (dirPath && this.openWikiIgnore.ignores(dirPath, true)) {
       return { matches: [] };
     }
 
@@ -223,7 +220,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
 
     return {
       ...result,
-      matches: result.matches?.filter((match) => !this.isIgnoredMatch(match)),
+      matches: result.matches?.filter(
+        (match) => !this.openWikiIgnore.ignores(match.path),
+      ),
     };
   }
 
@@ -235,7 +234,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     pattern: string,
     searchPath?: string,
   ): Promise<GlobResult> {
-    if (searchPath && this.ignoreRules.ignores(searchPath, true)) {
+    if (searchPath && this.openWikiIgnore.ignores(searchPath, true)) {
       return { files: [] };
     }
 
@@ -243,7 +242,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
 
     return {
       ...result,
-      files: result.files?.filter((file) => !this.isIgnoredFile(file)),
+      files: result.files?.filter(
+        (file) => !this.openWikiIgnore.ignores(file.path, file.is_dir === true),
+      ),
     };
   }
 
@@ -289,7 +290,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     paths: string[],
   ): Promise<FileDownloadResponse[]> {
     const allowedPaths = paths.filter(
-      (filePath) => !this.ignoreRules.ignores(filePath),
+      (filePath) => !this.openWikiIgnore.ignores(filePath),
     );
 
     if (allowedPaths.length === paths.length) {
@@ -302,7 +303,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     );
 
     return paths.map((filePath) => {
-      if (this.ignoreRules.ignores(filePath)) {
+      if (this.openWikiIgnore.ignores(filePath)) {
         return { content: null, error: "permission_denied", path: filePath };
       }
 
@@ -324,7 +325,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    */
   override async execute(command: string): Promise<ExecuteResponse> {
     if (
-      this.ignoreRules.isActive &&
+      this.openWikiIgnore.isActive &&
       !isAllowedShellCommandWithIgnore(command)
     ) {
       return {
@@ -362,7 +363,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     filePath: string,
     isDirectory = false,
   ): string | null {
-    if (!this.ignoreRules.ignores(filePath, isDirectory)) {
+    if (!this.openWikiIgnore.ignores(filePath, isDirectory)) {
       return null;
     }
 
@@ -377,23 +378,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    */
   private isWriteBlocked(filePath: string): boolean {
     return (
-      this.ignoreRules.ignores(filePath) ||
+      this.openWikiIgnore.ignores(filePath) ||
       this.getDocsOnlyWriteError(filePath) !== null
     );
-  }
-
-  /**
-   * Whether a directory entry should be filtered out of discovery results.
-   */
-  private isIgnoredFile(file: FileInfo): boolean {
-    return this.ignoreRules.ignores(file.path, file.is_dir === true);
-  }
-
-  /**
-   * Whether a grep hit should be filtered out because its file is ignored.
-   */
-  private isIgnoredMatch(match: GrepMatch): boolean {
-    return this.ignoreRules.ignores(match.path);
   }
 }
 

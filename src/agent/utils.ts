@@ -13,7 +13,7 @@ import {
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
 } from "../onboarding.js";
-import { OpenWikiIgnoreRules } from "./openwiki-ignore.js";
+import { OpenWikiIgnore } from "./openwiki-ignore.js";
 import type {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -44,7 +44,7 @@ export type UpdateNoopStatus =
 /**
  * Builds the per-run context the prompt uses to reason about prior docs and git changes.
  *
- * Paths excluded by `ignoreRules` are stripped from the git evidence so the
+ * Paths excluded by `openWikiIgnore` are stripped from the git evidence so the
  * agent never sees changes under an ignored path.
  */
 export async function createRunContext(
@@ -52,7 +52,7 @@ export async function createRunContext(
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
   language?: string | null,
-  ignoreRules = new OpenWikiIgnoreRules([]),
+  openWikiIgnore = new OpenWikiIgnore([]),
 ): Promise<RunContext> {
   const lastUpdate = await readLastUpdate(cwd, outputMode);
   // A validated flag wins; otherwise inherit the wiki's persisted language so an
@@ -87,7 +87,12 @@ export async function createRunContext(
 
   return {
     lastUpdate,
-    gitSummary: await createGitSummary(command, cwd, lastUpdate, ignoreRules),
+    gitSummary: await createGitSummary(
+      command,
+      cwd,
+      lastUpdate,
+      openWikiIgnore,
+    ),
     ...languageContext,
     wikiGoal,
   };
@@ -108,12 +113,12 @@ async function readRunWikiGoal(
  * Decides whether an `update` run can be skipped because nothing meaningful changed.
  *
  * Working-tree and committed changes that only touch `openwiki/` or paths
- * excluded by `ignoreRules` do not count as meaningful, so an ignored path
+ * excluded by `openWikiIgnore` do not count as meaningful, so an ignored path
  * changing on its own never forces a rebuild.
  */
 export async function getUpdateNoopStatus(
   cwd: string,
-  ignoreRules = new OpenWikiIgnoreRules([]),
+  openWikiIgnore = new OpenWikiIgnore([]),
 ): Promise<UpdateNoopStatus> {
   const lastUpdate = await readLastUpdate(cwd, "repository");
 
@@ -141,7 +146,7 @@ export async function getUpdateNoopStatus(
     .map((line) => line.trimEnd())
     .filter(Boolean)
     .filter((line) => !isUpdateMetadataStatusLine(line))
-    .filter((line) => !lineReferencesIgnoredPath(line, ignoreRules));
+    .filter((line) => !lineReferencesIgnoredPath(line, openWikiIgnore));
 
   if (meaningfulStatus.length > 0) {
     return { shouldSkip: false, reason: "worktree has changes" };
@@ -157,7 +162,7 @@ export async function getUpdateNoopStatus(
       committedPaths.length === 0 ||
       committedPaths.some(
         (changedPath) =>
-          !isOpenWikiPath(changedPath) && !ignoreRules.ignores(changedPath),
+          !isOpenWikiPath(changedPath) && !openWikiIgnore.ignores(changedPath),
       )
     ) {
       return { shouldSkip: false, reason: "git head changed" };
@@ -432,19 +437,19 @@ async function readSnapshotFile(filePath: string): Promise<Buffer | null> {
 /**
  * Produces the git evidence block passed to init/update prompts.
  *
- * Lines that reference a path excluded by `ignoreRules` are filtered out of
+ * Lines that reference a path excluded by `openWikiIgnore` are filtered out of
  * every git section (status, log, diff) before the block is assembled.
  */
 async function createGitSummary(
   command: OpenWikiCommand,
   cwd: string,
   lastUpdate: UpdateMetadata | null,
-  ignoreRules: OpenWikiIgnoreRules,
+  openWikiIgnore: OpenWikiIgnore,
 ): Promise<string> {
   const sections: string[] = [];
   const status = filterGitOutputForIgnore(
     await runGit(cwd, ["status", "--short"]),
-    ignoreRules,
+    openWikiIgnore,
   );
   const head = await getGitHead(cwd);
 
@@ -459,7 +464,7 @@ async function createGitSummary(
         "--name-status",
         "--oneline",
       ]),
-      ignoreRules,
+      openWikiIgnore,
     );
 
     sections.push(
@@ -477,7 +482,7 @@ async function createGitSummary(
         "--name-status",
         "--oneline",
       ]),
-      ignoreRules,
+      openWikiIgnore,
     );
 
     sections.push(
@@ -494,7 +499,7 @@ async function createGitSummary(
         "--name-status",
         "--oneline",
       ]),
-      ignoreRules,
+      openWikiIgnore,
     );
 
     if (command === "update") {
@@ -511,7 +516,7 @@ async function createGitSummary(
 
   const diff = filterGitOutputForIgnore(
     await runGit(cwd, ["diff", "--name-status", "HEAD"]),
-    ignoreRules,
+    openWikiIgnore,
   );
   sections.push(formatGitSection("git diff --name-status HEAD", diff));
 
@@ -606,15 +611,15 @@ function normalizeGitPath(value: string): string {
  */
 function filterGitOutputForIgnore(
   output: string,
-  ignoreRules: OpenWikiIgnoreRules,
+  openWikiIgnore: OpenWikiIgnore,
 ): string {
-  if (!ignoreRules.isActive || output.length === 0) {
+  if (!openWikiIgnore.isActive || output.length === 0) {
     return output;
   }
 
   const filteredOutput = output
     .split("\n")
-    .filter((line) => !lineReferencesIgnoredPath(line, ignoreRules))
+    .filter((line) => !lineReferencesIgnoredPath(line, openWikiIgnore))
     .join("\n")
     .trim();
 
@@ -628,10 +633,10 @@ function filterGitOutputForIgnore(
  */
 function lineReferencesIgnoredPath(
   line: string,
-  ignoreRules: OpenWikiIgnoreRules,
+  openWikiIgnore: OpenWikiIgnore,
 ): boolean {
   return extractGitPaths(line).some((changedPath) =>
-    ignoreRules.ignores(changedPath),
+    openWikiIgnore.ignores(changedPath),
   );
 }
 

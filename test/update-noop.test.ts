@@ -4,7 +4,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
-import { createOpenWikiIgnoreRules } from "../src/agent/openwiki-ignore.ts";
+import { OpenWikiIgnore } from "../src/agent/openwiki-ignore.ts";
 import {
   getUpdateNoopStatus,
   shouldCheckUpdateNoop,
@@ -106,7 +106,7 @@ describe("getUpdateNoopStatus", () => {
 
     const status = await getUpdateNoopStatus(
       repo,
-      createOpenWikiIgnoreRules("private/\n"),
+      OpenWikiIgnore.parse("private/\n"),
     );
 
     expect(status.shouldSkip).toBe(true);

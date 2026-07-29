@@ -8,44 +8,222 @@ import { isFileNotFoundError } from "../fs-errors.js";
 export const OPENWIKI_IGNORE_FILE = ".openwikiignore";
 
 /**
- * A single compiled `.openwikiignore` line.
+ * One compiled `.openwikiignore` pattern.
  *
- * One source pattern becomes one rule. Evaluation order matters: rules are
- * applied in file order with last-match-wins semantics (see {@link OpenWikiIgnoreRules.ignores}),
- * which is what lets a later `!negated` rule re-include a path an earlier rule excluded.
+ * A rule owns both the compiled matcher and the decision of whether a given
+ * path matches it. Rules are never evaluated alone: {@link OpenWikiIgnore}
+ * applies them in file order with last-match-wins semantics, which is what lets
+ * a later negated (`!`) rule re-include a path an earlier rule excluded.
  */
-type IgnoreRule = {
+export class OpenWikiIgnoreRule {
+  /**
+   * Compile one `.openwikiignore` pattern into a rule.
+   *
+   * Peels off the gitignore modifiers before building the matcher: a leading `!`
+   * marks negation, a leading `/` (or embedded slash) anchors the pattern to the
+   * repo root, and a trailing `/` scopes it to directories. Returns `undefined`
+   * if the pattern is empty after stripping those markers.
+   */
+  static compile(pattern: string): OpenWikiIgnoreRule | undefined {
+    let normalizedPattern = pattern.replace(/\\/gu, "/");
+    const negated = normalizedPattern.startsWith("!");
+
+    if (negated) {
+      normalizedPattern = normalizedPattern.slice(1);
+    }
+
+    normalizedPattern = normalizedPattern
+      .replace(/^\.\/+/u, "")
+      .replace(/\/+/gu, "/");
+
+    const anchored = normalizedPattern.startsWith("/");
+    const directoryOnly = normalizedPattern.endsWith("/");
+    normalizedPattern = normalizedPattern
+      .replace(/^\/+/u, "")
+      .replace(/\/+$/u, "");
+
+    if (normalizedPattern.length === 0) {
+      return undefined;
+    }
+
+    return new OpenWikiIgnoreRule(
+      directoryOnly,
+      OpenWikiIgnoreRule.createMatcher(normalizedPattern, anchored),
+      negated,
+    );
+  }
+
+  /**
+   * Build the regex that tests a normalized path against one pattern.
+   *
+   * Anchored patterns (leading `/`) and patterns that contain a slash are
+   * matched from the start of the path; a trailing `(?:/.*)?` lets a directory
+   * pattern also match everything nested beneath it. Unanchored, slash-free
+   * patterns (e.g. `*.log`) match at any path segment via the `(^|/)` prefix.
+   */
+  private static createMatcher(pattern: string, anchored: boolean): RegExp {
+    const containsSlash = pattern.includes("/");
+    const source = OpenWikiIgnoreRule.globToRegexSource(pattern);
+
+    if (anchored || containsSlash) {
+      return new RegExp(`^${source}(?:/.*)?$`, "u");
+    }
+
+    return new RegExp(`(^|/)${source}(/.*)?$`, "u");
+  }
+
+  /**
+   * Translate a gitignore-style glob into a regex source fragment.
+   *
+   * Supported wildcards: `**\/` spans zero or more directories, a bare `**`
+   * spans anything, `*` matches within a single path segment, and `?` matches
+   * one non-slash character. All other characters are escaped as literals.
+   */
+  private static globToRegexSource(pattern: string): string {
+    let source = "";
+
+    for (let index = 0; index < pattern.length; index += 1) {
+      const character = pattern[index];
+      const nextCharacter = pattern[index + 1];
+
+      if (character === "*" && nextCharacter === "*") {
+        const characterAfterGlobstar = pattern[index + 2];
+
+        if (characterAfterGlobstar === "/") {
+          source += "(?:.*/)?";
+          index += 2;
+        } else {
+          source += ".*";
+          index += 1;
+        }
+
+        continue;
+      }
+
+      if (character === "*") {
+        source += "[^/]*";
+        continue;
+      }
+
+      if (character === "?") {
+        source += "[^/]";
+        continue;
+      }
+
+      source += OpenWikiIgnoreRule.escapeRegex(character);
+    }
+
+    return source;
+  }
+
+  /**
+   * Escape a single character so it is treated literally inside a regex.
+   */
+  private static escapeRegex(value: string): string {
+    return value.replace(/[|\\{}()[\]^$+*?.]/gu, "\\$&");
+  }
+
   /**
    * Whether the pattern only matches directories (trailing `/` in the source,
    * e.g. `build/`). Directory-only rules still match files nested under the
-   * directory; see {@link matchesRule}.
+   * directory; see {@link matches}.
    */
-  directoryOnly: boolean;
+  private readonly directoryOnly: boolean;
 
   /**
    * Compiled matcher for the glob, tested against a normalized repo-relative path.
    */
-  matcher: RegExp;
+  private readonly matcher: RegExp;
 
   /**
    * Whether the source line began with `!`, re-including a previously excluded path.
    */
-  negated: boolean;
-};
+  readonly negated: boolean;
+
+  private constructor(
+    directoryOnly: boolean,
+    matcher: RegExp,
+    negated: boolean,
+  ) {
+    this.directoryOnly = directoryOnly;
+    this.matcher = matcher;
+    this.negated = negated;
+  }
+
+  /**
+   * Test whether this rule matches a normalized path.
+   *
+   * A directory-only rule matches only when the target is itself a directory or
+   * sits under one (the path contains a `/`), so `build/` never excludes a
+   * top-level file literally named `build`.
+   */
+  matches(filePath: string, isDirectory: boolean): boolean {
+    if (!this.matcher.test(filePath)) {
+      return false;
+    }
+
+    if (!this.directoryOnly) {
+      return true;
+    }
+
+    return isDirectory || filePath.includes("/");
+  }
+}
 
 /**
  * The full, ordered set of `.openwikiignore` rules for one run.
  *
- * This is the aggregate matcher, not a single rule: {@link ignores} can only
- * answer "is this path excluded?" by walking every rule in file order, because
- * negation (`!`) is only meaningful relative to the rules that precede it. It is
- * threaded through the agent backend, prompt, and run context as one cohesive
- * object so the matching semantics live in exactly one place.
+ * This is the aggregate matcher over every rule, not a single rule:
+ * {@link ignores} can only answer "is this path excluded?" by walking the rules
+ * in file order, because negation (`!`) is only meaningful relative to the rules
+ * that precede it. It is threaded through the agent backend, prompt, and run
+ * context as one cohesive object so the matching semantics live in exactly one
+ * place.
  *
  * Matching aims to be gitignore-compatible: last-match-wins, `*`/`**`/`?` globs,
  * leading-`/` anchoring to the repo root, and trailing-`/` directory scoping.
  */
-export class OpenWikiIgnoreRules {
+export class OpenWikiIgnore {
+  /**
+   * Parse raw `.openwikiignore` file contents into an aggregate matcher.
+   *
+   * Splits on newlines, drops blank lines and `#` comments, and keeps the
+   * remaining lines as patterns.
+   */
+  static parse(contents: string): OpenWikiIgnore {
+    return new OpenWikiIgnore(
+      contents
+        .split(/\r?\n/u)
+        .map(parseIgnoreLine)
+        .filter((line) => line !== undefined),
+    );
+  }
+
+  /**
+   * Load and parse `.openwikiignore` from a repo root.
+   *
+   * A missing file is treated as "no rules" (an inactive matcher), not an error;
+   * any other read failure is rethrown.
+   *
+   * @param cwd - Absolute path to the repository root to read the file from.
+   */
+  static async load(cwd: string): Promise<OpenWikiIgnore> {
+    try {
+      const contents = await readFile(
+        path.join(cwd, OPENWIKI_IGNORE_FILE),
+        "utf8",
+      );
+
+      return OpenWikiIgnore.parse(contents);
+    } catch (error) {
+      if (isFileNotFoundError(error)) {
+        return OpenWikiIgnore.parse("");
+      }
+
+      throw error;
+    }
+  }
+
   /**
    * The raw, non-comment pattern lines, preserved for prompt/display purposes.
    */
@@ -54,11 +232,13 @@ export class OpenWikiIgnoreRules {
   /**
    * The compiled rules, in file order; invalid/empty patterns are dropped.
    */
-  private readonly rules: IgnoreRule[];
+  private readonly rules: OpenWikiIgnoreRule[];
 
   constructor(patterns: string[]) {
     this.patterns = patterns;
-    this.rules = patterns.map(createRule).filter((rule) => rule !== null);
+    this.rules = patterns
+      .map((pattern) => OpenWikiIgnoreRule.compile(pattern))
+      .filter((rule) => rule !== undefined);
   }
 
   /**
@@ -90,59 +270,13 @@ export class OpenWikiIgnoreRules {
     let ignored = false;
 
     for (const rule of this.rules) {
-      if (matchesRule(rule, normalizedPath, isDirectory)) {
+      if (rule.matches(normalizedPath, isDirectory)) {
         ignored = !rule.negated;
       }
     }
 
     return ignored;
   }
-}
-
-/**
- * Load and parse `.openwikiignore` from a repo root.
- *
- * A missing file is treated as "no rules" (an inactive {@link OpenWikiIgnoreRules}),
- * not an error; any other read failure is rethrown.
- *
- * @param cwd - Absolute path to the repository root to read the file from.
- */
-export async function loadOpenWikiIgnore(
-  cwd: string,
-): Promise<OpenWikiIgnoreRules> {
-  try {
-    const contents = await readFile(
-      path.join(cwd, OPENWIKI_IGNORE_FILE),
-      "utf8",
-    );
-
-    return createOpenWikiIgnoreRules(contents);
-  } catch (error) {
-    if (isFileNotFoundError(error)) {
-      return createOpenWikiIgnoreRules("");
-    }
-
-    throw error;
-  }
-}
-
-/**
- * Build an {@link OpenWikiIgnoreRules} from raw file contents.
- *
- * Splits on newlines, drops blank lines and `#` comments, and keeps the
- * remaining lines as patterns.
- *
- * @param contents - The full text of a `.openwikiignore` file.
- */
-export function createOpenWikiIgnoreRules(
-  contents: string,
-): OpenWikiIgnoreRules {
-  return new OpenWikiIgnoreRules(
-    contents
-      .split(/\r?\n/u)
-      .map(parseIgnoreLine)
-      .filter((line) => line !== null),
-  );
 }
 
 /**
@@ -161,7 +295,7 @@ export function createOpenWikiIgnoreRules(
  *
  * @param filePath - A path in any spelling (backslashes, leading `/`, `.`/`..`).
  */
-export function normalizeIgnorePath(filePath: string): string {
+function normalizeIgnorePath(filePath: string): string {
   const slashed = filePath.replace(/\\/gu, "/");
   const normalized = path.posix.normalize(`/${slashed.replace(/^\/+/u, "")}`);
 
@@ -171,147 +305,14 @@ export function normalizeIgnorePath(filePath: string): string {
 /**
  * Trim one raw line and decide whether it is a usable pattern.
  *
- * Returns the trimmed pattern, or `null` for blank lines and `#` comments.
+ * Returns the trimmed pattern, or `undefined` for blank lines and `#` comments.
  */
-function parseIgnoreLine(line: string): string | null {
+function parseIgnoreLine(line: string): string | undefined {
   const trimmedLine = line.trim();
 
   if (trimmedLine.length === 0 || trimmedLine.startsWith("#")) {
-    return null;
+    return undefined;
   }
 
   return trimmedLine;
-}
-
-/**
- * Compile one `.openwikiignore` pattern into an {@link IgnoreRule}.
- *
- * Peels off the gitignore modifiers before building the matcher: a leading `!`
- * marks negation, a leading `/` (or embedded slash) anchors the pattern to the
- * repo root, and a trailing `/` scopes it to directories. Returns `null` if the
- * pattern is empty after stripping those markers.
- */
-function createRule(pattern: string): IgnoreRule | null {
-  let normalizedPattern = pattern.replace(/\\/gu, "/");
-  const negated = normalizedPattern.startsWith("!");
-
-  if (negated) {
-    normalizedPattern = normalizedPattern.slice(1);
-  }
-
-  normalizedPattern = normalizedPattern
-    .replace(/^\.\/+/u, "")
-    .replace(/\/+/gu, "/");
-
-  const anchored = normalizedPattern.startsWith("/");
-  const directoryOnly = normalizedPattern.endsWith("/");
-  normalizedPattern = normalizedPattern
-    .replace(/^\/+/u, "")
-    .replace(/\/+$/u, "");
-
-  if (normalizedPattern.length === 0) {
-    return null;
-  }
-
-  return {
-    directoryOnly,
-    matcher: createPatternMatcher(normalizedPattern, anchored),
-    negated,
-  };
-}
-
-/**
- * Build the regex that tests a normalized path against one pattern.
- *
- * Anchored patterns (leading `/`) and patterns that contain a slash are matched
- * from the start of the path; a trailing `(?:/.*)?` lets a directory pattern
- * also match everything nested beneath it. Unanchored, slash-free patterns
- * (e.g. `*.log`) match at any path segment via the `(^|/)` prefix.
- *
- * @param pattern - The pattern with `!`, leading/trailing `/` already stripped.
- * @param anchored - Whether the source pattern was root-anchored.
- */
-function createPatternMatcher(pattern: string, anchored: boolean): RegExp {
-  const containsSlash = pattern.includes("/");
-  const source = globToRegexSource(pattern);
-
-  if (anchored || containsSlash) {
-    return new RegExp(`^${source}(?:/.*)?$`, "u");
-  }
-
-  return new RegExp(`(^|/)${source}(/.*)?$`, "u");
-}
-
-/**
- * Test whether a compiled rule matches a normalized path.
- *
- * A directory-only rule matches only when the target is itself a directory or
- * sits under one (the path contains a `/`), so `build/` never excludes a
- * top-level file literally named `build`.
- */
-function matchesRule(
-  rule: IgnoreRule,
-  filePath: string,
-  isDirectory: boolean,
-): boolean {
-  if (!rule.matcher.test(filePath)) {
-    return false;
-  }
-
-  if (!rule.directoryOnly) {
-    return true;
-  }
-
-  return isDirectory || filePath.includes("/");
-}
-
-/**
- * Translate a gitignore-style glob into a regex source fragment.
- *
- * Supported wildcards: `**\/` spans zero or more directories, a bare `**` spans
- * anything, `*` matches within a single path segment, and `?` matches one
- * non-slash character. All other characters are escaped as literals.
- */
-function globToRegexSource(pattern: string): string {
-  let source = "";
-
-  for (let index = 0; index < pattern.length; index += 1) {
-    const character = pattern[index];
-    const nextCharacter = pattern[index + 1];
-
-    if (character === "*" && nextCharacter === "*") {
-      const characterAfterGlobstar = pattern[index + 2];
-
-      if (characterAfterGlobstar === "/") {
-        source += "(?:.*/)?";
-        index += 2;
-      } else {
-        source += ".*";
-        index += 1;
-      }
-
-      continue;
-    }
-
-    if (character === "*") {
-      source += "[^/]*";
-      continue;
-    }
-
-    if (character === "?") {
-      source += "[^/]";
-      continue;
-    }
-
-    source += escapeRegex(character);
-  }
-
-  return source;
-}
-
-/**
- * Escape a single character so it is treated literally inside a regex.
- */
-function escapeRegex(value: string): string {
-  return value.replace(/[|\\{}()[\]^$+*?.]/gu, "\\$&");
 }
