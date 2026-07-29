@@ -22,13 +22,10 @@ from typing import Any, Iterable, Sequence
 from urllib.parse import urlsplit
 
 
-# Canonical DeepSWE source repository.
 DEEPSWE_REPOSITORY = "https://github.com/datacurve-ai/deep-swe.git"
 # DeepSWE revision used for reproducible task definitions.
 DEEPSWE_COMMIT = "6db64a40f3318d8659238ff34a8cc4b491c49205"
-# Harbor release and LangSmith extra used to execute evaluations.
 HARBOR_PACKAGE = "harbor[langsmith]==0.20.0"
-# LiteLLM version compatible with the pinned Harbor release.
 LITELLM_PACKAGE = "litellm==1.83.14"
 # Codex CLI version installed in each agent environment.
 CODEX_VERSION = "0.144.6"
@@ -38,7 +35,7 @@ DEFAULT_MODEL = "openai/gpt-5.6-terra"
 DEFAULT_OPENWIKI_MODEL = "gpt-5.6-terra"
 # Shared LangSmith dataset keyed to the pinned benchmark revision.
 DEFAULT_LANGSMITH_DATASET = f"deepswe-openwiki-{DEEPSWE_COMMIT[:12]}"
-# Network hosts required for setup, model calls, and LangSmith tracing.
+# Allowed hosts for requests made inside the eval containers.
 DEFAULT_ALLOWED_HOSTS = (
     "deb.debian.org",
     "deb.nodesource.com",
@@ -112,14 +109,13 @@ DOC_LEVERAGE_10_TASKS = (
     "onedump-dump-encryption-pipeline",
     "testem-bail-on-test-failure",
 )
-# Named reproducible cohorts exposed by --task-suite.
+
 TASK_SUITES = {
     "koota-5": KOOTA_5_TASKS,
     "openwiki-doc-leverage-10": DOC_LEVERAGE_10_TASKS,
     "openwiki-20": (*KOOTA_5_TASKS, *WIKI_STRESS_15_TASKS),
 }
 
-# Command flags whose following values must be redacted from logs.
 SENSITIVE_FLAGS = {"--agent-env", "--ae"}
 # Ambient overrides removed so each Harbor job creates its own experiment.
 LANGSMITH_ENV_UNSET = {
