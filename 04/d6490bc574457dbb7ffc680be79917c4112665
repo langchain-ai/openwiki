@@ -1,0 +1,19 @@
+evals/deepswe/run.py
+  s_841f8a35235565::t_ff20bf5d73d8d3 25,27,29,31,33,35,37,39,41,52,54,56,58,61,63,65,67,69,71,73,76,84,102,115,122,124,129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "04d6490bc574457dbb7ffc680be79917c4112665",
+  "prompts": {},
+  "sessions": {
+    "s_841f8a35235565": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f869b-e584-7aa3-9b4c-c1a5f94e7fa7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
