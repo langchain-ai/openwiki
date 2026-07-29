@@ -248,14 +248,17 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   }
 
   /**
-   * Upload files, returning `permission_denied` for any ignored path while still
-   * uploading the allowed ones. Results are returned in the original input order.
+   * Upload files, returning `permission_denied` for any path that is excluded by
+   * `.openwikiignore` or (in docs-only mode) falls outside the `openwiki/` tree,
+   * while still uploading the allowed ones. As a write path, this enforces the
+   * same docs-only confinement as {@link write}/{@link edit}. Results are
+   * returned in the original input order.
    */
   override async uploadFiles(
     files: Array<[string, Uint8Array]>,
   ): Promise<FileUploadResponse[]> {
     const allowedFiles = files.filter(
-      ([filePath]) => !this.ignoreRules.ignores(filePath),
+      ([filePath]) => !this.isWriteBlocked(filePath),
     );
 
     if (allowedFiles.length === files.length) {
@@ -268,7 +271,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     );
 
     return files.map(([filePath]) => {
-      if (this.ignoreRules.ignores(filePath)) {
+      if (this.isWriteBlocked(filePath)) {
         return { error: "permission_denied", path: filePath };
       }
 
@@ -364,6 +367,19 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     }
 
     return `Path is excluded by ${OPENWIKI_IGNORE_FILE}: ${filePath}`;
+  }
+
+  /**
+   * Whether writing to a path is disallowed, combining the `.openwikiignore`
+   * exclusion and the docs-only confinement checks that {@link write} and
+   * {@link edit} apply. Used by batch write paths that cannot short-circuit on a
+   * single error message.
+   */
+  private isWriteBlocked(filePath: string): boolean {
+    return (
+      this.ignoreRules.ignores(filePath) ||
+      this.getDocsOnlyWriteError(filePath) !== null
+    );
   }
 
   /**

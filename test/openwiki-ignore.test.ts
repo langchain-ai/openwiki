@@ -165,6 +165,35 @@ describe("OpenWikiLocalShellBackend", () => {
     );
   });
 
+  test("refuses uploads outside the docs tree in docs-only mode", async () => {
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-docsonly-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      maxOutputBytes: 100_000,
+      outputMode: "repository",
+      rootDir: repo,
+      timeout: 120,
+      virtualMode: true,
+    });
+
+    await backend.initialize();
+
+    const uploads = await backend.uploadFiles([
+      ["AGENTS.md", new TextEncoder().encode("x")],
+      ["openwiki/notes.md", new TextEncoder().encode("y")],
+    ]);
+    const uploadByPath = new Map(
+      uploads.map((result) => [result.path, result]),
+    );
+
+    // A write outside openwiki/ must be refused even though no .openwikiignore
+    // rule matches it, mirroring the docs-only guard on write()/edit().
+    expect(uploadByPath.get("AGENTS.md")?.error).toBe("permission_denied");
+    expect(uploadByPath.get("openwiki/notes.md")?.error).not.toBe(
+      "permission_denied",
+    );
+  });
+
   test("restricts shell execute while ignore rules are active", async () => {
     const { backend } = await createIgnoredRepo();
 
