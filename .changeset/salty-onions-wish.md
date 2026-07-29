@@ -2,4 +2,4 @@
 "openwiki": patch
 ---
 
-fix: ignore stray oauth callback requests- #481
+fix: ignore stray oauth callback requests
