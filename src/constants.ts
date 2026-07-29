@@ -925,4 +925,7 @@ export function isValidModelId(value: string): boolean {
   );
 }
 
-export const OPENWIKI_VERSION = "0.2.3";
+// Derived at runtime from package.json (single source of truth) rather than
+// hardcoded here; re-exported so existing importers of `OPENWIKI_VERSION` are
+// unchanged.
+export { OPENWIKI_VERSION } from "./version.js";
