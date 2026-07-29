@@ -85,13 +85,15 @@ describe("raw connector tools", () => {
     const linkRelativePath = await createSymlinkRawItem(home, "x", runId);
     const tools = await loadConnectorTools(home);
 
-    await expect(
-      getTool(tools, "openwiki_read_raw_item").invoke({
+    // Surfaced as a labelled tool result rather than a rejection (#427);
+    // the symlink is still refused, and the reason still reaches the model.
+    const result = String(await getTool(tools, "openwiki_read_raw_item").invoke({
         connectorId: "x",
         maxBytes: 100,
         path: linkRelativePath,
-      }),
-    ).rejects.toThrow(/symbolic links/u);
+      }));
+    expect(result).toMatch(/^Tool error:/u);
+    expect(result).toMatch(/symbolic links/u);
   });
 
   test("rejects symlink raw directories before listing", async () => {
@@ -99,9 +101,11 @@ describe("raw connector tools", () => {
     await createSymlinkRawDir(home, "x");
     const tools = await loadConnectorTools(home);
 
-    await expect(
-      getTool(tools, "openwiki_list_raw_items").invoke({ connectorId: "x" }),
-    ).rejects.toThrow(/symbolic links/u);
+    // Surfaced as a labelled tool result rather than a rejection (#427);
+    // the symlink is still refused, and the reason still reaches the model.
+    const result = String(await getTool(tools, "openwiki_list_raw_items").invoke({ connectorId: "x" }));
+    expect(result).toMatch(/^Tool error:/u);
+    expect(result).toMatch(/symbolic links/u);
   });
 
   test("rejects symlink raw directories before reading", async () => {
@@ -109,13 +113,15 @@ describe("raw connector tools", () => {
     const rawItemPath = await createSymlinkRawDir(home, "x");
     const tools = await loadConnectorTools(home);
 
-    await expect(
-      getTool(tools, "openwiki_read_raw_item").invoke({
+    // Surfaced as a labelled tool result rather than a rejection (#427);
+    // the symlink is still refused, and the reason still reaches the model.
+    const result = String(await getTool(tools, "openwiki_read_raw_item").invoke({
         connectorId: "x",
         maxBytes: 100,
         path: rawItemPath,
-      }),
-    ).rejects.toThrow(/symbolic links/u);
+      }));
+    expect(result).toMatch(/^Tool error:/u);
+    expect(result).toMatch(/symbolic links/u);
   });
 });
 
