@@ -1,4 +1,11 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -955,6 +962,29 @@ describe("senders.recordRun", () => {
     // CI stays anonymous (no person profile).
     expect(tee.event.properties.$process_person_profile).toBe(false);
     await rm(file, { force: true });
+  });
+
+  test("tees with owner-only permissions and leaves no scratch file behind", async () => {
+    // The tee may land in a shared directory, so the write must not leak run
+    // metadata to other local users and must clean up its atomic-write scratch.
+    const dir = await mkdtemp(path.join(tmpdir(), "ow-tel-perms-"));
+    const file = path.join(dir, "out.json");
+
+    await recordRun(runDetails({ telemetryFile: file }));
+
+    // The final payload is intact and it is the only file left in the directory
+    // (the randomly-named scratch was renamed into place, not orphaned).
+    expect((await readTee(file)).sent).toBe(true);
+    expect(await readdir(dir)).toEqual(["out.json"]);
+
+    // On POSIX the file is created 0o600 (owner read/write only). Windows does
+    // not model these mode bits, so the assertion is POSIX-only.
+    if (process.platform !== "win32") {
+      const mode = (await stat(file)).mode & 0o777;
+      expect(mode).toBe(0o600);
+    }
+
+    await rm(dir, { force: true, recursive: true });
   });
 
   test("never throws even if capture fails", async () => {
