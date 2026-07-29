@@ -60,16 +60,24 @@ export class OpenWikiIgnoreRule {
    * matched from the start of the path; a trailing `(?:/.*)?` lets a directory
    * pattern also match everything nested beneath it. Unanchored, slash-free
    * patterns (e.g. `*.log`) match at any path segment via the `(^|/)` prefix.
+   *
+   * The `i` flag is deliberate and security-relevant: on case-insensitive
+   * filesystems (macOS APFS/HFS+, Windows NTFS) `Secrets/token.txt` and
+   * `secrets/token.txt` resolve to the same file, so a case-sensitive rule
+   * would let an alternate-cased spelling slip past an exclusion. Matching
+   * case-insensitively everywhere closes that bypass; the worst case on a
+   * genuinely case-sensitive filesystem is over-excluding a case variant,
+   * which is the safe direction for an access gate.
    */
   private static createMatcher(pattern: string, anchored: boolean): RegExp {
     const containsSlash = pattern.includes("/");
     const source = OpenWikiIgnoreRule.globToRegexSource(pattern);
 
     if (anchored || containsSlash) {
-      return new RegExp(`^${source}(?:/.*)?$`, "u");
+      return new RegExp(`^${source}(?:/.*)?$`, "iu");
     }
 
-    return new RegExp(`(^|/)${source}(/.*)?$`, "u");
+    return new RegExp(`(^|/)${source}(/.*)?$`, "iu");
   }
 
   /**

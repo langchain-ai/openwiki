@@ -77,6 +77,21 @@ secrets/
     // A path that genuinely resolves elsewhere stays allowed.
     expect(rules.ignores("secrets/../public.txt")).toBe(false);
   });
+
+  test("matches case-insensitively so alternate casing cannot bypass a rule", () => {
+    const rules = OpenWikiIgnore.parse(`
+secrets/
+*.log
+`);
+
+    // On case-insensitive filesystems (macOS, Windows) these spellings all
+    // resolve to the same excluded files, so they must all be ignored.
+    expect(rules.ignores("secrets/token.txt")).toBe(true);
+    expect(rules.ignores("Secrets/token.txt")).toBe(true);
+    expect(rules.ignores("SECRETS/token.txt")).toBe(true);
+    expect(rules.ignores("secrets/Token.TXT")).toBe(true);
+    expect(rules.ignores("app/DEBUG.LOG")).toBe(true);
+  });
 });
 
 describe("OpenWikiLocalShellBackend", () => {
@@ -119,6 +134,21 @@ describe("OpenWikiLocalShellBackend", () => {
     const traversalRead = await backend.read("/secrets/../secrets/token.txt");
     expect(traversalRead.error).toContain(".openwikiignore");
     expect(traversalRead.content).toBeUndefined();
+  });
+
+  test("blocks reads of ignored paths spelled with different casing", async () => {
+    const { backend } = await createIgnoredRepo();
+
+    // On a case-insensitive filesystem /Secrets/token.txt resolves to the same
+    // file as the excluded /secrets/token.txt, so the gate must reject it. The
+    // check runs before any filesystem access, so this holds on every platform.
+    const upperDirRead = await backend.read("/Secrets/token.txt");
+    expect(upperDirRead.error).toContain(".openwikiignore");
+    expect(upperDirRead.content).toBeUndefined();
+
+    const upperAllRead = await backend.read("/SECRETS/TOKEN.txt");
+    expect(upperAllRead.error).toContain(".openwikiignore");
+    expect(upperAllRead.content).toBeUndefined();
   });
 
   test("refuses writes and edits to ignored paths", async () => {
