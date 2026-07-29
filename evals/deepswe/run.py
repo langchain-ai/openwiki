@@ -22,14 +22,23 @@ from typing import Any, Iterable, Sequence
 from urllib.parse import urlsplit
 
 
+# Canonical DeepSWE source repository.
 DEEPSWE_REPOSITORY = "https://github.com/datacurve-ai/deep-swe.git"
+# DeepSWE revision used for reproducible task definitions.
 DEEPSWE_COMMIT = "6db64a40f3318d8659238ff34a8cc4b491c49205"
+# Harbor release and LangSmith extra used to execute evaluations.
 HARBOR_PACKAGE = "harbor[langsmith]==0.20.0"
+# LiteLLM version compatible with the pinned Harbor release.
 LITELLM_PACKAGE = "litellm==1.83.14"
+# Codex CLI version installed in each agent environment.
 CODEX_VERSION = "0.144.6"
+# Default coding-agent model for both experiment arms.
 DEFAULT_MODEL = "openai/gpt-5.6-terra"
+# Default model used to generate treatment wikis.
 DEFAULT_OPENWIKI_MODEL = "gpt-5.6-terra"
+# Shared LangSmith dataset keyed to the pinned benchmark revision.
 DEFAULT_LANGSMITH_DATASET = f"deepswe-openwiki-{DEEPSWE_COMMIT[:12]}"
+# Network hosts required for setup, model calls, and LangSmith tracing.
 DEFAULT_ALLOWED_HOSTS = (
     "deb.debian.org",
     "deb.nodesource.com",
@@ -40,19 +49,31 @@ DEFAULT_ALLOWED_HOSTS = (
     "gateway.smith.langchain.com",
     "api.smith.langchain.com",
 )
+# Allowed characters for model, run, dataset, and workspace identifiers.
 SAFE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$")
+# Allowed characters and glob tokens for task filters.
 TASK_FILTER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@+*?\[\]-]*$")
+# Validator for additional network allowlist hostnames.
 DNS_LABEL_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
+# Validator for Docker Compose network names derived from trials.
 DOCKER_NETWORK_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 
+# Directory containing the DeepSWE harness.
 EVAL_DIR = Path(__file__).resolve().parent
+# OpenWiki repository root packed for treatment runs.
 PROJECT_ROOT = EVAL_DIR.parents[1]
+# Default cache location for the pinned DeepSWE checkout.
 DEFAULT_DEEPSWE_DIR = EVAL_DIR / ".cache" / "deep-swe"
+# Default location for packed OpenWiki artifacts.
 DEFAULT_ARTIFACTS_DIR = EVAL_DIR / "artifacts"
+# Default location for raw Harbor job results.
 DEFAULT_JOBS_DIR = EVAL_DIR / "results"
+# Default location for aggregate JSON and trial CSV summaries.
 DEFAULT_SUMMARY_DIR = EVAL_DIR / "summaries"
+# Default host cache for generated task wikis.
 DEFAULT_OPENWIKI_CACHE_DIR = EVAL_DIR / ".cache" / "openwiki-wikis"
 
+# Five-task cohort used for fast iteration.
 KOOTA_5_TASKS = (
     "koota-composite-trait-aspects",
     "koota-deferred-mutation-buffer",
@@ -60,6 +81,7 @@ KOOTA_5_TASKS = (
     "koota-pair-relation-tracking",
     "koota-query-predicates",
 )
+# Fifteen difficult cross-repository tasks used with the Koota cohort.
 WIKI_STRESS_15_TASKS = (
     "adaptix-name-mapping-aliases",
     "dynamodb-toolbox-lazy-recursive-schemas",
@@ -77,6 +99,7 @@ WIKI_STRESS_15_TASKS = (
     "kgateway-consistent-hash-policy",
     "python-statemachine-state-data-scoping",
 )
+# Ten disjoint tasks selected for high documentation leverage.
 DOC_LEVERAGE_10_TASKS = (
     "aiomonitor-task-snapshots-diff",
     "bandit-incremental-cache-control",
@@ -89,17 +112,21 @@ DOC_LEVERAGE_10_TASKS = (
     "onedump-dump-encryption-pipeline",
     "testem-bail-on-test-failure",
 )
+# Named reproducible cohorts exposed by --task-suite.
 TASK_SUITES = {
     "koota-5": KOOTA_5_TASKS,
     "openwiki-doc-leverage-10": DOC_LEVERAGE_10_TASKS,
     "openwiki-20": (*KOOTA_5_TASKS, *WIKI_STRESS_15_TASKS),
 }
 
+# Command flags whose following values must be redacted from logs.
 SENSITIVE_FLAGS = {"--agent-env", "--ae"}
+# Ambient overrides removed so each Harbor job creates its own experiment.
 LANGSMITH_ENV_UNSET = {
     "HARBOR_LANGSMITH_EXPERIMENT",
     "HARBOR_LANGSMITH_EXPERIMENT_ID",
 }
+# Stable columns written to the trial-level summary CSV.
 SUMMARY_FIELDS = [
     "condition",
     "task_name",
