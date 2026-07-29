@@ -1,6 +1,7 @@
 import {
   mkdir,
   mkdtemp,
+  readdir,
   readFile,
   rm,
   stat,
@@ -42,6 +43,45 @@ describe("replaceSkillDirectories", () => {
       await expect(
         readFile(path.join(target, "custom", "SKILL.md"), "utf8"),
       ).resolves.toBe("custom");
+    } finally {
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
+  test("succeeds when skill directories already exist, even when syncs overlap", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-skills-"));
+    const source = path.join(root, "source");
+    const target = path.join(root, "target");
+    const skillNames = ["mermaid-diagrams", "write-connector"];
+
+    try {
+      for (const name of skillNames) {
+        await mkdir(path.join(source, name), { recursive: true });
+        await writeFile(path.join(source, name, "SKILL.md"), `bundled ${name}`);
+        // Simulate the leftovers of an earlier `--init` run (#499).
+        await mkdir(path.join(target, name), { recursive: true });
+        await writeFile(path.join(target, name, "SKILL.md"), "stale");
+      }
+
+      // Re-running init over existing skill directories must not throw.
+      await replaceSkillDirectories(source, target);
+      await replaceSkillDirectories(source, target);
+
+      // A doubly-triggered sync must not race into EEXIST (#499).
+      for (let iteration = 0; iteration < 25; iteration += 1) {
+        await Promise.all([
+          replaceSkillDirectories(source, target),
+          replaceSkillDirectories(source, target),
+        ]);
+      }
+
+      for (const name of skillNames) {
+        await expect(
+          readFile(path.join(target, name, "SKILL.md"), "utf8"),
+        ).resolves.toBe(`bundled ${name}`);
+      }
+      // Only the bundled skills remain; no staging leftovers.
+      expect((await readdir(target)).sort()).toEqual(skillNames);
     } finally {
       await rm(root, { force: true, recursive: true });
     }

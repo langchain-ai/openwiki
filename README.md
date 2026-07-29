@@ -293,6 +293,20 @@ OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
 ```
 
+Hosted OpenAI-compatible gateways work the same way. For example,
+[Requesty](https://requesty.ai) is a hosted gateway that fronts many upstream
+providers behind one OpenAI-compatible API at `https://router.requesty.ai/v1`,
+using `provider/model` model IDs (see the full list at
+`https://router.requesty.ai/v1/models`):
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=your-requesty-key
+OPENAI_COMPATIBLE_BASE_URL=https://router.requesty.ai/v1
+OPENWIKI_MODEL_ID=openai/gpt-5.5
+openwiki --init
+```
+
 Local LLM servers that expose OpenAI-compatible chat completions use the same
 provider. The model ID must match a model available from that local server:
 
