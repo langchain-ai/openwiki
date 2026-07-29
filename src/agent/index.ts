@@ -1577,57 +1577,120 @@ type OpenRouterResponseSummary = {
 const OPENROUTER_DEBUG_PROPERTY = "openRouterDebug";
 const OPENROUTER_DEBUG_BODY_LIMIT = 4_000;
 
-function installOpenRouterDebugFetch(
+// Reentrancy guard for the diagnostics fetch patch (#411).
+//
+// The patch used to capture `globalThis.fetch` per call and restore it blindly
+// in a `finally`. With two overlapping runs in one process — subagents, parallel
+// tests, a long-lived host — the install/restore steps corrupt each other:
+//
+//   1. run A installs, capturing the real fetch
+//   2. run B installs, capturing *A's wrapper* as its "original"
+//   3. A restores the real fetch
+//   4. B restores A's wrapper — leaked into the global permanently
+//
+// One wrapper is installed on the first entry and removed on the last exit, so
+// nesting composes. Each run keeps its own failure slot.
+let debugFetchDepth = 0;
+let debugFetchReal: typeof globalThis.fetch | null = null;
+let debugFetchWrapper: typeof globalThis.fetch | null = null;
+const activeDebugCaptures = new Set<{
+  lastFailure: OpenRouterFetchFailure | null;
+}>();
+
+function recordDebugFailure(failure: OpenRouterFetchFailure): void {
+  // A process-global fetch cannot be attributed to the run that issued it, so
+  // every concurrently-open capture records it. Runs read their slot from the
+  // catch block that just failed, so in practice the reader is the owner; a
+  // second concurrent run seeing a stray failure is strictly better than the
+  // previous behaviour of leaking the wrapper. Per-provider
+  // `configuration.fetch` injection would attribute precisely — see the issue.
+  for (const capture of activeDebugCaptures) {
+    capture.lastFailure = failure;
+  }
+}
+
+export function installOpenRouterDebugFetch(
   options: OpenWikiRunOptions,
 ): OpenRouterFetchCapture {
-  const originalFetch = globalThis.fetch;
-  let lastFailure: OpenRouterFetchFailure | null = null;
+  const slot: { lastFailure: OpenRouterFetchFailure | null } = {
+    lastFailure: null,
+  };
+  activeDebugCaptures.add(slot);
 
-  globalThis.fetch = (async (input, init) => {
-    if (!isOpenRouterFetchInput(input)) {
-      return originalFetch(input, init);
-    }
+  if (debugFetchDepth === 0) {
+    const realFetch = globalThis.fetch;
+    debugFetchReal = realFetch;
 
-    const request = summarizeOpenRouterRequest(input, init);
-
-    try {
-      const response = await originalFetch(input, init);
-
-      if (!response.ok) {
-        lastFailure = {
-          request,
-          response: {
-            bodyPreview: await readResponseBodyPreview(response),
-            headers: getSafeResponseHeaders(response.headers),
-            status: response.status,
-            statusText: response.statusText,
-          },
-        };
-        emitDebug(
-          options,
-          `openrouter.http status=${response.status} statusText=${JSON.stringify(
-            response.statusText,
-          )}`,
-        );
+    debugFetchWrapper = (async (input, init) => {
+      if (!isOpenRouterFetchInput(input)) {
+        return realFetch(input, init);
       }
 
-      return response;
-    } catch (error) {
-      lastFailure = {
-        fetchError: error instanceof Error ? error.message : String(error),
-        request,
-      };
-      throw error;
-    }
-  }) satisfies typeof fetch;
+      const request = summarizeOpenRouterRequest(input, init);
+
+      try {
+        const response = await realFetch(input, init);
+
+        if (!response.ok) {
+          recordDebugFailure({
+            request,
+            response: {
+              bodyPreview: await readResponseBodyPreview(response),
+              headers: getSafeResponseHeaders(response.headers),
+              status: response.status,
+              statusText: response.statusText,
+            },
+          });
+          emitDebug(
+            options,
+            `openrouter.http status=${response.status} statusText=${JSON.stringify(
+              response.statusText,
+            )}`,
+          );
+        }
+
+        return response;
+      } catch (error) {
+        recordDebugFailure({
+          fetchError: error instanceof Error ? error.message : String(error),
+          request,
+        });
+        throw error;
+      }
+    }) satisfies typeof fetch;
+
+    globalThis.fetch = debugFetchWrapper;
+  }
+
+  debugFetchDepth += 1;
+  let restored = false;
 
   return {
     clearLastFailure: () => {
-      lastFailure = null;
+      slot.lastFailure = null;
     },
-    getLastFailure: () => lastFailure,
+    getLastFailure: () => slot.lastFailure,
     restore: () => {
-      globalThis.fetch = originalFetch;
+      // Idempotent: a double `restore()` must not drop the depth below the
+      // number of live installs and un-patch a run that is still going.
+      if (restored) {
+        return;
+      }
+      restored = true;
+      activeDebugCaptures.delete(slot);
+      debugFetchDepth -= 1;
+
+      if (debugFetchDepth > 0) {
+        return;
+      }
+
+      // Last one out. Only un-patch if nothing else replaced our wrapper in the
+      // meantime; clobbering a third party's fetch would be the same bug again.
+      if (debugFetchReal && globalThis.fetch === debugFetchWrapper) {
+        globalThis.fetch = debugFetchReal;
+      }
+      debugFetchReal = null;
+      debugFetchWrapper = null;
     },
   };
 }
