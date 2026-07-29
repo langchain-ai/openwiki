@@ -1,0 +1,21 @@
+evals/deepswe/tests/test_run.py
+  s_841f8a35235565::t_d8ea656e917633 1-641
+evals/deepswe/README.md
+  s_841f8a35235565::t_d8ea656e917633 60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "3a782ecd8cbd42eb95288daabf48606fe62477f9",
+  "prompts": {},
+  "sessions": {
+    "s_841f8a35235565": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f869b-e584-7aa3-9b4c-c1a5f94e7fa7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
