@@ -1,6 +1,6 @@
 {
   "name": "openwiki",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase.",
   "license": "MIT",
   "type": "module",
@@ -10,6 +10,14 @@
   "bin": {
     "openwiki": "./dist/cli.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/langchain-ai/openwiki.git"
+  },
+  "bugs": {
+    "url": "https://github.com/langchain-ai/openwiki/issues"
+  },
+  "homepage": "https://github.com/langchain-ai/openwiki#readme",
   "files": [
     "dist",
     "skills",
@@ -28,6 +36,7 @@
   "scripts": {
     "openwiki": "node dist/cli.js",
     "build": "tsc -p tsconfig.json",
+    "changeset:version": "changeset version",
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
     "dev": "tsx src/cli.tsx",
@@ -37,6 +46,7 @@
     "lint:check": "eslint .",
     "prebuild": "pnpm run clean",
     "prepack": "pnpm run build",
+    "release": "pnpm run build && changeset publish",
     "start": "node dist/cli.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
@@ -80,6 +90,8 @@
     }
   },
   "devDependencies": {
+    "@changesets/changelog-github": "0.7.0",
+    "@changesets/cli": "2.31.1",
     "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.12",
     "@types/jsdom": "^28.0.3",
