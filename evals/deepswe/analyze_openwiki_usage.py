@@ -44,15 +44,6 @@ class Usage:
     cached_input_tokens: int
     output_tokens: int
 
-    @property
-    def uncached_input_tokens(self) -> int:
-        return self.input_tokens - self.cached_input_tokens
-
-    @property
-    def total_tokens(self) -> int:
-        return self.input_tokens + self.output_tokens
-
-
 @dataclass(frozen=True)
 class TrialMetrics:
     task_name: str
@@ -118,14 +109,6 @@ def _mcp_result_text(item: dict[str, Any]) -> str:
         return result
     error = _string(item.get("error"))
     return error or ""
-
-
-def _load_json_object(path: Path) -> dict[str, Any] | None:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return None
-    return _dict(value)
 
 
 def _managed_agents_chars(path: Path) -> int:
@@ -253,25 +236,6 @@ def analyze_trace(trace_path: Path, task_name: str) -> TrialMetrics | None:
     )
 
 
-def _valid_trial(job_dir: Path, result_path: Path) -> tuple[str, Path] | None:
-    try:
-        resolved_result = result_path.resolve(strict=True)
-        resolved_result.relative_to(job_dir)
-    except (OSError, ValueError):
-        return None
-
-    result = _load_json_object(resolved_result)
-    if result is None:
-        return None
-    task_name = _string(result.get("task_name"))
-    if task_name is None:
-        return None
-    trace_path = resolved_result.parent / "agent" / "codex.txt"
-    if not trace_path.is_file():
-        return None
-    return task_name, trace_path
-
-
 def collect_trials(job_dirs: Iterable[Path]) -> list[TrialMetrics]:
     trials = []
     seen_trial_dirs: set[Path] = set()
@@ -283,10 +247,17 @@ def collect_trials(job_dirs: Iterable[Path]) -> list[TrialMetrics]:
         if not job_dir.is_dir():
             raise ValueError(f"job path is not a directory: {supplied_dir}")
         for result_path in job_dir.rglob("result.json"):
-            valid = _valid_trial(job_dir, result_path)
-            if valid is None:
+            try:
+                resolved_result = result_path.resolve(strict=True)
+                resolved_result.relative_to(job_dir)
+                result = json.loads(resolved_result.read_text(encoding="utf-8"))
+            except (OSError, ValueError, UnicodeDecodeError, json.JSONDecodeError):
                 continue
-            task_name, trace_path = valid
+            result = _dict(result)
+            task_name = _string(result.get("task_name")) if result else None
+            trace_path = resolved_result.parent / "agent" / "codex.txt"
+            if task_name is None or not trace_path.is_file():
+                continue
             trial_dir = trace_path.parent.parent.resolve()
             if trial_dir in seen_trial_dirs:
                 continue
@@ -295,21 +266,6 @@ def collect_trials(job_dirs: Iterable[Path]) -> list[TrialMetrics]:
                 trials.append(metrics)
                 seen_trial_dirs.add(trial_dir)
     return sorted(trials, key=lambda trial: (trial.task_name, trial.trial_dir))
-
-
-def _sum_usage(trials: Iterable[TrialMetrics]) -> dict[str, int]:
-    trial_list = list(trials)
-    return {
-        "input_tokens": sum(trial.usage.input_tokens for trial in trial_list),
-        "cached_input_tokens": sum(
-            trial.usage.cached_input_tokens for trial in trial_list
-        ),
-        "uncached_input_tokens": sum(
-            trial.usage.uncached_input_tokens for trial in trial_list
-        ),
-        "output_tokens": sum(trial.usage.output_tokens for trial in trial_list),
-        "total_tokens": sum(trial.usage.total_tokens for trial in trial_list),
-    }
 
 
 def summarize(trials: list[TrialMetrics]) -> dict[str, Any]:
@@ -329,7 +285,20 @@ def summarize(trials: list[TrialMetrics]) -> dict[str, Any]:
     agents_tokens = agents_chars / CHARS_PER_TOKEN
     direct_tool_tokens = call_tokens + result_tokens
     overhead_tokens = direct_tool_tokens + agents_tokens
-    raw = _sum_usage(trials)
+    raw = {
+        "input_tokens": sum(trial.usage.input_tokens for trial in trials),
+        "cached_input_tokens": sum(
+            trial.usage.cached_input_tokens for trial in trials
+        ),
+        "uncached_input_tokens": sum(
+            trial.usage.input_tokens - trial.usage.cached_input_tokens
+            for trial in trials
+        ),
+        "output_tokens": sum(trial.usage.output_tokens for trial in trials),
+        "total_tokens": sum(
+            trial.usage.input_tokens + trial.usage.output_tokens for trial in trials
+        ),
+    }
 
     adjusted = {
         "input_tokens": raw["input_tokens"] - result_tokens - agents_tokens,

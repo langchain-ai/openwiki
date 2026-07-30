@@ -193,7 +193,7 @@ JSON and trial-level CSV files to `evals/deepswe/summaries/`, including:
 
 - binary reward and exception type
 - input, cached, and output tokens used by Codex
-- Codex cost and agent steps
+- Codex cost
 - agent and total wall-clock time
 - OpenWiki generation wall-clock time
 

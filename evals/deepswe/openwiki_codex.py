@@ -87,11 +87,12 @@ def _wiki_cache_key(base_commit: str, package_digest: str, model: str) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def _validate_wiki_cache_archive(archive_path: Path) -> None:
+def _validate_wiki_cache_archive(archive_path: Path) -> dict[str, str] | None:
     """Reject archives that could write anywhere except openwiki/."""
 
     seen: set[str] = set()
     quickstart_found = False
+    metadata_bytes: bytes | None = None
     total_size = 0
     with tarfile.open(archive_path, mode="r:*") as archive:
         members = archive.getmembers()
@@ -117,28 +118,21 @@ def _validate_wiki_cache_archive(archive_path: Path) -> None:
                 raise ValueError("OpenWiki cache is too large to restore safely")
             if normalized == "openwiki/quickstart.md" and member.isfile():
                 quickstart_found = True
+            if normalized == "openwiki/.last-update.json" and member.isfile():
+                if member.size > _MAX_CACHE_METADATA_BYTES:
+                    raise ValueError("OpenWiki cache has invalid update metadata")
+                extracted = archive.extractfile(member)
+                if extracted is None:
+                    raise ValueError("OpenWiki cache update metadata could not be read")
+                metadata_bytes = extracted.read(_MAX_CACHE_METADATA_BYTES + 1)
     if not quickstart_found:
         raise ValueError("OpenWiki cache is missing openwiki/quickstart.md")
-
-
-def _wiki_cache_metadata(archive_path: Path) -> dict[str, str]:
-    """Read schema-checked update metadata from an already validated cache."""
-
-    _validate_wiki_cache_archive(archive_path)
-    with tarfile.open(archive_path, mode="r:*") as archive:
-        try:
-            member = archive.getmember("openwiki/.last-update.json")
-        except KeyError as exc:
-            raise ValueError("OpenWiki cache is missing update metadata") from exc
-        if not member.isfile() or member.size > _MAX_CACHE_METADATA_BYTES:
-            raise ValueError("OpenWiki cache has invalid update metadata")
-        extracted = archive.extractfile(member)
-        if extracted is None:
-            raise ValueError("OpenWiki cache update metadata could not be read")
-        try:
-            value = json.loads(extracted.read(_MAX_CACHE_METADATA_BYTES + 1))
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise ValueError("OpenWiki cache update metadata is invalid JSON") from exc
+    if metadata_bytes is None:
+        return None
+    try:
+        value = json.loads(metadata_bytes)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("OpenWiki cache update metadata is invalid JSON") from exc
     if not isinstance(value, dict):
         raise ValueError("OpenWiki cache update metadata must be an object")
     git_head = value.get("gitHead")
@@ -168,7 +162,7 @@ def _find_wiki_cache(
     for index, candidate in enumerate(candidates):
         if not candidate.is_file():
             continue
-        metadata = _wiki_cache_metadata(candidate)
+        metadata = _validate_wiki_cache_archive(candidate)
         if metadata == {"gitHead": base_commit, "model": model}:
             return candidate, "exact" if index == 0 else "compatible"
     return None, None
@@ -186,6 +180,8 @@ def _bool_option(value: bool | str, name: str) -> bool:
 
 class BaselineCodex(Codex):
     """Codex with credential-safe Harbor command logging for the control arm."""
+
+    _PATCH_PATHSPEC = ""
 
     @staticmethod
     def name() -> str:
@@ -261,15 +257,12 @@ class BaselineCodex(Codex):
                 command=(
                     "umask 077; mkdir -p /logs/artifacts && "
                     f"git diff --binary {shlex.quote(start_head)} HEAD"
-                    f"{self._patch_pathspec()} > "
+                    f"{self._PATCH_PATHSPEC} > "
                     f"{shlex.quote(patch_path.as_posix())} && "
                     f"chmod 0600 {shlex.quote(patch_path.as_posix())}"
                 ),
                 cwd=_APP_DIR.as_posix(),
             )
-
-    def _patch_pathspec(self) -> str:
-        return ""
 
     async def _exec(
         self,
@@ -304,6 +297,8 @@ class BaselineCodex(Codex):
 
 class OpenWikiCodex(BaselineCodex):
     """Generate OpenWiki in an isolated clone before running the same Codex agent."""
+
+    _PATCH_PATHSPEC = " -- . ':(exclude)AGENTS.md' ':(exclude)openwiki/**'"
 
     def __init__(
         self,
@@ -415,23 +410,15 @@ class OpenWikiCodex(BaselineCodex):
         )
         await self.exec_as_agent(
             environment,
-            command=self._retrieval_registration_command(),
+            command=(
+                "codex mcp add openwiki_retrieval -- "
+                "/usr/local/bin/openwiki-retrieval-mcp "
+                f"--repo-root {_APP_DIR.as_posix()} "
+                f"--wiki-root {(_APP_DIR / 'openwiki').as_posix()} "
+                "--embedding-provider "
+                f"{shlex.quote(self._retrieval_embedding_provider)}"
+            ),
         )
-
-    def _retrieval_registration_command(self) -> str:
-        """Register the fixed read-only OpenWiki retrieval server for Codex."""
-
-        provider = shlex.quote(self._retrieval_embedding_provider)
-        return (
-            "codex mcp add openwiki_retrieval -- "
-            "/usr/local/bin/openwiki-retrieval-mcp "
-            f"--repo-root {_APP_DIR.as_posix()} "
-            f"--wiki-root {(_APP_DIR / 'openwiki').as_posix()} "
-            f"--embedding-provider {provider}"
-        )
-
-    def _patch_pathspec(self) -> str:
-        return " -- . ':(exclude)AGENTS.md' ':(exclude)openwiki/**'"
 
     async def run(
         self,

@@ -11,7 +11,7 @@ from requests import RequestException
 
 
 class DeepSWELangSmithPlugin(LangSmithPlugin):
-    """Preserve count rewards as values instead of invalid LangSmith scores."""
+    """Send only bounded DeepSWE rewards accepted by LangSmith."""
 
     def _post_feedback(self, payload: dict[str, Any]) -> None:
         """Publish feedback without allowing telemetry failures to abort a trial."""
@@ -37,7 +37,7 @@ class DeepSWELangSmithPlugin(LangSmithPlugin):
 
     def _create_feedback(self, run_id: str, result: Any) -> None:
         if result.verifier_result is not None:
-            for key, value in result.verifier_result.rewards.items():
+            for key, value in (result.verifier_result.rewards or {}).items():
                 payload: dict[str, Any] = {
                     "id": self._stable_uuid(run_id, "feedback", key),
                     "run_id": run_id,

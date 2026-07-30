@@ -125,7 +125,9 @@ class AnalyzeOpenWikiUsageTests(unittest.TestCase):
         self.assertEqual(expected_call_chars, result.call_json_chars)
         self.assertEqual(len("firstsecondwiki text\n"), result.result_chars)
         self.assertGreater(result.agents_prompt_chars, 0)
-        self.assertEqual(400, result.usage.uncached_input_tokens)
+        self.assertEqual(
+            400, result.usage.input_tokens - result.usage.cached_input_tokens
+        )
 
     def test_collect_trials_includes_complete_usage_even_after_verifier_failure(
         self,

@@ -46,10 +46,8 @@ DEFAULT_ALLOWED_HOSTS = (
     "gateway.smith.langchain.com",
     "api.smith.langchain.com",
 )
-# Allowed characters for model, run, dataset, and workspace identifiers.
-SAFE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$")
-# Allowed characters and glob tokens for task filters.
-TASK_FILTER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@+*?\[\]-]*$")
+# Allowed characters for Harbor job names stored beneath the jobs directory.
+JOB_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]*$")
 # Validator for additional network allowlist hostnames.
 DNS_LABEL_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
 # Validator for Docker Compose network names derived from trials.
@@ -116,7 +114,6 @@ TASK_SUITES = {
     "openwiki-20": (*KOOTA_5_TASKS, *WIKI_STRESS_15_TASKS),
 }
 
-SENSITIVE_FLAGS = {"--agent-env", "--ae"}
 # Ambient overrides removed so each Harbor job creates its own experiment.
 LANGSMITH_ENV_UNSET = {
     "HARBOR_LANGSMITH_EXPERIMENT",
@@ -133,23 +130,10 @@ SUMMARY_FIELDS = [
     "cache_tokens",
     "output_tokens",
     "cost_usd",
-    "agent_steps",
     "agent_duration_seconds",
     "total_duration_seconds",
     "openwiki_duration_seconds",
 ]
-
-
-def validate_id(value: str, label: str) -> str:
-    if not SAFE_ID_RE.fullmatch(value):
-        raise ValueError(f"{label} contains unsupported characters: {value!r}")
-    return value
-
-
-def validate_task_filter(value: str) -> str:
-    if not TASK_FILTER_RE.fullmatch(value):
-        raise ValueError(f"task filter contains unsupported characters: {value!r}")
-    return value
 
 
 def validate_endpoint(value: str) -> str:
@@ -176,24 +160,6 @@ def validate_host(value: str) -> str:
     return value.lower()
 
 
-def display_command(argv: Sequence[str]) -> str:
-    """Render an argv list while redacting values of known sensitive flags."""
-
-    rendered: list[str] = []
-    redact_next = False
-    for arg in argv:
-        if redact_next:
-            rendered.append("<redacted>")
-            redact_next = False
-            continue
-        if arg in SENSITIVE_FLAGS:
-            rendered.append(arg)
-            redact_next = True
-            continue
-        rendered.append(arg)
-    return shlex.join(rendered)
-
-
 def run_checked(
     argv: Sequence[str],
     *,
@@ -202,7 +168,7 @@ def run_checked(
     env_overrides: dict[str, str] | None = None,
     env_unset: Iterable[str] = (),
 ) -> None:
-    print(f"+ {display_command(argv)}")
+    print(f"+ {shlex.join(argv)}")
     if dry_run:
         return
     env = os.environ.copy()
@@ -213,6 +179,8 @@ def run_checked(
 
 
 def harbor_job_name(args: argparse.Namespace, condition: str) -> str:
+    if not JOB_NAME_RE.fullmatch(args.run_name):
+        raise ValueError(f"run name contains unsupported characters: {args.run_name!r}")
     return f"{args.run_name}-{condition}-seed-{args.seed}"
 
 
@@ -326,53 +294,27 @@ def _cleanup_docker_networks(
             )
 
 
-def cleanup_stale_docker_networks(jobs_dir: Path) -> None:
-    """Clean inactive networks from completed Harbor trials under jobs_dir."""
+def cleanup_docker_networks(jobs_dir: Path, job_name: str | None = None) -> None:
+    """Clean inactive networks from completed trials or one exact current job."""
 
-    trials: list[tuple[Path, Path]] = []
     try:
-        if not jobs_dir.is_dir():
-            return
         resolved_jobs = jobs_dir.resolve(strict=True)
-        for candidate in jobs_dir.iterdir():
+        candidates = [jobs_dir / job_name] if job_name else jobs_dir.iterdir()
+        trials: list[tuple[Path, Path]] = []
+        for candidate in candidates:
             job_dir = candidate.resolve(strict=True)
-            if job_dir.parent != resolved_jobs:
+            if job_dir.parent != resolved_jobs or not job_dir.is_dir():
                 continue
-            if not job_dir.is_dir() or not (job_dir / "config.json").is_file():
+            if job_name is None and not (job_dir / "config.json").is_file():
                 continue
             for trial_dir in job_dir.iterdir():
-                if trial_dir.is_dir() and (trial_dir / "result.json").is_file():
+                if trial_dir.is_dir() and (
+                    job_name is not None or (trial_dir / "result.json").is_file()
+                ):
                     trials.append((job_dir, trial_dir))
     except OSError:
         warnings.warn(
             "Could not inspect Harbor results for Docker cleanup; continuing",
-            RuntimeWarning,
-            stacklevel=2,
-        )
-        return
-    _cleanup_docker_networks(trials)
-
-
-def cleanup_job_docker_networks(jobs_dir: Path, job_name: str) -> None:
-    """Clean inactive networks belonging to the exact current Harbor job."""
-
-    validate_id(job_name, "job name")
-    try:
-        resolved_jobs = jobs_dir.resolve(strict=True)
-        job_dir = (jobs_dir / job_name).resolve(strict=True)
-    except OSError:
-        return
-    if not job_dir.is_dir() or job_dir.parent != resolved_jobs:
-        return
-    try:
-        trials = [
-            (job_dir, trial_dir)
-            for trial_dir in job_dir.iterdir()
-            if trial_dir.is_dir()
-        ]
-    except OSError:
-        warnings.warn(
-            "Could not inspect the current Harbor job for Docker cleanup; continuing",
             RuntimeWarning,
             stacklevel=2,
         )
@@ -445,12 +387,6 @@ def harbor_args(
     package_path: Path | None = None,
     selected_tasks: Sequence[str] | None = None,
 ) -> list[str]:
-    validate_id(args.model, "model")
-    validate_id(args.reasoning_effort, "reasoning effort")
-    validate_id(args.run_name, "run name")
-    for task in args.task:
-        validate_task_filter(task)
-
     job_name = harbor_job_name(args, condition)
     command = [
         "uvx",
@@ -506,7 +442,6 @@ def harbor_args(
     if condition == "openwiki":
         if package_path is None:
             raise ValueError("package_path is required for the OpenWiki condition")
-        validate_id(args.openwiki_model, "OpenWiki model")
         command.extend(
             [
                 "--agent-kwarg",
@@ -547,7 +482,6 @@ def ensure_credentials(args: argparse.Namespace) -> None:
 def langsmith_env(args: argparse.Namespace) -> dict[str, str]:
     """Return non-secret Harbor/LangSmith configuration for one job."""
 
-    validate_id(args.langsmith_dataset, "LangSmith dataset")
     overrides = {
         "PYTHONPATH": str(EVAL_DIR),
         "HARBOR_LANGSMITH_DATASET": args.langsmith_dataset,
@@ -557,7 +491,6 @@ def langsmith_env(args: argparse.Namespace) -> dict[str, str]:
     if args.langsmith_endpoint:
         overrides["LANGSMITH_ENDPOINT"] = validate_endpoint(args.langsmith_endpoint)
     if args.langsmith_workspace_id:
-        validate_id(args.langsmith_workspace_id, "LangSmith workspace ID")
         overrides["LANGSMITH_WORKSPACE_ID"] = args.langsmith_workspace_id
     return overrides
 
@@ -574,8 +507,6 @@ def select_tasks(args: argparse.Namespace) -> list[str] | None:
     suite_tasks: list[str] | None = None
     if args.task_suite:
         suite_tasks = list(TASK_SUITES[args.task_suite])
-        for task_id in suite_tasks:
-            validate_task_filter(task_id)
     if not tasks_dir.is_dir():
         return suite_tasks
     candidates: list[tuple[str, str]] = []
@@ -583,7 +514,6 @@ def select_tasks(args: argparse.Namespace) -> list[str] | None:
         config = tomllib.loads(config_path.read_text(encoding="utf-8"))
         configured_name = config.get("task", {}).get("name")
         local_id = config_path.parent.name
-        validate_task_filter(local_id)
         if isinstance(configured_name, str):
             candidates.append((local_id, configured_name))
     if suite_tasks is not None:
@@ -631,14 +561,7 @@ def run_condition(
     clean_docker = args.environment == "docker" and not args.dry_run
     job_name = harbor_job_name(args, condition)
     if clean_docker:
-        try:
-            cleanup_stale_docker_networks(args.jobs_dir)
-        except Exception:
-            warnings.warn(
-                "Docker network preflight cleanup failed; continuing",
-                RuntimeWarning,
-                stacklevel=2,
-            )
+        cleanup_docker_networks(args.jobs_dir)
     try:
         run_checked(
             command,
@@ -649,7 +572,7 @@ def run_condition(
     finally:
         if clean_docker:
             try:
-                cleanup_job_docker_networks(args.jobs_dir, job_name)
+                cleanup_docker_networks(args.jobs_dir, job_name)
             except Exception:
                 warnings.warn(
                     "Docker network final cleanup failed; continuing",
@@ -689,9 +612,6 @@ def load_trial_rows(job_dir: Path, condition: str) -> list[dict[str, Any]]:
                 "cache_tokens": agent_result.get("n_cache_tokens"),
                 "output_tokens": agent_result.get("n_output_tokens"),
                 "cost_usd": agent_result.get("cost_usd"),
-                "agent_steps": (
-                    data.get("n_agent_steps") or agent_result.get("n_agent_steps")
-                ),
                 "agent_duration_seconds": seconds_between(data.get("agent_execution")),
                 "total_duration_seconds": seconds_between(
                     {
@@ -726,7 +646,6 @@ def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "mean_cache_tokens": mean(row["cache_tokens"] for row in rows),
         "mean_output_tokens": mean(row["output_tokens"] for row in rows),
         "mean_cost_usd": mean(row["cost_usd"] for row in rows),
-        "mean_agent_steps": mean(row["agent_steps"] for row in rows),
         "mean_agent_duration_seconds": mean(
             row["agent_duration_seconds"] for row in rows
         ),

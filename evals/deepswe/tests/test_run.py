@@ -100,7 +100,6 @@ class DeepSWEHarnessTests(unittest.TestCase):
         self.assertIn("codex mcp add openwiki_retrieval", adapter)
         self.assertIn("command -v openwiki-retrieval-mcp || true", adapter)
         self.assertIn("if not retrieval_bin:", adapter)
-        self.assertIn("command=self._retrieval_registration_command()", adapter)
         self.assertNotIn("def _build_register_mcp_servers_command", adapter)
         self.assertIn("--wiki-root", adapter)
         self.assertIn("(_APP_DIR / 'openwiki').as_posix()", adapter)
@@ -316,13 +315,6 @@ class DeepSWEHarnessTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "plain DNS hostname"):
             deepswe_run.harbor_args(invalid, condition="baseline")
 
-    def test_display_command_redacts_agent_env(self) -> None:
-        rendered = deepswe_run.display_command(
-            ["harbor", "run", "--agent-env", "API_TOKEN=example-sensitive-value"]
-        )
-        self.assertNotIn("example-sensitive-value", rendered)
-        self.assertIn("<redacted>", rendered)
-
     def test_credentials_require_openai_and_langsmith(self) -> None:
         args = deepswe_run.parse_args(["baseline"])
         with patch.dict(os.environ, {}, clear=True):
@@ -401,7 +393,7 @@ class DeepSWEHarnessTests(unittest.TestCase):
             with patch.object(
                 deepswe_run.subprocess, "run", side_effect=docker_run
             ) as run:
-                deepswe_run.cleanup_stale_docker_networks(jobs_dir)
+                deepswe_run.cleanup_docker_networks(jobs_dir)
 
             commands = [call.args[0] for call in run.call_args_list]
             self.assertIn(["docker", "network", "inspect", network_name], commands)
@@ -464,8 +456,7 @@ class DeepSWEHarnessTests(unittest.TestCase):
             ["baseline", "--env-file", "credentials.env"]
         )
         with (
-            patch.object(deepswe_run, "cleanup_stale_docker_networks") as preflight,
-            patch.object(deepswe_run, "cleanup_job_docker_networks") as final_cleanup,
+            patch.object(deepswe_run, "cleanup_docker_networks") as cleanup,
             patch.object(
                 deepswe_run, "run_checked", side_effect=RuntimeError("harbor failed")
             ),
@@ -473,9 +464,14 @@ class DeepSWEHarnessTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "harbor failed"):
                 deepswe_run.run_condition(args, "baseline")
 
-        preflight.assert_called_once_with(args.jobs_dir)
-        final_cleanup.assert_called_once_with(
-            args.jobs_dir, deepswe_run.harbor_job_name(args, "baseline")
+        self.assertEqual(
+            [
+                unittest.mock.call(args.jobs_dir),
+                unittest.mock.call(
+                    args.jobs_dir, deepswe_run.harbor_job_name(args, "baseline")
+                ),
+            ],
+            cleanup.call_args_list,
         )
 
     def test_cleanup_failure_does_not_mask_harbor_failure(self) -> None:
@@ -483,11 +479,10 @@ class DeepSWEHarnessTests(unittest.TestCase):
             ["baseline", "--env-file", "credentials.env"]
         )
         with (
-            patch.object(deepswe_run, "cleanup_stale_docker_networks"),
             patch.object(
                 deepswe_run,
-                "cleanup_job_docker_networks",
-                side_effect=RuntimeError("cleanup failed"),
+                "cleanup_docker_networks",
+                side_effect=[None, RuntimeError("cleanup failed")],
             ),
             patch.object(
                 deepswe_run, "run_checked", side_effect=RuntimeError("harbor failed")
@@ -615,7 +610,6 @@ class DeepSWEHarnessTests(unittest.TestCase):
                             "started_at": "2026-07-21T10:00:30+00:00",
                             "finished_at": "2026-07-21T10:01:30+00:00",
                         },
-                        "n_agent_steps": 12,
                         "agent_result": {
                             "n_input_tokens": 100,
                             "n_cache_tokens": 40,
