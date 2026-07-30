@@ -61,7 +61,6 @@
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.3",
     "@langchain/openai": "^1.5.5",
     "@langchain/openrouter": "^0.4.3",
-    "@langchain/protocol": "^0.0.18",
     "@langchain/tavily": "1.2.0",
     "ci-info": "^4.4.0",
     "cron-parser": "5.6.1",

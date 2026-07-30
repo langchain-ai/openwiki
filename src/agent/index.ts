@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir } from "node:fs/promises";
 import path from "node:path";
+import { scheduler } from "node:timers/promises";
 import { AnthropicVertex } from "@anthropic-ai/vertex-sdk";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatBedrockConverse } from "@langchain/aws";
@@ -8,7 +9,6 @@ import { ChatGoogle } from "@langchain/google/node";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
-import type { Event as ProtocolEvent } from "@langchain/protocol";
 import {
   CompositeBackend,
   createDeepAgent,
@@ -22,7 +22,10 @@ import {
   saveOpenWikiEnv,
 } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
-import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
+import {
+  sanitizeDiagnosticText,
+  SECRET_KEY_PATTERN_SOURCE,
+} from "../diagnostics.js";
 import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
 import { resolveLanguage } from "../language.js";
 import {
@@ -389,28 +392,28 @@ async function runOpenWikiAgentCore(
     ],
   };
 
-  emitDebug(options, "stream=opening protocol=events version=v3");
-  const stream = await agent.streamEvents(input, {
+  emitDebug(options, "stream=opening modes=messages,tools subgraphs=true");
+  const stream = await agent.stream(input, {
     configurable: {
       thread_id: threadId,
     },
-    version: "v3",
+    streamMode: ["messages", "tools"],
+    subgraphs: true,
   });
-  emitDebug(options, "stream=started protocol=events version=v3");
+  emitDebug(options, "stream=started modes=messages,tools subgraphs=true");
 
   let unhandledChunkCount = 0;
 
   try {
     for await (const chunk of stream) {
-      const event = parseStreamEvent(chunk);
+      const event = parseAgentStreamChunk(chunk);
 
       if (event) {
         options.onEvent?.(event);
-      } else if (
-        options.debug &&
-        !isProtocolStreamEvent(chunk) &&
-        unhandledChunkCount < 3
-      ) {
+        // React batches updates from the async iterator; yield so Ink can paint
+        // streamed text before the iterator completes.
+        await scheduler.yield();
+      } else if (options.debug && unhandledChunkCount < 3) {
         emitDebug(
           options,
           `stream.unhandledChunk ${describeStreamChunkShape(chunk)}`,
@@ -1076,42 +1079,38 @@ function createGeminiEnterpriseModel(
   }
 }
 
-export function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
-  if (!isProtocolStreamEvent(chunk)) {
+export function parseAgentStreamChunk(chunk: unknown): OpenWikiRunEvent | null {
+  if (!isAgentStreamChunk(chunk)) {
     return null;
   }
 
-  if (chunk.method === "messages") {
-    const text = extractMessageText(chunk.params.data);
+  const [namespace, mode, payload] = chunk;
 
-    return text.length > 0
-      ? {
-          source: isSubgraphProtocolEvent(chunk) ? "subgraph" : "main",
-          type: "text",
-          text,
-        }
-      : null;
+  if (mode === "tools") {
+    return parseToolStreamEvent(payload);
   }
 
-  if (chunk.method === "tools") {
-    return parseToolStreamEvent(chunk.params.data);
-  }
+  const text = extractMessageText(payload);
 
-  return null;
+  return text.length > 0
+    ? {
+        source: namespace.length > 1 ? "subgraph" : "main",
+        type: "text",
+        text,
+      }
+    : null;
 }
 
-function isProtocolStreamEvent(value: unknown): value is ProtocolEvent {
+function isAgentStreamChunk(
+  value: unknown,
+): value is [string[], "messages" | "tools", unknown] {
   return (
-    isRecord(value) &&
-    value.type === "event" &&
-    typeof value.method === "string" &&
-    isRecord(value.params) &&
-    "data" in value.params
+    Array.isArray(value) &&
+    value.length === 3 &&
+    Array.isArray(value[0]) &&
+    value[0].every((part) => typeof part === "string") &&
+    (value[1] === "messages" || value[1] === "tools")
   );
-}
-
-function isSubgraphProtocolEvent(event: ProtocolEvent): boolean {
-  return event.params.namespace.length > 1;
 }
 
 function extractMessageText(payload: unknown): string {
@@ -1144,12 +1143,6 @@ function extractMessageTextValue(payload: unknown, seen: Set<object>): string {
   }
 
   seen.add(payload);
-
-  const protocolText = extractProtocolMessageText(payload, seen);
-
-  if (protocolText !== null) {
-    return protocolText;
-  }
 
   if (isRecord(payload.chunk)) {
     const text = extractMessageTextValue(payload.chunk, seen);
@@ -1232,36 +1225,6 @@ function isMessageLikeRecord(value: unknown): value is Record<string, unknown> {
     getMessageRole(value) !== null ||
     hasSerializedMessageId(value)
   );
-}
-
-function extractProtocolMessageText(
-  payload: Record<string, unknown>,
-  seen: Set<object>,
-): string | null {
-  const event = getStringRecordValue(payload, "event");
-
-  if (!event) {
-    return null;
-  }
-
-  if (event === "content-block-delta") {
-    return extractContentDeltaText(payload.delta, seen);
-  }
-
-  if (event === "content-block-start") {
-    return extractContentText(payload.content, seen);
-  }
-
-  if (
-    event === "message-start" ||
-    event === "message-finish" ||
-    event === "content-block-finish" ||
-    event === "error"
-  ) {
-    return "";
-  }
-
-  return null;
 }
 
 function extractContentText(content: unknown, seen: Set<object>): string {
@@ -1429,49 +1392,27 @@ function parseToolStreamEvent(payload: unknown): OpenWikiRunEvent | null {
   }
 
   const event = getStringRecordValue(payload, "event");
+  const name = getStringRecordValue(payload, "name") ?? "tool";
+  const id = getStringRecordValue(payload, "toolCallId") ?? name;
 
-  if (event === "on_tool_start" || event === "tool-started") {
-    const name =
-      getStringRecordValue(payload, "name") ??
-      getStringRecordValue(payload, "tool_name") ??
-      "tool";
-    const id =
-      getStringRecordValue(payload, "toolCallId") ??
-      getStringRecordValue(payload, "tool_call_id") ??
-      createSyntheticToolCallId(name, payload.input);
-
+  if (event === "on_tool_start") {
     return {
       type: "tool_start",
-      call: `${formatToolCallName(name)}(${formatToolArgs(payload.input)})`,
+      call: sanitizeDiagnosticText(
+        `${formatToolCallName(name)}(${formatToolArgs(payload.input)})`,
+      ),
       id,
       input: payload.input,
       name,
     };
   }
 
-  if (
-    event === "on_tool_end" ||
-    event === "tool-finished" ||
-    event === "on_tool_error" ||
-    event === "tool-error"
-  ) {
-    const name =
-      getStringRecordValue(payload, "name") ??
-      getStringRecordValue(payload, "tool_name") ??
-      "tool";
-    const id =
-      getStringRecordValue(payload, "toolCallId") ??
-      getStringRecordValue(payload, "tool_call_id") ??
-      createSyntheticToolCallId(name, payload.input);
-
+  if (event === "on_tool_end" || event === "on_tool_error") {
     return {
       type: "tool_end",
       id,
       name,
-      status:
-        event === "on_tool_error" || event === "tool-error"
-          ? "error"
-          : "finished",
+      status: event === "on_tool_error" ? "error" : "finished",
     };
   }
 
@@ -1495,18 +1436,10 @@ function formatToolArgs(input: unknown): string {
     return value.map(formatToolValue).join(", ");
   }
 
-  if (value === undefined || value === null) {
-    return "";
-  }
-
-  return formatToolValue(value);
+  return value == null ? "" : formatToolValue(value);
 }
 
 function formatToolValue(value: unknown): string {
-  if (typeof value === "string") {
-    return JSON.stringify(value);
-  }
-
   return JSON.stringify(value) ?? String(value);
 }
 
@@ -1520,10 +1453,6 @@ function parseStringifiedJson(value: unknown): unknown {
   } catch {
     return value;
   }
-}
-
-function createSyntheticToolCallId(name: string, input: unknown): string {
-  return `${name}:${formatToolValue(input)}`;
 }
 
 function getStringRecordValue(

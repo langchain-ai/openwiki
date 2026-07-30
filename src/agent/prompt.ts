@@ -62,7 +62,7 @@ Run discipline:
 ${discoveryHint}
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
 - For an explicit repository source, inspect the repository tree, package and workspace manifests, README-style files, entrypoints, routing files, database/schema files, and representative implementation and test files for every important domain.
-- Prioritize the most important, durable information. Keep individual pages concise and avoid redundant or low-signal detail, but do not use concision as a reason to omit important domains, independent components, or relationships.
+- Prioritize the most important, durable information. Concise means dense and non-redundant, not short; do not target a page count or page length, and do not omit important domains, independent components, or relationships for brevity.
 - ${output.searchBoundaryInstruction}
 ${createOpenWikiIgnoreInstructions(openWikiIgnore)}
 
@@ -95,8 +95,8 @@ ${output.wikiFirstAnsweringInstruction}
 
 Subagent discipline:
 - Use the task tool when independent repository areas or cross-cutting concerns can be investigated or documented in parallel. Choose the number and sequence of subagents from the repository's discovered complexity rather than a preset limit.
-- In a monorepo, consider assigning a scoped subagent to each substantial service, package, application, or workspace. Closely related small units may share a subagent when that produces a clearer domain boundary.
-- Delegation is iterative, not one-and-done. After the first reports or drafts return, reassess coverage and spawn additional subagents for newly discovered components, cross-package workflows, shared contracts, contradictions, or evidence gaps.
+- In a monorepo, assign a scoped subagent to each substantial service, package, application, or workspace unless closely related units form one clear domain boundary. Do not group unrelated substantial components into one umbrella assignment merely to reduce work.
+- Delegation is iterative, not one-and-done. After the first reports or drafts return, compare discovered areas with the temporary plan and spawn additional subagents for uncovered components, cross-package workflows, shared contracts, contradictions, or evidence gaps before writing final documentation.
 - Give each subagent a narrow brief such as one service/package/workspace, existing docs, runtime architecture, data/storage, UI/API surface, integrations, tests/evals, or a cross-component business workflow.
 - Subagents may inspect and summarize, or may draft/write explicitly assigned documentation pages when that improves throughput. Any delegated writes must stay inside ${output.docsLocation}, use non-overlapping page ownership, and follow the same source-grounding and security rules as the main agent. Never have parallel subagents edit the same file.
 - Ask each subagent to return concise findings with source paths and notable open questions. The main agent is responsible for the final synthesized documentation state, including delegated writes.
@@ -219,7 +219,7 @@ Section quality rules:
 
 Repository decomposition and coverage:
 - For repository sources, identify independent services, applications, packages, libraries, and workspaces from manifests, build configuration, entrypoints, and directory boundaries before choosing the documentation structure.
-- Give each substantial independent component its own page or clearly identifiable section when it has distinct responsibilities, runtime behavior, APIs, data ownership, dependencies, operational guidance, or tests. Closely coupled or very small components may share a page when their relationship is explained clearly.
+- Treat a manifest-backed service, application, package, library, or workspace as substantial when it has distinct runtime behavior, APIs, data ownership, dependencies, operations, or tests. Give each substantial independent component its own page or clearly named substantive section. Closely coupled or very small components may share a page when their relationship is explained clearly; do not collapse unrelated components solely to reduce page count.
 - In a monorepo, organize service/package/workspace documentation so readers can navigate both by component and by cross-component workflow. Wiki breadth should reflect meaningful repository boundaries and complexity; do not force repositories of different sizes into a predetermined page count.
 - Document the important responsibilities, interfaces, dependencies, data flows, operational constraints, extension points, and change-safety guidance for each component. Do not turn the wiki into a file-by-file inventory.
 
@@ -234,7 +234,8 @@ Required documentation structure:
 - Track the last successful documentation update in ${output.metadataPath}.
 
 Coverage self-check:
-- Before finishing, verify that every identified area is either documented or backlogged.
+- During init, reconcile the temporary plan with the final wiki tree. Map every substantial component and major workflow to its page or clearly named substantive section before finishing.
+- Backlog is not a substitute for initial coverage. Defer an area only when it is explicitly outside the requested scope, its evidence cannot be inspected safely or is unavailable, or a concrete evidence gap prevents accurate documentation. Never defer an area merely because of time, token, page-count, or navigation convenience.
 - Audit the concept graph: verify that internal concept links resolve, important cross-domain relationships described in prose are linked, and no concept is orphaned unless it is genuinely standalone.
 - Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
 - If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
@@ -342,7 +343,7 @@ export function createModeInstructions(
 - ${output.initialHistoryInstruction}
 - If the source material already has substantial docs or prior wiki pages, create a wiki that functions as an opinionated map and synthesis layer over those docs.
 - Create ${output.quickstartPath} first, then the linked section pages.
-- Do not silently drop a real domain, independent component, or workflow. Document it at the appropriate level or record it in the \`## Backlog\` section of ${output.quickstartPath} with its area name, source anchor, and a one-line reason.
+- Do not silently drop a real domain, independent component, or workflow. Substantial components and major workflows must be documented during init; use the \`## Backlog\` section of ${output.quickstartPath} only under the deferral conditions above.
 - Do not try to document every source file. Document the main architecture, workflows, domain concepts, data models, integrations, operations, tests, and known extension points at the right level of detail.
 - The CLI will record successful run metadata in ${output.metadataPath} after you finish.
 `.trim();

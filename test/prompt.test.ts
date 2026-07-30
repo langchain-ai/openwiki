@@ -197,3 +197,25 @@ describe("createSystemPrompt diagram guidance", () => {
     expect(init).not.toContain("adding one is a valuable improvement");
   });
 });
+
+describe("createSystemPrompt repository init coverage", () => {
+  test("requires broad component coverage without a backlog escape hatch", () => {
+    const prompt = createSystemPrompt("init", "repository");
+
+    expect(prompt).toContain(
+      "Concise means dense and non-redundant, not short",
+    );
+    expect(prompt).toContain(
+      "Do not group unrelated substantial components into one umbrella assignment merely to reduce work.",
+    );
+    expect(prompt).toContain(
+      "reconcile the temporary plan with the final wiki tree",
+    );
+    expect(prompt).toContain(
+      "Never defer an area merely because of time, token, page-count, or navigation convenience.",
+    );
+    expect(prompt).toContain(
+      "Substantial components and major workflows must be documented during init",
+    );
+  });
+});

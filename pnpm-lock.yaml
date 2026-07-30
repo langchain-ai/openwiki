@@ -35,9 +35,6 @@ importers:
       '@langchain/openrouter':
         specifier: ^0.4.3
         version: 0.4.3(@aws-sdk/credential-provider-node@3.972.63)(@langchain/core@1.2.1(openai@6.45.0(@aws-sdk/credential-provider-node@3.972.63)(@smithy/signature-v4@5.6.2)(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(@smithy/signature-v4@5.6.2)(ws@8.21.0)(zod@4.4.3)
-      '@langchain/protocol':
-        specifier: ^0.0.18
-        version: 0.0.18
       '@langchain/tavily':
         specifier: 1.2.0
         version: 1.2.0(@langchain/core@1.2.1(openai@6.45.0(@aws-sdk/credential-provider-node@3.972.63)(@smithy/signature-v4@5.6.2)(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))
