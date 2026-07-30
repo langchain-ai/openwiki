@@ -8,7 +8,8 @@
     "node": ">=22"
   },
   "bin": {
-    "openwiki": "./dist/cli.js"
+    "openwiki": "./dist/cli.js",
+    "openwiki-retrieval-mcp": "./dist/retrieval/mcp-server.js"
   },
   "repository": {
     "type": "git",

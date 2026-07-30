@@ -45,7 +45,12 @@ describe("ensureCodeModeRepoSetup agent files", () => {
       expect(content).toContain("## OpenWiki");
       expect(content).toContain("optional just-in-time context");
       expect(content).toContain("not required startup reading");
+      expect(content).toContain("openwiki_retrieval.change_surface");
+      expect(content).toContain("do not reread the returned wiki pages");
+      expect(content).toContain("concrete unresolved evidence gap");
+      expect(content).toContain("repository-relative changed paths");
       expect(content).toContain("verification gaps");
+      expect(content).not.toContain("trace_symbols");
       expect(content).toContain("quiet validation");
       expect(content.length).toBeLessThan(2_500);
     }
