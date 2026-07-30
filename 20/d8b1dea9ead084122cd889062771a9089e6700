@@ -1,0 +1,117 @@
+.changeset/salty-onions-wish.md
+  s_a40822b27ced8f::t_ea034d27213a60 1-5
+evals/deepswe/README.md
+  s_a40822b27ced8f::t_ea034d27213a60 1-219
+openwiki/agent/workflow.md
+  s_a40822b27ced8f::t_ea034d27213a60 23,25,40,132-133,140,151-155,158
+README.md
+  s_a40822b27ced8f::t_ea034d27213a60 242-255,310-322
+  s_a40822b27ced8f::t_3b8927c79ae6a7 323
+evals/deepswe/openwiki_codex.py
+  s_a40822b27ced8f::t_ea034d27213a60 1-598
+openwiki/evals/index.md
+  s_a40822b27ced8f::t_ea034d27213a60 1-3
+openwiki/quickstart.md
+  s_a40822b27ced8f::t_ea034d27213a60 16,21,29-30,49-58,67,76,83,113,123-127
+evals/deepswe/tests/test_analyze_openwiki_usage.py
+  s_a40822b27ced8f::t_ea034d27213a60 1-245
+evals/deepswe/tests/test_run.py
+  s_a40822b27ced8f::t_ea034d27213a60 1-635
+src/agent/docs-only-backend.ts
+  s_a40822b27ced8f::t_ea034d27213a60 5-9,11-13,17,20-22,25-27,29-33,35-48,52-87,89-91,93-101,107,111-145,150-153,161-164,171-174,185-345,357-384,387-389,403-409,421-430
+  s_a40822b27ced8f::t_dadb0af12b44a8 431-432
+src/auth/oauth.ts
+  s_a40822b27ced8f::t_ea034d27213a60 32,408-414,449,535
+src/agent/index.ts
+  s_a40822b27ced8f::t_ea034d27213a60 129,136,153-161,163,240,271,279,302,372-377
+evals/deepswe/analyze_openwiki_usage.py
+  s_a40822b27ced8f::t_ea034d27213a60 1-409
+src/version.ts
+  s_a40822b27ced8f::t_ea034d27213a60 1-73
+.changeset/quick-foxes-jump.md
+  s_a40822b27ced8f::t_ea034d27213a60 1-5
+.changeset/gentle-comets-allow.md
+  s_a40822b27ced8f::t_ea034d27213a60 1-5
+.changeset/README.md
+  s_a40822b27ced8f::t_ea034d27213a60 1-8
+.changeset/cozy-baboons-turn.md
+  s_a40822b27ced8f::t_ea034d27213a60 1-5
+evals/deepswe/deepswe_langsmith.py
+  s_a40822b27ced8f::t_ea034d27213a60 1-69
+openwiki/index.md
+  s_a40822b27ced8f::t_ea034d27213a60 14
+src/agent/openwiki-ignore.ts
+  s_a40822b27ced8f::t_ea034d27213a60 1-326
+openwiki/architecture/overview.md
+  s_a40822b27ced8f::t_ea034d27213a60 54-55,65,70-72,74-75,105-112,134-142
+openwiki/integrations/index.md
+  s_a40822b27ced8f::t_ea034d27213a60 3
+src/constants.ts
+  s_a40822b27ced8f::t_ea034d27213a60 923,928-931
+openwiki/.last-update.json
+  s_a40822b27ced8f::t_ea034d27213a60 2,4-7
+test/constants.test.ts
+  s_a40822b27ced8f::t_ea034d27213a60 49-55
+test/oauth-callback-server.test.ts
+  s_a40822b27ced8f::t_ea034d27213a60 49-50,63-117,143-144
+test/openwiki-ignore.test.ts
+  s_a40822b27ced8f::t_ea034d27213a60 1-237
+src/agent/utils.ts
+  s_a40822b27ced8f::t_ea034d27213a60 16,46-48,55,90-95,112-118,121,148-149,163-166,439-441,447,450-453,460-468,477-486,495-503,517-520,605-680
+  s_a40822b27ced8f::t_b8124afb31dec2 681
+test/update-noop.test.ts
+  s_a40822b27ced8f::t_ea034d27213a60 7,96-112
+  s_a40822b27ced8f::t_4e5a1c3fa3d160 113-114
+test/version.test.ts
+  s_a40822b27ced8f::t_ea034d27213a60 1-30
+src/agent/skills.ts
+  s_a40822b27ced8f::t_ea034d27213a60 1-9,33-34,36,39-102
+  s_a40822b27ced8f::t_a58daaa6200ba9 103
+.changeset/thin-mirrors-add.md
+  s_a40822b27ced8f::t_ea034d27213a60 1-5
+.github/workflows/release.yml
+  s_a40822b27ced8f::t_ea034d27213a60 1-65
+CONTRIBUTING.md
+  s_a40822b27ced8f::t_ea034d27213a60 35-62,72-73
+.changeset/config.json
+  s_a40822b27ced8f::t_ea034d27213a60 1-16
+openwiki/cli/usage.md
+  s_a40822b27ced8f::t_ea034d27213a60 67-68,81-95,190-217
+  s_a40822b27ced8f::t_3643c5717df2a0 218
+openwiki/evals/deepswe-harness.md
+  s_a40822b27ced8f::t_ea034d27213a60 1-121
+package.json
+  s_a40822b27ced8f::t_ea034d27213a60 3,13-20,39,49,93-94
+openwiki/operations/credentials-and-updates.md
+  s_a40822b27ced8f::t_ea034d27213a60 40,43-44,51,171-172,209-214,260,272-274
+src/agent/prompt.ts
+  s_a40822b27ced8f::t_ea034d27213a60 7,21,25-46,55,62,67,108,113,250-269
+  s_a40822b27ced8f::t_52fbfe7ce6a70a 270-271
+test/skills.test.ts
+  s_a40822b27ced8f::t_ea034d27213a60 4,51-84
+  s_a40822b27ced8f::t_ece53de689a87d 85-89
+openwiki/integrations/connectors.md
+  s_a40822b27ced8f::t_ea034d27213a60 4,8,14,20,40,42-51,55-56,74,83
+.gitignore
+  s_a40822b27ced8f::t_ea034d27213a60 21-28
+evals/deepswe/run.py
+  s_a40822b27ced8f::t_ea034d27213a60 1-833
+pnpm-lock.yaml
+  s_a40822b27ced8f::t_0a5bddd5c0a20d 84-89,288-348,627-635,733-738,1017-1019,1152-1155,1160-1163,1172-1181,1200-1203,1245-1247,1475-1477,1517-1520,1525-1528,1532-1535,1545-1548,1602-1606,1647-1649,1693-1696,1715-1722,1751-1754,1763-1765,1784-1787,1792-1795,1876-1883,1911-1918,1944-1946,2073-2076,2084-2086,2151-2154,2182-2190,2230-2236,2241-2244,2249-2252,2257-2260,2281-2287,2309-2312,2327-2330,2337-2338,2360-2364,2377-2379,2397-2400,2409-2412,2470-2473,2480-2483,2496-2501,2522-2525,2530-2533,2555-2558,2589-2591,2650-2653,2756-2758,2771-2773,3100-3257,3438-3444,3571-3586,3854-3855,4038-4039,4044-4045,4050-4057,4072-4075,4118-4119,4367-4368,4402-4403,4406-4409,4414-4415,4426-4430,4524-4525,4554-4555,4595-4599,4618-4629,4661-4669,4683-4684,4704-4705,4710-4713,4787-4792,4818-4826,4868-4871,4976-4979,4986-4987,5059-5060,5077-5080,5113-5118,5121-5124,5129-5132,5137-5138,5159-5164,5179-5180,5189-5190,5198,5225-5226,5236-5237,5257-5263,5272-5273,5341-5342,5351-5352,5365-5371,5395-5398,5403-5404,5430-5431,5457-5458,5508-5509,5522,5567-5568,5581-5585
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "20d8b1dea9ead084122cd889062771a9089e6700",
+  "prompts": {},
+  "sessions": {
+    "s_a40822b27ced8f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5c398a5c-b4e4-4cbe-baa6-06b8e31ba9c4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
