@@ -46,6 +46,13 @@ describe("isValidModelId", () => {
     expect(isValidModelId("nvidia/nemotron-3-super-120b-a12b")).toBe(true);
   });
 
+  test("accepts comma-bearing gateway/proxy routing ids", () => {
+    // Routing layers such as claude-code-router encode the target as
+    // `provider,model-id`; the comma is passed verbatim to the gateway, so it
+    // must survive validation rather than being treated as a delimiter here.
+    expect(isValidModelId("deepseek,deepseek-v4-pro")).toBe(true);
+  });
+
   test("accepts Cloudflare Workers AI model ids with leading '@'", () => {
     expect(isValidModelId("@cf/meta/llama-3-8b-instruct")).toBe(true);
     expect(isValidModelId("@cf/moonshotai/kimi-k2.7-code")).toBe(true);

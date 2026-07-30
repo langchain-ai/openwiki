@@ -126,12 +126,14 @@ import {
   shouldCheckUpdateNoop,
 } from "./utils.js";
 import { classifyError, recordRunSafe } from "../telemetry/index.js";
+import { OpenWikiIgnore } from "./openwiki-ignore.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
   cwd = openWikiLocalWikiDir,
   options: OpenWikiRunOptions = {},
 ): Promise<OpenWikiRunResult> {
+  const outputMode = options.outputMode ?? "local-wiki";
   const runtimeCwd = options.outputMode ? cwd : openWikiLocalWikiDir;
 
   emitDebug(options, `command=${command}`);
@@ -148,8 +150,17 @@ export async function runOpenWikiAgent(
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
+  const openWikiIgnore =
+    outputMode === "repository"
+      ? await OpenWikiIgnore.load(runtimeCwd)
+      : new OpenWikiIgnore([]);
+  emitDebug(
+    options,
+    `openwikiignore.patterns=${openWikiIgnore.patterns.length}`,
+  );
+
   if (command === "update" && shouldCheckUpdateNoop(options)) {
-    const noopStatus = await getUpdateNoopStatus(cwd);
+    const noopStatus = await getUpdateNoopStatus(cwd, openWikiIgnore);
 
     if (noopStatus.shouldSkip) {
       const message =
@@ -226,6 +237,7 @@ export async function runOpenWikiAgent(
       provider,
       modelId,
       providerRetryAttempts,
+      openWikiIgnore,
     );
 
     await recordRunSafe(command, options, {
@@ -256,6 +268,7 @@ async function runOpenWikiAgentCore(
   provider: OpenWikiProvider,
   modelId: string,
   providerRetryAttempts: number,
+  openWikiIgnore: OpenWikiIgnore,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
   const context = await createRunContext(
@@ -263,6 +276,7 @@ async function runOpenWikiAgentCore(
     cwd,
     outputMode,
     options.language,
+    openWikiIgnore,
   );
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
@@ -285,6 +299,7 @@ async function runOpenWikiAgentCore(
   );
   const wikiBackend = new OpenWikiLocalShellBackend({
     docsOnly: command !== "chat",
+    openWikiIgnore,
     maxOutputBytes: 100_000,
     outputMode,
     rootDir: cwd,
@@ -354,7 +369,12 @@ async function runOpenWikiAgentCore(
           ],
     skills: ["/skills/"],
     permissions: AGENT_FILESYSTEM_PERMISSIONS,
-    systemPrompt: createSystemPrompt(command, outputMode, context.language),
+    systemPrompt: createSystemPrompt(
+      command,
+      outputMode,
+      context.language,
+      openWikiIgnore,
+    ),
   });
   emitDebug(options, "agent=created");
 

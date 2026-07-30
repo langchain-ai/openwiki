@@ -920,9 +920,12 @@ export function isValidModelId(value: string): boolean {
     modelId.length <= 120 &&
     // Leading @ for Cloudflare Workers AI ids (@cf/...); interior @ for
     // Vertex AI @-versioned ids (e.g. claude-sonnet-4-5@20250929).
-    /^[@A-Za-z0-9][A-Za-z0-9._:/@+-]*$/u.test(modelId) &&
+    /^[@A-Za-z0-9][A-Za-z0-9._:/@+,-]*$/u.test(modelId) &&
     !modelId.includes("://")
   );
 }
 
-export const OPENWIKI_VERSION = "0.2.3";
+// Derived at runtime from package.json (single source of truth) rather than
+// hardcoded here; re-exported so existing importers of `OPENWIKI_VERSION` are
+// unchanged.
+export { OPENWIKI_VERSION } from "./version.js";
