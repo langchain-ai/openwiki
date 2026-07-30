@@ -1,0 +1,31 @@
+.changeset/warm-cores-trace.md
+  s_acad1d7df24bbf::t_e08451b3818e63 1-4
+  h_f78d33d4280f3f 5
+pnpm-workspace.yaml
+  s_acad1d7df24bbf::t_978dcd5c23534a 5
+package.json
+  s_acad1d7df24bbf::t_206a9f60907f8a 59
+pnpm-lock.yaml
+  s_acad1d7df24bbf::t_6c4d319aa881b4 19,22,24-25,28,31,34,37,43,55,64,658-659,3454,3457,3460,3466,3468,3484,3486,3493,3495-3496,3499,3501,3503,3505,3513,3515-3517,3527,3529,3539,3541,3551,3553-3554,3566,3568,4385,4387-4390,4392,4893,4895-4897
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "e617a577e18146a68e350f05d7d8daa2c41e49c6",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_acad1d7df24bbf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8623c38c-61b6-49c5-ab67-d3a6bdb3e38e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
