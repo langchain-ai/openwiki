@@ -49,11 +49,11 @@ Key options include `--n-tasks`, `--seed`, `--model` (the coding-agent model, de
 
 `run.py` defines three pinned task suites in `TASK_SUITES`:
 
-| Suite                      | Members                                                | Purpose                                            |
-| -------------------------- | ------------------------------------------------------ | -------------------------------------------------- |
-| `koota-5`                  | 5 Koota tasks                                          | Small iteration set.                               |
-| `openwiki-20`              | 5 Koota tasks + 15 independent repositories            | Broader cross-repository suite.                    |
-| `openwiki-doc-leverage-10` | 10 disjoint tasks spanning runtime/serialization/integration/CLI/SDK/delivery surfaces | Documentation-leverage set. |
+| Suite                      | Members                                                                                | Purpose                         |
+| -------------------------- | -------------------------------------------------------------------------------------- | ------------------------------- |
+| `koota-5`                  | 5 Koota tasks                                                                          | Small iteration set.            |
+| `openwiki-20`              | 5 Koota tasks + 15 independent repositories                                            | Broader cross-repository suite. |
+| `openwiki-doc-leverage-10` | 10 disjoint tasks spanning runtime/serialization/integration/CLI/SDK/delivery surfaces | Documentation-leverage set.     |
 
 `--task-suite` selects all members regardless of `--n-tasks` and cannot be combined with `--task`. Exact members are pinned in `run.py`.
 
