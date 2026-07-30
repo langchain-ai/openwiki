@@ -18,6 +18,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
 - Optionally schedules automated updates through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
+- Ships a paired DeepSWE evaluation harness (`evals/deepswe/`) that measures OpenWiki's documentation leverage on a Codex coding agent.
 
 ## Start here
 
@@ -26,6 +27,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - [Agent workflow](./agent/workflow.md) — how documentation runs are assembled and persisted.
 - [Credentials and updates](./operations/credentials-and-updates.md) — local env storage, metadata, and scheduled updates.
 - [Connectors](./integrations/connectors.md) — built-in connector architecture, the eight connectors, and ingestion orchestration.
+- [DeepSWE evaluation harness](./evals/deepswe-harness.md) — paired DeepSWE benchmark harness that measures OpenWiki's documentation leverage on Codex.
 
 ## Key source files
 
@@ -62,6 +64,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `examples/openwiki-update.yml` — GitHub Actions scheduled automation example.
 - `examples/openwiki-update.gitlab-ci.yml` — GitLab CI scheduled automation example.
 - `examples/openwiki-update.bitbucket-pipelines.yml` — Bitbucket Pipelines scheduled automation example.
+- `evals/deepswe/run.py` — paired DeepSWE evaluation harness entrypoint (see [DeepSWE evaluation harness](./evals/deepswe-harness.md)).
 
 ## Documentation map
 
@@ -70,6 +73,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - [Agent](./agent/workflow.md)
 - [Operations](./operations/credentials-and-updates.md)
 - [Connectors](./integrations/connectors.md)
+- [DeepSWE evaluation harness](./evals/deepswe-harness.md)
 
 ## Notes for future agents
 
