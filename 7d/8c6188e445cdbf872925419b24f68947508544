@@ -1,0 +1,69 @@
+src/agent/utils.ts
+  s_efb9139c29a715::t_c35b87628e4b4d 638-646,664
+  s_efb9139c29a715::t_aa869d37991688 659-663
+  s_efb9139c29a715::t_9928ae1d54a9a2 107-113
+  s_efb9139c29a715::t_c253d54088623b 434-436
+  s_efb9139c29a715::t_7c7a62800fd0c4 600-606
+  s_efb9139c29a715::t_2f3498b22f1dd2 46-48
+  s_efb9139c29a715::t_ff380bb303dacb 626-628
+src/agent/openwiki-ignore.ts
+  s_efb9139c29a715::t_a3f51b2e390235 10-16,18-22,24-25,27,29,36-47,53,71-82
+  s_efb9139c29a715::t_bec640b3e3a59a 129-136
+  s_efb9139c29a715::t_cb997fee7f3607 268-274
+  s_efb9139c29a715::t_0987de30ee79bb 64-66
+  s_efb9139c29a715::t_a49c340da9ec5c 102-109
+  s_efb9139c29a715::t_ff4d3b36e7848f 5-7
+  s_efb9139c29a715::t_1529e3865d59ac 30-32
+  s_efb9139c29a715::t_bd1890d211e429 49-51,54-56
+  s_efb9139c29a715::t_aeb8c191bc29e2 171-175,186-193
+  s_efb9139c29a715::t_d4c5c9fde6643e 148-163,165-168
+  h_f78d33d4280f3f 26
+  s_efb9139c29a715::t_ea986f2ba7332a 223-233,245-251
+  s_efb9139c29a715::t_2bf47bc203f400 312-314
+test/openwiki-ignore.test.ts
+  s_efb9139c29a715::t_b00c4e4a5367a4 112-144,148-167
+  s_efb9139c29a715::t_67e65c67a85455 145-147
+  s_efb9139c29a715::t_f6e0096d8450bb 62-79
+src/agent/docs-only-backend.ts
+  s_efb9139c29a715::t_84fe60428443f7 337-341
+  s_efb9139c29a715::t_2cb2d3cc90c46d 316-321
+  s_efb9139c29a715::t_db63c8f17f2f79 34-38,40-45,47-53,57-69
+  s_efb9139c29a715::t_58394753fd1156 250-253
+  s_efb9139c29a715::t_91e125d83ca18b 166-169
+  s_efb9139c29a715::t_539f6e5ffd1014 190-193
+  s_efb9139c29a715::t_c028803c7cd47a 369-371,376-378
+  s_efb9139c29a715::t_4c36737946ff66 400-406
+  s_efb9139c29a715::t_14e36dc922becf 419-422
+  s_efb9139c29a715::t_b75d71e853e0e9 25-27,30-32
+  s_efb9139c29a715::t_38f9ef90ae5b52 209-212
+  s_efb9139c29a715::t_e8a5212bf0e36a 384-386
+  s_efb9139c29a715::t_f78fea26e159d3 133-135
+  s_efb9139c29a715::t_43f8be37d8056a 94-96,99-101,104-106
+  s_efb9139c29a715::t_b1eed2032b981e 146-150
+  s_efb9139c29a715::t_dc7f8c621e123a 281-284
+  s_efb9139c29a715::t_77499e542b544b 354-357
+  s_efb9139c29a715::t_b2f20b53073c95 116-118
+  s_efb9139c29a715::t_1ab4d667bcd5eb 76-92,98,103
+  s_efb9139c29a715::t_53c0ef03fdf238 230-233
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "7d8c6188e445cdbf872925419b24f68947508544",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_efb9139c29a715": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "76a2f8c8-d541-46e8-90c3-a27b8a31aa1f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

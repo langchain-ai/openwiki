@@ -1,0 +1,27 @@
+test/openwiki-ignore.test.ts
+  s_efb9139c29a715::t_0ad7f882fa82cb 80-94
+  s_efb9139c29a715::t_c6c00943f68fcc 139-153
+src/agent/openwiki-ignore.ts
+  s_efb9139c29a715::t_869dadcec062e0 63-70,77,80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "06a863ad497793a6ba2758525bf19896a8969dce",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_efb9139c29a715": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "76a2f8c8-d541-46e8-90c3-a27b8a31aa1f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
