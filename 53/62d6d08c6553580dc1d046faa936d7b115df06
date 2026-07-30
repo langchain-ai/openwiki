@@ -1,0 +1,41 @@
+evals/deepswe/tests/test_analyze_openwiki_usage.py
+  s_841f8a35235565::t_5a42690b9d75bd 128-130
+evals/deepswe/openwiki_codex.py
+  s_841f8a35235565::t_f6a437ac2b43ba 90,95,121-127,130-135,165,260,413-420
+  s_841f8a35235565::t_a59456f64992a4 184-185,301
+  s_841f8a35235565::t_3add2f4ab2f4a9 302
+evals/deepswe/deepswe_langsmith.py
+  s_841f8a35235565::t_31e6e8d7e6069b 14
+  s_841f8a35235565::t_f6a437ac2b43ba 40
+evals/deepswe/tests/test_run.py
+  s_841f8a35235565::t_3cfe1eeadfdc23 396,459,467-474,484-485
+evals/deepswe/run.py
+  s_841f8a35235565::t_f6a437ac2b43ba 49-50,171,182-183,297-298,302-304,306,308,311-313,564,575
+evals/deepswe/analyze_openwiki_usage.py
+  s_841f8a35235565::t_f6a437ac2b43ba 250-259,288-301
+evals/deepswe/README.md
+  s_841f8a35235565::t_3cfe1eeadfdc23 196
+.gitignore
+  h_33f63fd75d0bd5 22-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "5362d6d08c6553580dc1d046faa936d7b115df06",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_841f8a35235565": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f869b-e584-7aa3-9b4c-c1a5f94e7fa7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}
