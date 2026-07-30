@@ -129,6 +129,8 @@ The agent is not just a generic chat wrapper. It is intentionally constrained so
 - avoid metadata churn via the content-snapshot check,
 - support both interactive and scheduled maintenance use cases.
 
+The same agent runtime is the wiki-generation backend invoked by the [DeepSWE evaluation harness](../evals/deepswe-harness.md), which runs it in an isolated clone to produce treatment wikis for paired benchmark trials.
+
 ## Things to watch when changing agent behavior
 
 - Keep the prompt in sync with the actual filesystem tools and path conventions used by the CLI.
