@@ -13,11 +13,12 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 
 - Launches an interactive Ink-based terminal app for chatting with the OpenWiki agent.
 - Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
-- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), OpenRouter, Anthropic, Gemini (AI Studio), Gemini Enterprise (Vertex AI, keyless via Google ADC), AWS Bedrock, Nebius Token Factory, Baseten, Fireworks, NVIDIA NIM, and any OpenAI-compatible gateway — each with their own credentials and model list (Gemini Enterprise uses Google ADC instead of an API key; Bedrock uses AWS access/secret keys and region).
+- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), GitHub Copilot (via GitHub CLI), OpenRouter, Anthropic, Gemini (AI Studio), Gemini Enterprise (Vertex AI, keyless via Google ADC), AWS Bedrock, Nebius Token Factory, Baseten, Fireworks, NVIDIA NIM, and any OpenAI-compatible gateway — each with their own credentials and model list (Gemini Enterprise uses Google ADC instead of an API key; Bedrock uses AWS access/secret keys and region; Copilot uses the GitHub CLI for auth).
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
 - Optionally schedules automated updates through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
+- Ships a paired DeepSWE evaluation harness (`evals/deepswe/`) that measures OpenWiki's documentation leverage on a Codex coding agent.
 
 ## Start here
 
@@ -25,7 +26,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - [CLI usage](./cli/usage.md) — commands, options, model/provider selection, and credential bootstrap.
 - [Agent workflow](./agent/workflow.md) — how documentation runs are assembled and persisted.
 - [Credentials and updates](./operations/credentials-and-updates.md) — local env storage, metadata, and scheduled updates.
-- [Connectors](./integrations/connectors.md) — built-in connector architecture, the seven connectors, and ingestion orchestration.
+- [Connectors](./integrations/connectors.md) — built-in connector architecture, the eight connectors, and ingestion orchestration.
+- [DeepSWE evaluation harness](./evals/deepswe-harness.md) — paired DeepSWE benchmark harness that measures OpenWiki's documentation leverage on Codex.
 
 ## Key source files
 
@@ -44,7 +46,16 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/auth/configure.ts` — `openwiki auth configure <provider>` flow for creating local connector configs.
 - `src/auth/ngrok.ts` — Slack HTTPS callback tunnel via ngrok.
 - `src/auth/tokens.ts` — token refresh and validation helpers for connector OAuth.
-- `src/connectors/` — connector registry, MCP client/runtime, source-specific ingestion (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions.
+- `src/agent/okf-middleware.ts` — OKF front-matter migration and index synchronization middleware.
+- `src/agent/translation-middleware.ts` — wiki translation middleware for output-language switching.
+- `src/agent/vertex-surface.ts` — Vertex AI model routing for the gemini-enterprise provider.
+- `src/agent/skills.ts` — bundles and syncs the `/skills/` directory into the agent runtime.
+- `src/external-cli-auth.ts` — GitHub CLI-based credential resolution for the copilot provider.
+- `src/diagnostics.ts` — secret redaction and credential diagnostics.
+- `src/okf/` — OKF front-matter validation, index-label localization, and deterministic index synchronization.
+- `src/mermaid/` — Mermaid fence extraction, validation, and wiki repair.
+- `src/telemetry/` — anonymous usage telemetry with PostHog, opt-out, and CI sentinel IDs.
+- `src/connectors/` — connector registry, MCP client/runtime, source-specific ingestion (git-repo, gmail, hackernews, langsmith, slack, web-search, x), and tool definitions.
 - `src/ingestion.ts` — orchestrates source ingestion runs across configured connectors.
 - `src/code-mode.ts` — `openwiki code` setup: creates the GitHub Actions workflow only when missing (preserving customizations on update) and refreshes AGENTS.md/CLAUDE.md snippets.
 - `src/env.ts` — `~/.openwiki/.env` persistence and credential diagnostics.
@@ -53,6 +64,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `examples/openwiki-update.yml` — GitHub Actions scheduled automation example.
 - `examples/openwiki-update.gitlab-ci.yml` — GitLab CI scheduled automation example.
 - `examples/openwiki-update.bitbucket-pipelines.yml` — Bitbucket Pipelines scheduled automation example.
+- `evals/deepswe/run.py` — paired DeepSWE evaluation harness entrypoint (see [DeepSWE evaluation harness](./evals/deepswe-harness.md)).
 
 ## Documentation map
 
@@ -61,13 +73,14 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - [Agent](./agent/workflow.md)
 - [Operations](./operations/credentials-and-updates.md)
 - [Connectors](./integrations/connectors.md)
+- [DeepSWE evaluation harness](./evals/deepswe-harness.md)
 
 ## Notes for future agents
 
 - The repository is intentionally focused: the main product surface is the CLI plus the documentation-generation agent.
 - Treat `openwiki/` in this repo as generated documentation output from a future OpenWiki run, not as application source.
 - When changing behavior, verify both the CLI parser and the agent prompt/runtime, because user-visible semantics are split across `src/commands.ts`, `src/cli.tsx`, and `src/agent/*`.
-- Provider support is centralized in `src/constants.ts`. Adding or changing a provider means updating `PROVIDER_CONFIGS`, the `OpenWikiProvider` type, the `SELECTABLE_OPENWIKI_PROVIDERS` list, and the model-creation branch in `src/agent/index.ts`. OAuth-based providers also need an entry in `src/auth/` if they use browser-login flows. Providers without an API key (like `gemini-enterprise`) declare their required env keys (e.g. `projectEnvKey`) in `PROVIDER_CONFIGS` and are gated by `getMissingProviderEnvKey()` instead.
+- Provider support is centralized in `src/constants.ts`. Adding or changing a provider means updating `PROVIDER_CONFIGS`, the `OpenWikiProvider` type, the `SELECTABLE_OPENWIKI_PROVIDERS` list, and the model-creation branch in `src/agent/index.ts`. OAuth-based providers also need an entry in `src/auth/` if they use browser-login flows. Providers without an API key (like `gemini-enterprise`) declare their required env keys (e.g. `projectEnvKey`) in `PROVIDER_CONFIGS` and are gated by `getMissingProviderEnvKey()` instead. External-CLI-auth providers (like `copilot`) declare `authMethod: "external-cli"` and an `externalCliAuthAdapter`, with the login flow handled in `src/external-cli-auth.ts`. AWS SDK providers (like `bedrock`) declare `authMethod: "aws-sdk"` and delegate credential resolution to the AWS SDK chain.
 
 ## Source map
 
@@ -97,6 +110,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/connectors/sources/git-repo.ts`
 - `src/connectors/sources/gmail.ts`
 - `src/connectors/sources/hackernews.ts`
+- `src/connectors/sources/langsmith/` (api.ts, index.ts, repo-config.ts, runs.ts, setup.ts, types.ts)
 - `src/connectors/sources/mcp.ts`
 - `src/connectors/sources/slack.ts`
 - `src/connectors/sources/web-search.ts`
@@ -106,7 +120,11 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/env.ts`
 - `src/credentials.tsx`
 - `src/constants.ts`
+- `src/external-cli-auth.ts`
+- `src/diagnostics.ts`
+- `src/okf/` (frontmatter.ts, index-labels.ts, index-sync.ts)
+- `src/mermaid/` (dom-shim.ts, fences.ts, validate.ts, wiki.ts)
+- `src/telemetry/`
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
 - `examples/openwiki-update.bitbucket-pipelines.yml`
-- Git evidence: commits `ceded10`, `f89b05d`, `a82759f`, `dfa73cc`, `fd3a702`, `8278c36`, `0fa1430`

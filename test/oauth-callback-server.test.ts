@@ -46,6 +46,8 @@ describe("createCallbackServer", () => {
     const callback = await createCallbackServer(getAuthProvider("gmail"));
 
     try {
+      expect(callback.redirectUri).toBe(`http://127.0.0.1:${port}/callback`);
+
       const codePromise = callback.waitForCode("expected-state");
       const redirect = await fetch(
         `http://127.0.0.1:${port}/callback?code=test-code&state=expected-state`,
@@ -53,6 +55,61 @@ describe("createCallbackServer", () => {
 
       expect(redirect.status).toBe(200);
       await expect(codePromise).resolves.toBe("test-code");
+    } finally {
+      await callback.close();
+    }
+  });
+
+  test("ignores non-callback requests without rejecting the pending flow", async () => {
+    const callback = await createCallbackServer(getAuthProvider("gmail"));
+
+    try {
+      const codePromise = callback.waitForCode("expected-state");
+      const strayRequest = await fetch(`http://127.0.0.1:${port}/favicon.ico`);
+
+      expect(strayRequest.status).toBe(404);
+      await expect(
+        fetch(
+          `http://127.0.0.1:${port}/callback?code=test-code&state=expected-state`,
+        ),
+      ).resolves.toMatchObject({ status: 200 });
+      await expect(codePromise).resolves.toBe("test-code");
+    } finally {
+      await callback.close();
+    }
+  });
+
+  test("rejects a callback request that is missing code or state", async () => {
+    const callback = await createCallbackServer(getAuthProvider("gmail"));
+
+    try {
+      const codePromise = callback.waitForCode("expected-state");
+      const codeRejection = expect(codePromise).rejects.toThrow(
+        "OAuth callback was missing code or state.",
+      );
+      const redirect = await fetch(`http://127.0.0.1:${port}/callback`);
+
+      expect(redirect.status).toBe(400);
+      await codeRejection;
+    } finally {
+      await callback.close();
+    }
+  });
+
+  test("rejects a callback request with a provider error", async () => {
+    const callback = await createCallbackServer(getAuthProvider("gmail"));
+
+    try {
+      const codePromise = callback.waitForCode("expected-state");
+      const codeRejection = expect(codePromise).rejects.toThrow(
+        "OAuth provider returned error: access_denied",
+      );
+      const redirect = await fetch(
+        `http://127.0.0.1:${port}/callback?error=access_denied`,
+      );
+
+      expect(redirect.status).toBe(400);
+      await codeRejection;
     } finally {
       await callback.close();
     }
@@ -83,7 +140,7 @@ describe("createCallbackServer", () => {
     await closePromise;
 
     const response = Buffer.concat(chunks).toString();
-    expect(response).toMatch(/^HTTP\/1\.1 400 /);
-    expect(response).toContain("missing required data");
+    expect(response).toMatch(/^HTTP\/1\.1 404 /);
+    expect(response).toContain("waiting for /callback");
   });
 });

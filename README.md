@@ -261,6 +261,20 @@ OPENWIKI_MODEL_ID="gpt-5.5"
 
 In CI (such as the scheduled GitHub Actions workflow), set the `COPILOT_API_KEY` repository secret and export `OPENWIKI_PROVIDER=copilot` in the workflow environment.
 
+### Ignoring paths
+
+Create a `.openwikiignore` file in the repository root to keep generated docs from reading or describing private, generated, or irrelevant paths. The syntax supports comments, blank lines, `*` and `**` globs, directory rules, and `!` negation:
+
+```gitignore
+secrets/
+*.log
+!logs/keep.log
+```
+
+When `.openwikiignore` has active rules, OpenWiki filters filesystem discovery and restricts shell execute so ignored paths stay out of the run.
+
+This is a read boundary: ignored paths are never read, scanned, or reproduced in the generated docs. It does not guarantee a topic will never be mentioned, since the agent may still infer an ignored area from other allowed evidence such as tests, the README, commit messages, or the existing wiki.
+
 ### Alternative base URLs
 
 To route the Anthropic provider at an alternative, Anthropic-compatible endpoint
@@ -313,6 +327,20 @@ OPENWIKI_PROVIDER=openai-compatible
 OPENAI_COMPATIBLE_API_KEY=your-gateway-key
 OPENAI_COMPATIBLE_BASE_URL=https://your-gateway.example.com/v1
 OPENWIKI_MODEL_ID=your-gateway-model-name
+```
+
+Hosted OpenAI-compatible gateways work the same way. For example,
+[Requesty](https://requesty.ai) is a hosted gateway that fronts many upstream
+providers behind one OpenAI-compatible API at `https://router.requesty.ai/v1`,
+using `provider/model` model IDs (see the full list at
+`https://router.requesty.ai/v1/models`):
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=your-requesty-key
+OPENAI_COMPATIBLE_BASE_URL=https://router.requesty.ai/v1
+OPENWIKI_MODEL_ID=openai/gpt-5.5
+openwiki --init
 ```
 
 Local LLM servers that expose OpenAI-compatible chat completions use the same
