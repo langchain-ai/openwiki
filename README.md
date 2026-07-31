@@ -330,16 +330,16 @@ When `.openwikiignore` has active rules, OpenWiki filters filesystem discovery a
 ## Command reference
 
 ```sh
-openwiki                    # interactive chat, code mode, current repo
-openwiki personal           # interactive chat, personal brain
-openwiki "generate docs"    # start with an initial request
+openwiki                         # interactive chat, code mode, current repo
+openwiki personal                # interactive chat, personal brain
+openwiki "generate docs"         # start with an initial request
 openwiki -p "what can you do?"   # one-shot, print, and exit
-openwiki --init             # initialize code docs (personal: openwiki personal --init)
-openwiki --update           # update code docs (personal: openwiki personal --update)
-openwiki visualize          # interactive graph + live reader
-openwiki auth <provider>    # authenticate a connector (slack, gmail, x, notion)
-openwiki ingest <source>    # run connector ingestion (all, or a connector/instance)
-openwiki --help             # full help
+openwiki --init                  # initialize code docs (personal: openwiki personal --init)
+openwiki --update                # update code docs (personal: openwiki personal --update)
+openwiki visualize               # interactive graph + live reader
+openwiki auth <provider>         # authenticate a connector (slack, gmail, x, notion)
+openwiki ingest <source>         # run connector ingestion (all, or a connector/instance)
+openwiki --help                  # full help
 ```
 
 In chat, `/api-key` updates the current provider key and `/langsmith-key` updates or clears LangSmith tracing credentials, both with masked prompts.
