@@ -28,11 +28,6 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 - **Self-updating** through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
 - **Open Knowledge Format** ([OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)) output with validated Mermaid diagrams.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./static/architecture-dark.png">
-  <img alt="How OpenWiki works: sources feed the agent, which writes a living wiki read by agents and humans, kept fresh by CI." src="./static/architecture-light.png">
-</picture>
-
 ## Quick start
 
 Install the CLI:
