@@ -28,6 +28,16 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 - **Self-updating** through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
 - **Open Knowledge Format** ([OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)) output with validated Mermaid diagrams.
 
+## 🎉 What's new
+
+- **[Interactive visualizer](#explore-your-wiki):** turn any wiki into a live, explorable node graph with a side-by-side Markdown reader.
+- **[`.openwikiignore`](#ignoring-paths):** keep generated, private, or irrelevant paths out of doc runs with familiar gitignore-style rules.
+- **Multilingual wikis:** generate docs in another language with `--language <locale>`, while code and identifiers stay canonical.
+- **LangSmith connector:** pull recent LangSmith traces (tool calls, outcomes, latency) into a code wiki.
+- **GitHub Copilot provider:** reuse an existing Copilot subscription for inference, no separate API key required.
+
+See the [changelog](./CHANGELOG.md) for the full history.
+
 ## Quick start
 
 Install the CLI:
