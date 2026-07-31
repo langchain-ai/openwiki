@@ -3,6 +3,7 @@ src/agent/prompt.ts
   s_d80d23df626cc1::t_4687da58974886 348
 src/agent/active-run.ts
   h_f78d33d4280f3f 1-34,36-66
+  s_d80d23df626cc1::t_8501dde9be80e0 35
 src/agent/types.ts
   h_f78d33d4280f3f 44
   s_d80d23df626cc1::t_5cb4201adc3d0c 49-67
@@ -10,15 +11,21 @@ src/crash-guard.ts
   h_f78d33d4280f3f 1-57
 src/telemetry/errors.ts
   h_f78d33d4280f3f 80,82-83,198-199,202,220-222,228,429
+  s_d80d23df626cc1::t_f05ad8b5703eaf 132-136
+  s_d80d23df626cc1::t_c7068109e3555a 77-79,81
 src/cli.tsx
   s_d80d23df626cc1::t_94e15955c1d028 4262-4269
   h_f78d33d4280f3f 103-105,294,465-466,566-570,4186-4191,4212,4261,4270-4273,4279-4280
   s_d80d23df626cc1::t_7a0025a3dd4b0b 89-92,94
+  s_d80d23df626cc1::t_70f80ab437eb70 630
 src/agent/index.ts
   h_f78d33d4280f3f 132-133,135-139,315,326-333,452,490-493,537
   s_d80d23df626cc1::t_ae17f2d5d126c0 518-522,525-526
   s_d80d23df626cc1::t_2228b74cd8af7b 523-524
   s_d80d23df626cc1::t_8684092bd3d548 63
+  s_d80d23df626cc1::t_3fa907ffcd1876 324-325
+  s_d80d23df626cc1::t_1456a57bb89d8a 461-463
+  s_d80d23df626cc1::t_8501dde9be80e0 134
 test/telemetry-errors.test.ts
   s_d80d23df626cc1::t_da1af267dd898d 3-6,29-31,44-46,68-70
   s_d80d23df626cc1::t_ac5feec4dafa42 1-2,7-28,32-43,47-67,71
@@ -33,6 +40,8 @@ test/truncation-monitor.test.ts
   s_d80d23df626cc1::t_9ea9a9cd1721d8 1-66,71-94
 test/agent-run-options.test.ts
   s_d80d23df626cc1::t_bacd6c1e04a752 1-21
+src/telemetry/taxonomy.ts
+  s_d80d23df626cc1::t_a91e6d1cc30f29 46-48
 ---
 {
   "schema_version": "authorship/3.0.0",
