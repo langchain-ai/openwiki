@@ -13,6 +13,7 @@ import {
   CompositeBackend,
   createDeepAgent,
   FilesystemBackend,
+  type FilesystemPermission,
 } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
@@ -23,7 +24,11 @@ import {
 } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
-import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
+import {
+  openWikiConversationHistoryDir,
+  openWikiLocalWikiDir,
+  openWikiSkillsDir,
+} from "../openwiki-home.js";
 import { resolveLanguage } from "../language.js";
 import {
   resolveConceptTypeLabel,
@@ -301,12 +306,7 @@ async function runOpenWikiAgentCore(
     timeout: 120,
     virtualMode: true,
   });
-  const backend = new CompositeBackend(wikiBackend, {
-    "/skills/": new FilesystemBackend({
-      rootDir: openWikiSkillsDir,
-      virtualMode: true,
-    }),
-  });
+  const backend = createAgentBackend(wikiBackend);
   // An update inherits the wiki's persisted language unless --language requests a
   // different one. The plan drives a beforeAgent pass that, on a switch,
   // retranslates every page so the incremental update does not leave a mix of the
@@ -368,9 +368,7 @@ async function runOpenWikiAgentCore(
             ),
           ],
     skills: ["/skills/"],
-    permissions: [
-      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
-    ],
+    permissions: AGENT_FILESYSTEM_PERMISSIONS,
     systemPrompt: createSystemPrompt(
       command,
       outputMode,
@@ -557,6 +555,67 @@ export function formatRuntimeRootInstruction(
   }
 
   return "Filesystem tools use a virtual root: / means the repository root. The generated repository wiki lives under /openwiki, for example /openwiki/quickstart.md and /openwiki/architecture/overview.md. Inspect source files from repository-root paths such as /README.md, /src/agent/index.ts, and /package.json.";
+}
+
+/**
+ * deepagents' summarization middleware offloads conversation history to
+ * `<historyPathPrefix>/<session>.md` through the agent's backend, and
+ * `createDeepAgent` exposes no way to override the `"/conversation_history"`
+ * default. Keep this mount prefix in sync with that default.
+ */
+export const CONVERSATION_HISTORY_MOUNT = "/conversation_history/";
+
+/**
+ * Agent-layer filesystem permissions. Both virtual mounts are read-only for
+ * the model's filesystem tools:
+ *
+ * - `/skills/**` — skills are installed by the CLI, never by the agent.
+ * - `/conversation_history/**` — only the summarization middleware may
+ *   write here. It writes directly through the backend, which agent-layer
+ *   permissions do not affect, so denying tool writes closes the door on
+ *   prompt-injected content being persisted into future sessions' context
+ *   without touching the offload itself.
+ */
+export const AGENT_FILESYSTEM_PERMISSIONS: FilesystemPermission[] = [
+  { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
+  {
+    operations: ["write"],
+    paths: [`${CONVERSATION_HISTORY_MOUNT}**`],
+    mode: "deny",
+  },
+];
+
+/**
+ * Wraps the wiki backend with the virtual mounts every agent run layers on
+ * top of the documented repository (or local wiki):
+ *
+ * - `/skills/` — the bundled and user skills under ~/.openwiki/skills.
+ * - `/conversation_history/` — the summarization middleware's history
+ *   offload, routed to ~/.openwiki/conversation_history. Routing it there
+ *   keeps the offload out of the documented repository and, on docs-only
+ *   init/update runs, keeps the docs-only guard from refusing the write —
+ *   that refusal is non-fatal but silently degrades summarization and
+ *   narrows coverage on large repositories (#496).
+ *
+ * `historyDir` and `skillsDir` are injectable for tests.
+ */
+export function createAgentBackend(
+  wikiBackend: OpenWikiLocalShellBackend,
+  {
+    historyDir = openWikiConversationHistoryDir,
+    skillsDir = openWikiSkillsDir,
+  }: { historyDir?: string; skillsDir?: string } = {},
+): CompositeBackend {
+  return new CompositeBackend(wikiBackend, {
+    [CONVERSATION_HISTORY_MOUNT]: new FilesystemBackend({
+      rootDir: historyDir,
+      virtualMode: true,
+    }),
+    "/skills/": new FilesystemBackend({
+      rootDir: skillsDir,
+      virtualMode: true,
+    }),
+  });
 }
 
 async function createCheckpointer(
