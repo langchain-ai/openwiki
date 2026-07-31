@@ -20,7 +20,33 @@ type ExternalCliAuthAdapterConfig = {
   command: string;
   commandArgs: readonly string[];
   tokenArgs: readonly string[];
+  /**
+   * Interprets the output of {@link ExternalCliAuthAdapterConfig.tokenArgs}.
+   * Defaults to "any non-empty output is the credential", which suits CLIs
+   * that print a bare token. Adapters whose status command always prints
+   * something — even when logged out — must override this, or a signed-out
+   * CLI is reported as authenticated.
+   */
+  parseCredential?: (stdout: string) => string | null;
 };
+
+/**
+ * `claude auth status` prints a JSON document whether or not a session exists,
+ * so presence of output proves nothing. Gate on the `loggedIn` flag instead.
+ *
+ * Unlike the GitHub CLI adapter, the returned value is a marker rather than a
+ * usable secret: the Claude Code session stays inside the CLI and the Agent
+ * SDK reads it directly when OpenWiki spawns it. Nothing is ever extracted or
+ * persisted.
+ */
+function parseClaudeCliStatus(stdout: string): string | null {
+  try {
+    const status = JSON.parse(stdout) as { loggedIn?: unknown };
+    return status.loggedIn === true ? "claude-code-session" : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * `gh`'s `--hostname` flag must match the tenant a provider's base URL
@@ -53,6 +79,17 @@ function buildExternalCliAuthAdapters(
   const githubHostname = resolveGithubCliHostname(provider, env);
 
   return {
+    "claude-cli": {
+      command: "claude",
+      commandArgs: ["auth", "login"],
+      credentialDescription: "Claude Code session",
+      installHint:
+        "Install Claude Code (https://claude.com/claude-code), then run `claude auth login`.",
+      loginCommand: "claude auth login",
+      name: "Claude Code CLI",
+      parseCredential: parseClaudeCliStatus,
+      tokenArgs: ["auth", "status"],
+    },
     "github-cli": {
       command: "gh",
       commandArgs: ["auth", "login", "--hostname", githubHostname],
@@ -118,6 +155,10 @@ export async function detectExternalCliCredential(
     const { stdout } = await execFileAsync(adapter.command, adapter.tokenArgs, {
       timeout: EXTERNAL_CLI_TIMEOUT_MS,
     });
+    if (adapter.parseCredential) {
+      return adapter.parseCredential(stdout);
+    }
+
     const credential = stdout.trim();
 
     return credential.length > 0 ? credential : null;

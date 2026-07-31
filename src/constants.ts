@@ -88,6 +88,7 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "bedrock"
+  | "claude-code"
   | "copilot"
   | "fireworks"
   | "gemini"
@@ -113,7 +114,7 @@ export type ProviderAuthMethod =
  * login. The provider config only declares the adapter; its implementation
  * lives outside this declarative provider registry.
  */
-export type ExternalCliAuthAdapter = "github-cli";
+export type ExternalCliAuthAdapter = "claude-cli" | "github-cli";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -219,6 +220,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
   "anthropic",
+  "claude-code",
   "copilot",
   "gemini",
   "gemini-enterprise",
@@ -255,6 +257,22 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     regionEnvKey: BEDROCK_AWS_REGION_ENV_KEY,
     regionFallbackEnvKeys: [AWS_REGION_ENV_KEY, AWS_DEFAULT_REGION_ENV_KEY],
     requiresRegion: true,
+  },
+  "claude-code": {
+    // Deliberately keyless: inference is routed through the local Claude Code
+    // CLI, which carries its own session. This is the point of the provider —
+    // it serves teams whose plan does not permit creating API keys. There is
+    // no CI fallback key because the CLI must be installed and logged in.
+    authMethod: "external-cli",
+    externalCliAuthAdapter: "claude-cli",
+    label: "Claude Code (local CLI)",
+    modelOptions: [
+      { id: "claude-opus-5", label: "Claude Opus 5" },
+      { id: "claude-fable-5", label: "Claude Fable 5" },
+      { id: "claude-sonnet-5", label: "Claude Sonnet 5" },
+      { id: "claude-opus-4-8", label: "Claude Opus 4.8" },
+      { id: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
+    ],
   },
   copilot: {
     apiKeyEnvKey: COPILOT_API_KEY_ENV_KEY,

@@ -219,7 +219,29 @@ notes.
 
 ## Customizing
 
-OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic, and GitHub Copilot out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+OpenWiki supports OpenAI (with an API key or a ChatGPT login), OpenRouter, Gemini (AI Studio), Gemini Enterprise (Vertex AI), Nebius Token Factory, Fireworks, Baseten, NVIDIA NIM, an OpenAI-compatible provider, AWS Bedrock, Anthropic (with an API key or a Claude Code login), and GitHub Copilot out of the box. The onboarding default is OpenAI with `gpt-5.6-terra`, and each inference provider also includes pre-defined model options plus support for custom model IDs.
+
+### Claude Code (local CLI)
+
+The `claude-code` provider routes inference through the [Claude Code](https://claude.com/claude-code) CLI installed on your machine, reusing its existing session instead of an Anthropic API key. This is aimed at Claude Team and Enterprise members whose plan does not let them create API keys, and at anyone who would rather spend an existing Claude Code seat than provision separate API credit.
+
+1. Install Claude Code and run `claude auth login`.
+2. Select `Claude Code (local CLI)` as the provider during `openwiki --init`. OpenWiki detects the existing session automatically; press <kbd>Tab</kbd> at the credential prompt to run `claude auth login` if you are not signed in yet.
+3. Choose a model (for example `claude-opus-5`).
+
+The resulting configuration is entirely keyless:
+
+```env
+OPENWIKI_PROVIDER="claude-code"
+OPENWIKI_MODEL_ID="claude-opus-5"
+```
+
+Two things are worth knowing before you pick this provider:
+
+- **The session stays in the CLI.** OpenWiki never reads, copies, or persists a Claude Code token — it spawns the CLI through the Claude Agent SDK and lets the SDK use whatever session is already there. Nothing is written to `~/.openwiki/.env`.
+- **It is interactive-only, and slower.** The Agent SDK accepts user messages but cannot replay prior assistant turns, so each agent step re-sends the transcript rather than resuming a session. Claude Code's prompt cache absorbs most of the repeated cost, but expect a wiki build to be slower than the `anthropic` provider and to draw on your subscription's rate limits. For CI, use `anthropic` with an API key.
+
+Claude Code's own tools are disabled for these runs and its project settings (`CLAUDE.md`, settings files) are not loaded, so the wiki is generated from OpenWiki's prompts and DeepAgents' virtual filesystem backend alone.
 
 ### GitHub Copilot
 

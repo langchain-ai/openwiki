@@ -630,18 +630,21 @@ describe("getDefaultModelId", () => {
 
 describe("getProvidersForKnownModelId", () => {
   test("finds the provider(s) whose known models include the id", () => {
-    // claude-opus-4-8 is a known model of both anthropic and the
-    // gemini-enterprise gateway, which also serves Claude models.
+    // claude-opus-4-8 is a known model of anthropic, the claude-code CLI
+    // bridge, and the gemini-enterprise gateway, which also serves Claude
+    // models.
     expect(getProvidersForKnownModelId("claude-opus-4-8", "openai")).toEqual([
+      "claude-code",
       "anthropic",
       "gemini-enterprise",
     ]);
   });
 
   test("excludes the provider passed in", () => {
-    // Excluding anthropic still leaves gemini-enterprise, which also lists it.
+    // Excluding anthropic still leaves claude-code and gemini-enterprise,
+    // which also list it.
     expect(getProvidersForKnownModelId("claude-opus-4-8", "anthropic")).toEqual(
-      ["gemini-enterprise"],
+      ["claude-code", "gemini-enterprise"],
     );
   });
 

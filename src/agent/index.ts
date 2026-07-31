@@ -34,6 +34,7 @@ import {
   resolveConceptTypeLabel,
   resolveIndexLabels,
 } from "../okf/index-labels.js";
+import { ChatClaudeCode } from "./claude-code-model.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
 import {
@@ -915,6 +916,15 @@ export function createModel(
       location,
       retryOptions,
     );
+  }
+
+  if (provider === "claude-code") {
+    // Keyless by design: the local Claude Code CLI carries the session, so
+    // there is no API key to resolve or base URL to override.
+    return new ChatClaudeCode({
+      model: modelId,
+      ...retryOptions,
+    });
   }
 
   if (provider === "anthropic") {
