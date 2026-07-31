@@ -497,6 +497,7 @@ describe("runPrintCommand", () => {
 
     await runPrintCommand(
       makeCommand("run", {
+        agentFilesPolicy: null,
         command: "update",
         dryRun: false,
         language: null,
@@ -521,6 +522,7 @@ describe("runPrintCommand", () => {
 
     await runPrintCommand(
       makeCommand("run", {
+        agentFilesPolicy: null,
         command: "init",
         dryRun: false,
         language: null,
@@ -536,6 +538,7 @@ describe("runPrintCommand", () => {
     );
 
     expect(ensureCodeModeRepoSetup).toHaveBeenCalledWith(expect.any(String), {
+      agentFilesPolicy: null,
       createWorkflow: true,
     });
     expect(runCodeModeConnectors).toHaveBeenCalled();
@@ -555,6 +558,7 @@ describe("runPrintCommand", () => {
 
     await runPrintCommand(
       makeCommand("run", {
+        agentFilesPolicy: null,
         command: "update",
         dryRun: false,
         language: null,

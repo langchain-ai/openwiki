@@ -52,6 +52,7 @@ import { getDisplayModelId, isExitMessage } from "../format.js";
 import { appendRunLogEvent } from "../run-log/reducer.js";
 import type { RunLogItem } from "../run-log/types.js";
 import {
+  getCodeModeRepoSetupOptions,
   getRunModeCwd,
   getRunModeOutputMode,
   shouldAutoExitStartupRun,
@@ -431,9 +432,13 @@ export function App({ command }: AppProps) {
       telemetryContext,
       async () => {
         if (runMode === "code") {
-          await ensureCodeModeRepoSetup(runtimeCwd, {
-            createWorkflow: resolvedCommand === "init",
-          });
+          await ensureCodeModeRepoSetup(
+            runtimeCwd,
+            getCodeModeRepoSetupOptions({
+              ...command,
+              command: resolvedCommand,
+            }),
+          );
         }
 
         await scheduler.yield();

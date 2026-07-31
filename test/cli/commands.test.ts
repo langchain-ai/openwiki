@@ -70,6 +70,10 @@ describe("parseCommand — help", () => {
   test("help documents the output language option", () => {
     expect(getHelpText()).toContain("-l, --language <locale>");
   });
+
+  test("help documents the root agent-file opt-out", () => {
+    expect(getHelpText()).toContain("--agent-files-policy <manage|preserve>");
+  });
 });
 
 describe("parseCommand — chat default", () => {
@@ -85,6 +89,7 @@ describe("parseCommand — chat default", () => {
       userMessage: null,
       print: false,
       dryRun: false,
+      agentFilesPolicy: null,
       modelId: null,
     });
   });
@@ -288,6 +293,67 @@ describe("parseCommand — init/update", () => {
 
   test("repeating the same command flag is allowed", () => {
     expect(parseCommand(["personal", "--init", "--init"]).kind).toBe("run");
+  });
+
+  for (const [name, argv, command] of [
+    ["chat", ["code", "--agent-files-policy", "preserve"], "chat"],
+    ["init", ["code", "--init", "--agent-files-policy", "preserve"], "init"],
+    [
+      "update",
+      ["code", "--update", "--agent-files-policy", "preserve"],
+      "update",
+    ],
+  ] as const) {
+    test(`--agent-files-policy applies to the ${name} command`, () => {
+      expect(parseCommand([...argv])).toMatchObject({
+        agentFilesPolicy: "preserve",
+        command,
+        kind: "run",
+        mode: "code",
+      });
+    });
+  }
+
+  test("--agent-files-policy accepts the equals form and explicit manage policy", () => {
+    expect(
+      parseCommand(["--update", "--agent-files-policy=manage"]),
+    ).toMatchObject({
+      agentFilesPolicy: "manage",
+      command: "update",
+      kind: "run",
+      mode: "code",
+    });
+  });
+
+  test("--agent-files-policy requires a policy", () => {
+    expect(parseCommand(["--update", "--agent-files-policy"])).toMatchObject({
+      kind: "error",
+      message: "--agent-files-policy requires manage or preserve.",
+    });
+  });
+
+  test("--agent-files-policy rejects an unknown policy", () => {
+    expect(
+      parseCommand(["--update", "--agent-files-policy", "ignore"]),
+    ).toMatchObject({
+      kind: "error",
+      message:
+        "Invalid --agent-files-policy value: ignore. Expected manage or preserve.",
+    });
+  });
+
+  test("--agent-files-policy is rejected in personal mode", () => {
+    expect(
+      parseCommand([
+        "personal",
+        "--update",
+        "--agent-files-policy",
+        "preserve",
+      ]),
+    ).toMatchObject({
+      kind: "error",
+      message: "--agent-files-policy is only available in code mode.",
+    });
   });
 });
 
