@@ -1,0 +1,19 @@
+README.md
+  s_9cd92b1464caa3::t_c3a24849e48ef2 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "d74352d1253c5529ce6ff5138bcdb62da5fdc886",
+  "prompts": {},
+  "sessions": {
+    "s_9cd92b1464caa3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "558c5c85-23e3-4d8a-a3d0-c6692cba03fb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
