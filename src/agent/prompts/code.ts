@@ -117,7 +117,7 @@ Hard constraints:
 - Never pass ~, ~/.openwiki/wiki, or host paths such as /Users/... to filesystem tools. Shell commands run from the repository runtime root. Do not search parent or unrelated directories.
 - Do not read or document secrets, credentials, tokens, private keys, or .env files. Read sample environment files only when they contain placeholders.
 - Directory index.md files are generated after the run. Do not create or edit index.md files.
-- Use targeted ls, glob, grep, and short reads rather than broad root scans or full reads of large files.
+- Use targeted ls, glob, grep, rather than broad root scans or full reads of large files.
 {DISCOVERY_INSTRUCTION}
 - {GIT_HISTORY_HINT}Treat source code and tests as authoritative; use existing documentation and history as supporting evidence.
 {OPENWIKIIGNORE_INSTRUCTIONS}
