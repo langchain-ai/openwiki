@@ -30,8 +30,8 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 
 ## 🎉 What's new
 
-- **[Interactive visualizer](#explore-your-wiki):** turn any wiki into a live, explorable node graph with a side-by-side Markdown reader.
-- **[`.openwikiignore`](#ignoring-paths):** keep generated, private, or irrelevant paths out of doc runs with familiar gitignore-style rules.
+- **Interactive visualizer:** turn any wiki into a live, explorable node graph with a side-by-side Markdown reader.
+- **`.openwikiignore`:** keep generated, private, or irrelevant paths out of doc runs with familiar gitignore-style rules.
 - **Multilingual wikis:** generate docs in another language with `--language <locale>`, while code and identifiers stay canonical.
 - **LangSmith connector:** pull recent LangSmith traces (tool calls, outcomes, latency) into a code wiki.
 - **GitHub Copilot provider:** reuse an existing Copilot subscription for inference, no separate API key required.
@@ -124,6 +124,21 @@ Connector secrets are referenced by env var name and stored in `~/.openwiki/.env
 **Slack OAuth tunnel.** `openwiki ngrok start` starts an ngrok tunnel with a random HTTPS forwarding URL, reads ngrok's local inspection API, appends `/callback`, and saves `OPENWIKI_HTTPS_OAUTH_REDIRECT_URI` automatically. Register the printed callback URL in Slack. With a fixed domain, run `openwiki ngrok start https://<your-ngrok-domain>`.
 
 </details>
+
+### LangSmith connector (code mode)
+
+The connectors above feed a `personal` wiki. The **LangSmith** connector instead enriches a `code` wiki: it pulls recent LangSmith traces (tool calls, outcomes, and latency) for the projects you choose through the official LangSmith SDK, so a repository's docs reflect how its code actually behaves at runtime, not just what the source says.
+
+Configure it during `openwiki --init` in `code` mode. From the source menu, add LangSmith, pick your workspace region (US or EU), and list the projects to document. OpenWiki writes a committed `openwiki/.langsmith.json` that names the workspaces and projects (never the key itself), so every teammate and CI run documents the same set. The API key is read from the environment:
+
+```sh
+OPENWIKI_LANGSMITH_API_KEY="<your-langsmith-key>"
+```
+
+Locally the setup wizard saves this to `~/.openwiki/.env`. In CI, set it as a repository secret and export it for the run.
+
+> [!NOTE]
+> A LangSmith key is workspace- and region-bound. To document projects across more than one workspace, add an entry per workspace, each with its own key named `OPENWIKI_LANGSMITH_API_KEY_2`, `OPENWIKI_LANGSMITH_API_KEY_3`, and so on. The connector only talks to the official US (`api.smith.langchain.com`) and EU (`eu.api.smith.langchain.com`) hosts.
 
 ## How it stays yours
 
