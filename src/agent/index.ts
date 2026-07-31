@@ -160,7 +160,11 @@ export async function runOpenWikiAgent(
   );
 
   if (command === "update" && shouldCheckUpdateNoop(options)) {
-    const noopStatus = await getUpdateNoopStatus(cwd, openWikiIgnore);
+    const noopStatus = await getUpdateNoopStatus(
+      cwd,
+      openWikiIgnore,
+      options.language,
+    );
 
     if (noopStatus.shouldSkip) {
       const message =
