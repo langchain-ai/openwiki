@@ -12,7 +12,11 @@ import {
 import { startNgrokTunnel } from "./auth/ngrok.js";
 import { runVisualizeServer } from "./visualize/server.js";
 import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
-import { ensureCodeModeRepoSetup, runCodeModeConnectors } from "./code-mode.js";
+import {
+  createCodeModeRepoSetupOptions,
+  ensureCodeModeRepoSetup,
+  runCodeModeConnectors,
+} from "./code-mode.js";
 import {
   commandEmitsTelemetry,
   helpContent,
@@ -646,9 +650,13 @@ function App({ command }: AppProps) {
       telemetryContext,
       async () => {
         if (runMode === "code") {
-          await ensureCodeModeRepoSetup(runtimeCwd, {
-            createWorkflow: resolvedCommand === "init",
-          });
+          await ensureCodeModeRepoSetup(
+            runtimeCwd,
+            createCodeModeRepoSetupOptions(
+              resolvedCommand,
+              command.agentFilesPolicy,
+            ),
+          );
         }
 
         await scheduler.yield();
@@ -4232,9 +4240,13 @@ async function runPrintCommand(
       telemetryContext,
       async () => {
         if (command.mode === "code") {
-          await ensureCodeModeRepoSetup(runtimeCwd, {
-            createWorkflow: command.command === "init",
-          });
+          await ensureCodeModeRepoSetup(
+            runtimeCwd,
+            createCodeModeRepoSetupOptions(
+              command.command,
+              command.agentFilesPolicy,
+            ),
+          );
         }
 
         // Code-mode connectors (e.g. langsmith) pull their evidence and augment

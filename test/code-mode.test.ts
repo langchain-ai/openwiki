@@ -1,8 +1,12 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import { ensureCodeModeRepoSetup } from "../src/code-mode.ts";
+import {
+  createCodeModeRepoSetupOptions,
+  ensureCodeModeRepoSetup,
+} from "../src/code-mode.ts";
+import { CODE_MODE_CONFIG_FILENAME } from "../src/code-mode-config.ts";
 
 const SNIPPET_START = "<!-- OPENWIKI:START -->";
 const SNIPPET_END = "<!-- OPENWIKI:END -->";
@@ -21,6 +25,17 @@ async function readIfPresent(filePath: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+async function writeAgentFilesPolicy(
+  repo: string,
+  policy: "manage" | "preserve",
+): Promise<void> {
+  await writeFile(
+    path.join(repo, CODE_MODE_CONFIG_FILENAME),
+    `codeMode:\n  agentFiles:\n    policy: ${policy}\n`,
+    "utf8",
+  );
 }
 
 afterEach(async () => {
@@ -157,6 +172,91 @@ ${SNIPPET_END}
       expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
     });
   }
+
+  test("preserve config leaves existing agent files byte-for-byte and wiki content untouched", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    const wikiPath = path.join(repo, "openwiki", "index.md");
+    const existingAgents = "# Existing AGENTS\n\nKeep this byte-for-byte.\n";
+    const existingClaude = "# Existing CLAUDE\r\n\r\nKeep this too.\r\n";
+    const existingWiki = "# Existing wiki\n";
+    await writeAgentFilesPolicy(repo, "preserve");
+    await mkdir(path.dirname(wikiPath), { recursive: true });
+    await Promise.all([
+      writeFile(agentsPath, existingAgents, "utf8"),
+      writeFile(claudePath, existingClaude, "utf8"),
+      writeFile(wikiPath, existingWiki, "utf8"),
+    ]);
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(agentsPath)).toBe(existingAgents);
+    expect(await readIfPresent(claudePath)).toBe(existingClaude);
+    expect(await readIfPresent(wikiPath)).toBe(existingWiki);
+  });
+
+  test("preserve config leaves missing agent files missing", async () => {
+    const repo = await createTempRepo();
+    await writeAgentFilesPolicy(repo, "preserve");
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toBeNull();
+    expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
+  });
+
+  for (const command of ["chat", "init", "update"] as const) {
+    test(`applies preserve config during ${command} setup`, async () => {
+      const repo = await createTempRepo();
+      const existing = `# ${command} instructions\n`;
+      const agentsPath = path.join(repo, "AGENTS.md");
+      await writeAgentFilesPolicy(repo, "preserve");
+      await writeFile(agentsPath, existing, "utf8");
+
+      await ensureCodeModeRepoSetup(
+        repo,
+        createCodeModeRepoSetupOptions(command, null),
+      );
+
+      expect(await readIfPresent(agentsPath)).toBe(existing);
+      const workflow = await readIfPresent(
+        path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+      );
+      if (command === "init") {
+        expect(workflow).not.toBeNull();
+      } else {
+        expect(workflow).toBeNull();
+      }
+    });
+  }
+
+  test("CLI preserve overrides a committed manage policy", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const existing = "# Keep me\n";
+    await writeAgentFilesPolicy(repo, "manage");
+    await writeFile(agentsPath, existing, "utf8");
+
+    await ensureCodeModeRepoSetup(repo, { agentFilesPolicy: "preserve" });
+
+    expect(await readIfPresent(agentsPath)).toBe(existing);
+    expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
+  });
+
+  test("CLI manage overrides a committed preserve policy", async () => {
+    const repo = await createTempRepo();
+    await writeAgentFilesPolicy(repo, "preserve");
+
+    await ensureCodeModeRepoSetup(repo, { agentFilesPolicy: "manage" });
+
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toContain(
+      SNIPPET_START,
+    );
+    expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toContain(
+      SNIPPET_START,
+    );
+  });
 });
 
 describe("ensureCodeModeRepoSetup workflow", () => {
@@ -178,6 +278,53 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     ]) {
       expect(workflow).toContain(managedPath);
     }
+  });
+
+  test("generated workflow reads committed preserve config on later runs", async () => {
+    const repo = await createTempRepo();
+    await writeAgentFilesPolicy(repo, "preserve");
+
+    await ensureCodeModeRepoSetup(repo, {
+      createWorkflow: true,
+    });
+
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    expect(workflow).toContain("run: openwiki code --update --print");
+    expect(workflow).not.toContain("--agent-files-policy");
+    expect(workflow).not.toContain("            AGENTS.md");
+    expect(workflow).not.toContain("            CLAUDE.md");
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toBeNull();
+    expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
+
+    // A later scheduled invocation has no CLI override and resolves the same
+    // committed policy instead of recreating either root file.
+    await ensureCodeModeRepoSetup(repo);
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toBeNull();
+    expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
+  });
+
+  test("a one-run CLI override does not become scheduled policy", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, {
+      agentFilesPolicy: "preserve",
+      createWorkflow: true,
+    });
+
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    expect(workflow).not.toContain("--agent-files-policy");
+    expect(workflow).toContain("            AGENTS.md");
+    expect(workflow).toContain("            CLAUDE.md");
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toBeNull();
+
+    await ensureCodeModeRepoSetup(repo);
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toContain(
+      SNIPPET_START,
+    );
   });
 
   test("wires the LangSmith connector read key into the workflow env", async () => {
