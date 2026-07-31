@@ -8,6 +8,7 @@ import {
   validateOAuthEndpointUrl,
 } from "./oauth-discovery.js";
 import { getAuthProvider } from "./providers.js";
+import { fetchWithAuthTimeout } from "./http.js";
 import type {
   AuthProviderId,
   OAuthClientRegistration,
@@ -203,20 +204,24 @@ async function registerMcpOAuthClient(
     validationOptions,
   ).toString();
 
-  const registrationResponse = await fetch(registrationEndpoint, {
-    body: JSON.stringify({
-      client_name: "OpenWiki",
-      grant_types: ["authorization_code", "refresh_token"],
-      redirect_uris: [redirectUri],
-      response_types: ["code"],
-      token_endpoint_auth_method: "none",
-    }),
-    headers: {
-      "Content-Type": "application/json",
+  const registrationResponse = await fetchWithAuthTimeout(
+    registrationEndpoint,
+    {
+      body: JSON.stringify({
+        client_name: "OpenWiki",
+        grant_types: ["authorization_code", "refresh_token"],
+        redirect_uris: [redirectUri],
+        response_types: ["code"],
+        token_endpoint_auth_method: "none",
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      redirect: "manual",
     },
-    method: "POST",
-    redirect: "manual",
-  });
+    { operation: `${provider.displayName} client registration` },
+  );
 
   if (!registrationResponse.ok) {
     throw new Error(
@@ -306,7 +311,7 @@ async function exchangeAuthorizationCode({
     body.set("resource", provider.mcpResourceUrl);
   }
 
-  const response = await fetch(
+  const response = await fetchWithAuthTimeout(
     validateOAuthEndpointUrl(
       registration.tokenUrl,
       `${provider.displayName} token endpoint`,
@@ -320,6 +325,7 @@ async function exchangeAuthorizationCode({
       method: "POST",
       redirect: "manual",
     },
+    { operation: `${provider.displayName} token exchange` },
   );
 
   if (!response.ok) {

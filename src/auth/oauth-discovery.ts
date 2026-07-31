@@ -1,4 +1,5 @@
 import { isIP } from "node:net";
+import { fetchWithAuthTimeout } from "./http.js";
 
 export type OAuthMetadata = {
   authorization_endpoint?: string;
@@ -30,13 +31,14 @@ export async function discoverProtectedResourceMetadata(
   ];
 
   for (const candidate of candidates) {
-    const response = await fetch(
+    const response = await fetchWithAuthTimeout(
       validateOAuthEndpointUrl(
         candidate,
         "MCP protected resource metadata",
         options,
       ),
       { redirect: "manual" },
+      { operation: "OAuth protected-resource discovery" },
     );
     if (response.ok) {
       return (await response.json()) as ProtectedResourceMetadata;
@@ -63,13 +65,14 @@ export async function discoverAuthorizationServerMetadata(
   ];
 
   for (const candidate of candidates) {
-    const response = await fetch(
+    const response = await fetchWithAuthTimeout(
       validateOAuthEndpointUrl(
         candidate,
         "OAuth authorization server metadata",
         options,
       ),
       { redirect: "manual" },
+      { operation: "OAuth authorization-server discovery" },
     );
     if (response.ok) {
       return (await response.json()) as OAuthMetadata;

@@ -8,6 +8,7 @@ import {
   OPENAI_CHATGPT_PLAN_ENV_KEY,
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
 } from "../constants.js";
+import { fetchWithAuthTimeout } from "../auth/http.js";
 
 /**
  * ChatGPT/Codex OAuth client.
@@ -315,11 +316,15 @@ function isCodexResponsesRequest(input: Parameters<typeof fetch>[0]): boolean {
 }
 
 async function exchangeToken(body: URLSearchParams): Promise<CodexTokens> {
-  const res = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
+  const res = await fetchWithAuthTimeout(
+    TOKEN_URL,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    },
+    { operation: "ChatGPT token exchange" },
+  );
 
   if (!res.ok) {
     throw new Error(
