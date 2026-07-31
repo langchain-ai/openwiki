@@ -136,9 +136,24 @@ Init workflow:
 - Optimize for path compression: shorten the route from an engineering intent to the owning files and symbols, related systems, focused tests, and narrow validation command.
 - Substantial components and major workflows must be documented during init. Defer only when explicitly outside scope, unavailable to inspect safely, or evidence-blocked. Never defer an area merely because of time, token, page-count, or navigation convenience. Record valid deferrals in a concise Backlog section in quickstart with a source anchor and reason.
 - Do not document every file or target a page count. Wiki depth should reflect meaningful repository complexity.
-- It can be a helpful exercise to find a concrete code snippet in the repo, then purely search in the wiki for the answer. If the wiki doesn't provide a clear path to the answer, the documentation is insufficient.
-  a). Use a subagent for this to ensure its context is isolated. Ask it a question such as "Where can I find the backend auth APIs for the admin dashboard" or "What's the schema of the user table in the database?".
-    In your prompt to the subagent, ensure you instruct it to ONLY query the 'openwiki/' directory for this answer. If it can not return the correct answer, the documentation is insufficient.
+- To verify the wiki has everything documented properly, find a component, feature API or specific system/workflow, then kickoff a subagent to search in the wiki to find the answer.
+  - If the wiki doesn't provide an accurate answer, the documentation is insufficient and you must update it & rerun the subagent verifier before completing.
+  - Use subagents for this to ensure context is isolated and it can not find the answer from other sources. Follow the following flow exactly when coming up with these questions:
+    1. Kickoff a single subagent to navigate the repo to find specific APIs, features, components, or similar systems. Have this subagent ONLY research in the codebase for a diverse set of questions. Use a subagent for this to ensure it's not biased by what you've already documented.
+    2. Once the subagent returns a list of questions, kickoff a new subagent (run all in parallel) for each question. Ensure you instruct the subagent to ONLY search in the 'openwiki/' directory for this answer.
+    3. After all subagents have finished, analyze the results and determine if the documentation is sufficient. For each question the subagent was unable to answer, do a 2nd pass over the wiki for that system or service, and update the docs to be more detailed.
+    4. Once you've updated the docs, re-ask the same questions which failed to ensure they now pass. Repeat until all questions pass.
+    - The number of questions should be dynamic depending on the size of the repository. For very small repos, a couple questions will suffice. For larger repos or monorepos, you'll want to ask many more questions to ensure comprehensive coverage.
+    - Questions should look roughly like:
+      Architectural & High-Level Questions:
+        - "What is the difference between module X and module Y?"
+        - "What does the data flow look like for a <specific operation>?"
+      Implementation & Functional Questions:
+        - "How is user authentication handled in system X?"
+        - "What does the main function or entry point do?"
+      Code Navigation & Usage Questions:
+        - "Which files control the data ingestion pipeline?"
+        - "Where does the code live that's responsible for state management?"
 
 Documentation contract:
 - /openwiki/quickstart.md is the entrypoint. Include a high-level map, links to every major concept, and a compact task-routing table from change area or intent to relevant page, source entrypoints/symbols, focused tests, and minimal validation.
@@ -152,6 +167,18 @@ Documentation contract:
   a) E.g. if there are 3 services for a web app (frontend, backend, database), you'll likely want to create a single directory for the app, with sub-pages for each service. That said, if the app itself is highly complex, you will almost certainly want to create individual pages or directories for major components or aspects of that larger system.
 - If a repository only has a single mono-API, you will likely want to break it up into multiple sections and document each one separately (granted the API is extensive enough).
 - You should compile a list of questions to ask for every main service or API, and ask them to subagents once your initial documentation pass is complete. For each which fails to return an answer, do a 2nd pass over the wiki for that system or service, and update the docs to be more detailed.
+
+Depth and completeness gate
+- Decompose large services by domain. When a service owns multiple independent route families, data models, or runtime subsystems, create a directory with separate domain pages. A single service overview is not sufficient coverage.
+- Before drafting each page, inspect enough primary evidence to answer:
+   - Why does this component exist?
+   - How is it entered, registered, and invoked?
+   - What are its principal types, APIs, schemas, and state transitions?
+   - Which invariants and failure modes must changes preserve?
+   - How does it communicate with adjacent systems?
+   - How is it extended?
+   - Which exact tests validate each important behavior?
+- Reading only manifests, READMEs, composition roots, or the first portion of a large file is insufficient.
 
 Metadata and links (OKF):
 - Every non-reserved Markdown concept must begin with valid OKF v0.1 YAML front matter. index.md and log.md are reserved and must not receive concept front matter.
