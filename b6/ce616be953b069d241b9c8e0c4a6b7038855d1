@@ -1,0 +1,59 @@
+src/agent/prompt.ts
+  s_d80d23df626cc1::t_2fea3420b3f6b8 296-297
+  s_d80d23df626cc1::t_4687da58974886 348
+src/agent/active-run.ts
+  h_f78d33d4280f3f 1-34,36-66
+src/agent/types.ts
+  h_f78d33d4280f3f 44
+  s_d80d23df626cc1::t_5cb4201adc3d0c 49-67
+src/crash-guard.ts
+  h_f78d33d4280f3f 1-57
+src/telemetry/types.ts
+  h_f78d33d4280f3f 10,13-14
+src/telemetry/errors.ts
+  h_f78d33d4280f3f 8-11,21-23,62-80
+src/cli.tsx
+  s_d80d23df626cc1::t_94e15955c1d028 4202-4209
+  h_f78d33d4280f3f 98-100,289,460-461,561-565,647,4145-4150,4189,4201,4210-4213,4219-4220
+  s_d80d23df626cc1::t_7a0025a3dd4b0b 87-91
+src/agent/index.ts
+  h_f78d33d4280f3f 131-132,134-138,291,296-303,305,410,416-418,443-446,488
+  s_d80d23df626cc1::t_ae17f2d5d126c0 469-473,476-477
+  s_d80d23df626cc1::t_2228b74cd8af7b 474-475
+  s_d80d23df626cc1::t_8684092bd3d548 63
+test/telemetry-errors.test.ts
+  s_d80d23df626cc1::t_da1af267dd898d 3-6,29-31,44-46,68-70
+  s_d80d23df626cc1::t_ac5feec4dafa42 1-2,7-28,32-43,47-67,71
+src/agent/truncation-monitor.ts
+  h_f78d33d4280f3f 1-93
+test/crash-guard.test.ts
+  s_d80d23df626cc1::t_da1af267dd898d 14-15
+  s_d80d23df626cc1::t_38f379878e38b9 8
+  s_d80d23df626cc1::t_2b5a59539c2045 1-7,9-13,16-130
+test/truncation-monitor.test.ts
+  s_d80d23df626cc1::t_da1af267dd898d 67-70
+  s_d80d23df626cc1::t_9ea9a9cd1721d8 1-66,71-94
+test/agent-run-options.test.ts
+  s_d80d23df626cc1::t_bacd6c1e04a752 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "b6ce616be953b069d241b9c8e0c4a6b7038855d1",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_d80d23df626cc1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dd16ad7-edaf-4e90-b062-7f6048ea2ff8",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
