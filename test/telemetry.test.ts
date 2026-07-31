@@ -60,6 +60,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   for (const key of ENV_KEYS) {
     if (savedEnv[key] === undefined) {
       delete process.env[key];
@@ -194,6 +195,37 @@ describe("client.capture", () => {
     expect(arg.properties).not.toHaveProperty("$ip");
     expect(posthog.shutdown).toHaveBeenCalledOnce();
   });
+
+  test("returns false when captureImmediate rejects", async () => {
+    posthog.captureImmediate.mockRejectedValue(new Error("network down"));
+
+    await expect(
+      captureEvent({
+        distinctId: "id-rejected",
+        event: "openwiki_run",
+        properties: {},
+      }),
+    ).resolves.toBe(false);
+    expect(posthog.shutdown).toHaveBeenCalledOnce();
+  });
+
+  test("returns false when captureImmediate times out", async () => {
+    vi.useFakeTimers();
+    posthog.captureImmediate.mockImplementation(
+      () => new Promise<void>(() => {}),
+    );
+
+    const pending = captureEvent({
+      distinctId: "id-timeout",
+      event: "openwiki_run",
+      properties: {},
+    });
+    const result = expect(pending).resolves.toBe(false);
+    await vi.advanceTimersByTimeAsync(3000);
+
+    await result;
+    expect(posthog.shutdown).toHaveBeenCalledOnce();
+  });
 });
 
 describe("senders.recordRun", () => {
@@ -259,6 +291,41 @@ describe("senders.recordRun", () => {
     });
 
     await expect(recordRun(runDetails())).resolves.toBeUndefined();
+  });
+
+  test("tees sent=false when an asynchronous capture is rejected", async () => {
+    posthog.captureImmediate.mockRejectedValue(new Error("network down"));
+    const file = path.join(tmpdir(), "ow-tel-rejected.json");
+
+    await recordRun(runDetails({ telemetryFile: file }));
+
+    await expect(readTee(file)).resolves.toMatchObject({
+      disabled: false,
+      sent: false,
+    });
+    await rm(file, { force: true });
+  });
+
+  test("tees sent=false when capture times out", async () => {
+    vi.useFakeTimers();
+    posthog.captureImmediate.mockImplementation(
+      () => new Promise<void>(() => {}),
+    );
+    const file = path.join(tmpdir(), "ow-tel-timeout.json");
+
+    const pending = recordRun(runDetails({ telemetryFile: file }));
+    const completion = expect(pending).resolves.toBeUndefined();
+    await vi.waitFor(() => {
+      expect(posthog.captureImmediate).toHaveBeenCalledOnce();
+    });
+    await vi.advanceTimersByTimeAsync(3000);
+    await completion;
+
+    await expect(readTee(file)).resolves.toMatchObject({
+      disabled: false,
+      sent: false,
+    });
+    await rm(file, { force: true });
   });
 });
 
