@@ -210,6 +210,49 @@ describe("selectSampleBuckets", () => {
     expect(outliers.map((s) => s.run.id).sort()).toEqual(["n6", "n7"]);
     expect(selected).toHaveLength(8);
   });
+
+  test("never labels runs without measurable latency as outliers", () => {
+    const nonErrorRuns = [
+      run({ id: "n1", start_time: BASE }),
+      run({ id: "n2", start_time: BASE }),
+      run({ id: "n3", start_time: BASE }),
+      run({ id: "n4", start_time: BASE }),
+    ];
+
+    const selected = selectSampleBuckets([], nonErrorRuns, {
+      errorCap: 0,
+      outlierCap: 5,
+      total: 4,
+    });
+
+    expect(selected.every((item) => item.bucket !== "outlier")).toBe(true);
+    expect(selected.every((item) => item.bucket === "baseline")).toBe(true);
+  });
+
+  test("fills outlier slots only with measured runs", () => {
+    const nonErrorRuns = [
+      run({ id: "missing-1", start_time: BASE }),
+      root("measured", 900),
+      root("measured-2", 100),
+      root("measured-3", 200),
+      root("measured-4", 300),
+      run({ id: "missing-2", start_time: BASE }),
+      run({ id: "missing-3", start_time: BASE }),
+      run({ id: "missing-4", start_time: BASE }),
+      run({ id: "missing-5", start_time: BASE }),
+      run({ id: "missing-6", start_time: BASE }),
+    ];
+
+    const selected = selectSampleBuckets([], nonErrorRuns, {
+      errorCap: 0,
+      outlierCap: 5,
+      total: 8,
+    });
+    const outliers = selected.filter((item) => item.bucket === "outlier");
+
+    expect(outliers).toHaveLength(1);
+    expect(outliers[0]?.run.id).toBe("measured");
+  });
 });
 
 describe("summarizeSample", () => {
