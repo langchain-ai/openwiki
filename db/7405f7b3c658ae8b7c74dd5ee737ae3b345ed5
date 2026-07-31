@@ -1,0 +1,28 @@
+src/agent/index.ts
+  s_1a094c985abfe9::t_3de27982c36f69 505-519
+  s_1a094c985abfe9::t_eee4b9f3a9ffaa 330-332
+  s_1a094c985abfe9::t_d2a0c31636e1cd 196-198,202-212,214-258,289,294,296
+  s_1a094c985abfe9::t_20486a3b62e2e4 368-410
+  s_1a094c985abfe9::t_6cbb7ef79dab96 128-134
+  s_1a094c985abfe9::t_44378069fc211c 464-465
+  s_1a094c985abfe9::t_171100281d96e5 311,318-320,322-324
+  s_1a094c985abfe9::t_255a5722a33826 364-367
+  s_1a094c985abfe9::t_ea4b2a42b35583 418-419
+  s_1a094c985abfe9::t_22489d0867e636 432-439
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "db7405f7b3c658ae8b7c74dd5ee737ae3b345ed5",
+  "prompts": {},
+  "sessions": {
+    "s_1a094c985abfe9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "09f52302-2078-4302-993a-18182eb5d654",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
