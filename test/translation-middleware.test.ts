@@ -444,4 +444,52 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
     ).resolves.toBeUndefined();
     expect(calls).toHaveLength(0);
   });
+
+  test("fails a language switch when the wiki root cannot be listed", async () => {
+    const { backend } = await setup("repository");
+    const realLs = backend.ls.bind(backend);
+    vi.spyOn(backend, "ls").mockImplementation((directoryPath) =>
+      directoryPath === "/openwiki"
+        ? Promise.resolve({ error: "EACCES: permission denied" })
+        : realLs(directoryPath),
+    );
+    const { model, calls } = fakeModel((content) => `T\n${content}`);
+
+    await expect(
+      runBeforeAgent(
+        createWikiTranslationMiddleware(
+          backend,
+          "repository",
+          model,
+          switchTo("zh-CN"),
+        ),
+      ),
+    ).rejects.toThrow("Unable to list /openwiki: EACCES");
+    expect(calls).toHaveLength(0);
+  });
+
+  test("fails a language switch when a nested directory cannot be listed", async () => {
+    const { backend } = await setup("repository");
+    await backend.write("/openwiki/accessible.md", "# Accessible\n");
+    await backend.write("/openwiki/unreadable/page.md", "# Unreadable\n");
+    const realLs = backend.ls.bind(backend);
+    vi.spyOn(backend, "ls").mockImplementation((directoryPath) =>
+      directoryPath === "/openwiki/unreadable"
+        ? Promise.resolve({ error: "EIO: input/output error" })
+        : realLs(directoryPath),
+    );
+    const { model, calls } = fakeModel((content) => `T\n${content}`);
+
+    await expect(
+      runBeforeAgent(
+        createWikiTranslationMiddleware(
+          backend,
+          "repository",
+          model,
+          switchTo("zh-CN"),
+        ),
+      ),
+    ).rejects.toThrow("Unable to list /openwiki/unreadable: EIO");
+    expect(calls).toHaveLength(0);
+  });
 });
