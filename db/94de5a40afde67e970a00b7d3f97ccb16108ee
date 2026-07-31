@@ -1,0 +1,33 @@
+src/mermaid/wiki.ts
+  s_70ce361ce20830::t_326e40bc7e4c93 117
+  h_f78d33d4280f3f 1-116,118-149
+src/agent/index-middleware.ts
+  h_f78d33d4280f3f 7,43
+test/mermaid-wiki.test.ts
+  s_70ce361ce20830::t_e192e11318dae8 1-7,14-24,28-40,45-93,98-138
+  s_70ce361ce20830::t_326e40bc7e4c93 8-13,25-27,41-44,94-97
+test/index-middleware.test.ts
+  s_70ce361ce20830::t_624633b867bb7c 6-17
+  s_70ce361ce20830::t_b7788c1f391bf4 255-287
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "db94de5a40afde67e970a00b7d3f97ccb16108ee",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

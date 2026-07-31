@@ -1,0 +1,21 @@
+src/agent/prompt.ts
+  s_94ccb1fd0cf306::t_ac401b07b209fe 215
+test/prompt.test.ts
+  s_94ccb1fd0cf306::t_1e5fb1ab5f9ea6 20-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "b624a06a335d480e953267a625d7a44e24bd0a66",
+  "prompts": {},
+  "sessions": {
+    "s_94ccb1fd0cf306": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3fe37e4d-4458-46b5-902f-59cf1647b2ee",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

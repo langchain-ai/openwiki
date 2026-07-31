@@ -1,0 +1,42 @@
+src/agent/index.ts
+  s_bda6b6c437da9f::t_fd176bb5ae544f 48-52
+  s_bda6b6c437da9f::t_df6ae5827cfd03 134-140
+test/telemetry.test.ts
+  s_bda6b6c437da9f::t_267f9e9196e77e 161-162,164-174,178,185-187,189-196,200-205,207-210,262
+  s_bda6b6c437da9f::t_cb7db3eea40c0d 45
+  s_bda6b6c437da9f::t_816e0620f7a0bd 317
+  s_bda6b6c437da9f::t_03d32c09ba4c91 163,176,206,364
+  s_bda6b6c437da9f::t_e0d846f000dea9 223,240-241,244,254-261
+  s_bda6b6c437da9f::t_0929490c5cafb4 263
+src/telemetry.ts
+  s_bda6b6c437da9f::t_205388f0241674 53,57,60
+  s_bda6b6c437da9f::t_65aba092c27517 197-198
+  s_bda6b6c437da9f::t_f348ab409817d7 7
+  s_bda6b6c437da9f::t_0394f1b3214caa 221-235,239-251,258-259,268,272
+  s_bda6b6c437da9f::t_10f7391b905726 236-238
+  s_bda6b6c437da9f::t_525dc6923ce58c 196
+  s_bda6b6c437da9f::t_3bc63bc3440b7f 8
+  s_bda6b6c437da9f::t_07523b93b0e6c3 138-141
+  s_bda6b6c437da9f::t_2246298b9c9926 58-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "28fe1c3bfb754ef4b2f84a304ea25af81d21bc80",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_bda6b6c437da9f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a1cfe115-7556-4173-b56c-a59878d842fe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

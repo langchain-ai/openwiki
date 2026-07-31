@@ -1,0 +1,49 @@
+src/agent/okf.ts
+  s_a57fcbbb51c51c::t_1c6a80ec105308 1-468,470-623
+  s_a57fcbbb51c51c::t_1de913e0a152a7 469
+src/constants.ts
+  s_a57fcbbb51c51c::t_106b57dd3cb15e 352-452
+  s_a57fcbbb51c51c::t_21155f6335e2a5 1-2
+src/agent/utils.ts
+  s_a57fcbbb51c51c::t_1792c423da198e 257
+src/agent/prompt.ts
+  s_a57fcbbb51c51c::t_e7a7aaef747cd0 268
+  s_a57fcbbb51c51c::t_78e42eefb28824 158-159
+  s_a57fcbbb51c51c::t_448364af3fc869 353-357
+  s_a57fcbbb51c51c::t_4d4f5480b42287 389-393
+src/agent/index.ts
+  s_a57fcbbb51c51c::t_a27652816b252d 231-241
+  s_a57fcbbb51c51c::t_cc29e7ce4b53d6 21
+  s_a57fcbbb51c51c::t_8335e87084eea0 164-167
+test/okf.test.ts
+  s_a57fcbbb51c51c::t_13d12ffb38487e 1-78,80-86,89-90,94-240,244-250,259-309
+  s_a57fcbbb51c51c::t_616ea5131a3a03 241-243,251-258
+  s_a57fcbbb51c51c::t_cd2a5ba2b83754 79,87-88,91-93
+package.json
+  s_a57fcbbb51c51c::t_1ce3a2b16b987a 58
+README.md
+  s_a57fcbbb51c51c::t_32832bf272f8ca 36-40
+pnpm-lock.yaml
+  s_a57fcbbb51c51c::t_3ee54ea5390fe4 22,53-55,1993
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3b1a67e286891ea8fdcf1d913be8c78125c4afab",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a57fcbbb51c51c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a9eadf2f-4fd3-42d7-8435-556597e807c3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

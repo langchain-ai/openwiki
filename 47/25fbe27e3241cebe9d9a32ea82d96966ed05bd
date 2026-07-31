@@ -1,0 +1,20 @@
+CONVENTIONS.md
+  s_8d4a238c334fd1::t_66f7691036ebce 112-113
+  s_8d4a238c334fd1::t_7238a521535e31 8-9,13-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "4725fbe27e3241cebe9d9a32ea82d96966ed05bd",
+  "prompts": {},
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

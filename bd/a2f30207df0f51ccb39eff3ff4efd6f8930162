@@ -1,0 +1,23 @@
+evals/deepswe/README.md
+  s_841f8a35235565::t_9ffec50773a6cf 13,17,23-28,34-37,52-53,65-69,73-80,147-149,168-171,179-181
+  s_841f8a35235565::t_676fe91bea7bfb 55-61
+  s_841f8a35235565::t_b1a1c505a81b9c 54
+evals/deepswe/run.py
+  s_841f8a35235565::t_9ffec50773a6cf 411
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "bda2f30207df0f51ccb39eff3ff4efd6f8930162",
+  "prompts": {},
+  "sessions": {
+    "s_841f8a35235565": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f869b-e584-7aa3-9b4c-c1a5f94e7fa7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

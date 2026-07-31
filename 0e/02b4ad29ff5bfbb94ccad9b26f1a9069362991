@@ -1,0 +1,41 @@
+src/ingestion.ts
+  s_005aef00a0993e::t_948ae003bfff87 37-58
+src/commands.ts
+  s_005aef00a0993e::t_b192d1f5a0e880 601-617
+src/cli.tsx
+  s_005aef00a0993e::t_509ecf245331fc 14
+  s_005aef00a0993e::t_a2b36a15010184 49
+  s_005aef00a0993e::t_47c11575c02401 3756-3758,3761-3764,3766,3768-3769,3771-3785,3787,3789-3810,3813-3819
+  s_005aef00a0993e::t_eccc3cb8743020 3695-3697,3718,3720-3735,3737-3743
+  h_f78d33d4280f3f 84-87,89,3460-3465,3822-3827
+  s_005aef00a0993e::t_a4629b71d441e8 88
+test/telemetry.test.ts
+  s_005aef00a0993e::t_5352008d6c1cf0 272-273,278-284,290-319
+  s_005aef00a0993e::t_02accf145ac55a 33-37
+  s_005aef00a0993e::t_2277c567edb889 274-277,285-289
+test/telemetry-cli.test.ts
+  s_005aef00a0993e::t_6b5ea5d8899582 1-7,12-47,49-61
+  s_005aef00a0993e::t_2277c567edb889 8-11
+  s_005aef00a0993e::t_beff9b690918b3 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "0e02b4ad29ff5bfbb94ccad9b26f1a9069362991",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_005aef00a0993e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "366e0bd6-73d2-4a7a-bab1-157a1f397b23",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

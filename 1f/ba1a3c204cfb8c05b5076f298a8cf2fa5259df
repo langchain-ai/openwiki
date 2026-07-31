@@ -1,0 +1,40 @@
+README.md
+  s_53366a76aa6b6f::t_1dbeda567fb903 96,106
+src/agent/utils.ts
+  s_53366a76aa6b6f::t_053ff679c9fa93 7-12,16,26,28,37-44,58,60,64,81,83,94-98,157-160,186-200
+  s_53366a76aa6b6f::t_c81fbfd6fa17dd 201
+src/agent/index.ts
+  s_53366a76aa6b6f::t_a458f42916b042 289-294
+  s_53366a76aa6b6f::t_71c8081a920df6 15,164-165,168-170,197,240-241,243,296,300,302-303,307-317
+  s_53366a76aa6b6f::t_0a89f694e0252c 295
+  s_53366a76aa6b6f::t_bf60dad0910e45 318
+src/ingestion.ts
+  s_53366a76aa6b6f::t_bc0c1b04cfcc13 237,261
+  s_53366a76aa6b6f::t_7236ed497d481f 56
+  s_53366a76aa6b6f::t_4c6584074fbb18 16-20,58,82
+  s_53366a76aa6b6f::t_98c494b95a8107 53
+  s_53366a76aa6b6f::t_24214b1403d5ff 148
+  s_53366a76aa6b6f::t_6b4a06ded86623 236
+src/agent/prompt.ts
+  s_53366a76aa6b6f::t_d251bb08e33b96 58,131-132,162-165,178,208,223,241-242,249-251,266-269,273,278-282,295-298,327-331
+  s_53366a76aa6b6f::t_7bae40eefcf06a 2-7,17-22,26,31,33,35,39,63,69-72,77,86,103-104,107,120,123-124,128-130,135,138,142-147,160,166,169,175-176,189,197,199-200,210,212,225,237-240,243-248,252-265,270-272,274-277,283-294,299-326,332-336
+  s_53366a76aa6b6f::t_895c36eba1cbe3 337-338
+src/agent/types.ts
+  s_53366a76aa6b6f::t_5a1a6fdc95f05c 2,38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "1fba1a3c204cfb8c05b5076f298a8cf2fa5259df",
+  "prompts": {},
+  "sessions": {
+    "s_53366a76aa6b6f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f1f27-d324-7112-9da9-3b3bff11b54e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+src/code-mode.ts
+  s_841f8a35235565::t_4928434f634b06 271-274
+CLAUDE.md
+  s_841f8a35235565::t_4928434f634b06 17-20
+test/code-mode.test.ts
+  s_841f8a35235565::t_4928434f634b06 46-50
+src/agent/prompt.ts
+  s_841f8a35235565::t_72fe28e16454c3 61,64-65,97-104,107,109,156,159-160,165,195-209,218-224,231,295-319,345,359-361,368,410
+AGENTS.md
+  s_841f8a35235565::t_4928434f634b06 17-20
+test/agent-navigation-guidance.test.ts
+  s_841f8a35235565::t_3060b824ff09ae 1-35
+README.md
+  s_841f8a35235565::t_d5249273b94aa6 174
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "889412382ad07d95827b1d2cc6ce788ae437d282",
+  "prompts": {},
+  "sessions": {
+    "s_841f8a35235565": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f869b-e584-7aa3-9b4c-c1a5f94e7fa7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": null
+    }
+  }
+}

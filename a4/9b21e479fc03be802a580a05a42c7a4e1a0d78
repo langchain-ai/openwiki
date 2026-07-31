@@ -1,0 +1,25 @@
+CONVENTIONS.md
+  h_f78d33d4280f3f 3-4,8,24-26,47-49,51-52,61,84-85,93-94,111,114,117-118,126-128
+  s_8d4a238c334fd1::t_57779835feeef5 9,11,13-22,30-31,43,54-55,59-60,62,64-65,73,89-90,92,97-107,113,115,122-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "a49b21e479fc03be802a580a05a42c7a4e1a0d78",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

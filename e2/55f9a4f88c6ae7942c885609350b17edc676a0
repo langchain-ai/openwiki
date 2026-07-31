@@ -1,0 +1,82 @@
+src/setup/config/run-mode.ts
+  s_ed18fedebfc70d::t_c0fed3e46a86ef 1-93
+src/setup/config/model-selection.ts
+  s_ed18fedebfc70d::t_9cb13668e85284 1-84
+src/setup/config/options.ts
+  s_ed18fedebfc70d::t_33c56046b2e66a 1-105
+src/setup/sources.ts
+  s_ed18fedebfc70d::t_e8e470b1f554b6 1-317
+src/setup/steps/transitions.ts
+  s_ed18fedebfc70d::t_d0cfbab04df9df 1-251
+src/setup/inputs/local-path.ts
+  s_ed18fedebfc70d::t_db537c5c271b3b 1-46
+src/setup/display.ts
+  s_ed18fedebfc70d::t_e3e208634d0681 1-5
+  s_ed18fedebfc70d::t_06560c8d68e576 56-58
+  s_ed18fedebfc70d::t_ac079a7c825a93 77-95
+  s_ed18fedebfc70d::t_e5eff6dee4906a 22
+  s_ed18fedebfc70d::t_322a79a7d10dbd 6-21,23-55,59-76
+src/setup/components/layout.tsx
+  s_ed18fedebfc70d::t_0acc99ac4336ad 1-108
+src/setup/components/oauth.tsx
+  s_ed18fedebfc70d::t_9a7be2fe01f200 1-178
+src/setup/components/inputs.tsx
+  s_ed18fedebfc70d::t_f397fc618ec7f0 1,6-159
+  s_ed18fedebfc70d::t_8846d529e77f30 2-5
+src/setup/credentials.tsx
+  s_ed18fedebfc70d::t_9b5416b0f265fa 175-178
+  s_ed18fedebfc70d::t_478c1d1941bc17 72-80,82,84-102,166-174
+  s_ed18fedebfc70d::t_384a5144962b81 160
+  s_ed18fedebfc70d::t_50b7ce73df56b9 135-140
+  s_ed18fedebfc70d::t_61cd98928f33f2 134
+  s_ed18fedebfc70d::t_127dde4cf36bee 141-152
+  s_ed18fedebfc70d::t_8c4f6dff7eb9a3 153-157
+  s_ed18fedebfc70d::t_4d9ae68a6017a2 179-182
+  s_ed18fedebfc70d::t_92e0d439b05620 161-165
+  s_ed18fedebfc70d::t_20af7854e13a5c 158
+  s_ed18fedebfc70d::t_2305842febdf47 108-114
+  s_ed18fedebfc70d::t_77a1de7273d1e5 115
+  s_ed18fedebfc70d::t_8b99a175a3a015 130,133
+  s_ed18fedebfc70d::t_111eff68a3719b 129,131-132
+  s_ed18fedebfc70d::t_d7f2c1abc6a967 159
+  s_ed18fedebfc70d::t_224b7798547b12 81,83
+  s_ed18fedebfc70d::t_b5664fc6ebde61 116-128
+  s_ed18fedebfc70d::t_dd6e77c05cdd37 103-107
+src/setup/actions.ts
+  s_ed18fedebfc70d::t_9b3bc99ce01e0c 1-10,12-35
+  s_ed18fedebfc70d::t_a0265c3d1a273e 11
+src/setup/steps/machine.ts
+  s_ed18fedebfc70d::t_f9006a48ce9524 271
+  s_ed18fedebfc70d::t_041792b6d6ae9c 1-270,272-365
+  s_ed18fedebfc70d::t_47bb3d7bf6ad79 366-373
+src/setup/components/prompt.tsx
+  s_ed18fedebfc70d::t_f4d6f313d9bcff 48
+  s_ed18fedebfc70d::t_a06780efb75f3b 1-47,49-54,56-860
+  s_ed18fedebfc70d::t_8df6cd6632fad6 55
+src/setup/credential-detail.ts
+  s_ed18fedebfc70d::t_2b931776c7b37c 1-22,27-144
+  s_ed18fedebfc70d::t_6fdc3ab24400ff 23-26
+src/setup/inputs/cron.ts
+  s_ed18fedebfc70d::t_d13b31cda33286 47-132
+  s_ed18fedebfc70d::t_570f661a742c2a 9-46
+  s_ed18fedebfc70d::t_c7f8ae44fa6a36 1,8
+  s_ed18fedebfc70d::t_04d724ef3d42f1 2-7
+src/setup/types.ts
+  s_ed18fedebfc70d::t_aee8821d7bac41 1-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "e255f9a4f88c6ae7942c885609350b17edc676a0",
+  "prompts": {},
+  "sessions": {
+    "s_ed18fedebfc70d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dde8f354-6e1c-4dca-96f7-0f6cd5cf3d58",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

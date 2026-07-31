@@ -1,0 +1,154 @@
+src/telemetry/index.ts
+  h_f78d33d4280f3f 10-16
+  s_7cf86c3d02d360::t_15d46ac4f7f073 3
+  s_7cf86c3d02d360::t_7a1ea3dcc33866 1-2
+  s_005aef00a0993e::t_122971769dd100 5-9
+  s_005aef00a0993e::t_381c05443167a1 4
+src/telemetry/gates.ts
+  h_f78d33d4280f3f 1-47,59-68
+  s_005aef00a0993e::t_aa1f74a16ca6b7 48
+  s_005aef00a0993e::t_eb8dff4d229144 49-58
+src/agent/types.ts
+  s_005aef00a0993e::t_6c38eb8df8e245 42
+src/telemetry/client.ts
+  s_005aef00a0993e::t_6b35446019f64c 31-34
+  s_7cf86c3d02d360::t_6f45bfcd39fed1 11-20,35-39,43-54
+  s_005aef00a0993e::t_9fff7263562cee 28-30
+  s_7cf86c3d02d360::t_c3a1c03dd826a0 40-42
+  s_005aef00a0993e::t_57a60da45d6801 1-10,21-27,55-72
+src/telemetry/errors.ts
+  h_f78d33d4280f3f 1-55
+examples/openwiki-update.yml
+  s_005aef00a0993e::t_ef6ada00cf1e8b 34-36
+test/telemetry-cli.test.ts
+  s_005aef00a0993e::t_6b5ea5d8899582 1-8,10-13,15,18,20-32
+  s_005aef00a0993e::t_c94216bbfe4cae 9,14,16-17
+  s_005aef00a0993e::t_beff9b690918b3 19
+test/telemetry.test.ts
+  s_7cf86c3d02d360::t_b2a6a459f43611 186,208,231,257,279
+  s_005aef00a0993e::t_b0c7266dc7cd60 322
+  s_005aef00a0993e::t_7be160a7ea3949 220-221,223
+  s_005aef00a0993e::t_1ab17c806f2719 14
+  s_005aef00a0993e::t_58a2e018cef855 278,285-288,290-292,294-295,297,300-301,303
+  s_7cf86c3d02d360::t_453d90779fed3e 12-13,17,20
+  s_005aef00a0993e::t_68652a77198ecf 191-193
+  s_005aef00a0993e::t_fa4be6d27e2d65 308
+  s_7cf86c3d02d360::t_964a20142b12e4 55-56
+  s_005aef00a0993e::t_671c055faf191c 1-11,21-33,35-54,57-74,76-77,79-185,190,194-207,209-211,213-219,224-227,232-234,236-242,247-249,253-256,258-275
+  s_005aef00a0993e::t_339f61c58ce33f 34
+  s_005aef00a0993e::t_cfce798645d0e8 187-189
+  s_7cf86c3d02d360::t_eda45045263ae2 229-230
+  s_005aef00a0993e::t_0c4a3caf9b8828 243-244,246,251-252
+  s_005aef00a0993e::t_9e139c3299e10b 304-306
+  s_005aef00a0993e::t_1b2d394b4778d2 78
+  s_005aef00a0993e::t_6050283874d2ea 277,317-320,323-328
+  s_005aef00a0993e::t_a21174a5499a21 222,228,235,245,250
+  s_7cf86c3d02d360::t_16f94cfb07bee5 212
+  s_005aef00a0993e::t_68610b7f770e82 307
+  s_005aef00a0993e::t_3ac717eb86504f 75
+  s_005aef00a0993e::t_f92ff17832c102 15-16,18-19
+  s_005aef00a0993e::t_386d6b236db7c7 309-316
+  s_005aef00a0993e::t_5352008d6c1cf0 276,280-284,289,293,296,298-299,302,329-330
+  s_7cf86c3d02d360::t_acfc7c061bc20c 321
+src/cli.tsx
+  s_005aef00a0993e::t_a181400eca76bc 3951
+  s_005aef00a0993e::t_bdd70021563a81 550
+  s_005aef00a0993e::t_81223008f3a167 86
+  s_005aef00a0993e::t_47c11575c02401 3824-3826,3829-3832,3834,3836-3837,3839-3853,3855,3857-3878,3881
+  s_005aef00a0993e::t_2fecba2fc0c2e5 221-222
+  s_005aef00a0993e::t_c28b05cf2209fa 242
+  s_005aef00a0993e::t_97200c72c34f2c 3557-3558,3560
+  s_005aef00a0993e::t_0972740782a392 216
+  s_005aef00a0993e::t_07d88483ba8e24 193,220,224-239,243-246
+  s_005aef00a0993e::t_6fad4a4459c2e7 3927-3930
+  s_005aef00a0993e::t_ce034c40786388 82-85,87
+  h_f78d33d4280f3f 240-241,3541,3543-3544
+  s_005aef00a0993e::t_aaa4d208551c07 168-192,194-209,212-215,217-219,223
+  s_005aef00a0993e::t_f69f7c854c1f37 3537-3540,3542,3559,3561,3564-3571
+  s_005aef00a0993e::t_eccc3cb8743020 3806,3808-3810
+  s_005aef00a0993e::t_8f95c86f30d121 210-211
+  s_005aef00a0993e::t_509ecf245331fc 14
+src/telemetry/config.ts
+  s_005aef00a0993e::t_be32c990ed3537 38-39
+  s_005aef00a0993e::t_bab0a29acd2960 35
+  s_7cf86c3d02d360::t_c5435f1077f19b 18-19,21
+  s_005aef00a0993e::t_1df9d34508d3f6 31-32
+  s_005aef00a0993e::t_7d218a8da78b2d 24-25
+  h_f78d33d4280f3f 1-7,9-17,20,22-23,26-29,33
+  s_005aef00a0993e::t_30b754874a42e9 30,34,36-37
+  s_7cf86c3d02d360::t_4b7c4289af9c2f 8
+src/telemetry/types.ts
+  s_005aef00a0993e::t_f3e42412d10f58 34-36,38
+  h_f78d33d4280f3f 1-24,31-33,37,39-50,53,55-56,59,61-62,66,68-93
+  s_005aef00a0993e::t_102599ed13242c 25-30,51-52,54,57-58,60,63-65,67
+src/telemetry/senders.ts
+  s_005aef00a0993e::t_b12660d171c3af 112
+  s_7cf86c3d02d360::t_c17d2f2bb0a8cc 70-75
+  s_005aef00a0993e::t_353eceb1f25bf7 13,62-64
+  s_005aef00a0993e::t_18bda89598789f 5
+  s_7cf86c3d02d360::t_a35d08a2bd883e 16-21,23-58,65-69,77-88,90,100-102,104,107,119-128
+  s_7cf86c3d02d360::t_33a7066dd42543 129
+  s_005aef00a0993e::t_fb36769b4657c4 6-11
+  h_f78d33d4280f3f 1-4,12,14-15,22,89,91-99,103,105-106,108-111,113-118,130-148
+  s_7cf86c3d02d360::t_a6651b51780fc6 59-61,76
+src/telemetry/record-run-safe.ts
+  s_7cf86c3d02d360::t_afcbc157d4adf8 1-63
+src/commands.ts
+  s_005aef00a0993e::t_aa33d51d7e76a9 602-604
+  s_005aef00a0993e::t_b192d1f5a0e880 601,605-613
+  h_f78d33d4280f3f 723
+  s_7cf86c3d02d360::t_ef90496e8773ce 67,343-344,480-510,549,720-722,724
+src/agent/index.ts
+  s_7cf86c3d02d360::t_116820ff03872d 66
+  s_005aef00a0993e::t_8531f20d9155e1 118-123,125-145
+  h_f78d33d4280f3f 85,99-103,146,154-160,163-169
+test/telemetry-install-id.test.ts
+  s_005aef00a0993e::t_02f5be92bf505c 6-7,9
+  s_005aef00a0993e::t_7590bb0f8dc78b 1-5,8,10-61
+src/connectors/registry.ts
+  h_f78d33d4280f3f 44-51,53-59
+  s_7cf86c3d02d360::t_5dd6f476a969a3 52
+README.md
+  s_005aef00a0993e::t_6ca56f3fcd6125 60-63
+  s_005aef00a0993e::t_dd5a2bb62bf336 278-282,284-285,292-294,306-325
+  s_005aef00a0993e::t_fe54ce03b7e25c 283,286-290,295-305
+  s_005aef00a0993e::t_cb927c1888c68a 291
+src/telemetry/install-id.ts
+  h_f78d33d4280f3f 1-4,6-34,36-40,47,49,51-53,55-56,58-67
+  s_005aef00a0993e::t_4c6834d575e1fe 5
+  s_005aef00a0993e::t_d33d7e097230f6 41-46,48,50,54,57
+  s_7cf86c3d02d360::t_2fdfafa71a1d37 35
+package.json
+  s_7cf86c3d02d360::t_734ff200f25a75 51,58
+pnpm-lock.yaml
+  s_7cf86c3d02d360::t_9b591373da40de 32-34,53-55,467-472,776-779,1407-1415,2068-2073,2373-2374,2940-2943
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "1e681f9891868392ac953538aa8cf905646771fb",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_005aef00a0993e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "366e0bd6-73d2-4a7a-bab1-157a1f397b23",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_7cf86c3d02d360": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4f7e967-2940-4bf2-b763-ceb3bc6cdc0f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

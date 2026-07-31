@@ -1,0 +1,29 @@
+src/agent/migrate-wiki-to-okf-skill.ts
+  s_f826d2309080ef::t_f90f48d9ee6cd9 1-77
+src/agent/prompt.ts
+  s_f826d2309080ef::t_f90f48d9ee6cd9 87-89
+  s_f826d2309080ef::t_58291195aa549e 80,82,84
+  s_f826d2309080ef::t_ffa6db70917c8a 90
+test/prompt.test.ts
+  s_f826d2309080ef::t_58291195aa549e 97,99
+  s_f826d2309080ef::t_ff5697af613dd3 94
+  s_f826d2309080ef::t_f90f48d9ee6cd9 2,90-93,95-96,98,100-114
+src/agent/index.ts
+  s_f826d2309080ef::t_f90f48d9ee6cd9 23,87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "5dfe9975f94dfe70d61ff3dcc4b55feb4f39f4c0",
+  "prompts": {},
+  "sessions": {
+    "s_f826d2309080ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ceb-1a04-79b1-bfba-a09d1a336374",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

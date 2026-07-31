@@ -1,0 +1,23 @@
+openwiki/agent/workflow.md
+  s_0a49fbee75b215::t_8a1b4b109c7568 65-70
+src/agent/prompt.ts
+  s_0a49fbee75b215::t_8c599048cf1b76 297,304-309
+src/ingestion.ts
+  s_0a49fbee75b215::t_4fb3c8a4c3c41f 338,363,367,371
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "0abdc61256bd9c530f842520984f947cbb6bdc41",
+  "prompts": {},
+  "sessions": {
+    "s_0a49fbee75b215": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3846-9f8c-7833-b477-085e5084e802",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

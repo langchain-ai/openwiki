@@ -1,0 +1,32 @@
+src/env.ts
+  s_54e363f268ec2d::t_a057e86a3db8f4 298-306
+  s_54e363f268ec2d::t_49f14865085eba 274-282
+test/openai-chatgpt-credentials.test.ts
+  s_54e363f268ec2d::t_568a3e96440491 61,181,196
+test/env-behavior.test.ts
+  s_54e363f268ec2d::t_244a378ee3a834 206-216
+src/credentials.tsx
+  s_54e363f268ec2d::t_17661daeb42bdd 2867
+  s_54e363f268ec2d::t_0c84ef14d036eb 395,2678,4106,4247
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "de10ce177d1889d9511f17292aef96c364a25a93",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_54e363f268ec2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ce63c4d8-ec0b-4a45-924e-e2a54e283581",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

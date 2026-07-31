@@ -1,0 +1,19 @@
+src/agent/prompt.ts
+  s_fe8c9d72e4a49f::t_018e938edea956 106-113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "dfa73cce9d55e674152015fc8f925e1088614d0f",
+  "prompts": {},
+  "sessions": {
+    "s_fe8c9d72e4a49f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019edc13-0920-78e0-a374-dda4523ed88e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

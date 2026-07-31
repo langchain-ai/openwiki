@@ -1,0 +1,28 @@
+README.md
+  h_33f63fd75d0bd5 18,20-22
+examples/openwiki-update.gitlab-ci.yml
+  s_2859e30e668c29::t_d547a50b4c6f0e 13
+openwiki/operations/credentials-and-updates.md
+  s_2859e30e668c29::t_960baf02d811e5 173,183
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6e29b857fad02b85d5e323e532e5fa8816ac52fd",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2859e30e668c29": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3ede-685b-72b1-a56d-01cf16ae4eed",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

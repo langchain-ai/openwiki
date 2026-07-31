@@ -1,0 +1,71 @@
+src/ui/app.tsx
+  s_8d4a238c334fd1::t_86834ec2d9eabc 48-51,53,55-59
+  s_8d4a238c334fd1::t_b74214c86e22e9 1-47,52,54,60-743
+src/ui/header.tsx
+  s_8d4a238c334fd1::t_1fed9bae590384 1-57,63-186
+  s_8d4a238c334fd1::t_c7c9ba349f14a4 58-62
+src/ui/views.tsx
+  s_8d4a238c334fd1::t_68572b0bf4ac94 1-10,15-53,58-107,112-140,145-164,174-185
+  s_8d4a238c334fd1::t_e961586cb551c5 108-111
+  s_8d4a238c334fd1::t_4352174a90c374 141-144
+  s_8d4a238c334fd1::t_0cc4b125f38b76 11-14
+  s_8d4a238c334fd1::t_9cf78b1de9ea81 165-173
+  s_8d4a238c334fd1::t_5556d20b0f8905 186
+  s_8d4a238c334fd1::t_9c1df69c6b1fba 54-57
+src/ui/run-view.tsx
+  s_8d4a238c334fd1::t_5b6e76b84ef6fd 6-7,10
+  s_8d4a238c334fd1::t_586e40e25af053 8-9
+  s_8d4a238c334fd1::t_3e863e42284b30 185-188
+  s_8d4a238c334fd1::t_c6e94df3daa787 12-16,23,25-28
+  s_8d4a238c334fd1::t_7eca64c9fc9107 1-5,11,17-22,24,29-184,189-217
+src/ui/markdown.tsx
+  s_8d4a238c334fd1::t_b87d44d8a45c5b 1-5,11-189
+  s_8d4a238c334fd1::t_5fc4a7ea97afe7 6-10
+src/ui/chat-input.tsx
+  s_8d4a238c334fd1::t_4dbae1342833dd 562-566,571
+  s_8d4a238c334fd1::t_6b2ea1de5c4e09 11,15-16
+  s_8d4a238c334fd1::t_ee4b846143d895 590-593,597
+  s_8d4a238c334fd1::t_43fdacfb427422 1-3,5-10,12-14,17,41
+  s_8d4a238c334fd1::t_b3d8d0393b63b8 554-557,560
+  s_8d4a238c334fd1::t_4eb0a0b4295301 18-23,34,36-40
+src/ui/tool-display.ts
+  s_8d4a238c334fd1::t_f71655277ed2ef 285-288
+  s_8d4a238c334fd1::t_d067a50f7247ea 51-55,57,59-60,62,64-67,69,71-74
+  s_8d4a238c334fd1::t_54a7946bfc165f 7-11
+  s_8d4a238c334fd1::t_73846cfde9bf3e 27-30
+  s_8d4a238c334fd1::t_347af1288f6f91 1-6,12-26,31-50,58,63,68,70,75-284,289-322
+  s_8d4a238c334fd1::t_b7258ebd5ba962 56,61
+src/ui/run-log.ts
+  s_8d4a238c334fd1::t_06a27f7fdc483f 11-14
+  s_8d4a238c334fd1::t_a3f2be92612e24 32-36
+  s_8d4a238c334fd1::t_8d3b57e12aaaa3 1-10,15-31,37-220
+src/index.tsx
+  s_8d4a238c334fd1::t_141fbb8eb0d0a6 1-64
+  s_8d4a238c334fd1::t_2dcd6264fb122b 65-68
+src/ui/components.tsx
+  s_8d4a238c334fd1::t_fe1b209561f0c3 82-96
+  s_8d4a238c334fd1::t_c1f96fa42ae786 1-81
+src/ui/types.ts
+  s_8d4a238c334fd1::t_7c9305046cd061 1-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "a8bbf990a16ae0b2e58dc02acc20a4ef7f4af5e9",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

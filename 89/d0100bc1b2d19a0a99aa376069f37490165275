@@ -1,0 +1,29 @@
+test/redaction.test.ts
+  s_8d4a238c334fd1::t_6c694cc15b9d68 194-232
+  s_8d4a238c334fd1::t_91eae9e5279055 8
+src/env.ts
+  s_8d4a238c334fd1::t_5111fe1d26a81d 125-170
+src/diagnostics.ts
+  s_8d4a238c334fd1::t_fc9a1a587761dc 1,8-12,17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "89d0100bc1b2d19a0a99aa376069f37490165275",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

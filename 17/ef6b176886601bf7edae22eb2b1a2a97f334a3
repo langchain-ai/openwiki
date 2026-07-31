@@ -1,0 +1,54 @@
+src/cli/commands/ingest.ts
+  s_8d4a238c334fd1::t_6cfd02b6d8f5d6 1-45
+src/cli/run-mode.ts
+  s_8d4a238c334fd1::t_d97b6ad932fde3 20-22
+  s_8d4a238c334fd1::t_68f57f6f10f5f8 1-19,23-38
+src/cli/commands/cron.ts
+  s_8d4a238c334fd1::t_999e45c7151542 1-215
+src/cli/error-diagnostics.ts
+  s_8d4a238c334fd1::t_1b3b6e64cc9669 11,16
+  s_8d4a238c334fd1::t_f5ec234c421b3c 29,322
+  s_8d4a238c334fd1::t_ae277a9401168d 1-4,6-8,10,13,17-22,30-317,323-334
+  s_8d4a238c334fd1::t_e082dbc853caa4 318-321
+  h_f78d33d4280f3f 5,9,12,14-15
+  s_8d4a238c334fd1::t_8af5e9f480b368 23-28
+src/cli.tsx
+  s_8d4a238c334fd1::t_263a833cc0b9e9 8,10-19
+  s_8d4a238c334fd1::t_4f31b6c0c60d6f 6-7,9
+  s_8d4a238c334fd1::t_6fe4a32d5bf4b5 45
+  s_8d4a238c334fd1::t_4b7321789abb9f 43,69
+src/cli/run-print.ts
+  s_8d4a238c334fd1::t_a4044d218c0d6c 1-52
+src/cli/commands/auth.ts
+  s_8d4a238c334fd1::t_0d90837898759e 1-92
+src/ui/format.ts
+  s_8d4a238c334fd1::t_75c39ae0b99ff2 1-38
+CONVENTIONS.md
+  s_8d4a238c334fd1::t_b889475324c2f4 1-17,27-82,84,86,89-158
+  s_8d4a238c334fd1::t_616a9afc98f509 85,87
+  s_8d4a238c334fd1::t_5ea30939af7fb0 18-26
+  s_8d4a238c334fd1::t_383094c7c41a49 83,88
+src/cli/commands/ngrok.ts
+  s_8d4a238c334fd1::t_7ce49f06d9a423 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "17ef6b176886601bf7edae22eb2b1a2a97f334a3",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+README.md
+  s_466497d4107182::t_cbb1a764547f1d 134
+test/code-mode.test.ts
+  s_466497d4107182::t_6411f761ea13d3 28-30
+  s_466497d4107182::t_30512d0ad60137 1-27,31-122
+examples/openwiki-update.yml
+  s_466497d4107182::t_e4de16348e7886 43-47
+src/code-mode.ts
+  s_466497d4107182::t_011473b91add98 3,9-12,18
+  s_466497d4107182::t_2b6808907e1380 35,37-48
+  s_466497d4107182::t_d085eb240434d3 108-112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8eb373934c56c076b635bf1ac1663c1366f47fb2",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_466497d4107182": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6e7a2ee2-e8fe-4a71-bff3-80c383d32feb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
