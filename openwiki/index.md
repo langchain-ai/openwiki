@@ -11,5 +11,6 @@ okf_version: "0.1"
 - [agent](agent/)
 - [architecture](architecture/)
 - [cli](cli/)
+- [evals](evals/)
 - [integrations](integrations/)
 - [operations](operations/)
