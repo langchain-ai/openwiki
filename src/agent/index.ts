@@ -293,7 +293,13 @@ async function runOpenWikiAgentCore(
   const context = await inStage(
     "build",
     () =>
-      createRunContext(command, cwd, outputMode, options.language, openWikiIgnore),
+      createRunContext(
+        command,
+        cwd,
+        outputMode,
+        options.language,
+        openWikiIgnore,
+      ),
     { errorClass: "build_error", errorDetail: "run_context" },
   );
   emitDebug(options, "context=created");
