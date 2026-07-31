@@ -344,17 +344,22 @@ function normalizeOnboardingConfig(value: unknown): OpenWikiOnboardingConfig {
     }
   }
 
-  if (!config.ingestionSchedule) {
+  // Migrate global ingestionSchedule to source instances that lack their own schedule.
+  // Per-source schedules are the source of truth; the global is kept for backward compatibility.
+  if (config.ingestionSchedule) {
+    config.sourceInstances = config.sourceInstances.map((sourceConfig) => {
+      if (sourceConfig.schedule) {
+        return sourceConfig;
+      }
+      return { ...sourceConfig, schedule: config.ingestionSchedule };
+    });
+  } else {
+    // Backfill global ingestionSchedule from first source instance that has one.
     config.ingestionSchedule = config.sourceInstances.find(
       (sourceConfig) => sourceConfig.schedule,
     )?.schedule;
   }
 
-  config.sourceInstances = config.sourceInstances.map((sourceConfig) => {
-    const nextSourceConfig = { ...sourceConfig };
-    delete nextSourceConfig.schedule;
-    return nextSourceConfig;
-  });
   config.sources = deriveLegacySources(config.sourceInstances);
 
   return config;
@@ -411,6 +416,7 @@ function deriveLegacySources(
         connectedAt: sourceInstance.connectedAt,
         connectorConfig: sourceInstance.connectorConfig,
         ingestionGoal: sourceInstance.ingestionGoal,
+        schedule: sourceInstance.schedule,
       };
     }
   }
