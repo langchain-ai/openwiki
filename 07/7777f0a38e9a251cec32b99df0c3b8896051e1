@@ -21,6 +21,8 @@ src/agent/index.ts
   s_1a094c985abfe9::t_a228dca909b2f1 193-196,198,201,211-213
   s_1a094c985abfe9::t_db3760540f8727 426-435
   s_1a094c985abfe9::t_32d9fb62d294b3 502-515
+  s_d80d23df626cc1::t_544fd3a2394ebb 295-296
+  s_d80d23df626cc1::t_eca5d86771bf47 404-410
 src/telemetry/config.ts
   h_f78d33d4280f3f 9
 src/cli.tsx
@@ -78,6 +80,14 @@ test/telemetry.test.ts
       "agent_id": {
         "tool": "claude",
         "id": "09f52302-2078-4302-993a-18182eb5d654",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_d80d23df626cc1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dd16ad7-edaf-4e90-b062-7f6048ea2ff8",
         "model": "claude-opus-4-8"
       },
       "human_author": "Colin Francis <colin.francis@langchain.dev>"
