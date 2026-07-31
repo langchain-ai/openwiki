@@ -36,8 +36,6 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 - **LangSmith connector:** pull recent LangSmith traces (tool calls, outcomes, latency) into a code wiki.
 - **GitHub Copilot provider:** reuse an existing Copilot subscription for inference, no separate API key required.
 
-See the [changelog](./CHANGELOG.md) for the full history.
-
 ## Quick start
 
 Install the CLI:
