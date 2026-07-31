@@ -2,10 +2,7 @@
 
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./static/openwiki-logo-dark.png">
-  <img alt="OpenWiki" src="./static/openwiki-logo-light.png" width="620">
-</picture>
+<img alt="OpenWiki" src="./static/openwiki-lockup.png" width="620">
 
 ### The self-maintaining wiki. Built for agents, explored by humans.
 
