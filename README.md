@@ -234,11 +234,21 @@ Locally the setup wizard saves this to `~/.openwiki/.env`. In CI, set it as a re
 
 Your wiki stays in the repository as plain Markdown you own, with OpenWiki-managed grounding and run metadata versioned alongside it.
 
-- **Agents read it as memory.** On each `code` run, OpenWiki maintains an `AGENTS.md` and `CLAUDE.md` at the repo root that point your coding agent at the wiki. It only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched.
+- **Agents read it as memory.** On each `code` run, OpenWiki maintains an `AGENTS.md` and `CLAUDE.md` at the repo root that point your coding agent at the wiki. It only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched. Repositories that own those files themselves can select the `preserve` policy below.
 - **Grounding stays with the wiki.** Versioned claim sidecars under `openwiki/.claims/` travel with the Markdown, so the evidence needed to maintain factual pages is inspectable and reviewable.
 - **You set the brief.** Repository-specific instructions live in `openwiki/INSTRUCTIONS.md`, a user-authored file OpenWiki reads for scope and priorities but never rewrites during normal runs.
 - **No-op runs do not churn docs.** A clean update skips model work and leaves wiki content untouched while refreshing `.last-update.json` to record that the check ran.
 - **Local, private config.** Provider choice, keys, and optional LangSmith tracing are saved to `~/.openwiki/.env` on your machine.
+
+Agent-file ownership is committed in `openwiki.config.yaml`. The default policy is `manage`; set `preserve` to leave existing root files byte-for-byte unchanged and keep missing files absent during init, update, chat, and scheduled runs:
+
+```yaml
+codeMode:
+  agentFiles:
+    policy: preserve
+```
+
+Use `--agent-files-policy <manage|preserve>` to override that policy for one code-mode run without rewriting the config. Resolution order is CLI override, committed config, then the `manage` default. The `agentFiles` mapping leaves room for future path configuration without changing the meaning of the policy setting. A newly generated workflow reads the committed config on later runs and omits `AGENTS.md` and `CLAUDE.md` from its pull request paths when the committed policy is `preserve`.
 
 ## Open Knowledge Format (OKF v0.2)
 
@@ -484,6 +494,7 @@ openwiki "generate docs"         # start with an initial request
 openwiki -p "what can you do?"   # one-shot, print, and exit
 openwiki --init                  # initialize code docs (personal: openwiki personal --init)
 openwiki --update                # update code docs (personal: openwiki personal --update)
+openwiki code --update --agent-files-policy preserve # preserve root agent files for one run
 openwiki visualize               # interactive graph + live reader
 openwiki visualize openwiki --export docs/openwiki-visualizer  # static graph + reader
 openwiki auth <provider>         # authenticate a connector (slack, gmail, x, notion)

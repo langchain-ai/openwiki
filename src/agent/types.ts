@@ -1,3 +1,5 @@
+import type { CodeModeAgentFilesPolicy } from "../config/code-mode.js";
+
 export type OpenWikiCommand = "chat" | "init" | "update";
 export type OpenWikiOutputMode = "local-wiki" | "repository";
 
@@ -76,6 +78,7 @@ export type OpenWikiRunEvent =
     };
 
 export type OpenWikiRunOptions = {
+  agentFilesPolicy?: CodeModeAgentFilesPolicy | null;
   debug?: boolean;
   isFollowup?: boolean;
   language?: string | null;
