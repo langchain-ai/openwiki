@@ -3177,14 +3177,14 @@ function createToolDisplay(
       return pickToolDisplay(
         variantIndex,
         [
-          `Spinning up ${formatCount(count, "subagent", "subagents")}`,
-          `Starting ${formatCount(count, "subagent", "subagents")}`,
-          `Delegating to ${formatCount(count, "subagent", "subagents")}`,
+          `Starting ${formatCount(count, "task", "tasks")}`,
+          `Opening ${formatCount(count, "task", "tasks")}`,
+          `Working on ${formatCount(count, "task", "tasks")}`,
         ],
         [
-          `Finished ${formatCount(count, "subagent", "subagents")}`,
-          `Completed ${formatCount(count, "subagent", "subagents")}`,
-          `Wrapped up ${formatCount(count, "subagent", "subagents")}`,
+          `Finished ${formatCount(count, "task", "tasks")}`,
+          `Completed ${formatCount(count, "task", "tasks")}`,
+          `Wrapped up ${formatCount(count, "task", "tasks")}`,
         ],
       );
     }

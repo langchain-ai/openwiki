@@ -69,14 +69,14 @@ describe("parseAgentStreamChunk", () => {
     expect(event).toBeNull();
   });
 
-  test("preserves delegated subagent output", () => {
+  test("preserves nested task output", () => {
     const event = parseAgentStreamChunk(
-      makeChunk([{ type: "text", text: "Subagent output" }], ["task", "agent"]),
+      makeChunk([{ type: "text", text: "Task output" }], ["task", "agent"]),
     );
 
     expect(event).toMatchObject({
       source: "subgraph",
-      text: "Subagent output",
+      text: "Task output",
       type: "text",
     });
   });

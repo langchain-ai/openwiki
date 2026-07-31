@@ -13,11 +13,11 @@ describe("createRunContext output language", () => {
 
     try {
       await expect(
-        createRunContext("chat", cwd, "repository", "zh-CN"),
+        createRunContext(cwd, "repository", "zh-CN"),
       ).resolves.toMatchObject({
         language: "zh-CN",
       });
-      expect(await createRunContext("chat", cwd, "repository")).toMatchObject({
+      expect(await createRunContext(cwd, "repository")).toMatchObject({
         language: "en",
       });
     } finally {
@@ -30,7 +30,7 @@ describe("createRunContext output language", () => {
 
     try {
       await expect(
-        createRunContext("chat", cwd, "local-wiki", "PT-br"),
+        createRunContext(cwd, "local-wiki", "PT-br"),
       ).resolves.toMatchObject({ language: "pt-BR" });
     } finally {
       await rm(cwd, { recursive: true, force: true });
@@ -42,7 +42,7 @@ describe("createRunContext output language", () => {
 
     try {
       expect(
-        await createRunContext("chat", cwd, "local-wiki", "fake-language"),
+        await createRunContext(cwd, "local-wiki", "fake-language"),
       ).toMatchObject({ language: "en" });
     } finally {
       await rm(cwd, { recursive: true, force: true });
@@ -64,7 +64,7 @@ describe("createRunContext language inheritance", () => {
         "zh-CN",
       );
 
-      expect(await createRunContext("chat", cwd, "local-wiki")).toMatchObject({
+      expect(await createRunContext(cwd, "local-wiki")).toMatchObject({
         language: "zh-CN",
       });
     } finally {
@@ -85,9 +85,9 @@ describe("createRunContext language inheritance", () => {
         "zh-CN",
       );
 
-      expect(
-        await createRunContext("chat", cwd, "local-wiki", "hi"),
-      ).toMatchObject({ language: "hi" });
+      expect(await createRunContext(cwd, "local-wiki", "hi")).toMatchObject({
+        language: "hi",
+      });
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -107,7 +107,7 @@ describe("createRunContext language inheritance", () => {
       );
 
       expect(
-        await createRunContext("chat", cwd, "local-wiki", "not-a-language"),
+        await createRunContext(cwd, "local-wiki", "not-a-language"),
       ).toMatchObject({ language: "zh-CN" });
     } finally {
       await rm(cwd, { recursive: true, force: true });

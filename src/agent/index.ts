@@ -269,13 +269,7 @@ async function runOpenWikiAgentCore(
   openWikiIgnore: OpenWikiIgnore,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
-  const context = await createRunContext(
-    command,
-    cwd,
-    outputMode,
-    options.language,
-    openWikiIgnore,
-  );
+  const context = await createRunContext(cwd, outputMode, options.language);
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
     command === "chat"
@@ -529,37 +523,13 @@ function createRunUserMessage(
     return options.userMessage.trim();
   }
 
-  return `
-${createUserPrompt(
-  command,
-  context,
-  options.userMessage ?? null,
-  options.outputMode ?? "local-wiki",
-)}
-
-${formatRuntimeRootLabel(options.outputMode ?? "local-wiki")}:
-${cwd}
-
-Runtime note:
-- ${formatRuntimeRootInstruction(options.outputMode ?? "local-wiki")}
-- Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.
-- Shell execute commands run on the host. For execute, use cd ${cwd} before commands that should run against this root.
-- Do not search parent directories or unrelated directories.
-`.trim();
-}
-
-function formatRuntimeRootLabel(outputMode: OpenWikiOutputMode): string {
-  return outputMode === "local-wiki" ? "Local wiki root" : "Repository root";
-}
-
-export function formatRuntimeRootInstruction(
-  outputMode: OpenWikiOutputMode,
-): string {
-  if (outputMode === "local-wiki") {
-    return "Filesystem tools use a virtual root: / means the local wiki directory above. Write wiki pages directly under /, for example /quickstart.md, /sources/gmail.md, and /_plan.md. Do not create a nested /openwiki directory.";
-  }
-
-  return "Filesystem tools use a virtual root: / means the repository root. The generated repository wiki lives under /openwiki, for example /openwiki/quickstart.md and /openwiki/architecture/overview.md. Inspect source files from repository-root paths such as /README.md, /src/agent/index.ts, and /package.json.";
+  return createUserPrompt(
+    command,
+    context,
+    options.userMessage ?? null,
+    options.outputMode ?? "local-wiki",
+    cwd,
+  );
 }
 
 async function createCheckpointer(

@@ -48,8 +48,8 @@ importers:
         specifier: 3.24.0
         version: 3.24.0
       deepagents:
-        specifier: ^1.11.1
-        version: 1.11.1(7f1e56310efb158954ec1f843ef153ef)
+        specifier: 1.12.0
+        version: 1.12.0(7f1e56310efb158954ec1f843ef153ef)
       google-auth-library:
         specifier: ^10.9.0
         version: 10.9.0
@@ -1498,8 +1498,8 @@ packages:
   deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
 
-  deepagents@1.11.1:
-    resolution: {integrity: sha512-qBdQ+rmQteHsGgDjqubbBEaY6qcCyQdhKHYKs3f4G7FMnfGMWo/OvbzGncDGIjQLqSl1pF7tD/XkQmfVCU/fhQ==}
+  deepagents@1.12.0:
+    resolution: {integrity: sha512-HE4MQZIlfMsW2IOW5ojtzd5SNBuROf+Kk4z0V4mkxCUudkEJ1m5Zxv4vpWf2mcRbtnBEvB6rCS6p7F+4CkugZg==}
     peerDependencies:
       '@langchain/core': ^1.2.0
       '@langchain/langgraph': ^1.4.4
@@ -4379,7 +4379,7 @@ snapshots:
 
   deep-is@0.1.4: {}
 
-  deepagents@1.11.1(7f1e56310efb158954ec1f843ef153ef):
+  deepagents@1.12.0(7f1e56310efb158954ec1f843ef153ef):
     dependencies:
       '@langchain/core': 1.2.1(openai@6.45.0(@aws-sdk/credential-provider-node@3.972.63)(@smithy/signature-v4@5.6.2)(ws@8.21.0)(zod@4.4.3))(ws@8.21.0)
       '@langchain/langgraph': 1.4.7(@langchain/core@1.2.1(openai@6.45.0(@aws-sdk/credential-provider-node@3.972.63)(@smithy/signature-v4@5.6.2)(ws@8.21.0)(zod@4.4.3))(ws@8.21.0))(react@18.3.1)(zod@4.4.3)
