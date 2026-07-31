@@ -9,6 +9,9 @@ src/agent/index.ts
   s_1a094c985abfe9::t_255a5722a33826 364-367
   s_1a094c985abfe9::t_ea4b2a42b35583 418-419
   s_1a094c985abfe9::t_22489d0867e636 432-439
+  s_d80d23df626cc1::t_722a00662b8aa7 213
+  s_d80d23df626cc1::t_62f43fa81cd22d 312
+  s_d80d23df626cc1::t_9e72f610a49985 411-417
 ---
 {
   "schema_version": "authorship/3.0.0",
@@ -20,6 +23,14 @@ src/agent/index.ts
       "agent_id": {
         "tool": "claude",
         "id": "09f52302-2078-4302-993a-18182eb5d654",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_d80d23df626cc1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dd16ad7-edaf-4e90-b062-7f6048ea2ff8",
         "model": "claude-opus-4-8"
       },
       "human_author": "Colin Francis <colin.francis@langchain.dev>"
