@@ -3,8 +3,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/langchain-ai/openwiki/main/static/openwiki-logo-dark.png">
-  <img alt="OpenWiki" src="https://raw.githubusercontent.com/langchain-ai/openwiki/main/static/openwiki-logo-light.png" width="620">
+  <source media="(prefers-color-scheme: dark)" srcset="./static/openwiki-logo-dark.png">
+  <img alt="OpenWiki" src="./static/openwiki-logo-light.png" width="620">
 </picture>
 
 ### The self-maintaining wiki. Built for agents, explored by humans.
@@ -32,8 +32,8 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 - **Open Knowledge Format** ([OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)) output with validated Mermaid diagrams.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/langchain-ai/openwiki/main/static/architecture-dark.png">
-  <img alt="How OpenWiki works: sources feed the agent, which writes a living wiki read by agents and humans, kept fresh by CI." src="https://raw.githubusercontent.com/langchain-ai/openwiki/main/static/architecture-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="./static/architecture-dark.png">
+  <img alt="How OpenWiki works: sources feed the agent, which writes a living wiki read by agents and humans, kept fresh by CI." src="./static/architecture-light.png">
 </picture>
 
 ## Quick start
@@ -82,7 +82,7 @@ openwiki visualize
 ```
 
 <div align="center">
-  <img alt="The OpenWiki visualizer: an interactive node graph beside a live Markdown reader." src="https://raw.githubusercontent.com/langchain-ai/openwiki/main/static/visualizer.png" width="880">
+  <img alt="The OpenWiki visualizer: an interactive node graph beside a live Markdown reader." src="./static/visualizer.png" width="880">
 </div>
 
 This serves `./openwiki` on a local loopback address (`127.0.0.1`, never exposed on the network) and opens your browser to the graph. Edits to the wiki files are picked up automatically while the server runs. Pass a path to visualize a different directory, `--port <port>` to choose the port (it increments on conflict; default `4321`), and `--no-open` to leave the browser alone:
