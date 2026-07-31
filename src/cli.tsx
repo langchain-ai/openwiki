@@ -41,7 +41,7 @@ import {
   isSecretLikeKey,
   sanitizeDiagnosticText,
 } from "./diagnostics.js";
-import { stripHtmlTags } from "./utils.js";
+import { stripHtmlTags, stripTerminalControlSequences } from "./utils.js";
 import {
   type OpenWikiRunEvent,
   type OpenWikiRunResult,
@@ -1523,7 +1523,7 @@ function getSpinnerFrame(frame: number): string {
 }
 
 function MarkdownText({ markdown }: { markdown: string }) {
-  const tokens = marked.lexer(markdown, {
+  const tokens = marked.lexer(stripTerminalControlSequences(markdown), {
     async: false,
     gfm: true,
   });
