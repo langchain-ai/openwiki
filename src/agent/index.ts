@@ -27,7 +27,11 @@ import {
   sanitizeDiagnosticText,
   SECRET_KEY_PATTERN_SOURCE,
 } from "../diagnostics.js";
-import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
+import {
+  openWikiConversationHistoryDir,
+  openWikiLocalWikiDir,
+  openWikiSkillsDir,
+} from "../openwiki-home.js";
 import { resolveLanguage } from "../language.js";
 import {
   resolveConceptTypeLabel,
