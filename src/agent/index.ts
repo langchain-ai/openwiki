@@ -8,6 +8,7 @@ import { ChatGoogle } from "@langchain/google/node";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
+import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
 import {
   CompositeBackend,
@@ -65,6 +66,7 @@ import type {
   OpenWikiRunEvent,
   OpenWikiRunOptions,
   OpenWikiRunResult,
+  RunContext,
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
@@ -280,6 +282,138 @@ async function resolveRunConfig(
   }
 }
 
+export type OpenWikiAgentOptions = {
+  command: OpenWikiCommand;
+  cwd: string;
+  language?: string | null;
+  model: BaseChatModel;
+  onEvent?: (event: OpenWikiRunEvent) => void;
+  outputMode: OpenWikiOutputMode;
+};
+
+/** Creates an OpenWiki DeepAgent graph from an already-initialized chat model. */
+export async function createOpenWikiAgent(
+  options: OpenWikiAgentOptions,
+): Promise<ReturnType<typeof createDeepAgent>> {
+  if (!path.isAbsolute(options.cwd)) {
+    throw new Error("OpenWiki agent cwd must be an absolute path.");
+  }
+
+  await syncBundledSkills();
+  const openWikiIgnore =
+    options.outputMode === "repository"
+      ? await OpenWikiIgnore.load(options.cwd)
+      : new OpenWikiIgnore([]);
+  const context = await createRunContext(
+    options.command,
+    options.cwd,
+    options.outputMode,
+    options.language,
+    openWikiIgnore,
+  );
+  const checkpointer = await createCheckpointer(
+    resolveCheckpointTarget(options.command),
+  );
+
+  return createOpenWikiAgentGraph({
+    ...options,
+    checkpointer,
+    context,
+    openWikiIgnore,
+  });
+}
+
+type OpenWikiAgentGraphOptions = OpenWikiAgentOptions & {
+  checkpointer: SqliteSaver;
+  context: RunContext;
+  openWikiIgnore: OpenWikiIgnore;
+};
+
+function createOpenWikiAgentGraph(
+  options: OpenWikiAgentGraphOptions,
+): ReturnType<typeof createDeepAgent> {
+  const wikiBackend = new OpenWikiLocalShellBackend({
+    docsOnly: options.command !== "chat",
+    openWikiIgnore: options.openWikiIgnore,
+    maxOutputBytes: 100_000,
+    outputMode: options.outputMode,
+    rootDir: options.cwd,
+    timeout: 120,
+    virtualMode: true,
+  });
+  const backend = createAgentBackend(wikiBackend);
+  // An update inherits the wiki's persisted language unless --language requests a
+  // different one. The plan drives a beforeAgent pass that, on a switch,
+  // retranslates every page so the incremental update does not leave a mix of the
+  // old and new language, and on any update retries pages a prior run left
+  // pending. It is undefined for init and chat, which never translate.
+  const translation = resolveTranslationPlan(
+    options.command,
+    resolveLanguage(options.language).language,
+    options.context.lastUpdate?.language,
+  );
+  // Localized headings for the deterministic directory indexes, plus the
+  // localized fallback `type` stamped on pages the code has to repair. Both fall
+  // back to English for any language not in the static maps.
+  const indexLabels = resolveIndexLabels(options.context.language);
+  const conceptType = resolveConceptTypeLabel(options.context.language);
+
+  return createDeepAgent({
+    model: options.model,
+    tools: createOpenWikiConnectorTools(),
+    checkpointer: options.checkpointer,
+    backend,
+    middleware:
+      options.command === "chat"
+        ? []
+        : [
+            ...(translation
+              ? [
+                  createWikiTranslationMiddleware(
+                    wikiBackend,
+                    options.outputMode,
+                    options.model,
+                    translation,
+                    (message) => {
+                      options.onEvent?.({ type: "text", text: message });
+                      // Also emit to stderr so the warning survives the TUI
+                      // re-render and --print's discard of streamed text.
+                      process.stderr.write(`${message}\n`);
+                    },
+                    // The pass announces itself with one line in place of the
+                    // suppressed per-token translation output. It is routine
+                    // progress, so unlike a warning it is not mirrored to stderr.
+                    // The trailing blank line keeps it a distinct Markdown block:
+                    // the TUI coalesces consecutive text events into one
+                    // block-lexed log item, so without it the status would run
+                    // straight into the agent's first streamed line.
+                    (message) => {
+                      options.onEvent?.({
+                        type: "text",
+                        text: `${message}\n\n`,
+                      });
+                    },
+                  ),
+                ]
+              : []),
+            createOpenWikiIndexMiddleware(
+              wikiBackend,
+              options.outputMode,
+              indexLabels,
+              conceptType,
+            ),
+          ],
+    skills: ["/skills/"],
+    permissions: AGENT_FILESYSTEM_PERMISSIONS,
+    systemPrompt: createSystemPrompt(
+      options.command,
+      options.outputMode,
+      options.context.language,
+      options.openWikiIgnore,
+    ),
+  });
+}
+
 async function runOpenWikiAgentCore(
   command: OpenWikiCommand,
   cwd: string,
@@ -333,87 +467,19 @@ async function runOpenWikiAgentCore(
       ? `checkpointer=${formatUrlDebugValue(checkpointTarget.connString)}`
       : "checkpointer=memory",
   );
-  const wikiBackend = new OpenWikiLocalShellBackend({
-    docsOnly: command !== "chat",
-    openWikiIgnore,
-    maxOutputBytes: 100_000,
-    outputMode,
-    rootDir: cwd,
-    timeout: 120,
-    virtualMode: true,
-  });
-  const backend = createAgentBackend(wikiBackend);
-  // An update inherits the wiki's persisted language unless --language requests a
-  // different one. The plan drives a beforeAgent pass that, on a switch,
-  // retranslates every page so the incremental update does not leave a mix of the
-  // old and new language, and on any update retries pages a prior run left
-  // pending. It is undefined for init and chat, which never translate.
-  const translation = resolveTranslationPlan(
-    command,
-    resolveLanguage(options.language).language,
-    context.lastUpdate?.language,
-  );
-  // Localized headings for the deterministic directory indexes, plus the
-  // localized fallback `type` stamped on pages the code has to repair. Both fall
-  // back to English for any language not in the static maps.
-  const indexLabels = resolveIndexLabels(context.language);
-  const conceptType = resolveConceptTypeLabel(context.language);
   const agent = inStageSync(
     "build",
     () =>
-      createDeepAgent({
+      createOpenWikiAgentGraph({
+        command,
+        cwd,
+        language: options.language,
         model,
-        tools: createOpenWikiConnectorTools(),
+        onEvent: options.onEvent,
+        outputMode,
         checkpointer,
-        backend,
-        middleware:
-          command === "chat"
-            ? []
-            : [
-                ...(translation
-                  ? [
-                      createWikiTranslationMiddleware(
-                        wikiBackend,
-                        outputMode,
-                        model,
-                        translation,
-                        (message) => {
-                          options.onEvent?.({ type: "text", text: message });
-                          // Also emit to stderr so the warning survives the TUI
-                          // re-render and --print's discard of streamed text.
-                          process.stderr.write(`${message}\n`);
-                        },
-                        // The pass announces itself with one line in place of the
-                        // suppressed per-token translation output. It is routine
-                        // progress, so unlike a warning it is not mirrored to stderr.
-                        // The trailing blank line keeps it a distinct Markdown block:
-                        // the TUI coalesces consecutive text events into one
-                        // block-lexed log item, so without it the status would run
-                        // straight into the agent's first streamed line.
-                        (message) => {
-                          options.onEvent?.({
-                            type: "text",
-                            text: `${message}\n\n`,
-                          });
-                        },
-                      ),
-                    ]
-                  : []),
-                createOpenWikiIndexMiddleware(
-                  wikiBackend,
-                  outputMode,
-                  indexLabels,
-                  conceptType,
-                ),
-              ],
-        skills: ["/skills/"],
-        permissions: AGENT_FILESYSTEM_PERMISSIONS,
-        systemPrompt: createSystemPrompt(
-          command,
-          outputMode,
-          context.language,
-          openWikiIgnore,
-        ),
+        context,
+        openWikiIgnore,
       }),
     { errorClass: "build_error", errorDetail: "agent" },
   );
