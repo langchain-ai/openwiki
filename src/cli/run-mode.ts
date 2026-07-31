@@ -1,5 +1,6 @@
 import type { OpenWikiOutputMode } from "../agent/types.js";
 import { openWikiLocalWikiDir } from "../config/openwiki-home.js";
+import type { CodeModeRepoSetupOptions } from "../ingestion/code-mode.js";
 import type { CliCommand, OpenWikiRunMode } from "./commands.js";
 
 /**
@@ -52,6 +53,16 @@ export function getRunModeOutputMode(
   mode: OpenWikiRunMode,
 ): OpenWikiOutputMode {
   return mode === "code" ? "repository" : "local-wiki";
+}
+
+/** Maps a parsed code-mode command to repository setup behavior. */
+export function getCodeModeRepoSetupOptions(
+  command: Extract<CliCommand, { kind: "run" }>,
+): CodeModeRepoSetupOptions {
+  return {
+    agentFilesPolicy: command.agentFilesPolicy,
+    createWorkflow: command.command === "init",
+  };
 }
 
 /**

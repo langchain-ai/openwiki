@@ -3,6 +3,7 @@ import { OpenWikiLocalShellBackend } from "../agent/docs-only-backend.js";
 import { OpenWikiIgnore } from "../agent/openwiki-ignore.js";
 import type { RunContext } from "../agent/types.js";
 import type { UpdateNoopStatus } from "../agent/utils.js";
+import type { CodeModeAgentFilesPolicy } from "../config/code-mode.js";
 import {
   createOpenWikiContentSnapshot,
   createRepositorySourceSnapshot,
@@ -73,6 +74,9 @@ import {
  * Inputs required to start or resume one repository-generation run.
  */
 export interface BeginRepositoryRunInput {
+  /** One-run override for repository agent-file handling. */
+  agentFilesPolicy?: CodeModeAgentFilesPolicy | null;
+
   /**
    * Absolute Git repository root for the run.
    */
@@ -332,6 +336,7 @@ export async function beginRepositoryRun(
     resolvedRequest.kind === "resolved" ? resolvedRequest.language : undefined;
 
   await ensureCodeModeRepoSetup(input.root, {
+    agentFilesPolicy: input.agentFilesPolicy,
     createWorkflow: input.mode === "init",
   });
 

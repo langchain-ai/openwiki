@@ -95,6 +95,7 @@ describe("runOpenWikiAgent repository routing", () => {
 
     for (const command of ["init", "update"] as const) {
       const result = await runOpenWikiAgent(command, root, {
+        agentFilesPolicy: "preserve",
         outputMode: "repository",
         userMessage: "Honor the repository-specific documentation scope.",
       });
@@ -108,13 +109,18 @@ describe("runOpenWikiAgent repository routing", () => {
       expect.objectContaining({
         root,
         mode: "init",
+        agentFilesPolicy: "preserve",
         force: true,
         planningContext: "Honor the repository-specific documentation scope.",
       }),
     );
     expect(harness.runNativeRepositoryGeneration).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ root, mode: "update" }),
+      expect.objectContaining({
+        agentFilesPolicy: "preserve",
+        root,
+        mode: "update",
+      }),
     );
     expect(harness.createDeepAgent).not.toHaveBeenCalled();
   });
