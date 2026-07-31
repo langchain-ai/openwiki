@@ -82,7 +82,7 @@ openwiki visualize
 ```
 
 <div align="center">
-  <img alt="The OpenWiki visualizer: an interactive node graph beside a live Markdown reader." src="./static/visualizer.png" width="880">
+  <img alt="The OpenWiki visualizer: an interactive node graph beside a live Markdown reader." src="./static/visualizer.gif" width="880">
 </div>
 
 This serves `./openwiki` on a local loopback address (`127.0.0.1`, never exposed on the network) and opens your browser to the graph. Edits to the wiki files are picked up automatically while the server runs. Pass a path to visualize a different directory, `--port <port>` to choose the port (it increments on conflict; default `4321`), and `--no-open` to leave the browser alone:
