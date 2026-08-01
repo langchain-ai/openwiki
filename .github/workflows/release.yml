@@ -11,6 +11,9 @@ permissions:
 
 jobs:
   release:
+    # Upstream releases run by default. Forks must explicitly opt in because
+    # this job can create release PRs, push tags, and publish to npm.
+    if: github.repository == 'langchain-ai/openwiki' || vars.OPENWIKI_ENABLE_RELEASE == 'true'
     name: Release
     runs-on: ubuntu-latest
     permissions:
