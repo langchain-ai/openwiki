@@ -24,6 +24,8 @@ import {
   NVIDIA_BASE_URL_ENV_KEY,
   normalizeModelId,
   normalizeProvider,
+  ORCAROUTER_BASE_URL,
+  ORCAROUTER_BASE_URL_ENV_KEY,
   providerRequiresApiKey,
   providerRequiresRegion,
   providerRequiresSecretKey,
@@ -90,6 +92,7 @@ describe("normalizeProvider / isValidProvider", () => {
   test("normalizes case and whitespace to a known provider", () => {
     expect(normalizeProvider("  Anthropic ")).toBe("anthropic");
     expect(normalizeProvider("OPENROUTER")).toBe("openrouter");
+    expect(normalizeProvider(" OrcaRouter ")).toBe("orcarouter");
     expect(normalizeProvider(" Nebius ")).toBe("nebius");
     expect(normalizeProvider(" Gemini-Enterprise ")).toBe("gemini-enterprise");
   });
@@ -106,6 +109,7 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(isValidProvider("openai-compatible")).toBe(true);
     expect(isValidProvider("copilot")).toBe(true);
     expect(isValidProvider("nvidia")).toBe(true);
+    expect(isValidProvider("orcarouter")).toBe(true);
     expect(isValidProvider("gemini")).toBe(true);
     expect(isValidProvider("gemini-enterprise")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
@@ -145,6 +149,23 @@ describe("resolveConfiguredProvider", () => {
 
   test("falls back to nvidia when only an NVIDIA key is present", () => {
     expect(resolveConfiguredProvider({ NVIDIA_API_KEY: "x" })).toBe("nvidia");
+  });
+
+  test("falls back to orcarouter when only an OrcaRouter key is present", () => {
+    expect(resolveConfiguredProvider({ ORCAROUTER_API_KEY: "x" })).toBe(
+      "orcarouter",
+    );
+  });
+
+  test("keeps existing provider precedence ahead of orcarouter", () => {
+    // OrcaRouter is checked last among the API-key gateways, so a pre-existing
+    // key keeps selecting the provider it always did.
+    expect(
+      resolveConfiguredProvider({
+        OPENROUTER_API_KEY: "x",
+        ORCAROUTER_API_KEY: "y",
+      }),
+    ).toBe("openrouter");
   });
 
   test("falls back to bedrock when a complete legacy key pair is present", () => {
@@ -197,6 +218,7 @@ describe("resolveProviderBaseUrl", () => {
     expect(resolveProviderBaseUrl("nvidia", {})).toBe(
       "https://integrate.api.nvidia.com/v1",
     );
+    expect(resolveProviderBaseUrl("orcarouter", {})).toBe(ORCAROUTER_BASE_URL);
   });
 
   test("prefers a non-empty env override over the default", () => {
@@ -228,6 +250,11 @@ describe("resolveProviderBaseUrl", () => {
         [NVIDIA_BASE_URL_ENV_KEY]: "https://gateway.example/nvidia/v1",
       }),
     ).toBe("https://gateway.example/nvidia/v1");
+    expect(
+      resolveProviderBaseUrl("orcarouter", {
+        [ORCAROUTER_BASE_URL_ENV_KEY]: "https://gateway.example/orcarouter/v1",
+      }),
+    ).toBe("https://gateway.example/orcarouter/v1");
   });
 
   test("ignores a whitespace-only override", () => {
@@ -246,6 +273,11 @@ describe("resolveProviderBaseUrl", () => {
     expect(
       resolveProviderBaseUrl("nvidia", { [NVIDIA_BASE_URL_ENV_KEY]: "   " }),
     ).toBe("https://integrate.api.nvidia.com/v1");
+    expect(
+      resolveProviderBaseUrl("orcarouter", {
+        [ORCAROUTER_BASE_URL_ENV_KEY]: "   ",
+      }),
+    ).toBe(ORCAROUTER_BASE_URL);
   });
 
   test("returns undefined for a provider with no default and no override", () => {
@@ -611,6 +643,7 @@ describe("getDefaultModelId", () => {
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
+    expect(getDefaultModelId("orcarouter")).toBe("z-ai/glm-5.2");
     expect(getDefaultModelId("gemini")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);

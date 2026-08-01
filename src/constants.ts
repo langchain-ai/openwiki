@@ -27,6 +27,8 @@ export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
   "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
+export const ORCAROUTER_API_KEY_ENV_KEY = "ORCAROUTER_API_KEY";
+export const ORCAROUTER_BASE_URL_ENV_KEY = "ORCAROUTER_BASE_URL";
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
   "BEDROCK_AWS_SECRET_ACCESS_KEY";
@@ -83,6 +85,7 @@ export const OPENWIKI_X_REFRESH_TOKEN_ENV_KEY = "OPENWIKI_X_REFRESH_TOKEN";
 export const OPENWIKI_TAVILY_API_KEY_ENV_KEY = "TAVILY_API_KEY";
 export const DEFAULT_PROVIDER = "openai";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+export const ORCAROUTER_BASE_URL = "https://api.orcarouter.ai/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
@@ -97,7 +100,8 @@ export type OpenWikiProvider =
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "orcarouter";
 
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
@@ -223,6 +227,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "gemini",
   "gemini-enterprise",
   "openrouter",
+  "orcarouter",
   "openai-compatible",
   "bedrock",
   "fireworks",
@@ -383,6 +388,20 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "openrouter/fusion", label: "OpenRouter Fusion" },
       { id: "moonshotai/kimi-k2.7-code", label: "Kimi K2.7 Code" },
       { id: "anthropic/claude-opus-4-8", label: "Claude Opus" },
+      { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
+      { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
+      { id: "openai/gpt-5.5", label: "GPT 5.5" },
+    ],
+  },
+  orcarouter: {
+    apiKeyEnvKey: ORCAROUTER_API_KEY_ENV_KEY,
+    baseURL: ORCAROUTER_BASE_URL,
+    baseUrlEnvKey: ORCAROUTER_BASE_URL_ENV_KEY,
+    label: "OrcaRouter",
+    modelOptions: [
+      { id: "z-ai/glm-5.2", label: "GLM 5.2" },
+      { id: "kimi/kimi-k2.7-code", label: "Kimi K2.7 Code" },
+      { id: "anthropic/claude-opus-4.8", label: "Claude Opus" },
       { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
@@ -810,16 +829,18 @@ export function resolveConfiguredProvider(
                   ? "nebius"
                   : env[NVIDIA_API_KEY_ENV_KEY]
                     ? "nvidia"
-                    : hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                        ) ||
-                        hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-                        )
-                      ? "bedrock"
-                      : DEFAULT_PROVIDER)
+                    : env[ORCAROUTER_API_KEY_ENV_KEY]
+                      ? "orcarouter"
+                      : hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                          ) ||
+                          hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                          )
+                        ? "bedrock"
+                        : DEFAULT_PROVIDER)
   );
 }
 

@@ -183,6 +183,7 @@ The onboarding default is OpenAI with `gpt-5.6-terra`. Every provider includes p
 | **AWS Bedrock**                                              | IAM credentials                         |
 | **GitHub Copilot**                                           | GitHub CLI session                      |
 | **OpenRouter**                                               | `OPENROUTER_API_KEY`                    |
+| **OrcaRouter**                                               | `ORCAROUTER_API_KEY`                    |
 | **Nebius / Fireworks / Baseten / NVIDIA NIM**                | Provider API key                        |
 | **OpenAI-compatible** (LiteLLM, Ollama, LM Studio, gateways) | Base URL + key                          |
 
@@ -315,7 +316,7 @@ Some local servers ignore the API key value, but OpenWiki still requires `OPENAI
 
 <br/>
 
-**Alternative base URLs.** Route a provider at a self-hosted or proxied gateway by setting its base URL alongside its key: `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `BASETEN_BASE_URL`, `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, or `COPILOT_BASE_URL`. The `openai` provider routes tool calls through the Responses API (`/v1/responses`), which is useful for gateways that expose it.
+**Alternative base URLs.** Route a provider at a self-hosted or proxied gateway by setting its base URL alongside its key: `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `BASETEN_BASE_URL`, `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, `ORCAROUTER_BASE_URL`, or `COPILOT_BASE_URL`. The `openai` provider routes tool calls through the Responses API (`/v1/responses`), which is useful for gateways that expose it.
 
 ```bash
 OPENWIKI_PROVIDER=anthropic

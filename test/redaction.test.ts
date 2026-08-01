@@ -163,6 +163,13 @@ describe("sanitizeDiagnosticText", () => {
     expect(result).toContain("[REDACTED:OPENROUTER_API_KEY]");
   });
 
+  test("redacts OrcaRouter sk-orca- tokens with the OrcaRouter label", () => {
+    const result = sanitizeDiagnosticText("using sk-orca-deadbeef00 now");
+
+    expect(result).not.toContain("sk-orca-deadbeef00");
+    expect(result).toContain("[REDACTED:ORCAROUTER_API_KEY]");
+  });
+
   test("redacts Bearer tokens", () => {
     const result = sanitizeDiagnosticText(
       "Authorization: Bearer eyJhbGciOi.J9.abc-123",

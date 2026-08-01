@@ -17,6 +17,7 @@ import {
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  ORCAROUTER_API_KEY_ENV_KEY,
 } from "./constants.js";
 
 /**
@@ -50,6 +51,7 @@ export function sanitizeDiagnosticText(value: string): string {
     OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    ORCAROUTER_API_KEY_ENV_KEY,
     "LANGSMITH_API_KEY",
   ]) {
     const secret = process.env[key];
@@ -66,6 +68,7 @@ export function sanitizeDiagnosticText(value: string): string {
     )
     .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gu, "Bearer [REDACTED]")
     .replace(/\bsk-or-v1-[A-Za-z0-9_-]+/gu, "[REDACTED:OPENROUTER_API_KEY]")
+    .replace(/\bsk-orca-[A-Za-z0-9_-]+/gu, "[REDACTED:ORCAROUTER_API_KEY]")
     .replace(/\bsk-[A-Za-z0-9_-]+/gu, "[REDACTED:API_KEY]")
     .replace(/\bls[v_][A-Za-z0-9_-]+/gu, "[REDACTED:LANGSMITH_API_KEY]");
 }

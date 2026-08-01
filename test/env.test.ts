@@ -139,6 +139,11 @@ describe("MANAGED_ENV_KEYS", () => {
     expect(MANAGED_ENV_KEYS).toContain("BASETEN_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("FIREWORKS_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("NVIDIA_BASE_URL");
+    expect(MANAGED_ENV_KEYS).toContain("ORCAROUTER_BASE_URL");
+  });
+
+  test("manages the ORCAROUTER_API_KEY for the orcarouter provider", () => {
+    expect(MANAGED_ENV_KEYS).toContain("ORCAROUTER_API_KEY");
   });
 });
 
