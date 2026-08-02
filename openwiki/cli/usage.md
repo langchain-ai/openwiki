@@ -20,6 +20,8 @@ From `src/commands.ts` and `README.md`, the supported entry patterns are:
 - `openwiki --update [message]` — refresh existing OpenWiki documentation.
 - `openwiki -p, --print` — run once and print the final assistant output (non-interactive).
 - `openwiki --modelId <id>` / `--model-id <id>` — choose a model ID for the run.
+- `openwiki --language <locale>` / `-l <locale>` — generate the wiki in a specific language (BCP-47 locale, e.g. `zh-CN`, `hi`, `pt-BR`); see [Multilingual wikis](#multilingual-wikis).
+- `openwiki visualize [path] [--port <port>] [--no-open]` — serve an interactive node-graph visualizer for a wiki directory on a local loopback address; see [Visualizer](#visualizer).
 - `openwiki --help` / `-h` — print usage, options, and examples.
 - `openwiki --dry-run` — development-only option that avoids invoking the agent.
 
@@ -216,6 +218,41 @@ The `--hostname` flag passed to `gh` matches the tenant of the configured base
 URL (if `COPILOT_BASE_URL` points at a GHE.com data-residency host), so the
 reused session authenticates against the correct GitHub instance.
 
+## Visualizer
+
+`openwiki visualize` serves the generated wiki as an interactive node graph with a side-by-side Markdown reader in the browser (`src/visualize/server.ts`). It is a read-only viewer for already-generated docs, not a generation command.
+
+```sh
+openwiki visualize                       # serve ./openwiki on the default port
+openwiki visualize openwiki --port 4400  # serve a different directory on port 4400
+openwiki visualize openwiki --no-open    # do not open the browser automatically
+```
+
+Behavior and bounds, from `src/visualize/server.ts`:
+
+- The HTTP server binds to the loopback address `127.0.0.1` only — it is never exposed on the network. The preferred port defaults to `4321`; on `EADDRINUSE` it increments through up to 20 ports before failing.
+- A positional path selects the wiki directory (default `openwiki`). If the directory is missing, the server fails fast with a message directing you to run `openwiki --init` first.
+- `buildGraph()` in `src/visualize/graph.ts` parses the wiki into nodes (concept pages) and edges (Markdown links), exposing them at `/api/graph`.
+- A recursive file watcher (`startWatch`) debounces changes (150 ms) and rebuilds the graph; connected browsers receive a reload event over an SSE stream at `/events`, so edits to the wiki files refresh the live graph and reader while the server runs.
+- The page (`src/visualize/page.ts`) and client (`src/visualize/client.ts`) are server-owned static assets served at fixed routes (`/`, `/client.js`, `/client-lib.js`). The browser loads Mermaid and the graph/Markdown libraries from a pinned jsdelivr CDN, so an internet connection is required even though the server is local. The CSP pins script sources to `'self'` and the CDN origin; no `req.url` path is ever used to read a file from disk.
+- Press Ctrl-C (SIGINT) to stop the server.
+
+## Multilingual wikis
+
+`--language <locale>` (alias `-l`) generates the wiki in a language other than English, while keeping code identifiers, file paths, commands, API names, URLs, and code blocks canonical. `resolveLanguage()` in `src/language.ts` validates the value as a BCP-47 tag via `Intl.Locale`; an unrecognized value resolves to English with a warning suggesting a code such as `zh-CN`, `hi`, or `pt-BR`.
+
+```sh
+openwiki --init --language pt-BR
+openwiki --update --language zh-CN
+```
+
+Language is persisted state, not a one-shot flag:
+
+- On a run, the effective language is the validated `--language` flag, else the language recorded in `openwiki/.last-update.json` from the previous run, else English (resolved in `src/agent/utils.ts` as `requestedLanguage ?? lastUpdate?.language ?? "en"`, with the requested value validated by `resolveLanguage()` in `src/language.ts`). An update without `--language` keeps the existing wiki consistent in its established language instead of producing a mix.
+- The chosen language is written to the `language` field of `.last-update.json` so subsequent runs inherit it.
+- When a `--language` request changes the primary language subtag (for example `en` to `zh`), the [translation middleware](../agent/workflow.md) (`src/agent/translation-middleware.ts`) runs a deterministic translate-all pass **before** the agent edits: every eligible concept page is translated into the target language and marked with an `openwiki_translation_pending` front-matter field. Pages left pending by a prior failed switch are retranslated individually on the next update.
+- Deterministic, model-free localization (index section headings and the derived concept `type` label) is resolved by `resolveIndexLabels()` and `resolveConceptTypeLabel()` in `src/okf/index-labels.ts`, keyed by BCP-47 tag with region fallback to the primary subtag and then to English.
+
 ## Help text and validation
 
 The help content is centralized in `src/commands.ts` and is used by the CLI UI. Model validation is intentionally strict:
@@ -247,6 +284,11 @@ The help content is centralized in `src/commands.ts` and is used by the CLI UI. 
 - `src/auth/providers.ts`
 - `src/auth/configure.ts`
 - `src/auth/ngrok.ts`
+- `src/language.ts`
+- `src/visualize/server.ts`
+- `src/visualize/graph.ts`
+- `src/visualize/page.ts`
+- `src/visualize/client.ts`
 - `README.md`
 - `package.json`
 - Git evidence: commits `ceded10`, `f89b05d`, `fd3a702`, `8278c36`, `0fa1430`

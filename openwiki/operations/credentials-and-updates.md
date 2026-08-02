@@ -206,6 +206,25 @@ When a run fails mid-stream, the catch block in `src/agent/index.ts` still calls
 
 Update runs use this metadata to build a change summary since the previous successful OpenWiki execution — preferring `gitHead` for a precise commit range, falling back to `updatedAt` for a time-based range.
 
+## Ignoring paths with `.openwikiignore`
+
+A `.openwikiignore` file at the repository root keeps generated docs from reading or describing private, generated, or irrelevant paths. It is enforced as a **read boundary** during the run, not just a generation hint.
+
+Syntax is gitignore-compatible (`src/agent/openwiki-ignore.ts`): comments (`#`), blank lines, `*` and `**` globs, `?` single-char, leading-`/` anchoring to the repo root, trailing-`/` directory scoping, and `!` negation with last-match-wins ordering.
+
+```gitignore
+secrets/
+*.log
+!logs/keep.log
+```
+
+Enforcement and bounds:
+
+- The compiled `OpenWikiIgnore` ruleset is threaded through the agent backend, prompt, and run context as one cohesive object (`src/agent/docs-only-backend.ts`). When rules are active, filesystem tools (`read_file`, `write_file`, `edit_file`, raw reads) hard-deny any path the ruleset excludes, and shell `execute` is restricted to a small allowlist of maintenance commands so ignored paths cannot be reached via the shell.
+- Paths are canonicalized (`normalizeIgnorePath`) before matching, so equivalent spellings such as `./secrets/x`, `secrets/../secrets/x`, or backslash variants cannot slip past an anchored rule. Matching is case-insensitive (`/iu`) to close a bypass on case-insensitive filesystems where `Secrets/token.txt` and `secrets/token.txt` resolve to the same file.
+- The agent prompt is told the run has `.openwikiignore` rules and that matching paths are out of scope, and is directed to use the provided git summary plus `ls`, `read_file`, `glob`, and `grep` (which keep exclusions enforced) instead of shell-based discovery.
+- This is a read boundary, not a topic-suppression guarantee: ignored paths are never read, scanned, or reproduced, but the agent may still infer an ignored area from other allowed evidence such as tests, the README, or commit messages.
+
 ## Anonymous usage telemetry
 
 OpenWiki collects anonymous, per-machine usage telemetry via PostHog (`src/telemetry/`). The system emits a single `openwiki_run` event per run with mode (code/personal), provider, outcome (success/failure), latency, environment, and configured connectors. Telemetry can be disabled by setting `OPENWIKI_TELEMETRY_DISABLED=1` or `DO_NOT_TRACK=1`.
@@ -279,6 +298,9 @@ Bitbucket users should configure repository variables for the model provider key
 - `src/onboarding.ts`
 - `src/schedules.ts`
 - `src/code-mode.ts`
+- `src/agent/openwiki-ignore.ts`
+- `src/agent/docs-only-backend.ts`
+- `src/agent/prompt.ts`
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
 - `examples/openwiki-update.bitbucket-pipelines.yml`
