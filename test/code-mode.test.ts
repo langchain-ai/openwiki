@@ -97,6 +97,97 @@ Trailing notes that must survive.
 
     expect(second).toEqual(first);
   });
+
+  test("replaces a legacy unmarked OpenWiki section in place instead of appending a duplicate", async () => {
+    const repo = await createTempRepo();
+    const existing = `# My Project
+
+## OpenWiki
+
+This repository has documentation located in the /openwiki directory.
+
+- [OpenWiki quickstart](openwiki/quickstart.md)
+
+## Deployment
+
+Keep this section intact.
+`;
+    await writeFile(path.join(repo, "AGENTS.md"), existing, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+    expect(content).toContain("# My Project");
+    expect(content).toContain("Keep this section intact.");
+    expect(content).not.toContain(
+      "documentation located in the /openwiki directory",
+    );
+    // Exactly one OpenWiki section, and it is the managed block.
+    expect(content?.match(/^## OpenWiki/gm)).toHaveLength(1);
+    expect(content?.match(new RegExp(SNIPPET_START, "g"))).toHaveLength(1);
+    // Replaced where the legacy section was, not appended after everything.
+    expect(content?.indexOf(SNIPPET_START)).toBeLessThan(
+      content?.indexOf("## Deployment") ?? -1,
+    );
+  });
+
+  test("removes a legacy unmarked OpenWiki section left alongside an existing managed block", async () => {
+    const repo = await createTempRepo();
+    const existing = `## OpenWiki
+
+Start here:
+
+- [OpenWiki quickstart](openwiki/quickstart.md)
+
+${SNIPPET_START}
+stale OpenWiki content
+${SNIPPET_END}
+`;
+    await writeFile(path.join(repo, "CLAUDE.md"), existing, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readIfPresent(path.join(repo, "CLAUDE.md"));
+    expect(content).not.toContain("Start here:");
+    expect(content?.match(/^## OpenWiki/gm)).toHaveLength(1);
+    expect(content?.match(new RegExp(SNIPPET_START, "g"))).toHaveLength(1);
+  });
+
+  test("preserves an unrelated user-authored OpenWiki section", async () => {
+    const repo = await createTempRepo();
+    const existing = `## OpenWiki
+
+My own notes about wikis in general, unrelated to the generated docs.
+`;
+    await writeFile(path.join(repo, "AGENTS.md"), existing, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+    expect(content).toContain("My own notes about wikis in general");
+    expect(content).toContain(SNIPPET_START);
+  });
+
+  test("is idempotent after replacing a legacy unmarked section", async () => {
+    const repo = await createTempRepo();
+    const existing = `## OpenWiki
+
+- [OpenWiki quickstart](openwiki/quickstart.md)
+
+## Notes
+
+Trailing user notes.
+`;
+    await writeFile(path.join(repo, "CLAUDE.md"), existing, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+    const first = await readIfPresent(path.join(repo, "CLAUDE.md"));
+    await ensureCodeModeRepoSetup(repo);
+    const second = await readIfPresent(path.join(repo, "CLAUDE.md"));
+
+    expect(second).toEqual(first);
+    expect(first?.match(/^## OpenWiki/gm)).toHaveLength(1);
+  });
 });
 
 describe("ensureCodeModeRepoSetup workflow", () => {
