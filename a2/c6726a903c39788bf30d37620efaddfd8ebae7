@@ -1,0 +1,78 @@
+test/git-history-guard.test.ts
+  s_88c14dfbd8e183::t_336cbcd511ae6a 1-221
+src/agent/crash-guard.ts
+  s_88c14dfbd8e183::t_fbf66743391e0d 95-100,112-113,121-130
+  s_88c14dfbd8e183::t_289af26e9ebcf1 71
+  s_88c14dfbd8e183::t_cf21fef46b2b0a 1-2
+  h_f78d33d4280f3f 3-70,72-94,101-111,114-120,131-144
+src/telemetry/errors.ts
+  h_f78d33d4280f3f 81-84
+src/agent/types.ts
+  h_f78d33d4280f3f 44-51
+src/agent/truncation-monitor.ts
+  s_88c14dfbd8e183::t_54b7dc660983d6 1-102
+test/run-options-signal.test.ts
+  s_88c14dfbd8e183::t_0353594f7358a8 1-20
+src/cli.tsx
+  h_f78d33d4280f3f 102-104,293,565-568,570
+  s_88c14dfbd8e183::t_1e5bdbea4697d1 4215
+  s_88c14dfbd8e183::t_666eaff7b30337 4263-4270,4276-4277
+  s_88c14dfbd8e183::t_39cd6cfb20077e 460-461
+  s_88c14dfbd8e183::t_06ecb10eaa702c 4185-4193
+  s_88c14dfbd8e183::t_511e42602a6d5e 630
+src/agent/prompt.ts
+  s_88c14dfbd8e183::t_a040b367acb688 296-297
+  s_88c14dfbd8e183::t_0f24c3277b3c6c 348
+test/truncation-monitor.test.ts
+  s_88c14dfbd8e183::t_c5ac9dd955885b 1-106
+  s_88c14dfbd8e183::t_69ba07dab893de 107-109
+  s_88c14dfbd8e183::t_d2139f6d631901 110-113
+src/agent/utils.ts
+  s_88c14dfbd8e183::t_8b7958b515e745 693-699
+  s_88c14dfbd8e183::t_394113e9d3d212 197-202,206-211
+  s_88c14dfbd8e183::t_d84014d203e015 305
+  s_88c14dfbd8e183::t_85544e20846921 491-493
+  s_88c14dfbd8e183::t_7d6413d9a37b7b 549-554,556,580-619
+  s_88c14dfbd8e183::t_98521015ee0a9d 472-474
+  s_88c14dfbd8e183::t_52f69a59479e0f 620,622-664
+  s_88c14dfbd8e183::t_56f3d306904aab 621
+test/crash-guard.test.ts
+  s_88c14dfbd8e183::t_d9ef6e888337e7 1-123
+src/telemetry/taxonomy.ts
+  s_88c14dfbd8e183::t_bf035c9064dfc4 89-97
+  s_88c14dfbd8e183::t_f5317ba657df28 139-140
+  h_f78d33d4280f3f 52
+  s_88c14dfbd8e183::t_48fc100cda9038 166-169
+  s_88c14dfbd8e183::t_ea96b86d4d1194 42-49
+  s_88c14dfbd8e183::t_5557068d8b34e7 88
+test/telemetry.test.ts
+  s_88c14dfbd8e183::t_20cf5440816617 245-266
+src/agent/index.ts
+  s_88c14dfbd8e183::t_99df7fab7da533 678-686
+  s_88c14dfbd8e183::t_ab7ab8c4e4615c 123,128,136
+  s_88c14dfbd8e183::t_ad4fec3a7ec3ea 170-181
+  s_88c14dfbd8e183::t_3f1a97bf94aefc 564-571
+  s_88c14dfbd8e183::t_ffba0bed8fb77a 521-525,536-537
+  h_f78d33d4280f3f 135,464-471,535,612
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "a2c6726a903c39788bf30d37620efaddfd8ebae7",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_88c14dfbd8e183": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecd9c94d-7522-4479-8faf-917dcc572b67",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
