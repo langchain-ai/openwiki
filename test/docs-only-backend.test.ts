@@ -65,6 +65,22 @@ describe("OpenWikiLocalShellBackend", () => {
     await expect(
       readFile(path.join(rootDir, "AGENTS.md"), "utf8"),
     ).rejects.toThrow();
+
+    for (const command of [
+      "echo bad > AGENTS.md",
+      "pwd && echo bad > AGENTS.md",
+      "git rev-parse HEAD > AGENTS.md",
+    ]) {
+      const shellWrite = await backend.execute(command);
+      expect(shellWrite.exitCode).toBe(1);
+      expect(shellWrite.output).toContain("repository init/update");
+    }
+    await expect(
+      readFile(path.join(rootDir, "AGENTS.md"), "utf8"),
+    ).rejects.toThrow();
+
+    const allowedReadOnlyCommand = await backend.execute("pwd");
+    expect(allowedReadOnlyCommand.exitCode).toBe(0);
   });
 
   test("allows local-wiki init/update writes at the wiki virtual root", async () => {
@@ -83,6 +99,10 @@ describe("OpenWikiLocalShellBackend", () => {
     await expect(
       readFile(path.join(rootDir, "quickstart.md"), "utf8"),
     ).resolves.toBe("updated");
+
+    const execute = await backend.execute("echo shell-available");
+    expect(execute.exitCode).toBe(0);
+    expect(execute.output).toContain("shell-available");
   });
 
   test("keeps chat-mode style backends unrestricted when docsOnly is false", async () => {

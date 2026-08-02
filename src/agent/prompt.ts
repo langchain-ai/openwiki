@@ -23,21 +23,22 @@ export function createSystemPrompt(
   const output = getOutputPromptConfig(outputMode);
   const languageInstructions = createLanguageInstructions(language);
   const ignoreActive = openWikiIgnore?.isActive === true;
+  const shellRestricted =
+    ignoreActive || (outputMode === "repository" && command !== "chat");
 
-  // When .openwikiignore is active the execute allowlist refuses shell-based
-  // discovery, so the prompt must steer to the file tools and the provided git
-  // summary instead of git/rg. When inactive these keep today's wording exactly,
-  // so the common no-ignore run is unchanged.
-  const gitHistoryHint = ignoreActive
+  // Restricted runs refuse shell-based discovery, so the prompt must steer to
+  // file tools and the provided git summary instead of suggesting git/rg calls
+  // that the backend will reject. Chat and local-wiki runs retain shell access.
+  const gitHistoryHint = shellRestricted
     ? "Use the provided git summary for repository history. "
     : "Use git through shell execute when it provides useful history. ";
-  const discoveryHint = ignoreActive
+  const discoveryHint = shellRestricted
     ? "- Do not call glob with **/* from the root. Use targeted ls, glob, and grep by directory and extension, skipping .git, node_modules, dist, build, cache directories, and existing generated wiki output."
     : "- Do not call glob with **/* from the root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.";
-  const gitDiscipline = ignoreActive
+  const gitDiscipline = shellRestricted
     ? `Git discipline:
-- A filtered git summary of repository history is provided in your context. Use it to explain why code exists, not just what it does, focusing on recent, high-signal changes.
-- The summary already excludes .openwikiignore paths. Do not run git or other shell commands to reconstruct history; shell discovery is unavailable while .openwikiignore is active.`
+- A git summary of repository history is provided in your context. Use it to explain why code exists, not just what it does, focusing on recent, high-signal changes.
+- Do not run git or other shell commands to reconstruct history; shell discovery is unavailable for this run.`
     : `Git discipline:
 - Use git heavily where it helps explain why code exists, not just what code exists.
 - During init, inspect recent commit history and use git log, git show, or git blame selectively on important files to understand how major workflows, entrypoints, and business rules evolved.
@@ -57,7 +58,11 @@ Use only the tools available to you. Prefer built-in filesystem discovery tools 
 Run discipline:
 - ${output.filesystemRootInstruction}
 - Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
-- Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path.
+- ${
+    shellRestricted
+      ? "Shell execute is restricted to a few read-only maintenance commands. Use the structured filesystem tools for repository inspection and documentation writes."
+      : "Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path."
+  }
 - Do not exhaustively read every file. For a local knowledge wiki, inspect the existing wiki structure and only the relevant connector evidence or configured local repository paths. For an explicit repository source, inspect the repository tree, package/config files, README-style files, entrypoints, routing files, database/schema files, and representative files for each major domain.
 ${discoveryHint}
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
@@ -203,7 +208,7 @@ Section quality rules:
 Required documentation structure:
 - ${output.quickstartPath} must be the entrypoint.
 - ${output.quickstartPath} must include a high-level overview and links to every major section.
-- When writing required documentation with filesystem tools or narrow shell execute, use ${output.writePathExample}.
+- When writing required documentation with filesystem tools, use ${output.writePathExample}.
 - ${output.sectionDirectoryInstruction}
 - Each section directory should contain focused Markdown pages; if a directory would contain only one short page, prefer a broader page or a heading in ${output.quickstartPath}.
 - Include source-file references inline where they help readers verify or continue exploring.

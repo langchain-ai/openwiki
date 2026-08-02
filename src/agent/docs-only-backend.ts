@@ -69,6 +69,20 @@ const allowedIgnoredShellCommands = [
 ];
 
 /**
+ * Read-only shell commands that remain available during repository init/update.
+ *
+ * Repository docs-only runs cannot safely admit arbitrary shell syntax: even a
+ * command that normally reads can be combined with redirection, substitution,
+ * aliases, or a second process to mutate paths outside `openwiki/`. Keep this
+ * list smaller than the `.openwikiignore` maintenance allowlist; deterministic
+ * host-side cleanup removes `_plan.md`, so the agent itself needs no shell write.
+ */
+const allowedDocsOnlyShellCommands = [
+  /^pwd$/u,
+  /^git\s+(?:--no-pager\s+)?rev-parse\s+HEAD$/u,
+];
+
+/**
  * Filesystem/shell backend that enforces OpenWiki's access boundaries for the
  * doc-generation agent.
  *
@@ -79,8 +93,9 @@ const allowedIgnoredShellCommands = [
  *    denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop
  *    ignored entries; uploads/downloads reject ignored paths; and shell
  *    `execute` is restricted to a small allowlist while any rule is active.
- * 2. Docs-only confinement (`docsOnly`): in repository mode, writes are limited
- *    to the `openwiki/` tree via {@link isOpenWikiDocsPath}.
+ * 2. Docs-only confinement (`docsOnly`): in repository mode, filesystem writes
+ *    are limited to the `openwiki/` tree via {@link isOpenWikiDocsPath}, and
+ *    shell `execute` is limited to a read-only allowlist.
  *
  * Both are security boundaries against an agent that may be prompt-injected via
  * untrusted repository content, so path checks canonicalize before matching.
@@ -319,9 +334,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
 
   /**
    * Run a shell command. While any `.openwikiignore` rule is active, only the
-   * {@link allowedIgnoredShellCommands} allowlist may run; anything else is
-   * refused (exit code 1) with guidance to use the gated filesystem tools,
-   * since arbitrary shell cannot be proven not to read an ignored path.
+   * {@link allowedIgnoredShellCommands} allowlist may run. Repository docs-only
+   * runs independently use {@link allowedDocsOnlyShellCommands}, preventing
+   * shell redirection or another mutation primitive from bypassing the path
+   * checks enforced by the structured filesystem methods.
    */
   override async execute(command: string): Promise<ExecuteResponse> {
     if (
@@ -331,6 +347,19 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return {
         exitCode: 1,
         output: `Shell execute is restricted while ${OPENWIKI_IGNORE_FILE} is active. Use the file tools instead (read_file, ls, glob, grep) so ignored paths stay excluded.`,
+        truncated: false,
+      };
+    }
+
+    if (
+      this.docsOnly &&
+      this.outputMode === "repository" &&
+      !isAllowedDocsOnlyShellCommand(command)
+    ) {
+      return {
+        exitCode: 1,
+        output:
+          "Shell execute is restricted during OpenWiki repository init/update runs. Use the filesystem tools for repository inspection and documentation writes.",
         truncated: false,
       };
     }
@@ -427,6 +456,17 @@ function isAllowedShellCommandWithIgnore(command: string): boolean {
   const trimmedCommand = command.trim();
 
   return allowedIgnoredShellCommands.some((allowedCommand) =>
+    allowedCommand.test(trimmedCommand),
+  );
+}
+
+/**
+ * Whether a shell command is on the repository docs-only read-only allowlist.
+ */
+function isAllowedDocsOnlyShellCommand(command: string): boolean {
+  const trimmedCommand = command.trim();
+
+  return allowedDocsOnlyShellCommands.some((allowedCommand) =>
     allowedCommand.test(trimmedCommand),
   );
 }

@@ -116,6 +116,39 @@ describe("createSystemPrompt filesystem path guidance", () => {
   });
 });
 
+describe("createSystemPrompt shell guidance", () => {
+  for (const command of ["init", "update"] as const) {
+    test(`repository ${command}: directs the agent away from restricted shell discovery and writes`, () => {
+      const prompt = createSystemPrompt(command, "repository");
+
+      expect(prompt).toContain(
+        "Shell execute is restricted to a few read-only maintenance commands",
+      );
+      expect(prompt).toContain(
+        "Use the structured filesystem tools for repository inspection and documentation writes",
+      );
+      expect(prompt).not.toContain("Use git through shell execute");
+      expect(prompt).not.toContain("narrow shell execute");
+    });
+  }
+
+  test("repository chat retains shell discovery", () => {
+    const prompt = createSystemPrompt("chat", "repository");
+
+    expect(prompt).toContain("Use git through shell execute");
+    expect(prompt).toContain("Shell execute commands run on the host");
+  });
+
+  test("local-wiki init retains shell access for connector raw files", () => {
+    const prompt = createSystemPrompt("init", "local-wiki");
+
+    expect(prompt).toContain("Shell execute commands run on the host");
+    expect(prompt).not.toContain(
+      "Shell execute is restricted to a few read-only maintenance commands",
+    );
+  });
+});
+
 /**
  * The deterministic post-run pass repairs missing or invalid front matter and
  * tags the page `openwiki_generated`. The prompt must tell the agent that code
