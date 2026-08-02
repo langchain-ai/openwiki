@@ -11,7 +11,9 @@ import {
   validateWikiInternalLinks,
 } from "../src/agent/wiki-link-validator.ts";
 
-async function setupWiki(outputMode: "local-wiki" | "repository" = "repository") {
+async function setupWiki(
+  outputMode: "local-wiki" | "repository" = "repository",
+) {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-links-"));
   const backend = new OpenWikiLocalShellBackend({
     docsOnly: true,
@@ -185,7 +187,10 @@ describe("validateWikiInternalLinks", () => {
       ),
     ).toBe(false);
 
-    const after = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    const after = await readFile(
+      path.join(rootDir, "openwiki/page.md"),
+      "utf8",
+    );
     expect(after).toContain("openwiki: broken internal link");
     expect(after).toContain("outside the wiki root");
     expect(after).not.toMatch(/does not exist in \/etc\/passwd/u);
@@ -247,7 +252,9 @@ describe("broken link stamp helpers", () => {
       },
     ]);
 
-    expect(message).toContain("OpenWiki internal link validation found broken links");
+    expect(message).toContain(
+      "OpenWiki internal link validation found broken links",
+    );
     expect(message).toContain(
       '/openwiki/quickstart.md:4 [./missing.md] file "./missing.md" does not exist',
     );
