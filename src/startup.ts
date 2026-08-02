@@ -8,10 +8,12 @@ import {
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderCredentialHint,
+  providerUsesExternalCliAuth,
   providerUsesOAuth,
   resolveConfiguredProvider,
   type OpenWikiProvider,
 } from "./constants.js";
+import { resolveExternalCliCredential } from "./external-cli-auth.js";
 
 type ResolveStartupCommandOptions = {
   cwd?: string;
@@ -45,7 +47,7 @@ export async function resolveStartupCommand(
     (command.print || !isStdinTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const missingEnvKey = getMissingNonInteractiveProviderEnvKey(
+    const missingEnvKey = await getMissingNonInteractiveProviderEnvKey(
       provider,
       process.env,
     );
@@ -89,10 +91,14 @@ export async function resolveStartupCommand(
   return command;
 }
 
-function getMissingNonInteractiveProviderEnvKey(
+async function getMissingNonInteractiveProviderEnvKey(
   provider: OpenWikiProvider,
   env: NodeJS.ProcessEnv,
-): string | null {
+): Promise<string | null> {
+  if (providerUsesExternalCliAuth(provider)) {
+    await resolveExternalCliCredential(provider, env);
+  }
+
   if (!providerUsesOAuth(provider)) {
     return getMissingProviderEnvKey(provider, env);
   }

@@ -63,12 +63,14 @@ describe("sanitizeDiagnosticText", () => {
   const originalNebiusKey = process.env.NEBIUS_API_KEY;
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
   const originalOpenAiCompatibleKey = process.env.OPENAI_COMPATIBLE_API_KEY;
+  const originalCopilotKey = process.env.COPILOT_API_KEY;
   const originalNvidiaKey = process.env.NVIDIA_API_KEY;
 
   beforeEach(() => {
     delete process.env.NEBIUS_API_KEY;
     delete process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_COMPATIBLE_API_KEY;
+    delete process.env.COPILOT_API_KEY;
     delete process.env.NVIDIA_API_KEY;
   });
 
@@ -90,6 +92,12 @@ describe("sanitizeDiagnosticText", () => {
       process.env.OPENAI_COMPATIBLE_API_KEY = originalOpenAiCompatibleKey;
     }
 
+    if (originalCopilotKey === undefined) {
+      delete process.env.COPILOT_API_KEY;
+    } else {
+      process.env.COPILOT_API_KEY = originalCopilotKey;
+    }
+
     if (originalNvidiaKey === undefined) {
       delete process.env.NVIDIA_API_KEY;
     } else {
@@ -106,6 +114,17 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("super-secret-value-12345");
     expect(result).toContain("[REDACTED:OPENAI_API_KEY]");
+  });
+
+  test("redacts the exact value of COPILOT_API_KEY when set", () => {
+    process.env.COPILOT_API_KEY = "ghu_secret-value-67890";
+
+    const result = sanitizeDiagnosticText(
+      "request failed with key ghu_secret-value-67890 attached",
+    );
+
+    expect(result).not.toContain("ghu_secret-value-67890");
+    expect(result).toContain("[REDACTED:COPILOT_API_KEY]");
   });
 
   test("redacts the Nebius API key when set in the environment", () => {

@@ -1,5 +1,6 @@
 import { isValidModelId, normalizeModelId } from "./constants.js";
 import type { OpenWikiCommand } from "./agent/types.js";
+import { resolveLanguage } from "./language.js";
 import { isAuthProviderId } from "./auth/providers.js";
 import type { AuthProviderId } from "./auth/types.js";
 import { parseIngestionTarget, type IngestionTarget } from "./ingestion.js";
@@ -39,6 +40,13 @@ export type CliCommand =
       url: string | null;
     }
   | {
+      kind: "visualize";
+      exitCode: 0;
+      wikiDir: string;
+      port: number;
+      open: boolean;
+    }
+  | {
       kind: "ingest";
       exitCode: 0;
       modelId: string | null;
@@ -58,6 +66,8 @@ export type CliCommand =
       exitCode: 0;
       command: OpenWikiCommand;
       dryRun: boolean;
+      language: string | null;
+      languageWarning: string | null;
       mode: OpenWikiRunMode;
       modeSource: OpenWikiRunModeSource;
       modelId: string | null;
@@ -203,6 +213,64 @@ export function parseCommand(argv: string[]): CliCommand {
     };
   }
 
+  if (argv[0] === "visualize") {
+    let wikiDir = "openwiki";
+    let port = 4321;
+    let open = true;
+    let sawPositional = false;
+    const optionArgs = argv.slice(1);
+
+    for (let index = 0; index < optionArgs.length; index += 1) {
+      const arg = optionArgs[index];
+
+      if (arg === "--no-open") {
+        open = false;
+        continue;
+      }
+
+      if (arg === "--port") {
+        const rawPort = optionArgs[index + 1];
+        if (!rawPort || rawPort.startsWith("-")) {
+          return {
+            kind: "error",
+            exitCode: 1,
+            message: "--port requires a value.",
+          };
+        }
+        port = Number(rawPort);
+        index += 1;
+        continue;
+      }
+
+      if (arg.startsWith("--port=")) {
+        port = Number(arg.slice("--port=".length));
+        continue;
+      }
+
+      if (!arg.startsWith("-") && !sawPositional) {
+        wikiDir = arg;
+        sawPositional = true;
+        continue;
+      }
+
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Unknown option for visualize: ${arg}`,
+      };
+    }
+
+    if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: "--port must be between 1024 and 65535.",
+      };
+    }
+
+    return { kind: "visualize", exitCode: 0, wikiDir, port, open };
+  }
+
   if (argv[0] === "ingest") {
     const target = parseIngestionTarget(argv[1] ?? "all");
     if (!target) {
@@ -338,6 +406,7 @@ function parseRunCommand(
   initialModeSource: OpenWikiRunModeSource,
 ): CliCommand {
   let dryRun = false;
+  let language: string | null = null;
   let mode = initialMode;
   let modeSource = initialModeSource;
   let modelId: string | null = null;
@@ -391,6 +460,22 @@ function parseRunCommand(
       }
 
       command = nextCommand;
+      continue;
+    }
+
+    if (arg === "--language" || arg === "-l") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${arg} requires a locale.`,
+        };
+      }
+
+      language = nextArg;
+      index += 1;
       continue;
     }
 
@@ -547,6 +632,10 @@ function parseRunCommand(
     userMessageParts.length > 0 ? userMessageParts.join(" ") : null;
   const shouldStart = command !== "chat" || userMessage !== null;
 
+  // Canonicalize the requested locale here so an unrecognized value is dropped
+  // (and surfaced as a warning) before it reaches the run or persisted state.
+  const resolvedLanguage = resolveLanguage(language);
+
   if (command !== "chat" && modeSource === "default") {
     mode = "code";
   }
@@ -564,6 +653,8 @@ function parseRunCommand(
     exitCode: 0,
     command,
     dryRun,
+    language: resolvedLanguage.language ?? null,
+    languageWarning: resolvedLanguage.warning ?? null,
     mode,
     modeSource,
     modelId,
@@ -644,6 +735,7 @@ export const helpContent: HelpContent = {
     "openwiki code [--init|--update] [message]",
     "openwiki personal [--init|--update] [message]",
     "openwiki --mode <personal|code> [--init|--update] [message]",
+    "openwiki [--language <locale>] [--init|--update] [message]",
     "openwiki [--modelId <model>]",
     "openwiki [--modelId <model>] [message]",
     "openwiki --update [message]",
@@ -656,6 +748,7 @@ export const helpContent: HelpContent = {
     "openwiki cron resume all",
     "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
+    "openwiki visualize [path] [--port <port>] [--no-open]",
   ],
   commands: [
     {
@@ -716,6 +809,11 @@ export const helpContent: HelpContent = {
       description:
         "Start an ngrok tunnel for Slack OAuth, optionally using a fixed HTTPS URL.",
     },
+    {
+      label: "openwiki visualize [path]",
+      description:
+        "Serve an interactive graph and live docs reader for a generated wiki (defaults to ./openwiki).",
+    },
   ],
   options: [
     {
@@ -732,6 +830,11 @@ export const helpContent: HelpContent = {
       label: "--mode <personal|code>",
       description:
         "Choose the personal brain (local, over configured sources) or the code brain (repository docs).",
+    },
+    {
+      label: "-l, --language <locale>",
+      description:
+        "Generate wiki documentation in the requested language or locale.",
     },
     {
       label: "-p, --print",
@@ -755,6 +858,15 @@ export const helpContent: HelpContent = {
       label: "--telemetry-file <path>",
       description:
         "Write the exact anonymous telemetry payload to a local JSON file.",
+    },
+    {
+      label: "--port <port>",
+      description:
+        "For visualize: port to serve on (default 4321; increments on conflict).",
+    },
+    {
+      label: "--no-open",
+      description: "For visualize: do not open the browser automatically.",
     },
   ],
   developmentOptions: [
@@ -789,6 +901,8 @@ export const helpContent: HelpContent = {
     "openwiki auth tools notion",
     "openwiki ngrok start",
     "openwiki ngrok start https://openwiki.ngrok.app",
+    "openwiki visualize",
+    "openwiki visualize openwiki --port 4400 --no-open",
   ],
   developmentExamples: ["openwiki --dry-run"],
 };

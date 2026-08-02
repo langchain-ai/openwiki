@@ -8,11 +8,13 @@ import { ChatGoogle } from "@langchain/google/node";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
+import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
 import {
   CompositeBackend,
   createDeepAgent,
   FilesystemBackend,
+  type FilesystemPermission,
 } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
@@ -23,9 +25,22 @@ import {
 } from "../env.js";
 import { isFileNotFoundError } from "../fs-errors.js";
 import { SECRET_KEY_PATTERN_SOURCE } from "../diagnostics.js";
-import { openWikiLocalWikiDir, openWikiSkillsDir } from "../openwiki-home.js";
+import {
+  openWikiConversationHistoryDir,
+  openWikiLocalWikiDir,
+  openWikiSkillsDir,
+} from "../openwiki-home.js";
+import { resolveLanguage } from "../language.js";
+import {
+  resolveConceptTypeLabel,
+  resolveIndexLabels,
+} from "../okf/index-labels.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
+import {
+  createWikiTranslationMiddleware,
+  resolveTranslationPlan,
+} from "./translation-middleware.js";
 import {
   CODEX_ORIGINATOR,
   CODEX_RESPONSES_BASE_URL,
@@ -51,6 +66,7 @@ import type {
   OpenWikiRunEvent,
   OpenWikiRunOptions,
   OpenWikiRunResult,
+  RunContext,
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
@@ -59,6 +75,7 @@ import {
   BEDROCK_AWS_REGION_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
+  COPILOT_BASE_URL_ENV_KEY,
   getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -88,6 +105,8 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  providerUsesExternalCliAuth,
+  providerUsesResponsesApi,
   resolveConfiguredProvider,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
@@ -97,6 +116,10 @@ import {
   type OpenWikiProvider,
 } from "../constants.js";
 import {
+  resolveExternalCliCredential,
+  validateExternalCliCredential,
+} from "../external-cli-auth.js";
+import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
   createRunContext,
@@ -104,13 +127,17 @@ import {
   removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
 } from "./utils.js";
-import { classifyError, recordRunSafe } from "../telemetry/index.js";
+import { inStage, inStageSync, tagErrorStage } from "../telemetry/index.js";
+import type { RunTelemetryContext } from "../telemetry/index.js";
+import { OpenWikiIgnore } from "./openwiki-ignore.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
   cwd = openWikiLocalWikiDir,
   options: OpenWikiRunOptions = {},
+  telemetryContext: RunTelemetryContext = {},
 ): Promise<OpenWikiRunResult> {
+  const outputMode = options.outputMode ?? "local-wiki";
   const runtimeCwd = options.outputMode ? cwd : openWikiLocalWikiDir;
 
   emitDebug(options, `command=${command}`);
@@ -127,8 +154,17 @@ export async function runOpenWikiAgent(
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
+  const openWikiIgnore =
+    outputMode === "repository"
+      ? await OpenWikiIgnore.load(runtimeCwd)
+      : new OpenWikiIgnore([]);
+  emitDebug(
+    options,
+    `openwikiignore.patterns=${openWikiIgnore.patterns.length}`,
+  );
+
   if (command === "update" && shouldCheckUpdateNoop(options)) {
-    const noopStatus = await getUpdateNoopStatus(cwd);
+    const noopStatus = await getUpdateNoopStatus(cwd, openWikiIgnore);
 
     if (noopStatus.shouldSkip) {
       const message =
@@ -136,10 +172,10 @@ export async function runOpenWikiAgent(
       emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
       options.onEvent?.({ type: "text", text: message });
 
-      await recordRunSafe(command, options, {
-        provider: resolveConfiguredProvider(),
-        outcome: "noop",
-      });
+      // The single telemetry boundary (withRunTelemetry) owns the record; publish
+      // the short-circuit outcome and provider onto the shared context and return.
+      telemetryContext.provider = resolveConfiguredProvider();
+      telemetryContext.outcome = "noop";
 
       return {
         command,
@@ -155,14 +191,55 @@ export async function runOpenWikiAgent(
 
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
-  // Resolved inside the try so a failure during resolution (missing key,
-  // invalid model, missing base URL) is still recorded. They may be undefined
-  // in the catch if resolution threw before assigning them.
-  let provider: OpenWikiProvider | undefined;
-  let modelId: string | undefined;
-
   try {
-    provider = resolveConfiguredProvider();
+    // Published onto the shared context the instant the provider is resolved, so a
+    // failure later in the run still attributes the provider. It stays undefined
+    // only if the very first resolution step throws. The single telemetry boundary
+    // (withRunTelemetry) reads this context to record the run.
+    const config = await resolveRunConfig(options, (resolved) => {
+      telemetryContext.provider = resolved;
+    });
+
+    return await runOpenWikiAgentCore(
+      command,
+      runtimeCwd,
+      options,
+      config.provider,
+      config.modelId,
+      config.providerRetryAttempts,
+      openWikiIgnore,
+    );
+  } catch (error) {
+    // Enrich the error for the CLI's debug/auth UI, then rethrow. The telemetry
+    // record is owned by withRunTelemetry, which reads the stage/class tags this
+    // error already carries.
+    attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
+
+    throw error;
+  } finally {
+    debugFetchCapture.restore();
+  }
+}
+
+/**
+ * Resolves everything the run needs before the agent is built: provider,
+ * credentials, model id, and retry count. Any throw here is tagged `config` so
+ * the failure telemetry locates it to the resolution stage. `onProviderResolved`
+ * fires the moment the provider is known, letting the caller attribute a failure
+ * that happens later in resolution to the right provider.
+ */
+async function resolveRunConfig(
+  options: OpenWikiRunOptions,
+  onProviderResolved: (provider: OpenWikiProvider) => void,
+): Promise<{
+  provider: OpenWikiProvider;
+  modelId: string;
+  providerRetryAttempts: number;
+}> {
+  try {
+    const provider = resolveConfiguredProvider();
+    onProviderResolved(provider);
+
     const providerBaseUrl = resolveProviderBaseUrl(provider);
     emitDebug(options, `provider=${provider}`);
     if (providerBaseUrl) {
@@ -170,6 +247,11 @@ export async function runOpenWikiAgent(
         options,
         `provider.baseUrl=${formatUrlDebugValue(providerBaseUrl)}`,
       );
+    }
+    await resolveExternalCliCredential(provider);
+    const providerApiKey = getProviderApiKey(provider);
+    if (providerUsesExternalCliAuth(provider) && providerApiKey) {
+      validateExternalCliCredential(provider, providerApiKey);
     }
     ensureProviderCredentials(provider);
     emitDebug(
@@ -188,39 +270,148 @@ export async function runOpenWikiAgent(
       emitDebug(options, "chatgpt.token=fresh");
     }
 
-    modelId = resolveModelId(options, provider);
+    const modelId = resolveModelId(options, provider);
     emitDebug(options, `model=${modelId}`);
     const providerRetryAttempts = resolveProviderRetryAttempts();
     emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
 
-    const result = await runOpenWikiAgentCore(
-      command,
-      runtimeCwd,
-      options,
-      provider,
-      modelId,
-      providerRetryAttempts,
-    );
-
-    await recordRunSafe(command, options, {
-      provider,
-      outcome: "success",
-    });
-
-    return result;
+    return { provider, modelId, providerRetryAttempts };
   } catch (error) {
-    attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
-
-    await recordRunSafe(command, options, {
-      provider,
-      outcome: "failure",
-      errorClass: classifyError(error),
-    });
-
+    tagErrorStage(error, "config");
     throw error;
-  } finally {
-    debugFetchCapture.restore();
   }
+}
+
+export type OpenWikiAgentOptions = {
+  command: OpenWikiCommand;
+  cwd: string;
+  language?: string | null;
+  model: BaseChatModel;
+  onEvent?: (event: OpenWikiRunEvent) => void;
+  outputMode: OpenWikiOutputMode;
+};
+
+/** Creates an OpenWiki DeepAgent graph from an already-initialized chat model. */
+export async function createOpenWikiAgent(
+  options: OpenWikiAgentOptions,
+): Promise<ReturnType<typeof createDeepAgent>> {
+  if (!path.isAbsolute(options.cwd)) {
+    throw new Error("OpenWiki agent cwd must be an absolute path.");
+  }
+
+  await syncBundledSkills();
+  const openWikiIgnore =
+    options.outputMode === "repository"
+      ? await OpenWikiIgnore.load(options.cwd)
+      : new OpenWikiIgnore([]);
+  const context = await createRunContext(
+    options.command,
+    options.cwd,
+    options.outputMode,
+    options.language,
+    openWikiIgnore,
+  );
+  const checkpointer = await createCheckpointer(
+    resolveCheckpointTarget(options.command),
+  );
+
+  return createOpenWikiAgentGraph({
+    ...options,
+    checkpointer,
+    context,
+    openWikiIgnore,
+  });
+}
+
+type OpenWikiAgentGraphOptions = OpenWikiAgentOptions & {
+  checkpointer: SqliteSaver;
+  context: RunContext;
+  openWikiIgnore: OpenWikiIgnore;
+};
+
+function createOpenWikiAgentGraph(
+  options: OpenWikiAgentGraphOptions,
+): ReturnType<typeof createDeepAgent> {
+  const wikiBackend = new OpenWikiLocalShellBackend({
+    docsOnly: options.command !== "chat",
+    openWikiIgnore: options.openWikiIgnore,
+    maxOutputBytes: 100_000,
+    outputMode: options.outputMode,
+    rootDir: options.cwd,
+    timeout: 120,
+    virtualMode: true,
+  });
+  const backend = createAgentBackend(wikiBackend);
+  // An update inherits the wiki's persisted language unless --language requests a
+  // different one. The plan drives a beforeAgent pass that, on a switch,
+  // retranslates every page so the incremental update does not leave a mix of the
+  // old and new language, and on any update retries pages a prior run left
+  // pending. It is undefined for init and chat, which never translate.
+  const translation = resolveTranslationPlan(
+    options.command,
+    resolveLanguage(options.language).language,
+    options.context.lastUpdate?.language,
+  );
+  // Localized headings for the deterministic directory indexes, plus the
+  // localized fallback `type` stamped on pages the code has to repair. Both fall
+  // back to English for any language not in the static maps.
+  const indexLabels = resolveIndexLabels(options.context.language);
+  const conceptType = resolveConceptTypeLabel(options.context.language);
+
+  return createDeepAgent({
+    model: options.model,
+    tools: createOpenWikiConnectorTools(),
+    checkpointer: options.checkpointer,
+    backend,
+    middleware:
+      options.command === "chat"
+        ? []
+        : [
+            ...(translation
+              ? [
+                  createWikiTranslationMiddleware(
+                    wikiBackend,
+                    options.outputMode,
+                    options.model,
+                    translation,
+                    (message) => {
+                      options.onEvent?.({ type: "text", text: message });
+                      // Also emit to stderr so the warning survives the TUI
+                      // re-render and --print's discard of streamed text.
+                      process.stderr.write(`${message}\n`);
+                    },
+                    // The pass announces itself with one line in place of the
+                    // suppressed per-token translation output. It is routine
+                    // progress, so unlike a warning it is not mirrored to stderr.
+                    // The trailing blank line keeps it a distinct Markdown block:
+                    // the TUI coalesces consecutive text events into one
+                    // block-lexed log item, so without it the status would run
+                    // straight into the agent's first streamed line.
+                    (message) => {
+                      options.onEvent?.({
+                        type: "text",
+                        text: `${message}\n\n`,
+                      });
+                    },
+                  ),
+                ]
+              : []),
+            createOpenWikiIndexMiddleware(
+              wikiBackend,
+              options.outputMode,
+              indexLabels,
+              conceptType,
+            ),
+          ],
+    skills: ["/skills/"],
+    permissions: AGENT_FILESYSTEM_PERMISSIONS,
+    systemPrompt: createSystemPrompt(
+      options.command,
+      options.outputMode,
+      options.context.language,
+      options.openWikiIgnore,
+    ),
+  });
 }
 
 async function runOpenWikiAgentCore(
@@ -230,57 +421,68 @@ async function runOpenWikiAgentCore(
   provider: OpenWikiProvider,
   modelId: string,
   providerRetryAttempts: number,
+  openWikiIgnore: OpenWikiIgnore,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
-  const context = await createRunContext(command, cwd, outputMode);
+  const context = await inStage(
+    "build",
+    () =>
+      createRunContext(
+        command,
+        cwd,
+        outputMode,
+        options.language,
+        openWikiIgnore,
+      ),
+    { errorClass: "build_error", errorDetail: "run_context" },
+  );
   emitDebug(options, "context=created");
   const openWikiSnapshotBefore =
     command === "chat"
       ? null
-      : await createOpenWikiContentSnapshot(cwd, outputMode);
+      : await inStage(
+          "build",
+          () => createOpenWikiContentSnapshot(cwd, outputMode),
+          { errorClass: "build_error", errorDetail: "snapshot" },
+        );
   emitDebug(options, "openwiki.snapshot=created");
-  const model = createModel(provider, modelId, providerRetryAttempts);
+  const model = inStageSync(
+    "build",
+    () => createModel(provider, modelId, providerRetryAttempts),
+    { errorClass: "build_error", errorDetail: "model" },
+  );
   emitDebug(options, `model.provider=${provider}`);
   emitDebug(options, "model=initialized");
   const threadId = options.threadId ?? createThreadId(cwd, createRunThreadId());
   emitDebug(options, `thread=${threadId}`);
   const checkpointTarget = resolveCheckpointTarget(command);
-  const checkpointer = await createCheckpointer(checkpointTarget);
+  const checkpointer = await inStage(
+    "build",
+    () => createCheckpointer(checkpointTarget),
+    { errorClass: "checkpointer_error", errorDetail: "create" },
+  );
   emitDebug(
     options,
     checkpointTarget.persistent
       ? `checkpointer=${formatUrlDebugValue(checkpointTarget.connString)}`
       : "checkpointer=memory",
   );
-  const wikiBackend = new OpenWikiLocalShellBackend({
-    docsOnly: command !== "chat",
-    maxOutputBytes: 100_000,
-    outputMode,
-    rootDir: cwd,
-    timeout: 120,
-    virtualMode: true,
-  });
-  const backend = new CompositeBackend(wikiBackend, {
-    "/skills/": new FilesystemBackend({
-      rootDir: openWikiSkillsDir,
-      virtualMode: true,
-    }),
-  });
-  const agent = createDeepAgent({
-    model,
-    tools: createOpenWikiConnectorTools(),
-    checkpointer,
-    backend,
-    middleware:
-      command === "chat"
-        ? []
-        : [createOpenWikiIndexMiddleware(wikiBackend, outputMode)],
-    skills: ["/skills/"],
-    permissions: [
-      { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
-    ],
-    systemPrompt: createSystemPrompt(command, outputMode),
-  });
+  const agent = inStageSync(
+    "build",
+    () =>
+      createOpenWikiAgentGraph({
+        command,
+        cwd,
+        language: options.language,
+        model,
+        onEvent: options.onEvent,
+        outputMode,
+        checkpointer,
+        context,
+        openWikiIgnore,
+      }),
+    { errorClass: "build_error", errorDetail: "agent" },
+  );
   emitDebug(options, "agent=created");
 
   const input = {
@@ -293,12 +495,17 @@ async function runOpenWikiAgentCore(
   };
 
   emitDebug(options, "stream=opening protocol=events version=v3");
-  const stream = await agent.streamEvents(input, {
-    configurable: {
-      thread_id: threadId,
-    },
-    version: "v3",
-  });
+  const stream = await inStage(
+    "build",
+    () =>
+      agent.streamEvents(input, {
+        configurable: {
+          thread_id: threadId,
+        },
+        version: "v3",
+      }),
+    { errorClass: "build_error", errorDetail: "stream_open" },
+  );
   emitDebug(options, "stream=started protocol=events version=v3");
 
   let unhandledChunkCount = 0;
@@ -328,6 +535,8 @@ async function runOpenWikiAgentCore(
     }
     emitDebug(options, "stream=completed");
   } catch (error) {
+    tagErrorStage(error, "run");
+
     await cleanupTemporaryPlanFile(command, cwd, outputMode, options).catch(
       () => {
         emitDebug(options, "plan.cleanup=failed");
@@ -347,6 +556,7 @@ async function runOpenWikiAgentCore(
         outputMode,
         openWikiSnapshotBefore,
         "interrupted",
+        context.language,
       );
       emitDebug(
         options,
@@ -357,21 +567,41 @@ async function runOpenWikiAgentCore(
     }
 
     throw error;
+  } finally {
+    prunePersistentCheckpointHistory(
+      checkpointTarget,
+      checkpointer,
+      threadId,
+      options,
+    );
   }
 
   if (checkpointTarget.persistent) {
-    await chmodIfExists(checkpointTarget.connString, 0o600);
+    // Locking down the checkpoint file is a checkpointer concern; a filesystem
+    // failure here owns to us, not the user, so it carries its own class rather
+    // than the stage-only tag the metadata write below relies on.
+    await inStage(
+      "finalize",
+      () => chmodIfExists(checkpointTarget.connString, 0o600),
+      { errorClass: "checkpointer_error", errorDetail: "chmod" },
+    );
   }
 
-  await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
-
-  const metadataWritten = await persistRunMetadataIfChanged(
-    command,
-    cwd,
-    modelId,
-    outputMode,
-    openWikiSnapshotBefore,
-  );
+  // Stage-only tag: a write failure here classifies from the raw error (a
+  // filesystem code becomes filesystem_error), and deriveOwner's finalize
+  // exception routes that to openwiki since the run reached our own persistence.
+  const metadataWritten = await inStage("finalize", async () => {
+    await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
+    return persistRunMetadataIfChanged(
+      command,
+      cwd,
+      modelId,
+      outputMode,
+      openWikiSnapshotBefore,
+      "complete",
+      context.language,
+    );
+  });
 
   if (metadataWritten) {
     emitDebug(options, "metadata=written");
@@ -457,6 +687,67 @@ export function formatRuntimeRootInstruction(
   return "Filesystem tools use a virtual root: / means the repository root. The generated repository wiki lives under /openwiki, for example /openwiki/quickstart.md and /openwiki/architecture/overview.md. Inspect source files from repository-root paths such as /README.md, /src/agent/index.ts, and /package.json.";
 }
 
+/**
+ * deepagents' summarization middleware offloads conversation history to
+ * `<historyPathPrefix>/<session>.md` through the agent's backend, and
+ * `createDeepAgent` exposes no way to override the `"/conversation_history"`
+ * default. Keep this mount prefix in sync with that default.
+ */
+export const CONVERSATION_HISTORY_MOUNT = "/conversation_history/";
+
+/**
+ * Agent-layer filesystem permissions. Both virtual mounts are read-only for
+ * the model's filesystem tools:
+ *
+ * - `/skills/**` — skills are installed by the CLI, never by the agent.
+ * - `/conversation_history/**` — only the summarization middleware may
+ *   write here. It writes directly through the backend, which agent-layer
+ *   permissions do not affect, so denying tool writes closes the door on
+ *   prompt-injected content being persisted into future sessions' context
+ *   without touching the offload itself.
+ */
+export const AGENT_FILESYSTEM_PERMISSIONS: FilesystemPermission[] = [
+  { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
+  {
+    operations: ["write"],
+    paths: [`${CONVERSATION_HISTORY_MOUNT}**`],
+    mode: "deny",
+  },
+];
+
+/**
+ * Wraps the wiki backend with the virtual mounts every agent run layers on
+ * top of the documented repository (or local wiki):
+ *
+ * - `/skills/` — the bundled and user skills under ~/.openwiki/skills.
+ * - `/conversation_history/` — the summarization middleware's history
+ *   offload, routed to ~/.openwiki/conversation_history. Routing it there
+ *   keeps the offload out of the documented repository and, on docs-only
+ *   init/update runs, keeps the docs-only guard from refusing the write —
+ *   that refusal is non-fatal but silently degrades summarization and
+ *   narrows coverage on large repositories (#496).
+ *
+ * `historyDir` and `skillsDir` are injectable for tests.
+ */
+export function createAgentBackend(
+  wikiBackend: OpenWikiLocalShellBackend,
+  {
+    historyDir = openWikiConversationHistoryDir,
+    skillsDir = openWikiSkillsDir,
+  }: { historyDir?: string; skillsDir?: string } = {},
+): CompositeBackend {
+  return new CompositeBackend(wikiBackend, {
+    [CONVERSATION_HISTORY_MOUNT]: new FilesystemBackend({
+      rootDir: historyDir,
+      virtualMode: true,
+    }),
+    "/skills/": new FilesystemBackend({
+      rootDir: skillsDir,
+      virtualMode: true,
+    }),
+  });
+}
+
 async function createCheckpointer(
   target: CheckpointTarget,
 ): Promise<SqliteSaver> {
@@ -474,6 +765,70 @@ async function prepareCheckpointDirectory(filePath: string): Promise<void> {
     mode: 0o700,
   });
   await chmodIfExists(checkpointDir, 0o700);
+}
+
+// SqliteSaver.put() only ever inserts new checkpoint rows; nothing in the
+// checkpointer itself prunes older ones. A chat session reuses the same
+// thread_id for every turn, so the sqlite file grows by a full state
+// snapshot on every graph step for as long as the session runs. OpenWiki
+// never resumes a chat turn from anything but the latest checkpoint, so
+// history beyond that is pure waste and safe to discard here.
+export function pruneCheckpointHistory(
+  checkpointer: SqliteSaver,
+  threadId: string,
+): void {
+  const prune = checkpointer.db.transaction((id: string) => {
+    checkpointer.db
+      .prepare(
+        `DELETE FROM checkpoints
+         WHERE thread_id = ?
+           AND (checkpoint_ns, checkpoint_id) NOT IN (
+             SELECT checkpoint_ns, checkpoint_id FROM (
+               SELECT checkpoint_ns, checkpoint_id,
+                      ROW_NUMBER() OVER (
+                        PARTITION BY checkpoint_ns ORDER BY checkpoint_id DESC
+                      ) AS rank
+               FROM checkpoints
+               WHERE thread_id = ?
+             )
+             WHERE rank = 1
+           )`,
+      )
+      .run(id, id);
+
+    checkpointer.db
+      .prepare(
+        `DELETE FROM writes
+         WHERE thread_id = ?
+           AND (checkpoint_ns, checkpoint_id) NOT IN (
+             SELECT checkpoint_ns, checkpoint_id FROM checkpoints WHERE thread_id = ?
+             UNION
+             SELECT checkpoint_ns, parent_checkpoint_id FROM checkpoints
+             WHERE thread_id = ? AND parent_checkpoint_id IS NOT NULL
+           )`,
+      )
+      .run(id, id, id);
+  });
+
+  prune(threadId);
+}
+
+function prunePersistentCheckpointHistory(
+  checkpointTarget: CheckpointTarget,
+  checkpointer: SqliteSaver,
+  threadId: string,
+  options: OpenWikiRunOptions,
+): void {
+  if (!checkpointTarget.persistent) {
+    return;
+  }
+
+  try {
+    pruneCheckpointHistory(checkpointer, threadId);
+    emitDebug(options, "checkpoint.pruned");
+  } catch {
+    emitDebug(options, "checkpoint.pruneFailed");
+  }
 }
 
 export function resolveCheckpointTarget(
@@ -769,7 +1124,7 @@ export function createModel(
         }
       : undefined,
     model: modelId,
-    useResponsesApi: provider === "openai",
+    useResponsesApi: providerUsesResponsesApi(provider, modelId),
     ...retryOptions,
   });
 }
@@ -1745,6 +2100,7 @@ export function formatEnvironmentDebugValue(
     key === "LANGCHAIN_ENDPOINT" ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === BASETEN_BASE_URL_ENV_KEY ||
+    key === COPILOT_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
