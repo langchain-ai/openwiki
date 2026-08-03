@@ -43,6 +43,7 @@ import {
   isSecretLikeKey,
   sanitizeDiagnosticText,
 } from "./diagnostics.js";
+import { installUnhandledRejectionHandler } from "./unhandled-rejection.js";
 import { stripHtmlTags } from "./utils.js";
 import {
   type OpenWikiRunEvent,
@@ -99,6 +100,12 @@ import {
   withRunTelemetry,
   type RunTelemetryContext,
 } from "./telemetry/index.js";
+
+// Installed before any async work starts: a rejection that escapes every
+// awaited chain (e.g. a provider 429 inside a run nothing is awaiting) must
+// print a clean message and exit non-zero instead of aborting with a raw
+// Node stack trace.
+installUnhandledRejectionHandler();
 
 type RunState =
   | { status: "idle" }
