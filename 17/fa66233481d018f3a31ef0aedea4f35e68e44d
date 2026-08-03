@@ -1,0 +1,21 @@
+package.json
+  s_0520ba48564e95::t_0bf09d17151414 64
+pnpm-lock.yaml
+  s_0520ba48564e95::t_a3890b1beb77a2 38-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "17fa66233481d018f3a31ef0aedea4f35e68e44d",
+  "prompts": {},
+  "sessions": {
+    "s_0520ba48564e95": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fc328-09a2-7123-8c8e-fe3ffccf977d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
