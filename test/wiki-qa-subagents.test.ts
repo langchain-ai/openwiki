@@ -16,9 +16,7 @@ describe("wiki Q/A subagents", () => {
     expect(finder.systemPrompt.match(/\[Q-0[123]\]:/gu)).toHaveLength(3);
     expect(finder.systemPrompt.match(/Acceptance criteria:/gu)).toHaveLength(4);
     expect(finder.systemPrompt.match(/Source evidence:/gu)).toHaveLength(4);
-    expect(finder.systemPrompt).toContain(
-      "Return at most 10 questions",
-    );
+    expect(finder.systemPrompt).toContain("Return at most 10 questions");
     expect(finder.systemPrompt).toContain("target 8 for a large repository");
     expect(verifier.name).toBe("wiki_answer_verifier");
     expect(verifier.description).toContain("batch of up to three");

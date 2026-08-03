@@ -235,7 +235,9 @@ describe("createSystemPrompt repository init coverage", () => {
     expect(prompt).toContain(
       "do not launch verifier calls incrementally as individual questions are repaired",
     );
-    expect(prompt).toContain("do not resend acceptance criteria or source evidence");
+    expect(prompt).toContain(
+      "do not resend acceptance criteria or source evidence",
+    );
     expect(prompt).toContain("Repeat only for IDs that still do not pass");
     expect(prompt).not.toContain("Questions should look roughly like:");
   });
