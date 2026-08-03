@@ -1669,14 +1669,16 @@ function formatToolCallName(name: string): string {
 function formatToolArgs(input: unknown): string {
   const value = parseStringifiedJson(input);
 
+  // Checked ahead of isRecord: arrays are `typeof "object"` and non-null, so
+  // the record branch would otherwise claim them and render `0=…, 1=…`.
+  if (Array.isArray(value)) {
+    return value.map(formatToolValue).join(", ");
+  }
+
   if (isRecord(value)) {
     return Object.entries(value)
       .map(([key, argValue]) => `${key}=${formatToolValue(argValue)}`)
       .join(", ");
-  }
-
-  if (Array.isArray(value)) {
-    return value.map(formatToolValue).join(", ");
   }
 
   if (value === undefined || value === null) {
