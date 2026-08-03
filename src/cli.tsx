@@ -631,6 +631,16 @@ function App({ command }: AppProps) {
         if (runMode === "code") {
           await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: resolvedCommand === "init",
+            // Mirror warnings to stderr so they survive a TUI re-render and an
+            // error-terminated run, which discards the run log.
+            onWarning: (message) => {
+              handleRunEvent({
+                source: "main",
+                text: message,
+                type: "text",
+              });
+              process.stderr.write(`${message}\n`);
+            },
           });
         }
 
@@ -4206,6 +4216,9 @@ async function runPrintCommand(
         if (command.mode === "code") {
           await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: command.command === "init",
+            // Explicit stderr wiring pins the warning channel against future
+            // default changes; stderr keeps piped stdout clean.
+            onWarning: (message) => process.stderr.write(`${message}\n`),
           });
         }
 
