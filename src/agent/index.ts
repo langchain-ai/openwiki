@@ -56,6 +56,7 @@ import {
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import { resolveSkeletonCriticSubagents } from "./skeleton_critic.js";
 import { syncBundledSkills } from "./skills.js";
+import { resolveWikiQaSubagents } from "./wiki_qa_subagents.js";
 import {
   createVertexAuthFetch,
   resolveVertexSurface,
@@ -405,7 +406,10 @@ async function runOpenWikiAgentCore(
                 ),
               ],
         skills: ["/skills/"],
-        subagents: resolveSkeletonCriticSubagents(command, outputMode),
+        subagents: [
+          ...resolveSkeletonCriticSubagents(command, outputMode),
+          ...resolveWikiQaSubagents(command, outputMode),
+        ],
         permissions: AGENT_FILESYSTEM_PERMISSIONS,
         systemPrompt: createSystemPrompt(
           command,

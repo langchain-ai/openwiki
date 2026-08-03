@@ -130,33 +130,22 @@ Init workflow:
   a) For each file in your skeleton, include a description of what you plan to document in said file.
   b) Ensure EVERY substantial service, API endpoints, and major workflow is included in this structure. Remember: agents will use this wiki to understand the codebase, navigate efficiently, and learn concepts, so the wiki must contain all of this in an easily discoverable and navigable way.
   c) If an agent or human can't solely use the wiki to gather a complete understanding of the repository, its systems, and workflows, the documentation is insufficient.
-5. Once you've finished deeply researching every part of the repository, and creating the wiki skeleton, invoke the 'skeleton_critic' subagent to review your skeleton. If the 'skeleton_critic' identifies any gaps, it will return a list of missing items that you MUST address before continuing
-  a) After addressing all gaps and concerns, invoke it again, state what it had previously requested, and what you did to resolve its concerns.
-6. After completing the wiki skeleton and confirming it's complete with the 'skeleton_critic' subagent, fill the contents for every page in the skeleton. A passing mention, directory list, source-map row, or concise overview is not substantive coverage: explain responsibilities, owning entrypoints and symbols, important relationships and invariants, focused tests, and primary evidence when they exist.
+5. Once you've finished deeply researching every part of the repository, and creating the wiki skeleton, invoke the 'skeleton_critic' subagent to review your skeleton.
+  a) Create one TODO for every returned RQ item and resolve every requested change before continuing.
+  b) Re-invoke 'skeleton_critic' exactly once with the complete prior-request ledger and what you did to resolve each item. This is the final critic review. If an item remains UNRESOLVED or a revision introduced a new regression, address that exact item directly and keep its TODO open until resolved; do not invoke the critic a third time.
+6. After completing the wiki skeleton and resolving every critic TODO, fill the contents for every page in the skeleton. A passing mention, directory list, source-map row, or concise overview is not substantive coverage: explain responsibilities, owning entrypoints and symbols, important relationships and invariants, focused tests, and primary evidence when they exist.
   a) REMEMBER: An agent or human should be able to use the wiki to fully understand the codebase and its systems/workflows without needing to read a single line of code outside of the wiki.
 7. After writing the wiki and its contents, perform an unknown-unknown pass over uncovered manifest-backed or high-ranked clusters, uncited one-hop dependencies, and cross-system workflows revealed during writing. Expand the plan and wiki when this exposes a real gap.
 8. Before finishing, reconcile the final wiki tree against the full inventory. Verify coverage, source grounding, terminology, navigation, and relationship links.
 - Optimize for path compression: shorten the route from an engineering intent to the owning files and symbols, related systems, focused tests, and narrow validation command.
 - Substantial components and major workflows must be documented during init. Defer only when explicitly outside scope, unavailable to inspect safely, or evidence-blocked. Never defer an area merely because of time, token, page-count, or navigation convenience. Record valid deferrals in a concise Backlog section in quickstart with a source anchor and reason.
 - Do not document every file or target a page count. Wiki depth should reflect meaningful repository complexity.
-- To verify the wiki has everything documented properly, find a component, feature API or specific system/workflow, then kickoff a subagent to search in the wiki to find the answer.
-  - If the wiki doesn't provide an accurate answer, the documentation is insufficient and you must update it & rerun the subagent verifier before completing.
-  - Use subagents for this to ensure context is isolated and it can not find the answer from other sources. Follow the following flow exactly when coming up with these questions:
-    1. Kickoff a single subagent to navigate the repo to find specific APIs, features, components, or similar systems. Have this subagent ONLY research in the codebase for a diverse set of questions. Use a subagent for this to ensure it's not biased by what you've already documented.
-    2. Once the subagent returns a list of questions, kickoff a new subagent (run all in parallel) for each question. Ensure you instruct the subagent to ONLY search in the 'openwiki/' directory for this answer.
-    3. After all subagents have finished, analyze the results and determine if the documentation is sufficient. For each question the subagent was unable to answer, do a 2nd pass over the wiki for that system or service, and update the docs to be more detailed.
-    4. Once you've updated the docs, re-ask the same questions which failed to ensure they now pass. Repeat until all questions pass.
-    - The number of questions should be dynamic depending on the size of the repository. For very small repos, a couple questions will suffice. For larger repos or monorepos, you'll want to ask many more questions to ensure comprehensive coverage.
-    - Questions should look roughly like:
-      “How does <operation> travel from its public entrypoint through middleware, domain logic, persistence, queues, and downstream services? Name the exact files, symbols, state transformations, and focused tests at every boundary.”
-      “To add a new <endpoint/provider/tool/resource type>, which implementation, registration, export, generated-artifact, configuration, consumer, and test surfaces must change? What commonly missed synchronization steps would leave it incomplete?”
-      “Where is <entity> validated, persisted, cached, indexed, queried, updated, and deleted? Identify schemas, tables, storage-selection gates, tenant keys, migrations, background jobs, and consistency invariants.”
-      “For <workflow>, how are user identity, service identity, tenant context, permissions, and accessible-resource filtering established and propagated across each service boundary? Which exceptions exist, and which tests prevent bypasses?”
-      “What ordering, retry, idempotency, concurrency, cleanup, and partial-failure behavior must <component> preserve? Which source symbols implement each invariant, and which exact tests exercise success and failure transitions?”
-      “If an engineer changed <specific behavior>, where should they begin, what is the complete blast radius, which generated or public contracts could drift, and what exact focused tests and conditional broader checks prove the change is shipped correctly?”
-    - Questions must be discovered from inspected source evidence, not selected from a predefined list of repository areas. Each question must name the exact source paths and symbols that motivated it. Prefer questions that require combining evidence from multiple files or services. Reject questions answerable from a README, directory listing, or composition root alone.
-    - Your questions should be very detailed and specific. These should mimic types of questions coding agents may ask when trying to understand specific parts of a codebase for debugging or feature development.
-    - You MUST NOT ask broad, unspecific questions.
+- Verify the completed wiki using the 'wiki_question_finder' and 'wiki_answer_verifier' subagents:
+  1. Invoke 'wiki_question_finder'.
+  2. Create one TODO for every returned question ID.
+  3. Before every verification wave, including retries, create the complete batch plan. Group questions that share relevant wiki pages, systems, or evidence into batches of 2–3. A question may run alone only when no other question in that wave has meaningful overlap; do not use one verifier per question by default. Launch all batches for the wave together in one parallel tool-call message. On the initial wave, provide each question's exact ID, text, and acceptance criteria.
+  4. For every PARTIAL or FAIL result, update the canonical wiki pages using the reported missing details. Complete all documentation repairs for the wave before beginning its retry verification; do not launch verifier calls incrementally as individual questions are repaired.
+  5. Re-invoke 'wiki_answer_verifier' only for PARTIAL or FAIL IDs. For each retry provide only the unchanged question ID and text, its prior missing-items list, and the wiki pages changed to resolve it; do not resend acceptance criteria or source evidence. Mark its TODO complete only after PASS. Repeat only for IDs that still do not pass.
 9. Finally, once all the wiki pages are complete, write the /openwiki/quickstart.md file. This should be a high level introduction to the repository wiki, documenting the main sections, concepts and APIs, and providing a quick reference for how to navigate the wiki.
 
 Remember to delete the /openwiki/_skeleton.md file once all wiki files have been created and populated.
@@ -172,7 +161,6 @@ Documentation contract:
 - Every service, package, or substantial API in the repository MUST get its own dedicated documentation page, OR if multiple services make up a single larger component, or system, group them inside a directory for that system.
   a) E.g. if there are 3 services for a web app (frontend, backend, database), you'll likely want to create a single directory for the app, with sub-pages for each service. That said, if the app itself is highly complex, you will almost certainly want to create individual pages or directories for major components or aspects of that larger system.
 - If a repository only has a single mono-API, you will likely want to break it up into multiple sections and document each one separately (granted the API is extensive enough).
-- You should compile a list of questions to ask for every main service or API, and ask them to subagents once your initial documentation pass is complete. For each which fails to return an answer, do a 2nd pass over the wiki for that system or service, and update the docs to be more detailed.
 
 Depth and completeness gate
 IMPORTANT: This section should be followed EXACTLY when navigating the codebase to ensure comprehensive documentation coverage:
@@ -181,7 +169,6 @@ IMPORTANT: This section should be followed EXACTLY when navigating the codebase 
 - Reading test files is highly encouraged as a great way to understand how components are used, validated and what the developer cares/focuses on the most.
 
 Do not draft wiki prose until every planned substantive page has an evidence brief. For each major component or domain, inspect:
-
 - its runtime entrypoint and registration/composition surface;
 - the primary implementation behind that entrypoint;
 - its important public types, schemas, and configuration;

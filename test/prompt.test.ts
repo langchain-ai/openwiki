@@ -201,10 +201,10 @@ describe("createSystemPrompt repository init coverage", () => {
       "Group related files into coherent systems and cross-system workflows",
     );
     expect(prompt).toContain(
-      "Create the complete wiki skeleton in /openwiki/_plan.md before drafting pages",
+      "Create the complete wiki skeleton in the /openwiki/_skeleton.md file before writing the actual files and their contents",
     );
     expect(prompt).toContain(
-      "A passing mention, directory list, or source-map row is not substantive coverage",
+      "A passing mention, directory list, source-map row, or concise overview is not substantive coverage",
     );
     expect(prompt).toContain("Optimize for path compression");
     expect(prompt).toContain("perform an unknown-unknown pass");
@@ -217,6 +217,27 @@ describe("createSystemPrompt repository init coverage", () => {
     expect(prompt).toContain(
       "Substantial components and major workflows must be documented during init",
     );
+    expect(prompt).toContain("Create one TODO for every returned RQ item");
+    expect(prompt).toContain("Re-invoke 'skeleton_critic' exactly once");
+    expect(prompt).toContain("Invoke 'wiki_question_finder'");
+    expect(prompt).toContain(
+      "Before every verification wave, including retries, create the complete batch plan",
+    );
+    expect(prompt).toContain(
+      "A question may run alone only when no other question in that wave has meaningful overlap",
+    );
+    expect(prompt).toContain(
+      "Launch all batches for the wave together in one parallel tool-call message",
+    );
+    expect(prompt).toContain(
+      "Complete all documentation repairs for the wave before beginning its retry verification",
+    );
+    expect(prompt).toContain(
+      "do not launch verifier calls incrementally as individual questions are repaired",
+    );
+    expect(prompt).toContain("do not resend acceptance criteria or source evidence");
+    expect(prompt).toContain("Repeat only for IDs that still do not pass");
+    expect(prompt).not.toContain("Questions should look roughly like:");
   });
 });
 
