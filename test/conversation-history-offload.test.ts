@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { createSummarizationMiddleware } from "deepagents";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
 import {
   AGENT_FILESYSTEM_PERMISSIONS,
@@ -26,6 +26,18 @@ async function createBackendFixture(options: { docsOnly: boolean }) {
 }
 
 describe("createAgentBackend conversation history offload", () => {
+  test("returns a tool error when a glob exceeds the call stack", async () => {
+    const { backend } = await createBackendFixture({ docsOnly: true });
+    vi.spyOn(OpenWikiLocalShellBackend.prototype, "glob").mockRejectedValueOnce(
+      new RangeError("Maximum call stack size exceeded"),
+    );
+
+    await expect(backend.glob("**/*", "/")).resolves.toEqual({
+      error:
+        "Glob search was too broad. Retry with a narrower path or pattern.",
+    });
+  });
+
   test("permits the summarization history offload on docs-only runs", async () => {
     const { backend, historyDir, repoDir } = await createBackendFixture({
       docsOnly: true,

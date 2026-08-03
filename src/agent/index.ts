@@ -14,6 +14,7 @@ import {
   createDeepAgent,
   FilesystemBackend,
   type FilesystemPermission,
+  type GlobResult,
 } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
@@ -53,6 +54,7 @@ import {
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
+import { resolveSkeletonCriticSubagents } from "./skeleton_critic.js";
 import { syncBundledSkills } from "./skills.js";
 import {
   createVertexAuthFetch,
@@ -403,6 +405,7 @@ async function runOpenWikiAgentCore(
                 ),
               ],
         skills: ["/skills/"],
+        subagents: resolveSkeletonCriticSubagents(command, outputMode),
         permissions: AGENT_FILESYSTEM_PERMISSIONS,
         systemPrompt: createSystemPrompt(
           command,
@@ -637,7 +640,7 @@ export function createAgentBackend(
     skillsDir = openWikiSkillsDir,
   }: { historyDir?: string; skillsDir?: string } = {},
 ): CompositeBackend {
-  return new CompositeBackend(wikiBackend, {
+  return new OpenWikiCompositeBackend(wikiBackend, {
     [CONVERSATION_HISTORY_MOUNT]: new FilesystemBackend({
       rootDir: historyDir,
       virtualMode: true,
@@ -647,6 +650,26 @@ export function createAgentBackend(
       virtualMode: true,
     }),
   });
+}
+
+class OpenWikiCompositeBackend extends CompositeBackend {
+  override async glob(pattern: string, path = "/"): Promise<GlobResult> {
+    try {
+      return await super.glob(pattern, path);
+    } catch (error) {
+      if (
+        error instanceof RangeError &&
+        error.message === "Maximum call stack size exceeded"
+      ) {
+        return {
+          error:
+            "Glob search was too broad. Retry with a narrower path or pattern.",
+        };
+      }
+
+      throw error;
+    }
+  }
 }
 
 async function createCheckpointer(

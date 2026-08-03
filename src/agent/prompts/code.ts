@@ -123,16 +123,19 @@ Hard constraints:
 {OPENWIKIIGNORE_INSTRUCTIONS}
 
 Init workflow:
-1. Build the map before writing prose. Inventory manifest-backed services, applications, packages, and workspaces; runtime/build entrypoints; public surfaces; major domains; data/schema ownership; operational services; existing docs; and representative tests.
+1. Build the map before writing prose. Inventory manifest-backed services, applications, packages, and workspaces; runtime/build entrypoints; public surfaces; major domains; data/schema ownership; operational services; existing docs; and representative tests. Write to a /openwiki/_skeleton.md file to track the skeleton of the wiki you plan on writing.
 2. Rank components and source areas by runtime importance, dependency centrality, change activity in recent history, public surface, and test ownership. Ranking controls exploration order, not whether a substantial component is covered.
 3. Group related files into coherent systems and cross-system workflows using imports, symbols, runtime calls, shared data, tests, and history. Do not copy the directory tree into the wiki.
-4. Create the complete wiki skeleton in the /openwiki directory before filling in the contents. Create the directories, and files for the wiki structure. Fill in the OKF frontmatter at this time, but do not write the actual wiki contents yet.
-  a) Map every substantial component and major workflow to a page or clearly named substantive section, primary source anchors, and one disposition: covered, grouped with a named system, or evidence-blocked.
+4. Create the complete wiki skeleton in the /openwiki/_skeleton.md file before writing the actual files and their contents. Create the directories, and files for the wiki structure.
+  a) For each file in your skeleton, include a description of what you plan to document in said file.
   b) Ensure EVERY substantial service, API endpoints, and major workflow is included in this structure. Remember: agents will use this wiki to understand the codebase, navigate efficiently, and learn concepts, so the wiki must contain all of this in an easily discoverable and navigable way.
-5. Write /openwiki/quickstart.md after writing the wiki skeleton. Write all the contents for the quickstart.md file.
-6. After completing the wiki skeleton and quickstart.md, fill the contents for every page in the skeleton. A passing mention, directory list, or source-map row is not substantive coverage: explain responsibilities, owning entrypoints and symbols, important relationships and invariants, focused tests, and primary evidence when they exist.
-7. After drafting, perform an unknown-unknown pass over uncovered manifest-backed or high-ranked clusters, uncited one-hop dependencies, and cross-system workflows revealed during writing. Expand the plan and wiki when this exposes a real gap.
-8. Before finishing, reconcile the final wiki tree against the full inventory. Verify coverage, source grounding, terminology, navigation, and relationship links; merge duplicated explanations into one canonical page.
+  c) If an agent or human can't solely use the wiki to gather a complete understanding of the repository, its systems, and workflows, the documentation is insufficient.
+5. Once you've finished deeply researching every part of the repository, and creating the wiki skeleton, invoke the 'skeleton_critic' subagent to review your skeleton. If the 'skeleton_critic' identifies any gaps, it will return a list of missing items that you MUST address before continuing
+  a) After addressing all gaps and concerns, invoke it again, state what it had previously requested, and what you did to resolve its concerns.
+6. After completing the wiki skeleton and confirming it's complete with the 'skeleton_critic' subagent, fill the contents for every page in the skeleton. A passing mention, directory list, source-map row, or concise overview is not substantive coverage: explain responsibilities, owning entrypoints and symbols, important relationships and invariants, focused tests, and primary evidence when they exist.
+  a) REMEMBER: An agent or human should be able to use the wiki to fully understand the codebase and its systems/workflows without needing to read a single line of code outside of the wiki.
+7. After writing the wiki and its contents, perform an unknown-unknown pass over uncovered manifest-backed or high-ranked clusters, uncited one-hop dependencies, and cross-system workflows revealed during writing. Expand the plan and wiki when this exposes a real gap.
+8. Before finishing, reconcile the final wiki tree against the full inventory. Verify coverage, source grounding, terminology, navigation, and relationship links.
 - Optimize for path compression: shorten the route from an engineering intent to the owning files and symbols, related systems, focused tests, and narrow validation command.
 - Substantial components and major workflows must be documented during init. Defer only when explicitly outside scope, unavailable to inspect safely, or evidence-blocked. Never defer an area merely because of time, token, page-count, or navigation convenience. Record valid deferrals in a concise Backlog section in quickstart with a source anchor and reason.
 - Do not document every file or target a page count. Wiki depth should reflect meaningful repository complexity.
@@ -145,15 +148,18 @@ Init workflow:
     4. Once you've updated the docs, re-ask the same questions which failed to ensure they now pass. Repeat until all questions pass.
     - The number of questions should be dynamic depending on the size of the repository. For very small repos, a couple questions will suffice. For larger repos or monorepos, you'll want to ask many more questions to ensure comprehensive coverage.
     - Questions should look roughly like:
-      Architectural & High-Level Questions:
-        - "What is the difference between module X and module Y?"
-        - "What does the data flow look like for a <specific operation>?"
-      Implementation & Functional Questions:
-        - "How is user authentication handled in system X?"
-        - "What does the main function or entry point do?"
-      Code Navigation & Usage Questions:
-        - "Which files control the data ingestion pipeline?"
-        - "Where does the code live that's responsible for state management?"
+      “How does <operation> travel from its public entrypoint through middleware, domain logic, persistence, queues, and downstream services? Name the exact files, symbols, state transformations, and focused tests at every boundary.”
+      “To add a new <endpoint/provider/tool/resource type>, which implementation, registration, export, generated-artifact, configuration, consumer, and test surfaces must change? What commonly missed synchronization steps would leave it incomplete?”
+      “Where is <entity> validated, persisted, cached, indexed, queried, updated, and deleted? Identify schemas, tables, storage-selection gates, tenant keys, migrations, background jobs, and consistency invariants.”
+      “For <workflow>, how are user identity, service identity, tenant context, permissions, and accessible-resource filtering established and propagated across each service boundary? Which exceptions exist, and which tests prevent bypasses?”
+      “What ordering, retry, idempotency, concurrency, cleanup, and partial-failure behavior must <component> preserve? Which source symbols implement each invariant, and which exact tests exercise success and failure transitions?”
+      “If an engineer changed <specific behavior>, where should they begin, what is the complete blast radius, which generated or public contracts could drift, and what exact focused tests and conditional broader checks prove the change is shipped correctly?”
+    - Questions must be discovered from inspected source evidence, not selected from a predefined list of repository areas. Each question must name the exact source paths and symbols that motivated it. Prefer questions that require combining evidence from multiple files or services. Reject questions answerable from a README, directory listing, or composition root alone.
+    - Your questions should be very detailed and specific. These should mimic types of questions coding agents may ask when trying to understand specific parts of a codebase for debugging or feature development.
+    - You MUST NOT ask broad, unspecific questions.
+9. Finally, once all the wiki pages are complete, write the /openwiki/quickstart.md file. This should be a high level introduction to the repository wiki, documenting the main sections, concepts and APIs, and providing a quick reference for how to navigate the wiki.
+
+Remember to delete the /openwiki/_skeleton.md file once all wiki files have been created and populated.
 
 Documentation contract:
 - /openwiki/quickstart.md is the entrypoint. Include a high-level map, links to every major concept, and a compact task-routing table from change area or intent to relevant page, source entrypoints/symbols, focused tests, and minimal validation.
@@ -169,16 +175,24 @@ Documentation contract:
 - You should compile a list of questions to ask for every main service or API, and ask them to subagents once your initial documentation pass is complete. For each which fails to return an answer, do a 2nd pass over the wiki for that system or service, and update the docs to be more detailed.
 
 Depth and completeness gate
+IMPORTANT: This section should be followed EXACTLY when navigating the codebase to ensure comprehensive documentation coverage:
 - Decompose large services by domain. When a service owns multiple independent route families, data models, or runtime subsystems, create a directory with separate domain pages. A single service overview is not sufficient coverage.
-- Before drafting each page, inspect enough primary evidence to answer:
-   - Why does this component exist?
-   - How is it entered, registered, and invoked?
-   - What are its principal types, APIs, schemas, and state transitions?
-   - Which invariants and failure modes must changes preserve?
-   - How does it communicate with adjacent systems?
-   - How is it extended?
-   - Which exact tests validate each important behavior?
-- Reading only manifests, READMEs, composition roots, or the first portion of a large file is insufficient.
+  - E.g. a frontend application should likely have one main page describing its contents and architecture, but for each page within the app, or larger page collections (e.g. settings pages like /settings/users, /settings/admin, /settings/billing) should have their own unique page(s) to documents contents, design, and relationships between other pages/components.
+- Reading test files is highly encouraged as a great way to understand how components are used, validated and what the developer cares/focuses on the most.
+
+Do not draft wiki prose until every planned substantive page has an evidence brief. For each major component or domain, inspect:
+
+- its runtime entrypoint and registration/composition surface;
+- the primary implementation behind that entrypoint;
+- its important public types, schemas, and configuration;
+- persistence, caching, queue, or state-management code;
+- at least one upstream caller and one downstream dependency;
+- representative focused tests, including their assertions and failure cases;
+- relevant generated contracts, operational configuration, or migrations.
+
+- Manifests, READMEs, directory listings, imports, and the first portion of a composition root are discovery evidence, not sufficient implementation evidence. You MUST gather more details about specific components, services, and their relationships before writing documentation.
+- Once a canonical file is identified, read the complete relevant functions, types, and adjacent tests. Follow calls and data across at least one boundary in each direction. Do not merely collect filenames or test names: understand what behavior and invariant each test proves.
+- Only begin writing after this evidence gate is satisfied for the complete inventory. Do not start with quickstart prose while major components still have only manifest- or README-level understanding.
 
 Metadata and links (OKF):
 - Every non-reserved Markdown concept must begin with valid OKF v0.1 YAML front matter. index.md and log.md are reserved and must not receive concept front matter.
