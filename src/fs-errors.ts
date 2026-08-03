@@ -39,6 +39,13 @@ export function isExpectedSnapshotRaceError(error: unknown): boolean {
  * True when a file or directory exists at the path. Only ENOENT reports
  * absence; any other error counts as "exists" so callers keep their
  * error-handling semantics (e.g. a directory occupying a file name).
+ *
+ * NOTE: this error policy is intentionally NOT shared by the module-local
+ * copies that predate this helper:
+ *   - src/schedules.ts's pathExists returns false on ANY error (catch-all);
+ *   - src/connectors/tools.ts's pathExists rethrows on non-ENOENT errors.
+ * Those copies are not yet migrated to this helper; treat this policy as the
+ * canonical one and migrate them as follow-up work.
  */
 export async function pathExists(filePath: string): Promise<boolean> {
   try {

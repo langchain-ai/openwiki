@@ -3,6 +3,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  readdir,
   rm,
   stat,
   symlink,
@@ -18,7 +19,10 @@ import {
   vi,
   type MockInstance,
 } from "vitest";
-import { ensureCodeModeRepoSetup } from "../src/code-mode.ts";
+import {
+  ensureCodeModeRepoSetup,
+  createMirroredWarningSink,
+} from "../src/code-mode.ts";
 
 const SNIPPET_START = "<!-- OPENWIKI:START -->";
 const SNIPPET_END = "<!-- OPENWIKI:END -->";
@@ -345,6 +349,11 @@ describe("non-canonical block protection", () => {
     expect(stderr).toHaveBeenCalledWith(
       expect.stringContaining("AGENTS.md.openwiki.bak"),
     );
+    // A fresh backup never claims a previous backup was replaced; that suffix
+    // only appears when the backup name was already occupied.
+    expect(stderr).not.toHaveBeenCalledWith(
+      expect.stringContaining("replaced"),
+    );
   });
 
   test("leaves a canonical block untouched: no warning, no backup, no rewrite", async () => {
@@ -468,6 +477,9 @@ describe("non-canonical block protection", () => {
       "hand-edited block content",
     );
     expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
+    // The temp backup file is cleaned up even though the rename failed.
+    const entries = await readdir(repo);
+    expect(entries.filter((e) => e.endsWith(".tmp"))).toEqual([]);
   });
 
   test("never auto-deletes an orphaned backup once the block is canonical", async () => {
@@ -496,6 +508,8 @@ describe("non-canonical block protection", () => {
     expect(linkStat.isSymbolicLink()).toBe(true);
     const backup = await readIfPresent(backupPathFor(linkPath));
     expect(backup).toBe(nonCanonicalFile());
+    // The refresh propagated through the symlink to its target file.
+    expect(await readIfPresent(targetPath)).toContain("## OpenWiki");
   });
 
   test("marker-less files get the append path with no warning or backup", async () => {
@@ -563,5 +577,29 @@ describe("ensureCodeModeRepoSetup onWarning sink", () => {
     expect(warnings).toHaveLength(2);
     expect(warnings[0]).toContain("AGENTS.md");
     expect(warnings[1]).toContain("CLAUDE.md");
+  });
+});
+
+describe("createMirroredWarningSink", () => {
+  test("emits to the run-log callback and mirrors the line to stderr", () => {
+    const emitted: string[] = [];
+    const stderr = captureStderr();
+
+    const sink = createMirroredWarningSink((message) => emitted.push(message));
+    sink("warning line");
+
+    expect(emitted).toEqual(["warning line"]);
+    expect(stderr).toHaveBeenCalledWith("warning line\n");
+  });
+
+  test("mirrors to stderr even when the run-log callback throws", () => {
+    const stderr = captureStderr();
+
+    const sink = createMirroredWarningSink(() => {
+      throw new Error("log backend down");
+    });
+    expect(() => sink("warning line")).toThrow("log backend down");
+
+    expect(stderr).toHaveBeenCalledWith("warning line\n");
   });
 });

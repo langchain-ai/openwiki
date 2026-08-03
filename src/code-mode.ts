@@ -1,4 +1,11 @@
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { OPENWIKI_VERSION } from "./constants.js";
@@ -49,6 +56,7 @@ export async function ensureCodeModeRepoSetup(
     await ensureCodeModeWorkflow(
       cwd,
       options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
+      createWarningSink(options.onWarning),
     );
   }
   await writeCodeModeAgentSnippets(cwd, options.onWarning);
@@ -62,6 +70,7 @@ export async function ensureCodeModeRepoSetup(
 async function ensureCodeModeWorkflow(
   cwd: string,
   cronExpression: string,
+  warn: (message: string) => void,
 ): Promise<void> {
   const workflowPath = path.join(
     cwd,
@@ -71,7 +80,15 @@ async function ensureCodeModeWorkflow(
   );
 
   try {
-    await readFile(workflowPath, "utf8");
+    const workflowContent = await readFile(workflowPath, "utf8");
+    // An existing workflow is preserved verbatim; older installs' workflows
+    // predate the backup commit paths and would silently discard backups on
+    // every scheduled run unless the operator re-runs --init or adds the paths.
+    if (!workflowContent.includes("AGENTS.md.openwiki.bak")) {
+      warn(
+        "OpenWiki: the existing .github/workflows/openwiki-update.yml does not commit agent-file backups; scheduled CI runs will discard them. Re-run openwiki code --init or add the backup paths to its add-paths.",
+      );
+    }
     return;
   } catch (error) {
     if (!isFileNotFoundError(error)) {
@@ -193,6 +210,7 @@ async function writeCodeModeAgentSnippets(
   cwd: string,
   onWarning?: (message: string) => void,
 ): Promise<void> {
+  await sweepStaleBackupTempFiles(cwd);
   const snippet = createCodeModeAgentsSnippet();
   const normalizedSnippet = normalizeLineEndings(snippet);
   const warn = createWarningSink(onWarning);
@@ -221,11 +239,30 @@ async function writeCodeModeAgentSnippets(
       backup: NonNullable<PreparedAgentFile["backup"]>;
     } => file.backup !== undefined,
   );
-  await Promise.all(
-    toBackUp.map((file) =>
-      writeBackupAtomically(file.agentsPath, file.backup.content),
-    ),
-  );
+  // A backup failure must abort the run before any rewrite; warn for the
+  // backups that already succeeded so the operator knows they exist, then
+  // rethrow with context. The agent files are left unchanged in this path.
+  const backedUpPaths = new Set<string>();
+  try {
+    await Promise.all(
+      toBackUp.map(async (file) => {
+        await writeBackupAtomically(file.agentsPath, file.backup.content);
+        backedUpPaths.add(file.agentsPath);
+      }),
+    );
+  } catch (error) {
+    for (const file of toBackUp) {
+      if (backedUpPaths.has(file.agentsPath)) {
+        warn(file.backup.warning);
+      }
+    }
+    throw new Error(
+      `OpenWiki: could not write agent-file backups; agent files were left unchanged. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      { cause: error },
+    );
+  }
   for (const file of toBackUp) {
     warn(file.backup.warning);
   }
@@ -258,6 +295,46 @@ function createWarningSink(
       process.stderr.write(`${message}\n`);
     }
   };
+}
+
+/**
+ * A warning sink that mirrors each warning to both the run log and stderr, so
+ * a TUI run keeps the message even when the run log is discarded (re-render or
+ * error-terminated run). The stderr mirror runs even if the run-log callback
+ * throws, so the warning always reaches at least one channel.
+ */
+export function createMirroredWarningSink(
+  emit: (message: string) => void,
+): (message: string) => void {
+  return (message) => {
+    try {
+      emit(message);
+    } finally {
+      process.stderr.write(`${message}\n`);
+    }
+  };
+}
+
+/**
+ * Best-effort sweep of stale backup temp files left by a crash between a
+ * backup's write and rename in {@link writeBackupAtomically}. Only the
+ * `.openwiki.bak.<pid>.<uuid>.tmp` pattern is removed — never the agent files
+ * or the real backups. Sweep failures must not break the run; errors from the
+ * actual backup writes still propagate.
+ */
+async function sweepStaleBackupTempFiles(cwd: string): Promise<void> {
+  try {
+    const entries = await readdir(cwd);
+    await Promise.all(
+      entries
+        .filter((entry) => /\.openwiki\.bak\..*\.tmp$/.test(entry))
+        .map((entry) =>
+          rm(path.join(cwd, entry), { force: true }).catch(() => undefined),
+        ),
+    );
+  } catch {
+    // Tolerate readdir failures; the sweep is cleanup, not a precondition.
+  }
 }
 
 /**
@@ -295,7 +372,15 @@ async function prepareCodeModeAgentSnippet(
   let currentContent = "";
 
   try {
-    currentContent = await readFile(agentsPath, "utf8");
+    const raw = await readFile(agentsPath);
+    currentContent = raw.toString("utf8");
+    // A lossy round-trip means the file is not valid UTF-8; refusing to
+    // rewrite or back it up lossily preserves the original bytes.
+    if (!Buffer.from(currentContent, "utf8").equals(raw)) {
+      throw new Error(
+        `Cannot update ${path.basename(agentsPath)} because it is not valid UTF-8; refusing to rewrite or back it up lossily.`,
+      );
+    }
   } catch (error) {
     if (!isFileNotFoundError(error)) {
       throw error;

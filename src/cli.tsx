@@ -11,7 +11,11 @@ import {
 import { startNgrokTunnel } from "./auth/ngrok.js";
 import { runVisualizeServer } from "./visualize/server.js";
 import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
-import { ensureCodeModeRepoSetup, runCodeModeConnectors } from "./code-mode.js";
+import {
+  createMirroredWarningSink,
+  ensureCodeModeRepoSetup,
+  runCodeModeConnectors,
+} from "./code-mode.js";
 import {
   commandEmitsTelemetry,
   helpContent,
@@ -633,14 +637,13 @@ function App({ command }: AppProps) {
             createWorkflow: resolvedCommand === "init",
             // Mirror warnings to stderr so they survive a TUI re-render and an
             // error-terminated run, which discards the run log.
-            onWarning: (message) => {
+            onWarning: createMirroredWarningSink((message) => {
               handleRunEvent({
                 source: "main",
                 text: message,
                 type: "text",
               });
-              process.stderr.write(`${message}\n`);
-            },
+            }),
           });
         }
 
