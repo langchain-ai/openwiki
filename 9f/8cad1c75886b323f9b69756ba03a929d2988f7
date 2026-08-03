@@ -1,0 +1,125 @@
+test/connectors/sources/git-repo.test.ts
+  s_ed18fedebfc70d::t_1db23316f69927 1-222
+test/connectors/sources/web-search.test.ts
+  s_ed18fedebfc70d::t_1db23316f69927 5,68,228-275
+test/agent/thread-id.test.ts
+  s_ed18fedebfc70d::t_5ae7cfa2a7f615 30-33,41-46
+  s_ed18fedebfc70d::t_998e762ac28880 1-29,34-40,47-50
+test/mermaid/validate-fallback.test.ts
+  s_ed18fedebfc70d::t_750d1ac9bf6447 1-49
+test/agent/openai-chatgpt-oauth.test.ts
+  s_ed18fedebfc70d::t_93083e8c3c087b 352-364
+  s_ed18fedebfc70d::t_eb9844fe95d099 197-217
+  s_ed18fedebfc70d::t_d28bd2c67e04ca 472-515,517,521-555,557-562
+  s_ed18fedebfc70d::t_8692a2832bd4e8 5,11,13
+  s_ed18fedebfc70d::t_a171ba5705fc0c 556
+  s_ed18fedebfc70d::t_c1d314c2371651 516,518-520
+test/mermaid/dom-shim.test.ts
+  s_ed18fedebfc70d::t_2dd559e3f22085 1-16
+test/agent/environment-debug-value.test.ts
+  s_ed18fedebfc70d::t_9930edc1858140 1-22,27-87
+  s_ed18fedebfc70d::t_5ae7cfa2a7f615 23-26
+test/auth/ngrok.test.ts
+  s_ed18fedebfc70d::t_1da6f605cb8999 131-156
+test/connectors/sources/hackernews.test.ts
+  s_ed18fedebfc70d::t_1db23316f69927 52,239-514
+test/connectors/sources/langsmith/repo-config.test.ts
+  s_ed18fedebfc70d::t_1db23316f69927 1-269
+test/agent/prompt.test.ts
+  s_ed18fedebfc70d::t_2889ed6f7a5684 6,8-21
+  s_ed18fedebfc70d::t_23543147bf4210 201-202,206-236,238-267,269-285
+  s_ed18fedebfc70d::t_28e6f54f779df1 203-205,237,268
+test/connectors/fetch-with-resilience.test.ts
+  s_ed18fedebfc70d::t_df058a382b8812 299-320,324-336
+  s_ed18fedebfc70d::t_d6eaf94cacad83 321-323
+test/connectors/sources/langsmith/setup.test.ts
+  s_ed18fedebfc70d::t_1db23316f69927 1-185
+test/connectors/sources/x.test.ts
+  s_ed18fedebfc70d::t_8d99293f24b7db 326
+  s_ed18fedebfc70d::t_3bf25e9af07de5 310-325,327-374
+  s_ed18fedebfc70d::t_9802b04f0dc018 375-396
+test/connectors/sources/langsmith/api.test.ts
+  s_ed18fedebfc70d::t_1db23316f69927 1-178
+test/agent/translation-middleware.test.ts
+  s_ed18fedebfc70d::t_6b310995aa3487 124-133
+  s_ed18fedebfc70d::t_b680c02691ba42 457-679
+test/telemetry/telemetry-install-id.test.ts
+  s_ed18fedebfc70d::t_ae6c037ef01bcb 1,13-21,25-32,42-57
+  s_ed18fedebfc70d::t_da18c76efd8b99 93-132
+test/telemetry/telemetry.test.ts
+  s_ed18fedebfc70d::t_c4213d894eb2c6 1
+  s_ed18fedebfc70d::t_e39d98c1a7d2ad 488-502
+  s_ed18fedebfc70d::t_16939582f41e2f 569-591
+  s_ed18fedebfc70d::t_f1933ebf8450cb 646-658
+test/connectors/sources/gmail.test.ts
+  s_ed18fedebfc70d::t_8d99293f24b7db 315-319
+  s_ed18fedebfc70d::t_647b30c4f291bc 309-314,320-383
+test/telemetry/client-no-key.test.ts
+  s_ed18fedebfc70d::t_ade61b086a0805 1-30
+test/auth/external-cli-auth.test.ts
+  s_ed18fedebfc70d::t_f35d4c870b5480 1,5,9,13,15,17,21-49,52
+  s_ed18fedebfc70d::t_1c6ebe4cb9ac98 133-262
+test/connectors/sources/mcp.test.ts
+  s_ed18fedebfc70d::t_1db23316f69927 1-175
+test/auth/oauth-url-validation.test.ts
+  s_ed18fedebfc70d::t_34b1c66b2cf6d2 87-204
+  s_ed18fedebfc70d::t_563cdd12c382a2 4,8-18
+  s_ed18fedebfc70d::t_73d357ae8131a5 44-48
+  s_ed18fedebfc70d::t_345b0bb4d1077e 49-51
+  s_ed18fedebfc70d::t_57b2e28e07965b 19
+test/config/openwiki-home.test.ts
+  s_ed18fedebfc70d::t_0261028e01df4d 10
+  s_ed18fedebfc70d::t_628d6fe6d50cc6 1-9,11-175
+test/connectors/connector-config-overrides.test.ts
+  s_ed18fedebfc70d::t_91d8a79507fa5c 135-160
+test/mermaid/mermaid-wiki.test.ts
+  s_ed18fedebfc70d::t_4c46c5b5395dec 164-169,171-183,186-201,204-214,217-234,237-243,245-251
+  s_ed18fedebfc70d::t_d75920c0a7e093 184-185,202-203,215-216,235-236,244
+  s_ed18fedebfc70d::t_790692d8137df1 19-21,24-26
+  s_ed18fedebfc70d::t_5975cca5deb5da 1-6,14-18,22-23,27-31
+  s_ed18fedebfc70d::t_a33f57b37967fb 170
+  s_ed18fedebfc70d::t_c7cce9602f2d55 32
+test/connectors/sources/langsmith/index.test.ts
+  s_ed18fedebfc70d::t_1db23316f69927 1-416
+test/connectors/sources/langsmith/runs.test.ts
+  s_ed18fedebfc70d::t_1db23316f69927 1-241
+vitest.config.ts
+  s_ed18fedebfc70d::t_e94c88827beeed 18-22
+test/connectors/sources/slack.test.ts
+  s_ed18fedebfc70d::t_6f1d991e68b119 459-511
+test/agent/parse-stream-event.test.ts
+  s_ed18fedebfc70d::t_9dc54965a3538f 1-51,60-237,248-329,332-360,366-386,388-396,400-409
+  s_ed18fedebfc70d::t_4f8821a52a9ee7 330-331
+  s_ed18fedebfc70d::t_d0247612ffef52 387,397-399
+  s_ed18fedebfc70d::t_5ae7cfa2a7f615 52-59,238-247,361-365
+test/okf/index-sync-errors.test.ts
+  s_ed18fedebfc70d::t_813c75a4574125 1-19,24-25,30-52,54-58,62-67,70-78,81-93,97-107,111-112,116-117
+  s_ed18fedebfc70d::t_0261028e01df4d 59-61,113-115
+  s_ed18fedebfc70d::t_d13d0d39b9abc1 20-23,26-29
+  s_ed18fedebfc70d::t_c9c8d7add181da 53,68-69,79-80,94-96,108-110
+test/okf/frontmatter.test.ts
+  s_ed18fedebfc70d::t_94f13c89ea9754 1-2,12-13
+  s_ed18fedebfc70d::t_3756c276c317b4 303-321,323-363
+  s_ed18fedebfc70d::t_b8c2f6e457f72e 322
+test/agent/model-resolution.test.ts
+  s_ed18fedebfc70d::t_9f43f4006658a2 1,4
+  s_ed18fedebfc70d::t_309a2751754b23 57-116
+test/mermaid/mermaid-validate.test.ts
+  s_ed18fedebfc70d::t_d12b909f82ea63 138-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "9f8cad1c75886b323f9b69756ba03a929d2988f7",
+  "prompts": {},
+  "sessions": {
+    "s_ed18fedebfc70d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dde8f354-6e1c-4dca-96f7-0f6cd5cf3d58",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
