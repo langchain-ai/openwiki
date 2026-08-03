@@ -4,7 +4,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
-import { OpenWikiIgnore } from "../src/agent/openwiki-ignore.ts";
+import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
 import {
   getUpdateNoopStatus,
   shouldCheckUpdateNoop,

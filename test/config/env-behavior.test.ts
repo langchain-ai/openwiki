@@ -333,7 +333,7 @@ describe("saveOpenWikiEnv", () => {
     });
 
     try {
-      const concurrentEnv = await import("../src/env.ts");
+      const concurrentEnv = await import("../../src/config/env.ts");
       const first = concurrentEnv.saveOpenWikiEnv({
         [OPENAI_API_KEY_ENV_KEY]: "first",
       });

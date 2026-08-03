@@ -1,5 +1,5 @@
 import type { OpenWikiCommand, OpenWikiRunOptions } from "../agent/types.js";
-import type { OpenWikiProvider } from "../constants.js";
+import type { OpenWikiProvider } from "../config/constants.js";
 
 import { describeErrorForTelemetry } from "./errors.js";
 import { recordRunSafe } from "./record-run-safe.js";

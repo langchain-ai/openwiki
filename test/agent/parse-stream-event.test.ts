@@ -384,7 +384,7 @@ describe("parseStreamEvent – tools branch", () => {
     },
   );
 
-  test("an array tool input is rendered via its indexed entries", () => {
+  test("an array tool input is rendered as a positional value list", () => {
     const event = parseStreamEvent(
       toolsChunk({
         event: "on_tool_start",
@@ -394,9 +394,9 @@ describe("parseStreamEvent – tools branch", () => {
       }),
     );
 
-    // An array is an object, so formatToolArgs takes the record branch first
-    // and keys by array index rather than positionally.
-    expect((event as { call: string }).call).toBe('batch(0="a", 1=2)');
+    // formatToolArgs checks Array.isArray before the record branch, so arrays
+    // render positionally as a value list rather than keyed by index.
+    expect((event as { call: string }).call).toBe('batch("a", 2)');
   });
 
   test("an absent tool input renders an empty argument list", () => {

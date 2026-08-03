@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseCommand } from "../src/commands.ts";
+import { parseCommand } from "../src/cli/commands.ts";
 
 describe("parseCommand visualize", () => {
   test("defaults: openwiki dir, port 4321, opens the browser", () => {
