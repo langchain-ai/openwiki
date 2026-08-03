@@ -7,6 +7,11 @@ pipelines:
     openwiki-update:
       - step:
           name: Run OpenWiki update
+          # Full history so `openwiki code --update` can diff HEAD against the
+          # commit it last documented; Bitbucket's default shallow clone hides
+          # that commit and the update runs against an empty change summary.
+          clone:
+            depth: full
           script:
             - apt-get update && apt-get install -y git curl
             # mermaid + jsdom are optional; they add high-fidelity validation of Mermaid diagrams. Remove if your wiki has none.

@@ -246,6 +246,11 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # Full history so \`openwiki code --update\` can diff HEAD against the
+          # commit it last documented; a shallow clone hides that commit and the
+          # update runs against an empty change summary.
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
