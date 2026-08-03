@@ -1,0 +1,26 @@
+src/agent/wiki-link-validator.ts
+  s_ed53d270747173::t_96cca39faaa069 15-18,20-24,26-30,34-36,38-40,42-45,47-50,52-55,203-207,281-284,318-321,341-343,355-358,377-381,386,390-393,410-413,428-431,442-445,450-453,472-475,496-498
+test/wiki-link-validator.test.ts
+  s_ed53d270747173::t_96cca39faaa069 156-172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "fb5d1b54a29d9a118c9b67d4e07017d96ce0a20b",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_ed53d270747173": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d2637247-d454-4285-aad7-b22c15edffeb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

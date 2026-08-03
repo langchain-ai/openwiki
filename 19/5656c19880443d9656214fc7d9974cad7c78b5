@@ -1,0 +1,53 @@
+src/agent/manifest/derive.ts
+  h_f78d33d4280f3f 1-97
+test/git-history-guard.test.ts
+  s_88c14dfbd8e183::t_04c96886c213a6 221-259
+src/agent/types.ts
+  h_f78d33d4280f3f 54,56,61,66-71,73,78-84,86-91,93-101
+  s_88c14dfbd8e183::t_cf2aca50a62274 74-76
+  s_88c14dfbd8e183::t_49c2487223ada5 57-59,62-64
+test/manifest.test.ts
+  s_88c14dfbd8e183::t_405309772f3824 7,223,225-227
+  s_88c14dfbd8e183::t_838ebe535576e0 1-6,8-185,195-222,224,228-254,256-453
+  s_88c14dfbd8e183::t_bdbe1153ca72ec 186-194
+  s_88c14dfbd8e183::t_dba772d1ede136 255
+src/agent/manifest/types.ts
+  h_f78d33d4280f3f 1-62,67-73
+  s_88c14dfbd8e183::t_8fd6dd0f0985cc 63-66
+src/agent/manifest/glob.ts
+  s_88c14dfbd8e183::t_3a192003d53145 11-14
+  s_88c14dfbd8e183::t_9531881aa5f658 8-10
+  s_88c14dfbd8e183::t_2fc9f8d1d256ad 15-17
+  s_88c14dfbd8e183::t_d3d4b9cff5bc16 1-7,18-50
+test/update-noop.test.ts
+  s_88c14dfbd8e183::t_f07e2593be7ade 141-154
+src/agent/manifest/io.ts
+  s_88c14dfbd8e183::t_ad89f4a63167d9 129-130,132-134
+  h_f78d33d4280f3f 1-128,131,135-159
+src/agent/utils.ts
+  s_88c14dfbd8e183::t_5432af867b9fa1 348-351,353-356
+  s_88c14dfbd8e183::t_991139b2d96eb9 361-367
+  h_f78d33d4280f3f 129,132,198,219
+  s_88c14dfbd8e183::t_a759bc91332668 130-131,133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "195656c19880443d9656214fc7d9974cad7c78b5",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_88c14dfbd8e183": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecd9c94d-7522-4479-8faf-917dcc572b67",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+src/agent/crash-guard.ts
+  s_88c14dfbd8e183::t_05ab01bd4a6e9a 105-111
+test/crash-guard.test.ts
+  s_88c14dfbd8e183::t_9dd9c6bd77c299 109-132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "8d8e1350bc8ee55c1c1d4272caacb4f6430f4093",
+  "prompts": {},
+  "sessions": {
+    "s_88c14dfbd8e183": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecd9c94d-7522-4479-8faf-917dcc572b67",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

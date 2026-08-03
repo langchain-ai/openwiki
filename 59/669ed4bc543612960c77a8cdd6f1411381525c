@@ -1,0 +1,49 @@
+src/agent/utils.ts
+  s_88c14dfbd8e183::t_ebdae296c2686d 242,246-253,256-265
+  s_88c14dfbd8e183::t_4233b77cd55b3f 226-231
+  s_88c14dfbd8e183::t_cbe0f7ceb8a876 266
+test/run-metadata.test.ts
+  s_88c14dfbd8e183::t_e00daa5eb7d21d 75-78,80-125
+  s_88c14dfbd8e183::t_ea337a37697a21 79
+src/agent/crash-guard.ts
+  s_88c14dfbd8e183::t_c68a6b41b38a44 1,7
+  s_88c14dfbd8e183::t_d3191a38b76e9a 97-101
+  s_88c14dfbd8e183::t_477d0bc18eb9ca 58-64
+  s_88c14dfbd8e183::t_c3e32725c34f80 111-122,125-142,148-157,176
+  s_88c14dfbd8e183::t_80623b2f6fa498 57
+test/crash-guard.test.ts
+  s_88c14dfbd8e183::t_395c74c0c30d31 20-23,28-34
+  s_88c14dfbd8e183::t_a3680ca32c0a07 7
+  s_88c14dfbd8e183::t_b5288e84f9f741 103,132-135,144-147,151,157-197,199
+  s_88c14dfbd8e183::t_4a0455f85eff7a 97-101
+  s_88c14dfbd8e183::t_d0d87c3a41a5b9 35
+  s_88c14dfbd8e183::t_6e6e7a0ddb676a 102
+  s_88c14dfbd8e183::t_90a4a0470fa2b8 104
+  s_88c14dfbd8e183::t_f98957ee496791 198
+src/cli.tsx
+  s_88c14dfbd8e183::t_3d24a5eab8e662 294-312
+  s_88c14dfbd8e183::t_35ff4e6bf3cb3d 730-734
+  s_88c14dfbd8e183::t_b925342854366c 702-706
+  s_88c14dfbd8e183::t_34e462e28994d9 1000-1004
+  s_88c14dfbd8e183::t_a49a55686b60a3 323-332
+  s_88c14dfbd8e183::t_b9aa76b554dcc5 4349-4350
+  s_88c14dfbd8e183::t_5dc19a3d3d4309 667-670
+  s_88c14dfbd8e183::t_33f12dbcbbf14d 808-843
+  s_88c14dfbd8e183::t_6627b950955907 3883-3886
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "59669ed4bc543612960c77a8cdd6f1411381525c",
+  "prompts": {},
+  "sessions": {
+    "s_88c14dfbd8e183": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecd9c94d-7522-4479-8faf-917dcc572b67",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
