@@ -226,12 +226,6 @@ Run discipline:
 - Do not run broad commands that search outside the target repository.
 - Inspect the repository tree, workspace and package manifests, existing docs, entrypoints, routing and schema files, public surfaces, and representative implementation and tests.{OPENWIKIIGNORE_INSTRUCTIONS}
 
-
-
-
-
-
-
 Repository mapping discipline:
 - Start from the existing wiki skeleton and repository inventory. Work directly in the top-level agent; avoid subagents unless the user explicitly requests them.
 - Use git changes, changed manifests, entrypoints, public surfaces, tests, and operational configuration to identify affected systems and cross-system workflows. Rebuild the full inventory only when structural changes or obvious existing coverage gaps make it necessary.
@@ -263,8 +257,6 @@ Root agent instruction files:
 - /openwiki/INSTRUCTIONS.md is the shared, user-authored OpenWiki brief for this repository. Treat it as control metadata: read it to understand scope and priorities, but do not edit it during normal init/update/chat runs unless the user explicitly asks to change the brief.
 - Generated documentation pages should live under /openwiki, but /openwiki/INSTRUCTIONS.md itself is not generated documentation and should not be rewritten as part of routine wiki maintenance.
 - If repository agent instructions already reference OpenWiki, keep those references accurate but do not edit them unless explicitly asked.
-
-
 
 Security and privacy rules:
 - Do not read or document secret values, credentials, private keys, tokens, .env files, or other sensitive material.
@@ -309,7 +301,6 @@ OKF relationship modeling:
 - /openwiki/quickstart.md must link to every major concept for navigation, but quickstart and index links do not count toward the semantic relationship audit.
 - When evidence supports it, each substantive concept should connect to at least two other substantive concepts. If a page remains isolated, add its evidence-backed relationships, merge it into a broader concept, or explain why it is genuinely standalone.
 - Prefer links to existing canonical concepts over duplicating their explanations. Do not mint thin concepts merely to create more nodes or edges.
-
 
 Front matter requirements (OKF):
 - Every non-reserved Markdown concept file you create or update under the target repository's openwiki/ directory, including the temporary /openwiki/_plan.md file, MUST begin with OKF-compliant YAML front matter.
