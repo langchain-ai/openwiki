@@ -1,0 +1,76 @@
+test/auth/oauth.test.ts
+  s_ed18fedebfc70d::t_03d5e634cc7fe0 195-199,204
+  s_ed18fedebfc70d::t_979c4e3a284855 1-96,98-107,109-194,200-203,205-215,219-223,225-235,239-241,243-247
+  s_ed18fedebfc70d::t_3d891ad9cc9296 216-218,224
+  s_ed18fedebfc70d::t_c15370ba5e43d2 236-238,242
+  s_ed18fedebfc70d::t_872da331184f07 97,108
+test/cli/commands.test.ts
+  s_ed18fedebfc70d::t_0ba0c7a9019185 578-770,777-934,938-963
+  s_ed18fedebfc70d::t_c2a65146bebf58 771-776,935-937
+  s_ed18fedebfc70d::t_7d87578ea7eba0 3
+test/scheduling/schedules.test.ts
+  s_ed18fedebfc70d::t_fd72b33fcabb03 1-116
+test/connectors/sources/slack.test.ts
+  s_ed18fedebfc70d::t_1d2cb4502244a6 56-57,136-138,168-171,202-211,230-233,438-440
+  s_ed18fedebfc70d::t_a939b72d85010f 459-506,508-530
+  s_ed18fedebfc70d::t_a7f1e0ddf70dc7 410-411,413
+  s_ed18fedebfc70d::t_bd0ff03282e677 1-55,58-135,139-167,172-201,212-229,234-409,412,414-437,441-458,507,531-568
+test/ingestion/ingestion.test.ts
+  s_ed18fedebfc70d::t_26d9823b93d38c 1-110
+test/scheduling/schedule-operations.test.ts
+  s_ed18fedebfc70d::t_63f28533008fda 1-49,53-397
+  s_ed18fedebfc70d::t_028a3a5d6f77bc 50-52
+test/ingestion/code-mode.test.ts
+  s_ed18fedebfc70d::t_0efcb8c0a59a1d 5-9
+  s_ed18fedebfc70d::t_44e3037c0dab70 255-310
+  s_ed18fedebfc70d::t_112c12b21ddd11 1
+test/auth/tokens.test.ts
+  s_ed18fedebfc70d::t_b7b36aa8ccdb10 1-3,5-7,9-14,16-115,118-119,124,126-129,132,135-139,143,146-153,155-159,162-165,168-171,173,179-185,188-195,198-200,202-203,206-208,210-211,214-219,221-222,226-241,244-271,275-290,295-313,318-472,474-524
+  s_ed18fedebfc70d::t_a32d28dfc1f968 140-142,160-161,272-274,291-294,314-317
+test/connectors/tools.test.ts
+  s_ed18fedebfc70d::t_1b4576219b0912 28-30,68-70,273-275,340
+  s_ed18fedebfc70d::t_bd18eaaf6e8d11 1-27,31-67,71-272,276-339,341-465
+test/agent/utils.test.ts
+  s_ed18fedebfc70d::t_b73241376671ec 211-213
+  s_ed18fedebfc70d::t_12f3123408f5a0 1-210,214-246
+test/connectors/sources/gmail.test.ts
+  s_ed18fedebfc70d::t_2e9a34f5202e0a 111,117-121
+  s_ed18fedebfc70d::t_231fc6c4567270 124-126
+  s_ed18fedebfc70d::t_1d2cb4502244a6 59-60,146-148,281-285,292-294
+  s_ed18fedebfc70d::t_aeb4962d175be1 1-58,61-110,112-116,122-123,127-145,149-280,286-291,295-352
+test/auth/ngrok.test.ts
+  s_ed18fedebfc70d::t_aecbfff82ecb80 1-14,98-109,111-136,138-140,142-153,155-157,159-212,215-216
+  s_ed18fedebfc70d::t_db76abf3071bd4 110,137,141,154,158,213-214
+test/connectors/sources/x.test.ts
+  s_ed18fedebfc70d::t_1d2cb4502244a6 80-81,132-134,172-179,181-184,234-236
+  s_ed18fedebfc70d::t_231fc6c4567270 333-335
+  s_ed18fedebfc70d::t_3d167637b5b1c2 1-79,82-131,135-171,180,185-186,212,240-332,336-338
+  s_ed18fedebfc70d::t_82721f12df1d0c 187-211,213-233,237-239
+test/setup/onboarding.test.ts
+  s_ed18fedebfc70d::t_877bebad15d859 208-234,240-361
+  s_ed18fedebfc70d::t_d290dfa2bbf0cc 1
+  s_ed18fedebfc70d::t_658548e1347ad5 235-239
+  s_ed18fedebfc70d::t_cfd5b6a6bda34a 21-37
+vitest.config.ts
+  s_ed18fedebfc70d::t_d9f07d534b8d7c 1-22
+test/connectors/mcp-client.test.ts
+  s_ed18fedebfc70d::t_1b4576219b0912 95-97,148,251,255-257
+  s_ed18fedebfc70d::t_a8ee6bde68204d 2-7,76-94,98-130,132-147,149-250,252-254,258-265
+  s_ed18fedebfc70d::t_4766421f682353 131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "dee216e3e9d93861aa402cfc0970e9fff1227e4e",
+  "prompts": {},
+  "sessions": {
+    "s_ed18fedebfc70d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dde8f354-6e1c-4dca-96f7-0f6cd5cf3d58",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
