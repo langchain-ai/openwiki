@@ -23,6 +23,7 @@ test/auth/ngrok.test.ts
   s_ed18fedebfc70d::t_1da6f605cb8999 131-156
 test/connectors/sources/hackernews.test.ts
   s_ed18fedebfc70d::t_1db23316f69927 52,239-514
+  s_76906187b9050b::t_d95ddd5504df16 1-51,53-238,515-520
 test/connectors/sources/langsmith/repo-config.test.ts
   s_ed18fedebfc70d::t_1db23316f69927 1-269
 test/agent/prompt.test.ts
@@ -113,6 +114,14 @@ test/mermaid/mermaid-validate.test.ts
   "base_commit_sha": "9f8cad1c75886b323f9b69756ba03a929d2988f7",
   "prompts": {},
   "sessions": {
+    "s_76906187b9050b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "391a4eba-570c-4f91-964a-03cc9764868e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
     "s_ed18fedebfc70d": {
       "agent_id": {
         "tool": "claude",
