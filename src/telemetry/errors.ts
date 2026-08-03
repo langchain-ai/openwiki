@@ -61,19 +61,96 @@ const PROVIDER_ERROR_CODES: Readonly<Record<string, ErrorClassification>> = {
 };
 
 /**
- * Maps an unknown error to a closed {@link ErrorClassification} from the raw error
- * alone (status, provider code, message, filesystem code). Priority runs
- * most-specific to least: abort, recognized provider code, HTTP status, tool shape,
- * message regexes, filesystem code, then the single `agent_error` catch-all.
+ * Max links followed when unwrapping a nested error. Bounds the walk so a long or
+ * cyclic `cause` chain cannot turn classification into a denial of service.
+ */
+const MAX_UNWRAP_DEPTH = 5;
+
+/**
+ * Flattens a possibly-wrapped error into the chain of links to inspect, nearest
+ * first: the error itself, then its `cause`, its single nested `error`, and any
+ * `AggregateError.errors`. Read-only and cycle-safe: it only reads own properties,
+ * never assigns, tracks visited objects, and stops at {@link MAX_UNWRAP_DEPTH}. The
+ * original value is always the first link even when it is not an object (a thrown
+ * string still gets classified), so callers see identical behavior for unwrapped
+ * errors.
  *
- * This reads only the raw signal; the owned families whose class comes from where
- * the error was thrown (`build_error`, `connector_error`, `okf_error`,
- * `checkpointer_error`, plus tagged `config_error`/`tool_error` details) are
- * resolved from the origin tag by {@link describeErrorForTelemetry}, which prefers
- * the tag over this. Never leaks the message: it is read to test regexes in-process,
- * but only an enum member is ever returned.
+ * @param error - The thrown value to flatten.
+ * @returns The nearest-first list of links, at most {@link MAX_UNWRAP_DEPTH} long.
+ */
+export function unwrapErrorChain(error: unknown): unknown[] {
+  const chain: unknown[] = [];
+  const visited = new Set<object>();
+  const queue: unknown[] = [error];
+
+  while (queue.length > 0 && chain.length < MAX_UNWRAP_DEPTH) {
+    const current = queue.shift();
+    chain.push(current);
+
+    if (
+      typeof current !== "object" ||
+      current === null ||
+      visited.has(current)
+    ) {
+      continue;
+    }
+    visited.add(current);
+
+    const node = current as {
+      cause?: unknown;
+      error?: unknown;
+      errors?: unknown;
+    };
+
+    if (node.cause !== undefined) {
+      queue.push(node.cause);
+    }
+    if (node.error !== undefined) {
+      queue.push(node.error);
+    }
+    if (Array.isArray(node.errors)) {
+      for (const nested of node.errors) {
+        queue.push(nested);
+      }
+    }
+  }
+
+  return chain;
+}
+
+/**
+ * Maps a possibly-wrapped error to a closed {@link ErrorClassification}. Walks the
+ * unwrap chain nearest-first and returns the first link that yields a named class,
+ * so a provider error hidden inside a tool-error wrapper or an `AggregateError` is
+ * recovered instead of collapsing into the residual. Returns `agent_error` only when
+ * no link in the chain carries a recognizable signal. Never leaks the message: links
+ * are read to test regexes in-process, but only an enum member is ever returned.
  */
 export function classifyError(error: unknown): ErrorClassification {
+  for (const link of unwrapErrorChain(error)) {
+    const result = classifyErrorLink(link);
+
+    if (result.errorClass !== "agent_error") {
+      return result;
+    }
+  }
+
+  return { errorClass: "agent_error" };
+}
+
+/**
+ * Classifies a single error link from the raw signal alone (status, provider code,
+ * message, filesystem code). Priority runs most-specific to least: abort, recognized
+ * provider code, HTTP status, tool shape, message regexes, filesystem code, then the
+ * single `agent_error` catch-all.
+ *
+ * This reads only the raw signal of the one link it is given; the owned families
+ * whose class comes from where the error was thrown (`build_error`, `connector_error`,
+ * `okf_error`, `checkpointer_error`, plus tagged `config_error`/`tool_error` details)
+ * are resolved from the origin tag by {@link describeErrorForTelemetry}, which prefers
+ * the tag over this.
+ */
+function classifyErrorLink(error: unknown): ErrorClassification {
   if (error instanceof Error && error.name === "AbortError") {
     return { errorClass: "aborted" };
   }
@@ -183,6 +260,23 @@ export function extractStatus(error: unknown): number | undefined {
     candidate.status ?? candidate.statusCode ?? candidate.response?.status;
 
   return typeof raw === "number" ? raw : undefined;
+}
+
+/**
+ * The provider status read from the nearest link in the unwrap chain that exposes
+ * one, or undefined. Lets a wrapped provider error still emit its numeric status even
+ * when the top-level wrapper carries none.
+ */
+export function firstStatusInChain(error: unknown): number | undefined {
+  for (const link of unwrapErrorChain(error)) {
+    const status = extractStatus(link);
+
+    if (status !== undefined) {
+      return status;
+    }
+  }
+
+  return undefined;
 }
 
 /**
@@ -384,15 +478,57 @@ export interface ErrorTelemetry {
    * The provider's numeric status, or undefined. A bare integer.
    */
   httpStatus: number | undefined;
+
+  /**
+   * Constructor name of the thrown error, allowlisted to a bare ASCII identifier.
+   * The only signal the residual `agent_error` bucket carries: it turns "unknown"
+   * into a ranked list of unhandled error types. Present only when the class stayed
+   * `agent_error`; undefined for every named class and for a name that failed the
+   * allowlist.
+   */
+  errorName: string | undefined;
 }
 
 /**
- * The single call the failure path uses: class, detail, owner, stage, and status in
- * one object, ready to spread into the run facts. The class and detail come from the
- * origin tag when the throw site owned the classification (build/connector/okf/
- * checkpointer, or a tagged config/tool detail), otherwise from {@link classifyError}
- * reading the raw error. The detail is normalized against its family's allowlist, so
- * an off-list value is dropped rather than emitted. Never leaks the message.
+ * A bare code identifier: an ASCII constructor name, nothing else. A subclass whose
+ * `.name` was set to a template string containing a path, URL, or user value fails
+ * this and is dropped, keeping the anonymity envelope closed.
+ */
+const CONSTRUCTOR_NAME = /^[A-Za-z][A-Za-z0-9]{0,63}$/u;
+
+/**
+ * The constructor name of `value`, but only if it is a plain ASCII identifier;
+ * otherwise undefined. Reads the name through the prototype (not an own
+ * `constructor` property) so a tampered own `constructor` cannot smuggle a value
+ * past the allowlist. Non-objects have no constructor name and yield undefined.
+ *
+ * @param value - The value to fingerprint.
+ * @returns The allowlisted constructor name, or undefined.
+ */
+export function safeConstructorName(value: unknown): string | undefined {
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
+
+  const proto = Object.getPrototypeOf(value) as {
+    constructor?: { name?: unknown };
+  } | null;
+  const raw = proto?.constructor?.name;
+
+  return typeof raw === "string" && CONSTRUCTOR_NAME.test(raw)
+    ? raw
+    : undefined;
+}
+
+/**
+ * The single call the failure path uses: class, detail, owner, stage, status, and
+ * (residual only) the error-name fingerprint in one object, ready to spread into the
+ * run facts. The class and detail come from the origin tag when the throw site owned
+ * the classification (build/connector/okf/checkpointer, or a tagged config/tool
+ * detail), otherwise from {@link classifyError} walking the unwrap chain. The detail
+ * is normalized against its family's allowlist, so an off-list value is dropped
+ * rather than emitted. `errorName` is attached only when the class stayed
+ * `agent_error`, since every other class is already named. Never leaks the message.
  */
 export function describeErrorForTelemetry(error: unknown): ErrorTelemetry {
   const origin = readErrorOrigin(error);
@@ -413,6 +549,11 @@ export function describeErrorForTelemetry(error: unknown): ErrorTelemetry {
     errorDetail,
     errorStage,
     errorOwner: deriveOwner(errorClass, errorDetail, errorStage),
-    httpStatus: extractStatus(error),
+    // Surfaced from the chain so a wrapped provider error still emits its status
+    // even when an origin tag already named the class.
+    httpStatus: firstStatusInChain(error),
+    // Only the residual bucket pays for a fingerprint; named classes stay undefined.
+    errorName:
+      errorClass === "agent_error" ? safeConstructorName(error) : undefined,
   };
 }

@@ -36,6 +36,7 @@ import {
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+import { installCrashGuard } from "./agent/crash-guard.js";
 import { formatChatGptAccountFromEnv } from "./agent/openai-chatgpt-oauth.js";
 import {
   getErrorMessage,
@@ -99,6 +100,11 @@ import {
   withRunTelemetry,
   type RunTelemetryContext,
 } from "./telemetry/index.js";
+
+// Register the last-resort handlers before any run starts, so a rejection that
+// escapes every catch (e.g. a subagent error surfacing on the microtask queue) is
+// recorded and stamped instead of hard-killing the process with no telemetry.
+installCrashGuard();
 
 type RunState =
   | { status: "idle" }

@@ -118,6 +118,17 @@ export interface RunTelemetry {
   httpStatus?: number;
 
   /**
+   * Constructor name of a residual (`agent_error`) failure's thrown error, a bare
+   * ASCII identifier. The only signal the residual bucket carries, so it can be
+   * broken down into a ranked list of unhandled error types. Present only on a
+   * failure that stayed `agent_error`.
+   *
+   * @default undefined - the failure was classified into a named family, or the
+   * constructor name failed the identifier allowlist.
+   */
+  errorName?: string;
+
+  /**
    * Which brain was set up (code = repository, personal = local wiki). Init
    * only; undefined on updates.
    */

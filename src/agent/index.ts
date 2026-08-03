@@ -127,6 +127,7 @@ import {
   removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
 } from "./utils.js";
+import { clearActiveRun, registerActiveRun } from "./crash-guard.js";
 import { inStage, inStageSync, tagErrorStage } from "../telemetry/index.js";
 import type { RunTelemetryContext } from "../telemetry/index.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
@@ -508,6 +509,20 @@ async function runOpenWikiAgentCore(
   );
   emitDebug(options, "stream=started protocol=events version=v3");
 
+  // Register with the crash guard for exactly the stream-consumption window: a
+  // subagent rejection surfaces on the microtask queue during streaming and escapes
+  // the for-await catch below, so the guard is what turns that escape into a
+  // recorded, interrupted-stamped failure instead of a silent process abort. The
+  // finally clears the registration so a clean run leaves nothing stale behind.
+  registerActiveRun({
+    command,
+    cwd,
+    modelId,
+    outputMode,
+    snapshotBefore: openWikiSnapshotBefore ?? undefined,
+    language: context.language,
+  });
+
   let unhandledChunkCount = 0;
 
   try {
@@ -563,6 +578,7 @@ async function runOpenWikiAgentCore(
 
     throw error;
   } finally {
+    clearActiveRun();
     prunePersistentCheckpointHistory(
       checkpointTarget,
       checkpointer,
