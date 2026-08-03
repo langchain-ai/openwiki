@@ -1,3 +1,5 @@
+import { stat } from "node:fs/promises";
+
 /**
  * Shared helpers for classifying Node.js filesystem errors.
  *
@@ -31,4 +33,18 @@ export function isExpectedSnapshotRaceError(error: unknown): boolean {
   return ["EISDIR", "ENOENT", "ENOTDIR"].includes(
     (error as NodeJS.ErrnoException).code ?? "",
   );
+}
+
+/**
+ * True when a file or directory exists at the path. Only ENOENT reports
+ * absence; any other error counts as "exists" so callers keep their
+ * error-handling semantics (e.g. a directory occupying a file name).
+ */
+export async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    await stat(filePath);
+    return true;
+  } catch (error) {
+    return !isFileNotFoundError(error);
+  }
 }

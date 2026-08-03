@@ -2,7 +2,7 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { OPENWIKI_VERSION } from "./constants.js";
-import { isFileNotFoundError } from "./fs-errors.js";
+import { isFileNotFoundError, pathExists } from "./fs-errors.js";
 import { createConnectorRegistry } from "./connectors/registry.js";
 import { UPDATE_METADATA_PATH } from "./constants.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
@@ -177,17 +177,16 @@ async function readLastUpdatedAt(
 }
 
 /**
- * One agent file's prepared outcome. `backupContent` and `warning` are present
- * only when the managed block holds non-canonical content that is about to be
- * replaced. `nextContent` equals `originalContent` when the file should not be
- * rewritten at all (canonical block, or marker-less append already staged).
+ * One agent file's prepared outcome. `backup` is present only when the managed
+ * block holds non-canonical content that is about to be replaced. `nextContent`
+ * equals `originalContent` when the file should not be rewritten at all
+ * (canonical block, or marker-less append already staged).
  */
 interface PreparedAgentFile {
   agentsPath: string;
   originalContent: string;
   nextContent: string;
-  backupContent?: string;
-  warning?: string;
+  backup?: { content: string; warning: string };
 }
 
 async function writeCodeModeAgentSnippets(
@@ -195,6 +194,7 @@ async function writeCodeModeAgentSnippets(
   onWarning?: (message: string) => void,
 ): Promise<void> {
   const snippet = createCodeModeAgentsSnippet();
+  const normalizedSnippet = normalizeLineEndings(snippet);
   const warn = createWarningSink(onWarning);
 
   // Phase 1 — validate and prepare both files in memory. A malformed-marker
@@ -202,21 +202,32 @@ async function writeCodeModeAgentSnippets(
   // leaves a backup for either file.
   const prepared = await Promise.all(
     CODE_MODE_AGENT_FILES.map((fileName) =>
-      prepareCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
+      prepareCodeModeAgentSnippet(
+        path.join(cwd, fileName),
+        snippet,
+        normalizedSnippet,
+      ),
     ),
   );
 
-  // Phase 2 — write backups and emit warnings, in agent-file order, before any
-  // replacement is written. Backups are sourced from the already-read content,
-  // so an editor touching the file in between cannot make the backup diverge.
-  for (const file of prepared) {
-    if (file.backupContent === undefined) {
-      continue;
-    }
-    await writeBackupAtomically(file.agentsPath, file.backupContent);
-    if (file.warning !== undefined) {
-      warn(file.warning);
-    }
+  // Phase 2 — write backups for files whose non-canonical block is about to be
+  // replaced, sourced from the already-read content so an editor touching the
+  // file in between cannot make the backup diverge. Backups run in parallel
+  // (independent files); warnings emit afterward in agent-file order.
+  const toBackUp = prepared.filter(
+    (
+      file,
+    ): file is PreparedAgentFile & {
+      backup: NonNullable<PreparedAgentFile["backup"]>;
+    } => file.backup !== undefined,
+  );
+  await Promise.all(
+    toBackUp.map((file) =>
+      writeBackupAtomically(file.agentsPath, file.backup.content),
+    ),
+  );
+  for (const file of toBackUp) {
+    warn(file.backup.warning);
   }
 
   // Phase 3 — write only files whose content actually changed. Canonical
@@ -257,18 +268,6 @@ function normalizeLineEndings(content: string): string {
   return content.replace(/\r\n?/g, "\n");
 }
 
-async function pathExists(filePath: string): Promise<boolean> {
-  try {
-    await readFile(filePath);
-    return true;
-  } catch (error) {
-    if (!isFileNotFoundError(error)) {
-      return true;
-    }
-    return false;
-  }
-}
-
 /**
  * Write the backup copy atomically (temp file plus rename, mirroring the
  * credential-file pattern) so a crash mid-write cannot leave a torn backup.
@@ -291,6 +290,7 @@ async function writeBackupAtomically(
 async function prepareCodeModeAgentSnippet(
   agentsPath: string,
   snippet: string,
+  normalizedSnippet: string,
 ): Promise<PreparedAgentFile> {
   let currentContent = "";
 
@@ -333,7 +333,7 @@ async function prepareCodeModeAgentSnippet(
 
   // Canonical block: leave the file untouched. Skip-write preserves mtime and
   // line endings and avoids a rewrite on every chat run.
-  if (normalizeLineEndings(region) === normalizeLineEndings(snippet)) {
+  if (normalizeLineEndings(region) === normalizedSnippet) {
     return {
       agentsPath,
       originalContent: currentContent,
@@ -342,15 +342,17 @@ async function prepareCodeModeAgentSnippet(
   }
 
   // Non-canonical block: user content sits inside the managed region. Back it
-  // up before the refresh replaces it, and say so out loud.
+  // up before the refresh replaces it, and warn naming the file and backup.
   const backupPath = `${agentsPath}${OPENWIKI_AGENTS_BACKUP_SUFFIX}`;
   const overwritingExisting = await pathExists(backupPath);
   return {
     agentsPath,
     originalContent: currentContent,
     nextContent: `${currentContent.slice(0, startIndex)}${snippet}${currentContent.slice(endIndex + OPENWIKI_AGENTS_SNIPPET_END.length)}`,
-    backupContent: currentContent,
-    warning: `OpenWiki: found content between the managed markers of ${path.basename(agentsPath)} that differs from the generated snippet; backup saved to ${backupPath}${overwritingExisting ? " (previous backup replaced)" : ""}. Move custom content outside the markers to keep it.`,
+    backup: {
+      content: currentContent,
+      warning: `OpenWiki: found content between the managed markers of ${path.basename(agentsPath)} that differs from the generated snippet; backup saved to ${backupPath}${overwritingExisting ? " (previous backup replaced)" : ""}. Move custom content outside the markers to keep it.`,
+    },
   };
 }
 
