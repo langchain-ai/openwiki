@@ -153,6 +153,23 @@ describe("validateWikiInternalLinks", () => {
     expect(report.issuesFound).toBe(0);
   });
 
+  test("accepts anchors on non-ASCII (unicode) headings", async () => {
+    const { backend } = await setupWiki();
+    await backend.write(
+      "/openwiki/quickstart.md",
+      "See [es](./overview.md#configuración) and [ja](./overview.md#概要).\n",
+    );
+    await backend.write(
+      "/openwiki/overview.md",
+      "# Overview\n\n## Configuración\n\n## 概要\n",
+    );
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report.issuesFound).toBe(0);
+    expect(report.stampedFiles).toEqual([]);
+  });
+
   test("accepts directory links", async () => {
     const { backend, rootDir } = await setupWiki();
     await mkdir(path.join(rootDir, "openwiki", "agent"), { recursive: true });

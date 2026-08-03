@@ -12,15 +12,47 @@ const EXCLUDED_FILES = new Set([
   "INSTRUCTIONS.md",
 ]);
 
+/**
+ * Matches a Markdown inline link, capturing its text and destination. Image
+ * links (`![alt](src)`) are rejected by the caller via the preceding `!`.
+ */
 const MARKDOWN_LINK_PATTERN = /\[([^\]]*)\]\(([^)]+)\)/gu;
+
+/**
+ * Matches an ATX heading, capturing its hashes and trimmed title text. The
+ * title feeds anchor-slug generation.
+ */
 const HEADING_PATTERN = /^(#{1,6})\s+(.+?)\s*#*\s*$/u;
+
+/**
+ * Matches a previously inserted broken-link stamp line, so stamps can be
+ * cleared before each pass and never accumulate across runs.
+ */
 const BROKEN_LINK_STAMP_PATTERN =
   /^\s*<!--\s*openwiki:\s*broken internal link\b.*?-->\s*$/u;
 
+/**
+ * One broken internal link found during a validation pass.
+ */
 export interface WikiLinkIssue {
+  /**
+   * The link destination exactly as written in the source Markdown.
+   */
   href: string;
+
+  /**
+   * 1-based line number of the link within its source file.
+   */
   line: number;
+
+  /**
+   * Human-readable reason the link is broken (missing file, anchor, etc.).
+   */
   message: string;
+
+  /**
+   * Wiki-absolute path of the file the broken link was found in.
+   */
   sourcePath: string;
 }
 
@@ -168,6 +200,11 @@ export function stampBrokenLinks(
   return lines.join("\n");
 }
 
+/**
+ * Validates one link against the wiki tree, returning an issue when the target
+ * file, directory, or heading anchor cannot be resolved. External links and
+ * bare (empty) hrefs are ignored.
+ */
 async function validateLink(
   backend: BackendProtocolV2,
   wikiRoot: string,
@@ -241,6 +278,10 @@ async function validateLink(
   return null;
 }
 
+/**
+ * Recursively collects wiki-absolute paths of every non-excluded Markdown
+ * file under a directory, skipping dotfiles and reserved control files.
+ */
 async function collectMarkdownFiles(
   backend: BackendProtocolV2,
   directoryPath: string,
@@ -274,6 +315,10 @@ async function collectMarkdownFiles(
   return files.sort();
 }
 
+/**
+ * Extracts every inline Markdown link with its 1-based line number, skipping
+ * image links.
+ */
 function extractMarkdownLinks(
   content: string,
 ): Array<{ href: string; line: number }> {
@@ -293,6 +338,9 @@ function extractMarkdownLinks(
   return links;
 }
 
+/**
+ * Extracts the trimmed title text of every ATX heading in a document.
+ */
 function extractHeadings(content: string): string[] {
   const headings: string[] = [];
   for (const line of content.split(/\r?\n/u)) {
@@ -304,6 +352,10 @@ function extractHeadings(content: string): string[] {
   return headings;
 }
 
+/**
+ * Builds the set of GitHub-style anchor slugs a document exposes, appending
+ * `-1`, `-2`, ... to duplicate slugs exactly as GitHub does.
+ */
 function buildHeadingAnchors(headings: string[]): Set<string> {
   const counts = new Map<string, number>();
   const anchors = new Set<string>();
@@ -322,14 +374,23 @@ function buildHeadingAnchors(headings: string[]): Set<string> {
   return anchors;
 }
 
+/**
+ * Converts heading text to a GitHub-style anchor slug: lowercased, punctuation
+ * removed, spaces collapsed to hyphens. Unicode letters and numbers are kept
+ * (matching GitHub), so anchors on non-English headings resolve correctly.
+ */
 function slugifyHeading(text: string): string {
   return text
     .trim()
     .toLowerCase()
-    .replace(/[^\w\s-]/gu, "")
+    .replace(/[^\p{L}\p{N}\s_-]/gu, "")
     .replace(/\s+/gu, "-");
 }
 
+/**
+ * Splits a link destination into its path and optional `#anchor`, dropping any
+ * trailing Markdown link title (e.g. `path "Title"`).
+ */
 function parseLinkDestination(rawHref: string): {
   anchor?: string;
   path: string;
@@ -346,6 +407,10 @@ function parseLinkDestination(rawHref: string): {
   };
 }
 
+/**
+ * Resolves a link path (relative to its source, or wiki-root-absolute) to a
+ * normalized wiki-absolute path, or undefined when it escapes the wiki root.
+ */
 function resolveWikiLinkPath(
   wikiRoot: string,
   sourcePath: string,
@@ -360,6 +425,10 @@ function resolveWikiLinkPath(
   return isPathUnderWikiRoot(wikiRoot, candidate) ? candidate : null;
 }
 
+/**
+ * True when a normalized candidate path is the wiki root itself or contained
+ * within it, guarding against `../` traversal out of the wiki.
+ */
 function isPathUnderWikiRoot(wikiRoot: string, candidate: string): boolean {
   const root = path.posix.normalize(wikiRoot.replace(/\/+$/u, "") || "/");
   const resolved = path.posix.normalize(candidate);
@@ -370,10 +439,18 @@ function isPathUnderWikiRoot(wikiRoot: string, candidate: string): boolean {
   );
 }
 
+/**
+ * True when a href points outside the wiki (has a URI scheme or is protocol-
+ * relative), so external links are skipped by validation.
+ */
 function isExternalHref(href: string): boolean {
   return /^(?:[a-z][a-z\d+.-]*:|\/\/)/iu.test(href);
 }
 
+/**
+ * True when a wiki-absolute path resolves to an existing file or directory on
+ * the backend. Any read error is treated as "does not exist".
+ */
 async function pathExists(
   backend: BackendProtocolV2,
   targetPath: string,
@@ -392,6 +469,10 @@ async function pathExists(
   }
 }
 
+/**
+ * Reads a backend file as text, joining array content into a string and
+ * throwing when the file is missing or not text.
+ */
 async function readText(
   backend: BackendProtocolV2,
   filePath: string,
@@ -412,6 +493,9 @@ async function readText(
   throw new Error(`${filePath} is not a text file.`);
 }
 
+/**
+ * Returns the base file name of a directory entry, tolerating a trailing slash.
+ */
 function entryName(entry: FileInfo): string {
   return path.posix.basename(entry.path.replace(/\/$/u, ""));
 }
