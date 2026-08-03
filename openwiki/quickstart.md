@@ -49,7 +49,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/auth/configure.ts` — `openwiki auth configure <provider>` flow for creating local connector configs.
 - `src/auth/ngrok.ts` — Slack HTTPS callback tunnel via ngrok.
 - `src/auth/tokens.ts` — token refresh and validation helpers for connector OAuth.
-- `src/agent/okf-middleware.ts` — OKF front-matter migration and index synchronization middleware.
+- `src/agent/okf-middleware.ts` — OKF front-matter migration and index synchronization middleware; its finalize stage also validates Mermaid fences and internal wiki links.
+- `src/agent/wiki-link-validator.ts` — validates relative wiki links and heading anchors after generation, stamping broken links inline instead of failing the run.
 - `src/agent/translation-middleware.ts` — wiki translation middleware for output-language switching.
 - `src/agent/vertex-surface.ts` — Vertex AI model routing for the gemini-enterprise provider.
 - `src/agent/skills.ts` — bundles and syncs the `/skills/` directory into the agent runtime.
