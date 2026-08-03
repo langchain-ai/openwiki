@@ -1,0 +1,25 @@
+test/reconcile.test.ts
+  s_88c14dfbd8e183::t_d3a55138d803e6 103-107,117-131,133-134
+  s_88c14dfbd8e183::t_0605c9cd2fb341 287-300
+src/agent/manifest/evidence.ts
+  s_88c14dfbd8e183::t_4cda5bb9e34935 97-104,114-116
+  s_88c14dfbd8e183::t_36413fbf1b895d 96
+src/agent/manifest/reconcile.ts
+  s_88c14dfbd8e183::t_6eb2985729d5d0 73-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "89f0edb399e5f91a27f842a1e9cbef1c748ba21c",
+  "prompts": {},
+  "sessions": {
+    "s_88c14dfbd8e183": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecd9c94d-7522-4479-8faf-917dcc572b67",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
