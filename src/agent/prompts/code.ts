@@ -192,6 +192,7 @@ title: <display name>
 description: <one or two retrieval-optimized sentences>
 resource: <optional canonical URI>
 tags: [<specific-domain-tag>]
+timestamp: <optional ISO 8601 datetime>
 ---
 \`\`\`
 

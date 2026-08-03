@@ -29,7 +29,7 @@ export function createSystemPrompt(
       ? CODE_SYSTEM_PROMPTS[command]
       : PERSONAL_SYSTEM_PROMPTS[command];
 
-  return template
+  const prompt = template
     .replace(
       "{OUTPUT_LANGUAGE_INSTRUCTIONS}",
       formatLanguageInstructions(language),
@@ -44,6 +44,10 @@ export function createSystemPrompt(
       formatOpenWikiIgnoreInstructions(openWikiIgnore),
     )
     .trim();
+
+  return command === "chat"
+    ? prompt
+    : `${prompt}\n\n${createLinkIntegrityInstructions()}`.trim();
 }
 
 export function createUserPrompt(
@@ -106,6 +110,25 @@ Output language:
 - In each page's YAML front matter, write the human-readable "title", "description", and "type" values in ${language}. Do this even when the value is dense with product names, feature names, or technical terminology; within those values keep unchanged only literal code identifiers, file paths, commands, and URLs. Write the "tags" values in English so they stay stable across languages as cross-cutting aggregation keys. Keep the YAML keys as written, and copy any URL, file path, timestamp, or identifier-like value byte-for-byte.
 - Apply this language only to generated wiki files. Do not translate OpenWiki CLI text or runtime messages.
 - Keep code identifiers, file paths, commands, API names, URLs, and code blocks unchanged where translation would reduce technical accuracy or usability.`;
+}
+
+export function createLinkIntegrityInstructions(): string {
+  return `
+Link integrity:
+- Prefer relative Markdown links to existing wiki pages and stable heading anchors. Do not invent destinations that are not written in the same run.
+- OpenWiki validates relative internal links and heading anchors after the run. Broken links are left in place and marked with an HTML comment starting with "openwiki: broken internal link", so the run completes and a later update can self-correct. If you find such a comment, repair the href or restore the target page using the reason in the comment, then delete the comment.
+`;
+}
+
+export function createDiagramInstructions(): string {
+  return `
+Diagram discipline:
+- Where a runtime flow, lifecycle, data model, or non-trivial control flow is clearer as a picture than as prose, embed a Mermaid diagram in a fenced \`\`\`mermaid block on the most relevant page. Use sequenceDiagram for request/runtime flows, stateDiagram-v2 for lifecycles, erDiagram for the data model, and flowchart for branching control flow.
+- Ground every diagram in inspected source. Do not invent participants, states, entities, or relationships the code does not support.
+- Keep diagrams accurate on update runs. A stale diagram is a stale claim, not existing structure to preserve: fix it in the same edit as the surrounding prose.
+- Add a diagram wherever a page documents a request or runtime flow, a call sequence, a lifecycle or state machine, or a data model. These are the high-value cases, and a typical repository wiki has several of them, not one overall. Skip pages that are navigation, reference tables, or configuration. Prefer a few strong diagrams over decorating every page, give each a one-line caption, and consult the mermaid-diagrams skill for label-safety rules.
+- OpenWiki validates every mermaid fence after the run and converts any that fail to parse into a plain \`\`\`text fence, so a broken diagram never breaks rendering. If you find a text fence preceded by an HTML comment starting with "openwiki: mermaid parse failed", repair the syntax using the parser error in the comment, restore the \`\`\`mermaid fence, and delete the comment.
+`;
 }
 
 function formatGitHistoryHint(openWikiIgnore?: OpenWikiIgnore): string {

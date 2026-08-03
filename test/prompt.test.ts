@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { createSystemPrompt, createUserPrompt } from "../src/agent/prompt.ts";
+import {
+  createDiagramInstructions,
+  createLinkIntegrityInstructions,
+  createSystemPrompt,
+  createUserPrompt,
+} from "../src/agent/prompt.ts";
 
 describe("createSystemPrompt output language", () => {
   test("instructs the agent to write wiki documentation in the selected language", () => {
@@ -147,6 +152,38 @@ describe("createSystemPrompt translation-marker guidance", () => {
   }
 });
 
+describe("createDiagramInstructions", () => {
+  test("nudges toward diagrams and defers label-safety to the skill", () => {
+    const text = createDiagramInstructions();
+
+    expect(text).toContain("Diagram discipline:");
+    expect(text).toContain("```mermaid");
+    // Names each of the four diagram types the skill documents.
+    for (const type of [
+      "sequenceDiagram",
+      "stateDiagram-v2",
+      "erDiagram",
+      "flowchart",
+    ]) {
+      expect(text).toContain(type);
+    }
+    // Detailed syntax rules moved to the skill; the prompt points at it instead
+    // of restating them.
+    expect(text).toContain("mermaid-diagrams skill");
+    expect(text.toLowerCase()).not.toContain("semicolons");
+  });
+});
+
+describe("createLinkIntegrityInstructions", () => {
+  test("teaches the post-run broken-link stamp marker for self-repair", () => {
+    const text = createLinkIntegrityInstructions();
+
+    expect(text).toContain("Link integrity:");
+    expect(text).toContain("openwiki: broken internal link");
+    expect(text).toContain("delete the comment");
+  });
+});
+
 describe("createSystemPrompt diagram guidance", () => {
   test("is always present for init and update runs", () => {
     for (const command of ["init", "update"] as const) {
@@ -167,6 +204,8 @@ describe("createSystemPrompt diagram guidance", () => {
       // Contract with the post-run degrade pass: the prompt must teach the exact
       // marker the validator embeds, or the repair loop never triggers.
       expect(prompt).toContain("openwiki: mermaid parse failed");
+      expect(prompt).toContain("Link integrity:");
+      expect(prompt).toContain("openwiki: broken internal link");
       expect(prompt).toContain("Mode-specific behavior:");
     }
   });

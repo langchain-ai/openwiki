@@ -170,18 +170,25 @@ async function readLastUpdatedAt(
 
 async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
   const snippet = createCodeModeAgentsSnippet();
+  // Prepare and validate both files before writing either one. If one file has
+  // malformed markers, setup fails without partially refreshing its sibling.
+  const updates = await Promise.all(
+    CODE_MODE_AGENT_FILES.map((fileName) =>
+      prepareCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
+    ),
+  );
 
   await Promise.all(
-    CODE_MODE_AGENT_FILES.map((fileName) =>
-      writeCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
+    updates.map(({ agentsPath, nextContent }) =>
+      writeFile(agentsPath, nextContent, "utf8"),
     ),
   );
 }
 
-async function writeCodeModeAgentSnippet(
+async function prepareCodeModeAgentSnippet(
   agentsPath: string,
   snippet: string,
-): Promise<void> {
+): Promise<{ agentsPath: string; nextContent: string }> {
   let currentContent = "";
 
   try {
@@ -194,12 +201,31 @@ async function writeCodeModeAgentSnippet(
 
   const startIndex = currentContent.indexOf(OPENWIKI_AGENTS_SNIPPET_START);
   const endIndex = currentContent.indexOf(OPENWIKI_AGENTS_SNIPPET_END);
-  const nextContent =
-    startIndex !== -1 && endIndex !== -1 && endIndex > startIndex
-      ? `${currentContent.slice(0, startIndex)}${snippet}${currentContent.slice(endIndex + OPENWIKI_AGENTS_SNIPPET_END.length)}`
-      : `${currentContent.trimEnd()}${currentContent.trim().length > 0 ? "\n\n" : ""}${snippet}\n`;
+  const hasNoMarkers = startIndex === -1 && endIndex === -1;
 
-  await writeFile(agentsPath, nextContent, "utf8");
+  if (hasNoMarkers) {
+    return {
+      agentsPath,
+      nextContent: `${currentContent.trimEnd()}${currentContent.trim().length > 0 ? "\n\n" : ""}${snippet}\n`,
+    };
+  }
+
+  const hasOneOrderedPair =
+    startIndex !== -1 &&
+    endIndex > startIndex &&
+    startIndex === currentContent.lastIndexOf(OPENWIKI_AGENTS_SNIPPET_START) &&
+    endIndex === currentContent.lastIndexOf(OPENWIKI_AGENTS_SNIPPET_END);
+
+  if (!hasOneOrderedPair) {
+    throw new Error(
+      `Cannot update ${path.basename(agentsPath)} because its OpenWiki managed markers are malformed or duplicated. Expected either no markers or exactly one ${OPENWIKI_AGENTS_SNIPPET_START} marker followed by one ${OPENWIKI_AGENTS_SNIPPET_END} marker. Repair or remove the markers and retry; the file was left unchanged.`,
+    );
+  }
+
+  return {
+    agentsPath,
+    nextContent: `${currentContent.slice(0, startIndex)}${snippet}${currentContent.slice(endIndex + OPENWIKI_AGENTS_SNIPPET_END.length)}`,
+  };
 }
 
 function createCodeModeWorkflow(cronExpression: string): string {
