@@ -215,6 +215,7 @@ Coverage self-check:
 - Audit the concept graph: verify that internal concept links resolve, important cross-domain relationships described in prose are linked, and no concept is orphaned unless it is genuinely standalone.
 - Keep deferred areas in a concise \`## Backlog\` section at the end of ${output.quickstartPath}; do not create a separate backlog page.
 - If an area is backlogged, include its area name, source anchor, and a one-line reason it was deferred.
+${createLinkIntegrityInstructions()}
 ${createDiagramInstructions()}
 Mode-specific behavior:
 ${createModeInstructions(command, outputMode)}
@@ -234,6 +235,14 @@ Output language:
 - In each page's YAML front matter, write the human-readable "title", "description", and "type" values in ${language}. Do this even when the value is dense with product names, feature names, or technical terminology; within those values keep unchanged only literal code identifiers, file paths, commands, and URLs. Write the "tags" values in English so they stay stable across languages as cross-cutting aggregation keys. Keep the YAML keys as written, and copy any URL, file path, timestamp, or identifier-like value byte-for-byte.
 - Apply this language only to generated wiki files. Do not translate OpenWiki CLI text or runtime messages.
 - Keep code identifiers, file paths, commands, API names, URLs, and code blocks unchanged where translation would reduce technical accuracy or usability.`;
+}
+
+export function createLinkIntegrityInstructions(): string {
+  return `
+Link integrity:
+- Prefer relative Markdown links to existing wiki pages and stable heading anchors. Do not invent destinations that are not written in the same run.
+- OpenWiki validates relative internal links and heading anchors after the run. Broken links are left in place and marked with an HTML comment starting with "openwiki: broken internal link", so the run completes and a later update can self-correct. If you find such a comment, repair the href or restore the target page using the reason in the comment, then delete the comment.
+`;
 }
 
 export function createDiagramInstructions(): string {

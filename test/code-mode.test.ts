@@ -97,6 +97,66 @@ Trailing notes that must survive.
 
     expect(second).toEqual(first);
   });
+
+  for (const [name, existing] of [
+    [
+      "an orphaned start marker",
+      `# Project instructions
+
+${SNIPPET_START}
+DO NOT DELETE: hand-written project policy
+`,
+    ],
+    [
+      "an orphaned end marker",
+      `# Project instructions
+
+DO NOT DELETE: hand-written project policy
+${SNIPPET_END}
+`,
+    ],
+    [
+      "reversed markers",
+      `# Project instructions
+
+${SNIPPET_END}
+DO NOT DELETE: hand-written project policy
+${SNIPPET_START}
+`,
+    ],
+    [
+      "duplicate managed blocks",
+      `# Project instructions
+
+${SNIPPET_START}
+first managed block
+${SNIPPET_END}
+
+DO NOT DELETE: hand-written project policy
+
+${SNIPPET_START}
+second managed block
+${SNIPPET_END}
+`,
+    ],
+  ] as const) {
+    test(`rejects ${name} without changing either agent file`, async () => {
+      const repo = await createTempRepo();
+      const agentsPath = path.join(repo, "AGENTS.md");
+      await writeFile(agentsPath, existing, "utf8");
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        await expect(ensureCodeModeRepoSetup(repo)).rejects.toThrow(
+          /AGENTS\.md.*managed markers are malformed or duplicated/u,
+        );
+      }
+
+      expect(await readIfPresent(agentsPath)).toBe(existing);
+      // Both files are prepared before either is written, so a malformed
+      // AGENTS.md cannot leave a newly-created CLAUDE.md behind.
+      expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
+    });
+  }
 });
 
 describe("ensureCodeModeRepoSetup workflow", () => {

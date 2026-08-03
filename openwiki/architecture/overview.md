@@ -80,7 +80,7 @@ Both mounts are denied to the model's own filesystem tools via `AGENT_FILESYSTEM
 
 The agent runtime attaches two middleware layers:
 
-- **OKF index middleware** (`src/agent/okf-middleware.ts`): migrates existing pages to valid OKF front matter before the agent runs, validates front matter on every write, and synchronizes directory `index.md` files after the run. It also validates Mermaid fences via `src/mermaid/wiki.ts` after the agent finishes.
+- **OKF index middleware** (`src/agent/okf-middleware.ts`): migrates existing pages to valid OKF front matter before the agent runs, validates front matter on every write, and synchronizes directory `index.md` files after the run. Its `afterAgent` finalize stage runs three validation passes: Mermaid fences via `src/mermaid/wiki.ts`, index synchronization, and internal link validation via `src/agent/wiki-link-validator.ts`. The link validator checks relative wiki links and GitHub-style heading anchors, stamping broken links inline with `openwiki:` HTML comments instead of failing the run — the same degrade-and-self-repair pattern Mermaid uses — so a later update can repair the href from the inline comment.
 - **Translation middleware** (`src/agent/translation-middleware.ts`): when the output language differs from the wiki's current language, translates all eligible pages before the agent runs. Pages marked `openwiki_translation_pending` from a prior failed run are retranslated individually. The middleware tags its LLM calls with `langsmith:nostream` so translation output does not scroll past in the TUI token stream.
 
 ### Content snapshot and metadata writes

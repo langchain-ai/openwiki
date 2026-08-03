@@ -19,6 +19,9 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
 - Optionally schedules automated updates through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
 - Ships a paired DeepSWE evaluation harness (`evals/deepswe/`) that measures OpenWiki's documentation leverage on a Codex coding agent.
+- Serves an interactive node-graph visualizer (`openwiki visualize`) for an already-generated wiki, with live edits refreshed over SSE.
+- Honors a repo-root `.openwikiignore` file as a read boundary that keeps private/generated paths out of doc runs.
+- Generates the wiki in a non-English language with `--language <locale>` (BCP-47); the language is persisted and retranslated on a switch via the translation middleware.
 
 ## Start here
 
@@ -46,7 +49,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/auth/configure.ts` — `openwiki auth configure <provider>` flow for creating local connector configs.
 - `src/auth/ngrok.ts` — Slack HTTPS callback tunnel via ngrok.
 - `src/auth/tokens.ts` — token refresh and validation helpers for connector OAuth.
-- `src/agent/okf-middleware.ts` — OKF front-matter migration and index synchronization middleware.
+- `src/agent/okf-middleware.ts` — OKF front-matter migration and index synchronization middleware; its finalize stage also validates Mermaid fences and internal wiki links.
+- `src/agent/wiki-link-validator.ts` — validates relative wiki links and heading anchors after generation, stamping broken links inline instead of failing the run.
 - `src/agent/translation-middleware.ts` — wiki translation middleware for output-language switching.
 - `src/agent/vertex-surface.ts` — Vertex AI model routing for the gemini-enterprise provider.
 - `src/agent/skills.ts` — bundles and syncs the `/skills/` directory into the agent runtime.
@@ -65,6 +69,11 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `examples/openwiki-update.gitlab-ci.yml` — GitLab CI scheduled automation example.
 - `examples/openwiki-update.bitbucket-pipelines.yml` — Bitbucket Pipelines scheduled automation example.
 - `evals/deepswe/run.py` — paired DeepSWE evaluation harness entrypoint (see [DeepSWE evaluation harness](./evals/deepswe-harness.md)).
+- `src/visualize/server.ts` — local loopback HTTP server for `openwiki visualize` (node graph + live reader, SSE reload).
+- `src/visualize/graph.ts` — parses the wiki into concept nodes and Markdown-link edges for the visualizer.
+- `src/visualize/page.ts` — branded single-page visualizer app HTML served at `/`.
+- `src/agent/openwiki-ignore.ts` — `.openwikiignore` parsing and gitignore-compatible matching (read boundary for doc runs).
+- `src/language.ts` — `resolveLanguage()` BCP-47 validation/canonicalization for `--language`.
 
 ## Documentation map
 
@@ -128,3 +137,6 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
 - `examples/openwiki-update.bitbucket-pipelines.yml`
+- `src/visualize/` (server.ts, graph.ts, page.ts, client.ts, client-lib.ts)
+- `src/agent/openwiki-ignore.ts`
+- `src/language.ts`
