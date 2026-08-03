@@ -151,6 +151,8 @@ test/agent/openai-chatgpt-oauth.test.ts
   s_ed18fedebfc70d::t_3b42fc0b69c58f 1-435
 test/telemetry/telemetry.test.ts
   s_ed18fedebfc70d::t_3b42fc0b69c58f 1-23,25-27,39-44,53-104,106-108,122-123,128-129,143-144,149-154,342-344,415-621
+  s_76906187b9050b::t_d3b52bc4185884 45-46,52
+  s_76906187b9050b::t_911b55f9084cd5 24,34,38
 test/agent/frontmatter-validator.test.ts
   s_ed18fedebfc70d::t_3b42fc0b69c58f 1-208
 src/scheduling/schedules.ts
@@ -181,6 +183,7 @@ src/ingestion/ingestion.ts
   s_ed18fedebfc70d::t_cf1742725af3f9 1-9,11-14,16-19,21-26,31-172,174-185,197-452
   s_ed18fedebfc70d::t_330595e2a30f8c 10,20
   s_ed18fedebfc70d::t_7972f03d70e3fc 15
+  s_76906187b9050b::t_ece57e8fe9868c 30
 src/auth/ngrok.ts
   s_ed18fedebfc70d::t_330595e2a30f8c 3
 test/connectors/langsmith-runs.test.ts
@@ -213,6 +216,8 @@ src/cli/cli.tsx
   s_ed18fedebfc70d::t_7ff3059ff1d6b7 10-11,13-17,41-42,48-49,53,57,72,104
   s_ed18fedebfc70d::t_7972f03d70e3fc 33,61
   s_ed18fedebfc70d::t_330595e2a30f8c 40,62,91
+  s_76906187b9050b::t_86f48b23f63292 12
+  s_76906187b9050b::t_1aee131538b3e5 96
 src/connectors/sources/web-search.ts
   s_ed18fedebfc70d::t_330595e2a30f8c 2
 src/connectors/mcp-runtime.ts
@@ -235,6 +240,14 @@ src/connectors/sources/langsmith/repo-config.ts
   "base_commit_sha": "e1f95f7f8c077d5b05ce969a95656ad3e7732b93",
   "prompts": {},
   "sessions": {
+    "s_76906187b9050b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "391a4eba-570c-4f91-964a-03cc9764868e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
     "s_ed18fedebfc70d": {
       "agent_id": {
         "tool": "claude",
