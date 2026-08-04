@@ -215,6 +215,27 @@ describe("validateWikiInternalLinks", () => {
     expect(report.issuesFound).toBe(0);
   });
 
+  test("accepts double-hyphen anchors from stripped punctuation between words", async () => {
+    const { backend } = await setupWiki();
+    await backend.write(
+      "/openwiki/architecture/agents.md",
+      [
+        "See [tokens](/openwiki/architecture/overview.md#layout-primitives--design-tokens).",
+        "See [store](/openwiki/architecture/overview.md#state--store).",
+        "See [ab](/openwiki/architecture/overview.md#a--b).",
+      ].join("\n"),
+    );
+    await backend.write(
+      "/openwiki/architecture/overview.md",
+      "# Overview\n\n## Layout Primitives & Design Tokens\n\n## State / Store\n\n## A + B\n",
+    );
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report.issuesFound).toBe(0);
+    expect(report.stampedFiles).toEqual([]);
+  });
+
   test("accepts anchors on non-ASCII (unicode) headings", async () => {
     const { backend } = await setupWiki();
     await backend.write(
@@ -224,6 +245,27 @@ describe("validateWikiInternalLinks", () => {
     await backend.write(
       "/openwiki/overview.md",
       "# Overview\n\n## Configuración\n\n## 概要\n",
+    );
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report.issuesFound).toBe(0);
+    expect(report.stampedFiles).toEqual([]);
+  });
+
+  test("keeps combining marks so decomposed-accent anchors resolve", async () => {
+    const { backend } = await setupWiki();
+    const combining = "́"; // combining acute accent (decomposed/NFD)
+    const heading = `Cre${combining}dit Notes`;
+    const anchor = `cre${combining}dit-notes`;
+    expect(anchor.includes("́")).toBe(true); // guard: really decomposed
+    await backend.write(
+      "/openwiki/quickstart.md",
+      `See [notes](./overview.md#${anchor}).\n`,
+    );
+    await backend.write(
+      "/openwiki/overview.md",
+      `# Overview\n\n## ${heading}\n`,
     );
 
     const report = await validateWikiInternalLinks(backend, "repository");

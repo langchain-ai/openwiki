@@ -376,15 +376,25 @@ function buildHeadingAnchors(headings: string[]): Set<string> {
 
 /**
  * Converts heading text to a GitHub-style anchor slug: lowercased, punctuation
- * removed, spaces collapsed to hyphens. Unicode letters and numbers are kept
- * (matching GitHub), so anchors on non-English headings resolve correctly.
+ * removed, each whitespace character replaced by a single hyphen. Unicode
+ * letters, numbers, and combining marks are kept (matching GitHub), so anchors
+ * on non-English headings resolve correctly.
+ *
+ * The kept-character class mirrors `github-slugger` exactly: `\p{M}` retains
+ * combining marks so a decomposed (NFD) accent like `e` + U+0301 slugs to `é`
+ * rather than a bare `e`, matching how GitHub renders the anchor.
+ *
+ * Whitespace is replaced per-character, not collapsed, because GitHub does the
+ * same: stripping punctuation between two words (e.g. `&` in "A & B") leaves
+ * two spaces that become two hyphens (`a--b`). Collapsing them would compute
+ * `a-b` and falsely flag the valid `#a--b` anchor as broken.
  */
 function slugifyHeading(text: string): string {
   return text
     .trim()
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s_-]/gu, "")
-    .replace(/\s+/gu, "-");
+    .replace(/[^\p{L}\p{M}\p{N}\s_-]/gu, "")
+    .replace(/\s/gu, "-");
 }
 
 /**
