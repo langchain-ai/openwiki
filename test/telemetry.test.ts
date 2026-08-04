@@ -378,6 +378,23 @@ describe("describeErrorForTelemetry - residual fingerprint", () => {
     expect(described.errorName).toBeUndefined();
   });
 
+  test("fingerprints the innermost cause, not the outer wrapper", () => {
+    // A framework envelope (e.g. LangChain's MiddlewareError) copies the inner
+    // message onto a fresh wrapper but reports its own constructor. The fingerprint
+    // must reach the real cause so the residual bucket ranks by actual failure type
+    // instead of collapsing every distinct cause to the wrapper's name.
+    class MiddlewareError extends Error {}
+    class ProviderCrash extends Error {}
+    const inner = new ProviderCrash("upstream blew up");
+    const outer = new MiddlewareError("wrapModelCall failed");
+    (outer as { cause?: unknown }).cause = inner;
+
+    const described = describeErrorForTelemetry(outer);
+
+    expect(described.errorClass).toBe("agent_error");
+    expect(described.errorName).toBe("ProviderCrash");
+  });
+
   test("a residual with an un-allowlisted name drops error_name to undefined", () => {
     class Weird {}
     Object.defineProperty(Weird, "name", { value: "weird name/with space" });
@@ -484,6 +501,31 @@ describe("error origin tags", () => {
     ).catch((error: unknown) => error);
 
     expect(describeErrorForTelemetry(captured)).toMatchObject({
+      errorClass: "okf_error",
+      errorDetail: "index_sync",
+      errorStage: "run",
+      errorOwner: "openwiki",
+    });
+  });
+
+  test("an owned-family tag survives re-wrapping and a later stage-only tag", async () => {
+    // okf tags the inner failure with its owned class; a framework re-wraps it (the
+    // tag is stranded on `.cause`) and the run bracket stamps the fresh wrapper with
+    // a stage-only tag. The owned class must still win by walking the chain, instead
+    // of decaying to agent_error the way a top-only read would.
+    const inner = await inStage(
+      "run",
+      () => {
+        throw new Error("index write failed");
+      },
+      { errorClass: "okf_error", errorDetail: "index_sync" },
+    ).catch((error: unknown) => error);
+
+    const outer = new Error("wrapModelCall failed");
+    (outer as { cause?: unknown }).cause = inner;
+    tagErrorStage(outer, "run");
+
+    expect(describeErrorForTelemetry(outer)).toMatchObject({
       errorClass: "okf_error",
       errorDetail: "index_sync",
       errorStage: "run",

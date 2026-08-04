@@ -383,9 +383,11 @@ function tagErrorOrigin(error: unknown, tag: ErrorOriginTag): void {
 }
 
 /**
- * Reads the origin tag off an error, or undefined if it was never tagged.
+ * Reads the origin tag stamped directly on a single error object, or undefined if
+ * this object was never tagged. Reads only this one object; {@link readErrorOrigin}
+ * is what walks the unwrap chain over it.
  */
-function readErrorOrigin(error: unknown): ErrorOriginTag | undefined {
+function readOwnOriginTag(error: unknown): ErrorOriginTag | undefined {
   if (typeof error === "object" && error !== null) {
     const tag = (error as Record<symbol, unknown>)[ERROR_ORIGIN];
     if (typeof tag === "object" && tag !== null && "stage" in tag) {
@@ -394,6 +396,44 @@ function readErrorOrigin(error: unknown): ErrorOriginTag | undefined {
   }
 
   return undefined;
+}
+
+/**
+ * The origin tag that governs classification, resolved across the whole unwrap
+ * chain. Mirrors {@link classifyError}: it walks the chain nearest-first and returns
+ * the first link whose tag names an owned family (its class, detail, and throw-site
+ * stage), so an owned error re-wrapped by a framework keeps its class instead of
+ * decaying into `agent_error`. LangChain's `MiddlewareError`, for one, copies the
+ * inner message onto a fresh wrapper but strands the tag on `.cause`, so a top-only
+ * read would lose the owned class. When no link owns a class, the nearest stage-only
+ * tag is returned so a plain stage bracket still reports its stage.
+ *
+ * @param error - The thrown value whose chain to inspect.
+ * @returns The governing origin tag, or undefined when no link was ever tagged.
+ */
+function readErrorOrigin(error: unknown): ErrorOriginTag | undefined {
+  let nearestStageOnly: ErrorOriginTag | undefined;
+
+  for (const link of unwrapErrorChain(error)) {
+    const tag = readOwnOriginTag(link);
+    if (tag === undefined) {
+      continue;
+    }
+
+    // An owned-family tag wins outright: it carries the class and detail decided at
+    // the throw site, along with that site's own stage.
+    if (tag.errorClass !== undefined) {
+      return tag;
+    }
+
+    // A stage-only tag is only a fallback; keep the nearest one in case no deeper
+    // link owns a class.
+    if (nearestStageOnly === undefined) {
+      nearestStageOnly = tag;
+    }
+  }
+
+  return nearestStageOnly;
 }
 
 /**
@@ -521,6 +561,34 @@ export function safeConstructorName(value: unknown): string | undefined {
 }
 
 /**
+ * The allowlisted constructor name of the innermost error in the unwrap chain, or
+ * undefined. This is the one signal the residual `agent_error` bucket carries, so it
+ * must name the real failure and not a wrapper: a framework envelope like LangChain's
+ * `MiddlewareError` copies the inner message but reports its own constructor, so
+ * fingerprinting the outermost link collapses every distinct root cause to the
+ * wrapper's name. Walking to the deepest link recovers the actual failure's identity
+ * (e.g. the provider SDK's own error class) while the same {@link safeConstructorName}
+ * allowlist keeps the anonymity envelope closed. Falls back to the outermost
+ * allowlisted name when only the wrapper has one. The walk reuses the read-only,
+ * cycle-safe {@link unwrapErrorChain}.
+ *
+ * @param error - The thrown value to fingerprint.
+ * @returns The innermost allowlisted constructor name, or undefined.
+ */
+export function innermostConstructorName(error: unknown): string | undefined {
+  let deepest: string | undefined;
+
+  for (const link of unwrapErrorChain(error)) {
+    const name = safeConstructorName(link);
+    if (name !== undefined) {
+      deepest = name;
+    }
+  }
+
+  return deepest;
+}
+
+/**
  * The single call the failure path uses: class, detail, owner, stage, status, and
  * (residual only) the error-name fingerprint in one object, ready to spread into the
  * run facts. The class and detail come from the origin tag when the throw site owned
@@ -553,7 +621,11 @@ export function describeErrorForTelemetry(error: unknown): ErrorTelemetry {
     // even when an origin tag already named the class.
     httpStatus: firstStatusInChain(error),
     // Only the residual bucket pays for a fingerprint; named classes stay undefined.
+    // Reads the innermost cause, not the outer wrapper, so a framework envelope like
+    // LangChain's `MiddlewareError` does not collapse every root cause to one name.
     errorName:
-      errorClass === "agent_error" ? safeConstructorName(error) : undefined,
+      errorClass === "agent_error"
+        ? innermostConstructorName(error)
+        : undefined,
   };
 }
