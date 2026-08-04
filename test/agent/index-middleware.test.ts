@@ -56,7 +56,7 @@ describe("synchronizeWikiIndexes", () => {
       "utf8",
     );
 
-    expect(rootIndex).toContain('okf_version: "0.1"');
+    expect(rootIndex).toContain('okf_version: "0.2"');
     expect(rootIndex).not.toContain("type: Documentation Index");
     expect(rootIndex).not.toMatch(/^tags:/mu);
     expect(rootIndex).toContain("- [Quickstart](quickstart.md) - Start here.");
@@ -140,7 +140,7 @@ describe("synchronizeWikiIndexes", () => {
       path.join(rootDir, "openwiki/architecture/index.md"),
       "utf8",
     );
-    expect(rootIndex).toMatch(/^---\nokf_version: "0\.1"\n---\n\n# Files/mu);
+    expect(rootIndex).toMatch(/^---\nokf_version: "0\.2"\n---\n\n# Files/mu);
     expect(rootIndex).not.toContain("type: Documentation Index");
     expect(nestedIndex).toMatch(/^# Files/mu);
     expect(nestedIndex).not.toMatch(/^---/u);

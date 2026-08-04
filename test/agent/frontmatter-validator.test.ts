@@ -54,7 +54,7 @@ describe("validateOkfFrontmatter", () => {
     ).toEqual({ valid: true });
   });
 
-  test("accepts OKF timestamp and producer-defined extension fields", () => {
+  test("accepts the legacy v0.1 timestamp and producer-defined extension fields", () => {
     expect(
       validateOkfFrontmatter(
         markdown(
@@ -63,11 +63,75 @@ describe("validateOkfFrontmatter", () => {
             'timestamp: "2026-07-16T20:00:00Z"',
             "author: steve",
             "confidence: 0.95",
-            "status: verified",
+            "review_state: verified",
           ].join("\n"),
         ),
       ),
     ).toEqual({ valid: true });
+  });
+
+  test("accepts the v0.2 provenance, trust, and lifecycle families", () => {
+    expect(
+      validateOkfFrontmatter(
+        markdown(
+          [
+            "type: Reference",
+            "generated: {by: openwiki/0.3.0, at: 2026-08-04T09:00:00Z}",
+            "verified:",
+            "  - {by: human:ahormati, at: 2026-08-05T09:00:00Z}",
+            "  - {by: process:finance-nightly, at: 2026-08-06T02:00:00Z}",
+            "sources:",
+            "  - id: spec",
+            "    resource: https://example.com/spec",
+            "    author: team:docs",
+            "    usage_count: 5000",
+            "    last_modified: 2026-05-30",
+            "usage_window: {from: 2026-06-01, to: 2026-06-30}",
+            "status: stable",
+            "stale_after: 2026-09-23",
+          ].join("\n"),
+        ),
+      ),
+    ).toEqual({ valid: true });
+  });
+
+  test("accepts a bare verified mapping as a one-element list", () => {
+    // §5.2: a single verifier may be written without the list dash.
+    expect(
+      validateOkfFrontmatter(
+        markdown(
+          "type: Reference\nverified: {by: human:ahormati, at: 2026-08-05T09:00:00Z}",
+        ),
+      ),
+    ).toEqual({ valid: true });
+  });
+
+  test("reports malformed v0.2 family fields", () => {
+    const result = validateOkfFrontmatter(
+      markdown(
+        [
+          "type: Reference",
+          "generated: 2026-08-04",
+          "verified:",
+          "  - {at: 2026-08-05T09:00:00Z}",
+          "sources:",
+          "  - {id: spec}",
+          "status: verified",
+          "stale_after: soon",
+        ].join("\n"),
+      ),
+    );
+
+    expect(result).toMatchObject({
+      issues: [
+        { code: "invalid_generated" },
+        { code: "invalid_verified" },
+        { code: "invalid_sources" },
+        { code: "invalid_status" },
+        { code: "invalid_stale_after" },
+      ],
+      valid: false,
+    });
   });
 
   test("reports deterministic delimiter and required-field issues", () => {
