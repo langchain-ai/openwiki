@@ -112,7 +112,6 @@ export async function validateWikiInternalLinks(
       report.linksChecked += 1;
       const issue = await validateLink(
         backend,
-        wikiRoot,
         sourcePath,
         href,
         line,
@@ -201,13 +200,17 @@ export function stampBrokenLinks(
 }
 
 /**
- * Validates one link against the wiki tree, returning an issue when the target
- * file, directory, or heading anchor cannot be resolved. External links and
- * bare (empty) hrefs are ignored.
+ * Validates one link, returning an issue when the target file, directory, or
+ * heading anchor cannot be resolved. External links and bare (empty) hrefs are
+ * ignored.
+ *
+ * Targets are checked by existence against the whole repository, not just the
+ * wiki subtree: a wiki page may legitimately link out to a repo file (a design
+ * doc, source file, etc.), which renders correctly on GitHub. A link is broken
+ * only when its target genuinely does not exist.
  */
 async function validateLink(
   backend: BackendProtocolV2,
-  wikiRoot: string,
   sourcePath: string,
   rawHref: string,
   line: number,
@@ -234,12 +237,12 @@ async function validateLink(
     return null;
   }
 
-  const resolvedPath = resolveWikiLinkPath(wikiRoot, sourcePath, linkPath);
+  const resolvedPath = resolveRepoLinkPath(sourcePath, linkPath);
   if (!resolvedPath) {
     return {
       href,
       line,
-      message: `link "${linkPath}" is outside the wiki root`,
+      message: `link "${linkPath}" cannot be resolved`,
       sourcePath,
     };
   }
@@ -260,7 +263,14 @@ async function validateLink(
     };
   }
 
-  if (!anchor || isDirectory) {
+  // Heading anchors are only validated against Markdown targets. Anchors on
+  // directories, and GitHub line anchors on source files (e.g. `#L10`), are
+  // out of scope and must not be flagged as broken.
+  if (
+    !anchor ||
+    isDirectory ||
+    path.posix.extname(targetPath).toLowerCase() !== ".md"
+  ) {
     return null;
   }
 
@@ -418,19 +428,23 @@ function parseLinkDestination(rawHref: string): {
 }
 
 /**
- * Resolves a link path to a normalized wiki-absolute path, or undefined when it
- * escapes the wiki root.
+ * Resolves a link path to a normalized repo-absolute path, or undefined when it
+ * cannot be contained within the repo root.
  *
  * A leading-slash link is absolute from the virtual filesystem root (the repo
  * root in `repository` mode, the wiki dir in `local-wiki` mode) — the same
- * convention the generation prompt teaches and GitHub renders. In `repository`
- * mode that means cross-page links are authored as `/openwiki/...`, already
- * carrying the wiki-root prefix, so they must not be re-prefixed. The
- * `isPathUnderWikiRoot` guard below still rejects absolute paths that land
- * outside the wiki (e.g. `/src/index.ts`) and any `../` traversal.
+ * convention the generation prompt teaches and GitHub renders. A relative link
+ * resolves against its source file's directory.
+ *
+ * The result is not constrained to the wiki subtree: wiki pages may link out to
+ * other repo files, so containment is enforced at the repo root instead.
+ * `path.posix.normalize` clamps any leading `..` at `/`, so a normalized
+ * absolute path can never climb above the repo root that the backend's virtual
+ * filesystem maps (e.g. `/openwiki/a/../../../etc` normalizes to `/etc`, still
+ * under `/`). The explicit absolute-path check below makes that containment a
+ * hard guarantee rather than an implicit one.
  */
-function resolveWikiLinkPath(
-  wikiRoot: string,
+function resolveRepoLinkPath(
   sourcePath: string,
   linkPath: string,
 ): string | null {
@@ -440,21 +454,7 @@ function resolveWikiLinkPath(
       : path.posix.join(path.posix.dirname(sourcePath), linkPath),
   );
 
-  return isPathUnderWikiRoot(wikiRoot, candidate) ? candidate : null;
-}
-
-/**
- * True when a normalized candidate path is the wiki root itself or contained
- * within it, guarding against `../` traversal out of the wiki.
- */
-function isPathUnderWikiRoot(wikiRoot: string, candidate: string): boolean {
-  const root = path.posix.normalize(wikiRoot.replace(/\/+$/u, "") || "/");
-  const resolved = path.posix.normalize(candidate);
-  const relative = path.posix.relative(root, resolved);
-  return (
-    relative === "" ||
-    (!relative.startsWith("..") && !path.posix.isAbsolute(relative))
-  );
+  return path.posix.isAbsolute(candidate) ? candidate : null;
 }
 
 /**
