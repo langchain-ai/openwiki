@@ -86,6 +86,10 @@ export function buildRunEvent(
       ...(details.httpStatus !== undefined
         ? { http_status: details.httpStatus }
         : {}),
+      // Residual-only fingerprint: an allowlisted constructor identifier, the one
+      // signal the `agent_error` bucket carries. Omitted for every named class, so
+      // the null bucket reads as "already classified" rather than a value.
+      ...(details.errorName ? { error_name: details.errorName } : {}),
       ...(details.mode ? { mode: details.mode } : {}),
       ...(details.provider ? { provider: details.provider } : {}),
       ...connectorProperties(details.configuredConnectors ?? []),

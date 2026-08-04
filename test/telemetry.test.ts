@@ -28,9 +28,12 @@ import { DEFAULT_POSTHOG_KEY } from "../src/telemetry/config.ts";
 import {
   classifyError,
   describeErrorForTelemetry,
+  firstStatusInChain,
   inStage,
   inStageSync,
+  safeConstructorName,
   tagErrorStage,
+  unwrapErrorChain,
 } from "../src/telemetry/errors.ts";
 import {
   deriveOwner,
@@ -77,6 +80,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   for (const key of ENV_KEYS) {
     if (savedEnv[key] === undefined) {
       delete process.env[key];
@@ -214,6 +218,199 @@ describe("classifyError - provider granularity", () => {
   });
 });
 
+describe("classifyError - unwrapping wrapped errors", () => {
+  test("recovers a provider status from a cause chain", () => {
+    // The top-level wrapper carries no status; the real signal is one `cause`
+    // deep. This is the tool-error-wrapping-a-429 shape that today falls through.
+    const wrapped = new Error("tool failed");
+    (wrapped as { cause?: unknown }).cause = { status: 429 };
+
+    expect(classifyError(wrapped)).toEqual({
+      errorClass: "provider_error",
+      errorDetail: "rate_limit",
+    });
+  });
+
+  test("recovers a signal from AggregateError.errors", () => {
+    // Parallel subagents can surface as an AggregateError; the classifiable link
+    // is inside the `errors` array, not on the aggregate itself.
+    const aggregate = new AggregateError(
+      [new Error("wrapper"), new Error("getaddrinfo ENOTFOUND api.host")],
+      "all failed",
+    );
+
+    expect(classifyError(aggregate)).toEqual({
+      errorClass: "network_error",
+      errorDetail: "dns",
+    });
+  });
+
+  test("nearest classifiable link wins over a deeper one", () => {
+    // A 401 wrapping a 429 classifies as auth: the walk is nearest-first, so the
+    // outer recognized signal is returned before the inner one is reached.
+    const outer = Object.assign(new Error("auth wrapper"), { status: 401 });
+    (outer as { cause?: unknown }).cause = { status: 429 };
+
+    expect(classifyError(outer)).toEqual({
+      errorClass: "provider_error",
+      errorDetail: "auth",
+    });
+  });
+
+  test("terminates on a cyclic cause chain and returns the residual", () => {
+    // A self-referential cause must not hang the walk; with no signal it stays
+    // residual.
+    const cyclic = new Error("loop");
+    (cyclic as { cause?: unknown }).cause = cyclic;
+
+    expect(classifyError(cyclic)).toEqual({ errorClass: "agent_error" });
+  });
+
+  test("stops at the depth bound: a signal below it is not reached", () => {
+    // Six nested wrappers put the only real signal (a 429) below MAX_UNWRAP_DEPTH
+    // (5), so the walk bounds out at the residual rather than recovering it. This
+    // is the DoS guard: a pathologically deep chain costs at most five links.
+    let deep: { message: string; cause?: unknown } = { message: "w0" };
+    const root = deep;
+    for (let i = 1; i <= 5; i++) {
+      const next = { message: `w${i}` };
+      deep.cause = next;
+      deep = next;
+    }
+    deep.cause = { status: 429 };
+
+    expect(classifyError(root)).toEqual({ errorClass: "agent_error" });
+  });
+
+  test("a signal within the depth bound is still recovered", () => {
+    // The same shape but with the 429 at depth 3 is found: the bound only drops
+    // signals genuinely past five links.
+    const l0 = new Error("w0");
+    const l1 = new Error("w1");
+    const l2 = { status: 429 };
+    (l0 as { cause?: unknown }).cause = l1;
+    (l1 as { cause?: unknown }).cause = l2;
+
+    expect(classifyError(l0)).toEqual({
+      errorClass: "provider_error",
+      errorDetail: "rate_limit",
+    });
+  });
+
+  test("an unwrapped error still classifies exactly as before", () => {
+    // A chain of length one must behave identically to the pre-unwrap classifier.
+    expect(classifyError({ status: 401 })).toEqual({
+      errorClass: "provider_error",
+      errorDetail: "auth",
+    });
+    expect(classifyError(new Error("nothing recognizable"))).toEqual({
+      errorClass: "agent_error",
+    });
+  });
+
+  test("unwrapErrorChain is read-only, cycle-safe, and depth-bounded", () => {
+    const cyclic = new Error("a");
+    (cyclic as { cause?: unknown }).cause = cyclic;
+
+    const chain = unwrapErrorChain(cyclic);
+    // Never longer than the bound, even for a cycle.
+    expect(chain.length).toBeLessThanOrEqual(5);
+    // The first link is always the original value.
+    expect(chain[0]).toBe(cyclic);
+    // A thrown non-object is still the sole link, so classification is unchanged.
+    expect(unwrapErrorChain("boom")).toEqual(["boom"]);
+  });
+});
+
+describe("safeConstructorName allowlist", () => {
+  test("accepts a plain ASCII constructor name", () => {
+    expect(safeConstructorName(new TypeError("x"))).toBe("TypeError");
+    expect(safeConstructorName(new Error("x"))).toBe("Error");
+  });
+
+  test("reads the prototype, ignoring a tampered own constructor", () => {
+    // An own `constructor` property must not smuggle a value past the allowlist:
+    // the name comes from the prototype chain (here, Object), not the own prop.
+    const tampered = { constructor: { name: "PwnedError/../etc" } };
+
+    expect(safeConstructorName(tampered)).toBe("Object");
+  });
+
+  test("drops names that are not bare identifiers", () => {
+    const withName = (name: string): unknown => {
+      class Custom {}
+      Object.defineProperty(Custom, "name", { value: name });
+      return new Custom();
+    };
+
+    expect(safeConstructorName(withName("has space"))).toBeUndefined();
+    expect(safeConstructorName(withName("a/b"))).toBeUndefined();
+    expect(
+      safeConstructorName(withName("/Users/me/secret/path")),
+    ).toBeUndefined();
+    expect(safeConstructorName(withName("a".repeat(65)))).toBeUndefined();
+    // A 64-char identifier is the longest allowed and still passes.
+    expect(safeConstructorName(withName("a".repeat(64)))).toBe("a".repeat(64));
+  });
+
+  test("non-objects have no constructor name", () => {
+    expect(safeConstructorName("string")).toBeUndefined();
+    expect(safeConstructorName(42)).toBeUndefined();
+    expect(safeConstructorName(null)).toBeUndefined();
+    expect(safeConstructorName(undefined)).toBeUndefined();
+  });
+});
+
+describe("describeErrorForTelemetry - residual fingerprint", () => {
+  test("a residual failure carries its error_name and no status", () => {
+    const described = describeErrorForTelemetry(new TypeError("boom"));
+
+    expect(described.errorClass).toBe("agent_error");
+    expect(described.errorName).toBe("TypeError");
+    expect(described.httpStatus).toBeUndefined();
+  });
+
+  test("a named class carries no error_name", () => {
+    // Only the residual bucket pays for a fingerprint; a real 401 is already named.
+    const described = describeErrorForTelemetry({ status: 401 });
+
+    expect(described.errorClass).toBe("provider_error");
+    expect(described.errorName).toBeUndefined();
+  });
+
+  test("a residual with an un-allowlisted name drops error_name to undefined", () => {
+    class Weird {}
+    Object.defineProperty(Weird, "name", { value: "weird name/with space" });
+
+    const described = describeErrorForTelemetry(new Weird());
+
+    expect(described.errorClass).toBe("agent_error");
+    expect(described.errorName).toBeUndefined();
+  });
+
+  test("http_status is surfaced from a wrapped provider error", () => {
+    // firstStatusInChain reaches the status one cause deep even though the class
+    // was recovered from the same link.
+    const wrapped = new Error("tool failed");
+    (wrapped as { cause?: unknown }).cause = { status: 503 };
+
+    const described = describeErrorForTelemetry(wrapped);
+
+    expect(described.errorClass).toBe("provider_error");
+    expect(described.errorDetail).toBe("overloaded");
+    expect(described.httpStatus).toBe(503);
+    // A recovered (named) class is not fingerprinted.
+    expect(described.errorName).toBeUndefined();
+  });
+
+  test("firstStatusInChain returns undefined when no link exposes a status", () => {
+    const wrapped = new Error("outer");
+    (wrapped as { cause?: unknown }).cause = new Error("inner");
+
+    expect(firstStatusInChain(wrapped)).toBeUndefined();
+  });
+});
+
 describe("taxonomy", () => {
   test("deriveOwner encodes the default owners", () => {
     expect(deriveOwner("config_error", "missing_credentials", "config")).toBe(
@@ -332,12 +529,16 @@ describe("error origin tags", () => {
   });
 
   test("leaves detail, stage, and status undefined when absent", () => {
+    // A bare residual Error carries no detail/stage/status, but it is still
+    // fingerprinted: "Error" is an allowlisted constructor name, so the residual
+    // agent_error bucket gains an error_name to slice on.
     expect(describeErrorForTelemetry(new Error("boom"))).toEqual({
       errorClass: "agent_error",
       errorDetail: undefined,
       errorStage: undefined,
       errorOwner: "unowned",
       httpStatus: undefined,
+      errorName: "Error",
     });
   });
 });
@@ -485,6 +686,37 @@ describe("client.capture", () => {
     expect(arg.properties).not.toHaveProperty("$ip");
     expect(posthog.shutdown).toHaveBeenCalledOnce();
   });
+
+  test("returns false when captureImmediate rejects", async () => {
+    posthog.captureImmediate.mockRejectedValue(new Error("network down"));
+
+    await expect(
+      captureEvent({
+        distinctId: "id-rejected",
+        event: "openwiki_run",
+        properties: {},
+      }),
+    ).resolves.toBe(false);
+    expect(posthog.shutdown).toHaveBeenCalledOnce();
+  });
+
+  test("returns false when captureImmediate times out", async () => {
+    vi.useFakeTimers();
+    posthog.captureImmediate.mockImplementation(
+      () => new Promise<void>(() => {}),
+    );
+
+    const pending = captureEvent({
+      distinctId: "id-timeout",
+      event: "openwiki_run",
+      properties: {},
+    });
+    const result = expect(pending).resolves.toBe(false);
+    await vi.advanceTimersByTimeAsync(3000);
+
+    await result;
+    expect(posthog.shutdown).toHaveBeenCalledOnce();
+  });
 });
 
 describe("senders.recordRun", () => {
@@ -550,6 +782,41 @@ describe("senders.recordRun", () => {
     });
 
     await expect(recordRun(runDetails())).resolves.toBeUndefined();
+  });
+
+  test("tees sent=false when an asynchronous capture is rejected", async () => {
+    posthog.captureImmediate.mockRejectedValue(new Error("network down"));
+    const file = path.join(tmpdir(), "ow-tel-rejected.json");
+
+    await recordRun(runDetails({ telemetryFile: file }));
+
+    await expect(readTee(file)).resolves.toMatchObject({
+      disabled: false,
+      sent: false,
+    });
+    await rm(file, { force: true });
+  });
+
+  test("tees sent=false when capture times out", async () => {
+    vi.useFakeTimers();
+    posthog.captureImmediate.mockImplementation(
+      () => new Promise<void>(() => {}),
+    );
+    const file = path.join(tmpdir(), "ow-tel-timeout.json");
+
+    const pending = recordRun(runDetails({ telemetryFile: file }));
+    const completion = expect(pending).resolves.toBeUndefined();
+    await vi.waitFor(() => {
+      expect(posthog.captureImmediate).toHaveBeenCalledOnce();
+    });
+    await vi.advanceTimersByTimeAsync(3000);
+    await completion;
+
+    await expect(readTee(file)).resolves.toMatchObject({
+      disabled: false,
+      sent: false,
+    });
+    await rm(file, { force: true });
   });
 });
 
@@ -665,6 +932,38 @@ describe("buildRunEvent diagnostics", () => {
     expect(event.properties).not.toHaveProperty("error_owner");
     expect(event.properties).not.toHaveProperty("error_stage");
     expect(event.properties).not.toHaveProperty("http_status");
+    expect(event.properties).not.toHaveProperty("error_name");
+  });
+
+  test("the residual fingerprint rides only when error_name is present", () => {
+    // A residual failure carries error_name; a named class leaves it undefined so
+    // the property is absent and the PostHog null bucket reads as "classified".
+    const residual = buildRunEvent(
+      {
+        command: "init",
+        outcome: "failure",
+        errorClass: "agent_error",
+        errorOwner: "unowned",
+        errorStage: "run",
+        errorName: "TypeError",
+      },
+      baseContext,
+    );
+    expect(residual.properties).toMatchObject({ error_name: "TypeError" });
+
+    const named = buildRunEvent(
+      {
+        command: "init",
+        outcome: "failure",
+        errorClass: "provider_error",
+        errorDetail: "rate_limit",
+        errorOwner: "provider",
+        errorStage: "run",
+        httpStatus: 429,
+      },
+      baseContext,
+    );
+    expect(named.properties).not.toHaveProperty("error_name");
   });
 
   test("http_status of 0 would still ride, but omission is by undefined only", () => {
@@ -834,6 +1133,11 @@ describe("anonymity envelope: one representative failure per reachable family", 
           // A bare integer; no provider strings ride with it.
           expect(Number.isInteger(value)).toBe(true);
           break;
+        case "error_name":
+          // A bare ASCII constructor identifier, nothing else: the residual
+          // fingerprint is gated to exactly this shape before it can leave.
+          expect(value).toMatch(/^[A-Za-z][A-Za-z0-9]{0,63}$/u);
+          break;
         case "app_version":
           expect(value).toMatch(/^\d+\.\d+\.\d+/u);
           break;
@@ -966,6 +1270,7 @@ describe("anonymity envelope: one representative failure per reachable family", 
           errorOwner: described.errorOwner,
           errorStage: described.errorStage,
           httpStatus: described.httpStatus,
+          errorName: described.errorName,
         },
         sweepContext,
       );

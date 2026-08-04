@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatRuntimeRootInstruction } from "../src/agent/index.ts";
+import { formatRuntimeRootInstruction } from "../src/agent/prompt.ts";
 
 describe("formatRuntimeRootInstruction", () => {
   test("points repository runs at the repo-local openwiki directory", () => {
