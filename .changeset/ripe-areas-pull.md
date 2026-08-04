@@ -2,4 +2,4 @@
 "openwiki": patch
 ---
 
-fix: resolve repo-root-absolute wiki links without double-prefixing /openwiki
+fix: stop the internal link validator from falsely flagging valid links
