@@ -1,5 +1,13 @@
 # openwiki
 
+## 0.3.1
+
+### Patch Changes
+
+- [#585](https://github.com/langchain-ai/openwiki/pull/585) [`1e6b395`](https://github.com/langchain-ai/openwiki/commit/1e6b395b162b52929cf39eaf219f7fb034af023f) Thanks [@colifran](https://github.com/colifran)! - fix: stop the internal link validator from falsely flagging valid links
+
+- [#589](https://github.com/langchain-ai/openwiki/pull/589) [`a86d0ba`](https://github.com/langchain-ai/openwiki/commit/a86d0bad2c457de299cab5659092197a53f7d7f5) Thanks [@colifran](https://github.com/colifran)! - fix: fingerprint innermost cause and chain-walk origin tag
+
 ## 0.3.0
 
 ### Minor Changes
