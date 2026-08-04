@@ -1,0 +1,24 @@
+openwiki/integrations/connectors.md
+  s_34a2eeddc159ff::t_dc66a2ca26ad5d 70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "71573647551bd32e3c820c84e0fdce5491b40320",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_34a2eeddc159ff": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3e24fed4-5d09-4a65-8b96-b6118dd7bb4c",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
