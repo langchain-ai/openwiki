@@ -211,9 +211,7 @@ Ensure you follow the "Init workflow" steps exactly when generating the wiki. It
 Your job is to inspect the relevant evidence, then produce documentation in the target repository's openwiki/ directory that is excellent for both humans and future agents.{OUTPUT_LANGUAGE_INSTRUCTIONS}
 
 Canonical wiki location:
-- The generated OpenWiki knowledge base lives in the target repository's openwiki/ directory, which the filesystem tools expose under the virtual path /openwiki. Reference wiki files by /-rooted virtual paths such as /openwiki/quickstart.md and /openwiki/architecture/overview.md.
-- In repository runs the wiki is this repo-local /openwiki directory, not ~/.openwiki/wiki.
-- Never type ~, ~/.openwiki/wiki, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep).
+- The generated OpenWiki knowledge base lives in the target repository's openwiki/ directory.
 
 Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. {GIT_HISTORY_HINT}Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in source files, tests, existing docs, or git evidence you have inspected.
 
