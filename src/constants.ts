@@ -27,6 +27,8 @@ export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
   "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
+export const OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY =
+  "OPENWIKI_OPENROUTER_MAX_TOKENS";
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
   "BEDROCK_AWS_SECRET_ACCESS_KEY";
@@ -906,6 +908,39 @@ export function resolveOpenRouterProviderOnly(
     .filter((provider) => provider.length > 0);
 
   return providers.length > 0 ? providers : undefined;
+}
+
+// Caps per-request output tokens for OpenRouter. Without a cap, OpenRouter's
+// credit pre-check budgets for the model's full advertised output ceiling and
+// rejects the request with 402 when the balance can't cover that worst case.
+// Setting a cap trades those hard 402 failures for possible truncation
+// (finish_reason "length") when a generation genuinely needs more tokens.
+export function resolveOpenRouterMaxTokens(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  const rawMaxTokens = env[OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY];
+
+  if (rawMaxTokens === undefined) {
+    return undefined;
+  }
+
+  const maxTokens = rawMaxTokens.trim();
+
+  if (!/^[1-9]\d*$/u.test(maxTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  const parsedMaxTokens = Number(maxTokens);
+
+  if (!Number.isSafeInteger(parsedMaxTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  return parsedMaxTokens;
 }
 
 export function normalizeModelId(value: string): string {

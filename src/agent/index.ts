@@ -115,6 +115,7 @@ import {
   providerUsesExternalCliAuth,
   providerUsesResponsesApi,
   resolveConfiguredProvider,
+  resolveOpenRouterMaxTokens,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
@@ -1104,11 +1105,13 @@ export function createModel(
 
   if (provider === "openrouter") {
     const providerOnly = resolveOpenRouterProviderOnly();
+    const maxTokens = resolveOpenRouterMaxTokens();
 
     return new ChatOpenRouter({
       apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
       baseURL: OPENROUTER_BASE_URL,
       model: modelId,
+      ...(maxTokens !== undefined ? { maxTokens } : {}),
       provider: providerOnly ? { only: providerOnly } : undefined,
       siteName: "OpenWiki",
       ...retryOptions,
