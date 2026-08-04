@@ -408,8 +408,16 @@ function parseLinkDestination(rawHref: string): {
 }
 
 /**
- * Resolves a link path (relative to its source, or wiki-root-absolute) to a
- * normalized wiki-absolute path, or undefined when it escapes the wiki root.
+ * Resolves a link path to a normalized wiki-absolute path, or undefined when it
+ * escapes the wiki root.
+ *
+ * A leading-slash link is absolute from the virtual filesystem root (the repo
+ * root in `repository` mode, the wiki dir in `local-wiki` mode) — the same
+ * convention the generation prompt teaches and GitHub renders. In `repository`
+ * mode that means cross-page links are authored as `/openwiki/...`, already
+ * carrying the wiki-root prefix, so they must not be re-prefixed. The
+ * `isPathUnderWikiRoot` guard below still rejects absolute paths that land
+ * outside the wiki (e.g. `/src/index.ts`) and any `../` traversal.
  */
 function resolveWikiLinkPath(
   wikiRoot: string,
@@ -418,7 +426,7 @@ function resolveWikiLinkPath(
 ): string | null {
   const candidate = path.posix.normalize(
     linkPath.startsWith("/")
-      ? path.posix.join(wikiRoot, linkPath.slice(1))
+      ? linkPath
       : path.posix.join(path.posix.dirname(sourcePath), linkPath),
   );
 
