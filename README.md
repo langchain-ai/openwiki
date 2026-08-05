@@ -127,7 +127,7 @@ Connector secrets are referenced by env var name and stored in `~/.openwiki/.env
 
 The connectors above feed a `personal` wiki. The **LangSmith** connector instead enriches a `code` wiki: it pulls recent LangSmith traces (tool calls, outcomes, and latency) for the projects you choose through the official LangSmith SDK, so a repository's docs reflect how its code actually behaves at runtime, not just what the source says.
 
-Configure it during `openwiki --init` in `code` mode. From the source menu, add LangSmith, pick your workspace region (US or EU), and list the projects to document. OpenWiki writes a committed `openwiki/.langsmith.json` that names the workspaces and projects (never the key itself), so every teammate and CI run documents the same set. The API key is read from the environment:
+Configure it during `openwiki --init` in `code` mode. From the source menu, add LangSmith, pick your workspace region (US, EU, or APAC), and list the projects to document. OpenWiki writes a committed `openwiki/.langsmith.json` that names the workspaces and projects (never the key itself), so every teammate and CI run documents the same set. The API key is read from the environment:
 
 ```sh
 OPENWIKI_LANGSMITH_API_KEY="<your-langsmith-key>"
@@ -136,7 +136,7 @@ OPENWIKI_LANGSMITH_API_KEY="<your-langsmith-key>"
 Locally the setup wizard saves this to `~/.openwiki/.env`. In CI, set it as a repository secret and export it for the run.
 
 > [!NOTE]
-> A LangSmith key is workspace- and region-bound. To document projects across more than one workspace, add an entry per workspace, each with its own key named `OPENWIKI_LANGSMITH_API_KEY_2`, `OPENWIKI_LANGSMITH_API_KEY_3`, and so on. The connector only talks to the official US (`api.smith.langchain.com`) and EU (`eu.api.smith.langchain.com`) hosts.
+> A LangSmith key is workspace- and region-bound. To document projects across more than one workspace, add an entry per workspace, each with its own key named `OPENWIKI_LANGSMITH_API_KEY_2`, `OPENWIKI_LANGSMITH_API_KEY_3`, and so on. The connector only talks to the official US (`api.smith.langchain.com`), EU (`eu.api.smith.langchain.com`), and APAC (`apac.api.smith.langchain.com`) hosts.
 
 ## How it stays yours
 
