@@ -733,15 +733,18 @@ function resolveChildEnv(
 }
 
 // Base environment variables an MCP subprocess may legitimately need to run
-// (locating binaries, resolving the home dir, temp paths, terminal behavior).
-// Deliberately excludes OpenWiki credentials so a spawned MCP server command
-// cannot read the user's API keys and OAuth refresh tokens out of process.env.
+// (locating binaries, resolving the home dir, AppData caches on Windows, temp
+// paths, terminal behavior). Deliberately excludes OpenWiki credentials so a
+// spawned MCP server command cannot read the user's API keys and OAuth refresh
+// tokens out of process.env.
 const CHILD_ENV_ALLOWLIST = [
   "PATH",
   "HOME",
   "HOMEPATH",
   "HOMEDRIVE",
   "USERPROFILE",
+  "APPDATA",
+  "LOCALAPPDATA",
   "TMPDIR",
   "TEMP",
   "TMP",
