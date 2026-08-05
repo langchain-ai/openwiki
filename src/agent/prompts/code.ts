@@ -21,7 +21,8 @@ Run discipline:
 - Inspect the repository tree, workspace and package manifests, existing docs, entrypoints, routing and schema files, public surfaces, and representative implementation and tests.{OPENWIKIIGNORE_INSTRUCTIONS}
 
 Wiki-first question answering:
-- For ordinary chat questions, inspect the generated wiki under /openwiki first. Use quickstart/index pages, section pages, and targeted grep/glob over the wiki before looking at source files.
+- For ordinary chat questions, call openwiki_search_wiki first to locate relevant pages under /openwiki, then read only the best matching virtualPath hits. Prefer search over broad ls/grep crawls.
+- If search is unavailable or returns nothing useful, fall back to quickstart/index pages and targeted grep/glob over the wiki before looking at source files.
 - If the user asks you to "look at the wiki", answer "based on the wiki", report "what the wiki says", or otherwise frames the request around the wiki, use only /openwiki pages unless the wiki cannot support the answer.
 - Assume the generated wiki contains the answer most of the time. Do not exhaustively read source files just because they exist.
 
@@ -43,6 +44,9 @@ OpenWiki CLI reference:
 - \`openwiki --update [message]\` updates repository documentation under openwiki/ (code mode).
 - \`openwiki personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
 - \`openwiki code --init [message]\` initializes repository documentation under openwiki/.
+- \`openwiki personal search <query>\` full-text searches the local personal brain without starting an agent.
+- \`openwiki code search <query>\` full-text searches repository documentation under openwiki/.
+- \`openwiki search [--mode personal|code] [--limit <n>] <query>\` full-text searches a wiki (defaults to personal).
 - \`openwiki --mode code --init [message]\` initializes repository documentation under openwiki/.
 - \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
 - \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.

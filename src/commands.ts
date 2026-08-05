@@ -60,6 +60,13 @@ export type CliCommand =
       exitCode: 0;
       target: CronTarget | null;
     }
+  | {
+      kind: "search";
+      exitCode: 0;
+      limit: number | null;
+      mode: OpenWikiRunMode;
+      query: string;
+    }
   | { kind: "help"; exitCode: 0 }
   | {
       kind: "run";
@@ -393,11 +400,145 @@ export function parseCommand(argv: string[]): CliCommand {
     }
   }
 
+  if (argv[0] === "search") {
+    return parseSearchCommand(argv.slice(1), null);
+  }
+
+  if (isOpenWikiRunMode(argv[0]) && argv[1] === "search") {
+    return parseSearchCommand(argv.slice(2), argv[0]);
+  }
+
   if (isOpenWikiRunMode(argv[0])) {
     return parseRunCommand(argv.slice(1), argv[0], "positional");
   }
 
   return parseRunCommand(argv, "code", "default");
+}
+
+function parseSearchCommand(
+  argv: string[],
+  initialMode: OpenWikiRunMode | null,
+): CliCommand {
+  let mode = initialMode;
+  let limit: number | null = null;
+  const queryParts: string[] = [];
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === "--help" || arg === "-h") {
+      return { kind: "help", exitCode: 0 };
+    }
+
+    if (arg === "--mode") {
+      if (initialMode !== null) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message:
+            "Do not pass --mode when using openwiki personal search or openwiki code search.",
+        };
+      }
+
+      const nextArg = argv[index + 1];
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--mode requires personal or code.",
+        };
+      }
+      if (!isOpenWikiRunMode(nextArg)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid mode: ${nextArg}. Expected personal or code.`,
+        };
+      }
+      mode = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--mode=")) {
+      if (initialMode !== null) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message:
+            "Do not pass --mode when using openwiki personal search or openwiki code search.",
+        };
+      }
+      const nextArg = arg.slice("--mode=".length);
+      if (!isOpenWikiRunMode(nextArg)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid mode: ${nextArg}. Expected personal or code.`,
+        };
+      }
+      mode = nextArg;
+      continue;
+    }
+
+    if (arg === "--limit") {
+      const nextArg = argv[index + 1];
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--limit requires a number.",
+        };
+      }
+      limit = Number(nextArg);
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--limit=")) {
+      limit = Number(arg.slice("--limit=".length));
+      continue;
+    }
+
+    if (arg.startsWith("-")) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Unknown option for search: ${arg}`,
+      };
+    }
+
+    queryParts.push(arg);
+  }
+
+  if (
+    limit !== null &&
+    (!Number.isInteger(limit) || limit < 1 || limit > 100)
+  ) {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "--limit must be an integer between 1 and 100.",
+    };
+  }
+
+  const query = queryParts.join(" ").trim();
+  if (!query) {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message:
+        "Usage: openwiki personal search <query> | openwiki search [--mode personal|code] [--limit <n>] <query>",
+    };
+  }
+
+  return {
+    kind: "search",
+    exitCode: 0,
+    limit,
+    mode: mode ?? "personal",
+    query,
+  };
 }
 
 function parseRunCommand(
@@ -747,6 +888,9 @@ export const helpContent: HelpContent = {
     "openwiki cron pause all",
     "openwiki cron resume all",
     "openwiki cron delete all",
+    "openwiki personal search <query>",
+    "openwiki code search <query>",
+    "openwiki search [--mode personal|code] [--limit <n>] <query>",
     "openwiki ngrok start [url] [--port <port>]",
     "openwiki visualize [path] [--port <port>] [--no-open]",
   ],
@@ -760,6 +904,21 @@ export const helpContent: HelpContent = {
       label: "openwiki personal",
       description:
         "Run OpenWiki as your local personal brain over configured sources, writing to ~/.openwiki/wiki.",
+    },
+    {
+      label: "openwiki personal search <query>",
+      description:
+        "Full-text search the local personal brain wiki under ~/.openwiki/wiki without starting an agent.",
+    },
+    {
+      label: "openwiki code search <query>",
+      description:
+        "Full-text search repository documentation under ./openwiki without starting an agent.",
+    },
+    {
+      label: "openwiki search <query>",
+      description:
+        "Full-text search a wiki (defaults to personal mode; pass --mode code for repository docs).",
     },
     {
       label: "openwiki",
@@ -860,6 +1019,10 @@ export const helpContent: HelpContent = {
         "Write the exact anonymous telemetry payload to a local JSON file.",
     },
     {
+      label: "--limit <n>",
+      description: "For search: maximum number of hits to print (1-100).",
+    },
+    {
       label: "--port <port>",
       description:
         "For visualize: port to serve on (default 4321; increments on conflict).",
@@ -895,6 +1058,8 @@ export const helpContent: HelpContent = {
     "openwiki cron pause all",
     "openwiki cron resume all",
     "openwiki cron delete all",
+    'openwiki personal search "middleware"',
+    'openwiki search --mode personal --limit 10 "filesystem backends"',
     "openwiki auth slack",
     "openwiki auth gmail",
     "openwiki auth notion",

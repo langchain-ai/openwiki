@@ -19,6 +19,7 @@ import {
   type GlobResult,
 } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
+import { createWikiSearchTool } from "../search/index.js";
 import {
   DEBUG_ENV_KEYS,
   loadOpenWikiEnv,
@@ -366,7 +367,13 @@ function createOpenWikiAgentGraph(
 
   return createDeepAgent({
     model: options.model,
-    tools: createOpenWikiConnectorTools(),
+    tools: [
+      ...createOpenWikiConnectorTools(),
+      createWikiSearchTool({
+        cwd: options.cwd,
+        outputMode: options.outputMode,
+      }),
+    ],
     checkpointer: options.checkpointer,
     backend,
     middleware:
