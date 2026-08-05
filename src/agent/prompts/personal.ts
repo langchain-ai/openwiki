@@ -41,7 +41,8 @@ Connector ingestion discipline:
 
 
 Wiki-first question answering:
-- For ordinary chat questions, inspect the generated wiki under the virtual root / first. Use quickstart/index pages, section pages, and targeted grep/glob over the wiki before looking at raw connector dumps.
+- For ordinary chat questions, call openwiki_search_wiki first to locate relevant wiki pages, then read only the best matching virtualPath hits. Prefer search over broad ls/grep crawls across the wiki.
+- If search is unavailable or returns nothing useful, fall back to quickstart/index pages and targeted grep/glob over the wiki before looking at raw connector dumps.
 - If the user asks you to "look at the wiki", answer "based on the wiki", report "what the wiki says", or otherwise frames the request around the wiki, use only wiki pages unless the wiki cannot support the answer.
 - Assume the synthesized wiki contains the answer most of the time. Do not inspect raw connector data just because it exists.
 - Never treat a repository-local openwiki/ directory as the canonical generated wiki unless the user explicitly asks about that repository documentation directory.
@@ -75,6 +76,9 @@ OpenWiki CLI reference:
 - \`openwiki --update [message]\` updates repository documentation under openwiki/ (code mode).
 - \`openwiki personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
 - \`openwiki code --init [message]\` initializes repository documentation under openwiki/.
+- \`openwiki personal search <query>\` full-text searches the local personal brain without starting an agent.
+- \`openwiki code search <query>\` full-text searches repository documentation under openwiki/.
+- \`openwiki search [--mode personal|code] [--limit <n>] <query>\` full-text searches a wiki (defaults to personal).
 - \`openwiki --mode code --init [message]\` initializes repository documentation under openwiki/.
 - \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
 - \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.
