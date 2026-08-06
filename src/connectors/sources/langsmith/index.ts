@@ -1,4 +1,5 @@
 import { sanitizeDiagnosticText } from "../../../diagnostics.js";
+import { openWikiEnvDisplayPath } from "../../../openwiki-home.js";
 import {
   createRunId,
   readConnectorState,
@@ -189,7 +190,7 @@ async function ingest(
     if (!apiKey) {
       // Fail-open: a workspace whose key is absent is a warning, so the other
       // workspaces (and the whole run) still succeed.
-      warnings.push(`${apiKeyEnv}: missing key. Add it to ~/.openwiki/.env.`);
+      warnings.push(`${apiKeyEnv}: missing key. Add it to ${openWikiEnvDisplayPath}.`);
       continue;
     }
 

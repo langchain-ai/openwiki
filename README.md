@@ -106,7 +106,98 @@ openwiki ingest web-search  # run one connector's sources
 <details>
 <summary><b>Connector details and OAuth</b></summary>
 
-<br/>
+```sh
+openwiki -p "Summarize what you can do"
+```
+
+Initialize OpenWiki:
+
+```sh
+openwiki personal --init
+```
+
+Initialize repository code documentation:
+
+```sh
+openwiki code --init
+```
+
+Update existing documentation:
+
+```sh
+openwiki --update
+```
+
+Update repository code documentation:
+
+```sh
+openwiki code --update
+```
+
+Run an update that can ingest configured local connectors first:
+
+```sh
+openwiki --update "Refresh the wiki from configured connectors"
+```
+
+Show help:
+
+```sh
+openwiki --help
+```
+
+In chat, use `/api-key` to update the current provider API key and
+`/langsmith-key` to update or clear LangSmith tracing credentials. Both commands
+use masked prompts.
+
+Authenticate a connector provider:
+
+```sh
+openwiki auth slack
+openwiki auth gmail
+openwiki auth x
+openwiki auth notion
+```
+
+Start an ngrok tunnel for Slack OAuth:
+
+```sh
+openwiki ngrok start
+```
+
+This starts ngrok with a random HTTPS forwarding URL. OpenWiki reads ngrok's
+local inspection API, appends `/callback`, and saves
+`OPENWIKI_HTTPS_OAUTH_REDIRECT_URI` automatically. Register the printed callback
+URL in Slack. If you have a fixed ngrok domain, run
+`openwiki ngrok start https://<your-ngrok-domain>`. X/Twitter and Gmail auth
+ignore that HTTPS override and keep using the local loopback callback,
+`http://127.0.0.1:53682/callback`.
+
+`openwiki` creates initial repository documentation in `openwiki/` when no wiki exists. Source ingestion runs and scheduled connector updates maintain the local general-purpose wiki in `~/.openwiki/wiki/`. By default, the CLI stays open after each run so you can send follow-up messages. Use `-p` or `--print` for a one-shot non-interactive run that prints the final assistant output.
+
+Use `openwiki personal --init` for the local personal brain wiki or `openwiki code --init` for repository documentation. Bare `openwiki --init` is no longer supported because init needs an explicit mode. `openwiki --update` defaults to personal mode unless you pass `code`, `personal`, or `--mode`.
+
+On each `code` run, `openwiki` maintains both an `AGENTS.md` and a `CLAUDE.md` at the repository root, adding prompting that instructs your coding agent to reference the wiki when searching for context. Each file is created if it does not already exist. If a file is present, OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of your content untouched (appending the block the first time). The scheduled GitHub Actions workflow includes these files, along with the workflow itself, in the documentation pull request.
+
+On the first interactive run, OpenWiki will have you configure your inference provider, API key, and LLM. You will also be able to set a LangSmith API key to trace your OpenWiki runs to a LangSmith tracing project named "openwiki" (optional).
+
+These configuration options and secrets will be saved to `~/.openwiki/.env` on your local machine.
+
+To run in a container or use a different writable location, set
+`OPENWIKI_CONFIG_DIR` before starting OpenWiki. It relocates the local `.env`,
+personal wiki, connectors, and skills together; the default remains
+`~/.openwiki`.
+
+## Local Connectors
+
+OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `~/.openwiki/wiki/` from those local files.
+
+You can configure the same connector more than once. For example, add one Web
+Search source for AI research and another for NBA news; OpenWiki stores them as
+separate source instances such as `web-search-1` and `web-search-2`. Run all
+instances with `openwiki ingest all`, all instances for one connector with
+`openwiki ingest web-search`, or one instance with
+`openwiki ingest web-search-2`.
 
 - `git-repo` reads configured local repository paths and writes compact manifests.
 - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.

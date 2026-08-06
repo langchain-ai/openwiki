@@ -3,7 +3,41 @@ import os from "node:os";
 import path from "node:path";
 import { restrictDirToCurrentUser } from "./windows-acl.js";
 
-export const openWikiHomeDir = path.join(os.homedir(), ".openwiki");
+export const OPENWIKI_CONFIG_DIR_ENV_KEY = "OPENWIKI_CONFIG_DIR";
+
+export function resolveOpenWikiHomeDir(
+  environment: NodeJS.ProcessEnv = process.env,
+): string {
+  const configuredDir = environment[OPENWIKI_CONFIG_DIR_ENV_KEY]?.trim();
+
+  if (!configuredDir) {
+    return path.join(os.homedir(), ".openwiki");
+  }
+
+  // `path.resolve` does not expand a leading `~`, and several environments
+  // that set env vars (PowerShell, docker-compose, a hand-edited `.env`) leave
+  // it literal. Mirror the tilde handling used by `normalizeLocalPath`.
+  if (configuredDir === "~") {
+    return path.join(os.homedir());
+  }
+
+  if (configuredDir.startsWith("~/") || configuredDir.startsWith("~\\")) {
+    return path.resolve(os.homedir(), configuredDir.slice(2));
+  }
+
+  return path.resolve(configuredDir);
+}
+
+export function getOpenWikiHomeDisplayPath(
+  environment: NodeJS.ProcessEnv = process.env,
+): string {
+  return environment[OPENWIKI_CONFIG_DIR_ENV_KEY]?.trim()
+    ? resolveOpenWikiHomeDir(environment)
+    : "~/.openwiki";
+}
+
+export const openWikiHomeDir = resolveOpenWikiHomeDir();
+export const openWikiHomeDisplayPath = getOpenWikiHomeDisplayPath();
 export const openWikiConnectorsDir = path.join(openWikiHomeDir, "connectors");
 export const openWikiConversationHistoryDir = path.join(
   openWikiHomeDir,
@@ -11,6 +45,10 @@ export const openWikiConversationHistoryDir = path.join(
 );
 export const openWikiLocalWikiDir = path.join(openWikiHomeDir, "wiki");
 export const openWikiSkillsDir = path.join(openWikiHomeDir, "skills");
+export const openWikiConnectorsDisplayPath = `${openWikiHomeDisplayPath}/connectors`;
+export const openWikiLocalWikiDisplayPath = `${openWikiHomeDisplayPath}/wiki`;
+export const openWikiSkillsDisplayPath = `${openWikiHomeDisplayPath}/skills`;
+export const openWikiEnvDisplayPath = `${openWikiHomeDisplayPath}/.env`;
 
 export function getConnectorDir(connectorId: string): string {
   return path.join(openWikiConnectorsDir, connectorId);

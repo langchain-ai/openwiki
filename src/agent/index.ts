@@ -32,7 +32,9 @@ import {
 } from "../diagnostics.js";
 import {
   openWikiConversationHistoryDir,
+  openWikiHomeDisplayPath,
   openWikiLocalWikiDir,
+  openWikiLocalWikiDisplayPath,
   openWikiSkillsDir,
 } from "../openwiki-home.js";
 import { resolveLanguage } from "../language.js";
@@ -159,7 +161,7 @@ export async function runOpenWikiAgent(
 
   await loadOpenWikiEnv();
   await syncBundledSkills();
-  emitDebug(options, "env=loaded ~/.openwiki/.env");
+  emitDebug(options, `env=loaded ${openWikiHomeDisplayPath}/.env`);
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
   const openWikiIgnore =

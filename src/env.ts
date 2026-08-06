@@ -1,6 +1,5 @@
 import { mkdir, readFile, writeFile, chmod, rename } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import os from "node:os";
 import path from "node:path";
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
@@ -61,20 +60,17 @@ import {
   resolveProviderRetryAttempts,
 } from "./constants.js";
 import { isFileNotFoundError } from "./fs-errors.js";
+import { openWikiEnvDisplayPath, openWikiHomeDir } from "./openwiki-home.js";
 import { restrictDirToCurrentUser } from "./windows-acl.js";
 
-export const openWikiEnvDir = path.join(os.homedir(), ".openwiki");
+export const openWikiEnvDir = openWikiHomeDir;
 export const openWikiEnvPath = path.join(openWikiEnvDir, ".env");
 
 type EnvMap = Record<string, string>;
 
 export type CredentialDiagnostic = {
   key: string;
-  source:
-    | "process.env"
-    | "~/.openwiki/.env"
-    | "process.env over ~/.openwiki/.env"
-    | "unset";
+  source: string;
   length: number | null;
   preview: string;
   warnings: string[];
@@ -392,7 +388,7 @@ function getCredentialSource(
   fileValue: string | undefined,
 ): CredentialDiagnostic["source"] {
   if (processValue !== undefined && fileValue !== undefined) {
-    return "process.env over ~/.openwiki/.env";
+    return `process.env over ${openWikiEnvDisplayPath}`;
   }
 
   if (processValue !== undefined) {
@@ -400,7 +396,7 @@ function getCredentialSource(
   }
 
   if (fileValue !== undefined) {
-    return "~/.openwiki/.env";
+    return openWikiEnvDisplayPath;
   }
 
   return "unset";

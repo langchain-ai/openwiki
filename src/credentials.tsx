@@ -82,6 +82,7 @@ import {
   openWikiEnvPath,
   saveOpenWikiEnv,
 } from "./env.js";
+import { openWikiEnvDisplayPath } from "./openwiki-home.js";
 import {
   createEmptyOnboardingConfig,
   isOpenWikiOnboardingCompleteSync,
@@ -4218,7 +4219,7 @@ function Prompt({
         <Text>LangSmith API key for this workspace.</Text>
         <Text color="gray">
           The connector&apos;s own read key (not your app&apos;s tracing key).
-          Saved to ~/.openwiki/.env as {apiKeyEnv}, never committed.
+          Saved to {openWikiEnvDisplayPath} as {apiKeyEnv}, never committed.
         </Text>
         <BorderedInput
           maxDisplayWidth={inputDisplayWidth}

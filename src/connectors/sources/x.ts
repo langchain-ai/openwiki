@@ -13,6 +13,10 @@ import type {
   ConnectorRuntime,
 } from "../types.js";
 import { OPENWIKI_X_ACCESS_TOKEN_ENV_KEY } from "../../constants.js";
+import {
+  openWikiConnectorsDisplayPath,
+  openWikiEnvDisplayPath,
+} from "../../openwiki-home.js";
 import { getOAuthAccessToken } from "../../auth/tokens.js";
 import { fetchWithResilience } from "../http.js";
 import { normalizeStringArray } from "../config.js";
@@ -87,7 +91,7 @@ async function ingest(
     return {
       connectorId: "x",
       message:
-        "X connector is not enabled. Configure ~/.openwiki/connectors/x/config.json and set OPENWIKI_X_ACCESS_TOKEN in ~/.openwiki/.env.",
+        `X connector is not enabled. Configure ${openWikiConnectorsDisplayPath}/x/config.json and set OPENWIKI_X_ACCESS_TOKEN in ${openWikiEnvDisplayPath}.`,
       rawFiles,
       runId,
       statePath: "~/.openwiki/connectors/x/state.json",

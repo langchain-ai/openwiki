@@ -58,7 +58,11 @@ import {
   readOpenWikiOnboardingConfig,
   saveOpenWikiOnboardingConfig,
 } from "./onboarding.js";
-import { openWikiLocalWikiDir } from "./openwiki-home.js";
+import {
+  openWikiEnvDisplayPath,
+  openWikiLocalWikiDir,
+  openWikiLocalWikiDisplayPath,
+} from "./openwiki-home.js";
 import {
   deleteConnectorSchedules,
   getSavedPowerScheduleStatus,
@@ -1127,7 +1131,11 @@ function DryRunView({
         />
         <StatusLine tone="muted" label="Agent" value="not invoked" />
         <StatusLine tone="muted" label="Writes" value="no files or metadata" />
-        <StatusLine tone="muted" label="Output" value="~/.openwiki/wiki" />
+        <StatusLine
+          tone="muted"
+          label="Output"
+          value={openWikiLocalWikiDisplayPath}
+        />
         <StatusLine
           tone="muted"
           label="Startup"
@@ -1183,7 +1191,7 @@ function getAuthFixSteps(authFix: AuthFix): string[] {
       "Verify the selected AWS identity with `aws sts get-caller-identity` in the same environment.",
       "Configure the AWS SDK credential chain (OIDC/workload role, AWS_PROFILE/SSO, or standard AWS credentials) and a Bedrock region, then retry.",
       "Unset AWS_BEARER_TOKEN_BEDROCK for OIDC/IAM runs; a bearer token takes precedence when present.",
-      "A complete BEDROCK_AWS_ACCESS_KEY_ID/BEDROCK_AWS_SECRET_ACCESS_KEY pair takes precedence; unset both in the shell and remove both from ~/.openwiki/.env to use ambient AWS credentials.",
+      `A complete BEDROCK_AWS_ACCESS_KEY_ID/BEDROCK_AWS_SECRET_ACCESS_KEY pair takes precedence; unset both in the shell and remove both from ${openWikiEnvDisplayPath} to use ambient AWS credentials.`,
     );
 
     return steps;
@@ -1191,13 +1199,13 @@ function getAuthFixSteps(authFix: AuthFix): string[] {
 
   if (authFix.keyFromShell && authFix.apiKeyEnvKey) {
     steps.push(
-      `${authFix.apiKeyEnvKey} came from your shell, not ~/.openwiki/.env. ` +
+      `${authFix.apiKeyEnvKey} came from your shell, not ${openWikiEnvDisplayPath}. ` +
         `Unset it (unset ${authFix.apiKeyEnvKey}) or fix it, then retry.`,
     );
   }
 
   steps.push(
-    "Re-enter your key: re-run openwiki --init, or edit ~/.openwiki/.env.",
+    `Re-enter your key: re-run openwiki --init, or edit ${openWikiEnvDisplayPath}.`,
   );
 
   return steps;
@@ -2044,7 +2052,7 @@ function ChatInput({
 
       if (providerUsesAwsSdkCredentials(currentProvider)) {
         setError(
-          `${getProviderLabel(currentProvider)} uses the AWS SDK credential chain; /api-key cannot safely configure an access-key pair. ${getProviderCredentialHint(currentProvider) ?? ""} Legacy BEDROCK_AWS_ACCESS_KEY_ID and BEDROCK_AWS_SECRET_ACCESS_KEY values must be configured or removed together in the shell and ~/.openwiki/.env.`.trim(),
+          `${getProviderLabel(currentProvider)} uses the AWS SDK credential chain; /api-key cannot safely configure an access-key pair. ${getProviderCredentialHint(currentProvider) ?? ""} Legacy BEDROCK_AWS_ACCESS_KEY_ID and BEDROCK_AWS_SECRET_ACCESS_KEY values must be configured or removed together in the shell and ${openWikiEnvDisplayPath}.`.trim(),
         );
         return;
       }
