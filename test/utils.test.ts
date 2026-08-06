@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { stripHtmlTags } from "../src/utils.ts";
+import { stripHtmlTags, stripTerminalControlSequences } from "../src/utils.ts";
 
 describe("stripHtmlTags", () => {
   test("removes a complete tag pair", () => {
@@ -37,5 +37,33 @@ describe("stripHtmlTags", () => {
   test("leaves plain text untouched", () => {
     expect(stripHtmlTags("just plain text")).toBe("just plain text");
     expect(stripHtmlTags("")).toBe("");
+  });
+});
+
+describe("stripTerminalControlSequences", () => {
+  test("removes OSC clipboard and hyperlink sequences", () => {
+    const value =
+      "before\u001b]52;c;SGVsbG8=\u0007middle\u001b]8;;https://evil.example\u0007link\u001b]8;;\u0007after";
+
+    expect(stripTerminalControlSequences(value)).toBe("beforemiddlelinkafter");
+  });
+
+  test("removes CSI cursor/display controls and C1 controls", () => {
+    const value = "a\u001b[2J\u001b[H\u0080b\u009cc";
+
+    expect(stripTerminalControlSequences(value)).toBe("abc");
+  });
+
+  test("removes BEL, carriage returns, and other C0 controls but keeps Markdown whitespace", () => {
+    expect(stripTerminalControlSequences("a\u0007\r\u0000b\tcode\nnext")).toBe(
+      "ab\tcode\nnext",
+    );
+  });
+
+  test("removes unterminated OSC and DCS payloads", () => {
+    expect(stripTerminalControlSequences("safe\u001b]52;c;secret")).toBe(
+      "safe",
+    );
+    expect(stripTerminalControlSequences("safe\u001bP1;2;secret")).toBe("safe");
   });
 });
