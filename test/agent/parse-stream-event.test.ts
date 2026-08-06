@@ -180,49 +180,29 @@ describe("parseStreamEvent – message text extraction shapes", () => {
 });
 
 describe("parseStreamEvent – protocol streaming sub-events", () => {
-  test("content-block-delta text-delta streams the delta text", () => {
-    const event = parseStreamEvent(
-      messagesChunk({
-        event: "content-block-delta",
-        delta: { type: "text-delta", text: "streamed" },
-      }),
-    );
-
-    expect(expectText(event)).toBe("streamed");
-  });
-
-  test("content-block-delta block-delta reads text out of `fields`", () => {
-    const event = parseStreamEvent(
-      messagesChunk({
-        event: "content-block-delta",
-        delta: { type: "block-delta", fields: { text: "block body" } },
-      }),
-    );
-
-    expect(expectText(event)).toBe("block body");
-  });
-
-  test("content-block-delta falls back to a bare `text` on the delta", () => {
-    const event = parseStreamEvent(
-      messagesChunk({
-        event: "content-block-delta",
-        delta: { text: "bare delta text" },
-      }),
-    );
-
-    expect(expectText(event)).toBe("bare delta text");
-  });
-
-  test("content-block-delta falls back to a bare `delta` string", () => {
-    const event = parseStreamEvent(
-      messagesChunk({
-        event: "content-block-delta",
-        delta: { delta: "nested delta" },
-      }),
-    );
-
-    expect(expectText(event)).toBe("nested delta");
-  });
+  // A bare protocol-framing record (`{ event, delta }`) carries no message
+  // `content` and no recognizable role, so extractMessageText finds nothing to
+  // read and the frame resolves to null. Real streamed delta text arrives
+  // wrapped in a content block (see the content-array delta case below), which
+  // is the path that actually surfaces text.
+  test.each([
+    ["text-delta frame", { type: "text-delta", text: "streamed" }],
+    [
+      "block-delta frame",
+      { type: "block-delta", fields: { text: "block body" } },
+    ],
+    ["bare-text delta", { text: "bare delta text" }],
+    ["nested-delta string", { delta: "nested delta" }],
+  ])(
+    "a bare content-block-delta record (%s) surfaces no renderable text",
+    (_label, delta) => {
+      expect(
+        parseStreamEvent(
+          messagesChunk({ event: "content-block-delta", delta }),
+        ),
+      ).toBeNull();
+    },
+  );
 
   test("content-block-start reads text from the block content", () => {
     const event = parseStreamEvent(
@@ -323,7 +303,7 @@ describe("parseStreamEvent – tools branch", () => {
 
   test("the `execute` tool name is capitalized in the call line", () => {
     const event = parseStreamEvent(
-      toolsChunk({ event: "tool-started", tool_name: "execute", input: "ls" }),
+      toolsChunk({ event: "on_tool_start", name: "execute", input: "ls" }),
     );
 
     // formatToolCallName maps execute -> Execute; a bare non-JSON string input
@@ -337,9 +317,9 @@ describe("parseStreamEvent – tools branch", () => {
       toolsChunk({ event: "on_tool_start", input: { q: 1 } }),
     );
 
-    // Absent name -> "tool"; absent id -> `${name}:${formatToolValue(input)}`.
+    // Absent name -> "tool"; absent toolCallId -> the resolved name itself.
     expect(event).toMatchObject({ type: "tool_start", name: "tool" });
-    expect((event as { id: string }).id).toBe('tool:{"q":1}');
+    expect((event as { id: string }).id).toBe("tool");
   });
 
   test("a stringified-JSON input is parsed before formatting", () => {
@@ -347,7 +327,7 @@ describe("parseStreamEvent – tools branch", () => {
       toolsChunk({
         event: "on_tool_start",
         name: "search",
-        tool_call_id: "c2",
+        toolCallId: "c2",
         input: '{"query":"hi"}',
       }),
     );
@@ -373,16 +353,17 @@ describe("parseStreamEvent – tools branch", () => {
     });
   });
 
-  test.each(["on_tool_error", "tool-error"])(
-    "%s yields a tool_end event with error status",
-    (event) => {
-      const parsed = parseStreamEvent(
-        toolsChunk({ event, name: "write_file", tool_call_id: "c4" }),
-      );
+  test("on_tool_error yields a tool_end event with error status", () => {
+    const parsed = parseStreamEvent(
+      toolsChunk({
+        event: "on_tool_error",
+        name: "write_file",
+        toolCallId: "c4",
+      }),
+    );
 
-      expect(parsed).toMatchObject({ type: "tool_end", status: "error" });
-    },
-  );
+    expect(parsed).toMatchObject({ type: "tool_end", status: "error" });
+  });
 
   test("an array tool input is rendered as a positional value list", () => {
     const event = parseStreamEvent(

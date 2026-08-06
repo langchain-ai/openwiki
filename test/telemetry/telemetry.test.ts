@@ -1028,6 +1028,8 @@ describe("senders.recordRun", () => {
       sent: false,
     });
     await rm(file, { force: true });
+  });
+
   test("reports, without throwing, when the tee file cannot be written", async () => {
     // A tee target under a regular file cannot have its parent directory
     // created; recordRun must log the failure and carry on, never breaking the

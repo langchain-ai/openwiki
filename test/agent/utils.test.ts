@@ -6,15 +6,15 @@ import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
 import {
   createOpenWikiContentSnapshot,
-  createRunContext,
   getUpdateNoopStatus,
   removeTemporaryPlanFile,
 } from "../../src/agent/utils.ts";
 
 // These cover the branches of utils.ts that the sibling run-context,
-// run-metadata, and update-noop suites do not reach: the repository-mode git
-// evidence block, the local-wiki summary text, the degenerate no-op paths, the
-// snapshot recursion, and the unexpected-error path of plan-file removal.
+// run-metadata, and update-noop suites do not reach: the degenerate no-op
+// paths, the snapshot recursion, and the unexpected-error path of plan-file
+// removal. (createRunContext's own behavior is covered by run-context.test.ts;
+// it no longer computes a git summary in code — the agent runs git itself.)
 
 const execFileAsync = promisify(execFile);
 
@@ -49,114 +49,6 @@ async function writeMetadata(
     "utf8",
   );
 }
-
-describe("createRunContext git summary", () => {
-  test("init in a repository embeds the standard git evidence sections", async () => {
-    const repo = await createGitRepo();
-
-    try {
-      const context = await createRunContext("init", repo, "repository");
-
-      // The prompt relies on these labeled sections to reason about the repo,
-      // so their presence is the observable contract of createGitSummary.
-      expect(context.gitSummary).toContain("$ git status --short");
-      expect(context.gitSummary).toContain("$ git rev-parse HEAD");
-      expect(context.gitSummary).toContain(
-        "$ git log --max-count=20 --name-status --oneline",
-      );
-      expect(context.gitSummary).toContain("$ git diff --name-status HEAD");
-      // An init run has no prior timestamp, but the "No prior" note is reserved
-      // for update runs and must not appear here.
-      expect(context.gitSummary).not.toContain(
-        "No prior OpenWiki update timestamp",
-      );
-    } finally {
-      await rm(repo, { recursive: true, force: true });
-    }
-  });
-
-  test("update without prior metadata falls back to the recent log with a note", async () => {
-    const repo = await createGitRepo();
-
-    try {
-      const context = await createRunContext("update", repo, "repository");
-
-      expect(context.gitSummary).toContain(
-        "No prior OpenWiki update timestamp was found.",
-      );
-      expect(context.gitSummary).toContain(
-        "$ git log --max-count=20 --name-status --oneline",
-      );
-    } finally {
-      await rm(repo, { recursive: true, force: true });
-    }
-  });
-
-  test("update diffs since the recorded git head when one exists", async () => {
-    const repo = await createGitRepo();
-
-    try {
-      const firstHead = await git(repo, ["rev-parse", "HEAD"]);
-      await writeFile(path.join(repo, "README.md"), "# Changed\n", "utf8");
-      await git(repo, ["add", "."]);
-      await git(repo, ["commit", "-m", "second"]);
-      await writeMetadata(repo, {
-        updatedAt: new Date().toISOString(),
-        command: "update",
-        gitHead: firstHead,
-        model: "test-model",
-      });
-
-      const context = await createRunContext("update", repo, "repository");
-
-      // A recorded head drives a precise range diff rather than the timestamp
-      // fallback or the recent-log fallback.
-      expect(context.gitSummary).toContain(
-        `$ git log ${firstHead}..HEAD --name-status --oneline`,
-      );
-      expect(context.gitSummary).not.toContain(
-        "No prior OpenWiki update timestamp",
-      );
-    } finally {
-      await rm(repo, { recursive: true, force: true });
-    }
-  });
-
-  test("update falls back to a --since log when only a timestamp was recorded", async () => {
-    const repo = await createGitRepo();
-
-    try {
-      // Metadata that predates the gitHead field still carries updatedAt, which
-      // selects the `git log --since` branch.
-      await writeMetadata(repo, {
-        updatedAt: "2020-01-01T00:00:00.000Z",
-        command: "update",
-        model: "test-model",
-      });
-
-      const context = await createRunContext("update", repo, "repository");
-
-      expect(context.gitSummary).toContain(
-        "$ git log --since 2020-01-01T00:00:00.000Z --name-status --oneline",
-      );
-    } finally {
-      await rm(repo, { recursive: true, force: true });
-    }
-  });
-
-  test("local-wiki mode reports that git context is not used", async () => {
-    const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-utils-local-"));
-
-    try {
-      const context = await createRunContext("update", cwd, "local-wiki");
-
-      expect(context.gitSummary).toContain("Local wiki mode");
-      expect(context.gitSummary).not.toContain("$ git status");
-    } finally {
-      await rm(cwd, { recursive: true, force: true });
-    }
-  });
-});
 
 describe("getUpdateNoopStatus degenerate cases", () => {
   test("does not skip when prior metadata has no git head", async () => {

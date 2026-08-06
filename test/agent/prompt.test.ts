@@ -15,7 +15,6 @@ import type { RunContext } from "../../src/agent/types.ts";
 function emptyContext(overrides: Partial<RunContext> = {}): RunContext {
   return {
     lastUpdate: null,
-    gitSummary: "no git changes",
     ...overrides,
   };
 }
@@ -122,13 +121,17 @@ describe("createSystemPrompt filesystem path guidance", () => {
     });
   });
 
-  test("both modes forbid typing host/tilde paths into filesystem tools", () => {
-    for (const outputMode of ["repository", "local-wiki"] as const) {
-      const prompt = createSystemPrompt("update", outputMode);
-      expect(prompt).toMatch(
-        /Never type ~, ~\/\.openwiki\/wiki, or host paths/,
-      );
-    }
+  test("both modes forbid typing host paths into filesystem tools", () => {
+    // The hazard differs by mode, so the guidance does too: repository update
+    // warns against host *absolute* paths (/Users/...), since a repo has no
+    // ~/.openwiki/wiki to confuse; local-wiki update additionally forbids ~ and
+    // the wiki home. Both keep host paths out of the filesystem tools.
+    expect(createSystemPrompt("update", "repository")).toMatch(
+      /Never pass host absolute paths like \/Users\/\.\.\. to filesystem tools/,
+    );
+    expect(createSystemPrompt("update", "local-wiki")).toMatch(
+      /Never type ~, ~\/\.openwiki\/wiki, or host paths/,
+    );
   });
 });
 
@@ -216,10 +219,10 @@ describe("createUserPrompt", () => {
     );
   });
 
-  test("init embeds the wiki goal and git summary for the resolved subject", () => {
+  test("init embeds the wiki goal for the resolved subject", () => {
     const prompt = createUserPrompt(
       "init",
-      emptyContext({ wikiGoal: "Explain the CLI", gitSummary: "3 files" }),
+      emptyContext({ wikiGoal: "Explain the CLI" }),
       null,
       "repository",
     );
@@ -227,8 +230,10 @@ describe("createUserPrompt", () => {
     expect(prompt).toContain("Initialize OpenWiki documentation for");
     // Repository mode resolves the subject to the repo, not the personal brain.
     expect(prompt).toContain("this repository");
+    // The wiki goal is interpolated into the brief; the git summary is not part
+    // of the user prompt (it rides the run context for the agent, not the
+    // template), so only the goal is asserted here.
     expect(prompt).toContain("Explain the CLI");
-    expect(prompt).toContain("3 files");
     // No user message means no appended instruction block.
     expect(prompt).not.toContain("Additional user instruction:");
   });
@@ -242,6 +247,9 @@ describe("createUserPrompt", () => {
   });
 
   test("update renders the previous-run metadata as pretty JSON", () => {
+    // Only local-wiki mode inlines the recorded metadata into the prompt;
+    // repository update instead tells the agent to read /openwiki/.last-update.json
+    // from disk, so the {LAST_UPDATE} block lives on the personal template.
     const prompt = createUserPrompt(
       "update",
       emptyContext({
@@ -252,7 +260,7 @@ describe("createUserPrompt", () => {
         },
       }),
       null,
-      "repository",
+      "local-wiki",
     );
 
     expect(prompt).toContain("Update the existing OpenWiki documentation");
