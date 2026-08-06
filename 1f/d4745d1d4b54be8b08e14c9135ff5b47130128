@@ -1,0 +1,50 @@
+src/telemetry/senders.ts
+  s_9df199bc4d57fc::t_3e1f03dad06ee5 76-78
+src/telemetry/taxonomy.ts
+  s_9df199bc4d57fc::t_806135b25774c3 65-92
+  s_9df199bc4d57fc::t_dc36c2f408808c 117-120,134-137
+  s_9df199bc4d57fc::t_5169495dbe6084 48-49
+  s_9df199bc4d57fc::t_3f8046424f3125 138-139
+src/telemetry/types.ts
+  s_9df199bc4d57fc::t_7f873b478b7a23 85-91
+test/crash-guard.test.ts
+  s_9df199bc4d57fc::t_ebd45d714d5e70 99,103
+  s_9df199bc4d57fc::t_167be88124d1a7 14
+test/telemetry.test.ts
+  s_9df199bc4d57fc::t_4f17f28743bb42 1041-1042,1046-1048,1054,1060-1061
+  s_9df199bc4d57fc::t_54f7469cd14280 638-641,644
+  s_9df199bc4d57fc::t_ca8cb58dc11406 1222-1228
+  s_9df199bc4d57fc::t_e986e6da2184ef 413,417,421,425-427,431,434,448,451-465,472
+  s_9df199bc4d57fc::t_8b4e11da146d53 272-275,278
+  s_9df199bc4d57fc::t_b5feabedc7ec65 35,41
+  s_9df199bc4d57fc::t_d3f1a75b7cedc6 357-364,375-412,414
+  s_9df199bc4d57fc::t_7246593093aee3 415
+src/telemetry/errors.ts
+  s_9df199bc4d57fc::t_2e488b3824174c 1-5
+  s_9df199bc4d57fc::t_10396f2a82d13f 531-535,550,554-569,597,610,612
+  s_9df199bc4d57fc::t_6d6714ecf16f33 69-72,74
+  s_9df199bc4d57fc::t_58453308348873 570,572-596,599-607,616
+  s_9df199bc4d57fc::t_ff0b9a046d68c2 626-635,648-653
+  s_9df199bc4d57fc::t_8bd0c2f6d9418c 571
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "1fd4745d1d4b54be8b08e14c9135ff5b47130128",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
