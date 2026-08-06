@@ -627,23 +627,38 @@ export function innermostErrorName(error: unknown): string | undefined {
  * one object, ready to spread into the run facts. The class and detail come from the
  * origin tag when the throw site owned the classification (build/connector/okf/
  * checkpointer, or a tagged config/tool detail), otherwise from {@link classifyError}
- * walking the unwrap chain. For the residual `agent_error` bucket the detail is
- * instead the innermost error's own name, the one signal that bucket carries, read
- * from the cause chain so a framework envelope like LangChain's `MiddlewareError`
- * does not collapse every root cause to the wrapper's name. The detail is normalized
- * against its family's allowlist (or the identifier allowlist for `agent_error`), so
- * an off-list value is dropped rather than emitted. Never leaks the message.
+ * walking the unwrap chain. The one exception is the `build_error/stream_open` tag:
+ * that stage is the first provider round trip, so a failure there carrying a provider
+ * signal is a disguised provider error and the raw classification wins over the tag
+ * (see {@link streamOpenDisguisesProvider}). For the residual `agent_error` bucket the
+ * detail is instead the innermost error's own name, the one signal that bucket
+ * carries, read from the cause chain so a framework envelope like LangChain's
+ * `MiddlewareError` does not collapse every root cause to the wrapper's name. The
+ * detail is normalized against its family's allowlist (or the identifier allowlist for
+ * `agent_error`), so an off-list value is dropped rather than emitted. Never leaks the
+ * message.
  */
 export function describeErrorForTelemetry(error: unknown): ErrorTelemetry {
   const origin = readErrorOrigin(error);
   const classified = classifyError(error);
+  const httpStatus = firstStatusInChain(error);
 
   // An origin tag that names a class owns both class and detail; a stage-only tag
-  // leaves both to the raw-error classifier.
-  const errorClass = origin?.errorClass ?? classified.errorClass;
-  const rawDetail = origin?.errorClass
-    ? origin.errorDetail
-    : classified.errorDetail;
+  // leaves both to the raw-error classifier. The lone override is a stream-open tag
+  // over a disguised provider failure, which defers to the raw classifier so the
+  // failure lands on the provider instead of being counted as our build bug.
+  let errorClass: TelemetryErrorClass;
+  let rawDetail: string | undefined;
+  if (
+    origin?.errorClass !== undefined &&
+    !streamOpenDisguisesProvider(origin, classified, httpStatus)
+  ) {
+    errorClass = origin.errorClass;
+    rawDetail = origin.errorDetail;
+  } else {
+    errorClass = classified.errorClass;
+    rawDetail = classified.errorDetail;
+  }
 
   // The residual bucket carries no origin/classified detail; its one signal is the
   // innermost error's own name. Every named class keeps its taxonomy detail.
@@ -660,6 +675,40 @@ export function describeErrorForTelemetry(error: unknown): ErrorTelemetry {
     errorOwner: deriveOwner(errorClass, errorDetail, errorStage),
     // Surfaced from the chain so a wrapped provider error still emits its status
     // even when an origin tag already named the class.
-    httpStatus: firstStatusInChain(error),
+    httpStatus,
   };
+}
+
+/**
+ * Whether a `build_error/stream_open` origin tag is really masking a provider
+ * failure. The stream-open call is the only build stage that crosses into provider
+ * territory (the first token/HTTP round trip), so a throw there that carries a
+ * provider signal — the raw classifier already naming it `provider_error`, or an HTTP
+ * status on the chain paired with any named (non-residual) classification — is the
+ * provider's fault, not ours, and the raw classification should win over the tag.
+ * Guarded to a named class so a genuine stream-setup failure with no provider signal
+ * (which classifies as the residual `agent_error`) keeps its informative
+ * `build_error/stream_open` tag instead of regressing to the residual bucket.
+ *
+ * @param origin - The origin tag read off the error, if any.
+ * @param classified - The raw-error classification of the same error.
+ * @param httpStatus - The first HTTP status found on the chain, or undefined.
+ * @returns True when the raw classification should override the tag.
+ */
+function streamOpenDisguisesProvider(
+  origin: ErrorOriginTag | undefined,
+  classified: ErrorClassification,
+  httpStatus: number | undefined,
+): boolean {
+  if (
+    origin?.errorClass !== "build_error" ||
+    origin.errorDetail !== "stream_open"
+  ) {
+    return false;
+  }
+
+  return (
+    classified.errorClass === "provider_error" ||
+    (httpStatus !== undefined && classified.errorClass !== "agent_error")
+  );
 }

@@ -493,6 +493,80 @@ describe("describeErrorForTelemetry - residual fingerprint", () => {
   });
 });
 
+describe("describeErrorForTelemetry - stream_open de-own", () => {
+  /**
+   * Tags `thrown` exactly as the production stream-open call site does — through
+   * inStageSync with the { build_error, stream_open } origin — and returns the tagged
+   * error, so these tests exercise the real tag, not a hand-built one.
+   */
+  function taggedStreamOpen(thrown: unknown): unknown {
+    try {
+      inStageSync(
+        "build",
+        () => {
+          throw thrown;
+        },
+        {
+          errorClass: "build_error",
+          errorDetail: "stream_open",
+        },
+      );
+    } catch (error) {
+      return error;
+    }
+    throw new Error("expected the staged fn to throw");
+  }
+
+  test("a provider failure disguised as stream_open lands on the provider", () => {
+    // A 503 thrown during the first provider round trip is the provider's fault, not
+    // our stream-setup bug: the raw classification wins over the build_error tag.
+    const described = describeErrorForTelemetry(
+      taggedStreamOpen(Object.assign(new Error("upstream"), { status: 503 })),
+    );
+
+    expect(described).toMatchObject({
+      errorClass: "provider_error",
+      errorDetail: "overloaded",
+      errorOwner: "provider",
+      // The stage still records where it happened; only the class/owner move.
+      errorStage: "build",
+      httpStatus: 503,
+    });
+  });
+
+  test("a genuine stream-setup failure keeps its build_error tag", () => {
+    // No provider signal (no status, classifies as the residual): this really is our
+    // stream-setup path, so the tag stands and the owner stays openwiki.
+    const described = describeErrorForTelemetry(
+      taggedStreamOpen(new Error("stream handshake failed")),
+    );
+
+    expect(described).toMatchObject({
+      errorClass: "build_error",
+      errorDetail: "stream_open",
+      errorOwner: "openwiki",
+      errorStage: "build",
+    });
+    expect(described.httpStatus).toBeUndefined();
+  });
+
+  test("an unclassifiable status does not regress build_error to the residual", () => {
+    // A status is present but unmapped (418), so the raw classifier returns the
+    // residual agent_error. De-owning here would trade an informative build_error for
+    // the residual bucket, so the guard keeps the tag; the status still rides.
+    const described = describeErrorForTelemetry(
+      taggedStreamOpen(Object.assign(new Error("teapot"), { status: 418 })),
+    );
+
+    expect(described).toMatchObject({
+      errorClass: "build_error",
+      errorDetail: "stream_open",
+      errorOwner: "openwiki",
+      httpStatus: 418,
+    });
+  });
+});
+
 describe("taxonomy", () => {
   test("deriveOwner encodes the default owners", () => {
     expect(deriveOwner("config_error", "missing_credentials", "config")).toBe(
