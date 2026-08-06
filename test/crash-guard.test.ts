@@ -11,7 +11,7 @@ import {
 // The crash guard's two side effects are mocked so the post-mortem can be asserted
 // without a real telemetry send or a metadata write. describeErrorForTelemetry is
 // left REAL, so these tests also prove a residual crash is classified and
-// fingerprinted (agent_error + error_name) on the way through the guard.
+// fingerprinted (agent_error + its error_detail name) on the way through the guard.
 const recordRunSafe = vi.fn(() => Promise.resolve(undefined));
 const persistRunMetadataIfChanged = vi.fn(() => Promise.resolve(true));
 
@@ -96,11 +96,11 @@ describe("handleFatal", () => {
     expect(command).toBe("init");
     expect(options).toEqual({ outputMode: "repository" });
     // The real describeErrorForTelemetry ran: a residual crash is agent_error with
-    // its constructor name as the fingerprint.
+    // the thrown error's name as its error_detail fingerprint.
     expect(facts).toMatchObject({
       outcome: "failure",
       errorClass: "agent_error",
-      errorName: "TypeError",
+      errorDetail: "TypeError",
     });
   });
 

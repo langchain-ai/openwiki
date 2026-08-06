@@ -32,11 +32,13 @@ import {
   inStage,
   inStageSync,
   safeConstructorName,
+  safeErrorName,
   tagErrorStage,
   unwrapErrorChain,
 } from "../src/telemetry/errors.ts";
 import {
   deriveOwner,
+  isSafeErrorIdentifier,
   normalizeErrorDetail,
 } from "../src/telemetry/taxonomy.ts";
 import {
@@ -267,12 +269,13 @@ describe("classifyError - unwrapping wrapped errors", () => {
   });
 
   test("stops at the depth bound: a signal below it is not reached", () => {
-    // Six nested wrappers put the only real signal (a 429) below MAX_UNWRAP_DEPTH
-    // (5), so the walk bounds out at the residual rather than recovering it. This
-    // is the DoS guard: a pathologically deep chain costs at most five links.
+    // A run of wrappers longer than MAX_UNWRAP_DEPTH (32) puts the only real signal
+    // (a 429) past the bound, so the walk bounds out at the residual rather than
+    // recovering it. This is the DoS guard: a pathologically deep chain costs at
+    // most the bounded number of links.
     let deep: { message: string; cause?: unknown } = { message: "w0" };
     const root = deep;
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 40; i++) {
       const next = { message: `w${i}` };
       deep.cause = next;
       deep = next;
@@ -351,6 +354,14 @@ describe("safeConstructorName allowlist", () => {
     expect(safeConstructorName(withName("a".repeat(65)))).toBeUndefined();
     // A 64-char identifier is the longest allowed and still passes.
     expect(safeConstructorName(withName("a".repeat(64)))).toBe("a".repeat(64));
+    // Interior underscores are allowed (real SDK error names carry them), but a
+    // leading, trailing, or doubled underscore is not a bare identifier.
+    expect(safeConstructorName(withName("AI_APICallError"))).toBe(
+      "AI_APICallError",
+    );
+    expect(safeConstructorName(withName("_leading"))).toBeUndefined();
+    expect(safeConstructorName(withName("trailing_"))).toBeUndefined();
+    expect(safeConstructorName(withName("double__underscore"))).toBeUndefined();
   });
 
   test("non-objects have no constructor name", () => {
@@ -361,24 +372,66 @@ describe("safeConstructorName allowlist", () => {
   });
 });
 
+describe("safeErrorName allowlist", () => {
+  test("reads the deliberately-set .name a framework copies up", () => {
+    // LangChain's MiddlewareError copies the inner error's .name onto the wrapper,
+    // so .name names the real failure even when the constructor is the envelope.
+    const wrapper = Object.assign(new Error("wrapModelCall failed"), {
+      name: "AI_APICallError",
+    });
+
+    expect(safeErrorName(wrapper)).toBe("AI_APICallError");
+    // A stock Error's .name is its constructor name, so both agree.
+    expect(safeErrorName(new TypeError("x"))).toBe("TypeError");
+  });
+
+  test("drops a .name that is not a bare identifier", () => {
+    const tampered = Object.assign(new Error("x"), {
+      name: "/Users/me/secret error",
+    });
+
+    expect(safeErrorName(tampered)).toBeUndefined();
+  });
+
+  test("non-objects and nameless objects yield undefined", () => {
+    expect(safeErrorName("string")).toBeUndefined();
+    expect(safeErrorName(null)).toBeUndefined();
+    expect(safeErrorName({})).toBeUndefined();
+  });
+});
+
+describe("isSafeErrorIdentifier", () => {
+  test("accepts bare identifiers with interior underscores, rejects the rest", () => {
+    expect(isSafeErrorIdentifier("TypeError")).toBe(true);
+    expect(isSafeErrorIdentifier("OUTPUT_PARSING_FAILURE")).toBe(true);
+    expect(isSafeErrorIdentifier("a".repeat(64))).toBe(true);
+    expect(isSafeErrorIdentifier("a".repeat(65))).toBe(false);
+    expect(isSafeErrorIdentifier("has space")).toBe(false);
+    expect(isSafeErrorIdentifier("_leading")).toBe(false);
+    expect(isSafeErrorIdentifier("")).toBe(false);
+    expect(isSafeErrorIdentifier(42)).toBe(false);
+  });
+});
+
 describe("describeErrorForTelemetry - residual fingerprint", () => {
-  test("a residual failure carries its error_name and no status", () => {
+  test("a residual failure carries its name as error_detail and no status", () => {
     const described = describeErrorForTelemetry(new TypeError("boom"));
 
     expect(described.errorClass).toBe("agent_error");
-    expect(described.errorName).toBe("TypeError");
+    expect(described.errorDetail).toBe("TypeError");
     expect(described.httpStatus).toBeUndefined();
   });
 
-  test("a named class carries no error_name", () => {
-    // Only the residual bucket pays for a fingerprint; a real 401 is already named.
+  test("a named class carries its family detail, not a name fingerprint", () => {
+    // The fingerprint only rides for the residual bucket; a real 401 is already
+    // named, so its detail is the taxonomy word, not the error's constructor.
     const described = describeErrorForTelemetry({ status: 401 });
 
     expect(described.errorClass).toBe("provider_error");
-    expect(described.errorName).toBeUndefined();
+    expect(described.errorDetail).toBe("auth");
   });
 
-  test("fingerprints the innermost cause, not the outer wrapper", () => {
+  test("fingerprints the innermost cause's name, not the outer wrapper", () => {
     // A framework envelope (e.g. LangChain's MiddlewareError) copies the inner
     // message onto a fresh wrapper but reports its own constructor. The fingerprint
     // must reach the real cause so the residual bucket ranks by actual failure type
@@ -392,17 +445,31 @@ describe("describeErrorForTelemetry - residual fingerprint", () => {
     const described = describeErrorForTelemetry(outer);
 
     expect(described.errorClass).toBe("agent_error");
-    expect(described.errorName).toBe("ProviderCrash");
+    expect(described.errorDetail).toBe("ProviderCrash");
   });
 
-  test("a residual with an un-allowlisted name drops error_name to undefined", () => {
+  test("prefers the deliberately-set .name over the wrapper's constructor", () => {
+    // The core MiddlewareError case: the wrapper's constructor is the envelope
+    // class, but its .name was set to the inner error's identity. Reading .name
+    // recovers the real failure even with no cause link to walk.
+    const wrapper = Object.assign(new Error("wrapModelCall failed"), {
+      name: "AI_APICallError",
+    });
+
+    const described = describeErrorForTelemetry(wrapper);
+
+    expect(described.errorClass).toBe("agent_error");
+    expect(described.errorDetail).toBe("AI_APICallError");
+  });
+
+  test("a residual with an un-allowlisted name drops error_detail to undefined", () => {
     class Weird {}
     Object.defineProperty(Weird, "name", { value: "weird name/with space" });
 
     const described = describeErrorForTelemetry(new Weird());
 
     expect(described.errorClass).toBe("agent_error");
-    expect(described.errorName).toBeUndefined();
+    expect(described.errorDetail).toBeUndefined();
   });
 
   test("http_status is surfaced from a wrapped provider error", () => {
@@ -416,8 +483,6 @@ describe("describeErrorForTelemetry - residual fingerprint", () => {
     expect(described.errorClass).toBe("provider_error");
     expect(described.errorDetail).toBe("overloaded");
     expect(described.httpStatus).toBe(503);
-    // A recovered (named) class is not fingerprinted.
-    expect(described.errorName).toBeUndefined();
   });
 
   test("firstStatusInChain returns undefined when no link exposes a status", () => {
@@ -570,17 +635,16 @@ describe("error origin tags", () => {
     });
   });
 
-  test("leaves detail, stage, and status undefined when absent", () => {
-    // A bare residual Error carries no detail/stage/status, but it is still
-    // fingerprinted: "Error" is an allowlisted constructor name, so the residual
-    // agent_error bucket gains an error_name to slice on.
+  test("leaves stage and status undefined when absent, detail is the name", () => {
+    // A bare residual Error carries no stage/status, but it is still fingerprinted:
+    // "Error" is an allowlisted name, so the residual agent_error bucket carries it
+    // as error_detail to slice on.
     expect(describeErrorForTelemetry(new Error("boom"))).toEqual({
       errorClass: "agent_error",
-      errorDetail: undefined,
+      errorDetail: "Error",
       errorStage: undefined,
       errorOwner: "unowned",
       httpStatus: undefined,
-      errorName: "Error",
     });
   });
 });
@@ -974,38 +1038,27 @@ describe("buildRunEvent diagnostics", () => {
     expect(event.properties).not.toHaveProperty("error_owner");
     expect(event.properties).not.toHaveProperty("error_stage");
     expect(event.properties).not.toHaveProperty("http_status");
+    // The residual fingerprint never rode as its own property; it is folded into
+    // error_detail, so error_name must never appear on any event.
     expect(event.properties).not.toHaveProperty("error_name");
   });
 
-  test("the residual fingerprint rides only when error_name is present", () => {
-    // A residual failure carries error_name; a named class leaves it undefined so
-    // the property is absent and the PostHog null bucket reads as "classified".
+  test("the residual fingerprint rides as error_detail", () => {
+    // The residual bucket carries the innermost error's name as error_detail; it is
+    // never emitted under a separate error_name property.
     const residual = buildRunEvent(
       {
         command: "init",
         outcome: "failure",
         errorClass: "agent_error",
+        errorDetail: "TypeError",
         errorOwner: "unowned",
         errorStage: "run",
-        errorName: "TypeError",
       },
       baseContext,
     );
-    expect(residual.properties).toMatchObject({ error_name: "TypeError" });
-
-    const named = buildRunEvent(
-      {
-        command: "init",
-        outcome: "failure",
-        errorClass: "provider_error",
-        errorDetail: "rate_limit",
-        errorOwner: "provider",
-        errorStage: "run",
-        httpStatus: 429,
-      },
-      baseContext,
-    );
-    expect(named.properties).not.toHaveProperty("error_name");
+    expect(residual.properties).toMatchObject({ error_detail: "TypeError" });
+    expect(residual.properties).not.toHaveProperty("error_name");
   });
 
   test("http_status of 0 would still ride, but omission is by undefined only", () => {
@@ -1166,7 +1219,13 @@ describe("anonymity envelope: one representative failure per reachable family", 
           expect(ENUM_ALLOWLISTS[key].has(value as string)).toBe(true);
           break;
         case "error_detail":
-          expect(DETAIL_ALLOWLIST.has(value as string)).toBe(true);
+          // A fixed-family detail is an allowlisted word; the residual agent_error
+          // bucket instead carries the innermost error's name, gated to a bare
+          // identifier. Either shape is inside the envelope; nothing else is.
+          expect(
+            DETAIL_ALLOWLIST.has(value as string) ||
+              isSafeErrorIdentifier(value),
+          ).toBe(true);
           break;
         case "provider":
           expect(PROVIDER_ALLOWLIST.has(value as string)).toBe(true);
@@ -1174,11 +1233,6 @@ describe("anonymity envelope: one representative failure per reachable family", 
         case "http_status":
           // A bare integer; no provider strings ride with it.
           expect(Number.isInteger(value)).toBe(true);
-          break;
-        case "error_name":
-          // A bare ASCII constructor identifier, nothing else: the residual
-          // fingerprint is gated to exactly this shape before it can leave.
-          expect(value).toMatch(/^[A-Za-z][A-Za-z0-9]{0,63}$/u);
           break;
         case "app_version":
           expect(value).toMatch(/^\d+\.\d+\.\d+/u);
@@ -1312,7 +1366,6 @@ describe("anonymity envelope: one representative failure per reachable family", 
           errorOwner: described.errorOwner,
           errorStage: described.errorStage,
           httpStatus: described.httpStatus,
-          errorName: described.errorName,
         },
         sweepContext,
       );

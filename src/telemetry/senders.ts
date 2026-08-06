@@ -73,8 +73,9 @@ export function buildRunEvent(
       outcome: details.outcome,
       ...(details.errorClass ? { error_class: details.errorClass } : {}),
       // The specific failure within the family and who owns the fix. Detail is an
-      // allowlisted word (dropped upstream if off-list); owner is derived from
-      // (class, detail, stage) so the dashboard can roll up by who must act,
+      // allowlisted word (or, for the residual `agent_error` bucket, the innermost
+      // error's allowlisted name), dropped upstream if off-list; owner is derived
+      // from (class, detail, stage) so the dashboard can roll up by who must act,
       // including the cross-owner exceptions PostHog cannot derive. Failure-only.
       ...(details.errorDetail ? { error_detail: details.errorDetail } : {}),
       ...(details.errorOwner ? { error_owner: details.errorOwner } : {}),
@@ -86,10 +87,6 @@ export function buildRunEvent(
       ...(details.httpStatus !== undefined
         ? { http_status: details.httpStatus }
         : {}),
-      // Residual-only fingerprint: an allowlisted constructor identifier, the one
-      // signal the `agent_error` bucket carries. Omitted for every named class, so
-      // the null bucket reads as "already classified" rather than a value.
-      ...(details.errorName ? { error_name: details.errorName } : {}),
       ...(details.mode ? { mode: details.mode } : {}),
       ...(details.provider ? { provider: details.provider } : {}),
       ...connectorProperties(details.configuredConnectors ?? []),
