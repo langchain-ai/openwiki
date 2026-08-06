@@ -405,9 +405,22 @@ function extractText(content: MessageContent): string {
 async function collectMarkdownFiles(
   backend: BackendProtocolV2,
   directoryPath: string,
+  optionalRoot = directoryPath,
 ): Promise<string[]> {
   const result = await backend.ls(directoryPath);
-  if (result.error) return [];
+  if (result.error) {
+    // A repository-mode wiki root may not exist yet, which is a valid no-op.
+    // Every other listing failure means the file tree is incomplete and must
+    // abort the pass rather than silently claiming a language switch succeeded.
+    if (
+      directoryPath === optionalRoot &&
+      isMissingDirectoryError(result.error)
+    ) {
+      return [];
+    }
+
+    throw new Error(`Unable to list ${directoryPath}: ${result.error}`);
+  }
 
   const files: string[] = [];
   for (const entry of result.files ?? []) {
@@ -416,7 +429,9 @@ async function collectMarkdownFiles(
 
     const entryPath = path.posix.join(directoryPath, name);
     if (entry.is_dir) {
-      files.push(...(await collectMarkdownFiles(backend, entryPath)));
+      files.push(
+        ...(await collectMarkdownFiles(backend, entryPath, optionalRoot)),
+      );
       continue;
     }
     if (
@@ -427,6 +442,10 @@ async function collectMarkdownFiles(
     }
   }
   return files;
+}
+
+function isMissingDirectoryError(error: string): boolean {
+  return /(?:ENOENT|not found)/iu.test(error);
 }
 
 /**
