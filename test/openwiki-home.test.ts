@@ -35,6 +35,18 @@ describe("resolveOpenWikiHomeDir", () => {
     ).toBe(resolveOpenWikiHomeDir({}));
   });
 
+  test("expands a bare ~ override to the home directory", () => {
+    expect(resolveOpenWikiHomeDir({ [OPENWIKI_CONFIG_DIR_ENV_KEY]: "~" })).toBe(
+      path.join(os.homedir()),
+    );
+  });
+
+  test("expands a ~/-prefixed override relative to the home directory", () => {
+    expect(
+      resolveOpenWikiHomeDir({ [OPENWIKI_CONFIG_DIR_ENV_KEY]: "~/openwiki-state" }),
+    ).toBe(path.resolve(os.homedir(), "openwiki-state"));
+  });
+
   test("shares an override with credential storage", async () => {
     process.env.OPENWIKI_CONFIG_DIR = "C:/openwiki-state";
     vi.resetModules();

@@ -9,9 +9,22 @@ export function resolveOpenWikiHomeDir(
 ): string {
   const configuredDir = environment[OPENWIKI_CONFIG_DIR_ENV_KEY]?.trim();
 
-  return configuredDir
-    ? path.resolve(configuredDir)
-    : path.join(os.homedir(), ".openwiki");
+  if (!configuredDir) {
+    return path.join(os.homedir(), ".openwiki");
+  }
+
+  // `path.resolve` does not expand a leading `~`, and several environments
+  // that set env vars (PowerShell, docker-compose, a hand-edited `.env`) leave
+  // it literal. Mirror the tilde handling used by `normalizeLocalPath`.
+  if (configuredDir === "~") {
+    return path.join(os.homedir());
+  }
+
+  if (configuredDir.startsWith("~/") || configuredDir.startsWith("~\\")) {
+    return path.resolve(os.homedir(), configuredDir.slice(2));
+  }
+
+  return path.resolve(configuredDir);
 }
 
 export function getOpenWikiHomeDisplayPath(
