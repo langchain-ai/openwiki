@@ -5,6 +5,7 @@ import {
 import { constants as fsConstants } from "node:fs";
 import { lstat, open, readdir, stat } from "node:fs/promises";
 import path from "node:path";
+import type { OpenWikiOutputMode } from "../agent/types.js";
 import {
   getConnectorConfigPath,
   getConnectorRawDir,
@@ -20,7 +21,18 @@ import {
 } from "./mcp-runtime.js";
 import type { ConnectorId, ConnectorIngestOptions } from "./types.js";
 
-export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
+export function createOpenWikiConnectorTools(
+  outputMode: OpenWikiOutputMode = "local-wiki",
+): StructuredToolInterface[] {
+  // Connector tools perform credentialed external fetches (Gmail, Slack, X, ...)
+  // and write raw data under the OpenWiki home. They are a personal/local-wiki
+  // capability: a code-mode run documents a codebase and must never be handed
+  // connector ingestion, which otherwise throws on missing credentials and
+  // wastes tokens discovering sources it has no business touching. See #444.
+  if (outputMode === "repository") {
+    return [];
+  }
+
   return [
     new DynamicStructuredTool({
       name: "openwiki_list_connectors",
