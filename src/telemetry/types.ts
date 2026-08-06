@@ -54,6 +54,16 @@ export type TelemetryErrorStage = "config" | "build" | "run" | "finalize";
 export type TelemetryMode = "code" | "personal";
 
 /**
+ * The distribution channel a build was produced for, baked in at build time and
+ * stamped on every event so fork-originated telemetry can be filtered out from
+ * the official-release signal on the dashboard.
+ *
+ * - `official`: an npm-published upstream build (the release pipeline bakes this).
+ * - `community`: anything else — a fork, a local build, or a source/dev run.
+ */
+export type BuildChannel = "official" | "community";
+
+/**
  * Everything the run event reports, assembled by the agent run lifecycle.
  *
  * Two tiers: `command`, `outcome`, and `errorClass` ride on every run

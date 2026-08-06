@@ -6,13 +6,14 @@ import { fileURLToPath } from "node:url";
 import { capture } from "./client.js";
 import { DEFAULT_POSTHOG_HOST, TELEMETRY_RUN_EVENT } from "./config.js";
 import {
+  buildChannel,
   ciSentinelId,
   isCiEnvironment,
   isProductionBuild,
   isTelemetryDisabled,
 } from "./gates.js";
 import { getOrCreateInstallId } from "./install-id.js";
-import type { RunTelemetry, TelemetryEvent } from "./types.js";
+import type { BuildChannel, RunTelemetry, TelemetryEvent } from "./types.js";
 
 /**
  * Environment and identity inputs that are not part of a run's own facts:
@@ -34,6 +35,14 @@ export interface RunEventContext {
    * dev/source or seed run.
    */
   production: boolean;
+
+  /**
+   * The distribution channel this build was produced for (see
+   * {@link BuildChannel}). Baked at build time, so the caller resolves it (via
+   * `buildChannel()`) and the builder stays pure. Stamped on every event so
+   * fork-originated telemetry can be separated from the official-release signal.
+   */
+  buildChannel: BuildChannel;
 
   /**
    * Identity the event is attributed to: an install id (human) or the CI
@@ -93,6 +102,11 @@ export function buildRunEvent(
       // True for the published build, false for dev/source/seed runs; lets real
       // usage be separated from local testing and pre-launch seed data.
       production: context.production,
+      // Distribution channel baked at build time: "official" only for npm-published
+      // upstream builds, "community" for forks/local/dev. Lets the dashboard scope
+      // the official-release signal and drop fork-originated telemetry. A closed
+      // two-value enum; no free strings.
+      build_channel: context.buildChannel,
       // Distribution provenance: the OpenWiki version from the bundled
       // package.json, stamped on every event so adoption and per-version
       // breakage are readable. Omitted when the caller could not resolve it.
@@ -132,6 +146,7 @@ export async function recordRun(details: RunTelemetry): Promise<void> {
     const event = buildRunEvent(details, {
       ci,
       production: isProductionBuild(),
+      buildChannel: buildChannel(),
       distinctId,
       appVersion: packageProvenance().appVersion,
     });

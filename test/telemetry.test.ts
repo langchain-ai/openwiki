@@ -42,6 +42,7 @@ import {
   normalizeErrorDetail,
 } from "../src/telemetry/taxonomy.ts";
 import {
+  buildChannel,
   ciSentinelId,
   isCiEnvironment,
   isTelemetryDisabled,
@@ -1071,6 +1072,7 @@ describe("buildRunEvent diagnostics", () => {
   const baseContext: RunEventContext = {
     ci: false,
     production: true,
+    buildChannel: "official",
     distinctId: "install-abc",
   };
 
@@ -1172,6 +1174,31 @@ describe("buildRunEvent diagnostics", () => {
 
     expect(event.properties).not.toHaveProperty("app_version");
   });
+
+  test("build_channel is stamped from the context on every event", () => {
+    // The channel is a peer of production/ci: baked at build time, resolved by
+    // the caller, and it rides both success and failure events verbatim.
+    const official = buildRunEvent(
+      { command: "init", outcome: "success" },
+      { ...baseContext, buildChannel: "official" },
+    );
+    const community = buildRunEvent(
+      { command: "update", outcome: "failure", errorClass: "agent_error" },
+      { ...baseContext, buildChannel: "community" },
+    );
+
+    expect(official.properties.build_channel).toBe("official");
+    expect(community.properties.build_channel).toBe("community");
+  });
+});
+
+describe("buildChannel", () => {
+  test("the committed default is community", () => {
+    // The stamp script rewrites this to "official" only on the official release
+    // path; the committed source must always resolve to "community" so a fork or
+    // local build never mislabels its telemetry as official.
+    expect(buildChannel()).toBe("community");
+  });
 });
 
 describe("anonymity envelope: one representative failure per reachable family", () => {
@@ -1258,6 +1285,7 @@ describe("anonymity envelope: one representative failure per reachable family", 
   const sweepContext: RunEventContext = {
     ci: false,
     production: true,
+    buildChannel: "official",
     // An anonymous install UUID, exactly the shape recordRun attributes to.
     distinctId: "0f9a2c1e-4b3d-4e5f-8a1b-2c3d4e5f6a7b",
     appVersion: "0.2.3",
@@ -1310,6 +1338,10 @@ describe("anonymity envelope: one representative failure per reachable family", 
           break;
         case "app_version":
           expect(value).toMatch(/^\d+\.\d+\.\d+/u);
+          break;
+        case "build_channel":
+          // A closed two-value enum baked at build time; never a free string.
+          expect(["official", "community"]).toContain(value);
           break;
         case "production":
         case "ci":
