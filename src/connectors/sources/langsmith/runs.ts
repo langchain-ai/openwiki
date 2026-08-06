@@ -21,12 +21,12 @@ export interface SampleCaps {
 /**
  * Selects the sample from two lean root-run pools within the window, biased
  * toward anomalies: errors first (up to errorCap), then latency outliers among
- * the non-errored runs (up to outlierCap, at most a quarter of the non-errored
- * pool so the bucket stays a genuine tail rather than swallowing a small pull,
- * and the remaining budget), then the most-recent non-errored runs to backfill
- * to `total`. With no errors/outliers it degrades to all-baseline — the same
- * recency behavior as before. Runs are deduped by id; `nonErrorRuns` is assumed
- * most-recent-first.
+ * the measurable non-errored runs (up to outlierCap, at most a quarter of the
+ * measurable pool so the bucket stays a genuine tail rather than swallowing a
+ * small pull, and the remaining budget), then the most-recent non-errored runs
+ * to backfill to `total`. With no errors/outliers it degrades to all-baseline —
+ * the same recency behavior as before. Runs are deduped by id; `nonErrorRuns` is
+ * assumed most-recent-first.
  */
 export function selectSampleBuckets(
   errorRuns: Run[],
@@ -51,14 +51,19 @@ export function selectSampleBuckets(
   // Keep outliers a genuine tail: never more than the flat cap, the remaining
   // budget, or a quarter of the non-errored pool (so a small pull stays mostly
   // baseline instead of being relabeled as outliers).
+  const measuredNonErrorRuns = nonErrorRuns
+    .filter((run) => !usedIds.has(run.id))
+    .map((run) => ({ latency: latencyMs(run), run }))
+    .filter(
+      (item): item is { latency: number; run: Run } =>
+        item.latency !== undefined,
+    );
   const outlierBudget = Math.min(
     caps.outlierCap,
     caps.total - selected.length,
-    Math.floor(nonErrorRuns.length / 4),
+    Math.floor(measuredNonErrorRuns.length / 4),
   );
-  const byLatencyDesc = nonErrorRuns
-    .filter((run) => !usedIds.has(run.id))
-    .map((run) => ({ latency: latencyMs(run) ?? -1, run }))
+  const byLatencyDesc = measuredNonErrorRuns
     .sort((left, right) => right.latency - left.latency)
     .slice(0, outlierBudget);
   for (const { run } of byLatencyDesc) {
