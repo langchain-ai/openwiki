@@ -32,6 +32,34 @@ pnpm test
 `format` and `lint` match the checks that run on every PR, and `test` runs the
 Vitest suite.
 
+If your change should ship in a release, also add a changeset (see below).
+
+## Changesets
+
+We release with [Changesets](https://github.com/changesets/changesets). If your
+PR changes the published `openwiki` package in a way users should see (a bug fix,
+a new feature, or any behavior change), add a changeset:
+
+```sh
+pnpm changeset
+```
+
+Pick the bump type, write a short summary, and commit the generated
+`.changeset/*.md` file with your PR. The summary becomes the changelog entry, so
+write it for users rather than reviewers. Bump types follow semver:
+
+- **patch** for bug fixes and other small, backward-compatible changes
+- **minor** for new, backward-compatible features
+- **major** for breaking changes
+
+Changes that do not affect the published package (docs, tests, CI, internal
+refactors) do not need a changeset. If a change touches the package but should
+not trigger a release, record that intent with an empty one: `pnpm changeset --empty`.
+
+Once your PR merges, the Release workflow opens a "chore: version packages" PR
+that collects the pending changesets. Merging that PR bumps the version, updates
+`CHANGELOG.md`, and publishes the release.
+
 ## PR expectations
 
 - **Clear title** — a single sentence describing the one change, prefixed with a
@@ -41,6 +69,8 @@ Vitest suite.
 - **How you tested it** — describe the tests (unit or end-to-end) that verify your
   change works and doesn't break existing behavior. If you added or updated tests,
   note them here.
+- **Add a changeset** for any user-facing change so it lands in the changelog and
+  the next release. See [Changesets](#changesets).
 - **Link an issue** for anything non-trivial, so the change has context.
 
 ## A note for AI agents

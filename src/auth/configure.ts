@@ -3,6 +3,7 @@ import { OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY } from "../constants.js";
 import {
   ensureConnectorHome,
   getConnectorConfigPath,
+  openWikiEnvDisplayPath,
 } from "../openwiki-home.js";
 import {
   discoverMcpConnectorTools,
@@ -143,7 +144,7 @@ function getDefaultConfig(provider: AuthProviderId): unknown {
         "Date",
         "Message-ID",
       ],
-      note: "Direct Gmail API ingestion. Tokens stay in ~/.openwiki/.env. query defaults to the last day of mail.",
+      note: `Direct Gmail API ingestion. Tokens stay in ${openWikiEnvDisplayPath}. query defaults to the last day of mail.`,
       pageSize: 100,
       provider: "gmail",
       query: "newer_than:1d",
@@ -175,7 +176,7 @@ function getNextSteps(
   if (provider === "notion") {
     return [
       prefix,
-      "Run openwiki --update and the agent can discover and call read-only Notion MCP tools automatically.",
+      "Run openwiki personal --update and the agent can discover and call read-only Notion MCP tools automatically.",
       "Use openwiki auth tools notion only when you want to inspect the live MCP tool list yourself.",
     ];
   }
@@ -199,7 +200,7 @@ function getNextSteps(
   return [
     prefix,
     "Edit listIds if you want X list ingestion.",
-    "Run openwiki --update after auth and config are complete.",
+    "Run openwiki personal --update after auth and config are complete.",
   ];
 }
 

@@ -1,5 +1,6 @@
 import { isValidModelId, normalizeModelId } from "./constants.js";
 import type { OpenWikiCommand } from "./agent/types.js";
+import { resolveLanguage } from "./language.js";
 import { isAuthProviderId } from "./auth/providers.js";
 import type { AuthProviderId } from "./auth/types.js";
 import { parseIngestionTarget, type IngestionTarget } from "./ingestion.js";
@@ -39,6 +40,13 @@ export type CliCommand =
       url: string | null;
     }
   | {
+      kind: "visualize";
+      exitCode: 0;
+      wikiDir: string;
+      port: number;
+      open: boolean;
+    }
+  | {
       kind: "ingest";
       exitCode: 0;
       modelId: string | null;
@@ -58,12 +66,15 @@ export type CliCommand =
       exitCode: 0;
       command: OpenWikiCommand;
       dryRun: boolean;
+      language: string | null;
+      languageWarning: string | null;
       mode: OpenWikiRunMode;
       modeSource: OpenWikiRunModeSource;
       modelId: string | null;
       print: boolean;
       shouldStart: boolean;
       userMessage: string | null;
+      telemetryFile: string | null;
     }
   | {
       kind: "error";
@@ -93,8 +104,11 @@ export function parseCommand(argv: string[]): CliCommand {
       action === "configure" || action === "tools"
         ? argv.slice(3)
         : argv.slice(2);
-    const unknownOption = optionArgs.find((arg) => arg !== "--force");
-    const force = optionArgs.includes("--force");
+    const acceptsForce = action !== "tools";
+    const unknownOption = optionArgs.find((arg) =>
+      acceptsForce ? arg !== "--force" : true,
+    );
+    const force = acceptsForce && optionArgs.includes("--force");
 
     if (unknownOption) {
       return {
@@ -199,6 +213,64 @@ export function parseCommand(argv: string[]): CliCommand {
     };
   }
 
+  if (argv[0] === "visualize") {
+    let wikiDir = "openwiki";
+    let port = 4321;
+    let open = true;
+    let sawPositional = false;
+    const optionArgs = argv.slice(1);
+
+    for (let index = 0; index < optionArgs.length; index += 1) {
+      const arg = optionArgs[index];
+
+      if (arg === "--no-open") {
+        open = false;
+        continue;
+      }
+
+      if (arg === "--port") {
+        const rawPort = optionArgs[index + 1];
+        if (!rawPort || rawPort.startsWith("-")) {
+          return {
+            kind: "error",
+            exitCode: 1,
+            message: "--port requires a value.",
+          };
+        }
+        port = Number(rawPort);
+        index += 1;
+        continue;
+      }
+
+      if (arg.startsWith("--port=")) {
+        port = Number(arg.slice("--port=".length));
+        continue;
+      }
+
+      if (!arg.startsWith("-") && !sawPositional) {
+        wikiDir = arg;
+        sawPositional = true;
+        continue;
+      }
+
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Unknown option for visualize: ${arg}`,
+      };
+    }
+
+    if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: "--port must be between 1024 and 65535.",
+      };
+    }
+
+    return { kind: "visualize", exitCode: 0, wikiDir, port, open };
+  }
+
   if (argv[0] === "ingest") {
     const target = parseIngestionTarget(argv[1] ?? "all");
     if (!target) {
@@ -206,7 +278,7 @@ export function parseCommand(argv: string[]): CliCommand {
         kind: "error",
         exitCode: 1,
         message:
-          "Usage: openwiki ingest <source|source-instance|all> [--print] [--modelId <id>]",
+          "Usage: openwiki ingest <source|source-instance|all> [--scheduled] [--print] [--modelId <id>]",
       };
     }
 
@@ -295,11 +367,11 @@ export function parseCommand(argv: string[]): CliCommand {
 
     if (argv[1] === "pause" || argv[1] === "resume" || argv[1] === "delete") {
       const target = parseIngestionTarget(argv[2] ?? "");
-      if (!target || typeof target !== "string" || argv.length > 3) {
+      if (target !== "all" || argv.length > 3) {
         return {
           kind: "error",
           exitCode: 1,
-          message: `Usage: openwiki cron ${argv[1]} <source|all>`,
+          message: `Usage: openwiki cron ${argv[1]} all`,
         };
       }
 
@@ -316,7 +388,7 @@ export function parseCommand(argv: string[]): CliCommand {
         kind: "error",
         exitCode: 1,
         message:
-          "Usage: openwiki cron list | pause <source|all> | resume <source|all> | delete <source|all>",
+          "Usage: openwiki cron list | pause all | resume all | delete all",
       };
     }
   }
@@ -325,7 +397,7 @@ export function parseCommand(argv: string[]): CliCommand {
     return parseRunCommand(argv.slice(1), argv[0], "positional");
   }
 
-  return parseRunCommand(argv, "personal", "default");
+  return parseRunCommand(argv, "code", "default");
 }
 
 function parseRunCommand(
@@ -334,11 +406,14 @@ function parseRunCommand(
   initialModeSource: OpenWikiRunModeSource,
 ): CliCommand {
   let dryRun = false;
+  let language: string | null = null;
   let mode = initialMode;
   let modeSource = initialModeSource;
   let modelId: string | null = null;
   let print = false;
   let command: OpenWikiCommand = "chat";
+  let telemetryFile: string | null = null;
+
   const userMessageParts: string[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -366,6 +441,13 @@ function parseRunCommand(
       continue;
     }
 
+    if (arg === "--debug") {
+      // isDebugMode() reads OPENWIKI_DEBUG; setting it at parse time is the
+      // least-invasive way to opt into full credential/error diagnostics.
+      process.env.OPENWIKI_DEBUG = "1";
+      continue;
+    }
+
     if (arg === "--init" || arg === "--update") {
       const nextCommand = arg === "--init" ? "init" : "update";
 
@@ -378,6 +460,22 @@ function parseRunCommand(
       }
 
       command = nextCommand;
+      continue;
+    }
+
+    if (arg === "--language" || arg === "-l") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `${arg} requires a locale.`,
+        };
+      }
+
+      language = nextArg;
+      index += 1;
       continue;
     }
 
@@ -474,12 +572,57 @@ function parseRunCommand(
       continue;
     }
 
+    if (arg === "--telemetry-file") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--telemetry-file requires a path.",
+        };
+      }
+
+      telemetryFile = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--telemetry-file=")) {
+      const [, value = ""] = arg.split("=", 2);
+
+      if (value.length === 0) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--telemetry-file requires a path.",
+        };
+      }
+
+      telemetryFile = value;
+      continue;
+    }
+
     if (arg.startsWith("-")) {
       return {
         kind: "error",
         exitCode: 1,
         message: `Unknown option: ${arg}`,
       };
+    }
+
+    // A mode word in the first positional slot selects the mode even when
+    // flags precede it (e.g. `openwiki --print code --update`), matching the
+    // `openwiki code ...` form. Otherwise it would silently become the user
+    // message and the run would target the default personal wiki.
+    if (
+      isOpenWikiRunMode(arg) &&
+      modeSource === "default" &&
+      userMessageParts.length === 0
+    ) {
+      mode = arg;
+      modeSource = "positional";
+      continue;
     }
 
     userMessageParts.push(arg);
@@ -489,13 +632,12 @@ function parseRunCommand(
     userMessageParts.length > 0 ? userMessageParts.join(" ") : null;
   const shouldStart = command !== "chat" || userMessage !== null;
 
-  if (command === "init" && modeSource === "default") {
-    return {
-      kind: "error",
-      exitCode: 1,
-      message:
-        "openwiki --init requires a mode.\n\nRun one of:\n  openwiki personal --init  Build your local personal brain wiki in ~/.openwiki/wiki.\n  openwiki code --init   Build repository documentation in ./openwiki.",
-    };
+  // Canonicalize the requested locale here so an unrecognized value is dropped
+  // (and surfaced as a warning) before it reaches the run or persisted state.
+  const resolvedLanguage = resolveLanguage(language);
+
+  if (command !== "chat" && modeSource === "default") {
+    mode = "code";
   }
 
   if (print && !shouldStart) {
@@ -511,12 +653,15 @@ function parseRunCommand(
     exitCode: 0,
     command,
     dryRun,
+    language: resolvedLanguage.language ?? null,
+    languageWarning: resolvedLanguage.warning ?? null,
     mode,
     modeSource,
     modelId,
     print,
     shouldStart,
     userMessage,
+    telemetryFile,
   };
 }
 
@@ -568,26 +713,42 @@ export function isDevelopmentMode(): boolean {
   );
 }
 
+/**
+ * True for commands that send telemetry and therefore require the one-time
+ * disclosure. Only init/update runs emit the single openwiki_run event; chat,
+ * auth, and ingest record nothing, so those sessions need no disclosure.
+ */
+export function commandEmitsTelemetry(command: CliCommand): boolean {
+  return (
+    command.kind === "run" &&
+    !command.dryRun &&
+    (command.command === "init" || command.command === "update")
+  );
+}
+
 export const helpContent: HelpContent = {
   title: "OpenWiki",
   description:
     "Run an agent that generates and maintains a project or local knowledge wiki.",
   usage: [
+    "openwiki [--init|--update] [message]",
     "openwiki code [--init|--update] [message]",
     "openwiki personal [--init|--update] [message]",
     "openwiki --mode <personal|code> [--init|--update] [message]",
+    "openwiki [--language <locale>] [--init|--update] [message]",
     "openwiki [--modelId <model>]",
     "openwiki [--modelId <model>] [message]",
     "openwiki --update [message]",
     "openwiki auth <provider>",
     "openwiki auth configure <provider> [--force]",
     "openwiki auth tools <provider>",
-    "openwiki ingest <source|source-instance|all>",
+    "openwiki ingest <source|source-instance|all> [--scheduled] [--print] [--modelId <id>]",
     "openwiki cron list",
-    "openwiki cron pause <source|all>",
-    "openwiki cron resume <source|all>",
-    "openwiki cron delete <source|all>",
+    "openwiki cron pause all",
+    "openwiki cron resume all",
+    "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
+    "openwiki visualize [path] [--port <port>] [--no-open]",
   ],
   commands: [
     {
@@ -602,7 +763,8 @@ export const helpContent: HelpContent = {
     },
     {
       label: "openwiki",
-      description: "Open the interactive OpenWiki personal brain chat.",
+      description:
+        "Open the interactive OpenWiki code chat for the current repository.",
     },
     {
       label: "openwiki auth <provider>",
@@ -628,17 +790,17 @@ export const helpContent: HelpContent = {
       description: "List saved connector schedules and local launchd status.",
     },
     {
-      label: "openwiki cron pause <source|all>",
+      label: "openwiki cron pause all",
       description:
         "Pause saved connector schedules and reconcile the Mac wake window.",
     },
     {
-      label: "openwiki cron resume <source|all>",
+      label: "openwiki cron resume all",
       description:
         "Resume paused connector schedules and reconcile the Mac wake window.",
     },
     {
-      label: "openwiki cron delete <source|all>",
+      label: "openwiki cron delete all",
       description:
         "Delete saved connector schedules and remove stale local schedule files.",
     },
@@ -647,17 +809,22 @@ export const helpContent: HelpContent = {
       description:
         "Start an ngrok tunnel for Slack OAuth, optionally using a fixed HTTPS URL.",
     },
+    {
+      label: "openwiki visualize [path]",
+      description:
+        "Serve an interactive graph and live docs reader for a generated wiki (defaults to ./openwiki).",
+    },
   ],
   options: [
     {
       label: "--init",
       description:
-        "Generate initial OpenWiki documentation for a selected mode. Use openwiki personal --init or openwiki code --init.",
+        "Generate initial OpenWiki documentation. Defaults to code mode; use personal to initialize the local personal brain.",
     },
     {
       label: "--update",
       description:
-        "Update existing OpenWiki documentation and ingest configured connectors when relevant.",
+        "Update existing OpenWiki documentation. Defaults to code mode; use personal to update the local personal brain.",
     },
     {
       label: "--mode <personal|code>",
@@ -665,12 +832,41 @@ export const helpContent: HelpContent = {
         "Choose the personal brain (local, over configured sources) or the code brain (repository docs).",
     },
     {
+      label: "-l, --language <locale>",
+      description:
+        "Generate wiki documentation in the requested language or locale.",
+    },
+    {
       label: "-p, --print",
       description: "Run once and print the final assistant output.",
     },
     {
+      label: "--debug",
+      description:
+        "Show full credential and error diagnostics when a run fails.",
+    },
+    {
       label: "--modelId <id>",
       description: "Use a model ID for this run.",
+    },
+    {
+      label: "--scheduled",
+      description:
+        "For ingest only: run scheduled-only ingestion for scheduler-managed runs.",
+    },
+    {
+      label: "--telemetry-file <path>",
+      description:
+        "Write the exact anonymous telemetry payload to a local JSON file.",
+    },
+    {
+      label: "--port <port>",
+      description:
+        "For visualize: port to serve on (default 4321; increments on conflict).",
+    },
+    {
+      label: "--no-open",
+      description: "For visualize: do not open the browser automatically.",
     },
   ],
   developmentOptions: [
@@ -681,6 +877,7 @@ export const helpContent: HelpContent = {
   ],
   examples: [
     "openwiki",
+    "openwiki --init",
     "openwiki personal --init",
     "openwiki code --init",
     "openwiki --update",
@@ -689,20 +886,23 @@ export const helpContent: HelpContent = {
     'openwiki -p "Summarize what OpenWiki can do"',
     "openwiki --modelId gpt-5.5",
     'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
-    'openwiki --update "Refresh the wiki from configured connectors"',
+    'openwiki personal --update "Refresh the wiki from configured connectors"',
     "openwiki ingest all",
+    "openwiki ingest all --scheduled --print",
     "openwiki ingest web-search",
     "openwiki ingest web-search-2",
     "openwiki cron list",
-    "openwiki cron pause web-search",
-    "openwiki cron resume web-search",
-    "openwiki cron delete web-search",
+    "openwiki cron pause all",
+    "openwiki cron resume all",
+    "openwiki cron delete all",
     "openwiki auth slack",
     "openwiki auth gmail",
     "openwiki auth notion",
     "openwiki auth tools notion",
     "openwiki ngrok start",
     "openwiki ngrok start https://openwiki.ngrok.app",
+    "openwiki visualize",
+    "openwiki visualize openwiki --port 4400 --no-open",
   ],
   developmentExamples: ["openwiki --dry-run"],
 };

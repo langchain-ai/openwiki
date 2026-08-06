@@ -1,7 +1,19 @@
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
+  AWS_ACCESS_KEY_ID_ENV_KEY,
+  AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
+  AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  AWS_SESSION_TOKEN_ENV_KEY,
+  AWS_WEB_IDENTITY_TOKEN_FILE_ENV_KEY,
   BASETEN_API_KEY_ENV_KEY,
+  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
+  COPILOT_API_KEY_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
+  GEMINI_API_KEY_ENV_KEY,
+  NEBIUS_API_KEY_ENV_KEY,
+  NVIDIA_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -21,7 +33,19 @@ export function sanitizeDiagnosticText(value: string): string {
 
   for (const key of [
     BASETEN_API_KEY_ENV_KEY,
+    AWS_ACCESS_KEY_ID_ENV_KEY,
+    AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
+    AWS_SECRET_ACCESS_KEY_ENV_KEY,
+    AWS_SESSION_TOKEN_ENV_KEY,
+    AWS_WEB_IDENTITY_TOKEN_FILE_ENV_KEY,
+    BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+    BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+    BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
+    COPILOT_API_KEY_ENV_KEY,
     FIREWORKS_API_KEY_ENV_KEY,
+    GEMINI_API_KEY_ENV_KEY,
+    NEBIUS_API_KEY_ENV_KEY,
+    NVIDIA_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
     OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
@@ -44,6 +68,27 @@ export function sanitizeDiagnosticText(value: string): string {
     .replace(/\bsk-or-v1-[A-Za-z0-9_-]+/gu, "[REDACTED:OPENROUTER_API_KEY]")
     .replace(/\bsk-[A-Za-z0-9_-]+/gu, "[REDACTED:API_KEY]")
     .replace(/\bls[v_][A-Za-z0-9_-]+/gu, "[REDACTED:LANGSMITH_API_KEY]");
+}
+
+/**
+ * True when an object key name looks like it holds a credential, so its value
+ * should be redacted before display, logging, or persistence.
+ *
+ * This is a security boundary shared by every redaction path (diagnostics,
+ * OpenRouter response bodies, and MCP tool args/results). The term list is the
+ * union of every term the individual paths previously matched, so a key
+ * redacted by one path is redacted by all of them.
+ */
+/**
+ * The union of every substring that marks a key/field name as secret-bearing.
+ * Single source of truth for all redaction paths — extend this, not the
+ * individual call sites.
+ */
+export const SECRET_KEY_PATTERN_SOURCE =
+  "api[-_]?key|authorization|bearer|token|secret|password|user_id|cookie";
+
+export function isSecretLikeKey(key: string): boolean {
+  return new RegExp(SECRET_KEY_PATTERN_SOURCE, "iu").test(key);
 }
 
 /**
@@ -85,6 +130,40 @@ export function getErrorMessage(error: unknown): string {
   }
 
   return sanitizeDiagnosticText(message);
+}
+
+/**
+ * Whether a run failure looks like a credential rejection, judged from the HTTP
+ * status (401/403, number or string) and the already-redacted message. Drives
+ * whether the CLI shows the auth "how to fix" panel.
+ */
+export function isAuthError(error: unknown, message: string): boolean {
+  const status = isRecord(error)
+    ? (error.statusCode ?? error.status)
+    : undefined;
+  const name = isRecord(error) ? error.name : undefined;
+
+  if (
+    status === 401 ||
+    status === 403 ||
+    status === "401" ||
+    status === "403"
+  ) {
+    return true;
+  }
+
+  if (
+    name === "CredentialsProviderError" ||
+    name === "InvalidIdentityTokenException" ||
+    name === "ExpiredTokenException" ||
+    name === "IDPRejectedClaimException"
+  ) {
+    return true;
+  }
+
+  return /\b40[13]\b|incorrect api key|invalid api key|unauthorized|forbidden|authentication|permission denied|not authorized|could not load credentials from any providers|invalid identity token|expired token|web identity token.+(?:expired|invalid|not valid)|security token.+invalid/iu.test(
+    message,
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

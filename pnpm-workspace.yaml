@@ -2,6 +2,7 @@ allowBuilds:
   better-sqlite3: true
   esbuild: true
 minimumReleaseAgeExclude:
+  - "@langchain/core@1.2.4"
   - "@langchain/openai"
   - "@langchain/openai@1.5.4"
   - "@langchain/openai@1.5.5"
@@ -13,7 +14,7 @@ minimumReleaseAgeExclude:
   - "@vitest/snapshot@4.1.10"
   - "@vitest/spy@4.1.10"
   - "@vitest/utils@4.1.10"
-  - "deepagents@1.10.7"
+  - "deepagents@1.12.0"
   - "langchain@1.5.3"
   - "node-abi@3.94.0"
   - "picomatch@4.0.5"

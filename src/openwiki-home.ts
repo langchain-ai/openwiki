@@ -1,6 +1,7 @@
 import { chmod, mkdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { restrictDirToCurrentUser } from "./windows-acl.js";
 
 export const OPENWIKI_CONFIG_DIR_ENV_KEY = "OPENWIKI_CONFIG_DIR";
 
@@ -38,11 +39,16 @@ export function getOpenWikiHomeDisplayPath(
 export const openWikiHomeDir = resolveOpenWikiHomeDir();
 export const openWikiHomeDisplayPath = getOpenWikiHomeDisplayPath();
 export const openWikiConnectorsDir = path.join(openWikiHomeDir, "connectors");
+export const openWikiConversationHistoryDir = path.join(
+  openWikiHomeDir,
+  "conversation_history",
+);
 export const openWikiLocalWikiDir = path.join(openWikiHomeDir, "wiki");
 export const openWikiSkillsDir = path.join(openWikiHomeDir, "skills");
 export const openWikiConnectorsDisplayPath = `${openWikiHomeDisplayPath}/connectors`;
 export const openWikiLocalWikiDisplayPath = `${openWikiHomeDisplayPath}/wiki`;
 export const openWikiSkillsDisplayPath = `${openWikiHomeDisplayPath}/skills`;
+export const openWikiEnvDisplayPath = `${openWikiHomeDisplayPath}/.env`;
 
 export function getConnectorDir(connectorId: string): string {
   return path.join(openWikiConnectorsDir, connectorId);
@@ -67,7 +73,9 @@ export function getConnectorLogsDir(connectorId: string): string {
 export async function ensureOpenWikiHome(): Promise<void> {
   await mkdir(openWikiHomeDir, { recursive: true, mode: 0o700 });
   await chmodIfExists(openWikiHomeDir, 0o700);
+  await restrictDirToCurrentUser(openWikiHomeDir);
   await mkdir(openWikiConnectorsDir, { recursive: true, mode: 0o700 });
+  await mkdir(openWikiConversationHistoryDir, { recursive: true, mode: 0o700 });
   await mkdir(openWikiLocalWikiDir, { recursive: true, mode: 0o700 });
   await mkdir(openWikiSkillsDir, { recursive: true, mode: 0o700 });
 }

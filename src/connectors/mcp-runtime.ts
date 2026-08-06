@@ -16,6 +16,7 @@ import type {
   ConnectorIngestResult,
   McpConnectorConfig,
 } from "./types.js";
+import { isSecretLikeKey } from "../diagnostics.js";
 
 export type McpConnectorId = Extract<ConnectorId, "notion">;
 
@@ -271,8 +272,4 @@ function sanitizeValue(value: unknown): unknown {
   }
 
   return value;
-}
-
-function isSecretLikeKey(key: string): boolean {
-  return /(token|secret|password|authorization|api[-_]?key|cookie)/iu.test(key);
 }

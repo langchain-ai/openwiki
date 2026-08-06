@@ -97,13 +97,73 @@ Trailing notes that must survive.
 
     expect(second).toEqual(first);
   });
+
+  for (const [name, existing] of [
+    [
+      "an orphaned start marker",
+      `# Project instructions
+
+${SNIPPET_START}
+DO NOT DELETE: hand-written project policy
+`,
+    ],
+    [
+      "an orphaned end marker",
+      `# Project instructions
+
+DO NOT DELETE: hand-written project policy
+${SNIPPET_END}
+`,
+    ],
+    [
+      "reversed markers",
+      `# Project instructions
+
+${SNIPPET_END}
+DO NOT DELETE: hand-written project policy
+${SNIPPET_START}
+`,
+    ],
+    [
+      "duplicate managed blocks",
+      `# Project instructions
+
+${SNIPPET_START}
+first managed block
+${SNIPPET_END}
+
+DO NOT DELETE: hand-written project policy
+
+${SNIPPET_START}
+second managed block
+${SNIPPET_END}
+`,
+    ],
+  ] as const) {
+    test(`rejects ${name} without changing either agent file`, async () => {
+      const repo = await createTempRepo();
+      const agentsPath = path.join(repo, "AGENTS.md");
+      await writeFile(agentsPath, existing, "utf8");
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        await expect(ensureCodeModeRepoSetup(repo)).rejects.toThrow(
+          /AGENTS\.md.*managed markers are malformed or duplicated/u,
+        );
+      }
+
+      expect(await readIfPresent(agentsPath)).toBe(existing);
+      // Both files are prepared before either is written, so a malformed
+      // AGENTS.md cannot leave a newly-created CLAUDE.md behind.
+      expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
+    });
+  }
 });
 
 describe("ensureCodeModeRepoSetup workflow", () => {
   test("generated PR includes agent files and the workflow in add-paths", async () => {
     const repo = await createTempRepo();
 
-    await ensureCodeModeRepoSetup(repo);
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
 
     const workflow = await readIfPresent(
       path.join(repo, ".github", "workflows", "openwiki-update.yml"),
@@ -118,5 +178,73 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     ]) {
       expect(workflow).toContain(managedPath);
     }
+  });
+
+  test("wires the LangSmith connector read key into the workflow env", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    // Without this, the scheduled code-mode pull has no connector key in CI and
+    // the LangSmith pull skips every run (the key is the connector's requiredEnv).
+    expect(workflow).toContain(
+      "OPENWIKI_LANGSMITH_API_KEY: ${{ secrets.OPENWIKI_LANGSMITH_API_KEY }}",
+    );
+  });
+
+  test("pins the openwiki install to a specific version, never unpinned", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    // Installing an unpinned package in a privileged CI context is a supply-chain
+    // risk; the generated workflow must pin openwiki to the shipping version.
+    expect(workflow).toMatch(/npm install --global openwiki@\d+\.\d+\.\d+ /u);
+    expect(workflow).not.toMatch(/--global openwiki(?![@\d])/u);
+  });
+
+  test("does not create a workflow unless explicitly requested", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(
+      await readIfPresent(
+        path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+      ),
+    ).toBeNull();
+  });
+
+  test("preserves a customized workflow when setup runs again", async () => {
+    const repo = await createTempRepo();
+    const workflowPath = path.join(
+      repo,
+      ".github",
+      "workflows",
+      "openwiki-update.yml",
+    );
+    const customizedWorkflow = `name: Custom OpenWiki Update
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update:
+    uses: ./.github/workflows/reusable-openwiki.yml
+    with:
+      model: gpt-5.6-terra
+`;
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+    await writeFile(workflowPath, customizedWorkflow, "utf8");
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+
+    expect(await readIfPresent(workflowPath)).toBe(customizedWorkflow);
   });
 });

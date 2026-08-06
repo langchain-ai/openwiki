@@ -58,7 +58,7 @@ function configureValidChatGptSession(): void {
   set("OPENWIKI_PROVIDER", "openai-chatgpt");
   storeChatGptTokens();
   set("OPENWIKI_MODEL_ID", "gpt-5.5");
-  set("LANGSMITH_API_KEY", "");
+  set("LANGSMITH_API_KEY", "lsv2_test-key");
 }
 
 beforeEach(() => {
@@ -178,7 +178,7 @@ describe("forceModel re-asks the model after a provider change", () => {
     set("OPENWIKI_PROVIDER", "openai-chatgpt");
     storeChatGptTokens();
     set("OPENWIKI_MODEL_ID", "gpt-5.4-mini");
-    set("LANGSMITH_API_KEY", "");
+    set("LANGSMITH_API_KEY", "lsv2_test-key");
 
     // Without force, a stored model is kept (no model step).
     expect(
@@ -193,7 +193,7 @@ describe("forceModel re-asks the model after a provider change", () => {
   test("a per-run model override still suppresses the model step", () => {
     set("OPENWIKI_PROVIDER", "openai-chatgpt");
     storeChatGptTokens();
-    set("LANGSMITH_API_KEY", "");
+    set("LANGSMITH_API_KEY", "lsv2_test-key");
 
     expect(
       getNextStepAfterProvider(

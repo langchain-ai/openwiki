@@ -1,9 +1,19 @@
 import { shouldCheckUpdateNoop, getUpdateNoopStatus } from "./agent/utils.js";
+import { readCodexTokensFromEnv } from "./agent/openai-chatgpt-oauth.js";
 import type { CliCommand } from "./commands.js";
 import {
+  OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
+  OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
+  getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
+  getProviderCredentialHint,
+  providerUsesExternalCliAuth,
+  providerUsesOAuth,
   resolveConfiguredProvider,
+  type OpenWikiProvider,
 } from "./constants.js";
+import { resolveExternalCliCredential } from "./external-cli-auth.js";
 
 type ResolveStartupCommandOptions = {
   cwd?: string;
@@ -37,10 +47,12 @@ export async function resolveStartupCommand(
     (command.print || !isStdinTTY)
   ) {
     const provider = resolveConfiguredProvider();
-    const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-    const hasProviderKey = Boolean(process.env[apiKeyEnvKey]);
+    const missingEnvKey = await getMissingNonInteractiveProviderEnvKey(
+      provider,
+      process.env,
+    );
 
-    if (!hasProviderKey) {
+    if (missingEnvKey) {
       if (
         command.print &&
         (await canSkipCleanUpdateBeforeCredentials(
@@ -51,10 +63,14 @@ export async function resolveStartupCommand(
         return command;
       }
 
+      const hint = getProviderCredentialHint(provider);
+
       return {
         kind: "error",
         exitCode: 1,
-        message: `${apiKeyEnvKey} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.`,
+        message: `${formatCredentialRequirement(provider, missingEnvKey)} is required for non-interactive runs. Run openwiki in an interactive terminal to save credentials.${
+          hint ? ` ${hint}` : ""
+        }`,
       };
     }
   }
@@ -73,6 +89,34 @@ export async function resolveStartupCommand(
   }
 
   return command;
+}
+
+async function getMissingNonInteractiveProviderEnvKey(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv,
+): Promise<string | null> {
+  if (providerUsesExternalCliAuth(provider)) {
+    await resolveExternalCliCredential(provider, env);
+  }
+
+  if (!providerUsesOAuth(provider)) {
+    return getMissingProviderEnvKey(provider, env);
+  }
+
+  return readCodexTokensFromEnv(env) === null
+    ? (getProviderApiKeyEnvKey(provider) ?? "ChatGPT OAuth token set")
+    : null;
+}
+
+function formatCredentialRequirement(
+  provider: OpenWikiProvider,
+  apiKeyEnvKey: string,
+): string {
+  if (!providerUsesOAuth(provider)) {
+    return apiKeyEnvKey;
+  }
+
+  return `A complete ChatGPT OAuth token set (${apiKeyEnvKey}, ${OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY}, ${OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY}, ${OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY})`;
 }
 
 async function canSkipCleanUpdateBeforeCredentials(

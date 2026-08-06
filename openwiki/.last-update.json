@@ -1,6 +1,8 @@
 {
-  "updatedAt": "2026-06-30T21:20:03.130Z",
+  "updatedAt": "2026-08-04T09:01:26.212Z",
   "command": "update",
-  "gitHead": "c344dca36e974e67aaa1476474b4b4d43aa6ba7c",
-  "model": "accounts/fireworks/models/glm-5p2"
+  "gitHead": "9a02b3516fe1706d6e8f23557ac42f42a6d0896a",
+  "model": "z-ai/glm-5.2",
+  "status": "complete",
+  "language": "en"
 }
