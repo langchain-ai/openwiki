@@ -200,7 +200,42 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
           ),
         ),
     }),
-  ];
+  ].map(withToolErrorsAsResults);
+}
+
+/**
+ * Return thrown tool errors as the tool *result* instead of rejecting (#427).
+ *
+ * A thrown tool error aborts the agent run, and even when the run survives, the
+ * model never sees the message. That matters because these messages are written
+ * for the model — `callMcpTool` answers a wrong tool name with
+ *
+ *   MCP tool notion-get-page-content was not returned by tools/list for notion.
+ *   Run openwiki_list_mcp_tools first and use an exact discovered name.
+ *
+ * which is precisely the hint needed to retry correctly. Returning it lets the
+ * model self-correct; throwing it just ends the turn.
+ *
+ * Errors are surfaced, not swallowed: the result is prefixed `Tool error:` so a
+ * failure is never mistaken for data, and the run transcript still shows it.
+ */
+export function withToolErrorsAsResults(
+  tool: DynamicStructuredTool,
+): DynamicStructuredTool {
+  const originalFunc = tool.func.bind(tool) as (
+    ...args: Parameters<DynamicStructuredTool["func"]>
+  ) => Promise<unknown>;
+
+  tool.func = (async (...args: Parameters<DynamicStructuredTool["func"]>) => {
+    try {
+      return await originalFunc(...args);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return `Tool error: ${message}`;
+    }
+  }) as DynamicStructuredTool["func"];
+
+  return tool;
 }
 
 async function listConnectors() {
