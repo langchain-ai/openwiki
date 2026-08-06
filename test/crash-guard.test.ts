@@ -170,4 +170,24 @@ describe("handleFatal", () => {
     expect(line).toContain("unhandledRejection");
     expect(line).toContain("visible message");
   });
+
+  test("a burst of concurrent fatal signals records the crash exactly once", async () => {
+    registerActiveRun(ACTIVE);
+
+    // The installer fires `void handleFatal(...)` fire-and-forget, once per escaped
+    // rejection, so a burst arrives with no await between calls and every handler runs
+    // its synchronous prefix back-to-back. The first must claim the run; every later
+    // one must see it already cleared. Before the sync-claim fix each of the 50 read
+    // the still-set run and recorded it, which is the one-crash-261-events bug.
+    await Promise.all(
+      Array.from({ length: 50 }, (_unused, index) =>
+        handleFatal("unhandledRejection", new Error(`boom ${index}`)),
+      ),
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(recordRunSafe).toHaveBeenCalledTimes(1);
+    expect(persistRunMetadataIfChanged).toHaveBeenCalledTimes(1);
+    expect(getActiveRun()).toBeUndefined();
+  });
 });
