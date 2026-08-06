@@ -60,6 +60,11 @@ import {
 } from "./onboarding.js";
 import { openWikiLocalWikiDir } from "./openwiki-home.js";
 import {
+  resolveWikiRoot,
+  searchWiki,
+  virtualRootForRunMode,
+} from "./search/index.js";
+import {
   deleteConnectorSchedules,
   getSavedPowerScheduleStatus,
   listConnectorSchedules,
@@ -3795,6 +3800,8 @@ if (command.kind === "auth") {
   await runCronCommand(command);
 } else if (command.kind === "ingest") {
   await runIngestCommand(command);
+} else if (command.kind === "search") {
+  await runSearchCommand(command);
 } else if (command.kind === "visualize") {
   await runVisualizeCommand(command);
 } else if (shouldPrintStartupError(argv, parsedCommand, command)) {
@@ -3847,6 +3854,36 @@ async function runVisualizeCommand(
       port: command.port,
       open: command.open,
     });
+  } catch (error) {
+    process.stderr.write(`${getErrorMessage(error)}\n`);
+    process.exitCode = 1;
+  }
+}
+
+async function runSearchCommand(
+  command: Extract<CliCommand, { kind: "search" }>,
+): Promise<void> {
+  try {
+    const rootDir = resolveWikiRoot(command.mode, process.cwd());
+    const hits = await searchWiki({
+      rootDir,
+      query: command.query,
+      virtualRoot: virtualRootForRunMode(command.mode),
+      maxResults: command.limit ?? undefined,
+    });
+
+    if (hits.length === 0) {
+      process.stdout.write(
+        `No matches for ${JSON.stringify(command.query)} in ${rootDir}\n`,
+      );
+      process.exitCode = 0;
+      return;
+    }
+
+    for (const hit of hits) {
+      process.stdout.write(`${hit.path}:${hit.line}: ${hit.snippet}\n`);
+    }
+    process.exitCode = 0;
   } catch (error) {
     process.stderr.write(`${getErrorMessage(error)}\n`);
     process.exitCode = 1;
