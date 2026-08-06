@@ -6,7 +6,7 @@ import {
   buildGraph,
   firstHeading,
   splitFrontmatter,
-} from "../src/visualize/graph.ts";
+} from "../../src/visualize/graph.ts";
 
 const tempDirs: string[] = [];
 

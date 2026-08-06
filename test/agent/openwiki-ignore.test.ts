@@ -2,8 +2,8 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
-import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
-import { OpenWikiIgnore } from "../src/agent/openwiki-ignore.ts";
+import { OpenWikiLocalShellBackend } from "../../src/agent/docs-only-backend.ts";
+import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
 
 async function createIgnoredRepo(): Promise<{
   backend: OpenWikiLocalShellBackend;

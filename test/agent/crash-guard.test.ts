@@ -15,10 +15,10 @@ import {
 const recordRunSafe = vi.fn(() => Promise.resolve(undefined));
 const persistRunMetadataIfChanged = vi.fn(() => Promise.resolve(true));
 
-vi.mock("../src/telemetry/record-run-safe.ts", () => ({
+vi.mock("../../src/telemetry/record-run-safe.ts", () => ({
   recordRunSafe: (...args: unknown[]) => recordRunSafe(...args),
 }));
-vi.mock("../src/agent/utils.ts", () => ({
+vi.mock("../../src/agent/utils.ts", () => ({
   persistRunMetadataIfChanged: (...args: unknown[]) =>
     persistRunMetadataIfChanged(...args),
 }));
@@ -29,7 +29,7 @@ import {
   handleFatal,
   registerActiveRun,
   type ActiveRunRecord,
-} from "../src/agent/crash-guard.ts";
+} from "../../src/agent/crash-guard.ts";
 
 const ACTIVE: ActiveRunRecord = {
   command: "init",

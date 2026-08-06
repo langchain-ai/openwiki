@@ -4,12 +4,12 @@ import path from "node:path";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { createSummarizationMiddleware } from "deepagents";
 import { describe, expect, test, vi } from "vitest";
-import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
+import { OpenWikiLocalShellBackend } from "../../src/agent/docs-only-backend.ts";
 import {
   AGENT_FILESYSTEM_PERMISSIONS,
   CONVERSATION_HISTORY_MOUNT,
   createAgentBackend,
-} from "../src/agent/index.ts";
+} from "../../src/agent/index.ts";
 
 async function createBackendFixture(options: { docsOnly: boolean }) {
   const repoDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-repo-"));

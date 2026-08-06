@@ -2,14 +2,14 @@ import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
-import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
+import { OpenWikiLocalShellBackend } from "../../src/agent/docs-only-backend.ts";
 import {
   formatBrokenLinkStamp,
   formatWikiLinkIssues,
   stampBrokenLinks,
   stripBrokenLinkStamps,
   validateWikiInternalLinks,
-} from "../src/agent/wiki-link-validator.ts";
+} from "../../src/agent/wiki-link-validator.ts";
 
 async function setupWiki(
   outputMode: "local-wiki" | "repository" = "repository",

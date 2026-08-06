@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { FakeListChatModel } from "@langchain/core/utils/testing";
 import { afterEach, describe, expect, test } from "vitest";
-import { createOpenWikiAgent } from "../src/agent/index.ts";
+import { createOpenWikiAgent } from "../../src/agent/index.ts";
 
 const temporaryDirectories: string[] = [];
 

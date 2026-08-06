@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseStreamEvent } from "../src/agent/index.ts";
+import { parseStreamEvent } from "../../src/agent/index.ts";
 
 // `formatToolArgs` is module-private, so these drive it the way the CLI does:
 // through the exported stream-event parser, whose "tools" branch builds the

@@ -9,7 +9,7 @@ import {
   normalize,
   signature,
   stripFrontmatter,
-} from "../src/visualize/client-lib.ts";
+} from "../../src/visualize/client-lib.ts";
 
 describe("escapeHtml", () => {
   test("escapes the HTML-significant characters", () => {
