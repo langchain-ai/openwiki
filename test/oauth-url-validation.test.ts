@@ -41,6 +41,7 @@ describe("validateOAuthEndpointUrl", () => {
 
 describe("OAuth discovery fetches", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -62,5 +63,24 @@ describe("OAuth discovery fetches", () => {
     for (const call of fetchMock.mock.calls) {
       expect(call[1]).toMatchObject({ redirect: "manual" });
     }
+  });
+
+  test("times out a stalled metadata response", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+
+    const pending = discoverAuthorizationServerMetadata(
+      "https://auth.notion.com/oauth",
+      { allowedHosts: ["notion.com"] },
+    );
+    const rejection = expect(pending).rejects.toThrow(
+      "OAuth authorization-server discovery timed out",
+    );
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    await rejection;
   });
 });

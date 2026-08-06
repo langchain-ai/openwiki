@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import { saveOpenWikiEnv } from "../env.js";
+import { fetchWithAuthTimeout } from "./http.js";
 
 const DEFAULT_CALLBACK_PORT = 53682;
 const OAUTH_CALLBACK_PORT_ENV_KEY = "OPENWIKI_OAUTH_CALLBACK_PORT";
@@ -8,6 +9,7 @@ const HTTPS_OAUTH_REDIRECT_URI_ENV_KEY = "OPENWIKI_HTTPS_OAUTH_REDIRECT_URI";
 const NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels";
 const NGROK_DISCOVERY_TIMEOUT_MS = 15_000;
 const NGROK_DISCOVERY_POLL_MS = 500;
+const NGROK_FETCH_TIMEOUT_MS = 2_000;
 
 export type NgrokStartOptions = {
   port?: number;
@@ -255,22 +257,40 @@ async function waitForRandomNgrokRedirectUri(
   port: number,
 ): Promise<string | null> {
   const startedAt = Date.now();
+  const deadline = startedAt + NGROK_DISCOVERY_TIMEOUT_MS;
 
-  while (Date.now() - startedAt < NGROK_DISCOVERY_TIMEOUT_MS) {
-    const redirectUri = await fetchNgrokRedirectUri(port);
+  while (Date.now() < deadline) {
+    const remainingMs = deadline - Date.now();
+    const redirectUri = await fetchNgrokRedirectUri(
+      port,
+      Math.min(NGROK_FETCH_TIMEOUT_MS, remainingMs),
+    );
     if (redirectUri) {
       return redirectUri;
     }
 
-    await sleep(NGROK_DISCOVERY_POLL_MS);
+    const delayMs = Math.min(NGROK_DISCOVERY_POLL_MS, deadline - Date.now());
+    if (delayMs > 0) {
+      await sleep(delayMs);
+    }
   }
 
   return null;
 }
 
-async function fetchNgrokRedirectUri(port: number): Promise<string | null> {
+async function fetchNgrokRedirectUri(
+  port: number,
+  timeoutMs: number,
+): Promise<string | null> {
   try {
-    const response = await fetch(NGROK_API_URL);
+    const response = await fetchWithAuthTimeout(
+      NGROK_API_URL,
+      {},
+      {
+        operation: "ngrok tunnel discovery",
+        timeoutMs,
+      },
+    );
     if (!response.ok) {
       return null;
     }

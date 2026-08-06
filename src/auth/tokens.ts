@@ -1,4 +1,5 @@
 import { loadOpenWikiEnv, saveOpenWikiEnv } from "../env.js";
+import { fetchWithAuthTimeout } from "./http.js";
 import {
   discoverAuthorizationServerMetadata,
   discoverProtectedResourceMetadata,
@@ -92,7 +93,7 @@ export async function refreshOAuthAccessToken(
     body.set("resource", provider.mcpResourceUrl);
   }
 
-  const response = await fetch(
+  const response = await fetchWithAuthTimeout(
     validateOAuthEndpointUrl(
       tokenUrl,
       `${provider.displayName} token endpoint`,
@@ -107,6 +108,7 @@ export async function refreshOAuthAccessToken(
       method: "POST",
       redirect: "manual",
     },
+    { operation: `${provider.displayName} token refresh` },
   );
 
   if (!response.ok) {
