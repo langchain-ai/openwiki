@@ -1,5 +1,7 @@
 import { existsSync } from "node:fs";
+import { homedir } from "node:os";
 import path from "node:path";
+import type * as React from "react";
 import {
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
@@ -8,6 +10,11 @@ import {
   getProviderProjectEnvKey,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
+  getProviderLabel,
+  getDefaultModelId,
+  getProviderModelOptions,
+  normalizeModelId,
+  isValidModelId,
   providerRequiresApiKey,
   providerRequiresBaseUrl,
   providerRequiresRegion,
@@ -20,6 +27,7 @@ import {
   normalizeProvider,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  SELECTABLE_OPENWIKI_PROVIDERS,
   type OpenWikiProvider,
 } from "../../config/constants.js";
 import {
@@ -34,12 +42,21 @@ import {
   readRepositoryWikiInstructions,
   type OpenWikiOnboardingConfig,
 } from "../onboarding.js";
-import type { PromptStep, SetupStepState, SourceSetupOption } from "./types.js";
+import type {
+  PromptStep,
+  SetupStepState,
+  SourceSetupOption,
+  ModelSelectionOption,
+  SourceSecretInput,
+  PromptInputKey,
+} from "./types.js";
 import {
   ONBOARDING_TEMPLATES,
   RUN_MODE_OPTIONS,
   LANGSMITH_REGION_OPTIONS,
   SOURCE_OPTIONS,
+  CRON_FIELD_LABELS,
+  FINAL_OPTIONS,
 } from "./constants.js";
 import type { OpenWikiRunMode } from "../../cli/commands.js";
 import type { LangSmithRegion } from "../../connectors/sources/langsmith/setup.js";
@@ -650,4 +667,484 @@ export function findNearestGitRepoRoot(startPath: string): string | null {
 
     currentPath = parentPath;
   }
+}
+
+export function needsEnvValue(secretInput: SourceSecretInput): boolean {
+  return !process.env[secretInput.envKey];
+}
+
+export function addSourceInstanceConfig(
+  config: OpenWikiOnboardingConfig,
+  sourceInstance: OpenWikiOnboardingConfig["sourceInstances"][number],
+): OpenWikiOnboardingConfig {
+  const sourceInstances = [...config.sourceInstances, sourceInstance];
+  return {
+    ...config,
+    sourceInstances,
+    sources: deriveLegacySources(sourceInstances),
+  };
+}
+
+export function deriveLegacySources(
+  sourceInstances: OpenWikiOnboardingConfig["sourceInstances"],
+): OpenWikiOnboardingConfig["sources"] {
+  const sources: OpenWikiOnboardingConfig["sources"] = {};
+
+  for (const sourceInstance of sourceInstances) {
+    if (!sources[sourceInstance.connectorId]) {
+      sources[sourceInstance.connectorId] = {
+        connectedAt: sourceInstance.connectedAt,
+        connectorConfig: sourceInstance.connectorConfig,
+        ingestionGoal: sourceInstance.ingestionGoal,
+      };
+    }
+  }
+
+  return sources;
+}
+
+export function getSourceInstanceCount(
+  config: OpenWikiOnboardingConfig,
+  sourceId: ConnectorId,
+): number {
+  return getSourceInstances(config, sourceId).length;
+}
+
+export function getSourceInstances(
+  config: OpenWikiOnboardingConfig,
+  sourceId: ConnectorId,
+): OpenWikiOnboardingConfig["sourceInstances"] {
+  return config.sourceInstances.filter(
+    (sourceInstance) => sourceInstance.connectorId === sourceId,
+  );
+}
+
+export function getConnectedSourceCount(
+  config: OpenWikiOnboardingConfig,
+  sourceOptions: readonly SourceSetupOption[],
+): number {
+  const sourceIds = new Set(sourceOptions.map((source) => source.id));
+  return config.sourceInstances.filter((sourceInstance) =>
+    sourceIds.has(sourceInstance.connectorId),
+  ).length;
+}
+
+export function createSourceInstanceId(
+  sourceId: ConnectorId,
+  config: OpenWikiOnboardingConfig,
+): string {
+  const sourceCount = getSourceInstanceCount(config, sourceId) + 1;
+  return `${sourceId}-${sourceCount}`;
+}
+
+export function createSourceInstanceName(
+  source: SourceSetupOption,
+  description: string,
+  config: OpenWikiOnboardingConfig,
+): string {
+  const sourceCount = getSourceInstanceCount(config, source.id) + 1;
+  const trimmedDescription = description.trim();
+  const suffix = trimmedDescription.length > 0 ? `: ${trimmedDescription}` : "";
+  return `${source.displayName} ${sourceCount}${suffix}`.slice(0, 120);
+}
+
+export function isSourceStep(step: PromptStep | null): boolean {
+  return Boolean(step?.startsWith("source-"));
+}
+
+export function isScheduleStep(step: PromptStep | null): boolean {
+  return Boolean(step?.startsWith("global-"));
+}
+
+/**
+ * Label for the provider's primary credential input. Bedrock authenticates
+ * with an IAM access key ID (paired with a secret access key), not a single
+ * opaque API key, so its prompt reads differently from every other provider.
+ */
+export function getApiKeyFieldLabel(provider: OpenWikiProvider): string {
+  return provider === "bedrock"
+    ? `${getProviderLabel(provider)} access key ID`
+    : `${getProviderLabel(provider)} API key`;
+}
+
+export function getModelSetupDetail(
+  modelIdOverride: string | null,
+  provider: OpenWikiProvider,
+): string {
+  if (modelIdOverride) {
+    return `using ${modelIdOverride} for this run`;
+  }
+
+  if (process.env[OPENWIKI_MODEL_ID_ENV_KEY]) {
+    return process.env[OPENWIKI_MODEL_ID_ENV_KEY] ?? "";
+  }
+
+  return `default ${getDefaultModelId(provider)}`;
+}
+
+export function getModelSelectionOptions(
+  provider: OpenWikiProvider,
+): ModelSelectionOption[] {
+  return [
+    ...getProviderModelOptions(provider).map((model) => ({
+      id: model.id,
+      kind: "preset" as const,
+      label: model.label,
+    })),
+    { kind: "custom" },
+  ];
+}
+
+export function shouldStartWithCustomModelInput(
+  provider: OpenWikiProvider,
+): boolean {
+  return getProviderModelOptions(provider).length === 0;
+}
+
+export function getSelectedModelId(
+  provider: OpenWikiProvider,
+  selectedIndex: number,
+  input: string,
+  isCustomInput: boolean,
+): string | null {
+  if (!isCustomInput) {
+    const selectedOption = getModelSelectionOptions(provider)[selectedIndex];
+
+    if (!selectedOption) {
+      return null;
+    }
+
+    return selectedOption.kind === "custom" ? "custom" : selectedOption.id;
+  }
+
+  const normalizedModelId = normalizeModelId(input);
+
+  return isValidModelId(normalizedModelId) ? normalizedModelId : null;
+}
+
+export function getProviderSelectionIndex(provider: OpenWikiProvider): number {
+  const selectedIndex = SELECTABLE_OPENWIKI_PROVIDERS.findIndex(
+    (providerOption) => providerOption === provider,
+  );
+
+  return selectedIndex === -1 ? 0 : selectedIndex;
+}
+
+export function getModelSelectionIndex(
+  provider: OpenWikiProvider,
+  selectedModelId: string,
+): number {
+  const selectedIndex = getModelSelectionOptions(provider).findIndex(
+    (option) => option.kind === "preset" && option.id === selectedModelId,
+  );
+
+  return selectedIndex === -1 ? 0 : selectedIndex;
+}
+
+export function moveSelectionIndex(
+  currentIndex: number,
+  offset: number,
+  itemCount: number,
+): number {
+  if (itemCount <= 0) {
+    return 0;
+  }
+
+  return (currentIndex + offset + itemCount) % itemCount;
+}
+
+export function getInputDisplayWidth(
+  stdoutColumns: number | undefined,
+): number {
+  const defaultWidth = 64;
+
+  if (!stdoutColumns || stdoutColumns <= 0) {
+    return defaultWidth;
+  }
+
+  return Math.max(24, Math.min(96, stdoutColumns - 16));
+}
+
+export function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
+  return provider === "baseten" ||
+    provider === "fireworks" ||
+    provider === "gemini" ||
+    provider === "gemini-enterprise" ||
+    provider === "nebius"
+    ? "a"
+    : "an";
+}
+
+export function getTemplateGoal(templateId: string | undefined): string {
+  return (
+    ONBOARDING_TEMPLATES.find((template) => template.id === templateId)
+      ?.suggestedGoal ?? ""
+  );
+}
+
+export function getSourceMenuLabel(
+  source: SourceSetupOption,
+  sourceInstanceCount: number,
+): string {
+  return sourceInstanceCount > 0
+    ? `Add another ${source.displayName}`
+    : `Add ${source.displayName}`;
+}
+
+export function getTemplateSourceOptions(
+  templateId: string | undefined,
+): readonly SourceSetupOption[] {
+  const template =
+    ONBOARDING_TEMPLATES.find((option) => option.id === templateId) ??
+    ONBOARDING_TEMPLATES[0];
+  const sourceIds = new Set(template.sourceIds);
+  const sourceOptions = SOURCE_OPTIONS.filter((source) =>
+    sourceIds.has(source.id),
+  );
+
+  return sourceOptions.length > 0 ? sourceOptions : SOURCE_OPTIONS;
+}
+
+export function getSourceDescriptionPrompt(source: SourceSetupOption): string {
+  if (source.id === "web-search") {
+    return "Describe the topics, companies, or pages OpenWiki should search for.";
+  }
+
+  if (source.id === "hackernews") {
+    return "Describe the topics, keywords, users, or story types OpenWiki should watch on Hacker News.";
+  }
+
+  if (source.id === "git-repo") {
+    return "Describe what OpenWiki should understand about this repository.";
+  }
+
+  return `Describe what OpenWiki should look for in ${source.displayName}.`;
+}
+
+export function getFinalOptionLabel(
+  option: (typeof FINAL_OPTIONS)[number],
+  mode: OpenWikiRunMode,
+): string {
+  if (mode !== "code") {
+    return option;
+  }
+
+  return option === "Run ingestion now" ? "Run OpenWiki now" : "Open chat";
+}
+
+export function getSourceDescriptionOptionCount(
+  source: SourceSetupOption,
+): number {
+  return source.examples.length + 1;
+}
+
+export function handleCronEditorInput({
+  currentFieldIndex,
+  currentValue,
+  fallbackExpression,
+  inputValue,
+  key,
+  replaceCurrentField,
+  setCurrentFieldIndex,
+  setReplaceCurrentField,
+  setValue,
+}: {
+  currentFieldIndex: number;
+  currentValue: string;
+  fallbackExpression: string;
+  inputValue: string;
+  key: PromptInputKey;
+  replaceCurrentField: boolean;
+  setCurrentFieldIndex: React.Dispatch<React.SetStateAction<number>>;
+  setReplaceCurrentField: React.Dispatch<React.SetStateAction<boolean>>;
+  setValue: React.Dispatch<React.SetStateAction<string>>;
+}): boolean {
+  if (key.leftArrow) {
+    setCurrentFieldIndex((index) => Math.max(0, index - 1));
+    setReplaceCurrentField(true);
+    return true;
+  }
+
+  if (key.rightArrow || key.tab || inputValue === " " || inputValue === "\t") {
+    setCurrentFieldIndex((index) =>
+      Math.min(CRON_FIELD_LABELS.length - 1, index + 1),
+    );
+    setReplaceCurrentField(true);
+    return true;
+  }
+
+  if (key.backspace || key.delete) {
+    const fields = getCronFields(currentValue, fallbackExpression);
+    const currentField = fields[currentFieldIndex] ?? "";
+    if (currentField.length === 0 && currentFieldIndex > 0) {
+      setCurrentFieldIndex(currentFieldIndex - 1);
+      setReplaceCurrentField(false);
+      return true;
+    }
+
+    fields[currentFieldIndex] = currentField.slice(0, -1);
+    setValue(fields.join(" "));
+    setReplaceCurrentField(false);
+    return true;
+  }
+
+  if (key.ctrl || key.meta) {
+    return false;
+  }
+
+  const pastedFields = parseCronFieldPaste(inputValue);
+  if (pastedFields.length > 1) {
+    const fields = getCronFields(currentValue, fallbackExpression);
+    pastedFields.forEach((field, offset) => {
+      const fieldIndex = currentFieldIndex + offset;
+      if (fieldIndex < CRON_FIELD_LABELS.length) {
+        fields[fieldIndex] = field;
+      }
+    });
+    setValue(fields.join(" "));
+    setCurrentFieldIndex((index) =>
+      Math.min(CRON_FIELD_LABELS.length - 1, index + pastedFields.length - 1),
+    );
+    setReplaceCurrentField(true);
+    return true;
+  }
+
+  const sanitizedInput = sanitizeCronInputChunk(inputValue);
+
+  if (!sanitizedInput) {
+    return false;
+  }
+
+  const fields = getCronFields(currentValue, fallbackExpression);
+  fields[currentFieldIndex] = replaceCurrentField
+    ? sanitizedInput
+    : `${fields[currentFieldIndex] ?? ""}${sanitizedInput}`;
+  setValue(fields.join(" "));
+  setReplaceCurrentField(false);
+  return true;
+}
+
+export function getCronFields(
+  expression: string,
+  fallbackExpression: string,
+): string[] {
+  const source =
+    expression.trim().length > 0 ? expression.trim() : fallbackExpression;
+  const fields = source.split(/\s+/u);
+
+  return CRON_FIELD_LABELS.map((_, index) => fields[index] ?? "");
+}
+
+export function parseCronFieldPaste(inputValue: string): string[] {
+  if (inputValue.trim().length === 0) {
+    return [];
+  }
+
+  if (/\s/u.test(inputValue)) {
+    return inputValue
+      .trim()
+      .split(/\s+/u)
+      .map((field) => sanitizeCronInputChunk(field))
+      .filter((field) => field.length > 0);
+  }
+
+  const compactValue = sanitizeCronInputChunk(inputValue);
+
+  if (/^[0-9*]{5}$/u.test(compactValue)) {
+    return compactValue.split("");
+  }
+
+  return [];
+}
+
+export function sanitizeInputChunk(value: string): string {
+  return value.replace(/[\r\n]/gu, "");
+}
+
+export function sanitizeCronInputChunk(value: string): string {
+  return value.replace(/[^A-Za-z0-9*,/?#LW.-]/gu, "");
+}
+
+export function sanitizeRepoId(value: string): string {
+  return value.replace(/[^A-Za-z0-9._-]/gu, "-").slice(0, 80) || "repo";
+}
+
+export function getDefaultLocalGitRepoPath(): string {
+  return process.cwd();
+}
+
+export async function validateLocalDirectoryPath(
+  value: string,
+): Promise<string> {
+  const normalizedPath = normalizeLocalPath(value);
+
+  if (normalizedPath.length === 0) {
+    throw new Error("Enter a local directory.");
+  }
+
+  const { stat } = await import("node:fs/promises");
+  const pathStat = await stat(normalizedPath);
+
+  if (!pathStat.isDirectory()) {
+    throw new Error(`${normalizedPath} is not a directory.`);
+  }
+
+  return normalizedPath;
+}
+
+export function normalizeLocalPath(value: string): string {
+  const trimmedValue = value.trim();
+  if (trimmedValue.length === 0) {
+    return "";
+  }
+
+  if (trimmedValue === "~") {
+    return homedir();
+  }
+
+  if (trimmedValue.startsWith("~/") || trimmedValue.startsWith("~\\")) {
+    return path.resolve(homedir(), trimmedValue.slice(2));
+  }
+
+  return path.resolve(trimmedValue);
+}
+
+export function getStaticSourceConfig(
+  sourceId: ConnectorId,
+  query: string,
+): Record<string, unknown> {
+  const queries = query.trim().length > 0 ? [query.trim()] : [];
+
+  if (sourceId === "web-search") {
+    return {
+      enabled: true,
+      includeAnswer: true,
+      includeImages: false,
+      includeRawContent: false,
+      maxResults: 5,
+      queries,
+      searchDepth: "basic",
+      timeRange: "day",
+      topic: "general",
+    };
+  }
+
+  if (sourceId === "hackernews") {
+    return {
+      enabled: true,
+      feeds: ["top", "new"],
+      maxItemsPerFeed: 30,
+      maxResultsPerQuery: 20,
+      queries,
+      queryTags: ["story"],
+    };
+  }
+
+  return {
+    enabled: true,
+  };
+}
+
+export function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
