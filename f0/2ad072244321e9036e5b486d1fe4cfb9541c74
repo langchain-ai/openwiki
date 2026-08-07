@@ -2,6 +2,7 @@ test/connectors/sources/git-repo.test.ts
   s_ed18fedebfc70d::t_1db23316f69927 1-222
 test/connectors/sources/web-search.test.ts
   s_ed18fedebfc70d::t_1db23316f69927 5,68,228-275
+  s_9df199bc4d57fc::t_4571c441c980a3 1-4,6-67,69-227,276-292
 test/agent/thread-id.test.ts
   s_ed18fedebfc70d::t_5ae7cfa2a7f615 30-33,41-46
   s_ed18fedebfc70d::t_998e762ac28880 1-29,34-40,47-50
@@ -118,6 +119,14 @@ test/mermaid/mermaid-validate.test.ts
       "agent_id": {
         "tool": "claude",
         "id": "391a4eba-570c-4f91-964a-03cc9764868e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
         "model": "claude-opus-4-8"
       },
       "human_author": "Colin Francis <colin.francis@langchain.dev>"
