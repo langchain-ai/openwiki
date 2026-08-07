@@ -100,6 +100,7 @@
     "@types/react": "^18.3.17",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.5.0",
+    "ink-testing-library": "^4.0.0",
     "jsdom": "^29.1.1",
     "mermaid": "^11.16.0",
     "prettier": "^3.8.4",

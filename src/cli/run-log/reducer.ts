@@ -201,6 +201,22 @@ export function findLastToolLogItemIndex(
 }
 
 /**
+ * Returns the id of the most recent still-running tool line, or null when no
+ * tool is currently running.
+ */
+export function getActiveRunningToolLogId(log: RunLogItem[]): number | null {
+  for (let index = log.length - 1; index >= 0; index -= 1) {
+    const item = log[index];
+
+    if (item.type === "tool" && item.status === "running") {
+      return item.id;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Returns the running tool call ids for a line, falling back to the single
  * `toolCallId` for legacy running lines and an empty list otherwise.
  */
