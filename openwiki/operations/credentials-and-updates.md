@@ -202,9 +202,30 @@ The content-change check uses `createOpenWikiContentSnapshot()`, which hashes th
 
 When a run fails mid-stream, the catch block in `src/agent/index.ts` still calls `persistRunMetadataIfChanged()` with `status: "interrupted"` so that already-generated content stays diffable by future updates. Without this, a crashed run would be indistinguishable from a completed one — the next update would see a clean worktree with an unchanged git head and skip as a no-op, treating a possibly partial wiki as current.
 
+A rejection that escapes every catch (for example a subagent error surfacing on the microtask queue during streaming) is caught by the process-wide crash guard in `src/agent/crash-guard.ts`, installed once at CLI startup. `handleFatal()` records the crash to telemetry and stamps the run `interrupted` post-mortem before exiting non-zero, so the next scheduled update still retries instead of skipping against a half-written wiki.
+
 `getUpdateNoopStatus()` checks `lastUpdate.status` before skipping: if it is `"interrupted"`, the update is not skipped. Metadata written by older versions (no `status` field) is treated as `"complete"`, so upgrades do not force a spurious re-run. A completed retry that changes no content still rewrites the metadata to clear a leftover interrupted status, so the no-op skip recovers instead of re-running forever.
 
 Update runs use this metadata to build a change summary since the previous successful OpenWiki execution — preferring `gitHead` for a precise commit range, falling back to `updatedAt` for a time-based range.
+
+## Ignoring paths with `.openwikiignore`
+
+A `.openwikiignore` file at the repository root keeps generated docs from reading or describing private, generated, or irrelevant paths. It is enforced as a **read boundary** during the run, not just a generation hint.
+
+Syntax is gitignore-compatible (`src/agent/openwiki-ignore.ts`): comments (`#`), blank lines, `*` and `**` globs, `?` single-char, leading-`/` anchoring to the repo root, trailing-`/` directory scoping, and `!` negation with last-match-wins ordering.
+
+```gitignore
+secrets/
+*.log
+!logs/keep.log
+```
+
+Enforcement and bounds:
+
+- The compiled `OpenWikiIgnore` ruleset is threaded through the agent backend, prompt, and run context as one cohesive object (`src/agent/docs-only-backend.ts`). When rules are active, filesystem tools (`read_file`, `write_file`, `edit_file`, raw reads) hard-deny any path the ruleset excludes, and shell `execute` is restricted to a small allowlist of maintenance commands so ignored paths cannot be reached via the shell.
+- Paths are canonicalized (`normalizeIgnorePath`) before matching, so equivalent spellings such as `./secrets/x`, `secrets/../secrets/x`, or backslash variants cannot slip past an anchored rule. Matching is case-insensitive (`/iu`) to close a bypass on case-insensitive filesystems where `Secrets/token.txt` and `secrets/token.txt` resolve to the same file.
+- The agent prompt is told the run has `.openwikiignore` rules and that matching paths are out of scope, and is directed to use `ls`, `read_file`, `glob`, and `grep` (which keep exclusions enforced) instead of shell-based discovery. When `.openwikiignore` is active, the prompt's git-history hint tells the agent history is unavailable through the shell and to rely on allowed source files and tests.
+- This is a read boundary, not a topic-suppression guarantee: ignored paths are never read, scanned, or reproduced, but the agent may still infer an ignored area from other allowed evidence such as tests, the README, or commit messages.
 
 ## Anonymous usage telemetry
 
@@ -219,7 +240,7 @@ During `openwiki code --init`, `src/code-mode.ts` also creates `.github/workflow
 The repository includes `examples/openwiki-update.yml` as a copyable GitHub Actions scheduled update workflow. It:
 
 - runs on schedule (daily at 08:00 UTC) and on manual dispatch,
-- checks out the repository,
+- checks out the repository with `fetch-depth: 0` (full history) so `openwiki code --update` can diff HEAD against the commit it last documented — a shallow clone hides that commit and the update runs against an empty change summary,
 - installs Node.js 22,
 - installs OpenWiki globally,
 - runs `openwiki code --update --print`,
@@ -231,6 +252,7 @@ The workflow is a good reference for automated maintenance. The repo also contai
 The repository also includes `examples/openwiki-update.gitlab-ci.yml` as a copyable GitLab CI scheduled update job. It:
 
 - runs from a scheduled pipeline or a manually triggered web pipeline,
+- sets `GIT_DEPTH: "0"` (full clone) so `openwiki code --update` can diff HEAD against the last-documented commit — GitLab's default shallow clone hides that commit,
 - installs OpenWiki globally in a Node.js 22 container,
 - runs `openwiki code --update --print`,
 - skips the rest of the job when `openwiki/` did not change,
@@ -243,6 +265,7 @@ GitLab users should configure protected CI/CD variables for the model provider k
 The repository also includes `examples/openwiki-update.bitbucket-pipelines.yml` as a copyable Bitbucket Pipelines scheduled update job. It:
 
 - runs on a custom schedule or manual trigger,
+- clones with `depth: full` so `openwiki code --update` can diff HEAD against the last-documented commit — Bitbucket's default shallow clone hides that commit,
 - installs OpenWiki globally in a Node.js 22 container,
 - runs `openwiki code --update --print`,
 - commits changes to a generated `openwiki/update-$BITBUCKET_BUILD_NUMBER` branch,
@@ -259,6 +282,7 @@ Bitbucket users should configure repository variables for the model provider key
 - Scheduled automation depends on the same CLI entrypoint as local users, so workflow changes should be validated against `package.json` and the CLI help text.
 - When adding a provider, update `managedEnvKeys` in `src/env.ts` so the env file is formatted correctly and diagnostics cover the new key. Providers without an API key (like gemini-enterprise) declare their required env keys in `PROVIDER_CONFIGS` (e.g. `projectEnvKey`) and are gated by `getMissingProviderEnvKey()`. Providers with a paired secret and region (like bedrock) use `secretKeyEnvKey` and `regionEnvKey` with `requiresRegion: true`. External-CLI-auth providers (like copilot) declare `authMethod: "external-cli"` and `externalCliAuthAdapter`; the CLI login flow is handled in `src/external-cli-auth.ts`, and the token is never persisted to `~/.openwiki/.env`. AWS SDK providers (like bedrock) declare `authMethod: "aws-sdk"` and delegate credential resolution to the AWS SDK chain.
 - The content-snapshot check means CI runs that produce no changes will not update `.last-update.json` or open a PR with metadata-only changes.
+- Scheduled update workflows must fetch full history (`fetch-depth: 0` for GitHub Actions, `GIT_DEPTH: "0"` for GitLab CI, `clone: depth: full` for Bitbucket). A shallow clone hides the commit recorded in `.last-update.json`, so `openwiki code --update` cannot build a change window and runs against an empty summary.
 - Interrupted runs write `status: "interrupted"` so the next update retries. If metadata semantics change, keep `getUpdateNoopStatus()` and `persistRunMetadataIfChanged()` in sync so the interrupted/complete lifecycle is preserved.
 
 ## Source map
@@ -279,6 +303,9 @@ Bitbucket users should configure repository variables for the model provider key
 - `src/onboarding.ts`
 - `src/schedules.ts`
 - `src/code-mode.ts`
+- `src/agent/openwiki-ignore.ts`
+- `src/agent/docs-only-backend.ts`
+- `src/agent/prompt.ts`
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
 - `examples/openwiki-update.bitbucket-pipelines.yml`

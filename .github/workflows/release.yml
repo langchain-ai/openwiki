@@ -63,3 +63,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+          # Bake the distribution channel into the published build. Only the
+          # upstream repo stamps "official"; a fork that opts into releasing
+          # (OPENWIKI_ENABLE_RELEASE) still publishes "community", so its
+          # telemetry stays filterable. The stamp runs inside `pnpm release`
+          # (publish path only), never on the version-PR path, so it is never
+          # committed back to the repo.
+          OPENWIKI_BUILD_CHANNEL: ${{ github.repository == 'langchain-ai/openwiki' && 'official' || 'community' }}

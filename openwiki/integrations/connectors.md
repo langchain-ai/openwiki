@@ -67,7 +67,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
 
 `src/onboarding.ts` drives first-run setup: wiki template selection, scope customization, per-source ingestion notes, and source schedules, persisted to `~/.openwiki/onboarding.json`. Global personal-wiki instructions are saved to `~/.openwiki/INSTRUCTIONS.md`.
 
-`src/schedules.ts` installs source schedules as macOS user LaunchAgents (`~/Library/LaunchAgents/`) with logs under `~/.openwiki/logs/`, and backs the `openwiki cron list|pause|resume|delete` commands (see [CLI usage](/cli/usage.md)).
+`src/schedules.ts` installs source schedules as macOS user LaunchAgents (`~/Library/LaunchAgents/`) with logs under `~/.openwiki/logs/`, and backs the `openwiki cron list|pause|resume|delete` commands (see [CLI usage](../cli/usage.md)).
 
 ## Things to watch when changing connector behavior
 

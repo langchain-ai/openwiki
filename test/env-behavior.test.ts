@@ -285,6 +285,79 @@ describe("saveOpenWikiEnv", () => {
     // the rename that would have replaced it never ran.
     await expect(readFile(env.openWikiEnvPath, "utf8")).resolves.toBe(original);
   });
+
+  test("serializes overlapping saves so disjoint updates are preserved", async () => {
+    // Hold the first temp-file write open. A correctly serialized save must not
+    // even read the environment for the second call until the first rename has
+    // completed; otherwise both calls can merge from the same stale snapshot.
+    const original = `${OPENWIKI_PROVIDER_ENV_KEY}=openai\n`;
+    await mkdir(path.dirname(env.openWikiEnvPath), { recursive: true });
+    await writeFile(env.openWikiEnvPath, original, "utf8");
+
+    let readCount = 0;
+    let releaseFirstWrite!: () => void;
+    let firstWriteStarted!: () => void;
+    const firstWriteReady = new Promise<void>((resolve) => {
+      firstWriteStarted = resolve;
+    });
+    const firstWriteReleased = new Promise<void>((resolve) => {
+      releaseFirstWrite = resolve;
+    });
+
+    vi.resetModules();
+    vi.doMock("node:fs/promises", async () => {
+      const actual =
+        await vi.importActual<typeof import("node:fs/promises")>(
+          "node:fs/promises",
+        );
+      let writeCount = 0;
+
+      return {
+        ...actual,
+        default: actual,
+        readFile: vi.fn(async (...args: Parameters<typeof actual.readFile>) => {
+          readCount += 1;
+          return actual.readFile(...args);
+        }),
+        writeFile: vi.fn(
+          async (...args: Parameters<typeof actual.writeFile>) => {
+            writeCount += 1;
+            if (writeCount === 1) {
+              firstWriteStarted();
+              await firstWriteReleased;
+            }
+            return actual.writeFile(...args);
+          },
+        ),
+      };
+    });
+
+    try {
+      const concurrentEnv = await import("../src/env.ts");
+      const first = concurrentEnv.saveOpenWikiEnv({
+        [OPENAI_API_KEY_ENV_KEY]: "first",
+      });
+      await firstWriteReady;
+
+      const second = concurrentEnv.saveOpenWikiEnv({
+        [OPENROUTER_API_KEY_ENV_KEY]: "second",
+      });
+      await Promise.resolve();
+
+      // The initial read belongs to the first save. The second save is queued
+      // behind the complete read/merge/write/rename transaction.
+      expect(readCount).toBe(1);
+
+      releaseFirstWrite();
+      await Promise.all([first, second]);
+    } finally {
+      vi.doUnmock("node:fs/promises");
+    }
+
+    const contents = await readFile(env.openWikiEnvPath, "utf8");
+    expect(contents).toContain(`${OPENAI_API_KEY_ENV_KEY}=`);
+    expect(contents).toContain(`${OPENROUTER_API_KEY_ENV_KEY}=`);
+  });
 });
 
 describe("getShellEnvValue", () => {

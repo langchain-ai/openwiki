@@ -1,17 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { parseStreamEvent } from "../src/agent/index.ts";
+import { parseAgentStreamChunk } from "../src/agent/index.ts";
 
-// Helpers to build fake stream chunks in the normalized protocol-event shape
-// that `parseStreamEvent` now consumes:
-//   { type: "event", method: "messages", params: { data, namespace } }
-// isProtocolStreamEvent() checks type/method/params.data; the "messages"
-// branch then feeds params.data to extractMessageText, which unwraps the
-// [messageLike, metadata] tuple (isStreamMessageTuplePayload checks that
-// metadata has langgraph_node etc.) and reads the message content blocks.
-
-function makeChunk(contentBlocks: unknown[]): unknown {
+function makeChunk(
+  contentBlocks: unknown[],
+  namespace: string[] = [],
+): unknown {
   const message = {
-    // marks this as a message-like record (isMessageLikeRecord check)
     content: contentBlocks,
     role: "assistant",
   };
@@ -19,22 +13,13 @@ function makeChunk(contentBlocks: unknown[]): unknown {
     langgraph_node: "agent",
     run_id: "fake-run-id",
   };
-  return {
-    type: "event",
-    method: "messages",
-    params: {
-      // the LangGraph `messages` payload: [message, metadata] tuple
-      data: [message, metadata],
-      // top-level (main graph) namespace, not a subgraph
-      namespace: [],
-    },
-  };
+  return [namespace, "messages", [message, metadata]];
 }
 
-describe("parseStreamEvent – content-block filtering", () => {
+describe("parseAgentStreamChunk", () => {
   test("plain text blocks still stream through normally", () => {
     const chunk = makeChunk([{ type: "text", text: "Hello from the agent." }]);
-    const event = parseStreamEvent(chunk);
+    const event = parseAgentStreamChunk(chunk);
 
     expect(event).not.toBeNull();
     expect(event?.type).toBe("text");
@@ -45,7 +30,7 @@ describe("parseStreamEvent – content-block filtering", () => {
     // A 5 000-character base64 blob that mimics an actual file payload
     const base64Blob = "ZmYtZmFrZS1iYXNlNjQ=".repeat(250);
     const chunk = makeChunk([{ type: "file", content: base64Blob }]);
-    const event = parseStreamEvent(chunk);
+    const event = parseAgentStreamChunk(chunk);
 
     // Nothing should reach the terminal
     expect(event).toBeNull();
@@ -57,7 +42,7 @@ describe("parseStreamEvent – content-block filtering", () => {
       { type: "image", content: base64Image },
       { type: "text", text: "Here is your result." },
     ]);
-    const event = parseStreamEvent(chunk);
+    const event = parseAgentStreamChunk(chunk);
 
     expect(event).not.toBeNull();
     expect(event?.type).toBe("text");
@@ -70,7 +55,7 @@ describe("parseStreamEvent – content-block filtering", () => {
     const chunk = makeChunk([
       { type: "input_file", content: "ZmFrZWZpbGVkYXRh" },
     ]);
-    const event = parseStreamEvent(chunk);
+    const event = parseAgentStreamChunk(chunk);
 
     expect(event).toBeNull();
   });
@@ -79,8 +64,70 @@ describe("parseStreamEvent – content-block filtering", () => {
     const chunk = makeChunk([
       { type: "image_url", content: "data:image/png;base64,abc123==" },
     ]);
-    const event = parseStreamEvent(chunk);
+    const event = parseAgentStreamChunk(chunk);
 
     expect(event).toBeNull();
+  });
+
+  test("preserves nested task output", () => {
+    const event = parseAgentStreamChunk(
+      makeChunk([{ type: "text", text: "Task output" }], ["task", "agent"]),
+    );
+
+    expect(event).toMatchObject({
+      source: "subgraph",
+      text: "Task output",
+      type: "text",
+    });
+  });
+
+  test("normalizes tool lifecycle events", () => {
+    expect(
+      parseAgentStreamChunk([
+        [],
+        "tools",
+        {
+          event: "on_tool_start",
+          input: { path: "/README.md" },
+          name: "read_file",
+          toolCallId: "call-1",
+        },
+      ]),
+    ).toMatchObject({
+      id: "call-1",
+      name: "read_file",
+      type: "tool_start",
+    });
+    expect(
+      parseAgentStreamChunk([
+        [],
+        "tools",
+        { event: "on_tool_end", name: "read_file", toolCallId: "call-1" },
+      ]),
+    ).toEqual({
+      id: "call-1",
+      name: "read_file",
+      status: "finished",
+      type: "tool_end",
+    });
+    expect(
+      parseAgentStreamChunk([
+        [],
+        "tools",
+        { event: "on_tool_error", name: "grep", toolCallId: "call-2" },
+      ]),
+    ).toEqual({
+      id: "call-2",
+      name: "grep",
+      status: "error",
+      type: "tool_end",
+    });
+  });
+
+  test("rejects malformed stream chunks", () => {
+    expect(parseAgentStreamChunk({ content: "not a tuple" })).toBeNull();
+    expect(
+      parseAgentStreamChunk([["namespace"], ["not a message"]]),
+    ).toBeNull();
   });
 });

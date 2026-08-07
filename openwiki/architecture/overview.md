@@ -34,14 +34,15 @@ The CLI starts in `src/cli.tsx`, parses the command, and then either:
 - runs an init/update command against the current repository, or
 - performs a dry-run in development mode.
 
-For non-chat runs, the agent receives a `RunContext` that includes last-update metadata and a Git summary generated from:
+For non-chat runs, the agent receives a `RunContext` carrying `lastUpdate`, `language`, and `wikiGoal`. The prompt templates instruct the agent to gather its own Git evidence during the run by running:
 
-- `git status --short`
 - `git rev-parse HEAD`
-- `git log --max-count=20 --name-status --oneline` (init, or update without prior metadata)
 - `git log <lastHead>..HEAD --name-status --oneline` (update with a recorded `gitHead`)
+- `git log --max-count=20 --name-status --oneline` (init, or update without prior metadata)
 - `git log --since <updatedAt> --name-status --oneline` (update with only a timestamp)
-- `git diff --name-status HEAD`
+- `git status` / `git diff` to account for uncommitted local changes
+
+`createRunContext()` no longer precomputes a git summary; `.openwikiignore` exclusions are enforced by the filesystem backend and the restricted shell-execute allowlist instead of by pre-filtering a summary.
 
 ### Provider and model resolution
 
@@ -71,7 +72,7 @@ Credential gating before model creation uses `getMissingProviderEnvKey()` in `sr
 
 The agent uses a DeepAgents `LocalShellBackend` rooted at the repository, configured with `virtualMode: true`, `maxOutputBytes: 100_000`, and a 120 second timeout. A SQLite checkpointer (`~/.openwiki/openwiki.sqlite`) persists conversation threads keyed by a hash of the repository path.
 
-`createAgentBackend()` in `src/agent/index.ts` wraps that wiki backend in a DeepAgents `CompositeBackend` that layers two read-only virtual mounts on top of the documented repository:
+`createAgentBackend()` in `src/agent/index.ts` wraps that wiki backend in an `OpenWikiCompositeBackend` (a DeepAgents `CompositeBackend` subclass) that layers two read-only virtual mounts on top of the documented repository:
 
 - `/skills/` — the bundled and user skills under `~/.openwiki/skills` (populated by `src/agent/skills.ts`).
 - `/conversation_history/` — the DeepAgents summarization middleware's history offload, routed to `~/.openwiki/conversation_history` (created by `ensureOpenWikiHome()` in `src/openwiki-home.ts`). `createDeepAgent` exposes no way to override the `/conversation_history` default prefix, so the mount prefix is kept in sync with it via the exported `CONVERSATION_HISTORY_MOUNT` constant. Routing the offload outside the repository is what lets it succeed on docs-only `--init`/`--update` runs: without the mount, the docs-only write guard refuses the offload write, that refusal is non-fatal, and summarization silently degrades — narrowing coverage on large repositories while the run still exits 0 (#496).
@@ -80,7 +81,7 @@ Both mounts are denied to the model's own filesystem tools via `AGENT_FILESYSTEM
 
 The agent runtime attaches two middleware layers:
 
-- **OKF index middleware** (`src/agent/okf-middleware.ts`): migrates existing pages to valid OKF front matter before the agent runs, validates front matter on every write, and synchronizes directory `index.md` files after the run. It also validates Mermaid fences via `src/mermaid/wiki.ts` after the agent finishes.
+- **OKF index middleware** (`src/agent/okf-middleware.ts`): migrates existing pages to valid OKF front matter before the agent runs, validates front matter on every write, and synchronizes directory `index.md` files after the run. Its `afterAgent` finalize stage runs three validation passes: Mermaid fences via `src/mermaid/wiki.ts`, index synchronization, and internal link validation via `src/agent/wiki-link-validator.ts`. The link validator resolves targets against the whole repository (not just the `openwiki/` subtree), since wiki pages may legitimately link out to repo files that render on GitHub; a link is broken only when its target genuinely does not exist. Heading anchors are validated only against Markdown targets, so directory links and GitHub line anchors on source files (e.g. `#L10`) are never flagged. `slugifyHeading` mirrors `github-slugger` (keeps combining marks, replaces whitespace per-character without collapsing) so anchors like `a--b` from stripped punctuation resolve. Broken links are stamped inline with `openwiki:` HTML comments instead of failing the run — the same degrade-and-self-repair pattern Mermaid uses — so a later update can repair the href from the inline comment.
 - **Translation middleware** (`src/agent/translation-middleware.ts`): when the output language differs from the wiki's current language, translates all eligible pages before the agent runs. Pages marked `openwiki_translation_pending` from a prior failed run are retranslated individually. The middleware tags its LLM calls with `langsmith:nostream` so translation output does not scroll past in the TUI token stream.
 
 ### Content snapshot and metadata writes
@@ -91,12 +92,18 @@ After a non-chat run completes, `src/agent/utils.ts` computes a SHA-256 snapshot
 
 `shouldAutoExitStartupRun()` in `src/cli.tsx` determines whether a startup run should exit automatically on success. This applies to `--init` and `--update` commands (without `--print`) when run in a TTY: the CLI launches the run, renders streaming output, and exits with code 0 on success. Chat runs and `--print` runs are unaffected.
 
+### Streaming and crash guard
+
+The live run consumes the agent via `agent.stream({ streamMode: ["messages", "tools"], subgraphs: true })` rather than the Agent Protocol `streamEvents` API. `parseAgentStreamChunk()` in `src/agent/index.ts` normalizes each `[namespace, mode, payload]` chunk into an `OpenWikiRunEvent`: `tools` chunks become tool start/end events (tool-call strings pass through `sanitizeDiagnosticText()` so secrets are redacted), and `messages` chunks yield text after `extractMessageText()` filters non-text content blocks (`tool`, `reasoning`, `file`, `image`) so base64 payloads never reach the terminal. A namespace longer than one element marks the event `source: "subgraph"`, which is how init subagent output is attributed. `parseStreamEvent()` remains exported for the public agent factory's Agent Protocol v3 event shape, but the live run no longer uses it.
+
+A process-wide crash guard (`src/agent/crash-guard.ts`) is installed once at CLI startup via `installCrashGuard()`. The run registers itself with `registerActiveRun()` for the stream-consumption window only and clears it in `finally`; if a rejection escapes every catch (e.g. a subagent error on the microtask queue), `handleFatal()` records the failure to telemetry, stamps the run `interrupted`, and exits non-zero. See [Agent workflow § Crash guard](../agent/workflow.md#crash-guard) for the post-mortem contract.
+
 ## Why the architecture is shaped this way
 
 The current design reflects a documentation product rather than a general-purpose agent framework:
 
 - The CLI owns user experience and credential bootstrap so the tool is install-and-run friendly.
-- Git evidence is collected in the host process before the agent starts so the model sees stable repository context.
+- Git evidence is gathered by the agent itself during the run (per the prompt templates), so the model can adapt its discovery to the actual change window rather than consuming a fixed precomputed summary.
 - Provider support is centralized in `src/constants.ts` so adding a provider is a single-config change plus a model-creation branch.
 - Model execution is provider-stable: transient request failures can retry through the selected LangChain model client, but OpenWiki surfaces the final error instead of continuing with another model.
 - The content-snapshot check prevents metadata churn when an update run produces no documentation changes, which is important for scheduled CI workflows.
@@ -108,14 +115,13 @@ The current design reflects a documentation product rather than a general-purpos
 - Change onboarding or local credential storage in `src/credentials.tsx` and `src/env.ts`.
 - Add a new model provider by extending `PROVIDER_CONFIGS` and `OpenWikiProvider` in `src/constants.ts`, then adding a branch in `createModel` in `src/agent/index.ts`.
 - Adjust model defaults, validation, or fallback lists in `src/constants.ts`.
-- Extend the documentation prompt or Git evidence in `src/agent/prompt.ts` and `src/agent/utils.ts`.
-- Modify run persistence or snapshot behavior in `src/agent/utils.ts`.
+- Extend the documentation prompt or Git evidence in `src/agent/prompts/code.ts`, `src/agent/prompts/personal.ts`, and `src/agent/prompt.ts` (assembler); run persistence and snapshot behavior live in `src/agent/utils.ts`.
 
 ## Supporting subsystems
 
 - **OKF compliance** (`src/okf/`): `frontmatter.ts` validates and migrates YAML front matter, `index-labels.ts` localizes directory index headings by BCP-47 language, and `index-sync.ts` deterministically generates and synchronizes every `index.md` after a run. The OKF middleware (`src/agent/okf-middleware.ts`) ties these into the agent lifecycle.
 - **Mermaid validation** (`src/mermaid/`): `fences.ts` extracts Mermaid code fences from wiki pages, `validate.ts` parses and validates them, and `wiki.ts` repairs broken fences by converting them to plain text fences with an HTML comment explaining the parse error. The OKF middleware calls `validateWikiMermaid()` after every run.
-- **Telemetry** (`src/telemetry/`): emits a single `openwiki_run` PostHog event per run with mode, provider, outcome, latency, and configured connectors. `gates.ts` checks `OPENWIKI_TELEMETRY_DISABLED` / `DO_NOT_TRACK` for opt-out and uses `ci-info` to tag CI runs with a sentinel distinct ID so ephemeral runners never inflate install counts. `record-run-safe.ts` wraps the send with a 3-second flush timeout so telemetry can never stall the CLI.
+- **Telemetry** (`src/telemetry/`): emits a single `openwiki_run` PostHog event per run with mode, provider, outcome, latency, and configured connectors. `gates.ts` checks `OPENWIKI_TELEMETRY_DISABLED` / `DO_NOT_TRACK` for opt-out and uses `ci-info` to tag CI runs with a sentinel distinct ID so ephemeral runners never inflate install counts. `record-run-safe.ts` wraps the send with a 3-second flush timeout so telemetry can never stall the CLI. `errors.ts` classifies failures by walking an unwrap chain (`unwrapErrorChain()`, bounded at 5 links, cycle-safe) so a provider error hidden inside a tool-error wrapper or `AggregateError` is recovered instead of collapsing into the residual `agent_error` bucket. The origin-tag read is itself a chain walk: `readErrorOrigin()` mirrors `classifyError()` and returns the first link whose tag names an owned family (class + detail + throw-site stage), falling back to the nearest stage-only tag — so an owned error re-wrapped by a framework (LangChain's `MiddlewareError` copies the inner message but strands the tag on `.cause`) keeps its class instead of decaying to `agent_error`. The residual bucket also carries an `errorName` fingerprint via `innermostConstructorName()`, which walks to the deepest allowlisted constructor name (not the outer wrapper's) so a framework envelope does not collapse every distinct root cause to one name; the same `safeConstructorName()` allowlist keeps the anonymity envelope closed. `client.ts` `capture()` returns `true` only when the PostHog send fulfills before the flush timeout, so send failures and timeouts are reported as failures rather than silently swallowed.
 - **Skills** (`src/agent/skills.ts`): bundles the `skills/` directory into the OpenWiki home and exposes it to the agent as the `/skills/` virtual mount on the `CompositeBackend` built by `createAgentBackend()` (see [DeepAgents backend and middleware](#deepagents-backend-and-middleware)). Write access to `/skills/**` is denied to the model via `AGENT_FILESYSTEM_PERMISSIONS`. Each bundled skill is staged in a unique scratch directory and swapped into place with an atomic `rename`, so repeated or overlapping `--init` syncs are idempotent — a concurrent install that lands first is accepted as success rather than racing with `EEXIST` or `ENOTEMPTY` errors.
 - **Diagnostics and redaction** (`src/diagnostics.ts`): redacts secrets from error messages, headers, and provider responses before they are shown to the user or written to logs. It matches exact secret values from the environment and known token shapes (`sk-…`, `Bearer …`, `ls…`).
 
@@ -136,6 +142,11 @@ The current design reflects a documentation product rather than a general-purpos
 - `src/env.ts`
 - `src/agent/index.ts`
 - `src/agent/prompt.ts`
+- `src/agent/prompts/code.ts`
+- `src/agent/prompts/personal.ts`
+- `src/agent/skeleton_critic.ts`
+- `src/agent/wiki_qa_subagents.ts`
+- `src/agent/crash-guard.ts`
 - `src/agent/utils.ts`
 - `src/agent/types.ts`
 - `src/agent/docs-only-backend.ts`
@@ -148,7 +159,7 @@ The current design reflects a documentation product rather than a general-purpos
 - `src/diagnostics.ts`
 - `src/okf/frontmatter.ts`, `src/okf/index-labels.ts`, `src/okf/index-sync.ts`
 - `src/mermaid/fences.ts`, `src/mermaid/validate.ts`, `src/mermaid/wiki.ts`, `src/mermaid/dom-shim.ts`
-- `src/telemetry/`
+- `src/telemetry/` (including `errors.ts`, `record-run-safe.ts`, `client.ts`)
 - `src/auth/oauth.ts`
 - `src/auth/providers.ts`
 - `src/auth/configure.ts`
