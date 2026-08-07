@@ -1,4 +1,5 @@
-import { describe, expect, test } from "vitest";
+import type { BackendProtocolV2 } from "deepagents";
+import { describe, expect, test, vi } from "vitest";
 import {
   deriveMinimalFrontmatter,
   normalizeConceptContent,
@@ -8,6 +9,8 @@ import {
   renderFrontmatter,
   setFrontmatterField,
   splitFrontmatter,
+  validateOkfFrontmatter,
+  validatePersistedFile,
 } from "../../src/okf/frontmatter.ts";
 
 const PATH = "/openwiki/architecture/overview.md";
@@ -294,6 +297,67 @@ describe("parseFrontmatterFields", () => {
 
   test("returns undefined for a non-mapping root", () => {
     expect(parseFrontmatterFields("---\n- one\n- two\n---\n")).toBeUndefined();
+  });
+});
+
+describe("validateOkfFrontmatter non-mapping root", () => {
+  test("rejects front matter whose YAML root is not a mapping", () => {
+    // A scalar or list parses cleanly but is not an OKF field map, so it is
+    // reported distinctly from a YAML syntax error.
+    for (const block of ["just a scalar", "- one\n- two"]) {
+      expect(validateOkfFrontmatter(`---\n${block}\n---\n`)).toMatchObject({
+        issues: [{ code: "invalid_yaml_root" }],
+        valid: false,
+      });
+    }
+  });
+});
+
+describe("validatePersistedFile", () => {
+  function backend(read: {
+    error?: string;
+    content?: string | string[] | Uint8Array;
+  }): BackendProtocolV2 {
+    return {
+      readRaw: vi.fn(() => ({
+        error: read.error,
+        data:
+          read.content === undefined
+            ? undefined
+            : {
+                content: read.content,
+                mimeType: "text/markdown",
+                created_at: "2026-07-13T00:00:00.000Z",
+                modified_at: "2026-07-13T00:00:00.000Z",
+              },
+      })),
+    } as unknown as BackendProtocolV2;
+  }
+
+  test("validates the joined text of a persisted file", async () => {
+    await expect(
+      validatePersistedFile(
+        backend({ content: ["---", "type: Reference", "---", ""] }),
+        "/openwiki/page.md",
+      ),
+    ).resolves.toEqual({ valid: true });
+  });
+
+  test("reports a read failure instead of validating missing text", async () => {
+    // A read error, absent content, or binary data all mean there is no final
+    // Markdown to validate, which is surfaced as a single structured issue.
+    for (const read of [
+      { error: "boom" },
+      { content: undefined },
+      { content: new Uint8Array([1, 2, 3]) },
+    ]) {
+      await expect(
+        validatePersistedFile(backend(read), "/openwiki/page.md"),
+      ).resolves.toMatchObject({
+        issues: [{ code: "file_read_failed" }],
+        valid: false,
+      });
+    }
   });
 });
 
