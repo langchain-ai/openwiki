@@ -39,8 +39,13 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli.tsx` — Ink UI, command execution, auto-exit, and run lifecycle.
 - `src/commands.ts` — CLI parsing and help content.
 - `src/agent/index.ts` — agent runtime, provider-specific model creation (including ChatGPT OAuth), fallback, and metadata writes.
-- `src/agent/prompt.ts` — prompt assembly, documentation-run instructions, and AGENTS.md/CLAUDE.md insertion rules.
-- `src/agent/utils.ts` — git evidence collection, content snapshot, and `.last-update.json` handling.
+- `src/agent/prompt.ts` — prompt assembler: selects a template by output mode and substitutes placeholders.
+- `src/agent/prompts/code.ts` — `CODE_SYSTEM_PROMPTS`/`CODE_USER_PROMPTS` for repository runs (init/update/chat contracts, including the skeleton-critic and wiki-QA verification workflow).
+- `src/agent/prompts/personal.ts` — `PERSONAL_SYSTEM_PROMPTS`/`PERSONAL_USER_PROMPTS` for local personal-brain runs.
+- `src/agent/skeleton_critic.ts` — `skeleton_critic` init-only subagent that reviews the proposed wiki skeleton against the repository.
+- `src/agent/wiki_qa_subagents.ts` — `wiki_question_finder` and `wiki_answer_verifier` init-only subagents that verify the completed wiki answers source-grounded questions.
+- `src/agent/crash-guard.ts` — process-wide `installCrashGuard()` + `registerActiveRun`/`handleFatal` that records and stamps an escaped rejection as an interrupted run.
+- `src/agent/utils.ts` — run context, content snapshot, and `.last-update.json` handling.
 - `src/agent/types.ts` — shared agent types (`OpenWikiCommand`, `RunContext`, `UpdateMetadata`, run options/events).
 - `src/agent/docs-only-backend.ts` — `OpenWikiLocalShellBackend`, extends DeepAgents `LocalShellBackend` with docs-only write guards and output-mode awareness.
 - `src/agent/openai-chatgpt-oauth.ts` — ChatGPT OAuth flow, token persistence, and refresh logic for the `openai-chatgpt` provider.
@@ -50,7 +55,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/auth/ngrok.ts` — Slack HTTPS callback tunnel via ngrok.
 - `src/auth/tokens.ts` — token refresh and validation helpers for connector OAuth.
 - `src/agent/okf-middleware.ts` — OKF front-matter migration and index synchronization middleware; its finalize stage also validates Mermaid fences and internal wiki links.
-- `src/agent/wiki-link-validator.ts` — validates relative wiki links and heading anchors after generation, stamping broken links inline instead of failing the run.
+- `src/agent/wiki-link-validator.ts` — validates internal links repo-wide (not just the `openwiki/` subtree) and GitHub-style heading anchors on Markdown targets after generation, stamping broken links inline instead of failing the run.
 - `src/agent/translation-middleware.ts` — wiki translation middleware for output-language switching.
 - `src/agent/vertex-surface.ts` — Vertex AI model routing for the gemini-enterprise provider.
 - `src/agent/skills.ts` — bundles and syncs the `/skills/` directory into the agent runtime.
@@ -99,6 +104,11 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/commands.ts`
 - `src/agent/index.ts`
 - `src/agent/prompt.ts`
+- `src/agent/prompts/code.ts`
+- `src/agent/prompts/personal.ts`
+- `src/agent/skeleton_critic.ts`
+- `src/agent/wiki_qa_subagents.ts`
+- `src/agent/crash-guard.ts`
 - `src/agent/utils.ts`
 - `src/agent/types.ts`
 - `src/agent/docs-only-backend.ts`

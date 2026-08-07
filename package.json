@@ -1,6 +1,6 @@
 {
   "name": "openwiki",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase.",
   "license": "MIT",
   "type": "module",
@@ -46,7 +46,8 @@
     "lint:check": "eslint .",
     "prebuild": "pnpm run clean",
     "prepack": "pnpm run build",
-    "release": "pnpm run build && changeset publish",
+    "release": "pnpm run stamp:channel && pnpm run build && changeset publish",
+    "stamp:channel": "node scripts/stamp-build-channel.cjs",
     "start": "node dist/cli.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.client.json"

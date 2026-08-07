@@ -44,7 +44,6 @@ export async function recordRunSafe(
     errorOwner?: TelemetryErrorOwner;
     errorStage?: TelemetryErrorStage;
     httpStatus?: number;
-    errorName?: string;
   },
 ): Promise<void> {
   // Chat is deliberately not recorded: it is interactive and would emit one
@@ -63,7 +62,6 @@ export async function recordRunSafe(
     errorOwner: facts.errorOwner,
     errorStage: facts.errorStage,
     httpStatus: facts.httpStatus,
-    errorName: facts.errorName,
     // Setup choices are captured on init only (the configuration moment); on
     // updates these are omitted entirely.
     ...(command === "init"

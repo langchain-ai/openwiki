@@ -56,7 +56,7 @@ If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires the prov
 - `init` / `update` command launches (including from `/init` and `/update` slash commands),
 - provider and model selection during the session (`/provider`, `/model`),
 - interactive credential setup when required (including for init/update, not just chat),
-- streaming agent text and tool events,
+- streaming agent text and tool events (tool-call strings are redacted via `sanitizeDiagnosticText()` before display; subagent lifecycle is shown as "task" start/finish labels),
 - completed-run history and error display,
 - exit handling for help, errors, and explicit `/exit` messages.
 
