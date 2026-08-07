@@ -115,8 +115,9 @@ Output language:
 export function createLinkIntegrityInstructions(): string {
   return `
 Link integrity:
-- Prefer relative Markdown links to existing wiki pages and stable heading anchors. Do not invent destinations that are not written in the same run.
-- OpenWiki validates relative internal links and heading anchors after the run. Broken links are left in place and marked with an HTML comment starting with "openwiki: broken internal link", so the run completes and a later update can self-correct. If you find such a comment, repair the href or restore the target page using the reason in the comment, then delete the comment.
+- Write Markdown link destinations relative to the linking file, never rooted at /. The /-rooted virtual paths in the filesystem-tool instructions are only for tool calls. Use the relative form the generated index.md files use, for example ./architecture/overview.md, ../agent/workflow.md, or ../../src/main.ts; a root-relative destination such as /openwiki/page.md or /src/main.ts resolves in no renderer (GitHub, editor preview, or the OpenWiki visualizer graph) and is treated as broken.
+- Prefer links to existing wiki pages and stable heading anchors. Do not invent destinations that are not written in the same run.
+- OpenWiki validates internal links and heading anchors after the run. Broken links — root-relative ones included — are left in place and marked with an HTML comment starting with "openwiki: broken internal link", so the run completes and a later update can self-correct. If you find such a comment, repair the href or restore the target page using the reason in the comment, then delete the comment.
 `;
 }
 

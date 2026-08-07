@@ -51,8 +51,36 @@ describe("validateWikiInternalLinks", () => {
     ).resolves.toBe(before);
   });
 
-  test("accepts repo-root-absolute links carrying the /openwiki prefix", async () => {
-    const { backend } = await setupWiki();
+  test("does not rewrite CRLF files whose only difference is line endings", async () => {
+    const { backend, rootDir } = await setupWiki();
+    await backend.write(
+      "/openwiki/quickstart.md",
+      "# Quickstart\r\n\r\nSee [architecture](./architecture/overview.md).\r\n",
+    );
+    await backend.write(
+      "/openwiki/architecture/overview.md",
+      "# Overview\r\n",
+    );
+    const before = await readFile(
+      path.join(rootDir, "openwiki/quickstart.md"),
+      "utf8",
+    );
+    const edit = vi.spyOn(backend, "edit");
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report).toMatchObject({
+      issuesFound: 0,
+      stampedFiles: [],
+    });
+    expect(edit).not.toHaveBeenCalled();
+    await expect(
+      readFile(path.join(rootDir, "openwiki/quickstart.md"), "utf8"),
+    ).resolves.toBe(before);
+  });
+
+  test("stamps root-relative links so the next run rewrites them relative", async () => {
+    const { backend, rootDir } = await setupWiki();
     await backend.write(
       "/openwiki/integrations/connectors.md",
       "See [CLI usage](/openwiki/cli/usage.md).\n",
@@ -61,15 +89,23 @@ describe("validateWikiInternalLinks", () => {
 
     const report = await validateWikiInternalLinks(backend, "repository");
 
-    expect(report.issuesFound).toBe(0);
-    expect(report.stampedFiles).toEqual([]);
+    expect(report.issuesFound).toBe(1);
+    expect(report.stampedFiles).toEqual(["integrations/connectors.md"]);
+    const after = await readFile(
+      path.join(rootDir, "openwiki/integrations/connectors.md"),
+      "utf8",
+    );
+    expect(after).toContain(
+      "openwiki: broken internal link [/openwiki/cli/usage.md]",
+    );
+    expect(after).toContain("root-relative");
   });
 
-  test("accepts repo-root-absolute links with heading anchors", async () => {
+  test("accepts relative links with heading anchors", async () => {
     const { backend } = await setupWiki();
     await backend.write(
       "/openwiki/architecture/agents.md",
-      "See [Shared Browser Tooling](/openwiki/architecture/shared-tools.md#one-browser-tab-per-run).\n",
+      "See [Shared Browser Tooling](./shared-tools.md#one-browser-tab-per-run).\n",
     );
     await backend.write(
       "/openwiki/architecture/shared-tools.md",
@@ -82,7 +118,7 @@ describe("validateWikiInternalLinks", () => {
     expect(report.stampedFiles).toEqual([]);
   });
 
-  test("stamps repo-root-absolute links to missing files", async () => {
+  test("stamps root-relative links to missing files", async () => {
     const { backend } = await setupWiki();
     await backend.write(
       "/openwiki/quickstart.md",
@@ -95,21 +131,27 @@ describe("validateWikiInternalLinks", () => {
     expect(report.stampedFiles).toEqual(["quickstart.md"]);
   });
 
-  test("stamps repo-root-absolute links with missing anchors", async () => {
-    const { backend } = await setupWiki();
+  test("stamps root-relative links to repo source files", async () => {
+    const { backend, rootDir } = await setupWiki();
+    await mkdir(path.join(rootDir, "src"), { recursive: true });
+    await writeFile(path.join(rootDir, "src/index.ts"), "export {};\n", "utf8");
     await backend.write(
       "/openwiki/quickstart.md",
-      "See [section](/openwiki/overview.md#missing-anchor).\n",
+      "See [src](/src/index.ts).\n",
     );
-    await backend.write("/openwiki/overview.md", "# Overview\n");
 
     const report = await validateWikiInternalLinks(backend, "repository");
 
     expect(report.issuesFound).toBe(1);
     expect(report.stampedFiles).toEqual(["quickstart.md"]);
+    const after = await readFile(
+      path.join(rootDir, "openwiki/quickstart.md"),
+      "utf8",
+    );
+    expect(after).toContain("root-relative link \"/src/index.ts\"");
   });
 
-  test("accepts links to existing repo files outside the wiki dir", async () => {
+  test("accepts relative links to existing repo files outside the wiki dir", async () => {
     const { backend, rootDir } = await setupWiki();
     await mkdir(path.join(rootDir, "docs"), { recursive: true });
     await writeFile(
@@ -119,7 +161,7 @@ describe("validateWikiInternalLinks", () => {
     );
     await backend.write(
       "/openwiki/architecture/ui-components.md",
-      "See [decision](/docs/decision.md) and [src](/src/index.ts).\n",
+      "See [decision](../../docs/decision.md) and [src](../../src/index.ts).\n",
     );
     await mkdir(path.join(rootDir, "src"), { recursive: true });
     await writeFile(path.join(rootDir, "src/index.ts"), "export {};\n", "utf8");
@@ -130,11 +172,11 @@ describe("validateWikiInternalLinks", () => {
     expect(report.stampedFiles).toEqual([]);
   });
 
-  test("stamps links to missing repo files outside the wiki dir", async () => {
+  test("stamps relative links to missing repo files outside the wiki dir", async () => {
     const { backend, rootDir } = await setupWiki();
     await backend.write(
       "/openwiki/architecture/ui-components.md",
-      "See [decision](/docs/missing-decision.md).\n",
+      "See [decision](../../docs/missing-decision.md).\n",
     );
 
     const report = await validateWikiInternalLinks(backend, "repository");
@@ -145,7 +187,9 @@ describe("validateWikiInternalLinks", () => {
       path.join(rootDir, "openwiki/architecture/ui-components.md"),
       "utf8",
     );
-    expect(after).toContain('file "/docs/missing-decision.md" does not exist');
+    expect(after).toContain(
+      'file "../../docs/missing-decision.md" does not exist',
+    );
   });
 
   test("does not validate anchors on non-markdown targets", async () => {
@@ -155,13 +199,27 @@ describe("validateWikiInternalLinks", () => {
     // GitHub line anchors (#L10) on source files must not be treated as broken.
     await backend.write(
       "/openwiki/quickstart.md",
-      "See [line](/src/index.ts#L10).\n",
+      "See [line](../../src/index.ts#L10).\n",
     );
 
     const report = await validateWikiInternalLinks(backend, "repository");
 
     expect(report.issuesFound).toBe(0);
     expect(report.stampedFiles).toEqual([]);
+  });
+
+  test("accepts slash-less directory links", async () => {
+    const { backend, rootDir } = await setupWiki();
+    await mkdir(path.join(rootDir, "openwiki", "agent"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "openwiki", "page.md"),
+      "- [agent](agent)\n",
+      "utf8",
+    );
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report.issuesFound).toBe(0);
   });
 
   test("stamps missing target files without throwing", async () => {
@@ -257,9 +315,9 @@ describe("validateWikiInternalLinks", () => {
     await backend.write(
       "/openwiki/architecture/agents.md",
       [
-        "See [tokens](/openwiki/architecture/overview.md#layout-primitives--design-tokens).",
-        "See [store](/openwiki/architecture/overview.md#state--store).",
-        "See [ab](/openwiki/architecture/overview.md#a--b).",
+        "See [tokens](./overview.md#layout-primitives--design-tokens).",
+        "See [store](./overview.md#state--store).",
+        "See [ab](./overview.md#a--b).",
       ].join("\n"),
     );
     await backend.write(

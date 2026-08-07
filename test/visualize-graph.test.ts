@@ -109,6 +109,51 @@ describe("buildGraph", () => {
     expect(graph.edges).toEqual([]);
   });
 
+  test("resolves root-relative links against the wiki root", async () => {
+    const root = await makeWiki({
+      "quickstart.md": "# Home\nSee [workflow](/agent/workflow.md).\n",
+      "agent/workflow.md": "# Workflow\n",
+    });
+
+    const graph = await buildGraph(root);
+
+    expect(graph.edges).toContainEqual({
+      source: "quickstart",
+      target: "agent/workflow",
+    });
+    expect(
+      graph.nodes.find((n) => n.id === "agent/workflow")?.backlinks,
+    ).toContain("quickstart");
+  });
+
+  test("resolves root-relative links under an openwiki/ subdir", async () => {
+    const root = await makeWiki({
+      "openwiki/quickstart.md":
+        "# Home\nSee [Viewer Runtime](/openwiki/rendering/viewer.md).\n",
+      "openwiki/rendering/viewer.md": "# Viewer\n",
+    });
+
+    const graph = await buildGraph(path.join(root, "openwiki"));
+
+    expect(graph.edges).toContainEqual({
+      source: "quickstart",
+      target: "rendering/viewer",
+    });
+    expect(
+      graph.nodes.find((n) => n.id === "rendering/viewer")?.backlinks,
+    ).toContain("quickstart");
+  });
+
+  test("does not create edges from root-relative links to unknown pages", async () => {
+    const root = await makeWiki({
+      "quickstart.md": "# Home\nSee [nope](/openwiki/missing.md).\n",
+    });
+
+    const graph = await buildGraph(root);
+
+    expect(graph.edges).toEqual([]);
+  });
+
   test("does not follow a symlink that escapes the wiki root", async () => {
     const secret = await mkdtemp(path.join(tmpdir(), "openwiki-secret-"));
     tempDirs.push(secret);

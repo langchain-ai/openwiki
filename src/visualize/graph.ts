@@ -295,6 +295,35 @@ async function readNode(file: string, wikiRoot: string): Promise<WikiNode> {
 }
 
 /**
+ * Resolve one markdown link target from its source file into a node id, or
+ * undefined when it matches no node. A relative link resolves against the
+ * source file's directory. A leading-slash (root-relative) link — which older
+ * generated wikis carry — is tried against the wiki root first, then against
+ * the repo root (the wiki root's parent), so both code-mode
+ * `/openwiki/foo.md` and local-mode `/foo.md` links resolve without the
+ * builder knowing the mode. Only candidates naming an existing node are
+ * accepted, so no edge is ever fabricated.
+ */
+function resolveNodeId(
+  wikiRoot: string,
+  fileDir: string,
+  link: string,
+  byId: Map<string, WikiNode>,
+): string | undefined {
+  if (!link.startsWith("/")) {
+    const id = toId(wikiRoot, path.resolve(fileDir, link));
+    return byId.has(id) ? id : undefined;
+  }
+
+  const repoRelative = link.replace(/^\/+/, "");
+  const candidates = [
+    toId(wikiRoot, path.join(wikiRoot, repoRelative)),
+    toId(wikiRoot, path.join(path.dirname(wikiRoot), repoRelative)),
+  ];
+  return candidates.find((id) => byId.has(id));
+}
+
+/**
  * Resolve each node's markdown links into directed edges between existing nodes,
  * recording them on the nodes' `links`/`backlinks` in place. Self-links, links to
  * unknown pages, and duplicate edges are dropped.
@@ -306,7 +335,8 @@ function linkNodes(nodes: WikiNode[], wikiRoot: string): WikiEdge[] {
   for (const node of nodes) {
     const fileDir = path.dirname(path.join(wikiRoot, `${node.id}.md`));
     for (const link of markdownLinks(node.body)) {
-      const target = toId(wikiRoot, path.resolve(fileDir, link));
+      const target = resolveNodeId(wikiRoot, fileDir, link, byId);
+      if (!target) continue;
       const targetNode = byId.get(target);
       const key = `${node.id}\n${target}`;
       if (!targetNode || target === node.id || seen.has(key)) continue;

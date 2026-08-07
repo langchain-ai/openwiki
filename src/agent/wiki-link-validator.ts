@@ -124,7 +124,7 @@ export async function validateWikiInternalLinks(
 
     report.issuesFound += issues.length;
     const stamped = stampBrokenLinks(cleaned, issues);
-    if (stamped === original) {
+    if (stamped === normalizeLineEndings(original)) {
       continue;
     }
 
@@ -168,6 +168,16 @@ export function stripBrokenLinkStamps(content: string): string {
     .split(/\r?\n/u)
     .filter((line) => !BROKEN_LINK_STAMP_PATTERN.test(line))
     .join("\n");
+}
+
+/**
+ * Normalizes CRLF and lone-CR line endings to LF, so a rewrite comparison is
+ * immune to the host platform's line-ending convention. `stripBrokenLinkStamps`
+ * already returns LF, so a file whose only difference from the clean content is
+ * line endings must not be rewritten (or reported as stamped).
+ */
+function normalizeLineEndings(content: string): string {
+  return content.replace(/\r\n?/gu, "\n");
 }
 
 /**
@@ -221,6 +231,19 @@ async function validateLink(
     return null;
   }
 
+  // A leading-slash destination is root-relative: no renderer (GitHub, editor
+  // preview, or the visualizer graph) resolves it, so it cannot be relied on.
+  // Flag it so a later update run rewrites it as a path relative to this file,
+  // matching the relative form the deterministic index.md files already use.
+  if (path.posix.isAbsolute(href)) {
+    return {
+      href,
+      line,
+      message: `root-relative link "${href}" resolves in no renderer; rewrite it as a path relative to ${sourcePath}`,
+      sourcePath,
+    };
+  }
+
   const { anchor, path: linkPath } = parseLinkDestination(href);
   if (!linkPath) {
     if (!anchor) {
@@ -252,7 +275,11 @@ async function validateLink(
     ? resolvedPath.replace(/\/+$/u, "")
     : resolvedPath;
 
-  if (!(await pathExists(backend, targetPath, isDirectory))) {
+  const exists =
+    (await pathExists(backend, targetPath, isDirectory)) ||
+    (!isDirectory && (await pathExists(backend, targetPath, true)));
+
+  if (!exists) {
     return {
       href,
       line,
@@ -428,13 +455,12 @@ function parseLinkDestination(rawHref: string): {
 }
 
 /**
- * Resolves a link path to a normalized repo-absolute path, or undefined when it
- * cannot be contained within the repo root.
+ * Resolves a relative link path against its source file's directory into a
+ * normalized repo-absolute path, or undefined when it cannot be contained
+ * within the repo root.
  *
- * A leading-slash link is absolute from the virtual filesystem root (the repo
- * root in `repository` mode, the wiki dir in `local-wiki` mode) — the same
- * convention the generation prompt teaches and GitHub renders. A relative link
- * resolves against its source file's directory.
+ * Root-relative destinations are rejected by `validateLink` before this runs,
+ * so only relative paths reach this resolver.
  *
  * The result is not constrained to the wiki subtree: wiki pages may link out to
  * other repo files, so containment is enforced at the repo root instead.
@@ -449,9 +475,7 @@ function resolveRepoLinkPath(
   linkPath: string,
 ): string | null {
   const candidate = path.posix.normalize(
-    linkPath.startsWith("/")
-      ? linkPath
-      : path.posix.join(path.posix.dirname(sourcePath), linkPath),
+    path.posix.join(path.posix.dirname(sourcePath), linkPath),
   );
 
   return path.posix.isAbsolute(candidate) ? candidate : null;
@@ -468,6 +492,12 @@ function isExternalHref(href: string): boolean {
 /**
  * True when a wiki-absolute path resolves to an existing file or directory on
  * the backend. Any read error is treated as "does not exist".
+ *
+ * Directory existence cannot be inferred from `ls` alone, because the backend
+ * lists a missing directory as an empty result rather than an error. Instead
+ * the parent directory is listed and the target's entry is matched by name, so
+ * a genuinely missing directory (e.g. a clamps-at-root `../` escape) still
+ * resolves to false.
  */
 async function pathExists(
   backend: BackendProtocolV2,
@@ -475,13 +505,26 @@ async function pathExists(
   isDirectory: boolean,
 ): Promise<boolean> {
   try {
-    if (isDirectory) {
-      const result = await backend.ls(targetPath);
+    if (!isDirectory) {
+      const result = await backend.readRaw(targetPath);
       return !result.error;
     }
 
-    const result = await backend.readRaw(targetPath);
-    return !result.error;
+    const normalized = targetPath.replace(/\/+$/u, "");
+    if (!normalized || normalized === "/") {
+      return true;
+    }
+
+    const parent = path.posix.dirname(normalized);
+    const name = path.posix.basename(normalized);
+    const result = await backend.ls(parent);
+    if (result.error) {
+      return false;
+    }
+
+    return (result.files ?? []).some(
+      (entry) => entry.is_dir === true && entryName(entry) === name,
+    );
   } catch {
     return false;
   }
