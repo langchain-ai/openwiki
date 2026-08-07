@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import { spawn } from "node:child_process";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { homedir } from "node:os";
 import path from "node:path";
@@ -7,12 +5,6 @@ import { Box, Text, useInput, useStdin, useStdout } from "ink";
 import { configureAuthProvider } from "../auth/configure.js";
 import { runOAuthAuth } from "../auth/oauth.js";
 import {
-  AWS_ACCESS_KEY_ID_ENV_KEY,
-  AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
-  AWS_SECRET_ACCESS_KEY_ENV_KEY,
-  AWS_SESSION_TOKEN_ENV_KEY,
-  BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-  BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   DEFAULT_PROVIDER,
   DEFAULT_VERTEX_LOCATION,
   getDefaultModelId,
@@ -27,18 +19,10 @@ import {
   getProviderRegionEnvKey,
   getProviderRegionEnvKeys,
   getProviderSecretKeyEnvKey,
-  providerRequiresApiKey,
   isValidModelId,
-  normalizeProvider,
   normalizeModelId,
-  OPENAI_CHATGPT_EMAIL_ENV_KEY,
-  OPENAI_CHATGPT_PLAN_ENV_KEY,
-  OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY,
-  OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
-  OPENWIKI_TAVILY_API_KEY_ENV_KEY,
-  OPENWIKI_X_CLIENT_ID_ENV_KEY,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
   providerRequiresRegion,
@@ -54,10 +38,7 @@ import {
   type ChatGptLoginHandle,
   type CodexTokens,
   codexTokensToEnv,
-  formatChatGptAccount,
-  isChatGptTokenExpired,
   loginWithChatGPT,
-  readCodexTokensFromEnv,
 } from "../agent/openai-chatgpt-oauth.js";
 import type { AuthProviderId } from "../auth/types.js";
 import type { OpenWikiRunMode } from "../cli/commands.js";
@@ -66,7 +47,6 @@ import {
   nextLangSmithApiKeyEnv,
   saveLangSmithSetup,
 } from "../connectors/sources/langsmith/setup.js";
-import type { LangSmithRegion } from "../connectors/sources/langsmith/setup.js";
 import type { ConnectorId } from "../connectors/types.js";
 import {
   detectExternalCliCredential,
@@ -79,16 +59,12 @@ import { getConnectorConfigPath } from "../config/openwiki-home.js";
 import {
   getSavedEnvValue,
   getShellEnvValue,
-  openWikiEnvPath,
   saveOpenWikiEnv,
 } from "../config/env.js";
 import {
   createEmptyOnboardingConfig,
-  isOpenWikiOnboardingCompleteSync,
   isOnboardingComplete,
-  isRepositoryCodeOnboardingCompleteSync,
   readOpenWikiOnboardingConfig,
-  readRepositoryWikiInstructions,
   saveRepositoryWikiInstructions,
   saveOpenWikiOnboardingConfig,
   type OpenWikiOnboardingConfig,
@@ -100,728 +76,92 @@ import {
   validateCronExpression,
 } from "../scheduling/schedules.js";
 
-export type InitSetupResult = {
-  mode: OpenWikiRunMode;
-  modelId: string | null;
-  onboardingCompleted: boolean;
-  provider: OpenWikiProvider | null;
-  repoRoot?: string;
-  runIngestionNow: boolean;
-  savedApiKey: boolean;
-  savedBaseUrl: boolean;
-  savedGcpLocation: boolean;
-  savedGcpProject: boolean;
-  savedLangSmithKey: boolean;
-  savedModelId: boolean;
-  savedProvider: boolean;
-  savedRegion: boolean;
-  savedSecretKey: boolean;
-  shouldContinueToRun: boolean;
-};
-
-type InitSetupProps = {
-  allowModeSelection?: boolean;
-  mode: OpenWikiRunMode;
-  modelIdOverride?: string | null;
-  onComplete: (result: InitSetupResult) => void;
-  onError: (message: string) => void;
-  /**
-   * When true (explicit `--init`), walk every applicable step even when it is
-   * already configured, so the run can review/change any of them. When false
-   * the wizard skips satisfied steps and collects only what is missing.
-   */
-  walkAllSteps?: boolean;
-};
-
-type PromptStep =
-  | "api-key"
-  | "base-url"
-  | "code-repo-confirm"
-  | "code-repo-path"
-  | "external-cli-auth"
-  | "final"
-  | "gcp-location"
-  | "gcp-project"
-  | "langsmith"
-  | "model"
-  | "oauth-login"
-  | "provider"
-  | "region"
-  | "run-mode"
-  | "secret-key"
-  | "source-auth"
-  | "global-cron-custom"
-  | "global-cron-mode"
-  | "global-power-mode"
-  | "source-description"
-  | "source-description-custom"
-  | "source-langsmith-key"
-  | "source-langsmith-projects"
-  | "source-langsmith-region"
-  | "source-langsmith-workspaces"
-  | "source-menu"
-  | "source-path"
-  | "source-confirm-continue"
-  | "source-secret"
-  | "template"
-  | "wiki-goal";
-
-type SourceSetupOption = {
-  authProvider?: AuthProviderId;
-  displayName: string;
-  examples: string[];
-  id: ConnectorId;
-  instructions: string[];
-  secretInputs: SourceSecretInput[];
-};
-
-type SourceSecretInput = {
-  envKey: string;
-  label: string;
-  optional?: boolean;
-  secret?: boolean;
-};
-
-type SourceSetupState = {
-  authUrl?: string;
-  connectorConfig?: Record<string, unknown>;
-  copiedAuthUrlToClipboard?: boolean;
-  savedScheduleWarning?: string;
-  secretValues: Record<string, string>;
-};
-
-type PromptInputKey = {
-  backspace?: boolean;
-  ctrl?: boolean;
-  delete?: boolean;
-  downArrow?: boolean;
-  leftArrow?: boolean;
-  meta?: boolean;
-  return?: boolean;
-  rightArrow?: boolean;
-  tab?: boolean;
-  upArrow?: boolean;
-};
-
-type ModelSelectionOption =
-  | {
-      id: string;
-      kind: "preset";
-      label: string;
-    }
-  | {
-      kind: "custom";
-    };
-
-type OnboardingMode = {
-  description: string;
-  id: string;
-  name: string;
-  sourceIds: ConnectorId[];
-  suggestedSources: string[];
-  suggestedGoal: string;
-};
-
-const ONBOARDING_TEMPLATES = [
-  {
-    description:
-      "Maintain a structured project wiki from a local Git repository, with code-oriented pages for architecture, workflows, source maps, and operational guidance.",
-    id: "code",
-    name: "Code",
-    sourceIds: ["langsmith"],
-    suggestedSources: ["Local Git repository"],
-    suggestedGoal: "A code wiki for this repository.",
-  },
-  {
-    description:
-      "A personal assistant wiki that builds memory from email, notes, social/research sources, and web search so you can ask about projects, priorities, people, and recurring context.",
-    id: "personal",
-    name: "Personal",
-    sourceIds: [
-      "git-repo",
-      "google",
-      "notion",
-      "web-search",
-      "hackernews",
-      "x",
-    ],
-    suggestedSources: [
-      "Gmail",
-      "Notion",
-      "Web Search (Tavily)",
-      "Hacker News",
-      "X/Twitter",
-    ],
-    suggestedGoal:
-      "Your personal brain. Track active projects, people, organizations, decisions, commitments, follow-ups, useful links, recurring themes, and fresh external signals. Organize the wiki so a personal assistant can answer what changed, what matters, what needs attention, and where supporting evidence came from. Be selective: summarize durable context and explicit action items, not every raw item.",
-  },
-] as const satisfies readonly OnboardingMode[];
-
-const RUN_MODE_OPTIONS = [
-  {
-    description:
-      "Build a local personal brain wiki in ~/.openwiki/wiki from configured sources.",
-    id: "personal",
-    name: "Personal",
-  },
-  {
-    description:
-      "Build repository documentation in ./openwiki for this codebase.",
-    id: "code",
-    name: "Code",
-  },
-] as const satisfies readonly {
-  description: string;
-  id: OpenWikiRunMode;
-  name: string;
-}[];
-
-const LANGSMITH_REGION_OPTIONS = [
-  {
-    description: "US workspaces. The default.",
-    host: "https://api.smith.langchain.com",
-    id: "us",
-    name: "US",
-  },
-  {
-    description: "EU workspaces.",
-    host: "https://eu.api.smith.langchain.com",
-    id: "eu",
-    name: "EU",
-  },
-] as const satisfies readonly {
-  description: string;
-  host: string;
-  id: LangSmithRegion;
-  name: string;
-}[];
-
-/**
- * One LangSmith workspace as the wizard edits it. `apiKey` holds a value entered
- * this session (empty = keep the committed key); it is written to ~/.openwiki/.env
- * under `apiKeyEnv` on completion, never committed.
- */
-interface LangsmithWorkspaceDraft {
-  apiKeyEnv: string;
-  region: LangSmithRegion;
-  apiKey: string;
-  projects: string[];
-}
-
-const SOURCE_OPTIONS = [
-  {
-    displayName: "Local Git repository",
-    examples: [
-      "Track architecture notes from this repo.",
-      "Summarize recent commits and changed files.",
-    ],
-    id: "git-repo",
-    instructions: [
-      "Choose the local repository directory OpenWiki should read.",
-      "The default is the current working directory, and you can replace it with another path.",
-      "You can add more repositories later in the connector config file.",
-    ],
-    secretInputs: [],
-  },
-  {
-    displayName: "LangSmith traces",
-    examples: ["support-bot-prod", "chat-agent"],
-    id: "langsmith",
-    instructions: [
-      "Document how your agent runs, grounded in its LangSmith traces.",
-      "List the projects to document; written to openwiki/.langsmith.json (committed).",
-    ],
-    // No secret input: the LangSmith key is captured by the earlier `langsmith`
-    // spine step (and provided as a CI secret), and used at pull time, not here.
-    secretInputs: [],
-  },
-  {
-    authProvider: "notion",
-    displayName: "Notion",
-    examples: [
-      "Ingest product specs, meeting notes, and research pages.",
-      "Prioritize pages related to Applied AI and customer feedback.",
-    ],
-    id: "notion",
-    instructions: [
-      "OpenWiki uses Notion's hosted MCP OAuth flow.",
-      "No client ID, client secret, or pasted Notion token is required.",
-      "Approve access in the browser window when it opens.",
-    ],
-    secretInputs: [],
-  },
-  {
-    authProvider: "gmail",
-    displayName: "Gmail",
-    examples: [
-      "Capture important project email threads from the last 24 hours.",
-      "Look for vendor updates, customer feedback, and action items.",
-    ],
-    id: "google",
-    instructions: [
-      "Create OAuth credentials in Google Cloud for a desktop or web app.",
-      "Enable the Gmail API for the Google Cloud project.",
-      "Add http://127.0.0.1:53682/callback as an authorized redirect URI.",
-      "Paste the client ID and client secret below.",
-    ],
-    secretInputs: [
-      {
-        envKey: OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY,
-        label: "Google OAuth client ID",
-      },
-      {
-        envKey: OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY,
-        label: "Google OAuth client secret",
-        secret: true,
-      },
-    ],
-  },
-  {
-    displayName: "Web Search (Tavily)",
-    examples: [
-      "Track a company, product category, or technical topic.",
-      "Find launch posts, docs, pricing pages, and recent articles.",
-    ],
-    id: "web-search",
-    instructions: [
-      "Create a Tavily account and API key.",
-      "Paste the Tavily API key below.",
-      "Describe the topics, companies, or pages OpenWiki should search for on the next screen.",
-    ],
-    secretInputs: [
-      {
-        envKey: OPENWIKI_TAVILY_API_KEY_ENV_KEY,
-        label: "Tavily API key",
-        secret: true,
-      },
-    ],
-  },
-  {
-    displayName: "Hacker News",
-    examples: [
-      "Monitor threads about AI agents, evals, infrastructure, and startups.",
-      "Capture notable discussions and links related to my research topics.",
-    ],
-    id: "hackernews",
-    instructions: [
-      "No account setup is required for Hacker News.",
-      "OpenWiki uses public Hacker News feed and search APIs.",
-      "Describe the topics, keywords, users, or story types OpenWiki should watch on the next screen.",
-    ],
-    secretInputs: [],
-  },
-  {
-    authProvider: "x",
-    displayName: "X / Twitter",
-    examples: [
-      "Track my home timeline, bookmarks, and key lists.",
-      "Summarize tweets from AI researchers and product announcements.",
-    ],
-    id: "x",
-    instructions: [
-      "Create an X OAuth 2.0 app.",
-      "Use a native app or public client when possible.",
-      "Add http://127.0.0.1:53682/callback as a callback URI.",
-      "Paste the OAuth client ID below.",
-    ],
-    secretInputs: [
-      {
-        envKey: OPENWIKI_X_CLIENT_ID_ENV_KEY,
-        label: "X OAuth client ID",
-      },
-    ],
-  },
-] as const satisfies readonly SourceSetupOption[];
-
-const CRON_MODE_OPTIONS = [
-  "Use suggested schedule",
-  "Enter custom cron",
-] as const;
-const POWER_MODE_OPTIONS = [
-  "Set up Mac wake/sleep window",
-  "Skip power setup",
-] as const;
-const CRON_FIELD_LABELS = ["minute", "hour", "day", "month", "weekday"];
-const SOURCE_CONTINUE_OPTIONS = [
-  "Go back to connections",
-  "Continue without all sources",
-] as const;
-const FINAL_OPTIONS = ["Run ingestion now", "Run later"] as const;
-const CODE_REPO_OPTIONS = ["Confirm and continue", "Edit path"] as const;
-
-export function needsCredentialSetup(
-  modelIdOverride: string | null = null,
-  mode: OpenWikiRunMode = "personal",
-): boolean {
-  const provider = resolveConfiguredProvider();
-
-  const needsCredentials =
-    !hasValidConfiguredProvider() ||
-    needsAwsCredentialRepair(provider) ||
-    needsCredentialStep(provider) ||
-    needsSecretKeyStep(provider) ||
-    needsBaseUrlStep(provider) ||
-    needsRegionStep(provider) ||
-    (modelIdOverride === null &&
-      process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
-    needsLangSmithStep();
-
-  if (needsCredentials) {
-    return true;
-  }
-
-  return mode === "code"
-    ? !isRepositoryCodeOnboardingCompleteSync(getDefaultCodeRepoRootPath())
-    : !isOpenWikiOnboardingCompleteSync();
-}
-
-function needsAwsCredentialRepair(provider: OpenWikiProvider): boolean {
-  return (
-    providerUsesAwsSdkCredentials(provider) &&
-    getMissingProviderEnvKey(provider) !== null
-  );
-}
-
-function getAwsCredentialRepairMessage(
-  provider: OpenWikiProvider,
-): string | null {
-  if (!providerUsesAwsSdkCredentials(provider)) {
-    return null;
-  }
-
-  const missingEnvKey = getMissingProviderEnvKey(provider);
-
-  if (!missingEnvKey) {
-    return null;
-  }
-
-  const pair =
-    missingEnvKey === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
-    missingEnvKey === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY
-      ? `${BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY} and ${BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY}`
-      : `${AWS_ACCESS_KEY_ID_ENV_KEY} and ${AWS_SECRET_ACCESS_KEY_ENV_KEY}`;
-
-  return `${missingEnvKey} is missing or blank. Set both ${pair}, or unset both in your shell and ${openWikiEnvPath}, then restart OpenWiki.`;
-}
-
-/**
- * Whether the provider still needs its primary credential collected. For
- * `oauth` providers this is a valid, non-expired stored token; for API-key
- * providers it is a pasted key; for keyless providers (gemini-enterprise) it is
- * the required GCP project id.
- */
-function needsCredentialStep(provider: OpenWikiProvider): boolean {
-  if (providerUsesOAuth(provider)) {
-    return !hasValidStoredToken();
-  }
-
-  return (
-    getMissingProviderEnvKey(provider) !== null &&
-    credentialStep(provider) !== null
-  );
-}
-
-/** The step that collects the provider's primary credential. */
-function credentialStep(provider: OpenWikiProvider): PromptStep | null {
-  if (providerUsesOAuth(provider)) {
-    return "oauth-login";
-  }
-
-  if (providerUsesAwsSdkCredentials(provider)) {
-    return null;
-  }
-
-  if (providerUsesExternalCliAuth(provider)) {
-    return "external-cli-auth";
-  }
-
-  if (providerRequiresApiKey(provider)) {
-    return "api-key";
-  }
-
-  return getProviderProjectEnvKey(provider) ? "gcp-project" : null;
-}
-
-/**
- * Every managed env key the wizard lets you set for a provider, in checklist
- * order: the provider selection, its credential keys, the model, and the
- * LangSmith tracing key. Used to detect which of them a shell export is
- * currently shadowing (a shell var wins at runtime and would silently override
- * the choice made here). Returns key names only, never values.
- */
-function getWizardManagedEnvKeys(provider: OpenWikiProvider): string[] {
-  return [
-    OPENWIKI_PROVIDER_ENV_KEY,
-    getProviderApiKeyEnvKey(provider),
-    getProviderSecretKeyEnvKey(provider),
-    getProviderProjectEnvKey(provider),
-    getProviderLocationEnvKey(provider),
-    getProviderBaseUrlEnvKey(provider),
-    getProviderRegionEnvKey(provider),
-    OPENWIKI_MODEL_ID_ENV_KEY,
-    "LANGSMITH_API_KEY",
-  ].filter((key): key is string => key !== undefined);
-}
-
-/**
- * The setup steps that apply to a provider and run mode, in the order the wizard
- * walks them. Unlike the skip-based waterfall in {@link getInitialStep}, this
- * includes steps already satisfied by the environment, so navigation can reach
- * and re-edit an auto-skipped step. The provider's primary credential step
- * ({@link credentialStep}) is emitted once; for keyless providers that step is
- * the GCP project, so it is not appended again below.
- */
-export function orderedSetupSteps(
-  provider: OpenWikiProvider,
-  mode: OpenWikiRunMode,
-  allowModeSelection: boolean,
-): PromptStep[] {
-  const steps: PromptStep[] = [];
-
-  if (allowModeSelection) {
-    steps.push("run-mode");
-  }
-
-  steps.push("provider");
-
-  const primary = credentialStep(provider);
-  if (primary) {
-    steps.push(primary);
-  }
-
-  if (providerRequiresSecretKey(provider)) {
-    steps.push("secret-key");
-  }
-  if (getProviderProjectEnvKey(provider) && primary !== "gcp-project") {
-    steps.push("gcp-project");
-  }
-  if (
-    getProviderProjectEnvKey(provider) &&
-    getProviderLocationEnvKey(provider)
-  ) {
-    steps.push("gcp-location");
-  }
-  if (providerRequiresBaseUrl(provider)) {
-    steps.push("base-url");
-  }
-  if (providerRequiresRegion(provider)) {
-    steps.push("region");
-  }
-
-  steps.push("model");
-  steps.push("langsmith");
-
-  // Personal mode's template is fixed by the run mode, so it skips the
-  // Code/Personal chooser and walks straight into the wiki brief. Only code
-  // mode needs a spine step after langsmith (repo confirmation).
-  if (mode === "code") {
-    steps.push("code-repo-confirm");
-  }
-
-  return steps;
-}
-
-/**
- * The step after `step` in the applicable spine, or null when `step` is the last
- * spine step or outside it. Drives forward navigation: Enter advances to the
- * next applicable step in order rather than skipping ones already satisfied by
- * the environment, so setup reads as a sequential walk.
- */
-export function nextSetupStep(
-  step: PromptStep | null,
-  provider: OpenWikiProvider,
-  mode: OpenWikiRunMode,
-  allowModeSelection: boolean,
-): PromptStep | null {
-  if (step === null) {
-    return null;
-  }
-  const spine = orderedSetupSteps(provider, mode, allowModeSelection);
-  const index = spine.indexOf(step);
-  return index >= 0 && index + 1 < spine.length ? spine[index + 1] : null;
-}
-
-function hasValidStoredToken(env: NodeJS.ProcessEnv = process.env): boolean {
-  const tokens = readCodexTokensFromEnv(env);
-
-  return tokens !== null && !isChatGptTokenExpired(tokens.expiresAtMs);
-}
-
-function needsGcpProjectStep(provider: OpenWikiProvider): boolean {
-  const projectEnvKey = getProviderProjectEnvKey(provider);
-
-  return projectEnvKey ? !process.env[projectEnvKey] : false;
-}
-
-function needsBaseUrlStep(provider: OpenWikiProvider): boolean {
-  if (!providerRequiresBaseUrl(provider)) {
-    return false;
-  }
-
-  return !isBaseUrlConfigured(provider);
-}
-
-function isBaseUrlConfigured(provider: OpenWikiProvider): boolean {
-  const baseUrlEnvKey = getProviderBaseUrlEnvKey(provider);
-
-  return baseUrlEnvKey ? Boolean(process.env[baseUrlEnvKey]) : false;
-}
-
-function needsSecretKeyStep(provider: OpenWikiProvider): boolean {
-  if (!providerRequiresSecretKey(provider)) {
-    return false;
-  }
-
-  return !isSecretKeyConfigured(provider);
-}
-
-function isSecretKeyConfigured(provider: OpenWikiProvider): boolean {
-  const secretKeyEnvKey = getProviderSecretKeyEnvKey(provider);
-
-  return secretKeyEnvKey ? Boolean(process.env[secretKeyEnvKey]) : false;
-}
-
-function needsRegionStep(provider: OpenWikiProvider): boolean {
-  if (!providerRequiresRegion(provider)) {
-    return false;
-  }
-
-  return !isRegionConfigured(provider);
-}
-
-/**
- * Whether the optional LangSmith tracing step still needs to be shown.
- *
- * The step is optional, so "answered" must include skipping it. Skipping does
- * not persist `LANGSMITH_API_KEY` — `saveOpenWikiEnv` strips empty values, so
- * the key is simply absent afterwards. What the step always records instead is
- * `LANGCHAIN_TRACING_V2` (`"false"` on skip, `"true"` when a key is entered),
- * which survives because it is non-empty. So the step is unanswered only when
- * neither a key is present (e.g. from a shell export) nor a tracing decision
- * has been recorded.
- */
-export function needsLangSmithStep(
-  env: NodeJS.ProcessEnv = process.env,
-): boolean {
-  return !env.LANGSMITH_API_KEY && env.LANGCHAIN_TRACING_V2 === undefined;
-}
-
-function isRegionConfigured(provider: OpenWikiProvider): boolean {
-  return resolveProviderRegion(provider) !== undefined;
-}
-
-function isCredentialConfigured(provider: OpenWikiProvider): boolean {
-  return providerUsesOAuth(provider)
-    ? hasValidStoredToken()
-    : getMissingProviderEnvKey(provider) === null;
-}
-
-function getCredentialSetupDetail(
-  provider: OpenWikiProvider,
-  tokens: CodexTokens | null = null,
-): string {
-  if (providerUsesOAuth(provider)) {
-    if (!isCredentialConfigured(provider) && !tokens) {
-      return "sign in with your ChatGPT account";
-    }
-
-    const account = formatChatGptAccount(
-      tokens?.email ?? process.env[OPENAI_CHATGPT_EMAIL_ENV_KEY] ?? null,
-      tokens?.planType ?? process.env[OPENAI_CHATGPT_PLAN_ENV_KEY] ?? null,
-    );
-
-    return account ? `signed in as ${account}` : "signed in with ChatGPT";
-  }
-
-  if (providerUsesAwsSdkCredentials(provider)) {
-    if (process.env[AWS_BEARER_TOKEN_BEDROCK_ENV_KEY]?.trim()) {
-      return "Bedrock bearer token (takes precedence)";
-    }
-
-    const missingEnvKey = getMissingProviderEnvKey(provider);
-
-    if (missingEnvKey) {
-      if (
-        missingEnvKey === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
-        missingEnvKey === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY
-      ) {
-        return "incomplete legacy Bedrock keys; set both or clear both";
-      }
-
-      if (
-        missingEnvKey === AWS_ACCESS_KEY_ID_ENV_KEY ||
-        missingEnvKey === AWS_SECRET_ACCESS_KEY_ENV_KEY
-      ) {
-        return "incomplete standard AWS credentials; set the full set or unset it";
-      }
-
-      return `incomplete AWS credential configuration (${missingEnvKey})`;
-    }
-
-    const legacyApiKey = getProviderApiKeyEnvKey(provider);
-    const legacySecretKey = getProviderSecretKeyEnvKey(provider);
-    const usesLegacyKeys = Boolean(
-      legacyApiKey &&
-      legacySecretKey &&
-      process.env[legacyApiKey]?.trim() &&
-      process.env[legacySecretKey]?.trim(),
-    );
-
-    const ignoresOrphanSessionToken = Boolean(
-      process.env[AWS_SESSION_TOKEN_ENV_KEY]?.trim() &&
-      !process.env[AWS_ACCESS_KEY_ID_ENV_KEY]?.trim() &&
-      !process.env[AWS_SECRET_ACCESS_KEY_ENV_KEY]?.trim(),
-    );
-
-    return usesLegacyKeys
-      ? "legacy Bedrock keys (take precedence)"
-      : ignoresOrphanSessionToken
-        ? "AWS SDK default credential chain (orphan AWS_SESSION_TOKEN ignored)"
-        : "AWS SDK default credential chain";
-  }
-
-  const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-
-  return isCredentialConfigured(provider)
-    ? "available from environment"
-    : apiKeyEnvKey
-      ? `save ${apiKeyEnvKey} to ${openWikiEnvPath}`
-      : "configure Google Cloud credentials";
-}
-
-/**
- * Copies text to the terminal's clipboard using the OSC 52 escape sequence.
- * This targets the user's local terminal emulator even when OpenWiki runs over
- * SSH, unlike shelling out to a host clipboard utility.
- */
-function copyToClipboard(text: string): void {
-  const encoded = Buffer.from(text, "utf8").toString("base64");
-
-  process.stdout.write(`\u001b]52;c;${encoded}\u0007`);
-}
-
-function openLoginUrl(url: string): void {
-  try {
-    const child =
-      process.platform === "win32"
-        ? spawn("cmd", ["/c", "start", '""', `"${url}"`], {
-            detached: true,
-            stdio: "ignore",
-            windowsVerbatimArguments: true,
-          })
-        : spawn(process.platform === "darwin" ? "open" : "xdg-open", [url], {
-            detached: true,
-            stdio: "ignore",
-          });
-
-    child.on("error", () => {
-      // The URL is also rendered for manual use on headless/SSH machines.
-    });
-    child.unref();
-  } catch {
-    // Ignore spawn failures; the URL is still rendered for manual use.
-  }
-}
+import {
+  credentialStep,
+  ensureRunModeConfig,
+  getConfigModeId,
+  getConfigModeName,
+  getDefaultCodeRepoRootPath,
+  getInitialStep,
+  getLangsmithRegionLabel,
+  getLangsmithRegionSelectionIndex,
+  getNextStepAfterApiKey,
+  getNextStepAfterBaseUrl,
+  getNextStepAfterGcpLocation,
+  getNextStepAfterProvider,
+  getNextStepAfterRegion,
+  getNextStepAfterSecretKey,
+  getRunModeName,
+  getRunModeSelectionIndex,
+  getSourceOption,
+  getWizardManagedEnvKeys,
+  hasValidConfiguredProvider,
+  hydrateRunModeConfig,
+  isBaseUrlConfigured,
+  isCodeMode,
+  isCredentialConfigured,
+  isRegionConfigured,
+  isSecretKeyConfigured,
+  needsAwsCredentialRepair,
+  needsBaseUrlStep,
+  needsCredentialStep,
+  needsLangSmithStep,
+  needsRegionStep,
+  needsSecretKeyStep,
+  nextSetupStep,
+  resolveStepStatus,
+} from "./credentials/steps.js";
+import {
+  copyToClipboard,
+  formatSecretInputDisplay,
+  formatTerminalHyperlink,
+  getAwsCredentialRepairMessage,
+  getCredentialSetupDetail,
+  getOAuthAuthorizationStatusText,
+  getSingleLineInputDisplayValue,
+  mask,
+  openLoginUrl,
+} from "./credentials/format.js";
+import {
+  CODE_REPO_OPTIONS,
+  CRON_FIELD_LABELS,
+  CRON_MODE_OPTIONS,
+  FINAL_OPTIONS,
+  LANGSMITH_REGION_OPTIONS,
+  ONBOARDING_TEMPLATES,
+  POWER_MODE_OPTIONS,
+  RUN_MODE_OPTIONS,
+  SOURCE_CONTINUE_OPTIONS,
+  SOURCE_OPTIONS,
+  STEP_COLOR,
+  STEP_GLYPH,
+} from "./credentials/constants.js";
+import type {
+  InitSetupProps,
+  LangsmithWorkspaceDraft,
+  ModelSelectionOption,
+  PromptInputKey,
+  PromptStep,
+  SetupStepState,
+  SourceSecretInput,
+  SourceSetupOption,
+  SourceSetupState,
+} from "./credentials/types.js";
+
+export type { InitSetupResult } from "./credentials/types.js";
+export {
+  ensureRunModeConfig,
+  findNearestGitRepoRoot,
+  getInitialStep,
+  getNextStepAfterProvider,
+  hydrateRunModeConfig,
+  needsCredentialSetup,
+  needsLangSmithStep,
+  nextSetupStep,
+  orderedSetupSteps,
+  resolveStepStatus,
+} from "./credentials/steps.js";
+export { getOAuthAuthorizationStatusText } from "./credentials/format.js";
 
 export function InitSetup({
   allowModeSelection = false,
@@ -4411,14 +3751,6 @@ function Prompt({
   return null;
 }
 
-function mask(value: string): string {
-  if (value.length === 0) {
-    return "";
-  }
-
-  return "*".repeat(value.length);
-}
-
 function ExternalCliAuthPrompt({
   authState,
   input,
@@ -4517,48 +3849,6 @@ function SetupHeader() {
   );
 }
 
-type SetupStepState = "current" | "done" | "optional" | "pending";
-
-/**
- * Resolve a checklist row's status. The active step wins, so navigating back to
- * an already-done step shows the current-row cursor rather than a check; a done
- * step reads done; anything else falls to its resting status.
- */
-export function resolveStepStatus(
-  id: PromptStep,
-  activeStep: PromptStep | null,
-  done: boolean,
-  resting: "optional" | "pending" = "pending",
-): SetupStepState {
-  if (id === activeStep) {
-    return "current";
-  }
-  if (done) {
-    return "done";
-  }
-  return resting;
-}
-
-/**
- * Progress glyph per status: a check for done, an arrow for the active row, a
- * hollow circle for not-started (and optional). Single cell wide so every row's
- * label column lines up without padding the marker.
- */
-const STEP_GLYPH: Record<SetupStepState, string> = {
-  done: "✓",
-  current: "❯",
-  optional: "○",
-  pending: "○",
-};
-
-/** Color per status. Optionality is conveyed by the detail text, not the glyph. */
-const STEP_COLOR: Record<SetupStepState, string> = {
-  done: "green",
-  current: "cyan",
-  optional: "gray",
-  pending: "gray",
-};
-
 function SetupStep({
   detail,
   label,
@@ -4648,24 +3938,6 @@ function OAuthAuthorizationLink({
       </Text>
     </Box>
   );
-}
-
-export function getOAuthAuthorizationStatusText({
-  authProvider,
-  copiedToClipboard,
-}: {
-  authProvider?: AuthProviderId;
-  copiedToClipboard: boolean;
-}): string {
-  if (copiedToClipboard) {
-    return "Full URL copied to clipboard. Use the link above if your terminal supports it.";
-  }
-
-  const authCommand = authProvider
-    ? `openwiki auth ${authProvider}`
-    : "openwiki auth <provider>";
-
-  return `Use the terminal link above. If it is not clickable, cancel and run ${authCommand} in a plain terminal.`;
 }
 
 function OAuthLoginPrompt({
@@ -4841,35 +4113,6 @@ function InputValueWithCursor({
   );
 }
 
-function formatSecretInputDisplay(value: string): string {
-  // Empty renders as nothing (just the cursor); dots for the entered length,
-  // matching the non-secret inputs rather than printing a literal "empty".
-  return "•".repeat(value.length);
-}
-
-function formatTerminalHyperlink(url: string, label: string): string {
-  return `\u001B]8;;${url}\u0007${label}\u001B]8;;\u0007`;
-}
-
-function getSingleLineInputDisplayValue(
-  value: string,
-  maxLength: number,
-): string {
-  if (maxLength <= 0) {
-    return "";
-  }
-
-  if (value.length <= maxLength) {
-    return value;
-  }
-
-  if (maxLength <= 3) {
-    return value.slice(-maxLength);
-  }
-
-  return `...${value.slice(-(maxLength - 3))}`;
-}
-
 function SegmentedCronInput({
   activeFieldIndex,
   expression,
@@ -4909,317 +4152,6 @@ function SegmentedCronInput({
       <Text color="gray">Cron: {fields.join(" ")}</Text>
     </Box>
   );
-}
-
-export function getInitialStep(
-  modelIdOverride: string | null,
-  provider: OpenWikiProvider,
-  onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
-  mode: OpenWikiRunMode = "code",
-  allowModeSelection = false,
-  walkAll = false,
-): PromptStep | null {
-  if (walkAll) {
-    // Explicit --init: always start at the top and walk every applicable step,
-    // even ones already configured, instead of skipping to the first unset one.
-    return orderedSetupSteps(provider, mode, allowModeSelection)[0] ?? null;
-  }
-
-  if (allowModeSelection) {
-    return "run-mode";
-  }
-
-  if (!hasValidConfiguredProvider()) {
-    return "provider";
-  }
-
-  if (needsAwsCredentialRepair(provider)) {
-    return "region";
-  }
-
-  const nextCredentialStep = credentialStep(provider);
-
-  if (needsCredentialStep(provider) && nextCredentialStep) {
-    return nextCredentialStep;
-  }
-
-  if (needsSecretKeyStep(provider)) {
-    return "secret-key";
-  }
-
-  if (needsGcpProjectStep(provider)) {
-    return "gcp-project";
-  }
-
-  if (needsBaseUrlStep(provider)) {
-    return "base-url";
-  }
-
-  if (needsRegionStep(provider)) {
-    return "region";
-  }
-
-  if (
-    modelIdOverride === null &&
-    process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined
-  ) {
-    return "model";
-  }
-
-  if (!process.env.LANGSMITH_API_KEY) {
-    return "langsmith";
-  }
-
-  if (mode === "code" && !isOnboardingComplete(onboardingConfig)) {
-    return "code-repo-confirm";
-  }
-
-  if (!getConfigModeId(onboardingConfig)) {
-    return "template";
-  }
-
-  if (!onboardingConfig.wikiGoal) {
-    return "wiki-goal";
-  }
-
-  if (!isCodeMode(onboardingConfig) && !onboardingConfig.ingestionSchedule) {
-    return "global-cron-mode";
-  }
-
-  if (!isOnboardingComplete(onboardingConfig)) {
-    return "source-menu";
-  }
-
-  return null;
-}
-
-export function getNextStepAfterProvider(
-  provider: OpenWikiProvider,
-  modelIdOverride: string | null,
-  onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
-  mode: OpenWikiRunMode = "code",
-  forceModelStep = false,
-): PromptStep | null {
-  if (needsAwsCredentialRepair(provider)) {
-    return "region";
-  }
-
-  const nextCredentialStep = credentialStep(provider);
-
-  if (needsCredentialStep(provider) && nextCredentialStep) {
-    return nextCredentialStep;
-  }
-
-  return getNextStepAfterApiKey(
-    provider,
-    modelIdOverride,
-    onboardingConfig,
-    mode,
-    forceModelStep,
-  );
-}
-
-function getNextStepAfterApiKey(
-  provider: OpenWikiProvider,
-  modelIdOverride: string | null,
-  onboardingConfig: OpenWikiOnboardingConfig,
-  mode: OpenWikiRunMode,
-  forceModelStep = false,
-): PromptStep | null {
-  if (needsSecretKeyStep(provider)) {
-    return "secret-key";
-  }
-
-  return getNextStepAfterSecretKey(
-    provider,
-    modelIdOverride,
-    onboardingConfig,
-    mode,
-    forceModelStep,
-  );
-}
-
-function getNextStepAfterSecretKey(
-  provider: OpenWikiProvider,
-  modelIdOverride: string | null,
-  onboardingConfig: OpenWikiOnboardingConfig,
-  mode: OpenWikiRunMode,
-  forceModelStep = false,
-): PromptStep | null {
-  if (needsGcpProjectStep(provider)) {
-    return "gcp-project";
-  }
-
-  return getNextStepAfterGcpLocation(
-    provider,
-    modelIdOverride,
-    onboardingConfig,
-    mode,
-    forceModelStep,
-  );
-}
-
-function getNextStepAfterGcpLocation(
-  provider: OpenWikiProvider,
-  modelIdOverride: string | null,
-  onboardingConfig: OpenWikiOnboardingConfig = createEmptyOnboardingConfig(),
-  mode: OpenWikiRunMode = "code",
-  forceModelStep = false,
-): PromptStep | null {
-  if (needsBaseUrlStep(provider)) {
-    return "base-url";
-  }
-
-  return getNextStepAfterBaseUrl(
-    provider,
-    modelIdOverride,
-    onboardingConfig,
-    mode,
-    forceModelStep,
-  );
-}
-
-function getNextStepAfterBaseUrl(
-  provider: OpenWikiProvider,
-  modelIdOverride: string | null,
-  onboardingConfig: OpenWikiOnboardingConfig,
-  mode: OpenWikiRunMode,
-  forceModelStep = false,
-): PromptStep | null {
-  if (needsRegionStep(provider)) {
-    return "region";
-  }
-
-  return getNextStepAfterRegion(
-    provider,
-    modelIdOverride,
-    onboardingConfig,
-    mode,
-    forceModelStep,
-  );
-}
-
-function getNextStepAfterRegion(
-  provider: OpenWikiProvider,
-  modelIdOverride: string | null,
-  onboardingConfig: OpenWikiOnboardingConfig,
-  mode: OpenWikiRunMode,
-  forceModelStep = false,
-): PromptStep | null {
-  if (
-    modelIdOverride === null &&
-    (forceModelStep || process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined)
-  ) {
-    return "model";
-  }
-
-  if (!process.env.LANGSMITH_API_KEY) {
-    return "langsmith";
-  }
-
-  if (mode === "code" && !isOnboardingComplete(onboardingConfig)) {
-    return "code-repo-confirm";
-  }
-
-  if (!getConfigModeId(onboardingConfig)) {
-    return "template";
-  }
-
-  if (!onboardingConfig.wikiGoal) {
-    return "wiki-goal";
-  }
-
-  if (!isCodeMode(onboardingConfig) && !onboardingConfig.ingestionSchedule) {
-    return "global-cron-mode";
-  }
-
-  if (!isOnboardingComplete(onboardingConfig)) {
-    return "source-menu";
-  }
-
-  return null;
-}
-
-export function ensureRunModeConfig(
-  config: OpenWikiOnboardingConfig,
-  mode: OpenWikiRunMode,
-): OpenWikiOnboardingConfig {
-  if (getConfigModeId(config) === mode) {
-    return mode === "code" && config.wikiGoal !== undefined
-      ? { ...config, wikiGoal: undefined }
-      : config;
-  }
-
-  const runModeTemplate = ONBOARDING_TEMPLATES.find(
-    (option) => option.id === mode,
-  );
-  if (!runModeTemplate) {
-    return config;
-  }
-
-  return {
-    ...config,
-    modeId: runModeTemplate.id,
-    modeName: runModeTemplate.name,
-    templateId: runModeTemplate.id,
-    templateName: runModeTemplate.name,
-    ...(mode === "code" ? { wikiGoal: undefined } : {}),
-  };
-}
-
-export async function hydrateRunModeConfig(
-  config: OpenWikiOnboardingConfig,
-  mode: OpenWikiRunMode,
-  repoRoot: string,
-): Promise<OpenWikiOnboardingConfig> {
-  if (mode !== "code") {
-    return config;
-  }
-
-  const wikiGoal = await readRepositoryWikiInstructions(repoRoot);
-
-  return { ...config, wikiGoal };
-}
-
-function getRunModeSelectionIndex(mode: OpenWikiRunMode): number {
-  const index = RUN_MODE_OPTIONS.findIndex((option) => option.id === mode);
-  return index === -1 ? 0 : index;
-}
-
-function getLangsmithRegionSelectionIndex(region: LangSmithRegion): number {
-  const index = LANGSMITH_REGION_OPTIONS.findIndex(
-    (option) => option.id === region,
-  );
-  return index === -1 ? 0 : index;
-}
-
-function getLangsmithRegionLabel(region: LangSmithRegion): string {
-  const option = LANGSMITH_REGION_OPTIONS.find((item) => item.id === region);
-  return option ? `${option.name} (${option.host})` : region;
-}
-
-function getRunModeName(mode: OpenWikiRunMode): string {
-  return RUN_MODE_OPTIONS.find((option) => option.id === mode)?.name ?? mode;
-}
-
-function getSourceOption(sourceId: ConnectorId): SourceSetupOption {
-  return (
-    SOURCE_OPTIONS.find((source) => source.id === sourceId) ?? SOURCE_OPTIONS[0]
-  );
-}
-
-function getConfigModeId(config: OpenWikiOnboardingConfig): string | undefined {
-  return config.modeId ?? config.templateId;
-}
-
-function getConfigModeName(
-  config: OpenWikiOnboardingConfig,
-): string | undefined {
-  return config.modeName ?? config.templateName;
-}
-
-function isCodeMode(config: OpenWikiOnboardingConfig): boolean {
-  return getConfigModeId(config) === "code";
 }
 
 function needsEnvValue(secretInput: SourceSecretInput): boolean {
@@ -5318,10 +4250,6 @@ function getApiKeyFieldLabel(provider: OpenWikiProvider): string {
   return provider === "bedrock"
     ? `${getProviderLabel(provider)} access key ID`
     : `${getProviderLabel(provider)} API key`;
-}
-
-function hasValidConfiguredProvider(): boolean {
-  return normalizeProvider(process.env[OPENWIKI_PROVIDER_ENV_KEY]) !== null;
 }
 
 function getModelSetupDetail(
@@ -5622,27 +4550,6 @@ function sanitizeRepoId(value: string): string {
 
 function getDefaultLocalGitRepoPath(): string {
   return process.cwd();
-}
-
-function getDefaultCodeRepoRootPath(): string {
-  return findNearestGitRepoRoot(process.cwd()) ?? process.cwd();
-}
-
-export function findNearestGitRepoRoot(startPath: string): string | null {
-  let currentPath = path.resolve(startPath);
-
-  while (true) {
-    if (existsSync(path.join(currentPath, ".git"))) {
-      return currentPath;
-    }
-
-    const parentPath = path.dirname(currentPath);
-    if (parentPath === currentPath) {
-      return null;
-    }
-
-    currentPath = parentPath;
-  }
 }
 
 async function validateLocalDirectoryPath(value: string): Promise<string> {
