@@ -46,6 +46,7 @@ import {
   sanitizeDiagnosticText,
 } from "./diagnostics.js";
 import { stripHtmlTags } from "./utils.js";
+import { stripUnsafeTerminalSequences } from "./terminal-sanitize.js";
 import {
   type OpenWikiRunEvent,
   type OpenWikiRunResult,
@@ -1573,7 +1574,7 @@ function getSpinnerFrame(frame: number): string {
 }
 
 function MarkdownText({ markdown }: { markdown: string }) {
-  const tokens = marked.lexer(markdown, {
+  const tokens = marked.lexer(stripUnsafeTerminalSequences(markdown), {
     async: false,
     gfm: true,
   });
