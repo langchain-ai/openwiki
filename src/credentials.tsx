@@ -289,6 +289,12 @@ const LANGSMITH_REGION_OPTIONS = [
     id: "eu",
     name: "EU",
   },
+  {
+    description: "APAC workspaces.",
+    host: "https://apac.api.smith.langchain.com",
+    id: "apac",
+    name: "APAC",
+  },
 ] as const satisfies readonly {
   description: string;
   host: string;

@@ -5,17 +5,32 @@ import {
 } from "./repo-config.js";
 
 /**
- * LangSmith workspace region. Maps to the two official API hosts the connector
+ * LangSmith workspace region. Maps to the official API hosts the connector
  * is allowlisted to talk to; the wizard offers this instead of a raw URL.
  */
-export type LangSmithRegion = "us" | "eu";
+export type LangSmithRegion = "us" | "eu" | "apac";
 
 /**
- * EU host, written to apiBaseUrl for EU workspaces. The US host is the connector
- * default, so it is left out of the file entirely.
+ * Non-US hosts, written to apiBaseUrl for that region. The US host is the
+ * connector default, so it is left out of the file entirely.
  */
 const EU_API_BASE_URL = "https://eu.api.smith.langchain.com";
+const APAC_API_BASE_URL = "https://apac.api.smith.langchain.com";
 
+const API_BASE_URL_BY_REGION: Record<Exclude<LangSmithRegion, "us">, string> = {
+  apac: APAC_API_BASE_URL,
+  eu: EU_API_BASE_URL,
+};
+
+function regionFromApiBaseUrl(apiBaseUrl: string | undefined): LangSmithRegion {
+  if (apiBaseUrl === EU_API_BASE_URL) {
+    return "eu";
+  }
+  if (apiBaseUrl === APAC_API_BASE_URL) {
+    return "apac";
+  }
+  return "us";
+}
 /**
  * Base env var name for the first workspace's key. Additional workspaces get
  * OPENWIKI_LANGSMITH_API_KEY_<n>.
@@ -54,7 +69,7 @@ export async function loadLangSmithSetup(
   return (config?.workspaces ?? []).map((workspace) => ({
     apiKeyEnv: workspace.apiKeyEnv,
     projects: workspace.projects.map((project) => project.name),
-    region: workspace.apiBaseUrl === EU_API_BASE_URL ? "eu" : "us",
+    region: regionFromApiBaseUrl(workspace.apiBaseUrl),
   }));
 }
 
@@ -87,7 +102,9 @@ export async function saveLangSmithSetup(
     cleaned.push({
       apiKeyEnv: workspace.apiKeyEnv,
       projects,
-      ...(workspace.region === "eu" ? { apiBaseUrl: EU_API_BASE_URL } : {}),
+      ...(workspace.region === "us"
+        ? {}
+        : { apiBaseUrl: API_BASE_URL_BY_REGION[workspace.region] }),
     });
   }
   if (cleaned.length === 0 && !existing) {

@@ -23,7 +23,7 @@ export interface LangSmithWorkspaceConfig {
   projects: LangSmithProjectConfig[];
 
   /**
-   * Non-default API host for EU workspaces.
+   * Non-default API host for EU/APAC workspaces.
    *
    * @default the connector's default host (https://api.smith.langchain.com)
    */
@@ -49,6 +49,7 @@ export interface LangSmithRepoConfig {
 const ALLOWED_API_HOSTS = new Set([
   "api.smith.langchain.com",
   "eu.api.smith.langchain.com",
+  "apac.api.smith.langchain.com",
 ]);
 
 /**

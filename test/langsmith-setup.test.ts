@@ -17,6 +17,7 @@ import {
 
 const REPO = "/repo";
 const EU = "https://eu.api.smith.langchain.com";
+const APAC = "https://apac.api.smith.langchain.com";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -35,6 +36,11 @@ describe("loadLangSmithSetup", () => {
           apiKeyEnv: "OPENWIKI_LANGSMITH_API_KEY_2",
           projects: [{ name: "c" }],
         },
+        {
+          apiBaseUrl: APAC,
+          apiKeyEnv: "OPENWIKI_LANGSMITH_API_KEY_3",
+          projects: [{ name: "d" }],
+        },
       ],
     });
 
@@ -49,6 +55,11 @@ describe("loadLangSmithSetup", () => {
         projects: ["c"],
         region: "eu",
       },
+      {
+        apiKeyEnv: "OPENWIKI_LANGSMITH_API_KEY_3",
+        projects: ["d"],
+        region: "apac",
+      },
     ]);
   });
 
@@ -60,7 +71,7 @@ describe("loadLangSmithSetup", () => {
 });
 
 describe("saveLangSmithSetup", () => {
-  test("writes workspaces, US omitting apiBaseUrl and EU including it", async () => {
+  test("writes workspaces, US omitting apiBaseUrl and EU/APAC including it", async () => {
     vi.mocked(readLangSmithRepoConfig).mockResolvedValue(undefined);
 
     await saveLangSmithSetup(REPO, [
@@ -74,6 +85,11 @@ describe("saveLangSmithSetup", () => {
         projects: ["b"],
         region: "eu",
       },
+      {
+        apiKeyEnv: "OPENWIKI_LANGSMITH_API_KEY_3",
+        projects: ["c"],
+        region: "apac",
+      },
     ]);
 
     expect(writeLangSmithRepoConfig).toHaveBeenCalledWith(REPO, {
@@ -83,6 +99,11 @@ describe("saveLangSmithSetup", () => {
           apiBaseUrl: EU,
           apiKeyEnv: "OPENWIKI_LANGSMITH_API_KEY_2",
           projects: [{ name: "b" }],
+        },
+        {
+          apiBaseUrl: APAC,
+          apiKeyEnv: "OPENWIKI_LANGSMITH_API_KEY_3",
+          projects: [{ name: "c" }],
         },
       ],
     });
