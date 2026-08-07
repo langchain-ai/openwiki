@@ -1,0 +1,69 @@
+test/cli/components/panels.test.tsx
+  s_9df199bc4d57fc::t_a2756cc1ae81ea 1-143
+test/cli/components/markdown.test.tsx
+  s_9df199bc4d57fc::t_8597a9a0971211 1-79
+src/cli/components/markdown.tsx
+  s_9df199bc4d57fc::t_e97fe95dee1be1 1-215
+src/cli/components/primitives.tsx
+  s_9df199bc4d57fc::t_00b2d37d7af4e1 1-139
+src/cli/cli.tsx
+  s_9df199bc4d57fc::t_00fa7567319462 38-40,42-53
+  s_9df199bc4d57fc::t_53951369c334d3 54
+  s_9df199bc4d57fc::t_061f9a6be0c243 5
+test/cli/components/primitives.test.tsx
+  s_9df199bc4d57fc::t_f6596a45f2be0f 12,61-69
+  s_9df199bc4d57fc::t_0ca1a2fca16b79 1-11,13-60,70-108
+src/cli/components/header.tsx
+  s_9df199bc4d57fc::t_a032082449e4ca 1-177
+src/cli/components/panels.tsx
+  s_9df199bc4d57fc::t_1e9b2d03bcc6e1 1-194
+src/cli/components/chat.tsx
+  s_9df199bc4d57fc::t_b362a361599540 1-217,219-225,227-726
+  s_9df199bc4d57fc::t_decd7a11cfa428 218,226
+src/cli/run-log/reducer.ts
+  s_9df199bc4d57fc::t_8937bfd95f618e 204-218
+  s_9df199bc4d57fc::t_839f8adf84860b 203
+src/cli/components/types.ts
+  s_9df199bc4d57fc::t_38b75491dcb0bd 1-21
+test/cli/components/chat.test.tsx
+  s_9df199bc4d57fc::t_24ddba9c83627f 1-121
+test/cli/components/ansi.ts
+  s_9df199bc4d57fc::t_7847cf1df294cd 1-11
+test/cli/components/header.test.tsx
+  s_9df199bc4d57fc::t_1848b7d465eecf 56,64
+  s_9df199bc4d57fc::t_7bdbd1e8ebb1f3 1-55,57-63,65-77
+test/cli/components/first-run-notice.test.tsx
+  s_9df199bc4d57fc::t_62d02f4ff6fd76 1-66
+src/cli/components/run-view.tsx
+  s_9df199bc4d57fc::t_c5dacb5cd21d1a 1-218
+package.json
+  s_9df199bc4d57fc::t_58a78b5922b9bc 103
+src/cli/components/first-run-notice.tsx
+  s_9df199bc4d57fc::t_717cd9f24f4f33 1-56,58-86
+  s_9df199bc4d57fc::t_5c1609ed6e6370 57
+test/cli/components/run-view.test.tsx
+  s_9df199bc4d57fc::t_06f4d3b27fdc3c 1-145
+pnpm-lock.yaml
+  s_9df199bc4d57fc::t_87b3b89c6c630f 111-113,1828-1836,2175-2176,4743-4746,5082,5217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "a33d1c30b698bed333e434e0af0283d3a0243e58",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
