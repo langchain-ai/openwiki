@@ -14,6 +14,7 @@ import type {
 } from "../types.js";
 import { OPENWIKI_X_ACCESS_TOKEN_ENV_KEY } from "../../constants.js";
 import { getOAuthAccessToken } from "../../auth/tokens.js";
+import { fetchWithResilience } from "../http.js";
 import { normalizeStringArray } from "../config.js";
 
 type XConfig = {
@@ -238,7 +239,7 @@ async function fetchX(
     url.searchParams.set(key, value);
   }
 
-  const response = await fetch(url, {
+  const response = await fetchWithResilience(url, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },

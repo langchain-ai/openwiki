@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile, chmod, rename } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -9,6 +10,8 @@ import {
   BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  COPILOT_API_KEY_ENV_KEY,
+  COPILOT_BASE_URL_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
   getProviderBaseUrlWarnings,
@@ -88,6 +91,8 @@ export type CredentialDiagnostic = {
 export const MANAGED_ENV_KEYS = [
   BASETEN_API_KEY_ENV_KEY,
   BASETEN_BASE_URL_ENV_KEY,
+  COPILOT_API_KEY_ENV_KEY,
+  COPILOT_BASE_URL_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
   NEBIUS_API_KEY_ENV_KEY,
@@ -270,7 +275,22 @@ export async function getCredentialDiagnostics(): Promise<
   );
 }
 
-export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
+let saveOpenWikiEnvQueue: Promise<void> = Promise.resolve();
+
+export function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
+  const save = saveOpenWikiEnvQueue.then(() => saveOpenWikiEnvLocked(updates));
+
+  // A failed save must not leave later saves permanently queued behind a
+  // rejected promise. The caller still receives the original error from save.
+  saveOpenWikiEnvQueue = save.then(
+    () => undefined,
+    () => undefined,
+  );
+
+  return save;
+}
+
+async function saveOpenWikiEnvLocked(updates: EnvMap): Promise<void> {
   captureShellEnv();
 
   const currentEnv = await readOpenWikiEnv();
@@ -304,7 +324,7 @@ export async function saveOpenWikiEnv(updates: EnvMap): Promise<void> {
   // so a failure mid-write (ENOSPC, crash, power loss) would leave
   // ~/.openwiki/.env truncated and every saved token/key lost. The rename
   // keeps the original intact until the new contents are fully written.
-  const tmpPath = `${openWikiEnvPath}.${process.pid}.tmp`;
+  const tmpPath = `${openWikiEnvPath}.${process.pid}.${randomUUID()}.tmp`;
   await writeFile(tmpPath, formatEnv(nextEnv), {
     encoding: "utf8",
     mode: 0o600,
@@ -447,6 +467,7 @@ export function isNonSecretDiagnosticKey(key: string): boolean {
     key === OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === BASETEN_BASE_URL_ENV_KEY ||
+    key === COPILOT_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||

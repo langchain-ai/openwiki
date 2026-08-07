@@ -8,8 +8,15 @@ import {
   type FrontmatterIssue,
 } from "../okf/frontmatter.js";
 import { migrateWikiToOkf, synchronizeWikiIndexes } from "../okf/index-sync.js";
+import {
+  ENGLISH_CONCEPT_TYPE,
+  ENGLISH_INDEX_LABELS,
+  type IndexLabels,
+} from "../okf/index-labels.js";
 import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
+import { inStage } from "../telemetry/index.js";
 import type { OpenWikiOutputMode } from "./types.js";
+import { validateWikiInternalLinks } from "./wiki-link-validator.js";
 
 const OKF_RESERVED_FILES = new Set(["index.md", "log.md"]);
 const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
@@ -22,12 +29,35 @@ const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
 export function createOpenWikiIndexMiddleware(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
+  labels: IndexLabels = ENGLISH_INDEX_LABELS,
+  conceptType: string = ENGLISH_CONCEPT_TYPE,
 ) {
   return createMiddleware({
     name: "OpenWikiIndexMiddleware",
     beforeAgent: async () => {
-      await migrateWikiToOkf(backend, outputMode);
+      // Owned OKF pass: a throw here is our conformance code failing, not the
+      // model. Tag class+detail at the origin so it does not fall to the run
+      // stage's raw classifier (which would read agent_error).
+      await inStage(
+        "build",
+        () => migrateWikiToOkf(backend, outputMode, conceptType),
+        { errorClass: "okf_error", errorDetail: "migrate" },
+      );
     },
+    // Telemetry guard: this wrap only *decorates a successful* tool result with a
+    // front-matter warning; it deliberately does not catch tool throws. LangChain's
+    // tool node swallows a thrown tool error into a ToolMessage fed back to the
+    // model so the agent can recover, so tool/connector throws never reach the run
+    // failure path. Consequences to keep in mind before changing this:
+    //   - `connector_error` has no fatal propagating path at all (the connector
+    //     pull in runCodeModeConnectors is fail-open by design), so it is a
+    //     documented telemetry blind spot, not a bucket some run produces.
+    //   - `tool_error` is reachable only when a tool-named error escapes to the
+    //     failure path; classifyError matches it by `error.name`, not here.
+    //   - Tool-input parse errors are swallowed by LangChain upstream and never
+    //     become `tool_error`.
+    // Do not turn this into a catch that rethrows: that would make every recoverable
+    // tool error fatal and record otherwise-successful runs as failures.
     wrapToolCall: async (request, handler) =>
       addFrontmatterWarning(
         await handler(request),
@@ -36,8 +66,23 @@ export function createOpenWikiIndexMiddleware(
         request.toolCall.name,
       ),
     afterAgent: async () => {
-      await validateWikiMermaid(backend, outputMode);
-      await synchronizeWikiIndexes(backend, outputMode);
+      await inStage(
+        "finalize",
+        () => validateWikiMermaid(backend, outputMode),
+        { errorClass: "okf_error", errorDetail: "mermaid" },
+      );
+      await inStage(
+        "finalize",
+        () => synchronizeWikiIndexes(backend, outputMode, labels, conceptType),
+        { errorClass: "okf_error", errorDetail: "index_sync" },
+      );
+      // Stamp broken internal links in place (do not fail the run) so a later
+      // update can repair them from the inline openwiki comments.
+      await inStage(
+        "finalize",
+        () => validateWikiInternalLinks(backend, outputMode),
+        { errorClass: "okf_error", errorDetail: "link_validation" },
+      );
     },
   });
 }

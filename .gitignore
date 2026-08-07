@@ -39,3 +39,10 @@ token.json
 *.jks
 
 large_tool_results/
+
+.cache/
+artifacts/
+results/
+summaries/
+__pycache__/
+*.pyc

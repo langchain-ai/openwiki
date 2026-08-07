@@ -6,6 +6,7 @@ import {
   getOAuthAccessToken,
   refreshOAuthAccessToken,
 } from "../../auth/tokens.js";
+import { fetchWithResilience } from "../http.js";
 import { normalizeStringArray } from "../config.js";
 import {
   createRunId,
@@ -308,7 +309,7 @@ async function fetchGmail(
     url.searchParams.append(key, value);
   }
 
-  return await fetch(url, {
+  return await fetchWithResilience(url, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },

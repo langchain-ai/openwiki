@@ -65,6 +65,10 @@ describe("parseCommand — help", () => {
     expect(helpText).toContain("scheduled-only ingestion");
     expect(helpText).toContain("openwiki ingest all --scheduled --print");
   });
+
+  test("help documents the output language option", () => {
+    expect(getHelpText()).toContain("-l, --language <locale>");
+  });
 });
 
 describe("parseCommand — chat default", () => {
@@ -180,6 +184,53 @@ describe("parseCommand — mode after flags", () => {
 });
 
 describe("parseCommand — init/update", () => {
+  test("--language passes the selected locale to an init run", () => {
+    expect(parseCommand(["--init", "--language", "zh-CN"])).toMatchObject({
+      kind: "run",
+      command: "init",
+      language: "zh-CN",
+    });
+  });
+
+  test("-l passes the selected locale to an update run", () => {
+    expect(parseCommand(["--update", "-l", "zh-CN"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      language: "zh-CN",
+    });
+  });
+
+  test("language is unset when no language option is supplied", () => {
+    expect(parseCommand(["--init"])).toMatchObject({
+      kind: "run",
+      language: null,
+    });
+  });
+
+  test("--language requires a locale", () => {
+    expect(parseCommand(["--language", "--init"])).toMatchObject({
+      kind: "error",
+      message: "--language requires a locale.",
+    });
+  });
+
+  test("--language canonicalizes the locale and sets no warning", () => {
+    expect(parseCommand(["--init", "--language", "PT-br"])).toMatchObject({
+      kind: "run",
+      language: "pt-BR",
+      languageWarning: null,
+    });
+  });
+
+  test("an unrecognized --language is dropped and warned", () => {
+    const result = parseCommand(["--init", "--language", "fake-language"]);
+
+    expect(result).toMatchObject({ kind: "run", language: null });
+    if (result.kind === "run") {
+      expect(result.languageWarning).toContain("fake-language");
+    }
+  });
+
   test("personal --init selects the init command and starts", () => {
     expect(parseCommand(["personal", "--init"])).toMatchObject({
       kind: "run",

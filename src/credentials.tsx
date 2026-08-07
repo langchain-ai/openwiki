@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { homedir } from "node:os";
 import path from "node:path";
-import { Box, Text, useInput, useStdout } from "ink";
+import { Box, Text, useInput, useStdin, useStdout } from "ink";
 import { configureAuthProvider } from "./auth/configure.js";
 import { runOAuthAuth } from "./auth/oauth.js";
 import {
@@ -44,6 +44,7 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  providerUsesExternalCliAuth,
   providerUsesOAuth,
   resolveConfiguredProvider,
   resolveProviderRegion,
@@ -67,6 +68,13 @@ import {
 } from "./connectors/sources/langsmith/setup.js";
 import type { LangSmithRegion } from "./connectors/sources/langsmith/setup.js";
 import type { ConnectorId } from "./connectors/types.js";
+import {
+  detectExternalCliCredential,
+  getExternalCliAuthAdapter,
+  isExternalCliAvailable,
+  runExternalCliLogin,
+  type ExternalCliAuthState,
+} from "./external-cli-auth.js";
 import { getConnectorConfigPath } from "./openwiki-home.js";
 import {
   getSavedEnvValue,
@@ -130,6 +138,7 @@ type PromptStep =
   | "base-url"
   | "code-repo-confirm"
   | "code-repo-path"
+  | "external-cli-auth"
   | "final"
   | "gcp-location"
   | "gcp-project"
@@ -221,8 +230,7 @@ const ONBOARDING_TEMPLATES = [
     name: "Code",
     sourceIds: ["langsmith"],
     suggestedSources: ["Local Git repository"],
-    suggestedGoal:
-      "A code wiki for this local repository. Prioritize a concise quickstart, architecture overview, source map, key workflows, domain concepts, operations/runbook notes, testing guidance, and integration points. Inspect git history to understand reasoning behind code changes and the progression of the repository. Keep pages grounded in the repository structure and recent code changes. Prefer practical navigation for engineers over generic summaries.",
+    suggestedGoal: "A code wiki for this repository.",
   },
   {
     description:
@@ -521,6 +529,10 @@ function credentialStep(provider: OpenWikiProvider): PromptStep | null {
 
   if (providerUsesAwsSdkCredentials(provider)) {
     return null;
+  }
+
+  if (providerUsesExternalCliAuth(provider)) {
+    return "external-cli-auth";
   }
 
   if (providerRequiresApiKey(provider)) {
@@ -923,6 +935,11 @@ export function InitSetup({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [externalCliAuth, setExternalCliAuth] = useState<ExternalCliAuthState>({
+    kind: "idle",
+  });
+  const externalCliProbeProvider = useRef<OpenWikiProvider | null>(null);
+  const { setRawMode } = useStdin();
   const [isAuthRunning, setIsAuthRunning] = useState(false);
   const [oauthTokens, setOauthTokens] = useState<CodexTokens | null>(null);
   const [loginUrl, setLoginUrl] = useState<string | null>(null);
@@ -1141,6 +1158,70 @@ export function InitSetup({
     };
   }, [step, loginAttempt]);
 
+  useEffect(() => {
+    if (
+      step !== "external-cli-auth" ||
+      !providerUsesExternalCliAuth(provider) ||
+      externalCliProbeProvider.current === provider
+    ) {
+      return;
+    }
+
+    externalCliProbeProvider.current = provider;
+
+    let cancelled = false;
+    setExternalCliAuth({ kind: "checking" });
+
+    void (async () => {
+      const credential = await detectExternalCliCredential(provider);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (credential) {
+        setExternalCliAuth({ kind: "detected" });
+        return;
+      }
+
+      const cliAvailable = await isExternalCliAvailable(provider);
+
+      if (cancelled) {
+        return;
+      }
+
+      setExternalCliAuth({ kind: "not-detected", cliAvailable });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, provider]);
+
+  async function launchExternalCliLogin() {
+    setExternalCliAuth({ kind: "logging-in" });
+    setRawMode?.(false);
+
+    try {
+      const success = await runExternalCliLogin(provider);
+
+      if (!success) {
+        setExternalCliAuth({ kind: "login-failed" });
+        return;
+      }
+
+      const credential = await detectExternalCliCredential(provider);
+
+      setExternalCliAuth(
+        credential
+          ? { kind: "detected" }
+          : { kind: "not-detected", cliAvailable: true },
+      );
+    } finally {
+      setRawMode?.(true);
+    }
+  }
+
   /**
    * Pre-fill the input or selection for a step reached via navigation, so a done
    * step opens ready to edit. Secret steps are pre-filled with the stored key,
@@ -1195,6 +1276,11 @@ export function InitSetup({
         break;
       }
       case "api-key": {
+        const envKey = getProviderApiKeyEnvKey(provider);
+        setInput(apiKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
+        break;
+      }
+      case "external-cli-auth": {
         const envKey = getProviderApiKeyEnvKey(provider);
         setInput(apiKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
         break;
@@ -1302,6 +1388,7 @@ export function InitSetup({
     const trimmed = input.trim();
     switch (from) {
       case "api-key":
+      case "external-cli-auth":
         if (trimmed) setApiKey(trimmed);
         break;
       case "secret-key":
@@ -1423,6 +1510,16 @@ export function InitSetup({
         setInput((value) => value + sanitizedInput);
       }
 
+      return;
+    }
+
+    if (
+      step === "external-cli-auth" &&
+      key.tab &&
+      externalCliAuth.kind !== "checking" &&
+      externalCliAuth.kind !== "logging-in"
+    ) {
+      void launchExternalCliLogin();
       return;
     }
 
@@ -1834,13 +1931,24 @@ export function InitSetup({
       return;
     }
 
-    if (step === "api-key") {
+    if (step === "api-key" || step === "external-cli-auth") {
       const trimmedInput = input.trim();
-      // Empty submit keeps an existing key (session or env); only a genuinely
-      // missing key is an error.
-      const nextApiKey = trimmedInput.length > 0 ? trimmedInput : apiKey;
+      const usesExternalCli = step === "external-cli-auth";
+      // Empty submit keeps an existing key (session or env). For an external
+      // CLI session it deliberately saves nothing: the CLI remains the token
+      // owner and the runtime resolves it again for this process only.
+      const nextApiKey =
+        trimmedInput.length > 0
+          ? trimmedInput
+          : usesExternalCli && externalCliAuth.kind === "detected"
+            ? null
+            : apiKey;
 
-      if (nextApiKey === null && !isCredentialConfigured(provider)) {
+      if (
+        nextApiKey === null &&
+        !(usesExternalCli && externalCliAuth.kind === "detected") &&
+        !isCredentialConfigured(provider)
+      ) {
         setError(
           `${getProviderApiKeyEnvKey(provider) ?? "API key"} is required.`,
         );
@@ -1852,7 +1960,7 @@ export function InitSetup({
       }
       setInput("");
       const nextStep =
-        nextSetupStep("api-key", provider, selectedMode, allowModeSelection) ??
+        nextSetupStep(step, provider, selectedMode, allowModeSelection) ??
         getNextStepAfterApiKey(
           provider,
           modelIdOverride,
@@ -3417,6 +3525,7 @@ export function InitSetup({
             <Prompt
               codeRepoPathInput={codeRepoPathInput}
               codeRepoRoot={codeRepoRoot}
+              externalCliAuth={externalCliAuth}
               codeRepoSelectionIndex={codeRepoSelectionIndex}
               cronFieldSelectionIndex={cronFieldSelectionIndex}
               cronModeSelectionIndex={cronModeSelectionIndex}
@@ -3501,6 +3610,7 @@ function Prompt({
   codeRepoPathInput,
   codeRepoRoot,
   codeRepoSelectionIndex,
+  externalCliAuth,
   cronFieldSelectionIndex,
   cronModeSelectionIndex,
   finalSelectionIndex,
@@ -3533,6 +3643,7 @@ function Prompt({
   codeRepoPathInput: string;
   codeRepoRoot: string;
   codeRepoSelectionIndex: number;
+  externalCliAuth: ExternalCliAuthState;
   cronFieldSelectionIndex: number;
   cronModeSelectionIndex: number;
   finalSelectionIndex: number;
@@ -3616,6 +3727,16 @@ function Prompt({
         />
         <Text color="gray">Press Enter to save it.</Text>
       </Box>
+    );
+  }
+
+  if (step === "external-cli-auth") {
+    return (
+      <ExternalCliAuthPrompt
+        authState={externalCliAuth}
+        input={input}
+        provider={provider}
+      />
     );
   }
 
@@ -4288,6 +4409,92 @@ function Prompt({
   }
 
   return null;
+}
+
+function mask(value: string): string {
+  if (value.length === 0) {
+    return "";
+  }
+
+  return "*".repeat(value.length);
+}
+
+function ExternalCliAuthPrompt({
+  authState,
+  input,
+  provider,
+}: {
+  authState: ExternalCliAuthState;
+  input: string;
+  provider: OpenWikiProvider;
+}) {
+  const adapter = getExternalCliAuthAdapter(provider);
+  const envKey = getProviderApiKeyEnvKey(provider) ?? "API key";
+
+  if (!adapter) {
+    return null;
+  }
+
+  if (authState.kind === "idle" || authState.kind === "checking") {
+    return (
+      <Text color="gray">
+        Checking for an existing {adapter.credentialDescription}...
+      </Text>
+    );
+  }
+
+  if (authState.kind === "logging-in") {
+    return (
+      <Text color="gray">
+        Running `{adapter.loginCommand}` — follow the prompts in this
+        terminal...
+      </Text>
+    );
+  }
+
+  if (authState.kind === "detected") {
+    return (
+      <Box flexDirection="column">
+        <Text>Detected an existing {adapter.credentialDescription}.</Text>
+        <Text color="gray">
+          Press Enter to use it, Tab to sign in again, or paste a different
+          token below.
+        </Text>
+        <Text>
+          <Text color="gray">$</Text> {envKey}={" "}
+          <Text color="yellow">
+            {input.length > 0 ? mask(input) : `<from ${adapter.name}>`}
+          </Text>
+        </Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      <Text>No {adapter.credentialDescription} detected.</Text>
+      {authState.kind === "login-failed" ? (
+        <Text color="red">
+          `{adapter.loginCommand}` did not complete successfully.
+        </Text>
+      ) : null}
+      {authState.kind === "not-detected" && authState.cliAvailable ? (
+        <Text color="gray">
+          Press Tab to run `{adapter.loginCommand}`, or paste a token below.
+        </Text>
+      ) : (
+        <Text color="gray">
+          {adapter.installHint} You can also paste a token below for CI or other
+          headless use.
+        </Text>
+      )}
+      <Text>
+        <Text color="gray">$</Text> {envKey}={" "}
+        <Text color="yellow">{mask(input)}</Text>
+      </Text>
+      <Text color="gray">Press Enter to save it.</Text>
+    </Box>
+  );
 }
 
 function SetupHeader() {

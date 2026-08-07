@@ -16,13 +16,13 @@ The documentation agent is implemented in `src/agent/`. It takes a command (`cha
 1. Load `~/.openwiki/.env` into `process.env`.
 2. Resolve the provider via `resolveConfiguredProvider()` and ensure the provider's API key exists.
 3. Resolve the model ID from CLI input, `OPENWIKI_MODEL_ID`, or the provider's default model.
-4. Create a run context from Git state and prior update metadata.
+4. Create a run context from prior update metadata, persisted language, and the wiki brief. `createRunContext()` in `src/agent/utils.ts` no longer builds a Git summary: the agent runs `git` itself during the run per the prompt's Git-history instructions (the update prompt tells it to run `git rev-parse HEAD`, `git log <gitHead>..HEAD --name-status --oneline`, and `git diff` to scope changes). `RunContext` carries `lastUpdate`, `language`, and `wikiGoal` only.
 5. Snapshot the current `openwiki/` content hash (before the run).
-6. Build the system prompt and user prompt.
+6. Build the system prompt and user prompt. `createSystemPrompt()` and `createUserPrompt()` in `src/agent/prompt.ts` select a prompt template by output mode — `CODE_SYSTEM_PROMPTS`/`CODE_USER_PROMPTS` from `src/agent/prompts/code.ts` for repository runs, `PERSONAL_SYSTEM_PROMPTS`/`PERSONAL_USER_PROMPTS` from `src/agent/prompts/personal.ts` for local-wiki runs — then substitute placeholders for language, Git-history hint, discovery instruction, `.openwikiignore` instructions, and runtime context. The user prompt's runtime context block (`{RUNTIME_CONTEXT}`) is produced by `formatRuntimeContext()` and carries the runtime root label and path (the `formatRuntimeRootInstruction()` helper moved here from `index.ts`).
 7. Create the provider-specific model client (`ChatAnthropic`, `ChatOpenRouter`, or `ChatOpenAI`).
-8. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer.
-9. Stream messages and tool events back to the CLI.
-10. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed** — or if the previous run was interrupted and this run completed, to clear the stale status. If the run fails mid-stream, the catch block writes metadata with `status: "interrupted"` so the next update retries instead of skipping as a no-op.
+8. Create a DeepAgents `LocalShellBackend` rooted at the repository with a SQLite checkpointer, wrap it in a `CompositeBackend` via `createAgentBackend()` (an `OpenWikiCompositeBackend` subclass that turns a `RangeError` from an over-broad `glob` into a tool error rather than crashing the run), then attach OKF index middleware (`src/agent/okf-middleware.ts`) and translation middleware (`src/agent/translation-middleware.ts`). The `/conversation_history/` mount routes the DeepAgents summarization middleware's history offload to `~/.openwiki/conversation_history` so it succeeds even on docs-only runs (without it, the docs-only guard refuses the offload and summarization silently degrades — #496). `AGENT_FILESYSTEM_PERMISSIONS` denies the model's own writes to both `/skills/**` and `/conversation_history/**`. For `init` repository runs, the agent graph also registers init-only subagents (see [Init subagents](#init-subagents)). The OKF middleware migrates front matter before the agent runs, validates writes, and synchronizes `index.md` files after; its finalize stage also validates Mermaid fences and internal wiki links via `src/agent/wiki-link-validator.ts`, stamping broken links inline rather than aborting the run so a later update can repair them. The translation middleware translates eligible pages when the output language has changed.
+9. Stream messages and tool events back to the CLI. The run now consumes the graph with `agent.stream(input, { streamMode: ["messages", "tools"], subgraphs: true })` rather than the older `streamEvents` v3 protocol. `parseAgentStreamChunk()` in `src/agent/index.ts` normalizes each `[namespace, mode, payload]` chunk into an `OpenWikiRunEvent`: `tools`-mode chunks become tool start/end events, `messages`-mode chunks become text events with `source: "main"` when the namespace is a single segment or `source: "subgraph"` when deeper (task output). `extractMessageText()` filters out non-text content blocks — `tool`, `reasoning`, `file`, and `image` types — so raw base64 payloads from file/image blocks never leak into the terminal output. A `scheduler.yield()` between chunks lets Ink paint streamed text before the async iterator advances. (`parseStreamEvent()` is retained for the public agent factory's Agent Protocol event shape, but the live run uses `parseAgentStreamChunk()`.) Before iterating, the runtime calls `registerActiveRun()` from `src/agent/crash-guard.ts` with the command, cwd, model id, output mode, pre-run snapshot, and language, so a rejection that escapes the for-await catch (e.g. a subagent error surfacing on the microtask queue) is still attributed; `clearActiveRun()` runs in the `finally`.
+10. For `init` and `update`, compare the post-run content snapshot to the pre-run snapshot. Write `openwiki/.last-update.json` **only if the content changed** — or if the previous run was interrupted and this run completed, to clear the stale status. If the run fails mid-stream, the catch block writes metadata with `status: "interrupted"` so the next update retries instead of skipping as a no-op. After the run (success or failure), `recordRunSafe()` in `src/telemetry/` emits a single `openwiki_run` PostHog event with mode, provider, outcome, and latency. A rejection that escapes every catch is caught by the process-wide crash guard (see [Crash guard](#crash-guard)).
 
 Chat runs skip metadata writes entirely.
 
@@ -37,6 +37,7 @@ Chat runs skip metadata writes entirely.
 - **openrouter**: `new ChatOpenRouter({ apiKey, baseURL, model, siteName: "OpenWiki" })` — uses the selected OpenRouter model directly.
 - **bedrock**: `new ChatBedrockConverse({ credentials: { accessKeyId, secretAccessKey }, model, region })` — uses `@langchain/aws` Bedrock Converse API with AWS credentials and a required region.
 - **openai**: `new ChatOpenAI({ apiKey, model, useResponsesApi: true })` — uses OpenAI's Responses API for official OpenAI calls.
+- **copilot**: `new ChatOpenAI({ apiKey, configuration: { baseURL? }, model, useResponsesApi: /^gpt-5/u.test(modelId) })` — uses the GitHub Copilot API endpoint. The API key is resolved before model creation via `resolveExternalCliCredential()` in `src/external-cli-auth.ts`, which runs `gh auth token` and injects the credential into `process.env` for the current process only (never written to `~/.openwiki/.env`). For CI, `COPILOT_API_KEY` can be set directly to a GitHub OAuth token. The `responsesApi` setting is a regex so GPT models use the Responses API while Claude/Gemini models use standard chat completions. The `--hostname` flag matches the base URL tenant (for GHE.com data-residency hosts).
 - **baseten / fireworks / nebius / nvidia / openai-compatible**: `new ChatOpenAI({ apiKey, configuration: { baseURL? }, model })` — OpenAI-compatible clients using the provider's base URL when configured. The `openai-compatible` provider has no default endpoint; its base URL is user-supplied via `OPENAI_COMPATIBLE_BASE_URL` and required (`requiresBaseUrl: true`), which lets OpenWiki target any OpenAI-compatible gateway (for example a LiteLLM gateway fronting upstream providers).
 
 Base URLs are resolved through `resolveProviderBaseUrl()` in `src/constants.ts`, which prefers a provider's alternative base URL environment variable (`baseUrlEnvKey`) over the built-in default before falling back to the SDK's own default endpoint. Providers marked `requiresBaseUrl` are validated at startup by `ensureProviderBaseUrl()`.
@@ -45,7 +46,14 @@ Provider retry attempts are resolved through `resolveProviderRetryAttempts()` an
 
 ## Prompting strategy
 
-`src/agent/prompt.ts` encodes the product rules directly into the system prompt. The agent is instructed to:
+`src/agent/prompt.ts` is the prompt assembler. It selects a template by output mode and substitutes placeholders; the prompt text itself lives in two sibling modules so the long product rules are kept out of the assembler:
+
+- `src/agent/prompts/code.ts` — `CODE_SYSTEM_PROMPTS` / `CODE_USER_PROMPTS` for repository (`code`) runs. The `init` template drives a structured init workflow: build a `/openwiki/_skeleton.md` inventory, invoke the `skeleton_critic` subagent, resolve every requested change, fill the wiki, then verify with the `wiki_question_finder` and `wiki_answer_verifier` subagents, and finally write `quickstart.md`. The `update` template is the maintenance-update run contract (this wiki's own update prompt is the `CODE_USER_PROMPTS.update` template). The `chat` template steers wiki-first question answering.
+- `src/agent/prompts/personal.ts` — `PERSONAL_SYSTEM_PROMPTS` / `PERSONAL_USER_PROMPTS` for `local-wiki` (personal brain) runs, including the canonical-file discipline (`/open-questions.md`, `/themes.md`, `/commitments.md`, `/personal-logistics.md`, `/sources/<connector>.md`) and contested-knowledge handling.
+
+`createSystemPrompt()` substitutes `{OUTPUT_LANGUAGE_INSTRUCTIONS}`, `{GIT_HISTORY_HINT}`, `{DISCOVERY_INSTRUCTION}`, and `{OPENWIKIIGNORE_INSTRUCTIONS}`. For non-chat commands it appends link-integrity instructions. `createUserPrompt()` substitutes `{USER_MESSAGE}`, `{WIKI_GOAL}`, `{LAST_UPDATE}`, `{ADDITIONAL_USER_REQUEST}`, and `{RUNTIME_CONTEXT}` (the runtime context block, produced by `formatRuntimeContext()` in `prompt.ts`, carries the runtime root label and the `formatRuntimeRootInstruction()` path note).
+
+The prompts instruct the agent to:
 
 - inspect the current codebase and write documentation under `openwiki/`,
 - use filesystem discovery tools and git history rather than inventing facts,
@@ -92,13 +100,7 @@ Use `personal-logistics.md` for non-work personal items such as appointments, pi
 
 ## Git evidence and update metadata
 
-`src/agent/utils.ts` is responsible for the repository evidence that the prompt sees:
-
-- current working tree status,
-- current HEAD,
-- a change window since the last successful update when `.last-update.json` includes a `gitHead` or `updatedAt`,
-- the most recent 20 commits with changed files for init runs (or updates without prior metadata),
-- a diff summary against HEAD.
+The run context built by `createRunContext()` in `src/agent/utils.ts` carries `lastUpdate`, `language`, and `wikiGoal` only. It no longer precomputes a Git summary: since the prompt refactor, the agent runs `git` itself during the run. The `CODE_SYSTEM_PROMPTS.update` template instructs the agent to run `git rev-parse HEAD`, read `/openwiki/.last-update.json`, then `git log <gitHead>..HEAD --name-status --oneline` (or recent history when no prior `gitHead` exists) and the relevant diff to scope the update. `.openwikiignore` exclusions are enforced by the filesystem backend rather than by pre-filtering a git summary.
 
 On successful init/update runs where content changed, the agent writes JSON metadata with:
 
@@ -108,11 +110,32 @@ On successful init/update runs where content changed, the agent writes JSON meta
 - `model`
 - `status` — `"complete"` (default) or `"interrupted"`
 
-That metadata is later used to scope update runs. When a run fails mid-stream, the catch block in `src/agent/index.ts` calls `persistRunMetadataIfChanged()` with `status: "interrupted"`, so already-generated content stays diffable. `getUpdateNoopStatus()` then sees the interrupted status and does not skip the next update — preventing a possibly partial wiki from being treated as current. Metadata without a `status` field (from older versions) is treated as `"complete"`. A completed retry that changes no content still rewrites metadata to clear the interrupted status.
+That metadata is later used to scope update runs. When a run fails mid-stream, the catch block in `src/agent/index.ts` calls `persistRunMetadataIfChanged()` with `status: "interrupted"`, so already-generated content stays diffable. A rejection that escapes every catch is caught by the process-wide [crash guard](#crash-guard), which records the failure and stamps the same interrupted status post-mortem. `getUpdateNoopStatus()` then sees the interrupted status and does not skip the next update — preventing a possibly partial wiki from being treated as current. Metadata without a `status` field (from older versions) is treated as `"complete"`. A completed retry that changes no content still rewrites metadata to clear the interrupted status.
 
 ### Content snapshot
 
 `createOpenWikiContentSnapshot()` computes a SHA-256 hash of the entire `openwiki/` directory tree (excluding `.last-update.json`). The agent runtime takes a snapshot before and after the run. If they match — meaning the model made no documentation changes — the metadata file is not updated, unless the previous run was interrupted and this run completed, in which case metadata is rewritten to clear the stale `"interrupted"` status. This prevents scheduled update loops from churning the metadata when the wiki is already current while still recovering from failed runs.
+
+## Init subagents
+
+Repository `init` runs register two read-only DeepAgents subagents through `createOpenWikiAgentGraph()` in `src/agent/index.ts`, gated by `command === "init" && outputMode === "repository"`:
+
+- **`skeleton_critic`** (`src/agent/skeleton_critic.ts`, `resolveSkeletonCriticSubagents()`): an independent coverage reviewer. After the main agent researches the codebase and writes `/openwiki/_skeleton.md`, it invokes this subagent, which maps the repository itself before reading the skeleton and returns either `PASS` or `CHANGES_REQUESTED` with evidence-backed gaps. The main agent creates one TODO per returned `RQ` item, resolves them, then re-invokes the critic exactly once with the prior-request ledger. A third invocation is not allowed; any still-unresolved item is addressed directly.
+- **`wiki_question_finder`** and **`wiki_answer_verifier`** (`src/agent/wiki_qa_subagents.ts`, `resolveWikiQaSubagents()`): a QA pair. The finder inspects repository source and tests (never `/openwiki`) and returns at most ~10 source-grounded questions with stable IDs, acceptance criteria, and motivating evidence. The main agent groups questions that share wiki pages into batches of 2–3, launches all batches for a wave in one parallel tool-call message, and the verifier checks each batch using only `/openwiki`, returning `PASS`, `PARTIAL`, or `FAIL` per question. For `PARTIAL`/`FAIL` results the main agent updates the canonical wiki pages, then re-verifies only the failing IDs with the changed pages (no resent criteria). This runs after the wiki is written.
+
+Both subagents are read-only: they never create, edit, move, or delete files. They surface to the agent graph through the `subagents` option of `createDeepAgent`, and their output streams back as `source: "subgraph"` text/tool events via `parseAgentStreamChunk()`.
+
+## Crash guard
+
+`src/agent/crash-guard.ts` is the last-resort handler for rejections and exceptions that bypass every catch in the run — notably a subagent rejection surfacing on the microtask queue during streaming, which escapes the for-await catch. `installCrashGuard()` (called once at CLI startup in `src/cli.tsx`) registers idempotent `unhandledRejection` and `uncaughtException` handlers. `runOpenWikiAgentCore()` in `src/agent/index.ts` calls `registerActiveRun()` with the command, cwd, model id, output mode, pre-run snapshot, and language for exactly the stream-consumption window, and `clearActiveRun()` in the `finally`.
+
+When a fatal signal fires with an active run, `handleFatal()` best-effort:
+
+1. records the crash as a failure via `recordRunSafe()` so it appears in telemetry, classified and (when residual) fingerprinted by the same boundary as every other failure;
+2. stamps the run `interrupted` via `persistRunMetadataIfChanged()` so the next scheduled update retries instead of no-op'ing against a half-written wiki;
+3. writes a local stderr line and, when `OPENWIKI_DEBUG` is set, the stack; then exits non-zero via `setImmediate`.
+
+Each side effect is wrapped and swallowed independently so a failure in one never blocks the other or the exit. The guard is the post-mortem counterpart to the catch block's interrupted-stamp path described under [Git evidence and update metadata](#git-evidence-and-update-metadata).
 
 ## Model errors
 
@@ -128,23 +151,40 @@ The agent is not just a generic chat wrapper. It is intentionally constrained so
 - avoid metadata churn via the content-snapshot check,
 - support both interactive and scheduled maintenance use cases.
 
+The same agent runtime is the wiki-generation backend invoked by the [DeepSWE evaluation harness](../evals/deepswe-harness.md), which runs it in an isolated clone to produce treatment wikis for paired benchmark trials.
+
 ## Things to watch when changing agent behavior
 
-- Keep the prompt in sync with the actual filesystem tools and path conventions used by the CLI.
-- Be careful with `.last-update.json` semantics, because update runs use it to decide what changed since the previous successful run. The `status` field (`"complete"` / `"interrupted"`) gates the no-op skip: `getUpdateNoopStatus()` does not skip when the previous run was interrupted, and a completed retry clears the status even without content changes.
+- Keep the prompt templates in `src/agent/prompts/code.ts` and `src/agent/prompts/personal.ts` in sync with the actual filesystem tools and path conventions used by the CLI. The assembler in `src/agent/prompt.ts` only substitutes placeholders; behavior changes go in the templates.
+- Be careful with `.last-update.json` semantics, because update runs use it to decide what changed since the previous successful run. The `status` field (`"complete"` / `"interrupted"`) gates the no-op skip: `getUpdateNoopStatus()` does not skip when the previous run was interrupted, and a completed retry clears the status even without content changes. Both the catch block and the [crash guard](#crash-guard) stamp interrupted; keep both in sync if metadata semantics change.
 - The content-snapshot check means a no-op update will not update metadata. If you change the snapshot logic, ensure `.last-update.json` is still excluded.
 - Credential loading happens before model resolution; changes there affect both onboarding and agent startup.
-- When adding a provider, add a branch in `createModel()` and ensure the API key env key is checked in `ensureProviderKey()`. OAuth-based providers (like `openai-chatgpt`) skip `ensureProviderKey()` and instead require a token refresh step before `createModel()` is called. Providers without an API key (like `gemini-enterprise`) declare their required env keys (e.g. `projectEnvKey`) in `PROVIDER_CONFIGS` and are gated by `getMissingProviderEnvKey()` instead.
+- When adding a provider, add a branch in `createModel()` and ensure the API key env key is checked in `ensureProviderKey()`. OAuth-based providers (like `openai-chatgpt`) skip `ensureProviderKey()` and instead require a token refresh step before `createModel()` is called. Providers without an API key (like `gemini-enterprise`) declare their required env keys (e.g. `projectEnvKey`) in `PROVIDER_CONFIGS` and are gated by `getMissingProviderEnvKey()` instead. External-CLI-auth providers (like `copilot`) declare `authMethod: "external-cli"` and an `externalCliAuthAdapter`; `resolveExternalCliCredential()` in `src/external-cli-auth.ts` probes the CLI at startup and injects the token into `process.env` for the current process only. AWS SDK providers (like `bedrock`) declare `authMethod: "aws-sdk"` and delegate credential resolution to the AWS SDK chain, accepting standard AWS env vars, OIDC/web identity, IAM roles, or SSO profiles in addition to legacy Bedrock-specific keys.
 - The DeepAgents backend is configured with `virtualMode: true`, which is important for documentation-only behavior. The custom `OpenWikiLocalShellBackend` in `src/agent/docs-only-backend.ts` adds docs-only write guards that restrict writes to the `openwiki/` directory in docs-only mode.
+- `createAgentBackend()` wraps the wiki backend in an `OpenWikiCompositeBackend` (a `CompositeBackend` subclass) with `/skills/` and `/conversation_history/` mounts. The subclass overrides `glob` to convert a `RangeError` ("Maximum call stack size exceeded") from an over-broad pattern into a tool error so a runaway `**/*` glob no longer crashes the run (covered by `test/conversation-history-offload.test.ts`). `CONVERSATION_HISTORY_MOUNT` must stay in sync with deepagents' hard-coded `/conversation_history` default (there is no override); a dependency bump that moves that default silently reintroduces #496, so the offload test suite includes a drift probe that drives the installed `createSummarizationMiddleware` against a recording backend. Both mounts are denied to the model's filesystem tools via `AGENT_FILESYSTEM_PERMISSIONS`; do not loosen those deny rules without closing the prompt-injection path they guard.
+- The live run streams via `agent.stream({ streamMode: ["messages", "tools"], subgraphs: true })` and is normalized by `parseAgentStreamChunk()`. `parseStreamEvent()` remains for the public agent factory's Agent Protocol v3 event shape only — if you change streaming, update `parseAgentStreamChunk()` and `test/stream-redaction.test.ts`, not the protocol parser.
+- Init-only subagents are gated by `resolveSkeletonCriticSubagents()` and `resolveWikiQaSubagents()` (both `init` + `repository` only). Adding or changing the init verification loop means editing `src/agent/skeleton_critic.ts` / `src/agent/wiki_qa_subagents.ts` and the `CODE_SYSTEM_PROMPTS.init` template that drives them.
+- The crash guard registers the active run only for the stream-consumption window; if you move streaming or add earlier fatal paths, ensure `registerActiveRun()`/`clearActiveRun()` still bracket the window a subagent rejection can escape through.
 
 ## Source map
 
 - `src/agent/index.ts`
 - `src/agent/prompt.ts`
+- `src/agent/prompts/code.ts`
+- `src/agent/prompts/personal.ts`
+- `src/agent/skeleton_critic.ts`
+- `src/agent/wiki_qa_subagents.ts`
+- `src/agent/crash-guard.ts`
 - `src/agent/utils.ts`
 - `src/agent/types.ts`
 - `src/agent/docs-only-backend.ts`
 - `src/agent/openai-chatgpt-oauth.ts`
+- `src/agent/okf-middleware.ts`
+- `src/agent/wiki-link-validator.ts`
+- `src/agent/translation-middleware.ts`
+- `src/agent/vertex-surface.ts`
+- `src/agent/skills.ts`
+- `src/external-cli-auth.ts`
 - `src/constants.ts`
 - `src/env.ts`
-- Git evidence: commits `ceded10`, `f89b05d`, `dfa73cc`, `a82759f`, `0fa1430`
+- `src/telemetry/`

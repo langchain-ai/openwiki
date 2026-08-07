@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
 import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
 import { createOpenWikiIndexMiddleware } from "../src/agent/okf-middleware.ts";
+import { ENGLISH_INDEX_LABELS } from "../src/okf/index-labels.ts";
 import {
   migrateWikiToOkf,
   synchronizeWikiIndexes,
@@ -66,6 +67,56 @@ describe("synchronizeWikiIndexes", () => {
     expect(architectureIndex).toContain(
       "- [Architecture overview](overview.md) - How the system is structured.",
     );
+  });
+
+  test("renders localized section headings when labels are supplied", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/quickstart.md",
+      document("Brzi početak", "Počnite ovdje."),
+    );
+    await backend.write(
+      "/openwiki/architecture/overview.md",
+      document("Pregled", "Struktura sustava."),
+    );
+
+    await synchronizeWikiIndexes(backend, "repository", {
+      files: "Datoteke",
+      directories: "Direktoriji",
+    });
+
+    const rootIndex = await readFile(
+      path.join(rootDir, "openwiki/index.md"),
+      "utf8",
+    );
+
+    expect(rootIndex).toContain(
+      "# Datoteke\n\n- [Brzi početak](quickstart.md)",
+    );
+    expect(rootIndex).toContain(
+      "# Direktoriji\n\n- [architecture](architecture/)",
+    );
+    expect(rootIndex).not.toContain("# Files");
+    expect(rootIndex).not.toContain("# Directories");
+  });
+
+  test("stamps the localized concept type on a repaired page", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/legacy.md", "# Pregled\n\nTijelo.\n");
+
+    await synchronizeWikiIndexes(
+      backend,
+      "repository",
+      { files: "Datoteke", directories: "Direktoriji" },
+      "Referenca",
+    );
+
+    const legacy = await readFile(
+      path.join(rootDir, "openwiki/legacy.md"),
+      "utf8",
+    );
+    expect(legacy).toContain('type: "Referenca"');
+    expect(legacy).not.toContain('type: "Reference"');
   });
 
   test("uses OKF version frontmatter only at the bundle root", async () => {
@@ -296,6 +347,20 @@ describe("migrateWikiToOkf", () => {
     ).resolves.toBe(goodBefore);
   });
 
+  test("stamps a localized concept type when supplied", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/legacy.md", "# Pregled\n\nTijelo.\n");
+
+    await migrateWikiToOkf(backend, "repository", "Referenca");
+
+    const legacy = await readFile(
+      path.join(rootDir, "openwiki/legacy.md"),
+      "utf8",
+    );
+    expect(legacy).toContain('type: "Referenca"');
+    expect(legacy).not.toContain('type: "Reference"');
+  });
+
   test("skips reserved files, dotfiles, and dot-directories", async () => {
     const { backend, rootDir } = await setup();
     const dir = path.join(rootDir, "openwiki");
@@ -364,6 +429,30 @@ describe("createOpenWikiIndexMiddleware beforeAgent", () => {
     expect(legacy).toContain('type: "Reference"');
     expect(legacy).toContain("openwiki_generated: true");
   });
+
+  test("migrates using the localized concept type it was created with", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/legacy.md", "# Pregled\n\nTijelo.\n");
+
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Referenca",
+    );
+    const beforeAgent =
+      typeof middleware.beforeAgent === "function"
+        ? middleware.beforeAgent
+        : middleware.beforeAgent?.hook;
+    expect(beforeAgent).toBeTypeOf("function");
+    await (beforeAgent as () => Promise<unknown>)();
+
+    const legacy = await readFile(
+      path.join(rootDir, "openwiki/legacy.md"),
+      "utf8",
+    );
+    expect(legacy).toContain('type: "Referenca"');
+  });
 });
 
 describe("createOpenWikiIndexMiddleware afterAgent", () => {
@@ -396,5 +485,30 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     expect(page).toContain("openwiki: mermaid parse failed");
     // The index pass also ran over the same tree.
     expect(index).toContain("- [Quickstart](quickstart.md) - Start here.");
+  });
+
+  test("stamps broken internal links without failing the run", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/quickstart.md",
+      `${document("Quickstart", "Start here.")}\nSee [missing](./missing.md).\n`,
+    );
+
+    const middleware = createOpenWikiIndexMiddleware(backend, "repository");
+    const afterAgent =
+      typeof middleware.afterAgent === "function"
+        ? middleware.afterAgent
+        : middleware.afterAgent?.hook;
+    expect(afterAgent).toBeTypeOf("function");
+    await expect(
+      (afterAgent as () => Promise<unknown>)(),
+    ).resolves.toBeUndefined();
+
+    const page = await readFile(
+      path.join(rootDir, "openwiki/quickstart.md"),
+      "utf8",
+    );
+    expect(page).toContain("openwiki: broken internal link [./missing.md]");
+    expect(page).toContain("See [missing](./missing.md).");
   });
 });

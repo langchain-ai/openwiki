@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import path from "node:path";
+import { scheduler } from "node:timers/promises";
 import React, { useEffect, useRef, useState } from "react";
 import { Box, render, Text, useApp, useInput } from "ink";
 import { marked, type Token, type Tokens } from "marked";
@@ -8,6 +10,7 @@ import {
   shouldDiscoverToolsAfterAuth,
 } from "./auth/configure.js";
 import { startNgrokTunnel } from "./auth/ngrok.js";
+import { runVisualizeServer } from "./visualize/server.js";
 import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
 import { ensureCodeModeRepoSetup, runCodeModeConnectors } from "./code-mode.js";
 import {
@@ -37,6 +40,7 @@ import {
   type CredentialDiagnostic,
 } from "./env.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+import { installCrashGuard } from "./agent/crash-guard.js";
 import { formatChatGptAccountFromEnv } from "./agent/openai-chatgpt-oauth.js";
 import {
   getErrorMessage,
@@ -87,13 +91,24 @@ import {
   OPENWIKI_VERSION,
   type OpenWikiProvider,
 } from "./constants.js";
-import type { OpenWikiCommand, OpenWikiOutputMode } from "./agent/types.js";
+import type {
+  OpenWikiCommand,
+  OpenWikiOutputMode,
+  OpenWikiRunOptions,
+} from "./agent/types.js";
 import {
   firstRunNoticePending,
   FIRST_RUN_NOTICE_BODY,
   FIRST_RUN_NOTICE_OPT_OUT,
   FIRST_RUN_NOTICE_VERIFY,
+  withRunTelemetry,
+  type RunTelemetryContext,
 } from "./telemetry/index.js";
+
+// Register the last-resort handlers before any run starts, so a rejection that
+// escapes every catch (e.g. a subagent error surfacing on the microtask queue) is
+// recorded and stamped instead of hard-killing the process with no telemetry.
+installCrashGuard();
 
 type RunState =
   | { status: "idle" }
@@ -282,6 +297,7 @@ function App({ command }: AppProps) {
     startupModelId,
   );
   const activeRunId = useRef(0);
+  const agentRunInFlight = useRef(false);
   const sessionThreadId = useRef(createOpenWikiThreadId(runtimeCwd));
   const sessionThreadMode = useRef<OpenWikiRunMode>(runMode);
   const mountedRef = useRef(false);
@@ -544,9 +560,18 @@ function App({ command }: AppProps) {
       return;
     }
 
+    if (isInitCommand && initWizardConsumed && runState.status === "idle") {
+      return;
+    }
+
     if (runState.status !== "idle" && runState.status !== "init-setup-saved") {
       return;
     }
+
+    if (agentRunInFlight.current) {
+      return;
+    }
+    agentRunInFlight.current = true;
 
     const runId = activeRunId.current + 1;
     const runMessage = activeUserMessage;
@@ -582,34 +607,54 @@ function App({ command }: AppProps) {
         });
     }
 
-    const setupPromise =
-      runMode === "code"
-        ? ensureCodeModeRepoSetup(runtimeCwd, {
+    const handleRunEvent = (event: OpenWikiRunEvent): void => {
+      if (!mountedRef.current || activeRunId.current !== runId) {
+        return;
+      }
+
+      activeRunLog.current = appendRunLogEvent(
+        activeRunLog.current,
+        event,
+        nextLogId,
+      );
+      setRunState((currentState) =>
+        currentState.status === "running"
+          ? {
+              ...currentState,
+              log: activeRunLog.current,
+            }
+          : currentState,
+      );
+    };
+
+    const runOptions: OpenWikiRunOptions = {
+      debug: isDebugMode(),
+      isFollowup: activeMessageIsFollowup,
+      language: command.language,
+      modelId: sessionModelId,
+      outputMode: runtimeOutputMode,
+      threadId: sessionThreadId.current,
+      telemetryFile: command.telemetryFile ?? undefined,
+      onEvent: handleRunEvent,
+    };
+
+    // withRunTelemetry is the single boundary that records this run. It wraps repo
+    // setup and the connector pull too (not just the agent), so a throw in either
+    // pre-agent step is recorded rather than reaching only the UI catch below.
+    const telemetryContext: RunTelemetryContext = {};
+
+    withRunTelemetry(
+      resolvedCommand,
+      runOptions,
+      telemetryContext,
+      async () => {
+        if (runMode === "code") {
+          await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: resolvedCommand === "init",
-          })
-        : Promise.resolve();
+          });
+        }
 
-    setupPromise
-      .then(async () => {
-        const handleRunEvent = (event: OpenWikiRunEvent): void => {
-          if (!mountedRef.current || activeRunId.current !== runId) {
-            return;
-          }
-
-          activeRunLog.current = appendRunLogEvent(
-            activeRunLog.current,
-            event,
-            nextLogId,
-          );
-          setRunState((currentState) =>
-            currentState.status === "running"
-              ? {
-                  ...currentState,
-                  log: activeRunLog.current,
-                }
-              : currentState,
-          );
-        };
+        await scheduler.yield();
 
         // Code-mode connectors pull their evidence and augment the agent message
         // before the run, matching the --print path exactly. They emit progress
@@ -623,17 +668,14 @@ function App({ command }: AppProps) {
               )
             : activeUserMessage;
 
-        return runOpenWikiAgent(resolvedCommand, runtimeCwd, {
-          debug: isDebugMode(),
-          isFollowup: activeMessageIsFollowup,
-          modelId: sessionModelId,
-          outputMode: runtimeOutputMode,
-          threadId: sessionThreadId.current,
-          userMessage,
-          telemetryFile: command.telemetryFile ?? undefined,
-          onEvent: handleRunEvent,
-        });
-      })
+        return runOpenWikiAgent(
+          resolvedCommand,
+          runtimeCwd,
+          { ...runOptions, userMessage },
+          telemetryContext,
+        );
+      },
+    )
       .then((result) => {
         if (!mountedRef.current || activeRunId.current !== runId) {
           return;
@@ -694,12 +736,17 @@ function App({ command }: AppProps) {
               authFix,
             });
           });
+      })
+      .finally(() => {
+        agentRunInFlight.current = false;
       });
   }, [
     app,
     command,
     activeMessageIsFollowup,
     activeUserMessage,
+    initWizardConsumed,
+    isInitCommand,
     resolvedCommand,
     runMode,
     runState.status,
@@ -766,6 +813,10 @@ function App({ command }: AppProps) {
         modelIdOverride={command.modelId}
         walkAllSteps={isInitCommand}
         onComplete={(result) => {
+          if (agentRunInFlight.current) {
+            return;
+          }
+
           setInitWizardConsumed(true);
           const nextCodeRuntimeCwd = result.repoRoot ?? codeRuntimeCwd;
 
@@ -3157,14 +3208,14 @@ function createToolDisplay(
       return pickToolDisplay(
         variantIndex,
         [
-          `Spinning up ${formatCount(count, "subagent", "subagents")}`,
-          `Starting ${formatCount(count, "subagent", "subagents")}`,
-          `Delegating to ${formatCount(count, "subagent", "subagents")}`,
+          `Starting ${formatCount(count, "task", "tasks")}`,
+          `Opening ${formatCount(count, "task", "tasks")}`,
+          `Working on ${formatCount(count, "task", "tasks")}`,
         ],
         [
-          `Finished ${formatCount(count, "subagent", "subagents")}`,
-          `Completed ${formatCount(count, "subagent", "subagents")}`,
-          `Wrapped up ${formatCount(count, "subagent", "subagents")}`,
+          `Finished ${formatCount(count, "task", "tasks")}`,
+          `Completed ${formatCount(count, "task", "tasks")}`,
+          `Wrapped up ${formatCount(count, "task", "tasks")}`,
         ],
       );
     }
@@ -3734,6 +3785,11 @@ if (commandEmitsTelemetry(command)) {
   showFirstRunNotice = await firstRunNoticePending();
 }
 
+if (command.kind === "run" && command.languageWarning) {
+  // stderr keeps piped stdout clean while still warning about an ignored locale.
+  process.stderr.write(`${command.languageWarning}\n`);
+}
+
 if (command.kind === "auth") {
   await runAuthCommand(command);
 } else if (command.kind === "ngrok") {
@@ -3742,6 +3798,8 @@ if (command.kind === "auth") {
   await runCronCommand(command);
 } else if (command.kind === "ingest") {
   await runIngestCommand(command);
+} else if (command.kind === "visualize") {
+  await runVisualizeCommand(command);
 } else if (shouldPrintStartupError(argv, parsedCommand, command)) {
   process.stderr.write(`${command.message}\n`);
   process.exitCode = command.exitCode;
@@ -3774,6 +3832,26 @@ async function runNgrokCommand(
       url: command.url,
     });
     process.exitCode = 0;
+  } catch (error) {
+    process.stderr.write(`${getErrorMessage(error)}\n`);
+    process.exitCode = 1;
+  }
+}
+
+/**
+ * Start the wiki visualizer server for a resolved wiki directory. Blocks until the
+ * server is stopped with Ctrl-C; surfaces a missing-directory error cleanly.
+ */
+async function runVisualizeCommand(
+  command: Extract<CliCommand, { kind: "visualize" }>,
+): Promise<void> {
+  const wikiRoot = path.resolve(process.cwd(), command.wikiDir);
+  try {
+    await runVisualizeServer({
+      wikiRoot,
+      port: command.port,
+      open: command.open,
+    });
   } catch (error) {
     process.stderr.write(`${getErrorMessage(error)}\n`);
     process.exitCode = 1;
@@ -4131,39 +4209,59 @@ async function runPrintCommand(
     const runtimeCwd = getRunModeCwd(command.mode);
     const runtimeOutputMode = getRunModeOutputMode(command.mode);
 
-    if (command.mode === "code") {
-      await ensureCodeModeRepoSetup(runtimeCwd, {
-        createWorkflow: command.command === "init",
-      });
-    }
-
-    // Code-mode connectors (e.g. langsmith) pull their evidence and augment the
-    // agent message before the run, so --print behaves exactly like interactive.
     const handlePrintEvent = (event: OpenWikiRunEvent): void => {
       if (event.type === "text" && event.source !== "subgraph") {
         output.push(event.text);
       }
     };
 
-    const userMessage =
-      command.mode === "code" && command.command !== "chat"
-        ? await runCodeModeConnectors(
-            runtimeCwd,
-            command.userMessage ?? undefined,
-            handlePrintEvent,
-          )
-        : command.userMessage;
-
-    await runOpenWikiAgent(command.command, runtimeCwd, {
+    const runOptions: OpenWikiRunOptions = {
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
+      language: command.language,
       modelId: command.modelId,
       outputMode: runtimeOutputMode,
       threadId: createOpenWikiThreadId(runtimeCwd),
-      userMessage,
       telemetryFile: command.telemetryFile ?? undefined,
       onEvent: handlePrintEvent,
-    });
+    };
+
+    // withRunTelemetry is the single boundary that records this run, wrapping repo
+    // setup and the connector pull as well as the agent so a throw in either
+    // pre-agent step is recorded rather than only surfaced on stderr below.
+    const telemetryContext: RunTelemetryContext = {};
+
+    await withRunTelemetry(
+      command.command,
+      runOptions,
+      telemetryContext,
+      async () => {
+        if (command.mode === "code") {
+          await ensureCodeModeRepoSetup(runtimeCwd, {
+            createWorkflow: command.command === "init",
+          });
+        }
+
+        // Code-mode connectors (e.g. langsmith) pull their evidence and augment
+        // the agent message before the run, so --print behaves exactly like
+        // interactive.
+        const userMessage =
+          command.mode === "code" && command.command !== "chat"
+            ? await runCodeModeConnectors(
+                runtimeCwd,
+                command.userMessage ?? undefined,
+                handlePrintEvent,
+              )
+            : command.userMessage;
+
+        await runOpenWikiAgent(
+          command.command,
+          runtimeCwd,
+          { ...runOptions, userMessage },
+          telemetryContext,
+        );
+      },
+    );
 
     const text = output.join("").trim();
 

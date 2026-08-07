@@ -6,6 +6,7 @@ import {
   writeConnectorState,
   writeRawJson,
 } from "../io.js";
+import { fetchWithResilience } from "../http.js";
 import { normalizeStringArray } from "../config.js";
 import type {
   ConnectorDefinition,
@@ -16,11 +17,11 @@ import type {
 
 type HackerNewsConfig = {
   enabled?: boolean;
-  feeds?: HackerNewsFeed[];
+  feeds?: unknown;
   maxItemsPerFeed?: number;
   maxResultsPerQuery?: number;
-  queries?: string[];
-  queryTags?: string[];
+  queries?: unknown;
+  queryTags?: unknown;
 };
 
 type HackerNewsFeed = "ask" | "best" | "job" | "new" | "show" | "top";
@@ -62,6 +63,20 @@ type AlgoliaResponse = {
 const HN_FIREBASE_BASE_URL = "https://hacker-news.firebaseio.com/v0";
 const HN_ALGOLIA_SEARCH_URL = "https://hn.algolia.com/api/v1/search_by_date";
 const DEFAULT_FEEDS: HackerNewsFeed[] = ["top", "new"];
+const VALID_FEEDS: readonly HackerNewsFeed[] = [
+  "ask",
+  "best",
+  "job",
+  "new",
+  "show",
+  "top",
+];
+
+type FeedSelection = {
+  feeds: HackerNewsFeed[];
+  invalidFeeds: string[];
+  source: "configured" | "default" | "requested";
+};
 
 const definition: ConnectorDefinition = {
   backend: "direct-api",
@@ -119,7 +134,25 @@ async function ingest(
     config.maxResultsPerQuery,
     100,
   );
-  const feeds = normalizeFeeds(options.streams, config.feeds);
+  const feedSelection = normalizeFeeds(options.streams, config.feeds);
+  const feeds = feedSelection.feeds;
+  const invalidFeedsWarning = getInvalidFeedsWarning(feedSelection);
+  if (invalidFeedsWarning) {
+    warnings.push(invalidFeedsWarning);
+  }
+  const queries = normalizeStringArray(config.queries);
+  if (feeds.length === 0 && queries.length === 0) {
+    return await finishHackerNewsRun({
+      message:
+        "No valid Hacker News feeds were configured or requested, and no Hacker News search queries are configured. Add at least one valid feed or query.",
+      rawFiles,
+      runId,
+      state,
+      status: "error",
+      warnings,
+    });
+  }
+
   const windowHours = normalizeWindowHours(options.windowHours);
   const earliestUnixTime =
     windowHours === null
@@ -153,7 +186,6 @@ async function ingest(
   }
 
   const queryResults = [];
-  const queries = normalizeStringArray(config.queries);
   const tags = normalizeStringArray(config.queryTags);
   for (const query of queries) {
     try {
@@ -180,32 +212,59 @@ async function ingest(
     }),
   );
 
+  return await finishHackerNewsRun({
+    message: `Fetched ${feedResults.length} Hacker News feed(s) and ${queryResults.length} search quer${
+      queryResults.length === 1 ? "y" : "ies"
+    }.`,
+    rawFiles,
+    runId,
+    state,
+    status: rawFiles.length > 0 ? "success" : "skipped",
+    warnings,
+  });
+}
+
+async function finishHackerNewsRun({
+  message,
+  rawFiles,
+  runId,
+  state,
+  status,
+  warnings,
+}: {
+  message: string;
+  rawFiles: string[];
+  runId: string;
+  state: Awaited<ReturnType<typeof readConnectorState>>;
+  status: ConnectorIngestResult["status"];
+  warnings: string[];
+}): Promise<ConnectorIngestResult> {
   await writeConnectorState(
     "hackernews",
     updateStateWithRun(state, {
       at: new Date().toISOString(),
       rawFiles,
       runId,
-      status: rawFiles.length > 0 ? "success" : "skipped",
+      status,
       warnings,
     }),
   );
 
   return {
     connectorId: "hackernews",
-    message: `Fetched ${feedResults.length} Hacker News feed(s) and ${queryResults.length} search quer${
-      queryResults.length === 1 ? "y" : "ies"
-    }.`,
+    message,
     rawFiles,
     runId,
     statePath: "~/.openwiki/connectors/hackernews/state.json",
-    status: rawFiles.length > 0 ? "success" : "skipped",
+    status,
     warnings,
   };
 }
 
 async function hnFirebaseApi<T>(endpointPath: string): Promise<T> {
-  const response = await fetch(`${HN_FIREBASE_BASE_URL}${endpointPath}`);
+  const response = await fetchWithResilience(
+    `${HN_FIREBASE_BASE_URL}${endpointPath}`,
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -238,7 +297,7 @@ async function searchHackerNews(
     url.searchParams.set("numericFilters", `created_at_i>${earliestUnixTime}`);
   }
 
-  const response = await fetch(url);
+  const response = await fetchWithResilience(url);
   if (!response.ok) {
     throw new Error(
       `Hacker News search request failed: ${response.status} ${response.statusText}`,
@@ -249,22 +308,75 @@ async function searchHackerNews(
 }
 
 function normalizeFeeds(
-  optionFeeds: string[] | undefined,
+  optionFeeds: unknown,
   configFeeds: HackerNewsConfig["feeds"],
-): HackerNewsFeed[] {
-  const feeds = optionFeeds?.length ? optionFeeds : configFeeds;
-  return (feeds?.length ? feeds : DEFAULT_FEEDS).filter(isHackerNewsFeed);
+): FeedSelection {
+  const requestedFeeds = normalizeExplicitFeeds(optionFeeds);
+  if (requestedFeeds) {
+    return {
+      ...requestedFeeds,
+      source: "requested",
+    };
+  }
+
+  const configuredFeeds = normalizeExplicitFeeds(configFeeds);
+  if (configuredFeeds) {
+    return {
+      ...configuredFeeds,
+      source: "configured",
+    };
+  }
+
+  return {
+    feeds: DEFAULT_FEEDS,
+    invalidFeeds: [],
+    source: "default",
+  };
+}
+
+function normalizeExplicitFeeds(
+  value: unknown,
+): Pick<FeedSelection, "feeds" | "invalidFeeds"> | null {
+  if (value === undefined || (Array.isArray(value) && value.length === 0)) {
+    return null;
+  }
+
+  const values = normalizeStringArray(value);
+  const feeds: HackerNewsFeed[] = [];
+  const invalidFeeds: string[] = [];
+
+  for (const feed of values) {
+    if (isHackerNewsFeed(feed)) {
+      feeds.push(feed);
+    } else {
+      invalidFeeds.push(feed);
+    }
+  }
+
+  if (!Array.isArray(value)) {
+    invalidFeeds.push(`non-array ${typeof value}`);
+  } else if (values.length < value.length) {
+    invalidFeeds.push("non-string or blank value");
+  }
+
+  return {
+    feeds,
+    invalidFeeds,
+  };
+}
+
+function getInvalidFeedsWarning(selection: FeedSelection): string | null {
+  if (selection.invalidFeeds.length === 0) {
+    return null;
+  }
+
+  return `Ignored invalid Hacker News ${selection.source} feed(s): ${selection.invalidFeeds.join(
+    ", ",
+  )}. Valid feeds are: ${VALID_FEEDS.join(", ")}.`;
 }
 
 function isHackerNewsFeed(value: string): value is HackerNewsFeed {
-  return (
-    value === "ask" ||
-    value === "best" ||
-    value === "job" ||
-    value === "new" ||
-    value === "show" ||
-    value === "top"
-  );
+  return (VALID_FEEDS as readonly string[]).includes(value);
 }
 
 function isWithinWindow(

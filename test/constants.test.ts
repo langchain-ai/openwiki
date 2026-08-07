@@ -42,7 +42,15 @@ describe("isValidModelId", () => {
     expect(isValidModelId("z-ai/glm-5.2")).toBe(true);
     expect(isValidModelId("accounts/fireworks/models/glm-5p2")).toBe(true);
     expect(isValidModelId("gpt-5.4-mini")).toBe(true);
+    expect(isValidModelId("claude-sonnet-5")).toBe(true);
     expect(isValidModelId("nvidia/nemotron-3-super-120b-a12b")).toBe(true);
+  });
+
+  test("accepts comma-bearing gateway/proxy routing ids", () => {
+    // Routing layers such as claude-code-router encode the target as
+    // `provider,model-id`; the comma is passed verbatim to the gateway, so it
+    // must survive validation rather than being treated as a delimiter here.
+    expect(isValidModelId("deepseek,deepseek-v4-pro")).toBe(true);
   });
 
   test("accepts Cloudflare Workers AI model ids with leading '@'", () => {
@@ -96,6 +104,7 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(isValidProvider("anthropic")).toBe(true);
     expect(isValidProvider("nebius")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
+    expect(isValidProvider("copilot")).toBe(true);
     expect(isValidProvider("nvidia")).toBe(true);
     expect(isValidProvider("gemini")).toBe(true);
     expect(isValidProvider("gemini-enterprise")).toBe(true);
@@ -181,6 +190,9 @@ describe("resolveProviderBaseUrl", () => {
     expect(resolveProviderBaseUrl("openrouter", {})).toBe(
       "https://openrouter.ai/api/v1",
     );
+    expect(resolveProviderBaseUrl("copilot", {})).toBe(
+      "https://api.githubcopilot.com",
+    );
     expect(resolveProviderBaseUrl("nebius", {})).toBe(NEBIUS_BASE_URL);
     expect(resolveProviderBaseUrl("nvidia", {})).toBe(
       "https://integrate.api.nvidia.com/v1",
@@ -193,6 +205,11 @@ describe("resolveProviderBaseUrl", () => {
         ANTHROPIC_BASE_URL: "https://gateway.example/anthropic",
       }),
     ).toBe("https://gateway.example/anthropic");
+    expect(
+      resolveProviderBaseUrl("copilot", {
+        COPILOT_BASE_URL: "https://tenant.ghe.com/api/copilot",
+      }),
+    ).toBe("https://tenant.ghe.com/api/copilot");
   });
 
   test("prefers hosted OpenAI-compatible provider base URL overrides", () => {
@@ -589,6 +606,7 @@ describe("getProviderModelOptions", () => {
 describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
+    expect(getDefaultModelId("copilot")).toBe("gpt-5.6-terra");
     expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K2.6");
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",

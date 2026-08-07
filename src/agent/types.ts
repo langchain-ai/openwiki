@@ -34,6 +34,7 @@ export type OpenWikiRunEvent =
 export type OpenWikiRunOptions = {
   debug?: boolean;
   isFollowup?: boolean;
+  language?: string | null;
   modelId?: string | null;
   onEvent?: (event: OpenWikiRunEvent) => void;
   outputMode?: OpenWikiOutputMode;
@@ -50,10 +51,11 @@ export type UpdateMetadata = {
   gitHead?: string;
   model: string;
   status?: UpdateRunStatus;
+  language?: string;
 };
 
 export type RunContext = {
   lastUpdate: UpdateMetadata | null;
-  gitSummary: string;
+  language?: string;
   wikiGoal?: string;
 };
