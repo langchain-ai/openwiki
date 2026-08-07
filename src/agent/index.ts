@@ -41,6 +41,7 @@ import {
   resolveIndexLabels,
 } from "../okf/index-labels.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
+import { getSelectedModelAvailability } from "../model-availability.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
 import {
   createWikiTranslationMiddleware,
@@ -280,6 +281,25 @@ async function resolveRunConfig(
 
     const modelId = resolveModelId(options, provider);
     emitDebug(options, `model=${modelId}`);
+    const modelAvailability = await getSelectedModelAvailability({
+      provider,
+      modelId,
+      apiKey: getProviderApiKey(provider),
+      baseUrl: providerBaseUrl,
+    });
+    if (modelAvailability.status === "unavailable") {
+      throw new Error(
+        `${getProviderLabel(provider)} does not make model "${modelId}" available to the configured credentials. Set ${OPENWIKI_MODEL_ID_ENV_KEY} to an available model.`,
+      );
+    }
+    if (modelAvailability.status === "unknown") {
+      emitDebug(
+        options,
+        `model.availability=unknown${
+          modelAvailability.reason ? ` reason=${modelAvailability.reason}` : ""
+        }`,
+      );
+    }
     const providerRetryAttempts = resolveProviderRetryAttempts();
     emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
 
