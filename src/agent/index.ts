@@ -139,6 +139,10 @@ import { inStage, inStageSync, tagErrorStage } from "../telemetry/index.js";
 import type { RunTelemetryContext } from "../telemetry/index.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
 
+const OPENAI_COMPATIBLE_MODEL_KWARGS = {
+  enable_thinking: false,
+} as const;
+
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
   cwd = openWikiLocalWikiDir,
@@ -1134,6 +1138,9 @@ export function createModel(
       : undefined,
     model: modelId,
     useResponsesApi: providerUsesResponsesApi(provider, modelId),
+    ...(provider === "openai-compatible"
+      ? { modelKwargs: OPENAI_COMPATIBLE_MODEL_KWARGS }
+      : {}),
     ...retryOptions,
   });
 }
