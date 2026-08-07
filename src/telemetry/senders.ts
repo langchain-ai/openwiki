@@ -1,5 +1,6 @@
+import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -256,11 +257,32 @@ async function writeTelemetryFile(
     return;
   }
 
+  const resolved = path.resolve(process.cwd(), filePath);
+  // Write to an unguessable, owner-only scratch sibling and atomically rename it
+  // into place, rather than writing the caller's path directly. `--telemetry-file`
+  // may point at a shared directory such as /tmp, where a direct write would
+  // follow a pre-planted symlink (clobbering an arbitrary file with our
+  // privileges) and inherit umask permissions (leaking run metadata to other
+  // local users). The random name defeats pre-creation, `flag: "wx"` refuses to
+  // open through an existing symlink, `mode: 0o600` keeps it owner-only, and
+  // `rename` replaces the final directory entry itself instead of writing
+  // through a symlink at that path.
+  const scratch = path.join(
+    path.dirname(resolved),
+    `.${path.basename(resolved)}.${randomBytes(6).toString("hex")}.tmp`,
+  );
+
   try {
-    const resolved = path.resolve(process.cwd(), filePath);
     await mkdir(path.dirname(resolved), { recursive: true });
-    await writeFile(resolved, `${JSON.stringify(record, null, 2)}\n`, "utf8");
+    await writeFile(scratch, `${JSON.stringify(record, null, 2)}\n`, {
+      encoding: "utf8",
+      flag: "wx",
+      mode: 0o600,
+    });
+    await rename(scratch, resolved);
   } catch (error) {
+    // Best-effort cleanup so a failed write never leaves the scratch behind.
+    await rm(scratch, { force: true }).catch(() => {});
     const message = error instanceof Error ? error.message : String(error);
     console.error(
       `OpenWiki: could not write telemetry file "${filePath}": ${message}`,

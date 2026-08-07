@@ -4,7 +4,7 @@ import type {
   OpenWikiRunOptions,
 } from "../agent/types.js";
 import { getConfiguredConnectorIds } from "../connectors/registry.js";
-import type { OpenWikiProvider } from "../constants.js";
+import type { OpenWikiProvider } from "../config/constants.js";
 
 import { recordRun } from "./senders.js";
 import type {
