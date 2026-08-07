@@ -27,6 +27,7 @@ import {
   clearActiveRun,
   getActiveRun,
   handleFatal,
+  installCrashGuard,
   registerActiveRun,
   type ActiveRunRecord,
 } from "../../src/agent/crash-guard.ts";
@@ -120,6 +121,24 @@ describe("handleFatal", () => {
     );
   });
 
+  test("stamps a null snapshot when the crash preceded any snapshot", async () => {
+    // A run can crash before its before-snapshot is captured; the stamp then records
+    // null rather than a hash, so the interrupted marker is still written.
+    registerActiveRun({ ...ACTIVE, snapshotBefore: undefined });
+
+    await runFatal("uncaughtException", new Error("boom"));
+
+    expect(persistRunMetadataIfChanged).toHaveBeenCalledWith(
+      "init",
+      "/repo",
+      "some-model",
+      "repository",
+      null,
+      "interrupted",
+      "en",
+    );
+  });
+
   test("clears the active run and exits non-zero", async () => {
     registerActiveRun(ACTIVE);
 
@@ -189,5 +208,113 @@ describe("handleFatal", () => {
     expect(recordRunSafe).toHaveBeenCalledTimes(1);
     expect(persistRunMetadataIfChanged).toHaveBeenCalledTimes(1);
     expect(getActiveRun()).toBeUndefined();
+  });
+
+  test("handles a non-Error thrown value by stringifying it for the stderr line", async () => {
+    registerActiveRun(ACTIVE);
+
+    // A rejection can carry any value, not just an Error. The guard must still
+    // record, stamp, and exit, and its stderr line stringifies the raw value
+    // instead of reading a .message/.stack that isn't there.
+    await runFatal("unhandledRejection", "bare string failure");
+
+    expect(recordRunSafe).toHaveBeenCalledTimes(1);
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const line = stderrSpy.mock.calls[0]?.[0] as string;
+    expect(line).toContain("bare string failure");
+  });
+
+  test("prints the error stack as a second stderr line under OPENWIKI_DEBUG", async () => {
+    registerActiveRun(ACTIVE);
+    const previous = process.env.OPENWIKI_DEBUG;
+    process.env.OPENWIKI_DEBUG = "1";
+
+    try {
+      await runFatal("uncaughtException", new Error("boom with stack"));
+
+      // Debug mode adds a second write: the failure UX line, then the raw stack.
+      expect(stderrSpy).toHaveBeenCalledTimes(2);
+      const stackLine = stderrSpy.mock.calls[1]?.[0] as string;
+      expect(stackLine).toContain("boom with stack");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.OPENWIKI_DEBUG;
+      } else {
+        process.env.OPENWIKI_DEBUG = previous;
+      }
+    }
+  });
+
+  test("skips the stack line under OPENWIKI_DEBUG when the error carries no stack", async () => {
+    registerActiveRun(ACTIVE);
+    const previous = process.env.OPENWIKI_DEBUG;
+    process.env.OPENWIKI_DEBUG = "1";
+    const stackless = new Error("no stack here");
+    delete stackless.stack;
+
+    try {
+      await runFatal("uncaughtException", stackless);
+
+      // Debug mode only appends the stack line when there is a stack to print, so a
+      // stackless error still yields exactly the one failure-UX line.
+      expect(stderrSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      if (previous === undefined) {
+        delete process.env.OPENWIKI_DEBUG;
+      } else {
+        process.env.OPENWIKI_DEBUG = previous;
+      }
+    }
+  });
+});
+
+describe("installCrashGuard", () => {
+  test("registers both fatal handlers once, idempotently, wired to handleFatal", async () => {
+    // Capture the listeners instead of attaching them to the real process, so the
+    // test never installs live handlers that outlive it.
+    const handlers = new Map<string, (arg: unknown) => void>();
+    const onSpy = vi.spyOn(process, "on").mockImplementation(((
+      event: string,
+      listener: (arg: unknown) => void,
+    ) => {
+      handlers.set(event, listener);
+      return process;
+    }) as typeof process.on);
+
+    try {
+      installCrashGuard();
+      const callsAfterFirst = onSpy.mock.calls.length;
+      expect(handlers.has("unhandledRejection")).toBe(true);
+      expect(handlers.has("uncaughtException")).toBe(true);
+
+      // Idempotent singleton: a repeat call registers no further handlers.
+      installCrashGuard();
+      expect(onSpy.mock.calls.length).toBe(callsAfterFirst);
+
+      // The registered handler routes an escaped rejection through handleFatal, so
+      // with an active run it records and stamps the crash and still exits.
+      registerActiveRun(ACTIVE);
+      handlers.get("unhandledRejection")?.(new Error("escaped"));
+      // The handler is fire-and-forget (`void handleFatal`): its two awaits run on
+      // the microtask queue and only then schedule the exit on setImmediate, so two
+      // macrotask flushes are needed to reach past the recorder to the exit.
+      await new Promise((resolve) => setImmediate(resolve));
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(recordRunSafe).toHaveBeenCalledTimes(1);
+      expect(exitSpy).toHaveBeenCalledWith(1);
+
+      // The uncaughtException listener is wired the same way: with a fresh active
+      // run it routes through handleFatal, records the crash, and exits.
+      registerActiveRun(ACTIVE);
+      handlers.get("uncaughtException")?.(new Error("thrown"));
+      await new Promise((resolve) => setImmediate(resolve));
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(recordRunSafe).toHaveBeenCalledTimes(2);
+      expect(exitSpy).toHaveBeenCalledTimes(2);
+    } finally {
+      onSpy.mockRestore();
+    }
   });
 });

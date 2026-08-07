@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "ink-testing-library";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   IngestionSummary,
   RunLogLine,
@@ -9,6 +9,10 @@ import {
 import type { OpenWikiIngestionResult } from "../../../src/ingestion/ingestion.ts";
 import type { RunLogItem } from "../../../src/cli/run-log/types.ts";
 import { stripAnsi as plain } from "./ansi.ts";
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 /** Builds an ingestion result with the given per-source statuses. */
 function ingestionResult(): OpenWikiIngestionResult {
@@ -104,6 +108,21 @@ describe("RunLogLine", () => {
     expect(frame).toContain("done");
     expect(frame).toContain("with the docs");
   });
+
+  test("renders a completed (done) tool with a green marker", () => {
+    const item: RunLogItem = {
+      content: "read_file",
+      id: 5,
+      type: "tool",
+      status: "done",
+    };
+
+    const { lastFrame } = render(<RunLogLine item={item} />);
+    const frame = plain(lastFrame());
+
+    expect(frame).toContain("*");
+    expect(frame).toContain("read_file");
+  });
 });
 
 describe("RunView", () => {
@@ -140,6 +159,26 @@ describe("RunView", () => {
     expect(frame).toContain("Working");
     expect(frame).toContain("openwiki update");
     expect(frame).toContain("Waiting for model output...");
+    unmount();
+  });
+
+  test("animates the spinner while a live run has a running tool", () => {
+    // A live run (done=false) with a still-running tool starts the animation
+    // interval; advancing time exercises the frame tick and the cleanup on
+    // unmount clears the interval.
+    vi.useFakeTimers();
+    const log: RunLogItem[] = [
+      { content: "read_file", id: 1, type: "tool", status: "running" },
+    ];
+
+    const { lastFrame, unmount } = render(
+      <RunView command="update" done={false} log={log} />,
+    );
+
+    expect(plain(lastFrame())).toContain("read_file");
+    vi.advanceTimersByTime(140);
+    expect(plain(lastFrame())).toContain("read_file");
+
     unmount();
   });
 });
