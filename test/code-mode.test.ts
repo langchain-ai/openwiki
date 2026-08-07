@@ -1,13 +1,45 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, test } from "vitest";
-import { ensureCodeModeRepoSetup } from "../src/code-mode.ts";
+import {
+  afterEach,
+  describe,
+  expect,
+  test,
+  vi,
+  type MockInstance,
+} from "vitest";
+import {
+  ensureCodeModeRepoSetup,
+  createMirroredWarningSink,
+} from "../src/code-mode.ts";
 
 const SNIPPET_START = "<!-- OPENWIKI:START -->";
 const SNIPPET_END = "<!-- OPENWIKI:END -->";
 
 const tempRepos: string[] = [];
+const stderrSpies: MockInstance<typeof process.stderr.write>[] = [];
+
+/**
+ * Capture writes to stderr for the current test. Spies are restored in
+ * `afterEach` so a failed assertion can never leak a live mock that would
+ * swallow stderr for the rest of the worker.
+ */
+function captureStderr(): MockInstance<typeof process.stderr.write> {
+  const spy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+  stderrSpies.push(spy);
+  return spy;
+}
 
 async function createTempRepo(): Promise<string> {
   const repo = await mkdtemp(path.join(tmpdir(), "openwiki-code-mode-"));
@@ -23,12 +55,44 @@ async function readIfPresent(filePath: string): Promise<string | null> {
   }
 }
 
+function backupPathFor(agentsPath: string): string {
+  return `${agentsPath}.openwiki.bak`;
+}
+
+function canonicalFile(): string {
+  return `# Custom header\n\nKeep me.\n\n${SNIPPET_START}
+
+## OpenWiki
+
+This repository uses OpenWiki for recurring code documentation. Start with \`openwiki/quickstart.md\`, then follow its links to architecture, workflows, domain concepts, operations, integrations, testing guidance, and source maps.
+
+The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+
+${SNIPPET_END}\n`;
+}
+
+function nonCanonicalFile(): string {
+  return `# Custom header
+
+User content INSIDE the managed block that must not be lost.
+
+${SNIPPET_START}
+hand-edited block content
+${SNIPPET_END}
+
+Trailing notes.
+`;
+}
+
 afterEach(async () => {
   await Promise.all(
     tempRepos
       .splice(0)
       .map((repo) => rm(repo, { force: true, recursive: true })),
   );
+  for (const spy of stderrSpies.splice(0)) {
+    spy.mockRestore();
+  }
 });
 
 describe("ensureCodeModeRepoSetup agent files", () => {
@@ -58,17 +122,25 @@ ${SNIPPET_END}
 
 Trailing notes that must survive.
 `;
-    await writeFile(path.join(repo, "CLAUDE.md"), existing, "utf8");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    await writeFile(claudePath, existing, "utf8");
+    const stderr = captureStderr();
 
     await ensureCodeModeRepoSetup(repo);
 
-    const content = await readIfPresent(path.join(repo, "CLAUDE.md"));
+    const content = await readIfPresent(claudePath);
     expect(content).toContain("# My Project");
     expect(content).toContain("Hand-written guidance for coding agents.");
     expect(content).toContain("Trailing notes that must survive.");
     expect(content).not.toContain("stale OpenWiki content");
     // Exactly one managed block after a refresh.
     expect(content?.match(new RegExp(SNIPPET_START, "g"))).toHaveLength(1);
+    // The stale (non-canonical) block content was backed up, never silently.
+    const backup = await readIfPresent(backupPathFor(claudePath));
+    expect(backup).toBe(existing);
+    expect(stderr).toHaveBeenCalledWith(
+      expect.stringContaining("CLAUDE.md.openwiki.bak"),
+    );
   });
 
   test("appends the block to an existing file without markers, keeping content", async () => {
@@ -155,12 +227,18 @@ ${SNIPPET_END}
       // Both files are prepared before either is written, so a malformed
       // AGENTS.md cannot leave a newly-created CLAUDE.md behind.
       expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
+      // Validation runs before any backup is written, so an aborted run
+      // leaves no backup for either file.
+      expect(await readIfPresent(backupPathFor(agentsPath))).toBeNull();
+      expect(
+        await readIfPresent(backupPathFor(path.join(repo, "CLAUDE.md"))),
+      ).toBeNull();
     });
   }
 });
 
 describe("ensureCodeModeRepoSetup workflow", () => {
-  test("generated PR includes agent files and the workflow in add-paths", async () => {
+  test("generated PR includes agent files, backups, and the workflow in add-paths", async () => {
     const repo = await createTempRepo();
 
     await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
@@ -174,6 +252,8 @@ describe("ensureCodeModeRepoSetup workflow", () => {
       "openwiki",
       "AGENTS.md",
       "CLAUDE.md",
+      "AGENTS.md.openwiki.bak",
+      "CLAUDE.md.openwiki.bak",
       ".github/workflows/openwiki-update.yml",
     ]) {
       expect(workflow).toContain(managedPath);
@@ -246,5 +326,280 @@ jobs:
     await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
 
     expect(await readIfPresent(workflowPath)).toBe(customizedWorkflow);
+  });
+});
+
+describe("non-canonical block protection", () => {
+  test("backs up a non-canonical block before replacing it and warns", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const existing = nonCanonicalFile();
+    await writeFile(agentsPath, existing, "utf8");
+    const stderr = captureStderr();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readIfPresent(agentsPath);
+    expect(content).not.toContain("hand-edited block content");
+    expect(content).toContain("## OpenWiki");
+    expect(content).toContain("Trailing notes.");
+    const backup = await readIfPresent(backupPathFor(agentsPath));
+    expect(backup).toBe(existing);
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining("AGENTS.md"));
+    expect(stderr).toHaveBeenCalledWith(
+      expect.stringContaining("AGENTS.md.openwiki.bak"),
+    );
+    // A fresh backup never claims a previous backup was replaced; that suffix
+    // only appears when the backup name was already occupied.
+    expect(stderr).not.toHaveBeenCalledWith(
+      expect.stringContaining("replaced"),
+    );
+  });
+
+  test("leaves a canonical block untouched: no warning, no backup, no rewrite", async () => {
+    const repo = await createTempRepo();
+    const claudePath = path.join(repo, "CLAUDE.md");
+    const canonical = canonicalFile();
+    await writeFile(claudePath, canonical, "utf8");
+    const before = await stat(claudePath);
+    const stderr = captureStderr();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(claudePath)).toBe(canonical);
+    const after = await stat(claudePath);
+    expect(after.mtimeMs).toBe(before.mtimeMs);
+    expect(stderr).not.toHaveBeenCalled();
+    expect(await readIfPresent(backupPathFor(claudePath))).toBeNull();
+  });
+
+  test("treats a CRLF canonical block as canonical, preserving line endings", async () => {
+    const repo = await createTempRepo();
+    const claudePath = path.join(repo, "CLAUDE.md");
+    const crlf = canonicalFile().replace(/\n/g, "\r\n");
+    await writeFile(claudePath, crlf, "utf8");
+    const before = await stat(claudePath);
+    const stderr = captureStderr();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(claudePath)).toBe(crlf);
+    const after = await stat(claudePath);
+    expect(after.mtimeMs).toBe(before.mtimeMs);
+    expect(stderr).not.toHaveBeenCalled();
+    expect(await readIfPresent(backupPathFor(claudePath))).toBeNull();
+  });
+
+  test("treats a lone-CR canonical block as canonical, preserving line endings", async () => {
+    const repo = await createTempRepo();
+    const claudePath = path.join(repo, "CLAUDE.md");
+    const cr = canonicalFile().replace(/\n/g, "\r");
+    await writeFile(claudePath, cr, "utf8");
+    const before = await stat(claudePath);
+    const stderr = captureStderr();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(claudePath)).toBe(cr);
+    const after = await stat(claudePath);
+    expect(after.mtimeMs).toBe(before.mtimeMs);
+    expect(stderr).not.toHaveBeenCalled();
+    expect(await readIfPresent(backupPathFor(claudePath))).toBeNull();
+  });
+
+  test("malformed markers in one file abort before any backup for the sibling", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    await writeFile(
+      agentsPath,
+      `# Project\n\n${SNIPPET_START}\norphaned start marker\n`,
+      "utf8",
+    );
+    await writeFile(claudePath, nonCanonicalFile(), "utf8");
+
+    await expect(ensureCodeModeRepoSetup(repo)).rejects.toThrow(
+      /managed markers are malformed or duplicated/u,
+    );
+
+    expect(await readIfPresent(agentsPath)).toContain("orphaned start marker");
+    expect(await readIfPresent(claudePath)).toContain(
+      "hand-edited block content",
+    );
+    expect(await readIfPresent(backupPathFor(agentsPath))).toBeNull();
+    expect(await readIfPresent(backupPathFor(claudePath))).toBeNull();
+  });
+
+  test("overwrites a previous backup on a second non-canonical run and says so", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    await writeFile(agentsPath, nonCanonicalFile(), "utf8");
+    await ensureCodeModeRepoSetup(repo);
+    const firstBackup = await readIfPresent(backupPathFor(agentsPath));
+    const secondStale = nonCanonicalFile().replace(
+      "hand-edited block content",
+      "second round of hand edits",
+    );
+    await writeFile(agentsPath, secondStale, "utf8");
+    const stderr = captureStderr();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(backupPathFor(agentsPath))).toBe(secondStale);
+    expect(firstBackup).not.toBe(secondStale);
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining("replaced"));
+  });
+
+  test("clobbering a pre-existing backup file is named in the warning", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    await writeFile(agentsPath, nonCanonicalFile(), "utf8");
+    const backupPath = backupPathFor(agentsPath);
+    await writeFile(backupPath, "pre-existing user file", "utf8");
+    const stderr = captureStderr();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(backupPath)).toBe(nonCanonicalFile());
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining("replaced"));
+  });
+
+  test("a failing backup aborts the run before any agent file is written", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    await writeFile(agentsPath, nonCanonicalFile(), "utf8");
+    // A directory occupying the backup name makes the atomic rename fail.
+    await mkdir(backupPathFor(agentsPath));
+
+    await expect(ensureCodeModeRepoSetup(repo)).rejects.toThrow();
+
+    expect(await readIfPresent(agentsPath)).toContain(
+      "hand-edited block content",
+    );
+    expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
+    // The temp backup file is cleaned up even though the rename failed.
+    const entries = await readdir(repo);
+    expect(entries.filter((e) => e.endsWith(".tmp"))).toEqual([]);
+  });
+
+  test("never auto-deletes an orphaned backup once the block is canonical", async () => {
+    const repo = await createTempRepo();
+    const claudePath = path.join(repo, "CLAUDE.md");
+    await writeFile(claudePath, nonCanonicalFile(), "utf8");
+    await ensureCodeModeRepoSetup(repo);
+    const backup = await readIfPresent(backupPathFor(claudePath));
+    expect(backup).not.toBeNull();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(backupPathFor(claudePath))).toBe(backup);
+  });
+
+  test("backs up the target content of a symlinked agent file", async () => {
+    const repo = await createTempRepo();
+    const targetPath = path.join(repo, "real-agents.md");
+    await writeFile(targetPath, nonCanonicalFile(), "utf8");
+    const linkPath = path.join(repo, "AGENTS.md");
+    await symlink(targetPath, linkPath);
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const linkStat = await lstat(linkPath);
+    expect(linkStat.isSymbolicLink()).toBe(true);
+    const backup = await readIfPresent(backupPathFor(linkPath));
+    expect(backup).toBe(nonCanonicalFile());
+    // The refresh propagated through the symlink to its target file.
+    expect(await readIfPresent(targetPath)).toContain("## OpenWiki");
+  });
+
+  test("marker-less files get the append path with no warning or backup", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const existing = "# Existing AGENTS\n\nDo not lose this line.\n";
+    await writeFile(agentsPath, existing, "utf8");
+    const stderr = captureStderr();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(agentsPath)).toContain(SNIPPET_START);
+    expect(stderr).not.toHaveBeenCalled();
+    expect(await readIfPresent(backupPathFor(agentsPath))).toBeNull();
+  });
+});
+
+describe("ensureCodeModeRepoSetup onWarning sink", () => {
+  test("delivers warnings to a custom sink instead of stderr", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    await writeFile(agentsPath, nonCanonicalFile(), "utf8");
+    const warnings: string[] = [];
+    const stderr = captureStderr();
+
+    await ensureCodeModeRepoSetup(repo, {
+      onWarning: (message) => warnings.push(message),
+    });
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("AGENTS.md.openwiki.bak");
+    expect(stderr).not.toHaveBeenCalled();
+  });
+
+  test("a throwing sink falls back to stderr without breaking the run", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    await writeFile(agentsPath, nonCanonicalFile(), "utf8");
+    const stderr = captureStderr();
+
+    await ensureCodeModeRepoSetup(repo, {
+      onWarning: () => {
+        throw new Error("sink exploded");
+      },
+    });
+
+    expect(await readIfPresent(agentsPath)).toContain("## OpenWiki");
+    expect(stderr).toHaveBeenCalledWith(
+      expect.stringContaining("AGENTS.md.openwiki.bak"),
+    );
+  });
+
+  test("warns for each affected file, once per file, in agent-file order", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    await writeFile(agentsPath, nonCanonicalFile(), "utf8");
+    await writeFile(claudePath, nonCanonicalFile(), "utf8");
+    const warnings: string[] = [];
+
+    await ensureCodeModeRepoSetup(repo, {
+      onWarning: (message) => warnings.push(message),
+    });
+
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0]).toContain("AGENTS.md");
+    expect(warnings[1]).toContain("CLAUDE.md");
+  });
+});
+
+describe("createMirroredWarningSink", () => {
+  test("emits to the run-log callback and mirrors the line to stderr", () => {
+    const emitted: string[] = [];
+    const stderr = captureStderr();
+
+    const sink = createMirroredWarningSink((message) => emitted.push(message));
+    sink("warning line");
+
+    expect(emitted).toEqual(["warning line"]);
+    expect(stderr).toHaveBeenCalledWith("warning line\n");
+  });
+
+  test("mirrors to stderr even when the run-log callback throws", () => {
+    const stderr = captureStderr();
+
+    const sink = createMirroredWarningSink(() => {
+      throw new Error("log backend down");
+    });
+    expect(() => sink("warning line")).toThrow("log backend down");
+
+    expect(stderr).toHaveBeenCalledWith("warning line\n");
   });
 });

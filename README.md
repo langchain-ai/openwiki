@@ -142,7 +142,7 @@ Locally the setup wizard saves this to `~/.openwiki/.env`. In CI, set it as a re
 
 Everything OpenWiki writes is plain Markdown you own and version alongside your code.
 
-- **Agents read it as memory.** On each `code` run, OpenWiki maintains an `AGENTS.md` and `CLAUDE.md` at the repo root that point your coding agent at the wiki. It only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched.
+- **Agents read it as memory.** On each `code` run, OpenWiki maintains an `AGENTS.md` and `CLAUDE.md` at the repo root that point your coding agent at the wiki. It only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched. If it finds custom content inside that block, it saves the file to `<file>.openwiki.bak` and prints a warning naming the file and the backup path before refreshing — recover by copying the backup back over the file, and stop future replacements by moving your content outside the markers. Backups are never deleted automatically; remove them after review.
 - **You set the brief.** Repository-specific instructions live in `openwiki/INSTRUCTIONS.md`, a user-authored file OpenWiki reads for scope and priorities but never rewrites during normal runs.
 - **No-op runs are free.** After a run, OpenWiki snapshots the `openwiki/` directory and only records new metadata when something actually changed, so scheduled workflows never churn.
 - **Local, private config.** Provider choice, keys, and optional LangSmith tracing are saved to `~/.openwiki/.env` on your machine.

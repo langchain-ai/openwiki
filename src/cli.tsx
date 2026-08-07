@@ -12,7 +12,11 @@ import {
 import { startNgrokTunnel } from "./auth/ngrok.js";
 import { runVisualizeServer } from "./visualize/server.js";
 import { formatAuthProviderList, runOAuthAuth } from "./auth/oauth.js";
-import { ensureCodeModeRepoSetup, runCodeModeConnectors } from "./code-mode.js";
+import {
+  createMirroredWarningSink,
+  ensureCodeModeRepoSetup,
+  runCodeModeConnectors,
+} from "./code-mode.js";
 import {
   commandEmitsTelemetry,
   helpContent,
@@ -648,6 +652,15 @@ function App({ command }: AppProps) {
         if (runMode === "code") {
           await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: resolvedCommand === "init",
+            // Mirror warnings to stderr so they survive a TUI re-render and an
+            // error-terminated run, which discards the run log.
+            onWarning: createMirroredWarningSink((message) => {
+              handleRunEvent({
+                source: "main",
+                text: message,
+                type: "text",
+              });
+            }),
           });
         }
 
@@ -4234,6 +4247,9 @@ async function runPrintCommand(
         if (command.mode === "code") {
           await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: command.command === "init",
+            // Explicit stderr wiring pins the warning channel against future
+            // default changes; stderr keeps piped stdout clean.
+            onWarning: (message) => process.stderr.write(`${message}\n`),
           });
         }
 

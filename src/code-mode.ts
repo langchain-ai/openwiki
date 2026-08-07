@@ -1,7 +1,15 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { OPENWIKI_VERSION } from "./constants.js";
-import { isFileNotFoundError } from "./fs-errors.js";
+import { isFileNotFoundError, pathExists } from "./fs-errors.js";
 import { createConnectorRegistry } from "./connectors/registry.js";
 import { UPDATE_METADATA_PATH } from "./constants.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
@@ -9,6 +17,7 @@ import type { OpenWikiRunEvent } from "./agent/types.js";
 
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
+const OPENWIKI_AGENTS_BACKUP_SUFFIX = ".openwiki.bak";
 const DEFAULT_CODE_MODE_CRON = "0 8 * * *";
 
 // Root agent-instruction files OpenWiki keeps pointed at the generated wiki.
@@ -26,6 +35,12 @@ export interface CodeModeRepoSetupOptions {
   createWorkflow?: boolean;
   /** Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}. */
   cronExpression?: string;
+  /**
+   * Sink for warnings about non-canonical content inside the managed
+   * agent-instruction blocks. When absent, warnings go to stderr. A throwing
+   * sink falls back to stderr and never breaks the run.
+   */
+  onWarning?: (message: string) => void;
 }
 
 /**
@@ -41,9 +56,10 @@ export async function ensureCodeModeRepoSetup(
     await ensureCodeModeWorkflow(
       cwd,
       options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
+      createWarningSink(options.onWarning),
     );
   }
-  await writeCodeModeAgentSnippets(cwd);
+  await writeCodeModeAgentSnippets(cwd, options.onWarning);
 }
 
 /**
@@ -54,6 +70,7 @@ export async function ensureCodeModeRepoSetup(
 async function ensureCodeModeWorkflow(
   cwd: string,
   cronExpression: string,
+  warn: (message: string) => void,
 ): Promise<void> {
   const workflowPath = path.join(
     cwd,
@@ -63,7 +80,15 @@ async function ensureCodeModeWorkflow(
   );
 
   try {
-    await readFile(workflowPath, "utf8");
+    const workflowContent = await readFile(workflowPath, "utf8");
+    // An existing workflow is preserved verbatim; older installs' workflows
+    // predate the backup commit paths and would silently discard backups on
+    // every scheduled run unless the operator re-runs --init or adds the paths.
+    if (!workflowContent.includes("AGENTS.md.openwiki.bak")) {
+      warn(
+        "OpenWiki: the existing .github/workflows/openwiki-update.yml does not commit agent-file backups; scheduled CI runs will discard them. Re-run openwiki code --init or add the backup paths to its add-paths.",
+      );
+    }
     return;
   } catch (error) {
     if (!isFileNotFoundError(error)) {
@@ -168,31 +193,194 @@ async function readLastUpdatedAt(
   }
 }
 
-async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
+/**
+ * One agent file's prepared outcome. `backup` is present only when the managed
+ * block holds non-canonical content that is about to be replaced. `nextContent`
+ * equals `originalContent` when the file should not be rewritten at all
+ * (canonical block, or marker-less append already staged).
+ */
+interface PreparedAgentFile {
+  agentsPath: string;
+  originalContent: string;
+  nextContent: string;
+  backup?: { content: string; warning: string };
+}
+
+async function writeCodeModeAgentSnippets(
+  cwd: string,
+  onWarning?: (message: string) => void,
+): Promise<void> {
+  await sweepStaleBackupTempFiles(cwd);
   const snippet = createCodeModeAgentsSnippet();
-  // Prepare and validate both files before writing either one. If one file has
-  // malformed markers, setup fails without partially refreshing its sibling.
-  const updates = await Promise.all(
+  const normalizedSnippet = normalizeLineEndings(snippet);
+  const warn = createWarningSink(onWarning);
+
+  // Phase 1 — validate and prepare both files in memory. A malformed-marker
+  // throw here aborts before any backup or write, so an aborted run never
+  // leaves a backup for either file.
+  const prepared = await Promise.all(
     CODE_MODE_AGENT_FILES.map((fileName) =>
-      prepareCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
+      prepareCodeModeAgentSnippet(
+        path.join(cwd, fileName),
+        snippet,
+        normalizedSnippet,
+      ),
     ),
   );
 
-  await Promise.all(
-    updates.map(({ agentsPath, nextContent }) =>
-      writeFile(agentsPath, nextContent, "utf8"),
-    ),
+  // Phase 2 — write backups for files whose non-canonical block is about to be
+  // replaced, sourced from the already-read content so an editor touching the
+  // file in between cannot make the backup diverge. Backups run in parallel
+  // (independent files); warnings emit afterward in agent-file order.
+  const toBackUp = prepared.filter(
+    (
+      file,
+    ): file is PreparedAgentFile & {
+      backup: NonNullable<PreparedAgentFile["backup"]>;
+    } => file.backup !== undefined,
   );
+  // A backup failure must abort the run before any rewrite; warn for the
+  // backups that already succeeded so the operator knows they exist, then
+  // rethrow with context. The agent files are left unchanged in this path.
+  const backedUpPaths = new Set<string>();
+  try {
+    await Promise.all(
+      toBackUp.map(async (file) => {
+        await writeBackupAtomically(file.agentsPath, file.backup.content);
+        backedUpPaths.add(file.agentsPath);
+      }),
+    );
+  } catch (error) {
+    for (const file of toBackUp) {
+      if (backedUpPaths.has(file.agentsPath)) {
+        warn(file.backup.warning);
+      }
+    }
+    throw new Error(
+      `OpenWiki: could not write agent-file backups; agent files were left unchanged. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      { cause: error },
+    );
+  }
+  for (const file of toBackUp) {
+    warn(file.backup.warning);
+  }
+
+  // Phase 3 — write only files whose content actually changed. Canonical
+  // files are skipped entirely, so mtime and line endings stay untouched.
+  await Promise.all(
+    prepared
+      .filter((file) => file.nextContent !== file.originalContent)
+      .map(({ agentsPath, nextContent }) =>
+        writeFile(agentsPath, nextContent, "utf8"),
+      ),
+  );
+}
+
+/**
+ * A warning sink that never breaks the run: a throwing custom sink falls back
+ * to stderr, and the default sink writes straight to stderr.
+ */
+function createWarningSink(
+  onWarning: ((message: string) => void) | undefined,
+): (message: string) => void {
+  if (onWarning === undefined) {
+    return (message) => process.stderr.write(`${message}\n`);
+  }
+  return (message) => {
+    try {
+      onWarning(message);
+    } catch {
+      process.stderr.write(`${message}\n`);
+    }
+  };
+}
+
+/**
+ * A warning sink that mirrors each warning to both the run log and stderr, so
+ * a TUI run keeps the message even when the run log is discarded (re-render or
+ * error-terminated run). The stderr mirror runs even if the run-log callback
+ * throws, so the warning always reaches at least one channel.
+ */
+export function createMirroredWarningSink(
+  emit: (message: string) => void,
+): (message: string) => void {
+  return (message) => {
+    try {
+      emit(message);
+    } finally {
+      process.stderr.write(`${message}\n`);
+    }
+  };
+}
+
+/**
+ * Best-effort sweep of stale backup temp files left by a crash between a
+ * backup's write and rename in {@link writeBackupAtomically}. Only the
+ * `.openwiki.bak.<pid>.<uuid>.tmp` pattern is removed — never the agent files
+ * or the real backups. Sweep failures must not break the run; errors from the
+ * actual backup writes still propagate.
+ */
+async function sweepStaleBackupTempFiles(cwd: string): Promise<void> {
+  try {
+    const entries = await readdir(cwd);
+    await Promise.all(
+      entries
+        .filter((entry) => /\.openwiki\.bak\..*\.tmp$/.test(entry))
+        .map((entry) =>
+          rm(path.join(cwd, entry), { force: true }).catch(() => undefined),
+        ),
+    );
+  } catch {
+    // Tolerate readdir failures; the sweep is cleanup, not a precondition.
+  }
+}
+
+/**
+ * Normalize CRLF and lone-CR line endings to LF so Windows-edited and old-Mac
+ * files compare equal to the LF canonical snippet.
+ */
+function normalizeLineEndings(content: string): string {
+  return content.replace(/\r\n?/g, "\n");
+}
+
+/**
+ * Write the backup copy atomically (temp file plus rename, mirroring the
+ * credential-file pattern) so a crash mid-write cannot leave a torn backup.
+ */
+async function writeBackupAtomically(
+  agentsPath: string,
+  content: string,
+): Promise<void> {
+  const backupPath = `${agentsPath}${OPENWIKI_AGENTS_BACKUP_SUFFIX}`;
+  const tmpPath = `${backupPath}.${process.pid}.${randomUUID()}.tmp`;
+  try {
+    await writeFile(tmpPath, content, "utf8");
+    await rename(tmpPath, backupPath);
+  } catch (error) {
+    await rm(tmpPath, { force: true }).catch(() => undefined);
+    throw error;
+  }
 }
 
 async function prepareCodeModeAgentSnippet(
   agentsPath: string,
   snippet: string,
-): Promise<{ agentsPath: string; nextContent: string }> {
+  normalizedSnippet: string,
+): Promise<PreparedAgentFile> {
   let currentContent = "";
 
   try {
-    currentContent = await readFile(agentsPath, "utf8");
+    const raw = await readFile(agentsPath);
+    currentContent = raw.toString("utf8");
+    // A lossy round-trip means the file is not valid UTF-8; refusing to
+    // rewrite or back it up lossily preserves the original bytes.
+    if (!Buffer.from(currentContent, "utf8").equals(raw)) {
+      throw new Error(
+        `Cannot update ${path.basename(agentsPath)} because it is not valid UTF-8; refusing to rewrite or back it up lossily.`,
+      );
+    }
   } catch (error) {
     if (!isFileNotFoundError(error)) {
       throw error;
@@ -206,6 +394,7 @@ async function prepareCodeModeAgentSnippet(
   if (hasNoMarkers) {
     return {
       agentsPath,
+      originalContent: currentContent,
       nextContent: `${currentContent.trimEnd()}${currentContent.trim().length > 0 ? "\n\n" : ""}${snippet}\n`,
     };
   }
@@ -222,9 +411,33 @@ async function prepareCodeModeAgentSnippet(
     );
   }
 
+  const region = currentContent.slice(
+    startIndex,
+    endIndex + OPENWIKI_AGENTS_SNIPPET_END.length,
+  );
+
+  // Canonical block: leave the file untouched. Skip-write preserves mtime and
+  // line endings and avoids a rewrite on every chat run.
+  if (normalizeLineEndings(region) === normalizedSnippet) {
+    return {
+      agentsPath,
+      originalContent: currentContent,
+      nextContent: currentContent,
+    };
+  }
+
+  // Non-canonical block: user content sits inside the managed region. Back it
+  // up before the refresh replaces it, and warn naming the file and backup.
+  const backupPath = `${agentsPath}${OPENWIKI_AGENTS_BACKUP_SUFFIX}`;
+  const overwritingExisting = await pathExists(backupPath);
   return {
     agentsPath,
+    originalContent: currentContent,
     nextContent: `${currentContent.slice(0, startIndex)}${snippet}${currentContent.slice(endIndex + OPENWIKI_AGENTS_SNIPPET_END.length)}`,
+    backup: {
+      content: currentContent,
+      warning: `OpenWiki: found content between the managed markers of ${path.basename(agentsPath)} that differs from the generated snippet; backup saved to ${backupPath}${overwritingExisting ? " (previous backup replaced)" : ""}. Move custom content outside the markers to keep it.`,
+    },
   };
 }
 
@@ -283,6 +496,8 @@ jobs:
             openwiki
             AGENTS.md
             CLAUDE.md
+            AGENTS.md.openwiki.bak
+            CLAUDE.md.openwiki.bak
             .github/workflows/openwiki-update.yml
           branch: openwiki/update
           commit-message: "docs: update OpenWiki"
