@@ -349,6 +349,28 @@ async function saveOpenWikiEnvLocked(updates: EnvMap): Promise<void> {
   }
 }
 
+export async function deleteOpenWikiEnv(keys: string[]): Promise<void> {
+  const currentEnv = await readOpenWikiEnv();
+  const nextEnv = { ...currentEnv };
+
+  for (const key of keys) {
+    delete nextEnv[key];
+    delete process.env[key];
+  }
+
+  await mkdir(openWikiEnvDir, {
+    recursive: true,
+    mode: 0o700,
+  });
+  await chmod(openWikiEnvDir, 0o700);
+
+  await writeFile(openWikiEnvPath, formatEnv(nextEnv), {
+    encoding: "utf8",
+    mode: 0o600,
+  });
+  await chmod(openWikiEnvPath, 0o600);
+}
+
 function createCredentialDiagnostic(
   key: CredentialDiagnostic["key"],
   fileEnv: EnvMap,
@@ -437,7 +459,7 @@ function getBaseUrlDiagnosticWarnings(
   return undefined;
 }
 
-function isNonSecretDiagnosticKey(key: string): boolean {
+export function isNonSecretDiagnosticKey(key: string): boolean {
   return (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
@@ -507,7 +529,7 @@ function getRetryAttemptsWarnings(value: string): string[] {
   }
 }
 
-async function readOpenWikiEnv(): Promise<EnvMap> {
+export async function readOpenWikiEnv(): Promise<EnvMap> {
   try {
     return parseEnv(await readFile(openWikiEnvPath, "utf8"));
   } catch (error) {

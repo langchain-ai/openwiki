@@ -4,6 +4,7 @@ import { resolveLanguage } from "./language.js";
 import { isAuthProviderId } from "./auth/providers.js";
 import type { AuthProviderId } from "./auth/types.js";
 import { parseIngestionTarget, type IngestionTarget } from "./ingestion.js";
+import { MANAGED_ENV_KEYS } from "./env.js";
 
 export type HelpRow = {
   label: string;
@@ -23,6 +24,11 @@ export type HelpContent = {
   examples: string[];
   developmentExamples: string[];
 };
+
+export type ConfigAction =
+  | { type: "list" }
+  | { type: "set"; key: string; value: string }
+  | { type: "delete"; key: string };
 
 export type CliCommand =
   | {
@@ -77,6 +83,11 @@ export type CliCommand =
       telemetryFile: string | null;
     }
   | {
+      kind: "config";
+      exitCode: 0;
+      action: ConfigAction;
+    }
+  | {
       kind: "error";
       exitCode: 1;
       message: string;
@@ -88,6 +99,90 @@ export function parseCommand(argv: string[]): CliCommand {
   if (argv[0] === "--help" || argv[0] === "-h") {
     return { kind: "help", exitCode: 0 };
   }
+
+  // ---- config command ----
+  if (argv[0] === "config") {
+    const sub = argv[1];
+
+    if (!sub || sub === "list" || sub === "show") {
+      return {
+        kind: "config",
+        exitCode: 0,
+        action: { type: "list" },
+      };
+    }
+
+    if (sub === "set") {
+      const rawKey = argv[2];
+      const value = argv[3];
+
+      if (!rawKey) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message:
+            "config set requires a key and a value. Usage: openwiki config set <KEY> <VALUE>",
+        };
+      }
+
+      const key = rawKey.toUpperCase();
+      if (!(MANAGED_ENV_KEYS as readonly string[]).includes(key)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid config key: ${rawKey}. Supported keys: ${MANAGED_ENV_KEYS.join(", ")}`,
+        };
+      }
+
+      if (value === undefined) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `config set requires a value for key ${key}. Usage: openwiki config set <KEY> <VALUE>`,
+        };
+      }
+
+      return {
+        kind: "config",
+        exitCode: 0,
+        action: { type: "set", key, value },
+      };
+    }
+
+    if (sub === "delete" || sub === "unset" || sub === "remove") {
+      const rawKey = argv[2];
+
+      if (!rawKey) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "config delete requires a key. Usage: openwiki config delete <KEY>",
+        };
+      }
+
+      const key = rawKey.toUpperCase();
+      if (!(MANAGED_ENV_KEYS as readonly string[]).includes(key)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid config key: ${rawKey}. Supported keys: ${MANAGED_ENV_KEYS.join(", ")}`,
+        };
+      }
+
+      return {
+        kind: "config",
+        exitCode: 0,
+        action: { type: "delete", key },
+      };
+    }
+
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: `Unknown config subcommand: ${sub}. Valid config subcommands: list, set, delete`,
+    };
+  }
+
 
   if (argv[0] === "auth") {
     const action =
@@ -748,6 +843,7 @@ export const helpContent: HelpContent = {
     "openwiki cron resume all",
     "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
+    "openwiki config [list|set|delete] [arguments]",
     "openwiki visualize [path] [--port <port>] [--no-open]",
   ],
   commands: [
@@ -810,6 +906,8 @@ export const helpContent: HelpContent = {
         "Start an ngrok tunnel for Slack OAuth, optionally using a fixed HTTPS URL.",
     },
     {
+      label: "openwiki config",
+      description: "Manage configuration and credentials.",
       label: "openwiki visualize [path]",
       description:
         "Serve an interactive graph and live docs reader for a generated wiki (defaults to ./openwiki).",
@@ -901,6 +999,9 @@ export const helpContent: HelpContent = {
     "openwiki auth tools notion",
     "openwiki ngrok start",
     "openwiki ngrok start https://openwiki.ngrok.app",
+    "openwiki config list",
+    "openwiki config set OPENAI_COMPATIBLE_API_KEY sk-...",
+    "openwiki config delete OPENAI_COMPATIBLE_API_KEY",
     "openwiki visualize",
     "openwiki visualize openwiki --port 4400 --no-open",
   ],

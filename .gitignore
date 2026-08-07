@@ -1,9 +1,29 @@
+# Dependency directories
 node_modules/
-dist/
-coverage/
 
+# Build outputs and caches
+dist/
+build/
+out/
+.tsbuildinfo
+.eslintcache
+.vitest/
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 *.tgz
+
+# OS files
 .DS_Store
 
 .env
