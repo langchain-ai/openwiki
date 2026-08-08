@@ -1,0 +1,511 @@
+test/setup/credentials/steps-derivations.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-605
+src/cli/components/run-view.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-218
+test/auth/ngrok.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-553
+src/connectors/tools.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 14
+src/setup/onboarding.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-481
+src/cli/runners.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-364
+src/config/env.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-587
+src/visualize/server.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 54-61,108-177,201,218,221,308
+test/agent/environment-debug-value.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-87
+src/cli/startup.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-141
+test/auth/configure.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-137
+test/cli/components/ansi.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-11
+test/cli/components/primitives.test.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-108
+src/cli/components/header.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-177
+test/config/env-behavior.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-530
+test/agent/checkpoint-pruning.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-77
+test/connectors/fetch-with-resilience.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-352
+.changeset/rich-mangos-rush.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-5
+test/stamp-build-channel.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-100
+test/mermaid/validate-fallback.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-49
+src/cli/input/menu.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-277
+src/auth/ngrok.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 3
+src/setup/credentials/components.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-1278
+test/cli/schedule-format.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-206
+package.json
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 11,37,42,47,50-53,104
+test/connectors/mcp-client.test.ts
+  s_9df199bc4d57fc::t_157044a4691381 29-35
+  s_9df199bc4d57fc::t_4e5ba8c6d53f03 69-70
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-28,36-68,71-1082
+test/connectors/raw-connector-tools.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-273
+src/cli/components/chat.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-726
+test/platform/windows-acl.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-97
+src/cli/commands.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-957
+test/agent/prompt-okf.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-26
+src/cli/debug.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-16
+test/agent/run-metadata.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-260
+src/cli/components/panels.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-194
+test/agent/bedrock-credentials-integration.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-74
+src/agent/crash-guard.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 107-113,115
+src/platform/utils.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-18
+test/auth/tokens.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-526
+src/config/openwiki-home.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-98
+openwiki/operations/credentials-and-updates.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 232,236-243,295,308-309
+src/cli/app/app.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-838
+test/agent/thread-id.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-50
+test/ingestion/ingestion.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-110
+test/agent/checkpoint-policy.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-23
+test/cli/run-log/reducer.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-161
+test/cli/run-mode.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-154
+test/setup/credentials/format.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-326
+src/connectors/mcp-runtime.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 19
+test/visualize/visualize-client-lib.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-138
+src/cli/run-mode.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-69
+test/connectors/sources/web-search.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-292
+test/cli/telemetry-cli.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-32
+src/cli/cli.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-93
+test/connectors/sources/langsmith/api.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-178
+test/platform/language.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-33
+src/agent/openai-chatgpt-oauth.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 10
+test/cli/components/chat.test.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-429
+src/auth/oauth.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 4
+test/cli/components/first-run-notice.test.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-66
+test/auth/oauth.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-247
+src/cli/schedule-format.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-159
+test/cli/diagnostics/sanitize.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-59
+test/cli/components/panels.test.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-143
+test/mermaid/mermaid-wiki.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-251
+test/auth/oauth-redirect-override.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-121
+src/ingestion/code-mode.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-310
+test/scheduling/schedules-launchd.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-405
+src/telemetry/install-id.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 4
+.changeset/twelve-wings-like.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-5
+CONTRIBUTING.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 32-33
+test/cli/run-log/tool-display.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-155
+test/setup/credentials/steps.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-971
+.changeset/huge-ants-stick.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-5
+test/telemetry/telemetry.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-1567
+test/scheduling/launchd-calendar-interval.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-81
+src/cli/components/markdown.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-215
+test/setup/credentials/persistence.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-147
+src/connectors/io.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 8
+test/auth/oauth-callback-server.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-146
+test/okf/index-sync-errors.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-117
+src/telemetry/config.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 3,32
+src/telemetry/taxonomy.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 48-49,65-92,117-120,134-137
+  s_9df199bc4d57fc::t_fcdbc4b0d6d7ad 138-139
+src/cli/input/types.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-107
+test/agent/create-openwiki-agent.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-44
+test/agent/model-resolution.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-116
+src/auth/providers.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 16
+test/setup/credentials.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-340
+src/cli/diagnostics/error-diagnostics.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-311
+src/cli/run-log/tool-display.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-270
+src/setup/credentials/view.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-649
+src/cli/input/cursor.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-158
+src/telemetry/gates.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 3-24
+src/connectors/sources/langsmith/index.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1
+test/agent/parse-stream-event.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-390
+test/mermaid/mermaid-fences.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-63
+test/agent/translation-middleware.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-680
+test/agent/create-model.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-165
+src/cli/run-log/reducer.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-276
+src/telemetry/senders.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1,3,10,17,40-47,86-88,106-110,150,260-274,277-282,284-285
+src/agent/index.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 27-28,32,37-38,124,128
+src/setup/credentials/steps.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-1150
+src/cli/format.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-93
+test/telemetry/record-run-safe.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-130
+test/connectors/sources/git-repo.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-222
+scripts/stamp-build-channel.cjs
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-91
+test/platform/fs-errors.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-53
+openwiki/agent/workflow.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 134,138-139,169
+test/visualize/visualize-server.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-39
+src/agent/translation-middleware.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 7
+.github/workflows/checks.yml
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 96,149
+test/setup/openai-chatgpt-credentials.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-208
+src/platform/language.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-60
+test/cli/components/run-view.test.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-184
+src/connectors/sources/web-search.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 2
+src/setup/credentials/format.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-208
+test/agent/vertex-surface.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-192
+test/connectors/sources/slack.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-621
+test/agent/index-middleware.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-514
+test/agent/frontmatter-validator.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-208
+src/cli/diagnostics/sanitize.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-50
+src/cli/components/types.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-21
+src/connectors/sources/x.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 15
+src/setup/credentials.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-30
+src/platform/diagnostics.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-171
+test/agent/update-noop.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-186
+src/platform/windows-acl.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-41
+test/agent/utils.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-138
+test/cli/components/header.test.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-77
+test/connectors/sources/x.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-425
+test/connectors/tools.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-465
+test/ingestion/ingestion-run.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-554
+src/config/constants.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-931
+test/telemetry/telemetry-install-id.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-133
+test/agent/redaction.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-378
+openwiki/.last-update.json
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 2,4
+src/mermaid/validate.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1
+test/agent/wiki-link-validator.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-446
+test/setup/credentials/init-setup-langsmith-skip.test.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-179
+test/okf/index-labels.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-84
+test/telemetry/with-run-telemetry.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-89
+src/cli/app/run-state.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-72
+test/agent/prompt.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-320
+src/ingestion/ingestion.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-452
+src/cli/run-log/types.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-84
+test/platform/utils.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-41
+test/agent/run-context.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-116
+test/connectors/connector-config-overrides.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-440
+src/telemetry/errors.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-5,69-72,74,531-535,550,554-597,599-607,610,612,616,626-639,644,647-666,668,678,681-714
+test/cli/app/run-state.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-82
+test/visualize/page.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-59
+src/scheduling/schedules.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-938
+src/agent/docs-only-backend.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 16
+test/visualize/visualize-graph.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-124
+test/config/constants.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-697
+test/connectors/sources/gmail.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-427
+test/auth/external-cli-auth.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-262
+src/setup/credentials/use-init-setup.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-2559
+test/agent/gemini-retry.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-113
+src/agent/utils.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 6,10-11,15
+test/cli/startup.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-322
+test/cli/input/cursor.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-175
+test/agent/bedrock-model.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-78
+test/connectors/mcp-runtime.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-215
+test/cli/visualize-command.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-52
+test/scheduling/schedules.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-116
+test/agent/tool-args-formatting.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-52
+src/telemetry/types.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 57-65,95-101
+  s_9df199bc4d57fc::t_63afc2786f659a 56
+test/auth/oauth-run.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-645
+test/cli/input/secret.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-14
+test/config/env.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-164
+test/connectors/sources/mcp.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-175
+.changeset/silver-breads-serve.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-5
+test/ingestion/langsmith-modes.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-74
+src/auth/configure.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 2,6
+src/telemetry/record-run-safe.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 7
+src/telemetry/with-run-telemetry.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 2
+test/ingestion/code-mode.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-310
+openwiki/architecture/overview.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 99,124,162,177-178
+src/cli/components/first-run-notice.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-86
+test/telemetry/client-no-key.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-30
+src/platform/fs-errors.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-34
+test/setup/credentials/components.test.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-702
+test/agent/skills.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-159
+test/agent/docs-only-backend.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-103
+test/platform/diagnostics.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-43
+src/setup/credentials/types.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-170
+src/connectors/sources/gmail.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 4
+test/cli/diagnostics/auth-fix.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-65
+test/connectors/sources/hackernews.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-520
+test/cli/commands.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-964
+src/agent/openwiki-ignore.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 3
+src/agent/vertex-surface.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 2
+test/cli/debug.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-61
+test/config/copilot-provider.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-27
+test/connectors/connector-config.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-30
+test/cli/guards.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-34
+test/setup/onboarding.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-910
+openwiki/quickstart.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 25,48,67-68,149
+test/mermaid/dom-shim.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-16
+.changeset/nine-toes-drop.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-5
+test/visualize/server.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-233
+src/setup/credentials/persistence.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-124
+src/setup/credentials/constants.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-248
+src/cli/guards.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-24
+test/agent/gemini-enterprise-claude.e2e.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-97
+test/agent/openai-chatgpt-oauth.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-563
+test/cli/format.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-134
+vitest.config.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-47
+test/config/openai-chatgpt-provider.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-66
+test/agent/crash-guard.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-320
+.changeset/huge-spiders-shave.md
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-5
+src/cli/components/primitives.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-139
+test/connectors/sources/langsmith/index.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-416
+test/cli/input/menu.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-215
+src/connectors/sources/langsmith/repo-config.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 3-4
+src/cli/input/secret.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-7
+test/connectors/sources/langsmith/repo-config.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-269
+src/auth/tokens.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1
+test/auth/oauth-url-validation.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-205
+test/setup/credentials/view.test.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-321
+test/agent/gemini-enterprise-claude.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-121
+test/scheduling/schedule-operations.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-467
+src/cli/diagnostics/auth-fix.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-94
+test/agent/openwiki-ignore.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-309
+test/cli/diagnostics/error-diagnostics.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-107
+test/cli/runners.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-626
+test/connectors/sources/langsmith/setup.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-185
+test/okf/frontmatter.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-2,12-13,303-362
+  s_9df199bc4d57fc::t_4b2fcd2a329af5 363
+test/agent/agent-runtime-root.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-20
+.github/workflows/release.yml
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 66-72
+src/auth/external-cli-auth.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-189
+test/agent/wiki-link-validator-dogfood.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-21
+src/connectors/sources/slack.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1
+test/agent/stream-redaction.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-133
+test/cli/components/markdown.test.tsx
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-198
+test/agent/conversation-history-offload.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-166
+test/connectors/sources/langsmith/runs.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-241
+src/connectors/mcp-client.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 2
+test/mermaid/mermaid-validate.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-212
+src/agent/skills.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 12-15
+test/config/openwiki-home.test.ts
+  s_9df199bc4d57fc::t_90da38f5fbe2c1 1-175
+pnpm-lock.yaml
+  s_9df199bc4d57fc::t_c04fb66dbe3a2f 111-113,119,952-953,1533-1534,1567-1569,1831-1839,2142-2143,2178-2179,2304-2305,2353-2354,2582-2585,2862-2863,3779,3840,4430,4459-4460,4752-4755,5044,5058-5059,5091,5191,5224,5226,5462-5463,5550
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "c643876374a9b4bd7a2dc9ddd6cddfcaeca1f752",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
