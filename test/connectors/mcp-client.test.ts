@@ -26,13 +26,21 @@ describe("buildChildEnv", () => {
   const saved: Record<string, string | undefined> = {};
 
   beforeEach(() => {
-    for (const key of [...SECRET_KEYS, "PATH", "MCP_SERVER_TOKEN"]) {
+    for (const key of [
+      ...SECRET_KEYS,
+      "PATH",
+      "APPDATA",
+      "LOCALAPPDATA",
+      "MCP_SERVER_TOKEN",
+    ]) {
       saved[key] = process.env[key];
     }
     for (const key of SECRET_KEYS) {
       process.env[key] = `secret-value-for-${key}`;
     }
     process.env.PATH = "/usr/bin:/bin";
+    process.env.APPDATA = "C:\\Users\\example\\AppData\\Roaming";
+    process.env.LOCALAPPDATA = "C:\\Users\\example\\AppData\\Local";
     process.env.MCP_SERVER_TOKEN = "declared-token-123";
   });
 
@@ -60,6 +68,12 @@ describe("buildChildEnv", () => {
   test("passes through allow-listed base variables like PATH", () => {
     const childEnv = buildChildEnv({});
     expect(childEnv.PATH).toBe("/usr/bin:/bin");
+  });
+
+  test("passes through Windows AppData paths used by many MCP servers", () => {
+    const childEnv = buildChildEnv({});
+    expect(childEnv.APPDATA).toBe("C:\\Users\\example\\AppData\\Roaming");
+    expect(childEnv.LOCALAPPDATA).toBe("C:\\Users\\example\\AppData\\Local");
   });
 
   test("resolves only the credentials the transport explicitly declares", () => {
