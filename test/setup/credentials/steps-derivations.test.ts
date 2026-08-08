@@ -130,6 +130,8 @@ describe("path helpers", () => {
     expect(normalizeLocalPath("  ")).toBe("");
     expect(normalizeLocalPath("~")).toBe(homedir());
     expect(normalizeLocalPath("~/sub")).toBe(path.resolve(homedir(), "sub"));
+    // A Windows-style tilde prefix is expanded the same way.
+    expect(normalizeLocalPath("~\\sub")).toBe(path.resolve(homedir(), "sub"));
     expect(normalizeLocalPath("./rel")).toBe(path.resolve("./rel"));
   });
 
@@ -140,6 +142,10 @@ describe("path helpers", () => {
     await expect(validateLocalDirectoryPath("   ")).rejects.toThrow(
       "Enter a local directory.",
     );
+    // A path that exists but is a file, not a directory, is rejected.
+    await expect(
+      validateLocalDirectoryPath(`${process.cwd()}/package.json`),
+    ).rejects.toThrow("is not a directory.");
   });
 });
 
@@ -213,6 +219,10 @@ describe("model selection", () => {
     expect(
       getSelectedModelId(PROVIDER_WITH_PRESETS, 0, "   ", true),
     ).toBeNull();
+    // A valid custom id is normalized (trimmed) and returned verbatim.
+    expect(
+      getSelectedModelId(PROVIDER_WITH_PRESETS, 0, "  my-custom-model  ", true),
+    ).toBe("my-custom-model");
   });
 
   test("getModelSelectionIndex finds a preset and defaults unknown ids to 0", () => {
@@ -233,6 +243,8 @@ describe("model selection", () => {
         SELECTABLE_OPENWIKI_PROVIDERS.indexOf(provider),
       );
     }
+    // An unknown provider falls back to the first selectable index.
+    expect(getProviderSelectionIndex("bogus" as never)).toBe(0);
   });
 });
 
@@ -314,6 +326,11 @@ describe("template + source labelling", () => {
     );
     expect(getSourceDescriptionPrompt(sourceOption("git-repo"))).toContain(
       "repository",
+    );
+    // Any other source falls back to the generic, name-interpolated prompt.
+    const generic = sourceOption("langsmith");
+    expect(getSourceDescriptionPrompt(generic)).toBe(
+      `Describe what OpenWiki should look for in ${generic.displayName}.`,
     );
   });
 
@@ -516,5 +533,73 @@ describe("cron field editing", () => {
     setValue.mockClear();
     expect(call("5", {}, "* * * * *", 0, true)).toBe(true);
     expect(setValue).toHaveBeenCalledWith("5 * * * *");
+  });
+
+  test("handleCronEditorInput handles arrows, backspace, paste, and appends", () => {
+    const setValue = vi.fn();
+    const setCurrentFieldIndex = vi.fn();
+    const setReplaceCurrentField = vi.fn();
+    const call = (
+      inputValue: string,
+      key: Parameters<typeof handleCronEditorInput>[0]["key"],
+      currentValue = "* * * * *",
+      currentFieldIndex = 0,
+      replaceCurrentField = true,
+    ): boolean =>
+      handleCronEditorInput({
+        currentFieldIndex,
+        currentValue,
+        fallbackExpression: "0 0 * * *",
+        inputValue,
+        key,
+        replaceCurrentField,
+        setCurrentFieldIndex,
+        setReplaceCurrentField,
+        setValue,
+      });
+
+    // Left arrow steps the active field back, clamped at zero.
+    expect(call("", { leftArrow: true }, "* * * * *", 2)).toBe(true);
+    const back = setCurrentFieldIndex.mock.calls[0]?.[0] as (
+      index: number,
+    ) => number;
+    expect(back(2)).toBe(1);
+    expect(back(0)).toBe(0);
+
+    // Backspace on a non-empty field trims its last character.
+    setValue.mockClear();
+    expect(call("", { backspace: true }, "12 * * * *", 0)).toBe(true);
+    expect(setValue).toHaveBeenCalledWith("1 * * * *");
+
+    // Backspace on an already-empty field hops to the previous field instead.
+    setValue.mockClear();
+    setCurrentFieldIndex.mockClear();
+    expect(call("", { backspace: true }, "1", 1)).toBe(true);
+    expect(setCurrentFieldIndex).toHaveBeenCalledWith(0);
+    expect(setValue).not.toHaveBeenCalled();
+
+    // A multi-field paste distributes across the fields from the cursor.
+    setValue.mockClear();
+    expect(call("1 2 3", {}, "* * * * *", 0)).toBe(true);
+    expect(setValue).toHaveBeenCalledWith("1 2 3 * *");
+
+    // A paste that overflows the field list drops the fields past the end.
+    setValue.mockClear();
+    setCurrentFieldIndex.mockClear();
+    expect(call("7 8 9", {}, "* * * * *", 4)).toBe(true);
+    expect(setValue).toHaveBeenCalledWith("* * * * 7");
+    // The cursor updater clamps to the last field after a long paste.
+    const clamp = setCurrentFieldIndex.mock.calls[0]?.[0] as (
+      index: number,
+    ) => number;
+    expect(clamp(4)).toBe(4);
+
+    // Input that sanitizes to nothing is not consumed.
+    expect(call("!", {}, "* * * * *", 0)).toBe(false);
+
+    // With replace disabled, a legal character appends to the current field.
+    setValue.mockClear();
+    expect(call("2", {}, "1 * * * *", 0, false)).toBe(true);
+    expect(setValue).toHaveBeenCalledWith("12 * * * *");
   });
 });

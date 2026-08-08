@@ -384,7 +384,7 @@ export function getInitialStep(
     return "model";
   }
 
-  if (!process.env.LANGSMITH_API_KEY) {
+  if (needsLangSmithStep()) {
     return "langsmith";
   }
 
@@ -531,7 +531,7 @@ export function getNextStepAfterRegion(
     return "model";
   }
 
-  if (!process.env.LANGSMITH_API_KEY) {
+  if (needsLangSmithStep()) {
     return "langsmith";
   }
 

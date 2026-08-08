@@ -10,16 +10,28 @@ import {
   AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
   AWS_SECRET_ACCESS_KEY_ENV_KEY,
 } from "../../../src/config/constants.ts";
-import { createEmptyOnboardingConfig } from "../../../src/setup/onboarding.ts";
+import {
+  createEmptyOnboardingConfig,
+  isOpenWikiOnboardingCompleteSync,
+  isRepositoryCodeOnboardingCompleteSync,
+} from "../../../src/setup/onboarding.ts";
 import type { OpenWikiOnboardingConfig } from "../../../src/setup/onboarding.ts";
 import {
   credentialStep,
   ensureRunModeConfig,
+  findNearestGitRepoRoot,
   getConfigModeId,
   getConfigModeName,
+  getDefaultCodeRepoRootPath,
   getInitialStep,
   getLangsmithRegionLabel,
   getLangsmithRegionSelectionIndex,
+  getNextStepAfterApiKey,
+  getNextStepAfterBaseUrl,
+  getNextStepAfterGcpLocation,
+  getNextStepAfterProvider,
+  getNextStepAfterRegion,
+  getNextStepAfterSecretKey,
   getRunModeName,
   getRunModeSelectionIndex,
   getSourceOption,
@@ -47,12 +59,20 @@ import {
 // hydrateRunModeConfig is the only function here that reads the filesystem
 // (repository wiki instructions). Stub just that one onboarding export so the
 // code-mode branch is deterministic; every other onboarding helper stays real.
+//
+// The two *Sync completeness probes read the real ~/.openwiki directory, so they
+// are also stubbed here as vi.fn() (defaulting to "not complete", the value for a
+// machine with no onboarding file) and driven per test via vi.mocked below. Only
+// needsCredentialSetup consults them; every other function under test uses the
+// in-memory isOnboardingComplete instead.
 vi.mock("../../../src/setup/onboarding.ts", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("../../../src/setup/onboarding.ts")>();
   return {
     ...actual,
     readRepositoryWikiInstructions: () => Promise.resolve("hydrated repo goal"),
+    isOpenWikiOnboardingCompleteSync: vi.fn(() => false),
+    isRepositoryCodeOnboardingCompleteSync: vi.fn(() => false),
   };
 });
 
@@ -100,6 +120,7 @@ const MANAGED_KEYS = [
   "OPENAI_CHATGPT_ACCOUNT_ID",
   "OPENAI_CHATGPT_EXPIRES_AT",
   getProviderApiKeyEnvKey("openai"),
+  getProviderApiKeyEnvKey("openai-compatible"),
   getProviderApiKeyEnvKey("bedrock"),
   getProviderSecretKeyEnvKey("bedrock"),
   getProviderRegionEnvKey("bedrock"),
@@ -349,6 +370,17 @@ describe("ensureRunModeConfig", () => {
     expect(result.wikiGoal).toBeUndefined();
   });
 
+  test("applies the personal template without touching the wiki goal", () => {
+    // Switching code -> personal changes the mode but omits the code-only
+    // wikiGoal reset, so a pre-existing goal is preserved.
+    const code = config({ modeId: "code", wikiGoal: "keep me" });
+    const result = ensureRunModeConfig(code, "personal");
+
+    expect(result.modeId).toBe("personal");
+    expect(result.templateId).toBe("personal");
+    expect(result.wikiGoal).toBe("keep me");
+  });
+
   test("returns the config unchanged for an unknown target mode", () => {
     const code = config({ modeId: "code" });
     expect(ensureRunModeConfig(code, "bogus" as never)).toBe(code);
@@ -477,5 +509,463 @@ describe("environment-driven credential predicates", () => {
     set("OPENWIKI_PROVIDER", "openai");
     // Provider set but its api key is missing, so setup is still required.
     expect(needsCredentialSetup(null)).toBe(true);
+  });
+
+  test("needsGcpProjectStep is false for a provider without a project key", () => {
+    // openai has no project env key, so its ternary takes the falsey branch.
+    expect(needsGcpProjectStep("openai")).toBe(false);
+  });
+
+  test("needsBaseUrlStep is false for a provider that does not require one", () => {
+    // openai does not require a base url, so the guard returns early.
+    expect(needsBaseUrlStep("openai")).toBe(false);
+  });
+
+  test("isBaseUrlConfigured is false when the provider has no base-url key", () => {
+    // gemini exposes no base-url env key, so the ternary returns its fallback.
+    expect(isBaseUrlConfigured("gemini")).toBe(false);
+  });
+
+  test("needsRegionStep is false for a provider that does not require one", () => {
+    // openai does not require a region, so the guard returns early.
+    expect(needsRegionStep("openai")).toBe(false);
+  });
+
+  test("isSecretKeyConfigured is false when the provider has no secret key", () => {
+    // openai exposes no secret-key env key, so the ternary returns its fallback.
+    expect(isSecretKeyConfigured("openai")).toBe(false);
+  });
+});
+
+/** A minimal, valid ingestion schedule fixture for onboarding gates. */
+const SCHEDULE = {
+  description: "daily",
+  expression: "0 9 * * *",
+  updatedAt: "2026-01-01T00:00:00Z",
+};
+
+/** Env for a fully satisfied openai run: provider, key, model, and tracing. */
+function configureCompleteOpenai(): void {
+  const apiKey = getProviderApiKeyEnvKey("openai");
+  if (!apiKey) throw new Error("openai must define an api key env var");
+  set("OPENWIKI_PROVIDER", "openai");
+  set(apiKey, "sk-test");
+  set("OPENWIKI_MODEL_ID", "gpt-test");
+  set("LANGSMITH_API_KEY", "lsv2_key");
+}
+
+describe("needsCredentialSetup waterfall", () => {
+  test("surfaces aws credential repair for a partial bedrock legacy pair", () => {
+    const accessKey = getProviderApiKeyEnvKey("bedrock");
+    if (!accessKey) throw new Error("bedrock must define a legacy access key");
+    set("OPENWIKI_PROVIDER", "bedrock");
+    set(accessKey, "AKIAEXAMPLE");
+
+    expect(needsCredentialSetup(null)).toBe(true);
+  });
+
+  test("requires setup when only the model choice is missing", () => {
+    configureCompleteOpenai();
+    set("OPENWIKI_MODEL_ID", undefined);
+
+    // modelIdOverride null + no env model id keeps setup required.
+    expect(needsCredentialSetup(null)).toBe(true);
+    // An explicit per-run model override satisfies the model gate, so with the
+    // sync onboarding probe reporting complete, no setup is needed.
+    vi.mocked(isOpenWikiOnboardingCompleteSync).mockReturnValue(true);
+    expect(needsCredentialSetup("gpt-run", "personal")).toBe(false);
+    vi.mocked(isOpenWikiOnboardingCompleteSync).mockReturnValue(false);
+  });
+
+  test("requires setup when only the langsmith decision is missing", () => {
+    configureCompleteOpenai();
+    set("LANGSMITH_API_KEY", undefined);
+
+    expect(needsCredentialSetup(null)).toBe(true);
+  });
+
+  test("requires setup when only a base url is missing", () => {
+    const apiKey = getProviderApiKeyEnvKey("openai-compatible");
+    if (!apiKey) throw new Error("openai-compatible must define an api key");
+    set("OPENWIKI_PROVIDER", "openai-compatible");
+    set(apiKey, "sk-test");
+    set("OPENWIKI_MODEL_ID", "gpt-test");
+    set("LANGSMITH_API_KEY", "lsv2_key");
+
+    // Credential and model gates pass but the base-url gate keeps setup on.
+    expect(needsCredentialSetup(null)).toBe(true);
+  });
+
+  test("falls through to the onboarding probe once credentials are complete", () => {
+    configureCompleteOpenai();
+
+    // personal mode consults the OpenWiki onboarding probe.
+    vi.mocked(isOpenWikiOnboardingCompleteSync).mockReturnValue(false);
+    expect(needsCredentialSetup(null, "personal")).toBe(true);
+    vi.mocked(isOpenWikiOnboardingCompleteSync).mockReturnValue(true);
+    expect(needsCredentialSetup(null, "personal")).toBe(false);
+
+    // code mode consults the repository code onboarding probe instead.
+    vi.mocked(isRepositoryCodeOnboardingCompleteSync).mockReturnValue(false);
+    expect(needsCredentialSetup(null, "code")).toBe(true);
+    vi.mocked(isRepositoryCodeOnboardingCompleteSync).mockReturnValue(true);
+    expect(needsCredentialSetup(null, "code")).toBe(false);
+
+    vi.mocked(isOpenWikiOnboardingCompleteSync).mockReturnValue(false);
+    vi.mocked(isRepositoryCodeOnboardingCompleteSync).mockReturnValue(false);
+  });
+});
+
+describe("getInitialStep waterfall", () => {
+  test("routes to provider selection when none is configured", () => {
+    // OPENWIKI_PROVIDER is cleared by beforeEach, so no provider is valid.
+    expect(getInitialStep(null, "openai")).toBe("provider");
+  });
+
+  test("routes to region for a bedrock partial legacy pair (aws repair)", () => {
+    const accessKey = getProviderApiKeyEnvKey("bedrock");
+    if (!accessKey) throw new Error("bedrock must define a legacy access key");
+    set("OPENWIKI_PROVIDER", "bedrock");
+    set(accessKey, "AKIAEXAMPLE");
+
+    expect(getInitialStep(null, "bedrock")).toBe("region");
+  });
+
+  test("routes to the provider's credential step when it is unmet", () => {
+    set("OPENWIKI_PROVIDER", "openai");
+    // No api key set, so openai still needs its api-key step.
+    expect(getInitialStep(null, "openai")).toBe("api-key");
+
+    // gemini-enterprise's primary credential is its gcp project.
+    set("OPENWIKI_PROVIDER", "gemini-enterprise");
+    expect(getInitialStep(null, "gemini-enterprise")).toBe("gcp-project");
+  });
+
+  test("routes to base-url once credentials are met but a base url is missing", () => {
+    const apiKey = getProviderApiKeyEnvKey("openai-compatible");
+    if (!apiKey) throw new Error("openai-compatible must define an api key");
+    set("OPENWIKI_PROVIDER", "openai-compatible");
+    set(apiKey, "sk-test");
+
+    expect(getInitialStep(null, "openai-compatible")).toBe("base-url");
+  });
+
+  test("routes to region once credentials are met but a region is missing", () => {
+    set("OPENWIKI_PROVIDER", "bedrock");
+    // A bearer token satisfies the aws credential chain, leaving only region.
+    set(AWS_BEARER_TOKEN_BEDROCK_ENV_KEY, "bedrock-token");
+
+    expect(getInitialStep(null, "bedrock")).toBe("region");
+  });
+
+  test("routes to model, then langsmith, once credentials are met", () => {
+    const apiKey = getProviderApiKeyEnvKey("openai");
+    if (!apiKey) throw new Error("openai must define an api key env var");
+    set("OPENWIKI_PROVIDER", "openai");
+    set(apiKey, "sk-test");
+
+    // No model id anywhere yet, so the model step comes next.
+    expect(getInitialStep(null, "openai")).toBe("model");
+
+    // A per-run override satisfies the model gate; langsmith is next.
+    expect(getInitialStep("gpt-run", "openai")).toBe("langsmith");
+  });
+
+  test("walks the onboarding tail in personal mode", () => {
+    configureCompleteOpenai();
+
+    // Empty config: no mode chosen yet, so the template step comes first.
+    expect(getInitialStep(null, "openai", config(), "personal")).toBe(
+      "template",
+    );
+
+    // Mode chosen but no wiki goal.
+    expect(
+      getInitialStep(
+        null,
+        "openai",
+        config({ modeId: "personal" }),
+        "personal",
+      ),
+    ).toBe("wiki-goal");
+
+    // Goal set but no schedule (personal mode requires one).
+    expect(
+      getInitialStep(
+        null,
+        "openai",
+        config({ modeId: "personal", wikiGoal: "g" }),
+        "personal",
+      ),
+    ).toBe("global-cron-mode");
+
+    // Schedule set but onboarding not yet completed.
+    expect(
+      getInitialStep(
+        null,
+        "openai",
+        config({
+          modeId: "personal",
+          wikiGoal: "g",
+          ingestionSchedule: SCHEDULE,
+        }),
+        "personal",
+      ),
+    ).toBe("source-menu");
+
+    // Fully complete onboarding resolves to no further step.
+    expect(
+      getInitialStep(
+        null,
+        "openai",
+        config({
+          modeId: "personal",
+          wikiGoal: "g",
+          ingestionSchedule: SCHEDULE,
+          completedAt: "2026-01-01T00:00:00Z",
+        }),
+        "personal",
+      ),
+    ).toBeNull();
+  });
+
+  test("routes to repo confirmation in incomplete code mode", () => {
+    configureCompleteOpenai();
+
+    expect(getInitialStep(null, "openai", config(), "code")).toBe(
+      "code-repo-confirm",
+    );
+
+    // A complete code config skips the repo step and resolves to null.
+    expect(
+      getInitialStep(
+        null,
+        "openai",
+        config({
+          modeId: "code",
+          wikiGoal: "g",
+          completedAt: "2026-01-01T00:00:00Z",
+        }),
+        "code",
+      ),
+    ).toBeNull();
+  });
+});
+
+/**
+ * The LangSmith step is optional, and both entry-point routers (getInitialStep
+ * and getNextStepAfterRegion) must gate it on the same two-signal check as
+ * needsLangSmithStep: a recorded tracing decision (LANGCHAIN_TRACING_V2) counts
+ * as answered even when no key is stored. The row that regressed before this was
+ * unified is "declined" (LANGCHAIN_TRACING_V2="false", no key): the naive
+ * `!LANGSMITH_API_KEY` check re-prompted it on every re-run.
+ */
+describe("LangSmith skip-router gating", () => {
+  const empty = createEmptyOnboardingConfig();
+
+  /** Configures a valid openai provider so routing reaches the LangSmith gate. */
+  function reachLangSmithGate(): void {
+    const apiKey = getProviderApiKeyEnvKey("openai");
+    if (!apiKey) throw new Error("openai must define an api key env var");
+    set("OPENWIKI_PROVIDER", "openai");
+    set(apiKey, "sk-test");
+    set("OPENWIKI_MODEL_ID", "gpt-test");
+  }
+
+  // Each row is [label, LANGSMITH_API_KEY, LANGCHAIN_TRACING_V2, showsLangSmith].
+  const cases: Array<
+    [string, string | undefined, string | undefined, boolean]
+  > = [
+    ["neither key nor decision recorded", undefined, undefined, true],
+    ["a stored api key", "lsv2_key", undefined, false],
+    ["a declined tracing decision", undefined, "false", false],
+    ["an enabled tracing decision", undefined, "true", false],
+  ];
+
+  for (const [label, key, tracing, showsLangSmith] of cases) {
+    test(`getInitialStep ${
+      showsLangSmith ? "shows" : "skips"
+    } LangSmith with ${label}`, () => {
+      reachLangSmithGate();
+      set("LANGSMITH_API_KEY", key);
+      set("LANGCHAIN_TRACING_V2", tracing);
+
+      // Model id present via env, empty code config: the only fork left is the
+      // LangSmith gate, then code-repo-confirm once it is satisfied.
+      expect(getInitialStep(null, "openai", empty, "code")).toBe(
+        showsLangSmith ? "langsmith" : "code-repo-confirm",
+      );
+    });
+
+    test(`getNextStepAfterRegion ${
+      showsLangSmith ? "shows" : "skips"
+    } LangSmith with ${label}`, () => {
+      set("LANGSMITH_API_KEY", key);
+      set("LANGCHAIN_TRACING_V2", tracing);
+
+      // modelIdOverride satisfies the model gate, so the LangSmith gate is the
+      // next fork; code mode with an empty config lands on code-repo-confirm.
+      expect(getNextStepAfterRegion("openai", "gpt-run", empty, "code")).toBe(
+        showsLangSmith ? "langsmith" : "code-repo-confirm",
+      );
+    });
+  }
+});
+
+describe("getNextStepAfter* chain", () => {
+  const empty = createEmptyOnboardingConfig();
+
+  test("getNextStepAfterProvider surfaces aws repair then the credential step", () => {
+    const accessKey = getProviderApiKeyEnvKey("bedrock");
+    if (!accessKey) throw new Error("bedrock must define a legacy access key");
+    set(accessKey, "AKIAEXAMPLE");
+    expect(getNextStepAfterProvider("bedrock", null, empty)).toBe("region");
+    set(accessKey, undefined);
+
+    // openai with no key advances to its api-key step.
+    expect(getNextStepAfterProvider("openai", null, empty)).toBe("api-key");
+  });
+
+  test("getNextStepAfterProvider cascades through every satisfied gate", () => {
+    const apiKey = getProviderApiKeyEnvKey("openai");
+    if (!apiKey) throw new Error("openai must define an api key env var");
+    set(apiKey, "sk-test");
+
+    // With the credential satisfied and nothing else configured, the whole
+    // Provider -> ApiKey -> SecretKey -> GcpLocation -> BaseUrl -> Region chain
+    // falls through to the model step.
+    expect(getNextStepAfterProvider("openai", null, empty, "personal")).toBe(
+      "model",
+    );
+  });
+
+  test("getNextStepAfterSecretKey routes a keyless provider to its gcp project", () => {
+    // gemini-enterprise needs a gcp project when none is configured.
+    expect(
+      getNextStepAfterSecretKey("gemini-enterprise", null, empty, "code"),
+    ).toBe("gcp-project");
+  });
+
+  test("getNextStepAfterGcpLocation routes to base-url when one is missing", () => {
+    expect(getNextStepAfterGcpLocation("openai-compatible", null, empty)).toBe(
+      "base-url",
+    );
+  });
+
+  test("getNextStepAfterBaseUrl routes to region when one is missing", () => {
+    expect(getNextStepAfterBaseUrl("bedrock", null, empty, "code")).toBe(
+      "region",
+    );
+  });
+
+  test("getNextStepAfterApiKey delegates past the (unreachable) secret-key step", () => {
+    // No selectable provider requires a secret key, so this delegates straight
+    // through to the gcp-project probe for a keyless provider.
+    expect(
+      getNextStepAfterApiKey("gemini-enterprise", null, empty, "code"),
+    ).toBe("gcp-project");
+  });
+
+  test("getNextStepAfterRegion forces the model step when asked", () => {
+    set("OPENWIKI_MODEL_ID", "gpt-test");
+    set("LANGSMITH_API_KEY", "lsv2_key");
+    // Even with a model id present, forceModelStep re-shows the model step.
+    expect(getNextStepAfterRegion("openai", null, empty, "code", true)).toBe(
+      "model",
+    );
+    // Without the force flag, the present model id lets the step be skipped.
+    expect(getNextStepAfterRegion("openai", null, empty, "code", false)).toBe(
+      "code-repo-confirm",
+    );
+  });
+
+  test("getNextStepAfterRegion walks model, langsmith, and the onboarding tail", () => {
+    // No model id and no override -> model step.
+    expect(getNextStepAfterRegion("openai", null, empty, "personal")).toBe(
+      "model",
+    );
+
+    // Model satisfied via override, no langsmith key -> langsmith step.
+    expect(getNextStepAfterRegion("openai", "gpt-run", empty, "personal")).toBe(
+      "langsmith",
+    );
+
+    // Model + langsmith satisfied -> onboarding tail (personal).
+    set("LANGSMITH_API_KEY", "lsv2_key");
+    expect(getNextStepAfterRegion("openai", "gpt-run", empty, "personal")).toBe(
+      "template",
+    );
+    expect(
+      getNextStepAfterRegion(
+        "openai",
+        "gpt-run",
+        config({ modeId: "personal" }),
+        "personal",
+      ),
+    ).toBe("wiki-goal");
+    expect(
+      getNextStepAfterRegion(
+        "openai",
+        "gpt-run",
+        config({ modeId: "personal", wikiGoal: "g" }),
+        "personal",
+      ),
+    ).toBe("global-cron-mode");
+    expect(
+      getNextStepAfterRegion(
+        "openai",
+        "gpt-run",
+        config({
+          modeId: "personal",
+          wikiGoal: "g",
+          ingestionSchedule: SCHEDULE,
+        }),
+        "personal",
+      ),
+    ).toBe("source-menu");
+    expect(
+      getNextStepAfterRegion(
+        "openai",
+        "gpt-run",
+        config({
+          modeId: "personal",
+          wikiGoal: "g",
+          ingestionSchedule: SCHEDULE,
+          completedAt: "2026-01-01T00:00:00Z",
+        }),
+        "personal",
+      ),
+    ).toBeNull();
+  });
+
+  test("getNextStepAfterRegion routes code mode to repo confirmation", () => {
+    set("LANGSMITH_API_KEY", "lsv2_key");
+    expect(getNextStepAfterRegion("openai", "gpt-run", empty, "code")).toBe(
+      "code-repo-confirm",
+    );
+  });
+});
+
+describe("git repo root discovery", () => {
+  test("findNearestGitRepoRoot finds the repo containing this test run", () => {
+    // The vitest process runs inside the OpenWiki git repo.
+    expect(findNearestGitRepoRoot(process.cwd())).not.toBeNull();
+  });
+
+  test("findNearestGitRepoRoot returns null when no .git ancestor exists", () => {
+    // The filesystem root has no .git directory above it.
+    expect(findNearestGitRepoRoot("/")).toBeNull();
+  });
+
+  test("findNearestGitRepoRoot walks up from a nested subdirectory", () => {
+    // A directory below the repo root forces at least one parent hop before the
+    // .git directory is found.
+    const root = findNearestGitRepoRoot(process.cwd());
+    expect(findNearestGitRepoRoot(`${process.cwd()}/src/setup`)).toBe(root);
+  });
+
+  test("getDefaultCodeRepoRootPath resolves to a real directory string", () => {
+    expect(typeof getDefaultCodeRepoRootPath()).toBe("string");
+    expect(getDefaultCodeRepoRootPath().length).toBeGreaterThan(0);
   });
 });

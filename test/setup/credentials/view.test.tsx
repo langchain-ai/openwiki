@@ -139,4 +139,167 @@ describe("InitSetupView", () => {
     expect(frame).toContain("Saving");
     expect(frame).toContain("Writing OpenWiki setup...");
   });
+
+  test("code mode surfaces the wiki-scope row in the detected section", () => {
+    const frame = frameOf(
+      makeProps({ selectedMode: "code", step: "provider" }),
+    );
+    expect(frame).toContain("Wiki scope");
+    expect(frame).toContain("openwiki/");
+  });
+
+  test("mode selection marks the run-mode row current on its step", () => {
+    const frame = frameOf(
+      makeProps({ allowModeSelection: true, step: "run-mode" }),
+    );
+    expect(frame).toContain("Run mode");
+  });
+
+  test("an AWS SDK provider renders the AWS credentials and region rows", () => {
+    const frame = frameOf(
+      makeProps({ provider: "bedrock", step: "region", region: "us-west-2" }),
+    );
+    expect(frame).toContain("AWS credentials");
+    expect(frame).toContain("Region");
+    expect(frame).toContain("us-west-2");
+  });
+
+  test("an OAuth provider renders the ChatGPT login row", () => {
+    const frame = frameOf(
+      makeProps({
+        provider: "openai-chatgpt",
+        step: "provider",
+        oauthTokens: {
+          access: "a",
+          refresh: "r",
+          expiresAtMs: 1,
+          accountId: "acct",
+          email: "me@example.com",
+          planType: "pro",
+        },
+      }),
+    );
+    expect(frame).toContain("ChatGPT login");
+  });
+
+  test("a Vertex provider renders GCP project and location with entered values", () => {
+    const frame = frameOf(
+      makeProps({
+        provider: "gemini-enterprise",
+        step: "gcp-project",
+        gcpProject: "proj-1",
+        gcpLocation: "us-central1",
+      }),
+    );
+    expect(frame).toContain("GCP project");
+    expect(frame).toContain("proj-1");
+    expect(frame).toContain("GCP location");
+    expect(frame).toContain("us-central1");
+  });
+
+  test("an OpenAI-compatible provider renders the base URL row", () => {
+    const frame = frameOf(
+      makeProps({
+        provider: "openai-compatible",
+        step: "base-url",
+        baseUrl: "https://api.local/v1",
+      }),
+    );
+    expect(frame).toContain("Base URL");
+    expect(frame).toContain("https://api.local/v1");
+  });
+
+  test("an API key entered this session marks the provider key configured", () => {
+    const frame = frameOf(
+      makeProps({ provider: "openai", step: "model", apiKey: "sk-123" }),
+    );
+    expect(frame).toContain("Provider key");
+    expect(frame).toContain("configured");
+  });
+
+  test("a blank LangSmith key entered this session reads as skipped", () => {
+    const frame = frameOf(makeProps({ langSmithKey: "" }));
+    expect(frame).toContain("LangSmith");
+    expect(frame).toContain("skipped");
+  });
+
+  test("a LangSmith key entered this session is not marked skipped", () => {
+    const frame = frameOf(makeProps({ langSmithKey: "ls-key" }));
+    expect(frame).toContain("LangSmith");
+    expect(frame).not.toContain("skipped");
+  });
+
+  test("a saved LangSmith key in the environment renders without a skip label", () => {
+    process.env.LANGSMITH_API_KEY = "ls-env";
+    const frame = frameOf(makeProps({ langSmithKey: null }));
+    expect(frame).toContain("LangSmith");
+    expect(frame).not.toContain("skipped");
+  });
+
+  test("an entered model id is shown as the model detail", () => {
+    const frame = frameOf(
+      makeProps({ modelId: "claude-custom", step: "model" }),
+    );
+    expect(frame).toContain("claude-custom");
+  });
+
+  test("a non-empty back history shows the go-back hint", () => {
+    const frame = frameOf(makeProps({ navHistoryLength: 2 }));
+    expect(frame).toContain("esc to go back");
+  });
+
+  test("a saved-schedule warning renders the schedule-note panel", () => {
+    const frame = frameOf(
+      makeProps({
+        sourceState: { secretValues: {}, savedScheduleWarning: "cron drift" },
+      }),
+    );
+    expect(frame).toContain("Schedule note");
+    expect(frame).toContain("cron drift");
+  });
+
+  test("the authorization panel shows while awaiting the browser callback", () => {
+    const frame = frameOf(makeProps({ isAuthRunning: true }));
+    expect(frame).toContain("Authorization");
+    expect(frame).toContain("Waiting for the browser authorization callback");
+  });
+
+  test("personal mode marks the schedule row current on a schedule step", () => {
+    const frame = frameOf(
+      makeProps({ selectedMode: "personal", step: "global-cron-mode" }),
+    );
+    expect(frame).toContain("Schedule");
+  });
+
+  test("personal mode marks the sources row current on a source step", () => {
+    const frame = frameOf(
+      makeProps({ selectedMode: "personal", step: "source-menu" }),
+    );
+    expect(frame).toContain("Sources");
+  });
+
+  test("personal mode surfaces wiki-scope, schedule, and sources as done", () => {
+    const config = {
+      ...createEmptyOnboardingConfig(),
+      wikiGoal: "document the repo",
+      ingestionSchedule: {
+        description: "At 02:00",
+        expression: "0 2 * * *",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+      sourceInstances: [{ connectorId: "git-repo" as const, id: "git-repo:1" }],
+    };
+    const frame = frameOf(
+      makeProps({
+        selectedMode: "personal",
+        step: "final",
+        onboardingConfig: config,
+        activeSourceOptions: [getSourceOption("git-repo")],
+      }),
+    );
+    expect(frame).toContain("Schedule");
+    expect(frame).toContain("At 02:00");
+    expect(frame).toContain("Sources");
+    expect(frame).toContain("1 configured");
+  });
 });

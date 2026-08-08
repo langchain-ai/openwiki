@@ -158,6 +158,17 @@ describe("getAwsCredentialRepairMessage", () => {
     expect(message).toContain(secretKey);
     expect(message).toContain("missing or blank");
   });
+
+  test("names the standard AWS key pair when the legacy pair is empty but the standard pair is partial", () => {
+    set(AWS_ACCESS_KEY_ID_ENV_KEY, "AKIASTANDARD");
+    const message = getAwsCredentialRepairMessage("bedrock");
+
+    expect(message).toContain(AWS_SECRET_ACCESS_KEY_ENV_KEY);
+    expect(message).toContain(
+      `${AWS_ACCESS_KEY_ID_ENV_KEY} and ${AWS_SECRET_ACCESS_KEY_ENV_KEY}`,
+    );
+    expect(message).toContain("missing or blank");
+  });
 });
 
 describe("getCredentialSetupDetail", () => {
@@ -189,6 +200,86 @@ describe("getCredentialSetupDetail", () => {
   test("describes the aws-sdk credential chain for bedrock", () => {
     expect(getCredentialSetupDetail("bedrock")).toBe(
       "AWS SDK default credential chain",
+    );
+  });
+
+  test("labels an oauth provider with the account decoded from passed-in tokens", () => {
+    const tokens = {
+      access: "access-token",
+      refresh: "refresh-token",
+      expiresAtMs: 0,
+      accountId: "acct-123",
+      email: "user@example.com",
+      planType: "plus",
+    };
+
+    expect(getCredentialSetupDetail("openai-chatgpt", tokens)).toBe(
+      "signed in as user@example.com (Plus)",
+    );
+  });
+
+  test("falls back to a generic signed-in label when the account cannot be formatted", () => {
+    const tokens = {
+      access: "access-token",
+      refresh: "refresh-token",
+      expiresAtMs: 0,
+      accountId: "acct-123",
+      email: null,
+      planType: null,
+    };
+
+    expect(getCredentialSetupDetail("openai-chatgpt", tokens)).toBe(
+      "signed in with ChatGPT",
+    );
+  });
+
+  test("reports the bedrock bearer token as taking precedence when set", () => {
+    set(AWS_BEARER_TOKEN_BEDROCK_ENV_KEY, "bearer-token");
+
+    expect(getCredentialSetupDetail("bedrock")).toBe(
+      "Bedrock bearer token (takes precedence)",
+    );
+  });
+
+  test("flags a partial legacy bedrock key pair", () => {
+    const accessKey = getProviderApiKeyEnvKey("bedrock");
+    if (!accessKey) throw new Error("bedrock must define a legacy api key");
+
+    set(accessKey, "AKIAEXAMPLE");
+
+    expect(getCredentialSetupDetail("bedrock")).toBe(
+      "incomplete legacy Bedrock keys; set both or clear both",
+    );
+  });
+
+  test("flags a partial standard AWS key pair when the legacy pair is empty", () => {
+    set(AWS_ACCESS_KEY_ID_ENV_KEY, "AKIASTANDARD");
+
+    expect(getCredentialSetupDetail("bedrock")).toBe(
+      "incomplete standard AWS credentials; set the full set or unset it",
+    );
+  });
+
+  test("reports a complete legacy bedrock pair as taking precedence", () => {
+    const accessKey = getProviderApiKeyEnvKey("bedrock");
+    const secretKey = getProviderSecretKeyEnvKey("bedrock");
+    if (!accessKey || !secretKey) {
+      throw new Error("bedrock must define a legacy key pair");
+    }
+
+    set(accessKey, "AKIAEXAMPLE");
+    set(secretKey, "secret-example");
+
+    expect(getCredentialSetupDetail("bedrock")).toBe(
+      "legacy Bedrock keys (take precedence)",
+    );
+  });
+
+  test("notes that an orphan AWS session token is ignored by the credential chain", () => {
+    set(AWS_SESSION_TOKEN_ENV_KEY, "session-token");
+
+    expect(getCredentialSetupDetail("bedrock")).toBe(
+      "AWS SDK default credential chain (orphan AWS_SESSION_TOKEN ignored)",
     );
   });
 });
