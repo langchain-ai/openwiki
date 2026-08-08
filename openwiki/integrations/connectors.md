@@ -19,7 +19,7 @@ All connectors share types in `src/connectors/types.ts`:
 
 `src/connectors/registry.ts` (`createConnectorRegistry()`) wires up all eight; `notion` is built through the generic `createMcpConnector()` factory (`src/connectors/sources/mcp.ts`) rather than a bespoke source file, while `langsmith` has its own submodule under `src/connectors/sources/langsmith/`.
 
-Shared IO helpers live in `src/connectors/io.ts`: `writeRawJson()` writes raw dumps with `0600`/`0700` permissions under `~/.openwiki/connectors/<id>/raw/<runId>/`, and `updateStateWithRun()` maintains the state file.
+Shared IO helpers live in `src/connectors/io.ts`: `writeRawJson()` writes raw dumps with `0600`/`0700` permissions under `~/.openwiki/connectors/<id>/raw/<runId>/`, and `updateStateWithRun()` maintains the state file. `src/connectors/config.ts` exports `normalizeStringArray()`, a defensive coercion used by hackernews, web-search, and x ingestion to turn hand-edited connector config fields (scalars, non-string entries, blank values) into clean trimmed-string lists before they reach ingestion logic.
 
 ### Resilient HTTP (`fetchWithResilience`)
 
@@ -36,6 +36,10 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
 ## MCP subsystem
 
 `src/connectors/mcp-client.ts` is a low-level JSON-RPC MCP client (stdio or HTTP transport) implementing `listMcpTools`/`executeMcpTool`/`executeMcpReadOnlyOperations`. `src/connectors/mcp-runtime.ts` wraps it for connector use (currently only `notion`), adding a **read-only tool-call policy**: a tool call is allowed only if it's explicitly listed in `allowedTools`, the MCP server's own `readOnlyHint` annotation is `true`, or (for the hosted `mcp.notion.com/mcp` endpoint specifically) the tool name/description matches a read-only heuristic (search/retrieve/get/list/query/read/fetch/find/lookup/load/children). This is the mechanism that keeps MCP-backed connectors read-only even though the underlying server may expose write tools.
+
+### stdio MCP child environment
+
+When `mcp-client.ts` spawns a stdio MCP server subprocess, it builds the child environment from a small `CHILD_ENV_ALLOWLIST` rather than forwarding the parent `process.env`. The allowlist carries only what a server process needs to locate binaries and resolve paths — `PATH`, `HOME`/`USERPROFILE`/`HOMEDRIVE`/`HOMEPATH`, `TMPDIR`/`TEMP`/`TMP`, and (on Windows) `APPDATA`/`LOCALAPPDATA` so local MCP servers can resolve their config and cache directories. OpenWiki credentials and OAuth refresh tokens are deliberately excluded, so a spawned MCP server command cannot read the user's API keys out of `process.env`. `resolveChildEnv()` is the single place that allowlist is applied; any new env var a server legitimately needs must be added there.
 
 ## The eight connectors
 
@@ -61,25 +65,25 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
 
 ## Ingestion orchestration
 
-`src/ingestion.ts` (`runOpenWikiIngestion`) loads `~/.openwiki/.env`, reads onboarding config, builds the connector registry, and resolves a target — `"all"`, a bare `ConnectorId`, or a specific source instance id (connectors can be configured more than once, e.g. `web-search-1`/`web-search-2`, run individually via `openwiki ingest web-search-2`). For each matched instance it runs deterministic ingestion first (writing raw JSON + updating state), then the synthesis agent run reads those raw files to update the wiki. This split — deterministic fetch, then LLM synthesis — keeps credentialed network calls out of model-controlled code paths.
+`src/ingestion/ingestion.ts` (`runOpenWikiIngestion`) loads `~/.openwiki/.env`, reads onboarding config, builds the connector registry, and resolves a target — `"all"`, a bare `ConnectorId`, or a specific source instance id (connectors can be configured more than once, e.g. `web-search-1`/`web-search-2`, run individually via `openwiki ingest web-search-2`). For each matched instance it runs deterministic ingestion first (writing raw JSON + updating state), then the synthesis agent run reads those raw files to update the wiki. This split — deterministic fetch, then LLM synthesis — keeps credentialed network calls out of model-controlled code paths.
 
 ## Onboarding and scheduling
 
-`src/onboarding.ts` drives first-run setup: wiki template selection, scope customization, per-source ingestion notes, and source schedules, persisted to `~/.openwiki/onboarding.json`. Global personal-wiki instructions are saved to `~/.openwiki/INSTRUCTIONS.md`.
+`src/setup/onboarding.ts` drives first-run setup: wiki template selection, scope customization, per-source ingestion notes, and source schedules, persisted to `~/.openwiki/onboarding.json`. Global personal-wiki instructions are saved to `~/.openwiki/INSTRUCTIONS.md`.
 
-`src/schedules.ts` installs source schedules as macOS user LaunchAgents (`~/Library/LaunchAgents/`) with logs under `~/.openwiki/logs/`, and backs the `openwiki cron list|pause|resume|delete` commands (see [CLI usage](../cli/usage.md)).
+`src/scheduling/schedules.ts` installs source schedules as macOS user LaunchAgents (`~/Library/LaunchAgents/`) with logs under `~/.openwiki/logs/`, and backs the `openwiki cron list|pause|resume|delete` commands (see [CLI usage](../cli/usage.md)).
 
 ## Things to watch when changing connector behavior
 
-- Adding a connector means: extend `ConnectorId` in `types.ts`, add a source file under `src/connectors/sources/`, register it in `registry.ts`, and add its entry in `src/credentials.tsx` onboarding (for personal-mode connectors) or in the code-mode connector config (for code-mode-only connectors like `langsmith`) — see `/skills/write-connector/SKILL.md` for the full checklist.
+- Adding a connector means: extend `ConnectorId` in `src/connectors/types.ts`, add a source file under `src/connectors/sources/`, register it in `src/connectors/registry.ts`, and add its entry in `src/setup/credentials.tsx` onboarding (for personal-mode connectors) or in the code-mode connector config (for code-mode-only connectors like `langsmith`) — see `/skills/write-connector/SKILL.md` for the full checklist.
 - Never write secret values into connector config or raw dumps — only env var names and presence booleans.
 - Keep deterministic ingestion (network calls) out of agent-controlled code; the agent only reads what ingestion already wrote to `raw/`.
 - MCP connectors must stay read-only; changes to `mcp-runtime.ts`'s tool-call policy directly affect what a hosted MCP server is allowed to do on OpenWiki's behalf.
 
 # Citations
 
-- `src/connectors/types.ts`, `src/connectors/registry.ts`, `src/connectors/io.ts`, `src/connectors/http.ts`, `src/connectors/tools.ts`
+- `src/connectors/types.ts`, `src/connectors/registry.ts`, `src/connectors/io.ts`, `src/connectors/http.ts`, `src/connectors/tools.ts`, `src/connectors/config.ts`
 - `src/connectors/mcp-client.ts`, `src/connectors/mcp-runtime.ts`, `src/connectors/sources/mcp.ts`
 - `src/connectors/sources/git-repo.ts`, `src/connectors/sources/gmail.ts`, `src/connectors/sources/hackernews.ts`, `src/connectors/sources/langsmith/` (api.ts, index.ts, repo-config.ts, runs.ts, setup.ts, types.ts), `src/connectors/sources/slack.ts`, `src/connectors/sources/web-search.ts`, `src/connectors/sources/x.ts`
-- `src/ingestion.ts`, `src/onboarding.ts`, `src/schedules.ts`
-- `test/onboarding.test.ts`
+- `src/ingestion/ingestion.ts`, `src/setup/onboarding.ts`, `src/scheduling/schedules.ts`
+- `test/setup/onboarding.test.ts`
