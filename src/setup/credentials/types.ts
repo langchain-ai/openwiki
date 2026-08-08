@@ -1,3 +1,4 @@
+import type { CodexTokens } from "../../agent/openai-chatgpt-oauth.js";
 import type { OpenWikiRunMode } from "../../cli/commands.js";
 import type { OpenWikiProvider } from "../../config/constants.js";
 import type { AuthProviderId } from "../../auth/types.js";
@@ -139,3 +140,31 @@ export interface LangsmithWorkspaceDraft {
 }
 
 export type SetupStepState = "current" | "done" | "optional" | "pending";
+
+/**
+ * The credential/config values collected by the wizard that get persisted to
+ * `~/.openwiki/.env` on completion. Each `next*` field is the value to write for
+ * that provider setting, or null when the wizard did not collect one (in which
+ * case that key is left untouched).
+ */
+export interface CompleteSetupOptions {
+  nextApiKey: string | null;
+  nextBaseUrl: string | null;
+  nextGcpLocation: string | null;
+  nextGcpProject: string | null;
+  nextLangSmithKey: string | null;
+  nextModelId: string | null;
+
+  /**
+   * OAuth tokens to persist for providers that authenticate by browser login.
+   *
+   * @default the wizard's current `oauthTokens` state (resolved by the caller
+   * when this field is omitted; an explicit null means "no tokens")
+   */
+  nextOAuthTokens?: CodexTokens | null;
+
+  nextProvider: OpenWikiProvider;
+  nextRegion: string | null;
+  nextSecretKey: string | null;
+  runMode: OpenWikiRunMode;
+}
