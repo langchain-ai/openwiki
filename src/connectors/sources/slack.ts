@@ -1,4 +1,4 @@
-import { OPENWIKI_SLACK_USER_TOKEN_ENV_KEY } from "../../constants.js";
+import { OPENWIKI_SLACK_USER_TOKEN_ENV_KEY } from "../../config/constants.js";
 import { getOAuthAccessToken } from "../../auth/tokens.js";
 import { normalizeStringArray } from "../config.js";
 import {

@@ -1,4 +1,4 @@
-import { sanitizeDiagnosticText } from "../diagnostics.js";
+import { sanitizeDiagnosticText } from "../platform/diagnostics.js";
 import { ensureDomGlobals } from "./dom-shim.js";
 import { extractMermaidFences, type MermaidFence } from "./fences.js";
 

@@ -1,4 +1,8 @@
-import { deriveOwner, normalizeErrorDetail } from "./taxonomy.js";
+import {
+  deriveOwner,
+  isSafeErrorIdentifier,
+  normalizeErrorDetail,
+} from "./taxonomy.js";
 import type {
   TelemetryErrorClass,
   TelemetryErrorOwner,
@@ -62,9 +66,12 @@ const PROVIDER_ERROR_CODES: Readonly<Record<string, ErrorClassification>> = {
 
 /**
  * Max links followed when unwrapping a nested error. Bounds the walk so a long or
- * cyclic `cause` chain cannot turn classification into a denial of service.
+ * cyclic `cause` chain cannot turn classification into a denial of service. Set well
+ * above real nesting depth so a provider error buried under several framework
+ * envelopes (agent -> middleware -> retry wrapper -> SDK error) still reaches its root
+ * cause; the cycle-safe BFS makes a high bound cheap on well-formed chains.
  */
-const MAX_UNWRAP_DEPTH = 5;
+const MAX_UNWRAP_DEPTH = 32;
 
 /**
  * Flattens a possibly-wrapped error into the chain of links to inspect, nearest
@@ -518,29 +525,14 @@ export interface ErrorTelemetry {
    * The provider's numeric status, or undefined. A bare integer.
    */
   httpStatus: number | undefined;
-
-  /**
-   * Constructor name of the thrown error, allowlisted to a bare ASCII identifier.
-   * The only signal the residual `agent_error` bucket carries: it turns "unknown"
-   * into a ranked list of unhandled error types. Present only when the class stayed
-   * `agent_error`; undefined for every named class and for a name that failed the
-   * allowlist.
-   */
-  errorName: string | undefined;
 }
 
 /**
- * A bare code identifier: an ASCII constructor name, nothing else. A subclass whose
- * `.name` was set to a template string containing a path, URL, or user value fails
- * this and is dropped, keeping the anonymity envelope closed.
- */
-const CONSTRUCTOR_NAME = /^[A-Za-z][A-Za-z0-9]{0,63}$/u;
-
-/**
- * The constructor name of `value`, but only if it is a plain ASCII identifier;
- * otherwise undefined. Reads the name through the prototype (not an own
- * `constructor` property) so a tampered own `constructor` cannot smuggle a value
- * past the allowlist. Non-objects have no constructor name and yield undefined.
+ * The constructor name of `value`, but only if it is a bare identifier; otherwise
+ * undefined. Reads the name through the prototype (not an own `constructor` property)
+ * so a tampered own `constructor` cannot smuggle a value past the allowlist.
+ * Non-objects have no constructor name and yield undefined. Gated by the shared
+ * {@link isSafeErrorIdentifier}.
  *
  * @param value - The value to fingerprint.
  * @returns The allowlisted constructor name, or undefined.
@@ -555,31 +547,73 @@ export function safeConstructorName(value: unknown): string | undefined {
   } | null;
   const raw = proto?.constructor?.name;
 
-  return typeof raw === "string" && CONSTRUCTOR_NAME.test(raw)
-    ? raw
-    : undefined;
+  return isSafeErrorIdentifier(raw) ? raw : undefined;
 }
 
 /**
- * The allowlisted constructor name of the innermost error in the unwrap chain, or
+ * The `.name` property of `value`, but only if it is a bare identifier; otherwise
+ * undefined. This is the identity a framework deliberately sets: LangChain's
+ * `MiddlewareError.wrap` copies the inner error's `.name` up onto the wrapper, so
+ * reading `.name` recovers the real failure's identity even when `constructor.name`
+ * reports the envelope class. Gated by the shared {@link isSafeErrorIdentifier}.
+ *
+ * @param value - The value to fingerprint.
+ * @returns The allowlisted `.name`, or undefined.
+ */
+export function safeErrorName(value: unknown): string | undefined {
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
+
+  const raw = (value as { name?: unknown }).name;
+  return isSafeErrorIdentifier(raw) ? raw : undefined;
+}
+
+/**
+/**
+ * The most specific allowlisted identifier for a single chain link, or undefined.
+ * Reconciles the two identity sources: a link's own `.name`, which a framework like
+ * LangChain's `MiddlewareError` deliberately sets to the inner error's name, and its
+ * `constructor.name`. The `.name` wins because it is the identity a wrapper copies up
+ * (e.g. `AI_APICallError` on a `MiddlewareError`), except when it is the bare base
+ * `"Error"`: an `Error` subclass that never sets `this.name` inherits `"Error"`, which
+ * says less than the constructor (e.g. a `ProviderCrash` subclass), so there the
+ * constructor is preferred. Both candidates pass the same allowlist.
+ *
+ * @param link - One error in the unwrap chain.
+ * @returns The link's most specific allowlisted identifier, or undefined.
+ */
+function linkErrorName(link: unknown): string | undefined {
+  const name = safeErrorName(link);
+  const constructorName = safeConstructorName(link);
+
+  if (name !== undefined && name !== "Error") {
+    return name;
+  }
+  return constructorName ?? name;
+}
+
+/**
+ * The allowlisted identifier of the innermost error in the unwrap chain, or
  * undefined. This is the one signal the residual `agent_error` bucket carries, so it
- * must name the real failure and not a wrapper: a framework envelope like LangChain's
- * `MiddlewareError` copies the inner message but reports its own constructor, so
- * fingerprinting the outermost link collapses every distinct root cause to the
- * wrapper's name. Walking to the deepest link recovers the actual failure's identity
- * (e.g. the provider SDK's own error class) while the same {@link safeConstructorName}
- * allowlist keeps the anonymity envelope closed. Falls back to the outermost
- * allowlisted name when only the wrapper has one. The walk reuses the read-only,
- * cycle-safe {@link unwrapErrorChain}.
+ * must name the real failure and not a wrapper: a framework envelope copies the inner
+ * message but reports its own constructor, so fingerprinting the outermost link
+ * collapses every distinct root cause to the wrapper's name. Each link is resolved by
+ * {@link linkErrorName} (its deliberately-set `.name`, else its constructor), and the
+ * deepest link that yields a name wins. Walking to the deepest link recovers the
+ * actual failure's identity (e.g. the provider SDK's own error class) while the shared
+ * {@link isSafeErrorIdentifier} allowlist keeps the anonymity envelope closed. Falls
+ * back to the outermost allowlisted name when only the wrapper has one. The walk
+ * reuses the read-only, cycle-safe {@link unwrapErrorChain}.
  *
  * @param error - The thrown value to fingerprint.
- * @returns The innermost allowlisted constructor name, or undefined.
+ * @returns The innermost allowlisted identifier, or undefined.
  */
-export function innermostConstructorName(error: unknown): string | undefined {
+export function innermostErrorName(error: unknown): string | undefined {
   let deepest: string | undefined;
 
   for (const link of unwrapErrorChain(error)) {
-    const name = safeConstructorName(link);
+    const name = linkErrorName(link);
     if (name !== undefined) {
       deepest = name;
     }
@@ -589,27 +623,49 @@ export function innermostConstructorName(error: unknown): string | undefined {
 }
 
 /**
- * The single call the failure path uses: class, detail, owner, stage, status, and
- * (residual only) the error-name fingerprint in one object, ready to spread into the
- * run facts. The class and detail come from the origin tag when the throw site owned
- * the classification (build/connector/okf/checkpointer, or a tagged config/tool
- * detail), otherwise from {@link classifyError} walking the unwrap chain. The detail
- * is normalized against its family's allowlist, so an off-list value is dropped
- * rather than emitted. `errorName` is attached only when the class stayed
- * `agent_error`, since every other class is already named. Never leaks the message.
+ * The single call the failure path uses: class, detail, owner, stage, and status in
+ * one object, ready to spread into the run facts. The class and detail come from the
+ * origin tag when the throw site owned the classification (build/connector/okf/
+ * checkpointer, or a tagged config/tool detail), otherwise from {@link classifyError}
+ * walking the unwrap chain. The one exception is the `build_error/stream_open` tag:
+ * that stage is the first provider round trip, so a failure there carrying a provider
+ * signal is a disguised provider error and the raw classification wins over the tag
+ * (see {@link streamOpenDisguisesProvider}). For the residual `agent_error` bucket the
+ * detail is instead the innermost error's own name, the one signal that bucket
+ * carries, read from the cause chain so a framework envelope like LangChain's
+ * `MiddlewareError` does not collapse every root cause to the wrapper's name. The
+ * detail is normalized against its family's allowlist (or the identifier allowlist for
+ * `agent_error`), so an off-list value is dropped rather than emitted. Never leaks the
+ * message.
  */
 export function describeErrorForTelemetry(error: unknown): ErrorTelemetry {
   const origin = readErrorOrigin(error);
   const classified = classifyError(error);
+  const httpStatus = firstStatusInChain(error);
 
   // An origin tag that names a class owns both class and detail; a stage-only tag
-  // leaves both to the raw-error classifier.
-  const errorClass = origin?.errorClass ?? classified.errorClass;
-  const rawDetail = origin?.errorClass
-    ? origin.errorDetail
-    : classified.errorDetail;
+  // leaves both to the raw-error classifier. The lone override is a stream-open tag
+  // over a disguised provider failure, which defers to the raw classifier so the
+  // failure lands on the provider instead of being counted as our build bug.
+  let errorClass: TelemetryErrorClass;
+  let rawDetail: string | undefined;
+  if (
+    origin?.errorClass !== undefined &&
+    !streamOpenDisguisesProvider(origin, classified, httpStatus)
+  ) {
+    errorClass = origin.errorClass;
+    rawDetail = origin.errorDetail;
+  } else {
+    errorClass = classified.errorClass;
+    rawDetail = classified.errorDetail;
+  }
 
-  const errorDetail = normalizeErrorDetail(errorClass, rawDetail);
+  // The residual bucket carries no origin/classified detail; its one signal is the
+  // innermost error's own name. Every named class keeps its taxonomy detail.
+  const detailInput =
+    errorClass === "agent_error" ? innermostErrorName(error) : rawDetail;
+
+  const errorDetail = normalizeErrorDetail(errorClass, detailInput);
   const errorStage = origin?.stage;
 
   return {
@@ -619,13 +675,40 @@ export function describeErrorForTelemetry(error: unknown): ErrorTelemetry {
     errorOwner: deriveOwner(errorClass, errorDetail, errorStage),
     // Surfaced from the chain so a wrapped provider error still emits its status
     // even when an origin tag already named the class.
-    httpStatus: firstStatusInChain(error),
-    // Only the residual bucket pays for a fingerprint; named classes stay undefined.
-    // Reads the innermost cause, not the outer wrapper, so a framework envelope like
-    // LangChain's `MiddlewareError` does not collapse every root cause to one name.
-    errorName:
-      errorClass === "agent_error"
-        ? innermostConstructorName(error)
-        : undefined,
+    httpStatus,
   };
+}
+
+/**
+ * Whether a `build_error/stream_open` origin tag is really masking a provider
+ * failure. The stream-open call is the only build stage that crosses into provider
+ * territory (the first token/HTTP round trip), so a throw there that carries a
+ * provider signal — the raw classifier already naming it `provider_error`, or an HTTP
+ * status on the chain paired with any named (non-residual) classification — is the
+ * provider's fault, not ours, and the raw classification should win over the tag.
+ * Guarded to a named class so a genuine stream-setup failure with no provider signal
+ * (which classifies as the residual `agent_error`) keeps its informative
+ * `build_error/stream_open` tag instead of regressing to the residual bucket.
+ *
+ * @param origin - The origin tag read off the error, if any.
+ * @param classified - The raw-error classification of the same error.
+ * @param httpStatus - The first HTTP status found on the chain, or undefined.
+ * @returns True when the raw classification should override the tag.
+ */
+function streamOpenDisguisesProvider(
+  origin: ErrorOriginTag | undefined,
+  classified: ErrorClassification,
+  httpStatus: number | undefined,
+): boolean {
+  if (
+    origin?.errorClass !== "build_error" ||
+    origin.errorDetail !== "stream_open"
+  ) {
+    return false;
+  }
+
+  return (
+    classified.errorClass === "provider_error" ||
+    (httpStatus !== undefined && classified.errorClass !== "agent_error")
+  );
 }

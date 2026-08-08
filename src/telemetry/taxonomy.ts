@@ -45,6 +45,8 @@ const FIXED_ERROR_DETAILS: Readonly<
   output_error: ["json_parse", "schema"],
   // No detail split: the family is the whole signal.
   context_limit_error: [],
+  // The residual bucket's detail is not a fixed word: it is the innermost error's own
+  // name, gated by the identifier allowlist in `normalizeErrorDetail`, not this list.
   agent_error: [],
   aborted: [],
 };
@@ -59,6 +61,34 @@ const OPEN_DETAIL_CLASSES: ReadonlySet<TelemetryErrorClass> = new Set([
   "connector_error",
   "tool_error",
 ]);
+
+/**
+ * A bare code identifier: an ASCII letter, then letters/digits with single interior
+ * underscores (e.g. `TypeError`, `AI_APICallError`, `OUTPUT_PARSING_FAILURE`). The
+ * anonymity gate for any error-name-shaped value: a `.name` or `constructor.name` set
+ * to a template string carrying a path, URL, space, or user value fails this and is
+ * dropped, keeping the envelope closed. Leading, trailing, and doubled underscores
+ * are rejected so nothing but a plain identifier survives.
+ */
+const SAFE_ERROR_IDENTIFIER = /^[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*$/u;
+
+/**
+ * Whether `value` is a bare code identifier safe to emit: a string of at most 64
+ * characters matching {@link SAFE_ERROR_IDENTIFIER}. The length bound caps how much a
+ * single name can weigh and closes the door on a giant synthesized name. The one gate
+ * every error identifier passes through before it can leave the process, whether it
+ * is read from `.name`, `constructor.name`, or the residual `agent_error` detail.
+ *
+ * @param value - The candidate identifier, or any non-string value.
+ * @returns True only for an allowlisted bare identifier.
+ */
+export function isSafeErrorIdentifier(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length <= 64 &&
+    SAFE_ERROR_IDENTIFIER.test(value)
+  );
+}
 
 /**
  * Provider-error details that are really the user's key or account, not a transient
@@ -84,7 +114,10 @@ const NETWORK_ENVIRONMENT_DETAILS: ReadonlySet<string> = new Set([
  * detail property's anonymity: a fixed-family detail must be on the family's
  * hardcoded list; an open-family detail (connector/tool id) is trusted as a
  * non-empty string because its tag site already validated it against the registry;
- * a no-detail family always yields undefined.
+ * the residual `agent_error` family carries the innermost error's own name as its
+ * detail, so it accepts any bare identifier that passes {@link isSafeErrorIdentifier}
+ * (not a fixed word list) and drops anything else; a no-detail family always yields
+ * undefined.
  *
  * @param errorClass - The failure family the detail belongs to.
  * @param detail - The observed detail, or undefined when none was resolved.
@@ -96,6 +129,12 @@ export function normalizeErrorDetail(
 ): string | undefined {
   if (detail === undefined || detail === "") {
     return undefined;
+  }
+
+  // The residual bucket's detail is the innermost error's name, an open value gated
+  // by the identifier allowlist rather than a fixed word list.
+  if (errorClass === "agent_error") {
+    return isSafeErrorIdentifier(detail) ? detail : undefined;
   }
 
   if (OPEN_DETAIL_CLASSES.has(errorClass)) {

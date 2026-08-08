@@ -1,5 +1,5 @@
 import { TavilySearch } from "@langchain/tavily";
-import { OPENWIKI_TAVILY_API_KEY_ENV_KEY } from "../../constants.js";
+import { OPENWIKI_TAVILY_API_KEY_ENV_KEY } from "../../config/constants.js";
 import { normalizeStringArray } from "../config.js";
 import {
   createRunId,

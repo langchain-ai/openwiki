@@ -54,6 +54,16 @@ export type TelemetryErrorStage = "config" | "build" | "run" | "finalize";
 export type TelemetryMode = "code" | "personal";
 
 /**
+ * The distribution channel a build was produced for, baked in at build time and
+ * stamped on every event so fork-originated telemetry can be filtered out from
+ * the official-release signal on the dashboard.
+ *
+ * - `official`: an npm-published upstream build (the release pipeline bakes this).
+ * - `community`: anything else — a fork, a local build, or a source/dev run.
+ */
+export type BuildChannel = "official" | "community";
+
+/**
  * Everything the run event reports, assembled by the agent run lifecycle.
  *
  * Two tiers: `command`, `outcome`, and `errorClass` ride on every run
@@ -82,9 +92,13 @@ export interface RunTelemetry {
 
   /**
    * The specific failure within `errorClass`, from that family's hardcoded
-   * allowlist (see `taxonomy.ts`), e.g. `auth` inside `provider_error`. One shared
-   * property across all families. Anything off the family's allowlist is dropped to
-   * undefined rather than sent raw, so the anonymity envelope stays closed.
+   * allowlist (see `taxonomy.ts`), e.g. `auth` inside `provider_error`. For the
+   * residual `agent_error` family it is instead the innermost error's own name (a
+   * bare identifier), the one signal that bucket carries, so it can be broken down
+   * into a ranked list of unhandled error types. One shared property across all
+   * families. Anything off the family's allowlist (or the identifier allowlist for
+   * `agent_error`) is dropped to undefined rather than sent raw, so the anonymity
+   * envelope stays closed.
    *
    * @default undefined - the family has no detail split, or the observed detail was
    * not on the family's allowlist; the field is omitted rather than sent raw.
@@ -116,17 +130,6 @@ export interface RunTelemetry {
    * @default undefined - the error exposed no numeric status.
    */
   httpStatus?: number;
-
-  /**
-   * Constructor name of a residual (`agent_error`) failure's thrown error, a bare
-   * ASCII identifier. The only signal the residual bucket carries, so it can be
-   * broken down into a ranked list of unhandled error types. Present only on a
-   * failure that stayed `agent_error`.
-   *
-   * @default undefined - the failure was classified into a named family, or the
-   * constructor name failed the identifier allowlist.
-   */
-  errorName?: string;
 
   /**
    * Which brain was set up (code = repository, personal = local wiki). Init

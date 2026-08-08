@@ -1,5 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { OPENWIKI_VERSION } from "../constants.js";
+import { OPENWIKI_VERSION } from "../config/constants.js";
 import {
   getOAuthAccessToken,
   getOAuthProviderIdForAccessTokenEnvKey,

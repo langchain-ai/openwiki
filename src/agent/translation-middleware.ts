@@ -4,7 +4,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import { createMiddleware } from "langchain";
 import path from "node:path";
-import { getErrorMessage } from "../diagnostics.js";
+import { getErrorMessage } from "../platform/diagnostics.js";
 import {
   OPENWIKI_TRANSLATION_PENDING_FIELD,
   readFrontmatterField,

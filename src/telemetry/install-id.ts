@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 
-import { openWikiHomeDir } from "../openwiki-home.js";
+import { openWikiHomeDir } from "../config/openwiki-home.js";
 import { INSTALL_ID_PATH } from "./config.js";
 import { noticeSuppressed } from "./gates.js";
 

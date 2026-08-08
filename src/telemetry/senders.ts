@@ -1,18 +1,20 @@
+import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { capture } from "./client.js";
 import { DEFAULT_POSTHOG_HOST, TELEMETRY_RUN_EVENT } from "./config.js";
 import {
+  buildChannel,
   ciSentinelId,
   isCiEnvironment,
   isProductionBuild,
   isTelemetryDisabled,
 } from "./gates.js";
 import { getOrCreateInstallId } from "./install-id.js";
-import type { RunTelemetry, TelemetryEvent } from "./types.js";
+import type { BuildChannel, RunTelemetry, TelemetryEvent } from "./types.js";
 
 /**
  * Environment and identity inputs that are not part of a run's own facts:
@@ -34,6 +36,14 @@ export interface RunEventContext {
    * dev/source or seed run.
    */
   production: boolean;
+
+  /**
+   * The distribution channel this build was produced for (see
+   * {@link BuildChannel}). Baked at build time, so the caller resolves it (via
+   * `buildChannel()`) and the builder stays pure. Stamped on every event so
+   * fork-originated telemetry can be separated from the official-release signal.
+   */
+  buildChannel: BuildChannel;
 
   /**
    * Identity the event is attributed to: an install id (human) or the CI
@@ -73,8 +83,9 @@ export function buildRunEvent(
       outcome: details.outcome,
       ...(details.errorClass ? { error_class: details.errorClass } : {}),
       // The specific failure within the family and who owns the fix. Detail is an
-      // allowlisted word (dropped upstream if off-list); owner is derived from
-      // (class, detail, stage) so the dashboard can roll up by who must act,
+      // allowlisted word (or, for the residual `agent_error` bucket, the innermost
+      // error's allowlisted name), dropped upstream if off-list; owner is derived
+      // from (class, detail, stage) so the dashboard can roll up by who must act,
       // including the cross-owner exceptions PostHog cannot derive. Failure-only.
       ...(details.errorDetail ? { error_detail: details.errorDetail } : {}),
       ...(details.errorOwner ? { error_owner: details.errorOwner } : {}),
@@ -86,16 +97,17 @@ export function buildRunEvent(
       ...(details.httpStatus !== undefined
         ? { http_status: details.httpStatus }
         : {}),
-      // Residual-only fingerprint: an allowlisted constructor identifier, the one
-      // signal the `agent_error` bucket carries. Omitted for every named class, so
-      // the null bucket reads as "already classified" rather than a value.
-      ...(details.errorName ? { error_name: details.errorName } : {}),
       ...(details.mode ? { mode: details.mode } : {}),
       ...(details.provider ? { provider: details.provider } : {}),
       ...connectorProperties(details.configuredConnectors ?? []),
       // True for the published build, false for dev/source/seed runs; lets real
       // usage be separated from local testing and pre-launch seed data.
       production: context.production,
+      // Distribution channel baked at build time: "official" only for npm-published
+      // upstream builds, "community" for forks/local/dev. Lets the dashboard scope
+      // the official-release signal and drop fork-originated telemetry. A closed
+      // two-value enum; no free strings.
+      build_channel: context.buildChannel,
       // Distribution provenance: the OpenWiki version from the bundled
       // package.json, stamped on every event so adoption and per-version
       // breakage are readable. Omitted when the caller could not resolve it.
@@ -135,6 +147,7 @@ export async function recordRun(details: RunTelemetry): Promise<void> {
     const event = buildRunEvent(details, {
       ci,
       production: isProductionBuild(),
+      buildChannel: buildChannel(),
       distinctId,
       appVersion: packageProvenance().appVersion,
     });
@@ -244,11 +257,32 @@ async function writeTelemetryFile(
     return;
   }
 
+  const resolved = path.resolve(process.cwd(), filePath);
+  // Write to an unguessable, owner-only scratch sibling and atomically rename it
+  // into place, rather than writing the caller's path directly. `--telemetry-file`
+  // may point at a shared directory such as /tmp, where a direct write would
+  // follow a pre-planted symlink (clobbering an arbitrary file with our
+  // privileges) and inherit umask permissions (leaking run metadata to other
+  // local users). The random name defeats pre-creation, `flag: "wx"` refuses to
+  // open through an existing symlink, `mode: 0o600` keeps it owner-only, and
+  // `rename` replaces the final directory entry itself instead of writing
+  // through a symlink at that path.
+  const scratch = path.join(
+    path.dirname(resolved),
+    `.${path.basename(resolved)}.${randomBytes(6).toString("hex")}.tmp`,
+  );
+
   try {
-    const resolved = path.resolve(process.cwd(), filePath);
     await mkdir(path.dirname(resolved), { recursive: true });
-    await writeFile(resolved, `${JSON.stringify(record, null, 2)}\n`, "utf8");
+    await writeFile(scratch, `${JSON.stringify(record, null, 2)}\n`, {
+      encoding: "utf8",
+      flag: "wx",
+      mode: 0o600,
+    });
+    await rename(scratch, resolved);
   } catch (error) {
+    // Best-effort cleanup so a failed write never leaves the scratch behind.
+    await rm(scratch, { force: true }).catch(() => {});
     const message = error instanceof Error ? error.message : String(error);
     console.error(
       `OpenWiki: could not write telemetry file "${filePath}": ${message}`,

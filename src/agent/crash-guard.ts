@@ -104,7 +104,15 @@ export async function handleFatal(
   source: string,
   error: unknown,
 ): Promise<void> {
+  // Claim the active run synchronously, before any await. The installer fires one
+  // `void handleFatal(...)` per escaped rejection, and a burst of subagent rejections
+  // lands on the microtask queue together; reading and clearing here with no await
+  // between the two statements makes the claim atomic for the event loop, so the first
+  // handler owns the crash and every later one sees `undefined` and only exits. Do not
+  // move any await above this pair: doing so reintroduces the race where every
+  // rejection records the same run and one crash produces hundreds of events.
   const active = getActiveRun();
+  clearActiveRun();
 
   if (active) {
     // Record the crash as a failure so it finally appears in the data, classified
@@ -134,8 +142,6 @@ export async function handleFatal(
     } catch {
       // Intentionally ignored: the stamp is best-effort during a crash.
     }
-
-    clearActiveRun();
   }
 
   // The local stderr line intentionally carries the raw message: it is the user's
