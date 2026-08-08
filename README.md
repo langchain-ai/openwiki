@@ -26,7 +26,7 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 - **Built-in connectors** for Notion, Slack, Gmail, X, Web Search, Hacker News, and local git repositories.
 - **An interactive visualizer** that turns any wiki into a live, explorable node graph.
 - **Self-updating** through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
-- **Open Knowledge Format** ([OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)) output with validated Mermaid diagrams.
+- **Open Knowledge Format** ([OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)) output with validated Mermaid diagrams.
 
 ## 🎉 What's new
 
@@ -149,12 +149,14 @@ Everything OpenWiki writes is plain Markdown you own and version alongside your 
 
 ## Open Knowledge Format
 
-OpenWiki emits [Google Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundles in both modes, so your wiki is portable to any OKF-aware tool.
+OpenWiki emits [Google Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundles in both modes, so your wiki is portable to any OKF-aware tool.
 
 - Every concept document carries YAML front matter with a non-empty `type`; all other standard fields are optional.
+- Pages record their last meaningful change as `generated: {by, at}`; the legacy v0.1 `timestamp` field is still tolerated on existing pages.
+- The optional v0.2 provenance, trust, and lifecycle families (`sources`, `verified`, `status`, `stale_after`) are validated when present.
 - Standard Markdown links between concept documents express their relationships.
-- `index.md` and `log.md` are reserved documents rather than concepts. The root index declares `okf_version: "0.1"`.
-- Valid `timestamp` values and producer-defined extension fields are preserved across updates and migrations.
+- `index.md` and `log.md` are reserved documents rather than concepts. The root index declares `okf_version: "0.2"`.
+- Producer-defined extension fields are preserved across updates and migrations.
 
 ## Diagrams
 

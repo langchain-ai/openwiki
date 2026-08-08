@@ -1,3 +1,4 @@
+import { OPENWIKI_VERSION } from "../version.js";
 import type { OpenWikiIgnore } from "./openwiki-ignore.js";
 import { CODE_SYSTEM_PROMPTS, CODE_USER_PROMPTS } from "./prompts/code.js";
 import {
@@ -30,6 +31,7 @@ export function createSystemPrompt(
       : PERSONAL_SYSTEM_PROMPTS[command];
 
   const prompt = template
+    .replaceAll("{OKF_PRODUCER_ACTOR}", `openwiki/${OPENWIKI_VERSION}`)
     .replace(
       "{OUTPUT_LANGUAGE_INSTRUCTIONS}",
       formatLanguageInstructions(language),

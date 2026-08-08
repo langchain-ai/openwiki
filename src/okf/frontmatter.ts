@@ -2,7 +2,9 @@ import type { BackendProtocolV2 } from "deepagents";
 import { parse } from "yaml";
 
 /**
- * OKF fields that, when present, must be non-empty string values.
+ * OKF fields that, when present, must be non-empty string values. `timestamp`
+ * is the field OKF v0.2 supersedes with `generated.at`; it stays tolerated
+ * because consumers may fall back to it on v0.1 pages (SPEC §13.1).
  */
 const OKF_STRING_FIELDS = [
   "type",
@@ -11,6 +13,16 @@ const OKF_STRING_FIELDS = [
   "resource",
   "timestamp",
 ];
+
+/**
+ * Lifecycle states defined by OKF v0.2 §5.4; an absent `status` means stable.
+ */
+const OKF_STATUS_VALUES = ["draft", "stable", "deprecated"];
+
+/**
+ * Matches the absolute `YYYY-MM-DD` date `stale_after` requires (§5.5).
+ */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/u;
 
 /**
  * Extension field flagging front matter OpenWiki derived deterministically.
@@ -148,8 +160,99 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
       ),
     );
   }
+  validateTrustFamilies(fields, issues);
 
   return issues.length === 0 ? { valid: true } : { issues, valid: false };
+}
+
+/**
+ * Validates the optional OKF v0.2 provenance, trust, and lifecycle families
+ * (SPEC §5) when present. Only the shape OKF specifies is checked; extra keys
+ * inside entries stay tolerated so producer extensions survive round trips.
+ */
+function validateTrustFamilies(
+  fields: Record<string, unknown>,
+  issues: FrontmatterIssue[],
+): void {
+  if (Object.hasOwn(fields, "generated") && !isActorEvent(fields.generated)) {
+    issues.push(
+      issue(
+        "invalid_generated",
+        "Field `generated` must be a mapping with a non-empty string `by` (actor) and an optional string `at` (ISO 8601 datetime).",
+      ),
+    );
+  }
+  if (Object.hasOwn(fields, "verified")) {
+    // §5.2: a single verifier may be a bare mapping; read it as a one-element list.
+    const events = Array.isArray(fields.verified)
+      ? fields.verified
+      : [fields.verified];
+    if (!events.every(isActorEvent)) {
+      issues.push(
+        issue(
+          "invalid_verified",
+          "Field `verified` must be a `{by, at}` mapping or a YAML list of them, each with a non-empty string `by` (actor).",
+        ),
+      );
+    }
+  }
+  if (
+    Object.hasOwn(fields, "sources") &&
+    (!Array.isArray(fields.sources) ||
+      fields.sources.some(
+        (entry) => !isRecord(entry) || !isNonEmptyString(entry.resource),
+      ))
+  ) {
+    issues.push(
+      issue(
+        "invalid_sources",
+        "Field `sources` must be a YAML list of mappings, each with a non-empty string `resource`.",
+      ),
+    );
+  }
+  if (
+    Object.hasOwn(fields, "status") &&
+    (typeof fields.status !== "string" ||
+      !OKF_STATUS_VALUES.includes(fields.status))
+  ) {
+    issues.push(
+      issue(
+        "invalid_status",
+        "Field `status` must be one of `draft`, `stable`, or `deprecated`.",
+      ),
+    );
+  }
+  if (
+    Object.hasOwn(fields, "stale_after") &&
+    (typeof fields.stale_after !== "string" ||
+      !ISO_DATE.test(fields.stale_after))
+  ) {
+    issues.push(
+      issue(
+        "invalid_stale_after",
+        "Field `stale_after` must be an absolute `YYYY-MM-DD` date.",
+      ),
+    );
+  }
+}
+
+/**
+ * Narrows a value to an OKF `{by, at}` event: a mapping whose `by` is a
+ * non-empty actor string and whose `at`, when present, is a non-empty string.
+ */
+function isActorEvent(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.by) &&
+    (!Object.hasOwn(value, "at") || isNonEmptyString(value.at))
+  );
+}
+
+/**
+ * Reports whether a value is a non-empty, non-blank string.
+ */
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim() !== "";
 }
 
 /**
