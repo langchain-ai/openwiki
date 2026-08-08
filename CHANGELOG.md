@@ -1,5 +1,25 @@
 # openwiki
 
+## 0.3.2
+
+### Patch Changes
+
+- [#616](https://github.com/langchain-ai/openwiki/pull/616) [`7531d61`](https://github.com/langchain-ai/openwiki/commit/7531d615216e8cbccf464f66cfbbae3668871c84) Thanks [@colifran](https://github.com/colifran)! - fix: pin patched js-yaml and undici via pnpm overrides
+
+- [#513](https://github.com/langchain-ai/openwiki/pull/513) [`adc03d6`](https://github.com/langchain-ai/openwiki/commit/adc03d6f68812bc842c1a020be98738cb1e17568) Thanks [@colifran](https://github.com/colifran)! - chore: reorganize repo code to make into domain specific directories and improve test coverage to prevent regressions
+
+- [#610](https://github.com/langchain-ai/openwiki/pull/610) [`c74ae1e`](https://github.com/langchain-ai/openwiki/commit/c74ae1e3ebc9a01e6ea84420931eea9d833fd1fa) Thanks [@Tomaskobel](https://github.com/Tomaskobel)! - fix: preserve exec bit on dist/cli.js after build
+
+- [#599](https://github.com/langchain-ai/openwiki/pull/599) [`f9b9f0d`](https://github.com/langchain-ai/openwiki/commit/f9b9f0d6f1f1084c93633d943cabb54201263036) Thanks [@sudipawtg](https://github.com/sudipawtg)! - Pass Windows `APPDATA` and `LOCALAPPDATA` into stdio MCP child environments so local MCP servers can resolve their config and cache directories.
+
+- [#605](https://github.com/langchain-ai/openwiki/pull/605) [`bff302c`](https://github.com/langchain-ai/openwiki/commit/bff302cc764688095d2051f968adc4d1013857af) Thanks [@dependabot](https://github.com/apps/dependabot)! - chore: bump mermaid from 11.16.0 to 11.16.1
+
+- [#611](https://github.com/langchain-ai/openwiki/pull/611) [`817b2a0`](https://github.com/langchain-ai/openwiki/commit/817b2a0b8df3ec265e73bac58ae8b462d595139a) Thanks [@colifran](https://github.com/colifran)! - chore: reorganize CLI into domain modules and add test coverage
+
+- [#604](https://github.com/langchain-ai/openwiki/pull/604) [`a0e28a3`](https://github.com/langchain-ai/openwiki/commit/a0e28a30fba1c80bc883711eab48292c5f8c398d) Thanks [@colifran](https://github.com/colifran)! - fix: harden error classification and run accounting
+
+- [#612](https://github.com/langchain-ai/openwiki/pull/612) [`3d51348`](https://github.com/langchain-ai/openwiki/commit/3d51348c4f307e1dfa2f13d6b8803716d52b3ca3) Thanks [@colifran](https://github.com/colifran)! - chore: split credentials.tsx pure logic into credentials/ modules with tests
+
 ## 0.3.1
 
 ### Patch Changes
