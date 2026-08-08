@@ -84,9 +84,11 @@ function makeProps(
 
 describe("InitSetupView", () => {
   const originalLangSmithKey = process.env.LANGSMITH_API_KEY;
+  const originalTracing = process.env.LANGCHAIN_TRACING_V2;
 
   beforeEach(() => {
     delete process.env.LANGSMITH_API_KEY;
+    delete process.env.LANGCHAIN_TRACING_V2;
   });
 
   afterEach(() => {
@@ -94,6 +96,11 @@ describe("InitSetupView", () => {
       delete process.env.LANGSMITH_API_KEY;
     } else {
       process.env.LANGSMITH_API_KEY = originalLangSmithKey;
+    }
+    if (originalTracing === undefined) {
+      delete process.env.LANGCHAIN_TRACING_V2;
+    } else {
+      process.env.LANGCHAIN_TRACING_V2 = originalTracing;
     }
   });
 
@@ -234,6 +241,15 @@ describe("InitSetupView", () => {
     const frame = frameOf(makeProps({ langSmithKey: null }));
     expect(frame).toContain("LangSmith");
     expect(frame).not.toContain("skipped");
+  });
+
+  test("a recorded tracing decline (no key, no session value) reads as skipped", () => {
+    process.env.LANGCHAIN_TRACING_V2 = "false";
+    // Only the LangSmith row ever emits "skipped", so its presence proves the
+    // declined-via-env state no longer reads as the "not set" resting label.
+    const frame = frameOf(makeProps({ langSmithKey: null }));
+    expect(frame).toContain("LangSmith");
+    expect(frame).toContain("skipped");
   });
 
   test("an entered model id is shown as the model detail", () => {

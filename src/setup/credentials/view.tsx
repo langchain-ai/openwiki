@@ -483,7 +483,10 @@ export function InitSetupView({
             state={resolveStepStatus(
               "langsmith",
               step,
-              langSmithKey !== null || Boolean(process.env.LANGSMITH_API_KEY),
+              // Answered when a key exists (this session or in env) or a tracing
+              // decision was recorded; !needsLangSmithStep() covers both, so a
+              // prior decline reads done instead of resetting to optional.
+              langSmithKey !== null || !needsLangSmithStep(),
               "optional",
             )}
             detail={
@@ -493,7 +496,11 @@ export function InitSetupView({
                   : "skipped"
                 : process.env.LANGSMITH_API_KEY
                   ? "configured"
-                  : "not set"
+                  : // A recorded tracing decision with no key means the step was
+                    // seen and declined on an earlier run, so it reads "skipped".
+                    process.env.LANGCHAIN_TRACING_V2 !== undefined
+                    ? "skipped"
+                    : "not set"
             }
           />
           {selectedMode === "personal" ? (

@@ -94,6 +94,7 @@ import {
   isSecretKeyConfigured,
   moveSelectionIndex,
   needsEnvValue,
+  needsLangSmithStep,
   nextSetupStep,
   normalizeLocalPath,
   sanitizeInputChunk,
@@ -1578,10 +1579,37 @@ export function useInitSetup({
       setInput("");
       setIsCustomModelInput(false);
 
-      // Sequential: always visit LangSmith next (the next spine step). Seed it
-      // from state so a key entered earlier and stepped past is not dropped.
-      seedInputForStep("langsmith");
-      setStep("langsmith");
+      // LangSmith is the next spine step, but it is optional: once the user has
+      // recorded a tracing decision (LANGCHAIN_TRACING_V2 set, or a key present)
+      // do not re-prompt on a later setup pass. An explicit --init re-walk
+      // (walkAllSteps) still visits it so the whole setup can be reconfigured.
+      // getInitialStep guards direct entry at the step; this guards the forward
+      // walk, which every no-region provider reaches through the model step.
+      if (walkAllSteps || needsLangSmithStep()) {
+        // Seed from state so a key entered earlier and stepped past is not
+        // dropped.
+        seedInputForStep("langsmith");
+        setStep("langsmith");
+        return;
+      }
+
+      // Skip straight to the credential save, preserving the recorded decision
+      // (nextLangSmithKey: langSmithKey, never rewritten) and using the freshly
+      // selected model id, since the setModelId state update above is not yet
+      // visible in this closure.
+      await continueAfterCredentials({
+        nextApiKey: apiKey,
+        nextBaseUrl: baseUrl,
+        nextSecretKey: secretKey,
+        nextRegion: region,
+        nextGcpLocation: gcpLocation,
+        nextGcpProject: gcpProject,
+        nextLangSmithKey: langSmithKey,
+        nextModelId: selectedModelId,
+        nextOAuthTokens: oauthTokens,
+        nextProvider: provider,
+        runMode: selectedMode,
+      });
       return;
     }
 
