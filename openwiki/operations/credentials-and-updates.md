@@ -229,9 +229,17 @@ Enforcement and bounds:
 
 ## Anonymous usage telemetry
 
-OpenWiki collects anonymous, per-machine usage telemetry via PostHog (`src/telemetry/`). The system emits a single `openwiki_run` event per run with mode (code/personal), provider, outcome (success/failure), latency, environment, and configured connectors. Telemetry can be disabled by setting `OPENWIKI_TELEMETRY_DISABLED=1` or `DO_NOT_TRACK=1`.
+OpenWiki collects anonymous, per-machine usage telemetry via PostHog (`src/telemetry/`). The system emits a single `openwiki_run` event per run with mode (code/personal), provider, outcome (success/failure), latency, environment, configured connectors, and a `build_channel` stamp. Telemetry can be disabled by setting `OPENWIKI_TELEMETRY_DISABLED=1` or `DO_NOT_TRACK=1`.
 
 CI and scheduled runs are detected via `ci-info` (or `OPENWIKI_SCHEDULED=1`) and sent under a sentinel distinct id per provider rather than the machine's install id, so ephemeral CI runners do not inflate human install counts. The install id is stored at `~/.openwiki/install-id` and a one-time disclosure notice is shown on first run (`src/telemetry/config.ts`). Telemetry never stalls a run — the send and client shutdown are bounded by a 3-second flush timeout (`src/telemetry/config.ts`).
+
+### Build channel stamping
+
+Every event carries a `build_channel` property (`"official"` or `"community"`) baked into the build so fork-originated telemetry can be filtered from the official-release signal. The committed default in `src/telemetry/gates.ts` is `"community"`; the upstream release pipeline rewrites that one `BUILD_CHANNEL` assignment to `"official"` via `scripts/stamp-build-channel.cjs` (driven by the `OPENWIKI_BUILD_CHANNEL` env var set in `.github/workflows/release.yml`), so only npm-published upstream builds report `"official"` and every fork, local build, and source/dev run reports `"community"`. The stamp is fail-safe: an unset or unrecognized value always resolves to `"community"`, so an unexpected env value can never mint an `"official"` build, and the stamp throws if the expected single `BUILD_CHANNEL` assignment is not present exactly once (so a drifted file fails the release loudly instead of silently publishing an unstamped build). The rewrite is ephemeral in CI (a throwaway checkout that is never committed back), so the committed source stays `"community"`. The stamp runs inside the `pnpm release` script (publish path only, before `tsc`), never on the version-PR path.
+
+### Error classification and fingerprinting
+
+Failure events are classified by walking an unwrap chain (`unwrapErrorChain()`, bounded at 32 links, cycle-safe) so a provider error hidden inside a tool-error wrapper or `AggregateError` is recovered instead of collapsing into the residual `agent_error` bucket. The origin-tag read is itself a chain walk: `readErrorOrigin()` mirrors `classifyError()` and returns the first link whose tag names an owned family (class + detail + throw-site stage), falling back to the nearest stage-only tag — so an owned error re-wrapped by a framework keeps its class instead of decaying to `agent_error`. The one override is `build_error/stream_open`: that stage is the first provider round trip, so a failure there carrying a provider signal (the raw classifier already naming it `provider_error`, or an HTTP status on the chain paired with any non-residual class) is a disguised provider error and the raw classification wins over the tag, landing the failure on the provider instead of being counted as our build bug. The residual `agent_error` bucket carries no fixed detail; its `error_detail` is the innermost error's own allowlisted name (`innermostErrorName()`), read from both `.name` (which a framework like LangChain's `MiddlewareError` copies up from the inner error) and `constructor.name`, walking to the deepest link so a framework envelope does not collapse every distinct root cause to one name. The identifier gate (`isSafeErrorIdentifier()` in `src/telemetry/taxonomy.ts`) allows only a bare ASCII identifier (letters/digits with single interior underscores, ≤64 chars); anything else is dropped so the anonymity envelope stays closed. The `errorName` field was removed — the residual bucket's signal now travels in `error_detail` — so every failure class reports a single shared detail property.
 
 ## Scheduled CI workflows
 
@@ -284,6 +292,7 @@ Bitbucket users should configure repository variables for the model provider key
 - The content-snapshot check means CI runs that produce no changes will not update `.last-update.json` or open a PR with metadata-only changes.
 - Scheduled update workflows must fetch full history (`fetch-depth: 0` for GitHub Actions, `GIT_DEPTH: "0"` for GitLab CI, `clone: depth: full` for Bitbucket). A shallow clone hides the commit recorded in `.last-update.json`, so `openwiki code --update` cannot build a change window and runs against an empty summary.
 - Interrupted runs write `status: "interrupted"` so the next update retries. If metadata semantics change, keep `getUpdateNoopStatus()` and `persistRunMetadataIfChanged()` in sync so the interrupted/complete lifecycle is preserved.
+- The `build_channel` stamp (`scripts/stamp-build-channel.cjs`) targets exactly one `const BUILD_CHANNEL: BuildChannel = "…"` assignment in `src/telemetry/gates.ts`. Renaming that line, splitting it, or changing its formatting breaks the regex and fails the release loudly (`test/stamp-build-channel.test.ts`). Keep the committed value `"community"`; only the upstream release pipeline (`.github/workflows/release.yml`) sets `OPENWIKI_BUILD_CHANNEL=official`. A drifted `gates.ts` that no longer matches the assignment pattern will throw instead of silently publishing an unstamped build.
 
 ## Source map
 
@@ -296,6 +305,8 @@ Bitbucket users should configure repository variables for the model provider key
 - `src/external-cli-auth.ts`
 - `src/diagnostics.ts`
 - `src/telemetry/`
+- `scripts/stamp-build-channel.cjs`
+- `.github/workflows/release.yml`
 - `src/auth/oauth.ts`
 - `src/auth/providers.ts`
 - `src/auth/configure.ts`

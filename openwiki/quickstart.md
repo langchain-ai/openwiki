@@ -22,6 +22,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - Serves an interactive node-graph visualizer (`openwiki visualize`) for an already-generated wiki, with live edits refreshed over SSE.
 - Honors a repo-root `.openwikiignore` file as a read boundary that keeps private/generated paths out of doc runs.
 - Generates the wiki in a non-English language with `--language <locale>` (BCP-47); the language is persisted and retranslated on a switch via the translation middleware.
+- Stamps a `build_channel` (`official` / `community`) into each telemetry event at build time so fork-originated telemetry can be filtered from the official-release signal.
 
 ## Start here
 
@@ -44,7 +45,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/agent/prompts/personal.ts` — `PERSONAL_SYSTEM_PROMPTS`/`PERSONAL_USER_PROMPTS` for local personal-brain runs.
 - `src/agent/skeleton_critic.ts` — `skeleton_critic` init-only subagent that reviews the proposed wiki skeleton against the repository.
 - `src/agent/wiki_qa_subagents.ts` — `wiki_question_finder` and `wiki_answer_verifier` init-only subagents that verify the completed wiki answers source-grounded questions.
-- `src/agent/crash-guard.ts` — process-wide `installCrashGuard()` + `registerActiveRun`/`handleFatal` that records and stamps an escaped rejection as an interrupted run.
+- `src/agent/crash-guard.ts` — process-wide `installCrashGuard()` + `registerActiveRun`/`handleFatal` that records and stamps an escaped rejection as an interrupted run; `handleFatal` claims the active run synchronously so a burst of escaped rejections records one crash.
 - `src/agent/utils.ts` — run context, content snapshot, and `.last-update.json` handling.
 - `src/agent/types.ts` — shared agent types (`OpenWikiCommand`, `RunContext`, `UpdateMetadata`, run options/events).
 - `src/agent/docs-only-backend.ts` — `OpenWikiLocalShellBackend`, extends DeepAgents `LocalShellBackend` with docs-only write guards and output-mode awareness.
@@ -63,7 +64,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/diagnostics.ts` — secret redaction and credential diagnostics.
 - `src/okf/` — OKF front-matter validation, index-label localization, and deterministic index synchronization.
 - `src/mermaid/` — Mermaid fence extraction, validation, and wiki repair.
-- `src/telemetry/` — anonymous usage telemetry with PostHog, opt-out, and CI sentinel IDs.
+- `src/telemetry/` — anonymous usage telemetry with PostHog, opt-out, CI sentinel IDs, error classification/fingerprinting, and a baked-in `build_channel` stamp.
+- `scripts/stamp-build-channel.cjs` — release-only build-time rewrite of `BUILD_CHANNEL` in `src/telemetry/gates.ts` from `"community"` to `"official"` for npm-published upstream builds, driven by `OPENWIKI_BUILD_CHANNEL` in `.github/workflows/release.yml`.
 - `src/connectors/` — connector registry, MCP client/runtime, source-specific ingestion (git-repo, gmail, hackernews, langsmith, slack, web-search, x), and tool definitions.
 - `src/ingestion.ts` — orchestrates source ingestion runs across configured connectors.
 - `src/code-mode.ts` — `openwiki code` setup: creates the GitHub Actions workflow only when missing (preserving customizations on update) and refreshes AGENTS.md/CLAUDE.md snippets.
@@ -144,7 +146,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/okf/` (frontmatter.ts, index-labels.ts, index-sync.ts)
 - `src/mermaid/` (dom-shim.ts, fences.ts, validate.ts, wiki.ts)
 - `src/telemetry/`
-- `examples/openwiki-update.yml`
+- `scripts/stamp-build-channel.cjs`- `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
 - `examples/openwiki-update.bitbucket-pipelines.yml`
 - `src/visualize/` (server.ts, graph.ts, page.ts, client.ts, client-lib.ts)
