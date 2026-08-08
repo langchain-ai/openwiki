@@ -26,11 +26,20 @@ export default defineConfig({
       // extracted into `visualize/client-lib.ts` (fully covered), so new logic
       // belongs there, not here. Excluded so the aggregate is not dragged by code
       // a Node unit test can never execute.
+      //
+      // `setup/credentials/use-init-setup.ts` is the setup wizard's Ink state
+      // machine: a stateful `useInput` keyboard flow that ink-testing-library
+      // cannot exercise cleanly. Its extractable logic lives in tested modules
+      // (`steps.ts`, `format.ts`, `persistence.ts`) and its rendering in
+      // `view.tsx` (render-tested); what remains here is the wiring those cannot
+      // cover. Excluded so the aggregate is not dragged by code a Node unit test
+      // cannot drive.
       exclude: [
         "src/**/*.d.ts",
         "src/**/types.ts",
         "src/telemetry/index.ts",
         "src/visualize/client.ts",
+        "src/setup/credentials/use-init-setup.ts",
       ],
       reporter: ["text", "text-summary", "html", "json-summary", "lcov"],
     },

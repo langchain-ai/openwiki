@@ -35,6 +35,30 @@ async function seedRawOnboardingJson(
   );
 }
 
+// Writes an arbitrary (possibly invalid) string to onboarding.json so we can
+// exercise the JSON.parse failure paths that seedRawOnboardingJson cannot.
+async function seedRawOnboardingText(
+  onboarding: Awaited<ReturnType<typeof loadOnboardingModule>>,
+  text: string,
+): Promise<void> {
+  await mkdir(path.dirname(onboarding.openWikiOnboardingPath), {
+    recursive: true,
+  });
+  await writeFile(onboarding.openWikiOnboardingPath, text, "utf8");
+}
+
+// Writes INSTRUCTIONS.md under the temp home without going through
+// saveOpenWikiOnboardingConfig, so tests can control the raw file contents.
+async function seedHomeInstructions(
+  onboarding: Awaited<ReturnType<typeof loadOnboardingModule>>,
+  contents: string,
+): Promise<void> {
+  await mkdir(path.dirname(onboarding.openWikiInstructionsPath), {
+    recursive: true,
+  });
+  await writeFile(onboarding.openWikiInstructionsPath, contents, "utf8");
+}
+
 afterEach(async () => {
   vi.resetModules();
 
@@ -357,5 +381,530 @@ describe("normalizeOnboardingConfig (via readOpenWikiOnboardingConfig)", () => {
     const config = await onboarding.readOpenWikiOnboardingConfig();
 
     expect(config.powerManagement).toBeUndefined();
+  });
+
+  test("ignores a sources value that is not an object", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      sourceInstances: [],
+      sources: "not-an-object",
+      version: 1,
+    });
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.sources).toEqual({});
+    expect(config.sourceInstances).toEqual([]);
+  });
+
+  test("ignores a sourceInstances value that is not an array", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      sourceInstances: "not-an-array",
+      sources: {},
+      version: 1,
+    });
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.sourceInstances).toEqual([]);
+  });
+
+  test("preserves modeName and templateName when both are present", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      modeId: "personal",
+      modeName: "Personal wiki",
+      sourceInstances: [],
+      sources: {},
+      templateId: "personal",
+      templateName: "Personal template",
+      version: 1,
+    });
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.modeName).toBe("Personal wiki");
+    expect(config.templateName).toBe("Personal template");
+  });
+
+  test("skips malformed and unknown source instances", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      sourceInstances: [
+        null,
+        "not-an-object",
+        { name: "missing connector id" },
+        { connectorId: "totally-bogus" },
+        { connectorId: "notion", id: "keep-me" },
+      ],
+      sources: {},
+      version: 1,
+    });
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.sourceInstances).toHaveLength(1);
+    expect(config.sourceInstances[0]?.connectorId).toBe("notion");
+    expect(config.sourceInstances[0]?.id).toBe("keep-me");
+  });
+
+  test("retains a source instance name when it is a string", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      sourceInstances: [
+        { connectorId: "notion", id: "notion-1", name: "Team space" },
+      ],
+      sources: {},
+      version: 1,
+    });
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.sourceInstances[0]?.name).toBe("Team space");
+  });
+
+  test("normalizes full source connection fields", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      sourceInstances: [
+        {
+          connectedAt: "2026-01-01T00:00:00.000Z",
+          connectorConfig: { token: "abc" },
+          connectorId: "notion",
+          id: "notion-1",
+          ingestionGoal: "docs",
+        },
+      ],
+      sources: {},
+      version: 1,
+    });
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.sourceInstances[0]).toMatchObject({
+      connectedAt: "2026-01-01T00:00:00.000Z",
+      connectorConfig: { token: "abc" },
+      ingestionGoal: "docs",
+    });
+    // Legacy sources should carry the same connection details forward.
+    expect(config.sources.notion).toMatchObject({
+      connectedAt: "2026-01-01T00:00:00.000Z",
+      connectorConfig: { token: "abc" },
+      ingestionGoal: "docs",
+    });
+  });
+
+  test("derives a single legacy source entry from duplicate connector instances", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      sourceInstances: [
+        { connectorId: "slack", id: "slack-1", ingestionGoal: "primary" },
+        { connectorId: "slack", id: "slack-2", ingestionGoal: "secondary" },
+      ],
+      sources: {},
+      version: 1,
+    });
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.sourceInstances).toHaveLength(2);
+    // deriveLegacySources keeps only the first instance per connector id.
+    expect(config.sources.slack?.ingestionGoal).toBe("primary");
+  });
+
+  test("fills schedule defaults when the schedule object is empty", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      ingestionSchedule: {},
+      sourceInstances: [],
+      sources: {},
+      version: 1,
+    });
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.ingestionSchedule).toEqual({
+      description: "",
+      expression: "",
+      launchAgentPath: undefined,
+      pausedAt: undefined,
+      updatedAt: new Date(0).toISOString(),
+      warning: undefined,
+    });
+  });
+
+  test("preserves every optional schedule field when present", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      ingestionSchedule: {
+        description: "nightly",
+        expression: "0 3 * * *",
+        launchAgentPath: "/Library/LaunchAgents/openwiki.plist",
+        pausedAt: "2026-02-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+        warning: "battery only",
+      },
+      sourceInstances: [],
+      sources: {},
+      version: 1,
+    });
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.ingestionSchedule).toEqual({
+      description: "nightly",
+      expression: "0 3 * * *",
+      launchAgentPath: "/Library/LaunchAgents/openwiki.plist",
+      pausedAt: "2026-02-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      warning: "battery only",
+    });
+  });
+
+  test("preserves every optional pmset field when present", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      powerManagement: {
+        pmset: {
+          days: "MTWRF",
+          enabled: true,
+          sleepTime: "23:00:00",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+          wakeTime: "07:00:00",
+          warning: "requires admin",
+        },
+      },
+      sourceInstances: [],
+      sources: {},
+      version: 1,
+    });
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.powerManagement?.pmset).toEqual({
+      days: "MTWRF",
+      enabled: true,
+      sleepTime: "23:00:00",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      wakeTime: "07:00:00",
+      warning: "requires admin",
+    });
+  });
+});
+
+describe("readOpenWikiOnboardingConfig missing and error paths", () => {
+  test("returns an empty config with the wiki goal when only instructions exist", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedHomeInstructions(onboarding, "Only the goal survives.\n");
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.wikiGoal).toBe("Only the goal survives.");
+    expect(config.sourceInstances).toEqual([]);
+    expect(config.sources).toEqual({});
+    expect(config.version).toBe(1);
+  });
+
+  test("returns a bare empty config when neither file exists", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config).toEqual({
+      sourceInstances: [],
+      sources: {},
+      version: 1,
+    });
+  });
+
+  test("treats a whitespace-only instructions file as no wiki goal", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      sourceInstances: [],
+      sources: {},
+      version: 1,
+    });
+    await seedHomeInstructions(onboarding, "   \n\t\n");
+
+    const config = await onboarding.readOpenWikiOnboardingConfig();
+
+    expect(config.wikiGoal).toBeUndefined();
+  });
+
+  test("rethrows when the stored onboarding JSON is malformed", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingText(onboarding, "{ not valid json");
+
+    await expect(onboarding.readOpenWikiOnboardingConfig()).rejects.toThrow();
+  });
+
+  test("rethrows non-ENOENT errors from the instructions file", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingJson(onboarding, {
+      sourceInstances: [],
+      sources: {},
+      version: 1,
+    });
+    // A directory at the instructions path makes readFile fail with EISDIR,
+    // which is not treated as file-not-found and must propagate.
+    await mkdir(onboarding.openWikiInstructionsPath, { recursive: true });
+
+    await expect(onboarding.readOpenWikiOnboardingConfig()).rejects.toThrow();
+  });
+});
+
+describe("readRepositoryWikiInstructions edge cases", () => {
+  test("returns undefined when the repository has no instructions file", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      await expect(
+        onboarding.readRepositoryWikiInstructions(repo),
+      ).resolves.toBeUndefined();
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test("returns undefined for a whitespace-only repository instructions file", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      const instructionsPath =
+        onboarding.getRepositoryWikiInstructionsPath(repo);
+      await mkdir(path.dirname(instructionsPath), { recursive: true });
+      await writeFile(instructionsPath, "   \n", "utf8");
+
+      await expect(
+        onboarding.readRepositoryWikiInstructions(repo),
+      ).resolves.toBeUndefined();
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test("rethrows non-ENOENT errors from the repository instructions file", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      // A directory at the instructions path yields EISDIR, not ENOENT.
+      await mkdir(onboarding.getRepositoryWikiInstructionsPath(repo), {
+        recursive: true,
+      });
+
+      await expect(
+        onboarding.readRepositoryWikiInstructions(repo),
+      ).rejects.toThrow();
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+});
+
+describe("isOnboardingComplete code mode via templateId", () => {
+  test("treats a templateId of code as code mode when modeId is absent", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+
+    expect(
+      onboarding.isOnboardingComplete({
+        completedAt: "2026-01-01T00:00:00.000Z",
+        sourceInstances: [],
+        sources: {},
+        templateId: "code",
+        version: 1,
+        wikiGoal: "Maintain a code wiki.",
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("isOpenWikiOnboardingCompleteSync", () => {
+  test("returns false when no onboarding.json exists", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+
+    expect(onboarding.isOpenWikiOnboardingCompleteSync()).toBe(false);
+  });
+
+  test("returns true for a completed personal config with a schedule", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+
+    await onboarding.saveOpenWikiOnboardingConfig({
+      completedAt: "2026-01-01T00:00:00.000Z",
+      ingestionSchedule: {
+        description: "daily",
+        expression: "0 9 * * *",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+      modeId: "personal",
+      sourceInstances: [],
+      sources: {},
+      templateId: "personal",
+      version: 1,
+      wikiGoal: "Track projects and commitments.",
+    });
+
+    expect(onboarding.isOpenWikiOnboardingCompleteSync()).toBe(true);
+  });
+
+  test("returns false when the instructions file is missing", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+
+    await onboarding.saveOpenWikiOnboardingConfig({
+      completedAt: "2026-01-01T00:00:00.000Z",
+      ingestionSchedule: {
+        description: "daily",
+        expression: "0 9 * * *",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+      modeId: "personal",
+      sourceInstances: [],
+      sources: {},
+      templateId: "personal",
+      version: 1,
+      wikiGoal: "Track projects and commitments.",
+    });
+    await rm(onboarding.openWikiInstructionsPath);
+
+    expect(onboarding.isOpenWikiOnboardingCompleteSync()).toBe(false);
+  });
+
+  test("returns false when the instructions file is only whitespace", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+
+    await onboarding.saveOpenWikiOnboardingConfig({
+      completedAt: "2026-01-01T00:00:00.000Z",
+      ingestionSchedule: {
+        description: "daily",
+        expression: "0 9 * * *",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+      modeId: "personal",
+      sourceInstances: [],
+      sources: {},
+      templateId: "personal",
+      version: 1,
+      wikiGoal: "Track projects and commitments.",
+    });
+    await seedHomeInstructions(onboarding, "   \n");
+
+    expect(onboarding.isOpenWikiOnboardingCompleteSync()).toBe(false);
+  });
+
+  test("returns false when onboarding.json is malformed", async () => {
+    const home = await createTempHome();
+    const onboarding = await loadOnboardingModule(home);
+    await seedRawOnboardingText(onboarding, "{ not valid json");
+
+    expect(onboarding.isOpenWikiOnboardingCompleteSync()).toBe(false);
+  });
+});
+
+describe("isRepositoryCodeOnboardingCompleteSync edge cases", () => {
+  test("returns false when no onboarding.json exists", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      expect(onboarding.isRepositoryCodeOnboardingCompleteSync(repo)).toBe(
+        false,
+      );
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test("returns false for a non-code onboarding config", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      await onboarding.saveOpenWikiOnboardingConfig({
+        completedAt: "2026-01-01T00:00:00.000Z",
+        modeId: "personal",
+        sourceInstances: [],
+        sources: {},
+        templateId: "personal",
+        version: 1,
+      });
+      await onboarding.saveRepositoryWikiInstructions(repo, "A code wiki.");
+
+      expect(onboarding.isRepositoryCodeOnboardingCompleteSync(repo)).toBe(
+        false,
+      );
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test("returns false when the repository instructions are only whitespace", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      await onboarding.saveOpenWikiOnboardingConfig({
+        completedAt: "2026-01-01T00:00:00.000Z",
+        modeId: "code",
+        sourceInstances: [],
+        sources: {},
+        templateId: "code",
+        version: 1,
+      });
+      const instructionsPath =
+        onboarding.getRepositoryWikiInstructionsPath(repo);
+      await mkdir(path.dirname(instructionsPath), { recursive: true });
+      await writeFile(instructionsPath, "   \n", "utf8");
+
+      expect(onboarding.isRepositoryCodeOnboardingCompleteSync(repo)).toBe(
+        false,
+      );
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test("returns false when onboarding.json is malformed", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      await seedRawOnboardingText(onboarding, "{ not valid json");
+
+      expect(onboarding.isRepositoryCodeOnboardingCompleteSync(repo)).toBe(
+        false,
+      );
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
   });
 });
