@@ -99,6 +99,7 @@ import {
   DEFAULT_VERTEX_LOCATION,
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
   isValidModelId,
+  MISTRAL_BASE_URL_ENV_KEY,
   normalizeModelId,
   NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_BASE_URL_ENV_KEY,
@@ -2021,6 +2022,7 @@ export function formatEnvironmentDebugValue(
     key === BASETEN_BASE_URL_ENV_KEY ||
     key === COPILOT_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
+    key === MISTRAL_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY

@@ -14,6 +14,7 @@ import {
   ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_BASE_URL_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
+  MISTRAL_BASE_URL_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
@@ -49,6 +50,7 @@ const KEYS_UNDER_TEST = [
   ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_BASE_URL_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
+  MISTRAL_BASE_URL_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
@@ -456,6 +458,7 @@ describe("getCredentialDiagnostics", () => {
     await env.saveOpenWikiEnv({
       [ANTHROPIC_BASE_URL_ENV_KEY]: "https://gateway.example.com/anthropic",
       [BASETEN_BASE_URL_ENV_KEY]: "https://gateway.example.com/baseten/v1",
+      [MISTRAL_BASE_URL_ENV_KEY]: "https://gateway.example.com/mistral/v1",
     });
 
     const diagnostics = await env.getCredentialDiagnostics();
@@ -465,12 +468,18 @@ describe("getCredentialDiagnostics", () => {
     const basetenEntry = diagnostics.find(
       (item) => item.key === BASETEN_BASE_URL_ENV_KEY,
     );
+    const mistralEntry = diagnostics.find(
+      (item) => item.key === MISTRAL_BASE_URL_ENV_KEY,
+    );
 
     expect(anthropicEntry?.preview).toBe(
       '"https://gateway.example.com/anthropic"',
     );
     expect(basetenEntry?.preview).toBe(
       '"https://gateway.example.com/baseten/v1"',
+    );
+    expect(mistralEntry?.preview).toBe(
+      '"https://gateway.example.com/mistral/v1"',
     );
   });
 

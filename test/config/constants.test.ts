@@ -20,6 +20,7 @@ import {
   isValidProviderBaseUrl,
   isValidModelId,
   isValidProvider,
+  MISTRAL_BASE_URL_ENV_KEY,
   NEBIUS_BASE_URL,
   NVIDIA_BASE_URL_ENV_KEY,
   normalizeModelId,
@@ -102,6 +103,7 @@ describe("normalizeProvider / isValidProvider", () => {
 
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
+    expect(isValidProvider("mistral")).toBe(true);
     expect(isValidProvider("nebius")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
     expect(isValidProvider("copilot")).toBe(true);
@@ -145,6 +147,10 @@ describe("resolveConfiguredProvider", () => {
 
   test("falls back to nvidia when only an NVIDIA key is present", () => {
     expect(resolveConfiguredProvider({ NVIDIA_API_KEY: "x" })).toBe("nvidia");
+  });
+
+  test("falls back to mistral when only a Mistral key is present", () => {
+    expect(resolveConfiguredProvider({ MISTRAL_API_KEY: "x" })).toBe("mistral");
   });
 
   test("falls back to bedrock when a complete legacy key pair is present", () => {
@@ -193,6 +199,9 @@ describe("resolveProviderBaseUrl", () => {
     expect(resolveProviderBaseUrl("copilot", {})).toBe(
       "https://api.githubcopilot.com",
     );
+    expect(resolveProviderBaseUrl("mistral", {})).toBe(
+      "https://api.mistral.ai/v1",
+    );
     expect(resolveProviderBaseUrl("nebius", {})).toBe(NEBIUS_BASE_URL);
     expect(resolveProviderBaseUrl("nvidia", {})).toBe(
       "https://integrate.api.nvidia.com/v1",
@@ -224,6 +233,11 @@ describe("resolveProviderBaseUrl", () => {
       }),
     ).toBe("https://gateway.example/fireworks/v1");
     expect(
+      resolveProviderBaseUrl("mistral", {
+        [MISTRAL_BASE_URL_ENV_KEY]: "https://gateway.example/mistral/v1",
+      }),
+    ).toBe("https://gateway.example/mistral/v1");
+    expect(
       resolveProviderBaseUrl("nvidia", {
         [NVIDIA_BASE_URL_ENV_KEY]: "https://gateway.example/nvidia/v1",
       }),
@@ -243,6 +257,9 @@ describe("resolveProviderBaseUrl", () => {
         [FIREWORKS_BASE_URL_ENV_KEY]: "   ",
       }),
     ).toBe("https://api.fireworks.ai/inference/v1");
+    expect(
+      resolveProviderBaseUrl("mistral", { [MISTRAL_BASE_URL_ENV_KEY]: "   " }),
+    ).toBe("https://api.mistral.ai/v1");
     expect(
       resolveProviderBaseUrl("nvidia", { [NVIDIA_BASE_URL_ENV_KEY]: "   " }),
     ).toBe("https://integrate.api.nvidia.com/v1");
@@ -607,6 +624,7 @@ describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
     expect(getDefaultModelId("copilot")).toBe("gpt-5.6-terra");
+    expect(getDefaultModelId("mistral")).toBe("mistral-medium-latest");
     expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K2.6");
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",

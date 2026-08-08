@@ -7,6 +7,8 @@ export const COPILOT_API_KEY_ENV_KEY = "COPILOT_API_KEY";
 export const COPILOT_BASE_URL_ENV_KEY = "COPILOT_BASE_URL";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const FIREWORKS_BASE_URL_ENV_KEY = "FIREWORKS_BASE_URL";
+export const MISTRAL_API_KEY_ENV_KEY = "MISTRAL_API_KEY";
+export const MISTRAL_BASE_URL_ENV_KEY = "MISTRAL_BASE_URL";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
 export const NVIDIA_BASE_URL_ENV_KEY = "NVIDIA_BASE_URL";
@@ -92,6 +94,7 @@ export type OpenWikiProvider =
   | "fireworks"
   | "gemini"
   | "gemini-enterprise"
+  | "mistral"
   | "nebius"
   | "nvidia"
   | "openai"
@@ -227,6 +230,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "bedrock",
   "fireworks",
   "baseten",
+  "mistral",
   "nebius",
   "nvidia",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
@@ -290,6 +294,21 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
         id: "accounts/fireworks/models/kimi-k2p7-code",
         label: "Kimi K2.7 Code",
       },
+    ],
+  },
+  mistral: {
+    apiKeyEnvKey: MISTRAL_API_KEY_ENV_KEY,
+    baseURL: "https://api.mistral.ai/v1",
+    baseUrlEnvKey: MISTRAL_BASE_URL_ENV_KEY,
+    label: "Mistral",
+    modelOptions: [
+      { id: "mistral-medium-latest", label: "Mistral Medium" },
+      { id: "mistral-large-latest", label: "Mistral Large" },
+      { id: "mistral-small-latest", label: "Mistral Small" },
+      { id: "codestral-latest", label: "Codestral" },
+      { id: "ministral-8b-latest", label: "Ministral 8B" },
+      { id: "ministral-3b-latest", label: "Ministral 3B" },
+      { id: "open-mistral-nemo", label: "Mistral Nemo" },
     ],
   },
   nebius: {
@@ -806,20 +825,22 @@ export function resolveConfiguredProvider(
               ? "baseten"
               : env[FIREWORKS_API_KEY_ENV_KEY]
                 ? "fireworks"
-                : env[NEBIUS_API_KEY_ENV_KEY]
-                  ? "nebius"
-                  : env[NVIDIA_API_KEY_ENV_KEY]
-                    ? "nvidia"
-                    : hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                        ) ||
-                        hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-                        )
-                      ? "bedrock"
-                      : DEFAULT_PROVIDER)
+                : env[MISTRAL_API_KEY_ENV_KEY]
+                  ? "mistral"
+                  : env[NEBIUS_API_KEY_ENV_KEY]
+                    ? "nebius"
+                    : env[NVIDIA_API_KEY_ENV_KEY]
+                      ? "nvidia"
+                      : hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                          ) ||
+                          hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                          )
+                        ? "bedrock"
+                        : DEFAULT_PROVIDER)
   );
 }
 
