@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { formatEnvironmentDebugValue } from "../../src/agent/index.ts";
 import {
+  MISTRAL_BASE_URL_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
 } from "../../src/config/constants.ts";
@@ -83,5 +84,20 @@ describe("formatEnvironmentDebugValue – URL-typed keys", () => {
     );
 
     expect(result).toMatch(/^set\(length=\d+, preview=/u);
+  });
+
+  test("MISTRAL_BASE_URL is routed through URL scrubbing like the other hosted OpenAI-compatible base URLs", () => {
+    // Regression pin: a base URL misclassified as a generic secret would leak
+    // through length-only formatting; verify it goes through formatUrlDebugValue
+    // and strips embedded credentials/query/fragment like LANGCHAIN_ENDPOINT.
+    const result = formatEnvironmentDebugValue(
+      MISTRAL_BASE_URL_ENV_KEY,
+      "https://user:pass@gateway.example/mistral/v1?token=abc#frag",
+    );
+
+    expect(result).toContain("redacted=auth+query+hash");
+    for (const leaked of ["user", "pass", "token=abc", "frag"]) {
+      expect(result).not.toContain(leaked);
+    }
   });
 });
