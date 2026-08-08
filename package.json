@@ -44,7 +44,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
-    "postbuild": "chmod +x dist/cli.js",
+    "postbuild": "node -e \"require('fs').chmodSync('dist/cli/cli.js', 0o755)\"",
     "prebuild": "pnpm run clean",
     "prepack": "pnpm run build",
     "release": "pnpm run stamp:channel && pnpm run build && changeset publish",
