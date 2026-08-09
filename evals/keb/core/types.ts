@@ -554,9 +554,12 @@ export interface CheckpointEvaluationRecord {
   factEvaluations: FactEvaluation[];
 
   /**
-   * Forgetting verdicts at this checkpoint: one per obsolete version under watch,
-   * which is every version newly obsolete at this boundary plus every earlier
-   * obsolete version not yet judged forgotten.
+   * Forgetting verdicts at this checkpoint: one per obsolete version under watch.
+   * The watch set is every version that is obsolete according to the Truth Ledger
+   * here, including versions already judged `forgotten` at an earlier checkpoint.
+   * Forgetting is not treated as permanent, so a forgotten version stays under
+   * watch and keeps being re-evaluated as long as it remains obsolete; it leaves
+   * the watch set only if the ledger makes it current truth again.
    */
   forgettingEvaluations: ForgettingEvaluation[];
 
@@ -875,9 +878,13 @@ export interface StaleKnowledgeRecord {
   factVersionId: string;
 
   /**
-   * How many checkpoints the version was judged `lingering`. For a resolved
-   * version this is its final stale lifetime; for an unresolved one it is a lower
-   * bound, since the version might have lingered longer had the trace continued.
+   * How many checkpoints the version was judged `lingering` before it was first
+   * judged `forgotten` — its stale lifetime. For a resolved version this is its
+   * final lifetime; for an unresolved one it is a lower bound, since the version
+   * might have lingered longer had the trace continued. Lingering verdicts after a
+   * first forgetting (an obsolete version that recurs) are not counted here; V1
+   * leaves such recurrences in the raw forgetting history without a separate
+   * metric.
    */
   lingeredCheckpoints: number;
 
