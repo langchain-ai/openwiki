@@ -39,13 +39,16 @@ into stable, size-bounded sections, then one BM25 index is reused to retrieve th
 most relevant evidence for coverage and forgetting. A missing or forgotten
 verdict is provisional until the evaluator has exhausted every remaining
 section, preventing retrieval misses from becoming final negative judgments.
+Forgetting evidence is required when obsolete knowledge lingers and optional
+when it has been forgotten; a forgotten verdict may cite a section that shows
+the replacement, removal, or historical-only treatment.
 
 All semantic judgments use schema-validated direct model calls with fixed batch
 sizes, a five-minute per-attempt timeout, at most two attempts, zero provider
-retries, and temperature zero. Passes run sequentially, so call counts and
-failure boundaries remain bounded and observable. Precision visits every
-section rather than using retrieval and compares every extracted assertion with
-the complete active Truth Ledger.
+retries, and no evaluator-forced sampling parameters. Passes run sequentially,
+so call counts and failure boundaries remain bounded and observable. Precision
+visits every section rather than using retrieval and compares every extracted
+assertion with the complete active Truth Ledger.
 
 For OpenWiki, the generated wiki persists between checkpoints, so `update` sees the artifact produced by the previous run:
 
@@ -99,10 +102,24 @@ all material assertions
 
 KEB extracts assertions from every deterministic artifact section in bounded
 batches, then judges those assertions against the complete active Truth Ledger.
-V1 collapses assertions only when their whitespace-normalized text is identical
-after terminal punctuation is removed. Differently worded semantic duplicates
-remain separate assertions; avoiding an additional model grouping pass keeps the
-precision denominator more deterministic and auditable.
+Before judgment, code excludes wiki navigation and metadata, history narration,
+editorial descriptions, contributor advice, and hypothetical change scenarios.
+It deterministically collapses normalized exact duplicates and conservative
+recognized families of equivalent repository-absence claims. Generic lexical
+similarity never removes an assertion because similar wording can describe
+different functions or numeric cases. KEB records remaining high-overlap pairs
+for manual review.
+
+Each run writes `assertions/<checkpoint>.json` before precision judgment. The
+inventory records excluded sections, every extracted candidate, deterministic
+exclusion reasons, duplicates, retained assertion IDs, and lexical
+near-duplicate pairs. These files survive a later evaluation failure alongside
+`error.json`, making assertion counts and filtering auditable without provider
+traces.
+
+Complete generated documents are also written to
+`artifacts/<checkpoint>/` before evaluation. This preserves the exact artifact
+for inspection or later re-evaluation even when a subsequent pass fails.
 
 Coverage and Precision are averaged across checkpoints, then combined using their harmonic mean.
 
@@ -236,6 +253,8 @@ evals/keb/.results/
 Each run produces:
 
 ```text
+artifacts/<checkpoint>/
+assertions/<checkpoint>.json
 result.json
 report.md
 ```

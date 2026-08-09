@@ -34,7 +34,6 @@ const control = vi.hoisted<ModelControl>(() => ({
 }));
 
 const fakeModel = vi.hoisted(() => ({
-  temperature: undefined as number | undefined,
   withStructuredOutput: () => ({
     invoke: async (messages: Array<{ role: string; content: string }>) => {
       control.systemPrompts.push(messages[0].content);
@@ -72,6 +71,10 @@ beforeEach(() => {
 
 describe("ModelEvaluationBackend", () => {
   test("runs the complete bounded pipeline sequentially from artifact documents", async () => {
+    const inventories: Array<{
+      checkpointId: string;
+      keptAssertionCount: number;
+    }> = [];
     control.responses.push(
       {
         evaluations: [
@@ -116,6 +119,12 @@ describe("ModelEvaluationBackend", () => {
     const backend = new ModelEvaluationBackend({
       provider: "anthropic",
       modelId: "test-model",
+      onAssertionInventory: (inventory) => {
+        inventories.push({
+          checkpointId: inventory.checkpointId,
+          keptAssertionCount: inventory.keptAssertionCount,
+        });
+      },
     });
     const result = await backend.evaluate({
       artifact: {
@@ -146,7 +155,6 @@ describe("ModelEvaluationBackend", () => {
       ],
     });
 
-    expect(backend.version).toBe("keb-eval-3");
     expect(control.systemPrompts).toEqual([
       COVERAGE_SYSTEM,
       FORGETTING_SYSTEM,
@@ -154,6 +162,9 @@ describe("ModelEvaluationBackend", () => {
       PRECISION_JUDGMENT_SYSTEM,
     ]);
     expect(control.maxActive).toBe(1);
+    expect(inventories).toEqual([
+      { checkpointId: "T1", keptAssertionCount: 1 },
+    ]);
     expect(result).toEqual({
       factEvaluations: [
         {

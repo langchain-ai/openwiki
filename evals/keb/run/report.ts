@@ -68,9 +68,7 @@ export function formatReport(result: KebRunResult): string {
   lines.push(
     `- System: ${result.metadata.system.provider} / ${result.metadata.system.modelId ?? "(default)"}`,
   );
-  lines.push(
-    `- Evaluator: ${result.metadata.evaluatorModelId ?? "(default)"} (prompts ${result.metadata.evaluatorPromptVersion})`,
-  );
+  lines.push(`- Evaluator: ${result.metadata.evaluatorModelId ?? "(default)"}`);
   lines.push("");
   lines.push(`## KEB Score: ${pct(score.kebScore)}`);
   lines.push("");

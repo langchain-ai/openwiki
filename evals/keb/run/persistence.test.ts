@@ -4,8 +4,14 @@ import path from "node:path";
 
 import { afterEach, describe, expect, test } from "vitest";
 
-import { writeRunResult } from "./persistence.js";
-import type { KebRunResult } from "../core/types.js";
+import {
+  prepareRunDirectory,
+  writeArtifactSnapshot,
+  writeAssertionInventory,
+  writeRunFailure,
+  writeRunResult,
+} from "./persistence.js";
+import type { KebRunResult, KnowledgeArtifact } from "../core/types.js";
 
 /**
  * Build a minimal, serializable run result with the given benchmark name. The
@@ -22,7 +28,6 @@ function sampleResult(benchmarkName: string): KebRunResult {
       benchmarkName,
       startedAt: "2026-01-01T00:00:00.000Z",
       system: { provider: "fake-provider" },
-      evaluatorPromptVersion: "fake-1",
     },
     checkpoints: [],
     score: {
@@ -125,5 +130,121 @@ describe("writeRunResult", () => {
 
     expect(path.dirname(runDir)).toBe(resultsDir);
     expect(path.basename(runDir)).toBe("benchmark-2026-01-01T00-00-00-000Z");
+  });
+
+  test("persists a pre-judgment assertion inventory in the eventual run directory", async () => {
+    const resultsDir = await scratchResultsDir();
+    const runDir = await prepareRunDirectory(
+      resultsDir,
+      "calc-evolution",
+      "2026-01-01T00:00:00.000Z",
+    );
+
+    await writeAssertionInventory(runDir, {
+      checkpointId: "T0",
+      totalSectionCount: 2,
+      extractedSectionCount: 1,
+      excludedSections: [
+        {
+          sectionId: "guide.md::0001",
+          relativePath: "guide.md",
+          headingPath: ["Documentation map"],
+          reason: "wiki-navigation-section",
+        },
+      ],
+      candidates: [
+        {
+          candidateId: "candidate-000001",
+          statement: "The library exports add.",
+          sectionId: "guide.md::0000",
+          relativePath: "guide.md",
+          headingPath: ["Overview"],
+          disposition: "kept",
+          assertionId: "assertion-000001",
+        },
+      ],
+      keptAssertionCount: 1,
+      nearDuplicatePairs: [],
+    });
+
+    const written = JSON.parse(
+      await readFile(path.join(runDir, "assertions", "T0.json"), "utf8"),
+    ) as { keptAssertionCount: number };
+    expect(written.keptAssertionCount).toBe(1);
+    await expect(stat(path.join(runDir, "result.json"))).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+  });
+
+  test("persists complete checkpoint artifacts with a fingerprint manifest", async () => {
+    const resultsDir = await scratchResultsDir();
+    const runDir = await prepareRunDirectory(
+      resultsDir,
+      "calc-evolution",
+      "2026-01-01T00:00:00.000Z",
+    );
+    const artifact: KnowledgeArtifact = {
+      checkpointId: "T0",
+      snapshotDir: path.join(resultsDir, "source"),
+      fingerprint: "abc123",
+      documents: [
+        { relativePath: "quickstart.md", content: "# Quickstart\n" },
+        { relativePath: "api/calc.md", content: "# API\n" },
+      ],
+    };
+
+    await writeArtifactSnapshot(runDir, artifact);
+
+    expect(
+      await readFile(
+        path.join(runDir, "artifacts", "T0", "api", "calc.md"),
+        "utf8",
+      ),
+    ).toBe("# API\n");
+    const manifest = JSON.parse(
+      await readFile(path.join(runDir, "artifacts", "T0.json"), "utf8"),
+    ) as { fingerprint: string; documents: string[] };
+    expect(manifest).toEqual({
+      checkpointId: "T0",
+      fingerprint: "abc123",
+      documents: ["quickstart.md", "api/calc.md"],
+    });
+  });
+
+  test("rejects artifact document paths outside the checkpoint directory", async () => {
+    const resultsDir = await scratchResultsDir();
+    const runDir = await prepareRunDirectory(
+      resultsDir,
+      "calc-evolution",
+      "2026-01-01T00:00:00.000Z",
+    );
+
+    await expect(
+      writeArtifactSnapshot(runDir, {
+        checkpointId: "T0",
+        snapshotDir: path.join(resultsDir, "source"),
+        fingerprint: "abc123",
+        documents: [{ relativePath: "../escape.md", content: "escape" }],
+      }),
+    ).rejects.toThrow(/outside/u);
+  });
+
+  test("persists bounded failure metadata beside partial audit artifacts", async () => {
+    const resultsDir = await scratchResultsDir();
+    const runDir = await prepareRunDirectory(
+      resultsDir,
+      "calc-evolution",
+      "2026-01-01T00:00:00.000Z",
+    );
+
+    await writeRunFailure(runDir, new Error("precision judgment failed"));
+
+    const written = JSON.parse(
+      await readFile(path.join(runDir, "error.json"), "utf8"),
+    ) as { name: string; message: string };
+    expect(written).toMatchObject({
+      name: "Error",
+      message: "precision judgment failed",
+    });
   });
 });

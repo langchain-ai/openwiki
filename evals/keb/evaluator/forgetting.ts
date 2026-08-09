@@ -207,7 +207,7 @@ export function resolveForgetting(
  * @param targets - Obsolete facts and sections supplied to the model.
  * @param output - Parsed classifier output.
  *
- * @throws EvaluationError when a citation was unavailable to its target or a
+ * @throws EvaluationError when a citation was unavailable to the request or a
  * verdict has an invalid evidence shape.
  */
 function validateForgettingOutput(
@@ -218,30 +218,17 @@ function validateForgettingOutput(
     targets.map((target) => target.fact),
     output,
   );
-  const allowedByVersion = new Map(
-    targets.map((target) => [
-      target.fact.factVersionId,
-      new Set(target.sections.map((section) => section.id)),
-    ]),
+  const allowedSectionIds = new Set(
+    targets.flatMap((target) => target.sections.map((section) => section.id)),
   );
 
   for (const evaluation of resolved) {
-    const allowed = allowedByVersion.get(
-      evaluation.factVersionId,
-    ) as Set<string>;
-
     for (const sectionId of evaluation.evidence) {
-      if (!allowed.has(sectionId)) {
+      if (!allowedSectionIds.has(sectionId)) {
         throw new EvaluationError(
           `Forgetting evaluator cited unavailable sectionId "${sectionId}" for factVersionId "${evaluation.factVersionId}".`,
         );
       }
-    }
-
-    if (evaluation.verdict === "forgotten" && evaluation.evidence.length > 0) {
-      throw new EvaluationError(
-        `Forgetting evaluator returned evidence for forgotten factVersionId "${evaluation.factVersionId}".`,
-      );
     }
 
     if (

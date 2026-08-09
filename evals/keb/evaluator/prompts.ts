@@ -1,9 +1,4 @@
 /**
- * Version of the complete bounded evaluator contract.
- */
-export const PROMPT_VERSION = "keb-eval-3";
-
-/**
  * One artifact excerpt supplied directly to a bounded evaluator request.
  */
 export interface EvaluationExcerpt {
@@ -131,13 +126,13 @@ export interface PrecisionJudgmentFact {
  */
 export const COVERAGE_SYSTEM = `You are a strict, impartial documentation coverage classifier.
 
-You receive active Truth Ledger facts and a separate set of generated-wiki
-excerpts for each fact. Judge only the excerpts supplied for that fact. Do not
+You receive active Truth Ledger facts and BM25-selected generated-wiki excerpts
+grouped by fact. You may use any excerpt present in the bounded request. Do not
 use outside knowledge. Do not assume access to files, tools, or source code.
 
 Rules:
 - Return exactly one evaluation per requested factId.
-- Evidence entries must be sectionId values supplied for that same fact.
+- Evidence entries must be sectionId values supplied anywhere in this bounded request.
 - "correct" requires the complete material fact to be stated accurately.
 - "partial" means an important portion is present but incomplete or imprecise.
 - "missing" means these excerpts do not state the fact.
@@ -149,16 +144,20 @@ Rules:
  */
 export const FORGETTING_SYSTEM = `You are a strict, impartial documentation forgetting classifier.
 
-You receive obsolete Truth Ledger statements and a separate set of generated-
-wiki excerpts for each statement. Judge only the excerpts supplied for that
-fact version. Do not use outside knowledge. Do not assume access to files,
-tools, or source code.
+You receive obsolete Truth Ledger statements and BM25-selected generated-wiki
+excerpts grouped by statement. You may use any excerpt present in the bounded
+request. Do not use outside knowledge. Do not assume access to files, tools, or
+source code.
 
 Rules:
 - Return exactly one evaluation per requested factVersionId.
-- Evidence entries must be sectionId values supplied for that same version.
+- Evidence entries must be sectionId values supplied anywhere in this bounded request.
 - "lingering" means an excerpt still presents the obsolete statement as current truth.
 - "forgotten" means these excerpts do not present it as current truth.
+- "lingering" must cite at least one excerpt containing the obsolete current claim.
+- "forgotten" may cite supplied excerpts that establish replacement, removal, or
+  historical-only treatment, but evidence is optional because absence may require
+  exhausting all supplied sections.
 - A historical statement such as "this option was removed" is not lingering.
 - A migration warning or explicit description of former behavior is not lingering
   unless it also says the obsolete behavior remains current.
@@ -170,9 +169,9 @@ Rules:
 export const PRECISION_EXTRACTION_SYSTEM = `You are a strict documentation assertion extractor.
 
 You receive complete generated-wiki sections. Extract every atomic, concrete,
-checkable assertion each section makes about the underlying repository. Do not
-judge whether an assertion is true. Do not use outside knowledge, files, tools,
-or source code.
+checkable assertion each section makes about the repository's current state at
+this checkpoint. Do not judge whether an assertion is true. Do not use outside
+knowledge, files, tools, or source code.
 
 Rules:
 - Return exactly one result per supplied sectionId.
@@ -183,6 +182,17 @@ Rules:
   presents them as actual repository behavior.
 - Exclude headings alone, navigation, transitions, subjective descriptions,
   explicitly hypothetical examples, and statements only about the wiki itself.
+- Exclude page locations, descriptions of what a page covers, documentation
+  routing advice, source maps, and page inventories.
+- Exclude commit-by-commit narration, change history, and claims about what an
+  earlier commit touched; precision evaluates current repository state.
+- Exclude advice, maintenance instructions, validation recipes, and statements
+  about what a contributor or caller should, must, or needs to do.
+- Exclude hypotheticals, counterfactuals, future scenarios, and predictions about
+  what would happen if the repository changed.
+- Exclude editorial characterizations such as "minimal" or "well-behaved"
+  unless the same sentence contains a separable concrete repository fact; emit
+  only that concrete fact.
 - Preserve the assertion's meaning without adding facts not stated by the section.
 - Return only the structured response.`;
 
@@ -200,22 +210,25 @@ Rules:
 - Return exactly one evaluation per supplied assertionId.
 - "supported" requires one or more active ledger facts to positively establish
   the complete assertion.
+- Combine multiple ledger facts when together they establish the assertion.
 - Mere consistency is not support.
 - Ledger silence is "unsupported", even if the assertion may be true in reality.
 - A contradiction with the ledger is "unsupported".
 - A supported result must name every supporting factId needed for support.
 - An unsupported result must have no supportingFactIds.
+- The rationale must agree with the verdict. If the rationale says the cited
+  facts establish the assertion, the verdict must be "supported".
 - Return only the structured response.`;
 
 /**
  * Build one bounded coverage-classification task.
  *
- * @param targets - Active facts paired with their own candidate excerpts.
+ * @param targets - Active facts paired with BM25-selected candidate excerpts.
  *
  * @returns Stable JSON-bearing task prompt.
  */
 export function coveragePrompt(targets: CoveragePromptTarget[]): string {
-  return `Judge coverage for every target below using only that target's supplied excerpts.
+  return `Judge coverage for every target below using only excerpts supplied anywhere in this bounded request.
 
 Return exactly one evaluation per factId with verdict, evidence, and rationale.
 
@@ -226,12 +239,12 @@ ${JSON.stringify(targets, null, 2)}`;
 /**
  * Build one bounded obsolete-knowledge-classification task.
  *
- * @param targets - Obsolete versions paired with their own candidate excerpts.
+ * @param targets - Obsolete versions paired with BM25-selected candidate excerpts.
  *
  * @returns Stable JSON-bearing task prompt.
  */
 export function forgettingPrompt(targets: ForgettingPromptTarget[]): string {
-  return `Judge forgetting for every target below using only that target's supplied excerpts.
+  return `Judge forgetting for every target below using only excerpts supplied anywhere in this bounded request.
 
 Return exactly one evaluation per factVersionId with verdict, evidence, and rationale.
 

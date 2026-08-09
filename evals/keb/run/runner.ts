@@ -32,6 +32,73 @@ import type {
 import { createWorkspace } from "../replay/workspace.js";
 
 /**
+ * Observable lifecycle events emitted by a benchmark run.
+ */
+export type BenchmarkProgressEvent =
+  | {
+      type: "run-start";
+      benchmarkName: string;
+      totalCheckpoints: number;
+      provider: string;
+      systemModelId?: string;
+      evaluatorModelId?: string;
+    }
+  | { type: "replay-ready" }
+  | {
+      type: "checkpoint-start";
+      checkpointId: string;
+      checkpointIndex: number;
+      totalCheckpoints: number;
+      commit: string;
+      label?: string;
+      command: "init" | "update";
+    }
+  | {
+      type: "system-complete";
+      checkpointId: string;
+      command: "init" | "update";
+      durationMs: number;
+      skipped: boolean;
+    }
+  | {
+      type: "artifact-captured";
+      checkpointId: string;
+      documentCount: number;
+    }
+  | {
+      type: "evaluation-start";
+      checkpointId: string;
+      activeFactCount: number;
+      obsoleteFactCount: number;
+    }
+  | {
+      type: "checkpoint-complete";
+      checkpointId: string;
+      coverageScore: number;
+      precisionScore: number;
+      forgottenCount: number;
+      obsoleteFactCount: number;
+    }
+  | {
+      type: "run-complete";
+      kebScore: number;
+      quality: number;
+      traceCoverage: number;
+      tracePrecision: number;
+      maintenance?: number;
+      newKnowledgeDiscovery?: number;
+      changedKnowledgeCorrection?: number;
+      completeForgetting?: number;
+      stableRetention?: number;
+    }
+  | { type: "run-failed"; message: string };
+
+/**
+ * Receives one benchmark lifecycle event synchronously.
+ */
+export type BenchmarkProgressReporter = (event: BenchmarkProgressEvent) => void;
+
+/**
  * Everything the runner needs beyond the benchmark: the system to score, the
  * evaluator, the resolved config, and an injected start timestamp (injected so
  * the run result is deterministic in tests).
@@ -53,6 +120,12 @@ export interface RunnerInputs {
   evaluationBackend: EvaluationBackend;
 
   /**
+   * Optional durable sink invoked after each artifact capture and before its
+   * evaluation begins.
+   */
+  onArtifact?: (artifact: KnowledgeArtifact) => void | Promise<void>;
+
+  /**
    * The resolved run config.
    */
   config: KebRunConfig;
@@ -61,6 +134,11 @@ export interface RunnerInputs {
    * ISO-8601 start timestamp, injected by the caller.
    */
   startedAt: string;
+
+  /**
+   * Optional lifecycle observer used by interactive command-line output.
+   */
+  onProgress?: BenchmarkProgressReporter;
 }
 
 /**
@@ -129,6 +207,15 @@ export async function runBenchmark(
 ): Promise<KebRunResult> {
   const { benchmark, system, evaluationBackend, config, startedAt } = inputs;
   const checkpoints = benchmark.trace.checkpoints;
+  const reportProgress = inputs.onProgress ?? (() => undefined);
+  reportProgress({
+    type: "run-start",
+    benchmarkName: benchmark.name,
+    totalCheckpoints: checkpoints.length,
+    provider: config.provider,
+    systemModelId: config.systemModelId,
+    evaluatorModelId: config.evaluatorModelId,
+  });
   const workspace = await createWorkspace();
 
   let replay: GitReplay | undefined;
@@ -139,6 +226,7 @@ export async function runBenchmark(
       workspace.worktreeParent,
       checkpoints[0].commit,
     );
+    reportProgress({ type: "replay-ready" });
 
     for (let i = 0; i < checkpoints.length; i += 1) {
       const checkpoint = checkpoints[i];
@@ -164,6 +252,17 @@ export async function runBenchmark(
 
     for (let i = 0; i < checkpoints.length; i += 1) {
       const checkpoint = checkpoints[i];
+      const command = i === 0 ? "init" : "update";
+
+      reportProgress({
+        type: "checkpoint-start",
+        checkpointId: checkpoint.id,
+        checkpointIndex: i,
+        totalCheckpoints: checkpoints.length,
+        commit: checkpoint.commit,
+        label: checkpoint.label,
+        command,
+      });
 
       if (i > 0) {
         await replay.checkout(checkpoint.commit);
@@ -173,12 +272,25 @@ export async function runBenchmark(
         i === 0
           ? await system.init(replay.worktreeDir)
           : await system.update(replay.worktreeDir);
+      reportProgress({
+        type: "system-complete",
+        checkpointId: checkpoint.id,
+        command,
+        durationMs: outcome.durationMs,
+        skipped: outcome.skipped,
+      });
 
       const artifact = await captureArtifact(
         checkpoint.id,
         replay.worktreeDir,
         workspace.artifactsRoot,
       );
+      await inputs.onArtifact?.(artifact);
+      reportProgress({
+        type: "artifact-captured",
+        checkpointId: checkpoint.id,
+        documentCount: artifact.documents.length,
+      });
 
       if (i === 0 && artifact.documents.length === 0) {
         throw new SystemRunError(
@@ -226,6 +338,13 @@ export async function runBenchmark(
         ...newlyObsolete,
       ]);
 
+      reportProgress({
+        type: "evaluation-start",
+        checkpointId: checkpoint.id,
+        activeFactCount: activeFacts.length,
+        obsoleteFactCount: obsoleteFacts.length,
+      });
+
       const evaluation = await evaluationBackend.evaluate({
         artifact,
         activeFacts,
@@ -234,6 +353,16 @@ export async function runBenchmark(
 
       const coverage = computeCoverage(evaluation.factEvaluations);
       const precision = computePrecision(evaluation.precisionEvaluations);
+      reportProgress({
+        type: "checkpoint-complete",
+        checkpointId: checkpoint.id,
+        coverageScore: coverage.score,
+        precisionScore: precision.score,
+        forgottenCount: evaluation.forgettingEvaluations.filter(
+          (item) => item.verdict === "forgotten",
+        ).length,
+        obsoleteFactCount: evaluation.forgettingEvaluations.length,
+      });
 
       let maintenanceCounts: MaintenanceCounts | undefined;
 
@@ -286,18 +415,39 @@ export async function runBenchmark(
       previousFactEvaluations = evaluation.factEvaluations;
     }
 
-    return {
+    const result: KebRunResult = {
       metadata: {
         benchmarkName: benchmark.name,
         startedAt,
         system: { provider: config.provider, modelId: config.systemModelId },
         evaluatorModelId: config.evaluatorModelId,
-        evaluatorPromptVersion: evaluationBackend.version,
       },
       checkpoints: scores,
       score: aggregateScore(scores),
       diagnostics: computeDiagnostics(history),
     };
+
+    reportProgress({
+      type: "run-complete",
+      kebScore: result.score.kebScore,
+      quality: result.score.quality,
+      traceCoverage: result.score.traceCoverage,
+      tracePrecision: result.score.tracePrecision,
+      maintenance: result.score.maintenance,
+      newKnowledgeDiscovery:
+        result.score.maintenanceRates.newKnowledgeDiscovery,
+      changedKnowledgeCorrection:
+        result.score.maintenanceRates.changedKnowledgeCorrection,
+      completeForgetting: result.score.maintenanceRates.completeForgetting,
+      stableRetention: result.score.maintenanceRates.stableRetention,
+    });
+    return result;
+  } catch (error) {
+    reportProgress({
+      type: "run-failed",
+      message: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
   } finally {
     await replay?.teardown();
     await workspace.dispose();

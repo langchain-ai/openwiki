@@ -34,6 +34,116 @@
         ]
       },
       {
+        "id": "fixture-purpose",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The source describes calc as a tiny arithmetic library used as a KEB smoke-test fixture.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "repository-file-inventory",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The complete repository contains exactly three tracked files: `README.md`, `src/calc.ts`, and `src/version.ts`.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "root-layout",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The repository root contains `README.md` and the `src/` directory.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "source-file-inventory",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The complete TypeScript source surface consists of exactly two files under `src/`: `src/calc.ts` and `src/version.ts`.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-tests",
+        "category": "testing",
+        "versions": [
+          {
+            "statement": "The repository contains no test files or test directory.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-package-config",
+        "category": "operations",
+        "versions": [
+          {
+            "statement": "The repository contains no package manifest or `package.json` file.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "dependency-shape",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The TypeScript source imports no modules.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-entrypoint-barrel",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The repository has no index, barrel, or package entrypoint module.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-private-source-symbols",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "Every runtime declaration in the TypeScript source is exported; there are no private helper functions, classes, types, interfaces, or internal constants.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "public-api-surface",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "The complete public surface has exactly three named exports: the functions `add` and `negate`, plus the `VERSION` constant.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T1"
+          },
+          {
+            "statement": "The complete public surface has exactly four named exports: the functions `add`, `negate`, and `subtract`, plus the `VERSION` constant.",
+            "fromCheckpoint": "T1",
+            "untilCheckpoint": "T2"
+          },
+          {
+            "statement": "The complete public surface has exactly three named exports: the functions `add` and `subtract`, plus the `VERSION` constant; `negate` is no longer exported or present.",
+            "fromCheckpoint": "T2"
+          }
+        ]
+      },
+      {
         "id": "language-esm-exports",
         "category": "architecture",
         "versions": [
@@ -64,6 +174,16 @@
         ]
       },
       {
+        "id": "calc-module-comment",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "`src/calc.ts` begins with a module-level JSDoc comment describing the file as a tiny arithmetic library used as a KEB smoke-test fixture and stating its purity constraints.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
         "id": "version-module",
         "category": "architecture",
         "versions": [
@@ -74,11 +194,41 @@
         ]
       },
       {
+        "id": "version-export-shape",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "`src/version.ts` contains only a JSDoc-documented named string constant `VERSION`, described as the library's released version string.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
         "id": "readme-api-doc",
         "category": "docs",
         "versions": [
           {
             "statement": "A root `README.md` documents the current version and the public API, listing each function as a bullet under an `## API` heading.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "readme-structure",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "`README.md` starts with the H1 heading `calc`.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "readme-purity-contract",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "The README explicitly states that all functions are pure, perform no input validation, rounding, or I/O, and are TypeScript ES module named exports.",
             "fromCheckpoint": "T0"
           }
         ]
@@ -114,11 +264,52 @@
         ]
       },
       {
+        "id": "add-signature",
+        "category": "types",
+        "versions": [
+          {
+            "statement": "`add` has the TypeScript signature `add(a: number, b: number): number`.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "negate-signature",
+        "category": "types",
+        "versions": [
+          {
+            "statement": "`negate` has the TypeScript signature `negate(x: number): number`.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          }
+        ]
+      },
+      {
+        "id": "subtract-signature",
+        "category": "types",
+        "versions": [
+          {
+            "statement": "`subtract` has the TypeScript signature `subtract(a: number, b: number): number`.",
+            "fromCheckpoint": "T1"
+          }
+        ]
+      },
+      {
         "id": "add-behavior",
         "category": "api",
         "versions": [
           {
             "statement": "`add(a, b)` returns the sum of its two number arguments.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "add-implementation",
+        "category": "implementation",
+        "versions": [
+          {
+            "statement": "The complete implementation of `add` is `return a + b;`; it contains no branches, helper calls, or other operations.",
             "fromCheckpoint": "T0"
           }
         ]
@@ -135,11 +326,369 @@
         ]
       },
       {
+        "id": "negate-implementation",
+        "category": "implementation",
+        "versions": [
+          {
+            "statement": "The complete implementation of `negate` is `return -x;`; it contains no branches, helper calls, or other operations.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          }
+        ]
+      },
+      {
         "id": "subtract-behavior",
         "category": "api",
         "versions": [
           {
             "statement": "`subtract(a, b)` returns the difference of its two arguments, the first minus the second (`a - b`).",
+            "fromCheckpoint": "T1"
+          }
+        ]
+      },
+      {
+        "id": "subtract-implementation",
+        "category": "implementation",
+        "versions": [
+          {
+            "statement": "The complete implementation of `subtract` is `return a - b;`; it contains no branches, helper calls, or other operations.",
+            "fromCheckpoint": "T1"
+          }
+        ]
+      },
+      {
+        "id": "readme-api-surface",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "At version 1.0.0 the README API list documents exactly `add(a, b)` and `negate(x)`.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T1"
+          },
+          {
+            "statement": "After subtract is introduced, the README API list documents exactly `add(a, b)`, `negate(x)`, and `subtract(a, b)`.",
+            "fromCheckpoint": "T1",
+            "untilCheckpoint": "T2"
+          },
+          {
+            "statement": "At version 2.0.0 the README API list documents exactly `add(a, b)` and `subtract(a, b)`; it no longer lists `negate(x)`.",
+            "fromCheckpoint": "T2"
+          }
+        ]
+      },
+      {
+        "id": "no-other-root-entries",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The repository root has no entries other than `README.md` and `src/`.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-typescript-config",
+        "category": "operations",
+        "versions": [
+          {
+            "statement": "The repository contains no `tsconfig.json` or other TypeScript compiler configuration.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-build-config",
+        "category": "operations",
+        "versions": [
+          {
+            "statement": "The repository contains no build or bundler configuration.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-test-config",
+        "category": "testing",
+        "versions": [
+          {
+            "statement": "The repository contains no test-runner configuration.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-dependencies",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The repository declares no runtime or development dependencies.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "direct-module-exports",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "Public declarations are exported directly from `src/calc.ts` and `src/version.ts`.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-class-or-namespace",
+        "category": "implementation",
+        "versions": [
+          {
+            "statement": "`src/calc.ts` defines no class or namespace.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-module-state",
+        "category": "implementation",
+        "versions": [
+          {
+            "statement": "The arithmetic module defines no shared mutable state or module-level variables read or written by its functions.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-plugin-system",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The repository contains no plugin or registration system.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-ci",
+        "category": "operations",
+        "versions": [
+          {
+            "statement": "The repository contains no CI configuration or `.github/workflows` directory.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-lint-format-config",
+        "category": "operations",
+        "versions": [
+          {
+            "statement": "The repository contains no lint, ESLint, formatting, or Prettier configuration.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-build-output",
+        "category": "operations",
+        "versions": [
+          {
+            "statement": "The repository contains no build output or `dist/` directory.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-npm-scripts",
+        "category": "operations",
+        "versions": [
+          {
+            "statement": "The repository declares no npm scripts because it has no package manifest.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-build-command",
+        "category": "operations",
+        "versions": [
+          {
+            "statement": "The repository defines no build command.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-test-command",
+        "category": "testing",
+        "versions": [
+          {
+            "statement": "The repository defines no test command.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-lint-command",
+        "category": "operations",
+        "versions": [
+          {
+            "statement": "The repository defines no lint command.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-version-sync-check",
+        "category": "testing",
+        "versions": [
+          {
+            "statement": "The repository contains no automated test, build, or CI check that enforces agreement between `src/version.ts` and the version stated in `README.md`.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "sole-machine-version",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "`VERSION` in `src/version.ts` is the repository's only machine-readable version identifier.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "readme-description",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "The README description is exactly `A tiny calculator library, version 1.0.0.`",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          },
+          {
+            "statement": "The README description is exactly `A tiny calculator library, version 2.0.0.`",
+            "fromCheckpoint": "T2"
+          }
+        ]
+      },
+      {
+        "id": "readme-version-line",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "The README contains the exact Markdown line: `The exported \u0060VERSION\u0060 constant is \u0060\"1.0.0\"\u0060.`",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          },
+          {
+            "statement": "The README contains the exact Markdown line: `The exported \u0060VERSION\u0060 constant is \u0060\"2.0.0\"\u0060.`",
+            "fromCheckpoint": "T2"
+          }
+        ]
+      },
+      {
+        "id": "readme-api-heading",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "The README has exactly one H2 heading, `API`.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "calc-module-docblock-text",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "The `src/calc.ts` module docblock states exactly: `A tiny arithmetic library used as a KEB smoke-test fixture. Every function is a pure function of its arguments: no input validation, no rounding, and no I/O.`",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "version-source-line",
+        "category": "implementation",
+        "versions": [
+          {
+            "statement": "`src/version.ts` contains exactly `export const VERSION = \"1.0.0\";` after its JSDoc comment.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          },
+          {
+            "statement": "`src/version.ts` contains exactly `export const VERSION = \"2.0.0\";` after its JSDoc comment.",
+            "fromCheckpoint": "T2"
+          }
+        ]
+      },
+      {
+        "id": "add-jsdoc-parameters",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "The JSDoc for `add` identifies `a` as the left operand, `b` as the right operand, and the return value as the sum of `a` and `b`.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "negate-jsdoc-parameter",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "The JSDoc for `negate` identifies `x` as the value to negate and the return value as the additive inverse of `x`.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          }
+        ]
+      },
+      {
+        "id": "subtract-jsdoc-parameters",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "The JSDoc for `subtract` identifies `a` as the number to subtract from, `b` as the number to subtract, and the return value as the difference `a - b`.",
+            "fromCheckpoint": "T1"
+          }
+        ]
+      },
+      {
+        "id": "native-number-semantics",
+        "category": "behavior",
+        "versions": [
+          {
+            "statement": "The arithmetic functions use JavaScript's native `number` operators directly, so they preserve native NaN, infinity, signed-zero, and floating-point behavior without special cases or precision correction.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "add-edge-cases",
+        "category": "behavior",
+        "versions": [
+          {
+            "statement": "`add(NaN, 1)` is NaN; `add(Infinity, 1)` is Infinity; `add(Infinity, -Infinity)` is NaN; `add(-Infinity, 1)` is -Infinity; `add(-0, 0)` is 0; and `add(0.1, 0.2)` is 0.30000000000000004.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "negate-edge-cases",
+        "category": "behavior",
+        "versions": [
+          {
+            "statement": "`negate(NaN)` is NaN; `negate(Infinity)` is -Infinity; `negate(-Infinity)` is Infinity; `negate(0)` is -0; `negate(-0)` is 0; and `negate(0.1)` is -0.1.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          }
+        ]
+      },
+      {
+        "id": "subtract-edge-cases",
+        "category": "behavior",
+        "versions": [
+          {
+            "statement": "`subtract(NaN, 1)` is NaN; `subtract(Infinity, 1)` is Infinity; `subtract(Infinity, Infinity)` is NaN; `subtract(-Infinity, 1)` is -Infinity; `subtract(0, 0)` is 0; `subtract(-0, 0)` is -0; and `subtract(0.3, 0.1)` is 0.19999999999999998.",
             "fromCheckpoint": "T1"
           }
         ]

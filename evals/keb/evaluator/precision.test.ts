@@ -8,7 +8,10 @@ import {
   PRECISION_EXTRACTION_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
 } from "./prompts.js";
-import { runPrecisionPass } from "./precision.js";
+import {
+  runPrecisionPass,
+  type PrecisionAssertionInventory,
+} from "./precision.js";
 
 /**
  * Queued responses and invocation telemetry for precision tests.
@@ -396,6 +399,221 @@ describe("runPrecisionPass", () => {
       "Retries occur.",
       "Requests are retried.",
     ]);
+  });
+
+  test("deterministically deduplicates equivalent repository-absence claims", async () => {
+    const control = controller([
+      {
+        sections: [
+          {
+            sectionId: "a::0000",
+            assertions: [
+              "No test files exist in the repository.",
+              "There are no tests anywhere in the tree.",
+              "There is no test runner configuration.",
+            ],
+          },
+        ],
+      },
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "supported",
+            supportingFactIds: ["tests"],
+            rationale: "The repository has no tests.",
+          },
+          {
+            assertionId: "assertion-000002",
+            verdict: "supported",
+            supportingFactIds: ["runner"],
+            rationale: "The repository has no test runner.",
+          },
+        ],
+      },
+    ]);
+    let inventory: PrecisionAssertionInventory | undefined;
+
+    const evaluations = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T0",
+      sections: [section("a::0000", "a.md", "Repository testing state.")],
+      activeFacts: [
+        activeFact("tests", "The repository has no tests."),
+        activeFact("runner", "The repository has no test runner."),
+      ],
+      onInventory: (value) => {
+        inventory = value;
+      },
+    });
+
+    expect(evaluations).toHaveLength(2);
+    expect(inventory?.candidates[1]).toMatchObject({
+      disposition: "excluded",
+      exclusionReason: "semantic-duplicate",
+      duplicateOf: "assertion-000001",
+    });
+  });
+
+  test("excludes advice and hypothetical change scenarios", async () => {
+    const control = controller([
+      {
+        sections: [
+          {
+            sectionId: "a::0000",
+            assertions: [
+              "Contributors should update README.md when adding an export.",
+              "If VERSION were changed, the README would become stale.",
+              "The library exports add.",
+              "The service must run Redis.",
+            ],
+          },
+        ],
+      },
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "supported",
+            supportingFactIds: ["add"],
+            rationale: "Supported.",
+          },
+          {
+            assertionId: "assertion-000002",
+            verdict: "supported",
+            supportingFactIds: ["redis"],
+            rationale: "Supported.",
+          },
+        ],
+      },
+    ]);
+    let inventory: PrecisionAssertionInventory | undefined;
+
+    await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T0",
+      sections: [section("a::0000", "a.md", "Guidance and facts.")],
+      activeFacts: [
+        activeFact("add", "The library exports add."),
+        activeFact("redis", "The service must run Redis."),
+      ],
+      onInventory: (value) => {
+        inventory = value;
+      },
+    });
+
+    expect(
+      inventory?.candidates.map((candidate) => candidate.exclusionReason),
+    ).toEqual([
+      "prescriptive-assertion",
+      "hypothetical-assertion",
+      undefined,
+      undefined,
+    ]);
+  });
+
+  test("persists an auditable filtered inventory before judgment", async () => {
+    const contentSection = section(
+      "guide::0000",
+      "guide.md",
+      "Current repository facts.",
+    );
+    const navigationSection = {
+      ...section("guide::0001", "guide.md", "Page routing."),
+      headingPath: ["Documentation map"],
+    };
+    const control = controller([
+      {
+        sections: [
+          {
+            sectionId: "guide::0000",
+            assertions: [
+              "The library exports add.",
+              "The library exports add!",
+              "The wiki page API Reference covers add.",
+              "Commit 0ee8f29 did not touch version.ts.",
+              "calc is a minimal, well-behaved codebase rather than a production library.",
+              "The add function returns the sum of two numbers.",
+              "The add function returns the sum of its two numbers.",
+            ],
+          },
+        ],
+      },
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "supported",
+            supportingFactIds: ["add"],
+            rationale: "Supported.",
+          },
+          {
+            assertionId: "assertion-000002",
+            verdict: "supported",
+            supportingFactIds: ["add"],
+            rationale: "Supported.",
+          },
+          {
+            assertionId: "assertion-000003",
+            verdict: "supported",
+            supportingFactIds: ["add"],
+            rationale: "Supported.",
+          },
+        ],
+      },
+    ]);
+    let inventory: PrecisionAssertionInventory | undefined;
+    let callsAtInventory = -1;
+
+    const result = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [navigationSection, contentSection],
+      activeFacts: [activeFact("add", "The library exports add.")],
+      onInventory: (value) => {
+        inventory = value;
+        callsAtInventory = control.systemPrompts.length;
+      },
+    });
+
+    expect(callsAtInventory).toBe(1);
+    expect(control.systemPrompts).toEqual([
+      PRECISION_EXTRACTION_SYSTEM,
+      PRECISION_JUDGMENT_SYSTEM,
+    ]);
+    expect(extractionSections(control.taskPrompts[0])).toEqual([
+      expect.objectContaining({ sectionId: "guide::0000" }),
+    ]);
+    expect(inventory).toMatchObject({
+      checkpointId: "T1",
+      totalSectionCount: 2,
+      extractedSectionCount: 1,
+      keptAssertionCount: 3,
+      excludedSections: [
+        expect.objectContaining({
+          sectionId: "guide::0001",
+          reason: "wiki-navigation-section",
+        }),
+      ],
+    });
+    expect(
+      inventory?.candidates.map((candidate) => candidate.exclusionReason),
+    ).toEqual([
+      undefined,
+      "exact-duplicate",
+      "wiki-meta-assertion",
+      "commit-history-assertion",
+      "editorial-assertion",
+      undefined,
+      undefined,
+    ]);
+    expect(inventory?.nearDuplicatePairs).toEqual([
+      expect.objectContaining({
+        firstAssertionId: "assertion-000002",
+        secondAssertionId: "assertion-000003",
+      }),
+    ]);
+    expect(result).toHaveLength(3);
   });
 
   test("retries then rejects unknown supporting fact IDs", async () => {

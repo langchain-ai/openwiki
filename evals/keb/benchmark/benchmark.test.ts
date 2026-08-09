@@ -6,6 +6,7 @@ import { afterEach, describe, expect, test } from "vitest";
 
 import { git } from "../replay/git.js";
 import { loadBenchmark } from "./benchmark.js";
+import { getActiveFacts } from "./truth-ledger.js";
 
 /**
  * Absolute path to the committed `calc-evolution` fixture, whose source history
@@ -64,5 +65,36 @@ describe("loadBenchmark on the committed calc-evolution fixture", () => {
         await git(RECONSTRUCTED_REPO, ["cat-file", "-t", checkpoint.commit]),
       ).toBe("commit");
     }
+  });
+
+  test("projects a comprehensive checkpoint-aware fact census", async () => {
+    const benchmark = await loadBenchmark(FIXTURE_DIR);
+    const t0 = getActiveFacts(benchmark, "T0");
+    const t1 = getActiveFacts(benchmark, "T1");
+    const t2 = getActiveFacts(benchmark, "T2");
+
+    expect([t0.length, t1.length, t2.length]).toEqual([59, 64, 59]);
+    expect(
+      t0.find((fact) => fact.factId === "public-api-surface")?.statement,
+    ).toContain("exactly three named exports");
+    expect(
+      t1.find((fact) => fact.factId === "public-api-surface")?.statement,
+    ).toContain("exactly four named exports");
+    expect(
+      t2.find((fact) => fact.factId === "public-api-surface")?.statement,
+    ).toContain("`negate` is no longer exported or present");
+    expect(t0.map((fact) => fact.factId)).toEqual(
+      expect.arrayContaining([
+        "repository-file-inventory",
+        "source-file-inventory",
+        "no-tests",
+        "no-package-config",
+        "dependency-shape",
+        "no-entrypoint-barrel",
+        "no-private-source-symbols",
+        "add-signature",
+        "add-implementation",
+      ]),
+    );
   });
 });

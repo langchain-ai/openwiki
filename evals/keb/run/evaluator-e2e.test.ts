@@ -244,7 +244,6 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
 }
 
 const scriptedModel = {
-  temperature: undefined as number | undefined,
   withStructuredOutput: () => ({
     invoke: async (
       messages: Array<{ role: string; content: string }>,
@@ -548,8 +547,8 @@ describe("direct evaluator end to end", () => {
     const runDir = await writeRunResult(resultsDir, result);
     const persisted = JSON.parse(
       await readFile(path.join(runDir, "result.json"), "utf8"),
-    ) as { metadata: { evaluatorPromptVersion: string } };
-    expect(persisted.metadata.evaluatorPromptVersion).toBe("keb-eval-3");
+    ) as { metadata: Record<string, unknown> };
+    expect(persisted.metadata).not.toHaveProperty("evaluatorPromptVersion");
     expect(formatReport(result)).toContain("Unsupported assertions (1 of 4)");
   });
 

@@ -1039,11 +1039,6 @@ export interface KebRunMetadata {
    * Model the evaluator used.
    */
   evaluatorModelId?: string;
-
-  /**
-   * The prompt version string the evaluator ran with, for reproducibility.
-   */
-  evaluatorPromptVersion: string;
 }
 
 /**
@@ -1136,12 +1131,6 @@ export interface SystemUnderTest {
  * contract.
  */
 export interface EvaluationBackend {
-  /**
-   * Version string identifying the evaluation logic and prompts, recorded in run
-   * metadata for reproducibility.
-   */
-  readonly version: string;
-
   /**
    * Evaluate one checkpoint's artifact.
    *

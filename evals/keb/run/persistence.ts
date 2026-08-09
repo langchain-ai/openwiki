@@ -3,7 +3,8 @@ import path from "node:path";
 
 import { WorktreeSafetyError } from "../core/errors.js";
 import { isContainedBy } from "../core/paths.js";
-import type { KebRunResult } from "../core/types.js";
+import type { KebRunResult, KnowledgeArtifact } from "../core/types.js";
+import type { PrecisionAssertionInventory } from "../evaluator/precision.js";
 
 /**
  * Turn an ISO timestamp into a filesystem-safe slug.
@@ -36,6 +37,153 @@ function nameSlug(name: string): string {
 }
 
 /**
+ * Resolve and confine the stable per-run directory shared by incremental audit
+ * artifacts and the final result.
+ *
+ * @param resultsDir - Absolute or relative results root.
+ * @param benchmarkName - Untrusted benchmark display name.
+ * @param startedAt - ISO timestamp identifying the run.
+ *
+ * @returns Absolute confined run directory.
+ *
+ * @throws WorktreeSafetyError when the resolved path escapes the results root.
+ */
+export function runDirectory(
+  resultsDir: string,
+  benchmarkName: string,
+  startedAt: string,
+): string {
+  const base = path.resolve(resultsDir);
+  const runDir = path.join(
+    base,
+    `${nameSlug(benchmarkName)}-${timestampSlug(startedAt)}`,
+  );
+
+  if (!isContainedBy(base, path.resolve(runDir))) {
+    throw new WorktreeSafetyError(
+      `Refusing to write run results outside "${base}": "${runDir}".`,
+    );
+  }
+
+  return runDir;
+}
+
+/**
+ * Create the stable per-run directory before benchmark execution begins.
+ *
+ * @param resultsDir - Results root.
+ * @param benchmarkName - Benchmark name used in the directory slug.
+ * @param startedAt - Run start timestamp.
+ *
+ * @returns Absolute created run directory.
+ */
+export async function prepareRunDirectory(
+  resultsDir: string,
+  benchmarkName: string,
+  startedAt: string,
+): Promise<string> {
+  const runDir = runDirectory(resultsDir, benchmarkName, startedAt);
+  await mkdir(runDir, { recursive: true });
+  return runDir;
+}
+
+/**
+ * Persist one complete pre-judgment assertion inventory immediately so it
+ * survives a later evaluator or benchmark failure.
+ *
+ * @param runDir - Prepared confined run directory.
+ * @param inventory - Complete checkpoint extraction inventory.
+ *
+ * @returns Nothing after the inventory is durable.
+ */
+export async function writeAssertionInventory(
+  runDir: string,
+  inventory: PrecisionAssertionInventory,
+): Promise<void> {
+  const checkpointSlug = nameSlug(inventory.checkpointId);
+  const assertionsDir = path.join(runDir, "assertions");
+  await mkdir(assertionsDir, { recursive: true });
+  await writeFile(
+    path.join(assertionsDir, `${checkpointSlug}.json`),
+    `${JSON.stringify(inventory, null, 2)}\n`,
+    "utf8",
+  );
+}
+
+/**
+ * Persist one complete generated-wiki artifact before evaluation begins. The
+ * snapshot includes both directly readable Markdown files and a manifest with
+ * the checkpoint fingerprint and exact document inventory.
+ *
+ * @param runDir - Prepared confined run directory.
+ * @param artifact - Immutable checkpoint artifact to preserve.
+ *
+ * @returns Nothing after every document and the manifest are durable.
+ *
+ * @throws WorktreeSafetyError when a document path would escape its checkpoint
+ * artifact directory.
+ */
+export async function writeArtifactSnapshot(
+  runDir: string,
+  artifact: KnowledgeArtifact,
+): Promise<void> {
+  const checkpointSlug = nameSlug(artifact.checkpointId);
+  const checkpointDir = path.join(runDir, "artifacts", checkpointSlug);
+  await mkdir(checkpointDir, { recursive: true });
+
+  for (const document of artifact.documents) {
+    const destination = path.resolve(checkpointDir, document.relativePath);
+
+    if (!isContainedBy(checkpointDir, destination)) {
+      throw new WorktreeSafetyError(
+        `Refusing to write artifact document outside "${checkpointDir}": "${document.relativePath}".`,
+      );
+    }
+
+    await mkdir(path.dirname(destination), { recursive: true });
+    await writeFile(destination, document.content, "utf8");
+  }
+
+  await writeFile(
+    path.join(runDir, "artifacts", `${checkpointSlug}.json`),
+    `${JSON.stringify(
+      {
+        checkpointId: artifact.checkpointId,
+        fingerprint: artifact.fingerprint,
+        documents: artifact.documents.map((document) => document.relativePath),
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+}
+
+/**
+ * Persist bounded failure metadata beside any assertion inventories that were
+ * already written for an incomplete run.
+ *
+ * @param runDir - Prepared confined run directory.
+ * @param error - Failure raised by benchmark execution.
+ *
+ * @returns Nothing after failure metadata is durable.
+ */
+export async function writeRunFailure(
+  runDir: string,
+  error: unknown,
+): Promise<void> {
+  const normalized =
+    error instanceof Error
+      ? { name: error.name, message: error.message, stack: error.stack }
+      : { name: "Error", message: String(error) };
+  await writeFile(
+    path.join(runDir, "error.json"),
+    `${JSON.stringify(normalized, null, 2)}\n`,
+    "utf8",
+  );
+}
+
+/**
  * Persist a run result as `result.json` in a per-run subdirectory beneath the
  * results directory. Nothing secret is written: the result contains only scores,
  * metadata, and model ids, never API keys.
@@ -57,19 +205,11 @@ export async function writeRunResult(
   resultsDir: string,
   result: KebRunResult,
 ): Promise<string> {
-  const base = path.resolve(resultsDir);
-  const runDir = path.join(
-    base,
-    `${nameSlug(result.metadata.benchmarkName)}-${timestampSlug(result.metadata.startedAt)}`,
+  const runDir = await prepareRunDirectory(
+    resultsDir,
+    result.metadata.benchmarkName,
+    result.metadata.startedAt,
   );
-
-  if (!isContainedBy(base, path.resolve(runDir))) {
-    throw new WorktreeSafetyError(
-      `Refusing to write run results outside "${base}": "${runDir}".`,
-    );
-  }
-
-  await mkdir(runDir, { recursive: true });
   await writeFile(
     path.join(runDir, "result.json"),
     `${JSON.stringify(result, null, 2)}\n`,

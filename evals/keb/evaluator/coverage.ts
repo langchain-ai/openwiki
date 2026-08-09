@@ -201,7 +201,7 @@ export function resolveCoverage(
  * @param targets - Facts and sections supplied to the model.
  * @param output - Parsed classifier output.
  *
- * @throws EvaluationError when a citation was unavailable to its fact or a
+ * @throws EvaluationError when a citation was unavailable to the request or a
  * verdict has an invalid evidence shape.
  */
 function validateCoverageOutput(
@@ -212,18 +212,13 @@ function validateCoverageOutput(
     targets.map((target) => target.fact),
     output,
   );
-  const allowedByFact = new Map(
-    targets.map((target) => [
-      target.fact.factId,
-      new Set(target.sections.map((section) => section.id)),
-    ]),
+  const allowedSectionIds = new Set(
+    targets.flatMap((target) => target.sections.map((section) => section.id)),
   );
 
   for (const evaluation of resolved) {
-    const allowed = allowedByFact.get(evaluation.factId) as Set<string>;
-
     for (const sectionId of evaluation.evidence) {
-      if (!allowed.has(sectionId)) {
+      if (!allowedSectionIds.has(sectionId)) {
         throw new EvaluationError(
           `Coverage evaluator cited unavailable sectionId "${sectionId}" for factId "${evaluation.factId}".`,
         );

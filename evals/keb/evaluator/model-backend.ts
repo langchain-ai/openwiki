@@ -15,7 +15,7 @@ import { runCoveragePass } from "./coverage.js";
 import { sectionArtifact } from "./documents.js";
 import { runForgettingPass } from "./forgetting.js";
 import { runPrecisionPass } from "./precision.js";
-import { PROMPT_VERSION } from "./prompts.js";
+import type { PrecisionAssertionInventory } from "./precision.js";
 import { SectionBm25Index } from "./retrieval.js";
 
 /**
@@ -55,27 +55,26 @@ export interface ModelEvaluationBackendOptions {
    * @default 300000
    */
   timeoutMs?: number;
-}
 
-/**
- * Evaluator model surface carrying the common sampling-temperature field.
- */
-interface TemperatureConfigurableModel extends BaseChatModel {
   /**
-   * Sampling temperature applied to evaluator requests.
+   * Optional durable audit sink invoked before precision judgment.
    */
-  temperature?: number;
+  onAssertionInventory?: (
+    inventory: PrecisionAssertionInventory,
+  ) => void | Promise<void>;
 }
 
 /**
  * Runs the complete bounded KEB evaluation pipeline with direct model calls.
  */
 export class ModelEvaluationBackend implements EvaluationBackend {
-  readonly version = PROMPT_VERSION;
-
   private readonly model: BaseChatModel;
 
   private readonly timeoutMs: number | undefined;
+
+  private readonly onAssertionInventory:
+    | ((inventory: PrecisionAssertionInventory) => void | Promise<void>)
+    | undefined;
 
   constructor(options: ModelEvaluationBackendOptions) {
     const model = createModel(
@@ -84,11 +83,11 @@ export class ModelEvaluationBackend implements EvaluationBackend {
       // Evaluator orchestration owns its retry ceiling. Disabling nested
       // provider retries keeps the total request count bounded and observable.
       0,
-    ) as TemperatureConfigurableModel;
+    );
 
-    model.temperature = 0;
     this.model = model;
     this.timeoutMs = options.timeoutMs;
+    this.onAssertionInventory = options.onAssertionInventory;
   }
 
   /**
@@ -122,6 +121,7 @@ export class ModelEvaluationBackend implements EvaluationBackend {
       sections,
       activeFacts: input.activeFacts,
       timeoutMs: this.timeoutMs,
+      onInventory: this.onAssertionInventory,
     });
 
     return { factEvaluations, forgettingEvaluations, precisionEvaluations };

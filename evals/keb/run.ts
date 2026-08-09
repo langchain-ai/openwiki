@@ -6,8 +6,15 @@ import { ModelEvaluationBackend } from "./evaluator/model-backend.js";
 import { parseArgs } from "./run/args.js";
 import { loadBenchmark } from "./benchmark/benchmark.js";
 import { OpenWikiSystem } from "./system/openwiki-system.js";
-import { writeRunResult } from "./run/persistence.js";
+import {
+  prepareRunDirectory,
+  writeArtifactSnapshot,
+  writeAssertionInventory,
+  writeRunFailure,
+  writeRunResult,
+} from "./run/persistence.js";
 import { formatReport } from "./run/report.js";
+import { createCliProgressReporter } from "./run/progress.js";
 import { resolveRunConfig } from "./run/run-config.js";
 import { runBenchmark } from "./run/runner.js";
 
@@ -31,6 +38,12 @@ async function main(): Promise<void> {
     evalDir,
   );
   const benchmark = await loadBenchmark(config.benchmarkDir);
+  const startedAt = new Date().toISOString();
+  const runDir = await prepareRunDirectory(
+    config.resultsDir,
+    benchmark.name,
+    startedAt,
+  );
 
   const system = new OpenWikiSystem({
     provider: config.provider,
@@ -40,23 +53,40 @@ async function main(): Promise<void> {
     provider: config.provider,
     // resolveRunConfig guarantees a concrete evaluator model id.
     modelId: config.evaluatorModelId as string,
+    onAssertionInventory: (inventory) =>
+      writeAssertionInventory(runDir, inventory),
   });
 
-  const startedAt = new Date().toISOString();
-  const result = await runBenchmark({
-    benchmark,
-    system,
-    evaluationBackend,
-    config,
-    startedAt,
-  });
+  let result;
 
-  const runDir = await writeRunResult(config.resultsDir, result);
+  try {
+    result = await runBenchmark({
+      benchmark,
+      system,
+      evaluationBackend,
+      config,
+      startedAt,
+      onArtifact: (artifact) => writeArtifactSnapshot(runDir, artifact),
+      onProgress: createCliProgressReporter(),
+    });
+  } catch (error) {
+    try {
+      await writeRunFailure(runDir, error);
+      process.stderr.write(`Audit artifacts written to ${runDir}\n`);
+    } catch (persistenceError) {
+      process.stderr.write(
+        `Could not persist failure audit artifacts: ${persistenceError instanceof Error ? persistenceError.message : String(persistenceError)}\n`,
+      );
+    }
+    throw error;
+  }
+
+  await writeRunResult(config.resultsDir, result);
   const report = formatReport(result);
 
   await writeFile(path.join(runDir, "report.md"), report, "utf8");
 
-  process.stdout.write(`${report}\nResults written to ${runDir}\n`);
+  process.stderr.write(`📁 Results · ${runDir}\n`);
 }
 
 // Direct-invocation guard: run only when executed as a script, not when imported

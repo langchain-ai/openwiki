@@ -343,6 +343,45 @@ describe("runCoveragePass", () => {
     expect(control.taskPrompts).toHaveLength(2);
   });
 
+  test("accepts evidence supplied for another fact in the same bounded request", async () => {
+    const control = controller([
+      {
+        evaluations: [
+          {
+            factId: "alpha",
+            verdict: "correct",
+            evidence: ["beta-section"],
+            rationale: "The request includes this supporting section.",
+          },
+          {
+            factId: "beta",
+            verdict: "correct",
+            evidence: ["beta-section"],
+            rationale: "The section supports this fact too.",
+          },
+        ],
+      },
+    ]);
+
+    const evaluations = await runCoveragePass({
+      model: fakeModel(control),
+      checkpointId: "T0",
+      activeFacts: [
+        activeFact("alpha", "alpha behavior"),
+        activeFact("beta", "beta behavior"),
+      ],
+      index: new SectionBm25Index([
+        section("alpha-section", "alpha behavior"),
+        section("beta-section", "beta behavior and alpha behavior"),
+      ]),
+      topK: 1,
+      batchSize: 2,
+    });
+
+    expect(evaluations[0].evidence).toEqual(["beta-section"]);
+    expect(control.taskPrompts).toHaveLength(1);
+  });
+
   test("returns deterministic missing without a model for an empty artifact", async () => {
     const control = controller([]);
 
@@ -366,7 +405,7 @@ describe("runForgettingPass", () => {
           {
             factVersionId: "old@T0",
             verdict: "forgotten",
-            evidence: [],
+            evidence: ["history"],
             rationale: "described only as removed",
           },
         ],
@@ -383,8 +422,12 @@ describe("runForgettingPass", () => {
     });
 
     expect(evaluation.verdict).toBe("forgotten");
+    expect(evaluation.evidence).toEqual(["history"]);
     expect(FORGETTING_SYSTEM).toContain(
       'A historical statement such as "this option was removed" is not lingering.',
+    );
+    expect(FORGETTING_SYSTEM).toContain(
+      '"forgotten" may cite supplied excerpts that establish replacement',
     );
     expect(control.systemPrompts[0]).not.toContain("read_file");
   });
@@ -493,6 +536,45 @@ describe("runForgettingPass", () => {
       }),
     ).rejects.toBeInstanceOf(EvaluationError);
     expect(control.taskPrompts).toHaveLength(2);
+  });
+
+  test("accepts evidence supplied for another version in the same bounded request", async () => {
+    const control = controller([
+      {
+        evaluations: [
+          {
+            factVersionId: "alpha@T0",
+            verdict: "lingering",
+            evidence: ["beta-section"],
+            rationale: "The request includes the lingering assertion.",
+          },
+          {
+            factVersionId: "beta@T0",
+            verdict: "lingering",
+            evidence: ["beta-section"],
+            rationale: "The obsolete beta statement remains current.",
+          },
+        ],
+      },
+    ]);
+
+    const evaluations = await runForgettingPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      obsoleteFacts: [
+        obsoleteFact("alpha", "alpha obsolete"),
+        obsoleteFact("beta", "beta obsolete"),
+      ],
+      index: new SectionBm25Index([
+        section("alpha-section", "alpha obsolete"),
+        section("beta-section", "beta obsolete and alpha obsolete"),
+      ]),
+      topK: 1,
+      batchSize: 2,
+    });
+
+    expect(evaluations[0].evidence).toEqual(["beta-section"]);
+    expect(control.taskPrompts).toHaveLength(1);
   });
 
   test("returns deterministic forgotten without a model for an empty artifact", async () => {

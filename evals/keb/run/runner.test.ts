@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { runBenchmark } from "./runner.js";
+import type { BenchmarkProgressEvent } from "./runner.js";
 import { createTinyRepo, type TinyRepo } from "../testing/tiny-repo.js";
 import type {
   CheckpointEvaluation,
@@ -48,8 +49,6 @@ class FakeSystem implements SystemUnderTest {
  * result is fully determined.
  */
 class FakeEvaluator implements EvaluationBackend {
-  readonly version = "fake-1";
-
   async evaluate(input: EvaluationInput): Promise<CheckpointEvaluation> {
     if (input.artifact.checkpointId === "T0") {
       return {
@@ -142,8 +141,6 @@ class FakeEvaluator implements EvaluationBackend {
  * into the forgetting pass across checkpoints, not to produce a meaningful score.
  */
 class RecordingEvaluator implements EvaluationBackend {
-  readonly version = "recording-1";
-
   readonly watchSets = new Map<string, string[]>();
 
   async evaluate(input: EvaluationInput): Promise<CheckpointEvaluation> {
@@ -221,12 +218,14 @@ describe("runBenchmark", () => {
   }
 
   test("produces the exact hand-computed KEB score", async () => {
+    const progress: BenchmarkProgressEvent[] = [];
     const result = await runBenchmark({
       benchmark: benchmark(),
       system: new FakeSystem(),
       evaluationBackend: new FakeEvaluator(),
       config: config(),
       startedAt: "2026-01-01T00:00:00.000Z",
+      onProgress: (event) => progress.push(event),
     });
 
     // Per checkpoint the score now carries raw coverage and precision, not a
@@ -269,6 +268,37 @@ describe("runBenchmark", () => {
       ],
       meanResolvedLifetime: 0,
       unresolvedCount: 0,
+    });
+    expect(progress.map((event) => event.type)).toEqual([
+      "run-start",
+      "replay-ready",
+      "checkpoint-start",
+      "system-complete",
+      "artifact-captured",
+      "evaluation-start",
+      "checkpoint-complete",
+      "checkpoint-start",
+      "system-complete",
+      "artifact-captured",
+      "evaluation-start",
+      "checkpoint-complete",
+      "run-complete",
+    ]);
+    const t0Complete = progress.find(
+      (event) =>
+        event.type === "checkpoint-complete" && event.checkpointId === "T0",
+    );
+    const t1Complete = progress.find(
+      (event) =>
+        event.type === "checkpoint-complete" && event.checkpointId === "T1",
+    );
+    expect(t0Complete).toMatchObject({
+      forgottenCount: 0,
+      obsoleteFactCount: 0,
+    });
+    expect(t1Complete).toMatchObject({
+      forgottenCount: 1,
+      obsoleteFactCount: 1,
     });
   });
 

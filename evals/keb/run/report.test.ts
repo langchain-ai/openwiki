@@ -16,7 +16,6 @@ function result(): KebRunResult {
       startedAt: "2026-01-01T00:00:00.000Z",
       system: { provider: "anthropic", modelId: "claude-sonnet-5" },
       evaluatorModelId: "claude-sonnet-5",
-      evaluatorPromptVersion: "keb-eval-1",
     },
     checkpoints: [
       {
