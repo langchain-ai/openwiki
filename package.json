@@ -40,6 +40,8 @@
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
     "dev": "tsx src/cli/cli.tsx",
+    "eval:keb": "tsx evals/keb/run.ts",
+    "eval:keb:typecheck": "tsc --noEmit -p evals/keb/tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",
