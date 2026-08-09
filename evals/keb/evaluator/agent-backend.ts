@@ -20,11 +20,6 @@ import type {
 } from "../core/types.js";
 
 /**
- * Number of provider-level retries the evaluator model uses on transient errors.
- */
-const EVALUATOR_RETRY_ATTEMPTS = 2;
-
-/**
  * Narrow a raw provider string to a known OpenWiki provider, so a typo fails
  * fast with a clear message rather than deep inside model construction.
  *
@@ -59,6 +54,17 @@ export interface AgentEvaluationBackendOptions {
 }
 
 /**
+ * Evaluator model surface carrying the common sampling-temperature field used
+ * by the provider wrappers returned from OpenWiki's model factory.
+ */
+interface TemperatureConfigurableModel extends BaseChatModel {
+  /**
+   * Sampling temperature applied to evaluator requests.
+   */
+  temperature?: number;
+}
+
+/**
  * An `EvaluationBackend` that scores an artifact with three sandboxed deepagents
  * passes. This is the real evaluator; the fake in the runner test satisfies the
  * same interface.
@@ -69,11 +75,16 @@ export class AgentEvaluationBackend implements EvaluationBackend {
   private readonly model: BaseChatModel;
 
   constructor(options: AgentEvaluationBackendOptions) {
-    this.model = createModel(
+    const model = createModel(
       asProvider(options.provider),
       options.modelId,
-      EVALUATOR_RETRY_ATTEMPTS,
-    ) as BaseChatModel;
+      // Evaluator orchestration owns its retry ceiling. Disabling nested
+      // provider retries keeps the total request count bounded and observable.
+      0,
+    ) as TemperatureConfigurableModel;
+
+    model.temperature = 0;
+    this.model = model;
   }
 
   /**
