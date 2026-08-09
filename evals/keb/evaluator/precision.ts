@@ -89,6 +89,11 @@ export interface PrecisionPassInput {
    * @default 20
    */
   judgmentBatchSize?: number;
+
+  /**
+   * Per-attempt evaluator request deadline in milliseconds.
+   */
+  timeoutMs?: number;
 }
 
 /**
@@ -261,6 +266,7 @@ async function extractAssertions(
       taskPrompt: precisionExtractionPrompt(sections.map(toExtractionSection)),
       schema: assertionExtractionOutputSchema,
       validate: (parsed) => resolveExtraction(sections, parsed),
+      timeoutMs: input.timeoutMs,
     });
 
     for (const result of resolveExtraction(sections, output)) {
@@ -475,6 +481,7 @@ export async function runPrecisionPass(
       schema: precisionJudgmentOutputSchema,
       validate: (parsed) =>
         resolveJudgments(assertionBatch, input.activeFacts, parsed),
+      timeoutMs: input.timeoutMs,
     });
 
     evaluations.push(

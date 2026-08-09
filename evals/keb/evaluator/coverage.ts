@@ -55,6 +55,11 @@ export interface CoveragePassInput {
    * @default 5
    */
   batchSize?: number;
+
+  /**
+   * Per-attempt evaluator request deadline in milliseconds.
+   */
+  timeoutMs?: number;
 }
 
 /**
@@ -245,6 +250,7 @@ function validateCoverageOutput(
  * @param model - Evaluator model.
  * @param checkpointId - Checkpoint used for diagnostics.
  * @param targets - Facts and excerpts included in the request.
+ * @param timeoutMs - Optional per-attempt request deadline.
  *
  * @returns One validated evaluation per target.
  */
@@ -252,6 +258,7 @@ async function evaluateCoverageBatch(
   model: BaseChatModel,
   checkpointId: string,
   targets: CoverageTarget[],
+  timeoutMs?: number,
 ): Promise<FactEvaluation[]> {
   const output = await invokeStructuredModel({
     model,
@@ -261,6 +268,7 @@ async function evaluateCoverageBatch(
     taskPrompt: coveragePrompt(toPromptTargets(targets)),
     schema: coverageOutputSchema,
     validate: (parsed) => validateCoverageOutput(targets, parsed),
+    timeoutMs,
   });
 
   return resolveCoverage(
@@ -314,6 +322,7 @@ export async function runCoveragePass(
       input.model,
       input.checkpointId,
       targets,
+      input.timeoutMs,
     );
 
     for (const evaluation of evaluations) {
@@ -338,6 +347,7 @@ export async function runCoveragePass(
         input.model,
         input.checkpointId,
         [{ fact: target.fact, sections }],
+        input.timeoutMs,
       );
 
       resultByFact.set(target.fact.factId, evaluation);

@@ -58,6 +58,11 @@ export interface ForgettingPassInput {
    * @default 5
    */
   batchSize?: number;
+
+  /**
+   * Per-attempt evaluator request deadline in milliseconds.
+   */
+  timeoutMs?: number;
 }
 
 /**
@@ -256,6 +261,7 @@ function validateForgettingOutput(
  * @param model - Evaluator model.
  * @param checkpointId - Checkpoint used for diagnostics.
  * @param targets - Obsolete facts and excerpts included in the request.
+ * @param timeoutMs - Optional per-attempt request deadline.
  *
  * @returns One validated evaluation per target.
  */
@@ -263,6 +269,7 @@ async function evaluateForgettingBatch(
   model: BaseChatModel,
   checkpointId: string,
   targets: ForgettingTarget[],
+  timeoutMs?: number,
 ): Promise<ForgettingEvaluation[]> {
   const output = await invokeStructuredModel({
     model,
@@ -272,6 +279,7 @@ async function evaluateForgettingBatch(
     taskPrompt: forgettingPrompt(toPromptTargets(targets)),
     schema: forgettingOutputSchema,
     validate: (parsed) => validateForgettingOutput(targets, parsed),
+    timeoutMs,
   });
 
   return resolveForgetting(
@@ -325,6 +333,7 @@ export async function runForgettingPass(
       input.model,
       input.checkpointId,
       targets,
+      input.timeoutMs,
     );
 
     for (const evaluation of evaluations) {
@@ -351,6 +360,7 @@ export async function runForgettingPass(
         input.model,
         input.checkpointId,
         [{ fact: target.fact, sections }],
+        input.timeoutMs,
       );
 
       resultByVersion.set(target.fact.factVersionId, evaluation);

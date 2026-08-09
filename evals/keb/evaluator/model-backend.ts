@@ -48,6 +48,13 @@ export interface ModelEvaluationBackendOptions {
    * Concrete model id for the evaluator.
    */
   modelId: string;
+
+  /**
+   * Per-attempt evaluator request deadline in milliseconds.
+   *
+   * @default 300000
+   */
+  timeoutMs?: number;
 }
 
 /**
@@ -68,6 +75,8 @@ export class ModelEvaluationBackend implements EvaluationBackend {
 
   private readonly model: BaseChatModel;
 
+  private readonly timeoutMs: number | undefined;
+
   constructor(options: ModelEvaluationBackendOptions) {
     const model = createModel(
       asProvider(options.provider),
@@ -79,6 +88,7 @@ export class ModelEvaluationBackend implements EvaluationBackend {
 
     model.temperature = 0;
     this.model = model;
+    this.timeoutMs = options.timeoutMs;
   }
 
   /**
@@ -97,18 +107,21 @@ export class ModelEvaluationBackend implements EvaluationBackend {
       checkpointId: input.artifact.checkpointId,
       activeFacts: input.activeFacts,
       index,
+      timeoutMs: this.timeoutMs,
     });
     const forgettingEvaluations = await runForgettingPass({
       model: this.model,
       checkpointId: input.artifact.checkpointId,
       obsoleteFacts: input.obsoleteFacts,
       index,
+      timeoutMs: this.timeoutMs,
     });
     const precisionEvaluations = await runPrecisionPass({
       model: this.model,
       checkpointId: input.artifact.checkpointId,
       sections,
       activeFacts: input.activeFacts,
+      timeoutMs: this.timeoutMs,
     });
 
     return { factEvaluations, forgettingEvaluations, precisionEvaluations };
