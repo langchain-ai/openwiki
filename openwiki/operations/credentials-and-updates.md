@@ -37,18 +37,19 @@ The file stores provider configuration and API keys:
 - `OPENWIKI_PROVIDER` — the selected model provider
 - `OPENWIKI_MODEL_ID` — the default model ID
 - `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` — optional positive integer retry count for transient provider request failures; defaults to 3 when unset
-- Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`, `GEMINI_API_KEY`, `NEBIUS_API_KEY`
+- Provider API keys: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`, `GEMINI_API_KEY`, `NEBIUS_API_KEY`, `COPILOT_API_KEY` (the copilot provider can also authenticate via the GitHub CLI at runtime — see below)
 - ChatGPT OAuth tokens (for the `openai-chatgpt` provider): `OPENAI_CHATGPT_ACCESS_TOKEN`, `OPENAI_CHATGPT_REFRESH_TOKEN`, `OPENAI_CHATGPT_EXPIRES_AT`, `OPENAI_CHATGPT_ACCOUNT_ID`, `OPENAI_CHATGPT_EMAIL`, `OPENAI_CHATGPT_PLAN`
 - xAI Grok subscription OAuth tokens (for the `xai-grok` provider): `XAI_GROK_ACCESS_TOKEN`, `XAI_GROK_REFRESH_TOKEN`, `XAI_GROK_EXPIRES_AT`. Login uses xAI’s public Grok CLI OAuth client (PKCE, no client secret) against `auth.x.ai`; chat calls go to `https://api.x.ai/v1`. Tokens are never logged. Client id/scopes may change without an official OpenWiki app registration.
 - Connector OAuth credentials: `OPENWIKI_GMAIL_ACCESS_TOKEN`, `OPENWIKI_GMAIL_REFRESH_TOKEN`, `OPENWIKI_GOOGLE_CLIENT_ID`, `OPENWIKI_GOOGLE_CLIENT_SECRET`, `OPENWIKI_NOTION_MCP_ACCESS_TOKEN`, `OPENWIKI_NOTION_MCP_CLIENT_ID`, `OPENWIKI_NOTION_MCP_REFRESH_TOKEN`, `OPENWIKI_SLACK_USER_TOKEN`, `OPENWIKI_SLACK_CLIENT_ID`, `OPENWIKI_SLACK_CLIENT_SECRET`, `OPENWIKI_X_ACCESS_TOKEN`, `OPENWIKI_X_CLIENT_ID`, `OPENWIKI_X_CLIENT_SECRET`, `OPENWIKI_X_REFRESH_TOKEN`
-- Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API), `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint), and `OPENAI_BASE_URL` (optional — overrides the openai provider's default endpoint)
-- AWS Bedrock credentials: `BEDROCK_AWS_ACCESS_KEY_ID`, `BEDROCK_AWS_SECRET_ACCESS_KEY`, `BEDROCK_AWS_REGION` (all required by the bedrock provider)
+- Base URLs: `ANTHROPIC_BASE_URL` (optional — routes the anthropic provider at an Anthropic-compatible endpoint other than the default API), `OPENAI_COMPATIBLE_BASE_URL` (required by the openai-compatible provider, which has no default endpoint), `OPENAI_BASE_URL` (optional — overrides the openai provider's default endpoint), `COPILOT_BASE_URL` (optional — overrides the copilot provider's default `https://api.githubcopilot.com`, useful for GHE.com data-residency hosts), `BASETEN_BASE_URL`, `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL` (optional overrides for those providers)
+- AWS Bedrock credentials: `BEDROCK_AWS_ACCESS_KEY_ID`, `BEDROCK_AWS_SECRET_ACCESS_KEY`, `BEDROCK_AWS_SESSION_TOKEN` (optional), `BEDROCK_AWS_REGION` (all supported by the bedrock provider via `authMethod: "aws-sdk"`, which also accepts standard AWS env vars — `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AWS_REGION`, `AWS_DEFAULT_REGION` — as well as `AWS_BEARER_TOKEN_BEDROCK`, `AWS_ROLE_ARN`, and `AWS_WEB_IDENTITY_TOKEN_FILE` for OIDC/web identity)
 - Connector API keys: `TAVILY_API_KEY` for Web Search
 - Google Cloud settings for the gemini-enterprise provider: `GOOGLE_CLOUD_PROJECT` (required to run gemini-enterprise), `GOOGLE_CLOUD_LOCATION` (optional, defaults to `global`), and `GOOGLE_APPLICATION_CREDENTIALS` (optional service-account key file path; never prompted for — Google Application Default Credentials handle auth)
 - Optional LangSmith settings: `LANGSMITH_API_KEY`, `LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`
 - Optional OAuth callback settings: `OPENWIKI_OAUTH_CALLBACK_PORT` controls the
   local callback port, and `OPENWIKI_HTTPS_OAUTH_REDIRECT_URI` stores the
   Slack-only HTTPS callback URL created by `openwiki ngrok start`.
+- Telemetry settings: `OPENWIKI_TELEMETRY_DISABLED` or `DO_NOT_TRACK` (opt out of anonymous usage telemetry), `OPENWIKI_SCHEDULED` (marks a run as CI/scheduled so it is sent under a sentinel id that does not inflate human install counts)
 
 The loader merges those values into `process.env`, while preferring existing process-level values over file values. Deprecated keys (`OPENAI_BASE_URL`, `OPENAI_ORG_ID`, `OPENAI_PROJECT`) are skipped on load and removed on save.
 
@@ -168,6 +169,8 @@ saved repeat `pmset` schedule and marks the saved wake window disabled.
 2. Otherwise, use the first available provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, Nebius, NVIDIA, then Bedrock.
 3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.6-terra`).
 
+The copilot provider is selectable but never auto-detected — its credential comes from the GitHub CLI at runtime, so `resolveConfiguredProvider()` does not probe for it.
+
 `needsCredentialSetup()` in `src/credentials.tsx` checks whether the provider env var is valid and whether the provider's required credentials (its API key, or `GOOGLE_CLOUD_PROJECT` for gemini-enterprise — via `getMissingProviderEnvKey()` in `src/constants.ts`), a model ID (unless overridden), and a LangSmith key are all present. Any missing value or invalid provider triggers the interactive flow.
 
 ## Model and credential diagnostics
@@ -200,9 +203,44 @@ The content-change check uses `createOpenWikiContentSnapshot()`, which hashes th
 
 When a run fails mid-stream, the catch block in `src/agent/index.ts` still calls `persistRunMetadataIfChanged()` with `status: "interrupted"` so that already-generated content stays diffable by future updates. Without this, a crashed run would be indistinguishable from a completed one — the next update would see a clean worktree with an unchanged git head and skip as a no-op, treating a possibly partial wiki as current.
 
+A rejection that escapes every catch (for example a subagent error surfacing on the microtask queue during streaming) is caught by the process-wide crash guard in `src/agent/crash-guard.ts`, installed once at CLI startup. `handleFatal()` records the crash to telemetry and stamps the run `interrupted` post-mortem before exiting non-zero, so the next scheduled update still retries instead of skipping against a half-written wiki.
+
 `getUpdateNoopStatus()` checks `lastUpdate.status` before skipping: if it is `"interrupted"`, the update is not skipped. Metadata written by older versions (no `status` field) is treated as `"complete"`, so upgrades do not force a spurious re-run. A completed retry that changes no content still rewrites the metadata to clear a leftover interrupted status, so the no-op skip recovers instead of re-running forever.
 
 Update runs use this metadata to build a change summary since the previous successful OpenWiki execution — preferring `gitHead` for a precise commit range, falling back to `updatedAt` for a time-based range.
+
+## Ignoring paths with `.openwikiignore`
+
+A `.openwikiignore` file at the repository root keeps generated docs from reading or describing private, generated, or irrelevant paths. It is enforced as a **read boundary** during the run, not just a generation hint.
+
+Syntax is gitignore-compatible (`src/agent/openwiki-ignore.ts`): comments (`#`), blank lines, `*` and `**` globs, `?` single-char, leading-`/` anchoring to the repo root, trailing-`/` directory scoping, and `!` negation with last-match-wins ordering.
+
+```gitignore
+secrets/
+*.log
+!logs/keep.log
+```
+
+Enforcement and bounds:
+
+- The compiled `OpenWikiIgnore` ruleset is threaded through the agent backend, prompt, and run context as one cohesive object (`src/agent/docs-only-backend.ts`). When rules are active, filesystem tools (`read_file`, `write_file`, `edit_file`, raw reads) hard-deny any path the ruleset excludes, and shell `execute` is restricted to a small allowlist of maintenance commands so ignored paths cannot be reached via the shell.
+- Paths are canonicalized (`normalizeIgnorePath`) before matching, so equivalent spellings such as `./secrets/x`, `secrets/../secrets/x`, or backslash variants cannot slip past an anchored rule. Matching is case-insensitive (`/iu`) to close a bypass on case-insensitive filesystems where `Secrets/token.txt` and `secrets/token.txt` resolve to the same file.
+- The agent prompt is told the run has `.openwikiignore` rules and that matching paths are out of scope, and is directed to use `ls`, `read_file`, `glob`, and `grep` (which keep exclusions enforced) instead of shell-based discovery. When `.openwikiignore` is active, the prompt's git-history hint tells the agent history is unavailable through the shell and to rely on allowed source files and tests.
+- This is a read boundary, not a topic-suppression guarantee: ignored paths are never read, scanned, or reproduced, but the agent may still infer an ignored area from other allowed evidence such as tests, the README, or commit messages.
+
+## Anonymous usage telemetry
+
+OpenWiki collects anonymous, per-machine usage telemetry via PostHog (`src/telemetry/`). The system emits a single `openwiki_run` event per run with mode (code/personal), provider, outcome (success/failure), latency, environment, configured connectors, and a `build_channel` stamp. Telemetry can be disabled by setting `OPENWIKI_TELEMETRY_DISABLED=1` or `DO_NOT_TRACK=1`.
+
+CI and scheduled runs are detected via `ci-info` (or `OPENWIKI_SCHEDULED=1`) and sent under a sentinel distinct id per provider rather than the machine's install id, so ephemeral CI runners do not inflate human install counts. The install id is stored at `~/.openwiki/install-id` and a one-time disclosure notice is shown on first run (`src/telemetry/config.ts`). Telemetry never stalls a run — the send and client shutdown are bounded by a 3-second flush timeout (`src/telemetry/config.ts`).
+
+### Build channel stamping
+
+Every event carries a `build_channel` property (`"official"` or `"community"`) baked into the build so fork-originated telemetry can be filtered from the official-release signal. The committed default in `src/telemetry/gates.ts` is `"community"`; the upstream release pipeline rewrites that one `BUILD_CHANNEL` assignment to `"official"` via `scripts/stamp-build-channel.cjs` (driven by the `OPENWIKI_BUILD_CHANNEL` env var set in `.github/workflows/release.yml`), so only npm-published upstream builds report `"official"` and every fork, local build, and source/dev run reports `"community"`. The stamp is fail-safe: an unset or unrecognized value always resolves to `"community"`, so an unexpected env value can never mint an `"official"` build, and the stamp throws if the expected single `BUILD_CHANNEL` assignment is not present exactly once (so a drifted file fails the release loudly instead of silently publishing an unstamped build). The rewrite is ephemeral in CI (a throwaway checkout that is never committed back), so the committed source stays `"community"`. The stamp runs inside the `pnpm release` script (publish path only, before `tsc`), never on the version-PR path.
+
+### Error classification and fingerprinting
+
+Failure events are classified by walking an unwrap chain (`unwrapErrorChain()`, bounded at 32 links, cycle-safe) so a provider error hidden inside a tool-error wrapper or `AggregateError` is recovered instead of collapsing into the residual `agent_error` bucket. The origin-tag read is itself a chain walk: `readErrorOrigin()` mirrors `classifyError()` and returns the first link whose tag names an owned family (class + detail + throw-site stage), falling back to the nearest stage-only tag — so an owned error re-wrapped by a framework keeps its class instead of decaying to `agent_error`. The one override is `build_error/stream_open`: that stage is the first provider round trip, so a failure there carrying a provider signal (the raw classifier already naming it `provider_error`, or an HTTP status on the chain paired with any non-residual class) is a disguised provider error and the raw classification wins over the tag, landing the failure on the provider instead of being counted as our build bug. The residual `agent_error` bucket carries no fixed detail; its `error_detail` is the innermost error's own allowlisted name (`innermostErrorName()`), read from both `.name` (which a framework like LangChain's `MiddlewareError` copies up from the inner error) and `constructor.name`, walking to the deepest link so a framework envelope does not collapse every distinct root cause to one name. The identifier gate (`isSafeErrorIdentifier()` in `src/telemetry/taxonomy.ts`) allows only a bare ASCII identifier (letters/digits with single interior underscores, ≤64 chars); anything else is dropped so the anonymity envelope stays closed. The `errorName` field was removed — the residual bucket's signal now travels in `error_detail` — so every failure class reports a single shared detail property.
 
 ## Scheduled CI workflows
 
@@ -211,7 +249,7 @@ During `openwiki code --init`, `src/code-mode.ts` also creates `.github/workflow
 The repository includes `examples/openwiki-update.yml` as a copyable GitHub Actions scheduled update workflow. It:
 
 - runs on schedule (daily at 08:00 UTC) and on manual dispatch,
-- checks out the repository,
+- checks out the repository with `fetch-depth: 0` (full history) so `openwiki code --update` can diff HEAD against the commit it last documented — a shallow clone hides that commit and the update runs against an empty change summary,
 - installs Node.js 22,
 - installs OpenWiki globally,
 - runs `openwiki code --update --print`,
@@ -223,6 +261,7 @@ The workflow is a good reference for automated maintenance. The repo also contai
 The repository also includes `examples/openwiki-update.gitlab-ci.yml` as a copyable GitLab CI scheduled update job. It:
 
 - runs from a scheduled pipeline or a manually triggered web pipeline,
+- sets `GIT_DEPTH: "0"` (full clone) so `openwiki code --update` can diff HEAD against the last-documented commit — GitLab's default shallow clone hides that commit,
 - installs OpenWiki globally in a Node.js 22 container,
 - runs `openwiki code --update --print`,
 - skips the rest of the job when `openwiki/` did not change,
@@ -235,6 +274,7 @@ GitLab users should configure protected CI/CD variables for the model provider k
 The repository also includes `examples/openwiki-update.bitbucket-pipelines.yml` as a copyable Bitbucket Pipelines scheduled update job. It:
 
 - runs on a custom schedule or manual trigger,
+- clones with `depth: full` so `openwiki code --update` can diff HEAD against the last-documented commit — Bitbucket's default shallow clone hides that commit,
 - installs OpenWiki globally in a Node.js 22 container,
 - runs `openwiki code --update --print`,
 - commits changes to a generated `openwiki/update-$BITBUCKET_BUILD_NUMBER` branch,
@@ -249,9 +289,11 @@ Bitbucket users should configure repository variables for the model provider key
 - Never document real secret values; only document the presence and purpose of the configuration.
 - If update metadata semantics change, update both the agent runtime and the docs that explain how update runs are scoped.
 - Scheduled automation depends on the same CLI entrypoint as local users, so workflow changes should be validated against `package.json` and the CLI help text.
-- When adding a provider, update `managedEnvKeys` in `src/env.ts` so the env file is formatted correctly and diagnostics cover the new key. Providers without an API key (like gemini-enterprise) declare their required env keys in `PROVIDER_CONFIGS` (e.g. `projectEnvKey`) and are gated by `getMissingProviderEnvKey()`. Providers with a paired secret and region (like bedrock) use `secretKeyEnvKey` and `regionEnvKey` with `requiresRegion: true`.
+- When adding a provider, update `managedEnvKeys` in `src/env.ts` so the env file is formatted correctly and diagnostics cover the new key. Providers without an API key (like gemini-enterprise) declare their required env keys in `PROVIDER_CONFIGS` (e.g. `projectEnvKey`) and are gated by `getMissingProviderEnvKey()`. Providers with a paired secret and region (like bedrock) use `secretKeyEnvKey` and `regionEnvKey` with `requiresRegion: true`. External-CLI-auth providers (like copilot) declare `authMethod: "external-cli"` and `externalCliAuthAdapter`; the CLI login flow is handled in `src/external-cli-auth.ts`, and the token is never persisted to `~/.openwiki/.env`. AWS SDK providers (like bedrock) declare `authMethod: "aws-sdk"` and delegate credential resolution to the AWS SDK chain.
 - The content-snapshot check means CI runs that produce no changes will not update `.last-update.json` or open a PR with metadata-only changes.
+- Scheduled update workflows must fetch full history (`fetch-depth: 0` for GitHub Actions, `GIT_DEPTH: "0"` for GitLab CI, `clone: depth: full` for Bitbucket). A shallow clone hides the commit recorded in `.last-update.json`, so `openwiki code --update` cannot build a change window and runs against an empty summary.
 - Interrupted runs write `status: "interrupted"` so the next update retries. If metadata semantics change, keep `getUpdateNoopStatus()` and `persistRunMetadataIfChanged()` in sync so the interrupted/complete lifecycle is preserved.
+- The `build_channel` stamp (`scripts/stamp-build-channel.cjs`) targets exactly one `const BUILD_CHANNEL: BuildChannel = "…"` assignment in `src/telemetry/gates.ts`. Renaming that line, splitting it, or changing its formatting breaks the regex and fails the release loudly (`test/stamp-build-channel.test.ts`). Keep the committed value `"community"`; only the upstream release pipeline (`.github/workflows/release.yml`) sets `OPENWIKI_BUILD_CHANNEL=official`. A drifted `gates.ts` that no longer matches the assignment pattern will throw instead of silently publishing an unstamped build.
 
 ## Source map
 
@@ -261,6 +303,11 @@ Bitbucket users should configure repository variables for the model provider key
 - `src/agent/utils.ts`
 - `src/agent/index.ts`
 - `src/agent/openai-chatgpt-oauth.ts`
+- `src/external-cli-auth.ts`
+- `src/diagnostics.ts`
+- `src/telemetry/`
+- `scripts/stamp-build-channel.cjs`
+- `.github/workflows/release.yml`
 - `src/auth/oauth.ts`
 - `src/auth/providers.ts`
 - `src/auth/configure.ts`
@@ -268,8 +315,10 @@ Bitbucket users should configure repository variables for the model provider key
 - `src/onboarding.ts`
 - `src/schedules.ts`
 - `src/code-mode.ts`
+- `src/agent/openwiki-ignore.ts`
+- `src/agent/docs-only-backend.ts`
+- `src/agent/prompt.ts`
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
 - `examples/openwiki-update.bitbucket-pipelines.yml`
 - `README.md`
-- Git evidence: commits `ceded10`, `f89b05d`, `8278c36`, `0fa1430`

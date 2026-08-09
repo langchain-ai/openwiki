@@ -32,41 +32,72 @@ export async function capture(event: TelemetryEvent): Promise<boolean> {
     isServer: false,
   });
 
+  let sent = false;
   try {
-    await withTimeout(
-      client.captureImmediate({
-        distinctId: event.distinctId,
-        event: event.event,
-        // `$process_person_profile: false` is set by the caller so PostHog
-        // never builds a person; every run is anonymous. It travels in
-        // event.properties.
-        properties: event.properties,
-        // No server-side geoip enrichment (no $geoip_* location). The raw client
-        // IP is dropped by the project's "Discard client IP data" setting, not
-        // here: it is added server-side, so no client-side option can strip it.
-        disableGeoip: true,
-      }),
+    sent = await withTimeout(
+      Promise.resolve().then(() =>
+        client.captureImmediate({
+          distinctId: event.distinctId,
+          event: event.event,
+          // `$process_person_profile: false` is set by the caller so PostHog
+          // never builds a person; every run is anonymous. It travels in
+          // event.properties.
+          properties: event.properties,
+          // No server-side geoip enrichment (no $geoip_* location). The raw client
+          // IP is dropped by the project's "Discard client IP data" setting, not
+          // here: it is added server-side, so no client-side option can strip it.
+          disableGeoip: true,
+        }),
+      ),
       FLUSH_TIMEOUT_MS,
     );
+  } catch {
+    // Telemetry is best-effort; a synchronous SDK failure is a failed send.
   } finally {
     // Release the client's timers/handles so the process can exit promptly.
-    await withTimeout(client.shutdown(), FLUSH_TIMEOUT_MS);
+    try {
+      await withTimeout(
+        Promise.resolve().then(() => client.shutdown()),
+        FLUSH_TIMEOUT_MS,
+      );
+    } catch {
+      // Shutdown must not change the outcome of a capture that already settled.
+    }
   }
 
-  return true;
+  return sent;
 }
 
 /**
- * Resolves when `promise` settles or `ms` elapses, whichever comes first.
+ * Returns true only when `promise` fulfills before `ms` elapses. Rejections,
+ * synchronous failures converted to rejected promises, and timeouts return
+ * false; the caller never waits indefinitely for the short-lived CLI.
  */
 async function withTimeout(
   promise: Promise<unknown>,
   ms: number,
-): Promise<void> {
-  await Promise.race([
-    promise.catch(() => undefined),
-    new Promise<void>((resolve) => {
-      setTimeout(resolve, ms).unref();
-    }),
-  ]);
+): Promise<boolean> {
+  return await new Promise<boolean>((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      settled = true;
+      resolve(false);
+    }, ms);
+    timer.unref();
+
+    promise.then(
+      () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(true);
+      },
+      () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(false);
+      },
+    );
+  });
 }

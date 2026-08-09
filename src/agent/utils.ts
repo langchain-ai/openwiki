@@ -3,15 +3,17 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
+import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../config/constants.js";
 import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
-} from "../fs-errors.js";
+} from "../platform/fs-errors.js";
+import { resolveLanguage } from "../platform/language.js";
 import {
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
-} from "../onboarding.js";
+} from "../setup/onboarding.js";
+import { OpenWikiIgnore } from "./openwiki-ignore.js";
 import type {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -40,36 +42,28 @@ export type UpdateNoopStatus =
     };
 
 /**
- * Builds the per-run context the prompt uses to reason about prior docs and git changes.
+ * Builds the persisted per-run context used by the prompt.
  */
 export async function createRunContext(
-  command: OpenWikiCommand,
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
+  language?: string | null,
 ): Promise<RunContext> {
   const lastUpdate = await readLastUpdate(cwd, outputMode);
+  // A validated flag wins; otherwise inherit the wiki's persisted language so an
+  // update without --language keeps the existing wiki consistent instead of
+  // producing a mix of the old and new language.
+  const requestedLanguage = resolveLanguage(language).language;
+  // English is materialized as "en" rather than encoded by an absent key, so the
+  // wiki's language is always explicit in metadata and every run inherits a
+  // concrete value.
+  const effectiveLanguage = requestedLanguage ?? lastUpdate?.language ?? "en";
+  const languageContext = { language: effectiveLanguage };
   const wikiGoal = await readRunWikiGoal(cwd, outputMode);
-
-  if (command === "chat") {
-    return {
-      lastUpdate,
-      gitSummary: "Not applicable for chat.",
-      wikiGoal,
-    };
-  }
-
-  if (outputMode === "local-wiki") {
-    return {
-      lastUpdate,
-      gitSummary:
-        "Local wiki mode: connector source evidence is provided through raw data paths and OpenWiki connector tools. Git repository diff context is not used for this run.",
-      wikiGoal,
-    };
-  }
 
   return {
     lastUpdate,
-    gitSummary: await createGitSummary(command, cwd, lastUpdate),
+    ...languageContext,
     wikiGoal,
   };
 }
@@ -85,8 +79,16 @@ async function readRunWikiGoal(
   return (await readOpenWikiOnboardingConfig()).wikiGoal;
 }
 
+/**
+ * Decides whether an `update` run can be skipped because nothing meaningful changed.
+ *
+ * Working-tree and committed changes that only touch `openwiki/` or paths
+ * excluded by `openWikiIgnore` do not count as meaningful, so an ignored path
+ * changing on its own never forces a rebuild.
+ */
 export async function getUpdateNoopStatus(
   cwd: string,
+  openWikiIgnore = new OpenWikiIgnore([]),
 ): Promise<UpdateNoopStatus> {
   const lastUpdate = await readLastUpdate(cwd, "repository");
 
@@ -113,7 +115,8 @@ export async function getUpdateNoopStatus(
     .split("\n")
     .map((line) => line.trimEnd())
     .filter(Boolean)
-    .filter((line) => !isUpdateMetadataStatusLine(line));
+    .filter((line) => !isUpdateMetadataStatusLine(line))
+    .filter((line) => !lineReferencesIgnoredPath(line, openWikiIgnore));
 
   if (meaningfulStatus.length > 0) {
     return { shouldSkip: false, reason: "worktree has changes" };
@@ -127,7 +130,10 @@ export async function getUpdateNoopStatus(
 
     if (
       committedPaths.length === 0 ||
-      committedPaths.some((changedPath) => !isOpenWikiPath(changedPath))
+      committedPaths.some(
+        (changedPath) =>
+          !isOpenWikiPath(changedPath) && !openWikiIgnore.ignores(changedPath),
+      )
     ) {
       return { shouldSkip: false, reason: "git head changed" };
     }
@@ -155,6 +161,7 @@ export async function writeLastUpdateMetadata(
   modelId: string,
   outputMode: OpenWikiOutputMode = "repository",
   status: UpdateRunStatus = "complete",
+  language?: string,
 ): Promise<void> {
   const metadataFile = getMetadataFilePath(cwd, outputMode);
   const metadata: UpdateMetadata = {
@@ -163,6 +170,7 @@ export async function writeLastUpdateMetadata(
     gitHead: outputMode === "repository" ? await getGitHead(cwd) : undefined,
     model: modelId,
     status,
+    ...(language ? { language } : {}),
   };
 
   await mkdir(path.dirname(metadataFile), { recursive: true });
@@ -185,6 +193,7 @@ export async function persistRunMetadataIfChanged(
   outputMode: OpenWikiOutputMode,
   snapshotBefore: OpenWikiContentSnapshot | null,
   status: UpdateRunStatus = "complete",
+  language?: string,
 ): Promise<boolean> {
   if (command === "chat" || snapshotBefore === null) {
     return false;
@@ -201,7 +210,14 @@ export async function persistRunMetadataIfChanged(
     }
   }
 
-  await writeLastUpdateMetadata(command, cwd, modelId, outputMode, status);
+  await writeLastUpdateMetadata(
+    command,
+    cwd,
+    modelId,
+    outputMode,
+    status,
+    language,
+  );
 
   return true;
 }
@@ -272,6 +288,10 @@ async function readLastUpdate(
         // complete so upgrades do not force a spurious re-run.
         status:
           parsedMetadata.status === "interrupted" ? "interrupted" : "complete",
+        language:
+          typeof parsedMetadata.language === "string"
+            ? parsedMetadata.language
+            : undefined,
       };
     }
 
@@ -384,76 +404,6 @@ async function readSnapshotFile(filePath: string): Promise<Buffer | null> {
   }
 }
 
-/**
- * Produces the git evidence block passed to init/update prompts.
- */
-async function createGitSummary(
-  command: OpenWikiCommand,
-  cwd: string,
-  lastUpdate: UpdateMetadata | null,
-): Promise<string> {
-  const sections: string[] = [];
-  const status = await runGit(cwd, ["status", "--short"]);
-  const head = await getGitHead(cwd);
-
-  sections.push(formatGitSection("git status --short", status));
-  sections.push(formatGitSection("git rev-parse HEAD", head ?? "(unknown)"));
-
-  if (command === "update" && lastUpdate?.gitHead) {
-    const logSinceLastHead = await runGit(cwd, [
-      "log",
-      `${lastUpdate.gitHead}..HEAD`,
-      "--name-status",
-      "--oneline",
-    ]);
-
-    sections.push(
-      formatGitSection(
-        `git log ${lastUpdate.gitHead}..HEAD --name-status --oneline`,
-        logSinceLastHead,
-      ),
-    );
-  } else if (command === "update" && lastUpdate?.updatedAt) {
-    const logSinceLastUpdate = await runGit(cwd, [
-      "log",
-      "--since",
-      lastUpdate.updatedAt,
-      "--name-status",
-      "--oneline",
-    ]);
-
-    sections.push(
-      formatGitSection(
-        `git log --since ${lastUpdate.updatedAt} --name-status --oneline`,
-        logSinceLastUpdate,
-      ),
-    );
-  } else {
-    const recentLog = await runGit(cwd, [
-      "log",
-      "--max-count=20",
-      "--name-status",
-      "--oneline",
-    ]);
-
-    if (command === "update") {
-      sections.push("No prior OpenWiki update timestamp was found.");
-    }
-
-    sections.push(
-      formatGitSection(
-        "git log --max-count=20 --name-status --oneline",
-        recentLog,
-      ),
-    );
-  }
-
-  const diff = await runGit(cwd, ["diff", "--name-status", "HEAD"]);
-  sections.push(formatGitSection("git diff --name-status HEAD", diff));
-
-  return sections.join("\n\n");
-}
-
 async function getGitHead(cwd: string): Promise<string | undefined> {
   const head = await runGit(cwd, ["rev-parse", "HEAD"]);
 
@@ -487,14 +437,16 @@ async function runGit(cwd: string, args: string[]): Promise<string> {
   }
 }
 
-function formatGitSection(command: string, output: string): string {
-  return [`$ ${command}`, output.length > 0 ? output : "(no output)"].join(
-    "\n",
-  );
-}
+/**
+ * Matches the two-character status field `git status --short` puts in front of
+ * each path. The field is only one character wide on the first line of a
+ * trimmed run, because `runGit` strips the leading space of an unstaged-only
+ * status such as " M openwiki/.last-update.json".
+ */
+const GIT_STATUS_LINE_PATTERN = /^[ !?ACDMRTU]{1,2} (.+)$/u;
 
 function isUpdateMetadataStatusLine(line: string): boolean {
-  const statusPath = line.length > 3 ? line.slice(3).trim() : line.trim();
+  const statusPath = (GIT_STATUS_LINE_PATTERN.exec(line)?.[1] ?? line).trim();
   const normalizedPath = statusPath.replace(/\\/gu, "/");
 
   return (
@@ -523,6 +475,57 @@ function isOpenWikiPath(changedPath: string): boolean {
 
 function normalizeGitPath(value: string): string {
   return value.trim().replace(/\\/gu, "/");
+}
+
+/**
+ * Whether a single line of git output names at least one ignored path.
+ */
+function lineReferencesIgnoredPath(
+  line: string,
+  openWikiIgnore: OpenWikiIgnore,
+): boolean {
+  return extractGitPaths(line).some((changedPath) =>
+    openWikiIgnore.ignores(changedPath),
+  );
+}
+
+/**
+ * Pulls the file path(s) out of one line of `git status --short` or
+ * `--name-status` output.
+ *
+ * Handles both the two-column short-status format and the letter-prefixed
+ * name-status format, and returns an empty array for lines that carry no path
+ * (such as `--oneline` commit headers). Rename lines yield both the old and new
+ * paths so that either side matching a rule excludes the line.
+ */
+function extractGitPaths(line: string): string[] {
+  const shortStatusMatch = /^(?:[ MARCUD?!]{2})\s+(.+)$/u.exec(line);
+  const nameStatusMatch = /^(?:[ACDMRTUXB]\d*)\s+(.+)$/u.exec(line.trim());
+  const pathsText = shortStatusMatch?.[1] ?? nameStatusMatch?.[1];
+
+  if (!pathsText) {
+    return [];
+  }
+
+  return splitGitPaths(pathsText).map(normalizeGitPath).filter(Boolean);
+}
+
+/**
+ * Splits the path portion of a git line into individual paths.
+ *
+ * `--name-status` separates a rename's source and target with a tab, while
+ * `git status --short` uses ` -> `; a plain single path is returned as-is.
+ */
+function splitGitPaths(pathsText: string): string[] {
+  if (pathsText.includes("\t")) {
+    return pathsText.split("\t");
+  }
+
+  if (pathsText.includes(" -> ")) {
+    return pathsText.split(" -> ");
+  }
+
+  return [pathsText];
 }
 
 function isExecError(

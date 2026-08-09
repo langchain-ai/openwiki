@@ -4,8 +4,8 @@ import {
   XAI_GROK_ACCESS_TOKEN_ENV_KEY,
   XAI_GROK_EXPIRES_AT_ENV_KEY,
   XAI_GROK_REFRESH_TOKEN_ENV_KEY,
-} from "../constants.js";
-import { saveOpenWikiEnv } from "../env.js";
+} from "../config/constants.js";
+import { saveOpenWikiEnv } from "../config/env.js";
 
 /**
  * xAI Grok subscription OAuth client.

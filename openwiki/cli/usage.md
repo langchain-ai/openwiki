@@ -20,6 +20,8 @@ From `src/commands.ts` and `README.md`, the supported entry patterns are:
 - `openwiki --update [message]` — refresh existing OpenWiki documentation.
 - `openwiki -p, --print` — run once and print the final assistant output (non-interactive).
 - `openwiki --modelId <id>` / `--model-id <id>` — choose a model ID for the run.
+- `openwiki --language <locale>` / `-l <locale>` — generate the wiki in a specific language (BCP-47 locale, e.g. `zh-CN`, `hi`, `pt-BR`); see [Multilingual wikis](#multilingual-wikis).
+- `openwiki visualize [path] [--port <port>] [--no-open]` — serve an interactive node-graph visualizer for a wiki directory on a local loopback address; see [Visualizer](#visualizer).
 - `openwiki --help` / `-h` — print usage, options, and examples.
 - `openwiki --dry-run` — development-only option that avoids invoking the agent.
 
@@ -54,7 +56,7 @@ If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires the prov
 - `init` / `update` command launches (including from `/init` and `/update` slash commands),
 - provider and model selection during the session (`/provider`, `/model`),
 - interactive credential setup when required (including for init/update, not just chat),
-- streaming agent text and tool events,
+- streaming agent text and tool events (tool-call strings are redacted via `sanitizeDiagnosticText()` before display; subagent lifecycle is shown as "task" start/finish labels),
 - completed-run history and error display,
 - exit handling for help, errors, and explicit `/exit` messages.
 
@@ -64,8 +66,8 @@ The UI persists provider and model selection back to `~/.openwiki/.env` through 
 
 The first interactive run can prompt for:
 
-- a **provider** (`OPENWIKI_PROVIDER`) — openai, openai-chatgpt, openrouter, anthropic, gemini, gemini-enterprise, bedrock, baseten, fireworks, nebius, nvidia, or openai-compatible,
-- the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`, `GEMINI_API_KEY`, `NEBIUS_API_KEY`) — skipped for the gemini-enterprise provider, which instead prompts for a **GCP project** (`GOOGLE_CLOUD_PROJECT`, required) and a **GCP location** (`GOOGLE_CLOUD_LOCATION`, optional, defaults to `global`), and skipped for the bedrock provider, which instead prompts for AWS access key ID, secret access key, and region,
+- a **provider** (`OPENWIKI_PROVIDER`) — openai, openai-chatgpt, copilot, openrouter, anthropic, gemini, gemini-enterprise, bedrock, baseten, fireworks, nebius, nvidia, or openai-compatible,
+- the **provider API key** (e.g. `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `OPENAI_COMPATIBLE_API_KEY`, `ANTHROPIC_API_KEY`, `BASETEN_API_KEY`, `FIREWORKS_API_KEY`, `GEMINI_API_KEY`, `NEBIUS_API_KEY`) — skipped for the gemini-enterprise provider, which instead prompts for a **GCP project** (`GOOGLE_CLOUD_PROJECT`, required) and a **GCP location** (`GOOGLE_CLOUD_LOCATION`, optional, defaults to `global`), and skipped for the bedrock provider, which instead prompts for AWS access key ID, secret access key, and region, and skipped for the copilot provider, which uses the GitHub CLI (`gh auth login`) instead of an API key,
 - a **base URL** for providers that require one (the openai-compatible provider prompts for `OPENAI_COMPATIBLE_BASE_URL`),
 - a **model ID** stored as `OPENWIKI_MODEL_ID` — chosen from the provider's model list or a custom ID,
 - optional `LANGSMITH_API_KEY` for tracing.
@@ -78,20 +80,21 @@ If a LangSmith key is provided, onboarding also enables `LANGCHAIN_PROJECT=openw
 
 Providers and their model options are defined in `PROVIDER_CONFIGS` in `src/constants.ts`:
 
-| Provider          | Env key                                                       | Base URL                                       | Models                                                                          |
-| ----------------- | ------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------- |
-| openai            | `OPENAI_API_KEY`                                              | (default, or `OPENAI_BASE_URL`)                | 5.6 Terra, 5.6 Luna, 5.6 Sol, 5.5, 5.4 mini                                     |
-| openai-chatgpt    | `OPENAI_CHATGPT_ACCESS_TOKEN`                                 | (Codex backend)                                | Same as openai (OAuth login, no API key)                                        |
-| openrouter        | `OPENROUTER_API_KEY`                                          | `https://openrouter.ai/api/v1`                 | GLM 5.2, Fusion, Kimi K2.7 Code, Claude Opus/Sonnet, GPT 5.4 mini/5.5           |
-| anthropic         | `ANTHROPIC_API_KEY`                                           | (default, or `ANTHROPIC_BASE_URL`)             | Haiku, Sonnet, Opus                                                             |
-| gemini            | `GEMINI_API_KEY`                                              | (AI Studio)                                    | Gemini 3.6 Flash, 3.5 Flash/Lite, 3.1 Pro, 3 Flash, 3.1 Flash-Lite              |
-| gemini-enterprise | none (Google ADC) — `GOOGLE_CLOUD_PROJECT` required           | per `GOOGLE_CLOUD_LOCATION` (default `global`) | Gemini models + Claude Haiku/Sonnet/Opus on Vertex AI; MaaS by pasting model ID |
-| bedrock           | `BEDROCK_AWS_ACCESS_KEY_ID` + `BEDROCK_AWS_SECRET_ACCESS_KEY` | per `BEDROCK_AWS_REGION` (required)            | Account/region-specific; paste Bedrock model ID directly                        |
-| baseten           | `BASETEN_API_KEY`                                             | `https://inference.baseten.co/v1`              | GLM 5.2, Kimi K2.7 Code                                                         |
-| fireworks         | `FIREWORKS_API_KEY`                                           | `https://api.fireworks.ai/inference/v1`        | GLM 5.2, Kimi K2.7 Code                                                         |
-| nebius            | `NEBIUS_API_KEY`                                              | `https://api.tokenfactory.nebius.com/v1/`      | Kimi K2.6                                                                       |
-| nvidia            | `NVIDIA_API_KEY`                                              | `https://integrate.api.nvidia.com/v1`          | Nemotron 3 Super/Ultra/Nano, DeepSeek V4 Pro, GPT-OSS 120B, Kimi K2.6           |
-| openai-compatible | `OPENAI_COMPATIBLE_API_KEY`                                   | `OPENAI_COMPATIBLE_BASE_URL` (required)        | custom model ID only                                                            |
+| Provider          | Env key                                                       | Base URL                                                | Models                                                                                |
+| ----------------- | ------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| openai            | `OPENAI_API_KEY`                                              | (default, or `OPENAI_BASE_URL`)                         | 5.6 Terra, 5.6 Luna, 5.6 Sol, 5.5, 5.4 mini                                           |
+| openai-chatgpt    | `OPENAI_CHATGPT_ACCESS_TOKEN`                                 | (Codex backend)                                         | Same as openai (OAuth login, no API key)                                              |
+| copilot           | `COPILOT_API_KEY`                                             | `https://api.githubcopilot.com` (or `COPILOT_BASE_URL`) | GPT 5.6 Terra/Luna/Sol, 5.5, 5.4 mini; Claude Opus/Sonnet/Haiku/Fable; Gemini 2.5 Pro |
+| openrouter        | `OPENROUTER_API_KEY`                                          | `https://openrouter.ai/api/v1`                          | GLM 5.2, Fusion, Kimi K2.7 Code, Claude Opus/Sonnet, GPT 5.4 mini/5.5                 |
+| anthropic         | `ANTHROPIC_API_KEY`                                           | (default, or `ANTHROPIC_BASE_URL`)                      | Haiku, Sonnet, Opus                                                                   |
+| gemini            | `GEMINI_API_KEY`                                              | (AI Studio)                                             | Gemini 3.6 Flash, 3.5 Flash/Lite, 3.1 Pro, 3 Flash, 3.1 Flash-Lite                    |
+| gemini-enterprise | none (Google ADC) — `GOOGLE_CLOUD_PROJECT` required           | per `GOOGLE_CLOUD_LOCATION` (default `global`)          | Gemini models + Claude Haiku/Sonnet/Opus on Vertex AI; MaaS by pasting model ID       |
+| bedrock           | `BEDROCK_AWS_ACCESS_KEY_ID` + `BEDROCK_AWS_SECRET_ACCESS_KEY` | per `BEDROCK_AWS_REGION` (required)                     | Account/region-specific; paste Bedrock model ID directly                              |
+| baseten           | `BASETEN_API_KEY`                                             | `https://inference.baseten.co/v1`                       | GLM 5.2, Kimi K2.7 Code                                                               |
+| fireworks         | `FIREWORKS_API_KEY`                                           | `https://api.fireworks.ai/inference/v1`                 | GLM 5.2, Kimi K2.7 Code                                                               |
+| nebius            | `NEBIUS_API_KEY`                                              | `https://api.tokenfactory.nebius.com/v1/`               | Kimi K2.6                                                                             |
+| nvidia            | `NVIDIA_API_KEY`                                              | `https://integrate.api.nvidia.com/v1`                   | Nemotron 3 Super/Ultra/Nano, DeepSeek V4 Pro, GPT-OSS 120B, Kimi K2.6                 |
+| openai-compatible | `OPENAI_COMPATIBLE_API_KEY`                                   | `OPENAI_COMPATIBLE_BASE_URL` (required)                 | custom model ID only                                                                  |
 
 The default provider is `openai`, and the default model is `gpt-5.6-terra`. `resolveConfiguredProvider()` picks the provider from `OPENWIKI_PROVIDER`, then falls back to the first configured provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, Nebius, NVIDIA, Bedrock, and finally `DEFAULT_PROVIDER`.
 
@@ -186,6 +189,70 @@ secret access key (`BEDROCK_AWS_SECRET_ACCESS_KEY`), and a region
 so there is no preset model list — paste the Bedrock model ID directly (for
 example `anthropic.claude-sonnet-5-20260101-v1:0`).
 
+### GitHub Copilot provider
+
+The `copilot` provider uses the GitHub Copilot API endpoint
+(`https://api.githubcopilot.com`) and authenticates via the GitHub CLI rather
+than a pasted API key. It is configured with `authMethod: "external-cli"` and
+`externalCliAuthAdapter: "github-cli"`, so the interactive onboarding flow runs
+`gh auth login` with a Copilot-enabled account and reads the token via
+`gh auth token`. The token is reused for the current process only — it is never
+written to `~/.openwiki/.env`, so the CLI remains the source of truth.
+
+For CI and other headless runs, set `COPILOT_API_KEY` directly to a GitHub OAuth
+token (not a Personal Access Token — `ghp_` and `github_pat_` tokens are
+rejected by `validateExternalCliCredential()` because the Copilot API does not
+accept them).
+
+The provider's `responsesApi` setting is a regex (`/^gpt-5/u`), so GPT models
+use the OpenAI Responses API while Claude and Gemini models use the standard
+chat completions endpoint.
+
+```bash
+OPENWIKI_PROVIDER=copilot
+# Interactive: run `gh auth login` with a Copilot-enabled account
+# CI: set COPILOT_API_KEY to a GitHub OAuth token
+```
+
+The `--hostname` flag passed to `gh` matches the tenant of the configured base
+URL (if `COPILOT_BASE_URL` points at a GHE.com data-residency host), so the
+reused session authenticates against the correct GitHub instance.
+
+## Visualizer
+
+`openwiki visualize` serves the generated wiki as an interactive node graph with a side-by-side Markdown reader in the browser (`src/visualize/server.ts`). It is a read-only viewer for already-generated docs, not a generation command.
+
+```sh
+openwiki visualize                       # serve ./openwiki on the default port
+openwiki visualize openwiki --port 4400  # serve a different directory on port 4400
+openwiki visualize openwiki --no-open    # do not open the browser automatically
+```
+
+Behavior and bounds, from `src/visualize/server.ts`:
+
+- The HTTP server binds to the loopback address `127.0.0.1` only — it is never exposed on the network. The preferred port defaults to `4321`; on `EADDRINUSE` it increments through up to 20 ports before failing.
+- A positional path selects the wiki directory (default `openwiki`). If the directory is missing, the server fails fast with a message directing you to run `openwiki --init` first.
+- `buildGraph()` in `src/visualize/graph.ts` parses the wiki into nodes (concept pages) and edges (Markdown links), exposing them at `/api/graph`.
+- A recursive file watcher (`startWatch`) debounces changes (150 ms) and rebuilds the graph; connected browsers receive a reload event over an SSE stream at `/events`, so edits to the wiki files refresh the live graph and reader while the server runs.
+- The page (`src/visualize/page.ts`) and client (`src/visualize/client.ts`) are server-owned static assets served at fixed routes (`/`, `/client.js`, `/client-lib.js`). The browser loads Mermaid and the graph/Markdown libraries from a pinned jsdelivr CDN, so an internet connection is required even though the server is local. The CSP pins script sources to `'self'` and the CDN origin; no `req.url` path is ever used to read a file from disk.
+- Press Ctrl-C (SIGINT) to stop the server.
+
+## Multilingual wikis
+
+`--language <locale>` (alias `-l`) generates the wiki in a language other than English, while keeping code identifiers, file paths, commands, API names, URLs, and code blocks canonical. `resolveLanguage()` in `src/language.ts` validates the value as a BCP-47 tag via `Intl.Locale`; an unrecognized value resolves to English with a warning suggesting a code such as `zh-CN`, `hi`, or `pt-BR`.
+
+```sh
+openwiki --init --language pt-BR
+openwiki --update --language zh-CN
+```
+
+Language is persisted state, not a one-shot flag:
+
+- On a run, the effective language is the validated `--language` flag, else the language recorded in `openwiki/.last-update.json` from the previous run, else English (resolved in `src/agent/utils.ts` as `requestedLanguage ?? lastUpdate?.language ?? "en"`, with the requested value validated by `resolveLanguage()` in `src/language.ts`). An update without `--language` keeps the existing wiki consistent in its established language instead of producing a mix.
+- The chosen language is written to the `language` field of `.last-update.json` so subsequent runs inherit it.
+- When a `--language` request changes the primary language subtag (for example `en` to `zh`), the [translation middleware](../agent/workflow.md) (`src/agent/translation-middleware.ts`) runs a deterministic translate-all pass **before** the agent edits: every eligible concept page is translated into the target language and marked with an `openwiki_translation_pending` front-matter field. Pages left pending by a prior failed switch are retranslated individually on the next update.
+- Deterministic, model-free localization (index section headings and the derived concept `type` label) is resolved by `resolveIndexLabels()` and `resolveConceptTypeLabel()` in `src/okf/index-labels.ts`, keyed by BCP-47 tag with region fallback to the primary subtag and then to English.
+
 ## Help text and validation
 
 The help content is centralized in `src/commands.ts` and is used by the CLI UI. Model validation is intentionally strict:
@@ -217,6 +284,11 @@ The help content is centralized in `src/commands.ts` and is used by the CLI UI. 
 - `src/auth/providers.ts`
 - `src/auth/configure.ts`
 - `src/auth/ngrok.ts`
+- `src/language.ts`
+- `src/visualize/server.ts`
+- `src/visualize/graph.ts`
+- `src/visualize/page.ts`
+- `src/visualize/client.ts`
 - `README.md`
 - `package.json`
 - Git evidence: commits `ceded10`, `f89b05d`, `fd3a702`, `8278c36`, `0fa1430`
