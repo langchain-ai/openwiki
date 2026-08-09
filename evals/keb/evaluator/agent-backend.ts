@@ -9,11 +9,12 @@ import {
   PROVIDER_CONFIGS,
   type OpenWikiProvider,
 } from "../../../src/config/constants.js";
-import { runCoveragePass, runPrecisionPass } from "./coverage.js";
+import { runCoveragePass } from "./coverage.js";
 import { sectionArtifact } from "./documents.js";
 import { EvaluationError } from "../core/errors.js";
 import { runForgettingPass } from "./forgetting.js";
 import { PROMPT_VERSION } from "./prompts.js";
+import { runPrecisionPass } from "./precision.js";
 import { SectionBm25Index } from "./retrieval.js";
 import type {
   CheckpointEvaluation,
@@ -67,9 +68,9 @@ interface TemperatureConfigurableModel extends BaseChatModel {
 }
 
 /**
- * Transitional evaluation backend. Coverage and forgetting use bounded direct
- * model calls, while precision temporarily retains its sandboxed agent until
- * Phase 4 replaces it.
+ * Transitional evaluation backend using bounded direct model calls for all
+ * semantic passes. Its legacy temporary workspace remains until Phase 5 removes
+ * the obsolete agent infrastructure and renames the backend.
  */
 export class AgentEvaluationBackend implements EvaluationBackend {
   readonly version = PROMPT_VERSION;
@@ -90,11 +91,10 @@ export class AgentEvaluationBackend implements EvaluationBackend {
   }
 
   /**
-   * Materialize the temporary workspace still required by legacy precision,
-   * then run coverage, forgetting, and precision sequentially. Coverage and
-   * forgetting consume deterministic sections directly from the captured
-   * artifact; precision reads the copied artifact and ledger through its legacy
-   * sandbox. The workspace is always removed in `finally`.
+   * Materialize the legacy temporary workspace, then run bounded coverage,
+   * forgetting, and precision sequentially against deterministic artifact
+   * sections. The workspace is no longer read by semantic evaluation and is
+   * retained only until the Phase 5 cleanup. It is always removed in `finally`.
    *
    * @param input - The artifact, active facts, and obsolete fact versions.
    *
@@ -131,10 +131,12 @@ export class AgentEvaluationBackend implements EvaluationBackend {
         obsoleteFacts: input.obsoleteFacts,
         index,
       });
-      const precisionEvaluations = await runPrecisionPass(
-        this.model,
-        workspaceDir,
-      );
+      const precisionEvaluations = await runPrecisionPass({
+        model: this.model,
+        checkpointId: input.artifact.checkpointId,
+        sections,
+        activeFacts: input.activeFacts,
+      });
 
       return { factEvaluations, forgettingEvaluations, precisionEvaluations };
     } finally {

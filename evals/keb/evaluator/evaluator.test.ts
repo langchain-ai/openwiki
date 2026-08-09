@@ -11,9 +11,10 @@ import { SectionBm25Index } from "./retrieval.js";
 import { EvaluationError } from "../core/errors.js";
 import { resolveForgetting, runForgettingPass } from "./forgetting.js";
 import {
+  assertionExtractionOutputSchema,
   coverageOutputSchema,
   forgettingOutputSchema,
-  precisionOutputSchema,
+  precisionJudgmentOutputSchema,
 } from "./schemas.js";
 import type {
   ActiveTruthFact,
@@ -39,24 +40,26 @@ describe("schemas", () => {
   });
 
   test("precision and forgetting schemas accept well-formed output", () => {
-    const precision = precisionOutputSchema.parse({
+    const extraction = assertionExtractionOutputSchema.parse({
+      sections: [{ sectionId: "a::0000", assertions: ["A fact."] }],
+    });
+    const precision = precisionJudgmentOutputSchema.parse({
       evaluations: [
         {
-          assertion: "x",
-          location: "artifact/a.md",
+          assertionId: "assertion-000001",
           verdict: "supported",
           supportingFactIds: ["f1"],
-          rationale: "",
+          rationale: "The ledger establishes it.",
         },
         {
-          assertion: "y",
-          location: "artifact/a.md",
+          assertionId: "assertion-000002",
           verdict: "unsupported",
-          rationale: "",
+          rationale: "The ledger is silent.",
         },
       ],
     });
 
+    expect(extraction.sections[0].assertions).toEqual(["A fact."]);
     // Named supporting ids survive; an omitted list defaults to empty.
     expect(precision.evaluations[0].supportingFactIds).toEqual(["f1"]);
     expect(precision.evaluations[1].supportingFactIds).toEqual([]);

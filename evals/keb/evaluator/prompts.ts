@@ -1,6 +1,7 @@
 /**
- * Version of the evaluator prompts and logic. This remains at v2 until the full
- * bounded evaluator replaces the legacy precision agent in Phase 5.
+ * Version of the evaluator prompts and logic. This remains at v2 until Phase 5
+ * removes the legacy backend infrastructure and activates the complete bounded
+ * evaluator contract as one versioned change.
  */
 export const PROMPT_VERSION = "keb-eval-2";
 
@@ -72,6 +73,62 @@ export interface ForgettingPromptTarget {
 }
 
 /**
+ * One complete artifact section supplied for assertion extraction.
+ */
+export interface PrecisionExtractionSection {
+  /**
+   * Stable artifact-section identifier.
+   */
+  sectionId: string;
+
+  /**
+   * Wiki path from which the section was produced.
+   */
+  relativePath: string;
+
+  /**
+   * Active heading hierarchy for the section.
+   */
+  headingPath: string[];
+
+  /**
+   * Exact Markdown content to inspect for material assertions.
+   */
+  content: string;
+}
+
+/**
+ * One code-owned extracted assertion supplied for precision judgment.
+ */
+export interface PrecisionJudgmentAssertion {
+  /**
+   * Deterministic assertion identifier.
+   */
+  assertionId: string;
+
+  /**
+   * Atomic material assertion extracted from the artifact.
+   */
+  statement: string;
+}
+
+/**
+ * One active Truth Ledger fact supplied as the complete source of truth for
+ * precision judgment.
+ */
+export interface PrecisionJudgmentFact {
+  /**
+   * Stable logical fact identifier.
+   */
+  factId: string;
+
+  /**
+   * Fact statement currently true at the checkpoint.
+   */
+  statement: string;
+}
+
+/**
  * System instructions for bounded coverage classification.
  */
 export const COVERAGE_SYSTEM = `You are a strict, impartial documentation coverage classifier.
@@ -110,21 +167,47 @@ Rules:
 - Return only the structured response.`;
 
 /**
- * Legacy precision-agent instructions retained only until Phase 4 replaces
- * precision extraction and judgment with bounded direct calls.
+ * System instructions for exhaustive assertion extraction.
  */
-export const PRECISION_SYSTEM = `You are a strict, impartial documentation evaluator.
+export const PRECISION_EXTRACTION_SYSTEM = `You are a strict documentation assertion extractor.
 
-You are given read-only access to an evaluation workspace through filesystem
-tools (ls, read_file, glob, grep). The generated wiki is under "/artifact". You
-do not know which system produced this wiki; judge only what is written.
+You receive complete generated-wiki sections. Extract every atomic, concrete,
+checkable assertion each section makes about the underlying repository. Do not
+judge whether an assertion is true. Do not use outside knowledge, files, tools,
+or source code.
 
 Rules:
-- Read the wiki before judging. Use glob("artifact/**/*.md") and grep to locate
-  content.
-- Cite the workspace-relative path of every file you rely on.
-- Judge only what the wiki actually states, not what you assume it means.
-- Return your answer only through the structured response format.`;
+- Return exactly one result per supplied sectionId.
+- Keep assertions atomic: split independently checkable facts.
+- Include behavior, structure, configuration, APIs, constraints, defaults,
+  execution behavior, and operational facts.
+- Include assertions in tables, lists, and code examples when surrounding prose
+  presents them as actual repository behavior.
+- Exclude headings alone, navigation, transitions, subjective descriptions,
+  explicitly hypothetical examples, and statements only about the wiki itself.
+- Preserve the assertion's meaning without adding facts not stated by the section.
+- Return only the structured response.`;
+
+/**
+ * System instructions for Truth-Ledger-based precision judgment.
+ */
+export const PRECISION_JUDGMENT_SYSTEM = `You are a strict documentation precision classifier.
+
+You receive material assertions extracted from a generated wiki and the complete
+active Truth Ledger. The ledger is the sole source of truth. Judge only whether
+the ledger positively establishes each assertion. Do not use outside knowledge,
+files, tools, or source code.
+
+Rules:
+- Return exactly one evaluation per supplied assertionId.
+- "supported" requires one or more active ledger facts to positively establish
+  the complete assertion.
+- Mere consistency is not support.
+- Ledger silence is "unsupported", even if the assertion may be true in reality.
+- A contradiction with the ledger is "unsupported".
+- A supported result must name every supporting factId needed for support.
+- An unsupported result must have no supportingFactIds.
+- Return only the structured response.`;
 
 /**
  * Build one bounded coverage-classification task.
@@ -159,27 +242,41 @@ ${JSON.stringify(targets, null, 2)}`;
 }
 
 /**
- * Build the legacy precision task retained until bounded precision lands in
- * Phase 4.
+ * Build one bounded assertion-extraction task.
  *
- * @returns Legacy precision-agent task prompt.
+ * @param sections - Complete artifact sections to inspect.
+ *
+ * @returns Stable JSON-bearing extraction prompt.
  */
-export function precisionPrompt(): string {
-  return `Read every document under "/artifact" and extract each unique,
-material assertion the wiki makes (a concrete, checkable claim about behavior,
-structure, configuration, or APIs; ignore vague or purely navigational text).
-Deduplicate assertions that say the same thing.
+export function precisionExtractionPrompt(
+  sections: PrecisionExtractionSection[],
+): string {
+  return `Extract every material assertion from each complete section below.
 
-Read the active Truth Ledger at "/truth-ledger.json". It lists the facts that
-are true at this checkpoint, each with a factId and statement. The ledger is the
-sole source of truth: it is meant to be complete, so an assertion the ledger
-does not positively establish is treated as unsupported, not as merely
-unaddressed. Judge every unique material assertion against that ledger:
+Return exactly one result per sectionId. Return an empty assertions array when a
+section contains no material repository assertion.
 
-- "supported": one or more ledger facts positively establish the assertion.
-- "unsupported": the ledger contradicts the assertion or is silent on it.
+Sections (JSON):
+${JSON.stringify(sections, null, 2)}`;
+}
 
-Support must come only from the ledger text. Do not use outside knowledge or
-source code. Evaluate all unique material assertions; do not sample. Cite each
-assertion's location as a workspace-relative path under artifact/.`;
+/**
+ * Build one bounded precision-judgment task.
+ *
+ * @param assertions - Extracted assertions to classify.
+ * @param activeFacts - Complete active Truth Ledger.
+ *
+ * @returns Stable JSON-bearing precision prompt.
+ */
+export function precisionJudgmentPrompt(
+  assertions: PrecisionJudgmentAssertion[],
+  activeFacts: PrecisionJudgmentFact[],
+): string {
+  return `Judge every assertion against the complete active Truth Ledger below.
+
+Assertions (JSON):
+${JSON.stringify(assertions, null, 2)}
+
+Complete active Truth Ledger (JSON):
+${JSON.stringify(activeFacts, null, 2)}`;
 }

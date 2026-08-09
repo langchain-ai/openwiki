@@ -44,20 +44,29 @@ export const forgettingOutputSchema = z.object({
 });
 
 /**
- * The precision pass's raw output: every unique material assertion the agent
- * extracted from the wiki and its judgment of each against the active ledger.
- * `supportingFactIds` names the ledger facts that support a supported assertion
- * (one or more) and defaults to empty, which is the expected value for an
- * unsupported one.
+ * Raw assertion-extraction output: exactly one assertion list for every
+ * artifact section supplied to the classifier.
  */
-export const precisionOutputSchema = z.object({
+export const assertionExtractionOutputSchema = z.object({
+  sections: z.array(
+    z.object({
+      sectionId: z.string(),
+      assertions: z.array(z.string().trim().min(1)),
+    }),
+  ),
+});
+
+/**
+ * Raw precision-judgment output: one support verdict for every code-owned
+ * assertion ID supplied to the classifier.
+ */
+export const precisionJudgmentOutputSchema = z.object({
   evaluations: z.array(
     z.object({
-      assertion: z.string(),
-      location: z.string(),
+      assertionId: z.string(),
       verdict: z.enum(["supported", "unsupported"]),
       supportingFactIds: z.array(z.string()).default([]),
-      rationale: z.string(),
+      rationale: z.string().trim().min(1),
     }),
   ),
 });
@@ -73,6 +82,15 @@ export type CoverageOutput = z.infer<typeof coverageOutputSchema>;
 export type ForgettingOutput = z.infer<typeof forgettingOutputSchema>;
 
 /**
- * Inferred type of the precision pass output.
+ * Inferred type of assertion-extraction output.
  */
-export type PrecisionOutput = z.infer<typeof precisionOutputSchema>;
+export type AssertionExtractionOutput = z.infer<
+  typeof assertionExtractionOutputSchema
+>;
+
+/**
+ * Inferred type of precision-judgment output.
+ */
+export type PrecisionJudgmentOutput = z.infer<
+  typeof precisionJudgmentOutputSchema
+>;

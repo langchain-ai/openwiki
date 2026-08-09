@@ -84,6 +84,13 @@ supported assertions
 all material assertions
 ```
 
+KEB extracts assertions from every deterministic artifact section in bounded
+batches, then judges those assertions against the complete active Truth Ledger.
+V1 collapses assertions only when their whitespace-normalized text is identical
+after terminal punctuation is removed. Differently worded semantic duplicates
+remain separate assertions; avoiding an additional model grouping pass keeps the
+precision denominator more deterministic and auditable.
+
 Coverage and Precision are averaged across checkpoints, then combined using their harmonic mean.
 
 ### Maintenance

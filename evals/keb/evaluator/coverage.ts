@@ -1,24 +1,17 @@
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 
 import { EvaluationError } from "../core/errors.js";
-import type {
-  ActiveTruthFact,
-  FactEvaluation,
-  PrecisionAssertionEvaluation,
-} from "../core/types.js";
+import type { ActiveTruthFact, FactEvaluation } from "../core/types.js";
 import { invokeStructuredModel } from "./direct-model.js";
 import type { ArtifactSection } from "./documents.js";
-import { runEvaluatorPass } from "./evaluator.js";
 import {
   COVERAGE_SYSTEM,
-  PRECISION_SYSTEM,
   coveragePrompt,
-  precisionPrompt,
   type CoveragePromptTarget,
   type EvaluationExcerpt,
 } from "./prompts.js";
 import type { SectionBm25Index } from "./retrieval.js";
-import { coverageOutputSchema, precisionOutputSchema } from "./schemas.js";
+import { coverageOutputSchema } from "./schemas.js";
 import type { CoverageOutput } from "./schemas.js";
 
 const DEFAULT_TOP_K = 8;
@@ -358,34 +351,4 @@ export async function runCoveragePass(
   return input.activeFacts.map(
     (fact) => resultByFact.get(fact.factId) as FactEvaluation,
   );
-}
-
-/**
- * Run the legacy precision agent until Phase 4 replaces it with exhaustive,
- * bounded assertion extraction and judgment.
- *
- * @param model - Evaluator model.
- * @param workspaceDir - Legacy filesystem evaluation workspace.
- *
- * @returns Precision verdicts extracted and judged by the legacy agent.
- */
-export async function runPrecisionPass(
-  model: BaseChatModel,
-  workspaceDir: string,
-): Promise<PrecisionAssertionEvaluation[]> {
-  const output = await runEvaluatorPass({
-    model,
-    workspaceDir,
-    systemPrompt: PRECISION_SYSTEM,
-    taskPrompt: precisionPrompt(),
-    schema: precisionOutputSchema,
-  });
-
-  return output.evaluations.map((evaluation) => ({
-    assertion: evaluation.assertion,
-    location: evaluation.location,
-    verdict: evaluation.verdict,
-    supportingFactIds: evaluation.supportingFactIds,
-    rationale: evaluation.rationale,
-  }));
 }
