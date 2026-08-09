@@ -104,6 +104,18 @@ export class SectionBm25Index {
   }
 
   /**
+   * Return every indexed section in stable section-ID order. The returned array
+   * is a copy and may be safely filtered or reordered by a caller.
+   *
+   * @returns All indexed sections in deterministic order.
+   */
+  sections(): ArtifactSection[] {
+    return this.indexed
+      .map((entry) => entry.section)
+      .sort((a, b) => compareStrings(a.id, b.id));
+  }
+
+  /**
    * Rank sections for a query. Zero-score candidates are retained after all
    * positive matches so callers always receive up to `topK` sections.
    *

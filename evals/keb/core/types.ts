@@ -394,7 +394,7 @@ export interface FactEvaluation {
   verdict: FactVerdict;
 
   /**
-   * Wiki paths the evaluator cited as evidence, relative to the wiki root.
+   * Stable artifact section IDs the evaluator cited as evidence.
    *
    * @default an empty array when the evaluator cited nothing (expected for a
    *   `missing` verdict)
@@ -455,8 +455,7 @@ export interface ForgettingEvaluation {
   verdict: ForgettingVerdict;
 
   /**
-   * Wiki paths where the obsolete statement still appears, relative to the wiki
-   * root.
+   * Stable artifact section IDs where the obsolete statement still appears.
    *
    * @default an empty array for a `forgotten` verdict
    */

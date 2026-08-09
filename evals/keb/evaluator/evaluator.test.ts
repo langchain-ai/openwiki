@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
 import { AgentEvaluationBackend } from "./agent-backend.js";
 import { resolveCoverage, runCoveragePass } from "./coverage.js";
+import { SectionBm25Index } from "./retrieval.js";
 import { EvaluationError } from "../core/errors.js";
 import { resolveForgetting, runForgettingPass } from "./forgetting.js";
 import {
@@ -261,11 +262,25 @@ describe("empty-input passes short-circuit", () => {
   const model = {} as unknown as BaseChatModel;
 
   test("coverage returns no evaluations without invoking a model", async () => {
-    await expect(runCoveragePass(model, "/unused", [])).resolves.toEqual([]);
+    await expect(
+      runCoveragePass({
+        model,
+        checkpointId: "T0",
+        activeFacts: [],
+        index: new SectionBm25Index([]),
+      }),
+    ).resolves.toEqual([]);
   });
 
   test("forgetting returns no evaluations without invoking a model", async () => {
-    await expect(runForgettingPass(model, "/unused", [])).resolves.toEqual([]);
+    await expect(
+      runForgettingPass({
+        model,
+        checkpointId: "T0",
+        obsoleteFacts: [],
+        index: new SectionBm25Index([]),
+      }),
+    ).resolves.toEqual([]);
   });
 });
 
@@ -297,7 +312,13 @@ describe.skipIf(!process.env.KEB_LIVE)("AgentEvaluationBackend (live)", () => {
       checkpointId: "T0",
       snapshotDir,
       fingerprint: "x",
-      documents: [],
+      documents: [
+        {
+          relativePath: "overview.md",
+          content:
+            "# Overview\n\nThe service authenticates requests with an API key passed in the `X-Api-Key` header.\n",
+        },
+      ],
     };
 
     const evaluation = await backend.evaluate({

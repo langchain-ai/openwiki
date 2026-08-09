@@ -1,34 +1,159 @@
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 
 import { EvaluationError } from "../core/errors.js";
+import type {
+  ActiveTruthFact,
+  FactEvaluation,
+  PrecisionAssertionEvaluation,
+} from "../core/types.js";
+import { invokeStructuredModel } from "./direct-model.js";
+import type { ArtifactSection } from "./documents.js";
 import { runEvaluatorPass } from "./evaluator.js";
 import {
   COVERAGE_SYSTEM,
   PRECISION_SYSTEM,
   coveragePrompt,
   precisionPrompt,
+  type CoveragePromptTarget,
+  type EvaluationExcerpt,
 } from "./prompts.js";
+import type { SectionBm25Index } from "./retrieval.js";
 import { coverageOutputSchema, precisionOutputSchema } from "./schemas.js";
 import type { CoverageOutput } from "./schemas.js";
-import type {
-  ActiveTruthFact,
-  FactEvaluation,
-  PrecisionAssertionEvaluation,
-} from "../core/types.js";
+
+const DEFAULT_TOP_K = 8;
+const DEFAULT_TARGET_BATCH_SIZE = 5;
+const FALLBACK_SECTION_BATCH_SIZE = 8;
+
+/**
+ * Inputs for the bounded coverage pass.
+ */
+export interface CoveragePassInput {
+  /**
+   * Evaluator model used for direct structured judgments.
+   */
+  model: BaseChatModel;
+
+  /**
+   * Checkpoint being evaluated.
+   */
+  checkpointId: string;
+
+  /**
+   * Truth Ledger facts active at the checkpoint.
+   */
+  activeFacts: ActiveTruthFact[];
+
+  /**
+   * BM25 index over every Markdown artifact section.
+   */
+  index: SectionBm25Index;
+
+  /**
+   * Number of BM25-ranked sections inspected in the first judgment.
+   *
+   * @default 8
+   */
+  topK?: number;
+
+  /**
+   * Number of fact targets included in each initial model request.
+   *
+   * @default 5
+   */
+  batchSize?: number;
+}
+
+/**
+ * Internal active fact paired with the exact sections visible to one model
+ * judgment.
+ */
+interface CoverageTarget {
+  /**
+   * Active ledger fact being judged.
+   */
+  fact: ActiveTruthFact;
+
+  /**
+   * Artifact sections supplied as evidence candidates.
+   */
+  sections: ArtifactSection[];
+}
+
+/**
+ * Split an ordered array into stable non-empty batches.
+ *
+ * @param values - Ordered values to batch.
+ * @param size - Positive maximum batch size.
+ *
+ * @returns Stable batches preserving input order.
+ */
+function batch<T>(values: T[], size: number): T[][] {
+  const result: T[][] = [];
+
+  for (let offset = 0; offset < values.length; offset += size) {
+    result.push(values.slice(offset, offset + size));
+  }
+
+  return result;
+}
+
+/**
+ * Validate a positive integer pass option.
+ *
+ * @param value - Configured numeric value.
+ * @param name - Option name used in diagnostics.
+ *
+ * @throws EvaluationError when the value is not a positive integer.
+ */
+function assertPositiveInteger(value: number, name: string): void {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new EvaluationError(`${name} must be a positive integer.`);
+  }
+}
+
+/**
+ * Convert an artifact section to the prompt's data-only excerpt shape.
+ *
+ * @param section - Artifact section selected for a judgment.
+ *
+ * @returns Serializable excerpt supplied to the model.
+ */
+function toExcerpt(section: ArtifactSection): EvaluationExcerpt {
+  return {
+    sectionId: section.id,
+    relativePath: section.relativePath,
+    headingPath: section.headingPath,
+    content: section.content,
+  };
+}
+
+/**
+ * Convert internal coverage targets into their prompt representation.
+ *
+ * @param targets - Facts and sections included in one request.
+ *
+ * @returns Data-only prompt targets.
+ */
+function toPromptTargets(targets: CoverageTarget[]): CoveragePromptTarget[] {
+  return targets.map(({ fact, sections }) => ({
+    factId: fact.factId,
+    statement: fact.statement,
+    excerpts: sections.map(toExcerpt),
+  }));
+}
 
 /**
  * Resolve raw coverage output into exactly one evaluation per requested fact.
- * Unknown fact ids, duplicate verdicts, and missing verdicts are all evaluation
- * failures: the coverage contract is one verdict per active fact, never a
- * silent default. The resulting evaluations carry the stable `factVersionId`
- * from the ledger so downstream maintenance scoring can reason about versions.
+ * Unknown fact IDs, duplicate verdicts, and missing verdicts are evaluation
+ * failures rather than implicit defaults.
  *
- * @param activeFacts - The facts that were requested.
- * @param output - The agent's raw coverage output.
+ * @param activeFacts - Facts requested from the classifier.
+ * @param output - Parsed classifier output.
  *
- * @returns One evaluation per active fact, in the requested order.
+ * @returns One evaluation per fact in request order.
  *
- * @throws EvaluationError when a fact id is unknown, duplicated, or missing.
+ * @throws EvaluationError when output identity or completeness is invalid.
  */
 export function resolveCoverage(
   activeFacts: ActiveTruthFact[],
@@ -73,49 +198,176 @@ export function resolveCoverage(
 }
 
 /**
- * Run the coverage pass and resolve it against the active facts. The
- * completeness check runs inside the pass so an incomplete generation is retried
- * once before it becomes fatal.
+ * Validate evidence citations and evidence/verdict consistency for one request.
  *
- * @param model - The evaluator model.
- * @param workspaceDir - The evaluation workspace directory.
- * @param activeFacts - The facts true at this checkpoint.
+ * @param targets - Facts and sections supplied to the model.
+ * @param output - Parsed classifier output.
  *
- * @returns One coverage verdict per active fact.
+ * @throws EvaluationError when a citation was unavailable to its fact or a
+ * verdict has an invalid evidence shape.
  */
-export async function runCoveragePass(
-  model: BaseChatModel,
-  workspaceDir: string,
-  activeFacts: ActiveTruthFact[],
-): Promise<FactEvaluation[]> {
-  if (activeFacts.length === 0) {
-    return [];
+function validateCoverageOutput(
+  targets: CoverageTarget[],
+  output: CoverageOutput,
+): void {
+  const resolved = resolveCoverage(
+    targets.map((target) => target.fact),
+    output,
+  );
+  const allowedByFact = new Map(
+    targets.map((target) => [
+      target.fact.factId,
+      new Set(target.sections.map((section) => section.id)),
+    ]),
+  );
+
+  for (const evaluation of resolved) {
+    const allowed = allowedByFact.get(evaluation.factId) as Set<string>;
+
+    for (const sectionId of evaluation.evidence) {
+      if (!allowed.has(sectionId)) {
+        throw new EvaluationError(
+          `Coverage evaluator cited unavailable sectionId "${sectionId}" for factId "${evaluation.factId}".`,
+        );
+      }
+    }
+
+    if (evaluation.verdict === "missing" && evaluation.evidence.length > 0) {
+      throw new EvaluationError(
+        `Coverage evaluator returned evidence for missing factId "${evaluation.factId}".`,
+      );
+    }
+
+    if (evaluation.verdict !== "missing" && evaluation.evidence.length === 0) {
+      throw new EvaluationError(
+        `Coverage evaluator returned no evidence for ${evaluation.verdict} factId "${evaluation.factId}".`,
+      );
+    }
   }
-
-  const output = await runEvaluatorPass({
-    model,
-    workspaceDir,
-    systemPrompt: COVERAGE_SYSTEM,
-    taskPrompt: coveragePrompt(activeFacts),
-    schema: coverageOutputSchema,
-    validate: (parsed) => {
-      resolveCoverage(activeFacts, parsed);
-    },
-  });
-
-  return resolveCoverage(activeFacts, output);
 }
 
 /**
- * Run the precision pass over every unique material assertion in the wiki. No
- * completeness check is possible here because the set of assertions is not known
- * in advance; the pass extracts and judges all of them against the ledger, and
- * its output is the precision result in full.
+ * Run one bounded coverage request and resolve it to code-owned fact metadata.
  *
- * @param model - The evaluator model.
- * @param workspaceDir - The evaluation workspace directory.
+ * @param model - Evaluator model.
+ * @param checkpointId - Checkpoint used for diagnostics.
+ * @param targets - Facts and excerpts included in the request.
  *
- * @returns The precision verdicts, one per unique material assertion.
+ * @returns One validated evaluation per target.
+ */
+async function evaluateCoverageBatch(
+  model: BaseChatModel,
+  checkpointId: string,
+  targets: CoverageTarget[],
+): Promise<FactEvaluation[]> {
+  const output = await invokeStructuredModel({
+    model,
+    pass: "coverage",
+    checkpointId,
+    systemPrompt: COVERAGE_SYSTEM,
+    taskPrompt: coveragePrompt(toPromptTargets(targets)),
+    schema: coverageOutputSchema,
+    validate: (parsed) => validateCoverageOutput(targets, parsed),
+  });
+
+  return resolveCoverage(
+    targets.map((target) => target.fact),
+    output,
+  );
+}
+
+/**
+ * Run bounded coverage classification with BM25-first evidence and exhaustive
+ * fallback before any `missing` verdict becomes final.
+ *
+ * @param input - Coverage pass configuration.
+ *
+ * @returns One coverage verdict per active fact in ledger order.
+ */
+export async function runCoveragePass(
+  input: CoveragePassInput,
+): Promise<FactEvaluation[]> {
+  if (input.activeFacts.length === 0) {
+    return [];
+  }
+
+  const topK = input.topK ?? DEFAULT_TOP_K;
+  const batchSize = input.batchSize ?? DEFAULT_TARGET_BATCH_SIZE;
+  assertPositiveInteger(topK, "Coverage topK");
+  assertPositiveInteger(batchSize, "Coverage batchSize");
+
+  const allSections = input.index.sections();
+
+  if (allSections.length === 0) {
+    return input.activeFacts.map((fact) => ({
+      factId: fact.factId,
+      factVersionId: fact.factVersionId,
+      verdict: "missing",
+      evidence: [],
+      rationale: "The knowledge artifact contains no Markdown sections.",
+    }));
+  }
+
+  const initialTargets = input.activeFacts.map((fact): CoverageTarget => ({
+    fact,
+    sections: input.index
+      .search(fact.statement, topK)
+      .map((ranked) => ranked.section),
+  }));
+  const resultByFact = new Map<string, FactEvaluation>();
+
+  for (const targets of batch(initialTargets, batchSize)) {
+    const evaluations = await evaluateCoverageBatch(
+      input.model,
+      input.checkpointId,
+      targets,
+    );
+
+    for (const evaluation of evaluations) {
+      resultByFact.set(evaluation.factId, evaluation);
+    }
+  }
+
+  for (const target of initialTargets) {
+    const initial = resultByFact.get(target.fact.factId) as FactEvaluation;
+
+    if (initial.verdict !== "missing") {
+      continue;
+    }
+
+    const examined = new Set(target.sections.map((section) => section.id));
+    const remaining = allSections.filter(
+      (section) => !examined.has(section.id),
+    );
+
+    for (const sections of batch(remaining, FALLBACK_SECTION_BATCH_SIZE)) {
+      const [evaluation] = await evaluateCoverageBatch(
+        input.model,
+        input.checkpointId,
+        [{ fact: target.fact, sections }],
+      );
+
+      resultByFact.set(target.fact.factId, evaluation);
+
+      if (evaluation.verdict !== "missing") {
+        break;
+      }
+    }
+  }
+
+  return input.activeFacts.map(
+    (fact) => resultByFact.get(fact.factId) as FactEvaluation,
+  );
+}
+
+/**
+ * Run the legacy precision agent until Phase 4 replaces it with exhaustive,
+ * bounded assertion extraction and judgment.
+ *
+ * @param model - Evaluator model.
+ * @param workspaceDir - Legacy filesystem evaluation workspace.
+ *
+ * @returns Precision verdicts extracted and judged by the legacy agent.
  */
 export async function runPrecisionPass(
   model: BaseChatModel,

@@ -1,7 +1,7 @@
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import { resolveCoverage, runCoveragePass } from "./coverage.js";
+import { resolveCoverage } from "./coverage.js";
 import { EvaluationError } from "../core/errors.js";
 import { runEvaluatorPass } from "./evaluator.js";
 import { coverageOutputSchema } from "./schemas.js";
@@ -132,39 +132,5 @@ describe("runEvaluatorPass", () => {
     ).rejects.toBeInstanceOf(EvaluationError);
 
     expect(controller.invocations).toBe(2);
-  });
-});
-
-describe("runCoveragePass through the faked agent", () => {
-  test("resolves the pass output against the requested facts", async () => {
-    const activeFacts: ActiveTruthFact[] = [
-      { factId: "a", factVersionId: "a@T0", category: "x", statement: "A" },
-    ];
-
-    controller.responses = [
-      {
-        evaluations: [
-          {
-            factId: "a",
-            verdict: "correct",
-            evidence: ["artifact/a.md"],
-            rationale: "stated verbatim",
-          },
-        ],
-      },
-    ];
-
-    const evaluations = await runCoveragePass(model, "/unused", activeFacts);
-
-    expect(controller.invocations).toBe(1);
-    expect(evaluations).toEqual([
-      {
-        factId: "a",
-        factVersionId: "a@T0",
-        verdict: "correct",
-        evidence: ["artifact/a.md"],
-        rationale: "stated verbatim",
-      },
-    ]);
   });
 });

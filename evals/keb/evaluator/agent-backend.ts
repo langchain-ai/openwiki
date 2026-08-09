@@ -10,9 +10,11 @@ import {
   type OpenWikiProvider,
 } from "../../../src/config/constants.js";
 import { runCoveragePass, runPrecisionPass } from "./coverage.js";
+import { sectionArtifact } from "./documents.js";
 import { EvaluationError } from "../core/errors.js";
 import { runForgettingPass } from "./forgetting.js";
 import { PROMPT_VERSION } from "./prompts.js";
+import { SectionBm25Index } from "./retrieval.js";
 import type {
   CheckpointEvaluation,
   EvaluationBackend,
@@ -65,9 +67,9 @@ interface TemperatureConfigurableModel extends BaseChatModel {
 }
 
 /**
- * An `EvaluationBackend` that scores an artifact with three sandboxed deepagents
- * passes. This is the real evaluator; the fake in the runner test satisfies the
- * same interface.
+ * Transitional evaluation backend. Coverage and forgetting use bounded direct
+ * model calls, while precision temporarily retains its sandboxed agent until
+ * Phase 4 replaces it.
  */
 export class AgentEvaluationBackend implements EvaluationBackend {
   readonly version = PROMPT_VERSION;
@@ -88,12 +90,11 @@ export class AgentEvaluationBackend implements EvaluationBackend {
   }
 
   /**
-   * Materialize a per-checkpoint evaluation workspace, run the three passes
-   * against it concurrently, and dispose of the workspace. The workspace holds
-   * the artifact snapshot under `artifact/` and the active ledger as
-   * `truth-ledger.json`; only `artifact/` is system output. It is created with
-   * `mkdtemp` under the OS temp directory and removed in a `finally`, so a failed
-   * pass never leaks it.
+   * Materialize the temporary workspace still required by legacy precision,
+   * then run coverage, forgetting, and precision sequentially. Coverage and
+   * forgetting consume deterministic sections directly from the captured
+   * artifact; precision reads the copied artifact and ledger through its legacy
+   * sandbox. The workspace is always removed in `finally`.
    *
    * @param input - The artifact, active facts, and obsolete fact versions.
    *
@@ -116,12 +117,24 @@ export class AgentEvaluationBackend implements EvaluationBackend {
         "utf8",
       );
 
-      const [factEvaluations, precisionEvaluations, forgettingEvaluations] =
-        await Promise.all([
-          runCoveragePass(this.model, workspaceDir, input.activeFacts),
-          runPrecisionPass(this.model, workspaceDir),
-          runForgettingPass(this.model, workspaceDir, input.obsoleteFacts),
-        ]);
+      const sections = sectionArtifact(input.artifact);
+      const index = new SectionBm25Index(sections);
+      const factEvaluations = await runCoveragePass({
+        model: this.model,
+        checkpointId: input.artifact.checkpointId,
+        activeFacts: input.activeFacts,
+        index,
+      });
+      const forgettingEvaluations = await runForgettingPass({
+        model: this.model,
+        checkpointId: input.artifact.checkpointId,
+        obsoleteFacts: input.obsoleteFacts,
+        index,
+      });
+      const precisionEvaluations = await runPrecisionPass(
+        this.model,
+        workspaceDir,
+      );
 
       return { factEvaluations, forgettingEvaluations, precisionEvaluations };
     } finally {

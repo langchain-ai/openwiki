@@ -11,9 +11,9 @@ export const factVerdictSchema = z.enum([
 ]);
 
 /**
- * The coverage pass's raw output: one verdict per fact the agent was asked
- * about. Evidence defaults to an empty array so an omitted field is not an
- * error.
+ * The coverage pass's raw output: one verdict per fact the classifier received.
+ * Evidence contains supplied artifact section IDs and defaults to an empty
+ * array so an omitted field is not a schema error.
  */
 export const coverageOutputSchema = z.object({
   evaluations: z.array(
@@ -28,8 +28,9 @@ export const coverageOutputSchema = z.object({
 
 /**
  * The forgetting pass's raw output: one verdict per obsolete fact version the
- * agent was asked to look for. Keyed by `factVersionId`, so a lingering earlier
- * version is distinguished from the current one.
+ * classifier received. Evidence contains supplied artifact section IDs. Results
+ * are keyed by `factVersionId`, distinguishing a lingering earlier version from
+ * current truth.
  */
 export const forgettingOutputSchema = z.object({
   evaluations: z.array(

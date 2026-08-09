@@ -120,6 +120,18 @@ describe("SectionBm25Index", () => {
     expect(sections[1]).toBe(second);
   });
 
+  test("returns a copied section list in stable ID order", () => {
+    const index = new SectionBm25Index([
+      section("z", "last"),
+      section("a", "first"),
+    ]);
+
+    const first = index.sections();
+    first.reverse();
+
+    expect(index.sections().map((item) => item.id)).toEqual(["a", "z"]);
+  });
+
   test("returns no results for an empty index", () => {
     expect(new SectionBm25Index([]).search("anything")).toEqual([]);
   });
