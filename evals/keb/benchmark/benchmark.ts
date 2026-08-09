@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { BenchmarkValidationError } from "../core/errors.js";
 import type { KebBenchmark } from "../core/types.js";
+import { ensureSourceRepoAvailable } from "./source-repo.js";
 import { validateBenchmark } from "./validation.js";
 
 /**
@@ -103,6 +104,10 @@ export async function loadBenchmark(
   }
 
   const sourceRepoPath = path.resolve(benchmarkDir, raw.sourceRepo);
+
+  // Reconstruct the source working tree from its committed bundle when a fresh
+  // checkout left it absent. A no-op for benchmarks that ship a real repository.
+  await ensureSourceRepoAvailable(benchmarkDir, sourceRepoPath);
 
   const benchmark: KebBenchmark = {
     name: typeof raw.name === "string" ? raw.name : "",

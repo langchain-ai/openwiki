@@ -257,6 +257,15 @@ export async function runBenchmark(
           churnedLines: computeChurn(previousArtifact, artifact),
           totalTokens: outcome.totalTokens,
         },
+        // Retain the raw verdicts, not just their reduced counts, so a score is
+        // explainable: the unsupported precision assertions are the candidate
+        // missing ledger facts (or hallucinations), and the forgetting verdicts
+        // make an otherwise invisible pass visible in the persisted result.
+        evaluations: {
+          factEvaluations: evaluation.factEvaluations,
+          precisionEvaluations: evaluation.precisionEvaluations,
+          forgettingEvaluations: evaluation.forgettingEvaluations,
+        },
       });
 
       history.push({

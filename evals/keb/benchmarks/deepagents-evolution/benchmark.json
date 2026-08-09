@@ -1,0 +1,223 @@
+{
+  "name": "deepagents-evolution",
+  "description": "Nine checkpoints from deepagents' real 1.11 to 1.12 core cycle (July 2026). Exercises discovery (delete protocol, filesystem allowlist, middleware-merge-by-name), changed-knowledge correction (filesystem path errors, write_file semantics, default base prompt, opt-in todo middleware), and a full remove-then-revive of the structured system prompt so complete forgetting and later re-discovery of identical knowledge are both scored.",
+  "sourceRepo": "./repo",
+  "trace": {
+    "checkpoints": [
+      {
+        "id": "T0",
+        "commit": "e80651b94123922f788625050613a4d2d4efb6af",
+        "label": "add structured system prompt configuration (#669)"
+      },
+      {
+        "id": "T1",
+        "commit": "560bcbd57e6cd256b22f113884583b1c4cc738a5",
+        "label": "add delete protocol support (#673)"
+      },
+      {
+        "id": "T2",
+        "commit": "b1d5997b7c109b1f4acb7f371e07711181559a29",
+        "label": "add filesystem tool allowlist (#671)"
+      },
+      {
+        "id": "T3",
+        "commit": "4c271ba006040717504c0b96a80b8762168b00a0",
+        "label": "merge custom middleware by name (#672)"
+      },
+      {
+        "id": "T4",
+        "commit": "c5e7d42565e8ddedf4e0a4826074ac988c5156ce",
+        "label": "recoverable errors for invalid/denied filesystem paths (#693)"
+      },
+      {
+        "id": "T5",
+        "commit": "2ed8cb2c8ae46ac86a47586ca759496c7ac6d18d",
+        "label": "allow write_file to overwrite files (#674)"
+      },
+      {
+        "id": "T6",
+        "commit": "577db113239996832dcc94603abd463b70afc589",
+        "label": "revert system prompt configuration (#700)"
+      },
+      {
+        "id": "T7",
+        "commit": "db4f18e350f8bb04a57021b24d46e9cfcdcdaeec",
+        "label": "simplify prompting (#703)"
+      },
+      {
+        "id": "T8",
+        "commit": "927f1b6a6c025e2b9b7d1672b82081bdbbb2779b",
+        "label": "make todo middleware opt-in (#708)"
+      }
+    ]
+  },
+  "ledger": {
+    "facts": [
+      {
+        "id": "agent-entrypoint",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The library's primary entry point is the exported createDeepAgent function, which constructs and returns a ready-to-run LangGraph agent.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "filesystem-tools",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "The agent's built-in filesystem tools are read_file, write_file, edit_file, ls, glob, and grep.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "subagent-tool",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "The agent exposes a task tool that delegates work to sub-agents, each running with its own isolated context.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "package-entrypoints",
+        "category": "packaging",
+        "versions": [
+          {
+            "statement": "The deepagents package publishes environment-specific entry points: the default \".\" export plus dedicated \"deepagents/node\" and \"deepagents/browser\" exports.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "peer-dependencies",
+        "category": "packaging",
+        "versions": [
+          {
+            "statement": "LangChain runtime packages such as @langchain/core and @langchain/langgraph are declared as peerDependencies, so a consumer installs them alongside deepagents rather than receiving them bundled.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "storage-backends",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "Storage is abstracted behind a Backend protocol with swappable implementations, including StateBackend, FilesystemBackend, StoreBackend, and CompositeBackend.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "structured-system-prompt",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "The createDeepAgent systemPrompt option accepts a structured configuration object (SystemPromptConfig) with optional prefix, base, and suffix parts that are assembled in that order, in addition to accepting a plain string or SystemMessage.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T6"
+          },
+          {
+            "statement": "The createDeepAgent systemPrompt option accepts a structured configuration object (SystemPromptConfig) with optional prefix, base, and suffix parts that are assembled in that order, in addition to accepting a plain string or SystemMessage.",
+            "fromCheckpoint": "T7"
+          }
+        ]
+      },
+      {
+        "id": "delete-protocol",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "The backend protocol includes an optional file deletion operation that returns a structured DeleteResult, letting a backend report the outcome of a delete rather than only succeeding or throwing.",
+            "fromCheckpoint": "T1"
+          }
+        ]
+      },
+      {
+        "id": "filesystem-tool-allowlist",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "The filesystem middleware accepts a tools allowlist that restricts which built-in filesystem tools are exposed to the model.",
+            "fromCheckpoint": "T2"
+          }
+        ]
+      },
+      {
+        "id": "middleware-merge-by-name",
+        "category": "behavior",
+        "versions": [
+          {
+            "statement": "Custom middleware passed to createDeepAgent replaces a built-in default middleware that shares the same name, rather than being appended alongside the default.",
+            "fromCheckpoint": "T3"
+          }
+        ]
+      },
+      {
+        "id": "filesystem-path-error-handling",
+        "category": "behavior",
+        "versions": [
+          {
+            "statement": "When a filesystem tool is given an invalid or disallowed path, the tool throws an error.",
+            "fromCheckpoint": "T2",
+            "untilCheckpoint": "T4"
+          },
+          {
+            "statement": "When a filesystem tool is given an invalid or disallowed path, the tool returns a recoverable error result to the model instead of throwing, so the agent can react and continue.",
+            "fromCheckpoint": "T4"
+          }
+        ]
+      },
+      {
+        "id": "write-file-semantics",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "write_file only creates a new file; when the target path already exists the tool refuses the write and returns an error directing the caller to edit the existing file or write to a new path.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T5"
+          },
+          {
+            "statement": "write_file creates the file when it does not exist and completely overwrites it when it does; the caller does not need to read an existing file before replacing it.",
+            "fromCheckpoint": "T5"
+          }
+        ]
+      },
+      {
+        "id": "default-base-prompt",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "The agent applies an authored default base system prompt, and its built-in middleware and tool descriptions carry prescriptive usage guidance by default.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T7"
+          },
+          {
+            "statement": "There is no authored default base system prompt; the base prompt is empty by default and the built-in tool descriptions are concise, retaining only load-bearing guidance while custom prompts, skills, and memory remain intact.",
+            "fromCheckpoint": "T7"
+          }
+        ]
+      },
+      {
+        "id": "todo-planning-default",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "By default the agent includes todo-list planning middleware, so the write_todos planning tool is available without any opt-in.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T8"
+          },
+          {
+            "statement": "The todo-list planning middleware is opt-in and is not part of the default middleware stack, so write_todos is only available when a caller explicitly enables it.",
+            "fromCheckpoint": "T8"
+          }
+        ]
+      }
+    ]
+  }
+}

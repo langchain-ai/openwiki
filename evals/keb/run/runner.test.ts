@@ -272,6 +272,36 @@ describe("runBenchmark", () => {
     });
   });
 
+  test("retains the raw per-item verdicts on each checkpoint", async () => {
+    const result = await runBenchmark({
+      benchmark: benchmark(),
+      system: new FakeSystem(),
+      evaluationBackend: new FakeEvaluator(),
+      config: config(),
+      startedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    // The lossy score counts are explainable because the underlying verdicts are
+    // carried through unchanged: T1's single unsupported assertion is exactly the
+    // one the evaluator returned, and f2@T0's forgetting verdict is preserved.
+    const t1 = result.checkpoints[1].evaluations;
+
+    expect(t1).toBeDefined();
+    expect(t1?.precisionEvaluations).toHaveLength(2);
+    expect(
+      t1?.precisionEvaluations.filter((a) => a.verdict === "unsupported"),
+    ).toHaveLength(1);
+    expect(t1?.forgettingEvaluations).toEqual([
+      {
+        factId: "f2",
+        factVersionId: "f2@T0",
+        verdict: "forgotten",
+        evidence: [],
+        rationale: "",
+      },
+    ]);
+  });
+
   test("records efficiency: duration passthrough and churn only after T0", async () => {
     const result = await runBenchmark({
       benchmark: benchmark(),

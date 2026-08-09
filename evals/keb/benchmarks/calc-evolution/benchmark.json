@@ -1,0 +1,164 @@
+{
+  "name": "calc-evolution",
+  "description": "Three checkpoints of a tiny TypeScript calculator library: add/negate at T0, subtract introduced at T1, negate removed and VERSION bumped to 2.0.0 at T2. The ledger is a complete census of every material fact about the library at each checkpoint (identity, layout, module locations, exports, typing, purity, docs, per-function behavior, version value), not a list of deltas, so precision is measured against everything true rather than a thin sample. Exercises discovery, retention, complete forgetting, and changed-knowledge correction.",
+  "sourceRepo": "./repo",
+  "trace": {
+    "checkpoints": [
+      {
+        "id": "T0",
+        "commit": "973be7a697c4d75b4cde36085f6a470b84c51f88",
+        "label": "calc 1.0.0 with add and negate"
+      },
+      {
+        "id": "T1",
+        "commit": "0ee8f2956b69b54bf6dcb9be10259aec4d5f799b",
+        "label": "introduce subtract"
+      },
+      {
+        "id": "T2",
+        "commit": "811b273eafc0bbaeae999de1c6966f03790eabe2",
+        "label": "remove negate, bump to 2.0.0"
+      }
+    ]
+  },
+  "ledger": {
+    "facts": [
+      {
+        "id": "library-identity",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The repository is `calc`, a tiny calculator (arithmetic) library.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "language-esm-exports",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The library is written in TypeScript and every public value (the functions and the VERSION constant) is an ES module named export, imported individually; there is no default export.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "src-layout",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "All source code lives under a top-level `src/` directory.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "calc-module",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The arithmetic functions are defined in the module `src/calc.ts`.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "version-module",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "The library's version string is defined in its own module, `src/version.ts`, separate from the arithmetic code.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "readme-api-doc",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "A root `README.md` documents the current version and the public API, listing each function as a bullet under an `## API` heading.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "jsdoc",
+        "category": "docs",
+        "versions": [
+          {
+            "statement": "Every exported function carries a JSDoc comment documenting each parameter and its return value.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "purity",
+        "category": "behavior",
+        "versions": [
+          {
+            "statement": "Every exported function is pure: it performs no input validation, no rounding, and no I/O, and returns a value computed only from its arguments.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "number-typed",
+        "category": "types",
+        "versions": [
+          {
+            "statement": "Every arithmetic function takes and returns TypeScript `number` values.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "add-behavior",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "`add(a, b)` returns the sum of its two number arguments.",
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "negate-behavior",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "`negate(x)` returns the additive inverse (negation) of its single argument.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          }
+        ]
+      },
+      {
+        "id": "subtract-behavior",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "`subtract(a, b)` returns the difference of its two arguments, the first minus the second (`a - b`).",
+            "fromCheckpoint": "T1"
+          }
+        ]
+      },
+      {
+        "id": "version-value",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "The exported VERSION constant is the string \"1.0.0\", and the README states the library version is 1.0.0.",
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          },
+          {
+            "statement": "The exported VERSION constant is the string \"2.0.0\", and the README states the library version is 2.0.0.",
+            "fromCheckpoint": "T2"
+          }
+        ]
+      }
+    ]
+  }
+}

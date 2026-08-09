@@ -5,7 +5,7 @@ import type { ActiveTruthFact, ObsoleteFactTarget } from "../core/types.js";
  * alter verdicts, so results carry the exact evaluation contract they were
  * produced under.
  */
-export const PROMPT_VERSION = "keb-eval-1";
+export const PROMPT_VERSION = "keb-eval-2";
 
 /**
  * Shared preamble for every pass. Establishes blind evaluation (the evaluator is
@@ -114,13 +114,23 @@ structure, configuration, or APIs; ignore vague or purely navigational text).
 Deduplicate assertions that say the same thing.
 
 Read the active Truth Ledger at "/truth-ledger.json". It lists the facts that
-are true at this checkpoint, each with a factId and statement. Judge every
-unique material assertion against that ledger:
+are true at this checkpoint, each with a factId and statement. The ledger is the
+sole source of truth: it is meant to be complete, so an assertion the ledger
+does not positively establish is treated as unsupported, not as merely
+unaddressed. Judge every unique material assertion against that ledger:
 
-- "supported": the ledger entails or is consistent with the assertion. Set
-  supportingFactIds to the factId (or factIds) that support it.
-- "unsupported": the ledger contradicts the assertion, or nothing in the ledger
-  supports it. Leave supportingFactIds empty.
+- "supported": one or more ledger facts positively entail the assertion, so a
+  reader of the ledger alone would have to conclude the assertion is true. Set
+  supportingFactIds to the factId (or factIds) that entail it.
+- "unsupported": the ledger contradicts the assertion, or the ledger does not
+  entail it, which includes the ledger being silent on it. Leave
+  supportingFactIds empty.
+
+Support must come only from the ledger text. Do not use outside or world
+knowledge, and do not read or infer from source code, to supply support: an
+assertion that is true in reality but not entailed by the ledger is unsupported.
+Mere consistency with the ledger (the ledger not contradicting the assertion) is
+not support.
 
 Evaluate ALL unique material assertions; do not sample. You may work through the
 wiki in batches across files, but every unique material assertion must receive

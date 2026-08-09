@@ -117,6 +117,83 @@ export function formatReport(result: KebRunResult): string {
   }
 
   lines.push("");
+  appendEvaluationDetail(lines, result);
 
   return `${lines.join("\n")}\n`;
+}
+
+/**
+ * Append the per-checkpoint evaluation detail behind the scores: the coverage
+ * facts not stated correctly, the material assertions the ledger did not support,
+ * and the forgetting verdicts. This is what turns a bare score into something a
+ * reader can act on: every unsupported assertion is a candidate fact missing from
+ * the ledger (or a genuine hallucination), and the forgetting list is the only
+ * place a reader sees forgetting at all when a trace has obsolete versions. The
+ * whole section is skipped when no checkpoint carries retained detail, so scores
+ * built by hand still render.
+ *
+ * @param lines - The report lines accumulated so far, appended to in place.
+ * @param result - The run result whose detail is rendered.
+ */
+function appendEvaluationDetail(lines: string[], result: KebRunResult): void {
+  if (!result.checkpoints.some((checkpoint) => checkpoint.evaluations)) {
+    return;
+  }
+
+  lines.push("## Evaluation detail");
+  lines.push("");
+  lines.push(
+    "The raw verdicts behind the scores. Coverage lists active facts the wiki did not state correctly; precision lists material assertions the active ledger does not support, each a candidate missing ledger fact or a hallucination; forgetting lists obsolete versions and whether the wiki dropped them.",
+  );
+  lines.push("");
+
+  for (const checkpoint of result.checkpoints) {
+    const detail = checkpoint.evaluations;
+
+    if (detail === undefined) {
+      continue;
+    }
+
+    lines.push(`### ${checkpoint.checkpointId}`);
+    lines.push("");
+
+    const coverageGaps = detail.factEvaluations.filter(
+      (fact) => fact.verdict !== "correct",
+    );
+    lines.push(`- Coverage gaps (${coverageGaps.length}):`);
+    if (coverageGaps.length === 0) {
+      lines.push("  - none; every active fact is stated correctly");
+    } else {
+      for (const gap of coverageGaps) {
+        lines.push(`  - \`${gap.factId}\` ${gap.verdict}: ${gap.rationale}`);
+      }
+    }
+
+    const unsupported = detail.precisionEvaluations.filter(
+      (assertion) => assertion.verdict === "unsupported",
+    );
+    lines.push(
+      `- Unsupported assertions (${unsupported.length} of ${detail.precisionEvaluations.length}):`,
+    );
+    if (unsupported.length === 0) {
+      lines.push("  - none; every material assertion is ledger-supported");
+    } else {
+      for (const assertion of unsupported) {
+        lines.push(
+          `  - ${assertion.location}: "${assertion.assertion}" (${assertion.rationale})`,
+        );
+      }
+    }
+
+    if (detail.forgettingEvaluations.length > 0) {
+      lines.push(`- Forgetting (${detail.forgettingEvaluations.length}):`);
+      for (const forgetting of detail.forgettingEvaluations) {
+        lines.push(
+          `  - \`${forgetting.factVersionId}\` ${forgetting.verdict}: ${forgetting.rationale}`,
+        );
+      }
+    }
+
+    lines.push("");
+  }
 }

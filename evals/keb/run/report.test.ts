@@ -94,6 +94,122 @@ describe("formatReport", () => {
     expect(report).toContain("  - Unresolved obsolete versions: 1");
   });
 
+  test("omits the evaluation detail section when no checkpoint carries verdicts", () => {
+    const report = formatReport(result());
+
+    expect(report).not.toContain("## Evaluation detail");
+  });
+
+  test("renders retained verdicts: coverage gaps, unsupported assertions, forgetting", () => {
+    const detailed: KebRunResult = {
+      ...result(),
+      checkpoints: [
+        {
+          ...result().checkpoints[0],
+          evaluations: {
+            factEvaluations: [
+              {
+                factId: "add-behavior",
+                factVersionId: "add-behavior@T0",
+                verdict: "correct",
+                evidence: ["api/calc.md"],
+                rationale: "stated in the calc reference",
+              },
+              {
+                factId: "subtract-behavior",
+                factVersionId: "subtract-behavior@T0",
+                verdict: "missing",
+                evidence: [],
+                rationale: "the wiki never mentions subtraction",
+              },
+            ],
+            precisionEvaluations: [
+              {
+                assertion: "add returns the sum of its arguments",
+                location: "artifact/api/calc.md",
+                verdict: "supported",
+                supportingFactIds: ["add-behavior"],
+                rationale: "matches the add fact",
+              },
+              {
+                assertion: "add uses IEEE-754 double-precision arithmetic",
+                location: "artifact/api/calc.md",
+                verdict: "unsupported",
+                supportingFactIds: [],
+                rationale: "no active fact speaks to numeric representation",
+              },
+            ],
+            forgettingEvaluations: [
+              {
+                factId: "auth-scheme",
+                factVersionId: "auth-scheme@T0",
+                verdict: "lingering",
+                evidence: ["architecture/overview.md"],
+                rationale: "the old API-key scheme is still documented",
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const report = formatReport(detailed);
+
+    expect(report).toContain("## Evaluation detail");
+    expect(report).toContain("### T0");
+    expect(report).toContain("- Coverage gaps (1):");
+    expect(report).toContain(
+      "  - `subtract-behavior` missing: the wiki never mentions subtraction",
+    );
+    expect(report).toContain("- Unsupported assertions (1 of 2):");
+    expect(report).toContain(
+      '  - artifact/api/calc.md: "add uses IEEE-754 double-precision arithmetic" (no active fact speaks to numeric representation)',
+    );
+    expect(report).toContain("- Forgetting (1):");
+    expect(report).toContain(
+      "  - `auth-scheme@T0` lingering: the old API-key scheme is still documented",
+    );
+  });
+
+  test("reports a clean checkpoint as having no gaps rather than omitting it", () => {
+    const clean: KebRunResult = {
+      ...result(),
+      checkpoints: [
+        {
+          ...result().checkpoints[0],
+          evaluations: {
+            factEvaluations: [
+              {
+                factId: "add-behavior",
+                factVersionId: "add-behavior@T0",
+                verdict: "correct",
+                evidence: ["api/calc.md"],
+                rationale: "stated in the calc reference",
+              },
+            ],
+            precisionEvaluations: [
+              {
+                assertion: "add returns the sum of its arguments",
+                location: "artifact/api/calc.md",
+                verdict: "supported",
+                supportingFactIds: ["add-behavior"],
+                rationale: "matches the add fact",
+              },
+            ],
+            forgettingEvaluations: [],
+          },
+        },
+      ],
+    };
+    const report = formatReport(clean);
+
+    expect(report).toContain("  - none; every active fact is stated correctly");
+    expect(report).toContain(
+      "  - none; every material assertion is ledger-supported",
+    );
+    // A checkpoint with no obsolete versions renders no forgetting line at all.
+    expect(report).not.toContain("- Forgetting (");
+  });
+
   test("marks a skipped checkpoint and renders its churn", () => {
     const withSkip: KebRunResult = {
       ...result(),

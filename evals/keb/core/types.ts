@@ -696,6 +696,33 @@ export interface MaintenanceCounts {
 }
 
 /**
+ * The raw per-item verdicts behind a checkpoint's scores, retained so a score is
+ * explainable. The scores above are lossy reductions of these lists to counts;
+ * these are the lists themselves, exactly as the evaluator returned them, so a
+ * reader can see which facts were missed, which assertions the ledger did not
+ * support (each is a candidate missing ledger fact or a hallucination), and which
+ * obsolete versions the wiki dropped.
+ */
+export interface CheckpointEvaluationDetail {
+  /**
+   * Coverage verdicts, one per active fact at this checkpoint.
+   */
+  factEvaluations: FactEvaluation[];
+
+  /**
+   * Precision verdicts, one per unique material assertion the wiki makes.
+   */
+  precisionEvaluations: PrecisionAssertionEvaluation[];
+
+  /**
+   * Forgetting verdicts, one per obsolete version under watch at this checkpoint.
+   * Empty at checkpoints where no version is obsolete, which is why a trace with
+   * no changed or removed facts shows nothing about forgetting.
+   */
+  forgettingEvaluations: ForgettingEvaluation[];
+}
+
+/**
  * The scored result for one checkpoint. Quality and maintenance are not scored
  * per checkpoint; only the raw components that aggregate to the trace level are
  * kept here.
@@ -728,6 +755,15 @@ export interface CheckpointScore {
    * Efficiency observations for the run that produced this checkpoint.
    */
   efficiency: KebExecutionMetrics;
+
+  /**
+   * The raw per-item verdicts behind this checkpoint's scores, retained for
+   * auditing and report drill-down.
+   *
+   * @default absent on synthetic scores built by hand (in tests); the runner
+   *   always populates it from the evaluator's output
+   */
+  evaluations?: CheckpointEvaluationDetail;
 }
 
 /**
