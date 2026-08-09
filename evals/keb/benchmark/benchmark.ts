@@ -1,0 +1,120 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
+import { BenchmarkValidationError } from "../core/errors.js";
+import type { KebBenchmark } from "../core/types.js";
+import { validateBenchmark } from "./validation.js";
+
+/**
+ * Name of the manifest file inside a benchmark directory.
+ */
+export const BENCHMARK_FILE = "benchmark.json";
+
+/**
+ * Raw on-disk shape of `benchmark.json`, before path resolution and validation.
+ * Kept separate from `KebBenchmark` because the file stores a relative
+ * `sourceRepo` while the domain type stores an absolute `sourceRepoPath`.
+ *
+ * Every field is optional and typed `unknown` on purpose: the file is untrusted
+ * input, so neither the presence nor the type of any key is assumed until
+ * `loadBenchmark` and `validateBenchmark` have checked it.
+ */
+interface RawBenchmark {
+  /**
+   * Human-readable benchmark name for reports. Typed `unknown` because the raw
+   * file is untrusted until checked.
+   *
+   * @default an empty string when absent or not a string, since the name is
+   *   only cosmetic
+   */
+  name?: unknown;
+
+  /**
+   * Free-text description of what the benchmark exercises, for reports. Typed
+   * `unknown` because the raw file is untrusted until checked.
+   *
+   * @default an empty string when absent or not a string, since the description
+   *   is only cosmetic
+   */
+  description?: unknown;
+
+  /**
+   * Path to the repository the benchmark replays, written relative to the
+   * benchmark directory. `loadBenchmark` resolves it against that directory into
+   * the absolute `sourceRepoPath` on `KebBenchmark`.
+   *
+   * @default no fallback; an absent, non-string, or empty value is rejected with
+   *   a `BenchmarkValidationError` before any path resolution
+   */
+  sourceRepo?: unknown;
+
+  /**
+   * Ordered checkpoint sequence to replay. Passed straight to
+   * `validateBenchmark`, whose deep structural checks make the later cast to
+   * `KebBenchmark["trace"]` sound; no shape is assumed here.
+   *
+   * @default no fallback; `validateBenchmark` rejects an absent or malformed
+   *   trace with a `BenchmarkValidationError`
+   */
+  trace?: unknown;
+
+  /**
+   * The Truth Ledger of hand-authored facts and their versions the generated
+   * wiki is scored against. Passed straight to `validateBenchmark` for the same
+   * deep validation as `trace`; no shape is assumed here.
+   *
+   * @default no fallback; `validateBenchmark` rejects an absent or malformed
+   *   ledger with a `BenchmarkValidationError`
+   */
+  ledger?: unknown;
+}
+
+/**
+ * Load, resolve, and validate the benchmark in `benchmarkDir`.
+ *
+ * @param benchmarkDir - Absolute path to the directory containing
+ *   `benchmark.json`.
+ *
+ * @returns The validated benchmark with `sourceRepoPath` resolved to an absolute
+ *   path.
+ *
+ * @throws BenchmarkValidationError when the file is missing, unparseable, or
+ *   fails an integrity check.
+ */
+export async function loadBenchmark(
+  benchmarkDir: string,
+): Promise<KebBenchmark> {
+  const file = path.join(benchmarkDir, BENCHMARK_FILE);
+
+  let raw: RawBenchmark;
+
+  try {
+    raw = JSON.parse(await readFile(file, "utf8")) as RawBenchmark;
+  } catch (error) {
+    throw new BenchmarkValidationError(
+      `Could not read or parse ${file}: ${(error as Error).message}`,
+    );
+  }
+
+  if (typeof raw.sourceRepo !== "string" || raw.sourceRepo.length === 0) {
+    throw new BenchmarkValidationError(
+      `${file}: "sourceRepo" must be a non-empty string.`,
+    );
+  }
+
+  const sourceRepoPath = path.resolve(benchmarkDir, raw.sourceRepo);
+
+  const benchmark: KebBenchmark = {
+    name: typeof raw.name === "string" ? raw.name : "",
+    description: typeof raw.description === "string" ? raw.description : "",
+    sourceRepoPath,
+    // Cast is deliberate: validateBenchmark performs the deep structural checks
+    // that make this cast sound, and throws before the value is used otherwise.
+    trace: raw.trace as KebBenchmark["trace"],
+    ledger: raw.ledger as KebBenchmark["ledger"],
+  };
+
+  validateBenchmark(benchmark);
+
+  return benchmark;
+}
