@@ -1,0 +1,38 @@
+evals/keb/README.md
+  s_464015dc89b99a::t_ab7f169f1a2a2f 87-93
+evals/keb/evaluator/agent-backend.ts
+  s_464015dc89b99a::t_3bc1004f1fb6ae 12,17,71-73,94-97,134-139
+evals/keb/evaluator/coverage.ts
+  s_464015dc89b99a::t_666c8c7feba6cd 4,14
+evals/keb/evaluator/evaluator.test.ts
+  s_464015dc89b99a::t_eab27ffcd74b7b 14,17,43-46,49,52,55,57,62
+evals/keb/evaluator/precision.test.ts
+  s_464015dc89b99a::t_4be562be4a3c7d 1-549
+evals/keb/evaluator/precision.ts
+  s_464015dc89b99a::t_144fe3ce21f87e 1-486
+evals/keb/evaluator/prompts.ts
+  s_464015dc89b99a::t_681c5edc86e9f2 2-4,75-130,170-192,194,196-199,202-210,245,247-249,251-281
+evals/keb/evaluator/schemas.ts
+  s_464015dc89b99a::t_8c7629c2dffe6e 47-48,50-63,66,69,85-92,94-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "f15dc6391ba28536e0e8fa1813fe8ff1b3fad400",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_464015dc89b99a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe7ba-63f6-7b61-93e7-cbf1d2cdefdc",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
