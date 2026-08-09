@@ -77,6 +77,8 @@ export async function runVisualizeServer(
     edges: [],
   };
   const sseClients = new Set<ServerResponse>();
+  let watchHandle: { close(): void } | undefined;
+  let stopping = false;
 
   // The compiled client modules sit beside this file in dist/visualize/. They are static,
   // server-owned build artifacts (no user input, never evaluated), read once at startup and
@@ -118,13 +120,16 @@ export async function runVisualizeServer(
 
   return new Promise<void>((resolve) => {
     process.once("SIGINT", () => {
+      stopping = true;
       process.stdout.write("\n  stopped.\n");
+      closeVisualizerResources(sseClients, watchHandle);
       server.close(() => resolve());
     });
     listen(server, options.port, PORT_ATTEMPTS, (boundPort) => {
       const url = `http://${HOST}:${boundPort}`;
       void rebuild("initial scan").then(() => {
-        startWatch(wikiRoot, rebuild);
+        if (stopping) return;
+        watchHandle = startWatch(wikiRoot, rebuild);
         printBanner(wikiRoot, url);
         if (options.open) openBrowser(url);
       });
@@ -161,6 +166,20 @@ export interface RequestHandlerDeps {
    * `/events` subscribers here and drops them when the connection closes.
    */
   sseClients: Set<ServerResponse>;
+}
+
+/**
+ * Close the long-lived resources owned by the visualizer before stopping its
+ * HTTP server. Ending SSE responses lets `server.close()` finish even while a
+ * browser tab is still connected.
+ */
+export function closeVisualizerResources(
+  sseClients: Set<ServerResponse>,
+  watchHandle?: { close(): void },
+): void {
+  for (const response of sseClients) response.end();
+  sseClients.clear();
+  watchHandle?.close();
 }
 
 /**
@@ -265,18 +284,25 @@ function listen(
 function startWatch(
   wikiRoot: string,
   rebuild: (reason: string) => Promise<void>,
-): void {
+): { close(): void } | undefined {
   let timer: NodeJS.Timeout | undefined;
   try {
-    watch(wikiRoot, { recursive: true }, () => {
+    const watcher = watch(wikiRoot, { recursive: true }, () => {
       clearTimeout(timer);
       timer = setTimeout(
         () => void rebuild("change detected"),
         WATCH_DEBOUNCE_MS,
       );
     });
+    return {
+      close(): void {
+        clearTimeout(timer);
+        watcher.close();
+      },
+    };
   } catch {
     process.stdout.write("  (live watch unavailable on this platform)\n");
+    return undefined;
   }
 }
 
