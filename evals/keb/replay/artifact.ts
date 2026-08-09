@@ -75,8 +75,8 @@ function fingerprint(documents: KnowledgeDocument[]): string {
 /**
  * Capture the wiki inside a worktree as an immutable artifact: read every
  * knowledge document, write a private copy under the artifacts root, and record
- * a fingerprint. The snapshot copy is what the evaluator later reads through a
- * sandboxed backend, so it is never mutated after this returns.
+ * a fingerprint. The evaluator consumes the returned immutable document list;
+ * the on-disk snapshot remains available for run artifacts and diagnostics.
  *
  * @param checkpointId - The checkpoint this artifact belongs to.
  * @param worktreeDir - Absolute path to the worktree whose wiki to capture.

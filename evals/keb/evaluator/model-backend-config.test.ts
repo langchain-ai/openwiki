@@ -12,16 +12,16 @@ vi.mock("../../../src/agent/index.js", () => ({
   },
 }));
 
-const { AgentEvaluationBackend } = await import("./agent-backend.js");
+const { ModelEvaluationBackend } = await import("./model-backend.js");
 
 beforeEach(() => {
   modelCalls.length = 0;
   fakeModel.temperature = undefined;
 });
 
-describe("AgentEvaluationBackend model configuration", () => {
+describe("ModelEvaluationBackend model configuration", () => {
   test("disables provider retries and requests deterministic temperature", () => {
-    new AgentEvaluationBackend({
+    new ModelEvaluationBackend({
       provider: "anthropic",
       modelId: "claude-sonnet-5",
     });

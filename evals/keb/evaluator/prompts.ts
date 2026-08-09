@@ -1,9 +1,7 @@
 /**
- * Version of the evaluator prompts and logic. This remains at v2 until Phase 5
- * removes the legacy backend infrastructure and activates the complete bounded
- * evaluator contract as one versioned change.
+ * Version of the complete bounded evaluator contract.
  */
-export const PROMPT_VERSION = "keb-eval-2";
+export const PROMPT_VERSION = "keb-eval-3";
 
 /**
  * One artifact excerpt supplied directly to a bounded evaluator request.

@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { AgentEvaluationBackend } from "./evaluator/agent-backend.js";
+import { ModelEvaluationBackend } from "./evaluator/model-backend.js";
 import { parseArgs } from "./run/args.js";
 import { loadBenchmark } from "./benchmark/benchmark.js";
 import { OpenWikiSystem } from "./system/openwiki-system.js";
@@ -36,7 +36,7 @@ async function main(): Promise<void> {
     provider: config.provider,
     modelId: config.systemModelId,
   });
-  const evaluationBackend = new AgentEvaluationBackend({
+  const evaluationBackend = new ModelEvaluationBackend({
     provider: config.provider,
     // resolveRunConfig guarantees a concrete evaluator model id.
     modelId: config.evaluatorModelId as string,

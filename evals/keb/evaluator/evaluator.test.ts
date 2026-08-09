@@ -5,7 +5,7 @@ import path from "node:path";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
-import { AgentEvaluationBackend } from "./agent-backend.js";
+import { ModelEvaluationBackend } from "./model-backend.js";
 import { resolveCoverage, runCoveragePass } from "./coverage.js";
 import { SectionBm25Index } from "./retrieval.js";
 import { EvaluationError } from "../core/errors.js";
@@ -289,7 +289,7 @@ describe("empty-input passes short-circuit", () => {
 
 // Live test: requires KEB_LIVE plus provider credentials. Skipped by default so
 // the main suite stays offline.
-describe.skipIf(!process.env.KEB_LIVE)("AgentEvaluationBackend (live)", () => {
+describe.skipIf(!process.env.KEB_LIVE)("ModelEvaluationBackend (live)", () => {
   let snapshotDir: string;
 
   beforeAll(async () => {
@@ -306,7 +306,7 @@ describe.skipIf(!process.env.KEB_LIVE)("AgentEvaluationBackend (live)", () => {
   });
 
   test("marks a clearly-stated fact correct", async () => {
-    const backend = new AgentEvaluationBackend({
+    const backend = new ModelEvaluationBackend({
       provider: process.env.OPENWIKI_PROVIDER ?? "anthropic",
       modelId: process.env.KEB_EVALUATOR_MODEL_ID ?? "claude-sonnet-5",
     });

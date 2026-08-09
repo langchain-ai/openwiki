@@ -331,9 +331,8 @@ export interface KnowledgeDocument {
 }
 
 /**
- * An immutable snapshot of the generated wiki at one checkpoint. Once captured
- * it is never mutated; the evaluator reads a copy of it through a sandboxed
- * backend.
+ * An immutable snapshot of the generated wiki at one checkpoint. Once captured,
+ * its document list is the evaluator's authoritative artifact input.
  */
 export interface KnowledgeArtifact {
   /**
@@ -1133,8 +1132,8 @@ export interface SystemUnderTest {
 
 /**
  * Turns an immutable artifact plus the active ledger into the three evaluation
- * passes. The deterministic fake (Phase 4) and the agent-backed implementation
- * (Phase 5) both satisfy this.
+ * passes. Production and deterministic test implementations satisfy this
+ * contract.
  */
 export interface EvaluationBackend {
   /**

@@ -34,6 +34,19 @@ A KEB benchmark contains:
 
 KEB creates an isolated Git worktree, runs the system at each checkpoint, freezes the resulting wiki, and evaluates it against the Truth Ledger.
 
+Evaluation uses the frozen in-memory document set directly. Markdown is split
+into stable, size-bounded sections, then one BM25 index is reused to retrieve the
+most relevant evidence for coverage and forgetting. A missing or forgotten
+verdict is provisional until the evaluator has exhausted every remaining
+section, preventing retrieval misses from becoming final negative judgments.
+
+All semantic judgments use schema-validated direct model calls with fixed batch
+sizes, a five-minute per-attempt timeout, at most two attempts, zero provider
+retries, and temperature zero. Passes run sequentially, so call counts and
+failure boundaries remain bounded and observable. Precision visits every
+section rather than using retrieval and compares every extracted assertion with
+the complete active Truth Ledger.
+
 For OpenWiki, the generated wiki persists between checkpoints, so `update` sees the artifact produced by the previous run:
 
 ```text
