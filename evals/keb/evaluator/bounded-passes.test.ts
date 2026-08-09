@@ -382,6 +382,39 @@ describe("runCoveragePass", () => {
     expect(control.taskPrompts).toHaveLength(1);
   });
 
+  test("accepts valid related evidence for a missing coverage verdict", async () => {
+    const control = controller([
+      {
+        evaluations: [
+          {
+            factId: "edge-cases",
+            verdict: "missing",
+            evidence: ["api-section"],
+            rationale:
+              "The API section documents the function but omits its edge cases.",
+          },
+        ],
+      },
+    ]);
+
+    const [evaluation] = await runCoveragePass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      activeFacts: [
+        activeFact("edge-cases", "The API documents numeric edge cases."),
+      ],
+      index: new SectionBm25Index([
+        section("api-section", "The API documents the add function."),
+      ]),
+    });
+
+    expect(evaluation).toMatchObject({
+      verdict: "missing",
+      evidence: ["api-section"],
+    });
+    expect(control.taskPrompts).toHaveLength(1);
+  });
+
   test("returns deterministic missing without a model for an empty artifact", async () => {
     const control = controller([]);
 

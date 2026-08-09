@@ -137,6 +137,9 @@ Rules:
 - "partial" means an important portion is present but incomplete or imprecise.
 - "missing" means these excerpts do not state the fact.
 - "contradicted" means these excerpts assert something incompatible with it.
+- "missing" may cite supplied excerpts that show related but incomplete
+  documentation; evidence is optional because absence may require exhausting
+  all supplied sections.
 - Return only the structured response.`;
 
 /**

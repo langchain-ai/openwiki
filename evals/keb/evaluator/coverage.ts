@@ -225,12 +225,6 @@ function validateCoverageOutput(
       }
     }
 
-    if (evaluation.verdict === "missing" && evaluation.evidence.length > 0) {
-      throw new EvaluationError(
-        `Coverage evaluator returned evidence for missing factId "${evaluation.factId}".`,
-      );
-    }
-
     if (evaluation.verdict !== "missing" && evaluation.evidence.length === 0) {
       throw new EvaluationError(
         `Coverage evaluator returned no evidence for ${evaluation.verdict} factId "${evaluation.factId}".`,
