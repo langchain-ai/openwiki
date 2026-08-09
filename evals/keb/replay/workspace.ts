@@ -89,7 +89,15 @@ export async function createWorkspace(): Promise<Workspace> {
     async dispose(): Promise<void> {
       // Guard: only ever remove a path we created under the OS temp directory.
       await assertContainedByRealpath(os.tmpdir(), root);
-      await rm(root, { recursive: true, force: true });
+      // Worktrees under this root carry `.git` state git may still be flushing;
+      // retry the recursive remove so a transient ENOTEMPTY/EBUSY under parallel
+      // test load does not fail teardown.
+      await rm(root, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 50,
+      });
     },
   };
 }

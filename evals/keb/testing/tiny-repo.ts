@@ -82,7 +82,16 @@ export async function createTinyRepo(commits: TinyCommit[]): Promise<TinyRepo> {
     repoPath,
     shas,
     async dispose(): Promise<void> {
-      await rm(repoPath, { recursive: true, force: true });
+      // Git can still be finalizing pack files under `.git/objects` when the
+      // last command's promise resolves, which makes a bare recursive rmdir
+      // race to ENOTEMPTY under parallel test load. maxRetries/retryDelay make
+      // fs.rm retry exactly that class of transient error.
+      await rm(repoPath, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 50,
+      });
     },
   };
 }
