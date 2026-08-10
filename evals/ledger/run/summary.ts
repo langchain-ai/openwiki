@@ -309,9 +309,7 @@ export function formatRunSummary(
       : ` · maintenance ${pct(score.maintenance)}`;
 
   push("│");
-  push(
-    `├ 📊 LEDGER ${pct(score.ledgerScore)} · quality ${pct(score.quality)}${maintenance}`,
-  );
+  push(`├ 📊 quality ${pct(score.quality)}${maintenance}`);
   push(`│  ├ coverage ${pct(score.traceCoverage)}`);
   push(`│  ├ precision ${pct(score.tracePrecision)}`);
   push(`│  ├ hallucination ${pct(score.traceHallucinationRate)}`);

@@ -223,9 +223,7 @@ describe("formatRunSummary", () => {
       elapsedMs: 123_000,
     });
 
-    expect(summary).toContain(
-      "├ 📊 LEDGER 80.0% · quality 70.0% · maintenance 90.0%",
-    );
+    expect(summary).toContain("├ 📊 quality 70.0% · maintenance 90.0%");
     expect(summary).toContain("│  ├ coverage 75.0%");
     expect(summary).toContain("│  ├ precision 75.0%");
     expect(summary).toContain("│  ├ hallucination 10.0%");
@@ -257,7 +255,7 @@ describe("formatRunSummary", () => {
 
     const summary = formatRunSummary(single);
 
-    expect(summary).toContain("├ 📊 LEDGER 80.0% · quality 70.0%");
+    expect(summary).toContain("├ 📊 quality 70.0%");
     expect(summary).not.toContain("maintenance");
   });
 
