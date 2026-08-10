@@ -3,6 +3,9 @@ import { promisify } from "node:util";
 
 import { GitReplayError } from "../core/errors.js";
 
+/**
+ * Promise-returning `execFile` used to run Git without a shell.
+ */
 const execFileAsync = promisify(execFile);
 
 /**

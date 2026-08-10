@@ -1,9 +1,10 @@
 import { performance } from "node:perf_hooks";
 
+import { formatPercent as formatPercentString } from "./format.js";
 import type {
   BenchmarkProgressEvent,
   BenchmarkProgressReporter,
-} from "./runner.js";
+} from "./progress-events.js";
 
 /**
  * Destination used for progress output.
@@ -44,14 +45,15 @@ export function formatProgressDuration(durationMs: number): string {
 }
 
 /**
- * Render a score fraction as a whole-number percentage.
+ * Render a score fraction as a whole-number percentage for the compact live
+ * checkpoint line.
  *
  * @param score - Score between zero and one.
  *
  * @returns Percentage text.
  */
 function formatPercent(score: number | null): string {
-  return score === null ? "-" : `${(score * 100).toFixed(0)}%`;
+  return formatPercentString(score, 0);
 }
 
 /**
@@ -63,9 +65,7 @@ function formatPercent(score: number | null): string {
  * @returns Percentage text or a dash.
  */
 function formatAggregatePercent(score: number | null | undefined): string {
-  return score === undefined || score === null
-    ? "-"
-    : `${(score * 100).toFixed(1)}%`;
+  return formatPercentString(score, 1);
 }
 
 /**
@@ -85,6 +85,29 @@ function formatForgetting(
   }
 
   return `${formatPercent(forgottenCount / obsoleteFactCount)} (${forgottenCount}/${obsoleteFactCount})`;
+}
+
+/**
+ * Count claims whose truth was adjudicated by the ledger or source evidence.
+ */
+function adjudicatedClaimCount(event: {
+  supportedCount: number;
+  inventedCount: number;
+  staleCount: number;
+}): number {
+  return event.supportedCount + event.inventedCount + event.staleCount;
+}
+
+/**
+ * Compute the claim-weighted hallucination rate shown beside aggregate counts.
+ */
+function aggregateHallucinationRate(event: {
+  supportedCount: number;
+  inventedCount: number;
+  staleCount: number;
+}): number | null {
+  const adjudicated = adjudicatedClaimCount(event);
+  return adjudicated === 0 ? null : event.inventedCount / adjudicated;
 }
 
 /**
@@ -235,10 +258,10 @@ export function createCliProgressReporter(
         break;
       case "checkpoint-complete":
         completeSpinner(
-          `✅ ${event.checkpointId} · coverage ${formatPercent(event.coverageScore)} · precision ${formatPercent(event.precisionScore)} · halluc ${formatPercent(event.hallucinationRate)} · stale ${formatPercent(event.stalenessRate)} · unverified ${formatPercent(event.unverifiedRate)} · forgetting ${formatForgetting(event.forgottenCount, event.obsoleteFactCount)}`,
+          `✅ ${event.checkpointId} · coverage ${formatPercent(event.coverageScore)} · precision ${formatPercent(event.precisionScore)} · hallucination ${formatPercent(event.hallucinationRate)} · forgetting ${formatForgetting(event.forgottenCount, event.obsoleteFactCount)}`,
         );
         output.write(
-          `│    ↳ ${event.materialClaimCount} claims · ${event.supportedCount} supported · ${event.inventedCount} invented · ${event.staleCount} stale · ${event.unverifiedCount} unverified\n`,
+          `│    ↳ ${adjudicatedClaimCount(event)}/${event.materialClaimCount} claims adjudicated · ${event.supportedCount} supported · ${event.inventedCount} invented · ${event.staleCount} stale\n`,
         );
         if (event.indeterminateCount > 0) {
           output.write(
@@ -254,40 +277,29 @@ export function createCliProgressReporter(
           `│  ├ Coverage ${formatAggregatePercent(event.traceCoverage)}\n`,
         );
         output.write(
-          `│  └ Precision ${formatAggregatePercent(event.tracePrecision)}\n`,
-        );
-        output.write(`│     ├ Material claims ${event.materialClaimCount}\n`);
-        output.write(`│     ├ Supported ${event.supportedCount}\n`);
-        output.write(`│     ├ Invented ${event.inventedCount}\n`);
-        output.write(`│     ├ Stale ${event.staleCount}\n`);
-        output.write(`│     └ Unverified ${event.unverifiedCount}\n`);
-        output.write(
-          `│        ├ Hallucination rate ${formatAggregatePercent(event.traceHallucinationRate)}\n`,
+          `│  ├ Precision ${formatAggregatePercent(event.tracePrecision)}\n`,
         );
         output.write(
-          `│        ├ Staleness rate ${formatAggregatePercent(event.traceStalenessRate)}\n`,
+          `│  └ Hallucination ${formatAggregatePercent(aggregateHallucinationRate(event))}\n`,
         );
+        output.write("│\n");
         output.write(
-          `│        └ Unverified rate ${formatAggregatePercent(event.traceUnverifiedRate)}\n`,
+          `├ 🧹 Forgetting ${formatAggregatePercent(event.completeForgetting)}\n`,
         );
+        output.write("│\n");
+        output.write("├ 🧾 Claims\n");
         output.write(
-          `├ 🔄 Maintenance ${formatAggregatePercent(event.maintenance)}\n`,
+          `│  ├ Adjudicated ${adjudicatedClaimCount(event)}/${event.materialClaimCount}\n`,
         );
-        output.write(
-          `│  ├ Discovery ${formatAggregatePercent(event.newKnowledgeDiscovery)}\n`,
-        );
-        output.write(
-          `│  ├ Correction ${formatAggregatePercent(event.changedKnowledgeCorrection)}\n`,
-        );
-        output.write(
-          `│  ├ Forgetting ${formatAggregatePercent(event.completeForgetting)}\n`,
-        );
-        output.write(
-          `│  └ Retention ${formatAggregatePercent(event.stableRetention)}\n`,
-        );
-        output.write(
-          `├ ⚖️ Evaluator completeness ${formatAggregatePercent(event.evaluationCompleteness)}\n`,
-        );
+        output.write(`│  ├ Supported ${event.supportedCount}\n`);
+        output.write(`│  ├ Invented ${event.inventedCount}\n`);
+        output.write(`│  └ Stale ${event.staleCount}\n`);
+        if (event.evaluationCompleteness < 1) {
+          output.write("│\n");
+          output.write(
+            `├ ⚠️ Evaluator completeness ${formatAggregatePercent(event.evaluationCompleteness)}\n`,
+          );
+        }
         output.write("│\n");
         const completionIcon = event.evaluationCompleteness === 1 ? "🎉" : "⚠️";
         output.write(

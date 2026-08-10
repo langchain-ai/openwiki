@@ -523,8 +523,8 @@ export function computeRecoveryRate(
  * is taken over resolved (forgotten) versions only; obsolete versions left
  * unresolved when observation stopped (never judged forgotten, whether the trace
  * ended or the fact was revived) are counted in `unresolvedCount` and never folded
- * into the mean, so an unknown final lifetime is never treated as known. A
- * An indeterminate forgetting judgment neither increments the lifetime nor
+ * into the mean, so an unknown final lifetime is never treated as known. An
+ * indeterminate forgetting judgment neither increments the lifetime nor
  * resolves it. Evaluator Completeness reports that gap. A trace-level diagnostic,
  * never part of the LEDGER Score.
  *
@@ -633,7 +633,9 @@ function mean(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-/** Average defined nullable rates, returning null when none are defined. */
+/**
+ * Average defined nullable rates, returning null when none are defined.
+ */
 function meanDefined(values: Array<number | null>): number | null {
   const defined = values.filter((value): value is number => value !== null);
   return defined.length === 0 ? null : mean(defined);

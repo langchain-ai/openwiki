@@ -2,22 +2,14 @@ import { lstat, readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { EvaluationError } from "../core/errors.js";
+import { compareStrings } from "../core/order.js";
 import type { EvidenceCorpus, EvidenceRecord } from "../core/types.js";
 import { git } from "../replay/git.js";
 
-const MAX_EVIDENCE_CHARS = 6_000;
-
 /**
- * Compare strings using locale-independent code-unit ordering.
- *
- * @param first - First string.
- * @param second - Second string.
- *
- * @returns A negative number, zero, or a positive number for sorting.
+ * Maximum characters retained per evidence chunk before splitting.
  */
-function compareStrings(first: string, second: string): number {
-  return first < second ? -1 : first > second ? 1 : 0;
-}
+const MAX_EVIDENCE_CHARS = 6_000;
 
 /**
  * Split text into stable bounded chunks, preferring newline boundaries without

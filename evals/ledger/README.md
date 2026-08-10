@@ -708,15 +708,34 @@ pnpm exec tsx evals/ledger/run.ts \
   --benchmark evals/ledger/benchmarks/calc-evolution
 ```
 
-The terminal shows checkpoint progress and a compact precision composition:
+The terminal emphasizes the core quality signals and shows how much of the claim
+inventory was adjudicated:
 
 ```text
-│ ✅ T1 · coverage 83% · precision 92% · halluc 3% · stale 5% · unverified 31% · forgetting 100% (2/2)
-│    ↳ 16 claims · 9 supported · 1 invented · 1 stale · 5 unverified
+│ ✅ T2 · coverage 100% · precision 89% · hallucination 11% · forgetting 100% (2/2)
+│    ↳ 27/143 claims adjudicated · 24 supported · 3 invented · 0 stale
+│
+├ 📊 Quality 95.1%
+│  ├ Coverage 100.0%
+│  ├ Precision 90.7%
+│  └ Hallucination 10.1%
+│
+├ 🧹 Forgetting 100.0%
+│
+├ 🧾 Claims
+│  ├ Adjudicated 69/406
+│  ├ Supported 62
+│  ├ Invented 7
+│  └ Stale 0
+│
+└ 🎉 LEDGER 97.6% · 19m 20s
 ```
 
-Detailed claim text, provenance, and citations remain in the result directory
-rather than being dumped to the terminal.
+Hallucination in the final summary is claim-weighted, so it corresponds directly
+to the displayed invented, supported, and stale totals. Detailed maintenance
+dimensions, unverified rates, claim text, provenance, and citations remain in the
+report and result directory. Evaluator completeness appears in the terminal only
+when it falls below 100%.
 
 ### Re-evaluate a saved run
 

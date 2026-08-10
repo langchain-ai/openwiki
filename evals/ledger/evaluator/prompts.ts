@@ -112,7 +112,9 @@ export interface PrecisionJudgmentAssertion {
    */
   statement: string;
 
-  /** Temporal stance assigned during extraction. */
+  /**
+   * Temporal stance assigned during extraction.
+   */
   tense: "current" | "historical";
 
   /**
@@ -171,7 +173,9 @@ export interface PrecisionLedgerFact {
    */
   statement: string;
 
-  /** Whether this version is active or superseded at the checkpoint. */
+  /**
+   * Whether this version is active or superseded at the checkpoint.
+   */
   current: boolean;
 }
 
@@ -452,6 +456,10 @@ export function precisionLedgerPrompt(
   facts: PrecisionLedgerFact[],
   transitions?: CheckpointTransitions,
 ): string {
+  // `?? null` is deliberate: absent transitions must serialize to the literal
+  // `null` in the prompt. Flipping to `undefined` would render "undefined" and
+  // change the prompt text, so this stays null despite the wider undefined
+  // convention.
   return `Account for every assertion against the complete current and superseded truth ledger.
 
 Assertions (JSON):

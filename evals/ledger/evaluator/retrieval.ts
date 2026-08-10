@@ -1,7 +1,19 @@
+import { compareStrings } from "../core/order.js";
 import type { ArtifactSection } from "./documents.js";
 
+/**
+ * Default number of ranked sections returned when a caller omits `topK`.
+ */
 const DEFAULT_TOP_K = 8;
+
+/**
+ * BM25 term-frequency saturation parameter.
+ */
 const K1 = 1.2;
+
+/**
+ * BM25 length-normalization parameter.
+ */
 const B = 0.75;
 
 /**
@@ -37,18 +49,6 @@ interface IndexedSection {
    * Total number of indexed tokens in the section.
    */
   length: number;
-}
-
-/**
- * Compare strings using locale-independent code-unit ordering.
- *
- * @param a - First string.
- * @param b - Second string.
- *
- * @returns A negative number, zero, or a positive number for sorting.
- */
-function compareStrings(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 /**

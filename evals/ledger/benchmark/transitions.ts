@@ -1,5 +1,6 @@
 import { activeVersionAt, versionIdFor } from "./truth-ledger.js";
 import type {
+  ActiveTruthFact,
   CheckpointTransitions,
   LedgerBenchmark,
   ObsoleteFactTarget,
@@ -115,4 +116,75 @@ export function obsoleteTargetsFor(
   }
 
   return targets;
+}
+
+/**
+ * Deduplicate obsolete forgetting targets by `factVersionId`, keeping the first
+ * occurrence in trace order. A version goes obsolete at exactly one boundary, so
+ * a duplicate can only arise from the sticky carry-forward concatenating a target
+ * with itself; this is a defensive guard that keeps the evaluator from ever
+ * seeing one version twice within a single checkpoint.
+ *
+ * @param targets - The obsolete targets to deduplicate.
+ *
+ * @returns The targets with duplicate versions removed, in first-seen order.
+ */
+function dedupeTargets(targets: ObsoleteFactTarget[]): ObsoleteFactTarget[] {
+  const seen = new Set<string>();
+
+  return targets.filter((target) => {
+    if (seen.has(target.factVersionId)) {
+      return false;
+    }
+
+    seen.add(target.factVersionId);
+    return true;
+  });
+}
+
+/**
+ * Advance the forgetting watch set across one checkpoint boundary. Once a fact
+ * version goes obsolete it stays under watch at every later checkpoint so the
+ * forgetting pass keeps re-checking it, which is what makes the Stale-Knowledge
+ * Lifetime diagnostic measurable; LEDGER does not treat forgetting as permanent.
+ * A target leaves the set only when the requirements revive that exact knowledge
+ * (its fact id is active again with the version's own canonical statement), so
+ * the wiki is never asked to forget something true again. This never affects the
+ * Maintenance Score, because `computeMaintenanceCounts` only ever matches
+ * forgetting verdicts against the current boundary's own obsolete versions.
+ *
+ * @param inputs - The outstanding watch set, the current active facts, and the
+ *   versions this boundary newly retires.
+ *
+ * @returns The deduplicated watch set for the current checkpoint, with carried
+ *   targets before this boundary's newly obsolete ones.
+ */
+export function advanceObsoleteWatchSet(inputs: {
+  /**
+   * Obsolete versions carried in from earlier boundaries.
+   */
+  outstanding: ObsoleteFactTarget[];
+
+  /**
+   * Facts true at the current checkpoint, used to retire revived targets.
+   */
+  activeFacts: ActiveTruthFact[];
+
+  /**
+   * Versions this boundary newly retires.
+   */
+  newlyObsolete: ObsoleteFactTarget[];
+}): ObsoleteFactTarget[] {
+  const activeStatementByFactId = new Map(
+    inputs.activeFacts.map((fact): [string, string] => [
+      fact.factId,
+      fact.statement,
+    ]),
+  );
+  const carried = inputs.outstanding.filter(
+    (target) =>
+      activeStatementByFactId.get(target.factId) !== target.obsoleteStatement,
+  );
+
+  return dedupeTargets([...carried, ...inputs.newlyObsolete]);
 }

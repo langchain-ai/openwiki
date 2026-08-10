@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import {
+  advanceObsoleteWatchSet,
   computeTransitions,
   obsoleteTargetsFor,
 } from "../benchmark/transitions.js";
@@ -28,7 +29,7 @@ import {
   computeMaintenanceCounts,
   computePrecision,
 } from "../scoring/metrics.js";
-import type { BenchmarkProgressReporter } from "./runner.js";
+import type { BenchmarkProgressReporter } from "./progress-events.js";
 import {
   loadSavedArtifact,
   loadSavedEvidence,
@@ -70,39 +71,25 @@ export interface SavedRunReevaluationInputs {
   startedAt: string;
 
   /**
-   * Optional lifecycle observer used by command-line progress output.
+   * Lifecycle observer used by command-line progress output.
+   *
+   * @default undefined lifecycle events are discarded
    */
   onProgress?: BenchmarkProgressReporter;
 
   /**
-   * Optional durable sink for each loaded artifact copied into the new run.
+   * Durable sink for each loaded artifact copied into the new run.
+   *
+   * @default undefined loaded artifacts are not re-persisted
    */
   onArtifact?: (artifact: KnowledgeArtifact) => void | Promise<void>;
 
   /**
-   * Optional durable sink for each loaded evidence corpus copied into the new run.
+   * Durable sink for each loaded evidence corpus copied into the new run.
+   *
+   * @default undefined loaded evidence is not re-persisted
    */
   onEvidence?: (evidence: EvidenceCorpus) => void | Promise<void>;
-}
-
-/**
- * Deduplicate obsolete targets while preserving their first-seen trace order.
- *
- * @param targets - Obsolete fact versions currently under watch.
- *
- * @returns Unique targets keyed by fact-version identity.
- */
-function dedupeTargets(targets: ObsoleteFactTarget[]): ObsoleteFactTarget[] {
-  const seen = new Set<string>();
-
-  return targets.filter((target) => {
-    if (seen.has(target.factVersionId)) {
-      return false;
-    }
-
-    seen.add(target.factVersionId);
-    return true;
-  });
 }
 
 /**
@@ -216,21 +203,11 @@ export async function reevaluateSavedRun(
         newlyObsolete = obsoleteTargetsFor(transitions);
       }
 
-      const activeStatementByFactId = new Map(
-        activeFacts.map((fact): [string, string] => [
-          fact.factId,
-          fact.statement,
-        ]),
-      );
-      const carriedObsolete = outstandingObsolete.filter(
-        (target) =>
-          activeStatementByFactId.get(target.factId) !==
-          target.obsoleteStatement,
-      );
-      const obsoleteFacts = dedupeTargets([
-        ...carriedObsolete,
-        ...newlyObsolete,
-      ]);
+      const obsoleteFacts = advanceObsoleteWatchSet({
+        outstanding: outstandingObsolete,
+        activeFacts,
+        newlyObsolete,
+      });
 
       reportProgress({
         type: "evaluation-start",

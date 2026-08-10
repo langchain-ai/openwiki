@@ -462,22 +462,6 @@ export interface FactEvaluation {
 }
 
 /**
- * A previously true statement that may still linger in the knowledge artifact.
- * Input to the forgetting pass.
- */
-export interface ObsoleteFact {
-  /**
-   * The statement as it appears in the wiki.
-   */
-  statement: string;
-
-  /**
-   * Wiki path the statement was found in, relative to the wiki root.
-   */
-  location: string;
-}
-
-/**
  * The forgetting pass's judgment about whether a previously-true-but-now-false
  * fact still lingers in the wiki.
  *
@@ -533,7 +517,9 @@ export interface ForgettingEvaluation {
 export type PrecisionVerdict =
   "supported" | "invented" | "stale" | "unverified";
 
-/** Temporal stance of an extracted material claim. */
+/**
+ * Temporal stance of an extracted material claim.
+ */
 export type PrecisionClaimTense = "current" | "historical";
 
 /**
@@ -674,7 +660,7 @@ export interface CheckpointEvaluationRecord {
 
 /**
  * Coverage at one checkpoint: the fraction of validly judged active material
- * topics the artifact states correctly. Coverage is strict — only `correct`
+ * topics the artifact states correctly. Coverage is strict: only `correct`
  * verdicts earn headline credit. The `partial`, `missing`, and `contradicted`
  * counts are diagnostic and never feed the score. Indeterminate judgments are
  * excluded and represented by Evaluator Completeness.
@@ -984,13 +970,19 @@ export interface LedgerScore {
    */
   tracePrecision: number | null;
 
-  /** Macro-average assertion hallucination rate over defined checkpoints. */
+  /**
+   * Macro-average assertion hallucination rate over defined checkpoints.
+   */
   traceHallucinationRate: number | null;
 
-  /** Macro-average assertion staleness rate over defined checkpoints. */
+  /**
+   * Macro-average assertion staleness rate over defined checkpoints.
+   */
   traceStalenessRate: number | null;
 
-  /** Macro-average unverified-claim rate across all checkpoints. */
+  /**
+   * Macro-average unverified-claim rate across all checkpoints.
+   */
   traceUnverifiedRate: number;
 
   /**
@@ -1098,7 +1090,7 @@ export interface StaleKnowledgeRecord {
 
   /**
    * How many checkpoints the version was judged `lingering` before it was first
-   * judged `forgotten` — its stale lifetime. For a resolved version this is its
+   * judged `forgotten`, its stale lifetime. For a resolved version this is its
    * final lifetime; for an unresolved one it is a lower bound, since the version
    * might have lingered longer had the trace continued. Lingering verdicts after a
    * first forgetting (an obsolete version that recurs) are not counted here; V1
@@ -1359,7 +1351,9 @@ export interface EvaluationInput {
    */
   obsoleteFacts: ObsoleteFactTarget[];
 
-  /** Declared truth-ledger transition into this checkpoint, when one exists. */
+  /**
+   * Declared truth-ledger transition into this checkpoint, when one exists.
+   */
   transitions?: CheckpointTransitions;
 }
 

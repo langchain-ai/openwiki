@@ -35,6 +35,61 @@
         ]
       },
       {
+        "id": "operation-exports",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "The library's arithmetic operations are defined in src/calc.ts and exposed as named exports.",
+            "evidenceRefs": ["src/calc.ts", "README.md"],
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "source-consumption-model",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "The repository provides calc directly as TypeScript source and contains no package manifest or build configuration.",
+            "evidenceRefs": ["README.md", "src/calc.ts", "src/version.ts"],
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "no-runtime-dependencies",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "The calc library has no runtime dependencies.",
+            "evidenceRefs": ["src/calc.ts", "src/version.ts"],
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "version-export",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "The library exposes its current version as the named constant VERSION in src/version.ts.",
+            "evidenceRefs": ["src/version.ts", "README.md"],
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "typed-api",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "Every arithmetic operation accepts and returns values typed as number in TypeScript.",
+            "evidenceRefs": ["src/calc.ts"],
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
         "id": "add-operation",
         "category": "api",
         "versions": [

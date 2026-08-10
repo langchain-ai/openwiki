@@ -883,7 +883,7 @@ describe("computeStaleKnowledge", () => {
     ];
 
     // a@T0 lingered once (T1) before being forgotten at T2. It lingers again at
-    // T3 — a recurrence — but the stale lifetime is the time to the *first*
+    // T3 (a recurrence) but the stale lifetime is the time to the *first*
     // forgetting, so it stays 1 and the version stays resolved. The recurrence
     // remains in the raw forgetting history without inflating the lifetime.
     expect(computeStaleKnowledge(history)).toEqual({

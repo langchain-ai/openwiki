@@ -63,7 +63,7 @@ function indexDocuments(documents: KnowledgeDocument[]): Map<string, string> {
  * deliberately a multiset symmetric difference of lines, not an edit distance:
  * each distinct line is charged by how its occurrence count changed, so moving
  * lines around within a document with no content change contributes zero churn.
- * Cheap and fully deterministic, and diagnostic-only — it never feeds the LEDGER
+ * Cheap and fully deterministic, and diagnostic-only; it never feeds the LEDGER
  * Score. Undefined when there is no previous artifact (the first checkpoint has
  * nothing to diff against).
  *

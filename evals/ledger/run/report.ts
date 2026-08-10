@@ -1,25 +1,33 @@
 import type { LedgerRunResult, PrecisionVerdict } from "../core/types.js";
+import { formatCount, formatLifetime, formatPercent } from "./format.js";
 
-function pct(value: number | null): string {
-  return value === null ? "-" : `${(value * 100).toFixed(1)}%`;
+/**
+ * Render a report metric fraction with the report's one-decimal precision.
+ */
+function pct(value: number | null | undefined): string {
+  return formatPercent(value, 1);
 }
 
-function cell(value: number | undefined): string {
-  return value === undefined ? "-" : String(value);
-}
-
-function rate(value: number | undefined): string {
-  return value === undefined ? "-" : pct(value);
-}
-
-function lifetime(value: number | undefined): string {
-  return value === undefined ? "-" : `${value.toFixed(1)} checkpoints`;
-}
-
+/**
+ * Render a claim-class count with its share of a denominator.
+ *
+ * @param count - Number of claims in the class.
+ * @param denominator - Total claims the share is taken over.
+ *
+ * @returns The count and its parenthesized percentage, dash when undefined.
+ */
 function assertionCount(count: number, denominator: number): string {
   return `${count} (${pct(denominator === 0 ? null : count / denominator)})`;
 }
 
+/**
+ * Compute one checkpoint's fact-side forgetting rate over judged versions.
+ *
+ * @param result - Complete run result.
+ * @param checkpointId - Checkpoint to summarize.
+ *
+ * @returns Forgetting rate and counts, or a dash when nothing was judged.
+ */
 function factForgettingRate(
   result: LedgerRunResult,
   checkpointId: string,
@@ -38,7 +46,9 @@ function factForgettingRate(
   return `${pct(forgotten / judged.length)} (${forgotten}/${judged.length})`;
 }
 
-/** Format one complete benchmark result as an auditable Markdown report. */
+/**
+ * Format one complete benchmark result as an auditable Markdown report.
+ */
 export function formatReport(result: LedgerRunResult): string {
   const lines: string[] = [];
   const { score } = result;
@@ -101,22 +111,22 @@ export function formatReport(result: LedgerRunResult): string {
       "  - Warning: no checkpoint contained an adjudicated precision claim; precision, quality, and the benchmark score are undefined.",
     );
   }
-  lines.push(`- Maintenance: ${rate(score.maintenance)}`);
+  lines.push(`- Maintenance: ${pct(score.maintenance)}`);
   lines.push(
-    `  - New-Knowledge Discovery: ${rate(rates.newKnowledgeDiscovery)}`,
+    `  - New-Knowledge Discovery: ${pct(rates.newKnowledgeDiscovery)}`,
   );
   lines.push(
-    `  - Changed-Knowledge Correction: ${rate(rates.changedKnowledgeCorrection)}`,
+    `  - Changed-Knowledge Correction: ${pct(rates.changedKnowledgeCorrection)}`,
   );
-  lines.push(`  - Complete Forgetting: ${rate(rates.completeForgetting)}`);
-  lines.push(`  - Stable Retention: ${rate(rates.stableRetention)}`);
+  lines.push(`  - Complete Forgetting: ${pct(rates.completeForgetting)}`);
+  lines.push(`  - Stable Retention: ${pct(rates.stableRetention)}`);
   lines.push("");
   lines.push("## Diagnostics");
   lines.push("");
   lines.push(`- Evaluator Completeness: ${pct(score.evaluationCompleteness)}`);
-  lines.push(`- Recovery Rate: ${rate(diagnostics.recoveryRate)}`);
+  lines.push(`- Recovery Rate: ${pct(diagnostics.recoveryRate)}`);
   lines.push(
-    `- Stale-Knowledge Lifetime (mean over resolved versions): ${lifetime(diagnostics.staleKnowledge.meanResolvedLifetime)}`,
+    `- Stale-Knowledge Lifetime (mean over resolved versions): ${formatLifetime(diagnostics.staleKnowledge.meanResolvedLifetime)}`,
   );
   lines.push(
     `  - Unresolved obsolete versions: ${diagnostics.staleKnowledge.unresolvedCount}`,
@@ -132,7 +142,7 @@ export function formatReport(result: LedgerRunResult): string {
   );
   for (const checkpoint of result.checkpoints) {
     lines.push(
-      `| ${checkpoint.checkpointId} | ${pct(checkpoint.coverage.score)} | ${pct(checkpoint.precision.score)} | ${pct(checkpoint.precision.hallucinationRate)} | ${pct(checkpoint.precision.stalenessRate)} | ${pct(checkpoint.precision.unverifiedRate)} | ${factForgettingRate(result, checkpoint.checkpointId)} | ${checkpoint.precision.adjudicated} | ${checkpoint.precision.total} | ${pct(checkpoint.evaluationCompleteness.score)} | ${checkpoint.efficiency.durationMs} | ${cell(checkpoint.efficiency.churnedLines)} | ${checkpoint.efficiency.skipped ? "yes" : "no"} |`,
+      `| ${checkpoint.checkpointId} | ${pct(checkpoint.coverage.score)} | ${pct(checkpoint.precision.score)} | ${pct(checkpoint.precision.hallucinationRate)} | ${pct(checkpoint.precision.stalenessRate)} | ${pct(checkpoint.precision.unverifiedRate)} | ${factForgettingRate(result, checkpoint.checkpointId)} | ${checkpoint.precision.adjudicated} | ${checkpoint.precision.total} | ${pct(checkpoint.evaluationCompleteness.score)} | ${checkpoint.efficiency.durationMs} | ${formatCount(checkpoint.efficiency.churnedLines)} | ${checkpoint.efficiency.skipped ? "yes" : "no"} |`,
     );
   }
 
@@ -141,6 +151,13 @@ export function formatReport(result: LedgerRunResult): string {
   return `${lines.join("\n")}\n`;
 }
 
+/**
+ * Append one precision verdict class and its matching claims to the report.
+ *
+ * @param lines - Accumulating report lines, mutated in place.
+ * @param verdict - Precision verdict class to render.
+ * @param claims - All precision evaluations for the checkpoint.
+ */
 function appendClaimClass(
   lines: string[],
   verdict: PrecisionVerdict,
@@ -162,6 +179,13 @@ function appendClaimClass(
   }
 }
 
+/**
+ * Append the per-checkpoint evaluation-detail section when any checkpoint
+ * carries evaluations.
+ *
+ * @param lines - Accumulating report lines, mutated in place.
+ * @param result - Complete run result.
+ */
 function appendEvaluationDetail(
   lines: string[],
   result: LedgerRunResult,

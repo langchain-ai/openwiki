@@ -96,7 +96,21 @@ describe("loadBenchmark on the committed calc-evolution fixture", () => {
     const t1 = getActiveFacts(benchmark, "T1");
     const t2 = getActiveFacts(benchmark, "T2");
 
-    expect([t0.length, t1.length, t2.length]).toEqual([5, 6, 5]);
+    expect([t0.length, t1.length, t2.length]).toEqual([10, 11, 10]);
+    const stableImplementationFacts = [
+      "operation-exports",
+      "source-consumption-model",
+      "no-runtime-dependencies",
+      "version-export",
+      "typed-api",
+    ];
+    for (const facts of [t0, t1, t2]) {
+      expect(
+        stableImplementationFacts.every((factId) =>
+          facts.some((fact) => fact.factId === factId),
+        ),
+      ).toBe(true);
+    }
     expect(
       t0.find((fact) => fact.factId === "current-version")?.statement,
     ).toContain("1.0.0");

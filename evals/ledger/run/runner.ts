@@ -11,6 +11,7 @@ import {
   computePrecision,
 } from "../scoring/metrics.js";
 import {
+  advanceObsoleteWatchSet,
   computeTransitions,
   obsoleteTargetsFor,
 } from "../benchmark/transitions.js";
@@ -36,96 +37,7 @@ import {
   GitSourceEvidenceAdapter,
   type SourceEvidenceAdapter,
 } from "../source/source-adapter.js";
-
-/**
- * Observable lifecycle events emitted by a benchmark run.
- */
-export type BenchmarkProgressEvent =
-  | {
-      type: "run-start";
-      benchmarkName: string;
-      totalCheckpoints: number;
-      provider: string;
-      systemModelId?: string;
-      evaluatorModelId?: string;
-      evaluationOnly?: boolean;
-    }
-  | { type: "replay-ready"; saved?: boolean }
-  | {
-      type: "checkpoint-start";
-      checkpointId: string;
-      checkpointIndex: number;
-      totalCheckpoints: number;
-      commit: string;
-      label?: string;
-      command: "init" | "update";
-      evaluationOnly?: boolean;
-    }
-  | {
-      type: "system-complete";
-      checkpointId: string;
-      command: "init" | "update";
-      durationMs: number;
-      skipped: boolean;
-    }
-  | {
-      type: "artifact-captured";
-      checkpointId: string;
-      documentCount: number;
-      loaded?: boolean;
-    }
-  | {
-      type: "evaluation-start";
-      checkpointId: string;
-      activeFactCount: number;
-      obsoleteFactCount: number;
-    }
-  | {
-      type: "checkpoint-complete";
-      checkpointId: string;
-      coverageScore: number;
-      precisionScore: number | null;
-      hallucinationRate: number | null;
-      stalenessRate: number | null;
-      unverifiedRate: number;
-      forgottenCount: number;
-      obsoleteFactCount: number;
-      evaluationCompleteness: number;
-      indeterminateCount: number;
-      evaluationItemCount: number;
-      materialClaimCount: number;
-      supportedCount: number;
-      inventedCount: number;
-      staleCount: number;
-      unverifiedCount: number;
-    }
-  | {
-      type: "run-complete";
-      ledgerScore: number | null;
-      quality: number | null;
-      traceCoverage: number;
-      tracePrecision: number | null;
-      traceHallucinationRate: number | null;
-      traceStalenessRate: number | null;
-      traceUnverifiedRate: number;
-      maintenance?: number;
-      newKnowledgeDiscovery?: number;
-      changedKnowledgeCorrection?: number;
-      completeForgetting?: number;
-      stableRetention?: number;
-      evaluationCompleteness: number;
-      materialClaimCount: number;
-      supportedCount: number;
-      inventedCount: number;
-      staleCount: number;
-      unverifiedCount: number;
-    }
-  | { type: "run-failed"; message: string };
-
-/**
- * Receives one benchmark lifecycle event synchronously.
- */
-export type BenchmarkProgressReporter = (event: BenchmarkProgressEvent) => void;
+import type { BenchmarkProgressReporter } from "./progress-events.js";
 
 /**
  * Everything the runner needs beyond the benchmark: the system to score, the
@@ -156,14 +68,18 @@ export interface RunnerInputs {
   sourceEvidenceAdapter?: SourceEvidenceAdapter;
 
   /**
-   * Optional durable sink invoked after each artifact capture and before its
-   * evaluation begins.
+   * Durable sink invoked after each artifact capture and before its evaluation
+   * begins.
+   *
+   * @default undefined captured artifacts are not persisted
    */
   onArtifact?: (artifact: KnowledgeArtifact) => void | Promise<void>;
 
   /**
-   * Optional durable sink invoked after checkpoint source evidence is collected
-   * and before semantic evaluation begins.
+   * Durable sink invoked after checkpoint source evidence is collected and
+   * before semantic evaluation begins.
+   *
+   * @default undefined collected evidence is not persisted
    */
   onEvidence?: (evidence: EvidenceCorpus) => void | Promise<void>;
 
@@ -178,37 +94,11 @@ export interface RunnerInputs {
   startedAt: string;
 
   /**
-   * Optional lifecycle observer used by interactive command-line output.
+   * Lifecycle observer used by interactive command-line output.
+   *
+   * @default undefined lifecycle events are discarded
    */
   onProgress?: BenchmarkProgressReporter;
-}
-
-/**
- * Deduplicate obsolete forgetting targets by `factVersionId`, keeping the first
- * occurrence. Sticky carry-forward concatenates the targets still outstanding
- * from earlier boundaries with the ones this boundary introduces; a version goes
- * obsolete at exactly one boundary, so this is a defensive guard rather than a
- * load-bearing merge, but it keeps the evaluator from ever seeing a version
- * twice in one checkpoint.
- *
- * @param targets - The obsolete targets to deduplicate.
- *
- * @returns The targets with duplicate versions removed, in first-seen order.
- */
-function dedupeTargets(targets: ObsoleteFactTarget[]): ObsoleteFactTarget[] {
-  const seen = new Set<string>();
-  const result: ObsoleteFactTarget[] = [];
-
-  for (const target of targets) {
-    if (seen.has(target.factVersionId)) {
-      continue;
-    }
-
-    seen.add(target.factVersionId);
-    result.push(target);
-  }
-
-  return result;
 }
 
 /**
@@ -379,31 +269,11 @@ export async function runBenchmark(
         newlyObsolete = obsoleteTargetsFor(transitions);
       }
 
-      // Do not keep chasing an obsolete version once the same knowledge is true
-      // again: if the fact id is active here with the exact canonical statement
-      // the target calls obsolete, the knowledge has been revived, so retire the
-      // stale target rather than asking the wiki to forget something true.
-      const activeStatementByFactId = new Map(
-        activeFacts.map((fact): [string, string] => [
-          fact.factId,
-          fact.statement,
-        ]),
-      );
-      const carriedObsolete = outstandingObsolete.filter(
-        (target) =>
-          activeStatementByFactId.get(target.factId) !==
-          target.obsoleteStatement,
-      );
-
-      // Carry the still-obsolete versions forward alongside this boundary's newly
-      // obsolete ones so the forgetting pass keeps checking them; this is what
-      // makes Stale-Knowledge Lifetime measurable. Maintenance is unaffected,
-      // because computeMaintenanceCounts only ever matches the current boundary's
-      // own obsolete versions.
-      const obsoleteFacts = dedupeTargets([
-        ...carriedObsolete,
-        ...newlyObsolete,
-      ]);
+      const obsoleteFacts = advanceObsoleteWatchSet({
+        outstanding: outstandingObsolete,
+        activeFacts,
+        newlyObsolete,
+      });
 
       reportProgress({
         type: "evaluation-start",

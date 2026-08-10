@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { runBenchmark } from "./runner.js";
-import type { BenchmarkProgressEvent } from "./runner.js";
+import type { BenchmarkProgressEvent } from "./progress-events.js";
 import { createTinyRepo, type TinyRepo } from "../testing/tiny-repo.js";
 import type {
   CheckpointEvaluation,

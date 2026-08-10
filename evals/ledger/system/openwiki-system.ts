@@ -75,7 +75,7 @@ export class OpenWikiSystem implements SystemUnderTest {
     try {
       const result = await runOpenWikiAgent(command, worktreeDir, {
         outputMode: "repository",
-        modelId: this.options.modelId ?? null,
+        modelId: this.options.modelId,
       });
 
       return {

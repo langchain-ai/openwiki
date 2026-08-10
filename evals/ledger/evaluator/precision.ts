@@ -1,6 +1,7 @@
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 
 import { EvaluationError } from "../core/errors.js";
+import { compareStrings } from "../core/order.js";
 import type {
   ActiveTruthFact,
   CheckpointTransitions,
@@ -12,6 +13,7 @@ import type {
 } from "../core/types.js";
 import { invokeStructuredModel } from "./direct-model.js";
 import type { ArtifactSection } from "./documents.js";
+import { assertPositiveInteger, batch } from "./pass-utils.js";
 import {
   PRECISION_EXTRACTION_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
@@ -34,18 +36,54 @@ import {
   type PrecisionLedgerOutput,
 } from "./schemas.js";
 
+/**
+ * Default number of text units classified per extraction request.
+ */
 const DEFAULT_EXTRACTION_BATCH_SIZE = 10;
+
+/**
+ * Default number of assertions accounted per ledger/judgment request.
+ */
 const DEFAULT_JUDGMENT_BATCH_SIZE = 10;
+
+/**
+ * Default number of evidence sections retrieved per bounded refutation.
+ */
 const DEFAULT_EVIDENCE_TOP_K = 8;
 
+/**
+ * One extracted artifact claim carried through ledger and refutation passes.
+ */
 export interface ExtractedArtifactAssertion {
+  /**
+   * Stable per-checkpoint assertion identifier.
+   */
   id: string;
+
+  /**
+   * Normalized claim text as it appears in the artifact.
+   */
   statement: string;
+
+  /**
+   * Whether the claim is asserted as current or historical truth.
+   */
   tense: PrecisionClaimTense;
+
+  /**
+   * Artifact section the claim was extracted from.
+   */
   sectionId: string;
+
+  /**
+   * Path of the source document relative to the artifact root.
+   */
   relativePath: string;
 }
 
+/**
+ * How the extractor classified one Markdown text unit.
+ */
 export type PrecisionTextUnitClassification =
   | "factual"
   | "mixed"
@@ -55,123 +93,363 @@ export type PrecisionTextUnitClassification =
   | "instruction"
   | "no-claim";
 
-export type PrecisionExclusionReason =
-  | "navigation"
-  | "meta-artifact"
-  | "opinion"
-  | "instruction"
-  | "no-claim"
-  | "exact-duplicate";
-
+/**
+ * One candidate assertion in the inventory, recording whether it was kept as a
+ * distinct claim or excluded as an exact duplicate of an earlier candidate.
+ */
 export interface PrecisionAssertionInventoryEntry {
+  /**
+   * Stable per-checkpoint candidate identifier in extraction order.
+   */
   candidateId: string;
+
+  /**
+   * Normalized claim text.
+   */
   statement: string;
+
+  /**
+   * Whether the claim is asserted as current or historical truth.
+   */
   tense: PrecisionClaimTense;
+
+  /**
+   * Artifact section the claim was extracted from.
+   */
   sectionId: string;
+
+  /**
+   * Path of the source document relative to the artifact root.
+   */
   relativePath: string;
+
+  /**
+   * Active ATX heading hierarchy at the claim's location.
+   */
   headingPath: string[];
+
+  /**
+   * Whether this candidate became a distinct assertion or was dropped.
+   */
   disposition: "kept" | "excluded";
+
+  /**
+   * Assertion identifier assigned when the candidate is kept.
+   *
+   * @default undefined when the candidate was excluded
+   */
   assertionId?: string;
+
+  /**
+   * Why the candidate was excluded.
+   *
+   * @default undefined when the candidate was kept
+   */
   exclusionReason?: "exact-duplicate";
+
+  /**
+   * Candidate identifier this one duplicates.
+   *
+   * @default undefined when the candidate was kept
+   */
   duplicateOf?: string;
 }
 
+/**
+ * One classified Markdown text unit and the claims extracted from it.
+ */
 export interface PrecisionTextUnitInventoryEntry {
+  /**
+   * Stable per-section text-unit identifier.
+   */
   unitId: string;
+
+  /**
+   * Artifact section the unit belongs to.
+   */
   sectionId: string;
+
+  /**
+   * Path of the source document relative to the artifact root.
+   */
   relativePath: string;
+
+  /**
+   * Active ATX heading hierarchy at the unit's location.
+   */
   headingPath: string[];
+
+  /**
+   * Exact Markdown assigned to the unit.
+   */
   content: string;
+
+  /**
+   * Extractor classification of the unit.
+   */
   classification: PrecisionTextUnitClassification;
+
+  /**
+   * Claims extracted from the unit, if any.
+   */
   assertions: Array<{ statement: string; tense: PrecisionClaimTense }>;
+
+  /**
+   * Extractor rationale for the classification.
+   */
   rationale: string;
 }
 
+/**
+ * Full record of extraction and deduplication for one checkpoint.
+ */
 export interface PrecisionAssertionInventory {
+  /**
+   * Checkpoint the inventory was built for.
+   */
   checkpointId: string;
+
+  /**
+   * Number of artifact sections presented to extraction.
+   */
   totalSectionCount: number;
+
+  /**
+   * Number of sections extraction actually processed.
+   */
   extractedSectionCount: number;
+
+  /**
+   * Every classified text unit in stable order.
+   */
   units: PrecisionTextUnitInventoryEntry[];
+
+  /**
+   * Every candidate assertion, kept or excluded, in extraction order.
+   */
   candidates: PrecisionAssertionInventoryEntry[];
+
+  /**
+   * Number of distinct assertions kept for accounting.
+   */
   keptAssertionCount: number;
 }
 
+/**
+ * Inputs for one checkpoint's precision pass.
+ */
 export interface PrecisionPassInput {
+  /**
+   * Evaluator model used for extraction, accounting, and refutation.
+   */
   model: BaseChatModel;
+
+  /**
+   * Checkpoint being evaluated.
+   */
   checkpointId: string;
+
+  /**
+   * Markdown artifact sections to extract claims from.
+   */
   sections: ArtifactSection[];
+
+  /**
+   * Truth-ledger facts current at the checkpoint.
+   */
   activeFacts: ActiveTruthFact[];
+
+  /**
+   * Truth-ledger facts that were superseded before the checkpoint.
+   *
+   * @default [] no superseded facts are considered
+   */
   supersededFacts?: ObsoleteFactTarget[];
+
+  /**
+   * Fact transitions crossing into this checkpoint, used as accounting context.
+   *
+   * @default undefined at the first checkpoint, where no transitions exist
+   */
   transitions?: CheckpointTransitions;
+
+  /**
+   * Source evidence corpus used for bounded refutation.
+   */
   evidence: EvidenceCorpus;
+
+  /**
+   * Number of text units classified per extraction request.
+   *
+   * @default 10
+   */
   extractionBatchSize?: number;
+
+  /**
+   * Number of assertions accounted per ledger/judgment request.
+   *
+   * @default 10
+   */
   judgmentBatchSize?: number;
+
+  /**
+   * Per-attempt evaluator request deadline in milliseconds.
+   *
+   * @default undefined no per-attempt deadline is applied
+   */
   timeoutMs?: number;
+
+  /**
+   * Optional sink for the assertion inventory once extraction completes.
+   *
+   * @default undefined the inventory is not surfaced
+   */
   onInventory?: (
     inventory: PrecisionAssertionInventory,
   ) => void | Promise<void>;
+
+  /**
+   * Optional sink for items that remain invalid after isolated repair.
+   *
+   * @default undefined evaluator warnings are dropped
+   */
   onWarning?: (warning: EvaluationWarning) => void;
 }
 
+/**
+ * One assertion extracted from a text unit before deduplication.
+ */
 interface RawExtractedAssertion {
+  /**
+   * Normalized claim text.
+   */
   statement: string;
+
+  /**
+   * Whether the claim is asserted as current or historical truth.
+   */
   tense: PrecisionClaimTense;
+
+  /**
+   * Artifact section the claim was extracted from.
+   */
   sectionId: string;
+
+  /**
+   * Path of the source document relative to the artifact root.
+   */
   relativePath: string;
+
+  /**
+   * Active ATX heading hierarchy at the claim's location.
+   */
   headingPath: string[];
 }
 
+/**
+ * A Markdown text unit presented to the extraction classifier.
+ */
 type PrecisionTextUnit = PrecisionExtractionUnit;
 
+/**
+ * A text unit paired with its extractor classification and claims.
+ */
 interface ClassifiedPrecisionTextUnit extends PrecisionTextUnit {
+  /**
+   * Extractor classification of the unit.
+   */
   classification: PrecisionTextUnitClassification;
+
+  /**
+   * Claims extracted from the unit, if any.
+   */
   assertions: Array<{ statement: string; tense: PrecisionClaimTense }>;
+
+  /**
+   * Extractor rationale for the classification.
+   */
   rationale: string;
 }
 
+/**
+ * One assertion's verdict from the truth-ledger accounting pass.
+ */
 interface LedgerAssertionEvaluation {
+  /**
+   * Assertion the verdict applies to.
+   */
   assertionId: string;
+
+  /**
+   * Whether the claim is supported, contradicted, or unaccounted by the ledger.
+   */
   verdict: "supported" | "contradicted" | "unaccounted";
+
+  /**
+   * Fact versions cited in support of the verdict.
+   */
   factVersionIds: string[];
+
+  /**
+   * Whether a contradicted claim was formerly true (stale) rather than invented.
+   *
+   * @default undefined for non-contradicted verdicts
+   */
   formerlyTrue?: boolean;
+
+  /**
+   * Accounting rationale.
+   */
   rationale: string;
+
+  /**
+   * Whether the evaluator failed and the verdict is a resilient fallback.
+   *
+   * @default undefined when accounting succeeded
+   */
   evaluatorFailed?: boolean;
 }
 
+/**
+ * A source-evidence section annotated with its checkpoint provenance.
+ */
 interface EvidenceSection extends ArtifactSection {
+  /**
+   * Checkpoint at which the evidence was observed.
+   */
   observedAtCheckpoint: string;
+
+  /**
+   * Whether the evidence is current source truth.
+   */
   current: boolean;
 }
 
+/**
+ * One assertion paired with the evidence visible to its refutation.
+ */
 interface PrecisionJudgmentTarget {
+  /**
+   * Assertion being refuted.
+   */
   assertion: ExtractedArtifactAssertion;
+
+  /**
+   * Candidate evidence sections for the refutation.
+   */
   evidence: EvidenceSection[];
 }
 
-function compareStrings(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
-function batch<T>(values: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let offset = 0; offset < values.length; offset += size) {
-    result.push(values.slice(offset, offset + size));
-  }
-  return result;
-}
-
-function assertPositiveInteger(value: number, name: string): void {
-  if (!Number.isInteger(value) || value <= 0) {
-    throw new EvaluationError(`${name} must be a positive integer.`);
-  }
-}
-
-/** Normalize assertion whitespace without changing factual content. */
+/**
+ * Normalize assertion whitespace without changing factual content.
+ */
 function normalizeStatement(statement: string): string {
   return statement.replace(/\s+/gu, " ").trim();
 }
 
-/** Produce the conservative exact-deduplication key. */
+/**
+ * Produce the conservative exact-deduplication key.
+ */
 function deduplicationKey(statement: string): string {
   return statement
     .toLocaleLowerCase("en-US")
@@ -182,7 +460,9 @@ function deduplicationKey(statement: string): string {
     .trim();
 }
 
-/** Divide a Markdown section into stable blank-line-delimited blocks. */
+/**
+ * Divide a Markdown section into stable blank-line-delimited blocks.
+ */
 function textUnitsForSection(section: ArtifactSection): PrecisionTextUnit[] {
   const lines = section.content.match(/[^\n]*\n|[^\n]+$/gu) ?? [];
   const blocks: string[] = [];
@@ -228,6 +508,10 @@ function textUnitsForSection(section: ArtifactSection): PrecisionTextUnit[] {
   }));
 }
 
+/**
+ * Resolve raw extraction output into one classified unit per requested unit,
+ * rejecting unknown, duplicate, or classification-inconsistent responses.
+ */
 function resolveExtraction(
   units: PrecisionTextUnit[],
   output: AssertionExtractionOutput,
@@ -279,6 +563,9 @@ function resolveExtraction(
   });
 }
 
+/**
+ * Classify every section's text units and flatten the extracted claims.
+ */
 async function extractAssertions(
   input: PrecisionPassInput,
   sections: ArtifactSection[],
@@ -326,6 +613,10 @@ async function extractAssertions(
   };
 }
 
+/**
+ * Assign stable identifiers, drop exact duplicates, and assemble the inventory
+ * alongside the distinct assertions that proceed to accounting.
+ */
 function buildInventory(
   checkpointId: string,
   sectionCount: number,
@@ -386,6 +677,9 @@ function buildInventory(
   };
 }
 
+/**
+ * Project active and superseded facts into the ledger-accounting shape.
+ */
 function toLedgerFacts(input: PrecisionPassInput): PrecisionLedgerFact[] {
   return [
     ...input.activeFacts.map((fact) => ({
@@ -403,6 +697,10 @@ function toLedgerFacts(input: PrecisionPassInput): PrecisionLedgerFact[] {
   ];
 }
 
+/**
+ * Extract and fully validate one assertion's ledger verdict, enforcing the
+ * evidence and formerly-true invariants for each verdict class.
+ */
 function resolveLedgerItem(
   assertion: ExtractedArtifactAssertion,
   output: PrecisionLedgerOutput,
@@ -472,6 +770,9 @@ function resolveLedgerItem(
   return evaluation;
 }
 
+/**
+ * Re-run ledger accounting for a single assertion in isolation.
+ */
 async function repairLedgerItem(
   input: PrecisionPassInput,
   assertion: ExtractedArtifactAssertion,
@@ -500,7 +801,9 @@ async function repairLedgerItem(
   return resolveLedgerItem(assertion, output, facts);
 }
 
-/** Account every claim against current and superseded truth-ledger facts. */
+/**
+ * Account every claim against current and superseded truth-ledger facts.
+ */
 async function runLedgerAccounting(
   input: PrecisionPassInput,
   assertions: ExtractedArtifactAssertion[],
@@ -565,6 +868,9 @@ async function runLedgerAccounting(
   return results;
 }
 
+/**
+ * Project an evidence corpus into searchable, checkpoint-annotated sections.
+ */
 function toEvidenceSections(corpus: EvidenceCorpus): EvidenceSection[] {
   return [...corpus.records]
     .sort((a, b) => compareStrings(a.evidenceId, b.evidenceId))
@@ -580,7 +886,9 @@ function toEvidenceSections(corpus: EvidenceCorpus): EvidenceSection[] {
     }));
 }
 
-/** Give each target the stable union actually visible in its shared batch. */
+/**
+ * Give each target the stable union actually visible in its shared batch.
+ */
 function shareBatchEvidence(
   targets: PrecisionJudgmentTarget[],
 ): PrecisionJudgmentTarget[] {
@@ -592,6 +900,9 @@ function shareBatchEvidence(
   return targets.map((target) => ({ ...target, evidence: shared }));
 }
 
+/**
+ * Project judgment targets into the refutation prompt's assertion shape.
+ */
 function toJudgmentAssertions(
   targets: PrecisionJudgmentTarget[],
 ): PrecisionJudgmentAssertion[] {
@@ -603,6 +914,9 @@ function toJudgmentAssertions(
   }));
 }
 
+/**
+ * Collect the distinct evidence excerpts cited across the judgment targets.
+ */
 function toJudgmentEvidence(
   targets: PrecisionJudgmentTarget[],
 ): PrecisionEvidenceExcerpt[] {
@@ -621,6 +935,10 @@ function toJudgmentEvidence(
   return [...byId.values()];
 }
 
+/**
+ * Resolve refutation output into one verdict per target, mapping refuted claims
+ * to `stale` or `invented` and enforcing the current/historical evidence rules.
+ */
 function resolveJudgments(
   targets: PrecisionJudgmentTarget[],
   output: PrecisionJudgmentOutput,
@@ -735,7 +1053,9 @@ async function repairPrecisionJudgment(
   return resolveJudgments([target], output)[0];
 }
 
-/** Resolve a batch while preserving valid neighbors and warning on failures. */
+/**
+ * Resolve a batch while preserving valid neighbors and warning on failures.
+ */
 async function resolvePrecisionBatchResilient(
   input: PrecisionPassInput,
   targets: PrecisionJudgmentTarget[],
@@ -784,7 +1104,9 @@ async function resolvePrecisionBatchResilient(
   return results;
 }
 
-/** Run extraction, truth-ledger accounting, and one bounded refutation pass. */
+/**
+ * Run extraction, truth-ledger accounting, and one bounded refutation pass.
+ */
 export async function runPrecisionPass(
   input: PrecisionPassInput,
 ): Promise<PrecisionAssertionEvaluation[]> {

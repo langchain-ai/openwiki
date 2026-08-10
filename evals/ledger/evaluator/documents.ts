@@ -1,3 +1,4 @@
+import { compareStrings } from "../core/order.js";
 import type { KnowledgeArtifact, KnowledgeDocument } from "../core/types.js";
 
 /**
@@ -67,18 +68,6 @@ interface HeadingChunk {
    * Exact Markdown content belonging to the chunk.
    */
   content: string;
-}
-
-/**
- * Compare strings using locale-independent code-unit ordering.
- *
- * @param a - First string.
- * @param b - Second string.
- *
- * @returns A negative number, zero, or a positive number for sorting.
- */
-function compareStrings(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 /**

@@ -8,18 +8,29 @@ import type {
 } from "../core/types.js";
 import { invokeStructuredModel } from "./direct-model.js";
 import type { ArtifactSection } from "./documents.js";
+import { assertPositiveInteger, batch, toExcerpt } from "./pass-utils.js";
 import {
   FORGETTING_SYSTEM,
   forgettingPrompt,
-  type EvaluationExcerpt,
   type ForgettingPromptTarget,
 } from "./prompts.js";
 import type { SectionBm25Index } from "./retrieval.js";
 import { forgettingOutputSchema } from "./schemas.js";
 import type { ForgettingOutput } from "./schemas.js";
 
+/**
+ * Default number of BM25-ranked sections inspected in the first judgment.
+ */
 const DEFAULT_TOP_K = 8;
+
+/**
+ * Default number of obsolete targets included in each initial model request.
+ */
 const DEFAULT_TARGET_BATCH_SIZE = 5;
+
+/**
+ * Number of untried sections examined per exhaustive fallback request.
+ */
 const FALLBACK_SECTION_BATCH_SIZE = 8;
 
 /**
@@ -85,54 +96,6 @@ interface ForgettingTarget {
    * Artifact sections supplied as evidence candidates.
    */
   sections: ArtifactSection[];
-}
-
-/**
- * Split an ordered array into stable non-empty batches.
- *
- * @param values - Ordered values to batch.
- * @param size - Positive maximum batch size.
- *
- * @returns Stable batches preserving input order.
- */
-function batch<T>(values: T[], size: number): T[][] {
-  const result: T[][] = [];
-
-  for (let offset = 0; offset < values.length; offset += size) {
-    result.push(values.slice(offset, offset + size));
-  }
-
-  return result;
-}
-
-/**
- * Validate a positive integer pass option.
- *
- * @param value - Configured numeric value.
- * @param name - Option name used in diagnostics.
- *
- * @throws EvaluationError when the value is not a positive integer.
- */
-function assertPositiveInteger(value: number, name: string): void {
-  if (!Number.isInteger(value) || value <= 0) {
-    throw new EvaluationError(`${name} must be a positive integer.`);
-  }
-}
-
-/**
- * Convert an artifact section to the prompt's data-only excerpt shape.
- *
- * @param section - Artifact section selected for a judgment.
- *
- * @returns Serializable excerpt supplied to the model.
- */
-function toExcerpt(section: ArtifactSection): EvaluationExcerpt {
-  return {
-    sectionId: section.id,
-    relativePath: section.relativePath,
-    headingPath: section.headingPath,
-    content: section.content,
-  };
 }
 
 /**

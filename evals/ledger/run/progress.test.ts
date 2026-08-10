@@ -134,35 +134,67 @@ describe("createCliProgressReporter", () => {
       "Evaluating 7 material topics · 2 obsolete versions",
     );
     expect(rendered).toContain(
-      "✅ T1 · coverage 86% · precision 75% · halluc 13% · stale 13% · unverified 11% · forgetting 50% (1/2)",
+      "✅ T1 · coverage 86% · precision 75% · hallucination 13% · forgetting 50% (1/2)",
     );
     expect(rendered).toContain(
-      "✅ T0 · coverage 100% · precision 100% · halluc 0% · stale 0% · unverified 0% · forgetting -",
+      "✅ T0 · coverage 100% · precision 100% · hallucination 0% · forgetting -",
     );
     expect(rendered).toContain(
-      "↳ 9 claims · 6 supported · 1 invented · 1 stale · 1 unverified",
+      "↳ 8/9 claims adjudicated · 6 supported · 1 invented · 1 stale",
     );
     expect(rendered).toContain(
       "⚠️ Evaluator 90% complete · 1/10 indeterminate",
     );
     expect(rendered).toContain("├ 📊 Quality 70.0%");
     expect(rendered).toContain("│  ├ Coverage 80.0%");
-    expect(rendered).toContain("│  └ Precision 62.5%");
-    expect(rendered).toContain("│     ├ Material claims 19");
-    expect(rendered).toContain("│     ├ Supported 16");
-    expect(rendered).toContain("│     ├ Invented 1");
-    expect(rendered).toContain("│     ├ Stale 1");
-    expect(rendered).toContain("│     └ Unverified 1");
-    expect(rendered).toContain("│        ├ Hallucination rate 10.0%");
-    expect(rendered).toContain("│        ├ Staleness rate 5.0%");
-    expect(rendered).toContain("│        └ Unverified rate 20.0%");
-    expect(rendered).toContain("├ 🔄 Maintenance 90.0%");
-    expect(rendered).toContain("│  ├ Discovery 75.0%");
-    expect(rendered).toContain("│  ├ Correction 100.0%");
-    expect(rendered).toContain("│  ├ Forgetting 100.0%");
-    expect(rendered).toContain("│  └ Retention 85.0%");
-    expect(rendered).toContain("├ ⚖️ Evaluator completeness 95.0%");
+    expect(rendered).toContain("│  ├ Precision 62.5%");
+    expect(rendered).toContain("│  └ Hallucination 5.6%");
+    expect(rendered).toContain("├ 🧹 Forgetting 100.0%");
+    expect(rendered).toContain("├ 🧾 Claims");
+    expect(rendered).toContain("│  ├ Adjudicated 18/19");
+    expect(rendered).toContain("│  ├ Supported 16");
+    expect(rendered).toContain("│  ├ Invented 1");
+    expect(rendered).toContain("│  └ Stale 1");
+    expect(rendered).not.toContain("Unverified");
+    expect(rendered).toContain("├ ⚠️ Evaluator completeness 95.0%");
+    expect(rendered).not.toContain("Discovery");
+    expect(rendered).not.toContain("Correction");
+    expect(rendered).not.toContain("Retention");
     expect(rendered).toMatch(/└ ⚠️ LEDGER 80\.0% · \d+ms/u);
+  });
+
+  test("hides evaluator completeness when every judgment completed", () => {
+    let rendered = "";
+    const report = createCliProgressReporter({
+      write: (text) => {
+        rendered += text;
+      },
+    });
+
+    report({
+      type: "run-complete",
+      ledgerScore: 1,
+      quality: 1,
+      traceCoverage: 1,
+      tracePrecision: 1,
+      traceHallucinationRate: 0,
+      traceStalenessRate: 0,
+      traceUnverifiedRate: 0,
+      maintenance: 1,
+      newKnowledgeDiscovery: 1,
+      changedKnowledgeCorrection: 1,
+      completeForgetting: 1,
+      stableRetention: 1,
+      evaluationCompleteness: 1,
+      materialClaimCount: 1,
+      supportedCount: 1,
+      inventedCount: 0,
+      staleCount: 0,
+      unverifiedCount: 0,
+    });
+
+    expect(rendered).not.toContain("Evaluator completeness");
+    expect(rendered).toContain("└ 🎉 LEDGER 100.0%");
   });
 
   test("closes the frame with one bounded failure line", () => {
