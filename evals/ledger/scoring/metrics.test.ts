@@ -208,7 +208,7 @@ describe("computePrecision", () => {
 });
 
 describe("computeEvaluationCompleteness", () => {
-  test("keeps evaluator failures separate from unsupported system claims", () => {
+  test("keeps evaluator failures separate from four-class claim verdicts", () => {
     expect(
       computeEvaluationCompleteness(
         [fact("covered", "correct"), fact("broken", "indeterminate")],

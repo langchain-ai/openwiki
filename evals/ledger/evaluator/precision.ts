@@ -3,6 +3,7 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 import { EvaluationError } from "../core/errors.js";
 import type {
   ActiveTruthFact,
+  CheckpointTransitions,
   EvidenceCorpus,
   EvaluationWarning,
   ObsoleteFactTarget,
@@ -33,11 +34,10 @@ import {
   type PrecisionLedgerOutput,
 } from "./schemas.js";
 
-const DEFAULT_EXTRACTION_BATCH_SIZE = 20;
-const DEFAULT_JUDGMENT_BATCH_SIZE = 20;
+const DEFAULT_EXTRACTION_BATCH_SIZE = 10;
+const DEFAULT_JUDGMENT_BATCH_SIZE = 10;
 const DEFAULT_EVIDENCE_TOP_K = 8;
 
-/** One atomic material claim extracted from the artifact. */
 export interface ExtractedArtifactAssertion {
   id: string;
   statement: string;
@@ -46,7 +46,6 @@ export interface ExtractedArtifactAssertion {
   relativePath: string;
 }
 
-/** Semantic role assigned to one complete code-owned artifact text unit. */
 export type PrecisionTextUnitClassification =
   | "factual"
   | "mixed"
@@ -56,7 +55,6 @@ export type PrecisionTextUnitClassification =
   | "instruction"
   | "no-claim";
 
-/** Extraction-derived reason a claim or unit does not enter adjudication. */
 export type PrecisionExclusionReason =
   | "navigation"
   | "meta-artifact"
@@ -65,7 +63,6 @@ export type PrecisionExclusionReason =
   | "no-claim"
   | "exact-duplicate";
 
-/** One extracted candidate and its exact-dedup disposition. */
 export interface PrecisionAssertionInventoryEntry {
   candidateId: string;
   statement: string;
@@ -79,7 +76,6 @@ export interface PrecisionAssertionInventoryEntry {
   duplicateOf?: string;
 }
 
-/** Auditable classification of one artifact text unit. */
 export interface PrecisionTextUnitInventoryEntry {
   unitId: string;
   sectionId: string;
@@ -91,7 +87,6 @@ export interface PrecisionTextUnitInventoryEntry {
   rationale: string;
 }
 
-/** Complete auditable output of extraction and exact deduplication. */
 export interface PrecisionAssertionInventory {
   checkpointId: string;
   totalSectionCount: number;
@@ -101,13 +96,13 @@ export interface PrecisionAssertionInventory {
   keptAssertionCount: number;
 }
 
-/** Inputs for exhaustive bounded precision evaluation. */
 export interface PrecisionPassInput {
   model: BaseChatModel;
   checkpointId: string;
   sections: ArtifactSection[];
   activeFacts: ActiveTruthFact[];
   supersededFacts?: ObsoleteFactTarget[];
+  transitions?: CheckpointTransitions;
   evidence: EvidenceCorpus;
   extractionBatchSize?: number;
   judgmentBatchSize?: number;
@@ -496,6 +491,7 @@ async function repairLedgerItem(
         },
       ],
       facts,
+      input.transitions,
     ),
     schema: precisionLedgerOutputSchema,
     validate: (parsed) => resolveLedgerItem(assertion, parsed, facts),
@@ -536,6 +532,7 @@ async function runLedgerAccounting(
           tense: assertion.tense,
         })),
         facts,
+        input.transitions,
       ),
       schema: precisionLedgerOutputSchema,
       timeoutMs: input.timeoutMs,

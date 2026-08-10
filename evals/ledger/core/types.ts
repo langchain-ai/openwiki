@@ -1358,6 +1358,9 @@ export interface EvaluationInput {
    * must no longer linger (forgetting targets). Empty at the first checkpoint.
    */
   obsoleteFacts: ObsoleteFactTarget[];
+
+  /** Declared truth-ledger transition into this checkpoint, when one exists. */
+  transitions?: CheckpointTransitions;
 }
 
 /**

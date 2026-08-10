@@ -229,12 +229,13 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
 
   if (systemPrompt === PRECISION_LEDGER_SYSTEM) {
     const ledgerMarker = "\n\nComplete truth ledger (JSON):\n";
+    const transitionMarker = "\n\nDeclared checkpoint transition (JSON):\n";
     const assertions = parsePromptJson<
       Array<{ assertionId: string; statement: string }>
     >(taskPrompt, "Assertions (JSON):\n", ledgerMarker);
     const facts = parsePromptJson<
       Array<{ factVersionId: string; statement: string }>
-    >(taskPrompt, ledgerMarker);
+    >(taskPrompt, ledgerMarker, transitionMarker);
 
     return {
       evaluations: assertions.map((assertion) => {

@@ -14,6 +14,10 @@
       "expected": { "classification": "meta-artifact", "assertions": [] }
     },
     {
+      "content": "The calc-api.md and versioning.md pages describe the library's purity invariants.",
+      "expected": { "classification": "meta-artifact", "assertions": [] }
+    },
+    {
       "content": "This tiny library is elegant.",
       "expected": { "classification": "opinion", "assertions": [] }
     },
@@ -57,6 +61,22 @@
         "assertions": [
           {
             "statement": "negate(x) was removed in version 2.0.0.",
+            "tense": "historical"
+          }
+        ]
+      }
+    },
+    {
+      "content": "subtract was added alongside add and negate with the same JSDoc style.",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "subtract was added alongside add and negate.",
+            "tense": "historical"
+          },
+          {
+            "statement": "subtract was added with the same JSDoc style as add and negate.",
             "tense": "historical"
           }
         ]
@@ -129,6 +149,20 @@
           "current": false
         }
       ],
+      "transitions": {
+        "checkpointId": "T2",
+        "previousCheckpointId": "T1",
+        "introduced": [],
+        "changed": [],
+        "removed": [
+          {
+            "factId": "negate",
+            "previousVersionId": "negate@T0",
+            "previousStatement": "The library provides negate(x)."
+          }
+        ],
+        "stable": []
+      },
       "expected": { "verdict": "supported" }
     },
     {
@@ -145,6 +179,109 @@
         }
       ],
       "expected": { "verdict": "unaccounted" }
+    },
+    {
+      "assertion": {
+        "statement": "README.md uses the phrase 'first minus the second' for subtract.",
+        "tense": "current"
+      },
+      "facts": [
+        {
+          "factId": "subtract",
+          "factVersionId": "subtract@T1",
+          "statement": "subtract(a, b) returns a - b.",
+          "current": true
+        }
+      ],
+      "expected": { "verdict": "unaccounted" }
+    },
+    {
+      "assertion": {
+        "statement": "VERSION is declared in src/version.ts.",
+        "tense": "current"
+      },
+      "facts": [
+        {
+          "factId": "version",
+          "factVersionId": "version@T2",
+          "statement": "VERSION is 2.0.0.",
+          "current": true
+        }
+      ],
+      "expected": { "verdict": "unaccounted" }
+    },
+    {
+      "assertion": {
+        "statement": "add(a, b) returns b - a.",
+        "tense": "current"
+      },
+      "facts": [
+        {
+          "factId": "add",
+          "factVersionId": "add@T0",
+          "statement": "add(a, b) returns a + b.",
+          "current": true
+        }
+      ],
+      "expected": { "verdict": "contradicted", "formerlyTrue": false }
+    },
+    {
+      "assertion": {
+        "statement": "add(a, b) returns a + b and validates both inputs.",
+        "tense": "current"
+      },
+      "facts": [
+        {
+          "factId": "add",
+          "factVersionId": "add@T0",
+          "statement": "add(a, b) returns a + b.",
+          "current": true
+        }
+      ],
+      "expected": { "verdict": "unaccounted" }
+    },
+    {
+      "assertion": {
+        "statement": "negate was removed in version 2.0.0.",
+        "tense": "historical"
+      },
+      "facts": [
+        {
+          "factId": "negate",
+          "factVersionId": "negate@T0",
+          "statement": "The library provides negate(x).",
+          "current": false
+        },
+        {
+          "factId": "version",
+          "factVersionId": "version@T2",
+          "statement": "VERSION is 2.0.0.",
+          "current": true
+        }
+      ],
+      "transitions": {
+        "checkpointId": "T2",
+        "previousCheckpointId": "T1",
+        "introduced": [],
+        "changed": [
+          {
+            "factId": "version",
+            "previousVersionId": "version@T0",
+            "previousStatement": "VERSION is 1.0.0.",
+            "currentVersionId": "version@T2",
+            "currentStatement": "VERSION is 2.0.0."
+          }
+        ],
+        "removed": [
+          {
+            "factId": "negate",
+            "previousVersionId": "negate@T0",
+            "previousStatement": "The library provides negate(x)."
+          }
+        ],
+        "stable": []
+      },
+      "expected": { "verdict": "supported" }
     }
   ],
   "refutationCases": [
@@ -203,6 +340,84 @@
           "observedAtCheckpoint": "T2",
           "current": true,
           "content": "Tracked files: README.md, src/calc.ts, src/version.ts"
+        }
+      ],
+      "expected": { "verdict": "not-refuted" }
+    },
+    {
+      "assertion": "A repository-wide file search finds only README.md, src/calc.ts, and src/version.ts.",
+      "evidence": [
+        {
+          "evidenceId": "tracked",
+          "sourceRef": "git tracked files",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "Tracked files: README.md, src/calc.ts, src/version.ts"
+        }
+      ],
+      "expected": { "verdict": "not-refuted" }
+    },
+    {
+      "assertion": "README.md documents add(a, b) and its TypeScript return type.",
+      "evidence": [
+        {
+          "evidenceId": "readme",
+          "sourceRef": "README.md",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "add(a, b) returns the sum of its two arguments."
+        }
+      ],
+      "expected": { "verdict": "not-refuted" }
+    },
+    {
+      "assertion": "The wiki contains a calc-api.md page.",
+      "evidence": [
+        {
+          "evidenceId": "tracked",
+          "sourceRef": "git tracked files",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "Tracked source files: README.md, src/calc.ts, src/version.ts"
+        }
+      ],
+      "expected": { "verdict": "not-refuted" }
+    },
+    {
+      "assertion": "The purity invariants shared by add and subtract are stated in the module header.",
+      "evidence": [
+        {
+          "evidenceId": "calc",
+          "sourceRef": "src/calc.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "/** Every function is pure and performs no validation, rounding, or I/O. */\nexport function add(a, b) { return a + b; }\nexport function subtract(a, b) { return a - b; }"
+        }
+      ],
+      "expected": { "verdict": "not-refuted" }
+    },
+    {
+      "assertion": "There is no executable code besides the VERSION constant.",
+      "evidence": [
+        {
+          "evidenceId": "calc",
+          "sourceRef": "src/calc.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "export function add(a, b) { return a + b; }"
+        }
+      ],
+      "expected": { "verdict": "contradicted", "formerlyTrue": false }
+    },
+    {
+      "assertion": "There is no package.json in the repository.",
+      "evidence": [
+        {
+          "evidenceId": "readme",
+          "sourceRef": "README.md",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "A tiny calculator library."
         }
       ],
       "expected": { "verdict": "not-refuted" }

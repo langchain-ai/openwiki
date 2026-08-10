@@ -1,0 +1,101 @@
+{
+  "name": "calc-evolution",
+  "description": "Three checkpoints of a small arithmetic library used to measure useful point-in-time knowledge and longitudinal discovery, correction, forgetting, and retention.",
+  "sourceRepo": "./repo",
+  "trace": {
+    "checkpoints": [
+      {
+        "id": "T0",
+        "commit": "973be7a697c4d75b4cde36085f6a470b84c51f88",
+        "label": "calc 1.0.0 with add and negate"
+      },
+      {
+        "id": "T1",
+        "commit": "0ee8f2956b69b54bf6dcb9be10259aec4d5f799b",
+        "label": "introduce subtract"
+      },
+      {
+        "id": "T2",
+        "commit": "811b273eafc0bbaeae999de1c6966f03790eabe2",
+        "label": "remove negate, bump to 2.0.0"
+      }
+    ]
+  },
+  "truthPackage": {
+    "requirements": [
+      {
+        "id": "library-purpose",
+        "category": "architecture",
+        "versions": [
+          {
+            "statement": "calc is a TypeScript arithmetic library.",
+            "evidenceRefs": ["README.md", "src/calc.ts"],
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "add-operation",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "The library provides add(a, b), which returns the sum a + b.",
+            "evidenceRefs": ["src/calc.ts", "README.md"],
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "negate-operation",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "The library provides negate(x), which returns the additive inverse -x.",
+            "evidenceRefs": ["src/calc.ts", "README.md"],
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          }
+        ]
+      },
+      {
+        "id": "subtract-operation",
+        "category": "api",
+        "versions": [
+          {
+            "statement": "The library provides subtract(a, b), which returns the difference a - b.",
+            "evidenceRefs": ["src/calc.ts", "README.md"],
+            "fromCheckpoint": "T1"
+          }
+        ]
+      },
+      {
+        "id": "arithmetic-contract",
+        "category": "behavior",
+        "versions": [
+          {
+            "statement": "Arithmetic operations use JavaScript number semantics, are pure, and perform no input validation, rounding, or I/O.",
+            "evidenceRefs": ["src/calc.ts", "README.md"],
+            "fromCheckpoint": "T0"
+          }
+        ]
+      },
+      {
+        "id": "current-version",
+        "category": "config",
+        "versions": [
+          {
+            "statement": "The library's current version is 1.0.0.",
+            "evidenceRefs": ["src/version.ts", "README.md"],
+            "fromCheckpoint": "T0",
+            "untilCheckpoint": "T2"
+          },
+          {
+            "statement": "The library's current version is 2.0.0.",
+            "evidenceRefs": ["src/version.ts", "README.md"],
+            "fromCheckpoint": "T2"
+          }
+        ]
+      }
+    ]
+  }
+}

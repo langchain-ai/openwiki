@@ -1,3 +1,5 @@
+import type { CheckpointTransitions } from "../core/types.js";
+
 /**
  * One artifact excerpt supplied directly to a bounded evaluator request.
  */
@@ -254,6 +256,8 @@ Rules:
   constraints. Never weaken a specific claim to make it easier to support.
 - Tag every assertion "current" when it asserts present world state and
   "historical" only when it explicitly asserts a past state.
+- Past-tense change narration such as "subtract was added" or "negate was
+  removed" is historical even when the described change still matters now.
 - A concrete command's documented behavior may be factual; advice to run it is
   instruction. Example: "Run pnpm test" is instruction; "pnpm test runs Vitest"
   is factual.
@@ -262,12 +266,17 @@ Rules:
   is factual and historical.
 - Wiki self-description is meta-artifact. Example: "This wiki documents every
   export" yields no claim, while "src/calc.ts exports add" is factual.
+- Statements about what generated wiki pages, sections, maps, or documentation
+  files describe are meta-artifact. Example: "the generated API page describes purity"
+  yields no claim. Statements about the underlying source README or code remain
+  factual when they assert source-owned content.
 - Editorial asides and recommendations are instruction or opinion. Hypothetical
   future states yield no current fact unless they contain a separable present fact.
 - A subjective sentence containing a separable factual claim is "mixed" and must
   retain only the factual claim.
 - Preserve meaning without inventing implied intent, policy, or causality.
 - Return a concise rationale explaining each classification.
+- Return units and assertions as actual JSON arrays, never as JSON-encoded strings.
 - Return only the structured response.`;
 
 /**
@@ -289,9 +298,16 @@ Rules:
 - Fact versions sharing a factId form one declared history. A superseded version
   with no current version of the same factId declares that the fact was removed;
   a superseded version with a current version declares that it changed.
+- The supplied checkpoint transition is authoritative for when facts changed or
+  were removed. For example, "negate was removed in version 2.0.0" is supported
+  when that transition removes negate and the current version fact at the same
+  checkpoint establishes 2.0.0.
 - "contradicted" means current facts establish incompatible truth.
 - "unaccounted" means the facts establish neither support nor contradiction.
 - Mere consistency is not support, and ledger silence is not contradiction.
+- Missing support for a location, wording, attribution, timing detail, or one
+  part of a compound claim is unaccounted, not contradicted, unless current facts
+  affirmatively establish an incompatible detail.
 - For every contradicted result, formerlyTrue is true iff superseded fact versions
   establish that the complete assertion was true earlier. Otherwise it is false.
 - formerlyTrue is required for contradicted results and must be omitted for
@@ -300,6 +316,11 @@ Rules:
   the verdict. A contradicted result with formerlyTrue=true must also cite the
   superseded factVersionIds establishing former truth. Unaccounted results cite none.
 - The rationale must agree with the verdict.
+- Never return contradicted when the rationale says the claim is merely
+  unsupported, unestablished, only partially established, consistent, or
+  ambiguous. Those cases are unaccounted.
+- Return evaluations and factVersionIds as actual JSON arrays, never as
+  JSON-encoded strings.
 - Return only the structured response.`;
 
 /**
@@ -320,6 +341,9 @@ Rules:
 - "not-refuted" means supplied evidence does not establish incompatible truth.
   It does not mean the assertion is supported.
 - Absence of evidence is never contradiction. Never certify an assertion true.
+- Evidence that supports, matches, is consistent with, or only partially
+  addresses an assertion requires not-refuted. The absence of complete support
+  still does not establish incompatible truth.
 - Contradicted results must cite the evidenceIds that establish incompatible
   current truth. Not-refuted results cite no evidenceIds.
 - Evidence IDs must come from that assertion's own supplied evidence.
@@ -331,6 +355,11 @@ Rules:
   not-refuted results.
 - The rationale must agree with the verdict. Never return "contradicted" while
   explaining that it is not refuted.
+- Never infer that a generated artifact page is absent because it is not listed
+  among source-repository files; source evidence and artifact files are separate
+  namespaces.
+- Return evaluations and evidenceIds as actual JSON arrays, never as JSON-encoded
+  strings.
 - Return only the structured response.`;
 
 /**
@@ -410,6 +439,7 @@ ${JSON.stringify(evidence, null, 2)}`;
  *
  * @param assertions - Extracted assertions to account for.
  * @param facts - Complete active requirement set.
+ * @param transitions - Declared truth-ledger transition into the checkpoint.
  *
  * @returns Stable JSON-bearing ledger prompt.
  */
@@ -420,6 +450,7 @@ export function precisionLedgerPrompt(
     tense: "current" | "historical";
   }>,
   facts: PrecisionLedgerFact[],
+  transitions?: CheckpointTransitions,
 ): string {
   return `Account for every assertion against the complete current and superseded truth ledger.
 
@@ -427,5 +458,8 @@ Assertions (JSON):
 ${JSON.stringify(assertions, null, 2)}
 
 Complete truth ledger (JSON):
-${JSON.stringify(facts, null, 2)}`;
+${JSON.stringify(facts, null, 2)}
+
+Declared checkpoint transition (JSON):
+${JSON.stringify(transitions ?? null, null, 2)}`;
 }

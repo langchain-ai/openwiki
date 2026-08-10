@@ -243,6 +243,7 @@ export async function reevaluateSavedRun(
         activeFacts,
         evidence,
         obsoleteFacts,
+        transitions,
       });
       const coverage = computeCoverage(evaluation.factEvaluations);
       const precision = computePrecision(evaluation.precisionEvaluations);

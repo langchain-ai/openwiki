@@ -1,8 +1,8 @@
 # LEDGER 🧪
 
 **LEDGER (Longitudinal Evaluation of Drift, Grounding, Evolution, and
-Retention), formerly KEB, measures whether knowledge artifacts stay complete,
-accurate, and current as their underlying truth changes.**
+Retention) measures whether knowledge artifacts stay complete, accurate, and
+current as their underlying truth changes.**
 
 A knowledge artifact might be a repository wiki, a personal brain, an internal
 knowledge base, generated documentation, or another maintained representation of

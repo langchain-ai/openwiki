@@ -355,6 +355,5 @@ describe("runPrecisionPass", () => {
     expect(PRECISION_JUDGMENT_SYSTEM).toContain(
       "Never certify an assertion true",
     );
-    expect(PRECISION_JUDGMENT_SYSTEM).not.toContain("complete inventory");
   });
 });

@@ -2,7 +2,10 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 import { readFile } from "node:fs/promises";
 
 import { EvaluationError } from "../core/errors.js";
-import type { PrecisionClaimTense } from "../core/types.js";
+import type {
+  CheckpointTransitions,
+  PrecisionClaimTense,
+} from "../core/types.js";
 import { invokeStructuredModel } from "../evaluator/direct-model.js";
 import {
   PRECISION_EXTRACTION_SYSTEM,
@@ -41,6 +44,7 @@ export interface PrecisionGoldFixture {
   ledgerCases: Array<{
     assertion: ExpectedAssertion;
     facts: PrecisionLedgerFact[];
+    transitions?: CheckpointTransitions;
     expected: {
       verdict: "supported" | "contradicted" | "unaccounted";
       formerlyTrue?: boolean;
@@ -124,13 +128,21 @@ export async function measureGoldAgreement(inputs: {
   const extractionById = new Map(
     extraction.units.map((unit) => [unit.unitId, unit]),
   );
-  const extractionCorrect = fixture.extractionCases.filter((item, index) => {
+  let extractionCorrect = 0;
+  const extractionMismatches: string[] = [];
+  for (const [index, item] of fixture.extractionCases.entries()) {
     const actual = extractionById.get(`gold-unit-${index}`);
-    return (
+    if (
       actual?.classification === item.expected.classification &&
       sameJson(actual.assertions, item.expected.assertions)
-    );
-  }).length;
+    ) {
+      extractionCorrect += 1;
+    } else {
+      extractionMismatches.push(
+        `case ${index}: expected ${JSON.stringify(item.expected)}, received ${JSON.stringify(actual === undefined ? null : { classification: actual.classification, assertions: actual.assertions })}`,
+      );
+    }
+  }
 
   let ledgerCorrect = 0;
   const ledgerMismatches: string[] = [];
@@ -144,6 +156,7 @@ export async function measureGoldAgreement(inputs: {
       taskPrompt: precisionLedgerPrompt(
         [{ assertionId, ...item.assertion }],
         item.facts,
+        item.transitions,
       ),
       schema: precisionLedgerOutputSchema,
       timeoutMs: inputs.timeoutMs,
@@ -205,6 +218,7 @@ export async function measureGoldAgreement(inputs: {
     extraction: stageAgreement(
       extractionCorrect,
       fixture.extractionCases.length,
+      extractionMismatches,
     ),
     ledger: stageAgreement(
       ledgerCorrect,

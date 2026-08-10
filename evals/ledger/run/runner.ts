@@ -417,6 +417,7 @@ export async function runBenchmark(
         activeFacts,
         evidence,
         obsoleteFacts,
+        transitions,
       });
 
       const coverage = computeCoverage(evaluation.factEvaluations);

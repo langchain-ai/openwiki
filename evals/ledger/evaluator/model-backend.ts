@@ -134,6 +134,7 @@ export class ModelEvaluationBackend implements EvaluationBackend {
       sections,
       activeFacts: input.activeFacts,
       supersededFacts: input.obsoleteFacts,
+      transitions: input.transitions,
       evidence: input.evidence,
       timeoutMs: this.timeoutMs,
       onInventory: this.onAssertionInventory,

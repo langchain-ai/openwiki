@@ -174,6 +174,7 @@ async function evaluateTrace(inputs: {
         activeFacts,
         evidence,
         obsoleteFacts,
+        transitions,
       });
       const coverage = computeCoverage(evaluation.factEvaluations);
       const precision = computePrecision(evaluation.precisionEvaluations);
