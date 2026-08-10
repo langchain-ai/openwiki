@@ -9,6 +9,7 @@ coverage/
 .env
 .env.*
 !.env.example
+package-lock.json
 credentials.json
 token.json
 *.pem
