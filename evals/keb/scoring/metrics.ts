@@ -3,6 +3,7 @@ import type {
   CheckpointScore,
   CheckpointTransitions,
   CoverageMetric,
+  EvaluationCompletenessMetric,
   FactEvaluation,
   ForgettingEvaluation,
   KebDiagnostics,
@@ -17,12 +18,12 @@ import type {
 } from "../core/types.js";
 
 /**
- * Coverage over active material topics. Strict: only `correct` earns headline credit;
- * `partial`, `missing`, and `contradicted` are tallied as diagnostics but never
- * scored. A checkpoint with no active coverage facts is invalid benchmark data, rejected
- * by `validateBenchmark` before any run, so `total === 0` never occurs during
- * scoring; the guard below returns 1 only to keep this pure function total
- * (never `0 / 0`), and that value is never actually scored.
+ * Coverage over validly judged active material topics. Strict: only `correct`
+ * earns headline credit; `partial`, `missing`, and `contradicted` are tallied as
+ * diagnostics but never scored. Indeterminate evaluator output is excluded from
+ * the semantic denominator and represented by Evaluator Completeness instead.
+ * A checkpoint with no active coverage facts is invalid benchmark data, rejected
+ * by `validateBenchmark` before any run.
  *
  * @param evaluations - The coverage verdicts.
  *
@@ -35,18 +36,29 @@ export function computeCoverage(evaluations: FactEvaluation[]): CoverageMetric {
   const contradicted = evaluations.filter(
     (e) => e.verdict === "contradicted",
   ).length;
+  const indeterminate = evaluations.filter(
+    (e) => e.verdict === "indeterminate",
+  ).length;
   const total = evaluations.length;
-  // total === 0 is unreachable for a validated benchmark (validateBenchmark
-  // requires at least one active coverage fact per checkpoint); the branch only keeps
-  // this function total rather than scoring an empty active set.
-  const score = total === 0 ? 1 : correct / total;
+  const judged = total - indeterminate;
+  const score = judged === 0 ? 0 : correct / judged;
 
-  return { correct, partial, missing, contradicted, total, score };
+  return {
+    correct,
+    partial,
+    missing,
+    contradicted,
+    indeterminate,
+    total,
+    score,
+  };
 }
 
 /**
- * Precision over decidable material artifact assertions. Unverifiable claims
- * remain visible but do not become false hallucinations or improve precision.
+ * Binary grounding precision over all validly judged factual artifact
+ * assertions. Unsupported claims receive no precision credit, with direct
+ * contradictions retained as a diagnostic subtype. Indeterminate evaluator
+ * output is excluded and represented by Evaluator Completeness instead.
  *
  * @param evaluations - The precision verdicts, one per material assertion.
  *
@@ -56,27 +68,78 @@ export function computePrecision(
   evaluations: PrecisionAssertionEvaluation[],
 ): PrecisionMetric {
   const supported = evaluations.filter((e) => e.verdict === "supported").length;
-  const contradicted = evaluations.filter(
-    (e) => e.verdict === "contradicted",
+  const ledgerSupported = evaluations.filter(
+    (evaluation) =>
+      evaluation.verdict === "supported" &&
+      evaluation.verificationSource === "ledger",
   ).length;
-  const unverifiable = evaluations.filter(
-    (e) => e.verdict === "unverifiable",
+  const sourceSupported = supported - ledgerSupported;
+  const unsupported = evaluations.filter(
+    (evaluation) => evaluation.verdict === "unsupported",
+  ).length;
+  const contradicted = evaluations.filter(
+    (evaluation) => evaluation.unsupportedReason === "contradicted",
+  ).length;
+  const notEstablished = evaluations.filter(
+    (evaluation) => evaluation.unsupportedReason === "not-established",
+  ).length;
+  const indeterminate = evaluations.filter(
+    (e) => e.verdict === "indeterminate",
   ).length;
   const total = evaluations.length;
-  const decidable = supported + contradicted;
-  const score = decidable === 0 ? 0 : supported / decidable;
-  const hallucinationRate = total === 0 ? 0 : contradicted / total;
-  const unverifiableRate = total === 0 ? 0 : unverifiable / total;
+  const judged = supported + unsupported;
+  const score = judged === 0 ? 0 : supported / judged;
+  const unsupportedRate = judged === 0 ? 0 : unsupported / judged;
+  const extraKnowledgeRate = judged === 0 ? 0 : sourceSupported / judged;
 
   return {
     supported,
+    ledgerSupported,
+    sourceSupported,
+    unsupported,
     contradicted,
-    unverifiable,
-    decidable,
+    notEstablished,
+    indeterminate,
+    judged,
     total,
-    hallucinationRate,
-    unverifiableRate,
+    unsupportedRate,
+    extraKnowledgeRate,
     score,
+  };
+}
+
+/**
+ * Measure evaluator reliability independently from system quality. An
+ * indeterminate verdict means a schema-valid batch item was malformed and an
+ * isolated repair request also failed.
+ *
+ * @param coverage - Coverage judgments at one checkpoint.
+ * @param precision - Precision judgments at one checkpoint.
+ * @param forgetting - Forgetting judgments at one checkpoint.
+ *
+ * @returns Judged and indeterminate counts plus their completeness rate.
+ */
+export function computeEvaluationCompleteness(
+  coverage: FactEvaluation[],
+  precision: PrecisionAssertionEvaluation[],
+  forgetting: ForgettingEvaluation[],
+): EvaluationCompletenessMetric {
+  const verdicts = [
+    ...coverage.map((evaluation) => evaluation.verdict),
+    ...precision.map((evaluation) => evaluation.verdict),
+    ...forgetting.map((evaluation) => evaluation.verdict),
+  ];
+  const indeterminate = verdicts.filter(
+    (verdict) => verdict === "indeterminate",
+  ).length;
+  const total = verdicts.length;
+  const judged = total - indeterminate;
+
+  return {
+    judged,
+    indeterminate,
+    total,
+    score: total === 0 ? 1 : judged / total,
   };
 }
 
@@ -109,6 +172,39 @@ function forgottenVersionIds(evaluations: ForgettingEvaluation[]): Set<string> {
 }
 
 /**
+ * Collect coverage fact IDs whose semantic judgment remained indeterminate.
+ *
+ * @param evaluations - Coverage verdicts.
+ *
+ * @returns Indeterminate fact IDs.
+ */
+function indeterminateFactIds(evaluations: FactEvaluation[]): Set<string> {
+  return new Set(
+    evaluations
+      .filter((evaluation) => evaluation.verdict === "indeterminate")
+      .map((evaluation) => evaluation.factId),
+  );
+}
+
+/**
+ * Collect obsolete version IDs whose forgetting judgment remained
+ * indeterminate.
+ *
+ * @param evaluations - Forgetting verdicts.
+ *
+ * @returns Indeterminate obsolete version IDs.
+ */
+function indeterminateVersionIds(
+  evaluations: ForgettingEvaluation[],
+): Set<string> {
+  return new Set(
+    evaluations
+      .filter((evaluation) => evaluation.verdict === "indeterminate")
+      .map((evaluation) => evaluation.factVersionId),
+  );
+}
+
+/**
  * Raw maintenance counts for one checkpoint boundary. Each rate is left as an
  * unreduced numerator over denominator so the trace-level rates can be summed
  * globally before any division; there is deliberately no per-checkpoint
@@ -125,6 +221,9 @@ function forgottenVersionIds(evaluations: ForgettingEvaluation[]): Set<string> {
  * - Retention: a stable fact that was `correct` at the previous checkpoint is
  *   still `correct` now. Only facts correct at the previous checkpoint are
  *   eligible, so retention never rewards facts the wiki never had.
+ *
+ * A transition whose required current judgment is indeterminate is excluded
+ * from its semantic denominator and represented by Evaluator Completeness.
  *
  * @param transitions - The structured transitions across this boundary.
  * @param currentCoverage - Coverage verdicts at the current checkpoint.
@@ -143,32 +242,44 @@ export function computeMaintenanceCounts(
   const currentCorrect = correctFactIds(currentCoverage);
   const previousCorrect = correctFactIds(previousCoverage);
   const forgottenVersions = forgottenVersionIds(forgetting);
+  const indeterminateFacts = indeterminateFactIds(currentCoverage);
+  const indeterminateVersions = indeterminateVersionIds(forgetting);
+  const eligibleIntroduced = transitions.introduced.filter(
+    (fact) => !indeterminateFacts.has(fact.factId),
+  );
 
   const discovery: RateCount = {
-    numerator: transitions.introduced.filter((f) =>
-      currentCorrect.has(f.factId),
-    ).length,
-    denominator: transitions.introduced.length,
+    numerator: eligibleIntroduced.filter((f) => currentCorrect.has(f.factId))
+      .length,
+    denominator: eligibleIntroduced.length,
   };
 
+  const eligibleChanged = transitions.changed.filter(
+    (fact) =>
+      !indeterminateFacts.has(fact.factId) &&
+      !indeterminateVersions.has(fact.previousVersionId),
+  );
   const correction: RateCount = {
-    numerator: transitions.changed.filter(
+    numerator: eligibleChanged.filter(
       (f) =>
         currentCorrect.has(f.factId) &&
         forgottenVersions.has(f.previousVersionId),
     ).length,
-    denominator: transitions.changed.length,
+    denominator: eligibleChanged.length,
   };
 
+  const eligibleRemoved = transitions.removed.filter(
+    (fact) => !indeterminateVersions.has(fact.previousVersionId),
+  );
   const completeForgetting: RateCount = {
-    numerator: transitions.removed.filter((f) =>
+    numerator: eligibleRemoved.filter((f) =>
       forgottenVersions.has(f.previousVersionId),
     ).length,
-    denominator: transitions.removed.length,
+    denominator: eligibleRemoved.length,
   };
 
-  const eligibleStable = transitions.stable.filter((f) =>
-    previousCorrect.has(f.factId),
+  const eligibleStable = transitions.stable.filter(
+    (f) => previousCorrect.has(f.factId) && !indeterminateFacts.has(f.factId),
   );
   const retention: RateCount = {
     numerator: eligibleStable.filter((f) => currentCorrect.has(f.factId))
@@ -240,6 +351,17 @@ export function aggregateScore(checkpoints: CheckpointScore[]): KebScore {
   const traceCoverage = mean(checkpoints.map((c) => c.coverage.score));
   const tracePrecision = mean(checkpoints.map((c) => c.precision.score));
   const quality = harmonicMean(traceCoverage, tracePrecision);
+  const completenessTotals = checkpoints.reduce(
+    (totals, checkpoint) => ({
+      judged: totals.judged + checkpoint.evaluationCompleteness.judged,
+      total: totals.total + checkpoint.evaluationCompleteness.total,
+    }),
+    { judged: 0, total: 0 },
+  );
+  const evaluationCompleteness =
+    completenessTotals.total === 0
+      ? 1
+      : completenessTotals.judged / completenessTotals.total;
 
   const maintenanceRates = aggregateMaintenanceRates(
     checkpoints
@@ -265,6 +387,7 @@ export function aggregateScore(checkpoints: CheckpointScore[]): KebScore {
   return {
     traceCoverage,
     tracePrecision,
+    evaluationCompleteness,
     quality,
     maintenanceRates,
     maintenance,
@@ -286,10 +409,11 @@ export function aggregateScore(checkpoints: CheckpointScore[]): KebScore {
  * - Removed: eligible when the obsolete version is not forgotten at the boundary;
  *   recovers when it is forgotten at any later checkpoint.
  *
- * Stable-retention regressions are deliberately excluded in V1. Coverage is
- * matched by `factId` and forgetting by obsolete `factVersionId`, exactly as the
- * maintenance counts match them. A trace-level diagnostic, never part of the KEB
- * Score.
+ * Stable-retention regressions are deliberately excluded in V1. A transition
+ * with an indeterminate boundary judgment is not classified as a failure.
+ * Coverage is matched by `factId` and forgetting by obsolete `factVersionId`,
+ * exactly as the maintenance counts match them. A trace-level diagnostic, never
+ * part of the KEB Score.
  *
  * @param history - The per-checkpoint evaluation records, in trace order.
  *
@@ -310,6 +434,12 @@ export function computeRecoveryRate(
   // checkpoint, not from whether the version had ever been forgotten by then.
   const forgottenByIndex = history.map((record) =>
     forgottenVersionIds(record.forgettingEvaluations),
+  );
+  const indeterminateFactsByIndex = history.map((record) =>
+    indeterminateFactIds(record.factEvaluations),
+  );
+  const indeterminateVersionsByIndex = history.map((record) =>
+    indeterminateVersionIds(record.forgettingEvaluations),
   );
 
   const correctAt = (index: number, factId: string): boolean =>
@@ -349,10 +479,19 @@ export function computeRecoveryRate(
     };
 
     for (const fact of transitions.introduced) {
+      if (indeterminateFactsByIndex[boundary].has(fact.factId)) {
+        continue;
+      }
       assess((index) => correctAt(index, fact.factId));
     }
 
     for (const fact of transitions.changed) {
+      if (
+        indeterminateFactsByIndex[boundary].has(fact.factId) ||
+        indeterminateVersionsByIndex[boundary].has(fact.previousVersionId)
+      ) {
+        continue;
+      }
       assess(
         (index) =>
           correctAt(index, fact.factId) &&
@@ -361,6 +500,9 @@ export function computeRecoveryRate(
     }
 
     for (const fact of transitions.removed) {
+      if (indeterminateVersionsByIndex[boundary].has(fact.previousVersionId)) {
+        continue;
+      }
       assess((index) => forgottenAt(index, fact.previousVersionId));
     }
   });
@@ -380,7 +522,9 @@ export function computeRecoveryRate(
  * unresolved when observation stopped (never judged forgotten, whether the trace
  * ended or the fact was revived) are counted in `unresolvedCount` and never folded
  * into the mean, so an unknown final lifetime is never treated as known. A
- * trace-level diagnostic, never part of the KEB Score.
+ * An indeterminate forgetting judgment neither increments the lifetime nor
+ * resolves it. Evaluator Completeness reports that gap. A trace-level diagnostic,
+ * never part of the KEB Score.
  *
  * @param history - The per-checkpoint evaluation records, in trace order.
  *
@@ -412,7 +556,7 @@ export function computeStaleKnowledge(
           evaluation.factVersionId,
           (lingered.get(evaluation.factVersionId) ?? 0) + 1,
         );
-      } else {
+      } else if (evaluation.verdict === "forgotten") {
         resolved.add(evaluation.factVersionId);
       }
     }

@@ -2,6 +2,7 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 
 import { EvaluationError } from "../core/errors.js";
 import type {
+  EvaluationWarning,
   ForgettingEvaluation,
   ObsoleteFactTarget,
 } from "../core/types.js";
@@ -63,6 +64,11 @@ export interface ForgettingPassInput {
    * Per-attempt evaluator request deadline in milliseconds.
    */
   timeoutMs?: number;
+
+  /**
+   * Optional sink for items that remain invalid after isolated repair.
+   */
+  onWarning?: (warning: EvaluationWarning) => void;
 }
 
 /**
@@ -243,6 +249,66 @@ function validateForgettingOutput(
 }
 
 /**
+ * Resolve and validate one forgetting target from a possibly imperfect batch
+ * response without allowing neighboring items to invalidate it.
+ *
+ * @param target - Obsolete requirement version being resolved.
+ * @param output - Schema-valid batch response.
+ * @param allowedSectionIds - Evidence identities visible anywhere in the batch.
+ *
+ * @returns One validated code-owned forgetting evaluation.
+ *
+ * @throws EvaluationError when this target is missing, duplicated, lacks required
+ * evidence, or cites unavailable evidence.
+ */
+function resolveForgettingItem(
+  target: ForgettingTarget,
+  output: ForgettingOutput,
+  allowedSectionIds: Set<string>,
+): ForgettingEvaluation {
+  const matches = output.evaluations.filter(
+    (evaluation) => evaluation.factVersionId === target.fact.factVersionId,
+  );
+
+  if (matches.length !== 1) {
+    throw new EvaluationError(
+      `Forgetting evaluator returned ${matches.length} verdicts for factVersionId "${target.fact.factVersionId}".`,
+    );
+  }
+
+  const [evaluation] = matches;
+  const uniqueEvidence = new Set(evaluation.evidence);
+
+  if (uniqueEvidence.size !== evaluation.evidence.length) {
+    throw new EvaluationError(
+      `Forgetting evaluator returned duplicate evidence for factVersionId "${target.fact.factVersionId}".`,
+    );
+  }
+
+  for (const sectionId of evaluation.evidence) {
+    if (!allowedSectionIds.has(sectionId)) {
+      throw new EvaluationError(
+        `Forgetting evaluator cited unavailable sectionId "${sectionId}" for factVersionId "${target.fact.factVersionId}".`,
+      );
+    }
+  }
+
+  if (evaluation.verdict === "lingering" && evaluation.evidence.length === 0) {
+    throw new EvaluationError(
+      `Forgetting evaluator returned no evidence for lingering factVersionId "${target.fact.factVersionId}".`,
+    );
+  }
+
+  return {
+    factId: target.fact.factId,
+    factVersionId: target.fact.factVersionId,
+    verdict: evaluation.verdict,
+    evidence: evaluation.evidence,
+    rationale: evaluation.rationale,
+  };
+}
+
+/**
  * Run one bounded forgetting request and resolve it to code-owned fact metadata.
  *
  * @param model - Evaluator model.
@@ -273,6 +339,77 @@ async function evaluateForgettingBatch(
     targets.map((target) => target.fact),
     output,
   );
+}
+
+/**
+ * Evaluate a forgetting batch item by item, retrying only malformed items in
+ * isolation and converting irreparable output into an explicit indeterminate
+ * verdict.
+ *
+ * @param input - Forgetting pass configuration and warning sink.
+ * @param targets - Obsolete versions and excerpts in the initial batch.
+ *
+ * @returns One valid or indeterminate evaluation per target.
+ */
+async function evaluateForgettingBatchResilient(
+  input: ForgettingPassInput,
+  targets: ForgettingTarget[],
+): Promise<ForgettingEvaluation[]> {
+  const output = await invokeStructuredModel({
+    model: input.model,
+    pass: "forgetting",
+    checkpointId: input.checkpointId,
+    systemPrompt: FORGETTING_SYSTEM,
+    taskPrompt: forgettingPrompt(toPromptTargets(targets)),
+    schema: forgettingOutputSchema,
+    timeoutMs: input.timeoutMs,
+  });
+  const allowedSectionIds = new Set(
+    targets.flatMap((target) => target.sections.map((section) => section.id)),
+  );
+  const evaluations: ForgettingEvaluation[] = [];
+
+  for (const target of targets) {
+    try {
+      evaluations.push(
+        resolveForgettingItem(target, output, allowedSectionIds),
+      );
+    } catch (initialError) {
+      try {
+        const [repaired] = await evaluateForgettingBatch(
+          input.model,
+          input.checkpointId,
+          [target],
+          input.timeoutMs,
+        );
+        evaluations.push(repaired);
+      } catch (repairError) {
+        const initialMessage =
+          initialError instanceof Error
+            ? initialError.message
+            : String(initialError);
+        const repairMessage =
+          repairError instanceof Error
+            ? repairError.message
+            : String(repairError);
+        const message = `${initialMessage} Isolated repair failed: ${repairMessage}`;
+        input.onWarning?.({
+          pass: "forgetting",
+          itemId: target.fact.factVersionId,
+          message,
+        });
+        evaluations.push({
+          factId: target.fact.factId,
+          factVersionId: target.fact.factVersionId,
+          verdict: "indeterminate",
+          evidence: [],
+          rationale: `Evaluator could not repair this forgetting judgment: ${message}`,
+        });
+      }
+    }
+  }
+
+  return evaluations;
 }
 
 /**
@@ -316,12 +453,7 @@ export async function runForgettingPass(
   const resultByVersion = new Map<string, ForgettingEvaluation>();
 
   for (const targets of batch(initialTargets, batchSize)) {
-    const evaluations = await evaluateForgettingBatch(
-      input.model,
-      input.checkpointId,
-      targets,
-      input.timeoutMs,
-    );
+    const evaluations = await evaluateForgettingBatchResilient(input, targets);
 
     for (const evaluation of evaluations) {
       resultByVersion.set(evaluation.factVersionId, evaluation);
@@ -333,7 +465,7 @@ export async function runForgettingPass(
       target.fact.factVersionId,
     ) as ForgettingEvaluation;
 
-    if (initial.verdict === "lingering") {
+    if (initial.verdict !== "forgotten") {
       continue;
     }
 
@@ -343,16 +475,13 @@ export async function runForgettingPass(
     );
 
     for (const sections of batch(remaining, FALLBACK_SECTION_BATCH_SIZE)) {
-      const [evaluation] = await evaluateForgettingBatch(
-        input.model,
-        input.checkpointId,
-        [{ fact: target.fact, sections }],
-        input.timeoutMs,
-      );
+      const [evaluation] = await evaluateForgettingBatchResilient(input, [
+        { fact: target.fact, sections },
+      ]);
 
       resultByVersion.set(target.fact.factVersionId, evaluation);
 
-      if (evaluation.verdict === "lingering") {
+      if (evaluation.verdict !== "forgotten") {
         break;
       }
     }

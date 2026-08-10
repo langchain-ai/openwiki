@@ -25,17 +25,28 @@ function result(): KebRunResult {
           partial: 0,
           missing: 0,
           contradicted: 0,
+          indeterminate: 0,
           total: 2,
           score: 1,
         },
         precision: {
           supported: 2,
+          ledgerSupported: 2,
+          sourceSupported: 0,
+          unsupported: 0,
           contradicted: 0,
-          unverifiable: 0,
-          decidable: 2,
+          notEstablished: 0,
+          indeterminate: 0,
+          judged: 2,
           total: 2,
-          hallucinationRate: 0,
-          unverifiableRate: 0,
+          unsupportedRate: 0,
+          extraKnowledgeRate: 0,
+          score: 1,
+        },
+        evaluationCompleteness: {
+          judged: 4,
+          indeterminate: 0,
+          total: 4,
           score: 1,
         },
         efficiency: { durationMs: 1000, skipped: false },
@@ -44,6 +55,7 @@ function result(): KebRunResult {
     score: {
       traceCoverage: 1,
       tracePrecision: 1,
+      evaluationCompleteness: 1,
       quality: 1,
       maintenanceRates: {},
       kebScore: 1,
@@ -58,8 +70,28 @@ describe("formatReport", () => {
 
     expect(report).toContain("## KEB Score: 100.0%");
     expect(report).toContain("- Quality: 100.0%");
+    expect(report).toContain("- Required claims (ledger-backed): 2 (100.0%)");
+    expect(report).toContain("- Valid extras (source-backed): 0 (0.0%)");
+    expect(report).toContain("- Hallucinated: 0 (0.0%)");
     expect(report).toContain(
-      "| T0 | 100.0% | 100.0% | 0.0% | 0.0% | 1000 | - | no |",
+      "| Unsupported | Hallucinated | Not established |",
+    );
+    expect(report).toContain(
+      "| T0 | 100.0% | 100.0% | 2 | 0 | 0 (0.0%) | 0 | 0 | 100.0% | 1000 | - | no |",
+    );
+  });
+
+  test("identifies evaluator-only replay provenance", () => {
+    const replayed: KebRunResult = {
+      ...result(),
+      metadata: {
+        ...result().metadata,
+        reevaluatedFrom: "/saved/original-run",
+      },
+    };
+
+    expect(formatReport(replayed)).toContain(
+      "- Re-evaluated from: /saved/original-run",
     );
   });
 
@@ -144,7 +176,9 @@ describe("formatReport", () => {
               {
                 assertion: "add uses IEEE-754 double-precision arithmetic",
                 location: "artifact/api/calc.md",
-                verdict: "unverifiable",
+                verdict: "unsupported",
+                unsupportedReason: "not-established",
+                verificationSource: "source",
                 evidenceIds: [],
                 rationale: "source evidence does not establish representation",
               },
@@ -170,10 +204,9 @@ describe("formatReport", () => {
     expect(report).toContain(
       "  - `subtract-behavior` missing: the wiki never mentions subtraction",
     );
-    expect(report).toContain("- Contradicted assertions (0 of 2):");
-    expect(report).toContain("- Unverifiable assertions (1 of 2):");
+    expect(report).toContain("- Unsupported assertions (1 of 2):");
     expect(report).toContain(
-      '  - artifact/api/calc.md: "add uses IEEE-754 double-precision arithmetic" (source evidence does not establish representation)',
+      '  - not-established · artifact/api/calc.md: "add uses IEEE-754 double-precision arithmetic" (source evidence does not establish representation)',
     );
     expect(report).toContain("- Forgetting (1):");
     expect(report).toContain(
@@ -216,10 +249,50 @@ describe("formatReport", () => {
     expect(report).toContain(
       "  - none; every material topic is stated correctly",
     );
-    expect(report).toContain("- Contradicted assertions (0 of 1):");
-    expect(report).toContain("- Unverifiable assertions (0 of 1):");
+    expect(report).toContain("- Unsupported assertions (0 of 1):");
     // A checkpoint with no obsolete versions renders no forgetting line at all.
     expect(report).not.toContain("- Forgetting (");
+  });
+
+  test("reports evaluator incompleteness and its item-level warning", () => {
+    const degraded = result();
+    degraded.score.evaluationCompleteness = 0.75;
+    degraded.checkpoints[0].evaluationCompleteness = {
+      judged: 3,
+      indeterminate: 1,
+      total: 4,
+      score: 0.75,
+    };
+    degraded.checkpoints[0].evaluations = {
+      factEvaluations: [
+        {
+          factId: "version",
+          factVersionId: "version@T0",
+          verdict: "indeterminate",
+          evidence: [],
+          rationale: "isolated repair failed",
+        },
+      ],
+      precisionEvaluations: [],
+      forgettingEvaluations: [],
+      warnings: [
+        {
+          pass: "coverage",
+          itemId: "version",
+          message: "invented citation; isolated repair failed",
+        },
+      ],
+    };
+
+    const report = formatReport(degraded);
+
+    expect(report).toContain("- Evaluator Completeness: 75.0%");
+    expect(report).toContain(
+      "| T0 | 100.0% | 100.0% | 2 | 0 | 0 (0.0%) | 0 | 0 | 75.0%",
+    );
+    expect(report).toContain(
+      "- coverage `version`: invented citation; isolated repair failed",
+    );
   });
 
   test("marks a skipped checkpoint and renders its churn", () => {
@@ -234,18 +307,29 @@ describe("formatReport", () => {
             partial: 1,
             missing: 0,
             contradicted: 0,
+            indeterminate: 0,
             total: 2,
             score: 0.5,
           },
           precision: {
             supported: 1,
+            ledgerSupported: 0,
+            sourceSupported: 1,
+            unsupported: 1,
             contradicted: 1,
-            unverifiable: 0,
-            decidable: 2,
+            notEstablished: 0,
+            indeterminate: 0,
+            judged: 2,
             total: 2,
-            hallucinationRate: 0.5,
-            unverifiableRate: 0,
+            unsupportedRate: 0.5,
+            extraKnowledgeRate: 0.5,
             score: 0.5,
+          },
+          evaluationCompleteness: {
+            judged: 4,
+            indeterminate: 0,
+            total: 4,
+            score: 1,
           },
           efficiency: { durationMs: 0, skipped: true, churnedLines: 12 },
         },
@@ -254,7 +338,7 @@ describe("formatReport", () => {
     const report = formatReport(withSkip);
 
     expect(report).toContain(
-      "| T1 | 50.0% | 50.0% | 50.0% | 0.0% | 0 | 12 | yes |",
+      "| T1 | 50.0% | 50.0% | 0 | 1 | 1 (50.0%) | 1 | 0 | 100.0% | 0 | 12 | yes |",
     );
   });
 });

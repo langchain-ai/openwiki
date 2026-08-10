@@ -48,6 +48,18 @@ function lifetime(value: number | undefined): string {
 }
 
 /**
+ * Render an assertion count with its fraction of validly judged assertions.
+ *
+ * @param count - Assertions in the displayed class.
+ * @param judged - Complete validly judged assertion count.
+ *
+ * @returns Count followed by a percentage in parentheses.
+ */
+function assertionCount(count: number, judged: number): string {
+  return `${count} (${pct(judged === 0 ? 0 : count / judged)})`;
+}
+
+/**
  * Format a run result as a Markdown report: a headline score, the trace-level
  * quality and maintenance breakdown, the trace-level diagnostics, then a
  * per-checkpoint table of coverage, precision, and efficiency.
@@ -61,6 +73,27 @@ export function formatReport(result: KebRunResult): string {
   const score = result.score;
   const rates = score.maintenanceRates;
   const diagnostics = result.diagnostics;
+  const precisionTotals = result.checkpoints.reduce(
+    (totals, checkpoint) => ({
+      ledgerSupported:
+        totals.ledgerSupported + checkpoint.precision.ledgerSupported,
+      sourceSupported:
+        totals.sourceSupported + checkpoint.precision.sourceSupported,
+      unsupported: totals.unsupported + checkpoint.precision.unsupported,
+      contradicted: totals.contradicted + checkpoint.precision.contradicted,
+      notEstablished:
+        totals.notEstablished + checkpoint.precision.notEstablished,
+      judged: totals.judged + checkpoint.precision.judged,
+    }),
+    {
+      ledgerSupported: 0,
+      sourceSupported: 0,
+      unsupported: 0,
+      contradicted: 0,
+      notEstablished: 0,
+      judged: 0,
+    },
+  );
 
   lines.push(`# KEB report: ${result.metadata.benchmarkName}`);
   lines.push("");
@@ -69,6 +102,9 @@ export function formatReport(result: KebRunResult): string {
     `- System: ${result.metadata.system.provider} / ${result.metadata.system.modelId ?? "(default)"}`,
   );
   lines.push(`- Evaluator: ${result.metadata.evaluatorModelId ?? "(default)"}`);
+  if (result.metadata.reevaluatedFrom !== undefined) {
+    lines.push(`- Re-evaluated from: ${result.metadata.reevaluatedFrom}`);
+  }
   lines.push("");
   lines.push(`## KEB Score: ${pct(score.kebScore)}`);
   lines.push("");
@@ -77,6 +113,21 @@ export function formatReport(result: KebRunResult): string {
   );
   lines.push(`  - Trace Coverage: ${pct(score.traceCoverage)}`);
   lines.push(`  - Trace Precision: ${pct(score.tracePrecision)}`);
+  lines.push(
+    `    - Required claims (ledger-backed): ${assertionCount(precisionTotals.ledgerSupported, precisionTotals.judged)}`,
+  );
+  lines.push(
+    `    - Valid extras (source-backed): ${assertionCount(precisionTotals.sourceSupported, precisionTotals.judged)}`,
+  );
+  lines.push(
+    `    - Unsupported: ${assertionCount(precisionTotals.unsupported, precisionTotals.judged)}`,
+  );
+  lines.push(
+    `      - Hallucinated: ${assertionCount(precisionTotals.contradicted, precisionTotals.judged)}`,
+  );
+  lines.push(
+    `      - Not established: ${assertionCount(precisionTotals.notEstablished, precisionTotals.judged)}`,
+  );
   lines.push(`- Maintenance: ${rate(score.maintenance)}`);
   lines.push(
     `  - New-Knowledge Discovery: ${rate(rates.newKnowledgeDiscovery)}`,
@@ -93,6 +144,7 @@ export function formatReport(result: KebRunResult): string {
     "Trace-level behavior reported alongside the score, not part of it.",
   );
   lines.push("");
+  lines.push(`- Evaluator Completeness: ${pct(score.evaluationCompleteness)}`);
   lines.push(`- Recovery Rate: ${rate(diagnostics.recoveryRate)}`);
   lines.push(
     `- Stale-Knowledge Lifetime (mean over resolved versions): ${lifetime(diagnostics.staleKnowledge.meanResolvedLifetime)}`,
@@ -104,13 +156,15 @@ export function formatReport(result: KebRunResult): string {
   lines.push("## Checkpoints");
   lines.push("");
   lines.push(
-    "| Checkpoint | Coverage | Precision | Hallucination | Unverifiable | Duration (ms) | Churn | Skipped |",
+    "| Checkpoint | Coverage | Precision | Required claims | Valid extras | Unsupported | Hallucinated | Not established | Evaluator | Duration (ms) | Churn | Skipped |",
   );
-  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
+  lines.push(
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+  );
 
   for (const checkpoint of result.checkpoints) {
     lines.push(
-      `| ${checkpoint.checkpointId} | ${pct(checkpoint.coverage.score)} | ${pct(checkpoint.precision.score)} | ${pct(checkpoint.precision.hallucinationRate)} | ${pct(checkpoint.precision.unverifiableRate)} | ${checkpoint.efficiency.durationMs} | ${cell(checkpoint.efficiency.churnedLines)} | ${checkpoint.efficiency.skipped ? "yes" : "no"} |`,
+      `| ${checkpoint.checkpointId} | ${pct(checkpoint.coverage.score)} | ${pct(checkpoint.precision.score)} | ${checkpoint.precision.ledgerSupported} | ${checkpoint.precision.sourceSupported} | ${assertionCount(checkpoint.precision.unsupported, checkpoint.precision.judged)} | ${checkpoint.precision.contradicted} | ${checkpoint.precision.notEstablished} | ${pct(checkpoint.evaluationCompleteness.score)} | ${checkpoint.efficiency.durationMs} | ${cell(checkpoint.efficiency.churnedLines)} | ${checkpoint.efficiency.skipped ? "yes" : "no"} |`,
     );
   }
 
@@ -122,9 +176,9 @@ export function formatReport(result: KebRunResult): string {
 
 /**
  * Append the per-checkpoint evaluation detail behind the scores: the coverage
- * facts not stated correctly, contradicted and unverifiable artifact claims, and
+ * facts not stated correctly, unsupported artifact claims, and
  * forgetting verdicts. This turns a bare score into evidence a reader can act on
- * without treating evaluator uncertainty as certain hallucination.
+ * without treating evaluator failure as a system error.
  *
  * @param lines - The report lines accumulated so far, appended to in place.
  * @param result - The run result whose detail is rendered.
@@ -137,7 +191,7 @@ function appendEvaluationDetail(lines: string[], result: KebRunResult): void {
   lines.push("## Evaluation detail");
   lines.push("");
   lines.push(
-    "The raw verdicts behind the scores. Coverage lists material topics the artifact did not state correctly; precision separates source-contradicted claims from claims the available evidence could not verify; forgetting lists obsolete versions and whether the artifact dropped them.",
+    "The raw verdicts behind the scores. Coverage lists material topics the artifact did not state correctly; precision lists unsupported claims with their diagnostic subtype; forgetting lists obsolete versions and whether the artifact dropped them.",
   );
   lines.push("");
 
@@ -163,34 +217,18 @@ function appendEvaluationDetail(lines: string[], result: KebRunResult): void {
       }
     }
 
-    const contradicted = detail.precisionEvaluations.filter(
-      (assertion) => assertion.verdict === "contradicted",
+    const unsupported = detail.precisionEvaluations.filter(
+      (assertion) => assertion.verdict === "unsupported",
     );
     lines.push(
-      `- Contradicted assertions (${contradicted.length} of ${detail.precisionEvaluations.length}):`,
+      `- Unsupported assertions (${unsupported.length} of ${detail.precisionEvaluations.length}):`,
     );
-    if (contradicted.length === 0) {
+    if (unsupported.length === 0) {
       lines.push("  - none");
     } else {
-      for (const assertion of contradicted) {
+      for (const assertion of unsupported) {
         lines.push(
-          `  - ${assertion.location}: "${assertion.assertion}" (${assertion.rationale})`,
-        );
-      }
-    }
-
-    const unverifiable = detail.precisionEvaluations.filter(
-      (assertion) => assertion.verdict === "unverifiable",
-    );
-    lines.push(
-      `- Unverifiable assertions (${unverifiable.length} of ${detail.precisionEvaluations.length}):`,
-    );
-    if (unverifiable.length === 0) {
-      lines.push("  - none");
-    } else {
-      for (const assertion of unverifiable) {
-        lines.push(
-          `  - ${assertion.location}: "${assertion.assertion}" (${assertion.rationale})`,
+          `  - ${assertion.unsupportedReason === "contradicted" ? "hallucinated" : (assertion.unsupportedReason ?? "unspecified")} · ${assertion.location}: "${assertion.assertion}" (${assertion.rationale})`,
         );
       }
     }
@@ -200,6 +238,16 @@ function appendEvaluationDetail(lines: string[], result: KebRunResult): void {
       for (const forgetting of detail.forgettingEvaluations) {
         lines.push(
           `  - \`${forgetting.factVersionId}\` ${forgetting.verdict}: ${forgetting.rationale}`,
+        );
+      }
+    }
+
+    const warnings = detail.warnings ?? [];
+    if (warnings.length > 0) {
+      lines.push(`- Evaluator warnings (${warnings.length}):`);
+      for (const warning of warnings) {
+        lines.push(
+          `  - ${warning.pass} \`${warning.itemId}\`: ${warning.message}`,
         );
       }
     }

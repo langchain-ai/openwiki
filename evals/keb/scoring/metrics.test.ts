@@ -5,6 +5,7 @@ import {
   aggregateScore,
   computeCoverage,
   computeDiagnostics,
+  computeEvaluationCompleteness,
   computeMaintenanceCounts,
   computePrecision,
   computeRecoveryRate,
@@ -48,6 +49,8 @@ function forget(
 
 function assertion(
   verdict: PrecisionAssertionEvaluation["verdict"],
+  verificationSource?: PrecisionAssertionEvaluation["verificationSource"],
+  unsupportedReason?: PrecisionAssertionEvaluation["unsupportedReason"],
 ): PrecisionAssertionEvaluation {
   return {
     assertion: "x",
@@ -55,6 +58,8 @@ function assertion(
     verdict,
     evidenceIds: [],
     rationale: "",
+    verificationSource,
+    unsupportedReason,
   };
 }
 
@@ -113,51 +118,123 @@ describe("computeCoverage", () => {
       partial: 1,
       missing: 1,
       contradicted: 1,
+      indeterminate: 0,
       total: 4,
       score: 0.25,
     });
   });
 
-  test("defensively totals an empty fact set to 1 (validation rejects it upstream)", () => {
+  test("defensively scores an empty fact set as 0 (validation rejects it upstream)", () => {
     // A zero-active-fact checkpoint is invalid benchmark data that
     // validateBenchmark rejects before any run, so this branch is unreachable in
     // scoring; the guard exists only so the pure function never divides by zero.
-    expect(computeCoverage([]).score).toBe(1);
+    expect(computeCoverage([]).score).toBe(0);
+  });
+
+  test("excludes indeterminate evaluator output from the semantic denominator", () => {
+    const metric = computeCoverage([
+      fact("valid", "correct"),
+      fact("broken", "indeterminate"),
+    ]);
+
+    expect(metric).toMatchObject({
+      correct: 1,
+      indeterminate: 1,
+      total: 2,
+      score: 1,
+    });
   });
 });
 
 describe("computePrecision", () => {
-  test("scores supported claims over decidable claims", () => {
+  test("scores supported claims over judged claims", () => {
     const metric = computePrecision([
       assertion("supported"),
       assertion("supported"),
-      assertion("contradicted"),
-      assertion("unverifiable"),
+      assertion("unsupported", "source", "contradicted"),
+      assertion("unsupported", "source", "not-established"),
     ]);
 
     expect(metric).toEqual({
       supported: 2,
+      ledgerSupported: 0,
+      sourceSupported: 2,
+      unsupported: 2,
       contradicted: 1,
-      unverifiable: 1,
-      decidable: 3,
+      notEstablished: 1,
+      indeterminate: 0,
+      judged: 4,
       total: 4,
-      hallucinationRate: 0.25,
-      unverifiableRate: 0.25,
+      unsupportedRate: 0.5,
+      extraKnowledgeRate: 0.5,
+      score: 0.5,
+    });
+  });
+
+  test("separates required knowledge from valid extra knowledge", () => {
+    const metric = computePrecision([
+      assertion("supported", "ledger"),
+      assertion("supported", "source"),
+      assertion("unsupported", "source", "contradicted"),
+    ]);
+
+    expect(metric).toMatchObject({
+      supported: 2,
+      ledgerSupported: 1,
+      sourceSupported: 1,
+      judged: 3,
+      extraKnowledgeRate: 1 / 3,
       score: 2 / 3,
+    });
+  });
+
+  test("excludes indeterminate output from semantic precision rates", () => {
+    const metric = computePrecision([
+      assertion("unsupported", "source", "contradicted"),
+      assertion("indeterminate"),
+    ]);
+
+    expect(metric).toMatchObject({
+      contradicted: 1,
+      unsupported: 1,
+      notEstablished: 0,
+      indeterminate: 1,
+      total: 2,
+      unsupportedRate: 1,
+      score: 0,
     });
   });
 
   test("scores a wiki with no material assertions as 0, not 1", () => {
     expect(computePrecision([])).toEqual({
       supported: 0,
+      ledgerSupported: 0,
+      sourceSupported: 0,
+      unsupported: 0,
       contradicted: 0,
-      unverifiable: 0,
-      decidable: 0,
+      notEstablished: 0,
+      indeterminate: 0,
+      judged: 0,
       total: 0,
-      hallucinationRate: 0,
-      unverifiableRate: 0,
+      unsupportedRate: 0,
+      extraKnowledgeRate: 0,
       score: 0,
     });
+  });
+});
+
+describe("computeEvaluationCompleteness", () => {
+  test("keeps evaluator failures separate from unsupported system claims", () => {
+    expect(
+      computeEvaluationCompleteness(
+        [fact("covered", "correct"), fact("broken", "indeterminate")],
+        [
+          assertion("unsupported", "source", "not-established"),
+          assertion("indeterminate"),
+        ],
+        [forget("old@T0", "forgotten")],
+      ),
+    ).toEqual({ judged: 3, indeterminate: 2, total: 5, score: 0.6 });
   });
 });
 
@@ -241,6 +318,26 @@ describe("computeMaintenanceCounts", () => {
     // it is in the denominator but not the numerator: a retention failure.
     expect(counts.stableRetention).toEqual({ numerator: 0, denominator: 1 });
   });
+
+  test("excludes indeterminate evaluator output from maintenance denominators", () => {
+    const counts = computeMaintenanceCounts(
+      transitions,
+      [
+        fact("n", "indeterminate"),
+        fact("c", "indeterminate"),
+        fact("s", "indeterminate"),
+      ],
+      [forget("c@T0", "indeterminate"), forget("r@T0", "indeterminate")],
+      [fact("s", "correct")],
+    );
+
+    expect(counts).toEqual({
+      newKnowledgeDiscovery: { numerator: 0, denominator: 0 },
+      changedKnowledgeCorrection: { numerator: 0, denominator: 0 },
+      completeForgetting: { numerator: 0, denominator: 0 },
+      stableRetention: { numerator: 0, denominator: 0 },
+    });
+  });
 });
 
 describe("aggregateScore", () => {
@@ -253,17 +350,28 @@ describe("aggregateScore", () => {
           partial: 0,
           missing: 0,
           contradicted: 0,
+          indeterminate: 0,
           total: 1,
           score: 1,
         },
         precision: {
           supported: 1,
+          ledgerSupported: 1,
+          sourceSupported: 0,
+          unsupported: 0,
           contradicted: 0,
-          unverifiable: 0,
-          decidable: 1,
+          notEstablished: 0,
+          indeterminate: 0,
+          judged: 1,
           total: 1,
-          hallucinationRate: 0,
-          unverifiableRate: 0,
+          unsupportedRate: 0,
+          extraKnowledgeRate: 0,
+          score: 1,
+        },
+        evaluationCompleteness: {
+          judged: 2,
+          indeterminate: 0,
+          total: 2,
           score: 1,
         },
         efficiency: { durationMs: 0, skipped: false },
@@ -275,18 +383,29 @@ describe("aggregateScore", () => {
           partial: 0,
           missing: 1,
           contradicted: 0,
+          indeterminate: 0,
           total: 1,
           score: 0,
         },
         precision: {
           supported: 1,
+          ledgerSupported: 0,
+          sourceSupported: 1,
+          unsupported: 1,
           contradicted: 1,
-          unverifiable: 0,
-          decidable: 2,
+          notEstablished: 0,
+          indeterminate: 0,
+          judged: 2,
           total: 2,
-          hallucinationRate: 0.5,
-          unverifiableRate: 0,
+          unsupportedRate: 0.5,
+          extraKnowledgeRate: 0.5,
           score: 0.5,
+        },
+        evaluationCompleteness: {
+          judged: 2,
+          indeterminate: 1,
+          total: 3,
+          score: 2 / 3,
         },
         maintenanceCounts: {
           newKnowledgeDiscovery: { numerator: 1, denominator: 2 },
@@ -303,6 +422,7 @@ describe("aggregateScore", () => {
     // trace coverage = mean(1, 0) = 0.5; trace precision = mean(1, 0.5) = 0.75
     expect(score.traceCoverage).toBe(0.5);
     expect(score.tracePrecision).toBe(0.75);
+    expect(score.evaluationCompleteness).toBe(0.8);
     // quality = harmonic(0.5, 0.75) = 2 * 0.5 * 0.75 / 1.25 = 0.6
     expect(score.quality).toBeCloseTo(0.6, 10);
     // global rates: discovery 1/2; correction denom 0 -> undefined; forgetting 1/1; retention 2/2
@@ -326,17 +446,28 @@ describe("aggregateScore", () => {
           partial: 0,
           missing: 0,
           contradicted: 0,
+          indeterminate: 0,
           total: 1,
           score: 1,
         },
         precision: {
           supported: 1,
+          ledgerSupported: 1,
+          sourceSupported: 0,
+          unsupported: 0,
           contradicted: 0,
-          unverifiable: 0,
-          decidable: 1,
+          notEstablished: 0,
+          indeterminate: 0,
+          judged: 1,
           total: 1,
-          hallucinationRate: 0,
-          unverifiableRate: 0,
+          unsupportedRate: 0,
+          extraKnowledgeRate: 0,
+          score: 1,
+        },
+        evaluationCompleteness: {
+          judged: 2,
+          indeterminate: 0,
+          total: 2,
           score: 1,
         },
         efficiency: { durationMs: 0, skipped: false },
@@ -429,6 +560,26 @@ describe("computeChurn", () => {
 });
 
 describe("computeRecoveryRate", () => {
+  test("excludes a transition with an indeterminate boundary judgment", () => {
+    const history: CheckpointEvaluationRecord[] = [
+      base("T0"),
+      {
+        checkpointId: "T1",
+        factEvaluations: [fact("a", "indeterminate")],
+        forgettingEvaluations: [],
+        transitions: transitionsAt("T1", { introduced: [introduced("a")] }),
+      },
+      {
+        checkpointId: "T2",
+        factEvaluations: [fact("a", "correct")],
+        forgettingEvaluations: [],
+        transitions: transitionsAt("T2", {}),
+      },
+    ];
+
+    expect(computeRecoveryRate(history)).toBeUndefined();
+  });
+
   test("an introduced fact wrong at its boundary that later reads correct recovers", () => {
     const history: CheckpointEvaluationRecord[] = [
       base("T0"),
@@ -632,6 +783,29 @@ describe("computeRecoveryRate", () => {
 });
 
 describe("computeStaleKnowledge", () => {
+  test("does not resolve or extend lifetime for an indeterminate judgment", () => {
+    const history: CheckpointEvaluationRecord[] = [
+      {
+        checkpointId: "T1",
+        factEvaluations: [],
+        forgettingEvaluations: [forget("a@T0", "indeterminate")],
+      },
+      {
+        checkpointId: "T2",
+        factEvaluations: [],
+        forgettingEvaluations: [forget("a@T0", "forgotten")],
+      },
+    ];
+
+    expect(computeStaleKnowledge(history)).toEqual({
+      records: [
+        { factVersionId: "a@T0", lingeredCheckpoints: 0, resolved: true },
+      ],
+      meanResolvedLifetime: 0,
+      unresolvedCount: 0,
+    });
+  });
+
   test("records a version forgotten immediately as resolved with lifetime 0", () => {
     const history: CheckpointEvaluationRecord[] = [
       {

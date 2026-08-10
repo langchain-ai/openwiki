@@ -8,8 +8,11 @@ import { assertContainedByRealpath } from "./workspace.js";
 
 /**
  * Drives a source repository through an evolution trace inside one detached Git
- * worktree. The worktree is created under a caller-provided temp parent; the
- * class records its realpath and confines every destructive operation to it.
+ * worktree. Both a private local clone and the worktree are created under a
+ * caller-provided temp parent; the class records their realpaths and confines
+ * every destructive operation to them. The private clone ensures a running
+ * replay does not depend on mutable Git administration files in the benchmark
+ * fixture.
  *
  * The generated wiki lives as untracked files inside the worktree, so
  * `checkout` (which never touches untracked files) preserves it from one
@@ -18,7 +21,7 @@ import { assertContainedByRealpath } from "./workspace.js";
  */
 export class GitReplay {
   /**
-   * Absolute realpath of the source repository being replayed.
+   * Absolute realpath of the private source clone being replayed.
    */
   private readonly sourceRepoPath: string;
 
@@ -41,14 +44,14 @@ export class GitReplay {
   }
 
   /**
-   * Create a detached worktree at the initial commit.
+   * Create a private local clone and a detached worktree at the initial commit.
    *
    * @param sourceRepoPath - Absolute path to the source repository.
    * @param worktreeParent - Absolute path (inside a workspace) to create the
    *   worktree beneath.
    * @param initialCommit - Commit SHA the worktree starts at.
    *
-   * @returns A ready `GitReplay`.
+   * @returns A ready `GitReplay` independent of later source-path changes.
    *
    * @throws GitReplayError when the source is not a Git repository or the commit
    *   is missing.
@@ -70,13 +73,27 @@ export class GitReplay {
       );
     }
 
+    const privateSourcePath = path.join(worktreeParent, "source");
     const worktreePath = path.join(worktreeParent, "wt");
 
-    // Containment sanity check before creating anything: the worktree must land
-    // inside the workspace-owned parent.
+    // Containment sanity checks before creating anything: the private clone and
+    // worktree must both land inside the workspace-owned parent.
+    await assertContainedByRealpath(worktreeParent, privateSourcePath);
     await assertContainedByRealpath(worktreeParent, worktreePath);
 
-    await git(source, [
+    // A local clone has independent Git administration metadata. Its object
+    // hardlinks remain valid if the original fixture directory is later removed,
+    // while avoiding a redundant copy of immutable benchmark history.
+    await git(worktreeParent, [
+      "clone",
+      "--local",
+      "--no-checkout",
+      source,
+      privateSourcePath,
+    ]);
+    const privateSource = await realpath(privateSourcePath);
+
+    await git(privateSource, [
       "worktree",
       "add",
       "--detach",
@@ -86,7 +103,7 @@ export class GitReplay {
 
     const worktreeRoot = await realpath(worktreePath);
 
-    return new GitReplay(source, worktreeRoot);
+    return new GitReplay(privateSource, worktreeRoot);
   }
 
   /**
@@ -220,10 +237,10 @@ export class GitReplay {
   }
 
   /**
-   * Remove the worktree from the source repository's worktree list. The
-   * workspace owning the temp tree is responsible for deleting the files; this
-   * only unregisters the worktree so the source repo's metadata stays clean.
-   * Failures are swallowed so teardown never masks an earlier error.
+   * Remove the worktree from the private source clone's worktree list. The
+   * workspace owning both temporary trees is responsible for deleting their
+   * files; this only unregisters the worktree. Failures are swallowed so
+   * teardown never masks an earlier error.
    */
   async teardown(): Promise<void> {
     try {

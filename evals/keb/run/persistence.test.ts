@@ -34,6 +34,7 @@ function sampleResult(benchmarkName: string): KebRunResult {
     score: {
       traceCoverage: 1,
       tracePrecision: 1,
+      evaluationCompleteness: 1,
       quality: 1,
       maintenanceRates: {},
       kebScore: 1,
@@ -153,6 +154,7 @@ describe("writeRunResult", () => {
           reason: "wiki-navigation-section",
         },
       ],
+      units: [],
       candidates: [
         {
           candidateId: "candidate-000001",

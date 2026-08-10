@@ -158,6 +158,24 @@ describe("GitReplay", () => {
     await replay.teardown();
   });
 
+  test("continues after the original source repository is removed", async () => {
+    const replay = await GitReplay.create(
+      repo.repoPath,
+      workspace.worktreeParent,
+      repo.shas[0],
+    );
+    const laterCommit = repo.shas[1];
+
+    await repo.dispose();
+    await replay.checkout(laterCommit);
+
+    expect(
+      await readFile(path.join(replay.worktreeDir, "src.txt"), "utf8"),
+    ).toBe("two\n");
+
+    await replay.teardown();
+  });
+
   test("rejects an invalid commit SHA", async () => {
     await expect(
       GitReplay.create(repo.repoPath, workspace.worktreeParent, "not-a-sha"),

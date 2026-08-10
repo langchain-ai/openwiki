@@ -10,6 +10,7 @@ import type {
   CheckpointEvaluation,
   EvaluationBackend,
   EvaluationInput,
+  EvaluationWarning,
 } from "../core/types.js";
 import { runCoveragePass } from "./coverage.js";
 import { sectionArtifact } from "./documents.js";
@@ -101,12 +102,23 @@ export class ModelEvaluationBackend implements EvaluationBackend {
   async evaluate(input: EvaluationInput): Promise<CheckpointEvaluation> {
     const sections = sectionArtifact(input.artifact);
     const index = new SectionBm25Index(sections);
+    const warnings: EvaluationWarning[] = [];
+
+    /**
+     * Retain an item-level evaluator failure without aborting the checkpoint.
+     *
+     * @param warning - The repair failure to preserve for audit.
+     */
+    const onWarning = (warning: EvaluationWarning): void => {
+      warnings.push(warning);
+    };
     const factEvaluations = await runCoveragePass({
       model: this.model,
       checkpointId: input.artifact.checkpointId,
       activeFacts: input.activeFacts,
       index,
       timeoutMs: this.timeoutMs,
+      onWarning,
     });
     const forgettingEvaluations = await runForgettingPass({
       model: this.model,
@@ -114,16 +126,24 @@ export class ModelEvaluationBackend implements EvaluationBackend {
       obsoleteFacts: input.obsoleteFacts,
       index,
       timeoutMs: this.timeoutMs,
+      onWarning,
     });
     const precisionEvaluations = await runPrecisionPass({
       model: this.model,
       checkpointId: input.artifact.checkpointId,
       sections,
+      activeFacts: input.activeFacts,
       evidence: input.evidence,
       timeoutMs: this.timeoutMs,
       onInventory: this.onAssertionInventory,
+      onWarning,
     });
 
-    return { factEvaluations, forgettingEvaluations, precisionEvaluations };
+    return {
+      factEvaluations,
+      forgettingEvaluations,
+      precisionEvaluations,
+      warnings,
+    };
   }
 }

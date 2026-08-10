@@ -69,6 +69,15 @@ describe("createCliProgressReporter", () => {
       precisionScore: 0.75,
       forgottenCount: 1,
       obsoleteFactCount: 2,
+      evaluationCompleteness: 0.9,
+      indeterminateCount: 1,
+      evaluationItemCount: 10,
+      materialClaimCount: 9,
+      ledgerSupportedCount: 4,
+      sourceSupportedCount: 2,
+      unsupportedCount: 3,
+      contradictedCount: 1,
+      notEstablishedCount: 2,
     });
     report({
       type: "checkpoint-complete",
@@ -77,6 +86,15 @@ describe("createCliProgressReporter", () => {
       precisionScore: 1,
       forgottenCount: 0,
       obsoleteFactCount: 0,
+      evaluationCompleteness: 1,
+      indeterminateCount: 0,
+      evaluationItemCount: 10,
+      materialClaimCount: 10,
+      ledgerSupportedCount: 6,
+      sourceSupportedCount: 4,
+      unsupportedCount: 0,
+      contradictedCount: 0,
+      notEstablishedCount: 0,
     });
     report({
       type: "run-complete",
@@ -89,6 +107,13 @@ describe("createCliProgressReporter", () => {
       changedKnowledgeCorrection: 1,
       completeForgetting: 1,
       stableRetention: 0.85,
+      evaluationCompleteness: 0.95,
+      materialClaimCount: 19,
+      ledgerSupportedCount: 10,
+      sourceSupportedCount: 6,
+      unsupportedCount: 3,
+      contradictedCount: 1,
+      notEstablishedCount: 2,
     });
 
     expect(rendered).toContain("┌ 🧪 KEB · calc-evolution");
@@ -108,15 +133,28 @@ describe("createCliProgressReporter", () => {
     expect(rendered).toContain(
       "✅ T0 · coverage 100% · precision 100% · forgetting -",
     );
+    expect(rendered).toContain(
+      "↳ 9 material claims · 4 required · 2 valid extras · 3 unsupported (1 hallucinated · 2 not established)",
+    );
+    expect(rendered).toContain(
+      "⚠️ Evaluator 90% complete · 1/10 indeterminate",
+    );
     expect(rendered).toContain("├ 📊 Quality 70.0%");
     expect(rendered).toContain("│  ├ Coverage 80.0%");
     expect(rendered).toContain("│  └ Precision 62.5%");
+    expect(rendered).toContain("│     ├ Material claims 19");
+    expect(rendered).toContain("│     ├ Required claims 10");
+    expect(rendered).toContain("│     ├ Valid extras 6");
+    expect(rendered).toContain("│     └ Unsupported 3");
+    expect(rendered).toContain("│        ├ Hallucinated 1");
+    expect(rendered).toContain("│        └ Not established 2");
     expect(rendered).toContain("├ 🔄 Maintenance 90.0%");
     expect(rendered).toContain("│  ├ Discovery 75.0%");
     expect(rendered).toContain("│  ├ Correction 100.0%");
     expect(rendered).toContain("│  ├ Forgetting 100.0%");
     expect(rendered).toContain("│  └ Retention 85.0%");
-    expect(rendered).toMatch(/└ 🎉 KEB 80\.0% · \d+ms/u);
+    expect(rendered).toContain("├ ⚖️ Evaluator completeness 95.0%");
+    expect(rendered).toMatch(/└ ⚠️ KEB 80\.0% · \d+ms/u);
   });
 
   test("closes the frame with one bounded failure line", () => {
@@ -135,6 +173,45 @@ describe("createCliProgressReporter", () => {
     expect(rendered).toBe(
       "│\n└ ❌ Failed · Evaluator failed after timeout\n\n",
     );
+  });
+
+  test("labels evaluator-only replay without claiming OpenWiki ran", () => {
+    let rendered = "";
+    const report = createCliProgressReporter({
+      write: (text) => {
+        rendered += text;
+      },
+    });
+
+    report({
+      type: "run-start",
+      benchmarkName: "calc-evolution",
+      totalCheckpoints: 3,
+      provider: "anthropic",
+      evaluatorModelId: "evaluator-model",
+      evaluationOnly: true,
+    });
+    report({ type: "replay-ready", saved: true });
+    report({
+      type: "checkpoint-start",
+      checkpointId: "T0",
+      checkpointIndex: 0,
+      totalCheckpoints: 3,
+      commit: "abcdef0123456789",
+      command: "init",
+      evaluationOnly: true,
+    });
+    report({
+      type: "artifact-captured",
+      checkpointId: "T0",
+      documentCount: 4,
+      loaded: true,
+    });
+
+    expect(rendered).toContain("saved artifacts · evaluator evaluator-model");
+    expect(rendered).toContain("♻️ Saved artifacts and source evidence ready");
+    expect(rendered).toContain("📚 Loaded 4 documents");
+    expect(rendered).not.toContain("Running OpenWiki");
   });
 
   test("animates long-running activities in place on a TTY", () => {

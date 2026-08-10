@@ -125,7 +125,8 @@ class FakeEvaluator implements EvaluationBackend {
         {
           assertion: "b",
           location: "page.md",
-          verdict: "contradicted",
+          verdict: "unsupported",
+          unsupportedReason: "contradicted",
           evidenceIds: ["source::b"],
           rationale: "",
         },
@@ -312,14 +313,16 @@ describe("runBenchmark", () => {
     });
 
     // The lossy score counts are explainable because the underlying verdicts are
-    // carried through unchanged: T1's contradicted assertion is exactly the
+    // carried through unchanged: T1's unsupported assertion is exactly the
     // one the evaluator returned, and f2@T0's forgetting verdict is preserved.
     const t1 = result.checkpoints[1].evaluations;
 
     expect(t1).toBeDefined();
     expect(t1?.precisionEvaluations).toHaveLength(2);
     expect(
-      t1?.precisionEvaluations.filter((a) => a.verdict === "contradicted"),
+      t1?.precisionEvaluations.filter(
+        (a) => a.unsupportedReason === "contradicted",
+      ),
     ).toHaveLength(1);
     expect(t1?.forgettingEvaluations).toEqual([
       {

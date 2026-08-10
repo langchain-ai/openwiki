@@ -41,7 +41,14 @@ describe("schemas", () => {
 
   test("precision and forgetting schemas accept well-formed output", () => {
     const extraction = assertionExtractionOutputSchema.parse({
-      sections: [{ sectionId: "a::0000", assertions: ["A fact."] }],
+      units: [
+        {
+          unitId: "a::0000::unit-0000",
+          classification: "factual",
+          assertions: ["A fact."],
+          rationale: "The unit states a checkable fact.",
+        },
+      ],
     });
     const precision = precisionJudgmentOutputSchema.parse({
       evaluations: [
@@ -53,13 +60,13 @@ describe("schemas", () => {
         },
         {
           assertionId: "assertion-000002",
-          verdict: "unverifiable",
+          verdict: "not-supported",
           rationale: "The source is silent.",
         },
       ],
     });
 
-    expect(extraction.sections[0].assertions).toEqual(["A fact."]);
+    expect(extraction.units[0].assertions).toEqual(["A fact."]);
     // Named evidence ids survive; an omitted list defaults to empty.
     expect(precision.evaluations[0].evidenceIds).toEqual(["source::0000"]);
     expect(precision.evaluations[1].evidenceIds).toEqual([]);

@@ -4,7 +4,10 @@ import path from "node:path";
 import { describe, expect, test } from "vitest";
 
 import { createTinyRepo } from "../testing/tiny-repo.js";
-import { collectGitEvidence } from "./git-evidence.js";
+import {
+  collectGitEvidence,
+  GIT_TRACKED_FILES_EVIDENCE_ID,
+} from "./git-evidence.js";
 
 describe("collectGitEvidence", () => {
   test("collects stable tracked text while excluding untracked artifacts", async () => {
@@ -33,6 +36,16 @@ describe("collectGitEvidence", () => {
         }),
       ]),
     );
+    expect(corpus.records[0]).toEqual({
+      evidenceId: GIT_TRACKED_FILES_EVIDENCE_ID,
+      sourceRef: "git tracked-file inventory",
+      observedAtCheckpoint: "T0",
+      current: true,
+      content:
+        "Complete tracked-file inventory at checkpoint T0.\n" +
+        "This list was produced by git ls-files; no other tracked paths exist:\n" +
+        "- src/value.ts",
+    });
 
     await repo.dispose();
   });

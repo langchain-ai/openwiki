@@ -17,7 +17,11 @@ const MAX_ATTEMPTS = 2;
  * Names the bounded semantic operation being performed by a model request.
  */
 export type DirectEvaluationPass =
-  "coverage" | "forgetting" | "precision-extraction" | "precision-judgment";
+  | "coverage"
+  | "forgetting"
+  | "precision-extraction"
+  | "precision-ledger"
+  | "precision-judgment";
 
 /**
  * Inputs for one bounded structured evaluator request.

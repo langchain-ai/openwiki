@@ -1,7 +1,6 @@
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { describe, expect, test } from "vitest";
 
-import { EvaluationError } from "../core/errors.js";
 import type { ActiveTruthFact, ObsoleteFactTarget } from "../core/types.js";
 import { runCoveragePass } from "./coverage.js";
 import type { ArtifactSection } from "./documents.js";
@@ -319,7 +318,7 @@ describe("runCoveragePass", () => {
     expect(control.taskPrompts).toHaveLength(2);
   });
 
-  test("retries then rejects citations not supplied for that fact", async () => {
+  test("isolates then marks an irreparable coverage citation indeterminate", async () => {
     const invalid = {
       evaluations: [
         {
@@ -330,17 +329,60 @@ describe("runCoveragePass", () => {
         },
       ],
     };
-    const control = controller([invalid, invalid]);
+    const control = controller([invalid, invalid, invalid]);
+    const warnings: string[] = [];
 
-    await expect(
-      runCoveragePass({
-        model: fakeModel(control),
-        checkpointId: "T3",
-        activeFacts: [activeFact("f", "fact")],
-        index: new SectionBm25Index([section("seen", "fact")]),
-      }),
-    ).rejects.toBeInstanceOf(EvaluationError);
-    expect(control.taskPrompts).toHaveLength(2);
+    const [evaluation] = await runCoveragePass({
+      model: fakeModel(control),
+      checkpointId: "T3",
+      activeFacts: [activeFact("f", "fact")],
+      index: new SectionBm25Index([section("seen", "fact")]),
+      onWarning: (warning) => warnings.push(warning.itemId),
+    });
+
+    expect(evaluation.verdict).toBe("indeterminate");
+    expect(warnings).toEqual(["f"]);
+    expect(control.taskPrompts).toHaveLength(3);
+  });
+
+  test("preserves valid coverage neighbors when one item is indeterminate", async () => {
+    const invalidItem = {
+      evaluations: [
+        {
+          factId: "broken",
+          verdict: "correct",
+          evidence: ["unseen"],
+          rationale: "invented citation",
+        },
+      ],
+    };
+    const control = controller([
+      {
+        evaluations: [
+          {
+            factId: "valid",
+            verdict: "correct",
+            evidence: ["seen"],
+            rationale: "visible evidence",
+          },
+          ...invalidItem.evaluations,
+        ],
+      },
+      invalidItem,
+      invalidItem,
+    ]);
+
+    const evaluations = await runCoveragePass({
+      model: fakeModel(control),
+      checkpointId: "T3",
+      activeFacts: [activeFact("valid", "fact"), activeFact("broken", "fact")],
+      index: new SectionBm25Index([section("seen", "fact")]),
+    });
+
+    expect(evaluations.map((evaluation) => evaluation.verdict)).toEqual([
+      "correct",
+      "indeterminate",
+    ]);
   });
 
   test("accepts evidence supplied for another fact in the same bounded request", async () => {
@@ -547,7 +589,7 @@ describe("runForgettingPass", () => {
     expect(new Set(requestedIds).size).toBe(10);
   });
 
-  test("retries then rejects citations not supplied for that obsolete version", async () => {
+  test("isolates then marks an irreparable forgetting citation indeterminate", async () => {
     const invalid = {
       evaluations: [
         {
@@ -558,17 +600,63 @@ describe("runForgettingPass", () => {
         },
       ],
     };
-    const control = controller([invalid, invalid]);
+    const control = controller([invalid, invalid, invalid]);
+    const warnings: string[] = [];
 
-    await expect(
-      runForgettingPass({
-        model: fakeModel(control),
-        checkpointId: "T2",
-        obsoleteFacts: [obsoleteFact("old", "old truth")],
-        index: new SectionBm25Index([section("seen", "old truth")]),
-      }),
-    ).rejects.toBeInstanceOf(EvaluationError);
-    expect(control.taskPrompts).toHaveLength(2);
+    const [evaluation] = await runForgettingPass({
+      model: fakeModel(control),
+      checkpointId: "T2",
+      obsoleteFacts: [obsoleteFact("old", "old truth")],
+      index: new SectionBm25Index([section("seen", "old truth")]),
+      onWarning: (warning) => warnings.push(warning.itemId),
+    });
+
+    expect(evaluation.verdict).toBe("indeterminate");
+    expect(warnings).toEqual(["old@T0"]);
+    expect(control.taskPrompts).toHaveLength(3);
+  });
+
+  test("preserves valid forgetting neighbors when one item is indeterminate", async () => {
+    const invalidItem = {
+      evaluations: [
+        {
+          factVersionId: "broken@T0",
+          verdict: "lingering",
+          evidence: ["unseen"],
+          rationale: "invented citation",
+        },
+      ],
+    };
+    const control = controller([
+      {
+        evaluations: [
+          {
+            factVersionId: "valid@T0",
+            verdict: "forgotten",
+            evidence: [],
+            rationale: "absent",
+          },
+          ...invalidItem.evaluations,
+        ],
+      },
+      invalidItem,
+      invalidItem,
+    ]);
+
+    const evaluations = await runForgettingPass({
+      model: fakeModel(control),
+      checkpointId: "T2",
+      obsoleteFacts: [
+        obsoleteFact("valid", "old truth"),
+        obsoleteFact("broken", "old truth"),
+      ],
+      index: new SectionBm25Index([section("seen", "old truth")]),
+    });
+
+    expect(evaluations.map((evaluation) => evaluation.verdict)).toEqual([
+      "forgotten",
+      "indeterminate",
+    ]);
   });
 
   test("accepts evidence supplied for another version in the same bounded request", async () => {

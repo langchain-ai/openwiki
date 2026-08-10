@@ -59,7 +59,7 @@ const {
   COVERAGE_SYSTEM,
   FORGETTING_SYSTEM,
   PRECISION_EXTRACTION_SYSTEM,
-  PRECISION_JUDGMENT_SYSTEM,
+  PRECISION_LEDGER_SYSTEM,
 } = await import("./prompts.js");
 
 beforeEach(() => {
@@ -97,10 +97,18 @@ describe("ModelEvaluationBackend", () => {
         ],
       },
       {
-        sections: [
+        units: [
           {
-            sectionId: "guide.md::0000",
+            unitId: "guide.md::0000::unit-0000",
+            classification: "no-claim",
+            assertions: [],
+            rationale: "A heading alone makes no factual claim.",
+          },
+          {
+            unitId: "guide.md::0000::unit-0001",
+            classification: "factual",
             assertions: ["Current behavior is enabled."],
+            rationale: "The unit states current behavior.",
           },
         ],
       },
@@ -109,8 +117,8 @@ describe("ModelEvaluationBackend", () => {
           {
             assertionId: "assertion-000001",
             verdict: "supported",
-            evidenceIds: ["src/current.ts::0000"],
-            rationale: "The source supports the assertion.",
+            factVersionIds: ["current@T1"],
+            rationale: "The active requirement supports the assertion.",
           },
         ],
       },
@@ -171,7 +179,7 @@ describe("ModelEvaluationBackend", () => {
       COVERAGE_SYSTEM,
       FORGETTING_SYSTEM,
       PRECISION_EXTRACTION_SYSTEM,
-      PRECISION_JUDGMENT_SYSTEM,
+      PRECISION_LEDGER_SYSTEM,
     ]);
     expect(control.maxActive).toBe(1);
     expect(inventories).toEqual([
@@ -201,10 +209,12 @@ describe("ModelEvaluationBackend", () => {
           assertion: "Current behavior is enabled.",
           location: "guide.md",
           verdict: "supported",
-          evidenceIds: ["src/current.ts::0000"],
-          rationale: "The source supports the assertion.",
+          evidenceIds: ["current@T1"],
+          rationale: "The active requirement supports the assertion.",
+          verificationSource: "ledger",
         },
       ],
+      warnings: [],
     });
   });
 });

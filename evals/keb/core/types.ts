@@ -421,8 +421,10 @@ export interface EvidenceCorpus {
  * - `partial`: the wiki gestures at the fact but is incomplete or imprecise.
  * - `missing`: the wiki does not state the fact.
  * - `contradicted`: the wiki states something that conflicts with the fact.
+ * - `indeterminate`: evaluator output remained invalid after isolated repair.
  */
-export type FactVerdict = "correct" | "partial" | "missing" | "contradicted";
+export type FactVerdict =
+  "correct" | "partial" | "missing" | "contradicted" | "indeterminate";
 
 /**
  * The coverage pass's judgment about one active fact.
@@ -481,8 +483,9 @@ export interface ObsoleteFact {
  *
  * - `forgotten`: the wiki no longer asserts the obsolete statement (good).
  * - `lingering`: the wiki still asserts it (a forgetting failure).
+ * - `indeterminate`: evaluator output remained invalid after isolated repair.
  */
-export type ForgettingVerdict = "forgotten" | "lingering";
+export type ForgettingVerdict = "forgotten" | "lingering" | "indeterminate";
 
 /**
  * A judgment about one fact that should have been forgotten (its prior version
@@ -520,14 +523,43 @@ export interface ForgettingEvaluation {
 }
 
 /**
- * Precision verdict for one material assertion the artifact makes, judged
- * against current source evidence.
+ * Precision verdict for one material assertion the artifact makes, judged first
+ * against active requirements and then, when unaccounted, against source
+ * evidence.
  *
- * - `supported`: supplied source evidence establishes the complete assertion.
- * - `contradicted`: supplied source evidence establishes incompatible truth.
- * - `unverifiable`: supplied evidence establishes neither result.
+ * - `supported`: a truth layer establishes the complete assertion.
+ * - `unsupported`: the complete assertion is contradicted or not established.
+ * - `indeterminate`: evaluator output remained invalid after isolated repair.
  */
-export type PrecisionVerdict = "supported" | "contradicted" | "unverifiable";
+export type PrecisionVerdict = "supported" | "unsupported" | "indeterminate";
+
+/**
+ * Why a valid precision judgment rejected an artifact assertion.
+ *
+ * - `contradicted`: available truth establishes an incompatible fact.
+ * - `not-established`: available truth does not establish the complete claim.
+ */
+export type PrecisionUnsupportedReason = "contradicted" | "not-established";
+
+/**
+ * One fail-soft evaluator warning retained with a checkpoint result.
+ */
+export interface EvaluationWarning {
+  /**
+   * Semantic pass that could not repair one item.
+   */
+  pass: "coverage" | "forgetting" | "precision-ledger" | "precision-judgment";
+
+  /**
+   * Fact, fact-version, or assertion identity affected by the failure.
+   */
+  itemId: string;
+
+  /**
+   * Bounded repair-failure diagnostic safe to persist and display.
+   */
+  message: string;
+}
 
 /**
  * The precision pass's judgment about one material assertion in the artifact.
@@ -550,8 +582,23 @@ export interface PrecisionAssertionEvaluation {
   verdict: PrecisionVerdict;
 
   /**
-   * Evidence identities establishing support or contradiction. Unverifiable
-   * assertions have no cited evidence.
+   * Diagnostic subtype for an unsupported assertion.
+   *
+   * @default undefined for supported or indeterminate judgments
+   */
+  unsupportedReason?: PrecisionUnsupportedReason;
+
+  /**
+   * Truth layer that judged a supported or unsupported verdict. Absent for
+   * indeterminate judgments and optional on synthetic test data.
+   *
+   * @default undefined when no truth layer established the assertion
+   */
+  verificationSource?: "ledger" | "source";
+
+  /**
+   * Requirement-version or source-evidence identities establishing support or
+   * direct contradiction. Not-established assertions have no cited evidence.
    */
   evidenceIds: string[];
 
@@ -582,6 +629,13 @@ export interface CheckpointEvaluation {
    * Precision verdicts, one per unique material assertion the wiki makes.
    */
   precisionEvaluations: PrecisionAssertionEvaluation[];
+
+  /**
+   * Items that remained invalid after isolated repair.
+   *
+   * @default an empty array for evaluation backends without fail-soft repair
+   */
+  warnings?: EvaluationWarning[];
 }
 
 /**
@@ -628,11 +682,11 @@ export interface CheckpointEvaluationRecord {
 // ---------------------------------------------------------------------------
 
 /**
- * Coverage at one checkpoint: the fraction of active material topics the
- * artifact states correctly. Coverage is strict — only `correct` verdicts earn
- * headline credit.
- * The `partial`, `missing`, and `contradicted` counts are diagnostic and never
- * feed the score.
+ * Coverage at one checkpoint: the fraction of validly judged active material
+ * topics the artifact states correctly. Coverage is strict — only `correct`
+ * verdicts earn headline credit. The `partial`, `missing`, and `contradicted`
+ * counts are diagnostic and never feed the score. Indeterminate judgments are
+ * excluded and represented by Evaluator Completeness.
  */
 export interface CoverageMetric {
   /**
@@ -657,23 +711,26 @@ export interface CoverageMetric {
   contradicted: number;
 
   /**
+   * Count of requirements the evaluator could not judge after isolated repair.
+   */
+  indeterminate: number;
+
+  /**
    * Total active material topics evaluated.
    */
   total: number;
 
   /**
-   * `correct / total`. The empty-active-set case (`total === 0`) cannot arise for
-   * a validated benchmark: `validateBenchmark` requires every checkpoint to have
-   * at least one active coverage fact, so an empty active set is invalid data,
-   * not a legitimate score. `computeCoverage` still guards it defensively rather
-   * than dividing by zero, but the guarded value is never actually scored.
+   * `correct / (total - indeterminate)`, or 0 when the evaluator produced no
+   * valid coverage judgment. The latter is always paired with zero Evaluator
+   * Completeness for this pass and must not be read as a reliable system score.
    */
   score: number;
 }
 
 /**
- * Precision at one checkpoint: the supported fraction of source-decidable
- * material artifact assertions, with uncertainty reported separately.
+ * Precision at one checkpoint: the supported fraction of all validly judged
+ * material artifact assertions.
  */
 export interface PrecisionMetric {
   /**
@@ -682,19 +739,39 @@ export interface PrecisionMetric {
   supported: number;
 
   /**
-   * Count of `contradicted` assertions.
+   * Supported assertions accounted for directly by required benchmark knowledge.
+   */
+  ledgerSupported: number;
+
+  /**
+   * Supported assertions outside the required ledger, verified from source.
+   */
+  sourceSupported: number;
+
+  /**
+   * Count of assertions rejected by either truth layer.
+   */
+  unsupported: number;
+
+  /**
+   * Unsupported assertions for which truth establishes an incompatible fact.
    */
   contradicted: number;
 
   /**
-   * Count of assertions current evidence could not verify or contradict.
+   * Unsupported assertions whose complete claim is not established.
    */
-  unverifiable: number;
+  notEstablished: number;
 
   /**
-   * Count of assertions with a decidable supported or contradicted verdict.
+   * Count of assertions the evaluator could not judge after isolated repair.
    */
-  decidable: number;
+  indeterminate: number;
+
+  /**
+   * Count of validly judged assertions used as the precision denominator.
+   */
+  judged: number;
 
   /**
    * Total material assertions evaluated.
@@ -702,17 +779,42 @@ export interface PrecisionMetric {
   total: number;
 
   /**
-   * `contradicted / total`, or 0 when no material claims were extracted.
+   * `unsupported / judged`, or 0 when no material claim was validly judged.
    */
-  hallucinationRate: number;
+  unsupportedRate: number;
 
   /**
-   * `unverifiable / total`, or 0 when no material claims were extracted.
+   * `sourceSupported / judged`, describing valid knowledge beyond requirements.
    */
-  unverifiableRate: number;
+  extraKnowledgeRate: number;
 
   /**
-   * `supported / decidable`, or 0 when no material assertion is decidable.
+   * `supported / judged`, or 0 when no material assertion was validly judged.
+   */
+  score: number;
+}
+
+/**
+ * Fraction of semantic evaluation items that produced valid judgments.
+ */
+export interface EvaluationCompletenessMetric {
+  /**
+   * Validly judged items across coverage, precision, and forgetting.
+   */
+  judged: number;
+
+  /**
+   * Items still invalid after isolated repair.
+   */
+  indeterminate: number;
+
+  /**
+   * Total semantic evaluation items attempted.
+   */
+  total: number;
+
+  /**
+   * `judged / total`, or 1 when no semantic items existed.
    */
   score: number;
 }
@@ -736,7 +838,8 @@ export interface RateCount {
 /**
  * Raw maintenance counts for one checkpoint boundary. These are unreduced tallies
  * summed across the trace before any rate is computed; there is no per-checkpoint
- * maintenance score.
+ * maintenance score. Transitions affected by indeterminate current judgments are
+ * excluded and represented by Evaluator Completeness.
  */
 export interface MaintenanceCounts {
   /**
@@ -770,7 +873,7 @@ export interface MaintenanceCounts {
  * explainable. The scores above are lossy reductions of these lists to counts;
  * these are the lists themselves, exactly as the evaluator returned them, so a
  * reader can see which requirements were missed, which assertions source
- * evidence supported, contradicted, or could not verify, and which obsolete
+ * evidence supported or rejected, and which obsolete
  * versions the artifact dropped.
  */
 export interface CheckpointEvaluationDetail {
@@ -790,6 +893,13 @@ export interface CheckpointEvaluationDetail {
    * no changed or removed facts shows nothing about forgetting.
    */
   forgettingEvaluations: ForgettingEvaluation[];
+
+  /**
+   * Fail-soft item repair failures retained for audit.
+   *
+   * @default an empty array for older or synthetic results
+   */
+  warnings?: EvaluationWarning[];
 }
 
 /**
@@ -812,6 +922,11 @@ export interface CheckpointScore {
    * Precision at this checkpoint.
    */
   precision: PrecisionMetric;
+
+  /**
+   * Evaluator reliability for this checkpoint, separate from system quality.
+   */
+  evaluationCompleteness: EvaluationCompletenessMetric;
 
   /**
    * Raw maintenance counts for the boundary into this checkpoint. Absent at the
@@ -886,6 +1001,12 @@ export interface KebScore {
    * Macro-average of per-checkpoint `precision.score` across the trace, 0 to 1.
    */
   tracePrecision: number;
+
+  /**
+   * Micro-average of valid evaluator judgments across every checkpoint. This is
+   * evaluator reliability metadata and does not feed Quality or the KEB Score.
+   */
+  evaluationCompleteness: number;
 
   /**
    * Harmonic mean of `traceCoverage` and `tracePrecision`, or 0 when either is 0.
@@ -1111,6 +1232,14 @@ export interface KebRunMetadata {
    * Model the evaluator used.
    */
   evaluatorModelId?: string;
+
+  /**
+   * Absolute path of the completed run whose immutable artifacts and source
+   * evidence were reused for evaluator-only replay.
+   *
+   * @default absent for a normal end-to-end benchmark run
+   */
+  reevaluatedFrom?: string;
 }
 
 /**

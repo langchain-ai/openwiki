@@ -1,7 +1,11 @@
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 
 import { EvaluationError } from "../core/errors.js";
-import type { ActiveTruthFact, FactEvaluation } from "../core/types.js";
+import type {
+  ActiveTruthFact,
+  EvaluationWarning,
+  FactEvaluation,
+} from "../core/types.js";
 import { invokeStructuredModel } from "./direct-model.js";
 import type { ArtifactSection } from "./documents.js";
 import {
@@ -60,6 +64,11 @@ export interface CoveragePassInput {
    * Per-attempt evaluator request deadline in milliseconds.
    */
   timeoutMs?: number;
+
+  /**
+   * Optional sink for items that remain invalid after isolated repair.
+   */
+  onWarning?: (warning: EvaluationWarning) => void;
 }
 
 /**
@@ -234,6 +243,67 @@ function validateCoverageOutput(
 }
 
 /**
+ * Resolve and validate one coverage target from a possibly imperfect batch
+ * response. Other targets' malformed or extra entries cannot invalidate this
+ * item.
+ *
+ * @param target - Requirement being resolved.
+ * @param output - Schema-valid batch response.
+ * @param allowedSectionIds - Evidence identities visible anywhere in the batch.
+ *
+ * @returns One validated code-owned coverage evaluation.
+ *
+ * @throws EvaluationError when this target is missing, duplicated, invalid
+ * by evidence, or cites unavailable evidence.
+ */
+function resolveCoverageItem(
+  target: CoverageTarget,
+  output: CoverageOutput,
+  allowedSectionIds: Set<string>,
+): FactEvaluation {
+  const matches = output.evaluations.filter(
+    (evaluation) => evaluation.factId === target.fact.factId,
+  );
+
+  if (matches.length !== 1) {
+    throw new EvaluationError(
+      `Coverage evaluator returned ${matches.length} verdicts for factId "${target.fact.factId}".`,
+    );
+  }
+
+  const [evaluation] = matches;
+  const uniqueEvidence = new Set(evaluation.evidence);
+
+  if (uniqueEvidence.size !== evaluation.evidence.length) {
+    throw new EvaluationError(
+      `Coverage evaluator returned duplicate evidence for factId "${target.fact.factId}".`,
+    );
+  }
+
+  for (const sectionId of evaluation.evidence) {
+    if (!allowedSectionIds.has(sectionId)) {
+      throw new EvaluationError(
+        `Coverage evaluator cited unavailable sectionId "${sectionId}" for factId "${target.fact.factId}".`,
+      );
+    }
+  }
+
+  if (evaluation.verdict !== "missing" && evaluation.evidence.length === 0) {
+    throw new EvaluationError(
+      `Coverage evaluator returned no evidence for ${evaluation.verdict} factId "${target.fact.factId}".`,
+    );
+  }
+
+  return {
+    factId: target.fact.factId,
+    factVersionId: target.fact.factVersionId,
+    verdict: evaluation.verdict,
+    evidence: evaluation.evidence,
+    rationale: evaluation.rationale,
+  };
+}
+
+/**
  * Run one bounded coverage request and resolve it to code-owned fact metadata.
  *
  * @param model - Evaluator model.
@@ -264,6 +334,75 @@ async function evaluateCoverageBatch(
     targets.map((target) => target.fact),
     output,
   );
+}
+
+/**
+ * Evaluate a coverage batch without letting one malformed item discard valid
+ * neighboring judgments. Invalid items receive one isolated structured request;
+ * an item that still fails becomes explicitly indeterminate.
+ *
+ * @param input - Coverage pass configuration and warning sink.
+ * @param targets - Requirements and excerpts included in the initial batch.
+ *
+ * @returns One valid or indeterminate evaluation per target.
+ */
+async function evaluateCoverageBatchResilient(
+  input: CoveragePassInput,
+  targets: CoverageTarget[],
+): Promise<FactEvaluation[]> {
+  const output = await invokeStructuredModel({
+    model: input.model,
+    pass: "coverage",
+    checkpointId: input.checkpointId,
+    systemPrompt: COVERAGE_SYSTEM,
+    taskPrompt: coveragePrompt(toPromptTargets(targets)),
+    schema: coverageOutputSchema,
+    timeoutMs: input.timeoutMs,
+  });
+  const allowedSectionIds = new Set(
+    targets.flatMap((target) => target.sections.map((section) => section.id)),
+  );
+  const evaluations: FactEvaluation[] = [];
+
+  for (const target of targets) {
+    try {
+      evaluations.push(resolveCoverageItem(target, output, allowedSectionIds));
+    } catch (initialError) {
+      try {
+        const [repaired] = await evaluateCoverageBatch(
+          input.model,
+          input.checkpointId,
+          [target],
+          input.timeoutMs,
+        );
+        evaluations.push(repaired);
+      } catch (repairError) {
+        const initialMessage =
+          initialError instanceof Error
+            ? initialError.message
+            : String(initialError);
+        const repairMessage =
+          repairError instanceof Error
+            ? repairError.message
+            : String(repairError);
+        const message = `${initialMessage} Isolated repair failed: ${repairMessage}`;
+        input.onWarning?.({
+          pass: "coverage",
+          itemId: target.fact.factId,
+          message,
+        });
+        evaluations.push({
+          factId: target.fact.factId,
+          factVersionId: target.fact.factVersionId,
+          verdict: "indeterminate",
+          evidence: [],
+          rationale: `Evaluator could not repair this coverage judgment: ${message}`,
+        });
+      }
+    }
+  }
+
+  return evaluations;
 }
 
 /**
@@ -307,12 +446,7 @@ export async function runCoveragePass(
   const resultByFact = new Map<string, FactEvaluation>();
 
   for (const targets of batch(initialTargets, batchSize)) {
-    const evaluations = await evaluateCoverageBatch(
-      input.model,
-      input.checkpointId,
-      targets,
-      input.timeoutMs,
-    );
+    const evaluations = await evaluateCoverageBatchResilient(input, targets);
 
     for (const evaluation of evaluations) {
       resultByFact.set(evaluation.factId, evaluation);
@@ -332,12 +466,9 @@ export async function runCoveragePass(
     );
 
     for (const sections of batch(remaining, FALLBACK_SECTION_BATCH_SIZE)) {
-      const [evaluation] = await evaluateCoverageBatch(
-        input.model,
-        input.checkpointId,
-        [{ fact: target.fact, sections }],
-        input.timeoutMs,
-      );
+      const [evaluation] = await evaluateCoverageBatchResilient(input, [
+        { fact: target.fact, sections },
+      ]);
 
       resultByFact.set(target.fact.factId, evaluation);
 

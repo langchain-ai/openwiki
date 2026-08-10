@@ -5,8 +5,9 @@ complete, accurate, and current as their underlying truth changes.**
 
 A knowledge artifact might be a repository wiki, a personal brain, an internal
 knowledge base, generated documentation, or another maintained representation of
-changing source material. KEB does not require Git, source code, Markdown, or
-even a model-driven system.
+changing source material. KEB's evaluation model is source- and artifact-agnostic;
+the executable V1 runner currently implements Git checkpoints, OpenWiki, and
+Markdown artifacts.
 
 Most evaluations inspect one artifact once. KEB supports both point-in-time and
 longitudinal evaluation:
@@ -23,11 +24,11 @@ truth @ T2 → update K2 → evaluate change handling
 
 KEB asks three core questions:
 
-| Question                                               | Metric         | Plain-English meaning                                        |
-| ------------------------------------------------------ | -------------- | ------------------------------------------------------------ |
-| 📚 Did the artifact represent what is true?            | **Coverage**   | Expected facts appear correctly in the artifact.             |
-| 🎯 Is what the artifact says supported?                | **Precision**  | Concrete claims are checked against current source evidence. |
-| 🧹 Did the artifact stop presenting what became false? | **Forgetting** | Obsolete facts are no longer presented as current.           |
+| Question                                               | Metric         | Plain-English meaning                                               |
+| ------------------------------------------------------ | -------------- | ------------------------------------------------------------------- |
+| 📚 Did the artifact represent what matters?            | **Coverage**   | Required knowledge appears correctly in the artifact.               |
+| 🎯 Is what the artifact says supported?                | **Precision**  | Claims are checked against requirements, then source evidence.      |
+| 🧹 Did the artifact stop presenting what became false? | **Forgetting** | Obsolete requirements are no longer presented as current knowledge. |
 
 Those checkpoint judgments also produce longitudinal maintenance metrics for
 discovering new knowledge, correcting changed knowledge, forgetting stale
@@ -35,27 +36,36 @@ knowledge, and retaining unchanged knowledge.
 
 ## 🧱 What is a benchmark?
 
-A benchmark is the complete frozen test case:
+A benchmark is the frozen source evolution and its human-authored expectations:
 
 ```text
 Benchmark
 ├── ordered source-truth states or events
 ├── checkpoint boundaries
-├── system adapter that creates or updates the artifact
 └── Truth Package
     ├── material knowledge requirements
     ├── temporal validity and supersession
-    └── source-evidence adapter
+    └── optional human-audit evidence references
+
+Evaluation run
+├── benchmark
+├── system under test
+├── source-evidence adapter
+└── evaluator
 ```
 
-The **Truth Package is the ground-truth part of the benchmark**. Human-authored
-knowledge requirements define what a useful artifact should cover. A source
-adapter independently normalizes the frozen source at each checkpoint into an
-evidence corpus that can verify additional details the artifact chooses to state.
-No system under test creates or modifies either input during a run.
+In the current manifest schema, the **Truth Package** is the human-authored
+ground-truth specification: material knowledge requirements and their validity
+ranges. During a run, the separately supplied source-evidence adapter normalizes
+the frozen source at each checkpoint into an evidence corpus. Requirements define
+what a useful artifact must cover; source evidence verifies additional details
+the artifact chooses to state.
 
-The benchmark is broader than the Truth Package because it also defines the evolving
-source truth, checkpoint sequence, and system-under-test adapter.
+The benchmark is broader than the Truth Package because it also defines the
+evolving source truth and checkpoint sequence. The system under test, source
+adapter, and evaluator are run inputs, which allows the same benchmark to compare
+different systems without changing its truth definition. The system under test
+never creates or modifies the requirements or source evidence.
 
 Possible source evolutions include:
 
@@ -106,6 +116,12 @@ An individual knowledge requirement keeps the same ID while its truth changes:
 At T1, KEB selects the first version. At T2, it selects the second version and
 treats the first as obsolete knowledge that the artifact must forget.
 
+`evidenceRefs` are optional, human-auditable pointers documenting where a
+requirement came from. In V1 they do not affect retrieval or scoring. The Git
+source adapter captures all tracked text files except generated `openwiki/`
+content, binary files, and non-file entries; it does not restrict evidence to
+these references.
+
 ## 🗺️ End-to-end architecture
 
 ```mermaid
@@ -120,7 +136,10 @@ flowchart TD
     L --> CV[Coverage]
     CV --> FG[Forgetting]
     FG --> EX[Extract artifact assertions]
-    EX --> PR[Precision]
+    EX --> TL[Account against active requirements]
+    TL -->|Required or contradicted| PR[Finalize verdict]
+    TL -->|Unaccounted| SE[Verify against source evidence]
+    SE --> PR
     PR --> SC[Score checkpoint]
     SC --> N{More checkpoints?}
     N -->|Yes| C
@@ -131,18 +150,27 @@ flowchart TD
     EV[(Evaluator)] -. judgments .-> CV
     EV -. judgments .-> FG
     EV -. judgments .-> EX
-    EV -. judgments .-> PR
+    EV -. judgments .-> TL
+    EV -. judgments .-> SE
 ```
 
 At each checkpoint, KEB measures point-in-time quality. Across checkpoint
 transitions, it measures whether the artifact adapted correctly:
 
 ```text
-                         POINT-IN-TIME
-source truth @ Tn ──▶ requirements @ Tn ◀──compare──▶ artifact @ Tn
-                                                coverage + precision
+                              POINT-IN-TIME
+requirements @ Tn ─────────compare─────────▶ artifact @ Tn
+                         coverage
 
-                         LONGITUDINAL
+artifact assertions @ Tn ──▶ active requirements
+                                 │
+                                 ├── accounted → final verdict
+                                 └── unaccounted
+                                         │
+                                         ▼
+source truth @ Tn ─────────────▶ evidence corpus → source verification
+
+                              LONGITUDINAL
 requirements Tn ──changed──▶ requirements Tn+1
                               ▲
                               │ compare evolution
@@ -163,24 +191,26 @@ repository @ T2 + wiki K1 ──update──▶ wiki K2
 ```
 
 T2 therefore evaluates how well OpenWiki maintained the artifact it created at
-T0 and updated at T1—not a fresh generation with no memory. Another adapter
-could replay note edits, messages, policy revisions, database snapshots, or
-timestamped events instead of Git commits.
+T0 and updated at T1—not a fresh generation with no memory. KEB's contracts are
+designed to support note edits, messages, policy revisions, database snapshots,
+or timestamped events, but V1 would need additional replay and artifact adapters
+to run those domains end to end.
 
 ### One checkpoint, step by step
 
-| Step | Generic KEB operation                                       | Current Git/OpenWiki adapter                            |
-| ---- | ----------------------------------------------------------- | ------------------------------------------------------- |
-| 1    | Load checkpoint definitions and knowledge requirements.     | Load commits and `benchmark.json`.                      |
-| 2    | Materialize the checkpoint's source truth.                  | Check out a commit in an isolated worktree.             |
-| 3    | Ask the system under test to create or update its artifact. | Run OpenWiki `init` or `update` using the system model. |
-| 4    | Freeze and persist the artifact before evaluation.          | Capture every generated wiki document.                  |
-| 5    | Project requirements and collect current source evidence.   | Requirement projection plus tracked-file evidence.      |
-| 6    | Evaluate coverage of every active material topic.           | BM25 retrieval plus evaluator-model judgment.           |
-| 7    | Evaluate whether obsolete fact versions were forgotten.     | BM25 retrieval plus evaluator-model judgment.           |
-| 8    | Extract concrete assertions from the artifact.              | Section filtering plus evaluator-model extraction.      |
-| 9    | Evaluate each retained assertion against source evidence.   | BM25 retrieval plus evaluator-model judgment.           |
-| 10   | Score the checkpoint and, finally, the complete trace.      | Deterministic calculation and persistence.              |
+| Step | Generic KEB operation                                       | Current Git/OpenWiki adapter                               |
+| ---- | ----------------------------------------------------------- | ---------------------------------------------------------- |
+| 1    | Load checkpoint definitions and knowledge requirements.     | Load commits and `benchmark.json`.                         |
+| 2    | Materialize the checkpoint's source truth.                  | Check out a commit in an isolated worktree.                |
+| 3    | Ask the system under test to create or update its artifact. | Run OpenWiki `init` or `update` using the system model.    |
+| 4    | Freeze and persist the artifact before evaluation.          | Capture every generated wiki document.                     |
+| 5    | Project requirements and collect temporal source evidence.  | Requirements plus current and prior tracked files.         |
+| 6    | Evaluate coverage of every active material topic.           | BM25 retrieval plus evaluator-model judgment.              |
+| 7    | Evaluate whether obsolete fact versions were forgotten.     | BM25 retrieval plus evaluator-model judgment.              |
+| 8    | Extract concrete assertions from the artifact.              | Section filtering plus evaluator-model extraction.         |
+| 9    | Account each assertion against active requirements.         | Evaluator-model judgment using the complete active ledger. |
+| 10   | Verify only unaccounted assertions against source evidence. | BM25 retrieval plus evaluator-model judgment.              |
+| 11   | Score the checkpoint and, finally, the complete trace.      | Deterministic calculation and persistence.                 |
 
 KEB does not require the system under test to use a model. The current OpenWiki
 system does, and may perform many agent calls. The current evaluator also uses a
@@ -192,6 +222,10 @@ The current implementation has two intentionally separate model roles:
 | ---------------------- | ----------------------------------------------------------------------------------------- |
 | 🤖 **System model**    | Operates OpenWiki and creates or updates the artifact being evaluated.                    |
 | ⚖️ **Evaluator model** | Extracts assertions and judges coverage, precision, and forgetting from bounded evidence. |
+
+The models do not generate benchmark requirements, checkpoint definitions,
+source-evidence records, BM25 rankings, temporal transitions, metrics, or scores.
+Those remain human-authored or deterministic code paths.
 
 In the current adapter, Git replay, requirement projection, source-evidence
 capture, Markdown sectioning, BM25 retrieval, filtering, deduplication, scoring,
@@ -255,29 +289,60 @@ This keeps retrieval quality from silently becoming a coverage failure.
 
 ## 🎯 Precision: is what the artifact says supported?
 
-Precision runs in the opposite direction. It starts from the artifact and checks
-every retained claim against normalized current source evidence.
+Precision runs in the opposite direction from coverage. Coverage starts with
+human-authored requirements. Precision starts with every code-owned text unit in
+the artifact, decides whether it contains a material factual claim, and checks
+every retained claim through two truth layers.
 
-```text
-every eligible artifact section
-          │
-          ▼
-extract concrete assertions
-          │
-          ▼
-deterministic filtering and deduplication
-          │
-          ▼
-retrieve source evidence for each assertion
-          │
-          ├── supported
-          ├── contradicted
-          └── unverifiable
+```mermaid
+flowchart TD
+    W[Every artifact text unit] --> C{Classify unit}
+    C -->|Navigation, opinion, instruction, no claim| X[Exclude with rationale]
+    C -->|Factual or mixed| A[Extract material factual claims]
+    A --> L{Active requirement ledger}
+    L -->|Supported| RK[Required claim]
+    L -->|Contradicted| U1[Unsupported: hallucinated]
+    L -->|Unaccounted| R[Build cumulative source dossier]
+    R --> S{Source judgment}
+    S -->|Supported| EK[Valid extra]
+    S -->|Contradicted| U2[Unsupported: hallucinated]
+    S -->|Not established| U3[Unsupported: not established]
 ```
+
+The active requirement ledger is the complete set of material knowledge the
+benchmark requires. It is deliberately not an impossible inventory of everything
+true in the source. Ledger silence therefore means `unaccounted`, not false. Only
+unaccounted claims require the source-verification pass.
+
+### Step 1: account for every text unit
+
+Before truth judgment, the evaluator must return exactly one classification for
+every supplied Markdown block:
+
+| Text                                                   | Classification | Precision claim                                |
+| ------------------------------------------------------ | -------------- | ---------------------------------------------- |
+| “`add(a, b)` returns `a + b`.”                         | `factual`      | Keep the complete behavior claim.              |
+| “Because there are no tests, validate manually.”       | `mixed`        | Keep “There are no tests”; discard the advice. |
+| “See the API page.”                                    | `navigation`   | None.                                          |
+| “This library is elegant.”                             | `opinion`      | None.                                          |
+| “Run the functions manually.”                          | `instruction`  | None.                                          |
+| A heading or transition with no subject-matter meaning | `no-claim`     | None.                                          |
+
+This is model-based because the distinction is semantic, but it is accountable:
+a unit cannot silently disappear, factual and mixed units must produce claims,
+excluded units must produce none, and every decision is persisted with a
+rationale. Code-owned filters then remove narrow deterministic categories such as
+commit archaeology and exact duplicates.
 
 ### Worked precision example
 
-Suppose the artifact says:
+Suppose the active ledger requires:
+
+```text
+The library provides add(a, b), which returns a + b.
+```
+
+The artifact says:
 
 ```text
 add returns a + b.
@@ -286,8 +351,7 @@ See the API page for details.
 If validation is added later, update the README.
 ```
 
-The model extracts the four statements. Deterministic rules then remove content
-that is not a current-state domain assertion:
+The text-unit classifier excludes content that is not a material domain claim:
 
 ```text
 Removed: “See the API page for details.”
@@ -297,18 +361,27 @@ Removed: “If validation is added later, update the README.”
          ↳ hypothetical contributor advice
 ```
 
-The source adapter captures the current implementation and BM25 retrieves the
-most relevant source excerpts for each retained assertion:
+The remaining assertions first go to the complete active ledger:
+
+```text
+add returns a + b         → supported by requirement → required knowledge
+add validates both inputs → unaccounted
+```
+
+Only the second assertion goes to source verification. BM25 finds likely source
+records first. If they do not establish the claim, KEB accumulates additional
+records instead of replacing the earlier evidence. Complete inventories are
+always present, so repository-wide absence claims can use closed-world evidence.
 
 ```text
 Current source evidence
 ├── add returns a + b
 └── add performs no input validation
 
-Artifact assertion                     Verdict
-─────────────────────────────────────  ───────────
-add returns a + b                      supported
-add validates both inputs              contradicted
+Artifact assertion          Final class                Why
+──────────────────────────  ─────────────────────────  ─────────────────────────────
+add returns a + b           required claim              Active requirement supports it
+add validates both inputs   unsupported: hallucinated   Current source proves otherwise
 ```
 
 Precision for this example is:
@@ -316,32 +389,49 @@ Precision for this example is:
 ```text
 supported assertions     1
 ──────────────────── = ───── = 50%
-decidable assertions     2
+judged assertions     2
 ```
 
-### What do the precision verdicts mean?
+### Step 2: make a binary truth judgment
 
-An assertion is:
+An assertion finishes as:
 
-- `supported` when supplied current source evidence establishes the complete
-  claim;
-- `contradicted` when supplied evidence establishes incompatible current truth;
-  or
-- `unverifiable` when the evidence establishes neither outcome.
+- **supported / required claim** when the active ledger establishes it;
+- **supported / valid extra** when source evidence establishes it;
+- **unsupported / hallucinated** when a truth layer proves something
+  incompatible; or
+- **unsupported / not established** when the complete available evidence does
+  not establish the claim.
 
-The evaluator may use only the source evidence supplied for that assertion. It
-cannot rely on outside knowledge or treat the artifact as evidence for itself.
-An unverifiable claim is reported separately rather than silently labeled a
-hallucination: it may reflect ambiguous source material, a retrieval problem, or
-a genuinely unsupported artifact claim.
+`supported` versus `unsupported` is the scored decision. The unsupported subtype
+is diagnostic: it distinguishes an explicit conflict from an assertion that adds
+unstated intent, policy, causality, guarantees, or other detail the source does
+not establish.
 
-A hallucination in V1 is a material claim contradicted by current source
-evidence. Unverifiable claims never improve precision and remain visible in the
-audit report.
+Current-state assertions require current evidence. Historical evidence may
+support explicitly historical assertions, but cannot establish that obsolete
+behavior remains current.
+
+The source verifier may use ordinary deterministic consequences of supplied
+code. For example, `return a + b` directly supports “`add(2, 3)` returns `5`.” It
+may also combine a complete path inventory with file contents to establish that
+no test suite exists. It may not invent project intent, policy, or guarantees.
+
+If the model itself fails to return a structurally and semantically valid answer,
+that is different from an unsupported artifact claim. KEB retries the individual
+judgment and then records `indeterminate` plus an audit warning. Indeterminate
+items reduce Evaluator Completeness and do not enter the precision denominator.
+
+In short:
+
+```text
+source cannot establish the artifact claim → unsupported system output
+evaluator cannot produce a valid judgment → indeterminate evaluator output
+```
 
 ### What is excluded before judgment?
 
-Code-owned rules exclude:
+The model classifier and narrow code-owned rules exclude:
 
 - artifact navigation and structural descriptions;
 - change-history narration that is outside the benchmark's current-state scope;
@@ -349,7 +439,7 @@ Code-owned rules exclude:
 - contributor or caller advice;
 - hypothetical and counterfactual scenarios;
 - normalized exact duplicates; and
-- conservative recognized families of equivalent absence claims.
+- conservative recognized families of equivalent claims.
 
 Generic lexical similarity is recorded for audit but does not automatically
 remove assertions because similar wording can describe different functions or
@@ -410,16 +500,24 @@ KEB Score = (Quality + Maintenance) / 2
 Quality evaluates the artifact at every checkpoint.
 
 ```text
-Trace Coverage = correctly represented material topics / all material topics
+Checkpoint Coverage = correct active requirements / active requirements
 
-Trace Precision = supported artifact assertions / decidable artifact assertions
+Trace Coverage = mean of checkpoint Coverage scores
+
+Checkpoint Precision =
+  (required knowledge + valid extra knowledge)
+  / (required knowledge + valid extra knowledge + unsupported)
+
+Trace Precision = mean of checkpoint Precision scores
 
 Quality = harmonic mean(Trace Coverage, Trace Precision)
 ```
 
-The harmonic mean makes a system earn both coverage and precision. An artifact
-cannot score well by saying almost nothing, nor by saying everything
-indiscriminately.
+The checkpoint macro-average gives each checkpoint equal weight even when they
+contain different numbers of requirements or assertions. The harmonic mean makes
+a system earn both coverage and precision. Every validly judged unsupported
+claim lowers precision. Its subtype distinguishes an established conflict from a
+claim the complete supplied evidence does not establish.
 
 ### Maintenance
 
@@ -445,8 +543,26 @@ KEB also reports signals that do not affect the headline score:
 - **Efficiency** — system runtime and documentation churn. Token and cost capture
   can be added when usage telemetry is available.
 
-Contradicted claims are decidable and lower precision. Unverifiable claims are
-reported separately and do not improve the score.
+Precision also reports its composition:
+
+- **Required knowledge** — ledger-supported assertions;
+- **Valid extra knowledge** — source-supported assertions outside the ledger;
+- **Unsupported: hallucinated** — a truth layer establishes incompatible truth;
+  and
+- **Unsupported: not established** — complete available evidence does not
+  establish the claim.
+
+Evaluator Completeness is reported separately from system quality:
+
+```text
+Evaluator Completeness = valid semantic judgments / attempted judgments
+```
+
+An `indeterminate` item means a schema-valid batch contained an invalid judgment
+and an isolated repair request also failed. It is excluded from semantic score
+denominators and never becomes a hallucination merely because evaluation failed.
+Reduced Evaluator Completeness makes the resulting KEB score explicitly
+provisional rather than quietly treating evaluator failure as system failure.
 
 ## 📒 Authoring the Truth Package
 
@@ -517,25 +633,40 @@ The executable requirement schema and validation rules live in
 
 ## 🔬 Evaluator mechanics and reliability
 
-The current evaluator splits generated Markdown into stable, bounded sections.
-Coverage and forgetting reuse one BM25 index over artifact sections. Precision
-visits every eligible artifact section for extraction, then uses a separate BM25
-index over normalized source evidence for judgment. Provisional negative results
-exhaust remaining evidence before becoming final. Other source and artifact
-formats can provide adapters while preserving the same evaluation contract.
+The current evaluator splits generated Markdown into stable, bounded sections and
+then into fence-aware text units. Coverage and forgetting reuse one BM25 index
+over artifact sections. Precision classifies every eligible text unit, accounts
+retained claims against the complete active requirement ledger, then uses a
+separate BM25 index over normalized source evidence only for unaccounted claims.
+Source evidence is cumulative across fallback batches, and complete inventories
+always accompany judgments. The source-evidence interface is generic, but the V1
+runner still directly owns Git replay, OpenWiki execution, and Markdown capture;
+other domains require those additional adapters.
 
 Semantic judgments use direct schema-validated model calls with:
 
 - stable bounded batches;
+- exactly one extraction classification per supplied text unit;
 - a five-minute timeout per attempt;
 - at most two attempts;
 - provider retries disabled inside each attempt;
 - sequential passes and observable failure boundaries; and
 - no evaluator-forced sampling parameter.
 
+The reviewed boundary examples used by deterministic evaluator tests live in
+[`evaluator/fixtures/precision-gold.json`](./evaluator/fixtures/precision-gold.json).
+They intentionally cover navigation, opinion, instruction, mixed content,
+direct code inference, closed-world absence, explicit contradiction, and
+unsupported intent.
+
 Evidence citations must name sections that were actually supplied in the bounded
-request. A model failure, invalid schema, invented identity, or unavailable
-citation fails the pass instead of silently inventing a default verdict.
+request. An initial provider failure, schema-wide failure, or unusable assertion
+inventory still fails the pass because there is no trustworthy batch to preserve.
+When a schema-valid judgment batch contains one malformed item, KEB preserves
+valid neighboring judgments and retries only that item with isolated evidence.
+If both isolated attempts fail for any reason, the item becomes `indeterminate`,
+an audit warning is persisted, and the run continues with reduced Evaluator
+Completeness.
 
 ## 💾 Audit artifacts
 
@@ -547,14 +678,18 @@ calc-evolution-<timestamp>/
 │   ├── T0/                 # exact frozen artifact at T0
 │   ├── T0.json             # fingerprint and document inventory
 │   ├── T1/
-│   └── T1.json
+│   ├── T1.json
+│   ├── T2/
+│   └── T2.json
 ├── assertions/
-│   ├── T0.json             # all extracted, excluded, and retained assertions
-│   └── T1.json
+│   ├── T0.json             # classified units plus all excluded/retained claims
+│   ├── T1.json
+│   └── T2.json
 ├── evidence/
 │   ├── T0.json             # normalized source evidence used by precision
-│   └── T1.json
-├── result.json             # completed runs: verdicts, scores, and diagnostics
+│   ├── T1.json
+│   └── T2.json
+├── result.json             # verdicts, warnings, scores, and diagnostics
 ├── report.md               # completed runs: detailed human-readable report
 └── error.json              # failed runs: bounded failure details
 ```
@@ -562,6 +697,11 @@ calc-evolution-<timestamp>/
 Artifacts and source evidence are persisted before evaluation, and assertion
 inventories are persisted before precision judgment. They therefore survive
 later evaluator failures and can be inspected without reading provider traces.
+
+The assertion inventory is the main precision-tuning artifact. For every text
+unit it records the classification, extracted claims, and rationale; for every
+claim it records deterministic exclusions, deduplication, stable assertion IDs,
+and near-duplicate diagnostics.
 
 ## ▶️ Running the Git/OpenWiki adapter
 
@@ -583,8 +723,35 @@ pnpm exec tsx evals/keb/run.ts \
   --benchmark evals/keb/benchmarks/calc-evolution
 ```
 
-The terminal shows checkpoint progress and a compact final score. Detailed
-verdicts remain in the result directory rather than being dumped to the terminal.
+The terminal shows checkpoint progress and a compact precision composition:
+
+```text
+│ ✅ T1 · coverage 83% · precision 92% · forgetting 100% (2/2)
+│    ↳ 12 material claims · 8 required · 3 valid extras · 1 unsupported (1 hallucinated · 0 not established)
+```
+
+`required claims` and `valid extras` are supported artifact assertions, not the
+number of coverage requirements. Detailed claim text and citations remain in the
+result directory rather than being dumped to the terminal.
+
+### Re-evaluate a saved run
+
+Evaluator tuning does not require regenerating the knowledge artifact. A
+completed run already contains the exact artifact and source-evidence snapshots
+for every checkpoint. Re-evaluate them with:
+
+```sh
+pnpm run eval:keb:reevaluate -- \
+  --benchmark evals/keb/benchmarks/calc-evolution \
+  --run evals/keb/.results/calc-evolution-<timestamp> \
+  --evaluator-model claude-sonnet-5
+```
+
+This does **not** invoke OpenWiki or replay the source repository. It reprojects
+the active requirements and obsolete versions, reruns every semantic evaluator
+pass, recomputes all point-in-time and longitudinal scores, and writes a new
+standalone audit directory. The new result preserves the original system runtime
+and model metadata only as observations; no prior semantic verdict is reused.
 
 ## ⚖️ Comparing systems
 

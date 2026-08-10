@@ -1,0 +1,73 @@
+{
+  "description": "Human-reviewed boundary cases for material-claim extraction and source-grounded precision.",
+  "units": [
+    {
+      "content": "See the API page for details.",
+      "classification": "navigation",
+      "assertions": [],
+      "rationale": "This only routes the reader to another artifact page."
+    },
+    {
+      "content": "This tiny library is elegant.",
+      "classification": "opinion",
+      "assertions": [],
+      "rationale": "Elegance is a subjective characterization."
+    },
+    {
+      "content": "Run the functions manually before publishing.",
+      "classification": "instruction",
+      "assertions": [],
+      "rationale": "This is advice without a checkable repository claim."
+    },
+    {
+      "content": "Because there are no automated tests, run the functions manually.",
+      "classification": "mixed",
+      "assertions": ["There are no automated tests in the repository."],
+      "rationale": "The absence of tests is factual; the manual check is advice."
+    },
+    {
+      "content": "Calling add(2, 3) returns 5.",
+      "classification": "factual",
+      "assertions": ["Calling add(2, 3) returns 5."],
+      "rationale": "This is a concrete behavioral claim."
+    },
+    {
+      "content": "The current VERSION is 2.0.0.",
+      "classification": "factual",
+      "assertions": ["The current VERSION is 2.0.0."],
+      "rationale": "This is a concrete current-state value claim."
+    },
+    {
+      "content": "Maintainers intentionally update VERSION by hand for every release.",
+      "classification": "factual",
+      "assertions": [
+        "Maintainers intentionally update VERSION by hand for every release."
+      ],
+      "rationale": "This makes a checkable process and intent claim."
+    }
+  ],
+  "expectedJudgments": [
+    {
+      "assertion": "There are no automated tests in the repository.",
+      "verdict": "supported",
+      "evidenceIds": ["source-00::0000"]
+    },
+    {
+      "assertion": "Calling add(2, 3) returns 5.",
+      "verdict": "supported",
+      "evidenceIds": ["source-01::0000"]
+    },
+    {
+      "assertion": "The current VERSION is 2.0.0.",
+      "verdict": "unsupported",
+      "unsupportedReason": "contradicted",
+      "evidenceIds": ["source-02::0000"]
+    },
+    {
+      "assertion": "Maintainers intentionally update VERSION by hand for every release.",
+      "verdict": "unsupported",
+      "unsupportedReason": "not-established",
+      "evidenceIds": []
+    }
+  ]
+}

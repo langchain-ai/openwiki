@@ -12,6 +12,19 @@ import { validateBenchmark } from "./validation.js";
 export const BENCHMARK_FILE = "benchmark.json";
 
 /**
+ * Optional benchmark-loading behavior for callers that do not replay source.
+ */
+export interface LoadBenchmarkOptions {
+  /**
+   * Whether to reconstruct a missing Git source repository from its committed
+   * bundle.
+   *
+   * @default true
+   */
+  ensureSourceRepo?: boolean;
+}
+
+/**
  * Raw on-disk shape of `benchmark.json`, before path resolution and validation.
  * Kept separate from `KebBenchmark` because the file stores a relative
  * `sourceRepo` while the domain type stores an absolute `sourceRepoPath`.
@@ -79,6 +92,7 @@ interface RawBenchmark {
  *
  * @param benchmarkDir - Absolute path to the directory containing
  *   `benchmark.json`.
+ * @param options - Optional source-materialization behavior.
  *
  * @returns The validated benchmark with `sourceRepoPath` resolved to an absolute
  *   path.
@@ -88,6 +102,7 @@ interface RawBenchmark {
  */
 export async function loadBenchmark(
   benchmarkDir: string,
+  options: LoadBenchmarkOptions = {},
 ): Promise<KebBenchmark> {
   const file = path.join(benchmarkDir, BENCHMARK_FILE);
 
@@ -111,7 +126,9 @@ export async function loadBenchmark(
 
   // Reconstruct the source working tree from its committed bundle when a fresh
   // checkout left it absent. A no-op for benchmarks that ship a real repository.
-  await ensureSourceRepoAvailable(benchmarkDir, sourceRepoPath);
+  if (options.ensureSourceRepo !== false) {
+    await ensureSourceRepoAvailable(benchmarkDir, sourceRepoPath);
+  }
 
   const benchmark: KebBenchmark = {
     name: typeof raw.name === "string" ? raw.name : "",

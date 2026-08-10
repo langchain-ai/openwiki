@@ -189,12 +189,18 @@ export function createCliProgressReporter(
         const evaluatorModel = event.evaluatorModelId ?? "provider default";
         output.write(`┌ 🧪 KEB · ${event.benchmarkName}\n`);
         output.write(
-          `│ ${event.totalCheckpoints} checkpoints · ${event.provider} · system ${systemModel} · evaluator ${evaluatorModel}\n`,
+          event.evaluationOnly === true
+            ? `│ ${event.totalCheckpoints} checkpoints · ${event.provider} · saved artifacts · evaluator ${evaluatorModel}\n`
+            : `│ ${event.totalCheckpoints} checkpoints · ${event.provider} · system ${systemModel} · evaluator ${evaluatorModel}\n`,
         );
         break;
       }
       case "replay-ready":
-        output.write("│ 📦 Replay workspace ready\n");
+        output.write(
+          event.saved === true
+            ? "│ ♻️ Saved artifacts and source evidence ready\n"
+            : "│ 📦 Replay workspace ready\n",
+        );
         break;
       case "checkpoint-start": {
         const position = `${event.checkpointIndex + 1}/${event.totalCheckpoints}`;
@@ -203,7 +209,9 @@ export function createCliProgressReporter(
         output.write(
           `├ 📍 ${position} · ${event.checkpointId} · ${event.commit.slice(0, 7)}${label}\n`,
         );
-        startSpinner(`🤖 Running OpenWiki ${event.command}`);
+        if (event.evaluationOnly !== true) {
+          startSpinner(`🤖 Running OpenWiki ${event.command}`);
+        }
         break;
       }
       case "system-complete": {
@@ -215,7 +223,7 @@ export function createCliProgressReporter(
       }
       case "artifact-captured":
         output.write(
-          `│ 📚 Captured ${event.documentCount} document${event.documentCount === 1 ? "" : "s"}\n`,
+          `│ 📚 ${event.loaded === true ? "Loaded" : "Captured"} ${event.documentCount} document${event.documentCount === 1 ? "" : "s"}\n`,
         );
         break;
       case "evaluation-start":
@@ -227,6 +235,14 @@ export function createCliProgressReporter(
         completeSpinner(
           `✅ ${event.checkpointId} · coverage ${formatPercent(event.coverageScore)} · precision ${formatPercent(event.precisionScore)} · forgetting ${formatForgetting(event.forgottenCount, event.obsoleteFactCount)}`,
         );
+        output.write(
+          `│    ↳ ${event.materialClaimCount} material claims · ${event.ledgerSupportedCount} required · ${event.sourceSupportedCount} valid extras · ${event.unsupportedCount} unsupported (${event.contradictedCount} hallucinated · ${event.notEstablishedCount} not established)\n`,
+        );
+        if (event.indeterminateCount > 0) {
+          output.write(
+            `│ ⚠️ Evaluator ${formatPercent(event.evaluationCompleteness)} complete · ${event.indeterminateCount}/${event.evaluationItemCount} indeterminate\n`,
+          );
+        }
         break;
       case "run-complete":
         clearSpinner();
@@ -237,6 +253,14 @@ export function createCliProgressReporter(
         );
         output.write(
           `│  └ Precision ${formatAggregatePercent(event.tracePrecision)}\n`,
+        );
+        output.write(`│     ├ Material claims ${event.materialClaimCount}\n`);
+        output.write(`│     ├ Required claims ${event.ledgerSupportedCount}\n`);
+        output.write(`│     ├ Valid extras ${event.sourceSupportedCount}\n`);
+        output.write(`│     └ Unsupported ${event.unsupportedCount}\n`);
+        output.write(`│        ├ Hallucinated ${event.contradictedCount}\n`);
+        output.write(
+          `│        └ Not established ${event.notEstablishedCount}\n`,
         );
         output.write(
           `├ 🔄 Maintenance ${formatAggregatePercent(event.maintenance)}\n`,
@@ -253,9 +277,13 @@ export function createCliProgressReporter(
         output.write(
           `│  └ Retention ${formatAggregatePercent(event.stableRetention)}\n`,
         );
-        output.write("│\n");
         output.write(
-          `└ 🎉 KEB ${formatAggregatePercent(event.kebScore)} · ${formatProgressDuration(performance.now() - startedAt)}\n\n`,
+          `├ ⚖️ Evaluator completeness ${formatAggregatePercent(event.evaluationCompleteness)}\n`,
+        );
+        output.write("│\n");
+        const completionIcon = event.evaluationCompleteness === 1 ? "🎉" : "⚠️";
+        output.write(
+          `└ ${completionIcon} KEB ${formatAggregatePercent(event.kebScore)} · ${formatProgressDuration(performance.now() - startedAt)}\n\n`,
         );
         break;
       case "run-failed":

@@ -6,6 +6,7 @@ import {
   aggregateScore,
   computeCoverage,
   computeDiagnostics,
+  computeEvaluationCompleteness,
   computeMaintenanceCounts,
   computePrecision,
 } from "../scoring/metrics.js";
@@ -47,8 +48,9 @@ export type BenchmarkProgressEvent =
       provider: string;
       systemModelId?: string;
       evaluatorModelId?: string;
+      evaluationOnly?: boolean;
     }
-  | { type: "replay-ready" }
+  | { type: "replay-ready"; saved?: boolean }
   | {
       type: "checkpoint-start";
       checkpointId: string;
@@ -57,6 +59,7 @@ export type BenchmarkProgressEvent =
       commit: string;
       label?: string;
       command: "init" | "update";
+      evaluationOnly?: boolean;
     }
   | {
       type: "system-complete";
@@ -69,6 +72,7 @@ export type BenchmarkProgressEvent =
       type: "artifact-captured";
       checkpointId: string;
       documentCount: number;
+      loaded?: boolean;
     }
   | {
       type: "evaluation-start";
@@ -83,6 +87,15 @@ export type BenchmarkProgressEvent =
       precisionScore: number;
       forgottenCount: number;
       obsoleteFactCount: number;
+      evaluationCompleteness: number;
+      indeterminateCount: number;
+      evaluationItemCount: number;
+      materialClaimCount: number;
+      ledgerSupportedCount: number;
+      sourceSupportedCount: number;
+      unsupportedCount: number;
+      contradictedCount: number;
+      notEstablishedCount: number;
     }
   | {
       type: "run-complete";
@@ -95,6 +108,13 @@ export type BenchmarkProgressEvent =
       changedKnowledgeCorrection?: number;
       completeForgetting?: number;
       stableRetention?: number;
+      evaluationCompleteness: number;
+      materialClaimCount: number;
+      ledgerSupportedCount: number;
+      sourceSupportedCount: number;
+      unsupportedCount: number;
+      contradictedCount: number;
+      notEstablishedCount: number;
     }
   | { type: "run-failed"; message: string };
 
@@ -397,6 +417,11 @@ export async function runBenchmark(
 
       const coverage = computeCoverage(evaluation.factEvaluations);
       const precision = computePrecision(evaluation.precisionEvaluations);
+      const evaluationCompleteness = computeEvaluationCompleteness(
+        evaluation.factEvaluations,
+        evaluation.precisionEvaluations,
+        evaluation.forgettingEvaluations,
+      );
       reportProgress({
         type: "checkpoint-complete",
         checkpointId: checkpoint.id,
@@ -406,6 +431,15 @@ export async function runBenchmark(
           (item) => item.verdict === "forgotten",
         ).length,
         obsoleteFactCount: evaluation.forgettingEvaluations.length,
+        evaluationCompleteness: evaluationCompleteness.score,
+        indeterminateCount: evaluationCompleteness.indeterminate,
+        evaluationItemCount: evaluationCompleteness.total,
+        materialClaimCount: precision.total,
+        ledgerSupportedCount: precision.ledgerSupported,
+        sourceSupportedCount: precision.sourceSupported,
+        unsupportedCount: precision.unsupported,
+        contradictedCount: precision.contradicted,
+        notEstablishedCount: precision.notEstablished,
       });
 
       let maintenanceCounts: MaintenanceCounts | undefined;
@@ -423,6 +457,7 @@ export async function runBenchmark(
         checkpointId: checkpoint.id,
         coverage,
         precision,
+        evaluationCompleteness,
         maintenanceCounts,
         efficiency: {
           durationMs: outcome.durationMs,
@@ -431,13 +466,14 @@ export async function runBenchmark(
           totalTokens: outcome.totalTokens,
         },
         // Retain the raw verdicts, not just their reduced counts, so a score is
-        // explainable: contradicted and unverifiable precision claims remain
-        // distinguishable, and forgetting verdicts make an otherwise invisible
-        // pass visible in the persisted result.
+        // explainable: unsupported precision subtypes remain distinguishable,
+        // and forgetting verdicts make an otherwise invisible pass visible in
+        // the persisted result.
         evaluations: {
           factEvaluations: evaluation.factEvaluations,
           precisionEvaluations: evaluation.precisionEvaluations,
           forgettingEvaluations: evaluation.forgettingEvaluations,
+          warnings: evaluation.warnings ?? [],
         },
       });
 
@@ -470,6 +506,25 @@ export async function runBenchmark(
       score: aggregateScore(scores),
       diagnostics: computeDiagnostics(history),
     };
+    const precisionCounts = result.checkpoints.reduce(
+      (counts, checkpoint) => ({
+        ledgerSupported:
+          counts.ledgerSupported + checkpoint.precision.ledgerSupported,
+        sourceSupported:
+          counts.sourceSupported + checkpoint.precision.sourceSupported,
+        unsupported: counts.unsupported + checkpoint.precision.unsupported,
+        contradicted: counts.contradicted + checkpoint.precision.contradicted,
+        notEstablished:
+          counts.notEstablished + checkpoint.precision.notEstablished,
+      }),
+      {
+        ledgerSupported: 0,
+        sourceSupported: 0,
+        unsupported: 0,
+        contradicted: 0,
+        notEstablished: 0,
+      },
+    );
 
     reportProgress({
       type: "run-complete",
@@ -484,6 +539,16 @@ export async function runBenchmark(
         result.score.maintenanceRates.changedKnowledgeCorrection,
       completeForgetting: result.score.maintenanceRates.completeForgetting,
       stableRetention: result.score.maintenanceRates.stableRetention,
+      evaluationCompleteness: result.score.evaluationCompleteness,
+      materialClaimCount: result.checkpoints.reduce(
+        (total, checkpoint) => total + checkpoint.precision.total,
+        0,
+      ),
+      ledgerSupportedCount: precisionCounts.ledgerSupported,
+      sourceSupportedCount: precisionCounts.sourceSupported,
+      unsupportedCount: precisionCounts.unsupported,
+      contradictedCount: precisionCounts.contradicted,
+      notEstablishedCount: precisionCounts.notEstablished,
     });
     return result;
   } catch (error) {

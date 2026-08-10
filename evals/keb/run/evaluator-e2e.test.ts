@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type {
   KebBenchmark,
   KebRunConfig,
+  KebRunResult,
   SystemRunOutcome,
   SystemUnderTest,
 } from "../core/types.js";
@@ -87,6 +88,7 @@ const {
   COVERAGE_SYSTEM,
   FORGETTING_SYSTEM,
   PRECISION_EXTRACTION_SYSTEM,
+  PRECISION_LEDGER_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
 } = await import("../evaluator/prompts.js");
 
@@ -200,18 +202,55 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
   }
 
   if (systemPrompt === PRECISION_EXTRACTION_SYSTEM) {
-    const sections = parsePromptJson<
-      Array<{ sectionId: string; content: string }>
-    >(taskPrompt, "Sections (JSON):\n");
+    const units = parsePromptJson<Array<{ unitId: string; content: string }>>(
+      taskPrompt,
+      "Text units (JSON):\n",
+    );
 
     return {
-      sections: sections.map((section) => ({
-        sectionId: section.sectionId,
-        assertions: section.content
+      units: units.map((unit) => {
+        const assertions = unit.content
           .split("\n")
           .filter((line) => line.startsWith("- "))
-          .map((line) => line.slice(2)),
-      })),
+          .map((line) => line.slice(2));
+
+        return {
+          unitId: unit.unitId,
+          classification: assertions.length > 0 ? "factual" : "no-claim",
+          assertions,
+          rationale:
+            assertions.length > 0
+              ? "The unit states factual behavior."
+              : "The unit contains no factual claim.",
+        };
+      }),
+    };
+  }
+
+  if (systemPrompt === PRECISION_LEDGER_SYSTEM) {
+    const ledgerMarker = "\n\nComplete active requirement ledger (JSON):\n";
+    const assertions = parsePromptJson<
+      Array<{ assertionId: string; statement: string }>
+    >(taskPrompt, "Assertions (JSON):\n", ledgerMarker);
+    const facts = parsePromptJson<
+      Array<{ factVersionId: string; statement: string }>
+    >(taskPrompt, ledgerMarker);
+
+    return {
+      evaluations: assertions.map((assertion) => {
+        const fact = facts.find(
+          (candidate) => candidate.statement === assertion.statement,
+        );
+
+        return {
+          assertionId: assertion.assertionId,
+          verdict: fact ? "supported" : "unaccounted",
+          factVersionIds: fact ? [fact.factVersionId] : [],
+          rationale: fact
+            ? "The active requirement supports it."
+            : "The active requirements do not address it.",
+        };
+      }),
     };
   }
 
@@ -462,6 +501,7 @@ describe("direct evaluator end to end", () => {
           partial: 0,
           missing: 0,
           contradicted: 0,
+          indeterminate: 0,
           total: 3,
           score: 1,
         },
@@ -470,6 +510,7 @@ describe("direct evaluator end to end", () => {
           partial: 0,
           missing: 0,
           contradicted: 0,
+          indeterminate: 0,
           total: 4,
           score: 1,
         },
@@ -478,6 +519,7 @@ describe("direct evaluator end to end", () => {
           partial: 0,
           missing: 0,
           contradicted: 0,
+          indeterminate: 0,
           total: 3,
           score: 1,
         },
@@ -488,32 +530,44 @@ describe("direct evaluator end to end", () => {
     ).toEqual([
       {
         supported: 3,
+        ledgerSupported: 3,
+        sourceSupported: 0,
+        unsupported: 1,
         contradicted: 1,
-        unverifiable: 0,
-        decidable: 4,
+        notEstablished: 0,
+        indeterminate: 0,
+        judged: 4,
         total: 4,
-        hallucinationRate: 0.25,
-        unverifiableRate: 0,
+        unsupportedRate: 0.25,
+        extraKnowledgeRate: 0,
         score: 0.75,
       },
       {
         supported: 4,
+        ledgerSupported: 4,
+        sourceSupported: 0,
+        unsupported: 1,
         contradicted: 1,
-        unverifiable: 0,
-        decidable: 5,
+        notEstablished: 0,
+        indeterminate: 0,
+        judged: 5,
         total: 5,
-        hallucinationRate: 0.2,
-        unverifiableRate: 0,
+        unsupportedRate: 0.2,
+        extraKnowledgeRate: 0,
         score: 0.8,
       },
       {
         supported: 3,
+        ledgerSupported: 3,
+        sourceSupported: 0,
+        unsupported: 1,
         contradicted: 1,
-        unverifiable: 0,
-        decidable: 4,
+        notEstablished: 0,
+        indeterminate: 0,
+        judged: 4,
         total: 4,
-        hallucinationRate: 0.25,
-        unverifiableRate: 0,
+        unsupportedRate: 0.25,
+        extraKnowledgeRate: 0,
         score: 0.75,
       },
     ]);
@@ -523,11 +577,12 @@ describe("direct evaluator end to end", () => {
       completeForgetting: 1,
       stableRetention: 1,
     });
+    expect(result.score.evaluationCompleteness).toBe(1);
     expect(
       result.checkpoints.flatMap(
         (checkpoint) =>
           checkpoint.evaluations?.precisionEvaluations.filter(
-            (evaluation) => evaluation.verdict === "contradicted",
+            (evaluation) => evaluation.unsupportedReason === "contradicted",
           ) ?? [],
       ),
     ).toEqual([
@@ -556,17 +611,20 @@ describe("direct evaluator end to end", () => {
     expect(modelControl.systemPrompts).toEqual([
       COVERAGE_SYSTEM,
       PRECISION_EXTRACTION_SYSTEM,
+      PRECISION_LEDGER_SYSTEM,
       PRECISION_JUDGMENT_SYSTEM,
       COVERAGE_SYSTEM,
       PRECISION_EXTRACTION_SYSTEM,
+      PRECISION_LEDGER_SYSTEM,
       PRECISION_JUDGMENT_SYSTEM,
       COVERAGE_SYSTEM,
       FORGETTING_SYSTEM,
       PRECISION_EXTRACTION_SYSTEM,
+      PRECISION_LEDGER_SYSTEM,
       PRECISION_JUDGMENT_SYSTEM,
     ]);
     expect(modelControl.maxActive).toBe(1);
-    expect(modelControl.signals).toHaveLength(10);
+    expect(modelControl.signals).toHaveLength(13);
     expect(workspaceRoots).toHaveLength(1);
     await expect(stat(workspaceRoots[0])).rejects.toMatchObject({
       code: "ENOENT",
@@ -575,9 +633,24 @@ describe("direct evaluator end to end", () => {
     const runDir = await writeRunResult(resultsDir, result);
     const persisted = JSON.parse(
       await readFile(path.join(runDir, "result.json"), "utf8"),
-    ) as { metadata: Record<string, unknown> };
+    ) as KebRunResult;
     expect(persisted.metadata).not.toHaveProperty("evaluatorPromptVersion");
-    expect(formatReport(result)).toContain("Contradicted assertions (1 of 4)");
+    expect(persisted.checkpoints[0].evaluations?.precisionEvaluations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          assertion: "Stable behavior is enabled.",
+          verificationSource: "ledger",
+          evidenceIds: ["stable@T0"],
+        }),
+        expect.objectContaining({
+          assertion: "Undocumented magic is available.",
+          verificationSource: "source",
+          verdict: "unsupported",
+          unsupportedReason: "contradicted",
+        }),
+      ]),
+    );
+    expect(formatReport(result)).toContain("Unsupported assertions (1 of 4)");
   });
 
   test("times out, stops later passes, and cleans replay resources", async () => {

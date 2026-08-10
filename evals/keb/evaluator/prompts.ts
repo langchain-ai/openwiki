@@ -66,11 +66,17 @@ export interface ForgettingPromptTarget {
 }
 
 /**
- * One complete artifact section supplied for assertion extraction.
+ * One code-owned Markdown text unit supplied for accountable classification and
+ * factual-claim extraction.
  */
-export interface PrecisionExtractionSection {
+export interface PrecisionExtractionUnit {
   /**
-   * Stable artifact-section identifier.
+   * Stable text-unit identifier that the classifier must return.
+   */
+  unitId: string;
+
+  /**
+   * Stable artifact-section identifier owning the unit.
    */
   sectionId: string;
 
@@ -85,7 +91,7 @@ export interface PrecisionExtractionSection {
   headingPath: string[];
 
   /**
-   * Exact Markdown content to inspect for material assertions.
+   * Exact Markdown block to classify and inspect for factual assertions.
    */
   content: string;
 }
@@ -105,7 +111,8 @@ export interface PrecisionJudgmentAssertion {
   statement: string;
 
   /**
-   * Identities of source excerpts retrieved for this assertion.
+   * Identities of source excerpts visible to this assertion in the bounded
+   * judgment batch.
    */
   evidenceIds: string[];
 }
@@ -138,6 +145,26 @@ export interface PrecisionEvidenceExcerpt {
    * Exact normalized source content.
    */
   content: string;
+}
+
+/**
+ * One active human-authored requirement supplied for assertion accounting.
+ */
+export interface PrecisionLedgerFact {
+  /**
+   * Stable logical requirement identity.
+   */
+  factId: string;
+
+  /**
+   * Stable identity of the requirement version active at this checkpoint.
+   */
+  factVersionId: string;
+
+  /**
+   * Complete required statement active at this checkpoint.
+   */
+  statement: string;
 }
 
 /**
@@ -189,44 +216,62 @@ Rules:
 /**
  * System instructions for exhaustive assertion extraction.
  */
-export const PRECISION_EXTRACTION_SYSTEM = `You are a strict knowledge-artifact assertion extractor.
+export const PRECISION_EXTRACTION_SYSTEM = `You are a strict, accountable knowledge-claim classifier.
 
-You receive complete artifact sections. Extract the meaningful, concrete,
-checkable knowledge claims that would help an agent or human understand, use,
-modify, operate, or troubleshoot the subject. Do not inventory every syntactic
-or incidental observation. Do not judge whether a claim is true. Do not use
-outside knowledge, files, tools, or source code.
+You receive code-owned Markdown text units. Classify every supplied unit and
+extract only its objectively checkable claims about the underlying subject. Do
+not judge whether a claim is true. Do not use outside knowledge, files, tools, or
+source code. No supplied unit may disappear.
+
+Classifications:
+- "factual": the unit consists of one or more objectively checkable subject claims.
+- "mixed": the unit combines checkable subject claims with navigation, opinion,
+  instruction, or other non-claim material. Extract only the factual parts.
+- "navigation": the unit only routes the reader within the artifact or describes
+  artifact pages, sections, maps, or organization.
+- "opinion": the unit only makes subjective, aesthetic, or evaluative judgments.
+- "instruction": the unit only tells a reader what to do without asserting an
+  objectively checkable command, behavior, requirement, or consequence.
+- "no-claim": headings, transitions, fragments, or other content with no claim.
 
 Rules:
-- Return exactly one result per supplied sectionId.
-- Consolidate closely related statements into one coherent claim when they
-  explain one topic or behavior.
-- Preserve every material exact detail the artifact states, including names,
-  values, behavior, conditions, exceptions, defaults, and constraints. Never
-  weaken a specific claim into a vague claim that is easier to support.
-- Split claims only when they concern independently meaningful topics or could
-  receive different truth judgments.
-- Include material behavior, architecture, configuration, APIs, constraints,
-  defaults, execution behavior, and operational facts.
-- Include assertions in tables, lists, and code examples when surrounding prose
-  presents them as actual behavior.
-- Exclude headings alone, navigation, transitions, subjective descriptions,
-  explicitly hypothetical examples, and statements only about the artifact.
-- Exclude page locations, descriptions of what a page covers, documentation
-  routing advice, source maps, and page inventories.
-- Exclude commit-by-commit narration, change history, and claims about what an
-  earlier change touched; precision evaluates current state.
-- Exclude repository archaeology and incidental inventory such as commit counts,
-  exact file counts, commentary wording, fixture provenance, and absent tooling
-  with no material consequence.
-- Exclude advice, maintenance instructions, validation recipes, and statements
-  about what a contributor or caller should, must, or needs to do.
-- Exclude hypotheticals, counterfactuals, future scenarios, and predictions about
-  what would happen if the repository changed.
-- Exclude editorial characterizations such as "minimal" or "well-behaved"
-  unless the same sentence contains a separable concrete material fact; emit
-  only that concrete fact.
-- Preserve the assertion's meaning without adding facts not stated by the section.
+- Return exactly one result per supplied unitId.
+- "factual" and "mixed" must return at least one assertion. Every other
+  classification must return an empty assertions array.
+- Preserve exact names, values, behavior, conditions, exceptions, defaults, and
+  constraints. Never weaken a specific claim to make it easier to support.
+- Split independent claims that could receive different truth judgments.
+- A command or procedure is factual when it claims that a concrete command works,
+  is required, or produces a result. Pure recommendations are instructions.
+- Useful domain history such as an API being removed may be factual. Incidental
+  commit hashes, commit messages, file counts, and change archaeology are not
+  subject claims.
+- Statements about the artifact itself are navigation, not source-domain facts.
+- A subjective sentence containing a separable factual claim is "mixed" and must
+  retain only the factual claim.
+- Preserve meaning without inventing implied intent, policy, or causality.
+- Return a concise rationale explaining each classification.
+- Return only the structured response.`;
+
+/**
+ * System instructions for accounting artifact assertions against requirements.
+ */
+export const PRECISION_LEDGER_SYSTEM = `You are a strict benchmark-ledger classifier.
+
+You receive material assertions extracted from a knowledge artifact and the
+complete set of human-authored requirements active at the checkpoint. Judge only
+against these requirements. Do not use source code, outside knowledge, tools, or
+unstated assumptions.
+
+Rules:
+- Return exactly one evaluation per supplied assertionId.
+- "supported" means one or more active requirements establish the complete assertion.
+- "contradicted" means one or more active requirements establish incompatible truth.
+- "unaccounted" means the requirements establish neither support nor contradiction.
+- Mere consistency is not support, and ledger silence is not contradiction.
+- Supported and contradicted results must cite the factVersionIds that establish
+  the verdict. Unaccounted results must cite no factVersionIds.
+- The rationale must agree with the verdict.
 - Return only the structured response.`;
 
 /**
@@ -234,27 +279,31 @@ Rules:
  */
 export const PRECISION_JUDGMENT_SYSTEM = `You are a strict source-grounded precision classifier.
 
-You receive material assertions extracted from a knowledge artifact and
-source-evidence excerpts retrieved separately for each assertion. Judge only
-from the supplied evidence. Do not use outside knowledge, files, tools, or
-unstated assumptions.
+You receive material assertions extracted from a knowledge artifact and a
+deduplicated source-evidence set shared by the bounded judgment batch. Each
+assertion lists the exact evidence IDs it may use. Judge only from the supplied
+evidence. Do not use unavailable files, tools, project facts, or changing outside
+information. You may apply ordinary language and runtime semantics needed to
+interpret supplied source code, such as arithmetic and direct control flow.
 
 Rules:
 - Return exactly one evaluation per supplied assertionId.
-- "supported" requires supplied evidence to establish the complete assertion.
-- "contradicted" requires supplied evidence to establish incompatible current
-  truth. Mere lack of support is not a contradiction.
-- "unverifiable" means the supplied evidence establishes neither support nor
-  contradiction.
-- Mere consistency is not support, and uncertainty is not contradiction.
+- "supported" requires supplied evidence, including its direct deterministic
+  consequences, to establish the complete assertion.
+- "contradicted" requires supplied evidence to establish incompatible truth.
+- "not-supported" means the complete assertion is not established and no
+  supplied evidence directly proves an incompatible alternative.
+- A record that explicitly identifies itself as a complete inventory is
+  closed-world evidence for paths absent from that inventory. Combine it with
+  supplied file contents when judging repository-wide absence claims.
 - Supported and contradicted results must cite the evidenceIds that establish
-  the verdict. Unverifiable results must cite no evidenceIds.
+  the verdict. Not-supported results must cite no evidenceIds.
 - Evidence IDs must come from that assertion's own supplied evidence.
 - Current-state assertions require current evidence. Historical evidence may
   establish explicitly historical claims but must not support a claim that an
   obsolete behavior remains current.
-- The rationale must agree with the verdict. If the rationale says the cited
-  evidence establishes the assertion, the verdict must be "supported".
+- The rationale must agree with the verdict. Never return "contradicted" while
+  explaining that the assertion is supported, or vice versa.
 - Return only the structured response.`;
 
 /**
@@ -292,20 +341,20 @@ ${JSON.stringify(targets, null, 2)}`;
 /**
  * Build one bounded assertion-extraction task.
  *
- * @param sections - Complete artifact sections to inspect.
+ * @param units - Complete code-owned text units to classify.
  *
  * @returns Stable JSON-bearing extraction prompt.
  */
 export function precisionExtractionPrompt(
-  sections: PrecisionExtractionSection[],
+  units: PrecisionExtractionUnit[],
 ): string {
-  return `Extract the meaningful, detail-preserving knowledge claims from each complete section below.
+  return `Classify every text unit and extract its detail-preserving factual subject claims.
 
-Return exactly one result per sectionId. Return an empty assertions array when a
-section contains no material claim.
+Return exactly one result per unitId. Follow the classification/assertion rules
+from the system instructions.
 
-Sections (JSON):
-${JSON.stringify(sections, null, 2)}`;
+Text units (JSON):
+${JSON.stringify(units, null, 2)}`;
 }
 
 /**
@@ -327,4 +376,25 @@ ${JSON.stringify(assertions, null, 2)}
 
 Source evidence (JSON):
 ${JSON.stringify(evidence, null, 2)}`;
+}
+
+/**
+ * Build one complete requirement-accounting task.
+ *
+ * @param assertions - Extracted assertions to account for.
+ * @param facts - Complete active requirement set.
+ *
+ * @returns Stable JSON-bearing ledger prompt.
+ */
+export function precisionLedgerPrompt(
+  assertions: Array<{ assertionId: string; statement: string }>,
+  facts: PrecisionLedgerFact[],
+): string {
+  return `Account for every assertion against the complete active requirement ledger.
+
+Assertions (JSON):
+${JSON.stringify(assertions, null, 2)}
+
+Complete active requirement ledger (JSON):
+${JSON.stringify(facts, null, 2)}`;
 }

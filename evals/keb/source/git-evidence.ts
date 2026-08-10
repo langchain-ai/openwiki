@@ -7,6 +7,11 @@ import { git } from "../replay/git.js";
 const MAX_EVIDENCE_CHARS = 6_000;
 
 /**
+ * Stable identity of the deterministic complete tracked-path inventory.
+ */
+export const GIT_TRACKED_FILES_EVIDENCE_ID = "git:tracked-files";
+
+/**
  * Compare strings using locale-independent code-unit ordering.
  *
  * @param first - First string.
@@ -80,6 +85,18 @@ export async function collectGitEvidence(
     )
     .sort(compareStrings);
   const records: EvidenceRecord[] = [];
+
+  records.push({
+    evidenceId: GIT_TRACKED_FILES_EVIDENCE_ID,
+    sourceRef: "git tracked-file inventory",
+    observedAtCheckpoint: checkpointId,
+    current: true,
+    content: [
+      `Complete tracked-file inventory at checkpoint ${checkpointId}.`,
+      "This list was produced by git ls-files; no other tracked paths exist:",
+      ...relativePaths.map((relativePath) => `- ${relativePath}`),
+    ].join("\n"),
+  });
 
   for (const relativePath of relativePaths) {
     const absolutePath = path.join(worktreeDir, relativePath);

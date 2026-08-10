@@ -2,7 +2,9 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 
 import { EvaluationError } from "../core/errors.js";
 import type {
+  ActiveTruthFact,
   EvidenceCorpus,
+  EvaluationWarning,
   PrecisionAssertionEvaluation,
 } from "../core/types.js";
 import { invokeStructuredModel } from "./direct-model.js";
@@ -10,24 +12,30 @@ import type { ArtifactSection } from "./documents.js";
 import {
   PRECISION_EXTRACTION_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
+  PRECISION_LEDGER_SYSTEM,
   precisionExtractionPrompt,
   precisionJudgmentPrompt,
+  precisionLedgerPrompt,
   type PrecisionEvidenceExcerpt,
-  type PrecisionExtractionSection,
+  type PrecisionExtractionUnit,
   type PrecisionJudgmentAssertion,
+  type PrecisionLedgerFact,
 } from "./prompts.js";
 import { SectionBm25Index } from "./retrieval.js";
 import {
   assertionExtractionOutputSchema,
   precisionJudgmentOutputSchema,
+  precisionLedgerOutputSchema,
   type AssertionExtractionOutput,
   type PrecisionJudgmentOutput,
+  type PrecisionLedgerOutput,
 } from "./schemas.js";
 
-const DEFAULT_EXTRACTION_BATCH_SIZE = 4;
+const DEFAULT_EXTRACTION_BATCH_SIZE = 20;
 const DEFAULT_JUDGMENT_BATCH_SIZE = 20;
 const DEFAULT_EVIDENCE_TOP_K = 8;
 const EVIDENCE_FALLBACK_BATCH_SIZE = 8;
+const MAX_EVIDENCE_DOSSIER_CHARS = 60_000;
 
 /**
  * One material assertion extracted from the artifact and assigned a stable,
@@ -170,6 +178,57 @@ export interface PrecisionNearDuplicatePair {
 }
 
 /**
+ * Semantic role assigned to one complete code-owned artifact text unit.
+ */
+export type PrecisionTextUnitClassification =
+  "factual" | "mixed" | "navigation" | "opinion" | "instruction" | "no-claim";
+
+/**
+ * Auditable classification of one artifact text unit before truth judgment.
+ */
+export interface PrecisionTextUnitInventoryEntry {
+  /**
+   * Stable code-owned text-unit identity.
+   */
+  unitId: string;
+
+  /**
+   * Stable artifact section owning the unit.
+   */
+  sectionId: string;
+
+  /**
+   * Wiki path owning the unit.
+   */
+  relativePath: string;
+
+  /**
+   * Active heading hierarchy at the unit.
+   */
+  headingPath: string[];
+
+  /**
+   * Exact Markdown block classified by the evaluator.
+   */
+  content: string;
+
+  /**
+   * Evaluator-assigned semantic role.
+   */
+  classification: PrecisionTextUnitClassification;
+
+  /**
+   * Factual assertions retained from factual or mixed units.
+   */
+  assertions: string[];
+
+  /**
+   * Concise explanation of the classification.
+   */
+  rationale: string;
+}
+
+/**
  * Complete auditable output of precision extraction before semantic judgment.
  */
 export interface PrecisionAssertionInventory {
@@ -192,6 +251,11 @@ export interface PrecisionAssertionInventory {
    * Sections excluded before assertion extraction.
    */
   excludedSections: ExcludedPrecisionSection[];
+
+  /**
+   * Every code-owned text unit and its accountable semantic classification.
+   */
+  units: PrecisionTextUnitInventoryEntry[];
 
   /**
    * Every extracted candidate, including excluded and duplicate candidates.
@@ -229,6 +293,11 @@ export interface PrecisionPassInput {
   sections: ArtifactSection[];
 
   /**
+   * Human-authored material requirements active at this checkpoint.
+   */
+  activeFacts: ActiveTruthFact[];
+
+  /**
    * Normalized source evidence with explicit current and historical metadata.
    */
   evidence: EvidenceCorpus;
@@ -259,6 +328,11 @@ export interface PrecisionPassInput {
   onInventory?: (
     inventory: PrecisionAssertionInventory,
   ) => void | Promise<void>;
+
+  /**
+   * Optional sink for items that remain invalid after isolated repair.
+   */
+  onWarning?: (warning: EvaluationWarning) => void;
 }
 
 /**
@@ -502,7 +576,10 @@ function assertionExclusionReason(
       "wiki-navigation-section" | "commit-history-section" | "exact-duplicate"
     >
   | undefined {
-  const normalized = statement.toLowerCase();
+  const normalized = statement
+    .toLowerCase()
+    .replace(/[`*_]/gu, "")
+    .replace(/[“”‘’]/gu, "'");
 
   if (
     /\b(?:this|the) (?:wiki )?page\b/u.test(normalized) ||
@@ -515,7 +592,17 @@ function assertionExclusionReason(
     /\b(?:overview|quickstart|api|versioning) (?:document|page)\b/u.test(
       normalized,
     ) ||
+    /\b(?:library|api) reference (?:documents?|covers?)\b/u.test(normalized) ||
+    /\b(?:wiki )?quickstart\b.+\b(?:maps?|routes?|documents?|covers?)\b/u.test(
+      normalized,
+    ) ||
+    /\bdocumented on (?:the )?.+\bpage\b/u.test(normalized) ||
+    /\b(?:calc-api|versioning)\.md page\b/u.test(normalized) ||
+    /\b(?:wiki|quickstart|reference)\b.+\b(?:entry point|navigation map|serves as)\b/u.test(
+      normalized,
+    ) ||
     /\b(?:documented|covered) in the .+ (?:page|section)\b/u.test(normalized) ||
+    /\brecorded as .+\bsection\b/u.test(normalized) ||
     /\b(?:relevant|recommended) page\b/u.test(normalized) ||
     /\bpage (?:is located|covers|provides a full reference)\b/u.test(
       normalized,
@@ -529,39 +616,27 @@ function assertionExclusionReason(
     /\bcommit\s+[0-9a-f]{7,40}\b/u.test(normalized) ||
     /\b[0-9a-f]{7,40}\b.+\b(?:commit|touched?|changed?|introduced|removed)\b/u.test(
       normalized,
-    )
+    ) ||
+    /\b(?:same|single) commit\b/u.test(normalized) ||
+    /\bcommit\b.+\b(?:titled|named|message)\b/u.test(normalized) ||
+    /\b(?:introduced|changed|removed) in (?:a|the) commit\b/u.test(normalized)
   ) {
     return "commit-history-assertion";
   }
 
   if (
-    /\b(?:header|module[- ]level) comment\b/u.test(normalized) ||
-    /\b(?:comment|docblock) (?:states?|describes?|reads?|says?)\b/u.test(
+    /\b(?:header|module[- ]level) (?:comment|docstring)\b/u.test(normalized) ||
+    /\b(?:comment|docblock|docstring) (?:states?|describes?|reads?|says?)\b/u.test(
       normalized,
     ) ||
+    /\bper (?:the )?(?:module )?docstring\b/u.test(normalized) ||
     /\b(?:exactly|only|single|total of)\s+(?:one|two|three|four|five|\d+)\s+(?:tracked\s+)?(?:source\s+)?files?\b/u.test(
       normalized,
     ) ||
-    /\b(?:entire|complete) (?:repository|source|library).+\b(?:files?|entries)\b/u.test(
+    /\b(?:entire|complete) (?:tracked )?(?:repository|source|library).+\b(?:files?|entries|contents)\b/u.test(
       normalized,
     ) ||
-    /\brepository (?:root )?(?:contains?|has) no (?:package manifest|package\.json|tsconfig|test files?|test director|ci|build|lint|format)/u.test(
-      normalized,
-    ) ||
-    /\bthere (?:is|are) no (?:package manifest|package\.json|tsconfig|test files?|test director|ci|build|lint|format)/u.test(
-      normalized,
-    ) ||
-    /\bno (?:package manifest|package\.json|tsconfig|test runner|test configuration|build configuration|ci configuration|lint configuration|formatting configuration|npm scripts?)\b/u.test(
-      normalized,
-    ) ||
-    /\b(?:no test files? exist|there are no tests?|no tests? anywhere)\b/u.test(
-      normalized,
-    ) ||
-    /\b(?:nothing|no module).+\bimports?.*\bsrc\b/u.test(normalized) ||
-    /\bno (?:internal or external )?consumers? (?:are )?checked into (?:this|the) repository\b/u.test(
-      normalized,
-    ) ||
-    /\bleaf library with no .+consumers\b/u.test(normalized)
+    /\bgit ls-files\b/u.test(normalized)
   ) {
     return "repository-archaeology";
   }
@@ -585,15 +660,19 @@ function assertionExclusionReason(
   }
 
   if (
-    /\b(?:contributors?|callers?|readers?|developers?|maintainers?|you)\b/u.test(
+    /^(?:extension )?step \d+\b/u.test(normalized) ||
+    /\b(?:minimal|narrowest|only) (?:manual )?validation\b/u.test(normalized) ||
+    /\bcan be validated with (?:a )?manual\b/u.test(normalized) ||
+    /\badding a new .+\binvolves\b/u.test(normalized) ||
+    (/\b(?:consumers?|contributors?|callers?|readers?|developers?|maintainers?|you)\b/u.test(
       normalized,
     ) &&
-    /\b(?:should|must|needs? to|requires?|recommended|responsible for)\b/u.test(
-      normalized,
-    ) &&
-    /\b(?:add|change|check|confirm|extend|keep|modify|preserve|read|run|update|validate|write)\w*\b/u.test(
-      normalized,
-    )
+      /\b(?:should|must|needs? to|requires?|recommended|responsible for)\b/u.test(
+        normalized,
+      ) &&
+      /\b(?:add|change|check|confirm|extend|keep|modify|preserve|read|run|update|validate|write)\w*\b/u.test(
+        normalized,
+      ))
   ) {
     return "prescriptive-assertion";
   }
@@ -652,50 +731,135 @@ function tokenOverlap(first: Set<string>, second: Set<string>): number {
 }
 
 /**
- * Convert an artifact section into the extraction prompt's data-only shape.
- *
- * @param section - Complete artifact section.
- *
- * @returns Serializable extraction section.
+ * Internal code-owned Markdown block before semantic classification.
  */
-function toExtractionSection(
-  section: ArtifactSection,
-): PrecisionExtractionSection {
-  return {
-    sectionId: section.id,
-    relativePath: section.relativePath,
-    headingPath: section.headingPath,
-    content: section.content,
-  };
+type PrecisionTextUnit = PrecisionExtractionUnit;
+
+/**
+ * Classifier output restored to its code-owned text unit.
+ */
+interface ClassifiedPrecisionTextUnit extends PrecisionTextUnit {
+  /**
+   * Semantic role assigned by the evaluator.
+   */
+  classification: PrecisionTextUnitClassification;
+
+  /**
+   * Normalized factual claims extracted from the unit.
+   */
+  assertions: string[];
+
+  /**
+   * Concise classification rationale.
+   */
+  rationale: string;
 }
 
 /**
- * Validate and restore extraction output to the supplied section order.
+ * Divide one artifact section into stable Markdown blocks. Blank lines split
+ * units outside fenced code, while fenced content remains intact.
  *
- * @param sections - Complete sections supplied to one extraction request.
- * @param output - Parsed extraction response.
+ * @param section - Artifact section to divide.
  *
- * @returns One assertion array per section in request order.
+ * @returns Code-owned text units in exact source order.
+ */
+function textUnitsForSection(section: ArtifactSection): PrecisionTextUnit[] {
+  const lines = section.content.match(/[^\n]*\n|[^\n]+$/gu) ?? [];
+  const blocks: string[] = [];
+  let current = "";
+  let fence: { marker: "`" | "~"; length: number } | undefined;
+
+  /**
+   * Persist one non-empty accumulated Markdown block.
+   */
+  function flush(): void {
+    if (current.length === 0) {
+      return;
+    }
+
+    blocks.push(current);
+    current = "";
+  }
+
+  for (const line of lines) {
+    const withoutNewline = line.replace(/\r?\n$/u, "");
+    const marker = /^ {0,3}(`{3,}|~{3,})/u.exec(withoutNewline)?.[1];
+
+    if (fence === undefined && marker !== undefined) {
+      fence = {
+        marker: marker[0] as "`" | "~",
+        length: marker.length,
+      };
+    } else if (
+      fence !== undefined &&
+      marker !== undefined &&
+      marker[0] === fence.marker &&
+      marker.length >= fence.length &&
+      /^ {0,3}(?:`{3,}|~{3,})[\t ]*$/u.test(withoutNewline)
+    ) {
+      fence = undefined;
+    }
+
+    if (fence === undefined && withoutNewline.trim().length === 0) {
+      flush();
+      continue;
+    }
+
+    current += line;
+  }
+
+  flush();
+
+  if (blocks.length === 0) {
+    blocks.push("");
+  }
+
+  return blocks.map((content, index) => ({
+    unitId: `${section.id}::unit-${String(index).padStart(4, "0")}`,
+    sectionId: section.id,
+    relativePath: section.relativePath,
+    headingPath: section.headingPath,
+    content,
+  }));
+}
+
+/**
+ * Validate and restore extraction output to the supplied text-unit order.
  *
- * @throws EvaluationError for unknown, duplicate, missing, or empty assertions.
+ * @param units - Complete code-owned units supplied to one request.
+ * @param output - Parsed classification response.
+ *
+ * @returns Classified units in request order.
+ *
+ * @throws EvaluationError for unknown, duplicate, missing, or internally
+ * inconsistent unit results.
  */
 function resolveExtraction(
-  sections: ArtifactSection[],
+  units: PrecisionTextUnit[],
   output: AssertionExtractionOutput,
-): Array<{ section: ArtifactSection; assertions: string[] }> {
-  const requested = new Set(sections.map((section) => section.id));
-  const byId = new Map<string, AssertionExtractionOutput["sections"][number]>();
+): ClassifiedPrecisionTextUnit[] {
+  const requested = new Set(units.map((unit) => unit.unitId));
+  const byId = new Map<string, AssertionExtractionOutput["units"][number]>();
 
-  for (const result of output.sections) {
-    if (!requested.has(result.sectionId)) {
+  for (const result of output.units) {
+    if (!requested.has(result.unitId)) {
       throw new EvaluationError(
-        `Precision extractor returned unknown sectionId "${result.sectionId}".`,
+        `Precision extractor returned unknown unitId "${result.unitId}".`,
       );
     }
 
-    if (byId.has(result.sectionId)) {
+    if (byId.has(result.unitId)) {
       throw new EvaluationError(
-        `Precision extractor returned sectionId "${result.sectionId}" more than once.`,
+        `Precision extractor returned unitId "${result.unitId}" more than once.`,
+      );
+    }
+
+    const requiresAssertions =
+      result.classification === "factual" || result.classification === "mixed";
+
+    if (requiresAssertions !== result.assertions.length > 0) {
+      throw new EvaluationError(
+        `Precision extractor returned classification "${result.classification}" with ${result.assertions.length} assertions for unitId "${result.unitId}".`,
       );
     }
 
@@ -704,69 +868,87 @@ function resolveExtraction(
 
       if (deduplicationKey(normalized).length === 0) {
         throw new EvaluationError(
-          `Precision extractor returned an assertion containing only punctuation for sectionId "${result.sectionId}".`,
+          `Precision extractor returned an assertion containing only punctuation for unitId "${result.unitId}".`,
         );
       }
     }
 
-    byId.set(result.sectionId, result);
+    byId.set(result.unitId, result);
   }
 
-  return sections.map((section) => {
-    const result = byId.get(section.id);
+  return units.map((unit) => {
+    const result = byId.get(unit.unitId);
 
     if (result === undefined) {
       throw new EvaluationError(
-        `Precision extractor returned no result for sectionId "${section.id}".`,
+        `Precision extractor returned no result for unitId "${unit.unitId}".`,
       );
     }
 
-    return { section, assertions: result.assertions };
+    return {
+      ...unit,
+      classification: result.classification,
+      assertions: result.assertions.map(normalizeStatement),
+      rationale: result.rationale,
+    };
   });
 }
 
 /**
- * Extract and normalize every model-proposed material artifact assertion while
- * visiting each supplied section exactly once.
+ * Classify every code-owned text unit and extract normalized factual assertions.
  *
  * @param input - Precision pass configuration.
- * @param orderedSections - Complete sections in stable ID order.
- * @param extractionBatchSize - Validated extraction batch size.
+ * @param orderedSections - Complete extractable sections in stable ID order.
+ * @param extractionBatchSize - Validated text-unit batch size.
  *
- * @returns Stable raw assertion candidates before code-owned filtering.
+ * @returns Classified unit inventory plus raw factual assertion candidates.
  */
 async function extractAssertions(
   input: PrecisionPassInput,
   orderedSections: ArtifactSection[],
   extractionBatchSize: number,
-): Promise<RawExtractedAssertion[]> {
-  const extracted: RawExtractedAssertion[] = [];
+): Promise<{
+  units: PrecisionTextUnitInventoryEntry[];
+  assertions: RawExtractedAssertion[];
+}> {
+  const units = orderedSections.flatMap(textUnitsForSection);
+  const classified: ClassifiedPrecisionTextUnit[] = [];
 
-  for (const sections of batch(orderedSections, extractionBatchSize)) {
+  for (const unitBatch of batch(units, extractionBatchSize)) {
     const output = await invokeStructuredModel({
       model: input.model,
       pass: "precision-extraction",
       checkpointId: input.checkpointId,
       systemPrompt: PRECISION_EXTRACTION_SYSTEM,
-      taskPrompt: precisionExtractionPrompt(sections.map(toExtractionSection)),
+      taskPrompt: precisionExtractionPrompt(unitBatch),
       schema: assertionExtractionOutputSchema,
-      validate: (parsed) => resolveExtraction(sections, parsed),
+      validate: (parsed) => resolveExtraction(unitBatch, parsed),
       timeoutMs: input.timeoutMs,
     });
 
-    for (const result of resolveExtraction(sections, output)) {
-      for (const rawStatement of result.assertions) {
-        extracted.push({
-          statement: normalizeStatement(rawStatement),
-          sectionId: result.section.id,
-          relativePath: result.section.relativePath,
-          headingPath: result.section.headingPath,
-        });
-      }
-    }
+    classified.push(...resolveExtraction(unitBatch, output));
   }
 
-  return extracted;
+  return {
+    units: classified.map((unit) => ({
+      unitId: unit.unitId,
+      sectionId: unit.sectionId,
+      relativePath: unit.relativePath,
+      headingPath: unit.headingPath,
+      content: unit.content,
+      classification: unit.classification,
+      assertions: unit.assertions,
+      rationale: unit.rationale,
+    })),
+    assertions: classified.flatMap((unit) =>
+      unit.assertions.map((statement) => ({
+        statement,
+        sectionId: unit.sectionId,
+        relativePath: unit.relativePath,
+        headingPath: unit.headingPath,
+      })),
+    ),
+  };
 }
 
 /**
@@ -777,6 +959,7 @@ async function extractAssertions(
  * @param totalSectionCount - Complete section count before filtering.
  * @param extractedSectionCount - Sections sent to the model extractor.
  * @param excludedSections - Sections excluded before model extraction.
+ * @param units - Complete classified text-unit inventory.
  * @param extracted - Raw normalized assertion candidates.
  *
  * @returns Auditable inventory plus retained precision assertions.
@@ -786,6 +969,7 @@ function buildInventory(
   totalSectionCount: number,
   extractedSectionCount: number,
   excludedSections: ExcludedPrecisionSection[],
+  units: PrecisionTextUnitInventoryEntry[],
   extracted: RawExtractedAssertion[],
 ): {
   inventory: PrecisionAssertionInventory;
@@ -891,12 +1075,247 @@ function buildInventory(
       totalSectionCount,
       extractedSectionCount,
       excludedSections,
+      units,
       candidates,
       keptAssertionCount: assertions.length,
       nearDuplicatePairs,
     },
     assertions,
   };
+}
+
+/**
+ * Internal result of accounting one artifact assertion against required
+ * benchmark knowledge.
+ */
+interface LedgerAssertionEvaluation {
+  /**
+   * Code-owned assertion identity.
+   */
+  assertionId: string;
+
+  /**
+   * Relationship between the assertion and active requirements.
+   */
+  verdict: "supported" | "contradicted" | "unaccounted" | "indeterminate";
+
+  /**
+   * Active requirement-version identities establishing the verdict.
+   */
+  factVersionIds: string[];
+
+  /**
+   * One-sentence accounting rationale.
+   */
+  rationale: string;
+}
+
+/**
+ * Convert active requirements into the stable prompt representation used for
+ * ledger accounting.
+ *
+ * @param facts - Active material requirements.
+ *
+ * @returns Serializable requirement facts in benchmark order.
+ */
+function toLedgerFacts(facts: ActiveTruthFact[]): PrecisionLedgerFact[] {
+  return facts.map((fact) => ({
+    factId: fact.factId,
+    factVersionId: fact.factVersionId,
+    statement: fact.statement,
+  }));
+}
+
+/**
+ * Resolve and validate one assertion from a schema-valid ledger response.
+ *
+ * @param assertion - Code-owned artifact assertion.
+ * @param output - Schema-valid batch response.
+ * @param allowedFactVersionIds - Complete active requirement-version allowlist.
+ *
+ * @returns One validated ledger accounting result.
+ *
+ * @throws EvaluationError when the assertion result is missing, duplicated, or
+ * cites an unavailable requirement version.
+ */
+function resolveLedgerItem(
+  assertion: ExtractedArtifactAssertion,
+  output: PrecisionLedgerOutput,
+  allowedFactVersionIds: Set<string>,
+): LedgerAssertionEvaluation {
+  const matches = output.evaluations.filter(
+    (evaluation) => evaluation.assertionId === assertion.id,
+  );
+
+  if (matches.length !== 1) {
+    throw new EvaluationError(
+      `Precision ledger classifier returned ${matches.length} verdicts for assertionId "${assertion.id}".`,
+    );
+  }
+
+  const [evaluation] = matches;
+  const uniqueFactVersionIds = new Set(evaluation.factVersionIds);
+
+  if (uniqueFactVersionIds.size !== evaluation.factVersionIds.length) {
+    throw new EvaluationError(
+      `Precision ledger classifier returned duplicate factVersionIds for assertionId "${assertion.id}".`,
+    );
+  }
+
+  for (const factVersionId of evaluation.factVersionIds) {
+    if (!allowedFactVersionIds.has(factVersionId)) {
+      throw new EvaluationError(
+        `Precision ledger classifier cited unavailable factVersionId "${factVersionId}" for assertionId "${assertion.id}".`,
+      );
+    }
+  }
+
+  if (
+    evaluation.verdict !== "unaccounted" &&
+    evaluation.factVersionIds.length === 0
+  ) {
+    throw new EvaluationError(
+      `Precision ledger classifier returned no factVersionIds for ${evaluation.verdict} assertionId "${assertion.id}".`,
+    );
+  }
+
+  if (
+    evaluation.verdict === "unaccounted" &&
+    evaluation.factVersionIds.length > 0
+  ) {
+    throw new EvaluationError(
+      `Precision ledger classifier returned factVersionIds for unaccounted assertionId "${assertion.id}".`,
+    );
+  }
+
+  return {
+    assertionId: assertion.id,
+    verdict: evaluation.verdict,
+    factVersionIds: evaluation.factVersionIds,
+    rationale: evaluation.rationale,
+  };
+}
+
+/**
+ * Run one strict isolated ledger-accounting request for repair.
+ *
+ * @param input - Precision pass configuration.
+ * @param assertion - Assertion whose batch result was malformed.
+ * @param facts - Complete active requirement set.
+ *
+ * @returns One validated ledger accounting result.
+ */
+async function repairLedgerItem(
+  input: PrecisionPassInput,
+  assertion: ExtractedArtifactAssertion,
+  facts: PrecisionLedgerFact[],
+): Promise<LedgerAssertionEvaluation> {
+  const allowedFactVersionIds = new Set(
+    facts.map((fact) => fact.factVersionId),
+  );
+  const output = await invokeStructuredModel({
+    model: input.model,
+    pass: "precision-ledger",
+    checkpointId: input.checkpointId,
+    systemPrompt: PRECISION_LEDGER_SYSTEM,
+    taskPrompt: precisionLedgerPrompt(
+      [{ assertionId: assertion.id, statement: assertion.statement }],
+      facts,
+    ),
+    schema: precisionLedgerOutputSchema,
+    validate: (parsed) =>
+      resolveLedgerItem(assertion, parsed, allowedFactVersionIds),
+    timeoutMs: input.timeoutMs,
+  });
+
+  return resolveLedgerItem(assertion, output, allowedFactVersionIds);
+}
+
+/**
+ * Account every extracted assertion against the complete active requirement
+ * ledger. Valid neighbors survive malformed batch items; an irreparable item is
+ * marked indeterminate rather than aborting the checkpoint.
+ *
+ * @param input - Precision pass configuration and warning sink.
+ * @param assertions - Complete retained assertion inventory.
+ *
+ * @returns One ledger result per assertion in stable order.
+ */
+async function runLedgerAccounting(
+  input: PrecisionPassInput,
+  assertions: ExtractedArtifactAssertion[],
+): Promise<LedgerAssertionEvaluation[]> {
+  const facts = toLedgerFacts(input.activeFacts);
+
+  if (facts.length === 0) {
+    return assertions.map((assertion) => ({
+      assertionId: assertion.id,
+      verdict: "unaccounted",
+      factVersionIds: [],
+      rationale: "No active requirements were supplied for ledger accounting.",
+    }));
+  }
+
+  const allowedFactVersionIds = new Set(
+    facts.map((fact) => fact.factVersionId),
+  );
+  const results: LedgerAssertionEvaluation[] = [];
+
+  for (const assertionBatch of batch(
+    assertions,
+    input.judgmentBatchSize ?? DEFAULT_JUDGMENT_BATCH_SIZE,
+  )) {
+    const output = await invokeStructuredModel({
+      model: input.model,
+      pass: "precision-ledger",
+      checkpointId: input.checkpointId,
+      systemPrompt: PRECISION_LEDGER_SYSTEM,
+      taskPrompt: precisionLedgerPrompt(
+        assertionBatch.map((assertion) => ({
+          assertionId: assertion.id,
+          statement: assertion.statement,
+        })),
+        facts,
+      ),
+      schema: precisionLedgerOutputSchema,
+      timeoutMs: input.timeoutMs,
+    });
+
+    for (const assertion of assertionBatch) {
+      try {
+        results.push(
+          resolveLedgerItem(assertion, output, allowedFactVersionIds),
+        );
+      } catch (initialError) {
+        try {
+          results.push(await repairLedgerItem(input, assertion, facts));
+        } catch (repairError) {
+          const initialMessage =
+            initialError instanceof Error
+              ? initialError.message
+              : String(initialError);
+          const repairMessage =
+            repairError instanceof Error
+              ? repairError.message
+              : String(repairError);
+          const message = `${initialMessage} Isolated repair failed: ${repairMessage}`;
+          input.onWarning?.({
+            pass: "precision-ledger",
+            itemId: assertion.id,
+            message,
+          });
+          results.push({
+            assertionId: assertion.id,
+            verdict: "indeterminate",
+            factVersionIds: [],
+            rationale: `Evaluator could not repair this ledger judgment: ${message}`,
+          });
+        }
+      }
+    }
+  }
+
+  return results;
 }
 
 /**
@@ -931,6 +1350,92 @@ interface PrecisionJudgmentTarget {
 }
 
 /**
+ * Determine whether an adapter record explicitly claims to enumerate a complete
+ * closed-world inventory.
+ *
+ * @param evidence - Normalized evidence section.
+ *
+ * @returns Whether the record should accompany every source judgment.
+ */
+function isCompleteInventory(evidence: EvidenceSection): boolean {
+  return (
+    evidence.id === "git:tracked-files" ||
+    /\bcomplete\b[^\n]*\binventory\b/iu.test(evidence.content)
+  );
+}
+
+/**
+ * Build one bounded cumulative evidence dossier. Newly examined evidence and
+ * complete inventories take precedence; prior evidence is retained while the
+ * deterministic character budget permits.
+ *
+ * @param prior - Evidence already examined for the assertion.
+ * @param additions - Newly examined evidence.
+ * @param inventories - Complete inventory records relevant to every assertion.
+ *
+ * @returns Stable deduplicated evidence bounded by the dossier character cap.
+ */
+function evidenceDossier(
+  prior: EvidenceSection[],
+  additions: EvidenceSection[],
+  inventories: EvidenceSection[],
+): EvidenceSection[] {
+  const ordered = [...inventories, ...additions, ...prior];
+  const selected: EvidenceSection[] = [];
+  const seen = new Set<string>();
+  let characters = 0;
+
+  for (const evidence of ordered) {
+    if (seen.has(evidence.id)) {
+      continue;
+    }
+
+    const nextCharacters = characters + evidence.content.length;
+
+    if (selected.length > 0 && nextCharacters > MAX_EVIDENCE_DOSSIER_CHARS) {
+      continue;
+    }
+
+    selected.push(evidence);
+    seen.add(evidence.id);
+    characters = nextCharacters;
+  }
+
+  return selected;
+}
+
+/**
+ * Make a judgment batch's deduplicated evidence visibility explicit. The prompt
+ * serializes one shared evidence array for the whole batch, so every assertion
+ * can actually inspect every excerpt in that array. Giving each target that same
+ * stable union keeps prompt metadata and citation validation aligned with the
+ * model's real visibility.
+ *
+ * @param targets - Assertion targets whose evidence will share one prompt.
+ *
+ * @returns New targets that each reference the batch's stable evidence union.
+ */
+function shareBatchEvidence(
+  targets: PrecisionJudgmentTarget[],
+): PrecisionJudgmentTarget[] {
+  const evidenceById = new Map<string, EvidenceSection>();
+
+  for (const target of targets) {
+    for (const evidence of target.evidence) {
+      if (!evidenceById.has(evidence.id)) {
+        evidenceById.set(evidence.id, evidence);
+      }
+    }
+  }
+
+  const sharedEvidence = [...evidenceById.values()];
+  return targets.map((target) => ({
+    assertion: target.assertion,
+    evidence: sharedEvidence,
+  }));
+}
+
+/**
  * Convert internal precision targets into the prompt's data-only shape.
  *
  * @param targets - Assertions paired with their retrieved source evidence.
@@ -949,7 +1454,7 @@ function toJudgmentAssertions(
 
 /**
  * Deduplicate evidence content across a judgment batch while preserving stable
- * first-seen order and assertion-specific allowed identities.
+ * first-seen order.
  *
  * @param targets - Assertion targets in request order.
  *
@@ -1014,6 +1519,32 @@ function resolveJudgments(
     const target = targets.find(
       (candidate) => candidate.assertion.id === evaluation.assertionId,
     ) as PrecisionJudgmentTarget;
+    const normalizedRationale = evaluation.rationale.toLowerCase();
+
+    if (
+      evaluation.verdict === "contradicted" &&
+      (/\b(?:seems|appears|is|should be) supported\b/u.test(
+        normalizedRationale,
+      ) ||
+        /\bnot contradicted\b/u.test(normalizedRationale) ||
+        /\bre-evaluat\w*\b.+\bsupported\b/u.test(normalizedRationale))
+    ) {
+      throw new EvaluationError(
+        `Precision classifier rationale conflicts with contradicted verdict for assertionId "${evaluation.assertionId}".`,
+      );
+    }
+
+    if (
+      evaluation.verdict === "supported" &&
+      (/\b(?:cannot|does not|doesn't|fails to) (?:verify|establish|support)\b/u.test(
+        normalizedRationale,
+      ) ||
+        /\bnot supported\b/u.test(normalizedRationale))
+    ) {
+      throw new EvaluationError(
+        `Precision classifier rationale conflicts with supported verdict for assertionId "${evaluation.assertionId}".`,
+      );
+    }
     const allowedEvidenceIds = new Set(
       target.evidence.map((evidence) => evidence.id),
     );
@@ -1034,7 +1565,7 @@ function resolveJudgments(
     }
 
     if (
-      evaluation.verdict !== "unverifiable" &&
+      evaluation.verdict !== "not-supported" &&
       evaluation.evidenceIds.length === 0
     ) {
       throw new EvaluationError(
@@ -1043,11 +1574,11 @@ function resolveJudgments(
     }
 
     if (
-      evaluation.verdict === "unverifiable" &&
+      evaluation.verdict === "not-supported" &&
       evaluation.evidenceIds.length > 0
     ) {
       throw new EvaluationError(
-        `Precision classifier returned evidence IDs for unverifiable assertionId "${evaluation.assertionId}".`,
+        `Precision classifier returned evidence IDs for not-supported assertionId "${evaluation.assertionId}".`,
       );
     }
 
@@ -1066,11 +1597,135 @@ function resolveJudgments(
     return {
       assertion: target.assertion.statement,
       location: target.assertion.relativePath,
-      verdict: evaluation.verdict,
+      verdict: evaluation.verdict === "supported" ? "supported" : "unsupported",
+      unsupportedReason:
+        evaluation.verdict === "supported"
+          ? undefined
+          : evaluation.verdict === "contradicted"
+            ? "contradicted"
+            : "not-established",
+      verificationSource: "source",
       evidenceIds: evaluation.evidenceIds,
       rationale: evaluation.rationale,
     };
   });
+}
+
+/**
+ * Resolve one assertion from a possibly imperfect batch response. Extra or
+ * malformed neighboring entries do not invalidate this item.
+ *
+ * @param target - Assertion and exact evidence visible to it.
+ * @param output - Schema-valid batch response.
+ *
+ * @returns One validated precision evaluation.
+ *
+ * @throws EvaluationError when this assertion is missing, duplicated, has an
+ * invalid evidence shape, or cites unavailable evidence.
+ */
+function resolveJudgmentItem(
+  target: PrecisionJudgmentTarget,
+  output: PrecisionJudgmentOutput,
+): PrecisionAssertionEvaluation {
+  const matching = output.evaluations.filter(
+    (evaluation) => evaluation.assertionId === target.assertion.id,
+  );
+
+  return resolveJudgments([target], { evaluations: matching })[0];
+}
+
+/**
+ * Run one strict isolated precision judgment. The direct evaluator retries the
+ * request twice and rejects if either structured shape or semantic validation
+ * remains invalid.
+ *
+ * @param input - Precision pass configuration.
+ * @param target - One assertion and its visible evidence.
+ *
+ * @returns A validated precision evaluation.
+ */
+async function repairPrecisionJudgment(
+  input: PrecisionPassInput,
+  target: PrecisionJudgmentTarget,
+): Promise<PrecisionAssertionEvaluation> {
+  const output = await invokeStructuredModel({
+    model: input.model,
+    pass: "precision-judgment",
+    checkpointId: input.checkpointId,
+    systemPrompt: PRECISION_JUDGMENT_SYSTEM,
+    taskPrompt: precisionJudgmentPrompt(
+      toJudgmentAssertions([target]),
+      toJudgmentEvidence([target]),
+    ),
+    schema: precisionJudgmentOutputSchema,
+    validate: (parsed) => resolveJudgments([target], parsed),
+    timeoutMs: input.timeoutMs,
+  });
+
+  return resolveJudgments([target], output)[0];
+}
+
+/**
+ * Resolve a schema-valid precision batch item by item. Invalid items receive one
+ * isolated two-attempt repair request; irreparable items become indeterminate
+ * while valid neighbors survive unchanged.
+ *
+ * @param input - Precision pass configuration and warning sink.
+ * @param targets - Assertions sharing one bounded evidence set.
+ *
+ * @returns One valid or indeterminate evaluation per target.
+ */
+async function resolvePrecisionBatchResilient(
+  input: PrecisionPassInput,
+  targets: PrecisionJudgmentTarget[],
+): Promise<PrecisionAssertionEvaluation[]> {
+  const output = await invokeStructuredModel({
+    model: input.model,
+    pass: "precision-judgment",
+    checkpointId: input.checkpointId,
+    systemPrompt: PRECISION_JUDGMENT_SYSTEM,
+    taskPrompt: precisionJudgmentPrompt(
+      toJudgmentAssertions(targets),
+      toJudgmentEvidence(targets),
+    ),
+    schema: precisionJudgmentOutputSchema,
+    timeoutMs: input.timeoutMs,
+  });
+  const evaluations: PrecisionAssertionEvaluation[] = [];
+
+  for (const target of targets) {
+    try {
+      evaluations.push(resolveJudgmentItem(target, output));
+    } catch (initialError) {
+      try {
+        evaluations.push(await repairPrecisionJudgment(input, target));
+      } catch (repairError) {
+        const initialMessage =
+          initialError instanceof Error
+            ? initialError.message
+            : String(initialError);
+        const repairMessage =
+          repairError instanceof Error
+            ? repairError.message
+            : String(repairError);
+        const message = `${initialMessage} Isolated repair failed: ${repairMessage}`;
+        input.onWarning?.({
+          pass: "precision-judgment",
+          itemId: target.assertion.id,
+          message,
+        });
+        evaluations.push({
+          assertion: target.assertion.statement,
+          location: target.assertion.relativePath,
+          verdict: "indeterminate",
+          evidenceIds: [],
+          rationale: `Evaluator could not repair this precision judgment: ${message}`,
+        });
+      }
+    }
+  }
+
+  return evaluations;
 }
 
 /**
@@ -1107,6 +1762,7 @@ export async function runPrecisionPass(
       totalSectionCount: 0,
       extractedSectionCount: 0,
       excludedSections: [],
+      units: [],
       candidates: [],
       keptAssertionCount: 0,
       nearDuplicatePairs: [],
@@ -1130,7 +1786,7 @@ export async function runPrecisionPass(
     });
     return false;
   });
-  const extracted = await extractAssertions(
+  const extraction = await extractAssertions(
     input,
     extractableSections,
     extractionBatchSize,
@@ -1140,12 +1796,56 @@ export async function runPrecisionPass(
     orderedSections.length,
     extractableSections.length,
     excludedSections,
-    extracted,
+    extraction.units,
+    extraction.assertions,
   );
   await input.onInventory?.(inventory);
 
   if (assertions.length === 0) {
     return [];
+  }
+
+  const ledgerResults = await runLedgerAccounting(input, assertions);
+  const assertionById = new Map(
+    assertions.map((assertion): [string, ExtractedArtifactAssertion] => [
+      assertion.id,
+      assertion,
+    ]),
+  );
+  const evaluationByAssertion = new Map<string, PrecisionAssertionEvaluation>();
+  const unaccountedAssertions: ExtractedArtifactAssertion[] = [];
+
+  for (const ledgerResult of ledgerResults) {
+    const assertion = assertionById.get(
+      ledgerResult.assertionId,
+    ) as ExtractedArtifactAssertion;
+
+    if (ledgerResult.verdict === "unaccounted") {
+      unaccountedAssertions.push(assertion);
+      continue;
+    }
+
+    evaluationByAssertion.set(assertion.id, {
+      assertion: assertion.statement,
+      location: assertion.relativePath,
+      verdict:
+        ledgerResult.verdict === "contradicted"
+          ? "unsupported"
+          : ledgerResult.verdict,
+      unsupportedReason:
+        ledgerResult.verdict === "contradicted" ? "contradicted" : undefined,
+      verificationSource:
+        ledgerResult.verdict === "indeterminate" ? undefined : "ledger",
+      evidenceIds: ledgerResult.factVersionIds,
+      rationale: ledgerResult.rationale,
+    });
+  }
+
+  if (unaccountedAssertions.length === 0) {
+    return assertions.map(
+      (assertion) =>
+        evaluationByAssertion.get(assertion.id) as PrecisionAssertionEvaluation,
+    );
   }
 
   const evidenceSections: EvidenceSection[] = input.evidence.records.map(
@@ -1161,43 +1861,56 @@ export async function runPrecisionPass(
     }),
   );
   const evidenceIndex = new SectionBm25Index(evidenceSections);
-  const initialTargets = assertions.map(
+  const completeInventories = evidenceSections.filter(isCompleteInventory);
+  const initialTargets = unaccountedAssertions.map(
     (assertion): PrecisionJudgmentTarget => ({
       assertion,
-      evidence: evidenceIndex
-        .search(assertion.statement, DEFAULT_EVIDENCE_TOP_K)
-        .map((ranked) => ranked.section as EvidenceSection),
+      evidence: evidenceDossier(
+        [],
+        evidenceIndex
+          .search(assertion.statement, DEFAULT_EVIDENCE_TOP_K)
+          .map((ranked) => ranked.section as EvidenceSection),
+        completeInventories,
+      ),
     }),
   );
-  const evaluationByAssertion = new Map<string, PrecisionAssertionEvaluation>();
+  const examinedEvidenceByAssertion = new Map<string, Set<string>>();
 
   if (evidenceSections.length === 0) {
-    return assertions.map((assertion) => ({
-      assertion: assertion.statement,
-      location: assertion.relativePath,
-      verdict: "unverifiable",
-      evidenceIds: [],
-      rationale: "The checkpoint contains no source evidence.",
-    }));
+    for (const assertion of unaccountedAssertions) {
+      evaluationByAssertion.set(assertion.id, {
+        assertion: assertion.statement,
+        location: assertion.relativePath,
+        verdict: "unsupported",
+        unsupportedReason: "not-established",
+        verificationSource: "source",
+        evidenceIds: [],
+        rationale: "The checkpoint contains no source evidence.",
+      });
+    }
+
+    return assertions.map(
+      (assertion) =>
+        evaluationByAssertion.get(assertion.id) as PrecisionAssertionEvaluation,
+    );
   }
 
   for (const targetBatch of batch(initialTargets, judgmentBatchSize)) {
-    const output = await invokeStructuredModel({
-      model: input.model,
-      pass: "precision-judgment",
-      checkpointId: input.checkpointId,
-      systemPrompt: PRECISION_JUDGMENT_SYSTEM,
-      taskPrompt: precisionJudgmentPrompt(
-        toJudgmentAssertions(targetBatch),
-        toJudgmentEvidence(targetBatch),
-      ),
-      schema: precisionJudgmentOutputSchema,
-      validate: (parsed) => resolveJudgments(targetBatch, parsed),
-      timeoutMs: input.timeoutMs,
-    });
+    const visibleTargetBatch = shareBatchEvidence(targetBatch);
+    const evaluations = await resolvePrecisionBatchResilient(
+      input,
+      visibleTargetBatch,
+    );
 
-    for (const evaluation of resolveJudgments(targetBatch, output)) {
-      const target = targetBatch.find(
+    for (const target of visibleTargetBatch) {
+      examinedEvidenceByAssertion.set(
+        target.assertion.id,
+        new Set(target.evidence.map((evidence) => evidence.id)),
+      );
+    }
+
+    for (const evaluation of evaluations) {
+      const target = visibleTargetBatch.find(
         (candidate) => candidate.assertion.statement === evaluation.assertion,
       ) as PrecisionJudgmentTarget;
       evaluationByAssertion.set(target.assertion.id, evaluation);
@@ -1207,34 +1920,40 @@ export async function runPrecisionPass(
   for (const target of initialTargets) {
     const initial = evaluationByAssertion.get(target.assertion.id);
 
-    if (initial?.verdict !== "unverifiable") {
+    if (
+      initial?.verdict !== "unsupported" ||
+      initial.unsupportedReason !== "not-established"
+    ) {
       continue;
     }
 
-    const examined = new Set(target.evidence.map((evidence) => evidence.id));
+    const examined =
+      examinedEvidenceByAssertion.get(target.assertion.id) ?? new Set<string>();
     const remaining = evidenceIndex
       .sections()
       .filter((evidence) => !examined.has(evidence.id)) as EvidenceSection[];
+    let dossier = evidenceSections.filter((evidence) =>
+      examined.has(evidence.id),
+    );
 
-    for (const evidence of batch(remaining, EVIDENCE_FALLBACK_BATCH_SIZE)) {
-      const fallbackTarget = { assertion: target.assertion, evidence };
-      const output = await invokeStructuredModel({
-        model: input.model,
-        pass: "precision-judgment",
-        checkpointId: input.checkpointId,
-        systemPrompt: PRECISION_JUDGMENT_SYSTEM,
-        taskPrompt: precisionJudgmentPrompt(
-          toJudgmentAssertions([fallbackTarget]),
-          toJudgmentEvidence([fallbackTarget]),
-        ),
-        schema: precisionJudgmentOutputSchema,
-        validate: (parsed) => resolveJudgments([fallbackTarget], parsed),
-        timeoutMs: input.timeoutMs,
-      });
-      const [evaluation] = resolveJudgments([fallbackTarget], output);
+    for (const evidenceBatch of batch(
+      remaining,
+      EVIDENCE_FALLBACK_BATCH_SIZE,
+    )) {
+      dossier = evidenceDossier(dossier, evidenceBatch, completeInventories);
+      const fallbackTarget = {
+        assertion: target.assertion,
+        evidence: dossier,
+      };
+      const [evaluation] = await resolvePrecisionBatchResilient(input, [
+        fallbackTarget,
+      ]);
       evaluationByAssertion.set(target.assertion.id, evaluation);
 
-      if (evaluation.verdict !== "unverifiable") {
+      if (
+        evaluation.verdict !== "unsupported" ||
+        evaluation.unsupportedReason !== "not-established"
+      ) {
         break;
       }
     }
