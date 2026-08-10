@@ -87,11 +87,13 @@ describe("raw connector tools", () => {
 
     // Surfaced as a labelled tool result rather than a rejection (#427);
     // the symlink is still refused, and the reason still reaches the model.
-    const result = String(await getTool(tools, "openwiki_read_raw_item").invoke({
+    const result = String(
+      await getTool(tools, "openwiki_read_raw_item").invoke({
         connectorId: "x",
         maxBytes: 100,
         path: linkRelativePath,
-      }));
+      }),
+    );
     expect(result).toMatch(/^Tool error:/u);
     expect(result).toMatch(/symbolic links/u);
   });
@@ -103,7 +105,11 @@ describe("raw connector tools", () => {
 
     // Surfaced as a labelled tool result rather than a rejection (#427);
     // the symlink is still refused, and the reason still reaches the model.
-    const result = String(await getTool(tools, "openwiki_list_raw_items").invoke({ connectorId: "x" }));
+    const result = String(
+      await getTool(tools, "openwiki_list_raw_items").invoke({
+        connectorId: "x",
+      }),
+    );
     expect(result).toMatch(/^Tool error:/u);
     expect(result).toMatch(/symbolic links/u);
   });
@@ -115,11 +121,13 @@ describe("raw connector tools", () => {
 
     // Surfaced as a labelled tool result rather than a rejection (#427);
     // the symlink is still refused, and the reason still reaches the model.
-    const result = String(await getTool(tools, "openwiki_read_raw_item").invoke({
+    const result = String(
+      await getTool(tools, "openwiki_read_raw_item").invoke({
         connectorId: "x",
         maxBytes: 100,
         path: rawItemPath,
-      }));
+      }),
+    );
     expect(result).toMatch(/^Tool error:/u);
     expect(result).toMatch(/symbolic links/u);
   });

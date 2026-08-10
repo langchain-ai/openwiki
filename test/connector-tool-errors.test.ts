@@ -107,7 +107,9 @@ describe("registered connector tools", () => {
   });
 
   test("a successful connector tool call is unaffected", async () => {
-    const result = String(await toolNamed("openwiki_list_connectors").invoke({}));
+    const result = String(
+      await toolNamed("openwiki_list_connectors").invoke({}),
+    );
 
     expect(result).not.toContain("Tool error:");
     expect(() => JSON.parse(result) as unknown).not.toThrow();
