@@ -1,7 +1,7 @@
 import {
   OPENWIKI_GMAIL_ACCESS_TOKEN_ENV_KEY,
   OPENWIKI_GMAIL_REFRESH_TOKEN_ENV_KEY,
-} from "../../constants.js";
+} from "../../config/constants.js";
 import {
   getOAuthAccessToken,
   refreshOAuthAccessToken,

@@ -24,18 +24,18 @@ import {
   loadOpenWikiEnv,
   openWikiEnvDir,
   saveOpenWikiEnv,
-} from "../env.js";
-import { isFileNotFoundError } from "../fs-errors.js";
+} from "../config/env.js";
+import { isFileNotFoundError } from "../platform/fs-errors.js";
 import {
   sanitizeDiagnosticText,
   SECRET_KEY_PATTERN_SOURCE,
-} from "../diagnostics.js";
+} from "../platform/diagnostics.js";
 import {
   openWikiConversationHistoryDir,
   openWikiLocalWikiDir,
   openWikiSkillsDir,
-} from "../openwiki-home.js";
-import { resolveLanguage } from "../language.js";
+} from "../config/openwiki-home.js";
+import { resolveLanguage } from "../platform/language.js";
 import {
   resolveConceptTypeLabel,
   resolveIndexLabels,
@@ -121,11 +121,11 @@ import {
   resolveProviderRegion,
   resolveProviderRetryAttempts,
   type OpenWikiProvider,
-} from "../constants.js";
+} from "../config/constants.js";
 import {
   resolveExternalCliCredential,
   validateExternalCliCredential,
-} from "../external-cli-auth.js";
+} from "../auth/external-cli-auth.js";
 import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,

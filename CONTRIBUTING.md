@@ -29,8 +29,8 @@ pnpm run lint
 pnpm test
 ```
 
-`format` and `lint` match the checks that run on every PR, and `test` runs the
-Vitest suite.
+`format` and `lint` match the checks that run on every PR, and `test`
+typechecks, builds, and runs the Vitest suite with coverage.
 
 If your change should ship in a release, also add a changeset (see below).
 

@@ -1,4 +1,4 @@
-import { loadOpenWikiEnv, saveOpenWikiEnv } from "../env.js";
+import { loadOpenWikiEnv, saveOpenWikiEnv } from "../config/env.js";
 import {
   discoverAuthorizationServerMetadata,
   discoverProtectedResourceMetadata,
