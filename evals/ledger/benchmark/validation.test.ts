@@ -1,18 +1,15 @@
 import { describe, expect, test } from "vitest";
 
-import type {
-  LedgerBenchmark,
-  LedgerCheckpoint,
-  TruthFact,
-} from "../core/types.js";
-import type { TruthFactVersion } from "../core/types.js";
+import type { LedgerBenchmark, LedgerCheckpoint } from "../core/types.js";
 import { BenchmarkValidationError } from "../core/errors.js";
 import { validateBenchmark } from "./validation.js";
 
 /**
- * A minimal two-checkpoint benchmark in which every checkpoint has an active
- * fact. Each test starts from this valid shape and mutates it into the specific
- * violation it exercises.
+ * A minimal two-checkpoint benchmark. Source is the ground truth now, so a
+ * benchmark is just a trace of named checkpoints; each test starts from this
+ * valid shape and mutates it into the specific violation it exercises.
+ *
+ * @returns A structurally valid benchmark.
  */
 function valid(): LedgerBenchmark {
   return {
@@ -23,14 +20,6 @@ function valid(): LedgerBenchmark {
       checkpoints: [
         { id: "T0", commit: "aaaaaaa" },
         { id: "T1", commit: "bbbbbbb" },
-      ],
-    },
-    truthPackage: {
-      requirements: [
-        {
-          id: "spanning",
-          versions: [{ statement: "true throughout", fromCheckpoint: "T0" }],
-        },
       ],
     },
   };
@@ -54,7 +43,7 @@ function expectRejected(
 }
 
 describe("validateBenchmark", () => {
-  test("accepts a benchmark whose every checkpoint has an active fact", () => {
+  test("accepts a well-formed trace", () => {
     expect(() => validateBenchmark(valid())).not.toThrow();
   });
 
@@ -63,14 +52,6 @@ describe("validateBenchmark", () => {
     benchmark.trace.checkpoints[0].commit = "a".repeat(40);
 
     expect(() => validateBenchmark(benchmark)).not.toThrow();
-  });
-
-  test("rejects a checkpoint left with no active facts", () => {
-    const benchmark = valid();
-    // Retire the only fact at T1 (half-open [T0, T1)), emptying T1's active set.
-    benchmark.truthPackage.requirements[0].versions[0].untilCheckpoint = "T1";
-
-    expectRejected(benchmark, /T1.*no active coverage facts/);
   });
 });
 
@@ -123,116 +104,5 @@ describe("validateBenchmark commit SHA allowlist", () => {
     benchmark.trace.checkpoints[0].commit = commit;
 
     expectRejected(benchmark, /Checkpoint "T0" has an invalid commit SHA/);
-  });
-});
-
-describe("validateBenchmark Truth Package rules", () => {
-  test("rejects an empty facts list", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements = [];
-
-    expectRejected(
-      benchmark,
-      /truthPackage\.requirements must be a non-empty array/,
-    );
-  });
-
-  test("rejects a null fact entry as a validation error, not a crash", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements[0] = null as unknown as TruthFact;
-
-    expectRejected(benchmark, /A fact entry is not an object/);
-  });
-
-  test("rejects a fact with an empty id", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements[0].id = "";
-
-    expectRejected(benchmark, /A fact has an empty id/);
-  });
-
-  test("rejects duplicate fact ids", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements.push({
-      id: "spanning",
-      versions: [{ statement: "clash", fromCheckpoint: "T0" }],
-    });
-
-    expectRejected(benchmark, /Duplicate fact id "spanning"/);
-  });
-
-  test("rejects a fact with no versions", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements[0].versions = [];
-
-    expectRejected(benchmark, /must have at least one version/);
-  });
-
-  test("rejects a null version entry as a validation error, not a crash", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements[0].versions[0] =
-      null as unknown as TruthFactVersion;
-
-    expectRejected(benchmark, /has a version that is not an object/);
-  });
-
-  test("rejects a version with an empty statement", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements[0].versions[0].statement = "";
-
-    expectRejected(benchmark, /has a version with an empty statement/);
-  });
-
-  test("rejects malformed requirement evidence references", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements[0].versions[0].evidenceRefs = [""];
-
-    expectRejected(benchmark, /invalid evidenceRefs/);
-  });
-
-  test("rejects an unknown fromCheckpoint reference", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements[0].versions[0].fromCheckpoint = "T9";
-
-    expectRejected(benchmark, /unknown fromCheckpoint "T9"/);
-  });
-
-  test("rejects an unknown untilCheckpoint reference", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements[0].versions[0].untilCheckpoint = "T9";
-
-    expectRejected(benchmark, /unknown untilCheckpoint "T9"/);
-  });
-
-  test("rejects an untilCheckpoint equal to its fromCheckpoint", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements[0].versions[0].untilCheckpoint = "T0";
-
-    expectRejected(
-      benchmark,
-      /untilCheckpoint is not after its fromCheckpoint/,
-    );
-  });
-
-  test("rejects an untilCheckpoint before its fromCheckpoint", () => {
-    const benchmark = valid();
-    benchmark.truthPackage.requirements[0].versions[0].fromCheckpoint = "T1";
-    benchmark.truthPackage.requirements[0].versions[0].untilCheckpoint = "T0";
-
-    expectRejected(
-      benchmark,
-      /untilCheckpoint is not after its fromCheckpoint/,
-    );
-  });
-
-  test("rejects overlapping version ranges within one fact", () => {
-    const benchmark = valid();
-    // spanning covers [T0, end); add a second version [T1, end) that overlaps it.
-    benchmark.truthPackage.requirements[0].versions.push({
-      statement: "overlaps",
-      fromCheckpoint: "T1",
-    });
-
-    expectRejected(benchmark, /overlapping version ranges/);
   });
 });

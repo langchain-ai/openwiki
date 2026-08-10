@@ -5,10 +5,10 @@ import { fileURLToPath } from "node:url";
 import { loadBenchmark } from "../../benchmark/benchmark.js";
 import {
   advanceObsoleteWatchSet,
-  computeTransitions,
+  diffSurface,
+  extractSurface,
   obsoleteTargetsFor,
-} from "../../benchmark/transitions.js";
-import { getActiveFacts } from "../../benchmark/truth-ledger.js";
+} from "../../benchmark/surface.js";
 import { EvaluationError } from "../../core/errors.js";
 import type {
   CheckpointEvaluationRecord,
@@ -20,6 +20,7 @@ import type {
   LedgerRunResult,
   KnowledgeArtifact,
   ObsoleteFactTarget,
+  SurfaceItem,
 } from "../../core/types.js";
 import { GitReplay } from "../../replay/git-replay.js";
 import { createWorkspace } from "../../replay/workspace.js";
@@ -239,6 +240,7 @@ async function evaluateTrace(inputs: {
     const history: CheckpointEvaluationRecord[] = [];
     const evidenceHistory: EvidenceCorpus[] = [];
     let previousCheckpointId: string | undefined;
+    let previousSurface: SurfaceItem[] | undefined;
     let previousFacts: FactEvaluation[] = [];
     let outstandingObsolete: ObsoleteFactTarget[] = [];
 
@@ -262,12 +264,16 @@ async function evaluateTrace(inputs: {
         ],
       };
       evidenceHistory.push(currentEvidence);
-      const activeFacts = getActiveFacts(inputs.benchmark, checkpoint.id);
+      const surface = await extractSurface(
+        inputs.benchmark.sourceRepoPath,
+        checkpoint.commit,
+      );
       const transitions =
-        previousCheckpointId === undefined
+        previousCheckpointId === undefined || previousSurface === undefined
           ? undefined
-          : computeTransitions(
-              inputs.benchmark,
+          : diffSurface(
+              previousSurface,
+              surface,
               previousCheckpointId,
               checkpoint.id,
             );
@@ -275,7 +281,7 @@ async function evaluateTrace(inputs: {
         transitions === undefined ? [] : obsoleteTargetsFor(transitions);
       const obsoleteFacts = advanceObsoleteWatchSet({
         outstanding: outstandingObsolete,
-        activeFacts,
+        surface,
         newlyObsolete,
       });
       const artifact = await baseArtifact(
@@ -286,7 +292,7 @@ async function evaluateTrace(inputs: {
       );
       const evaluation = await inputs.backend.evaluate({
         artifact,
-        activeFacts,
+        surface,
         evidence,
         obsoleteFacts,
         transitions,
@@ -326,6 +332,7 @@ async function evaluateTrace(inputs: {
       });
       outstandingObsolete = obsoleteFacts;
       previousCheckpointId = checkpoint.id;
+      previousSurface = surface;
       previousFacts = evaluation.factEvaluations;
     }
 

@@ -4,6 +4,7 @@ import path from "node:path";
 import { BenchmarkValidationError } from "../core/errors.js";
 import type { LedgerBenchmark } from "../core/types.js";
 import { ensureSourceRepoAvailable } from "./source-repo.js";
+import { extractSurface } from "./surface.js";
 import { validateBenchmark } from "./validation.js";
 
 /**
@@ -71,20 +72,6 @@ interface RawBenchmark {
    *   trace with a `BenchmarkValidationError`
    */
   trace?: unknown;
-
-  /**
-   * Human-authored material knowledge requirements and their temporal versions.
-   * Passed straight to `validateBenchmark`; no shape is assumed here.
-   *
-   * @default no fallback; `validateBenchmark` rejects an absent or malformed
-   *   Truth Package with a `BenchmarkValidationError`
-   */
-  truthPackage?: unknown;
-
-  /**
-   * Deprecated pre-Truth-Package manifest field accepted during migration.
-   */
-  ledger?: unknown;
 }
 
 /**
@@ -137,13 +124,47 @@ export async function loadBenchmark(
     // Cast is deliberate: validateBenchmark performs the deep structural checks
     // that make this cast sound, and throws before the value is used otherwise.
     trace: raw.trace as LedgerBenchmark["trace"],
-    truthPackage: (raw.truthPackage ??
-      (typeof raw.ledger === "object" && raw.ledger !== null
-        ? { requirements: (raw.ledger as { facts?: unknown }).facts }
-        : raw.ledger)) as LedgerBenchmark["truthPackage"],
   };
 
   validateBenchmark(benchmark);
 
+  // The source repo is the ground truth, so confirm every checkpoint yields at
+  // least one surface item before a run begins; a checkpoint with an empty
+  // surface would leave Knowledge Coverage with no denominator. Only when the
+  // source working tree is present (reconstructed above, or shipped): a caller
+  // that opts out of source materialization also skips this preflight.
+  if (options.ensureSourceRepo !== false) {
+    await assertEveryCheckpointHasSurface(benchmark);
+  }
+
   return benchmark;
+}
+
+/**
+ * Assert that every checkpoint's source surface has at least one item, so
+ * Knowledge Coverage is well-defined wherever the runner scores. Reads each
+ * checkpoint's surface directly from source at its pinned commit.
+ *
+ * @param benchmark - The benchmark whose checkpoints to preflight.
+ *
+ * @throws BenchmarkValidationError naming the first checkpoint whose source
+ *   surface is empty.
+ */
+async function assertEveryCheckpointHasSurface(
+  benchmark: LedgerBenchmark,
+): Promise<void> {
+  for (const checkpoint of benchmark.trace.checkpoints) {
+    const surface = await extractSurface(
+      benchmark.sourceRepoPath,
+      checkpoint.commit,
+    );
+
+    if (surface.length === 0) {
+      throw new BenchmarkValidationError(
+        `Checkpoint "${checkpoint.id}" has an empty source surface. Every checkpoint ` +
+          `must expose at least one symbol, file, or version so Knowledge Coverage is ` +
+          `well-defined there.`,
+      );
+    }
+  }
 }

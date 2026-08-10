@@ -2,10 +2,10 @@ import path from "node:path";
 
 import {
   advanceObsoleteWatchSet,
-  computeTransitions,
+  diffSurface,
+  extractSurface,
   obsoleteTargetsFor,
-} from "../benchmark/transitions.js";
-import { getActiveFacts } from "../benchmark/truth-ledger.js";
+} from "../benchmark/surface.js";
 import { LedgerError } from "../core/errors.js";
 import type {
   CheckpointEvaluationRecord,
@@ -19,6 +19,7 @@ import type {
   KnowledgeArtifact,
   MaintenanceCounts,
   ObsoleteFactTarget,
+  SurfaceItem,
 } from "../core/types.js";
 import { computeChurn } from "../scoring/churn.js";
 import {
@@ -122,7 +123,7 @@ function savedCheckpoint(
 
 /**
  * Re-run only semantic evaluation over immutable artifacts and source evidence
- * from a completed LEDGER run. Truth Package projection, temporal transitions,
+ * from a completed LEDGER run. Source surface extraction, temporal transitions,
  * forgetting watch sets, all per-item judgments, and every score are recomputed.
  * The System Under Test is never invoked.
  *
@@ -162,6 +163,7 @@ export async function reevaluateSavedRun(
     const history: CheckpointEvaluationRecord[] = [];
     let previousArtifact: KnowledgeArtifact | undefined;
     let previousCheckpointId: string | undefined;
+    let previousSurface: SurfaceItem[] | undefined;
     let previousFactEvaluations: FactEvaluation[] = [];
     let outstandingObsolete: ObsoleteFactTarget[] = [];
 
@@ -190,13 +192,21 @@ export async function reevaluateSavedRun(
         loaded: true,
       });
 
-      const activeFacts = getActiveFacts(inputs.benchmark, checkpoint.id);
+      const surface = await extractSurface(
+        inputs.benchmark.sourceRepoPath,
+        checkpoint.commit,
+      );
       let transitions: CheckpointTransitions | undefined;
       let newlyObsolete: ObsoleteFactTarget[] = [];
 
-      if (index > 0 && previousCheckpointId !== undefined) {
-        transitions = computeTransitions(
-          inputs.benchmark,
+      if (
+        index > 0 &&
+        previousCheckpointId !== undefined &&
+        previousSurface !== undefined
+      ) {
+        transitions = diffSurface(
+          previousSurface,
+          surface,
           previousCheckpointId,
           checkpoint.id,
         );
@@ -205,19 +215,19 @@ export async function reevaluateSavedRun(
 
       const obsoleteFacts = advanceObsoleteWatchSet({
         outstanding: outstandingObsolete,
-        activeFacts,
+        surface,
         newlyObsolete,
       });
 
       reportProgress({
         type: "evaluation-start",
         checkpointId: checkpoint.id,
-        activeFactCount: activeFacts.length,
+        surfaceItemCount: surface.length,
         obsoleteFactCount: obsoleteFacts.length,
       });
       const evaluation = await inputs.evaluationBackend.evaluate({
         artifact,
-        activeFacts,
+        surface,
         evidence,
         obsoleteFacts,
         transitions,
@@ -284,6 +294,7 @@ export async function reevaluateSavedRun(
       outstandingObsolete = obsoleteFacts;
       previousArtifact = artifact;
       previousCheckpointId = checkpoint.id;
+      previousSurface = surface;
       previousFactEvaluations = evaluation.factEvaluations;
     }
 

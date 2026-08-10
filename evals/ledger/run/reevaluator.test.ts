@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import type {
   CheckpointEvaluation,
@@ -14,6 +14,7 @@ import type {
   LedgerRunResult,
   KnowledgeArtifact,
 } from "../core/types.js";
+import { createTinyRepo, type TinyRepo } from "../testing/tiny-repo.js";
 import {
   prepareRunDirectory,
   writeArtifactSnapshot,
@@ -40,12 +41,12 @@ class SavedInputEvaluator implements EvaluationBackend {
     this.seenArtifacts.push(input.artifact.documents[0]?.content ?? "");
 
     return {
-      factEvaluations: input.activeFacts.map((fact) => ({
+      factEvaluations: input.surface.map((fact) => ({
         factId: fact.factId,
         factVersionId: fact.factVersionId,
         verdict: "correct",
         evidence: ["page.md::0000"],
-        rationale: "The saved artifact states the active fact.",
+        rationale: "The saved artifact states the surface item.",
       })),
       forgettingEvaluations: input.obsoleteFacts.map((fact) => ({
         factId: fact.factId,
@@ -60,7 +61,7 @@ class SavedInputEvaluator implements EvaluationBackend {
           location: "page.md",
           verdict: "supported",
           tense: "current",
-          adjudicatedBy: "ledger",
+          adjudicatedBy: "source",
           evidenceIds: ["source::0000"],
           rationale: "The saved source evidence supports it.",
         },
@@ -70,34 +71,24 @@ class SavedInputEvaluator implements EvaluationBackend {
 }
 
 /**
- * Build the two-checkpoint benchmark used by evaluator-only replay tests.
+ * Build the two-checkpoint benchmark used by evaluator-only replay tests. The
+ * source repo evolves one exported symbol's signature at T1 so the surface diff
+ * yields exactly one changed element and thus one maintenance correction
+ * boundary.
  *
- * @returns A benchmark with one fact that changes at T1.
+ * @param repo - Tiny repository supplying the two checkpoint commits.
+ *
+ * @returns A source-grounded benchmark trace.
  */
-function benchmark(): LedgerBenchmark {
+function benchmark(repo: TinyRepo): LedgerBenchmark {
   return {
     name: "saved-evolution",
     description: "saved replay test",
-    sourceRepoPath: "/unused",
+    sourceRepoPath: repo.repoPath,
     trace: {
       checkpoints: [
-        { id: "T0", commit: "1111111", label: "version one" },
-        { id: "T1", commit: "2222222", label: "version two" },
-      ],
-    },
-    truthPackage: {
-      requirements: [
-        {
-          id: "version",
-          versions: [
-            {
-              statement: "Version is one.",
-              fromCheckpoint: "T0",
-              untilCheckpoint: "T1",
-            },
-            { statement: "Version is two.", fromCheckpoint: "T1" },
-          ],
-        },
+        { id: "T0", commit: repo.shas[0], label: "version one" },
+        { id: "T1", commit: repo.shas[1], label: "version two" },
       ],
     },
   };
@@ -221,8 +212,25 @@ function evidence(checkpointId: string): EvidenceCorpus {
 
 describe("reevaluateSavedRun", () => {
   const temporaryDirectories: string[] = [];
+  let repo: TinyRepo;
+
+  beforeEach(async () => {
+    repo = await createTinyRepo([
+      {
+        message: "T0",
+        files: { "code.ts": "export function f(): number {\n  return 1;\n}\n" },
+      },
+      {
+        message: "T1",
+        files: {
+          "code.ts": "export function f(a: number): number {\n  return a;\n}\n",
+        },
+      },
+    ]);
+  });
 
   afterEach(async () => {
+    await repo.dispose();
     await Promise.all(
       temporaryDirectories
         .splice(0)
@@ -249,7 +257,7 @@ describe("reevaluateSavedRun", () => {
     const evaluator = new SavedInputEvaluator();
     const events: string[] = [];
     const result = await reevaluateSavedRun({
-      benchmark: benchmark(),
+      benchmark: benchmark(repo),
       sourceRunDir: runDir,
       evaluationBackend: evaluator,
       provider: "anthropic",

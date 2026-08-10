@@ -36,9 +36,10 @@ async function main(): Promise<void> {
     process.env,
     evalDir,
   );
-  const benchmark = await loadBenchmark(config.benchmarkDir, {
-    ensureSourceRepo: false,
-  });
+  // Source is now the ground truth: surface extraction and grounding both read
+  // the repository at each checkpoint's commit, so the working tree must exist
+  // even for a pure re-evaluation of a saved run.
+  const benchmark = await loadBenchmark(config.benchmarkDir);
   const startedAt = new Date().toISOString();
   const startedMs = performance.now();
   const runDir = await prepareRunDirectory(

@@ -1,5 +1,5 @@
 {
-  "benchmark": "../../../benchmarks/calc-evolution",
+  "benchmark": "../../../benchmarks/calc",
   "defects": [
     {
       "id": "D1",
@@ -14,24 +14,24 @@
       "kind": "stale",
       "checkpointId": "T2",
       "operation": "append",
-      "text": "The library's current version is 1.0.0.",
-      "expectedClaim": "The library's current version is 1.0.0."
+      "text": "The library's current released version is \"1.0.0\".",
+      "expectedClaim": "The library's current released version is \"1.0.0\"."
     },
     {
       "id": "D3",
       "kind": "coverage-gap",
       "checkpointId": "T1",
       "operation": "delete",
-      "text": "- The library provides subtract(a, b), which returns the difference a - b.\n",
-      "expectedFactId": "subtract-operation"
+      "text": "- The module `src/calc.ts` exports a function `subtract(a: number, b: number): number`.\n",
+      "expectedFactId": "symbol:subtract"
     },
     {
       "id": "D4",
       "kind": "spurious-deletion",
       "checkpointId": "T1",
       "operation": "delete",
-      "text": "- The library provides add(a, b), which returns the sum a + b.\n",
-      "expectedFactId": "add-operation"
+      "text": "- The module `src/calc.ts` exports a function `add(a: number, b: number): number`.\n",
+      "expectedFactId": "symbol:add"
     },
     {
       "id": "D5",

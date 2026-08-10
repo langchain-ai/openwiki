@@ -115,7 +115,7 @@ export class ModelEvaluationBackend implements EvaluationBackend {
     const factEvaluations = await runCoveragePass({
       model: this.model,
       checkpointId: input.artifact.checkpointId,
-      activeFacts: input.activeFacts,
+      surface: input.surface,
       index,
       timeoutMs: this.timeoutMs,
       onWarning,
@@ -132,9 +132,6 @@ export class ModelEvaluationBackend implements EvaluationBackend {
       model: this.model,
       checkpointId: input.artifact.checkpointId,
       sections,
-      activeFacts: input.activeFacts,
-      supersededFacts: input.obsoleteFacts,
-      transitions: input.transitions,
       evidence: input.evidence,
       timeoutMs: this.timeoutMs,
       onInventory: this.onAssertionInventory,

@@ -2,25 +2,18 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 import { readFile } from "node:fs/promises";
 
 import { EvaluationError } from "../core/errors.js";
-import type {
-  CheckpointTransitions,
-  PrecisionClaimTense,
-} from "../core/types.js";
+import type { PrecisionClaimTense } from "../core/types.js";
 import { invokeStructuredModel } from "../evaluator/direct-model.js";
 import {
   PRECISION_EXTRACTION_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
-  PRECISION_LEDGER_SYSTEM,
   precisionExtractionPrompt,
   precisionJudgmentPrompt,
-  precisionLedgerPrompt,
   type PrecisionEvidenceExcerpt,
-  type PrecisionLedgerFact,
 } from "../evaluator/prompts.js";
 import {
   assertionExtractionOutputSchema,
   precisionJudgmentOutputSchema,
-  precisionLedgerOutputSchema,
 } from "../evaluator/schemas.js";
 import type { PrecisionTextUnitClassification } from "../evaluator/precision.js";
 
@@ -45,7 +38,7 @@ interface ExpectedAssertion {
 }
 
 /**
- * Human-reviewed calibration cases for the three live precision stages.
+ * Human-reviewed calibration cases for the live precision stages.
  */
 export interface PrecisionGoldFixture {
   /**
@@ -72,65 +65,29 @@ export interface PrecisionGoldFixture {
   }>;
 
   /**
-   * Ledger-accounting calibration cases.
+   * Source-grounding calibration cases.
    */
-  ledgerCases: Array<{
+  groundingCases: Array<{
     /**
-     * Claim being accounted.
-     */
-    assertion: ExpectedAssertion;
-
-    /**
-     * Ledger facts available to the accounting.
-     */
-    facts: PrecisionLedgerFact[];
-
-    /**
-     * Declared transition context for the case.
-     *
-     * @default undefined no transition context is supplied
-     */
-    transitions?: CheckpointTransitions;
-
-    /**
-     * Expected accounting verdict.
-     */
-    expected: {
-      verdict: "supported" | "contradicted" | "unaccounted";
-
-      /**
-       * Expected formerly-true flag for a contradicted verdict.
-       *
-       * @default undefined for non-contradicted expected verdicts
-       */
-      formerlyTrue?: boolean;
-    };
-  }>;
-
-  /**
-   * Bounded-refutation calibration cases.
-   */
-  refutationCases: Array<{
-    /**
-     * Claim being refuted.
+     * Claim being grounded against source evidence.
      */
     assertion: string;
 
     /**
-     * Evidence excerpts visible to the refutation.
+     * Evidence excerpts visible to the grounding.
      */
     evidence: PrecisionEvidenceExcerpt[];
 
     /**
-     * Expected refutation verdict.
+     * Expected grounding verdict.
      */
     expected: {
-      verdict: "contradicted" | "not-refuted";
+      verdict: "supported" | "contradicted" | "not-addressed";
 
       /**
        * Expected formerly-true flag for a contradicted verdict.
        *
-       * @default undefined for a not-refuted expected verdict
+       * @default undefined for a supported or not-addressed expected verdict
        */
       formerlyTrue?: boolean;
     };
@@ -163,7 +120,7 @@ export interface StageAgreement {
 }
 
 /**
- * Full calibration report across all three semantic stages.
+ * Full calibration report across all semantic stages.
  */
 export interface GoldAgreementReport {
   /**
@@ -172,14 +129,9 @@ export interface GoldAgreementReport {
   extraction: StageAgreement;
 
   /**
-   * Ledger-accounting stage agreement.
+   * Source-grounding stage agreement.
    */
-  ledger: StageAgreement;
-
-  /**
-   * Bounded-refutation stage agreement.
-   */
-  refutation: StageAgreement;
+  grounding: StageAgreement;
 
   /**
    * Minimum agreement each stage must reach.
@@ -240,7 +192,7 @@ function sameJson(first: unknown, second: unknown): boolean {
 }
 
 /**
- * Run all three live semantic stages and report exact judge-vs-human agreement.
+ * Run every live semantic stage and report exact judge-vs-human agreement.
  */
 export async function measureGoldAgreement(inputs: {
   model: BaseChatModel;
@@ -283,42 +235,10 @@ export async function measureGoldAgreement(inputs: {
     }
   }
 
-  let ledgerCorrect = 0;
-  const ledgerMismatches: string[] = [];
-  for (const [index, item] of fixture.ledgerCases.entries()) {
-    const assertionId = `gold-ledger-${index}`;
-    const output = await invokeStructuredModel({
-      model: inputs.model,
-      pass: "precision-ledger",
-      checkpointId: "gold",
-      systemPrompt: PRECISION_LEDGER_SYSTEM,
-      taskPrompt: precisionLedgerPrompt(
-        [{ assertionId, ...item.assertion }],
-        item.facts,
-        item.transitions,
-      ),
-      schema: precisionLedgerOutputSchema,
-      timeoutMs: inputs.timeoutMs,
-    });
-    const actual = output.evaluations.find(
-      (evaluation) => evaluation.assertionId === assertionId,
-    );
-    if (
-      actual?.verdict === item.expected.verdict &&
-      actual.formerlyTrue === item.expected.formerlyTrue
-    ) {
-      ledgerCorrect += 1;
-    } else {
-      ledgerMismatches.push(
-        `case ${index}: expected ${JSON.stringify(item.expected)}, received ${JSON.stringify(actual === undefined ? null : { verdict: actual.verdict, formerlyTrue: actual.formerlyTrue })}`,
-      );
-    }
-  }
-
-  let refutationCorrect = 0;
-  const refutationMismatches: string[] = [];
-  for (const [index, item] of fixture.refutationCases.entries()) {
-    const assertionId = `gold-refutation-${index}`;
+  let groundingCorrect = 0;
+  const groundingMismatches: string[] = [];
+  for (const [index, item] of fixture.groundingCases.entries()) {
+    const assertionId = `gold-grounding-${index}`;
     const output = await invokeStructuredModel({
       model: inputs.model,
       pass: "precision-judgment",
@@ -345,9 +265,9 @@ export async function measureGoldAgreement(inputs: {
       actual?.verdict === item.expected.verdict &&
       actual.formerlyTrue === item.expected.formerlyTrue
     ) {
-      refutationCorrect += 1;
+      groundingCorrect += 1;
     } else {
-      refutationMismatches.push(
+      groundingMismatches.push(
         `case ${index}: expected ${JSON.stringify(item.expected)}, received ${JSON.stringify(actual === undefined ? null : { verdict: actual.verdict, formerlyTrue: actual.formerlyTrue })}`,
       );
     }
@@ -359,20 +279,15 @@ export async function measureGoldAgreement(inputs: {
       fixture.extractionCases.length,
       extractionMismatches,
     ),
-    ledger: stageAgreement(
-      ledgerCorrect,
-      fixture.ledgerCases.length,
-      ledgerMismatches,
-    ),
-    refutation: stageAgreement(
-      refutationCorrect,
-      fixture.refutationCases.length,
-      refutationMismatches,
+    grounding: stageAgreement(
+      groundingCorrect,
+      fixture.groundingCases.length,
+      groundingMismatches,
     ),
     floor: GOLD_AGREEMENT_FLOOR,
     passed: false,
   };
-  report.passed = [report.extraction, report.ledger, report.refutation].every(
+  report.passed = [report.extraction, report.grounding].every(
     (stage) => stage.agreement >= GOLD_AGREEMENT_FLOOR,
   );
   return report;
@@ -384,7 +299,7 @@ export async function measureGoldAgreement(inputs: {
 export function assertGoldAgreement(report: GoldAgreementReport): void {
   if (!report.passed) {
     throw new EvaluationError(
-      `Precision gold agreement below ${GOLD_AGREEMENT_FLOOR}: extraction=${report.extraction.agreement}, ledger=${report.ledger.agreement}, refutation=${report.refutation.agreement}.`,
+      `Precision gold agreement below ${GOLD_AGREEMENT_FLOOR}: extraction=${report.extraction.agreement}, grounding=${report.grounding.agreement}.`,
     );
   }
 }

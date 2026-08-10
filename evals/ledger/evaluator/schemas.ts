@@ -71,14 +71,15 @@ export const assertionExtractionOutputSchema = z.object({
 });
 
 /**
- * Enforce the cross-field invariant shared by both precision passes:
- * `formerlyTrue` must be present exactly when the verdict is `contradicted`.
+ * Enforce the precision-judgment cross-field invariant: `formerlyTrue` must be
+ * present exactly when the verdict is `contradicted` (it distinguishes a stale
+ * claim from an invented one; a `supported` or `not-addressed` claim has no such
+ * flag).
  *
- * This is attached to the strict single-item schemas used by isolated repair
- * calls. The batch schemas deliberately omit it and defer the identical check to
- * per-item resolution (see `resolveLedgerItem` / `resolveJudgments`), so one
- * malformed element degrades to a fallback verdict instead of failing the whole
- * batch parse.
+ * This is attached to the strict single-item schema used by isolated repair
+ * calls. The batch schema deliberately omits it and defers the identical check
+ * to per-item resolution (see `resolveJudgments`), so one malformed element
+ * degrades to a fallback verdict instead of failing the whole batch parse.
  *
  * @param evaluation - One decoded precision evaluation element.
  * @param context - The Zod refinement context used to report violations.
@@ -102,54 +103,22 @@ function refineFormerlyTrue(
 }
 
 /**
- * One raw required-ledger accounting evaluation, before the cross-field
- * invariant is applied.
- */
-const precisionLedgerEvaluationSchema = z.object({
-  assertionId: z.string(),
-  verdict: z.enum(["supported", "contradicted", "unaccounted"]),
-  factVersionIds: z.array(z.string()).default([]),
-  formerlyTrue: z.boolean().optional(),
-  rationale: z.string().trim().min(1),
-});
-
-/**
- * One raw refutation evaluation for a current, off-ledger claim, before the
- * cross-field invariant is applied.
+ * One raw source-grounding evaluation for an extracted claim, before the
+ * cross-field invariant is applied. `supported` and `contradicted` cite the
+ * source evidence that establishes the verdict; `not-addressed` cites none.
  */
 const precisionJudgmentEvaluationSchema = z.object({
   assertionId: z.string(),
-  verdict: z.enum(["contradicted", "not-refuted"]),
+  verdict: z.enum(["supported", "contradicted", "not-addressed"]),
   evidenceIds: z.array(z.string()).default([]),
   formerlyTrue: z.boolean().optional(),
   rationale: z.string().trim().min(1),
 });
 
 /**
- * Strict required-ledger accounting output for a single isolated repair, where
- * the cross-field invariant is enforced at parse time so the model gets a retry
+ * Strict source-grounding output for a single isolated repair, where the
+ * cross-field invariant is enforced at parse time so the model gets a retry
  * before the element is degraded.
- */
-export const precisionLedgerOutputSchema = z.object({
-  evaluations: z.array(
-    precisionLedgerEvaluationSchema.superRefine(refineFormerlyTrue),
-  ),
-});
-
-/**
- * Lenient required-ledger accounting output for a batch. Parsing does not reject
- * the whole array when one element violates the cross-field invariant; that rule
- * is enforced per element by `resolveLedgerItem`, so a single bad element can
- * degrade to `unaccounted` while its neighbors survive.
- */
-export const precisionLedgerBatchOutputSchema = z.object({
-  evaluations: z.array(precisionLedgerEvaluationSchema),
-});
-
-/**
- * Strict refutation output for a single isolated repair, where the cross-field
- * invariant is enforced at parse time so the model gets a retry before the
- * element is degraded.
  */
 export const precisionJudgmentOutputSchema = z.object({
   evaluations: z.array(
@@ -158,10 +127,10 @@ export const precisionJudgmentOutputSchema = z.object({
 });
 
 /**
- * Lenient refutation output for a batch. Parsing does not reject the whole array
- * when one element violates the cross-field invariant; that rule is enforced per
- * element by `resolveJudgments`, so a single bad element can degrade to
- * `unverified` while its neighbors survive.
+ * Lenient source-grounding output for a batch. Parsing does not reject the whole
+ * array when one element violates the cross-field invariant; that rule is
+ * enforced per element by `resolveJudgments`, so a single bad element can
+ * degrade to `unverified` while its neighbors survive.
  */
 export const precisionJudgmentBatchOutputSchema = z.object({
   evaluations: z.array(precisionJudgmentEvaluationSchema),
@@ -183,11 +152,6 @@ export type ForgettingOutput = z.infer<typeof forgettingOutputSchema>;
 export type AssertionExtractionOutput = z.infer<
   typeof assertionExtractionOutputSchema
 >;
-
-/**
- * Inferred type of required-ledger accounting output.
- */
-export type PrecisionLedgerOutput = z.infer<typeof precisionLedgerOutputSchema>;
 
 /**
  * Inferred type of precision-judgment output.

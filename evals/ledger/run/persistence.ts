@@ -218,12 +218,13 @@ export async function writeRunFailure(
 const UNVERIFIED_CLAIMS_BASENAME = "unverified-claims.md";
 
 /**
- * Persist the human-readable worklist of claims the Truth Package could neither
+ * Persist the human-readable worklist of claims the source evidence could neither
  * support nor refute. These claims never enter a scored denominator, so they are
  * invisible in the metrics; the file gives a reader the concrete assertions and a
- * clear next action (promote the true ones to requirements so the next run scores
- * them). The file is written with a constant basename directly inside the already
- * confined run directory, so no untrusted input reaches the write path.
+ * clear next action (review each for a hidden hallucination or a gap in the
+ * evidence retrieved from source). The file is written with a constant basename
+ * directly inside the already confined run directory, so no untrusted input
+ * reaches the write path.
  *
  * @param runDir - Prepared confined run directory.
  * @param result - The completed run result.
@@ -263,10 +264,10 @@ export async function writeUnverifiedClaims(
     "",
     `${result.metadata.benchmarkName} · ${result.metadata.startedAt}`,
     "",
-    "These claims are neither supported nor refuted by the Truth Package, so they",
-    "never entered a scored denominator. Read each one: promote the true claims to",
-    "requirements in the benchmark so the next run scores them, and treat the false",
-    "ones as a precision gap the Truth Package should learn to refute.",
+    "These claims are neither supported nor refuted by the source evidence, so they",
+    "never entered a scored denominator. Read each one: a claim the source cannot",
+    "confirm is either a hidden hallucination or a gap in the evidence retrieved",
+    "from source at this checkpoint.",
     "",
     sections.join("\n\n"),
     "",

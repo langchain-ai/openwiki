@@ -238,15 +238,15 @@ describe("formatRunSummary", () => {
       '│  ├ T1 · invented "the retry budget defaults to 5 attempts"',
     );
     expect(summary).toContain(
-      "1 claim the Truth Package can't judge → /runs/demo/unverified-claims.md",
+      "1 claim the source evidence neither confirmed nor refuted → /runs/demo/unverified-claims.md",
     );
     expect(summary).toContain("└ ⚠️ LEDGER 80.0% · 2m 3s");
   });
 
-  test("omits the coverage-gaps block when no worklist was written", () => {
+  test("omits the unverified-claims block when no worklist was written", () => {
     const summary = formatRunSummary(result());
 
-    expect(summary).not.toContain("Coverage gaps");
+    expect(summary).not.toContain("Unverified claims");
     expect(summary).not.toContain("unverified-claims.md");
   });
 

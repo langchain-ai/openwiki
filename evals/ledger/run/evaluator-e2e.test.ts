@@ -20,6 +20,7 @@ import type {
   SystemUnderTest,
 } from "../core/types.js";
 import { wikiDirFor } from "../core/paths.js";
+import { extractSurface } from "../benchmark/surface.js";
 import { createTinyRepo, type TinyRepo } from "../testing/tiny-repo.js";
 
 /**
@@ -88,7 +89,6 @@ const {
   COVERAGE_SYSTEM,
   FORGETTING_SYSTEM,
   PRECISION_EXTRACTION_SYSTEM,
-  PRECISION_LEDGER_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
 } = await import("../evaluator/prompts.js");
 
@@ -160,17 +160,18 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
       }>
     >(taskPrompt, "Targets (JSON):\n");
 
+    // The evolving artifact names every surface item, so coverage is a full
+    // mention floor at every checkpoint. Cite the first supplied excerpt when one
+    // exists so the evidence field is populated the way the real model would.
     return {
       evaluations: targets.map((target) => {
-        const evidence = target.excerpts.find((excerpt) =>
-          excerpt.content.includes(target.statement),
-        );
+        const excerpt = target.excerpts[0];
 
         return {
           factId: target.factId,
-          verdict: evidence ? "correct" : "missing",
-          evidence: evidence ? [evidence.sectionId] : [],
-          rationale: evidence ? "The statement is present." : "It is absent.",
+          verdict: "correct",
+          evidence: excerpt ? [excerpt.sectionId] : [],
+          rationale: "The artifact mentions the surface item.",
         };
       }),
     };
@@ -227,34 +228,6 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
     };
   }
 
-  if (systemPrompt === PRECISION_LEDGER_SYSTEM) {
-    const ledgerMarker = "\n\nComplete truth ledger (JSON):\n";
-    const transitionMarker = "\n\nDeclared checkpoint transition (JSON):\n";
-    const assertions = parsePromptJson<
-      Array<{ assertionId: string; statement: string }>
-    >(taskPrompt, "Assertions (JSON):\n", ledgerMarker);
-    const facts = parsePromptJson<
-      Array<{ factVersionId: string; statement: string }>
-    >(taskPrompt, ledgerMarker, transitionMarker);
-
-    return {
-      evaluations: assertions.map((assertion) => {
-        const fact = facts.find(
-          (candidate) => candidate.statement === assertion.statement,
-        );
-
-        return {
-          assertionId: assertion.assertionId,
-          verdict: fact ? "supported" : "unaccounted",
-          factVersionIds: fact ? [fact.factVersionId] : [],
-          rationale: fact
-            ? "The active requirement supports it."
-            : "The active requirements do not address it.",
-        };
-      }),
-    };
-  }
-
   if (systemPrompt === PRECISION_JUDGMENT_SYSTEM) {
     const evidenceMarker = "\n\nSource evidence (JSON):\n";
     const assertions = parsePromptJson<
@@ -271,21 +244,26 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
       (item) => item.current,
     )?.evidenceId;
 
+    if (currentEvidenceId === undefined) {
+      throw new Error("Scripted grounding requires a current evidence record.");
+    }
+
+    // Ground every claim against source: the "magic" bullet has no source
+    // support and is a current-state contradiction (invented); every other claim
+    // is established by the current source and is supported. The shared batch
+    // evidence always includes the current record, so both verdicts cite it.
     return {
       evaluations: assertions.map((assertion) => {
         const contradicted = assertion.statement.includes("magic");
 
         return {
           assertionId: assertion.assertionId,
-          verdict: contradicted ? "contradicted" : "not-refuted",
-          evidenceIds:
-            contradicted && currentEvidenceId !== undefined
-              ? [currentEvidenceId]
-              : [],
+          verdict: contradicted ? "contradicted" : "supported",
+          evidenceIds: [currentEvidenceId],
           formerlyTrue: contradicted ? false : undefined,
           rationale: contradicted
-            ? "The source contradicts it."
-            : "The supplied source does not refute it.",
+            ? "The current source establishes incompatible behavior."
+            : "The current source establishes the claim.",
         };
       }),
     };
@@ -388,7 +366,9 @@ class EvolvingDocumentationSystem implements SystemUnderTest {
 }
 
 /**
- * Build the three-checkpoint Truth Package used by the end-to-end test.
+ * Build the three-checkpoint benchmark used by the end-to-end test. Truth comes
+ * entirely from the source repo's evolving surface, so the benchmark is just the
+ * repo history plus named checkpoints.
  *
  * @param repo - Tiny repository supplying checkpoint commits.
  *
@@ -404,49 +384,6 @@ function benchmark(repo: TinyRepo): LedgerBenchmark {
         id: `T${index}`,
         commit,
       })),
-    },
-    truthPackage: {
-      requirements: [
-        {
-          id: "stable",
-          versions: [
-            { statement: "Stable behavior is enabled.", fromCheckpoint: "T0" },
-          ],
-        },
-        {
-          id: "introduced",
-          versions: [
-            {
-              statement: "Introduced behavior is enabled.",
-              fromCheckpoint: "T1",
-            },
-          ],
-        },
-        {
-          id: "changed",
-          versions: [
-            {
-              statement: "Changed behavior uses version one.",
-              fromCheckpoint: "T0",
-              untilCheckpoint: "T2",
-            },
-            {
-              statement: "Changed behavior uses version two.",
-              fromCheckpoint: "T2",
-            },
-          ],
-        },
-        {
-          id: "removed",
-          versions: [
-            {
-              statement: "Removed behavior is available.",
-              fromCheckpoint: "T0",
-              untilCheckpoint: "T2",
-            },
-          ],
-        },
-      ],
     },
   };
 }
@@ -471,10 +408,35 @@ let repo: TinyRepo;
 let resultsDir: string;
 
 beforeEach(async () => {
+  // The source surface evolves across the three checkpoints so the diff exercises
+  // every transition bucket: `stable` never changes; `introduced` appears at T1;
+  // `changed` keeps its signature until T2, where its parameter list grows; and
+  // `removed` disappears at T2. The exported names deliberately share terms with
+  // the artifact's prose bullets so BM25 retrieves current source evidence for
+  // grounding. No `VERSION` constant or `package.json`, so there is no version
+  // surface item.
+  const stable = "export function stable(): number {\n  return 0;\n}\n";
+  const introduced = "export function introduced(): number {\n  return 0;\n}\n";
+  const changedV1 =
+    "export function changed(a: number): number {\n  return a;\n}\n";
+  const changedV2 =
+    "export function changed(a: number, b: number): number {\n  return a + b;\n}\n";
+  const removed = "export function removed(): number {\n  return 0;\n}\n";
   repo = await createTinyRepo([
-    { message: "T0", files: { "code.ts": "export const version = 0;\n" } },
-    { message: "T1", files: { "code.ts": "export const version = 1;\n" } },
-    { message: "T2", files: { "code.ts": "export const version = 2;\n" } },
+    {
+      message: "T0",
+      files: { "code.ts": `${stable}\n${changedV1}\n${removed}` },
+    },
+    {
+      message: "T1",
+      files: {
+        "code.ts": `${stable}\n${introduced}\n${changedV1}\n${removed}`,
+      },
+    },
+    {
+      message: "T2",
+      files: { "code.ts": `${stable}\n${introduced}\n${changedV2}` },
+    },
   ]);
   resultsDir = await mkdtemp(path.join(os.tmpdir(), "ledger-results-"));
   modelControl.systemPrompts.length = 0;
@@ -505,17 +467,12 @@ describe("direct evaluator end to end", () => {
       startedAt: "2026-01-01T00:00:00.000Z",
     });
 
+    // The surface at each checkpoint is the source file plus its exported
+    // symbols: T0 has `stable`, `changed`, `removed` (+ the file) for 4 items; T1
+    // adds `introduced` for 5; T2 drops `removed` back to 4. The artifact mentions
+    // all of them, so coverage is a full mention floor throughout.
     expect(result.checkpoints.map((checkpoint) => checkpoint.coverage)).toEqual(
       [
-        {
-          correct: 3,
-          partial: 0,
-          missing: 0,
-          contradicted: 0,
-          indeterminate: 0,
-          total: 3,
-          score: 1,
-        },
         {
           correct: 4,
           partial: 0,
@@ -526,12 +483,21 @@ describe("direct evaluator end to end", () => {
           score: 1,
         },
         {
-          correct: 3,
+          correct: 5,
           partial: 0,
           missing: 0,
           contradicted: 0,
           indeterminate: 0,
-          total: 3,
+          total: 5,
+          score: 1,
+        },
+        {
+          correct: 4,
+          partial: 0,
+          missing: 0,
+          contradicted: 0,
+          indeterminate: 0,
+          total: 4,
           score: 1,
         },
       ],
@@ -601,35 +567,45 @@ describe("direct evaluator end to end", () => {
         assertion: "Undocumented magic is available.",
       }),
     ]);
+    // The obsolete versions watched at T2 are `changed` and `removed` as they
+    // stood at T1 (their signatures were unchanged from T0), both content-hashed
+    // rather than checkpoint-tagged.
+    const surfaceT1 = await extractSurface(repo.repoPath, repo.shas[1]);
+    const obsoleteVersionId = (factId: string): string => {
+      const item = surfaceT1.find((entry) => entry.factId === factId);
+      if (item === undefined) {
+        throw new Error(`missing surface item ${factId}`);
+      }
+      return item.factVersionId;
+    };
     expect(result.checkpoints[2].evaluations?.forgettingEvaluations).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          factVersionId: "changed@T0",
+          factVersionId: obsoleteVersionId("symbol:changed"),
           verdict: "forgotten",
         }),
         expect.objectContaining({
-          factVersionId: "removed@T0",
+          factVersionId: obsoleteVersionId("symbol:removed"),
           verdict: "forgotten",
         }),
       ]),
     );
+    // No census-accounting stage: each checkpoint runs coverage, then extraction
+    // and grounding; forgetting runs only at T2, where obsolete versions exist.
     expect(modelControl.systemPrompts).toEqual([
       COVERAGE_SYSTEM,
       PRECISION_EXTRACTION_SYSTEM,
-      PRECISION_LEDGER_SYSTEM,
       PRECISION_JUDGMENT_SYSTEM,
       COVERAGE_SYSTEM,
       PRECISION_EXTRACTION_SYSTEM,
-      PRECISION_LEDGER_SYSTEM,
       PRECISION_JUDGMENT_SYSTEM,
       COVERAGE_SYSTEM,
       FORGETTING_SYSTEM,
       PRECISION_EXTRACTION_SYSTEM,
-      PRECISION_LEDGER_SYSTEM,
       PRECISION_JUDGMENT_SYSTEM,
     ]);
     expect(modelControl.maxActive).toBe(1);
-    expect(modelControl.signals).toHaveLength(13);
+    expect(modelControl.signals).toHaveLength(10);
     expect(workspaceRoots).toHaveLength(1);
     await expect(stat(workspaceRoots[0])).rejects.toMatchObject({
       code: "ENOENT",
@@ -644,8 +620,8 @@ describe("direct evaluator end to end", () => {
       expect.arrayContaining([
         expect.objectContaining({
           assertion: "Stable behavior is enabled.",
-          adjudicatedBy: "ledger",
-          evidenceIds: ["stable@T0"],
+          adjudicatedBy: "source",
+          verdict: "supported",
         }),
         expect.objectContaining({
           assertion: "Undocumented magic is available.",

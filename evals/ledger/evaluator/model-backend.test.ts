@@ -59,7 +59,7 @@ const {
   COVERAGE_SYSTEM,
   FORGETTING_SYSTEM,
   PRECISION_EXTRACTION_SYSTEM,
-  PRECISION_LEDGER_SYSTEM,
+  PRECISION_JUDGMENT_SYSTEM,
 } = await import("./prompts.js");
 
 beforeEach(() => {
@@ -122,8 +122,8 @@ describe("ModelEvaluationBackend", () => {
           {
             assertionId: "assertion-000001",
             verdict: "supported",
-            factVersionIds: ["current@T1"],
-            rationale: "The active requirement supports the assertion.",
+            evidenceIds: ["src/current.ts::0000"],
+            rationale: "Current source establishes the assertion.",
           },
         ],
       },
@@ -151,11 +151,12 @@ describe("ModelEvaluationBackend", () => {
           },
         ],
       },
-      activeFacts: [
+      surface: [
         {
           factId: "current",
           factVersionId: "current@T1",
-          category: "behavior",
+          kind: "symbol",
+          name: "current",
           statement: "Current behavior is enabled.",
         },
       ],
@@ -184,7 +185,7 @@ describe("ModelEvaluationBackend", () => {
       COVERAGE_SYSTEM,
       FORGETTING_SYSTEM,
       PRECISION_EXTRACTION_SYSTEM,
-      PRECISION_LEDGER_SYSTEM,
+      PRECISION_JUDGMENT_SYSTEM,
     ]);
     expect(control.maxActive).toBe(1);
     expect(inventories).toEqual([
@@ -215,9 +216,9 @@ describe("ModelEvaluationBackend", () => {
           location: "guide.md",
           verdict: "supported",
           tense: "current",
-          adjudicatedBy: "ledger",
-          evidenceIds: ["current@T1"],
-          rationale: "The active requirement supports the assertion.",
+          adjudicatedBy: "source",
+          evidenceIds: ["src/current.ts::0000"],
+          rationale: "Current source establishes the assertion.",
         },
       ],
       warnings: [],

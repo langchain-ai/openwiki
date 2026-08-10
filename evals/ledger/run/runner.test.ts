@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { runBenchmark } from "./runner.js";
 import type { BenchmarkProgressEvent } from "./progress-events.js";
+import { extractSurface } from "../benchmark/surface.js";
 import { createTinyRepo, type TinyRepo } from "../testing/tiny-repo.js";
 import type {
   CheckpointEvaluation,
@@ -45,99 +46,73 @@ class FakeSystem implements SystemUnderTest {
 }
 
 /**
- * A fake evaluator returning canned verdicts keyed by checkpoint id, so the run
- * result is fully determined.
+ * A fake evaluator that covers every source-surface item `correct` and forgets
+ * every obsolete target, so coverage and maintenance are fully determined by the
+ * repository's surface evolution. Precision is canned per checkpoint: two
+ * supported claims at T0, and one supported plus one invented at T1, so precision
+ * is 1 at T0 and 0.5 at T1 regardless of the surface.
  */
 class FakeEvaluator implements EvaluationBackend {
   async evaluate(input: EvaluationInput): Promise<CheckpointEvaluation> {
-    if (input.artifact.checkpointId === "T0") {
-      return {
-        factEvaluations: [
-          {
-            factId: "f1",
-            factVersionId: "f1@T0",
-            verdict: "correct",
-            evidence: [],
-            rationale: "",
-          },
-          {
-            factId: "f2",
-            factVersionId: "f2@T0",
-            verdict: "correct",
-            evidence: [],
-            rationale: "",
-          },
-        ],
-        forgettingEvaluations: [],
-        precisionEvaluations: [
-          {
-            assertion: "a",
-            location: "page.md",
-            verdict: "supported",
-            tense: "current",
-            adjudicatedBy: "ledger",
-            evidenceIds: ["source::a"],
-            rationale: "",
-          },
-          {
-            assertion: "b",
-            location: "page.md",
-            verdict: "supported",
-            tense: "current",
-            adjudicatedBy: "ledger",
-            evidenceIds: ["source::b"],
-            rationale: "",
-          },
-        ],
-      };
-    }
+    const precisionEvaluations: CheckpointEvaluation["precisionEvaluations"] =
+      input.artifact.checkpointId === "T0"
+        ? [
+            {
+              assertion: "a",
+              location: "page.md",
+              verdict: "supported",
+              tense: "current",
+              adjudicatedBy: "source",
+              evidenceIds: ["source::a"],
+              rationale: "",
+            },
+            {
+              assertion: "b",
+              location: "page.md",
+              verdict: "supported",
+              tense: "current",
+              adjudicatedBy: "source",
+              evidenceIds: ["source::b"],
+              rationale: "",
+            },
+          ]
+        : [
+            {
+              assertion: "a",
+              location: "page.md",
+              verdict: "supported",
+              tense: "current",
+              adjudicatedBy: "source",
+              evidenceIds: ["source::a"],
+              rationale: "",
+            },
+            {
+              assertion: "b",
+              location: "page.md",
+              verdict: "invented",
+              tense: "current",
+              adjudicatedBy: "source",
+              evidenceIds: ["source::b"],
+              rationale: "",
+            },
+          ];
 
     return {
-      factEvaluations: [
-        {
-          factId: "f1",
-          factVersionId: "f1@T0",
-          verdict: "correct",
-          evidence: [],
-          rationale: "",
-        },
-        {
-          factId: "f2",
-          factVersionId: "f2@T1",
-          verdict: "correct",
-          evidence: [],
-          rationale: "",
-        },
-      ],
-      forgettingEvaluations: [
-        {
-          factId: "f2",
-          factVersionId: "f2@T0",
-          verdict: "forgotten",
-          evidence: [],
-          rationale: "",
-        },
-      ],
-      precisionEvaluations: [
-        {
-          assertion: "a",
-          location: "page.md",
-          verdict: "supported",
-          tense: "current",
-          adjudicatedBy: "ledger",
-          evidenceIds: ["source::a"],
-          rationale: "",
-        },
-        {
-          assertion: "b",
-          location: "page.md",
-          verdict: "invented",
-          tense: "current",
-          adjudicatedBy: "source",
-          evidenceIds: ["source::b"],
-          rationale: "",
-        },
-      ],
+      factEvaluations: input.surface.map((item) => ({
+        factId: item.factId,
+        factVersionId: item.factVersionId,
+        verdict: "correct",
+        evidence: [],
+        rationale: "",
+      })),
+      forgettingEvaluations: input.obsoleteFacts.map((target) => ({
+        factId: target.factId,
+        factVersionId: target.factVersionId,
+        verdict: "forgotten",
+        evidence: [],
+        rationale: "",
+      })),
+      precisionEvaluations,
     };
   }
 }
@@ -158,7 +133,7 @@ class RecordingEvaluator implements EvaluationBackend {
     );
 
     return {
-      factEvaluations: input.activeFacts.map((fact) => ({
+      factEvaluations: input.surface.map((fact) => ({
         factId: fact.factId,
         factVersionId: fact.factVersionId,
         verdict: "correct",
@@ -181,9 +156,21 @@ describe("runBenchmark", () => {
   let repo: TinyRepo;
 
   beforeEach(async () => {
+    // T0 -> T1 changes one exported symbol's signature (one `changed` element)
+    // while the source file itself is unchanged (one `stable` element), so the
+    // surface diff yields exactly one maintenance correction boundary and one
+    // obsolete watch target.
     repo = await createTinyRepo([
-      { message: "c0", files: { "code.ts": "export const v = 1;\n" } },
-      { message: "c1", files: { "code.ts": "export const v = 2;\n" } },
+      {
+        message: "c0",
+        files: { "code.ts": "export function f(): number {\n  return 1;\n}\n" },
+      },
+      {
+        message: "c1",
+        files: {
+          "code.ts": "export function f(a: number): number {\n  return a;\n}\n",
+        },
+      },
     ]);
   });
 
@@ -200,18 +187,6 @@ describe("runBenchmark", () => {
         checkpoints: [
           { id: "T0", commit: repo.shas[0] },
           { id: "T1", commit: repo.shas[1] },
-        ],
-      },
-      truthPackage: {
-        requirements: [
-          { id: "f1", versions: [{ statement: "A", fromCheckpoint: "T0" }] },
-          {
-            id: "f2",
-            versions: [
-              { statement: "x1", fromCheckpoint: "T0", untilCheckpoint: "T1" },
-              { statement: "x2", fromCheckpoint: "T1" },
-            ],
-          },
         ],
       },
     };
@@ -264,11 +239,16 @@ describe("runBenchmark", () => {
     expect(result.score.ledgerScore).toBeCloseTo(13 / 14, 10);
 
     // Diagnostics sit beside the score, not inside it. The only maintenance
-    // transition is f2's change at T1, and it succeeds at its own boundary (new
-    // version correct, old version forgotten), so no transition was an eligible
-    // failure and the recovery rate is undefined with nothing eligible. f2@T0
-    // went obsolete at T1 and was forgotten immediately, so it is one resolved
-    // record with lifetime 0 and no unresolved versions.
+    // transition is the change to `f` at T1, and it succeeds at its own boundary
+    // (new version correct, old version forgotten), so no transition was an
+    // eligible failure and the recovery rate is undefined with nothing eligible.
+    // `f`'s T0 version went obsolete at T1 and was forgotten immediately, so it
+    // is one resolved record with lifetime 0 and no unresolved versions.
+    const surfaceT0 = await extractSurface(repo.repoPath, repo.shas[0]);
+    const obsoleteVersionId = surfaceT0.find(
+      (item) => item.factId === "symbol:f",
+    )?.factVersionId;
+    expect(obsoleteVersionId).toBeDefined();
     expect(result.diagnostics.recovery).toEqual({
       rate: undefined,
       recovered: 0,
@@ -276,7 +256,11 @@ describe("runBenchmark", () => {
     });
     expect(result.diagnostics.staleKnowledge).toEqual({
       records: [
-        { factVersionId: "f2@T0", lingeredCheckpoints: 0, resolved: true },
+        {
+          factVersionId: obsoleteVersionId,
+          lingeredCheckpoints: 0,
+          resolved: true,
+        },
       ],
       meanResolvedLifetime: 0,
       unresolvedCount: 0,
@@ -324,8 +308,13 @@ describe("runBenchmark", () => {
     });
 
     // The lossy score counts are explainable because the underlying verdicts are
-    // carried through unchanged: T1's invented assertion is exactly the
-    // one the evaluator returned, and f2@T0's forgetting verdict is preserved.
+    // carried through unchanged: T1's invented assertion is exactly the one the
+    // evaluator returned, and the forgetting verdict for `f`'s obsolete T0 version
+    // is preserved.
+    const surfaceT0 = await extractSurface(repo.repoPath, repo.shas[0]);
+    const obsoleteVersionId = surfaceT0.find(
+      (item) => item.factId === "symbol:f",
+    )?.factVersionId;
     const t1 = result.checkpoints[1].evaluations;
 
     expect(t1).toBeDefined();
@@ -337,8 +326,8 @@ describe("runBenchmark", () => {
     ).toHaveLength(1);
     expect(t1?.forgettingEvaluations).toEqual([
       {
-        factId: "f2",
-        factVersionId: "f2@T0",
+        factId: "symbol:f",
+        factVersionId: obsoleteVersionId,
         verdict: "forgotten",
         evidence: [],
         rationale: "",
@@ -366,10 +355,23 @@ describe("runBenchmark forgetting watch set", () => {
   let repo: TinyRepo;
 
   beforeEach(async () => {
+    // Two exported symbols drive the watch set. `changing` mutates its signature
+    // at every checkpoint (three distinct versions), so its earlier versions
+    // accumulate. `reviving` flips its return type off at T1 and back to the exact
+    // T0 signature at T2, so its T0 version is revived (byte-identical statement)
+    // and must leave the watch set while its T1 version becomes obsolete.
+    const source = (
+      changing: string,
+      reviving: string,
+    ): { "code.ts": string } => ({
+      "code.ts":
+        `export function changing(${changing}): number {\n  return 0;\n}\n\n` +
+        `export function reviving(): ${reviving} {\n  return ${reviving};\n}\n`,
+    });
     repo = await createTinyRepo([
-      { message: "c0", files: { "code.ts": "export const v = 0;\n" } },
-      { message: "c1", files: { "code.ts": "export const v = 1;\n" } },
-      { message: "c2", files: { "code.ts": "export const v = 2;\n" } },
+      { message: "c0", files: source("a: number", "1") },
+      { message: "c1", files: source("a: number, b: number", "2") },
+      { message: "c2", files: source("a: number, b: number, c: number", "1") },
     ]);
   });
 
@@ -387,27 +389,6 @@ describe("runBenchmark forgetting watch set", () => {
           { id: "T0", commit: repo.shas[0] },
           { id: "T1", commit: repo.shas[1] },
           { id: "T2", commit: repo.shas[2] },
-        ],
-      },
-      truthPackage: {
-        requirements: [
-          { id: "f1", versions: [{ statement: "A", fromCheckpoint: "T0" }] },
-          {
-            id: "f2",
-            versions: [
-              { statement: "x1", fromCheckpoint: "T0", untilCheckpoint: "T1" },
-              { statement: "x2", fromCheckpoint: "T1", untilCheckpoint: "T2" },
-              { statement: "x3", fromCheckpoint: "T2" },
-            ],
-          },
-          {
-            id: "f3",
-            versions: [
-              { statement: "on", fromCheckpoint: "T0", untilCheckpoint: "T1" },
-              { statement: "off", fromCheckpoint: "T1", untilCheckpoint: "T2" },
-              { statement: "on", fromCheckpoint: "T2" },
-            ],
-          },
         ],
       },
     };
@@ -434,19 +415,35 @@ describe("runBenchmark forgetting watch set", () => {
 
     const watchedAt = (id: string): Set<string> =>
       new Set(evaluator.watchSets.get(id));
+    const surfaceT0 = await extractSurface(repo.repoPath, repo.shas[0]);
+    const surfaceT1 = await extractSurface(repo.repoPath, repo.shas[1]);
+    const versionId = (surface: typeof surfaceT0, factId: string): string => {
+      const item = surface.find((entry) => entry.factId === factId);
+      if (item === undefined) {
+        throw new Error(`missing surface item ${factId}`);
+      }
+      return item.factVersionId;
+    };
+    const changingT0 = versionId(surfaceT0, "symbol:changing");
+    const changingT1 = versionId(surfaceT1, "symbol:changing");
+    const revivingT0 = versionId(surfaceT0, "symbol:reviving");
+    const revivingT1 = versionId(surfaceT1, "symbol:reviving");
 
     // The first checkpoint has nothing obsolete yet.
     expect(evaluator.watchSets.get("T0")).toEqual([]);
 
-    // At T1 both f2 and f3 have just changed, so their T0 versions go obsolete.
-    expect(watchedAt("T1")).toEqual(new Set(["f2@T0", "f3@T0"]));
+    // At T1 both symbols have just changed, so their T0 versions go obsolete.
+    expect(watchedAt("T1")).toEqual(new Set([changingT0, revivingT0]));
 
-    // At T2: f2@T0 was judged forgotten at T1 but is still watched, because LEDGER
-    // does not treat forgetting as permanent (the Checkpoint 2 decision). f2@T1 is
-    // newly obsolete. f3@T0 is dropped because f3 is true again at T2 with its
-    // original "on" statement, so that knowledge was revived, not left stale.
-    // f3@T1 ("off") is newly obsolete.
-    expect(watchedAt("T2")).toEqual(new Set(["f2@T0", "f2@T1", "f3@T1"]));
-    expect(watchedAt("T2").has("f3@T0")).toBe(false);
+    // At T2: `changing`'s T0 version was judged forgotten at T1 but is still
+    // watched, because LEDGER does not treat forgetting as permanent (the
+    // Checkpoint 2 decision). `changing`'s T1 version is newly obsolete.
+    // `reviving`'s T0 version is dropped because `reviving` has the exact T0
+    // signature again at T2, so that knowledge was revived, not left stale.
+    // `reviving`'s T1 version is newly obsolete.
+    expect(watchedAt("T2")).toEqual(
+      new Set([changingT0, changingT1, revivingT1]),
+    );
+    expect(watchedAt("T2").has(revivingT0)).toBe(false);
   });
 });

@@ -10,7 +10,6 @@ import {
 import {
   PRECISION_EXTRACTION_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
-  PRECISION_LEDGER_SYSTEM,
 } from "./prompts.js";
 
 interface ModelControl {
@@ -119,14 +118,14 @@ describe("runPrecisionPass", () => {
           {
             assertionId: "assertion-000001",
             verdict: "supported",
-            factVersionIds: ["add@T0"],
-            rationale: "Current truth ledger establishes add.",
+            evidenceIds: ["current-0"],
+            rationale: "Current source establishes add.",
           },
           {
             assertionId: "assertion-000002",
             verdict: "supported",
-            factVersionIds: ["negate@T0"],
-            rationale: "Superseded truth establishes the historical removal.",
+            evidenceIds: ["historical-0"],
+            rationale: "Historical source establishes the earlier removal.",
           },
         ],
       },
@@ -137,22 +136,7 @@ describe("runPrecisionPass", () => {
       model: fakeModel(control),
       checkpointId: "T1",
       sections: [section("one block")],
-      activeFacts: [
-        {
-          factId: "add",
-          factVersionId: "add@T0",
-          category: "api",
-          statement: "add returns a + b",
-        },
-      ],
-      supersededFacts: [
-        {
-          factId: "negate",
-          factVersionId: "negate@T0",
-          obsoleteStatement: "negate exists",
-        },
-      ],
-      evidence: evidence(),
+      evidence: evidence(["add returns a + b"], ["negate was removed"]),
       onInventory: (value) => {
         inventory = value;
       },
@@ -170,7 +154,7 @@ describe("runPrecisionPass", () => {
     });
   });
 
-  test("routes ledger contradictions to invented or stale", async () => {
+  test("grounds source contradictions to invented or stale", async () => {
     const control = controller([
       extraction([
         { statement: "VERSION is 9.0.0" },
@@ -181,16 +165,16 @@ describe("runPrecisionPass", () => {
           {
             assertionId: "assertion-000001",
             verdict: "contradicted",
-            factVersionIds: ["version@T1"],
+            evidenceIds: ["current-0"],
             formerlyTrue: false,
-            rationale: "Current version is 2.0.0 and 9.0.0 was never true.",
+            rationale: "Current source is 2.0.0 and 9.0.0 was never true.",
           },
           {
             assertionId: "assertion-000002",
             verdict: "contradicted",
-            factVersionIds: ["version@T1", "version@T0"],
+            evidenceIds: ["current-0", "historical-0"],
             formerlyTrue: true,
-            rationale: "1.0.0 was true before the current 2.0.0 version.",
+            rationale: "1.0.0 held before the current 2.0.0 source.",
           },
         ],
       },
@@ -200,60 +184,27 @@ describe("runPrecisionPass", () => {
       model: fakeModel(control),
       checkpointId: "T1",
       sections: [section("versions")],
-      activeFacts: [
-        {
-          factId: "version",
-          factVersionId: "version@T1",
-          category: "release",
-          statement: "VERSION is 2.0.0",
-        },
-      ],
-      supersededFacts: [
-        {
-          factId: "version",
-          factVersionId: "version@T0",
-          obsoleteStatement: "VERSION is 1.0.0",
-        },
-      ],
-      evidence: evidence(),
+      evidence: evidence(["VERSION is 2.0.0"], ["VERSION is 1.0.0"]),
     });
 
     expect(result).toMatchObject([
-      { verdict: "invented", adjudicatedBy: "ledger" },
-      { verdict: "stale", adjudicatedBy: "ledger" },
+      { verdict: "invented", adjudicatedBy: "source" },
+      { verdict: "stale", adjudicatedBy: "source" },
     ]);
   });
 
-  test("leaves unaccounted historical claims unverified without source calls", async () => {
+  test("marks claims unverified without a model call when no source evidence exists", async () => {
     const control = controller([
       extraction([
         { statement: "A release happened in 2019", tense: "historical" },
       ]),
-      {
-        evaluations: [
-          {
-            assertionId: "assertion-000001",
-            verdict: "unaccounted",
-            factVersionIds: [],
-            rationale: "The truth ledger is silent.",
-          },
-        ],
-      },
     ]);
 
     const [result] = await runPrecisionPass({
       model: fakeModel(control),
       checkpointId: "T1",
       sections: [section("history")],
-      activeFacts: [
-        {
-          factId: "other",
-          factVersionId: "other@T1",
-          category: "test",
-          statement: "Another fact",
-        },
-      ],
-      evidence: evidence(["contradictory source should never be queried"]),
+      evidence: evidence(),
     });
 
     expect(result).toMatchObject({
@@ -261,10 +212,12 @@ describe("runPrecisionPass", () => {
       tense: "historical",
       adjudicatedBy: "none",
     });
+    // Extraction ran, but the empty corpus short-circuits grounding with no call.
     expect(control.responses).toHaveLength(0);
+    expect(control.systemPrompts).toEqual([PRECISION_EXTRACTION_SYSTEM]);
   });
 
-  test("runs one top-k refutation and distinguishes invented, stale, and unverified", async () => {
+  test("runs one grounding batch and distinguishes invented, stale, and unverified", async () => {
     const control = controller([
       extraction([
         { statement: "flag is gamma" },
@@ -286,13 +239,14 @@ describe("runPrecisionPass", () => {
             evidenceIds: ["current-0", "historical-0"],
             formerlyTrue: true,
             rationale:
-              "Current beta refutes alpha, which historical source established.",
+              "Current beta contradicts alpha, which historical source established.",
           },
           {
             assertionId: "assertion-000003",
-            verdict: "not-refuted",
+            verdict: "not-addressed",
             evidenceIds: [],
-            rationale: "Supplied source does not refute the preference claim.",
+            rationale:
+              "Supplied source neither confirms nor denies the preference.",
           },
         ],
       },
@@ -302,7 +256,6 @@ describe("runPrecisionPass", () => {
       model: fakeModel(control),
       checkpointId: "T1",
       sections: [section("claims")],
-      activeFacts: [],
       evidence: evidence(["flag = beta"], ["flag = alpha"]),
     });
 
@@ -317,7 +270,7 @@ describe("runPrecisionPass", () => {
     ]);
   });
 
-  test("repairs malformed refutation in isolation and degrades failure to unverified", async () => {
+  test("repairs a malformed grounding element in isolation and degrades to unverified", async () => {
     const control = controller([
       extraction([{ statement: "flag is gamma" }]),
       {
@@ -340,7 +293,6 @@ describe("runPrecisionPass", () => {
       model: fakeModel(control),
       checkpointId: "T1",
       sections: [section("claim")],
-      activeFacts: [],
       evidence: evidence(["flag = beta"]),
       onWarning: (warning) => warnings.push(warning),
     });
@@ -354,7 +306,7 @@ describe("runPrecisionPass", () => {
     expect(warnings[0].pass).toBe("precision-judgment");
   });
 
-  test("degrades one malformed refutation element without failing valid neighbors", async () => {
+  test("degrades one malformed grounding element without failing valid neighbors", async () => {
     const control = controller([
       extraction([
         { statement: "flag is gamma" },
@@ -367,7 +319,7 @@ describe("runPrecisionPass", () => {
             verdict: "contradicted",
             evidenceIds: ["current-0"],
             formerlyTrue: false,
-            rationale: "Current source refutes gamma.",
+            rationale: "Current source contradicts gamma.",
           },
           {
             // Malformed: a contradicted verdict with formerlyTrue omitted.
@@ -389,7 +341,6 @@ describe("runPrecisionPass", () => {
       model: fakeModel(control),
       checkpointId: "T1",
       sections: [section("claims")],
-      activeFacts: [],
       evidence: evidence(["flag = beta"]),
       onWarning: (warning) => warnings.push(warning),
     });
@@ -426,20 +377,20 @@ describe("runPrecisionPass", () => {
           },
         ],
       },
-      // One refutation batch leaves both surviving claims unverified.
+      // One grounding batch leaves both surviving claims not-addressed.
       {
         evaluations: [
           {
             assertionId: "assertion-000001",
-            verdict: "not-refuted",
+            verdict: "not-addressed",
             evidenceIds: [],
-            rationale: "Not refuted.",
+            rationale: "Not addressed.",
           },
           {
             assertionId: "assertion-000002",
-            verdict: "not-refuted",
+            verdict: "not-addressed",
             evidenceIds: [],
-            rationale: "Not refuted.",
+            rationale: "Not addressed.",
           },
         ],
       },
@@ -453,7 +404,6 @@ describe("runPrecisionPass", () => {
         sectionWithId("guide.md::0000", "claim A"),
         sectionWithId("guide.md::0001", "claim B"),
       ],
-      activeFacts: [],
       evidence: evidence(["some source"]),
       onWarning: (warning) => warnings.push(warning),
     });
@@ -480,14 +430,14 @@ describe("runPrecisionPass", () => {
       },
       new Error("isolated extraction failed once"),
       new Error("isolated extraction failed twice"),
-      // Only the surviving claim reaches refutation.
+      // Only the surviving claim reaches grounding.
       {
         evaluations: [
           {
             assertionId: "assertion-000001",
-            verdict: "not-refuted",
+            verdict: "not-addressed",
             evidenceIds: [],
-            rationale: "Not refuted.",
+            rationale: "Not addressed.",
           },
         ],
       },
@@ -501,7 +451,6 @@ describe("runPrecisionPass", () => {
         sectionWithId("guide.md::0000", "claim A"),
         sectionWithId("guide.md::0001", "claim B"),
       ],
-      activeFacts: [],
       evidence: evidence(["some source"]),
       onWarning: (warning) => warnings.push(warning),
     });
@@ -518,11 +467,7 @@ describe("runPrecisionPass", () => {
       "one independently judgeable claim",
     );
     expect(PRECISION_EXTRACTION_SYSTEM).toContain('"historical"');
-    expect(PRECISION_LEDGER_SYSTEM).toContain(
-      "ledger silence is not contradiction",
-    );
-    expect(PRECISION_JUDGMENT_SYSTEM).toContain(
-      "Never certify an assertion true",
-    );
+    expect(PRECISION_JUDGMENT_SYSTEM).toContain("source-grounding classifier");
+    expect(PRECISION_JUDGMENT_SYSTEM).toContain("silence is not contradiction");
   });
 });

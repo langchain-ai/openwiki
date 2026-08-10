@@ -17,9 +17,9 @@ import {
   precisionJudgmentOutputSchema,
 } from "./schemas.js";
 import type {
-  ActiveTruthFact,
   KnowledgeArtifact,
   ObsoleteFactTarget,
+  SurfaceItem,
 } from "../core/types.js";
 
 describe("schemas", () => {
@@ -61,8 +61,8 @@ describe("schemas", () => {
         },
         {
           assertionId: "assertion-000002",
-          verdict: "not-refuted",
-          rationale: "The source does not refute it.",
+          verdict: "not-addressed",
+          rationale: "The source neither confirms nor denies it.",
         },
       ],
     });
@@ -85,13 +85,25 @@ describe("schemas", () => {
 });
 
 describe("resolveCoverage", () => {
-  const activeFacts: ActiveTruthFact[] = [
-    { factId: "a", factVersionId: "a@T0", category: "x", statement: "A" },
-    { factId: "b", factVersionId: "b@T0", category: "x", statement: "B" },
+  const surface: SurfaceItem[] = [
+    {
+      factId: "a",
+      factVersionId: "a@T0",
+      kind: "symbol",
+      name: "a",
+      statement: "A",
+    },
+    {
+      factId: "b",
+      factVersionId: "b@T0",
+      kind: "symbol",
+      name: "b",
+      statement: "B",
+    },
   ];
 
   test("maps every requested fact and attaches the factVersionId", () => {
-    const resolved = resolveCoverage(activeFacts, {
+    const resolved = resolveCoverage(surface, {
       evaluations: [
         {
           factId: "a",
@@ -113,7 +125,7 @@ describe("resolveCoverage", () => {
 
   test("throws when a requested fact has no verdict", () => {
     expect(() =>
-      resolveCoverage(activeFacts, {
+      resolveCoverage(surface, {
         evaluations: [
           { factId: "a", verdict: "correct", evidence: [], rationale: "" },
         ],
@@ -123,7 +135,7 @@ describe("resolveCoverage", () => {
 
   test("throws on an unknown fact id", () => {
     expect(() =>
-      resolveCoverage(activeFacts, {
+      resolveCoverage(surface, {
         evaluations: [
           { factId: "a", verdict: "correct", evidence: [], rationale: "" },
           { factId: "b", verdict: "correct", evidence: [], rationale: "" },
@@ -135,7 +147,7 @@ describe("resolveCoverage", () => {
 
   test("throws on a duplicate verdict", () => {
     expect(() =>
-      resolveCoverage(activeFacts, {
+      resolveCoverage(surface, {
         evaluations: [
           { factId: "a", verdict: "correct", evidence: [], rationale: "" },
           { factId: "a", verdict: "partial", evidence: [], rationale: "" },
@@ -279,7 +291,7 @@ describe("empty-input passes short-circuit", () => {
       runCoveragePass({
         model,
         checkpointId: "T0",
-        activeFacts: [],
+        surface: [],
         index: new SectionBm25Index([]),
       }),
     ).resolves.toEqual([]);
@@ -338,11 +350,12 @@ describe.skipIf(!process.env.LEDGER_LIVE)(
 
       const evaluation = await backend.evaluate({
         artifact,
-        activeFacts: [
+        surface: [
           {
             factId: "auth",
             factVersionId: "auth@T0",
-            category: "api",
+            kind: "symbol",
+            name: "auth",
             statement:
               "Requests authenticate with an API key in the X-Api-Key header.",
           },

@@ -9,8 +9,8 @@
  */
 export interface LedgerCheckpoint {
   /**
-   * Stable identifier used to reference this checkpoint from Truth Package
-   * (for example `"T0"`, `"T3"`). Unique within a benchmark.
+   * Stable identifier used to reference this checkpoint (for example `"T0"`,
+   * `"T3"`). Unique within a benchmark.
    */
   id: string;
 
@@ -40,80 +40,9 @@ export interface LedgerTrace {
 }
 
 /**
- * One version of a fact, valid across a half-open range of checkpoints. A fact's
- * versions partition the trace: exactly one version (or none) is active at any
- * checkpoint.
- */
-export interface TruthFactVersion {
-  /**
-   * The correct statement of the fact while this version is active. This is what
-   * the wiki should say. Written as a self-contained claim, not a diff.
-   */
-  statement: string;
-
-  /**
-   * Human-auditable source references grounding this requirement version. The
-   * source adapter determines how references such as paths or message IDs map to
-   * evidence records.
-   */
-  evidenceRefs?: string[];
-
-  /**
-   * Checkpoint id at which this version becomes true (inclusive).
-   */
-  fromCheckpoint: string;
-
-  /**
-   * Checkpoint id at which this version stops being true (exclusive). Absent
-   * means the version remains true through the final checkpoint.
-   *
-   * @default the version stays active through the end of the trace
-   */
-  untilCheckpoint?: string;
-}
-
-/**
- * A single unit of ground-truth knowledge tracked across the whole trace. A fact
- * may change wording over time (multiple versions), may be introduced partway
- * through, and may be removed. The evaluator never sees this structure directly;
- * LEDGER projects the active version at each checkpoint.
- */
-export interface TruthFact {
-  /**
-   * Stable identifier, unique within the benchmark, used to correlate evaluator
-   * verdicts back to the requirements across checkpoints.
-   */
-  id: string;
-
-  /**
-   * Short category used only for reporting and slicing results, for example
-   * `"architecture"`, `"api"`, `"config"`.
-   *
-   * @default the fact is reported under an `"uncategorized"` bucket
-   */
-  category?: string;
-
-  /**
-   * Chronological versions of this fact. Ranges must not overlap and must be in
-   * trace order. Validated at load time.
-   */
-  versions: TruthFactVersion[];
-}
-
-/**
- * Human-authored material knowledge requirements for a benchmark. Source
- * evidence is collected independently at each checkpoint by a source adapter.
- */
-export interface TruthPackage {
-  /**
-   * Versioned knowledge requirements that drive coverage and maintenance.
-   */
-  requirements: TruthFact[];
-}
-
-/**
- * A benchmark: an evolution trace plus the Truth Package requirements it is
- * scored against, plus the source repository replayed by the first adapter.
+ * A benchmark: an evolution trace plus the source repository it is scored
+ * against. Truth is read directly from the source at each checkpoint by
+ * `extractSurface`; there is no hand-authored knowledge census.
  */
 export interface LedgerBenchmark {
   /**
@@ -137,44 +66,64 @@ export interface LedgerBenchmark {
    * The frozen evolution trace.
    */
   trace: LedgerTrace;
-
-  /**
-   * The frozen human-authored Truth Package.
-   */
-  truthPackage: TruthPackage;
 }
 
 // ---------------------------------------------------------------------------
-// Truth Package requirement projection
+// Source surface
 // ---------------------------------------------------------------------------
 
 /**
- * A fact projected to a single checkpoint: its id, category, and the statement
- * that is true at that checkpoint. This is the unit the coverage and precision
- * passes are given.
+ * The kind of public-surface element a `SurfaceItem` describes.
  */
-export interface ActiveTruthFact {
+export type SurfaceKind = "symbol" | "file" | "version";
+
+/**
+ * One element of a repository's public surface at a single checkpoint,
+ * extracted deterministically from source by `extractSurface` (no human
+ * authoring). This is the unit the coverage pass scores under its mention-only
+ * floor: does the wiki acknowledge each surface item. A surface element whose
+ * `statement` changes or disappears across a boundary also becomes a forgetting
+ * watch target, so the field names deliberately mirror `ObsoleteFactTarget`
+ * (`factId`, `factVersionId`, `statement`) that the evaluators already consume.
+ */
+export interface SurfaceItem {
   /**
-   * The originating fact id.
+   * Stable logical id for this surface element, unique within a checkpoint:
+   * `symbol:<name>`, `file:<path>`, or `version`. Coverage verdicts and
+   * maintenance matching key off this id across checkpoints.
    */
   factId: string;
 
   /**
-   * Stable id of the specific fact *version* that is active here, derived
-   * deterministically as `${factId}@${fromCheckpoint}`. Two checkpoints that
-   * share a version share this id; a changed fact gets a new one. Forgetting
-   * targets and results identify a version by this id, not by `factId` alone.
+   * Content-addressed version id, `${factId}@${shortHash(statement)}`. Stable
+   * across checkpoints while the element is unchanged and fresh when its
+   * `statement` changes, so a changed element retires its prior version into the
+   * forgetting watch set and a byte-identical revival reuses the same id.
    */
   factVersionId: string;
 
   /**
-   * The originating fact category, defaulted to `"uncategorized"` during
-   * projection so consumers never handle absence.
+   * The surface element's kind.
    */
-  category: string;
+  kind: SurfaceKind;
 
   /**
-   * The statement that is true at the projected checkpoint.
+   * Human-readable name: the exported symbol name, the file path, or the version
+   * string.
+   */
+  name: string;
+
+  /**
+   * For a `symbol`, its reconstructed one-line signature.
+   *
+   * @default absent for `file` and `version` items, which have no signature
+   */
+  signature?: string;
+
+  /**
+   * A self-contained claim describing this surface element, used as the coverage
+   * retrieval query and, when the element goes obsolete, as the forgetting
+   * target's `obsoleteStatement`.
    */
   statement: string;
 }
@@ -281,9 +230,10 @@ export interface StableFact {
 }
 
 /**
- * How the active Truth Package requirements changed across one checkpoint
- * boundary, derived deterministically from the requirements and never from the
- * artifact. Every active fact falls into exactly one bucket.
+ * How the source surface changed across one checkpoint boundary, derived
+ * deterministically by `diffSurface` from the two checkpoints' surfaces and
+ * never from the artifact. Every surface element present at either checkpoint
+ * falls into exactly one bucket.
  */
 export interface CheckpointTransitions {
   /**
@@ -436,9 +386,8 @@ export interface FactEvaluation {
   factId: string;
 
   /**
-   * Stable id of the active fact version this judgment concerns, carried through
-   * from the projected `ActiveTruthFact` for auditing and cross-checkpoint
-   * matching.
+   * Stable id of the surface item version this judgment concerns, carried
+   * through from the `SurfaceItem` for auditing and cross-checkpoint matching.
    */
   factVersionId: string;
 
@@ -509,10 +458,10 @@ export interface ForgettingEvaluation {
 /**
  * Precision verdict for one deduplicated material claim.
  *
- * - `supported`: the active truth ledger establishes the claim.
- * - `invented`: current truth refutes the claim and it was never true.
- * - `stale`: current truth refutes the claim but former truth established it.
- * - `unverified`: neither the truth ledger nor bounded refutation adjudicated it.
+ * - `supported`: the source evidence establishes the claim.
+ * - `invented`: current source refutes the claim and it was never true.
+ * - `stale`: current source refutes the claim but earlier source established it.
+ * - `unverified`: the source evidence neither confirmed nor refuted the claim.
  */
 export type PrecisionVerdict =
   "supported" | "invented" | "stale" | "unverified";
@@ -634,17 +583,17 @@ export interface CheckpointEvaluationRecord {
   checkpointId: string;
 
   /**
-   * Coverage verdicts at this checkpoint, one per active fact.
+   * Coverage verdicts at this checkpoint, one per surface item.
    */
   factEvaluations: FactEvaluation[];
 
   /**
    * Forgetting verdicts at this checkpoint: one per obsolete version under watch.
-   * The watch set is every requirement version that is obsolete according to the
-   * Truth Package here, including versions already judged `forgotten` at an
+   * The watch set is every surface version that is obsolete according to the
+   * source diff here, including versions already judged `forgotten` at an
    * earlier checkpoint. Forgetting is not treated as permanent, so a forgotten
    * version stays under watch and keeps being re-evaluated as long as it remains
-   * obsolete; it leaves the watch set only if the requirements make it current
+   * obsolete; it leaves the watch set only if the source surface makes it current
    * truth again.
    */
   forgettingEvaluations: ForgettingEvaluation[];
@@ -1366,9 +1315,10 @@ export interface EvaluationInput {
   artifact: KnowledgeArtifact;
 
   /**
-   * Material knowledge requirements active at this checkpoint.
+   * The repository's public surface at this checkpoint, scored by the coverage
+   * pass.
    */
-  activeFacts: ActiveTruthFact[];
+  surface: SurfaceItem[];
 
   /**
    * Current normalized source evidence used to verify artifact assertions.
@@ -1382,7 +1332,7 @@ export interface EvaluationInput {
   obsoleteFacts: ObsoleteFactTarget[];
 
   /**
-   * Declared truth-ledger transition into this checkpoint, when one exists.
+   * Source-derived surface transition into this checkpoint, when one exists.
    */
   transitions?: CheckpointTransitions;
 }

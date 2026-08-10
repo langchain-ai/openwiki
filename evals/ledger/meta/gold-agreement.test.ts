@@ -25,30 +25,16 @@ describe("precision gold agreement", () => {
           rationale: "Human-labeled fixture response.",
         })),
       },
-      ...fixture.ledgerCases.map((item, index) => ({
+      ...fixture.groundingCases.map((item, index) => ({
         evaluations: [
           {
-            assertionId: `gold-ledger-${index}`,
-            verdict: item.expected.verdict,
-            formerlyTrue: item.expected.formerlyTrue,
-            factVersionIds:
-              item.expected.verdict === "unaccounted"
-                ? []
-                : item.facts.map((fact) => fact.factVersionId),
-            rationale: "Human-labeled fixture response.",
-          },
-        ],
-      })),
-      ...fixture.refutationCases.map((item, index) => ({
-        evaluations: [
-          {
-            assertionId: `gold-refutation-${index}`,
+            assertionId: `gold-grounding-${index}`,
             verdict: item.expected.verdict,
             formerlyTrue: item.expected.formerlyTrue,
             evidenceIds:
-              item.expected.verdict === "contradicted"
-                ? item.evidence.map((evidence) => evidence.evidenceId)
-                : [],
+              item.expected.verdict === "not-addressed"
+                ? []
+                : item.evidence.map((evidence) => evidence.evidenceId),
             rationale: "Human-labeled fixture response.",
           },
         ],
@@ -62,8 +48,7 @@ describe("precision gold agreement", () => {
 
     expect(report).toMatchObject({
       extraction: { agreement: 1 },
-      ledger: { agreement: 1 },
-      refutation: { agreement: 1 },
+      grounding: { agreement: 1 },
       floor: 0.9,
       passed: true,
     });
@@ -74,8 +59,7 @@ describe("precision gold agreement", () => {
     expect(() =>
       assertGoldAgreement({
         extraction: { correct: 8, total: 10, agreement: 0.8, mismatches: [] },
-        ledger: { correct: 5, total: 5, agreement: 1, mismatches: [] },
-        refutation: { correct: 4, total: 4, agreement: 1, mismatches: [] },
+        grounding: { correct: 4, total: 4, agreement: 1, mismatches: [] },
         floor: 0.9,
         passed: false,
       }),

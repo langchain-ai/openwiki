@@ -38,7 +38,7 @@ export type BenchmarkProgressEvent =
   | {
       type: "evaluation-start";
       checkpointId: string;
-      activeFactCount: number;
+      surfaceItemCount: number;
       obsoleteFactCount: number;
     }
   | {

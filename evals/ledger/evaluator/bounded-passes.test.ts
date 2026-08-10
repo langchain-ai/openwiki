@@ -1,7 +1,7 @@
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { describe, expect, test } from "vitest";
 
-import type { ActiveTruthFact, ObsoleteFactTarget } from "../core/types.js";
+import type { ObsoleteFactTarget, SurfaceItem } from "../core/types.js";
 import { runCoveragePass } from "./coverage.js";
 import type { ArtifactSection } from "./documents.js";
 import { runForgettingPass } from "./forgetting.js";
@@ -58,24 +58,25 @@ function section(id: string, content: string): ArtifactSection {
 }
 
 /**
- * Build an active Truth Package requirement fixture.
+ * Build a public-surface item fixture the coverage pass scores.
  *
- * @param factId - Stable logical fact identifier.
- * @param statement - Current fact statement.
+ * @param factId - Stable logical surface id.
+ * @param statement - Self-contained claim describing the surface element.
  *
- * @returns Active fact fixture.
+ * @returns Surface item fixture.
  */
-function activeFact(factId: string, statement: string): ActiveTruthFact {
+function surfaceItem(factId: string, statement: string): SurfaceItem {
   return {
     factId,
     factVersionId: `${factId}@T0`,
-    category: "test",
+    kind: "symbol",
+    name: factId,
     statement,
   };
 }
 
 /**
- * Build an obsolete Truth Package requirement-version fixture.
+ * Build an obsolete source-surface version fixture.
  *
  * @param factId - Stable logical fact identifier.
  * @param obsoleteStatement - Statement no longer true.
@@ -166,9 +167,9 @@ function promptTargets(prompt: string): Array<Record<string, unknown>> {
 describe("runCoveragePass", () => {
   test("uses per-fact BM25 excerpts, stable target batches, and input result order", async () => {
     const facts = [
-      activeFact("b", "beta behavior"),
-      activeFact("a", "alpha behavior"),
-      activeFact("c", "gamma behavior"),
+      surfaceItem("b", "beta behavior"),
+      surfaceItem("a", "alpha behavior"),
+      surfaceItem("c", "gamma behavior"),
     ];
     const control = controller([
       {
@@ -207,7 +208,7 @@ describe("runCoveragePass", () => {
     const evaluations = await runCoveragePass({
       model: fakeModel(control),
       checkpointId: "T0",
-      activeFacts: facts,
+      surface: facts,
       index,
       topK: 1,
       batchSize: 2,
@@ -264,7 +265,7 @@ describe("runCoveragePass", () => {
     const [evaluation] = await runCoveragePass({
       model: fakeModel(control),
       checkpointId: "T0",
-      activeFacts: [activeFact("f", "needle")],
+      surface: [surfaceItem("f", "needle")],
       index: new SectionBm25Index(sections),
       topK: 1,
     });
@@ -309,7 +310,7 @@ describe("runCoveragePass", () => {
     const [evaluation] = await runCoveragePass({
       model: fakeModel(control),
       checkpointId: "T0",
-      activeFacts: [activeFact("f", "needle")],
+      surface: [surfaceItem("f", "needle")],
       index: new SectionBm25Index(sections),
       topK: 1,
     });
@@ -335,7 +336,7 @@ describe("runCoveragePass", () => {
     const [evaluation] = await runCoveragePass({
       model: fakeModel(control),
       checkpointId: "T3",
-      activeFacts: [activeFact("f", "fact")],
+      surface: [surfaceItem("f", "fact")],
       index: new SectionBm25Index([section("seen", "fact")]),
       onWarning: (warning) => warnings.push(warning.itemId),
     });
@@ -375,7 +376,7 @@ describe("runCoveragePass", () => {
     const evaluations = await runCoveragePass({
       model: fakeModel(control),
       checkpointId: "T3",
-      activeFacts: [activeFact("valid", "fact"), activeFact("broken", "fact")],
+      surface: [surfaceItem("valid", "fact"), surfaceItem("broken", "fact")],
       index: new SectionBm25Index([section("seen", "fact")]),
     });
 
@@ -408,9 +409,9 @@ describe("runCoveragePass", () => {
     const evaluations = await runCoveragePass({
       model: fakeModel(control),
       checkpointId: "T0",
-      activeFacts: [
-        activeFact("alpha", "alpha behavior"),
-        activeFact("beta", "beta behavior"),
+      surface: [
+        surfaceItem("alpha", "alpha behavior"),
+        surfaceItem("beta", "beta behavior"),
       ],
       index: new SectionBm25Index([
         section("alpha-section", "alpha behavior"),
@@ -442,8 +443,8 @@ describe("runCoveragePass", () => {
     const [evaluation] = await runCoveragePass({
       model: fakeModel(control),
       checkpointId: "T1",
-      activeFacts: [
-        activeFact("edge-cases", "The API documents numeric edge cases."),
+      surface: [
+        surfaceItem("edge-cases", "The API documents numeric edge cases."),
       ],
       index: new SectionBm25Index([
         section("api-section", "The API documents the add function."),
@@ -463,7 +464,7 @@ describe("runCoveragePass", () => {
     const result = await runCoveragePass({
       model: fakeModel(control),
       checkpointId: "T0",
-      activeFacts: [activeFact("f", "fact")],
+      surface: [surfaceItem("f", "fact")],
       index: new SectionBm25Index([]),
     });
 

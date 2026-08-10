@@ -15,7 +15,7 @@ class FixtureSemanticBackend implements EvaluationBackend {
       .filter((line) => line.startsWith("- "))
       .map((line) => line.slice(2));
     const activeByStatement = new Map(
-      input.activeFacts.map((fact) => [fact.statement, fact.factVersionId]),
+      input.surface.map((fact) => [fact.statement, fact.factVersionId]),
     );
     const obsoleteByStatement = new Map(
       input.obsoleteFacts.map((fact) => [
@@ -25,7 +25,7 @@ class FixtureSemanticBackend implements EvaluationBackend {
     );
 
     return {
-      factEvaluations: input.activeFacts.map((fact) => ({
+      factEvaluations: input.surface.map((fact) => ({
         factId: fact.factId,
         factVersionId: fact.factVersionId,
         verdict: content.includes(fact.statement) ? "correct" : "missing",

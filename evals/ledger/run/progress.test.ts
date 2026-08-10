@@ -59,7 +59,7 @@ describe("createCliProgressReporter", () => {
     report({
       type: "evaluation-start",
       checkpointId: "T1",
-      activeFactCount: 7,
+      surfaceItemCount: 7,
       obsoleteFactCount: 2,
     });
     report({
@@ -97,7 +97,7 @@ describe("createCliProgressReporter", () => {
     expect(rendered).toContain("OpenWiki update complete · 4.2s");
     expect(rendered).toContain("Captured 4 documents");
     expect(rendered).toContain(
-      "Evaluating 7 material topics · 2 obsolete versions",
+      "Evaluating 7 surface items · 2 obsolete versions",
     );
     expect(rendered).toContain(
       "✅ T1 · coverage 86% · precision 75% · hallucination 13% · forgetting 50% (1/2)",

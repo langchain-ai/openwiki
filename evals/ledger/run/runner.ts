@@ -12,10 +12,10 @@ import {
 } from "../scoring/metrics.js";
 import {
   advanceObsoleteWatchSet,
-  computeTransitions,
+  diffSurface,
+  extractSurface,
   obsoleteTargetsFor,
-} from "../benchmark/transitions.js";
-import { getActiveFacts } from "../benchmark/truth-ledger.js";
+} from "../benchmark/surface.js";
 import type {
   CheckpointEvaluationRecord,
   CheckpointScore,
@@ -29,6 +29,7 @@ import type {
   KnowledgeArtifact,
   MaintenanceCounts,
   ObsoleteFactTarget,
+  SurfaceItem,
   SystemRunOutcome,
   SystemUnderTest,
 } from "../core/types.js";
@@ -181,6 +182,7 @@ export async function runBenchmark(
     const history: CheckpointEvaluationRecord[] = [];
     let previousArtifact: KnowledgeArtifact | undefined;
     let previousCheckpointId: string | undefined;
+    let previousSurface: SurfaceItem[] | undefined;
     let previousFactEvaluations: FactEvaluation[] = [];
     let outstandingObsolete: ObsoleteFactTarget[] = [];
     const evidenceHistory: EvidenceCorpus[] = [];
@@ -255,14 +257,22 @@ export async function runBenchmark(
         );
       }
 
-      const activeFacts = getActiveFacts(benchmark, checkpoint.id);
+      const surface = await extractSurface(
+        benchmark.sourceRepoPath,
+        checkpoint.commit,
+      );
 
       let transitions: CheckpointTransitions | undefined;
       let newlyObsolete: ObsoleteFactTarget[] = [];
 
-      if (i > 0 && previousCheckpointId !== undefined) {
-        transitions = computeTransitions(
-          benchmark,
+      if (
+        i > 0 &&
+        previousCheckpointId !== undefined &&
+        previousSurface !== undefined
+      ) {
+        transitions = diffSurface(
+          previousSurface,
+          surface,
           previousCheckpointId,
           checkpoint.id,
         );
@@ -271,20 +281,20 @@ export async function runBenchmark(
 
       const obsoleteFacts = advanceObsoleteWatchSet({
         outstanding: outstandingObsolete,
-        activeFacts,
+        surface,
         newlyObsolete,
       });
 
       reportProgress({
         type: "evaluation-start",
         checkpointId: checkpoint.id,
-        activeFactCount: activeFacts.length,
+        surfaceItemCount: surface.length,
         obsoleteFactCount: obsoleteFacts.length,
       });
 
       const evaluation = await evaluationBackend.evaluate({
         artifact,
-        activeFacts,
+        surface,
         evidence,
         obsoleteFacts,
         transitions,
@@ -362,6 +372,7 @@ export async function runBenchmark(
 
       previousArtifact = artifact;
       previousCheckpointId = checkpoint.id;
+      previousSurface = surface;
       previousFactEvaluations = evaluation.factEvaluations;
     }
 

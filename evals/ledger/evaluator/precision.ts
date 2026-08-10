@@ -3,11 +3,8 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 import { EvaluationError } from "../core/errors.js";
 import { compareStrings } from "../core/order.js";
 import type {
-  ActiveTruthFact,
-  CheckpointTransitions,
   EvidenceCorpus,
   EvaluationWarning,
-  ObsoleteFactTarget,
   PrecisionAssertionEvaluation,
   PrecisionClaimTense,
 } from "../core/types.js";
@@ -17,25 +14,19 @@ import { assertPositiveInteger, batch } from "./pass-utils.js";
 import {
   PRECISION_EXTRACTION_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
-  PRECISION_LEDGER_SYSTEM,
   precisionExtractionPrompt,
   precisionJudgmentPrompt,
-  precisionLedgerPrompt,
   type PrecisionEvidenceExcerpt,
   type PrecisionExtractionUnit,
   type PrecisionJudgmentAssertion,
-  type PrecisionLedgerFact,
 } from "./prompts.js";
 import { SectionBm25Index } from "./retrieval.js";
 import {
   assertionExtractionOutputSchema,
   precisionJudgmentBatchOutputSchema,
   precisionJudgmentOutputSchema,
-  precisionLedgerBatchOutputSchema,
-  precisionLedgerOutputSchema,
   type AssertionExtractionOutput,
   type PrecisionJudgmentOutput,
-  type PrecisionLedgerOutput,
 } from "./schemas.js";
 
 /**
@@ -44,17 +35,17 @@ import {
 const DEFAULT_EXTRACTION_BATCH_SIZE = 10;
 
 /**
- * Default number of assertions accounted per ledger/judgment request.
+ * Default number of assertions grounded per judgment request.
  */
 const DEFAULT_JUDGMENT_BATCH_SIZE = 10;
 
 /**
- * Default number of evidence sections retrieved per bounded refutation.
+ * Default number of evidence sections retrieved per bounded grounding judgment.
  */
 const DEFAULT_EVIDENCE_TOP_K = 8;
 
 /**
- * One extracted artifact claim carried through ledger and refutation passes.
+ * One extracted artifact claim carried through the source-grounding pass.
  */
 export interface ExtractedArtifactAssertion {
   /**
@@ -242,7 +233,7 @@ export interface PrecisionAssertionInventory {
  */
 export interface PrecisionPassInput {
   /**
-   * Evaluator model used for extraction, accounting, and refutation.
+   * Evaluator model used for extraction and source grounding.
    */
   model: BaseChatModel;
 
@@ -257,26 +248,10 @@ export interface PrecisionPassInput {
   sections: ArtifactSection[];
 
   /**
-   * Truth-ledger facts current at the checkpoint.
-   */
-  activeFacts: ActiveTruthFact[];
-
-  /**
-   * Truth-ledger facts that were superseded before the checkpoint.
-   *
-   * @default [] no superseded facts are considered
-   */
-  supersededFacts?: ObsoleteFactTarget[];
-
-  /**
-   * Fact transitions crossing into this checkpoint, used as accounting context.
-   *
-   * @default undefined at the first checkpoint, where no transitions exist
-   */
-  transitions?: CheckpointTransitions;
-
-  /**
-   * Source evidence corpus used for bounded refutation.
+   * Source evidence corpus every claim is grounded against. It folds prior
+   * checkpoints' source as historical (`current: false`) records, so staleness
+   * is emergent: a claim the current source contradicts but earlier source
+   * supported is stale, otherwise invented.
    */
   evidence: EvidenceCorpus;
 
@@ -288,7 +263,7 @@ export interface PrecisionPassInput {
   extractionBatchSize?: number;
 
   /**
-   * Number of assertions accounted per ledger/judgment request.
+   * Number of assertions grounded per judgment request.
    *
    * @default 10
    */
@@ -374,45 +349,6 @@ interface ClassifiedPrecisionTextUnit extends PrecisionTextUnit {
 }
 
 /**
- * One assertion's verdict from the truth-ledger accounting pass.
- */
-interface LedgerAssertionEvaluation {
-  /**
-   * Assertion the verdict applies to.
-   */
-  assertionId: string;
-
-  /**
-   * Whether the claim is supported, contradicted, or unaccounted by the ledger.
-   */
-  verdict: "supported" | "contradicted" | "unaccounted";
-
-  /**
-   * Fact versions cited in support of the verdict.
-   */
-  factVersionIds: string[];
-
-  /**
-   * Whether a contradicted claim was formerly true (stale) rather than invented.
-   *
-   * @default undefined for non-contradicted verdicts
-   */
-  formerlyTrue?: boolean;
-
-  /**
-   * Accounting rationale.
-   */
-  rationale: string;
-
-  /**
-   * Whether the evaluator failed and the verdict is a resilient fallback.
-   *
-   * @default undefined when accounting succeeded
-   */
-  evaluatorFailed?: boolean;
-}
-
-/**
  * A source-evidence section annotated with its checkpoint provenance.
  */
 interface EvidenceSection extends ArtifactSection {
@@ -428,16 +364,16 @@ interface EvidenceSection extends ArtifactSection {
 }
 
 /**
- * One assertion paired with the evidence visible to its refutation.
+ * One assertion paired with the evidence visible to its grounding judgment.
  */
 interface PrecisionJudgmentTarget {
   /**
-   * Assertion being refuted.
+   * Assertion being grounded against source evidence.
    */
   assertion: ExtractedArtifactAssertion;
 
   /**
-   * Candidate evidence sections for the refutation.
+   * Candidate evidence sections for the grounding judgment.
    */
   evidence: EvidenceSection[];
 }
@@ -746,197 +682,6 @@ function buildInventory(
 }
 
 /**
- * Project active and superseded facts into the ledger-accounting shape.
- */
-function toLedgerFacts(input: PrecisionPassInput): PrecisionLedgerFact[] {
-  return [
-    ...input.activeFacts.map((fact) => ({
-      factId: fact.factId,
-      factVersionId: fact.factVersionId,
-      statement: fact.statement,
-      current: true,
-    })),
-    ...(input.supersededFacts ?? []).map((fact) => ({
-      factId: fact.factId,
-      factVersionId: fact.factVersionId,
-      statement: fact.obsoleteStatement,
-      current: false,
-    })),
-  ];
-}
-
-/**
- * Extract and fully validate one assertion's ledger verdict, enforcing the
- * evidence and formerly-true invariants for each verdict class.
- */
-function resolveLedgerItem(
-  assertion: ExtractedArtifactAssertion,
-  output: PrecisionLedgerOutput,
-  facts: PrecisionLedgerFact[],
-): LedgerAssertionEvaluation {
-  const matches = output.evaluations.filter(
-    (evaluation) => evaluation.assertionId === assertion.id,
-  );
-  if (matches.length !== 1) {
-    throw new EvaluationError(
-      `Precision ledger classifier returned ${matches.length} verdicts for assertionId "${assertion.id}".`,
-    );
-  }
-  const [evaluation] = matches;
-  const byId = new Map(facts.map((fact) => [fact.factVersionId, fact]));
-  const uniqueIds = new Set(evaluation.factVersionIds);
-  if (uniqueIds.size !== evaluation.factVersionIds.length) {
-    throw new EvaluationError(
-      `Precision ledger classifier returned duplicate factVersionIds for assertionId "${assertion.id}".`,
-    );
-  }
-  for (const id of evaluation.factVersionIds) {
-    if (!byId.has(id)) {
-      throw new EvaluationError(
-        `Precision ledger classifier cited unavailable factVersionId "${id}" for assertionId "${assertion.id}".`,
-      );
-    }
-  }
-  if (evaluation.verdict === "unaccounted") {
-    if (
-      evaluation.factVersionIds.length > 0 ||
-      evaluation.formerlyTrue !== undefined
-    ) {
-      throw new EvaluationError(
-        `Precision ledger classifier attached evidence or formerlyTrue to unaccounted assertionId "${assertion.id}".`,
-      );
-    }
-  } else if (evaluation.factVersionIds.length === 0) {
-    throw new EvaluationError(
-      `Precision ledger classifier returned no factVersionIds for ${evaluation.verdict} assertionId "${assertion.id}".`,
-    );
-  }
-  if (evaluation.verdict === "contradicted") {
-    if (evaluation.formerlyTrue === undefined) {
-      throw new EvaluationError(
-        `Precision ledger classifier omitted formerlyTrue for contradicted assertionId "${assertion.id}".`,
-      );
-    }
-    const cited = evaluation.factVersionIds.map(
-      (id) => byId.get(id) as PrecisionLedgerFact,
-    );
-    if (!cited.some((fact) => fact.current)) {
-      throw new EvaluationError(
-        `Precision ledger contradiction lacks a current fact for assertionId "${assertion.id}".`,
-      );
-    }
-    if (evaluation.formerlyTrue && !cited.some((fact) => !fact.current)) {
-      throw new EvaluationError(
-        `Precision ledger formerlyTrue lacks a superseded fact for assertionId "${assertion.id}".`,
-      );
-    }
-  } else if (evaluation.formerlyTrue !== undefined) {
-    throw new EvaluationError(
-      `Precision ledger classifier returned formerlyTrue for ${evaluation.verdict} assertionId "${assertion.id}".`,
-    );
-  }
-  return evaluation;
-}
-
-/**
- * Re-run ledger accounting for a single assertion in isolation.
- */
-async function repairLedgerItem(
-  input: PrecisionPassInput,
-  assertion: ExtractedArtifactAssertion,
-  facts: PrecisionLedgerFact[],
-): Promise<LedgerAssertionEvaluation> {
-  const output = await invokeStructuredModel({
-    model: input.model,
-    pass: "precision-ledger",
-    checkpointId: input.checkpointId,
-    systemPrompt: PRECISION_LEDGER_SYSTEM,
-    taskPrompt: precisionLedgerPrompt(
-      [
-        {
-          assertionId: assertion.id,
-          statement: assertion.statement,
-          tense: assertion.tense,
-        },
-      ],
-      facts,
-      input.transitions,
-    ),
-    schema: precisionLedgerOutputSchema,
-    validate: (parsed) => resolveLedgerItem(assertion, parsed, facts),
-    timeoutMs: input.timeoutMs,
-  });
-  return resolveLedgerItem(assertion, output, facts);
-}
-
-/**
- * Account every claim against current and superseded truth-ledger facts.
- */
-async function runLedgerAccounting(
-  input: PrecisionPassInput,
-  assertions: ExtractedArtifactAssertion[],
-): Promise<LedgerAssertionEvaluation[]> {
-  const facts = toLedgerFacts(input);
-  if (facts.length === 0) {
-    return assertions.map((assertion) => ({
-      assertionId: assertion.id,
-      verdict: "unaccounted",
-      factVersionIds: [],
-      rationale: "No truth-ledger facts were supplied.",
-    }));
-  }
-
-  const results: LedgerAssertionEvaluation[] = [];
-  for (const assertionBatch of batch(
-    assertions,
-    input.judgmentBatchSize ?? DEFAULT_JUDGMENT_BATCH_SIZE,
-  )) {
-    const output = await invokeStructuredModel({
-      model: input.model,
-      pass: "precision-ledger",
-      checkpointId: input.checkpointId,
-      systemPrompt: PRECISION_LEDGER_SYSTEM,
-      taskPrompt: precisionLedgerPrompt(
-        assertionBatch.map((assertion) => ({
-          assertionId: assertion.id,
-          statement: assertion.statement,
-          tense: assertion.tense,
-        })),
-        facts,
-        input.transitions,
-      ),
-      schema: precisionLedgerBatchOutputSchema,
-      timeoutMs: input.timeoutMs,
-    });
-
-    for (const assertion of assertionBatch) {
-      try {
-        results.push(resolveLedgerItem(assertion, output, facts));
-      } catch (initialError) {
-        try {
-          results.push(await repairLedgerItem(input, assertion, facts));
-        } catch (repairError) {
-          const message = `${String(initialError)} Isolated repair failed: ${String(repairError)}`;
-          input.onWarning?.({
-            pass: "precision-ledger",
-            itemId: assertion.id,
-            message,
-          });
-          results.push({
-            assertionId: assertion.id,
-            verdict: "unaccounted",
-            factVersionIds: [],
-            rationale: `Evaluator could not repair ledger accounting: ${message}`,
-            evaluatorFailed: true,
-          });
-        }
-      }
-    }
-  }
-  return results;
-}
-
-/**
  * Project an evidence corpus into searchable, checkpoint-annotated sections.
  */
 function toEvidenceSections(corpus: EvidenceCorpus): EvidenceSection[] {
@@ -969,7 +714,7 @@ function shareBatchEvidence(
 }
 
 /**
- * Project judgment targets into the refutation prompt's assertion shape.
+ * Project judgment targets into the grounding prompt's assertion shape.
  */
 function toJudgmentAssertions(
   targets: PrecisionJudgmentTarget[],
@@ -1004,8 +749,11 @@ function toJudgmentEvidence(
 }
 
 /**
- * Resolve refutation output into one verdict per target, mapping refuted claims
- * to `stale` or `invented` and enforcing the current/historical evidence rules.
+ * Resolve grounding output into one verdict per target: `supported` claims are
+ * adjudicated by source, `contradicted` claims map to `stale` or `invented` by
+ * their formerly-true flag, and `not-addressed` claims fall through to
+ * `unverified`. Enforces the citation and current/historical evidence rules for
+ * each verdict class.
  */
 function resolveJudgments(
   targets: PrecisionJudgmentTarget[],
@@ -1022,7 +770,7 @@ function resolveJudgments(
       byId.has(evaluation.assertionId)
     ) {
       throw new EvaluationError(
-        `Precision refuter returned unknown or duplicate assertionId "${evaluation.assertionId}".`,
+        `Precision grounding classifier returned unknown or duplicate assertionId "${evaluation.assertionId}".`,
       );
     }
     byId.set(evaluation.assertionId, evaluation);
@@ -1032,7 +780,7 @@ function resolveJudgments(
     const evaluation = byId.get(target.assertion.id);
     if (evaluation === undefined) {
       throw new EvaluationError(
-        `Precision refuter returned no verdict for assertionId "${target.assertion.id}".`,
+        `Precision grounding classifier returned no verdict for assertionId "${target.assertion.id}".`,
       );
     }
     const evidenceById = new Map(
@@ -1042,23 +790,24 @@ function resolveJudgments(
       new Set(evaluation.evidenceIds).size !== evaluation.evidenceIds.length
     ) {
       throw new EvaluationError(
-        `Precision refuter returned duplicate evidence IDs for assertionId "${target.assertion.id}".`,
+        `Precision grounding classifier returned duplicate evidence IDs for assertionId "${target.assertion.id}".`,
       );
     }
     for (const id of evaluation.evidenceIds) {
       if (!evidenceById.has(id)) {
         throw new EvaluationError(
-          `Precision refuter cited unavailable evidenceId "${id}" for assertionId "${target.assertion.id}".`,
+          `Precision grounding classifier cited unavailable evidenceId "${id}" for assertionId "${target.assertion.id}".`,
         );
       }
     }
-    if (evaluation.verdict === "not-refuted") {
+
+    if (evaluation.verdict === "not-addressed") {
       if (
         evaluation.evidenceIds.length > 0 ||
         evaluation.formerlyTrue !== undefined
       ) {
         throw new EvaluationError(
-          `Precision refuter attached evidence or formerlyTrue to not-refuted assertionId "${target.assertion.id}".`,
+          `Precision grounding classifier attached evidence or formerlyTrue to not-addressed assertionId "${target.assertion.id}".`,
         );
       }
       return {
@@ -1071,9 +820,33 @@ function resolveJudgments(
         rationale: evaluation.rationale,
       };
     }
+
+    if (evaluation.evidenceIds.length === 0) {
+      throw new EvaluationError(
+        `Precision grounding classifier returned no evidence for ${evaluation.verdict} assertionId "${target.assertion.id}".`,
+      );
+    }
+
+    if (evaluation.verdict === "supported") {
+      if (evaluation.formerlyTrue !== undefined) {
+        throw new EvaluationError(
+          `Precision grounding classifier returned formerlyTrue for supported assertionId "${target.assertion.id}".`,
+        );
+      }
+      return {
+        assertion: target.assertion.statement,
+        location: target.assertion.relativePath,
+        verdict: "supported",
+        tense: target.assertion.tense,
+        adjudicatedBy: "source",
+        evidenceIds: evaluation.evidenceIds,
+        rationale: evaluation.rationale,
+      };
+    }
+
     if (evaluation.formerlyTrue === undefined) {
       throw new EvaluationError(
-        `Precision refuter omitted formerlyTrue for contradicted assertionId "${target.assertion.id}".`,
+        `Precision grounding classifier omitted formerlyTrue for contradicted assertionId "${target.assertion.id}".`,
       );
     }
     const cited = evaluation.evidenceIds.map(
@@ -1081,7 +854,7 @@ function resolveJudgments(
     );
     if (!cited.some((item) => item.current)) {
       throw new EvaluationError(
-        `Precision refutation lacks current evidence for assertionId "${target.assertion.id}".`,
+        `Precision contradiction lacks current evidence for assertionId "${target.assertion.id}".`,
       );
     }
     if (evaluation.formerlyTrue && !cited.some((item) => !item.current)) {
@@ -1164,7 +937,7 @@ async function resolvePrecisionBatchResilient(
           tense: target.assertion.tense,
           adjudicatedBy: "none",
           evidenceIds: [],
-          rationale: `Evaluator could not repair refutation judgment: ${message}`,
+          rationale: `Evaluator could not repair grounding judgment: ${message}`,
         });
       }
     }
@@ -1173,7 +946,12 @@ async function resolvePrecisionBatchResilient(
 }
 
 /**
- * Run extraction, truth-ledger accounting, and one bounded refutation pass.
+ * Extract atomic wiki claims and ground every one against the source evidence.
+ *
+ * There is no census-accounting stage: each extracted assertion (current or
+ * historical) is judged directly against the retrieved source evidence, which
+ * `supported`, `contradicted` (stale or invented), or `not-addressed`
+ * (`unverified`).
  */
 export async function runPrecisionPass(
   input: PrecisionPassInput,
@@ -1207,53 +985,11 @@ export async function runPrecisionPass(
   await input.onInventory?.(inventory);
   if (assertions.length === 0) return [];
 
-  const ledgerResults = await runLedgerAccounting(input, assertions);
-  const ledgerById = new Map(
-    ledgerResults.map((result) => [result.assertionId, result]),
-  );
   const evaluations = new Map<string, PrecisionAssertionEvaluation>();
-  const needsRefutation: ExtractedArtifactAssertion[] = [];
-
-  for (const assertion of assertions) {
-    const result = ledgerById.get(assertion.id) as LedgerAssertionEvaluation;
-    if (result.verdict === "supported") {
-      evaluations.set(assertion.id, {
-        assertion: assertion.statement,
-        location: assertion.relativePath,
-        verdict: "supported",
-        tense: assertion.tense,
-        adjudicatedBy: "ledger",
-        evidenceIds: result.factVersionIds,
-        rationale: result.rationale,
-      });
-    } else if (result.verdict === "contradicted") {
-      evaluations.set(assertion.id, {
-        assertion: assertion.statement,
-        location: assertion.relativePath,
-        verdict: result.formerlyTrue ? "stale" : "invented",
-        tense: assertion.tense,
-        adjudicatedBy: "ledger",
-        evidenceIds: result.factVersionIds,
-        rationale: result.rationale,
-      });
-    } else if (assertion.tense === "historical" || result.evaluatorFailed) {
-      evaluations.set(assertion.id, {
-        assertion: assertion.statement,
-        location: assertion.relativePath,
-        verdict: "unverified",
-        tense: assertion.tense,
-        adjudicatedBy: "none",
-        evidenceIds: [],
-        rationale: result.rationale,
-      });
-    } else {
-      needsRefutation.push(assertion);
-    }
-  }
-
   const evidenceSections = toEvidenceSections(input.evidence);
   const evidenceIndex = new SectionBm25Index(evidenceSections);
-  for (const assertionBatch of batch(needsRefutation, judgmentBatchSize)) {
+
+  for (const assertionBatch of batch(assertions, judgmentBatchSize)) {
     if (evidenceSections.length === 0) {
       for (const assertion of assertionBatch) {
         evaluations.set(assertion.id, {
@@ -1263,7 +999,7 @@ export async function runPrecisionPass(
           tense: assertion.tense,
           adjudicatedBy: "none",
           evidenceIds: [],
-          rationale: "No source evidence was available for bounded refutation.",
+          rationale: "No source evidence was available for grounding.",
         });
       }
       continue;

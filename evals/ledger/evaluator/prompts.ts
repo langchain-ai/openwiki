@@ -1,5 +1,3 @@
-import type { CheckpointTransitions } from "../core/types.js";
-
 /**
  * One artifact excerpt supplied directly to a bounded evaluator request.
  */
@@ -26,8 +24,8 @@ export interface EvaluationExcerpt {
 }
 
 /**
- * One active Truth Package requirement and only the excerpts selected for its
- * coverage judgment.
+ * One source-surface item and only the excerpts selected for its coverage
+ * judgment.
  */
 export interface CoveragePromptTarget {
   /**
@@ -36,12 +34,12 @@ export interface CoveragePromptTarget {
   factId: string;
 
   /**
-   * Requirement statement currently active at the checkpoint.
+   * Human-readable claim describing the surface item present at the checkpoint.
    */
   statement: string;
 
   /**
-   * Artifact excerpts the model may use for this fact.
+   * Artifact excerpts the model may use for this item.
    */
   excerpts: EvaluationExcerpt[];
 }
@@ -155,50 +153,30 @@ export interface PrecisionEvidenceExcerpt {
 }
 
 /**
- * One active human-authored requirement supplied for assertion accounting.
- */
-export interface PrecisionLedgerFact {
-  /**
-   * Stable logical requirement identity.
-   */
-  factId: string;
-
-  /**
-   * Stable identity of the requirement version active at this checkpoint.
-   */
-  factVersionId: string;
-
-  /**
-   * Complete required statement active at this checkpoint.
-   */
-  statement: string;
-
-  /**
-   * Whether this version is active or superseded at the checkpoint.
-   */
-  current: boolean;
-}
-
-/**
  * System instructions for bounded coverage classification.
  */
 export const COVERAGE_SYSTEM = `You are a strict, impartial documentation coverage classifier.
 
-You receive active Truth Package requirements and BM25-selected artifact
-excerpts grouped by requirement. You may use any excerpt present in the bounded
-request. Do not use outside knowledge. Do not assume access to files, tools, or
-source code.
+You receive items from a codebase's public surface (exported symbols, source
+files, and the version) and BM25-selected artifact excerpts grouped by item. You
+may use any excerpt present in the bounded request. Do not use outside knowledge.
+Do not assume access to files, tools, or source code.
+
+You judge mention only: whether the artifact mentions each surface item anywhere.
+You do not judge whether the artifact describes the item completely or correctly.
 
 Rules:
 - Return exactly one evaluation per requested factId.
 - Evidence entries must be sectionId values supplied anywhere in this bounded request.
-- "correct" requires the complete material fact to be stated accurately.
-- "partial" means an important portion is present but incomplete or imprecise.
-- "missing" means these excerpts do not state the fact.
-- "contradicted" means these excerpts assert something incompatible with it.
-- "missing" may cite supplied excerpts that show related but incomplete
-  documentation; evidence is optional because absence may require exhausting
-  all supplied sections.
+- "correct" means at least one excerpt names or refers to this surface item: the
+  exported symbol by name, the source file by its path or clear description, or
+  the version string. A passing mention is enough; completeness is not required.
+- "missing" means no supplied excerpt names or refers to this surface item.
+- Use only "correct" or "missing". A mention either exists or it does not, so do
+  not return "partial" or "contradicted".
+- "correct" must cite at least one excerpt containing the mention. "missing" may
+  cite related-but-insufficient excerpts, but evidence is optional because absence
+  may require exhausting all supplied sections.
 - Return only the structured response.`;
 
 /**
@@ -206,7 +184,7 @@ Rules:
  */
 export const FORGETTING_SYSTEM = `You are a strict, impartial documentation forgetting classifier.
 
-You receive obsolete Truth Package requirement statements and BM25-selected
+You receive obsolete source-surface statements and BM25-selected
 artifact excerpts grouped by statement. You may use any excerpt present in the
 bounded request. Do not use outside knowledge. Do not assume access to files,
 tools, or source code.
@@ -284,81 +262,43 @@ Rules:
 - Return only the structured response.`;
 
 /**
- * System instructions for accounting artifact assertions against requirements.
- */
-export const PRECISION_LEDGER_SYSTEM = `You are a strict truth-ledger classifier.
-
-You receive material assertions extracted from a knowledge artifact and the
-complete set of human-authored fact versions relevant at the checkpoint. Facts
-are marked current or superseded. Judge only against these facts and declared
-version history. Do not use source code, outside knowledge, tools, or unstated
-assumptions.
-
-Rules:
-- Return exactly one evaluation per supplied assertionId.
-- "supported" means current facts establish the complete current assertion, or
-  superseded facts and their transition to current truth establish an explicitly
-  historical assertion.
-- Fact versions sharing a factId form one declared history. A superseded version
-  with no current version of the same factId declares that the fact was removed;
-  a superseded version with a current version declares that it changed.
-- The supplied checkpoint transition is authoritative for when facts changed or
-  were removed. For example, "negate was removed in version 2.0.0" is supported
-  when that transition removes negate and the current version fact at the same
-  checkpoint establishes 2.0.0.
-- "contradicted" means current facts establish incompatible truth.
-- "unaccounted" means the facts establish neither support nor contradiction.
-- Mere consistency is not support, and ledger silence is not contradiction.
-- Missing support for a location, wording, attribution, timing detail, or one
-  part of a compound claim is unaccounted, not contradicted, unless current facts
-  affirmatively establish an incompatible detail.
-- For every contradicted result, formerlyTrue is true iff superseded fact versions
-  establish that the complete assertion was true earlier. Otherwise it is false.
-- formerlyTrue is required for contradicted results and must be omitted for
-  supported and unaccounted results.
-- Supported and contradicted results must cite the factVersionIds that establish
-  the verdict. A contradicted result with formerlyTrue=true must also cite the
-  superseded factVersionIds establishing former truth. Unaccounted results cite none.
-- The rationale must agree with the verdict.
-- Never return contradicted when the rationale says the claim is merely
-  unsupported, unestablished, only partially established, consistent, or
-  ambiguous. Those cases are unaccounted.
-- Return evaluations and factVersionIds as actual JSON arrays, never as
-  JSON-encoded strings.
-- Return only the structured response.`;
-
-/**
  * System instructions for source-evidence-based precision judgment.
  */
-export const PRECISION_JUDGMENT_SYSTEM = `You are a strict source-grounded refutation classifier.
+export const PRECISION_JUDGMENT_SYSTEM = `You are a strict, impartial source-grounding classifier.
 
 You receive material assertions extracted from a knowledge artifact and a
 deduplicated source-evidence set shared by the bounded judgment batch. Each
-assertion lists the exact evidence IDs it may use. Judge only from the supplied
-evidence. Do not use unavailable files, tools, project facts, or changing outside
-information. You may apply ordinary language and runtime semantics needed to
-interpret supplied source code, such as arithmetic and direct control flow.
+evidence excerpt is marked current (drawn from the checkpoint under evaluation)
+or historical (drawn from an earlier checkpoint). Each assertion lists the exact
+evidence IDs it may use. Judge only from the supplied evidence. Do not use
+unavailable files, tools, project facts, or changing outside information. You may
+apply ordinary language and runtime semantics needed to interpret supplied source
+code, such as arithmetic and direct control flow.
+
+Judge each assertion against the evidence with one of three verdicts:
+- "supported": the supplied evidence establishes the assertion. For a current
+  assertion, current evidence must establish it. For a historical assertion, the
+  evidence must establish that it held at the earlier checkpoint it describes.
+- "contradicted": the supplied evidence establishes an incompatible truth.
+- "not-addressed": the evidence neither establishes the assertion nor establishes
+  something incompatible with it.
 
 Rules:
 - Return exactly one evaluation per supplied assertionId.
-- "contradicted" requires supplied evidence to establish incompatible truth.
-- "not-refuted" means supplied evidence does not establish incompatible truth.
-  It does not mean the assertion is supported.
-- Absence of evidence is never contradiction. Never certify an assertion true.
-- Evidence that supports, matches, is consistent with, or only partially
-  addresses an assertion requires not-refuted. The absence of complete support
-  still does not establish incompatible truth.
-- Contradicted results must cite the evidenceIds that establish incompatible
-  current truth. Not-refuted results cite no evidenceIds.
+- Mere consistency is not support, and silence is not contradiction. Missing
+  evidence for a location, wording, attribution, timing detail, or one part of a
+  compound claim is "not-addressed", not "contradicted", unless the evidence
+  affirmatively establishes an incompatible detail.
+- "supported" and "contradicted" must cite the evidenceIds that establish the
+  verdict. "not-addressed" must cite no evidenceIds.
 - Evidence IDs must come from that assertion's own supplied evidence.
 - Current-state contradiction requires current evidence. For every contradicted
   result, formerlyTrue is true iff supplied historical evidence establishes the
   complete assertion at an earlier checkpoint; otherwise it is false. Cite the
   historical evidence IDs as well when formerlyTrue is true.
 - formerlyTrue is required for contradicted results and must be omitted for
-  not-refuted results.
-- The rationale must agree with the verdict. Never return "contradicted" while
-  explaining that it is not refuted.
+  supported and not-addressed results.
+- The rationale must agree with the verdict.
 - Never infer that a generated artifact page is absent because it is not listed
   among source-repository files; source evidence and artifact files are separate
   namespaces.
@@ -369,12 +309,12 @@ Rules:
 /**
  * Build one bounded coverage-classification task.
  *
- * @param targets - Active facts paired with BM25-selected candidate excerpts.
+ * @param targets - Surface items paired with BM25-selected candidate excerpts.
  *
  * @returns Stable JSON-bearing task prompt.
  */
 export function coveragePrompt(targets: CoveragePromptTarget[]): string {
-  return `Judge coverage for every target below using only excerpts supplied anywhere in this bounded request.
+  return `Judge whether the artifact mentions every surface item below, using only excerpts supplied anywhere in this bounded request.
 
 Return exactly one evaluation per factId with verdict, evidence, and rationale.
 
@@ -429,45 +369,11 @@ export function precisionJudgmentPrompt(
   assertions: PrecisionJudgmentAssertion[],
   evidence: PrecisionEvidenceExcerpt[],
 ): string {
-  return `Attempt to refute every assertion using only its supplied source evidence. Never certify support.
+  return `Ground every assertion against only its supplied source evidence, returning supported, contradicted, or not-addressed.
 
 Assertions (JSON):
 ${JSON.stringify(assertions, null, 2)}
 
 Source evidence (JSON):
 ${JSON.stringify(evidence, null, 2)}`;
-}
-
-/**
- * Build one complete requirement-accounting task.
- *
- * @param assertions - Extracted assertions to account for.
- * @param facts - Complete active requirement set.
- * @param transitions - Declared truth-ledger transition into the checkpoint.
- *
- * @returns Stable JSON-bearing ledger prompt.
- */
-export function precisionLedgerPrompt(
-  assertions: Array<{
-    assertionId: string;
-    statement: string;
-    tense: "current" | "historical";
-  }>,
-  facts: PrecisionLedgerFact[],
-  transitions?: CheckpointTransitions,
-): string {
-  // `?? null` is deliberate: absent transitions must serialize to the literal
-  // `null` in the prompt. Flipping to `undefined` would render "undefined" and
-  // change the prompt text, so this stays null despite the wider undefined
-  // convention.
-  return `Account for every assertion against the complete current and superseded truth ledger.
-
-Assertions (JSON):
-${JSON.stringify(assertions, null, 2)}
-
-Complete truth ledger (JSON):
-${JSON.stringify(facts, null, 2)}
-
-Declared checkpoint transition (JSON):
-${JSON.stringify(transitions ?? null, null, 2)}`;
 }

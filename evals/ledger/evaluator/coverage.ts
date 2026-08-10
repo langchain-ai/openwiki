@@ -2,9 +2,9 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 
 import { EvaluationError } from "../core/errors.js";
 import type {
-  ActiveTruthFact,
   EvaluationWarning,
   FactEvaluation,
+  SurfaceItem,
 } from "../core/types.js";
 import { invokeStructuredModel } from "./direct-model.js";
 import type { ArtifactSection } from "./documents.js";
@@ -48,9 +48,10 @@ export interface CoveragePassInput {
   checkpointId: string;
 
   /**
-   * Truth Package requirements active at the checkpoint.
+   * Public source surface extracted at the checkpoint: the items the wiki is
+   * expected to mention.
    */
-  activeFacts: ActiveTruthFact[];
+  surface: SurfaceItem[];
 
   /**
    * BM25 index over every Markdown artifact section.
@@ -83,14 +84,14 @@ export interface CoveragePassInput {
 }
 
 /**
- * Internal active fact paired with the exact sections visible to one model
+ * Internal surface item paired with the exact sections visible to one model
  * judgment.
  */
 interface CoverageTarget {
   /**
-   * Active requirement being judged.
+   * Surface item whose mention is being judged.
    */
-  fact: ActiveTruthFact;
+  fact: SurfaceItem;
 
   /**
    * Artifact sections supplied as evidence candidates.
@@ -114,22 +115,22 @@ function toPromptTargets(targets: CoverageTarget[]): CoveragePromptTarget[] {
 }
 
 /**
- * Resolve raw coverage output into exactly one evaluation per requested fact.
- * Unknown fact IDs, duplicate verdicts, and missing verdicts are evaluation
- * failures rather than implicit defaults.
+ * Resolve raw coverage output into exactly one evaluation per requested surface
+ * item. Unknown fact IDs, duplicate verdicts, and missing verdicts are
+ * evaluation failures rather than implicit defaults.
  *
- * @param activeFacts - Facts requested from the classifier.
+ * @param surface - Surface items requested from the classifier.
  * @param output - Parsed classifier output.
  *
- * @returns One evaluation per fact in request order.
+ * @returns One evaluation per surface item in request order.
  *
  * @throws EvaluationError when output identity or completeness is invalid.
  */
 export function resolveCoverage(
-  activeFacts: ActiveTruthFact[],
+  surface: SurfaceItem[],
   output: CoverageOutput,
 ): FactEvaluation[] {
-  const requested = new Set(activeFacts.map((fact) => fact.factId));
+  const requested = new Set(surface.map((fact) => fact.factId));
   const byId = new Map<string, CoverageOutput["evaluations"][number]>();
 
   for (const evaluation of output.evaluations) {
@@ -148,7 +149,7 @@ export function resolveCoverage(
     byId.set(evaluation.factId, evaluation);
   }
 
-  return activeFacts.map((fact) => {
+  return surface.map((fact) => {
     const evaluation = byId.get(fact.factId);
 
     if (evaluation === undefined) {
@@ -374,12 +375,12 @@ async function evaluateCoverageBatchResilient(
  *
  * @param input - Coverage pass configuration.
  *
- * @returns One coverage verdict per active requirement in package order.
+ * @returns One coverage verdict per surface item in surface order.
  */
 export async function runCoveragePass(
   input: CoveragePassInput,
 ): Promise<FactEvaluation[]> {
-  if (input.activeFacts.length === 0) {
+  if (input.surface.length === 0) {
     return [];
   }
 
@@ -391,7 +392,7 @@ export async function runCoveragePass(
   const allSections = input.index.sections();
 
   if (allSections.length === 0) {
-    return input.activeFacts.map((fact) => ({
+    return input.surface.map((fact) => ({
       factId: fact.factId,
       factVersionId: fact.factVersionId,
       verdict: "missing",
@@ -400,7 +401,7 @@ export async function runCoveragePass(
     }));
   }
 
-  const initialTargets = input.activeFacts.map((fact): CoverageTarget => ({
+  const initialTargets = input.surface.map((fact): CoverageTarget => ({
     fact,
     sections: input.index
       .search(fact.statement, topK)
@@ -441,7 +442,7 @@ export async function runCoveragePass(
     }
   }
 
-  return input.activeFacts.map(
+  return input.surface.map(
     (fact) => resultByFact.get(fact.factId) as FactEvaluation,
   );
 }

@@ -346,11 +346,11 @@ export function formatRunSummary(
       0,
     );
     push("│");
-    push("├ 🔬 Coverage gaps");
+    push("├ 🔬 Unverified claims");
     push(
-      `│  └ ${unverified} claim${unverified === 1 ? "" : "s"} the Truth Package can't judge → ${options.unverifiedClaimsPath}`,
+      `│  └ ${unverified} claim${unverified === 1 ? "" : "s"} the source evidence neither confirmed nor refuted → ${options.unverifiedClaimsPath}`,
     );
-    push("│     add the true ones as requirements to score them next run");
+    push("│     review them for hidden hallucinations or missing evidence");
   }
 
   push("│");
