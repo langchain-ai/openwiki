@@ -14,14 +14,18 @@ export const factVerdictSchema = z.enum([
  * The coverage pass's raw output: one verdict per fact the classifier received.
  * Evidence contains supplied artifact section IDs and defaults to an empty
  * array so an omitted field is not a schema error.
+ *
+ * Fields are ordered reasoning-first: the classifier writes its `rationale` and
+ * cites `evidence` before committing a `verdict`, so the label is conditioned on
+ * the completed reasoning rather than fixed before it.
  */
 export const coverageOutputSchema = z.object({
   evaluations: z.array(
     z.object({
       factId: z.string(),
-      verdict: factVerdictSchema,
-      evidence: z.array(z.string()).default([]),
       rationale: z.string(),
+      evidence: z.array(z.string()).default([]),
+      verdict: factVerdictSchema,
     }),
   ),
 });
@@ -31,25 +35,34 @@ export const coverageOutputSchema = z.object({
  * classifier received. Evidence contains supplied artifact section IDs. Results
  * are keyed by `factVersionId`, distinguishing a lingering earlier version from
  * current truth.
+ *
+ * Fields are ordered reasoning-first: the classifier writes its `rationale` and
+ * cites `evidence` before committing a `verdict`, so the label is conditioned on
+ * the completed reasoning rather than fixed before it.
  */
 export const forgettingOutputSchema = z.object({
   evaluations: z.array(
     z.object({
       factVersionId: z.string(),
-      verdict: z.enum(["forgotten", "lingering"]),
-      evidence: z.array(z.string()).default([]),
       rationale: z.string(),
+      evidence: z.array(z.string()).default([]),
+      verdict: z.enum(["forgotten", "lingering"]),
     }),
   ),
 });
 
 /**
  * Raw accountable text-unit classification and assertion-extraction output.
+ *
+ * Fields are ordered reasoning-first: the extractor writes its `rationale`
+ * before committing a `classification`, so the label is conditioned on the
+ * completed reasoning rather than fixed before it.
  */
 export const assertionExtractionOutputSchema = z.object({
   units: z.array(
     z.object({
       unitId: z.string(),
+      rationale: z.string().trim().min(1),
       classification: z.enum([
         "factual",
         "mixed",
@@ -65,7 +78,6 @@ export const assertionExtractionOutputSchema = z.object({
           tense: z.enum(["current", "historical"]),
         }),
       ),
-      rationale: z.string().trim().min(1),
     }),
   ),
 });
@@ -106,13 +118,20 @@ function refineFormerlyTrue(
  * One raw source-grounding evaluation for an extracted claim, before the
  * cross-field invariant is applied. `supported` and `contradicted` cite the
  * source evidence that establishes the verdict; `not-addressed` cites none.
+ *
+ * Fields are ordered reasoning-first: the classifier writes its `rationale` and
+ * cites `evidenceIds` before committing a `verdict`, and sets `formerlyTrue`
+ * (a sub-flag of `contradicted`) only after the verdict it depends on. The
+ * label is thus conditioned on the completed reasoning rather than fixed before
+ * it, so a rationale that reasons its way to a conclusion can no longer disagree
+ * with an already-emitted verdict.
  */
 const precisionJudgmentEvaluationSchema = z.object({
   assertionId: z.string(),
-  verdict: z.enum(["supported", "contradicted", "not-addressed"]),
-  evidenceIds: z.array(z.string()).default([]),
-  formerlyTrue: z.boolean().optional(),
   rationale: z.string().trim().min(1),
+  evidenceIds: z.array(z.string()).default([]),
+  verdict: z.enum(["supported", "contradicted", "not-addressed"]),
+  formerlyTrue: z.boolean().optional(),
 });
 
 /**

@@ -165,6 +165,11 @@ Do not assume access to files, tools, or source code.
 You judge mention only: whether the artifact mentions each surface item anywhere.
 You do not judge whether the artifact describes the item completely or correctly.
 
+For each item write the rationale first and cite evidence, then name the verdict
+last, emitting fields in that schema order. The verdict must match the
+conclusion the rationale reached; never leave a label standing against your own
+reasoning.
+
 Rules:
 - Return exactly one evaluation per requested factId.
 - Evidence entries must be sectionId values supplied anywhere in this bounded request.
@@ -188,6 +193,11 @@ You receive obsolete source-surface statements and BM25-selected
 artifact excerpts grouped by statement. You may use any excerpt present in the
 bounded request. Do not use outside knowledge. Do not assume access to files,
 tools, or source code.
+
+For each statement write the rationale first and cite evidence, then name the
+verdict last, emitting fields in that schema order. The verdict must match the
+conclusion the rationale reached; never leave a label standing against your own
+reasoning.
 
 Rules:
 - Return exactly one evaluation per requested factVersionId.
@@ -257,6 +267,9 @@ Rules:
 - A subjective sentence containing a separable factual claim is "mixed" and must
   retain only the factual claim.
 - Preserve meaning without inventing implied intent, policy, or causality.
+- For each unit write the rationale first and then name the classification,
+  emitting fields in that schema order. The classification must match the
+  conclusion the rationale reached.
 - Return a concise rationale explaining each classification.
 - Return units and assertions as actual JSON arrays, never as JSON-encoded strings.
 - Return only the structured response.`;
@@ -283,12 +296,26 @@ Judge each assertion against the evidence with one of three verdicts:
 - "not-addressed": the evidence neither establishes the assertion nor establishes
   something incompatible with it.
 
+Decide in this order for every assertion. First write the rationale: reason from
+the cited evidence to a single conclusion, and finish that reasoning before you
+name a verdict. Then set the verdict to the conclusion the rationale reached.
+Emit each field in the order the response schema lists them (rationale, then
+evidenceIds, then verdict) and never revise the reasoning after naming the
+verdict. The verdict is your final answer, not a first guess: if the rationale
+argues the claim matches the source, the verdict is "supported"; do not leave a
+"contradicted" or "not-addressed" label standing against your own conclusion.
+
 Rules:
 - Return exactly one evaluation per supplied assertionId.
 - Mere consistency is not support, and silence is not contradiction. Missing
   evidence for a location, wording, attribution, timing detail, or one part of a
   compound claim is "not-addressed", not "contradicted", unless the evidence
   affirmatively establishes an incompatible detail.
+- A claim about the artifact's own provenance or authoring process, an
+  interpretive gloss or generalization, or a negative-existential claim ("there
+  is no X anywhere") is "not-addressed" whenever the bounded evidence does not
+  affirmatively establish an incompatible fact. Do not mark such a claim
+  "contradicted" merely because the evidence does not mention it.
 - "supported" and "contradicted" must cite the evidenceIds that establish the
   verdict. "not-addressed" must cite no evidenceIds.
 - Evidence IDs must come from that assertion's own supplied evidence.
@@ -298,7 +325,7 @@ Rules:
   historical evidence IDs as well when formerlyTrue is true.
 - formerlyTrue is required for contradicted results and must be omitted for
   supported and not-addressed results.
-- The rationale must agree with the verdict.
+- The verdict must agree with the conclusion of the rationale.
 - Never infer that a generated artifact page is absent because it is not listed
   among source-repository files; source evidence and artifact files are separate
   namespaces.

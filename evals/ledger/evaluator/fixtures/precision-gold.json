@@ -1,5 +1,5 @@
 {
-  "description": "Human-reviewed calibration cases for atomic extraction, truth-ledger accounting, and bounded refutation.",
+  "description": "Human-reviewed calibration cases for atomic extraction and source-grounding, including regression cases drawn from the taskflow run where the judge emitted a verdict that contradicted its own rationale (a claim the evidence plainly supported was labeled invented). These lock in the reasoning-first field order that conditions the verdict on the completed rationale.",
   "extractionCases": [
     {
       "content": "See the API page for details.",
@@ -269,6 +269,207 @@
           "observedAtCheckpoint": "T1",
           "current": true,
           "content": "A tiny calculator library."
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    },
+    {
+      "assertion": "src/task.ts exports Task<T>, TaskState, and createTask.",
+      "evidence": [
+        {
+          "evidenceId": "task",
+          "sourceRef": "src/task.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "export type TaskState = \"pending\" | \"running\" | \"succeeded\" | \"failed\";\n\nexport interface Task<T = unknown> {\n  readonly id: string;\n  run: () => Promise<T>;\n  state: TaskState;\n}\n\nexport function createTask<T>(run: () => Promise<T>): Task<T> {\n  counter += 1;\n  return { id: \"task-\" + counter, run, state: \"pending\" };\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "src/worker.ts depends on src/task.ts.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "import { TaskFailedError } from \"./errors.js\";\nimport type { Queue } from \"./queue.js\";\nimport type { Task } from \"./task.js\";\n\nexport class WorkerPool {\n  private readonly queue: Queue;\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "src/worker.ts depends on all three of src/errors.ts, src/task.ts, and src/queue.ts.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "import { TaskFailedError } from \"./errors.js\";\nimport type { Queue } from \"./queue.js\";\nimport type { Task } from \"./task.js\";\n\nexport class WorkerPool {\n  private readonly queue: Queue;\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "src/worker.ts depends on src/queue.ts.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "import { TaskFailedError } from \"./errors.js\";\nimport type { Queue } from \"./queue.js\";\nimport type { Task } from \"./task.js\";\n\nexport class WorkerPool {\n  constructor(queue: Queue, options: WorkerPoolOptions = {}) {}\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "Source imports in taskflow use explicit .js extensions, for example `import { TaskFailedError } from \"./errors.js\";` in src/worker.ts.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "import { TaskFailedError } from \"./errors.js\";\nimport type { Queue } from \"./queue.js\";\nimport type { Task } from \"./task.js\";\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "src/errors.ts and src/task.ts are leaf modules with no internal dependencies.",
+      "evidence": [
+        {
+          "evidenceId": "errors",
+          "sourceRef": "src/errors.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "/**\n * Base class for every error thrown by taskflow.\n */\nexport class TaskflowError extends Error {\n  constructor(message: string) {\n    super(message);\n    this.name = new.target.name;\n  }\n}\n\nexport class TaskFailedError extends TaskflowError {}\n"
+        },
+        {
+          "evidenceId": "task",
+          "sourceRef": "src/task.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "export type TaskState = \"pending\" | \"running\" | \"succeeded\" | \"failed\";\n\nexport interface Task<T = unknown> {\n  readonly id: string;\n  run: () => Promise<T>;\n  state: TaskState;\n}\n\nexport function createTask<T>(run: () => Promise<T>): Task<T> {\n  counter += 1;\n  return { id: \"task-\" + counter, run, state: \"pending\" };\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "The export list in src/index.ts consists of six export statements.",
+      "evidence": [
+        {
+          "evidenceId": "index",
+          "sourceRef": "src/index.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "export { Queue } from \"./queue.js\";\nexport { WorkerPool } from \"./worker.js\";\nexport type { WorkerPoolOptions } from \"./worker.js\";\nexport { createTask } from \"./task.js\";\nexport type { Task, TaskState } from \"./task.js\";\nexport { TaskflowError, TaskFailedError } from \"./errors.js\";\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": ".prettierrc.json sets singleQuote to false.",
+      "evidence": [
+        {
+          "evidenceId": "prettier",
+          "sourceRef": ".prettierrc.json",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "{\n  \"semi\": true,\n  \"singleQuote\": false,\n  \"trailingComma\": \"all\"\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "Queue never reads or writes the task's state property.",
+      "evidence": [
+        {
+          "evidenceId": "queue",
+          "sourceRef": "src/queue.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "interface QueueEntry {\n  task: Task;\n  priority: number;\n  sequence: number;\n}\n\nexport class Queue {\n  private readonly entries: QueueEntry[] = [];\n\n  enqueue(task: Task, priority = 0): void {\n    this.sequence += 1;\n    this.entries.push({ task, priority, sequence: this.sequence });\n  }\n\n  dequeue(): Task | undefined {\n    const index = this.nextIndex();\n    if (index === undefined) {\n      return undefined;\n    }\n    return this.entries.splice(index, 1)[0].task;\n  }\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "dequeue() never throws.",
+      "evidence": [
+        {
+          "evidenceId": "queue-current",
+          "sourceRef": "src/queue.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "dequeue(): Task | undefined {\n  const index = this.nextIndex();\n  if (index === undefined) {\n    return undefined;\n  }\n  return this.entries.splice(index, 1)[0].task;\n}\n"
+        },
+        {
+          "evidenceId": "queue-historical",
+          "sourceRef": "src/queue.ts",
+          "observedAtCheckpoint": "T0",
+          "current": false,
+          "content": "dequeue(): Task {\n  const task = this.tasks.shift();\n  if (task === undefined) {\n    throw new QueueEmptyError();\n  }\n  return task;\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "A failure in one drain loop does not cancel sibling drain loops that are already running.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "async run(): Promise<void> {\n  const workers: Array<Promise<void>> = [];\n  for (let i = 0; i < this.concurrency; i += 1) {\n    workers.push(this.drain());\n  }\n  await Promise.all(workers);\n}\n\nprivate async drain(): Promise<void> {\n  for (\n    let task = this.queue.dequeue();\n    task !== undefined;\n    task = this.queue.dequeue()\n  ) {\n    await this.execute(task);\n  }\n}\n\nprivate async execute(task: Task): Promise<void> {\n  task.state = \"running\";\n  try {\n    await task.run();\n    task.state = \"succeeded\";\n  } catch (cause) {\n    task.state = \"failed\";\n    throw new TaskFailedError(task.id, cause);\n  }\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "The behavior described is established solely by reading src/worker.ts and src/errors.ts.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "async run(): Promise<void> {\n  const workers: Array<Promise<void>> = [];\n  for (let i = 0; i < this.concurrency; i += 1) {\n    workers.push(this.drain());\n  }\n  await Promise.all(workers);\n}\n"
+        },
+        {
+          "evidenceId": "queue",
+          "sourceRef": "src/queue.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "dequeue(): Task | undefined {\n  const index = this.nextIndex();\n  if (index === undefined) {\n    return undefined;\n  }\n  return this.entries.splice(index, 1)[0].task;\n}\n"
         }
       ],
       "expected": {
