@@ -1,6 +1,6 @@
 # Evaluator meta-evaluation
 
-The gold-agreement gate measures the extraction, truth-ledger, and refutation
+The gold-agreement gate measures the extraction/classification and source-grounding
 judges against human-reviewed cases. Every stage must achieve at least 0.90
 agreement in the optional live-model tier.
 

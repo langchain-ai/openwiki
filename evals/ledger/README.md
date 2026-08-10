@@ -15,38 +15,50 @@ longitudinal evaluation:
 
 ```text
 Point in time
-truth @ T0 → artifact K0 → evaluate quality
+source @ T0 → artifact K0 → evaluate quality
 
 Longitudinal
-truth @ T0 → create K0 → evaluate
-truth @ T1 → update K1 → evaluate change handling
-truth @ T2 → update K2 → evaluate change handling
+source @ T0 → create K0 → evaluate
+source @ T1 → update K1 → evaluate change handling
+source @ T2 → update K2 → evaluate change handling
 ```
 
 LEDGER asks three core questions:
 
 | Question                                               | Metric         | Plain-English meaning                                               |
 | ------------------------------------------------------ | -------------- | ------------------------------------------------------------------- |
-| 📚 Did the artifact represent what matters?            | **Coverage**   | Required knowledge appears correctly in the artifact.               |
-| 🎯 Is what the artifact says supported?                | **Precision**  | Claims are checked against requirements, then source evidence.      |
-| 🧹 Did the artifact stop presenting what became false? | **Forgetting** | Obsolete requirements are no longer presented as current knowledge. |
+| 📚 Did the artifact represent what matters?            | **Coverage**   | The code's public surface is mentioned in the artifact.             |
+| 🎯 Is what the artifact says supported?                | **Precision**  | Each claim is grounded directly against source evidence.            |
+| 🧹 Did the artifact stop presenting what became false? | **Forgetting** | Obsolete surface knowledge is no longer presented as current.       |
 
 Those checkpoint judgments also produce longitudinal maintenance metrics for
 discovering new knowledge, correcting changed knowledge, forgetting stale
 knowledge, and retaining unchanged knowledge.
 
+## 🧭 Source is the ground truth
+
+LEDGER has no hand-authored truth ledger. The source repository at each checkpoint
+**is** the ground truth, and everything scoreable is derived from it automatically:
+
+- The **coverage checklist** is the code's public surface, extracted deterministically
+  at each commit.
+- **Precision** grounds every artifact claim directly against source evidence, which
+  can both establish a claim and refute it.
+- The **forgetting watch set** and the longitudinal transitions are computed by
+  diffing the surface between consecutive checkpoints.
+
+This removes the subjective, expensive step of authoring a census of "what matters"
+by hand, and it removes a whole class of measurement error: a claim can no longer be
+called invented merely because a human census was silent about it.
+
 ## 🧱 What is a benchmark?
 
-A benchmark is the frozen source evolution and its human-authored expectations:
+A benchmark is just a frozen source evolution and its checkpoint boundaries:
 
 ```text
 Benchmark
 ├── ordered source-truth states or events
-├── checkpoint boundaries
-└── Truth Package
-    ├── material knowledge requirements
-    ├── temporal validity and supersession
-    └── optional human-audit evidence references
+└── named checkpoint boundaries
 
 Evaluation run
 ├── benchmark
@@ -55,18 +67,12 @@ Evaluation run
 └── evaluator
 ```
 
-In the current manifest schema, the **Truth Package** is the human-authored
-ground-truth specification: material knowledge requirements and their validity
-ranges. During a run, the separately supplied source-evidence adapter normalizes
-the frozen source at each checkpoint into an evidence corpus. Requirements define
-what a useful artifact must cover; source evidence verifies additional details
-the artifact chooses to state.
-
-The benchmark is broader than the Truth Package because it also defines the
-evolving source truth and checkpoint sequence. The system under test, source
-adapter, and evaluator are run inputs, which allows the same benchmark to compare
-different systems without changing its truth definition. The system under test
-never creates or modifies the requirements or source evidence.
+There is no human-authored truth object in the manifest. At each checkpoint the
+source-evidence adapter normalizes the frozen source into an evidence corpus, and
+the surface extractor reads the same source to produce the coverage checklist. The
+system under test, source adapter, and evaluator are run inputs, so the same
+benchmark can compare different systems without changing anything about its truth.
+The system under test never sees or modifies the surface or the source evidence.
 
 Possible source evolutions include:
 
@@ -83,45 +89,27 @@ not part of LEDGER's conceptual requirement.
 ### Current Git/OpenWiki implementation
 
 The first LEDGER adapter uses Git commits as source-truth checkpoints and OpenWiki
-as the system under test. The committed `calc-evolution` benchmark has three
-checkpoints:
+as the system under test. The committed `calc` benchmark has three checkpoints:
 
-| Checkpoint | Repository change             | Selected active truth                                                   |
+| Checkpoint | Repository change             | Public surface at this checkpoint                                       |
 | ---------- | ----------------------------- | ----------------------------------------------------------------------- |
-| T0         | calc 1.0.0                    | `add` and `negate` exist; `VERSION` is `"1.0.0"`.                       |
-| T1         | Introduce `subtract`          | `add`, `negate`, and `subtract` exist; version remains `"1.0.0"`.       |
-| T2         | Remove `negate`, bump version | `add` and `subtract` exist; `negate` is absent; `VERSION` is `"2.0.0"`. |
+| T0         | calc 1.0.0                    | `add` and `negate` exported; version is `"1.0.0"`.                      |
+| T1         | Introduce `subtract`          | `add`, `negate`, and `subtract` exported; version remains `"1.0.0"`.    |
+| T2         | Remove `negate`, bump version | `add` and `subtract` exported; `negate` absent; version is `"2.0.0"`.   |
 
-An individual knowledge requirement keeps the same ID while its truth changes:
+The surface is derived, not declared. At T0 the extractor emits items like:
 
-```json
-{
-  "id": "current-version",
-  "category": "config",
-  "versions": [
-    {
-      "statement": "The library's current version is 1.0.0.",
-      "evidenceRefs": ["src/version.ts", "README.md"],
-      "fromCheckpoint": "T0",
-      "untilCheckpoint": "T2"
-    },
-    {
-      "statement": "The library's current version is 2.0.0.",
-      "evidenceRefs": ["src/version.ts", "README.md"],
-      "fromCheckpoint": "T2"
-    }
-  ]
-}
+```text
+The repository includes the source file `src/calc.ts`.
+The module `src/calc.ts` exports a function `add(a: number, b: number): number`.
+The module `src/calc.ts` exports a function `negate(x: number): number`.
+The library's current released version is "1.0.0".
 ```
 
-At T1, LEDGER selects the first version. At T2, it selects the second version and
-treats the first as obsolete knowledge that the artifact must forget.
-
-`evidenceRefs` are optional, human-auditable pointers documenting where a
-requirement came from. In V1 they do not affect retrieval or scoring. The Git
-source adapter captures all tracked text files except generated `openwiki/`
-content, binary files, and non-file entries; it does not restrict evidence to
-these references.
+At T2, `negate` no longer appears in the surface and the version item changes to
+`"2.0.0"`. The surface diff records `negate` as removed and the version as changed,
+so the T1 forms (`negate` exported, version `"1.0.0"`) become obsolete knowledge the
+artifact must stop presenting as current.
 
 ## 🗺️ End-to-end architecture
 
@@ -133,21 +121,17 @@ flowchart TD
     F -->|No| U[Update knowledge artifact]
     I --> A[Freeze artifact]
     U --> A
-    A --> L[Project truth ledger and collect source evidence]
-    L --> CV[Coverage]
-    CV --> FG[Forgetting]
-    FG --> EX[Stage 1: classify units and extract atomic, tense-tagged claims]
+    A --> L[Extract source surface and collect source evidence]
+    L --> CV[Coverage: mention of each surface item]
+    CV --> FG[Forgetting: obsolete surface versions]
+    FG --> EX[Extract: classify units and extract atomic, tense-tagged claims]
     EX --> DD{Exact duplicate?}
     DD -->|Yes| DX[Drop and record]
-    DD -->|No| TL[Stage 2: account against active and superseded ledger facts]
-    TL -->|Supported| SP[Supported]
-    TL -->|Contradicted and never true| IN[Invented]
-    TL -->|Contradicted and formerly true| ST[Stale]
-    TL -->|Unaccounted historical| UV[Unverified]
-    TL -->|Unaccounted current| SE[Stage 3: BM25 top-k source refutation]
-    SE -->|Contradicted and never true| IN
-    SE -->|Contradicted and formerly true| ST
-    SE -->|Not refuted| UV
+    DD -->|No| GR[Ground each claim against bounded source evidence]
+    GR -->|Supported| SP[Supported]
+    GR -->|Contradicted and never true| IN[Invented]
+    GR -->|Contradicted and formerly true| ST[Stale]
+    GR -->|Not addressed| UV[Unverified]
     DX --> SC[Score checkpoint]
     SP --> SC
     IN --> SC
@@ -162,8 +146,7 @@ flowchart TD
     EV[(Evaluator)] -. judgments .-> CV
     EV -. judgments .-> FG
     EV -. judgments .-> EX
-    EV -. judgments .-> TL
-    EV -. judgments .-> SE
+    EV -. judgments .-> GR
 ```
 
 At each checkpoint, LEDGER measures point-in-time quality. Across checkpoint
@@ -171,26 +154,20 @@ transitions, it measures whether the artifact adapted correctly:
 
 ```text
                               POINT-IN-TIME
-requirements @ Tn ─────────compare─────────▶ artifact @ Tn
-                         coverage
+surface @ Tn ─────────────compare─────────────▶ artifact @ Tn
+                         coverage (mention)
 
-artifact assertions @ Tn ──▶ active requirements
+artifact assertions @ Tn ──▶ bounded source evidence @ Tn
                                  │
-                                 ├── supported → supported
-                                 ├── contradicted → stale or invented
-                                 └── unaccounted current
-                                         │
-                                         ▼
-source truth @ Tn ─────────────▶ BM25 top-k evidence → refutation only
-                                                        │
-                                                        ├── contradicted → stale or invented
-                                                        └── not refuted → unverified
+                                 ├── supported     → supported
+                                 ├── contradicted  → stale or invented
+                                 └── not-addressed → unverified
 
                               LONGITUDINAL
-requirements Tn ──changed──▶ requirements Tn+1
-                              ▲
-                              │ compare evolution
-                              ▼
+surface Tn ──diff──▶ surface Tn+1
+                      ▲
+                      │ compare evolution
+                      ▼
 artifact Kn ─updated─▶ artifact Kn+1
              discovery + correction + forgetting + retention
 ```
@@ -207,7 +184,7 @@ repository @ T2 + wiki K1 ──update──▶ wiki K2
 ```
 
 T2 therefore evaluates how well OpenWiki maintained the artifact it created at
-T0 and updated at T1—not a fresh generation with no memory. LEDGER's contracts are
+T0 and updated at T1, not a fresh generation with no memory. LEDGER's contracts are
 designed to support note edits, messages, policy revisions, database snapshots,
 or timestamped events, but V1 would need additional replay and artifact adapters
 to run those domains end to end.
@@ -216,17 +193,16 @@ to run those domains end to end.
 
 | Step | Generic LEDGER operation                                     | Current Git/OpenWiki adapter                            |
 | ---- | ------------------------------------------------------------ | ------------------------------------------------------- |
-| 1    | Load checkpoint definitions and knowledge requirements.      | Load commits and `benchmark.json`.                      |
+| 1    | Load checkpoint definitions.                                 | Load commits and `benchmark.json`.                      |
 | 2    | Materialize the checkpoint's source truth.                   | Check out a commit in an isolated worktree.             |
 | 3    | Ask the system under test to create or update its artifact.  | Run OpenWiki `init` or `update` using the system model. |
 | 4    | Freeze and persist the artifact before evaluation.           | Capture every generated wiki document.                  |
-| 5    | Project requirements and collect temporal source evidence.   | Requirements plus current and prior tracked files.      |
-| 6    | Evaluate coverage of every active material topic.            | BM25 retrieval plus evaluator-model judgment.           |
-| 7    | Evaluate whether obsolete fact versions were forgotten.      | BM25 retrieval plus evaluator-model judgment.           |
+| 5    | Extract the source surface and collect temporal evidence.    | Parse exports/files/version; capture tracked files.     |
+| 6    | Evaluate coverage: is each surface item mentioned?           | BM25 retrieval plus evaluator-model judgment.           |
+| 7    | Evaluate whether obsolete surface versions were forgotten.   | BM25 retrieval plus evaluator-model judgment.           |
 | 8    | Classify text units and extract atomic, tense-tagged claims. | Evaluator-model extraction plus exact deduplication.    |
-| 9    | Account each claim against the truth ledger.                 | Active and superseded ledger-fact judgment.             |
-| 10   | Refute unaccounted current claims from source evidence.      | One bounded BM25 top-eight judgment, then stop.         |
-| 11   | Score the checkpoint and, finally, the complete trace.       | Deterministic calculation and persistence.              |
+| 9    | Ground each current claim against bounded source evidence.   | One bounded BM25 top-eight judgment, then stop.         |
+| 10   | Score the checkpoint and, finally, the complete trace.       | Deterministic calculation and persistence.              |
 
 LEDGER does not require the system under test to use a model. The current OpenWiki
 system does, and may perform many agent calls. The current evaluator also uses a
@@ -239,20 +215,51 @@ The current implementation has two intentionally separate model roles:
 | 🤖 **System model**    | Operates OpenWiki and creates or updates the artifact being evaluated.                    |
 | ⚖️ **Evaluator model** | Extracts assertions and judges coverage, precision, and forgetting from bounded evidence. |
 
-The models do not generate benchmark requirements, checkpoint definitions,
-source-evidence records, BM25 rankings, temporal transitions, metrics, or scores.
-Those remain human-authored or deterministic code paths.
+The models do not generate the surface, checkpoint definitions, source-evidence
+records, BM25 rankings, temporal transitions, metrics, or scores. Those are
+deterministic code paths.
 
-In the current adapter, Git replay, requirement projection, source-evidence
-capture, Markdown sectioning, BM25 retrieval, exact deduplication, scoring, and
-persistence are deterministic code paths.
+In the current adapter, Git replay, surface extraction, source-evidence capture,
+Markdown sectioning, BM25 retrieval, exact deduplication, scoring, and persistence
+are all deterministic.
 
-## 📚 Coverage: did the artifact represent what is true?
+## 🧬 The source surface
 
-Coverage starts from the active knowledge requirements and searches the artifact.
+The surface is the deterministic, code-owned checklist of what a useful artifact
+should mention at a checkpoint. For a TypeScript repository, the extractor parses
+each source file with the TypeScript compiler API and emits three kinds of item:
+
+| Kind      | One item per                          | Example statement                                                          |
+| --------- | ------------------------------------- | -------------------------------------------------------------------------- |
+| `symbol`  | Exported declaration                  | ``The module `src/calc.ts` exports a function `add(a: number, b: number): number`.`` |
+| `file`    | Parseable source file                 | ``The repository includes the source file `src/calc.ts`.``                 |
+| `version` | The library version                   | `The library's current released version is "1.0.0".`                       |
+
+Each item carries a stable `factId` (for example `symbol:add`) and a
+content-addressed `factVersionId` derived from a hash of its statement. Symbol
+statements are built from the type signature, so a change that alters behavior
+without changing the signature (for example `const v = 1` becoming `const v = 2`)
+is stable, while a signature change (for example adding a parameter) is a genuine
+`changed` transition. The version item is read from an exported `VERSION` constant
+or, failing that, `package.json`.
+
+Surface extraction is **TypeScript-only for V1**, behind a clean seam so other
+languages can be added later without touching the evaluators or scoring. Both
+committed benchmarks are TypeScript. The extractor and its diff live in
+[`benchmark/surface.ts`](./benchmark/surface.ts).
+
+Coverage is a **mention-only floor**. It asks whether the artifact names or refers
+to each surface item anywhere, not whether it describes it completely or correctly.
+This is objective, needs nothing hand-authored, and closes the empty-artifact
+loophole: an artifact that says almost nothing cannot quietly score full precision,
+because coverage anchors the other side of Quality.
+
+## 📚 Coverage: did the artifact represent the surface?
+
+Coverage starts from the surface items and searches the artifact.
 
 ```text
-active knowledge requirement
+surface item
         │
         ▼
 retrieve likely artifact sections
@@ -260,32 +267,29 @@ retrieve likely artifact sections
         ▼
 evaluator judges all supplied sections together
         │
-        ├── correct
-        ├── partial
-        ├── contradicted
-        └── missing
+        ├── correct   (a mention exists)
+        └── missing   (no supplied section mentions it)
 ```
 
 In the current Markdown evaluator, BM25 initially retrieves the eight most
-relevant artifact sections for each active fact. The evaluator receives the fact
+relevant artifact sections for each surface item. The evaluator receives the item
 and those candidate sections.
 
 ### Worked coverage example
 
-Active T1 requirement:
+Surface item at T1:
 
 ```text
-subtract(a, b) returns the first argument minus the second.
+The module `src/calc.ts` exports a function `subtract(a: number, b: number): number`.
 ```
 
 Possible artifact evidence and verdicts:
 
-| Artifact text                       | Verdict        | Why                                       |
-| ----------------------------------- | -------------- | ----------------------------------------- |
-| “`subtract(a, b)` returns `a - b`.” | `correct`      | The complete fact is accurate.            |
-| “The library exports `subtract`.”   | `partial`      | It confirms existence but omits behavior. |
-| “`subtract(a, b)` returns `b - a`.” | `contradicted` | It states incompatible behavior.          |
-| No section describes `subtract`.    | `missing`      | The artifact does not represent the fact. |
+| Artifact text                                | Verdict   | Why                                        |
+| -------------------------------------------- | --------- | ------------------------------------------ |
+| “`subtract(a, b)` returns `a - b`.”          | `correct` | It names the exported symbol.              |
+| “The library also exports `subtract`.”       | `correct` | A mention is enough; behavior is optional. |
+| No section names or refers to `subtract`.    | `missing` | The artifact does not mention the item.    |
 
 A model may initially return `missing` because BM25 did not retrieve the right
 section. LEDGER therefore treats `missing` as provisional and checks every remaining
@@ -297,41 +301,38 @@ top BM25 sections say missing
              ▼
 inspect every unexamined section
              │
-             ├── find support → correct or partial
-             └── find none    → final missing
+             ├── find a mention → correct
+             └── find none      → final missing
 ```
 
-This keeps retrieval quality from silently becoming a coverage failure.
+This keeps retrieval quality from silently becoming a coverage failure. The
+`FactVerdict` enum still carries `partial`, `contradicted`, and `indeterminate`
+values for schema and report compatibility, but a mention-only judgment resolves to
+`correct` or `missing`.
 
 ## 🎯 Precision: is what the artifact says supported?
 
-Precision runs in the opposite direction from coverage. Coverage starts with
-human-authored requirements. Precision starts with every code-owned text unit in
-the artifact, extracts atomic claims, accounts for the claims the truth ledger
-can adjudicate, and asks the source repository only whether remaining current
-claims can be refuted.
+Precision runs in the opposite direction from coverage. Coverage starts from the
+surface. Precision starts from every code-owned text unit in the artifact, extracts
+atomic claims, and grounds each current claim directly against source evidence.
 
 ```mermaid
 flowchart TD
     W[Artifact text units] --> E[Stage 1: classify and extract atomic claims]
     E --> D{Exact duplicate?}
     D -->|Yes| X[Drop and record]
-    D -->|No| L[Stage 2: truth-ledger accounting]
-    L -->|Supported| SP[Supported]
-    L -->|Contradicted| FT{Formerly true?}
+    D -->|No| G[Stage 2: bounded source grounding]
+    G -->|Supported| SP[Supported]
+    G -->|Contradicted| FT{Formerly true?}
     FT -->|No| IN[Invented]
     FT -->|Yes| ST[Stale]
-    L -->|Unaccounted historical| UV[Unverified]
-    L -->|Unaccounted current| R[Stage 3: BM25 top-k refutation]
-    R -->|Not refuted| UV
-    R -->|Contradicted| SF{Formerly true?}
-    SF -->|No| IN
-    SF -->|Yes| ST
+    G -->|Not addressed| UV[Unverified]
 ```
 
-The truth ledger is the scoreable contract: the human declaration of what
-matters. It is not an inventory of everything true in the source. Mere
-consistency is not support, and ledger silence is not contradiction.
+Source is the scoreable contract. Unlike a hand-authored census, source evidence
+can both **establish** a claim and **refute** it. Mere silence is still not
+contradiction: a claim the evidence neither confirms nor denies is `unverified`,
+never invented.
 
 ### Stage 1: extract accountable atomic claims
 
@@ -360,42 +361,39 @@ exact duplicates are removed.
 
 The extraction taxonomy is the only semantic filtering layer. Navigation, wiki
 self-description, commit archaeology, editorial asides, hypothetical future
-work, prescriptive advice, opinions, and text with no claim are handled here—not
+work, prescriptive advice, opinions, and text with no claim are handled here, not
 by code-side regex families.
 
-### Stage 2: account against the truth ledger
+### Stage 2: ground each claim against bounded source evidence
 
-Each deduplicated claim is judged against active and superseded fact versions:
+For each deduplicated claim, BM25 selects the top eight current and historical
+source-evidence records shared across the bounded batch. The judge receives that
+context once and returns one of three verdicts:
 
-| Ledger verdict                        | Routing                                                 |
-| ------------------------------------- | ------------------------------------------------------- |
-| `supported`                           | Final `supported` verdict.                              |
-| `contradicted`, `formerlyTrue: false` | Final `invented` verdict.                               |
-| `contradicted`, `formerlyTrue: true`  | Final `stale` verdict, citing superseded fact versions. |
-| `unaccounted`, historical claim       | Final `unverified` verdict.                             |
-| `unaccounted`, current claim          | Continue to source refutation.                          |
+- `supported` requires cited evidence that establishes the claim. A current claim
+  needs current evidence; a historical claim needs evidence that it held at the
+  earlier checkpoint it describes.
+- `contradicted` requires cited evidence establishing an incompatible truth.
+  `formerlyTrue` is true only when cited historical evidence shows the complete
+  claim held at an earlier checkpoint.
+- `not-addressed` means the supplied evidence neither establishes the claim nor
+  establishes anything incompatible with it.
 
-Historical claims can be supported by superseded fact versions and declared
-transitions. The same ledger judgment that finds a contradiction determines
-whether the claim was formerly true; there is no extra stale-detection pass.
+The three verdicts route to the four final classes:
 
-### Stage 3: refute from bounded source evidence
+| Grounding verdict                     | Final class                              |
+| ------------------------------------- | ---------------------------------------- |
+| `supported`                           | `supported`                              |
+| `contradicted`, `formerlyTrue: false` | `invented`                               |
+| `contradicted`, `formerlyTrue: true`  | `stale`                                  |
+| `not-addressed`                       | `unverified`                             |
 
-For each unaccounted current claim, BM25 selects the top eight current and
-historical source-evidence records. The judge receives that bounded context once
-and may return only `contradicted` or `not-refuted`:
-
-- `contradicted` requires cited current evidence establishing incompatible truth;
-- `formerlyTrue: true` additionally requires cited historical evidence showing
-  that the complete claim held earlier; and
-- `not-refuted` means only that the supplied evidence did not disprove the claim.
-
-The source repository is a refuter, never a certifier. Absence of evidence is not
-contradiction, and source evidence never produces a `supported` verdict. The
-judge may apply ordinary language and runtime semantics to supplied code, such
+The judge may apply ordinary language and runtime semantics to supplied code, such
 as arithmetic and direct control flow. Retrieval ends after the one bounded
 judgment: a missed refutation is a tolerated sampling false negative, measured by
-the defect harness rather than chased with a scan-everything fallback.
+the defect harness rather than chased with a scan-everything fallback. When a
+checkpoint's evidence corpus is empty, grounding is short-circuited to `unverified`
+with no model call.
 
 ### Final classes and worked example
 
@@ -403,17 +401,17 @@ Every deduplicated claim ends in exactly one class:
 
 | Class        | Meaning                                                                |
 | ------------ | ---------------------------------------------------------------------- |
-| `supported`  | Established by the active truth ledger.                                |
-| `invented`   | Refuted as false and never true—a hallucination.                       |
-| `stale`      | False now but established in a former world state—a failure to forget. |
-| `unverified` | Neither established nor refuted.                                       |
+| `supported`  | The source evidence establishes the claim.                             |
+| `invented`   | Source refutes the claim and it was never true, a hallucination.       |
+| `stale`      | False now but established in a former world state, a failure to forget. |
+| `unverified` | The source neither established nor refuted the claim.                  |
 
-Suppose the active ledger establishes that `add(a, b)` returns `a + b`, and the
-artifact also claims that `add` validates both inputs and that no CI workflow
-exists. The first claim is `supported`. If retrieved source evidence directly
-shows that `add` performs no validation, the second is `invented`. If the bounded
-evidence neither establishes nor refutes the absence of CI, the third is
-`unverified`—reported as a padding diagnostic, not treated as a hallucination.
+Suppose the source shows that `add(a, b)` returns `a + b`, and the artifact claims
+that `add` returns `a + b`, that `add` validates both inputs, and that no CI
+workflow exists. The first claim is `supported`. If retrieved source evidence
+directly shows that `add` performs no validation, the second is `invented`. If the
+bounded evidence neither establishes nor refutes the absence of CI, the third is
+`unverified`, reported as a padding diagnostic, not treated as a hallucination.
 
 If an isolated source-judgment repair also fails, the claim is conservatively
 recorded as `unverified` with an audit warning. Evaluator failures never create an
@@ -421,10 +419,11 @@ recorded as `unverified` with an audit warning. Evaluator failures never create 
 
 ## 🧹 Forgetting: did stale knowledge disappear?
 
-Forgetting checks prior requirement versions that are no longer active.
+Forgetting checks surface versions that were current at an earlier checkpoint and
+are now obsolete because the surface diff recorded them as removed or changed.
 
 ```text
-obsolete requirement version
+obsolete surface version
           │
           ▼
 retrieve likely artifact sections
@@ -436,16 +435,21 @@ evaluator checks whether the old claim is still current
           └── forgotten
 ```
 
+The watch set is sticky. Forgetting is not treated as permanent: an obsolete
+version stays under watch and is re-evaluated at every later checkpoint, and it
+leaves the watch set only if the surface revives that exact form as current truth
+again.
+
 ### Worked forgetting example
 
 At T1:
 
 ```text
-negate(x) is exported.
+The module `src/calc.ts` exports a function `negate(x: number): number`.
 ```
 
-At T2, `negate` is removed. The T1 statement becomes an obsolete fact version.
-LEDGER searches the T2 artifact for that old knowledge:
+At T2, `negate` is removed, so the T1 statement becomes an obsolete surface
+version. LEDGER searches the T2 artifact for that old knowledge:
 
 | T2 artifact text                         | Verdict     | Why                                                     |
 | ---------------------------------------- | ----------- | ------------------------------------------------------- |
@@ -474,7 +478,7 @@ LEDGER Score = (Quality + Maintenance) / 2
 Quality evaluates the artifact at every checkpoint.
 
 ```text
-Checkpoint Coverage = correct active requirements / active requirements
+Checkpoint Coverage = mentioned surface items / surface items
 
 Trace Coverage = mean of checkpoint Coverage scores
 
@@ -491,11 +495,10 @@ Quality = harmonic mean(Trace Coverage, Trace Precision)
 ```
 
 The checkpoint macro-average gives each checkpoint equal weight even when they
-contain different numbers of requirements or assertions. The harmonic mean makes
+contain different numbers of surface items or assertions. The harmonic mean makes
 a system earn both coverage and precision. `Unverified` claims never enter a
 score denominator and are never a penalty. They remain visible as the padding
-guardrail, while coverage anchors the ledger side and prevents a system from
-earning quality by saying nothing.
+guardrail, while coverage prevents a system from earning quality by saying nothing.
 
 If a checkpoint has no adjudicated claims, its precision, hallucination rate,
 and staleness rate are `null`; the run succeeds with a report warning. Null
@@ -509,10 +512,10 @@ Maintenance evaluates transitions between checkpoints:
 
 | Metric                              | Question                                              |
 | ----------------------------------- | ----------------------------------------------------- |
-| 🌱 **New-Knowledge Discovery**      | Did newly true facts appear?                          |
-| 🔄 **Changed-Knowledge Correction** | Did the new truth appear and the old truth disappear? |
-| 🧹 **Complete Forgetting**          | Did removed knowledge stop appearing as current?      |
-| 🛡️ **Stable Retention**             | Did correct, unchanged knowledge remain correct?      |
+| 🌱 **New-Knowledge Discovery**      | Did newly introduced surface facts appear correctly?  |
+| 🔄 **Changed-Knowledge Correction** | Did the new form appear and the old form disappear?   |
+| 🧹 **Complete Forgetting**          | Did removed surface facts stop appearing as current?  |
+| 🛡️ **Stable Retention**             | Did correct, unchanged surface facts remain correct?  |
 
 The eligible rates are averaged into the Maintenance score.
 
@@ -520,19 +523,19 @@ The eligible rates are averaged into the Maintenance score.
 
 LEDGER also reports signals that do not affect the headline score:
 
-- **Recovery Rate** — whether a missed introduction, change, or removal is fixed
+- **Recovery Rate** - whether a missed introduction, change, or removal is fixed
   at a later checkpoint.
-- **Stale-Knowledge Lifetime** — how many checkpoints obsolete knowledge lingers
+- **Stale-Knowledge Lifetime** - how many checkpoints obsolete knowledge lingers
   before it is first forgotten.
-- **Efficiency** — system runtime and documentation churn. Token and cost capture
+- **Efficiency** - system runtime and documentation churn. Token and cost capture
   can be added when usage telemetry is available.
 
 Precision also reports its composition:
 
-- **Supported** — active-ledger-established claims;
-- **Invented** — false claims that were never true;
-- **Stale** — false current claims that were true at an earlier checkpoint; and
-- **Unverified** — claims neither established nor refuted.
+- **Supported** - source-established claims;
+- **Invented** - false claims that were never true;
+- **Stale** - false current claims that were true at an earlier checkpoint; and
+- **Unverified** - claims the source neither established nor refuted.
 
 The report prints assertion-side Staleness Rate beside fact-side forgetting at
 each checkpoint. They measure the same failure from opposite directions and
@@ -551,81 +554,21 @@ Evaluator failure never becomes a hallucination. Reduced Evaluator Completeness
 makes the resulting LEDGER score explicitly provisional rather than quietly treating
 evaluator failure as system failure.
 
-## 📒 Authoring the Truth Package
+### Why unverified is not a penalty
 
-Human-authored requirements should capture the material source truth the artifact
-is expected to represent—not every mechanically observable property. The source
-adapter captures the underlying evidence needed to verify additional claims.
-
-Depending on the domain, categories might include:
-
-- identities, entities, relationships, and attributes;
-- behaviors, decisions, defaults, and configuration;
-- architecture, components, processes, and execution flows;
-- timelines, commitments, constraints, and meaningful absences;
-- source or artifact structure; and
-- facts that were introduced, changed, or removed across the trace.
-
-Coverage facts should be meaningful, independently checkable topic claims:
-
-```text
-Avoid:
-  add exists.
-  add is exported.
-  add has two parameters.
-  add returns a number.
-  add is defined in src/calc.ts.
-
-Prefer:
-  The library provides add(a, b), which returns the sum a + b.
-```
-
-Exact values and behavior remain part of the claim when they are material. “The
-library exposes a version” is insufficient when the useful truth is “the current
-version is 1.0.0.” File placement, declaration syntax, exact counts, and similar
-implementation details are not coverage requirements by default.
-
-Repository archaeology—commit counts, incidental file inventories, commentary
-wording, fixture provenance, and absent tooling with no material consequence—is
-outside the default evaluation scope.
-
-### Authoring workflow
-
-```mermaid
-flowchart LR
-    R0[Source truth at T0] --> A0[Independent analysis]
-    A0 --> D0[Draft material requirements]
-    D0 --> H0[Human review and freeze]
-    H0 --> CH[Inspect changes in source truth]
-    CH --> EV[Evolve added, changed, removed facts]
-    EV --> HR[Review each checkpoint projection]
-```
-
-For a small source set, author requirements manually. For a larger domain, a model
-may help draft candidates from independent source analysis, but a human must
-review and freeze the result before evaluation. The system under test's artifact
-must never be used as ground truth.
-
-Ask at each checkpoint:
-
-> What should a high-quality artifact represent now?
-
-not merely:
-
-> What changed since the preceding checkpoint?
-
-The executable requirement schema and validation rules live in
-[`core/types.ts`](./core/types.ts) and
-[`benchmark/validation.ts`](./benchmark/validation.ts).
+Unlike FActScore-style factuality metrics, LEDGER reports unverifiable claims rather
+than penalizing them, following audit practice: a scope limitation is not a
+misstatement. Coverage prevents a system from scoring well by saying almost
+nothing, and the unverified rate keeps unverifiable padding visible without
+incorrectly treating it as a factual error.
 
 ## 🔬 Evaluator mechanics and reliability
 
 The current evaluator splits generated Markdown into stable, bounded sections and
 then into fence-aware text units. Coverage and forgetting reuse one BM25 index
 over artifact sections. Precision classifies every text unit, exact-deduplicates
-the extracted claims, accounts them against active and superseded ledger facts,
-then uses a separate BM25 index for one top-eight refutation judgment on each
-unaccounted current claim. The source-evidence interface is generic, but the V1
+the extracted claims, then uses a separate BM25 index for one top-eight grounding
+judgment on each claim. The source-evidence interface is generic, but the V1
 runner still directly owns Git replay, OpenWiki execution, and Markdown capture;
 other domains require those additional adapters.
 
@@ -645,7 +588,7 @@ They intentionally cover navigation, opinion, instruction, mixed content,
 meta-artifact text, tense, direct code inference, explicit contradiction, and
 formerly-true boundaries.
 
-Evidence citations must name sections that were actually supplied in the bounded
+Evidence citations must name records that were actually supplied in the bounded
 request. An initial provider failure, schema-wide failure, or unusable assertion
 inventory still fails the pass because there is no trustworthy batch to preserve.
 When a schema-valid judgment batch contains one malformed item, LEDGER preserves
@@ -658,7 +601,7 @@ forgetting items become `indeterminate`; precision items become `unverified`.
 Every run writes to a timestamped directory under `evals/ledger/.results/`:
 
 ```text
-calc-evolution-<timestamp>/
+calc-<timestamp>/
 ├── artifacts/
 │   ├── T0/                 # exact frozen artifact at T0
 │   ├── T0.json             # fingerprint and document inventory
@@ -676,6 +619,7 @@ calc-evolution-<timestamp>/
 │   └── T2.json
 ├── result.json             # verdicts, warnings, scores, and diagnostics
 ├── report.md               # completed runs: detailed human-readable report
+├── unverified-claims.md    # completed runs: worklist of unverified claims
 └── error.json              # failed runs: bounded failure details
 ```
 
@@ -705,56 +649,69 @@ Run the calc benchmark:
 
 ```sh
 pnpm exec tsx evals/ledger/run.ts \
-  --benchmark evals/ledger/benchmarks/calc-evolution
+  --benchmark evals/ledger/benchmarks/calc
 ```
 
-The terminal emphasizes the core quality signals and shows how much of the claim
-inventory was adjudicated:
+The terminal emphasizes the core quality signals and how much of the surface and
+claim inventory was evaluated:
 
 ```text
-│ ✅ T2 · coverage 100% · precision 89% · hallucination 11% · forgetting 100% (2/2)
-│    ↳ 27/143 claims adjudicated · 24 supported · 3 invented · 0 stale
+┌ 🧪 LEDGER · calc
+│ 3 checkpoints · anthropic · system claude-sonnet-5 · evaluator claude-sonnet-5
 │
-├ 📊 Quality 95.1%
-│  ├ Coverage 100.0%
-│  ├ Precision 90.7%
-│  └ Hallucination 10.1%
+├ 📍 1/3 · T0 · 973be7a · calc 1.0.0 with add and negate
+│ 📚 Captured 4 documents
+│ 🔍 Evaluating 5 surface items · 0 obsolete versions
+│ ✅ T0 · coverage 100% · precision 100% · hallucination 0% · forgetting -
 │
-├ 🧹 Forgetting 100.0%
+├ 📍 2/3 · T1 · 0ee8f29 · introduce subtract
+│ 🔍 Evaluating 6 surface items · 0 obsolete versions
+│ ✅ T1 · coverage 100% · precision 100% · hallucination 0% · forgetting -
 │
-├ 🧾 Claims
-│  ├ Adjudicated 69/406
-│  ├ Supported 62
-│  ├ Invented 7
-│  └ Stale 0
+├ 📍 3/3 · T2 · 811b273 · remove negate, bump to 2.0.0
+│ 🔍 Evaluating 5 surface items · 2 obsolete versions
+│ ✅ T2 · coverage 100% · precision 100% · hallucination 0% · forgetting 100% (2/2)
 │
-└ 🎉 LEDGER 97.6% · 19m 20s
+├ 📊 LEDGER 100.0% · quality 100.0% · maintenance 100.0%
+│  ├ coverage 100.0%
+│  ├ precision 100.0%
+│  ├ hallucination 0.0%
+│  └ forgetting 100.0%
+│
+├ 🔬 Unverified claims
+│  └ 57 claims the source evidence neither confirmed nor refuted → …/unverified-claims.md
+│     review them for hidden hallucinations or missing evidence
+│
+└ 🎉 LEDGER 100.0%
+
+📁 Results · evals/ledger/.results/calc-<timestamp>
 ```
 
-Hallucination in the final summary is claim-weighted, so it corresponds directly
-to the displayed invented, supported, and stale totals. Detailed maintenance
-dimensions, unverified rates, claim text, provenance, and citations remain in the
-report and result directory. Evaluator completeness appears in the terminal only
-when it falls below 100%.
+Precision is 100% here while 57 claims are unverified: precision scores only the
+adjudicated claims (supported, invented, stale), and unverified claims stay out of
+that denominator. Detailed maintenance dimensions, unverified rates, claim text,
+provenance, and citations remain in the report and result directory. Evaluator
+completeness appears in the terminal only when it falls below 100%.
 
 ### Re-evaluate a saved run
 
 Evaluator tuning does not require regenerating the knowledge artifact. A
-completed run already contains the exact artifact and source-evidence snapshots
-for every checkpoint. Re-evaluate them with:
+completed run already contains the exact artifact snapshots for every checkpoint.
+Because source is now the ground truth, re-evaluation re-reads the repository at
+each commit, so the benchmark's source must be available:
 
 ```sh
 pnpm run eval:ledger:reevaluate \
-  --benchmark evals/ledger/benchmarks/calc-evolution \
-  --run evals/ledger/.results/calc-evolution-<timestamp> \
+  --benchmark evals/ledger/benchmarks/calc \
+  --run evals/ledger/.results/calc-<timestamp> \
   --evaluator-model claude-sonnet-5
 ```
 
-This does **not** invoke OpenWiki or replay the source repository. It reprojects
-the active requirements and obsolete versions, reruns every semantic evaluator
-pass, recomputes all point-in-time and longitudinal scores, and writes a new
-standalone audit directory. The new result preserves the original system runtime
-and model metadata only as observations; no prior semantic verdict is reused.
+This does **not** invoke OpenWiki. It re-extracts the surface and obsolete
+versions, reruns every semantic evaluator pass, recomputes all point-in-time and
+longitudinal scores, and writes a new standalone audit directory. The new result
+preserves the original system runtime and model metadata only as observations; no
+prior semantic verdict is reused.
 
 ## ⚖️ Comparing systems
 
@@ -762,7 +719,7 @@ A valid comparison holds every evaluation input constant:
 
 ```text
 same source evolution and checkpoints
-same Truth Package and source evidence
+same source-evidence adapter
 same evaluator model
 same repetition count
              │
@@ -786,8 +743,8 @@ than merely generating a different artifact.
 The optional provider-backed tier treats the evaluator as a calibrated
 instrument rather than patching individual misses in production code:
 
-- the gold-agreement gate measures extraction, truth-ledger accounting, and
-  refutation against human-reviewed cases, requiring at least 0.90 agreement for
+- the gold-agreement gate measures **extraction/classification** and **source
+  grounding** against human-reviewed cases, requiring at least 0.90 agreement for
   each stage; and
 - the defect harness evaluates captured clean artifacts plus five mutations:
   invented fact, stale fact, coverage gap, spurious deletion, and unverified
