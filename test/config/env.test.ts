@@ -140,6 +140,10 @@ describe("MANAGED_ENV_KEYS", () => {
     expect(MANAGED_ENV_KEYS).toContain("FIREWORKS_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("NVIDIA_BASE_URL");
   });
+
+  test("manages the reasoning effort setting", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_REASONING_EFFORT");
+  });
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {

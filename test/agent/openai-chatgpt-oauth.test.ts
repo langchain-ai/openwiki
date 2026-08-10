@@ -76,7 +76,7 @@ describe("Codex Responses requests", () => {
         input: [{ role: "system", content: "Follow the repository rules." }],
         instructions: "You are a coding agent.",
         parallel_tool_calls: true,
-        reasoning: { effort: "high" },
+        reasoning: { effort: "max" },
         tools: [
           {
             type: "function",
@@ -121,7 +121,7 @@ describe("Codex Responses requests", () => {
         { role: "developer", content: "Follow the repository rules." },
       ],
       parallel_tool_calls: false,
-      reasoning: { effort: "high", context: "all_turns" },
+      reasoning: { effort: "max", context: "all_turns" },
     });
   });
 
