@@ -16,7 +16,7 @@ import type {
   ConnectorIngestResult,
   McpConnectorConfig,
 } from "./types.js";
-import { isSecretLikeKey } from "../diagnostics.js";
+import { isSecretLikeKey } from "../platform/diagnostics.js";
 
 export type McpConnectorId = Extract<ConnectorId, "notion">;
 

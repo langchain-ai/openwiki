@@ -7,7 +7,7 @@ import {
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
   OPENAI_CHATGPT_PLAN_ENV_KEY,
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
-} from "../constants.js";
+} from "../config/constants.js";
 
 /**
  * ChatGPT/Codex OAuth client.

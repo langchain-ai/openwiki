@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { execFile } from "node:child_process";
 import http from "node:http";
-import { loadOpenWikiEnv, saveOpenWikiEnv } from "../env.js";
+import { loadOpenWikiEnv, saveOpenWikiEnv } from "../config/env.js";
 import {
   discoverAuthorizationServerMetadata,
   discoverProtectedResourceMetadata,
@@ -29,6 +29,7 @@ type TokenResponse = {
 };
 
 const CALLBACK_HOST = "127.0.0.1";
+const CALLBACK_PATH = "/callback";
 const DEFAULT_CALLBACK_PORT = 53682;
 const OAUTH_CALLBACK_PORT_ENV_KEY = "OPENWIKI_OAUTH_CALLBACK_PORT";
 const HTTPS_OAUTH_REDIRECT_URI_ENV_KEY = "OPENWIKI_HTTPS_OAUTH_REDIRECT_URI";
@@ -404,6 +405,13 @@ export async function createCallbackServer(
       request.url ?? "/",
       `http://${CALLBACK_HOST}:${callbackPort}`,
     );
+
+    if (requestUrl.pathname !== CALLBACK_PATH) {
+      response.writeHead(404, getCallbackResponseHeaders());
+      response.end("OpenWiki OAuth callback server is waiting for /callback.");
+      return;
+    }
+
     const code = requestUrl.searchParams.get("code");
     const state = requestUrl.searchParams.get("state");
     const error = requestUrl.searchParams.get("error");
@@ -438,7 +446,7 @@ export async function createCallbackServer(
   if (!address || typeof address === "string") {
     throw new Error("Could not start OAuth callback server.");
   }
-  const localRedirectUri = `http://${CALLBACK_HOST}:${address.port}/callback`;
+  const localRedirectUri = `http://${CALLBACK_HOST}:${address.port}${CALLBACK_PATH}`;
 
   return {
     close: () => closeCallbackServer(server),
@@ -524,7 +532,7 @@ function getProviderRedirectUri(
 
   const url = new URL(override);
 
-  if (url.pathname !== "/callback") {
+  if (url.pathname !== CALLBACK_PATH) {
     throw new Error(
       `${HTTPS_OAUTH_REDIRECT_URI_ENV_KEY} must end with /callback.`,
     );

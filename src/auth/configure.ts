@@ -1,9 +1,9 @@
 import { chmod, readFile, writeFile } from "node:fs/promises";
-import { OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY } from "../constants.js";
+import { OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY } from "../config/constants.js";
 import {
   ensureConnectorHome,
   getConnectorConfigPath,
-} from "../openwiki-home.js";
+} from "../config/openwiki-home.js";
 import {
   discoverMcpConnectorTools,
   isMcpConnectorId,

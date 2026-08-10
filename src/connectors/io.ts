@@ -5,7 +5,7 @@ import {
   getConnectorConfigPath,
   getConnectorRawDir,
   getConnectorStatePath,
-} from "../openwiki-home.js";
+} from "../config/openwiki-home.js";
 import type { ConnectorId, ConnectorState } from "./types.js";
 
 export async function readConnectorConfig<T extends object>(

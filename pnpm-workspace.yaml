@@ -1,7 +1,19 @@
 allowBuilds:
   better-sqlite3: true
   esbuild: true
+# Force patched versions of transitive dev-only dependencies flagged by
+# Dependabot. js-yaml is pulled in only by @changesets/cli (both majors coexist,
+# so each keeps its own patched line) and undici only by jsdom via vitest. None
+# ship in the published runtime.
+#   js-yaml GHSA-5p4m-2wfm-xmqj  (quadratic-CPU DoS in !!omap resolution)
+#   undici  GHSA-4cwx-7wf7-3272, -m8rv-5g2x-5cg5, -jr45-8vmc-qm54,
+#           -v3r7-h72x-cjcm, -8xcm-r25x-g524
+overrides:
+  js-yaml@3: ^3.15.1
+  js-yaml@4: ^4.3.1
+  undici: ^7.29.0
 minimumReleaseAgeExclude:
+  - "@langchain/core@1.2.4"
   - "@langchain/openai"
   - "@langchain/openai@1.5.4"
   - "@langchain/openai@1.5.5"
@@ -13,7 +25,7 @@ minimumReleaseAgeExclude:
   - "@vitest/snapshot@4.1.10"
   - "@vitest/spy@4.1.10"
   - "@vitest/utils@4.1.10"
-  - "deepagents@1.11.1"
+  - "deepagents@1.12.0"
   - "langchain@1.5.3"
   - "node-abi@3.94.0"
   - "picomatch@4.0.5"
