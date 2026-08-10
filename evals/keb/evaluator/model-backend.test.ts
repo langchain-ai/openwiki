@@ -109,8 +109,8 @@ describe("ModelEvaluationBackend", () => {
           {
             assertionId: "assertion-000001",
             verdict: "supported",
-            supportingFactIds: ["current"],
-            rationale: "The active ledger supports the assertion.",
+            evidenceIds: ["src/current.ts::0000"],
+            rationale: "The source supports the assertion.",
           },
         ],
       },
@@ -146,6 +146,18 @@ describe("ModelEvaluationBackend", () => {
           statement: "Current behavior is enabled.",
         },
       ],
+      evidence: {
+        checkpointId: "T1",
+        records: [
+          {
+            evidenceId: "src/current.ts::0000",
+            sourceRef: "src/current.ts",
+            observedAtCheckpoint: "T1",
+            current: true,
+            content: "Current behavior is enabled.",
+          },
+        ],
+      },
       obsoleteFacts: [
         {
           factId: "old",
@@ -189,8 +201,8 @@ describe("ModelEvaluationBackend", () => {
           assertion: "Current behavior is enabled.",
           location: "guide.md",
           verdict: "supported",
-          supportingFactIds: ["current"],
-          rationale: "The active ledger supports the assertion.",
+          evidenceIds: ["src/current.ts::0000"],
+          rationale: "The source supports the assertion.",
         },
       ],
     });

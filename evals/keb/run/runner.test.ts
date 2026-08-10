@@ -74,14 +74,14 @@ class FakeEvaluator implements EvaluationBackend {
             assertion: "a",
             location: "page.md",
             verdict: "supported",
-            supportingFactIds: ["f1"],
+            evidenceIds: ["source::a"],
             rationale: "",
           },
           {
             assertion: "b",
             location: "page.md",
             verdict: "supported",
-            supportingFactIds: ["f2"],
+            evidenceIds: ["source::b"],
             rationale: "",
           },
         ],
@@ -119,14 +119,14 @@ class FakeEvaluator implements EvaluationBackend {
           assertion: "a",
           location: "page.md",
           verdict: "supported",
-          supportingFactIds: ["f1"],
+          evidenceIds: ["source::a"],
           rationale: "",
         },
         {
           assertion: "b",
           location: "page.md",
-          verdict: "unsupported",
-          supportingFactIds: [],
+          verdict: "contradicted",
+          evidenceIds: ["source::b"],
           rationale: "",
         },
       ],
@@ -194,8 +194,8 @@ describe("runBenchmark", () => {
           { id: "T1", commit: repo.shas[1] },
         ],
       },
-      ledger: {
-        facts: [
+      truthPackage: {
+        requirements: [
           { id: "f1", versions: [{ statement: "A", fromCheckpoint: "T0" }] },
           {
             id: "f2",
@@ -312,14 +312,14 @@ describe("runBenchmark", () => {
     });
 
     // The lossy score counts are explainable because the underlying verdicts are
-    // carried through unchanged: T1's single unsupported assertion is exactly the
+    // carried through unchanged: T1's contradicted assertion is exactly the
     // one the evaluator returned, and f2@T0's forgetting verdict is preserved.
     const t1 = result.checkpoints[1].evaluations;
 
     expect(t1).toBeDefined();
     expect(t1?.precisionEvaluations).toHaveLength(2);
     expect(
-      t1?.precisionEvaluations.filter((a) => a.verdict === "unsupported"),
+      t1?.precisionEvaluations.filter((a) => a.verdict === "contradicted"),
     ).toHaveLength(1);
     expect(t1?.forgettingEvaluations).toEqual([
       {
@@ -375,8 +375,8 @@ describe("runBenchmark forgetting watch set", () => {
           { id: "T2", commit: repo.shas[2] },
         ],
       },
-      ledger: {
-        facts: [
+      truthPackage: {
+        requirements: [
           { id: "f1", versions: [{ statement: "A", fromCheckpoint: "T0" }] },
           {
             id: "f2",

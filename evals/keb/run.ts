@@ -10,6 +10,7 @@ import {
   prepareRunDirectory,
   writeArtifactSnapshot,
   writeAssertionInventory,
+  writeEvidenceCorpus,
   writeRunFailure,
   writeRunResult,
 } from "./run/persistence.js";
@@ -67,6 +68,7 @@ async function main(): Promise<void> {
       config,
       startedAt,
       onArtifact: (artifact) => writeArtifactSnapshot(runDir, artifact),
+      onEvidence: (evidence) => writeEvidenceCorpus(runDir, evidence),
       onProgress: createCliProgressReporter(),
     });
   } catch (error) {

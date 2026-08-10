@@ -144,14 +144,13 @@ export function activeVersionAt(
 }
 
 /**
- * Every fact true at a checkpoint, projected to its active statement and stable
- * version id. These are the coverage targets and the ground-truth ledger the
- * precision pass judges against.
+ * Every material requirement true at a checkpoint, projected to its active
+ * statement and stable version id.
  *
  * @param benchmark - The benchmark to project against.
  * @param checkpointId - The checkpoint id to project to.
  *
- * @returns The active facts, in ledger order.
+ * @returns The active facts, in Truth Package requirement order.
  */
 export function getActiveFacts(
   benchmark: KebBenchmark,
@@ -160,7 +159,7 @@ export function getActiveFacts(
   const position = checkpointIndex(benchmark, checkpointId);
   const active: ActiveTruthFact[] = [];
 
-  for (const fact of benchmark.ledger.facts) {
+  for (const fact of benchmark.truthPackage.requirements) {
     const version = activeVersion(benchmark, fact, position);
 
     if (version !== undefined) {

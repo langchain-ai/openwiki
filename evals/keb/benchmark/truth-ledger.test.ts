@@ -20,8 +20,8 @@ function fixture(): KebBenchmark {
         { id: "T2", commit: "ccccccc" },
       ],
     },
-    ledger: {
-      facts: [
+    truthPackage: {
+      requirements: [
         {
           id: "stable",
           versions: [{ statement: "always true", fromCheckpoint: "T0" }],
@@ -69,8 +69,8 @@ function twiceChangedFixture(): KebBenchmark {
         { id: "T2", commit: "ccccccc" },
       ],
     },
-    ledger: {
-      facts: [
+    truthPackage: {
+      requirements: [
         {
           id: "evolving",
           versions: [
@@ -137,7 +137,7 @@ describe("getActiveFacts", () => {
 
 describe("activeStatement", () => {
   test("returns undefined for a fact not yet active", () => {
-    const [introduced] = fixture().ledger.facts.filter(
+    const [introduced] = fixture().truthPackage.requirements.filter(
       (f) => f.id === "introduced",
     );
 
@@ -147,7 +147,9 @@ describe("activeStatement", () => {
 
   test("keeps a version active up to but excluding its untilCheckpoint", () => {
     const benchmark = fixture();
-    const [removed] = benchmark.ledger.facts.filter((f) => f.id === "removed");
+    const [removed] = benchmark.truthPackage.requirements.filter(
+      (fact) => fact.id === "removed",
+    );
 
     // "removed" is [T0, T2): active at T0 and T1, gone exactly at the exclusive
     // untilCheckpoint T2. This is the half-open boundary the projection rests on.

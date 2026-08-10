@@ -21,8 +21,8 @@ function valid(): KebBenchmark {
         { id: "T1", commit: "bbbbbbb" },
       ],
     },
-    ledger: {
-      facts: [
+    truthPackage: {
+      requirements: [
         {
           id: "spanning",
           versions: [{ statement: "true throughout", fromCheckpoint: "T0" }],
@@ -61,9 +61,9 @@ describe("validateBenchmark", () => {
   test("rejects a checkpoint left with no active facts", () => {
     const benchmark = valid();
     // Retire the only fact at T1 (half-open [T0, T1)), emptying T1's active set.
-    benchmark.ledger.facts[0].versions[0].untilCheckpoint = "T1";
+    benchmark.truthPackage.requirements[0].versions[0].untilCheckpoint = "T1";
 
-    expectRejected(benchmark, /T1.*no active facts/);
+    expectRejected(benchmark, /T1.*no active coverage facts/);
   });
 });
 
@@ -119,31 +119,34 @@ describe("validateBenchmark commit SHA allowlist", () => {
   });
 });
 
-describe("validateBenchmark ledger rules", () => {
+describe("validateBenchmark Truth Package rules", () => {
   test("rejects an empty facts list", () => {
     const benchmark = valid();
-    benchmark.ledger.facts = [];
+    benchmark.truthPackage.requirements = [];
 
-    expectRejected(benchmark, /ledger\.facts must be a non-empty array/);
+    expectRejected(
+      benchmark,
+      /truthPackage\.requirements must be a non-empty array/,
+    );
   });
 
   test("rejects a null fact entry as a validation error, not a crash", () => {
     const benchmark = valid();
-    benchmark.ledger.facts[0] = null as unknown as TruthFact;
+    benchmark.truthPackage.requirements[0] = null as unknown as TruthFact;
 
     expectRejected(benchmark, /A fact entry is not an object/);
   });
 
   test("rejects a fact with an empty id", () => {
     const benchmark = valid();
-    benchmark.ledger.facts[0].id = "";
+    benchmark.truthPackage.requirements[0].id = "";
 
     expectRejected(benchmark, /A fact has an empty id/);
   });
 
   test("rejects duplicate fact ids", () => {
     const benchmark = valid();
-    benchmark.ledger.facts.push({
+    benchmark.truthPackage.requirements.push({
       id: "spanning",
       versions: [{ statement: "clash", fromCheckpoint: "T0" }],
     });
@@ -153,42 +156,50 @@ describe("validateBenchmark ledger rules", () => {
 
   test("rejects a fact with no versions", () => {
     const benchmark = valid();
-    benchmark.ledger.facts[0].versions = [];
+    benchmark.truthPackage.requirements[0].versions = [];
 
     expectRejected(benchmark, /must have at least one version/);
   });
 
   test("rejects a null version entry as a validation error, not a crash", () => {
     const benchmark = valid();
-    benchmark.ledger.facts[0].versions[0] = null as unknown as TruthFactVersion;
+    benchmark.truthPackage.requirements[0].versions[0] =
+      null as unknown as TruthFactVersion;
 
     expectRejected(benchmark, /has a version that is not an object/);
   });
 
   test("rejects a version with an empty statement", () => {
     const benchmark = valid();
-    benchmark.ledger.facts[0].versions[0].statement = "";
+    benchmark.truthPackage.requirements[0].versions[0].statement = "";
 
     expectRejected(benchmark, /has a version with an empty statement/);
   });
 
+  test("rejects malformed requirement evidence references", () => {
+    const benchmark = valid();
+    benchmark.truthPackage.requirements[0].versions[0].evidenceRefs = [""];
+
+    expectRejected(benchmark, /invalid evidenceRefs/);
+  });
+
   test("rejects an unknown fromCheckpoint reference", () => {
     const benchmark = valid();
-    benchmark.ledger.facts[0].versions[0].fromCheckpoint = "T9";
+    benchmark.truthPackage.requirements[0].versions[0].fromCheckpoint = "T9";
 
     expectRejected(benchmark, /unknown fromCheckpoint "T9"/);
   });
 
   test("rejects an unknown untilCheckpoint reference", () => {
     const benchmark = valid();
-    benchmark.ledger.facts[0].versions[0].untilCheckpoint = "T9";
+    benchmark.truthPackage.requirements[0].versions[0].untilCheckpoint = "T9";
 
     expectRejected(benchmark, /unknown untilCheckpoint "T9"/);
   });
 
   test("rejects an untilCheckpoint equal to its fromCheckpoint", () => {
     const benchmark = valid();
-    benchmark.ledger.facts[0].versions[0].untilCheckpoint = "T0";
+    benchmark.truthPackage.requirements[0].versions[0].untilCheckpoint = "T0";
 
     expectRejected(
       benchmark,
@@ -198,8 +209,8 @@ describe("validateBenchmark ledger rules", () => {
 
   test("rejects an untilCheckpoint before its fromCheckpoint", () => {
     const benchmark = valid();
-    benchmark.ledger.facts[0].versions[0].fromCheckpoint = "T1";
-    benchmark.ledger.facts[0].versions[0].untilCheckpoint = "T0";
+    benchmark.truthPackage.requirements[0].versions[0].fromCheckpoint = "T1";
+    benchmark.truthPackage.requirements[0].versions[0].untilCheckpoint = "T0";
 
     expectRejected(
       benchmark,
@@ -210,7 +221,7 @@ describe("validateBenchmark ledger rules", () => {
   test("rejects overlapping version ranges within one fact", () => {
     const benchmark = valid();
     // spanning covers [T0, end); add a second version [T1, end) that overlaps it.
-    benchmark.ledger.facts[0].versions.push({
+    benchmark.truthPackage.requirements[0].versions.push({
       statement: "overlaps",
       fromCheckpoint: "T1",
     });

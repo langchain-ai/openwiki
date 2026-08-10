@@ -119,7 +119,7 @@ export class ModelEvaluationBackend implements EvaluationBackend {
       model: this.model,
       checkpointId: input.artifact.checkpointId,
       sections,
-      activeFacts: input.activeFacts,
+      evidence: input.evidence,
       timeoutMs: this.timeoutMs,
       onInventory: this.onAssertionInventory,
     });

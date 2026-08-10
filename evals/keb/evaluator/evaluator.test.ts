@@ -48,21 +48,21 @@ describe("schemas", () => {
         {
           assertionId: "assertion-000001",
           verdict: "supported",
-          supportingFactIds: ["f1"],
-          rationale: "The ledger establishes it.",
+          evidenceIds: ["source::0000"],
+          rationale: "The source establishes it.",
         },
         {
           assertionId: "assertion-000002",
-          verdict: "unsupported",
-          rationale: "The ledger is silent.",
+          verdict: "unverifiable",
+          rationale: "The source is silent.",
         },
       ],
     });
 
     expect(extraction.sections[0].assertions).toEqual(["A fact."]);
-    // Named supporting ids survive; an omitted list defaults to empty.
-    expect(precision.evaluations[0].supportingFactIds).toEqual(["f1"]);
-    expect(precision.evaluations[1].supportingFactIds).toEqual([]);
+    // Named evidence ids survive; an omitted list defaults to empty.
+    expect(precision.evaluations[0].evidenceIds).toEqual(["source::0000"]);
+    expect(precision.evaluations[1].evidenceIds).toEqual([]);
 
     expect(() =>
       forgettingOutputSchema.parse({
@@ -335,6 +335,19 @@ describe.skipIf(!process.env.KEB_LIVE)("ModelEvaluationBackend (live)", () => {
             "Requests authenticate with an API key in the X-Api-Key header.",
         },
       ],
+      evidence: {
+        checkpointId: "T0",
+        records: [
+          {
+            evidenceId: "source/auth.ts::0000",
+            sourceRef: "source/auth.ts",
+            observedAtCheckpoint: "T0",
+            current: true,
+            content:
+              "Requests authenticate with an API key in the X-Api-Key header.",
+          },
+        ],
+      },
       obsoleteFacts: [],
     });
 

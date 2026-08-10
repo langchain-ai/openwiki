@@ -67,34 +67,22 @@ describe("loadBenchmark on the committed calc-evolution fixture", () => {
     }
   });
 
-  test("projects a comprehensive checkpoint-aware fact census", async () => {
+  test("projects material requirements at each checkpoint", async () => {
     const benchmark = await loadBenchmark(FIXTURE_DIR);
     const t0 = getActiveFacts(benchmark, "T0");
     const t1 = getActiveFacts(benchmark, "T1");
     const t2 = getActiveFacts(benchmark, "T2");
 
-    expect([t0.length, t1.length, t2.length]).toEqual([59, 64, 59]);
+    expect([t0.length, t1.length, t2.length]).toEqual([5, 6, 5]);
     expect(
-      t0.find((fact) => fact.factId === "public-api-surface")?.statement,
-    ).toContain("exactly three named exports");
+      t0.find((fact) => fact.factId === "current-version")?.statement,
+    ).toContain("1.0.0");
     expect(
-      t1.find((fact) => fact.factId === "public-api-surface")?.statement,
-    ).toContain("exactly four named exports");
+      t1.find((fact) => fact.factId === "subtract-operation")?.statement,
+    ).toContain("a - b");
     expect(
-      t2.find((fact) => fact.factId === "public-api-surface")?.statement,
-    ).toContain("`negate` is no longer exported or present");
-    expect(t0.map((fact) => fact.factId)).toEqual(
-      expect.arrayContaining([
-        "repository-file-inventory",
-        "source-file-inventory",
-        "no-tests",
-        "no-package-config",
-        "dependency-shape",
-        "no-entrypoint-barrel",
-        "no-private-source-symbols",
-        "add-signature",
-        "add-implementation",
-      ]),
-    );
+      t2.find((fact) => fact.factId === "current-version")?.statement,
+    ).toContain("2.0.0");
+    expect(t2.some((fact) => fact.factId === "negate-operation")).toBe(false);
   });
 });

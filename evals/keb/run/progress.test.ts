@@ -100,7 +100,7 @@ describe("createCliProgressReporter", () => {
     expect(rendered).toContain("OpenWiki update complete · 4.2s");
     expect(rendered).toContain("Captured 4 documents");
     expect(rendered).toContain(
-      "Evaluating 7 active facts · 2 obsolete versions",
+      "Evaluating 7 material topics · 2 obsolete versions",
     );
     expect(rendered).toContain(
       "✅ T1 · coverage 86% · precision 75% · forgetting 50% (1/2)",

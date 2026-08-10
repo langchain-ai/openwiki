@@ -17,9 +17,9 @@ import type {
 } from "../core/types.js";
 
 /**
- * Coverage over the active facts. Strict: only `correct` earns headline credit;
+ * Coverage over active material topics. Strict: only `correct` earns headline credit;
  * `partial`, `missing`, and `contradicted` are tallied as diagnostics but never
- * scored. A checkpoint with no active facts is invalid benchmark data, rejected
+ * scored. A checkpoint with no active coverage facts is invalid benchmark data, rejected
  * by `validateBenchmark` before any run, so `total === 0` never occurs during
  * scoring; the guard below returns 1 only to keep this pure function total
  * (never `0 / 0`), and that value is never actually scored.
@@ -37,7 +37,7 @@ export function computeCoverage(evaluations: FactEvaluation[]): CoverageMetric {
   ).length;
   const total = evaluations.length;
   // total === 0 is unreachable for a validated benchmark (validateBenchmark
-  // requires at least one active fact per checkpoint); the branch only keeps
+  // requires at least one active coverage fact per checkpoint); the branch only keeps
   // this function total rather than scoring an empty active set.
   const score = total === 0 ? 1 : correct / total;
 
@@ -45,9 +45,8 @@ export function computeCoverage(evaluations: FactEvaluation[]): CoverageMetric {
 }
 
 /**
- * Precision over the wiki's material assertions: the fraction the active ledger
- * supports. An empty wiki scores 0, not 1 — a wiki that says nothing earns no
- * precision credit.
+ * Precision over decidable material artifact assertions. Unverifiable claims
+ * remain visible but do not become false hallucinations or improve precision.
  *
  * @param evaluations - The precision verdicts, one per material assertion.
  *
@@ -57,13 +56,28 @@ export function computePrecision(
   evaluations: PrecisionAssertionEvaluation[],
 ): PrecisionMetric {
   const supported = evaluations.filter((e) => e.verdict === "supported").length;
-  const unsupported = evaluations.filter(
-    (e) => e.verdict === "unsupported",
+  const contradicted = evaluations.filter(
+    (e) => e.verdict === "contradicted",
+  ).length;
+  const unverifiable = evaluations.filter(
+    (e) => e.verdict === "unverifiable",
   ).length;
   const total = evaluations.length;
-  const score = total === 0 ? 0 : supported / total;
+  const decidable = supported + contradicted;
+  const score = decidable === 0 ? 0 : supported / decidable;
+  const hallucinationRate = total === 0 ? 0 : contradicted / total;
+  const unverifiableRate = total === 0 ? 0 : unverifiable / total;
 
-  return { supported, unsupported, total, score };
+  return {
+    supported,
+    contradicted,
+    unverifiable,
+    decidable,
+    total,
+    hallucinationRate,
+    unverifiableRate,
+    score,
+  };
 }
 
 /**
@@ -445,7 +459,7 @@ export function computeDiagnostics(
 
 /**
  * The harmonic mean of two fractions, or 0 when either is 0. Punishes imbalance:
- * a wiki that covers everything but is full of unsupported claims, or is
+ * an artifact that covers everything but contains contradicted claims, or is
  * perfectly precise but says almost nothing, scores poorly.
  *
  * @param a - The first fraction.

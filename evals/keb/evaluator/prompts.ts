@@ -24,8 +24,8 @@ export interface EvaluationExcerpt {
 }
 
 /**
- * One active Truth Ledger fact and only the excerpts selected for its coverage
- * judgment.
+ * One active Truth Package requirement and only the excerpts selected for its
+ * coverage judgment.
  */
 export interface CoveragePromptTarget {
   /**
@@ -34,7 +34,7 @@ export interface CoveragePromptTarget {
   factId: string;
 
   /**
-   * Fact statement currently true in the ledger.
+   * Requirement statement currently active at the checkpoint.
    */
   statement: string;
 
@@ -103,22 +103,41 @@ export interface PrecisionJudgmentAssertion {
    * Atomic material assertion extracted from the artifact.
    */
   statement: string;
+
+  /**
+   * Identities of source excerpts retrieved for this assertion.
+   */
+  evidenceIds: string[];
 }
 
 /**
- * One active Truth Ledger fact supplied as the complete source of truth for
- * precision judgment.
+ * One source excerpt supplied to a precision judgment.
  */
-export interface PrecisionJudgmentFact {
+export interface PrecisionEvidenceExcerpt {
   /**
-   * Stable logical fact identifier.
+   * Stable source-adapter-owned evidence identity.
    */
-  factId: string;
+  evidenceId: string;
 
   /**
-   * Fact statement currently true at the checkpoint.
+   * Human-auditable source location.
    */
-  statement: string;
+  sourceRef: string;
+
+  /**
+   * Checkpoint at which this evidence was observed.
+   */
+  observedAtCheckpoint: string;
+
+  /**
+   * Whether this evidence belongs to the active checkpoint.
+   */
+  current: boolean;
+
+  /**
+   * Exact normalized source content.
+   */
+  content: string;
 }
 
 /**
@@ -126,9 +145,10 @@ export interface PrecisionJudgmentFact {
  */
 export const COVERAGE_SYSTEM = `You are a strict, impartial documentation coverage classifier.
 
-You receive active Truth Ledger facts and BM25-selected generated-wiki excerpts
-grouped by fact. You may use any excerpt present in the bounded request. Do not
-use outside knowledge. Do not assume access to files, tools, or source code.
+You receive active Truth Package requirements and BM25-selected artifact
+excerpts grouped by requirement. You may use any excerpt present in the bounded
+request. Do not use outside knowledge. Do not assume access to files, tools, or
+source code.
 
 Rules:
 - Return exactly one evaluation per requested factId.
@@ -147,10 +167,10 @@ Rules:
  */
 export const FORGETTING_SYSTEM = `You are a strict, impartial documentation forgetting classifier.
 
-You receive obsolete Truth Ledger statements and BM25-selected generated-wiki
-excerpts grouped by statement. You may use any excerpt present in the bounded
-request. Do not use outside knowledge. Do not assume access to files, tools, or
-source code.
+You receive obsolete Truth Package requirement statements and BM25-selected
+artifact excerpts grouped by statement. You may use any excerpt present in the
+bounded request. Do not use outside knowledge. Do not assume access to files,
+tools, or source code.
 
 Rules:
 - Return exactly one evaluation per requested factVersionId.
@@ -169,58 +189,72 @@ Rules:
 /**
  * System instructions for exhaustive assertion extraction.
  */
-export const PRECISION_EXTRACTION_SYSTEM = `You are a strict documentation assertion extractor.
+export const PRECISION_EXTRACTION_SYSTEM = `You are a strict knowledge-artifact assertion extractor.
 
-You receive complete generated-wiki sections. Extract every atomic, concrete,
-checkable assertion each section makes about the repository's current state at
-this checkpoint. Do not judge whether an assertion is true. Do not use outside
-knowledge, files, tools, or source code.
+You receive complete artifact sections. Extract the meaningful, concrete,
+checkable knowledge claims that would help an agent or human understand, use,
+modify, operate, or troubleshoot the subject. Do not inventory every syntactic
+or incidental observation. Do not judge whether a claim is true. Do not use
+outside knowledge, files, tools, or source code.
 
 Rules:
 - Return exactly one result per supplied sectionId.
-- Keep assertions atomic: split independently checkable facts.
-- Include behavior, structure, configuration, APIs, constraints, defaults,
-  execution behavior, and operational facts.
+- Consolidate closely related statements into one coherent claim when they
+  explain one topic or behavior.
+- Preserve every material exact detail the artifact states, including names,
+  values, behavior, conditions, exceptions, defaults, and constraints. Never
+  weaken a specific claim into a vague claim that is easier to support.
+- Split claims only when they concern independently meaningful topics or could
+  receive different truth judgments.
+- Include material behavior, architecture, configuration, APIs, constraints,
+  defaults, execution behavior, and operational facts.
 - Include assertions in tables, lists, and code examples when surrounding prose
-  presents them as actual repository behavior.
+  presents them as actual behavior.
 - Exclude headings alone, navigation, transitions, subjective descriptions,
-  explicitly hypothetical examples, and statements only about the wiki itself.
+  explicitly hypothetical examples, and statements only about the artifact.
 - Exclude page locations, descriptions of what a page covers, documentation
   routing advice, source maps, and page inventories.
 - Exclude commit-by-commit narration, change history, and claims about what an
-  earlier commit touched; precision evaluates current repository state.
+  earlier change touched; precision evaluates current state.
+- Exclude repository archaeology and incidental inventory such as commit counts,
+  exact file counts, commentary wording, fixture provenance, and absent tooling
+  with no material consequence.
 - Exclude advice, maintenance instructions, validation recipes, and statements
   about what a contributor or caller should, must, or needs to do.
 - Exclude hypotheticals, counterfactuals, future scenarios, and predictions about
   what would happen if the repository changed.
 - Exclude editorial characterizations such as "minimal" or "well-behaved"
-  unless the same sentence contains a separable concrete repository fact; emit
+  unless the same sentence contains a separable concrete material fact; emit
   only that concrete fact.
 - Preserve the assertion's meaning without adding facts not stated by the section.
 - Return only the structured response.`;
 
 /**
- * System instructions for Truth-Ledger-based precision judgment.
+ * System instructions for source-evidence-based precision judgment.
  */
-export const PRECISION_JUDGMENT_SYSTEM = `You are a strict documentation precision classifier.
+export const PRECISION_JUDGMENT_SYSTEM = `You are a strict source-grounded precision classifier.
 
-You receive material assertions extracted from a generated wiki and the complete
-active Truth Ledger. The ledger is the sole source of truth. Judge only whether
-the ledger positively establishes each assertion. Do not use outside knowledge,
-files, tools, or source code.
+You receive material assertions extracted from a knowledge artifact and
+source-evidence excerpts retrieved separately for each assertion. Judge only
+from the supplied evidence. Do not use outside knowledge, files, tools, or
+unstated assumptions.
 
 Rules:
 - Return exactly one evaluation per supplied assertionId.
-- "supported" requires one or more active ledger facts to positively establish
-  the complete assertion.
-- Combine multiple ledger facts when together they establish the assertion.
-- Mere consistency is not support.
-- Ledger silence is "unsupported", even if the assertion may be true in reality.
-- A contradiction with the ledger is "unsupported".
-- A supported result must name every supporting factId needed for support.
-- An unsupported result must have no supportingFactIds.
+- "supported" requires supplied evidence to establish the complete assertion.
+- "contradicted" requires supplied evidence to establish incompatible current
+  truth. Mere lack of support is not a contradiction.
+- "unverifiable" means the supplied evidence establishes neither support nor
+  contradiction.
+- Mere consistency is not support, and uncertainty is not contradiction.
+- Supported and contradicted results must cite the evidenceIds that establish
+  the verdict. Unverifiable results must cite no evidenceIds.
+- Evidence IDs must come from that assertion's own supplied evidence.
+- Current-state assertions require current evidence. Historical evidence may
+  establish explicitly historical claims but must not support a claim that an
+  obsolete behavior remains current.
 - The rationale must agree with the verdict. If the rationale says the cited
-  facts establish the assertion, the verdict must be "supported".
+  evidence establishes the assertion, the verdict must be "supported".
 - Return only the structured response.`;
 
 /**
@@ -265,10 +299,10 @@ ${JSON.stringify(targets, null, 2)}`;
 export function precisionExtractionPrompt(
   sections: PrecisionExtractionSection[],
 ): string {
-  return `Extract every material assertion from each complete section below.
+  return `Extract the meaningful, detail-preserving knowledge claims from each complete section below.
 
 Return exactly one result per sectionId. Return an empty assertions array when a
-section contains no material repository assertion.
+section contains no material claim.
 
 Sections (JSON):
 ${JSON.stringify(sections, null, 2)}`;
@@ -277,20 +311,20 @@ ${JSON.stringify(sections, null, 2)}`;
 /**
  * Build one bounded precision-judgment task.
  *
- * @param assertions - Extracted assertions to classify.
- * @param activeFacts - Complete active Truth Ledger.
+ * @param assertions - Extracted assertions paired with source evidence.
+ * @param evidence - Deduplicated source excerpts referenced by the assertions.
  *
  * @returns Stable JSON-bearing precision prompt.
  */
 export function precisionJudgmentPrompt(
   assertions: PrecisionJudgmentAssertion[],
-  activeFacts: PrecisionJudgmentFact[],
+  evidence: PrecisionEvidenceExcerpt[],
 ): string {
-  return `Judge every assertion against the complete active Truth Ledger below.
+  return `Judge every assertion against only its supplied source evidence.
 
 Assertions (JSON):
 ${JSON.stringify(assertions, null, 2)}
 
-Complete active Truth Ledger (JSON):
-${JSON.stringify(activeFacts, null, 2)}`;
+Source evidence (JSON):
+${JSON.stringify(evidence, null, 2)}`;
 }

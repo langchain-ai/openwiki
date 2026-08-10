@@ -3,7 +3,11 @@ import path from "node:path";
 
 import { WorktreeSafetyError } from "../core/errors.js";
 import { isContainedBy } from "../core/paths.js";
-import type { KebRunResult, KnowledgeArtifact } from "../core/types.js";
+import type {
+  EvidenceCorpus,
+  KebRunResult,
+  KnowledgeArtifact,
+} from "../core/types.js";
 import type { PrecisionAssertionInventory } from "../evaluator/precision.js";
 
 /**
@@ -106,6 +110,29 @@ export async function writeAssertionInventory(
   await writeFile(
     path.join(assertionsDir, `${checkpointSlug}.json`),
     `${JSON.stringify(inventory, null, 2)}\n`,
+    "utf8",
+  );
+}
+
+/**
+ * Persist normalized checkpoint source evidence before evaluation so precision
+ * citations remain auditable after the temporary replay workspace is removed.
+ *
+ * @param runDir - Prepared confined run directory.
+ * @param evidence - Complete normalized checkpoint evidence.
+ *
+ * @returns Nothing after the evidence is durable.
+ */
+export async function writeEvidenceCorpus(
+  runDir: string,
+  evidence: EvidenceCorpus,
+): Promise<void> {
+  const checkpointSlug = nameSlug(evidence.checkpointId);
+  const evidenceDir = path.join(runDir, "evidence");
+  await mkdir(evidenceDir, { recursive: true });
+  await writeFile(
+    path.join(evidenceDir, `${checkpointSlug}.json`),
+    `${JSON.stringify(evidence, null, 2)}\n`,
     "utf8",
   );
 }

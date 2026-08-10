@@ -10,7 +10,7 @@ const COMMIT_PATTERN = /^[0-9a-f]{7,40}$/;
 
 /**
  * Whether a value is a non-null object, the precondition for reading fields off a
- * trace or ledger entry. The benchmark reaches validation cast from untrusted
+ * trace or requirement entry. The benchmark reaches validation cast from untrusted
  * JSON, so an entry the static type claims is an object can still be `null` or a
  * primitive at runtime; guarding with this before property access keeps a
  * malformed entry a `BenchmarkValidationError` rather than a raw `TypeError`.
@@ -28,8 +28,8 @@ function isObject(value: unknown): value is Record<string, unknown> {
  * Checks: a non-empty trace with unique checkpoint ids and well-formed commits;
  * at least one fact; per fact, at least one version whose checkpoint references
  * exist, whose ranges are ordered `from < until`, and whose ranges do not
- * overlap; and that every checkpoint has at least one active fact, so Knowledge
- * Coverage is well-defined at every checkpoint the runner scores.
+ * overlap; and that every checkpoint has at least one active coverage fact, so
+ * Knowledge Coverage is well-defined at every checkpoint the runner scores.
  *
  * @param benchmark - The assembled benchmark to check.
  *
@@ -46,11 +46,11 @@ export function validateBenchmark(benchmark: KebBenchmark): void {
 
   const index = buildCheckpointIndex(checkpoints);
 
-  const facts = benchmark.ledger?.facts;
+  const facts = benchmark.truthPackage?.requirements;
 
   if (!Array.isArray(facts) || facts.length === 0) {
     throw new BenchmarkValidationError(
-      "ledger.facts must be a non-empty array.",
+      "truthPackage.requirements must be a non-empty array.",
     );
   }
 
@@ -161,6 +161,20 @@ function validateFact(
       );
     }
 
+    if (
+      version.evidenceRefs !== undefined &&
+      (!Array.isArray(version.evidenceRefs) ||
+        version.evidenceRefs.length === 0 ||
+        version.evidenceRefs.some(
+          (reference) =>
+            typeof reference !== "string" || reference.length === 0,
+        ))
+    ) {
+      throw new BenchmarkValidationError(
+        `Fact "${fact.id}" has invalid evidenceRefs; expected non-empty source references.`,
+      );
+    }
+
     const from = index.get(version.fromCheckpoint);
 
     if (from === undefined) {
@@ -217,18 +231,15 @@ function assertNoOverlap(
 }
 
 /**
- * Assert that every checkpoint has at least one active fact. A checkpoint with no
- * active facts would leave Knowledge Coverage with a zero denominator (nothing to
- * cover), which is invalid benchmark data rather than a meaningful score: Coverage
- * is the fraction of active facts recalled, so an empty active set has no value to
- * compute. Reuses `getActiveFacts` so this notion of "active" is exactly the one
- * the scorer uses. Runs after fact validation, so every version range is already
- * known well-formed.
+ * Assert that every checkpoint has at least one active material requirement so
+ * Knowledge Coverage has a meaningful denominator. Runs after fact validation,
+ * so every version range is already known well-formed.
  *
  * @param benchmark - The benchmark to project active facts from.
  * @param checkpoints - The trace checkpoints, in order.
  *
- * @throws BenchmarkValidationError naming the first checkpoint with no active facts.
+ * @throws BenchmarkValidationError naming the first checkpoint with no active
+ * coverage facts.
  */
 function assertEveryCheckpointHasActiveFacts(
   benchmark: KebBenchmark,
@@ -237,8 +248,8 @@ function assertEveryCheckpointHasActiveFacts(
   for (const checkpoint of checkpoints) {
     if (getActiveFacts(benchmark, checkpoint.id).length === 0) {
       throw new BenchmarkValidationError(
-        `Checkpoint "${checkpoint.id}" has no active facts. Every checkpoint must ` +
-          `have at least one active Truth Ledger fact so Knowledge Coverage is ` +
+        `Checkpoint "${checkpoint.id}" has no active coverage facts. Every checkpoint must ` +
+          `have at least one material Truth Package requirement so Knowledge Coverage is ` +
           `well-defined there.`,
       );
     }

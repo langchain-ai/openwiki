@@ -216,25 +216,26 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
   }
 
   if (systemPrompt === PRECISION_JUDGMENT_SYSTEM) {
-    const ledgerMarker = "\n\nComplete active Truth Ledger (JSON):\n";
+    const evidenceMarker = "\n\nSource evidence (JSON):\n";
     const assertions = parsePromptJson<
-      Array<{ assertionId: string; statement: string }>
-    >(taskPrompt, "Assertions (JSON):\n", ledgerMarker);
-    const activeFacts = parsePromptJson<
-      Array<{ factId: string; statement: string }>
-    >(taskPrompt, ledgerMarker);
+      Array<{
+        assertionId: string;
+        statement: string;
+        evidenceIds: string[];
+      }>
+    >(taskPrompt, "Assertions (JSON):\n", evidenceMarker);
 
     return {
       evaluations: assertions.map((assertion) => {
-        const support = activeFacts.find(
-          (fact) => fact.statement === assertion.statement,
-        );
+        const contradicted = assertion.statement.includes("magic");
 
         return {
           assertionId: assertion.assertionId,
-          verdict: support ? "supported" : "unsupported",
-          supportingFactIds: support ? [support.factId] : [],
-          rationale: support ? "The ledger supports it." : "Ledger silence.",
+          verdict: contradicted ? "contradicted" : "supported",
+          evidenceIds: [assertion.evidenceIds[0]],
+          rationale: contradicted
+            ? "The source contradicts it."
+            : "The source supports it.",
         };
       }),
     };
@@ -337,7 +338,7 @@ class EvolvingDocumentationSystem implements SystemUnderTest {
 }
 
 /**
- * Build the three-checkpoint Truth Ledger used by the end-to-end test.
+ * Build the three-checkpoint Truth Package used by the end-to-end test.
  *
  * @param repo - Tiny repository supplying checkpoint commits.
  *
@@ -354,8 +355,8 @@ function benchmark(repo: TinyRepo): KebBenchmark {
         commit,
       })),
     },
-    ledger: {
-      facts: [
+    truthPackage: {
+      requirements: [
         {
           id: "stable",
           versions: [
@@ -485,9 +486,36 @@ describe("direct evaluator end to end", () => {
     expect(
       result.checkpoints.map((checkpoint) => checkpoint.precision),
     ).toEqual([
-      { supported: 3, unsupported: 1, total: 4, score: 0.75 },
-      { supported: 4, unsupported: 1, total: 5, score: 0.8 },
-      { supported: 3, unsupported: 1, total: 4, score: 0.75 },
+      {
+        supported: 3,
+        contradicted: 1,
+        unverifiable: 0,
+        decidable: 4,
+        total: 4,
+        hallucinationRate: 0.25,
+        unverifiableRate: 0,
+        score: 0.75,
+      },
+      {
+        supported: 4,
+        contradicted: 1,
+        unverifiable: 0,
+        decidable: 5,
+        total: 5,
+        hallucinationRate: 0.2,
+        unverifiableRate: 0,
+        score: 0.8,
+      },
+      {
+        supported: 3,
+        contradicted: 1,
+        unverifiable: 0,
+        decidable: 4,
+        total: 4,
+        hallucinationRate: 0.25,
+        unverifiableRate: 0,
+        score: 0.75,
+      },
     ]);
     expect(result.score.maintenanceRates).toEqual({
       newKnowledgeDiscovery: 1,
@@ -499,7 +527,7 @@ describe("direct evaluator end to end", () => {
       result.checkpoints.flatMap(
         (checkpoint) =>
           checkpoint.evaluations?.precisionEvaluations.filter(
-            (evaluation) => evaluation.verdict === "unsupported",
+            (evaluation) => evaluation.verdict === "contradicted",
           ) ?? [],
       ),
     ).toEqual([
@@ -549,7 +577,7 @@ describe("direct evaluator end to end", () => {
       await readFile(path.join(runDir, "result.json"), "utf8"),
     ) as { metadata: Record<string, unknown> };
     expect(persisted.metadata).not.toHaveProperty("evaluatorPromptVersion");
-    expect(formatReport(result)).toContain("Unsupported assertions (1 of 4)");
+    expect(formatReport(result)).toContain("Contradicted assertions (1 of 4)");
   });
 
   test("times out, stops later passes, and cleans replay resources", async () => {

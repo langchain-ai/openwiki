@@ -23,11 +23,11 @@ truth @ T2 → update K2 → evaluate change handling
 
 KEB asks three core questions:
 
-| Question                                               | Metric         | Plain-English meaning                                       |
-| ------------------------------------------------------ | -------------- | ----------------------------------------------------------- |
-| 📚 Did the artifact represent what is true?            | **Coverage**   | Expected facts appear correctly in the artifact.            |
-| 🎯 Is what the artifact says supported?                | **Precision**  | Concrete artifact claims are supported by the Truth Ledger. |
-| 🧹 Did the artifact stop presenting what became false? | **Forgetting** | Obsolete facts are no longer presented as current.          |
+| Question                                               | Metric         | Plain-English meaning                                        |
+| ------------------------------------------------------ | -------------- | ------------------------------------------------------------ |
+| 📚 Did the artifact represent what is true?            | **Coverage**   | Expected facts appear correctly in the artifact.             |
+| 🎯 Is what the artifact says supported?                | **Precision**  | Concrete claims are checked against current source evidence. |
+| 🧹 Did the artifact stop presenting what became false? | **Forgetting** | Obsolete facts are no longer presented as current.           |
 
 Those checkpoint judgments also produce longitudinal maintenance metrics for
 discovering new knowledge, correcting changed knowledge, forgetting stale
@@ -42,17 +42,19 @@ Benchmark
 ├── ordered source-truth states or events
 ├── checkpoint boundaries
 ├── system adapter that creates or updates the artifact
-└── Truth Ledger
-    ├── facts true at T0
-    ├── facts introduced or changed at T1
-    └── facts introduced, changed, or removed at T2
+└── Truth Package
+    ├── material knowledge requirements
+    ├── temporal validity and supersession
+    └── source-evidence adapter
 ```
 
-The **Truth Ledger is the ground-truth part of the benchmark**. It is authored
-from independent analysis of the underlying source material and frozen before
-evaluation. No system under test creates or modifies it during a run.
+The **Truth Package is the ground-truth part of the benchmark**. Human-authored
+knowledge requirements define what a useful artifact should cover. A source
+adapter independently normalizes the frozen source at each checkpoint into an
+evidence corpus that can verify additional details the artifact chooses to state.
+No system under test creates or modifies either input during a run.
 
-The benchmark is broader than the ledger because it also defines the evolving
+The benchmark is broader than the Truth Package because it also defines the evolving
 source truth, checkpoint sequence, and system-under-test adapter.
 
 Possible source evolutions include:
@@ -79,20 +81,22 @@ checkpoints:
 | T1         | Introduce `subtract`          | `add`, `negate`, and `subtract` exist; version remains `"1.0.0"`.       |
 | T2         | Remove `negate`, bump version | `add` and `subtract` exist; `negate` is absent; `VERSION` is `"2.0.0"`. |
 
-An individual logical fact keeps the same ID while its truth changes:
+An individual knowledge requirement keeps the same ID while its truth changes:
 
 ```json
 {
-  "id": "version-value",
+  "id": "current-version",
   "category": "config",
   "versions": [
     {
-      "statement": "VERSION is the string \"1.0.0\".",
+      "statement": "The library's current version is 1.0.0.",
+      "evidenceRefs": ["src/version.ts", "README.md"],
       "fromCheckpoint": "T0",
       "untilCheckpoint": "T2"
     },
     {
-      "statement": "VERSION is the string \"2.0.0\".",
+      "statement": "The library's current version is 2.0.0.",
+      "evidenceRefs": ["src/version.ts", "README.md"],
       "fromCheckpoint": "T2"
     }
   ]
@@ -112,7 +116,7 @@ flowchart TD
     F -->|No| U[Update knowledge artifact]
     I --> A[Freeze artifact]
     U --> A
-    A --> L[Project ledger at checkpoint]
+    A --> L[Project requirements and collect source evidence]
     L --> CV[Coverage]
     CV --> FG[Forgetting]
     FG --> EX[Extract artifact assertions]
@@ -135,11 +139,11 @@ transitions, it measures whether the artifact adapted correctly:
 
 ```text
                          POINT-IN-TIME
-source truth @ Tn ──▶ Truth Ledger @ Tn ◀──compare──▶ artifact @ Tn
+source truth @ Tn ──▶ requirements @ Tn ◀──compare──▶ artifact @ Tn
                                                 coverage + precision
 
                          LONGITUDINAL
-ledger Tn ──changed──▶ ledger Tn+1
+requirements Tn ──changed──▶ requirements Tn+1
                               ▲
                               │ compare evolution
                               ▼
@@ -167,15 +171,15 @@ timestamped events instead of Git commits.
 
 | Step | Generic KEB operation                                       | Current Git/OpenWiki adapter                            |
 | ---- | ----------------------------------------------------------- | ------------------------------------------------------- |
-| 1    | Load checkpoint definitions and ledger versions.            | Load commits and `benchmark.json`.                      |
+| 1    | Load checkpoint definitions and knowledge requirements.     | Load commits and `benchmark.json`.                      |
 | 2    | Materialize the checkpoint's source truth.                  | Check out a commit in an isolated worktree.             |
 | 3    | Ask the system under test to create or update its artifact. | Run OpenWiki `init` or `update` using the system model. |
 | 4    | Freeze and persist the artifact before evaluation.          | Capture every generated wiki document.                  |
-| 5    | Select active and obsolete ledger facts.                    | Deterministic ledger projection.                        |
-| 6    | Evaluate coverage of every active fact.                     | BM25 retrieval plus evaluator-model judgment.           |
+| 5    | Project requirements and collect current source evidence.   | Requirement projection plus tracked-file evidence.      |
+| 6    | Evaluate coverage of every active material topic.           | BM25 retrieval plus evaluator-model judgment.           |
 | 7    | Evaluate whether obsolete fact versions were forgotten.     | BM25 retrieval plus evaluator-model judgment.           |
 | 8    | Extract concrete assertions from the artifact.              | Section filtering plus evaluator-model extraction.      |
-| 9    | Evaluate each retained assertion against the active ledger. | Evaluator-model judgment.                               |
+| 9    | Evaluate each retained assertion against source evidence.   | BM25 retrieval plus evaluator-model judgment.           |
 | 10   | Score the checkpoint and, finally, the complete trace.      | Deterministic calculation and persistence.              |
 
 KEB does not require the system under test to use a model. The current OpenWiki
@@ -184,21 +188,21 @@ model for semantic judgments, split into stable, bounded batches.
 
 The current implementation has two intentionally separate model roles:
 
-| Role                   | Responsibility                                                                                |
-| ---------------------- | --------------------------------------------------------------------------------------------- |
-| 🤖 **System model**    | Operates OpenWiki and creates or updates the artifact being evaluated.                        |
-| ⚖️ **Evaluator model** | Extracts assertions and judges coverage, precision, and forgetting against the frozen ledger. |
+| Role                   | Responsibility                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| 🤖 **System model**    | Operates OpenWiki and creates or updates the artifact being evaluated.                    |
+| ⚖️ **Evaluator model** | Extracts assertions and judges coverage, precision, and forgetting from bounded evidence. |
 
-In the current adapter, Git replay, ledger projection, Markdown sectioning, BM25
-retrieval, filtering, deduplication, scoring, and persistence are deterministic
-code paths.
+In the current adapter, Git replay, requirement projection, source-evidence
+capture, Markdown sectioning, BM25 retrieval, filtering, deduplication, scoring,
+and persistence are deterministic code paths.
 
 ## 📚 Coverage: did the artifact represent what is true?
 
-Coverage starts from the Truth Ledger and searches the artifact.
+Coverage starts from the active knowledge requirements and searches the artifact.
 
 ```text
-active ledger fact
+active knowledge requirement
         │
         ▼
 retrieve likely artifact sections
@@ -218,7 +222,7 @@ and those candidate sections.
 
 ### Worked coverage example
 
-Active T1 ledger fact:
+Active T1 requirement:
 
 ```text
 subtract(a, b) returns the first argument minus the second.
@@ -252,7 +256,7 @@ This keeps retrieval quality from silently becoming a coverage failure.
 ## 🎯 Precision: is what the artifact says supported?
 
 Precision runs in the opposite direction. It starts from the artifact and checks
-every retained claim against the Truth Ledger.
+every retained claim against normalized current source evidence.
 
 ```text
 every eligible artifact section
@@ -264,10 +268,11 @@ extract concrete assertions
 deterministic filtering and deduplication
           │
           ▼
-compare each assertion with the complete active ledger
+retrieve source evidence for each assertion
           │
           ├── supported
-          └── unsupported
+          ├── contradicted
+          └── unverifiable
 ```
 
 ### Worked precision example
@@ -292,17 +297,18 @@ Removed: “If validation is added later, update the README.”
          ↳ hypothetical contributor advice
 ```
 
-The retained assertions are checked against the complete active ledger:
+The source adapter captures the current implementation and BM25 retrieves the
+most relevant source excerpts for each retained assertion:
 
 ```text
-Truth Ledger
+Current source evidence
 ├── add returns a + b
 └── add performs no input validation
 
 Artifact assertion                     Verdict
 ─────────────────────────────────────  ───────────
 add returns a + b                      supported
-add validates both inputs              unsupported
+add validates both inputs              contradicted
 ```
 
 Precision for this example is:
@@ -310,30 +316,28 @@ Precision for this example is:
 ```text
 supported assertions     1
 ──────────────────── = ───── = 50%
-retained assertions      2
+decidable assertions     2
 ```
 
-### What counts as unsupported?
+### What do the precision verdicts mean?
 
-An assertion is supported only when one or more active ledger facts positively
-establish the complete claim. It is unsupported when:
+An assertion is:
 
-- the ledger contradicts it;
-- the ledger establishes only part of it; or
-- the ledger says nothing about it.
+- `supported` when supplied current source evidence establishes the complete
+  claim;
+- `contradicted` when supplied evidence establishes incompatible current truth;
+  or
+- `unverifiable` when the evidence establishes neither outcome.
 
-The evaluator is deliberately forbidden from checking source code or relying on
-outside knowledge during judgment. The frozen ledger is its sole authority.
+The evaluator may use only the source evidence supplied for that assertion. It
+cannot rely on outside knowledge or treat the artifact as evidence for itself.
+An unverifiable claim is reported separately rather than silently labeled a
+hallucination: it may reflect ambiguous source material, a retrieval problem, or
+a genuinely unsupported artifact claim.
 
-Under KEB's strict benchmark definition, an unsupported assertion counts against
-precision even if it happens to be true in the underlying source. That outcome
-means
-either:
-
-1. the artifact hallucinated or overclaimed; or
-2. the benchmark ledger is incomplete and must be corrected.
-
-This is why ledger completeness is essential.
+A hallucination in V1 is a material claim contradicted by current source
+evidence. Unverifiable claims never improve precision and remain visible in the
+audit report.
 
 ### What is excluded before judgment?
 
@@ -353,10 +357,10 @@ numeric cases.
 
 ## 🧹 Forgetting: did stale knowledge disappear?
 
-Forgetting checks prior ledger versions that are no longer active.
+Forgetting checks prior requirement versions that are no longer active.
 
 ```text
-obsolete ledger version
+obsolete requirement version
           │
           ▼
 retrieve likely artifact sections
@@ -406,9 +410,9 @@ KEB Score = (Quality + Maintenance) / 2
 Quality evaluates the artifact at every checkpoint.
 
 ```text
-Trace Coverage = correctly represented active facts / all active facts
+Trace Coverage = correctly represented material topics / all material topics
 
-Trace Precision = supported artifact assertions / all retained artifact assertions
+Trace Precision = supported artifact assertions / decidable artifact assertions
 
 Quality = harmonic mean(Trace Coverage, Trace Precision)
 ```
@@ -441,11 +445,14 @@ KEB also reports signals that do not affect the headline score:
 - **Efficiency** — system runtime and documentation churn. Token and cost capture
   can be added when usage telemetry is available.
 
-## 📒 Authoring the Truth Ledger
+Contradicted claims are decidable and lower precision. Unverifiable claims are
+reported separately and do not improve the score.
 
-The active ledger at every checkpoint should be a comprehensive census of the
-material source truth that the artifact is expected to represent—not merely a
-list of facts that changed.
+## 📒 Authoring the Truth Package
+
+Human-authored requirements should capture the material source truth the artifact
+is expected to represent—not every mechanically observable property. The source
+adapter captures the underlying evidence needed to verify additional claims.
 
 Depending on the domain, categories might include:
 
@@ -456,36 +463,42 @@ Depending on the domain, categories might include:
 - source or artifact structure; and
 - facts that were introduced, changed, or removed across the trace.
 
-Facts should be atomic and independently checkable:
+Coverage facts should be meaningful, independently checkable topic claims:
 
 ```text
 Avoid:
-  add exists, accepts two numbers, returns their sum, and has JSDoc.
+  add exists.
+  add is exported.
+  add has two parameters.
+  add returns a number.
+  add is defined in src/calc.ts.
 
 Prefer:
-  add exists.
-  add has signature add(a: number, b: number): number.
-  add returns a + b.
-  add has JSDoc for both parameters and its return value.
+  The library provides add(a, b), which returns the sum a + b.
 ```
 
-Atomic facts make coverage verdicts interpretable. If the artifact documents the
-signature but omits JSDoc, one fact is correct and one is missing instead of one
-large fact becoming vaguely partial.
+Exact values and behavior remain part of the claim when they are material. “The
+library exposes a version” is insufficient when the useful truth is “the current
+version is 1.0.0.” File placement, declaration syntax, exact counts, and similar
+implementation details are not coverage requirements by default.
+
+Repository archaeology—commit counts, incidental file inventories, commentary
+wording, fixture provenance, and absent tooling with no material consequence—is
+outside the default evaluation scope.
 
 ### Authoring workflow
 
 ```mermaid
 flowchart LR
     R0[Source truth at T0] --> A0[Independent analysis]
-    A0 --> D0[Draft complete ledger]
+    A0 --> D0[Draft material requirements]
     D0 --> H0[Human review and freeze]
     H0 --> CH[Inspect changes in source truth]
     CH --> EV[Evolve added, changed, removed facts]
     EV --> HR[Review each checkpoint projection]
 ```
 
-For a small source set, author the ledger manually. For a larger domain, a model
+For a small source set, author requirements manually. For a larger domain, a model
 may help draft candidates from independent source analysis, but a human must
 review and freeze the result before evaluation. The system under test's artifact
 must never be used as ground truth.
@@ -498,17 +511,18 @@ not merely:
 
 > What changed since the preceding checkpoint?
 
-The executable schema and validation rules live in
+The executable requirement schema and validation rules live in
 [`core/types.ts`](./core/types.ts) and
 [`benchmark/validation.ts`](./benchmark/validation.ts).
 
 ## 🔬 Evaluator mechanics and reliability
 
 The current evaluator splits generated Markdown into stable, bounded sections.
-Coverage and forgetting reuse one BM25 index over those sections. Precision
-visits every eligible section rather than relying on retrieval. Other artifact
-formats can provide their own sectioning and retrieval adapters while preserving
-the same evaluation contract.
+Coverage and forgetting reuse one BM25 index over artifact sections. Precision
+visits every eligible artifact section for extraction, then uses a separate BM25
+index over normalized source evidence for judgment. Provisional negative results
+exhaust remaining evidence before becoming final. Other source and artifact
+formats can provide adapters while preserving the same evaluation contract.
 
 Semantic judgments use direct schema-validated model calls with:
 
@@ -537,14 +551,17 @@ calc-evolution-<timestamp>/
 ├── assertions/
 │   ├── T0.json             # all extracted, excluded, and retained assertions
 │   └── T1.json
+├── evidence/
+│   ├── T0.json             # normalized source evidence used by precision
+│   └── T1.json
 ├── result.json             # completed runs: verdicts, scores, and diagnostics
 ├── report.md               # completed runs: detailed human-readable report
 └── error.json              # failed runs: bounded failure details
 ```
 
-Artifacts are persisted before evaluation, and assertion inventories are
-persisted before precision judgment. They therefore survive later evaluator
-failures and can be inspected without reading provider traces.
+Artifacts and source evidence are persisted before evaluation, and assertion
+inventories are persisted before precision judgment. They therefore survive
+later evaluator failures and can be inspected without reading provider traces.
 
 ## ▶️ Running the Git/OpenWiki adapter
 
@@ -575,7 +592,7 @@ A valid comparison holds every evaluation input constant:
 
 ```text
 same source evolution and checkpoints
-same Truth Ledger
+same Truth Package and source evidence
 same evaluator model
 same repetition count
              │

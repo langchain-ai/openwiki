@@ -104,13 +104,13 @@ export function formatReport(result: KebRunResult): string {
   lines.push("## Checkpoints");
   lines.push("");
   lines.push(
-    "| Checkpoint | Coverage | Precision | Duration (ms) | Churn | Skipped |",
+    "| Checkpoint | Coverage | Precision | Hallucination | Unverifiable | Duration (ms) | Churn | Skipped |",
   );
-  lines.push("| --- | --- | --- | --- | --- | --- |");
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
 
   for (const checkpoint of result.checkpoints) {
     lines.push(
-      `| ${checkpoint.checkpointId} | ${pct(checkpoint.coverage.score)} | ${pct(checkpoint.precision.score)} | ${checkpoint.efficiency.durationMs} | ${cell(checkpoint.efficiency.churnedLines)} | ${checkpoint.efficiency.skipped ? "yes" : "no"} |`,
+      `| ${checkpoint.checkpointId} | ${pct(checkpoint.coverage.score)} | ${pct(checkpoint.precision.score)} | ${pct(checkpoint.precision.hallucinationRate)} | ${pct(checkpoint.precision.unverifiableRate)} | ${checkpoint.efficiency.durationMs} | ${cell(checkpoint.efficiency.churnedLines)} | ${checkpoint.efficiency.skipped ? "yes" : "no"} |`,
     );
   }
 
@@ -122,13 +122,9 @@ export function formatReport(result: KebRunResult): string {
 
 /**
  * Append the per-checkpoint evaluation detail behind the scores: the coverage
- * facts not stated correctly, the material assertions the ledger did not support,
- * and the forgetting verdicts. This is what turns a bare score into something a
- * reader can act on: every unsupported assertion is a candidate fact missing from
- * the ledger (or a genuine hallucination), and the forgetting list is the only
- * place a reader sees forgetting at all when a trace has obsolete versions. The
- * whole section is skipped when no checkpoint carries retained detail, so scores
- * built by hand still render.
+ * facts not stated correctly, contradicted and unverifiable artifact claims, and
+ * forgetting verdicts. This turns a bare score into evidence a reader can act on
+ * without treating evaluator uncertainty as certain hallucination.
  *
  * @param lines - The report lines accumulated so far, appended to in place.
  * @param result - The run result whose detail is rendered.
@@ -141,7 +137,7 @@ function appendEvaluationDetail(lines: string[], result: KebRunResult): void {
   lines.push("## Evaluation detail");
   lines.push("");
   lines.push(
-    "The raw verdicts behind the scores. Coverage lists active facts the wiki did not state correctly; precision lists material assertions the active ledger does not support, each a candidate missing ledger fact or a hallucination; forgetting lists obsolete versions and whether the wiki dropped them.",
+    "The raw verdicts behind the scores. Coverage lists material topics the artifact did not state correctly; precision separates source-contradicted claims from claims the available evidence could not verify; forgetting lists obsolete versions and whether the artifact dropped them.",
   );
   lines.push("");
 
@@ -160,23 +156,39 @@ function appendEvaluationDetail(lines: string[], result: KebRunResult): void {
     );
     lines.push(`- Coverage gaps (${coverageGaps.length}):`);
     if (coverageGaps.length === 0) {
-      lines.push("  - none; every active fact is stated correctly");
+      lines.push("  - none; every material topic is stated correctly");
     } else {
       for (const gap of coverageGaps) {
         lines.push(`  - \`${gap.factId}\` ${gap.verdict}: ${gap.rationale}`);
       }
     }
 
-    const unsupported = detail.precisionEvaluations.filter(
-      (assertion) => assertion.verdict === "unsupported",
+    const contradicted = detail.precisionEvaluations.filter(
+      (assertion) => assertion.verdict === "contradicted",
     );
     lines.push(
-      `- Unsupported assertions (${unsupported.length} of ${detail.precisionEvaluations.length}):`,
+      `- Contradicted assertions (${contradicted.length} of ${detail.precisionEvaluations.length}):`,
     );
-    if (unsupported.length === 0) {
-      lines.push("  - none; every material assertion is ledger-supported");
+    if (contradicted.length === 0) {
+      lines.push("  - none");
     } else {
-      for (const assertion of unsupported) {
+      for (const assertion of contradicted) {
+        lines.push(
+          `  - ${assertion.location}: "${assertion.assertion}" (${assertion.rationale})`,
+        );
+      }
+    }
+
+    const unverifiable = detail.precisionEvaluations.filter(
+      (assertion) => assertion.verdict === "unverifiable",
+    );
+    lines.push(
+      `- Unverifiable assertions (${unverifiable.length} of ${detail.precisionEvaluations.length}):`,
+    );
+    if (unverifiable.length === 0) {
+      lines.push("  - none");
+    } else {
+      for (const assertion of unverifiable) {
         lines.push(
           `  - ${assertion.location}: "${assertion.assertion}" (${assertion.rationale})`,
         );

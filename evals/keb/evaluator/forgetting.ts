@@ -71,7 +71,7 @@ export interface ForgettingPassInput {
  */
 interface ForgettingTarget {
   /**
-   * Obsolete ledger fact version being judged.
+   * Obsolete requirement version being judged.
    */
   fact: ObsoleteFactTarget;
 

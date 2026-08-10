@@ -64,8 +64,8 @@ export const precisionJudgmentOutputSchema = z.object({
   evaluations: z.array(
     z.object({
       assertionId: z.string(),
-      verdict: z.enum(["supported", "unsupported"]),
-      supportingFactIds: z.array(z.string()).default([]),
+      verdict: z.enum(["supported", "contradicted", "unverifiable"]),
+      evidenceIds: z.array(z.string()).default([]),
       rationale: z.string().trim().min(1),
     }),
   ),

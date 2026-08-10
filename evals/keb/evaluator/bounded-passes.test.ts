@@ -59,7 +59,7 @@ function section(id: string, content: string): ArtifactSection {
 }
 
 /**
- * Build an active Truth Ledger fact fixture.
+ * Build an active Truth Package requirement fixture.
  *
  * @param factId - Stable logical fact identifier.
  * @param statement - Current fact statement.
@@ -76,7 +76,7 @@ function activeFact(factId: string, statement: string): ActiveTruthFact {
 }
 
 /**
- * Build an obsolete Truth Ledger fact-version fixture.
+ * Build an obsolete Truth Package requirement-version fixture.
  *
  * @param factId - Stable logical fact identifier.
  * @param obsoleteStatement - Statement no longer true.

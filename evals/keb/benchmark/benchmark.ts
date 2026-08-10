@@ -60,12 +60,16 @@ interface RawBenchmark {
   trace?: unknown;
 
   /**
-   * The Truth Ledger of hand-authored facts and their versions the generated
-   * wiki is scored against. Passed straight to `validateBenchmark` for the same
-   * deep validation as `trace`; no shape is assumed here.
+   * Human-authored material knowledge requirements and their temporal versions.
+   * Passed straight to `validateBenchmark`; no shape is assumed here.
    *
    * @default no fallback; `validateBenchmark` rejects an absent or malformed
-   *   ledger with a `BenchmarkValidationError`
+   *   Truth Package with a `BenchmarkValidationError`
+   */
+  truthPackage?: unknown;
+
+  /**
+   * Deprecated pre-Truth-Package manifest field accepted during migration.
    */
   ledger?: unknown;
 }
@@ -116,7 +120,10 @@ export async function loadBenchmark(
     // Cast is deliberate: validateBenchmark performs the deep structural checks
     // that make this cast sound, and throws before the value is used otherwise.
     trace: raw.trace as KebBenchmark["trace"],
-    ledger: raw.ledger as KebBenchmark["ledger"],
+    truthPackage: (raw.truthPackage ??
+      (typeof raw.ledger === "object" && raw.ledger !== null
+        ? { requirements: (raw.ledger as { facts?: unknown }).facts }
+        : raw.ledger)) as KebBenchmark["truthPackage"],
   };
 
   validateBenchmark(benchmark);

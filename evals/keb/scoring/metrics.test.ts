@@ -53,7 +53,7 @@ function assertion(
     assertion: "x",
     location: "a.md",
     verdict,
-    supportingFactIds: [],
+    evidenceIds: [],
     rationale: "",
   };
 }
@@ -127,17 +127,22 @@ describe("computeCoverage", () => {
 });
 
 describe("computePrecision", () => {
-  test("is supported over total", () => {
+  test("scores supported claims over decidable claims", () => {
     const metric = computePrecision([
       assertion("supported"),
       assertion("supported"),
-      assertion("unsupported"),
+      assertion("contradicted"),
+      assertion("unverifiable"),
     ]);
 
     expect(metric).toEqual({
       supported: 2,
-      unsupported: 1,
-      total: 3,
+      contradicted: 1,
+      unverifiable: 1,
+      decidable: 3,
+      total: 4,
+      hallucinationRate: 0.25,
+      unverifiableRate: 0.25,
       score: 2 / 3,
     });
   });
@@ -145,8 +150,12 @@ describe("computePrecision", () => {
   test("scores a wiki with no material assertions as 0, not 1", () => {
     expect(computePrecision([])).toEqual({
       supported: 0,
-      unsupported: 0,
+      contradicted: 0,
+      unverifiable: 0,
+      decidable: 0,
       total: 0,
+      hallucinationRate: 0,
+      unverifiableRate: 0,
       score: 0,
     });
   });
@@ -247,7 +256,16 @@ describe("aggregateScore", () => {
           total: 1,
           score: 1,
         },
-        precision: { supported: 1, unsupported: 0, total: 1, score: 1 },
+        precision: {
+          supported: 1,
+          contradicted: 0,
+          unverifiable: 0,
+          decidable: 1,
+          total: 1,
+          hallucinationRate: 0,
+          unverifiableRate: 0,
+          score: 1,
+        },
         efficiency: { durationMs: 0, skipped: false },
       },
       {
@@ -260,7 +278,16 @@ describe("aggregateScore", () => {
           total: 1,
           score: 0,
         },
-        precision: { supported: 1, unsupported: 1, total: 2, score: 0.5 },
+        precision: {
+          supported: 1,
+          contradicted: 1,
+          unverifiable: 0,
+          decidable: 2,
+          total: 2,
+          hallucinationRate: 0.5,
+          unverifiableRate: 0,
+          score: 0.5,
+        },
         maintenanceCounts: {
           newKnowledgeDiscovery: { numerator: 1, denominator: 2 },
           changedKnowledgeCorrection: { numerator: 0, denominator: 0 },
@@ -302,7 +329,16 @@ describe("aggregateScore", () => {
           total: 1,
           score: 1,
         },
-        precision: { supported: 1, unsupported: 0, total: 1, score: 1 },
+        precision: {
+          supported: 1,
+          contradicted: 0,
+          unverifiable: 0,
+          decidable: 1,
+          total: 1,
+          hallucinationRate: 0,
+          unverifiableRate: 0,
+          score: 1,
+        },
         efficiency: { durationMs: 0, skipped: false },
       },
     ];

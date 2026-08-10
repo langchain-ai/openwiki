@@ -8,6 +8,7 @@ import {
   prepareRunDirectory,
   writeArtifactSnapshot,
   writeAssertionInventory,
+  writeEvidenceCorpus,
   writeRunFailure,
   writeRunResult,
 } from "./persistence.js";
@@ -209,6 +210,33 @@ describe("writeRunResult", () => {
       fingerprint: "abc123",
       documents: ["quickstart.md", "api/calc.md"],
     });
+  });
+
+  test("persists the normalized source-evidence corpus", async () => {
+    const resultsDir = await scratchResultsDir();
+    const runDir = await prepareRunDirectory(
+      resultsDir,
+      "calc-evolution",
+      "2026-01-01T00:00:00.000Z",
+    );
+
+    await writeEvidenceCorpus(runDir, {
+      checkpointId: "T0",
+      records: [
+        {
+          evidenceId: "src/calc.ts::0000",
+          sourceRef: "src/calc.ts",
+          observedAtCheckpoint: "T0",
+          current: true,
+          content: "export function add() {}",
+        },
+      ],
+    });
+
+    const written = JSON.parse(
+      await readFile(path.join(runDir, "evidence", "T0.json"), "utf8"),
+    ) as { records: Array<{ evidenceId: string }> };
+    expect(written.records[0].evidenceId).toBe("src/calc.ts::0000");
   });
 
   test("rejects artifact document paths outside the checkpoint directory", async () => {

@@ -220,7 +220,7 @@ export function createCliProgressReporter(
         break;
       case "evaluation-start":
         startSpinner(
-          `🔍 Evaluating ${event.activeFactCount} active facts · ${event.obsoleteFactCount} obsolete versions`,
+          `🔍 Evaluating ${event.activeFactCount} material topics · ${event.obsoleteFactCount} obsolete versions`,
         );
         break;
       case "checkpoint-complete":

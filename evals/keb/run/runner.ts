@@ -18,6 +18,7 @@ import type {
   CheckpointEvaluationRecord,
   CheckpointScore,
   CheckpointTransitions,
+  EvidenceCorpus,
   EvaluationBackend,
   FactEvaluation,
   KebBenchmark,
@@ -30,6 +31,10 @@ import type {
   SystemUnderTest,
 } from "../core/types.js";
 import { createWorkspace } from "../replay/workspace.js";
+import {
+  GitSourceEvidenceAdapter,
+  type SourceEvidenceAdapter,
+} from "../source/source-adapter.js";
 
 /**
  * Observable lifecycle events emitted by a benchmark run.
@@ -120,10 +125,23 @@ export interface RunnerInputs {
   evaluationBackend: EvaluationBackend;
 
   /**
+   * Adapter that normalizes the active source checkpoint into evidence.
+   *
+   * @default Git tracked-file evidence
+   */
+  sourceEvidenceAdapter?: SourceEvidenceAdapter;
+
+  /**
    * Optional durable sink invoked after each artifact capture and before its
    * evaluation begins.
    */
   onArtifact?: (artifact: KnowledgeArtifact) => void | Promise<void>;
+
+  /**
+   * Optional durable sink invoked after checkpoint source evidence is collected
+   * and before semantic evaluation begins.
+   */
+  onEvidence?: (evidence: EvidenceCorpus) => void | Promise<void>;
 
   /**
    * The resolved run config.
@@ -183,7 +201,7 @@ function dedupeTargets(targets: ObsoleteFactTarget[]): ObsoleteFactTarget[] {
  *
  * Sticky obsolete targets: once a fact version goes obsolete it stays in the
  * forgetting watch set for every later checkpoint, and is retired only when the
- * ledger revives that knowledge (the fact is active again with the version's own
+ * requirements revive that knowledge (the fact is active again with the version's own
  * statement). KEB does not treat forgetting as permanent, so a version already
  * judged forgotten is still re-checked at later checkpoints; that is what lets the
  * Stale-Knowledge Lifetime diagnostic measure how long stale knowledge lingers and
@@ -206,6 +224,8 @@ export async function runBenchmark(
   inputs: RunnerInputs,
 ): Promise<KebRunResult> {
   const { benchmark, system, evaluationBackend, config, startedAt } = inputs;
+  const sourceEvidenceAdapter =
+    inputs.sourceEvidenceAdapter ?? new GitSourceEvidenceAdapter();
   const checkpoints = benchmark.trace.checkpoints;
   const reportProgress = inputs.onProgress ?? (() => undefined);
   reportProgress({
@@ -249,6 +269,7 @@ export async function runBenchmark(
     let previousCheckpointId: string | undefined;
     let previousFactEvaluations: FactEvaluation[] = [];
     let outstandingObsolete: ObsoleteFactTarget[] = [];
+    const evidenceHistory: EvidenceCorpus[] = [];
 
     for (let i = 0; i < checkpoints.length; i += 1) {
       const checkpoint = checkpoints[i];
@@ -286,6 +307,28 @@ export async function runBenchmark(
         workspace.artifactsRoot,
       );
       await inputs.onArtifact?.(artifact);
+      const currentEvidence = await sourceEvidenceAdapter.collectEvidence(
+        checkpoint.id,
+        replay.worktreeDir,
+      );
+      const evidence: EvidenceCorpus = {
+        checkpointId: checkpoint.id,
+        records: [
+          ...currentEvidence.records.map((record) => ({
+            ...record,
+            current: true,
+          })),
+          ...evidenceHistory.flatMap((historical) =>
+            historical.records.map((record) => ({
+              ...record,
+              evidenceId: `${historical.checkpointId}:${record.evidenceId}`,
+              current: false,
+            })),
+          ),
+        ],
+      };
+      await inputs.onEvidence?.(evidence);
+      evidenceHistory.push(currentEvidence);
       reportProgress({
         type: "artifact-captured",
         checkpointId: checkpoint.id,
@@ -348,6 +391,7 @@ export async function runBenchmark(
       const evaluation = await evaluationBackend.evaluate({
         artifact,
         activeFacts,
+        evidence,
         obsoleteFacts,
       });
 
@@ -387,9 +431,9 @@ export async function runBenchmark(
           totalTokens: outcome.totalTokens,
         },
         // Retain the raw verdicts, not just their reduced counts, so a score is
-        // explainable: the unsupported precision assertions are the candidate
-        // missing ledger facts (or hallucinations), and the forgetting verdicts
-        // make an otherwise invisible pass visible in the persisted result.
+        // explainable: contradicted and unverifiable precision claims remain
+        // distinguishable, and forgetting verdicts make an otherwise invisible
+        // pass visible in the persisted result.
         evaluations: {
           factEvaluations: evaluation.factEvaluations,
           precisionEvaluations: evaluation.precisionEvaluations,
@@ -406,7 +450,7 @@ export async function runBenchmark(
 
       // Keep every obsolete version under watch, including ones just judged
       // forgotten: KEB does not treat forgetting as permanent, so a version stays
-      // in the forgetting pass until the ledger revives it (the revival filter
+      // in the forgetting pass until the requirements revive it (the revival filter
       // above is the only way a target leaves the watch set).
       outstandingObsolete = obsoleteFacts;
 

@@ -8,7 +8,7 @@ import type {
 /**
  * Classify every fact's change from the previous checkpoint to the current one
  * into the four transition buckets, carrying stable version ids. Facts inactive
- * at both checkpoints are omitted. Derived only from the ledger, never from the
+ * at both checkpoints are omitted. Derived only from requirements, never from the
  * wiki, so it is fully deterministic.
  *
  * @param benchmark - The benchmark to project against.
@@ -27,7 +27,7 @@ export function computeTransitions(
   const removed: CheckpointTransitions["removed"] = [];
   const stable: CheckpointTransitions["stable"] = [];
 
-  for (const fact of benchmark.ledger.facts) {
+  for (const fact of benchmark.truthPackage.requirements) {
     const previous = activeVersionAt(benchmark, fact, previousCheckpointId);
     const current = activeVersionAt(benchmark, fact, currentCheckpointId);
 

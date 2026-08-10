@@ -33,7 +33,7 @@ export interface CoveragePassInput {
   checkpointId: string;
 
   /**
-   * Truth Ledger facts active at the checkpoint.
+   * Truth Package requirements active at the checkpoint.
    */
   activeFacts: ActiveTruthFact[];
 
@@ -68,7 +68,7 @@ export interface CoveragePassInput {
  */
 interface CoverageTarget {
   /**
-   * Active ledger fact being judged.
+   * Active requirement being judged.
    */
   fact: ActiveTruthFact;
 
@@ -272,7 +272,7 @@ async function evaluateCoverageBatch(
  *
  * @param input - Coverage pass configuration.
  *
- * @returns One coverage verdict per active fact in ledger order.
+ * @returns One coverage verdict per active requirement in package order.
  */
 export async function runCoveragePass(
   input: CoveragePassInput,

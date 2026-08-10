@@ -28,7 +28,16 @@ function result(): KebRunResult {
           total: 2,
           score: 1,
         },
-        precision: { supported: 2, unsupported: 0, total: 2, score: 1 },
+        precision: {
+          supported: 2,
+          contradicted: 0,
+          unverifiable: 0,
+          decidable: 2,
+          total: 2,
+          hallucinationRate: 0,
+          unverifiableRate: 0,
+          score: 1,
+        },
         efficiency: { durationMs: 1000, skipped: false },
       },
     ],
@@ -49,7 +58,9 @@ describe("formatReport", () => {
 
     expect(report).toContain("## KEB Score: 100.0%");
     expect(report).toContain("- Quality: 100.0%");
-    expect(report).toContain("| T0 | 100.0% | 100.0% | 1000 | - | no |");
+    expect(report).toContain(
+      "| T0 | 100.0% | 100.0% | 0.0% | 0.0% | 1000 | - | no |",
+    );
   });
 
   test("dashes an undefined maintenance score when no boundary occurred", () => {
@@ -99,7 +110,7 @@ describe("formatReport", () => {
     expect(report).not.toContain("## Evaluation detail");
   });
 
-  test("renders retained verdicts: coverage gaps, unsupported assertions, forgetting", () => {
+  test("renders coverage gaps, precision diagnostics, and forgetting", () => {
     const detailed: KebRunResult = {
       ...result(),
       checkpoints: [
@@ -127,15 +138,15 @@ describe("formatReport", () => {
                 assertion: "add returns the sum of its arguments",
                 location: "artifact/api/calc.md",
                 verdict: "supported",
-                supportingFactIds: ["add-behavior"],
+                evidenceIds: ["src/calc.ts::0000"],
                 rationale: "matches the add fact",
               },
               {
                 assertion: "add uses IEEE-754 double-precision arithmetic",
                 location: "artifact/api/calc.md",
-                verdict: "unsupported",
-                supportingFactIds: [],
-                rationale: "no active fact speaks to numeric representation",
+                verdict: "unverifiable",
+                evidenceIds: [],
+                rationale: "source evidence does not establish representation",
               },
             ],
             forgettingEvaluations: [
@@ -159,9 +170,10 @@ describe("formatReport", () => {
     expect(report).toContain(
       "  - `subtract-behavior` missing: the wiki never mentions subtraction",
     );
-    expect(report).toContain("- Unsupported assertions (1 of 2):");
+    expect(report).toContain("- Contradicted assertions (0 of 2):");
+    expect(report).toContain("- Unverifiable assertions (1 of 2):");
     expect(report).toContain(
-      '  - artifact/api/calc.md: "add uses IEEE-754 double-precision arithmetic" (no active fact speaks to numeric representation)',
+      '  - artifact/api/calc.md: "add uses IEEE-754 double-precision arithmetic" (source evidence does not establish representation)',
     );
     expect(report).toContain("- Forgetting (1):");
     expect(report).toContain(
@@ -190,7 +202,7 @@ describe("formatReport", () => {
                 assertion: "add returns the sum of its arguments",
                 location: "artifact/api/calc.md",
                 verdict: "supported",
-                supportingFactIds: ["add-behavior"],
+                evidenceIds: ["src/calc.ts::0000"],
                 rationale: "matches the add fact",
               },
             ],
@@ -201,10 +213,11 @@ describe("formatReport", () => {
     };
     const report = formatReport(clean);
 
-    expect(report).toContain("  - none; every active fact is stated correctly");
     expect(report).toContain(
-      "  - none; every material assertion is ledger-supported",
+      "  - none; every material topic is stated correctly",
     );
+    expect(report).toContain("- Contradicted assertions (0 of 1):");
+    expect(report).toContain("- Unverifiable assertions (0 of 1):");
     // A checkpoint with no obsolete versions renders no forgetting line at all.
     expect(report).not.toContain("- Forgetting (");
   });
@@ -224,13 +237,24 @@ describe("formatReport", () => {
             total: 2,
             score: 0.5,
           },
-          precision: { supported: 1, unsupported: 1, total: 2, score: 0.5 },
+          precision: {
+            supported: 1,
+            contradicted: 1,
+            unverifiable: 0,
+            decidable: 2,
+            total: 2,
+            hallucinationRate: 0.5,
+            unverifiableRate: 0,
+            score: 0.5,
+          },
           efficiency: { durationMs: 0, skipped: true, churnedLines: 12 },
         },
       ],
     };
     const report = formatReport(withSkip);
 
-    expect(report).toContain("| T1 | 50.0% | 50.0% | 0 | 12 | yes |");
+    expect(report).toContain(
+      "| T1 | 50.0% | 50.0% | 50.0% | 0.0% | 0 | 12 | yes |",
+    );
   });
 });
