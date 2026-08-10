@@ -28,5 +28,5 @@ __pycache__/
 *.pyc
 
 # KEB: run output and checked-out benchmark source repos are never committed.
-evals/keb/.results/
-evals/keb/benchmarks/*/repo/
+evals/ledger/.results/
+evals/ledger/benchmarks/*/repo/
