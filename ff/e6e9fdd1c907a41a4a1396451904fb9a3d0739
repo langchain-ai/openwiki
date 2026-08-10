@@ -1,0 +1,27 @@
+evals/ledger/run/summary.test.ts
+  s_c8fd8da1bbefea::t_d82739e7d0d655 226
+  s_c8fd8da1bbefea::t_c37bdf34b3c82b 258
+evals/ledger/run/summary.ts
+  s_c8fd8da1bbefea::t_c2be8508f6550b 312
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "ffe6e9fdd1c907a41a4a1396451904fb9a3d0739",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_c8fd8da1bbefea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7a2ddc30-9130-4920-b846-bb51dd3c63bc",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
