@@ -41,6 +41,7 @@
     "coverage": "vitest run --coverage",
     "dev": "tsx src/cli/cli.tsx",
     "eval:keb": "tsx evals/keb/run.ts",
+    "eval:keb:reevaluate": "tsx evals/keb/reevaluate.ts",
     "eval:keb:typecheck": "tsc --noEmit -p evals/keb/tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
