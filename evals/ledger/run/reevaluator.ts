@@ -236,8 +236,6 @@ export async function reevaluateSavedRun(
         coverageScore: coverage.score,
         precisionScore: precision.score,
         hallucinationRate: precision.hallucinationRate,
-        stalenessRate: precision.stalenessRate,
-        unverifiedRate: precision.unverifiedRate,
         forgottenCount: evaluation.forgettingEvaluations.filter(
           (item) => item.verdict === "forgotten",
         ).length,
@@ -245,11 +243,6 @@ export async function reevaluateSavedRun(
         evaluationCompleteness: evaluationCompleteness.score,
         indeterminateCount: evaluationCompleteness.indeterminate,
         evaluationItemCount: evaluationCompleteness.total,
-        materialClaimCount: precision.total,
-        supportedCount: precision.supported,
-        inventedCount: precision.invented,
-        staleCount: precision.stale,
-        unverifiedCount: precision.unverified,
       });
 
       let maintenanceCounts: MaintenanceCounts | undefined;
@@ -306,47 +299,8 @@ export async function reevaluateSavedRun(
       score: aggregateScore(scores),
       diagnostics: computeDiagnostics(history),
     };
-    const precisionCounts = result.checkpoints.reduce(
-      (counts, checkpoint) => ({
-        supported: counts.supported + checkpoint.precision.supported,
-        invented: counts.invented + checkpoint.precision.invented,
-        stale: counts.stale + checkpoint.precision.stale,
-        unverified: counts.unverified + checkpoint.precision.unverified,
-      }),
-      {
-        supported: 0,
-        invented: 0,
-        stale: 0,
-        unverified: 0,
-      },
-    );
 
-    reportProgress({
-      type: "run-complete",
-      ledgerScore: result.score.ledgerScore,
-      quality: result.score.quality,
-      traceCoverage: result.score.traceCoverage,
-      tracePrecision: result.score.tracePrecision,
-      traceHallucinationRate: result.score.traceHallucinationRate,
-      traceStalenessRate: result.score.traceStalenessRate,
-      traceUnverifiedRate: result.score.traceUnverifiedRate,
-      maintenance: result.score.maintenance,
-      newKnowledgeDiscovery:
-        result.score.maintenanceRates.newKnowledgeDiscovery,
-      changedKnowledgeCorrection:
-        result.score.maintenanceRates.changedKnowledgeCorrection,
-      completeForgetting: result.score.maintenanceRates.completeForgetting,
-      stableRetention: result.score.maintenanceRates.stableRetention,
-      evaluationCompleteness: result.score.evaluationCompleteness,
-      materialClaimCount: result.checkpoints.reduce(
-        (total, checkpoint) => total + checkpoint.precision.total,
-        0,
-      ),
-      supportedCount: precisionCounts.supported,
-      inventedCount: precisionCounts.invented,
-      staleCount: precisionCounts.stale,
-      unverifiedCount: precisionCounts.unverified,
-    });
+    reportProgress({ type: "run-complete" });
 
     return result;
   } catch (error) {

@@ -1,5 +1,3 @@
-import { performance } from "node:perf_hooks";
-
 import { formatPercent as formatPercentString } from "./format.js";
 import type {
   BenchmarkProgressEvent,
@@ -57,18 +55,6 @@ function formatPercent(score: number | null): string {
 }
 
 /**
- * Render an aggregate metric with one decimal place or a dash when the trace
- * has no eligible transitions for that metric.
- *
- * @param score - Optional score between zero and one.
- *
- * @returns Percentage text or a dash.
- */
-function formatAggregatePercent(score: number | null | undefined): string {
-  return formatPercentString(score, 1);
-}
-
-/**
  * Format forgetting as unavailable or as a successful-removal rate and count.
  *
  * @param forgottenCount - Obsolete versions no longer presented as current.
@@ -85,29 +71,6 @@ function formatForgetting(
   }
 
   return `${formatPercent(forgottenCount / obsoleteFactCount)} (${forgottenCount}/${obsoleteFactCount})`;
-}
-
-/**
- * Count claims whose truth was adjudicated by the ledger or source evidence.
- */
-function adjudicatedClaimCount(event: {
-  supportedCount: number;
-  inventedCount: number;
-  staleCount: number;
-}): number {
-  return event.supportedCount + event.inventedCount + event.staleCount;
-}
-
-/**
- * Compute the claim-weighted hallucination rate shown beside aggregate counts.
- */
-function aggregateHallucinationRate(event: {
-  supportedCount: number;
-  inventedCount: number;
-  staleCount: number;
-}): number | null {
-  const adjudicated = adjudicatedClaimCount(event);
-  return adjudicated === 0 ? null : event.inventedCount / adjudicated;
 }
 
 /**
@@ -133,7 +96,6 @@ function formatFailure(message: string): string {
 export function createCliProgressReporter(
   output: ProgressOutput = process.stderr,
 ): BenchmarkProgressReporter {
-  let startedAt = performance.now();
   const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
   let spinnerFrame = 0;
   let spinnerMessage: string | undefined;
@@ -209,7 +171,6 @@ export function createCliProgressReporter(
   return (event): void => {
     switch (event.type) {
       case "run-start": {
-        startedAt = performance.now();
         const systemModel = event.systemModelId ?? "provider default";
         const evaluatorModel = event.evaluatorModelId ?? "provider default";
         output.write(`┌ 🧪 LEDGER · ${event.benchmarkName}\n`);
@@ -260,51 +221,18 @@ export function createCliProgressReporter(
         completeSpinner(
           `✅ ${event.checkpointId} · coverage ${formatPercent(event.coverageScore)} · precision ${formatPercent(event.precisionScore)} · hallucination ${formatPercent(event.hallucinationRate)} · forgetting ${formatForgetting(event.forgottenCount, event.obsoleteFactCount)}`,
         );
-        output.write(
-          `│    ↳ ${adjudicatedClaimCount(event)}/${event.materialClaimCount} claims adjudicated · ${event.supportedCount} supported · ${event.inventedCount} invented · ${event.staleCount} stale\n`,
-        );
         if (event.indeterminateCount > 0) {
           output.write(
-            `│ ⚠️ Evaluator ${formatPercent(event.evaluationCompleteness)} complete · ${event.indeterminateCount}/${event.evaluationItemCount} indeterminate\n`,
+            `│    ↳ ⚠️ evaluator ${formatPercent(event.evaluationCompleteness)} complete · ${event.indeterminateCount}/${event.evaluationItemCount} indeterminate\n`,
           );
         }
         break;
       case "run-complete":
+        // The framed footer is rendered from the full run result by
+        // `formatRunSummary`, which the CLI prints after the run so it can name
+        // the worst checkpoints and point at the persisted unverified-claims
+        // file. Here we only retire the live spinner.
         clearSpinner();
-        output.write("│\n");
-        output.write(`├ 📊 Quality ${formatAggregatePercent(event.quality)}\n`);
-        output.write(
-          `│  ├ Coverage ${formatAggregatePercent(event.traceCoverage)}\n`,
-        );
-        output.write(
-          `│  ├ Precision ${formatAggregatePercent(event.tracePrecision)}\n`,
-        );
-        output.write(
-          `│  └ Hallucination ${formatAggregatePercent(aggregateHallucinationRate(event))}\n`,
-        );
-        output.write("│\n");
-        output.write(
-          `├ 🧹 Forgetting ${formatAggregatePercent(event.completeForgetting)}\n`,
-        );
-        output.write("│\n");
-        output.write("├ 🧾 Claims\n");
-        output.write(
-          `│  ├ Adjudicated ${adjudicatedClaimCount(event)}/${event.materialClaimCount}\n`,
-        );
-        output.write(`│  ├ Supported ${event.supportedCount}\n`);
-        output.write(`│  ├ Invented ${event.inventedCount}\n`);
-        output.write(`│  └ Stale ${event.staleCount}\n`);
-        if (event.evaluationCompleteness < 1) {
-          output.write("│\n");
-          output.write(
-            `├ ⚠️ Evaluator completeness ${formatAggregatePercent(event.evaluationCompleteness)}\n`,
-          );
-        }
-        output.write("│\n");
-        const completionIcon = event.evaluationCompleteness === 1 ? "🎉" : "⚠️";
-        output.write(
-          `└ ${completionIcon} LEDGER ${formatAggregatePercent(event.ledgerScore)} · ${formatProgressDuration(performance.now() - startedAt)}\n\n`,
-        );
         break;
       case "run-failed":
         clearSpinner();

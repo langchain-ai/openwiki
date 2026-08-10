@@ -48,6 +48,7 @@ function result(startedAt: string): LedgerRunResult {
       ledgerScore: 0,
     },
     diagnostics: {
+      recovery: { recovered: 0, eligible: 0 },
       staleKnowledge: { records: [], unresolvedCount: 0 },
     },
   };

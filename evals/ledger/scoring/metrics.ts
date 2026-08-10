@@ -13,6 +13,7 @@ import type {
   PrecisionAssertionEvaluation,
   PrecisionMetric,
   RateCount,
+  RecoveryDiagnostic,
   StaleKnowledgeDiagnostic,
   StaleKnowledgeRecord,
 } from "../core/types.js";
@@ -419,12 +420,13 @@ export function aggregateScore(checkpoints: CheckpointScore[]): LedgerScore {
  *
  * @param history - The per-checkpoint evaluation records, in trace order.
  *
- * @returns The recovery rate in [0, 1], or undefined when no transition failed at
- *   its boundary, so nothing was eligible to recover.
+ * @returns The recovery rate plus the eligible and recovered counts it reduces,
+ *   with an undefined rate when no transition failed at its boundary, so nothing
+ *   was eligible to recover.
  */
-export function computeRecoveryRate(
+export function computeRecovery(
   history: CheckpointEvaluationRecord[],
-): number | undefined {
+): RecoveryDiagnostic {
   const correctByIndex = history.map((record) =>
     correctFactIds(record.factEvaluations),
   );
@@ -509,7 +511,11 @@ export function computeRecoveryRate(
     }
   });
 
-  return eligible === 0 ? undefined : recovered / eligible;
+  return {
+    rate: eligible === 0 ? undefined : recovered / eligible,
+    recovered,
+    eligible,
+  };
 }
 
 /**
@@ -598,7 +604,7 @@ export function computeDiagnostics(
   history: CheckpointEvaluationRecord[],
 ): LedgerDiagnostics {
   return {
-    recoveryRate: computeRecoveryRate(history),
+    recovery: computeRecovery(history),
     staleKnowledge: computeStaleKnowledge(history),
   };
 }

@@ -68,18 +68,11 @@ describe("createCliProgressReporter", () => {
       coverageScore: 0.86,
       precisionScore: 0.75,
       hallucinationRate: 0.125,
-      stalenessRate: 0.125,
-      unverifiedRate: 1 / 9,
       forgottenCount: 1,
       obsoleteFactCount: 2,
       evaluationCompleteness: 0.9,
       indeterminateCount: 1,
       evaluationItemCount: 10,
-      materialClaimCount: 9,
-      supportedCount: 6,
-      inventedCount: 1,
-      staleCount: 1,
-      unverifiedCount: 1,
     });
     report({
       type: "checkpoint-complete",
@@ -87,40 +80,13 @@ describe("createCliProgressReporter", () => {
       coverageScore: 1,
       precisionScore: 1,
       hallucinationRate: 0,
-      stalenessRate: 0,
-      unverifiedRate: 0,
       forgottenCount: 0,
       obsoleteFactCount: 0,
       evaluationCompleteness: 1,
       indeterminateCount: 0,
       evaluationItemCount: 10,
-      materialClaimCount: 10,
-      supportedCount: 10,
-      inventedCount: 0,
-      staleCount: 0,
-      unverifiedCount: 0,
     });
-    report({
-      type: "run-complete",
-      ledgerScore: 0.8,
-      quality: 0.7,
-      traceCoverage: 0.8,
-      tracePrecision: 0.625,
-      traceHallucinationRate: 0.1,
-      traceStalenessRate: 0.05,
-      traceUnverifiedRate: 0.2,
-      maintenance: 0.9,
-      newKnowledgeDiscovery: 0.75,
-      changedKnowledgeCorrection: 1,
-      completeForgetting: 1,
-      stableRetention: 0.85,
-      evaluationCompleteness: 0.95,
-      materialClaimCount: 19,
-      supportedCount: 16,
-      inventedCount: 1,
-      staleCount: 1,
-      unverifiedCount: 1,
-    });
+    report({ type: "run-complete" });
 
     expect(rendered).toContain("┌ 🧪 LEDGER · calc-evolution");
     expect(rendered).toContain(
@@ -140,30 +106,11 @@ describe("createCliProgressReporter", () => {
       "✅ T0 · coverage 100% · precision 100% · hallucination 0% · forgetting -",
     );
     expect(rendered).toContain(
-      "↳ 8/9 claims adjudicated · 6 supported · 1 invented · 1 stale",
+      "↳ ⚠️ evaluator 90% complete · 1/10 indeterminate",
     );
-    expect(rendered).toContain(
-      "⚠️ Evaluator 90% complete · 1/10 indeterminate",
-    );
-    expect(rendered).toContain("├ 📊 Quality 70.0%");
-    expect(rendered).toContain("│  ├ Coverage 80.0%");
-    expect(rendered).toContain("│  ├ Precision 62.5%");
-    expect(rendered).toContain("│  └ Hallucination 5.6%");
-    expect(rendered).toContain("├ 🧹 Forgetting 100.0%");
-    expect(rendered).toContain("├ 🧾 Claims");
-    expect(rendered).toContain("│  ├ Adjudicated 18/19");
-    expect(rendered).toContain("│  ├ Supported 16");
-    expect(rendered).toContain("│  ├ Invented 1");
-    expect(rendered).toContain("│  └ Stale 1");
-    expect(rendered).not.toContain("Unverified");
-    expect(rendered).toContain("├ ⚠️ Evaluator completeness 95.0%");
-    expect(rendered).not.toContain("Discovery");
-    expect(rendered).not.toContain("Correction");
-    expect(rendered).not.toContain("Retention");
-    expect(rendered).toMatch(/└ ⚠️ LEDGER 80\.0% · \d+ms/u);
   });
 
-  test("hides evaluator completeness when every judgment completed", () => {
+  test("hides the indeterminate note when every judgment completed", () => {
     let rendered = "";
     const report = createCliProgressReporter({
       write: (text) => {
@@ -172,29 +119,32 @@ describe("createCliProgressReporter", () => {
     });
 
     report({
-      type: "run-complete",
-      ledgerScore: 1,
-      quality: 1,
-      traceCoverage: 1,
-      tracePrecision: 1,
-      traceHallucinationRate: 0,
-      traceStalenessRate: 0,
-      traceUnverifiedRate: 0,
-      maintenance: 1,
-      newKnowledgeDiscovery: 1,
-      changedKnowledgeCorrection: 1,
-      completeForgetting: 1,
-      stableRetention: 1,
+      type: "checkpoint-complete",
+      checkpointId: "T0",
+      coverageScore: 1,
+      precisionScore: 1,
+      hallucinationRate: 0,
+      forgottenCount: 0,
+      obsoleteFactCount: 0,
       evaluationCompleteness: 1,
-      materialClaimCount: 1,
-      supportedCount: 1,
-      inventedCount: 0,
-      staleCount: 0,
-      unverifiedCount: 0,
+      indeterminateCount: 0,
+      evaluationItemCount: 10,
     });
 
-    expect(rendered).not.toContain("Evaluator completeness");
-    expect(rendered).toContain("└ 🎉 LEDGER 100.0%");
+    expect(rendered).not.toContain("indeterminate");
+  });
+
+  test("emits no footer output on run completion", () => {
+    let rendered = "";
+    const report = createCliProgressReporter({
+      write: (text) => {
+        rendered += text;
+      },
+    });
+
+    report({ type: "run-complete" });
+
+    expect(rendered).toBe("");
   });
 
   test("closes the frame with one bounded failure line", () => {

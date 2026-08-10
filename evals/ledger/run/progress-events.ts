@@ -47,40 +47,13 @@ export type BenchmarkProgressEvent =
       coverageScore: number;
       precisionScore: number | null;
       hallucinationRate: number | null;
-      stalenessRate: number | null;
-      unverifiedRate: number;
       forgottenCount: number;
       obsoleteFactCount: number;
       evaluationCompleteness: number;
       indeterminateCount: number;
       evaluationItemCount: number;
-      materialClaimCount: number;
-      supportedCount: number;
-      inventedCount: number;
-      staleCount: number;
-      unverifiedCount: number;
     }
-  | {
-      type: "run-complete";
-      ledgerScore: number | null;
-      quality: number | null;
-      traceCoverage: number;
-      tracePrecision: number | null;
-      traceHallucinationRate: number | null;
-      traceStalenessRate: number | null;
-      traceUnverifiedRate: number;
-      maintenance?: number;
-      newKnowledgeDiscovery?: number;
-      changedKnowledgeCorrection?: number;
-      completeForgetting?: number;
-      stableRetention?: number;
-      evaluationCompleteness: number;
-      materialClaimCount: number;
-      supportedCount: number;
-      inventedCount: number;
-      staleCount: number;
-      unverifiedCount: number;
-    }
+  | { type: "run-complete" }
   | { type: "run-failed"; message: string };
 
 /**

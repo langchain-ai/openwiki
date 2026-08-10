@@ -11,11 +11,13 @@ import {
   writeEvidenceCorpus,
   writeRunFailure,
   writeRunResult,
+  writeUnverifiedClaims,
 } from "./run/persistence.js";
 import { createCliProgressReporter } from "./run/progress.js";
 import { reevaluateSavedRun } from "./run/reevaluator.js";
 import { resolveReevaluationConfig } from "./run/reevaluate-args.js";
 import { formatReport } from "./run/report.js";
+import { formatRunSummary } from "./run/summary.js";
 
 /**
  * Absolute directory containing the LEDGER implementation.
@@ -38,6 +40,7 @@ async function main(): Promise<void> {
     ensureSourceRepo: false,
   });
   const startedAt = new Date().toISOString();
+  const startedMs = performance.now();
   const runDir = await prepareRunDirectory(
     config.resultsDir,
     benchmark.name,
@@ -67,6 +70,14 @@ async function main(): Promise<void> {
       path.join(runDir, "report.md"),
       formatReport(result),
       "utf8",
+    );
+
+    const unverifiedClaimsPath = await writeUnverifiedClaims(runDir, result);
+    process.stderr.write(
+      formatRunSummary(result, {
+        unverifiedClaimsPath,
+        elapsedMs: performance.now() - startedMs,
+      }),
     );
     process.stderr.write(`📁 Results · ${runDir}\n`);
   } catch (error) {

@@ -8,7 +8,7 @@ import {
   computeEvaluationCompleteness,
   computeMaintenanceCounts,
   computePrecision,
-  computeRecoveryRate,
+  computeRecovery,
   computeStaleKnowledge,
 } from "./metrics.js";
 import type {
@@ -569,7 +569,7 @@ describe("computeChurn", () => {
   });
 });
 
-describe("computeRecoveryRate", () => {
+describe("computeRecovery", () => {
   test("excludes a transition with an indeterminate boundary judgment", () => {
     const history: CheckpointEvaluationRecord[] = [
       base("T0"),
@@ -587,7 +587,7 @@ describe("computeRecoveryRate", () => {
       },
     ];
 
-    expect(computeRecoveryRate(history)).toBeUndefined();
+    expect(computeRecovery(history).rate).toBeUndefined();
   });
 
   test("an introduced fact wrong at its boundary that later reads correct recovers", () => {
@@ -607,7 +607,7 @@ describe("computeRecoveryRate", () => {
       },
     ];
 
-    expect(computeRecoveryRate(history)).toBe(1);
+    expect(computeRecovery(history).rate).toBe(1);
   });
 
   test("an introduced fact never made correct is eligible but not recovered", () => {
@@ -627,7 +627,7 @@ describe("computeRecoveryRate", () => {
       },
     ];
 
-    expect(computeRecoveryRate(history)).toBe(0);
+    expect(computeRecovery(history).rate).toBe(0);
   });
 
   test("a changed fact recovers only once the new version is correct and the old one is forgotten", () => {
@@ -650,7 +650,7 @@ describe("computeRecoveryRate", () => {
     // At T1 the new version is correct but the old one still lingers, so the
     // correction failed and is eligible. At T2 the old version is forgotten while
     // the new one stays correct, so it recovers.
-    expect(computeRecoveryRate(history)).toBe(1);
+    expect(computeRecovery(history).rate).toBe(1);
   });
 
   test("a changed fact does not recover while the obsolete version keeps lingering", () => {
@@ -672,7 +672,7 @@ describe("computeRecoveryRate", () => {
 
     // The new version is correct throughout, but the obsolete version never gets
     // forgotten, so the correction never completes: eligible, not recovered.
-    expect(computeRecoveryRate(history)).toBe(0);
+    expect(computeRecovery(history).rate).toBe(0);
   });
 
   test("a changed fact needs the correction to hold at one checkpoint, not a stale forgetting carried forward", () => {
@@ -704,7 +704,7 @@ describe("computeRecoveryRate", () => {
     // The correction must hold at the same later checkpoint, and none does.
     // Because forgetting is not permanent, the stale T2 forgetting is not carried
     // forward to T3.
-    expect(computeRecoveryRate(history)).toBe(0);
+    expect(computeRecovery(history).rate).toBe(0);
   });
 
   test("a removed fact recovers once its obsolete version is forgotten", () => {
@@ -726,7 +726,7 @@ describe("computeRecoveryRate", () => {
 
     // The removal is eligible because the obsolete version lingered at T1, and it
     // recovers once the version is forgotten at T2.
-    expect(computeRecoveryRate(history)).toBe(1);
+    expect(computeRecovery(history).rate).toBe(1);
   });
 
   test("a transition that succeeds at its own boundary is not eligible", () => {
@@ -742,7 +742,7 @@ describe("computeRecoveryRate", () => {
 
     // The introduced fact is correct at its own boundary, so it never failed and
     // is not counted.
-    expect(computeRecoveryRate(history)).toBeUndefined();
+    expect(computeRecovery(history).rate).toBeUndefined();
   });
 
   test("a stable fact that regresses is excluded from Recovery Rate in V1", () => {
@@ -764,7 +764,7 @@ describe("computeRecoveryRate", () => {
 
     // "a" was stable, not introduced/changed/removed, so its regression at T1 is
     // never eligible for Recovery Rate. Nothing else was eligible -> undefined.
-    expect(computeRecoveryRate(history)).toBeUndefined();
+    expect(computeRecovery(history).rate).toBeUndefined();
   });
 
   test("is the fraction of eligible transitions that recover", () => {
@@ -788,7 +788,7 @@ describe("computeRecoveryRate", () => {
 
     // Both introductions failed at T1. "a" recovers at T2, "b" never does: 1 of
     // 2 eligible transitions recovered.
-    expect(computeRecoveryRate(history)).toBe(0.5);
+    expect(computeRecovery(history).rate).toBe(0.5);
   });
 });
 
@@ -968,7 +968,7 @@ describe("computeDiagnostics", () => {
     // transitions recover -> 1. Stale knowledge: b@T0 lingered once before being
     // forgotten -> one resolved record with lifetime 1.
     expect(computeDiagnostics(history)).toEqual({
-      recoveryRate: 1,
+      recovery: { rate: 1, recovered: 2, eligible: 2 },
       staleKnowledge: {
         records: [
           { factVersionId: "b@T0", lingeredCheckpoints: 1, resolved: true },

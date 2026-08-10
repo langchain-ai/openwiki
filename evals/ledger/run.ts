@@ -13,11 +13,13 @@ import {
   writeEvidenceCorpus,
   writeRunFailure,
   writeRunResult,
+  writeUnverifiedClaims,
 } from "./run/persistence.js";
 import { formatReport } from "./run/report.js";
 import { createCliProgressReporter } from "./run/progress.js";
 import { resolveRunConfig } from "./run/run-config.js";
 import { runBenchmark } from "./run/runner.js";
+import { formatRunSummary } from "./run/summary.js";
 
 /**
  * Absolute path to the directory this module lives in (`evals/ledger`).
@@ -40,6 +42,7 @@ async function main(): Promise<void> {
   );
   const benchmark = await loadBenchmark(config.benchmarkDir);
   const startedAt = new Date().toISOString();
+  const startedMs = performance.now();
   const runDir = await prepareRunDirectory(
     config.resultsDir,
     benchmark.name,
@@ -88,6 +91,13 @@ async function main(): Promise<void> {
 
   await writeFile(path.join(runDir, "report.md"), report, "utf8");
 
+  const unverifiedClaimsPath = await writeUnverifiedClaims(runDir, result);
+  process.stderr.write(
+    formatRunSummary(result, {
+      unverifiedClaimsPath,
+      elapsedMs: performance.now() - startedMs,
+    }),
+  );
   process.stderr.write(`📁 Results · ${runDir}\n`);
 }
 

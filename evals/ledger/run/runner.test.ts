@@ -266,10 +266,14 @@ describe("runBenchmark", () => {
     // Diagnostics sit beside the score, not inside it. The only maintenance
     // transition is f2's change at T1, and it succeeds at its own boundary (new
     // version correct, old version forgotten), so no transition was an eligible
-    // failure and recoveryRate is undefined. f2@T0 went obsolete at T1 and was
-    // forgotten immediately, so it is one resolved record with lifetime 0 and no
-    // unresolved versions.
-    expect(result.diagnostics.recoveryRate).toBeUndefined();
+    // failure and the recovery rate is undefined with nothing eligible. f2@T0
+    // went obsolete at T1 and was forgotten immediately, so it is one resolved
+    // record with lifetime 0 and no unresolved versions.
+    expect(result.diagnostics.recovery).toEqual({
+      rate: undefined,
+      recovered: 0,
+      eligible: 0,
+    });
     expect(result.diagnostics.staleKnowledge).toEqual({
       records: [
         { factVersionId: "f2@T0", lingeredCheckpoints: 0, resolved: true },

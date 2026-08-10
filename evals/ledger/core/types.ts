@@ -529,7 +529,12 @@ export interface EvaluationWarning {
   /**
    * Semantic pass that could not repair one item.
    */
-  pass: "coverage" | "forgetting" | "precision-ledger" | "precision-judgment";
+  pass:
+    | "coverage"
+    | "forgetting"
+    | "precision-extraction"
+    | "precision-ledger"
+    | "precision-judgment";
 
   /**
    * Fact, fact-version, or assertion identity affected by the failure.
@@ -1020,6 +1025,38 @@ export interface LedgerScore {
 }
 
 /**
+ * The Recovery Rate diagnostic: of the maintenance transitions that failed at
+ * their own boundary, how many a later checkpoint made good. Eligibility and
+ * recovery are judged per transition type, mirroring the maintenance success
+ * conditions: an introduced fact recovers when the current fact later reads
+ * `correct`; a changed fact recovers when the new version reads `correct` and the
+ * obsolete version is forgotten; a removed fact recovers when the obsolete version
+ * is forgotten. Stable-retention regressions are excluded in V1. A measure of how
+ * well the system self-heals maintenance it initially got wrong. The counts are
+ * kept alongside the rate so a report can name them.
+ */
+export interface RecoveryDiagnostic {
+  /**
+   * `recovered / eligible`, in [0, 1].
+   *
+   * @default undefined when no introduced, changed, or removed transition failed
+   *   at its boundary, so nothing was eligible to recover
+   */
+  rate?: number;
+
+  /**
+   * How many eligible failed transitions a strictly later checkpoint made good.
+   */
+  recovered: number;
+
+  /**
+   * How many transitions failed at their own boundary and so were eligible to
+   * recover later.
+   */
+  eligible: number;
+}
+
+/**
  * Trace-level diagnostics computed from the full evaluation history. These
  * describe qualitative behavior over the trace and are reported alongside the LEDGER
  * Score, but they are deliberately not part of the Maintenance Score or the LEDGER
@@ -1027,19 +1064,12 @@ export interface LedgerScore {
  */
 export interface LedgerDiagnostics {
   /**
-   * Recovery Rate: of the maintenance transitions that failed at their own
-   * boundary, the fraction a later checkpoint made good. Eligibility and recovery
-   * are judged per transition type, mirroring the maintenance success conditions:
-   * an introduced fact recovers when the current fact later reads `correct`; a
-   * changed fact recovers when the new version reads `correct` and the obsolete
-   * version is forgotten; a removed fact recovers when the obsolete version is
-   * forgotten. Stable-retention regressions are excluded in V1. A measure of how
-   * well the system self-heals maintenance it initially got wrong, in [0, 1].
-   *
-   * @default undefined when no introduced, changed, or removed transition failed
-   *   at its boundary, so nothing was eligible to recover
+   * Recovery: of the maintenance transitions that failed at their own boundary,
+   * how many a later checkpoint made good, kept as a rate plus its underlying
+   * counts so a report can say "1 of 2 regressions recovered later" rather than a
+   * bare percentage.
    */
-  recoveryRate?: number;
+  recovery: RecoveryDiagnostic;
 
   /**
    * Stale-Knowledge Lifetime: how long obsolete fact versions kept lingering in

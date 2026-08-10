@@ -211,6 +211,74 @@ export async function writeRunFailure(
 }
 
 /**
+ * Constant basename for the unverified-claims worklist. It is a fixed literal,
+ * never derived from untrusted input, so the write target can only ever be this
+ * one file directly inside the confined run directory.
+ */
+const UNVERIFIED_CLAIMS_BASENAME = "unverified-claims.md";
+
+/**
+ * Persist the human-readable worklist of claims the Truth Package could neither
+ * support nor refute. These claims never enter a scored denominator, so they are
+ * invisible in the metrics; the file gives a reader the concrete assertions and a
+ * clear next action (promote the true ones to requirements so the next run scores
+ * them). The file is written with a constant basename directly inside the already
+ * confined run directory, so no untrusted input reaches the write path.
+ *
+ * @param runDir - Prepared confined run directory.
+ * @param result - The completed run result.
+ *
+ * @returns Absolute path to the written worklist, or undefined when the run had
+ *   no unverified claims and nothing was written.
+ */
+export async function writeUnverifiedClaims(
+  runDir: string,
+  result: LedgerRunResult,
+): Promise<string | undefined> {
+  const sections: string[] = [];
+  let total = 0;
+
+  for (const checkpoint of result.checkpoints) {
+    const unverified = (
+      checkpoint.evaluations?.precisionEvaluations ?? []
+    ).filter((claim) => claim.verdict === "unverified");
+    if (unverified.length === 0) {
+      continue;
+    }
+
+    total += unverified.length;
+    const items = unverified.map(
+      (claim) =>
+        `- "${claim.assertion}"\n  - Location: ${claim.location}\n  - Why unverified: ${claim.rationale}`,
+    );
+    sections.push(`## ${checkpoint.checkpointId}\n\n${items.join("\n")}`);
+  }
+
+  if (total === 0) {
+    return undefined;
+  }
+
+  const body = [
+    "# Unverified claims",
+    "",
+    `${result.metadata.benchmarkName} · ${result.metadata.startedAt}`,
+    "",
+    "These claims are neither supported nor refuted by the Truth Package, so they",
+    "never entered a scored denominator. Read each one: promote the true claims to",
+    "requirements in the benchmark so the next run scores them, and treat the false",
+    "ones as a precision gap the Truth Package should learn to refute.",
+    "",
+    sections.join("\n\n"),
+    "",
+  ].join("\n");
+
+  const destination = path.join(runDir, UNVERIFIED_CLAIMS_BASENAME);
+  await writeFile(destination, body, "utf8");
+
+  return destination;
+}
+
+/**
  * Persist a run result as `result.json` in a per-run subdirectory beneath the
  * results directory. Nothing secret is written: the result contains only scores,
  * metadata, and model ids, never API keys.

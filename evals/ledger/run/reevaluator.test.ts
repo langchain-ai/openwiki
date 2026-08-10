@@ -173,7 +173,10 @@ function sourceResult(): LedgerRunResult {
       maintenanceRates: {},
       ledgerScore: null,
     },
-    diagnostics: { staleKnowledge: { records: [], unresolvedCount: 0 } },
+    diagnostics: {
+      recovery: { recovered: 0, eligible: 0 },
+      staleKnowledge: { records: [], unresolvedCount: 0 },
+    },
   };
 }
 

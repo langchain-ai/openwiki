@@ -11,8 +11,14 @@ import {
   writeEvidenceCorpus,
   writeRunFailure,
   writeRunResult,
+  writeUnverifiedClaims,
 } from "./persistence.js";
-import type { LedgerRunResult, KnowledgeArtifact } from "../core/types.js";
+import type {
+  CheckpointScore,
+  LedgerRunResult,
+  KnowledgeArtifact,
+  PrecisionAssertionEvaluation,
+} from "../core/types.js";
 
 /**
  * Build a minimal, serializable run result with the given benchmark name. The
@@ -43,10 +49,137 @@ function sampleResult(benchmarkName: string): LedgerRunResult {
       ledgerScore: 1,
     },
     diagnostics: {
+      recovery: { recovered: 0, eligible: 0 },
       staleKnowledge: { records: [], unresolvedCount: 0 },
     },
   };
 }
+
+/**
+ * Build a checkpoint carrying the given precision verdicts and no other detail,
+ * enough to drive the unverified-claims worklist.
+ *
+ * @param checkpointId - Identifier for the checkpoint.
+ * @param precisionEvaluations - Precision verdicts to attach.
+ *
+ * @returns A checkpoint score with the supplied precision evaluations.
+ */
+function checkpointWith(
+  checkpointId: string,
+  precisionEvaluations: PrecisionAssertionEvaluation[],
+): CheckpointScore {
+  return {
+    checkpointId,
+    coverage: {
+      correct: 0,
+      partial: 0,
+      missing: 0,
+      contradicted: 0,
+      indeterminate: 0,
+      total: 0,
+      score: 0,
+    },
+    precision: {
+      supported: 0,
+      invented: 0,
+      stale: 0,
+      unverified: precisionEvaluations.filter(
+        (claim) => claim.verdict === "unverified",
+      ).length,
+      adjudicated: 0,
+      total: precisionEvaluations.length,
+      hallucinationRate: null,
+      stalenessRate: null,
+      unverifiedRate: 0,
+      score: null,
+    },
+    evaluationCompleteness: { judged: 0, indeterminate: 0, total: 0, score: 1 },
+    efficiency: { durationMs: 1000, skipped: false },
+    evaluations: {
+      factEvaluations: [],
+      precisionEvaluations,
+      forgettingEvaluations: [],
+    },
+  };
+}
+
+describe("writeUnverifiedClaims", () => {
+  const cleanups: string[] = [];
+
+  afterEach(async () => {
+    await Promise.all(
+      cleanups
+        .splice(0)
+        .map((dir) => rm(dir, { recursive: true, force: true })),
+    );
+  });
+
+  /**
+   * Create a throwaway run directory registered for cleanup.
+   *
+   * @returns The absolute run directory path.
+   */
+  async function scratchRunDir(): Promise<string> {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "ledger-run-"));
+
+    cleanups.push(dir);
+
+    return dir;
+  }
+
+  test("writes the worklist with claim text, location, and rationale", async () => {
+    const runDir = await scratchRunDir();
+    const result = sampleResult("calc-evolution");
+    result.checkpoints = [
+      checkpointWith("T0", [
+        {
+          assertion: "maintainers prefer tabs",
+          location: "guide.md",
+          verdict: "unverified",
+          tense: "current",
+          adjudicatedBy: "none",
+          evidenceIds: [],
+          rationale: "Not refuted by bounded evidence.",
+        },
+      ]),
+    ];
+
+    const written = await writeUnverifiedClaims(runDir, result);
+
+    expect(written).toBe(path.join(runDir, "unverified-claims.md"));
+    const body = await readFile(written as string, "utf8");
+    expect(body).toContain("# Unverified claims");
+    expect(body).toContain("## T0");
+    expect(body).toContain('- "maintainers prefer tabs"');
+    expect(body).toContain("Location: guide.md");
+    expect(body).toContain("Why unverified: Not refuted by bounded evidence.");
+  });
+
+  test("writes nothing and returns undefined when no claim is unverified", async () => {
+    const runDir = await scratchRunDir();
+    const result = sampleResult("calc-evolution");
+    result.checkpoints = [
+      checkpointWith("T0", [
+        {
+          assertion: "add returns 5",
+          location: "guide.md",
+          verdict: "supported",
+          tense: "current",
+          adjudicatedBy: "source",
+          evidenceIds: ["src/add.ts"],
+          rationale: "Matches source.",
+        },
+      ]),
+    ];
+
+    const written = await writeUnverifiedClaims(runDir, result);
+
+    expect(written).toBeUndefined();
+    await expect(
+      stat(path.join(runDir, "unverified-claims.md")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+});
 
 describe("writeRunResult", () => {
   const cleanups: string[] = [];

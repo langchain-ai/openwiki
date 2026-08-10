@@ -48,6 +48,17 @@ function section(content: string): ArtifactSection {
   };
 }
 
+function sectionWithId(id: string, content: string): ArtifactSection {
+  return {
+    id,
+    relativePath: id.split("::")[0],
+    headingPath: ["Guide"],
+    ordinal: 0,
+    content,
+    searchableText: content,
+  };
+}
+
 function evidence(
   current: string[] = [],
   historical: string[] = [],
@@ -341,6 +352,164 @@ describe("runPrecisionPass", () => {
     });
     expect(warnings).toHaveLength(1);
     expect(warnings[0].pass).toBe("precision-judgment");
+  });
+
+  test("degrades one malformed refutation element without failing valid neighbors", async () => {
+    const control = controller([
+      extraction([
+        { statement: "flag is gamma" },
+        { statement: "maintainers prefer tabs" },
+      ]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "contradicted",
+            evidenceIds: ["current-0"],
+            formerlyTrue: false,
+            rationale: "Current source refutes gamma.",
+          },
+          {
+            // Malformed: a contradicted verdict with formerlyTrue omitted.
+            // Under the old strict batch schema this failed the whole array
+            // parse and crashed the run; now it is isolated per target.
+            assertionId: "assertion-000002",
+            verdict: "contradicted",
+            evidenceIds: ["current-0"],
+            rationale: "Model waffled and omitted formerlyTrue.",
+          },
+        ],
+      },
+      new Error("isolated repair failed once"),
+      new Error("isolated repair failed twice"),
+    ]);
+    const warnings: EvaluationWarning[] = [];
+
+    const result = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [section("claims")],
+      activeFacts: [],
+      evidence: evidence(["flag = beta"]),
+      onWarning: (warning) => warnings.push(warning),
+    });
+
+    expect(result).toMatchObject([
+      { verdict: "invented", adjudicatedBy: "source" },
+      { verdict: "unverified", adjudicatedBy: "none" },
+    ]);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].pass).toBe("precision-judgment");
+  });
+
+  test("repairs a dropped extraction unit in isolation without failing the pass", async () => {
+    const control = controller([
+      // The batch response drops the second requested unit entirely.
+      {
+        units: [
+          {
+            unitId: "guide.md::0000::unit-0000",
+            classification: "factual",
+            assertions: [{ statement: "A is true", tense: "current" }],
+            rationale: "States a checkable fact.",
+          },
+        ],
+      },
+      // Isolated re-extraction recovers the dropped unit.
+      {
+        units: [
+          {
+            unitId: "guide.md::0001::unit-0000",
+            classification: "factual",
+            assertions: [{ statement: "B is true", tense: "current" }],
+            rationale: "States a checkable fact.",
+          },
+        ],
+      },
+      // One refutation batch leaves both surviving claims unverified.
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "not-refuted",
+            evidenceIds: [],
+            rationale: "Not refuted.",
+          },
+          {
+            assertionId: "assertion-000002",
+            verdict: "not-refuted",
+            evidenceIds: [],
+            rationale: "Not refuted.",
+          },
+        ],
+      },
+    ]);
+    const warnings: EvaluationWarning[] = [];
+
+    const result = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [
+        sectionWithId("guide.md::0000", "claim A"),
+        sectionWithId("guide.md::0001", "claim B"),
+      ],
+      activeFacts: [],
+      evidence: evidence(["some source"]),
+      onWarning: (warning) => warnings.push(warning),
+    });
+
+    expect(result.map((item) => item.assertion)).toEqual([
+      "A is true",
+      "B is true",
+    ]);
+    expect(warnings).toHaveLength(0);
+  });
+
+  test("degrades an unrecoverable extraction unit to a warned no-claim unit", async () => {
+    const control = controller([
+      // The batch response drops the second requested unit.
+      {
+        units: [
+          {
+            unitId: "guide.md::0000::unit-0000",
+            classification: "factual",
+            assertions: [{ statement: "A is true", tense: "current" }],
+            rationale: "States a checkable fact.",
+          },
+        ],
+      },
+      new Error("isolated extraction failed once"),
+      new Error("isolated extraction failed twice"),
+      // Only the surviving claim reaches refutation.
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "not-refuted",
+            evidenceIds: [],
+            rationale: "Not refuted.",
+          },
+        ],
+      },
+    ]);
+    const warnings: EvaluationWarning[] = [];
+
+    const result = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [
+        sectionWithId("guide.md::0000", "claim A"),
+        sectionWithId("guide.md::0001", "claim B"),
+      ],
+      activeFacts: [],
+      evidence: evidence(["some source"]),
+      onWarning: (warning) => warnings.push(warning),
+    });
+
+    expect(result.map((item) => item.assertion)).toEqual(["A is true"]);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].pass).toBe("precision-extraction");
+    expect(warnings[0].itemId).toBe("guide.md::0001::unit-0000");
   });
 
   test("uses extraction as the sole semantic filter taxonomy", () => {

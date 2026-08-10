@@ -124,7 +124,9 @@ export function formatReport(result: LedgerRunResult): string {
   lines.push("## Diagnostics");
   lines.push("");
   lines.push(`- Evaluator Completeness: ${pct(score.evaluationCompleteness)}`);
-  lines.push(`- Recovery Rate: ${pct(diagnostics.recoveryRate)}`);
+  lines.push(
+    `- Recovery Rate: ${pct(diagnostics.recovery.rate)} (${diagnostics.recovery.recovered} of ${diagnostics.recovery.eligible} failed transitions recovered later)`,
+  );
   lines.push(
     `- Stale-Knowledge Lifetime (mean over resolved versions): ${formatLifetime(diagnostics.staleKnowledge.meanResolvedLifetime)}`,
   );

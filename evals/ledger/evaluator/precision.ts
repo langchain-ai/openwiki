@@ -29,7 +29,9 @@ import {
 import { SectionBm25Index } from "./retrieval.js";
 import {
   assertionExtractionOutputSchema,
+  precisionJudgmentBatchOutputSchema,
   precisionJudgmentOutputSchema,
+  precisionLedgerBatchOutputSchema,
   precisionLedgerOutputSchema,
   type AssertionExtractionOutput,
   type PrecisionJudgmentOutput,
@@ -509,62 +511,113 @@ function textUnitsForSection(section: ArtifactSection): PrecisionTextUnit[] {
 }
 
 /**
- * Resolve raw extraction output into one classified unit per requested unit,
- * rejecting unknown, duplicate, or classification-inconsistent responses.
+ * Resolve one requested text unit from raw extraction output, rejecting a
+ * missing, duplicated, or classification-inconsistent response for that unit.
+ * Extra units the model returned for identifiers that were not requested are
+ * ignored rather than treated as fatal.
+ *
+ * @param unit - The requested text unit to resolve.
+ * @param output - Raw extraction output that should classify the unit.
+ *
+ * @returns The unit paired with its classification and normalized assertions.
+ *
+ * @throws EvaluationError when the output does not classify the unit exactly
+ *   once, or the classification and its assertions are inconsistent.
  */
-function resolveExtraction(
-  units: PrecisionTextUnit[],
+function resolveExtractionUnit(
+  unit: PrecisionTextUnit,
   output: AssertionExtractionOutput,
-): ClassifiedPrecisionTextUnit[] {
-  const requested = new Set(units.map((unit) => unit.unitId));
-  const byId = new Map<string, AssertionExtractionOutput["units"][number]>();
-
-  for (const result of output.units) {
-    if (!requested.has(result.unitId) || byId.has(result.unitId)) {
-      throw new EvaluationError(
-        `Precision extractor returned unknown or duplicate unitId "${result.unitId}".`,
-      );
-    }
-    const yieldsClaims =
-      result.classification === "factual" || result.classification === "mixed";
-    if (yieldsClaims !== result.assertions.length > 0) {
-      throw new EvaluationError(
-        `Precision extractor returned classification "${result.classification}" with ${result.assertions.length} assertions for unitId "${result.unitId}".`,
-      );
-    }
-    for (const assertion of result.assertions) {
-      if (
-        deduplicationKey(normalizeStatement(assertion.statement)).length === 0
-      ) {
-        throw new EvaluationError(
-          `Precision extractor returned an empty assertion for unitId "${result.unitId}".`,
-        );
-      }
-    }
-    byId.set(result.unitId, result);
+): ClassifiedPrecisionTextUnit {
+  const matches = output.units.filter(
+    (result) => result.unitId === unit.unitId,
+  );
+  if (matches.length !== 1) {
+    throw new EvaluationError(
+      `Precision extractor returned ${matches.length} results for unitId "${unit.unitId}".`,
+    );
   }
-
-  return units.map((unit) => {
-    const result = byId.get(unit.unitId);
-    if (result === undefined) {
+  const [result] = matches;
+  const yieldsClaims =
+    result.classification === "factual" || result.classification === "mixed";
+  if (yieldsClaims !== result.assertions.length > 0) {
+    throw new EvaluationError(
+      `Precision extractor returned classification "${result.classification}" with ${result.assertions.length} assertions for unitId "${unit.unitId}".`,
+    );
+  }
+  for (const assertion of result.assertions) {
+    if (
+      deduplicationKey(normalizeStatement(assertion.statement)).length === 0
+    ) {
       throw new EvaluationError(
-        `Precision extractor returned no result for unitId "${unit.unitId}".`,
+        `Precision extractor returned an empty assertion for unitId "${unit.unitId}".`,
       );
     }
-    return {
-      ...unit,
-      classification: result.classification,
-      assertions: result.assertions.map((assertion) => ({
-        statement: normalizeStatement(assertion.statement),
-        tense: assertion.tense,
-      })),
-      rationale: result.rationale,
-    };
-  });
+  }
+  return {
+    ...unit,
+    classification: result.classification,
+    assertions: result.assertions.map((assertion) => ({
+      statement: normalizeStatement(assertion.statement),
+      tense: assertion.tense,
+    })),
+    rationale: result.rationale,
+  };
 }
 
 /**
- * Classify every section's text units and flatten the extracted claims.
+ * Re-extract a single text unit in isolation, giving the model a clean retry
+ * when it dropped or mishandled the unit inside a larger batch.
+ *
+ * @param input - The precision pass input carrying the model and timeout.
+ * @param unit - The single text unit to re-extract.
+ *
+ * @returns The classified unit.
+ */
+async function repairExtractionUnit(
+  input: PrecisionPassInput,
+  unit: PrecisionTextUnit,
+): Promise<ClassifiedPrecisionTextUnit> {
+  const output = await invokeStructuredModel({
+    model: input.model,
+    pass: "precision-extraction",
+    checkpointId: input.checkpointId,
+    systemPrompt: PRECISION_EXTRACTION_SYSTEM,
+    taskPrompt: precisionExtractionPrompt([unit]),
+    schema: assertionExtractionOutputSchema,
+    validate: (parsed) => resolveExtractionUnit(unit, parsed),
+    timeoutMs: input.timeoutMs,
+  });
+  return resolveExtractionUnit(unit, output);
+}
+
+/**
+ * Fall back to a claim-free classification for a text unit the extractor could
+ * not process even in isolation. The unit contributes no assertions, so it can
+ * never fabricate precision signal; the failure is surfaced through an
+ * evaluator warning instead of crashing the run.
+ *
+ * @param unit - The text unit that could not be extracted.
+ * @param message - Combined batch and isolated-repair failure detail.
+ *
+ * @returns A no-claim classified unit recording the evaluator failure.
+ */
+function degradedExtractionUnit(
+  unit: PrecisionTextUnit,
+  message: string,
+): ClassifiedPrecisionTextUnit {
+  return {
+    ...unit,
+    classification: "no-claim",
+    assertions: [],
+    rationale: `Evaluator could not extract assertions: ${message}`,
+  };
+}
+
+/**
+ * Classify every section's text units and flatten the extracted claims. Each
+ * requested unit is resolved individually from the batch response, so a single
+ * dropped or malformed unit is repaired in isolation and, only if that also
+ * fails, degraded to a warned no-claim unit rather than crashing the pass.
  */
 async function extractAssertions(
   input: PrecisionPassInput,
@@ -585,10 +638,25 @@ async function extractAssertions(
       systemPrompt: PRECISION_EXTRACTION_SYSTEM,
       taskPrompt: precisionExtractionPrompt(unitBatch),
       schema: assertionExtractionOutputSchema,
-      validate: (parsed) => resolveExtraction(unitBatch, parsed),
       timeoutMs: input.timeoutMs,
     });
-    classified.push(...resolveExtraction(unitBatch, output));
+    for (const unit of unitBatch) {
+      try {
+        classified.push(resolveExtractionUnit(unit, output));
+      } catch (initialError) {
+        try {
+          classified.push(await repairExtractionUnit(input, unit));
+        } catch (repairError) {
+          const message = `${String(initialError)} Isolated repair failed: ${String(repairError)}`;
+          input.onWarning?.({
+            pass: "precision-extraction",
+            itemId: unit.unitId,
+            message,
+          });
+          classified.push(degradedExtractionUnit(unit, message));
+        }
+      }
+    }
   }
 
   return {
@@ -837,7 +905,7 @@ async function runLedgerAccounting(
         facts,
         input.transitions,
       ),
-      schema: precisionLedgerOutputSchema,
+      schema: precisionLedgerBatchOutputSchema,
       timeoutMs: input.timeoutMs,
     });
 
@@ -1069,7 +1137,7 @@ async function resolvePrecisionBatchResilient(
       toJudgmentAssertions(targets),
       toJudgmentEvidence(targets),
     ),
-    schema: precisionJudgmentOutputSchema,
+    schema: precisionJudgmentBatchOutputSchema,
     timeoutMs: input.timeoutMs,
   });
   const results: PrecisionAssertionEvaluation[] = [];

@@ -104,7 +104,10 @@ function result(): LedgerRunResult {
       maintenanceRates: {},
       ledgerScore: 2 / 3,
     },
-    diagnostics: { staleKnowledge: { records: [], unresolvedCount: 0 } },
+    diagnostics: {
+      recovery: { recovered: 0, eligible: 0 },
+      staleKnowledge: { records: [], unresolvedCount: 0 },
+    },
   };
 }
 
