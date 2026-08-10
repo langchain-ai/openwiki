@@ -1,6 +1,7 @@
 {
   "name": "calc",
   "description": "Three checkpoints of a small arithmetic library used to measure useful point-in-time knowledge and longitudinal discovery, correction, forgetting, and retention.",
+  "difficulty": "easy",
   "sourceRepo": "./repo",
   "trace": {
     "checkpoints": [

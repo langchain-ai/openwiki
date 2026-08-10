@@ -1,6 +1,7 @@
 {
   "name": "taskflow",
   "description": "A production-shaped in-memory task queue whose choreographed history exercises coverage, precision, forgetting, and every maintenance transition. This slice covers T0 (0.1.0) through T1 (0.2.0).",
+  "difficulty": "hard",
   "sourceRepo": "./repo",
   "trace": {
     "checkpoints": [

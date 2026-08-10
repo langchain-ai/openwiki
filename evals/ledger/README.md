@@ -25,11 +25,11 @@ source @ T2 → update K2 → evaluate change handling
 
 LEDGER asks three core questions:
 
-| Question                                               | Metric         | Plain-English meaning                                               |
-| ------------------------------------------------------ | -------------- | ------------------------------------------------------------------- |
-| 📚 Did the artifact represent what matters?            | **Coverage**   | The code's public surface is mentioned in the artifact.             |
-| 🎯 Is what the artifact says supported?                | **Precision**  | Each claim is grounded directly against source evidence.            |
-| 🧹 Did the artifact stop presenting what became false? | **Forgetting** | Obsolete surface knowledge is no longer presented as current.       |
+| Question                                               | Metric         | Plain-English meaning                                         |
+| ------------------------------------------------------ | -------------- | ------------------------------------------------------------- |
+| 📚 Did the artifact represent what matters?            | **Coverage**   | The code's public surface is mentioned in the artifact.       |
+| 🎯 Is what the artifact says supported?                | **Precision**  | Each claim is grounded directly against source evidence.      |
+| 🧹 Did the artifact stop presenting what became false? | **Forgetting** | Obsolete surface knowledge is no longer presented as current. |
 
 Those checkpoint judgments also produce longitudinal maintenance metrics for
 discovering new knowledge, correcting changed knowledge, forgetting stale
@@ -91,11 +91,11 @@ not part of LEDGER's conceptual requirement.
 The first LEDGER adapter uses Git commits as source-truth checkpoints and OpenWiki
 as the system under test. The committed `calc` benchmark has three checkpoints:
 
-| Checkpoint | Repository change             | Public surface at this checkpoint                                       |
-| ---------- | ----------------------------- | ----------------------------------------------------------------------- |
-| T0         | calc 1.0.0                    | `add` and `negate` exported; version is `"1.0.0"`.                      |
-| T1         | Introduce `subtract`          | `add`, `negate`, and `subtract` exported; version remains `"1.0.0"`.    |
-| T2         | Remove `negate`, bump version | `add` and `subtract` exported; `negate` absent; version is `"2.0.0"`.   |
+| Checkpoint | Repository change             | Public surface at this checkpoint                                     |
+| ---------- | ----------------------------- | --------------------------------------------------------------------- |
+| T0         | calc 1.0.0                    | `add` and `negate` exported; version is `"1.0.0"`.                    |
+| T1         | Introduce `subtract`          | `add`, `negate`, and `subtract` exported; version remains `"1.0.0"`.  |
+| T2         | Remove `negate`, bump version | `add` and `subtract` exported; `negate` absent; version is `"2.0.0"`. |
 
 The surface is derived, not declared. At T0 the extractor emits items like:
 
@@ -229,11 +229,11 @@ The surface is the deterministic, code-owned checklist of what a useful artifact
 should mention at a checkpoint. For a TypeScript repository, the extractor parses
 each source file with the TypeScript compiler API and emits three kinds of item:
 
-| Kind      | One item per                          | Example statement                                                          |
-| --------- | ------------------------------------- | -------------------------------------------------------------------------- |
-| `symbol`  | Exported declaration                  | ``The module `src/calc.ts` exports a function `add(a: number, b: number): number`.`` |
-| `file`    | Parseable source file                 | ``The repository includes the source file `src/calc.ts`.``                 |
-| `version` | The library version                   | `The library's current released version is "1.0.0".`                       |
+| Kind      | One item per          | Example statement                                                                    |
+| --------- | --------------------- | ------------------------------------------------------------------------------------ |
+| `symbol`  | Exported declaration  | ``The module `src/calc.ts` exports a function `add(a: number, b: number): number`.`` |
+| `file`    | Parseable source file | ``The repository includes the source file `src/calc.ts`.``                           |
+| `version` | The library version   | `The library's current released version is "1.0.0".`                                 |
 
 Each item carries a stable `factId` (for example `symbol:add`) and a
 content-addressed `factVersionId` derived from a hash of its statement. Symbol
@@ -285,11 +285,11 @@ The module `src/calc.ts` exports a function `subtract(a: number, b: number): num
 
 Possible artifact evidence and verdicts:
 
-| Artifact text                                | Verdict   | Why                                        |
-| -------------------------------------------- | --------- | ------------------------------------------ |
-| “`subtract(a, b)` returns `a - b`.”          | `correct` | It names the exported symbol.              |
-| “The library also exports `subtract`.”       | `correct` | A mention is enough; behavior is optional. |
-| No section names or refers to `subtract`.    | `missing` | The artifact does not mention the item.    |
+| Artifact text                             | Verdict   | Why                                        |
+| ----------------------------------------- | --------- | ------------------------------------------ |
+| “`subtract(a, b)` returns `a - b`.”       | `correct` | It names the exported symbol.              |
+| “The library also exports `subtract`.”    | `correct` | A mention is enough; behavior is optional. |
+| No section names or refers to `subtract`. | `missing` | The artifact does not mention the item.    |
 
 A model may initially return `missing` because BM25 did not retrieve the right
 section. LEDGER therefore treats `missing` as provisional and checks every remaining
@@ -381,12 +381,12 @@ context once and returns one of three verdicts:
 
 The three verdicts route to the four final classes:
 
-| Grounding verdict                     | Final class                              |
-| ------------------------------------- | ---------------------------------------- |
-| `supported`                           | `supported`                              |
-| `contradicted`, `formerlyTrue: false` | `invented`                               |
-| `contradicted`, `formerlyTrue: true`  | `stale`                                  |
-| `not-addressed`                       | `unverified`                             |
+| Grounding verdict                     | Final class  |
+| ------------------------------------- | ------------ |
+| `supported`                           | `supported`  |
+| `contradicted`, `formerlyTrue: false` | `invented`   |
+| `contradicted`, `formerlyTrue: true`  | `stale`      |
+| `not-addressed`                       | `unverified` |
 
 The judge may apply ordinary language and runtime semantics to supplied code, such
 as arithmetic and direct control flow. Retrieval ends after the one bounded
@@ -399,12 +399,12 @@ with no model call.
 
 Every deduplicated claim ends in exactly one class:
 
-| Class        | Meaning                                                                |
-| ------------ | ---------------------------------------------------------------------- |
-| `supported`  | The source evidence establishes the claim.                             |
-| `invented`   | Source refutes the claim and it was never true, a hallucination.       |
+| Class        | Meaning                                                                 |
+| ------------ | ----------------------------------------------------------------------- |
+| `supported`  | The source evidence establishes the claim.                              |
+| `invented`   | Source refutes the claim and it was never true, a hallucination.        |
 | `stale`      | False now but established in a former world state, a failure to forget. |
-| `unverified` | The source neither established nor refuted the claim.                  |
+| `unverified` | The source neither established nor refuted the claim.                   |
 
 Suppose the source shows that `add(a, b)` returns `a + b`, and the artifact claims
 that `add` returns `a + b`, that `add` validates both inputs, and that no CI
@@ -510,12 +510,12 @@ claims were extracted.
 
 Maintenance evaluates transitions between checkpoints:
 
-| Metric                              | Question                                              |
-| ----------------------------------- | ----------------------------------------------------- |
-| 🌱 **New-Knowledge Discovery**      | Did newly introduced surface facts appear correctly?  |
-| 🔄 **Changed-Knowledge Correction** | Did the new form appear and the old form disappear?   |
-| 🧹 **Complete Forgetting**          | Did removed surface facts stop appearing as current?  |
-| 🛡️ **Stable Retention**             | Did correct, unchanged surface facts remain correct?  |
+| Metric                              | Question                                             |
+| ----------------------------------- | ---------------------------------------------------- |
+| 🌱 **New-Knowledge Discovery**      | Did newly introduced surface facts appear correctly? |
+| 🔄 **Changed-Knowledge Correction** | Did the new form appear and the old form disappear?  |
+| 🧹 **Complete Forgetting**          | Did removed surface facts stop appearing as current? |
+| 🛡️ **Stable Retention**             | Did correct, unchanged surface facts remain correct? |
 
 The eligible rates are averaged into the Maintenance score.
 

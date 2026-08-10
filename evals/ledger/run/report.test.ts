@@ -7,6 +7,7 @@ function result(): LedgerRunResult {
   return {
     metadata: {
       benchmarkName: "demo",
+      difficulty: "hard",
       startedAt: "2026-01-01T00:00:00.000Z",
       system: { provider: "anthropic", modelId: "system" },
       evaluatorModelId: "judge",

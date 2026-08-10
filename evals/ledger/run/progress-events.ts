@@ -1,3 +1,5 @@
+import type { BenchmarkDifficulty } from "../core/types.js";
+
 /**
  * Observable lifecycle events emitted by a benchmark run.
  */
@@ -5,6 +7,7 @@ export type BenchmarkProgressEvent =
   | {
       type: "run-start";
       benchmarkName: string;
+      difficulty: BenchmarkDifficulty;
       totalCheckpoints: number;
       provider: string;
       systemModelId?: string;

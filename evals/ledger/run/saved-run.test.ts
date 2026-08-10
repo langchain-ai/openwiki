@@ -32,6 +32,7 @@ function result(startedAt: string): LedgerRunResult {
   return {
     metadata: {
       benchmarkName: "saved",
+      difficulty: "medium",
       startedAt,
       system: { provider: "fake", modelId: "system" },
     },

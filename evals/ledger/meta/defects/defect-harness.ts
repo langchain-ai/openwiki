@@ -339,6 +339,7 @@ async function evaluateTrace(inputs: {
     return {
       metadata: {
         benchmarkName: inputs.benchmark.name,
+        difficulty: inputs.benchmark.difficulty,
         startedAt: "meta-defect-harness",
         system: { provider: "fixture" },
       },

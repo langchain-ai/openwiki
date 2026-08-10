@@ -75,6 +75,7 @@ export function formatReport(result: LedgerRunResult): string {
 
   lines.push(`# LEDGER report: ${result.metadata.benchmarkName}`);
   lines.push("");
+  lines.push(`- Difficulty: ${result.metadata.difficulty}`);
   lines.push(`- Started: ${result.metadata.startedAt}`);
   lines.push(
     `- System: ${result.metadata.system.provider} / ${result.metadata.system.modelId ?? "(default)"}`,

@@ -146,6 +146,7 @@ export async function runBenchmark(
   reportProgress({
     type: "run-start",
     benchmarkName: benchmark.name,
+    difficulty: benchmark.difficulty,
     totalCheckpoints: checkpoints.length,
     provider: config.provider,
     systemModelId: config.systemModelId,
@@ -379,6 +380,7 @@ export async function runBenchmark(
     const result: LedgerRunResult = {
       metadata: {
         benchmarkName: benchmark.name,
+        difficulty: benchmark.difficulty,
         startedAt,
         system: { provider: config.provider, modelId: config.systemModelId },
         evaluatorModelId: config.evaluatorModelId,

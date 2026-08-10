@@ -15,6 +15,7 @@ function valid(): LedgerBenchmark {
   return {
     name: "valid",
     description: "validation fixture",
+    difficulty: "easy",
     sourceRepoPath: "/nonexistent",
     trace: {
       checkpoints: [

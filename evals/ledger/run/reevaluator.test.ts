@@ -84,6 +84,7 @@ function benchmark(repo: TinyRepo): LedgerBenchmark {
   return {
     name: "saved-evolution",
     description: "saved replay test",
+    difficulty: "medium",
     sourceRepoPath: repo.repoPath,
     trace: {
       checkpoints: [
@@ -145,6 +146,7 @@ function sourceResult(): LedgerRunResult {
   return {
     metadata: {
       benchmarkName: "saved-evolution",
+      difficulty: "medium",
       startedAt: "2026-01-01T00:00:00.000Z",
       system: { provider: "anthropic", modelId: "system-model" },
       evaluatorModelId: "old-evaluator",

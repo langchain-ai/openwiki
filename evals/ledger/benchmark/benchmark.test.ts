@@ -1,4 +1,12 @@
-import { access, copyFile, mkdir, mkdtemp, rm } from "node:fs/promises";
+import {
+  access,
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -66,6 +74,7 @@ describe("loadBenchmark on the committed calc fixture", () => {
     const benchmark = await loadBenchmark(fixtureDir);
 
     expect(benchmark.name).toBe("calc");
+    expect(benchmark.difficulty).toBe("easy");
     const ids = benchmark.trace.checkpoints.map((checkpoint) => checkpoint.id);
     expect(ids).toEqual(["T0", "T1", "T2"]);
 
@@ -79,6 +88,17 @@ describe("loadBenchmark on the committed calc fixture", () => {
         await git(reconstructedRepo, ["cat-file", "-t", checkpoint.commit]),
       ).toBe("commit");
     }
+  });
+
+  test("rejects a manifest whose difficulty is not easy, medium, or hard", async () => {
+    const manifestPath = path.join(fixtureDir, "benchmark.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    manifest.difficulty = "trivial";
+    await writeFile(manifestPath, JSON.stringify(manifest), "utf8");
+
+    await expect(
+      loadBenchmark(fixtureDir, { ensureSourceRepo: false }),
+    ).rejects.toThrow(/difficulty/);
   });
 
   test("loads benchmark truth without materializing source for evaluator replay", async () => {

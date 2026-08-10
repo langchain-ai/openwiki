@@ -378,6 +378,7 @@ function benchmark(repo: TinyRepo): LedgerBenchmark {
   return {
     name: "direct-evaluator-e2e",
     description: "Complete deterministic evaluator pipeline",
+    difficulty: "medium",
     sourceRepoPath: repo.repoPath,
     trace: {
       checkpoints: repo.shas.map((commit, index) => ({

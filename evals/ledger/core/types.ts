@@ -44,6 +44,14 @@ export interface LedgerTrace {
  * against. Truth is read directly from the source at each checkpoint by
  * `extractSurface`; there is no hand-authored knowledge census.
  */
+/**
+ * Author-declared honest rating of how hard a benchmark's history is for a
+ * documentation system to maintain. Rendered in the run headline and report so
+ * a low score on a `hard` benchmark reads differently from one on an `easy`
+ * benchmark. Declared by a human, never computed from the trace.
+ */
+export type BenchmarkDifficulty = "easy" | "medium" | "hard";
+
 export interface LedgerBenchmark {
   /**
    * Machine name, unique per benchmark directory, used in report filenames.
@@ -54,6 +62,12 @@ export interface LedgerBenchmark {
    * One-line human description of what evolution this benchmark exercises.
    */
   description: string;
+
+  /**
+   * Author-declared difficulty of maintaining documentation across this
+   * benchmark's history.
+   */
+  difficulty: BenchmarkDifficulty;
 
   /**
    * Absolute path to the source Git repository to replay. Resolved from the
@@ -1179,6 +1193,11 @@ export interface LedgerRunMetadata {
    * The benchmark name that was run.
    */
   benchmarkName: string;
+
+  /**
+   * Author-declared difficulty of the benchmark that was run.
+   */
+  difficulty: BenchmarkDifficulty;
 
   /**
    * ISO-8601 timestamp the run started, stamped by the caller (scripts cannot

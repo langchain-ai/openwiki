@@ -173,7 +173,9 @@ export function createCliProgressReporter(
       case "run-start": {
         const systemModel = event.systemModelId ?? "provider default";
         const evaluatorModel = event.evaluatorModelId ?? "provider default";
-        output.write(`┌ 🧪 LEDGER · ${event.benchmarkName}\n`);
+        output.write(
+          `┌ 🧪 LEDGER · ${event.benchmarkName} · ${event.difficulty}\n`,
+        );
         output.write(
           event.evaluationOnly === true
             ? `│ ${event.totalCheckpoints} checkpoints · ${event.provider} · saved artifacts · evaluator ${evaluatorModel}\n`

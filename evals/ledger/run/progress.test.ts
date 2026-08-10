@@ -29,6 +29,7 @@ describe("createCliProgressReporter", () => {
     report({
       type: "run-start",
       benchmarkName: "calc-evolution",
+      difficulty: "hard",
       totalCheckpoints: 3,
       provider: "anthropic",
       systemModelId: "system-model",
@@ -88,7 +89,7 @@ describe("createCliProgressReporter", () => {
     });
     report({ type: "run-complete" });
 
-    expect(rendered).toContain("┌ 🧪 LEDGER · calc-evolution");
+    expect(rendered).toContain("┌ 🧪 LEDGER · calc-evolution · hard");
     expect(rendered).toContain(
       "3 checkpoints · anthropic · system system-model · evaluator evaluator-model",
     );
@@ -176,6 +177,7 @@ describe("createCliProgressReporter", () => {
     report({
       type: "run-start",
       benchmarkName: "calc-evolution",
+      difficulty: "hard",
       totalCheckpoints: 3,
       provider: "anthropic",
       evaluatorModelId: "evaluator-model",

@@ -150,6 +150,7 @@ export async function reevaluateSavedRun(
   reportProgress({
     type: "run-start",
     benchmarkName: inputs.benchmark.name,
+    difficulty: inputs.benchmark.difficulty,
     totalCheckpoints: checkpoints.length,
     provider: inputs.provider,
     systemModelId: savedResult.metadata.system.modelId,
@@ -301,6 +302,7 @@ export async function reevaluateSavedRun(
     const result: LedgerRunResult = {
       metadata: {
         benchmarkName: inputs.benchmark.name,
+        difficulty: inputs.benchmark.difficulty,
         startedAt: inputs.startedAt,
         system: savedResult.metadata.system,
         evaluatorModelId: inputs.evaluatorModelId,

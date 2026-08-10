@@ -182,6 +182,7 @@ describe("runBenchmark", () => {
     return {
       name: "fake",
       description: "deterministic end-to-end",
+      difficulty: "medium",
       sourceRepoPath: repo.repoPath,
       trace: {
         checkpoints: [
@@ -383,6 +384,7 @@ describe("runBenchmark forgetting watch set", () => {
     return {
       name: "watch-set",
       description: "three checkpoints covering carry-forward and revival",
+      difficulty: "medium",
       sourceRepoPath: repo.repoPath,
       trace: {
         checkpoints: [

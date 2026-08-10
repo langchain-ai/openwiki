@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { BenchmarkValidationError } from "../core/errors.js";
-import type { LedgerBenchmark } from "../core/types.js";
+import type { BenchmarkDifficulty, LedgerBenchmark } from "../core/types.js";
 import { ensureSourceRepoAvailable } from "./source-repo.js";
 import { extractSurface } from "./surface.js";
 import { validateBenchmark } from "./validation.js";
@@ -11,6 +11,12 @@ import { validateBenchmark } from "./validation.js";
  * Name of the manifest file inside a benchmark directory.
  */
 export const BENCHMARK_FILE = "benchmark.json";
+
+/**
+ * The difficulty labels a benchmark manifest may declare, in ascending order.
+ * Used as the allowlist the untrusted `difficulty` field is checked against.
+ */
+const DIFFICULTIES: readonly BenchmarkDifficulty[] = ["easy", "medium", "hard"];
 
 /**
  * Optional benchmark-loading behavior for callers that do not replay source.
@@ -52,6 +58,15 @@ interface RawBenchmark {
    *   is only cosmetic
    */
   description?: unknown;
+
+  /**
+   * Author-declared difficulty rating. Typed `unknown` because the raw file is
+   * untrusted until checked.
+   *
+   * @default no fallback; an absent or unrecognized value is rejected with a
+   *   `BenchmarkValidationError` so every benchmark declares an explicit rating
+   */
+  difficulty?: unknown;
 
   /**
    * Path to the repository the benchmark replays, written relative to the
@@ -109,6 +124,16 @@ export async function loadBenchmark(
     );
   }
 
+  if (
+    typeof raw.difficulty !== "string" ||
+    !DIFFICULTIES.includes(raw.difficulty as BenchmarkDifficulty)
+  ) {
+    throw new BenchmarkValidationError(
+      `${file}: "difficulty" must be one of ${DIFFICULTIES.join(", ")}.`,
+    );
+  }
+  const difficulty = raw.difficulty as BenchmarkDifficulty;
+
   const sourceRepoPath = path.resolve(benchmarkDir, raw.sourceRepo);
 
   // Reconstruct the source working tree from its committed bundle when a fresh
@@ -120,6 +145,7 @@ export async function loadBenchmark(
   const benchmark: LedgerBenchmark = {
     name: typeof raw.name === "string" ? raw.name : "",
     description: typeof raw.description === "string" ? raw.description : "",
+    difficulty,
     sourceRepoPath,
     // Cast is deliberate: validateBenchmark performs the deep structural checks
     // that make this cast sound, and throws before the value is used otherwise.
