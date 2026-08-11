@@ -1,0 +1,89 @@
+test/cli/components/markdown.test.tsx
+  s_9df199bc4d57fc::t_811597e7a74d65 101
+  s_9df199bc4d57fc::t_3e119516a20669 68-100,102-125,140-146,148-162,164-173,175-181,183-198
+  s_9df199bc4d57fc::t_11f526ba9fdbe3 147,163,174,182
+  s_9df199bc4d57fc::t_35bbef0de8c86c 3,6,8
+test/visualize/page.test.ts
+  s_9df199bc4d57fc::t_da790f9fa12d79 53-54
+  s_9df199bc4d57fc::t_5df323ce5482e0 1-52,55-59
+src/visualize/server.ts
+  s_9df199bc4d57fc::t_f6b5872e164983 133,136-177,201,218
+  s_9df199bc4d57fc::t_156f87dac0fdec 308
+  s_9df199bc4d57fc::t_76d50479be0698 134
+  s_9df199bc4d57fc::t_f5871e89aa71e1 54-61
+  s_9df199bc4d57fc::t_bd3b28c7db9c61 108-117
+  s_9df199bc4d57fc::t_a580174622eb5d 221
+  s_9df199bc4d57fc::t_aaf8e2e65c036d 118-120,130-132
+  s_9df199bc4d57fc::t_46be6e51da6cbf 135
+  s_9df199bc4d57fc::t_79425933809284 121-129
+test/telemetry/with-run-telemetry.test.ts
+  s_9df199bc4d57fc::t_f23f5790cca2e2 1-63,65-89
+  s_9df199bc4d57fc::t_386ca247c499b2 64
+test/agent/crash-guard.test.ts
+  s_9df199bc4d57fc::t_2dcc9322a84ae9 30
+  s_9df199bc4d57fc::t_a5881beb322d87 247-268
+  s_9df199bc4d57fc::t_48da77171f1e08 124-141
+  s_9df199bc4d57fc::t_48fb60eb953845 298-301
+  s_9df199bc4d57fc::t_29befceb28c9ac 306-315
+  s_9df199bc4d57fc::t_3e11c115aea681 212,227-246,269-297,302-305,316-319
+  s_9df199bc4d57fc::t_9a5ebc771a3583 213-226
+test/cli/components/chat.test.tsx
+  s_9df199bc4d57fc::t_17a8cee09cd260 144-151
+  s_9df199bc4d57fc::t_6b0315001bb205 170-181,187,200,203,208,211,219,222,234-235,244,254,268-269,278-279,289-290,299-300,309-310,319-320,330-331,341-342,351-352,365-366,368,375,391-392,394,404-405,407,418-419,421
+  s_9df199bc4d57fc::t_ce9b06e3474bb8 142-143,152-169,185-186,188-199,202,204-207,210,213-218,221,227-231,233,236-241,243,245-251,253,255-258,261-265,267,270-275,277,280-286,288,291-296,298,301-306,308,311-316,318,321-327,329,332-338,340,343-348,350,353-362,364,367,369-374,376-388,390,393,395-401,403,406,409-415,417,420,422-429
+  s_9df199bc4d57fc::t_ddac37e9e698fe 182-184
+  s_9df199bc4d57fc::t_19e68c21d54ce6 212,223-226,259-260,408
+  s_9df199bc4d57fc::t_1d1e3a5cdaafbf 201,209,220,232,242,252,266,276,287,297,307,317,328,339,349,363,389,402,416
+  s_9df199bc4d57fc::t_f47b68ebbc2b49 3,10,13-21,25-33
+  s_9df199bc4d57fc::t_62eb98f4e75db4 34
+test/telemetry/record-run-safe.test.ts
+  s_9df199bc4d57fc::t_4b8dfca7069838 38-39,41-42
+  s_9df199bc4d57fc::t_683b8a9e036e5c 3
+  s_9df199bc4d57fc::t_afff39908eb1eb 24
+  s_9df199bc4d57fc::t_203ed448242ed9 1-2,4-21,23,25-37,40,43-130
+  s_9df199bc4d57fc::t_fc32b91d52cf03 22
+test/visualize/server.test.ts
+  s_9df199bc4d57fc::t_f5e4f0853dd173 192
+  s_9df199bc4d57fc::t_9e78e14cc4ac4a 169,176
+  s_9df199bc4d57fc::t_e8ad377199975e 1-168,170-175,177-179,181-182,184-191,193-233
+  s_9df199bc4d57fc::t_ca7745f3a296ca 180,183
+vitest.config.ts
+  s_9df199bc4d57fc::t_8b1ea1123e7843 23-34
+test/cli/components/run-view.test.tsx
+  s_9df199bc4d57fc::t_0ad1769fb0a362 13-16
+  s_9df199bc4d57fc::t_039dea32e8240e 3
+  s_9df199bc4d57fc::t_152f10c33b7f3e 164-183
+  s_9df199bc4d57fc::t_915c05ee311857 111-125
+test/cli/runners.test.ts
+  s_9df199bc4d57fc::t_c6a2172a4d8d32 10-75,77-91,103,105-107,112-121,125,131,133,143-179,181-259,264-287,289,291-293,295-487,489-493,495-518,520-543,545-579,589,602,614,624
+  s_9df199bc4d57fc::t_bca2215fc09886 180
+  s_9df199bc4d57fc::t_f255eb5241a37d 288,290,294
+  s_9df199bc4d57fc::t_2ffc91f7f493fa 488,494
+  s_9df199bc4d57fc::t_521d6588823390 544
+  s_9df199bc4d57fc::t_8bbf10bfd72483 519
+  s_9df199bc4d57fc::t_6efb414e715179 260-263
+test/agent/openwiki-ignore.test.ts
+  s_9df199bc4d57fc::t_5e912ee29aec8f 6-10
+  s_9df199bc4d57fc::t_aecfe148879a11 99-166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "704d9120bf35485434bd04a6419c80e6c3e1f029",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

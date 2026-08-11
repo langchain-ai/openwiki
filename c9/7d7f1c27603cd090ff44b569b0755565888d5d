@@ -1,0 +1,46 @@
+evals/keb/evaluator/evaluator.ts
+  h_f78d33d4280f3f 1-2,4-72,77-80,82-108
+  s_035863e8e09de1::t_54b6b82159848f 73-76,81
+  s_035863e8e09de1::t_5c02d44dbd503e 3
+evals/keb/evaluator/forgetting.ts
+  h_f78d33d4280f3f 1-6,8-102
+  s_035863e8e09de1::t_43a8edbe100838 7
+evals/keb/evaluator/coverage.ts
+  s_035863e8e09de1::t_63e27eaf0dd74e 1,12
+  h_f78d33d4280f3f 2-11,13-139
+evals/keb/evaluator/evaluator.test.ts
+  s_035863e8e09de1::t_76c85965064163 92-97
+  s_035863e8e09de1::t_63e53edd18106e 168-179
+  s_035863e8e09de1::t_7ce9d1695a9f7e 207-224
+  s_035863e8e09de1::t_2f9d7548c52035 234-251
+  s_035863e8e09de1::t_49c86e80eba769 1-91,98-167,180-206,225-233,252-319
+evals/keb/evaluator/agent-backend.ts
+  h_f78d33d4280f3f 1-120
+evals/keb/evaluator/evaluator-pass.test.ts
+  s_035863e8e09de1::t_38fb9d48ae3d95 1-170
+evals/keb/evaluator/prompts.ts
+  s_035863e8e09de1::t_2fdae61e442764 1-129
+evals/keb/evaluator/schemas.ts
+  s_035863e8e09de1::t_fe866f00457c07 1-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "c97d7f1c27603cd090ff44b569b0755565888d5d",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_035863e8e09de1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe66751d-b755-4d97-8ed8-e3e9d3319a3b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

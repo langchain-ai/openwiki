@@ -1,0 +1,27 @@
+test/connectors/mcp-client.test.ts
+  s_9df199bc4d57fc::t_4e5ba8c6d53f03 73-76
+  s_9df199bc4d57fc::t_157044a4691381 42-43
+  s_9df199bc4d57fc::t_50b654c6a09cb3 77-78
+  s_9df199bc4d57fc::t_df489f2965dcfd 29-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "f4820b228568580fea126697dacf8214cec4139a",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,98 @@
+evals/ledger/evaluator/precision.test.ts
+  s_5be9e335eecbfd::t_3bfd1e4171cfed 357-514
+  s_5be9e335eecbfd::t_c374caea0b01f5 51-61
+evals/ledger/run/saved-run.test.ts
+  s_5be9e335eecbfd::t_73e0c7a28708ed 51
+evals/ledger/run/progress.ts
+  s_5be9e335eecbfd::t_bf88cd9462c62f 226,231-234
+evals/ledger/run/report.ts
+  s_5be9e335eecbfd::t_9495d2b6fbb54e 127-129
+evals/ledger/run/progress.test.ts
+  s_5be9e335eecbfd::t_e6d836c01b442f 89,109,113,122-128,130-131,134-147
+evals/ledger/run/summary.ts
+  s_5be9e335eecbfd::t_a04283f1e869ee 136-138,307-309,312-314
+  s_5be9e335eecbfd::t_9efc2f2edec195 318
+  s_5be9e335eecbfd::t_b75052e2a47f0d 315-317
+  s_5be9e335eecbfd::t_bc183466aeb286 1-135,139-306,310-311,319-365
+evals/ledger/scoring/metrics.test.ts
+  s_5be9e335eecbfd::t_e1baf7aee123e5 590,610,630,653,675,707,729,745,767,791
+  s_5be9e335eecbfd::t_fa641ff9010f09 971
+  s_5be9e335eecbfd::t_c015c961521727 11
+  s_5be9e335eecbfd::t_dc227fc99bfeba 572
+evals/ledger/run/persistence.test.ts
+  s_5be9e335eecbfd::t_38ac31e1f871ed 14,16-19,21
+  s_5be9e335eecbfd::t_30aa7fb9ace047 58-68,70-183
+  s_5be9e335eecbfd::t_488d7f41f32309 20
+  s_5be9e335eecbfd::t_bf47932852369a 52
+  s_5be9e335eecbfd::t_9be0105e53aa6b 69
+evals/ledger/run/persistence.ts
+  s_5be9e335eecbfd::t_51252fe8c34e9a 213-241,245-280
+  s_5be9e335eecbfd::t_a04283f1e869ee 242-244
+evals/ledger/reevaluate.ts
+  s_5be9e335eecbfd::t_ab9dec0d873786 74-81
+  s_5be9e335eecbfd::t_fc7e3182072168 43
+  s_5be9e335eecbfd::t_664a0c27e5f76a 14,20
+evals/ledger/run/reevaluator.test.ts
+  s_5be9e335eecbfd::t_23da0bd46dfd14 176-179
+evals/ledger/run/runner.test.ts
+  s_5be9e335eecbfd::t_1512e914a31ff7 269-276
+evals/ledger/scoring/metrics.ts
+  s_5be9e335eecbfd::t_455d16662ae996 423-425,427,429
+  s_5be9e335eecbfd::t_51ddbb130bebe8 514-518
+  s_5be9e335eecbfd::t_27ba17c551eaf4 607
+  s_5be9e335eecbfd::t_1642c32df8cf32 16
+evals/ledger/evaluator/schemas.ts
+  s_5be9e335eecbfd::t_53cf97c214583c 74-131,135,140-152,156,160-168
+  s_5be9e335eecbfd::t_10103af1a8458f 169
+evals/ledger/run/report.test.ts
+  s_5be9e335eecbfd::t_630592abb82d4a 107-110
+evals/ledger/run/summary.test.ts
+  s_5be9e335eecbfd::t_05051f9c0440b4 1-218,220-227,232-269
+  s_5be9e335eecbfd::t_44412583a2b2dd 219
+  s_5be9e335eecbfd::t_7717df751d5ccd 228-231
+evals/ledger/run/progress-events.ts
+  s_5be9e335eecbfd::t_ec8aa133b17d2e 56
+evals/ledger/run.ts
+  s_5be9e335eecbfd::t_d183b9ccb18f8e 94-100
+  s_5be9e335eecbfd::t_038fbc3ef9dcc3 16,22
+  s_5be9e335eecbfd::t_83643338cca908 45
+evals/ledger/benchmarks/taskflow/build-repo.mjs
+  s_5be9e335eecbfd::t_3018e62f69f732 1-1118
+evals/ledger/run/reevaluator.ts
+  s_5be9e335eecbfd::t_47415488d7e06e 303
+evals/ledger/evaluator/precision.ts
+  s_5be9e335eecbfd::t_eaabc4728f9035 908
+  s_5be9e335eecbfd::t_7e72dc603d8028 32,34
+  s_5be9e335eecbfd::t_56671393886097 514-525,527-528,530-550,552,556-565,567-588,590,594-620,643-659
+  s_5be9e335eecbfd::t_1b906e61b186b7 1140
+evals/ledger/benchmarks/taskflow/benchmark.json
+  s_5be9e335eecbfd::t_ddd266b3ef60b4 1-256
+evals/ledger/core/types.ts
+  s_5be9e335eecbfd::t_166b45bb890941 532-537
+  s_5be9e335eecbfd::t_a141bfef36189a 1067-1070,1072
+  s_5be9e335eecbfd::t_be0ee74a4e2af1 1028-1058
+  s_5be9e335eecbfd::t_1f7ae9d9fe9aee 1027
+evals/ledger/run/runner.ts
+  s_5be9e335eecbfd::t_578fe0fcf76505 380
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "b6b53461e3b9d740386fc1a305a93fc437126a0a",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_5be9e335eecbfd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f28b39b9-bbad-4f0f-a813-ca0915cff021",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

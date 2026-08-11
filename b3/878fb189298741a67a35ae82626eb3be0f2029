@@ -1,0 +1,33 @@
+evals/keb/system/openwiki-system-run.test.ts
+  s_035863e8e09de1::t_372feafbb6f5b5 1-4,9-129
+  s_035863e8e09de1::t_9e4e0b5a69d099 5-8
+evals/keb/system/openwiki-system.test.ts
+  h_f78d33d4280f3f 1-53
+evals/keb/testing/tiny-repo.ts
+  s_035863e8e09de1::t_540d00b99ba3df 85-94
+evals/keb/system/openwiki-system.ts
+  h_f78d33d4280f3f 1-91
+evals/keb/replay/workspace.ts
+  s_035863e8e09de1::t_ad3b6275c20c2b 92-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "b3878fb189298741a67a35ae82626eb3be0f2029",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_035863e8e09de1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe66751d-b755-4d97-8ed8-e3e9d3319a3b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

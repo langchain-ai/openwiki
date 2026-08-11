@@ -1,0 +1,46 @@
+evals/keb/benchmark/truth-ledger.ts
+  h_f78d33d4280f3f 1-177
+evals/keb/benchmark/transitions.ts
+  h_f78d33d4280f3f 1-118
+evals/keb/benchmark/benchmark.ts
+  h_f78d33d4280f3f 1-16,21-22,30,39,49,59,69-120
+  s_035863e8e09de1::t_db9d5441cf0153 17-20,23-29,31-38,40-48,50-58,60-68
+evals/keb/benchmark/validation.ts
+  s_035863e8e09de1::t_467e4339c0ec7b 52-54,155-158
+  h_f78d33d4280f3f 1-11,27-51,55-79,86-125,130-148,159-246
+  s_035863e8e09de1::t_ba00e89014fe58 12-26
+  s_035863e8e09de1::t_194b2e182bbe5c 80-85
+  s_035863e8e09de1::t_67df0bc87b1c0a 149-154
+  s_035863e8e09de1::t_b90c5328800b7a 126-129
+evals/keb/benchmark/truth-ledger.test.ts
+  s_035863e8e09de1::t_a0a7b686da5652 55-86
+  s_035863e8e09de1::t_7f1bd6378ba928 147-157
+  h_f78d33d4280f3f 1-54,87-146,158-225,252
+  s_035863e8e09de1::t_467e4339c0ec7b 230-232,235-239,242-246
+  s_035863e8e09de1::t_cbd24e4e3b1002 226-229,233-234,240-241,247-251
+evals/keb/benchmark/validation.test.ts
+  s_035863e8e09de1::t_467e4339c0ec7b 44,114-119,163,193-196,204-207
+  h_f78d33d4280f3f 1-2,5-34,49-53,61-64,217,219-220
+  s_035863e8e09de1::t_a025274554676e 3-4,35-43,45-48,54-60,65-113,120-162,164-192,197-203,208-216,218
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "480cd36920da53de43a98c402ea1d6ea3997e974",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_035863e8e09de1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe66751d-b755-4d97-8ed8-e3e9d3319a3b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

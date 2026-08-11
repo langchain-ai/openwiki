@@ -1,0 +1,131 @@
+evals/ledger/replay/git.ts
+  s_5be9e335eecbfd::t_7e4af4877696e1 6-8
+evals/ledger/meta/defects/defect-harness.ts
+  s_5be9e335eecbfd::t_450e66b8af7603 172-182
+  s_5be9e335eecbfd::t_476ba86b71db09 36-39,51,56,61,66,71-76,78-83,95,110,115,120,135,144,147-158
+  s_5be9e335eecbfd::t_7e4af4877696e1 43-45,47-49,52-54,57-59,62-64,67-69,87-89,91-93,96-98,102-104,106-108,111-113,116-118,121-123,127-129,131-133,136-138,141-143,212-214,217-219,431-433
+  s_5be9e335eecbfd::t_1fcbbdd9d2c04c 200-210,216,221-226
+  s_5be9e335eecbfd::t_28df6443cf4e83 276-280
+  s_5be9e335eecbfd::t_68dc2539f31e0d 348-357,365-378
+  s_5be9e335eecbfd::t_11acc029ec317b 7
+evals/ledger/core/order.ts
+  s_5be9e335eecbfd::t_002aaabfd5ecd1 1-13
+evals/ledger/run/runner.ts
+  s_5be9e335eecbfd::t_e46d109db26156 40
+  s_5be9e335eecbfd::t_2a84d4ae550546 71-74,79-82,97-99
+  s_5be9e335eecbfd::t_cc8a5b2823fa42 272-276
+  s_5be9e335eecbfd::t_e0e42af074f6d3 14
+evals/ledger/source/git-evidence.ts
+  s_5be9e335eecbfd::t_7e4af4877696e1 10
+  s_5be9e335eecbfd::t_e1d6a109d497d0 5
+  s_5be9e335eecbfd::t_fdb13dc489efc8 12
+evals/ledger/evaluator/precision.ts
+  s_5be9e335eecbfd::t_3bd3e7df0a8e87 700-703
+  s_5be9e335eecbfd::t_6855fce66c9e64 938-941
+  s_5be9e335eecbfd::t_24121333f81702 43,48,62,67,72,77,96-99,105,110,115,120,125,130,135-140,142-147,149-154,166,171,176,181,186,191,196,211,216,221,226,231,246,251,256,261-266,268-273,275,280-285,287-292,294-299,301-306,310-315,327,332,337,342,362,367,382,387,392-397,399,404-409,421
+  s_5be9e335eecbfd::t_7e4af4877696e1 39-41,44-46,49-51,54-56,58-60,63-65,68-70,73-75,78-80,84-86,101-103,106-108,111-113,116-118,121-123,126-128,131-133,158-160,162-164,167-169,172-174,177-179,182-184,187-189,192-194,197-199,203-205,207-209,212-214,217-219,222-224,227-229,232-234,238-240,242-244,247-249,252-254,257-259,276-278,319-321,323-325,328-330,333-335,338-340,343-345,349-351,354-356,358-360,363-365,368-370,374-376,378-380,383-385,388-390,400-402,413-415,417-419,422-424,428-430,432-434,437-440,443-445,450-452,463-465,566-568,680-682,773-775,804-806,871-873,889-891,903-905,917-919,1056-1058,1107-1109
+  s_5be9e335eecbfd::t_ebc05332609ecc 511-514
+  s_5be9e335eecbfd::t_0220f528b9af4f 4,16
+  s_5be9e335eecbfd::t_986e6a75fa65b4 616-619
+evals/ledger/run/report.ts
+  s_5be9e335eecbfd::t_ff19e4b82d2090 182-188
+  s_5be9e335eecbfd::t_ba5d2bd94e7bcc 114,116,119,121-122,127,129,145
+  s_5be9e335eecbfd::t_7e4af4877696e1 4-6,49-51
+  s_5be9e335eecbfd::t_e081605d990146 2,7-8,11-18,23-30
+  s_5be9e335eecbfd::t_e48a804c27a5ae 154-160
+evals/ledger/scoring/metrics.ts
+  s_5be9e335eecbfd::t_01d3e8599fe80b 526-527
+  s_5be9e335eecbfd::t_7e4af4877696e1 636-638
+evals/ledger/run/format.ts
+  s_5be9e335eecbfd::t_a9b1fd1e39f132 1-49
+evals/ledger/run/reevaluator.ts
+  s_5be9e335eecbfd::t_3e9c8c00946e74 4
+  s_5be9e335eecbfd::t_7be477213fd1a1 32
+  s_5be9e335eecbfd::t_aa1c72a9d710a9 74-76,81-83,88-90
+  s_5be9e335eecbfd::t_1658c5a29306f3 206-210
+evals/ledger/evaluator/pass-utils.ts
+  s_5be9e335eecbfd::t_0ce56ca21295fb 1-51
+evals/ledger/meta/gold-agreement.ts
+  s_5be9e335eecbfd::t_7bf6a2f8ab7370 230-237
+  s_5be9e335eecbfd::t_3243dbaab743b1 40,55,64,73,82,87-92,94,100-105,109,118,123,129-134,148,153,158,173,178,183,188
+  s_5be9e335eecbfd::t_5536d4c6cf0eed 207-216
+  s_5be9e335eecbfd::t_7e4af4877696e1 27-29,32-34,36-38,41-43,47-49,51-53,56-58,60-62,65-67,74-76,78-80,83-85,95-97,110-112,114-116,119-121,124-126,140-142,144-146,149-151,154-156,159-161,165-167,169-171,174-176,179-181,184-186,189-191,195-197,242-244,381-383
+evals/ledger/evaluator/forgetting.ts
+  s_5be9e335eecbfd::t_ff5b2c3c1f2154 25,30
+  s_5be9e335eecbfd::t_7e4af4877696e1 21-23,26-28,31-33
+  s_5be9e335eecbfd::t_60a374702cca67 11
+evals/ledger/evaluator/coverage.ts
+  s_5be9e335eecbfd::t_7e4af4877696e1 21-23,26-28,31-33
+  s_5be9e335eecbfd::t_aad164f2141385 25,30
+  s_5be9e335eecbfd::t_039a33b45279a8 11
+evals/ledger/run/runner.test.ts
+  s_5be9e335eecbfd::t_54dd1a446e67f1 7
+evals/ledger/scoring/metrics.test.ts
+  s_5be9e335eecbfd::t_ff378617fb6de1 886
+evals/ledger/evaluator/retrieval.ts
+  s_5be9e335eecbfd::t_7e4af4877696e1 4-6,9-11,14-16
+  s_5be9e335eecbfd::t_6e079c769ee668 8,13
+  s_5be9e335eecbfd::t_ab7ddfbac8ef7d 1
+evals/ledger/run/progress-events.ts
+  s_5be9e335eecbfd::t_597c382e503a33 1-89
+evals/ledger/scoring/churn.ts
+  s_5be9e335eecbfd::t_ed9c951e55f1fa 66
+evals/ledger/core/types.ts
+  s_5be9e335eecbfd::t_7e4af4877696e1 520-522,973-975,978-980,983-985,1354-1356
+  s_5be9e335eecbfd::t_c3a813c073ec52 663
+  s_5be9e335eecbfd::t_e809196cac0e81 1093
+evals/ledger/system/openwiki-system.ts
+  s_5be9e335eecbfd::t_b0f8adb3dd645f 78
+evals/ledger/evaluator/prompts.ts
+  s_5be9e335eecbfd::t_e278403a90d49a 459-462
+  s_5be9e335eecbfd::t_7e4af4877696e1 115-117,176-178
+evals/ledger/benchmark/transitions.ts
+  s_5be9e335eecbfd::t_7e4af4877696e1 163-165,168-170,173-175
+  s_5be9e335eecbfd::t_ee635e3cf936f2 3
+  s_5be9e335eecbfd::t_e7d8db819a18fd 120-162,166-167,171-172,176-190
+evals/ledger/run/progress.ts
+  s_5be9e335eecbfd::t_1a49c60b124452 7
+  s_5be9e335eecbfd::t_7e4af4877696e1 90-103
+  s_5be9e335eecbfd::t_44972df087f635 48-49,56,68
+  s_5be9e335eecbfd::t_ac4f69fa9d080c 3
+  s_5be9e335eecbfd::t_b5b6368ef7cc19 104-112,261,264,280,283,285,287,289-290,292,294-302
+evals/ledger/evaluator/documents.ts
+  s_5be9e335eecbfd::t_f9dad817de2432 1
+evals/ledger/README.md
+  s_2c5ee2953b7be4::t_a8cd9dc1a6c1b3 711-712,715-731,734-738
+evals/ledger/benchmark/benchmark.test.ts
+  s_2c5ee2953b7be4::t_3d7210f0a8fca3 99-113
+evals/ledger/benchmarks/calc-evolution/benchmark.json
+  s_2c5ee2953b7be4::t_31f415e1a24205 37-91
+evals/ledger/run/progress.test.ts
+  s_2c5ee2953b7be4::t_71cd30cd6609f4 137,140,143,150-162,166-199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "4881435a867ea30ccf1244fbf59e9c0cd68945d6",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_2c5ee2953b7be4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fea53-39d0-70f1-9a1a-f8c14abfd6fb",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_5be9e335eecbfd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f28b39b9-bbad-4f0f-a813-ca0915cff021",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

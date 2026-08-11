@@ -1,0 +1,25 @@
+.github/workflows/checks.yml
+  s_9df199bc4d57fc::t_0a5eb528df9d67 191-193,197-203
+  s_9df199bc4d57fc::t_564fdd2b138f14 245-254
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "6e830ba0c13b96a254fc4391242a4fffc57075c2",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
