@@ -1,0 +1,60 @@
+evals/ledger/evaluator/model-backend.ts
+  s_a78e1243cf0b12::t_34aa1c66389c84 77-78
+evals/ledger/run/runner.test.ts
+  s_a78e1243cf0b12::t_ccf02ae5d4fa77 31,37
+evals/ledger/run/summary.ts
+  s_a78e1243cf0b12::t_1c8f4326a0f4e6 2,30
+evals/ledger/run/evaluator-e2e.test.ts
+  s_a78e1243cf0b12::t_27a6abfc28d95b 91,246-261,550,565
+evals/ledger/evaluator/prompts.ts
+  s_a78e1243cf0b12::t_f1dfb93604593a 284-297
+  s_a78e1243cf0b12::t_e4aefac81c7fa9 283
+evals/ledger/README.md
+  s_a78e1243cf0b12::t_f80bcde1624690 59,64-67,74-83
+  s_a78e1243cf0b12::t_1c8f4326a0f4e6 150,154,159
+evals/ledger/run/report.ts
+  s_a78e1243cf0b12::t_1c8f4326a0f4e6 71,74,79
+evals/ledger/run/persistence.test.ts
+  s_a78e1243cf0b12::t_ed041cf0bfca05 300-308
+evals/ledger/evaluator/model-backend.test.ts
+  s_a78e1243cf0b12::t_c3d7b3594ca8c0 204-205
+  s_a78e1243cf0b12::t_abd3bba9281e4e 208
+evals/ledger/evaluator/precision.test.ts
+  s_a78e1243cf0b12::t_53f3ba867ff4af 126-129,176,181-199,379-381,392-407,425
+  s_a78e1243cf0b12::t_fbbe2f60cfbb58 13
+  s_a78e1243cf0b12::t_5b1d0e6b8baa98 218-274,291-328,334-335
+  s_a78e1243cf0b12::t_e92a7e81b91427 275-290,329-333
+evals/ledger/run/progress.ts
+  s_a78e1243cf0b12::t_82882923c8e621 1
+  s_a78e1243cf0b12::t_1c8f4326a0f4e6 238
+evals/ledger/evaluator/precision.ts
+  s_a78e1243cf0b12::t_d23f3755ea478c 832
+  s_a78e1243cf0b12::t_f91df8c54e6ebd 909,912
+  s_a78e1243cf0b12::t_7ed2ad6ea1a05f 866-870
+  s_a78e1243cf0b12::t_cf4904117ff5b8 25,60-62,64-65,67,286-288,295-310
+  s_a78e1243cf0b12::t_34aa1c66389c84 333-336,1307-1309
+  s_a78e1243cf0b12::t_0e2701856acdf2 1343,1355-1362,1378-1383,1385-1414,1417-1426,1429-1434,1438-1464,1466,1471-1547,1549-1562,1564-1607
+  s_a78e1243cf0b12::t_d131613acf5c48 980,1415-1416
+  s_a78e1243cf0b12::t_019bd543957b55 894-908,910-911,913-915,920,923-924,951
+  s_a78e1243cf0b12::t_6c6bde9d0e853f 311,857-865,871-893,916-919,921-922,925-950,952-979,981-987
+  s_a78e1243cf0b12::t_9d7ae1b62e5bbc 1222,1228,1250,1259,1277-1279
+  s_a78e1243cf0b12::t_9a345d538f97b5 312
+evals/ledger/system/openwiki-system-run.test.ts
+  s_a78e1243cf0b12::t_ccf02ae5d4fa77 104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "1cc8a7b3ee33a7ecd442e977412c63a63424cee4",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
