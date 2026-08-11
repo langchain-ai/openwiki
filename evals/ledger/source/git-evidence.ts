@@ -1,4 +1,5 @@
-import { lstat, readFile } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
+import { lstat, open } from "node:fs/promises";
 import path from "node:path";
 
 import { EvaluationError } from "../core/errors.js";
@@ -52,6 +53,52 @@ function formatOrdinal(ordinal: number): string {
 }
 
 /**
+ * Read a regular file through one stable descriptor without following a final
+ * symlink. Inspecting and reading the same open handle avoids a check/use race
+ * where the path could be replaced after metadata validation.
+ *
+ * @param filePath - Absolute tracked-file path to inspect.
+ *
+ * @returns File bytes, or undefined when the path is not a regular file.
+ */
+async function readRegularFile(filePath: string): Promise<Buffer | undefined> {
+  const noFollowFlag =
+    typeof fsConstants.O_NOFOLLOW === "number" ? fsConstants.O_NOFOLLOW : 0;
+  let fileHandle;
+
+  try {
+    fileHandle = await open(filePath, fsConstants.O_RDONLY | noFollowFlag);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ELOOP") {
+      return undefined;
+    }
+
+    throw error;
+  }
+
+  try {
+    const [openedMetadata, pathMetadata] = await Promise.all([
+      fileHandle.stat(),
+      lstat(filePath),
+    ]);
+
+    if (
+      !openedMetadata.isFile() ||
+      !pathMetadata.isFile() ||
+      pathMetadata.isSymbolicLink() ||
+      openedMetadata.dev !== pathMetadata.dev ||
+      openedMetadata.ino !== pathMetadata.ino
+    ) {
+      return undefined;
+    }
+
+    return await fileHandle.readFile();
+  } finally {
+    await fileHandle.close();
+  }
+}
+
+/**
  * Collect a checkpoint's tracked Git files as deterministic source evidence.
  * Binary files and the generated `openwiki/` artifact directory are excluded.
  *
@@ -96,15 +143,9 @@ export async function collectGitEvidence(
       );
     }
 
-    const metadata = await lstat(absolutePath);
+    const buffer = await readRegularFile(absolutePath);
 
-    if (metadata.isSymbolicLink() || !metadata.isFile()) {
-      continue;
-    }
-
-    const buffer = await readFile(absolutePath);
-
-    if (buffer.includes(0)) {
+    if (!buffer || buffer.includes(0)) {
       continue;
     }
 
