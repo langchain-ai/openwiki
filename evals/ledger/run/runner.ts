@@ -1,11 +1,10 @@
 import { SystemRunError } from "../core/errors.js";
 import { captureArtifact } from "../replay/artifact.js";
-import { computeChurn } from "../scoring/churn.js";
 import { GitReplay } from "../replay/git-replay.js";
-import { computeDiagnostics } from "../scoring/metrics.js";
+import { computeDiagnostics } from "../metrics/claims.js";
 import type {
   CheckpointEvaluationRecord,
-  CheckpointScore,
+  CheckpointResult,
   EvidenceCorpus,
   EvaluationBackend,
   LedgerBenchmark,
@@ -160,7 +159,7 @@ export async function runBenchmark(
       await replay.assertWikiNotTrackedAt(checkpoint.commit);
     }
 
-    const scores: CheckpointScore[] = [];
+    const checkpointResults: CheckpointResult[] = [];
     const history: CheckpointEvaluationRecord[] = [];
     let carry = initialCarry();
     const evidenceHistory: EvidenceCorpus[] = [];
@@ -236,7 +235,7 @@ export async function runBenchmark(
       }
 
       const {
-        score,
+        checkpointResult,
         history: historyEntry,
         nextCarry,
       } = await evaluateCheckpoint({
@@ -250,13 +249,12 @@ export async function runBenchmark(
         efficiency: {
           durationMs: outcome.durationMs,
           skipped: outcome.skipped,
-          churnedLines: computeChurn(carry.previousArtifact, artifact),
           totalTokens: outcome.totalTokens,
         },
         reportProgress,
       });
 
-      scores.push(score);
+      checkpointResults.push(checkpointResult);
       history.push(historyEntry);
       carry = nextCarry;
     }
@@ -269,7 +267,7 @@ export async function runBenchmark(
         system: { provider: config.provider, modelId: config.systemModelId },
         evaluatorModelId: config.evaluatorModelId,
       },
-      checkpoints: scores,
+      checkpoints: checkpointResults,
       diagnostics: computeDiagnostics(history),
     };
 

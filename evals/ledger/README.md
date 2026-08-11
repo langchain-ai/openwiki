@@ -38,8 +38,12 @@ hallucination rate = invented / current claims
 unverified rate    = unverified / current claims
 ```
 
-The rates therefore sum to 100%. `Unverified` is not treated as a factual error;
-it is the audit worklist and confidence boundary around the known results.
+Each checkpoint recomputes this partition from the entire current wiki; it is not
+a delta or an average of earlier checkpoints. When at least one current claim
+exists, the unrounded rates sum to 100% (whole-number CLI rounding may not). A
+claim-free wiki reports zero for all four rates. `Unverified` is not treated as a
+factual error; it is the audit worklist and confidence boundary around the known
+results.
 
 ### Claim evaluation pipeline
 
@@ -63,23 +67,35 @@ supported / contradicted / not addressed
         └ not addressed                → unverified
 ```
 
-Source evidence is every tracked non-binary Git file except the generated
-`openwiki/` artifact. Current evidence comes from the active checkpoint; earlier
-checkpoint evidence is marked historical. Every adjudicated verdict cites the
-exact evidence records visible to the judge.
+Source evidence contains a tracked-file manifest plus bounded text chunks from
+every tracked, regular, non-binary Git file except the generated `openwiki/`
+artifact. Symlinks are skipped. Current evidence comes from the active
+checkpoint; evidence captured at every earlier checkpoint is marked historical.
+Every supported or contradicted verdict cites the exact evidence records visible
+to the judge.
+
+Evaluator failures do not abort the run. A claim-grounding judgment that remains
+invalid after isolated repair falls back to `unverified`; a failed extraction
+unit contributes no claims. Both cases lower the separately reported evaluator
+completeness rate and remain visible as warnings in the audit report.
 
 ## Forgetting
 
 Source absence is not always sufficient to refute a claim. LEDGER therefore keeps
 a separate deterministic watchlist for structural public-API changes.
 
-At each checkpoint the TypeScript surface extractor records exported symbols,
-parseable source files, and the package version. Diffing consecutive surfaces
-identifies changed and removed fact versions. Those obsolete versions stay under
-watch while they remain obsolete.
+At each checkpoint the TypeScript surface extractor records authored
+`.ts`/`.tsx`/`.mts`/`.cts` files, their exported symbols, and an exported
+`VERSION` constant or `package.json` version when present. Declaration files,
+tests, generated wiki content, dependencies, and build output are excluded.
+Diffing consecutive surfaces identifies changed and removed fact versions. Those
+obsolete versions stay under watch while they remain obsolete, even after first
+being judged forgotten; an exact source revival removes the version from the
+watchlist.
 
 The forgetting evaluator asks whether each obsolete fact is still presented as
-current:
+current. It inspects BM25-ranked wiki sections first, then exhaustively checks all
+remaining sections before declaring the fact forgotten:
 
 | Verdict         | Meaning                                                     |
 | --------------- | ----------------------------------------------------------- |
@@ -88,7 +104,11 @@ current:
 | `indeterminate` | The evaluator could not complete the judgment.              |
 
 This produces forgotten and carried obsolete facts at each checkpoint plus
-stale-knowledge lifetime, measured in checkpoints until first forgotten.
+stale-knowledge lifetime, measured as the number of checkpoints judged
+`lingering` before the first `forgotten` verdict. Indeterminate judgments reduce
+evaluator completeness and are excluded from the report's forgetting-rate
+denominator. In the live CLI, an indeterminate obsolete fact remains in the
+`carrying` count and is accompanied by an evaluator warning.
 
 The source surface is an obsolete-knowledge oracle only. It is not reported or
 scored as documentation coverage.
@@ -109,23 +129,30 @@ scored as documentation coverage.
 │ 📊 claims · 88% supported · 4% stale · 2% hallucinated · 6% unverified
 │ 🧹 forgot 2/3 obsolete facts · carrying 1
 │
-├ 🔬 Details → .ledger/runs/…/report.md
+├ 🔬 Details → evals/ledger/.results/taskflow-…/report.md
 └ ✅ Complete · 2m 11s
 ```
 
 Counts, individual claims, citations, evaluator warnings, and stale lifetimes are
 kept in `report.md`, `result.json`, the assertion inventories, evidence snapshots,
-and `unverified-claims.md`.
+and, when current unverified claims exist, `unverified-claims.md`.
 
 ## Running
 
 ```bash
+OPENWIKI_PROVIDER=anthropic \
+LEDGER_EVALUATOR_MODEL_ID=claude-sonnet-5 \
 pnpm run eval:ledger -- --benchmark evals/ledger/benchmarks/taskflow
 ```
+
+Provider credentials use the same environment configuration as OpenWiki. Add
+`--system-model <id>` or `--evaluator-model <id>` to override either model.
 
 Re-evaluate a completed run without invoking OpenWiki again:
 
 ```bash
+OPENWIKI_PROVIDER=anthropic \
+LEDGER_EVALUATOR_MODEL_ID=claude-sonnet-5 \
 pnpm run eval:ledger:reevaluate -- \
   --benchmark evals/ledger/benchmarks/taskflow \
   --run evals/ledger/.results/taskflow-<timestamp>

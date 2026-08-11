@@ -243,16 +243,6 @@ describe.skipIf(!process.env.LEDGER_LIVE)(
 
       const evaluation = await backend.evaluate({
         artifact,
-        surface: [
-          {
-            factId: "auth",
-            factVersionId: "auth@T0",
-            kind: "symbol",
-            name: "auth",
-            statement:
-              "Requests authenticate with an API key in the X-Api-Key header.",
-          },
-        ],
         evidence: {
           checkpointId: "T0",
           records: [

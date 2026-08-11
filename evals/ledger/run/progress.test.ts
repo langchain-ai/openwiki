@@ -48,7 +48,6 @@ describe("createCliProgressReporter", () => {
     report({
       type: "checkpoint-complete",
       checkpointId: "T1",
-      claimCount: 100,
       supportedRate: 0.82,
       stalenessRate: 0.1,
       hallucinationRate: 0.02,
@@ -75,7 +74,6 @@ describe("createCliProgressReporter", () => {
     report({
       type: "checkpoint-complete",
       checkpointId: "T0",
-      claimCount: 9,
       supportedRate: 1,
       stalenessRate: 0,
       hallucinationRate: 0,

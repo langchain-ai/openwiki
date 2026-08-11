@@ -29,7 +29,7 @@ test("reports current claim state and forgetting without a composite score", () 
           judged: 106,
           indeterminate: 0,
           total: 106,
-          score: 1,
+          rate: 1,
         },
         efficiency: { durationMs: 4200, churnedLines: 12, skipped: false },
         evaluations: {

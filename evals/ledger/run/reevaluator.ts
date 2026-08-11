@@ -3,15 +3,14 @@ import path from "node:path";
 import { LedgerError } from "../core/errors.js";
 import type {
   CheckpointEvaluationRecord,
-  CheckpointScore,
+  CheckpointResult,
   EvidenceCorpus,
   EvaluationBackend,
   LedgerBenchmark,
   LedgerRunResult,
   KnowledgeArtifact,
 } from "../core/types.js";
-import { computeChurn } from "../scoring/churn.js";
-import { computeDiagnostics } from "../scoring/metrics.js";
+import { computeDiagnostics } from "../metrics/claims.js";
 import { evaluateCheckpoint, initialCarry } from "./evaluate-checkpoint.js";
 import type { BenchmarkProgressReporter } from "./progress-events.js";
 import {
@@ -91,7 +90,7 @@ export interface SavedRunReevaluationInputs {
 function savedCheckpoint(
   savedResult: LedgerRunResult,
   checkpointId: string,
-): CheckpointScore {
+): CheckpointResult {
   const checkpoint = savedResult.checkpoints.find(
     (candidate) => candidate.checkpointId === checkpointId,
   );
@@ -144,7 +143,7 @@ export async function reevaluateSavedRun(
   reportProgress({ type: "replay-ready", saved: true });
 
   try {
-    const scores: CheckpointScore[] = [];
+    const checkpointResults: CheckpointResult[] = [];
     const history: CheckpointEvaluationRecord[] = [];
     let carry = initialCarry();
 
@@ -175,7 +174,7 @@ export async function reevaluateSavedRun(
 
       const original = savedCheckpoint(savedResult, checkpoint.id);
       const {
-        score,
+        checkpointResult,
         history: historyEntry,
         nextCarry,
       } = await evaluateCheckpoint({
@@ -186,14 +185,11 @@ export async function reevaluateSavedRun(
         evidence,
         evaluationBackend: inputs.evaluationBackend,
         carry,
-        efficiency: {
-          ...original.efficiency,
-          churnedLines: computeChurn(carry.previousArtifact, artifact),
-        },
+        efficiency: original.efficiency,
         reportProgress,
       });
 
-      scores.push(score);
+      checkpointResults.push(checkpointResult);
       history.push(historyEntry);
       carry = nextCarry;
     }
@@ -207,7 +203,7 @@ export async function reevaluateSavedRun(
         evaluatorModelId: inputs.evaluatorModelId,
         reevaluatedFrom: sourceRunDir,
       },
-      checkpoints: scores,
+      checkpoints: checkpointResults,
       diagnostics: computeDiagnostics(history),
     };
 

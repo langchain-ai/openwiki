@@ -7,7 +7,7 @@ import {
   computeClaimState,
   computeEvaluationCompleteness,
   computeStaleKnowledge,
-} from "./metrics.js";
+} from "./claims.js";
 
 function claim(
   verdict: PrecisionAssertionEvaluation["verdict"],
@@ -68,7 +68,7 @@ test("evaluation completeness counts indeterminate forgetting judgments", () => 
         },
       ],
     ),
-  ).toEqual({ judged: 1, indeterminate: 1, total: 2, score: 0.5 });
+  ).toEqual({ judged: 1, indeterminate: 1, total: 2, rate: 0.5 });
 });
 
 test("evaluation completeness does not double-count warned fallback results", () => {
@@ -89,7 +89,7 @@ test("evaluation completeness does not double-count warned fallback results", ()
         { pass: "forgetting", itemId: "x@1", message: "failed" },
       ],
     ),
-  ).toEqual({ judged: 0, indeterminate: 2, total: 2, score: 0 });
+  ).toEqual({ judged: 0, indeterminate: 2, total: 2, rate: 0 });
 });
 
 test("evaluation completeness includes failed extraction units", () => {
@@ -99,14 +99,13 @@ test("evaluation completeness includes failed extraction units", () => {
       [],
       [{ pass: "precision-extraction", itemId: "unit-1", message: "failed" }],
     ),
-  ).toEqual({ judged: 0, indeterminate: 1, total: 1, score: 0 });
+  ).toEqual({ judged: 0, indeterminate: 1, total: 1, rate: 0 });
 });
 
 test("stale lifetime stops when an obsolete fact is first forgotten", () => {
   const history: CheckpointEvaluationRecord[] = [
-    { checkpointId: "T0", forgettingEvaluations: [] },
+    { forgettingEvaluations: [] },
     {
-      checkpointId: "T1",
       forgettingEvaluations: [
         {
           factId: "x",
@@ -118,7 +117,6 @@ test("stale lifetime stops when an obsolete fact is first forgotten", () => {
       ],
     },
     {
-      checkpointId: "T2",
       forgettingEvaluations: [
         {
           factId: "x",

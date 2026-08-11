@@ -4,19 +4,24 @@ import {
   formatLifetime,
   formatPercent1 as pct,
 } from "./format.js";
-import { forgettingRate } from "./forgetting-rate.js";
 
 function factForgettingRate(
   result: LedgerRunResult,
   checkpointId: string,
 ): string {
-  const rate = forgettingRate(
-    result.checkpoints.find((item) => item.checkpointId === checkpointId)
-      ?.evaluations?.forgettingEvaluations,
+  const evaluations = result.checkpoints.find(
+    (item) => item.checkpointId === checkpointId,
+  )?.evaluations?.forgettingEvaluations;
+  const judged = evaluations?.filter(
+    (evaluation) => evaluation.verdict !== "indeterminate",
   );
-  return rate === undefined
-    ? "-"
-    : `${pct(rate.rate)} (${rate.forgotten}/${rate.judged})`;
+  if (judged === undefined || judged.length === 0) {
+    return "-";
+  }
+  const forgotten = judged.filter(
+    (evaluation) => evaluation.verdict === "forgotten",
+  ).length;
+  return `${pct(forgotten / judged.length)} (${forgotten}/${judged.length})`;
 }
 
 function appendClaimClass(
@@ -67,7 +72,7 @@ export function formatReport(result: LedgerRunResult): string {
   for (const checkpoint of result.checkpoints) {
     const claims = checkpoint.claims;
     lines.push(
-      `| ${checkpoint.checkpointId} | ${claims.total} | ${pct(claims.supportedRate)} | ${pct(claims.stalenessRate)} (${claims.stale}) | ${pct(claims.hallucinationRate)} (${claims.invented}) | ${pct(claims.unverifiedRate)} (${claims.unverified}) | ${factForgettingRate(result, checkpoint.checkpointId)} | ${pct(checkpoint.evaluationCompleteness.score)} | ${checkpoint.efficiency.durationMs} | ${formatCount(checkpoint.efficiency.churnedLines)} | ${checkpoint.efficiency.skipped ? "yes" : "no"} |`,
+      `| ${checkpoint.checkpointId} | ${claims.total} | ${pct(claims.supportedRate)} | ${pct(claims.stalenessRate)} (${claims.stale}) | ${pct(claims.hallucinationRate)} (${claims.invented}) | ${pct(claims.unverifiedRate)} (${claims.unverified}) | ${factForgettingRate(result, checkpoint.checkpointId)} | ${pct(checkpoint.evaluationCompleteness.rate)} | ${checkpoint.efficiency.durationMs} | ${formatCount(checkpoint.efficiency.churnedLines)} | ${checkpoint.efficiency.skipped ? "yes" : "no"} |`,
     );
   }
 

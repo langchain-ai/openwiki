@@ -19,7 +19,7 @@ export function formatRunSummary(
     lines.push(`├ 🔬 Details → ${options.detailsPath}`);
   }
   const incomplete = result.checkpoints.some(
-    (checkpoint) => checkpoint.evaluationCompleteness.score < 1,
+    (checkpoint) => checkpoint.evaluationCompleteness.rate < 1,
   );
   const elapsed =
     options.elapsedMs === undefined

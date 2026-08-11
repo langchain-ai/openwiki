@@ -6,8 +6,7 @@ import {
 } from "../benchmark/surface.js";
 import type {
   CheckpointEvaluationRecord,
-  CheckpointScore,
-  CheckpointTransitions,
+  CheckpointResult,
   EvaluationBackend,
   EvidenceCorpus,
   KnowledgeArtifact,
@@ -19,7 +18,8 @@ import type {
 import {
   computeClaimState,
   computeEvaluationCompleteness,
-} from "../scoring/metrics.js";
+} from "../metrics/claims.js";
+import { computeChurn } from "../metrics/churn.js";
 import type { BenchmarkProgressReporter } from "./progress-events.js";
 
 /**
@@ -118,8 +118,8 @@ export interface EvaluateCheckpointInputs {
   carry: CheckpointCarry;
 
   /**
-   * The System Under Test efficiency observations for this checkpoint, built by
-   * the caller (measured live, or copied from a saved run with churn recomputed).
+   * The System Under Test efficiency observations for this checkpoint, measured
+   * live or copied from a saved run. Churn is recomputed here from the carry.
    */
   efficiency: LedgerExecutionMetrics;
 
@@ -137,7 +137,7 @@ export interface EvaluatedCheckpoint {
   /**
    * The checkpoint measurements to append to the run result.
    */
-  score: CheckpointScore;
+  checkpointResult: CheckpointResult;
 
   /**
    * The evaluation record to push onto the run's history, feeding diagnostics.
@@ -186,7 +186,6 @@ export async function evaluateCheckpoint(
 
   const surface = await extractSurface(sourceRepoPath, checkpoint.commit);
 
-  let transitions: CheckpointTransitions | undefined;
   let newlyObsolete: ObsoleteFactTarget[] = [];
 
   if (
@@ -194,13 +193,14 @@ export async function evaluateCheckpoint(
     carry.previousCheckpointId !== undefined &&
     carry.previousSurface !== undefined
   ) {
-    transitions = diffSurface(
-      carry.previousSurface,
-      surface,
-      carry.previousCheckpointId,
-      checkpoint.id,
+    newlyObsolete = obsoleteTargetsFor(
+      diffSurface(
+        carry.previousSurface,
+        surface,
+        carry.previousCheckpointId,
+        checkpoint.id,
+      ),
     );
-    newlyObsolete = obsoleteTargetsFor(transitions);
   }
 
   const obsoleteFacts = advanceObsoleteWatchSet({
@@ -212,16 +212,13 @@ export async function evaluateCheckpoint(
   reportProgress({
     type: "evaluation-start",
     checkpointId: checkpoint.id,
-    surfaceItemCount: surface.length,
     obsoleteFactCount: obsoleteFacts.length,
   });
 
   const evaluation = await evaluationBackend.evaluate({
     artifact,
-    surface,
     evidence,
     obsoleteFacts,
-    transitions,
   });
 
   const claims = computeClaimState(evaluation.precisionEvaluations);
@@ -234,7 +231,6 @@ export async function evaluateCheckpoint(
   reportProgress({
     type: "checkpoint-complete",
     checkpointId: checkpoint.id,
-    claimCount: claims.total,
     supportedRate: claims.supportedRate,
     stalenessRate: claims.stalenessRate,
     hallucinationRate: claims.hallucinationRate,
@@ -243,16 +239,19 @@ export async function evaluateCheckpoint(
       (item) => item.verdict === "forgotten",
     ).length,
     obsoleteFactCount: evaluation.forgettingEvaluations.length,
-    evaluationCompleteness: evaluationCompleteness.score,
+    evaluationCompleteness: evaluationCompleteness.rate,
     indeterminateCount: evaluationCompleteness.indeterminate,
     evaluationItemCount: evaluationCompleteness.total,
   });
 
-  const score: CheckpointScore = {
+  const checkpointResult: CheckpointResult = {
     checkpointId: checkpoint.id,
     claims,
     evaluationCompleteness,
-    efficiency,
+    efficiency: {
+      ...efficiency,
+      churnedLines: computeChurn(carry.previousArtifact, artifact),
+    },
     // Retain the raw verdicts, not just their reduced counts, so each claim state
     // and forgetting result remains explainable in the persisted result.
     evaluations: {
@@ -263,7 +262,6 @@ export async function evaluateCheckpoint(
   };
 
   const history: CheckpointEvaluationRecord = {
-    checkpointId: checkpoint.id,
     forgettingEvaluations: evaluation.forgettingEvaluations,
   };
 
@@ -278,5 +276,5 @@ export async function evaluateCheckpoint(
     previousSurface: surface,
   };
 
-  return { score, history, nextCarry };
+  return { checkpointResult, history, nextCarry };
 }

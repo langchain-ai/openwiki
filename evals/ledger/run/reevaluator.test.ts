@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import type {
   CheckpointEvaluation,
-  CheckpointScore,
+  CheckpointResult,
   EvaluationBackend,
   EvaluationInput,
   EvidenceCorpus,
@@ -94,12 +94,12 @@ function benchmark(repo: TinyRepo): LedgerBenchmark {
  * @param checkpointId - Checkpoint identity.
  * @param durationMs - Original system duration.
  *
- * @returns A minimal checkpoint score.
+ * @returns A minimal checkpoint result.
  */
 function originalCheckpoint(
   checkpointId: string,
   durationMs: number,
-): CheckpointScore {
+): CheckpointResult {
   return {
     checkpointId,
     claims: {
@@ -113,7 +113,7 @@ function originalCheckpoint(
       stalenessRate: 0,
       unverifiedRate: 0,
     },
-    evaluationCompleteness: { judged: 0, indeterminate: 0, total: 0, score: 1 },
+    evaluationCompleteness: { judged: 0, indeterminate: 0, total: 0, rate: 1 },
     efficiency: { durationMs, skipped: false },
   };
 }
@@ -210,7 +210,7 @@ describe("reevaluateSavedRun", () => {
     );
   });
 
-  test("recomputes semantic and longitudinal scores without invoking a system", async () => {
+  test("recomputes semantic and longitudinal measurements without invoking a system", async () => {
     const resultsDir = await mkdtemp(path.join(os.tmpdir(), "ledger-reeval-"));
     temporaryDirectories.push(resultsDir);
     const original = sourceResult();

@@ -14,7 +14,7 @@ import {
   writeUnverifiedClaims,
 } from "./persistence.js";
 import type {
-  CheckpointScore,
+  CheckpointResult,
   LedgerRunResult,
   KnowledgeArtifact,
   PrecisionAssertionEvaluation,
@@ -23,7 +23,7 @@ import type {
 /**
  * Build a minimal, serializable run result with the given benchmark name. The
  * fields are otherwise fixed; persistence only serializes the object, so the exact
- * scores do not matter to these tests.
+ * measurements do not matter to these tests.
  *
  * @param benchmarkName - The benchmark name to stamp into the metadata.
  *
@@ -51,12 +51,12 @@ function sampleResult(benchmarkName: string): LedgerRunResult {
  * @param checkpointId - Identifier for the checkpoint.
  * @param precisionEvaluations - Precision verdicts to attach.
  *
- * @returns A checkpoint score with the supplied precision evaluations.
+ * @returns A checkpoint result with the supplied precision evaluations.
  */
 function checkpointWith(
   checkpointId: string,
   precisionEvaluations: PrecisionAssertionEvaluation[],
-): CheckpointScore {
+): CheckpointResult {
   return {
     checkpointId,
     claims: {
@@ -73,7 +73,7 @@ function checkpointWith(
       stalenessRate: 0,
       unverifiedRate: 0,
     },
-    evaluationCompleteness: { judged: 0, indeterminate: 0, total: 0, score: 1 },
+    evaluationCompleteness: { judged: 0, indeterminate: 0, total: 0, rate: 1 },
     efficiency: { durationMs: 1000, skipped: false },
     evaluations: {
       precisionEvaluations,

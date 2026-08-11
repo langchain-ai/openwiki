@@ -65,7 +65,7 @@ export function computeEvaluationCompleteness(
     judged: total - indeterminate,
     indeterminate,
     total,
-    score: total === 0 ? 1 : (total - indeterminate) / total,
+    rate: total === 0 ? 1 : (total - indeterminate) / total,
   };
 }
 

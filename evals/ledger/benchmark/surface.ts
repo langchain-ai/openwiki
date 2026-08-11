@@ -426,8 +426,8 @@ function symbolStatement(symbol: DeclaredSymbol): string {
  * entirely from source at `commit`, never from the wiki, so it is the ground
  * truth the surface diff is computed against.
  *
- * TypeScript-only for v1: files outside {@link SOURCE_EXTENSIONS} contribute a
- * `file` item but no symbols.
+ * TypeScript-only for v1: files outside {@link SOURCE_EXTENSIONS} do not
+ * contribute surface items.
  *
  * @param repoPath - Absolute path to the source Git repository.
  * @param commit - Commit SHA to read the surface at. Validated before use.

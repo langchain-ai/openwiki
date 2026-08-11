@@ -13,7 +13,7 @@ responses are:
 Never add a code-side regex, token list, fixture name, or other special case for
 one judge miss.
 
-Claim-state mutations are covered by the scoring and evaluator tests: supported,
+Claim-state mutations are covered by the metrics and evaluator tests: supported,
 stale, hallucinated, and unverified current claims must remain a complete,
 single-denominator partition. Forgetting behavior is tested separately against
 the deterministic obsolete-API watch set.

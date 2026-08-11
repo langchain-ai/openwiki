@@ -41,13 +41,11 @@ export type BenchmarkProgressEvent =
   | {
       type: "evaluation-start";
       checkpointId: string;
-      surfaceItemCount: number;
       obsoleteFactCount: number;
     }
   | {
       type: "checkpoint-complete";
       checkpointId: string;
-      claimCount: number;
       supportedRate: number;
       stalenessRate: number;
       hallucinationRate: number;

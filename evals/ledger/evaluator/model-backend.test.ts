@@ -148,15 +148,6 @@ describe("ModelEvaluationBackend", () => {
           },
         ],
       },
-      surface: [
-        {
-          factId: "current",
-          factVersionId: "current@T1",
-          kind: "symbol",
-          name: "current",
-          statement: "Current behavior is enabled.",
-        },
-      ],
       evidence: {
         checkpointId: "T1",
         records: [

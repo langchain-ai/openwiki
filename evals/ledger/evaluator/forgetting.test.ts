@@ -86,7 +86,7 @@ function promptTargets(prompt: string): Array<Record<string, unknown>> {
   >;
 }
 
-describe("runForgettingPass", () => {
+describe("forgetting evaluator", () => {
   test("treats explicit historical language as non-lingering", async () => {
     const control = controller([
       {

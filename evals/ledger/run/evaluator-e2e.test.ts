@@ -428,7 +428,7 @@ afterEach(async () => {
 });
 
 describe("direct evaluator end to end", () => {
-  test("replays, evaluates, scores, persists, and reports deterministically", async () => {
+  test("replays, evaluates, persists, and reports deterministically", async () => {
     const result = await runBenchmark({
       benchmark: benchmark(repo),
       system: new EvolvingDocumentationSystem(),
@@ -478,7 +478,7 @@ describe("direct evaluator end to end", () => {
     ]);
     expect(
       result.checkpoints.every(
-        (checkpoint) => checkpoint.evaluationCompleteness.score === 1,
+        (checkpoint) => checkpoint.evaluationCompleteness.rate === 1,
       ),
     ).toBe(true);
     expect(

@@ -530,11 +530,6 @@ export interface CheckpointEvaluation {
  */
 export interface CheckpointEvaluationRecord {
   /**
-   * The checkpoint these verdicts are for.
-   */
-  checkpointId: string;
-
-  /**
    * Forgetting verdicts at this checkpoint: one per obsolete version under watch.
    * The watch set is every surface version that is obsolete according to the
    * source diff here, including versions already judged `forgotten` at an
@@ -624,7 +619,7 @@ export interface EvaluationCompletenessMetric {
   /**
    * `judged / total`, or 1 when no semantic items existed.
    */
-  score: number;
+  rate: number;
 }
 
 /**
@@ -657,7 +652,7 @@ export interface CheckpointEvaluationDetail {
 /**
  * The measured result for one checkpoint.
  */
-export interface CheckpointScore {
+export interface CheckpointResult {
   /**
    * The checkpoint id.
    */
@@ -682,7 +677,7 @@ export interface CheckpointScore {
    * The raw per-item verdicts behind this checkpoint's measurements, retained for
    * auditing and report drill-down.
    *
-   * @default absent on synthetic scores built by hand (in tests); the runner
+   * @default absent on synthetic results built by hand (in tests); the runner
    *   always populates it from the evaluator's output
    */
   evaluations?: CheckpointEvaluationDetail;
@@ -894,7 +889,7 @@ export interface LedgerRunResult {
   /**
    * One entry per checkpoint, in trace order.
    */
-  checkpoints: CheckpointScore[];
+  checkpoints: CheckpointResult[];
 
   /**
    * Trace-level forgetting diagnostics.
@@ -987,13 +982,6 @@ export interface EvaluationInput {
   artifact: KnowledgeArtifact;
 
   /**
-   * The repository's public surface at this checkpoint. The runtime uses it to
-   * derive obsolete fact versions; current claim state comes from the artifact's
-   * extracted claims instead.
-   */
-  surface: SurfaceItem[];
-
-  /**
    * Current normalized source evidence used to verify artifact assertions.
    */
   evidence: EvidenceCorpus;
@@ -1003,13 +991,6 @@ export interface EvaluationInput {
    * must no longer linger (forgetting targets). Empty at the first checkpoint.
    */
   obsoleteFacts: ObsoleteFactTarget[];
-
-  /**
-   * Source-derived surface transition into this checkpoint, when one exists.
-   *
-   * @default undefined the first checkpoint has no inbound transition
-   */
-  transitions?: CheckpointTransitions;
 }
 
 /**

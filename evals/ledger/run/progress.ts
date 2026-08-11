@@ -40,15 +40,15 @@ export function formatProgressDuration(durationMs: number): string {
 }
 
 /**
- * Render a score fraction as a whole-number percentage for the compact live
+ * Render a metric fraction as a whole-number percentage for the compact live
  * checkpoint line.
  *
- * @param score - Score between zero and one.
+ * @param value - Fraction between zero and one.
  *
  * @returns Percentage text.
  */
-function formatPercent(score: number | undefined): string {
-  return formatPercentString(score, 0);
+function formatPercent(value: number | undefined): string {
+  return formatPercentString(value, 0);
 }
 
 /**
