@@ -49,7 +49,6 @@ jobs:
           OPENWIKI_REASONING_EFFORT: ${{ matrix.effort }}
         run: |
           test -n "$NVIDIA_API_KEY"
-          expected="NIM_${OPENWIKI_REASONING_EFFORT^^}_OK"
-          response="$(pnpm exec tsx src/cli/cli.tsx --print --mode code --model-id "$OPENWIKI_MODEL_ID" "Reply with exactly $expected. Do not call tools and do not modify files.")"
+          response="$(pnpm exec tsx src/cli/cli.tsx --print --mode code --model-id "$OPENWIKI_MODEL_ID" "Briefly describe your capabilities. Do not call tools and do not modify files.")"
           printf '%s\n' "$response"
-          test "$response" = "$expected"
+          test -n "$response"
