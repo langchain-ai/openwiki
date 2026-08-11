@@ -8,7 +8,15 @@ import type {
 } from "../core/types.js";
 import { invokeStructuredModel } from "./direct-model.js";
 import type { ArtifactSection } from "./documents.js";
-import { assertPositiveInteger, batch, toExcerpt } from "./pass-utils.js";
+import {
+  assertPositiveInteger,
+  batch,
+  createLimiter,
+  DEFAULT_PASS_CONCURRENCY,
+  mapWithLimit,
+  toExcerpt,
+  type Limiter,
+} from "./pass-utils.js";
 import {
   COVERAGE_SYSTEM,
   coveragePrompt,
@@ -25,8 +33,12 @@ const DEFAULT_TOP_K = 8;
 
 /**
  * Default number of fact targets included in each initial model request.
+ *
+ * Raised from the original conservative default now that a failed batch
+ * degrades to per-item repair instead of aborting the run; larger batches cut
+ * the serial round-trip count per checkpoint.
  */
-const DEFAULT_TARGET_BATCH_SIZE = 5;
+const DEFAULT_TARGET_BATCH_SIZE = 15;
 
 /**
  * Number of untried sections examined per exhaustive fallback request.
@@ -76,6 +88,15 @@ export interface CoveragePassInput {
    * Per-attempt evaluator request deadline in milliseconds.
    */
   timeoutMs?: number;
+
+  /**
+   * Shared concurrency limiter bounding in-flight model calls across passes.
+   *
+   * @default a private limiter of `DEFAULT_PASS_CONCURRENCY` when absent, so a
+   * standalone pass still runs its batches concurrently but never shares a
+   * budget with sibling passes.
+   */
+  limit?: Limiter;
 
   /**
    * Optional sink for items that remain invalid after isolated repair.
@@ -301,6 +322,43 @@ async function evaluateCoverageBatch(
 }
 
 /**
+ * Exhaustively scan every untried section for one still-`missing` requirement,
+ * stopping at the first section batch that flips the verdict. The scan stays
+ * strictly serial and early-breaks so it examines the minimum evidence, exactly
+ * as when the fallback ran inline; only the per-target calls run concurrently.
+ *
+ * @param input - Coverage pass configuration and warning sink.
+ * @param target - Requirement whose initial verdict was `missing`.
+ * @param allSections - Every artifact section available as evidence.
+ * @param initial - The initial `missing` evaluation retained when no section
+ * flips the verdict.
+ *
+ * @returns The first non-missing verdict found, else the initial missing one.
+ */
+async function resolveCoverageFallback(
+  input: CoveragePassInput,
+  target: CoverageTarget,
+  allSections: ArtifactSection[],
+  initial: FactEvaluation,
+): Promise<FactEvaluation> {
+  const examined = new Set(target.sections.map((section) => section.id));
+  const remaining = allSections.filter((section) => !examined.has(section.id));
+  let evaluation = initial;
+
+  for (const sections of batch(remaining, FALLBACK_SECTION_BATCH_SIZE)) {
+    [evaluation] = await evaluateCoverageBatchResilient(input, [
+      { fact: target.fact, sections },
+    ]);
+
+    if (evaluation.verdict !== "missing") {
+      break;
+    }
+  }
+
+  return evaluation;
+}
+
+/**
  * Evaluate a coverage batch without letting one malformed item discard valid
  * neighboring judgments. Invalid items receive one isolated structured request;
  * an item that still fails becomes explicitly indeterminate.
@@ -314,15 +372,29 @@ async function evaluateCoverageBatchResilient(
   input: CoveragePassInput,
   targets: CoverageTarget[],
 ): Promise<FactEvaluation[]> {
-  const output = await invokeStructuredModel({
-    model: input.model,
-    pass: "coverage",
-    checkpointId: input.checkpointId,
-    systemPrompt: COVERAGE_SYSTEM,
-    taskPrompt: coveragePrompt(toPromptTargets(targets)),
-    schema: coverageOutputSchema,
-    timeoutMs: input.timeoutMs,
-  });
+  // A whole-batch coverage failure (for example an empty or malformed tool-call
+  // payload that survives both attempts inside invokeStructuredModel) must not
+  // abort the pass. Fall back to an empty response and let the per-target loop
+  // below re-evaluate each target in isolation, degrading only the targets that
+  // still cannot be judged. The batch error is threaded into the degrade message
+  // so the warning reports the real cause; it is already prompt-redacted and
+  // length-bounded by invokeStructuredModel before it reaches here.
+  let output: CoverageOutput;
+  let batchError: unknown;
+  try {
+    output = await invokeStructuredModel({
+      model: input.model,
+      pass: "coverage",
+      checkpointId: input.checkpointId,
+      systemPrompt: COVERAGE_SYSTEM,
+      taskPrompt: coveragePrompt(toPromptTargets(targets)),
+      schema: coverageOutputSchema,
+      timeoutMs: input.timeoutMs,
+    });
+  } catch (error) {
+    batchError = error;
+    output = { evaluations: [] };
+  }
   const allowedSectionIds = new Set(
     targets.flatMap((target) => target.sections.map((section) => section.id)),
   );
@@ -341,10 +413,9 @@ async function evaluateCoverageBatchResilient(
         );
         evaluations.push(repaired);
       } catch (repairError) {
+        const cause = batchError ?? initialError;
         const initialMessage =
-          initialError instanceof Error
-            ? initialError.message
-            : String(initialError);
+          cause instanceof Error ? cause.message : String(cause);
         const repairMessage =
           repairError instanceof Error
             ? repairError.message
@@ -386,6 +457,7 @@ export async function runCoveragePass(
 
   const topK = input.topK ?? DEFAULT_TOP_K;
   const batchSize = input.batchSize ?? DEFAULT_TARGET_BATCH_SIZE;
+  const limit = input.limit ?? createLimiter(DEFAULT_PASS_CONCURRENCY);
   assertPositiveInteger(topK, "Coverage topK");
   assertPositiveInteger(batchSize, "Coverage batchSize");
 
@@ -409,37 +481,37 @@ export async function runCoveragePass(
   }));
   const resultByFact = new Map<string, FactEvaluation>();
 
-  for (const targets of batch(initialTargets, batchSize)) {
-    const evaluations = await evaluateCoverageBatchResilient(input, targets);
+  const batchResults = await mapWithLimit(
+    batch(initialTargets, batchSize),
+    limit,
+    (targets) => evaluateCoverageBatchResilient(input, targets),
+  );
 
+  for (const evaluations of batchResults) {
     for (const evaluation of evaluations) {
       resultByFact.set(evaluation.factId, evaluation);
     }
   }
 
-  for (const target of initialTargets) {
-    const initial = resultByFact.get(target.fact.factId) as FactEvaluation;
+  // Every still-missing requirement gets an independent exhaustive scan; the
+  // targets are independent and each writes only its own result, so they run
+  // concurrently while each scan's inner section walk stays serial.
+  const missingTargets = initialTargets.filter(
+    (target) =>
+      (resultByFact.get(target.fact.factId) as FactEvaluation).verdict ===
+      "missing",
+  );
+  const fallbackResults = await mapWithLimit(missingTargets, limit, (target) =>
+    resolveCoverageFallback(
+      input,
+      target,
+      allSections,
+      resultByFact.get(target.fact.factId) as FactEvaluation,
+    ),
+  );
 
-    if (initial.verdict !== "missing") {
-      continue;
-    }
-
-    const examined = new Set(target.sections.map((section) => section.id));
-    const remaining = allSections.filter(
-      (section) => !examined.has(section.id),
-    );
-
-    for (const sections of batch(remaining, FALLBACK_SECTION_BATCH_SIZE)) {
-      const [evaluation] = await evaluateCoverageBatchResilient(input, [
-        { fact: target.fact, sections },
-      ]);
-
-      resultByFact.set(target.fact.factId, evaluation);
-
-      if (evaluation.verdict !== "missing") {
-        break;
-      }
-    }
+  for (const evaluation of fallbackResults) {
+    resultByFact.set(evaluation.factId, evaluation);
   }
 
   return input.surface.map(

@@ -1,16 +1,36 @@
-// Deterministic authoring script for the `taskflow` LEDGER benchmark.
+// Deterministic authoring script for the `taskflow` LEDGER benchmark (v2).
 //
 // Rebuilds the choreographed git history into `repo.bundle` next to this file,
-// with pinned author/committer identity and dates so the checkpoint commit SHAs
-// are reproducible across machines. Run it with `node build-repo.mjs`; it prints
-// the checkpoint SHAs to fold into `benchmark.json`.
+// with a pinned author/committer identity and fixed dates so the checkpoint
+// commit SHAs are reproducible across machines. Run it with `node build-repo.mjs`;
+// it prints the five checkpoint SHAs to fold into `benchmark.json`.
 //
-// This slice covers T0 (taskflow 0.1.0) through T1 (taskflow 0.2.0) only. Later
-// checkpoints are appended as the benchmark grows.
+// The history covers taskflow 0.1.0 (T0) through 1.0.0 (T4) across ~37 commits,
+// 8 per update gap, so the diff the base system must digest between checkpoints
+// is large and lifelike. It carries three signature-stable bug fixes, a transient
+// add-then-revert, a store rename + file move, an experimental RedisStore feature
+// that is reverted a checkpoint later, and a resurrected TaskError class. The arc
+// is deliberately adversarial; see misc/taskflow-v2-benchmark-plan.md for the trap
+// catalog.
+//
+// Two grading channels shape every trap:
+//   - The deterministic census (benchmark/surface.ts) sees only top-level
+//     exports, one item per source file, and the version, so every structural
+//     hazard (rename, move, removal, resurrection, signature change) is planted
+//     at the top-level-export layer and graded model-free.
+//   - Precision grounds each wiki claim against a checkpoint-folded corpus of all
+//     tracked source text (code AND docstrings AND README). The three bug fixes
+//     (LIFO to FIFO dequeue, batched to streaming worker pool, off-by-one retry
+//     backoff) flip behavior under an IDENTICAL signature, so they are invisible
+//     to the census and reachable only as precision staleness once the wiki has
+//     documented the buggy behavior. The distributed-workers docstring at T4 is a
+//     code-authoritative hallucination the single in-memory loop refutes.
 //
 // Safety: every git call uses execFileSync with an explicit argument array and
 // no shell; all writes land inside a fresh os.tmpdir workspace or this benchmark
-// directory; the embedded library sources are static text, never evaluated.
+// directory; the embedded library sources are static text, never evaluated, and
+// contain no backticks or template interpolation so they survive verbatim inside
+// these template literals.
 
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
@@ -46,1032 +66,1689 @@ function git(cwd, args, extraEnv = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Embedded source snapshots. Kept free of backticks and template-literal
-// interpolation so they can live inside these template literals verbatim.
+// Static, non-source scaffolding.
 // ---------------------------------------------------------------------------
-
-const TASK_TS = `/**
- * The lifecycle states a task moves through inside taskflow.
- */
-export type TaskState = "pending" | "running" | "succeeded" | "failed";
-
-/**
- * A unit of asynchronous work managed by a Queue and executed by a worker pool.
- */
-export interface Task<T = unknown> {
-  /** Stable identifier assigned when the task is created. */
-  readonly id: string;
-
-  /** The asynchronous work performed when the task runs. */
-  run: () => Promise<T>;
-
-  /** Current lifecycle state; a new task starts as "pending". */
-  state: TaskState;
-}
-
-let counter = 0;
-
-/**
- * Wrap an asynchronous function in a pending task.
- *
- * @param run - The work to perform when the task is executed.
- * @returns A task in the "pending" state.
- */
-export function createTask<T>(run: () => Promise<T>): Task<T> {
-  counter += 1;
-  return { id: "task-" + counter, run, state: "pending" };
-}
-`;
-
-const ERRORS_FULL = `/**
- * Base class for every error thrown by taskflow.
- */
-export class TaskflowError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = new.target.name;
-  }
-}
-
-/**
- * Thrown when a task is dequeued from an empty queue.
- */
-export class QueueEmptyError extends TaskflowError {
-  constructor() {
-    super("Cannot dequeue from an empty queue.");
-  }
-}
-
-/**
- * Thrown when the work backing a task rejects during execution.
- */
-export class TaskFailedError extends TaskflowError {
-  readonly taskId: string;
-  readonly cause: unknown;
-
-  constructor(taskId: string, cause: unknown) {
-    super("Task " + taskId + " failed.");
-    this.taskId = taskId;
-    this.cause = cause;
-  }
-}
-`;
-
-const ERRORS_NO_EMPTY = `/**
- * Base class for every error thrown by taskflow.
- */
-export class TaskflowError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = new.target.name;
-  }
-}
-
-/**
- * Thrown when the work backing a task rejects during execution.
- */
-export class TaskFailedError extends TaskflowError {
-  readonly taskId: string;
-  readonly cause: unknown;
-
-  constructor(taskId: string, cause: unknown) {
-    super("Task " + taskId + " failed.");
-    this.taskId = taskId;
-    this.cause = cause;
-  }
-}
-`;
-
-const QUEUE_FIFO = `import { QueueEmptyError } from "./errors.js";
-import type { Task } from "./task.js";
-
-/**
- * An in-memory queue of pending tasks.
- *
- * Tasks are dequeued in first-in, first-out order. The queue holds tasks in
- * memory only and performs no persistence or I/O.
- */
-export class Queue {
-  private readonly tasks: Task[] = [];
-
-  /**
-   * Add a task to the back of the queue.
-   *
-   * @param task - The task to enqueue.
-   */
-  enqueue(task: Task): void {
-    this.tasks.push(task);
-  }
-
-  /**
-   * Remove and return the task at the front of the queue.
-   *
-   * @returns The next task to run.
-   * @throws QueueEmptyError when the queue holds no tasks.
-   */
-  dequeue(): Task {
-    const task = this.tasks.shift();
-    if (task === undefined) {
-      throw new QueueEmptyError();
-    }
-    return task;
-  }
-
-  /**
-   * Return the next task without removing it.
-   *
-   * @returns The task at the front of the queue, or undefined when empty.
-   */
-  peek(): Task | undefined {
-    return this.tasks[0];
-  }
-
-  /**
-   * The number of tasks currently queued.
-   */
-  get size(): number {
-    return this.tasks.length;
-  }
-
-  /**
-   * Remove all pending tasks from the queue.
-   */
-  clear(): void {
-    this.tasks.length = 0;
-  }
-}
-`;
-
-const QUEUE_PRIORITY = `import { QueueEmptyError } from "./errors.js";
-import type { Task } from "./task.js";
-
-interface QueueEntry {
-  task: Task;
-  priority: number;
-  sequence: number;
-}
-
-/**
- * An in-memory priority queue of pending tasks.
- *
- * Tasks are dequeued in priority order, highest first, with ties broken in
- * first-in, first-out order. The queue holds tasks in memory only and performs
- * no persistence or I/O.
- */
-export class Queue {
-  private readonly entries: QueueEntry[] = [];
-  private sequence = 0;
-
-  /**
-   * Add a task to the queue.
-   *
-   * @param task - The task to enqueue.
-   * @param priority - Higher values are dequeued sooner. Defaults to 0.
-   */
-  enqueue(task: Task, priority = 0): void {
-    this.sequence += 1;
-    this.entries.push({ task, priority, sequence: this.sequence });
-  }
-
-  /**
-   * Remove and return the highest-priority task.
-   *
-   * @returns The next task to run.
-   * @throws QueueEmptyError when the queue holds no tasks.
-   */
-  dequeue(): Task {
-    const index = this.nextIndex();
-    if (index === undefined) {
-      throw new QueueEmptyError();
-    }
-    return this.entries.splice(index, 1)[0].task;
-  }
-
-  /**
-   * Return the highest-priority task without removing it.
-   *
-   * @returns The next task to run, or undefined when empty.
-   */
-  peek(): Task | undefined {
-    const index = this.nextIndex();
-    return index === undefined ? undefined : this.entries[index].task;
-  }
-
-  /**
-   * The number of tasks currently queued.
-   */
-  get size(): number {
-    return this.entries.length;
-  }
-
-  /**
-   * Remove all pending tasks from the queue.
-   */
-  clear(): void {
-    this.entries.length = 0;
-  }
-
-  private nextIndex(): number | undefined {
-    if (this.entries.length === 0) {
-      return undefined;
-    }
-    let best = 0;
-    for (let i = 1; i < this.entries.length; i += 1) {
-      const candidate = this.entries[i];
-      const incumbent = this.entries[best];
-      if (
-        candidate.priority > incumbent.priority ||
-        (candidate.priority === incumbent.priority &&
-          candidate.sequence < incumbent.sequence)
-      ) {
-        best = i;
-      }
-    }
-    return best;
-  }
-}
-`;
-
-const QUEUE_PRIORITY_UNDEFINED = `import type { Task } from "./task.js";
-
-interface QueueEntry {
-  task: Task;
-  priority: number;
-  sequence: number;
-}
-
-/**
- * An in-memory priority queue of pending tasks.
- *
- * Tasks are dequeued in priority order, highest first, with ties broken in
- * first-in, first-out order. The queue holds tasks in memory only and performs
- * no persistence or I/O.
- */
-export class Queue {
-  private readonly entries: QueueEntry[] = [];
-  private sequence = 0;
-
-  /**
-   * Add a task to the queue.
-   *
-   * @param task - The task to enqueue.
-   * @param priority - Higher values are dequeued sooner. Defaults to 0.
-   */
-  enqueue(task: Task, priority = 0): void {
-    this.sequence += 1;
-    this.entries.push({ task, priority, sequence: this.sequence });
-  }
-
-  /**
-   * Remove and return the highest-priority task.
-   *
-   * @returns The next task to run, or undefined when the queue is empty.
-   */
-  dequeue(): Task | undefined {
-    const index = this.nextIndex();
-    if (index === undefined) {
-      return undefined;
-    }
-    return this.entries.splice(index, 1)[0].task;
-  }
-
-  /**
-   * Return the highest-priority task without removing it.
-   *
-   * @returns The next task to run, or undefined when empty.
-   */
-  peek(): Task | undefined {
-    const index = this.nextIndex();
-    return index === undefined ? undefined : this.entries[index].task;
-  }
-
-  /**
-   * The number of tasks currently queued.
-   */
-  get size(): number {
-    return this.entries.length;
-  }
-
-  /**
-   * Remove all pending tasks from the queue.
-   */
-  clear(): void {
-    this.entries.length = 0;
-  }
-
-  private nextIndex(): number | undefined {
-    if (this.entries.length === 0) {
-      return undefined;
-    }
-    let best = 0;
-    for (let i = 1; i < this.entries.length; i += 1) {
-      const candidate = this.entries[i];
-      const incumbent = this.entries[best];
-      if (
-        candidate.priority > incumbent.priority ||
-        (candidate.priority === incumbent.priority &&
-          candidate.sequence < incumbent.sequence)
-      ) {
-        best = i;
-      }
-    }
-    return best;
-  }
-}
-`;
-
-const WORKER_SEQ_THROWS = `import { TaskFailedError } from "./errors.js";
-import type { Queue } from "./queue.js";
-import type { Task } from "./task.js";
-
-/**
- * Drains a queue, running one task at a time to completion.
- */
-export class WorkerPool {
-  private readonly queue: Queue;
-
-  constructor(queue: Queue) {
-    this.queue = queue;
-  }
-
-  /**
-   * Run queued tasks one at a time until the queue is empty.
-   *
-   * @throws TaskFailedError when a task's work rejects.
-   */
-  async run(): Promise<void> {
-    while (this.queue.size > 0) {
-      await this.execute(this.queue.dequeue());
-    }
-  }
-
-  private async execute(task: Task): Promise<void> {
-    task.state = "running";
-    try {
-      await task.run();
-      task.state = "succeeded";
-    } catch (cause) {
-      task.state = "failed";
-      throw new TaskFailedError(task.id, cause);
-    }
-  }
-}
-`;
-
-const WORKER_SEQ_UNDEFINED = `import { TaskFailedError } from "./errors.js";
-import type { Queue } from "./queue.js";
-import type { Task } from "./task.js";
-
-/**
- * Drains a queue, running one task at a time to completion.
- */
-export class WorkerPool {
-  private readonly queue: Queue;
-
-  constructor(queue: Queue) {
-    this.queue = queue;
-  }
-
-  /**
-   * Run queued tasks one at a time until the queue is empty.
-   *
-   * @throws TaskFailedError when a task's work rejects.
-   */
-  async run(): Promise<void> {
-    for (
-      let task = this.queue.dequeue();
-      task !== undefined;
-      task = this.queue.dequeue()
-    ) {
-      await this.execute(task);
-    }
-  }
-
-  private async execute(task: Task): Promise<void> {
-    task.state = "running";
-    try {
-      await task.run();
-      task.state = "succeeded";
-    } catch (cause) {
-      task.state = "failed";
-      throw new TaskFailedError(task.id, cause);
-    }
-  }
-}
-`;
-
-const WORKER_CONCURRENT = `import { TaskFailedError } from "./errors.js";
-import type { Queue } from "./queue.js";
-import type { Task } from "./task.js";
-
-/**
- * Options controlling how a worker pool drains its queue.
- */
-export interface WorkerPoolOptions {
-  /**
-   * Maximum number of tasks to run at the same time. Defaults to 1.
-   */
-  concurrency?: number;
-}
-
-/**
- * Drains a queue, running up to a configurable number of tasks concurrently.
- */
-export class WorkerPool {
-  private readonly queue: Queue;
-  private readonly concurrency: number;
-
-  constructor(queue: Queue, options: WorkerPoolOptions = {}) {
-    this.queue = queue;
-    this.concurrency = Math.max(1, options.concurrency ?? 1);
-  }
-
-  /**
-   * Run queued tasks until the queue is empty, keeping up to the configured
-   * concurrency of tasks running at once.
-   *
-   * @throws TaskFailedError when a task's work rejects.
-   */
-  async run(): Promise<void> {
-    const workers: Array<Promise<void>> = [];
-    for (let i = 0; i < this.concurrency; i += 1) {
-      workers.push(this.drain());
-    }
-    await Promise.all(workers);
-  }
-
-  private async drain(): Promise<void> {
-    for (
-      let task = this.queue.dequeue();
-      task !== undefined;
-      task = this.queue.dequeue()
-    ) {
-      await this.execute(task);
-    }
-  }
-
-  private async execute(task: Task): Promise<void> {
-    task.state = "running";
-    try {
-      await task.run();
-      task.state = "succeeded";
-    } catch (cause) {
-      task.state = "failed";
-      throw new TaskFailedError(task.id, cause);
-    }
-  }
-}
-`;
-
-const INDEX_FULL = `export { Queue } from "./queue.js";
-export { WorkerPool } from "./worker.js";
-export { createTask } from "./task.js";
-export type { Task, TaskState } from "./task.js";
-export { TaskflowError, QueueEmptyError, TaskFailedError } from "./errors.js";
-`;
-
-const INDEX_NO_EMPTY = `export { Queue } from "./queue.js";
-export { WorkerPool } from "./worker.js";
-export { createTask } from "./task.js";
-export type { Task, TaskState } from "./task.js";
-export { TaskflowError, TaskFailedError } from "./errors.js";
-`;
-
-const INDEX_CONCURRENCY = `export { Queue } from "./queue.js";
-export { WorkerPool } from "./worker.js";
-export type { WorkerPoolOptions } from "./worker.js";
-export { createTask } from "./task.js";
-export type { Task, TaskState } from "./task.js";
-export { TaskflowError, TaskFailedError } from "./errors.js";
-`;
 
 const TSCONFIG = `{
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "strict": true,
     "declaration": true,
-    "verbatimModuleSyntax": true,
-    "skipLibCheck": true
+    "outDir": "dist",
+    "rootDir": "src"
   },
-  "include": ["src", "test"]
+  "include": ["src"]
 }
 `;
 
 const PRETTIERRC = `{
-  "semi": true,
   "singleQuote": false,
   "trailingComma": "all"
 }
 `;
 
-const PKG_010 = `{
+const PRETTIERRC_WIDE = `{
+  "singleQuote": false,
+  "trailingComma": "all",
+  "printWidth": 100
+}
+`;
+
+/**
+ * Render a package.json at a given version. Kept as a function so a version bump
+ * is a one-line change rather than a fresh snapshot.
+ *
+ * @param {string} version - Semantic version string.
+ * @param {string} [vitest] - vitest devDependency range; bumped once as noise.
+ * @returns {string} package.json content.
+ */
+function pkg(version, vitest = "1.6.0") {
+  return `{
   "name": "taskflow",
-  "version": "0.1.0",
-  "description": "A small in-memory task queue and worker pool for TypeScript.",
+  "version": "${version}",
+  "description": "An in-memory task queue.",
   "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "vitest": "^1.4.0"
+    "vitest": "${vitest}"
   },
   "license": "MIT"
 }
 `;
+}
 
-const PKG_010_PRETTIER = `{
-  "name": "taskflow",
-  "version": "0.1.0",
-  "description": "A small in-memory task queue and worker pool for TypeScript.",
-  "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "scripts": {
-    "test": "vitest run",
-    "format": "prettier --write ."
-  },
-  "devDependencies": {
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.0",
-    "vitest": "^1.4.0"
-  },
-  "license": "MIT"
+// ---------------------------------------------------------------------------
+// src/index.ts snapshots. Star re-exports contribute no phantom symbols to the
+// census, so the surface always attributes a symbol to its real declaration
+// file. VERSION is read as the library version, not as an ordinary symbol.
+// ---------------------------------------------------------------------------
+
+/**
+ * Render src/index.ts for a version and an ordered list of re-exported modules.
+ *
+ * @param {string} version - Semantic version string.
+ * @param {string[]} modules - Module specifiers to star-re-export.
+ * @returns {string} index.ts content.
+ */
+function indexTs(version, modules) {
+  const reexports = modules
+    .map((specifier) => `export * from "${specifier}";`)
+    .join("\n");
+  return `/**
+ * Public entry point for the taskflow in-memory task queue.
+ */
+export const VERSION = "${version}";
+
+${reexports}
+`;
+}
+
+const IDX_SCAFFOLD = indexTs("0.1.0", []);
+const IDX_TASK = indexTs("0.1.0", ["./task.js"]);
+const IDX_TASK_QUEUE = indexTs("0.1.0", ["./task.js", "./queue.js"]);
+const IDX_T0 = indexTs("0.1.0", ["./task.js", "./queue.js", "./worker.js"]);
+const IDX_T1_STORE = indexTs("0.1.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store.js",
+]);
+const IDX_T1 = indexTs("0.2.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store.js",
+]);
+const IDX_T2_RETRY = indexTs("0.2.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store.js",
+  "./retry.js",
+]);
+const IDX_T2_EVENTS = indexTs("0.2.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store.js",
+  "./retry.js",
+  "./events.js",
+]);
+const IDX_T2_STORE_IFACE = indexTs("0.2.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store/store.js",
+  "./store.js",
+  "./retry.js",
+  "./events.js",
+]);
+const IDX_T2_STORE_MOVED = indexTs("0.2.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store/store.js",
+  "./store/in-memory-store.js",
+  "./retry.js",
+  "./events.js",
+]);
+const IDX_T2 = indexTs("0.3.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store/store.js",
+  "./store/in-memory-store.js",
+  "./retry.js",
+  "./events.js",
+]);
+const IDX_T3_SCHED = indexTs("0.3.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store/store.js",
+  "./store/in-memory-store.js",
+  "./retry.js",
+  "./events.js",
+  "./scheduler.js",
+]);
+const IDX_T3_REDIS = indexTs("0.3.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store/store.js",
+  "./store/in-memory-store.js",
+  "./store/redis-store.js",
+  "./retry.js",
+  "./events.js",
+  "./scheduler.js",
+]);
+const IDX_T3 = indexTs("0.4.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store/store.js",
+  "./store/in-memory-store.js",
+  "./store/redis-store.js",
+  "./retry.js",
+  "./events.js",
+  "./scheduler.js",
+]);
+const IDX_T4_NOREDIS = indexTs("0.4.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store/store.js",
+  "./store/in-memory-store.js",
+  "./retry.js",
+  "./events.js",
+  "./scheduler.js",
+]);
+const IDX_T4_METRICS = indexTs("0.4.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store/store.js",
+  "./store/in-memory-store.js",
+  "./retry.js",
+  "./events.js",
+  "./scheduler.js",
+  "./metrics.js",
+]);
+const IDX_T4_PQ = indexTs("0.4.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store/store.js",
+  "./store/in-memory-store.js",
+  "./retry.js",
+  "./events.js",
+  "./scheduler.js",
+  "./metrics.js",
+  "./persistent-queue.js",
+]);
+const IDX_T4 = indexTs("1.0.0", [
+  "./task.js",
+  "./queue.js",
+  "./worker.js",
+  "./store/store.js",
+  "./store/in-memory-store.js",
+  "./retry.js",
+  "./events.js",
+  "./scheduler.js",
+  "./metrics.js",
+  "./persistent-queue.js",
+]);
+
+// ---------------------------------------------------------------------------
+// src/task.ts snapshots.
+// ---------------------------------------------------------------------------
+
+const TASK_T0 = `/**
+ * Lifecycle state of a task as it moves through the queue.
+ */
+export enum TaskState {
+  pending,
+  running,
+  succeeded,
+  failed,
+}
+
+/**
+ * A unit of work submitted to the queue.
+ */
+export interface Task {
+  /** Stable identifier for the task. */
+  id: string;
+
+  /** Opaque work payload handed to the task handler. */
+  payload: unknown;
+}
+
+/**
+ * Error thrown when a running task's handler rejects or throws. This is the
+ * execution error: it signals a failure that happened while the task was being
+ * processed, not a problem with the task's definition.
+ */
+export class TaskError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TaskError";
+  }
 }
 `;
 
-const PKG_020 = `{
-  "name": "taskflow",
-  "version": "0.2.0",
-  "description": "A small in-memory task queue and worker pool for TypeScript.",
-  "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "scripts": {
-    "test": "vitest run",
-    "format": "prettier --write ."
-  },
-  "devDependencies": {
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.0",
-    "vitest": "^1.4.0"
-  },
-  "license": "MIT"
+const TASK_PRIORITY = `/**
+ * Relative scheduling priority for a task. Higher priorities are drained first.
+ */
+export enum Priority {
+  low,
+  normal,
+  high,
+}
+
+/**
+ * Lifecycle state of a task as it moves through the queue.
+ */
+export enum TaskState {
+  pending,
+  running,
+  succeeded,
+  failed,
+}
+
+/**
+ * A unit of work submitted to the queue.
+ */
+export interface Task {
+  /** Stable identifier for the task. */
+  id: string;
+
+  /** Opaque work payload handed to the task handler. */
+  payload: unknown;
+
+  /** Relative scheduling priority; defaults to normal when omitted. */
+  priority?: Priority;
+}
+
+/**
+ * Error thrown when a running task's handler rejects or throws (execution
+ * error).
+ */
+export class TaskError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TaskError";
+  }
 }
 `;
 
-const TEST_T0 = `import { describe, expect, it } from "vitest";
+// The execution error is renamed to TaskExecutionError, with the old name kept
+// as a deprecated alias for one release so downstream imports keep working.
+const TASK_ALIAS = `/**
+ * Relative scheduling priority for a task. Higher priorities are drained first.
+ */
+export enum Priority {
+  low,
+  normal,
+  high,
+}
 
-import { QueueEmptyError } from "../src/errors.js";
-import { Queue } from "../src/queue.js";
-import { createTask } from "../src/task.js";
+/**
+ * Lifecycle state of a task as it moves through the queue.
+ */
+export enum TaskState {
+  pending,
+  running,
+  succeeded,
+  failed,
+}
 
-describe("Queue", () => {
-  it("dequeues tasks in first-in, first-out order", () => {
-    const queue = new Queue();
-    const first = createTask(async () => 1);
-    const second = createTask(async () => 2);
-    queue.enqueue(first);
-    queue.enqueue(second);
-    expect(queue.dequeue()).toBe(first);
-    expect(queue.dequeue()).toBe(second);
-  });
+/**
+ * A unit of work submitted to the queue.
+ */
+export interface Task {
+  /** Stable identifier for the task. */
+  id: string;
 
-  it("throws when dequeuing from an empty queue", () => {
-    const queue = new Queue();
-    expect(() => queue.dequeue()).toThrow(QueueEmptyError);
-  });
+  /** Opaque work payload handed to the task handler. */
+  payload: unknown;
 
-  it("clears all pending tasks", () => {
-    const queue = new Queue();
-    queue.enqueue(createTask(async () => 1));
-    queue.clear();
-    expect(queue.size).toBe(0);
-  });
-});
+  /** Relative scheduling priority; defaults to normal when omitted. */
+  priority?: Priority;
+}
+
+/**
+ * Error thrown when a running task's handler rejects or throws (execution
+ * error). Renamed from TaskError; the old name remains as a deprecated alias
+ * for one release so downstream imports keep working.
+ */
+export class TaskExecutionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TaskExecutionError";
+  }
+}
+
+/**
+ * Deprecated alias for TaskExecutionError. Prefer TaskExecutionError in new
+ * code; TaskError will be removed in a future release.
+ */
+export { TaskExecutionError as TaskError };
 `;
 
-const TEST_PRIORITY = `import { describe, expect, it } from "vitest";
+// The deprecated alias is dropped: TaskError disappears from task.ts entirely
+// (it is resurrected with a different meaning in scheduler.ts at T4).
+const TASK_NO_ALIAS = `/**
+ * Relative scheduling priority for a task. Higher priorities are drained first.
+ */
+export enum Priority {
+  low,
+  normal,
+  high,
+}
 
-import { QueueEmptyError } from "../src/errors.js";
-import { Queue } from "../src/queue.js";
-import { createTask } from "../src/task.js";
+/**
+ * Lifecycle state of a task as it moves through the queue.
+ */
+export enum TaskState {
+  pending,
+  running,
+  succeeded,
+  failed,
+}
 
-describe("Queue", () => {
-  it("dequeues tasks in first-in, first-out order", () => {
-    const queue = new Queue();
-    const first = createTask(async () => 1);
-    const second = createTask(async () => 2);
-    queue.enqueue(first);
-    queue.enqueue(second);
-    expect(queue.dequeue()).toBe(first);
-    expect(queue.dequeue()).toBe(second);
-  });
+/**
+ * A unit of work submitted to the queue.
+ */
+export interface Task {
+  /** Stable identifier for the task. */
+  id: string;
 
-  it("dequeues higher-priority tasks first", () => {
-    const queue = new Queue();
-    const low = createTask(async () => 1);
-    const high = createTask(async () => 2);
-    queue.enqueue(low, 1);
-    queue.enqueue(high, 5);
-    expect(queue.dequeue()).toBe(high);
-  });
+  /** Opaque work payload handed to the task handler. */
+  payload: unknown;
 
-  it("throws when dequeuing from an empty queue", () => {
-    const queue = new Queue();
-    expect(() => queue.dequeue()).toThrow(QueueEmptyError);
-  });
+  /** Relative scheduling priority; defaults to normal when omitted. */
+  priority?: Priority;
+}
 
-  it("clears all pending tasks", () => {
-    const queue = new Queue();
-    queue.enqueue(createTask(async () => 1));
-    queue.clear();
-    expect(queue.size).toBe(0);
-  });
-});
+/**
+ * Error thrown when a running task's handler rejects or throws (execution
+ * error).
+ */
+export class TaskExecutionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TaskExecutionError";
+  }
+}
 `;
 
-const TEST_FIX = `import { describe, expect, it } from "vitest";
+// ---------------------------------------------------------------------------
+// src/queue.ts snapshots. T0 ships a real FIFO bug: dequeue returns the MOST
+// recently enqueued task (pop, LIFO) while the docstring and README promise
+// first-in-first-out. The fix restores FIFO; a later commit adds real priority
+// ordering with arrival order breaking ties, so the FIFO fix survives. dequeue's
+// signature never changes, so the census sees queue.ts as stable across the fix
+// and the priority change: both are precision-only.
+// ---------------------------------------------------------------------------
 
-import { Queue } from "../src/queue.js";
-import { createTask } from "../src/task.js";
+const QUEUE_T0_LIFO_BUG = `import type { Task } from "./task.js";
 
-describe("Queue", () => {
-  it("dequeues tasks in first-in, first-out order", () => {
-    const queue = new Queue();
-    const first = createTask(async () => 1);
-    const second = createTask(async () => 2);
-    queue.enqueue(first);
-    queue.enqueue(second);
-    expect(queue.dequeue()).toBe(first);
-    expect(queue.dequeue()).toBe(second);
-  });
+/**
+ * A first-in-first-out task queue. The task waiting longest is always the next
+ * one returned by dequeue.
+ */
+export class Queue {
+  /** Tasks currently waiting, oldest first. */
+  tasks: Task[] = [];
+}
 
-  it("dequeues higher-priority tasks first", () => {
-    const queue = new Queue();
-    const low = createTask(async () => 1);
-    const high = createTask(async () => 2);
-    queue.enqueue(low, 1);
-    queue.enqueue(high, 5);
-    expect(queue.dequeue()).toBe(high);
-  });
+/**
+ * Create an empty queue.
+ */
+export function createQueue(): Queue {
+  return new Queue();
+}
 
-  it("returns undefined when dequeuing from an empty queue", () => {
-    const queue = new Queue();
-    expect(queue.dequeue()).toBeUndefined();
-  });
+/**
+ * Add a task to the back of the queue.
+ */
+export function enqueue(queue: Queue, task: Task): void {
+  queue.tasks.push(task);
+}
 
-  it("clears all pending tasks", () => {
-    const queue = new Queue();
-    queue.enqueue(createTask(async () => 1));
-    queue.clear();
-    expect(queue.size).toBe(0);
-  });
-});
+/**
+ * Remove and return the task that has waited longest, or undefined when the
+ * queue is empty.
+ */
+export function dequeue(queue: Queue): Task | undefined {
+  return queue.tasks.pop();
+}
+
+/**
+ * The number of tasks currently waiting.
+ */
+export function size(queue: Queue): number {
+  return queue.tasks.length;
+}
 `;
+
+const QUEUE_FIFO_FIXED = `import type { Task } from "./task.js";
+
+/**
+ * A first-in-first-out task queue. The task waiting longest is always the next
+ * one returned by dequeue.
+ */
+export class Queue {
+  /** Tasks currently waiting, oldest first. */
+  tasks: Task[] = [];
+}
+
+/**
+ * Create an empty queue.
+ */
+export function createQueue(): Queue {
+  return new Queue();
+}
+
+/**
+ * Add a task to the back of the queue.
+ */
+export function enqueue(queue: Queue, task: Task): void {
+  queue.tasks.push(task);
+}
+
+/**
+ * Remove and return the task that has waited longest, or undefined when the
+ * queue is empty.
+ */
+export function dequeue(queue: Queue): Task | undefined {
+  return queue.tasks.shift();
+}
+
+/**
+ * The number of tasks currently waiting.
+ */
+export function size(queue: Queue): number {
+  return queue.tasks.length;
+}
+`;
+
+const QUEUE_PRIORITY_PARAM = `import { Priority, type Task } from "./task.js";
+
+/**
+ * A task queue. Tasks are drained in priority order, with arrival order breaking
+ * ties, so equal-priority tasks still leave first-in-first-out.
+ */
+export class Queue {
+  /** Tasks currently waiting, oldest first. */
+  tasks: Task[] = [];
+}
+
+/**
+ * Create an empty queue.
+ */
+export function createQueue(): Queue {
+  return new Queue();
+}
+
+/**
+ * Add a task to the queue with an explicit priority.
+ */
+export function enqueue(
+  queue: Queue,
+  task: Task,
+  priority: Priority = Priority.normal,
+): void {
+  task.priority = priority;
+  queue.tasks.push(task);
+}
+
+/**
+ * Remove and return the task that has waited longest, or undefined when the
+ * queue is empty.
+ */
+export function dequeue(queue: Queue): Task | undefined {
+  return queue.tasks.shift();
+}
+
+/**
+ * The number of tasks currently waiting.
+ */
+export function size(queue: Queue): number {
+  return queue.tasks.length;
+}
+`;
+
+const QUEUE_PRIORITY = `import { Priority, type Task } from "./task.js";
+
+/**
+ * A task queue. Tasks are drained in priority order, with arrival order breaking
+ * ties, so equal-priority tasks still leave first-in-first-out.
+ */
+export class Queue {
+  /** Tasks currently waiting, oldest first. */
+  tasks: Task[] = [];
+}
+
+/**
+ * Create an empty queue.
+ */
+export function createQueue(): Queue {
+  return new Queue();
+}
+
+/**
+ * Add a task to the queue with an explicit priority.
+ */
+export function enqueue(
+  queue: Queue,
+  task: Task,
+  priority: Priority = Priority.normal,
+): void {
+  task.priority = priority;
+  queue.tasks.push(task);
+}
+
+/**
+ * Remove and return the highest-priority task waiting, or undefined when the
+ * queue is empty. Ties are broken by arrival order.
+ */
+export function dequeue(queue: Queue): Task | undefined {
+  if (queue.tasks.length === 0) {
+    return undefined;
+  }
+  let best = 0;
+  for (let i = 1; i < queue.tasks.length; i += 1) {
+    const candidate = queue.tasks[i].priority ?? Priority.normal;
+    const winner = queue.tasks[best].priority ?? Priority.normal;
+    if (candidate > winner) {
+      best = i;
+    }
+  }
+  return queue.tasks.splice(best, 1)[0];
+}
+
+/**
+ * The number of tasks currently waiting.
+ */
+export function size(queue: Queue): number {
+  return queue.tasks.length;
+}
+`;
+
+// Transient: a clear() helper added mid-gap, then git-reverted before the T1
+// release. It must never reach a tagged surface.
+const QUEUE_PRIORITY_CLEAR = `import { Priority, type Task } from "./task.js";
+
+/**
+ * A task queue. Tasks are drained in priority order, with arrival order breaking
+ * ties, so equal-priority tasks still leave first-in-first-out.
+ */
+export class Queue {
+  /** Tasks currently waiting, oldest first. */
+  tasks: Task[] = [];
+}
+
+/**
+ * Create an empty queue.
+ */
+export function createQueue(): Queue {
+  return new Queue();
+}
+
+/**
+ * Add a task to the queue with an explicit priority.
+ */
+export function enqueue(
+  queue: Queue,
+  task: Task,
+  priority: Priority = Priority.normal,
+): void {
+  task.priority = priority;
+  queue.tasks.push(task);
+}
+
+/**
+ * Remove and return the highest-priority task waiting, or undefined when the
+ * queue is empty. Ties are broken by arrival order.
+ */
+export function dequeue(queue: Queue): Task | undefined {
+  if (queue.tasks.length === 0) {
+    return undefined;
+  }
+  let best = 0;
+  for (let i = 1; i < queue.tasks.length; i += 1) {
+    const candidate = queue.tasks[i].priority ?? Priority.normal;
+    const winner = queue.tasks[best].priority ?? Priority.normal;
+    if (candidate > winner) {
+      best = i;
+    }
+  }
+  return queue.tasks.splice(best, 1)[0];
+}
+
+/**
+ * The number of tasks currently waiting.
+ */
+export function size(queue: Queue): number {
+  return queue.tasks.length;
+}
+
+/**
+ * Remove every waiting task from the queue.
+ */
+export function clear(queue: Queue): void {
+  queue.tasks.length = 0;
+}
+`;
+
+// ---------------------------------------------------------------------------
+// src/worker.ts snapshots. T0 is strictly sequential. T1 grows a worker pool
+// with a concurrency parameter, but the pool has a real throughput bug: it fills
+// a batch of `concurrency` tasks and blocks on the WHOLE batch before starting
+// the next, so one slow task stalls every other slot (head-of-line blocking).
+// The T2 fix streams work, refilling each slot as soon as it frees. runWorker's
+// signature is identical across the fix, so it is precision-only.
+// ---------------------------------------------------------------------------
+
+const WORKER_SEQUENTIAL = `import { dequeue, type Queue } from "./queue.js";
+import { TaskError, type Task } from "./task.js";
+
+/**
+ * Executes tasks pulled from a queue.
+ */
+export class Worker {
+  running = false;
+}
+
+/**
+ * Drain the queue, running each task to completion one at a time before
+ * starting the next (strictly sequential).
+ */
+export async function runWorker(worker: Worker, queue: Queue): Promise<void> {
+  worker.running = true;
+  let task: Task | undefined = dequeue(queue);
+  while (task !== undefined) {
+    await handle(task);
+    task = dequeue(queue);
+  }
+  worker.running = false;
+}
+
+/**
+ * Run one task, wrapping any thrown value as a TaskError.
+ */
+async function handle(task: Task): Promise<void> {
+  try {
+    void task;
+  } catch (cause) {
+    throw new TaskError("task failed: " + String(cause));
+  }
+}
+`;
+
+const WORKER_POOL_BATCHED = `import { dequeue, type Queue } from "./queue.js";
+import { TaskError, type Task } from "./task.js";
+
+/**
+ * Executes tasks pulled from a queue.
+ */
+export class Worker {
+  running = false;
+}
+
+/**
+ * Drain the queue across a pool of up to concurrency tasks running at once.
+ */
+export async function runWorker(
+  worker: Worker,
+  queue: Queue,
+  concurrency: number = 1,
+): Promise<void> {
+  worker.running = true;
+  let batch: Array<Promise<void>> = [];
+  let task: Task | undefined = dequeue(queue);
+  while (task !== undefined) {
+    batch.push(handle(task));
+    if (batch.length >= concurrency) {
+      await Promise.all(batch);
+      batch = [];
+    }
+    task = dequeue(queue);
+  }
+  await Promise.all(batch);
+  worker.running = false;
+}
+
+/**
+ * Run one task, wrapping any thrown value as a TaskError.
+ */
+async function handle(task: Task): Promise<void> {
+  try {
+    void task;
+  } catch (cause) {
+    throw new TaskError("task failed: " + String(cause));
+  }
+}
+`;
+
+const WORKER_POOL_STREAMING = `import { dequeue, type Queue } from "./queue.js";
+import { TaskError, type Task } from "./task.js";
+
+/**
+ * Executes tasks pulled from a queue.
+ */
+export class Worker {
+  running = false;
+}
+
+/**
+ * Drain the queue across a pool of up to concurrency tasks running at once,
+ * refilling each slot as soon as its task finishes rather than waiting for the
+ * whole batch.
+ */
+export async function runWorker(
+  worker: Worker,
+  queue: Queue,
+  concurrency: number = 1,
+): Promise<void> {
+  worker.running = true;
+  const inFlight = new Set<Promise<void>>();
+  let task: Task | undefined = dequeue(queue);
+  while (task !== undefined) {
+    const slot: Promise<void> = handle(task).then(() => {
+      inFlight.delete(slot);
+    });
+    inFlight.add(slot);
+    if (inFlight.size >= concurrency) {
+      await Promise.race(inFlight);
+    }
+    task = dequeue(queue);
+  }
+  await Promise.all(inFlight);
+  worker.running = false;
+}
+
+/**
+ * Run one task, wrapping any thrown value as a TaskError.
+ */
+async function handle(task: Task): Promise<void> {
+  try {
+    void task;
+  } catch (cause) {
+    throw new TaskError("task failed: " + String(cause));
+  }
+}
+`;
+
+// The worker imports the renamed execution error once TaskError becomes an alias
+// for TaskExecutionError; behavior is unchanged, this only tracks the rename.
+const WORKER_POOL_RENAMED_ERROR = `import { dequeue, type Queue } from "./queue.js";
+import { TaskExecutionError, type Task } from "./task.js";
+
+/**
+ * Executes tasks pulled from a queue.
+ */
+export class Worker {
+  running = false;
+}
+
+/**
+ * Drain the queue across a pool of up to concurrency tasks running at once,
+ * refilling each slot as soon as its task finishes rather than waiting for the
+ * whole batch.
+ */
+export async function runWorker(
+  worker: Worker,
+  queue: Queue,
+  concurrency: number = 1,
+): Promise<void> {
+  worker.running = true;
+  const inFlight = new Set<Promise<void>>();
+  let task: Task | undefined = dequeue(queue);
+  while (task !== undefined) {
+    const slot: Promise<void> = handle(task).then(() => {
+      inFlight.delete(slot);
+    });
+    inFlight.add(slot);
+    if (inFlight.size >= concurrency) {
+      await Promise.race(inFlight);
+    }
+    task = dequeue(queue);
+  }
+  await Promise.all(inFlight);
+  worker.running = false;
+}
+
+/**
+ * Run one task, wrapping any thrown value as a TaskExecutionError.
+ */
+async function handle(task: Task): Promise<void> {
+  try {
+    void task;
+  } catch (cause) {
+    throw new TaskExecutionError("task failed: " + String(cause));
+  }
+}
+`;
+
+// ---------------------------------------------------------------------------
+// src/store.ts (T1) then src/store/*.ts (T2). MemoryStore is a standalone class
+// at T1. At T2 a Store interface is extracted and MemoryStore is renamed to
+// InMemoryStore and moved under src/store/, so the census sees MemoryStore (and
+// its file) removed and Store + InMemoryStore introduced.
+// ---------------------------------------------------------------------------
+
+const STORE_MEMORY = `import type { Task } from "./task.js";
+
+/**
+ * Keeps finished task results in memory, keyed by task id.
+ */
+export class MemoryStore {
+  private readonly results = new Map<string, unknown>();
+
+  /** Record the result of a finished task. */
+  save(task: Task, result: unknown): void {
+    this.results.set(task.id, result);
+  }
+
+  /** Read a previously saved result, or undefined if none was stored. */
+  load(id: string): unknown {
+    return this.results.get(id);
+  }
+}
+`;
+
+const STORE_INTERFACE = `import type { Task } from "../task.js";
+
+/**
+ * A pluggable backing store for finished task results.
+ */
+export interface Store {
+  /** Record the result of a finished task. */
+  save(task: Task, result: unknown): void;
+
+  /** Read a previously saved result, or undefined if none was stored. */
+  load(id: string): unknown;
+}
+`;
+
+const STORE_IN_MEMORY = `import type { Task } from "../task.js";
+import type { Store } from "./store.js";
+
+/**
+ * A Store that keeps finished task results in process memory, keyed by task id.
+ * Renamed from MemoryStore in 0.3.0.
+ */
+export class InMemoryStore implements Store {
+  private readonly results = new Map<string, unknown>();
+
+  save(task: Task, result: unknown): void {
+    this.results.set(task.id, result);
+  }
+
+  load(id: string): unknown {
+    return this.results.get(id);
+  }
+}
+`;
+
+const STORE_REDIS = `import type { Task } from "../task.js";
+import type { Store } from "./store.js";
+
+/**
+ * EXPERIMENTAL. A Store backed by Redis so results survive a process restart.
+ * This is a best-effort stub: it buffers writes in memory and does not yet talk
+ * to a real Redis server. Do not rely on it in production.
+ */
+export class RedisStore implements Store {
+  private readonly buffer = new Map<string, unknown>();
+  readonly url: string;
+
+  constructor(url: string) {
+    this.url = url;
+  }
+
+  save(task: Task, result: unknown): void {
+    this.buffer.set(task.id, result);
+  }
+
+  load(id: string): unknown {
+    return this.buffer.get(id);
+  }
+}
+`;
+
+// ---------------------------------------------------------------------------
+// src/retry.ts snapshots. withRetry computes an exponential backoff. T2 ships an
+// off-by-one: the exponent starts at 1, so the first retry already waits twice
+// baseDelayMs instead of exactly baseDelayMs. The T3 fix starts the exponent at
+// 0. withRetry's signature is identical across the fix (precision-only).
+// ---------------------------------------------------------------------------
+
+const RETRY_OFF_BY_ONE = `/**
+ * Controls how a failed task is retried.
+ */
+export interface RetryPolicy {
+  /** Maximum number of retry attempts after the first failure. */
+  retries: number;
+
+  /** Base delay in milliseconds; the first retry waits exactly this long. */
+  baseDelayMs: number;
+}
+
+/**
+ * Thrown when a task still fails after its retry policy is exhausted.
+ */
+export class RetryError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RetryError";
+  }
+}
+
+/**
+ * The delay before retry attempt number \`attempt\` (1-based), using exponential
+ * backoff: the first retry waits baseDelayMs, then each subsequent retry doubles.
+ */
+export function backoffDelay(policy: RetryPolicy, attempt: number): number {
+  return policy.baseDelayMs * 2 ** attempt;
+}
+
+/**
+ * Run \`work\`, retrying on failure per the policy with exponential backoff.
+ */
+export async function withRetry(
+  policy: RetryPolicy,
+  work: () => Promise<void>,
+): Promise<void> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= policy.retries + 1; attempt += 1) {
+    try {
+      await work();
+      return;
+    } catch (cause) {
+      lastError = cause;
+      void backoffDelay(policy, attempt);
+    }
+  }
+  throw new RetryError("retries exhausted: " + String(lastError));
+}
+`;
+
+const RETRY_FIXED = `/**
+ * Controls how a failed task is retried.
+ */
+export interface RetryPolicy {
+  /** Maximum number of retry attempts after the first failure. */
+  retries: number;
+
+  /** Base delay in milliseconds; the first retry waits exactly this long. */
+  baseDelayMs: number;
+}
+
+/**
+ * Thrown when a task still fails after its retry policy is exhausted.
+ */
+export class RetryError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RetryError";
+  }
+}
+
+/**
+ * The delay before retry attempt number \`attempt\` (1-based), using exponential
+ * backoff: the first retry waits baseDelayMs, then each subsequent retry doubles.
+ */
+export function backoffDelay(policy: RetryPolicy, attempt: number): number {
+  return policy.baseDelayMs * 2 ** (attempt - 1);
+}
+
+/**
+ * Run \`work\`, retrying on failure per the policy with exponential backoff.
+ */
+export async function withRetry(
+  policy: RetryPolicy,
+  work: () => Promise<void>,
+): Promise<void> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= policy.retries + 1; attempt += 1) {
+    try {
+      await work();
+      return;
+    } catch (cause) {
+      lastError = cause;
+      void backoffDelay(policy, attempt);
+    }
+  }
+  throw new RetryError("retries exhausted: " + String(lastError));
+}
+`;
+
+// ---------------------------------------------------------------------------
+// src/events.ts snapshot. A tiny lifecycle event bus.
+// ---------------------------------------------------------------------------
+
+const EVENTS = `import type { Task } from "./task.js";
+
+/**
+ * A lifecycle event emitted as a task moves through the queue.
+ */
+export interface TaskEvent {
+  /** What happened, for example "started" or "succeeded". */
+  kind: string;
+
+  /** The task the event concerns. */
+  task: Task;
+}
+
+/**
+ * A minimal synchronous event bus for task lifecycle events.
+ */
+export class EventBus {
+  readonly listeners: Array<(event: TaskEvent) => void> = [];
+}
+
+/**
+ * Register a listener for every task lifecycle event.
+ */
+export function subscribe(
+  bus: EventBus,
+  listener: (event: TaskEvent) => void,
+): void {
+  bus.listeners.push(listener);
+}
+
+/**
+ * Deliver an event to every registered listener, in registration order.
+ */
+export function publish(bus: EventBus, event: TaskEvent): void {
+  for (const listener of bus.listeners) {
+    listener(event);
+  }
+}
+`;
+
+// ---------------------------------------------------------------------------
+// src/scheduler.ts snapshots. Introduced at T3 with a dead-letter queue. At T4
+// it gains a resurrected TaskError (now a VALIDATION error, distinct from the
+// buried execution error), an options parameter whose retries default flips to
+// 3, and a docstring that overclaims distributed workers the in-memory loop does
+// not implement.
+// ---------------------------------------------------------------------------
+
+const SCHED_T3 = `import { Priority, type Task } from "./task.js";
+
+/**
+ * The scheduler front door. Holds tasks in memory and drains them by priority
+ * through a single worker loop.
+ */
+export class Scheduler {
+  tasks: Task[] = [];
+  concurrency: number;
+
+  constructor(concurrency: number) {
+    this.concurrency = concurrency;
+  }
+}
+
+/**
+ * A holding area for tasks that have exhausted their retry policy.
+ */
+export class DeadLetterQueue {
+  readonly dead: Task[] = [];
+
+  /** Move a permanently failed task into the dead-letter queue. */
+  bury(task: Task): void {
+    this.dead.push(task);
+  }
+}
+
+/**
+ * Create a scheduler with an optional worker concurrency (defaults to 1).
+ */
+export function createScheduler(concurrency: number = 1): Scheduler {
+  return new Scheduler(concurrency);
+}
+
+/**
+ * Submit a task to the scheduler at an optional priority.
+ */
+export function schedule(
+  scheduler: Scheduler,
+  task: Task,
+  priority: Priority = Priority.normal,
+): void {
+  task.priority = priority;
+  scheduler.tasks.push(task);
+}
+`;
+
+const SCHED_T4 = `import { Priority, type Task } from "./task.js";
+
+/**
+ * The scheduler front door. Distributes tasks across worker processes so a fleet
+ * of machines drains the queue and the scheduler scales horizontally across a
+ * cluster.
+ */
+export class Scheduler {
+  tasks: Task[] = [];
+  concurrency: number;
+
+  constructor(concurrency: number) {
+    this.concurrency = concurrency;
+  }
+}
+
+/**
+ * A holding area for tasks that have exhausted their retry policy.
+ */
+export class DeadLetterQueue {
+  readonly dead: Task[] = [];
+
+  /** Move a permanently failed task into the dead-letter queue. */
+  bury(task: Task): void {
+    this.dead.push(task);
+  }
+}
+
+/**
+ * Create a scheduler with an optional worker concurrency (defaults to 1).
+ */
+export function createScheduler(concurrency: number = 1): Scheduler {
+  return new Scheduler(concurrency);
+}
+
+/**
+ * Submit a task to the scheduler at an optional priority. Failed tasks are
+ * retried automatically; retries default to 3.
+ */
+export function schedule(
+  scheduler: Scheduler,
+  task: Task,
+  priority: Priority = Priority.normal,
+  options: { retries?: number } = {},
+): void {
+  const retries = options.retries ?? 3;
+  void retries;
+  if (task.id === "") {
+    throw new TaskError("task is missing an id");
+  }
+  task.priority = priority;
+  scheduler.tasks.push(task);
+}
+
+/**
+ * Error thrown by schedule() when a task is missing an id. This is a validation
+ * error raised before the task ever runs, distinct from an execution failure.
+ */
+export class TaskError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TaskError";
+  }
+}
+`;
+
+// ---------------------------------------------------------------------------
+// src/metrics.ts and src/persistent-queue.ts (T4).
+// ---------------------------------------------------------------------------
+
+const METRICS = `import type { Scheduler } from "./scheduler.js";
+
+/**
+ * A point-in-time snapshot of scheduler activity.
+ */
+export interface SchedulerMetrics {
+  queued: number;
+  running: number;
+  completed: number;
+}
+
+/**
+ * Read the current metrics for a scheduler.
+ */
+export function metrics(scheduler: Scheduler): SchedulerMetrics {
+  return { queued: scheduler.tasks.length, running: 0, completed: 0 };
+}
+`;
+
+const PERSISTENT_QUEUE = `import type { Task } from "./task.js";
+
+/**
+ * A queue whose contents survive process restarts by persisting to disk.
+ */
+export class PersistentQueue {
+  tasks: Task[] = [];
+  readonly path: string;
+
+  constructor(path: string) {
+    this.path = path;
+  }
+}
+
+/**
+ * Open (or create) a persistent queue backed by the file at the given path.
+ */
+export function openPersistentQueue(path: string): PersistentQueue {
+  return new PersistentQueue(path);
+}
+`;
+
+// ---------------------------------------------------------------------------
+// Prose. The README tracks the honest evolving public story, except the T4
+// distributed-workers line, which restates the code-authoritative lie in the
+// Scheduler docstring so both channels agree it is unsupported.
+// ---------------------------------------------------------------------------
 
 const README_T0 = `# taskflow
 
-A small in-memory task queue and worker pool for TypeScript.
+An in-memory task queue.
 
-Current version: 0.1.0
+Tasks are processed first-in-first-out: the task that has waited longest is
+always the next one to run.
 
-taskflow lets you enqueue units of asynchronous work and drain them with a
-worker pool. It keeps everything in memory and has no runtime dependencies.
+## Usage
 
-## Installation
-
-    npm install taskflow
-
-## Getting started
-
-    import { Queue, WorkerPool, createTask } from "taskflow";
-
-    const queue = new Queue();
-    queue.enqueue(createTask(async () => console.log("first")));
-    queue.enqueue(createTask(async () => console.log("second")));
-
-    await new WorkerPool(queue).run();
-
-## Tasks
-
-A task wraps an asynchronous function and tracks its lifecycle state, one of
-pending, running, succeeded, or failed. Build one with createTask.
-
-## Queue
-
-Queue is an in-memory queue exposing enqueue, dequeue, peek, size, and clear.
-Tasks are dequeued in first-in, first-out order. Calling dequeue on an empty
-queue throws QueueEmptyError. Calling clear discards all pending tasks.
-
-## Worker pool
-
-WorkerPool drains a queue by running one task at a time to completion. If a
-task's work rejects, the pool throws TaskFailedError carrying the failing task
-id.
-
-## Errors
-
-Every error thrown by taskflow extends the TaskflowError base class.
-
-## License
-
-MIT
-`;
-
-const README_PRIORITY = `# taskflow
-
-A small in-memory task queue and worker pool for TypeScript.
-
-Current version: 0.1.0
-
-taskflow lets you enqueue units of asynchronous work and drain them with a
-worker pool. It keeps everything in memory and has no runtime dependencies.
-
-## Installation
-
-    npm install taskflow
-
-## Getting started
-
-    import { Queue, WorkerPool, createTask } from "taskflow";
-
-    const queue = new Queue();
-    queue.enqueue(createTask(async () => console.log("low")), 1);
-    queue.enqueue(createTask(async () => console.log("high")), 5);
-
-    await new WorkerPool(queue).run();
-
-## Tasks
-
-A task wraps an asynchronous function and tracks its lifecycle state, one of
-pending, running, succeeded, or failed. Build one with createTask.
-
-## Queue
-
-Queue is an in-memory priority queue exposing enqueue, dequeue, peek, size, and
-clear. enqueue accepts an optional priority (default 0); tasks are dequeued in
-priority order, highest first, with ties broken in first-in, first-out order.
-Calling dequeue on an empty queue throws QueueEmptyError. Calling clear discards
-all pending tasks.
-
-## Worker pool
-
-WorkerPool drains a queue by running one task at a time to completion. If a
-task's work rejects, the pool throws TaskFailedError carrying the failing task
-id.
-
-## Errors
-
-Every error thrown by taskflow extends the TaskflowError base class.
-
-## License
-
-MIT
-`;
-
-const README_FIX = `# taskflow
-
-A small in-memory task queue and worker pool for TypeScript.
-
-Current version: 0.1.0
-
-taskflow lets you enqueue units of asynchronous work and drain them with a
-worker pool. It keeps everything in memory and has no runtime dependencies.
-
-## Installation
-
-    npm install taskflow
-
-## Getting started
-
-    import { Queue, WorkerPool, createTask } from "taskflow";
-
-    const queue = new Queue();
-    queue.enqueue(createTask(async () => console.log("low")), 1);
-    queue.enqueue(createTask(async () => console.log("high")), 5);
-
-    await new WorkerPool(queue).run();
-
-## Tasks
-
-A task wraps an asynchronous function and tracks its lifecycle state, one of
-pending, running, succeeded, or failed. Build one with createTask.
-
-## Queue
-
-Queue is an in-memory priority queue exposing enqueue, dequeue, peek, size, and
-clear. enqueue accepts an optional priority (default 0); tasks are dequeued in
-priority order, highest first, with ties broken in first-in, first-out order.
-Calling dequeue on an empty queue returns undefined. Calling clear discards all
-pending tasks.
-
-## Worker pool
-
-WorkerPool drains a queue by running one task at a time to completion. If a
-task's work rejects, the pool throws TaskFailedError carrying the failing task
-id.
-
-## Errors
-
-Every error thrown by taskflow extends the TaskflowError base class.
-
-## License
-
-MIT
-`;
-
-const README_CONCURRENCY = `# taskflow
-
-A small in-memory task queue and worker pool for TypeScript.
-
-Current version: 0.1.0
-
-taskflow lets you enqueue units of asynchronous work and drain them with a
-worker pool. It keeps everything in memory and has no runtime dependencies.
-
-## Installation
-
-    npm install taskflow
-
-## Getting started
-
-    import { Queue, WorkerPool, createTask } from "taskflow";
-
-    const queue = new Queue();
-    queue.enqueue(createTask(async () => console.log("low")), 1);
-    queue.enqueue(createTask(async () => console.log("high")), 5);
-
-    await new WorkerPool(queue, { concurrency: 4 }).run();
-
-## Tasks
-
-A task wraps an asynchronous function and tracks its lifecycle state, one of
-pending, running, succeeded, or failed. Build one with createTask.
-
-## Queue
-
-Queue is an in-memory priority queue exposing enqueue, dequeue, peek, size, and
-clear. enqueue accepts an optional priority (default 0); tasks are dequeued in
-priority order, highest first, with ties broken in first-in, first-out order.
-Calling dequeue on an empty queue returns undefined. Calling clear discards all
-pending tasks.
-
-## Worker pool
-
-WorkerPool drains a queue by running up to a configurable number of tasks
-concurrently. Pass a concurrency option (default 1) to bound how many tasks run
-in parallel. If a task's work rejects, the pool throws TaskFailedError carrying
-the failing task id.
-
-## Errors
-
-Every error thrown by taskflow extends the TaskflowError base class.
-
-## License
-
-MIT
+Create a queue with createQueue, add tasks with enqueue, and drain them by
+running a worker with runWorker.
 `;
 
 const README_T1 = `# taskflow
 
-A small in-memory task queue and worker pool for TypeScript.
+An in-memory task queue.
 
-Current version: 0.2.0
+Tasks are drained in priority order. Assign a Priority when enqueuing; higher
+priorities run first, and equal priorities keep first-in-first-out order.
 
-taskflow lets you enqueue units of asynchronous work and drain them with a
-worker pool. It keeps everything in memory and has no runtime dependencies.
+## Usage
 
-## Installation
+Create a queue with createQueue, add tasks with enqueue, and drain them by
+running a worker pool with runWorker (pass a concurrency to run several tasks at
+once). Finished results can be kept in a MemoryStore.
+`;
 
-    npm install taskflow
+const README_T2 = `# taskflow
 
-## Getting started
+An in-memory task queue.
 
-    import { Queue, WorkerPool, createTask } from "taskflow";
+Tasks are drained in priority order across a worker pool. Failed tasks can be
+retried with a RetryPolicy, and lifecycle events are delivered through an
+EventBus.
 
-    const queue = new Queue();
-    queue.enqueue(createTask(async () => console.log("low")), 1);
-    queue.enqueue(createTask(async () => console.log("high")), 5);
+## Usage
 
-    await new WorkerPool(queue, { concurrency: 4 }).run();
+Create a queue with createQueue and drain it with runWorker. Keep finished
+results in any Store; the built-in InMemoryStore keeps them in process memory.
+`;
 
-## Tasks
+const README_T3 = `# taskflow
 
-A task wraps an asynchronous function and tracks its lifecycle state, one of
-pending, running, succeeded, or failed. Build one with createTask.
+An in-memory task queue.
 
-## Queue
+Use the Scheduler front door: create one with createScheduler, then hand it work
+with schedule. Tasks that exhaust their retries land in a DeadLetterQueue.
 
-Queue is an in-memory priority queue exposing enqueue, dequeue, peek, size, and
-clear. enqueue accepts an optional priority (default 0); tasks are dequeued in
-priority order, highest first, with ties broken in first-in, first-out order.
-Calling dequeue on an empty queue returns undefined. Calling clear discards all
-pending tasks.
+## Usage
 
-## Worker pool
+Results can be kept in an InMemoryStore, or, experimentally, a RedisStore that
+survives restarts. Retry failed work with withRetry and a RetryPolicy.
+`;
 
-WorkerPool drains a queue by running up to a configurable number of tasks
-concurrently. Pass a concurrency option (default 1) to bound how many tasks run
-in parallel. If a task's work rejects, the pool throws TaskFailedError carrying
-the failing task id.
+const README_T4 = `# taskflow
 
-## Errors
+A task queue.
 
-Every error thrown by taskflow extends the TaskflowError base class.
+Workers are distributed across processes so the scheduler scales horizontally
+across a cluster of machines.
 
-## Changelog
+## Usage
 
-### 0.2.0
+Use createScheduler and schedule. Failed tasks are retried automatically.
+Persist work across restarts with openPersistentQueue, and read live counters
+with metrics.
+`;
 
-- Queue orders tasks by priority, breaking ties first-in, first-out.
-- WorkerPool runs tasks concurrently via a configurable concurrency option.
-- Queue.dequeue returns undefined on an empty queue instead of throwing.
+// ---------------------------------------------------------------------------
+// Tests. Outside tsconfig's include, so they never break a checkpoint build and
+// never contribute to the census, but they do join the precision evidence
+// corpus (which folds all tracked text).
+// ---------------------------------------------------------------------------
 
-### 0.1.0
+const TEST_T0 = `import { createQueue, dequeue, enqueue, size } from "../src/queue.js";
 
-- Initial release: FIFO queue, sequential worker pool, in-memory only.
+const q = createQueue();
+enqueue(q, { id: "a", payload: 1 });
+enqueue(q, { id: "b", payload: 2 });
+if (size(q) !== 2) {
+  throw new Error("expected two waiting tasks");
+}
+if (dequeue(q) === undefined) {
+  throw new Error("expected a task");
+}
+`;
 
-## License
+const TEST_T1 = `import { createQueue, dequeue, enqueue } from "../src/queue.js";
+import { Priority } from "../src/task.js";
 
-MIT
+const q = createQueue();
+enqueue(q, { id: "a", payload: 1 }, Priority.high);
+if (dequeue(q) === undefined) {
+  throw new Error("expected a task");
+}
+`;
+
+const TEST_T2 = `import { InMemoryStore } from "../src/store/in-memory-store.js";
+import { withRetry, type RetryPolicy } from "../src/retry.js";
+
+const store = new InMemoryStore();
+store.save({ id: "a", payload: 1 }, "ok");
+if (store.load("a") !== "ok") {
+  throw new Error("expected the saved result");
+}
+const policy: RetryPolicy = { retries: 2, baseDelayMs: 10 };
+await withRetry(policy, async () => {});
+`;
+
+const TEST_T3 = `import { createScheduler, schedule } from "../src/scheduler.js";
+import { Priority } from "../src/task.js";
+
+const scheduler = createScheduler(2);
+schedule(scheduler, { id: "a", payload: 1 }, Priority.high);
+if (scheduler.tasks.length !== 1) {
+  throw new Error("expected one scheduled task");
+}
 `;
 
 // ---------------------------------------------------------------------------
 // Commit choreography. Each step lists only the files it changes; unchanged
-// files persist from the previous commit.
+// files persist from the previous commit. Only the tree at a tagged checkpoint
+// is graded, so intermediate commits carry the transient churn and the bug fixes.
 // ---------------------------------------------------------------------------
 
 const steps = [
+  // --- T0 (0.1.0): honest MVP with a latent FIFO bug ---------------------
   {
-    message:
-      "feat: taskflow 0.1.0 MVP - FIFO queue, sequential worker, task lifecycle",
-    date: "2024-01-08T09:00:00+0000",
+    message: "chore: scaffold taskflow 0.1.0",
+    date: "2025-01-06T09:00:00+0000",
+    files: {
+      "package.json": pkg("0.1.0"),
+      "tsconfig.json": TSCONFIG,
+      ".prettierrc.json": PRETTIERRC,
+      "src/index.ts": IDX_SCAFFOLD,
+    },
+  },
+  {
+    message: "feat: task model, TaskState, and TaskError execution error",
+    date: "2025-01-07T09:00:00+0000",
+    files: {
+      "src/task.ts": TASK_T0,
+      "src/index.ts": IDX_TASK,
+    },
+  },
+  {
+    message: "feat: FIFO queue with enqueue, dequeue, and size",
+    date: "2025-01-08T09:00:00+0000",
+    files: {
+      "src/queue.ts": QUEUE_T0_LIFO_BUG,
+      "src/index.ts": IDX_TASK_QUEUE,
+    },
+  },
+  {
+    message: "feat: strictly sequential runWorker",
+    date: "2025-01-09T09:00:00+0000",
+    files: {
+      "src/worker.ts": WORKER_SEQUENTIAL,
+      "src/index.ts": IDX_T0,
+    },
+  },
+  {
+    message: "docs: README and a smoke-test scaffold",
+    date: "2025-01-10T09:00:00+0000",
     checkpoint: "T0",
     files: {
-      "package.json": PKG_010,
-      "tsconfig.json": TSCONFIG,
       "README.md": README_T0,
-      "src/index.ts": INDEX_FULL,
-      "src/task.ts": TASK_TS,
-      "src/queue.ts": QUEUE_FIFO,
-      "src/worker.ts": WORKER_SEQ_THROWS,
-      "src/errors.ts": ERRORS_FULL,
       "test/queue.test.ts": TEST_T0,
     },
   },
+
+  // --- T0 -> T1 (0.2.0): FIFO fix, priorities, pool, store, transient clear
   {
-    message: "feat: order queued tasks by priority",
-    date: "2024-01-12T09:00:00+0000",
+    message:
+      "fix: dequeue returned the most recently added task, not the oldest",
+    date: "2025-02-03T09:00:00+0000",
+    files: {
+      "src/queue.ts": QUEUE_FIFO_FIXED,
+    },
+  },
+  {
+    message: "feat: add a Priority enum and a priority parameter to enqueue",
+    date: "2025-02-05T09:00:00+0000",
+    files: {
+      "src/task.ts": TASK_PRIORITY,
+      "src/queue.ts": QUEUE_PRIORITY_PARAM,
+    },
+  },
+  {
+    message: "refactor: drain the queue in priority order, ties by arrival",
+    date: "2025-02-06T09:00:00+0000",
     files: {
       "src/queue.ts": QUEUE_PRIORITY,
-      "test/queue.test.ts": TEST_PRIORITY,
-      "README.md": README_PRIORITY,
+      "README.md": README_T1,
     },
   },
   {
-    message: "fix: return undefined from dequeue on an empty queue",
-    date: "2024-01-16T09:00:00+0000",
+    message: "feat: drain the queue across a worker pool",
+    date: "2025-02-08T09:00:00+0000",
     files: {
-      "src/queue.ts": QUEUE_PRIORITY_UNDEFINED,
-      "src/worker.ts": WORKER_SEQ_UNDEFINED,
-      "src/errors.ts": ERRORS_NO_EMPTY,
-      "src/index.ts": INDEX_NO_EMPTY,
-      "test/queue.test.ts": TEST_FIX,
-      "README.md": README_FIX,
+      "src/worker.ts": WORKER_POOL_BATCHED,
     },
   },
   {
-    message: "feat: process tasks concurrently in the worker pool",
-    date: "2024-01-19T09:00:00+0000",
+    message: "feat: MemoryStore for finished task results",
+    date: "2025-02-10T09:00:00+0000",
     files: {
-      "src/worker.ts": WORKER_CONCURRENT,
-      "src/index.ts": INDEX_CONCURRENCY,
-      "README.md": README_CONCURRENCY,
+      "src/store.ts": STORE_MEMORY,
+      "src/index.ts": IDX_T1_STORE,
     },
   },
   {
-    message: "chore: adopt prettier and add a format script",
-    date: "2024-01-22T09:00:00+0000",
+    message: "feat: add clear() to empty a queue",
+    date: "2025-02-11T09:00:00+0000",
     files: {
-      "package.json": PKG_010_PRETTIER,
-      ".prettierrc.json": PRETTIERRC,
+      "src/queue.ts": QUEUE_PRIORITY_CLEAR,
     },
   },
   {
-    message: "release: taskflow 0.2.0",
-    date: "2024-01-24T09:00:00+0000",
+    message: "revert: drop clear(), it duplicates recreating the queue",
+    date: "2025-02-12T09:00:00+0000",
+    files: {
+      "src/queue.ts": QUEUE_PRIORITY,
+    },
+  },
+  {
+    message: "release: taskflow 0.2.0 - priorities, worker pool, MemoryStore",
+    date: "2025-02-14T09:00:00+0000",
     checkpoint: "T1",
     files: {
-      "package.json": PKG_020,
-      "README.md": README_T1,
+      "package.json": pkg("0.2.0"),
+      "src/index.ts": IDX_T1,
+      "test/queue.test.ts": TEST_T1,
+    },
+  },
+
+  // --- T1 -> T2 (0.3.0): retries, events, pool fix, Store extraction+rename
+  {
+    message: "feat: RetryPolicy, RetryError, and withRetry",
+    date: "2025-03-03T09:00:00+0000",
+    files: {
+      "src/retry.ts": RETRY_OFF_BY_ONE,
+      "src/index.ts": IDX_T2_RETRY,
+    },
+  },
+  {
+    message: "feat: task lifecycle events through an EventBus",
+    date: "2025-03-05T09:00:00+0000",
+    files: {
+      "src/events.ts": EVENTS,
+      "src/index.ts": IDX_T2_EVENTS,
+    },
+  },
+  {
+    message: "fix: worker pool blocked on a full batch, stalling free slots",
+    date: "2025-03-07T09:00:00+0000",
+    files: {
+      "src/worker.ts": WORKER_POOL_STREAMING,
+    },
+  },
+  {
+    message: "refactor: extract a pluggable Store interface",
+    date: "2025-03-09T09:00:00+0000",
+    files: {
+      "src/store/store.ts": STORE_INTERFACE,
+      "src/index.ts": IDX_T2_STORE_IFACE,
+    },
+  },
+  {
+    message:
+      "refactor: rename MemoryStore to InMemoryStore and move under src/store",
+    date: "2025-03-11T09:00:00+0000",
+    remove: ["src/store.ts"],
+    files: {
+      "src/store/in-memory-store.ts": STORE_IN_MEMORY,
+      "src/index.ts": IDX_T2_STORE_MOVED,
+    },
+  },
+  {
+    message: "test: cover the store and retry helpers",
+    date: "2025-03-12T09:00:00+0000",
+    files: {
+      "test/queue.test.ts": TEST_T2,
+    },
+  },
+  {
+    message: "chore: widen Prettier printWidth to 100",
+    date: "2025-03-13T09:00:00+0000",
+    files: {
+      ".prettierrc.json": PRETTIERRC_WIDE,
+    },
+  },
+  {
+    message: "release: taskflow 0.3.0 - retries, events, pluggable Store",
+    date: "2025-03-14T09:00:00+0000",
+    checkpoint: "T2",
+    files: {
+      "package.json": pkg("0.3.0"),
+      "src/index.ts": IDX_T2,
+      "README.md": README_T2,
+    },
+  },
+
+  // --- T2 -> T3 (0.4.0): scheduler, dead-letter, experimental Redis, rename,
+  //     backoff fix ------------------------------------------------------
+  {
+    message: "feat: Scheduler front door with a DeadLetterQueue",
+    date: "2025-04-02T09:00:00+0000",
+    files: {
+      "src/scheduler.ts": SCHED_T3,
+      "src/index.ts": IDX_T3_SCHED,
+    },
+  },
+  {
+    message: "feat: experimental RedisStore backing store",
+    date: "2025-04-04T09:00:00+0000",
+    files: {
+      "src/store/redis-store.ts": STORE_REDIS,
+      "src/index.ts": IDX_T3_REDIS,
+    },
+  },
+  {
+    message:
+      "refactor: rename TaskError to TaskExecutionError with a deprecated alias",
+    date: "2025-04-07T09:00:00+0000",
+    files: {
+      "src/task.ts": TASK_ALIAS,
+      "src/worker.ts": WORKER_POOL_RENAMED_ERROR,
+    },
+  },
+  {
+    message: "fix: retry backoff doubled the first delay (off-by-one exponent)",
+    date: "2025-04-09T09:00:00+0000",
+    files: {
+      "src/retry.ts": RETRY_FIXED,
+    },
+  },
+  {
+    message: "chore: bump vitest to 1.6.1",
+    date: "2025-04-11T09:00:00+0000",
+    files: {
+      "package.json": pkg("0.3.0", "1.6.1"),
+    },
+  },
+  {
+    message: "test: schedule places a task on the scheduler",
+    date: "2025-04-12T09:00:00+0000",
+    files: {
+      "test/queue.test.ts": TEST_T3,
+    },
+  },
+  {
+    message:
+      "release: taskflow 0.4.0 - scheduler, dead-letter, experimental Redis",
+    date: "2025-04-14T09:00:00+0000",
+    checkpoint: "T3",
+    files: {
+      "package.json": pkg("0.4.0", "1.6.1"),
+      "src/index.ts": IDX_T3,
+      "README.md": README_T3,
+    },
+  },
+
+  // --- T3 -> T4 (1.0.0): revert Redis, metrics, persistence, drop alias,
+  //     resurrect TaskError, retries default flip, distributed doc lie ----
+  {
+    message:
+      "revert: remove experimental RedisStore, it proved flaky under load",
+    date: "2025-05-05T09:00:00+0000",
+    remove: ["src/store/redis-store.ts"],
+    files: {
+      "src/index.ts": IDX_T4_NOREDIS,
+    },
+  },
+  {
+    message: "feat: scheduler metrics",
+    date: "2025-05-07T09:00:00+0000",
+    files: {
+      "src/metrics.ts": METRICS,
+      "src/index.ts": IDX_T4_METRICS,
+    },
+  },
+  {
+    message: "feat: PersistentQueue and openPersistentQueue",
+    date: "2025-05-09T09:00:00+0000",
+    files: {
+      "src/persistent-queue.ts": PERSISTENT_QUEUE,
+      "src/index.ts": IDX_T4_PQ,
+    },
+  },
+  {
+    message: "refactor: drop the deprecated TaskError alias",
+    date: "2025-05-11T09:00:00+0000",
+    files: {
+      "src/task.ts": TASK_NO_ALIAS,
+    },
+  },
+  {
+    message: "feat: TaskError, now a validation error thrown by schedule()",
+    date: "2025-05-13T09:00:00+0000",
+    files: {
+      "src/scheduler.ts": SCHED_T4,
+    },
+  },
+  {
+    message: "docs: describe the distributed, horizontally scaled scheduler",
+    date: "2025-05-15T09:00:00+0000",
+    files: {
+      "README.md": README_T4,
+    },
+  },
+  {
+    message:
+      "release: taskflow 1.0.0 - metrics, persistence, retries default to 3",
+    date: "2025-05-16T09:00:00+0000",
+    checkpoint: "T4",
+    files: {
+      "package.json": pkg("1.0.0", "1.6.1"),
+      "src/index.ts": IDX_T4,
     },
   },
 ];
@@ -1098,6 +1775,10 @@ try {
   const shas = {};
   for (const step of steps) {
     current = { ...current, ...step.files };
+    for (const rel of step.remove ?? []) {
+      delete current[rel];
+      rmSync(path.join(work, rel), { force: true });
+    }
     writeAll(work, current);
     git(work, ["add", "-A"]);
     git(work, ["commit", "-q", "-m", step.message], {
@@ -1114,5 +1795,12 @@ try {
 
   process.stdout.write(JSON.stringify(shas, null, 2) + "\n");
 } finally {
-  rmSync(work, { recursive: true, force: true });
+  // Retry the teardown: git can briefly hold objects under .git on some
+  // filesystems, which otherwise surfaces as a spurious ENOTEMPTY.
+  rmSync(work, {
+    recursive: true,
+    force: true,
+    maxRetries: 10,
+    retryDelay: 50,
+  });
 }

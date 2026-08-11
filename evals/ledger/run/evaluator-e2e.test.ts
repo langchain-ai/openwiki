@@ -593,19 +593,29 @@ describe("direct evaluator end to end", () => {
     );
     // No census-accounting stage: each checkpoint runs coverage, then extraction
     // and grounding; forgetting runs only at T2, where obsolete versions exist.
-    expect(modelControl.systemPrompts).toEqual([
-      COVERAGE_SYSTEM,
-      PRECISION_EXTRACTION_SYSTEM,
-      PRECISION_JUDGMENT_SYSTEM,
-      COVERAGE_SYSTEM,
-      PRECISION_EXTRACTION_SYSTEM,
-      PRECISION_JUDGMENT_SYSTEM,
-      COVERAGE_SYSTEM,
-      FORGETTING_SYSTEM,
-      PRECISION_EXTRACTION_SYSTEM,
-      PRECISION_JUDGMENT_SYSTEM,
-    ]);
-    expect(modelControl.maxActive).toBe(1);
+    // The passes now run concurrently within each checkpoint, so the first-wave
+    // order (coverage / forgetting / extraction) is non-deterministic; assert
+    // per-pass counts rather than the exact sequence.
+    const promptCount = (prompt: string): number =>
+      modelControl.systemPrompts.filter((seen) => seen === prompt).length;
+    expect(promptCount(COVERAGE_SYSTEM)).toBe(3);
+    expect(promptCount(FORGETTING_SYSTEM)).toBe(1);
+    expect(promptCount(PRECISION_EXTRACTION_SYSTEM)).toBe(3);
+    expect(promptCount(PRECISION_JUDGMENT_SYSTEM)).toBe(3);
+    // Precision judgment always trails its own extraction, even when interleaved
+    // with the other passes: at no prefix have more judgments run than extractions.
+    let extractions = 0;
+    let judgments = 0;
+    for (const prompt of modelControl.systemPrompts) {
+      if (prompt === PRECISION_EXTRACTION_SYSTEM) {
+        extractions += 1;
+      } else if (prompt === PRECISION_JUDGMENT_SYSTEM) {
+        judgments += 1;
+        expect(judgments).toBeLessThanOrEqual(extractions);
+      }
+    }
+    // The three passes overlap rather than running strictly serially.
+    expect(modelControl.maxActive).toBeGreaterThan(1);
     expect(modelControl.signals).toHaveLength(10);
     expect(workspaceRoots).toHaveLength(1);
     await expect(stat(workspaceRoots[0])).rejects.toMatchObject({
@@ -634,7 +644,7 @@ describe("direct evaluator end to end", () => {
     expect(formatReport(result)).toContain("Invented claims (1 of 4)");
   });
 
-  test("times out, stops later passes, and cleans replay resources", async () => {
+  test("times out a hanging pass, degrades it fail-soft, and still completes and cleans up", async () => {
     modelControl.hangingSystemPrompt = COVERAGE_SYSTEM;
     const backend = new ModelEvaluationBackend({
       provider: "anthropic",
@@ -642,23 +652,35 @@ describe("direct evaluator end to end", () => {
       timeoutMs: 10,
     });
 
-    await expect(
-      runBenchmark({
-        benchmark: benchmark(repo),
-        system: new EvolvingDocumentationSystem(),
-        evaluationBackend: backend,
-        config: config(resultsDir),
-        startedAt: "2026-01-01T00:00:00.000Z",
-      }),
-    ).rejects.toThrow(
-      /checkpoint "T0" pass "coverage" failed after 2 attempts/u,
-    );
+    // A persistently hanging coverage pass no longer aborts the run: it times
+    // out, exhausts isolated repair, and degrades each coverage verdict to
+    // indeterminate, so the benchmark resolves rather than rejecting.
+    const result = await runBenchmark({
+      benchmark: benchmark(repo),
+      system: new EvolvingDocumentationSystem(),
+      evaluationBackend: backend,
+      config: config(resultsDir),
+      startedAt: "2026-01-01T00:00:00.000Z",
+    });
 
-    expect(modelControl.systemPrompts).toEqual([
-      COVERAGE_SYSTEM,
-      COVERAGE_SYSTEM,
-    ]);
-    expect(modelControl.signals.every((signal) => signal.aborted)).toBe(true);
+    const coverageVerdicts = result.checkpoints.flatMap(
+      (checkpoint) => checkpoint.evaluations?.factEvaluations ?? [],
+    );
+    expect(coverageVerdicts.length).toBeGreaterThan(0);
+    expect(
+      coverageVerdicts.every((verdict) => verdict.verdict === "indeterminate"),
+    ).toBe(true);
+    expect(
+      coverageVerdicts.every((verdict) =>
+        /pass "coverage" failed after 2 attempts/u.test(verdict.rationale),
+      ),
+    ).toBe(true);
+
+    // The timed-out coverage invocations were aborted; the concurrent precision
+    // and forgetting invocations completed normally and were not.
+    expect(modelControl.signals.some((signal) => signal.aborted)).toBe(true);
+
+    // Replay resources are cleaned up despite the timeouts.
     expect(workspaceRoots).toHaveLength(1);
     await expect(stat(workspaceRoots[0])).rejects.toMatchObject({
       code: "ENOENT",

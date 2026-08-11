@@ -1,19 +1,34 @@
 {
   "name": "taskflow",
-  "description": "A production-shaped in-memory task queue whose choreographed history exercises coverage, precision, forgetting, and every maintenance transition. This slice covers T0 (0.1.0) through T1 (0.2.0).",
+  "description": "A production-shaped in-memory task queue whose choreographed 5-checkpoint history (T0 0.1.0 through T4 1.0.0, ~37 commits, 8 per update gap) stress-tests coverage, precision, and forgetting under a large, lifelike diff. Structural traps are graded model-free by the census: a MemoryStore-to-InMemoryStore rename with a file move, an experimental RedisStore feature reverted a checkpoint after it ships, a TaskError-to-TaskExecutionError rename with a deprecated alias, and a same-named TaskError resurrected with a new validation meaning in a new file. Three signature-stable bug fixes (LIFO-to-FIFO dequeue, batched-to-streaming worker pool, off-by-one retry backoff) flip behavior invisibly to the census and are reachable only as precision staleness, and a distributed-workers docstring at T4 is a code-authoritative hallucination. A transient clear() is added then reverted inside a gap.",
   "difficulty": "hard",
   "sourceRepo": "./repo",
   "trace": {
     "checkpoints": [
       {
         "id": "T0",
-        "commit": "7d3ef880ad861acdb79593708064bdfe49a27d05",
-        "label": "taskflow 0.1.0 MVP: FIFO queue, sequential worker"
+        "commit": "090dab8d986a864115533cd74626f927f3059434",
+        "label": "taskflow 0.1.0 MVP: FIFO queue (latent LIFO bug), sequential worker, TaskError execution error"
       },
       {
         "id": "T1",
-        "commit": "9c587e992bf89fdf508b5837da672662f46f3a16",
-        "label": "taskflow 0.2.0: priority ordering and concurrency"
+        "commit": "daad8257a1adefe33d968ade97e9dd3dacec0322",
+        "label": "taskflow 0.2.0: FIFO fix, priority ordering, worker pool, MemoryStore"
+      },
+      {
+        "id": "T2",
+        "commit": "6c9e9133ba70b70874d83fd9ba763b65d80e1dda",
+        "label": "taskflow 0.3.0: retries, events, worker-pool fix, Store extracted with MemoryStore renamed to InMemoryStore"
+      },
+      {
+        "id": "T3",
+        "commit": "9eb029d46e9b0b571a7c1d5c0a6179c11cc8e9ac",
+        "label": "taskflow 0.4.0: Scheduler, DeadLetterQueue, experimental RedisStore, TaskError renamed to TaskExecutionError with alias, retry backoff fix"
+      },
+      {
+        "id": "T4",
+        "commit": "4238a1f66565683b6cff2db1f9118aa031ec8d18",
+        "label": "taskflow 1.0.0: RedisStore reverted, metrics, PersistentQueue, TaskError resurrected as a validation error, schedule retries default flip, distributed-workers doc lie"
       }
     ]
   }

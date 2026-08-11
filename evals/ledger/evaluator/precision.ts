@@ -10,7 +10,14 @@ import type {
 } from "../core/types.js";
 import { invokeStructuredModel } from "./direct-model.js";
 import type { ArtifactSection } from "./documents.js";
-import { assertPositiveInteger, batch } from "./pass-utils.js";
+import {
+  assertPositiveInteger,
+  batch,
+  createLimiter,
+  DEFAULT_PASS_CONCURRENCY,
+  mapWithLimit,
+  type Limiter,
+} from "./pass-utils.js";
 import {
   PRECISION_EXTRACTION_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
@@ -31,13 +38,21 @@ import {
 
 /**
  * Default number of text units classified per extraction request.
+ *
+ * Sized larger than the judgment default because extraction units are compact
+ * (a claim plus its grounding pointer), so they hit the structured-output
+ * ceiling later. Fewer, larger batches cut serial round-trips per checkpoint,
+ * and a degenerate batch now degrades to per-item repair rather than aborting.
  */
-const DEFAULT_EXTRACTION_BATCH_SIZE = 10;
+const DEFAULT_EXTRACTION_BATCH_SIZE = 25;
 
 /**
  * Default number of assertions grounded per judgment request.
+ *
+ * Kept below the extraction default because judgments are rationale-first, so
+ * each unit's output is heavier and truncates sooner at large batch sizes.
  */
-const DEFAULT_JUDGMENT_BATCH_SIZE = 10;
+const DEFAULT_JUDGMENT_BATCH_SIZE = 15;
 
 /**
  * Default number of evidence sections retrieved per bounded grounding judgment.
@@ -275,6 +290,15 @@ export interface PrecisionPassInput {
    * @default undefined no per-attempt deadline is applied
    */
   timeoutMs?: number;
+
+  /**
+   * Shared concurrency limiter bounding in-flight model calls across passes.
+   *
+   * @default a private limiter of `DEFAULT_PASS_CONCURRENCY` when absent, so a
+   * standalone pass still runs its extraction and judgment batches concurrently
+   * but never shares a budget with sibling passes.
+   */
+  limit?: Limiter;
 
   /**
    * Optional sink for the assertion inventory once extraction completes.
@@ -550,24 +574,32 @@ function degradedExtractionUnit(
 }
 
 /**
- * Classify every section's text units and flatten the extracted claims. Each
- * requested unit is resolved individually from the batch response, so a single
- * dropped or malformed unit is repaired in isolation and, only if that also
- * fails, degraded to a warned no-claim unit rather than crashing the pass.
+ * Classify one batch of text units, resolving each requested unit individually
+ * so a single dropped or malformed unit is repaired in isolation and, only if
+ * that also fails, degraded to a warned no-claim unit rather than failing the
+ * batch. Returns the classified units in the batch's input order.
+ *
+ * @param input - Precision pass configuration and warning sink.
+ * @param unitBatch - Text units classified in one model request.
+ *
+ * @returns One classified unit per input unit, in order.
  */
-async function extractAssertions(
+async function classifyUnitBatch(
   input: PrecisionPassInput,
-  sections: ArtifactSection[],
-  batchSize: number,
-): Promise<{
-  units: PrecisionTextUnitInventoryEntry[];
-  assertions: RawExtractedAssertion[];
-}> {
-  const units = sections.flatMap(textUnitsForSection);
-  const classified: ClassifiedPrecisionTextUnit[] = [];
-
-  for (const unitBatch of batch(units, batchSize)) {
-    const output = await invokeStructuredModel({
+  unitBatch: PrecisionTextUnit[],
+): Promise<ClassifiedPrecisionTextUnit[]> {
+  // A whole-batch extraction failure (for example an empty or malformed
+  // tool-call payload that survives both attempts inside
+  // invokeStructuredModel) must not abort the pass. Fall back to an empty
+  // response and let the per-unit loop below re-extract each unit in
+  // isolation, degrading only the units that still cannot be extracted. The
+  // batch error is threaded into the degrade message so the warning reports
+  // the real cause; the error is already prompt-redacted and length-bounded
+  // by invokeStructuredModel before it reaches here.
+  let output: AssertionExtractionOutput;
+  let batchError: unknown;
+  try {
+    output = await invokeStructuredModel({
       model: input.model,
       pass: "precision-extraction",
       checkpointId: input.checkpointId,
@@ -576,24 +608,55 @@ async function extractAssertions(
       schema: assertionExtractionOutputSchema,
       timeoutMs: input.timeoutMs,
     });
-    for (const unit of unitBatch) {
+  } catch (error) {
+    batchError = error;
+    output = { units: [] };
+  }
+  const classified: ClassifiedPrecisionTextUnit[] = [];
+  for (const unit of unitBatch) {
+    try {
+      classified.push(resolveExtractionUnit(unit, output));
+    } catch (initialError) {
       try {
-        classified.push(resolveExtractionUnit(unit, output));
-      } catch (initialError) {
-        try {
-          classified.push(await repairExtractionUnit(input, unit));
-        } catch (repairError) {
-          const message = `${String(initialError)} Isolated repair failed: ${String(repairError)}`;
-          input.onWarning?.({
-            pass: "precision-extraction",
-            itemId: unit.unitId,
-            message,
-          });
-          classified.push(degradedExtractionUnit(unit, message));
-        }
+        classified.push(await repairExtractionUnit(input, unit));
+      } catch (repairError) {
+        const cause = batchError ?? initialError;
+        const message = `${String(cause)} Isolated repair failed: ${String(repairError)}`;
+        input.onWarning?.({
+          pass: "precision-extraction",
+          itemId: unit.unitId,
+          message,
+        });
+        classified.push(degradedExtractionUnit(unit, message));
       }
     }
   }
+  return classified;
+}
+
+/**
+ * Classify every section's text units and flatten the extracted claims. Unit
+ * batches run concurrently under the shared limiter and are reassembled in batch
+ * order, so extraction order (hence candidate identifiers) is unchanged from a
+ * serial drain. Each requested unit is still resolved, repaired, or degraded
+ * individually within its batch.
+ */
+async function extractAssertions(
+  input: PrecisionPassInput,
+  sections: ArtifactSection[],
+  batchSize: number,
+  limit: Limiter,
+): Promise<{
+  units: PrecisionTextUnitInventoryEntry[];
+  assertions: RawExtractedAssertion[];
+}> {
+  const units = sections.flatMap(textUnitsForSection);
+  const batchResults = await mapWithLimit(
+    batch(units, batchSize),
+    limit,
+    (unitBatch) => classifyUnitBatch(input, unitBatch),
+  );
+  const classified = batchResults.flat();
 
   return {
     units: classified.map((unit) => ({
@@ -963,6 +1026,7 @@ export async function runPrecisionPass(
   assertPositiveInteger(extractionBatchSize, "Precision extractionBatchSize");
   assertPositiveInteger(judgmentBatchSize, "Precision judgmentBatchSize");
 
+  const limit = input.limit ?? createLimiter(DEFAULT_PASS_CONCURRENCY);
   const sections = [...input.sections].sort((a, b) =>
     compareStrings(a.id, b.id),
   );
@@ -975,6 +1039,7 @@ export async function runPrecisionPass(
     input,
     sections,
     extractionBatchSize,
+    limit,
   );
   const { inventory, assertions } = buildInventory(
     input.checkpointId,
@@ -989,34 +1054,43 @@ export async function runPrecisionPass(
   const evidenceSections = toEvidenceSections(input.evidence);
   const evidenceIndex = new SectionBm25Index(evidenceSections);
 
-  for (const assertionBatch of batch(assertions, judgmentBatchSize)) {
-    if (evidenceSections.length === 0) {
-      for (const assertion of assertionBatch) {
-        evaluations.set(assertion.id, {
-          assertion: assertion.statement,
-          location: assertion.relativePath,
-          verdict: "unverified",
-          tense: assertion.tense,
-          adjudicatedBy: "none",
-          evidenceIds: [],
-          rationale: "No source evidence was available for grounding.",
-        });
+  // Judgment batches are independent: each writes only its own assertions'
+  // verdicts (assertion ids are unique across batches), so they run concurrently
+  // under the shared limiter. Verdicts are unchanged because each batch grounds
+  // exactly the assertions and shared evidence it would have under a serial
+  // drain.
+  await mapWithLimit(
+    batch(assertions, judgmentBatchSize),
+    limit,
+    async (assertionBatch) => {
+      if (evidenceSections.length === 0) {
+        for (const assertion of assertionBatch) {
+          evaluations.set(assertion.id, {
+            assertion: assertion.statement,
+            location: assertion.relativePath,
+            verdict: "unverified",
+            tense: assertion.tense,
+            adjudicatedBy: "none",
+            evidenceIds: [],
+            rationale: "No source evidence was available for grounding.",
+          });
+        }
+        return;
       }
-      continue;
-    }
-    const targets = shareBatchEvidence(
-      assertionBatch.map((assertion) => ({
-        assertion,
-        evidence: evidenceIndex
-          .search(assertion.statement, DEFAULT_EVIDENCE_TOP_K)
-          .map((ranked) => ranked.section as EvidenceSection),
-      })),
-    );
-    const judged = await resolvePrecisionBatchResilient(input, targets);
-    for (const [index, evaluation] of judged.entries()) {
-      evaluations.set(targets[index].assertion.id, evaluation);
-    }
-  }
+      const targets = shareBatchEvidence(
+        assertionBatch.map((assertion) => ({
+          assertion,
+          evidence: evidenceIndex
+            .search(assertion.statement, DEFAULT_EVIDENCE_TOP_K)
+            .map((ranked) => ranked.section as EvidenceSection),
+        })),
+      );
+      const judged = await resolvePrecisionBatchResilient(input, targets);
+      for (const [index, evaluation] of judged.entries()) {
+        evaluations.set(targets[index].assertion.id, evaluation);
+      }
+    },
+  );
 
   return assertions.map(
     (assertion) =>

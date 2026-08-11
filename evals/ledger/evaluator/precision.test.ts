@@ -461,6 +461,108 @@ describe("runPrecisionPass", () => {
     expect(warnings[0].itemId).toBe("guide.md::0001::unit-0000");
   });
 
+  test("recovers from an empty batch tool-call payload without crashing the pass", async () => {
+    const control = controller([
+      // Degenerate empty structured-output payload: Anthropic structured output
+      // is forced tool use, and the model can return `{}` with no `units` key.
+      // The tolerant schema parses this to an empty extraction rather than
+      // throwing at the schema boundary.
+      {},
+      // Isolated re-extraction recovers each requested unit.
+      {
+        units: [
+          {
+            unitId: "guide.md::0000::unit-0000",
+            classification: "factual",
+            assertions: [{ statement: "A is true", tense: "current" }],
+            rationale: "States a checkable fact.",
+          },
+        ],
+      },
+      {
+        units: [
+          {
+            unitId: "guide.md::0001::unit-0000",
+            classification: "factual",
+            assertions: [{ statement: "B is true", tense: "current" }],
+            rationale: "States a checkable fact.",
+          },
+        ],
+      },
+      // Grounding leaves both recovered claims not-addressed.
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "not-addressed",
+            evidenceIds: [],
+            rationale: "Not addressed.",
+          },
+          {
+            assertionId: "assertion-000002",
+            verdict: "not-addressed",
+            evidenceIds: [],
+            rationale: "Not addressed.",
+          },
+        ],
+      },
+    ]);
+    const warnings: EvaluationWarning[] = [];
+
+    const result = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [
+        sectionWithId("guide.md::0000", "claim A"),
+        sectionWithId("guide.md::0001", "claim B"),
+      ],
+      evidence: evidence(["some source"]),
+      onWarning: (warning) => warnings.push(warning),
+    });
+
+    expect(result.map((item) => item.assertion)).toEqual([
+      "A is true",
+      "B is true",
+    ]);
+    expect(warnings).toHaveLength(0);
+  });
+
+  test("survives a whole-batch extraction failure by degrading each unit to a warned no-claim unit", async () => {
+    const control = controller([
+      // Both attempts of the batch extraction fail outright, so the batch call
+      // throws instead of returning a payload.
+      new Error("batch extraction failed once"),
+      new Error("batch extraction failed twice"),
+      // Isolated re-extraction of each unit also fails on both attempts.
+      new Error("unit-0 repair failed once"),
+      new Error("unit-0 repair failed twice"),
+      new Error("unit-1 repair failed once"),
+      new Error("unit-1 repair failed twice"),
+    ]);
+    const warnings: EvaluationWarning[] = [];
+
+    const result = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [
+        sectionWithId("guide.md::0000", "claim A"),
+        sectionWithId("guide.md::0001", "claim B"),
+      ],
+      evidence: evidence(["some source"]),
+      onWarning: (warning) => warnings.push(warning),
+    });
+
+    expect(result).toEqual([]);
+    expect(warnings).toHaveLength(2);
+    expect(warnings.map((warning) => warning.itemId)).toEqual([
+      "guide.md::0000::unit-0000",
+      "guide.md::0001::unit-0000",
+    ]);
+    expect(
+      warnings.every((warning) => warning.pass === "precision-extraction"),
+    ).toBe(true);
+  });
+
   test("uses extraction as the sole semantic filter taxonomy", () => {
     expect(PRECISION_EXTRACTION_SYSTEM).toContain('"meta-artifact"');
     expect(PRECISION_EXTRACTION_SYSTEM).toContain(

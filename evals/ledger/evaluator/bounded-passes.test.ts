@@ -5,6 +5,7 @@ import type { ObsoleteFactTarget, SurfaceItem } from "../core/types.js";
 import { runCoveragePass } from "./coverage.js";
 import type { ArtifactSection } from "./documents.js";
 import { runForgettingPass } from "./forgetting.js";
+import { createLimiter } from "./pass-utils.js";
 import { FORGETTING_SYSTEM } from "./prompts.js";
 import { SectionBm25Index } from "./retrieval.js";
 
@@ -220,7 +221,9 @@ describe("runCoveragePass", () => {
       "c",
     ]);
     expect(control.taskPrompts).toHaveLength(2);
-    expect(control.maxActive).toBe(1);
+    // The two target batches now run concurrently under the pass limiter rather
+    // than draining serially, so both are in flight at once.
+    expect(control.maxActive).toBe(2);
 
     const firstTargets = promptTargets(control.taskPrompts[0]);
     expect(firstTargets.map((target) => target.factId)).toEqual(["b", "a"]);
@@ -230,6 +233,46 @@ describe("runCoveragePass", () => {
     expect(firstTargets[1].excerpts).toEqual([
       expect.objectContaining({ sectionId: "a-section" }),
     ]);
+  });
+
+  test("bounds concurrent batches to the shared limiter and preserves order", async () => {
+    const facts = Array.from({ length: 6 }, (_, index) =>
+      surfaceItem(`f${index}`, `fact ${index} behavior`),
+    );
+    const control = controller(
+      facts.map((fact) => ({
+        evaluations: [
+          {
+            factId: fact.factId,
+            verdict: "correct",
+            evidence: [`${fact.factId}-section`],
+            rationale: fact.factId,
+          },
+        ],
+      })),
+    );
+    const index = new SectionBm25Index(
+      facts.map((fact) => section(`${fact.factId}-section`, fact.statement)),
+    );
+
+    const evaluations = await runCoveragePass({
+      model: fakeModel(control),
+      checkpointId: "T0",
+      surface: facts,
+      index,
+      topK: 1,
+      // One fact per batch (six batches) under a three-wide limiter.
+      batchSize: 1,
+      limit: createLimiter(3),
+    });
+
+    // Output order matches surface order despite concurrent execution.
+    expect(evaluations.map((evaluation) => evaluation.factId)).toEqual(
+      facts.map((fact) => fact.factId),
+    );
+    expect(control.taskPrompts).toHaveLength(6);
+    // Six batches never exceed the three-wide budget, and reach it.
+    expect(control.maxActive).toBe(3);
   });
 
   test("checks every remaining section before finalizing missing", async () => {
@@ -344,6 +387,69 @@ describe("runCoveragePass", () => {
     expect(evaluation.verdict).toBe("indeterminate");
     expect(warnings).toEqual(["f"]);
     expect(control.taskPrompts).toHaveLength(3);
+  });
+
+  test("recovers from an empty batch tool-call payload via isolated repair", async () => {
+    // A degenerate `{}` tool-call payload parses through the schema default to an
+    // empty batch, so the batch invoke does not throw; the per-item loop then
+    // finds no verdict for the target and repairs it in isolation.
+    const control = controller([
+      {},
+      {
+        evaluations: [
+          {
+            factId: "f",
+            verdict: "correct",
+            evidence: ["seen"],
+            rationale: "visible evidence",
+          },
+        ],
+      },
+    ]);
+    const warnings: string[] = [];
+
+    const [evaluation] = await runCoveragePass({
+      model: fakeModel(control),
+      checkpointId: "T3",
+      surface: [surfaceItem("f", "fact")],
+      index: new SectionBm25Index([section("seen", "fact")]),
+      onWarning: (warning) => warnings.push(warning.itemId),
+    });
+
+    expect(evaluation.verdict).toBe("correct");
+    expect(warnings).toEqual([]);
+    expect(control.taskPrompts).toHaveLength(2);
+  });
+
+  test("survives a whole-batch coverage failure by degrading each target with the batch cause", async () => {
+    // Every attempt throws, so both the batch invoke and the isolated repair
+    // exhaust their two attempts. The pass must not abort; each target degrades
+    // to a warned indeterminate verdict, and the warning must report the real
+    // batch cause rather than the generic "not found" resolution error.
+    const control = controller([
+      new Error("provider exploded"),
+      new Error("provider exploded"),
+      new Error("provider exploded"),
+      new Error("provider exploded"),
+    ]);
+    const warnings: Array<{ itemId: string; message: string }> = [];
+
+    const [evaluation] = await runCoveragePass({
+      model: fakeModel(control),
+      checkpointId: "T3",
+      surface: [surfaceItem("f", "fact")],
+      index: new SectionBm25Index([section("seen", "fact")]),
+      onWarning: (warning) =>
+        warnings.push({ itemId: warning.itemId, message: warning.message }),
+    });
+
+    expect(evaluation.verdict).toBe("indeterminate");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].itemId).toBe("f");
+    expect(warnings[0].message).toContain(
+      'pass "coverage" failed after 2 attempts',
+    );
+    expect(control.taskPrompts).toHaveLength(4);
   });
 
   test("preserves valid coverage neighbors when one item is indeterminate", async () => {
@@ -615,6 +721,68 @@ describe("runForgettingPass", () => {
     expect(evaluation.verdict).toBe("indeterminate");
     expect(warnings).toEqual(["old@T0"]);
     expect(control.taskPrompts).toHaveLength(3);
+  });
+
+  test("recovers from an empty batch tool-call payload via isolated repair", async () => {
+    // The degenerate `{}` payload parses to an empty batch, so the batch invoke
+    // does not throw; the per-item loop finds no verdict and repairs the target
+    // in isolation. A lingering verdict finalizes without exhaustive fallback.
+    const control = controller([
+      {},
+      {
+        evaluations: [
+          {
+            factVersionId: "old@T0",
+            verdict: "lingering",
+            evidence: ["seen"],
+            rationale: "still present",
+          },
+        ],
+      },
+    ]);
+    const warnings: string[] = [];
+
+    const [evaluation] = await runForgettingPass({
+      model: fakeModel(control),
+      checkpointId: "T2",
+      obsoleteFacts: [obsoleteFact("old", "old truth")],
+      index: new SectionBm25Index([section("seen", "old truth")]),
+      onWarning: (warning) => warnings.push(warning.itemId),
+    });
+
+    expect(evaluation.verdict).toBe("lingering");
+    expect(warnings).toEqual([]);
+    expect(control.taskPrompts).toHaveLength(2);
+  });
+
+  test("survives a whole-batch forgetting failure by degrading each target with the batch cause", async () => {
+    // Every attempt throws, so both the batch invoke and the isolated repair
+    // exhaust their two attempts. The pass must not abort; the target degrades
+    // to a warned indeterminate verdict whose warning reports the batch cause.
+    const control = controller([
+      new Error("provider exploded"),
+      new Error("provider exploded"),
+      new Error("provider exploded"),
+      new Error("provider exploded"),
+    ]);
+    const warnings: Array<{ itemId: string; message: string }> = [];
+
+    const [evaluation] = await runForgettingPass({
+      model: fakeModel(control),
+      checkpointId: "T2",
+      obsoleteFacts: [obsoleteFact("old", "old truth")],
+      index: new SectionBm25Index([section("seen", "old truth")]),
+      onWarning: (warning) =>
+        warnings.push({ itemId: warning.itemId, message: warning.message }),
+    });
+
+    expect(evaluation.verdict).toBe("indeterminate");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].itemId).toBe("old@T0");
+    expect(warnings[0].message).toContain(
+      'pass "forgetting" failed after 2 attempts',
+    );
+    expect(control.taskPrompts).toHaveLength(4);
   });
 
   test("preserves valid forgetting neighbors when one item is indeterminate", async () => {

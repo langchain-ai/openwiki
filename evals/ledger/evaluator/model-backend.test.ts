@@ -6,9 +6,12 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
  */
 interface ModelControl {
   /**
-   * Structured responses consumed in invocation order.
+   * Structured responses queued per system prompt and consumed in order.
+   *
+   * The passes now run concurrently, so responses cannot be routed by a single
+   * positional queue; each prompt keeps its own FIFO instead.
    */
-  responses: unknown[];
+  responsesByPrompt: Map<string, unknown[]>;
 
   /**
    * System prompts observed in invocation order.
@@ -27,7 +30,7 @@ interface ModelControl {
 }
 
 const control = vi.hoisted<ModelControl>(() => ({
-  responses: [],
+  responsesByPrompt: new Map<string, unknown[]>(),
   systemPrompts: [],
   active: 0,
   maxActive: 0,
@@ -36,13 +39,14 @@ const control = vi.hoisted<ModelControl>(() => ({
 const fakeModel = vi.hoisted(() => ({
   withStructuredOutput: () => ({
     invoke: async (messages: Array<{ role: string; content: string }>) => {
-      control.systemPrompts.push(messages[0].content);
+      const prompt = messages[0].content;
+      control.systemPrompts.push(prompt);
       control.active += 1;
       control.maxActive = Math.max(control.maxActive, control.active);
 
       try {
         await Promise.resolve();
-        return control.responses.shift();
+        return control.responsesByPrompt.get(prompt)?.shift();
       } finally {
         control.active -= 1;
       }
@@ -63,19 +67,19 @@ const {
 } = await import("./prompts.js");
 
 beforeEach(() => {
-  control.responses.length = 0;
+  control.responsesByPrompt.clear();
   control.systemPrompts.length = 0;
   control.active = 0;
   control.maxActive = 0;
 });
 
 describe("ModelEvaluationBackend", () => {
-  test("runs the complete bounded pipeline sequentially from artifact documents", async () => {
+  test("runs the complete bounded pipeline concurrently from artifact documents", async () => {
     const inventories: Array<{
       checkpointId: string;
       keptAssertionCount: number;
     }> = [];
-    control.responses.push(
+    control.responsesByPrompt.set(COVERAGE_SYSTEM, [
       {
         evaluations: [
           {
@@ -86,6 +90,8 @@ describe("ModelEvaluationBackend", () => {
           },
         ],
       },
+    ]);
+    control.responsesByPrompt.set(FORGETTING_SYSTEM, [
       {
         evaluations: [
           {
@@ -96,6 +102,8 @@ describe("ModelEvaluationBackend", () => {
           },
         ],
       },
+    ]);
+    control.responsesByPrompt.set(PRECISION_EXTRACTION_SYSTEM, [
       {
         units: [
           {
@@ -117,6 +125,8 @@ describe("ModelEvaluationBackend", () => {
           },
         ],
       },
+    ]);
+    control.responsesByPrompt.set(PRECISION_JUDGMENT_SYSTEM, [
       {
         evaluations: [
           {
@@ -127,7 +137,7 @@ describe("ModelEvaluationBackend", () => {
           },
         ],
       },
-    );
+    ]);
 
     const backend = new ModelEvaluationBackend({
       provider: "anthropic",
@@ -181,13 +191,23 @@ describe("ModelEvaluationBackend", () => {
       ],
     });
 
-    expect(control.systemPrompts).toEqual([
-      COVERAGE_SYSTEM,
-      FORGETTING_SYSTEM,
-      PRECISION_EXTRACTION_SYSTEM,
-      PRECISION_JUDGMENT_SYSTEM,
-    ]);
-    expect(control.maxActive).toBe(1);
+    // Every pass runs exactly once; concurrency makes the first-wave order
+    // non-deterministic, so assert the set rather than the sequence.
+    expect([...control.systemPrompts].sort()).toEqual(
+      [
+        COVERAGE_SYSTEM,
+        FORGETTING_SYSTEM,
+        PRECISION_EXTRACTION_SYSTEM,
+        PRECISION_JUDGMENT_SYSTEM,
+      ].sort(),
+    );
+    // Precision's judgment still depends on its extraction, so that ordering
+    // must hold even under concurrency.
+    expect(
+      control.systemPrompts.indexOf(PRECISION_EXTRACTION_SYSTEM),
+    ).toBeLessThan(control.systemPrompts.indexOf(PRECISION_JUDGMENT_SYSTEM));
+    // The three passes overlap rather than running strictly serially.
+    expect(control.maxActive).toBeGreaterThan(1);
     expect(inventories).toEqual([
       { checkpointId: "T1", keptAssertionCount: 1 },
     ]);

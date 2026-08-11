@@ -100,7 +100,7 @@ describe("OpenWikiSystem.run", () => {
     expect(process.env.OPENWIKI_MODEL_ID).toBe("claude-x");
   });
 
-  test("update treats an absent skip flag as not skipped and passes modelId null when unset", async () => {
+  test("update treats an absent skip flag as not skipped and passes modelId undefined when unset", async () => {
     controller.result = { command: "update", model: "m" };
     delete process.env.OPENWIKI_MODEL_ID;
     const system = new OpenWikiSystem({ provider: "openai" });
@@ -109,9 +109,9 @@ describe("OpenWikiSystem.run", () => {
 
     expect(outcome.skipped).toBe(false);
     expect(controller.calls[0].command).toBe("update");
-    // With no configured model the adapter passes null so OpenWiki resolves its
-    // own default, and it leaves OPENWIKI_MODEL_ID untouched.
-    expect(controller.calls[0].options.modelId).toBeNull();
+    // With no configured model the adapter passes undefined so OpenWiki resolves
+    // its own default, and it leaves OPENWIKI_MODEL_ID untouched.
+    expect(controller.calls[0].options.modelId).toBeUndefined();
     expect(process.env.OPENWIKI_MODEL_ID).toBeUndefined();
   });
 

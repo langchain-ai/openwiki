@@ -15,9 +15,22 @@ import type {
 import { runCoveragePass } from "./coverage.js";
 import { sectionArtifact } from "./documents.js";
 import { runForgettingPass } from "./forgetting.js";
+import { createLimiter } from "./pass-utils.js";
 import { runPrecisionPass } from "./precision.js";
 import type { PrecisionAssertionInventory } from "./precision.js";
 import { SectionBm25Index } from "./retrieval.js";
+
+/**
+ * Total in-flight evaluator model calls allowed across the three concurrent
+ * passes for one checkpoint.
+ *
+ * The three passes share one limiter, so this bounds every batch call together
+ * rather than per pass: precision's deep judgment queue can borrow the whole
+ * budget when coverage and forgetting are idle. Kept conservative because
+ * provider retries are disabled (constructor passes 0), so a 429 burst degrades
+ * verdicts rather than being absorbed.
+ */
+const EVALUATOR_CONCURRENCY = 6;
 
 /**
  * Narrow a raw provider string to a known OpenWiki provider.
@@ -67,6 +80,14 @@ export interface ModelEvaluationBackendOptions {
 
 /**
  * Runs the complete bounded LEDGER evaluation pipeline with direct model calls.
+ *
+ * Coverage, forgetting, and precision are independent per checkpoint, so they
+ * run concurrently, and within each pass the batch loops also run concurrently
+ * under one shared limiter (`EVALUATOR_CONCURRENCY`). Peak in-flight requests
+ * stay globally bounded regardless of how deep any single pass's batch queue is;
+ * precision's extraction still completes before its judgment. This turns
+ * per-checkpoint latency from the serial sum of every batch into the queue depth
+ * divided by the shared budget.
  */
 export class ModelEvaluationBackend implements EvaluationBackend {
   private readonly model: BaseChatModel;
@@ -92,8 +113,10 @@ export class ModelEvaluationBackend implements EvaluationBackend {
   }
 
   /**
-   * Run coverage, forgetting, and precision sequentially over one immutable
+   * Run coverage, forgetting, and precision concurrently over one immutable
    * artifact. Coverage and forgetting reuse a single deterministic BM25 index.
+   * The three passes only read shared inputs, so the concurrency is race-free;
+   * warnings are collected in completion order rather than pass order.
    *
    * @param input - Artifact documents and their active and obsolete facts.
    *
@@ -112,31 +135,41 @@ export class ModelEvaluationBackend implements EvaluationBackend {
     const onWarning = (warning: EvaluationWarning): void => {
       warnings.push(warning);
     };
-    const factEvaluations = await runCoveragePass({
-      model: this.model,
-      checkpointId: input.artifact.checkpointId,
-      surface: input.surface,
-      index,
-      timeoutMs: this.timeoutMs,
-      onWarning,
-    });
-    const forgettingEvaluations = await runForgettingPass({
-      model: this.model,
-      checkpointId: input.artifact.checkpointId,
-      obsoleteFacts: input.obsoleteFacts,
-      index,
-      timeoutMs: this.timeoutMs,
-      onWarning,
-    });
-    const precisionEvaluations = await runPrecisionPass({
-      model: this.model,
-      checkpointId: input.artifact.checkpointId,
-      sections,
-      evidence: input.evidence,
-      timeoutMs: this.timeoutMs,
-      onInventory: this.onAssertionInventory,
-      onWarning,
-    });
+    // One limiter shared by all three passes bounds their combined in-flight
+    // model calls. Without it each pass would parallelize its own batches
+    // independently and the checkpoint could issue three full budgets at once.
+    const limit = createLimiter(EVALUATOR_CONCURRENCY);
+    const [factEvaluations, forgettingEvaluations, precisionEvaluations] =
+      await Promise.all([
+        runCoveragePass({
+          model: this.model,
+          checkpointId: input.artifact.checkpointId,
+          surface: input.surface,
+          index,
+          timeoutMs: this.timeoutMs,
+          limit,
+          onWarning,
+        }),
+        runForgettingPass({
+          model: this.model,
+          checkpointId: input.artifact.checkpointId,
+          obsoleteFacts: input.obsoleteFacts,
+          index,
+          timeoutMs: this.timeoutMs,
+          limit,
+          onWarning,
+        }),
+        runPrecisionPass({
+          model: this.model,
+          checkpointId: input.artifact.checkpointId,
+          sections,
+          evidence: input.evidence,
+          timeoutMs: this.timeoutMs,
+          limit,
+          onInventory: this.onAssertionInventory,
+          onWarning,
+        }),
+      ]);
 
     return {
       factEvaluations,

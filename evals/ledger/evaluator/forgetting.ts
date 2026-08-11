@@ -8,7 +8,15 @@ import type {
 } from "../core/types.js";
 import { invokeStructuredModel } from "./direct-model.js";
 import type { ArtifactSection } from "./documents.js";
-import { assertPositiveInteger, batch, toExcerpt } from "./pass-utils.js";
+import {
+  assertPositiveInteger,
+  batch,
+  createLimiter,
+  DEFAULT_PASS_CONCURRENCY,
+  mapWithLimit,
+  toExcerpt,
+  type Limiter,
+} from "./pass-utils.js";
 import {
   FORGETTING_SYSTEM,
   forgettingPrompt,
@@ -25,8 +33,12 @@ const DEFAULT_TOP_K = 8;
 
 /**
  * Default number of obsolete targets included in each initial model request.
+ *
+ * Raised from the original conservative default now that a failed batch
+ * degrades to per-item repair instead of aborting the run; larger batches cut
+ * the serial round-trip count per checkpoint.
  */
-const DEFAULT_TARGET_BATCH_SIZE = 5;
+const DEFAULT_TARGET_BATCH_SIZE = 15;
 
 /**
  * Number of untried sections examined per exhaustive fallback request.
@@ -75,6 +87,15 @@ export interface ForgettingPassInput {
    * Per-attempt evaluator request deadline in milliseconds.
    */
   timeoutMs?: number;
+
+  /**
+   * Shared concurrency limiter bounding in-flight model calls across passes.
+   *
+   * @default a private limiter of `DEFAULT_PASS_CONCURRENCY` when absent, so a
+   * standalone pass still runs its batches concurrently but never shares a
+   * budget with sibling passes.
+   */
+  limit?: Limiter;
 
   /**
    * Optional sink for items that remain invalid after isolated repair.
@@ -305,6 +326,45 @@ async function evaluateForgettingBatch(
 }
 
 /**
+ * Exhaustively scan every untried section for one still-`forgotten` obsolete
+ * version, stopping at the first section batch that finds it lingering. The scan
+ * stays strictly serial and early-breaks so it examines the minimum evidence,
+ * exactly as when the fallback ran inline; only the per-target calls run
+ * concurrently.
+ *
+ * @param input - Forgetting pass configuration and warning sink.
+ * @param target - Obsolete version whose initial verdict was `forgotten`.
+ * @param allSections - Every artifact section available as evidence.
+ * @param initial - The initial `forgotten` evaluation retained when no section
+ * finds it lingering.
+ *
+ * @returns The first non-forgotten verdict found, else the initial forgotten
+ * one.
+ */
+async function resolveForgettingFallback(
+  input: ForgettingPassInput,
+  target: ForgettingTarget,
+  allSections: ArtifactSection[],
+  initial: ForgettingEvaluation,
+): Promise<ForgettingEvaluation> {
+  const examined = new Set(target.sections.map((section) => section.id));
+  const remaining = allSections.filter((section) => !examined.has(section.id));
+  let evaluation = initial;
+
+  for (const sections of batch(remaining, FALLBACK_SECTION_BATCH_SIZE)) {
+    [evaluation] = await evaluateForgettingBatchResilient(input, [
+      { fact: target.fact, sections },
+    ]);
+
+    if (evaluation.verdict !== "forgotten") {
+      break;
+    }
+  }
+
+  return evaluation;
+}
+
+/**
  * Evaluate a forgetting batch item by item, retrying only malformed items in
  * isolation and converting irreparable output into an explicit indeterminate
  * verdict.
@@ -318,15 +378,30 @@ async function evaluateForgettingBatchResilient(
   input: ForgettingPassInput,
   targets: ForgettingTarget[],
 ): Promise<ForgettingEvaluation[]> {
-  const output = await invokeStructuredModel({
-    model: input.model,
-    pass: "forgetting",
-    checkpointId: input.checkpointId,
-    systemPrompt: FORGETTING_SYSTEM,
-    taskPrompt: forgettingPrompt(toPromptTargets(targets)),
-    schema: forgettingOutputSchema,
-    timeoutMs: input.timeoutMs,
-  });
+  // A whole-batch forgetting failure (for example an empty or malformed
+  // tool-call payload that survives both attempts inside invokeStructuredModel)
+  // must not abort the pass. Fall back to an empty response and let the
+  // per-target loop below re-evaluate each target in isolation, degrading only
+  // the targets that still cannot be judged. The batch error is threaded into
+  // the degrade message so the warning reports the real cause; it is already
+  // prompt-redacted and length-bounded by invokeStructuredModel before it
+  // reaches here.
+  let output: ForgettingOutput;
+  let batchError: unknown;
+  try {
+    output = await invokeStructuredModel({
+      model: input.model,
+      pass: "forgetting",
+      checkpointId: input.checkpointId,
+      systemPrompt: FORGETTING_SYSTEM,
+      taskPrompt: forgettingPrompt(toPromptTargets(targets)),
+      schema: forgettingOutputSchema,
+      timeoutMs: input.timeoutMs,
+    });
+  } catch (error) {
+    batchError = error;
+    output = { evaluations: [] };
+  }
   const allowedSectionIds = new Set(
     targets.flatMap((target) => target.sections.map((section) => section.id)),
   );
@@ -347,10 +422,9 @@ async function evaluateForgettingBatchResilient(
         );
         evaluations.push(repaired);
       } catch (repairError) {
+        const cause = batchError ?? initialError;
         const initialMessage =
-          initialError instanceof Error
-            ? initialError.message
-            : String(initialError);
+          cause instanceof Error ? cause.message : String(cause);
         const repairMessage =
           repairError instanceof Error
             ? repairError.message
@@ -392,6 +466,7 @@ export async function runForgettingPass(
 
   const topK = input.topK ?? DEFAULT_TOP_K;
   const batchSize = input.batchSize ?? DEFAULT_TARGET_BATCH_SIZE;
+  const limit = input.limit ?? createLimiter(DEFAULT_PASS_CONCURRENCY);
   assertPositiveInteger(topK, "Forgetting topK");
   assertPositiveInteger(batchSize, "Forgetting batchSize");
 
@@ -415,39 +490,40 @@ export async function runForgettingPass(
   }));
   const resultByVersion = new Map<string, ForgettingEvaluation>();
 
-  for (const targets of batch(initialTargets, batchSize)) {
-    const evaluations = await evaluateForgettingBatchResilient(input, targets);
+  const batchResults = await mapWithLimit(
+    batch(initialTargets, batchSize),
+    limit,
+    (targets) => evaluateForgettingBatchResilient(input, targets),
+  );
 
+  for (const evaluations of batchResults) {
     for (const evaluation of evaluations) {
       resultByVersion.set(evaluation.factVersionId, evaluation);
     }
   }
 
-  for (const target of initialTargets) {
-    const initial = resultByVersion.get(
-      target.fact.factVersionId,
-    ) as ForgettingEvaluation;
+  // Every still-forgotten version gets an independent exhaustive scan; the
+  // targets are independent and each writes only its own result, so they run
+  // concurrently while each scan's inner section walk stays serial.
+  const forgottenTargets = initialTargets.filter(
+    (target) =>
+      (resultByVersion.get(target.fact.factVersionId) as ForgettingEvaluation)
+        .verdict === "forgotten",
+  );
+  const fallbackResults = await mapWithLimit(
+    forgottenTargets,
+    limit,
+    (target) =>
+      resolveForgettingFallback(
+        input,
+        target,
+        allSections,
+        resultByVersion.get(target.fact.factVersionId) as ForgettingEvaluation,
+      ),
+  );
 
-    if (initial.verdict !== "forgotten") {
-      continue;
-    }
-
-    const examined = new Set(target.sections.map((section) => section.id));
-    const remaining = allSections.filter(
-      (section) => !examined.has(section.id),
-    );
-
-    for (const sections of batch(remaining, FALLBACK_SECTION_BATCH_SIZE)) {
-      const [evaluation] = await evaluateForgettingBatchResilient(input, [
-        { fact: target.fact, sections },
-      ]);
-
-      resultByVersion.set(target.fact.factVersionId, evaluation);
-
-      if (evaluation.verdict !== "forgotten") {
-        break;
-      }
-    }
+  for (const evaluation of fallbackResults) {
+    resultByVersion.set(evaluation.factVersionId, evaluation);
   }
 
   return input.obsoleteFacts.map(

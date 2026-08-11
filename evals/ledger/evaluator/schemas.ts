@@ -20,14 +20,26 @@ export const factVerdictSchema = z.enum([
  * the completed reasoning rather than fixed before it.
  */
 export const coverageOutputSchema = z.object({
-  evaluations: z.array(
-    z.object({
-      factId: z.string(),
-      rationale: z.string(),
-      evidence: z.array(z.string()).default([]),
-      verdict: factVerdictSchema,
-    }),
-  ),
+  /**
+   * One verdict per requested fact. Defaults to an empty array so a degenerate
+   * tool-call payload (Anthropic structured output is forced tool use, and the
+   * model can return `{}`) parses to an empty batch and degrades per item rather
+   * than crashing the pass at the schema boundary. Every requested target is
+   * still reconciled by `resolveCoverageItem`, so a missing item is repaired or
+   * degraded, never silently dropped.
+   *
+   * @default [] when the model omits the field entirely
+   */
+  evaluations: z
+    .array(
+      z.object({
+        factId: z.string(),
+        rationale: z.string(),
+        evidence: z.array(z.string()).default([]),
+        verdict: factVerdictSchema,
+      }),
+    )
+    .default([]),
 });
 
 /**
@@ -41,14 +53,27 @@ export const coverageOutputSchema = z.object({
  * the completed reasoning rather than fixed before it.
  */
 export const forgettingOutputSchema = z.object({
-  evaluations: z.array(
-    z.object({
-      factVersionId: z.string(),
-      rationale: z.string(),
-      evidence: z.array(z.string()).default([]),
-      verdict: z.enum(["forgotten", "lingering"]),
-    }),
-  ),
+  /**
+   * One verdict per obsolete fact version the classifier received. Defaults to
+   * an empty array so a degenerate tool-call payload (Anthropic structured
+   * output is forced tool use, and the model can return `{}`) parses to an empty
+   * batch and degrades per item rather than crashing the pass at the schema
+   * boundary. Every requested target is still reconciled by
+   * `resolveForgettingItem`, so a missing item is repaired or degraded, never
+   * silently dropped.
+   *
+   * @default [] when the model omits the field entirely
+   */
+  evaluations: z
+    .array(
+      z.object({
+        factVersionId: z.string(),
+        rationale: z.string(),
+        evidence: z.array(z.string()).default([]),
+        verdict: z.enum(["forgotten", "lingering"]),
+      }),
+    )
+    .default([]),
 });
 
 /**
@@ -59,27 +84,38 @@ export const forgettingOutputSchema = z.object({
  * completed reasoning rather than fixed before it.
  */
 export const assertionExtractionOutputSchema = z.object({
-  units: z.array(
-    z.object({
-      unitId: z.string(),
-      rationale: z.string().trim().min(1),
-      classification: z.enum([
-        "factual",
-        "mixed",
-        "navigation",
-        "meta-artifact",
-        "opinion",
-        "instruction",
-        "no-claim",
-      ]),
-      assertions: z.array(
-        z.object({
-          statement: z.string().trim().min(1),
-          tense: z.enum(["current", "historical"]),
-        }),
-      ),
-    }),
-  ),
+  /**
+   * One classified result per requested text unit. Defaults to an empty array so
+   * a degenerate tool-call payload (Anthropic structured output is forced tool
+   * use, and the model can return `{}`) parses to an empty extraction and flows
+   * into the per-unit degrade path rather than crashing the whole pass at the
+   * schema boundary. Every requested unit is still reconciled by
+   * `resolveExtractionUnit`, so a missing unit is repaired or warned, never
+   * silently dropped.
+   */
+  units: z
+    .array(
+      z.object({
+        unitId: z.string(),
+        rationale: z.string().trim().min(1),
+        classification: z.enum([
+          "factual",
+          "mixed",
+          "navigation",
+          "meta-artifact",
+          "opinion",
+          "instruction",
+          "no-claim",
+        ]),
+        assertions: z.array(
+          z.object({
+            statement: z.string().trim().min(1),
+            tense: z.enum(["current", "historical"]),
+          }),
+        ),
+      }),
+    )
+    .default([]),
 });
 
 /**
