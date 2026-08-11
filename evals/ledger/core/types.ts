@@ -493,11 +493,7 @@ export interface EvaluationWarning {
    * Semantic pass that could not repair one item.
    */
   pass:
-    | "coverage"
-    | "forgetting"
-    | "precision-extraction"
-    | "precision-ledger"
-    | "precision-judgment";
+    "coverage" | "forgetting" | "precision-extraction" | "precision-judgment";
 
   /**
    * Fact, fact-version, or assertion identity affected by the failure.
@@ -709,14 +705,14 @@ export interface PrecisionMetric {
   total: number;
 
   /**
-   * `invented / adjudicated`, or null when no claim was adjudicated.
+   * `invented / adjudicated`, or undefined when no claim was adjudicated.
    */
-  hallucinationRate: number | null;
+  hallucinationRate: number | undefined;
 
   /**
-   * `stale / adjudicated`, or null when no claim was adjudicated.
+   * `stale / adjudicated`, or undefined when no claim was adjudicated.
    */
-  stalenessRate: number | null;
+  stalenessRate: number | undefined;
 
   /**
    * `unverified / total`, or 0 when no material claim was extracted.
@@ -724,9 +720,9 @@ export interface PrecisionMetric {
   unverifiedRate: number;
 
   /**
-   * `supported / adjudicated`, or null when no claim was adjudicated.
+   * `supported / adjudicated`, or undefined when no claim was adjudicated.
    */
-  score: number | null;
+  score: number | undefined;
 }
 
 /**
@@ -933,20 +929,20 @@ export interface LedgerScore {
   traceCoverage: number;
 
   /**
-   * Macro-average of defined per-checkpoint `precision.score` values. Null when
-   * no checkpoint contains an adjudicated precision claim.
+   * Macro-average of defined per-checkpoint `precision.score` values. Undefined
+   * when no checkpoint contains an adjudicated precision claim.
    */
-  tracePrecision: number | null;
+  tracePrecision: number | undefined;
 
   /**
    * Macro-average assertion hallucination rate over defined checkpoints.
    */
-  traceHallucinationRate: number | null;
+  traceHallucinationRate: number | undefined;
 
   /**
    * Macro-average assertion staleness rate over defined checkpoints.
    */
-  traceStalenessRate: number | null;
+  traceStalenessRate: number | undefined;
 
   /**
    * Macro-average unverified-claim rate across all checkpoints.
@@ -960,10 +956,10 @@ export interface LedgerScore {
   evaluationCompleteness: number;
 
   /**
-   * Harmonic mean of trace coverage and precision. Null when trace precision is
-   * null.
+   * Harmonic mean of trace coverage and precision. Undefined when trace
+   * precision is undefined.
    */
-  quality: number | null;
+  quality: number | undefined;
 
   /**
    * The four trace-level maintenance rates. Rates whose global denominator was 0
@@ -984,7 +980,7 @@ export interface LedgerScore {
    * `(quality + maintenance) / 2` when maintenance is defined, otherwise
    * `quality`. Reported to the user as 0 to 100.
    */
-  ledgerScore: number | null;
+  ledgerScore: number | undefined;
 }
 
 /**
@@ -1352,6 +1348,8 @@ export interface EvaluationInput {
 
   /**
    * Source-derived surface transition into this checkpoint, when one exists.
+   *
+   * @default undefined the first checkpoint has no inbound transition
    */
   transitions?: CheckpointTransitions;
 }

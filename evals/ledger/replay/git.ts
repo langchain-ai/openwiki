@@ -9,9 +9,11 @@ import { GitReplayError } from "../core/errors.js";
 const execFileAsync = promisify(execFile);
 
 /**
- * Git commit SHAs LEDGER will pass to Git: 7 to 40 lowercase hex characters.
+ * Git commit SHAs LEDGER will pass to Git: 7 to 40 lowercase hex characters. The
+ * single source of truth for the SHA allowlist, reused wherever a commit id
+ * crosses from untrusted benchmark JSON toward Git.
  */
-const COMMIT_PATTERN = /^[0-9a-f]{7,40}$/;
+export const COMMIT_PATTERN = /^[0-9a-f]{7,40}$/;
 
 /**
  * Reject any string that is not a well-formed commit SHA before it reaches Git.

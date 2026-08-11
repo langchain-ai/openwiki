@@ -1,4 +1,3 @@
-import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -6,20 +5,16 @@ import { ModelEvaluationBackend } from "./evaluator/model-backend.js";
 import { parseArgs } from "./run/args.js";
 import { loadBenchmark } from "./benchmark/benchmark.js";
 import { OpenWikiSystem } from "./system/openwiki-system.js";
+import { finalizeRun, persistFailureAudit } from "./run/finalize.js";
 import {
   prepareRunDirectory,
   writeArtifactSnapshot,
   writeAssertionInventory,
   writeEvidenceCorpus,
-  writeRunFailure,
-  writeRunResult,
-  writeUnverifiedClaims,
 } from "./run/persistence.js";
-import { formatReport } from "./run/report.js";
 import { createCliProgressReporter } from "./run/progress.js";
 import { resolveRunConfig } from "./run/run-config.js";
 import { runBenchmark } from "./run/runner.js";
-import { formatRunSummary } from "./run/summary.js";
 
 /**
  * Absolute path to the directory this module lives in (`evals/ledger`).
@@ -75,30 +70,16 @@ async function main(): Promise<void> {
       onProgress: createCliProgressReporter(),
     });
   } catch (error) {
-    try {
-      await writeRunFailure(runDir, error);
-      process.stderr.write(`Audit artifacts written to ${runDir}\n`);
-    } catch (persistenceError) {
-      process.stderr.write(
-        `Could not persist failure audit artifacts: ${persistenceError instanceof Error ? persistenceError.message : String(persistenceError)}\n`,
-      );
-    }
+    await persistFailureAudit(runDir, error);
     throw error;
   }
 
-  await writeRunResult(config.resultsDir, result);
-  const report = formatReport(result);
-
-  await writeFile(path.join(runDir, "report.md"), report, "utf8");
-
-  const unverifiedClaimsPath = await writeUnverifiedClaims(runDir, result);
-  process.stderr.write(
-    formatRunSummary(result, {
-      unverifiedClaimsPath,
-      elapsedMs: performance.now() - startedMs,
-    }),
-  );
-  process.stderr.write(`📁 Results · ${runDir}\n`);
+  await finalizeRun({
+    resultsDir: config.resultsDir,
+    runDir,
+    result,
+    startedMs,
+  });
 }
 
 // Direct-invocation guard: run only when executed as a script, not when imported

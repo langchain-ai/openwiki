@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { EvaluationError } from "../core/errors.js";
 import { compareStrings } from "../core/order.js";
+import { isContainedBy } from "../core/paths.js";
 import type { EvidenceCorpus, EvidenceRecord } from "../core/types.js";
 import { git } from "../replay/git.js";
 
@@ -89,7 +90,7 @@ export async function collectGitEvidence(
   for (const relativePath of relativePaths) {
     const absolutePath = path.resolve(workspaceRoot, relativePath);
 
-    if (!absolutePath.startsWith(`${workspaceRoot}${path.sep}`)) {
+    if (!isContainedBy(workspaceRoot, absolutePath)) {
       throw new EvaluationError(
         `Git evidence path escapes the replay workspace: "${relativePath}".`,
       );

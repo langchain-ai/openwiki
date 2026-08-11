@@ -10,7 +10,7 @@ import { validateBenchmark } from "./validation.js";
 /**
  * Name of the manifest file inside a benchmark directory.
  */
-export const BENCHMARK_FILE = "benchmark.json";
+const BENCHMARK_FILE = "benchmark.json";
 
 /**
  * The difficulty labels a benchmark manifest may declare, in ascending order.

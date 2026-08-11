@@ -223,20 +223,6 @@ export class GitReplay {
   }
 
   /**
-   * Discard modifications to tracked files, returning them to the checked-out
-   * commit. Untracked files (the wiki) are left untouched because this uses
-   * `reset --hard` and never `git clean`. The baseline OpenWiki System Under
-   * Test never dirties tracked files, so the runner does not call this; it
-   * exists for future systems that might.
-   *
-   * @throws WorktreeSafetyError when containment cannot be proven.
-   */
-  async discardTrackedChanges(): Promise<void> {
-    await assertContainedByRealpath(this.worktreeRoot, this.worktreeRoot);
-    await git(this.worktreeRoot, ["reset", "--hard", "HEAD"]);
-  }
-
-  /**
    * Remove the worktree from the private source clone's worktree list. The
    * workspace owning both temporary trees is responsible for deleting their
    * files; this only unregisters the worktree. Failures are swallowed so

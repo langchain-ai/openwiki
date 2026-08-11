@@ -1,12 +1,10 @@
 import type { LedgerRunResult, PrecisionVerdict } from "../core/types.js";
-import { formatCount, formatLifetime, formatPercent } from "./format.js";
-
-/**
- * Render a report metric fraction with the report's one-decimal precision.
- */
-function pct(value: number | null | undefined): string {
-  return formatPercent(value, 1);
-}
+import {
+  formatCount,
+  formatLifetime,
+  formatPercent1 as pct,
+} from "./format.js";
+import { forgettingRate } from "./forgetting-rate.js";
 
 /**
  * Render a claim-class count with its share of a denominator.
@@ -17,7 +15,7 @@ function pct(value: number | null | undefined): string {
  * @returns The count and its parenthesized percentage, dash when undefined.
  */
 function assertionCount(count: number, denominator: number): string {
-  return `${count} (${pct(denominator === 0 ? null : count / denominator)})`;
+  return `${count} (${pct(denominator === 0 ? undefined : count / denominator)})`;
 }
 
 /**
@@ -32,18 +30,13 @@ function factForgettingRate(
   result: LedgerRunResult,
   checkpointId: string,
 ): string {
-  const evaluations = result.checkpoints.find(
-    (checkpoint) => checkpoint.checkpointId === checkpointId,
-  )?.evaluations?.forgettingEvaluations;
-  if (evaluations === undefined) return "-";
-  const judged = evaluations.filter(
-    (evaluation) => evaluation.verdict !== "indeterminate",
+  const rate = forgettingRate(
+    result.checkpoints.find(
+      (checkpoint) => checkpoint.checkpointId === checkpointId,
+    )?.evaluations?.forgettingEvaluations,
   );
-  if (judged.length === 0) return "-";
-  const forgotten = judged.filter(
-    (evaluation) => evaluation.verdict === "forgotten",
-  ).length;
-  return `${pct(forgotten / judged.length)} (${forgotten}/${judged.length})`;
+  if (rate === undefined) return "-";
+  return `${pct(rate.rate)} (${rate.forgotten}/${rate.judged})`;
 }
 
 /**
@@ -107,7 +100,7 @@ export function formatReport(result: LedgerRunResult): string {
   lines.push(
     `    - Unverified: ${assertionCount(totals.unverified, totals.total)}`,
   );
-  if (score.tracePrecision === null) {
+  if (score.tracePrecision === undefined) {
     lines.push(
       "  - Warning: no checkpoint contained an adjudicated precision claim; precision, quality, and the benchmark score are undefined.",
     );

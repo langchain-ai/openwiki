@@ -1,5 +1,6 @@
 import type { LedgerRunResult } from "../core/types.js";
-import { formatPercent as formatPercentString } from "./format.js";
+import { formatPercent1 as pct } from "./format.js";
+import { forgettingRate } from "./forgetting-rate.js";
 import { formatProgressDuration } from "./progress.js";
 
 /**
@@ -86,18 +87,6 @@ export interface Offender {
 const SEVERITY = { invented: 0, contradicted: 1, stale: 2, missing: 3 };
 
 /**
- * Render a percentage with the summary's one-decimal precision, or a dash when
- * the metric is undefined for this trace.
- *
- * @param value - A fraction between zero and one, or an absent metric.
- *
- * @returns Percentage text such as `88.0%`, or `-`.
- */
-function pct(value: number | null | undefined): string {
-  return formatPercentString(value, 1);
-}
-
-/**
  * Truncate a claim to a bounded single-line excerpt for the worst-offender list.
  *
  * @param text - The raw claim or identifier.
@@ -107,35 +96,6 @@ function pct(value: number | null | undefined): string {
 function excerpt(text: string): string {
   const collapsed = text.replace(/\s+/gu, " ").trim();
   return collapsed.length <= 60 ? collapsed : `${collapsed.slice(0, 59)}…`;
-}
-
-/**
- * The fraction of judged obsolete versions a checkpoint actually forgot, or
- * undefined when nothing obsolete was judged there.
- *
- * @param result - The complete run result.
- * @param checkpointIndex - Zero-based checkpoint position.
- *
- * @returns The forgetting rate in [0, 1], or undefined.
- */
-function checkpointForgettingRate(
-  result: LedgerRunResult,
-  checkpointIndex: number,
-): number | undefined {
-  const forgetting =
-    result.checkpoints[checkpointIndex].evaluations?.forgettingEvaluations;
-  if (forgetting === undefined) {
-    return undefined;
-  }
-
-  const judged = forgetting.filter((item) => item.verdict !== "indeterminate");
-  if (judged.length === 0) {
-    return undefined;
-  }
-
-  return (
-    judged.filter((item) => item.verdict === "forgotten").length / judged.length
-  );
 }
 
 /**
@@ -159,14 +119,14 @@ export function selectWeakestPoint(
     }
   };
 
-  result.checkpoints.forEach((checkpoint, index) => {
+  result.checkpoints.forEach((checkpoint) => {
     consider({
       checkpointId: checkpoint.checkpointId,
       dimension: "coverage",
       value: checkpoint.coverage.score,
     });
 
-    if (checkpoint.precision.score !== null) {
+    if (checkpoint.precision.score !== undefined) {
       consider({
         checkpointId: checkpoint.checkpointId,
         dimension: "precision",
@@ -174,12 +134,14 @@ export function selectWeakestPoint(
       });
     }
 
-    const forgetting = checkpointForgettingRate(result, index);
+    const forgetting = forgettingRate(
+      checkpoint.evaluations?.forgettingEvaluations,
+    );
     if (forgetting !== undefined) {
       consider({
         checkpointId: checkpoint.checkpointId,
         dimension: "forgetting",
-        value: forgetting,
+        value: forgetting.rate,
       });
     }
   });

@@ -8,22 +8,32 @@
 
 /**
  * Render a metric fraction as a percentage string, or a dash when the value is
- * absent. `null` and `undefined` are both treated as absent so callers can pass
- * either the persisted "no adjudicated claim" (`null`) or the "dimension did not
- * occur" (`undefined`) convention.
+ * absent. An absent value (`undefined`) covers both the "no adjudicated claim"
+ * and the "dimension did not occur" cases, which the score never distinguishes
+ * at render time.
  *
- * @param value - Fraction between zero and one, or absent.
+ * @param value - Fraction between zero and one, or undefined when absent.
  * @param decimals - Number of decimal places in the rendered percentage.
  *
  * @returns Percentage text such as `72%` or `72.0%`, or `-` when absent.
  */
 export function formatPercent(
-  value: number | null | undefined,
+  value: number | undefined,
   decimals: number,
 ): string {
-  return value === null || value === undefined
-    ? "-"
-    : `${(value * 100).toFixed(decimals)}%`;
+  return value === undefined ? "-" : `${(value * 100).toFixed(decimals)}%`;
+}
+
+/**
+ * Render a metric fraction at the one-decimal precision the auditable report and
+ * the run summary footer share, or a dash when the value is absent.
+ *
+ * @param value - Fraction between zero and one, or undefined when absent.
+ *
+ * @returns Percentage text such as `72.0%`, or `-` when absent.
+ */
+export function formatPercent1(value: number | undefined): string {
+  return formatPercent(value, 1);
 }
 
 /**

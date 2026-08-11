@@ -1,35 +1,18 @@
 import path from "node:path";
 
-import {
-  advanceObsoleteWatchSet,
-  diffSurface,
-  extractSurface,
-  obsoleteTargetsFor,
-} from "../benchmark/surface.js";
 import { LedgerError } from "../core/errors.js";
 import type {
   CheckpointEvaluationRecord,
   CheckpointScore,
-  CheckpointTransitions,
   EvidenceCorpus,
   EvaluationBackend,
-  FactEvaluation,
   LedgerBenchmark,
   LedgerRunResult,
   KnowledgeArtifact,
-  MaintenanceCounts,
-  ObsoleteFactTarget,
-  SurfaceItem,
 } from "../core/types.js";
 import { computeChurn } from "../scoring/churn.js";
-import {
-  aggregateScore,
-  computeCoverage,
-  computeDiagnostics,
-  computeEvaluationCompleteness,
-  computeMaintenanceCounts,
-  computePrecision,
-} from "../scoring/metrics.js";
+import { aggregateScore, computeDiagnostics } from "../scoring/metrics.js";
+import { evaluateCheckpoint, initialCarry } from "./evaluate-checkpoint.js";
 import type { BenchmarkProgressReporter } from "./progress-events.js";
 import {
   loadSavedArtifact,
@@ -162,11 +145,7 @@ export async function reevaluateSavedRun(
   try {
     const scores: CheckpointScore[] = [];
     const history: CheckpointEvaluationRecord[] = [];
-    let previousArtifact: KnowledgeArtifact | undefined;
-    let previousCheckpointId: string | undefined;
-    let previousSurface: SurfaceItem[] | undefined;
-    let previousFactEvaluations: FactEvaluation[] = [];
-    let outstandingObsolete: ObsoleteFactTarget[] = [];
+    let carry = initialCarry();
 
     for (let index = 0; index < checkpoints.length; index += 1) {
       const checkpoint = checkpoints[index];
@@ -193,110 +172,29 @@ export async function reevaluateSavedRun(
         loaded: true,
       });
 
-      const surface = await extractSurface(
-        inputs.benchmark.sourceRepoPath,
-        checkpoint.commit,
-      );
-      let transitions: CheckpointTransitions | undefined;
-      let newlyObsolete: ObsoleteFactTarget[] = [];
-
-      if (
-        index > 0 &&
-        previousCheckpointId !== undefined &&
-        previousSurface !== undefined
-      ) {
-        transitions = diffSurface(
-          previousSurface,
-          surface,
-          previousCheckpointId,
-          checkpoint.id,
-        );
-        newlyObsolete = obsoleteTargetsFor(transitions);
-      }
-
-      const obsoleteFacts = advanceObsoleteWatchSet({
-        outstanding: outstandingObsolete,
-        surface,
-        newlyObsolete,
-      });
-
-      reportProgress({
-        type: "evaluation-start",
-        checkpointId: checkpoint.id,
-        surfaceItemCount: surface.length,
-        obsoleteFactCount: obsoleteFacts.length,
-      });
-      const evaluation = await inputs.evaluationBackend.evaluate({
-        artifact,
-        surface,
-        evidence,
-        obsoleteFacts,
-        transitions,
-      });
-      const coverage = computeCoverage(evaluation.factEvaluations);
-      const precision = computePrecision(evaluation.precisionEvaluations);
-      const evaluationCompleteness = computeEvaluationCompleteness(
-        evaluation.factEvaluations,
-        evaluation.precisionEvaluations,
-        evaluation.forgettingEvaluations,
-      );
-
-      reportProgress({
-        type: "checkpoint-complete",
-        checkpointId: checkpoint.id,
-        coverageScore: coverage.score,
-        precisionScore: precision.score,
-        hallucinationRate: precision.hallucinationRate,
-        forgottenCount: evaluation.forgettingEvaluations.filter(
-          (item) => item.verdict === "forgotten",
-        ).length,
-        obsoleteFactCount: evaluation.forgettingEvaluations.length,
-        evaluationCompleteness: evaluationCompleteness.score,
-        indeterminateCount: evaluationCompleteness.indeterminate,
-        evaluationItemCount: evaluationCompleteness.total,
-      });
-
-      let maintenanceCounts: MaintenanceCounts | undefined;
-
-      if (transitions !== undefined) {
-        maintenanceCounts = computeMaintenanceCounts(
-          transitions,
-          evaluation.factEvaluations,
-          evaluation.forgettingEvaluations,
-          previousFactEvaluations,
-        );
-      }
-
       const original = savedCheckpoint(savedResult, checkpoint.id);
-      scores.push({
-        checkpointId: checkpoint.id,
-        coverage,
-        precision,
-        evaluationCompleteness,
-        maintenanceCounts,
+      const {
+        score,
+        history: historyEntry,
+        nextCarry,
+      } = await evaluateCheckpoint({
+        sourceRepoPath: inputs.benchmark.sourceRepoPath,
+        checkpoint,
+        index,
+        artifact,
+        evidence,
+        evaluationBackend: inputs.evaluationBackend,
+        carry,
         efficiency: {
           ...original.efficiency,
-          churnedLines: computeChurn(previousArtifact, artifact),
+          churnedLines: computeChurn(carry.previousArtifact, artifact),
         },
-        evaluations: {
-          factEvaluations: evaluation.factEvaluations,
-          precisionEvaluations: evaluation.precisionEvaluations,
-          forgettingEvaluations: evaluation.forgettingEvaluations,
-          warnings: evaluation.warnings ?? [],
-        },
-      });
-      history.push({
-        checkpointId: checkpoint.id,
-        factEvaluations: evaluation.factEvaluations,
-        forgettingEvaluations: evaluation.forgettingEvaluations,
-        transitions,
+        reportProgress,
       });
 
-      outstandingObsolete = obsoleteFacts;
-      previousArtifact = artifact;
-      previousCheckpointId = checkpoint.id;
-      previousSurface = surface;
-      previousFactEvaluations = evaluation.factEvaluations;
+      scores.push(score);
+      history.push(historyEntry);
+      carry = nextCarry;
     }
 
     const result: LedgerRunResult = {

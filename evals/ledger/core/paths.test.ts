@@ -2,17 +2,11 @@ import path from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import {
-  isContainedBy,
-  OPEN_WIKI_DIR,
-  UPDATE_METADATA_FILE,
-  wikiDirFor,
-} from "./paths.js";
+import { isContainedBy, OPEN_WIKI_DIR, wikiDirFor } from "./paths.js";
 
 describe("constants", () => {
   test("mirror OpenWiki's on-disk contract", () => {
     expect(OPEN_WIKI_DIR).toBe("openwiki");
-    expect(UPDATE_METADATA_FILE).toBe(".last-update.json");
   });
 });
 

@@ -314,14 +314,14 @@ export interface PrecisionPassInput {
   /**
    * Number of text units classified per extraction request.
    *
-   * @default 10
+   * @default 25
    */
   extractionBatchSize?: number;
 
   /**
    * Number of assertions grounded per judgment request.
    *
-   * @default 10
+   * @default 15
    */
   judgmentBatchSize?: number;
 

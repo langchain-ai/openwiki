@@ -17,11 +17,7 @@ const MAX_ATTEMPTS = 2;
  * Names the bounded semantic operation being performed by a model request.
  */
 export type DirectEvaluationPass =
-  | "coverage"
-  | "forgetting"
-  | "precision-extraction"
-  | "precision-ledger"
-  | "precision-judgment";
+  "coverage" | "forgetting" | "precision-extraction" | "precision-judgment";
 
 /**
  * Inputs for one bounded structured evaluator request.
@@ -66,6 +62,8 @@ export interface DirectModelCallOptions<T extends Record<string, unknown>> {
 
   /**
    * Optional semantic completeness validation applied after schema parsing.
+   *
+   * @default undefined only schema parsing is enforced when absent
    */
   validate?: (result: T) => void;
 }

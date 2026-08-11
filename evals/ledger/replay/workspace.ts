@@ -1,9 +1,9 @@
-import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
 import { WorktreeSafetyError } from "../core/errors.js";
-import { isContainedBy } from "../core/paths.js";
+import { assertContained } from "../core/paths.js";
 
 /**
  * A disposable, isolated filesystem for one benchmark run. Everything LEDGER writes
@@ -48,25 +48,14 @@ export async function assertContainedByRealpath(
   allowedRoot: string,
   target: string,
 ): Promise<void> {
-  const root = await realpath(allowedRoot);
-
-  let resolvedTarget: string;
-
-  try {
-    resolvedTarget = await realpath(target);
-  } catch {
-    // The target may not exist yet (for example a worktree path about to be
-    // created). Resolve symlinks up to the parent, then re-attach the basename,
-    // so a symlinked parent still cannot point the operation outside the root.
-    const parent = await realpath(path.dirname(target));
-    resolvedTarget = path.join(parent, path.basename(target));
-  }
-
-  if (!isContainedBy(root, resolvedTarget)) {
-    throw new WorktreeSafetyError(
-      `Refusing to operate on "${resolvedTarget}" outside allowed root "${root}".`,
-    );
-  }
+  await assertContained(
+    allowedRoot,
+    target,
+    (resolvedTarget, resolvedRoot) =>
+      new WorktreeSafetyError(
+        `Refusing to operate on "${resolvedTarget}" outside allowed root "${resolvedRoot}".`,
+      ),
+  );
 }
 
 /**

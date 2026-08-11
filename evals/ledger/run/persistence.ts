@@ -52,7 +52,7 @@ function nameSlug(name: string): string {
  *
  * @throws WorktreeSafetyError when the resolved path escapes the results root.
  */
-export function runDirectory(
+function runDirectory(
   resultsDir: string,
   benchmarkName: string,
   startedAt: string,

@@ -1,23 +1,18 @@
-import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { loadBenchmark } from "./benchmark/benchmark.js";
 import { ModelEvaluationBackend } from "./evaluator/model-backend.js";
+import { finalizeRun, persistFailureAudit } from "./run/finalize.js";
 import {
   prepareRunDirectory,
   writeArtifactSnapshot,
   writeAssertionInventory,
   writeEvidenceCorpus,
-  writeRunFailure,
-  writeRunResult,
-  writeUnverifiedClaims,
 } from "./run/persistence.js";
 import { createCliProgressReporter } from "./run/progress.js";
 import { reevaluateSavedRun } from "./run/reevaluator.js";
 import { resolveReevaluationConfig } from "./run/reevaluate-args.js";
-import { formatReport } from "./run/report.js";
-import { formatRunSummary } from "./run/summary.js";
 
 /**
  * Absolute directory containing the LEDGER implementation.
@@ -66,31 +61,14 @@ async function main(): Promise<void> {
       onArtifact: (artifact) => writeArtifactSnapshot(runDir, artifact),
       onEvidence: (evidence) => writeEvidenceCorpus(runDir, evidence),
     });
-    await writeRunResult(config.resultsDir, result);
-    await writeFile(
-      path.join(runDir, "report.md"),
-      formatReport(result),
-      "utf8",
-    );
-
-    const unverifiedClaimsPath = await writeUnverifiedClaims(runDir, result);
-    process.stderr.write(
-      formatRunSummary(result, {
-        unverifiedClaimsPath,
-        elapsedMs: performance.now() - startedMs,
-      }),
-    );
-    process.stderr.write(`📁 Results · ${runDir}\n`);
+    await finalizeRun({
+      resultsDir: config.resultsDir,
+      runDir,
+      result,
+      startedMs,
+    });
   } catch (error) {
-    try {
-      await writeRunFailure(runDir, error);
-      process.stderr.write(`Audit artifacts written to ${runDir}\n`);
-    } catch (persistenceError) {
-      process.stderr.write(
-        `Could not persist failure audit artifacts: ${persistenceError instanceof Error ? persistenceError.message : String(persistenceError)}\n`,
-      );
-    }
-
+    await persistFailureAudit(runDir, error);
     throw error;
   }
 }

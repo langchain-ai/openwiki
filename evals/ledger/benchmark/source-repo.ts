@@ -1,8 +1,7 @@
-import { access, realpath } from "node:fs/promises";
-import path from "node:path";
+import { access } from "node:fs/promises";
 
 import { BenchmarkValidationError } from "../core/errors.js";
-import { isContainedBy } from "../core/paths.js";
+import { assertContained } from "../core/paths.js";
 import { git } from "../replay/git.js";
 
 /**
@@ -47,22 +46,14 @@ async function assertInsideBenchmarkDir(
   benchmarkDir: string,
   target: string,
 ): Promise<void> {
-  const root = await realpath(benchmarkDir);
-
-  let resolved: string;
-
-  try {
-    resolved = await realpath(target);
-  } catch {
-    const parent = await realpath(path.dirname(target));
-    resolved = path.join(parent, path.basename(target));
-  }
-
-  if (!isContainedBy(root, resolved)) {
-    throw new BenchmarkValidationError(
-      `Refusing to reconstruct a source repository at "${resolved}" outside the benchmark directory "${root}".`,
-    );
-  }
+  await assertContained(
+    benchmarkDir,
+    target,
+    (resolved, root) =>
+      new BenchmarkValidationError(
+        `Refusing to reconstruct a source repository at "${resolved}" outside the benchmark directory "${root}".`,
+      ),
+  );
 }
 
 /**

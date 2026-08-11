@@ -150,17 +150,17 @@ describe("formatReport", () => {
       unverified: 1,
       adjudicated: 0,
       total: 1,
-      hallucinationRate: null,
-      stalenessRate: null,
+      hallucinationRate: undefined,
+      stalenessRate: undefined,
       unverifiedRate: 1,
-      score: null,
+      score: undefined,
     };
-    empty.score.tracePrecision = null;
-    empty.score.traceHallucinationRate = null;
-    empty.score.traceStalenessRate = null;
+    empty.score.tracePrecision = undefined;
+    empty.score.traceHallucinationRate = undefined;
+    empty.score.traceStalenessRate = undefined;
     empty.score.traceUnverifiedRate = 1;
-    empty.score.quality = null;
-    empty.score.ledgerScore = null;
+    empty.score.quality = undefined;
+    empty.score.ledgerScore = undefined;
 
     const report = formatReport(empty);
     expect(report).toContain("## LEDGER Score: -");

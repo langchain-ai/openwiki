@@ -1,11 +1,6 @@
 import { BenchmarkValidationError } from "../core/errors.js";
 import type { LedgerBenchmark, LedgerCheckpoint } from "../core/types.js";
-
-/**
- * Git commit SHAs LEDGER accepts: 7 to 40 lowercase hex characters. Enforced before
- * any SHA is passed to Git so a malformed benchmark cannot smuggle an argument.
- */
-const COMMIT_PATTERN = /^[0-9a-f]{7,40}$/;
+import { COMMIT_PATTERN } from "../replay/git.js";
 
 /**
  * Whether a value is a non-null object, the precondition for reading fields off a
@@ -53,7 +48,7 @@ export function validateBenchmark(benchmark: LedgerBenchmark): void {
  *
  * @returns A map from checkpoint id to zero-based index.
  */
-export function buildCheckpointIndex(
+function buildCheckpointIndex(
   checkpoints: LedgerCheckpoint[],
 ): Map<string, number> {
   const index = new Map<string, number>();

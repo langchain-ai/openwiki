@@ -189,7 +189,7 @@ describe("computePrecision", () => {
     });
   });
 
-  test("returns null scored metrics for a wiki with no adjudicated claims", () => {
+  test("returns undefined scored metrics for a wiki with no adjudicated claims", () => {
     expect(computePrecision([])).toEqual({
       supported: 0,
       invented: 0,
@@ -197,13 +197,13 @@ describe("computePrecision", () => {
       unverified: 0,
       adjudicated: 0,
       total: 0,
-      hallucinationRate: null,
-      stalenessRate: null,
+      hallucinationRate: undefined,
+      stalenessRate: undefined,
       unverifiedRate: 0,
-      score: null,
+      score: undefined,
     });
 
-    expect(computePrecision([assertion("unverified")]).score).toBeNull();
+    expect(computePrecision([assertion("unverified")]).score).toBeUndefined();
   });
 });
 
@@ -465,7 +465,7 @@ describe("aggregateScore", () => {
     expect(score.ledgerScore).toBe(1);
   });
 
-  test("excludes null precision checkpoints and returns null when none adjudicate", () => {
+  test("excludes undefined precision checkpoints and returns undefined when none adjudicate", () => {
     const checkpoint: CheckpointScore = {
       checkpointId: "T0",
       coverage: {
@@ -488,12 +488,12 @@ describe("aggregateScore", () => {
     };
 
     expect(aggregateScore([checkpoint])).toMatchObject({
-      tracePrecision: null,
-      traceHallucinationRate: null,
-      traceStalenessRate: null,
+      tracePrecision: undefined,
+      traceHallucinationRate: undefined,
+      traceStalenessRate: undefined,
       traceUnverifiedRate: 1,
-      quality: null,
-      ledgerScore: null,
+      quality: undefined,
+      ledgerScore: undefined,
     });
   });
 });

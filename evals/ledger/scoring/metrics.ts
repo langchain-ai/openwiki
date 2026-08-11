@@ -74,9 +74,10 @@ export function computePrecision(
   ).length;
   const total = evaluations.length;
   const adjudicated = supported + invented + stale;
-  const score = adjudicated === 0 ? null : supported / adjudicated;
-  const hallucinationRate = adjudicated === 0 ? null : invented / adjudicated;
-  const stalenessRate = adjudicated === 0 ? null : stale / adjudicated;
+  const score = adjudicated === 0 ? undefined : supported / adjudicated;
+  const hallucinationRate =
+    adjudicated === 0 ? undefined : invented / adjudicated;
+  const stalenessRate = adjudicated === 0 ? undefined : stale / adjudicated;
   const unverifiedRate = total === 0 ? 0 : unverified / total;
 
   return {
@@ -344,8 +345,8 @@ export function aggregateScore(checkpoints: CheckpointScore[]): LedgerScore {
     checkpoints.map((c) => c.precision.unverifiedRate),
   );
   const quality =
-    tracePrecision === null
-      ? null
+    tracePrecision === undefined
+      ? undefined
       : harmonicMean(traceCoverage, tracePrecision);
   const completenessTotals = checkpoints.reduce(
     (totals, checkpoint) => ({
@@ -378,8 +379,8 @@ export function aggregateScore(checkpoints: CheckpointScore[]): LedgerScore {
       : definedRates.reduce((sum, rate) => sum + rate, 0) / definedRates.length;
 
   const ledgerScore =
-    quality === null
-      ? null
+    quality === undefined
+      ? undefined
       : maintenance === undefined
         ? quality
         : (quality + maintenance) / 2;
@@ -640,9 +641,15 @@ function mean(values: number[]): number {
 }
 
 /**
- * Average defined nullable rates, returning null when none are defined.
+ * Average the defined rates, returning undefined when none are defined.
+ *
+ * @param values - Per-checkpoint rates, each undefined where the rate is absent.
+ *
+ * @returns The mean of the defined rates, or undefined when none are defined.
  */
-function meanDefined(values: Array<number | null>): number | null {
-  const defined = values.filter((value): value is number => value !== null);
-  return defined.length === 0 ? null : mean(defined);
+function meanDefined(values: Array<number | undefined>): number | undefined {
+  const defined = values.filter(
+    (value): value is number => value !== undefined,
+  );
+  return defined.length === 0 ? undefined : mean(defined);
 }

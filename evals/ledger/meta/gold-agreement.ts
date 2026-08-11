@@ -20,7 +20,7 @@ import type { PrecisionTextUnitClassification } from "../evaluator/precision.js"
 /**
  * Minimum acceptable live judge agreement for every semantic stage.
  */
-export const GOLD_AGREEMENT_FLOOR = 0.9;
+const GOLD_AGREEMENT_FLOOR = 0.9;
 
 /**
  * One human-labeled expected claim in a gold fixture case.

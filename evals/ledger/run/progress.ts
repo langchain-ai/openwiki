@@ -1,8 +1,5 @@
 import { formatPercent as formatPercentString } from "./format.js";
-import type {
-  BenchmarkProgressEvent,
-  BenchmarkProgressReporter,
-} from "./progress-events.js";
+import type { BenchmarkProgressReporter } from "./progress-events.js";
 
 /**
  * Destination used for progress output.
@@ -50,7 +47,7 @@ export function formatProgressDuration(durationMs: number): string {
  *
  * @returns Percentage text.
  */
-function formatPercent(score: number | null): string {
+function formatPercent(score: number | undefined): string {
   return formatPercentString(score, 0);
 }
 

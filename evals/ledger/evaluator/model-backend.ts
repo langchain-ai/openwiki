@@ -75,6 +75,8 @@ export interface ModelEvaluationBackendOptions {
 
   /**
    * Optional durable audit sink invoked before precision judgment.
+   *
+   * @default undefined the assertion inventory is not surfaced when absent
    */
   onAssertionInventory?: (
     inventory: PrecisionAssertionInventory,

@@ -1,3 +1,4 @@
+import { realpath } from "node:fs/promises";
 import path from "node:path";
 
 /**
@@ -7,12 +8,6 @@ import path from "node:path";
  * fixed by OpenWiki's on-disk contract.
  */
 export const OPEN_WIKI_DIR = "openwiki";
-
-/**
- * File OpenWiki writes after a run to record the last update. LEDGER reads it only
- * for diagnostics; change-detection is owned by OpenWiki itself.
- */
-export const UPDATE_METADATA_FILE = ".last-update.json";
 
 /**
  * Absolute path to the generated wiki inside a prepared worktree.
@@ -57,4 +52,51 @@ export function isContainedBy(root: string, child: string): boolean {
   // separator), never as a string prefix, so a real child whose name merely
   // starts with `..` is not misread as an escape.
   return relative !== ".." && !relative.startsWith(`..${path.sep}`);
+}
+
+/**
+ * Resolve `target` to a real path even when it does not exist yet: take its own
+ * realpath, or when that fails (the path is a destination about to be created)
+ * resolve the parent's realpath and re-attach the basename. This closes a
+ * symlinked-parent escape while still resolving a not-yet-created path.
+ *
+ * @param target - Absolute path to resolve.
+ *
+ * @returns The realpath-resolved absolute path, following symlinks as far as
+ *   they exist on disk.
+ */
+async function resolveRealPath(target: string): Promise<string> {
+  try {
+    return await realpath(target);
+  } catch {
+    const parent = await realpath(path.dirname(target));
+    return path.join(parent, path.basename(target));
+  }
+}
+
+/**
+ * Assert that `target` resolves to a path contained by `allowedRoot`, following
+ * symlinks so neither a symlinked target nor a symlinked parent can escape the
+ * root. `target` may not exist yet, so it is resolved via `resolveRealPath`. This
+ * is the shared realpath containment guard every destructive filesystem or Git
+ * operation in the eval passes through; callers supply the domain error thrown on
+ * an escape so each keeps its own error type and message.
+ *
+ * @param allowedRoot - Absolute path the target must be contained by.
+ * @param target - Absolute path to check.
+ * @param onEscape - Builds the error to throw, given the resolved target and the resolved root.
+ *
+ * @throws Whatever `onEscape` returns, when the resolved target escapes the root.
+ */
+export async function assertContained(
+  allowedRoot: string,
+  target: string,
+  onEscape: (resolvedTarget: string, resolvedRoot: string) => Error,
+): Promise<void> {
+  const root = await realpath(allowedRoot);
+  const resolved = await resolveRealPath(target);
+
+  if (!isContainedBy(root, resolved)) {
+    throw onEscape(resolved, root);
+  }
 }

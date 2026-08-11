@@ -2,34 +2,16 @@ import { SystemRunError } from "../core/errors.js";
 import { captureArtifact } from "../replay/artifact.js";
 import { computeChurn } from "../scoring/churn.js";
 import { GitReplay } from "../replay/git-replay.js";
-import {
-  aggregateScore,
-  computeCoverage,
-  computeDiagnostics,
-  computeEvaluationCompleteness,
-  computeMaintenanceCounts,
-  computePrecision,
-} from "../scoring/metrics.js";
-import {
-  advanceObsoleteWatchSet,
-  diffSurface,
-  extractSurface,
-  obsoleteTargetsFor,
-} from "../benchmark/surface.js";
+import { aggregateScore, computeDiagnostics } from "../scoring/metrics.js";
 import type {
   CheckpointEvaluationRecord,
   CheckpointScore,
-  CheckpointTransitions,
   EvidenceCorpus,
   EvaluationBackend,
-  FactEvaluation,
   LedgerBenchmark,
   LedgerRunConfig,
   LedgerRunResult,
   KnowledgeArtifact,
-  MaintenanceCounts,
-  ObsoleteFactTarget,
-  SurfaceItem,
   SystemRunOutcome,
   SystemUnderTest,
 } from "../core/types.js";
@@ -38,6 +20,7 @@ import {
   GitSourceEvidenceAdapter,
   type SourceEvidenceAdapter,
 } from "../source/source-adapter.js";
+import { evaluateCheckpoint, initialCarry } from "./evaluate-checkpoint.js";
 import type { BenchmarkProgressReporter } from "./progress-events.js";
 
 /**
@@ -181,11 +164,7 @@ export async function runBenchmark(
 
     const scores: CheckpointScore[] = [];
     const history: CheckpointEvaluationRecord[] = [];
-    let previousArtifact: KnowledgeArtifact | undefined;
-    let previousCheckpointId: string | undefined;
-    let previousSurface: SurfaceItem[] | undefined;
-    let previousFactEvaluations: FactEvaluation[] = [];
-    let outstandingObsolete: ObsoleteFactTarget[] = [];
+    let carry = initialCarry();
     const evidenceHistory: EvidenceCorpus[] = [];
 
     for (let i = 0; i < checkpoints.length; i += 1) {
@@ -258,123 +237,30 @@ export async function runBenchmark(
         );
       }
 
-      const surface = await extractSurface(
-        benchmark.sourceRepoPath,
-        checkpoint.commit,
-      );
-
-      let transitions: CheckpointTransitions | undefined;
-      let newlyObsolete: ObsoleteFactTarget[] = [];
-
-      if (
-        i > 0 &&
-        previousCheckpointId !== undefined &&
-        previousSurface !== undefined
-      ) {
-        transitions = diffSurface(
-          previousSurface,
-          surface,
-          previousCheckpointId,
-          checkpoint.id,
-        );
-        newlyObsolete = obsoleteTargetsFor(transitions);
-      }
-
-      const obsoleteFacts = advanceObsoleteWatchSet({
-        outstanding: outstandingObsolete,
-        surface,
-        newlyObsolete,
-      });
-
-      reportProgress({
-        type: "evaluation-start",
-        checkpointId: checkpoint.id,
-        surfaceItemCount: surface.length,
-        obsoleteFactCount: obsoleteFacts.length,
-      });
-
-      const evaluation = await evaluationBackend.evaluate({
+      const {
+        score,
+        history: historyEntry,
+        nextCarry,
+      } = await evaluateCheckpoint({
+        sourceRepoPath: benchmark.sourceRepoPath,
+        checkpoint,
+        index: i,
         artifact,
-        surface,
         evidence,
-        obsoleteFacts,
-        transitions,
-      });
-
-      const coverage = computeCoverage(evaluation.factEvaluations);
-      const precision = computePrecision(evaluation.precisionEvaluations);
-      const evaluationCompleteness = computeEvaluationCompleteness(
-        evaluation.factEvaluations,
-        evaluation.precisionEvaluations,
-        evaluation.forgettingEvaluations,
-      );
-      reportProgress({
-        type: "checkpoint-complete",
-        checkpointId: checkpoint.id,
-        coverageScore: coverage.score,
-        precisionScore: precision.score,
-        hallucinationRate: precision.hallucinationRate,
-        forgottenCount: evaluation.forgettingEvaluations.filter(
-          (item) => item.verdict === "forgotten",
-        ).length,
-        obsoleteFactCount: evaluation.forgettingEvaluations.length,
-        evaluationCompleteness: evaluationCompleteness.score,
-        indeterminateCount: evaluationCompleteness.indeterminate,
-        evaluationItemCount: evaluationCompleteness.total,
-      });
-
-      let maintenanceCounts: MaintenanceCounts | undefined;
-
-      if (transitions !== undefined) {
-        maintenanceCounts = computeMaintenanceCounts(
-          transitions,
-          evaluation.factEvaluations,
-          evaluation.forgettingEvaluations,
-          previousFactEvaluations,
-        );
-      }
-
-      scores.push({
-        checkpointId: checkpoint.id,
-        coverage,
-        precision,
-        evaluationCompleteness,
-        maintenanceCounts,
+        evaluationBackend,
+        carry,
         efficiency: {
           durationMs: outcome.durationMs,
           skipped: outcome.skipped,
-          churnedLines: computeChurn(previousArtifact, artifact),
+          churnedLines: computeChurn(carry.previousArtifact, artifact),
           totalTokens: outcome.totalTokens,
         },
-        // Retain the raw verdicts, not just their reduced counts, so a score is
-        // explainable: precision classes remain distinguishable,
-        // and forgetting verdicts make an otherwise invisible pass visible in
-        // the persisted result.
-        evaluations: {
-          factEvaluations: evaluation.factEvaluations,
-          precisionEvaluations: evaluation.precisionEvaluations,
-          forgettingEvaluations: evaluation.forgettingEvaluations,
-          warnings: evaluation.warnings ?? [],
-        },
+        reportProgress,
       });
 
-      history.push({
-        checkpointId: checkpoint.id,
-        factEvaluations: evaluation.factEvaluations,
-        forgettingEvaluations: evaluation.forgettingEvaluations,
-        transitions,
-      });
-
-      // Keep every obsolete version under watch, including ones just judged
-      // forgotten: LEDGER does not treat forgetting as permanent, so a version stays
-      // in the forgetting pass until the requirements revive it (the revival filter
-      // above is the only way a target leaves the watch set).
-      outstandingObsolete = obsoleteFacts;
-
-      previousArtifact = artifact;
-      previousCheckpointId = checkpoint.id;
-      previousSurface = surface;
-      previousFactEvaluations = evaluation.factEvaluations;
+      scores.push(score);
+      history.push(historyEntry);
+      carry = nextCarry;
     }
 
     const result: LedgerRunResult = {
