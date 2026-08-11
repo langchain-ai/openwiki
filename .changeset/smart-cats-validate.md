@@ -2,4 +2,4 @@
 "openwiki": patch
 ---
 
-feat: validate selected OpenAI models against API-key availability before inference
+feat: validate selected openai models against api-key availability before inference
