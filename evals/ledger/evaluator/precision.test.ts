@@ -5,6 +5,7 @@ import type { EvidenceCorpus, EvaluationWarning } from "../core/types.js";
 import type { ArtifactSection } from "./documents.js";
 import {
   type PrecisionAssertionInventory,
+  type PrecisionVerdictCache,
   runPrecisionPass,
 } from "./precision.js";
 import {
@@ -561,6 +562,170 @@ describe("runPrecisionPass", () => {
     expect(
       warnings.every((warning) => warning.pass === "precision-extraction"),
     ).toBe(true);
+  });
+
+  test("reuses a cached verdict across checkpoints without a second judgment call", async () => {
+    const cache: PrecisionVerdictCache = new Map();
+    const control = controller([
+      extraction([{ statement: "add returns a + b" }]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "supported",
+            evidenceIds: ["current-0"],
+            rationale: "Current source establishes add.",
+          },
+        ],
+      },
+      // Second checkpoint re-extracts the identical claim; grounding must be
+      // served from the cache, so no judgment response is queued for it.
+      extraction([{ statement: "add returns a + b" }]),
+    ]);
+    const corpus = evidence(["add returns a + b"]);
+
+    await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [section("one block")],
+      evidence: corpus,
+      verdictCache: cache,
+    });
+    const [second] = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T2",
+      sections: [section("one block")],
+      evidence: corpus,
+      verdictCache: cache,
+    });
+
+    expect(second).toMatchObject({
+      verdict: "supported",
+      adjudicatedBy: "source",
+      evidenceIds: ["current-0"],
+    });
+    // Both extraction responses and the single judgment response are consumed;
+    // the reused verdict skips a second judgment call entirely.
+    expect(control.responses).toHaveLength(0);
+    expect(
+      control.systemPrompts.filter(
+        (prompt) => prompt === PRECISION_JUDGMENT_SYSTEM,
+      ),
+    ).toHaveLength(1);
+  });
+
+  test("re-judges when the claim's grounding evidence content changes", async () => {
+    const cache: PrecisionVerdictCache = new Map();
+    const control = controller([
+      extraction([{ statement: "VERSION is 2.0.0" }]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "supported",
+            evidenceIds: ["current-0"],
+            rationale: "Source is 2.0.0.",
+          },
+        ],
+      },
+      extraction([{ statement: "VERSION is 2.0.0" }]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "contradicted",
+            evidenceIds: ["current-0"],
+            formerlyTrue: false,
+            rationale: "Source now says 9.9.9.",
+          },
+        ],
+      },
+    ]);
+
+    await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [section("versions")],
+      evidence: evidence(["VERSION is 2.0.0"]),
+      verdictCache: cache,
+    });
+    const [second] = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T2",
+      sections: [section("versions")],
+      // Same statement, but the grounding evidence content changed, so the
+      // cache key differs and the claim is judged again.
+      evidence: evidence(["VERSION is 9.9.9"]),
+      verdictCache: cache,
+    });
+
+    expect(second).toMatchObject({
+      verdict: "invented",
+      adjudicatedBy: "source",
+    });
+    expect(control.responses).toHaveLength(0);
+  });
+
+  test("never caches a degraded verdict, so the claim is judged again next checkpoint", async () => {
+    const cache: PrecisionVerdictCache = new Map();
+    const control = controller([
+      extraction([{ statement: "flag is gamma" }]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "contradicted",
+            evidenceIds: ["missing"],
+            formerlyTrue: false,
+            rationale: "Bad citation.",
+          },
+        ],
+      },
+      new Error("repair failed once"),
+      new Error("repair failed twice"),
+      // Second checkpoint: identical claim and evidence. A cached degraded
+      // verdict would short-circuit here; instead the claim must reach a fresh
+      // judgment that resolves cleanly.
+      extraction([{ statement: "flag is gamma" }]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "not-addressed",
+            evidenceIds: [],
+            rationale: "Fresh judgment: not addressed.",
+          },
+        ],
+      },
+    ]);
+    const corpus = evidence(["flag = beta"]);
+    const warnings: EvaluationWarning[] = [];
+
+    const [first] = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [section("claim")],
+      evidence: corpus,
+      verdictCache: cache,
+      onWarning: (warning) => warnings.push(warning),
+    });
+    const [second] = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T2",
+      sections: [section("claim")],
+      evidence: corpus,
+      verdictCache: cache,
+    });
+
+    expect(first).toMatchObject({
+      verdict: "unverified",
+      adjudicatedBy: "none",
+    });
+    expect(warnings).toHaveLength(1);
+    // The degraded verdict was not cached: the second checkpoint re-judged and
+    // consumed the fresh not-addressed response.
+    expect(second.rationale).toBe("Fresh judgment: not addressed.");
+    expect(control.responses).toHaveLength(0);
   });
 
   test("uses extraction as the sole semantic filter taxonomy", () => {

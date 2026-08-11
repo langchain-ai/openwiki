@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 
 import { EvaluationError } from "../core/errors.js";
@@ -58,6 +60,45 @@ const DEFAULT_JUDGMENT_BATCH_SIZE = 15;
  * Default number of evidence sections retrieved per bounded grounding judgment.
  */
 const DEFAULT_EVIDENCE_TOP_K = 8;
+
+/**
+ * A precision grounding verdict stripped of its checkpoint-specific location, so
+ * it can be reused for an identical claim grounded on identical evidence at a
+ * later checkpoint. The statement, tense, and grounding-evidence signature are
+ * folded into the cache key rather than stored here, so only the verdict payload
+ * remains.
+ */
+export interface CachedPrecisionVerdict {
+  /**
+   * Source-grounding verdict reached for the claim.
+   */
+  verdict: PrecisionAssertionEvaluation["verdict"];
+
+  /**
+   * Which stage adjudicated the verdict.
+   */
+  adjudicatedBy: PrecisionAssertionEvaluation["adjudicatedBy"];
+
+  /**
+   * Evidence identifiers the verdict cited, all drawn from the claim's own
+   * grounding evidence set.
+   */
+  evidenceIds: string[];
+
+  /**
+   * Judge rationale recorded for the verdict.
+   */
+  rationale: string;
+}
+
+/**
+ * Cross-checkpoint precision verdict cache, keyed by a stable hash of the claim
+ * statement, tense, and grounding-evidence content signature. Owned by the
+ * evaluation backend so it persists across a run's checkpoints; a claim whose
+ * text and grounding evidence are unchanged from an earlier checkpoint reuses
+ * the earlier verdict instead of being re-judged.
+ */
+export type PrecisionVerdictCache = Map<string, CachedPrecisionVerdict>;
 
 /**
  * One extracted artifact claim carried through the source-grounding pass.
@@ -299,6 +340,17 @@ export interface PrecisionPassInput {
    * but never shares a budget with sibling passes.
    */
   limit?: Limiter;
+
+  /**
+   * Cross-checkpoint precision verdict cache. When supplied, an assertion whose
+   * statement, tense, and per-assertion grounding evidence match an earlier
+   * checkpoint's entry reuses that verdict instead of being re-judged, and every
+   * fresh non-degraded verdict is written back for later checkpoints.
+   *
+   * @default undefined every assertion is judged fresh and nothing is cached, so
+   * a standalone pass is fully self-contained.
+   */
+  verdictCache?: PrecisionVerdictCache;
 
   /**
    * Optional sink for the assertion inventory once extraction completes.
@@ -763,17 +815,73 @@ function toEvidenceSections(corpus: EvidenceCorpus): EvidenceSection[] {
 }
 
 /**
- * Give each target the stable union actually visible in its shared batch.
+ * Compute the cross-checkpoint cache key for one grounding judgment. The key is
+ * a stable hash of everything the verdict depends on: the normalized statement,
+ * its tense, and the full content signature of the grounding evidence set
+ * (every field surfaced to the judge, evidence sorted by id so retrieval order
+ * never perturbs the key). Two checkpoints that ground an identical claim on
+ * byte-identical evidence therefore share a key and reuse the verdict.
+ *
+ * @param assertion - The claim being grounded.
+ * @param evidence - The claim's own top-K grounding evidence.
+ *
+ * @returns A hex SHA-256 digest used only as a Map key, not for security.
  */
-function shareBatchEvidence(
-  targets: PrecisionJudgmentTarget[],
-): PrecisionJudgmentTarget[] {
-  const byId = new Map<string, EvidenceSection>();
-  for (const target of targets) {
-    for (const evidence of target.evidence) byId.set(evidence.id, evidence);
-  }
-  const shared = [...byId.values()].sort((a, b) => compareStrings(a.id, b.id));
-  return targets.map((target) => ({ ...target, evidence: shared }));
+function precisionVerdictCacheKey(
+  assertion: ExtractedArtifactAssertion,
+  evidence: EvidenceSection[],
+): string {
+  const evidenceSignature = [...evidence]
+    .sort((a, b) => compareStrings(a.id, b.id))
+    .map((section) => [
+      section.id,
+      section.relativePath,
+      section.observedAtCheckpoint,
+      section.current,
+      section.content,
+    ]);
+  const payload = JSON.stringify([
+    normalizeStatement(assertion.statement),
+    assertion.tense,
+    evidenceSignature,
+  ]);
+  return createHash("sha256").update(payload).digest("hex");
+}
+
+/**
+ * Strip a fresh grounding verdict down to its cacheable payload, dropping the
+ * checkpoint-specific statement and location that the key already pins.
+ */
+function toCachedVerdict(
+  evaluation: PrecisionAssertionEvaluation,
+): CachedPrecisionVerdict {
+  return {
+    verdict: evaluation.verdict,
+    adjudicatedBy: evaluation.adjudicatedBy,
+    evidenceIds: [...evaluation.evidenceIds],
+    rationale: evaluation.rationale,
+  };
+}
+
+/**
+ * Rebuild a full evaluation from a cached verdict, stamping the current
+ * checkpoint's statement, tense, and document location. The statement and tense
+ * are identical to the cached claim by construction of the key; the location is
+ * taken fresh because the same claim may surface from a different document.
+ */
+function projectCachedVerdict(
+  cached: CachedPrecisionVerdict,
+  assertion: ExtractedArtifactAssertion,
+): PrecisionAssertionEvaluation {
+  return {
+    assertion: assertion.statement,
+    location: assertion.relativePath,
+    verdict: cached.verdict,
+    tense: assertion.tense,
+    adjudicatedBy: cached.adjudicatedBy,
+    evidenceIds: [...cached.evidenceIds],
+    rationale: cached.rationale,
+  };
 }
 
 /**
@@ -959,11 +1067,18 @@ async function repairPrecisionJudgment(
 
 /**
  * Resolve a batch while preserving valid neighbors and warning on failures.
+ * Returns the verdicts in target order alongside the set of assertion ids whose
+ * grounding could not be repaired and fell back to a warned `unverified`
+ * verdict; the caller must never cache a degraded id, since its verdict reflects
+ * an evaluator failure rather than a grounding decision.
  */
 async function resolvePrecisionBatchResilient(
   input: PrecisionPassInput,
   targets: PrecisionJudgmentTarget[],
-): Promise<PrecisionAssertionEvaluation[]> {
+): Promise<{
+  evaluations: PrecisionAssertionEvaluation[];
+  degraded: Set<string>;
+}> {
   const output = await invokeStructuredModel({
     model: input.model,
     pass: "precision-judgment",
@@ -977,6 +1092,7 @@ async function resolvePrecisionBatchResilient(
     timeoutMs: input.timeoutMs,
   });
   const results: PrecisionAssertionEvaluation[] = [];
+  const degraded = new Set<string>();
   for (const target of targets) {
     try {
       const matching = output.evaluations.filter(
@@ -993,6 +1109,7 @@ async function resolvePrecisionBatchResilient(
           itemId: target.assertion.id,
           message,
         });
+        degraded.add(target.assertion.id);
         results.push({
           assertion: target.assertion.statement,
           location: target.assertion.relativePath,
@@ -1005,7 +1122,7 @@ async function resolvePrecisionBatchResilient(
       }
     }
   }
-  return results;
+  return { evaluations: results, degraded };
 }
 
 /**
@@ -1052,42 +1169,75 @@ export async function runPrecisionPass(
 
   const evaluations = new Map<string, PrecisionAssertionEvaluation>();
   const evidenceSections = toEvidenceSections(input.evidence);
+
+  // With no source evidence at all, grounding is a no-op: every claim is
+  // unverified without a model call, and nothing is cached because the verdict
+  // reflects an empty corpus rather than a grounding decision.
+  if (evidenceSections.length === 0) {
+    return assertions.map((assertion): PrecisionAssertionEvaluation => ({
+      assertion: assertion.statement,
+      location: assertion.relativePath,
+      verdict: "unverified",
+      tense: assertion.tense,
+      adjudicatedBy: "none",
+      evidenceIds: [],
+      rationale: "No source evidence was available for grounding.",
+    }));
+  }
+
   const evidenceIndex = new SectionBm25Index(evidenceSections);
+  const cache = input.verdictCache;
+
+  // Ground each assertion on its OWN deterministic BM25 top-K rather than the
+  // batch union, so a verdict is a pure function of (statement, tense, own
+  // evidence) and can be reused across checkpoints. Cache hits are resolved up
+  // front with no model call; only the misses are batched and judged. The
+  // grounding prompt still shows a batch's evidence as one deduped excerpt list,
+  // but each assertion may cite only its own top-K, which the resolver enforces.
+  const uncached: Array<{
+    target: PrecisionJudgmentTarget;
+    cacheKey: string;
+  }> = [];
+  for (const assertion of assertions) {
+    const evidence = evidenceIndex
+      .search(assertion.statement, DEFAULT_EVIDENCE_TOP_K)
+      .map((ranked) => ranked.section as EvidenceSection);
+    const cacheKey = precisionVerdictCacheKey(assertion, evidence);
+    const cached = cache?.get(cacheKey);
+    if (cached !== undefined) {
+      evaluations.set(assertion.id, projectCachedVerdict(cached, assertion));
+    } else {
+      uncached.push({ target: { assertion, evidence }, cacheKey });
+    }
+  }
+  const cacheKeyById = new Map(
+    uncached.map(({ target, cacheKey }) => [target.assertion.id, cacheKey]),
+  );
 
   // Judgment batches are independent: each writes only its own assertions'
   // verdicts (assertion ids are unique across batches), so they run concurrently
-  // under the shared limiter. Verdicts are unchanged because each batch grounds
-  // exactly the assertions and shared evidence it would have under a serial
-  // drain.
+  // under the shared limiter. Only non-degraded verdicts are cached; a repair
+  // fallback reflects an evaluator failure, not a grounding decision.
   await mapWithLimit(
-    batch(assertions, judgmentBatchSize),
+    batch(
+      uncached.map(({ target }) => target),
+      judgmentBatchSize,
+    ),
     limit,
-    async (assertionBatch) => {
-      if (evidenceSections.length === 0) {
-        for (const assertion of assertionBatch) {
-          evaluations.set(assertion.id, {
-            assertion: assertion.statement,
-            location: assertion.relativePath,
-            verdict: "unverified",
-            tense: assertion.tense,
-            adjudicatedBy: "none",
-            evidenceIds: [],
-            rationale: "No source evidence was available for grounding.",
-          });
-        }
-        return;
-      }
-      const targets = shareBatchEvidence(
-        assertionBatch.map((assertion) => ({
-          assertion,
-          evidence: evidenceIndex
-            .search(assertion.statement, DEFAULT_EVIDENCE_TOP_K)
-            .map((ranked) => ranked.section as EvidenceSection),
-        })),
-      );
-      const judged = await resolvePrecisionBatchResilient(input, targets);
+    async (targetBatch) => {
+      const { evaluations: judged, degraded } =
+        await resolvePrecisionBatchResilient(input, targetBatch);
       for (const [index, evaluation] of judged.entries()) {
-        evaluations.set(targets[index].assertion.id, evaluation);
+        const { id } = targetBatch[index].assertion;
+        evaluations.set(id, evaluation);
+        const cacheKey = cacheKeyById.get(id);
+        if (
+          cache !== undefined &&
+          cacheKey !== undefined &&
+          !degraded.has(id)
+        ) {
+          cache.set(cacheKey, toCachedVerdict(evaluation));
+        }
       }
     },
   );

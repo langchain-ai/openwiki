@@ -17,7 +17,10 @@ import { sectionArtifact } from "./documents.js";
 import { runForgettingPass } from "./forgetting.js";
 import { createLimiter } from "./pass-utils.js";
 import { runPrecisionPass } from "./precision.js";
-import type { PrecisionAssertionInventory } from "./precision.js";
+import type {
+  PrecisionAssertionInventory,
+  PrecisionVerdictCache,
+} from "./precision.js";
 import { SectionBm25Index } from "./retrieval.js";
 
 /**
@@ -88,6 +91,11 @@ export interface ModelEvaluationBackendOptions {
  * precision's extraction still completes before its judgment. This turns
  * per-checkpoint latency from the serial sum of every batch into the queue depth
  * divided by the shared budget.
+ *
+ * The instance also carries a cross-checkpoint precision verdict cache, so a
+ * claim whose text and grounding evidence are unchanged from an earlier
+ * checkpoint reuses its verdict instead of being re-judged, cutting precision's
+ * otherwise super-linear re-judging over a multi-checkpoint run.
  */
 export class ModelEvaluationBackend implements EvaluationBackend {
   private readonly model: BaseChatModel;
@@ -97,6 +105,13 @@ export class ModelEvaluationBackend implements EvaluationBackend {
   private readonly onAssertionInventory:
     | ((inventory: PrecisionAssertionInventory) => void | Promise<void>)
     | undefined;
+
+  /**
+   * Cross-checkpoint precision verdict cache. The backend instance lives for a
+   * whole run, so a claim whose text and grounding evidence are unchanged from
+   * an earlier checkpoint reuses that verdict instead of being re-judged.
+   */
+  private readonly precisionVerdictCache: PrecisionVerdictCache = new Map();
 
   constructor(options: ModelEvaluationBackendOptions) {
     const model = createModel(
@@ -166,6 +181,7 @@ export class ModelEvaluationBackend implements EvaluationBackend {
           evidence: input.evidence,
           timeoutMs: this.timeoutMs,
           limit,
+          verdictCache: this.precisionVerdictCache,
           onInventory: this.onAssertionInventory,
           onWarning,
         }),
