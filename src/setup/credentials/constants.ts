@@ -28,6 +28,7 @@ export const ONBOARDING_TEMPLATES = [
     id: "personal",
     name: "Personal",
     sourceIds: [
+      "custom-mcp",
       "git-repo",
       "google",
       "notion",
@@ -38,6 +39,7 @@ export const ONBOARDING_TEMPLATES = [
     suggestedSources: [
       "Gmail",
       "Notion",
+      "Custom MCP",
       "Web Search (Tavily)",
       "Hacker News",
       "X/Twitter",
@@ -125,6 +127,22 @@ export const SOURCE_OPTIONS = [
       "OpenWiki uses Notion's hosted MCP OAuth flow.",
       "No client ID, client secret, or pasted Notion token is required.",
       "Approve access in the browser window when it opens.",
+    ],
+    secretInputs: [],
+  },
+  {
+    displayName: "Custom MCP",
+    examples: [
+      "Point OpenWiki at a Linear, Jira, or internal MCP server.",
+      "Ingest read-only tools from a self-hosted knowledge MCP.",
+    ],
+    id: "custom-mcp",
+    instructions: [
+      "Edit ~/.openwiki/connectors/custom-mcp/config.json after setup.",
+      'Set "enabled": true and an HTTP or stdio "transport".',
+      "Put secrets only in ~/.openwiki/.env; reference them as ${ENV_NAME} in headers/env.",
+      "Prefer allowedTools and MCP readOnlyHint. Optionally set readOnlyOperations for a fixed pull recipe.",
+      "Do not allowlist mutating tools. This is a built-in generic MCP source, not a plugin loader.",
     ],
     secretInputs: [],
   },

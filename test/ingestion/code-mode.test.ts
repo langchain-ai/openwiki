@@ -253,6 +253,89 @@ jobs:
   });
 });
 
+describe("ensureCodeModeRepoSetup workflow provider block", () => {
+  async function generateWorkflow(env: NodeJS.ProcessEnv): Promise<string> {
+    const repo = await createTempRepo();
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true, env });
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    if (workflow === null) {
+      throw new Error("expected the workflow to be created");
+    }
+    return workflow;
+  }
+
+  test("authenticates the provider the operator configured", async () => {
+    const workflow = await generateWorkflow({
+      OPENWIKI_PROVIDER: "copilot",
+      OPENWIKI_MODEL_ID: "gpt-5.6-terra",
+    });
+
+    // A fixed provider block ships every non-default setup a workflow whose
+    // first scheduled run fails on a secret the repo was never told about.
+    expect(workflow).toContain("OPENWIKI_PROVIDER: copilot");
+    expect(workflow).toContain(
+      "COPILOT_API_KEY: ${{ secrets.COPILOT_API_KEY }}",
+    );
+    expect(workflow).toContain('OPENWIKI_MODEL_ID: "gpt-5.6-terra"');
+    expect(workflow).not.toContain("OPENROUTER_API_KEY");
+  });
+
+  test("emits non-secret provider settings as repository variables", async () => {
+    const workflow = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-compatible",
+    });
+
+    // The gateway endpoint is required but is configuration, not a credential.
+    expect(workflow).toContain(
+      "OPENAI_COMPATIBLE_BASE_URL: ${{ vars.OPENAI_COMPATIBLE_BASE_URL }}",
+    );
+    expect(workflow).toContain(
+      "OPENAI_COMPATIBLE_API_KEY: ${{ secrets.OPENAI_COMPATIBLE_API_KEY }}",
+    );
+  });
+
+  test("pairs both AWS credentials and the region for Bedrock", async () => {
+    const workflow = await generateWorkflow({ OPENWIKI_PROVIDER: "bedrock" });
+
+    expect(workflow).toContain(
+      "BEDROCK_AWS_SECRET_ACCESS_KEY: ${{ secrets.BEDROCK_AWS_SECRET_ACCESS_KEY }}",
+    );
+    expect(workflow).toContain(
+      "BEDROCK_AWS_REGION: ${{ vars.BEDROCK_AWS_REGION }}",
+    );
+    // Bedrock model availability is account- and region-specific, so there is
+    // no preset to suggest and a guessed ID would fail at runtime.
+    expect(workflow).not.toContain("OPENWIKI_MODEL_ID");
+  });
+
+  test("does not pin a rotating browser-login token as a secret", async () => {
+    const workflow = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-chatgpt",
+    });
+
+    expect(workflow).toContain("OPENWIKI_PROVIDER: openai-chatgpt");
+    // The stored access token is refreshed in place, so a repo secret holding
+    // it breaks on the first rotation rather than authenticating the run.
+    expect(workflow).not.toContain("secrets.OPENAI_CHATGPT_ACCESS_TOKEN");
+    expect(workflow).toContain("browser login");
+  });
+
+  test("quotes the model ID so reserved YAML characters survive", async () => {
+    const workflow = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-compatible",
+      OPENWIKI_MODEL_ID: "@cf/meta/llama-3.1-8b-instruct",
+    });
+
+    // A leading "@" is a reserved YAML indicator: unquoted, the workflow fails
+    // to parse and the scheduled run never starts.
+    expect(workflow).toContain(
+      'OPENWIKI_MODEL_ID: "@cf/meta/llama-3.1-8b-instruct"',
+    );
+  });
+});
+
 describe("runCodeModeConnectors", () => {
   // The only code-mode connector is LangSmith, which reads committed repo config
   // and cleanly skips (no network) when a repo has not configured it. That lets
