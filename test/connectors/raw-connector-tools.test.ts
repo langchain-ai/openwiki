@@ -165,8 +165,7 @@ interface RawReadResult {
 async function loadConnectorTools(
   home: string,
 ): Promise<StructuredToolInterface[]> {
-  const { createOpenWikiConnectorTools } =
-    await loadConnectorToolsModule(home);
+  const { createOpenWikiConnectorTools } = await loadConnectorToolsModule(home);
 
   return createOpenWikiConnectorTools();
 }
@@ -175,8 +174,7 @@ async function loadConnectorToolsForMode(
   home: string,
   outputMode: "local-wiki" | "repository",
 ): Promise<StructuredToolInterface[]> {
-  const { createOpenWikiConnectorTools } =
-    await loadConnectorToolsModule(home);
+  const { createOpenWikiConnectorTools } = await loadConnectorToolsModule(home);
 
   return createOpenWikiConnectorTools(outputMode);
 }
