@@ -398,6 +398,23 @@ describe("Prompt", () => {
     expect(frame).toContain("Custom model ID");
   });
 
+  test("reasoning effort lists only the selected model's available values", () => {
+    const frame = promptFrame({
+      step: "reasoning-effort",
+      reasoningEffortOptions: [
+        { label: "Provider default", value: "" },
+        { label: "none", value: "none" },
+        { label: "low", value: "low" },
+        { label: "high", value: "high" },
+      ],
+      reasoningEffortSelectionIndex: 2,
+    });
+    expect(frame).toContain("Choose the reasoning effort for this model.");
+    expect(frame).toContain("Provider default preserves the provider setting");
+    expect(frame).toContain("> low");
+    expect(frame).not.toContain("max");
+  });
+
   test("model in custom-input mode prompts for a pasted model id", () => {
     const frame = promptFrame({
       step: "model",
