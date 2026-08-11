@@ -1,5 +1,27 @@
 import ciInfo from "ci-info";
 
+import type { BuildChannel } from "./types.js";
+
+/**
+ * The distribution channel baked into this build. Committed as `"community"`;
+ * the official release pipeline rewrites this one assignment via
+ * `scripts/stamp-build-channel.cjs` (driven by `OPENWIKI_BUILD_CHANNEL`) so only
+ * npm-published upstream builds report `"official"`. Do not edit by hand, and
+ * keep the committed value `"community"` — the stamp targets this exact line.
+ */
+const BUILD_CHANNEL: BuildChannel = "community";
+
+/**
+ * The distribution channel this build was produced for (see {@link BuildChannel}).
+ * `"official"` only for npm-published upstream builds, `"community"` for
+ * everything else (forks, local builds, source/dev runs). Stamped on every event
+ * so fork-originated telemetry can be filtered out from the official-release
+ * signal.
+ */
+export function buildChannel(): BuildChannel {
+  return BUILD_CHANNEL;
+}
+
 /**
  * True when the user has opted out via OpenWiki's switch or DO_NOT_TRACK.
  */

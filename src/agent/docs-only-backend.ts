@@ -13,7 +13,7 @@ import {
   type ReadResult,
   type WriteResult,
 } from "deepagents";
-import { OPEN_WIKI_DIR } from "../constants.js";
+import { OPEN_WIKI_DIR } from "../config/constants.js";
 import { OPENWIKI_IGNORE_FILE, OpenWikiIgnore } from "./openwiki-ignore.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
