@@ -3,6 +3,12 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatGoogle } from "@langchain/google/node";
 import { ChatOpenAI } from "@langchain/openai";
 import { createModel } from "../../src/agent/index.ts";
+import { XAI_API_BASE_URL } from "../../src/agent/xai-grok-oauth.ts";
+import {
+  XAI_GROK_ACCESS_TOKEN_ENV_KEY,
+  XAI_GROK_REFRESH_TOKEN_ENV_KEY,
+  XAI_GROK_EXPIRES_AT_ENV_KEY,
+} from "../../src/config/constants.ts";
 
 // Constructing a LangChain chat model makes no network calls (auth/clients
 // resolve lazily on first request), so these assert the gemini-enterprise
@@ -153,6 +159,55 @@ describe("createModel OpenAI-compatible transport selection", () => {
     };
 
     expect(model.useResponsesApi).toBe(false);
+  });
+});
+
+
+describe("createModel xai-grok", () => {
+  const keys = [
+    XAI_GROK_ACCESS_TOKEN_ENV_KEY,
+    XAI_GROK_REFRESH_TOKEN_ENV_KEY,
+    XAI_GROK_EXPIRES_AT_ENV_KEY,
+  ] as const;
+  let saved: Record<string, string | undefined>;
+
+  beforeEach(() => {
+    saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+    process.env[XAI_GROK_ACCESS_TOKEN_ENV_KEY] = "xai-access-token";
+    process.env[XAI_GROK_REFRESH_TOKEN_ENV_KEY] = "xai-refresh-token";
+    process.env[XAI_GROK_EXPIRES_AT_ENV_KEY] = String(
+      Date.now() + 60 * 60 * 1000,
+    );
+  });
+
+  afterEach(() => {
+    for (const key of keys) {
+      restoreEnv(key, saved[key]);
+    }
+  });
+
+  test("builds ChatOpenAI against api.x.ai with the access token", () => {
+    const model = createModel("xai-grok", "grok-4.5", 0);
+
+    expect(model).toBeInstanceOf(ChatOpenAI);
+    expect(modelName(model)).toBe("grok-4.5");
+
+    const config = model as {
+      apiKey?: string;
+      clientConfig?: { baseURL?: string };
+    };
+    expect(config.apiKey ?? (model as { openAIApiKey?: string }).openAIApiKey).toBe(
+      "xai-access-token",
+    );
+    expect(config.clientConfig?.baseURL).toBe(XAI_API_BASE_URL);
+  });
+
+  test("throws when the OAuth token set is incomplete", () => {
+    delete process.env[XAI_GROK_ACCESS_TOKEN_ENV_KEY];
+
+    expect(() => createModel("xai-grok", "grok-4.5", 0)).toThrow(
+      /xAI Grok login is incomplete/u,
+    );
   });
 });
 

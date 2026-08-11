@@ -14,7 +14,6 @@ import {
   providerUsesAwsSdkCredentials,
   providerUsesOAuth,
 } from "../../config/constants.js";
-import type { CodexTokens } from "../../agent/openai-chatgpt-oauth.js";
 import type { OpenWikiRunMode } from "../../cli/commands.js";
 import type { ExternalCliAuthState } from "../../auth/external-cli-auth.js";
 import { getShellEnvValue } from "../../config/env.js";
@@ -40,9 +39,10 @@ import {
   needsSecretKeyStep,
   resolveStepStatus,
 } from "./steps.js";
-import { getCredentialSetupDetail } from "./format.js";
+import { getCredentialSetupDetail, getOAuthLoginLabel } from "./format.js";
 import type {
   LangsmithWorkspaceDraft,
+  OAuthTokenSet,
   PromptStep,
   SourceSetupOption,
   SourceSetupState,
@@ -83,7 +83,7 @@ export interface InitSetupViewProps {
   apiKey: string | null;
 
   /** OAuth tokens obtained this session, or null when none were obtained. */
-  oauthTokens: CodexTokens | null;
+  oauthTokens: OAuthTokenSet | null;
 
   /** Secret key entered this session, or null when none was typed. */
   secretKey: string | null;
@@ -372,7 +372,9 @@ export function InitSetupView({
           ) : providerUsesOAuth(provider) || primaryCredentialStep ? (
             <SetupStep
               label={
-                providerUsesOAuth(provider) ? "ChatGPT login" : "Provider key"
+                providerUsesOAuth(provider)
+                  ? getOAuthLoginLabel(provider)
+                  : "Provider key"
               }
               state={resolveStepStatus(
                 primaryCredentialStep ?? "provider",

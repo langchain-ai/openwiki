@@ -1,4 +1,8 @@
-import { codexTokensToEnv } from "../../agent/openai-chatgpt-oauth.js";
+import {
+  codexTokensToEnv,
+  type CodexTokens,
+} from "../../agent/openai-chatgpt-oauth.js";
+import { xaiGrokTokensToEnv } from "../../agent/xai-grok-oauth.js";
 import {
   getProviderApiKeyEnvKey,
   getProviderBaseUrlEnvKey,
@@ -8,8 +12,20 @@ import {
   getProviderSecretKeyEnvKey,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  type OpenWikiProvider,
 } from "../../config/constants.js";
-import type { CompleteSetupOptions } from "./types.js";
+import type { CompleteSetupOptions, OAuthTokenSet } from "./types.js";
+
+function oauthTokensToEnv(
+  provider: OpenWikiProvider,
+  tokens: OAuthTokenSet,
+): Record<string, string> {
+  if (provider === "xai-grok") {
+    return xaiGrokTokensToEnv(tokens);
+  }
+
+  return codexTokensToEnv(tokens as CodexTokens);
+}
 
 /**
  * Build the `~/.openwiki/.env` update map from the values the wizard collected.
@@ -59,7 +75,7 @@ export function buildCredentialEnvUpdates(
   }
 
   if (nextOAuthTokens) {
-    Object.assign(updates, codexTokensToEnv(nextOAuthTokens));
+    Object.assign(updates, oauthTokensToEnv(nextProvider, nextOAuthTokens));
   }
 
   if (nextBaseUrl !== null) {

@@ -22,6 +22,7 @@ import {
 } from "../../agent/openai-chatgpt-oauth.js";
 import type { AuthProviderId } from "../../auth/types.js";
 import { isCredentialConfigured } from "./steps.js";
+import type { OAuthTokenSet } from "./types.js";
 
 export function getAwsCredentialRepairMessage(
   provider: OpenWikiProvider,
@@ -45,18 +46,35 @@ export function getAwsCredentialRepairMessage(
   return `${missingEnvKey} is missing or blank. Set both ${pair}, or unset both in your shell and ${openWikiEnvPath}, then restart OpenWiki.`;
 }
 
+export function getOAuthLoginLabel(provider: OpenWikiProvider): string {
+  if (provider === "xai-grok") {
+    return "xAI login";
+  }
+
+  return "ChatGPT login";
+}
+
 export function getCredentialSetupDetail(
   provider: OpenWikiProvider,
-  tokens: CodexTokens | null = null,
+  tokens: OAuthTokenSet | null = null,
 ): string {
   if (providerUsesOAuth(provider)) {
     if (!isCredentialConfigured(provider) && !tokens) {
-      return "sign in with your ChatGPT account";
+      return provider === "xai-grok"
+        ? "sign in with your xAI account"
+        : "sign in with your ChatGPT account";
     }
 
+    if (provider === "xai-grok") {
+      return "signed in with xAI";
+    }
+
+    const chatGptTokens = tokens as CodexTokens | null;
     const account = formatChatGptAccount(
-      tokens?.email ?? process.env[OPENAI_CHATGPT_EMAIL_ENV_KEY] ?? null,
-      tokens?.planType ?? process.env[OPENAI_CHATGPT_PLAN_ENV_KEY] ?? null,
+      chatGptTokens?.email ?? process.env[OPENAI_CHATGPT_EMAIL_ENV_KEY] ?? null,
+      chatGptTokens?.planType ??
+        process.env[OPENAI_CHATGPT_PLAN_ENV_KEY] ??
+        null,
     );
 
     return account ? `signed in as ${account}` : "signed in with ChatGPT";

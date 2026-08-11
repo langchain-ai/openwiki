@@ -25,9 +25,12 @@ import {
 } from "../../config/constants.js";
 import {
   type ChatGptLoginHandle,
-  type CodexTokens,
   loginWithChatGPT,
 } from "../../agent/openai-chatgpt-oauth.js";
+import {
+  type XaiGrokLoginHandle,
+  loginWithXaiGrok,
+} from "../../agent/xai-grok-oauth.js";
 import type { OpenWikiRunMode } from "../../cli/commands.js";
 import {
   loadLangSmithSetup,
@@ -121,6 +124,7 @@ import type {
   CompleteSetupOptions,
   InitSetupProps,
   LangsmithWorkspaceDraft,
+  OAuthTokenSet,
   PromptInputKey,
   PromptStep,
   SourceSetupOption,
@@ -128,6 +132,24 @@ import type {
 } from "./types.js";
 import { buildCredentialEnvUpdates } from "./persistence.js";
 import type { InitSetupViewProps } from "./view.js";
+
+type OAuthLoginHandle = ChatGptLoginHandle | XaiGrokLoginHandle;
+
+async function loginWithProviderOAuth(
+  provider: OpenWikiProvider,
+  openUrl: (url: string) => void,
+  onReady?: (handle: OAuthLoginHandle) => void,
+): Promise<OAuthTokenSet> {
+  if (provider === "xai-grok") {
+    return loginWithXaiGrok(openUrl, onReady);
+  }
+
+  if (provider === "openai-chatgpt") {
+    return loginWithChatGPT(openUrl, onReady);
+  }
+
+  throw new Error(`OAuth login is not supported for provider ${provider}.`);
+}
 
 /**
  * The controller behind `InitSetup`: it owns the entire setup state machine
@@ -254,13 +276,13 @@ export function useInitSetup({
   const externalCliProbeProvider = useRef<OpenWikiProvider | null>(null);
   const { setRawMode } = useStdin();
   const [isAuthRunning, setIsAuthRunning] = useState(false);
-  const [oauthTokens, setOauthTokens] = useState<CodexTokens | null>(null);
+  const [oauthTokens, setOauthTokens] = useState<OAuthTokenSet | null>(null);
   const [loginUrl, setLoginUrl] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginAttempt, setLoginAttempt] = useState(0);
   const [copied, setCopied] = useState(false);
   const [forceModelStep, setForceModelStep] = useState(false);
-  const loginHandleRef = useRef<ChatGptLoginHandle | null>(null);
+  const loginHandleRef = useRef<OAuthLoginHandle | null>(null);
 
   const activeSourceOptions = useMemo(
     () => getTemplateSourceOptions(getConfigModeId(onboardingConfig)),
@@ -396,7 +418,8 @@ export function useInitSetup({
 
     void (async () => {
       try {
-        const tokens = await loginWithChatGPT(
+        const tokens = await loginWithProviderOAuth(
+          provider,
           (url) => {
             if (cancelled) {
               return;
@@ -469,7 +492,7 @@ export function useInitSetup({
     return () => {
       cancelled = true;
     };
-  }, [step, loginAttempt]);
+  }, [step, loginAttempt, provider]);
 
   useEffect(() => {
     if (

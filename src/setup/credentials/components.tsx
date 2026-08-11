@@ -45,6 +45,7 @@ import {
   formatTerminalHyperlink,
   getAwsCredentialRepairMessage,
   getOAuthAuthorizationStatusText,
+  getOAuthLoginLabel,
   getSingleLineInputDisplayValue,
   mask,
 } from "./format.js";
@@ -1076,14 +1077,19 @@ export function OAuthLoginPrompt({
   loginUrl: string | null;
   provider: OpenWikiProvider;
 }) {
+  const loginLabel = getOAuthLoginLabel(provider);
+  const accountKind = provider === "xai-grok" ? "xAI" : "ChatGPT";
+
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Text bold color="cyan">
-        ChatGPT login
+        {loginLabel}
       </Text>
       <Text>
-        Sign in with your {getProviderLabel(provider)} account to authorize
-        OpenWiki.
+        Sign in with your {accountKind} account to authorize OpenWiki
+        {provider === "xai-grok"
+          ? " (uses xAI's public Grok CLI OAuth client)."
+          : "."}
       </Text>
       {loginUrl ? (
         <Box flexDirection="column" marginTop={1}>
@@ -1113,7 +1119,7 @@ export function OAuthLoginPrompt({
           </Box>
         </Box>
       ) : (
-        <Text color="gray">Starting the ChatGPT login...</Text>
+        <Text color="gray">Starting the {loginLabel}...</Text>
       )}
       <Text color="gray">
         {isLoggingIn

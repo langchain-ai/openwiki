@@ -1,9 +1,13 @@
 import type { CodexTokens } from "../../agent/openai-chatgpt-oauth.js";
+import type { XaiGrokTokens } from "../../agent/xai-grok-oauth.js";
 import type { OpenWikiRunMode } from "../../cli/commands.js";
 import type { OpenWikiProvider } from "../../config/constants.js";
 import type { AuthProviderId } from "../../auth/types.js";
 import type { ConnectorId } from "../../connectors/types.js";
 import type { LangSmithRegion } from "../../connectors/sources/langsmith/setup.js";
+
+/** Browser-login token payload for any OAuth model provider. */
+export type OAuthTokenSet = CodexTokens | XaiGrokTokens;
 
 export type InitSetupResult = {
   mode: OpenWikiRunMode;
@@ -161,7 +165,7 @@ export interface CompleteSetupOptions {
    * @default the wizard's current `oauthTokens` state (resolved by the caller
    * when this field is omitted; an explicit null means "no tokens")
    */
-  nextOAuthTokens?: CodexTokens | null;
+  nextOAuthTokens?: OAuthTokenSet | null;
 
   nextProvider: OpenWikiProvider;
   nextRegion: string | null;

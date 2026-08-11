@@ -22,6 +22,9 @@ import {
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  XAI_GROK_ACCESS_TOKEN_ENV_KEY,
+  XAI_GROK_EXPIRES_AT_ENV_KEY,
+  XAI_GROK_REFRESH_TOKEN_ENV_KEY,
 } from "../../src/config/constants.ts";
 
 const execFileAsync = promisify(execFile);
@@ -41,6 +44,9 @@ const MANAGED_ENV_KEYS = [
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
   OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  XAI_GROK_ACCESS_TOKEN_ENV_KEY,
+  XAI_GROK_REFRESH_TOKEN_ENV_KEY,
+  XAI_GROK_EXPIRES_AT_ENV_KEY,
 ] as const;
 const originalEnv = new Map(
   MANAGED_ENV_KEYS.map((key) => [key, process.env[key]]),
@@ -236,6 +242,39 @@ describe("resolveStartupCommand", () => {
   test("allows non-interactive ChatGPT OAuth startup with complete tokens", async () => {
     process.env[OPENWIKI_PROVIDER_ENV_KEY] = "openai-chatgpt";
     storeChatGptTokens();
+
+    const command = updatePrintCommand({ userMessage: "refresh API docs" });
+    const result = await resolveStartupCommand(command, { isStdinTTY: false });
+
+    expect(result).toBe(command);
+  });
+
+  test("rejects non-interactive xAI Grok OAuth startup with incomplete tokens", async () => {
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] = "xai-grok";
+    process.env[XAI_GROK_ACCESS_TOKEN_ENV_KEY] = "access-token";
+    process.env[XAI_GROK_EXPIRES_AT_ENV_KEY] = String(
+      Date.now() + 60 * 60 * 1000,
+    );
+
+    const result = await resolveStartupCommand(
+      updatePrintCommand({ userMessage: "refresh API docs" }),
+      { isStdinTTY: false },
+    );
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toContain("xAI Grok OAuth token set");
+      expect(result.message).toContain(XAI_GROK_REFRESH_TOKEN_ENV_KEY);
+    }
+  });
+
+  test("allows non-interactive xAI Grok OAuth startup with complete tokens", async () => {
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] = "xai-grok";
+    process.env[XAI_GROK_ACCESS_TOKEN_ENV_KEY] = "access-token";
+    process.env[XAI_GROK_REFRESH_TOKEN_ENV_KEY] = "refresh-token";
+    process.env[XAI_GROK_EXPIRES_AT_ENV_KEY] = String(
+      Date.now() + 60 * 60 * 1000,
+    );
 
     const command = updatePrintCommand({ userMessage: "refresh API docs" });
     const result = await resolveStartupCommand(command, { isStdinTTY: false });

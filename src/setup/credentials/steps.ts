@@ -34,6 +34,7 @@ import {
   readCodexTokensFromEnv,
   isChatGptTokenExpired,
 } from "../../agent/openai-chatgpt-oauth.js";
+import { hasValidXaiGrokTokens } from "../../agent/xai-grok-oauth.js";
 import {
   createEmptyOnboardingConfig,
   isOnboardingComplete,
@@ -103,7 +104,7 @@ export function needsAwsCredentialRepair(provider: OpenWikiProvider): boolean {
  */
 export function needsCredentialStep(provider: OpenWikiProvider): boolean {
   if (providerUsesOAuth(provider)) {
-    return !hasValidStoredToken();
+    return !hasValidStoredToken(provider);
   }
 
   return (
@@ -233,11 +234,20 @@ export function nextSetupStep(
 }
 
 export function hasValidStoredToken(
+  provider: OpenWikiProvider = resolveConfiguredProvider(),
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  const tokens = readCodexTokensFromEnv(env);
+  if (provider === "xai-grok") {
+    return hasValidXaiGrokTokens(env);
+  }
 
-  return tokens !== null && !isChatGptTokenExpired(tokens.expiresAtMs);
+  if (provider === "openai-chatgpt") {
+    const tokens = readCodexTokensFromEnv(env);
+
+    return tokens !== null && !isChatGptTokenExpired(tokens.expiresAtMs);
+  }
+
+  return false;
 }
 
 export function needsGcpProjectStep(provider: OpenWikiProvider): boolean {
@@ -305,7 +315,7 @@ export function isRegionConfigured(provider: OpenWikiProvider): boolean {
 
 export function isCredentialConfigured(provider: OpenWikiProvider): boolean {
   return providerUsesOAuth(provider)
-    ? hasValidStoredToken()
+    ? hasValidStoredToken(provider)
     : getMissingProviderEnvKey(provider) === null;
 }
 

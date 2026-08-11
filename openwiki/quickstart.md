@@ -13,7 +13,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 
 - Launches an interactive Ink-based terminal app for chatting with the OpenWiki agent.
 - Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
-- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), GitHub Copilot (via GitHub CLI), OpenRouter, Anthropic, Gemini (AI Studio), Gemini Enterprise (Vertex AI, keyless via Google ADC), AWS Bedrock, Nebius Token Factory, Baseten, Fireworks, NVIDIA NIM, and any OpenAI-compatible gateway — each with their own credentials and model list (Gemini Enterprise uses Google ADC instead of an API key; Bedrock uses AWS access/secret keys and region; Copilot uses the GitHub CLI for auth).
+- Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), Grok (xAI subscription OAuth), GitHub Copilot (via GitHub CLI), OpenRouter, Anthropic, Gemini (AI Studio), Gemini Enterprise (Vertex AI, keyless via Google ADC), AWS Bedrock, Nebius Token Factory, Baseten, Fireworks, NVIDIA NIM, and any OpenAI-compatible gateway — each with their own credentials and model list (Gemini Enterprise uses Google ADC instead of an API key; Bedrock uses AWS access/secret keys and region; Copilot uses the GitHub CLI for auth).
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
@@ -50,6 +50,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/agent/types.ts` — shared agent types (`OpenWikiCommand`, `RunContext`, `UpdateMetadata`, run options/events).
 - `src/agent/docs-only-backend.ts` — `OpenWikiLocalShellBackend`, extends DeepAgents `LocalShellBackend` with docs-only write guards and output-mode awareness.
 - `src/agent/openai-chatgpt-oauth.ts` — ChatGPT OAuth flow, token persistence, and refresh logic for the `openai-chatgpt` provider.
+- `src/agent/xai-grok-oauth.ts` — xAI Grok subscription OAuth (browser PKCE), token persistence, and refresh for the `xai-grok` provider.
 - `src/auth/oauth.ts` — generic OAuth runner for connector providers (Gmail, Notion, Slack, X).
 - `src/auth/providers.ts` — connector OAuth provider configs (scopes, token URLs, env-key mappings).
 - `src/auth/configure.ts` — `openwiki auth configure <provider>` flow for creating local connector configs.
@@ -115,6 +116,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/agent/types.ts`
 - `src/agent/docs-only-backend.ts`
 - `src/agent/openai-chatgpt-oauth.ts`
+- `src/agent/xai-grok-oauth.ts`
 - `src/auth/oauth.ts`
 - `src/auth/providers.ts`
 - `src/auth/configure.ts`

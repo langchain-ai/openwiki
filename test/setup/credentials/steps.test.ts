@@ -84,6 +84,7 @@ vi.mock("../../../src/setup/onboarding.ts", async (importOriginal) => {
 const SPINE_BY_PROVIDER: Record<string, string[]> = {
   openai: ["provider", "api-key", "model", "langsmith"],
   "openai-chatgpt": ["provider", "oauth-login", "model", "langsmith"],
+  "xai-grok": ["provider", "oauth-login", "model", "langsmith"],
   anthropic: ["provider", "api-key", "model", "langsmith"],
   copilot: ["provider", "external-cli-auth", "model", "langsmith"],
   gemini: ["provider", "api-key", "model", "langsmith"],
@@ -282,12 +283,12 @@ describe("hasValidStoredToken", () => {
   }
 
   test("is false with no tokens and true with a complete, unexpired set", () => {
-    expect(hasValidStoredToken({})).toBe(false);
-    expect(hasValidStoredToken(tokenEnv(future))).toBe(true);
+    expect(hasValidStoredToken("openai-chatgpt", {})).toBe(false);
+    expect(hasValidStoredToken("openai-chatgpt", tokenEnv(future))).toBe(true);
   });
 
   test("is false once the stored token has expired", () => {
-    expect(hasValidStoredToken(tokenEnv(past))).toBe(false);
+    expect(hasValidStoredToken("openai-chatgpt", tokenEnv(past))).toBe(false);
   });
 });
 
