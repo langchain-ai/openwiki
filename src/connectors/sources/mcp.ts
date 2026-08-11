@@ -11,6 +11,7 @@ import { sanitizeMcpTransport } from "../mcp-runtime.js";
 import type {
   ConnectorDefinition,
   ConnectorId,
+  ConnectorIngestOptions,
   ConnectorIngestResult,
   ConnectorRuntime,
   McpConnectorConfig,
@@ -31,20 +32,18 @@ export function createMcpConnector(input: McpConnectorInput): ConnectorRuntime {
 
   return {
     ...definition,
-    ingest: () => ingestMcpConnector(input.id, definition),
+    ingest: (options) => ingestMcpConnector(input.id, definition, options),
   };
 }
 
 async function ingestMcpConnector(
   connectorId: ConnectorId,
   definition: ConnectorDefinition,
+  options?: ConnectorIngestOptions,
 ): Promise<ConnectorIngestResult> {
   const runId = createRunId();
   const state = await readConnectorState(connectorId);
-  const config = await readConnectorConfig<McpConnectorConfig>(connectorId, {
-    enabled: false,
-    readOnlyOperations: [],
-  });
+  const config = await resolveMcpConnectorConfig(connectorId, options);
   const warnings: string[] = [];
 
   if (!config.enabled) {
@@ -117,6 +116,32 @@ async function ingestMcpConnector(
     status: "success",
     warnings,
   });
+}
+
+/**
+ * Disk config is the base; optional ingest `connectorConfig` (source-instance
+ * override from onboarding) wins field-by-field without inventing defaults.
+ */
+async function resolveMcpConnectorConfig(
+  connectorId: ConnectorId,
+  options?: ConnectorIngestOptions,
+): Promise<McpConnectorConfig> {
+  const diskConfig = await readConnectorConfig<McpConnectorConfig>(
+    connectorId,
+    {
+      enabled: false,
+      readOnlyOperations: [],
+    },
+  );
+  const override = options?.connectorConfig;
+  if (!override || typeof override !== "object" || Array.isArray(override)) {
+    return diskConfig;
+  }
+
+  return {
+    ...diskConfig,
+    ...(override as Partial<McpConnectorConfig>),
+  };
 }
 
 async function finishMcpRun({

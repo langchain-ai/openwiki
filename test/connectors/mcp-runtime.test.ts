@@ -72,8 +72,9 @@ beforeEach(() => {
 });
 
 describe("isMcpConnectorId", () => {
-  test("recognizes notion and rejects other connectors", () => {
+  test("recognizes MCP connectors and rejects others", () => {
     expect(isMcpConnectorId("notion")).toBe(true);
+    expect(isMcpConnectorId("custom-mcp")).toBe(true);
     expect(isMcpConnectorId("git-repo")).toBe(false);
   });
 });
@@ -158,6 +159,23 @@ describe("callMcpConnectorTool policy", () => {
     expect(result.allowedBy).toBe(
       "allowed by hosted Notion read-only tool name/description",
     );
+  });
+
+  test("does not apply the Notion name heuristic to custom-mcp", async () => {
+    vi.mocked(readConnectorConfig).mockResolvedValue({
+      enabled: true,
+      readOnlyOperations: [],
+      transport: {
+        type: "http",
+        url: "https://mcp.example.com/mcp",
+      },
+    });
+    withTools(tool({ description: "Search records", name: "search_records" }));
+
+    await expect(
+      callMcpConnectorTool("custom-mcp", "search_records", {}),
+    ).rejects.toThrow("is not marked read-only");
+    expect(executeMcpTool).not.toHaveBeenCalled();
   });
 
   test("rejects a mutating tool that is not marked read-only", async () => {

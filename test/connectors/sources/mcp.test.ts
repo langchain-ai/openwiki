@@ -172,4 +172,38 @@ describe("mcp connector read-only execution", () => {
     expect(payload.transport).toEqual({ redacted: true });
     expect(writeConnectorState).toHaveBeenCalledTimes(1);
   });
+
+  test("merges source-instance connectorConfig over disk config", async () => {
+    configure({
+      enabled: false,
+      readOnlyOperations: [],
+      transport: TRANSPORT as never,
+    });
+    const operations = [{ name: "search", type: "tool" }];
+    vi.mocked(executeMcpReadOnlyOperations).mockResolvedValue({
+      operations: [{ name: "search", result: "ok" }],
+    } as never);
+    const connector = createMcpConnector({
+      description: "Custom MCP",
+      displayName: "Custom MCP",
+      id: "custom-mcp",
+      requiredEnv: [],
+    });
+
+    const result = await connector.ingest({
+      connectorConfig: {
+        enabled: true,
+        readOnlyOperations: operations,
+      },
+    });
+
+    expect(result.status).toBe("success");
+    expect(executeMcpReadOnlyOperations).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enabled: true,
+        readOnlyOperations: operations,
+        transport: TRANSPORT,
+      }),
+    );
+  });
 });
