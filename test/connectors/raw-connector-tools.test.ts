@@ -119,6 +119,37 @@ describe("raw connector tools", () => {
   });
 });
 
+describe("connector tool run-mode gating (#444)", () => {
+  test("personal/local-wiki mode exposes connector ingest tools", async () => {
+    const home = await createTempHome();
+    const tools = await loadConnectorToolsForMode(home, "local-wiki");
+
+    expect(tools.map((tool) => tool.name)).toContain(
+      "openwiki_ingest_connector",
+    );
+    expect(tools.map((tool) => tool.name)).toContain(
+      "openwiki_ingest_all_connectors",
+    );
+  });
+
+  test("code/repository mode is not offered any connector tools", async () => {
+    const home = await createTempHome();
+    const tools = await loadConnectorToolsForMode(home, "repository");
+
+    expect(tools).toEqual([]);
+  });
+
+  test("defaulting without a mode behaves like local-wiki", async () => {
+    const home = await createTempHome();
+    const tools = await loadConnectorTools(home);
+
+    expect(tools.length).toBeGreaterThan(0);
+    expect(tools.map((tool) => tool.name)).toContain(
+      "openwiki_ingest_connector",
+    );
+  });
+});
+
 interface RawItemsResult {
   files: string[];
   latestFiles: string[];
@@ -134,13 +165,28 @@ interface RawReadResult {
 async function loadConnectorTools(
   home: string,
 ): Promise<StructuredToolInterface[]> {
+  const { createOpenWikiConnectorTools } = await loadConnectorToolsModule(home);
+
+  return createOpenWikiConnectorTools();
+}
+
+async function loadConnectorToolsForMode(
+  home: string,
+  outputMode: "local-wiki" | "repository",
+): Promise<StructuredToolInterface[]> {
+  const { createOpenWikiConnectorTools } = await loadConnectorToolsModule(home);
+
+  return createOpenWikiConnectorTools(outputMode);
+}
+
+async function loadConnectorToolsModule(
+  home: string,
+): Promise<typeof import("../../src/connectors/tools.ts")> {
   vi.resetModules();
   process.env.HOME = home;
   process.env.USERPROFILE = home;
-  const { createOpenWikiConnectorTools } =
-    await import("../../src/connectors/tools.ts");
 
-  return createOpenWikiConnectorTools();
+  return import("../../src/connectors/tools.ts");
 }
 
 function getTool(

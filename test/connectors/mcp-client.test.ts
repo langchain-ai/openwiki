@@ -1094,3 +1094,145 @@ describe("stdio client deferred kill", () => {
     expect(killSpy).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("listMcpTools pagination", () => {
+  const MCP_URL = "https://mcp.example.com/mcp";
+
+  type JsonRpcCall = {
+    method: string;
+    params?: Record<string, unknown>;
+  };
+
+  /**
+   * Stubs an HTTP MCP server that answers `initialize` and then serves the
+   * given `tools/list` pages in order, recording every JSON-RPC call it saw.
+   */
+  function stubHttpMcpServer(pages: Record<string, unknown>[]): JsonRpcCall[] {
+    const calls: JsonRpcCall[] = [];
+    let pageIndex = 0;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_input: unknown, init?: { body?: string }) => {
+        const message = JSON.parse(init?.body ?? "{}") as {
+          id?: number;
+          method: string;
+          params?: Record<string, unknown>;
+        };
+        calls.push({ method: message.method, params: message.params });
+
+        const result =
+          message.method === "tools/list"
+            ? (pages[Math.min(pageIndex++, pages.length - 1)] ?? { tools: [] })
+            : {};
+
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ id: message.id, jsonrpc: "2.0", result }),
+            { headers: { "content-type": "application/json" }, status: 200 },
+          ),
+        );
+      }),
+    );
+
+    return calls;
+  }
+
+  function listToolsCalls(calls: JsonRpcCall[]): JsonRpcCall[] {
+    return calls.filter((call) => call.method === "tools/list");
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  test("follows nextCursor so tools past the first page are discovered", async () => {
+    const calls = stubHttpMcpServer([
+      { nextCursor: "cursor-2", tools: [{ name: "page_one_tool" }] },
+      { tools: [{ name: "page_two_tool" }] },
+    ]);
+
+    const result = await listMcpTools({
+      transport: { type: "http", url: MCP_URL },
+    });
+
+    expect(result.tools.map((tool) => tool.name)).toEqual([
+      "page_one_tool",
+      "page_two_tool",
+    ]);
+    // The second page must be requested with the cursor the server handed back.
+    expect(listToolsCalls(calls).map((call) => call.params)).toEqual([
+      {},
+      { cursor: "cursor-2" },
+    ]);
+  });
+
+  test("issues a single request when the server does not paginate", async () => {
+    const calls = stubHttpMcpServer([{ tools: [{ name: "only_tool" }] }]);
+
+    const result = await listMcpTools({
+      transport: { type: "http", url: MCP_URL },
+    });
+
+    expect(result.tools.map((tool) => tool.name)).toEqual(["only_tool"]);
+    expect(listToolsCalls(calls)).toHaveLength(1);
+  });
+
+  test("stops instead of looping when a server repeats the same cursor", async () => {
+    const calls = stubHttpMcpServer([
+      { nextCursor: "stuck", tools: [{ name: "first_tool" }] },
+      { nextCursor: "stuck", tools: [{ name: "second_tool" }] },
+    ]);
+
+    const result = await listMcpTools({
+      transport: { type: "http", url: MCP_URL },
+    });
+
+    expect(result.tools.map((tool) => tool.name)).toEqual([
+      "first_tool",
+      "second_tool",
+    ]);
+    expect(listToolsCalls(calls)).toHaveLength(2);
+  });
+
+  test("caps the number of pages when a server always returns a fresh cursor", async () => {
+    const calls: JsonRpcCall[] = [];
+    let cursorSeed = 0;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_input: unknown, init?: { body?: string }) => {
+        const message = JSON.parse(init?.body ?? "{}") as {
+          id?: number;
+          method: string;
+          params?: Record<string, unknown>;
+        };
+        calls.push({ method: message.method, params: message.params });
+
+        cursorSeed += 1;
+        const result =
+          message.method === "tools/list"
+            ? {
+                nextCursor: `cursor-${cursorSeed}`,
+                tools: [{ name: `tool_${cursorSeed}` }],
+              }
+            : {};
+
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ id: message.id, jsonrpc: "2.0", result }),
+            { headers: { "content-type": "application/json" }, status: 200 },
+          ),
+        );
+      }),
+    );
+
+    const result = await listMcpTools({
+      transport: { type: "http", url: MCP_URL },
+    });
+
+    // Terminates on the page cap rather than following cursors forever.
+    expect(listToolsCalls(calls)).toHaveLength(100);
+    expect(result.tools).toHaveLength(100);
+  });
+});
