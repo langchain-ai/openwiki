@@ -1,6 +1,13 @@
 name: NVIDIA NIM Live Verification
 
 on:
+  pull_request:
+    paths:
+      - "src/agent/**"
+      - "src/cli/**"
+      - "src/config/**"
+      - "src/setup/**"
+      - ".github/workflows/nvidia-nim-live.yml"
   workflow_dispatch:
 
 permissions:
@@ -9,6 +16,7 @@ permissions:
 jobs:
   reasoning-effort:
     name: Reasoning effort (${{ matrix.effort }})
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
     strategy:
