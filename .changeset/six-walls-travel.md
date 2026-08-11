@@ -2,4 +2,4 @@
 "openwiki": patch
 ---
 
-feat: LEDGER, a longitudinal benchmark for wiki coverage, precision, and forgetting
+feat: add LEDGER, a longitudinal benchmark for wiki grounding and forgetting
