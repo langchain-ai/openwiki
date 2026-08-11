@@ -1,0 +1,34 @@
+evals/ledger/evaluator/model-backend.ts
+  s_c8fd8da1bbefea::t_15d1c781e700bb 94-98
+  s_c8fd8da1bbefea::t_8490bac9b87611 184
+  s_c8fd8da1bbefea::t_9580c5a465d8f4 109-115
+  s_c8fd8da1bbefea::t_b982a7e00848ff 20-23
+evals/ledger/evaluator/precision.ts
+  s_c8fd8da1bbefea::t_26c524ac3e2901 1172-1176,1186-1187,1189-1215,1219-1220,1222-1225,1227-1229,1231-1233,1239-1240
+  s_c8fd8da1bbefea::t_359211e147cc72 1-2
+  s_c8fd8da1bbefea::t_62f36f4f493ab1 1070-1073,1078-1081,1095,1112,1125
+  s_c8fd8da1bbefea::t_21866304373dc9 1177-1185,1234-1238
+  s_c8fd8da1bbefea::t_03408ba484dfb2 345-354
+  s_c8fd8da1bbefea::t_8d61c27866354d 64,818-828,830-884
+  s_c8fd8da1bbefea::t_6ba390b3251933 65-102,344
+evals/ledger/evaluator/precision.test.ts
+  s_c8fd8da1bbefea::t_fee7c6c1ed985c 567-661,666-719,724-730
+  s_c8fd8da1bbefea::t_21866304373dc9 662-665,720-723
+  s_c8fd8da1bbefea::t_3033f868ae4ec4 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "c19b707ad0c2a81503d0a343ee3880c557e30a9a",
+  "prompts": {},
+  "sessions": {
+    "s_c8fd8da1bbefea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7a2ddc30-9130-4920-b846-bb51dd3c63bc",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
