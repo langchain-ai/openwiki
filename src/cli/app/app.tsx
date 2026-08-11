@@ -69,10 +69,10 @@ type AppProps = {
   command: CliCommand;
 };
 
-function getConfiguredReasoningEffort(): string | null {
+function getConfiguredReasoningEffort(): ReasoningEffort | null {
   const effort = process.env[OPENWIKI_REASONING_EFFORT_ENV_KEY]?.trim();
 
-  return effort || null;
+  return effort && isReasoningEffort(effort) ? effort : null;
 }
 
 function shouldClearReasoningEffort(
@@ -106,9 +106,8 @@ export function App({ command }: AppProps) {
   const [sessionModelId, setSessionModelId] = useState<string | null>(
     startupModelId,
   );
-  const [sessionReasoningEffort, setSessionReasoningEffort] = useState(
-    getConfiguredReasoningEffort,
-  );
+  const [sessionReasoningEffort, setSessionReasoningEffort] =
+    useState<ReasoningEffort | null>(getConfiguredReasoningEffort);
   const activeRunId = useRef(0);
   const agentRunInFlight = useRef(false);
   const sessionThreadId = useRef(createOpenWikiThreadId(runtimeCwd));
@@ -434,6 +433,7 @@ export function App({ command }: AppProps) {
 
     const runId = activeRunId.current + 1;
     const runMessage = activeUserMessage;
+    const runReasoningEffort = sessionReasoningEffort;
 
     activeRunId.current = runId;
     activeRunCredentialDiagnostics.current = undefined;
@@ -554,6 +554,7 @@ export function App({ command }: AppProps) {
             credentialDiagnostics: activeRunCredentialDiagnostics.current,
             log: activeRunLog.current,
             message: runMessage,
+            reasoningEffort: runReasoningEffort,
             result,
           },
         ]);
@@ -613,6 +614,7 @@ export function App({ command }: AppProps) {
     runtimeOutputMode,
     sessionModelId,
     sessionProvider,
+    sessionReasoningEffort,
     shouldRunInteractiveCredentialSetup,
   ]);
 

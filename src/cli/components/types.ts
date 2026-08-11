@@ -1,5 +1,6 @@
 import type { OpenWikiCommand, OpenWikiRunResult } from "../../agent/types.js";
 import type { CredentialDiagnostic } from "../../config/env.js";
+import type { ReasoningEffort } from "../../config/reasoning.js";
 import type { RunLogItem } from "../run-log/types.js";
 
 /**
@@ -17,5 +18,7 @@ export interface CompletedRun {
 
   log: RunLogItem[];
   message: string | null;
+  /** Reasoning effort selected when this run began, if the provider supports it. */
+  reasoningEffort: ReasoningEffort | null;
   result: OpenWikiRunResult;
 }

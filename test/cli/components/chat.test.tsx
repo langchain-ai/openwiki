@@ -45,6 +45,7 @@ describe("ChatHistory", () => {
         command: "init",
         log: [{ content: "Wrote 5 pages.", id: 1, type: "text" }],
         message: "seed the wiki",
+        reasoningEffort: "max",
         result: { command: "init", model: "opus" },
       },
     ];
@@ -54,7 +55,7 @@ describe("ChatHistory", () => {
 
     expect(frame).toContain("seed the wiki");
     expect(frame).toContain("Complete");
-    expect(frame).toContain("openwiki init - opus");
+    expect(frame).toContain("openwiki init - opus (effort: max)");
     expect(frame).toContain("Wrote 5 pages.");
   });
 
@@ -65,12 +66,15 @@ describe("ChatHistory", () => {
         command: "update",
         log: [],
         message: null,
+        reasoningEffort: null,
         result: { command: "update", model: "sonnet" },
       },
     ];
 
     const { lastFrame } = render(<ChatHistory runs={runs} />);
-    expect(plain(lastFrame())).toContain("No assistant output captured.");
+    const frame = plain(lastFrame());
+    expect(frame).toContain("No assistant output captured.");
+    expect(frame).not.toContain("effort:");
   });
 });
 

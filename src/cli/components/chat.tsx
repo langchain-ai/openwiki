@@ -72,6 +72,7 @@ export function ChatHistory({ runs }: { runs: CompletedRun[] }) {
             <Text bold>Complete</Text>{" "}
             <Text color="gray">
               openwiki {run.command} - {run.result.model}
+              {run.reasoningEffort ? ` (effort: ${run.reasoningEffort})` : ""}
             </Text>
           </Text>
           <Box flexDirection="column" marginLeft={2} marginTop={1}>
