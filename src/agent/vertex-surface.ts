@@ -1,5 +1,5 @@
 import { GoogleAuth } from "google-auth-library";
-import { ANTHROPIC_API_KEY_ENV_KEY } from "../constants.js";
+import { ANTHROPIC_API_KEY_ENV_KEY } from "../config/constants.js";
 
 /**
  * A Vertex AI Model Garden model can be served over one of several distinct API
