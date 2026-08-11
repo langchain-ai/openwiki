@@ -36,6 +36,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { env, stdout } from "node:process";
 import { fileURLToPath } from "node:url";
 
 const benchmarkDir = path.dirname(fileURLToPath(import.meta.url));
@@ -59,7 +60,7 @@ const IDENTITY = {
  */
 function git(cwd, args, extraEnv = {}) {
   return execFileSync("git", ["-C", cwd, ...args], {
-    env: { ...process.env, ...IDENTITY, ...extraEnv },
+    env: { ...env, ...IDENTITY, ...extraEnv },
     stdio: ["ignore", "pipe", "inherit"],
     encoding: "utf8",
   }).trim();
@@ -1793,7 +1794,7 @@ try {
   rmSync(bundlePath, { force: true });
   git(work, ["bundle", "create", bundlePath, "--all"]);
 
-  process.stdout.write(JSON.stringify(shas, null, 2) + "\n");
+  stdout.write(JSON.stringify(shas, null, 2) + "\n");
 } finally {
   // Retry the teardown: git can briefly hold objects under .git on some
   // filesystems, which otherwise surfaces as a spurious ENOTEMPTY.

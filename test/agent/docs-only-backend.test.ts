@@ -112,12 +112,12 @@ describe("OpenWikiLocalShellBackend", () => {
       virtualMode: true,
     });
 
-    await expect(backend.glob("**/*")).resolves.toMatchObject({
-      error: expect.stringContaining("Unbounded root globbing is disabled"),
-    });
-    await expect(backend.glob(".git/**/*")).resolves.toMatchObject({
-      error: expect.stringContaining("Git metadata"),
-    });
+    const unboundedGlob = await backend.glob("**/*");
+    expect(unboundedGlob.error).toContain(
+      "Unbounded root globbing is disabled",
+    );
+    const gitGlob = await backend.glob(".git/**/*");
+    expect(gitGlob.error).toContain("Git metadata");
     await expect(backend.glob("**/*.ts", "/src")).resolves.toEqual({
       files: [expect.objectContaining({ path: "/index.ts", is_dir: false })],
     });
