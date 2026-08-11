@@ -1,4 +1,4 @@
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
@@ -99,5 +99,27 @@ describe("OpenWikiLocalShellBackend", () => {
     await expect(
       readFile(path.join(rootDir, "notes.md"), "utf8"),
     ).resolves.toBe("ok");
+  });
+
+  test("handles file-backed Git worktree metadata without crashing glob", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await writeFile(path.join(rootDir, ".git"), "gitdir: /tmp/example\n");
+    await mkdir(path.join(rootDir, "src"));
+    await writeFile(path.join(rootDir, "src", "index.ts"), "export {};\n");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    await expect(backend.glob("**/*")).resolves.toMatchObject({
+      error: expect.stringContaining("Unbounded root globbing is disabled"),
+    });
+    await expect(backend.glob(".git/**/*")).resolves.toMatchObject({
+      error: expect.stringContaining("Git metadata"),
+    });
+    await expect(backend.glob("**/*.ts", "/src")).resolves.toEqual({
+      files: [expect.objectContaining({ path: "/index.ts", is_dir: false })],
+    });
   });
 });
