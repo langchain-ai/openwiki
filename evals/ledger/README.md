@@ -1,7 +1,9 @@
 # LEDGER 🧪
 
-LEDGER measures whether an evolving knowledge artifact remains grounded as its
-source changes. The current adapter replays Git checkpoints, runs OpenWiki, and
+LEDGER (Longitudinal Evaluation of Documentation Grounding, Evolution, and
+Revision) is a source-grounded framework for evaluating whether generated
+knowledge artifacts remain accurate and current as their underlying source of
+truth evolves. The current adapter replays Git checkpoints, runs OpenWiki, and
 evaluates each frozen wiki snapshot.
 
 LEDGER reports two directly auditable views:
@@ -142,7 +144,7 @@ wiki covers every important source topic; that limitation remains explicit.
 ## CLI output
 
 ```text
-┌ 🧪 LEDGER · taskflow · medium
+┌ 🧪 LEDGER · taskflow · hard
 │ 5 checkpoints · anthropic · system claude-opus-4-8 · evaluator claude-opus-4-8
 │ 📦 Replay workspace ready
 │
