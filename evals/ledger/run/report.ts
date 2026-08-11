@@ -62,17 +62,21 @@ export function formatReport(result: LedgerRunResult): string {
     lines.push(`- Re-evaluated from: ${result.metadata.reevaluatedFrom}`);
   }
 
+  lines.push(`- LEDGER score: ${pct(result.score.value)}`);
+  lines.push(`- Claim health: ${pct(result.score.claimHealth)}`);
+  lines.push(`- Forgetting score: ${pct(result.score.forgetting)}`);
+
   lines.push("", "## Checkpoints", "");
   lines.push(
-    "| Checkpoint | Current claims | Supported | Stale | Hallucinated | Unverified | API forgetting | Evaluator | Duration (ms) | Churn | Skipped |",
+    "| Checkpoint | Current claims | Supported | Stale | Hallucinated | Unverified | API forgetting | Evaluator | Duration (ms) | Tokens | Churn | Skipped |",
   );
   lines.push(
-    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
   );
   for (const checkpoint of result.checkpoints) {
     const claims = checkpoint.claims;
     lines.push(
-      `| ${checkpoint.checkpointId} | ${claims.total} | ${pct(claims.supportedRate)} | ${pct(claims.stalenessRate)} (${claims.stale}) | ${pct(claims.hallucinationRate)} (${claims.invented}) | ${pct(claims.unverifiedRate)} (${claims.unverified}) | ${factForgettingRate(result, checkpoint.checkpointId)} | ${pct(checkpoint.evaluationCompleteness.rate)} | ${checkpoint.efficiency.durationMs} | ${formatCount(checkpoint.efficiency.churnedLines)} | ${checkpoint.efficiency.skipped ? "yes" : "no"} |`,
+      `| ${checkpoint.checkpointId} | ${claims.total} | ${pct(claims.supportedRate)} | ${pct(claims.stalenessRate)} (${claims.stale}) | ${pct(claims.hallucinationRate)} (${claims.invented}) | ${pct(claims.unverifiedRate)} (${claims.unverified}) | ${factForgettingRate(result, checkpoint.checkpointId)} | ${pct(checkpoint.evaluationCompleteness.rate)} | ${checkpoint.efficiency.durationMs} | ${formatCount(checkpoint.efficiency.totalTokens)} | ${formatCount(checkpoint.efficiency.churnedLines)} | ${checkpoint.efficiency.skipped ? "yes" : "no"} |`,
     );
   }
 

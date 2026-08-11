@@ -4,8 +4,7 @@ LEDGER measures whether an evolving knowledge artifact remains grounded as its
 source changes. The current adapter replays Git checkpoints, runs OpenWiki, and
 evaluates each frozen wiki snapshot.
 
-LEDGER deliberately does not produce a composite quality score. It reports two
-directly auditable views:
+LEDGER reports two directly auditable views:
 
 1. the state of every current factual claim in the wiki; and
 2. whether known-obsolete public API facts are still presented as current.
@@ -113,6 +112,24 @@ denominator. In the live CLI, an indeterminate obsolete fact remains in the
 The source surface is an obsolete-knowledge oracle only. It is not reported or
 scored as documentation coverage.
 
+## LEDGER score
+
+The run-level score summarizes claim health and forgetting without claiming to
+measure documentation completeness:
+
+```text
+claim health = supported current claims / all current claims across checkpoints
+forgetting   = forgotten / determinate obsolete-fact checks
+LEDGER score = harmonic mean(claim health, forgetting)
+```
+
+Stale, hallucinated, and unverified claims all lower claim health because they
+remain in its denominator. The sticky forgetting watchlist makes a lingering
+obsolete fact lower forgetting again at every checkpoint until it is removed.
+When a trace has no determinate forgetting opportunity, claim health is the only
+observed dimension and becomes the score. The score does not measure whether the
+wiki covers every important source topic; that limitation remains explicit.
+
 ## CLI output
 
 ```text
@@ -121,16 +138,16 @@ scored as documentation coverage.
 │ 📦 Replay workspace ready
 │
 ├ 📍 1/5 · T0 · 3f2a1b9 · baseline API
-│ 🤖 OpenWiki init complete · 5.4s · 12 documents
+│ 🤖 OpenWiki init complete · 5.4s · 12 documents · 182k tokens
 │ 📊 35 claims · 91% supported · 0% stale · 3% hallucinated · 6% unverified
 │
 ├ 📍 2/5 · T1 · a7c40e2 · RedisStore + retry API
-│ 🤖 OpenWiki update complete · 6.8s · 14 documents
+│ 🤖 OpenWiki update complete · 6.8s · 14 documents · 74k tokens
 │ 📊 50 claims · 88% supported · 4% stale · 2% hallucinated · 6% unverified
 │ 🧹 forgot 2/3 obsolete facts · carrying 1
 │
 ├ 🔬 Details → evals/ledger/.results/taskflow-…/report.md
-└ ✅ Complete · 2m 11s
+└ ✅ LEDGER score 84% · 2m 11s · 416k OpenWiki tokens
 ```
 
 The displayed claim count is the shared snapshot denominator: distinct current-
@@ -149,6 +166,11 @@ While evaluation is active, the spinner reports phase-specific completion:
 Extraction advances by classified text units. After extraction, grounding
 progress combines distinct-claim judgments and obsolete-fact judgments, so 100%
 means the checkpoint evaluation is genuinely complete.
+
+Token counts come from provider-reported LangChain usage metadata and include
+the main agent, subagents, summarization, and translation calls. They are never
+estimated: a provider that omits usage leaves the checkpoint token count absent,
+and LEDGER omits the run total rather than presenting a partial sum.
 
 ## Running
 

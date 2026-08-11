@@ -5,6 +5,7 @@ export type OpenWikiRunResult = {
   command: OpenWikiCommand;
   model: string;
   skipped?: boolean;
+  totalTokens?: number;
 };
 
 export type OpenWikiRunEvent =

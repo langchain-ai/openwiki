@@ -38,6 +38,7 @@ function sampleResult(benchmarkName: string): LedgerRunResult {
       system: { provider: "fake-provider" },
     },
     checkpoints: [],
+    score: { value: 0, claimHealth: 0 },
     diagnostics: {
       staleKnowledge: { records: [], unresolvedCount: 0 },
     },

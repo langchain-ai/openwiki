@@ -1,4 +1,7 @@
-import { formatPercent as formatPercentString } from "./format.js";
+import {
+  formatPercent as formatPercentString,
+  formatTokenCount,
+} from "./format.js";
 import type { BenchmarkProgressReporter } from "./progress-events.js";
 
 /**
@@ -103,6 +106,7 @@ export function createCliProgressReporter(
         command: "init" | "update";
         durationMs: number;
         skipped: boolean;
+        totalTokens?: number;
       }
     | undefined;
 
@@ -234,8 +238,12 @@ export function createCliProgressReporter(
           );
         } else if (completedSystem !== undefined) {
           const status = completedSystem.skipped ? "skipped" : "complete";
+          const tokens =
+            completedSystem.totalTokens === undefined
+              ? ""
+              : ` · ${formatTokenCount(completedSystem.totalTokens)} tokens`;
           completeSpinner(
-            `🤖 OpenWiki ${completedSystem.command} ${status} · ${formatProgressDuration(completedSystem.durationMs)} · ${event.documentCount} document${event.documentCount === 1 ? "" : "s"}`,
+            `🤖 OpenWiki ${completedSystem.command} ${status} · ${formatProgressDuration(completedSystem.durationMs)} · ${event.documentCount} document${event.documentCount === 1 ? "" : "s"}${tokens}`,
           );
           completedSystem = undefined;
         }

@@ -81,6 +81,8 @@ export class OpenWikiSystem implements SystemUnderTest {
       return {
         skipped: result.skipped === true,
         durationMs: Math.round(performance.now() - start),
+        totalTokens:
+          result.totalTokens ?? (result.skipped === true ? 0 : undefined),
       };
     } catch (error) {
       throw new SystemRunError(

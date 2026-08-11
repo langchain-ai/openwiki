@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import type { LedgerRunResult } from "../core/types.js";
 import { formatReport } from "./report.js";
 
-test("reports current claim state and forgetting without a composite score", () => {
+test("reports current claim state, forgetting, and the auditable score", () => {
   const result: LedgerRunResult = {
     metadata: {
       benchmarkName: "taskflow",
@@ -46,6 +46,11 @@ test("reports current claim state and forgetting without a composite score", () 
         },
       },
     ],
+    score: {
+      value: (2 * 0.82) / 1.82,
+      claimHealth: 0.82,
+      forgetting: 1,
+    },
     diagnostics: {
       staleKnowledge: {
         records: [
@@ -61,6 +66,8 @@ test("reports current claim state and forgetting without a composite score", () 
     "| T1 | 100 | 82.0% | 10.0% (10) | 2.0% (2) | 6.0% (6)",
   );
   expect(report).toContain("API forgetting");
-  expect(report).not.toContain("LEDGER Score");
+  expect(report).toContain("LEDGER score: 90.1%");
+  expect(report).toContain("Claim health: 82.0%");
+  expect(report).toContain("Forgetting score: 100.0%");
   expect(report).not.toContain("Coverage");
 });

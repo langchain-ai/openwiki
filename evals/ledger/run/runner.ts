@@ -2,6 +2,7 @@ import { SystemRunError } from "../core/errors.js";
 import { captureArtifact } from "../replay/artifact.js";
 import { GitReplay } from "../replay/git-replay.js";
 import { computeDiagnostics } from "../metrics/claims.js";
+import { computeLedgerScore } from "../metrics/score.js";
 import type {
   CheckpointEvaluationRecord,
   CheckpointResult,
@@ -192,6 +193,7 @@ export async function runBenchmark(
         command,
         durationMs: outcome.durationMs,
         skipped: outcome.skipped,
+        totalTokens: outcome.totalTokens,
       });
 
       const artifact = await captureArtifact(
@@ -268,6 +270,7 @@ export async function runBenchmark(
         evaluatorModelId: config.evaluatorModelId,
       },
       checkpoints: checkpointResults,
+      score: computeLedgerScore(checkpointResults),
       diagnostics: computeDiagnostics(history),
     };
 

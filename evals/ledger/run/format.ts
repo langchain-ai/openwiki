@@ -47,6 +47,27 @@ export function formatCount(value: number | undefined): string {
 }
 
 /**
+ * Render a token count compactly for terminal output.
+ *
+ * @param value - Non-negative token count.
+ *
+ * @returns Compact text such as `850`, `12.3k`, or `1.2m`.
+ */
+export function formatTokenCount(value: number): string {
+  if (value < 1_000) {
+    return String(Math.round(value));
+  }
+
+  if (value < 1_000_000) {
+    const thousands = value / 1_000;
+    return `${thousands < 100 ? thousands.toFixed(1).replace(/\.0$/u, "") : Math.round(thousands)}k`;
+  }
+
+  const millions = value / 1_000_000;
+  return `${millions.toFixed(1).replace(/\.0$/u, "")}m`;
+}
+
+/**
  * Render a mean lifetime in checkpoints, or a dash when the value is absent.
  *
  * @param value - Mean lifetime in checkpoints, or undefined.

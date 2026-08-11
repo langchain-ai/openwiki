@@ -11,6 +11,7 @@ import type {
   KnowledgeArtifact,
 } from "../core/types.js";
 import { computeDiagnostics } from "../metrics/claims.js";
+import { computeLedgerScore } from "../metrics/score.js";
 import { evaluateCheckpoint, initialCarry } from "./evaluate-checkpoint.js";
 import type { BenchmarkProgressReporter } from "./progress-events.js";
 import {
@@ -204,6 +205,7 @@ export async function reevaluateSavedRun(
         reevaluatedFrom: sourceRunDir,
       },
       checkpoints: checkpointResults,
+      score: computeLedgerScore(checkpointResults),
       diagnostics: computeDiagnostics(history),
     };
 

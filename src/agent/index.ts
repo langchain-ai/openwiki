@@ -139,6 +139,7 @@ import { clearActiveRun, registerActiveRun } from "./crash-guard.js";
 import { inStage, inStageSync, tagErrorStage } from "../telemetry/index.js";
 import type { RunTelemetryContext } from "../telemetry/index.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
+import { createTokenUsageTracker } from "./token-usage.js";
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -499,6 +500,7 @@ async function runOpenWikiAgentCore(
   };
 
   emitDebug(options, "stream=opening modes=messages,tools subgraphs=true");
+  const tokenUsage = createTokenUsageTracker();
   const stream = await inStage(
     "build",
     () =>
@@ -506,6 +508,7 @@ async function runOpenWikiAgentCore(
         configurable: {
           thread_id: threadId,
         },
+        callbacks: [tokenUsage.handler],
         streamMode: ["messages", "tools"],
         subgraphs: true,
       }),
@@ -631,6 +634,7 @@ async function runOpenWikiAgentCore(
   return {
     command,
     model: modelId,
+    totalTokens: tokenUsage.totalTokens(),
   };
 }
 

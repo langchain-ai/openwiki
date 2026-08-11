@@ -137,6 +137,7 @@ function sourceResult(): LedgerRunResult {
       originalCheckpoint("T0", 10_000),
       originalCheckpoint("T1", 5_000),
     ],
+    score: { value: 0, claimHealth: 0 },
     diagnostics: {
       staleKnowledge: { records: [], unresolvedCount: 0 },
     },
@@ -253,6 +254,11 @@ describe("reevaluateSavedRun", () => {
     expect(result.checkpoints.map((item) => item.claims.supportedRate)).toEqual(
       [1, 1],
     );
+    expect(result.score).toEqual({
+      value: 1,
+      claimHealth: 1,
+      forgetting: 1,
+    });
     expect(events).toContain("run-complete");
     expect(events).not.toContain("system-complete");
   });

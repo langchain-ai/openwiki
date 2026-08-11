@@ -781,9 +781,9 @@ export interface LedgerExecutionMetrics {
   churnedLines?: number;
 
   /**
-   * Total tokens the run consumed, when token capture is enabled (Phase 8).
+   * Provider-reported OpenWiki tokens consumed by this checkpoint's run.
    *
-   * @default absent unless the optional usage callback is wired in
+   * @default absent when any model call omits usage metadata
    */
   totalTokens?: number;
 
@@ -891,10 +891,25 @@ export interface LedgerRunResult {
    */
   checkpoints: CheckpointResult[];
 
+  /** Run-level score derived from claim health and forgetting. */
+  score: LedgerScore;
+
   /**
    * Trace-level forgetting diagnostics.
    */
   diagnostics: LedgerDiagnostics;
+}
+
+/** Auditable components of the run-level LEDGER score. */
+export interface LedgerScore {
+  /** Harmonic mean of the observed score dimensions. */
+  value: number;
+
+  /** Supported current claims divided by all current claims across checkpoints. */
+  claimHealth: number;
+
+  /** Forgotten divided by determinate obsolete-fact checks, when observed. */
+  forgetting?: number;
 }
 
 // ---------------------------------------------------------------------------
