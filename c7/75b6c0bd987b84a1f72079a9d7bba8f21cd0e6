@@ -1,0 +1,37 @@
+CHANGELOG.md
+  s_b7a9f39aa7a050::t_e98f34736ab021 3-22
+openwiki/.last-update.json
+  s_b7a9f39aa7a050::t_d869fbbdeed108 2,4
+openwiki/agent/workflow.md
+  s_b7a9f39aa7a050::t_73c6de2cb5d301 40,43,130,138,164,166-167,169,189-191
+openwiki/architecture/overview.md
+  s_b7a9f39aa7a050::t_0d8fc8f952a4f4 12-15,21,23-25,30,49,66,69,78,93,107,114-117,126,130,134,139-144,160-161,166,176-178
+openwiki/cli/usage.md
+  s_b7a9f39aa7a050::t_36bdb032acc28b 14,45,53,77,81,99,139,160,242,251,258,266-270,272,276-285,289,293
+openwiki/integrations/connectors.md
+  s_b7a9f39aa7a050::t_c9bae76a7b7363 4,8,14,20,38,40-42,62,66,70,72,76,86-87
+openwiki/integrations/index.md
+  s_b7a9f39aa7a050::t_f3bc92120bc3ea 3
+openwiki/operations/credentials-and-updates.md
+  s_b7a9f39aa7a050::t_a985d90a598ab4 30,75,110,165,173,246,291,299-301,305-306,311,315-317
+openwiki/quickstart.md
+  s_b7a9f39aa7a050::t_bcb436d3af186f 10,33,40-44,57,67-68,74-78,87,102-103,109-113,125,127,133,149-157,166
+package.json
+  s_b7a9f39aa7a050::t_3b1e6858d2a561 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "c775b6c0bd987b84a1f72079a9d7bba8f21cd0e6",
+  "prompts": {},
+  "sessions": {
+    "s_b7a9f39aa7a050": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6df1b475-f278-450d-9c60-e6461fcc65e7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
