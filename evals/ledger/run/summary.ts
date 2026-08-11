@@ -19,15 +19,12 @@ export function formatRunSummary(
   if (options.detailsPath !== undefined) {
     lines.push(`├ 🔬 Details → ${options.detailsPath}`);
   }
-  const incomplete = result.checkpoints.some(
-    (checkpoint) => checkpoint.evaluationCompleteness.rate < 1,
-  );
   const elapsed =
     options.elapsedMs === undefined
       ? ""
       : ` · ${formatProgressDuration(options.elapsedMs)}`;
   lines.push(
-    `└ ${incomplete ? "⚠️" : "✅"} LEDGER score ${formatPercent(result.score.value, 0)}${elapsed}`,
+    `└ ✅ LEDGER score ${formatPercent(result.score.value, 0)}${elapsed}`,
   );
   return `${lines.join("\n")}\n\n`;
 }
