@@ -47,9 +47,11 @@ export type BenchmarkProgressEvent =
   | {
       type: "checkpoint-complete";
       checkpointId: string;
-      coverageScore: number;
-      precisionScore: number | undefined;
-      hallucinationRate: number | undefined;
+      claimCount: number;
+      supportedRate: number;
+      stalenessRate: number;
+      hallucinationRate: number;
+      unverifiedRate: number;
       forgottenCount: number;
       obsoleteFactCount: number;
       evaluationCompleteness: number;

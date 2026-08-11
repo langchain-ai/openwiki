@@ -105,7 +105,7 @@ describe("invokeStructuredModel", () => {
 
     const result = await invokeStructuredModel({
       model: fakeModel(control),
-      pass: "coverage",
+      pass: "forgetting",
       checkpointId: "T0",
       systemPrompt: "system instructions",
       taskPrompt: "bounded task",
@@ -155,7 +155,7 @@ describe("invokeStructuredModel", () => {
 
     const result = await invokeStructuredModel({
       model: fakeModel(control),
-      pass: "coverage",
+      pass: "forgetting",
       checkpointId: "T1",
       systemPrompt: "system",
       taskPrompt: "task",
@@ -226,7 +226,7 @@ describe("invokeStructuredModel", () => {
     try {
       await invokeStructuredModel({
         model: fakeModel(controller([new Error("x"), new Error("y")])),
-        pass: "coverage",
+        pass: "forgetting",
         checkpointId: "T0",
         systemPrompt: "system",
         taskPrompt: "SECRET ARTIFACT CONTENT",
@@ -246,7 +246,7 @@ describe("invokeStructuredModel", () => {
       await expect(
         invokeStructuredModel({
           model: fakeModel(control),
-          pass: "coverage",
+          pass: "forgetting",
           checkpointId: "T0",
           systemPrompt: "system",
           taskPrompt: "task",

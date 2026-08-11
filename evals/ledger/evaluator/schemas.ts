@@ -1,48 +1,6 @@
 import { z } from "zod";
 
 /**
- * Coverage verdict for one fact.
- */
-export const factVerdictSchema = z.enum([
-  "correct",
-  "partial",
-  "missing",
-  "contradicted",
-]);
-
-/**
- * The coverage pass's raw output: one verdict per fact the classifier received.
- * Evidence contains supplied artifact section IDs and defaults to an empty
- * array so an omitted field is not a schema error.
- *
- * Fields are ordered reasoning-first: the classifier writes its `rationale` and
- * cites `evidence` before committing a `verdict`, so the label is conditioned on
- * the completed reasoning rather than fixed before it.
- */
-export const coverageOutputSchema = z.object({
-  /**
-   * One verdict per requested fact. Defaults to an empty array so a degenerate
-   * tool-call payload (Anthropic structured output is forced tool use, and the
-   * model can return `{}`) parses to an empty batch and degrades per item rather
-   * than crashing the pass at the schema boundary. Every requested target is
-   * still reconciled by `resolveCoverageItem`, so a missing item is repaired or
-   * degraded, never silently dropped.
-   *
-   * @default [] when the model omits the field entirely
-   */
-  evaluations: z
-    .array(
-      z.object({
-        factId: z.string(),
-        rationale: z.string(),
-        evidence: z.array(z.string()).default([]),
-        verdict: factVerdictSchema,
-      }),
-    )
-    .default([]),
-});
-
-/**
  * The forgetting pass's raw output: one verdict per obsolete fact version the
  * classifier received. Evidence contains supplied artifact section IDs. Results
  * are keyed by `factVersionId`, distinguishing a lingering earlier version from
@@ -190,11 +148,6 @@ export const precisionJudgmentOutputSchema = z.object({
 export const precisionJudgmentBatchOutputSchema = z.object({
   evaluations: z.array(precisionJudgmentEvaluationSchema),
 });
-
-/**
- * Inferred type of the coverage pass output.
- */
-export type CoverageOutput = z.infer<typeof coverageOutputSchema>;
 
 /**
  * Inferred type of the forgetting pass output.

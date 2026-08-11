@@ -199,7 +199,7 @@ export async function loadSavedEvidence(
 /**
  * Load the original completed result whose artifacts are being re-evaluated.
  * Only metadata and execution observations are reused; every semantic verdict
- * and score is recomputed.
+ * and checkpoint measurement is recomputed.
  *
  * @param runDir - Directory containing `result.json`.
  *

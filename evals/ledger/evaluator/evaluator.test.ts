@@ -6,39 +6,17 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
 import { ModelEvaluationBackend } from "./model-backend.js";
-import { resolveCoverage, runCoveragePass } from "./coverage.js";
 import { SectionBm25Index } from "./retrieval.js";
 import { EvaluationError } from "../core/errors.js";
 import { resolveForgetting, runForgettingPass } from "./forgetting.js";
 import {
   assertionExtractionOutputSchema,
-  coverageOutputSchema,
   forgettingOutputSchema,
   precisionJudgmentOutputSchema,
 } from "./schemas.js";
-import type {
-  KnowledgeArtifact,
-  ObsoleteFactTarget,
-  SurfaceItem,
-} from "../core/types.js";
+import type { KnowledgeArtifact, ObsoleteFactTarget } from "../core/types.js";
 
 describe("schemas", () => {
-  test("coverage schema defaults absent evidence to an empty array", () => {
-    const parsed = coverageOutputSchema.parse({
-      evaluations: [{ factId: "a", verdict: "correct", rationale: "ok" }],
-    });
-
-    expect(parsed.evaluations[0].evidence).toEqual([]);
-  });
-
-  test("coverage schema rejects an unknown verdict", () => {
-    expect(() =>
-      coverageOutputSchema.parse({
-        evaluations: [{ factId: "a", verdict: "great", rationale: "" }],
-      }),
-    ).toThrow();
-  });
-
   test("precision and forgetting schemas accept well-formed output", () => {
     const extraction = assertionExtractionOutputSchema.parse({
       units: [
@@ -81,80 +59,6 @@ describe("schemas", () => {
         ],
       }),
     ).not.toThrow();
-  });
-});
-
-describe("resolveCoverage", () => {
-  const surface: SurfaceItem[] = [
-    {
-      factId: "a",
-      factVersionId: "a@T0",
-      kind: "symbol",
-      name: "a",
-      statement: "A",
-    },
-    {
-      factId: "b",
-      factVersionId: "b@T0",
-      kind: "symbol",
-      name: "b",
-      statement: "B",
-    },
-  ];
-
-  test("maps every requested fact and attaches the factVersionId", () => {
-    const resolved = resolveCoverage(surface, {
-      evaluations: [
-        {
-          factId: "a",
-          verdict: "correct",
-          evidence: ["artifact/a.md"],
-          rationale: "",
-        },
-        { factId: "b", verdict: "missing", evidence: [], rationale: "" },
-      ],
-    });
-
-    expect(resolved.map((e) => [e.factId, e.factVersionId, e.verdict])).toEqual(
-      [
-        ["a", "a@T0", "correct"],
-        ["b", "b@T0", "missing"],
-      ],
-    );
-  });
-
-  test("throws when a requested fact has no verdict", () => {
-    expect(() =>
-      resolveCoverage(surface, {
-        evaluations: [
-          { factId: "a", verdict: "correct", evidence: [], rationale: "" },
-        ],
-      }),
-    ).toThrow(EvaluationError);
-  });
-
-  test("throws on an unknown fact id", () => {
-    expect(() =>
-      resolveCoverage(surface, {
-        evaluations: [
-          { factId: "a", verdict: "correct", evidence: [], rationale: "" },
-          { factId: "b", verdict: "correct", evidence: [], rationale: "" },
-          { factId: "ghost", verdict: "correct", evidence: [], rationale: "" },
-        ],
-      }),
-    ).toThrow(EvaluationError);
-  });
-
-  test("throws on a duplicate verdict", () => {
-    expect(() =>
-      resolveCoverage(surface, {
-        evaluations: [
-          { factId: "a", verdict: "correct", evidence: [], rationale: "" },
-          { factId: "a", verdict: "partial", evidence: [], rationale: "" },
-          { factId: "b", verdict: "correct", evidence: [], rationale: "" },
-        ],
-      }),
-    ).toThrow(EvaluationError);
   });
 });
 
@@ -286,17 +190,6 @@ describe("empty-input passes short-circuit", () => {
   // point is that no agent is built and no provider call is made.
   const model = {} as unknown as BaseChatModel;
 
-  test("coverage returns no evaluations without invoking a model", async () => {
-    await expect(
-      runCoveragePass({
-        model,
-        checkpointId: "T0",
-        surface: [],
-        index: new SectionBm25Index([]),
-      }),
-    ).resolves.toEqual([]);
-  });
-
   test("forgetting returns no evaluations without invoking a model", async () => {
     await expect(
       runForgettingPass({
@@ -376,7 +269,7 @@ describe.skipIf(!process.env.LEDGER_LIVE)(
         obsoleteFacts: [],
       });
 
-      expect(evaluation.factEvaluations[0].verdict).toBe("correct");
+      expect(evaluation.precisionEvaluations[0].verdict).toBe("supported");
     });
   },
 );

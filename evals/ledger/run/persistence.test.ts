@@ -38,19 +38,7 @@ function sampleResult(benchmarkName: string): LedgerRunResult {
       system: { provider: "fake-provider" },
     },
     checkpoints: [],
-    score: {
-      traceCoverage: 1,
-      tracePrecision: 1,
-      traceHallucinationRate: 0,
-      traceStalenessRate: 0,
-      traceUnverifiedRate: 0,
-      evaluationCompleteness: 1,
-      quality: 1,
-      maintenanceRates: {},
-      ledgerScore: 1,
-    },
     diagnostics: {
-      recovery: { recovered: 0, eligible: 0 },
       staleKnowledge: { records: [], unresolvedCount: 0 },
     },
   };
@@ -71,33 +59,23 @@ function checkpointWith(
 ): CheckpointScore {
   return {
     checkpointId,
-    coverage: {
-      correct: 0,
-      partial: 0,
-      missing: 0,
-      contradicted: 0,
-      indeterminate: 0,
-      total: 0,
-      score: 0,
-    },
-    precision: {
+    claims: {
       supported: 0,
       invented: 0,
       stale: 0,
       unverified: precisionEvaluations.filter(
-        (claim) => claim.verdict === "unverified",
+        (claim) => claim.tense === "current" && claim.verdict === "unverified",
       ).length,
-      adjudicated: 0,
-      total: precisionEvaluations.length,
-      hallucinationRate: undefined,
-      stalenessRate: undefined,
+      total: precisionEvaluations.filter((claim) => claim.tense === "current")
+        .length,
+      supportedRate: 0,
+      hallucinationRate: 0,
+      stalenessRate: 0,
       unverifiedRate: 0,
-      score: undefined,
     },
     evaluationCompleteness: { judged: 0, indeterminate: 0, total: 0, score: 1 },
     efficiency: { durationMs: 1000, skipped: false },
     evaluations: {
-      factEvaluations: [],
       precisionEvaluations,
       forgettingEvaluations: [],
     },
@@ -179,6 +157,28 @@ describe("writeUnverifiedClaims", () => {
     await expect(
       stat(path.join(runDir, "unverified-claims.md")),
     ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  test("keeps historical unverified claims audit-only", async () => {
+    const runDir = await scratchRunDir();
+    const result = sampleResult("calc-evolution");
+    result.checkpoints = [
+      checkpointWith("T0", [
+        {
+          assertion: "A removed option once existed.",
+          location: "history.md",
+          verdict: "unverified",
+          tense: "historical",
+          adjudicatedBy: "none",
+          evidenceIds: [],
+          rationale: "No historical evidence was retrieved.",
+        },
+      ]),
+    ];
+
+    await expect(
+      writeUnverifiedClaims(runDir, result),
+    ).resolves.toBeUndefined();
   });
 });
 

@@ -24,27 +24,6 @@ export interface EvaluationExcerpt {
 }
 
 /**
- * One source-surface item and only the excerpts selected for its coverage
- * judgment.
- */
-export interface CoveragePromptTarget {
-  /**
-   * Stable logical fact identifier.
-   */
-  factId: string;
-
-  /**
-   * Human-readable claim describing the surface item present at the checkpoint.
-   */
-  statement: string;
-
-  /**
-   * Artifact excerpts the model may use for this item.
-   */
-  excerpts: EvaluationExcerpt[];
-}
-
-/**
  * One obsolete fact version and only the excerpts selected for its forgetting
  * judgment.
  */
@@ -151,38 +130,6 @@ export interface PrecisionEvidenceExcerpt {
    */
   content: string;
 }
-
-/**
- * System instructions for bounded coverage classification.
- */
-export const COVERAGE_SYSTEM = `You are a strict, impartial documentation coverage classifier.
-
-You receive items from a codebase's public surface (exported symbols, source
-files, and the version) and BM25-selected artifact excerpts grouped by item. You
-may use any excerpt present in the bounded request. Do not use outside knowledge.
-Do not assume access to files, tools, or source code.
-
-You judge mention only: whether the artifact mentions each surface item anywhere.
-You do not judge whether the artifact describes the item completely or correctly.
-
-For each item write the rationale first and cite evidence, then name the verdict
-last, emitting fields in that schema order. The verdict must match the
-conclusion the rationale reached; never leave a label standing against your own
-reasoning.
-
-Rules:
-- Return exactly one evaluation per requested factId.
-- Evidence entries must be sectionId values supplied anywhere in this bounded request.
-- "correct" means at least one excerpt names or refers to this surface item: the
-  exported symbol by name, the source file by its path or clear description, or
-  the version string. A passing mention is enough; completeness is not required.
-- "missing" means no supplied excerpt names or refers to this surface item.
-- Use only "correct" or "missing". A mention either exists or it does not, so do
-  not return "partial" or "contradicted".
-- "correct" must cite at least one excerpt containing the mention. "missing" may
-  cite related-but-insufficient excerpts, but evidence is optional because absence
-  may require exhausting all supplied sections.
-- Return only the structured response.`;
 
 /**
  * System instructions for bounded obsolete-knowledge classification.
@@ -332,22 +279,6 @@ Rules:
 - Return evaluations and evidenceIds as actual JSON arrays, never as JSON-encoded
   strings.
 - Return only the structured response.`;
-
-/**
- * Build one bounded coverage-classification task.
- *
- * @param targets - Surface items paired with BM25-selected candidate excerpts.
- *
- * @returns Stable JSON-bearing task prompt.
- */
-export function coveragePrompt(targets: CoveragePromptTarget[]): string {
-  return `Judge whether the artifact mentions every surface item below, using only excerpts supplied anywhere in this bounded request.
-
-Return exactly one evaluation per factId with verdict, evidence, and rationale.
-
-Targets (JSON):
-${JSON.stringify(targets, null, 2)}`;
-}
 
 /**
  * Build one bounded obsolete-knowledge-classification task.

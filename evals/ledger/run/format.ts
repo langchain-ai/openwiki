@@ -9,8 +9,7 @@
 /**
  * Render a metric fraction as a percentage string, or a dash when the value is
  * absent. An absent value (`undefined`) covers both the "no adjudicated claim"
- * and the "dimension did not occur" cases, which the score never distinguishes
- * at render time.
+ * and the "dimension did not occur" cases.
  *
  * @param value - Fraction between zero and one, or undefined when absent.
  * @param decimals - Number of decimal places in the rendered percentage.

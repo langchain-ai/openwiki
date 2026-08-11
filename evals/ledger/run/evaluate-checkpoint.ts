@@ -10,19 +10,15 @@ import type {
   CheckpointTransitions,
   EvaluationBackend,
   EvidenceCorpus,
-  FactEvaluation,
   KnowledgeArtifact,
   LedgerCheckpoint,
   LedgerExecutionMetrics,
-  MaintenanceCounts,
   ObsoleteFactTarget,
   SurfaceItem,
 } from "../core/types.js";
 import {
-  computeCoverage,
+  computeClaimState,
   computeEvaluationCompleteness,
-  computeMaintenanceCounts,
-  computePrecision,
 } from "../scoring/metrics.js";
 import type { BenchmarkProgressReporter } from "./progress-events.js";
 
@@ -56,12 +52,6 @@ export interface CheckpointCarry {
   previousSurface: SurfaceItem[] | undefined;
 
   /**
-   * The previous checkpoint's fact evaluations, used by maintenance scoring to
-   * detect revived knowledge across the boundary.
-   */
-  previousFactEvaluations: FactEvaluation[];
-
-  /**
    * Obsolete fact versions still under the forgetting watch set entering this
    * checkpoint. Sticky: a version stays until the requirements revive it.
    */
@@ -79,7 +69,6 @@ export function initialCarry(): CheckpointCarry {
     previousArtifact: undefined,
     previousCheckpointId: undefined,
     previousSurface: undefined,
-    previousFactEvaluations: [],
     outstandingObsolete: [],
   };
 }
@@ -104,7 +93,7 @@ export interface EvaluateCheckpointInputs {
 
   /**
    * Zero-based position of this checkpoint in the trace. Index 0 has no inbound
-   * transition, so no surface diff or maintenance counts are produced for it.
+   * transition, so no surface diff or obsolete facts are produced for it.
    */
   index: number;
 
@@ -141,12 +130,12 @@ export interface EvaluateCheckpointInputs {
 }
 
 /**
- * The outcome of evaluating one checkpoint: the score to record, the history
+ * The outcome of evaluating one checkpoint: the measurements to record, history
  * entry to append, and the carry to pass to the next checkpoint.
  */
 export interface EvaluatedCheckpoint {
   /**
-   * The checkpoint score to push onto the run's score list.
+   * The checkpoint measurements to append to the run result.
    */
   score: CheckpointScore;
 
@@ -165,8 +154,8 @@ export interface EvaluatedCheckpoint {
  * Evaluate a single checkpoint: extract its source surface, diff it against the
  * previous checkpoint to derive transitions and newly obsolete versions, advance
  * the sticky forgetting watch set, run the evaluation backend, and reduce the raw
- * verdicts into coverage, precision, evaluation-completeness, and maintenance
- * counts. This is the loop body shared verbatim by the live runner and the
+ * verdicts into current claim-state and evaluator-completeness measurements.
+ * This is the loop body shared verbatim by the live runner and the
  * saved-run re-evaluator; the only per-caller differences (artifact/evidence
  * source and how efficiency is built) are passed in through the inputs.
  *
@@ -174,13 +163,11 @@ export interface EvaluatedCheckpoint {
  * for every later checkpoint, retired only when the requirements revive that
  * knowledge, so a version already judged forgotten is still re-checked later. That
  * is what lets the Stale-Knowledge Lifetime diagnostic measure how long stale
- * knowledge lingers; it does not affect the Maintenance Score, because
- * `computeMaintenanceCounts` only matches forgetting verdicts against the current
- * boundary's own obsolete versions.
+ * knowledge lingers.
  *
  * @param inputs - The checkpoint evaluation inputs.
  *
- * @returns The score, history entry, and next carry for this checkpoint.
+ * @returns The measurements, history entry, and next carry for this checkpoint.
  */
 export async function evaluateCheckpoint(
   inputs: EvaluateCheckpointInputs,
@@ -237,20 +224,21 @@ export async function evaluateCheckpoint(
     transitions,
   });
 
-  const coverage = computeCoverage(evaluation.factEvaluations);
-  const precision = computePrecision(evaluation.precisionEvaluations);
+  const claims = computeClaimState(evaluation.precisionEvaluations);
   const evaluationCompleteness = computeEvaluationCompleteness(
-    evaluation.factEvaluations,
     evaluation.precisionEvaluations,
     evaluation.forgettingEvaluations,
+    evaluation.warnings ?? [],
   );
 
   reportProgress({
     type: "checkpoint-complete",
     checkpointId: checkpoint.id,
-    coverageScore: coverage.score,
-    precisionScore: precision.score,
-    hallucinationRate: precision.hallucinationRate,
+    claimCount: claims.total,
+    supportedRate: claims.supportedRate,
+    stalenessRate: claims.stalenessRate,
+    hallucinationRate: claims.hallucinationRate,
+    unverifiedRate: claims.unverifiedRate,
     forgottenCount: evaluation.forgettingEvaluations.filter(
       (item) => item.verdict === "forgotten",
     ).length,
@@ -260,29 +248,14 @@ export async function evaluateCheckpoint(
     evaluationItemCount: evaluationCompleteness.total,
   });
 
-  let maintenanceCounts: MaintenanceCounts | undefined;
-
-  if (transitions !== undefined) {
-    maintenanceCounts = computeMaintenanceCounts(
-      transitions,
-      evaluation.factEvaluations,
-      evaluation.forgettingEvaluations,
-      carry.previousFactEvaluations,
-    );
-  }
-
   const score: CheckpointScore = {
     checkpointId: checkpoint.id,
-    coverage,
-    precision,
+    claims,
     evaluationCompleteness,
-    maintenanceCounts,
     efficiency,
-    // Retain the raw verdicts, not just their reduced counts, so a score is
-    // explainable: precision classes remain distinguishable, and forgetting
-    // verdicts make an otherwise invisible pass visible in the persisted result.
+    // Retain the raw verdicts, not just their reduced counts, so each claim state
+    // and forgetting result remains explainable in the persisted result.
     evaluations: {
-      factEvaluations: evaluation.factEvaluations,
       precisionEvaluations: evaluation.precisionEvaluations,
       forgettingEvaluations: evaluation.forgettingEvaluations,
       warnings: evaluation.warnings ?? [],
@@ -291,9 +264,7 @@ export async function evaluateCheckpoint(
 
   const history: CheckpointEvaluationRecord = {
     checkpointId: checkpoint.id,
-    factEvaluations: evaluation.factEvaluations,
     forgettingEvaluations: evaluation.forgettingEvaluations,
-    transitions,
   };
 
   const nextCarry: CheckpointCarry = {
@@ -305,7 +276,6 @@ export async function evaluateCheckpoint(
     previousArtifact: artifact,
     previousCheckpointId: checkpoint.id,
     previousSurface: surface,
-    previousFactEvaluations: evaluation.factEvaluations,
   };
 
   return { score, history, nextCarry };

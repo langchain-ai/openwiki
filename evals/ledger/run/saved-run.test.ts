@@ -37,19 +37,7 @@ function result(startedAt: string): LedgerRunResult {
       system: { provider: "fake", modelId: "system" },
     },
     checkpoints: [],
-    score: {
-      traceCoverage: 0,
-      tracePrecision: 0,
-      traceHallucinationRate: 0,
-      traceStalenessRate: 0,
-      traceUnverifiedRate: 0,
-      evaluationCompleteness: 1,
-      quality: 0,
-      maintenanceRates: {},
-      ledgerScore: 0,
-    },
     diagnostics: {
-      recovery: { recovered: 0, eligible: 0 },
       staleKnowledge: { records: [], unresolvedCount: 0 },
     },
   };

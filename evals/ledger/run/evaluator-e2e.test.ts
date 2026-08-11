@@ -86,7 +86,6 @@ vi.mock("../replay/workspace.js", async (importOriginal) => {
 });
 
 const {
-  COVERAGE_SYSTEM,
   FORGETTING_SYSTEM,
   PRECISION_EXTRACTION_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
@@ -151,32 +150,6 @@ function hangUntilAborted(signal: AbortSignal): Promise<never> {
  * @returns A structured evaluator response.
  */
 function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
-  if (systemPrompt === COVERAGE_SYSTEM) {
-    const targets = parsePromptJson<
-      Array<{
-        factId: string;
-        statement: string;
-        excerpts: Array<{ sectionId: string; content: string }>;
-      }>
-    >(taskPrompt, "Targets (JSON):\n");
-
-    // The evolving artifact names every surface item, so coverage is a full
-    // mention floor at every checkpoint. Cite the first supplied excerpt when one
-    // exists so the evidence field is populated the way the real model would.
-    return {
-      evaluations: targets.map((target) => {
-        const excerpt = target.excerpts[0];
-
-        return {
-          factId: target.factId,
-          verdict: "correct",
-          evidence: excerpt ? [excerpt.sectionId] : [],
-          rationale: "The artifact mentions the surface item.",
-        };
-      }),
-    };
-  }
-
   if (systemPrompt === FORGETTING_SYSTEM) {
     const targets = parsePromptJson<
       Array<{
@@ -468,88 +441,46 @@ describe("direct evaluator end to end", () => {
       startedAt: "2026-01-01T00:00:00.000Z",
     });
 
-    // The surface at each checkpoint is the source file plus its exported
-    // symbols: T0 has `stable`, `changed`, `removed` (+ the file) for 4 items; T1
-    // adds `introduced` for 5; T2 drops `removed` back to 4. The artifact mentions
-    // all of them, so coverage is a full mention floor throughout.
-    expect(result.checkpoints.map((checkpoint) => checkpoint.coverage)).toEqual(
-      [
-        {
-          correct: 4,
-          partial: 0,
-          missing: 0,
-          contradicted: 0,
-          indeterminate: 0,
-          total: 4,
-          score: 1,
-        },
-        {
-          correct: 5,
-          partial: 0,
-          missing: 0,
-          contradicted: 0,
-          indeterminate: 0,
-          total: 5,
-          score: 1,
-        },
-        {
-          correct: 4,
-          partial: 0,
-          missing: 0,
-          contradicted: 0,
-          indeterminate: 0,
-          total: 4,
-          score: 1,
-        },
-      ],
-    );
-    expect(
-      result.checkpoints.map((checkpoint) => checkpoint.precision),
-    ).toEqual([
+    expect(result.checkpoints.map((checkpoint) => checkpoint.claims)).toEqual([
       {
         supported: 3,
         invented: 1,
         stale: 0,
         unverified: 0,
-        adjudicated: 4,
         total: 4,
+        supportedRate: 0.75,
         hallucinationRate: 0.25,
         stalenessRate: 0,
         unverifiedRate: 0,
-        score: 0.75,
       },
       {
         supported: 4,
         invented: 1,
         stale: 0,
         unverified: 0,
-        adjudicated: 5,
         total: 5,
+        supportedRate: 0.8,
         hallucinationRate: 0.2,
         stalenessRate: 0,
         unverifiedRate: 0,
-        score: 0.8,
       },
       {
         supported: 3,
         invented: 1,
         stale: 0,
         unverified: 0,
-        adjudicated: 4,
         total: 4,
+        supportedRate: 0.75,
         hallucinationRate: 0.25,
         stalenessRate: 0,
         unverifiedRate: 0,
-        score: 0.75,
       },
     ]);
-    expect(result.score.maintenanceRates).toEqual({
-      newKnowledgeDiscovery: 1,
-      changedKnowledgeCorrection: 1,
-      completeForgetting: 1,
-      stableRetention: 1,
-    });
-    expect(result.score.evaluationCompleteness).toBe(1);
+    expect(
+      result.checkpoints.every(
+        (checkpoint) => checkpoint.evaluationCompleteness.score === 1,
+      ),
+    ).toBe(true);
     expect(
       result.checkpoints.flatMap(
         (checkpoint) =>
@@ -591,14 +522,11 @@ describe("direct evaluator end to end", () => {
         }),
       ]),
     );
-    // No census-accounting stage: each checkpoint runs coverage, then extraction
-    // and grounding; forgetting runs only at T2, where obsolete versions exist.
-    // The passes now run concurrently within each checkpoint, so the first-wave
-    // order (coverage / forgetting / extraction) is non-deterministic; assert
-    // per-pass counts rather than the exact sequence.
+    // Each checkpoint runs extraction and grounding; forgetting runs only at T2,
+    // where obsolete versions exist. The passes run concurrently within each
+    // checkpoint, so assert per-pass counts rather than the exact sequence.
     const promptCount = (prompt: string): number =>
       modelControl.systemPrompts.filter((seen) => seen === prompt).length;
-    expect(promptCount(COVERAGE_SYSTEM)).toBe(3);
     expect(promptCount(FORGETTING_SYSTEM)).toBe(1);
     expect(promptCount(PRECISION_EXTRACTION_SYSTEM)).toBe(3);
     expect(promptCount(PRECISION_JUDGMENT_SYSTEM)).toBe(3);
@@ -614,9 +542,9 @@ describe("direct evaluator end to end", () => {
         expect(judgments).toBeLessThanOrEqual(extractions);
       }
     }
-    // The three passes overlap rather than running strictly serially.
+    // Forgetting and precision overlap rather than running strictly serially.
     expect(modelControl.maxActive).toBeGreaterThan(1);
-    expect(modelControl.signals).toHaveLength(10);
+    expect(modelControl.signals).toHaveLength(7);
     expect(workspaceRoots).toHaveLength(1);
     await expect(stat(workspaceRoots[0])).rejects.toMatchObject({
       code: "ENOENT",
@@ -641,19 +569,19 @@ describe("direct evaluator end to end", () => {
         }),
       ]),
     );
-    expect(formatReport(result)).toContain("Invented claims (1 of 4)");
+    expect(formatReport(result)).toContain("Invented current claims (1)");
   });
 
   test("times out a hanging pass, degrades it fail-soft, and still completes and cleans up", async () => {
-    modelControl.hangingSystemPrompt = COVERAGE_SYSTEM;
+    modelControl.hangingSystemPrompt = FORGETTING_SYSTEM;
     const backend = new ModelEvaluationBackend({
       provider: "anthropic",
       modelId: "scripted-model",
       timeoutMs: 10,
     });
 
-    // A persistently hanging coverage pass no longer aborts the run: it times
-    // out, exhausts isolated repair, and degrades each coverage verdict to
+    // A persistently hanging forgetting pass no longer aborts the run: it times
+    // out, exhausts isolated repair, and degrades each forgetting verdict to
     // indeterminate, so the benchmark resolves rather than rejecting.
     const result = await runBenchmark({
       benchmark: benchmark(repo),
@@ -663,20 +591,22 @@ describe("direct evaluator end to end", () => {
       startedAt: "2026-01-01T00:00:00.000Z",
     });
 
-    const coverageVerdicts = result.checkpoints.flatMap(
-      (checkpoint) => checkpoint.evaluations?.factEvaluations ?? [],
+    const forgettingVerdicts = result.checkpoints.flatMap(
+      (checkpoint) => checkpoint.evaluations?.forgettingEvaluations ?? [],
     );
-    expect(coverageVerdicts.length).toBeGreaterThan(0);
+    expect(forgettingVerdicts.length).toBeGreaterThan(0);
     expect(
-      coverageVerdicts.every((verdict) => verdict.verdict === "indeterminate"),
+      forgettingVerdicts.every(
+        (verdict) => verdict.verdict === "indeterminate",
+      ),
     ).toBe(true);
     expect(
-      coverageVerdicts.every((verdict) =>
-        /pass "coverage" failed after 2 attempts/u.test(verdict.rationale),
+      forgettingVerdicts.every((verdict) =>
+        /pass "forgetting" failed after 2 attempts/u.test(verdict.rationale),
       ),
     ).toBe(true);
 
-    // The timed-out coverage invocations were aborted; the concurrent precision
+    // The timed-out forgetting invocations were aborted; the concurrent precision
     // and forgetting invocations completed normally and were not.
     expect(modelControl.signals.some((signal) => signal.aborted)).toBe(true);
 

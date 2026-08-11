@@ -219,10 +219,10 @@ const UNVERIFIED_CLAIMS_BASENAME = "unverified-claims.md";
 
 /**
  * Persist the human-readable worklist of claims the source evidence could neither
- * support nor refute. These claims never enter a scored denominator, so they are
- * invisible in the metrics; the file gives a reader the concrete assertions and a
- * clear next action (review each for a hidden hallucination or a gap in the
- * evidence retrieved from source). The file is written with a constant basename
+ * support nor refute. They remain visible in the shared-denominator claim state;
+ * this file gives a reader the concrete assertions and a clear next action
+ * (review each for a hidden hallucination or a gap in source evidence). It is
+ * written with a constant basename
  * directly inside the already confined run directory, so no untrusted input
  * reaches the write path.
  *
@@ -242,7 +242,9 @@ export async function writeUnverifiedClaims(
   for (const checkpoint of result.checkpoints) {
     const unverified = (
       checkpoint.evaluations?.precisionEvaluations ?? []
-    ).filter((claim) => claim.verdict === "unverified");
+    ).filter(
+      (claim) => claim.tense === "current" && claim.verdict === "unverified",
+    );
     if (unverified.length === 0) {
       continue;
     }
@@ -264,8 +266,8 @@ export async function writeUnverifiedClaims(
     "",
     `${result.metadata.benchmarkName} · ${result.metadata.startedAt}`,
     "",
-    "These claims are neither supported nor refuted by the source evidence, so they",
-    "never entered a scored denominator. Read each one: a claim the source cannot",
+    "These claims are neither supported nor refuted by the source evidence.",
+    "Read each one: a claim the source cannot",
     "confirm is either a hidden hallucination or a gap in the evidence retrieved",
     "from source at this checkpoint.",
     "",
@@ -281,8 +283,8 @@ export async function writeUnverifiedClaims(
 
 /**
  * Persist a run result as `result.json` in a per-run subdirectory beneath the
- * results directory. Nothing secret is written: the result contains only scores,
- * metadata, and model ids, never API keys.
+ * results directory. Nothing secret is written: the result contains only claim
+ * measurements, metadata, and model ids, never API keys.
  *
  * The per-run directory name is `<name-slug>-<timestamp-slug>`, where the name is
  * sanitized to a single safe path segment. As defense in depth beyond that

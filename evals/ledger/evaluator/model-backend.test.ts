@@ -60,7 +60,6 @@ vi.mock("../../../src/agent/index.js", () => ({
 
 const { ModelEvaluationBackend } = await import("./model-backend.js");
 const {
-  COVERAGE_SYSTEM,
   FORGETTING_SYSTEM,
   PRECISION_EXTRACTION_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
@@ -79,18 +78,6 @@ describe("ModelEvaluationBackend", () => {
       checkpointId: string;
       keptAssertionCount: number;
     }> = [];
-    control.responsesByPrompt.set(COVERAGE_SYSTEM, [
-      {
-        evaluations: [
-          {
-            factId: "current",
-            verdict: "correct",
-            evidence: ["guide.md::0000"],
-            rationale: "The artifact states the active fact.",
-          },
-        ],
-      },
-    ]);
     control.responsesByPrompt.set(FORGETTING_SYSTEM, [
       {
         evaluations: [
@@ -195,7 +182,6 @@ describe("ModelEvaluationBackend", () => {
     // non-deterministic, so assert the set rather than the sequence.
     expect([...control.systemPrompts].sort()).toEqual(
       [
-        COVERAGE_SYSTEM,
         FORGETTING_SYSTEM,
         PRECISION_EXTRACTION_SYSTEM,
         PRECISION_JUDGMENT_SYSTEM,
@@ -212,15 +198,6 @@ describe("ModelEvaluationBackend", () => {
       { checkpointId: "T1", keptAssertionCount: 1 },
     ]);
     expect(result).toEqual({
-      factEvaluations: [
-        {
-          factId: "current",
-          factVersionId: "current@T1",
-          verdict: "correct",
-          evidence: ["guide.md::0000"],
-          rationale: "The artifact states the active fact.",
-        },
-      ],
       forgettingEvaluations: [
         {
           factId: "old",

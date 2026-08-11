@@ -177,7 +177,7 @@ export interface BoundedPassSpec<
 
   /**
    * Capitalized human label used to prefix evaluation error messages (for
-   * example `"Coverage"` yields `"Coverage evaluator returned ..."`).
+   * example `"Forgetting"` yields `"Forgetting evaluator returned ..."`).
    */
   label: string;
 
@@ -194,8 +194,8 @@ export interface BoundedPassSpec<
 
   /**
    * The evidence-free verdict a target starts at and that an exhaustive fallback
-   * scan tries to flip (for example coverage `"missing"`, forgetting
-   * `"forgotten"`). Any other verdict must cite evidence.
+   * scan tries to flip (for example forgetting `"forgotten"`). Any other
+   * verdict must cite evidence.
    */
   negativeVerdict: string;
 
@@ -628,8 +628,7 @@ async function resolveFallback<
 /**
  * Run a bounded classification pass with BM25-first evidence and an exhaustive
  * fallback before any negative verdict becomes final. This is the control flow
- * shared by the coverage and forgetting passes; the spec supplies everything
- * pass-specific.
+ * used by the forgetting pass; the spec supplies everything pass-specific.
  *
  * @param spec - The pass definition.
  * @param runtime - Model, checkpoint, and batching configuration.

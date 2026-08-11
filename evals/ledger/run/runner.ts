@@ -2,7 +2,7 @@ import { SystemRunError } from "../core/errors.js";
 import { captureArtifact } from "../replay/artifact.js";
 import { computeChurn } from "../scoring/churn.js";
 import { GitReplay } from "../replay/git-replay.js";
-import { aggregateScore, computeDiagnostics } from "../scoring/metrics.js";
+import { computeDiagnostics } from "../scoring/metrics.js";
 import type {
   CheckpointEvaluationRecord,
   CheckpointScore,
@@ -24,7 +24,7 @@ import { evaluateCheckpoint, initialCarry } from "./evaluate-checkpoint.js";
 import type { BenchmarkProgressReporter } from "./progress-events.js";
 
 /**
- * Everything the runner needs beyond the benchmark: the system to score, the
+ * Everything the runner needs beyond the benchmark: the system to evaluate, the
  * evaluator, the resolved config, and an injected start timestamp (injected so
  * the run result is deterministic in tests).
  */
@@ -86,10 +86,10 @@ export interface RunnerInputs {
 }
 
 /**
- * Run a benchmark end to end and return the scored result. Creates an isolated
+ * Run a benchmark end to end and return the measured result. Creates an isolated
  * workspace and a guarded Git replay, validates the whole trace up front, then
  * walks it running `init` then `update`, freezes an immutable artifact at each
- * checkpoint, evaluates it, and aggregates the scores. The workspace and worktree
+ * checkpoint and evaluates it. The workspace and worktree
  * are always torn down, even on failure.
  *
  * The preflight validation, before any system runs, checks three things for the
@@ -104,9 +104,7 @@ export interface RunnerInputs {
  * judged forgotten is still re-checked at later checkpoints; that is what lets the
  * Stale-Knowledge Lifetime diagnostic measure how long stale knowledge lingers and
  * keeps a later lingering regression visible in the forgetting history. This adds
- * a forgetting-pass evaluation per watched version per checkpoint but does not
- * affect the Maintenance Score, because `computeMaintenanceCounts` only ever
- * matches forgetting verdicts against the current boundary's own obsolete versions.
+ * a forgetting-pass evaluation per watched version per checkpoint.
  *
  * @param inputs - The runner inputs.
  *
@@ -272,7 +270,6 @@ export async function runBenchmark(
         evaluatorModelId: config.evaluatorModelId,
       },
       checkpoints: scores,
-      score: aggregateScore(scores),
       diagnostics: computeDiagnostics(history),
     };
 

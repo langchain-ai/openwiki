@@ -52,25 +52,6 @@ function formatPercent(score: number | undefined): string {
 }
 
 /**
- * Format forgetting as unavailable or as a successful-removal rate and count.
- *
- * @param forgottenCount - Obsolete versions no longer presented as current.
- * @param obsoleteFactCount - Total obsolete versions evaluated.
- *
- * @returns Clear forgetting summary for one checkpoint.
- */
-function formatForgetting(
-  forgottenCount: number,
-  obsoleteFactCount: number,
-): string {
-  if (obsoleteFactCount === 0) {
-    return "-";
-  }
-
-  return `${formatPercent(forgottenCount / obsoleteFactCount)} (${forgottenCount}/${obsoleteFactCount})`;
-}
-
-/**
  * Reduce an error to one bounded terminal line.
  *
  * @param message - Raw failure message.
@@ -97,6 +78,13 @@ export function createCliProgressReporter(
   let spinnerFrame = 0;
   let spinnerMessage: string | undefined;
   let spinnerTimer: ReturnType<typeof setInterval> | undefined;
+  let completedSystem:
+    | {
+        command: "init" | "update";
+        durationMs: number;
+        skipped: boolean;
+      }
+    | undefined;
 
   /**
    * Render the current interactive spinner frame in place.
@@ -200,26 +188,37 @@ export function createCliProgressReporter(
         break;
       }
       case "system-complete": {
-        const status = event.skipped ? "skipped" : "complete";
-        completeSpinner(
-          `🤖 OpenWiki ${event.command} ${status} · ${formatProgressDuration(event.durationMs)}`,
-        );
+        completedSystem = event;
         break;
       }
-      case "artifact-captured":
-        output.write(
-          `│ 📚 ${event.loaded === true ? "Loaded" : "Captured"} ${event.documentCount} document${event.documentCount === 1 ? "" : "s"}\n`,
-        );
+      case "artifact-captured": {
+        if (event.loaded === true) {
+          output.write(
+            `│ 📚 Loaded ${event.documentCount} document${event.documentCount === 1 ? "" : "s"}\n`,
+          );
+        } else if (completedSystem !== undefined) {
+          const status = completedSystem.skipped ? "skipped" : "complete";
+          completeSpinner(
+            `🤖 OpenWiki ${completedSystem.command} ${status} · ${formatProgressDuration(completedSystem.durationMs)} · ${event.documentCount} document${event.documentCount === 1 ? "" : "s"}`,
+          );
+          completedSystem = undefined;
+        }
         break;
+      }
       case "evaluation-start":
         startSpinner(
-          `🔍 Evaluating ${event.surfaceItemCount} surface items · ${event.obsoleteFactCount} obsolete versions`,
+          `🔍 Evaluating claims · ${event.obsoleteFactCount} obsolete API facts`,
         );
         break;
       case "checkpoint-complete":
         completeSpinner(
-          `✅ ${event.checkpointId} · coverage ${formatPercent(event.coverageScore)} · precision ${formatPercent(event.precisionScore)} · hallucination ${formatPercent(event.hallucinationRate)} · forgetting ${formatForgetting(event.forgottenCount, event.obsoleteFactCount)}`,
+          `📊 claims · ${formatPercent(event.supportedRate)} supported · ${formatPercent(event.stalenessRate)} stale · ${formatPercent(event.hallucinationRate)} hallucinated · ${formatPercent(event.unverifiedRate)} unverified`,
         );
+        if (event.obsoleteFactCount > 0) {
+          output.write(
+            `│ 🧹 forgot ${event.forgottenCount}/${event.obsoleteFactCount} obsolete facts · carrying ${event.obsoleteFactCount - event.forgottenCount}\n`,
+          );
+        }
         if (event.indeterminateCount > 0) {
           output.write(
             `│    ↳ ⚠️ evaluator ${formatPercent(event.evaluationCompleteness)} complete · ${event.indeterminateCount}/${event.evaluationItemCount} indeterminate\n`,

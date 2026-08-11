@@ -65,7 +65,7 @@ export interface FinalizeRunInputs {
 /**
  * Persist a completed run and print its human-readable summary: write the
  * canonical result JSON, the rendered report, and the unverified-claims worklist,
- * then emit the run summary and results path to stderr. Shared by every entry
+ * then emit the deliberately small run summary to stderr. Shared by every entry
  * point's success path.
  *
  * @param inputs - The finalization inputs.
@@ -78,12 +78,11 @@ export async function finalizeRun(inputs: FinalizeRunInputs): Promise<void> {
   await writeRunResult(resultsDir, result);
   await writeFile(path.join(runDir, "report.md"), formatReport(result), "utf8");
 
-  const unverifiedClaimsPath = await writeUnverifiedClaims(runDir, result);
+  await writeUnverifiedClaims(runDir, result);
   process.stderr.write(
     formatRunSummary(result, {
-      unverifiedClaimsPath,
+      detailsPath: path.join(runDir, "report.md"),
       elapsedMs: performance.now() - startedMs,
     }),
   );
-  process.stderr.write(`📁 Results · ${runDir}\n`);
 }

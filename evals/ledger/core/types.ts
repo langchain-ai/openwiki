@@ -47,8 +47,8 @@ export interface LedgerTrace {
 /**
  * Author-declared honest rating of how hard a benchmark's history is for a
  * documentation system to maintain. Rendered in the run headline and report so
- * a low score on a `hard` benchmark reads differently from one on an `easy`
- * benchmark. Declared by a human, never computed from the trace.
+ * weak results on a `hard` benchmark read differently from the same results on
+ * an `easy` benchmark. Declared by a human, never computed from the trace.
  */
 export type BenchmarkDifficulty = "easy" | "medium" | "hard";
 
@@ -94,17 +94,16 @@ export type SurfaceKind = "symbol" | "file" | "version";
 /**
  * One element of a repository's public surface at a single checkpoint,
  * extracted deterministically from source by `extractSurface` (no human
- * authoring). This is the unit the coverage pass scores under its mention-only
- * floor: does the wiki acknowledge each surface item. A surface element whose
- * `statement` changes or disappears across a boundary also becomes a forgetting
- * watch target, so the field names deliberately mirror `ObsoleteFactTarget`
- * (`factId`, `factVersionId`, `statement`) that the evaluators already consume.
+ * authoring). A surface element whose `statement` changes or disappears across
+ * a boundary becomes a forgetting watch target, so the field names deliberately
+ * mirror `ObsoleteFactTarget` (`factId`, `factVersionId`, `statement`) that the
+ * evaluator consumes.
  */
 export interface SurfaceItem {
   /**
    * Stable logical id for this surface element, unique within a checkpoint:
-   * `symbol:<name>`, `file:<path>`, or `version`. Coverage verdicts and
-   * maintenance matching key off this id across checkpoints.
+   * `symbol:<name>`, `file:<path>`, or `version`. Forgetting history keys off
+   * this id across checkpoints.
    */
   factId: string;
 
@@ -135,9 +134,8 @@ export interface SurfaceItem {
   signature?: string;
 
   /**
-   * A self-contained claim describing this surface element, used as the coverage
-   * retrieval query and, when the element goes obsolete, as the forgetting
-   * target's `obsoleteStatement`.
+   * A self-contained claim describing this surface element. When the element
+   * goes obsolete, this becomes the forgetting target's `obsoleteStatement`.
    */
   statement: string;
 }
@@ -170,8 +168,7 @@ export interface IntroducedFact {
 /**
  * A fact that was active both before and now, but whose active statement
  * changed. It carries both the obsolete previous version and the new current
- * version so correction can require the old version forgotten and the new one
- * covered.
+ * version so the old version can be tracked until it is forgotten.
  */
 export interface ChangedFact {
   /**
@@ -379,52 +376,6 @@ export interface EvidenceCorpus {
 // ---------------------------------------------------------------------------
 
 /**
- * Verdict for a single active fact against the wiki.
- *
- * - `correct`: the wiki states the fact accurately.
- * - `partial`: the wiki gestures at the fact but is incomplete or imprecise.
- * - `missing`: the wiki does not state the fact.
- * - `contradicted`: the wiki states something that conflicts with the fact.
- * - `indeterminate`: evaluator output remained invalid after isolated repair.
- */
-export type FactVerdict =
-  "correct" | "partial" | "missing" | "contradicted" | "indeterminate";
-
-/**
- * The coverage pass's judgment about one active fact.
- */
-export interface FactEvaluation {
-  /**
-   * The active fact this judgment concerns.
-   */
-  factId: string;
-
-  /**
-   * Stable id of the surface item version this judgment concerns, carried
-   * through from the `SurfaceItem` for auditing and cross-checkpoint matching.
-   */
-  factVersionId: string;
-
-  /**
-   * The verdict.
-   */
-  verdict: FactVerdict;
-
-  /**
-   * Stable artifact section IDs the evaluator cited as evidence.
-   *
-   * @default an empty array when the evaluator cited nothing (expected for a
-   *   `missing` verdict)
-   */
-  evidence: string[];
-
-  /**
-   * One-sentence rationale, retained for auditing and report drill-down.
-   */
-  rationale: string;
-}
-
-/**
  * The forgetting pass's judgment about whether a previously-true-but-now-false
  * fact still lingers in the wiki.
  *
@@ -492,8 +443,7 @@ export interface EvaluationWarning {
   /**
    * Semantic pass that could not repair one item.
    */
-  pass:
-    "coverage" | "forgetting" | "precision-extraction" | "precision-judgment";
+  pass: "forgetting" | "precision-extraction" | "precision-judgment";
 
   /**
    * Fact, fact-version, or assertion identity affected by the failure.
@@ -556,11 +506,6 @@ export interface PrecisionAssertionEvaluation {
  */
 export interface CheckpointEvaluation {
   /**
-   * Coverage verdicts, one per active fact at this checkpoint.
-   */
-  factEvaluations: FactEvaluation[];
-
-  /**
    * Forgetting verdicts, one per fact that should have been forgotten by this
    * checkpoint.
    */
@@ -580,22 +525,14 @@ export interface CheckpointEvaluation {
 }
 
 /**
- * One checkpoint's coverage and forgetting verdicts paired with its id and the
- * requirement transitions it lands on. The runner accumulates one of these per
- * checkpoint, in trace order, so the trace-level diagnostics can be computed from
- * the full evaluation history. Precision verdicts are omitted because no
- * diagnostic reads them.
+ * One checkpoint's forgetting verdicts. The runner accumulates these in trace
+ * order to compute stale-knowledge lifetime.
  */
 export interface CheckpointEvaluationRecord {
   /**
    * The checkpoint these verdicts are for.
    */
   checkpointId: string;
-
-  /**
-   * Coverage verdicts at this checkpoint, one per surface item.
-   */
-  factEvaluations: FactEvaluation[];
 
   /**
    * Forgetting verdicts at this checkpoint: one per obsolete version under watch.
@@ -607,15 +544,6 @@ export interface CheckpointEvaluationRecord {
    * truth again.
    */
   forgettingEvaluations: ForgettingEvaluation[];
-
-  /**
-   * The requirement transitions this checkpoint lands on, so the transition-level
-   * Recovery Rate can tell which introduced, changed, and removed transitions
-   * failed here and whether a later checkpoint made them good.
-   *
-   * @default undefined at the first checkpoint, which has no preceding boundary
-   */
-  transitions?: CheckpointTransitions;
 }
 
 // ---------------------------------------------------------------------------
@@ -623,57 +551,10 @@ export interface CheckpointEvaluationRecord {
 // ---------------------------------------------------------------------------
 
 /**
- * Coverage at one checkpoint: the fraction of validly judged active material
- * topics the artifact states correctly. Coverage is strict: only `correct`
- * verdicts earn headline credit. The `partial`, `missing`, and `contradicted`
- * counts are diagnostic and never feed the score. Indeterminate judgments are
- * excluded and represented by Evaluator Completeness.
+ * Snapshot-wide state of current factual claims at one checkpoint. Every rate
+ * uses `total` so the four states form a complete partition.
  */
-export interface CoverageMetric {
-  /**
-   * Count of active material topics with a `correct` verdict.
-   */
-  correct: number;
-
-  /**
-   * Count of active facts with a `partial` verdict. Diagnostic only; earns no
-   * headline credit.
-   */
-  partial: number;
-
-  /**
-   * Count of active facts with a `missing` verdict. Diagnostic only.
-   */
-  missing: number;
-
-  /**
-   * Count of active facts with a `contradicted` verdict. Diagnostic only.
-   */
-  contradicted: number;
-
-  /**
-   * Count of requirements the evaluator could not judge after isolated repair.
-   */
-  indeterminate: number;
-
-  /**
-   * Total active material topics evaluated.
-   */
-  total: number;
-
-  /**
-   * `correct / (total - indeterminate)`, or 0 when the evaluator produced no
-   * valid coverage judgment. The latter is always paired with zero Evaluator
-   * Completeness for this pass and must not be read as a reliable system score.
-   */
-  score: number;
-}
-
-/**
- * Precision at one checkpoint. Unverified claims remain visible but never enter
- * a scored denominator.
- */
-export interface PrecisionMetric {
+export interface ClaimStateMetric {
   /**
    * Count of `supported` assertions.
    */
@@ -695,24 +576,20 @@ export interface PrecisionMetric {
   unverified: number;
 
   /**
-   * Claims used by precision: `supported + invented + stale`.
-   */
-  adjudicated: number;
-
-  /**
-   * Total material assertions evaluated.
+   * Total current-tense material assertions evaluated. Historical narration is
+   * audited in the raw evaluations but excluded from this snapshot metric.
    */
   total: number;
 
   /**
-   * `invented / adjudicated`, or undefined when no claim was adjudicated.
+   * `invented / total`, or 0 when no current claim was extracted.
    */
-  hallucinationRate: number | undefined;
+  hallucinationRate: number;
 
   /**
-   * `stale / adjudicated`, or undefined when no claim was adjudicated.
+   * `stale / total`, or 0 when no current claim was extracted.
    */
-  stalenessRate: number | undefined;
+  stalenessRate: number;
 
   /**
    * `unverified / total`, or 0 when no material claim was extracted.
@@ -720,9 +597,9 @@ export interface PrecisionMetric {
   unverifiedRate: number;
 
   /**
-   * `supported / adjudicated`, or undefined when no claim was adjudicated.
+   * `supported / total`, or 0 when no current claim was extracted.
    */
-  score: number | undefined;
+  supportedRate: number;
 }
 
 /**
@@ -730,7 +607,7 @@ export interface PrecisionMetric {
  */
 export interface EvaluationCompletenessMetric {
   /**
-   * Validly judged items across coverage, precision, and forgetting.
+   * Validly judged items across claim grounding and forgetting.
    */
   judged: number;
 
@@ -751,68 +628,12 @@ export interface EvaluationCompletenessMetric {
 }
 
 /**
- * A raw numerator over denominator, kept unreduced so maintenance rates can be
- * summed globally across the whole trace before any single division.
- */
-export interface RateCount {
-  /**
-   * Facts that satisfied the rate's success condition.
-   */
-  numerator: number;
-
-  /**
-   * Facts eligible for the rate.
-   */
-  denominator: number;
-}
-
-/**
- * Raw maintenance counts for one checkpoint boundary. These are unreduced tallies
- * summed across the trace before any rate is computed; there is no per-checkpoint
- * maintenance score. Transitions affected by indeterminate current judgments are
- * excluded and represented by Evaluator Completeness.
- */
-export interface MaintenanceCounts {
-  /**
-   * New-Knowledge Discovery: of facts introduced at this checkpoint, those the
-   * wiki now states correctly.
-   */
-  newKnowledgeDiscovery: RateCount;
-
-  /**
-   * Changed-Knowledge Correction: of facts changed at this checkpoint, those
-   * whose new version is now correct AND whose previous version is forgotten.
-   */
-  changedKnowledgeCorrection: RateCount;
-
-  /**
-   * Complete Forgetting: of facts removed at this checkpoint, those the wiki no
-   * longer asserts. A changed fact's obsolete version is counted under correction
-   * only, never here, so no forgetting is double-counted.
-   */
-  completeForgetting: RateCount;
-
-  /**
-   * Stable-Knowledge Retention: of facts stable at this checkpoint that were
-   * correct at the previous checkpoint, those still correct now.
-   */
-  stableRetention: RateCount;
-}
-
-/**
- * The raw per-item verdicts behind a checkpoint's scores, retained so a score is
- * explainable. The scores above are lossy reductions of these lists to counts;
- * these are the lists themselves, exactly as the evaluator returned them, so a
- * reader can see which requirements were missed, which assertions source
- * evidence supported or rejected, and which obsolete
- * versions the artifact dropped.
+ * The raw per-item verdicts behind a checkpoint's measurements. The claim-state
+ * rates are lossy reductions of these lists to counts. These are the lists
+ * themselves, exactly as the evaluator returned them, so a reader can inspect
+ * source-grounding and obsolete-version judgments.
  */
 export interface CheckpointEvaluationDetail {
-  /**
-   * Coverage verdicts, one per active fact at this checkpoint.
-   */
-  factEvaluations: FactEvaluation[];
-
   /**
    * Precision verdicts, one per unique material assertion the wiki makes.
    */
@@ -834,9 +655,7 @@ export interface CheckpointEvaluationDetail {
 }
 
 /**
- * The scored result for one checkpoint. Quality and maintenance are not scored
- * per checkpoint; only the raw components that aggregate to the trace level are
- * kept here.
+ * The measured result for one checkpoint.
  */
 export interface CheckpointScore {
   /**
@@ -845,14 +664,9 @@ export interface CheckpointScore {
   checkpointId: string;
 
   /**
-   * Coverage at this checkpoint.
+   * Snapshot-wide state of the wiki's current factual claims.
    */
-  coverage: CoverageMetric;
-
-  /**
-   * Precision at this checkpoint.
-   */
-  precision: PrecisionMetric;
+  claims: ClaimStateMetric;
 
   /**
    * Evaluator reliability for this checkpoint, separate from system quality.
@@ -860,20 +674,12 @@ export interface CheckpointScore {
   evaluationCompleteness: EvaluationCompletenessMetric;
 
   /**
-   * Raw maintenance counts for the boundary into this checkpoint. Absent at the
-   * first checkpoint, which has no prior state to maintain.
-   *
-   * @default absent at index 0, where there is no prior state to maintain
-   */
-  maintenanceCounts?: MaintenanceCounts;
-
-  /**
    * Efficiency observations for the run that produced this checkpoint.
    */
   efficiency: LedgerExecutionMetrics;
 
   /**
-   * The raw per-item verdicts behind this checkpoint's scores, retained for
+   * The raw per-item verdicts behind this checkpoint's measurements, retained for
    * auditing and report drill-down.
    *
    * @default absent on synthetic scores built by hand (in tests); the runner
@@ -883,153 +689,9 @@ export interface CheckpointScore {
 }
 
 /**
- * The four trace-level maintenance rates, each computed by summing raw numerators
- * and denominators across the whole trace and dividing once. A rate whose global
- * denominator is 0 never occurred on the trace and is left `undefined` rather
- * than credited; such a rate is excluded from the Maintenance Score.
- */
-export interface MaintenanceRates {
-  /**
-   * Trace New-Knowledge Discovery.
-   *
-   * @default undefined when no fact was introduced anywhere on the trace
-   */
-  newKnowledgeDiscovery?: number;
-
-  /**
-   * Trace Changed-Knowledge Correction.
-   *
-   * @default undefined when no fact changed anywhere on the trace
-   */
-  changedKnowledgeCorrection?: number;
-
-  /**
-   * Trace Complete Forgetting.
-   *
-   * @default undefined when no fact was removed anywhere on the trace
-   */
-  completeForgetting?: number;
-
-  /**
-   * Trace Stable-Knowledge Retention.
-   *
-   * @default undefined when no eligible stable fact existed anywhere on the trace
-   */
-  stableRetention?: number;
-}
-
-/**
- * The final aggregated LEDGER score for a whole run. Quality aggregates as
- * checkpoint macro-averages; maintenance aggregates from global raw counts.
- */
-export interface LedgerScore {
-  /**
-   * Macro-average of per-checkpoint `coverage.score` across the trace, 0 to 1.
-   */
-  traceCoverage: number;
-
-  /**
-   * Macro-average of defined per-checkpoint `precision.score` values. Undefined
-   * when no checkpoint contains an adjudicated precision claim.
-   */
-  tracePrecision: number | undefined;
-
-  /**
-   * Macro-average assertion hallucination rate over defined checkpoints.
-   */
-  traceHallucinationRate: number | undefined;
-
-  /**
-   * Macro-average assertion staleness rate over defined checkpoints.
-   */
-  traceStalenessRate: number | undefined;
-
-  /**
-   * Macro-average unverified-claim rate across all checkpoints.
-   */
-  traceUnverifiedRate: number;
-
-  /**
-   * Micro-average of valid evaluator judgments across every checkpoint. This is
-   * evaluator reliability metadata and does not feed Quality or the LEDGER Score.
-   */
-  evaluationCompleteness: number;
-
-  /**
-   * Harmonic mean of trace coverage and precision. Undefined when trace
-   * precision is undefined.
-   */
-  quality: number | undefined;
-
-  /**
-   * The four trace-level maintenance rates. Rates whose global denominator was 0
-   * are `undefined`.
-   */
-  maintenanceRates: MaintenanceRates;
-
-  /**
-   * Mean of the defined trace-level maintenance rates, 0 to 1. Absent when no
-   * maintenance dimension occurred anywhere on the trace (a single-checkpoint
-   * trace, for instance).
-   *
-   * @default absent when no maintenance dimension occurred on the trace
-   */
-  maintenance?: number;
-
-  /**
-   * `(quality + maintenance) / 2` when maintenance is defined, otherwise
-   * `quality`. Reported to the user as 0 to 100.
-   */
-  ledgerScore: number | undefined;
-}
-
-/**
- * The Recovery Rate diagnostic: of the maintenance transitions that failed at
- * their own boundary, how many a later checkpoint made good. Eligibility and
- * recovery are judged per transition type, mirroring the maintenance success
- * conditions: an introduced fact recovers when the current fact later reads
- * `correct`; a changed fact recovers when the new version reads `correct` and the
- * obsolete version is forgotten; a removed fact recovers when the obsolete version
- * is forgotten. Stable-retention regressions are excluded in V1. A measure of how
- * well the system self-heals maintenance it initially got wrong. The counts are
- * kept alongside the rate so a report can name them.
- */
-export interface RecoveryDiagnostic {
-  /**
-   * `recovered / eligible`, in [0, 1].
-   *
-   * @default undefined when no introduced, changed, or removed transition failed
-   *   at its boundary, so nothing was eligible to recover
-   */
-  rate?: number;
-
-  /**
-   * How many eligible failed transitions a strictly later checkpoint made good.
-   */
-  recovered: number;
-
-  /**
-   * How many transitions failed at their own boundary and so were eligible to
-   * recover later.
-   */
-  eligible: number;
-}
-
-/**
- * Trace-level diagnostics computed from the full evaluation history. These
- * describe qualitative behavior over the trace and are reported alongside the LEDGER
- * Score, but they are deliberately not part of the Maintenance Score or the LEDGER
- * Score.
+ * Trace-level forgetting diagnostics computed from the evaluation history.
  */
 export interface LedgerDiagnostics {
-  /**
-   * Recovery: of the maintenance transitions that failed at their own boundary,
-   * how many a later checkpoint made good, kept as a rate plus its underlying
-   * counts so a report can say "1 of 2 regressions recovered later" rather than a
-   * bare percentage.
-   */
-  recovery: RecoveryDiagnostic;
-
   /**
    * Stale-Knowledge Lifetime: how long obsolete fact versions kept lingering in
    * the wiki after they became obsolete, before each was first judged forgotten.
@@ -1101,8 +763,7 @@ export interface StaleKnowledgeRecord {
 // ---------------------------------------------------------------------------
 
 /**
- * Diagnostic efficiency observations for a single SUT run. None of these feed
- * the LEDGER Score; they are reported alongside it.
+ * Diagnostic efficiency observations for a single SUT run.
  */
 export interface LedgerExecutionMetrics {
   /**
@@ -1221,7 +882,8 @@ export interface LedgerRunMetadata {
 }
 
 /**
- * The complete result of a LEDGER run: per-checkpoint scores plus the aggregate.
+ * The complete result of a LEDGER run: per-checkpoint claim state plus
+ * trace-level forgetting diagnostics.
  */
 export interface LedgerRunResult {
   /**
@@ -1235,12 +897,7 @@ export interface LedgerRunResult {
   checkpoints: CheckpointScore[];
 
   /**
-   * The aggregated score.
-   */
-  score: LedgerScore;
-
-  /**
-   * Trace-level diagnostics, reported alongside the score but not part of it.
+   * Trace-level forgetting diagnostics.
    */
   diagnostics: LedgerDiagnostics;
 }
@@ -1305,23 +962,23 @@ export interface SystemUnderTest {
 }
 
 /**
- * Turns an immutable artifact, active requirements, and source evidence into the
- * three evaluation passes. Production and deterministic test implementations
+ * Turns an immutable artifact and source evidence into claim-grounding and
+ * forgetting judgments. Production and deterministic test implementations
  * satisfy this contract.
  */
 export interface EvaluationBackend {
   /**
    * Evaluate one checkpoint's artifact.
    *
-   * @param input - The artifact, requirements, and evidence needed to score it.
+   * @param input - The artifact, obsolete watchlist, and grounding evidence.
    *
-   * @returns The three evaluation passes for this checkpoint.
+   * @returns Claim-grounding and forgetting judgments for this checkpoint.
    */
   evaluate(input: EvaluationInput): Promise<CheckpointEvaluation>;
 }
 
 /**
- * Everything an `EvaluationBackend` needs to score one checkpoint.
+ * Everything an `EvaluationBackend` needs to evaluate one checkpoint.
  */
 export interface EvaluationInput {
   /**
@@ -1330,8 +987,9 @@ export interface EvaluationInput {
   artifact: KnowledgeArtifact;
 
   /**
-   * The repository's public surface at this checkpoint, scored by the coverage
-   * pass.
+   * The repository's public surface at this checkpoint. The runtime uses it to
+   * derive obsolete fact versions; current claim state comes from the artifact's
+   * extracted claims instead.
    */
   surface: SurfaceItem[];
 

@@ -41,13 +41,6 @@ class SavedInputEvaluator implements EvaluationBackend {
     this.seenArtifacts.push(input.artifact.documents[0]?.content ?? "");
 
     return {
-      factEvaluations: input.surface.map((fact) => ({
-        factId: fact.factId,
-        factVersionId: fact.factVersionId,
-        verdict: "correct",
-        evidence: ["page.md::0000"],
-        rationale: "The saved artifact states the surface item.",
-      })),
       forgettingEvaluations: input.obsoleteFacts.map((fact) => ({
         factId: fact.factId,
         factVersionId: fact.factVersionId,
@@ -73,8 +66,7 @@ class SavedInputEvaluator implements EvaluationBackend {
 /**
  * Build the two-checkpoint benchmark used by evaluator-only replay tests. The
  * source repo evolves one exported symbol's signature at T1 so the surface diff
- * yields exactly one changed element and thus one maintenance correction
- * boundary.
+ * yields exactly one obsolete fact to watch.
  *
  * @param repo - Tiny repository supplying the two checkpoint commits.
  *
@@ -110,26 +102,16 @@ function originalCheckpoint(
 ): CheckpointScore {
   return {
     checkpointId,
-    coverage: {
-      correct: 0,
-      partial: 0,
-      missing: 0,
-      contradicted: 0,
-      indeterminate: 0,
-      total: 0,
-      score: 0,
-    },
-    precision: {
+    claims: {
       supported: 0,
       invented: 0,
       stale: 0,
       unverified: 0,
-      adjudicated: 0,
       total: 0,
-      hallucinationRate: undefined,
-      stalenessRate: undefined,
+      supportedRate: 0,
+      hallucinationRate: 0,
+      stalenessRate: 0,
       unverifiedRate: 0,
-      score: undefined,
     },
     evaluationCompleteness: { judged: 0, indeterminate: 0, total: 0, score: 1 },
     efficiency: { durationMs, skipped: false },
@@ -155,19 +137,7 @@ function sourceResult(): LedgerRunResult {
       originalCheckpoint("T0", 10_000),
       originalCheckpoint("T1", 5_000),
     ],
-    score: {
-      traceCoverage: 0,
-      tracePrecision: undefined,
-      traceHallucinationRate: undefined,
-      traceStalenessRate: undefined,
-      traceUnverifiedRate: 0,
-      evaluationCompleteness: 1,
-      quality: undefined,
-      maintenanceRates: {},
-      ledgerScore: undefined,
-    },
     diagnostics: {
-      recovery: { recovered: 0, eligible: 0 },
       staleKnowledge: { records: [], unresolvedCount: 0 },
     },
   };
@@ -280,15 +250,9 @@ describe("reevaluateSavedRun", () => {
     expect(
       result.checkpoints.map((item) => item.efficiency.durationMs),
     ).toEqual([10_000, 5_000]);
-    expect(result.score).toMatchObject({
-      traceCoverage: 1,
-      tracePrecision: 1,
-      maintenance: 1,
-      ledgerScore: 1,
-    });
-    expect(
-      result.checkpoints[1].maintenanceCounts?.changedKnowledgeCorrection,
-    ).toEqual({ numerator: 1, denominator: 1 });
+    expect(result.checkpoints.map((item) => item.claims.supportedRate)).toEqual(
+      [1, 1],
+    );
     expect(events).toContain("run-complete");
     expect(events).not.toContain("system-complete");
   });

@@ -46,11 +46,9 @@ class FakeSystem implements SystemUnderTest {
 }
 
 /**
- * A fake evaluator that covers every source-surface item `correct` and forgets
- * every obsolete target, so coverage and maintenance are fully determined by the
- * repository's surface evolution. Precision is canned per checkpoint: two
- * supported claims at T0, and one supported plus one invented at T1, so precision
- * is 1 at T0 and 0.5 at T1 regardless of the surface.
+ * A fake evaluator that forgets every obsolete target. Claim grounding is canned
+ * per checkpoint: two supported claims at T0, and one supported plus one
+ * invented at T1, regardless of the surface.
  */
 class FakeEvaluator implements EvaluationBackend {
   async evaluate(input: EvaluationInput): Promise<CheckpointEvaluation> {
@@ -98,13 +96,6 @@ class FakeEvaluator implements EvaluationBackend {
           ];
 
     return {
-      factEvaluations: input.surface.map((item) => ({
-        factId: item.factId,
-        factVersionId: item.factVersionId,
-        verdict: "correct",
-        evidence: [],
-        rationale: "",
-      })),
       forgettingEvaluations: input.obsoleteFacts.map((target) => ({
         factId: target.factId,
         factVersionId: target.factVersionId,
@@ -119,9 +110,9 @@ class FakeEvaluator implements EvaluationBackend {
 
 /**
  * An evaluator that records the forgetting watch set (the obsolete versions it is
- * asked about) at each checkpoint, and answers every active fact `correct` and
- * every obsolete target `forgotten`. It exists to assert what the runner carries
- * into the forgetting pass across checkpoints, not to produce a meaningful score.
+ * asked about) at each checkpoint and marks every obsolete target `forgotten`.
+ * It exists to assert what the runner carries into the forgetting pass across
+ * checkpoints, not to produce meaningful claim measurements.
  */
 class RecordingEvaluator implements EvaluationBackend {
   readonly watchSets = new Map<string, string[]>();
@@ -133,13 +124,6 @@ class RecordingEvaluator implements EvaluationBackend {
     );
 
     return {
-      factEvaluations: input.surface.map((fact) => ({
-        factId: fact.factId,
-        factVersionId: fact.factVersionId,
-        verdict: "correct",
-        evidence: [],
-        rationale: "",
-      })),
       forgettingEvaluations: input.obsoleteFacts.map((target) => ({
         factId: target.factId,
         factVersionId: target.factVersionId,
@@ -158,8 +142,7 @@ describe("runBenchmark", () => {
   beforeEach(async () => {
     // T0 -> T1 changes one exported symbol's signature (one `changed` element)
     // while the source file itself is unchanged (one `stable` element), so the
-    // surface diff yields exactly one maintenance correction boundary and one
-    // obsolete watch target.
+    // surface diff yields exactly one obsolete watch target.
     repo = await createTinyRepo([
       {
         message: "c0",
@@ -201,7 +184,7 @@ describe("runBenchmark", () => {
     };
   }
 
-  test("produces the exact hand-computed LEDGER score", async () => {
+  test("produces current claim state and forgetting diagnostics", async () => {
     const progress: BenchmarkProgressEvent[] = [];
     const result = await runBenchmark({
       benchmark: benchmark(),
@@ -212,49 +195,28 @@ describe("runBenchmark", () => {
       onProgress: (event) => progress.push(event),
     });
 
-    // Per checkpoint the score now carries raw coverage and precision, not a
-    // pre-combined quality (quality is a trace-level quantity).
-    // T0: coverage 1, precision 1. No maintenance boundary.
-    // T1: coverage 1, precision 0.5. Maintenance counts: correction 1/1 and
-    //     retention 1/1; discovery and forgetting denominators are 0.
-    expect(result.checkpoints[0].coverage.score).toBe(1);
-    expect(result.checkpoints[0].precision.score).toBe(1);
-    expect(result.checkpoints[0].maintenanceCounts).toBeUndefined();
-    expect(result.checkpoints[1].coverage.score).toBe(1);
-    expect(result.checkpoints[1].precision.score).toBe(0.5);
-    expect(result.checkpoints[1].maintenanceCounts).toBeDefined();
+    expect(result.checkpoints[0].claims).toEqual({
+      supported: 2,
+      invented: 0,
+      stale: 0,
+      unverified: 0,
+      total: 2,
+      supportedRate: 1,
+      hallucinationRate: 0,
+      stalenessRate: 0,
+      unverifiedRate: 0,
+    });
+    expect(result.checkpoints[1].claims.supportedRate).toBe(0.5);
+    expect(result.checkpoints[1].claims.hallucinationRate).toBe(0.5);
 
-    // Trace macro-averages: coverage mean(1, 1) = 1, precision mean(1, 0.5) =
-    // 0.75. Quality = harmonic(1, 0.75) = 6/7. Global maintenance rates:
-    // correction 1, retention 1; discovery and forgetting are undefined because
-    // their global denominators are 0. Maintenance = mean(1, 1) = 1.
-    // LEDGER = (6/7 + 1) / 2 = 13/14.
-    expect(result.score.traceCoverage).toBe(1);
-    expect(result.score.tracePrecision).toBe(0.75);
-    expect(result.score.quality).toBeCloseTo(6 / 7, 10);
-    expect(result.score.maintenanceRates.changedKnowledgeCorrection).toBe(1);
-    expect(result.score.maintenanceRates.stableRetention).toBe(1);
-    expect(result.score.maintenanceRates.newKnowledgeDiscovery).toBeUndefined();
-    expect(result.score.maintenanceRates.completeForgetting).toBeUndefined();
-    expect(result.score.maintenance).toBe(1);
-    expect(result.score.ledgerScore).toBeCloseTo(13 / 14, 10);
-
-    // Diagnostics sit beside the score, not inside it. The only maintenance
-    // transition is the change to `f` at T1, and it succeeds at its own boundary
-    // (new version correct, old version forgotten), so no transition was an
-    // eligible failure and the recovery rate is undefined with nothing eligible.
-    // `f`'s T0 version went obsolete at T1 and was forgotten immediately, so it
-    // is one resolved record with lifetime 0 and no unresolved versions.
+    // `f`'s T0 version went obsolete at T1 and was forgotten immediately, so the
+    // diagnostic has one resolved record with lifetime 0 and no unresolved
+    // versions.
     const surfaceT0 = await extractSurface(repo.repoPath, repo.shas[0]);
     const obsoleteVersionId = surfaceT0.find(
       (item) => item.factId === "symbol:f",
     )?.factVersionId;
     expect(obsoleteVersionId).toBeDefined();
-    expect(result.diagnostics.recovery).toEqual({
-      rate: undefined,
-      recovered: 0,
-      eligible: 0,
-    });
     expect(result.diagnostics.staleKnowledge).toEqual({
       records: [
         {
@@ -308,7 +270,7 @@ describe("runBenchmark", () => {
       startedAt: "2026-01-01T00:00:00.000Z",
     });
 
-    // The lossy score counts are explainable because the underlying verdicts are
+    // The lossy claim counts are explainable because the underlying verdicts are
     // carried through unchanged: T1's invented assertion is exactly the one the
     // evaluator returned, and the forgetting verdict for `f`'s obsolete T0 version
     // is preserved.

@@ -11,7 +11,7 @@ import type {
   KnowledgeArtifact,
 } from "../core/types.js";
 import { computeChurn } from "../scoring/churn.js";
-import { aggregateScore, computeDiagnostics } from "../scoring/metrics.js";
+import { computeDiagnostics } from "../scoring/metrics.js";
 import { evaluateCheckpoint, initialCarry } from "./evaluate-checkpoint.js";
 import type { BenchmarkProgressReporter } from "./progress-events.js";
 import {
@@ -77,8 +77,9 @@ export interface SavedRunReevaluationInputs {
 }
 
 /**
- * Resolve the original checkpoint score used only for immutable System Under
- * Test efficiency observations. Semantic scores and verdicts are never reused.
+ * Resolve the original checkpoint result used only for immutable System Under
+ * Test efficiency observations. Semantic measurements and verdicts are never
+ * reused.
  *
  * @param savedResult - Original completed run result.
  * @param checkpointId - Checkpoint to resolve.
@@ -107,8 +108,8 @@ function savedCheckpoint(
 /**
  * Re-run only semantic evaluation over immutable artifacts and source evidence
  * from a completed LEDGER run. Source surface extraction, temporal transitions,
- * forgetting watch sets, all per-item judgments, and every score are recomputed.
- * The System Under Test is never invoked.
+ * forgetting watch sets, all per-item judgments, and every measurement are
+ * recomputed. The System Under Test is never invoked.
  *
  * @param inputs - Saved-run evaluation inputs.
  *
@@ -207,7 +208,6 @@ export async function reevaluateSavedRun(
         reevaluatedFrom: sourceRunDir,
       },
       checkpoints: scores,
-      score: aggregateScore(scores),
       diagnostics: computeDiagnostics(history),
     };
 

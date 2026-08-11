@@ -424,7 +424,7 @@ function symbolStatement(symbol: DeclaredSymbol): string {
  * Extract a repository's public surface at a single commit: every exported
  * symbol, every parsed source file, and the version. Deterministic and derived
  * entirely from source at `commit`, never from the wiki, so it is the ground
- * truth the coverage pass and the surface diff are computed against.
+ * truth the surface diff is computed against.
  *
  * TypeScript-only for v1: files outside {@link SOURCE_EXTENSIONS} contribute a
  * `file` item but no symbols.
@@ -668,13 +668,10 @@ function dedupeTargets(targets: ObsoleteFactTarget[]): ObsoleteFactTarget[] {
  * Advance the forgetting watch set across one checkpoint boundary. Once a
  * surface element goes obsolete it stays under watch at every later checkpoint
  * so the forgetting pass keeps re-checking it, which is what makes the
- * Stale-Knowledge Lifetime diagnostic measurable; LEDGER does not treat
+ * stale-knowledge lifetime diagnostic measurable; LEDGER does not treat
  * forgetting as permanent. A target leaves the set only when the surface revives
  * that exact knowledge (its `factId` is present again with the version's own
- * statement), so the wiki is never asked to forget something true again. This
- * never affects the Maintenance Score, because `computeMaintenanceCounts` only
- * ever matches forgetting verdicts against the current boundary's own obsolete
- * versions.
+ * statement), so the wiki is never asked to forget something true again.
  *
  * @param inputs - The outstanding watch set, the current surface, and the
  *   versions this boundary newly retires.

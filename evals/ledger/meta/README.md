@@ -13,7 +13,7 @@ responses are:
 Never add a code-side regex, token list, fixture name, or other special case for
 one judge miss.
 
-The defect harness evaluates seeded mutations in captured artifacts without
-running OpenWiki. It verifies that invented, stale, coverage, retention, and
-padding defects produce the expected signals while the clean baseline produces
-no invented claims.
+Claim-state mutations are covered by the scoring and evaluator tests: supported,
+stale, hallucinated, and unverified current claims must remain a complete,
+single-denominator partition. Forgetting behavior is tested separately against
+the deterministic obsolete-API watch set.
