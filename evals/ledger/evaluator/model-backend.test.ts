@@ -78,6 +78,12 @@ describe("ModelEvaluationBackend", () => {
       checkpointId: string;
       keptAssertionCount: number;
     }> = [];
+    const extractionProgress: Array<{ completed: number; total: number }> = [];
+    const evaluationProgress: Array<{
+      claimCount: number;
+      completed: number;
+      total: number;
+    }> = [];
     control.responsesByPrompt.set(FORGETTING_SYSTEM, [
       {
         evaluations: [
@@ -136,38 +142,48 @@ describe("ModelEvaluationBackend", () => {
         });
       },
     });
-    const result = await backend.evaluate({
-      artifact: {
-        checkpointId: "T1",
-        snapshotDir: "/snapshot-that-does-not-exist",
-        fingerprint: "fixture",
-        documents: [
-          {
-            relativePath: "guide.md",
-            content: "# Guide\n\nCurrent behavior is enabled.\n",
-          },
-        ],
-      },
-      evidence: {
-        checkpointId: "T1",
-        records: [
-          {
-            evidenceId: "src/current.ts::0000",
-            sourceRef: "src/current.ts",
-            observedAtCheckpoint: "T1",
-            current: true,
-            content: "Current behavior is enabled.",
-          },
-        ],
-      },
-      obsoleteFacts: [
-        {
-          factId: "old",
-          factVersionId: "old@T0",
-          obsoleteStatement: "Old behavior is enabled.",
+    const result = await backend.evaluate(
+      {
+        artifact: {
+          checkpointId: "T1",
+          snapshotDir: "/snapshot-that-does-not-exist",
+          fingerprint: "fixture",
+          documents: [
+            {
+              relativePath: "guide.md",
+              content: "# Guide\n\nCurrent behavior is enabled.\n",
+            },
+          ],
         },
-      ],
-    });
+        evidence: {
+          checkpointId: "T1",
+          records: [
+            {
+              evidenceId: "src/current.ts::0000",
+              sourceRef: "src/current.ts",
+              observedAtCheckpoint: "T1",
+              current: true,
+              content: "Current behavior is enabled.",
+            },
+          ],
+        },
+        obsoleteFacts: [
+          {
+            factId: "old",
+            factVersionId: "old@T0",
+            obsoleteStatement: "Old behavior is enabled.",
+          },
+        ],
+      },
+      {
+        onClaimExtractionProgress: (completed, total) => {
+          extractionProgress.push({ completed, total });
+        },
+        onClaimEvaluationProgress: (claimCount, completed, total) => {
+          evaluationProgress.push({ claimCount, completed, total });
+        },
+      },
+    );
 
     // Every pass runs exactly once; concurrency makes the first-wave order
     // non-deterministic, so assert the set rather than the sequence.
@@ -188,6 +204,12 @@ describe("ModelEvaluationBackend", () => {
     expect(inventories).toEqual([
       { checkpointId: "T1", keptAssertionCount: 1 },
     ]);
+    expect(extractionProgress.at(-1)).toEqual({ completed: 2, total: 2 });
+    expect(evaluationProgress.at(-1)).toEqual({
+      claimCount: 1,
+      completed: 2,
+      total: 2,
+    });
     expect(result).toEqual({
       forgettingEvaluations: [
         {

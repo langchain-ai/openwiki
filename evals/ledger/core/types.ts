@@ -969,7 +969,31 @@ export interface EvaluationBackend {
    *
    * @returns Claim-grounding and forgetting judgments for this checkpoint.
    */
-  evaluate(input: EvaluationInput): Promise<CheckpointEvaluation>;
+  evaluate(
+    input: EvaluationInput,
+    observer?: EvaluationProgressObserver,
+  ): Promise<CheckpointEvaluation>;
+}
+
+/**
+ * Optional lifecycle observations emitted while one checkpoint is evaluated.
+ */
+export interface EvaluationProgressObserver {
+  /**
+   * Report completed text-unit extraction work.
+   */
+  onClaimExtractionProgress?(completed: number, total: number): void;
+
+  /**
+   * Report completed post-extraction judgments. The claim count is the distinct
+   * current-tense snapshot denominator; progress includes both claim grounding
+   * and obsolete-fact judgments so 100% means checkpoint evaluation is done.
+   */
+  onClaimEvaluationProgress?(
+    claimCount: number,
+    completed: number,
+    total: number,
+  ): void;
 }
 
 /**

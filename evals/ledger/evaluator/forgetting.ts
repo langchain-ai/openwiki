@@ -69,6 +69,9 @@ export interface ForgettingPassInput {
 
   /** Optional sink for judgments that remain invalid after isolated repair. */
   onWarning?: (warning: EvaluationWarning) => void;
+
+  /** Optional sink for obsolete facts whose final verdict is complete. */
+  onProgress?: (completed: number, total: number) => void;
 }
 
 /** Build the structured task prompt for a batch of obsolete facts. */
@@ -319,6 +322,7 @@ export async function runForgettingPass(
   input: ForgettingPassInput,
 ): Promise<ForgettingEvaluation[]> {
   if (input.obsoleteFacts.length === 0) {
+    input.onProgress?.(0, 0);
     return [];
   }
 
@@ -330,9 +334,11 @@ export async function runForgettingPass(
 
   const allSections = input.index.sections();
   if (allSections.length === 0) {
-    return input.obsoleteFacts.map((fact) =>
+    const evaluations = input.obsoleteFacts.map((fact) =>
       makeResult(fact, "forgotten", [], NO_SECTIONS_RATIONALE),
     );
+    input.onProgress?.(evaluations.length, evaluations.length);
+    return evaluations;
   }
 
   const initialTargets = input.obsoleteFacts.map((fact): ForgettingTarget => ({
@@ -358,16 +364,22 @@ export async function runForgettingPass(
     (target) =>
       resultById.get(target.fact.factVersionId)?.verdict === "forgotten",
   );
+  let completed = input.obsoleteFacts.length - forgottenTargets.length;
+  input.onProgress?.(completed, input.obsoleteFacts.length);
   const fallbackResults = await mapWithLimit(
     forgottenTargets,
     limit,
-    (target) =>
-      resolveFallback(
+    async (target) => {
+      const evaluation = await resolveFallback(
         input,
         target,
         allSections,
         resultById.get(target.fact.factVersionId) as ForgettingEvaluation,
-      ),
+      );
+      completed += 1;
+      input.onProgress?.(completed, input.obsoleteFacts.length);
+      return evaluation;
+    },
   );
 
   for (const evaluation of fallbackResults) {

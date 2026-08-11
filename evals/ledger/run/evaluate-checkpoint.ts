@@ -215,11 +215,32 @@ export async function evaluateCheckpoint(
     obsoleteFactCount: obsoleteFacts.length,
   });
 
-  const evaluation = await evaluationBackend.evaluate({
-    artifact,
-    evidence,
-    obsoleteFacts,
-  });
+  const evaluation = await evaluationBackend.evaluate(
+    {
+      artifact,
+      evidence,
+      obsoleteFacts,
+    },
+    {
+      onClaimExtractionProgress: (completed, total) =>
+        reportProgress({
+          type: "claim-extraction-progress",
+          checkpointId: checkpoint.id,
+          completed,
+          total,
+          obsoleteFactCount: obsoleteFacts.length,
+        }),
+      onClaimEvaluationProgress: (claimCount, completed, total) =>
+        reportProgress({
+          type: "claim-evaluation-progress",
+          checkpointId: checkpoint.id,
+          claimCount,
+          completed,
+          total,
+          obsoleteFactCount: obsoleteFacts.length,
+        }),
+    },
+  );
 
   const claims = computeClaimState(evaluation.precisionEvaluations);
   const evaluationCompleteness = computeEvaluationCompleteness(
@@ -231,6 +252,7 @@ export async function evaluateCheckpoint(
   reportProgress({
     type: "checkpoint-complete",
     checkpointId: checkpoint.id,
+    claimCount: claims.total,
     supportedRate: claims.supportedRate,
     stalenessRate: claims.stalenessRate,
     hallucinationRate: claims.hallucinationRate,

@@ -40,6 +40,26 @@ export function formatProgressDuration(durationMs: number): string {
 }
 
 /**
+ * Format completed work as a clamped whole-number percentage.
+ *
+ * @param completed - Completed item count.
+ * @param total - Total item count.
+ *
+ * @returns A percentage such as `49%`; empty work is already complete.
+ */
+export function formatProgressPercentage(
+  completed: number,
+  total: number,
+): string {
+  if (total <= 0) {
+    return "100%";
+  }
+
+  const fraction = Math.min(1, Math.max(0, completed / total));
+  return `${Math.round(fraction * 100)}%`;
+}
+
+/**
  * Render a metric fraction as a whole-number percentage for the compact live
  * checkpoint line.
  *
@@ -116,6 +136,22 @@ export function createCliProgressReporter(
     renderSpinner();
     spinnerTimer = setInterval(renderSpinner, 80);
     spinnerTimer.unref();
+  }
+
+  /**
+   * Replace the text of the active activity once more detail is available.
+   * Non-interactive logs retain both lifecycle messages as separate lines.
+   *
+   * @param message - Refined activity text.
+   */
+  function updateSpinner(message: string): void {
+    if (spinnerMessage === undefined) {
+      startSpinner(message);
+      return;
+    }
+
+    spinnerMessage = message;
+    renderSpinner();
   }
 
   /**
@@ -207,12 +243,22 @@ export function createCliProgressReporter(
       }
       case "evaluation-start":
         startSpinner(
-          `🔍 Evaluating claims · ${event.obsoleteFactCount} obsolete API facts`,
+          `🔍 Extracting claims · ${event.obsoleteFactCount} obsolete API facts`,
+        );
+        break;
+      case "claim-extraction-progress":
+        updateSpinner(
+          `🔍 Extracting claims · ${formatProgressPercentage(event.completed, event.total)} · ${event.obsoleteFactCount} obsolete API facts`,
+        );
+        break;
+      case "claim-evaluation-progress":
+        updateSpinner(
+          `🔍 Grounding ${event.claimCount} claim${event.claimCount === 1 ? "" : "s"} · ${formatProgressPercentage(event.completed, event.total)} · ${event.obsoleteFactCount} obsolete API facts`,
         );
         break;
       case "checkpoint-complete":
         completeSpinner(
-          `📊 claims · ${formatPercent(event.supportedRate)} supported · ${formatPercent(event.stalenessRate)} stale · ${formatPercent(event.hallucinationRate)} hallucinated · ${formatPercent(event.unverifiedRate)} unverified`,
+          `📊 ${event.claimCount} claim${event.claimCount === 1 ? "" : "s"} · ${formatPercent(event.supportedRate)} supported · ${formatPercent(event.stalenessRate)} stale · ${formatPercent(event.hallucinationRate)} hallucinated · ${formatPercent(event.unverifiedRate)} unverified`,
         );
         if (event.obsoleteFactCount > 0) {
           output.write(

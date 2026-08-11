@@ -252,10 +252,12 @@ describe("runBenchmark", () => {
         event.type === "checkpoint-complete" && event.checkpointId === "T1",
     );
     expect(t0Complete).toMatchObject({
+      claimCount: 2,
       forgottenCount: 0,
       obsoleteFactCount: 0,
     });
     expect(t1Complete).toMatchObject({
+      claimCount: 2,
       forgottenCount: 1,
       obsoleteFactCount: 1,
     });

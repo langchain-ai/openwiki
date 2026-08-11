@@ -10,6 +10,7 @@ import type {
   CheckpointEvaluation,
   EvaluationBackend,
   EvaluationInput,
+  EvaluationProgressObserver,
   EvaluationWarning,
 } from "../core/types.js";
 import { sectionArtifact } from "./documents.js";
@@ -137,10 +138,38 @@ export class ModelEvaluationBackend implements EvaluationBackend {
    *
    * @returns The three evaluation result sets for the checkpoint.
    */
-  async evaluate(input: EvaluationInput): Promise<CheckpointEvaluation> {
+  async evaluate(
+    input: EvaluationInput,
+    observer?: EvaluationProgressObserver,
+  ): Promise<CheckpointEvaluation> {
     const sections = sectionArtifact(input.artifact);
     const index = new SectionBm25Index(sections);
     const warnings: EvaluationWarning[] = [];
+    let currentClaimCount: number | undefined;
+    let groundingCompleted = 0;
+    let groundingTotal = 0;
+    let forgettingCompleted = 0;
+    let lastReportedEvaluationProgress: string | undefined;
+
+    /** Report aggregate post-extraction progress once the claim total is known. */
+    const reportEvaluationProgress = (): void => {
+      if (currentClaimCount === undefined) {
+        return;
+      }
+
+      const completed = groundingCompleted + forgettingCompleted;
+      const total = groundingTotal + input.obsoleteFacts.length;
+      const signature = `${currentClaimCount}:${completed}:${total}`;
+      if (signature === lastReportedEvaluationProgress) {
+        return;
+      }
+      lastReportedEvaluationProgress = signature;
+      observer?.onClaimEvaluationProgress?.(
+        currentClaimCount,
+        completed,
+        total,
+      );
+    };
 
     /**
      * Retain an item-level evaluator failure without aborting the checkpoint.
@@ -162,6 +191,10 @@ export class ModelEvaluationBackend implements EvaluationBackend {
         index,
         timeoutMs: this.timeoutMs,
         limit,
+        onProgress: (completed) => {
+          forgettingCompleted = completed;
+          reportEvaluationProgress();
+        },
         onWarning,
       }),
       runPrecisionPass({
@@ -172,7 +205,21 @@ export class ModelEvaluationBackend implements EvaluationBackend {
         timeoutMs: this.timeoutMs,
         limit,
         verdictCache: this.precisionVerdictCache,
-        onInventory: this.onAssertionInventory,
+        onExtractionProgress: (completed, total) =>
+          observer?.onClaimExtractionProgress?.(completed, total),
+        onInventory: async (inventory) => {
+          currentClaimCount = inventory.candidates.filter(
+            (candidate) =>
+              candidate.disposition === "kept" && candidate.tense === "current",
+          ).length;
+          groundingTotal = inventory.keptAssertionCount;
+          reportEvaluationProgress();
+          await this.onAssertionInventory?.(inventory);
+        },
+        onGroundingProgress: (completed) => {
+          groundingCompleted = completed;
+          reportEvaluationProgress();
+        },
         onWarning,
       }),
     ]);

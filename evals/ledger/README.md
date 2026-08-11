@@ -122,20 +122,33 @@ scored as documentation coverage.
 │
 ├ 📍 1/5 · T0 · 3f2a1b9 · baseline API
 │ 🤖 OpenWiki init complete · 5.4s · 12 documents
-│ 📊 claims · 91% supported · 0% stale · 3% hallucinated · 6% unverified
+│ 📊 35 claims · 91% supported · 0% stale · 3% hallucinated · 6% unverified
 │
 ├ 📍 2/5 · T1 · a7c40e2 · RedisStore + retry API
 │ 🤖 OpenWiki update complete · 6.8s · 14 documents
-│ 📊 claims · 88% supported · 4% stale · 2% hallucinated · 6% unverified
+│ 📊 50 claims · 88% supported · 4% stale · 2% hallucinated · 6% unverified
 │ 🧹 forgot 2/3 obsolete facts · carrying 1
 │
 ├ 🔬 Details → evals/ledger/.results/taskflow-…/report.md
 └ ✅ Complete · 2m 11s
 ```
 
-Counts, individual claims, citations, evaluator warnings, and stale lifetimes are
-kept in `report.md`, `result.json`, the assertion inventories, evidence snapshots,
-and, when current unverified claims exist, `unverified-claims.md`.
+The displayed claim count is the shared snapshot denominator: distinct current-
+tense claims after exact deduplication. Individual claims, citations, evaluator
+warnings, and stale lifetimes are kept in `report.md`, `result.json`, the
+assertion inventories, evidence snapshots, and, when current unverified claims
+exist, `unverified-claims.md`.
+
+While evaluation is active, the spinner reports phase-specific completion:
+
+```text
+│ ⠼ 🔍 Extracting claims · 44% · 0 obsolete API facts
+│ ⠼ 🔍 Grounding 35 claims · 49% · 0 obsolete API facts
+```
+
+Extraction advances by classified text units. After extraction, grounding
+progress combines distinct-claim judgments and obsolete-fact judgments, so 100%
+means the checkpoint evaluation is genuinely complete.
 
 ## Running
 

@@ -361,6 +361,12 @@ export interface PrecisionPassInput {
     inventory: PrecisionAssertionInventory,
   ) => void | Promise<void>;
 
+  /** Optional sink for completed text-unit extraction work. */
+  onExtractionProgress?: (completed: number, total: number) => void;
+
+  /** Optional sink for completed distinct-assertion grounding work. */
+  onGroundingProgress?: (completed: number, total: number) => void;
+
   /**
    * Optional sink for items that remain invalid after isolated repair.
    *
@@ -703,10 +709,17 @@ async function extractAssertions(
   assertions: RawExtractedAssertion[];
 }> {
   const units = sections.flatMap(textUnitsForSection);
+  let completed = 0;
+  input.onExtractionProgress?.(completed, units.length);
   const batchResults = await mapWithLimit(
     batch(units, batchSize),
     limit,
-    (unitBatch) => classifyUnitBatch(input, unitBatch),
+    async (unitBatch) => {
+      const result = await classifyUnitBatch(input, unitBatch);
+      completed += unitBatch.length;
+      input.onExtractionProgress?.(completed, units.length);
+      return result;
+    },
   );
   const classified = batchResults.flat();
 
@@ -1165,7 +1178,10 @@ export async function runPrecisionPass(
     extraction.assertions,
   );
   await input.onInventory?.(inventory);
-  if (assertions.length === 0) return [];
+  if (assertions.length === 0) {
+    input.onGroundingProgress?.(0, 0);
+    return [];
+  }
 
   const evaluations = new Map<string, PrecisionAssertionEvaluation>();
   const evidenceSections = toEvidenceSections(input.evidence);
@@ -1174,15 +1190,19 @@ export async function runPrecisionPass(
   // unverified without a model call, and nothing is cached because the verdict
   // reflects an empty corpus rather than a grounding decision.
   if (evidenceSections.length === 0) {
-    return assertions.map((assertion): PrecisionAssertionEvaluation => ({
-      assertion: assertion.statement,
-      location: assertion.relativePath,
-      verdict: "unverified",
-      tense: assertion.tense,
-      adjudicatedBy: "none",
-      evidenceIds: [],
-      rationale: "No source evidence was available for grounding.",
-    }));
+    const unverified = assertions.map(
+      (assertion): PrecisionAssertionEvaluation => ({
+        assertion: assertion.statement,
+        location: assertion.relativePath,
+        verdict: "unverified",
+        tense: assertion.tense,
+        adjudicatedBy: "none",
+        evidenceIds: [],
+        rationale: "No source evidence was available for grounding.",
+      }),
+    );
+    input.onGroundingProgress?.(assertions.length, assertions.length);
+    return unverified;
   }
 
   const evidenceIndex = new SectionBm25Index(evidenceSections);
@@ -1213,6 +1233,7 @@ export async function runPrecisionPass(
   const cacheKeyById = new Map(
     uncached.map(({ target, cacheKey }) => [target.assertion.id, cacheKey]),
   );
+  input.onGroundingProgress?.(evaluations.size, assertions.length);
 
   // Judgment batches are independent: each writes only its own assertions'
   // verdicts (assertion ids are unique across batches), so they run concurrently
@@ -1239,6 +1260,7 @@ export async function runPrecisionPass(
           cache.set(cacheKey, toCachedVerdict(evaluation));
         }
       }
+      input.onGroundingProgress?.(evaluations.size, assertions.length);
     },
   );
 

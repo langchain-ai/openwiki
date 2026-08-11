@@ -2,12 +2,19 @@ import { describe, expect, test } from "vitest";
 import {
   createCliProgressReporter,
   formatProgressDuration,
+  formatProgressPercentage,
 } from "./progress.js";
 
 test("formats compact durations", () => {
   expect(formatProgressDuration(850)).toBe("850ms");
   expect(formatProgressDuration(4_200)).toBe("4.2s");
   expect(formatProgressDuration(123_000)).toBe("2m 3s");
+});
+
+test("formats bounded progress percentages", () => {
+  expect(formatProgressPercentage(28, 64)).toBe("44%");
+  expect(formatProgressPercentage(0, 0)).toBe("100%");
+  expect(formatProgressPercentage(12, 10)).toBe("100%");
 });
 
 describe("createCliProgressReporter", () => {
@@ -46,8 +53,29 @@ describe("createCliProgressReporter", () => {
       },
     });
     report({
+      type: "evaluation-start",
+      checkpointId: "T1",
+      obsoleteFactCount: 6,
+    });
+    report({
+      type: "claim-extraction-progress",
+      checkpointId: "T1",
+      completed: 28,
+      total: 64,
+      obsoleteFactCount: 6,
+    });
+    report({
+      type: "claim-evaluation-progress",
+      checkpointId: "T1",
+      claimCount: 100,
+      completed: 52,
+      total: 106,
+      obsoleteFactCount: 6,
+    });
+    report({
       type: "checkpoint-complete",
       checkpointId: "T1",
+      claimCount: 100,
       supportedRate: 0.82,
       stalenessRate: 0.1,
       hallucinationRate: 0.02,
@@ -59,7 +87,13 @@ describe("createCliProgressReporter", () => {
       evaluationItemCount: 106,
     });
     expect(rendered).toContain(
-      "📊 claims · 82% supported · 10% stale · 2% hallucinated · 6% unverified",
+      "🔍 Extracting claims · 44% · 6 obsolete API facts",
+    );
+    expect(rendered).toContain(
+      "🔍 Grounding 100 claims · 49% · 6 obsolete API facts",
+    );
+    expect(rendered).toContain(
+      "📊 100 claims · 82% supported · 10% stale · 2% hallucinated · 6% unverified",
     );
     expect(rendered).toContain("🧹 forgot 4/6 obsolete facts · carrying 2");
   });
@@ -74,6 +108,7 @@ describe("createCliProgressReporter", () => {
     report({
       type: "checkpoint-complete",
       checkpointId: "T0",
+      claimCount: 10,
       supportedRate: 1,
       stalenessRate: 0,
       hallucinationRate: 0,

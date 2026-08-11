@@ -44,8 +44,24 @@ export type BenchmarkProgressEvent =
       obsoleteFactCount: number;
     }
   | {
+      type: "claim-extraction-progress";
+      checkpointId: string;
+      completed: number;
+      total: number;
+      obsoleteFactCount: number;
+    }
+  | {
+      type: "claim-evaluation-progress";
+      checkpointId: string;
+      claimCount: number;
+      completed: number;
+      total: number;
+      obsoleteFactCount: number;
+    }
+  | {
       type: "checkpoint-complete";
       checkpointId: string;
+      claimCount: number;
       supportedRate: number;
       stalenessRate: number;
       hallucinationRate: number;
