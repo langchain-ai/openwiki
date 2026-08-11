@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "vitest";
 import {
   argvRequestsPrint,
+  getCodeModeRepoSetupOptions,
   getRunModeCwd,
   getRunModeOutputMode,
   shouldAutoExitStartupRun,
@@ -17,6 +18,7 @@ function runCommand(
 ): CliCommand {
   return {
     kind: "run",
+    agentFilesPolicy: null,
     command: "init",
     dryRun: false,
     exitCode: 0,
@@ -125,6 +127,28 @@ describe("getRunModeOutputMode", () => {
     expect(getRunModeOutputMode("code")).toBe("repository");
     expect(getRunModeOutputMode("local-wiki")).toBe("local-wiki");
   });
+});
+
+describe("getCodeModeRepoSetupOptions", () => {
+  for (const [command, createWorkflow] of [
+    ["chat", false],
+    ["init", true],
+    ["update", false],
+  ] as const) {
+    test(`forwards agent-file policy for ${command}`, () => {
+      expect(
+        getCodeModeRepoSetupOptions(
+          runCommand({ agentFilesPolicy: "preserve", command }) as Extract<
+            CliCommand,
+            { kind: "run" }
+          >,
+        ),
+      ).toEqual({
+        agentFilesPolicy: "preserve",
+        createWorkflow,
+      });
+    });
+  }
 });
 
 describe("shouldAutoExitStartupRun", () => {

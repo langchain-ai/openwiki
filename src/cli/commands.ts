@@ -1,4 +1,8 @@
 import { isValidModelId, normalizeModelId } from "../config/constants.js";
+import {
+  isCodeModeAgentFilesPolicy,
+  type CodeModeAgentFilesPolicy,
+} from "../config/code-mode.js";
 import type { OpenWikiCommand } from "../agent/types.js";
 import { resolveLanguage } from "../platform/language.js";
 import { isAuthProviderId } from "../auth/providers.js";
@@ -71,6 +75,7 @@ export type CliCommand =
       dryRun: boolean;
       language: string | null;
       languageWarning: string | null;
+      agentFilesPolicy: CodeModeAgentFilesPolicy | null;
       mode: OpenWikiRunMode;
       modeSource: OpenWikiRunModeSource;
       modelId: string | null;
@@ -408,6 +413,7 @@ function parseRunCommand(
   initialMode: OpenWikiRunMode,
   initialModeSource: OpenWikiRunModeSource,
 ): CliCommand {
+  let agentFilesPolicy: CodeModeAgentFilesPolicy | null = null;
   let dryRun = false;
   let language: string | null = null;
   let mode = initialMode;
@@ -441,6 +447,43 @@ function parseRunCommand(
 
     if (arg === "--print" || arg === "-p") {
       print = true;
+      continue;
+    }
+
+    if (arg === "--agent-files-policy") {
+      const nextArg = argv[index + 1];
+
+      if (!nextArg || nextArg.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--agent-files-policy requires manage or preserve.",
+        };
+      }
+      if (!isCodeModeAgentFilesPolicy(nextArg)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid --agent-files-policy value: ${nextArg}. Expected manage or preserve.`,
+        };
+      }
+
+      agentFilesPolicy = nextArg;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--agent-files-policy=")) {
+      const [, value = ""] = arg.split("=", 2);
+      if (!isCodeModeAgentFilesPolicy(value)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: `Invalid --agent-files-policy value: ${value}. Expected manage or preserve.`,
+        };
+      }
+
+      agentFilesPolicy = value;
       continue;
     }
 
@@ -643,6 +686,14 @@ function parseRunCommand(
     mode = "code";
   }
 
+  if (agentFilesPolicy !== null && mode !== "code") {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "--agent-files-policy is only available in code mode.",
+    };
+  }
+
   if (print && !shouldStart) {
     return {
       kind: "error",
@@ -654,6 +705,7 @@ function parseRunCommand(
   return {
     kind: "run",
     exitCode: 0,
+    agentFilesPolicy,
     command,
     dryRun,
     language: resolvedLanguage.language ?? null,
@@ -736,6 +788,7 @@ export const helpContent: HelpContent = {
   usage: [
     "openwiki [--init|--update] [message]",
     "openwiki code [--init|--update] [message]",
+    "openwiki code --agent-files-policy <manage|preserve> [--init|--update] [message]",
     "openwiki personal [--init|--update] [message]",
     "openwiki --mode <personal|code> [--init|--update] [message]",
     "openwiki [--language <locale>] [--init|--update] [message]",
@@ -844,6 +897,11 @@ export const helpContent: HelpContent = {
       description: "Run once and print the final assistant output.",
     },
     {
+      label: "--agent-files-policy <manage|preserve>",
+      description:
+        "Override root agent-file handling for this code-mode run (default: config, then manage).",
+    },
+    {
       label: "--debug",
       description:
         "Show full credential and error diagnostics when a run fails.",
@@ -884,6 +942,7 @@ export const helpContent: HelpContent = {
     "openwiki personal --init",
     "openwiki code --init",
     "openwiki --update",
+    "openwiki code --update --agent-files-policy preserve",
     "openwiki --update --mode personal",
     'openwiki "What can you do?"',
     'openwiki -p "Summarize what OpenWiki can do"',
