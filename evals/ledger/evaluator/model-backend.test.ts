@@ -201,7 +201,10 @@ describe("ModelEvaluationBackend", () => {
     ).toBeLessThan(control.systemPrompts.indexOf(PRECISION_JUDGMENT_SYSTEM));
     // The three passes overlap rather than running strictly serially.
     expect(control.maxActive).toBeGreaterThan(1);
+    // The first inventory is durable before judgment; the second overwrites it
+    // with final cache and historical-consultation provenance.
     expect(inventories).toEqual([
+      { checkpointId: "T1", keptAssertionCount: 1 },
       { checkpointId: "T1", keptAssertionCount: 1 },
     ]);
     expect(extractionProgress.at(-1)).toEqual({ completed: 2, total: 2 });

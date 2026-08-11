@@ -22,6 +22,7 @@ import {
 } from "./pass-utils.js";
 import {
   PRECISION_EXTRACTION_SYSTEM,
+  PRECISION_HISTORY_JUDGMENT_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
   precisionExtractionPrompt,
   precisionJudgmentPrompt,
@@ -56,10 +57,14 @@ const DEFAULT_EXTRACTION_BATCH_SIZE = 25;
  */
 const DEFAULT_JUDGMENT_BATCH_SIZE = 15;
 
+/** Minimum ranked excerpts retained even when they exceed the soft budget. */
+const MIN_EVIDENCE_SECTIONS = 8;
+
 /**
- * Default number of evidence sections retrieved per bounded grounding judgment.
+ * Soft per-assertion source-evidence budget. Small corpora fit in full; larger
+ * ones retain mandatory structural evidence plus at least the top ranked set.
  */
-const DEFAULT_EVIDENCE_TOP_K = 8;
+const EVIDENCE_CHAR_BUDGET = 24_000;
 
 /**
  * A precision grounding verdict stripped of its checkpoint-specific location, so
@@ -278,10 +283,31 @@ export interface PrecisionAssertionInventory {
    */
   candidates: PrecisionAssertionInventoryEntry[];
 
+  /** Evidence selected for every kept assertion, including cache provenance. */
+  groundingEvidence: PrecisionGroundingEvidenceInventoryEntry[];
+
   /**
    * Number of distinct assertions kept for accounting.
    */
   keptAssertionCount: number;
+}
+
+/** Auditable evidence selection for one distinct assertion. */
+export interface PrecisionGroundingEvidenceInventoryEntry {
+  /** Stable assertion identity from the candidate inventory. */
+  assertionId: string;
+
+  /** Current source excerpts supplied to current-state grounding. */
+  currentEvidenceIds: string[];
+
+  /** Historical candidates reserved for a possible former-truth follow-up. */
+  historicalEvidenceIds: string[];
+
+  /** Whether historical candidates were actually supplied to a judgment. */
+  historicalConsulted: boolean;
+
+  /** Whether the final verdict was reused without a fresh grounding call. */
+  cacheHit: boolean;
 }
 
 /**
@@ -304,10 +330,10 @@ export interface PrecisionPassInput {
   sections: ArtifactSection[];
 
   /**
-   * Source evidence corpus every claim is grounded against. It folds prior
-   * checkpoints' source as historical (`current: false`) records, so staleness
-   * is emergent: a claim the current source contradicts but earlier source
-   * supported is stale, otherwise invented.
+   * Source evidence corpus every claim is grounded against. Current records are
+   * judged first. Prior checkpoints are marked historical (`current: false`)
+   * and are consulted only to split a current contradiction into stale versus
+   * invented.
    */
   evidence: EvidenceCorpus;
 
@@ -803,6 +829,7 @@ function buildInventory(
       extractedSectionCount: sectionCount,
       units,
       candidates,
+      groundingEvidence: [],
       keptAssertionCount: assertions.length,
     },
     assertions,
@@ -825,6 +852,137 @@ function toEvidenceSections(corpus: EvidenceCorpus): EvidenceSection[] {
       observedAtCheckpoint: record.observedAtCheckpoint,
       current: record.current,
     }));
+}
+
+/** Keep one stable representative of byte-identical historical source. */
+function deduplicateHistoricalEvidence(
+  sections: EvidenceSection[],
+): EvidenceSection[] {
+  const distinct = new Map<string, EvidenceSection>();
+
+  for (const section of [...sections].sort((a, b) =>
+    compareStrings(a.id, b.id),
+  )) {
+    const comparableContent =
+      section.relativePath === "git tracked files"
+        ? section.content.slice(Math.max(0, section.content.indexOf("\n") + 1))
+        : section.content;
+    const key = `${section.relativePath}\0${comparableContent}`;
+    if (!distinct.has(key)) {
+      distinct.set(key, section);
+    }
+  }
+
+  return [...distinct.values()];
+}
+
+/** Whether a claim explicitly names a source path represented by a section. */
+function statementNamesSourcePath(
+  statement: string,
+  section: EvidenceSection,
+): boolean {
+  const sourceRef = section.relativePath.trim();
+  return (
+    sourceRef.length > 0 &&
+    sourceRef !== "git tracked files" &&
+    statement
+      .toLocaleLowerCase("en-US")
+      .includes(sourceRef.toLocaleLowerCase("en-US"))
+  );
+}
+
+/** Extract filename-like source references without interpreting claim truth. */
+function namedSourcePaths(statement: string): string[] {
+  const matches =
+    statement.match(
+      /\/?(?:[\p{L}_@][\p{L}\p{N}_.@+-]*\/)*[\p{L}_@][\p{L}\p{N}_.@+-]*\.[\p{L}\p{N}]+/gu,
+    ) ?? [];
+  return matches.map((match) => match.replace(/^\//u, ""));
+}
+
+/** Whether a claim names a file that the complete source manifest omits. */
+function statementNamesMissingSourcePath(
+  statement: string,
+  sections: EvidenceSection[],
+): boolean {
+  const sourceRefs = new Set(
+    sections.map((section) => section.relativePath.toLocaleLowerCase("en-US")),
+  );
+  return namedSourcePaths(statement).some(
+    (sourcePath) => !sourceRefs.has(sourcePath.toLocaleLowerCase("en-US")),
+  );
+}
+
+/** Structural evidence that must not depend on lexical term overlap. */
+function isMandatoryEvidence(
+  assertion: ExtractedArtifactAssertion,
+  section: EvidenceSection,
+  sections: EvidenceSection[],
+): boolean {
+  return (
+    (section.relativePath === "git tracked files" &&
+      statementNamesMissingSourcePath(assertion.statement, sections)) ||
+    statementNamesSourcePath(assertion.statement, section)
+  );
+}
+
+/** Approximate stable prompt footprint for one source excerpt. */
+function evidenceSize(section: EvidenceSection): number {
+  return section.relativePath.length + section.content.length;
+}
+
+/**
+ * Select bounded evidence while guaranteeing manifests and explicitly named
+ * paths. When the complete corpus fits the soft budget, retain it in full.
+ */
+function selectEvidence(
+  assertion: ExtractedArtifactAssertion,
+  sections: EvidenceSection[],
+  index: SectionBm25Index,
+): EvidenceSection[] {
+  if (sections.length === 0) {
+    return [];
+  }
+
+  const ranked = index
+    .search(assertion.statement, sections.length)
+    .map((item) => item.section as EvidenceSection);
+  const mandatory = sections
+    .filter((section) => isMandatoryEvidence(assertion, section, sections))
+    .sort((a, b) => compareStrings(a.id, b.id));
+  const selected: EvidenceSection[] = [];
+  const selectedIds = new Set<string>();
+  let size = 0;
+
+  const add = (section: EvidenceSection): void => {
+    if (selectedIds.has(section.id)) {
+      return;
+    }
+    selectedIds.add(section.id);
+    selected.push(section);
+    size += evidenceSize(section);
+  };
+
+  mandatory.forEach(add);
+  for (const section of ranked) {
+    if (
+      selected.length < MIN_EVIDENCE_SECTIONS ||
+      size + evidenceSize(section) <= EVIDENCE_CHAR_BUDGET
+    ) {
+      add(section);
+    }
+  }
+
+  return selected;
+}
+
+/** Merge evidence lists without allowing one excerpt to appear twice. */
+function mergeEvidence(...groups: EvidenceSection[][]): EvidenceSection[] {
+  const byId = new Map<string, EvidenceSection>();
+  for (const section of groups.flat()) {
+    byId.set(section.id, section);
+  }
+  return [...byId.values()];
 }
 
 /**
@@ -1061,12 +1219,13 @@ function resolveJudgments(
 async function repairPrecisionJudgment(
   input: PrecisionPassInput,
   target: PrecisionJudgmentTarget,
+  systemPrompt: string,
 ): Promise<PrecisionAssertionEvaluation> {
   const output = await invokeStructuredModel({
     model: input.model,
     pass: "precision-judgment",
     checkpointId: input.checkpointId,
-    systemPrompt: PRECISION_JUDGMENT_SYSTEM,
+    systemPrompt,
     taskPrompt: precisionJudgmentPrompt(
       toJudgmentAssertions([target]),
       toJudgmentEvidence([target]),
@@ -1088,6 +1247,7 @@ async function repairPrecisionJudgment(
 async function resolvePrecisionBatchResilient(
   input: PrecisionPassInput,
   targets: PrecisionJudgmentTarget[],
+  systemPrompt = PRECISION_JUDGMENT_SYSTEM,
 ): Promise<{
   evaluations: PrecisionAssertionEvaluation[];
   degraded: Set<string>;
@@ -1096,7 +1256,7 @@ async function resolvePrecisionBatchResilient(
     model: input.model,
     pass: "precision-judgment",
     checkpointId: input.checkpointId,
-    systemPrompt: PRECISION_JUDGMENT_SYSTEM,
+    systemPrompt,
     taskPrompt: precisionJudgmentPrompt(
       toJudgmentAssertions(targets),
       toJudgmentEvidence(targets),
@@ -1114,7 +1274,9 @@ async function resolvePrecisionBatchResilient(
       results.push(...resolveJudgments([target], { evaluations: matching }));
     } catch (initialError) {
       try {
-        results.push(await repairPrecisionJudgment(input, target));
+        results.push(
+          await repairPrecisionJudgment(input, target, systemPrompt),
+        );
       } catch (repairError) {
         const message = `${String(initialError)} Isolated repair failed: ${String(repairError)}`;
         input.onWarning?.({
@@ -1142,9 +1304,9 @@ async function resolvePrecisionBatchResilient(
  * Extract atomic wiki claims and ground every one against the source evidence.
  *
  * There is no census-accounting stage: each extracted assertion (current or
- * historical) is judged directly against the retrieved source evidence, which
- * `supported`, `contradicted` (stale or invented), or `not-addressed`
- * (`unverified`).
+ * historical) is judged against bounded source evidence. Current claims see
+ * current source first; only a contradiction triggers a historical former-truth
+ * check that separates stale from invented. Not-addressed claims are unverified.
  */
 export async function runPrecisionPass(
   input: PrecisionPassInput,
@@ -1177,8 +1339,8 @@ export async function runPrecisionPass(
     extraction.units,
     extraction.assertions,
   );
-  await input.onInventory?.(inventory);
   if (assertions.length === 0) {
+    await input.onInventory?.(inventory);
     input.onGroundingProgress?.(0, 0);
     return [];
   }
@@ -1190,6 +1352,14 @@ export async function runPrecisionPass(
   // unverified without a model call, and nothing is cached because the verdict
   // reflects an empty corpus rather than a grounding decision.
   if (evidenceSections.length === 0) {
+    inventory.groundingEvidence = assertions.map((assertion) => ({
+      assertionId: assertion.id,
+      currentEvidenceIds: [],
+      historicalEvidenceIds: [],
+      historicalConsulted: false,
+      cacheHit: false,
+    }));
+    await input.onInventory?.(inventory);
     const unverified = assertions.map(
       (assertion): PrecisionAssertionEvaluation => ({
         assertion: assertion.statement,
@@ -1205,64 +1375,236 @@ export async function runPrecisionPass(
     return unverified;
   }
 
-  const evidenceIndex = new SectionBm25Index(evidenceSections);
+  const currentEvidence = evidenceSections.filter((section) => section.current);
+  const historicalEvidence = deduplicateHistoricalEvidence(
+    evidenceSections.filter((section) => !section.current),
+  );
+  const currentEvidenceIndex = new SectionBm25Index(currentEvidence);
+  const historicalEvidenceIndex = new SectionBm25Index(historicalEvidence);
   const cache = input.verdictCache;
+  const selectedEvidence = new Map<
+    string,
+    { current: EvidenceSection[]; historical: EvidenceSection[] }
+  >();
+  const groundingInventory = new Map<
+    string,
+    PrecisionGroundingEvidenceInventoryEntry
+  >();
 
-  // Ground each assertion on its OWN deterministic BM25 top-K rather than the
-  // batch union, so a verdict is a pure function of (statement, tense, own
-  // evidence) and can be reused across checkpoints. Cache hits are resolved up
-  // front with no model call; only the misses are batched and judged. The
-  // grounding prompt still shows a batch's evidence as one deduped excerpt list,
-  // but each assertion may cite only its own top-K, which the resolver enforces.
-  const uncached: Array<{
-    target: PrecisionJudgmentTarget;
-    cacheKey: string;
-  }> = [];
   for (const assertion of assertions) {
-    const evidence = evidenceIndex
-      .search(assertion.statement, DEFAULT_EVIDENCE_TOP_K)
-      .map((ranked) => ranked.section as EvidenceSection);
-    const cacheKey = precisionVerdictCacheKey(assertion, evidence);
+    const current = selectEvidence(
+      assertion,
+      currentEvidence,
+      currentEvidenceIndex,
+    );
+    const historical = selectEvidence(
+      assertion,
+      historicalEvidence,
+      historicalEvidenceIndex,
+    );
+    selectedEvidence.set(assertion.id, { current, historical });
+    groundingInventory.set(assertion.id, {
+      assertionId: assertion.id,
+      currentEvidenceIds: current.map((section) => section.id),
+      historicalEvidenceIds: historical.map((section) => section.id),
+      historicalConsulted:
+        assertion.tense === "historical" && historical.length > 0,
+      cacheHit: false,
+    });
+  }
+  inventory.groundingEvidence = assertions.map((assertion) =>
+    groundingInventory.get(assertion.id)!,
+  );
+
+  // Persist deterministic evidence selection before any grounding call. A
+  // second write after judgment records which historical candidates were
+  // actually consulted and which verdicts came from cache.
+  await input.onInventory?.(inventory);
+
+  const cacheKeyById = new Map<string, string>();
+  const currentTargets: PrecisionJudgmentTarget[] = [];
+  const historicalClaimTargets: PrecisionJudgmentTarget[] = [];
+
+  for (const assertion of assertions) {
+    const selected = selectedEvidence.get(assertion.id)!;
+    const cacheKey = precisionVerdictCacheKey(
+      assertion,
+      mergeEvidence(selected.current, selected.historical),
+    );
+    cacheKeyById.set(assertion.id, cacheKey);
     const cached = cache?.get(cacheKey);
     if (cached !== undefined) {
       evaluations.set(assertion.id, projectCachedVerdict(cached, assertion));
+      groundingInventory.get(assertion.id)!.cacheHit = true;
+      continue;
+    }
+
+    const evidence =
+      assertion.tense === "current"
+        ? selected.current
+        : mergeEvidence(selected.current, selected.historical);
+    if (evidence.length === 0) {
+      evaluations.set(assertion.id, {
+        assertion: assertion.statement,
+        location: assertion.relativePath,
+        verdict: "unverified",
+        tense: assertion.tense,
+        adjudicatedBy: "none",
+        evidenceIds: [],
+        rationale:
+          assertion.tense === "current"
+            ? "No current source evidence was available for grounding."
+            : "No current or historical source evidence was available for grounding.",
+      });
+      continue;
+    }
+
+    const target = { assertion, evidence };
+    if (assertion.tense === "current") {
+      currentTargets.push(target);
     } else {
-      uncached.push({ target: { assertion, evidence }, cacheKey });
+      historicalClaimTargets.push(target);
     }
   }
-  const cacheKeyById = new Map(
-    uncached.map(({ target, cacheKey }) => [target.assertion.id, cacheKey]),
-  );
   input.onGroundingProgress?.(evaluations.size, assertions.length);
 
-  // Judgment batches are independent: each writes only its own assertions'
-  // verdicts (assertion ids are unique across batches), so they run concurrently
-  // under the shared limiter. Only non-degraded verdicts are cached; a repair
-  // fallback reflects an evaluator failure, not a grounding decision.
-  await mapWithLimit(
-    batch(
-      uncached.map(({ target }) => target),
-      judgmentBatchSize,
-    ),
-    limit,
-    async (targetBatch) => {
-      const { evaluations: judged, degraded } =
-        await resolvePrecisionBatchResilient(input, targetBatch);
-      for (const [index, evaluation] of judged.entries()) {
-        const { id } = targetBatch[index].assertion;
-        evaluations.set(id, evaluation);
-        const cacheKey = cacheKeyById.get(id);
-        if (
-          cache !== undefined &&
-          cacheKey !== undefined &&
-          !degraded.has(id)
-        ) {
-          cache.set(cacheKey, toCachedVerdict(evaluation));
-        }
-      }
-      input.onGroundingProgress?.(evaluations.size, assertions.length);
-    },
+  /** Judge targets in bounded batches while retaining target identity. */
+  const judgeTargets = async (
+    targets: PrecisionJudgmentTarget[],
+    systemPrompt: string,
+  ): Promise<
+    Array<{
+      target: PrecisionJudgmentTarget;
+      evaluation: PrecisionAssertionEvaluation;
+      degraded: boolean;
+    }>
+  > => {
+    const judgedBatches = await mapWithLimit(
+      batch(targets, judgmentBatchSize),
+      limit,
+      async (targetBatch) => {
+        const resolved = await resolvePrecisionBatchResilient(
+          input,
+          targetBatch,
+          systemPrompt,
+        );
+        return resolved.evaluations.map((evaluation, index) => ({
+          target: targetBatch[index],
+          evaluation,
+          degraded: resolved.degraded.has(targetBatch[index].assertion.id),
+        }));
+      },
+    );
+    return judgedBatches.flat();
+  };
+
+  // Current claims see only current source. Historical narration may require
+  // both sides of a transition, so it retains the combined bounded corpus.
+  const [currentJudgments, historicalClaimJudgments] = await Promise.all([
+    judgeTargets(currentTargets, PRECISION_JUDGMENT_SYSTEM),
+    judgeTargets(historicalClaimTargets, PRECISION_JUDGMENT_SYSTEM),
+  ]);
+  const pendingFormerTruth: Array<{
+    target: PrecisionJudgmentTarget;
+    currentEvaluation: PrecisionAssertionEvaluation;
+  }> = [];
+
+  for (const { target, evaluation, degraded } of historicalClaimJudgments) {
+    const id = target.assertion.id;
+    evaluations.set(id, evaluation);
+    const cacheKey = cacheKeyById.get(id);
+    if (cache !== undefined && cacheKey !== undefined && !degraded) {
+      cache.set(cacheKey, toCachedVerdict(evaluation));
+    }
+  }
+
+  for (const { target, evaluation, degraded } of currentJudgments) {
+    const id = target.assertion.id;
+    if (!degraded && evaluation.verdict === "invented") {
+      pendingFormerTruth.push({ target, currentEvaluation: evaluation });
+      continue;
+    }
+
+    evaluations.set(id, evaluation);
+    const cacheKey = cacheKeyById.get(id);
+    if (cache !== undefined && cacheKey !== undefined && !degraded) {
+      cache.set(cacheKey, toCachedVerdict(evaluation));
+    }
+  }
+  input.onGroundingProgress?.(evaluations.size, assertions.length);
+
+  const historicalTargets: PrecisionJudgmentTarget[] = [];
+  const pendingById = new Map(
+    pendingFormerTruth.map((pending) => [pending.target.assertion.id, pending]),
   );
+  for (const pending of pendingFormerTruth) {
+    const id = pending.target.assertion.id;
+    const historical = selectedEvidence.get(id)!.historical;
+    if (historical.length === 0) {
+      evaluations.set(id, pending.currentEvaluation);
+      const cacheKey = cacheKeyById.get(id);
+      if (cache !== undefined && cacheKey !== undefined) {
+        cache.set(cacheKey, toCachedVerdict(pending.currentEvaluation));
+      }
+      continue;
+    }
+
+    groundingInventory.get(id)!.historicalConsulted = true;
+    historicalTargets.push({
+      assertion: { ...pending.target.assertion, tense: "historical" },
+      evidence: historical,
+    });
+  }
+  input.onGroundingProgress?.(evaluations.size, assertions.length);
+
+  const formerTruthJudgments = await judgeTargets(
+    historicalTargets,
+    PRECISION_HISTORY_JUDGMENT_SYSTEM,
+  );
+  for (const { target, evaluation, degraded } of formerTruthJudgments) {
+    const id = target.assertion.id;
+    const pending = pendingById.get(id)!;
+    let finalEvaluation: PrecisionAssertionEvaluation;
+
+    if (degraded) {
+      finalEvaluation = {
+        ...evaluation,
+        assertion: pending.target.assertion.statement,
+        location: pending.target.assertion.relativePath,
+        tense: "current",
+        rationale: `Current source established a contradiction, but former truth could not be determined. ${evaluation.rationale}`,
+      };
+    } else if (evaluation.verdict === "supported") {
+      finalEvaluation = {
+        assertion: pending.target.assertion.statement,
+        location: pending.target.assertion.relativePath,
+        verdict: "stale",
+        tense: "current",
+        adjudicatedBy: "source",
+        evidenceIds: [
+          ...pending.currentEvaluation.evidenceIds,
+          ...evaluation.evidenceIds,
+        ],
+        rationale: `${pending.currentEvaluation.rationale} Historical evidence establishes that the claim was formerly true: ${evaluation.rationale}`,
+      };
+    } else {
+      finalEvaluation = {
+        ...pending.currentEvaluation,
+        rationale: `${pending.currentEvaluation.rationale} Historical evidence did not establish that the claim was formerly true: ${evaluation.rationale}`,
+      };
+    }
+
+    evaluations.set(id, finalEvaluation);
+    const cacheKey = cacheKeyById.get(id);
+    if (cache !== undefined && cacheKey !== undefined && !degraded) {
+      cache.set(cacheKey, toCachedVerdict(finalEvaluation));
+    }
+  }
+  input.onGroundingProgress?.(evaluations.size, assertions.length);
+
+  // Finalize the audit inventory after cache resolution and any historical
+  // follow-up. The durable sink overwrites the pre-judgment snapshot in place.
+  await input.onInventory?.(inventory);
 
   return assertions.map(
     (assertion) =>

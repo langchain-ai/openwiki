@@ -4,7 +4,6 @@ import {
   formatProgressDuration,
   formatProgressPercentage,
 } from "./progress.js";
-import { formatTokenCount } from "./format.js";
 
 test("formats compact durations", () => {
   expect(formatProgressDuration(850)).toBe("850ms");
@@ -16,13 +15,6 @@ test("formats bounded progress percentages", () => {
   expect(formatProgressPercentage(28, 64)).toBe("44%");
   expect(formatProgressPercentage(0, 0)).toBe("100%");
   expect(formatProgressPercentage(12, 10)).toBe("100%");
-});
-
-test("formats compact token counts", () => {
-  expect(formatTokenCount(850)).toBe("850");
-  expect(formatTokenCount(12_345)).toBe("12.3k");
-  expect(formatTokenCount(182_000)).toBe("182k");
-  expect(formatTokenCount(1_250_000)).toBe("1.3m");
 });
 
 describe("createCliProgressReporter", () => {
@@ -47,12 +39,9 @@ describe("createCliProgressReporter", () => {
       command: "update",
       durationMs: 4_200,
       skipped: false,
-      totalTokens: 182_000,
     });
     report({ type: "artifact-captured", checkpointId: "T1", documentCount: 4 });
-    expect(rendered).toContain(
-      "OpenWiki update complete · 4.2s · 4 documents · 182k tokens",
-    );
+    expect(rendered).toContain("OpenWiki update complete · 4.2s · 4 documents");
     expect(rendered).not.toContain("Captured");
   });
 

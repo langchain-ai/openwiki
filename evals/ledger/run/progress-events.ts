@@ -31,7 +31,6 @@ export type BenchmarkProgressEvent =
       command: "init" | "update";
       durationMs: number;
       skipped: boolean;
-      totalTokens?: number;
     }
   | {
       type: "artifact-captured";

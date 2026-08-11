@@ -193,7 +193,6 @@ export async function runBenchmark(
         command,
         durationMs: outcome.durationMs,
         skipped: outcome.skipped,
-        totalTokens: outcome.totalTokens,
       });
 
       const artifact = await captureArtifact(
@@ -251,7 +250,6 @@ export async function runBenchmark(
         efficiency: {
           durationMs: outcome.durationMs,
           skipped: outcome.skipped,
-          totalTokens: outcome.totalTokens,
         },
         reportProgress,
       });

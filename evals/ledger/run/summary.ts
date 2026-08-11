@@ -1,5 +1,5 @@
 import type { LedgerRunResult } from "../core/types.js";
-import { formatPercent, formatTokenCount } from "./format.js";
+import { formatPercent } from "./format.js";
 import { formatProgressDuration } from "./progress.js";
 
 /** Optional paths and timing supplied by the CLI after persistence. */
@@ -26,20 +26,8 @@ export function formatRunSummary(
     options.elapsedMs === undefined
       ? ""
       : ` · ${formatProgressDuration(options.elapsedMs)}`;
-  const tokenCounts = result.checkpoints.map(
-    (checkpoint) => checkpoint.efficiency.totalTokens,
-  );
-  const totalTokens =
-    tokenCounts.length > 0 &&
-    tokenCounts.every((tokens): tokens is number => tokens !== undefined)
-      ? tokenCounts.reduce((sum, tokens) => sum + tokens, 0)
-      : undefined;
-  const tokens =
-    totalTokens === undefined
-      ? ""
-      : ` · ${formatTokenCount(totalTokens)} OpenWiki tokens`;
   lines.push(
-    `└ ${incomplete ? "⚠️" : "✅"} LEDGER score ${formatPercent(result.score.value, 0)}${elapsed}${tokens}`,
+    `└ ${incomplete ? "⚠️" : "✅"} LEDGER score ${formatPercent(result.score.value, 0)}${elapsed}`,
   );
   return `${lines.join("\n")}\n\n`;
 }

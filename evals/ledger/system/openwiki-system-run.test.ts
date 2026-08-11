@@ -85,7 +85,6 @@ describe("OpenWikiSystem.run", () => {
     expect(outcome.skipped).toBe(true);
     expect(Number.isInteger(outcome.durationMs)).toBe(true);
     expect(outcome.durationMs).toBeGreaterThanOrEqual(0);
-    expect(outcome.totalTokens).toBe(0);
 
     // The adapter must drive OpenWiki in repository mode so the worktree cwd is
     // honored, and pass the configured model through.
@@ -102,14 +101,13 @@ describe("OpenWikiSystem.run", () => {
   });
 
   test("update treats an absent skip flag as not skipped and passes modelId undefined when unset", async () => {
-    controller.result = { command: "update", model: "m", totalTokens: 12_345 };
+    controller.result = { command: "update", model: "m" };
     delete process.env.OPENWIKI_MODEL_ID;
     const system = new OpenWikiSystem({ provider: "openai" });
 
     const outcome = await system.update("/worktree");
 
     expect(outcome.skipped).toBe(false);
-    expect(outcome.totalTokens).toBe(12_345);
     expect(controller.calls[0].command).toBe("update");
     // With no configured model the adapter passes undefined so OpenWiki resolves
     // its own default, and it leaves OPENWIKI_MODEL_ID untouched.

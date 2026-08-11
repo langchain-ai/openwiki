@@ -28,13 +28,13 @@ class FakeSystem implements SystemUnderTest {
   async init(worktreeDir: string): Promise<SystemRunOutcome> {
     await this.write(worktreeDir, "f1: A\nf2: x1\n");
 
-    return { skipped: false, durationMs: 10, totalTokens: 1_000 };
+    return { skipped: false, durationMs: 10 };
   }
 
   async update(worktreeDir: string): Promise<SystemRunOutcome> {
     await this.write(worktreeDir, "f1: A\nf2: x2\n");
 
-    return { skipped: false, durationMs: 20, totalTokens: 2_000 };
+    return { skipped: false, durationMs: 20 };
   }
 
   private async write(worktreeDir: string, body: string): Promise<void> {
@@ -310,10 +310,8 @@ describe("runBenchmark", () => {
     });
 
     expect(result.checkpoints[0].efficiency.durationMs).toBe(10);
-    expect(result.checkpoints[0].efficiency.totalTokens).toBe(1_000);
     expect(result.checkpoints[0].efficiency.churnedLines).toBeUndefined();
     expect(result.checkpoints[1].efficiency.durationMs).toBe(20);
-    expect(result.checkpoints[1].efficiency.totalTokens).toBe(2_000);
     expect(result.checkpoints[1].efficiency.churnedLines).toBeGreaterThan(0);
     expect(result.score.claimHealth).toBe(0.75);
     expect(result.score.forgetting).toBe(1);

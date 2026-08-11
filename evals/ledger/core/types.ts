@@ -779,20 +779,6 @@ export interface LedgerExecutionMetrics {
    * @default absent at index 0, where there is no prior artifact to diff against
    */
   churnedLines?: number;
-
-  /**
-   * Provider-reported OpenWiki tokens consumed by this checkpoint's run.
-   *
-   * @default absent when any model call omits usage metadata
-   */
-  totalTokens?: number;
-
-  /**
-   * Estimated cost in US dollars, when token capture and pricing are enabled.
-   *
-   * @default absent unless token capture and a price table are provided
-   */
-  estimatedCostUsd?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -929,13 +915,6 @@ export interface SystemRunOutcome {
    * Wall-clock milliseconds the run took.
    */
   durationMs: number;
-
-  /**
-   * Total tokens consumed, if the system can report them.
-   *
-   * @default absent when the system does not report token usage
-   */
-  totalTokens?: number;
 }
 
 /**

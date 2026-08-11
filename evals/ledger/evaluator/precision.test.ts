@@ -10,6 +10,7 @@ import {
 } from "./precision.js";
 import {
   PRECISION_EXTRACTION_SYSTEM,
+  PRECISION_HISTORY_JUDGMENT_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
 } from "./prompts.js";
 
@@ -122,6 +123,10 @@ describe("runPrecisionPass", () => {
             evidenceIds: ["current-0"],
             rationale: "Current source establishes add.",
           },
+        ],
+      },
+      {
+        evaluations: [
           {
             assertionId: "assertion-000002",
             verdict: "supported",
@@ -168,14 +173,30 @@ describe("runPrecisionPass", () => {
             verdict: "contradicted",
             evidenceIds: ["current-0"],
             formerlyTrue: false,
-            rationale: "Current source is 2.0.0 and 9.0.0 was never true.",
+            rationale: "Current source is 2.0.0, not 9.0.0.",
           },
           {
             assertionId: "assertion-000002",
             verdict: "contradicted",
-            evidenceIds: ["current-0", "historical-0"],
-            formerlyTrue: true,
-            rationale: "1.0.0 held before the current 2.0.0 source.",
+            evidenceIds: ["current-0"],
+            formerlyTrue: false,
+            rationale: "Current source is 2.0.0, not 1.0.0.",
+          },
+        ],
+      },
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "not-addressed",
+            evidenceIds: [],
+            rationale: "Historical source never establishes 9.0.0.",
+          },
+          {
+            assertionId: "assertion-000002",
+            verdict: "supported",
+            evidenceIds: ["historical-0"],
+            rationale: "Historical source establishes 1.0.0.",
           },
         ],
       },
@@ -192,6 +213,124 @@ describe("runPrecisionPass", () => {
       { verdict: "invented", adjudicatedBy: "source" },
       { verdict: "stale", adjudicatedBy: "source" },
     ]);
+  });
+
+  test("keeps current named paths and the manifest out of historical BM25 crowding", async () => {
+    const control = controller([
+      extraction([
+        { statement: "src/version.ts contains a standalone VERSION constant" },
+        { statement: "There is no package.json in the repository" },
+      ]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "supported",
+            evidenceIds: ["src/version.ts::0000"],
+            rationale: "The named current file defines VERSION.",
+          },
+          {
+            assertionId: "assertion-000002",
+            verdict: "supported",
+            evidenceIds: ["git:tracked-files"],
+            rationale: "The complete current manifest omits package.json.",
+          },
+        ],
+      },
+    ]);
+    let inventory: PrecisionAssertionInventory | undefined;
+    const filler = "package repository version constant ".repeat(200);
+    const corpus: EvidenceCorpus = {
+      checkpointId: "T2",
+      records: [
+        {
+          evidenceId: "git:tracked-files",
+          sourceRef: "git tracked files",
+          observedAtCheckpoint: "T2",
+          current: true,
+          content: "Tracked files:\n- README.md\n- src/version.ts",
+        },
+        ...Array.from({ length: 10 }, (_, index) => ({
+          evidenceId: `notes-${index}::0000`,
+          sourceRef: `notes-${index}.md`,
+          observedAtCheckpoint: "T2",
+          current: true,
+          content: filler,
+        })),
+        {
+          evidenceId: "src/version.ts::0000",
+          sourceRef: "src/version.ts",
+          observedAtCheckpoint: "T2",
+          current: true,
+          content: 'export const VERSION = "2.0.0";',
+        },
+        {
+          evidenceId: "T0:src/version.ts::0000",
+          sourceRef: "src/version.ts",
+          observedAtCheckpoint: "T0",
+          current: false,
+          content: 'export const VERSION = "1.0.0";',
+        },
+        {
+          evidenceId: "T0:git:tracked-files",
+          sourceRef: "git tracked files",
+          observedAtCheckpoint: "T0",
+          current: false,
+          content:
+            "Tracked files reported by git ls-files at checkpoint T0:\n- README.md\n- src/version.ts",
+        },
+        {
+          evidenceId: "T1:git:tracked-files",
+          sourceRef: "git tracked files",
+          observedAtCheckpoint: "T1",
+          current: false,
+          content:
+            "Tracked files reported by git ls-files at checkpoint T1:\n- README.md\n- src/version.ts",
+        },
+        {
+          evidenceId: "T1:src/version.ts::0000",
+          sourceRef: "src/version.ts",
+          observedAtCheckpoint: "T1",
+          current: false,
+          content: 'export const VERSION = "1.0.0";',
+        },
+      ],
+    };
+
+    await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T2",
+      sections: [section("claims")],
+      evidence: corpus,
+      onInventory: (value) => {
+        inventory = value;
+      },
+    });
+
+    const currentPromptIndex = control.systemPrompts.indexOf(
+      PRECISION_JUDGMENT_SYSTEM,
+    );
+    const currentPrompt = control.taskPrompts[currentPromptIndex];
+    expect(currentPrompt).toContain('"evidenceId": "src/version.ts::0000"');
+    expect(currentPrompt).toContain('"evidenceId": "git:tracked-files"');
+    expect(currentPrompt).not.toContain('"evidenceId": "T0:');
+    expect(currentPrompt).not.toContain('"evidenceId": "T1:');
+
+    const namedPath = inventory?.groundingEvidence[0];
+    expect(namedPath?.currentEvidenceIds).toContain("src/version.ts::0000");
+    expect(
+      namedPath?.historicalEvidenceIds.filter((id) =>
+        id.includes("src/version.ts"),
+      ),
+    ).toHaveLength(1);
+    expect(inventory?.groundingEvidence[1]?.currentEvidenceIds).toContain(
+      "git:tracked-files",
+    );
+    expect(
+      inventory?.groundingEvidence[1]?.historicalEvidenceIds.filter((id) =>
+        id.includes("git:tracked-files"),
+      ),
+    ).toHaveLength(1);
   });
 
   test("marks claims unverified without a model call when no source evidence exists", async () => {
@@ -237,10 +376,9 @@ describe("runPrecisionPass", () => {
           {
             assertionId: "assertion-000002",
             verdict: "contradicted",
-            evidenceIds: ["current-0", "historical-0"],
-            formerlyTrue: true,
-            rationale:
-              "Current beta contradicts alpha, which historical source established.",
+            evidenceIds: ["current-0"],
+            formerlyTrue: false,
+            rationale: "Current beta contradicts alpha.",
           },
           {
             assertionId: "assertion-000003",
@@ -248,6 +386,22 @@ describe("runPrecisionPass", () => {
             evidenceIds: [],
             rationale:
               "Supplied source neither confirms nor denies the preference.",
+          },
+        ],
+      },
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "not-addressed",
+            evidenceIds: [],
+            rationale: "Historical source does not establish gamma.",
+          },
+          {
+            assertionId: "assertion-000002",
+            verdict: "supported",
+            evidenceIds: ["historical-0"],
+            rationale: "Historical source establishes alpha.",
           },
         ],
       },
@@ -268,6 +422,7 @@ describe("runPrecisionPass", () => {
     expect(control.systemPrompts).toEqual([
       PRECISION_EXTRACTION_SYSTEM,
       PRECISION_JUDGMENT_SYSTEM,
+      PRECISION_HISTORY_JUDGMENT_SYSTEM,
     ]);
   });
 

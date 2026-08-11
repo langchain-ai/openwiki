@@ -88,6 +88,7 @@ vi.mock("../replay/workspace.js", async (importOriginal) => {
 const {
   FORGETTING_SYSTEM,
   PRECISION_EXTRACTION_SYSTEM,
+  PRECISION_HISTORY_JUDGMENT_SYSTEM,
   PRECISION_JUDGMENT_SYSTEM,
 } = await import("../evaluator/prompts.js");
 
@@ -239,6 +240,22 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
             : "The current source establishes the claim.",
         };
       }),
+    };
+  }
+
+  if (systemPrompt === PRECISION_HISTORY_JUDGMENT_SYSTEM) {
+    const evidenceMarker = "\n\nSource evidence (JSON):\n";
+    const assertions = parsePromptJson<
+      Array<{ assertionId: string; statement: string }>
+    >(taskPrompt, "Assertions (JSON):\n", evidenceMarker);
+
+    return {
+      evaluations: assertions.map((assertion) => ({
+        assertionId: assertion.assertionId,
+        verdict: "not-addressed",
+        evidenceIds: [],
+        rationale: "Historical source never establishes undocumented magic.",
+      })),
     };
   }
 
@@ -530,6 +547,7 @@ describe("direct evaluator end to end", () => {
     expect(promptCount(FORGETTING_SYSTEM)).toBe(1);
     expect(promptCount(PRECISION_EXTRACTION_SYSTEM)).toBe(3);
     expect(promptCount(PRECISION_JUDGMENT_SYSTEM)).toBe(3);
+    expect(promptCount(PRECISION_HISTORY_JUDGMENT_SYSTEM)).toBe(2);
     // Precision judgment always trails its own extraction, even when interleaved
     // with the other passes: at no prefix have more judgments run than extractions.
     let extractions = 0;
@@ -544,7 +562,7 @@ describe("direct evaluator end to end", () => {
     }
     // Forgetting and precision overlap rather than running strictly serially.
     expect(modelControl.maxActive).toBeGreaterThan(1);
-    expect(modelControl.signals).toHaveLength(7);
+    expect(modelControl.signals).toHaveLength(9);
     expect(workspaceRoots).toHaveLength(1);
     await expect(stat(workspaceRoots[0])).rejects.toMatchObject({
       code: "ENOENT",

@@ -297,6 +297,15 @@ describe("writeRunResult", () => {
           assertionId: "assertion-000001",
         },
       ],
+      groundingEvidence: [
+        {
+          assertionId: "assertion-000001",
+          currentEvidenceIds: ["src/calc.ts::0000"],
+          historicalEvidenceIds: [],
+          historicalConsulted: false,
+          cacheHit: false,
+        },
+      ],
       keptAssertionCount: 1,
     });
 

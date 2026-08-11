@@ -281,6 +281,21 @@ Rules:
 - Return only the structured response.`;
 
 /**
+ * System instructions for the second, contradiction-only historical check.
+ * Current source has already established an incompatible truth; this pass asks
+ * only whether the complete claim was true at an earlier checkpoint.
+ */
+export const PRECISION_HISTORY_JUDGMENT_SYSTEM = `${PRECISION_JUDGMENT_SYSTEM}
+
+This is a former-truth follow-up. Every supplied excerpt is historical, and the
+current source has already contradicted each assertion. Judge only whether the
+complete assertion was established at any earlier checkpoint:
+- Return "supported" when historical evidence establishes the complete claim.
+- Return "not-addressed" when it does not.
+- Never return "contradicted" in this follow-up.
+- Omit formerlyTrue; the caller derives stale versus invented from this result.`;
+
+/**
  * Build one bounded obsolete-knowledge-classification task.
  *
  * @param targets - Obsolete versions paired with BM25-selected candidate excerpts.

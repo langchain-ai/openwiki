@@ -56,22 +56,31 @@ classify every text unit and extract atomic claims
 remove normalized exact duplicates
         │
         ▼
-retrieve the claim's top eight current/historical source excerpts
+retrieve bounded current source evidence
         │
         ▼
 supported / contradicted / not addressed
         │
-        ├ contradicted + formerly true → stale
-        ├ contradicted + never true    → invented
-        └ not addressed                → unverified
+        ├ contradicted → check distinct historical evidence
+        │                  ├ formerly true → stale
+        │                  └ not established → invented
+        └ not addressed → unverified
 ```
 
 Source evidence contains a tracked-file manifest plus bounded text chunks from
 every tracked, regular, non-binary Git file except the generated `openwiki/`
 artifact. Symlinks are skipped. Current evidence comes from the active
 checkpoint; evidence captured at every earlier checkpoint is marked historical.
-Every supported or contradicted verdict cites the exact evidence records visible
-to the judge.
+
+Current claims are grounded against current evidence first; historical snapshots
+cannot crowd current truth out of the retrieval window. A named source path is
+always included, and a claim naming a missing file receives the complete tracked-
+file manifest. Small corpora are supplied in full. Larger corpora retain
+mandatory evidence plus at least the eight best BM25 matches within a soft
+character budget. Byte-identical historical excerpts are deduplicated, and
+historical evidence is consulted only after current source establishes a
+contradiction. Every selected evidence identity, cache hit, and historical
+follow-up is preserved in the assertion inventory.
 
 Evaluator failures do not abort the run. A claim-grounding judgment that remains
 invalid after isolated repair falls back to `unverified`; a failed extraction
@@ -138,16 +147,16 @@ wiki covers every important source topic; that limitation remains explicit.
 │ 📦 Replay workspace ready
 │
 ├ 📍 1/5 · T0 · 3f2a1b9 · baseline API
-│ 🤖 OpenWiki init complete · 5.4s · 12 documents · 182k tokens
+│ 🤖 OpenWiki init complete · 5.4s · 12 documents
 │ 📊 35 claims · 91% supported · 0% stale · 3% hallucinated · 6% unverified
 │
 ├ 📍 2/5 · T1 · a7c40e2 · RedisStore + retry API
-│ 🤖 OpenWiki update complete · 6.8s · 14 documents · 74k tokens
+│ 🤖 OpenWiki update complete · 6.8s · 14 documents
 │ 📊 50 claims · 88% supported · 4% stale · 2% hallucinated · 6% unverified
 │ 🧹 forgot 2/3 obsolete facts · carrying 1
 │
 ├ 🔬 Details → evals/ledger/.results/taskflow-…/report.md
-└ ✅ LEDGER score 84% · 2m 11s · 416k OpenWiki tokens
+└ ✅ LEDGER score 84% · 2m 11s
 ```
 
 The displayed claim count is the shared snapshot denominator: distinct current-
@@ -166,11 +175,6 @@ While evaluation is active, the spinner reports phase-specific completion:
 Extraction advances by classified text units. After extraction, grounding
 progress combines distinct-claim judgments and obsolete-fact judgments, so 100%
 means the checkpoint evaluation is genuinely complete.
-
-Token counts come from provider-reported LangChain usage metadata and include
-the main agent, subagents, summarization, and translation calls. They are never
-estimated: a provider that omits usage leaves the checkpoint token count absent,
-and LEDGER omits the run total rather than presenting a partial sum.
 
 ## Running
 

@@ -74,7 +74,8 @@ export interface ModelEvaluationBackendOptions {
   timeoutMs?: number;
 
   /**
-   * Optional durable audit sink invoked before precision judgment.
+   * Optional durable audit sink invoked before precision judgment and finalized
+   * after cache resolution and any historical follow-up.
    *
    * @default undefined the assertion inventory is not surfaced when absent
    */
