@@ -267,6 +267,51 @@ describe("createModel reasoning configuration", () => {
   });
 });
 
+describe("createModel openrouter output-token cap", () => {
+  const OPENROUTER_KEY = "OPENROUTER_API_KEY";
+  const MAX_TOKENS_KEY = "OPENWIKI_OPENROUTER_MAX_TOKENS";
+  let savedApiKey: string | undefined;
+  let savedMaxTokens: string | undefined;
+
+  beforeEach(() => {
+    savedApiKey = process.env[OPENROUTER_KEY];
+    savedMaxTokens = process.env[MAX_TOKENS_KEY];
+    process.env[OPENROUTER_KEY] = "test-key";
+    delete process.env[MAX_TOKENS_KEY];
+  });
+
+  afterEach(() => {
+    restoreEnv(OPENROUTER_KEY, savedApiKey);
+    restoreEnv(MAX_TOKENS_KEY, savedMaxTokens);
+  });
+
+  test("leaves maxTokens unset by default", () => {
+    const model = createModel("openrouter", "z-ai/glm-4.7-flash", 0) as {
+      maxTokens?: number;
+    };
+
+    expect(model.maxTokens).toBeUndefined();
+  });
+
+  test("passes the configured cap through to ChatOpenRouter", () => {
+    process.env[MAX_TOKENS_KEY] = "4096";
+
+    const model = createModel("openrouter", "z-ai/glm-4.7-flash", 0) as {
+      maxTokens?: number;
+    };
+
+    expect(model.maxTokens).toBe(4096);
+  });
+
+  test("rejects an invalid cap with a clear error", () => {
+    process.env[MAX_TOKENS_KEY] = "lots";
+
+    expect(() => createModel("openrouter", "z-ai/glm-4.7-flash", 0)).toThrow(
+      /OPENWIKI_OPENROUTER_MAX_TOKENS/u,
+    );
+  });
+});
+
 function restoreEnv(key: string, value: string | undefined): void {
   if (value === undefined) {
     delete process.env[key];

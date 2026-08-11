@@ -1,6 +1,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { OPENWIKI_VERSION } from "../config/constants.js";
+import {
+  getProviderAuthMethod,
+  getProviderConfig,
+  OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_VERSION,
+  resolveConfiguredProvider,
+} from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { createConnectorRegistry } from "../connectors/registry.js";
 import { UPDATE_METADATA_PATH } from "../config/constants.js";
@@ -26,6 +32,12 @@ export interface CodeModeRepoSetupOptions {
   createWorkflow?: boolean;
   /** Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}. */
   cronExpression?: string;
+  /**
+   * Environment the generated workflow's provider block is derived from.
+   * Defaults to `process.env`, which by this point holds the credentials setup
+   * resolved for this run.
+   */
+  env?: NodeJS.ProcessEnv;
 }
 
 /**
@@ -41,6 +53,7 @@ export async function ensureCodeModeRepoSetup(
     await ensureCodeModeWorkflow(
       cwd,
       options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
+      options.env ?? process.env,
     );
   }
   await writeCodeModeAgentSnippets(cwd);
@@ -54,6 +67,7 @@ export async function ensureCodeModeRepoSetup(
 async function ensureCodeModeWorkflow(
   cwd: string,
   cronExpression: string,
+  env: NodeJS.ProcessEnv,
 ): Promise<void> {
   const workflowPath = path.join(
     cwd,
@@ -72,7 +86,11 @@ async function ensureCodeModeWorkflow(
   }
 
   await mkdir(path.dirname(workflowPath), { recursive: true });
-  await writeFile(workflowPath, createCodeModeWorkflow(cronExpression), "utf8");
+  await writeFile(
+    workflowPath,
+    createCodeModeWorkflow(cronExpression, env),
+    "utf8",
+  );
 }
 
 /**
@@ -228,7 +246,66 @@ async function prepareCodeModeAgentSnippet(
   };
 }
 
-function createCodeModeWorkflow(cronExpression: string): string {
+/**
+ * The provider half of the generated workflow's `env:` block, derived from the
+ * provider the operator configured during setup. A fixed provider block here
+ * authenticates only the default setup: every other one silently ships a
+ * workflow whose first scheduled run fails on a credential the repo never had.
+ *
+ * Only what the provider config actually pins down is emitted. Secrets go
+ * through `secrets.`, non-sensitive settings (endpoint, project, region)
+ * through `vars.`, so neither has to be reverse-engineered from a stack trace.
+ */
+function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
+  const provider = resolveConfiguredProvider(env);
+  const config = getProviderConfig(provider);
+  const lines = [`OPENWIKI_PROVIDER: ${provider}`];
+
+  if (getProviderAuthMethod(provider) === "oauth") {
+    // The stored access token is short-lived and refreshed in place, so
+    // pinning it as a repo secret would break on the first rotation.
+    lines.push(
+      `# ${config.label} authenticates through a browser login, which has no`,
+      "# unattended equivalent. Supply CI credentials for it yourself.",
+    );
+  } else if (config.apiKeyEnvKey !== undefined) {
+    lines.push(
+      `${config.apiKeyEnvKey}: \${{ secrets.${config.apiKeyEnvKey} }}`,
+    );
+    if (config.secretKeyEnvKey !== undefined) {
+      lines.push(
+        `${config.secretKeyEnvKey}: \${{ secrets.${config.secretKeyEnvKey} }}`,
+      );
+    }
+  }
+
+  if (config.requiresBaseUrl && config.baseUrlEnvKey !== undefined) {
+    lines.push(`${config.baseUrlEnvKey}: \${{ vars.${config.baseUrlEnvKey} }}`);
+  }
+  if (config.projectEnvKey !== undefined) {
+    lines.push(`${config.projectEnvKey}: \${{ vars.${config.projectEnvKey} }}`);
+  }
+  if (config.requiresRegion && config.regionEnvKey !== undefined) {
+    lines.push(`${config.regionEnvKey}: \${{ vars.${config.regionEnvKey} }}`);
+  }
+
+  // Bedrock ships no preset model list because entitlements are account- and
+  // region-specific, so there is nothing safe to suggest and the line is left out.
+  const modelId =
+    env[OPENWIKI_MODEL_ID_ENV_KEY]?.trim() || config.modelOptions[0]?.id;
+  if (modelId !== undefined) {
+    // Quoted because model IDs are not all plain YAML scalars: Cloudflare
+    // Workers AI IDs lead with "@", a reserved indicator that fails to parse.
+    lines.push(`${OPENWIKI_MODEL_ID_ENV_KEY}: ${JSON.stringify(modelId)}`);
+  }
+
+  return lines.join("\n          ");
+}
+
+function createCodeModeWorkflow(
+  cronExpression: string,
+  env: NodeJS.ProcessEnv,
+): string {
   return `name: OpenWiki Update
 
 on:
@@ -264,9 +341,7 @@ jobs:
       - name: Run OpenWiki
         run: openwiki code --update --print
         env:
-          OPENWIKI_PROVIDER: openrouter
-          OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
-          OPENWIKI_MODEL_ID: z-ai/glm-5.2
+          ${createWorkflowProviderEnv(env)}
           # Required for the LangSmith connector's code-mode pull to authenticate.
           # For extra workspaces, add OPENWIKI_LANGSMITH_API_KEY_2, _3, ... as repo
           # secrets and env entries here.

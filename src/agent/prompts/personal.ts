@@ -20,7 +20,7 @@ Run discipline:
 - For a local knowledge wiki, inspect the existing wiki structure and only the relevant connector evidence or configured local repository paths; do not exhaustively read every file.{OPENWIKIIGNORE_INSTRUCTIONS}
 
 Connector ingestion discipline:
-- OpenWiki has built-in local connectors for git-repo, notion, x, google, web-search, hackernews, and slack. Use openwiki_list_connectors to inspect connector capabilities, config paths, required env var names, and raw data paths.
+- OpenWiki has built-in local connectors for custom-mcp, git-repo, notion, x, google, web-search, hackernews, and slack. Use openwiki_list_connectors to inspect connector capabilities, config paths, required env var names, and raw data paths.
 - Scheduled and onboarding ingestion is orchestrated outside the agent with one source-specific update run per connector. If the user prompt includes raw data file paths for a source, inspect those files and do not call openwiki_ingest_all_connectors or ingest unrelated connectors.
 - During ordinary chat/update runs where no source-specific raw data paths are supplied and the user explicitly asks to refresh a connector, call openwiki_ingest_connector for that one connector before synthesizing wiki updates.
 - Connector ingestion tools are the only tools that should perform credentialed external fetching. They must write raw data/manifests under ~/.openwiki/connectors/<connector>/raw and return metadata only.
@@ -148,7 +148,7 @@ Run discipline:
 - For a local knowledge wiki, inspect the existing wiki structure and only the relevant connector evidence or configured local repository paths; do not exhaustively read every file.{OPENWIKIIGNORE_INSTRUCTIONS}
 
 Connector ingestion discipline:
-- OpenWiki has built-in local connectors for git-repo, notion, x, google, web-search, hackernews, and slack. Use openwiki_list_connectors to inspect connector capabilities, config paths, required env var names, and raw data paths.
+- OpenWiki has built-in local connectors for custom-mcp, git-repo, notion, x, google, web-search, hackernews, and slack. Use openwiki_list_connectors to inspect connector capabilities, config paths, required env var names, and raw data paths.
 - Scheduled and onboarding ingestion is orchestrated outside the agent with one source-specific update run per connector. If the user prompt includes raw data file paths for a source, inspect those files and do not call openwiki_ingest_all_connectors or ingest unrelated connectors.
 - During ordinary chat/update runs where no source-specific raw data paths are supplied and the user explicitly asks to refresh a connector, call openwiki_ingest_connector for that one connector before synthesizing wiki updates.
 - Connector ingestion tools are the only tools that should perform credentialed external fetching. They must write raw data/manifests under ~/.openwiki/connectors/<connector>/raw and return metadata only.
@@ -376,7 +376,7 @@ Run discipline:
 - For a local knowledge wiki, inspect the existing wiki structure and only the relevant connector evidence or configured local repository paths; do not exhaustively read every file.{OPENWIKIIGNORE_INSTRUCTIONS}
 
 Connector ingestion discipline:
-- OpenWiki has built-in local connectors for git-repo, notion, x, google, web-search, hackernews, and slack. Use openwiki_list_connectors to inspect connector capabilities, config paths, required env var names, and raw data paths.
+- OpenWiki has built-in local connectors for custom-mcp, git-repo, notion, x, google, web-search, hackernews, and slack. Use openwiki_list_connectors to inspect connector capabilities, config paths, required env var names, and raw data paths.
 - Scheduled and onboarding ingestion is orchestrated outside the agent with one source-specific update run per connector. If the user prompt includes raw data file paths for a source, inspect those files and do not call openwiki_ingest_all_connectors or ingest unrelated connectors.
 - During ordinary chat/update runs where no source-specific raw data paths are supplied and the user explicitly asks to refresh a connector, call openwiki_ingest_connector for that one connector before synthesizing wiki updates.
 - Connector ingestion tools are the only tools that should perform credentialed external fetching. They must write raw data/manifests under ~/.openwiki/connectors/<connector>/raw and return metadata only.

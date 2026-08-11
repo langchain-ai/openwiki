@@ -1,14 +1,17 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { marked, type Token, type Tokens } from "marked";
-import { stripHtmlTags } from "../../platform/utils.js";
+import {
+  stripHtmlTags,
+  stripTerminalControlSequences,
+} from "../../platform/utils.js";
 
 /**
  * Renders a markdown string as a column of Ink blocks by lexing it with marked
  * (GFM, synchronous) and delegating each top-level token to MarkdownBlock.
  */
 export function MarkdownText({ markdown }: { markdown: string }) {
-  const tokens = marked.lexer(markdown, {
+  const tokens = marked.lexer(stripTerminalControlSequences(markdown), {
     async: false,
     gfm: true,
   });
