@@ -139,20 +139,44 @@ describe("createModel gemini (AI Studio)", () => {
 });
 
 describe("createModel OpenAI-compatible transport selection", () => {
-  test("routes Copilot GPT-5 models through the Responses API", () => {
-    const model = createModel("copilot", "gpt-5.5", 0) as {
+  test("keeps OpenAI Responses API tool turns stateless", () => {
+    const model = createModel("openai", "gpt-5.6-luna", 0) as {
+      modelKwargs?: Record<string, unknown>;
       useResponsesApi?: boolean;
+      zdrEnabled?: boolean;
     };
 
     expect(model.useResponsesApi).toBe(true);
+    expect(model.zdrEnabled).toBe(true);
+    expect(model.modelKwargs).toEqual({
+      include: ["reasoning.encrypted_content"],
+    });
+  });
+
+  test("routes Copilot GPT-5 models through the Responses API", () => {
+    const model = createModel("copilot", "gpt-5.5", 0) as {
+      modelKwargs?: Record<string, unknown>;
+      useResponsesApi?: boolean;
+      zdrEnabled?: boolean;
+    };
+
+    expect(model.useResponsesApi).toBe(true);
+    expect(model.zdrEnabled).toBe(true);
+    expect(model.modelKwargs).toEqual({
+      include: ["reasoning.encrypted_content"],
+    });
   });
 
   test("keeps non-GPT-5 Copilot models on chat completions", () => {
     const model = createModel("copilot", "claude-sonnet-5", 0) as {
+      modelKwargs?: Record<string, unknown>;
       useResponsesApi?: boolean;
+      zdrEnabled?: boolean;
     };
 
     expect(model.useResponsesApi).toBe(false);
+    expect(model.zdrEnabled).toBe(false);
+    expect(model.modelKwargs).toEqual({});
   });
 });
 

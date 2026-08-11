@@ -58,6 +58,7 @@ import {
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import { resolveSkeletonCriticSubagents } from "./skeleton_critic.js";
 import { syncBundledSkills } from "./skills.js";
+import { resolveUpdateSubagents } from "./update_subagents.js";
 import { resolveWikiQaSubagents } from "./wiki_qa_subagents.js";
 import {
   createVertexAuthFetch,
@@ -413,6 +414,7 @@ function createOpenWikiAgentGraph(
     subagents: [
       ...resolveSkeletonCriticSubagents(options.command, options.outputMode),
       ...resolveWikiQaSubagents(options.command, options.outputMode),
+      ...resolveUpdateSubagents(options.command, options.outputMode),
     ],
     permissions: AGENT_FILESYSTEM_PERMISSIONS,
     systemPrompt: createSystemPrompt(
@@ -1124,6 +1126,7 @@ export function createModel(
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
+  const useResponsesApi = providerUsesResponsesApi(provider, modelId);
 
   return new ChatOpenAI({
     apiKey: getProviderApiKey(provider),
@@ -1133,7 +1136,15 @@ export function createModel(
         }
       : undefined,
     model: modelId,
-    useResponsesApi: providerUsesResponsesApi(provider, modelId),
+    useResponsesApi,
+    ...(useResponsesApi
+      ? {
+          zdrEnabled: true,
+          modelKwargs: {
+            include: ["reasoning.encrypted_content"],
+          },
+        }
+      : {}),
     ...retryOptions,
   });
 }

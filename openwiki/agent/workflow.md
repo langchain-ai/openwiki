@@ -61,7 +61,6 @@ The prompts instruct the agent to:
 - avoid thin/slim pages — merge stubs into broader pages rather than creating many small directories,
 - document the repository for both humans and future agents,
 - respect the repository root as the only project in scope,
-- avoid reading secrets or `.env` files,
 - use git history for init and update runs,
 - respect the temporary plan file and update metadata requirements,
 - ensure top-level `/AGENTS.md` and/or `/CLAUDE.md` reference the OpenWiki quickstart (inserting or refreshing a standardized section).
@@ -100,7 +99,19 @@ Use `personal-logistics.md` for non-work personal items such as appointments, pi
 
 ## Git evidence and update metadata
 
-The run context built by `createRunContext()` in `src/agent/utils.ts` carries `lastUpdate`, `language`, and `wikiGoal` only. It no longer precomputes a Git summary: since the prompt refactor, the agent runs `git` itself during the run. The `CODE_SYSTEM_PROMPTS.update` template instructs the agent to run `git rev-parse HEAD`, read `/openwiki/.last-update.json`, then `git log <gitHead>..HEAD --name-status --oneline` (or recent history when no prior `gitHead` exists) and the relevant diff to scope the update. `.openwikiignore` exclusions are enforced by the filesystem backend rather than by pre-filtering a git summary.
+The run context built by `createRunContext()` in `src/agent/utils.ts` carries `lastUpdate`, `language`, and `wikiGoal` only. It no longer precomputes a Git summary: since the prompt refactor, the agent runs `git` itself during the run. In update mode, the recorded `gitHead` in `/openwiki/.last-update.json` is the BASE, and the current repository HEAD bounds the change scope; the update prompt uses the relevant history and diff rather than an opaque precomputed summary. `.openwikiignore` exclusions are enforced by the filesystem backend rather than by pre-filtering a git summary.
+
+### Repository update lifecycle
+
+The following is the orchestration contract stated by `CODE_SYSTEM_PROMPTS.update` and `CODE_USER_PROMPTS.update`, not a description of implemented runtime symbols. The prompt text names `update_plan_builder`, `update_wiki_implementer`, and `update_wiki_verifier` as roles in that contract; this repository evidence does not establish runtime registration or implementation for them, so their execution wiring is external and is not present here.
+
+1. Before inspecting generated wiki pages, read only `/openwiki/.last-update.json` and, when present, `/openwiki/INSTRUCTIONS.md`; set BASE from the metadata `gitHead` and compare it with HEAD. If BASE equals HEAD, stop without creating `/openwiki/_plan.md` or editing wiki files.
+2. When changes exist, the orchestration contract calls for `update_plan_builder` with BASE, HEAD, and `/openwiki/_plan.md`. The builder owns the evidence plan, and it must finish before the existing wiki is inspected or edited. The update should be behavior-driven and surgical, not a formatting-only rewrite.
+3. Read the completed plan, assign every behavior row one canonical existing wiki page (creating a page only when no appropriate home exists), then group rows by page into implementer batches whose page sets are disjoint. The contract calls for launching all `update_wiki_implementer` batches together in one parallel tool-call message, without concurrent ownership conflicts.
+4. After implementation, the contract calls for the independent `update_wiki_verifier` with BASE, HEAD, and the plan. If it reports failures or NEW behaviors, add every NEW item to the plan, assign failed and new items to pages, and run a repair wave of disjoint implementer batches before verifying again. The update is not complete while any item fails.
+5. Delete `/openwiki/_plan.md` only after verification returns PASS.
+
+Removal maintenance is also behavior-driven: delete obsolete claims when behavior or an API is removed rather than writing removal history. Add a plan row only when the removal requires wiki content to change, and verify it by citing the affected page/section or deletion of the obsolete page. Preserve historical removal context only when it creates a durable compatibility or migration concern.
 
 On successful init/update runs where content changed, the agent writes JSON metadata with:
 
