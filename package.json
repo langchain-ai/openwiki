@@ -40,6 +40,8 @@
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
     "dev": "tsx src/cli/cli.tsx",
+    "eval:reasoning-effort": "pnpm run build && node scripts/reasoning-effort-eval.cjs",
+    "eval:reasoning-effort:fixture": "node --test scripts/fixtures/reasoning-effort-sample/test/*.test.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",

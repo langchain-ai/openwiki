@@ -1,4 +1,4 @@
-name: NVIDIA NIM Live Verification
+name: NVIDIA NIM Feature Evaluation
 
 on:
   pull_request:
@@ -7,6 +7,9 @@ on:
       - "src/cli/**"
       - "src/config/**"
       - "src/setup/**"
+      - "scripts/reasoning-effort-eval.cjs"
+      - "scripts/fixtures/reasoning-effort-sample/**"
+      - "package.json"
       - ".github/workflows/nvidia-nim-live.yml"
   workflow_dispatch:
 
@@ -14,15 +17,11 @@ permissions:
   contents: read
 
 jobs:
-  reasoning-effort:
-    name: Reasoning effort (${{ matrix.effort }})
+  usage:
+    name: Usage comparison (low vs high)
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        effort: [low, high]
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -41,14 +40,76 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify NVIDIA NIM reasoning effort
+      - name: Compare NVIDIA NIM usage
         env:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
-          OPENWIKI_PROVIDER: nvidia
-          OPENWIKI_MODEL_ID: nvidia/nemotron-3-super-120b-a12b
-          OPENWIKI_REASONING_EFFORT: ${{ matrix.effort }}
         run: |
-          test -n "$NVIDIA_API_KEY"
-          response="$(pnpm exec tsx src/cli/cli.tsx --print --mode code --model-id "$OPENWIKI_MODEL_ID" "Briefly describe your capabilities. Do not call tools and do not modify files.")"
-          printf '%s\n' "$response"
-          test -n "$response"
+          if [[ -z "$NVIDIA_API_KEY" ]]; then
+            echo "::error::NVIDIA_API_KEY is not configured"
+            exit 1
+          fi
+
+          pnpm eval:reasoning-effort -- \
+            --provider nvidia \
+            --model nvidia/nemotron-3-super-120b-a12b \
+            --efforts low,high \
+            --skip-lifecycle \
+            --output-dir artifacts/reasoning-effort/nvidia-usage
+
+      - name: Upload usage evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nvidia-nim-reasoning-usage
+          path: artifacts/reasoning-effort/nvidia-usage
+          if-no-files-found: warn
+
+  lifecycle:
+    name: Sample init and chat (low)
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify sample fixture
+        run: pnpm run eval:reasoning-effort:fixture
+
+      - name: Run NVIDIA NIM sample lifecycle
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: |
+          if [[ -z "$NVIDIA_API_KEY" ]]; then
+            echo "::error::NVIDIA_API_KEY is not configured"
+            exit 1
+          fi
+
+          pnpm eval:reasoning-effort -- \
+            --provider nvidia \
+            --model nvidia/nemotron-3-super-120b-a12b \
+            --lifecycle-effort low \
+            --skip-probes \
+            --output-dir artifacts/reasoning-effort/nvidia-lifecycle
+
+      - name: Upload lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nvidia-nim-sample-lifecycle
+          path: artifacts/reasoning-effort/nvidia-lifecycle
+          if-no-files-found: warn
