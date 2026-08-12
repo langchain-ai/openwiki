@@ -1,4 +1,5 @@
 import {
+  chmod,
   mkdir,
   mkdtemp,
   readdir,
@@ -11,6 +12,23 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
 import { replaceSkillDirectories } from "../../src/agent/skills.ts";
+
+/**
+ * Recursively grant owner-write on a tree so a read-only fixture (built to
+ * mimic the Nix store / immutable container that ships bundled skills as
+ * `dr-xr-xr-x` dirs and `-r--r--r--` files) can be torn down afterwards.
+ */
+async function restoreWritable(dir: string): Promise<void> {
+  await chmod(dir, 0o755);
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await restoreWritable(full);
+    } else {
+      await chmod(full, 0o644);
+    }
+  }
+}
 
 describe("replaceSkillDirectories", () => {
   test("overwrites bundled skills and preserves unrelated skills", async () => {
@@ -83,6 +101,100 @@ describe("replaceSkillDirectories", () => {
       // Only the bundled skills remain; no staging leftovers.
       expect((await readdir(target)).sort()).toEqual(skillNames);
     } finally {
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
+  test("installs read-only bundled skills (top-level read-only dir + file)", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-skills-ro-"));
+    const source = path.join(root, "source");
+    const target = path.join(root, "target");
+
+    try {
+      await mkdir(path.join(source, "write-connector"), { recursive: true });
+      await writeFile(
+        path.join(source, "write-connector", "SKILL.md"),
+        "bundled",
+      );
+      // Mimic the Nix store: read-only file inside a read-only directory.
+      await chmod(path.join(source, "write-connector", "SKILL.md"), 0o444);
+      await chmod(path.join(source, "write-connector"), 0o555);
+
+      await replaceSkillDirectories(source, target);
+
+      await expect(
+        readFile(path.join(target, "write-connector", "SKILL.md"), "utf8"),
+      ).resolves.toBe("bundled");
+      // The atomic swap must not leave a `.write-connector-staging-*` behind.
+      expect((await readdir(target)).sort()).toEqual(["write-connector"]);
+    } finally {
+      await restoreWritable(root);
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
+  test("installs read-only bundled skills with read-only nested dirs", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-skills-ro-"));
+    const source = path.join(root, "source");
+    const target = path.join(root, "target");
+
+    try {
+      const skill = path.join(source, "write-connector");
+      await mkdir(path.join(skill, "references", "deep"), { recursive: true });
+      await writeFile(path.join(skill, "SKILL.md"), "bundled");
+      await writeFile(path.join(skill, "references", "api.md"), "reference");
+      await writeFile(
+        path.join(skill, "references", "deep", "note.md"),
+        "deep",
+      );
+      // Read-only from the leaves up, exactly how an immutable store ships it.
+      await chmod(path.join(skill, "references", "deep", "note.md"), 0o444);
+      await chmod(path.join(skill, "references", "deep"), 0o555);
+      await chmod(path.join(skill, "references", "api.md"), 0o444);
+      await chmod(path.join(skill, "references"), 0o555);
+      await chmod(path.join(skill, "SKILL.md"), 0o444);
+      await chmod(skill, 0o555);
+
+      await replaceSkillDirectories(source, target);
+
+      await expect(
+        readFile(
+          path.join(target, "write-connector", "references", "deep", "note.md"),
+          "utf8",
+        ),
+      ).resolves.toBe("deep");
+      // No staging residue survives, even with multiple read-only nested levels.
+      expect((await readdir(target)).sort()).toEqual(["write-connector"]);
+    } finally {
+      await restoreWritable(root);
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
+  test("re-syncing read-only bundled skills is idempotent and leaves no residue", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-skills-ro-"));
+    const source = path.join(root, "source");
+    const target = path.join(root, "target");
+
+    try {
+      await mkdir(path.join(source, "write-connector"), { recursive: true });
+      await writeFile(
+        path.join(source, "write-connector", "SKILL.md"),
+        "bundled",
+      );
+      await chmod(path.join(source, "write-connector", "SKILL.md"), 0o444);
+      await chmod(path.join(source, "write-connector"), 0o555);
+
+      // Two consecutive syncs: the second must replace the first cleanly.
+      await replaceSkillDirectories(source, target);
+      await replaceSkillDirectories(source, target);
+
+      await expect(
+        readFile(path.join(target, "write-connector", "SKILL.md"), "utf8"),
+      ).resolves.toBe("bundled");
+      expect((await readdir(target)).sort()).toEqual(["write-connector"]);
+    } finally {
+      await restoreWritable(root);
       await rm(root, { force: true, recursive: true });
     }
   });
