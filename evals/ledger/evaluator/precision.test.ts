@@ -586,6 +586,37 @@ describe("runPrecisionPass", () => {
     expect(warnings).toHaveLength(0);
   });
 
+  test("degrades a failed grounding batch instead of aborting the pass", async () => {
+    const control = controller([
+      extraction([{ statement: "A is true" }, { statement: "B is true" }]),
+      new Error("connection failed once"),
+      new Error("connection failed twice"),
+    ]);
+    const warnings: EvaluationWarning[] = [];
+
+    const result = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [section("claims")],
+      evidence: evidence(["some source"]),
+      onWarning: (warning) => warnings.push(warning),
+    });
+
+    expect(result).toMatchObject([
+      { assertion: "A is true", verdict: "unverified", adjudicatedBy: "none" },
+      { assertion: "B is true", verdict: "unverified", adjudicatedBy: "none" },
+    ]);
+    expect(warnings).toHaveLength(2);
+    expect(
+      warnings.every((warning) => warning.pass === "precision-judgment"),
+    ).toBe(true);
+    expect(warnings.map((warning) => warning.itemId)).toEqual([
+      "assertion-000001",
+      "assertion-000002",
+    ]);
+    expect(control.responses).toHaveLength(0);
+  });
+
   test("degrades an unrecoverable extraction unit to a warned no-claim unit", async () => {
     const control = controller([
       // The batch response drops the second requested unit.

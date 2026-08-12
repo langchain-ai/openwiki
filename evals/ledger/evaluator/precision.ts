@@ -1339,19 +1339,45 @@ async function resolvePrecisionBatchResilient(
   evaluations: PrecisionAssertionEvaluation[];
   degraded: Set<string>;
 }> {
-  const output = await invokeStructuredModel({
-    model: input.model,
-    pass: "precision-judgment",
-    checkpointId: input.checkpointId,
-    systemPrompt,
-    taskPrompt: precisionJudgmentPrompt(
-      toJudgmentAssertions(targets),
-      toJudgmentEvidence(targets),
-      toJudgmentArtifactContexts(targets),
-    ),
-    schema: precisionJudgmentBatchOutputSchema,
-    timeoutMs: input.timeoutMs,
-  });
+  let output: PrecisionJudgmentOutput;
+  try {
+    output = await invokeStructuredModel({
+      model: input.model,
+      pass: "precision-judgment",
+      checkpointId: input.checkpointId,
+      systemPrompt,
+      taskPrompt: precisionJudgmentPrompt(
+        toJudgmentAssertions(targets),
+        toJudgmentEvidence(targets),
+        toJudgmentArtifactContexts(targets),
+      ),
+      schema: precisionJudgmentBatchOutputSchema,
+      timeoutMs: input.timeoutMs,
+    });
+  } catch (error) {
+    const message = `Evaluator could not complete grounding batch: ${String(error)}`;
+    const degraded = new Set(targets.map((target) => target.assertion.id));
+    for (const target of targets) {
+      input.onWarning?.({
+        pass: "precision-judgment",
+        itemId: target.assertion.id,
+        message,
+      });
+    }
+    return {
+      evaluations: targets.map((target) => ({
+        assertion: target.assertion.statement,
+        sourceQuote: target.assertion.sourceQuote,
+        location: target.assertion.relativePath,
+        verdict: "unverified",
+        tense: target.assertion.tense,
+        adjudicatedBy: "none",
+        evidenceIds: [],
+        rationale: message,
+      })),
+      degraded,
+    };
+  }
   const results: PrecisionAssertionEvaluation[] = [];
   const degraded = new Set<string>();
   for (const target of targets) {
