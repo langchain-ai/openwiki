@@ -181,14 +181,18 @@ describe("OpenWikiLocalShellBackend", () => {
       "secrets",
     );
 
-    const glob = await backend.glob("**/*", "/");
-    expect(glob.files?.map((file) => file.path).join("\n")).not.toContain(
+    const textGlob = await backend.glob("**/*.txt", "/");
+    expect(textGlob.error).toBeUndefined();
+    expect(textGlob.files?.map((file) => file.path).join("\n")).not.toContain(
       "secrets/token.txt",
     );
-    expect(glob.files?.map((file) => file.path).join("\n")).not.toContain(
+
+    const logGlob = await backend.glob("**/*.log", "/");
+    expect(logGlob.error).toBeUndefined();
+    expect(logGlob.files?.map((file) => file.path).join("\n")).not.toContain(
       "logs/debug.log",
     );
-    expect(glob.files?.map((file) => file.path).join("\n")).toContain(
+    expect(logGlob.files?.map((file) => file.path).join("\n")).toContain(
       "logs/keep.log",
     );
 

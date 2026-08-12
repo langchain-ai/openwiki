@@ -1,16 +1,23 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 /**
  * Vitest configuration.
  *
- * Test discovery is left on Vitest's defaults; this file only configures
- * coverage. `all: true` plus an explicit `include` makes `pnpm coverage` report
- * the entire `src` tree, so files that no test imports yet show up as 0% instead
- * of being silently omitted. Without this, coverage flatters itself by counting
- * only the files a test happens to touch.
+ * Test discovery keeps Vitest's defaults and adds one exclusion: a KEB
+ * benchmark's reconstructed source tree (`evals/keb/benchmarks/*\/repo/`, rebuilt
+ * from a committed bundle when a benchmark loads) carries the upstream project's
+ * own `*.test.ts` files. Those belong to the fixture under test, not to this
+ * repository, and must never be collected and run as this project's tests, so a
+ * benchmark whose `repo/` happens to be present on disk (a prior load, a local
+ * run) cannot pollute the suite. Coverage config is otherwise the only thing set
+ * here: `all: true` plus an explicit `include` makes `pnpm coverage` report the
+ * entire `src` tree, so files that no test imports yet show up as 0% instead of
+ * being silently omitted. Without this, coverage flatters itself by counting only
+ * the files a test happens to touch.
  */
 export default defineConfig({
   test: {
+    exclude: [...configDefaults.exclude, "**/benchmarks/*/repo/**"],
     coverage: {
       provider: "v8",
       all: true,
