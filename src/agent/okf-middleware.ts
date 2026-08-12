@@ -15,6 +15,7 @@ import {
 } from "../okf/index-labels.js";
 import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
 import { inStage } from "../telemetry/index.js";
+import { validateWikiSourceCitations } from "./source-citation-validator.js";
 import type { OpenWikiOutputMode } from "./types.js";
 import { validateWikiInternalLinks } from "./wiki-link-validator.js";
 
@@ -82,6 +83,13 @@ export function createOpenWikiIndexMiddleware(
         "finalize",
         () => validateWikiInternalLinks(backend, outputMode),
         { errorClass: "okf_error", errorDetail: "link_validation" },
+      );
+      // Same contract for prose citations of repository files, which a
+      // reorganization invalidates without touching the wiki.
+      await inStage(
+        "finalize",
+        () => validateWikiSourceCitations(backend, outputMode),
+        { errorClass: "okf_error", errorDetail: "source_citation_validation" },
       );
     },
   });

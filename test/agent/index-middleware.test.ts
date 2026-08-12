@@ -511,4 +511,38 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     expect(page).toContain("openwiki: broken internal link [./missing.md]");
     expect(page).toContain("See [missing](./missing.md).");
   });
+
+  test("stamps a moved source reference without failing the run", async () => {
+    const { backend, rootDir } = await setup();
+    await mkdir(path.join(rootDir, "src/cli"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "src/cli/commands.ts"),
+      "export const parsed = true;\n",
+      "utf8",
+    );
+    await backend.write(
+      "/openwiki/quickstart.md",
+      `${document("Quickstart", "Start here.")}\nParsing lives in \`src/commands.ts\`.\n`,
+    );
+
+    const middleware = createOpenWikiIndexMiddleware(backend, "repository");
+    const afterAgent =
+      typeof middleware.afterAgent === "function"
+        ? middleware.afterAgent
+        : middleware.afterAgent?.hook;
+    expect(afterAgent).toBeTypeOf("function");
+    await expect(
+      (afterAgent as () => Promise<unknown>)(),
+    ).resolves.toBeUndefined();
+
+    const page = await readFile(
+      path.join(rootDir, "openwiki/quickstart.md"),
+      "utf8",
+    );
+    expect(page).toContain(
+      "openwiki: stale source reference [src/commands.ts]",
+    );
+    expect(page).toContain('now at "src/cli/commands.ts"');
+    expect(page).toContain("Parsing lives in `src/commands.ts`.");
+  });
 });

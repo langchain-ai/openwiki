@@ -49,6 +49,7 @@ export type CliCommand =
       port: number;
       open: boolean;
     }
+  | { kind: "doctor"; exitCode: 0 }
   | {
       kind: "ingest";
       exitCode: 0;
@@ -272,6 +273,19 @@ export function parseCommand(argv: string[]): CliCommand {
     }
 
     return { kind: "visualize", exitCode: 0, wikiDir, port, open };
+  }
+
+  if (argv[0] === "doctor") {
+    const unknownOption = argv[1];
+    if (unknownOption) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Unknown option for doctor: ${unknownOption}`,
+      };
+    }
+
+    return { kind: "doctor", exitCode: 0 };
   }
 
   if (argv[0] === "ingest") {
@@ -752,6 +766,7 @@ export const helpContent: HelpContent = {
     "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
     "openwiki visualize [path] [--port <port>] [--no-open]",
+    "openwiki doctor",
   ],
   commands: [
     {
@@ -816,6 +831,11 @@ export const helpContent: HelpContent = {
       label: "openwiki visualize [path]",
       description:
         "Serve an interactive graph and live docs reader for a generated wiki (defaults to ./openwiki).",
+    },
+    {
+      label: "openwiki doctor",
+      description:
+        "Check the repository wiki for source references that no longer exist and pages whose sources changed. No model calls.",
     },
   ],
   options: [
@@ -906,6 +926,7 @@ export const helpContent: HelpContent = {
     "openwiki ngrok start https://openwiki.ngrok.app",
     "openwiki visualize",
     "openwiki visualize openwiki --port 4400 --no-open",
+    "openwiki doctor",
   ],
   developmentExamples: ["openwiki --dry-run"],
 };
