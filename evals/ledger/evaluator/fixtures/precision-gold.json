@@ -82,6 +82,29 @@
       }
     },
     {
+      "content": "The focused test is test/queue.test.ts:\n\n- It never imports worker.ts or store modules and never constructs TaskError.",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "test/queue.test.ts does not import worker.ts.",
+            "sourceQuote": "It never imports worker.ts or store modules",
+            "tense": "current"
+          },
+          {
+            "statement": "test/queue.test.ts does not import store modules.",
+            "sourceQuote": "It never imports worker.ts or store modules",
+            "tense": "current"
+          },
+          {
+            "statement": "test/queue.test.ts does not construct TaskError.",
+            "sourceQuote": "never constructs TaskError",
+            "tense": "current"
+          }
+        ]
+      }
+    },
+    {
       "content": "negate(x) was removed in version 2.0.0.",
       "expected": {
         "classification": "factual",

@@ -111,6 +111,63 @@ function extraction(
 }
 
 describe("runPrecisionPass", () => {
+  test("keeps a colon-led list with the paragraph that identifies its subject", async () => {
+    const content =
+      "The focused test is test/queue.test.ts:\n\n- This file does not import worker.ts.\n";
+    const control = controller([
+      {
+        units: [
+          {
+            unitId: "guide.md::0000::unit-0000",
+            classification: "factual",
+            assertions: [
+              {
+                statement: "test/queue.test.ts does not import worker.ts.",
+                sourceQuote: "This file does not import worker.ts.",
+                tense: "current",
+              },
+            ],
+            rationale: "The lead-in identifies the list subject.",
+          },
+        ],
+      },
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "supported",
+            evidenceIds: ["current-0"],
+            rationale: "The source establishes the import boundary.",
+          },
+        ],
+      },
+    ]);
+    let inventory: PrecisionAssertionInventory | undefined;
+
+    await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [
+        {
+          id: "guide.md::0000",
+          relativePath: "guide.md",
+          headingPath: ["Focused test"],
+          ordinal: 0,
+          content,
+          searchableText: content,
+        },
+      ],
+      evidence: evidence(["test/queue.test.ts has no worker import"]),
+      onInventory: (value) => {
+        inventory = value;
+      },
+    });
+
+    expect(inventory?.units).toHaveLength(1);
+    expect(inventory?.units[0].content).toBe(content);
+    expect(control.taskPrompts[0]).not.toContain("unit-0001");
+  });
+
   test("extracts tense-tagged atomic claims and exact-deduplicates only", async () => {
     const control = controller([
       extraction([

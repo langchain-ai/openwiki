@@ -235,6 +235,15 @@ Rules:
   complete qualified claim rather than distributing the qualifier across parts.
 - Every assertion must be self-contained. Resolve pronouns and implicit referents
   to explicit names without adding facts.
+- Never emit an unresolved deictic subject such as "this file", "this module",
+  "the function", or "it". Resolve it from the complete supplied unit and heading
+  context. If that context does not identify the referent, do not extract that
+  clause rather than guessing.
+- Repeat a shared subject or negation across independently judgeable clauses when
+  doing so preserves the original meaning. For example,
+  "test/queue.test.ts never imports worker.ts or store modules and never constructs
+  TaskError" becomes three assertions: the test does not import worker.ts, the
+  test does not import store modules, and the test does not construct TaskError.
 - Every assertion must include sourceQuote: the smallest exact contiguous
   verbatim span from the supplied unit that supports the complete statement.
   Never synthesize, normalize, or remove Markdown inside sourceQuote.

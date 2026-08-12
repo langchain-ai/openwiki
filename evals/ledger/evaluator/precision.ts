@@ -598,7 +598,24 @@ function textUnitsForSection(section: ArtifactSection): PrecisionTextUnit[] {
   flush();
   if (blocks.length === 0) blocks.push("");
 
-  return blocks.map((content, index) => ({
+  // A prose lead-in ending in a colon gives the following Markdown list its
+  // subject and scope. Keeping them together prevents deictic list text such as
+  // "this file" or "the following" from losing the antecedent the extractor
+  // needs to produce a self-contained claim.
+  const contextualBlocks: string[] = [];
+  for (const block of blocks) {
+    const previous = contextualBlocks.at(-1);
+    const startsList = /^(?: {0,3}(?:[-+*]|\d+[.)])[	 ]+)/u.test(block);
+    if (previous !== undefined && /:\s*$/u.test(previous) && startsList) {
+      const separator = previous.endsWith("\n") ? "\n" : "\n\n";
+      contextualBlocks[contextualBlocks.length - 1] =
+        previous + separator + block;
+    } else {
+      contextualBlocks.push(block);
+    }
+  }
+
+  return contextualBlocks.map((content, index) => ({
     unitId: `${section.id}::unit-${String(index).padStart(4, "0")}`,
     sectionId: section.id,
     relativePath: section.relativePath,

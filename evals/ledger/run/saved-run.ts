@@ -1,8 +1,9 @@
-import { readFile } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
+import { lstat, open, readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { LedgerError, WorktreeSafetyError } from "../core/errors.js";
-import { isContainedBy } from "../core/paths.js";
+import { assertContained, isContainedBy } from "../core/paths.js";
 import type {
   EvidenceCorpus,
   LedgerRunResult,
@@ -94,6 +95,98 @@ function artifactManifest(
   };
 }
 
+/** Require a saved-run directory to be real, contained, and non-symlinked. */
+async function assertSavedDirectory(
+  allowedRoot: string,
+  directory: string,
+  label: string,
+): Promise<void> {
+  if (!isContainedBy(path.resolve(allowedRoot), path.resolve(directory))) {
+    throw new WorktreeSafetyError(
+      `Refusing to use saved ${label} outside "${allowedRoot}".`,
+    );
+  }
+  await assertContained(
+    allowedRoot,
+    directory,
+    (resolved, root) =>
+      new WorktreeSafetyError(
+        `Refusing to use saved ${label} outside "${root}": "${resolved}".`,
+      ),
+  );
+  const metadata = await lstat(directory);
+  if (!metadata.isDirectory() || metadata.isSymbolicLink()) {
+    throw new WorktreeSafetyError(
+      `Refusing to use non-directory or symbolic-link saved ${label} "${directory}".`,
+    );
+  }
+}
+
+/**
+ * Read one saved artifact document through a stable regular-file descriptor.
+ * Realpath containment rejects symlinked parents that escape the snapshot;
+ * O_NOFOLLOW plus descriptor/path inode comparison rejects a final symlink and
+ * closes the check/use gap before content is read.
+ */
+async function readSavedArtifactDocument(
+  snapshotDir: string,
+  file: string,
+  relativePath: string,
+): Promise<string> {
+  const escapeError = (resolved: string, root: string): WorktreeSafetyError =>
+    new WorktreeSafetyError(
+      `Refusing to read saved artifact outside "${root}": "${relativePath}" resolved to "${resolved}".`,
+    );
+
+  if (!isContainedBy(path.resolve(snapshotDir), path.resolve(file))) {
+    throw escapeError(path.resolve(file), path.resolve(snapshotDir));
+  }
+  const artifactsRoot = path.dirname(snapshotDir);
+  await assertContained(artifactsRoot, file, escapeError);
+  await assertContained(snapshotDir, file, escapeError);
+
+  const noFollowFlag =
+    typeof fsConstants.O_NOFOLLOW === "number" ? fsConstants.O_NOFOLLOW : 0;
+  let fileHandle;
+
+  try {
+    fileHandle = await open(file, fsConstants.O_RDONLY | noFollowFlag);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ELOOP") {
+      throw new WorktreeSafetyError(
+        `Refusing to read symbolic-link artifact document "${relativePath}".`,
+      );
+    }
+    throw error;
+  }
+
+  try {
+    const [openedMetadata, pathMetadata] = await Promise.all([
+      fileHandle.stat(),
+      lstat(file),
+    ]);
+    if (
+      !openedMetadata.isFile() ||
+      !pathMetadata.isFile() ||
+      pathMetadata.isSymbolicLink() ||
+      openedMetadata.dev !== pathMetadata.dev ||
+      openedMetadata.ino !== pathMetadata.ino
+    ) {
+      throw new WorktreeSafetyError(
+        `Refusing to read non-regular or replaced artifact document "${relativePath}".`,
+      );
+    }
+
+    // Recheck after opening so a symlinked parent changed during the first check
+    // cannot silently redirect the path outside the snapshot.
+    await assertContained(artifactsRoot, file, escapeError);
+    await assertContained(snapshotDir, file, escapeError);
+    return await fileHandle.readFile("utf8");
+  } finally {
+    await fileHandle.close();
+  }
+}
+
 /**
  * Load one immutable generated knowledge artifact from a completed LEDGER run.
  * Every manifest path is resolved beneath the checkpoint snapshot directory
@@ -112,33 +205,51 @@ export async function loadSavedArtifact(
   checkpointId: string,
 ): Promise<KnowledgeArtifact> {
   const absoluteRunDir = path.resolve(runDir);
-  const manifestFile = path.join(
+  const artifactsDir = path.join(absoluteRunDir, "artifacts");
+  await assertSavedDirectory(
     absoluteRunDir,
-    "artifacts",
-    `${checkpointId}.json`,
+    artifactsDir,
+    "artifacts directory",
   );
+  const manifestFile = path.join(artifactsDir, `${checkpointId}.json`);
+  await assertContained(
+    artifactsDir,
+    manifestFile,
+    (resolved, root) =>
+      new WorktreeSafetyError(
+        `Refusing to read saved artifact manifest outside "${root}": "${resolved}".`,
+      ),
+  );
+  const manifestMetadata = await lstat(manifestFile);
+  if (!manifestMetadata.isFile() || manifestMetadata.isSymbolicLink()) {
+    throw new WorktreeSafetyError(
+      `Refusing to read non-regular or symbolic-link artifact manifest "${manifestFile}".`,
+    );
+  }
   const manifest = artifactManifest(
     await readJson(manifestFile, "artifact manifest"),
     checkpointId,
   );
-  const snapshotDir = path.join(absoluteRunDir, "artifacts", checkpointId);
+  const snapshotDir = path.join(artifactsDir, checkpointId);
+  await assertSavedDirectory(artifactsDir, snapshotDir, "artifact snapshot");
   const documents: KnowledgeDocument[] = [];
 
   for (const relativePath of manifest.documents) {
     const file = path.resolve(snapshotDir, relativePath);
 
-    if (!isContainedBy(snapshotDir, file)) {
-      throw new WorktreeSafetyError(
-        `Refusing to read saved artifact outside "${snapshotDir}": "${relativePath}".`,
-      );
-    }
-
     try {
       documents.push({
         relativePath,
-        content: await readFile(file, "utf8"),
+        content: await readSavedArtifactDocument(
+          snapshotDir,
+          file,
+          relativePath,
+        ),
       });
     } catch (error) {
+      if (error instanceof WorktreeSafetyError) {
+        throw error;
+      }
       throw new LedgerError(
         `Could not read saved artifact document "${file}": ${(error as Error).message}`,
       );

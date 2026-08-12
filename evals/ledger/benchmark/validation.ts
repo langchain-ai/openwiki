@@ -4,6 +4,9 @@ import { BenchmarkValidationError } from "../core/errors.js";
 import type { LedgerBenchmark, LedgerCheckpoint } from "../core/types.js";
 import { COMMIT_PATTERN, git } from "../replay/git.js";
 
+/** Safe single-segment checkpoint identifier accepted from benchmark JSON. */
+const CHECKPOINT_ID_PATTERN = /^[A-Za-z0-9._-]{1,64}$/u;
+
 /**
  * Whether a value is a non-null object, the precondition for reading fields off a
  * trace entry. The benchmark reaches validation cast from untrusted JSON, so an
@@ -217,9 +220,14 @@ function buildCheckpointIndex(
       );
     }
 
-    if (typeof checkpoint.id !== "string" || checkpoint.id.length === 0) {
+    if (
+      typeof checkpoint.id !== "string" ||
+      !CHECKPOINT_ID_PATTERN.test(checkpoint.id) ||
+      checkpoint.id === "." ||
+      checkpoint.id === ".."
+    ) {
       throw new BenchmarkValidationError(
-        `Checkpoint at position ${position} has an empty id.`,
+        `Checkpoint at position ${position} has an invalid id. Use 1-64 letters, numbers, dots, underscores, or hyphens; "." and ".." are not allowed.`,
       );
     }
 

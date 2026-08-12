@@ -96,6 +96,16 @@ describe("captureArtifact", () => {
     ).toBe("gamma");
   });
 
+  test("rejects a checkpoint path that escapes the artifacts root", async () => {
+    const { worktreeDir, artifactsRoot } = await scratch({
+      "a.md": "must remain contained",
+    });
+
+    await expect(
+      captureArtifact("../escaped", worktreeDir, artifactsRoot),
+    ).rejects.toThrow(/Refusing to write checkpoint artifact outside/u);
+  });
+
   test("fingerprints identical content the same and changed content differently", async () => {
     const one = await scratch({ "a.md": "alpha", "b.md": "beta" });
     const two = await scratch({ "a.md": "alpha", "b.md": "beta" });

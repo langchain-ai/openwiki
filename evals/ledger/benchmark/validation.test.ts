@@ -73,7 +73,20 @@ describe("validateBenchmark trace rules", () => {
     const benchmark = valid();
     benchmark.trace.checkpoints[0].id = "";
 
-    expectRejected(benchmark, /position 0 has an empty id/);
+    expectRejected(benchmark, /position 0 has an invalid id/);
+  });
+
+  test.each([
+    ["parent traversal", "../outside"],
+    ["current-directory segment", "."],
+    ["parent-directory segment", ".."],
+    ["path separator", "T0/nested"],
+    ["over 64 characters", "a".repeat(65)],
+  ])("rejects a checkpoint id containing %s", (_label, checkpointId) => {
+    const benchmark = valid();
+    benchmark.trace.checkpoints[0].id = checkpointId;
+
+    expectRejected(benchmark, /position 0 has an invalid id/);
   });
 
   test("rejects duplicate checkpoint ids", () => {

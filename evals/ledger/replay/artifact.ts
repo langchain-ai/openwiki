@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { wikiDirFor } from "../core/paths.js";
+import { WorktreeSafetyError } from "../core/errors.js";
+import { assertContained, wikiDirFor } from "../core/paths.js";
 import type { KnowledgeArtifact, KnowledgeDocument } from "../core/types.js";
 
 /**
@@ -92,6 +93,18 @@ export async function captureArtifact(
 ): Promise<KnowledgeArtifact> {
   const documents = await collectDocuments(wikiDirFor(worktreeDir));
   const snapshotDir = path.join(artifactsRoot, checkpointId);
+
+  // Checkpoint ids originate in benchmark metadata. Validation constrains them
+  // to one safe segment, and this realpath guard is defense in depth for direct
+  // callers that bypass benchmark loading.
+  await assertContained(
+    artifactsRoot,
+    snapshotDir,
+    (resolved, root) =>
+      new WorktreeSafetyError(
+        `Refusing to write checkpoint artifact outside "${root}": "${resolved}".`,
+      ),
+  );
 
   for (const doc of documents) {
     const destination = path.join(snapshotDir, doc.relativePath);

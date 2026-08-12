@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -100,7 +100,7 @@ describe("saved run inputs", () => {
     const runDir = await mkdtemp(path.join(os.tmpdir(), "ledger-saved-"));
     temporaryDirectories.push(runDir);
     const artifactsDir = path.join(runDir, "artifacts");
-    await mkdir(artifactsDir, { recursive: true });
+    await mkdir(path.join(artifactsDir, "T0"), { recursive: true });
     await writeFile(
       path.join(artifactsDir, "T0.json"),
       JSON.stringify({
@@ -113,6 +113,62 @@ describe("saved run inputs", () => {
 
     await expect(loadSavedArtifact(runDir, "T0")).rejects.toThrow(
       /Refusing to read saved artifact outside/u,
+    );
+  });
+
+  test("rejects a saved artifact document that is a symlink", async () => {
+    const runDir = await mkdtemp(path.join(os.tmpdir(), "ledger-saved-"));
+    const outsideDir = await mkdtemp(
+      path.join(os.tmpdir(), "ledger-saved-outside-"),
+    );
+    temporaryDirectories.push(runDir, outsideDir);
+    const artifactsDir = path.join(runDir, "artifacts");
+    const snapshotDir = path.join(artifactsDir, "T0");
+    const outsideFile = path.join(outsideDir, "outside.md");
+    await mkdir(snapshotDir, { recursive: true });
+    await writeFile(outsideFile, "outside marker", "utf8");
+    await symlink(outsideFile, path.join(snapshotDir, "linked.md"));
+    await writeFile(
+      path.join(artifactsDir, "T0.json"),
+      JSON.stringify({
+        checkpointId: "T0",
+        fingerprint: "abc123",
+        documents: ["linked.md"],
+      }),
+      "utf8",
+    );
+
+    await expect(loadSavedArtifact(runDir, "T0")).rejects.toThrow(
+      /Refusing to read saved artifact outside|symbolic-link artifact document/u,
+    );
+  });
+
+  test("rejects a saved artifact snapshot directory that is a symlink", async () => {
+    const runDir = await mkdtemp(path.join(os.tmpdir(), "ledger-saved-"));
+    const outsideDir = await mkdtemp(
+      path.join(os.tmpdir(), "ledger-saved-outside-"),
+    );
+    temporaryDirectories.push(runDir, outsideDir);
+    const artifactsDir = path.join(runDir, "artifacts");
+    await mkdir(artifactsDir, { recursive: true });
+    await writeFile(
+      path.join(outsideDir, "outside.md"),
+      "outside marker",
+      "utf8",
+    );
+    await symlink(outsideDir, path.join(artifactsDir, "T0"));
+    await writeFile(
+      path.join(artifactsDir, "T0.json"),
+      JSON.stringify({
+        checkpointId: "T0",
+        fingerprint: "abc123",
+        documents: ["outside.md"],
+      }),
+      "utf8",
+    );
+
+    await expect(loadSavedArtifact(runDir, "T0")).rejects.toThrow(
+      /Refusing to use saved artifact snapshot outside/u,
     );
   });
 });
