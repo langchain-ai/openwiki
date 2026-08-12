@@ -1,0 +1,57 @@
+test/claims/brains/code/middleware.test.ts
+  s_8b147279d063cb::t_0f00a44995018e 10,43
+  s_8b147279d063cb::t_ed0107f3dc4263 149
+  s_8b147279d063cb::t_ac5d836de54f59 1-9,11-42,44-148,150-241
+src/claims/brains/code/session.ts
+  s_8b147279d063cb::t_ed0107f3dc4263 240,256
+  s_8b147279d063cb::t_8c7357988ef8cf 57-61,114-116,121-123,125-131,133,142,174-177,179-199,241-255,281,317,347
+  h_f78d33d4280f3f 1-56,62-113,117-120,124,132,134-141,143-173,178,200-239,257-280,282-316,318-346,348-354
+test/claims/brains/code/session.test.ts
+  s_8b147279d063cb::t_85ead55eb542e7 1-115,118-222,224-311,315-373
+  s_8b147279d063cb::t_eafd5fe57e49f3 312-314
+  s_8b147279d063cb::t_0f00a44995018e 116-117
+  s_8b147279d063cb::t_ed0107f3dc4263 223
+src/claims/brains/code/tools.ts
+  h_f78d33d4280f3f 1-8,24-26,28-36,38-43,46-47,51-58,60-66,70-87,89-97,99-107,110-118,120-135,137-148,150-152,154,158-173,175-179
+  s_8b147279d063cb::t_7a5214b96beed5 9-23,27,37,44-45,48-50,59,67-69,88,98,108-109,119,136,149,153,155-157,174
+src/claims/brains/code/middleware.ts
+  s_8b147279d063cb::t_8bd84bee890d85 124-126
+  s_8b147279d063cb::t_525237b197bd57 3-5,36-48,56-67,71-93
+  h_f78d33d4280f3f 1-2,6-35,49-55,68-70,94-123,127-159
+src/claims/core/mutations.ts
+  h_f78d33d4280f3f 1-53,55,57-59,61-68,72,74,76-78,80-92,100-108,110-131,175-201,203-204,208-213,234-240,242-245,247-250,254-271
+  s_8b147279d063cb::t_55fb47da666eec 54,56,60,69-71,73,75,79,93-99,109,132-174,202,205-207,214-233,241,246,251-253
+test/claims/core/mutations.test.ts
+  s_8b147279d063cb::t_eafd5fe57e49f3 122,172,180,331
+  s_8b147279d063cb::t_76e0e5c2efc09e 1-121,123-155,158-171,173-179,181-330,332-339
+  s_8b147279d063cb::t_0f00a44995018e 156-157
+test/claims/brains/code/tools.test.ts
+  s_8b147279d063cb::t_2c64b9faccfd48 1-80,82-90,92-147,151-178
+  s_8b147279d063cb::t_0f00a44995018e 81,91
+  s_8b147279d063cb::t_eafd5fe57e49f3 148-150
+test/claims/brains/code/runtime.test.ts
+  s_8b147279d063cb::t_488e2082e3d4c6 1-132
+src/claims/brains/code/runtime.ts
+  h_f78d33d4280f3f 1-81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "ee1845a6bb39a0950143383d91dc436356af9398",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8b147279d063cb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff724-05bf-7871-9fd1-f3f83a5f90da",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
