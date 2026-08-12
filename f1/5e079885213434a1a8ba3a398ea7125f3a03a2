@@ -1,0 +1,21 @@
+evals/ledger/evaluator/precision.test.ts
+  s_a78e1243cf0b12::t_e1855a9180a828 589-619
+evals/ledger/evaluator/precision.ts
+  s_a78e1243cf0b12::t_e1855a9180a828 1342-1380
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f15e079885213434a1a8ba3a398ea7125f3a03a2",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
