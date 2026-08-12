@@ -191,6 +191,66 @@ describe("createModel reasoning configuration", () => {
     expect(model.reasoning).toEqual({ effort: "max" });
   });
 
+  test("serializes OpenAI GPT-5.6 effort in the Responses request", async () => {
+    const savedOpenAiKey = process.env.OPENAI_API_KEY;
+    process.env[REASONING_EFFORT_KEY] = "max";
+    process.env.OPENAI_API_KEY = "test-openai-key";
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: "resp-test",
+            object: "response",
+            created_at: 0,
+            status: "completed",
+            model: "gpt-5.6-luna",
+            output: [
+              {
+                id: "msg-test",
+                type: "message",
+                status: "completed",
+                role: "assistant",
+                content: [
+                  {
+                    type: "output_text",
+                    text: "ok",
+                    annotations: [],
+                  },
+                ],
+              },
+            ],
+            usage: {
+              input_tokens: 1,
+              output_tokens: 1,
+              output_tokens_details: { reasoning_tokens: 0 },
+              total_tokens: 2,
+            },
+          }),
+          { headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const model = createModel("openai", "gpt-5.6-luna", 0);
+
+      await model.invoke("hello");
+
+      const [url, init] = fetchMock.mock.calls[0] as [
+        string | URL,
+        { body: string },
+      ];
+      expect(String(url)).toBe("https://api.openai.com/v1/responses");
+      expect(JSON.parse(init.body)).toMatchObject({
+        model: "gpt-5.6-luna",
+        reasoning: { effort: "max" },
+      });
+    } finally {
+      restoreEnv("OPENAI_API_KEY", savedOpenAiKey);
+    }
+  });
+
   test("maps ChatGPT OAuth GPT-5.6 effort to the Responses reasoning payload", () => {
     process.env[REASONING_EFFORT_KEY] = "high";
     process.env.OPENAI_CHATGPT_ACCESS_TOKEN = "test-access-token";

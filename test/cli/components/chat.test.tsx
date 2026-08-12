@@ -181,7 +181,10 @@ describe("ChatInput keyboard interactions", () => {
     overrides: Partial<
       Pick<
         React.ComponentProps<typeof ChatInput>,
-        "currentModelId" | "currentProvider" | "currentReasoningEffort"
+        | "currentModelId"
+        | "currentProvider"
+        | "currentReasoningEffort"
+        | "onReasoningEffortSelect"
       >
     > = {},
   ) {
@@ -189,7 +192,8 @@ describe("ChatInput keyboard interactions", () => {
     const onCommandRun = vi.fn();
     const onModelSelect = vi.fn(() => Promise.resolve());
     const onProviderSelect = vi.fn(() => Promise.resolve());
-    const onReasoningEffortSelect = vi.fn(() => Promise.resolve());
+    const onReasoningEffortSelect =
+      overrides.onReasoningEffortSelect ?? vi.fn(() => Promise.resolve());
     const onSubmit = vi.fn();
 
     const utils = render(
@@ -422,6 +426,27 @@ describe("ChatInput keyboard interactions", () => {
     await press("\r");
 
     expect(onReasoningEffortSelect).toHaveBeenCalledWith(null);
+    unmount();
+  });
+
+  test("explains when a shell export shadows a saved reasoning effort", async () => {
+    const onReasoningEffortSelect = vi.fn(() =>
+      Promise.resolve({ isShadowedByShell: true }),
+    );
+    const { press, lastFrame, unmount } = await renderInput({
+      currentModelId: "gpt-5.6-terra",
+      currentProvider: "openai",
+      onReasoningEffortSelect,
+    });
+
+    await press("/effort low");
+    await press("\r");
+
+    expect(onReasoningEffortSelect).toHaveBeenCalledWith("low");
+    expect(plain(lastFrame())).toContain(
+      "Reasoning effort saved as low, but this session uses the shell value.",
+    );
+    expect(plain(lastFrame())).toContain("OPENWIKI_REASONING_EFFORT");
     unmount();
   });
 

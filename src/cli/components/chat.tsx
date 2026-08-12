@@ -11,6 +11,7 @@ import {
   isValidModelId,
   normalizeModelId,
   normalizeProvider,
+  OPENWIKI_REASONING_EFFORT_ENV_KEY,
   providerUsesAwsSdkCredentials,
   SELECTABLE_OPENWIKI_PROVIDERS,
   type OpenWikiProvider,
@@ -102,9 +103,21 @@ interface ChatInputProps {
   ) => void;
   onModelSelect: (modelId: string) => Promise<void>;
   onProviderSelect: (provider: OpenWikiProvider) => Promise<void>;
-  onReasoningEffortSelect: (effort: ReasoningEffort | null) => Promise<void>;
+  onReasoningEffortSelect: (
+    effort: ReasoningEffort | null,
+  ) => Promise<ReasoningEffortSelectionResult | void>;
   onSubmit: (message: string) => void;
 }
+
+/**
+ * The effective result of changing the saved reasoning-effort preference.
+ * A shell export intentionally takes precedence over the saved config, so the
+ * interactive UI must explain when a saved choice will apply only in a future
+ * shell where that export is absent.
+ */
+export type ReasoningEffortSelectionResult = {
+  isShadowedByShell: boolean;
+};
 
 /**
  * The interactive follow-up prompt: handles keystrokes, the slash-command menu,
@@ -587,13 +600,19 @@ export function ChatInput({
     setNotice(null);
 
     try {
-      await onReasoningEffortSelect(effort);
+      const result = await onReasoningEffortSelect(effort);
       resetInput();
-      setNotice(
-        effort === null
-          ? "Reasoning effort reset to provider default."
-          : `Reasoning effort set to ${effort}.`,
-      );
+      if (result?.isShadowedByShell) {
+        setNotice(
+          `Reasoning effort saved as ${effort ?? "provider default"}, but this session uses the shell value. Unset ${OPENWIKI_REASONING_EFFORT_ENV_KEY} to use the saved setting.`,
+        );
+      } else {
+        setNotice(
+          effort === null
+            ? "Reasoning effort reset to provider default."
+            : `Reasoning effort set to ${effort}.`,
+        );
+      }
     } catch (saveError) {
       setError(
         saveError instanceof Error

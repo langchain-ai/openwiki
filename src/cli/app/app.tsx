@@ -26,6 +26,7 @@ import {
 } from "../../config/reasoning.js";
 import {
   getCredentialDiagnostics,
+  getShellEnvValue,
   saveOpenWikiEnv,
   type CredentialDiagnostic,
 } from "../../config/env.js";
@@ -47,7 +48,11 @@ import { DryRunView } from "../components/panels.js";
 import { ErrorDiagnosticsPanel } from "../components/panels.js";
 import { HelpView } from "../components/panels.js";
 import { Header } from "../components/header.js";
-import { ChatHistory, ChatInput } from "../components/chat.js";
+import {
+  ChatHistory,
+  ChatInput,
+  type ReasoningEffortSelectionResult,
+} from "../components/chat.js";
 import { IngestionSummary, RunView } from "../components/run-view.js";
 import { PromptBlock, StatusLine } from "../components/primitives.js";
 import type { CompletedRun } from "../components/types.js";
@@ -334,7 +339,7 @@ export function App({ command }: AppProps) {
 
   async function selectReasoningEffort(
     effort: ReasoningEffort | null,
-  ): Promise<void> {
+  ): Promise<ReasoningEffortSelectionResult> {
     const modelId = getDisplayModelId(displayModelId);
     const capability = getReasoningCapability(sessionProvider, modelId);
 
@@ -353,7 +358,15 @@ export function App({ command }: AppProps) {
     await saveOpenWikiEnv({
       [OPENWIKI_REASONING_EFFORT_ENV_KEY]: effort ?? "",
     });
-    setSessionReasoningEffort(effort);
+    const isShadowedByShell =
+      getShellEnvValue(OPENWIKI_REASONING_EFFORT_ENV_KEY) !== undefined;
+
+    // Keep the header, menu, completed-run metadata, and actual request on the
+    // same value. A saved preference cannot replace a shell export until the
+    // next process starts without that export.
+    setSessionReasoningEffort(getConfiguredReasoningEffort());
+
+    return { isShadowedByShell };
   }
 
   useEffect(() => {
