@@ -39,24 +39,26 @@ function fakeModel(control: ModelControl): BaseChatModel {
 }
 
 function section(content: string): ArtifactSection {
+  const contextualContent = `[source quote]\n${content}`;
   return {
     id: "guide.md::0000",
     relativePath: "guide.md",
     headingPath: ["Guide"],
     ordinal: 0,
-    content,
-    searchableText: content,
+    content: contextualContent,
+    searchableText: contextualContent,
   };
 }
 
 function sectionWithId(id: string, content: string): ArtifactSection {
+  const contextualContent = `[source quote]\n${content}`;
   return {
     id,
     relativePath: id.split("::")[0],
     headingPath: ["Guide"],
     ordinal: 0,
-    content,
-    searchableText: content,
+    content: contextualContent,
+    searchableText: contextualContent,
   };
 }
 
@@ -99,6 +101,7 @@ function extraction(
         classification,
         assertions: assertions.map((assertion) => ({
           statement: assertion.statement,
+          sourceQuote: "[source quote]",
           tense: assertion.tense ?? "current",
         })),
         rationale: "Atomic factual claims.",
@@ -517,7 +520,13 @@ describe("runPrecisionPass", () => {
           {
             unitId: "guide.md::0000::unit-0000",
             classification: "factual",
-            assertions: [{ statement: "A is true", tense: "current" }],
+            assertions: [
+              {
+                statement: "A is true",
+                sourceQuote: "[source quote]",
+                tense: "current",
+              },
+            ],
             rationale: "States a checkable fact.",
           },
         ],
@@ -528,7 +537,13 @@ describe("runPrecisionPass", () => {
           {
             unitId: "guide.md::0001::unit-0000",
             classification: "factual",
-            assertions: [{ statement: "B is true", tense: "current" }],
+            assertions: [
+              {
+                statement: "B is true",
+                sourceQuote: "[source quote]",
+                tense: "current",
+              },
+            ],
             rationale: "States a checkable fact.",
           },
         ],
@@ -579,7 +594,13 @@ describe("runPrecisionPass", () => {
           {
             unitId: "guide.md::0000::unit-0000",
             classification: "factual",
-            assertions: [{ statement: "A is true", tense: "current" }],
+            assertions: [
+              {
+                statement: "A is true",
+                sourceQuote: "[source quote]",
+                tense: "current",
+              },
+            ],
             rationale: "States a checkable fact.",
           },
         ],
@@ -630,7 +651,13 @@ describe("runPrecisionPass", () => {
           {
             unitId: "guide.md::0000::unit-0000",
             classification: "factual",
-            assertions: [{ statement: "A is true", tense: "current" }],
+            assertions: [
+              {
+                statement: "A is true",
+                sourceQuote: "[source quote]",
+                tense: "current",
+              },
+            ],
             rationale: "States a checkable fact.",
           },
         ],
@@ -640,7 +667,13 @@ describe("runPrecisionPass", () => {
           {
             unitId: "guide.md::0001::unit-0000",
             classification: "factual",
-            assertions: [{ statement: "B is true", tense: "current" }],
+            assertions: [
+              {
+                statement: "B is true",
+                sourceQuote: "[source quote]",
+                tense: "current",
+              },
+            ],
             rationale: "States a checkable fact.",
           },
         ],
@@ -891,5 +924,147 @@ describe("runPrecisionPass", () => {
     expect(PRECISION_EXTRACTION_SYSTEM).toContain('"historical"');
     expect(PRECISION_JUDGMENT_SYSTEM).toContain("source-grounding classifier");
     expect(PRECISION_JUDGMENT_SYSTEM).toContain("silence is not contradiction");
+    expect(PRECISION_EXTRACTION_SYSTEM).toContain("shared qualifier");
+    expect(PRECISION_EXTRACTION_SYSTEM).toContain("complete supplied unit");
+    expect(PRECISION_JUDGMENT_SYSTEM).toContain("push followed by pop");
+    expect(PRECISION_JUDGMENT_SYSTEM).toContain("same complete assertion");
+  });
+
+  test("repairs an extraction whose source quote is not verbatim", async () => {
+    const control = controller([
+      {
+        units: [
+          {
+            unitId: "guide.md::0000::unit-0000",
+            classification: "factual",
+            assertions: [
+              {
+                statement: "A is true",
+                sourceQuote: "text absent from the unit",
+                tense: "current",
+              },
+            ],
+            rationale: "States a checkable fact.",
+          },
+        ],
+      },
+      extraction([{ statement: "A is true" }]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "not-addressed",
+            evidenceIds: [],
+            rationale: "Not addressed.",
+          },
+        ],
+      },
+    ]);
+    const warnings: EvaluationWarning[] = [];
+
+    const result = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [section("claim")],
+      evidence: evidence(["some source"]),
+      onWarning: (warning) => warnings.push(warning),
+    });
+
+    expect(result).toMatchObject([
+      { assertion: "A is true", sourceQuote: "[source quote]" },
+    ]);
+    expect(warnings).toHaveLength(0);
+    expect(
+      control.systemPrompts.filter(
+        (prompt) => prompt === PRECISION_EXTRACTION_SYSTEM,
+      ),
+    ).toHaveLength(2);
+  });
+
+  test("supplies one full artifact context for multiple assertions", async () => {
+    const control = controller([
+      extraction([{ statement: "A is true" }, { statement: "B is true" }]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "not-addressed",
+            evidenceIds: [],
+            rationale: "Not addressed.",
+          },
+          {
+            assertionId: "assertion-000002",
+            verdict: "not-addressed",
+            evidenceIds: [],
+            rationale: "Not addressed.",
+          },
+        ],
+      },
+    ]);
+
+    await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [section("shared context")],
+      evidence: evidence(["some source"]),
+    });
+
+    const judgmentPrompt = control.taskPrompts[1];
+    expect(judgmentPrompt.match(/"artifactContextId":/gu)).toHaveLength(2);
+    expect(judgmentPrompt.match(/"contextId":/gu)).toHaveLength(1);
+    expect(judgmentPrompt).toContain(
+      '"content": "[source quote]\\nshared context"',
+    );
+  });
+
+  test("re-judges an identical claim when its artifact context changes", async () => {
+    const cache: PrecisionVerdictCache = new Map();
+    const control = controller([
+      extraction([{ statement: "A is true" }]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "not-addressed",
+            evidenceIds: [],
+            rationale: "First context.",
+          },
+        ],
+      },
+      extraction([{ statement: "A is true" }]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "not-addressed",
+            evidenceIds: [],
+            rationale: "Changed context.",
+          },
+        ],
+      },
+    ]);
+    const corpus = evidence(["some source"]);
+
+    await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [section("first context")],
+      evidence: corpus,
+      verdictCache: cache,
+    });
+    const [second] = await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T2",
+      sections: [section("changed context")],
+      evidence: corpus,
+      verdictCache: cache,
+    });
+
+    expect(second.rationale).toBe("Changed context.");
+    expect(
+      control.systemPrompts.filter(
+        (prompt) => prompt === PRECISION_JUDGMENT_SYSTEM,
+      ),
+    ).toHaveLength(2);
   });
 });

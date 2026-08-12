@@ -111,6 +111,7 @@ describe("ModelEvaluationBackend", () => {
             assertions: [
               {
                 statement: "Current behavior is enabled.",
+                sourceQuote: "Current behavior is enabled.",
                 tense: "current",
               },
             ],
@@ -226,6 +227,7 @@ describe("ModelEvaluationBackend", () => {
       precisionEvaluations: [
         {
           assertion: "Current behavior is enabled.",
+          sourceQuote: "Current behavior is enabled.",
           location: "guide.md",
           verdict: "supported",
           tense: "current",

@@ -32,6 +32,11 @@ interface ExpectedAssertion {
   statement: string;
 
   /**
+   * Exact contiguous fixture text supporting the normalized claim.
+   */
+  sourceQuote: string;
+
+  /**
    * Expected claim tense.
    */
   tense: PrecisionClaimTense;
@@ -72,6 +77,20 @@ export interface PrecisionGoldFixture {
      * Claim being grounded against source evidence.
      */
     assertion: string;
+
+    /**
+     * Exact artifact span from which the assertion was normalized.
+     *
+     * @default The assertion text
+     */
+    sourceQuote?: string;
+
+    /**
+     * Complete artifact unit constraining the quote's scope and tense.
+     *
+     * @default The assertion text
+     */
+    artifactContext?: string;
 
     /**
      * Evidence excerpts visible to the grounding.
@@ -249,11 +268,21 @@ export async function measureGoldAgreement(inputs: {
           {
             assertionId,
             statement: item.assertion,
+            sourceQuote: item.sourceQuote ?? item.assertion,
+            artifactContextId: `gold-grounding-context-${index}`,
             tense: "current",
             evidenceIds: item.evidence.map((evidence) => evidence.evidenceId),
           },
         ],
         item.evidence,
+        [
+          {
+            contextId: `gold-grounding-context-${index}`,
+            relativePath: `gold-grounding-${index}.md`,
+            headingPath: [],
+            content: item.artifactContext ?? item.assertion,
+          },
+        ],
       ),
       schema: precisionJudgmentOutputSchema,
       timeoutMs: inputs.timeoutMs,

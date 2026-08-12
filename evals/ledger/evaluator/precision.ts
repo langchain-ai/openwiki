@@ -26,6 +26,7 @@ import {
   PRECISION_JUDGMENT_SYSTEM,
   precisionExtractionPrompt,
   precisionJudgmentPrompt,
+  type PrecisionArtifactContext,
   type PrecisionEvidenceExcerpt,
   type PrecisionExtractionUnit,
   type PrecisionJudgmentAssertion,
@@ -119,6 +120,18 @@ export interface ExtractedArtifactAssertion {
    */
   statement: string;
 
+  /** Exact contiguous artifact text supporting the normalized statement. */
+  sourceQuote: string;
+
+  /** Stable identity of the full text unit that constrains the quote. */
+  unitId: string;
+
+  /** Exact full text unit used to interpret scope and tense. */
+  artifactContext: string;
+
+  /** Active heading hierarchy at the assertion's location. */
+  headingPath: string[];
+
   /**
    * Whether the claim is asserted as current or historical truth.
    */
@@ -161,6 +174,9 @@ export interface PrecisionAssertionInventoryEntry {
    * Normalized claim text.
    */
   statement: string;
+
+  /** Exact artifact span from which the statement was normalized. */
+  sourceQuote: string;
 
   /**
    * Whether the claim is asserted as current or historical truth.
@@ -246,7 +262,11 @@ export interface PrecisionTextUnitInventoryEntry {
   /**
    * Claims extracted from the unit, if any.
    */
-  assertions: Array<{ statement: string; tense: PrecisionClaimTense }>;
+  assertions: Array<{
+    statement: string;
+    sourceQuote: string;
+    tense: PrecisionClaimTense;
+  }>;
 
   /**
    * Extractor rationale for the classification.
@@ -410,6 +430,15 @@ interface RawExtractedAssertion {
    */
   statement: string;
 
+  /** Exact artifact span from which the statement was normalized. */
+  sourceQuote: string;
+
+  /** Stable identity of the complete originating text unit. */
+  unitId: string;
+
+  /** Exact complete text unit constraining scope and tense. */
+  artifactContext: string;
+
   /**
    * Whether the claim is asserted as current or historical truth.
    */
@@ -448,7 +477,11 @@ interface ClassifiedPrecisionTextUnit extends PrecisionTextUnit {
   /**
    * Claims extracted from the unit, if any.
    */
-  assertions: Array<{ statement: string; tense: PrecisionClaimTense }>;
+  assertions: Array<{
+    statement: string;
+    sourceQuote: string;
+    tense: PrecisionClaimTense;
+  }>;
 
   /**
    * Extractor rationale for the classification.
@@ -596,12 +629,18 @@ function resolveExtractionUnit(
         `Precision extractor returned an empty assertion for unitId "${unit.unitId}".`,
       );
     }
+    if (!unit.content.includes(assertion.sourceQuote)) {
+      throw new EvaluationError(
+        `Precision extractor returned a sourceQuote that does not appear verbatim in unitId "${unit.unitId}".`,
+      );
+    }
   }
   return {
     ...unit,
     classification: result.classification,
     assertions: result.assertions.map((assertion) => ({
       statement: normalizeStatement(assertion.statement),
+      sourceQuote: assertion.sourceQuote,
       tense: assertion.tense,
     })),
     rationale: result.rationale,
@@ -763,6 +802,8 @@ async function extractAssertions(
     assertions: classified.flatMap((unit) =>
       unit.assertions.map((assertion) => ({
         ...assertion,
+        unitId: unit.unitId,
+        artifactContext: unit.content,
         sectionId: unit.sectionId,
         relativePath: unit.relativePath,
         headingPath: unit.headingPath,
@@ -795,6 +836,7 @@ function buildInventory(
     const base = {
       candidateId,
       statement: raw.statement,
+      sourceQuote: raw.sourceQuote,
       tense: raw.tense,
       sectionId: raw.sectionId,
       relativePath: raw.relativePath,
@@ -815,6 +857,10 @@ function buildInventory(
     assertions.push({
       id: assertionId,
       statement: raw.statement,
+      sourceQuote: raw.sourceQuote,
+      unitId: raw.unitId,
+      artifactContext: raw.artifactContext,
+      headingPath: raw.headingPath,
       tense: raw.tense,
       sectionId: raw.sectionId,
       relativePath: raw.relativePath,
@@ -1013,6 +1059,10 @@ function precisionVerdictCacheKey(
     ]);
   const payload = JSON.stringify([
     normalizeStatement(assertion.statement),
+    assertion.sourceQuote,
+    assertion.unitId,
+    assertion.artifactContext,
+    assertion.headingPath,
     assertion.tense,
     evidenceSignature,
   ]);
@@ -1046,6 +1096,7 @@ function projectCachedVerdict(
 ): PrecisionAssertionEvaluation {
   return {
     assertion: assertion.statement,
+    sourceQuote: assertion.sourceQuote,
     location: assertion.relativePath,
     verdict: cached.verdict,
     tense: assertion.tense,
@@ -1064,9 +1115,41 @@ function toJudgmentAssertions(
   return targets.map((target) => ({
     assertionId: target.assertion.id,
     statement: target.assertion.statement,
+    sourceQuote: target.assertion.sourceQuote,
+    artifactContextId: target.assertion.unitId,
     tense: target.assertion.tense,
     evidenceIds: target.evidence.map((evidence) => evidence.id),
   }));
+}
+
+/**
+ * Collect complete artifact units once per judgment batch. Assertions reference
+ * these by id so multiple claims from one unit do not duplicate prompt text.
+ */
+function toJudgmentArtifactContexts(
+  targets: PrecisionJudgmentTarget[],
+): PrecisionArtifactContext[] {
+  const byId = new Map<string, PrecisionArtifactContext>();
+  for (const target of targets) {
+    const assertion = target.assertion;
+    const existing = byId.get(assertion.unitId);
+    const context: PrecisionArtifactContext = {
+      contextId: assertion.unitId,
+      relativePath: assertion.relativePath,
+      headingPath: assertion.headingPath,
+      content: assertion.artifactContext,
+    };
+    if (
+      existing !== undefined &&
+      JSON.stringify(existing) !== JSON.stringify(context)
+    ) {
+      throw new EvaluationError(
+        `Precision assertion context identity "${assertion.unitId}" has conflicting content.`,
+      );
+    }
+    byId.set(assertion.unitId, context);
+  }
+  return [...byId.values()];
 }
 
 /**
@@ -1154,6 +1237,7 @@ function resolveJudgments(
       }
       return {
         assertion: target.assertion.statement,
+        sourceQuote: target.assertion.sourceQuote,
         location: target.assertion.relativePath,
         verdict: "unverified",
         tense: target.assertion.tense,
@@ -1177,6 +1261,7 @@ function resolveJudgments(
       }
       return {
         assertion: target.assertion.statement,
+        sourceQuote: target.assertion.sourceQuote,
         location: target.assertion.relativePath,
         verdict: "supported",
         tense: target.assertion.tense,
@@ -1206,6 +1291,7 @@ function resolveJudgments(
     }
     return {
       assertion: target.assertion.statement,
+      sourceQuote: target.assertion.sourceQuote,
       location: target.assertion.relativePath,
       verdict: evaluation.formerlyTrue ? "stale" : "invented",
       tense: target.assertion.tense,
@@ -1229,6 +1315,7 @@ async function repairPrecisionJudgment(
     taskPrompt: precisionJudgmentPrompt(
       toJudgmentAssertions([target]),
       toJudgmentEvidence([target]),
+      toJudgmentArtifactContexts([target]),
     ),
     schema: precisionJudgmentOutputSchema,
     validate: (parsed) => resolveJudgments([target], parsed),
@@ -1260,6 +1347,7 @@ async function resolvePrecisionBatchResilient(
     taskPrompt: precisionJudgmentPrompt(
       toJudgmentAssertions(targets),
       toJudgmentEvidence(targets),
+      toJudgmentArtifactContexts(targets),
     ),
     schema: precisionJudgmentBatchOutputSchema,
     timeoutMs: input.timeoutMs,
@@ -1287,6 +1375,7 @@ async function resolvePrecisionBatchResilient(
         degraded.add(target.assertion.id);
         results.push({
           assertion: target.assertion.statement,
+          sourceQuote: target.assertion.sourceQuote,
           location: target.assertion.relativePath,
           verdict: "unverified",
           tense: target.assertion.tense,
@@ -1363,6 +1452,7 @@ export async function runPrecisionPass(
     const unverified = assertions.map(
       (assertion): PrecisionAssertionEvaluation => ({
         assertion: assertion.statement,
+        sourceQuote: assertion.sourceQuote,
         location: assertion.relativePath,
         verdict: "unverified",
         tense: assertion.tense,
@@ -1446,6 +1536,7 @@ export async function runPrecisionPass(
     if (evidence.length === 0) {
       evaluations.set(assertion.id, {
         assertion: assertion.statement,
+        sourceQuote: assertion.sourceQuote,
         location: assertion.relativePath,
         verdict: "unverified",
         tense: assertion.tense,
@@ -1577,6 +1668,7 @@ export async function runPrecisionPass(
     } else if (evaluation.verdict === "supported") {
       finalEvaluation = {
         assertion: pending.target.assertion.statement,
+        sourceQuote: pending.target.assertion.sourceQuote,
         location: pending.target.assertion.relativePath,
         verdict: "stale",
         tense: "current",

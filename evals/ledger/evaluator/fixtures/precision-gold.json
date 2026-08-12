@@ -57,6 +57,7 @@
         "assertions": [
           {
             "statement": "There are no automated tests.",
+            "sourceQuote": "there are no automated tests",
             "tense": "current"
           }
         ]
@@ -69,10 +70,12 @@
         "assertions": [
           {
             "statement": "Calling add(2, 3) returns 5.",
+            "sourceQuote": "Calling add(2, 3) returns 5",
             "tense": "current"
           },
           {
             "statement": "Calling subtract(5, 3) returns 2.",
+            "sourceQuote": "subtract(5, 3) returns 2",
             "tense": "current"
           }
         ]
@@ -85,6 +88,7 @@
         "assertions": [
           {
             "statement": "negate(x) was removed in version 2.0.0.",
+            "sourceQuote": "negate(x) was removed in version 2.0.0.",
             "tense": "historical"
           }
         ]
@@ -97,10 +101,12 @@
         "assertions": [
           {
             "statement": "subtract was added alongside add and negate.",
+            "sourceQuote": "subtract was added alongside add and negate",
             "tense": "historical"
           },
           {
             "statement": "subtract was added with the same JSDoc style as add and negate.",
+            "sourceQuote": "subtract was added alongside add and negate with the same JSDoc style",
             "tense": "historical"
           }
         ]
@@ -111,6 +117,63 @@
       "expected": {
         "classification": "no-claim",
         "assertions": []
+      }
+    },
+    {
+      "content": "The tests only assert size and dequeue behavior.",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "The tests only assert size and dequeue behavior.",
+            "sourceQuote": "The tests only assert size and dequeue behavior.",
+            "tense": "current"
+          }
+        ]
+      }
+    },
+    {
+      "content": "In the original implementation, the queue is named and documented as FIFO, but dequeue used pop().",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "In the original implementation, the queue was named and documented as FIFO.",
+            "sourceQuote": "In the original implementation, the queue is named and documented as FIFO",
+            "tense": "historical"
+          },
+          {
+            "statement": "In the original implementation, dequeue used pop().",
+            "sourceQuote": "In the original implementation, the queue is named and documented as FIFO, but dequeue used pop()",
+            "tense": "historical"
+          }
+        ]
+      }
+    },
+    {
+      "content": "| Test | Imports |\n| --- | --- |\n| queue.test.ts | Priority only |",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "queue.test.ts imports only Priority.",
+            "sourceQuote": "| queue.test.ts | Priority only |",
+            "tense": "current"
+          }
+        ]
+      }
+    },
+    {
+      "content": "Conceptual lifecycle only (these are not runtime TaskState values): Waiting → Running.",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "Waiting and Running are conceptual lifecycle labels, not runtime TaskState values.",
+            "sourceQuote": "Conceptual lifecycle only (these are not runtime TaskState values): Waiting → Running.",
+            "tense": "current"
+          }
+        ]
       }
     }
   ],
@@ -470,6 +533,106 @@
           "observedAtCheckpoint": "T1",
           "current": true,
           "content": "dequeue(): Task | undefined {\n  const index = this.nextIndex();\n  if (index === undefined) {\n    return undefined;\n  }\n  return this.entries.splice(index, 1)[0].task;\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    },
+    {
+      "assertion": "dequeue is implemented as LIFO.",
+      "evidence": [
+        {
+          "evidenceId": "queue-lifo",
+          "sourceRef": "src/queue.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "// FIFO queue\nexport function enqueue(task) { tasks.push(task); }\nexport function dequeue() { return tasks.pop(); }"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "handle is a no-op for task execution.",
+      "evidence": [
+        {
+          "evidenceId": "worker-noop",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "private async handle(task: Task): Promise<void> {\n  void task;\n}"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "src/worker.ts exports a single function named runWorker.",
+      "evidence": [
+        {
+          "evidenceId": "worker-exports",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "export class Worker {\n  running = false;\n}\n\nexport async function runWorker(): Promise<void> {}"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "Consumers import functions directly from the package's public entrypoint.",
+      "evidence": [
+        {
+          "evidenceId": "internal-test-import",
+          "sourceRef": "test/queue.test.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "import { Queue } from \"../src/queue.js\";"
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    },
+    {
+      "assertion": "Worker is a marker class.",
+      "evidence": [
+        {
+          "evidenceId": "worker-current",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "export class Worker {\n  running = false;\n}"
+        },
+        {
+          "evidenceId": "worker-historical",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T0",
+          "current": false,
+          "content": "export class Worker {\n  running = false;\n}"
+        }
+      ],
+      "expected": {
+        "verdict": "contradicted",
+        "formerlyTrue": false
+      }
+    },
+    {
+      "assertion": "The tests only assert size.",
+      "sourceQuote": "The tests only assert size and dequeue behavior.",
+      "artifactContext": "The tests only assert size and dequeue behavior.",
+      "evidence": [
+        {
+          "evidenceId": "queue-tests",
+          "sourceRef": "test/queue.test.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "expect(queue.size).toBe(1);\nexpect(queue.dequeue()).toBe(task);"
         }
       ],
       "expected": {

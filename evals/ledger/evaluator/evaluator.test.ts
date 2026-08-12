@@ -23,7 +23,13 @@ describe("schemas", () => {
         {
           unitId: "a::0000::unit-0000",
           classification: "factual",
-          assertions: [{ statement: "A fact.", tense: "current" }],
+          assertions: [
+            {
+              statement: "A fact.",
+              sourceQuote: "A fact.",
+              tense: "current",
+            },
+          ],
           rationale: "The unit states a checkable fact.",
         },
       ],
@@ -46,7 +52,7 @@ describe("schemas", () => {
     });
 
     expect(extraction.units[0].assertions).toEqual([
-      { statement: "A fact.", tense: "current" },
+      { statement: "A fact.", sourceQuote: "A fact.", tense: "current" },
     ]);
     // Named evidence ids survive; an omitted list defaults to empty.
     expect(precision.evaluations[0].evidenceIds).toEqual(["source::0000"]);

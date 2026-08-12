@@ -76,6 +76,15 @@ export const assertionExtractionOutputSchema = z.object({
         assertions: z.array(
           z.object({
             statement: z.string().trim().min(1),
+            sourceQuote: z
+              .string()
+              .min(1)
+              .refine((value) => value.trim().length > 0, {
+                message: "sourceQuote must contain non-whitespace text",
+              })
+              .describe(
+                "The smallest exact contiguous verbatim span from the supplied text unit that supports this assertion.",
+              ),
             tense: z.enum(["current", "historical"]),
           }),
         ),

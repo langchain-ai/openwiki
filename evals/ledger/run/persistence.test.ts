@@ -289,6 +289,7 @@ describe("writeRunResult", () => {
         {
           candidateId: "candidate-000001",
           statement: "The library exports add.",
+          sourceQuote: "The library exports add.",
           tense: "current",
           sectionId: "guide.md::0000",
           relativePath: "guide.md",

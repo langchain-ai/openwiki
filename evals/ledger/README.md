@@ -49,7 +49,7 @@ results.
 all generated Markdown
         │
         ▼
-classify every text unit and extract atomic claims
+classify every text unit and extract atomic claims with exact artifact quotes
         │
         ▼
 remove normalized exact duplicates
@@ -80,6 +80,13 @@ character budget. Byte-identical historical excerpts are deduplicated, and
 historical evidence is consulted only after current source establishes a
 contradiction. Every selected evidence identity, cache hit, and historical
 follow-up is preserved in the assertion inventory.
+
+Each normalized claim retains an exact contiguous quote plus its complete
+artifact text unit, path, and heading context. Grounding checks that provenance
+before judging source truth, so a dropped qualifier, broadened table row,
+misread conceptual diagram, or historical passage mislabeled as current becomes
+`unverified` instead of a false stale or hallucinated result. Non-verbatim
+extractor quotes are rejected and repaired before grounding.
 
 Evaluator failures do not abort the run. A claim-grounding judgment that remains
 invalid after isolated repair falls back to `unverified`; a failed extraction

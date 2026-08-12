@@ -474,6 +474,12 @@ export interface PrecisionAssertionEvaluation {
   assertion: string;
 
   /**
+   * Exact artifact text from which the normalized assertion was extracted.
+   * Older persisted runs may omit this field.
+   */
+  sourceQuote?: string;
+
+  /**
    * Artifact path the assertion was drawn from.
    */
   location: string;

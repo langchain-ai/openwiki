@@ -89,6 +89,12 @@ export interface PrecisionJudgmentAssertion {
    */
   statement: string;
 
+  /** Exact artifact text from which the normalized statement was extracted. */
+  sourceQuote: string;
+
+  /** Identity of the full artifact unit that constrains the quote's meaning. */
+  artifactContextId: string;
+
   /**
    * Temporal stance assigned during extraction.
    */
@@ -99,6 +105,21 @@ export interface PrecisionJudgmentAssertion {
    * judgment batch.
    */
   evidenceIds: string[];
+}
+
+/** One deduplicated artifact unit supplied to preserve assertion semantics. */
+export interface PrecisionArtifactContext {
+  /** Stable text-unit identity referenced by extracted assertions. */
+  contextId: string;
+
+  /** Wiki path owning the unit. */
+  relativePath: string;
+
+  /** Active heading hierarchy at the unit. */
+  headingPath: string[];
+
+  /** Exact Markdown content of the full text unit. */
+  content: string;
 }
 
 /**
@@ -209,12 +230,26 @@ Rules:
   classification must return an empty assertions array.
 - Every assertion must be atomic: one independently judgeable claim. Split
   compounds whenever their parts could receive different truth judgments.
+- Do not split a compound when a shared qualifier or quantifier such as "only",
+  "none", "both", a comparison, or a condition would change scope. Preserve the
+  complete qualified claim rather than distributing the qualifier across parts.
 - Every assertion must be self-contained. Resolve pronouns and implicit referents
   to explicit names without adding facts.
+- Every assertion must include sourceQuote: the smallest exact contiguous
+  verbatim span from the supplied unit that supports the complete statement.
+  Never synthesize, normalize, or remove Markdown inside sourceQuote.
+- The normalized statement must be fully entailed by sourceQuote in the context
+  of the complete supplied unit. Preserve local scope from table headers, row
+  labels, captions, lists, and surrounding prose; never broaden a locally scoped
+  claim into a repository-wide one.
 - Preserve exact names, values, behavior, conditions, exceptions, defaults, and
   constraints. Never weaken a specific claim to make it easier to support.
 - Tag every assertion "current" when it asserts present world state and
   "historical" only when it explicitly asserts a past state.
+- Determine tense from the complete unit and heading context, not one isolated
+  clause. Claims inside narration about an original, earlier, removed, renamed,
+  or replaced implementation are historical even when a subordinate clause uses
+  present grammar.
 - Past-tense change narration such as "subtract was added" or "negate was
   removed" is historical even when the described change still matters now.
 - A concrete command's documented behavior may be factual; advice to run it is
@@ -233,6 +268,9 @@ Rules:
   future states yield no current fact unless they contain a separable present fact.
 - A subjective sentence containing a separable factual claim is "mixed" and must
   retain only the factual claim.
+- Diagram state names and labels may be conceptual descriptions. Do not turn
+  them into formal runtime fields or enum states when the caption or surrounding
+  prose qualifies that interpretation.
 - Preserve meaning without inventing implied intent, policy, or causality.
 - For each unit write the rationale first and then name the classification,
   emitting fields in that schema order. The classification must match the
@@ -248,7 +286,9 @@ export const PRECISION_JUDGMENT_SYSTEM = `You are a strict, impartial source-gro
 
 You receive material assertions extracted from a knowledge artifact and a
 deduplicated source-evidence set shared by the bounded judgment batch. Each
-evidence excerpt is marked current (drawn from the checkpoint under evaluation)
+assertion also carries an exact sourceQuote and references its complete artifact
+context. Use them to preserve the assertion's original scope, tense, and meaning.
+Each evidence excerpt is marked current (drawn from the checkpoint under evaluation)
 or historical (drawn from an earlier checkpoint). Each assertion lists the exact
 evidence IDs it may use. Judge only from the supplied evidence. Do not use
 unavailable files, tools, project facts, or changing outside information. You may
@@ -274,6 +314,12 @@ argues the claim matches the source, the verdict is "supported"; do not leave a
 
 Rules:
 - Return exactly one evaluation per supplied assertionId.
+- Before grounding, verify that the normalized statement is faithfully entailed
+  by sourceQuote in its complete artifact context. If extraction dropped or
+  redistributed a qualifier, broadened table/list scope, formalized a conceptual
+  diagram label, or assigned current tense to historical narration, return
+  "not-addressed" with no evidence. Do not accuse the artifact of a claim its
+  original text does not make.
 - Mere consistency is not support, and silence is not contradiction. Missing
   evidence for a location, wording, attribution, timing detail, or one part of a
   compound claim is "not-addressed", not "contradicted", unless the evidence
@@ -283,6 +329,16 @@ Rules:
   is no X anywhere") is "not-addressed" whenever the bounded evidence does not
   affirmatively establish an incompatible fact. Do not mark such a claim
   "contradicted" merely because the evidence does not mention it.
+- Use the narrow ordinary scope of the assertion. "Exports a single function"
+  means exactly one function export; it does not mean the module has no class,
+  type, or value exports. A test's internal source import does not establish how
+  package consumers import the published package.
+- For claims about executable behavior, direct implementation and control flow
+  outrank comments, README prose, names, and stated intent when they conflict.
+  For example, push followed by pop on the same array is LIFO even when comments
+  call it FIFO, and a function whose only executable operation is void task is a
+  no-op for task execution. Descriptive prose remains authoritative for claims
+  specifically about what that prose documents or intends.
 - "supported" and "contradicted" must cite the evidenceIds that establish the
   verdict. "not-addressed" must cite no evidenceIds.
 - Evidence IDs must come from that assertion's own supplied evidence.
@@ -290,6 +346,9 @@ Rules:
   result, formerlyTrue is true iff supplied historical evidence establishes the
   complete assertion at an earlier checkpoint; otherwise it is false. Cite the
   historical evidence IDs as well when formerlyTrue is true.
+- Historical evidence must entail the same complete assertion, not merely contain
+  the same names or remain compatible with it. If materially identical current
+  and historical implementation both refute the claim, formerlyTrue is false.
 - formerlyTrue is required for contradicted results and must be omitted for
   supported and not-addressed results.
 - The verdict must agree with the conclusion of the rationale.
@@ -361,11 +420,15 @@ ${JSON.stringify(units, null, 2)}`;
 export function precisionJudgmentPrompt(
   assertions: PrecisionJudgmentAssertion[],
   evidence: PrecisionEvidenceExcerpt[],
+  artifactContexts: PrecisionArtifactContext[],
 ): string {
   return `Ground every assertion against only its supplied source evidence, returning supported, contradicted, or not-addressed.
 
 Assertions (JSON):
 ${JSON.stringify(assertions, null, 2)}
+
+Artifact contexts (JSON):
+${JSON.stringify(artifactContexts, null, 2)}
 
 Source evidence (JSON):
 ${JSON.stringify(evidence, null, 2)}`;

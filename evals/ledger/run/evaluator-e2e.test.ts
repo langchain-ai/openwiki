@@ -188,7 +188,11 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
         const assertions = unit.content
           .split("\n")
           .filter((line) => line.startsWith("- "))
-          .map((line) => ({ statement: line.slice(2), tense: "current" }));
+          .map((line) => ({
+            statement: line.slice(2),
+            sourceQuote: line.slice(2),
+            tense: "current",
+          }));
 
         return {
           unitId: unit.unitId,
@@ -204,6 +208,7 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
   }
 
   if (systemPrompt === PRECISION_JUDGMENT_SYSTEM) {
+    const artifactMarker = "\n\nArtifact contexts (JSON):\n";
     const evidenceMarker = "\n\nSource evidence (JSON):\n";
     const assertions = parsePromptJson<
       Array<{
@@ -211,7 +216,7 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
         statement: string;
         evidenceIds: string[];
       }>
-    >(taskPrompt, "Assertions (JSON):\n", evidenceMarker);
+    >(taskPrompt, "Assertions (JSON):\n", artifactMarker);
     const sourceEvidence = parsePromptJson<
       Array<{ evidenceId: string; current: boolean }>
     >(taskPrompt, evidenceMarker);
@@ -245,10 +250,11 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
   }
 
   if (systemPrompt === PRECISION_HISTORY_JUDGMENT_SYSTEM) {
+    const artifactMarker = "\n\nArtifact contexts (JSON):\n";
     const evidenceMarker = "\n\nSource evidence (JSON):\n";
     const assertions = parsePromptJson<
       Array<{ assertionId: string; statement: string }>
-    >(taskPrompt, "Assertions (JSON):\n", evidenceMarker);
+    >(taskPrompt, "Assertions (JSON):\n", artifactMarker);
 
     return {
       evaluations: assertions.map((assertion) => ({
