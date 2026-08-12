@@ -170,6 +170,7 @@ function scriptedResponse(systemPrompt: string, taskPrompt: string): unknown {
           factVersionId: target.factVersionId,
           verdict: evidence ? "lingering" : "forgotten",
           evidence: evidence ? [evidence.sectionId] : [],
+          matchedText: evidence ? target.obsoleteStatement : undefined,
           rationale: evidence ? "The old statement remains." : "It is absent.",
         };
       }),

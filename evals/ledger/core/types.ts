@@ -415,6 +415,13 @@ export interface ForgettingEvaluation {
   evidence: string[];
 
   /**
+   * Exact verbatim artifact text that demonstrates the obsolete version is
+   * still presented as current. Present only for a `lingering` verdict and
+   * validated against one of the cited sections.
+   */
+  matchedText?: string;
+
+  /**
    * One-sentence rationale.
    */
   rationale: string;
@@ -864,7 +871,7 @@ export interface LedgerRunMetadata {
 
 /**
  * The complete result of a LEDGER run: per-checkpoint claim state plus
- * trace-level forgetting diagnostics.
+ * trace-level diagnostics.
  */
 export interface LedgerRunResult {
   /**
@@ -877,7 +884,7 @@ export interface LedgerRunResult {
    */
   checkpoints: CheckpointResult[];
 
-  /** Run-level score derived from claim health and forgetting. */
+  /** Run-level score derived from claim health. */
   score: LedgerScore;
 
   /**
@@ -888,14 +895,11 @@ export interface LedgerRunResult {
 
 /** Auditable components of the run-level LEDGER score. */
 export interface LedgerScore {
-  /** Harmonic mean of the observed score dimensions. */
+  /** Opportunity-weighted claim health across every checkpoint. */
   value: number;
 
   /** Supported current claims divided by all current claims across checkpoints. */
   claimHealth: number;
-
-  /** Forgotten divided by determinate obsolete-fact checks, when observed. */
-  forgetting?: number;
 }
 
 // ---------------------------------------------------------------------------

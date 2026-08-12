@@ -42,28 +42,23 @@ function checkpoint(
 }
 
 describe("computeLedgerScore", () => {
-  test("uses opportunity-weighted claim health and forgetting", () => {
+  test("uses opportunity-weighted claim health", () => {
     const score = computeLedgerScore([
       checkpoint(8, 10, ["forgotten", "lingering"]),
       checkpoint(18, 20, ["forgotten", "forgotten"]),
     ]);
 
-    expect(score.claimHealth).toBeCloseTo(26 / 30);
-    expect(score.forgetting).toBe(0.75);
-    expect(score.value).toBeCloseTo((2 * (26 / 30) * 0.75) / (26 / 30 + 0.75));
+    expect(score).toEqual({ value: 26 / 30, claimHealth: 26 / 30 });
   });
 
-  test("excludes indeterminate forgetting and falls back to claim health", () => {
+  test("does not let obsolete-fact diagnostics affect the score", () => {
     expect(computeLedgerScore([checkpoint(8, 10, ["indeterminate"])])).toEqual({
       value: 0.8,
       claimHealth: 0.8,
-      forgetting: undefined,
     });
-  });
-
-  test("returns zero when either observed dimension is zero", () => {
-    expect(computeLedgerScore([checkpoint(10, 10, ["lingering"])]).value).toBe(
-      0,
-    );
+    expect(computeLedgerScore([checkpoint(10, 10, ["lingering"])])).toEqual({
+      value: 1,
+      claimHealth: 1,
+    });
   });
 });

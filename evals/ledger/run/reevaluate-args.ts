@@ -6,6 +6,9 @@ import { LedgerError } from "../core/errors.js";
  * Fully resolved command-line configuration for evaluator-only replay.
  */
 export interface ReevaluationConfig {
+  /** Print every stale and hallucinated claim beneath each checkpoint. */
+  verbose: boolean;
+
   /**
    * Absolute benchmark directory.
    */
@@ -37,6 +40,9 @@ export interface ReevaluationConfig {
  * absolute path resolution.
  */
 interface ReevaluationArgs {
+  /** Whether detailed incorrect-claim output is enabled. */
+  verbose?: boolean;
+
   /**
    * Benchmark directory argument.
    */
@@ -61,7 +67,7 @@ interface ReevaluationArgs {
 /**
  * Supported evaluator-only flags and their destination properties.
  */
-const FLAGS: Record<string, keyof ReevaluationArgs> = {
+const FLAGS: Record<string, Exclude<keyof ReevaluationArgs, "verbose">> = {
   "--benchmark": "benchmark",
   "--run": "run",
   "--results": "results",
@@ -85,6 +91,15 @@ function parseReevaluationArgs(argv: string[]): ReevaluationArgs {
     const token = argv[index];
     const equals = token.indexOf("=");
     const flag = equals === -1 ? token : token.slice(0, equals);
+
+    if (flag === "--verbose") {
+      if (equals !== -1) {
+        throw new LedgerError(`"--verbose" does not accept a value.`);
+      }
+      parsed.verbose = true;
+      continue;
+    }
+
     const key = FLAGS[flag];
 
     if (key === undefined) {
@@ -156,6 +171,7 @@ export function resolveReevaluationConfig(
   }
 
   return {
+    verbose: args.verbose === true,
     benchmarkDir: path.resolve(args.benchmark),
     sourceRunDir: path.resolve(args.run),
     resultsDir:

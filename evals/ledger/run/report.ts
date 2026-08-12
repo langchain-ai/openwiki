@@ -64,7 +64,6 @@ export function formatReport(result: LedgerRunResult): string {
 
   lines.push(`- LEDGER score: ${pct(result.score.value)}`);
   lines.push(`- Claim health: ${pct(result.score.claimHealth)}`);
-  lines.push(`- Forgetting score: ${pct(result.score.forgetting)}`);
 
   lines.push("", "## Checkpoints", "");
   lines.push(

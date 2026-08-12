@@ -6,10 +6,7 @@ knowledge artifacts remain accurate and current as their underlying source of
 truth evolves. The current adapter replays Git checkpoints, runs OpenWiki, and
 evaluates each frozen wiki snapshot.
 
-LEDGER reports two directly auditable views:
-
-1. the state of every current factual claim in the wiki; and
-2. whether known-obsolete public API facts are still presented as current.
+LEDGER reports the state of every current factual claim in the wiki.
 
 ## Claim state
 
@@ -89,57 +86,18 @@ invalid after isolated repair falls back to `unverified`; a failed extraction
 unit contributes no claims. Both cases lower the separately reported evaluator
 completeness rate and remain visible as warnings in the audit report.
 
-## Forgetting
-
-Source absence is not always sufficient to refute a claim. LEDGER therefore keeps
-a separate deterministic watchlist for structural public-API changes.
-
-At each checkpoint the TypeScript surface extractor records authored
-`.ts`/`.tsx`/`.mts`/`.cts` files, their exported symbols, and an exported
-`VERSION` constant or `package.json` version when present. Declaration files,
-tests, generated wiki content, dependencies, and build output are excluded.
-Diffing consecutive surfaces identifies changed and removed fact versions. Those
-obsolete versions stay under watch while they remain obsolete, even after first
-being judged forgotten; an exact source revival removes the version from the
-watchlist.
-
-The forgetting evaluator asks whether each obsolete fact is still presented as
-current. It inspects BM25-ranked wiki sections first, then exhaustively checks all
-remaining sections before declaring the fact forgotten:
-
-| Verdict         | Meaning                                                     |
-| --------------- | ----------------------------------------------------------- |
-| `forgotten`     | The obsolete fact is absent or described only historically. |
-| `lingering`     | The wiki still presents the obsolete fact as current.       |
-| `indeterminate` | The evaluator could not complete the judgment.              |
-
-This produces forgotten and carried obsolete facts at each checkpoint plus
-stale-knowledge lifetime, measured as the number of checkpoints judged
-`lingering` before the first `forgotten` verdict. Indeterminate judgments reduce
-evaluator completeness and are excluded from the report's forgetting-rate
-denominator. In the live CLI, an indeterminate obsolete fact remains in the
-`carrying` count and is accompanied by an evaluator warning.
-
-The source surface is an obsolete-knowledge oracle only. It is not reported or
-scored as documentation coverage.
-
 ## LEDGER score
 
-The run-level score summarizes claim health and forgetting without claiming to
-measure documentation completeness:
+The run-level score is opportunity-weighted claim health across the trace:
 
 ```text
 claim health = supported current claims / all current claims across checkpoints
-forgetting   = forgotten / determinate obsolete-fact checks
-LEDGER score = harmonic mean(claim health, forgetting)
+LEDGER score = claim health
 ```
 
 Stale, hallucinated, and unverified claims all lower claim health because they
-remain in its denominator. The sticky forgetting watchlist makes a lingering
-obsolete fact lower forgetting again at every checkpoint until it is removed.
-When a trace has no determinate forgetting opportunity, claim health is the only
-observed dimension and becomes the score. The score does not measure whether the
-wiki covers every important source topic; that limitation remains explicit.
+remain in its denominator. The score does not measure whether the wiki covers
+every important source topic; that limitation remains explicit.
 
 ## CLI output
 
@@ -150,15 +108,16 @@ wiki covers every important source topic; that limitation remains explicit.
 │
 ├ 📍 1/5 · T0 · 3f2a1b9 · baseline API
 │ 🤖 OpenWiki init complete · 5.4s · 12 documents
-│ 📊 35 claims · 91% supported · 0% stale · 3% hallucinated · 6% unverified
+│ 📊 35 claims
+│    supported 91% (32) · stale 0% (0) · hallucinated 3% (1) · unverified 6% (2)
 │
 ├ 📍 2/5 · T1 · a7c40e2 · RedisStore + retry API
 │ 🤖 OpenWiki update complete · 6.8s · 14 documents
-│ 📊 50 claims · 88% supported · 4% stale · 2% hallucinated · 6% unverified
-│ 🧹 forgot 2/3 obsolete facts · carrying 1
+│ 📊 50 claims
+│    supported 88% (44) · stale 4% (2) · hallucinated 2% (1) · unverified 6% (3)
 │
 ├ 🔬 Details → evals/ledger/.results/taskflow-…/report.md
-└ ✅ LEDGER score 84% · 2m 11s
+└ ✅ LEDGER score 89% · 2m 11s
 ```
 
 The displayed claim count is the shared snapshot denominator: distinct current-
@@ -167,16 +126,21 @@ warnings, and stale lifetimes are kept in `report.md`, `result.json`, the
 assertion inventories, evidence snapshots, and, when current unverified claims
 exist, `unverified-claims.md`.
 
+Pass `--verbose` to print every stale and hallucinated claim beneath the
+checkpoint that produced it. The default output retains only percentages and
+counts. A nonzero rate below one percent is displayed as `<1%` rather than being
+rounded down to `0%`.
+
 While evaluation is active, the spinner reports phase-specific completion:
 
 ```text
-│ ⠼ 🔍 Extracting claims · 44% · 0 obsolete API facts
-│ ⠼ 🔍 Grounding 35 claims · 49% · 0 obsolete API facts
+│ ⠼ 🔍 Extracting claims · 44%
+│ ⠼ 🔍 Grounding 35 claims · 49%
 ```
 
 Extraction advances by classified text units. After extraction, grounding
-progress combines distinct-claim judgments and obsolete-fact judgments, so 100%
-means the checkpoint evaluation is genuinely complete.
+progress advances through distinct-claim judgments, so 100% means the checkpoint
+evaluation is genuinely complete.
 
 ## Running
 
@@ -187,7 +151,8 @@ pnpm run eval:ledger -- --benchmark evals/ledger/benchmarks/taskflow
 ```
 
 Provider credentials use the same environment configuration as OpenWiki. Add
-`--system-model <id>` or `--evaluator-model <id>` to override either model.
+`--system-model <id>` or `--evaluator-model <id>` to override either model, and
+`--verbose` to print every stale and hallucinated claim.
 
 Re-evaluate a completed run without invoking OpenWiki again:
 

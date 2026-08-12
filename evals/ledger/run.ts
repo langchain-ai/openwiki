@@ -30,11 +30,8 @@ const evalDir = path.dirname(fileURLToPath(import.meta.url));
  * @returns Nothing; side effects are the written files and printed report.
  */
 async function main(): Promise<void> {
-  const config = resolveRunConfig(
-    parseArgs(process.argv.slice(2)),
-    process.env,
-    evalDir,
-  );
+  const args = parseArgs(process.argv.slice(2));
+  const config = resolveRunConfig(args, process.env, evalDir);
   const benchmark = await loadBenchmark(config.benchmarkDir);
   const startedAt = new Date().toISOString();
   const startedMs = performance.now();
@@ -67,7 +64,9 @@ async function main(): Promise<void> {
       startedAt,
       onArtifact: (artifact) => writeArtifactSnapshot(runDir, artifact),
       onEvidence: (evidence) => writeEvidenceCorpus(runDir, evidence),
-      onProgress: createCliProgressReporter(),
+      onProgress: createCliProgressReporter(process.stderr, {
+        verbose: args.verbose === true,
+      }),
     });
   } catch (error) {
     await persistFailureAudit(runDir, error);

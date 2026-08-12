@@ -91,14 +91,21 @@ function makeResult(
   verdict: ForgettingEvaluation["verdict"],
   evidence: string[],
   rationale: string,
+  matchedText?: string,
 ): ForgettingEvaluation {
-  return {
+  const result: ForgettingEvaluation = {
     factId: fact.factId,
     factVersionId: fact.factVersionId,
     verdict,
     evidence,
     rationale,
   };
+
+  if (matchedText !== undefined) {
+    result.matchedText = matchedText;
+  }
+
+  return result;
 }
 
 /**
@@ -133,8 +140,63 @@ export function resolveForgetting(
         `Forgetting evaluator returned no verdict for factVersionId "${fact.factVersionId}".`,
       );
     }
-    return makeResult(fact, item.verdict, item.evidence, item.rationale);
+    return makeResult(
+      fact,
+      item.verdict,
+      item.evidence,
+      item.rationale,
+      item.matchedText,
+    );
   });
+}
+
+/** Validate one raw verdict's citations and verbatim lingering evidence. */
+function validateItemEvidence(
+  item: ForgettingOutput["evaluations"][number],
+  sectionsById: Map<string, ArtifactSection>,
+): void {
+  if (new Set(item.evidence).size !== item.evidence.length) {
+    throw new EvaluationError(
+      `Forgetting evaluator returned duplicate evidence for factVersionId "${item.factVersionId}".`,
+    );
+  }
+
+  for (const sectionId of item.evidence) {
+    if (!sectionsById.has(sectionId)) {
+      throw new EvaluationError(
+        `Forgetting evaluator cited unavailable sectionId "${sectionId}" for factVersionId "${item.factVersionId}".`,
+      );
+    }
+  }
+
+  if (item.verdict === "forgotten") {
+    if (item.matchedText !== undefined) {
+      throw new EvaluationError(
+        `Forgetting evaluator returned matchedText for forgotten factVersionId "${item.factVersionId}".`,
+      );
+    }
+    return;
+  }
+
+  if (item.evidence.length === 0) {
+    throw new EvaluationError(
+      `Forgetting evaluator returned no evidence for lingering factVersionId "${item.factVersionId}".`,
+    );
+  }
+  if (item.matchedText === undefined) {
+    throw new EvaluationError(
+      `Forgetting evaluator returned no matchedText for lingering factVersionId "${item.factVersionId}".`,
+    );
+  }
+
+  const quoteAppearsInCitation = item.evidence.some((sectionId) =>
+    sectionsById.get(sectionId)?.content.includes(item.matchedText as string),
+  );
+  if (!quoteAppearsInCitation) {
+    throw new EvaluationError(
+      `Forgetting evaluator matchedText does not appear verbatim in cited evidence for factVersionId "${item.factVersionId}".`,
+    );
+  }
 }
 
 /** Validate identities and evidence citations for one complete request. */
@@ -146,23 +208,14 @@ function validateOutput(
     targets.map((target) => target.fact),
     output,
   );
-  const allowedSectionIds = new Set(
-    targets.flatMap((target) => target.sections.map((section) => section.id)),
+  const sectionsById = new Map(
+    targets.flatMap((target) =>
+      target.sections.map((section) => [section.id, section] as const),
+    ),
   );
 
   for (const item of output.evaluations) {
-    for (const sectionId of item.evidence) {
-      if (!allowedSectionIds.has(sectionId)) {
-        throw new EvaluationError(
-          `Forgetting evaluator cited unavailable sectionId "${sectionId}" for factVersionId "${item.factVersionId}".`,
-        );
-      }
-    }
-    if (item.verdict === "lingering" && item.evidence.length === 0) {
-      throw new EvaluationError(
-        `Forgetting evaluator returned no evidence for lingering factVersionId "${item.factVersionId}".`,
-      );
-    }
+    validateItemEvidence(item, sectionsById);
   }
 }
 
@@ -170,7 +223,7 @@ function validateOutput(
 function resolveItem(
   target: ForgettingTarget,
   output: ForgettingOutput,
-  allowedSectionIds: Set<string>,
+  sectionsById: Map<string, ArtifactSection>,
 ): ForgettingEvaluation {
   const matches = output.evaluations.filter(
     (item) => item.factVersionId === target.fact.factVersionId,
@@ -182,25 +235,15 @@ function resolveItem(
   }
 
   const [item] = matches;
-  if (new Set(item.evidence).size !== item.evidence.length) {
-    throw new EvaluationError(
-      `Forgetting evaluator returned duplicate evidence for factVersionId "${target.fact.factVersionId}".`,
-    );
-  }
-  for (const sectionId of item.evidence) {
-    if (!allowedSectionIds.has(sectionId)) {
-      throw new EvaluationError(
-        `Forgetting evaluator cited unavailable sectionId "${sectionId}" for factVersionId "${target.fact.factVersionId}".`,
-      );
-    }
-  }
-  if (item.verdict === "lingering" && item.evidence.length === 0) {
-    throw new EvaluationError(
-      `Forgetting evaluator returned no evidence for lingering factVersionId "${target.fact.factVersionId}".`,
-    );
-  }
+  validateItemEvidence(item, sectionsById);
 
-  return makeResult(target.fact, item.verdict, item.evidence, item.rationale);
+  return makeResult(
+    target.fact,
+    item.verdict,
+    item.evidence,
+    item.rationale,
+    item.matchedText,
+  );
 }
 
 /** Invoke and strictly validate one complete forgetting request. */
@@ -250,14 +293,16 @@ async function evaluateBatchResilient(
     output = { evaluations: [] };
   }
 
-  const allowedSectionIds = new Set(
-    targets.flatMap((target) => target.sections.map((section) => section.id)),
+  const sectionsById = new Map(
+    targets.flatMap((target) =>
+      target.sections.map((section) => [section.id, section] as const),
+    ),
   );
   const evaluations: ForgettingEvaluation[] = [];
 
   for (const target of targets) {
     try {
-      evaluations.push(resolveItem(target, output, allowedSectionIds));
+      evaluations.push(resolveItem(target, output, sectionsById));
     } catch (initialError) {
       try {
         const [repaired] = await evaluateBatch(input, [target]);

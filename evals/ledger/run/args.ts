@@ -4,6 +4,9 @@ import { LedgerError } from "../core/errors.js";
  * Parsed command-line arguments for a LEDGER run.
  */
 export interface ParsedArgs {
+  /** Print every stale and hallucinated claim beneath each checkpoint. */
+  verbose?: boolean;
+
   /**
    * Path to the benchmark directory (required).
    */
@@ -35,7 +38,7 @@ export interface ParsedArgs {
  * Map from a long flag to the `ParsedArgs` key it sets. Acts as the allowlist:
  * any token whose flag is not a key here is rejected.
  */
-const FLAGS: Record<string, keyof ParsedArgs> = {
+const FLAGS: Record<string, Exclude<keyof ParsedArgs, "verbose">> = {
   "--benchmark": "benchmark",
   "--results": "results",
   "--system-model": "systemModel",
@@ -60,6 +63,15 @@ export function parseArgs(argv: string[]): ParsedArgs {
     const token = argv[i];
     const eq = token.indexOf("=");
     const flag = eq === -1 ? token : token.slice(0, eq);
+
+    if (flag === "--verbose") {
+      if (eq !== -1) {
+        throw new LedgerError(`"--verbose" does not accept a value.`);
+      }
+      parsed.verbose = true;
+      continue;
+    }
+
     const key = FLAGS[flag];
 
     if (key === undefined) {

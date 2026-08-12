@@ -243,6 +243,9 @@ export async function evaluateCheckpoint(
   );
 
   const claims = computeClaimState(evaluation.precisionEvaluations);
+  const currentClaims = evaluation.precisionEvaluations.filter(
+    (item) => item.tense === "current",
+  );
   const evaluationCompleteness = computeEvaluationCompleteness(
     evaluation.precisionEvaluations,
     evaluation.forgettingEvaluations,
@@ -253,6 +256,10 @@ export async function evaluateCheckpoint(
     type: "checkpoint-complete",
     checkpointId: checkpoint.id,
     claimCount: claims.total,
+    supportedCount: claims.supported,
+    staleCount: claims.stale,
+    hallucinatedCount: claims.invented,
+    unverifiedCount: claims.unverified,
     supportedRate: claims.supportedRate,
     stalenessRate: claims.stalenessRate,
     hallucinationRate: claims.hallucinationRate,
@@ -264,6 +271,12 @@ export async function evaluateCheckpoint(
     evaluationCompleteness: evaluationCompleteness.rate,
     indeterminateCount: evaluationCompleteness.indeterminate,
     evaluationItemCount: evaluationCompleteness.total,
+    staleClaims: currentClaims
+      .filter((item) => item.verdict === "stale")
+      .map(({ location, assertion }) => ({ location, assertion })),
+    hallucinatedClaims: currentClaims
+      .filter((item) => item.verdict === "invented")
+      .map(({ location, assertion }) => ({ location, assertion })),
   });
 
   const checkpointResult: CheckpointResult = {

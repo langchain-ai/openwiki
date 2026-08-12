@@ -45,7 +45,7 @@ describe("createCliProgressReporter", () => {
     expect(rendered).not.toContain("Captured");
   });
 
-  test("renders claim state and forgetting with a shared claim denominator", () => {
+  test("renders claim-state percentages and counts without forgetting output", () => {
     let rendered = "";
     const report = createCliProgressReporter({
       write: (text) => {
@@ -76,6 +76,10 @@ describe("createCliProgressReporter", () => {
       type: "checkpoint-complete",
       checkpointId: "T1",
       claimCount: 100,
+      supportedCount: 82,
+      staleCount: 10,
+      hallucinatedCount: 2,
+      unverifiedCount: 6,
       supportedRate: 0.82,
       stalenessRate: 0.1,
       hallucinationRate: 0.02,
@@ -85,20 +89,24 @@ describe("createCliProgressReporter", () => {
       evaluationCompleteness: 1,
       indeterminateCount: 0,
       evaluationItemCount: 106,
+      staleClaims: [
+        { location: "wiki/a.md", assertion: "The old default is two." },
+      ],
+      hallucinatedClaims: [
+        { location: "wiki/b.md", assertion: "A made-up module exists." },
+      ],
     });
+    expect(rendered).toContain("🔍 Extracting claims · 44%");
+    expect(rendered).toContain("🔍 Grounding 100 claims · 49%");
+    expect(rendered).toContain("📊 100 claims");
     expect(rendered).toContain(
-      "🔍 Extracting claims · 44% · 6 obsolete API facts",
+      "supported 82% (82) · stale 10% (10) · hallucinated 2% (2) · unverified 6% (6)",
     );
-    expect(rendered).toContain(
-      "🔍 Grounding 100 claims · 49% · 6 obsolete API facts",
-    );
-    expect(rendered).toContain(
-      "📊 100 claims · 82% supported · 10% stale · 2% hallucinated · 6% unverified",
-    );
-    expect(rendered).toContain("🧹 forgot 4/6 obsolete facts · carrying 2");
+    expect(rendered).not.toContain("obsolete");
+    expect(rendered).not.toContain("The old default");
   });
 
-  test("shows evaluator incompleteness and omits an empty forgetting line", () => {
+  test("shows evaluator incompleteness", () => {
     let rendered = "";
     const report = createCliProgressReporter({
       write: (text) => {
@@ -109,6 +117,10 @@ describe("createCliProgressReporter", () => {
       type: "checkpoint-complete",
       checkpointId: "T0",
       claimCount: 10,
+      supportedCount: 10,
+      staleCount: 0,
+      hallucinatedCount: 0,
+      unverifiedCount: 0,
       supportedRate: 1,
       stalenessRate: 0,
       hallucinationRate: 0,
@@ -118,9 +130,61 @@ describe("createCliProgressReporter", () => {
       evaluationCompleteness: 0.9,
       indeterminateCount: 1,
       evaluationItemCount: 10,
+      staleClaims: [],
+      hallucinatedClaims: [],
     });
     expect(rendered).not.toContain("obsolete facts");
     expect(rendered).toContain("evaluator 90% complete");
+  });
+
+  test("shows populated sub-percent metrics and all verbose claim details", () => {
+    let rendered = "";
+    const report = createCliProgressReporter(
+      {
+        write: (text) => {
+          rendered += text;
+        },
+      },
+      { verbose: true },
+    );
+
+    report({
+      type: "checkpoint-complete",
+      checkpointId: "T4",
+      claimCount: 1_325,
+      supportedCount: 1_239,
+      staleCount: 24,
+      hallucinatedCount: 6,
+      unverifiedCount: 56,
+      supportedRate: 1_239 / 1_325,
+      stalenessRate: 24 / 1_325,
+      hallucinationRate: 6 / 1_325,
+      unverifiedRate: 56 / 1_325,
+      forgottenCount: 12,
+      obsoleteFactCount: 13,
+      evaluationCompleteness: 1,
+      indeterminateCount: 0,
+      evaluationItemCount: 1_533,
+      staleClaims: [
+        { location: "architecture/a.md", assertion: "Old fact one." },
+        {
+          location: "architecture/b.md",
+          assertion: "Old fact\n two.",
+        },
+      ],
+      hallucinatedClaims: [
+        { location: "quickstart.md", assertion: "Invented fact." },
+      ],
+    });
+
+    expect(rendered).toContain("hallucinated <1% (6)");
+    expect(rendered).toContain("│    ↳ stale");
+    expect(rendered).toContain(
+      "architecture/a.md · “Old fact one.”\n│       architecture/b.md · “Old fact two.”",
+    );
+    expect(rendered).toContain("│    ↳ hallucinated");
+    expect(rendered).toContain("quickstart.md · “Invented fact.”");
+    expect(rendered).not.toContain("forgot 12/13");
   });
 
   test("closes failures with one bounded line", () => {

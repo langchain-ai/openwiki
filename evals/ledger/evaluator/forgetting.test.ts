@@ -142,6 +142,7 @@ describe("forgetting evaluator", () => {
             factVersionId: "old@T0",
             verdict: "lingering",
             evidence: ["s00"],
+            matchedText: "other 0",
             rationale: "still current",
           },
         ],
@@ -157,7 +158,116 @@ describe("forgetting evaluator", () => {
     });
 
     expect(evaluation.verdict).toBe("lingering");
+    expect(evaluation.matchedText).toBe("other 0");
     expect(control.taskPrompts).toHaveLength(2);
+  });
+
+  test("requires a verbatim quote from cited evidence for lingering", async () => {
+    const invalid = {
+      evaluations: [
+        {
+          factVersionId: "enqueue@T0",
+          verdict: "lingering",
+          evidence: ["seen"],
+          matchedText: "enqueue(queue, task)",
+          rationale: "The obsolete signature remains current.",
+        },
+      ],
+    };
+    const control = controller([invalid, invalid, invalid]);
+    const warnings: string[] = [];
+
+    const [evaluation] = await runForgettingPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      obsoleteFacts: [
+        obsoleteFact("enqueue", "enqueue(queue, task) accepts a task."),
+      ],
+      index: new SectionBm25Index([
+        section("seen", "Call enqueue(queue, task, priority) to add a task."),
+      ]),
+      onWarning: (warning) => warnings.push(warning.message),
+    });
+
+    expect(evaluation.verdict).toBe("indeterminate");
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain(
+      "matchedText does not appear verbatim in cited evidence",
+    );
+  });
+
+  test("rejects lingering without matched text", async () => {
+    const invalid = {
+      evaluations: [
+        {
+          factVersionId: "old@T0",
+          verdict: "lingering",
+          evidence: ["seen"],
+          rationale: "The same name appears.",
+        },
+      ],
+    };
+    const control = controller([invalid, invalid, invalid]);
+
+    const [evaluation] = await runForgettingPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      obsoleteFacts: [obsoleteFact("old", "old() has no parameters.")],
+      index: new SectionBm25Index([section("seen", "Use old(value).")]),
+    });
+
+    expect(evaluation.verdict).toBe("indeterminate");
+  });
+
+  test("rejects matched text on a forgotten verdict", async () => {
+    const invalid = {
+      evaluations: [
+        {
+          factVersionId: "old@T0",
+          verdict: "forgotten",
+          evidence: ["history"],
+          matchedText: "old() was removed.",
+          rationale: "The excerpt describes removal.",
+        },
+      ],
+    };
+    const control = controller([invalid, invalid, invalid]);
+
+    const [evaluation] = await runForgettingPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      obsoleteFacts: [obsoleteFact("old", "old() exists.")],
+      index: new SectionBm25Index([section("history", "old() was removed.")]),
+    });
+
+    expect(evaluation.verdict).toBe("indeterminate");
+  });
+
+  test("defines exact-version boundaries in the classifier prompt", () => {
+    expect(FORGETTING_SYSTEM).toContain("exact obsolete fact version");
+    expect(FORGETTING_SYSTEM).toContain(
+      "A generic mention of the same name is insufficient",
+    );
+    expect(FORGETTING_SYSTEM).toContain(
+      "artifact page does not assert that a similarly named",
+    );
+    expect(FORGETTING_SYSTEM).toContain(
+      "source file currently exists unless the excerpt says so",
+    );
+    expect(FORGETTING_SYSTEM).toContain(
+      "replacement signature, behavior, meaning, or source path",
+    );
+    expect(FORGETTING_SYSTEM).toContain(
+      "example that remains valid under both the obsolete and current versions",
+    );
+    expect(FORGETTING_SYSTEM).toContain(
+      "statement, including every version-distinguishing parameter, default, return",
+    );
+    expect(FORGETTING_SYSTEM).toContain('the verdict must be "forgotten"');
+    expect(FORGETTING_SYSTEM).toContain("matchedText: the smallest");
+    expect(FORGETTING_SYSTEM).toContain(
+      "exact verbatim span from a cited excerpt",
+    );
   });
 
   test("examines every section before finalizing forgotten", async () => {
@@ -202,6 +312,7 @@ describe("forgetting evaluator", () => {
           factVersionId: "old@T0",
           verdict: "lingering",
           evidence: ["unseen"],
+          matchedText: "old truth",
           rationale: "invented citation",
         },
       ],
@@ -253,6 +364,7 @@ describe("forgetting evaluator", () => {
           factVersionId: "broken@T0",
           verdict: "lingering",
           evidence: ["unseen"],
+          matchedText: "old truth",
           rationale: "invented citation",
         },
       ],

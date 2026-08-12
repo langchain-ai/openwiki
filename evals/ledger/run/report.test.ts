@@ -47,9 +47,8 @@ test("reports current claim state, forgetting, and the auditable score", () => {
       },
     ],
     score: {
-      value: (2 * 0.82) / 1.82,
+      value: 0.82,
       claimHealth: 0.82,
-      forgetting: 1,
     },
     diagnostics: {
       staleKnowledge: {
@@ -66,8 +65,8 @@ test("reports current claim state, forgetting, and the auditable score", () => {
     "| T1 | 100 | 82.0% | 10.0% (10) | 2.0% (2) | 6.0% (6)",
   );
   expect(report).toContain("API forgetting");
-  expect(report).toContain("LEDGER score: 90.1%");
+  expect(report).toContain("LEDGER score: 82.0%");
   expect(report).toContain("Claim health: 82.0%");
-  expect(report).toContain("Forgetting score: 100.0%");
+  expect(report).not.toContain("Forgetting score");
   expect(report).not.toContain("Coverage");
 });

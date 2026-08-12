@@ -28,6 +28,14 @@ export const forgettingOutputSchema = z.object({
         factVersionId: z.string(),
         rationale: z.string(),
         evidence: z.array(z.string()).default([]),
+        matchedText: z
+          .string()
+          .trim()
+          .min(1)
+          .optional()
+          .describe(
+            "For a lingering verdict, an exact verbatim span from a cited artifact excerpt that establishes the complete obsolete statement, including every version-distinguishing detail, as current. Mere compatibility is insufficient. Omit for forgotten.",
+          ),
         verdict: z.enum(["forgotten", "lingering"]),
       }),
     )

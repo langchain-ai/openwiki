@@ -75,6 +75,7 @@ describe("resolveForgetting", () => {
           factVersionId: "a@T0",
           verdict: "lingering",
           evidence: ["artifact/a.md"],
+          matchedText: "old A",
           rationale: "",
         },
         {
@@ -90,6 +91,7 @@ describe("resolveForgetting", () => {
       ["a@T0", "lingering"],
       ["b@T0", "forgotten"],
     ]);
+    expect(resolved[0].matchedText).toBe("old A");
   });
 
   test("carries the factId alongside the version verdict", () => {

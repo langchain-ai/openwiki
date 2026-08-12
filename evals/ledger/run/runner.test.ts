@@ -314,8 +314,7 @@ describe("runBenchmark", () => {
     expect(result.checkpoints[1].efficiency.durationMs).toBe(20);
     expect(result.checkpoints[1].efficiency.churnedLines).toBeGreaterThan(0);
     expect(result.score.claimHealth).toBe(0.75);
-    expect(result.score.forgetting).toBe(1);
-    expect(result.score.value).toBeCloseTo((2 * 0.75) / 1.75);
+    expect(result.score.value).toBe(0.75);
   });
 });
 

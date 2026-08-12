@@ -10,7 +10,7 @@ const result: LedgerRunResult = {
     system: { provider: "fake" },
   },
   checkpoints: [],
-  score: { value: 0.84, claimHealth: 0.89, forgetting: 0.79 },
+  score: { value: 0.84, claimHealth: 0.84 },
   diagnostics: { staleKnowledge: { records: [], unresolvedCount: 0 } },
 };
 

@@ -1,5 +1,11 @@
 import type { BenchmarkDifficulty } from "../core/types.js";
 
+/** One current claim displayed by verbose checkpoint output. */
+export interface ProgressClaim {
+  location: string;
+  assertion: string;
+}
+
 /**
  * Observable lifecycle events emitted by a benchmark run.
  */
@@ -62,6 +68,10 @@ export type BenchmarkProgressEvent =
       type: "checkpoint-complete";
       checkpointId: string;
       claimCount: number;
+      supportedCount: number;
+      staleCount: number;
+      hallucinatedCount: number;
+      unverifiedCount: number;
       supportedRate: number;
       stalenessRate: number;
       hallucinationRate: number;
@@ -71,6 +81,8 @@ export type BenchmarkProgressEvent =
       evaluationCompleteness: number;
       indeterminateCount: number;
       evaluationItemCount: number;
+      staleClaims: ProgressClaim[];
+      hallucinatedClaims: ProgressClaim[];
     }
   | { type: "run-complete" }
   | { type: "run-failed"; message: string };

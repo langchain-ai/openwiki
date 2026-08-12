@@ -57,7 +57,9 @@ async function main(): Promise<void> {
       provider: config.provider,
       evaluatorModelId: config.evaluatorModelId,
       startedAt,
-      onProgress: createCliProgressReporter(),
+      onProgress: createCliProgressReporter(process.stderr, {
+        verbose: config.verbose,
+      }),
       onArtifact: (artifact) => writeArtifactSnapshot(runDir, artifact),
       onEvidence: (evidence) => writeEvidenceCorpus(runDir, evidence),
     });

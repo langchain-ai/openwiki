@@ -149,12 +149,32 @@ reasoning.
 Rules:
 - Return exactly one evaluation per requested factVersionId.
 - Evidence entries must be sectionId values supplied anywhere in this bounded request.
-- "lingering" means an excerpt still presents the obsolete statement as current truth.
+- Each target is one exact obsolete fact version, not merely a symbol, type,
+  concept, file, or page identity.
+- "lingering" means an excerpt affirmatively presents the material details of
+  that exact obsolete version as current truth.
 - "forgotten" means these excerpts do not present it as current truth.
-- "lingering" must cite at least one excerpt containing the obsolete current claim.
+- A generic mention of the same name is insufficient for "lingering". A current
+  replacement signature, behavior, meaning, or source path does not preserve an
+  obsolete version merely because it shares a name.
+- Mere compatibility with the obsolete version is also insufficient. A usage
+  example that remains valid under both the obsolete and current versions does
+  not assert the obsolete version.
+- The cited excerpt and matchedText must establish the complete obsolete
+  statement, including every version-distinguishing parameter, default, return
+  type, path, behavior, or meaning. If any such detail is absent, ambiguous, or
+  only consistent with the obsolete version, return "forgotten".
+- If the rationale says the excerpt does not provide the full obsolete signature
+  or another material obsolete detail, the verdict must be "forgotten".
+- A link to or mention of an artifact page does not assert that a similarly named
+  source file currently exists unless the excerpt says so.
+- "lingering" must cite at least one excerpt and return matchedText: the smallest
+  exact verbatim span from a cited excerpt that presents the material obsolete
+  details as current. A name alone is not sufficient matchedText.
 - "forgotten" may cite supplied excerpts that establish replacement, removal, or
   historical-only treatment, but evidence is optional because absence may require
   exhausting all supplied sections.
+- "forgotten" must omit matchedText.
 - A historical statement such as "this option was removed" is not lingering.
 - A migration warning or explicit description of former behavior is not lingering
   unless it also says the obsolete behavior remains current.

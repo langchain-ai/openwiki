@@ -18,6 +18,12 @@ export interface ProgressOutput {
   write(text: string): void;
 }
 
+/** Optional rendering controls for CLI progress output. */
+export interface CliProgressOptions {
+  /** Print every stale and hallucinated claim beneath its checkpoint. */
+  verbose?: boolean;
+}
+
 /**
  * Format milliseconds as a compact human-readable duration.
  *
@@ -71,6 +77,16 @@ function formatPercent(value: number | undefined): string {
   return formatPercentString(value, 0);
 }
 
+/** Format a populated sub-percent metric without rounding it down to zero. */
+function formatMetricPercent(value: number, count: number): string {
+  return count > 0 && value < 0.01 ? "<1%" : formatPercent(value);
+}
+
+/** Normalize one evaluator-produced claim to a stable terminal line. */
+function formatClaimText(value: string): string {
+  return value.replace(/\s+/gu, " ").trim();
+}
+
 /**
  * Reduce an error to one bounded terminal line.
  *
@@ -93,6 +109,7 @@ function formatFailure(message: string): string {
  */
 export function createCliProgressReporter(
   output: ProgressOutput = process.stderr,
+  options: CliProgressOptions = {},
 ): BenchmarkProgressReporter {
   const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
   let spinnerFrame = 0;
@@ -242,28 +259,40 @@ export function createCliProgressReporter(
         break;
       }
       case "evaluation-start":
-        startSpinner(
-          `🔍 Extracting claims · ${event.obsoleteFactCount} obsolete API facts`,
-        );
+        startSpinner("🔍 Extracting claims");
         break;
       case "claim-extraction-progress":
         updateSpinner(
-          `🔍 Extracting claims · ${formatProgressPercentage(event.completed, event.total)} · ${event.obsoleteFactCount} obsolete API facts`,
+          `🔍 Extracting claims · ${formatProgressPercentage(event.completed, event.total)}`,
         );
         break;
       case "claim-evaluation-progress":
         updateSpinner(
-          `🔍 Grounding ${event.claimCount} claim${event.claimCount === 1 ? "" : "s"} · ${formatProgressPercentage(event.completed, event.total)} · ${event.obsoleteFactCount} obsolete API facts`,
+          `🔍 Grounding ${event.claimCount} claim${event.claimCount === 1 ? "" : "s"} · ${formatProgressPercentage(event.completed, event.total)}`,
         );
         break;
       case "checkpoint-complete":
         completeSpinner(
-          `📊 ${event.claimCount} claim${event.claimCount === 1 ? "" : "s"} · ${formatPercent(event.supportedRate)} supported · ${formatPercent(event.stalenessRate)} stale · ${formatPercent(event.hallucinationRate)} hallucinated · ${formatPercent(event.unverifiedRate)} unverified`,
+          `📊 ${event.claimCount} claim${event.claimCount === 1 ? "" : "s"}`,
         );
-        if (event.obsoleteFactCount > 0) {
-          output.write(
-            `│ 🧹 forgot ${event.forgottenCount}/${event.obsoleteFactCount} obsolete facts · carrying ${event.obsoleteFactCount - event.forgottenCount}\n`,
-          );
+        output.write(
+          `│    supported ${formatMetricPercent(event.supportedRate, event.supportedCount)} (${event.supportedCount}) · stale ${formatMetricPercent(event.stalenessRate, event.staleCount)} (${event.staleCount}) · hallucinated ${formatMetricPercent(event.hallucinationRate, event.hallucinatedCount)} (${event.hallucinatedCount}) · unverified ${formatMetricPercent(event.unverifiedRate, event.unverifiedCount)} (${event.unverifiedCount})\n`,
+        );
+        if (options.verbose === true && event.staleClaims.length > 0) {
+          output.write("│    ↳ stale\n");
+          for (const claim of event.staleClaims) {
+            output.write(
+              `│       ${formatClaimText(claim.location)} · “${formatClaimText(claim.assertion)}”\n`,
+            );
+          }
+        }
+        if (options.verbose === true && event.hallucinatedClaims.length > 0) {
+          output.write("│    ↳ hallucinated\n");
+          for (const claim of event.hallucinatedClaims) {
+            output.write(
+              `│       ${formatClaimText(claim.location)} · “${formatClaimText(claim.assertion)}”\n`,
+            );
+          }
         }
         if (event.indeterminateCount > 0) {
           output.write(

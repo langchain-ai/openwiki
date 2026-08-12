@@ -257,7 +257,6 @@ describe("reevaluateSavedRun", () => {
     expect(result.score).toEqual({
       value: 1,
       claimHealth: 1,
-      forgetting: 1,
     });
     expect(events).toContain("run-complete");
     expect(events).not.toContain("system-complete");

@@ -15,6 +15,16 @@ describe("parseArgs", () => {
     });
   });
 
+  test("parses verbose as a valueless flag", () => {
+    expect(parseArgs(["--benchmark", "bench", "--verbose"])).toEqual({
+      benchmark: "bench",
+      verbose: true,
+    });
+    expect(() => parseArgs(["--verbose=true"])).toThrow(
+      /does not accept a value/u,
+    );
+  });
+
   test("returns an empty object for no arguments", () => {
     expect(parseArgs([])).toEqual({});
   });

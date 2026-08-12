@@ -8,9 +8,9 @@ export interface RunSummaryOptions {
   elapsedMs?: number;
 }
 
-/** Render the deliberately small completion footer. Checkpoint claim state and
- * forgetting have already streamed above it, so the footer only links the audit
- * report and closes the frame. */
+/** Render the deliberately small completion footer. Checkpoint claim state has
+ * already streamed above it, so the footer only links the audit report and
+ * closes the frame. */
 export function formatRunSummary(
   result: LedgerRunResult,
   options: RunSummaryOptions = {},
