@@ -19,7 +19,7 @@ OpenWiki has a small but layered architecture:
 8. `src/agent/docs-only-backend.ts` provides `OpenWikiLocalShellBackend`, extending DeepAgents `LocalShellBackend` with docs-only write guards and output-mode awareness.
 9. `src/agent/openai-chatgpt-oauth.ts` implements the ChatGPT OAuth login flow, token persistence, and refresh for the `openai-chatgpt` provider.
 10. `src/auth/` contains the connector OAuth system: `oauth.ts` (generic runner), `providers.ts` (provider configs), `configure.ts` (`openwiki auth configure`), `ngrok.ts` (Slack HTTPS tunnel), `tokens.ts` (refresh/validation), `oauth-discovery.ts` (OAuth endpoint validation and protected-resource metadata discovery), and `types.ts`.
-11. `src/connectors/` contains the connector registry, MCP client/runtime, a shared resilient HTTP helper (`http.ts`), source-specific ingestion modules (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions exposed to the agent.
+11. `src/connectors/` contains the connector registry, MCP client/runtime, a shared resilient HTTP helper (`http.ts`), source-specific ingestion modules (git-repo, gmail, hackernews, slack, web-search, x), the generic `custom-mcp` MCP source, and tool definitions exposed to the agent.
 12. `src/ingestion/ingestion.ts` orchestrates source ingestion runs across configured connectors.
 13. `src/ingestion/code-mode.ts` handles `openwiki code` setup: creates a GitHub Actions workflow only when it does not already exist (so operator customizations survive `--update` runs), and refreshes AGENTS.md/CLAUDE.md snippets in place.
 14. `src/config/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
@@ -44,6 +44,10 @@ For non-chat runs, the agent receives a `RunContext` carrying `lastUpdate`, `lan
 
 `createRunContext()` no longer precomputes a git summary; `.openwikiignore` exclusions are enforced by the filesystem backend and the restricted shell-execute allowlist instead of by pre-filtering a summary.
 
+### Model availability pre-check
+
+After the provider and model ID are resolved, `resolveRunConfig()` in `src/agent/index.ts` calls `getSelectedModelAvailability()` in `src/model-availability.ts` before model creation. For the `openai` provider with an API key and the default OpenAI endpoint, it queries `GET https://api.openai.com/v1/models` and aborts the run with a clear message when the selected model is not exposed to the configured credentials (`status: "unavailable"`). Every other case resolves to `status: "unknown"` — non-OpenAI providers (no availability adapter), custom OpenAI-compatible endpoints (no Models API semantics assumed), a missing API key, a non-OK response, or a network failure — and proceeds to inference, so a catalogue lookup failure never blocks a run that could otherwise succeed. An `unknown` result is logged to the debug stream with its reason.
+
 ### Provider and model resolution
 
 The agent runtime resolves the provider via `resolveConfiguredProvider()` in `src/config/constants.ts`:
@@ -60,7 +64,7 @@ Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 - **gemini-enterprise** → `createGeminiEnterpriseModel()`, which routes by model family via `resolveVertexSurface()` in `src/agent/vertex-surface.ts`: Claude models use `ChatAnthropic` with a custom `AnthropicVertex` client (`@anthropic-ai/vertex-sdk`), partner/open-weight models use `ChatOpenAI` against Vertex's OpenAI-compatible MaaS endpoint with a per-request ADC auth fetch, and Gemini/Gemma models use `ChatGoogle` with Google ADC (keyless, `apiKey: ""` to block `GOOGLE_API_KEY` fallback). Auth is Google Application Default Credentials; `GOOGLE_CLOUD_PROJECT` is required and `GOOGLE_CLOUD_LOCATION` is optional (defaults to `global`).
 - **anthropic** → `ChatAnthropic` with the Anthropic API key.
 - **openai-chatgpt** → `ChatOpenAI` with `useResponsesApi: true`, `zdrEnabled: true`, `streaming: true`, pointed at the Codex backend (`CODEX_RESPONSES_BASE_URL`) with account-id/originator/beta headers. Tokens are refreshed before model creation via `ensureFreshChatGptTokens()`.
-- **openrouter** → `ChatOpenRouter` with the selected model ID.
+- **openrouter** → `ChatOpenRouter` with the selected model ID. When `OPENWIKI_OPENROUTER_MAX_TOKENS` is set to a positive integer (resolved by `resolveOpenRouterMaxTokens()` in `src/config/constants.ts`), the cap is passed as `maxTokens` so OpenRouter's credit pre-check budgets against the cap rather than the model's full advertised output ceiling (which otherwise triggers 402 errors on low balances).
 - **bedrock** → `ChatBedrockConverse` (`@langchain/aws`) with AWS access key ID, secret access key, and a required region.
 - **openai** → `ChatOpenAI` with `useResponsesApi: true`.
 - **copilot** → `ChatOpenAI` with `apiKey` from the GitHub CLI token (or `COPILOT_API_KEY` for CI), `baseURL` from `COPILOT_BASE_URL` or the default Copilot endpoint, and `useResponsesApi` matching `/^gpt-5/u`. Auth is resolved before model creation via `resolveExternalCliCredential()` in `src/auth/external-cli-auth.ts`, which runs `gh auth token` and injects the credential into `process.env` for the current process only.
@@ -124,6 +128,7 @@ The current design reflects a documentation product rather than a general-purpos
 - **Telemetry** (`src/telemetry/`): emits a single `openwiki_run` PostHog event per run with mode, provider, outcome, latency, configured connectors, and a build channel. `gates.ts` checks `OPENWIKI_TELEMETRY_DISABLED` / `DO_NOT_TRACK` for opt-out, uses `ci-info` to tag CI runs with a sentinel distinct ID so ephemeral runners never inflate install counts, and bakes a `BUILD_CHANNEL` (`"community"` in committed source, stamped to `"official"` only on the upstream release path — see [Credentials and updates § Build channel stamping](../operations/credentials-and-updates.md#build-channel-stamping)) so every event carries it and the dashboard can filter fork-originated telemetry. `record-run-safe.ts` wraps the send with a 3-second flush timeout so telemetry can never stall the CLI. `errors.ts` classifies failures by walking an unwrap chain (`unwrapErrorChain()`, bounded at 32 links, cycle-safe) so a provider error buried under several framework envelopes is recovered instead of collapsing into the residual `agent_error` bucket, with one origin-tag override (`streamOpenDisguisesProvider()`) that reclassifies a `build_error/stream_open` tag masking a provider failure. The residual `agent_error` bucket's one signal is the innermost error's own allowlisted name, folded into `error_detail` via `innermostErrorName()`; see [Credentials and updates § Error classification and fingerprinting](../operations/credentials-and-updates.md#error-classification-and-fingerprinting) for the full taxonomy, identifier allowlist, and override rules. `client.ts` `capture()` returns `true` only when the PostHog send fulfills before the flush timeout, so send failures and timeouts are reported as failures rather than silently swallowed.
 - **Skills** (`src/agent/skills.ts`): bundles the `skills/` directory into the OpenWiki home and exposes it to the agent as the `/skills/` virtual mount on the `CompositeBackend` built by `createAgentBackend()` (see [DeepAgents backend and middleware](#deepagents-backend-and-middleware)). Write access to `/skills/**` is denied to the model via `AGENT_FILESYSTEM_PERMISSIONS`. Each bundled skill is staged in a unique scratch directory and swapped into place with an atomic `rename`, so repeated or overlapping `--init` syncs are idempotent — a concurrent install that lands first is accepted as success rather than racing with `EEXIST` or `ENOTEMPTY` errors.
 - **Diagnostics and redaction** (`src/platform/diagnostics.ts`): redacts secrets from error messages, headers, and provider responses before they are shown to the user or written to logs. It matches exact secret values from the environment and known token shapes (`sk-…`, `Bearer …`, `ls…`).
+- **Untrusted-text sanitization** (`src/platform/utils.ts`): `stripHtmlTags()` removes angle brackets from markdown token text, and `stripTerminalControlSequences()` strips ANSI/VT escape, CSI, OSC, DCS, SOS, PM, and APC sequences plus non-whitespace C0/C1 controls from streamed model output before the Ink markdown renderer lexes it. Newlines and tabs are preserved as useful Markdown whitespace; other C0/C1 controls are discarded rather than passed to a terminal emulator. `MarkdownText` in `src/cli/components/markdown.tsx` applies `stripTerminalControlSequences()` before `marked.lexer`, so a prompt-injected escape sequence in model output can no longer reformat the terminal (#550).
 
 ## Things to watch when editing
 
@@ -143,6 +148,7 @@ The current design reflects a documentation product rather than a general-purpos
 - `src/setup/credentials.tsx` (re-exports `src/setup/credentials/`)
 - `src/config/env.ts`
 - `src/agent/index.ts`
+- `src/model-availability.ts`
 - `src/agent/prompt.ts`
 - `src/agent/prompts/code.ts`
 - `src/agent/prompts/personal.ts`
@@ -159,6 +165,7 @@ The current design reflects a documentation product rather than a general-purpos
 - `src/agent/skills.ts`
 - `src/auth/external-cli-auth.ts`
 - `src/platform/diagnostics.ts`
+- `src/platform/utils.ts`
 - `src/okf/frontmatter.ts`, `src/okf/index-labels.ts`, `src/okf/index-sync.ts`
 - `src/mermaid/fences.ts`, `src/mermaid/validate.ts`, `src/mermaid/wiki.ts`, `src/mermaid/dom-shim.ts`
 - `src/telemetry/` (including `errors.ts`, `gates.ts`, `record-run-safe.ts`, `senders.ts`, `client.ts`)

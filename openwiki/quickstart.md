@@ -23,6 +23,9 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - Honors a repo-root `.openwikiignore` file as a read boundary that keeps private/generated paths out of doc runs.
 - Generates the wiki in a non-English language with `--language <locale>` (BCP-47); the language is persisted and retranslated on a switch via the translation middleware.
 - Stamps a `build_channel` (`official` / `community`) into each telemetry event at build time so fork-originated telemetry can be filtered from the official-release signal.
+- Validates the selected OpenAI model against the API key's model catalogue before inference, aborting early when the model is unavailable to the configured credentials.
+- Caps OpenRouter per-request output tokens with `OPENWIKI_OPENROUTER_MAX_TOKENS` to avoid 402 credit-pre-check failures on low balances.
+- Offers a built-in `custom-mcp` connector so a personal-wiki run can ingest from any read-only MCP server without a dedicated connector, and gates all connector tools to personal/local-wiki runs so code-mode runs never make credentialed external fetches.
 
 ## Start here
 
@@ -30,7 +33,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - [CLI usage](./cli/usage.md) — commands, options, model/provider selection, and credential bootstrap.
 - [Agent workflow](./agent/workflow.md) — how documentation runs are assembled and persisted.
 - [Credentials and updates](./operations/credentials-and-updates.md) — local env storage, metadata, and scheduled updates.
-- [Connectors](./integrations/connectors.md) — built-in connector architecture, the eight connectors, and ingestion orchestration.
+- [Connectors](./integrations/connectors.md) — built-in connector architecture, the nine connectors (including the generic Custom MCP source), and ingestion orchestration.
 - [DeepSWE evaluation harness](./evals/deepswe-harness.md) — paired DeepSWE benchmark harness that measures OpenWiki's documentation leverage on Codex.
 
 ## Key source files
@@ -42,7 +45,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli/commands.ts` — CLI parsing and help content.
 - `src/cli/runners.ts` — non-interactive runners for auth, ngrok, cron, ingest, visualize, and print commands.
 - `src/cli/diagnostics/` — `error-diagnostics.ts`, `sanitize.ts`, and `auth-fix.ts` for the `--debug` diagnostics panel and auth-failure fix guidance.
-- `src/agent/index.ts` — agent runtime, provider-specific model creation (including ChatGPT OAuth), fallback, and metadata writes.
+- `src/agent/index.ts` — agent runtime, provider-specific model creation (including ChatGPT OAuth), OpenAI model-availability pre-check, fallback, and metadata writes.
 - `src/agent/prompt.ts` — prompt assembler: selects a template by output mode and substitutes placeholders.
 - `src/agent/prompts/code.ts` — `CODE_SYSTEM_PROMPTS`/`CODE_USER_PROMPTS` for repository runs (init/update/chat contracts, including the skeleton-critic and wiki-QA verification workflow).
 - `src/agent/prompts/personal.ts` — `PERSONAL_SYSTEM_PROMPTS`/`PERSONAL_USER_PROMPTS` for local personal-brain runs.
@@ -75,7 +78,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/ingestion/code-mode.ts` — `openwiki code` setup: creates the GitHub Actions workflow only when missing (preserving customizations on update) and refreshes AGENTS.md/CLAUDE.md snippets.
 - `src/config/env.ts` — `~/.openwiki/.env` persistence and credential diagnostics.
 - `src/setup/credentials.tsx` — interactive onboarding flow entrypoint (thin re-export over `src/setup/credentials/` modules: `steps.ts`, `view.tsx`, `use-init-setup.ts`, `persistence.ts`, `format.ts`, `constants.ts`, `types.ts`).
-- `src/config/constants.ts` — provider configs, model options, env keys, and validation helpers.
+- `src/config/constants.ts` — provider configs, model options, env keys, and validation helpers (including `resolveOpenRouterMaxTokens`).
+- `src/model-availability.ts` — `getSelectedModelAvailability()` validates the selected model against the OpenAI `/models` catalogue before inference; `unavailable` aborts, `unknown` proceeds.
 - `examples/openwiki-update.yml` — GitHub Actions scheduled automation example.
 - `examples/openwiki-update.gitlab-ci.yml` — GitLab CI scheduled automation example.
 - `examples/openwiki-update.bitbucket-pipelines.yml` — Bitbucket Pipelines scheduled automation example.
@@ -112,6 +116,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli/runners.ts`
 - `src/cli/diagnostics/` (`error-diagnostics.ts`, `sanitize.ts`, `auth-fix.ts`)
 - `src/agent/index.ts`
+- `src/model-availability.ts`
 - `src/agent/prompt.ts`
 - `src/agent/prompts/code.ts`
 - `src/agent/prompts/personal.ts`
@@ -154,11 +159,13 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/config/constants.ts`
 - `src/auth/external-cli-auth.ts`
 - `src/platform/diagnostics.ts`
+- `src/platform/utils.ts`
 - `src/platform/language.ts`
 - `src/okf/` (frontmatter.ts, index-labels.ts, index-sync.ts)
 - `src/mermaid/` (dom-shim.ts, fences.ts, validate.ts, wiki.ts)
 - `src/telemetry/`
-- `scripts/stamp-build-channel.cjs`- `examples/openwiki-update.yml`
+- `scripts/stamp-build-channel.cjs`
+- `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
 - `examples/openwiki-update.bitbucket-pipelines.yml`
 - `src/visualize/` (server.ts, graph.ts, page.ts, client.ts, client-lib.ts)
