@@ -43,8 +43,6 @@
     "eval:ledger": "tsx evals/ledger/run.ts",
     "eval:ledger:reevaluate": "tsx evals/ledger/reevaluate.ts",
     "eval:ledger:typecheck": "tsc --noEmit -p evals/ledger/tsconfig.json",
-    "eval:reasoning-effort": "pnpm run build && node scripts/reasoning-effort-eval.cjs",
-    "eval:reasoning-effort:fixture": "node --test scripts/fixtures/reasoning-effort-sample/verify/*.node.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",
