@@ -6,11 +6,13 @@ import {
   writeConnectorState,
   writeRawJson,
 } from "../io.js";
+import { openWikiConnectorsDisplayPath } from "../../config/openwiki-home.js";
 import { executeMcpReadOnlyOperations, listMcpTools } from "../mcp-client.js";
 import { sanitizeMcpTransport } from "../mcp-runtime.js";
 import type {
   ConnectorDefinition,
   ConnectorId,
+  ConnectorIngestOptions,
   ConnectorIngestResult,
   ConnectorRuntime,
   McpConnectorConfig,
@@ -31,29 +33,27 @@ export function createMcpConnector(input: McpConnectorInput): ConnectorRuntime {
 
   return {
     ...definition,
-    ingest: () => ingestMcpConnector(input.id, definition),
+    ingest: (options) => ingestMcpConnector(input.id, definition, options),
   };
 }
 
 async function ingestMcpConnector(
   connectorId: ConnectorId,
   definition: ConnectorDefinition,
+  options?: ConnectorIngestOptions,
 ): Promise<ConnectorIngestResult> {
   const runId = createRunId();
   const state = await readConnectorState(connectorId);
-  const config = await readConnectorConfig<McpConnectorConfig>(connectorId, {
-    enabled: false,
-    readOnlyOperations: [],
-  });
+  const config = await resolveMcpConnectorConfig(connectorId, options);
   const warnings: string[] = [];
 
   if (!config.enabled) {
     return {
       connectorId,
-      message: `${definition.displayName} is not enabled. Configure ~/.openwiki/connectors/${connectorId}/config.json with an MCP transport.`,
+      message: `${definition.displayName} is not enabled. Configure ${openWikiConnectorsDisplayPath}/${connectorId}/config.json with an MCP transport.`,
       rawFiles: [],
       runId,
-      statePath: `~/.openwiki/connectors/${connectorId}/state.json`,
+      statePath: `${openWikiConnectorsDisplayPath}/${connectorId}/state.json`,
       status: "skipped",
       warnings,
     };
@@ -119,6 +119,32 @@ async function ingestMcpConnector(
   });
 }
 
+/**
+ * Disk config is the base; optional ingest `connectorConfig` (source-instance
+ * override from onboarding) wins field-by-field without inventing defaults.
+ */
+async function resolveMcpConnectorConfig(
+  connectorId: ConnectorId,
+  options?: ConnectorIngestOptions,
+): Promise<McpConnectorConfig> {
+  const diskConfig = await readConnectorConfig<McpConnectorConfig>(
+    connectorId,
+    {
+      enabled: false,
+      readOnlyOperations: [],
+    },
+  );
+  const override = options?.connectorConfig;
+  if (!override || typeof override !== "object" || Array.isArray(override)) {
+    return diskConfig;
+  }
+
+  return {
+    ...diskConfig,
+    ...(override as Partial<McpConnectorConfig>),
+  };
+}
+
 async function finishMcpRun({
   connectorId,
   message,
@@ -152,7 +178,7 @@ async function finishMcpRun({
     message,
     rawFiles,
     runId,
-    statePath: `~/.openwiki/connectors/${connectorId}/state.json`,
+    statePath: `${openWikiConnectorsDisplayPath}/${connectorId}/state.json`,
     status,
     warnings,
   };

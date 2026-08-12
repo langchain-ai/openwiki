@@ -6,9 +6,11 @@ import { createMcpConnector } from "./sources/mcp.js";
 import { createSlackConnector } from "./sources/slack.js";
 import { createWebSearchConnector } from "./sources/web-search.js";
 import { createXConnector } from "./sources/x.js";
+import { openWikiConnectorsDisplayPath } from "../config/openwiki-home.js";
 import type { ConnectorId, ConnectorRuntime } from "./types.js";
 
 export const CONNECTOR_IDS = [
+  "custom-mcp",
   "git-repo",
   "notion",
   "x",
@@ -24,6 +26,14 @@ export function createConnectorRegistry(): Record<
   ConnectorRuntime
 > {
   return {
+    "custom-mcp": createMcpConnector({
+      description: `Generic read-only MCP knowledge source. Point OpenWiki at any MCP server via ${openWikiConnectorsDisplayPath}/custom-mcp/config.json (HTTP or stdio transport). Prefer allowedTools and/or MCP readOnlyHint; do not guess mutating tools.`,
+      displayName: "Custom MCP",
+      id: "custom-mcp",
+      // Secrets are referenced by env var name in transport.headers / transport.env.
+      // Different MCP servers need different credentials, so none are hard-required.
+      requiredEnv: [],
+    }),
     "git-repo": createGitRepoConnector(),
     google: createGmailConnector(),
     hackernews: createHackerNewsConnector(),

@@ -1,8 +1,4 @@
-import {
-  openWikiConnectorsDisplayPath,
-  openWikiHomeDisplayPath,
-  openWikiLocalWikiDisplayPath,
-} from "../../openwiki-home.js";
+import { openWikiLocalWikiDisplayPath } from "../../config/openwiki-home.js";
 export const CODE_SYSTEM_PROMPTS = {
   chat: `You are OpenWiki, an expert technical writer, software architect, and product analyst.
 

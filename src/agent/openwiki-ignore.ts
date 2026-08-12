@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { isFileNotFoundError } from "../fs-errors.js";
+import { isFileNotFoundError } from "../platform/fs-errors.js";
 
 /**
  * Name of the gitignore-style file that lists paths the doc agent must not touch.

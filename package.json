@@ -1,6 +1,6 @@
 {
   "name": "openwiki",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase.",
   "license": "MIT",
   "type": "module",
@@ -8,7 +8,7 @@
     "node": ">=22"
   },
   "bin": {
-    "openwiki": "./dist/cli.js"
+    "openwiki": "./dist/cli/cli.js"
   },
   "repository": {
     "type": "git",
@@ -34,21 +34,23 @@
     "cli"
   ],
   "scripts": {
-    "openwiki": "node dist/cli.js",
+    "openwiki": "node dist/cli/cli.js",
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json",
     "changeset:version": "changeset version",
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
-    "dev": "tsx src/cli.tsx",
+    "dev": "tsx src/cli/cli.tsx",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
+    "postbuild": "node -e \"require('fs').chmodSync('dist/cli/cli.js', 0o755)\"",
     "prebuild": "pnpm run clean",
     "prepack": "pnpm run build",
-    "release": "pnpm run build && changeset publish",
-    "start": "node dist/cli.js",
-    "test": "vitest run",
+    "release": "pnpm run stamp:channel && pnpm run build && changeset publish",
+    "stamp:channel": "node scripts/stamp-build-channel.cjs",
+    "start": "node dist/cli/cli.js",
+    "test": "pnpm run typecheck && pnpm run build && pnpm run coverage",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.client.json"
   },
   "dependencies": {
@@ -99,6 +101,7 @@
     "@types/react": "^18.3.17",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.5.0",
+    "ink-testing-library": "^4.0.0",
     "jsdom": "^29.1.1",
     "mermaid": "^11.16.0",
     "prettier": "^3.8.4",

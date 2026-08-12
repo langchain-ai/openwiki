@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { execFile } from "node:child_process";
 import http from "node:http";
-import { loadOpenWikiEnv, saveOpenWikiEnv } from "../env.js";
+import { loadOpenWikiEnv, saveOpenWikiEnv } from "../config/env.js";
 import {
   discoverAuthorizationServerMetadata,
   discoverProtectedResourceMetadata,

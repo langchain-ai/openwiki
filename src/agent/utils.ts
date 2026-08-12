@@ -3,16 +3,16 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
+import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../config/constants.js";
 import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
-} from "../fs-errors.js";
-import { resolveLanguage } from "../language.js";
+} from "../platform/fs-errors.js";
+import { resolveLanguage } from "../platform/language.js";
 import {
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
-} from "../onboarding.js";
+} from "../setup/onboarding.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
 import type {
   OpenWikiCommand,

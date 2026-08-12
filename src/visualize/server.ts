@@ -51,6 +51,14 @@ export interface VisualizeServerOptions {
   open: boolean;
 }
 
+/*
+ * Coverage: the server-lifecycle code below (boot, listen/retry, fs watch,
+ * browser launch, banner) needs a live HTTP server, a real filesystem, and a
+ * SIGINT to exercise - none reachable from a unit test. Its one piece of pure
+ * request logic is extracted into `createRequestHandler` (fully covered), so we
+ * exclude the lifecycle glue rather than count it as permanently uncovered.
+ */
+/* v8 ignore start */
 /**
  * Start the visualizer server. Resolves when the server is stopped (SIGINT);
  * exits the process on an unrecoverable listen error, matching the prototype.
@@ -97,7 +105,76 @@ export async function runVisualizeServer(
     }
   };
 
-  const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+  const server = createServer(
+    createRequestHandler({
+      // The graph is rebuilt (reassigned) on every file change, so read it live
+      // per request rather than capturing a stale snapshot.
+      getGraph: () => graph,
+      clientJs,
+      clientLibJs,
+      sseClients,
+    }),
+  );
+
+  return new Promise<void>((resolve) => {
+    process.once("SIGINT", () => {
+      process.stdout.write("\n  stopped.\n");
+      server.close(() => resolve());
+    });
+    listen(server, options.port, PORT_ATTEMPTS, (boundPort) => {
+      const url = `http://${HOST}:${boundPort}`;
+      void rebuild("initial scan").then(() => {
+        startWatch(wikiRoot, rebuild);
+        printBanner(wikiRoot, url);
+        if (options.open) openBrowser(url);
+      });
+    });
+  });
+}
+/* v8 ignore stop */
+
+/**
+ * Dependencies for the visualizer HTTP request handler. The handler is a pure
+ * router over a fixed set of routes; everything it needs is passed in so it can
+ * be exercised without booting a real server.
+ */
+export interface RequestHandlerDeps {
+  /**
+   * Read the current wiki graph. A getter (not the graph itself) because the
+   * server reassigns the graph on every rebuild, and each request must serve the
+   * latest one.
+   */
+  getGraph: () => WikiGraph;
+
+  /**
+   * Compiled browser client module, served verbatim at `/client.js`.
+   */
+  clientJs: string;
+
+  /**
+   * Compiled browser client library module, served verbatim at `/client-lib.js`.
+   */
+  clientLibJs: string;
+
+  /**
+   * Live set of open Server-Sent-Events responses; the handler registers new
+   * `/events` subscribers here and drops them when the connection closes.
+   */
+  sseClients: Set<ServerResponse>;
+}
+
+/**
+ * Build the visualizer HTTP request handler. Routing is locked to a fixed set of
+ * routes (`/`, `/index.html`, `/client.js`, `/client-lib.js`, `/api/graph`,
+ * `/events`); no filesystem path is ever derived from `req.url`, and `/` carries
+ * the strict Content-Security-Policy. Any other path is a 404.
+ */
+export function createRequestHandler(
+  deps: RequestHandlerDeps,
+): (req: IncomingMessage, res: ServerResponse) => void {
+  const { getGraph, clientJs, clientLibJs, sseClients } = deps;
+
+  return (req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? "/";
     if (url === "/" || url === "/index.html") {
       res.writeHead(200, {
@@ -121,7 +198,7 @@ export async function runVisualizeServer(
       res.writeHead(200, {
         "content-type": "application/json; charset=utf-8",
       });
-      res.end(JSON.stringify(graph));
+      res.end(JSON.stringify(getGraph()));
       return;
     }
     if (url === "/events") {
@@ -138,24 +215,10 @@ export async function runVisualizeServer(
     // Only these fixed routes exist; no filesystem path is ever derived from req.url.
     res.writeHead(404, { "content-type": "text/plain" });
     res.end("Not found");
-  });
-
-  return new Promise<void>((resolve) => {
-    process.once("SIGINT", () => {
-      process.stdout.write("\n  stopped.\n");
-      server.close(() => resolve());
-    });
-    listen(server, options.port, PORT_ATTEMPTS, (boundPort) => {
-      const url = `http://${HOST}:${boundPort}`;
-      void rebuild("initial scan").then(() => {
-        startWatch(wikiRoot, rebuild);
-        printBanner(wikiRoot, url);
-        if (options.open) openBrowser(url);
-      });
-    });
-  });
+  };
 }
 
+/* v8 ignore start */
 /**
  * Fail early with a friendly message when the wiki directory is missing.
  */
@@ -242,3 +305,4 @@ function printBanner(wikiRoot: string, url: string): void {
   );
   process.stdout.write(`  Ctrl-C to stop.\n\n`);
 }
+/* v8 ignore stop */

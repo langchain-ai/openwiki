@@ -1,5 +1,8 @@
-import { sanitizeDiagnosticText } from "../../../diagnostics.js";
-import { openWikiEnvDisplayPath } from "../../../openwiki-home.js";
+import { sanitizeDiagnosticText } from "../../../platform/diagnostics.js";
+import {
+  openWikiConnectorsDisplayPath,
+  openWikiEnvDisplayPath,
+} from "../../../config/openwiki-home.js";
 import {
   createRunId,
   readConnectorState,
@@ -43,7 +46,7 @@ const PRIMARY_API_KEY_ENV = "OPENWIKI_LANGSMITH_API_KEY";
 /**
  * Display path of the connector state file, used in result messages.
  */
-const STATE_PATH = "~/.openwiki/connectors/langsmith/state.json";
+const STATE_PATH = `${openWikiConnectorsDisplayPath}/langsmith/state.json`;
 
 /**
  * Cap on traces pulled per project. Within the ingestion window we build an
@@ -190,7 +193,9 @@ async function ingest(
     if (!apiKey) {
       // Fail-open: a workspace whose key is absent is a warning, so the other
       // workspaces (and the whole run) still succeed.
-      warnings.push(`${apiKeyEnv}: missing key. Add it to ${openWikiEnvDisplayPath}.`);
+      warnings.push(
+        `${apiKeyEnv}: missing key. Add it to ${openWikiEnvDisplayPath}.`,
+      );
       continue;
     }
 
