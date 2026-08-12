@@ -13,22 +13,53 @@ const fixtureRoot = path.join(
   "fixtures",
   "reasoning-effort-sample",
 );
-const evaluationPrompt =
-  "Find the smallest positive integer n that leaves remainder 1 when divided by each integer from 2 through 10 and is divisible by 11. Give the integer and a concise derivation. Do not use tools.";
+const evaluationPrompt = `Review this complete one-file JavaScript repository:
+
+\`\`\`js
+export function admitRequests(times, { capacity, refillEveryMs }) {
+  let tokens = capacity;
+  let lastRefillMs = 0;
+
+  return times.map((now) => {
+    const elapsed = now - lastRefillMs;
+    const refillCount = Math.floor(elapsed / refillEveryMs);
+    if (refillCount > 0) {
+      tokens = Math.min(capacity, tokens + refillCount);
+      lastRefillMs += refillCount * refillEveryMs;
+    }
+
+    const accepted = tokens > 0;
+    if (accepted) tokens -= 1;
+    return { atMs: now, accepted, tokens };
+  });
+}
+\`\`\`
+
+For capacity 2, refillEveryMs 1000, and times [0, 900, 1900, 2000]:
+1. Derive both the accepted values and post-decision token values returned by the current code.
+2. Derive both arrays again if lastRefillMs += refillCount * refillEveryMs is changed to lastRefillMs = now.
+3. Identify the first accepted-value divergence, explain the lost partial refill time, and give one exact regression assertion.
+
+Start with exactly one compact JSON line using this shape:
+{"current":{"accepted":[],"tokens":[]},"modified":{"accepted":[],"tokens":[]},"firstAcceptedDivergenceMs":0}
+
+Be concise. Do not use tools. Do not use an em dash.`;
 const initPrompt =
-  "Initialize documentation for this sample invoice library. Focus on its public API, validation rules, and test workflow.";
+  "Initialize documentation for this small token-bucket rate limiter. Focus on its public API, refill invariant, and test command.";
 const chatPrompt =
-  "Using the generated OpenWiki as your primary source, explain calculateInvoice, its validation rules, and the focused test command. Do not modify files.";
+  "Using the generated OpenWiki as your primary source, trace admitRequests for [0, 900, 1900, 2000] with capacity 2 and refillEveryMs 1000, explain the refill invariant, and give the focused test command. Do not modify files.";
 
 function parseArgs(argv) {
   const args = {
     efforts: ["low", "high"],
     lifecycleEffort: "high",
+    maxTokens: 768,
     outputDir: null,
     provider: "nvidia",
     model: null,
-    skipLifecycle: false,
+    skipLifecycle: true,
     skipProbes: false,
+    timeoutMs: 180_000,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -46,6 +77,10 @@ function parseArgs(argv) {
       args.skipLifecycle = true;
       continue;
     }
+    if (arg === "--include-lifecycle") {
+      args.skipLifecycle = false;
+      continue;
+    }
     if (arg === "--skip-probes") {
       args.skipProbes = true;
       continue;
@@ -61,8 +96,12 @@ function parseArgs(argv) {
       args.efforts = next.split(",").map((value) => value.trim());
     } else if (arg === "--lifecycle-effort") {
       args.lifecycleEffort = next;
+    } else if (arg === "--max-tokens") {
+      args.maxTokens = Number(next);
     } else if (arg === "--output-dir") {
       args.outputDir = path.resolve(next);
+    } else if (arg === "--timeout-ms") {
+      args.timeoutMs = Number(next);
     } else {
       throw new Error(`Unknown option: ${arg}`);
     }
@@ -74,6 +113,12 @@ function parseArgs(argv) {
   }
   if (args.efforts.length < 1 || args.efforts.some((value) => !value)) {
     throw new Error("--efforts must contain at least one value.");
+  }
+  if (!Number.isInteger(args.maxTokens) || args.maxTokens < 1) {
+    throw new Error("--max-tokens must be a positive integer.");
+  }
+  if (!Number.isInteger(args.timeoutMs) || args.timeoutMs < 1) {
+    throw new Error("--timeout-ms must be a positive integer.");
   }
   if (args.skipLifecycle && args.skipProbes) {
     throw new Error("--skip-lifecycle and --skip-probes cannot be combined.");
@@ -101,14 +146,20 @@ Options:
   --provider <id>           openai, openai-chatgpt, or nvidia
   --model <id>              model id (provider-specific default when omitted)
   --efforts <csv>           probe efforts to compare (default: low,high)
+  --max-tokens <count>      model maxTokens value per probe (default: 768)
+  --timeout-ms <ms>         timeout per probe (default: 180000)
   --lifecycle-effort <id>   effort for sample init and chat (default: high)
   --output-dir <path>       artifact directory (default: artifacts/reasoning-effort/...)
-  --skip-lifecycle          run only the fixed-prompt token probes
+  --skip-lifecycle          run only the fast micro-fixture probes (default)
+  --include-lifecycle       also run full OpenWiki init and chat (slow)
   --skip-probes             run only the sample init and chat lifecycle
 
 Credentials are read through OpenWiki's normal environment loading. The script
 never prints credential values. Results are observational: it records provider
 usage metadata but does not assert that a higher effort must consume more tokens.
+The default mode uses a one-function fixture and runs effort probes serially so
+the process-wide effort environment stays isolated. Full init is opt-in because
+its critic and QA agents can take minutes.
 `);
 }
 
@@ -170,14 +221,18 @@ async function withProgress(label, operation) {
 }
 
 async function runProbe(createModel, args, effort) {
-  process.stdout.write(`::group::Token probe (${effort})\n`);
+  process.stdout.write(`Starting micro-fixture chat (${effort})\n`);
   process.env.OPENWIKI_PROVIDER = args.provider;
   process.env.OPENWIKI_MODEL_ID = args.model;
   process.env.OPENWIKI_REASONING_EFFORT = effort;
 
+  const model = createModel(args.provider, args.model, 0);
+  model.maxTokens = args.maxTokens;
   const startedAt = Date.now();
   const message = await withProgress(`Token probe (${effort})`, () =>
-    createModel(args.provider, args.model, 0).invoke(evaluationPrompt),
+    model.invoke(evaluationPrompt, {
+      signal: globalThis.AbortSignal.timeout(args.timeoutMs),
+    }),
   );
   const response = textContent(message.content);
   const reasoning = reasoningContent(message);
@@ -186,9 +241,34 @@ async function runProbe(createModel, args, effort) {
     effort,
     ...usageRecord(message),
     reasoningContentChars: reasoning.length,
+    response,
     responseChars: response.length,
   };
 
+  const expectsReasoning = !["none", "default", "provider-default"].includes(
+    effort,
+  );
+  const hasReasoningEvidence =
+    (result.reasoningTokens ?? 0) > 0 || result.reasoningContentChars > 0;
+  if (expectsReasoning && !hasReasoningEvidence) {
+    throw new Error(
+      `${args.provider}/${args.model} returned no reasoning evidence for effort ${effort}`,
+    );
+  }
+  const compactResponse = response.replaceAll(/\s+/gu, "");
+  const expectedEvidence = [
+    '"current":{"accepted":[true,true,true,true],"tokens":[1,0,0,0]}',
+    '"modified":{"accepted":[true,true,true,false],"tokens":[1,0,0,0]}',
+    '"firstAcceptedDivergenceMs":2000',
+  ];
+  if (!expectedEvidence.every((value) => compactResponse.includes(value))) {
+    throw new Error(
+      `${args.provider}/${args.model} did not return the expected token-bucket trace for effort ${effort}`,
+    );
+  }
+  result.semanticCheck = "pass";
+
+  process.stdout.write(`::group::Micro-fixture chat result (${effort})\n`);
   process.stdout.write(
     `${JSON.stringify({
       provider: args.provider,
@@ -366,10 +446,12 @@ function createSummary(args, probes, lifecycle) {
     `--provider ${args.provider}`,
     `--model ${args.model}`,
     ...(!args.skipProbes ? [`--efforts ${args.efforts.join(",")}`] : []),
+    ...(!args.skipProbes ? [`--max-tokens ${args.maxTokens}`] : []),
+    ...(!args.skipProbes ? [`--timeout-ms ${args.timeoutMs}`] : []),
     ...(!args.skipLifecycle
       ? [`--lifecycle-effort ${args.lifecycleEffort}`]
       : []),
-    ...(args.skipLifecycle ? ["--skip-lifecycle"] : []),
+    ...(!args.skipLifecycle ? ["--include-lifecycle"] : []),
     ...(args.skipProbes ? ["--skip-probes"] : []),
   ].join(" ");
   const sections = [
@@ -381,8 +463,10 @@ function createSummary(args, probes, lifecycle) {
 
   if (probes.length > 0) {
     sections.push(
+      "- Fixture: one JavaScript token-bucket function with no dependencies",
       "- Token comparison: one observation per effort with an identical prompt",
-      "- Assertion policy: request success and reported metadata are required; token ordering is not asserted because model output is nondeterministic",
+      `- Runtime guard: probes run serially with model maxTokens set to ${args.maxTokens} and a ${args.timeoutMs} ms timeout each`,
+      "- Assertions: each active effort must return reasoning evidence and the expected current/modified traces with the first divergence at 2000 ms; token ordering is not asserted because model output is nondeterministic",
     );
     const rows = probes
       .map(
@@ -392,12 +476,24 @@ function createSummary(args, probes, lifecycle) {
       .join("\n");
     sections.push(
       "",
-      "### Fixed-prompt token observation",
+      "### Micro-fixture chat observation",
       "",
       "| Effort | Input tokens | Output tokens | Reasoning tokens | Reasoning content chars | Duration (ms) |",
       "| --- | ---: | ---: | ---: | ---: | ---: |",
       rows,
     );
+
+    for (const probe of probes) {
+      sections.push(
+        "",
+        `<details><summary>${probe.effort} chat result</summary>`,
+        "",
+        "```text",
+        truncate(probe.response, 600),
+        "```",
+        "</details>",
+      );
+    }
   }
 
   if (probes.length > 1) {

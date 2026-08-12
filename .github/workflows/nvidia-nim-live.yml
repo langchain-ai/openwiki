@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   usage:
-    name: Usage comparison (low vs high)
+    name: Rate limiter chat (low vs high)
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -40,7 +40,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Compare NVIDIA NIM usage
+      - name: Verify sample fixture
+        run: pnpm run eval:reasoning-effort:fixture
+
+      - name: Compare NVIDIA NIM rate-limiter chats
         env:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
         run: |
@@ -53,6 +56,8 @@ jobs:
             --provider nvidia \
             --model nvidia/nemotron-3-super-120b-a12b \
             --efforts low,high \
+            --max-tokens 768 \
+            --timeout-ms 180000 \
             --skip-lifecycle \
             --output-dir artifacts/reasoning-effort/nvidia-usage
 
@@ -60,56 +65,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: nvidia-nim-reasoning-usage
+          name: nvidia-nim-reasoning-evaluation
           path: artifacts/reasoning-effort/nvidia-usage
-          if-no-files-found: warn
-
-  lifecycle:
-    name: Sample init and chat (low)
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
-        with:
-          run_install: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: "22"
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Verify sample fixture
-        run: pnpm run eval:reasoning-effort:fixture
-
-      - name: Run NVIDIA NIM sample lifecycle
-        env:
-          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
-        run: |
-          if [[ -z "$NVIDIA_API_KEY" ]]; then
-            echo "::error::NVIDIA_API_KEY is not configured"
-            exit 1
-          fi
-
-          pnpm eval:reasoning-effort -- \
-            --provider nvidia \
-            --model nvidia/nemotron-3-super-120b-a12b \
-            --lifecycle-effort low \
-            --skip-probes \
-            --output-dir artifacts/reasoning-effort/nvidia-lifecycle
-
-      - name: Upload lifecycle evidence
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: nvidia-nim-sample-lifecycle
-          path: artifacts/reasoning-effort/nvidia-lifecycle
           if-no-files-found: warn

@@ -1,8 +1,8 @@
-# Invoice sample
+# Token-bucket sample
 
-This small JavaScript library calculates invoice totals from line items and a
-tax rate. It exists as a deterministic repository for the OpenWiki reasoning
-effort reproduction script.
+This small JavaScript rate limiter is the deterministic fixture for the OpenWiki
+reasoning-effort reproduction script. It preserves partial refill time instead
+of resetting the refill clock to the latest request.
 
 Run its tests with:
 
