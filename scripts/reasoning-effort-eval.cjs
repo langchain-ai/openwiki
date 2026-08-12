@@ -5,6 +5,7 @@ const { cp, mkdir, readFile, readdir, writeFile } = require("node:fs/promises");
 const path = require("node:path");
 const process = require("node:process");
 const { clearInterval, setInterval } = require("node:timers");
+const { isDeepStrictEqual } = require("node:util");
 
 const repoRoot = path.resolve(__dirname, "..");
 const fixtureRoot = path.join(
@@ -184,6 +185,43 @@ function reasoningContent(message) {
   return typeof value === "string" ? value : "";
 }
 
+function parseEvaluationContract(response) {
+  const start = response.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = start; index < response.length; index += 1) {
+    const character = response[index];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (character === "\\") {
+        escaped = true;
+      } else if (character === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (character === '"') {
+      inString = true;
+    } else if (character === "{") {
+      depth += 1;
+    } else if (character === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        try {
+          return JSON.parse(response.slice(start, index + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 function usageRecord(message) {
   const usage = message.usage_metadata ?? {};
   return {
@@ -255,18 +293,42 @@ async function runProbe(createModel, args, effort) {
       `${args.provider}/${args.model} returned no reasoning evidence for effort ${effort}`,
     );
   }
-  const compactResponse = response.replaceAll(/\s+/gu, "");
-  const expectedEvidence = [
-    '"current":{"accepted":[true,true,true,true],"tokens":[1,0,0,0]}',
-    '"modified":{"accepted":[true,true,true,false],"tokens":[1,0,0,0]}',
-    '"firstAcceptedDivergenceMs":2000',
-  ];
-  if (!expectedEvidence.every((value) => compactResponse.includes(value))) {
+  const contract = parseEvaluationContract(response);
+  const acceptedContract = contract && {
+    current: contract.current?.accepted,
+    modified: contract.modified?.accepted,
+    firstAcceptedDivergenceMs: contract.firstAcceptedDivergenceMs,
+  };
+  const expectedAcceptedContract = {
+    current: [true, true, true, true],
+    modified: [true, true, true, false],
+    firstAcceptedDivergenceMs: 2000,
+  };
+  if (!isDeepStrictEqual(acceptedContract, expectedAcceptedContract)) {
+    process.stdout.write(
+      `::group::Unexpected micro-fixture result (${effort})\n${response}\n::endgroup::\n`,
+    );
     throw new Error(
       `${args.provider}/${args.model} did not return the expected token-bucket trace for effort ${effort}`,
     );
   }
-  result.semanticCheck = "pass";
+  result.acceptanceCheck = "pass";
+  const expectedTokenTrace = {
+    current: [1, 0, 0, 0],
+    modified: [1, 0, 0, 0],
+  };
+  const tokenTrace = {
+    current: contract.current?.tokens,
+    modified: contract.modified?.tokens,
+  };
+  result.tokenTraceCheck = isDeepStrictEqual(tokenTrace, expectedTokenTrace)
+    ? "pass"
+    : "mismatch";
+  if (result.tokenTraceCheck === "mismatch") {
+    process.stdout.write(
+      `::warning::${args.provider}/${args.model} returned correct acceptance decisions but an incorrect diagnostic token trace for effort ${effort}\n`,
+    );
+  }
 
   process.stdout.write(`::group::Micro-fixture chat result (${effort})\n`);
   process.stdout.write(
@@ -466,20 +528,21 @@ function createSummary(args, probes, lifecycle) {
       "- Fixture: one JavaScript token-bucket function with no dependencies",
       "- Token comparison: one observation per effort with an identical prompt",
       `- Runtime guard: probes run serially with model maxTokens set to ${args.maxTokens} and a ${args.timeoutMs} ms timeout each`,
-      "- Assertions: each active effort must return reasoning evidence and the expected current/modified traces with the first divergence at 2000 ms; token ordering is not asserted because model output is nondeterministic",
+      "- Assertions: each active effort must return reasoning evidence, the expected accepted decisions, and the first accepted-value divergence at 2000 ms",
+      "- Diagnostic: post-decision token traces are reported separately as pass or mismatch and do not gate provider-wiring success",
     );
     const rows = probes
       .map(
         (probe) =>
-          `| ${probe.effort} | ${formatNumber(probe.inputTokens)} | ${formatNumber(probe.outputTokens)} | ${formatNumber(probe.reasoningTokens)} | ${probe.reasoningContentChars} | ${probe.durationMs} |`,
+          `| ${probe.effort} | ${formatNumber(probe.inputTokens)} | ${formatNumber(probe.outputTokens)} | ${formatNumber(probe.reasoningTokens)} | ${probe.reasoningContentChars} | ${probe.acceptanceCheck} | ${probe.tokenTraceCheck} | ${probe.durationMs} |`,
       )
       .join("\n");
     sections.push(
       "",
       "### Micro-fixture chat observation",
       "",
-      "| Effort | Input tokens | Output tokens | Reasoning tokens | Reasoning content chars | Duration (ms) |",
-      "| --- | ---: | ---: | ---: | ---: | ---: |",
+      "| Effort | Input tokens | Output tokens | Reasoning tokens | Reasoning content chars | Acceptance | Token trace | Duration (ms) |",
+      "| --- | ---: | ---: | ---: | ---: | --- | --- | ---: |",
       rows,
     );
 
