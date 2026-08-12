@@ -75,6 +75,11 @@ describe("loadBenchmark on the committed calc fixture", () => {
 
     expect(benchmark.name).toBe("calc");
     expect(benchmark.difficulty).toBe("easy");
+    expect(benchmark.evidenceMap?.entries.map((entry) => entry.id)).toEqual([
+      "arithmetic-api",
+      "library-properties",
+      "release-version",
+    ]);
     const ids = benchmark.trace.checkpoints.map((checkpoint) => checkpoint.id);
     expect(ids).toEqual(["T0", "T1", "T2"]);
 
@@ -99,6 +104,17 @@ describe("loadBenchmark on the committed calc fixture", () => {
     await expect(
       loadBenchmark(fixtureDir, { ensureSourceRepo: false }),
     ).rejects.toThrow(/difficulty/);
+  });
+
+  test("rejects an evidence selector absent from the entire trace", async () => {
+    const manifestPath = path.join(fixtureDir, "benchmark.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    manifest.evidenceMap.entries[0].evidence = ["src/missing.ts#missing"];
+    await writeFile(manifestPath, JSON.stringify(manifest), "utf8");
+
+    await expect(loadBenchmark(fixtureDir)).rejects.toThrow(
+      /does not resolve at any benchmark checkpoint/,
+    );
   });
 
   test("loads benchmark truth without materializing source for evaluator replay", async () => {

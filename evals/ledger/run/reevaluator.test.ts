@@ -30,6 +30,8 @@ import { reevaluateSavedRun } from "./reevaluator.js";
 class SavedInputEvaluator implements EvaluationBackend {
   readonly seenArtifacts: string[] = [];
 
+  readonly evidenceMapEntries: string[][] = [];
+
   /**
    * Evaluate one checkpoint and record that its persisted artifact was loaded.
    *
@@ -39,6 +41,9 @@ class SavedInputEvaluator implements EvaluationBackend {
    */
   async evaluate(input: EvaluationInput): Promise<CheckpointEvaluation> {
     this.seenArtifacts.push(input.artifact.documents[0]?.content ?? "");
+    this.evidenceMapEntries.push(
+      input.evidenceMap?.entries.map((entry) => entry.id) ?? [],
+    );
 
     return {
       forgettingEvaluations: input.obsoleteFacts.map((fact) => ({
@@ -78,6 +83,15 @@ function benchmark(repo: TinyRepo): LedgerBenchmark {
     description: "saved replay test",
     difficulty: "medium",
     sourceRepoPath: repo.repoPath,
+    evidenceMap: {
+      entries: [
+        {
+          id: "function-behavior",
+          concept: "function signature and behavior",
+          evidence: ["code.ts#f"],
+        },
+      ],
+    },
     trace: {
       checkpoints: [
         { id: "T0", commit: repo.shas[0], label: "version one" },
@@ -242,6 +256,10 @@ describe("reevaluateSavedRun", () => {
     expect(evaluator.seenArtifacts).toEqual([
       "Version is one.\n",
       "Version is two.\n",
+    ]);
+    expect(evaluator.evidenceMapEntries).toEqual([
+      ["function-behavior"],
+      ["function-behavior"],
     ]);
     expect(result.metadata).toMatchObject({
       system: { provider: "anthropic", modelId: "system-model" },

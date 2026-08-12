@@ -55,7 +55,10 @@ classify every text unit and extract atomic claims with exact artifact quotes
 remove normalized exact duplicates
         │
         ▼
-retrieve bounded current source evidence
+match claim prose to evaluator-only evidence-map concepts
+        │
+        ▼
+resolve mapped paths/symbols/globs to raw source and add bounded fallback evidence
         │
         ▼
 supported / contradicted / not addressed
@@ -71,15 +74,57 @@ every tracked, regular, non-binary Git file except the generated `openwiki/`
 artifact. Symlinks are skipped. Current evidence comes from the active
 checkpoint; evidence captured at every earlier checkpoint is marked historical.
 
+Benchmarks may also provide a reviewed semantic evidence map. Each entry names a
+natural-language topic and the source locations capable of establishing or
+refuting claims about that topic:
+
+```json
+{
+  "id": "queue-ordering",
+  "concept": "task queue insertion, ordering, and removal behavior",
+  "evidence": [
+    "src/queue.ts#enqueue",
+    "src/queue.ts#dequeue",
+    "src/worker.ts#runWorker"
+  ]
+}
+```
+
+The map is evaluator-only routing metadata, never input to OpenWiki and never a
+statement of expected truth. BM25 matches wiki prose to the map's prose concepts,
+where lexical retrieval is appropriate; selectors then resolve deterministically
+to raw source. V1 supplies the complete owning file for `path#symbol` selectors
+so the judge sees surrounding context. Exact paths and path globs are also
+supported. A coding agent can draft the map from the benchmark trace, followed by
+a quick review that concepts describe topics and locations rather than expected
+answers.
+
 Current claims are grounded against current evidence first; historical snapshots
 cannot crowd current truth out of the retrieval window. A named source path is
-always included, and a claim naming a missing file receives the complete tracked-
-file manifest. Small corpora are supplied in full. Larger corpora retain
-mandatory evidence plus at least the eight best BM25 matches within a soft
-character budget. Byte-identical historical excerpts are deduplicated, and
-historical evidence is consulted only after current source establishes a
-contradiction. Every selected evidence identity, cache hit, and historical
-follow-up is preserved in the assertion inventory.
+always included, routed evidence-map files are mandatory, and a claim naming a
+missing file receives the complete tracked-file manifest. Small corpora are
+supplied in full. Larger corpora retain mandatory routed evidence and use direct
+source BM25 to fill a minimum eight-excerpt candidate set within a soft character
+budget. A claim that matches no map entry therefore retains the prior exhaustive-
+when-small and bounded-BM25-when-large behavior. Byte-identical historical
+excerpts are deduplicated, and historical evidence is consulted only after
+current source establishes a contradiction. Every matched route ID, selector,
+resolved source path, selected evidence identity, cache hit, and historical
+follow-up is preserved in the assertion inventory. Routing is deterministic and
+adds no evaluator model calls.
+
+## Benchmark contract
+
+A benchmark contains a source-of-truth Git history, an ordered set of pinned
+checkpoints, an author-declared difficulty, and optionally a reviewed semantic
+evidence map. The checked-in calc and taskflow benchmarks both include maps.
+
+Map concepts should identify a fact category, never supply its conclusion. For
+example, use `task queue insertion, ordering, and removal behavior`, not `tasks
+are removed FIFO`. Include every source location capable of supporting or
+refuting that category. Selectors may refer to symbols that exist only at some
+checkpoints; unresolved selectors are ignored at checkpoints where that source
+is absent. Multiple matched entries are unioned before grounding.
 
 Each normalized claim retains an exact contiguous quote plus its complete
 artifact text unit, path, and heading context. Grounding checks that provenance

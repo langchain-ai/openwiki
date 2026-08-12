@@ -40,6 +40,35 @@ export interface LedgerTrace {
 }
 
 /**
+ * One evaluator-only route from a natural-language topic to source locations
+ * capable of establishing or refuting claims about that topic. The concept is
+ * deliberately not a statement of expected truth; raw source remains the only
+ * grounding authority.
+ */
+export interface SemanticEvidenceMapEntry {
+  /** Stable benchmark-local route identifier retained in audit output. */
+  id: string;
+
+  /** Natural-language topic description used only for lexical routing. */
+  concept: string;
+
+  /**
+   * Relative source paths, `path#symbol` selectors, or path globs. V1 resolves
+   * a symbol selector to its complete owning file so the judge sees context.
+   */
+  evidence: string[];
+}
+
+/**
+ * Reviewed evaluator-only routing metadata supplied by a benchmark. It helps
+ * translate wiki prose into likely source locations without encoding answers.
+ */
+export interface SemanticEvidenceMap {
+  /** Topic-to-source routes available across the benchmark's full trace. */
+  entries: SemanticEvidenceMapEntry[];
+}
+
+/**
  * A benchmark: an evolution trace plus the source repository it is scored
  * against. Truth is read directly from the source at each checkpoint by
  * `extractSurface`; there is no hand-authored knowledge census.
@@ -75,6 +104,12 @@ export interface LedgerBenchmark {
    * load time, so downstream code always sees an absolute path.
    */
   sourceRepoPath: string;
+
+  /**
+   * Optional evaluator-only semantic routing map. It is never exposed to the
+   * System Under Test. Benchmarks without one retain source BM25 selection.
+   */
+  evidenceMap?: SemanticEvidenceMap;
 
   /**
    * The frozen evolution trace.
@@ -1013,6 +1048,12 @@ export interface EvaluationInput {
    * Current normalized source evidence used to verify artifact assertions.
    */
   evidence: EvidenceCorpus;
+
+  /**
+   * Optional evaluator-only topic-to-source routing metadata for this
+   * benchmark. Raw source selected through the map remains the grounding truth.
+   */
+  evidenceMap?: SemanticEvidenceMap;
 
   /**
    * Fact versions that went obsolete at the transition into this checkpoint and

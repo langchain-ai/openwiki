@@ -14,6 +14,7 @@ import type {
   LedgerExecutionMetrics,
   ObsoleteFactTarget,
   SurfaceItem,
+  SemanticEvidenceMap,
 } from "../core/types.js";
 import {
   computeClaimState,
@@ -107,6 +108,9 @@ export interface EvaluateCheckpointInputs {
    */
   evidence: EvidenceCorpus;
 
+  /** Evaluator-only semantic topic-to-source routing metadata. */
+  evidenceMap?: SemanticEvidenceMap;
+
   /**
    * The evaluation backend that produces the per-item verdicts.
    */
@@ -178,6 +182,7 @@ export async function evaluateCheckpoint(
     index,
     artifact,
     evidence,
+    evidenceMap,
     evaluationBackend,
     carry,
     efficiency,
@@ -219,6 +224,7 @@ export async function evaluateCheckpoint(
     {
       artifact,
       evidence,
+      evidenceMap,
       obsoleteFacts,
     },
     {

@@ -51,7 +51,12 @@ class FakeSystem implements SystemUnderTest {
  * invented at T1, regardless of the surface.
  */
 class FakeEvaluator implements EvaluationBackend {
+  readonly evidenceMapEntries: string[][] = [];
+
   async evaluate(input: EvaluationInput): Promise<CheckpointEvaluation> {
+    this.evidenceMapEntries.push(
+      input.evidenceMap?.entries.map((entry) => entry.id) ?? [],
+    );
     const precisionEvaluations: CheckpointEvaluation["precisionEvaluations"] =
       input.artifact.checkpointId === "T0"
         ? [
@@ -167,6 +172,15 @@ describe("runBenchmark", () => {
       description: "deterministic end-to-end",
       difficulty: "medium",
       sourceRepoPath: repo.repoPath,
+      evidenceMap: {
+        entries: [
+          {
+            id: "function-behavior",
+            concept: "function signature and behavior",
+            evidence: ["code.ts#f"],
+          },
+        ],
+      },
       trace: {
         checkpoints: [
           { id: "T0", commit: repo.shas[0] },
@@ -186,10 +200,11 @@ describe("runBenchmark", () => {
 
   test("produces current claim state and forgetting diagnostics", async () => {
     const progress: BenchmarkProgressEvent[] = [];
+    const evaluator = new FakeEvaluator();
     const result = await runBenchmark({
       benchmark: benchmark(),
       system: new FakeSystem(),
-      evaluationBackend: new FakeEvaluator(),
+      evaluationBackend: evaluator,
       config: config(),
       startedAt: "2026-01-01T00:00:00.000Z",
       onProgress: (event) => progress.push(event),
@@ -208,6 +223,10 @@ describe("runBenchmark", () => {
     });
     expect(result.checkpoints[1].claims.supportedRate).toBe(0.5);
     expect(result.checkpoints[1].claims.hallucinationRate).toBe(0.5);
+    expect(evaluator.evidenceMapEntries).toEqual([
+      ["function-behavior"],
+      ["function-behavior"],
+    ]);
 
     // `f`'s T0 version went obsolete at T1 and was forgotten immediately, so the
     // diagnostic has one resolved record with lifetime 0 and no unresolved

@@ -184,6 +184,7 @@ export async function reevaluateSavedRun(
         index,
         artifact,
         evidence,
+        evidenceMap: inputs.benchmark.evidenceMap,
         evaluationBackend: inputs.evaluationBackend,
         carry,
         efficiency: original.efficiency,

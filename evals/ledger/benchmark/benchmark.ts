@@ -4,7 +4,7 @@ import path from "node:path";
 import { BenchmarkValidationError } from "../core/errors.js";
 import type { BenchmarkDifficulty, LedgerBenchmark } from "../core/types.js";
 import { ensureSourceRepoAvailable } from "./source-repo.js";
-import { validateBenchmark } from "./validation.js";
+import { validateBenchmark, validateEvidenceMapSources } from "./validation.js";
 
 /**
  * Name of the manifest file inside a benchmark directory.
@@ -86,6 +86,12 @@ interface RawBenchmark {
    *   trace with a `BenchmarkValidationError`
    */
   trace?: unknown;
+
+  /**
+   * Optional evaluator-only semantic routing metadata. Deep validation happens
+   * in `validateBenchmark` alongside the trace checks.
+   */
+  evidenceMap?: unknown;
 }
 
 /**
@@ -146,12 +152,16 @@ export async function loadBenchmark(
     description: typeof raw.description === "string" ? raw.description : "",
     difficulty,
     sourceRepoPath,
+    evidenceMap: raw.evidenceMap as LedgerBenchmark["evidenceMap"],
     // Cast is deliberate: validateBenchmark performs the deep structural checks
     // that make this cast sound, and throws before the value is used otherwise.
     trace: raw.trace as LedgerBenchmark["trace"],
   };
 
   validateBenchmark(benchmark);
+  if (options.ensureSourceRepo !== false) {
+    await validateEvidenceMapSources(benchmark);
+  }
 
   return benchmark;
 }

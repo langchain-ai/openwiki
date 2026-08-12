@@ -203,6 +203,7 @@ export class ModelEvaluationBackend implements EvaluationBackend {
         checkpointId: input.artifact.checkpointId,
         sections,
         evidence: input.evidence,
+        evidenceMap: input.evidenceMap,
         timeoutMs: this.timeoutMs,
         limit,
         verdictCache: this.precisionVerdictCache,

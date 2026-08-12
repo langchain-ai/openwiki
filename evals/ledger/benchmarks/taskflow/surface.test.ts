@@ -5,7 +5,12 @@ import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
-import type { ObsoleteFactTarget, SurfaceItem } from "../../core/types.js";
+import type {
+  LedgerBenchmark,
+  ObsoleteFactTarget,
+  SurfaceItem,
+} from "../../core/types.js";
+import { validateEvidenceMapSources } from "../../benchmark/validation.js";
 import {
   advanceObsoleteWatchSet,
   diffSurface,
@@ -74,7 +79,7 @@ describe("taskflow benchmark surface", () => {
   beforeAll(async () => {
     const manifest = JSON.parse(
       await readFile(path.join(benchmarkDir, "benchmark.json"), "utf8"),
-    ) as { trace: { checkpoints: Checkpoint[] } };
+    ) as Omit<LedgerBenchmark, "sourceRepoPath"> & { sourceRepo: string };
     checkpoints = manifest.trace.checkpoints;
 
     // Reconstruct the source repository from the committed bundle into a throwaway
@@ -87,6 +92,7 @@ describe("taskflow benchmark surface", () => {
       path.join(benchmarkDir, "repo.bundle"),
       repoPath,
     ]);
+    await validateEvidenceMapSources({ ...manifest, sourceRepoPath: repoPath });
 
     for (const checkpoint of checkpoints) {
       surfaces.set(

@@ -245,6 +245,7 @@ export async function runBenchmark(
         index: i,
         artifact,
         evidence,
+        evidenceMap: benchmark.evidenceMap,
         evaluationBackend,
         carry,
         efficiency: {

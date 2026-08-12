@@ -1,13 +1,18 @@
 import { describe, expect, test } from "vitest";
 
-import type { LedgerBenchmark, LedgerCheckpoint } from "../core/types.js";
+import type {
+  LedgerBenchmark,
+  LedgerCheckpoint,
+  SemanticEvidenceMapEntry,
+} from "../core/types.js";
 import { BenchmarkValidationError } from "../core/errors.js";
 import { validateBenchmark } from "./validation.js";
 
 /**
  * A minimal two-checkpoint benchmark. Source is the ground truth now, so a
- * benchmark is just a trace of named checkpoints; each test starts from this
- * valid shape and mutates it into the specific violation it exercises.
+ * benchmark requires a trace of named checkpoints and may add evaluator-only
+ * routing metadata; each test starts from this valid minimal shape and mutates
+ * it into the specific violation it exercises.
  *
  * @returns A structurally valid benchmark.
  */
@@ -83,6 +88,64 @@ describe("validateBenchmark trace rules", () => {
     benchmark.trace.checkpoints[0] = null as unknown as LedgerCheckpoint;
 
     expectRejected(benchmark, /Checkpoint at position 0 is not an object/);
+  });
+});
+
+describe("validateBenchmark evidence-map rules", () => {
+  test("accepts evaluator-only concepts with paths, symbols, and globs", () => {
+    const benchmark = valid();
+    benchmark.evidenceMap = {
+      entries: [
+        {
+          id: "queue-ordering",
+          concept: "task queue insertion, ordering, and removal behavior",
+          evidence: ["src/queue.ts#dequeue", "test/**/*.ts"],
+        },
+      ],
+    };
+
+    expect(() => validateBenchmark(benchmark)).not.toThrow();
+  });
+
+  test("rejects duplicate route ids", () => {
+    const benchmark = valid();
+    benchmark.evidenceMap = {
+      entries: [
+        { id: "queue", concept: "queue behavior", evidence: ["src/a.ts"] },
+        { id: "queue", concept: "worker behavior", evidence: ["src/b.ts"] },
+      ],
+    };
+
+    expectRejected(benchmark, /Duplicate evidence-map entry id "queue"/);
+  });
+
+  test("rejects expected answers embedded as extra entry fields", () => {
+    const benchmark = valid();
+    benchmark.evidenceMap = {
+      entries: [
+        {
+          id: "queue",
+          concept: "queue behavior",
+          evidence: ["src/queue.ts"],
+          expected: "FIFO",
+        } as unknown as SemanticEvidenceMapEntry,
+      ],
+    };
+
+    expectRejected(benchmark, /unsupported field "expected"/);
+  });
+
+  test("rejects absolute and parent-traversing selectors", () => {
+    for (const selector of ["/src/queue.ts", "../src/queue.ts"]) {
+      const benchmark = valid();
+      benchmark.evidenceMap = {
+        entries: [
+          { id: "queue", concept: "queue behavior", evidence: [selector] },
+        ],
+      };
+
+      expectRejected(benchmark, /invalid selector/);
+    }
   });
 });
 

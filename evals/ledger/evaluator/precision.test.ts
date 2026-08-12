@@ -336,6 +336,71 @@ describe("runPrecisionPass", () => {
     ).toHaveLength(1);
   });
 
+  test("makes evidence-map routes mandatory and records their provenance", async () => {
+    const control = controller([
+      extraction([{ statement: "The oldest task leaves the queue first." }]),
+      {
+        evaluations: [
+          {
+            assertionId: "assertion-000001",
+            verdict: "supported",
+            evidenceIds: ["src/queue.ts::0000"],
+            rationale: "The queue implementation establishes the behavior.",
+          },
+        ],
+      },
+    ]);
+    let inventory: PrecisionAssertionInventory | undefined;
+    const distractingContent = "oldest task queue first ".repeat(400);
+    const corpus: EvidenceCorpus = {
+      checkpointId: "T1",
+      records: [
+        ...Array.from({ length: 10 }, (_, index) => ({
+          evidenceId: `notes-${index}::0000`,
+          sourceRef: `notes-${index}.md`,
+          observedAtCheckpoint: "T1",
+          current: true,
+          content: distractingContent,
+        })),
+        {
+          evidenceId: "src/queue.ts::0000",
+          sourceRef: "src/queue.ts",
+          observedAtCheckpoint: "T1",
+          current: true,
+          content: "return queue.tasks.shift();",
+        },
+      ],
+    };
+
+    await runPrecisionPass({
+      model: fakeModel(control),
+      checkpointId: "T1",
+      sections: [section("queue behavior")],
+      evidence: corpus,
+      evidenceMap: {
+        entries: [
+          {
+            id: "queue-ordering",
+            concept: "task queue ordering oldest newest insertion and removal",
+            evidence: ["src/queue.ts#dequeue"],
+          },
+        ],
+      },
+      onInventory: (value) => {
+        inventory = value;
+      },
+    });
+
+    const grounding = inventory?.groundingEvidence[0];
+    expect(grounding?.currentEvidenceIds).toContain("src/queue.ts::0000");
+    expect(grounding).toMatchObject({
+      evidenceMapEntryIds: ["queue-ordering"],
+      evidenceMapSelectors: ["src/queue.ts#dequeue"],
+      currentEvidenceMapSourceRefs: ["src/queue.ts"],
+      historicalEvidenceMapSourceRefs: [],
+    });
+  });
+
   test("marks claims unverified without a model call when no source evidence exists", async () => {
     const control = controller([
       extraction([

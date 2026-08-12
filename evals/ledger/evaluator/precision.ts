@@ -33,6 +33,11 @@ import {
 } from "./prompts.js";
 import { SectionBm25Index } from "./retrieval.js";
 import {
+  SemanticEvidenceRouter,
+  type EvidenceMapMatch,
+  type ResolvedEvidenceMapMatch,
+} from "./evidence-map.js";
+import {
   assertionExtractionOutputSchema,
   precisionJudgmentBatchOutputSchema,
   precisionJudgmentOutputSchema,
@@ -323,6 +328,18 @@ export interface PrecisionGroundingEvidenceInventoryEntry {
   /** Historical candidates reserved for a possible former-truth follow-up. */
   historicalEvidenceIds: string[];
 
+  /** Semantic evidence-map routes matched to this assertion. */
+  evidenceMapEntryIds: string[];
+
+  /** Selectors contributed by the matched routes. */
+  evidenceMapSelectors: string[];
+
+  /** Current source files resolved through the evidence map. */
+  currentEvidenceMapSourceRefs: string[];
+
+  /** Historical source files resolved through the evidence map. */
+  historicalEvidenceMapSourceRefs: string[];
+
   /** Whether historical candidates were actually supplied to a judgment. */
   historicalConsulted: boolean;
 
@@ -356,6 +373,9 @@ export interface PrecisionPassInput {
    * invented.
    */
   evidence: EvidenceCorpus;
+
+  /** Optional evaluator-only natural-language topic to source routing map. */
+  evidenceMap?: import("../core/types.js").SemanticEvidenceMap;
 
   /**
    * Number of text units classified per extraction request.
@@ -985,6 +1005,7 @@ function selectEvidence(
   assertion: ExtractedArtifactAssertion,
   sections: EvidenceSection[],
   index: SectionBm25Index,
+  routed: ResolvedEvidenceMapMatch,
 ): EvidenceSection[] {
   if (sections.length === 0) {
     return [];
@@ -1010,6 +1031,7 @@ function selectEvidence(
   };
 
   mandatory.forEach(add);
+  routed.sections.forEach((section) => add(section as EvidenceSection));
   for (const section of ranked) {
     if (
       selected.length < MIN_EVIDENCE_SECTIONS ||
@@ -1471,6 +1493,10 @@ export async function runPrecisionPass(
       assertionId: assertion.id,
       currentEvidenceIds: [],
       historicalEvidenceIds: [],
+      evidenceMapEntryIds: [],
+      evidenceMapSelectors: [],
+      currentEvidenceMapSourceRefs: [],
+      historicalEvidenceMapSourceRefs: [],
       historicalConsulted: false,
       cacheHit: false,
     }));
@@ -1497,6 +1523,7 @@ export async function runPrecisionPass(
   );
   const currentEvidenceIndex = new SectionBm25Index(currentEvidence);
   const historicalEvidenceIndex = new SectionBm25Index(historicalEvidence);
+  const evidenceRouter = new SemanticEvidenceRouter(input.evidenceMap);
   const cache = input.verdictCache;
   const selectedEvidence = new Map<
     string,
@@ -1508,21 +1535,30 @@ export async function runPrecisionPass(
   >();
 
   for (const assertion of assertions) {
+    const route: EvidenceMapMatch = evidenceRouter.match(assertion.statement);
+    const currentRoute = evidenceRouter.resolve(route, currentEvidence);
+    const historicalRoute = evidenceRouter.resolve(route, historicalEvidence);
     const current = selectEvidence(
       assertion,
       currentEvidence,
       currentEvidenceIndex,
+      currentRoute,
     );
     const historical = selectEvidence(
       assertion,
       historicalEvidence,
       historicalEvidenceIndex,
+      historicalRoute,
     );
     selectedEvidence.set(assertion.id, { current, historical });
     groundingInventory.set(assertion.id, {
       assertionId: assertion.id,
       currentEvidenceIds: current.map((section) => section.id),
       historicalEvidenceIds: historical.map((section) => section.id),
+      evidenceMapEntryIds: route.entryIds,
+      evidenceMapSelectors: route.selectors,
+      currentEvidenceMapSourceRefs: currentRoute.sourceRefs,
+      historicalEvidenceMapSourceRefs: historicalRoute.sourceRefs,
       historicalConsulted:
         assertion.tense === "historical" && historical.length > 0,
       cacheHit: false,

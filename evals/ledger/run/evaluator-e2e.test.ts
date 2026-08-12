@@ -364,7 +364,7 @@ class EvolvingDocumentationSystem implements SystemUnderTest {
 
 /**
  * Build the three-checkpoint benchmark used by the end-to-end test. Truth comes
- * entirely from the source repo's evolving surface, so the benchmark is just the
+ * entirely from the source repo's evolving surface, so this minimal benchmark is the
  * repo history plus named checkpoints.
  *
  * @param repo - Tiny repository supplying checkpoint commits.
