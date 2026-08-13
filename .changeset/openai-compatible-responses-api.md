@@ -2,4 +2,4 @@
 "openwiki": minor
 ---
 
-Allow OpenAI-compatible providers to opt into the Responses API.
+feat: allow openai-compatible provider to opt into responses api
