@@ -1,0 +1,757 @@
+evals/ledger/evaluator/prompts.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-444
+CHANGELOG.md
+  s_6b9458b97f642e::t_f298e1545c2c57 3-58
+evals/ledger/benchmarks/calc/benchmark.json
+  s_6b9458b97f642e::t_f298e1545c2c57 1-48
+evals/ledger/benchmarks/taskflow/surface.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-426
+evals/ledger/replay/git-replay.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-245
+src/agent/openwiki-ignore.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 3
+src/cli/commands.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-957
+evals/ledger/run/progress-events.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-93
+evals/ledger/meta/gold-agreement.live.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-25
+test/agent/prompt.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-320
+examples/openwiki-update.bitbucket-pipelines.yml
+  s_6b9458b97f642e::t_f298e1545c2c57 10-14
+src/agent/skeleton_critic.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-69
+test/auth/tokens.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-526
+test/cli/diagnostics/sanitize.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-59
+test/cli/components/panels.test.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-143
+test/visualize/visualize-graph.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-124
+src/auth/tokens.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1
+test/setup/credentials/persistence.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-147
+src/telemetry/taxonomy.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 48-49,65-92,117-120,134-137
+  s_6b9458b97f642e::t_fd3ee6b5c0cc76 138-139
+src/telemetry/with-run-telemetry.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 2
+src/agent/prompts/personal.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-619
+test/cli/input/menu.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-215
+test/ingestion/code-mode.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-412
+test/agent/gemini-enterprise-claude.e2e.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-97
+evals/ledger/source/git-evidence.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-77
+test/auth/oauth-run.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-645
+test/connectors/sources/git-repo.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-222
+.github/workflows/release.yml
+  s_6b9458b97f642e::t_f298e1545c2c57 66-72
+evals/ledger/run/runner.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-288
+evals/ledger/source/git-evidence.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-166
+src/telemetry/types.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 57-65,95-101
+  s_6b9458b97f642e::t_c80d8212331ad8 56
+test/agent/thread-id.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-50
+evals/ledger/evaluator/forgetting.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-417
+evals/ledger/run/summary.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-59
+evals/ledger/evaluator/retrieval.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-138
+src/auth/external-cli-auth.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-189
+src/model-availability.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-85
+evals/ledger/core/types.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-1085
+src/auth/providers.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 16
+src/connectors/registry.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 12,28-36
+.changeset/six-walls-travel.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+openwiki/.last-update.json
+  s_6b9458b97f642e::t_f298e1545c2c57 2,4
+src/setup/credentials/persistence.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-124
+test/cli/app/run-state.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-82
+src/cli/input/menu.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-277
+src/cli/debug.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-16
+test/agent/gemini-retry.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-113
+test/config/constants.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-336,340-746
+  s_6b9458b97f642e::t_187a2b86ad582d 337-339
+test/config/openai-chatgpt-provider.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-66
+test/connectors/tools.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-466
+evals/ledger/core/order.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-13
+evals/ledger/run/report.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-118
+test/agent/docs-only-backend.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-125
+src/setup/credentials/format.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-208
+evals/ledger/benchmark/validation.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-253
+test/connectors/sources/custom-mcp.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-24
+evals/ledger/metrics/claims.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-120
+test/cli/run-log/tool-display.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-155
+test/cli/schedule-format.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-206
+test/auth/ngrok.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-553
+evals/ledger/core/errors.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-95
+evals/ledger/benchmarks/taskflow/build-repo.mjs
+  s_6b9458b97f642e::t_f298e1545c2c57 1-1807
+src/setup/credentials/constants.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-272
+test/auth/oauth-redirect-override.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-121
+evals/ledger/evaluator/pass-utils.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-139
+evals/ledger/evaluator/model-backend.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-235
+test/agent/utils.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-138
+test/agent/bedrock-model.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-78
+test/auth/oauth-url-validation.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-205
+test/cli/components/first-run-notice.test.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-66
+src/cli/input/secret.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-7
+src/agent/vertex-surface.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 2
+CLAUDE.md
+  s_6b9458b97f642e::t_f298e1545c2c57 17-20
+evals/ledger/evaluator/model-backend.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-242
+evals/ledger/run/persistence.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-424
+src/scheduling/schedules.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-938
+src/config/constants.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-926,929-982
+  s_6b9458b97f642e::t_5c10d64d28b376 927-928
+test/mermaid/validate-fallback.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-49
+evals/ledger/evaluator/forgetting.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-437
+test/agent/frontmatter-validator.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-208
+test/agent/run-context.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-116
+test/connectors/fetch-with-resilience.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-352
+src/ingestion/code-mode.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-409
+test/connectors/sources/langsmith/runs.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-241
+test/mermaid/mermaid-validate.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-212
+test/cli/components/markdown.test.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-198
+test/cli/input/cursor.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-175
+.changeset/spicy-llamas-shout.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+test/agent/index-middleware.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-514
+test/cli/components/header.test.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-77
+test/cli/input/secret.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-14
+src/setup/credentials/view.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-649
+openwiki/agent/workflow.md
+  s_6b9458b97f642e::t_f298e1545c2c57 18-19,21,23-25,37,40,43,49-56,103,113,119-141,144,156,160-161,164-170,175,177-181,191-193
+test/platform/fs-errors.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-53
+src/setup/credentials/types.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-170
+evals/ledger/evaluator/schemas.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-186
+evals/ledger/run/progress.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-317
+test/agent/run-metadata.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-260
+test/agent/gemini-enterprise-claude.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-121
+evals/ledger/metrics/score.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-24
+openwiki/quickstart.md
+  s_6b9458b97f642e::t_f298e1545c2c57 10,21,25-28,36,38,44-56,61,67,71-72,75-76,78-83,88-90,95,105,111-112,118-122,124,126-130,135,137,143,159-168,172,178
+openwiki/architecture/overview.md
+  s_6b9458b97f642e::t_f298e1545c2c57 12-15,19,21-25,30,37,41,43-49,53,67,70,73,79,82,88,97-103,110-111,118-122,128-131,135,139,144-149,151,153-157,166-168,171,173,183-185,187-188
+test/agent/tool-args-formatting.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-52
+src/cli/components/run-view.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-218
+src/telemetry/errors.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5,69-72,74,393-395,397,408-445,531-535,550-622,626-639,644,647-661,663-668,678,681-714
+src/agent/openai-chatgpt-oauth.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 10
+test/connectors/sources/langsmith/repo-config.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-272
+test/connectors/sources/x.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-425
+test/setup/credentials/steps-derivations.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-605
+src/connectors/sources/langsmith/repo-config.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 3-4,52
+src/cli/format.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-93
+.changeset/sour-cycles-ask.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+evals/ledger/run/reevaluate-args.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-50
+test/agent/agent-runtime-root.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-20
+test/agent/conversation-history-offload.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-166
+src/agent/crash-guard.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 107-113,115
+test/auth/external-cli-auth.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-262
+test/ingestion/ingestion.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-111
+src/mermaid/validate.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1
+evals/ledger/run/evaluate-checkpoint.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-321
+openwiki/operations/credentials-and-updates.md
+  s_6b9458b97f642e::t_f298e1545c2c57 30,40,76,96-98,112,167,175-177,189-190,210-211,232,237,241-248,251-253,258,270,283,298,300-301,303,307-309,312,314-315,317-318,320,324-326
+src/connectors/io.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 8
+src/ingestion/ingestion.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-457
+test/agent/wiki-link-validator-dogfood.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-21
+evals/ledger/evaluator/fixtures/precision-gold.json
+  s_6b9458b97f642e::t_f298e1545c2c57 1-666
+.changeset/smart-cats-validate.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+evals/ledger/run/format.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-58
+src/cli/components/header.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-177
+test/cli/telemetry-cli.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-32
+test/ingestion/langsmith-modes.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-74
+openwiki/evals/ledger-harness.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-222
+test/stamp-build-channel.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-100
+evals/ledger/run/args.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-100
+evals/ledger/source/source-adapter.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-48
+evals/ledger/system/openwiki-system-run.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-129
+evals/ledger/benchmark/source-repo.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-111
+package.json
+  s_6b9458b97f642e::t_f298e1545c2c57 3,11,37,42-45,50,53-56,74,107
+evals/ledger/run/progress.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-205
+evals/ledger/run/reevaluator.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-223
+src/connectors/mcp-client.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 2,10-12,381-430,516-518,664-666,793-796,803-804
+test/connectors/raw-connector-tools.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-319
+test/connectors/sources/langsmith/index.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-416
+test/connectors/sources/mcp.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-209
+test/telemetry/telemetry-install-id.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-133
+evals/ledger/benchmark/source-repo.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-129
+evals/ledger/run/run-config.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-65
+src/telemetry/record-run-safe.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 7
+src/visualize/server.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 54-61,108-177,201,218,221,308
+.changeset/provider-aware-ci-workflow.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+evals/ledger/reevaluate.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-85
+src/cli/components/primitives.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-139
+evals/ledger/evaluator/evidence-map.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-127
+src/cli/startup.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-141
+src/cli/run-log/types.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-84
+src/platform/utils.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-132
+test/ingestion/ingestion-run.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-554
+.changeset/custom-mcp-source.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+evals/ledger/evaluator/evidence-map.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-77
+evals/ledger/README.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-227
+evals/ledger/run/persistence.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-318
+test/platform/windows-acl.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-97
+openwiki/evals/index.md
+  s_6b9458b97f642e::t_f298e1545c2c57 4
+test/setup/credentials/init-setup-langsmith-skip.test.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-179
+src/auth/configure.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 2,6
+test/platform/utils.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-72
+test/okf/index-labels.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-84
+test/setup/credentials/steps.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-971
+evals/ledger/evaluator/model-backend-config.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-29
+examples/openwiki-update.gitlab-ci.yml
+  s_6b9458b97f642e::t_f298e1545c2c57 34-37
+src/cli/components/types.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-21
+evals/ledger/metrics/score.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-64
+src/connectors/sources/mcp.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 14,35,42,46,121-144
+  s_6b9458b97f642e::t_9d4c49614e1e23 145-146
+src/telemetry/senders.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1,3,10,17,40-47,86-88,106-110,150,260-274,277-282,284-285
+test/agent/openwiki-ignore.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-313
+evals/ledger/meta/gold-agreement.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-68
+test/agent/model-resolution.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-116
+test/agent/create-openwiki-agent.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-44
+test/cli/guards.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-34
+evals/ledger/run/saved-run.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-174
+src/cli/run-mode.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-69
+README.md
+  s_6b9458b97f642e::t_f298e1545c2c57 26,334-340
+  s_6b9458b97f642e::t_872688d104bae0 341
+src/agent/wiki-link-validator.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 203-210,240,245,266-273,389-400,406-407,431-445,447,453,457
+test/agent/vertex-surface.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-192
+src/cli/components/markdown.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-218
+evals/ledger/benchmark/validation.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-185
+evals/ledger/evaluator/precision.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-1223
+evals/ledger/run/runner.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-436
+src/agent/wiki_qa_subagents.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-113
+test/cli/debug.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-61
+src/cli/cli.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-93
+test/connectors/sources/langsmith/api.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-178
+test/mermaid/dom-shim.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-16
+src/connectors/sources/x.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 15
+test/setup/credentials.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-340
+test/config/copilot-provider.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-27
+test/telemetry/telemetry.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-1567
+pnpm-workspace.yaml
+  s_6b9458b97f642e::t_f298e1545c2c57 4-14,28
+test/auth/oauth.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-247
+evals/ledger/benchmarks/taskflow/benchmark.json
+  s_6b9458b97f642e::t_f298e1545c2c57 1-159
+src/agent/docs-only-backend.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 16,71-121,288-301,306-319
+src/platform/fs-errors.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-34
+src/cli/components/panels.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-194
+src/cli/guards.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-24
+evals/ledger/run/args.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-39
+test/cli/components/run-view.test.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-184
+.changeset/six-houses-crash.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+evals/ledger/meta/gold-agreement.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-334
+evals/ledger/run/saved-run.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-337
+openwiki/integrations/connectors.md
+  s_6b9458b97f642e::t_f298e1545c2c57 4,8,14,20,34,38,40-44,48,60,66,70,74,76,80-83,85-86,93-94
+src/config/openwiki-home.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-98
+test/connectors/sources/web-search.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-292
+evals/ledger/run/summary.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-30
+test/connectors/sources/langsmith/setup.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-228
+test/visualize/page.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-59
+test/connectors/connector-config-overrides.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-440
+src/setup/credentials/steps.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-1150
+test/connectors/sources/slack.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-621
+test/cli/commands.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-964
+test/setup/credentials/format.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-326
+test/telemetry/with-run-telemetry.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-89
+evals/ledger/replay/git.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-66
+test/scheduling/launchd-calendar-interval.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-81
+evals/ledger/replay/artifact.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-156
+src/agent/translation-middleware.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 7
+.gitignore
+  s_6b9458b97f642e::t_f298e1545c2c57 29-32
+evals/ledger/system/openwiki-system.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-91
+src/connectors/sources/langsmith/index.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1
+src/platform/language.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-60
+openwiki/evals/deepswe-harness.md
+  s_6b9458b97f642e::t_f298e1545c2c57 10
+src/setup/credentials/use-init-setup.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-2559
+src/telemetry/gates.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 3-24
+test/config/env-behavior.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-576
+src/connectors/sources/gmail.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 4
+src/config/env.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-603
+test/config/openwiki-home.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-175
+test/scheduling/schedules.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-116
+test/agent/bedrock-credentials-integration.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-74
+test/setup/onboarding.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-910
+src/setup/onboarding.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-482
+evals/ledger/system/openwiki-system.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-53
+test/config/env.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-164
+src/connectors/types.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 2
+test/platform/diagnostics.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-43
+test/cli/runners.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-626
+evals/ledger/evaluator/documents.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-154
+evals/ledger/replay/artifact.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-126
+test/setup/credentials/view.test.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-321
+vitest.config.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-54
+test/telemetry/client-no-key.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-30
+test/connectors/sources/hackernews.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-520
+evals/ledger/core/paths.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-88
+test/setup/credentials/components.test.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-702
+test/agent/redaction.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-378
+skills/write-connector/SKILL.md
+  s_6b9458b97f642e::t_f298e1545c2c57 10-19,38
+test/auth/configure.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-137
+evals/ledger/evaluator/direct-model.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-186
+evals/ledger/run/reevaluate-args.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-184
+evals/ledger/metrics/claims.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-136
+src/cli/diagnostics/auth-fix.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-94
+test/okf/frontmatter.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-2,12-13,303-362
+  s_6b9458b97f642e::t_9a282b103df3e2 363
+evals/ledger/core/errors.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-44
+evals/ledger/run/finalize.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-88
+src/setup/credentials.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-30
+src/connectors/mcp-runtime.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 19,21,39
+evals/ledger/replay/workspace.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-92
+src/setup/credentials/components.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-1278
+evals/ledger/evaluator/direct-model.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-260
+src/cli/schedule-format.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-159
+src/auth/ngrok.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 3
+evals/ledger/benchmark/benchmark.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-166
+evals/ledger/evaluator/retrieval.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-164
+test/auth/oauth-callback-server.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-146
+src/agent/utils.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 6,10-11,15,45
+test/visualize/server.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-233
+evals/ledger/replay/git-replay.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-292
+src/platform/windows-acl.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-41
+evals/ledger/run/reevaluator.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-282
+test/agent/prompt-okf.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-26
+evals/ledger/evaluator/evaluator.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-273
+src/cli/components/first-run-notice.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-86
+.changeset/paged-mcp-tool-lists.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+openwiki/cli/usage.md
+  s_6b9458b97f642e::t_f298e1545c2c57 14,30,45,53,59,77,81,99,139,160,221-233,254,263,270,278-282,284,288-297,301,305
+test/cli/diagnostics/error-diagnostics.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-107
+src/agent/prompt.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-2,4-7,14-19,27-51,53-80,82-87,89-90,92-95,97,100,134-146,150,159,163,169-170,172-174,176-177,179-183
+src/cli/input/cursor.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-158
+src/connectors/tools.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 8,15,24-35,51,57,71,81,109,158,188
+test/cli/startup.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-322
+test/mermaid/mermaid-wiki.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-251
+.changeset/read-only-bundled-skills.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+test/telemetry/record-run-safe.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-130
+src/agent/skills.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 2,4,14-17,66-75,119-141
+  s_6b9458b97f642e::t_0e8c63eb2d2dd7 142
+test/agent/openai-chatgpt-oauth.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-563
+src/cli/diagnostics/error-diagnostics.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-311
+test/scheduling/schedules-launchd.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-405
+src/platform/diagnostics.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-171
+evals/ledger/benchmark/surface.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-710
+src/connectors/sources/slack.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1
+test/agent/checkpoint-policy.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-23
+test/agent/create-model.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-210
+.github/workflows/checks.yml
+  s_6b9458b97f642e::t_f298e1545c2c57 96,149
+evals/ledger/run/evaluator-e2e.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-644
+src/cli/diagnostics/sanitize.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-50
+test/agent/stream-redaction.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-133
+test/agent/translation-middleware.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-680
+test/cli/run-mode.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-154
+openwiki/integrations/index.md
+  s_6b9458b97f642e::t_f298e1545c2c57 3
+test/model-availability.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-52
+test/okf/index-sync-errors.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-117
+test/scheduling/schedule-operations.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-467
+src/cli/app/run-state.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-72
+evals/ledger/evaluator/documents.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-287
+evals/ledger/tsconfig.json
+  s_6b9458b97f642e::t_f298e1545c2c57 1-9
+src/cli/input/types.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-107
+test/agent/parse-stream-event.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-390
+test/cli/components/primitives.test.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-108
+evals/ledger/run/run-config.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-102
+test/setup/openai-chatgpt-credentials.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-208
+.github/workflows/openwiki-update.yml
+  s_6b9458b97f642e::t_f298e1545c2c57 24-28
+evals/ledger/metrics/churn.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-95
+src/cli/components/chat.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-726
+CONTRIBUTING.md
+  s_6b9458b97f642e::t_f298e1545c2c57 32-33
+test/mermaid/mermaid-fences.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-63
+src/cli/run-log/tool-display.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-270
+src/connectors/sources/langsmith/setup.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 8,11,19-23,62-67,100-104
+test/visualize/visualize-client-lib.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-138
+evals/ledger/testing/tiny-repo.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-97
+test/agent/skills.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-271
+evals/ledger/core/paths.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-102
+evals/ledger/run.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-91
+src/agent/prompts/code.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-426
+src/cli/app/app.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-838
+test/agent/checkpoint-pruning.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-77
+test/cli/format.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-134
+test/cli/run-log/reducer.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-161
+test/connectors/mcp-client.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-1238
+.changeset/fix-connector-tool-mode-gating.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+test/agent/crash-guard.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-320
+src/telemetry/config.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 3,32
+src/connectors/sources/web-search.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 2
+test/visualize/visualize-server.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-39
+test/cli/diagnostics/auth-fix.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-65
+test/connectors/connector-config.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-30
+test/connectors/sources/gmail.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-427
+evals/ledger/evaluator/precision.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-1784
+test/cli/visualize-command.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-52
+src/telemetry/install-id.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 4
+scripts/stamp-build-channel.cjs
+  s_6b9458b97f642e::t_f298e1545c2c57 1-91
+evals/ledger/benchmark/benchmark.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-167
+examples/openwiki-update.yml
+  s_6b9458b97f642e::t_f298e1545c2c57 21-24
+test/agent/environment-debug-value.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-87
+test/agent/wiki-link-validator.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-446
+test/cli/components/ansi.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-11
+test/cli/components/chat.test.tsx
+  s_6b9458b97f642e::t_f298e1545c2c57 1-429
+test/connectors/mcp-runtime.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-233
+test/agent/update-noop.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-186
+src/cli/runners.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-364
+evals/ledger/benchmark/surface.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-240
+src/agent/index.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 4,19,27-32,37-38,44,60,62,119,126,130,285-303,390,434-437,460,521,525,529-530,534,554,558-561,691-697,749,761-780,1128,1134,1300-1322,1333,1357-1366,1648-1649,1651,1654-1656,1663,1668
+evals/ledger/meta/README.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-19
+src/auth/oauth.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 4
+.changeset/safe-streaming-text.md
+  s_6b9458b97f642e::t_f298e1545c2c57 1-5
+evals/ledger/run/report.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-72
+src/cli/run-log/reducer.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-276
+AGENTS.md
+  s_6b9458b97f642e::t_f298e1545c2c57 17-20
+test/platform/language.test.ts
+  s_6b9458b97f642e::t_f298e1545c2c57 1-33
+pnpm-lock.yaml
+  s_6b9458b97f642e::t_7a777d5a893742 7-11,59-60,116-118,124,750-752,754-755,957-958,1513-1514,1538-1539,1572-1574,1836-1844,1932-1933,1936-1937,2147-2148,2309-2310,2358-2359,2587-2590,2671-2672,2867-2868,3248,3616,3683,3784,3845,4410,4435,4464-4465,4757-4760,4849,4854,4875,5049,5063-5064,5196,5229,5291,5467-5468,5539,5555
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e8319967b380ac17a1e9fce2691e947aa0e9dc16",
+  "prompts": {},
+  "sessions": {
+    "s_6b9458b97f642e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "941a0b70-f800-4da1-97bb-b81455848115",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
