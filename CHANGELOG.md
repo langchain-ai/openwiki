@@ -1,5 +1,33 @@
 # openwiki
 
+## 0.3.3
+
+### Patch Changes
+
+- [#619](https://github.com/langchain-ai/openwiki/pull/619) [`250296c`](https://github.com/langchain-ai/openwiki/commit/250296ce8907608de734aa3471bcf81870f45c40) Thanks [@DecentralizedJM](https://github.com/DecentralizedJM)! - feat: add built-in custom-mcp connector for arbitrary mcp sources
+
+- [#603](https://github.com/langchain-ai/openwiki/pull/603) [`20f88c9`](https://github.com/langchain-ai/openwiki/commit/20f88c9c60d328737edebbeddc29f79e402f6209) Thanks [@akyourowngames](https://github.com/akyourowngames)! - fix: gate connector tools to personal/local-wiki runs
+
+- [#266](https://github.com/langchain-ai/openwiki/pull/266) [`3dcb382`](https://github.com/langchain-ai/openwiki/commit/3dcb3820b492fbec4ca73275ea69efa37fa76165) Thanks [@ousamabenyounes](https://github.com/ousamabenyounes)! - feat: allow openai-compatible provider to opt into responses api
+
+- [#566](https://github.com/langchain-ai/openwiki/pull/566) [`c5d41cb`](https://github.com/langchain-ai/openwiki/commit/c5d41cbe91fd6105bfbd4a05ec7606708ae22e23) Thanks [@divya0795](https://github.com/divya0795)! - fix: follow `nextCursor` when listing MCP tools, so tools on a paginated server past the first page are discovered and callable instead of rejected as "not returned by tools/list"
+
+- [#621](https://github.com/langchain-ai/openwiki/pull/621) [`239f810`](https://github.com/langchain-ai/openwiki/commit/239f810e6735dd32292ed176ea7ad9c05ed4350e) Thanks [@danielsogl](https://github.com/danielsogl)! - feat: generate the ci workflow env block from the configured provider
+
+- [#635](https://github.com/langchain-ai/openwiki/pull/635) [`9fb0097`](https://github.com/langchain-ai/openwiki/commit/9fb009798a97baf0c0987b08cdac82233c801901) Thanks [@Bubblegunn](https://github.com/Bubblegunn)! - fix: sync bundled skills from read-only installations
+
+- [#550](https://github.com/langchain-ai/openwiki/pull/550) [`f7c9f13`](https://github.com/langchain-ai/openwiki/commit/f7c9f1339fd9c826987d284fbc38869f79bc3f1d) Thanks [@GautamSharma99](https://github.com/GautamSharma99)! - fix: strip terminal control sequences from streamed Markdown output
+
+- [#639](https://github.com/langchain-ai/openwiki/pull/639) [`8e6dc99`](https://github.com/langchain-ai/openwiki/commit/8e6dc9945ba7d1e0e3a734dddfdb843e91d96f63) Thanks [@Christian-Sidak](https://github.com/Christian-Sidak)! - feat: add apac region support for langsmith
+
+- [#622](https://github.com/langchain-ai/openwiki/pull/622) [`2865cd6`](https://github.com/langchain-ai/openwiki/commit/2865cd6432c48ab27c7c834ca08ec0a7d6647086) Thanks [@colifran](https://github.com/colifran)! - feat: add LEDGER, a longitudinal benchmark for wiki grounding and forgetting
+
+- [#491](https://github.com/langchain-ai/openwiki/pull/491) [`4f61f7f`](https://github.com/langchain-ai/openwiki/commit/4f61f7f8b163cac26a00f91a2533e14b1b953387) Thanks [@jyje](https://github.com/jyje)! - feat: validate selected openai models against api-key availability before inference
+
+- [#640](https://github.com/langchain-ai/openwiki/pull/640) [`3a25d09`](https://github.com/langchain-ai/openwiki/commit/3a25d09444b879f358fcd5530ef82911f00905da) Thanks [@Christian-Sidak](https://github.com/Christian-Sidak)! - fix: generate CLAUDE.md as a pointer to AGENTS.md on init
+
+- [#590](https://github.com/langchain-ai/openwiki/pull/590) [`4fc9dff`](https://github.com/langchain-ai/openwiki/commit/4fc9dffa81cebaf60a0e8aa70f7b3565fa7edb3d) Thanks [@pawel-twardziak](https://github.com/pawel-twardziak)! - feat: cap openrouter output tokens with OPENWIKI_OPENROUTER_MAX_TOKENS to avoid 402 errors on low credit balances
+
 ## 0.3.2
 
 ### Patch Changes
