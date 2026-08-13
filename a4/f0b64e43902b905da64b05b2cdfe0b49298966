@@ -1,0 +1,84 @@
+src/claims/brains/code/runtime.ts
+  s_ebaf4c4570da5a::t_2c8dd7d4021163 97,100
+  s_ebaf4c4570da5a::t_7b430c183df354 11,36-42,85-90,93,95-96,98-99,101-102
+test/agent/claims-agent-integration.test.ts
+  s_ebaf4c4570da5a::t_2c68d28ec09103 180-186,188-191
+  s_ebaf4c4570da5a::t_03cb60cf60c3cb 1-2,41,60-63,129-179,187,192
+  s_ebaf4c4570da5a::t_ae8bb000966702 122-124
+  s_ebaf4c4570da5a::t_71468d5e1aefc4 193
+src/claims/brains/code/types.ts
+  s_ebaf4c4570da5a::t_2c68d28ec09103 48,50,68-86
+  s_ebaf4c4570da5a::t_d6e58d9357f910 87
+src/claims/brains/code/session.ts
+  s_ebaf4c4570da5a::t_0986f68adf3a35 315
+src/claims/brains/code/tools.ts
+  s_ebaf4c4570da5a::t_0986f68adf3a35 227
+  s_ebaf4c4570da5a::t_0acb109991ad0c 185
+  s_ebaf4c4570da5a::t_372d1afb668d62 194-195,198-201
+  s_ebaf4c4570da5a::t_2c68d28ec09103 71,173,177-183,188,197,202
+  s_ebaf4c4570da5a::t_0cdeeb1e1d4231 104,159,163-166
+test/agent/prompt.test.ts
+  s_ebaf4c4570da5a::t_cf79db2aece989 338-340
+src/agent/index.ts
+  s_ebaf4c4570da5a::t_d96edd2e603494 560-565
+  s_ebaf4c4570da5a::t_98331b8b841a36 22,27,381-387,559,566-571
+  s_ebaf4c4570da5a::t_99c9627fced387 505
+test/claims/brains/code/tools.test.ts
+  s_ebaf4c4570da5a::t_372d1afb668d62 161,236,308-312,314-322
+  s_ebaf4c4570da5a::t_a88e9a2c765477 117,162-180
+  s_ebaf4c4570da5a::t_0acb109991ad0c 222-224,230,232-233,235
+  s_ebaf4c4570da5a::t_cdcff248192071 313
+  s_ebaf4c4570da5a::t_2c68d28ec09103 112,138-152,157,199,207-213,217-221,225-229,278,280-282,301
+  s_ebaf4c4570da5a::t_9cca874e05ef89 231,234
+  s_ebaf4c4570da5a::t_cd5221a4f21320 136-137
+  s_ebaf4c4570da5a::t_c967b9eca47fd6 153-156
+  s_ebaf4c4570da5a::t_2a0360e80cd804 158-160
+  s_ebaf4c4570da5a::t_5022f795ca2a60 237
+src/claims/brains/code/middleware.ts
+  s_ebaf4c4570da5a::t_be17936d6c3c28 1
+src/claims/brains/code/reconciliation.ts
+  s_ebaf4c4570da5a::t_f2f14d77bb2e1a 2-3,5,14-17,46-50,118-125,144-153,187,256-257,268,270-272,274-279,465,468-471,475-479,515,518-524,539,603,617-620,624,717,725
+  s_ebaf4c4570da5a::t_a364303a0624be 283-367,372-391,397-403,418-422,427-436,441-459
+  s_ebaf4c4570da5a::t_c878919aa790de 437-440
+  s_ebaf4c4570da5a::t_47ff74da25ac5d 715,719
+  s_ebaf4c4570da5a::t_17e03e8e2d6013 1,4,6-13,19-35,41-45,51-117,126-143,154-186,188-255,258-259,261-262,267,273,280-282,460-464,466-467,480-514,516-517,525-527,529-538,540-553,562-566,572-585,587-602,604,606-614,616,621-623,625-637,658-714,716,720-724,727-796,799-851
+  s_ebaf4c4570da5a::t_99c9627fced387 18,260,368-371,423-426,472-474,528,586,615,797-798
+  s_ebaf4c4570da5a::t_3f5b2c3d30c382 554-561
+  s_ebaf4c4570da5a::t_69cede57d0adb3 36-40,263-266,269
+  s_ebaf4c4570da5a::t_719f14db04136b 567-571,605,638-657,718,726
+  s_ebaf4c4570da5a::t_ebc9c090638216 392-396,404-417
+src/agent/prompts/code.ts
+  s_ebaf4c4570da5a::t_7296c22c1ac263 232
+  s_ebaf4c4570da5a::t_0cdeeb1e1d4231 132,227-229
+  s_ebaf4c4570da5a::t_2c68d28ec09103 230-231
+test/claims/brains/code/middleware.test.ts
+  s_ebaf4c4570da5a::t_ae430ee8079dda 1,7
+test/claims/brains/code/reconciliation.test.ts
+  s_ebaf4c4570da5a::t_3f5b2c3d30c382 216
+  s_ebaf4c4570da5a::t_99c9627fced387 194,206,289-290
+  s_ebaf4c4570da5a::t_94ad7d94715ddd 2-4,6,12,124,126-130,236-288,291-325
+  s_ebaf4c4570da5a::t_dbea8fa76ccd33 1,5,7-11,13-123,125,131-193,195-205,207-215,217-235,326-327
+test/agent/claims-run-lifecycle.test.ts
+  s_ebaf4c4570da5a::t_2c68d28ec09103 185
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a4f0b64e43902b905da64b05b2cdfe0b49298966",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_ebaf4c4570da5a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffc48-6326-7f91-a188-360fb633427d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
