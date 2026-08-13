@@ -85,3 +85,14 @@ describe("formatEnvironmentDebugValue – URL-typed keys", () => {
     expect(result).toMatch(/^set\(length=\d+, preview=/u);
   });
 });
+
+describe("formatEnvironmentDebugValue – proxy", () => {
+  test("treats OPENWIKI_PROXY as a URL-typed key", () => {
+    expect(
+      formatEnvironmentDebugValue(
+        "OPENWIKI_PROXY",
+        "http://proxy.example.com:8888",
+      ),
+    ).toBe('set(url="http://proxy.example.com:8888/")');
+  });
+});

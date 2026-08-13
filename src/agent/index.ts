@@ -18,6 +18,7 @@ import {
   type FilesystemPermission,
   type GlobResult,
 } from "deepagents";
+import { ProxyAgent, setGlobalDispatcher } from "undici";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
   DEBUG_ENV_KEYS,
@@ -109,6 +110,7 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
+  OPENWIKI_PROXY_ENV_KEY,
   providerRequiresBaseUrl,
   providerRequiresRegion,
   providerRequiresSecretKey,
@@ -122,6 +124,7 @@ import {
   resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
+  resolveProxyUrl,
   type OpenWikiProvider,
 } from "../config/constants.js";
 import {
@@ -163,6 +166,7 @@ export async function runOpenWikiAgent(
   await syncBundledSkills();
   emitDebug(options, "env=loaded ~/.openwiki/.env");
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
+  installGlobalProxy(options);
 
   const openWikiIgnore =
     outputMode === "repository"
@@ -1035,6 +1039,24 @@ function warnOnProviderModelMismatch(
   // Also emit to stderr so the warning survives on failure, where the TUI
   // re-renders the log away and --print discards buffered streamed text.
   process.stderr.write(`${message}\n`);
+}
+
+let globalProxyInstalled = false;
+
+function installGlobalProxy(options: OpenWikiRunOptions): void {
+  if (globalProxyInstalled) {
+    return;
+  }
+
+  const proxyUrl = resolveProxyUrl();
+
+  if (proxyUrl === null) {
+    return;
+  }
+
+  setGlobalDispatcher(new ProxyAgent(proxyUrl));
+  globalProxyInstalled = true;
+  emitDebug(options, `proxy=set ${formatUrlDebugValue(proxyUrl)}`);
 }
 
 export function createModel(
@@ -2046,7 +2068,8 @@ export function formatEnvironmentDebugValue(
     key === FIREWORKS_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
-    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||
+    key === OPENWIKI_PROXY_ENV_KEY
   ) {
     return formatUrlDebugValue(value);
   }

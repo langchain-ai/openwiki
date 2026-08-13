@@ -140,6 +140,10 @@ describe("MANAGED_ENV_KEYS", () => {
     expect(MANAGED_ENV_KEYS).toContain("FIREWORKS_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("NVIDIA_BASE_URL");
   });
+
+  test("manages the outbound proxy URL", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_PROXY");
+  });
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {
@@ -148,6 +152,7 @@ describe("parseEnv <-> formatEnv round-trip", () => {
       OPENAI_API_KEY: 'weird "value" with\nnewline and \\ backslash',
       ANTHROPIC_BASE_URL: "https://gateway.example/anthropic",
       OPENWIKI_MODEL_ID: "claude-opus-4-8",
+      OPENWIKI_PROXY: "http://proxy.example.com:8888",
     };
 
     expect(parseEnv(formatEnv(original))).toEqual(original);
