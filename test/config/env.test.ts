@@ -140,6 +140,10 @@ describe("MANAGED_ENV_KEYS", () => {
     expect(MANAGED_ENV_KEYS).toContain("FIREWORKS_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("NVIDIA_BASE_URL");
   });
+
+  test("manages Anthropic gateway headers", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_PROVIDER_DEFAULT_HEADERS");
+  });
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {
@@ -148,6 +152,8 @@ describe("parseEnv <-> formatEnv round-trip", () => {
       OPENAI_API_KEY: 'weird "value" with\nnewline and \\ backslash',
       ANTHROPIC_BASE_URL: "https://gateway.example/anthropic",
       OPENWIKI_MODEL_ID: "claude-opus-4-8",
+      OPENWIKI_PROVIDER_DEFAULT_HEADERS:
+        '{"x-agent-id":"tenant-1","api-key":"secret"}',
     };
 
     expect(parseEnv(formatEnv(original))).toEqual(original);

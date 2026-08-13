@@ -323,6 +323,12 @@ ANTHROPIC_API_KEY=your-key
 ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 ```
 
+**Custom Anthropic headers.** Gateways that need extra HTTP headers (a tenant ID, an APIM subscription key, `anthropic-version`) can set `OPENWIKI_PROVIDER_DEFAULT_HEADERS` to a JSON object of header names to string values. These are sent on every Anthropic request.
+
+```bash
+OPENWIKI_PROVIDER_DEFAULT_HEADERS={"x-agent-id":"your-tenant-id","anthropic-version":"2023-06-01","api-key":"your-key"}
+```
+
 **OpenRouter provider pinning.** When OpenRouter serves a model through multiple upstreams, restrict routing with a provider or comma-separated allowlist:
 
 ```bash

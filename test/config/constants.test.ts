@@ -35,6 +35,7 @@ import {
   resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
+  resolveProviderDefaultHeaders,
 } from "../../src/config/constants.ts";
 
 describe("isValidModelId", () => {
@@ -717,5 +718,68 @@ describe("isModelIdForOtherProvider", () => {
     expect(isModelIdForOtherProvider("  claude-opus-4-8  ", "openai")).toBe(
       true,
     );
+  });
+});
+
+describe("resolveProviderDefaultHeaders", () => {
+  test("returns undefined when the env var is unset, blank, or an empty object", () => {
+    expect(resolveProviderDefaultHeaders({})).toBeUndefined();
+    expect(
+      resolveProviderDefaultHeaders({ OPENWIKI_PROVIDER_DEFAULT_HEADERS: "" }),
+    ).toBeUndefined();
+    expect(
+      resolveProviderDefaultHeaders({
+        OPENWIKI_PROVIDER_DEFAULT_HEADERS: "   ",
+      }),
+    ).toBeUndefined();
+    expect(
+      resolveProviderDefaultHeaders({
+        OPENWIKI_PROVIDER_DEFAULT_HEADERS: "{}",
+      }),
+    ).toBeUndefined();
+  });
+
+  test("parses a JSON object of string headers", () => {
+    expect(
+      resolveProviderDefaultHeaders({
+        OPENWIKI_PROVIDER_DEFAULT_HEADERS:
+          '{"x-agent-id":"tenant-1","anthropic-version":"2023-06-01","api-key":"secret"}',
+      }),
+    ).toEqual({
+      "x-agent-id": "tenant-1",
+      "anthropic-version": "2023-06-01",
+      "api-key": "secret",
+    });
+  });
+
+  test("rejects invalid JSON, arrays, and non-string values", () => {
+    expect(() =>
+      resolveProviderDefaultHeaders({
+        OPENWIKI_PROVIDER_DEFAULT_HEADERS: "{not json",
+      }),
+    ).toThrow(/OPENWIKI_PROVIDER_DEFAULT_HEADERS/u);
+    expect(() =>
+      resolveProviderDefaultHeaders({
+        OPENWIKI_PROVIDER_DEFAULT_HEADERS: '["x-agent-id"]',
+      }),
+    ).toThrow(/OPENWIKI_PROVIDER_DEFAULT_HEADERS/u);
+    expect(() =>
+      resolveProviderDefaultHeaders({
+        OPENWIKI_PROVIDER_DEFAULT_HEADERS: '{"x-agent-id":1}',
+      }),
+    ).toThrow(/OPENWIKI_PROVIDER_DEFAULT_HEADERS/u);
+    expect(() =>
+      resolveProviderDefaultHeaders({
+        OPENWIKI_PROVIDER_DEFAULT_HEADERS: '{"nested":{"a":"b"}}',
+      }),
+    ).toThrow(/OPENWIKI_PROVIDER_DEFAULT_HEADERS/u);
+  });
+
+  test("rejects an invalid HTTP header name", () => {
+    expect(() =>
+      resolveProviderDefaultHeaders({
+        OPENWIKI_PROVIDER_DEFAULT_HEADERS: '{"x agent id":"tenant-1"}',
+      }),
+    ).toThrow(/header name/iu);
   });
 });

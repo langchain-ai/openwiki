@@ -54,6 +54,8 @@ export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
+export const OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY =
+  "OPENWIKI_PROVIDER_DEFAULT_HEADERS";
 export const DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3;
 export const OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY =
   "OPENWIKI_GOOGLE_ACCESS_TOKEN";
@@ -941,6 +943,67 @@ export function resolveOpenRouterMaxTokens(
   }
 
   return parsedMaxTokens;
+}
+
+const HTTP_HEADER_NAME_PATTERN = /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/u;
+
+/**
+ * Extra HTTP headers sent on every provider request. Used by Anthropic-compatible
+ * gateways that require tenant or subscription headers beyond the API key
+ * (for example `x-agent-id` and Azure APIM `api-key`).
+ *
+ * Value is a JSON object of string header names to string values.
+ */
+export function resolveProviderDefaultHeaders(
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, string> | undefined {
+  const rawHeaders = env[OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY];
+
+  if (rawHeaders === undefined) {
+    return undefined;
+  }
+
+  const trimmed = rawHeaders.trim();
+
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    throw new Error(
+      `Invalid ${OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY}. Expected a JSON object of header names to string values.`,
+    );
+  }
+
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY}. Expected a JSON object of header names to string values.`,
+    );
+  }
+
+  const headers: Record<string, string> = {};
+
+  for (const [name, value] of Object.entries(parsed)) {
+    if (!HTTP_HEADER_NAME_PATTERN.test(name)) {
+      throw new Error(
+        `Invalid ${OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY}. Header name ${JSON.stringify(name)} is not a valid HTTP header name.`,
+      );
+    }
+
+    if (typeof value !== "string") {
+      throw new Error(
+        `Invalid ${OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY}. Header ${JSON.stringify(name)} must be a string.`,
+      );
+    }
+
+    headers[name] = value;
+  }
+
+  return Object.keys(headers).length > 0 ? headers : undefined;
 }
 
 export function normalizeModelId(value: string): string {

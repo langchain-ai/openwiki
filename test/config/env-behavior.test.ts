@@ -20,6 +20,7 @@ import {
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY,
 } from "../../src/config/constants.ts";
 
 // `loadOpenWikiEnv`, `saveOpenWikiEnv`, and `getCredentialDiagnostics` all read
@@ -55,6 +56,7 @@ const KEYS_UNDER_TEST = [
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY,
   // Deprecated / recently un-deprecated OpenAI keys. Cleared in each hook so the
   // developer's ambient shell (which may export OPENAI_BASE_URL) cannot leak
   // into these tests, and a loaded value cannot leak back out to other tests.
@@ -472,6 +474,21 @@ describe("getCredentialDiagnostics", () => {
     expect(basetenEntry?.preview).toBe(
       '"https://gateway.example.com/baseten/v1"',
     );
+  });
+
+  test("masks gateway headers", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY]:
+        '{"x-agent-id":"tenant-1","api-key":"super-secret-gateway-key"}',
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const headersEntry = diagnostics.find(
+      (item) => item.key === OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY,
+    );
+
+    expect(headersEntry?.preview).not.toContain("super-secret-gateway-key");
+    expect(headersEntry?.preview).not.toContain("tenant-1");
   });
 
   test("flags an invalid model ID with a warning", async () => {

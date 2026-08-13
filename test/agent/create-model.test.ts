@@ -201,6 +201,74 @@ describe("createModel openrouter output-token cap", () => {
   });
 });
 
+describe("createModel anthropic gateway options", () => {
+  const API_KEY = "ANTHROPIC_API_KEY";
+  const BASE_URL = "ANTHROPIC_BASE_URL";
+  const HEADERS = "OPENWIKI_PROVIDER_DEFAULT_HEADERS";
+
+  let savedApiKey: string | undefined;
+  let savedBaseUrl: string | undefined;
+  let savedHeaders: string | undefined;
+
+  beforeEach(() => {
+    savedApiKey = process.env[API_KEY];
+    savedBaseUrl = process.env[BASE_URL];
+    savedHeaders = process.env[HEADERS];
+    process.env[API_KEY] = "test-anthropic-key";
+    delete process.env[BASE_URL];
+    delete process.env[HEADERS];
+  });
+
+  afterEach(() => {
+    restoreEnv(API_KEY, savedApiKey);
+    restoreEnv(BASE_URL, savedBaseUrl);
+    restoreEnv(HEADERS, savedHeaders);
+  });
+
+  test("does not force streaming or extra headers against api.anthropic.com", () => {
+    const model = createModel(
+      "anthropic",
+      "claude-sonnet-4-6",
+      0,
+    ) as ChatAnthropic;
+
+    expect(model).toBeInstanceOf(ChatAnthropic);
+    expect(model.streaming).toBe(false);
+    expect(model.apiUrl).toBeUndefined();
+    expect(model.clientOptions.defaultHeaders).toBeUndefined();
+  });
+
+  test("enables streaming when a custom Anthropic base URL is set", () => {
+    process.env[BASE_URL] = "https://gateway.example.com/anthropic";
+
+    const model = createModel(
+      "anthropic",
+      "claude-sonnet-4-6",
+      0,
+    ) as ChatAnthropic;
+
+    expect(model.apiUrl).toBe("https://gateway.example.com/anthropic");
+    expect(model.streaming).toBe(true);
+    expect(model.streamUsage).toBe(true);
+  });
+
+  test("passes OPENWIKI_PROVIDER_DEFAULT_HEADERS to the Anthropic client", () => {
+    process.env[HEADERS] =
+      '{"x-agent-id":"tenant-1","anthropic-version":"2023-06-01"}';
+
+    const model = createModel(
+      "anthropic",
+      "claude-sonnet-4-6",
+      0,
+    ) as ChatAnthropic;
+
+    expect(model.clientOptions.defaultHeaders).toEqual({
+      "x-agent-id": "tenant-1",
+      "anthropic-version": "2023-06-01",
+    });
+  });
+});
+
 function restoreEnv(key: string, value: string | undefined): void {
   if (value === undefined) {
     delete process.env[key];

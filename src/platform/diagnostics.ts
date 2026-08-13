@@ -17,6 +17,7 @@ import {
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY,
 } from "../config/constants.js";
 
 /**
@@ -50,6 +51,7 @@ export function sanitizeDiagnosticText(value: string): string {
     OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,
+    OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY,
     "LANGSMITH_API_KEY",
   ]) {
     const secret = process.env[key];

@@ -108,6 +108,7 @@ import {
   OPENROUTER_BASE_URL,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   providerRequiresBaseUrl,
   providerRequiresRegion,
@@ -122,6 +123,7 @@ import {
   resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
+  resolveProviderDefaultHeaders,
   type OpenWikiProvider,
 } from "../config/constants.js";
 import {
@@ -1079,10 +1081,14 @@ export function createModel(
 
   if (provider === "anthropic") {
     const baseURL = resolveProviderBaseUrl(provider);
+    const defaultHeaders = resolveProviderDefaultHeaders();
 
     return new ChatAnthropic(modelId, {
       apiKey: getProviderApiKey(provider),
-      ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
+      ...(baseURL
+        ? { anthropicApiUrl: baseURL, streaming: true, streamUsage: true }
+        : {}),
+      ...(defaultHeaders ? { clientOptions: { defaultHeaders } } : {}),
       ...retryOptions,
     });
   }
@@ -2055,7 +2061,8 @@ export function formatEnvironmentDebugValue(
     key.endsWith("_API_KEY") ||
     key === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
     key === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY ||
-    key === BEDROCK_AWS_SESSION_TOKEN_ENV_KEY
+    key === BEDROCK_AWS_SESSION_TOKEN_ENV_KEY ||
+    key === OPENWIKI_PROVIDER_DEFAULT_HEADERS_ENV_KEY
   ) {
     return `set(length=${value.length})`;
   }
