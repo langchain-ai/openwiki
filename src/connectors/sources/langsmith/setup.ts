@@ -5,16 +5,21 @@ import {
 } from "./repo-config.js";
 
 /**
- * LangSmith workspace region. Maps to the two official API hosts the connector
+ * LangSmith workspace region. Maps to the three official API hosts the connector
  * is allowlisted to talk to; the wizard offers this instead of a raw URL.
  */
-export type LangSmithRegion = "us" | "eu";
+export type LangSmithRegion = "us" | "eu" | "apac";
 
 /**
  * EU host, written to apiBaseUrl for EU workspaces. The US host is the connector
  * default, so it is left out of the file entirely.
  */
 const EU_API_BASE_URL = "https://eu.api.smith.langchain.com";
+
+/**
+ * APAC host, written to apiBaseUrl for APAC workspaces.
+ */
+const APAC_API_BASE_URL = "https://apac.api.smith.langchain.com";
 
 /**
  * Base env var name for the first workspace's key. Additional workspaces get
@@ -54,7 +59,12 @@ export async function loadLangSmithSetup(
   return (config?.workspaces ?? []).map((workspace) => ({
     apiKeyEnv: workspace.apiKeyEnv,
     projects: workspace.projects.map((project) => project.name),
-    region: workspace.apiBaseUrl === EU_API_BASE_URL ? "eu" : "us",
+    region:
+      workspace.apiBaseUrl === EU_API_BASE_URL
+        ? "eu"
+        : workspace.apiBaseUrl === APAC_API_BASE_URL
+          ? "apac"
+          : "us",
   }));
 }
 
@@ -87,7 +97,11 @@ export async function saveLangSmithSetup(
     cleaned.push({
       apiKeyEnv: workspace.apiKeyEnv,
       projects,
-      ...(workspace.region === "eu" ? { apiBaseUrl: EU_API_BASE_URL } : {}),
+      ...(workspace.region === "eu"
+        ? { apiBaseUrl: EU_API_BASE_URL }
+        : workspace.region === "apac"
+          ? { apiBaseUrl: APAC_API_BASE_URL }
+          : {}),
     });
   }
   if (cleaned.length === 0 && !existing) {
