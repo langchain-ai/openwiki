@@ -12,7 +12,7 @@ import type {
   ConnectorIngestResult,
   ConnectorRuntime,
 } from "../types.js";
-import { OPENWIKI_X_ACCESS_TOKEN_ENV_KEY } from "../../constants.js";
+import { OPENWIKI_X_ACCESS_TOKEN_ENV_KEY } from "../../config/constants.js";
 import { getOAuthAccessToken } from "../../auth/tokens.js";
 import { fetchWithResilience } from "../http.js";
 import { normalizeStringArray } from "../config.js";

@@ -1,5 +1,7 @@
 import {
+  chmod,
   cp,
+  lstat,
   mkdir,
   mkdtemp,
   readdir,
@@ -9,7 +11,10 @@ import {
 } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { ensureOpenWikiHome, openWikiSkillsDir } from "../openwiki-home.js";
+import {
+  ensureOpenWikiHome,
+  openWikiSkillsDir,
+} from "../config/openwiki-home.js";
 
 const bundledSkillsDir = fileURLToPath(
   new URL("../../skills", import.meta.url),
@@ -58,6 +63,16 @@ async function replaceSkillDirectory(
   try {
     await cp(path.join(sourceDir, name), staged, { recursive: true });
 
+    // `cp` clones the source's mode bits, so a bundled skill shipped read-only
+    // (the Nix store and immutable container images mount `skills/` as
+    // `dr-xr-xr-x` / `-r--r--r--`) yields a read-only staging tree. That breaks
+    // the atomic install twice: `rename(staged, target)` needs the moved
+    // directory's own write bit to update its `..` entry, and the `finally`
+    // cleanup below cannot `unlink` files out of a read-only directory (#633).
+    // Grant owner write across the staged tree so both succeed; the installed
+    // copy is then writable and self-heals on the next sync.
+    await grantOwnerWrite(staged);
+
     // Move any existing copy aside; it is deleted with the scratch directory.
     try {
       await rename(target, displaced);
@@ -99,5 +114,29 @@ async function replaceSkillDirectory(
     }
   } finally {
     await rm(scratchDir, { force: true, recursive: true });
+  }
+}
+
+/**
+ * Recursively adds the owner-write bit to every entry under `entry`, preserving
+ * all other permission bits (including existing executable bits). Symlinks are
+ * left untouched so the mode of their targets outside the staging tree is never
+ * changed. Used to make a staged copy of a read-only bundled skill writable
+ * before the atomic swap and cleanup (#633).
+ */
+async function grantOwnerWrite(entry: string): Promise<void> {
+  const stats = await lstat(entry);
+
+  if (stats.isSymbolicLink()) {
+    return;
+  }
+
+  await chmod(entry, stats.mode | 0o200);
+
+  if (stats.isDirectory()) {
+    const children = await readdir(entry);
+    await Promise.all(
+      children.map((child) => grantOwnerWrite(path.join(entry, child))),
+    );
   }
 }

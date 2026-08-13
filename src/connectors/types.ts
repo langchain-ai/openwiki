@@ -1,4 +1,5 @@
 export type ConnectorId =
+  | "custom-mcp"
   | "git-repo"
   | "google"
   | "hackernews"

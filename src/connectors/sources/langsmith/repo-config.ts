@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { OPEN_WIKI_DIR } from "../../../constants.js";
-import { isFileNotFoundError } from "../../../fs-errors.js";
+import { OPEN_WIKI_DIR } from "../../../config/constants.js";
+import { isFileNotFoundError } from "../../../platform/fs-errors.js";
 import type { LangSmithProjectConfig } from "./types.js";
 
 /**
@@ -49,6 +49,7 @@ export interface LangSmithRepoConfig {
 const ALLOWED_API_HOSTS = new Set([
   "api.smith.langchain.com",
   "eu.api.smith.langchain.com",
+  "apac.api.smith.langchain.com",
 ]);
 
 /**

@@ -13,7 +13,7 @@ import {
   type ReadResult,
   type WriteResult,
 } from "deepagents";
-import { OPEN_WIKI_DIR } from "../constants.js";
+import { OPEN_WIKI_DIR } from "../config/constants.js";
 import { OPENWIKI_IGNORE_FILE, OpenWikiIgnore } from "./openwiki-ignore.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
@@ -67,6 +67,57 @@ const allowedIgnoredShellCommands = [
   /^git\s+(?:--no-pager\s+)?rev-parse\s+HEAD$/u,
   /^rm\s+-f\s+(?:\.\/)?openwiki\/_plan\.md$/u,
 ];
+
+/**
+ * Determine whether a glob attempts unbounded discovery from the repository
+ * root. OpenWiki prompts already prohibit this shape because it is expensive;
+ * rejecting it in the backend also avoids upstream traversal of a worktree's
+ * file-backed `.git` pointer as though it were a directory.
+ *
+ * @param pattern - Glob pattern supplied by the agent.
+ * @param searchPath - Optional virtual search root.
+ *
+ * @returns Whether the request is an unbounded repository-root glob.
+ */
+function isBroadRootGlob(pattern: string, searchPath?: string): boolean {
+  const searchesRoot =
+    searchPath === undefined || searchPath === "" || searchPath === "/";
+  const normalizedPattern = pattern.replace(/^\/+|\/+$/gu, "");
+
+  return searchesRoot && ["**", "**/*", "**/**"].includes(normalizedPattern);
+}
+
+/**
+ * Determine whether a glob explicitly targets Git's private metadata.
+ *
+ * @param pattern - Glob pattern supplied by the agent.
+ * @param searchPath - Optional virtual search root.
+ *
+ * @returns Whether either input names a `.git` path component.
+ */
+function targetsGitMetadata(pattern: string, searchPath?: string): boolean {
+  return [pattern, searchPath ?? ""].some((value) =>
+    /(?:^|[\\/])\.git(?:[\\/]|$)/u.test(value),
+  );
+}
+
+/**
+ * Recognize the upstream worktree failure raised when a glob tries to scan the
+ * file-backed `.git` pointer as a directory.
+ *
+ * @param error - Unknown failure raised by the underlying shell backend.
+ *
+ * @returns Whether the error is the specific recoverable worktree mismatch.
+ */
+function isWorktreeGitScandirError(error: unknown): boolean {
+  const candidate = error as NodeJS.ErrnoException;
+
+  return (
+    candidate?.code === "ENOTDIR" &&
+    typeof candidate.path === "string" &&
+    /(?:^|[\\/])\.git$/u.test(candidate.path)
+  );
+}
 
 /**
  * Filesystem/shell backend that enforces OpenWiki's access boundaries for the
@@ -234,11 +285,38 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     pattern: string,
     searchPath?: string,
   ): Promise<GlobResult> {
+    if (isBroadRootGlob(pattern, searchPath)) {
+      return {
+        error:
+          "Unbounded root globbing is disabled. Use ls at the repository root, then targeted glob or grep calls by directory and extension.",
+      };
+    }
+
+    if (targetsGitMetadata(pattern, searchPath)) {
+      return {
+        error:
+          "Git metadata is private repository state and is unavailable to glob. Use `git rev-parse HEAD` when the current commit is needed.",
+      };
+    }
+
     if (searchPath && this.openWikiIgnore.ignores(searchPath, true)) {
       return { files: [] };
     }
 
-    const result = await super.glob(pattern, searchPath);
+    let result: GlobResult;
+
+    try {
+      result = await super.glob(pattern, searchPath);
+    } catch (error) {
+      if (isWorktreeGitScandirError(error)) {
+        return {
+          error:
+            "Glob could not traverse this Git worktree safely. Use ls at the repository root, then search a specific source directory.",
+        };
+      }
+
+      throw error;
+    }
 
     return {
       ...result,

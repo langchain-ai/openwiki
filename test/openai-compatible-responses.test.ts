@@ -13,10 +13,6 @@ vi.mock("../src/connectors/tools.js", () => ({
   createOpenWikiConnectorTools: vi.fn(() => []),
 }));
 
-vi.mock("../src/connectors/write-connector-skill.js", () => ({
-  ensureWriteConnectorSkill: vi.fn(() => undefined),
-}));
-
 describe("openai-compatible responses API opt-in", () => {
   beforeEach(() => {
     chatOpenAiCalls.length = 0;
