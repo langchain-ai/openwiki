@@ -135,6 +135,7 @@ import {
   persistRunMetadataIfChanged,
   removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
+  writeLastUpdateMetadata,
 } from "./utils.js";
 import { clearActiveRun, registerActiveRun } from "./crash-guard.js";
 import { inStage, inStageSync, tagErrorStage } from "../telemetry/index.js";
@@ -181,6 +182,19 @@ export async function runOpenWikiAgent(
         "No repository changes detected since the last OpenWiki update; skipping agent run.";
       emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
       options.onEvent?.({ type: "text", text: message });
+
+      // Refresh .last-update.json even on a fast-skip no-op so freshness
+      // checks reflect the actual last run, not the last content change.
+      try {
+        await writeLastUpdateMetadata(
+          command,
+          cwd,
+          noopStatus.model ?? "",
+          options.outputMode ?? "local-wiki",
+        );
+      } catch {
+        // Best-effort: a metadata refresh must never block the no-op path.
+      }
 
       // The single telemetry boundary (withRunTelemetry) owns the record; publish
       // the short-circuit outcome and provider onto the shared context and return.

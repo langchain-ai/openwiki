@@ -120,7 +120,7 @@ describe("persistRunMetadataIfChanged", () => {
     expect(metadata?.status).toBe("complete");
   });
 
-  test("does not rewrite metadata when nothing changed after a complete run", async () => {
+  test("refreshes metadata when nothing changed after a complete run", async () => {
     const cwd = await createTempRepo();
 
     await mkdir(path.join(cwd, "openwiki"), { recursive: true });
@@ -138,6 +138,8 @@ describe("persistRunMetadataIfChanged", () => {
       snapshotBefore,
     );
 
+    // A no-op update still refreshes .last-update.json so freshness checks
+    // reflect the actual last run, not the last content change.
     const unchangedSnapshot = await createOpenWikiContentSnapshot(
       cwd,
       "repository",
@@ -150,7 +152,10 @@ describe("persistRunMetadataIfChanged", () => {
       unchangedSnapshot,
     );
 
-    expect(written).toBe(false);
+    expect(written).toBe(true);
+    const metadata = await readMetadata(cwd, "openwiki/.last-update.json");
+    expect(metadata).not.toBeNull();
+    expect(metadata?.status).toBe("complete");
   });
 
   test("writes metadata in local-wiki mode when content changed", async () => {
@@ -174,13 +179,15 @@ describe("persistRunMetadataIfChanged", () => {
     expect(await readMetadata(cwd, ".last-update.json")).not.toBeNull();
   });
 
-  test("skips when wiki content is unchanged", async () => {
+  test("refreshes metadata when wiki content is unchanged", async () => {
     const cwd = await createTempRepo();
     const snapshotBefore = await createOpenWikiContentSnapshot(
       cwd,
       "repository",
     );
 
+    // No content change: the timestamp must still be refreshed so freshness
+    // checks (e.g. Pi startup reminders) do not report a stale wiki.
     const written = await persistRunMetadataIfChanged(
       "update",
       cwd,
@@ -189,11 +196,14 @@ describe("persistRunMetadataIfChanged", () => {
       snapshotBefore,
     );
 
-    expect(written).toBe(false);
-    expect(await readMetadata(cwd, "openwiki/.last-update.json")).toBeNull();
+    expect(written).toBe(true);
+    const metadata = await readMetadata(cwd, "openwiki/.last-update.json");
+    expect(metadata).not.toBeNull();
+    expect(metadata?.model).toBe("test-model");
+    expect(metadata?.status).toBe("complete");
   });
 
-  test("skips when only the temporary plan file changed", async () => {
+  test("refreshes metadata when only the temporary plan file changed", async () => {
     const cwd = await createTempRepo();
     await mkdir(path.join(cwd, "openwiki"), { recursive: true });
     await writeFile(path.join(cwd, "openwiki", "index.md"), "# Docs\n", "utf8");
@@ -208,6 +218,8 @@ describe("persistRunMetadataIfChanged", () => {
       "utf8",
     );
 
+    // The plan file is excluded from the snapshot, so content is unchanged;
+    // metadata must still be refreshed to record that OpenWiki ran.
     const written = await persistRunMetadataIfChanged(
       "update",
       cwd,
@@ -216,8 +228,8 @@ describe("persistRunMetadataIfChanged", () => {
       snapshotBefore,
     );
 
-    expect(written).toBe(false);
-    expect(await readMetadata(cwd, "openwiki/.last-update.json")).toBeNull();
+    expect(written).toBe(true);
+    expect(await readMetadata(cwd, "openwiki/.last-update.json")).not.toBeNull();
   });
 
   test("skips for chat runs", async () => {
