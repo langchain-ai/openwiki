@@ -49,6 +49,7 @@ export interface LangSmithRepoConfig {
 const ALLOWED_API_HOSTS = new Set([
   "api.smith.langchain.com",
   "eu.api.smith.langchain.com",
+  "apac.api.smith.langchain.com",
 ]);
 
 /**

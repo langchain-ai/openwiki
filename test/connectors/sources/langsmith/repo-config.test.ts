@@ -192,6 +192,9 @@ describe("sanitizeLangSmithApiBaseUrl", () => {
     expect(
       sanitizeLangSmithApiBaseUrl("https://eu.api.smith.langchain.com"),
     ).toBe("https://eu.api.smith.langchain.com");
+    expect(
+      sanitizeLangSmithApiBaseUrl("https://apac.api.smith.langchain.com"),
+    ).toBe("https://apac.api.smith.langchain.com");
   });
 
   test.each([

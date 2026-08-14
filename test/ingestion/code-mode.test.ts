@@ -50,6 +50,25 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     }
   });
 
+  test("CLAUDE.md is a simple reference to AGENTS.md, not a copy of its full content", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const claudeContent = await readIfPresent(path.join(repo, "CLAUDE.md"));
+    const agentsContent = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(claudeContent).not.toBeNull();
+    expect(agentsContent).not.toBeNull();
+
+    // CLAUDE.md should reference AGENTS.md rather than duplicate its instructions.
+    expect(claudeContent).toContain("AGENTS.md");
+    // CLAUDE.md should be shorter than AGENTS.md because it is a pointer, not a copy.
+    expect((claudeContent ?? "").length).toBeLessThan(
+      (agentsContent ?? "").length,
+    );
+  });
+
   test("refreshes the OpenWiki block in place and preserves surrounding content", async () => {
     const repo = await createTempRepo();
     const existing = `# My Project
