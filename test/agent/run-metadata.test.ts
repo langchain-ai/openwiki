@@ -229,7 +229,9 @@ describe("persistRunMetadataIfChanged", () => {
     );
 
     expect(written).toBe(true);
-    expect(await readMetadata(cwd, "openwiki/.last-update.json")).not.toBeNull();
+    expect(
+      await readMetadata(cwd, "openwiki/.last-update.json"),
+    ).not.toBeNull();
   });
 
   test("skips for chat runs", async () => {
