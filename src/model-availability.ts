@@ -20,6 +20,13 @@ type ModelListResponse = {
 const OPENAI_API_BASE_URL = "https://api.openai.com/v1";
 
 /**
+ * Wall-clock cap on the catalogue lookup. This runs before inference on an
+ * endpoint the user controls, so an unresponsive host must not stall the run:
+ * the abort surfaces as `unknown` and inference proceeds.
+ */
+const AVAILABILITY_LOOKUP_TIMEOUT_MS = 5_000;
+
+/**
  * Checks whether a selected model is exposed to the configured provider
  * credential. `unknown` deliberately preserves the existing inference path:
  * a catalogue lookup failure is not proof that a model cannot be invoked.
@@ -40,14 +47,16 @@ export async function getSelectedModelAvailability(
   }
 
   if (check.provider === "nvidia") {
-    if (!check.baseUrlIsCustom || !check.baseUrl) {
+    const baseUrl = check.baseUrl;
+
+    if (!check.baseUrlIsCustom || !baseUrl) {
       return {
         status: "unknown",
         reason: "The NVIDIA hosted endpoint is not validated.",
       };
     }
 
-    return checkNvidiaNimModelAvailability(check, fetchImpl);
+    return checkNvidiaNimModelAvailability(check, baseUrl, fetchImpl);
   }
 
   return {
@@ -71,12 +80,19 @@ async function checkOpenAIModelAvailability(
 
 async function checkNvidiaNimModelAvailability(
   check: ModelAvailabilityCheck,
+  baseUrl: string,
   fetchImpl: typeof fetch,
 ): Promise<ModelAvailability> {
-  const endpoint = new URL(
-    "models",
-    ensureTrailingSlash(check.baseUrl!),
-  ).toString();
+  let endpoint: string;
+
+  try {
+    endpoint = resolveModelListEndpoint(baseUrl);
+  } catch {
+    return {
+      status: "unknown",
+      reason: "The configured base URL could not be resolved to a catalogue.",
+    };
+  }
 
   return checkModelListAvailability({
     apiKey: check.apiKey,
@@ -110,6 +126,7 @@ async function checkModelListAvailability({
   try {
     const response = await fetchImpl(endpoint, {
       headers: { Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(AVAILABILITY_LOOKUP_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -124,6 +141,15 @@ async function checkModelListAvailability({
       return {
         status: "unknown",
         reason: "Model availability lookup returned an unexpected response.",
+      };
+    }
+
+    if (body.data.length === 0) {
+      // A gateway that hides its catalogue from a key without list scope still
+      // serves inference, so an empty listing is no evidence of unavailability.
+      return {
+        status: "unknown",
+        reason: "Model availability lookup returned an empty catalogue.",
       };
     }
 
@@ -143,6 +169,16 @@ async function checkModelListAvailability({
   }
 }
 
-function ensureTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value : `${value}/`;
+/**
+ * Appends `/models` to the API root's path. Building the URL from `pathname`
+ * rather than resolving a relative reference keeps a base URL that carries a
+ * query string or fragment from losing its last path segment.
+ */
+function resolveModelListEndpoint(baseUrl: string): string {
+  const url = new URL(baseUrl.trim());
+
+  url.pathname = `${url.pathname.replace(/\/+$/u, "")}/models`;
+  url.hash = "";
+
+  return url.toString();
 }

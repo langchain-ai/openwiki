@@ -24,6 +24,8 @@ import {
   NVIDIA_BASE_URL_ENV_KEY,
   normalizeModelId,
   normalizeProvider,
+  OPENAI_BASE_URL_ENV_KEY,
+  providerBaseUrlIsCustom,
   providerRequiresApiKey,
   providerRequiresRegion,
   providerRequiresSecretKey,
@@ -252,6 +254,50 @@ describe("resolveProviderBaseUrl", () => {
 
   test("returns undefined for a provider with no default and no override", () => {
     expect(resolveProviderBaseUrl("openai", {})).toBeUndefined();
+  });
+});
+
+describe("providerBaseUrlIsCustom", () => {
+  test("is false when the provider falls back to its built-in default", () => {
+    expect(providerBaseUrlIsCustom("nvidia", {})).toBe(false);
+    expect(providerBaseUrlIsCustom("openai", {})).toBe(false);
+  });
+
+  test("is false when the override restates the built-in default", () => {
+    // Copying the documented endpoint into the env var is not a self-hosted
+    // deployment, so it must not make the hosted catalogue authoritative.
+    expect(
+      providerBaseUrlIsCustom("nvidia", {
+        [NVIDIA_BASE_URL_ENV_KEY]: "https://integrate.api.nvidia.com/v1",
+      }),
+    ).toBe(false);
+    expect(
+      providerBaseUrlIsCustom("nvidia", {
+        [NVIDIA_BASE_URL_ENV_KEY]: " https://integrate.api.nvidia.com/v1/ ",
+      }),
+    ).toBe(false);
+  });
+
+  test("is true for an endpoint that differs from the built-in default", () => {
+    expect(
+      providerBaseUrlIsCustom("nvidia", {
+        [NVIDIA_BASE_URL_ENV_KEY]: "https://nim.internal/v1",
+      }),
+    ).toBe(true);
+  });
+
+  test("is true for a provider with no default once an override is set", () => {
+    expect(
+      providerBaseUrlIsCustom("openai", {
+        [OPENAI_BASE_URL_ENV_KEY]: "https://gateway.example/openai/v1",
+      }),
+    ).toBe(true);
+  });
+
+  test("ignores a whitespace-only override", () => {
+    expect(
+      providerBaseUrlIsCustom("nvidia", { [NVIDIA_BASE_URL_ENV_KEY]: "   " }),
+    ).toBe(false);
   });
 });
 
