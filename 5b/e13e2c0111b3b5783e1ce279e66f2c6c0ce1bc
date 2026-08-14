@@ -1,0 +1,32 @@
+src/agent/generation/contracts.ts
+  h_f78d33d4280f3f 314-380
+src/agent/generation/specialists.ts
+  s_2ec855188a1549::t_a62c5d0c378b12 11-12,19-21,121-137,255-278,316-333
+test/agent/generation/specialists.test.ts
+  s_2ec855188a1549::t_a62c5d0c378b12 55,62,76,87-94,118-132,150-165,167-236
+src/agent/generation/init-graph.ts
+  h_f78d33d4280f3f 1-713
+src/agent/generation/inventory.ts
+  h_f78d33d4280f3f 1-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "5be13e2c0111b3b5783e1ce279e66f2c6c0ce1bc",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_2ec855188a1549": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0010c-6d0e-73a1-af82-7f04489ff51a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
