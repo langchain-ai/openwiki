@@ -87,8 +87,16 @@ This serves `./openwiki` on a local loopback address (`127.0.0.1`, never exposed
 openwiki visualize openwiki --port 4400 --no-open
 ```
 
+To publish the visualizer beside generated documentation, export a static directory instead of starting the server:
+
+```sh
+openwiki visualize openwiki --export docs/openwiki-visualizer
+```
+
+The export contains `index.html`, `client.js`, `client-lib.js`, and `graph.json`. Its client reads the sibling graph file and does not use live reload, so the directory can be hosted by GitHub Pages, MkDocs, or any other static host. `--export` cannot be combined with `--port` or `--no-open`.
+
 > [!NOTE]
-> The page loads its graph, Markdown, and diagram libraries from a public CDN, so an internet connection is required even though the server itself is local. Press Ctrl-C to stop it.
+> The page loads its graph, Markdown, and diagram libraries from a public CDN, so an internet connection is required for both local and static viewers.
 
 ## Connect your sources
 
@@ -367,6 +375,7 @@ openwiki -p "what can you do?"   # one-shot, print, and exit
 openwiki --init                  # initialize code docs (personal: openwiki personal --init)
 openwiki --update                # update code docs (personal: openwiki personal --update)
 openwiki visualize               # interactive graph + live reader
+openwiki visualize openwiki --export docs/openwiki-visualizer  # static graph + reader
 openwiki auth <provider>         # authenticate a connector (slack, gmail, x, notion)
 openwiki ingest <source>         # run connector ingestion (all, or a connector/instance)
 openwiki --help                  # full help

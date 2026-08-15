@@ -5,10 +5,11 @@ import {
   type ServerResponse,
 } from "node:http";
 import { watch } from "node:fs";
-import { readFile, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { buildGraph, type WikiGraph } from "./graph.js";
-import { PAGE } from "./page.js";
+import { CSP, PAGE } from "./page.js";
+import { loadVisualizerAssets } from "./static-export.js";
 
 const HOST = "127.0.0.1"; // loopback only (never expose the wiki on the network)
 const PORT_ATTEMPTS = 20; // ports to try before giving up when the preferred one is busy
@@ -18,17 +19,6 @@ const WATCH_DEBOUNCE_MS = 150; // collapse a burst of file-change events into on
 // jsdelivr CDN origin for the three browser libraries (whose integrity is pinned by the SRI
 // hashes on the <script> tags in page.ts) - no 'unsafe-inline' for scripts. The page still
 // carries one inline <style>, so style-src keeps 'unsafe-inline'.
-const CDN = "https://cdn.jsdelivr.net";
-const CSP = [
-  "default-src 'none'",
-  `script-src 'self' ${CDN}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "base-uri 'none'",
-  "form-action 'none'",
-].join("; ");
 
 /**
  * Inputs for a single visualizer server run. Every field is required: the CLI parser
@@ -81,14 +71,7 @@ export async function runVisualizeServer(
   // The compiled client modules sit beside this file in dist/visualize/. They are static,
   // server-owned build artifacts (no user input, never evaluated), read once at startup and
   // served verbatim at fixed routes.
-  const clientJs = await readFile(
-    new URL("./client.js", import.meta.url),
-    "utf8",
-  );
-  const clientLibJs = await readFile(
-    new URL("./client-lib.js", import.meta.url),
-    "utf8",
-  );
+  const { clientJs, clientLibJs } = await loadVisualizerAssets();
 
   const broadcastReload = (): void => {
     for (const res of sseClients) res.write("event: reload\ndata: 1\n\n");
