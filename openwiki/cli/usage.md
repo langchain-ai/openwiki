@@ -136,6 +136,22 @@ OPENAI_COMPATIBLE_BASE_URL=https://<gateway>/v1
 OPENWIKI_MODEL_ID=<model name the gateway exposes>
 ```
 
+By default the provider uses standard chat completions (`useResponsesApi: false`)
+so it works against gateways that only implement the `/chat/completions` shape.
+Opt the provider into OpenAI's Responses API (`POST {baseURL}/responses`) by
+setting `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true` — useful when the
+gateway exposes a Responses-compatible endpoint and you want LangChain's
+Responses-API tool-calling/SSE parsing. Any other value (unset, `"false"`, or a
+malformed value) keeps chat completions. The opt-in is resolved by
+`resolveOpenAiCompatibleUseResponsesApi()` in `src/config/constants.ts`, which
+`providerUsesResponsesApi()` short-circuits on for the `openai-compatible`
+provider; it is a non-secret managed key surfaced in credential diagnostics,
+where a value other than `true`/`false` reports an `invalid boolean` warning.
+
+```bash
+OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true   # opt into Responses API
+```
+
 Base URLs are resolved by `resolveProviderBaseUrl()` in `src/config/constants.ts`, which
 prefers a provider's `baseUrlEnvKey` override over the built-in default.
 
