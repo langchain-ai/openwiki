@@ -6,6 +6,7 @@ import {
   matchesFilter,
   nodeRadius,
   normalize,
+  resolveWikilinks,
   signature,
   stripFrontmatter,
 } from "./client-lib.js";
@@ -352,6 +353,24 @@ const byId = (id: string): WikiNode | undefined =>
   graph.nodes.find((n) => n.id === id);
 
 /**
+ * Resolve an OKF wikilink target to a node id. The generator writes targets as
+ * wiki-root-relative paths without .md, but be lenient: match the id
+ * case-insensitively, tolerate a stray .md extension, and fall back to a unique
+ * final-path-segment match so short targets like `[[overview]]` still land.
+ */
+function resolveWikiTarget(target: string): string | undefined {
+  const want = target.replace(/\.md$/i, "").toLowerCase();
+  if (!want) return undefined;
+  const exact = graph.nodes.find((n) => n.id.toLowerCase() === want);
+  if (exact) return exact.id;
+  const tail = want.split("/").pop() ?? want;
+  const byTail = graph.nodes.filter(
+    (n) => n.id.toLowerCase().split("/").pop() === tail,
+  );
+  return byTail.length === 1 ? byTail[0].id : undefined;
+}
+
+/**
  * Read a CSS custom property off the body, so colors follow the active theme.
  */
 const cssVar = (name: string): string =>
@@ -678,10 +697,13 @@ function renderReader(id: string): void {
   const back = n.backlinks.length
     ? `<div class="backlinks"><span class="eyebrow">Referenced by</span>${backEls}</div>`
     : "";
+  // The generator emits OKF [[wikilinks]], which marked would render as literal
+  // brackets; resolve them into markdown links (or plain text) before parsing.
+  const md = resolveWikilinks(stripFrontmatter(n.body), resolveWikiTarget);
   // The page body is rendered as markdown, and marked passes raw HTML through, so
   // sanitize before innerHTML: DOMPurify strips scripts, event handlers, and unsafe
   // URL schemes. This is defense in depth on top of the server's CSP.
-  const html = DOMPurify.sanitize(marked.parse(stripFrontmatter(n.body)));
+  const html = DOMPurify.sanitize(marked.parse(md));
   $("#detail").innerHTML =
     `<div class="eyebrow">${escapeHtml(n.type)}</div>` +
     `<h1 class="doc-title">${escapeHtml(n.title)}</h1>` +
@@ -717,7 +739,12 @@ function rewriteLinks(node: WikiNode): void {
       const href = a.getAttribute("href") ?? "";
       if (!href.endsWith(".md") && !href.includes(".md#")) return;
       const clean = href.split("#")[0];
-      const target = normalize(dir, clean).replace(/\.md$/, "");
+      // Hand-written links are page-relative, but wikilink-derived hrefs are
+      // rooted at the wiki, so try the root-relative reading as a fallback.
+      const rel = normalize(dir, clean).replace(/\.md$/, "");
+      const target = byId(rel)
+        ? rel
+        : normalize("", clean).replace(/\.md$/, "");
       if (byId(target)) {
         a.classList.add("wikilink");
         a.addEventListener("click", (e) => {
