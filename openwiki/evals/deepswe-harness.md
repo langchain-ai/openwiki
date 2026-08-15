@@ -7,7 +7,7 @@ tags: [evals, deepswe, harbor, codex, langsmith, benchmark]
 
 # DeepSWE OpenWiki evaluation harness
 
-The `evals/deepswe/` directory contains a Python harness that runs a **paired DeepSWE experiment** to measure whether OpenWiki-generated documentation helps a coding agent solve real software-engineering tasks. It is pinned to a fixed DeepSWE benchmark revision and orchestrates two conditions through Harbor with identical task sampling, model, seed, reasoning effort, and environment, then summarizes the results.
+The `evals/deepswe/` directory contains a Python harness that runs a **paired DeepSWE experiment** to measure whether OpenWiki-generated documentation helps a coding agent solve real software-engineering tasks. It is pinned to a fixed DeepSWE benchmark revision and orchestrates two conditions through Harbor with identical task sampling, model, seed, reasoning effort, and environment, then summarizes the results. It is the sibling of the [LEDGER longitudinal benchmark](./ledger-harness.md): DeepSWE measures downstream _documentation leverage_ on a coding agent, while LEDGER measures the _grounding and forgetting_ of the generated wiki itself across an evolution trace.
 
 The treatment condition generates its wiki through OpenWiki's normal documentation agent (see [Agent workflow](../agent/workflow.md)) in an isolated clone, then feeds the resulting `openwiki/` directory and merged `AGENTS.md` into a Codex agent that solves the task. This makes the harness a downstream consumer of the [Agent workflow](../agent/workflow.md), and the generated wiki's quality directly affects the measured documentation leverage.
 
