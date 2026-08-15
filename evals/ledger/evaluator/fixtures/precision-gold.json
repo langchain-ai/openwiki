@@ -1,0 +1,666 @@
+{
+  "description": "Human-reviewed calibration cases for atomic extraction and source-grounding, including regression cases drawn from the taskflow run where the judge emitted a verdict that contradicted its own rationale (a claim the evidence plainly supported was labeled invented). These lock in the reasoning-first field order that conditions the verdict on the completed rationale.",
+  "extractionCases": [
+    {
+      "content": "See the API page for details.",
+      "expected": {
+        "classification": "navigation",
+        "assertions": []
+      }
+    },
+    {
+      "content": "This wiki documents every export.",
+      "expected": {
+        "classification": "meta-artifact",
+        "assertions": []
+      }
+    },
+    {
+      "content": "Commit abc123 updated the API page.",
+      "expected": {
+        "classification": "meta-artifact",
+        "assertions": []
+      }
+    },
+    {
+      "content": "The calc-api.md and versioning.md pages describe the library's purity invariants.",
+      "expected": {
+        "classification": "meta-artifact",
+        "assertions": []
+      }
+    },
+    {
+      "content": "This tiny library is elegant.",
+      "expected": {
+        "classification": "opinion",
+        "assertions": []
+      }
+    },
+    {
+      "content": "Run the functions manually before publishing.",
+      "expected": {
+        "classification": "instruction",
+        "assertions": []
+      }
+    },
+    {
+      "content": "If validation is added later, update the README.",
+      "expected": {
+        "classification": "instruction",
+        "assertions": []
+      }
+    },
+    {
+      "content": "Because there are no automated tests, run the functions manually.",
+      "expected": {
+        "classification": "mixed",
+        "assertions": [
+          {
+            "statement": "There are no automated tests.",
+            "sourceQuote": "there are no automated tests",
+            "tense": "current"
+          }
+        ]
+      }
+    },
+    {
+      "content": "Calling add(2, 3) returns 5, and subtract(5, 3) returns 2.",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "Calling add(2, 3) returns 5.",
+            "sourceQuote": "Calling add(2, 3) returns 5",
+            "tense": "current"
+          },
+          {
+            "statement": "Calling subtract(5, 3) returns 2.",
+            "sourceQuote": "subtract(5, 3) returns 2",
+            "tense": "current"
+          }
+        ]
+      }
+    },
+    {
+      "content": "The focused test is test/queue.test.ts:\n\n- It never imports worker.ts or store modules and never constructs TaskError.",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "test/queue.test.ts does not import worker.ts.",
+            "sourceQuote": "It never imports worker.ts or store modules",
+            "tense": "current"
+          },
+          {
+            "statement": "test/queue.test.ts does not import store modules.",
+            "sourceQuote": "It never imports worker.ts or store modules",
+            "tense": "current"
+          },
+          {
+            "statement": "test/queue.test.ts does not construct TaskError.",
+            "sourceQuote": "never constructs TaskError",
+            "tense": "current"
+          }
+        ]
+      }
+    },
+    {
+      "content": "negate(x) was removed in version 2.0.0.",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "negate(x) was removed in version 2.0.0.",
+            "sourceQuote": "negate(x) was removed in version 2.0.0.",
+            "tense": "historical"
+          }
+        ]
+      }
+    },
+    {
+      "content": "subtract was added alongside add and negate with the same JSDoc style.",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "subtract was added alongside add and negate.",
+            "sourceQuote": "subtract was added alongside add and negate",
+            "tense": "historical"
+          },
+          {
+            "statement": "subtract was added with the same JSDoc style as add and negate.",
+            "sourceQuote": "subtract was added alongside add and negate with the same JSDoc style",
+            "tense": "historical"
+          }
+        ]
+      }
+    },
+    {
+      "content": "Overview",
+      "expected": {
+        "classification": "no-claim",
+        "assertions": []
+      }
+    },
+    {
+      "content": "The tests only assert size and dequeue behavior.",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "The tests only assert size and dequeue behavior.",
+            "sourceQuote": "The tests only assert size and dequeue behavior.",
+            "tense": "current"
+          }
+        ]
+      }
+    },
+    {
+      "content": "In the original implementation, the queue is named and documented as FIFO, but dequeue used pop().",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "In the original implementation, the queue was named and documented as FIFO.",
+            "sourceQuote": "In the original implementation, the queue is named and documented as FIFO",
+            "tense": "historical"
+          },
+          {
+            "statement": "In the original implementation, dequeue used pop().",
+            "sourceQuote": "In the original implementation, the queue is named and documented as FIFO, but dequeue used pop()",
+            "tense": "historical"
+          }
+        ]
+      }
+    },
+    {
+      "content": "| Test | Imports |\n| --- | --- |\n| queue.test.ts | Priority only |",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "queue.test.ts imports only Priority.",
+            "sourceQuote": "| queue.test.ts | Priority only |",
+            "tense": "current"
+          }
+        ]
+      }
+    },
+    {
+      "content": "Conceptual lifecycle only (these are not runtime TaskState values): Waiting → Running.",
+      "expected": {
+        "classification": "factual",
+        "assertions": [
+          {
+            "statement": "Waiting and Running are conceptual lifecycle labels, not runtime TaskState values.",
+            "sourceQuote": "Conceptual lifecycle only (these are not runtime TaskState values): Waiting → Running.",
+            "tense": "current"
+          }
+        ]
+      }
+    }
+  ],
+  "groundingCases": [
+    {
+      "assertion": "VERSION is 9.0.0.",
+      "evidence": [
+        {
+          "evidenceId": "current-version",
+          "sourceRef": "version.ts",
+          "observedAtCheckpoint": "T2",
+          "current": true,
+          "content": "export const VERSION = \"2.0.0\";"
+        }
+      ],
+      "expected": {
+        "verdict": "contradicted",
+        "formerlyTrue": false
+      }
+    },
+    {
+      "assertion": "VERSION is 1.0.0.",
+      "evidence": [
+        {
+          "evidenceId": "current-version",
+          "sourceRef": "version.ts",
+          "observedAtCheckpoint": "T2",
+          "current": true,
+          "content": "export const VERSION = \"2.0.0\";"
+        },
+        {
+          "evidenceId": "old-version",
+          "sourceRef": "version.ts",
+          "observedAtCheckpoint": "T0",
+          "current": false,
+          "content": "export const VERSION = \"1.0.0\";"
+        }
+      ],
+      "expected": {
+        "verdict": "contradicted",
+        "formerlyTrue": true
+      }
+    },
+    {
+      "assertion": "There is no CI configuration.",
+      "evidence": [
+        {
+          "evidenceId": "readme",
+          "sourceRef": "README.md",
+          "observedAtCheckpoint": "T2",
+          "current": true,
+          "content": "A tiny calculator library."
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    },
+    {
+      "assertion": "The repository uses GitHub Actions.",
+      "evidence": [
+        {
+          "evidenceId": "tracked",
+          "sourceRef": "git tracked files",
+          "observedAtCheckpoint": "T2",
+          "current": true,
+          "content": "Tracked files: README.md, src/calc.ts, src/version.ts"
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    },
+    {
+      "assertion": "A repository-wide file search finds only README.md, src/calc.ts, and src/version.ts.",
+      "evidence": [
+        {
+          "evidenceId": "tracked",
+          "sourceRef": "git tracked files",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "Tracked files: README.md, src/calc.ts, src/version.ts"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "README.md documents add(a, b) and its TypeScript return type.",
+      "evidence": [
+        {
+          "evidenceId": "readme",
+          "sourceRef": "README.md",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "add(a, b) returns the sum of its two arguments."
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    },
+    {
+      "assertion": "The wiki contains a calc-api.md page.",
+      "evidence": [
+        {
+          "evidenceId": "tracked",
+          "sourceRef": "git tracked files",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "Tracked source files: README.md, src/calc.ts, src/version.ts"
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    },
+    {
+      "assertion": "The purity invariants shared by add and subtract are stated in the module header.",
+      "evidence": [
+        {
+          "evidenceId": "calc",
+          "sourceRef": "src/calc.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "/** Every function is pure and performs no validation, rounding, or I/O. */\nexport function add(a, b) { return a + b; }\nexport function subtract(a, b) { return a - b; }"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "There is no executable code besides the VERSION constant.",
+      "evidence": [
+        {
+          "evidenceId": "calc",
+          "sourceRef": "src/calc.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "export function add(a, b) { return a + b; }"
+        }
+      ],
+      "expected": {
+        "verdict": "contradicted",
+        "formerlyTrue": false
+      }
+    },
+    {
+      "assertion": "There is no package.json in the repository.",
+      "evidence": [
+        {
+          "evidenceId": "readme",
+          "sourceRef": "README.md",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "A tiny calculator library."
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    },
+    {
+      "assertion": "src/task.ts exports Task<T>, TaskState, and createTask.",
+      "evidence": [
+        {
+          "evidenceId": "task",
+          "sourceRef": "src/task.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "export type TaskState = \"pending\" | \"running\" | \"succeeded\" | \"failed\";\n\nexport interface Task<T = unknown> {\n  readonly id: string;\n  run: () => Promise<T>;\n  state: TaskState;\n}\n\nexport function createTask<T>(run: () => Promise<T>): Task<T> {\n  counter += 1;\n  return { id: \"task-\" + counter, run, state: \"pending\" };\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "src/worker.ts depends on src/task.ts.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "import { TaskFailedError } from \"./errors.js\";\nimport type { Queue } from \"./queue.js\";\nimport type { Task } from \"./task.js\";\n\nexport class WorkerPool {\n  private readonly queue: Queue;\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "src/worker.ts depends on all three of src/errors.ts, src/task.ts, and src/queue.ts.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "import { TaskFailedError } from \"./errors.js\";\nimport type { Queue } from \"./queue.js\";\nimport type { Task } from \"./task.js\";\n\nexport class WorkerPool {\n  private readonly queue: Queue;\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "src/worker.ts depends on src/queue.ts.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "import { TaskFailedError } from \"./errors.js\";\nimport type { Queue } from \"./queue.js\";\nimport type { Task } from \"./task.js\";\n\nexport class WorkerPool {\n  constructor(queue: Queue, options: WorkerPoolOptions = {}) {}\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "Source imports in taskflow use explicit .js extensions, for example `import { TaskFailedError } from \"./errors.js\";` in src/worker.ts.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "import { TaskFailedError } from \"./errors.js\";\nimport type { Queue } from \"./queue.js\";\nimport type { Task } from \"./task.js\";\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "src/errors.ts and src/task.ts are leaf modules with no internal dependencies.",
+      "evidence": [
+        {
+          "evidenceId": "errors",
+          "sourceRef": "src/errors.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "/**\n * Base class for every error thrown by taskflow.\n */\nexport class TaskflowError extends Error {\n  constructor(message: string) {\n    super(message);\n    this.name = new.target.name;\n  }\n}\n\nexport class TaskFailedError extends TaskflowError {}\n"
+        },
+        {
+          "evidenceId": "task",
+          "sourceRef": "src/task.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "export type TaskState = \"pending\" | \"running\" | \"succeeded\" | \"failed\";\n\nexport interface Task<T = unknown> {\n  readonly id: string;\n  run: () => Promise<T>;\n  state: TaskState;\n}\n\nexport function createTask<T>(run: () => Promise<T>): Task<T> {\n  counter += 1;\n  return { id: \"task-\" + counter, run, state: \"pending\" };\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "The export list in src/index.ts consists of six export statements.",
+      "evidence": [
+        {
+          "evidenceId": "index",
+          "sourceRef": "src/index.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "export { Queue } from \"./queue.js\";\nexport { WorkerPool } from \"./worker.js\";\nexport type { WorkerPoolOptions } from \"./worker.js\";\nexport { createTask } from \"./task.js\";\nexport type { Task, TaskState } from \"./task.js\";\nexport { TaskflowError, TaskFailedError } from \"./errors.js\";\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": ".prettierrc.json sets singleQuote to false.",
+      "evidence": [
+        {
+          "evidenceId": "prettier",
+          "sourceRef": ".prettierrc.json",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "{\n  \"semi\": true,\n  \"singleQuote\": false,\n  \"trailingComma\": \"all\"\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "Queue never reads or writes the task's state property.",
+      "evidence": [
+        {
+          "evidenceId": "queue",
+          "sourceRef": "src/queue.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "interface QueueEntry {\n  task: Task;\n  priority: number;\n  sequence: number;\n}\n\nexport class Queue {\n  private readonly entries: QueueEntry[] = [];\n\n  enqueue(task: Task, priority = 0): void {\n    this.sequence += 1;\n    this.entries.push({ task, priority, sequence: this.sequence });\n  }\n\n  dequeue(): Task | undefined {\n    const index = this.nextIndex();\n    if (index === undefined) {\n      return undefined;\n    }\n    return this.entries.splice(index, 1)[0].task;\n  }\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "dequeue() never throws.",
+      "evidence": [
+        {
+          "evidenceId": "queue-current",
+          "sourceRef": "src/queue.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "dequeue(): Task | undefined {\n  const index = this.nextIndex();\n  if (index === undefined) {\n    return undefined;\n  }\n  return this.entries.splice(index, 1)[0].task;\n}\n"
+        },
+        {
+          "evidenceId": "queue-historical",
+          "sourceRef": "src/queue.ts",
+          "observedAtCheckpoint": "T0",
+          "current": false,
+          "content": "dequeue(): Task {\n  const task = this.tasks.shift();\n  if (task === undefined) {\n    throw new QueueEmptyError();\n  }\n  return task;\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "A failure in one drain loop does not cancel sibling drain loops that are already running.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "async run(): Promise<void> {\n  const workers: Array<Promise<void>> = [];\n  for (let i = 0; i < this.concurrency; i += 1) {\n    workers.push(this.drain());\n  }\n  await Promise.all(workers);\n}\n\nprivate async drain(): Promise<void> {\n  for (\n    let task = this.queue.dequeue();\n    task !== undefined;\n    task = this.queue.dequeue()\n  ) {\n    await this.execute(task);\n  }\n}\n\nprivate async execute(task: Task): Promise<void> {\n  task.state = \"running\";\n  try {\n    await task.run();\n    task.state = \"succeeded\";\n  } catch (cause) {\n    task.state = \"failed\";\n    throw new TaskFailedError(task.id, cause);\n  }\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "The behavior described is established solely by reading src/worker.ts and src/errors.ts.",
+      "evidence": [
+        {
+          "evidenceId": "worker",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "async run(): Promise<void> {\n  const workers: Array<Promise<void>> = [];\n  for (let i = 0; i < this.concurrency; i += 1) {\n    workers.push(this.drain());\n  }\n  await Promise.all(workers);\n}\n"
+        },
+        {
+          "evidenceId": "queue",
+          "sourceRef": "src/queue.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "dequeue(): Task | undefined {\n  const index = this.nextIndex();\n  if (index === undefined) {\n    return undefined;\n  }\n  return this.entries.splice(index, 1)[0].task;\n}\n"
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    },
+    {
+      "assertion": "dequeue is implemented as LIFO.",
+      "evidence": [
+        {
+          "evidenceId": "queue-lifo",
+          "sourceRef": "src/queue.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "// FIFO queue\nexport function enqueue(task) { tasks.push(task); }\nexport function dequeue() { return tasks.pop(); }"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "handle is a no-op for task execution.",
+      "evidence": [
+        {
+          "evidenceId": "worker-noop",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "private async handle(task: Task): Promise<void> {\n  void task;\n}"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "src/worker.ts exports a single function named runWorker.",
+      "evidence": [
+        {
+          "evidenceId": "worker-exports",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T0",
+          "current": true,
+          "content": "export class Worker {\n  running = false;\n}\n\nexport async function runWorker(): Promise<void> {}"
+        }
+      ],
+      "expected": {
+        "verdict": "supported"
+      }
+    },
+    {
+      "assertion": "Consumers import functions directly from the package's public entrypoint.",
+      "evidence": [
+        {
+          "evidenceId": "internal-test-import",
+          "sourceRef": "test/queue.test.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "import { Queue } from \"../src/queue.js\";"
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    },
+    {
+      "assertion": "Worker is a marker class.",
+      "evidence": [
+        {
+          "evidenceId": "worker-current",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "export class Worker {\n  running = false;\n}"
+        },
+        {
+          "evidenceId": "worker-historical",
+          "sourceRef": "src/worker.ts",
+          "observedAtCheckpoint": "T0",
+          "current": false,
+          "content": "export class Worker {\n  running = false;\n}"
+        }
+      ],
+      "expected": {
+        "verdict": "contradicted",
+        "formerlyTrue": false
+      }
+    },
+    {
+      "assertion": "The tests only assert size.",
+      "sourceQuote": "The tests only assert size and dequeue behavior.",
+      "artifactContext": "The tests only assert size and dequeue behavior.",
+      "evidence": [
+        {
+          "evidenceId": "queue-tests",
+          "sourceRef": "test/queue.test.ts",
+          "observedAtCheckpoint": "T1",
+          "current": true,
+          "content": "expect(queue.size).toBe(1);\nexpect(queue.dequeue()).toBe(task);"
+        }
+      ],
+      "expected": {
+        "verdict": "not-addressed"
+      }
+    }
+  ]
+}

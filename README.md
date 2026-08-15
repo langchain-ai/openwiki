@@ -30,11 +30,10 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 
 ## 🎉 What's new
 
-- **Interactive visualizer:** turn any wiki into a live, explorable node graph with a side-by-side Markdown reader.
-- **`.openwikiignore`:** keep generated, private, or irrelevant paths out of doc runs with familiar gitignore-style rules.
-- **Multilingual wikis:** generate docs in another language with `--language <locale>`, while code and identifiers stay canonical.
-- **LangSmith connector:** pull recent LangSmith traces (tool calls, outcomes, latency) into a code wiki.
-- **GitHub Copilot provider:** reuse an existing Copilot subscription for inference, no separate API key required.
+- **Custom MCP connector:** point OpenWiki at any MCP server and pull its tools into a run, no bespoke integration required.
+- **LangSmith APAC region:** the LangSmith connector now works against APAC-hosted workspaces.
+- **OpenAI Responses API:** OpenAI-compatible providers can opt into the Responses API instead of Chat Completions.
+- **Provider-aware CI:** the generated self-update workflow now emits an env block matched to your configured provider, so scheduled runs work out of the box.
 
 ## Quick start
 

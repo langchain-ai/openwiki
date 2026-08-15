@@ -27,7 +27,7 @@ From `src/cli/commands.ts` and `README.md`, the supported entry patterns are:
 
 ### Connector and operational subcommands
 
-- `openwiki auth <provider>` — run OAuth login for a connector provider (gmail, notion, slack, x).
+- `openwiki auth <provider>` — run OAuth login for a connector provider (gmail, notion, slack, x). The `custom-mcp` connector is configured via `~/.openwiki/connectors/custom-mcp/config.json` instead of an OAuth login.
 - `openwiki auth configure <provider> [--force]` — create local connector config that references saved auth env vars.
 - `openwiki auth tools <provider>` — list available MCP tools for a connector (e.g. notion).
 - `openwiki auth` (no provider) — list supported auth providers and their status.
@@ -136,6 +136,22 @@ OPENAI_COMPATIBLE_BASE_URL=https://<gateway>/v1
 OPENWIKI_MODEL_ID=<model name the gateway exposes>
 ```
 
+By default the provider uses standard chat completions (`useResponsesApi: false`)
+so it works against gateways that only implement the `/chat/completions` shape.
+Opt the provider into OpenAI's Responses API (`POST {baseURL}/responses`) by
+setting `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true` — useful when the
+gateway exposes a Responses-compatible endpoint and you want LangChain's
+Responses-API tool-calling/SSE parsing. Any other value (unset, `"false"`, or a
+malformed value) keeps chat completions. The opt-in is resolved by
+`resolveOpenAiCompatibleUseResponsesApi()` in `src/config/constants.ts`, which
+`providerUsesResponsesApi()` short-circuits on for the `openai-compatible`
+provider; it is a non-secret managed key surfaced in credential diagnostics,
+where a value other than `true`/`false` reports an `invalid boolean` warning.
+
+```bash
+OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true   # opt into Responses API
+```
+
 Base URLs are resolved by `resolveProviderBaseUrl()` in `src/config/constants.ts`, which
 prefers a provider's `baseUrlEnvKey` override over the built-in default.
 
@@ -218,7 +234,19 @@ The `--hostname` flag passed to `gh` matches the tenant of the configured base
 URL (if `COPILOT_BASE_URL` points at a GHE.com data-residency host), so the
 reused session authenticates against the correct GitHub instance.
 
-## Visualizer
+### OpenRouter provider
+
+The `openrouter` provider routes through `https://openrouter.ai/api/v1` using `OPENROUTER_API_KEY`. By default no `max_tokens` is sent, so OpenRouter's credit pre-check budgets for the model's full advertised output ceiling and on a low credit balance every request can fail with a 402 error. Cap the per-request output explicitly with `OPENWIKI_OPENROUTER_MAX_TOKENS` (a positive integer, resolved by `resolveOpenRouterMaxTokens()` in `src/config/constants.ts`):
+
+```bash
+OPENWIKI_PROVIDER=openrouter
+OPENROUTER_API_KEY=<key>
+OPENWIKI_OPENROUTER_MAX_TOKENS=8192
+```
+
+A cap trades those hard 402 failures for possible truncation (finish_reason `length`) when a long wiki generation genuinely needs more output tokens, so prefer the largest value your balance allows.
+
+### Visualizer
 
 `openwiki visualize` serves the generated wiki as an interactive node graph with a side-by-side Markdown reader in the browser (`src/visualize/server.ts`). It is a read-only viewer for already-generated docs, not a generation command.
 

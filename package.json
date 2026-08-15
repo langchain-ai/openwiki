@@ -1,6 +1,6 @@
 {
   "name": "openwiki",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase.",
   "license": "MIT",
   "type": "module",
@@ -40,6 +40,9 @@
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
     "dev": "tsx src/cli/cli.tsx",
+    "eval:ledger": "tsx evals/ledger/run.ts",
+    "eval:ledger:reevaluate": "tsx evals/ledger/reevaluate.ts",
+    "eval:ledger:typecheck": "tsc --noEmit -p evals/ledger/tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",
