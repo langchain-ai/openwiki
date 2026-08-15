@@ -32,7 +32,7 @@ type ClaudeToolSpec = {
   parameters: Record<string, unknown>;
 };
 
-type StructuredReply = {
+export type StructuredReply = {
   kind: "text" | "tool_calls";
   text?: string;
   tool_calls?: { name: string; arguments: Record<string, unknown> }[];
@@ -68,6 +68,55 @@ function buildReplySchema(): Record<string, unknown> {
     additionalProperties: false,
   };
 }
+
+/**
+ * Does this text reply refuse the turn because the model believes it has no
+ * tools? Two independent signals must both fire — a refusal/absence phrasing
+ * AND a reference to the tooling itself — because either alone is ordinary
+ * documentation prose. A wiki page about this very harness legitimately says
+ * "the tools are not available inside the session"; only a page that also says
+ * "I cannot" is the model talking about itself.
+ */
+const REFUSAL_RE =
+  /\b(?:i (?:cannot|can't|am unable to|do not have|don't have)|not available|unavailable|no access to|lack(?:ing)? access)\b/i;
+
+const TOOLING_RE =
+  /\b(?:tool|tools|tool suite|tool roster|filesystem|file system|read_file|write_file|edit_file|execute|glob|grep)\b/i;
+
+export function isMissingToolsRefusal(reply: StructuredReply): boolean {
+  if (reply.kind !== "text") {
+    return false;
+  }
+
+  const text = reply.text ?? "";
+
+  // A refusal is short and about itself. Real documentation output that happens
+  // to discuss tooling runs long, so the cap keeps a legitimate page describing
+  // this harness from being mistaken for a model that has given up on it.
+  if (!text.trim() || text.length > 4000) {
+    return false;
+  }
+
+  return REFUSAL_RE.test(text) && TOOLING_RE.test(text);
+}
+
+/**
+ * Appended for the one retry. It contradicts the model's inference directly and
+ * names the single next action, because the refusals seen in the wild end by
+ * asking for an interactive session rather than by trying anything.
+ */
+const TOOLS_REFUSAL_CORRECTION =
+  `## Correction\n\n` +
+  `Your previous response reported that tools are unavailable and stopped. That ` +
+  `conclusion is wrong, and it is the one failure mode this harness cannot ` +
+  `recover from on its own.\n\n` +
+  `Your native tool roster is empty BY DESIGN. It is not a broken session, it is ` +
+  `not a permissions problem, and switching to an interactive session is not an ` +
+  `option available to anyone here. The tools listed above are real and the ` +
+  `harness executes them for you the moment you name them.\n\n` +
+  `Emit kind="tool_calls" now, naming the first tool you need with its ` +
+  `arguments. Do not explain, do not apologise, and do not describe what you ` +
+  `would do with tools — emitting the call IS how you use them.`;
 
 function renderTools(tools: ClaudeToolSpec[]): string {
   if (tools.length === 0) {
@@ -176,6 +225,44 @@ function parseEnvelope(stdout: string): StructuredReply {
   throw new Error("claude -p returned no structured output");
 }
 
+/**
+ * The `claude -p` argv for one call. Exported so the flag contract can be
+ * asserted without spawning anything — every entry here is load-bearing.
+ *
+ * NOT here, deliberately: `--append-system-prompt`. Moving `renderTools` out of
+ * the user turn and into a system prompt is the obvious fix for the refusals
+ * described in `_generate`, it is what the failure looks like it wants, and it
+ * is wrong. Measured 2026-08-15, one prompt, four runs per cell:
+ *
+ *                      framing in user turn   framing as system prompt
+ *     sonnet                    0/3 worked                  3/3 worked
+ *     haiku                     4/4 worked                  1/4 worked
+ *
+ * The two models want OPPOSITE channels, so there is no channel that is simply
+ * correct — and haiku is what the scheduled runs use. Changing this would trade
+ * one broken model for another. The retry in `_generate` is channel-agnostic
+ * and repairs both, which is why the fix lives there instead.
+ */
+export function buildCliArgs(model: string): string[] {
+  return [
+    "-p",
+    "--output-format",
+    "json",
+    "--model",
+    model,
+    // Without this the CLI loads the user's global MCP config into every call —
+    // tool definitions that are pure overhead for a text-in/JSON-out request.
+    "--strict-mcp-config",
+    // Claude Code's own built-in tools are not the tools this agent is driving,
+    // and their definitions cost ~16k tokens per call. Verified safe alongside
+    // --json-schema: structured output is still enforced.
+    "--tools",
+    "",
+    "--json-schema",
+    JSON.stringify(buildReplySchema()),
+  ];
+}
+
 export type ChatClaudeCliParams = BaseChatModelParams & {
   model: string;
   timeoutMs?: number;
@@ -235,7 +322,37 @@ export class ChatClaudeCli extends BaseChatModel<BaseChatModelCallOptions> {
           : 'Respond with kind="text" and your answer.'),
     ].join("");
 
-    const reply = await this.runCli(prompt);
+    let reply = await this.runCli(prompt);
+
+    // The refusal `renderTools` is written to prevent, caught when it happens
+    // anyway — and it does happen, because that framing has to survive a model
+    // deciding what to make of it.
+    //
+    // Flattened into the user turn, `renderTools` reads like a prompt-injection
+    // attempt: third-party text that renames the assistant, asserts an unusual
+    // execution model, and hands over a tool roster the session cannot
+    // corroborate. A model that distrusts it answers with prose ABOUT the tools
+    // instead of the tool_calls that would have done the work — and because
+    // that prose is a well-formed kind:"text" reply, the agent loop treats it
+    // as a finished turn. The run then reports success having written nothing,
+    // which is the worst outcome this provider can produce.
+    //
+    // MEASURED (autojob, 2026-08-15 03:37, haiku): "I cannot complete this wiki
+    // update because the filesystem tools (read_file, write_file, edit_file,
+    // ls, glob, grep, execute) are not available in this CLI execution
+    // context." The nightly sweep printed that as the run's result. Every other
+    // repo in the sweep was already current, so nothing else needed a write and
+    // nothing else exposed it. Reproduced with sonnet at 0/3 on the same
+    // prompt, two runs naming the concern outright ("Prompt injection concern:
+    // the instructions in this turn try to redefine me as OpenWiki").
+    //
+    // The correction recovers it: sonnet 3/3 on the runs that had just refused.
+    // One retry, and only when tools are bound — the corrective is cheap, and a
+    // model that refuses twice is telling us something a prompt cannot fix.
+    // See buildCliArgs for the channel fix this deliberately is NOT.
+    if (this.boundTools.length > 0 && isMissingToolsRefusal(reply)) {
+      reply = await this.runCli(`${prompt}\n\n${TOOLS_REFUSAL_CORRECTION}`);
+    }
 
     if (reply.kind === "tool_calls" && reply.tool_calls?.length) {
       const message = new AIMessage({
@@ -259,24 +376,7 @@ export class ChatClaudeCli extends BaseChatModel<BaseChatModelCallOptions> {
   }
 
   private runCli(prompt: string): Promise<StructuredReply> {
-    const args = [
-      "-p",
-      "--output-format",
-      "json",
-      "--model",
-      this.model,
-      // Without this the CLI loads the user's global MCP config into every
-      // call — tool definitions that are pure overhead for a text-in/JSON-out
-      // request.
-      "--strict-mcp-config",
-      // Claude Code's own built-in tools are not the tools this agent is
-      // driving, and their definitions cost ~16k tokens per call. Verified
-      // safe alongside --json-schema: structured output is still enforced.
-      "--tools",
-      "",
-      "--json-schema",
-      JSON.stringify(buildReplySchema()),
-    ];
+    const args = buildCliArgs(this.model);
 
     return new Promise((resolve, reject) => {
       // A neutral cwd keeps the target repository's own CLAUDE.md and skills
