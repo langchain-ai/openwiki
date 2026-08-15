@@ -76,6 +76,7 @@ import type {
   OpenWikiRunResult,
   RunContext,
 } from "./types.js";
+import { ChatClaudeCli } from "./claude-cli-model.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_BASE_URL_ENV_KEY,
@@ -1085,6 +1086,13 @@ export function createModel(
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
       ...retryOptions,
     });
+  }
+
+  if (provider === "claude-cli") {
+    // Auth lives entirely inside the CLI, so there is nothing to pass here —
+    // the model shells out to `claude -p` per call. See claude-cli-model.ts for
+    // why tool calling is expressed as schema-enforced structured output.
+    return new ChatClaudeCli({ model: modelId });
   }
 
   if (provider === "openai-chatgpt") {

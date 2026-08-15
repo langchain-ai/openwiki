@@ -26,6 +26,12 @@ export const OPENAI_CHATGPT_EMAIL_ENV_KEY = "OPENAI_CHATGPT_EMAIL";
 export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
+/**
+ * Marks a detected Claude Code CLI session for the lifetime of the process.
+ * Deliberately not a credential: `claude -p` authenticates itself through the
+ * CLI's own login, so OpenWiki never holds a token for this provider.
+ */
+export const CLAUDE_CLI_SESSION_ENV_KEY = "CLAUDE_CLI_SESSION";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
 export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
   "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
@@ -93,6 +99,7 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "bedrock"
+  | "claude-cli"
   | "copilot"
   | "fireworks"
   | "gemini"
@@ -118,7 +125,7 @@ export type ProviderAuthMethod =
  * login. The provider config only declares the adapter; its implementation
  * lives outside this declarative provider registry.
  */
-export type ExternalCliAuthAdapter = "github-cli";
+export type ExternalCliAuthAdapter = "claude-cli" | "github-cli";
 
 export type SelectableOpenWikiProvider = OpenWikiProvider;
 
@@ -224,6 +231,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
   "anthropic",
+  "claude-cli",
   "copilot",
   "gemini",
   "gemini-enterprise",
@@ -260,6 +268,20 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     regionEnvKey: BEDROCK_AWS_REGION_ENV_KEY,
     regionFallbackEnvKeys: [AWS_REGION_ENV_KEY, AWS_DEFAULT_REGION_ENV_KEY],
     requiresRegion: true,
+  },
+  "claude-cli": {
+    // `claude -p` authenticates through the CLI's own login, so there is no key
+    // to paste or persist. The env var below only records that a session was
+    // detected, satisfying the shared external-CLI setup flow.
+    apiKeyEnvKey: CLAUDE_CLI_SESSION_ENV_KEY,
+    authMethod: "external-cli",
+    externalCliAuthAdapter: "claude-cli",
+    label: "Claude Code CLI (subscription login)",
+    modelOptions: [
+      { id: "claude-opus-5", label: "Opus" },
+      { id: "claude-sonnet-5", label: "Sonnet" },
+      { id: "claude-haiku-4-5", label: "Haiku" },
+    ],
   },
   copilot: {
     apiKeyEnvKey: COPILOT_API_KEY_ENV_KEY,

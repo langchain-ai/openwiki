@@ -8,6 +8,7 @@ import {
   type ExternalCliAuthAdapter,
   type OpenWikiProvider,
 } from "../config/constants.js";
+import { readClaudeCliSession } from "./claude-cli-auth.js";
 
 const execFileAsync = promisify(execFile);
 const EXTERNAL_CLI_TIMEOUT_MS = 5_000;
@@ -20,6 +21,12 @@ type ExternalCliAuthAdapterConfig = {
   command: string;
   commandArgs: readonly string[];
   tokenArgs: readonly string[];
+  /**
+   * Overrides the default `tokenArgs` lookup for CLIs that expose no
+   * token-printing subcommand and instead persist credentials to an OS keychain
+   * or credentials file.
+   */
+  readCredential?: () => Promise<string | null>;
 };
 
 /**
@@ -53,6 +60,21 @@ function buildExternalCliAuthAdapters(
   const githubHostname = resolveGithubCliHostname(provider, env);
 
   return {
+    "claude-cli": {
+      command: "claude",
+      // `claude` with no arguments opens the interactive session that performs
+      // the login; there is no non-interactive login subcommand.
+      commandArgs: [],
+      credentialDescription: "Claude Code CLI session",
+      installHint:
+        "Install Claude Code (https://claude.com/claude-code), then run `claude` once to sign in.",
+      loginCommand: "claude",
+      name: "Claude Code CLI",
+      // The CLI owns the credential and never prints it, so detection reports
+      // a session marker instead of running a token subcommand.
+      readCredential: readClaudeCliSession,
+      tokenArgs: [],
+    },
     "github-cli": {
       command: "gh",
       commandArgs: ["auth", "login", "--hostname", githubHostname],
@@ -112,6 +134,10 @@ export async function detectExternalCliCredential(
 
   if (!adapter) {
     return null;
+  }
+
+  if (adapter.readCredential) {
+    return adapter.readCredential();
   }
 
   try {
