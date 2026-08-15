@@ -14,6 +14,8 @@ export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
+export const OPENAI_COMPATIBLE_STREAMING_ENV_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_STREAMING";
 export const OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API";
 export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
@@ -464,6 +466,14 @@ export function providerUsesResponsesApi(
   return (
     setting === true || (setting instanceof RegExp && setting.test(modelId))
   );
+}
+
+export function providerUsesStreaming(provider: OpenWikiProvider): boolean {
+  if (provider === "openai-compatible") {
+    return resolveOpenAiCompatibleStreaming();
+  }
+
+  return false;
 }
 
 export function getProviderProjectEnvKey(
@@ -922,6 +932,25 @@ export function resolveOpenAiCompatibleUseResponsesApi(
 ): boolean {
   return (
     env[OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY]?.trim().toLowerCase() ===
+    TRUE_ENV_VALUE
+  );
+}
+
+// Some OpenAI-compatible gateways only serve the streaming transport: a
+// non-streaming request either gets rejected ("Stream must be set to true") or
+// returns HTTP 200 with empty content. DeepAgents' agent node issues
+// non-streaming `.invoke()` calls internally, so those deployments fail
+// silently — the run finishes with a blank wiki and no error. Opting in forces
+// the streaming transport for every generation, the same transport override the
+// openai-chatgpt provider hardcodes for the Codex backend.
+//
+// It stays opt-in because this provider points at arbitrary third-party
+// endpoints, where SSE is not guaranteed to survive proxies and load balancers.
+export function resolveOpenAiCompatibleStreaming(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    env[OPENAI_COMPATIBLE_STREAMING_ENV_KEY]?.trim().toLowerCase() ===
     TRUE_ENV_VALUE
   );
 }

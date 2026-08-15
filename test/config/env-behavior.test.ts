@@ -16,6 +16,7 @@ import {
   FIREWORKS_BASE_URL_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -57,6 +58,7 @@ const KEYS_UNDER_TEST = [
   FIREWORKS_BASE_URL_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
@@ -554,6 +556,44 @@ describe("getCredentialDiagnostics", () => {
     diagnostics = await env.getCredentialDiagnostics();
     entry = diagnostics.find(
       (item) => item.key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe(JSON.stringify(MALFORMED_BOOLEAN_ENV_VALUE));
+    expect(entry?.warnings).toContain(INVALID_BOOLEAN_WARNING);
+  });
+
+  test("surfaces and validates the OpenAI-compatible streaming opt-in", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENAI_COMPATIBLE_STREAMING_ENV_KEY]: BOOLEAN_TRUE_ENV_VALUE,
+    });
+
+    let diagnostics = await env.getCredentialDiagnostics();
+    let entry = diagnostics.find(
+      (item) => item.key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe(JSON.stringify(BOOLEAN_TRUE_ENV_VALUE));
+    expect(entry?.warnings).toEqual([]);
+
+    await env.saveOpenWikiEnv({
+      [OPENAI_COMPATIBLE_STREAMING_ENV_KEY]: BOOLEAN_FALSE_ENV_VALUE,
+    });
+
+    diagnostics = await env.getCredentialDiagnostics();
+    entry = diagnostics.find(
+      (item) => item.key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe(JSON.stringify(BOOLEAN_FALSE_ENV_VALUE));
+    expect(entry?.warnings).toEqual([]);
+
+    await env.saveOpenWikiEnv({
+      [OPENAI_COMPATIBLE_STREAMING_ENV_KEY]: MALFORMED_BOOLEAN_ENV_VALUE,
+    });
+
+    diagnostics = await env.getCredentialDiagnostics();
+    entry = diagnostics.find(
+      (item) => item.key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
     );
 
     expect(entry?.preview).toBe(JSON.stringify(MALFORMED_BOOLEAN_ENV_VALUE));
