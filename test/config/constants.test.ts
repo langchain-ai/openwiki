@@ -36,6 +36,7 @@ import {
   resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
+  resolveProxyUrl,
 } from "../../src/config/constants.ts";
 
 describe("isValidModelId", () => {
@@ -741,6 +742,49 @@ describe("isModelIdForOtherProvider", () => {
   test("trims whitespace before comparing", () => {
     expect(isModelIdForOtherProvider("  claude-opus-4-8  ", "openai")).toBe(
       true,
+    );
+  });
+});
+
+describe("resolveProxyUrl", () => {
+  test("returns null when no proxy env var is set", () => {
+    expect(resolveProxyUrl({})).toBeNull();
+  });
+
+  test("prefers OPENWIKI_PROXY over the standard proxy variables", () => {
+    expect(
+      resolveProxyUrl({
+        OPENWIKI_PROXY: "http://openwiki-proxy:8888",
+        HTTPS_PROXY: "http://https-proxy:8888",
+        HTTP_PROXY: "http://http-proxy:8888",
+      }),
+    ).toBe("http://openwiki-proxy:8888");
+  });
+
+  test("falls through a blank OPENWIKI_PROXY to HTTPS_PROXY", () => {
+    expect(
+      resolveProxyUrl({
+        OPENWIKI_PROXY: "  ",
+        HTTPS_PROXY: "http://https-proxy:8888",
+      }),
+    ).toBe("http://https-proxy:8888");
+  });
+
+  test("uses the standard proxy variables in HTTPS / HTTP / ALL order", () => {
+    expect(
+      resolveProxyUrl({
+        HTTP_PROXY: "http://http-proxy:8888",
+        ALL_PROXY: "http://all-proxy:8888",
+      }),
+    ).toBe("http://http-proxy:8888");
+    expect(resolveProxyUrl({ all_proxy: "http://all-proxy:8888" })).toBe(
+      "http://all-proxy:8888",
+    );
+  });
+
+  test("prepends http:// when the value has no scheme", () => {
+    expect(resolveProxyUrl({ OPENWIKI_PROXY: "proxy.example.com:8888" })).toBe(
+      "http://proxy.example.com:8888",
     );
   });
 });

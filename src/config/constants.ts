@@ -58,6 +58,7 @@ export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
+export const OPENWIKI_PROXY_ENV_KEY = "OPENWIKI_PROXY";
 export const DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3;
 const TRUE_ENV_VALUE = "true";
 export const OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY =
@@ -980,6 +981,49 @@ export function resolveOpenRouterMaxTokens(
   }
 
   return parsedMaxTokens;
+}
+
+/**
+ * Outbound HTTP proxy for provider requests. Node's fetch does not honor
+ * `HTTPS_PROXY` on its own; OpenWiki installs an undici ProxyAgent when this
+ * resolves. Preference order: `OPENWIKI_PROXY`, then the standard proxy env
+ * vars (`HTTPS_PROXY` / `HTTP_PROXY` / `ALL_PROXY`, both cases).
+ *
+ * A host without a scheme is treated as `http://`.
+ */
+export function resolveProxyUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  const candidates = [
+    env[OPENWIKI_PROXY_ENV_KEY],
+    env.HTTPS_PROXY,
+    env.https_proxy,
+    env.HTTP_PROXY,
+    env.http_proxy,
+    env.ALL_PROXY,
+    env.all_proxy,
+  ];
+
+  let proxy: string | undefined;
+
+  for (const candidate of candidates) {
+    if (candidate === undefined) {
+      continue;
+    }
+
+    const trimmed = candidate.trim();
+
+    if (trimmed.length > 0) {
+      proxy = trimmed;
+      break;
+    }
+  }
+
+  if (proxy === undefined) {
+    return null;
+  }
+
+  return /^[a-z][a-z0-9+.-]*:\/\//iu.test(proxy) ? proxy : `http://${proxy}`;
 }
 
 export function normalizeModelId(value: string): string {

@@ -21,6 +21,7 @@ import {
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_PROXY_ENV_KEY,
 } from "../../src/config/constants.ts";
 
 // `loadOpenWikiEnv`, `saveOpenWikiEnv`, and `getCredentialDiagnostics` all read
@@ -62,6 +63,7 @@ const KEYS_UNDER_TEST = [
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_PROXY_ENV_KEY,
   // Deprecated / recently un-deprecated OpenAI keys. Cleared in each hook so the
   // developer's ambient shell (which may export OPENAI_BASE_URL) cannot leak
   // into these tests, and a loaded value cannot leak back out to other tests.
@@ -479,6 +481,19 @@ describe("getCredentialDiagnostics", () => {
     expect(basetenEntry?.preview).toBe(
       '"https://gateway.example.com/baseten/v1"',
     );
+  });
+
+  test("surfaces OPENWIKI_PROXY verbatim", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_PROXY_ENV_KEY]: "http://proxy.example.com:8888",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const proxyEntry = diagnostics.find(
+      (item) => item.key === OPENWIKI_PROXY_ENV_KEY,
+    );
+
+    expect(proxyEntry?.preview).toBe('"http://proxy.example.com:8888"');
   });
 
   test("flags an invalid model ID with a warning", async () => {

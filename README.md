@@ -330,6 +330,12 @@ ANTHROPIC_API_KEY=your-key
 ANTHROPIC_BASE_URL=https://your-gateway.example.com/anthropic
 ```
 
+**HTTP proxy.** Node's `fetch` does not honor `HTTPS_PROXY` on its own. Set `OPENWIKI_PROXY`, or the standard `HTTPS_PROXY` / `HTTP_PROXY` / `ALL_PROXY` variables, to an HTTP proxy URL. OpenWiki installs an undici `ProxyAgent` for outbound provider requests. A host without a scheme is treated as `http://`.
+
+```bash
+OPENWIKI_PROXY=http://proxy.example.com:8888
+```
+
 **OpenRouter provider pinning.** When OpenRouter serves a model through multiple upstreams, restrict routing with a provider or comma-separated allowlist:
 
 ```bash
