@@ -185,12 +185,16 @@ export async function runOpenWikiAgent(
 
       // Refresh .last-update.json even on a fast-skip no-op so freshness
       // checks reflect the actual last run, not the last content change.
+      // The persisted language is carried through so a non-English wiki keeps
+      // its marker; dropping it would make the next real update revert to "en".
       try {
         await writeLastUpdateMetadata(
           command,
           cwd,
           noopStatus.model ?? "",
           options.outputMode ?? "local-wiki",
+          "complete",
+          noopStatus.language,
         );
       } catch {
         // Best-effort: a metadata refresh must never block the no-op path.

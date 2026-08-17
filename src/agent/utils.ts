@@ -35,6 +35,15 @@ export type UpdateNoopStatus =
       shouldSkip: true;
       gitHead: string;
       model: string;
+
+      /**
+       * The wiki's persisted language, carried through so a no-op metadata
+       * refresh re-writes `.last-update.json` without dropping it.
+       *
+       * @default undefined - the previous run recorded no language (a wiki
+       * created before language tracking); the refresh omits the field too.
+       */
+      language?: string;
     }
   | {
       shouldSkip: false;
@@ -143,6 +152,7 @@ export async function getUpdateNoopStatus(
     shouldSkip: true,
     gitHead: head,
     model: lastUpdate.model,
+    language: lastUpdate.language,
   };
 }
 
