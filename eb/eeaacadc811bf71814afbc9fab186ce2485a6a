@@ -1,0 +1,19 @@
+openwiki/cli/usage.md
+  s_301cf40ffe5f9d::t_af9d06ce14e61f 81-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "ebeeaacadc811bf71814afbc9fab186ce2485a6a",
+  "prompts": {},
+  "sessions": {
+    "s_301cf40ffe5f9d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "392f97ad-528d-473f-bf37-629601bbef21",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

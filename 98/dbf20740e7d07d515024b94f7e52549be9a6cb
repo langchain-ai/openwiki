@@ -1,0 +1,14 @@
+test/connectors/raw-connector-tools.test.ts
+  h_f78d33d4280f3f 168,177
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "98dbf20740e7d07d515024b94f7e52549be9a6cb",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

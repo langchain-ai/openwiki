@@ -1,0 +1,44 @@
+src/telemetry/install-id.ts
+  s_005aef00a0993e::t_4c6834d575e1fe 5
+  s_005aef00a0993e::t_d33d7e097230f6 41-46,48,50,54,57
+src/telemetry/index.ts
+  s_005aef00a0993e::t_381c05443167a1 2
+  s_005aef00a0993e::t_122971769dd100 3-7
+src/cli.tsx
+  s_005aef00a0993e::t_8f95c86f30d121 211-212
+  h_f78d33d4280f3f 241-242
+  s_005aef00a0993e::t_81223008f3a167 87
+  s_005aef00a0993e::t_aaa4d208551c07 169-193,195-210,213-216,218-220,224
+  s_005aef00a0993e::t_2fecba2fc0c2e5 222-223
+  s_005aef00a0993e::t_ce034c40786388 83-86,88
+  s_005aef00a0993e::t_c28b05cf2209fa 243
+  s_005aef00a0993e::t_f69f7c854c1f37 3538-3541,3543,3560,3562,3565-3572
+  s_005aef00a0993e::t_07d88483ba8e24 194,221,225-240,244-247
+  s_005aef00a0993e::t_0972740782a392 217
+  s_005aef00a0993e::t_97200c72c34f2c 3558-3559,3561
+src/telemetry/config.ts
+  s_005aef00a0993e::t_30b754874a42e9 29,33-36
+  s_005aef00a0993e::t_1df9d34508d3f6 30-31
+  s_005aef00a0993e::t_be32c990ed3537 37-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "a6618b2d2b124c07884eb9150ec14831deebcb31",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_005aef00a0993e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "366e0bd6-73d2-4a7a-bab1-157a1f397b23",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

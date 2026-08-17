@@ -1,0 +1,33 @@
+src/auth/oauth.ts
+  s_53366a76aa6b6f::t_873d41b74a136c 379
+  s_53366a76aa6b6f::t_5ea84180dbb988 402,409,417,434,451-480,540
+  s_53366a76aa6b6f::t_8ea04519159264 41,48,435,502-510,518-520,525,529-530,536-539
+  s_53366a76aa6b6f::t_13baa03bdcb21d 481
+  s_53366a76aa6b6f::t_fbf6dfa9a36f9f 541
+src/agent/prompt.ts
+  s_53366a76aa6b6f::t_2fdcbfe245399f 44
+src/env.ts
+  s_53366a76aa6b6f::t_32c05dcb57e65e 77-78
+README.md
+  s_53366a76aa6b6f::t_f8e61067ccd076 88-91,116-117
+src/commands.ts
+  s_53366a76aa6b6f::t_a2c187a5f14597 339
+src/auth/ngrok.ts
+  s_53366a76aa6b6f::t_561a04cfd7c6c1 6,28,33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "00ac758b6d791c70df66ee18d4e7b9a412ab535b",
+  "prompts": {},
+  "sessions": {
+    "s_53366a76aa6b6f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f1f27-d324-7112-9da9-3b3bff11b54e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

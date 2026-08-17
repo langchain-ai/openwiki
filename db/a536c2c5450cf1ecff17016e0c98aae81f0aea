@@ -1,0 +1,14 @@
+.changeset/six-houses-crash.md
+  h_f78d33d4280f3f 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "dba536c2c5450cf1ecff17016e0c98aae81f0aea",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

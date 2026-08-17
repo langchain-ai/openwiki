@@ -1,0 +1,86 @@
+src/cli/startup.ts
+  s_8b147279d063cb::t_86ba15bf5ff772 17-18,137-148
+src/claims/brains/code/tools.ts
+  s_8b147279d063cb::t_caf60df160c382 6,82-90,196,225
+  s_8b147279d063cb::t_531a25ec53fdd5 7-8,74-81,183-195,197-224
+  s_8b147279d063cb::t_073a75c58a020e 226
+src/agent/utils.ts
+  s_8b147279d063cb::t_875f11eac8e07a 83,85-88,93,95-101
+test/claims/brains/code/runtime.test.ts
+  s_8b147279d063cb::t_f0d465a0d78091 63,86,130,135-154
+  s_8b147279d063cb::t_1f6e8f7422465b 155
+test/agent/update-noop.test.ts
+  s_8b147279d063cb::t_f0d465a0d78091 56-66
+src/agent/index.ts
+  s_8b147279d063cb::t_eaf2cbd4026a3f 185,496
+  s_8b147279d063cb::t_ed3e130f8b739b 771-780,802-807
+  s_8b147279d063cb::t_86ba15bf5ff772 22-27,183-184,186-194,196-200,244,347-356,374-379,389,394-396,398-401,403-406,408-414,448-450,458-459,495,506,525,577,587-593,598,607,611,613-615,702-735,786,798
+  s_8b147279d063cb::t_531a25ec53fdd5 28-30,451-457
+  s_8b147279d063cb::t_8c89260733d979 497
+  s_8b147279d063cb::t_56c5503f361c22 808
+test/claims/brains/code/tools.test.ts
+  s_8b147279d063cb::t_caf60df160c382 189,206,220
+  s_8b147279d063cb::t_178e6a884775d5 2,4-7,182-188,190-205,207-219,221-229
+  s_8b147279d063cb::t_4d0e5ce8963357 230
+src/agent/prompt.ts
+  s_8b147279d063cb::t_6c0ea09017a860 54-64
+  s_8b147279d063cb::t_eaf2cbd4026a3f 92,102
+  s_8b147279d063cb::t_4d59acbfb609d7 2,71,96-101,103-115
+  s_8b147279d063cb::t_a29462c72a5fb2 116-117
+src/agent/docs-only-backend.ts
+  s_8b147279d063cb::t_8a6ce07abada83 135
+  s_8b147279d063cb::t_08302bd44ce803 591-593,595-596,600
+  s_8b147279d063cb::t_eaf2cbd4026a3f 315,430,467,611
+  s_8b147279d063cb::t_c7946aff976ced 4,123-134,136-139,144,153-154,190-192,205-207,227,249,262-278,284-286,297-299,313-314,316,325-327,354-357,380-382,429,443-446,468-475,522-568,578,587,601-610,612-616
+  s_8b147279d063cb::t_432dfd03c8447c 156
+test/agent/docs-only-backend.test.ts
+  s_8b147279d063cb::t_1e05090314fbbe 153-162,164-166,193-194,196-197
+  s_8b147279d063cb::t_bdfbf26580d7a0 6,13-21,135-152,163,167-185,189-192,195,198-208,212-225,229-234
+  s_8b147279d063cb::t_1b4cb9b1de7bb6 186-188,209-211,226-228
+src/claims/brains/code/runtime.ts
+  s_8b147279d063cb::t_eaf2cbd4026a3f 87
+  s_8b147279d063cb::t_875f11eac8e07a 30-34,72,86
+src/agent/prompts/code.ts
+  s_8b147279d063cb::t_4d59acbfb609d7 118,127-135,209,227-234,416-417
+  s_8b147279d063cb::t_432dfd03c8447c 217
+  s_8b147279d063cb::t_01e8d90b1f1f0c 418
+test/agent/claims-agent-integration.test.ts
+  s_8b147279d063cb::t_531a25ec53fdd5 110
+  s_8b147279d063cb::t_ed3e130f8b739b 122,144-146
+  s_8b147279d063cb::t_9af5e602558f66 148-150
+  s_8b147279d063cb::t_1b3690acb599ff 1-11,20-26,32-33,39-66,70-88,92-109,111-121,123-143,147,151-154
+  s_8b147279d063cb::t_8a6ce07abada83 67-69
+  s_8b147279d063cb::t_7c5e5e3685fbd6 34-38
+  s_8b147279d063cb::t_eb78086b63f33e 12-19,27-31,89-91
+src/agent/crash-guard.ts
+  s_8b147279d063cb::t_432dfd03c8447c 94,108
+test/cli/startup.test.ts
+  s_8b147279d063cb::t_432dfd03c8447c 211-214
+  s_8b147279d063cb::t_f0d465a0d78091 26,68-73,204-208,225
+  s_8b147279d063cb::t_9bd44c4d5eaf9b 209-210
+  s_8b147279d063cb::t_1bfeca98abd205 215-217,222-224
+  s_8b147279d063cb::t_a12471bd2cbcd4 226
+  s_8b147279d063cb::t_744bc82f7e9bb5 218-221
+test/agent/prompt.test.ts
+  s_8b147279d063cb::t_f0d465a0d78091 292-347
+test/agent/claims-run-lifecycle.test.ts
+  s_8b147279d063cb::t_8a6ce07abada83 228,234
+  s_8b147279d063cb::t_3db10994202598 1-227,229-233,235-256,258-353,355-371,373-380
+  s_8b147279d063cb::t_f11192aecaf0e3 257,354,372
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "efa0b45f4f23d3ece79dd3a7a2dc6db7db290d6a",
+  "prompts": {},
+  "sessions": {
+    "s_8b147279d063cb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff724-05bf-7871-9fd1-f3f83a5f90da",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

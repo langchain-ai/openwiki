@@ -1,0 +1,21 @@
+openwiki/evals/ledger-harness.md
+  s_a2c301d3fc897f::t_8a1b75d2a6f94a 63,74,110,128,132-135
+openwiki/evals/deepswe-harness.md
+  s_a2c301d3fc897f::t_8a1b75d2a6f94a 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "816cc5d3aeb789ee743652f9c9aeab7e112398e1",
+  "prompts": {},
+  "sessions": {
+    "s_a2c301d3fc897f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bcfe960b-3a32-4c64-822c-1fa77c156f84",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

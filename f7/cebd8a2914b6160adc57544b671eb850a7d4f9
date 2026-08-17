@@ -1,0 +1,39 @@
+src/credentials.tsx
+  s_54e363f268ec2d::t_23bedb9d007e37 417-421,423,425,432-433
+  s_54e363f268ec2d::t_393a2bccee863e 2523-2524,2537,2545-2546
+  s_54e363f268ec2d::t_a7d8ff19510733 2525-2536,2542-2544
+  s_54e363f268ec2d::t_42ae0198b74f41 56
+  s_54e363f268ec2d::t_c7844457a78d66 2595-2599
+  s_54e363f268ec2d::t_937fe9f4ce0431 422,424,426-431,434-436
+  s_54e363f268ec2d::t_f4694de34fac79 2522
+  s_54e363f268ec2d::t_5ec655d48c528f 2518-2521
+  s_54e363f268ec2d::t_1800eb80455335 416
+  s_54e363f268ec2d::t_a5715c5c92c262 2547
+src/env.ts
+  s_54e363f268ec2d::t_f2aa67f7a0f0a0 266-270
+  s_54e363f268ec2d::t_3059c446889d15 169-211,213-214
+  s_54e363f268ec2d::t_6fb422200dd31e 241-242
+test/env-behavior.test.ts
+  s_54e363f268ec2d::t_82d8c39fd4abde 193-228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "f7cebd8a2914b6160adc57544b671eb850a7d4f9",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_54e363f268ec2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ce63c4d8-ec0b-4a45-924e-e2a54e283581",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

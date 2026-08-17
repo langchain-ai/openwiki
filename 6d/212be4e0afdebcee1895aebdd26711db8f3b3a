@@ -1,0 +1,31 @@
+src/connectors/config.ts
+  s_808572fbdb878e::t_40c72b8a3bd0ee 1-24
+src/connectors/sources/x.ts
+  s_808572fbdb878e::t_a8fa9312c6bc05 17
+test/connector-config.test.ts
+  s_808572fbdb878e::t_a32a9948b0c6fa 1-30
+src/connectors/sources/gmail.ts
+  s_808572fbdb878e::t_b8be05ac10ec57 9
+src/connectors/sources/hackernews.ts
+  s_808572fbdb878e::t_5d3bee0ed1702a 9
+src/connectors/sources/web-search.ts
+  s_808572fbdb878e::t_562f27799ff2c9 3
+src/connectors/sources/slack.ts
+  s_808572fbdb878e::t_e6a3de7fa9effa 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "6d212be4e0afdebcee1895aebdd26711db8f3b3a",
+  "prompts": {},
+  "sessions": {
+    "s_808572fbdb878e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "64eab921-4549-48f4-a899-6ca643f83534",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

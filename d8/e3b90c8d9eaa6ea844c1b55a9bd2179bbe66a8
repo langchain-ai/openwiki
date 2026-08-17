@@ -1,0 +1,65 @@
+test/setup/credentials/steps-derivations.test.ts
+  s_9df199bc4d57fc::t_0868b2bcaacfc6 246-247
+  s_9df199bc4d57fc::t_8e956816f292a4 145-148
+  s_9df199bc4d57fc::t_df02328840c31c 537-585,597-604
+  s_9df199bc4d57fc::t_a17152efd7cc3f 222-225
+  s_9df199bc4d57fc::t_6b19d9c71dc795 588,591-595
+  s_9df199bc4d57fc::t_5b0751fca81d9c 586-587,589-590,596
+  s_9df199bc4d57fc::t_964d069dae1b34 133-134
+  s_9df199bc4d57fc::t_3707f14b8b874c 330-334
+test/setup/credentials/view.test.tsx
+  s_9df199bc4d57fc::t_824cb145f6e120 267-280
+  s_9df199bc4d57fc::t_9ecf6759336193 297
+  s_9df199bc4d57fc::t_142d8b71abc7b4 144-146,240-242
+  s_9df199bc4d57fc::t_f4b21147045b66 142-143,147-239,243-266,281-296,298-304
+test/setup/credentials/format.test.ts
+  s_9df199bc4d57fc::t_c0672cd3c58f6a 161-171
+  s_9df199bc4d57fc::t_4957027de00bbe 205-284
+test/setup/onboarding.test.ts
+  s_9df199bc4d57fc::t_ca9503eb0a4e36 38-61
+  s_9df199bc4d57fc::t_120cac1cd588c0 385-909
+test/setup/credentials/steps.test.ts
+  s_9df199bc4d57fc::t_41c9d03a874a87 13-17,22,25,29-34
+  s_9df199bc4d57fc::t_740c66a91455b8 755-775,784-814
+  s_9df199bc4d57fc::t_4ba18b3ab7750a 776-783
+  s_9df199bc4d57fc::t_ca11fc2abbe0b6 829-841
+  s_9df199bc4d57fc::t_349b6433e1beee 871
+  s_9df199bc4d57fc::t_1a80257302dd18 960-966
+  s_9df199bc4d57fc::t_4c60acdff51155 513-683,690-754,815-828,842-843,847-863,867-870,872,876-959,967-970
+  s_9df199bc4d57fc::t_196ca5b539f5e8 62-67,74-75
+  s_9df199bc4d57fc::t_02bf10e114472d 373-383
+  s_9df199bc4d57fc::t_cf5e7635a5874d 123
+  s_9df199bc4d57fc::t_1c58ff68b8254b 684-689,844-846,864-866,873-875
+src/setup/credentials/steps.ts
+  s_9df199bc4d57fc::t_d294c3e400ceda 387
+  s_9df199bc4d57fc::t_9d9f9c046fc9c9 534
+test/setup/credentials/components.test.tsx
+  s_9df199bc4d57fc::t_b8da2966cb6f23 262-263
+  s_9df199bc4d57fc::t_a65a26f0a91239 475-521
+  s_9df199bc4d57fc::t_8d179c5ea83ce4 13,21-25
+  s_9df199bc4d57fc::t_1f333ff5e04359 633-636,647-650,656-659
+  s_9df199bc4d57fc::t_9ecb53be57a52e 266-474,522-632,637-646,651-655,660-701
+  s_9df199bc4d57fc::t_7c133dbef8ce89 209-261,264
+  s_9df199bc4d57fc::t_439cec8c9f437c 265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "d8e3b90c8d9eaa6ea844c1b55a9bd2179bbe66a8",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

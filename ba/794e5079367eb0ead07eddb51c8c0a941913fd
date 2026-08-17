@@ -1,0 +1,44 @@
+src/okf/index-sync.ts
+  s_94ccb1fd0cf306::t_ecb00a8e1029b2 219,222-223,228
+  s_94ccb1fd0cf306::t_46399a081c391e 4
+  s_94ccb1fd0cf306::t_7764ddb970f444 160
+  s_94ccb1fd0cf306::t_b8c753b9027915 191-196
+  s_94ccb1fd0cf306::t_669eaa370b951e 60,64
+src/agent/okf-middleware.ts
+  s_94ccb1fd0cf306::t_dcb150bf0a6cff 11
+  s_94ccb1fd0cf306::t_aa9a745d65be53 26,42
+src/okf/index-labels.ts
+  h_f78d33d4280f3f 1-106
+test/translation-middleware.test.ts
+  s_94ccb1fd0cf306::t_255565a4d3dbfc 1-200
+src/agent/index.ts
+  s_94ccb1fd0cf306::t_dcff2166fcf23e 289-291
+  s_94ccb1fd0cf306::t_69c14ed5b09d09 311
+  s_94ccb1fd0cf306::t_925f114fe3d821 28
+test/index-labels.test.ts
+  s_94ccb1fd0cf306::t_6628e30ee96cc1 1-54
+test/index-middleware.test.ts
+  s_94ccb1fd0cf306::t_dcb150bf0a6cff 92-94
+  s_94ccb1fd0cf306::t_156072a0be8d53 71-91,95-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "ba794e5079367eb0ead07eddb51c8c0a941913fd",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_94ccb1fd0cf306": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3fe37e4d-4458-46b5-902f-59cf1647b2ee",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

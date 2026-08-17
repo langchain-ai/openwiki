@@ -1,0 +1,19 @@
+openwiki/evals/deepswe-harness.md
+  s_fa2fc7106ebc2d::t_a910cefc36135c 52-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "a327ea3abab247c515bfe611726cbd104e28c61c",
+  "prompts": {},
+  "sessions": {
+    "s_fa2fc7106ebc2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "507e1b2e-8c11-467b-9f7f-9f85a4b1b0a3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

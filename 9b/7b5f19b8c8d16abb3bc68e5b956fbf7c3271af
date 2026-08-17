@@ -1,0 +1,43 @@
+evals/keb/run/args.test.ts
+  s_035863e8e09de1::t_79f39ff2c8e32d 1-29
+evals/keb/run/run-config.test.ts
+  s_035863e8e09de1::t_aaeca9740e6c6d 1-31,37-102
+  s_035863e8e09de1::t_adc9f9de7a2998 32-36
+evals/keb/run/report.test.ts
+  s_035863e8e09de1::t_c53eab39324ed6 1-121
+evals/keb/run.ts
+  s_035863e8e09de1::t_c82fd952bec805 1-69
+evals/keb/run/args.ts
+  s_035863e8e09de1::t_424fa0b4bd8791 1-88
+evals/keb/benchmarks/example/benchmark.json
+  s_035863e8e09de1::t_b3d93e5401f783 1-53
+.gitignore
+  s_035863e8e09de1::t_68d2581e198724 29-32
+evals/keb/run/run-config.ts
+  s_035863e8e09de1::t_3fc7596dc3b9d2 1-63
+evals/keb/README.md
+  s_035863e8e09de1::t_31447ceffa33c5 1-76
+evals/keb/run/report.ts
+  s_035863e8e09de1::t_525291e65eeb65 1-122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "9b7b5f19b8c8d16abb3bc68e5b956fbf7c3271af",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_035863e8e09de1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe66751d-b755-4d97-8ed8-e3e9d3319a3b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

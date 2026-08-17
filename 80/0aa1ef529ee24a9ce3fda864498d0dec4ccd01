@@ -1,0 +1,21 @@
+package.json
+  s_70ce361ce20830::t_efe42520b30fe1 3
+src/constants.ts
+  s_70ce361ce20830::t_a8a712be01bee9 722
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "800aa1ef529ee24a9ce3fda864498d0dec4ccd01",
+  "prompts": {},
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

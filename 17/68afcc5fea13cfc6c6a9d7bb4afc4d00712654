@@ -1,0 +1,23 @@
+evals/ledger/source/git-evidence.test.ts
+  s_a78e1243cf0b12::t_680ce0568dfa13 1,6,49-70
+  s_a78e1243cf0b12::t_79638636ce85c6 71-73
+  s_a78e1243cf0b12::t_232bc3e878d718 74-76
+evals/ledger/source/git-evidence.ts
+  s_a78e1243cf0b12::t_81e99ade72684b 1-2,55-100,146,148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "1768afcc5fea13cfc6c6a9d7bb4afc4d00712654",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

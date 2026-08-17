@@ -1,0 +1,26 @@
+src/agent/docs-only-backend.ts
+  s_464015dc89b99a::t_052bda16f18590 71-121,288-301,306-319
+test/agent/docs-only-backend.test.ts
+  s_464015dc89b99a::t_9b02a3f6e1b45f 1,103-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "c2f6a47d547c9f82a2ce693cdb706d6179385b0d",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_464015dc89b99a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe7ba-63f6-7b61-93e7-cbf1d2cdefdc",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

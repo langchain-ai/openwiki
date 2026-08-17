@@ -1,0 +1,14 @@
+src/agent/frontmatter-validator.ts
+  h_33f63fd75d0bd5 12,18-19,21-22,24,26-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "c893b5f41534b3694c9fe698f17c87432297e340",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

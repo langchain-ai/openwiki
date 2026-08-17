@@ -1,0 +1,56 @@
+evals/ledger/README.md
+  s_2c5ee2953b7be4::t_63eb9d456380b7 4-5
+evals/ledger/benchmarks/calc-evolution/benchmark.json
+  s_464015dc89b99a::t_94ccc38d44b38f 1-101
+evals/ledger/core/types.ts
+  s_2c5ee2953b7be4::t_6a92eb08638673 1361-1363
+evals/ledger/evaluator/fixtures/precision-gold.json
+  s_2c5ee2953b7be4::t_de1205b1dc68e8 16-19,69-84,152-165,182-284,346-423
+evals/ledger/evaluator/model-backend.ts
+  s_2c5ee2953b7be4::t_7663ef6da16810 137
+evals/ledger/evaluator/precision.ts
+  s_2c5ee2953b7be4::t_bb15b477cd985d 6,37-38,105,494,535
+evals/ledger/evaluator/prompts.ts
+  s_2c5ee2953b7be4::t_b6ed8abdd85372 1-2,259-260,269-272,279,301-304,308-310,319-323,344-346,358-362,442,453,461-464
+evals/ledger/meta/defects/defect-harness.ts
+  s_2c5ee2953b7be4::t_054e0e830635cc 177
+evals/ledger/meta/gold-agreement.ts
+  s_2c5ee2953b7be4::t_3947717fa4cdc4 5-8,47,131-133,135,138-145,159,221
+evals/ledger/run/evaluator-e2e.test.ts
+  s_2c5ee2953b7be4::t_6c9e566c7965ee 232,238
+evals/ledger/run/reevaluator.ts
+  s_2c5ee2953b7be4::t_cd80dfaff9a54c 246
+evals/ledger/run/runner.ts
+  s_2c5ee2953b7be4::t_bb498983632b52 420
+evals/ledger/scoring/metrics.test.ts
+  s_2c5ee2953b7be4::t_dcff76bc9212f0 211
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "8c3d0c69cf9462460d3f2f8008477ac68cc97e97",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_2c5ee2953b7be4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fea53-39d0-70f1-9a1a-f8c14abfd6fb",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_464015dc89b99a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe7ba-63f6-7b61-93e7-cbf1d2cdefdc",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,58 @@
+test/claims/evidence/repository/resolver.test.ts
+  s_8b147279d063cb::t_0379d440993a04 1,111,131-133,192-194
+  s_8b147279d063cb::t_1e054d85dedf6d 267-273
+  s_8b147279d063cb::t_94817e705296e1 2-12,31-70,76-110,112-117,125-130,134-191,195-223,229-234,240-246,251-256,258-263,265-266,274-296
+  s_8b147279d063cb::t_62d32e23bddd61 13-30,247-250,257,264
+  s_8b147279d063cb::t_0866464fdf4fa8 235-239
+  s_8b147279d063cb::t_106d3e4263a167 71-75,118-124,224-228
+test/claims/evidence/repository/resource.test.ts
+  s_8b147279d063cb::t_94817e705296e1 4,39-57
+  s_8b147279d063cb::t_ac5c76ec275545 58
+src/claims/evidence/repository/resource.ts
+  s_8b147279d063cb::t_32bc8f1c54cf97 27-55,57-63
+  s_8b147279d063cb::t_f074a57fdc2a53 56
+  s_8b147279d063cb::t_fe89beda3ac3f4 26
+src/claims/evidence/repository/tree-sitter-adapter.ts
+  h_f78d33d4280f3f 2-3,8-24,31-64,66-70,91-124,126,156-163,165-178,180-188,192-193,213-232,234-243,245-254,257-276,299-307,309-327,345-356,358-361,363-366,368-370
+  s_8b147279d063cb::t_f074a57fdc2a53 71-76,81-90,285-287
+  s_8b147279d063cb::t_140bfb6b3cdd6c 28
+  s_8b147279d063cb::t_0239e7953a09b1 4-7,127-136,138-139,148-155,256,277-284,288-298,328-344
+  s_8b147279d063cb::t_32bc8f1c54cf97 137,140-147
+  s_8b147279d063cb::t_cf56458a66d97a 25-27,29-30,65,164,179,255
+  s_8b147279d063cb::t_2795d00440e728 77-80
+  s_8b147279d063cb::t_d68b20e47d96a8 1,125,189-191,194-212,233,244,308,357,362,367
+test/claims/evidence/repository/tree-sitter-adapter.test.ts
+  s_8b147279d063cb::t_62d32e23bddd61 190-191,196,201-207
+  s_8b147279d063cb::t_0642e66b5313c9 83
+  s_8b147279d063cb::t_0379d440993a04 89,157-161,164-173
+  s_8b147279d063cb::t_106d3e4263a167 114-128,130-137
+  s_8b147279d063cb::t_1e054d85dedf6d 65-69
+  s_8b147279d063cb::t_5325b4195d5003 75,77-78
+  s_8b147279d063cb::t_94817e705296e1 1-64,70-74,76,79-82,84-88,90-113,129,138-156,162-163,174-189,192-195,197-200,208-235
+src/claims/evidence/repository/resolver.ts
+  s_8b147279d063cb::t_32bc8f1c54cf97 2,9-12,49-55,80-90,92-93,95,98,111,129-139,141,157,170,188,214-221,229-243,246-262,264
+  h_f78d33d4280f3f 1,3-8,13-48,56-79,91,94,96-97,99-110,112-128,140,142-156,158-169,171-187,189-203,209-213,263,265-303
+  s_8b147279d063cb::t_0fa686f57d61cf 204-208,244-245
+  s_8b147279d063cb::t_f074a57fdc2a53 222-228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "aaa6d6d2752635bc2229cf1def10d9539be45386",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8b147279d063cb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff724-05bf-7871-9fd1-f3f83a5f90da",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

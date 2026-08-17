@@ -1,0 +1,123 @@
+evals/ledger/benchmark/validation.ts
+  s_c8fd8da1bbefea::t_1a0498475e07d6 3
+  s_c8fd8da1bbefea::t_215c9eb09b8695 51
+evals/ledger/evaluator/forgetting.ts
+  s_c8fd8da1bbefea::t_0edc84230da716 6-12,17-18,20,28-30,32-57,59-63,80,91,94
+evals/ledger/core/paths.ts
+  s_c8fd8da1bbefea::t_2c0431ada3394b 1
+  s_c8fd8da1bbefea::t_b42dfd620f376f 56-102
+evals/ledger/run/evaluate-checkpoint.ts
+  s_c8fd8da1bbefea::t_eeb7986bcbbe1a 1-312
+evals/ledger/run/reevaluator.ts
+  s_c8fd8da1bbefea::t_47ab8851f727c2 14-15
+  s_c8fd8da1bbefea::t_e0bdc4ef6d1ce9 195-197
+  s_c8fd8da1bbefea::t_4fa73232299090 148
+  s_c8fd8da1bbefea::t_ca3bd50b787585 176-183,186-187,190,192
+  s_c8fd8da1bbefea::t_ff0fad17809904 175
+evals/ledger/run/runner.ts
+  s_c8fd8da1bbefea::t_616ff3de82b0e9 5,23
+  s_c8fd8da1bbefea::t_c34b0bb694280f 261-263
+  s_c8fd8da1bbefea::t_ca3bd50b787585 240-247,250-251,255,258
+  s_c8fd8da1bbefea::t_d19846203b49ad 167
+evals/ledger/run/persistence.test.ts
+  s_c8fd8da1bbefea::t_db56c21ff4e588 92-93,95
+evals/ledger/scoring/metrics.ts
+  s_c8fd8da1bbefea::t_89247ac5427b54 645,647
+  s_c8fd8da1bbefea::t_6f8a14c7ad0b42 77-80
+  s_c8fd8da1bbefea::t_77e491d1681e52 382-383
+  s_c8fd8da1bbefea::t_da7fa8e96fdfa0 644,646,648,650-654
+  s_c8fd8da1bbefea::t_a33b9ffc7bf0d3 348-349
+evals/ledger/run/forgetting-rate.ts
+  s_c8fd8da1bbefea::t_4bbaea61f2b1e8 1-61
+evals/ledger/run.ts
+  s_c8fd8da1bbefea::t_9bc63e29ca4925 73,77-82
+  s_c8fd8da1bbefea::t_95f46ff9f40227 8
+evals/ledger/core/paths.test.ts
+  s_c8fd8da1bbefea::t_daa1c660b7b351 5
+evals/ledger/evaluator/coverage.ts
+  s_c8fd8da1bbefea::t_2b0f74c6a2188c 1,3-9,14-15,17,26-28,30-54,56-61,79,90,93
+evals/ledger/benchmark/source-repo.ts
+  s_c8fd8da1bbefea::t_9eb7ecdcbb5130 1,4
+  s_c8fd8da1bbefea::t_f041e8eed7d955 49-56
+evals/ledger/replay/git.ts
+  s_c8fd8da1bbefea::t_ef832ccb3e6874 12-14,16
+evals/ledger/benchmark/benchmark.ts
+  s_c8fd8da1bbefea::t_6d6227ba8cce01 13
+evals/ledger/core/types.ts
+  s_c8fd8da1bbefea::t_a65a7691efd3e7 1351-1352
+  s_c8fd8da1bbefea::t_f9bbee8dc11d0f 496
+  s_c8fd8da1bbefea::t_13028c589000e0 708,710,713,715,723,725
+  s_c8fd8da1bbefea::t_88c4281b575346 983
+  s_c8fd8da1bbefea::t_2bdc6d6c299cee 932-933,935,940,945
+  s_c8fd8da1bbefea::t_bfa4ae2e3a29c5 959-960,962
+evals/ledger/evaluator/direct-model.ts
+  s_c8fd8da1bbefea::t_3e84d57678ee50 65-66
+  s_c8fd8da1bbefea::t_f9bbee8dc11d0f 20
+evals/ledger/run/persistence.ts
+  s_c8fd8da1bbefea::t_1d1217ee5ac726 55
+evals/ledger/run/format.ts
+  s_c8fd8da1bbefea::t_738e790edf072c 31,35
+  s_c8fd8da1bbefea::t_925efb4fa68d84 11-13,15,21,24
+  s_c8fd8da1bbefea::t_44584c4f5f215a 28-30,32-34,36
+  s_c8fd8da1bbefea::t_82976caffb1a29 25-27
+evals/ledger/replay/workspace.ts
+  s_c8fd8da1bbefea::t_867df80138758d 1,6
+  s_c8fd8da1bbefea::t_79986209284e84 51-58
+evals/ledger/run/reevaluator.test.ts
+  s_c8fd8da1bbefea::t_a723bb5b67f3d1 160-162,165,167
+  s_c8fd8da1bbefea::t_f123980f717ea3 129-130,132
+evals/ledger/run/progress.ts
+  s_c8fd8da1bbefea::t_773fcf1a2237b8 2
+  s_c8fd8da1bbefea::t_b83df8d75301d2 50
+evals/ledger/evaluator/model-backend.ts
+  s_c8fd8da1bbefea::t_44e95db0d2cff6 78-79
+evals/ledger/evaluator/precision.ts
+  s_c8fd8da1bbefea::t_a43937f274af72 317,324
+evals/ledger/run/progress-events.ts
+  s_c8fd8da1bbefea::t_7ece09f0a88644 51-52
+evals/ledger/scoring/metrics.test.ts
+  s_c8fd8da1bbefea::t_f98a8158245d7a 491-493,495-496
+  s_c8fd8da1bbefea::t_72e1b773f921a1 468
+  s_c8fd8da1bbefea::t_cd9e841859d9d6 192,200-201,203,206
+evals/ledger/reevaluate.ts
+  s_c8fd8da1bbefea::t_9aaf088ebf4ad7 64-69,71
+  s_c8fd8da1bbefea::t_21540262c109ae 6
+evals/ledger/evaluator/bounded-pass.ts
+  s_c8fd8da1bbefea::t_6319a5a247805a 1-5,10-43,46-423,425-672,679-700,709-716
+  s_c8fd8da1bbefea::t_dacd370040ba99 6-9,44-45,424,673-678,701-708
+evals/ledger/run/report.ts
+  s_c8fd8da1bbefea::t_6fb7c9fcaf6e49 2-7
+  s_c8fd8da1bbefea::t_59df970a6aa669 33-36,38-39
+  s_c8fd8da1bbefea::t_607229d3dfdcca 103
+  s_c8fd8da1bbefea::t_e8737685dd4f13 18
+evals/ledger/meta/gold-agreement.ts
+  s_c8fd8da1bbefea::t_a5147e4a83aea3 23
+evals/ledger/source/git-evidence.ts
+  s_c8fd8da1bbefea::t_de85c6d31ea410 6
+  s_c8fd8da1bbefea::t_f6c3034fce351a 93
+evals/ledger/run/finalize.ts
+  s_c8fd8da1bbefea::t_a20f07dd5cc6f1 1-78,80-89
+  s_c8fd8da1bbefea::t_ca3bd50b787585 79
+evals/ledger/run/report.test.ts
+  s_c8fd8da1bbefea::t_4b85d15fcfe40c 153-154,156,158-160,162-163
+evals/ledger/run/summary.ts
+  s_c8fd8da1bbefea::t_f0f8933e64ce4a 122,137-139,144
+  s_c8fd8da1bbefea::t_88e3f728e80a14 2-3
+  s_c8fd8da1bbefea::t_61bad7c2124c7d 129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "07857a966eceacb22e681aa39b3eb317aa61cc31",
+  "prompts": {},
+  "sessions": {
+    "s_c8fd8da1bbefea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7a2ddc30-9130-4920-b846-bb51dd3c63bc",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

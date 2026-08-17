@@ -1,0 +1,53 @@
+src/agent/index.ts
+  s_a57fcbbb51c51c::t_9dd737cdfa2fa4 164-167
+  s_a57fcbbb51c51c::t_ee0fccdfb5329f 64
+  s_a57fcbbb51c51c::t_9ac3e1a3b86ac4 232-238
+test/okf/update-safety.test.ts
+  s_a57fcbbb51c51c::t_1f0a0e22046d46 161,163-170
+  s_a57fcbbb51c51c::t_7be1e4951457e4 112-113,115-122
+  s_a57fcbbb51c51c::t_5740d40f4a5577 1-6,8-50,52-54,56-111,114,123-124,127,130-141,144-160,162,171-179
+  s_a57fcbbb51c51c::t_497a72f316dd35 7
+  s_a57fcbbb51c51c::t_f60308aee0190e 51
+  s_a57fcbbb51c51c::t_cf7eede76da8f8 55
+  s_a57fcbbb51c51c::t_145310b3697684 125-126
+  s_a57fcbbb51c51c::t_2fb4ca1be9bdfc 128-129
+  s_a57fcbbb51c51c::t_d6f4fe74e379bb 142-143
+src/agent/okf/normalize.ts
+  s_a57fcbbb51c51c::t_aea618ff973fb1 19
+  s_a57fcbbb51c51c::t_ee4804dfa5efcf 70,76
+  s_a57fcbbb51c51c::t_937d6fbe9b39ad 51-54,107-109,112,156-189
+  s_a57fcbbb51c51c::t_004a09f411b12c 114-122
+  s_a57fcbbb51c51c::t_46f7d328e7e667 138-155
+  s_a57fcbbb51c51c::t_2ef19e2d76f458 50
+  s_a57fcbbb51c51c::t_c862ed8c8c7601 55
+  s_a57fcbbb51c51c::t_a285cd16da360c 110-111
+  s_a57fcbbb51c51c::t_655c2f979f8ab4 113
+  s_a57fcbbb51c51c::t_44ca9752814dc0 1
+src/agent/okf/index.ts
+  s_a57fcbbb51c51c::t_49ce0b570afec1 5
+test/okf/validate.test.ts
+  s_a57fcbbb51c51c::t_16a3867b3bfcbb 68
+test/okf/normalize.test.ts
+  s_a57fcbbb51c51c::t_1050f74e58c3fc 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "0a5571210ab7281bf2545f55ef5d5778644b8422",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a57fcbbb51c51c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a9eadf2f-4fd3-42d7-8435-556597e807c3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

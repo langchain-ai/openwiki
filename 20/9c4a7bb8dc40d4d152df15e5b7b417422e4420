@@ -1,0 +1,50 @@
+src/agent/prompt.ts
+  s_efb9139c29a715::t_5e689b68ef3f2e 7
+  s_efb9139c29a715::t_f1898e57fa644b 21,45,236,238,242
+src/agent/utils.ts
+  s_efb9139c29a715::t_f1898e57fa644b 47,55,116,121,149,165,440,447,452,467,485,502,519,614,616,622,636,639
+  s_efb9139c29a715::t_9e09a067da4b55 90-95
+  s_efb9139c29a715::t_1203c4dde268e3 16
+test/update-noop.test.ts
+  s_efb9139c29a715::t_ca8538ef68b761 109
+  s_efb9139c29a715::t_ca948e8697e472 7
+src/agent/openwiki-ignore.ts
+  s_efb9139c29a715::t_2187a12d40a0e8 11,13-16,18-123,170-171,176-181,186-224,273,298,308,310,314
+  s_efb9139c29a715::t_e64ee0330d861c 124-125,129,131,136,141-169
+  s_efb9139c29a715::t_be7c0f6c83fb30 225-226,235,239-241
+test/openwiki-ignore.test.ts
+  s_efb9139c29a715::t_b07f5a4097fc87 6
+  s_efb9139c29a715::t_f1898e57fa644b 25,31
+  s_efb9139c29a715::t_e7b1e1322dd8c8 45,64
+src/agent/docs-only-backend.ts
+  s_efb9139c29a715::t_ca1923bd951a49 200-202,245-247
+  s_efb9139c29a715::t_d6c7a0fae4e365 17
+  s_efb9139c29a715::t_f1898e57fa644b 41,97,107,215,237,293,306,328,366,381
+  s_efb9139c29a715::t_1ccbe10cca9b36 223-225
+src/agent/index.ts
+  s_efb9139c29a715::t_9e09a067da4b55 152-155
+  s_efb9139c29a715::t_f1898e57fa644b 148,158,235,266,274,297,378
+  s_efb9139c29a715::t_150b78b199ffb5 124
+  s_efb9139c29a715::t_8ae4ddeaa69855 150-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "209c4a7bb8dc40d4d152df15e5b7b417422e4420",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_efb9139c29a715": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "76a2f8c8-d541-46e8-90c3-a27b8a31aa1f",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

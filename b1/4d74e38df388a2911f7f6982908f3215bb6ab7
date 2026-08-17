@@ -1,0 +1,14 @@
+.changeset/lucky-pumas-relax.md
+  h_f78d33d4280f3f 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "b14d74e38df388a2911f7f6982908f3215bb6ab7",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

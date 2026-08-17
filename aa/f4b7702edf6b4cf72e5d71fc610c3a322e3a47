@@ -1,0 +1,58 @@
+src/connectors/sources/langsmith/limits.ts
+  h_f78d33d4280f3f 1-4,7
+src/connectors/sources/langsmith/runs.ts
+  h_f78d33d4280f3f 1-144
+test/langsmith-runs.test.ts
+  s_70ce361ce20830::t_4ed86bb13538d0 1-149
+  s_70ce361ce20830::t_ec6ab87adcae15 150-152
+  s_70ce361ce20830::t_dd94c3c4b7f3d9 153
+test/langsmith-api.test.ts
+  s_70ce361ce20830::t_9fe4c9f8e2042d 19-20,22,24,26,29,31,34-35
+  s_70ce361ce20830::t_ef7ceeb14f4aeb 1-18,21,23,25,27-28,30,32-33,36-145
+src/connectors/types.ts
+  s_70ce361ce20830::t_685cbf81aa055f 5
+src/connectors/sources/langsmith/index.ts
+  s_70ce361ce20830::t_4299aa2ff0e1ca 193
+  s_70ce361ce20830::t_5dbcc687e5db8e 279
+  s_70ce361ce20830::t_5ed2e0945e7a4a 190-192
+  s_70ce361ce20830::t_b38e1eb610bd05 194-196,276-278
+  s_70ce361ce20830::t_0c9e89ac658b77 280-282
+src/connectors/sources/langsmith/types.ts
+  h_f78d33d4280f3f 1-177
+test/langsmith-index.test.ts
+  s_70ce361ce20830::t_721da9ea43498e 9,15-18
+  s_70ce361ce20830::t_e2eaab8b6da69b 1-8,10-14,19-40,45-70,72-111,116-133,136-142
+  s_70ce361ce20830::t_e12416430cde8d 71
+  s_70ce361ce20830::t_be33676c01114c 134-135
+  s_70ce361ce20830::t_99901d759b2f98 112-115
+  s_70ce361ce20830::t_bd0f32fda83be7 41-44
+src/connectors/registry.ts
+  s_70ce361ce20830::t_7c5fcc43d32fa8 19
+  s_70ce361ce20830::t_d9fc23a693078d 30
+  s_70ce361ce20830::t_ef72bb6f1ffb50 4
+src/ingestion.ts
+  s_70ce361ce20830::t_9cf7afc5d77c7e 379-382
+src/connectors/sources/langsmith/api.ts
+  h_f78d33d4280f3f 1-162
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "aaf4b7702edf6b4cf72e5d71fc610c3a322e3a47",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

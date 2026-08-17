@@ -1,0 +1,81 @@
+evals/ledger/run/persistence.test.ts
+  s_c8fd8da1bbefea::t_fa7a70443b9cc6 36
+evals/ledger/run/reevaluator.ts
+  s_c8fd8da1bbefea::t_1769d15f8fdfba 153
+  s_c8fd8da1bbefea::t_e656669802ea87 305
+evals/ledger/benchmark/validation.test.ts
+  s_c8fd8da1bbefea::t_6710b6c5121f80 18
+evals/ledger/benchmarks/taskflow/benchmark.json
+  s_c8fd8da1bbefea::t_e5bdad69784de3 4
+evals/ledger/run/runner.ts
+  s_c8fd8da1bbefea::t_3c831b97e01a63 149
+  s_c8fd8da1bbefea::t_be6beed43b52b2 383
+evals/ledger/run/report.test.ts
+  s_c8fd8da1bbefea::t_189e2c22f0e6b6 10
+evals/ledger/run/reevaluator.test.ts
+  s_c8fd8da1bbefea::t_e808247411cd88 87
+  s_c8fd8da1bbefea::t_d2706738c135ca 149
+evals/ledger/run/progress.ts
+  s_c8fd8da1bbefea::t_6028f4a873b6fd 176-178
+evals/ledger/run/runner.test.ts
+  s_c8fd8da1bbefea::t_c34c0ec5e0a241 185
+  s_c8fd8da1bbefea::t_f4928b658122f1 387
+evals/ledger/meta/defects/defect-harness.ts
+  s_c8fd8da1bbefea::t_6e11e8edab2cf2 342
+evals/ledger/run/saved-run.test.ts
+  s_c8fd8da1bbefea::t_7467d6da8f78da 35
+evals/ledger/benchmark/benchmark.ts
+  s_c8fd8da1bbefea::t_d885eb38a8ae07 63-70
+  s_c8fd8da1bbefea::t_8910665470d039 5
+  s_c8fd8da1bbefea::t_d3c18641cf5d86 127-136
+  s_c8fd8da1bbefea::t_ee5f9b9be5e884 148
+  s_c8fd8da1bbefea::t_d9bbb12e81fabb 16-20
+  s_c8fd8da1bbefea::t_252443aede3754 15
+  s_c8fd8da1bbefea::t_013c22a476d45a 62
+evals/ledger/benchmarks/calc/benchmark.json
+  s_c8fd8da1bbefea::t_4e9a3b0650f3f0 4
+evals/ledger/run/progress.test.ts
+  s_c8fd8da1bbefea::t_01c26fb8e40407 32
+  s_c8fd8da1bbefea::t_0155f7de5e3da0 92
+  s_c8fd8da1bbefea::t_f0c1173cfc84f7 180
+evals/ledger/run/report.ts
+  s_c8fd8da1bbefea::t_bd37b49dc164b3 78
+evals/ledger/run/summary.test.ts
+  s_c8fd8da1bbefea::t_3c48cbca152ae4 163
+evals/ledger/run/progress-events.ts
+  s_c8fd8da1bbefea::t_53b41c39e18a75 10
+  s_c8fd8da1bbefea::t_a405045275a77e 1-2
+evals/ledger/benchmark/benchmark.test.ts
+  s_c8fd8da1bbefea::t_161c903a355115 93-103
+  s_c8fd8da1bbefea::t_c80a808aee7ef2 77
+  s_c8fd8da1bbefea::t_20071a44c2cd54 1-9
+evals/ledger/run/evaluator-e2e.test.ts
+  s_c8fd8da1bbefea::t_0c2c6d0f3033d0 381
+evals/ledger/core/types.ts
+  s_c8fd8da1bbefea::t_fe89ae3a79d685 47-54,66-70,1197
+  s_c8fd8da1bbefea::t_bc7c89107b7f47 1198-1201
+  s_c8fd8da1bbefea::t_a5df8b00c843a0 71
+evals/ledger/README.md
+  s_c8fd8da1bbefea::t_6c9abc89707391 28-32,94-98,232-236,288-292,384-389,402-405,407,513-518
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "6784696423b5e91ef3b58f225f5a01238f3383a4",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_c8fd8da1bbefea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7a2ddc30-9130-4920-b846-bb51dd3c63bc",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

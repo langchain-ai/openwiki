@@ -1,0 +1,44 @@
+test/langsmith-api.test.ts
+  s_70ce361ce20830::t_045328e6bc9f9a 30
+  s_70ce361ce20830::t_e20f29b5ab34bd 1
+  s_70ce361ce20830::t_c6fe116b25d42f 96-144,146-173
+  s_70ce361ce20830::t_ed90687bdeed7f 145
+src/connectors/tools.ts
+  s_70ce361ce20830::t_4bb2af3f16f4af 148
+  s_70ce361ce20830::t_2f54ebae7ee0b6 177
+src/code-mode.ts
+  s_70ce361ce20830::t_8a68ab09c0c112 49,59-61,69,72
+  s_70ce361ce20830::t_b8787e84fb2af8 92-101
+  s_70ce361ce20830::t_0acc409ff73119 8
+  s_70ce361ce20830::t_33118836f32f27 91
+src/cli.tsx
+  s_70ce361ce20830::t_5ea29244a1d0df 587-606,608-609,615,627
+  s_70ce361ce20830::t_9f43007b1db96c 4109-4114,4120,4132
+src/connectors/sources/langsmith/api.ts
+  s_70ce361ce20830::t_3e0bec4201bf81 44,123-127,131-139,141,146-150,156-200
+  s_70ce361ce20830::t_03e0e99c41a46a 45-54
+  s_70ce361ce20830::t_baa8a8e92ef484 55-60
+  s_70ce361ce20830::t_75cb6403437742 111-119
+  s_70ce361ce20830::t_f39a44b6478a80 201
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "b815f62080d32b718e4c578c61f712ee1a770f39",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

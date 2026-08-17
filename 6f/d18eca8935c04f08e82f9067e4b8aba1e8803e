@@ -1,0 +1,24 @@
+eslint.config.js
+  s_bda6b6c437da9f::t_dee9f6487feeef 35-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6fd18eca8935c04f08e82f9067e4b8aba1e8803e",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_bda6b6c437da9f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a1cfe115-7556-4173-b56c-a59878d842fe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

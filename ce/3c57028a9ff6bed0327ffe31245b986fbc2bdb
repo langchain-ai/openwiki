@@ -1,0 +1,67 @@
+tsconfig.json
+  s_a90cebfcc677d2::t_7477279fff6ebe 1-17
+src/credentials.tsx
+  s_a90cebfcc677d2::t_9fbc6add77a465 83-86
+  s_a90cebfcc677d2::t_821222bb14c031 1-82,87-134
+LICENSE
+  s_a90cebfcc677d2::t_a253439a787998 1-21
+src/commands.ts
+  s_a90cebfcc677d2::t_9ed0922ca4dc1a 85,88
+  s_a90cebfcc677d2::t_0e671dcee8cf1a 11,13,18-19,43-64,66-69,73,76-78,80-81,97-102,105-106,110,119-130,133-141
+  s_a90cebfcc677d2::t_9c245c1da4e96f 1-10,12,14-15,83-84,86,89-91,93-94,103-104,107,111-113,115-118,131-132,142-149
+  s_a90cebfcc677d2::t_7477279fff6ebe 16,20-25,27-29,31-42,65,82,108-109,114,150
+  s_a90cebfcc677d2::t_0f685134a7e21e 70-72,74-75,79
+  s_a90cebfcc677d2::t_271b7fd86588f1 92,96
+  s_a90cebfcc677d2::t_ca20da4c141c91 17,26,30,87,95
+src/env.ts
+  s_a90cebfcc677d2::t_4111a53803891a 1-130
+.gitignore
+  s_a90cebfcc677d2::t_7477279fff6ebe 1-5
+src/cli.tsx
+  s_a90cebfcc677d2::t_cb992df399e442 11-16,21,33-34,37-38,53-56,83,109-110,115-134,257,264-270,272,274-275,280-281
+  s_a90cebfcc677d2::t_3729e131073429 238-243
+  s_a90cebfcc677d2::t_979ebafe2da191 31
+  s_a90cebfcc677d2::t_d77fb0d1345885 261-262,271,276-279,282-286
+  s_a90cebfcc677d2::t_28566c34da54a1 84-96
+  s_a90cebfcc677d2::t_2e564319ce3551 153-154,158
+  s_a90cebfcc677d2::t_1aa96eb3088f6d 36
+  s_a90cebfcc677d2::t_dac35692559527 2,17,19-20,22-25,32,41-46,57-64,66-82,97,135-150,155-156,159
+  s_a90cebfcc677d2::t_70c423cac3da72 3-5,7-10,99,104-108,151,160-180,187-191,197-201,214-237,244-246
+  s_a90cebfcc677d2::t_8c9a8afe4089b6 27
+  s_a90cebfcc677d2::t_7477279fff6ebe 1,18,26,28-30,39-40,65,98,100-103,152,157,247-248,259-260
+  s_a90cebfcc677d2::t_847993dd9fb055 6,35,47-52,111-114,181-186,192-196,202-213,249-256,258,263,273
+src/agent.ts
+  s_a90cebfcc677d2::t_df73b1d8957bdd 7,36
+  s_a90cebfcc677d2::t_0f8f9ab13b9877 1-4,19,21-31,39,55,140,155-160,162-304
+  s_a90cebfcc677d2::t_907cfcbb1dcff9 60-61,125,136
+  s_a90cebfcc677d2::t_0b45d6145873e8 37-38,66-71
+  s_a90cebfcc677d2::t_66b3dbbdcd46fc 5,40,42,74-76
+  s_a90cebfcc677d2::t_9680c3f2945633 6,8-18,20,32-35,41,43-54,56-59,62-65,72-73,77-124,126-135,137-139,141-153,161,305
+  s_a90cebfcc677d2::t_67a24771c7581d 154
+README.md
+  s_a90cebfcc677d2::t_a253439a787998 1-20
+package.json
+  s_a90cebfcc677d2::t_f65b32904c1825 30,32
+  s_a90cebfcc677d2::t_a6e859ee2c73e8 50-54
+  s_a90cebfcc677d2::t_855ef09547a2db 4-5,7-9,13-26,33
+  s_a90cebfcc677d2::t_e54ec4cb5c8066 2,11,28
+  s_a90cebfcc677d2::t_0f0a0a5b3f910b 37-39,41
+  s_a90cebfcc677d2::t_8fd68b8f0ff507 49,55
+  s_a90cebfcc677d2::t_7477279fff6ebe 1,3,6,10,12,27,29,31,34-36,40,42-48,56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "ce3c57028a9ff6bed0327ffe31245b986fbc2bdb",
+  "prompts": {},
+  "sessions": {
+    "s_a90cebfcc677d2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee15e-5abb-7811-905f-f202d90254e3",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+CONTRIBUTING.md
+  s_ed18fedebfc70d::t_85bf574973d75f 72-73
+  s_ed18fedebfc70d::t_03b11d74b076e0 35-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "e0017c7e4b00bed124be81fcd335639e6f780bd5",
+  "prompts": {},
+  "sessions": {
+    "s_ed18fedebfc70d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dde8f354-6e1c-4dca-96f7-0f6cd5cf3d58",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

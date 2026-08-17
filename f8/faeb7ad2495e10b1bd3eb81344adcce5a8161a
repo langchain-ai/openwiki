@@ -1,0 +1,27 @@
+README.md
+  s_005aef00a0993e::t_dd5a2bb62bf336 272-318
+  s_005aef00a0993e::t_6ca56f3fcd6125 60-63
+examples/openwiki-update.yml
+  s_005aef00a0993e::t_ef6ada00cf1e8b 34-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "f8faeb7ad2495e10b1bd3eb81344adcce5a8161a",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_005aef00a0993e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "366e0bd6-73d2-4a7a-bab1-157a1f397b23",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

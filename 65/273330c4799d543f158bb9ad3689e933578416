@@ -1,0 +1,34 @@
+src/agent/stream.ts
+  s_8d4a238c334fd1::t_a3445cb7e66444 1-7,13-36,40-466
+  s_8d4a238c334fd1::t_26cd69c7df2f6d 8-12
+  s_8d4a238c334fd1::t_1e8f701db6cc0c 37-39
+src/providers/model-factory.ts
+  s_8d4a238c334fd1::t_f015572c1c198c 1-22,28-46,53-130,135-136
+  s_8d4a238c334fd1::t_65ba4c1d03bae5 23-27
+  s_8d4a238c334fd1::t_cf24f8fdcfd6ee 131-134
+  s_8d4a238c334fd1::t_6a1bf396935b06 47-52
+src/agent/index.ts
+  s_8d4a238c334fd1::t_be7536e3581e50 24
+  s_8d4a238c334fd1::t_ed7041acf83bf6 25-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "65273330c4799d543f158bb9ad3689e933578416",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

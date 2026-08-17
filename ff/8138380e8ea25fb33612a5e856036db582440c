@@ -1,0 +1,14 @@
+.changeset/custom-mcp-source.md
+  h_f78d33d4280f3f 2,5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "ff8138380e8ea25fb33612a5e856036db582440c",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

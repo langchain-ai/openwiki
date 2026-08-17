@@ -1,0 +1,207 @@
+evals/ledger/reevaluate.ts
+  s_5be9e335eecbfd::t_df524786df9762 39-42
+evals/ledger/run/persistence.ts
+  s_c8fd8da1bbefea::t_c45643694fe34b 267-270
+  s_c8fd8da1bbefea::t_07446bc18efce5 221,224-227
+evals/ledger/evaluator/precision.ts
+  s_5be9e335eecbfd::t_799af5058e0f88 949-954,991-992,1002
+  s_5be9e335eecbfd::t_b4fa866d17d37e 48
+  s_5be9e335eecbfd::t_6fd0ce699217ea 38,43
+  s_5be9e335eecbfd::t_ab69fec4fe9fc7 752-756,773,783,793,799,803-804,810,823-846,849,857
+  s_5be9e335eecbfd::t_3ba1acafbc513c 717
+  s_5be9e335eecbfd::t_33585159f33fc7 236,251-254,266
+  s_5be9e335eecbfd::t_06240386f5a845 367,371,376
+  s_5be9e335eecbfd::t_a12b14c78bc04f 940
+evals/ledger/benchmark/validation.test.ts
+  s_5be9e335eecbfd::t_f3342c8eef3b78 3,8-12,46
+evals/ledger/benchmark/validation.ts
+  s_5be9e335eecbfd::t_0f63f72d389c59 2,12-15,26-30,45,56
+evals/ledger/benchmark/surface.test.ts
+  s_5be9e335eecbfd::t_5fd68d71aeaa5a 4-8
+  s_5be9e335eecbfd::t_a3aeec1e36063c 21
+  s_5be9e335eecbfd::t_f5eb650f3a3d0e 1-3,9-20,22-204,206-240
+  s_5be9e335eecbfd::t_31072ad838f06c 205
+evals/ledger/run/evaluator-e2e.test.ts
+  s_5be9e335eecbfd::t_7a11132e43b1a0 470-472
+  s_5be9e335eecbfd::t_aa8a3682b05c39 623
+  s_5be9e335eecbfd::t_536fd780c6ba44 369-371
+  s_5be9e335eecbfd::t_24ca63c21e7b75 23
+  s_5be9e335eecbfd::t_daf76f9e50cffc 247-254,261-262,265-266
+  s_5be9e335eecbfd::t_5c892b078437e2 163-165,168,172-174
+  s_5be9e335eecbfd::t_8eb345b845d8d5 411-424,426-438
+  s_5be9e335eecbfd::t_bb8604ceb98281 570-580,584,588,593
+  s_5be9e335eecbfd::t_89f0144b51b9ea 439
+  s_5be9e335eecbfd::t_458c9936efc43a 473
+  s_5be9e335eecbfd::t_bec4659de2d87b 594
+  s_5be9e335eecbfd::t_8db18129d5c604 624
+evals/ledger/evaluator/bounded-passes.test.ts
+  s_5be9e335eecbfd::t_ddea39e3bd70f8 170-172,211,268,313,339,379,413-414,447,467
+  s_c8fd8da1bbefea::t_4ba15054624280 79
+  s_5be9e335eecbfd::t_635349995d8f44 61,63-64,66,68,72-73
+  s_5be9e335eecbfd::t_f5cc59db3b84e2 412,446
+  s_5be9e335eecbfd::t_011a6aa3a8da7c 4
+evals/ledger/run/reevaluator.ts
+  s_5be9e335eecbfd::t_53bf43940c2019 5-6,8
+  s_c8fd8da1bbefea::t_b6e0abf18cb6d1 126
+  s_5be9e335eecbfd::t_3fed22850b36b3 195-198,202-209,218,225,230
+  s_5be9e335eecbfd::t_674f42964ab881 166
+  s_5be9e335eecbfd::t_6af722a7b4f686 297
+  s_5be9e335eecbfd::t_2af17338d7ca1f 22
+evals/ledger/meta/gold-agreement.test.ts
+  s_5be9e335eecbfd::t_317d8a9652db65 51
+  s_5be9e335eecbfd::t_999c519a1ecca6 62
+  s_5be9e335eecbfd::t_6a40ac3036911b 28,31,35-37
+evals/ledger/benchmark/benchmark.ts
+  s_5be9e335eecbfd::t_c70bd0e1529bb2 131-139,142-169
+  s_5be9e335eecbfd::t_5c77aea55a893b 7
+  s_5be9e335eecbfd::t_6fa19aaed56c2d 170
+evals/ledger/evaluator/prompts.ts
+  s_5be9e335eecbfd::t_340ac91258eac1 372
+  s_5be9e335eecbfd::t_e7357b3e7a86ab 160-166,171-179
+  s_5be9e335eecbfd::t_466e06b5852bc5 27-28,37,42
+  s_5be9e335eecbfd::t_e71bcba079de93 267,271-284,288-293,300-301
+  s_5be9e335eecbfd::t_93fcc2dd579fe9 312,317
+  s_5be9e335eecbfd::t_adf3469ccb218d 187
+evals/ledger/evaluator/coverage.ts
+  s_5be9e335eecbfd::t_37b1a75ac0f248 51-52,54
+  s_5be9e335eecbfd::t_ec7d4d7f713dc2 87,92,94
+  s_5be9e335eecbfd::t_f37fa54a48d9ac 378,383
+  s_5be9e335eecbfd::t_828104cb1e1183 395,404
+  s_5be9e335eecbfd::t_22e822b16f5238 152
+  s_5be9e335eecbfd::t_e700078ed7f5bd 7
+  s_5be9e335eecbfd::t_1d57f1f377e792 118-120,122,125,130,133
+  s_5be9e335eecbfd::t_b1c85eabf97185 445
+evals/ledger/core/types.ts
+  s_5be9e335eecbfd::t_d449277f0cd9f4 233-236
+  s_5be9e335eecbfd::t_6f01edd0c33899 1318-1319,1321
+  s_c8fd8da1bbefea::t_6948fc6e19be0d 586
+  s_5be9e335eecbfd::t_452d6d97d6e834 389-390
+  s_5be9e335eecbfd::t_e6a41e410c63b9 12-13
+  s_c8fd8da1bbefea::t_71047c02648f1a 592-593,596
+  s_5be9e335eecbfd::t_607317a011b8c5 1335
+  s_c8fd8da1bbefea::t_dd862c29b3192a 461-464
+  s_5be9e335eecbfd::t_a94d620bdaa97f 43-45,72,76-87,89,91-93,98-101,106-119,121,124-126
+evals/ledger/run/summary.test.ts
+  s_c8fd8da1bbefea::t_ad61dcc28089d6 241
+  s_c8fd8da1bbefea::t_99f7c3a8c9935e 246,249
+evals/ledger/meta/defects/fixtures/base/T1.md
+  s_5be9e335eecbfd::t_0cdda1f71a6723 1,3-8
+evals/ledger/meta/defects/fixtures/base/T0.md
+  s_5be9e335eecbfd::t_efd6adb64af176 1,3-7
+evals/ledger/meta/defects/defect-harness.ts
+  s_5be9e335eecbfd::t_fc9ae49c717680 8-9,11
+  s_5be9e335eecbfd::t_caef9d73007752 335
+  s_5be9e335eecbfd::t_9c87c9dfb9465d 243
+  s_5be9e335eecbfd::t_e8f870d42ffe7b 267-270,272,274-276,284,295
+  s_5be9e335eecbfd::t_54663d47f2b682 23
+evals/ledger/run/summary.ts
+  s_c8fd8da1bbefea::t_507cf38514ff97 349,351,353
+evals/ledger/run/reevaluator.test.ts
+  s_5be9e335eecbfd::t_a0bc0fe09ca5d9 260
+  s_5be9e335eecbfd::t_ac9a4c998ca4b0 5,17
+  s_5be9e335eecbfd::t_0b6272904e34b6 215-230,233
+  s_5be9e335eecbfd::t_46065d8140bbc7 44,49,64,74-77,79-81,83,87,90-91
+evals/ledger/benchmark/surface.ts
+  s_5be9e335eecbfd::t_f06c7fc4cf8921 1-122,124-125,127-193,195-329,331-485,487-713
+  s_5be9e335eecbfd::t_25e2146af603c1 123
+  s_5be9e335eecbfd::t_4eecb8ec340438 126
+  s_5be9e335eecbfd::t_decc1cf2712950 194
+  s_5be9e335eecbfd::t_ab898697e59c7a 330
+  s_5be9e335eecbfd::t_4090e1c2d80526 486
+evals/ledger/evaluator/evaluator.test.ts
+  s_5be9e335eecbfd::t_62be498dc0a90e 88-94
+  s_5be9e335eecbfd::t_85dafdd29d29f1 64-65
+  s_5be9e335eecbfd::t_b955ffbae520c2 138
+  s_5be9e335eecbfd::t_cd8209815159c4 22
+  s_5be9e335eecbfd::t_c6b0215f480898 95-97
+evals/ledger/run/progress.ts
+  s_5be9e335eecbfd::t_917023f3dfaca8 217
+evals/ledger/evaluator/fixtures/precision-gold.json
+  s_5be9e335eecbfd::t_7eba915c3f3169 6-9,13-16,20-23,27-30,34-37,41-44,48-51,70-73,111-114,117,129-132,152-155,168-170,183-185,198-200,213-215,228-230,243-245,258-261,274-276
+evals/ledger/evaluator/schemas.ts
+  s_5be9e335eecbfd::t_e901172c97ece3 74-77,79-82,106-108,112,119-120,130-133
+evals/ledger/evaluator/model-backend.test.ts
+  s_5be9e335eecbfd::t_83e4100f3e7b77 154,158-159
+  s_5be9e335eecbfd::t_37b671cf02020f 219-221
+  s_5be9e335eecbfd::t_0feb079def0a35 62
+  s_5be9e335eecbfd::t_c798dd33776e0d 125-126
+  s_5be9e335eecbfd::t_db804c36338c65 188
+evals/ledger/meta/defects/fixtures/base/T2.md
+  s_5be9e335eecbfd::t_e14ff279300ee2 1,3-7
+evals/ledger/meta/defects/defect-harness.test.ts
+  s_5be9e335eecbfd::t_ea938ee5930be5 18
+  s_5be9e335eecbfd::t_b43125945a9c54 28
+evals/ledger/run/runner.test.ts
+  s_5be9e335eecbfd::t_9fcc03e64e8a62 136
+  s_5be9e335eecbfd::t_c8f23ff44680a7 311-317,329-330
+  s_5be9e335eecbfd::t_7ff03381345634 242-251,259-263
+  s_5be9e335eecbfd::t_1d56782341d465 8
+  s_5be9e335eecbfd::t_4f8432ca924f94 159-162,164-173
+  s_5be9e335eecbfd::t_7fe34f67f3001d 358-370,372-374
+  s_5be9e335eecbfd::t_2be39b1f1bb020 418-430,435-447
+  s_5be9e335eecbfd::t_aafeaf09fa4810 49-53,57-98,101-115
+evals/ledger/benchmark/benchmark.test.ts
+  s_5be9e335eecbfd::t_033fc915b8e120 10,13-14,18
+  s_5be9e335eecbfd::t_793d2610048086 89,93,95-117,119-128
+  s_5be9e335eecbfd::t_1284c6fade8a26 38,45
+  s_5be9e335eecbfd::t_175fdd30b5bafe 68
+evals/ledger/run/progress-events.ts
+  s_5be9e335eecbfd::t_df5d889b921a1d 41
+evals/ledger/meta/defects/fixtures/manifest.json
+  s_5be9e335eecbfd::t_ae2d719d446f67 2,26,34
+  s_5be9e335eecbfd::t_323d464bf540ad 17-18,25,33
+evals/ledger/meta/gold-agreement.ts
+  s_5be9e335eecbfd::t_9024d3ff7595f1 195
+  s_5be9e335eecbfd::t_95e40ba0e180f4 5
+  s_5be9e335eecbfd::t_98d5b79b7898d9 302
+  s_5be9e335eecbfd::t_2fc631022ef698 123
+  s_5be9e335eecbfd::t_c3c0ba0cc31997 132,134
+  s_5be9e335eecbfd::t_ff2cc2d553f140 238-241,268,270,282-285,290
+  s_5be9e335eecbfd::t_85e2cf2b117f09 68,70,72,77,82,85,90
+  s_5be9e335eecbfd::t_e5ca6f75c45fdd 41
+evals/ledger/benchmarks/calc/benchmark.json
+  s_c8fd8da1bbefea::t_6a36faf5ad7635 2
+evals/ledger/evaluator/precision.test.ts
+  s_5be9e335eecbfd::t_42675b6f8cbae5 121,187,191-192,196,207,215,217,220,242,246,248-249,273,309,322,380,385,387
+  s_5be9e335eecbfd::t_3a0f5ffdd95108 122
+evals/ledger/run/runner.ts
+  s_5be9e335eecbfd::t_706506d18dfce6 32
+  s_5be9e335eecbfd::t_2b4bf3c8780ca5 260-263,268-275,284,291,297
+  s_5be9e335eecbfd::t_b731ea0074aabd 375
+  s_5be9e335eecbfd::t_7fb4306b882c15 185
+  s_5be9e335eecbfd::t_e978bddd925d57 15-16,18
+evals/ledger/run/progress.test.ts
+  s_5be9e335eecbfd::t_ec47e078e959a8 100
+  s_5be9e335eecbfd::t_19328fbef37b8d 62
+evals/ledger/evaluator/model-backend.ts
+  s_5be9e335eecbfd::t_23988c1677497f 118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "64d0c86b2bc2ed10de0366735814bff2f63fc6b6",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_5be9e335eecbfd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f28b39b9-bbad-4f0f-a813-ca0915cff021",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_c8fd8da1bbefea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7a2ddc30-9130-4920-b846-bb51dd3c63bc",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

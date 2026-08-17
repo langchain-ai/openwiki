@@ -1,0 +1,14 @@
+.changeset/six-walls-travel.md
+  h_f78d33d4280f3f 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "6d895bf3f134bcd4129eb592a0016435c7a5b76d",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

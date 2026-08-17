@@ -1,0 +1,35 @@
+src/cli.tsx
+  s_005aef00a0993e::t_571f09e316f363 3873
+  s_005aef00a0993e::t_735273c331def8 465
+  s_005aef00a0993e::t_e3b69e846fa60c 45
+  s_005aef00a0993e::t_6fad4a4459c2e7 3829-3852
+src/telemetry/types.ts
+  s_005aef00a0993e::t_f3e42412d10f58 40-42,44
+src/agent/types.ts
+  h_f78d33d4280f3f 42,57-91
+src/telemetry/senders.ts
+  s_005aef00a0993e::t_0951e7180f4a21 24
+src/commands.ts
+  h_f78d33d4280f3f 710
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "0af284c7b55e4dc6e49f7619005a40bfc45d6517",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_005aef00a0993e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "366e0bd6-73d2-4a7a-bab1-157a1f397b23",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

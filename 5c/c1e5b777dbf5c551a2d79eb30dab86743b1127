@@ -1,0 +1,54 @@
+evals/ledger/evaluator/prompts.ts
+  s_a78e1243cf0b12::t_8f7866b42623b3 92-97,110-124,233-235,238-244,249-252,271-273,289-290,317-322,332-341,349-351,423,430-431
+  s_a78e1243cf0b12::t_33ab6cb3563e39 291
+  s_a78e1243cf0b12::t_5eef33cb2f2e13 432
+evals/ledger/run/evaluator-e2e.test.ts
+  s_a78e1243cf0b12::t_9b0755f98d95b3 191-195
+  s_a78e1243cf0b12::t_3d81a049888dca 211,219,253,257
+evals/ledger/meta/gold-agreement.ts
+  s_a78e1243cf0b12::t_33ab6cb3563e39 35-38,271-272,278-285
+  s_a78e1243cf0b12::t_9b0755f98d95b3 81-94
+  s_a78e1243cf0b12::t_fc7f88837081af 34
+evals/ledger/evaluator/precision.test.ts
+  s_a78e1243cf0b12::t_7c5d004763db69 927-1067
+  s_a78e1243cf0b12::t_9b0755f98d95b3 42,48-49,54,60-61,104
+  s_a78e1243cf0b12::t_a1c2341ecf0bfa 523-529,540-546,597-603,654-660,670-676
+  s_a78e1243cf0b12::t_0e9170f8229d7e 1068
+evals/ledger/README.md
+  s_a78e1243cf0b12::t_1705b81953cc4a 52,84-89
+  s_a78e1243cf0b12::t_b2009945ea1756 90
+evals/ledger/evaluator/schemas.ts
+  s_a78e1243cf0b12::t_8f7866b42623b3 79-87
+evals/ledger/evaluator/evaluator.test.ts
+  s_a78e1243cf0b12::t_9b0755f98d95b3 26-32,55
+evals/ledger/run/persistence.test.ts
+  s_a78e1243cf0b12::t_33ab6cb3563e39 292
+evals/ledger/evaluator/model-backend.test.ts
+  s_a78e1243cf0b12::t_0944c93b046deb 114,230
+evals/ledger/evaluator/precision.ts
+  s_a78e1243cf0b12::t_0ea8347a012a0e 29,123-134,178-180,265-269,433-441,480-484,632-636,643,805-806,839,860-863
+  s_a78e1243cf0b12::t_33ab6cb3563e39 1062-1065,1099,1118-1119,1125-1152,1154
+  s_a78e1243cf0b12::t_d094a0fe69689a 1153
+evals/ledger/evaluator/fixtures/precision-gold.json
+  s_a78e1243cf0b12::t_248e011a3a2e78 60,73,78,91,104,109
+  s_a78e1243cf0b12::t_2b8c6085aec1aa 121-177,541-640
+evals/ledger/core/types.ts
+  s_a78e1243cf0b12::t_33ab6cb3563e39 477-481
+  s_a78e1243cf0b12::t_8c89391c077c3a 476
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "5cc1e5b777dbf5c551a2d79eb30dab86743b1127",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+evals/keb/testing/tiny-repo.ts
+  h_f78d33d4280f3f 1-88
+evals/keb/replay/git-replay.ts
+  h_f78d33d4280f3f 1-242
+evals/keb/replay/workspace.ts
+  h_f78d33d4280f3f 1-95
+evals/keb/replay/git-replay.test.ts
+  h_f78d33d4280f3f 10-39,100-274
+  s_035863e8e09de1::t_4a60173fa8fb92 40-99
+  s_035863e8e09de1::t_a1e585b56cd7fa 1-9
+evals/keb/replay/git.ts
+  h_f78d33d4280f3f 1-61
+evals/keb/replay/artifact.test.ts
+  s_035863e8e09de1::t_16a041db6d51ba 1-85,89-105,111-146
+  s_035863e8e09de1::t_e0178383760104 86-88,106-110
+evals/keb/replay/artifact.ts
+  h_f78d33d4280f3f 1-113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "601287f5d9465b276b17510c832a5591bbc0adb8",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_035863e8e09de1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe66751d-b755-4d97-8ed8-e3e9d3319a3b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

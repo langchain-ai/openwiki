@@ -1,0 +1,41 @@
+test/agent/claims-agent-integration.test.ts
+  s_ebaf4c4570da5a::t_1e872d7e6e8c55 1
+test/agent/prompt.test.ts
+  s_ebaf4c4570da5a::t_7910dfbb34634e 313-315
+  s_ebaf4c4570da5a::t_0b7110f09667d8 343-348
+test/claims/brains/code/session.test.ts
+  s_ebaf4c4570da5a::t_d80df2de61602a 13,363-417
+  s_ebaf4c4570da5a::t_47030e71c9fe63 420,438-446
+  s_ebaf4c4570da5a::t_183f6342333175 418-419
+test/agent/claims-run-lifecycle.test.ts
+  s_ebaf4c4570da5a::t_43433b112114c2 306-307,310,317-328,330-331,342-348
+  s_ebaf4c4570da5a::t_eadd0917c57e90 311-312
+  s_ebaf4c4570da5a::t_9f2e1ef005a09e 308-309,313-316,329,332,340-341
+  s_ebaf4c4570da5a::t_c7c4e4274c2a63 333-339
+src/agent/prompts/code.ts
+  s_ebaf4c4570da5a::t_80eff0f6b75a86 227-232,234
+  s_ebaf4c4570da5a::t_278e0a52288a16 421
+  s_ebaf4c4570da5a::t_ffdfd470cd42e1 422
+src/agent/index.ts
+  s_ebaf4c4570da5a::t_80eff0f6b75a86 709-720
+test/claims/brains/code/middleware.test.ts
+  s_ebaf4c4570da5a::t_47030e71c9fe63 196-198
+src/claims/brains/code/session.ts
+  s_ebaf4c4570da5a::t_80eff0f6b75a86 404,406-409,412,414,416,421-424,455
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "69b993224d23a4ef2befe4fa60f969b04afd2c06",
+  "prompts": {},
+  "sessions": {
+    "s_ebaf4c4570da5a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffc48-6326-7f91-a188-360fb633427d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

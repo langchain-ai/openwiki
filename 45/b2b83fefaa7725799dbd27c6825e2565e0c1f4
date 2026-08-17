@@ -1,0 +1,58 @@
+package.json
+  s_8b147279d063cb::t_b5039743fe3324 122-125
+  s_8b147279d063cb::t_2ba106e412f678 82-84
+src/claims/evidence/repository/resource.ts
+  s_8b147279d063cb::t_f4710f9410efdd 72
+  h_f78d33d4280f3f 1-46,52-63,75-84,87-91,93,98-112,126
+  s_8b147279d063cb::t_cb12b48ae3235d 85-86
+  s_8b147279d063cb::t_fa0b43979231bf 47-51,64-66,68-71,73-74,92,94-97
+  s_8b147279d063cb::t_3effc578071553 67,113-125
+test/claims/brains/code/paths.test.ts
+  s_8b147279d063cb::t_57e5064b05c7f7 1-16,21-27,30-33,35-70
+  s_8b147279d063cb::t_25774f62cf290a 17-20,28-29,34
+src/claims/core/errors.ts
+  h_f78d33d4280f3f 1-49
+src/claims/brains/code/paths.ts
+  s_8b147279d063cb::t_25774f62cf290a 58,76-78
+  s_8b147279d063cb::t_fa0b43979231bf 15,28-32,54-57,59-60,64,67-75
+  s_8b147279d063cb::t_f0a3a79ea128b0 12
+  h_f78d33d4280f3f 1-11,13-14,16-27,33-53,61-63,65-66,79-100
+src/claims/brains/code/types.ts
+  h_f78d33d4280f3f 1-111
+pnpm-workspace.yaml
+  s_8b147279d063cb::t_b1a1cd013d9cab 5-8,10
+  s_8b147279d063cb::t_ad5d536ccefd0c 14,17
+test/claims/core/errors.test.ts
+  s_8b147279d063cb::t_57e5064b05c7f7 1-11,26,33
+  s_8b147279d063cb::t_f0a3a79ea128b0 12-21
+  s_8b147279d063cb::t_77aeeacd30e9af 22-25,27-32
+test/claims/evidence/repository/resource.test.ts
+  s_8b147279d063cb::t_57e5064b05c7f7 1-60
+src/claims/core/types.ts
+  h_f78d33d4280f3f 1-138
+test/claims/core/architecture.test.ts
+  s_8b147279d063cb::t_57e5064b05c7f7 1-25
+pnpm-lock.yaml
+  s_8b147279d063cb::t_761c075b7bf9a4 8,11,84-92,1243-1245,2194-2195,2209-2212,2231-2234,2640-2658,4162,5122,5134,5144-5145,5158-5159,5273,5538-5557
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "45b2b83fefaa7725799dbd27c6825e2565e0c1f4",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8b147279d063cb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff724-05bf-7871-9fd1-f3f83a5f90da",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

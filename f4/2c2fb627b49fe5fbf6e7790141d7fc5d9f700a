@@ -1,0 +1,65 @@
+src/cli/help.ts
+  s_8d4a238c334fd1::t_b948286de4af19 63-65
+  s_8d4a238c334fd1::t_80256abe00d6ce 205-207
+  s_8d4a238c334fd1::t_06d748e2a79c75 7-9,11-14
+  s_8d4a238c334fd1::t_7e2b7ee4d57edc 3-6,10,15-21,25,30,35,40,45,50,55,60-62,66-204,208-252
+  s_8d4a238c334fd1::t_d4f4d014e77a8b 22-24,26-29,31-34,36-39,41-44,46-49,51-54,56-59
+  s_8d4a238c334fd1::t_80b1a0db479d67 1-2
+src/ui/app.tsx
+  s_8d4a238c334fd1::t_c9eb2caae834ac 12
+test/startup.test.ts
+  s_8d4a238c334fd1::t_400e77160f102c 8
+src/cli/run-mode.ts
+  s_8d4a238c334fd1::t_c9eb2caae834ac 2
+src/ui/components.tsx
+  s_8d4a238c334fd1::t_c9eb2caae834ac 3
+src/credentials.tsx
+  s_8d4a238c334fd1::t_c9eb2caae834ac 46
+CONVENTIONS.md
+  s_8d4a238c334fd1::t_11bcd91598568b 68-70
+src/index.tsx
+  s_8d4a238c334fd1::t_c9eb2caae834ac 12
+src/cli/commands/ngrok.ts
+  s_8d4a238c334fd1::t_c9eb2caae834ac 2
+src/cli/commands/ingest.ts
+  s_8d4a238c334fd1::t_c9eb2caae834ac 1
+src/cli/run-print.ts
+  s_8d4a238c334fd1::t_c9eb2caae834ac 3
+src/cli/commands/auth.ts
+  s_8d4a238c334fd1::t_c9eb2caae834ac 7
+src/cli/commands/cron.ts
+  s_8d4a238c334fd1::t_c9eb2caae834ac 1
+src/cli/parse.ts
+  s_8d4a238c334fd1::t_74470455e78162 69-72
+  s_8d4a238c334fd1::t_5060c9f83bc4af 75-78
+  s_8d4a238c334fd1::t_8618c13fe31cbd 568-571
+  s_8d4a238c334fd1::t_6b5b3ee5856721 16-20
+  s_8d4a238c334fd1::t_7e2b7ee4d57edc 1-15,21-68,73-74,79-567,572-576
+src/startup.ts
+  s_8d4a238c334fd1::t_c9eb2caae834ac 2
+src/ui/views.tsx
+  s_8d4a238c334fd1::t_01a3c1c34a0c5b 3-4
+test/commands.test.ts
+  s_8d4a238c334fd1::t_400e77160f102c 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "f42c2fb627b49fe5fbf6e7790141d7fc5d9f700a",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

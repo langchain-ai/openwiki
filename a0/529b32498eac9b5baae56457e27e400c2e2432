@@ -1,0 +1,55 @@
+src/claims/brains/code/middleware.ts
+  s_8b147279d063cb::t_49929b82e2a589 19-35,92-114,116-132,134,136-190
+  s_8b147279d063cb::t_dbcd04a99fface 1,7,133
+  s_8b147279d063cb::t_1463487a735c0a 115,135
+  s_8b147279d063cb::t_0e11d0ceb332ba 191
+src/claims/brains/code/types.ts
+  s_8b147279d063cb::t_5ba82d5b462ad7 112-134
+test/claims/brains/code/session.test.ts
+  s_8b147279d063cb::t_dbcd04a99fface 392
+  s_8b147279d063cb::t_d166dff7a707f9 362,380-381,383,387-391,393-421,428-456
+  s_8b147279d063cb::t_2498318c5c3b1e 422-427
+  s_8b147279d063cb::t_5da411bd42389d 457-458
+src/claims/brains/code/session.ts
+  s_8b147279d063cb::t_dbcd04a99fface 398-400
+  s_8b147279d063cb::t_5ba82d5b462ad7 11,92-96,170-174,185-187,235-244,331,345,372-397,414-419,501,506-532
+  s_8b147279d063cb::t_2e4c45eb6fcb20 406-409
+  s_8b147279d063cb::t_c2b54ece8bece6 401-402
+src/agent/prompts/code.ts
+  s_8b147279d063cb::t_c940343a5d728c 228-232
+test/claims/brains/code/runtime.test.ts
+  s_8b147279d063cb::t_cc0c03391917a8 68
+src/agent/index.ts
+  s_8b147279d063cb::t_a8f6bf8985b9bf 23-25,500-507
+  s_8b147279d063cb::t_e2c5c2fba6159d 22
+test/claims/brains/code/middleware.test.ts
+  s_8b147279d063cb::t_dbcd04a99fface 1,171
+  s_8b147279d063cb::t_2498318c5c3b1e 172
+  s_8b147279d063cb::t_d166dff7a707f9 7-10,26-32,69-104,156-170,261-263,309-389
+  s_8b147279d063cb::t_64c8c84265764a 173-174
+  s_8b147279d063cb::t_8f03a7900e66c2 390
+test/agent/claims-run-lifecycle.test.ts
+  s_8b147279d063cb::t_cc0c03391917a8 376,380
+test/agent/prompt.test.ts
+  s_8b147279d063cb::t_d166dff7a707f9 314
+src/agent/prompt.ts
+  s_8b147279d063cb::t_c940343a5d728c 109,114
+test/agent/claims-agent-integration.test.ts
+  s_8b147279d063cb::t_cc0c03391917a8 117-119,154-156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a0529b32498eac9b5baae56457e27e400c2e2432",
+  "prompts": {},
+  "sessions": {
+    "s_8b147279d063cb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff724-05bf-7871-9fd1-f3f83a5f90da",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

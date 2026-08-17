@@ -1,0 +1,38 @@
+src/mermaid/validate.ts
+  h_f78d33d4280f3f 1-108,113-131,135,137-152
+  s_70ce361ce20830::t_e27d1b66c0bd16 109-112
+  s_70ce361ce20830::t_b426179ee8aac9 132-134,136
+test/mermaid-validate.test.ts
+  s_70ce361ce20830::t_a2baa0e3230f3f 1-37,39-136
+  s_70ce361ce20830::t_41660090158c4b 38
+test/mermaid-fences.test.ts
+  s_70ce361ce20830::t_df8af014c33aa7 1-63
+skills/mermaid-diagrams/SKILL.md
+  h_f78d33d4280f3f 1-42
+src/mermaid/dom-shim.ts
+  h_f78d33d4280f3f 1-29
+src/mermaid/fences.ts
+  s_70ce361ce20830::t_41660090158c4b 54,59
+  h_f78d33d4280f3f 1-53,55-58,60-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "e22c86100b7f4211115d42916d8086279873f345",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

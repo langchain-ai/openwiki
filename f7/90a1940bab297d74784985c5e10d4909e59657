@@ -1,0 +1,40 @@
+src/agent/oauth/openai-chatgpt.ts
+  s_745799fc3127fe::t_38c42927fd560a 1-153,179,181,198-199,201,203
+  s_745799fc3127fe::t_4dfb1b26fdc08b 154-156,176-178
+  s_745799fc3127fe::t_f2c3938fdd5865 180
+  s_745799fc3127fe::t_1a05afb6866d45 182-184,195-197
+  s_745799fc3127fe::t_47112a29f5d4e6 200
+  s_745799fc3127fe::t_63868f29af71b1 202
+  s_745799fc3127fe::t_de64018c6f2ba1 204-206
+  s_745799fc3127fe::t_74545a29acfabb 157-175,185-194,207-216
+src/agent/oauth/index.ts
+  h_f78d33d4280f3f 1-7
+src/agent/openai-chatgpt-oauth.ts
+  s_745799fc3127fe::t_17f742d3e33e64 11-29
+src/agent/oauth/registry.ts
+  h_f78d33d4280f3f 1-18
+test/oauth-core.test.ts
+  s_745799fc3127fe::t_4ddc00793329f0 1-233
+  s_745799fc3127fe::t_c080b1187af964 234-235
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "f790a1940bab297d74784985c5e10d4909e59657",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_745799fc3127fe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e92ed3cb-dc1c-426e-bfa3-3b9a2cb3b5b7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

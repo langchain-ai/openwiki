@@ -1,0 +1,34 @@
+test/agent/claims-run-lifecycle.test.ts
+  s_ebaf4c4570da5a::t_e71addd1c4bbad 185
+src/agent/prompts/code.ts
+  s_ebaf4c4570da5a::t_e3fe66a54045b2 420
+  s_ebaf4c4570da5a::t_e71addd1c4bbad 228,234
+test/agent/prompt.test.ts
+  s_ebaf4c4570da5a::t_e71addd1c4bbad 347
+src/claims/brains/code/tools.ts
+  s_ebaf4c4570da5a::t_e71addd1c4bbad 71,173,177-179,181,184,190,192-193
+test/claims/brains/code/tools.test.ts
+  s_ebaf4c4570da5a::t_e71addd1c4bbad 112,139-141,143-145,147-148,195,203-205,209,212,214-216,219-224,267,269,272-276,295
+src/claims/brains/code/types.ts
+  s_ebaf4c4570da5a::t_e71addd1c4bbad 48,50
+src/claims/evidence/repository/tree-sitter-adapter.ts
+  s_ebaf4c4570da5a::t_5d55be729d041b 182-188
+test/claims/evidence/repository/tree-sitter-adapter.test.ts
+  s_ebaf4c4570da5a::t_5d55be729d041b 81-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "1704ee17bb42e7ce7d3efb8d47361110695c71fb",
+  "prompts": {},
+  "sessions": {
+    "s_ebaf4c4570da5a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffc48-6326-7f91-a188-360fb633427d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

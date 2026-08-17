@@ -1,0 +1,130 @@
+evals/ledger/evaluator/model-backend.ts
+  s_a78e1243cf0b12::t_bca03422c3f059 26,29-31,88-89
+  s_a78e1243cf0b12::t_4d8864f6ef239a 132-133
+  s_a78e1243cf0b12::t_548a7bda87c943 157-178
+evals/ledger/benchmark/surface.ts
+  s_a78e1243cf0b12::t_7582430c983cd0 671,674
+  s_a78e1243cf0b12::t_cb78ac5ba3609f 427
+evals/ledger/core/types.ts
+  s_a78e1243cf0b12::t_e0febdea65e741 50-51
+  s_a78e1243cf0b12::t_eaf9a3092b01d8 528-529,632-634,682,766
+  s_a78e1243cf0b12::t_4d8864f6ef239a 557,579-580,585,587,590,592,600,602,610,667,669
+  s_a78e1243cf0b12::t_34fc79a7c8f3d7 97-100,105-106,137-138,171
+  s_a78e1243cf0b12::t_91548e34176357 554-555,631,658,692
+  s_a78e1243cf0b12::t_f954ead7776be1 885-886,900,965-966,973,975,981,990
+  s_a78e1243cf0b12::t_74dd07ea929bdd 446
+  s_a78e1243cf0b12::t_a92f541dd6024c 991-992
+evals/ledger/run/report.test.ts
+  s_a78e1243cf0b12::t_548a7bda87c943 29,31,39-40,43,51-53,60-62
+  s_a78e1243cf0b12::t_78225cd3c25f88 1,5-6,8-9,16-26,34,36,50,54-56,59,63-65
+evals/ledger/scoring/metrics.test.ts
+  s_a78e1243cf0b12::t_fc6b0d8de82212 74-84,87-89,91-93,95-96,102-103
+  s_a78e1243cf0b12::t_06df94fcdd4923 97-101
+  s_a78e1243cf0b12::t_29ce38b8cec2c6 6-10,12,17-18,21-23,27-38,44-46,51-53,57-58,71,105-110,119-122,131-136
+  s_a78e1243cf0b12::t_548a7bda87c943 59-60,62-68,70,111-117,123-129
+evals/ledger/run/progress.ts
+  s_a78e1243cf0b12::t_548a7bda87c943 215
+  s_a78e1243cf0b12::t_79fe984298bbd7 81-87,191,194-205,207
+  s_a78e1243cf0b12::t_7f5d99f1bc5708 210,217-221
+evals/ledger/run/persistence.test.ts
+  s_a78e1243cf0b12::t_39811e68411791 67,69-70
+  s_a78e1243cf0b12::t_02b4538e333f2f 62,71-73
+  s_a78e1243cf0b12::t_dfe60d2810e36a 161-178,182
+  s_a78e1243cf0b12::t_27d7269ae0928a 179-181
+evals/ledger/run/evaluate-checkpoint.ts
+  s_a78e1243cf0b12::t_097f2dc09b0108 231
+  s_a78e1243cf0b12::t_7f5d99f1bc5708 20,157-158,227,237-241,253
+  s_a78e1243cf0b12::t_fc6b0d8de82212 96,256-257
+  s_a78e1243cf0b12::t_4eda23fc7febad 133,138,170
+  s_a78e1243cf0b12::t_548a7bda87c943 166
+evals/ledger/evaluator/bounded-passes.test.ts
+  s_a78e1243cf0b12::t_3f44da6d224776 4,90,121,165,198,225,239,243,249,292
+evals/ledger/run/report.ts
+  s_a78e1243cf0b12::t_7068f826a01e0c 14-15,17-19,29-31,33,40,45-58,60-63,67-72,74-82,86,91-92,94,109
+  s_a78e1243cf0b12::t_548a7bda87c943 65
+evals/ledger/scoring/metrics.ts
+  s_a78e1243cf0b12::t_4d8864f6ef239a 16,18,28
+  s_a78e1243cf0b12::t_548a7bda87c943 20-21,25-27,89-90
+  s_a78e1243cf0b12::t_fc6b0d8de82212 49-50,52-54,57-63
+  s_a78e1243cf0b12::t_29ce38b8cec2c6 3,13-15,19,23-24,29,36-39,43,65,68,72-73,81-84,86-87,92-93,102,107-110,115,119
+  s_a78e1243cf0b12::t_097f2dc09b0108 5,47,55-56
+evals/ledger/run/finalize.ts
+  s_a78e1243cf0b12::t_7068f826a01e0c 81,84
+  s_a78e1243cf0b12::t_f07bb73153b0c6 68
+evals/ledger/README.md
+  s_a78e1243cf0b12::t_548a7bda87c943 23-28,84-88
+  s_a78e1243cf0b12::t_7e4350455de681 3-5,7-8,10-11,13,15-19,21,30,33,35-38,41-42,44,47,50,53,55-63,66-69,71,73-74,76-79,81-82,90-91,93-94,96,99-101,103,105,107,109-110,112-113,116-118,120,122-123,126,128-131,134,136,138,141-142
+  s_a78e1243cf0b12::t_79fe984298bbd7 104,108
+evals/ledger/run/progress-events.ts
+  s_a78e1243cf0b12::t_7f5d99f1bc5708 50-54
+evals/ledger/run/runner.ts
+  s_a78e1243cf0b12::t_bca03422c3f059 89,92,107
+  s_a78e1243cf0b12::t_e0febdea65e741 27
+  s_a78e1243cf0b12::t_7f5d99f1bc5708 5
+evals/ledger/run/saved-run.ts
+  s_a78e1243cf0b12::t_f954ead7776be1 202
+evals/ledger/evaluator/direct-model.test.ts
+  s_a78e1243cf0b12::t_2011d76a201367 108,158,229,249
+evals/ledger/run/format.ts
+  s_a78e1243cf0b12::t_e0febdea65e741 12
+evals/ledger/run/reevaluator.ts
+  s_a78e1243cf0b12::t_7f5d99f1bc5708 14
+  s_a78e1243cf0b12::t_e0febdea65e741 80-82,111-112
+evals/ledger/benchmarks/taskflow/benchmark.json
+  s_a78e1243cf0b12::t_a92f541dd6024c 3
+evals/ledger/run/progress.test.ts
+  s_a78e1243cf0b12::t_548a7bda87c943 43-46
+  s_a78e1243cf0b12::t_02b4538e333f2f 1,7-10,41,51-57,60,63,65,68,78-80,82,85-86,89-90,93
+  s_a78e1243cf0b12::t_433b744357beef 14,36-40
+  s_a78e1243cf0b12::t_713012e8a1723c 42
+evals/ledger/run/reevaluator.test.ts
+  s_a78e1243cf0b12::t_fc6b0d8de82212 69
+  s_a78e1243cf0b12::t_0cb0a690e645e7 105,111-113
+  s_a78e1243cf0b12::t_548a7bda87c943 253-255
+evals/ledger/meta/README.md
+  s_a78e1243cf0b12::t_eaaa4b14b5098e 16-19
+evals/ledger/evaluator/bounded-pass.ts
+  s_a78e1243cf0b12::t_bae59f013d9106 180,197-198,631
+evals/ledger/run/persistence.ts
+  s_a78e1243cf0b12::t_dfe60d2810e36a 245-247
+  s_a78e1243cf0b12::t_bca03422c3f059 222-225,269-270,286-287
+evals/ledger/evaluator/evaluator.test.ts
+  s_a78e1243cf0b12::t_0cb0a690e645e7 272
+  s_a78e1243cf0b12::t_a3a40db611402e 17
+evals/ledger/evaluator/direct-model.ts
+  s_a78e1243cf0b12::t_2011d76a201367 20
+evals/ledger/run/runner.test.ts
+  s_a78e1243cf0b12::t_cb78ac5ba3609f 49-51
+  s_a78e1243cf0b12::t_e0febdea65e741 113-115,273
+  s_a78e1243cf0b12::t_14201e60fe1e6c 145,212-214
+  s_a78e1243cf0b12::t_7383788b3b532a 187,198-210
+evals/ledger/run/summary.test.ts
+  s_a78e1243cf0b12::t_02b4538e333f2f 1-17,22
+  s_a78e1243cf0b12::t_548a7bda87c943 18-19,21
+evals/ledger/run/evaluator-e2e.test.ts
+  s_a78e1243cf0b12::t_012e36fd708e63 545,547
+  s_a78e1243cf0b12::t_fc968ebd3345a1 526-527
+  s_a78e1243cf0b12::t_c870afe8ecf7f0 525,576,583-584,594-595,597,604-605,609
+  s_a78e1243cf0b12::t_7d682bd61f9b6a 451,462,473
+  s_a78e1243cf0b12::t_548a7bda87c943 444,480-483,599-601
+  s_a78e1243cf0b12::t_bb5b7b2ba67465 572
+  s_a78e1243cf0b12::t_aeee98d4043216 479
+evals/ledger/run/summary.ts
+  s_a78e1243cf0b12::t_7068f826a01e0c 4,6,10-12,17-19,21-23,28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e817e79060fdfbc9d06317e9c6821ca3c6e3555e",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

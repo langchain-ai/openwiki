@@ -1,0 +1,26 @@
+src/ingestion.ts
+  s_70ce361ce20830::t_bd09504374f8f9 388
+  s_70ce361ce20830::t_47834f77f646d9 390
+  s_70ce361ce20830::t_8c12c6564099cf 384-385
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "f58f1d3361f014af73fa294f9ff80f687ada3924",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

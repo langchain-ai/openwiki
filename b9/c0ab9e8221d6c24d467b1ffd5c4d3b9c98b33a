@@ -1,0 +1,35 @@
+package.json
+  s_841f8a35235565::t_065ef6c06e0665 11-12
+src/retrieval/mcp-server.ts
+  s_841f8a35235565::t_21e7170caff082 1-182
+src/retrieval/mcp-tools.ts
+  s_841f8a35235565::t_577df0bc689a68 1-72
+src/retrieval/ranking.ts
+  s_841f8a35235565::t_9966a201224a5a 1-293
+src/retrieval/repository-index.ts
+  s_841f8a35235565::t_db2ee1b67febde 1-510
+src/retrieval/search-service.ts
+  s_841f8a35235565::t_c01143c51a6f30 1-991
+src/retrieval/semantic.ts
+  s_841f8a35235565::t_e9f990295ff730 1-99
+src/retrieval/types.ts
+  s_841f8a35235565::t_640679084bbe57 1-154
+test/retrieval.test.ts
+  s_841f8a35235565::t_1b9b8b43b3df17 1-343
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "b9c0ab9e8221d6c24d467b1ffd5c4d3b9c98b33a",
+  "prompts": {},
+  "sessions": {
+    "s_841f8a35235565": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f869b-e584-7aa3-9b4c-c1a5f94e7fa7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

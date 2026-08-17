@@ -1,0 +1,14 @@
+.changeset/read-only-bundled-skills.md
+  h_f78d33d4280f3f 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "d8c21e3ebfc11fd9dc74cb56f6365601ff37d13d",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

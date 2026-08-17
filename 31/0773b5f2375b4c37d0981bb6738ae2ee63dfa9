@@ -1,0 +1,22 @@
+src/telemetry/errors.ts
+  s_1a094c985abfe9::t_033001a047dfab 1,4-28,35-39,47-56,59-60,62,65-75,78-82,85-90,102-103,105,110-116,120-237
+test/telemetry.test.ts
+  s_1a094c985abfe9::t_de5c55bf8bbae2 27-32
+  s_1a094c985abfe9::t_5cb706dc7e0e15 129-200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "310773b5f2375b4c37d0981bb6738ae2ee63dfa9",
+  "prompts": {},
+  "sessions": {
+    "s_1a094c985abfe9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "09f52302-2078-4302-993a-18182eb5d654",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

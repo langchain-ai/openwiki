@@ -1,0 +1,19 @@
+test/agent/openwiki-ignore.test.ts
+  s_a78e1243cf0b12::t_f1de898e9dc721 184-186,189-192,195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "3a250b4da03fbc35fa54fda479d33a2234cc74c6",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

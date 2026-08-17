@@ -1,0 +1,26 @@
+src/agent/review-subagents.ts
+  s_384ce797711b9e::t_b23985eccd1022 1-56
+test/agent/review-subagents.test.ts
+  s_384ce797711b9e::t_b23985eccd1022 2-7,9-32,47,49,54,60-68,70-72,82,86,88-90
+  s_384ce797711b9e::t_b29f8ae5a86359 36,48
+src/agent/skeleton-critic.ts
+  s_384ce797711b9e::t_34d5ca20362bec 9
+src/agent/index.ts
+  s_384ce797711b9e::t_b23985eccd1022 69,508-512
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "5bc5af0ded9633def457d2be31bef9d6394fee40",
+  "prompts": {},
+  "sessions": {
+    "s_384ce797711b9e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffd7f-f3ec-7823-8619-b5516237e990",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

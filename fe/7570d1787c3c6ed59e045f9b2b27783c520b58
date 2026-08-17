@@ -1,0 +1,41 @@
+src/agent/plan/planner.ts
+  s_88c14dfbd8e183::t_bb44fae6fb34a7 110
+  s_88c14dfbd8e183::t_fe5ceb1d075a6f 144,150-153
+  h_f78d33d4280f3f 1-109,111-143,145-149,154-186
+src/agent/plan/skeleton.ts
+  h_f78d33d4280f3f 1-65,67-69,73-105
+  s_88c14dfbd8e183::t_a666a975fc6241 66
+  s_88c14dfbd8e183::t_8b70314b3b8feb 70-72
+src/agent/plan/adopt.ts
+  s_88c14dfbd8e183::t_996dd7b014e7ff 97-104
+  h_f78d33d4280f3f 1-5,7-96,105-181
+  s_88c14dfbd8e183::t_014fb59cd9537e 6
+src/agent/reconcile/glob.ts
+  s_88c14dfbd8e183::t_0a8a2320d73a04 16-18
+  s_88c14dfbd8e183::t_42c19b887e7490 12-15
+test/plan.test.ts
+  s_88c14dfbd8e183::t_e1c9274d19a4d5 1-321
+  s_88c14dfbd8e183::t_625071b61477d1 322-324
+  h_f78d33d4280f3f 325-330
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "fe7570d1787c3c6ed59e045f9b2b27783c520b58",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_88c14dfbd8e183": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecd9c94d-7522-4479-8faf-917dcc572b67",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
