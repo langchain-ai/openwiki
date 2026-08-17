@@ -1,0 +1,121 @@
+package.json
+  s_1ce705c602c6af::t_9c5877bda59e66 3
+CLAUDE.md
+  s_1ce705c602c6af::t_9c5877bda59e66 17
+src/agent/translation-middleware.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 10,108-109
+src/ingestion/code-mode.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 190-195,200-203,394-406
+  s_1ce705c602c6af::t_d52f864fd16fc5 407-409
+test/openai-compatible-responses.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 1-48
+src/cli/startup.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 137-138,140-141
+  s_1ce705c602c6af::t_1c0deba04acc6e 139
+src/visualize/page.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 2-6,8-29,31,248,264,267-273
+openwiki/cli/usage.md
+  s_1ce705c602c6af::t_9c5877bda59e66 139-154
+.changeset/lucky-pumas-relax.md
+  s_1ce705c602c6af::t_9c5877bda59e66 1-5
+README.md
+  s_1ce705c602c6af::t_9c5877bda59e66 33-36,90-97,99,386
+src/config/constants.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 17-20,64,462-465,924-958
+test/connectors/sources/langsmith/repo-config.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 195-197
+test/ingestion/code-mode.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 53-71
+test/agent/update-noop.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 66-88
+openwiki/evals/deepswe-harness.md
+  s_1ce705c602c6af::t_9c5877bda59e66 10
+src/visualize/server.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 8,11-12,74
+openwiki/integrations/connectors.md
+  s_1ce705c602c6af::t_9c5877bda59e66 61
+CHANGELOG.md
+  s_1ce705c602c6af::t_9c5877bda59e66 3-30
+openwiki/evals/ledger-harness.md
+  s_1ce705c602c6af::t_9c5877bda59e66 1-222
+src/config/env.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 37,116,193-194,393-396,463,516-519
+  s_1ce705c602c6af::t_1c0deba04acc6e 397-401
+  s_1ce705c602c6af::t_c70bbe60966b8f 520-521
+src/agent/index.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 127,197,199-201,592-606,614,619
+  s_1ce705c602c6af::t_1c0deba04acc6e 198
+src/setup/credentials/constants.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 84-89
+openwiki/architecture/overview.md
+  s_1ce705c602c6af::t_9c5877bda59e66 19,71,129
+openwiki/.last-update.json
+  s_1ce705c602c6af::t_9c5877bda59e66 2,4
+src/platform/language.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 61-77
+test/cli/visualize-command.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 12,25,32-69
+test/config/constants.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 33,317-338
+  s_1ce705c602c6af::t_c83e75f6bb1792 339-340
+test/agent/stream-modes.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 1-48
+test/cli/startup.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 183-201
+test/platform/language.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 2-5,37-51
+  s_1ce705c602c6af::t_ed0beda549d6ae 52
+openwiki/agent/workflow.md
+  s_1ce705c602c6af::t_9c5877bda59e66 41,156,165
+src/connectors/sources/langsmith/setup.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 8,11,19-23,62-67,100-104
+src/visualize/client.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 325-330,783,887,891-893
+src/visualize/static-export.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 1-72
+test/connectors/sources/langsmith/setup.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 20,56-75,112-132
+  s_1ce705c602c6af::t_094052cbe0552f 133
+openwiki/evals/index.md
+  s_1ce705c602c6af::t_9c5877bda59e66 4
+openwiki/quickstart.md
+  s_1ce705c602c6af::t_9c5877bda59e66 21,28,39,80,83,89-91,106
+src/agent/utils.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 12-14,88-94,104,116-122
+  s_1ce705c602c6af::t_1c0deba04acc6e 95,98
+  s_1ce705c602c6af::t_c21c0609ce4c8e 11
+  s_1ce705c602c6af::t_3b0ed2b8969c86 123-124
+src/cli/runners.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 33,63,70-80
+test/visualize/static-export.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 1-78
+openwiki/operations/credentials-and-updates.md
+  s_1ce705c602c6af::t_9c5877bda59e66 45,252
+test/config/env-behavior.test.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 19,48-52,60,524-560
+  s_1ce705c602c6af::t_2faa1c4324d4ca 561-562
+.changeset/fair-languages-run.md
+  s_1ce705c602c6af::t_9c5877bda59e66 1-5
+src/connectors/sources/langsmith/repo-config.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 52
+.changeset/sixty-sites-cough.md
+  s_1ce705c602c6af::t_9c5877bda59e66 1-5
+src/cli/commands.ts
+  s_1ce705c602c6af::t_9c5877bda59e66 51,224-226,235,249,256-283,300-307,316,796,858,860,916-920,956
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "20976f46d89b1d8c0a8357c515b1637d4117cf3e",
+  "prompts": {},
+  "sessions": {
+    "s_1ce705c602c6af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a00874-b159-7d22-9347-610c3769ff44",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
