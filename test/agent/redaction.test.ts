@@ -116,6 +116,29 @@ describe("sanitizeDiagnosticText", () => {
     expect(result).toContain("[REDACTED:OPENAI_API_KEY]");
   });
 
+  test("redacts OPENWIKI_PROVIDER_DEFAULT_HEADERS when set", () => {
+    const originalHeaders = process.env.OPENWIKI_PROVIDER_DEFAULT_HEADERS;
+    const headers =
+      '{"x-agent-id":"tenant-1","api-key":"super-secret-gateway-key"}';
+
+    process.env.OPENWIKI_PROVIDER_DEFAULT_HEADERS = headers;
+
+    try {
+      const result = sanitizeDiagnosticText(
+        `gateway rejected headers ${headers}`,
+      );
+
+      expect(result).not.toContain("super-secret-gateway-key");
+      expect(result).toContain("[REDACTED:OPENWIKI_PROVIDER_DEFAULT_HEADERS]");
+    } finally {
+      if (originalHeaders === undefined) {
+        delete process.env.OPENWIKI_PROVIDER_DEFAULT_HEADERS;
+      } else {
+        process.env.OPENWIKI_PROVIDER_DEFAULT_HEADERS = originalHeaders;
+      }
+    }
+  });
+
   test("redacts the exact value of COPILOT_API_KEY when set", () => {
     process.env.COPILOT_API_KEY = "ghu_secret-value-67890";
 
@@ -263,6 +286,18 @@ describe("formatEnvironmentDebugValue", () => {
     expect(result).toBe(`set(length=${secretValue.length})`);
     expect(result).not.toContain(secretValue.slice(0, 6));
     expect(result).not.toContain(secretValue.slice(-4));
+  });
+
+  test("does not preview OPENWIKI_PROVIDER_DEFAULT_HEADERS", () => {
+    const headers =
+      '{"x-agent-id":"tenant-1","api-key":"super-secret-gateway-key"}';
+    const result = formatEnvironmentDebugValue(
+      "OPENWIKI_PROVIDER_DEFAULT_HEADERS",
+      headers,
+    );
+
+    expect(result).toBe(`set(length=${headers.length})`);
+    expect(result).not.toContain("super-secret-gateway-key");
   });
 });
 

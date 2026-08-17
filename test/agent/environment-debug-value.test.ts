@@ -85,3 +85,18 @@ describe("formatEnvironmentDebugValue – URL-typed keys", () => {
     expect(result).toMatch(/^set\(length=\d+, preview=/u);
   });
 });
+
+describe("formatEnvironmentDebugValue – gateway headers", () => {
+  test("does not preview OPENWIKI_PROVIDER_DEFAULT_HEADERS", () => {
+    const headers =
+      '{"x-agent-id":"tenant-1","api-key":"super-secret-gateway-key"}';
+    const result = formatEnvironmentDebugValue(
+      "OPENWIKI_PROVIDER_DEFAULT_HEADERS",
+      headers,
+    );
+
+    expect(result).toBe(`set(length=${headers.length})`);
+    expect(result).not.toContain("super-secret-gateway-key");
+    expect(result).not.toContain("tenant-1");
+  });
+});
