@@ -18,6 +18,8 @@ export const OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API";
 export const OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES";
+export const OPENAI_COMPATIBLE_MAX_TOKENS_ENV_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_MAX_TOKENS";
 export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
   "OPENAI_CHATGPT_ACCESS_TOKEN";
 export const OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY =
@@ -949,6 +951,17 @@ export function resolveOpenAiCompatibleStreamMessages(
   );
 }
 
+// Caps per-request output tokens for user-supplied OpenAI-compatible endpoints.
+// Some local servers budget an omitted `max_tokens` against the whole context
+// window, so a prompt near the model limit can be rejected even though the next
+// agent step would need only a modest response. Leaving the cap unset preserves
+// existing gateway behavior; setting it sends `max_tokens` through ChatOpenAI.
+export function resolveOpenAiCompatibleMaxTokens(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  return parsePositiveIntegerEnv(env, OPENAI_COMPATIBLE_MAX_TOKENS_ENV_KEY);
+}
+
 // Caps per-request output tokens for OpenRouter. Without a cap, OpenRouter's
 // credit pre-check budgets for the model's full advertised output ceiling and
 // rejects the request with 402 when the balance can't cover that worst case.
@@ -957,7 +970,14 @@ export function resolveOpenAiCompatibleStreamMessages(
 export function resolveOpenRouterMaxTokens(
   env: NodeJS.ProcessEnv = process.env,
 ): number | undefined {
-  const rawMaxTokens = env[OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY];
+  return parsePositiveIntegerEnv(env, OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY);
+}
+
+function parsePositiveIntegerEnv(
+  env: NodeJS.ProcessEnv,
+  envKey: string,
+): number | undefined {
+  const rawMaxTokens = env[envKey];
 
   if (rawMaxTokens === undefined) {
     return undefined;
@@ -966,17 +986,13 @@ export function resolveOpenRouterMaxTokens(
   const maxTokens = rawMaxTokens.trim();
 
   if (!/^[1-9]\d*$/u.test(maxTokens)) {
-    throw new Error(
-      `Invalid ${OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY}. Expected a positive integer.`,
-    );
+    throw new Error(`Invalid ${envKey}. Expected a positive integer.`);
   }
 
   const parsedMaxTokens = Number(maxTokens);
 
   if (!Number.isSafeInteger(parsedMaxTokens)) {
-    throw new Error(
-      `Invalid ${OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY}. Expected a positive integer.`,
-    );
+    throw new Error(`Invalid ${envKey}. Expected a positive integer.`);
   }
 
   return parsedMaxTokens;
