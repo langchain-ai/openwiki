@@ -30,11 +30,10 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 
 ## 🎉 What's new
 
-- **Interactive visualizer:** turn any wiki into a live, explorable node graph with a side-by-side Markdown reader.
-- **`.openwikiignore`:** keep generated, private, or irrelevant paths out of doc runs with familiar gitignore-style rules.
-- **Multilingual wikis:** generate docs in another language with `--language <locale>`, while code and identifiers stay canonical.
-- **LangSmith connector:** pull recent LangSmith traces (tool calls, outcomes, latency) into a code wiki.
-- **GitHub Copilot provider:** reuse an existing Copilot subscription for inference, no separate API key required.
+- **Custom MCP connector:** point OpenWiki at any MCP server and pull its tools into a run, no bespoke integration required.
+- **LangSmith APAC region:** the LangSmith connector now works against APAC-hosted workspaces.
+- **OpenAI Responses API:** OpenAI-compatible providers can opt into the Responses API instead of Chat Completions.
+- **Provider-aware CI:** the generated self-update workflow now emits an env block matched to your configured provider, so scheduled runs work out of the box.
 
 ## Quick start
 
@@ -88,8 +87,16 @@ This serves `./openwiki` on a local loopback address (`127.0.0.1`, never exposed
 openwiki visualize openwiki --port 4400 --no-open
 ```
 
+To publish the visualizer beside generated documentation, export a static directory instead of starting the server:
+
+```sh
+openwiki visualize openwiki --export docs/openwiki-visualizer
+```
+
+The export contains `index.html`, `client.js`, `client-lib.js`, and `graph.json`. Its client reads the sibling graph file and does not use live reload, so the directory can be hosted by GitHub Pages, MkDocs, or any other static host. `--export` cannot be combined with `--port` or `--no-open`.
+
 > [!NOTE]
-> The page loads its graph, Markdown, and diagram libraries from a public CDN, so an internet connection is required even though the server itself is local. Press Ctrl-C to stop it.
+> The page loads its graph, Markdown, and diagram libraries from a public CDN, so an internet connection is required for both local and static viewers.
 
 ## Connect your sources
 
@@ -368,6 +375,7 @@ openwiki -p "what can you do?"   # one-shot, print, and exit
 openwiki --init                  # initialize code docs (personal: openwiki personal --init)
 openwiki --update                # update code docs (personal: openwiki personal --update)
 openwiki visualize               # interactive graph + live reader
+openwiki visualize openwiki --export docs/openwiki-visualizer  # static graph + reader
 openwiki auth <provider>         # authenticate a connector (slack, gmail, x, notion)
 openwiki ingest <source>         # run connector ingestion (all, or a connector/instance)
 openwiki --help                  # full help

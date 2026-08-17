@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { resolveLanguage } from "../../src/platform/language.ts";
+import {
+  getPrimaryLanguageSubtag,
+  resolveLanguage,
+} from "../../src/platform/language.ts";
 
 describe("resolveLanguage", () => {
   test("canonicalizes recognized BCP-47 codes", () => {
@@ -29,5 +32,21 @@ describe("resolveLanguage", () => {
       expect(result.language, unknown).toBeUndefined();
       expect(result.warning, unknown).toBeTruthy();
     }
+  });
+});
+
+describe("getPrimaryLanguageSubtag", () => {
+  test("compares language variants by their primary subtag", () => {
+    expect(getPrimaryLanguageSubtag("en-GB")).toBe("en");
+    expect(getPrimaryLanguageSubtag("zh-CN")).toBe("zh");
+  });
+
+  test("treats an absent persisted language as English", () => {
+    expect(getPrimaryLanguageSubtag(undefined)).toBe("en");
+    expect(getPrimaryLanguageSubtag(null)).toBe("en");
+  });
+
+  test("preserves malformed persisted values for a safe mismatch", () => {
+    expect(getPrimaryLanguageSubtag("not_a_locale")).toBe("not_a_locale");
   });
 });

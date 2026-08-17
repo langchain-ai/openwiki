@@ -132,7 +132,11 @@ async function canSkipCleanUpdateBeforeCredentials(
   }
 
   try {
-    const noopStatus = await getUpdateNoopStatus(cwd);
+    const noopStatus = await getUpdateNoopStatus(
+      cwd,
+      undefined,
+      command.language,
+    );
 
     return noopStatus.shouldSkip;
   } catch {

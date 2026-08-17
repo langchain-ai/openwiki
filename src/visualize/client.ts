@@ -322,6 +322,12 @@ const filterQ = "";
  */
 const filterType = "";
 
+/** True when this client was emitted as a static visualizer export. */
+const isStaticExport = document.documentElement.dataset.staticExport === "true";
+
+/** Static exports carry their graph beside the client; live mode uses the server route. */
+const graphUrl = isStaticExport ? "./graph.json" : "/api/graph";
+
 /**
  * Persisted render-node objects keyed by id, reused across reloads so layout holds.
  */
@@ -774,7 +780,7 @@ function toggleTheme(): void {
  * when the topology is unchanged, so a live reload does not snap the graph.
  */
 async function load(firstTime: boolean): Promise<void> {
-  const res = await fetch("/api/graph");
+  const res = await fetch(graphUrl);
   graph = (await res.json()) as WikiGraph;
   $("#wiki-name").textContent = `${graph.root} · ${graph.nodes.length} pages`;
   const entry =
@@ -878,9 +884,10 @@ function connectSSE(): void {
 
 // --- Bootstrap --------------------------------------------------------------
 
-// Wire the theme toggle, configure the markdown/diagram libraries, then do the
-// first load and open the live-reload stream.
+// Wire the theme toggle and load the graph. Only the live server supplies SSE reloads.
 $("#theme").addEventListener("click", toggleTheme);
 mermaid.initialize({ startOnLoad: false, theme: "dark" });
 marked.setOptions({ breaks: false, gfm: true });
-void load(true).then(connectSSE);
+void load(true).then(() => {
+  if (!isStaticExport) connectSSE();
+});
