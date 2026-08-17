@@ -52,13 +52,12 @@ export function selectSampleBuckets(
 
   // Only runs with a measurable latency can be latency outliers; the rest
   // carry no latency evidence and fall through to the baseline backfill.
-  const measurable = nonErrorRuns
-    .filter((run) => !usedIds.has(run.id))
-    .map((run) => ({ latency: latencyMs(run), run }))
-    .filter(
-      (entry): entry is { latency: number; run: Run } =>
-        entry.latency !== undefined,
-    );
+  const measurable = nonErrorRuns.flatMap((run) => {
+    const latency = latencyMs(run);
+    return latency === undefined || usedIds.has(run.id)
+      ? []
+      : [{ latency, run }];
+  });
   // Keep outliers a genuine tail: never more than the flat cap, the remaining
   // budget, or a quarter of the measurable pool (so a small pull stays mostly
   // baseline instead of being relabeled as outliers).
