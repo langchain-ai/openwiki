@@ -19,13 +19,13 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
 - Optionally schedules automated updates through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
 - Ships two sibling evaluation harnesses: a paired DeepSWE evaluation harness (`evals/deepswe/`) that measures OpenWiki's documentation leverage on a Codex coding agent, and a LEDGER longitudinal benchmark (`evals/ledger/`) that replays a source repository's Git checkpoints, runs OpenWiki at each, and evaluates every current factual claim as supported, stale, hallucinated, or unverified.
-- Serves an interactive node-graph visualizer (`openwiki visualize`) for an already-generated wiki, with live edits refreshed over SSE.
+- Serves an interactive node-graph visualizer (`openwiki visualize`) for an already-generated wiki, with live edits refreshed over SSE, and can export a self-contained static visualizer directory (`openwiki visualize --export <dir>`) hostable on any static host.
 - Honors a repo-root `.openwikiignore` file as a read boundary that keeps private/generated paths out of doc runs.
-- Generates the wiki in a non-English language with `--language <locale>` (BCP-47); the language is persisted and retranslated on a switch via the translation middleware.
+- Generates the wiki in a non-English language with `--language <locale>` (BCP-47); the language is persisted and retranslated on a switch via the translation middleware. A `--language` switch to a different primary subtag defeats the update no-op skip on a clean tree, so the translation pass runs even when no source changed.
 - Stamps a `build_channel` (`official` / `community`) into each telemetry event at build time so fork-originated telemetry can be filtered from the official-release signal.
 - Validates the selected OpenAI model against the API key's model catalogue before inference, aborting early when the model is unavailable to the configured credentials.
 - Caps OpenRouter per-request output tokens with `OPENWIKI_OPENROUTER_MAX_TOKENS` to avoid 402 credit-pre-check failures on low balances.
-- Lets the openai-compatible provider opt into OpenAI's Responses API with `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true` (default chat completions), so a gateway exposing a Responses-compatible endpoint uses the Responses-API tool-calling/SSE path.
+- Lets the openai-compatible provider opt into OpenAI's Responses API with `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true` (default chat completions), so a gateway exposing a Responses-compatible endpoint uses the Responses-API tool-calling/SSE path. The openai-compatible provider also defaults to non-streaming `updates` stream mode (instead of `messages`) to avoid a `ChatMessageChunk` validator crash on endpoints that stream reasoning deltas before the first `role:"assistant"` delta (z.ai GLM, issue #659); set `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES=true` to restore live token streaming for known-good endpoints.
 - Offers a built-in `custom-mcp` connector so a personal-wiki run can ingest from any read-only MCP server without a dedicated connector, and gates all connector tools to personal/local-wiki runs so code-mode runs never make credentialed external fetches.
 
 ## Start here
@@ -45,7 +45,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli/cli.tsx` — process entrypoint: parses argv, loads env, and dispatches to the interactive app, print runner, or operational subcommands.
 - `src/cli/app/app.tsx` — Ink interactive app shell: chat, run lifecycle, provider/model selection, and streaming.
 - `src/cli/commands.ts` — CLI parsing and help content.
-- `src/cli/runners.ts` — non-interactive runners for auth, ngrok, cron, ingest, visualize, and print commands.
+- `src/cli/runners.ts` — non-interactive runners for auth, ngrok, cron, ingest, visualize (live server and `--export` static export), and print commands.
+- `src/cli/startup.ts` — `resolveStartupCommand()` and startup gating helpers, including `canSkipCleanUpdateBeforeCredentials()` which calls `getUpdateNoopStatus()` with the requested language so a `--language` switch is not skipped before credentials are even checked.
 - `src/cli/diagnostics/` — `error-diagnostics.ts`, `sanitize.ts`, and `auth-fix.ts` for the `--debug` diagnostics panel and auth-failure fix guidance.
 - `src/agent/index.ts` — agent runtime, provider-specific model creation (including ChatGPT OAuth), OpenAI model-availability pre-check, fallback, and metadata writes.
 - `src/agent/prompt.ts` — prompt assembler: selects a template by output mode and substitutes placeholders.
@@ -54,7 +55,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/agent/skeleton_critic.ts` — `skeleton_critic` init-only subagent that reviews the proposed wiki skeleton against the repository.
 - `src/agent/wiki_qa_subagents.ts` — `wiki_question_finder` and `wiki_answer_verifier` init-only subagents that verify the completed wiki answers source-grounded questions.
 - `src/agent/crash-guard.ts` — process-wide `installCrashGuard()` + `registerActiveRun`/`handleFatal` that records and stamps an escaped rejection as an interrupted run; `handleFatal` claims the active run synchronously so a burst of escaped rejections records one crash.
-- `src/agent/utils.ts` — run context, content snapshot, and `.last-update.json` handling.
+- `src/agent/utils.ts` — run context, content snapshot, and `.last-update.json` handling; `getUpdateNoopStatus()` (now language-aware) decides whether an update can skip.
 - `src/agent/types.ts` — shared agent types (`OpenWikiCommand`, `RunContext`, `UpdateMetadata`, run options/events).
 - `src/agent/docs-only-backend.ts` — `OpenWikiLocalShellBackend`, extends DeepAgents `LocalShellBackend` with docs-only write guards and output-mode awareness.
 - `src/agent/openai-chatgpt-oauth.ts` — ChatGPT OAuth flow, token persistence, and refresh logic for the `openai-chatgpt` provider.
@@ -90,8 +91,9 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `evals/ledger/reevaluate.ts` — re-evaluates a completed LEDGER run without re-invoking OpenWiki.
 - `evals/ledger/system/openwiki-system.ts` — `OpenWikiSystem` adapter that drives `runOpenWikiAgent` (`init`/`update`, `outputMode: "repository"`) against each replayed checkpoint.
 - `src/visualize/server.ts` — local loopback HTTP server for `openwiki visualize` (node graph + live reader, SSE reload).
+- `src/visualize/static-export.ts` — `exportStaticVisualizer()` writes a self-contained static visualizer directory (`index.html`, `client.js`, `client-lib.js`, `graph.json`) for `openwiki visualize --export <dir>`. Also exports `loadVisualizerAssets()`, the shared reader for the compiled browser modules used by both the live server and the static exporter.
 - `src/visualize/graph.ts` — parses the wiki into concept nodes and Markdown-link edges for the visualizer.
-- `src/visualize/page.ts` — branded single-page visualizer app HTML served at `/`.
+- `src/visualize/page.ts` — branded single-page visualizer app HTML; `renderPage(staticExport)` produces both the live `PAGE` and the static-export `STATIC_PAGE` (with a CSP `<meta>` and sibling `./client.js`), backed by the shared exported `CSP`.
 - `src/agent/openwiki-ignore.ts` — `.openwikiignore` parsing and gitignore-compatible matching (read boundary for doc runs).
 - `src/platform/language.ts` — `resolveLanguage()` BCP-47 validation/canonicalization for `--language`.
 
@@ -120,6 +122,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli/app/app.tsx`
 - `src/cli/commands.ts`
 - `src/cli/runners.ts`
+- `src/cli/startup.ts`
 - `src/cli/diagnostics/` (`error-diagnostics.ts`, `sanitize.ts`, `auth-fix.ts`)
 - `src/agent/index.ts`
 - `src/model-availability.ts`
@@ -174,6 +177,6 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
 - `examples/openwiki-update.bitbucket-pipelines.yml`
-- `src/visualize/` (server.ts, graph.ts, page.ts, client.ts, client-lib.ts)
+- `src/visualize/` (server.ts, static-export.ts, graph.ts, page.ts, client.ts, client-lib.ts)
 - `src/agent/openwiki-ignore.ts`
 - `src/scheduling/schedules.ts`

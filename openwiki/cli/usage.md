@@ -22,6 +22,7 @@ From `src/cli/commands.ts` and `README.md`, the supported entry patterns are:
 - `openwiki --modelId <id>` / `--model-id <id>` — choose a model ID for the run.
 - `openwiki --language <locale>` / `-l <locale>` — generate the wiki in a specific language (BCP-47 locale, e.g. `zh-CN`, `hi`, `pt-BR`); see [Multilingual wikis](#multilingual-wikis).
 - `openwiki visualize [path] [--port <port>] [--no-open]` — serve an interactive node-graph visualizer for a wiki directory on a local loopback address; see [Visualizer](#visualizer).
+- `openwiki visualize [path] --export <dir>` — write a self-contained static visualizer directory (no server) for web hosting; see [Visualizer](#visualizer).
 - `openwiki --help` / `-h` — print usage, options, and examples.
 - `openwiki --dry-run` — development-only option that avoids invoking the agent.
 
@@ -152,6 +153,8 @@ where a value other than `true`/`false` reports an `invalid boolean` warning.
 OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true   # opt into Responses API
 ```
 
+By default the agent runs the `openai-compatible` provider on the **updates** stream mode (`["updates","tools"]`) instead of the **messages** mode the other providers use. Endpoints that stream reasoning deltas before the first `role:"assistant"` delta — notably z.ai GLM — aggregate to a `ChatMessageChunk` under messages mode, which the agent loop's `wrapModelCall` validator rejects (`expected AIMessage or Command, got object`, issue #659). Dropping messages mode routes the model through the non-streaming `_generate` path, which returns a proper `AIMessage`. The cost is no live token streaming for openai-compatible runs in the TUI. Endpoints known to emit a `role:"assistant"` first delta can opt back into live streaming with `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES=true`, resolved by `resolveOpenAiCompatibleStreamMessages()` in `src/config/constants.ts` (default false; only the literal `true` case-insensitive/trimmed enables it).
+
 Base URLs are resolved by `resolveProviderBaseUrl()` in `src/config/constants.ts`, which
 prefers a provider's `baseUrlEnvKey` override over the built-in default.
 
@@ -254,15 +257,18 @@ A cap trades those hard 402 failures for possible truncation (finish_reason `len
 openwiki visualize                       # serve ./openwiki on the default port
 openwiki visualize openwiki --port 4400  # serve a different directory on port 4400
 openwiki visualize openwiki --no-open    # do not open the browser automatically
+openwiki visualize openwiki --export docs/openwiki-visualizer  # write a static visualizer directory
 ```
 
-Behavior and bounds, from `src/visualize/server.ts`:
+`--export <dir>` writes a self-contained static visualizer directory instead of starting the server (`src/visualize/static-export.ts`, `exportStaticVisualizer`). The directory contains `index.html`, `client.js`, `client-lib.js`, and `graph.json` — a snapshot of the graph at export time. The static client reads `./graph.json` and never opens an SSE connection (no live reload), so the directory can be hosted by GitHub Pages, MkDocs, or any other static host without OpenWiki running. The parser rejects `--export` combined with `--port` or `--no-open` (`--export cannot be combined with --port or --no-open.`), and rejects `--export` without a directory argument. On success the runner prints `Exported static visualizer to <dir> (<pages> pages, <links> links).` and exits.
+
+Behavior and bounds, from `src/visualize/server.ts` and `src/visualize/page.ts`:
 
 - The HTTP server binds to the loopback address `127.0.0.1` only — it is never exposed on the network. The preferred port defaults to `4321`; on `EADDRINUSE` it increments through up to 20 ports before failing.
 - A positional path selects the wiki directory (default `openwiki`). If the directory is missing, the server fails fast with a message directing you to run `openwiki --init` first.
 - `buildGraph()` in `src/visualize/graph.ts` parses the wiki into nodes (concept pages) and edges (Markdown links), exposing them at `/api/graph`.
 - A recursive file watcher (`startWatch`) debounces changes (150 ms) and rebuilds the graph; connected browsers receive a reload event over an SSE stream at `/events`, so edits to the wiki files refresh the live graph and reader while the server runs.
-- The page (`src/visualize/page.ts`) and client (`src/visualize/client.ts`) are server-owned static assets served at fixed routes (`/`, `/client.js`, `/client-lib.js`). The browser loads Mermaid and the graph/Markdown libraries from a pinned jsdelivr CDN, so an internet connection is required even though the server is local. The CSP pins script sources to `'self'` and the CDN origin; no `req.url` path is ever used to read a file from disk.
+- The page (`src/visualize/page.ts`) and client (`src/visualize/client.ts`) are server-owned static assets served at fixed routes (`/`, `/client.js`, `/client-lib.js`). The page is rendered by `renderPage(staticExport)`: the live page (`PAGE`) loads client modules from absolute routes; the static page (`STATIC_PAGE`) loads `./client.js` and carries a CSP `<meta>` tag so the exported HTML keeps the same script restrictions without a server header. The browser loads Mermaid and the graph/Markdown libraries from a pinned jsdelivr CDN, so an internet connection is required even though the server is local. The shared `CSP` pins script sources to `'self'` and the CDN origin; no `req.url` path is ever used to read a file from disk. The compiled browser modules are read once via `loadVisualizerAssets()` (shared between the live server and the static exporter).
 - Press Ctrl-C (SIGINT) to stop the server.
 
 ## Multilingual wikis
@@ -278,7 +284,8 @@ Language is persisted state, not a one-shot flag:
 
 - On a run, the effective language is the validated `--language` flag, else the language recorded in `openwiki/.last-update.json` from the previous run, else English (resolved in `src/agent/utils.ts` as `requestedLanguage ?? lastUpdate?.language ?? "en"`, with the requested value validated by `resolveLanguage()` in `src/platform/language.ts`). An update without `--language` keeps the existing wiki consistent in its established language instead of producing a mix.
 - The chosen language is written to the `language` field of `.last-update.json` so subsequent runs inherit it.
-- When a `--language` request changes the primary language subtag (for example `en` to `zh`), the [translation middleware](../agent/workflow.md) (`src/agent/translation-middleware.ts`) runs a deterministic translate-all pass **before** the agent edits: every eligible concept page is translated into the target language and marked with an `openwiki_translation_pending` front-matter field. Pages left pending by a prior failed switch are retranslated individually on the next update.
+- When a `--language` request changes the primary language subtag (for example `en` to `zh`), the [translation middleware](../agent/workflow.md) (`src/agent/translation-middleware.ts`) runs a deterministic translate-all pass **before** the agent edits: every eligible concept page is translated into the target language and marked with an `openwiki_translation_pending` front-matter field. Pages left pending by a prior failed switch are retranslated individually on the next update. The subtag comparison uses the shared `getPrimaryLanguageSubtag()` in `src/platform/language.ts`, which treats an absent tag as English and returns malformed persisted values as written so they cannot accidentally compare equal to a valid requested tag.
+- A language change also defeats the update no-op skip on a clean tree: `getUpdateNoopStatus()` in `src/agent/utils.ts` returns `shouldSkip: false` with reason `"output language changed"` when the requested primary subtag differs from the persisted wiki language, so the translation pass runs even though no source changed. This check runs in both the agent's update-noop gate and the CLI's pre-credential `canSkipCleanUpdateBeforeCredentials()` in `src/cli/startup.ts` (covered by `test/agent/update-noop.test.ts`, "does not skip a clean update that requests a different language").
 - Deterministic, model-free localization (index section headings and the derived concept `type` label) is resolved by `resolveIndexLabels()` and `resolveConceptTypeLabel()` in `src/okf/index-labels.ts`, keyed by BCP-47 tag with region fallback to the primary subtag and then to English.
 
 ## Help text and validation
@@ -297,6 +304,7 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - If adding a provider, update `PROVIDER_CONFIGS` and `SELECTABLE_OPENWIKI_PROVIDERS` in `src/config/constants.ts`, `managedEnvKeys` in `src/config/env.ts`, and the `createModel` branch in `src/agent/index.ts`. OAuth-based providers (like `openai-chatgpt`) additionally need a token refresh flow and a dedicated branch in `createModel` that reads tokens from `process.env`. `apiKeyEnvKey` is optional — a provider without one (like `gemini-enterprise`) instead declares the env keys it needs (e.g. `projectEnvKey`), and `getMissingProviderEnvKey()` gates runs on whichever required key is absent. Providers with a paired secret (like `bedrock`) use `secretKeyEnvKey`, and providers requiring a region use `regionEnvKey` with `requiresRegion: true`.
 - To let a provider accept an alternative base URL, set `baseUrlEnvKey` on its `PROVIDER_CONFIGS` entry, add that key to `managedEnvKeys` in `src/config/env.ts`, and read it through `resolveProviderBaseUrl()` in the provider's `createModel` branch.
 - To require a user-supplied base URL (a provider with no default endpoint, like `openai-compatible`), also set `requiresBaseUrl: true`. `ensureProviderBaseUrl()` in `src/agent/index.ts` enforces it at runtime, and the interactive setup adds a base-URL step for such providers.
+- To change agent streaming behavior per provider, edit the `streamMessagesEnabled`/`streamModes` resolution in `src/agent/index.ts` (the `openai-compatible` provider already gates `messages` vs `updates` there via `resolveOpenAiCompatibleStreamMessages()` in `src/config/constants.ts`) and the `managedEnvKeys`/diagnostics entry for any new opt-in env key; update `test/agent/stream-modes.test.ts` and `test/agent/stream-redaction.test.ts`.
 - Re-check the `package.json` bin entry and scripts if the entrypoint changes. The bin entry is `./dist/cli/cli.js`; a `postbuild` script restores its executable bit (`chmod 0o755`) so `npm link` installs survive rebuilds.
 
 ## Source map
@@ -320,6 +328,7 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - `src/auth/ngrok.ts`
 - `src/platform/language.ts`
 - `src/visualize/server.ts`
+- `src/visualize/static-export.ts`
 - `src/visualize/graph.ts`
 - `src/visualize/page.ts`
 - `src/visualize/client.ts`
