@@ -118,6 +118,7 @@ import {
   providerUsesResponsesApi,
   providerUsesStreaming,
   resolveConfiguredProvider,
+  resolveOpenAiCompatibleStreamMessages,
   resolveOpenRouterMaxTokens,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
@@ -176,7 +177,11 @@ export async function runOpenWikiAgent(
   );
 
   if (command === "update" && shouldCheckUpdateNoop(options)) {
-    const noopStatus = await getUpdateNoopStatus(cwd, openWikiIgnore);
+    const noopStatus = await getUpdateNoopStatus(
+      cwd,
+      openWikiIgnore,
+      options.language,
+    );
 
     if (noopStatus.shouldSkip) {
       const message =
@@ -520,7 +525,21 @@ async function runOpenWikiAgentCore(
     ],
   };
 
-  emitDebug(options, "stream=opening modes=messages,tools subgraphs=true");
+  // "messages" stream mode forces @langchain/core to route the model's
+  // `.invoke()` through chunk aggregation. Providers that stream reasoning
+  // deltas before the first `role: "assistant"` delta (z.ai GLM) aggregate to
+  // a ChatMessageChunk, which the agent loop's wrapModelCall validator
+  // rejects: `expected AIMessage or Command, got object` (issue #659). The
+  // openai-compatible provider can point at any endpoint, so it gets the
+  // safe "updates" mode by default; known-good endpoints can opt back in
+  // with OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES=true.
+  const streamMessagesEnabled =
+    provider !== "openai-compatible" || resolveOpenAiCompatibleStreamMessages();
+  const streamModes = streamMessagesEnabled
+    ? (["messages", "tools"] as const)
+    : (["updates", "tools"] as const);
+  const streamModesLabel = streamModes.join(",");
+  emitDebug(options, `stream=opening modes=${streamModesLabel} subgraphs=true`);
   const stream = await inStage(
     "build",
     () =>
@@ -528,12 +547,12 @@ async function runOpenWikiAgentCore(
         configurable: {
           thread_id: threadId,
         },
-        streamMode: ["messages", "tools"],
+        streamMode: [...streamModes],
         subgraphs: true,
       }),
     { errorClass: "build_error", errorDetail: "stream_open" },
   );
-  emitDebug(options, "stream=started modes=messages,tools subgraphs=true");
+  emitDebug(options, `stream=started modes=${streamModesLabel} subgraphs=true`);
 
   // Register with the crash guard for exactly the stream-consumption window: a
   // subagent rejection surfaces on the microtask queue during streaming and escapes

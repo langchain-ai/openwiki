@@ -58,3 +58,20 @@ export function resolveLanguage(
     warning: `Unrecognized language "${trimmed}"; generating in English. Use a BCP-47 code such as zh-CN, hi, or pt-BR.`,
   };
 }
+
+/**
+ * Returns a language tag's primary subtag (for example `zh` for `zh-CN`),
+ * treating an absent tag as English. Malformed persisted values are returned as
+ * written so they cannot accidentally compare equal to a valid requested tag.
+ */
+export function getPrimaryLanguageSubtag(
+  tag: string | null | undefined,
+): string {
+  if (!tag) return "en";
+
+  try {
+    return new Intl.Locale(tag).language;
+  } catch {
+    return tag;
+  }
+}
