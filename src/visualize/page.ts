@@ -1,15 +1,34 @@
 /**
- * The branded single-page visualizer app (LangChain design system). Served as-is
- * at "/". Scalar wiki fields (title, type, tags) are HTML-escaped client-side
- * before innerHTML; the page body is rendered as markdown, so any HTML embedded in
- * a body is contained by the server's Content-Security-Policy (no 'unsafe-inline'
- * scripts, no inline event handlers, no javascript: URLs) rather than by escaping.
- * The browser libraries load from cdn.jsdelivr.net at pinned exact versions with
- * SRI hashes, so a tampered CDN response is rejected by the browser.
+ * The branded single-page visualizer app (LangChain design system), rendered for
+ * either the local server or a static export. Scalar wiki fields (title, type,
+ * tags) are HTML-escaped client-side before innerHTML; Markdown bodies are
+ * additionally protected by CSP and DOMPurify. Browser libraries load from
+ * cdn.jsdelivr.net at pinned exact versions with SRI hashes.
  */
-export const PAGE = /* html */ `<!doctype html>
-<html lang="en" data-theme="dark">
+const CDN = "https://cdn.jsdelivr.net";
+export const CSP = [
+  "default-src 'none'",
+  `script-src 'self' ${CDN}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join("; ");
+
+function renderPage(staticExport: boolean): string {
+  const liveStatus = staticExport ? "Static" : "Live";
+  const liveClass = staticExport ? "live-pill stale" : "live-pill";
+  const clientUrl = staticExport ? "./client.js" : "/client.js";
+  const cspMeta = staticExport
+    ? `<meta http-equiv="Content-Security-Policy" content="${CSP}" />`
+    : "";
+
+  return /* html */ `<!doctype html>
+<html lang="en" data-theme="dark" data-static-export="${staticExport}">
 <head>
+${cspMeta}
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OpenWiki visualizer</title>
@@ -226,7 +245,7 @@ hr.rule { border:none; border-top:1px solid var(--edge); margin:22px 0; }
     <div class="title">OpenWiki<small id="wiki-name">wiki visualizer</small></div>
   </div>
   <div class="spacer"></div>
-  <div class="live-pill" id="live"><span class="live-dot"></span><span id="live-text">Live</span></div>
+  <div class="${liveClass}" id="live"><span class="live-dot"></span><span id="live-text">${liveStatus}</span></div>
   <div class="icon-btn" id="theme" title="Toggle theme">◐</div>
 </div>
 <div class="main">
@@ -242,6 +261,13 @@ hr.rule { border:none; border-top:1px solid var(--edge); margin:22px 0; }
   </div>
 </div>
 <div class="toast" id="toast">Wiki updated</div>
-<script type="module" src="/client.js"></script>
+<script type="module" src="${clientUrl}"></script>
 </body>
 </html>`;
+}
+
+/** The live-server page, loaded from fixed absolute routes. */
+export const PAGE = renderPage(false);
+
+/** The static-export page, loaded entirely from sibling files. */
+export const STATIC_PAGE = renderPage(true);
