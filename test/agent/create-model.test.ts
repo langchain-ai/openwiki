@@ -201,6 +201,51 @@ describe("createModel openrouter output-token cap", () => {
   });
 });
 
+describe("createModel openai-compatible output-token cap", () => {
+  const OPENAI_COMPATIBLE_KEY = "OPENAI_COMPATIBLE_API_KEY";
+  const MAX_TOKENS_KEY = "OPENWIKI_OPENAI_COMPATIBLE_MAX_TOKENS";
+  let savedApiKey: string | undefined;
+  let savedMaxTokens: string | undefined;
+
+  beforeEach(() => {
+    savedApiKey = process.env[OPENAI_COMPATIBLE_KEY];
+    savedMaxTokens = process.env[MAX_TOKENS_KEY];
+    process.env[OPENAI_COMPATIBLE_KEY] = "test-key";
+    delete process.env[MAX_TOKENS_KEY];
+  });
+
+  afterEach(() => {
+    restoreEnv(OPENAI_COMPATIBLE_KEY, savedApiKey);
+    restoreEnv(MAX_TOKENS_KEY, savedMaxTokens);
+  });
+
+  test("leaves maxTokens unset by default", () => {
+    const model = createModel("openai-compatible", "local-model", 0) as {
+      maxTokens?: number;
+    };
+
+    expect(model.maxTokens).toBeUndefined();
+  });
+
+  test("passes the configured cap through to ChatOpenAI", () => {
+    process.env[MAX_TOKENS_KEY] = "4096";
+
+    const model = createModel("openai-compatible", "local-model", 0) as {
+      maxTokens?: number;
+    };
+
+    expect(model.maxTokens).toBe(4096);
+  });
+
+  test("rejects an invalid cap with a clear error", () => {
+    process.env[MAX_TOKENS_KEY] = "lots";
+
+    expect(() => createModel("openai-compatible", "local-model", 0)).toThrow(
+      /OPENWIKI_OPENAI_COMPATIBLE_MAX_TOKENS/u,
+    );
+  });
+});
+
 function restoreEnv(key: string, value: string | undefined): void {
   if (value === undefined) {
     delete process.env[key];

@@ -315,6 +315,14 @@ OPENWIKI_MODEL_ID=your-loaded-model-id
 
 Some local servers ignore the API key value, but OpenWiki still requires `OPENAI_COMPATIBLE_API_KEY` because the client expects one.
 
+If a local endpoint rejects near-limit prompts because no `max_tokens` was sent, cap per-request output tokens for this provider:
+
+```bash
+OPENWIKI_OPENAI_COMPATIBLE_MAX_TOKENS=4096
+```
+
+Use the largest cap your model context window can comfortably leave for output; too small a value can truncate long generations.
+
 </details>
 
 <details>

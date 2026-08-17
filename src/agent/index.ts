@@ -116,6 +116,7 @@ import {
   providerUsesExternalCliAuth,
   providerUsesResponsesApi,
   resolveConfiguredProvider,
+  resolveOpenAiCompatibleMaxTokens,
   resolveOpenAiCompatibleStreamMessages,
   resolveOpenRouterMaxTokens,
   resolveOpenRouterProviderOnly,
@@ -1166,6 +1167,10 @@ export function createModel(
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
+  const openAiCompatibleMaxTokens =
+    provider === "openai-compatible"
+      ? resolveOpenAiCompatibleMaxTokens()
+      : undefined;
 
   return new ChatOpenAI({
     apiKey: getProviderApiKey(provider),
@@ -1174,6 +1179,9 @@ export function createModel(
           baseURL,
         }
       : undefined,
+    ...(openAiCompatibleMaxTokens !== undefined
+      ? { maxTokens: openAiCompatibleMaxTokens }
+      : {}),
     model: modelId,
     useResponsesApi: providerUsesResponsesApi(provider, modelId),
     ...retryOptions,

@@ -29,6 +29,7 @@ import {
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
   resolveConfiguredProvider,
+  resolveOpenAiCompatibleMaxTokens,
   resolveOpenAiCompatibleUseResponsesApi,
   resolveOpenRouterMaxTokens,
   resolveOpenRouterProviderOnly,
@@ -356,6 +357,35 @@ describe("resolveOpenRouterMaxTokens", () => {
       expect(() =>
         resolveOpenRouterMaxTokens({ OPENWIKI_OPENROUTER_MAX_TOKENS: value }),
       ).toThrow(/OPENWIKI_OPENROUTER_MAX_TOKENS/u);
+    }
+  });
+});
+
+describe("resolveOpenAiCompatibleMaxTokens", () => {
+  test("returns undefined when no cap is configured", () => {
+    expect(resolveOpenAiCompatibleMaxTokens({})).toBeUndefined();
+  });
+
+  test("parses a positive integer cap", () => {
+    expect(
+      resolveOpenAiCompatibleMaxTokens({
+        OPENWIKI_OPENAI_COMPATIBLE_MAX_TOKENS: "4096",
+      }),
+    ).toBe(4096);
+    expect(
+      resolveOpenAiCompatibleMaxTokens({
+        OPENWIKI_OPENAI_COMPATIBLE_MAX_TOKENS: " 512 ",
+      }),
+    ).toBe(512);
+  });
+
+  test("rejects zero, negative, fractional, and non-numeric values", () => {
+    for (const value of ["0", "-1", "1.5", "abc", "", "  ", "1e3", "0x10"]) {
+      expect(() =>
+        resolveOpenAiCompatibleMaxTokens({
+          OPENWIKI_OPENAI_COMPATIBLE_MAX_TOKENS: value,
+        }),
+      ).toThrow(/OPENWIKI_OPENAI_COMPATIBLE_MAX_TOKENS/u);
     }
   });
 });
