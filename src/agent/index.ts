@@ -104,6 +104,7 @@ import {
   NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -115,6 +116,7 @@ import {
   providerUsesAwsSdkCredentials,
   providerUsesExternalCliAuth,
   providerUsesResponsesApi,
+  providerUsesStreaming,
   resolveConfiguredProvider,
   resolveOpenAiCompatibleStreamMessages,
   resolveOpenRouterMaxTokens,
@@ -137,6 +139,7 @@ import {
   persistRunMetadataIfChanged,
   removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
+  writeLastUpdateMetadata,
 } from "./utils.js";
 import { clearActiveRun, registerActiveRun } from "./crash-guard.js";
 import { inStage, inStageSync, tagErrorStage } from "../telemetry/index.js";
@@ -187,6 +190,23 @@ export async function runOpenWikiAgent(
         "No repository changes detected since the last OpenWiki update; skipping agent run.";
       emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
       options.onEvent?.({ type: "text", text: message });
+
+      // Refresh .last-update.json even on a fast-skip no-op so freshness
+      // checks reflect the actual last run, not the last content change.
+      // The persisted language is carried through so a non-English wiki keeps
+      // its marker; dropping it would make the next real update revert to "en".
+      try {
+        await writeLastUpdateMetadata(
+          command,
+          cwd,
+          noopStatus.model ?? "",
+          options.outputMode ?? "local-wiki",
+          "complete",
+          noopStatus.language,
+        );
+      } catch {
+        // Best-effort: a metadata refresh must never block the no-op path.
+      }
 
       // The single telemetry boundary (withRunTelemetry) owns the record; publish
       // the short-circuit outcome and provider onto the shared context and return.
@@ -1193,6 +1213,11 @@ export function createModel(
     useResponsesApi: providerUsesResponsesApi(provider, modelId),
     ...responsesReasoningOptions,
     ...chatCompletionsReasoningOptions,
+    // Some gateways only serve the streaming transport; see
+    // resolveOpenAiCompatibleStreaming for the full rationale. Spread rather
+    // than assigning a boolean: `streaming: false` is not the same as omitting
+    // the key, because LangChain turns it into `disableStreaming`.
+    ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
     ...retryOptions,
   });
 }
@@ -2100,6 +2125,7 @@ export function formatEnvironmentDebugValue(
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
+    key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY ||
     key === BEDROCK_AWS_REGION_ENV_KEY
   ) {
     return `set(value=${JSON.stringify(value)})`;

@@ -28,7 +28,9 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  providerUsesStreaming,
   resolveConfiguredProvider,
+  resolveOpenAiCompatibleStreaming,
   resolveOpenAiCompatibleUseResponsesApi,
   resolveOpenRouterMaxTokens,
   resolveOpenRouterProviderOnly,
@@ -393,6 +395,67 @@ describe("resolveOpenAiCompatibleUseResponsesApi", () => {
         OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: "false",
       }),
     ).toBe(false);
+  });
+});
+
+describe("resolveOpenAiCompatibleStreaming", () => {
+  test("leaves the transport at the client default", () => {
+    expect(resolveOpenAiCompatibleStreaming({})).toBe(false);
+  });
+
+  test("only forces streaming for an explicit true opt-in", () => {
+    expect(
+      resolveOpenAiCompatibleStreaming({
+        OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "true",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleStreaming({
+        OPENWIKI_OPENAI_COMPATIBLE_STREAMING: " TRUE ",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleStreaming({
+        OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "false",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("providerUsesStreaming", () => {
+  test("stays off for openai-compatible without the opt-in", () => {
+    delete process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING;
+
+    expect(providerUsesStreaming("openai-compatible")).toBe(false);
+  });
+
+  test("forces streaming for openai-compatible when opted in", () => {
+    process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING = "true";
+
+    try {
+      expect(providerUsesStreaming("openai-compatible")).toBe(true);
+    } finally {
+      delete process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING;
+    }
+  });
+
+  test("never applies to the other providers sharing the ChatOpenAI branch", () => {
+    process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING = "true";
+
+    try {
+      for (const provider of [
+        "openai",
+        "baseten",
+        "copilot",
+        "fireworks",
+        "nebius",
+        "nvidia",
+      ] as const) {
+        expect(providerUsesStreaming(provider)).toBe(false);
+      }
+    } finally {
+      delete process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING;
+    }
   });
 });
 
