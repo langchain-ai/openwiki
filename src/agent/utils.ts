@@ -3,16 +3,19 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
+import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../config/constants.js";
 import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
-} from "../fs-errors.js";
-import { getPrimaryLanguageSubtag, resolveLanguage } from "../language.js";
+} from "../platform/fs-errors.js";
+import {
+  getPrimaryLanguageSubtag,
+  resolveLanguage,
+} from "../platform/language.js";
 import {
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
-} from "../onboarding.js";
+} from "../setup/onboarding.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
 import type {
   OpenWikiCommand,
@@ -42,17 +45,12 @@ export type UpdateNoopStatus =
     };
 
 /**
- * Builds the per-run context the prompt uses to reason about prior docs and git changes.
- *
- * Paths excluded by `openWikiIgnore` are stripped from the git evidence so the
- * agent never sees changes under an ignored path.
+ * Builds the persisted per-run context used by the prompt.
  */
 export async function createRunContext(
-  command: OpenWikiCommand,
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
   language?: string | null,
-  openWikiIgnore = new OpenWikiIgnore([]),
 ): Promise<RunContext> {
   const lastUpdate = await readLastUpdate(cwd, outputMode);
   // A validated flag wins; otherwise inherit the wiki's persisted language so an
@@ -66,33 +64,8 @@ export async function createRunContext(
   const languageContext = { language: effectiveLanguage };
   const wikiGoal = await readRunWikiGoal(cwd, outputMode);
 
-  if (command === "chat") {
-    return {
-      lastUpdate,
-      gitSummary: "Not applicable for chat.",
-      ...languageContext,
-      wikiGoal,
-    };
-  }
-
-  if (outputMode === "local-wiki") {
-    return {
-      lastUpdate,
-      gitSummary:
-        "Local wiki mode: connector source evidence is provided through raw data paths and OpenWiki connector tools. Git repository diff context is not used for this run.",
-      ...languageContext,
-      wikiGoal,
-    };
-  }
-
   return {
     lastUpdate,
-    gitSummary: await createGitSummary(
-      command,
-      cwd,
-      lastUpdate,
-      openWikiIgnore,
-    ),
     ...languageContext,
     wikiGoal,
   };
@@ -448,95 +421,6 @@ async function readSnapshotFile(filePath: string): Promise<Buffer | null> {
   }
 }
 
-/**
- * Produces the git evidence block passed to init/update prompts.
- *
- * Lines that reference a path excluded by `openWikiIgnore` are filtered out of
- * every git section (status, log, diff) before the block is assembled.
- */
-async function createGitSummary(
-  command: OpenWikiCommand,
-  cwd: string,
-  lastUpdate: UpdateMetadata | null,
-  openWikiIgnore: OpenWikiIgnore,
-): Promise<string> {
-  const sections: string[] = [];
-  const status = filterGitOutputForIgnore(
-    await runGit(cwd, ["status", "--short"]),
-    openWikiIgnore,
-  );
-  const head = await getGitHead(cwd);
-
-  sections.push(formatGitSection("git status --short", status));
-  sections.push(formatGitSection("git rev-parse HEAD", head ?? "(unknown)"));
-
-  if (command === "update" && lastUpdate?.gitHead) {
-    const logSinceLastHead = filterGitOutputForIgnore(
-      await runGit(cwd, [
-        "log",
-        `${lastUpdate.gitHead}..HEAD`,
-        "--name-status",
-        "--oneline",
-      ]),
-      openWikiIgnore,
-    );
-
-    sections.push(
-      formatGitSection(
-        `git log ${lastUpdate.gitHead}..HEAD --name-status --oneline`,
-        logSinceLastHead,
-      ),
-    );
-  } else if (command === "update" && lastUpdate?.updatedAt) {
-    const logSinceLastUpdate = filterGitOutputForIgnore(
-      await runGit(cwd, [
-        "log",
-        "--since",
-        lastUpdate.updatedAt,
-        "--name-status",
-        "--oneline",
-      ]),
-      openWikiIgnore,
-    );
-
-    sections.push(
-      formatGitSection(
-        `git log --since ${lastUpdate.updatedAt} --name-status --oneline`,
-        logSinceLastUpdate,
-      ),
-    );
-  } else {
-    const recentLog = filterGitOutputForIgnore(
-      await runGit(cwd, [
-        "log",
-        "--max-count=20",
-        "--name-status",
-        "--oneline",
-      ]),
-      openWikiIgnore,
-    );
-
-    if (command === "update") {
-      sections.push("No prior OpenWiki update timestamp was found.");
-    }
-
-    sections.push(
-      formatGitSection(
-        "git log --max-count=20 --name-status --oneline",
-        recentLog,
-      ),
-    );
-  }
-
-  const diff = filterGitOutputForIgnore(
-    await runGit(cwd, ["diff", "--name-status", "HEAD"]),
-    openWikiIgnore,
-  );
-  sections.push(formatGitSection("git diff --name-status HEAD", diff));
-
-  return sections.join("\n\n");
-}
-
 async function getGitHead(cwd: string): Promise<string | undefined> {
   const head = await runGit(cwd, ["rev-parse", "HEAD"]);
 
@@ -568,12 +452,6 @@ async function runGit(cwd: string, args: string[]): Promise<string> {
 
     throw error;
   }
-}
-
-function formatGitSection(command: string, output: string): string {
-  return [`$ ${command}`, output.length > 0 ? output : "(no output)"].join(
-    "\n",
-  );
 }
 
 /**
@@ -614,32 +492,6 @@ function isOpenWikiPath(changedPath: string): boolean {
 
 function normalizeGitPath(value: string): string {
   return value.trim().replace(/\\/gu, "/");
-}
-
-/**
- * Strips lines that reference an ignored path from a block of git output.
- *
- * Returns the input unchanged when no rules are active. When filtering removes
- * every line, returns a placeholder so the prompt records that matching paths
- * existed but were excluded, rather than showing a misleadingly empty section.
- */
-function filterGitOutputForIgnore(
-  output: string,
-  openWikiIgnore: OpenWikiIgnore,
-): string {
-  if (!openWikiIgnore.isActive || output.length === 0) {
-    return output;
-  }
-
-  const filteredOutput = output
-    .split("\n")
-    .filter((line) => !lineReferencesIgnoredPath(line, openWikiIgnore))
-    .join("\n")
-    .trim();
-
-  return filteredOutput.length > 0
-    ? filteredOutput
-    : "(all matching paths are excluded by .openwikiignore)";
 }
 
 /**

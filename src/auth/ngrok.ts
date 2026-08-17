@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
-import { saveOpenWikiEnv } from "../env.js";
+import { saveOpenWikiEnv } from "../config/env.js";
 
 const DEFAULT_CALLBACK_PORT = 53682;
 const OAUTH_CALLBACK_PORT_ENV_KEY = "OPENWIKI_OAUTH_CALLBACK_PORT";

@@ -1,11 +1,14 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { OPENWIKI_VERSION } from "../constants.js";
+import { OPENWIKI_VERSION } from "../config/constants.js";
 import {
   getOAuthAccessToken,
   getOAuthProviderIdForAccessTokenEnvKey,
 } from "../auth/tokens.js";
 import type { McpConnectorConfig, McpReadOnlyOperation } from "./types.js";
 import { fetchWithResilience } from "./http.js";
+
+/** Upper bound on `tools/list` pages, so a bad cursor chain cannot spin forever. */
+const MAX_TOOL_LIST_PAGES = 100;
 
 type JsonRpcRequest = {
   id?: number;
@@ -375,6 +378,56 @@ function extractToolValues(value: unknown): unknown[] {
   return [];
 }
 
+function extractNextCursor(value: unknown): string | undefined {
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    "nextCursor" in value &&
+    typeof value.nextCursor === "string" &&
+    value.nextCursor.length > 0
+  ) {
+    return value.nextCursor;
+  }
+
+  return undefined;
+}
+
+/**
+ * Reads every page of `tools/list`.
+ *
+ * The MCP spec paginates `tools/list` with a top-level `nextCursor`: the client
+ * must re-issue the request with that cursor until the field is absent.
+ * Requesting only the first page silently drops the rest of the tool set, and
+ * `callMcpConnectorTool` then rejects those tools as "not returned by
+ * tools/list" even though they are valid.
+ *
+ * The loop is bounded twice over so a misbehaving server cannot hang discovery:
+ * a repeated cursor stops it, and so does the page cap.
+ */
+async function collectPaginatedTools(
+  request: (
+    method: string,
+    params: Record<string, unknown>,
+  ) => Promise<unknown>,
+): Promise<{ tools: unknown[] }> {
+  const tools: unknown[] = [];
+  const seenCursors = new Set<string>();
+  let cursor: string | undefined;
+
+  for (let page = 0; page < MAX_TOOL_LIST_PAGES; page += 1) {
+    const result = await request("tools/list", cursor ? { cursor } : {});
+    tools.push(...extractToolValues(result));
+
+    cursor = extractNextCursor(result);
+    if (!cursor || seenCursors.has(cursor)) {
+      break;
+    }
+    seenCursors.add(cursor);
+  }
+
+  return { tools };
+}
+
 function normalizeMcpTool(value: unknown): McpToolDescriptor | null {
   if (value === null || typeof value !== "object") {
     return null;
@@ -460,7 +513,9 @@ class StdioJsonRpcClient {
   }
 
   listTools(): Promise<unknown> {
-    return this.request("tools/list", {});
+    return collectPaginatedTools((method, params) =>
+      this.request(method, params),
+    );
   }
 
   close(): void {
@@ -606,7 +661,9 @@ class HttpJsonRpcClient {
   }
 
   listTools(): Promise<unknown> {
-    return this.request("tools/list", {});
+    return collectPaginatedTools((method, params) =>
+      this.request(method, params),
+    );
   }
 
   private async notify(method: string): Promise<void> {
@@ -733,15 +790,18 @@ function resolveChildEnv(
 }
 
 // Base environment variables an MCP subprocess may legitimately need to run
-// (locating binaries, resolving the home dir, temp paths, terminal behavior).
-// Deliberately excludes OpenWiki credentials so a spawned MCP server command
-// cannot read the user's API keys and OAuth refresh tokens out of process.env.
+// (locating binaries, resolving the home dir, AppData caches on Windows, temp
+// paths, terminal behavior). Deliberately excludes OpenWiki credentials so a
+// spawned MCP server command cannot read the user's API keys and OAuth refresh
+// tokens out of process.env.
 const CHILD_ENV_ALLOWLIST = [
   "PATH",
   "HOME",
   "HOMEPATH",
   "HOMEDRIVE",
   "USERPROFILE",
+  "APPDATA",
+  "LOCALAPPDATA",
   "TMPDIR",
   "TEMP",
   "TMP",
