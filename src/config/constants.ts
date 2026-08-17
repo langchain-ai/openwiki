@@ -16,6 +16,8 @@ export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API";
+export const OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES";
 export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
   "OPENAI_CHATGPT_ACCESS_TOKEN";
 export const OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY =
@@ -922,6 +924,27 @@ export function resolveOpenAiCompatibleUseResponsesApi(
 ): boolean {
   return (
     env[OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY]?.trim().toLowerCase() ===
+    TRUE_ENV_VALUE
+  );
+}
+
+// Opt-in to keep "messages" stream mode for openai-compatible endpoints.
+//
+// The "messages" stream mode makes @langchain/core route `.invoke()`
+// through `_streamResponseChunks` chunk aggregation. Providers that emit
+// reasoning deltas before the first `role: "assistant"` delta (z.ai GLM
+// via https://api.z.ai/api/coding/paas/v4) aggregate to a
+// ChatMessageChunk instead of an AIMessage, which the agent loop's
+// wrapModelCall validator rejects ("expected AIMessage or Command, got
+// object" — issue #659). Dropping "messages" forces the non-streaming
+// `_generate` path, which returns a proper AIMessage at the cost of
+// live token streaming in the TUI. Endpoints known to emit a
+// role:"assistant" first delta can opt back in with the env below.
+export function resolveOpenAiCompatibleStreamMessages(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    env[OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY]?.trim().toLowerCase() ===
     TRUE_ENV_VALUE
   );
 }
