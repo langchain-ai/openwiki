@@ -1,0 +1,44 @@
+vitest.config.ts
+  s_9df199bc4d57fc::t_8f6f5420075353 29-36,42
+src/setup/credentials/view.tsx
+  s_9df199bc4d57fc::t_8345780d37cf5c 1-642
+src/setup/credentials/types.ts
+  s_9df199bc4d57fc::t_2b8f4c95a65231 1
+  s_9df199bc4d57fc::t_e157b0763742ac 143-170
+test/setup/credentials/view.test.tsx
+  s_9df199bc4d57fc::t_660244e9cc96c9 1-135,141-142
+  s_9df199bc4d57fc::t_680d5e08101982 136-140
+src/setup/credentials.tsx
+  s_9df199bc4d57fc::t_ca84c6148b7af1 1-2,20-29
+  s_9df199bc4d57fc::t_4c4209da56914b 3
+src/setup/credentials/persistence.ts
+  s_9df199bc4d57fc::t_548ed49501c255 1-124
+test/setup/credentials/persistence.test.ts
+  s_9df199bc4d57fc::t_c3ff8a264fb4ee 1-147
+src/setup/credentials/use-init-setup.ts
+  s_9df199bc4d57fc::t_d13ad0d8338420 129,131-138,145
+  s_9df199bc4d57fc::t_c77e427fad68ef 1
+  s_9df199bc4d57fc::t_3efcf61df65b42 2-128,130,139-144,146-2476,2531
+  s_9df199bc4d57fc::t_12453a6581f372 2477-2530
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "2e8060614fe3b1c02b096ec7264c9c309d9a0f0f",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

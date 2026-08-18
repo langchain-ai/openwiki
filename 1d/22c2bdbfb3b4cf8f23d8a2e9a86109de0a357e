@@ -1,0 +1,28 @@
+src/agent/index-middleware.ts
+  s_f826d2309080ef::t_aaa42174471a14 4,159-163,170,174
+  s_f826d2309080ef::t_de0db73b548aa7 167
+  s_f826d2309080ef::t_786670726ea438 157-158,164-166,168-169,171,173,175,178-180,183,187-188
+test/index-middleware.test.ts
+  s_f826d2309080ef::t_786670726ea438 110-138,140-165
+  s_f826d2309080ef::t_f0132efb82e3fa 139
+package.json
+  s_f826d2309080ef::t_58846dea131276 58
+pnpm-lock.yaml
+  s_f826d2309080ef::t_ded8ff6a611963 53-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "1d22c2bdbfb3b4cf8f23d8a2e9a86109de0a357e",
+  "prompts": {},
+  "sessions": {
+    "s_f826d2309080ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5ceb-1a04-79b1-bfba-a09d1a336374",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

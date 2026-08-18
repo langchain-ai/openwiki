@@ -1,0 +1,45 @@
+src/connectors/sources/hackernews.ts
+  s_70ce361ce20830::t_82a01ff5d3a9c1 71
+src/ingestion.ts
+  s_70ce361ce20830::t_cb793bd330238b 353-355
+test/langsmith-repo-config.test.ts
+  s_70ce361ce20830::t_ef57cec855a78d 1-140
+  s_70ce361ce20830::t_b6181818369ccc 141-143
+src/connectors/sources/gmail.ts
+  s_70ce361ce20830::t_c51f464b79aa26 68
+src/connectors/sources/git-repo.ts
+  s_70ce361ce20830::t_fce034e7553bbe 45
+src/connectors/sources/x.ts
+  s_70ce361ce20830::t_1bded5c6a90423 55
+src/connectors/sources/web-search.ts
+  s_70ce361ce20830::t_8293f969cb3d28 45
+test/langsmith-modes.test.ts
+  s_70ce361ce20830::t_5e213be8be5ea5 1-38
+src/connectors/sources/slack.ts
+  s_70ce361ce20830::t_39e462150ff8ee 142
+src/connectors/sources/mcp.ts
+  s_70ce361ce20830::t_3de70db21d37df 28
+src/connectors/sources/langsmith/repo-config.ts
+  h_f78d33d4280f3f 1-164
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "b9cccdce6498ce0a79f4d901017347197febb7e1",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

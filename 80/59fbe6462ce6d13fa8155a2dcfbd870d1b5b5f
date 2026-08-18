@@ -1,0 +1,26 @@
+src/cli.tsx
+  s_88c14dfbd8e183::t_3d9d9f8b826c46 4386-4388
+  s_88c14dfbd8e183::t_f1765f4dd45bbd 4372-4374
+  s_88c14dfbd8e183::t_10563596ac38ba 4270-4273,4275-4277,4279,4286-4287,4290-4300
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "8059fbe6462ce6d13fa8155a2dcfbd870d1b5b5f",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_88c14dfbd8e183": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecd9c94d-7522-4479-8faf-917dcc572b67",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

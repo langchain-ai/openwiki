@@ -1,0 +1,14 @@
+src/agent/oauth/types.ts
+  h_f78d33d4280f3f 1-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "83abc12e6f826d4391a10dad2e949807636a33db",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

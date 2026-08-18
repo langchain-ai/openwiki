@@ -1,0 +1,16 @@
+test/prompt.test.ts
+  h_33f63fd75d0bd5 238-240
+test/wiki-qa-subagents.test.ts
+  h_33f63fd75d0bd5 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "8bfe85e632279a6c93da736ecb0ee8d52a328cf3",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

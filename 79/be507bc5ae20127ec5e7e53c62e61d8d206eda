@@ -1,0 +1,21 @@
+src/agent/prompts/code.ts
+  s_e3e935f3300670::t_daf9444317dbc5 155
+  s_e3e935f3300670::t_3b37ffd1cc6cb4 135
+  s_e3e935f3300670::t_3af62ec5057ec2 144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "79be507bc5ae20127ec5e7e53c62e61d8d206eda",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

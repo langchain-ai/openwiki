@@ -1,0 +1,53 @@
+src/agent/prompts/code.ts
+  s_1c0b702349bc4c::t_3562c513f813d9 218
+  s_1c0b702349bc4c::t_b8abeab6508151 220,225-226
+  h_33f63fd75d0bd5 215-217,229-233
+  s_1c0b702349bc4c::t_0a97765ee1d324 219,221-224
+  s_1c0b702349bc4c::t_69a5f12347f7bb 334
+test/create-model.test.ts
+  s_1c0b702349bc4c::t_868678d88fafac 142-155,158,160,164-167,172,174,178-179
+src/agent/update_subagents.ts
+  s_1c0b702349bc4c::t_b89571b5267ed0 1-16,18,24,27,30,32,34,37-39,77-91,94-100,105-121,130-133,135,137,139-142,144-150,157-158
+  s_1c0b702349bc4c::t_d5ac0e9d27faa0 17,19-23,25-26,28-29,31,33,35-36,40-59,62-76,92-93,101-104,122-127,134,136,138,143,151-156
+  s_1c0b702349bc4c::t_b8abeab6508151 60-61,128-129
+test/update-workflow-prompt.test.ts
+  s_1c0b702349bc4c::t_ca4a883a903a85 29-30
+  s_1c0b702349bc4c::t_0a97765ee1d324 8,16-17
+  s_1c0b702349bc4c::t_adb6ec03fd4d3c 13
+  s_1c0b702349bc4c::t_09518d3dee73c8 1-7,9-12,14-15,18-22,24-25,27-28,36-38
+  s_1c0b702349bc4c::t_b8abeab6508151 23,26,31-35
+src/agent/index.ts
+  s_1c0b702349bc4c::t_868678d88fafac 1129,1139-1147
+  s_1c0b702349bc4c::t_2d20c6484c39d1 61,417
+test/update-subagents.test.ts
+  s_1c0b702349bc4c::t_0a97765ee1d324 10,28-30,40-43,48-58,62-69,73-74
+  s_1c0b702349bc4c::t_09518d3dee73c8 1-9,11-27,31-39,44-47,75,78-79
+  s_1c0b702349bc4c::t_b8abeab6508151 76-77
+  s_1c0b702349bc4c::t_00a2b8f099860d 70-72
+  s_1c0b702349bc4c::t_068f56cfa1cbbc 59-61
+openwiki/.last-update.json
+  h_33f63fd75d0bd5 2,4-5
+openwiki/agent/workflow.md
+  h_33f63fd75d0bd5 102-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "23343b8d7436f9c1f076d48da46f7d3bed93b7e5",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_1c0b702349bc4c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd847-a8e3-7442-97a0-ce454c315f85",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

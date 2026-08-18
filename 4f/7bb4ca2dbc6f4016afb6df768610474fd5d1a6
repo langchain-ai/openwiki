@@ -1,0 +1,56 @@
+src/agent/types.ts
+  s_a90cebfcc677d2::t_e4af54d5a93c3a 1
+src/agent/utils.ts
+  s_a90cebfcc677d2::t_6c98238a2bcefa 16-22
+src/agent/index.ts
+  s_a90cebfcc677d2::t_5825dc7b19d6f5 6,63-64,66
+  s_a90cebfcc677d2::t_eb6d4d127e6e60 110-115
+src/cli.tsx
+  s_a90cebfcc677d2::t_4ff4567714ef15 870,1083-1098,1103-1105,1107-1108,1111-1116,1119-1132,1134-1140,1145,1182-1183,1186-1227,1229-1240,1245-1250,1254-1256,1260-1265,1267-1321,1323-1329,1354-1355,1358-1366,1375-1387,1389-1493,1495-1499,1565,1574-1580,1617-1743
+  s_a90cebfcc677d2::t_fa90cb149ed4e5 357-360,374,403,418-421,430,441,457,459-462
+  s_a90cebfcc677d2::t_2276eb04a96bbf 1747
+  s_a90cebfcc677d2::t_2f489a2b549724 239,315
+  s_a90cebfcc677d2::t_b37387ccb3410b 1169,1566-1573,1613-1616
+  s_a90cebfcc677d2::t_08e196b36fe1b5 1175-1177
+  s_a90cebfcc677d2::t_d8b5c6b2c6887f 20,30-31,35
+  s_a90cebfcc677d2::t_0aeaf008ee5a14 458,463,2418,2420,2447
+  s_a90cebfcc677d2::t_49345f958fb697 793,860-864
+  s_a90cebfcc677d2::t_0f2b05207e5f2d 1099-1102,1109-1110,1141,1144,1146,1149,1153-1157,1161-1165,1170,1184-1185,1372-1374,1388,1500-1564,1581-1612
+  s_a90cebfcc677d2::t_f39291315a6714 1143,1148,1150-1152,1158-1160,1166-1168,1171-1174,1178-1180,1322,1330-1331,1340,1342
+  s_a90cebfcc677d2::t_721cca6304697e 2134-2135
+  s_a90cebfcc677d2::t_7c2df8d8dd235c 871,1339,1341,1343,1345-1348,1744-1746,1748
+  s_a90cebfcc677d2::t_3fdcf8c2dcd04f 1494
+  s_a90cebfcc677d2::t_b1a19fb11d6237 95-97,124-155
+  s_a90cebfcc677d2::t_3572b58c71e25f 718-736,753-759,772-778,780-792,794-812,817-818,843-859,865-869
+  s_a90cebfcc677d2::t_db4f245d991d8c 343-347,508,510,513,515,527,541-545
+  s_a90cebfcc677d2::t_53a78055f5874a 115-117,523-525
+  s_a90cebfcc677d2::t_7b6ec76f9e98ee 111-113
+README.md
+  h_33f63fd75d0bd5 3-5,16,18-20,22-25,30,33-37
+src/commands.ts
+  s_a90cebfcc677d2::t_6f119a02a87660 2,25,29,46,74-88,142-153,157,161-162,176-181,185,189-196,214-216,219
+src/agent/prompt.ts
+  s_a90cebfcc677d2::t_1eacbf073fafcf 20-30
+  s_a90cebfcc677d2::t_2f7dad1e8db2f0 59-67,94-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "4f7bb4ca2dbc6f4016afb6df768610474fd5d1a6",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_a90cebfcc677d2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee15e-5abb-7811-905f-f202d90254e3",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

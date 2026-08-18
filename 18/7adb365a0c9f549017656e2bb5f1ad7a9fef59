@@ -1,0 +1,43 @@
+test/claims/brains/code/store.test.ts
+  s_8b147279d063cb::t_b717c2bf722627 90,224-228,276,289
+  s_8b147279d063cb::t_7bdcb25ca1223b 1-89,91-223,229-258,275,277-281,288,290-309,311-347
+  s_8b147279d063cb::t_78ba479dbea991 310
+  s_8b147279d063cb::t_b5e77858b4d6fd 259-274,282-287
+test/claims/brains/code/preflight.test.ts
+  s_8b147279d063cb::t_b717c2bf722627 129,142-146,160,174-179,191
+  s_8b147279d063cb::t_7bdcb25ca1223b 1-20,22-128,130-141,147-159,161-173,180-190,192-214,216-277
+  s_8b147279d063cb::t_78ba479dbea991 21,215
+src/claims/brains/code/store.ts
+  h_f78d33d4280f3f 1-6,8-24,35-38,41-48,51-73,81-109,115-126,132-149,154-155,157-174,179-205,212,214-228,234-236,242,244-249,251-252,254-267,275,277-301,463-466,507-548,560-563,568-578,596-621
+  s_8b147279d063cb::t_b717c2bf722627 564-567
+  s_8b147279d063cb::t_59b1b0c5e05359 7,25-34,39-40,49-50,74-80,110-114,127-131,150-153,156,175-178,206-211,213,229-233,237-241,243,250,253,268-274,276,302-368,372-462
+  s_8b147279d063cb::t_3fb1c4c082959d 467-506,549-559,579-595
+  s_8b147279d063cb::t_15c87f3f7f41bb 369-371
+test/claims/brains/code/paths.test.ts
+  s_8b147279d063cb::t_a13a6ea62aa2f7 50
+src/claims/brains/code/paths.ts
+  s_8b147279d063cb::t_a13a6ea62aa2f7 61,65
+src/claims/brains/code/preflight.ts
+  h_f78d33d4280f3f 1-132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "187adb365a0c9f549017656e2bb5f1ad7a9fef59",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_8b147279d063cb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff724-05bf-7871-9fd1-f3f83a5f90da",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

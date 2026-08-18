@@ -1,0 +1,51 @@
+src/connectors/registry.ts
+  s_70ce361ce20830::t_0bc4ac18b64462 19
+  s_70ce361ce20830::t_c6aba06c9a7882 30
+  s_70ce361ce20830::t_c6bf81f9b4c64f 4
+src/ingestion.ts
+  s_70ce361ce20830::t_605a91ce1b7ce2 347-352,354-359
+src/connectors/sources/langsmith/index.ts
+  s_70ce361ce20830::t_6586d6a5b4304a 200-229
+  s_70ce361ce20830::t_34a71c5d543ae4 129
+  h_f78d33d4280f3f 1-128,130-199,230-328
+test/langsmith-runs.test.ts
+  s_70ce361ce20830::t_ae6373a3df6765 1-155
+  s_70ce361ce20830::t_ed70e5a248cdae 156-158
+src/connectors/types.ts
+  s_70ce361ce20830::t_d0c60914dcef95 5,19-24
+src/connectors/sources/langsmith/limits.ts
+  h_f78d33d4280f3f 1-21
+src/connectors/sources/langsmith/types.ts
+  h_f78d33d4280f3f 1-240
+test/langsmith-api.test.ts
+  s_70ce361ce20830::t_7642785cc09fcd 1-122
+src/connectors/sources/langsmith/runs.ts
+  h_f78d33d4280f3f 1-160
+src/connectors/sources/langsmith/api.ts
+  h_f78d33d4280f3f 1-169
+test/langsmith-index.test.ts
+  s_70ce361ce20830::t_00b6fdda30a120 54
+  s_70ce361ce20830::t_1fe465a47821a2 1-53,55-192
+  s_70ce361ce20830::t_3af6618fece3b8 193-195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "27373c61a4d4b86199ceee3e33686fa62832e9d6",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+evals/ledger/evaluator/precision.ts
+  s_a78e1243cf0b12::t_079c23d167c035 601-618
+evals/ledger/run/saved-run.ts
+  s_a78e1243cf0b12::t_53f79169fa6e03 1-2,126-140,146-181,183-189,243-247,250-252
+  s_a78e1243cf0b12::t_9ab6885bb66fb4 109-115,209,211-213,215-221
+  s_a78e1243cf0b12::t_32643934f6f8e8 6,141-143
+  s_a78e1243cf0b12::t_92294e2722d8c8 98-108,116-124,208,214,223-228,233-234
+  s_a78e1243cf0b12::t_7f293fbf3e589e 144-145,182
+  s_a78e1243cf0b12::t_eb3fb67d46e366 125
+evals/ledger/replay/artifact.ts
+  s_a78e1243cf0b12::t_702bcf2a7b83be 5-6,97-99,107
+  s_a78e1243cf0b12::t_6e68461c0f70fa 100-106
+  s_a78e1243cf0b12::t_06f5dde5595949 108
+evals/ledger/evaluator/fixtures/precision-gold.json
+  s_a78e1243cf0b12::t_079c23d167c035 85-106
+  s_a78e1243cf0b12::t_6043f7dc588253 84
+evals/ledger/evaluator/precision.test.ts
+  s_a78e1243cf0b12::t_079c23d167c035 114-170
+evals/ledger/replay/artifact.test.ts
+  s_a78e1243cf0b12::t_702bcf2a7b83be 99-108
+evals/ledger/evaluator/prompts.ts
+  s_a78e1243cf0b12::t_079c23d167c035 238-246
+evals/ledger/benchmark/validation.ts
+  s_a78e1243cf0b12::t_702bcf2a7b83be 7-9,223-228,230
+evals/ledger/run/saved-run.test.ts
+  s_a78e1243cf0b12::t_92294e2722d8c8 143-153,159-173
+  s_a78e1243cf0b12::t_9ab6885bb66fb4 154-158
+  s_a78e1243cf0b12::t_bbcc44bb86d65f 103
+  s_a78e1243cf0b12::t_53f79169fa6e03 118-142
+  s_a78e1243cf0b12::t_6e68461c0f70fa 1
+evals/ledger/benchmark/validation.test.ts
+  s_a78e1243cf0b12::t_702bcf2a7b83be 76-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "9c64751c36dbe71306fc672c91935bcb525fcba6",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

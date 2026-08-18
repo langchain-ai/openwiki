@@ -1,0 +1,23 @@
+test/openai-chatgpt-oauth.test.ts
+  s_57eb74afe81192::t_c98f176767ce22 74,77-83,85-88,99,101-119,174-212
+src/agent/openai-chatgpt-oauth.ts
+  s_57eb74afe81192::t_c98f176767ce22 58-63,68,79-102,120-122
+  s_57eb74afe81192::t_f80b43ad5a2849 76-78
+  s_57eb74afe81192::t_b3045bff9d4c5f 123-125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "ce91abf2b3efed82c464c106e59ce8cba823fe20",
+  "prompts": {},
+  "sessions": {
+    "s_57eb74afe81192": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f4e92-7c75-7802-a3ad-44fad27d3ec3",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

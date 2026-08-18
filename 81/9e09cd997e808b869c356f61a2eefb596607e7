@@ -1,0 +1,128 @@
+test/staleness/store.test.ts
+  s_c31451ed432cef::t_8325e1f187d5bc 1-46,91-109
+  s_c31451ed432cef::t_84563a67da3ab1 57
+  s_c31451ed432cef::t_42ee49a84499d9 47-56,58-79,81-90
+  s_c31451ed432cef::t_e71cf7decd4ccd 80
+src/okf/frontmatter.ts
+  s_c31451ed432cef::t_3dc61ded5cf677 277-295
+  s_c31451ed432cef::t_e1a1812d1b71a3 20,276,311-341
+  s_c31451ed432cef::t_506a3ade81818a 158-171
+  s_c31451ed432cef::t_b32c9a47028c37 469-475
+  s_c31451ed432cef::t_bdd28975d9e340 21-26
+src/staleness/anchors.ts
+  s_c31451ed432cef::t_574ef3a4f4d2f9 1-4,6
+  s_c31451ed432cef::t_11d84d7f5c8003 5,7-36
+test/staleness/engine.test.ts
+  s_c31451ed432cef::t_045054d286ff6d 156-291
+  s_c31451ed432cef::t_74321c4bcdd051 113
+  s_c31451ed432cef::t_1c2dfafe684455 1-97,148-155
+  s_c31451ed432cef::t_8121541bddd035 98-112,114-136,144,146-147
+  s_c31451ed432cef::t_f062df7439513d 137-143,145
+src/staleness/detect.ts
+  s_c31451ed432cef::t_94c3f977584e6e 184-267
+  s_c31451ed432cef::t_ed43935a5abbf1 340,344-349,352-379
+  s_c31451ed432cef::t_74bd52387790ad 1-3,8-11,20-183,445-499
+  s_c31451ed432cef::t_1f1cda7d7f4d1c 12,19
+  s_c31451ed432cef::t_3913d401d6511d 275-283,290-296
+  s_c31451ed432cef::t_b61a58186a503d 284-289,297-298
+  s_c31451ed432cef::t_8017a80136bdd4 268-274,299-317,323-339,341-343,350-351,380-392,397-398,400-401,403-410,412-413,440,442-444
+  s_c31451ed432cef::t_d6c367524621d5 393-396,399,402,411,414-439,441
+  s_c31451ed432cef::t_5dbc56db3a064d 4-7,13-18
+  s_c31451ed432cef::t_e68773dde21223 318-322
+test/staleness/stamp.test.ts
+  s_c31451ed432cef::t_e3131146b3e7f3 1-77
+test/prompt-okf.test.ts
+  s_c31451ed432cef::t_225a5dff3165da 26-33
+test/frontmatter-validator.test.ts
+  s_c31451ed432cef::t_62cc645164f2c6 135-164
+src/staleness/engine.ts
+  s_c31451ed432cef::t_baadc56c48509e 79-84,86-103,108
+  s_c31451ed432cef::t_7e835becb5d5a4 1-78,85,104-107,109-146,152-156,159-167
+  s_c31451ed432cef::t_2f813ed28f9dbb 147-151,157-158
+test/staleness/verdicts.test.ts
+  s_c31451ed432cef::t_3f3c005db56fa8 1-76
+package.json
+  s_c31451ed432cef::t_516a43b7a7c66a 77-78
+test/staleness/anchors.test.ts
+  s_c31451ed432cef::t_4832f958f445f4 1-48
+test/staleness/fake-backend.ts
+  s_c31451ed432cef::t_83219efd0ab989 1-64
+src/agent/okf-middleware.ts
+  s_c31451ed432cef::t_6bad6a541df711 118-124
+  s_c31451ed432cef::t_992c05f56a65ae 1
+  s_c31451ed432cef::t_7a21e487410def 62
+  s_c31451ed432cef::t_c3a2fa20e9bcf8 18-19,21,23-24
+  s_c31451ed432cef::t_440b49b826748e 178-187,195,203-221
+  s_c31451ed432cef::t_4fcd1e50ebbf6e 58-61,63-72
+  s_c31451ed432cef::t_e6b691ba759cd5 88-94,98-99
+  s_c31451ed432cef::t_4ac531840ae5e2 20,22
+  s_c31451ed432cef::t_bc6cc5a1690c24 42-46
+  s_c31451ed432cef::t_69bf240802e7b0 222
+src/staleness/queries.ts
+  s_c31451ed432cef::t_ac214d77a2c4d2 1-13,18-22,28,30-46,56-58,60,62-64,68,70-75,78,80-87,90,92-111,283,305-306,310,341-347,351
+  s_c31451ed432cef::t_14242fbb3cc2dc 14-17,23-27,29,47-55,59,61,65-67,69,76-77,79,88-89,91,112-282,284-304,307-309,311-340,348-350
+src/agent/prompts/personal.ts
+  s_c31451ed432cef::t_5270364d0ad9c0 108,302,532
+  s_c31451ed432cef::t_fbd9a3c5107a04 116,310,540
+src/staleness/types.ts
+  s_c31451ed432cef::t_fa45833d5ddd80 70,74-85,94-96
+  s_c31451ed432cef::t_3daf639f71871c 1-69,97-167
+  s_c31451ed432cef::t_f450b9e9bfc3b1 71-73,86-93
+src/staleness/stamp.ts
+  s_c31451ed432cef::t_097805c20bf565 1-21,24,26-66
+  s_c31451ed432cef::t_ad92a03b29b026 22-23,25
+src/staleness/verdicts.ts
+  s_c31451ed432cef::t_3d9994013fbce5 1-65
+test/staleness/detect.test.ts
+  s_c31451ed432cef::t_d21fff6b7fc0a3 4,6
+  s_c31451ed432cef::t_4841c62020d770 288
+  s_c31451ed432cef::t_2d577a1a0d4a4e 305,307-308,310,312-315,317
+  s_c31451ed432cef::t_f92ebbae54a9bc 148-189,320-337
+  s_c31451ed432cef::t_7f99c673d70811 1,9-147
+  s_c31451ed432cef::t_28e19bce674cac 190-192,197-198,200-203,205-206,234-235,246-276,278,284-285,287,304,318-319
+  s_c31451ed432cef::t_ee9526e172bc7e 193-196,199,204,207-233,236-245,277,279-283,286,289-303,306,309,311,316
+  s_c31451ed432cef::t_f3ace22d6e4dbe 2-3,5,7-8
+src/agent/prompt.ts
+  s_c31451ed432cef::t_573924743b3aef 110
+src/staleness/store.ts
+  s_c31451ed432cef::t_cb687d7f486d6d 1-20,60-86,88-129,131-143
+  s_c31451ed432cef::t_3ac05c59fd7e69 21-43,45-59
+  s_c31451ed432cef::t_b89027f54a5fd9 44
+  s_c31451ed432cef::t_d929ca4d55bd27 87
+  s_c31451ed432cef::t_f9596daf7d4ce4 130
+src/agent/prompts/code.ts
+  s_c31451ed432cef::t_f9ae81301955ec 203
+  s_c31451ed432cef::t_4fe99ff6a2d048 74,321
+  s_c31451ed432cef::t_d0c2c81f794f3c 82,329
+  s_c31451ed432cef::t_b38b1b909e29fb 197
+test/okf/frontmatter.test.ts
+  s_c31451ed432cef::t_a65a7997694997 7,11,14
+  s_c31451ed432cef::t_3a7a1ed3af9c9f 122-201
+src/agent/index.ts
+  s_c31451ed432cef::t_fcdf5898fd1010 966
+  s_c31451ed432cef::t_7756b7d2e2f2b4 1025
+  s_c31451ed432cef::t_d864d47abc366b 965
+pnpm-lock.yaml
+  s_c31451ed432cef::t_f7f9c1692563e9 77-82,748-749,752-753,2169-2170,2344-2345,2603-2605,2766-2773,3609,3676,5083,5216,5218,5481-5482,5542,5587-5588
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "819e09cd997e808b869c356f61a2eefb596607e7",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_c31451ed432cef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "edf4b435-95b1-4764-94f9-f1634c4053c8",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

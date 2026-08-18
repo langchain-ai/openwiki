@@ -1,0 +1,54 @@
+evals/ledger/evaluator/model-backend.ts
+  s_a78e1243cf0b12::t_8c63f5656a58b0 148-151,154-159,167-168,171-172,194-197,208-209,211-212,214-216,218-221
+  s_a78e1243cf0b12::t_5a39de5f140882 152,160-166,169-170
+  s_a78e1243cf0b12::t_eda3dd42aae946 213
+  s_a78e1243cf0b12::t_0ae672f02d2223 13,141-144,210,217,222
+  s_a78e1243cf0b12::t_1a94648f586171 153
+evals/ledger/run/evaluate-checkpoint.ts
+  s_a78e1243cf0b12::t_0ae672f02d2223 218-224,226,228,237,240-243,255
+  s_a78e1243cf0b12::t_8c63f5656a58b0 225,227,229-236,238-239
+evals/ledger/run/progress.ts
+  s_a78e1243cf0b12::t_8c63f5656a58b0 43-61,247-251,254,256
+  s_a78e1243cf0b12::t_0ae672f02d2223 142-156,246,252-253,255,261
+  s_a78e1243cf0b12::t_b293cafba1e881 42
+  s_a78e1243cf0b12::t_fb1c51fa77810d 141
+evals/ledger/run/progress.test.ts
+  s_a78e1243cf0b12::t_0ae672f02d2223 55-56,62,65-67,69-70,73-74,78,92,94-96,111
+  s_a78e1243cf0b12::t_0dd427c290d9d7 5,14-19,57-61,63-64,68,71-72,90-91,93
+evals/ledger/run/progress-events.ts
+  s_a78e1243cf0b12::t_0ae672f02d2223 48,56,59-60,64
+  s_a78e1243cf0b12::t_8c63f5656a58b0 46-47,49-55,57-58
+evals/ledger/evaluator/forgetting.ts
+  s_a78e1243cf0b12::t_6ccec64ad28d89 72-74,325,337,340-341,367-368,372-373,378-382
+evals/ledger/README.md
+  s_a78e1243cf0b12::t_0ae672f02d2223 125,129,136-140
+  s_a78e1243cf0b12::t_5a39de5f140882 142-151
+  s_a78e1243cf0b12::t_6898ba926f319d 141
+evals/ledger/evaluator/model-backend.test.ts
+  s_a78e1243cf0b12::t_0dd427c290d9d7 81-86,179-180,182-184,207-212
+  s_a78e1243cf0b12::t_aa53cf3aeb826b 145-170,172-174,178,185-186
+evals/ledger/run/runner.test.ts
+  s_a78e1243cf0b12::t_aa53cf3aeb826b 255,260
+evals/ledger/evaluator/precision.ts
+  s_a78e1243cf0b12::t_eda3dd42aae946 1195-1201
+  s_a78e1243cf0b12::t_6ccec64ad28d89 364-369,712-713,717-722,1181-1184,1193-1194,1202-1205,1236,1263
+evals/ledger/core/types.ts
+  s_a78e1243cf0b12::t_0ae672f02d2223 972-982,984
+  s_a78e1243cf0b12::t_6ccec64ad28d89 983,985-996
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "075eb0eae93118d8c4cbd5348fb1d09afda4fc59",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

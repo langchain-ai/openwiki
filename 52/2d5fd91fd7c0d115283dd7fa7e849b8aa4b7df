@@ -1,0 +1,26 @@
+src/agent/index.ts
+  s_b7a9f39aa7a050::t_85f865e7cdcf5f 370
+test/connectors/raw-connector-tools.test.ts
+  s_b7a9f39aa7a050::t_85f865e7cdcf5f 122-152,168-185
+  s_b7a9f39aa7a050::t_f857baef509f9b 186,191
+.changeset/fix-connector-tool-mode-gating.md
+  s_b7a9f39aa7a050::t_85f865e7cdcf5f 1-5
+src/connectors/tools.ts
+  s_b7a9f39aa7a050::t_85f865e7cdcf5f 8,24-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "522d5fd91fd7c0d115283dd7fa7e849b8aa4b7df",
+  "prompts": {},
+  "sessions": {
+    "s_b7a9f39aa7a050": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6df1b475-f278-450d-9c60-e6461fcc65e7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

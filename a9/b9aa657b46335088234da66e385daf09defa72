@@ -1,0 +1,38 @@
+src/setup/credentials/steps.ts
+  s_9df199bc4d57fc::t_487fef68f9c539 671-1150
+  s_9df199bc4d57fc::t_c52fb07a2736b8 2,4,13-17,30
+  s_9df199bc4d57fc::t_67f2d1548770c2 45-52,58-59
+src/setup/credentials/components.tsx
+  s_9df199bc4d57fc::t_fcba118cbdd8bd 1-1278
+src/setup/credentials.tsx
+  s_9df199bc4d57fc::t_4bb8d7253c0727 74-76,80,82-83,85,87-89,96,99-100,102-104,106,113,115-116,120,125,127-130
+  s_9df199bc4d57fc::t_ba9c2a89bebf35 156-162
+test/setup/credentials/components.test.tsx
+  s_9df199bc4d57fc::t_3ef07b7e15db96 1-68,75-142,148-203
+  s_9df199bc4d57fc::t_507b54593a4e45 69-74,143-147
+test/setup/credentials/steps-derivations.test.ts
+  s_9df199bc4d57fc::t_919eefe63b2bf1 210-215,451,454-456
+  s_9df199bc4d57fc::t_f3d3eb056f5d2f 1
+  s_9df199bc4d57fc::t_8021b4674f4d94 2-209,216-450,452-453,457-520
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "a9b9aa657b46335088234da66e385daf09defa72",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

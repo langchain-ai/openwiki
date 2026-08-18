@@ -1,0 +1,63 @@
+src/claims/brains/code/store.ts
+  s_2ec855188a1549::t_d80209e143f96d 83-87,93,159-164
+  s_2ec855188a1549::t_3f19fa9b103520 67-77,82,88-92,116,124,284
+  s_2ec855188a1549::t_b48a9863ad5db0 66
+src/agent/generation/page-commit.ts
+  s_2ec855188a1549::t_c43c0edcedb002 96,141
+  s_2ec855188a1549::t_f044559cfb5ae5 60-62
+  h_f78d33d4280f3f 1-59,63-95,97-140,142-199
+test/agent/generation/atomic-files.test.ts
+  s_2ec855188a1549::t_909af16c723e75 77-79,111-113
+  s_2ec855188a1549::t_4830241f1245b9 1-76,80-110,114-124
+test/agent/generation/pending-work-store.test.ts
+  s_2ec855188a1549::t_4830241f1245b9 1-201,205-214
+  s_2ec855188a1549::t_909af16c723e75 202-204
+test/claims/brains/code/preflight.test.ts
+  s_2ec855188a1549::t_909af16c723e75 137
+  s_2ec855188a1549::t_4830241f1245b9 7,127-136
+  s_2ec855188a1549::t_bc92b3448bde2f 138-139
+test/agent/generation/page-commit.test.ts
+  s_2ec855188a1549::t_909af16c723e75 58-61,106-108,117-119,132-134,149-151,185-187
+  s_2ec855188a1549::t_4830241f1245b9 1-57,62-105,109-116,120-131,135-148,152-184,188-204
+src/claims/brains/code/reconcile.ts
+  s_2ec855188a1549::t_f044559cfb5ae5 114-121
+  h_f78d33d4280f3f 1-113,122-125
+test/claims/brains/code/reconcile.test.ts
+  s_2ec855188a1549::t_4830241f1245b9 1-224,226-282
+  s_2ec855188a1549::t_909af16c723e75 225
+src/agent/generation/pending-work-store.ts
+  s_2ec855188a1549::t_f044559cfb5ae5 57,208-215
+  h_f78d33d4280f3f 1-56,58-207,216-226
+src/agent/generation/atomic-files.ts
+  s_2ec855188a1549::t_ee2b493a1f93e6 138
+  s_2ec855188a1549::t_3a76c0848fb795 177
+  s_2ec855188a1549::t_f044559cfb5ae5 242,285-294
+  h_f78d33d4280f3f 1-23,36-38,44-55,57-62,64-90,92-97,99-137,139-176,178-190,192-241,243-284,299-314
+  s_2ec855188a1549::t_14ace27bbfbad4 91,191
+  s_2ec855188a1549::t_909af16c723e75 295-298
+  s_2ec855188a1549::t_3f19fa9b103520 24-35,39-43,56,63,98
+test/claims/brains/code/store.test.ts
+  s_2ec855188a1549::t_4830241f1245b9 138-155,159-163
+  s_2ec855188a1549::t_909af16c723e75 156-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "54b3a04cc3b78f34fbd4a0c0a2d472ac9eb56847",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_2ec855188a1549": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0010c-6d0e-73a1-af82-7f04489ff51a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

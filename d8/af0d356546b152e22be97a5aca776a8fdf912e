@@ -1,0 +1,30 @@
+test/manifest.test.ts
+  s_ed53d270747173::t_2ffe0e5d984e8d 12
+src/agent/reconcile/reconcile.ts
+  s_ed53d270747173::t_cf7dfdea503408 4
+test/reconcile.test.ts
+  s_ed53d270747173::t_2ffe0e5d984e8d 6-7
+src/agent/plan/schema.ts
+  s_ed53d270747173::t_45315021e3e3c7 1-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "d8af0d356546b152e22be97a5aca776a8fdf912e",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_ed53d270747173": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d2637247-d454-4285-aad7-b22c15edffeb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

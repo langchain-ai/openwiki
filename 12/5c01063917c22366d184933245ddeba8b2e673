@@ -1,0 +1,14 @@
+CLAUDE.md
+  h_33f63fd75d0bd5 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "125c01063917c22366d184933245ddeba8b2e673",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+README.md
+  h_33f63fd75d0bd5 29,32,34-35,37-40,42-45,47-50,52,54-55,61-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "2c5bd4354649b52eb64b724fc8ed879b07dc9f5f",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+src/agent/index.ts
+  s_ca3f75497acfc2::t_cb19747c5a5332 59,409-412
+test/wiki-qa-subagents.test.ts
+  s_ca3f75497acfc2::t_cb19747c5a5332 1-16,23,26,30-35
+  s_ca3f75497acfc2::t_57877441d31076 17-19,21
+  s_ca3f75497acfc2::t_202cd885f0d37e 20,22,24-25,27-29
+src/agent/wiki_qa_subagents.ts
+  s_ca3f75497acfc2::t_57877441d31076 17,29-36,40-46,52-59
+  h_33f63fd75d0bd5 1
+  s_ca3f75497acfc2::t_202cd885f0d37e 16,69-70,86-90,94-103
+  s_ca3f75497acfc2::t_8dbc5edbcd6c38 37,47-49,60-61
+  s_ca3f75497acfc2::t_b204afaf085a0e 18,20-24
+  s_ca3f75497acfc2::t_0201265c542633 74,82
+  s_ca3f75497acfc2::t_cb19747c5a5332 2-15,19,25-28,38-39,50-51,62-68,71-73,75-81,83-85,91-93,104-113
+test/prompt.test.ts
+  s_ca3f75497acfc2::t_57877441d31076 220,222-223,237,240
+  s_ca3f75497acfc2::t_057bc2c3fc83c4 204
+  s_ca3f75497acfc2::t_640ec805718a49 224-236
+  s_ca3f75497acfc2::t_ae447a71954526 207
+  s_ca3f75497acfc2::t_202cd885f0d37e 221,238-239
+src/agent/prompts/code.ts
+  s_ca3f75497acfc2::t_640ec805718a49 146-148
+  s_ca3f75497acfc2::t_9c985ddeef2ee2 135-136
+  s_ca3f75497acfc2::t_57877441d31076 133-134,143-145
+src/agent/skeleton_critic.ts
+  s_ca3f75497acfc2::t_202cd885f0d37e 22-23,46-47
+  h_33f63fd75d0bd5 27-32,34-41,43,45,48-50,52-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "abc916811da6a79300d46d020490950b4fa2fdb9",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_ca3f75497acfc2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb985-efa3-7522-b8dd-309b236e8417",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

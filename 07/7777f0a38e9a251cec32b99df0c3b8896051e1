@@ -1,0 +1,96 @@
+src/ingestion.ts
+  s_1a094c985abfe9::t_eb96692c28e650 27-30
+  s_1a094c985abfe9::t_629d55be5dc483 173,186-196
+src/telemetry/senders.ts
+  s_1a094c985abfe9::t_b6c391f2a40144 75-80
+src/telemetry/with-run-telemetry.ts
+  s_1a094c985abfe9::t_d637f5c821a7e9 1-85
+src/telemetry/errors.ts
+  s_1a094c985abfe9::t_a2799586f22060 1-6,9-11,13-36,41-60,64-74,76,78,88,91,94,97,101-103,108-113,116,123,126,129,131-141,144-147,149-150,155-162,165,212-216,218-238,241-243,245-273,279,283-284,292,294,296-298,306-326,331,336,345-349,353,359,361-364,366-375,377-385,387-410,412-415
+  s_1a094c985abfe9::t_4e7f20903097e5 37-40
+src/agent/index.ts
+  s_1a094c985abfe9::t_d96433bb602262 136
+  s_1a094c985abfe9::t_d87a0c7b22db40 129
+  s_1a094c985abfe9::t_e124cc4f020183 412
+  s_1a094c985abfe9::t_8f9200fd1a384a 173-176
+  s_1a094c985abfe9::t_d881c664156724 355-358
+  s_1a094c985abfe9::t_6b1eb9b731582c 293-294,297,303-306,309-312
+  s_1a094c985abfe9::t_bde5ddb61f50b0 128
+  s_1a094c985abfe9::t_17eaf28b5f00b3 319-322
+  s_1a094c985abfe9::t_1695106798aa9c 359-403,411
+  s_1a094c985abfe9::t_a228dca909b2f1 193-196,198,201,211-213
+  s_1a094c985abfe9::t_db3760540f8727 426-435
+  s_1a094c985abfe9::t_32d9fb62d294b3 502-515
+  s_d80d23df626cc1::t_544fd3a2394ebb 295-296
+  s_d80d23df626cc1::t_eca5d86771bf47 404-410
+src/telemetry/config.ts
+  h_f78d33d4280f3f 9
+src/cli.tsx
+  s_1a094c985abfe9::t_0dd2f99d195f7b 4185,4194-4231
+  s_1a094c985abfe9::t_b1fb32f6926bc4 590-593,595-608,610-624
+  s_1a094c985abfe9::t_2a8af9cc0059a8 99-100
+  s_1a094c985abfe9::t_bde5ddb61f50b0 626-635,649-656
+  s_1a094c985abfe9::t_1b74f7fb8bf0f5 89-93
+  s_1a094c985abfe9::t_54e97e9ddfe764 625
+src/agent/okf-middleware.ts
+  s_1a094c985abfe9::t_4742d51b58c0ee 37-44,68-77
+  s_1a094c985abfe9::t_4f1f0022900a52 46-59
+  s_1a094c985abfe9::t_596b7ff6ac56c6 17
+src/telemetry/taxonomy.ts
+  s_1a094c985abfe9::t_f131bc4d3f9927 1-159
+src/telemetry/index.ts
+  s_1a094c985abfe9::t_46c35ce814547d 4-5
+  s_1a094c985abfe9::t_3499806e2a2fa0 19-24,29
+src/telemetry/types.ts
+  s_1a094c985abfe9::t_4e7f20903097e5 41
+  s_1a094c985abfe9::t_d39341401085d0 79,83-101
+  s_1a094c985abfe9::t_cd472696611513 2-10,13-21,23-24,27-40
+  s_1a094c985abfe9::t_43ff01fde1f014 42,102
+src/telemetry/record-run-safe.ts
+  s_1a094c985abfe9::t_e05ba84235c7a9 61-62
+  s_1a094c985abfe9::t_22bb0052bff675 32-34,43-44
+  s_1a094c985abfe9::t_70b6a10a590929 10-14
+test/telemetry.test.ts
+  s_1a094c985abfe9::t_1695106798aa9c 357-361
+  s_1a094c985abfe9::t_6b995441781ca1 31
+  s_1a094c985abfe9::t_c77642533927e6 32
+  s_1a094c985abfe9::t_f0916c1c52082f 47-50,52
+  s_1a094c985abfe9::t_fb99b427ffbeb6 105,109-121,130-142,145-148,155-156,164,167-179,183-186,192-205,209-248,252,256-260,264-265,270,278-308,311,316-317,319,324-334,337,339
+  s_1a094c985abfe9::t_dd686a40d6bec5 24
+  s_1a094c985abfe9::t_4e7f20903097e5 36-38,124-127,249-251,253-255,275-277
+  s_1a094c985abfe9::t_5208d6b635a8e6 345-356,362-414
+  s_1a094c985abfe9::t_9ced14b2bd747d 631-632,637-639,647-649,655,664-665
+  s_1a094c985abfe9::t_d01946f85d48b9 51
+  s_1a094c985abfe9::t_114ecea7113ca5 708-887,889-947,950-980,985-995
+  s_1a094c985abfe9::t_bc95c4cbe3413e 888,948-949,981-984
+  s_1a094c985abfe9::t_100efbbbde2598 35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "077777f0a38e9a251cec32b99df0c3b8896051e1",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_1a094c985abfe9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "09f52302-2078-4302-993a-18182eb5d654",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_d80d23df626cc1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dd16ad7-edaf-4e90-b062-7f6048ea2ff8",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

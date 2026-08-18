@@ -1,0 +1,26 @@
+package.json
+  s_70ce361ce20830::t_bed994004ec10d 63
+pnpm-lock.yaml
+  s_70ce361ce20830::t_65e399d359935d 55,65-67,1344-1345,2389,2903,2911,3284,3297
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "f014a96e8ce7baf1b6bd8b3ca96102bf100220a6",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_70ce361ce20830": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff43e45a-f6a1-49bf-ab70-2ebe1d4c54d9",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

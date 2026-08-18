@@ -1,0 +1,39 @@
+CONVENTIONS.md
+  s_8d4a238c334fd1::t_8484ab9498d377 26
+  s_8d4a238c334fd1::t_7b692047d8a793 23-25
+  s_8d4a238c334fd1::t_051dadf4720ea5 27
+src/agent/utils.ts
+  s_8d4a238c334fd1::t_4cfcfa7c71a4c3 14
+src/onboarding/store.ts
+  s_8d4a238c334fd1::t_4cfcfa7c71a4c3 1-483
+src/cli/commands/cron.ts
+  s_8d4a238c334fd1::t_4cfcfa7c71a4c3 6
+src/credentials.tsx
+  s_8d4a238c334fd1::t_4cfcfa7c71a4c3 77,95
+src/ingestion.ts
+  s_8d4a238c334fd1::t_4cfcfa7c71a4c3 15
+src/schedules.ts
+  s_8d4a238c334fd1::t_4cfcfa7c71a4c3 10
+test/onboarding.test.ts
+  s_8d4a238c334fd1::t_4cfcfa7c71a4c3 18
+src/config/credentials.ts
+  s_8d4a238c334fd1::t_4cfcfa7c71a4c3 23-24
+src/onboarding/setup.ts
+  s_8d4a238c334fd1::t_4cfcfa7c71a4c3 1-287
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "8bcf392a814b60ad9515119294393d3df31a9b20",
+  "prompts": {},
+  "sessions": {
+    "s_8d4a238c334fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f023271d-a6db-4162-8704-7a4d4c00ba60",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

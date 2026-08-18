@@ -1,0 +1,31 @@
+src/agent/prompt.ts
+  s_841f8a35235565::t_9baa7873dc3b2d 39-40,71-78,81,83,136,139-140,145,175-189,198-204,211,254-278,304,318-320,327,369
+AGENTS.md
+  s_841f8a35235565::t_16e5a52b23e0ef 17-23
+CLAUDE.md
+  s_841f8a35235565::t_76daa4a7bf55fe 17-23
+README.md
+  s_841f8a35235565::t_95571c073cbc72 174
+src/code-mode.ts
+  s_841f8a35235565::t_572aa24f2077cb 271-277
+test/agent-navigation-guidance.test.ts
+  s_841f8a35235565::t_29140dc2b15735 1-35
+test/code-mode.test.ts
+  s_841f8a35235565::t_a4bc2cf0828cd2 46-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "fafc1333c1cf9ad8b904f49dceb1431efa5d12d1",
+  "prompts": {},
+  "sessions": {
+    "s_841f8a35235565": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f869b-e584-7aa3-9b4c-c1a5f94e7fa7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

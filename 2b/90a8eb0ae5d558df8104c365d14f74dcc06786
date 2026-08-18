@@ -1,0 +1,28 @@
+test/openai-chatgpt-oauth.test.ts
+  s_5495b5162f1a42::t_b72f14f7200b79 4,7,66-88,90-143
+  s_5495b5162f1a42::t_964a7af22b9279 89
+  s_5495b5162f1a42::t_3a2b9e4b62e8d2 144-145
+src/agent/index.ts
+  s_5495b5162f1a42::t_b72f14f7200b79 25,468
+src/agent/openai-chatgpt-oauth.ts
+  s_5495b5162f1a42::t_b72f14f7200b79 36-102,260-263,265-275,279-282
+  s_5495b5162f1a42::t_36c6a0ddac0a4e 264
+  s_5495b5162f1a42::t_964a7af22b9279 276-278
+  s_5495b5162f1a42::t_a6aa5761362b0b 283
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "2b90a8eb0ae5d558df8104c365d14f74dcc06786",
+  "prompts": {},
+  "sessions": {
+    "s_5495b5162f1a42": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f4e3c-d348-76a2-8933-f56b4e7cd465",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

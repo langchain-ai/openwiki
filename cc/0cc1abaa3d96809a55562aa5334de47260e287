@@ -1,0 +1,31 @@
+src/agent/wiki-link-validator.ts
+  s_34a2eeddc159ff::t_09798639dd63b9 380-381,383-386,396
+  s_34a2eeddc159ff::t_bf7bb7f10dd7c6 379,382,387-390,397
+test/wiki-link-validator.test.ts
+  s_34a2eeddc159ff::t_f7099e3e5f02e0 218-238,252-254
+  s_34a2eeddc159ff::t_cfda1623296b5f 258-261
+  s_34a2eeddc159ff::t_dde0e331944c08 266-269
+  s_34a2eeddc159ff::t_12c1e9b5666ef7 256-257,262-265,270-271
+  s_34a2eeddc159ff::t_113b148c4b42ef 251,255
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "cc0cc1abaa3d96809a55562aa5334de47260e287",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_34a2eeddc159ff": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3e24fed4-5d09-4a65-8b96-b6118dd7bb4c",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+src/agent/translation-middleware.ts
+  s_94ccb1fd0cf306::t_7a15e230e7cf23 7
+  s_94ccb1fd0cf306::t_8cd063dc7e8750 121,125,132-134
+  s_94ccb1fd0cf306::t_f55b45aed47ba4 146,158,161,165,167,169-170,172,196-200,203
+  s_94ccb1fd0cf306::t_205b76644d7f04 270
+  s_94ccb1fd0cf306::t_ac2f6b7c11ae17 29-35,37-43,45-48,50,53-55,57,61-62,64-71,73,77-78,81-89
+  s_94ccb1fd0cf306::t_17868eda8d816e 8-13,18-19,106-107,109-116,118-120,122-124,131,139,145,147-151,157,162,164,166,168,171,173-195,201-202,208-214,216,220-221,225-239,241,243,247-269,279-280,292-296,300-302,304-308
+  s_94ccb1fd0cf306::t_2d671b95f7e02d 271-272
+src/agent/index.ts
+  s_94ccb1fd0cf306::t_6fa25bd23c78fb 314-319
+  s_94ccb1fd0cf306::t_dab5fec08d7ff2 36
+  s_94ccb1fd0cf306::t_cc9c5be162d1d2 284-288
+src/agent/prompt.ts
+  s_94ccb1fd0cf306::t_ae45cd5845c892 172
+test/prompt.test.ts
+  s_94ccb1fd0cf306::t_c3972a3aeacbdf 123-138
+test/translation-middleware.test.ts
+  s_94ccb1fd0cf306::t_970b5974d26b0d 71-76,81-84,88-113,116-118
+  s_94ccb1fd0cf306::t_205b76644d7f04 210,290-295
+  s_94ccb1fd0cf306::t_b7b7514b3bf1c7 163-166,169-182,184-198,300-301
+  s_94ccb1fd0cf306::t_0381a47fe2dd77 11
+  s_94ccb1fd0cf306::t_37a122bc91d950 10
+  s_94ccb1fd0cf306::t_f68ef57460e2c4 14-27,136,162,167-168,183,199-209,211-289,296-299,315-320,341-346,358-363,377-382
+test/okf/frontmatter.test.ts
+  s_94ccb1fd0cf306::t_a619d4b74ba92d 6-7,9
+  s_94ccb1fd0cf306::t_a1fd872ed9de34 96-147,153-174,178-181,185-218
+  s_94ccb1fd0cf306::t_205b76644d7f04 148-152,175-177,182-184
+src/okf/frontmatter.ts
+  s_94ccb1fd0cf306::t_09a602af09d899 391-398
+  s_94ccb1fd0cf306::t_205b76644d7f04 25-26
+  s_94ccb1fd0cf306::t_ff814c0a9e9d33 20,243-314
+  s_94ccb1fd0cf306::t_35a1d68ceb4333 21-24,27-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "5f870115d96a633260f97cb1177d977ab663a49a",
+  "prompts": {},
+  "sessions": {
+    "s_94ccb1fd0cf306": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3fe37e4d-4458-46b5-902f-59cf1647b2ee",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

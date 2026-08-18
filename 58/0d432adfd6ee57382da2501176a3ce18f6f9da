@@ -1,0 +1,94 @@
+test/onboarding.test.ts
+  s_c6b93f6ad09b8d::t_20b217d92dff8a 113
+  s_c6b93f6ad09b8d::t_01ded5aa57adf5 100-112,114-121
+  s_c6b93f6ad09b8d::t_6e61f3f29c9f36 142-173
+  s_c6b93f6ad09b8d::t_21d77fea9b2a4b 123-141,174-189
+  s_c6b93f6ad09b8d::t_3d67c84bde03fb 122
+src/agent/prompt.ts
+  s_c6b93f6ad09b8d::t_4cf65902704c4a 397-398
+  s_c6b93f6ad09b8d::t_9d4b2ce9f45c48 235-237,254-256,264-265
+  s_c6b93f6ad09b8d::t_8d99212ac5075a 266-267
+test/openai-chatgpt-credentials.test.ts
+  s_c6b93f6ad09b8d::t_b84f8614262c5e 33-36,123-124,126-134,136-142
+  s_c6b93f6ad09b8d::t_48fd1ab7c50176 149,155-157,159-162
+  s_c6b93f6ad09b8d::t_1325702f90f652 22-29,31,184,186,202
+  s_c6b93f6ad09b8d::t_dd796e1630f436 3,116,119-122,125,135,143-148,150-154,158
+  s_c6b93f6ad09b8d::t_f00784da284a07 30,32
+  s_c6b93f6ad09b8d::t_bb878a917e3930 185
+test/prompt.test.ts
+  s_c6b93f6ad09b8d::t_381e22bb965d31 2,16-23
+  s_c6b93f6ad09b8d::t_38750780212575 1,3-15,24-25
+src/cli.tsx
+  s_c6b93f6ad09b8d::t_e75158aa57e26b 190-196,199-202
+  s_c6b93f6ad09b8d::t_fc634250a2e82f 162-163,598-603,605-608,612-614,630-638
+  s_c6b93f6ad09b8d::t_04368c4f87792c 3811-3815
+  s_c6b93f6ad09b8d::t_5caddbe6e2ae0a 629
+src/onboarding.ts
+  s_c6b93f6ad09b8d::t_8d13f7b48b6390 174-175
+  s_c6b93f6ad09b8d::t_1bdd53a7317137 2,4,16,123-143,157-166
+  s_c6b93f6ad09b8d::t_2ea29fb3a20c5d 173,363-364
+  s_c6b93f6ad09b8d::t_bed2b485b4d054 144-156,167,196-206,211-216,218-220,365
+  s_c6b93f6ad09b8d::t_93ee2a61a3c088 207-210
+  s_c6b93f6ad09b8d::t_061c0e5462af8e 168
+  s_c6b93f6ad09b8d::t_857288c57c01b6 217
+  s_c6b93f6ad09b8d::t_ab80e3a8b44b96 221
+  s_c6b93f6ad09b8d::t_2c579b8567d521 366
+src/agent/utils.ts
+  s_c6b93f6ad09b8d::t_c09cbb58239be3 11-14,49,55,64,71,75-83
+  s_c6b93f6ad09b8d::t_a0f69f629f50ee 84-85
+src/credentials.tsx
+  s_c6b93f6ad09b8d::t_e72f4acd26ea17 3251,3255-3256,3258,3264-3267
+  s_c6b93f6ad09b8d::t_07c84862eb91c7 3557-3567
+  s_c6b93f6ad09b8d::t_039d281e00b4f8 52,55,368-374
+  h_33f63fd75d0bd5 179
+  s_c6b93f6ad09b8d::t_66456486906d66 1048-1075,1279
+  s_c6b93f6ad09b8d::t_633511526268be 3711
+  s_c6b93f6ad09b8d::t_3f0c369b0c240b 2730-2732,2737-2738,2740-2742
+  s_c6b93f6ad09b8d::t_a50952910ae0c2 567,570-574,576-579
+  s_c6b93f6ad09b8d::t_43a905534f1190 2101-2102,2116,2167-2168,2182,2194-2195,2209
+  s_c6b93f6ad09b8d::t_4a4af31a46e29c 1569-1571,1600-1610,1622-1625
+  s_c6b93f6ad09b8d::t_8b7291a3eb3897 1495
+  s_c6b93f6ad09b8d::t_c4a59e8b2b4821 821-833,953-968
+  s_c6b93f6ad09b8d::t_2c5897fec6ad57 1277-1278,1280-1282,3155,3236
+  s_c6b93f6ad09b8d::t_4f418838da8355 3271-3284
+  s_c6b93f6ad09b8d::t_a0784054d5906f 969,971,1275,1891-1905
+  s_c6b93f6ad09b8d::t_aaca09500487b6 1568,2733-2736
+  s_c6b93f6ad09b8d::t_d1c67bbd778522 56
+  s_c6b93f6ad09b8d::t_8d13f7b48b6390 351
+  s_c6b93f6ad09b8d::t_24b30c7b1416f8 2410-2451
+  s_c6b93f6ad09b8d::t_e146247a89237e 2766
+  s_c6b93f6ad09b8d::t_385fe734e08ec9 1,72,93-94,352,525-529,625-627
+  s_c6b93f6ad09b8d::t_0c9bf9d9fbe097 1505-1508
+  s_c6b93f6ad09b8d::t_88a92faf20405c 3143-3144,3224-3225
+  s_c6b93f6ad09b8d::t_88aeb6c4dc7da1 972,1911-1912,3707-3710,3712-3744
+  s_c6b93f6ad09b8d::t_b5e347c38746e9 628
+  s_c6b93f6ad09b8d::t_f4ea20e34e4651 970
+  s_c6b93f6ad09b8d::t_5fa71cd4d6c04f 973
+  s_c6b93f6ad09b8d::t_b71249ad57b7c9 1906-1910
+  s_c6b93f6ad09b8d::t_94cf93ce8f9ad4 1913
+test/commands.test.ts
+  s_c6b93f6ad09b8d::t_0c4ba6798ade68 48-64
+src/agent/types.ts
+  s_c6b93f6ad09b8d::t_eaf479477fb2df 54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "580d432adfd6ee57382da2501176a3ce18f6f9da",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_c6b93f6ad09b8d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f4d94-e4a2-76e0-b4b6-87920497e9d2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

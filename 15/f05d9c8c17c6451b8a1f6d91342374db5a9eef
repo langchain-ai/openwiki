@@ -1,0 +1,35 @@
+src/agent/prompts/code.ts
+  h_33f63fd75d0bd5 126,129-130,132-137,151-160,162,178,180-195
+  h_33f63fd75d0bd5 138,161
+src/agent/skeleton_critic.ts
+  h_33f63fd75d0bd5 17-22
+  s_ca3f75497acfc2::t_b784ef4f5e618c 1-16,23-52
+test/conversation-history-offload.test.ts
+  s_ca3f75497acfc2::t_b82784718a7724 6,29-35,38-40
+  s_ca3f75497acfc2::t_e30062915b3d6a 36-37
+src/agent/index.ts
+  s_ca3f75497acfc2::t_b82784718a7724 17,643,655-672
+  s_ca3f75497acfc2::t_b784ef4f5e618c 57,408
+  s_ca3f75497acfc2::t_9750ead9d51873 673-674
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "15f05d9c8c17c6451b8a1f6d91342374db5a9eef",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_ca3f75497acfc2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fb985-efa3-7522-b8dd-309b236e8417",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

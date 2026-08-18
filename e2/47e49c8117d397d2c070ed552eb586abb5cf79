@@ -1,0 +1,156 @@
+.gitignore
+  h_f78d33d4280f3f 31-32
+evals/ledger/evaluator/fixtures/precision-gold.json
+  s_2c5ee2953b7be4::t_732496d8860585 2-3,6-14,18,22-26,30-38,41-51,54-63,66-97,99-147,150,152-162,165-182,185-195,198-208
+evals/ledger/evaluator/model-backend.test.ts
+  s_2c5ee2953b7be4::t_eee43480d34920 110-115,217-218
+evals/ledger/evaluator/precision.test.ts
+  s_2c5ee2953b7be4::t_502c2242580722 4-5,13,17,22-23,32-34,40-48,51-84,86-90,92,94-105,111-112,117-118,125,127-129,131-134,137,139-141,144-147,150-152,154-159,162,164-167,172-182,188,190-191,195-197,200,204,207,210-212,216,218-220,222,224-227,233,235-236,239-242,245,248-251,253,256,258-262,268-270,274-278,281-282,284,290,292-293,295,298-301,303-305,309,311,316-319,323-324,326,328,330-331,333-334,337-339,342-343,346-358
+evals/ledger/evaluator/precision.ts
+  s_2c5ee2953b7be4::t_a491b21c633bc2 8,10,40,44,49-59,61-68,72,78,82,90,94,104,110,123,129-155,174,176,179,182,190,197-200,202,208,211,220-221,225,244,246,249,251,257-259,261,278-281,289-290,295,298,324-325,336,345,347,349-358,361,366,370-376,378,384-385,394-408,414,425-427,432-433,435,439-448,453-472,474,477,491-497,501,504,507,512,518,536,546,551,559,561-562,571-583,586,590,592,594-595,604-605,615-621,638-639,642,645-646,648-650,652,655-656,658-660,662,665-666,668,672-691,693,696-699,701,704,706,712-714,741,758,761-764,767,769,775,778-780,782,787,790,801,804,811,816,821,824-825,827-828,830-853,856-858,860,862-863,867-881,884-890,892-894,900
+evals/ledger/meta/README.md
+  s_2c5ee2953b7be4::t_7ae500db09960a 1-19
+evals/ledger/meta/defects/defect-harness.test.ts
+  s_2c5ee2953b7be4::t_5434a545889f13 1-110
+evals/ledger/meta/defects/fixtures/base/T0.md
+  s_2c5ee2953b7be4::t_4076b542193a72 1-7
+evals/ledger/meta/defects/fixtures/base/T1.md
+  s_2c5ee2953b7be4::t_4c00d29966d08c 1-8
+evals/ledger/meta/defects/fixtures/base/T2.md
+  s_2c5ee2953b7be4::t_be63b216608535 1-7
+evals/ledger/meta/defects/fixtures/manifest.json
+  s_2c5ee2953b7be4::t_b78ca916fcc9be 1-45
+evals/ledger/source/git-evidence.test.ts
+  s_2c5ee2953b7be4::t_40d8dd21a83fe6 7,37-38,42
+evals/ledger/source/git-evidence.ts
+  s_2c5ee2953b7be4::t_c077d1b6fc1c16 4,84,87-88,92,98-105,108
+evals/ledger/README.md
+  h_f78d33d4280f3f 1,3-5,9,13,26,81,85,117,136,139-155,169,179-181,184-187,210,217-231,247-248,291,310-312,316-336,341-350,355-420,448,456,466,469,481-486,488,495-504,521,532-539,547-552,625-628,645-646,651,653-654,658,689,699,707-708,714-715,718-719,728-730,765-781,784,787-788,794
+evals/ledger/benchmark/benchmark.test.ts
+  h_f78d33d4280f3f 44
+evals/ledger/benchmark/benchmark.ts
+  h_f78d33d4280f3f 5,29,58,68,106,133,139,143
+evals/ledger/benchmark/source-repo.test.ts
+  h_f78d33d4280f3f 35,110
+evals/ledger/benchmark/transitions.ts
+  h_f78d33d4280f3f 4,21
+evals/ledger/benchmark/truth-ledger.test.ts
+  h_f78d33d4280f3f 3,8,11,60
+evals/ledger/benchmark/truth-ledger.ts
+  h_f78d33d4280f3f 4,43,69,87,110,135,156
+evals/ledger/benchmark/validation.test.ts
+  h_f78d33d4280f3f 3-7,17,48-51,101
+evals/ledger/benchmark/validation.ts
+  h_f78d33d4280f3f 3-7,10,42,79,249-250
+evals/ledger/core/errors.test.ts
+  h_f78d33d4280f3f 7,14,19,43,45,48,70,73
+evals/ledger/core/errors.ts
+  h_f78d33d4280f3f 2-3,5,18,22-23,26,29,32,38,44
+evals/ledger/core/paths.test.ts
+  h_f78d33d4280f3f 30,37,41,47-49,68-69,73-75,79,81,85,89-92
+evals/ledger/core/paths.ts
+  h_f78d33d4280f3f 12,32-34
+evals/ledger/core/types.ts
+  h_f78d33d4280f3f 10,35,39,79,118,139,526,528-531,533-534,536-537,580,582,585,587,590-592,723-724,733,735,738,740,743,745,748,750,753,755,758,760,763,765,768,770,773,775,923,972,975,982-983,985-994,998,1003-1004,1006,1027,1032-1033,1036,1124,1126,1166,1168,1197,1206,1238,1240,1244,1254,1259,1289
+evals/ledger/evaluator/evaluator.test.ts
+  h_f78d33d4280f3f 48,57,59-60,64-65,70-72,300,302-314,316-317,320-324,326,328-330,332,334-346,350-364,366-369
+evals/ledger/evaluator/model-backend.ts
+  h_f78d33d4280f3f 69,136
+evals/ledger/evaluator/prompts.ts
+  h_f78d33d4280f3f 113-115,171-173,225,237-239,241-242,249-252,255-266,276,279-282,286-293,295-298,300-301,308,320-324,326-331,333,378,399,417-421,424,429
+evals/ledger/evaluator/schemas.ts
+  h_f78d33d4280f3f 57,62-67,78-98,103,107-127
+evals/ledger/meta/defects/defect-harness.live.test.ts
+  h_f78d33d4280f3f 1-24
+evals/ledger/meta/defects/defect-harness.ts
+  h_f78d33d4280f3f 1-325
+evals/ledger/meta/gold-agreement.live.test.ts
+  h_f78d33d4280f3f 1-25
+evals/ledger/meta/gold-agreement.test.ts
+  h_f78d33d4280f3f 1-20,22-26,28-29,31-38,40-43,45-84
+evals/ledger/meta/gold-agreement.ts
+  h_f78d33d4280f3f 1-235
+evals/ledger/reevaluate.ts
+  h_f78d33d4280f3f 21,26
+evals/ledger/replay/artifact.test.ts
+  h_f78d33d4280f3f 48-49,117-118,133
+evals/ledger/replay/git-replay.test.ts
+  h_f78d33d4280f3f 27,42-43,62-63,83
+evals/ledger/replay/git-replay.ts
+  h_f78d33d4280f3f 193,219
+evals/ledger/replay/git.ts
+  h_f78d33d4280f3f 9
+evals/ledger/replay/workspace.ts
+  h_f78d33d4280f3f 9,78
+evals/ledger/run.ts
+  h_f78d33d4280f3f 23
+evals/ledger/run/args.ts
+  h_f78d33d4280f3f 1,4,15,46,54,66,75
+evals/ledger/run/evaluator-e2e.test.ts
+  h_f78d33d4280f3f 16-18,215,231,266-271,279-284,287,396,460,478,543-546,548-550,555-558,560-562,567-570,572-574,589,640,646,651-652,656
+evals/ledger/run/persistence.test.ts
+  h_f78d33d4280f3f 15,26,37-39,43,68,151,157
+evals/ledger/run/persistence.ts
+  h_f78d33d4280f3f 8,233
+evals/ledger/run/progress.test.ts
+  h_f78d33d4280f3f 70-72,79-82,89-91,98-101,105,109-111,119-122,125,137,140,143,152-158,165
+evals/ledger/run/progress.ts
+  h_f78d33d4280f3f 53-54,65-68,102,192,238,241,260-263,265-271,294
+evals/ledger/run/reevaluate-args.test.ts
+  h_f78d33d4280f3f 14,16,21,32
+evals/ledger/run/reevaluate-args.ts
+  h_f78d33d4280f3f 3,79,91,97,116,120,130-132,136-138,144,148-150,153-154
+evals/ledger/run/reevaluator.test.ts
+  h_f78d33d4280f3f 13-14,62-63,77,132-135,137-140,153,167-170,172,174,231,274
+evals/ledger/run/reevaluator.ts
+  h_f78d33d4280f3f 8,16-17,39,45,117,120,128,138,146,150,157,260-262,271-274,319,333-336,339-342,348,352-354,367-370
+evals/ledger/run/report.test.ts
+  h_f78d33d4280f3f 3,6,11-12,28-36,39,41,45-93,98-101,103,105,112,115-119,121,124,128,131,133,135-137,140-152,154-162,164,168-172
+evals/ledger/run/report.ts
+  h_f78d33d4280f3f 1,3-4,19-20,23-42,44,47-54,57-62,66,77,84-86,88,91,94,97,99-103,128,131,135,144-155,158-169,174,180,183-184,186-187,190,194-196,198
+evals/ledger/run/run-config.test.ts
+  h_f78d33d4280f3f 5,12,40,55,77
+evals/ledger/run/run-config.ts
+  h_f78d33d4280f3f 4-5,16,22,27,33,35-37,43,48,51-52
+evals/ledger/run/runner.test.ts
+  h_f78d33d4280f3f 13-14,77-78,86-87,126-127,134-136,194,220,228,255,264,323,331,376,379,412,440
+evals/ledger/run/runner.ts
+  h_f78d33d4280f3f 25-27,87-90,97-100,104-105,107-110,118-121,139,173,229,249,434-436,445-448,475,494,504,517-520,523-526,532,536-538,551-554
+evals/ledger/run/saved-run.test.ts
+  h_f78d33d4280f3f 9,29,31,42-44,48,68,109
+evals/ledger/run/saved-run.ts
+  h_f78d33d4280f3f 4,8,34,41,47,72,85,98,102,107,142,159,164,191,208,212,222,225
+evals/ledger/scoring/churn.ts
+  h_f78d33d4280f3f 66
+evals/ledger/scoring/metrics.test.ts
+  h_f78d33d4280f3f 52-53,59-60,150,152-156,161-168,173,176-178,182-188,192,195-198,200-203,205-206,215,218,340-343,345-347,371-374,376-378,402-404,417,435-438,440-442,465-497
+evals/ledger/scoring/metrics.ts
+  h_f78d33d4280f3f 9-10,58-59,69-72,75-79,83-86,88-90,111,115,118,321,324,333,335-348,379-384,389-391,396,418,433,529,599,635-640
+evals/ledger/system/openwiki-system.test.ts
+  h_f78d33d4280f3f 11
+evals/ledger/testing/tiny-repo.ts
+  h_f78d33d4280f3f 54,57,59
+package.json
+  h_f78d33d4280f3f 43-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "e247e49c8117d397d2c070ed552eb586abb5cf79",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_2c5ee2953b7be4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fea53-39d0-70f1-9a1a-f8c14abfd6fb",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

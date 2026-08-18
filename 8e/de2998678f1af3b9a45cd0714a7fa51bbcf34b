@@ -1,0 +1,14 @@
+README.md
+  h_33f63fd75d0bd5 15-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "8ede2998678f1af3b9a45cd0714a7fa51bbcf34b",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

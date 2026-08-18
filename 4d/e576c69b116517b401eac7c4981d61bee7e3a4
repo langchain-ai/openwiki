@@ -1,0 +1,26 @@
+CONTRIBUTING.md
+  s_27bfdd2eb11500::t_36ab93676b92ef 1-2,5-7,9,12-18,21-31,34-36,40,44-56
+  h_f78d33d4280f3f 3-4,8,10-11,19-20,32-33
+  s_27bfdd2eb11500::t_7d46b159d43ca5 37-39,41-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4de576c69b116517b401eac7c4981d61bee7e3a4",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_27bfdd2eb11500": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fa6e10df-6e41-4efb-8aa8-c2943287d6e2",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

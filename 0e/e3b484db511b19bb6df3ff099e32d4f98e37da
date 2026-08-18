@@ -1,0 +1,66 @@
+src/ingestion/code-mode.ts
+  s_8b147279d063cb::t_e018660638d8ff 155
+src/claims/brains/code/session.ts
+  s_8b147279d063cb::t_82ac8823a1a68e 325-326
+  s_8b147279d063cb::t_51e2d5320171ac 341
+  s_8b147279d063cb::t_79f364f143ecde 86-112,163,173,248-251,254,256-262,332-340,347,349-350,355,362-376,379-384,386-387,392-418,435
+src/agent/translation-middleware.ts
+  s_8b147279d063cb::t_659ecf10a8ed0f 297-303,311,320,370-376,383,387,403-407,409-419,436-440
+  s_8b147279d063cb::t_7bf7f7d31322bc 7
+  s_8b147279d063cb::t_eeff89a5df7b1b 8,151-160,173,185,201-208,217,241-245,254-262,273-274
+test/agent/utils.test.ts
+  s_8b147279d063cb::t_936110c434fc86 138-164
+test/agent/parse-stream-event.test.ts
+  s_8b147279d063cb::t_d3a486fc34e01a 11-12,16,73-74,77
+src/agent/index.ts
+  s_8b147279d063cb::t_659ecf10a8ed0f 492
+  s_8b147279d063cb::t_cae0f63b06068f 1415
+test/cli/run-log/reducer.test.ts
+  s_8b147279d063cb::t_d3a486fc34e01a 22
+test/agent/stream-redaction.test.ts
+  s_8b147279d063cb::t_50d744b62a118c 4,13
+src/cli/run-log/reducer.ts
+  s_8b147279d063cb::t_cae0f63b06068f 8-10
+test/ingestion/ingestion-run.test.ts
+  s_8b147279d063cb::t_29d653639d69fb 55-70
+test/claims/brains/code/paths.test.ts
+  s_8b147279d063cb::t_d3a486fc34e01a 35
+test/agent/claims-run-lifecycle.test.ts
+  s_8b147279d063cb::t_6309c52b67a130 327-348
+src/cli/runners.ts
+  s_8b147279d063cb::t_cae0f63b06068f 149,259
+test/claims/core/architecture.test.ts
+  s_8b147279d063cb::t_a6f249267c91d9 11-15,30-38,43
+  s_8b147279d063cb::t_6ea6c2403e2ee2 39-42
+  s_8b147279d063cb::t_321047749aee1e 44-45
+test/claims/brains/code/store.test.ts
+  s_8b147279d063cb::t_7bf7f7d31322bc 165
+test/agent/translation-middleware.test.ts
+  s_8b147279d063cb::t_428e066a2a04eb 13-18,21-28,77-124
+  s_8b147279d063cb::t_6ea6c2403e2ee2 19,212,322-324
+  s_8b147279d063cb::t_5841f1d6bf531f 203-211,213-321,325-373
+  s_8b147279d063cb::t_7bae7aef30cadb 20,125-126
+test/claims/brains/code/preflight.test.ts
+  s_8b147279d063cb::t_a23d6df090e7b1 240-259
+test/claims/brains/code/session.test.ts
+  s_8b147279d063cb::t_51e2d5320171ac 410-412
+  s_8b147279d063cb::t_6ea6c2403e2ee2 433-435,475
+  s_8b147279d063cb::t_90f1c251ebb773 1-8,11,127,207,393-403,419-432,436-474,476-546
+  s_8b147279d063cb::t_a23d6df090e7b1 362-387
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "0ee3b484db511b19bb6df3ff099e32d4f98e37da",
+  "prompts": {},
+  "sessions": {
+    "s_8b147279d063cb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff724-05bf-7871-9fd1-f3f83a5f90da",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

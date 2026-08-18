@@ -1,0 +1,80 @@
+package.json
+  s_ed18fedebfc70d::t_834ea92f0c8e30 51
+test/auth/ngrok.test.ts
+  s_ed18fedebfc70d::t_67d95c06aebc09 296
+  s_ed18fedebfc70d::t_7a20e0a67075d0 58-61,450-453
+  s_ed18fedebfc70d::t_3217be51323e13 1,3,6-10,12-21,31-57,62-66
+  s_ed18fedebfc70d::t_a64dd76e892e4d 416
+  s_ed18fedebfc70d::t_d373b288bb069d 389-401
+  s_ed18fedebfc70d::t_fe6651bd2417a9 294-295,297-388,402-415,417-449,454-543,547-553
+  s_ed18fedebfc70d::t_924c77fd9229b8 544-546
+  s_ed18fedebfc70d::t_79f687bfd4b30a 2
+  s_ed18fedebfc70d::t_c8af069232f009 67
+test/scheduling/schedule-operations.test.ts
+  s_ed18fedebfc70d::t_6db832a150d02a 137-158
+  s_ed18fedebfc70d::t_51f0360bf4076b 393-433
+test/scheduling/launchd-calendar-interval.test.ts
+  s_ed18fedebfc70d::t_5dff57d4f21e71 59-80
+test/auth/oauth-redirect-override.test.ts
+  s_ed18fedebfc70d::t_33cf318261588e 70-72,81-83,94-96,106-108
+  s_ed18fedebfc70d::t_89e3eace1120e6 1-69,73-80,84-93,97-105,109-121
+test/agent/skills.test.ts
+  s_ed18fedebfc70d::t_6dd7f6e947a776 110-125,128-159
+  s_ed18fedebfc70d::t_d6a5334aa63dd8 4,12
+  s_ed18fedebfc70d::t_8c6cf781dad798 126-127
+test/scheduling/schedules-launchd.test.ts
+  s_ed18fedebfc70d::t_8bd0f35a70cef3 1-342,344-345,367-405
+  s_ed18fedebfc70d::t_8e8e12450e93ad 346-366
+  s_ed18fedebfc70d::t_9fdf1851f6d7b4 343
+vitest.config.ts
+  s_ed18fedebfc70d::t_8c6cf781dad798 23
+  s_ed18fedebfc70d::t_67756e56ef6462 18-22
+test/connectors/mcp-client.test.ts
+  s_ed18fedebfc70d::t_d99b8d1e7e6102 317-320,408-412,452-455,658-662,741-744,818,820-821,1038-1042
+  s_ed18fedebfc70d::t_62421a95dcbcf7 1-2,10-15
+  s_ed18fedebfc70d::t_473e796da74d93 731-734,745-750
+  s_ed18fedebfc70d::t_7d482eed33217c 972-1037,1043-1082
+  s_ed18fedebfc70d::t_b41269469b51d8 274-316,321-407,413-451,456-462,467-507,509-571,573-657,663-670,672-730,735-740,751-817,819,822-971
+  s_ed18fedebfc70d::t_877ce76cdf0249 572
+  s_ed18fedebfc70d::t_49ff5def57dc1e 463-466
+  s_ed18fedebfc70d::t_f70ea1513aa431 508
+  s_ed18fedebfc70d::t_162cf1aeebf8fc 671
+  s_ed18fedebfc70d::t_559ebdf0208efd 16
+CONTRIBUTING.md
+  s_ed18fedebfc70d::t_d03b4381a88723 32-33
+test/ingestion/ingestion-run.test.ts
+  s_ed18fedebfc70d::t_c9eda3cadd7d90 383-397,401-402,416-417,441,470-471
+  s_ed18fedebfc70d::t_c5f2210b8994ed 1-20,22-29,34-189,191-229,231-256,258-284,286-382,472-554
+  s_ed18fedebfc70d::t_cc256fa4201668 21,30-33
+  s_ed18fedebfc70d::t_ceba6e020158ab 190,230,257,285,419,444
+  s_ed18fedebfc70d::t_7bd2d46d4a1013 398-400,403-415,418,420-440,442-443,445-469
+test/auth/oauth-run.test.ts
+  s_ed18fedebfc70d::t_8277c2d42843c4 328-330
+  s_ed18fedebfc70d::t_7a95ef23bb9166 425-429,431
+  s_ed18fedebfc70d::t_fda0f22141f800 17
+  s_ed18fedebfc70d::t_097ae3110d92dc 110-114,116-125,127-132,134-135,137-139,141-142,144-145
+  s_ed18fedebfc70d::t_bd92c3d668f764 444-446,449-450
+  s_ed18fedebfc70d::t_628d379a4665d7 1,3-16,18-65,69-102,109,115,126,133,136,140,143,146-224,231-327,338-424,430,432-443,447-448,451-484,645
+  s_ed18fedebfc70d::t_78baec15435568 485-644
+  s_ed18fedebfc70d::t_3fbfb8a2e4a5f8 225-230
+  s_ed18fedebfc70d::t_33cf318261588e 2
+  s_ed18fedebfc70d::t_a40fbb8e759541 331-337
+  s_ed18fedebfc70d::t_6a9424fc5d8580 103-108
+  s_ed18fedebfc70d::t_7c00e2868106e1 66-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "4806421a72a9594f288d084f43d9e4d523f4ec7a",
+  "prompts": {},
+  "sessions": {
+    "s_ed18fedebfc70d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dde8f354-6e1c-4dca-96f7-0f6cd5cf3d58",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

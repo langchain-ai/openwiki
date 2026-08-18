@@ -1,0 +1,38 @@
+src/claims/core/mutations.ts
+  s_1ce705c602c6af::t_800f525240e1dc 3,60,89
+src/claims/brains/code/runtime.ts
+  s_1ce705c602c6af::t_3bec44f59661a9 10
+  s_1ce705c602c6af::t_cd2cd49b021436 30-34,63-68,70,73,89
+src/claims/brains/code/middleware.ts
+  s_1ce705c602c6af::t_4cd49fccbf183f 27,31,47
+src/claims/brains/code/integration.ts
+  s_1ce705c602c6af::t_085ece2f807ca7 1-40
+src/claims/brains/code/tools.ts
+  s_1ce705c602c6af::t_085ece2f807ca7 84
+  s_1ce705c602c6af::t_4cd49fccbf183f 204-205
+src/agent/index.ts
+  s_1ce705c602c6af::t_a0f16ec906e50e 22,427-429,450,488,703
+src/claims/brains/code/session.ts
+  s_1ce705c602c6af::t_7f730c6c0a838c 198,241
+  s_1ce705c602c6af::t_800f525240e1dc 4,410,420,456,461,465
+src/claims/core/resolver-cache.ts
+  s_1ce705c602c6af::t_800f525240e1dc 1-26
+src/claims/brains/code/preflight.ts
+  s_1ce705c602c6af::t_800f525240e1dc 1-2,48,66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "455a0df9cd0532365e115f1317611b49652505bb",
+  "prompts": {},
+  "sessions": {
+    "s_1ce705c602c6af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a00874-b159-7d22-9347-610c3769ff44",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

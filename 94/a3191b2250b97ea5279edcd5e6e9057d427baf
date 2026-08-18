@@ -1,0 +1,51 @@
+src/telemetry/senders.ts
+  s_005aef00a0993e::t_d80e62284e2579 84,96-100
+  s_005aef00a0993e::t_18bda89598789f 5,17-19,33,41-43,46-48
+  s_005aef00a0993e::t_9e139c3299e10b 45
+src/telemetry/types.ts
+  s_005aef00a0993e::t_0ec27126490fb9 82-84,86
+src/commands.ts
+  s_005aef00a0993e::t_aa33d51d7e76a9 602-604
+test/telemetry-cli.test.ts
+  s_005aef00a0993e::t_c94216bbfe4cae 9,14,16-17
+src/agent/index.ts
+  s_005aef00a0993e::t_bcaf98d8596be8 358-359
+  s_005aef00a0993e::t_481b9dfaf0887f 71
+src/telemetry/config.ts
+  s_005aef00a0993e::t_7d218a8da78b2d 23-24
+src/telemetry/index.ts
+  s_005aef00a0993e::t_8883aed77d4360 1
+test/telemetry.test.ts
+  s_005aef00a0993e::t_339f61c58ce33f 33
+  s_005aef00a0993e::t_58a2e018cef855 280-281,288-291,293-295,297-298,300,303-304,306,312-314
+  s_005aef00a0993e::t_b0c7266dc7cd60 315-319
+  s_005aef00a0993e::t_9e139c3299e10b 307-309
+  s_005aef00a0993e::t_1b2d394b4778d2 79
+  s_005aef00a0993e::t_fa4be6d27e2d65 311
+  s_005aef00a0993e::t_68610b7f770e82 310
+src/cli.tsx
+  s_005aef00a0993e::t_ccbcd5949b1d28 83
+README.md
+  s_005aef00a0993e::t_cb927c1888c68a 280-281,286-287
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "94a3191b2250b97ea5279edcd5e6e9057d427baf",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_005aef00a0993e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "366e0bd6-73d2-4a7a-bab1-157a1f397b23",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+examples/openwiki-update.yml
+  h_33f63fd75d0bd5 30,32,39-47,49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "74bd39db987cbca30b5e1b89d04f802032ddc2fe",
+  "prompts": {},
+  "humans": {
+    "h_33f63fd75d0bd5": {
+      "author": "bracesproul <braceasproul@gmail.com>"
+    }
+  }
+}

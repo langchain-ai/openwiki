@@ -1,0 +1,62 @@
+evals/ledger/run/runner.ts
+  s_a78e1243cf0b12::t_cc5ee64dbb5fb8 4,7,162,238,257,270
+evals/ledger/evaluator/forgetting.ts
+  s_a78e1243cf0b12::t_2854d2a6482571 1-3,5,9-10,12-19,21,25-52,54-71,74-92,95,98-99,102-103,109,111-132,134-199,201-311,315-316,318,321-337,344-379
+  s_a78e1243cf0b12::t_acb7a54e269017 110,133,200,338-343
+evals/ledger/README.md
+  s_a78e1243cf0b12::t_aa52afbaa8839e 70-80,87-94,97-98,107-109,132,138,143-144,148-150,154-155
+  s_a78e1243cf0b12::t_2d30d23e6fdd9b 41-46,110-111
+evals/ledger/evaluator/forgetting.test.ts
+  s_a78e1243cf0b12::t_ff5a9b6438f939 89
+evals/ledger/run/progress.ts
+  s_a78e1243cf0b12::t_591dfcb5140c34 43,46,50-51
+evals/ledger/run/reevaluator.ts
+  s_a78e1243cf0b12::t_cc5ee64dbb5fb8 6,13,93,146,177,192,206
+  s_a78e1243cf0b12::t_c3b5d289388f6e 188
+evals/ledger/run/summary.ts
+  s_a78e1243cf0b12::t_591dfcb5140c34 22
+evals/ledger/meta/README.md
+  s_a78e1243cf0b12::t_5560145ff2a266 16
+evals/ledger/run/evaluator-e2e.test.ts
+  s_a78e1243cf0b12::t_591dfcb5140c34 431,481
+evals/ledger/run/report.ts
+  s_a78e1243cf0b12::t_acb7a54e269017 12-14
+  s_a78e1243cf0b12::t_591dfcb5140c34 75
+  s_a78e1243cf0b12::t_aea73dd432cd4b 15-16,18-24
+evals/ledger/core/types.ts
+  s_a78e1243cf0b12::t_d0dffc23ce4242 622,655,680,892
+evals/ledger/metrics/claims.ts
+  s_a78e1243cf0b12::t_d0dffc23ce4242 68
+evals/ledger/benchmark/surface.ts
+  s_a78e1243cf0b12::t_aa52afbaa8839e 429-430
+evals/ledger/metrics/claims.test.ts
+  s_a78e1243cf0b12::t_d0dffc23ce4242 71,92,102
+  s_a78e1243cf0b12::t_29b9051ea396d9 107
+  s_a78e1243cf0b12::t_12b4f92ff7490f 10
+evals/ledger/run/persistence.test.ts
+  s_a78e1243cf0b12::t_591dfcb5140c34 17,26,54,59,76
+evals/ledger/run/reevaluator.test.ts
+  s_a78e1243cf0b12::t_591dfcb5140c34 9,97,102,116,213
+evals/ledger/run/evaluate-checkpoint.ts
+  s_a78e1243cf0b12::t_c3b5d289388f6e 121-122
+  s_a78e1243cf0b12::t_6366895c694ef3 9,21-22,140,242,247,251-254,279
+  s_a78e1243cf0b12::t_0ac4c3150d5d61 196-202
+evals/ledger/run/report.test.ts
+  s_a78e1243cf0b12::t_591dfcb5140c34 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "cfeb6449086f72a56b0a8f4526278f56c34cfd7a",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
