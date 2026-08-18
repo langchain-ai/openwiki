@@ -75,6 +75,7 @@ import type {
   OpenWikiRunOptions,
   OpenWikiRunResult,
   RunContext,
+  UpdateRunStatus,
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
@@ -141,6 +142,7 @@ import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
   createRunContext,
+  hasLeftoverSkeletonFile,
   persistRunMetadataIfChanged,
   removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
@@ -695,6 +697,29 @@ async function runOpenWikiAgentCore(
     );
   }
 
+  // A clean exit is not proof the wiki was finished: the agent may have ended
+  // its final turn on a plan or a question with the working skeleton still on
+  // disk. Gate "complete" on that verifiable state so downstream consumers
+  // (resume logic, CI docs jobs, batch scripts, the no-op check) can trust the
+  // status field (#653).
+  const finalStatus: UpdateRunStatus = (await hasLeftoverSkeletonFile(
+    cwd,
+    outputMode,
+  ))
+    ? "ended_early"
+    : "complete";
+
+  if (finalStatus === "ended_early") {
+    const message =
+      "Run ended before finishing: openwiki/_skeleton.md is still present, so the wiki is recorded as ended_early and the next update will not be skipped.";
+    emitDebug(options, "update.status=ended_early reason=skeleton-present");
+    options.onEvent?.({ type: "text", text: `Warning: ${message}` });
+    // Also emit to stderr so the warning survives on failure, where the TUI
+    // re-renders the log away and --print discards buffered streamed text.
+    process.stderr.write(`Warning: ${message}
+`);
+  }
+
   // Stage-only tag: a write failure here classifies from the raw error (a
   // filesystem code becomes filesystem_error), and deriveOwner's finalize
   // exception routes that to openwiki since the run reached our own persistence.
@@ -706,7 +731,7 @@ async function runOpenWikiAgentCore(
       modelId,
       outputMode,
       openWikiSnapshotBefore,
-      "complete",
+      finalStatus,
       context.language,
     );
   });

@@ -166,6 +166,21 @@ describe("getUpdateNoopStatus", () => {
     });
   });
 
+  test("does not skip update when the previous run ended early", async () => {
+    // A run that exited cleanly but left the working skeleton behind is not a
+    // finished wiki; consumers must not treat it as complete (#653).
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head, { status: "ended_early" });
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status).toEqual({
+      shouldSkip: false,
+      reason: "previous run ended before finishing the wiki",
+    });
+  });
+
   test("skips update when the previous complete run predates the status field", async () => {
     // Metadata written by versions without the status field must keep
     // behaving as a completed run and not force a spurious re-run.
