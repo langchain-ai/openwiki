@@ -699,4 +699,46 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
     // Only the handler's own write; the stamp path is skipped for non-.md files.
     expect(writes).toHaveBeenCalledTimes(1);
   });
+
+  test("keeps an otherwise-successful write when the stamp write fails", async () => {
+    const { backend, rootDir } = await setup();
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      NOW,
+    );
+
+    // The handler's own write (call 1) persists the page; the stamp's write
+    // (call 2) fails. Stamping is best-effort, so the failure must be logged
+    // and swallowed rather than propagate out of wrapToolCall as a fatal error.
+    const realWrite = backend.write.bind(backend);
+    let calls = 0;
+    const writeSpy = vi
+      .spyOn(backend, "write")
+      .mockImplementation(async (p: string, c: string) => {
+        calls += 1;
+        if (calls === 1) return realWrite(p, c);
+        throw new Error("disk full");
+      });
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const body = "---\ntype: Reference\ntitle: Page\n---\n\n# Page\n\nBody.\n";
+    await expect(
+      driveWrite(middleware, backend, "/openwiki/page.md", body),
+    ).resolves.toBeInstanceOf(ToolMessage);
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("could not stamp generated provenance"),
+    );
+    writeSpy.mockRestore();
+    errorSpy.mockRestore();
+
+    // The content the handler wrote survives; the page is simply left unstamped
+    // for a later body-changing update to pick up.
+    const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(page).toBe(body);
+    expect(page).not.toContain("generated:");
+  });
 });

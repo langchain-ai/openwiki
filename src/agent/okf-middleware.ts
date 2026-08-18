@@ -17,6 +17,7 @@ import {
   type IndexLabels,
 } from "../okf/index-labels.js";
 import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
+import { sanitizeDiagnosticText } from "../platform/diagnostics.js";
 import { inStage } from "../telemetry/index.js";
 import type { OpenWikiOutputMode } from "./types.js";
 import { OPENWIKI_PRODUCER_ACTOR } from "../version.js";
@@ -156,6 +157,15 @@ export async function addFrontmatterWarning<Result>(
  * The stamp writes `generated: {by: openwiki/<version>, at: <run time>}` and
  * drops any superseded legacy `timestamp` on the same page. Reserved documents
  * (`index.md`/`log.md`) and non-wiki paths are skipped by {@link isWikiMarkdownPath}.
+ *
+ * Stamping is best-effort. The tool's own write has already persisted the page
+ * body by the time this runs, so a stamp failure must never take the run down
+ * with it: any error is logged and swallowed, leaving the page validly unstamped
+ * (`generated` is optional in OKF v0.2) for a later body-changing update to
+ * stamp. This guard is load-bearing, not cosmetic: the tool node re-raises a
+ * throw from `wrapToolCall` as a fatal `MiddlewareError` rather than feeding it
+ * back to the model, so without it a failed provenance write would fail an
+ * otherwise-successful run.
  */
 async function stampGeneratedProvenance(
   result: unknown,
@@ -175,21 +185,29 @@ async function stampGeneratedProvenance(
     return;
   }
 
-  const after = await readContent(backend, mutationPath);
-  if (after === undefined) return;
+  try {
+    const after = await readContent(backend, mutationPath);
+    if (after === undefined) return;
 
-  // An unchanged body must not bump the recorded change time. A brand-new page
-  // (no `before`) has no prior body to match, so it always stamps.
-  if (before !== undefined && conceptBodiesEqual(before, after)) return;
+    // An unchanged body must not bump the recorded change time. A brand-new page
+    // (no `before`) has no prior body to match, so it always stamps.
+    if (before !== undefined && conceptBodiesEqual(before, after)) return;
 
-  const stamped = removeFrontmatterField(
-    setGeneratedEvent(after, OPENWIKI_PRODUCER_ACTOR, now),
-    "timestamp",
-  );
-  // Re-stamping within one run (same `now`, no `timestamp`) is a no-op; skip the
-  // redundant write so idempotent rewrites do not churn the file.
-  if (stamped !== after) {
-    await backend.write(mutationPath, stamped);
+    const stamped = removeFrontmatterField(
+      setGeneratedEvent(after, OPENWIKI_PRODUCER_ACTOR, now),
+      "timestamp",
+    );
+    // Re-stamping within one run (same `now`, no `timestamp`) is a no-op; skip the
+    // redundant write so idempotent rewrites do not churn the file.
+    if (stamped !== after) {
+      await backend.write(mutationPath, stamped);
+    }
+  } catch (error) {
+    console.error(
+      `OpenWiki: could not stamp generated provenance on "${mutationPath}": ${sanitizeDiagnosticText(
+        error instanceof Error ? error.message : String(error),
+      )}`,
+    );
   }
 }
 
