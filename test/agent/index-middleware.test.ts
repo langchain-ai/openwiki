@@ -1,9 +1,14 @@
+import { ToolMessage } from "@langchain/core/messages";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
-import { OpenWikiLocalShellBackend } from "../../src/agent/docs-only-backend.ts";
+import {
+  MUTATION_PATH_METADATA_KEY,
+  OpenWikiLocalShellBackend,
+} from "../../src/agent/docs-only-backend.ts";
 import { createOpenWikiIndexMiddleware } from "../../src/agent/okf-middleware.ts";
+import { OPENWIKI_VERSION } from "../../src/version.ts";
 import { ENGLISH_INDEX_LABELS } from "../../src/okf/index-labels.ts";
 import {
   migrateWikiToOkf,
@@ -510,5 +515,188 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     );
     expect(page).toContain("openwiki: broken internal link [./missing.md]");
     expect(page).toContain("See [missing](./missing.md).");
+  });
+});
+
+describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => {
+  const NOW = "2026-08-18T09:00:00.000Z";
+  const LATER = "2026-08-19T10:00:00.000Z";
+
+  /**
+   * Drives one wiki write through the middleware's wrapToolCall exactly as the
+   * deepagents write tool would: the handler persists the content and returns a
+   * ToolMessage carrying the mutation path the docs-only backend stamps.
+   */
+  async function driveWrite(
+    middleware: ReturnType<typeof createOpenWikiIndexMiddleware>,
+    backend: OpenWikiLocalShellBackend,
+    filePath: string,
+    content: string,
+    toolName = "write_file",
+  ) {
+    const wrap = (
+      typeof middleware.wrapToolCall === "function"
+        ? middleware.wrapToolCall
+        : middleware.wrapToolCall?.hook
+    ) as (request: unknown, handler: unknown) => Promise<unknown>;
+    const request = {
+      toolCall: { name: toolName, args: { file_path: filePath, content } },
+    };
+    const handler = async () => {
+      await backend.write(filePath, content);
+      return new ToolMessage({
+        content: "Successfully wrote file.",
+        metadata: { [MUTATION_PATH_METADATA_KEY]: filePath },
+        tool_call_id: "write-1",
+      });
+    };
+    return wrap(request, handler);
+  }
+
+  test("stamps a run-timed generated event on a newly created concept", async () => {
+    const { backend, rootDir } = await setup();
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      NOW,
+    );
+
+    await driveWrite(
+      middleware,
+      backend,
+      "/openwiki/page.md",
+      "---\ntype: Reference\ntitle: Page\n---\n\n# Page\n\nBody.\n",
+    );
+
+    const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(page).toContain(
+      `generated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}"}`,
+    );
+  });
+
+  test("bumps at and drops legacy timestamp when the body changes", async () => {
+    const { backend, rootDir } = await setup();
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      LATER,
+    );
+    // Pre-seed a legacy v0.1 page (has timestamp, no generated) directly.
+    await backend.write(
+      "/openwiki/page.md",
+      '---\ntype: Reference\ntitle: Page\ntimestamp: "2026-07-16T20:00:00Z"\n---\n\n# Page\n\nOld body.\n',
+    );
+
+    await driveWrite(
+      middleware,
+      backend,
+      "/openwiki/page.md",
+      '---\ntype: Reference\ntitle: Page\ntimestamp: "2026-07-16T20:00:00Z"\n---\n\n# Page\n\nNew body.\n',
+    );
+
+    const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(page).toContain(
+      `generated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${LATER}"}`,
+    );
+    expect(page).not.toContain("timestamp:");
+    // Exactly one generated event, not a duplicated field.
+    expect(page.match(/^generated:/gmu)).toHaveLength(1);
+  });
+
+  test("does not bump generated when only the body whitespace changes", async () => {
+    const { backend, rootDir } = await setup();
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      LATER,
+    );
+    await backend.write(
+      "/openwiki/page.md",
+      `---\ntype: Reference\ngenerated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}"}\n---\n\n# Page\n\nSame body.\n`,
+    );
+
+    // Only the body's whitespace is reflowed; the meaning is unchanged.
+    await driveWrite(
+      middleware,
+      backend,
+      "/openwiki/page.md",
+      `---\ntype: Reference\ngenerated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}"}\n---\n\n#   Page\n\n\nSame   body.\n`,
+    );
+
+    const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(page).toContain(`at: "${NOW}"`);
+    expect(page).not.toContain(LATER);
+  });
+
+  test("stamps a nested concept but never a reserved document", async () => {
+    const { backend, rootDir } = await setup();
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      NOW,
+    );
+
+    // A nested concept IS stamped (one handler write plus one stamp write).
+    const nestedWrites = vi.spyOn(backend, "write");
+    await driveWrite(
+      middleware,
+      backend,
+      "/openwiki/notes/scratch.md",
+      "---\ntype: Reference\n---\n\n# Scratch\n\nBody.\n",
+    );
+    const nested = await readFile(
+      path.join(rootDir, "openwiki/notes/scratch.md"),
+      "utf8",
+    );
+    expect(nested).toContain(`at: "${NOW}"`);
+    expect(nestedWrites).toHaveBeenCalledTimes(2);
+
+    // A reserved document is skipped: only the handler's own write happens.
+    const reservedWrites = vi.spyOn(backend, "write");
+    reservedWrites.mockClear();
+    await driveWrite(
+      middleware,
+      backend,
+      "/openwiki/log.md",
+      "# Directory Update Log\n\n## 2026-08-18\n- Changed page.\n",
+    );
+    const log = await readFile(path.join(rootDir, "openwiki/log.md"), "utf8");
+    expect(log).not.toContain("generated:");
+    expect(reservedWrites).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not stamp a non-Markdown file written under the wiki", async () => {
+    const { backend, rootDir } = await setup();
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      NOW,
+    );
+
+    const writes = vi.spyOn(backend, "write");
+    await driveWrite(
+      middleware,
+      backend,
+      "/openwiki/data.json",
+      '{"stamped": false}\n',
+    );
+
+    const data = await readFile(
+      path.join(rootDir, "openwiki/data.json"),
+      "utf8",
+    );
+    expect(data).not.toContain("generated:");
+    // Only the handler's own write; the stamp path is skipped for non-.md files.
+    expect(writes).toHaveBeenCalledTimes(1);
   });
 });

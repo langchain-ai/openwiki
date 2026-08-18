@@ -1,6 +1,7 @@
 import type { BackendProtocolV2 } from "deepagents";
 import { describe, expect, test, vi } from "vitest";
 import {
+  conceptBodiesEqual,
   deriveMinimalFrontmatter,
   normalizeConceptContent,
   parseFrontmatterFields,
@@ -8,6 +9,7 @@ import {
   removeFrontmatterField,
   renderFrontmatter,
   setFrontmatterField,
+  setGeneratedEvent,
   splitFrontmatter,
   validateOkfFrontmatter,
   validatePersistedFile,
@@ -118,6 +120,112 @@ describe("normalizeConceptContent", () => {
 
     expect(result.changed).toBe(false);
     expect(result.content).toBe(content);
+  });
+
+  test("carries a code-owned generated event across a regeneration", () => {
+    // A type-less page is rebuilt, which drops front matter. The deterministic
+    // `generated` provenance must survive verbatim so a stamped page does not
+    // lose its recorded last-change time when it also trips the repair path.
+    const result = normalizeConceptContent(
+      '---\ntitle: Orphan\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\n---\n\n# Orphan\n',
+      PATH,
+    );
+
+    expect(result.changed).toBe(true);
+    expect(result.content).toContain('type: "Reference"');
+    expect(result.content).toContain("openwiki_generated: true");
+    expect(result.content).toContain(
+      'generated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}',
+    );
+    // The carried event is still valid OKF on the rebuilt page.
+    expect(validateOkfFrontmatter(result.content)).toEqual({ valid: true });
+  });
+});
+
+describe("setGeneratedEvent", () => {
+  test("appends a generated flow mapping, preserving other lines", () => {
+    expect(
+      setGeneratedEvent(
+        "---\ntype: Reference\ntitle: Page\n---\n\n# Page\n",
+        "openwiki/0.3.1",
+        "2026-08-18T09:00:00.000Z",
+      ),
+    ).toBe(
+      '---\ntype: Reference\ntitle: Page\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\n---\n\n# Page\n',
+    );
+  });
+
+  test("replaces an existing generated event in place", () => {
+    expect(
+      setGeneratedEvent(
+        '---\ntype: Reference\ngenerated: {by: "human:steve"}\ntitle: Page\n---\n\n# Page\n',
+        "openwiki/0.3.1",
+        "2026-08-18T09:00:00.000Z",
+      ),
+    ).toBe(
+      '---\ntype: Reference\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\ntitle: Page\n---\n\n# Page\n',
+    );
+  });
+
+  test("emits a bare {by} event when no time is supplied", () => {
+    expect(
+      setGeneratedEvent(
+        "---\ntype: Reference\n---\n\n# Page\n",
+        "openwiki/0.3.1",
+      ),
+    ).toBe(
+      '---\ntype: Reference\ngenerated: {by: "openwiki/0.3.1"}\n---\n\n# Page\n',
+    );
+  });
+
+  test("prepends a minimal block when the page has no front matter", () => {
+    expect(
+      setGeneratedEvent(
+        "# Page\nBody.\n",
+        "openwiki/0.3.1",
+        "2026-08-18T09:00:00.000Z",
+      ),
+    ).toBe(
+      '---\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\n---\n\n# Page\nBody.\n',
+    );
+  });
+
+  test("produces front matter the validator accepts", () => {
+    const stamped = setGeneratedEvent(
+      "---\ntype: Reference\n---\n\n# Page\n",
+      "openwiki/0.3.1",
+      "2026-08-18T09:00:00.000Z",
+    );
+    expect(validateOkfFrontmatter(stamped)).toEqual({ valid: true });
+  });
+});
+
+describe("conceptBodiesEqual", () => {
+  test("ignores front-matter differences", () => {
+    expect(
+      conceptBodiesEqual(
+        "---\ntype: Reference\n---\n\n# Page\n\nSame body.\n",
+        "---\ntype: Reference\ngenerated: {by: openwiki/0.3.1}\n---\n\n# Page\n\nSame body.\n",
+      ),
+    ).toBe(true);
+  });
+
+  test("ignores whitespace-only reflows in the body", () => {
+    expect(
+      conceptBodiesEqual(
+        "---\ntype: Reference\n---\n\n# Page\n\nSame body.\n",
+        "---\ntype: Reference\n---\n\n#   Page\n\n\nSame   body.\n\n",
+      ),
+    ).toBe(true);
+  });
+
+  test("detects a meaningful body change", () => {
+    expect(
+      conceptBodiesEqual(
+        "---\ntype: Reference\n---\n\n# Page\n\nOld body.\n",
+        "---\ntype: Reference\n---\n\n# Page\n\nNew body.\n",
+      ),
+    ).toBe(false);
   });
 });
 

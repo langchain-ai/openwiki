@@ -48,6 +48,18 @@ export const OPENWIKI_TRANSLATION_PENDING_FIELD =
 const PRESERVED_EXTENSION_FIELDS = [OPENWIKI_TRANSLATION_PENDING_FIELD];
 
 /**
+ * OKF v0.2 provenance/trust/lifecycle families (SPEC §5) that must survive the
+ * deterministic type-less rebuild. Unlike {@link PRESERVED_EXTENSION_FIELDS}
+ * these hold structured mappings or lists rather than scalar strings, so they
+ * are carried across verbatim as whole raw lines rather than re-quoted.
+ *
+ * `generated` is code-owned (see {@link setGeneratedEvent}); listing it here
+ * keeps a deterministically stamped provenance event from being discarded when
+ * a page also happens to trip the type-less repair path.
+ */
+const PRESERVED_STRUCTURED_FIELDS = ["generated"];
+
+/**
  * Matches a leading YAML front-matter block and captures its inner text.
  */
 const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u;
@@ -387,6 +399,64 @@ export function setFrontmatterField(
 }
 
 /**
+ * Stamps the code-owned OKF `generated` provenance event on a page (SPEC §5.1),
+ * setting or replacing a `generated: {by, at}` flow mapping and preserving every
+ * other front-matter line byte-for-byte.
+ *
+ * `generated` is a mapping, not a scalar, so it cannot go through
+ * {@link setFrontmatterField}. The value is emitted as a single-line flow
+ * mapping with JSON-quoted members so an actor or datetime containing a colon
+ * stays valid YAML. When the page has no front-matter block, a minimal one
+ * holding just this field is prepended.
+ *
+ * `at` is optional so the same helper can carry a bare `{by}` event; callers
+ * that record a run time pass it, and it is emitted only when present.
+ */
+export function setGeneratedEvent(
+  content: string,
+  by: string,
+  at?: string,
+): string {
+  const members =
+    at === undefined
+      ? `by: ${JSON.stringify(by)}`
+      : `by: ${JSON.stringify(by)}, at: ${JSON.stringify(at)}`;
+  const line = `generated: {${members}}`;
+  const { block, body } = splitFrontmatter(content);
+  if (block === undefined) {
+    return `---\n${line}\n---\n\n${content}`;
+  }
+
+  const lines = block.split("\n");
+  const index = lines.findIndex((current) => isFieldLine(current, "generated"));
+  if (index === -1) {
+    lines.push(line);
+  } else {
+    lines[index] = line;
+  }
+  return `---\n${lines.join("\n")}\n---\n${body}`;
+}
+
+/**
+ * Reports whether two documents have the same concept body, ignoring their
+ * front-matter blocks and treating a run of whitespace as equal to a single
+ * space. This is the "meaningful change" test that gates {@link setGeneratedEvent}:
+ * a write that only reshuffles front matter or reflows whitespace does not bump
+ * the recorded change time.
+ */
+export function conceptBodiesEqual(before: string, after: string): boolean {
+  return normalizeBody(before) === normalizeBody(after);
+}
+
+/**
+ * Strips a document's front matter and collapses whitespace so two bodies that
+ * differ only in spacing or blank lines compare equal.
+ */
+function normalizeBody(content: string): string {
+  return splitFrontmatter(content).body.replace(/\s+/gu, " ").trim();
+}
+
+/**
  * Removes a single field from a page's front matter, preserving every other line
  * byte-for-byte, and returns the content unchanged when the field is absent. If
  * the field was the block's only line, the now-empty block is dropped entirely.
@@ -399,6 +469,29 @@ export function removeFrontmatterField(content: string, key: string): string {
   if (kept.length === block.split("\n").length) return content;
   if (kept.length === 0) return body.replace(/^\r?\n/u, "");
   return `---\n${kept.join("\n")}\n---\n${body}`;
+}
+
+/**
+ * Returns the raw front-matter line declaring the given top-level key, verbatim
+ * and including any inline flow mapping or list, or undefined when the field is
+ * absent or the block is unusable. Used to carry a structured field across the
+ * deterministic rebuild without parsing and re-rendering it.
+ */
+function rawFrontmatterLine(content: string, key: string): string | undefined {
+  const { block } = splitFrontmatter(content);
+  if (block === undefined) return undefined;
+  return block.split("\n").find((line) => isFieldLine(line, key));
+}
+
+/**
+ * Appends a raw front-matter line to a page's block verbatim, preserving every
+ * existing line. A page with no block is returned unchanged, since the rebuild
+ * path always constructs one before calling this.
+ */
+function appendFrontmatterLine(content: string, rawLine: string): string {
+  const { block, body } = splitFrontmatter(content);
+  if (block === undefined) return content;
+  return `---\n${block}\n${rawLine}\n---\n${body}`;
 }
 
 /**
@@ -496,6 +589,12 @@ export function normalizeConceptContent(
     const value = readFrontmatterField(content, field);
     if (value !== undefined) {
       rebuilt = setFrontmatterField(rebuilt, field, value);
+    }
+  }
+  for (const field of PRESERVED_STRUCTURED_FIELDS) {
+    const line = rawFrontmatterLine(content, field);
+    if (line !== undefined) {
+      rebuilt = appendFrontmatterLine(rebuilt, line);
     }
   }
   return { changed: true, content: rebuilt };

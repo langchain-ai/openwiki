@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest";
 import { createSystemPrompt } from "../../src/agent/prompt.ts";
-import { OPENWIKI_VERSION } from "../../src/version.ts";
 
 describe("createSystemPrompt OKF guidance", () => {
   test("keeps init requirements compact and update preservation explicit", () => {
@@ -8,9 +7,6 @@ describe("createSystemPrompt OKF guidance", () => {
     const update = createSystemPrompt("update", "repository");
 
     expect(init).toContain("Only type is required by OKF");
-    expect(init).toContain(
-      "generated: {by: <producer actor>, at: <ISO 8601 datetime>} # optional",
-    );
     expect(init).toContain("index.md and log.md are reserved");
     expect(init).not.toContain(
       "Preserve all existing producer-defined front matter fields",
@@ -27,7 +23,7 @@ describe("createSystemPrompt OKF guidance", () => {
     );
   });
 
-  test("targets OKF v0.2 and the generated trust field in every mode", () => {
+  test("targets OKF v0.2 and cedes the generated field to code in every mode", () => {
     const init = createSystemPrompt("init", "repository");
     const update = createSystemPrompt("update", "repository");
     const personalUpdate = createSystemPrompt("update", "local-wiki");
@@ -36,15 +32,23 @@ describe("createSystemPrompt OKF guidance", () => {
       // v0.1's timestamp is superseded by generated (OKF v0.2 §13.1).
       expect(prompt).not.toContain("v0.1");
       expect(prompt).not.toContain("timestamp: <");
-      expect(prompt).toContain(`by: openwiki/${OPENWIKI_VERSION}`);
+      // `generated` is code-owned: the model is never handed the producer actor
+      // nor told to author the field, so no `generated: {by: ...}` template and
+      // no resolved `openwiki/<version>` actor string leaks into the prompt.
+      expect(prompt).not.toContain("generated: {by:");
+      expect(prompt).not.toContain("by: openwiki/");
       expect(prompt).not.toContain("{OKF_PRODUCER_ACTOR}");
+      expect(prompt).toContain(
+        "OpenWiki stamps generated provenance (last meaningful change) deterministically",
+      );
     }
     expect(init).toContain("valid OKF v0.2 YAML front matter");
     for (const prompt of [update, personalUpdate]) {
       expect(prompt).toContain("Google Knowledge Catalog OKF v0.2 schema");
       expect(prompt).toContain('okf_version: "0.2"');
+      // The model is told OpenWiki owns the field and not to write it itself.
       expect(prompt).toContain(
-        "generated: {by: <producer actor>, at: <ISO 8601 datetime>} # Optional",
+        "Do not author, edit, or remove `generated` or `timestamp` yourself",
       );
     }
   });

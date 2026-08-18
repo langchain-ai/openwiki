@@ -105,14 +105,14 @@ title: <Optional display name>
 description: <Optional one to two sentence summary (optimized for search & retrieval)>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
-generated: {by: <producer actor>, at: <ISO 8601 datetime>} # Optional
+# OpenWiki stamps generated provenance (last meaningful change) deterministically; do not write it.
 # Producer-defined extension fields are allowed.
 ---
 </okf_front_matter>
 
 - Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
 - Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
-- \`generated\` optionally records the content's last meaningful change: \`by\` is required within it and names the producing actor (\`<producer>/<version>\` for agents, \`human:<id>\` for people, \`process:<id>\` for processes); \`at\` is an ISO 8601 datetime. When you create or meaningfully change a concept, write \`generated: {by: {OKF_PRODUCER_ACTOR}, at: <current ISO 8601 datetime>}\` and drop any superseded legacy \`timestamp\` field from that concept; otherwise leave existing \`generated\` and \`timestamp\` values untouched.
+- \`generated\` records the content's last meaningful change (\`by\` names the producing actor, \`at\` is an ISO 8601 datetime). OpenWiki owns this field: it stamps and updates \`generated\` deterministically after every run when a page's body actually changes, and drops the superseded legacy \`timestamp\` at the same time. Do not author, edit, or remove \`generated\` or \`timestamp\` yourself; leave any existing values in place.
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
 - Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
@@ -297,14 +297,14 @@ title: <Optional display name>
 description: <Optional one to two sentence summary (optimized for search & retrieval)>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
-generated: {by: <producer actor>, at: <ISO 8601 datetime>} # Optional
+# OpenWiki stamps generated provenance (last meaningful change) deterministically; do not write it.
 # Producer-defined extension fields are allowed.
 ---
 </okf_front_matter>
 
 - Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
 - Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
-- \`generated\` optionally records the content's last meaningful change: \`by\` is required within it and names the producing actor (\`<producer>/<version>\` for agents, \`human:<id>\` for people, \`process:<id>\` for processes); \`at\` is an ISO 8601 datetime. When you create or meaningfully change a concept, write \`generated: {by: {OKF_PRODUCER_ACTOR}, at: <current ISO 8601 datetime>}\` and drop any superseded legacy \`timestamp\` field from that concept; otherwise leave existing \`generated\` and \`timestamp\` values untouched.
+- \`generated\` records the content's last meaningful change (\`by\` names the producing actor, \`at\` is an ISO 8601 datetime). OpenWiki owns this field: it stamps and updates \`generated\` deterministically after every run when a page's body actually changes, and drops the superseded legacy \`timestamp\` at the same time. Do not author, edit, or remove \`generated\` or \`timestamp\` yourself; leave any existing values in place.
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
 - Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
@@ -525,14 +525,14 @@ title: <Optional display name>
 description: <Optional one to two sentence summary (optimized for search & retrieval)>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
-generated: {by: <producer actor>, at: <ISO 8601 datetime>} # Optional
+# OpenWiki stamps generated provenance (last meaningful change) deterministically; do not write it.
 # Producer-defined extension fields are allowed.
 ---
 </okf_front_matter>
 
 - Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
 - Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
-- \`generated\` optionally records the content's last meaningful change: \`by\` is required within it and names the producing actor (\`<producer>/<version>\` for agents, \`human:<id>\` for people, \`process:<id>\` for processes); \`at\` is an ISO 8601 datetime. When you create or meaningfully change a concept, write \`generated: {by: {OKF_PRODUCER_ACTOR}, at: <current ISO 8601 datetime>}\` and drop any superseded legacy \`timestamp\` field from that concept; otherwise leave existing \`generated\` and \`timestamp\` values untouched.
+- \`generated\` records the content's last meaningful change (\`by\` names the producing actor, \`at\` is an ISO 8601 datetime). OpenWiki owns this field: it stamps and updates \`generated\` deterministically after every run when a page's body actually changes, and drops the superseded legacy \`timestamp\` at the same time. Do not author, edit, or remove \`generated\` or \`timestamp\` yourself; leave any existing values in place.
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
 - Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.

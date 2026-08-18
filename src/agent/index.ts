@@ -363,6 +363,9 @@ function createOpenWikiAgentGraph(
   // back to English for any language not in the static maps.
   const indexLabels = resolveIndexLabels(options.context.language);
   const conceptType = resolveConceptTypeLabel(options.context.language);
+  // One stamp time for the whole run, so every page whose body changes shares a
+  // single deterministic `generated.at` rather than drifting across writes.
+  const runTimestamp = new Date().toISOString();
 
   return createDeepAgent({
     model: options.model,
@@ -407,6 +410,7 @@ function createOpenWikiAgentGraph(
               options.outputMode,
               indexLabels,
               conceptType,
+              runTimestamp,
             ),
           ],
     skills: ["/skills/"],
