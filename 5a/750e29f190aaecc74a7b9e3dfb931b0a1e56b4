@@ -1,0 +1,19 @@
+.changeset/green-koalas-reason.md
+  s_a311bef6ebf7f9::t_182df82a5abb1d 2,5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "5a750e29f190aaecc74a7b9e3dfb931b0a1e56b4",
+  "prompts": {},
+  "sessions": {
+    "s_a311bef6ebf7f9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6745ef6c-5dea-4cf1-8f3f-15248fec13c6",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
