@@ -1,0 +1,25 @@
+pnpm-lock.yaml
+  s_e3e935f3300670::t_871f7701387d57 48-50,209-212,695-712,723-725,807-811,983-987,1108-1110,1591-1598,2052-2056,2206-2208,2224-2226,2516-2522,3111-3116,3702-3723,3733-3734,3847-3862,4003-4006,4155-4156,4684-4685,5175-5186,5311-5312,5325-5328,5573-5584
+src/agent/code-interpreter.ts
+  s_e3e935f3300670::t_0d0c260ebea5e5 1-77
+package.json
+  s_e3e935f3300670::t_11c3b473e64c1a 70,90
+src/agent/index.ts
+  s_e3e935f3300670::t_b7742129c761ee 50,494-496
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "533ef16b5ff2e3e9a24b91d53b06cfcad4829019",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
