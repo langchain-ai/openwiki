@@ -1,0 +1,31 @@
+src/agent/index.ts
+  s_9b220869d1ee0a::t_40f993d3bbcb46 68,514-520
+src/agent/prompts/code.ts
+  s_9b220869d1ee0a::t_269636eea960a7 128-131,138
+src/agent/subtree-surveyor.ts
+  s_e3e935f3300670::t_d9e199ace2cd60 1-145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e5e310d132efdbc8ada4cc5145000e5cb9c25ac3",
+  "prompts": {},
+  "sessions": {
+    "s_9b220869d1ee0a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed580239-bcf5-4316-af7f-dcfd52d692a0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    },
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
