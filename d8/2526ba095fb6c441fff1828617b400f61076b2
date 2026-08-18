@@ -1,0 +1,33 @@
+package.json
+  s_f7d425ab7dd1a0::t_e04230c49ae3ad 90
+  s_f7d425ab7dd1a0::t_e54531cc12ca4b 143
+test/claims/evidence/repository/tree-sitter-adapter.test.ts
+  s_f7d425ab7dd1a0::t_888d0e48f93663 112-113,148-149,166-180,183
+  s_f7d425ab7dd1a0::t_283e46326dc6b4 181-182
+test/claims/evidence/repository/resolver.test.ts
+  s_f7d425ab7dd1a0::t_1cb1afeb99effe 161-178
+  s_f7d425ab7dd1a0::t_3318d9486eec0e 146-160
+src/claims/evidence/repository/tree-sitter-adapter.ts
+  s_f7d425ab7dd1a0::t_c3d46629dc3fca 95-98,389-392
+  s_f7d425ab7dd1a0::t_9c6e107347c6ff 94,245-254,284-288,316-320,388,507-510,540,546,549-555,557-564,570-593,696-707,855-865
+  s_f7d425ab7dd1a0::t_c3e59a36fec878 244
+  s_f7d425ab7dd1a0::t_2eec4a7ca12210 506
+pnpm-lock.yaml
+  s_f7d425ab7dd1a0::t_3fe359a0f6bb0d 108-110,2245-2247,2735-2743,5280-5281,5726-5731
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "d82526ba095fb6c441fff1828617b400f61076b2",
+  "prompts": {},
+  "sessions": {
+    "s_f7d425ab7dd1a0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01602-767f-7130-baed-cc9be690395f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
