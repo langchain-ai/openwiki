@@ -58,6 +58,8 @@ The agent runtime resolves the provider via `resolveConfiguredProvider()` in `sr
 
 Note: the copilot provider is selectable but never auto-detected — its credential comes from the GitHub CLI at runtime, so `resolveConfiguredProvider()` does not probe for it.
 
+`resolveRunConfig()` also resolves the per-run model knobs before `createModel()` is called: `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` (retry count, default 3), `OPENWIKI_MAX_OUTPUT_TOKENS` (a positive-integer override for the model client's output token limit, applied as `maxTokens` to non-Google clients and `maxOutputTokens` to `ChatGoogle`/Vertex Gemini surfaces), the Bedrock-only `OPENWIKI_STREAM_IDLE_TIMEOUT` (milliseconds, `0` disables the LangChain watchdog; `resolveStreamIdleTimeoutForProvider()` ignores a stale value when the active provider is not `bedrock`), and `OPENWIKI_REASONING_EFFORT` for supported reasoning-capable models (see [Reasoning effort](#reasoning-effort)). Each is logged to the debug stream with its resolved value or `provider-default`.
+
 Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 
 - **gemini** → `ChatGoogle` with `platformType: "gai"` (AI Studio), using the Gemini API key. Includes Gemini 3.x thought-signature round-trip options.
@@ -65,12 +67,16 @@ Model creation branches by provider in `src/agent/index.ts` (`createModel`):
 - **anthropic** → `ChatAnthropic` with the Anthropic API key.
 - **openai-chatgpt** → `ChatOpenAI` with `useResponsesApi: true`, `zdrEnabled: true`, `streaming: true`, pointed at the Codex backend (`CODEX_RESPONSES_BASE_URL`) with account-id/originator/beta headers. Tokens are refreshed before model creation via `ensureFreshChatGptTokens()`.
 - **openrouter** → `ChatOpenRouter` with the selected model ID. When `OPENWIKI_OPENROUTER_MAX_TOKENS` is set to a positive integer (resolved by `resolveOpenRouterMaxTokens()` in `src/config/constants.ts`), the cap is passed as `maxTokens` so OpenRouter's credit pre-check budgets against the cap rather than the model's full advertised output ceiling (which otherwise triggers 402 errors on low balances).
-- **bedrock** → `ChatBedrockConverse` (`@langchain/aws`) with AWS access key ID, secret access key, and a required region.
+- **bedrock** → `ChatBedrockConverse` (`@langchain/aws`) with AWS access key ID, secret access key, and a required region. When `OPENWIKI_MAX_OUTPUT_TOKENS` is set, it is passed as `maxTokens`; when `OPENWIKI_STREAM_IDLE_TIMEOUT` is set (Bedrock only), it is passed as `streamIdleTimeout` so the client waits that long for the first or next streamed chunk (the `@langchain/aws` default is preserved when unset).
 - **openai** → `ChatOpenAI` with `useResponsesApi: true`.
 - **copilot** → `ChatOpenAI` with `apiKey` from the GitHub CLI token (or `COPILOT_API_KEY` for CI), `baseURL` from `COPILOT_BASE_URL` or the default Copilot endpoint, and `useResponsesApi` matching `/^gpt-5/u`. Auth is resolved before model creation via `resolveExternalCliCredential()` in `src/auth/external-cli-auth.ts`, which runs `gh auth token` and injects the credential into `process.env` for the current process only.
-- **baseten / fireworks / nebius / nvidia / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`; `useResponsesApi` is resolved by `providerUsesResponsesApi()`, which for `openai-compatible` honors the `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API` opt-in (default chat completions) and is `false` for the others.
+- **baseten / fireworks / nebius / nvidia / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`; `useResponsesApi` is resolved by `providerUsesResponsesApi()`, which for `openai-compatible` honors the `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API` opt-in (default chat completions) and is `false` for the others. For `openai-compatible`, `OPENWIKI_OPENAI_COMPATIBLE_STREAMING=true` spreads `streaming: true` to force the HTTP streaming transport for gateways that only serve SSE. NVIDIA NIM reasoning-capable models (e.g. Nemotron 3 Super) read `OPENWIKI_REASONING_EFFORT` through the chat-completions `reasoning_effort` field.
 
 Credential gating before model creation uses `getMissingProviderEnvKey()` in `src/config/constants.ts`, which requires the provider's API key — or `GOOGLE_CLOUD_PROJECT` for gemini-enterprise — and powers the same check in the CLI's non-interactive gates and the onboarding flow.
+
+### Reasoning effort
+
+`OPENWIKI_REASONING_EFFORT` configures reasoning for supported provider/model pairs via `src/config/reasoning.ts`. The `REASONING_CAPABILITIES` table maps a `(provider, modelId)` to a transport and an allowlist of effort values: OpenAI and ChatGPT GPT-5.6 models use the Responses API transport (`reasoning: { effort }`), while NVIDIA NIM's Nemotron 3 Super uses the chat-completions `reasoning_effort` field. `resolveReasoningConfig()` is the single validation gate — it throws before a request is sent when the env value is not a known effort, the provider/model pair is unsupported, or the effort is not in the pair's allowlist — and `createModel()` spreads the resolved options into the matching branch. The interactive `/effort` slash command and the onboarding `reasoning-effort` step both derive their selectable rows from the same capability table via `getReasoningCapability()`, so an unsupported combination offers no value rather than failing at request time. A shell export of `OPENWIKI_REASONING_EFFORT` takes precedence over the saved `~/.openwiki/.env` value until the next process, so the interactive UI warns when a saved choice is shadowed.
 
 ### DeepAgents backend and middleware
 
@@ -90,7 +96,7 @@ The agent runtime attaches two middleware layers:
 
 ### Content snapshot and metadata writes
 
-After a non-chat run completes, `src/agent/utils.ts` computes a SHA-256 snapshot of the `openwiki/` directory (excluding `.last-update.json`). Metadata is written **only if the snapshot changed** — a no-op update that leaves docs untouched will not update `.last-update.json`. This prevents endless update loops in scheduled workflows.
+After a non-chat run completes, `src/agent/utils.ts` computes a SHA-256 snapshot of the `openwiki/` directory (excluding `.last-update.json`). `persistRunMetadataIfChanged()` always refreshes `openwiki/.last-update.json` for non-chat runs (not only when the snapshot changed) so freshness checks reflect the actual last run rather than the last content change — the fast-skip no-op path in `runOpenWikiAgent` also calls `writeLastUpdateMetadata()`, carrying the persisted `language` surfaced by `getUpdateNoopStatus()` so a non-English wiki keeps its marker. A completed retry that changed no content still clears a previous `interrupted` status so the update no-op check can skip again. The snapshot still guards against endless content-update loops in scheduled workflows by scoping the git change summary.
 
 ### Auto-exit behavior
 
@@ -110,7 +116,7 @@ The current design reflects a documentation product rather than a general-purpos
 - Git evidence is gathered by the agent itself during the run (per the prompt templates), so the model can adapt its discovery to the actual change window rather than consuming a fixed precomputed summary.
 - Provider support is centralized in `src/config/constants.ts` so adding a provider is a single-config change plus a model-creation branch.
 - Model execution is provider-stable: transient request failures can retry through the selected LangChain model client, but OpenWiki surfaces the final error instead of continuing with another model.
-- The content-snapshot check prevents metadata churn when an update run produces no documentation changes, which is important for scheduled CI workflows.
+- The content-snapshot check scopes the git change summary and gates interrupted-status recovery, while metadata is now always refreshed so freshness checks reflect the actual last run — both matter for scheduled CI workflows.
 - Auto-exit for init/update makes the CLI usable in both interactive and one-shot contexts without requiring `--print`.
 
 ## Major extension points
@@ -148,6 +154,8 @@ The current design reflects a documentation product rather than a general-purpos
 - `src/cli/startup.ts`
 - `src/setup/credentials.tsx` (re-exports `src/setup/credentials/`)
 - `src/config/env.ts`
+- `src/config/constants.ts`
+- `src/config/reasoning.ts`
 - `src/agent/index.ts`
 - `src/model-availability.ts`
 - `src/agent/prompt.ts`
