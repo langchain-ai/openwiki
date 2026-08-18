@@ -1,0 +1,19 @@
+src/agent/prompts/code.ts
+  s_a2acbfc74bd55c::t_877b8f7997fd62 137-140,142,145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "b77c28d281fb4f5b0861baef58cc16fbbca679c5",
+  "prompts": {},
+  "sessions": {
+    "s_a2acbfc74bd55c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01591-5ded-7a73-98c2-9a4c29873b2e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
