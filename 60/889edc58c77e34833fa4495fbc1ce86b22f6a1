@@ -1,0 +1,19 @@
+src/agent/wiki_qa_subagents.ts
+  s_32e70c20e925b7::t_10573cea1007b0 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "60889edc58c77e34833fa4495fbc1ce86b22f6a1",
+  "prompts": {},
+  "sessions": {
+    "s_32e70c20e925b7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1a26c65b-4ff4-4271-8cd2-8a28c8291083",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
