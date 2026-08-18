@@ -48,6 +48,7 @@ export type CliCommand =
       wikiDir: string;
       port: number;
       open: boolean;
+      exportDir: string | null;
     }
   | {
       kind: "ingest";
@@ -220,6 +221,9 @@ export function parseCommand(argv: string[]): CliCommand {
     let wikiDir = "openwiki";
     let port = 4321;
     let open = true;
+    let exportDir: string | null = null;
+    let sawPort = false;
+    let sawNoOpen = false;
     let sawPositional = false;
     const optionArgs = argv.slice(1);
 
@@ -228,6 +232,7 @@ export function parseCommand(argv: string[]): CliCommand {
 
       if (arg === "--no-open") {
         open = false;
+        sawNoOpen = true;
         continue;
       }
 
@@ -241,12 +246,41 @@ export function parseCommand(argv: string[]): CliCommand {
           };
         }
         port = Number(rawPort);
+        sawPort = true;
         index += 1;
         continue;
       }
 
       if (arg.startsWith("--port=")) {
         port = Number(arg.slice("--port=".length));
+        sawPort = true;
+        continue;
+      }
+
+      if (arg === "--export") {
+        const outputDir = optionArgs[index + 1];
+        if (!outputDir || outputDir.startsWith("-")) {
+          return {
+            kind: "error",
+            exitCode: 1,
+            message: "--export requires a directory.",
+          };
+        }
+        exportDir = outputDir;
+        index += 1;
+        continue;
+      }
+
+      if (arg.startsWith("--export=")) {
+        const outputDir = arg.slice("--export=".length);
+        if (!outputDir) {
+          return {
+            kind: "error",
+            exitCode: 1,
+            message: "--export requires a directory.",
+          };
+        }
+        exportDir = outputDir;
         continue;
       }
 
@@ -263,6 +297,14 @@ export function parseCommand(argv: string[]): CliCommand {
       };
     }
 
+    if (exportDir && (sawPort || sawNoOpen)) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: "--export cannot be combined with --port or --no-open.",
+      };
+    }
+
     if (!Number.isInteger(port) || port < 1024 || port > 65535) {
       return {
         kind: "error",
@@ -271,7 +313,7 @@ export function parseCommand(argv: string[]): CliCommand {
       };
     }
 
-    return { kind: "visualize", exitCode: 0, wikiDir, port, open };
+    return { kind: "visualize", exitCode: 0, wikiDir, port, open, exportDir };
   }
 
   if (argv[0] === "ingest") {
@@ -751,7 +793,7 @@ export const helpContent: HelpContent = {
     "openwiki cron resume all",
     "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
-    "openwiki visualize [path] [--port <port>] [--no-open]",
+    "openwiki visualize [path] [--port <port>] [--no-open] [--export <dir>]",
   ],
   commands: [
     {
@@ -813,9 +855,9 @@ export const helpContent: HelpContent = {
         "Start an ngrok tunnel for Slack OAuth, optionally using a fixed HTTPS URL.",
     },
     {
-      label: "openwiki visualize [path]",
+      label: "openwiki visualize [path] [--export <dir>]",
       description:
-        "Serve an interactive graph and live docs reader for a generated wiki (defaults to ./openwiki).",
+        "Serve a live graph and reader, or export a static graph for web hosting (defaults to ./openwiki).",
     },
   ],
   options: [
@@ -871,6 +913,11 @@ export const helpContent: HelpContent = {
       label: "--no-open",
       description: "For visualize: do not open the browser automatically.",
     },
+    {
+      label: "--export <dir>",
+      description:
+        "For visualize: write a static visualizer directory instead of starting the local server.",
+    },
   ],
   developmentOptions: [
     {
@@ -906,6 +953,7 @@ export const helpContent: HelpContent = {
     "openwiki ngrok start https://openwiki.ngrok.app",
     "openwiki visualize",
     "openwiki visualize openwiki --port 4400 --no-open",
+    "openwiki visualize openwiki --export docs/openwiki-visualizer",
   ],
   developmentExamples: ["openwiki --dry-run"],
 };

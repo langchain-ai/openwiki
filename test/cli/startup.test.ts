@@ -173,6 +173,25 @@ describe("resolveStartupCommand", () => {
     expect(result).toBe(command);
   });
 
+  test("requires credentials when a clean update requests a language change", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+
+    const result = await resolveStartupCommand(
+      updatePrintCommand({ language: "fr" }),
+      {
+        cwd: repo,
+        isStdinTTY: false,
+      },
+    );
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toContain("OPENROUTER_API_KEY is required");
+    }
+  });
+
   test("still requires credentials when update --print has source changes", async () => {
     const repo = await createRepoWithOpenWiki();
     const head = await git(repo, ["rev-parse", "HEAD"]);

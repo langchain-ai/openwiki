@@ -1,6 +1,14 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { OPENWIKI_VERSION } from "../config/constants.js";
+import {
+  getProviderAuthMethod,
+  getProviderConfig,
+  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
+  OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_VERSION,
+  resolveConfiguredProvider,
+  resolveOpenAiCompatibleStreaming,
+} from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { createConnectorRegistry } from "../connectors/registry.js";
 import { UPDATE_METADATA_PATH } from "../config/constants.js";
@@ -26,6 +34,12 @@ export interface CodeModeRepoSetupOptions {
   createWorkflow?: boolean;
   /** Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}. */
   cronExpression?: string;
+  /**
+   * Environment the generated workflow's provider block is derived from.
+   * Defaults to `process.env`, which by this point holds the credentials setup
+   * resolved for this run.
+   */
+  env?: NodeJS.ProcessEnv;
 }
 
 /**
@@ -41,6 +55,7 @@ export async function ensureCodeModeRepoSetup(
     await ensureCodeModeWorkflow(
       cwd,
       options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
+      options.env ?? process.env,
     );
   }
   await writeCodeModeAgentSnippets(cwd);
@@ -54,6 +69,7 @@ export async function ensureCodeModeRepoSetup(
 async function ensureCodeModeWorkflow(
   cwd: string,
   cronExpression: string,
+  env: NodeJS.ProcessEnv,
 ): Promise<void> {
   const workflowPath = path.join(
     cwd,
@@ -72,7 +88,11 @@ async function ensureCodeModeWorkflow(
   }
 
   await mkdir(path.dirname(workflowPath), { recursive: true });
-  await writeFile(workflowPath, createCodeModeWorkflow(cronExpression), "utf8");
+  await writeFile(
+    workflowPath,
+    createCodeModeWorkflow(cronExpression, env),
+    "utf8",
+  );
 }
 
 /**
@@ -169,12 +189,20 @@ async function readLastUpdatedAt(
 }
 
 async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
-  const snippet = createCodeModeAgentsSnippet();
+  const agentsSnippet = createCodeModeAgentsSnippet();
+  const claudeSnippet = createCodeModeClaudeSnippet();
+  const snippetByFile: Record<string, string> = {
+    "AGENTS.md": agentsSnippet,
+    "CLAUDE.md": claudeSnippet,
+  };
   // Prepare and validate both files before writing either one. If one file has
   // malformed markers, setup fails without partially refreshing its sibling.
   const updates = await Promise.all(
     CODE_MODE_AGENT_FILES.map((fileName) =>
-      prepareCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
+      prepareCodeModeAgentSnippet(
+        path.join(cwd, fileName),
+        snippetByFile[fileName] ?? agentsSnippet,
+      ),
     ),
   );
 
@@ -228,7 +256,74 @@ async function prepareCodeModeAgentSnippet(
   };
 }
 
-function createCodeModeWorkflow(cronExpression: string): string {
+/**
+ * The provider half of the generated workflow's `env:` block, derived from the
+ * provider the operator configured during setup. A fixed provider block here
+ * authenticates only the default setup: every other one silently ships a
+ * workflow whose first scheduled run fails on a credential the repo never had.
+ *
+ * Only what the provider config actually pins down is emitted. Secrets go
+ * through `secrets.`, non-sensitive settings (endpoint, project, region)
+ * through `vars.`, so neither has to be reverse-engineered from a stack trace.
+ */
+function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
+  const provider = resolveConfiguredProvider(env);
+  const config = getProviderConfig(provider);
+  const lines = [`OPENWIKI_PROVIDER: ${provider}`];
+
+  if (getProviderAuthMethod(provider) === "oauth") {
+    // The stored access token is short-lived and refreshed in place, so
+    // pinning it as a repo secret would break on the first rotation.
+    lines.push(
+      `# ${config.label} authenticates through a browser login, which has no`,
+      "# unattended equivalent. Supply CI credentials for it yourself.",
+    );
+  } else if (config.apiKeyEnvKey !== undefined) {
+    lines.push(
+      `${config.apiKeyEnvKey}: \${{ secrets.${config.apiKeyEnvKey} }}`,
+    );
+    if (config.secretKeyEnvKey !== undefined) {
+      lines.push(
+        `${config.secretKeyEnvKey}: \${{ secrets.${config.secretKeyEnvKey} }}`,
+      );
+    }
+  }
+
+  if (config.requiresBaseUrl && config.baseUrlEnvKey !== undefined) {
+    lines.push(`${config.baseUrlEnvKey}: \${{ vars.${config.baseUrlEnvKey} }}`);
+  }
+  if (config.projectEnvKey !== undefined) {
+    lines.push(`${config.projectEnvKey}: \${{ vars.${config.projectEnvKey} }}`);
+  }
+  if (config.requiresRegion && config.regionEnvKey !== undefined) {
+    lines.push(`${config.regionEnvKey}: \${{ vars.${config.regionEnvKey} }}`);
+  }
+
+  // Bedrock ships no preset model list because entitlements are account- and
+  // region-specific, so there is nothing safe to suggest and the line is left out.
+  const modelId =
+    env[OPENWIKI_MODEL_ID_ENV_KEY]?.trim() || config.modelOptions[0]?.id;
+  if (modelId !== undefined) {
+    // Quoted because model IDs are not all plain YAML scalars: Cloudflare
+    // Workers AI IDs lead with "@", a reserved indicator that fails to parse.
+    lines.push(`${OPENWIKI_MODEL_ID_ENV_KEY}: ${JSON.stringify(modelId)}`);
+  }
+
+  // Not part of the provider config because it is a transport override rather
+  // than a credential, but it has to survive into the scheduled run: a gateway
+  // that only serves SSE would otherwise return empty content unattended and
+  // commit a blank wiki. Emitted only when the author opted in locally.
+  if (resolveOpenAiCompatibleStreaming(env)) {
+    lines.push(`${OPENAI_COMPATIBLE_STREAMING_ENV_KEY}: "true"`);
+  }
+
+  return lines.join("\n          ");
+}
+
+function createCodeModeWorkflow(
+  cronExpression: string,
+  env: NodeJS.ProcessEnv,
+): string {
   return `name: OpenWiki Update
 
 on:
@@ -264,9 +359,7 @@ jobs:
       - name: Run OpenWiki
         run: openwiki code --update --print
         env:
-          OPENWIKI_PROVIDER: openrouter
-          OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
-          OPENWIKI_MODEL_ID: z-ai/glm-5.2
+          ${createWorkflowProviderEnv(env)}
           # Required for the LangSmith connector's code-mode pull to authenticate.
           # For extra workspaces, add OPENWIKI_LANGSMITH_API_KEY_2, _3, ... as repo
           # secrets and env entries here.
@@ -305,6 +398,22 @@ This repository has a generated \`openwiki/\` evidence index. It is optional jus
 - Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
 
 The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+
+${OPENWIKI_AGENTS_SNIPPET_END}`;
+}
+
+/**
+ * The snippet placed inside CLAUDE.md's managed block. It is intentionally
+ * minimal -- a single pointer to AGENTS.md -- so that one file remains the
+ * canonical source of agent instructions while Claude Code still has a file
+ * it reads at startup.
+ */
+function createCodeModeClaudeSnippet(): string {
+  return `${OPENWIKI_AGENTS_SNIPPET_START}
+
+## OpenWiki
+
+See [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.
 
 ${OPENWIKI_AGENTS_SNIPPET_END}`;
 }

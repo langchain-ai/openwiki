@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatGoogle } from "@langchain/google/node";
 import { ChatOpenAI } from "@langchain/openai";
@@ -11,6 +11,12 @@ import { createModel } from "../../src/agent/index.ts";
 const PROJECT_KEY = "GOOGLE_CLOUD_PROJECT";
 const LOCATION_KEY = "GOOGLE_CLOUD_LOCATION";
 const GEMINI_KEY = "GEMINI_API_KEY";
+const REASONING_EFFORT_KEY = "OPENWIKI_REASONING_EFFORT";
+const CHATGPT_TOKEN_KEYS = [
+  "OPENAI_CHATGPT_ACCESS_TOKEN",
+  "OPENAI_CHATGPT_REFRESH_TOKEN",
+  "OPENAI_CHATGPT_ACCOUNT_ID",
+] as const;
 
 function modelName(model: unknown): string | undefined {
   return (model as { model?: string }).model;
@@ -153,6 +159,216 @@ describe("createModel OpenAI-compatible transport selection", () => {
     };
 
     expect(model.useResponsesApi).toBe(false);
+  });
+});
+
+describe("createModel reasoning configuration", () => {
+  let savedReasoningEffort: string | undefined;
+  let savedChatGptTokens: Record<string, string | undefined>;
+
+  beforeEach(() => {
+    savedReasoningEffort = process.env[REASONING_EFFORT_KEY];
+    savedChatGptTokens = Object.fromEntries(
+      CHATGPT_TOKEN_KEYS.map((key) => [key, process.env[key]]),
+    );
+  });
+
+  afterEach(() => {
+    restoreEnv(REASONING_EFFORT_KEY, savedReasoningEffort);
+    for (const key of CHATGPT_TOKEN_KEYS) {
+      restoreEnv(key, savedChatGptTokens[key]);
+    }
+    vi.unstubAllGlobals();
+  });
+
+  test("maps OpenAI GPT-5.6 effort to the Responses reasoning payload", () => {
+    process.env[REASONING_EFFORT_KEY] = "max";
+
+    const model = createModel("openai", "gpt-5.6-luna", 0) as {
+      reasoning?: { effort?: string };
+    };
+
+    expect(model.reasoning).toEqual({ effort: "max" });
+  });
+
+  test("serializes OpenAI GPT-5.6 effort in the Responses request", async () => {
+    const savedOpenAiKey = process.env.OPENAI_API_KEY;
+    process.env[REASONING_EFFORT_KEY] = "max";
+    process.env.OPENAI_API_KEY = "test-openai-key";
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: "resp-test",
+            object: "response",
+            created_at: 0,
+            status: "completed",
+            model: "gpt-5.6-luna",
+            output: [
+              {
+                id: "msg-test",
+                type: "message",
+                status: "completed",
+                role: "assistant",
+                content: [
+                  {
+                    type: "output_text",
+                    text: "ok",
+                    annotations: [],
+                  },
+                ],
+              },
+            ],
+            usage: {
+              input_tokens: 1,
+              output_tokens: 1,
+              output_tokens_details: { reasoning_tokens: 0 },
+              total_tokens: 2,
+            },
+          }),
+          { headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const model = createModel("openai", "gpt-5.6-luna", 0);
+
+      await model.invoke("hello");
+
+      const [url, init] = fetchMock.mock.calls[0] as [
+        string | URL,
+        { body: string },
+      ];
+      expect(String(url)).toBe("https://api.openai.com/v1/responses");
+      expect(JSON.parse(init.body)).toMatchObject({
+        model: "gpt-5.6-luna",
+        reasoning: { effort: "max" },
+      });
+    } finally {
+      restoreEnv("OPENAI_API_KEY", savedOpenAiKey);
+    }
+  });
+
+  test("maps ChatGPT OAuth GPT-5.6 effort to the Responses reasoning payload", () => {
+    process.env[REASONING_EFFORT_KEY] = "high";
+    process.env.OPENAI_CHATGPT_ACCESS_TOKEN = "test-access-token";
+    process.env.OPENAI_CHATGPT_REFRESH_TOKEN = "test-refresh-token";
+    process.env.OPENAI_CHATGPT_ACCOUNT_ID = "test-account-id";
+
+    const model = createModel("openai-chatgpt", "gpt-5.6-luna", 0) as {
+      reasoning?: { effort?: string };
+    };
+
+    expect(model.reasoning).toEqual({ effort: "high" });
+  });
+
+  test("maps NVIDIA NIM effort to the Chat Completions request field", () => {
+    process.env[REASONING_EFFORT_KEY] = "high";
+
+    const model = createModel(
+      "nvidia",
+      "nvidia/nemotron-3-super-120b-a12b",
+      0,
+    ) as { modelKwargs?: Record<string, unknown> };
+
+    expect(model.modelKwargs).toMatchObject({ reasoning_effort: "high" });
+  });
+
+  test("serializes NVIDIA NIM effort in the Chat Completions request", async () => {
+    const savedNvidiaKey = process.env.NVIDIA_API_KEY;
+    process.env[REASONING_EFFORT_KEY] = "high";
+    process.env.NVIDIA_API_KEY = "test-nvidia-key";
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            model: "nvidia/nemotron-3-super-120b-a12b",
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "ok" },
+                finish_reason: "stop",
+              },
+            ],
+          }),
+          { headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const model = createModel(
+        "nvidia",
+        "nvidia/nemotron-3-super-120b-a12b",
+        0,
+      );
+
+      await model.invoke("hello");
+
+      const [url, init] = fetchMock.mock.calls[0] as [
+        string | URL,
+        { body: string },
+      ];
+      expect(String(url)).toBe(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+      );
+      expect(JSON.parse(init.body)).toMatchObject({
+        model: "nvidia/nemotron-3-super-120b-a12b",
+        reasoning_effort: "high",
+      });
+    } finally {
+      restoreEnv("NVIDIA_API_KEY", savedNvidiaKey);
+    }
+  });
+});
+
+describe("createModel openrouter output-token cap", () => {
+  const OPENROUTER_KEY = "OPENROUTER_API_KEY";
+  const MAX_TOKENS_KEY = "OPENWIKI_OPENROUTER_MAX_TOKENS";
+  let savedApiKey: string | undefined;
+  let savedMaxTokens: string | undefined;
+
+  beforeEach(() => {
+    savedApiKey = process.env[OPENROUTER_KEY];
+    savedMaxTokens = process.env[MAX_TOKENS_KEY];
+    process.env[OPENROUTER_KEY] = "test-key";
+    delete process.env[MAX_TOKENS_KEY];
+  });
+
+  afterEach(() => {
+    restoreEnv(OPENROUTER_KEY, savedApiKey);
+    restoreEnv(MAX_TOKENS_KEY, savedMaxTokens);
+  });
+
+  test("leaves maxTokens unset by default", () => {
+    const model = createModel("openrouter", "z-ai/glm-4.7-flash", 0) as {
+      maxTokens?: number;
+    };
+
+    expect(model.maxTokens).toBeUndefined();
+  });
+
+  test("passes the configured cap through to ChatOpenRouter", () => {
+    process.env[MAX_TOKENS_KEY] = "4096";
+
+    const model = createModel("openrouter", "z-ai/glm-4.7-flash", 0) as {
+      maxTokens?: number;
+    };
+
+    expect(model.maxTokens).toBe(4096);
+  });
+
+  test("rejects an invalid cap with a clear error", () => {
+    process.env[MAX_TOKENS_KEY] = "lots";
+
+    expect(() => createModel("openrouter", "z-ai/glm-4.7-flash", 0)).toThrow(
+      /OPENWIKI_OPENROUTER_MAX_TOKENS/u,
+    );
   });
 });
 

@@ -259,6 +259,25 @@ describe("InitSetupView", () => {
     expect(frame).toContain("claude-custom");
   });
 
+  test("shows the reasoning effort step only for a supported model", () => {
+    const supported = frameOf(
+      makeProps({
+        modelId: "gpt-5.6-luna",
+        provider: "openai",
+        reasoningEffort: "max",
+        step: "reasoning-effort",
+      }),
+    );
+    expect(supported).toContain("Reasoning effort");
+    expect(supported).toContain("max");
+    expect(supported).toContain("Provider default");
+
+    const unsupported = frameOf(
+      makeProps({ modelId: "gpt-5.5", provider: "openai", step: "model" }),
+    );
+    expect(unsupported).not.toContain("Reasoning effort");
+  });
+
   test("a non-empty back history shows the go-back hint", () => {
     const frame = frameOf(makeProps({ navHistoryLength: 2 }));
     expect(frame).toContain("esc to go back");

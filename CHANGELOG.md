@@ -1,5 +1,53 @@
 # openwiki
 
+## 0.3.3
+
+### Patch Changes
+
+- [#619](https://github.com/langchain-ai/openwiki/pull/619) [`250296c`](https://github.com/langchain-ai/openwiki/commit/250296ce8907608de734aa3471bcf81870f45c40) Thanks [@DecentralizedJM](https://github.com/DecentralizedJM)! - feat: add built-in custom-mcp connector for arbitrary mcp sources
+
+- [#603](https://github.com/langchain-ai/openwiki/pull/603) [`20f88c9`](https://github.com/langchain-ai/openwiki/commit/20f88c9c60d328737edebbeddc29f79e402f6209) Thanks [@akyourowngames](https://github.com/akyourowngames)! - fix: gate connector tools to personal/local-wiki runs
+
+- [#266](https://github.com/langchain-ai/openwiki/pull/266) [`3dcb382`](https://github.com/langchain-ai/openwiki/commit/3dcb3820b492fbec4ca73275ea69efa37fa76165) Thanks [@ousamabenyounes](https://github.com/ousamabenyounes)! - feat: allow openai-compatible provider to opt into responses api
+
+- [#566](https://github.com/langchain-ai/openwiki/pull/566) [`c5d41cb`](https://github.com/langchain-ai/openwiki/commit/c5d41cbe91fd6105bfbd4a05ec7606708ae22e23) Thanks [@divya0795](https://github.com/divya0795)! - fix: follow `nextCursor` when listing MCP tools, so tools on a paginated server past the first page are discovered and callable instead of rejected as "not returned by tools/list"
+
+- [#621](https://github.com/langchain-ai/openwiki/pull/621) [`239f810`](https://github.com/langchain-ai/openwiki/commit/239f810e6735dd32292ed176ea7ad9c05ed4350e) Thanks [@danielsogl](https://github.com/danielsogl)! - feat: generate the ci workflow env block from the configured provider
+
+- [#635](https://github.com/langchain-ai/openwiki/pull/635) [`9fb0097`](https://github.com/langchain-ai/openwiki/commit/9fb009798a97baf0c0987b08cdac82233c801901) Thanks [@Bubblegunn](https://github.com/Bubblegunn)! - fix: sync bundled skills from read-only installations
+
+- [#550](https://github.com/langchain-ai/openwiki/pull/550) [`f7c9f13`](https://github.com/langchain-ai/openwiki/commit/f7c9f1339fd9c826987d284fbc38869f79bc3f1d) Thanks [@GautamSharma99](https://github.com/GautamSharma99)! - fix: strip terminal control sequences from streamed Markdown output
+
+- [#639](https://github.com/langchain-ai/openwiki/pull/639) [`8e6dc99`](https://github.com/langchain-ai/openwiki/commit/8e6dc9945ba7d1e0e3a734dddfdb843e91d96f63) Thanks [@Christian-Sidak](https://github.com/Christian-Sidak)! - feat: add apac region support for langsmith
+
+- [#622](https://github.com/langchain-ai/openwiki/pull/622) [`2865cd6`](https://github.com/langchain-ai/openwiki/commit/2865cd6432c48ab27c7c834ca08ec0a7d6647086) Thanks [@colifran](https://github.com/colifran)! - feat: add LEDGER, a longitudinal benchmark for wiki grounding and forgetting
+
+- [#491](https://github.com/langchain-ai/openwiki/pull/491) [`4f61f7f`](https://github.com/langchain-ai/openwiki/commit/4f61f7f8b163cac26a00f91a2533e14b1b953387) Thanks [@jyje](https://github.com/jyje)! - feat: validate selected openai models against api-key availability before inference
+
+- [#640](https://github.com/langchain-ai/openwiki/pull/640) [`3a25d09`](https://github.com/langchain-ai/openwiki/commit/3a25d09444b879f358fcd5530ef82911f00905da) Thanks [@Christian-Sidak](https://github.com/Christian-Sidak)! - fix: generate CLAUDE.md as a pointer to AGENTS.md on init
+
+- [#590](https://github.com/langchain-ai/openwiki/pull/590) [`4fc9dff`](https://github.com/langchain-ai/openwiki/commit/4fc9dffa81cebaf60a0e8aa70f7b3565fa7edb3d) Thanks [@pawel-twardziak](https://github.com/pawel-twardziak)! - feat: cap openrouter output tokens with OPENWIKI_OPENROUTER_MAX_TOKENS to avoid 402 errors on low credit balances
+
+## 0.3.2
+
+### Patch Changes
+
+- [#616](https://github.com/langchain-ai/openwiki/pull/616) [`7531d61`](https://github.com/langchain-ai/openwiki/commit/7531d615216e8cbccf464f66cfbbae3668871c84) Thanks [@colifran](https://github.com/colifran)! - fix: pin patched js-yaml and undici via pnpm overrides
+
+- [#513](https://github.com/langchain-ai/openwiki/pull/513) [`adc03d6`](https://github.com/langchain-ai/openwiki/commit/adc03d6f68812bc842c1a020be98738cb1e17568) Thanks [@colifran](https://github.com/colifran)! - chore: reorganize repo code to make into domain specific directories and improve test coverage to prevent regressions
+
+- [#610](https://github.com/langchain-ai/openwiki/pull/610) [`c74ae1e`](https://github.com/langchain-ai/openwiki/commit/c74ae1e3ebc9a01e6ea84420931eea9d833fd1fa) Thanks [@Tomaskobel](https://github.com/Tomaskobel)! - fix: preserve exec bit on dist/cli.js after build
+
+- [#599](https://github.com/langchain-ai/openwiki/pull/599) [`f9b9f0d`](https://github.com/langchain-ai/openwiki/commit/f9b9f0d6f1f1084c93633d943cabb54201263036) Thanks [@sudipawtg](https://github.com/sudipawtg)! - Pass Windows `APPDATA` and `LOCALAPPDATA` into stdio MCP child environments so local MCP servers can resolve their config and cache directories.
+
+- [#605](https://github.com/langchain-ai/openwiki/pull/605) [`bff302c`](https://github.com/langchain-ai/openwiki/commit/bff302cc764688095d2051f968adc4d1013857af) Thanks [@dependabot](https://github.com/apps/dependabot)! - chore: bump mermaid from 11.16.0 to 11.16.1
+
+- [#611](https://github.com/langchain-ai/openwiki/pull/611) [`817b2a0`](https://github.com/langchain-ai/openwiki/commit/817b2a0b8df3ec265e73bac58ae8b462d595139a) Thanks [@colifran](https://github.com/colifran)! - chore: reorganize CLI into domain modules and add test coverage
+
+- [#604](https://github.com/langchain-ai/openwiki/pull/604) [`a0e28a3`](https://github.com/langchain-ai/openwiki/commit/a0e28a30fba1c80bc883711eab48292c5f8c398d) Thanks [@colifran](https://github.com/colifran)! - fix: harden error classification and run accounting
+
+- [#612](https://github.com/langchain-ai/openwiki/pull/612) [`3d51348`](https://github.com/langchain-ai/openwiki/commit/3d51348c4f307e1dfa2f13d6b8803716d52b3ca3) Thanks [@colifran](https://github.com/colifran)! - chore: split credentials.tsx pure logic into credentials/ modules with tests
+
 ## 0.3.1
 
 ### Patch Changes

@@ -1,6 +1,7 @@
 import type { CodexTokens } from "../../agent/openai-chatgpt-oauth.js";
 import type { OpenWikiRunMode } from "../../cli/commands.js";
 import type { OpenWikiProvider } from "../../config/constants.js";
+import type { ReasoningEffort } from "../../config/reasoning.js";
 import type { AuthProviderId } from "../../auth/types.js";
 import type { ConnectorId } from "../../connectors/types.js";
 import type { LangSmithRegion } from "../../connectors/sources/langsmith/setup.js";
@@ -51,6 +52,7 @@ export type PromptStep =
   | "model"
   | "oauth-login"
   | "provider"
+  | "reasoning-effort"
   | "region"
   | "run-mode"
   | "secret-key"
@@ -118,6 +120,9 @@ export type ModelSelectionOption =
       kind: "custom";
     };
 
+/** An explicit provider default is persisted as an empty environment value. */
+export type ReasoningEffortSelection = "" | ReasoningEffort;
+
 export type OnboardingMode = {
   description: string;
   id: string;
@@ -154,6 +159,7 @@ export interface CompleteSetupOptions {
   nextGcpProject: string | null;
   nextLangSmithKey: string | null;
   nextModelId: string | null;
+  nextReasoningEffort?: ReasoningEffortSelection | null;
 
   /**
    * OAuth tokens to persist for providers that authenticate by browser login.

@@ -34,6 +34,8 @@ import {
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
+  OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
   OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY,
   OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY,
   OPENWIKI_GOOGLE_CLIENT_SECRET_ENV_KEY,
@@ -45,6 +47,7 @@ import {
   OPENWIKI_NOTION_MCP_REFRESH_TOKEN_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_NOTION_TOKEN_ENV_KEY,
+  OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY,
   OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY,
   OPENWIKI_SLACK_BOT_TOKEN_ENV_KEY,
   OPENWIKI_SLACK_CLIENT_ID_ENV_KEY,
@@ -55,11 +58,19 @@ import {
   OPENWIKI_X_CLIENT_SECRET_ENV_KEY,
   OPENWIKI_X_REFRESH_TOKEN_ENV_KEY,
   OPENWIKI_TAVILY_API_KEY_ENV_KEY,
+  OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_REASONING_EFFORT_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
+  OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+  resolveConfiguredProvider,
+  resolveMaxOutputTokens,
   resolveProviderRetryAttempts,
+  resolveStreamIdleTimeout,
+  type OpenWikiProvider,
 } from "./constants.js";
+import { isReasoningEffort } from "./reasoning.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { restrictDirToCurrentUser } from "../platform/windows-acl.js";
 
@@ -108,6 +119,8 @@ export const MANAGED_ENV_KEYS = [
   OPENAI_CHATGPT_PLAN_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
+  OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
   ANTHROPIC_API_KEY_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
   GEMINI_API_KEY_ENV_KEY,
@@ -115,13 +128,17 @@ export const MANAGED_ENV_KEYS = [
   GOOGLE_CLOUD_LOCATION_ENV_KEY,
   GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY,
   OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY,
   BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
+  OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
+  OPENWIKI_REASONING_EFFORT_ENV_KEY,
   OPENWIKI_NOTION_TOKEN_ENV_KEY,
   OPENWIKI_NOTION_MCP_CLIENT_ID_ENV_KEY,
   OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY,
@@ -182,6 +199,8 @@ export const DEBUG_ENV_KEYS: readonly string[] = [
 const managedEnvKeys: readonly string[] = MANAGED_ENV_KEYS;
 
 const deprecatedEnvKeys = ["OPENAI_ORG_ID", "OPENAI_PROJECT"];
+const booleanDiagnosticValues = new Set(["true", "false"]);
+const invalidBooleanWarning = "invalid boolean";
 
 /**
  * The shell's values for managed credential keys, captured once before any load
@@ -269,9 +288,13 @@ export async function getCredentialDiagnostics(): Promise<
   CredentialDiagnostic[]
 > {
   const fileEnv = await readOpenWikiEnv();
+  const provider = resolveConfiguredProvider({
+    ...fileEnv,
+    ...process.env,
+  });
 
   return CREDENTIAL_DIAGNOSTIC_ENV_KEYS.map((key) =>
-    createCredentialDiagnostic(key, fileEnv),
+    createCredentialDiagnostic(key, fileEnv, provider),
   );
 }
 
@@ -352,6 +375,7 @@ async function saveOpenWikiEnvLocked(updates: EnvMap): Promise<void> {
 function createCredentialDiagnostic(
   key: CredentialDiagnostic["key"],
   fileEnv: EnvMap,
+  provider: OpenWikiProvider,
 ): CredentialDiagnostic {
   const processValue = process.env[key];
   const fileValue = fileEnv[key];
@@ -380,10 +404,19 @@ function createCredentialDiagnostic(
         ? getModelWarnings(value)
         : key === OPENWIKI_PROVIDER_ENV_KEY
           ? getProviderWarnings(value)
-          : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
-            ? getRetryAttemptsWarnings(value)
-            : (getBaseUrlDiagnosticWarnings(key, value) ??
-              getCredentialWarnings(value)),
+          : key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY
+            ? getMaxOutputTokensWarnings(value)
+            : key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY
+              ? getStreamIdleTimeoutWarnings(value, provider)
+              : key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY ||
+                  key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY
+                ? getBooleanWarnings(value)
+                : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
+                  ? getRetryAttemptsWarnings(value)
+                  : key === OPENWIKI_REASONING_EFFORT_ENV_KEY
+                    ? getReasoningEffortWarnings(value)
+                    : (getBaseUrlDiagnosticWarnings(key, value) ??
+                      getCredentialWarnings(value)),
   };
 }
 
@@ -441,8 +474,14 @@ function isNonSecretDiagnosticKey(key: string): boolean {
   return (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
+    key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY ||
+    key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
+    key === OPENWIKI_REASONING_EFFORT_ENV_KEY ||
+    key === OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY ||
     key === OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY ||
+    key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY ||
+    key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY ||
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === BASETEN_BASE_URL_ENV_KEY ||
     key === COPILOT_BASE_URL_ENV_KEY ||
@@ -495,6 +534,12 @@ function getProviderWarnings(value: string): string[] {
   return normalizeProvider(value) === null ? ["invalid provider"] : [];
 }
 
+function getBooleanWarnings(value: string): string[] {
+  return booleanDiagnosticValues.has(value.trim().toLowerCase())
+    ? []
+    : [invalidBooleanWarning];
+}
+
 function getRetryAttemptsWarnings(value: string): string[] {
   try {
     resolveProviderRetryAttempts({
@@ -505,6 +550,43 @@ function getRetryAttemptsWarnings(value: string): string[] {
   } catch {
     return ["invalid retry attempts"];
   }
+}
+
+function getMaxOutputTokensWarnings(value: string): string[] {
+  try {
+    resolveMaxOutputTokens({
+      [OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY]: value,
+    });
+
+    return [];
+  } catch {
+    return ["invalid output token limit"];
+  }
+}
+
+function getStreamIdleTimeoutWarnings(
+  value: string,
+  provider: OpenWikiProvider,
+): string[] {
+  if (provider !== "bedrock") {
+    return [];
+  }
+
+  try {
+    const streamIdleTimeout = resolveStreamIdleTimeout({
+      [OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY]: value,
+    });
+
+    return streamIdleTimeout === 0
+      ? ["stream watchdog disabled; stalled streams may hang indefinitely"]
+      : [];
+  } catch {
+    return ["invalid stream idle timeout"];
+  }
+}
+
+function getReasoningEffortWarnings(value: string): string[] {
+  return isReasoningEffort(value.trim()) ? [] : ["invalid reasoning effort"];
 }
 
 async function readOpenWikiEnv(): Promise<EnvMap> {

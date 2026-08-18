@@ -8,7 +8,10 @@ import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
 } from "../platform/fs-errors.js";
-import { resolveLanguage } from "../platform/language.js";
+import {
+  getPrimaryLanguageSubtag,
+  resolveLanguage,
+} from "../platform/language.js";
 import {
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
@@ -35,6 +38,15 @@ export type UpdateNoopStatus =
       shouldSkip: true;
       gitHead: string;
       model: string;
+
+      /**
+       * The wiki's persisted language, carried through so a no-op metadata
+       * refresh re-writes `.last-update.json` without dropping it.
+       *
+       * @default undefined - the previous run recorded no language (a wiki
+       * created before language tracking); the refresh omits the field too.
+       */
+      language?: string;
     }
   | {
       shouldSkip: false;
@@ -82,6 +94,10 @@ async function readRunWikiGoal(
 /**
  * Decides whether an `update` run can be skipped because nothing meaningful changed.
  *
+ * An explicit request whose primary language differs from the persisted wiki
+ * language is meaningful even on a clean tree, because the translation pass
+ * must run before the update agent.
+ *
  * Working-tree and committed changes that only touch `openwiki/` or paths
  * excluded by `openWikiIgnore` do not count as meaningful, so an ignored path
  * changing on its own never forces a rebuild.
@@ -89,6 +105,7 @@ async function readRunWikiGoal(
 export async function getUpdateNoopStatus(
   cwd: string,
   openWikiIgnore = new OpenWikiIgnore([]),
+  requestedLanguage?: string | null,
 ): Promise<UpdateNoopStatus> {
   const lastUpdate = await readLastUpdate(cwd, "repository");
 
@@ -98,6 +115,15 @@ export async function getUpdateNoopStatus(
 
   if (lastUpdate.status === "interrupted") {
     return { shouldSkip: false, reason: "previous update was interrupted" };
+  }
+
+  const resolvedRequestedLanguage = resolveLanguage(requestedLanguage).language;
+  if (
+    resolvedRequestedLanguage !== undefined &&
+    getPrimaryLanguageSubtag(resolvedRequestedLanguage) !==
+      getPrimaryLanguageSubtag(lastUpdate.language)
+  ) {
+    return { shouldSkip: false, reason: "output language changed" };
   }
 
   const head = await getGitHead(cwd);
@@ -143,6 +169,7 @@ export async function getUpdateNoopStatus(
     shouldSkip: true,
     gitHead: head,
     model: lastUpdate.model,
+    language: lastUpdate.language,
   };
 }
 
@@ -182,9 +209,12 @@ export async function writeLastUpdateMetadata(
 }
 
 /**
- * Persists run metadata when OpenWiki content changed since the given snapshot.
- * Returns whether metadata was written. Used after both successful and failed
- * runs so already-generated content stays diffable by future updates.
+ * Persists run metadata after an update/init run. Always refreshes the
+ * `.last-update.json` timestamp so freshness checks reflect the actual last
+ * run, even when the wiki content is unchanged (a no-op update still means
+ * OpenWiki ran). A completed run also clears any previous interrupted status
+ * so the update no-op check can skip again. Returns whether metadata was
+ * written (always true for non-chat runs).
  */
 export async function persistRunMetadataIfChanged(
   command: OpenWikiCommand,
@@ -197,17 +227,6 @@ export async function persistRunMetadataIfChanged(
 ): Promise<boolean> {
   if (command === "chat" || snapshotBefore === null) {
     return false;
-  }
-
-  if (
-    snapshotBefore === (await createOpenWikiContentSnapshot(cwd, outputMode))
-  ) {
-    // A completed run clears a previous interrupted status even when the
-    // content did not change, so the update no-op check can skip again.
-    const lastUpdate = await readLastUpdate(cwd, outputMode);
-    if (status !== "complete" || lastUpdate?.status !== "interrupted") {
-      return false;
-    }
   }
 
   await writeLastUpdateMetadata(

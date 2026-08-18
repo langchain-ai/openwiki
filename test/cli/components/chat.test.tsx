@@ -45,6 +45,7 @@ describe("ChatHistory", () => {
         command: "init",
         log: [{ content: "Wrote 5 pages.", id: 1, type: "text" }],
         message: "seed the wiki",
+        reasoningEffort: "max",
         result: { command: "init", model: "opus" },
       },
     ];
@@ -54,7 +55,7 @@ describe("ChatHistory", () => {
 
     expect(frame).toContain("seed the wiki");
     expect(frame).toContain("Complete");
-    expect(frame).toContain("openwiki init - opus");
+    expect(frame).toContain("openwiki init - opus (effort: max)");
     expect(frame).toContain("Wrote 5 pages.");
   });
 
@@ -65,12 +66,15 @@ describe("ChatHistory", () => {
         command: "update",
         log: [],
         message: null,
+        reasoningEffort: null,
         result: { command: "update", model: "sonnet" },
       },
     ];
 
     const { lastFrame } = render(<ChatHistory runs={runs} />);
-    expect(plain(lastFrame())).toContain("No assistant output captured.");
+    const frame = plain(lastFrame());
+    expect(frame).toContain("No assistant output captured.");
+    expect(frame).not.toContain("effort:");
   });
 });
 
@@ -80,6 +84,7 @@ describe("SlashMenu", () => {
       <SlashMenu
         currentModelId="opus"
         currentProvider="anthropic"
+        currentReasoningEffort={null}
         input="/"
         menuState={{ kind: "commands", selectedIndex: 0 }}
       />,
@@ -95,6 +100,7 @@ describe("SlashMenu", () => {
       <SlashMenu
         currentModelId="opus"
         currentProvider="anthropic"
+        currentReasoningEffort={null}
         input="/provider"
         menuState={{ kind: "provider", selectedIndex: 0 }}
       />,
@@ -109,6 +115,7 @@ describe("SlashMenu", () => {
       <SlashMenu
         currentModelId="opus"
         currentProvider="anthropic"
+        currentReasoningEffort={null}
         input="/model"
         menuState={{ kind: "model", selectedIndex: 0 }}
       />,
@@ -116,6 +123,26 @@ describe("SlashMenu", () => {
     const frame = plain(lastFrame());
 
     expect(frame).toContain("Models for");
+  });
+
+  test("renders only supported reasoning efforts for the selected model", () => {
+    const { lastFrame } = render(
+      <SlashMenu
+        currentModelId="nvidia/nemotron-3-super-120b-a12b"
+        currentProvider="nvidia"
+        currentReasoningEffort="high"
+        input="/effort"
+        menuState={{ kind: "effort", selectedIndex: 3 }}
+      />,
+    );
+    const frame = plain(lastFrame());
+
+    expect(frame).toContain("Reasoning effort for NVIDIA NIM");
+    expect(frame).toContain("Provider default");
+    expect(frame).toContain("none");
+    expect(frame).toContain("low");
+    expect(frame).toContain("high");
+    expect(frame).not.toContain("max");
   });
 });
 
@@ -125,10 +152,12 @@ describe("ChatInput", () => {
       <ChatInput
         currentModelId="opus"
         currentProvider="anthropic"
+        currentReasoningEffort={null}
         onClear={() => {}}
         onCommandRun={() => {}}
         onModelSelect={noopAsync}
         onProviderSelect={noopAsync}
+        onReasoningEffortSelect={noopAsync}
         onSubmit={() => {}}
       />,
     );
@@ -148,21 +177,35 @@ describe("ChatInput keyboard interactions", () => {
    * runs after the first render; we flush once here so a keystroke written by
    * the very first `press` is not dropped before that listener attaches.
    */
-  async function renderInput() {
+  async function renderInput(
+    overrides: Partial<
+      Pick<
+        React.ComponentProps<typeof ChatInput>,
+        | "currentModelId"
+        | "currentProvider"
+        | "currentReasoningEffort"
+        | "onReasoningEffortSelect"
+      >
+    > = {},
+  ) {
     const onClear = vi.fn();
     const onCommandRun = vi.fn();
     const onModelSelect = vi.fn(() => Promise.resolve());
     const onProviderSelect = vi.fn(() => Promise.resolve());
+    const onReasoningEffortSelect =
+      overrides.onReasoningEffortSelect ?? vi.fn(() => Promise.resolve());
     const onSubmit = vi.fn();
 
     const utils = render(
       <ChatInput
-        currentModelId="opus"
-        currentProvider="anthropic"
+        currentModelId={overrides.currentModelId ?? "opus"}
+        currentProvider={overrides.currentProvider ?? "anthropic"}
+        currentReasoningEffort={overrides.currentReasoningEffort ?? null}
         onClear={onClear}
         onCommandRun={onCommandRun}
         onModelSelect={onModelSelect}
         onProviderSelect={onProviderSelect}
+        onReasoningEffortSelect={onReasoningEffortSelect}
         onSubmit={onSubmit}
       />,
     );
@@ -189,6 +232,7 @@ describe("ChatInput keyboard interactions", () => {
       onCommandRun,
       onModelSelect,
       onProviderSelect,
+      onReasoningEffortSelect,
       onSubmit,
     };
   }
@@ -321,6 +365,88 @@ describe("ChatInput keyboard interactions", () => {
 
     expect(onModelSelect).toHaveBeenCalledWith("opus");
     expect(plain(lastFrame())).toContain("Model switched to opus.");
+    unmount();
+  });
+
+  test("/effort <value> saves a supported reasoning effort", async () => {
+    const { press, lastFrame, onReasoningEffortSelect, unmount } =
+      await renderInput({
+        currentModelId: "gpt-5.6-terra",
+        currentProvider: "openai",
+      });
+
+    await press("/effort high");
+    await press("\r");
+
+    expect(onReasoningEffortSelect).toHaveBeenCalledWith("high");
+    expect(plain(lastFrame())).toContain("Reasoning effort set to high.");
+    unmount();
+  });
+
+  test("/effort opens a menu with the current value selected", async () => {
+    const { press, lastFrame, unmount } = await renderInput({
+      currentModelId: "gpt-5.6-terra",
+      currentProvider: "openai",
+      currentReasoningEffort: "medium",
+    });
+
+    await press("/effort");
+
+    const frame = plain(lastFrame());
+    expect(frame).toContain("Reasoning effort for OpenAI gpt-5.6-terra");
+    expect(frame).toMatch(/medium\s+current/u);
+    expect(frame).toContain("max");
+    unmount();
+  });
+
+  test("/effort reports unsupported models without offering a menu", async () => {
+    const { press, lastFrame, unmount } = await renderInput({
+      currentModelId: "gpt-5.5",
+      currentProvider: "openai",
+    });
+
+    await press("/effort");
+    expect(plain(lastFrame())).not.toContain("Reasoning effort for OpenAI");
+    await press("\r");
+
+    expect(plain(lastFrame())).toContain(
+      "Reasoning effort is not supported for OpenAI model gpt-5.5.",
+    );
+    unmount();
+  });
+
+  test("/effort default clears the saved reasoning effort", async () => {
+    const { press, onReasoningEffortSelect, unmount } = await renderInput({
+      currentModelId: "gpt-5.6-terra",
+      currentProvider: "openai",
+      currentReasoningEffort: "medium",
+    });
+
+    await press("/effort default");
+    await press("\r");
+
+    expect(onReasoningEffortSelect).toHaveBeenCalledWith(null);
+    unmount();
+  });
+
+  test("explains when a shell export shadows a saved reasoning effort", async () => {
+    const onReasoningEffortSelect = vi.fn(() =>
+      Promise.resolve({ isShadowedByShell: true }),
+    );
+    const { press, lastFrame, unmount } = await renderInput({
+      currentModelId: "gpt-5.6-terra",
+      currentProvider: "openai",
+      onReasoningEffortSelect,
+    });
+
+    await press("/effort low");
+    await press("\r");
+
+    expect(onReasoningEffortSelect).toHaveBeenCalledWith("low");
+    expect(plain(lastFrame())).toContain(
+      "Reasoning effort saved as low, but this session uses the shell value.",
+    );
+    expect(plain(lastFrame())).toContain("OPENWIKI_REASONING_EFFORT");
     unmount();
   });
 

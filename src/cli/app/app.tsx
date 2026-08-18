@@ -15,11 +15,18 @@ import {
   getProviderModelOptions,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_REASONING_EFFORT_ENV_KEY,
   resolveConfiguredProvider,
   type OpenWikiProvider,
 } from "../../config/constants.js";
 import {
+  getReasoningCapability,
+  isReasoningEffort,
+  type ReasoningEffort,
+} from "../../config/reasoning.js";
+import {
   getCredentialDiagnostics,
+  getShellEnvValue,
   saveOpenWikiEnv,
   type CredentialDiagnostic,
 } from "../../config/env.js";
@@ -41,7 +48,11 @@ import { DryRunView } from "../components/panels.js";
 import { ErrorDiagnosticsPanel } from "../components/panels.js";
 import { HelpView } from "../components/panels.js";
 import { Header } from "../components/header.js";
-import { ChatHistory, ChatInput } from "../components/chat.js";
+import {
+  ChatHistory,
+  ChatInput,
+  type ReasoningEffortSelectionResult,
+} from "../components/chat.js";
 import { IngestionSummary, RunView } from "../components/run-view.js";
 import { PromptBlock, StatusLine } from "../components/primitives.js";
 import type { CompletedRun } from "../components/types.js";
@@ -63,6 +74,28 @@ type AppProps = {
   command: CliCommand;
 };
 
+function getConfiguredReasoningEffort(): ReasoningEffort | null {
+  const effort = process.env[OPENWIKI_REASONING_EFFORT_ENV_KEY]?.trim();
+
+  return effort && isReasoningEffort(effort) ? effort : null;
+}
+
+function shouldClearReasoningEffort(
+  provider: OpenWikiProvider,
+  modelId: string | null,
+  effort: string | null,
+): boolean {
+  if (effort === null) {
+    return false;
+  }
+
+  if (!modelId || !isReasoningEffort(effort)) {
+    return true;
+  }
+
+  return !getReasoningCapability(provider, modelId)?.values.includes(effort);
+}
+
 export function App({ command }: AppProps) {
   const app = useApp();
   const startupModelId = command.kind === "run" ? command.modelId : null;
@@ -78,6 +111,8 @@ export function App({ command }: AppProps) {
   const [sessionModelId, setSessionModelId] = useState<string | null>(
     startupModelId,
   );
+  const [sessionReasoningEffort, setSessionReasoningEffort] =
+    useState<ReasoningEffort | null>(getConfiguredReasoningEffort);
   const activeRunId = useRef(0);
   const agentRunInFlight = useRef(false);
   const sessionThreadId = useRef(createOpenWikiThreadId(runtimeCwd));
@@ -260,10 +295,21 @@ export function App({ command }: AppProps) {
   }
 
   async function selectModel(modelId: string) {
+    const clearReasoningEffort = shouldClearReasoningEffort(
+      sessionProvider,
+      modelId,
+      sessionReasoningEffort,
+    );
     await saveOpenWikiEnv({
       [OPENWIKI_MODEL_ID_ENV_KEY]: modelId,
+      ...(clearReasoningEffort
+        ? { [OPENWIKI_REASONING_EFFORT_ENV_KEY]: "" }
+        : {}),
     });
     setSessionModelId(modelId);
+    if (clearReasoningEffort) {
+      setSessionReasoningEffort(null);
+    }
   }
 
   async function selectProvider(provider: OpenWikiProvider) {
@@ -271,13 +317,56 @@ export function App({ command }: AppProps) {
       getProviderModelOptions(provider).length > 0
         ? getDefaultModelId(provider)
         : null;
+    const clearReasoningEffort = shouldClearReasoningEffort(
+      provider,
+      modelId,
+      sessionReasoningEffort,
+    );
 
     await saveOpenWikiEnv({
       [OPENWIKI_PROVIDER_ENV_KEY]: provider,
       ...(modelId ? { [OPENWIKI_MODEL_ID_ENV_KEY]: modelId } : {}),
+      ...(clearReasoningEffort
+        ? { [OPENWIKI_REASONING_EFFORT_ENV_KEY]: "" }
+        : {}),
     });
     setSessionProvider(provider);
     setSessionModelId(modelId);
+    if (clearReasoningEffort) {
+      setSessionReasoningEffort(null);
+    }
+  }
+
+  async function selectReasoningEffort(
+    effort: ReasoningEffort | null,
+  ): Promise<ReasoningEffortSelectionResult> {
+    const modelId = getDisplayModelId(displayModelId);
+    const capability = getReasoningCapability(sessionProvider, modelId);
+
+    if (!capability) {
+      throw new Error(
+        `Reasoning effort is not supported for ${getProviderLabel(sessionProvider)} model ${modelId}.`,
+      );
+    }
+
+    if (effort !== null && !capability.values.includes(effort)) {
+      throw new Error(
+        `Unsupported reasoning effort "${effort}". Available values: ${capability.values.join(", ")}.`,
+      );
+    }
+
+    await saveOpenWikiEnv({
+      [OPENWIKI_REASONING_EFFORT_ENV_KEY]: effort ?? "",
+    });
+    const isShadowedByShell =
+      getShellEnvValue(OPENWIKI_REASONING_EFFORT_ENV_KEY) !== undefined;
+
+    // Keep the header, menu, completed-run metadata, and actual request on the
+    // same value. A saved preference cannot replace a shell export until the
+    // next process starts without that export.
+    setSessionReasoningEffort(getConfiguredReasoningEffort());
+
+    return { isShadowedByShell };
   }
 
   useEffect(() => {
@@ -357,6 +446,7 @@ export function App({ command }: AppProps) {
 
     const runId = activeRunId.current + 1;
     const runMessage = activeUserMessage;
+    const runReasoningEffort = sessionReasoningEffort;
 
     activeRunId.current = runId;
     activeRunCredentialDiagnostics.current = undefined;
@@ -477,6 +567,7 @@ export function App({ command }: AppProps) {
             credentialDiagnostics: activeRunCredentialDiagnostics.current,
             log: activeRunLog.current,
             message: runMessage,
+            reasoningEffort: runReasoningEffort,
             result,
           },
         ]);
@@ -536,6 +627,7 @@ export function App({ command }: AppProps) {
     runtimeOutputMode,
     sessionModelId,
     sessionProvider,
+    sessionReasoningEffort,
     shouldRunInteractiveCredentialSetup,
   ]);
 
@@ -625,6 +717,7 @@ export function App({ command }: AppProps) {
           if (result.provider) {
             setSessionProvider(result.provider);
           }
+          setSessionReasoningEffort(getConfiguredReasoningEffort());
 
           if (!result.shouldContinueToRun) {
             activeRunId.current += 1;
@@ -782,10 +875,12 @@ export function App({ command }: AppProps) {
         <ChatInput
           currentModelId={getDisplayModelId(displayModelId)}
           currentProvider={sessionProvider}
+          currentReasoningEffort={sessionReasoningEffort}
           onClear={clearSession}
           onCommandRun={submitCommandRun}
           onModelSelect={selectModel}
           onProviderSelect={selectProvider}
+          onReasoningEffortSelect={selectReasoningEffort}
           onSubmit={submitChatMessage}
         />
       </Box>
@@ -827,10 +922,12 @@ export function App({ command }: AppProps) {
       <ChatInput
         currentModelId={getDisplayModelId(displayModelId)}
         currentProvider={sessionProvider}
+        currentReasoningEffort={sessionReasoningEffort}
         onClear={clearSession}
         onCommandRun={submitCommandRun}
         onModelSelect={selectModel}
         onProviderSelect={selectProvider}
+        onReasoningEffortSelect={selectReasoningEffort}
         onSubmit={submitChatMessage}
       />
     </Box>

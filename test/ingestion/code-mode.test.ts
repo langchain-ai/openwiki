@@ -50,6 +50,25 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     }
   });
 
+  test("CLAUDE.md is a simple reference to AGENTS.md, not a copy of its full content", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const claudeContent = await readIfPresent(path.join(repo, "CLAUDE.md"));
+    const agentsContent = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(claudeContent).not.toBeNull();
+    expect(agentsContent).not.toBeNull();
+
+    // CLAUDE.md should reference AGENTS.md rather than duplicate its instructions.
+    expect(claudeContent).toContain("AGENTS.md");
+    // CLAUDE.md should be shorter than AGENTS.md because it is a pointer, not a copy.
+    expect((claudeContent ?? "").length).toBeLessThan(
+      (agentsContent ?? "").length,
+    );
+  });
+
   test("refreshes the OpenWiki block in place and preserves surrounding content", async () => {
     const repo = await createTempRepo();
     const existing = `# My Project
@@ -250,6 +269,106 @@ jobs:
     await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
 
     expect(await readIfPresent(workflowPath)).toBe(customizedWorkflow);
+  });
+});
+
+describe("ensureCodeModeRepoSetup workflow provider block", () => {
+  async function generateWorkflow(env: NodeJS.ProcessEnv): Promise<string> {
+    const repo = await createTempRepo();
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true, env });
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    if (workflow === null) {
+      throw new Error("expected the workflow to be created");
+    }
+    return workflow;
+  }
+
+  test("authenticates the provider the operator configured", async () => {
+    const workflow = await generateWorkflow({
+      OPENWIKI_PROVIDER: "copilot",
+      OPENWIKI_MODEL_ID: "gpt-5.6-terra",
+    });
+
+    // A fixed provider block ships every non-default setup a workflow whose
+    // first scheduled run fails on a secret the repo was never told about.
+    expect(workflow).toContain("OPENWIKI_PROVIDER: copilot");
+    expect(workflow).toContain(
+      "COPILOT_API_KEY: ${{ secrets.COPILOT_API_KEY }}",
+    );
+    expect(workflow).toContain('OPENWIKI_MODEL_ID: "gpt-5.6-terra"');
+    expect(workflow).not.toContain("OPENROUTER_API_KEY");
+  });
+
+  test("emits non-secret provider settings as repository variables", async () => {
+    const workflow = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-compatible",
+    });
+
+    // The gateway endpoint is required but is configuration, not a credential.
+    expect(workflow).toContain(
+      "OPENAI_COMPATIBLE_BASE_URL: ${{ vars.OPENAI_COMPATIBLE_BASE_URL }}",
+    );
+    expect(workflow).toContain(
+      "OPENAI_COMPATIBLE_API_KEY: ${{ secrets.OPENAI_COMPATIBLE_API_KEY }}",
+    );
+  });
+
+  test("carries the streaming opt-in into the scheduled run", async () => {
+    // A gateway that only serves SSE would otherwise return empty content in
+    // CI and commit a blank wiki, with the local run still looking healthy.
+    const optedIn = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-compatible",
+      OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "true",
+    });
+
+    expect(optedIn).toContain('OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "true"');
+
+    const notOptedIn = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-compatible",
+    });
+
+    expect(notOptedIn).not.toContain("OPENWIKI_OPENAI_COMPATIBLE_STREAMING");
+  });
+
+  test("pairs both AWS credentials and the region for Bedrock", async () => {
+    const workflow = await generateWorkflow({ OPENWIKI_PROVIDER: "bedrock" });
+
+    expect(workflow).toContain(
+      "BEDROCK_AWS_SECRET_ACCESS_KEY: ${{ secrets.BEDROCK_AWS_SECRET_ACCESS_KEY }}",
+    );
+    expect(workflow).toContain(
+      "BEDROCK_AWS_REGION: ${{ vars.BEDROCK_AWS_REGION }}",
+    );
+    // Bedrock model availability is account- and region-specific, so there is
+    // no preset to suggest and a guessed ID would fail at runtime.
+    expect(workflow).not.toContain("OPENWIKI_MODEL_ID");
+  });
+
+  test("does not pin a rotating browser-login token as a secret", async () => {
+    const workflow = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-chatgpt",
+    });
+
+    expect(workflow).toContain("OPENWIKI_PROVIDER: openai-chatgpt");
+    // The stored access token is refreshed in place, so a repo secret holding
+    // it breaks on the first rotation rather than authenticating the run.
+    expect(workflow).not.toContain("secrets.OPENAI_CHATGPT_ACCESS_TOKEN");
+    expect(workflow).toContain("browser login");
+  });
+
+  test("quotes the model ID so reserved YAML characters survive", async () => {
+    const workflow = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-compatible",
+      OPENWIKI_MODEL_ID: "@cf/meta/llama-3.1-8b-instruct",
+    });
+
+    // A leading "@" is a reserved YAML indicator: unquoted, the workflow fails
+    // to parse and the scheduled run never starts.
+    expect(workflow).toContain(
+      'OPENWIKI_MODEL_ID: "@cf/meta/llama-3.1-8b-instruct"',
+    );
   });
 });
 
