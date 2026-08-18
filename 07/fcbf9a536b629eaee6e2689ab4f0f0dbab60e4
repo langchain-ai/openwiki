@@ -1,0 +1,16 @@
+src/agent/code-interpreter.ts
+  h_3e3c9c8a17c7af 28-35,49
+src/agent/prompts/code.ts
+  h_3e3c9c8a17c7af 140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "07fcbf9a536b629eaee6e2689ab4f0f0dbab60e4",
+  "prompts": {},
+  "humans": {
+    "h_3e3c9c8a17c7af": {
+      "author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
