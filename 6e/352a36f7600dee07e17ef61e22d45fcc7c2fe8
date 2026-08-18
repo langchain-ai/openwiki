@@ -1,0 +1,810 @@
+scripts/stamp-build-channel.cjs
+  s_431dc50983ccba::t_64bd58c40bac47 1-91
+src/auth/external-cli-auth.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-189
+src/platform/fs-errors.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-34
+evals/ledger/meta/gold-agreement.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-68
+src/telemetry/errors.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-10,13-15,17-160,162-167,172,175-187,191-222,224-225,227-228,230-234,239-246,249,253-254,256,261-267,271-714
+.changeset/fair-languages-run.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-5
+src/connectors/sources/langsmith/repo-config.ts
+  s_431dc50983ccba::t_64bd58c40bac47 3-4,52
+test/cli/telemetry-cli.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-32
+CHANGELOG.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-107
+evals/ledger/run/reevaluator.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-282
+openwiki/integrations/index.md
+  s_431dc50983ccba::t_64bd58c40bac47 3
+src/cli/run-log/tool-display.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-270
+test/agent/gemini-retry.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-184
+test/telemetry/with-run-telemetry.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-89
+evals/ledger/replay/git-replay.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-292
+vitest.config.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-54
+package.json
+  s_431dc50983ccba::t_64bd58c40bac47 3,11,13-20,37-39,42-45,50,53-57,64,74,98-99,107
+test/setup/openai-chatgpt-credentials.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-208
+test/cli/components/markdown.test.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-198
+test/ingestion/langsmith-modes.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-74
+.changeset/openai-compatible-streaming.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-5
+evals/ledger/README.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-227
+test/agent/crash-guard.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-320
+test/cli/components/run-view.test.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-184
+src/connectors/registry.ts
+  s_431dc50983ccba::t_64bd58c40bac47 12,28-36
+test/auth/oauth-callback-server.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-146
+src/cli/diagnostics/auth-fix.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-94
+test/connectors/sources/mcp.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-209
+test/visualize/visualize-graph.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-124
+test/agent/frontmatter-validator.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-208
+src/cli/schedule-format.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-159
+evals/ledger/evaluator/retrieval.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-138
+src/connectors/io.ts
+  s_431dc50983ccba::t_64bd58c40bac47 8
+evals/deepswe/deepswe_langsmith.py
+  s_431dc50983ccba::t_64bd58c40bac47 1-69
+src/telemetry/client.ts
+  s_431dc50983ccba::t_64bd58c40bac47 35,37-51,54-55,58-65,68,72-74,79-102
+test/agent/gemini-enterprise-claude.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-121
+test/model-availability.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-52
+src/cli/run-log/types.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-84
+openwiki/evals/index.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-4
+examples/openwiki-update.bitbucket-pipelines.yml
+  s_431dc50983ccba::t_64bd58c40bac47 10-14
+src/config/env.ts
+  s_431dc50983ccba::t_94dd6b6b725608 411-419
+  s_431dc50983ccba::t_64bd58c40bac47 1-410,420-585,588-669
+  s_431dc50983ccba::t_cdf3a6f295c13e 586-587
+test/connectors/sources/custom-mcp.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-24
+evals/ledger/run/persistence.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-424
+openwiki/quickstart.md
+  s_431dc50983ccba::t_64bd58c40bac47 10,16,21-29,37-39,45-58,63,68-85,89-98,107-108,114-115,121-126,128,130-134,139,141,147,158,163-176,180-182
+src/cli/diagnostics/sanitize.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-50
+src/cli/startup.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-145
+src/cli/runners.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-375
+src/setup/credentials/constants.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-272
+test/agent/utils.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-138
+test/config/openai-chatgpt-provider.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-66
+evals/ledger/run/progress-events.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-93
+evals/ledger/evaluator/direct-model.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-186
+openwiki/index.md
+  s_431dc50983ccba::t_64bd58c40bac47 14
+evals/ledger/evaluator/pass-utils.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-139
+evals/ledger/run/saved-run.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-174
+openwiki/agent/workflow.md
+  s_431dc50983ccba::t_64bd58c40bac47 18-19,21,23-25,37,40-41,43,49-56,103,113,119-141,144,156-157,160-161,164-170,175,177-181,186-194
+skills/write-connector/SKILL.md
+  s_431dc50983ccba::t_64bd58c40bac47 10-19,38
+test/agent/wiki-link-validator.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-446
+test/cli/run-mode.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-154
+test/agent/docs-only-backend.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-125
+test/config/openwiki-home.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-175
+test/okf/index-sync-errors.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-117
+test/scheduling/schedules.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-116
+test/visualize/page.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-59
+test/cli/diagnostics/auth-fix.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-65
+test/connectors/tools.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-466
+test/setup/onboarding.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-910
+test/connectors/raw-connector-tools.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-319
+examples/openwiki-update.yml
+  s_431dc50983ccba::t_64bd58c40bac47 21-24
+test/stamp-build-channel.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-100
+evals/ledger/benchmark/validation.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-185
+evals/ledger/testing/tiny-repo.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-97
+evals/ledger/evaluator/forgetting.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-417
+test/auth/oauth-url-validation.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-205
+test/cli/input/menu.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-254
+src/cli/components/first-run-notice.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-86
+src/setup/onboarding.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-482
+evals/ledger/run/runner.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-288
+test/connectors/sources/langsmith/runs.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-241
+evals/ledger/benchmark/validation.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-253
+src/ingestion/ingestion.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-457
+evals/ledger/evaluator/schemas.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-186
+src/auth/ngrok.ts
+  s_431dc50983ccba::t_64bd58c40bac47 3
+test/cli/run-log/reducer.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-161
+test/connectors/sources/web-search.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-292
+test/setup/credentials/components.test.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-719
+src/telemetry/install-id.ts
+  s_431dc50983ccba::t_64bd58c40bac47 4
+src/cli/run-log/reducer.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-276
+test/mermaid/mermaid-validate.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-212
+test/scheduling/schedule-operations.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-467
+openwiki/integrations/connectors.md
+  s_431dc50983ccba::t_64bd58c40bac47 4,8,14,20,34,38,40,42-56,60-62,66,70,74,76,80-83,85-86,92-94
+README.md
+  s_431dc50983ccba::t_64bd58c40bac47 1,4-16,19,21,23-29,31-40,46,52,54-56,58-59,61,63,65-68,70,72,74,77,80-82,84,87,90,93,96,98-99,101,103,105,108-110,113-114,116,118-123,125,127,129,131,133,135,137,140,143,145-146,148,150,152-155,157,159,161-164,166,168,170,172-177,179,181,183-194,196-197,199,201,203,206,213,215,217-218,220,222,225-229,232,234,236,238-239,241,243,246-247,250,252-254,257-259,262,264,266,268-269,271,273,281-283,285-286,288-290,293-297,300-306,308-314,316-318,321,324,326,328-329,331,333,335-339,341,349,352,355,363,365,367-368,370,372,374-377,380,382,384-396,398,400,402,404,406,408,412,415,417,419,421,423
+  s_431dc50983ccba::t_1709ec8e79f51f 357,359,361
+test/setup/credentials/persistence.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-167
+evals/ledger/tsconfig.json
+  s_431dc50983ccba::t_64bd58c40bac47 1-9
+evals/ledger/replay/git.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-66
+test/cli/components/primitives.test.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-108
+evals/ledger/replay/workspace.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-92
+src/agent/index.ts
+  s_431dc50983ccba::t_5fde7359df00ac 527-534
+  s_431dc50983ccba::t_3b3439e4527792 351,357
+  s_431dc50983ccba::t_eb108c898260e8 250-251
+  s_431dc50983ccba::t_8a8696e58beccb 505-506
+  s_431dc50983ccba::t_64bd58c40bac47 4,12,18-19,27-38,44,60,62,77,107,121,124-125,133-134,138,146,148-151,157,159,176-184,186-190,198-218,234-241,243-249,252-279,282,284-286,317,319-337,359,364-385,387-388,391-392,394-411,413-414,416-417,421,428,430,435-441,444,451-452,478,484-486,488-494,496-504,507-526,535-568,580-620,627,631-634,644-645,677,687-694,697-711,764-771,773-779,781-799,801-831,834-847,849-851,1127-1139,1211,1227,1233,1263-1269,1419-1441,1452,1476-1485,1767-1768,1770,1773-1775,1782,1787,1801-1806,2188
+  s_431dc50983ccba::t_cbcd2d67e58127 280-281
+evals/ledger/run/summary.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-30
+test/mermaid/dom-shim.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-16
+test/connectors/sources/git-repo.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-222
+test/openai-compatible-responses.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-48
+test/ingestion/code-mode.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-429
+test/agent/environment-debug-value.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-87
+test/cli/visualize-command.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-92
+evals/ledger/system/openwiki-system-run.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-129
+evals/deepswe/README.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-219
+test/cli/startup.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-341
+test/connectors/fetch-with-resilience.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-352
+test/connectors/sources/slack.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-621
+openwiki/evals/deepswe-harness.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-121
+src/setup/credentials/components.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-1303
+src/telemetry/record-run-safe.ts
+  s_431dc50983ccba::t_64bd58c40bac47 7,10-14,31-34,43-46,61-64
+test/setup/credentials/init-setup-langsmith-skip.test.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-179
+evals/ledger/run/args.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-39
+test/agent/checkpoint-pruning.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-77
+CONTRIBUTING.md
+  s_431dc50983ccba::t_64bd58c40bac47 32-61,72-73
+test/cli/debug.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-61
+src/agent/wiki-link-validator.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-519
+CLAUDE.md
+  s_431dc50983ccba::t_64bd58c40bac47 17
+src/telemetry/index.ts
+  s_431dc50983ccba::t_64bd58c40bac47 4-5,12-24,29-30
+evals/ledger/metrics/claims.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-120
+src/auth/tokens.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1
+test/agent/run-context.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-116
+src/agent/skeleton_critic.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-69
+src/setup/credentials.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-30
+evals/ledger/evaluator/evidence-map.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-127
+src/telemetry/with-run-telemetry.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-85
+test/platform/utils.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-72
+test/agent/checkpoint-policy.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-23
+.changeset/config.json
+  s_431dc50983ccba::t_64bd58c40bac47 1-16
+evals/ledger/evaluator/retrieval.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-164
+evals/ledger/benchmarks/taskflow/benchmark.json
+  s_431dc50983ccba::t_64bd58c40bac47 1-159
+src/cli/components/chat.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-919
+src/setup/credentials/format.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-208
+test/config/constants.test.ts
+  s_431dc50983ccba::t_5097bd088ed379 399-401
+  s_431dc50983ccba::t_64bd58c40bac47 1-398,402-975
+AGENTS.md
+  s_431dc50983ccba::t_64bd58c40bac47 17-20
+evals/ledger/run/progress.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-317
+src/connectors/tools.ts
+  s_431dc50983ccba::t_64bd58c40bac47 8,15,24-35,51,57,71,81,109,158,188
+test/connectors/sources/langsmith/repo-config.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-272
+test/setup/credentials.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-340
+evals/ledger/system/openwiki-system.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-53
+.github/workflows/checks.yml
+  s_431dc50983ccba::t_64bd58c40bac47 96,132,140,149
+evals/deepswe/tests/test_run.py
+  s_431dc50983ccba::t_64bd58c40bac47 1-635
+evals/ledger/run/progress.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-205
+evals/ledger/run/run-config.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-65
+src/agent/crash-guard.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-185
+src/visualize/client.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-893
+test/agent/create-openwiki-agent.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-44
+test/agent/stream-modes.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-48
+evals/ledger/metrics/claims.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-136
+src/platform/language.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-77
+openwiki/cli/usage.md
+  s_431dc50983ccba::t_64bd58c40bac47 14,23-25,31,46,54,60,70-71,78,82-100,140-158,179,211-290,293,301-305,307-308,312-321,325,329-334
+test/auth/oauth.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-247
+test/connectors/sources/langsmith/setup.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-228
+test/platform/diagnostics.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-43
+test/visualize/static-export.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-78
+openwiki/operations/credentials-and-updates.md
+  s_431dc50983ccba::t_64bd58c40bac47 30,40-41,44-47,54,78,98-100,114,169,175-179,191-192,212-214,218-250,253-255,260,272,285,300,302-303,305,309-311,314,316-320,322,326-331
+test/cli/schedule-format.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-206
+evals/ledger/benchmark/benchmark.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-166
+evals/ledger/evaluator/documents.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-287
+evals/ledger/core/paths.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-88
+evals/ledger/evaluator/evaluator.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-273
+evals/ledger/run/evaluate-checkpoint.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-321
+evals/deepswe/run.py
+  s_431dc50983ccba::t_64bd58c40bac47 1-833
+src/agent/openwiki-ignore.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-326
+test/connectors/connector-config-overrides.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-440
+src/connectors/sources/gmail.ts
+  s_431dc50983ccba::t_64bd58c40bac47 4
+test/agent/tool-args-formatting.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-52
+test/connectors/sources/x.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-425
+test/connectors/sources/hackernews.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-520
+evals/ledger/evaluator/fixtures/precision-gold.json
+  s_431dc50983ccba::t_64bd58c40bac47 1-666
+src/agent/prompts/code.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-426
+src/auth/configure.ts
+  s_431dc50983ccba::t_64bd58c40bac47 2,6
+test/agent/translation-middleware.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-680
+test/agent/update-noop.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-285
+src/connectors/sources/x.ts
+  s_431dc50983ccba::t_64bd58c40bac47 15
+evals/ledger/benchmarks/calc/benchmark.json
+  s_431dc50983ccba::t_64bd58c40bac47 1-48
+test/agent/stream-redaction.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-133
+test/connectors/mcp-runtime.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-233
+src/platform/diagnostics.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-171
+evals/ledger/run/run-config.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-102
+src/config/openwiki-home.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-98
+src/connectors/sources/langsmith/index.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1
+test/okf/index-labels.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-84
+src/agent/okf-middleware.ts
+  s_431dc50983ccba::t_64bd58c40bac47 17,19,38-45,47-60,69-85
+test/platform/windows-acl.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-97
+test/setup/credentials/steps.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-1001
+evals/ledger/metrics/churn.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-95
+evals/ledger/core/paths.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-102
+test/visualize/visualize-client-lib.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-138
+test/agent/wiki-link-validator-dogfood.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-21
+evals/ledger/meta/README.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-19
+src/connectors/types.ts
+  s_431dc50983ccba::t_64bd58c40bac47 2
+test/config/copilot-provider.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-27
+evals/ledger/evaluator/documents.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-154
+test/telemetry/client-no-key.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-30
+evals/ledger/evaluator/prompts.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-444
+evals/ledger/source/git-evidence.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-166
+test/cli/diagnostics/sanitize.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-59
+src/connectors/sources/slack.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1
+test/cli/guards.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-34
+src/mermaid/validate.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1
+src/cli/components/run-view.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-218
+src/cli/guards.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-24
+evals/ledger/run/evaluator-e2e.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-644
+src/cli/input/secret.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-7
+evals/ledger/benchmark/benchmark.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-167
+evals/ledger/benchmark/source-repo.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-111
+.gitignore
+  s_431dc50983ccba::t_64bd58c40bac47 21-32
+test/config/env-behavior.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-681
+test/agent/bedrock-credentials-integration.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-74
+evals/ledger/meta/gold-agreement.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-334
+test/agent/prompt.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-320
+src/model-availability.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-85
+evals/ledger/benchmark/surface.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-710
+evals/ledger/replay/artifact.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-126
+test/connectors/connector-config.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-30
+evals/ledger/meta/gold-agreement.live.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-25
+test/config/env.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-176
+src/agent/prompt.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-2,4-7,14-19,25,27-51,53-80,82-87,89-90,92-95,97,100,115-122,134-138,140-143,146-147,149-150,153-155,157,160-166,169-170,172-174,176-177,179-183
+evals/ledger/benchmarks/taskflow/surface.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-426
+src/platform/windows-acl.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-41
+test/agent/create-model.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-381
+evals/ledger/evaluator/model-backend-config.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-29
+test/cli/components/chat.test.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-555
+src/visualize/server.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-291
+evals/ledger/run/reevaluate-args.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-50
+src/agent/openai-chatgpt-oauth.ts
+  s_431dc50983ccba::t_64bd58c40bac47 10
+evals/ledger/run.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-91
+src/cli/components/primitives.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-139
+src/telemetry/taxonomy.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-198
+src/cli/app/run-state.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-72
+test/setup/credentials/view.test.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-340
+test/auth/oauth-redirect-override.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-121
+src/cli/run-mode.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-69
+test/version.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-30
+test/visualize/visualize-server.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-39
+test/cli/format.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-134
+test/ingestion/ingestion.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-111
+evals/ledger/run/saved-run.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-337
+openwiki/.last-update.json
+  s_431dc50983ccba::t_64bd58c40bac47 2,4-7
+src/version.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-73
+tsconfig.eslint.json
+  s_431dc50983ccba::t_64bd58c40bac47 3-7
+src/cli/cli.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-93
+evals/ledger/replay/git-replay.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-245
+src/cli/app/app.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-935
+src/agent/utils.ts
+  s_431dc50983ccba::t_64bd58c40bac47 6,10-14,18-19,41-49,57,94-104,107-108,120-128,144-145,159-162,172,212-217,499-548
+  s_431dc50983ccba::t_6a2dc47dca0c8c 549
+src/visualize/static-export.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-72
+test/agent/vertex-surface.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-192
+src/config/constants.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-1110
+test/okf/frontmatter.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-2,12-13,303-362
+  s_431dc50983ccba::t_504f3db9e1e593 363
+evals/ledger/benchmark/surface.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-240
+test/scheduling/launchd-calendar-interval.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-81
+evals/ledger/evaluator/precision.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-1223
+evals/ledger/benchmarks/taskflow/build-repo.mjs
+  s_431dc50983ccba::t_64bd58c40bac47 1-1807
+src/cli/components/header.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-198
+src/connectors/sources/mcp.ts
+  s_431dc50983ccba::t_64bd58c40bac47 14,35,42,46,121-144
+  s_431dc50983ccba::t_508f4af4adf9bf 145-146
+src/visualize/graph.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-338
+evals/ledger/source/source-adapter.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-48
+evals/ledger/core/order.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-13
+evals/ledger/run/reevaluator.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-223
+pnpm-workspace.yaml
+  s_431dc50983ccba::t_64bd58c40bac47 4-14,16,28
+src/agent/translation-middleware.ts
+  s_431dc50983ccba::t_64bd58c40bac47 7-8,106-107
+src/auth/oauth.ts
+  s_431dc50983ccba::t_64bd58c40bac47 4,32,408-414,449,535
+.changeset/README.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-8
+evals/ledger/replay/artifact.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-156
+test/agent/openai-chatgpt-oauth.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-563
+src/cli/debug.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-16
+test/cli/diagnostics/error-diagnostics.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-107
+evals/ledger/reevaluate.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-85
+test/connectors/sources/gmail.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-427
+test/setup/credentials/format.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-326
+test/platform/language.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-52
+src/setup/credentials/view.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-688
+src/telemetry/config.ts
+  s_431dc50983ccba::t_64bd58c40bac47 3,32
+src/cli/components/types.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-24
+evals/deepswe/openwiki_codex.py
+  s_431dc50983ccba::t_64bd58c40bac47 1-598
+src/cli/components/markdown.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-218
+test/mermaid/validate-fallback.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-49
+test/auth/configure.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-137
+evals/ledger/evaluator/evidence-map.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-77
+test/agent/thread-id.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-50
+test/connectors/sources/langsmith/api.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-178
+test/visualize/server.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-233
+.github/workflows/release.yml
+  s_431dc50983ccba::t_64bd58c40bac47 1-72
+src/config/reasoning.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-101
+src/scheduling/schedules.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-938
+src/agent/wiki_qa_subagents.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-113
+src/platform/utils.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-132
+test/cli/input/secret.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-14
+test/connectors/sources/langsmith/index.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-416
+evals/ledger/run/finalize.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-88
+test/agent/openwiki-ignore.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-313
+test/cli/components/header.test.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-91
+test/cli/components/first-run-notice.test.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-66
+test/scheduling/schedules-launchd.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-405
+evals/ledger/system/openwiki-system.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-91
+src/agent/skills.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-11,14-17,38-39,41,44-142
+openwiki/architecture/overview.md
+  s_431dc50983ccba::t_64bd58c40bac47 12-15,19,21-25,30,37,41,43-49,53,59-60,67,70-71,73,75,79-90,97-103,110-111,118-131,135,139,144-150,152,154-158,163-172,174,184-186,188-189
+src/agent/prompts/personal.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-619
+evals/deepswe/analyze_openwiki_usage.py
+  s_431dc50983ccba::t_64bd58c40bac47 1-409
+evals/ledger/core/errors.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-95
+evals/ledger/run/persistence.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-318
+src/telemetry/types.ts
+  s_431dc50983ccba::t_64bd58c40bac47 2-10,13-21,23-49,56-65,89,93-132
+  s_431dc50983ccba::t_c049845c6f2478 133
+test/auth/external-cli-auth.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-262
+evals/ledger/benchmark/source-repo.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-129
+test/agent/agent-runtime-root.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-20
+evals/ledger/evaluator/model-backend.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-235
+.changeset/green-koalas-reason.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-5
+test/cli/app/run-state.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-82
+test/cli/components/panels.test.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-143
+test/cli/commands.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-964
+test/cli/components/ansi.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-11
+.github/workflows/openwiki-update.yml
+  s_431dc50983ccba::t_64bd58c40bac47 23-28,31,65
+evals/ledger/source/git-evidence.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-77
+src/cli/commands.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-1005
+test/auth/ngrok.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-553
+src/telemetry/gates.ts
+  s_431dc50983ccba::t_64bd58c40bac47 3-24
+src/visualize/client-lib.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-156
+.changeset/lucky-pumas-relax.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-5
+test/agent/run-metadata.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-274
+test/auth/tokens.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-526
+test/openai-compatible-streaming.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-67
+src/cli/input/types.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-122
+src/setup/credentials/steps.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-1186
+evals/ledger/evaluator/direct-model.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-260
+src/setup/credentials/persistence.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-130
+test/agent/index-middleware.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-514
+test/cli/run-log/tool-display.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-155
+test/agent/parse-stream-event.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-390
+test/agent/prompt-okf.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-26
+test/agent/model-resolution.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-116
+src/agent/docs-only-backend.ts
+  s_431dc50983ccba::t_64bd58c40bac47 5-9,11-13,16-17,20-22,25-27,29-33,35-48,52-138,140-142,144-152,158,162-196,201-204,212-215,222-225,236-423,435-462,465-467,481-487,499-510
+test/ingestion/ingestion-run.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-554
+evals/ledger/run/summary.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-59
+test/setup/credentials/steps-derivations.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-605
+evals/ledger/run/report.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-72
+evals/ledger/run/reevaluate-args.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-184
+evals/ledger/run/report.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-118
+test/agent/skills.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-271
+.changeset/configure-model-output-limits.md
+  s_431dc50983ccba::t_6b28ea144ab358 1-5
+test/agent/conversation-history-offload.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-166
+src/connectors/mcp-client.ts
+  s_431dc50983ccba::t_64bd58c40bac47 2,10-12,381-430,516-518,664-666,793-796,803-804
+evals/ledger/core/errors.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-44
+test/auth/oauth-run.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-645
+src/connectors/sources/web-search.ts
+  s_431dc50983ccba::t_64bd58c40bac47 2
+test/agent/gemini-enterprise-claude.e2e.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-97
+test/agent/redaction.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-384
+evals/deepswe/tests/test_analyze_openwiki_usage.py
+  s_431dc50983ccba::t_64bd58c40bac47 1-245
+evals/ledger/run/format.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-58
+test/cli/input/cursor.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-175
+examples/openwiki-update.gitlab-ci.yml
+  s_431dc50983ccba::t_64bd58c40bac47 34-37
+src/cli/format.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-93
+openwiki/evals/ledger-harness.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-222
+src/agent/vertex-surface.ts
+  s_431dc50983ccba::t_64bd58c40bac47 2
+src/visualize/page.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-273
+tsconfig.json
+  s_431dc50983ccba::t_64bd58c40bac47 16-17
+src/auth/providers.ts
+  s_431dc50983ccba::t_64bd58c40bac47 16
+src/setup/credentials/use-init-setup.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-2642
+src/connectors/sources/langsmith/setup.ts
+  s_431dc50983ccba::t_64bd58c40bac47 8,11,19-23,62-67,100-104
+evals/ledger/run/args.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-100
+test/mermaid/mermaid-fences.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-63
+test/mermaid/mermaid-wiki.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-251
+evals/ledger/core/types.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-1085
+evals/ledger/evaluator/forgetting.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-437
+.changeset/soft-tools-refresh.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-5
+evals/ledger/metrics/score.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-24
+src/cli/input/menu.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-352
+test/agent/bedrock-model.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-121
+.changeset/sixty-sites-cough.md
+  s_431dc50983ccba::t_64bd58c40bac47 1-5
+evals/ledger/evaluator/model-backend.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-242
+src/connectors/mcp-runtime.ts
+  s_431dc50983ccba::t_64bd58c40bac47 19,21,39
+test/connectors/mcp-client.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-1238
+test/cli/runners.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-626
+evals/ledger/metrics/score.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-64
+test/platform/fs-errors.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-53
+src/telemetry/senders.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-3,5,10,17,40-47,53-63,85-99,106-114,150,152,168-240,260-274,277-282,284-285
+test/telemetry/telemetry.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-1567
+src/ingestion/code-mode.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-419
+tsconfig.client.json
+  s_431dc50983ccba::t_64bd58c40bac47 1-9
+src/cli/input/cursor.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-158
+evals/ledger/evaluator/precision.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-1784
+test/telemetry/record-run-safe.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-130
+test/telemetry/telemetry-install-id.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-133
+src/setup/credentials/types.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-176
+evals/ledger/run/runner.test.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-436
+src/cli/components/panels.tsx
+  s_431dc50983ccba::t_64bd58c40bac47 1-194
+src/cli/diagnostics/error-diagnostics.ts
+  s_431dc50983ccba::t_64bd58c40bac47 1-311
+pnpm-lock.yaml
+  s_431dc50983ccba::t_d39edb05feda4e 7-11,24,27,29-30,33,36,39,42,48,59-60,69,89-94,116-118,124,296-356,635-643,666-667,741-746,750-752,754-755,957-958,1026-1028,1161-1164,1169-1172,1181-1190,1209-1212,1254-1256,1484-1486,1513-1514,1526-1529,1534-1543,1554-1557,1572-1574,1614-1618,1659-1661,1705-1708,1727-1734,1763-1766,1775-1777,1796-1799,1804-1807,1836-1844,1897-1904,1932-1939,1965-1967,2094-2097,2105-2107,2147-2148,2172-2175,2203-2211,2251-2257,2262-2265,2270-2273,2278-2281,2302-2310,2330-2333,2348-2351,2358-2359,2381-2385,2398-2400,2418-2421,2430-2433,2491-2494,2501-2504,2517-2522,2543-2546,2551-2554,2576-2579,2587-2590,2614-2616,2671-2672,2675-2678,2781-2783,2796-2798,2867-2868,3125-3282,3463-3469,3479,3482,3485,3491,3493,3509,3511,3518,3520-3521,3524,3526,3528,3530,3538,3540-3542,3552,3554,3564,3566,3576,3578-3579,3591,3593,3596-3611,3616,3683,3784,3845,3879-3880,4063-4064,4069-4070,4075-4082,4097-4100,4143-4144,4392-4393,4410,4412-4415,4417,4427-4428,4431-4435,4439-4440,4451-4455,4464-4465,4551-4552,4581-4582,4622-4626,4645-4656,4688-4696,4710-4711,4731-4732,4737-4740,4757-4760,4818-4823,4849-4857,4875,4899-4902,4924,4926-4928,5007-5010,5017-5018,5049,5063-5064,5090-5091,5108-5111,5144-5149,5152-5155,5160-5163,5168-5169,5190-5196,5210-5211,5220-5221,5229,5256-5257,5267-5268,5288-5294,5303-5304,5372-5373,5382-5383,5396-5402,5426-5429,5434-5435,5461-5462,5467-5468,5490-5491,5539-5541,5555,5600-5601,5614-5618
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "6e352a36f7600dee07e17ef61e22d45fcc7c2fe8",
+  "prompts": {},
+  "sessions": {
+    "s_431dc50983ccba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "56b33a97-9171-4e62-b95d-a1d7bb919832",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
