@@ -1,4 +1,4 @@
-import { sanitizeDiagnosticText } from "../../../diagnostics.js";
+import { sanitizeDiagnosticText } from "../../../platform/diagnostics.js";
 import {
   createRunId,
   readConnectorState,

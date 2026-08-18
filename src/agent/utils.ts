@@ -3,16 +3,20 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../constants.js";
+import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../config/constants.js";
 import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
-} from "../fs-errors.js";
-import { resolveLanguage } from "../language.js";
+} from "../platform/fs-errors.js";
+import {
+  getPrimaryLanguageSubtag,
+  resolveLanguage,
+} from "../platform/language.js";
 import {
   readOpenWikiOnboardingConfig,
   readRepositoryWikiInstructions,
-} from "../onboarding.js";
+} from "../setup/onboarding.js";
+import { OpenWikiIgnore } from "./openwiki-ignore.js";
 import type {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -34,6 +38,15 @@ export type UpdateNoopStatus =
       shouldSkip: true;
       gitHead: string;
       model: string;
+
+      /**
+       * The wiki's persisted language, carried through so a no-op metadata
+       * refresh re-writes `.last-update.json` without dropping it.
+       *
+       * @default undefined - the previous run recorded no language (a wiki
+       * created before language tracking); the refresh omits the field too.
+       */
+      language?: string;
     }
   | {
       shouldSkip: false;
@@ -41,10 +54,9 @@ export type UpdateNoopStatus =
     };
 
 /**
- * Builds the per-run context the prompt uses to reason about prior docs and git changes.
+ * Builds the persisted per-run context used by the prompt.
  */
 export async function createRunContext(
-  command: OpenWikiCommand,
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
   language?: string | null,
@@ -61,28 +73,8 @@ export async function createRunContext(
   const languageContext = { language: effectiveLanguage };
   const wikiGoal = await readRunWikiGoal(cwd, outputMode);
 
-  if (command === "chat") {
-    return {
-      lastUpdate,
-      gitSummary: "Not applicable for chat.",
-      ...languageContext,
-      wikiGoal,
-    };
-  }
-
-  if (outputMode === "local-wiki") {
-    return {
-      lastUpdate,
-      gitSummary:
-        "Local wiki mode: connector source evidence is provided through raw data paths and OpenWiki connector tools. Git repository diff context is not used for this run.",
-      ...languageContext,
-      wikiGoal,
-    };
-  }
-
   return {
     lastUpdate,
-    gitSummary: await createGitSummary(command, cwd, lastUpdate),
     ...languageContext,
     wikiGoal,
   };
@@ -99,8 +91,21 @@ async function readRunWikiGoal(
   return (await readOpenWikiOnboardingConfig()).wikiGoal;
 }
 
+/**
+ * Decides whether an `update` run can be skipped because nothing meaningful changed.
+ *
+ * An explicit request whose primary language differs from the persisted wiki
+ * language is meaningful even on a clean tree, because the translation pass
+ * must run before the update agent.
+ *
+ * Working-tree and committed changes that only touch `openwiki/` or paths
+ * excluded by `openWikiIgnore` do not count as meaningful, so an ignored path
+ * changing on its own never forces a rebuild.
+ */
 export async function getUpdateNoopStatus(
   cwd: string,
+  openWikiIgnore = new OpenWikiIgnore([]),
+  requestedLanguage?: string | null,
 ): Promise<UpdateNoopStatus> {
   const lastUpdate = await readLastUpdate(cwd, "repository");
 
@@ -110,6 +115,15 @@ export async function getUpdateNoopStatus(
 
   if (lastUpdate.status === "interrupted") {
     return { shouldSkip: false, reason: "previous update was interrupted" };
+  }
+
+  const resolvedRequestedLanguage = resolveLanguage(requestedLanguage).language;
+  if (
+    resolvedRequestedLanguage !== undefined &&
+    getPrimaryLanguageSubtag(resolvedRequestedLanguage) !==
+      getPrimaryLanguageSubtag(lastUpdate.language)
+  ) {
+    return { shouldSkip: false, reason: "output language changed" };
   }
 
   const head = await getGitHead(cwd);
@@ -127,7 +141,8 @@ export async function getUpdateNoopStatus(
     .split("\n")
     .map((line) => line.trimEnd())
     .filter(Boolean)
-    .filter((line) => !isUpdateMetadataStatusLine(line));
+    .filter((line) => !isUpdateMetadataStatusLine(line))
+    .filter((line) => !lineReferencesIgnoredPath(line, openWikiIgnore));
 
   if (meaningfulStatus.length > 0) {
     return { shouldSkip: false, reason: "worktree has changes" };
@@ -141,7 +156,10 @@ export async function getUpdateNoopStatus(
 
     if (
       committedPaths.length === 0 ||
-      committedPaths.some((changedPath) => !isOpenWikiPath(changedPath))
+      committedPaths.some(
+        (changedPath) =>
+          !isOpenWikiPath(changedPath) && !openWikiIgnore.ignores(changedPath),
+      )
     ) {
       return { shouldSkip: false, reason: "git head changed" };
     }
@@ -151,6 +169,7 @@ export async function getUpdateNoopStatus(
     shouldSkip: true,
     gitHead: head,
     model: lastUpdate.model,
+    language: lastUpdate.language,
   };
 }
 
@@ -190,9 +209,12 @@ export async function writeLastUpdateMetadata(
 }
 
 /**
- * Persists run metadata when OpenWiki content changed since the given snapshot.
- * Returns whether metadata was written. Used after both successful and failed
- * runs so already-generated content stays diffable by future updates.
+ * Persists run metadata after an update/init run. Always refreshes the
+ * `.last-update.json` timestamp so freshness checks reflect the actual last
+ * run, even when the wiki content is unchanged (a no-op update still means
+ * OpenWiki ran). A completed run also clears any previous interrupted status
+ * so the update no-op check can skip again. Returns whether metadata was
+ * written (always true for non-chat runs).
  */
 export async function persistRunMetadataIfChanged(
   command: OpenWikiCommand,
@@ -205,17 +227,6 @@ export async function persistRunMetadataIfChanged(
 ): Promise<boolean> {
   if (command === "chat" || snapshotBefore === null) {
     return false;
-  }
-
-  if (
-    snapshotBefore === (await createOpenWikiContentSnapshot(cwd, outputMode))
-  ) {
-    // A completed run clears a previous interrupted status even when the
-    // content did not change, so the update no-op check can skip again.
-    const lastUpdate = await readLastUpdate(cwd, outputMode);
-    if (status !== "complete" || lastUpdate?.status !== "interrupted") {
-      return false;
-    }
   }
 
   await writeLastUpdateMetadata(
@@ -412,76 +423,6 @@ async function readSnapshotFile(filePath: string): Promise<Buffer | null> {
   }
 }
 
-/**
- * Produces the git evidence block passed to init/update prompts.
- */
-async function createGitSummary(
-  command: OpenWikiCommand,
-  cwd: string,
-  lastUpdate: UpdateMetadata | null,
-): Promise<string> {
-  const sections: string[] = [];
-  const status = await runGit(cwd, ["status", "--short"]);
-  const head = await getGitHead(cwd);
-
-  sections.push(formatGitSection("git status --short", status));
-  sections.push(formatGitSection("git rev-parse HEAD", head ?? "(unknown)"));
-
-  if (command === "update" && lastUpdate?.gitHead) {
-    const logSinceLastHead = await runGit(cwd, [
-      "log",
-      `${lastUpdate.gitHead}..HEAD`,
-      "--name-status",
-      "--oneline",
-    ]);
-
-    sections.push(
-      formatGitSection(
-        `git log ${lastUpdate.gitHead}..HEAD --name-status --oneline`,
-        logSinceLastHead,
-      ),
-    );
-  } else if (command === "update" && lastUpdate?.updatedAt) {
-    const logSinceLastUpdate = await runGit(cwd, [
-      "log",
-      "--since",
-      lastUpdate.updatedAt,
-      "--name-status",
-      "--oneline",
-    ]);
-
-    sections.push(
-      formatGitSection(
-        `git log --since ${lastUpdate.updatedAt} --name-status --oneline`,
-        logSinceLastUpdate,
-      ),
-    );
-  } else {
-    const recentLog = await runGit(cwd, [
-      "log",
-      "--max-count=20",
-      "--name-status",
-      "--oneline",
-    ]);
-
-    if (command === "update") {
-      sections.push("No prior OpenWiki update timestamp was found.");
-    }
-
-    sections.push(
-      formatGitSection(
-        "git log --max-count=20 --name-status --oneline",
-        recentLog,
-      ),
-    );
-  }
-
-  const diff = await runGit(cwd, ["diff", "--name-status", "HEAD"]);
-  sections.push(formatGitSection("git diff --name-status HEAD", diff));
-
-  return sections.join("\n\n");
-}
-
 async function getGitHead(cwd: string): Promise<string | undefined> {
   const head = await runGit(cwd, ["rev-parse", "HEAD"]);
 
@@ -513,12 +454,6 @@ async function runGit(cwd: string, args: string[]): Promise<string> {
 
     throw error;
   }
-}
-
-function formatGitSection(command: string, output: string): string {
-  return [`$ ${command}`, output.length > 0 ? output : "(no output)"].join(
-    "\n",
-  );
 }
 
 /**
@@ -559,6 +494,57 @@ function isOpenWikiPath(changedPath: string): boolean {
 
 function normalizeGitPath(value: string): string {
   return value.trim().replace(/\\/gu, "/");
+}
+
+/**
+ * Whether a single line of git output names at least one ignored path.
+ */
+function lineReferencesIgnoredPath(
+  line: string,
+  openWikiIgnore: OpenWikiIgnore,
+): boolean {
+  return extractGitPaths(line).some((changedPath) =>
+    openWikiIgnore.ignores(changedPath),
+  );
+}
+
+/**
+ * Pulls the file path(s) out of one line of `git status --short` or
+ * `--name-status` output.
+ *
+ * Handles both the two-column short-status format and the letter-prefixed
+ * name-status format, and returns an empty array for lines that carry no path
+ * (such as `--oneline` commit headers). Rename lines yield both the old and new
+ * paths so that either side matching a rule excludes the line.
+ */
+function extractGitPaths(line: string): string[] {
+  const shortStatusMatch = /^(?:[ MARCUD?!]{2})\s+(.+)$/u.exec(line);
+  const nameStatusMatch = /^(?:[ACDMRTUXB]\d*)\s+(.+)$/u.exec(line.trim());
+  const pathsText = shortStatusMatch?.[1] ?? nameStatusMatch?.[1];
+
+  if (!pathsText) {
+    return [];
+  }
+
+  return splitGitPaths(pathsText).map(normalizeGitPath).filter(Boolean);
+}
+
+/**
+ * Splits the path portion of a git line into individual paths.
+ *
+ * `--name-status` separates a rename's source and target with a tab, while
+ * `git status --short` uses ` -> `; a plain single path is returned as-is.
+ */
+function splitGitPaths(pathsText: string): string[] {
+  if (pathsText.includes("\t")) {
+    return pathsText.split("\t");
+  }
+
+  if (pathsText.includes(" -> ")) {
+    return pathsText.split(" -> ");
+  }
+
+  return [pathsText];
 }
 
 function isExecError(

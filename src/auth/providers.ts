@@ -13,7 +13,7 @@ import {
   OPENWIKI_X_CLIENT_ID_ENV_KEY,
   OPENWIKI_X_CLIENT_SECRET_ENV_KEY,
   OPENWIKI_X_REFRESH_TOKEN_ENV_KEY,
-} from "../constants.js";
+} from "../config/constants.js";
 import type { AuthProviderId, OAuthProviderConfig } from "./types.js";
 
 export const AUTH_PROVIDERS: Record<AuthProviderId, OAuthProviderConfig> = {
