@@ -1,0 +1,35 @@
+src/agent/authoring-pool.ts
+  s_a6e4788226c302::t_bb89631ae0da69 94,166-169,171,175,182,185-187,191-197,204
+src/agent/page-author.ts
+  s_e3e935f3300670::t_622f3cb93e2923 60-61,87-92,94-95,98,100-105,107-110,112-114
+src/agent/prompts/code.ts
+  s_a6e4788226c302::t_50343b8b8a8143 147
+test/agent/authoring-pool.test.ts
+  s_e3e935f3300670::t_dc911eeaa11818 4-13,15,18-20,24,32,36-39,41,43-51,54,57-63,65-78,80-81,84-85,89-92,94,96-98,101-102,106-107,109-115,117-127,132-134,136-137,140-141
+test/agent/claims-agent-integration.test.ts
+  s_a6e4788226c302::t_908a9c7fe5042e 173-175,177
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "548febb06398a6f20d8724b7ef42c70b85257b92",
+  "prompts": {},
+  "sessions": {
+    "s_a6e4788226c302": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "08932fa1-3ca1-481d-b362-3ec9a51ef083",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    },
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
