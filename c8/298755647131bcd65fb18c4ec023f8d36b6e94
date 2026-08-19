@@ -1,0 +1,104 @@
+src/agent/prompt.ts
+  s_5c8463d13f9cb5::t_7518eb5397797d 2-5,96-114
+  s_5c8463d13f9cb5::t_68b783f88008ab 115
+src/agent/types.ts
+  s_5c8463d13f9cb5::t_648fdfd7666ef1 4-11,45
+src/claims/brains/code/session.ts
+  s_5c8463d13f9cb5::t_1cf2e5fbc32748 332
+  s_5c8463d13f9cb5::t_3d46eb97c08b22 62-66,134-136,151-153,188,233,243,259,515-523
+  s_5c8463d13f9cb5::t_fd49b8e4995c8c 55-61,97-99,131-132,150,172,222,248,364-369,488
+  s_5c8463d13f9cb5::t_648fdfd7666ef1 234-242,244-247,249-250,524
+  s_5c8463d13f9cb5::t_535a01e948d617 133
+  s_5c8463d13f9cb5::t_e55e480f0533d9 525
+test/cli/migrate-app.test.tsx
+  s_5c8463d13f9cb5::t_a1a8369f2cb7a4 75-102,104-105,107-108,110-113,117-119
+  s_5c8463d13f9cb5::t_b514f6f39e9d61 109
+  s_5c8463d13f9cb5::t_4e098fef1b33e4 5,30,43,52
+  s_5c8463d13f9cb5::t_c73c706870b9c2 71
+  s_5c8463d13f9cb5::t_315ceea4a9e837 103,106
+  s_5c8463d13f9cb5::t_1ce6ee40ce171b 64
+  s_5c8463d13f9cb5::t_36316df20c6156 1-4,6-29,31-42,44-51,53-55,57-58,60-63,65-70,72-74
+  s_5c8463d13f9cb5::t_90450182310b2d 59
+  s_5c8463d13f9cb5::t_bedef9ca63a59f 56
+  s_5c8463d13f9cb5::t_ee97b7df7301ad 114-116
+src/claims/brains/code/integration.ts
+  s_5c8463d13f9cb5::t_3d46eb97c08b22 48-50
+  s_5c8463d13f9cb5::t_648fdfd7666ef1 8,12-18,44,52-54
+src/claims/brains/code/tools.ts
+  s_5c8463d13f9cb5::t_648fdfd7666ef1 106-112,280-310
+  s_5c8463d13f9cb5::t_a999f6e725b6f1 139
+  s_5c8463d13f9cb5::t_733d7e1c24bc93 311-312
+test/agent/prompt.test.ts
+  s_5c8463d13f9cb5::t_a999f6e725b6f1 34-36,38-47
+  s_5c8463d13f9cb5::t_36316df20c6156 3-4,24-33,37,48-49
+  s_5c8463d13f9cb5::t_de912c9444187b 50
+src/claims/brains/code/runtime.ts
+  s_5c8463d13f9cb5::t_3d46eb97c08b22 42,51,69-70,87-89
+test/migrations/claims.test.ts
+  s_5c8463d13f9cb5::t_4e098fef1b33e4 70-71
+  s_5c8463d13f9cb5::t_a1a8369f2cb7a4 84-124
+  s_5c8463d13f9cb5::t_36316df20c6156 1-69,72-83,125
+src/agent/index.ts
+  s_5c8463d13f9cb5::t_3d46eb97c08b22 199-201,403
+  s_5c8463d13f9cb5::t_7518eb5397797d 64-69,82,364,456-458,465-471,539-549,571,661-670,706-723,757-759,771-784,839-842
+  s_5c8463d13f9cb5::t_6e6e6f5df1d21f 212-216,812
+  s_5c8463d13f9cb5::t_ec436196e70f18 607
+  s_5c8463d13f9cb5::t_d8b6bc04817074 521-530
+src/cli/migrate-app.tsx
+  s_5c8463d13f9cb5::t_ee97b7df7301ad 321
+  s_5c8463d13f9cb5::t_2072b9302be6d8 121,133
+  s_5c8463d13f9cb5::t_36316df20c6156 96-97,194-197
+  s_5c8463d13f9cb5::t_c73c706870b9c2 246-255
+  s_5c8463d13f9cb5::t_3571df9ffa796e 1-12,14-63,68-95,98-120,122-132,134-193,198-209,212-227,229-245,256-258,261-268,327-328,335-339
+  s_5c8463d13f9cb5::t_820edcd02c662d 66,210-211,259-260
+  s_5c8463d13f9cb5::t_9d6cdcd4e6cd9f 64-65,67
+  s_5c8463d13f9cb5::t_f911fb224940e4 13,228,269-320,322-326,329-334
+README.md
+  s_5c8463d13f9cb5::t_81e2928b6cca87 157-172,401
+src/agent/prompts/claims-migration.ts
+  s_5c8463d13f9cb5::t_a999f6e725b6f1 1-2,18-19,22
+  s_5c8463d13f9cb5::t_7518eb5397797d 3-17,20-21,23-39
+src/agent/prompts/code.ts
+  s_5c8463d13f9cb5::t_a999f6e725b6f1 1-2,128-129,241
+src/migrations/claims.ts
+  s_5c8463d13f9cb5::t_6e6e6f5df1d21f 1-85,92-143,145,151-155,161-165
+  s_5c8463d13f9cb5::t_f911fb224940e4 86-91,144,146-150,156-160
+test/cli/commands.test.ts
+  s_5c8463d13f9cb5::t_36316df20c6156 73-94
+src/cli/commands.ts
+  s_5c8463d13f9cb5::t_3571df9ffa796e 31,158-168,800,827-830
+  s_5c8463d13f9cb5::t_6bf4396809db87 831
+test/agent/claims-agent-integration.test.ts
+  s_5c8463d13f9cb5::t_478178a9eb9910 55-57,141-156,158-162
+  s_5c8463d13f9cb5::t_d2d5144b50fa57 157
+  s_5c8463d13f9cb5::t_1ae5acf57203ea 163
+src/claims/guidance.ts
+  s_5c8463d13f9cb5::t_a999f6e725b6f1 1-7,10-11
+  s_5c8463d13f9cb5::t_a70985fb11263f 8-9,12
+test/claims/brains/code/tools.test.ts
+  s_5c8463d13f9cb5::t_d2d5144b50fa57 92-123
+  s_5c8463d13f9cb5::t_a999f6e725b6f1 132-138
+  s_5c8463d13f9cb5::t_36316df20c6156 12,79-91
+src/cli/cli.tsx
+  s_5c8463d13f9cb5::t_820edcd02c662d 42-43
+  s_5c8463d13f9cb5::t_3571df9ffa796e 19,76-84
+test/agent/claims-run-lifecycle.test.ts
+  s_5c8463d13f9cb5::t_af6c5116010aac 455-490
+  s_5c8463d13f9cb5::t_478178a9eb9910 423-454
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "c8298755647131bcd65fb18c4ec023f8d36b6e94",
+  "prompts": {},
+  "sessions": {
+    "s_5c8463d13f9cb5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01810-969a-76a3-a96d-b118ec42cb8b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
