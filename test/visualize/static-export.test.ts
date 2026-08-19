@@ -45,6 +45,7 @@ test("exports a static visualizer with sibling graph and browser assets", async 
     assets: {
       clientJs: 'export const client = "static";\n',
       clientLibJs: 'export const library = "static";\n',
+      stylesCss: "/* styles */\n",
     },
   });
 
@@ -58,12 +59,16 @@ test("exports a static visualizer with sibling graph and browser assets", async 
     "client.js",
     "graph.json",
     "index.html",
+    "styles.css",
   ]);
   expect(await readFile(path.join(outputDir, "client.js"), "utf8")).toBe(
     'export const client = "static";\n',
   );
   expect(await readFile(path.join(outputDir, "client-lib.js"), "utf8")).toBe(
     'export const library = "static";\n',
+  );
+  expect(await readFile(path.join(outputDir, "styles.css"), "utf8")).toBe(
+    "/* styles */\n",
   );
 
   const page = await readFile(path.join(outputDir, "index.html"), "utf8");
