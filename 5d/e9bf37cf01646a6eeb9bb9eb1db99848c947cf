@@ -1,0 +1,33 @@
+src/agent/code-interpreter.ts
+  s_e3e935f3300670::t_230cc31fc9b1a1 42-58
+src/agent/page-author.ts
+  s_e3e935f3300670::t_1a3d0e79c78bfb 111-115
+src/agent/prompts/code.ts
+  s_e3e935f3300670::t_09a0b215b67dc0 127-134,155,178
+src/agent/skeleton-critic.ts
+  s_e3e935f3300670::t_82175aec4163d4 5
+src/agent/wiki-qa-subagents.ts
+  s_e3e935f3300670::t_0c7ded19119ae7 7,32
+test/agent/claims-agent-integration.test.ts
+  s_e3e935f3300670::t_cbbf330dcd4981 123,133,135-156
+test/agent/prompt-okf.test.ts
+  s_e3e935f3300670::t_42e4fe465b1bcf 9-13
+test/agent/prompt.test.ts
+  s_e3e935f3300670::t_af007af1f78d9e 349-350,352-354,361,363,365-367
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "5de9bf37cf01646a6eeb9bb9eb1db99848c947cf",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
