@@ -1,0 +1,23 @@
+src/agent/plan-ledger.ts
+  s_9b220869d1ee0a::t_9acca46600f594 28,230-232
+src/agent/wiki-verification.ts
+  s_9b220869d1ee0a::t_3981cac867ff68 56-85
+test/agent/plan-ledger.test.ts
+  s_9b220869d1ee0a::t_b3d6d0eba9a5ac 192-200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "47d50ce945d4ca2c3a9c903390e59db11db1e170",
+  "prompts": {},
+  "sessions": {
+    "s_9b220869d1ee0a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed580239-bcf5-4316-af7f-dcfd52d692a0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
