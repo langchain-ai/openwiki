@@ -1,0 +1,19 @@
+.github/workflows/openwiki-update.yml
+  s_5c8463d13f9cb5::t_8ed0dfa5b2234d 35-47,50-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "d36e8deb1a8607c9ab3cf10351e461c7e670de23",
+  "prompts": {},
+  "sessions": {
+    "s_5c8463d13f9cb5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01810-969a-76a3-a96d-b118ec42cb8b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
