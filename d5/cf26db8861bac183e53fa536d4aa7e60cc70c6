@@ -1,0 +1,21 @@
+src/agent/authoring-pool.ts
+  s_e3e935f3300670::t_7bdefc43f04301 32,307-315
+test/agent/authoring-pool.test.ts
+  s_e3e935f3300670::t_cb2ca770e53c00 155-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "d5cf26db8861bac183e53fa536d4aa7e60cc70c6",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
