@@ -145,10 +145,31 @@ input.search::placeholder { color:var(--muted); }
 .nav-item.hidden { display:none; }
 .nav-item .dot { width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
 .nav-item .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-#graph { flex:1; min-width:0; position:relative; overflow:hidden; background:radial-gradient(120% 120% at 30% 10%, color-mix(in srgb, var(--graph-bg) 92%, var(--lc-blue) 8%), var(--graph-bg)); }
+#graph { flex:0 0 auto; width:50%; min-width:0; position:relative; overflow:hidden; background:radial-gradient(120% 120% at 30% 10%, color-mix(in srgb, var(--graph-bg) 92%, var(--lc-blue) 8%), var(--graph-bg)); }
+/* Hit area is much wider than the visible line: a near-miss on a thin bar lands
+   on the graph canvas, where force-graph turns a stationary press+release into a
+   background click that deselects the open page (moving releases become pans,
+   which is why the bug only shows on "stop, then release"). The ::after overlay
+   bleeds over both neighbours so those near-misses still grab the splitter. */
+.splitter { flex:0 0 10px; width:10px; cursor:col-resize; background:transparent; position:relative; z-index:6; }
+.splitter::after { content:""; position:absolute; top:0; bottom:0; left:-8px; right:-8px; }
+.splitter::before {
+  content:""; position:absolute; top:0; bottom:0; left:50%; width:2px;
+  transform:translateX(-50%); background:var(--edge); transition:background .15s ease;
+}
+.splitter:hover::before, .splitter.dragging::before { background:var(--lc-blue); }
+.splitter.hidden { display:none; }
+.main.dragging { cursor:col-resize; user-select:none; }
+/* While dragging, the canvas must never see the pointer — not even the release. */
+.main.dragging #graph { pointer-events:none; }
+.icon-btn.active { border-color:var(--lc-blue); color:var(--lc-blue); }
 .detail {
-  flex:1 1 0; min-width:0; border-left:1px solid var(--edge);
+  /* No border-left here: the splitter already draws the divider line via
+     ::before — a border on both sides of the boundary doubled it up. */
+  flex:1 1 0; min-width:0;
   background:var(--panel); overflow-y:auto; padding:40px 48px;
+  /* Reader content owns its side of the split and masks graph overlays that
+     extend beyond a narrow graph panel. The splitter remains above both. */
   position:relative; z-index:2;
 }
 .detail::-webkit-scrollbar { width:10px; }
@@ -156,7 +177,7 @@ input.search::placeholder { color:var(--muted); }
 
 /* Legend */
 .legend {
-  position:absolute; left:20px; bottom:18px; z-index:5;
+  position:absolute; left:20px; bottom:18px; z-index:1;
   display:flex; flex-wrap:wrap; gap:6px 14px; max-width:60%;
   padding:12px 14px; border-radius:12px;
   background:color-mix(in srgb, var(--panel) 88%, transparent);
@@ -228,7 +249,7 @@ hr.rule { border:none; border-top:1px solid var(--edge); margin:22px 0; }
 
 /* Controls hint, stacked above the legend */
 .graph-hint {
-  position:absolute; left:20px; bottom:72px; z-index:5; pointer-events:none;
+  position:absolute; left:20px; bottom:72px; z-index:1; pointer-events:none;
   font-size:11px; letter-spacing:0.02em; color:var(--muted);
   padding:6px 12px; border-radius:100px;
   background:color-mix(in srgb, var(--panel) 82%, transparent);
@@ -246,11 +267,13 @@ hr.rule { border:none; border-top:1px solid var(--edge); margin:22px 0; }
   </div>
   <div class="spacer"></div>
   <div class="${liveClass}" id="live"><span class="live-dot"></span><span id="live-text">${liveStatus}</span></div>
+  <div class="icon-btn" id="toggle-graph" title="Hide graph">⛶</div>
   <div class="icon-btn" id="theme" title="Toggle theme">◐</div>
 </div>
-<div class="main">
+<div class="main" id="main">
   <nav class="sidebar" id="sidebar"></nav>
   <div id="graph"></div>
+  <div class="splitter" id="splitter" title="Drag to resize"></div>
   <div class="legend" id="legend"></div>
   <div class="graph-hint" id="hint"><b>Drag</b> to pan · <b>Scroll</b> to zoom · <b>Click</b> a node to read</div>
   <div class="detail" id="detail">
