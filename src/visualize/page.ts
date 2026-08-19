@@ -168,6 +168,8 @@ input.search::placeholder { color:var(--muted); }
      ::before — a border on both sides of the boundary doubled it up. */
   flex:1 1 0; min-width:0;
   background:var(--panel); overflow-y:auto; padding:40px 48px;
+  /* Reader content owns its side of the split and masks graph overlays that
+     extend beyond a narrow graph panel. The splitter remains above both. */
   position:relative; z-index:2;
 }
 .detail::-webkit-scrollbar { width:10px; }
@@ -175,7 +177,7 @@ input.search::placeholder { color:var(--muted); }
 
 /* Legend */
 .legend {
-  position:absolute; left:20px; bottom:18px; z-index:5;
+  position:absolute; left:20px; bottom:18px; z-index:1;
   display:flex; flex-wrap:wrap; gap:6px 14px; max-width:60%;
   padding:12px 14px; border-radius:12px;
   background:color-mix(in srgb, var(--panel) 88%, transparent);
@@ -247,7 +249,7 @@ hr.rule { border:none; border-top:1px solid var(--edge); margin:22px 0; }
 
 /* Controls hint, stacked above the legend */
 .graph-hint {
-  position:absolute; left:20px; bottom:72px; z-index:5; pointer-events:none;
+  position:absolute; left:20px; bottom:72px; z-index:1; pointer-events:none;
   font-size:11px; letter-spacing:0.02em; color:var(--muted);
   padding:6px 12px; border-radius:100px;
   background:color-mix(in srgb, var(--panel) 82%, transparent);

@@ -219,6 +219,13 @@ interface ForceGraphInstance {
   height(height: number): ForceGraphInstance;
 
   /**
+   * Stop and restart the render loop. Resuming paints a frame immediately,
+   * which keeps canvas reallocations from becoming visible between frames.
+   */
+  pauseAnimation(): ForceGraphInstance;
+  resumeAnimation(): ForceGraphInstance;
+
+  /**
    * Set the zoom level (higher is more zoomed in).
    */
   zoom(zoom: number): ForceGraphInstance;
@@ -534,7 +541,16 @@ function initGraph(): void {
   // Pin the canvas to its column. Without this, force-graph falls back to the
   // window width and centres the graph behind the reader/index panels.
   const fitSize = (): void => {
-    if (G) G.width(container.clientWidth).height(container.clientHeight);
+    if (!G) return;
+
+    // Setting a canvas width clears its pixels. ResizeObserver runs late in the
+    // browser's paint cycle, so leaving the normal animation loop in charge can
+    // expose that cleared frame while the splitter is moving. Restarting the
+    // loop makes force-graph repaint synchronously at the new size.
+    G.pauseAnimation()
+      .width(container.clientWidth)
+      .height(container.clientHeight)
+      .resumeAnimation();
   };
   fitSize();
   new ResizeObserver(fitSize).observe(container);
