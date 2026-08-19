@@ -316,14 +316,12 @@ input.search::placeholder {
     var(--graph-bg)
   );
 }
-/* Hit area is much wider than the visible line: a near-miss on a thin bar lands
-   on the graph canvas, where force-graph turns a stationary press+release into a
-   background click that deselects the open page (moving releases become pans,
-   which is why the bug only shows on "stop, then release"). The ::after overlay
-   bleeds over both neighbours so those near-misses still grab the splitter. */
+/* The splitter occupies only the visible line so it sits flush with both panels.
+   Its ::after overlay bleeds over both neighbours to preserve a generous drag
+   target without introducing a transparent gutter into the layout. */
 .splitter {
-  flex: 0 0 10px;
-  width: 10px;
+  flex: 0 0 2px;
+  width: 2px;
   cursor: col-resize;
   background: transparent;
   position: relative;
@@ -334,17 +332,16 @@ input.search::placeholder {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -8px;
-  right: -8px;
+  left: -12px;
+  right: -12px;
 }
 .splitter::before {
   content: "";
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 50%;
+  left: 0;
   width: 2px;
-  transform: translateX(-50%);
   background: var(--edge);
   transition: background 0.15s ease;
 }
