@@ -141,6 +141,7 @@ import {
   getUpdateNoopStatus,
   createRunContext,
   persistRunMetadataIfChanged,
+  readTemporaryPlanFile,
   removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
@@ -628,6 +629,13 @@ async function runOpenWikiAgentCore(
 
   try {
     for await (const chunk of stream) {
+      try {
+        await options.onRawStreamChunk?.(chunk);
+      } catch {
+        // Telemetry and memory capture must never change the OpenWiki run.
+        emitDebug(options, "reasoning.capture.rawChunk=failed");
+      }
+
       const event = parseAgentStreamChunk(chunk);
 
       if (event) {
@@ -647,6 +655,7 @@ async function runOpenWikiAgentCore(
   } catch (error) {
     tagErrorStage(error, "run");
 
+    await captureTemporaryPlanFile(command, cwd, outputMode, options);
     await cleanupTemporaryPlanFile(command, cwd, outputMode, options).catch(
       () => {
         emitDebug(options, "plan.cleanup=failed");
@@ -702,6 +711,7 @@ async function runOpenWikiAgentCore(
   // filesystem code becomes filesystem_error), and deriveOwner's finalize
   // exception routes that to openwiki since the run reached our own persistence.
   const metadataWritten = await inStage("finalize", async () => {
+    await captureTemporaryPlanFile(command, cwd, outputMode, options);
     await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
     return persistRunMetadataIfChanged(
       command,
@@ -729,6 +739,28 @@ async function runOpenWikiAgentCore(
     command,
     model: modelId,
   };
+}
+
+async function captureTemporaryPlanFile(
+  command: OpenWikiCommand,
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+  options: OpenWikiRunOptions,
+): Promise<void> {
+  if (command === "chat" || !options.onPlanSnapshot) {
+    return;
+  }
+
+  try {
+    const plan = await readTemporaryPlanFile(cwd, outputMode);
+    if (plan !== null) {
+      await options.onPlanSnapshot(plan);
+      emitDebug(options, "reasoning.capture.plan=captured");
+    }
+  } catch {
+    // As with raw stream capture, observability is deliberately fail-open.
+    emitDebug(options, "reasoning.capture.plan=failed");
+  }
 }
 
 async function cleanupTemporaryPlanFile(

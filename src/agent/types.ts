@@ -37,6 +37,13 @@ export type OpenWikiRunOptions = {
   language?: string | null;
   modelId?: string | null;
   onEvent?: (event: OpenWikiRunEvent) => void;
+  /** Observable temporary plan content, captured before OpenWiki deletes it. */
+  onPlanSnapshot?: (plan: string) => void | Promise<void>;
+  /**
+   * Lossless LangGraph stream seam for telemetry such as tool outputs/errors.
+   * Consumers must redact and bound data before persistence.
+   */
+  onRawStreamChunk?: (chunk: unknown) => void | Promise<void>;
   outputMode?: OpenWikiOutputMode;
   threadId?: string;
   userMessage?: string | null;
