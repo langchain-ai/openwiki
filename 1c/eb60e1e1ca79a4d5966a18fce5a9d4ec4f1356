@@ -1,0 +1,64 @@
+test/claims/core/errors.test.ts
+  s_846410689295d1::t_73ab83dda25b11 53
+src/agent/wiki-qa-subagents.ts
+  s_846410689295d1::t_69394f5cf8b75a 14
+src/claims/core/resolver-cache.ts
+  s_846410689295d1::t_a5916f7313e52d 10,18-23,25-26
+src/claims/evidence/repository/resource.ts
+  s_846410689295d1::t_cd1104c027061e 44,61,83
+  s_846410689295d1::t_f2d341b8cba2f6 9-23,34,38,45,65,68-71,80,98,100,107,110-111,113,125-128,130,159-162,166,170-218,222-244
+  s_846410689295d1::t_f505422af6c2ce 62,219-221
+  s_846410689295d1::t_58146ad63bde3d 245
+test/claims/brains/code/store.test.ts
+  s_846410689295d1::t_73ab83dda25b11 78-79
+src/claims/core/mutations.ts
+  s_846410689295d1::t_30e1ec31708503 93,138,151-154
+src/claims/evidence/repository/resolver.ts
+  s_846410689295d1::t_1eaac55423fb13 17-64,116,119-120,122-125,170,173-179,218,220-239,242,244-253,255-297,299-351,353-384,386-418,425-508,512-529,531-545,547-562
+  s_846410689295d1::t_f505422af6c2ce 298,385,419,424,509-511
+  s_846410689295d1::t_185afef7853140 16,607-627
+  s_846410689295d1::t_cd1104c027061e 240-241,243,254,420-423,566,568
+  s_846410689295d1::t_5958e2f5aded2b 15
+src/claims/brains/code/session.ts
+  s_846410689295d1::t_1b2b426560d2d8 399-402
+src/agent/prompts/code.ts
+  s_846410689295d1::t_69394f5cf8b75a 134
+src/claims/core/types.ts
+  s_846410689295d1::t_63cbf119ed6392 157,160-163
+package.json
+  s_846410689295d1::t_39ceff55d2a9d3 119
+test/claims/core/mutations.test.ts
+  s_846410689295d1::t_aa661b33f04bcf 169-184,186-187
+  s_846410689295d1::t_f505422af6c2ce 185
+src/claims/brains/code/tools.ts
+  s_846410689295d1::t_69394f5cf8b75a 132
+test/claims/evidence/repository/resolver.test.ts
+  s_846410689295d1::t_39c1a77df5e882 45,60-64,67-69,71-77,80-81,84-87,90-92,95-96,98,102-105,107,113-119,122,124-125,128,130-132,134-140,143,145-146,149,151-157,160-162,164-170,172-178,182-183,185-191,193-195,197-198,200,203-208,210-211,213,215-216,218-220,222-224,226-228,232,239,244-245,258,263,267-268,273,277-278,280,283,287,290,303,306,308,314
+  s_846410689295d1::t_f505422af6c2ce 109-111,181,199,214,248
+test/claims/evidence/repository/resource.test.ts
+  s_846410689295d1::t_f505422af6c2ce 20,28
+  s_846410689295d1::t_d30677efe958ff 10,15,18-19,22,26,31,43,45,52-53,73-77,79
+  s_846410689295d1::t_0aab997b483a78 21
+src/claims/brains/code/preflight.ts
+  s_846410689295d1::t_a4656c8c473bb0 29-30
+  s_846410689295d1::t_1b2b426560d2d8 60-63
+test/claims/brains/code/preflight.test.ts
+  s_846410689295d1::t_19df1012f3b892 193-228
+  s_846410689295d1::t_73ab83dda25b11 124,126,231,244,293
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "1ceb60e1e1ca79a4d5966a18fce5a9d4ec4f1356",
+  "prompts": {},
+  "sessions": {
+    "s_846410689295d1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a016d7-cda2-7581-9197-f765b56111c9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
