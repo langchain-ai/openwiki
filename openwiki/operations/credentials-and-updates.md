@@ -3,7 +3,7 @@ type: Operations Guide
 title: Credentials and updates
 description: Operational reference for OpenWiki local credential storage, onboarding metadata, provider diagnostics, and update tracking. Covers scheduling workflows and CI automation for maintaining OpenWiki content safely.
 tags: [operations, credentials, updates, scheduling, ci]
-generated: {by: "openwiki/0.3.3", at: "2026-08-19T17:58:14.705Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-19T17:58:14.705Z" }
 ---
 
 # Credentials and updates
