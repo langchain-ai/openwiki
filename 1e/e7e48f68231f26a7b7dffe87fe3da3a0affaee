@@ -1,0 +1,21 @@
+.gitignore
+  s_929c69bf3d1e19::t_30f182f6a924dc 28
+openwiki/operations/credentials-and-updates.md
+  s_929c69bf3d1e19::t_9e2f3f79faa896 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "1ee7e48f68231f26a7b7dffe87fe3da3a0affaee",
+  "prompts": {},
+  "sessions": {
+    "s_929c69bf3d1e19": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b2b-9524-7e52-906a-896bf141abe1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
