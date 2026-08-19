@@ -125,6 +125,9 @@ describe("RunView", () => {
     expect(frame).toContain("openwiki update");
     expect(frame).toContain("Tracing affected documentation");
     expect(frame).toContain("Preparing the run...");
+    expect(frame).toMatch(
+      /Tracing affected documentation\n\s{4,}Preparing the run\.\.\./u,
+    );
     unmount();
   });
 

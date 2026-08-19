@@ -168,7 +168,9 @@ export function RunView({
             : null}
           {done ? <CompletedRunDetails log={log} /> : null}
           {!done && !summary && activities.length === 0 ? (
-            <Text color="gray">Preparing the run...</Text>
+            <Box marginLeft={2}>
+              <Text color="gray">Preparing the run...</Text>
+            </Box>
           ) : null}
         </Box>
       </Box>
