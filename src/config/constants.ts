@@ -14,6 +14,8 @@ export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
+export const OPENAI_COMPATIBLE_STREAMING_ENV_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_STREAMING";
 export const OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API";
 export const OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY =
@@ -56,9 +58,13 @@ export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
 export const DEFAULT_VERTEX_LOCATION = "global";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
+export const OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY =
+  "OPENWIKI_STREAM_IDLE_TIMEOUT";
+const MAX_STREAM_IDLE_TIMEOUT_MS = 2_147_483_647;
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
+export const OPENWIKI_REASONING_EFFORT_ENV_KEY = "OPENWIKI_REASONING_EFFORT";
 export const DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3;
 export const DEFAULT_ANTHROPIC_MAX_OUTPUT_TOKENS = 16_384;
 const TRUE_ENV_VALUE = "true";
@@ -470,6 +476,14 @@ export function providerUsesResponsesApi(
   );
 }
 
+export function providerUsesStreaming(provider: OpenWikiProvider): boolean {
+  if (provider === "openai-compatible") {
+    return resolveOpenAiCompatibleStreaming();
+  }
+
+  return false;
+}
+
 export function getProviderProjectEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
@@ -876,6 +890,73 @@ function inspectCredentialPair(
   return { complete: hasAccessKey && hasSecretKey, missingEnvKey: null };
 }
 
+export function resolveMaxOutputTokens(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  const rawMaxOutputTokens = env[OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY];
+
+  if (rawMaxOutputTokens === undefined) {
+    return undefined;
+  }
+
+  const maxOutputTokens = rawMaxOutputTokens.trim();
+
+  if (!/^[1-9]\d*$/u.test(maxOutputTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  const parsedMaxOutputTokens = Number(maxOutputTokens);
+
+  if (!Number.isSafeInteger(parsedMaxOutputTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  return parsedMaxOutputTokens;
+}
+
+/** Milliseconds to wait for the first or next Bedrock stream chunk. 0 disables the watchdog. */
+export function resolveStreamIdleTimeout(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  const rawStreamIdleTimeout = env[OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY];
+
+  if (rawStreamIdleTimeout === undefined) {
+    return undefined;
+  }
+
+  const streamIdleTimeout = rawStreamIdleTimeout.trim();
+
+  if (!/^\d+$/u.test(streamIdleTimeout)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY}. Expected an integer from 0 to ${MAX_STREAM_IDLE_TIMEOUT_MS} milliseconds.`,
+    );
+  }
+
+  const parsedStreamIdleTimeout = Number(streamIdleTimeout);
+
+  if (
+    !Number.isSafeInteger(parsedStreamIdleTimeout) ||
+    parsedStreamIdleTimeout > MAX_STREAM_IDLE_TIMEOUT_MS
+  ) {
+    throw new Error(
+      `Invalid ${OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY}. Expected an integer from 0 to ${MAX_STREAM_IDLE_TIMEOUT_MS} milliseconds.`,
+    );
+  }
+
+  return parsedStreamIdleTimeout;
+}
+
+export function resolveStreamIdleTimeoutForProvider(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  return provider === "bedrock" ? resolveStreamIdleTimeout(env) : undefined;
+}
+
 export function resolveProviderRetryAttempts(
   env: NodeJS.ProcessEnv = process.env,
 ): number {
@@ -951,6 +1032,29 @@ export function resolveOpenAiCompatibleStreamMessages(
   );
 }
 
+// Some OpenAI-compatible gateways only serve the streaming transport: a
+// non-streaming request either gets rejected ("Stream must be set to true") or
+// returns HTTP 200 with empty content. DeepAgents' agent node issues
+// non-streaming `.invoke()` calls internally, so those deployments fail
+// silently — the run finishes with a blank wiki and no error. Opting in forces
+// the streaming transport for every generation, the same transport override the
+// openai-chatgpt provider hardcodes for the Codex backend.
+//
+// This is the HTTP transport, a different axis from the stream mode above:
+// OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES controls how LangGraph surfaces a
+// run in the TUI, while this controls whether the request itself is sent as SSE.
+//
+// It stays opt-in because this provider points at arbitrary third-party
+// endpoints, where SSE is not guaranteed to survive proxies and load balancers.
+export function resolveOpenAiCompatibleStreaming(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    env[OPENAI_COMPATIBLE_STREAMING_ENV_KEY]?.trim().toLowerCase() ===
+    TRUE_ENV_VALUE
+  );
+}
+
 // Caps per-request output tokens for OpenRouter. Without a cap, OpenRouter's
 // credit pre-check budgets for the model's full advertised output ceiling and
 // rejects the request with 402 when the balance can't cover that worst case.
@@ -999,7 +1103,7 @@ export function resolveConfiguredMaxOutputTokens(
     return resolveOpenRouterMaxTokens(env);
   }
 
-  return resolvePositiveIntegerSetting(OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY, env);
+  return resolveMaxOutputTokens(env);
 }
 
 /**

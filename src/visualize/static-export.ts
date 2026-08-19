@@ -3,10 +3,12 @@ import path from "node:path";
 import { buildGraph, type WikiGraph } from "./graph.js";
 import { STATIC_PAGE } from "./page.js";
 
-/** Browser modules emitted alongside the server and copied into static exports. */
+/** Browser assets emitted alongside the server and copied into static exports. */
 export interface VisualizerAssets {
   clientJs: string;
   clientLibJs: string;
+  /** Stylesheet served verbatim and copied into static exports. */
+  stylesCss: string;
 }
 
 /** Inputs for writing a self-contained static visualizer directory. */
@@ -27,13 +29,14 @@ export interface StaticVisualizerExportResult {
   graph: WikiGraph;
 }
 
-/** Read the compiled browser modules that ship beside this module in dist. */
+/** Read the browser assets that ship beside this module in dist. */
 export async function loadVisualizerAssets(): Promise<VisualizerAssets> {
-  const [clientJs, clientLibJs] = await Promise.all([
+  const [clientJs, clientLibJs, stylesCss] = await Promise.all([
     readFile(new URL("./client.js", import.meta.url), "utf8"),
     readFile(new URL("./client-lib.js", import.meta.url), "utf8"),
+    readFile(new URL("./styles.css", import.meta.url), "utf8"),
   ]);
-  return { clientJs, clientLibJs };
+  return { clientJs, clientLibJs, stylesCss };
 }
 
 /**
@@ -59,6 +62,11 @@ export async function exportStaticVisualizer(
     writeFile(
       path.join(options.outputDir, "client-lib.js"),
       assets.clientLibJs,
+      "utf8",
+    ),
+    writeFile(
+      path.join(options.outputDir, "styles.css"),
+      assets.stylesCss,
       "utf8",
     ),
     writeFile(

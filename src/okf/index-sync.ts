@@ -233,7 +233,7 @@ function renderIndex(
   ]
     .filter(Boolean)
     .join("\n\n");
-  const version = isRoot ? '---\nokf_version: "0.1"\n---\n\n' : "";
+  const version = isRoot ? '---\nokf_version: "0.2"\n---\n\n' : "";
   return `${version}${sections || `# ${labels.files}`}\n`;
 }
 

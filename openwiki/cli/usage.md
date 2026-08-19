@@ -22,6 +22,7 @@ From `src/cli/commands.ts` and `README.md`, the supported entry patterns are:
 - `openwiki --modelId <id>` / `--model-id <id>` — choose a model ID for the run.
 - `openwiki --language <locale>` / `-l <locale>` — generate the wiki in a specific language (BCP-47 locale, e.g. `zh-CN`, `hi`, `pt-BR`); see [Multilingual wikis](#multilingual-wikis).
 - `openwiki visualize [path] [--port <port>] [--no-open]` — serve an interactive node-graph visualizer for a wiki directory on a local loopback address; see [Visualizer](#visualizer).
+- `openwiki visualize [path] --export <dir>` — write a self-contained static visualizer directory (no server) for web hosting; see [Visualizer](#visualizer).
 - `openwiki --help` / `-h` — print usage, options, and examples.
 - `openwiki --dry-run` — development-only option that avoids invoking the agent.
 
@@ -54,7 +55,7 @@ If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires the prov
 
 - chat submission and follow-up messages,
 - `init` / `update` command launches (including from `/init` and `/update` slash commands),
-- provider and model selection during the session (`/provider`, `/model`),
+- provider and model selection during the session (`/provider`, `/model`, `/effort` for reasoning-capable models),
 - interactive credential setup when required (including for init/update, not just chat),
 - streaming agent text and tool events (tool-call strings are redacted via `sanitizeDiagnosticText()` before display; subagent lifecycle is shown as "task" start/finish labels),
 - completed-run history and error display,
@@ -109,6 +110,24 @@ OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3
 
 If the value is unset, OpenWiki defaults to 3 retries.
 
+### Model output token limit
+
+Set `OPENWIKI_MAX_OUTPUT_TOKENS` (a positive integer) to override the maximum number of tokens generated in a model response, for example `OPENWIKI_MAX_OUTPUT_TOKENS=8192`. If unset, OpenWiki does not override the model client's output token limit — it is spread as `maxTokens` to non-Google clients (anthropic, openai, openai-chatgpt, copilot, openrouter, baseten/fireworks/nebius/nvidia/openai-compatible, and the Vertex Claude/MaaS surfaces) and as `maxOutputTokens` to `ChatGoogle`/Vertex Gemini surfaces. Provider and model limits still apply; unsupported values may be rejected, while very small values can truncate responses or tool calls. Resolved by `resolveMaxOutputTokens()` in `src/config/constants.ts`; covered by `test/config/constants.test.ts` ("resolveMaxOutputTokens") and `test/agent/gemini-retry.test.ts` ("passes maxTokens to direct non-Google clients").
+
+### Bedrock stream idle timeout
+
+For the Bedrock provider, set `OPENWIKI_STREAM_IDLE_TIMEOUT` to control how long the client waits for the first or next streamed response chunk:
+
+```bash
+OPENWIKI_STREAM_IDLE_TIMEOUT=300000
+```
+
+The value is milliseconds and must be an integer from `0` to `2147483647`. Set it to `0` to disable the LangChain watchdog. If unset, OpenWiki preserves the `@langchain/aws` provider default. Prefer a sufficiently long finite timeout over disabling the watchdog so a stalled stream cannot hang forever. The override is Bedrock-only: `resolveStreamIdleTimeoutForProvider()` ignores a stale value when the active provider is not `bedrock` so a leftover setting does not throw for other providers. Resolved by `resolveStreamIdleTimeout()` in `src/config/constants.ts`; passed to `ChatBedrockConverse` as `streamIdleTimeout`; covered by `test/agent/bedrock-model.test.ts` ("passes streamIdleTimeout to ChatBedrockConverse") and `test/config/constants.test.ts` ("resolveStreamIdleTimeout", "resolveStreamIdleTimeoutForProvider").
+
+### Reasoning effort
+
+Set `OPENWIKI_REASONING_EFFORT` to configure reasoning for a supported provider and model. OpenAI GPT-5.6 models (`gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.6-sol` for the `openai` and `openai-chatgpt` providers) use the Responses API values `none`, `low`, `medium`, `high`, `xhigh`, and `max`. NVIDIA NIM's `nvidia/nemotron-3-super-120b-a12b` supports `none`, `low`, and `high` through the chat-completions `reasoning_effort` field. In an interactive chat, use `/effort` to choose an available value or `/effort default` to restore the provider default. Leave the variable unset to preserve the provider default; invalid provider, model, or effort combinations fail before a request is sent (resolved by `resolveReasoningConfig()` in `src/config/reasoning.ts`). A shell export takes precedence over the saved `~/.openwiki/.env` value until the next process, so the interactive UI warns when a saved choice is shadowed.
+
 ### Alternative base URLs
 
 Set `ANTHROPIC_BASE_URL` to route the anthropic provider at an alternative,
@@ -151,6 +170,10 @@ where a value other than `true`/`false` reports an `invalid boolean` warning.
 ```bash
 OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true   # opt into Responses API
 ```
+
+By default the agent runs the `openai-compatible` provider on the **updates** stream mode (`["updates","tools"]`) instead of the **messages** mode the other providers use. Endpoints that stream reasoning deltas before the first `role:"assistant"` delta — notably z.ai GLM — aggregate to a `ChatMessageChunk` under messages mode, which the agent loop's `wrapModelCall` validator rejects (`expected AIMessage or Command, got object`, issue #659). Dropping messages mode routes the model through the non-streaming `_generate` path, which returns a proper `AIMessage`. The cost is no live token streaming for openai-compatible runs in the TUI. Endpoints known to emit a `role:"assistant"` first delta can opt back into live streaming with `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES=true`, resolved by `resolveOpenAiCompatibleStreamMessages()` in `src/config/constants.ts` (default false; only the literal `true` case-insensitive/trimmed enables it).
+
+Separately, `OPENWIKI_OPENAI_COMPATIBLE_STREAMING=true` forces the HTTP streaming transport (SSE) for every generation — a different axis from the stream mode above. Some gateways serve only the streaming transport and answer non-streaming requests with HTTP 200 and empty content, leaving a blank wiki and no error (#655). It stays off by default because SSE is not guaranteed to survive proxies and load balancers at arbitrary third-party endpoints. Resolved by `resolveOpenAiCompatibleStreaming()` / `providerUsesStreaming()` in `src/config/constants.ts`; forwarded into the generated CI workflow by `createWorkflowProviderEnv()` in `src/ingestion/code-mode.ts` so scheduled runs behave like local ones.
 
 Base URLs are resolved by `resolveProviderBaseUrl()` in `src/config/constants.ts`, which
 prefers a provider's `baseUrlEnvKey` override over the built-in default.
@@ -254,15 +277,18 @@ A cap trades those hard 402 failures for possible truncation (finish_reason `len
 openwiki visualize                       # serve ./openwiki on the default port
 openwiki visualize openwiki --port 4400  # serve a different directory on port 4400
 openwiki visualize openwiki --no-open    # do not open the browser automatically
+openwiki visualize openwiki --export docs/openwiki-visualizer  # write a static visualizer directory
 ```
 
-Behavior and bounds, from `src/visualize/server.ts`:
+`--export <dir>` writes a self-contained static visualizer directory instead of starting the server (`src/visualize/static-export.ts`, `exportStaticVisualizer`). The directory contains `index.html`, `client.js`, `client-lib.js`, and `graph.json` — a snapshot of the graph at export time. The static client reads `./graph.json` and never opens an SSE connection (no live reload), so the directory can be hosted by GitHub Pages, MkDocs, or any other static host without OpenWiki running. The parser rejects `--export` combined with `--port` or `--no-open` (`--export cannot be combined with --port or --no-open.`), and rejects `--export` without a directory argument. On success the runner prints `Exported static visualizer to <dir> (<pages> pages, <links> links).` and exits.
+
+Behavior and bounds, from `src/visualize/server.ts` and `src/visualize/page.ts`:
 
 - The HTTP server binds to the loopback address `127.0.0.1` only — it is never exposed on the network. The preferred port defaults to `4321`; on `EADDRINUSE` it increments through up to 20 ports before failing.
 - A positional path selects the wiki directory (default `openwiki`). If the directory is missing, the server fails fast with a message directing you to run `openwiki --init` first.
 - `buildGraph()` in `src/visualize/graph.ts` parses the wiki into nodes (concept pages) and edges (Markdown links), exposing them at `/api/graph`.
 - A recursive file watcher (`startWatch`) debounces changes (150 ms) and rebuilds the graph; connected browsers receive a reload event over an SSE stream at `/events`, so edits to the wiki files refresh the live graph and reader while the server runs.
-- The page (`src/visualize/page.ts`) and client (`src/visualize/client.ts`) are server-owned static assets served at fixed routes (`/`, `/client.js`, `/client-lib.js`). The browser loads Mermaid and the graph/Markdown libraries from a pinned jsdelivr CDN, so an internet connection is required even though the server is local. The CSP pins script sources to `'self'` and the CDN origin; no `req.url` path is ever used to read a file from disk.
+- The page (`src/visualize/page.ts`) and client (`src/visualize/client.ts`) are server-owned static assets served at fixed routes (`/`, `/client.js`, `/client-lib.js`). The page is rendered by `renderPage(staticExport)`: the live page (`PAGE`) loads client modules from absolute routes; the static page (`STATIC_PAGE`) loads `./client.js` and carries a CSP `<meta>` tag so the exported HTML keeps the same script restrictions without a server header. The browser loads Mermaid and the graph/Markdown libraries from a pinned jsdelivr CDN, so an internet connection is required even though the server is local. The shared `CSP` pins script sources to `'self'` and the CDN origin; no `req.url` path is ever used to read a file from disk. The compiled browser modules are read once via `loadVisualizerAssets()` (shared between the live server and the static exporter).
 - Press Ctrl-C (SIGINT) to stop the server.
 
 ## Multilingual wikis
@@ -278,7 +304,8 @@ Language is persisted state, not a one-shot flag:
 
 - On a run, the effective language is the validated `--language` flag, else the language recorded in `openwiki/.last-update.json` from the previous run, else English (resolved in `src/agent/utils.ts` as `requestedLanguage ?? lastUpdate?.language ?? "en"`, with the requested value validated by `resolveLanguage()` in `src/platform/language.ts`). An update without `--language` keeps the existing wiki consistent in its established language instead of producing a mix.
 - The chosen language is written to the `language` field of `.last-update.json` so subsequent runs inherit it.
-- When a `--language` request changes the primary language subtag (for example `en` to `zh`), the [translation middleware](../agent/workflow.md) (`src/agent/translation-middleware.ts`) runs a deterministic translate-all pass **before** the agent edits: every eligible concept page is translated into the target language and marked with an `openwiki_translation_pending` front-matter field. Pages left pending by a prior failed switch are retranslated individually on the next update.
+- When a `--language` request changes the primary language subtag (for example `en` to `zh`), the [translation middleware](../agent/workflow.md) (`src/agent/translation-middleware.ts`) runs a deterministic translate-all pass **before** the agent edits: every eligible concept page is translated into the target language and marked with an `openwiki_translation_pending` front-matter field. Pages left pending by a prior failed switch are retranslated individually on the next update. The subtag comparison uses the shared `getPrimaryLanguageSubtag()` in `src/platform/language.ts`, which treats an absent tag as English and returns malformed persisted values as written so they cannot accidentally compare equal to a valid requested tag.
+- A language change also defeats the update no-op skip on a clean tree: `getUpdateNoopStatus()` in `src/agent/utils.ts` returns `shouldSkip: false` with reason `"output language changed"` when the requested primary subtag differs from the persisted wiki language, so the translation pass runs even though no source changed. This check runs in both the agent's update-noop gate and the CLI's pre-credential `canSkipCleanUpdateBeforeCredentials()` in `src/cli/startup.ts` (covered by `test/agent/update-noop.test.ts`, "does not skip a clean update that requests a different language").
 - Deterministic, model-free localization (index section headings and the derived concept `type` label) is resolved by `resolveIndexLabels()` and `resolveConceptTypeLabel()` in `src/okf/index-labels.ts`, keyed by BCP-47 tag with region fallback to the primary subtag and then to English.
 
 ## Help text and validation
@@ -297,6 +324,8 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - If adding a provider, update `PROVIDER_CONFIGS` and `SELECTABLE_OPENWIKI_PROVIDERS` in `src/config/constants.ts`, `managedEnvKeys` in `src/config/env.ts`, and the `createModel` branch in `src/agent/index.ts`. OAuth-based providers (like `openai-chatgpt`) additionally need a token refresh flow and a dedicated branch in `createModel` that reads tokens from `process.env`. `apiKeyEnvKey` is optional — a provider without one (like `gemini-enterprise`) instead declares the env keys it needs (e.g. `projectEnvKey`), and `getMissingProviderEnvKey()` gates runs on whichever required key is absent. Providers with a paired secret (like `bedrock`) use `secretKeyEnvKey`, and providers requiring a region use `regionEnvKey` with `requiresRegion: true`.
 - To let a provider accept an alternative base URL, set `baseUrlEnvKey` on its `PROVIDER_CONFIGS` entry, add that key to `managedEnvKeys` in `src/config/env.ts`, and read it through `resolveProviderBaseUrl()` in the provider's `createModel` branch.
 - To require a user-supplied base URL (a provider with no default endpoint, like `openai-compatible`), also set `requiresBaseUrl: true`. `ensureProviderBaseUrl()` in `src/agent/index.ts` enforces it at runtime, and the interactive setup adds a base-URL step for such providers.
+- To change agent streaming behavior per provider, edit the `streamMessagesEnabled`/`streamModes` resolution in `src/agent/index.ts` (the `openai-compatible` provider already gates `messages` vs `updates` there via `resolveOpenAiCompatibleStreamMessages()` in `src/config/constants.ts`) and the `managedEnvKeys`/diagnostics entry for any new opt-in env key; update `test/agent/stream-modes.test.ts` and `test/agent/stream-redaction.test.ts`. The HTTP-transport opt-in `OPENWIKI_OPENAI_COMPATIBLE_STREAMING` is a separate axis (`providerUsesStreaming()` in `src/config/constants.ts`, forwarded into the CI workflow by `createWorkflowProviderEnv()` in `src/ingestion/code-mode.ts`); update `test/openai-compatible-streaming.test.ts` and `test/ingestion/code-mode.test.ts` when changing it.
+- To add reasoning-effort support for a provider/model, add a `ReasoningCapability` to `REASONING_CAPABILITIES` in `src/config/reasoning.ts`, wire the transport into the `createModel()` branch (`responsesReasoningOptions` for Responses-API models, `chatCompletionsReasoningOptions` for chat-completions `reasoning_effort`), and add an interactive `/effort` row via `getReasoningEffortMenuOptions()` in `src/cli/input/menu.ts` (which derives from the same capability table). The onboarding `reasoning-effort` step in `src/setup/credentials/steps.ts` and `use-init-setup.ts` walks after the model step. Update `test/agent/create-model.test.ts` ("createModel reasoning configuration"), `test/config/constants.test.ts` ("reasoning capabilities"), and `test/cli/components/chat.test.tsx`.
 - Re-check the `package.json` bin entry and scripts if the entrypoint changes. The bin entry is `./dist/cli/cli.js`; a `postbuild` script restores its executable bit (`chmod 0o755`) so `npm link` installs survive rebuilds.
 
 ## Source map
@@ -310,7 +339,10 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - `src/cli/diagnostics/auth-fix.ts`
 - `src/setup/credentials.tsx` (re-exports `src/setup/credentials/`)
 - `src/config/constants.ts`
+- `src/config/reasoning.ts`
 - `src/config/env.ts`
+- `src/cli/input/menu.ts`
+- `src/cli/components/chat.tsx`
 - `src/agent/index.ts`
 - `src/agent/openai-chatgpt-oauth.ts`
 - `src/auth/oauth.ts`
@@ -320,6 +352,7 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - `src/auth/ngrok.ts`
 - `src/platform/language.ts`
 - `src/visualize/server.ts`
+- `src/visualize/static-export.ts`
 - `src/visualize/graph.ts`
 - `src/visualize/page.ts`
 - `src/visualize/client.ts`

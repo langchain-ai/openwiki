@@ -2,7 +2,9 @@ import type { BackendProtocolV2 } from "deepagents";
 import { parse } from "yaml";
 
 /**
- * OKF fields that, when present, must be non-empty string values.
+ * OKF fields that, when present, must be non-empty string values. `timestamp`
+ * is the field OKF v0.2 supersedes with `generated.at`; it stays tolerated
+ * because consumers may fall back to it on v0.1 pages (SPEC §13.1).
  */
 const OKF_STRING_FIELDS = [
   "type",
@@ -11,6 +13,16 @@ const OKF_STRING_FIELDS = [
   "resource",
   "timestamp",
 ];
+
+/**
+ * Lifecycle states defined by OKF v0.2 §5.4; an absent `status` means stable.
+ */
+const OKF_STATUS_VALUES = ["draft", "stable", "deprecated"];
+
+/**
+ * Matches the absolute `YYYY-MM-DD` date `stale_after` requires (§5.5).
+ */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/u;
 
 /**
  * Extension field flagging front matter OpenWiki derived deterministically.
@@ -34,6 +46,18 @@ export const OPENWIKI_TRANSLATION_PENDING_FIELD =
  * page happens to be both non-conformant and, say, pending translation.
  */
 const PRESERVED_EXTENSION_FIELDS = [OPENWIKI_TRANSLATION_PENDING_FIELD];
+
+/**
+ * OKF v0.2 provenance/trust/lifecycle families (SPEC §5) that must survive the
+ * deterministic type-less rebuild. Unlike {@link PRESERVED_EXTENSION_FIELDS}
+ * these hold structured mappings or lists rather than scalar strings, so they
+ * are carried across verbatim as whole raw lines rather than re-quoted.
+ *
+ * `generated` is code-owned (see {@link setGeneratedEvent}); listing it here
+ * keeps a deterministically stamped provenance event from being discarded when
+ * a page also happens to trip the type-less repair path.
+ */
+const PRESERVED_STRUCTURED_FIELDS = ["generated"];
 
 /**
  * Matches a leading YAML front-matter block and captures its inner text.
@@ -148,8 +172,99 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
       ),
     );
   }
+  validateTrustFamilies(fields, issues);
 
   return issues.length === 0 ? { valid: true } : { issues, valid: false };
+}
+
+/**
+ * Validates the optional OKF v0.2 provenance, trust, and lifecycle families
+ * (SPEC §5) when present. Only the shape OKF specifies is checked; extra keys
+ * inside entries stay tolerated so producer extensions survive round trips.
+ */
+function validateTrustFamilies(
+  fields: Record<string, unknown>,
+  issues: FrontmatterIssue[],
+): void {
+  if (Object.hasOwn(fields, "generated") && !isActorEvent(fields.generated)) {
+    issues.push(
+      issue(
+        "invalid_generated",
+        "Field `generated` must be a mapping with a non-empty string `by` (actor) and an optional string `at` (ISO 8601 datetime).",
+      ),
+    );
+  }
+  if (Object.hasOwn(fields, "verified")) {
+    // §5.2: a single verifier may be a bare mapping; read it as a one-element list.
+    const events = Array.isArray(fields.verified)
+      ? fields.verified
+      : [fields.verified];
+    if (!events.every(isActorEvent)) {
+      issues.push(
+        issue(
+          "invalid_verified",
+          "Field `verified` must be a `{by, at}` mapping or a YAML list of them, each with a non-empty string `by` (actor).",
+        ),
+      );
+    }
+  }
+  if (
+    Object.hasOwn(fields, "sources") &&
+    (!Array.isArray(fields.sources) ||
+      fields.sources.some(
+        (entry) => !isRecord(entry) || !isNonEmptyString(entry.resource),
+      ))
+  ) {
+    issues.push(
+      issue(
+        "invalid_sources",
+        "Field `sources` must be a YAML list of mappings, each with a non-empty string `resource`.",
+      ),
+    );
+  }
+  if (
+    Object.hasOwn(fields, "status") &&
+    (typeof fields.status !== "string" ||
+      !OKF_STATUS_VALUES.includes(fields.status))
+  ) {
+    issues.push(
+      issue(
+        "invalid_status",
+        "Field `status` must be one of `draft`, `stable`, or `deprecated`.",
+      ),
+    );
+  }
+  if (
+    Object.hasOwn(fields, "stale_after") &&
+    (typeof fields.stale_after !== "string" ||
+      !ISO_DATE.test(fields.stale_after))
+  ) {
+    issues.push(
+      issue(
+        "invalid_stale_after",
+        "Field `stale_after` must be an absolute `YYYY-MM-DD` date.",
+      ),
+    );
+  }
+}
+
+/**
+ * Narrows a value to an OKF `{by, at}` event: a mapping whose `by` is a
+ * non-empty actor string and whose `at`, when present, is a non-empty string.
+ */
+function isActorEvent(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.by) &&
+    (!Object.hasOwn(value, "at") || isNonEmptyString(value.at))
+  );
+}
+
+/**
+ * Reports whether a value is a non-empty, non-blank string.
+ */
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim() !== "";
 }
 
 /**
@@ -284,6 +399,64 @@ export function setFrontmatterField(
 }
 
 /**
+ * Stamps the code-owned OKF `generated` provenance event on a page (SPEC §5.1),
+ * setting or replacing a `generated: {by, at}` flow mapping and preserving every
+ * other front-matter line byte-for-byte.
+ *
+ * `generated` is a mapping, not a scalar, so it cannot go through
+ * {@link setFrontmatterField}. The value is emitted as a single-line flow
+ * mapping with JSON-quoted members so an actor or datetime containing a colon
+ * stays valid YAML. When the page has no front-matter block, a minimal one
+ * holding just this field is prepended.
+ *
+ * `at` is optional so the same helper can carry a bare `{by}` event; callers
+ * that record a run time pass it, and it is emitted only when present.
+ */
+export function setGeneratedEvent(
+  content: string,
+  by: string,
+  at?: string,
+): string {
+  const members =
+    at === undefined
+      ? `by: ${JSON.stringify(by)}`
+      : `by: ${JSON.stringify(by)}, at: ${JSON.stringify(at)}`;
+  const line = `generated: {${members}}`;
+  const { block, body } = splitFrontmatter(content);
+  if (block === undefined) {
+    return `---\n${line}\n---\n\n${content}`;
+  }
+
+  const lines = block.split("\n");
+  const index = lines.findIndex((current) => isFieldLine(current, "generated"));
+  if (index === -1) {
+    lines.push(line);
+  } else {
+    lines[index] = line;
+  }
+  return `---\n${lines.join("\n")}\n---\n${body}`;
+}
+
+/**
+ * Reports whether two documents have the same concept body, ignoring their
+ * front-matter blocks and treating a run of whitespace as equal to a single
+ * space. This is the "meaningful change" test that gates {@link setGeneratedEvent}:
+ * a write that only reshuffles front matter or reflows whitespace does not bump
+ * the recorded change time.
+ */
+export function conceptBodiesEqual(before: string, after: string): boolean {
+  return normalizeBody(before) === normalizeBody(after);
+}
+
+/**
+ * Strips a document's front matter and collapses whitespace so two bodies that
+ * differ only in spacing or blank lines compare equal.
+ */
+function normalizeBody(content: string): string {
+  return splitFrontmatter(content).body.replace(/\s+/gu, " ").trim();
+}
+
+/**
  * Removes a single field from a page's front matter, preserving every other line
  * byte-for-byte, and returns the content unchanged when the field is absent. If
  * the field was the block's only line, the now-empty block is dropped entirely.
@@ -296,6 +469,29 @@ export function removeFrontmatterField(content: string, key: string): string {
   if (kept.length === block.split("\n").length) return content;
   if (kept.length === 0) return body.replace(/^\r?\n/u, "");
   return `---\n${kept.join("\n")}\n---\n${body}`;
+}
+
+/**
+ * Returns the raw front-matter line declaring the given top-level key, verbatim
+ * and including any inline flow mapping or list, or undefined when the field is
+ * absent or the block is unusable. Used to carry a structured field across the
+ * deterministic rebuild without parsing and re-rendering it.
+ */
+function rawFrontmatterLine(content: string, key: string): string | undefined {
+  const { block } = splitFrontmatter(content);
+  if (block === undefined) return undefined;
+  return block.split("\n").find((line) => isFieldLine(line, key));
+}
+
+/**
+ * Appends a raw front-matter line to a page's block verbatim, preserving every
+ * existing line. A page with no block is returned unchanged, since the rebuild
+ * path always constructs one before calling this.
+ */
+function appendFrontmatterLine(content: string, rawLine: string): string {
+  const { block, body } = splitFrontmatter(content);
+  if (block === undefined) return content;
+  return `---\n${block}\n${rawLine}\n---\n${body}`;
 }
 
 /**
@@ -393,6 +589,12 @@ export function normalizeConceptContent(
     const value = readFrontmatterField(content, field);
     if (value !== undefined) {
       rebuilt = setFrontmatterField(rebuilt, field, value);
+    }
+  }
+  for (const field of PRESERVED_STRUCTURED_FIELDS) {
+    const line = rawFrontmatterLine(content, field);
+    if (line !== undefined) {
+      rebuilt = appendFrontmatterLine(rebuilt, line);
     }
   }
   return { changed: true, content: rebuilt };

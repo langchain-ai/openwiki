@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
@@ -8,6 +8,7 @@ import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
 import {
   getUpdateNoopStatus,
   shouldCheckUpdateNoop,
+  writeLastUpdateMetadata,
 } from "../../src/agent/utils.ts";
 
 const execFileAsync = promisify(execFile);
@@ -192,6 +193,81 @@ describe("getUpdateNoopStatus", () => {
     const status = await getUpdateNoopStatus(repo);
 
     expect(status.shouldSkip).toBe(false);
+  });
+});
+
+describe("no-op metadata refresh", () => {
+  // The fast-skip path in runOpenWikiAgent re-writes .last-update.json with the
+  // model and language surfaced by getUpdateNoopStatus. These guard that the
+  // persisted language survives that refresh: dropping it makes the next real
+  // update revert a non-English wiki back to "en".
+  async function readPersistedMetadata(
+    repo: string,
+  ): Promise<Record<string, unknown>> {
+    const raw = await readFile(
+      path.join(repo, "openwiki", ".last-update.json"),
+      "utf8",
+    );
+    return JSON.parse(raw) as Record<string, unknown>;
+  }
+
+  test("surfaces the persisted language on a skip", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head, { language: "fr" });
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status).toMatchObject({ shouldSkip: true, language: "fr" });
+  });
+
+  test("refresh preserves the language surfaced by the skip", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head, { language: "fr" });
+
+    const status = await getUpdateNoopStatus(repo);
+    if (!status.shouldSkip) {
+      throw new Error(`expected a skip, got: ${status.reason}`);
+    }
+
+    // Mirror runOpenWikiAgent's fast-skip refresh call exactly.
+    await writeLastUpdateMetadata(
+      "update",
+      repo,
+      status.model,
+      "repository",
+      "complete",
+      status.language,
+    );
+
+    const metadata = await readPersistedMetadata(repo);
+    expect(metadata.language).toBe("fr");
+    expect(metadata.status).toBe("complete");
+  });
+
+  test("omits language when the wiki was never tagged with one", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+
+    const status = await getUpdateNoopStatus(repo);
+    if (!status.shouldSkip) {
+      throw new Error(`expected a skip, got: ${status.reason}`);
+    }
+    expect(status.language).toBeUndefined();
+
+    await writeLastUpdateMetadata(
+      "update",
+      repo,
+      status.model,
+      "repository",
+      "complete",
+      status.language,
+    );
+
+    const metadata = await readPersistedMetadata(repo);
+    expect(metadata).not.toHaveProperty("language");
   });
 });
 
