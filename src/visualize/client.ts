@@ -882,10 +882,80 @@ function connectSSE(): void {
   };
 }
 
+// --- Graph panel: resizable splitter + collapse-to-fullscreen-doc toggle ----
+
+/**
+ * Lets the graph column be resized by dragging, or collapsed entirely so the
+ * reader takes the full width. Width is stored as a percentage of the main
+ * row (not raw pixels) so it keeps behaving sanely across window resizes, and
+ * persists in localStorage across reloads.
+ */
+function initGraphPanelControls(): void {
+  const mainEl = $("#main");
+  const graphEl = $("#graph");
+  const splitterEl = $("#splitter");
+  const legendEl = $("#legend");
+  const hintEl = $("#hint");
+  const toggleBtn = $("#toggle-graph");
+  const WIDTH_KEY = "openwiki-graph-width";
+  const COLLAPSED_KEY = "openwiki-graph-collapsed";
+
+  let lastWidth = localStorage.getItem(WIDTH_KEY) || "50%";
+  let collapsed = localStorage.getItem(COLLAPSED_KEY) === "1";
+
+  function setCollapsed(next: boolean): void {
+    collapsed = next;
+    localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0");
+    graphEl.style.width = collapsed ? "0px" : lastWidth;
+    splitterEl.classList.toggle("hidden", collapsed);
+    legendEl.style.display = collapsed ? "none" : "";
+    hintEl.style.display = collapsed ? "none" : "";
+    toggleBtn.classList.toggle("active", collapsed);
+    toggleBtn.title = collapsed ? "Show graph" : "Hide graph";
+  }
+  setCollapsed(collapsed);
+
+  toggleBtn.addEventListener("click", () => setCollapsed(!collapsed));
+  splitterEl.addEventListener("dblclick", () => setCollapsed(!collapsed));
+
+  let dragging = false;
+  splitterEl.addEventListener("mousedown", (e) => {
+    if (collapsed) return;
+    dragging = true;
+    splitterEl.classList.add("dragging");
+    mainEl.classList.add("dragging");
+    e.preventDefault();
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    const mainRect = mainEl.getBoundingClientRect();
+    const sidebarWidth = $("#sidebar").getBoundingClientRect().width;
+    const avail = mainRect.width - sidebarWidth;
+    const minPx = 80;
+    const maxPx = Math.max(minPx, avail - 260); // keep room for the reader
+    let px = e.clientX - mainRect.left - sidebarWidth;
+    px = Math.max(minPx, Math.min(px, maxPx));
+    // % is resolved by the browser against the flex container's full width
+    // (mainRect.width, sidebar included), not just the space left after the
+    // sidebar — divide by the same basis or the graph silently overshoots
+    // into the reader's space as the sidebar eats a bigger share of the row.
+    lastWidth = `${((px / mainRect.width) * 100).toFixed(2)}%`;
+    graphEl.style.width = lastWidth;
+  });
+  window.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+    splitterEl.classList.remove("dragging");
+    mainEl.classList.remove("dragging");
+    localStorage.setItem(WIDTH_KEY, lastWidth);
+  });
+}
+
 // --- Bootstrap --------------------------------------------------------------
 
 // Wire the theme toggle and load the graph. Only the live server supplies SSE reloads.
 $("#theme").addEventListener("click", toggleTheme);
+initGraphPanelControls();
 mermaid.initialize({ startOnLoad: false, theme: "dark" });
 marked.setOptions({ breaks: false, gfm: true });
 void load(true).then(() => {
