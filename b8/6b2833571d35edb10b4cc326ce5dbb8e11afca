@@ -1,0 +1,40 @@
+test/copy-visualize-assets.test.ts
+  s_dd84697da6a0d4::t_1472bccc197399 1-79
+src/visualize/server.ts
+  s_dd84697da6a0d4::t_1472bccc197399 20-22,72-75,99,144-148,158-160,165,187-189
+src/visualize/static-export.ts
+  s_dd84697da6a0d4::t_1472bccc197399 6,10-11,32,34,37,39,67-69
+test/visualize/server.test.ts
+  s_dd84697da6a0d4::t_1472bccc197399 97,156-166,226
+src/visualize/styles.css
+  s_dd84697da6a0d4::t_1472bccc197399 1-307,310-318,370,373-377,380-395,397-656,658-671
+  s_dd84697da6a0d4::t_2082f0e5d9339c 308-309,319-369,371-372,378-379,396,657
+scripts/copy-visualize-assets.cjs
+  s_dd84697da6a0d4::t_1472bccc197399 1-61
+test/visualize/page.test.ts
+  s_dd84697da6a0d4::t_1472bccc197399 2,35-41
+package.json
+  s_dd84697da6a0d4::t_1472bccc197399 38
+test/visualize/static-export.test.ts
+  s_dd84697da6a0d4::t_1472bccc197399 48,62,70-71
+.changeset/quiet-styles-shine.md
+  s_dd84697da6a0d4::t_1472bccc197399 1-5
+src/visualize/page.ts
+  s_dd84697da6a0d4::t_1472bccc197399 24,58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "b86b2833571d35edb10b4cc326ce5dbb8e11afca",
+  "prompts": {},
+  "sessions": {
+    "s_dd84697da6a0d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b46-9ce8-7043-8c72-216c8b9006a6",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
