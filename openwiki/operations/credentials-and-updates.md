@@ -3,6 +3,7 @@ type: Operations Guide
 title: Credentials and updates
 description: Operational reference for OpenWiki local credential storage, onboarding metadata, provider diagnostics, and update tracking. Covers scheduling workflows and CI automation for maintaining OpenWiki content safely.
 tags: [operations, credentials, updates, scheduling, ci]
+generated: {by: "openwiki/0.3.3", at: "2026-08-19T17:58:14.705Z"}
 ---
 
 # Credentials and updates
@@ -270,6 +271,10 @@ The repository includes `examples/openwiki-update.yml` as a copyable GitHub Acti
 
 The workflow is a good reference for automated maintenance. The repo also contains a `checks.yml` workflow for CI (lint/format checks).
 
+### This repository's own update workflow
+
+The OpenWiki repo dogfoods its own scheduled update via `.github/workflows/openwiki-update.yml` (distinct from the `examples/` workflows shipped to users). It shares the same shape — daily `cron: "0 8 * * *"`, `fetch-depth: 0`, `peter-evans/create-pull-request` scoped to `openwiki`/`AGENTS.md`/`CLAUDE.md`/the workflow itself — but instead of installing the published `openwiki` package, it builds OpenWiki from the checked-out source: `pnpm/action-setup`, a `socketdev/action` Socket Firewall step (`mode: firewall-free`), `pnpm install --frozen-lockfile`, `pnpm build`, then `node dist/cli/cli.js code --update --print`. The intent is to dogfood `main` rather than the latest published release, so this daily run exercises unreleased agent, middleware, and output-format changes before a release (commit #679). A `git checkout -- .github/workflows/openwiki-update.yml` step (`if: always()`) restores the file afterward because `openwiki code --update` regenerates it from its internal template and would otherwise drop the fork guard (#423).
+
 The repository also includes `examples/openwiki-update.gitlab-ci.yml` as a copyable GitLab CI scheduled update job. It:
 
 - runs from a scheduled pipeline or a manually triggered web pipeline,
@@ -308,6 +313,7 @@ Bitbucket users should configure repository variables for the model provider key
 - The generated GitHub Actions workflow's `env:` block is provider-aware: `createWorkflowProviderEnv()` in `src/ingestion/code-mode.ts` derives it from the configured provider, routing secrets through `secrets.<KEY>` and non-sensitive settings through `vars.<KEY>`, quoting `OPENWIKI_MODEL_ID`, and emitting a comment for browser-login providers. If you change provider config fields, keep `createWorkflowProviderEnv()` and `test/ingestion/code-mode.test.ts` in sync so a freshly created workflow still authenticates the operator's provider.
 - Interrupted runs write `status: "interrupted"` so the next update retries. If metadata semantics change, keep `getUpdateNoopStatus()` and `persistRunMetadataIfChanged()` in sync so the interrupted/complete lifecycle is preserved.
 - The `build_channel` stamp (`scripts/stamp-build-channel.cjs`) targets exactly one `const BUILD_CHANNEL: BuildChannel = "…"` assignment in `src/telemetry/gates.ts`. Renaming that line, splitting it, or changing its formatting breaks the regex and fails the release loudly (`test/stamp-build-channel.test.ts`). Keep the committed value `"community"`; only the upstream release pipeline (`.github/workflows/release.yml`) sets `OPENWIKI_BUILD_CHANNEL=official`. A drifted `gates.ts` that no longer matches the assignment pattern will throw instead of silently publishing an unstamped build.
+- This repo's own `.github/workflows/openwiki-update.yml` builds OpenWiki from the checked-out source (`pnpm install --frozen-lockfile` + `pnpm build` + `node dist/cli/cli.js`) rather than installing the published package, so it dogfoods unreleased `main` before a release. If you change the CLI entrypoint (`./dist/cli/cli.js`), the `pnpm build` script, or the lockfile shape, the daily dogfooding run that gates releases can fail silently — validate the workflow still runs after such changes. Its `git checkout -- .github/workflows/openwiki-update.yml` restore step (`if: always()`) depends on `openwiki code --update` regenerating this file from the internal template; if template generation is removed (#423), the restore step becomes a no-op and can be dropped.
 
 ## Source map
 
@@ -337,4 +343,5 @@ Bitbucket users should configure repository variables for the model provider key
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
 - `examples/openwiki-update.bitbucket-pipelines.yml`
+- `.github/workflows/openwiki-update.yml` (this repo's own build-from-source dogfooding workflow)
 - `README.md`
