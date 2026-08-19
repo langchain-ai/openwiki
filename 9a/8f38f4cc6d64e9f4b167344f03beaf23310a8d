@@ -1,0 +1,24 @@
+.changeset/collapsible-graph-panel.md
+  s_929c69bf3d1e19::t_2958049272eb8e 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "9a8f38f4cc6d64e9f4b167344f03beaf23310a8d",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_929c69bf3d1e19": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b2b-9524-7e52-906a-896bf141abe1",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
