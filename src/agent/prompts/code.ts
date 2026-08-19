@@ -28,6 +28,12 @@ Wiki-first question answering:
 Index discipline:
 - Directory index.md files are generated deterministically after the run. Do not create or edit them yourself.
 
+Repository evidence grounding discipline:
+- When documenting this repository's CI, scheduled jobs, or OpenWiki integration, read and cite the checked-out workflow/config files from this repository before changing those docs.
+- Treat this repository's workflow files, package scripts, configuration files, and existing user-authored briefs as the source of truth for this repository's actual automation.
+- The OpenWiki CLI reference and OpenWiki's own README/examples describe the tool's defaults and upstream examples; use them only for generic OpenWiki behavior, never as a substitute for this repository's checked-out configuration.
+- If the repository configuration conflicts with OpenWiki's defaults or examples, document the repository configuration and call the upstream default/example out only when that contrast is directly relevant.
+
 Root agent instruction files:
 - Do not create or update repository /AGENTS.md or /CLAUDE.md files during normal code wiki runs.
 - Keep generated wiki content under the repository /openwiki directory.
@@ -181,6 +187,12 @@ Do not draft wiki prose until every planned substantive page has an evidence bri
 - Once a canonical file is identified, read the complete relevant functions, types, and adjacent tests. Follow calls and data across at least one boundary in each direction. Do not merely collect filenames or test names: understand what behavior and invariant each test proves.
 - Only begin writing after this evidence gate is satisfied for the complete inventory. Do not start with quickstart prose while major components still have only manifest- or README-level understanding.
 
+Repository evidence grounding discipline:
+- When documenting this repository's CI, scheduled jobs, or OpenWiki integration, read and cite the checked-out workflow/config files from this repository before changing those docs.
+- Treat this repository's workflow files, package scripts, configuration files, and existing user-authored briefs as the source of truth for this repository's actual automation.
+- The OpenWiki CLI reference and OpenWiki's own README/examples describe the tool's defaults and upstream examples; use them only for generic OpenWiki behavior, never as a substitute for this repository's checked-out configuration.
+- If the repository configuration conflicts with OpenWiki's defaults or examples, document the repository configuration and call the upstream default/example out only when that contrast is directly relevant.
+
 Metadata and links (OKF):
 - Every non-reserved Markdown concept must begin with valid OKF v0.2 YAML front matter. index.md and log.md are reserved and must not receive concept front matter.
 - Use this shape, omitting optional or empty fields:
@@ -250,6 +262,12 @@ Existing documentation discipline:
 - Use README files, docs/ trees, root documentation, runbooks, and SKILL.md files to discover intended behavior, terminology, workflows, and historical rationale; verify important current claims against source code and tests.
 - Summarize and link to useful existing docs instead of duplicating them wholesale.
 - If existing docs conflict with source code or git history, call out the likely stale documentation and prefer current source evidence.
+
+Repository evidence grounding discipline:
+- When documenting this repository's CI, scheduled jobs, or OpenWiki integration, read and cite the checked-out workflow/config files from this repository before changing those docs.
+- Treat this repository's workflow files, package scripts, configuration files, and existing user-authored briefs as the source of truth for this repository's actual automation.
+- The OpenWiki CLI reference and OpenWiki's own README/examples describe the tool's defaults and upstream examples; use them only for generic OpenWiki behavior, never as a substitute for this repository's checked-out configuration.
+- If the repository configuration conflicts with OpenWiki's defaults or examples, document the repository configuration and call the upstream default/example out only when that contrast is directly relevant.
 
 Root agent instruction files:
 - Do not create or update repository /AGENTS.md or /CLAUDE.md files during normal code wiki runs.
@@ -411,6 +429,9 @@ export const CODE_USER_PROMPTS = {
 Wiki brief:
 {WIKI_GOAL}
 
+Repository automation context:
+{REPOSITORY_CI_CONTEXT}
+
 {ADDITIONAL_USER_REQUEST}
 
 {RUNTIME_CONTEXT}`,
@@ -420,6 +441,9 @@ Inspect the target repository's openwiki/ directory, read /openwiki/.last-update
 
 Wiki brief:
 {WIKI_GOAL}
+
+Repository automation context:
+{REPOSITORY_CI_CONTEXT}
 
 {ADDITIONAL_USER_REQUEST}
 

@@ -19,6 +19,11 @@ function emptyContext(overrides: Partial<RunContext> = {}): RunContext {
   };
 }
 
+const REPOSITORY_CI_GROUNDING_RULE =
+  "When documenting this repository's CI, scheduled jobs, or OpenWiki integration";
+const OPENWIKI_REFERENCE_BOUNDARY =
+  "The OpenWiki CLI reference and OpenWiki's own README/examples describe the tool's defaults";
+
 describe("createSystemPrompt output language", () => {
   test("instructs the agent to write wiki documentation in the selected language", () => {
     const prompt = createSystemPrompt("init", "repository", "zh-CN");
@@ -316,5 +321,20 @@ describe("createSystemPrompt diagram guidance", () => {
     // The carve-out is scoped to update runs, not repeated in init guidance.
     const init = createSystemPrompt("init");
     expect(init).not.toContain("adding one is a valuable improvement");
+  });
+});
+
+describe("createSystemPrompt repository evidence grounding", () => {
+  test("grounds repository update CI documentation in checked-out workflow files", () => {
+    const prompt = createSystemPrompt("update", "repository");
+
+    expect(prompt).toContain(REPOSITORY_CI_GROUNDING_RULE);
+    expect(prompt).toContain(OPENWIKI_REFERENCE_BOUNDARY);
+  });
+
+  test("does not add repository CI grounding rules to local wiki runs", () => {
+    const prompt = createSystemPrompt("update", "local-wiki");
+
+    expect(prompt).not.toContain(REPOSITORY_CI_GROUNDING_RULE);
   });
 });

@@ -55,6 +55,7 @@ export type UpdateMetadata = {
 };
 
 export type RunContext = {
+  ciSummary?: string;
   lastUpdate: UpdateMetadata | null;
   language?: string;
   wikiGoal?: string;
