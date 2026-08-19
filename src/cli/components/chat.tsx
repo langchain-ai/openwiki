@@ -51,8 +51,9 @@ import type {
   SlashCommandOption,
 } from "../input/types.js";
 import { formatCwd } from "../format.js";
+import { formatRunCompletionTitle } from "../run-log/summary.js";
 import { InputCursor, MenuRow, PromptBlock } from "./primitives.js";
-import { RunLogLine } from "./run-view.js";
+import { CompletedRunDetails } from "./run-view.js";
 import type { CompletedRun } from "./types.js";
 
 /**
@@ -69,16 +70,18 @@ export function ChatHistory({ runs }: { runs: CompletedRun[] }) {
         <Box flexDirection="column" key={run.id} marginBottom={1}>
           {run.message ? <PromptBlock message={run.message} /> : null}
           <Text>
-            <Text color="green">* </Text>
-            <Text bold>Complete</Text>{" "}
+            <Text color="green">✓ </Text>
+            <Text bold>
+              {formatRunCompletionTitle(run.command, run.log, run.durationMs)}
+            </Text>{" "}
             <Text color="gray">
-              openwiki {run.command} - {run.result.model}
+              · {run.result.model}
               {run.reasoningEffort ? ` (effort: ${run.reasoningEffort})` : ""}
             </Text>
           </Text>
           <Box flexDirection="column" marginLeft={2} marginTop={1}>
             {run.log.length > 0 ? (
-              run.log.map((item) => <RunLogLine item={item} key={item.id} />)
+              <CompletedRunDetails log={run.log} />
             ) : (
               <Text color="gray">No assistant output captured.</Text>
             )}

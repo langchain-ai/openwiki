@@ -71,7 +71,7 @@ describe("parseAgentStreamChunk", () => {
 
   test("preserves nested task output", () => {
     const event = parseAgentStreamChunk(
-      makeChunk([{ type: "text", text: "Task output" }], ["task", "agent"]),
+      makeChunk([{ type: "text", text: "Task output" }], ["task"]),
     );
 
     expect(event).toMatchObject({

@@ -43,7 +43,22 @@ describe("ChatHistory", () => {
       {
         id: 1,
         command: "init",
-        log: [{ content: "Wrote 5 pages.", id: 1, type: "text" }],
+        durationMs: 2_000,
+        log: [
+          {
+            actionCount: 5,
+            content: "5 writes",
+            id: 1,
+            status: "done",
+            type: "tool",
+            writeCount: 5,
+            writtenPaths: Array.from(
+              { length: 5 },
+              (_, index) => `openwiki/page-${index + 1}.md`,
+            ),
+          },
+          { content: "Wrote 5 pages.", id: 2, type: "text" },
+        ],
         message: "seed the wiki",
         reasoningEffort: "max",
         result: { command: "init", model: "opus" },
@@ -54,8 +69,8 @@ describe("ChatHistory", () => {
     const frame = plain(lastFrame());
 
     expect(frame).toContain("seed the wiki");
-    expect(frame).toContain("Complete");
-    expect(frame).toContain("openwiki init - opus (effort: max)");
+    expect(frame).toContain("Generated 5 OpenWiki pages in 2s");
+    expect(frame).toContain("· opus (effort: max)");
     expect(frame).toContain("Wrote 5 pages.");
   });
 
@@ -64,6 +79,7 @@ describe("ChatHistory", () => {
       {
         id: 2,
         command: "update",
+        durationMs: 1_000,
         log: [],
         message: null,
         reasoningEffort: null,
@@ -75,6 +91,43 @@ describe("ChatHistory", () => {
     const frame = plain(lastFrame());
     expect(frame).toContain("No assistant output captured.");
     expect(frame).not.toContain("effort:");
+  });
+
+  test("keeps path activity out of completed-run scrollback", () => {
+    const runs: CompletedRun[] = [
+      {
+        id: 3,
+        command: "update",
+        durationMs: 1_000,
+        log: [
+          {
+            actionCount: 1,
+            content: "1 action",
+            id: 1,
+            status: "done",
+            type: "tool",
+          },
+          {
+            activityOperation: "read",
+            activityPath: "src/agent/index.ts",
+            activityScope: "repository",
+            activityStatus: "recent",
+            id: 2,
+            type: "activity",
+          },
+          { content: "Updated the wiki.", id: 3, type: "text" },
+        ],
+        message: null,
+        reasoningEffort: null,
+        result: { command: "update", model: "sonnet" },
+      },
+    ];
+
+    const frame = plain(render(<ChatHistory runs={runs} />).lastFrame());
+
+    expect(frame).toContain("1 action");
+    expect(frame).toContain("Updated the wiki.");
+    expect(frame).not.toContain("src/agent/index.ts");
   });
 });
 
