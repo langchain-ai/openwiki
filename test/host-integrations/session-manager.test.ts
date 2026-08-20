@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import {
   access,
   mkdir,
@@ -50,22 +51,18 @@ interface PersistedRunMetadata {
 async function createRepository(): Promise<string> {
   const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-session-"));
   temporaryRoots.push(root);
+  execFileSync("git", ["init", "--quiet", root]);
   return root;
 }
 
 /**
  * Creates a manager with a deterministic run timestamp.
  *
- * @param root - Temporary repository root.
  * @param host - Host identifier written to metadata.
  * @returns Validated lifecycle manager.
  */
-async function createManager(
-  root: string,
-  host = "codex",
-): Promise<HostSessionManager> {
+function createManager(host = "codex"): HostSessionManager {
   return HostSessionManager.create({
-    root,
     host,
     now: () => new Date(RUN_TIMESTAMP),
   });
@@ -130,14 +127,19 @@ describe("HostSessionManager lifecycle", () => {
     await writeFile(path.join(root, ".openwikiignore"), "private/**\n", "utf8");
     vi.stubEnv("OPENWIKI_HOST_TEST_SECRET", "ENV_VALUE_SENTINEL");
 
-    const manager = await createManager(root);
-    const started = await manager.begin({ mode: "init", language: "fr" });
+    const manager = createManager();
+    const started = await manager.begin({
+      root,
+      mode: "init",
+      language: "fr",
+    });
     const canonicalRoot = await realpath(root);
 
     const migrated = await readFile(path.join(wikiRoot, "legacy.md"), "utf8");
     expect(migrated).toContain('type: "Référence"');
     expect(migrated).toContain("openwiki_generated: true");
     expect(started).toMatchObject({
+      root: canonicalRoot,
       mode: "init",
       language: "fr",
       lastUpdate: null,
@@ -213,8 +215,8 @@ describe("HostSessionManager lifecycle", () => {
       concept("Page", "Body."),
       "utf8",
     );
-    const manager = await createManager(root);
-    const started = await manager.begin({ mode: "init" });
+    const manager = createManager();
+    const started = await manager.begin({ root, mode: "init" });
 
     const blockingIndex = path.join(wikiRoot, "index.md");
     await mkdir(blockingIndex);
@@ -230,20 +232,22 @@ describe("HostSessionManager lifecycle", () => {
     expect(await readMetadata(root)).toMatchObject({ status: "complete" });
   });
 
-  test("a second begin supersedes the old session without reverting Markdown", async () => {
+  test("a second begin may select a new root without reverting old Markdown", async () => {
     const root = await createRepository();
+    const replacementRoot = await createRepository();
     const wikiRoot = path.join(root, "openwiki");
-    const manager = await createManager(root);
-    const first = await manager.begin({ mode: "init" });
+    const manager = createManager();
+    const first = await manager.begin({ root, mode: "init" });
     await writeFile(
       path.join(wikiRoot, "preserved.md"),
       concept("Preserved", "Authored before replacement."),
       "utf8",
     );
 
-    const second = await manager.begin({ mode: "init" });
+    const second = await manager.begin({ root: replacementRoot, mode: "init" });
 
     expect(second.runId).not.toBe(first.runId);
+    expect(second.root).toBe(await realpath(replacementRoot));
     expect(() => manager.getRun(first.runId)).toThrow(HostIntegrationError);
     await expect(
       readFile(path.join(wikiRoot, "preserved.md"), "utf8"),
@@ -255,16 +259,16 @@ describe("HostSessionManager lifecycle", () => {
   test("a new manager recovers interrupted metadata and authored Markdown", async () => {
     const root = await createRepository();
     const wikiRoot = path.join(root, "openwiki");
-    const abandonedManager = await createManager(root, "codex");
-    await abandonedManager.begin({ mode: "init" });
+    const abandonedManager = createManager("codex");
+    await abandonedManager.begin({ root, mode: "init" });
     await writeFile(
       path.join(wikiRoot, "recovered.md"),
       concept("Recovered", "Survives process exit."),
       "utf8",
     );
 
-    const recoveryManager = await createManager(root, "claude-code");
-    const recovered = await recoveryManager.begin({ mode: "update" });
+    const recoveryManager = createManager("claude-code");
+    const recovered = await recoveryManager.begin({ root, mode: "update" });
 
     expect(recovered.lastUpdate).toMatchObject({ status: "interrupted" });
     await expect(
@@ -279,27 +283,25 @@ describe("HostSessionManager lifecycle", () => {
 });
 
 describe("HostSessionManager validation", () => {
-  test("rejects invalid host identifiers with a bounded error", async () => {
-    const root = await createRepository();
-
-    await expect(
-      HostSessionManager.create({ root, host: "Codex Agent" }),
-    ).rejects.toMatchObject({
-      name: "HostIntegrationError",
-      code: "invalid_input",
-      message:
-        "The host ID must contain lowercase letters, digits, or hyphens.",
-    });
+  test("rejects invalid host identifiers with a bounded error", () => {
+    expect(() => HostSessionManager.create({ host: "Codex Agent" })).toThrow(
+      expect.objectContaining({
+        name: "HostIntegrationError",
+        code: "invalid_input",
+        message:
+          "The host ID must contain lowercase letters, digits, or hyphens.",
+      }),
+    );
   });
 
   test("rejects invalid roots without exposing the candidate path", async () => {
     const root = await createRepository();
     const missing = path.join(root, "private-root-name");
 
-    const error: unknown = await HostSessionManager.create({
-      root: missing,
-      host: "codex",
-    }).catch((reason: unknown) => reason);
+    const manager = HostSessionManager.create({ host: "codex" });
+    const error: unknown = await manager
+      .begin({ root: missing, mode: "init" })
+      .catch((reason: unknown) => reason);
     expect(error).toMatchObject({
       name: "HostIntegrationError",
       code: "invalid_input",

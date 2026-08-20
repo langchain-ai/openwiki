@@ -1,4 +1,4 @@
-import path from "node:path";
+import os from "node:os";
 import {
   getHostIntegrationStatus,
   installHostIntegration,
@@ -21,12 +21,14 @@ export async function runIntegrationsCommand(
   command: Extract<CliCommand, { kind: "integrations" }>,
 ): Promise<void> {
   try {
+    const root =
+      command.scope === "user" ? os.homedir() : (command.projectRoot ?? ".");
     if (command.action === "list") {
       for (const target of listHostTargets()) {
-        const status = await getHostIntegrationStatus(
-          target,
-          command.projectRoot,
-        );
+        const status = await getHostIntegrationStatus(target, {
+          scope: command.scope,
+          root,
+        });
         process.stdout.write(
           `${target.id}\t${status}\t${target.displayName}\n`,
         );
@@ -40,11 +42,13 @@ export async function runIntegrationsCommand(
     const result =
       command.action === "install"
         ? await installHostIntegration(target, {
-            projectRoot: command.projectRoot,
+            scope: command.scope,
+            root,
             force: command.force,
           })
         : await uninstallHostIntegration(target, {
-            projectRoot: command.projectRoot,
+            scope: command.scope,
+            root,
           });
 
     process.stdout.write(
@@ -55,10 +59,14 @@ export async function runIntegrationsCommand(
     );
 
     if (command.action === "install") {
+      const restartGuidance =
+        command.scope === "user"
+          ? `Restart ${target.displayName}, then open any Git repository.`
+          : `Restart ${target.displayName} in this repository.`;
       process.stdout.write(
         `\nOpenWiki is ready for ${target.displayName}.\n\n` +
           "Next:\n" +
-          `  1. Restart ${target.displayName} in this repository.\n` +
+          `  1. ${restartGuidance}\n` +
           "  2. Confirm the openwiki MCP server is available.\n" +
           "  3. Ask: “Initialize OpenWiki for this repository.”\n",
       );
@@ -79,7 +87,6 @@ export async function runMcpCommand(
   command: Extract<CliCommand, { kind: "mcp" }>,
 ): Promise<void> {
   await runOpenWikiMcp({
-    root: path.resolve(process.cwd(), command.root),
     host: command.host,
   });
 }

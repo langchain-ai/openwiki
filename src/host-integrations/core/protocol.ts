@@ -15,6 +15,11 @@ export type ProtocolToolName = "openwiki_begin" | "openwiki_finish";
  */
 export interface BeginRequest {
   /**
+   * Absolute path inside the Git repository to document.
+   */
+  root: string;
+
+  /**
    * Lifecycle mode selected for the run.
    */
   mode: HostRunMode;
@@ -42,6 +47,7 @@ export interface RunRequest {
  */
 export const BeginInput: z.ZodType<BeginRequest> = z
   .object({
+    root: z.string().trim().min(1),
     mode: z.enum(["init", "update"]),
     language: z.string().trim().min(1).optional(),
   })

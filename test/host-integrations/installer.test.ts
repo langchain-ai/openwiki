@@ -27,7 +27,11 @@ import {
   HOST_TARGETS,
   listHostTargets,
 } from "../../src/host-integrations/install/registry.ts";
-import type { HostTarget } from "../../src/host-integrations/install/types.ts";
+import type {
+  HostIntegrationScope,
+  HostTarget,
+  InstallOptions,
+} from "../../src/host-integrations/install/types.ts";
 import { OPENWIKI_VERSION } from "../../src/version.ts";
 
 const RECEIPT_FILE = ".openwiki-install.json";
@@ -55,8 +59,12 @@ async function createProject(): Promise<string> {
  * @param target - Registry target.
  * @returns Absolute skill destination.
  */
-function skillPath(root: string, target: HostTarget): string {
-  return path.join(root, target.skillDirectory);
+function skillPath(
+  root: string,
+  target: HostTarget,
+  scope: HostIntegrationScope = "project",
+): string {
+  return path.join(root, target[scope].skillDirectory);
 }
 
 /**
@@ -66,8 +74,32 @@ function skillPath(root: string, target: HostTarget): string {
  * @param target - Registry target.
  * @returns Absolute config destination.
  */
-function configPath(root: string, target: HostTarget): string {
-  return path.join(root, target.mcpConfig.relativePath);
+function configPath(
+  root: string,
+  target: HostTarget,
+  scope: HostIntegrationScope = "project",
+): string {
+  return path.join(root, target[scope].mcpConfig.relativePath);
+}
+
+/**
+ * Builds project-scoped installer options for a disposable root.
+ *
+ * @param root - Temporary project root.
+ * @returns Project-scoped installation options.
+ */
+function projectOptions(root: string): InstallOptions {
+  return { scope: "project", root };
+}
+
+/**
+ * Builds user-scoped installer options for a disposable fake home.
+ *
+ * @param root - Temporary fake home directory.
+ * @returns User-scoped installation options.
+ */
+function userOptions(root: string): InstallOptions {
+  return { scope: "user", root };
 }
 
 /**
@@ -80,7 +112,7 @@ async function seedConfig(root: string, target: HostTarget): Promise<void> {
   const destination = configPath(root, target);
   await mkdir(path.dirname(destination), { recursive: true });
   const content =
-    target.mcpConfig.kind === "json"
+    target.project.mcpConfig.kind === "json"
       ? `${JSON.stringify({
           note: CONFIG_SENTINEL,
           mcpServers: { other: { command: "other" } },
@@ -102,7 +134,7 @@ async function expectManagedConfig(
 ): Promise<void> {
   const content = await readFile(configPath(root, target), "utf8");
   expect(content).toContain(CONFIG_SENTINEL);
-  if (target.mcpConfig.kind === "json") {
+  if (target.project.mcpConfig.kind === "json") {
     expect(JSON.parse(content)).toMatchObject({
       mcpServers: {
         other: { command: "other" },
@@ -256,7 +288,7 @@ async function writeMalformedConfig(
 ): Promise<string> {
   const destination = configPath(root, target);
   const content =
-    target.mcpConfig.kind === "json"
+    target.project.mcpConfig.kind === "json"
       ? "{ malformed json\n"
       : "# OPENWIKI:MCP:START\n";
   await mkdir(path.dirname(destination), { recursive: true });
@@ -276,7 +308,7 @@ async function modifyManagedConfig(
 ): Promise<void> {
   const destination = configPath(root, target);
   const content = await readFile(destination, "utf8");
-  if (target.mcpConfig.kind === "json") {
+  if (target.project.mcpConfig.kind === "json") {
     const parsed: unknown = JSON.parse(content);
     if (!isRecord(parsed) || !isRecord(parsed.mcpServers)) {
       throw new Error("Expected an MCP server mapping.");
@@ -305,24 +337,48 @@ afterEach(async () => {
 });
 
 describe("host integration registry", () => {
-  test("defines isolated destinations for all supported hosts", () => {
+  test("defines user and project destinations for all supported hosts", () => {
     expect(HOST_TARGETS).toMatchObject({
       codex: {
-        skillDirectory: ".agents/skills/openwiki",
-        mcpConfig: {
-          kind: "codex-toml",
-          relativePath: ".codex/config.toml",
+        user: {
+          skillDirectory: ".agents/skills/openwiki",
+          mcpConfig: {
+            kind: "codex-toml",
+            relativePath: ".codex/config.toml",
+          },
+        },
+        project: {
+          skillDirectory: ".agents/skills/openwiki",
+          mcpConfig: {
+            kind: "codex-toml",
+            relativePath: ".codex/config.toml",
+          },
         },
       },
       claude: {
-        skillDirectory: ".claude/skills/openwiki",
-        mcpConfig: { kind: "json", relativePath: ".mcp.json" },
+        user: {
+          skillDirectory: ".claude/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".claude.json" },
+        },
+        project: {
+          skillDirectory: ".claude/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".mcp.json" },
+        },
       },
       dcode: {
-        skillDirectory: ".deepagents/skills/openwiki",
-        mcpConfig: {
-          kind: "json",
-          relativePath: ".deepagents/.mcp.json",
+        user: {
+          skillDirectory: ".deepagents/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".deepagents/.mcp.json",
+          },
+        },
+        project: {
+          skillDirectory: ".deepagents/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".deepagents/.mcp.json",
+          },
         },
       },
     });
@@ -333,27 +389,61 @@ describe("host integration registry", () => {
       "claude",
       "dcode",
     ]);
-    expect(new Set(TARGETS.map((target) => target.skillDirectory)).size).toBe(
-      TARGETS.length,
-    );
+    expect(
+      new Set(TARGETS.map((target) => target.user.skillDirectory)).size,
+    ).toBe(TARGETS.length);
   });
 });
 
 describe.each(TARGETS)("$displayName host integration", (target) => {
+  test("installs, reports, reinstalls, and uninstalls at user scope", async () => {
+    const fakeHome = await createProject();
+    const installer = new HostIntegrationInstaller();
+    const options = userOptions(fakeHome);
+
+    await expect(installer.status(target, options)).resolves.toBe(
+      "not-installed",
+    );
+    await expect(installer.install(target, options)).resolves.toEqual({
+      target: target.id,
+      scope: "user",
+      skillDirectory: skillPath(fakeHome, target, "user"),
+      mcpConfig: configPath(fakeHome, target, "user"),
+      changed: true,
+    });
+    await expect(installer.status(target, options)).resolves.toBe("installed");
+    await expect(installer.install(target, options)).resolves.toMatchObject({
+      scope: "user",
+      changed: false,
+    });
+    await expect(installer.uninstall(target, options)).resolves.toMatchObject({
+      scope: "user",
+      changed: true,
+    });
+    await expect(installer.status(target, options)).resolves.toBe(
+      "not-installed",
+    );
+  });
+
   test("installs exact bytes, preserves config, is idempotent, and uninstalls", async () => {
     const root = await createProject();
     const installer = new HostIntegrationInstaller();
     await seedConfig(root, target);
-    await expect(installer.status(target, root)).resolves.toBe("not-installed");
+    await expect(installer.status(target, projectOptions(root))).resolves.toBe(
+      "not-installed",
+    );
 
-    const installed = await installer.install(target, { projectRoot: root });
+    const installed = await installer.install(target, projectOptions(root));
     expect(installed).toEqual({
       target: target.id,
+      scope: "project",
       skillDirectory: skillPath(root, target),
       mcpConfig: configPath(root, target),
       changed: true,
     });
-    await expect(installer.status(target, root)).resolves.toBe("installed");
+    await expect(installer.status(target, projectOptions(root))).resolves.toBe(
+      "installed",
+    );
     await expectManagedConfig(root, target);
     expect((await stat(configPath(root, target))).mode & 0o777).toBe(0o600);
 
@@ -375,20 +465,22 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     });
 
     await expect(
-      installer.install(target, { projectRoot: root }),
+      installer.install(target, projectOptions(root)),
     ).resolves.toMatchObject({ changed: false });
 
     await expect(
-      installer.uninstall(target, { projectRoot: root }),
+      installer.uninstall(target, projectOptions(root)),
     ).resolves.toMatchObject({ changed: true });
     await expect(access(skillPath(root, target))).rejects.toThrow();
-    await expect(installer.status(target, root)).resolves.toBe("not-installed");
+    await expect(installer.status(target, projectOptions(root))).resolves.toBe(
+      "not-installed",
+    );
     const remainingConfig = await readFile(configPath(root, target), "utf8");
     expect(remainingConfig).toContain(CONFIG_SENTINEL);
     expect(remainingConfig).not.toContain("openwiki");
     const protectedDirectory = path.join(
       root,
-      target.skillDirectory.split("/", 1)[0] ?? "",
+      target.project.skillDirectory.split("/", 1)[0] ?? "",
     );
     expect((await lstat(protectedDirectory)).isDirectory()).toBe(true);
   });
@@ -398,15 +490,16 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     const installer = new HostIntegrationInstaller();
 
     await expect(
-      installer.install(target, { projectRoot: root }),
+      installer.install(target, projectOptions(root)),
     ).resolves.toMatchObject({ changed: true });
     await access(configPath(root, target));
     await markReceiptOld(skillPath(root, target));
 
     await expect(
-      installer.install(target, { projectRoot: root }),
+      installer.install(target, projectOptions(root)),
     ).resolves.toEqual({
       target: target.id,
+      scope: "project",
       skillDirectory: skillPath(root, target),
       mcpConfig: configPath(root, target),
       changed: true,
@@ -428,12 +521,12 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     });
 
     await expect(
-      installer.install(target, { projectRoot: root }),
+      installer.install(target, projectOptions(root)),
     ).rejects.toMatchObject({ code: "conflict" });
     await expect(access(configPath(root, target))).rejects.toThrow();
 
     const forced = await installer.install(target, {
-      projectRoot: root,
+      ...projectOptions(root),
       force: true,
     });
     expect(forced.backupPath).toContain("openwiki-backup-2026-08-20T01-02-03");
@@ -442,12 +535,14 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     ).toBe("CUSTOM_SKILL\n");
 
     await writeFile(path.join(destination, "extra.md"), "MODIFIED\n");
-    await expect(installer.status(target, root)).resolves.toBe("modified");
+    await expect(installer.status(target, projectOptions(root))).resolves.toBe(
+      "modified",
+    );
     await expect(
-      installer.uninstall(target, { projectRoot: root }),
+      installer.uninstall(target, projectOptions(root)),
     ).rejects.toMatchObject({ code: "conflict" });
     await expect(
-      installer.install(target, { projectRoot: root }),
+      installer.install(target, projectOptions(root)),
     ).rejects.toMatchObject({ code: "conflict" });
   });
 
@@ -457,7 +552,7 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     const installer = new HostIntegrationInstaller();
 
     await expect(
-      installer.install(target, { projectRoot: root }),
+      installer.install(target, projectOptions(root)),
     ).rejects.toBeInstanceOf(Error);
     expect(await readFile(configPath(root, target), "utf8")).toBe(malformed);
     await expect(access(skillPath(root, target))).rejects.toThrow();
@@ -475,7 +570,7 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     });
 
     await expect(
-      installer.install(target, { projectRoot: root }),
+      installer.install(target, projectOptions(root)),
     ).rejects.toThrow("INJECTED_COMMIT_FAILURE");
     await expect(access(skillPath(root, target))).rejects.toThrow();
     await expect(access(configPath(root, target))).rejects.toThrow();
@@ -496,7 +591,7 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     });
 
     await expect(
-      installer.install(target, { projectRoot: root, force: true }),
+      installer.install(target, { ...projectOptions(root), force: true }),
     ).rejects.toThrow("INJECTED_PRIOR_MOVE_FAILURE");
     expect(await readFile(path.join(destination, "custom.md"), "utf8")).toBe(
       "PRESERVED\n",
@@ -507,7 +602,7 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
   test("restores an older skill and config absence after upgrade failure", async () => {
     const root = await createProject();
     const initial = new HostIntegrationInstaller();
-    await initial.install(target, { projectRoot: root });
+    await initial.install(target, projectOptions(root));
     await markReceiptOld(skillPath(root, target));
     await rm(configPath(root, target));
     const before = await readTree(skillPath(root, target));
@@ -517,9 +612,9 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
       createId: () => `upgrade-${(identifier += 1)}`,
     });
 
-    await expect(
-      failing.install(target, { projectRoot: root }),
-    ).rejects.toThrow("INJECTED_COMMIT_FAILURE");
+    await expect(failing.install(target, projectOptions(root))).rejects.toThrow(
+      "INJECTED_COMMIT_FAILURE",
+    );
     expect(await readTree(skillPath(root, target))).toEqual(before);
     await expect(access(configPath(root, target))).rejects.toThrow();
   });
@@ -527,47 +622,48 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
   test("returns retained backups when post-commit cleanup fails", async () => {
     const upgradeRoot = await createProject();
     const initial = new HostIntegrationInstaller();
-    await initial.install(target, { projectRoot: upgradeRoot });
+    await initial.install(target, projectOptions(upgradeRoot));
     await markReceiptOld(skillPath(upgradeRoot, target));
     const upgrade = new HostIntegrationInstaller({
       operations: failingCleanupOperations("rollback"),
       createId: () => "upgrade-cleanup",
     });
 
-    const upgraded = await upgrade.install(target, {
-      projectRoot: upgradeRoot,
-    });
+    const upgraded = await upgrade.install(target, projectOptions(upgradeRoot));
     expect(upgraded.backupPath).toContain("openwiki-rollback");
     await access(upgraded.backupPath ?? "");
-    await expect(upgrade.status(target, upgradeRoot)).resolves.toBe(
-      "installed",
-    );
+    await expect(
+      upgrade.status(target, projectOptions(upgradeRoot)),
+    ).resolves.toBe("installed");
 
     const uninstallRoot = await createProject();
-    await initial.install(target, { projectRoot: uninstallRoot });
+    await initial.install(target, projectOptions(uninstallRoot));
     const uninstall = new HostIntegrationInstaller({
       operations: failingCleanupOperations("uninstall"),
       createId: () => "uninstall-cleanup",
     });
-    const removed = await uninstall.uninstall(target, {
-      projectRoot: uninstallRoot,
-    });
+    const removed = await uninstall.uninstall(
+      target,
+      projectOptions(uninstallRoot),
+    );
     expect(removed.backupPath).toContain("openwiki-uninstall");
     await access(removed.backupPath ?? "");
-    await expect(uninstall.status(target, uninstallRoot)).resolves.toBe(
-      "not-installed",
-    );
+    await expect(
+      uninstall.status(target, projectOptions(uninstallRoot)),
+    ).resolves.toBe("not-installed");
   });
 
   test("refuses uninstall when managed config was modified", async () => {
     const root = await createProject();
     const installer = new HostIntegrationInstaller();
-    await installer.install(target, { projectRoot: root });
+    await installer.install(target, projectOptions(root));
     await modifyManagedConfig(root, target);
 
-    await expect(installer.status(target, root)).resolves.toBe("modified");
+    await expect(installer.status(target, projectOptions(root))).resolves.toBe(
+      "modified",
+    );
     await expect(
-      installer.uninstall(target, { projectRoot: root }),
+      installer.uninstall(target, projectOptions(root)),
     ).rejects.toMatchObject({ code: "conflict" });
     await access(skillPath(root, target));
   });
@@ -575,14 +671,34 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
   test("rejects symlinked destination components", async () => {
     const root = await createProject();
     const outside = await createProject();
-    const topLevel = target.skillDirectory.split("/", 1)[0] ?? "";
+    const topLevel = target.project.skillDirectory.split("/", 1)[0] ?? "";
     await symlink(outside, path.join(root, topLevel));
     const installer = new HostIntegrationInstaller();
 
     await expect(
-      installer.install(target, { projectRoot: root }),
+      installer.install(target, projectOptions(root)),
     ).rejects.toMatchObject({ code: "invalid_input" });
     expect(await readdir(outside)).toEqual([]);
+  });
+});
+
+describe("host integration scope ownership", () => {
+  test("keeps user and project installations independent", async () => {
+    const fakeHome = await createProject();
+    const projectRoot = path.join(fakeHome, "project");
+    await mkdir(projectRoot);
+    const target = HOST_TARGETS.codex;
+    const installer = new HostIntegrationInstaller();
+
+    await installer.install(target, userOptions(fakeHome));
+    await installer.install(target, projectOptions(projectRoot));
+    await installer.uninstall(target, userOptions(fakeHome));
+
+    await expect(access(skillPath(fakeHome, target, "user"))).rejects.toThrow();
+    await expect(
+      installer.status(target, projectOptions(projectRoot)),
+    ).resolves.toBe("installed");
+    await access(skillPath(projectRoot, target, "project"));
   });
 });
 

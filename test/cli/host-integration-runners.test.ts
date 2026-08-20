@@ -1,4 +1,4 @@
-import path from "node:path";
+import os from "node:os";
 import {
   afterEach,
   beforeEach,
@@ -72,7 +72,8 @@ describe("runIntegrationsCommand", () => {
       action: "list",
       exitCode: 0,
       target: null,
-      projectRoot: "repo",
+      scope: "user",
+      projectRoot: null,
       force: false,
     });
 
@@ -82,6 +83,10 @@ describe("runIntegrationsCommand", () => {
         "dcode\tnot-installed\tDeep Agents Code\n",
     );
     expect(getHostIntegrationStatus).toHaveBeenCalledTimes(3);
+    expect(getHostIntegrationStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "codex" }),
+      { scope: "user", root: os.homedir() },
+    );
     expect(process.exitCode).toBe(0);
     expect(stderr.join("")).toBe("");
   });
@@ -89,6 +94,7 @@ describe("runIntegrationsCommand", () => {
   test("installs with force and prints registry-derived next steps", async () => {
     vi.mocked(installHostIntegration).mockResolvedValue({
       target: "codex",
+      scope: "project",
       skillDirectory: "/repo/.agents/skills/openwiki",
       mcpConfig: "/repo/.codex/config.toml",
       changed: true,
@@ -99,13 +105,14 @@ describe("runIntegrationsCommand", () => {
       action: "install",
       exitCode: 0,
       target: "codex",
+      scope: "project",
       projectRoot: "/repo",
       force: true,
     });
 
     expect(installHostIntegration).toHaveBeenCalledWith(
       expect.objectContaining({ id: "codex", displayName: "Codex" }),
-      { projectRoot: "/repo", force: true },
+      { scope: "project", root: "/repo", force: true },
     );
     expect(stdout.join("")).toBe(
       "install Codex\n" +
@@ -124,6 +131,7 @@ describe("runIntegrationsCommand", () => {
   test("prints retained backups and stable unchanged output", async () => {
     vi.mocked(installHostIntegration).mockResolvedValue({
       target: "claude",
+      scope: "user",
       skillDirectory: "/repo/.claude/skills/openwiki",
       mcpConfig: "/repo/.mcp.json",
       changed: false,
@@ -135,19 +143,28 @@ describe("runIntegrationsCommand", () => {
       action: "install",
       exitCode: 0,
       target: "claude",
-      projectRoot: "/repo",
+      scope: "user",
+      projectRoot: null,
       force: false,
     });
 
+    expect(installHostIntegration).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "claude" }),
+      { scope: "user", root: os.homedir(), force: false },
+    );
     expect(stdout.join("")).toContain("unchanged Claude Code\n");
     expect(stdout.join("")).toContain(
       "backup: /repo/.claude/skills/openwiki.backup\n",
+    );
+    expect(stdout.join("")).toContain(
+      "Restart Claude Code, then open any Git repository.",
     );
   });
 
   test("uninstalls without printing install next steps", async () => {
     vi.mocked(uninstallHostIntegration).mockResolvedValue({
       target: "dcode",
+      scope: "project",
       skillDirectory: "/repo/.deepagents/skills/openwiki",
       mcpConfig: "/repo/.deepagents/.mcp.json",
       changed: true,
@@ -158,6 +175,7 @@ describe("runIntegrationsCommand", () => {
       action: "uninstall",
       exitCode: 0,
       target: "dcode",
+      scope: "project",
       projectRoot: "/repo",
       force: false,
     });
@@ -166,7 +184,7 @@ describe("runIntegrationsCommand", () => {
     expect(stdout.join("")).not.toContain("Next:");
     expect(uninstallHostIntegration).toHaveBeenCalledWith(
       expect.objectContaining({ id: "dcode" }),
-      { projectRoot: "/repo" },
+      { scope: "project", root: "/repo" },
     );
   });
 
@@ -180,6 +198,7 @@ describe("runIntegrationsCommand", () => {
       action: "install",
       exitCode: 0,
       target: "codex",
+      scope: "project",
       projectRoot: "/repo",
       force: false,
     });
@@ -191,18 +210,16 @@ describe("runIntegrationsCommand", () => {
 });
 
 describe("runMcpCommand", () => {
-  test("resolves the repository root and forwards the host identifier", async () => {
+  test("starts a rootless MCP server with the host identifier", async () => {
     vi.mocked(runOpenWikiMcp).mockResolvedValue(undefined);
 
     await runMcpCommand({
       kind: "mcp",
       exitCode: 0,
-      root: "../repo",
       host: "custom-host",
     });
 
     expect(runOpenWikiMcp).toHaveBeenCalledWith({
-      root: path.resolve(process.cwd(), "../repo"),
       host: "custom-host",
     });
   });

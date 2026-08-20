@@ -8,11 +8,13 @@ import { OPENWIKI_VERSION } from "../../version.js";
  * Host guidance advertised during MCP initialization.
  */
 const INSTRUCTIONS = `OpenWiki exposes deterministic lifecycle bookends.
-Call openwiki_begin before investigating or authoring. Use the host's native
-repository tools to inspect source code and author wiki pages in the middle.
+Resolve the absolute Git top-level, then call openwiki_begin with that root
+before investigating or authoring. Use the host's native repository tools to
+inspect source code and author wiki pages in the middle.
 Call openwiki_finish after authoring. If the run cannot be completed, leave it
 interrupted; a later begin supersedes it. Do not directly edit OpenWiki-owned
-indexes, metadata, logs, plans, or skeletons.`;
+indexes, metadata,
+logs, plans, or skeletons.`;
 
 /**
  * Minimal lifecycle capability required by the MCP transport adapter.
@@ -29,7 +31,7 @@ export interface HostLifecycleToolProvider {
 /**
  * Creates the thin MCP adapter over a transport-neutral lifecycle provider.
  *
- * @param provider - Repository-rooted lifecycle tool provider.
+ * @param provider - Rootless lifecycle tool provider.
  * @returns Unconnected MCP server exposing the provider's tools.
  */
 export function createOpenWikiMcpServer(

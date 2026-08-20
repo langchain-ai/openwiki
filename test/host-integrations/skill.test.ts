@@ -113,6 +113,24 @@ describe("canonical OpenWiki host skill", () => {
     expect(requiredSequence).toContain("with native tools");
   });
 
+  test("resolves and passes an explicit Git root before begin", async () => {
+    const skill = await readFile(SKILL_PATH, "utf8");
+    const requiredSequence = section(skill, "Required sequence");
+    const resolveIndex = requiredSequence.indexOf(
+      "`git rev-parse --show-toplevel`",
+    );
+    const beginIndex = requiredSequence.indexOf("`openwiki_begin`");
+
+    expect(resolveIndex).toBeGreaterThanOrEqual(0);
+    expect(beginIndex).toBeGreaterThan(resolveIndex);
+    expect(requiredSequence).toContain(
+      "`git -C <path> rev-parse --show-toplevel`",
+    );
+    expect(requiredSequence).toContain("with `root` and `mode`");
+    expect(requiredSequence).toContain("default to the home directory");
+    expect(requiredSequence).toContain("stop and ask the user");
+  });
+
   test("keeps deterministic work and reserved artifacts code-owned", async () => {
     const skill = await readFile(SKILL_PATH, "utf8");
 

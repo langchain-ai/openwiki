@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -39,6 +40,7 @@ interface ConnectedMcpFixture {
 async function createRepository(): Promise<string> {
   const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-mcp-"));
   temporaryRoots.push(root);
+  execFileSync("git", ["init", "--quiet", root]);
   return root;
 }
 
@@ -128,7 +130,10 @@ describe("OpenWiki MCP adapter", () => {
         expect.arrayContaining(["read_file", "write_file", "edit_file"]),
       );
       expect(fixture.client.getInstructions()).toContain(
-        "Use the host's native\nrepository tools",
+        "Use the host's native repository tools",
+      );
+      expect(fixture.client.getInstructions()).toContain(
+        "Resolve the absolute Git top-level",
       );
       expect(fixture.client.getInstructions()).toContain(
         "Call openwiki_finish after authoring",
@@ -265,7 +270,7 @@ describe("OpenWiki MCP lifecycle transport", () => {
   test("initializes, begins, and finishes through a real linked transport", async () => {
     const root = await createRepository();
     const wikiRoot = path.join(root, "openwiki");
-    const manager = await HostSessionManager.create({ root, host: "codex" });
+    const manager = HostSessionManager.create({ host: "codex" });
     const fixture = await connect(manager);
 
     try {
@@ -277,7 +282,7 @@ describe("OpenWiki MCP lifecycle transport", () => {
 
       const begin = await fixture.client.callTool({
         name: "openwiki_begin",
-        arguments: { mode: "init" },
+        arguments: { root, mode: "init" },
       });
       expect(begin.isError).not.toBe(true);
       const { runId } = z

@@ -8,22 +8,31 @@ import {
 import { listHostTargets } from "../../src/host-integrations/install/registry.ts";
 
 describe("parseCommand host integrations", () => {
-  test("parses list with the default or one explicit project path", () => {
+  test("parses list with global default or explicit project scope", () => {
     expect(parseCommand(["integrations", "list"])).toEqual({
       kind: "integrations",
       action: "list",
       exitCode: 0,
       target: null,
-      projectRoot: ".",
+      scope: "user",
+      projectRoot: null,
       force: false,
     });
-    expect(parseCommand(["integrations", "list", "../project"])).toEqual({
+    expect(
+      parseCommand(["integrations", "list", "--project", "../project"]),
+    ).toEqual({
       kind: "integrations",
       action: "list",
       exitCode: 0,
       target: null,
+      scope: "project",
       projectRoot: "../project",
       force: false,
+    });
+    expect(parseCommand(["integrations", "list", "--project"])).toMatchObject({
+      kind: "integrations",
+      scope: "project",
+      projectRoot: ".",
     });
   });
 
@@ -35,37 +44,66 @@ describe("parseCommand host integrations", () => {
           "integrations",
           "install",
           target.id,
-          "../project",
           "--force",
+          "--project=../project",
         ]),
       ).toEqual({
         kind: "integrations",
         action: "install",
         exitCode: 0,
         target: target.id,
+        scope: "project",
         projectRoot: "../project",
         force: true,
       });
       expect(
-        parseCommand(["integrations", "uninstall", target.id, "../project"]),
+        parseCommand([
+          "integrations",
+          "uninstall",
+          target.id,
+          "--project",
+          "../project",
+        ]),
       ).toEqual({
         kind: "integrations",
         action: "uninstall",
         exitCode: 0,
         target: target.id,
+        scope: "project",
         projectRoot: "../project",
         force: false,
       });
     },
   );
 
-  test("allows --force before the optional install path", () => {
+  test("allows --force before project scope", () => {
     expect(
-      parseCommand(["integrations", "install", "codex", "--force", "repo"]),
+      parseCommand([
+        "integrations",
+        "install",
+        "codex",
+        "--force",
+        "--project",
+        "repo",
+      ]),
     ).toMatchObject({
       kind: "integrations",
+      scope: "project",
       projectRoot: "repo",
       force: true,
+    });
+  });
+
+  test("defaults install and uninstall to user scope", () => {
+    expect(parseCommand(["integrations", "install", "codex"])).toMatchObject({
+      kind: "integrations",
+      scope: "user",
+      projectRoot: null,
+    });
+    expect(parseCommand(["integrations", "uninstall", "codex"])).toMatchObject({
+      kind: "integrations",
+      scope: "user",
+      projectRoot: null,
     });
   });
 
@@ -89,13 +127,15 @@ describe("parseCommand host integrations", () => {
       ["integrations", "install", "codex", "--force", "--force"],
       /only be specified once/u,
     ],
-    [
-      ["integrations", "install", "codex", "one", "two"],
-      /Only one integration project path/u,
-    ],
+    [["integrations", "install", "codex", "repo"], /must follow --project/u],
     [
       ["integrations", "install", "codex", "--unknown"],
       /Unknown option for integrations/u,
+    ],
+    [["integrations", "install", "codex", "--project="], /requires a path/u],
+    [
+      ["integrations", "install", "codex", "--project", "--project"],
+      /only be specified once/u,
     ],
   ])("rejects invalid integration arguments: %j", (argv, expected) => {
     const result = parseCommand(argv);
@@ -122,39 +162,26 @@ describe("parseCommand MCP", () => {
     expect(parseCommand(["mcp"])).toEqual({
       kind: "mcp",
       exitCode: 0,
-      root: ".",
       host: "unknown",
     });
   });
 
-  test("parses separated and equals option forms in either order", () => {
-    expect(
-      parseCommand(["mcp", "--host", "claude", "--root", "../repo"]),
-    ).toEqual({
+  test("parses separated and equals host option forms", () => {
+    expect(parseCommand(["mcp", "--host", "claude"])).toEqual({
       kind: "mcp",
       exitCode: 0,
-      root: "../repo",
       host: "claude",
     });
-    expect(
-      parseCommand(["mcp", "--root=../repo", "--host=custom-host-2"]),
-    ).toEqual({
+    expect(parseCommand(["mcp", "--host=custom-host-2"])).toEqual({
       kind: "mcp",
       exitCode: 0,
-      root: "../repo",
       host: "custom-host-2",
     });
   });
 
   test.each([
-    [["mcp", "--root"], /--root requires a path/u],
-    [["mcp", "--root="], /--root requires a path/u],
     [["mcp", "--host"], /--host requires a host identifier/u],
     [["mcp", "--host="], /--host requires a host identifier/u],
-    [
-      ["mcp", "--root", "one", "--root=two"],
-      /--root may only be specified once/u,
-    ],
     [
       ["mcp", "--host", "codex", "--host=dcode"],
       /--host may only be specified once/u,
@@ -163,6 +190,7 @@ describe("parseCommand MCP", () => {
     [["mcp", "--host", "bad_host"], /--host must contain/u],
     [["mcp", "--host", "a".repeat(65)], /--host must contain/u],
     [["mcp", "--unknown"], /Unknown option for mcp/u],
+    [["mcp", "--root", "repo"], /Unknown option for mcp/u],
     [["mcp", "repo"], /Unexpected argument for mcp/u],
   ])("rejects invalid MCP arguments: %j", (argv, expected) => {
     const result = parseCommand(argv);

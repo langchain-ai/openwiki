@@ -34,6 +34,7 @@ import {
   writeReceipt,
 } from "./skill-bundle.js";
 import type {
+  HostIntegrationScope,
   HostIntegrationStatus,
   HostTarget,
   InstallOptions,
@@ -143,20 +144,21 @@ export class HostIntegrationInstaller {
    * Installs or upgrades one host integration transactionally.
    *
    * @param target - Registry entry for the target host.
-   * @param options - Project root and conflict policy.
+   * @param options - Installation scope, root, and conflict policy.
    * @returns Installed paths, mutation status, and any retained backup.
    */
   async install(
     target: HostTarget,
     options: InstallOptions,
   ): Promise<InstallResult> {
-    const context = await resolveInstallContext(target, options.projectRoot);
+    const context = await resolveInstallContext(
+      target,
+      options.scope,
+      options.root,
+    );
     const canonical = await inventorySkill(this.bundleDirectory, false);
     await mkdir(path.dirname(context.skillDirectory), { recursive: true });
-    await assertNoSymlinkComponents(
-      context.projectRoot,
-      context.skillDirectory,
-    );
+    await assertNoSymlinkComponents(context.root, context.skillDirectory);
 
     const staging = siblingPath(
       context.skillDirectory,
@@ -203,6 +205,7 @@ export class HostIntegrationInstaller {
       await this.operations.removeDirectory(staging);
       const configChanged = await installManagedConfig(
         target,
+        context.scope,
         context.mcpConfig,
       );
       return resultFor(target, context, configChanged);
@@ -221,14 +224,18 @@ export class HostIntegrationInstaller {
    * Removes one unmodified managed host integration transactionally.
    *
    * @param target - Registry entry for the target host.
-   * @param options - Project root containing the managed integration.
+   * @param options - Installation scope and root containing the integration.
    * @returns Removed paths, mutation status, and any retained cleanup backup.
    */
   async uninstall(
     target: HostTarget,
     options: UninstallOptions,
   ): Promise<InstallResult> {
-    const context = await resolveInstallContext(target, options.projectRoot);
+    const context = await resolveInstallContext(
+      target,
+      options.scope,
+      options.root,
+    );
     const inspection = await inspectInstallation(
       context.skillDirectory,
       target.id,
@@ -252,7 +259,11 @@ export class HostIntegrationInstaller {
     );
 
     try {
-      configChanged = await uninstallManagedConfig(target, context.mcpConfig);
+      configChanged = await uninstallManagedConfig(
+        target,
+        context.scope,
+        context.mcpConfig,
+      );
       await this.operations.move(context.skillDirectory, cleanupBackup);
     } catch (error) {
       if (configChanged) {
@@ -276,10 +287,9 @@ export class HostIntegrationInstaller {
       backupPath = cleanupBackup;
     }
     if (!backupPath) {
-      await removeEmptySkillParents(
-        context.projectRoot,
-        context.skillDirectory,
-      ).catch(() => undefined);
+      await removeEmptySkillParents(context.root, context.skillDirectory).catch(
+        () => undefined,
+      );
     }
 
     return resultFor(target, context, true, backupPath);
@@ -289,17 +299,21 @@ export class HostIntegrationInstaller {
    * Reports whether a host integration is absent, intact, or modified.
    *
    * @param target - Registry entry for the target host.
-   * @param projectRoot - Project root to inspect.
+   * @param options - Installation scope and root to inspect.
    * @returns Current managed installation status.
    */
   async status(
     target: HostTarget,
-    projectRoot: string,
+    options: UninstallOptions,
   ): Promise<HostIntegrationStatus> {
-    const context = await resolveInstallContext(target, projectRoot);
+    const context = await resolveInstallContext(
+      target,
+      options.scope,
+      options.root,
+    );
     const [skill, config] = await Promise.all([
       inspectInstallation(context.skillDirectory, target.id),
-      getManagedConfigStatus(target, context.mcpConfig),
+      getManagedConfigStatus(target, context.scope, context.mcpConfig),
     ]);
     if (skill.status === "not-installed" && config === "not-installed") {
       return "not-installed";
@@ -333,7 +347,11 @@ export class HostIntegrationInstaller {
     let committed = false;
 
     try {
-      configChanged = await installManagedConfig(target, context.mcpConfig);
+      configChanged = await installManagedConfig(
+        target,
+        context.scope,
+        context.mcpConfig,
+      );
       if (hasPriorSkill) {
         priorSkill = force
           ? forcedBackupPath(
@@ -441,7 +459,7 @@ const defaultInstaller = new HostIntegrationInstaller();
  * Installs or upgrades one host integration transactionally.
  *
  * @param target - Registry entry for the target host.
- * @param options - Project root and conflict policy.
+ * @param options - Installation scope, root, and conflict policy.
  * @returns Installed paths, mutation status, and any retained backup.
  */
 export async function installHostIntegration(
@@ -455,7 +473,7 @@ export async function installHostIntegration(
  * Removes one unmodified managed host integration transactionally.
  *
  * @param target - Registry entry for the target host.
- * @param options - Project root containing the managed integration.
+ * @param options - Installation scope and root containing the integration.
  * @returns Removed paths, mutation status, and any retained cleanup backup.
  */
 export async function uninstallHostIntegration(
@@ -469,14 +487,14 @@ export async function uninstallHostIntegration(
  * Reports whether a host integration is absent, intact, or modified.
  *
  * @param target - Registry entry for the target host.
- * @param projectRoot - Project root to inspect.
+ * @param options - Installation scope and root to inspect.
  * @returns Current managed installation status.
  */
 export async function getHostIntegrationStatus(
   target: HostTarget,
-  projectRoot: string,
+  options: UninstallOptions,
 ): Promise<HostIntegrationStatus> {
-  return defaultInstaller.status(target, projectRoot);
+  return defaultInstaller.status(target, options);
 }
 
 /**
@@ -508,14 +526,16 @@ function jsonEntry(target: HostTarget): JsonMcpEntry {
  * Installs the registry-selected MCP config representation.
  *
  * @param target - Registry target selecting the adapter.
+ * @param scope - User or project config scope.
  * @param filePath - Absolute host config path.
  * @returns Whether config changed.
  */
 async function installManagedConfig(
   target: HostTarget,
+  scope: HostIntegrationScope,
   filePath: string,
 ): Promise<boolean> {
-  return target.mcpConfig.kind === "json"
+  return target[scope].mcpConfig.kind === "json"
     ? installJsonMcpEntry(filePath, jsonEntry(target))
     : installCodexMcpBlock(filePath, target.id);
 }
@@ -524,14 +544,16 @@ async function installManagedConfig(
  * Removes the registry-selected exact MCP config representation.
  *
  * @param target - Registry target selecting the adapter.
+ * @param scope - User or project config scope.
  * @param filePath - Absolute host config path.
  * @returns Whether config changed.
  */
 async function uninstallManagedConfig(
   target: HostTarget,
+  scope: HostIntegrationScope,
   filePath: string,
 ): Promise<boolean> {
-  return target.mcpConfig.kind === "json"
+  return target[scope].mcpConfig.kind === "json"
     ? uninstallJsonMcpEntry(filePath, jsonEntry(target))
     : uninstallCodexMcpBlock(filePath, target.id);
 }
@@ -540,14 +562,16 @@ async function uninstallManagedConfig(
  * Reports the registry-selected MCP config representation state.
  *
  * @param target - Registry target selecting the adapter.
+ * @param scope - User or project config scope.
  * @param filePath - Absolute host config path.
  * @returns Absent, intact, or modified managed config state.
  */
 async function getManagedConfigStatus(
   target: HostTarget,
+  scope: HostIntegrationScope,
   filePath: string,
 ): Promise<HostIntegrationStatus> {
-  return target.mcpConfig.kind === "json"
+  return target[scope].mcpConfig.kind === "json"
     ? getJsonMcpEntryStatus(filePath, jsonEntry(target))
     : getCodexMcpBlockStatus(filePath, target.id);
 }

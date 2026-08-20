@@ -11,7 +11,10 @@ import {
   getHostTarget,
   listHostTargets,
 } from "../host-integrations/install/registry.js";
-import type { HostTargetId } from "../host-integrations/install/types.js";
+import type {
+  HostIntegrationScope,
+  HostTargetId,
+} from "../host-integrations/install/types.js";
 
 export type HelpRow = {
   label: string;
@@ -57,9 +60,16 @@ export interface IntegrationsCliCommand {
   target: HostTargetId | null;
 
   /**
-   * Project root supplied to the installer.
+   * Ownership scope selected for the operation.
    */
-  projectRoot: string;
+  scope: HostIntegrationScope;
+
+  /**
+   * Optional project root supplied with `--project`.
+   *
+   * @default null - user scope is selected and the user's home is used.
+   */
+  projectRoot: string | null;
 
   /**
    * Whether install may replace unmanaged skill content.
@@ -80,11 +90,6 @@ export interface McpCliCommand {
    * Initial process exit code.
    */
   exitCode: 0;
-
-  /**
-   * Repository root fixed for the MCP process.
-   */
-  root: string;
 
   /**
    * Host identifier written to run metadata.
@@ -560,9 +565,12 @@ function parseIntegrationsCommand(argv: string[]): CliCommand {
   }
 
   let force = false;
-  let projectRoot = ".";
-  let sawProjectRoot = false;
-  for (const arg of argv.slice(argumentIndex)) {
+  let scope: HostIntegrationScope = "user";
+  let projectRoot: string | null = null;
+  let sawProject = false;
+  const options = argv.slice(argumentIndex);
+  for (let index = 0; index < options.length; index += 1) {
+    const arg = options[index];
     if (arg === "--force") {
       if (action !== "install") {
         return {
@@ -582,6 +590,39 @@ function parseIntegrationsCommand(argv: string[]): CliCommand {
       continue;
     }
 
+    if (arg === "--project" || arg.startsWith("--project=")) {
+      if (sawProject) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--project may only be specified once.",
+        };
+      }
+      sawProject = true;
+      scope = "project";
+      if (arg.startsWith("--project=")) {
+        const value = arg.slice("--project=".length);
+        if (!value) {
+          return {
+            kind: "error",
+            exitCode: 1,
+            message: "--project= requires a path.",
+          };
+        }
+        projectRoot = value;
+        continue;
+      }
+
+      const value = options[index + 1];
+      if (value && !value.startsWith("-")) {
+        projectRoot = value;
+        index += 1;
+      } else {
+        projectRoot = ".";
+      }
+      continue;
+    }
+
     if (arg.startsWith("-")) {
       return {
         kind: "error",
@@ -589,15 +630,11 @@ function parseIntegrationsCommand(argv: string[]): CliCommand {
         message: `Unknown option for integrations: ${arg}`,
       };
     }
-    if (sawProjectRoot) {
-      return {
-        kind: "error",
-        exitCode: 1,
-        message: "Only one integration project path may be supplied.",
-      };
-    }
-    projectRoot = arg;
-    sawProjectRoot = true;
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "Project paths must follow --project.",
+    };
   }
 
   return {
@@ -605,40 +642,24 @@ function parseIntegrationsCommand(argv: string[]): CliCommand {
     action,
     exitCode: 0,
     target,
+    scope,
     projectRoot,
     force,
   };
 }
 
 /**
- * Parses the internal repository-rooted MCP server command.
+ * Parses the internal rootless MCP server command.
  *
  * @param argv - Arguments following the `mcp` command.
  * @returns Parsed MCP command or a stable CLI error.
  */
 function parseMcpCommand(argv: string[]): CliCommand {
-  let root = ".";
   let host = "unknown";
-  let sawRoot = false;
   let sawHost = false;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === "--root" || arg.startsWith("--root=")) {
-      if (sawRoot) {
-        return repeatedMcpOption("--root");
-      }
-      const value =
-        arg === "--root" ? argv[index + 1] : arg.slice("--root=".length);
-      if (!value || value.startsWith("-")) {
-        return mcpValueError("--root", "a path");
-      }
-      root = value;
-      sawRoot = true;
-      if (arg === "--root") index += 1;
-      continue;
-    }
-
     if (arg === "--host" || arg.startsWith("--host=")) {
       if (sawHost) {
         return repeatedMcpOption("--host");
@@ -671,7 +692,7 @@ function parseMcpCommand(argv: string[]): CliCommand {
     };
   }
 
-  return { kind: "mcp", exitCode: 0, root, host };
+  return { kind: "mcp", exitCode: 0, host };
 }
 
 /**
@@ -684,9 +705,9 @@ function integrationUsageError(): CliCommand {
     kind: "error",
     exitCode: 1,
     message:
-      "Usage: openwiki integrations list [path] | " +
-      `install <${formatSupportedHostTargets("|")}> [path] [--force] | ` +
-      `uninstall <${formatSupportedHostTargets("|")}> [path]`,
+      "Usage: openwiki integrations list [--project [path]] | " +
+      `install <${formatSupportedHostTargets("|")}> [--force] [--project [path]] | ` +
+      `uninstall <${formatSupportedHostTargets("|")}> [--project [path]]`,
   };
 }
 
@@ -1098,9 +1119,9 @@ export const helpContent: HelpContent = {
     "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
     "openwiki visualize [path] [--port <port>] [--no-open] [--export <dir>]",
-    "openwiki integrations list [path]",
-    `openwiki integrations install <${formatSupportedHostTargets("|")}> [path] [--force]`,
-    `openwiki integrations uninstall <${formatSupportedHostTargets("|")}> [path]`,
+    "openwiki integrations list [--project [path]]",
+    `openwiki integrations install <${formatSupportedHostTargets("|")}> [--force] [--project [path]]`,
+    `openwiki integrations uninstall <${formatSupportedHostTargets("|")}> [--project [path]]`,
   ],
   commands: [
     {
@@ -1167,19 +1188,19 @@ export const helpContent: HelpContent = {
         "Serve a live graph and reader, or export a static graph for web hosting (defaults to ./openwiki).",
     },
     {
-      label: "openwiki integrations list [path]",
+      label: "openwiki integrations list [--project [path]]",
       description:
-        "Show OpenWiki installation status for each supported coding host.",
+        "Show user-level OpenWiki installation status, or project status with --project.",
     },
     {
-      label: "openwiki integrations install <host> [path]",
+      label: "openwiki integrations install <host> [--project [path]]",
       description:
-        "Install the OpenWiki skill and local MCP server config for a coding host.",
+        "Install the OpenWiki skill and MCP config globally, or into one project with --project.",
     },
     {
-      label: "openwiki integrations uninstall <host> [path]",
+      label: "openwiki integrations uninstall <host> [--project [path]]",
       description:
-        "Safely remove an unmodified OpenWiki coding-host integration.",
+        "Safely remove a global integration, or a project integration with --project.",
     },
   ],
   options: [

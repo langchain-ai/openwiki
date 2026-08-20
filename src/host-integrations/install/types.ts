@@ -9,6 +9,11 @@ export type HostTargetId = "codex" | "claude" | "dcode";
 export type HostIntegrationStatus = "installed" | "modified" | "not-installed";
 
 /**
+ * Supported ownership scopes for host integration files.
+ */
+export type HostIntegrationScope = "user" | "project";
+
+/**
  * Host-owned MCP configuration destination.
  */
 export interface HostMcpConfig {
@@ -18,9 +23,24 @@ export interface HostMcpConfig {
   readonly kind: "json" | "codex-toml";
 
   /**
-   * Config path relative to the target project root.
+   * Config path relative to the selected scope root.
    */
   readonly relativePath: string;
+}
+
+/**
+ * Host-owned destinations within one installation scope.
+ */
+export interface HostInstallationPaths {
+  /**
+   * Skill destination relative to the selected scope root.
+   */
+  readonly skillDirectory: string;
+
+  /**
+   * MCP config format and destination for the selected scope.
+   */
+  readonly mcpConfig: HostMcpConfig;
 }
 
 /**
@@ -38,14 +58,14 @@ export interface HostTarget {
   readonly displayName: string;
 
   /**
-   * Host-owned skill destination relative to the project root.
+   * User-level destinations relative to the user's home directory.
    */
-  readonly skillDirectory: string;
+  readonly user: HostInstallationPaths;
 
   /**
-   * Host-owned MCP config format and path.
+   * Project-level destinations relative to the target repository.
    */
-  readonly mcpConfig: HostMcpConfig;
+  readonly project: HostInstallationPaths;
 
   /**
    * Public setup documentation for the host's MCP support.
@@ -58,9 +78,14 @@ export interface HostTarget {
  */
 export interface InstallOptions {
   /**
-   * Project receiving the host integration.
+   * Ownership scope receiving the host integration.
    */
-  projectRoot: string;
+  scope: HostIntegrationScope;
+
+  /**
+   * Home or project directory anchoring the selected scope.
+   */
+  root: string;
 
   /**
    * Whether install may preserve and replace unmanaged or modified skill content.
@@ -75,9 +100,14 @@ export interface InstallOptions {
  */
 export interface UninstallOptions {
   /**
-   * Project containing the managed host integration.
+   * Ownership scope containing the managed host integration.
    */
-  projectRoot: string;
+  scope: HostIntegrationScope;
+
+  /**
+   * Home or project directory anchoring the selected scope.
+   */
+  root: string;
 }
 
 /**
@@ -88,6 +118,11 @@ export interface InstallResult {
    * Host target affected by the operation.
    */
   target: HostTargetId;
+
+  /**
+   * Ownership scope affected by the operation.
+   */
+  scope: HostIntegrationScope;
 
   /**
    * Absolute installed skill directory.

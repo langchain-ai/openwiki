@@ -9,7 +9,11 @@ import {
 import path from "node:path";
 import { HostIntegrationError } from "../core/errors.js";
 import { writeTextAtomic } from "./atomic-file.js";
-import type { HostTarget, InstallResult } from "./types.js";
+import type {
+  HostIntegrationScope,
+  HostTarget,
+  InstallResult,
+} from "./types.js";
 
 const PROTECTED_HOST_DIRECTORIES = [
   ".agents",
@@ -40,9 +44,14 @@ export interface TextFileSnapshot {
  */
 export interface InstallContext {
   /**
-   * Canonical real project root.
+   * Ownership scope for this transaction.
    */
-  projectRoot: string;
+  scope: HostIntegrationScope;
+
+  /**
+   * Canonical home or project root anchoring the transaction.
+   */
+  root: string;
 
   /**
    * Absolute host-owned skill directory.
@@ -58,42 +67,45 @@ export interface InstallContext {
 /**
  * Resolves canonical transaction paths and rejects symlinked components.
  *
- * @param target - Registry entry supplying project-relative destinations.
- * @param candidateRoot - User-supplied project root.
- * @returns Canonical project, skill, and config paths.
+ * @param target - Registry entry supplying scope-relative destinations.
+ * @param scope - User or project ownership scope.
+ * @param candidateRoot - Home or project root anchoring the scope.
+ * @returns Canonical scope, skill, and config paths.
  */
 export async function resolveInstallContext(
   target: HostTarget,
+  scope: HostIntegrationScope,
   candidateRoot: string,
 ): Promise<InstallContext> {
-  const projectRoot = await resolveProjectRoot(candidateRoot);
+  const root = await resolveInstallRoot(candidateRoot);
+  const destinations = target[scope];
   const skillDirectory = resolveInside(
-    projectRoot,
-    target.skillDirectory,
+    root,
+    destinations.skillDirectory,
     "skill directory",
   );
   const mcpConfig = resolveInside(
-    projectRoot,
-    target.mcpConfig.relativePath,
+    root,
+    destinations.mcpConfig.relativePath,
     "MCP config",
   );
-  await assertNoSymlinkComponents(projectRoot, skillDirectory);
-  await assertNoSymlinkComponents(projectRoot, mcpConfig);
-  return { projectRoot, skillDirectory, mcpConfig };
+  await assertNoSymlinkComponents(root, skillDirectory);
+  await assertNoSymlinkComponents(root, mcpConfig);
+  return { scope, root, skillDirectory, mcpConfig };
 }
 
 /**
  * Rejects symbolic links in every existing destination component.
  *
- * @param projectRoot - Canonical project root.
+ * @param root - Canonical installation root.
  * @param destination - Contained absolute destination path.
  */
 export async function assertNoSymlinkComponents(
-  projectRoot: string,
+  root: string,
   destination: string,
 ): Promise<void> {
-  const parts = path.relative(projectRoot, destination).split(path.sep);
-  let current = projectRoot;
+  const parts = path.relative(root, destination).split(path.sep);
+  let current = root;
   for (const [index, part] of parts.entries()) {
     current = path.join(current, part);
     try {
@@ -195,22 +207,20 @@ export function forcedBackupPath(
 /**
  * Removes empty skill ancestors without deleting host-owned root directories.
  *
- * @param projectRoot - Canonical project root.
+ * @param root - Canonical installation root.
  * @param skillDirectory - Removed managed skill path.
  */
 export async function removeEmptySkillParents(
-  projectRoot: string,
+  root: string,
   skillDirectory: string,
 ): Promise<void> {
   const protectedPaths = new Set(
-    PROTECTED_HOST_DIRECTORIES.map((directory) =>
-      path.join(projectRoot, directory),
-    ),
+    PROTECTED_HOST_DIRECTORIES.map((directory) => path.join(root, directory)),
   );
   let current = path.dirname(skillDirectory);
   while (
-    current !== projectRoot &&
-    current.startsWith(`${projectRoot}${path.sep}`) &&
+    current !== root &&
+    current.startsWith(`${root}${path.sep}`) &&
     !protectedPaths.has(current)
   ) {
     if ((await readdir(current)).length > 0) return;
@@ -223,7 +233,7 @@ export async function removeEmptySkillParents(
  * Creates one stable public result object.
  *
  * @param target - Affected registry target.
- * @param context - Canonical project paths.
+ * @param context - Canonical scope paths.
  * @param changed - Whether managed state changed.
  * @param backupPath - Optional retained sibling backup.
  * @returns Public installation result.
@@ -236,6 +246,7 @@ export function resultFor(
 ): InstallResult {
   return {
     target: target.id,
+    scope: context.scope,
     skillDirectory: context.skillDirectory,
     mcpConfig: context.mcpConfig,
     changed,
@@ -244,18 +255,18 @@ export function resultFor(
 }
 
 /**
- * Resolves and validates one existing project directory.
+ * Resolves and validates one existing installation root.
  *
- * @param candidate - User-supplied project root.
+ * @param candidate - User-supplied home or project root.
  * @returns Canonical absolute directory path.
  */
-async function resolveProjectRoot(candidate: string): Promise<string> {
+async function resolveInstallRoot(candidate: string): Promise<string> {
   try {
     const root = await realpath(candidate);
     if (!(await lstat(root)).isDirectory()) {
       throw new HostIntegrationError(
         "invalid_input",
-        "The integration project root must be a directory.",
+        "The integration scope root must be a directory.",
       );
     }
     return root;
@@ -263,38 +274,35 @@ async function resolveProjectRoot(candidate: string): Promise<string> {
     if (error instanceof HostIntegrationError) throw error;
     throw new HostIntegrationError(
       "invalid_input",
-      "The integration project root must be an existing directory.",
+      "The integration scope root must be an existing directory.",
     );
   }
 }
 
 /**
- * Resolves a trusted registry path while enforcing project containment.
+ * Resolves a trusted registry path while enforcing scope containment.
  *
- * @param projectRoot - Canonical project root.
+ * @param root - Canonical installation root.
  * @param relativePath - Registry-owned relative destination.
  * @param label - Destination label used in safe validation errors.
  * @returns Absolute contained destination path.
  */
 function resolveInside(
-  projectRoot: string,
+  root: string,
   relativePath: string,
   label: string,
 ): string {
   if (path.isAbsolute(relativePath)) {
     throw new HostIntegrationError(
       "invalid_input",
-      `The host ${label} must be project-relative.`,
+      `The host ${label} must be scope-relative.`,
     );
   }
-  const resolved = path.resolve(projectRoot, relativePath);
-  if (
-    resolved === projectRoot ||
-    !resolved.startsWith(`${projectRoot}${path.sep}`)
-  ) {
+  const resolved = path.resolve(root, relativePath);
+  if (resolved === root || !resolved.startsWith(`${root}${path.sep}`)) {
     throw new HostIntegrationError(
       "invalid_input",
-      `The host ${label} must stay inside the project root.`,
+      `The host ${label} must stay inside the scope root.`,
     );
   }
   return resolved;

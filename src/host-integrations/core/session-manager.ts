@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { lstat, realpath } from "node:fs/promises";
 import { OpenWikiLocalShellBackend } from "../../agent/docs-only-backend.js";
 import { OpenWikiIgnore } from "../../agent/openwiki-ignore.js";
 import type { RunContext } from "../../agent/types.js";
@@ -31,18 +30,14 @@ import {
   type ProtocolTool,
   type RunRequest,
 } from "./protocol.js";
+import { resolveRepositoryRoot } from "./repository-root.js";
 
 const HOST_ID_PATTERN = /^[a-z0-9-]{1,64}$/u;
 
 /**
- * Construction options for one repository-rooted host lifecycle manager.
+ * Construction options for one host lifecycle manager.
  */
 export interface HostSessionManagerOptions {
-  /**
-   * Repository root fixed for the lifetime of the manager.
-   */
-  root: string;
-
   /**
    * Stable lowercase host identifier used in run metadata.
    */
@@ -64,6 +59,11 @@ export interface BeginResult {
    * Opaque identifier required by the matching finish call.
    */
   runId: string;
+
+  /**
+   * Canonical Git repository root locked to this run.
+   */
+  root: string;
 
   /**
    * Lifecycle mode selected for this run.
@@ -166,18 +166,13 @@ interface ActiveSession extends HostRunView {
 }
 
 /**
- * Owns one in-process begin/finish lifecycle for a fixed repository.
+ * Owns one in-process begin/finish lifecycle for a host process.
  */
 export class HostSessionManager {
   /**
    * Current retryable run, or `null` when no run is active.
    */
   private active: ActiveSession | null = null;
-
-  /**
-   * Canonical repository root.
-   */
-  private readonly root: string;
 
   /**
    * Stable host identifier written to run metadata.
@@ -190,27 +185,23 @@ export class HostSessionManager {
   private readonly now: () => Date;
 
   /**
-   * Creates a repository-rooted manager after configuration validation.
+   * Creates a rootless manager after host configuration validation.
    *
-   * @param root - Canonical repository root.
    * @param host - Stable host identifier.
    * @param now - Run timestamp source.
    */
-  private constructor(root: string, host: string, now: () => Date) {
-    this.root = root;
+  private constructor(host: string, now: () => Date) {
     this.host = host;
     this.now = now;
   }
 
   /**
-   * Validates configuration and creates a manager for one repository.
+   * Validates configuration and creates a rootless host manager.
    *
-   * @param options - Repository root, host ID, and optional clock.
+   * @param options - Host ID and optional clock.
    * @returns Validated lifecycle manager.
    */
-  static async create(
-    options: HostSessionManagerOptions,
-  ): Promise<HostSessionManager> {
+  static create(options: HostSessionManagerOptions): HostSessionManager {
     if (!HOST_ID_PATTERN.test(options.host)) {
       throw new HostIntegrationError(
         "invalid_input",
@@ -218,9 +209,7 @@ export class HostSessionManager {
       );
     }
 
-    const root = await resolveRepositoryRoot(options.root);
     return new HostSessionManager(
-      root,
       options.host,
       options.now ?? (() => new Date()),
     );
@@ -240,19 +229,20 @@ export class HostSessionManager {
     const runTimestamp = this.now().toISOString();
 
     try {
-      const ignore = await OpenWikiIgnore.load(this.root);
+      const root = await resolveRepositoryRoot(input.root);
+      const ignore = await OpenWikiIgnore.load(root);
       const context = await createRunContext(
-        this.root,
+        root,
         "repository",
         input.language,
       );
       const language = context.language ?? "en";
       const updatePreflight =
         input.mode === "update"
-          ? await getUpdateNoopStatus(this.root, ignore, input.language)
+          ? await getUpdateNoopStatus(root, ignore, input.language)
           : undefined;
       const beforeContentSnapshot = await createOpenWikiContentSnapshot(
-        this.root,
+        root,
         "repository",
       );
       const backend = new OpenWikiLocalShellBackend({
@@ -260,14 +250,14 @@ export class HostSessionManager {
         maxOutputBytes: 100_000,
         openWikiIgnore: ignore,
         outputMode: "repository",
-        rootDir: this.root,
+        rootDir: root,
         timeout: 120,
         virtualMode: true,
       });
 
       await writeLastUpdateMetadata(
         input.mode,
-        this.root,
+        root,
         `host-agent/${this.host}`,
         "repository",
         "interrupted",
@@ -281,7 +271,7 @@ export class HostSessionManager {
 
       this.active = {
         id: runId,
-        root: this.root,
+        root,
         host: this.host,
         mode: input.mode,
         language,
@@ -293,6 +283,7 @@ export class HostSessionManager {
 
       return {
         runId,
+        root,
         mode: input.mode,
         language,
         lastUpdate: context.lastUpdate,
@@ -324,10 +315,10 @@ export class HostSessionManager {
       prepared: session.preparedWiki,
       at: session.startedAt,
     });
-    await removeTemporaryPlanFile(this.root, "repository");
+    await removeTemporaryPlanFile(session.root, "repository");
     await persistRunMetadataIfChanged(
       session.mode,
-      this.root,
+      session.root,
       `host-agent/${session.host}`,
       "repository",
       session.beforeContentSnapshot,
@@ -387,34 +378,6 @@ export class HostSessionManager {
       );
     }
     return this.active;
-  }
-}
-
-/**
- * Resolves and validates the canonical repository root without exposing raw
- * filesystem errors at the host-integration boundary.
- *
- * @param candidate - User-supplied repository root.
- * @returns Canonical absolute directory path.
- */
-async function resolveRepositoryRoot(candidate: string): Promise<string> {
-  try {
-    const root = await realpath(candidate);
-    if (!(await lstat(root)).isDirectory()) {
-      throw new HostIntegrationError(
-        "invalid_input",
-        "The OpenWiki root must be a directory.",
-      );
-    }
-    return root;
-  } catch (error) {
-    if (error instanceof HostIntegrationError) {
-      throw error;
-    }
-    throw new HostIntegrationError(
-      "invalid_input",
-      "The OpenWiki root must be an existing directory.",
-    );
   }
 }
 

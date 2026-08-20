@@ -52,6 +52,7 @@ describe("host integration CLI dogfood", () => {
       action: "install",
       exitCode: 0,
       target: "codex",
+      scope: "project",
       projectRoot,
       force: false,
     });
@@ -71,6 +72,7 @@ describe("host integration CLI dogfood", () => {
       action: "list",
       exitCode: 0,
       target: null,
+      scope: "project",
       projectRoot,
       force: false,
     });
@@ -86,6 +88,7 @@ describe("host integration CLI dogfood", () => {
       action: "install",
       exitCode: 0,
       target: "codex",
+      scope: "project",
       projectRoot,
       force: false,
     });
@@ -97,6 +100,7 @@ describe("host integration CLI dogfood", () => {
       action: "uninstall",
       exitCode: 0,
       target: "codex",
+      scope: "project",
       projectRoot,
       force: false,
     });
@@ -111,6 +115,7 @@ describe("host integration CLI dogfood", () => {
       action: "list",
       exitCode: 0,
       target: null,
+      scope: "project",
       projectRoot,
       force: false,
     });

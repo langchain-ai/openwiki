@@ -3,14 +3,9 @@ import { HostSessionManager } from "../core/session-manager.js";
 import { createOpenWikiMcpServer } from "./server.js";
 
 /**
- * Inputs required to start the repository-rooted MCP process.
+ * Inputs required to start the rootless MCP process.
  */
 export interface RunOpenWikiMcpOptions {
-  /**
-   * Repository root fixed for the lifetime of the process.
-   */
-  root: string;
-
   /**
    * Stable host identifier written to run metadata.
    */
@@ -20,12 +15,12 @@ export interface RunOpenWikiMcpOptions {
 /**
  * Starts OpenWiki's local stdio MCP server without writing to stdout.
  *
- * @param options - Repository root and host identifier.
+ * @param options - Host identifier used for run metadata.
  */
 export async function runOpenWikiMcp(
   options: RunOpenWikiMcpOptions,
 ): Promise<void> {
-  const manager = await HostSessionManager.create(options);
+  const manager = HostSessionManager.create({ host: options.host });
   const server = createOpenWikiMcpServer(manager);
   await server.connect(new StdioServerTransport());
 }

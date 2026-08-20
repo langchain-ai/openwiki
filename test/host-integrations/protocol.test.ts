@@ -1,4 +1,5 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { mkdtemp, realpath, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -21,6 +22,7 @@ const temporaryRoots: string[] = [];
 async function createRepository(): Promise<string> {
   const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-protocol-"));
   temporaryRoots.push(root);
+  execFileSync("git", ["init", "--quiet", root]);
   return root;
 }
 
@@ -37,10 +39,18 @@ afterEach(async () => {
 
 describe("host lifecycle protocol", () => {
   test("validates strict begin and finish inputs", () => {
-    expect(BeginInput.parse({ mode: "init", language: " fr " })).toEqual({
+    expect(
+      BeginInput.parse({
+        root: "/tmp/repository",
+        mode: "init",
+        language: " fr ",
+      }),
+    ).toEqual({
+      root: "/tmp/repository",
       mode: "init",
       language: "fr",
     });
+    expect(() => BeginInput.parse({ mode: "init" })).toThrow();
     expect(() => BeginInput.parse({ mode: "chat" })).toThrow();
     expect(() => BeginInput.parse({ mode: "init", extra: true })).toThrow();
     expect(() => RunInput.parse({ runId: "not-a-uuid" })).toThrow();
@@ -54,7 +64,7 @@ describe("host lifecycle protocol", () => {
 
   test("exposes exactly the two V1 lifecycle tools", async () => {
     const root = await createRepository();
-    const manager = await HostSessionManager.create({ root, host: "codex" });
+    const manager = HostSessionManager.create({ host: "codex" });
     const tools = manager.tools();
 
     expect(tools.map((tool) => tool.name)).toEqual([
@@ -71,10 +81,14 @@ describe("host lifecycle protocol", () => {
     expect(begin).toBeDefined();
     expect(finish).toBeDefined();
     await expect(
-      begin?.handle({ mode: "init", extra: true }),
+      begin?.handle({ root, mode: "init", extra: true }),
     ).rejects.toThrow();
 
-    const started = (await begin?.handle({ mode: "init" })) as BeginResult;
+    const started = (await begin?.handle({
+      root,
+      mode: "init",
+    })) as BeginResult;
+    expect(started.root).toBe(await realpath(root));
     await expect(finish?.handle({ runId: started.runId })).resolves.toEqual({
       status: "complete",
     });
