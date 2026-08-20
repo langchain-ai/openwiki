@@ -1,0 +1,39 @@
+src/agent/wiki-finalizer.ts
+  s_081e0b6f2df1e9::t_abedf0e7d00f86 14,142-149,193,209
+src/okf/generated-provenance.ts
+  s_081e0b6f2df1e9::t_abedf0e7d00f86 85,92,107
+  s_081e0b6f2df1e9::t_9552e18d7d69c8 94,98-99
+  s_081e0b6f2df1e9::t_311542360810e2 95-97
+src/host-integrations/core/session-manager.ts
+  s_081e0b6f2df1e9::t_abedf0e7d00f86 265,327,405-413
+  s_081e0b6f2df1e9::t_5972ef7a7d2e67 322,414-426
+test/agent/wiki-finalizer.test.ts
+  s_081e0b6f2df1e9::t_abedf0e7d00f86 151,166
+  s_081e0b6f2df1e9::t_9552e18d7d69c8 170-209
+  s_081e0b6f2df1e9::t_52795bbf170d8b 210
+test/host-integrations/session-manager.test.ts
+  s_081e0b6f2df1e9::t_e724f0f30f0806 208
+  s_081e0b6f2df1e9::t_5972ef7a7d2e67 268-286
+  s_081e0b6f2df1e9::t_c5a911a20362e8 287-288
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e8b372d83d1ca4c54a5f21ec37d8b0580f5ad3cd",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
