@@ -1,0 +1,21 @@
+src/agent/concept-discovery.ts
+  s_e3e935f3300670::t_a865cbda56cac0 1-408
+test/agent/concept-discovery.test.ts
+  s_e3e935f3300670::t_355970e4cb1716 1-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "66701618a94d491a4ec52fd264d324082276adf0",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
