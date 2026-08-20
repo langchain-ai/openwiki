@@ -1,0 +1,31 @@
+src/agent/plan-ledger.ts
+  s_e3e935f3300670::t_fdd35a8ac3921e 1220-1225,1229
+src/agent/prompts/code.ts
+  s_eb189fb9626ca8::t_933a3dfd747cd1 140
+test/agent/plan-ledger.test.ts
+  s_eb189fb9626ca8::t_fbd68b94b3031d 1435-1455
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "37bfe912234117b56b9851bc27e06f4b52fcf89d",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    },
+    "s_eb189fb9626ca8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b06effba-032e-4381-b45a-b95c621c59a0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
