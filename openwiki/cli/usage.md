@@ -3,7 +3,7 @@ type: CLI reference
 title: OpenWiki CLI usage
 description: Reference for OpenWiki command-line usage, including interactive and non-interactive runs, initialization and update modes, connector operations, and authentication setup. Covers provider configuration, model selection, validation, and the source files to update when changing CLI behavior.
 tags: [openwiki, cli, commands, configuration, authentication]
-generated: {by: "openwiki/0.3.3", at: "2026-08-20T08:11:55.370Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-20T08:11:55.370Z" }
 ---
 
 # CLI usage
@@ -75,13 +75,13 @@ Init and update runs render a bounded progress model rather than a raw streaming
 
 `src/cli/components/run-view.tsx` renders this model. While a run is live it shows a slow heartbeat spinner (`RunSpinner`), a stage label derived from active activities (`getRunStage()`: "Exploring the repository" / "Tracing affected documentation" / "Writing documentation"), the aggregate counts, and the activity tree split into sections ("Reading repository", "Reading OpenWiki", "Writing OpenWiki", "Writing repository") plus a bounded "Recent activity" list. On completion (`done`) it renders an outcome-first title via `formatRunCompletionTitle()` in `src/cli/run-log/summary.ts` — e.g. `Generated 2 OpenWiki pages in 3s` or `OpenWiki is up to date in <1s` — followed by up to 5 written page paths, secondary counts (writes omitted because the title already reports unique pages), diagnostics, and the final assistant text.
 
-| Module | Role | Focused tests |
-| --- | --- | --- |
-| `src/cli/run-log/reducer.ts` | `appendRunLogEvent()` event folder; tool start/end; activity activation/completion | `test/cli/run-log/reducer.test.ts` ("appendRunLogEvent text handling", "appendRunLogEvent tool grouping") |
-| `src/cli/run-log/activity.ts` | Path extraction, normalization, scope/operation classification, tree builder | `test/cli/run-log/activity.test.ts` ("getToolPathActivities", "isOpenWikiPagePath", "buildActivityTreeLines") |
-| `src/cli/run-log/summary.ts` | Count formatting and completion-title builder | `test/cli/run-log/summary.test.ts` ("formatRunCompletionTitle", "formatCompletedRunCounts") |
-| `src/cli/run-log/tool-input.ts` | Stringified-JSON tool arg parsing and target counting | `test/cli/run-log/tool-input.test.ts` ("parseToolInput", "countToolTargets") |
-| `src/cli/components/run-view.tsx` | `RunView` Ink component (live + completed states) | `test/cli/components/run-view.test.tsx` ("RunView") |
+| Module                            | Role                                                                               | Focused tests                                                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `src/cli/run-log/reducer.ts`      | `appendRunLogEvent()` event folder; tool start/end; activity activation/completion | `test/cli/run-log/reducer.test.ts` ("appendRunLogEvent text handling", "appendRunLogEvent tool grouping")     |
+| `src/cli/run-log/activity.ts`     | Path extraction, normalization, scope/operation classification, tree builder       | `test/cli/run-log/activity.test.ts` ("getToolPathActivities", "isOpenWikiPagePath", "buildActivityTreeLines") |
+| `src/cli/run-log/summary.ts`      | Count formatting and completion-title builder                                      | `test/cli/run-log/summary.test.ts` ("formatRunCompletionTitle", "formatCompletedRunCounts")                   |
+| `src/cli/run-log/tool-input.ts`   | Stringified-JSON tool arg parsing and target counting                              | `test/cli/run-log/tool-input.test.ts` ("parseToolInput", "countToolTargets")                                  |
+| `src/cli/components/run-view.tsx` | `RunView` Ink component (live + completed states)                                  | `test/cli/components/run-view.test.tsx` ("RunView")                                                           |
 
 When changing the run view, the reducer is the single fold point: new event types or display fields start there, then `run-view.tsx` renders them. `src/cli/format.ts` now exports only `formatCount()` (singular/plural noun formatting) and display helpers — the older `truncateLogOutput()`/`getSpinnerFrame()` helpers were removed when the raw transcript display was replaced by the bounded model.
 
