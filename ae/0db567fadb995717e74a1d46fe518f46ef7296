@@ -1,0 +1,23 @@
+src/agent/authoring-pool.ts
+  s_e3e935f3300670::t_0d2af86e56d78f 49-51,53-54,56-58,134,189-198,203,205,209-210,298-303
+src/agent/plan-ledger.ts
+  s_e3e935f3300670::t_e7b65ebad2cd23 443,516,519,525-529,531-534,597-602,618,687-699
+test/agent/authoring-pool.test.ts
+  s_e3e935f3300670::t_75b04671a3a1e3 53,194-196,199-203,224-257,260-261,264-268
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "ae0db567fadb995717e74a1d46fe518f46ef7296",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
