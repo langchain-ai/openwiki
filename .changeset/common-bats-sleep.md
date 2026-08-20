@@ -2,4 +2,4 @@
 "openwiki": patch
 ---
 
-chore: Improve init and update terminal ux
+chore: improve init and update terminal ux
