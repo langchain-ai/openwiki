@@ -12,8 +12,9 @@ import type { ProtocolTool } from "../../src/integrations/core/protocol.ts";
 import { HostSessionManager } from "../../src/integrations/core/session-manager.ts";
 import {
   createOpenWikiMcpServer,
-  type HostLifecycleToolProvider,
+  type HostToolProvider,
 } from "../../src/integrations/mcp/server.ts";
+import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
 
 const temporaryRoots: string[] = [];
 
@@ -50,7 +51,7 @@ async function createRepository(): Promise<string> {
  * @param tools - Tools returned to the MCP adapter.
  * @returns Minimal lifecycle provider used by adapter tests.
  */
-function provider(...tools: ProtocolTool[]): HostLifecycleToolProvider {
+function provider(...tools: ProtocolTool[]): HostToolProvider {
   return { tools: () => tools };
 }
 
@@ -61,7 +62,7 @@ function provider(...tools: ProtocolTool[]): HostLifecycleToolProvider {
  * @returns Connected client and server.
  */
 async function connect(
-  toolProvider: HostLifecycleToolProvider,
+  toolProvider: HostToolProvider,
 ): Promise<ConnectedMcpFixture> {
   const server = createOpenWikiMcpServer(toolProvider);
   const client = new Client({ name: "openwiki-test", version: "1.0.0" });
@@ -99,8 +100,10 @@ afterEach(async () => {
 });
 
 describe("OpenWiki MCP adapter", () => {
-  test("advertises only lifecycle tools and native-host authoring guidance", async () => {
+  test("advertises lifecycle, Claims, and native-host authoring guidance", async () => {
     const begin = vi.fn(() => Promise.resolve({ runId: "run-1" }));
+    const inspect = vi.fn(() => Promise.resolve({ pages: [] }));
+    const resolve = vi.fn(() => Promise.resolve({ pages: [] }));
     const finish = vi.fn(() => Promise.resolve({ status: "complete" }));
     const fixture = await connect(
       provider(
@@ -109,6 +112,18 @@ describe("OpenWiki MCP adapter", () => {
           description: "Begin.",
           schema: z.object({ mode: z.enum(["init", "update"]) }).strict(),
           handle: begin,
+        },
+        {
+          name: "openwiki_inspect_claims",
+          description: "Inspect Claims.",
+          schema: z.object({ runId: z.string() }).strict(),
+          handle: inspect,
+        },
+        {
+          name: "openwiki_resolve_claims",
+          description: "Resolve Claims.",
+          schema: z.object({ runId: z.string() }).strict(),
+          handle: resolve,
         },
         {
           name: "openwiki_finish",
@@ -124,6 +139,8 @@ describe("OpenWiki MCP adapter", () => {
 
       expect(listed.tools.map((tool) => tool.name)).toEqual([
         "openwiki_begin",
+        "openwiki_inspect_claims",
+        "openwiki_resolve_claims",
         "openwiki_finish",
       ]);
       expect(listed.tools.map((tool) => tool.name)).not.toEqual(
@@ -132,6 +149,8 @@ describe("OpenWiki MCP adapter", () => {
       const instructions = fixture.client.getInstructions();
       expect(instructions).toContain("Use the host's native repository tools");
       expect(instructions).toContain("Resolve the absolute Git top-level");
+      expect(instructions).toContain("openwiki_inspect_claims");
+      expect(instructions).toContain("openwiki_resolve_claims");
       expect(instructions).toContain("Call openwiki_finish after authoring");
       expect(instructions).toContain("openwiki/_plan.md");
       expect(instructions).toContain("openwiki/_skeleton.md");
@@ -268,6 +287,7 @@ describe("OpenWiki MCP lifecycle transport", () => {
   test("initializes, begins, and finishes through a real linked transport", async () => {
     const root = await createRepository();
     const wikiRoot = path.join(root, "openwiki");
+    await writeFile(path.join(root, "README.md"), "# Repository\n", "utf8");
     const manager = HostSessionManager.create({ host: "codex" });
     const fixture = await connect(manager);
 
@@ -275,6 +295,8 @@ describe("OpenWiki MCP lifecycle transport", () => {
       const listed = await fixture.client.listTools();
       expect(listed.tools.map((tool) => tool.name)).toEqual([
         "openwiki_begin",
+        "openwiki_inspect_claims",
+        "openwiki_resolve_claims",
         "openwiki_finish",
       ]);
 
@@ -286,6 +308,36 @@ describe("OpenWiki MCP lifecycle transport", () => {
       const { runId } = z
         .object({ runId: z.string() })
         .parse(begin.structuredContent);
+
+      const inspected = await fixture.client.callTool({
+        name: "openwiki_inspect_claims",
+        arguments: { runId, pages: ["openwiki/quickstart.md"] },
+      });
+      expect(inspected).toMatchObject({
+        structuredContent: {
+          pages: [{ page: "/openwiki/quickstart.md", claims: [] }],
+        },
+      });
+
+      const resolved = await fixture.client.callTool({
+        name: "openwiki_resolve_claims",
+        arguments: {
+          runId,
+          pages: [
+            {
+              page: "openwiki/quickstart.md",
+              operations: [
+                {
+                  op: "add",
+                  statement: "The repository has a README.",
+                  evidence: [{ resource: "repo://README.md" }],
+                },
+              ],
+            },
+          ],
+        },
+      });
+      expect(resolved.isError).not.toBe(true);
 
       await mkdir(wikiRoot, { recursive: true });
       await writeFile(
@@ -317,6 +369,11 @@ describe("OpenWiki MCP lifecycle transport", () => {
           },
         ],
         structuredContent: { status: "complete" },
+      });
+      await expect(
+        new ClaimsStore(root).loadPage("/openwiki/quickstart.md"),
+      ).resolves.toMatchObject({
+        claims: [{ statement: "The repository has a README." }],
       });
     } finally {
       await close(fixture.client, fixture.server);

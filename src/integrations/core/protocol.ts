@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  InspectClaimsInputSchema as ClaimsInspectPayloadInput,
+  ResolveClaimsInputSchema as ClaimsResolvePayloadInput,
+} from "../../claims/brains/code/tools.js";
 
 const HOST_ID_PATTERN = /^[a-z0-9-]{1,64}$/u;
 
@@ -10,7 +14,11 @@ export type HostRunMode = "init" | "update";
 /**
  * Stable names in the complete V1 host lifecycle tool set.
  */
-export type ProtocolToolName = "openwiki_begin" | "openwiki_finish";
+export type ProtocolToolName =
+  | "openwiki_begin"
+  | "openwiki_inspect_claims"
+  | "openwiki_resolve_claims"
+  | "openwiki_finish";
 
 /**
  * Validated request accepted by `openwiki_begin`.
@@ -63,6 +71,39 @@ export const RunInput: z.ZodType<RunRequest> = z
     runId: z.string().uuid(),
   })
   .strict();
+
+/**
+ * Validated request accepted by `openwiki_inspect_claims`.
+ */
+export const InspectClaimsInput = z
+  .object({
+    runId: z.string().uuid(),
+    ...ClaimsInspectPayloadInput.shape,
+  })
+  .strict()
+  .refine(({ ids, pages }) => (ids === undefined) !== (pages === undefined), {
+    message: "Pass exactly one of ids or pages",
+  });
+
+/**
+ * Validated request accepted by `openwiki_resolve_claims`.
+ */
+export const ResolveClaimsInput = z
+  .object({
+    runId: z.string().uuid(),
+    ...ClaimsResolvePayloadInput.shape,
+  })
+  .strict();
+
+/**
+ * Strict host Claims inspection request inferred from the shared schema.
+ */
+export type InspectClaimsRequest = z.infer<typeof InspectClaimsInput>;
+
+/**
+ * Strict host Claims mutation request inferred from the shared schema.
+ */
+export type ResolveClaimsRequest = z.infer<typeof ResolveClaimsInput>;
 
 /**
  * Validates the bounded identifier used for host metadata and provenance.

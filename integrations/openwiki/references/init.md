@@ -16,38 +16,50 @@ flows, files, symbols, focused tests, and operations.
    and test ownership.
 3. Group files into systems and cross-system workflows using imports, symbols,
    calls, shared data, tests, and history. Do not mirror the directory tree.
-4. Write the complete proposed structure to `openwiki/_skeleton.md`. Give every
-   substantial component and workflow a canonical page or named substantive
-   section, and describe the evidence and content each page must cover.
-5. Build an evidence brief for every planned substantive page before drafting.
-   Inspect its entrypoint, primary implementation, important types or schemas,
-   state or persistence, an upstream caller, a downstream dependency,
-   representative tests, and relevant operational or generated contracts.
-   Delegate independent briefs in parallel when the host supports it, then have
-   the main agent reconcile their evidence before authoring.
-6. Read [reviewers.md](reviewers.md), then run the skeleton critic through the
+4. Write the complete proposed structure to `openwiki/_plan.md`. Map every
+   substantial component and workflow to its canonical page, primary source
+   paths and symbols, focused tests, and disposition. Do not mirror the
+   directory tree.
+5. Read [reviewers.md](reviewers.md), then run the skeleton critic through the
    host's native delegation mechanism. Reviewers are read-only; the main agent
-   owns the skeleton and all wiki edits.
-7. Create one TODO for every critic request, revise the skeleton, then run the
+   owns the plan and all wiki edits.
+6. Create one TODO for every critic request, revise the plan, then run the
    critic exactly once more with the complete request ledger and resolutions.
    Address any remaining item directly; do not invoke a third critic review.
-8. Only after the critic gate, author every planned page. Explain ownership,
-   behavior, relationships, invariants, extension surfaces, failures, focused
-   tests, and primary evidence. Do not treat a source map or passing mention as
-   substantive coverage.
-9. Perform an unknown-unknown pass over uncovered manifest-backed or high-ranked
+7. Only after the critic gate, author every planned page. For each factual page,
+   first build an evidence brief by inspecting its entrypoint, primary
+   implementation, important types or schemas, state or persistence, an
+   upstream caller, a downstream dependency, representative tests, and relevant
+   operational or generated contracts. Delegate independent briefs in parallel
+   when the host supports it, then have the main agent reconcile their evidence.
+   Establish every material repository-supported proposition with
+   `openwiki_resolve_claims`, passing the active `runId`, the page, and bounded
+   `repo://path#L10-L24` evidence where practical. Batch multiple pages in one
+   call when their evidence is ready. Then write complete explanatory prose
+   grounded in those propositions. Explain ownership, behavior, relationships,
+   invariants, extension surfaces, failures, focused tests, and primary
+   evidence. Do not treat a source map or passing mention as substantive
+   coverage.
+8. Perform an unknown-unknown pass over uncovered manifest-backed or high-ranked
    clusters, one-hop dependencies, and cross-system workflows exposed during
-   writing. Expand the skeleton and wiki for real gaps.
-10. Reconcile the final wiki tree against the inventory, then invoke the question
-    finder. Create one TODO for every returned question.
+   writing. Expand the plan and wiki for real gaps, applying the same evidence
+   and Claims discipline to every added page.
+9. Reconcile the wiki tree against the reviewed plan and inventory. Establish
+   the complete Claims set for `openwiki/quickstart.md`, then write it last with
+   links to every major concept and a compact task-routing map from engineering
+   intent to pages, source entrypoints and symbols, focused tests, and narrow
+   validation.
+10. Invoke the question finder and create one TODO for every returned question.
 11. Batch related questions in groups of two or three and launch verifier batches
-    together. Repair all `PARTIAL` and `FAIL` results for a wave before retrying
-    only those IDs. Continue until every question passes.
-12. Write `openwiki/quickstart.md` last. Link every major concept and include a
-    compact task-routing map from engineering intent to pages, source entrypoints
-    and symbols, focused tests, and narrow validation.
-13. Call `openwiki_finish`; it removes the temporary skeleton and completes
-    deterministic validation, indexing, provenance, and metadata.
+    together. For every `PARTIAL` or `FAIL`, reconcile the affected propositions
+    through `openwiki_resolve_claims` before repairing Markdown. Complete all
+    repairs in a wave before retrying only those IDs. Continue until every
+    question passes.
+12. Perform a final reconciliation against the reviewed plan, QA TODOs, and
+    Claims-backed page set. Keep quickstart links accurate after repairs.
+13. Call `openwiki_finish`; it removes the temporary plan and completes
+    Claims persistence, deterministic validation, indexing, provenance, and
+    metadata.
 
 ## Coverage check
 

@@ -3,7 +3,7 @@
 Use the host's native delegation mechanism for these independent, read-only
 roles. If delegation is unavailable, run each role sequentially in the main
 agent while preserving the same evidence boundary and output contract. Never
-let a reviewer edit the skeleton or wiki.
+let a reviewer edit the plan or wiki.
 
 ## Contents
 
@@ -14,10 +14,10 @@ let a reviewer edit the skeleton or wiki.
 
 ## Skeleton critic
 
-Independently map the repository before reading `openwiki/_skeleton.md`. Inspect
+Independently map the repository before reading `openwiki/_plan.md`. Inspect
 manifests, entrypoints, public APIs, domains, state ownership, operations,
 cross-system flows, and representative implementation and tests. Then compare
-that inventory with the skeleton and identify every material missing or shallow
+that inventory with the plan and identify every material missing or shallow
 canonical home.
 
 The initial review must return all material gaps in one response. The one repeat
@@ -38,7 +38,7 @@ Return only:
     <item id="RQ-02">
       <gap>material coverage gap</gap>
       <evidence>paths, symbols, tests, or runtime flow</evidence>
-      <required_change>specific skeleton change</required_change>
+      <required_change>specific plan change</required_change>
     </item>
   </new_requests>
 </review>

@@ -113,7 +113,15 @@ describe("canonical OpenWiki host skill", () => {
     expect(workflowIndex).toBeGreaterThan(beginIndex);
     expect(finishIndex).toBeGreaterThan(workflowIndex);
     expect(requiredSequence).toContain("host-native subagents");
-    expect(requiredSequence).toMatch(/keep\s+factual edits in the main agent/u);
+    expect(requiredSequence).toMatch(
+      /keep Claims and factual edits in the main\s+agent/u,
+    );
+    expect(
+      requiredSequence.indexOf("`openwiki_inspect_claims`"),
+    ).toBeGreaterThan(beginIndex);
+    expect(
+      requiredSequence.indexOf("`openwiki_resolve_claims`"),
+    ).toBeGreaterThan(beginIndex);
   });
 
   test("resolves and passes an explicit Git root before begin", async () => {
@@ -162,6 +170,8 @@ describe("canonical OpenWiki host skill", () => {
     expect(security).toContain(
       "temporary `_skeleton.md` or `_plan.md` required by the selected workflow",
     );
+    expect(skill).toContain("Never edit `openwiki/.claims` directly");
+    expect(security).toContain("Never\nedit `openwiki/.claims`");
     expect(security).not.toMatch(/never edit[^.]*plans?[^.]*skeletons?/iu);
   });
 
@@ -176,24 +186,26 @@ describe("canonical OpenWiki host skill", () => {
     );
     const nativeInit = CODE_SYSTEM_PROMPTS.init;
 
-    expect(nativeInit).toContain("/openwiki/_skeleton.md");
-    expect(init).toContain("`openwiki/_skeleton.md`");
-    expect(nativeInit).toContain("'skeleton_critic' subagent");
+    expect(nativeInit).toContain("/openwiki/_plan.md");
+    expect(init).toContain("`openwiki/_plan.md`");
+    expect(nativeInit).toContain("`skeleton-critic` subagent");
     expect(init).toContain("run the skeleton critic");
-    expect(nativeInit).toContain("Re-invoke 'skeleton_critic' exactly once");
+    expect(nativeInit).toContain("Invoke `skeleton-critic` exactly once more");
     expect(init).toContain("critic exactly once more");
     expect(nativeInit).toContain("unknown-unknown pass");
     expect(init).toContain("unknown-unknown pass");
-    expect(nativeInit).toContain("'wiki_question_finder'");
-    expect(init).toContain("invoke the question\n    finder");
-    expect(nativeInit).toContain("'wiki_answer_verifier'");
+    expect(nativeInit).toContain("`wiki-question-finder`");
+    expect(init).toContain("Invoke the question finder");
+    expect(nativeInit).toContain("`wiki-answer-verifier`");
     expect(init).toContain("launch verifier batches");
     expect(nativeInit).toContain("batches of 2–3");
     expect(reviewers).toContain("batches of two or three");
     expect(nativeInit).toContain("PARTIAL or FAIL");
-    expect(init).toContain("`PARTIAL` and `FAIL`");
-    expect(nativeInit).toContain("write the /openwiki/quickstart.md file");
-    expect(init).toContain("Write `openwiki/quickstart.md` last");
+    expect(init).toContain("`PARTIAL` or `FAIL`");
+    expect(nativeInit).toContain("write /openwiki/quickstart.md");
+    expect(init).toContain("`openwiki/quickstart.md`, then write it last");
+    expect(nativeInit).toContain("through resolve_claims");
+    expect(init).toContain("`openwiki_resolve_claims`");
   });
 
   test("preserves native reviewer evidence isolation", async () => {
@@ -203,7 +215,7 @@ describe("canonical OpenWiki host skill", () => {
     );
 
     expect(reviewers).toContain(
-      "Independently map the repository before reading `openwiki/_skeleton.md`",
+      "Independently map the repository before reading `openwiki/_plan.md`",
     );
     expect(reviewers).toContain(
       "Read repository source and tests only; never read `openwiki/`",
@@ -211,9 +223,7 @@ describe("canonical OpenWiki host skill", () => {
     expect(reviewers).toContain(
       "Read `openwiki/` only; never inspect source or tests",
     );
-    expect(reviewers).toContain(
-      "Never\nlet a reviewer edit the skeleton or wiki.",
-    );
+    expect(reviewers).toContain("Never\nlet a reviewer edit the plan or wiki.");
   });
 
   test("mirrors native update planning discipline", async () => {
@@ -238,6 +248,10 @@ describe("canonical OpenWiki host skill", () => {
     expect(update).toContain("Keep the impact plan and all factual edits");
     expect(update).toContain("`updatePreflight.shouldSkip` is `true`");
     expect(update).toContain("call `openwiki_finish`\n   immediately");
+    expect(nativeUpdate).toContain("inspect_claims");
+    expect(nativeUpdate).toContain("resolve_claims");
+    expect(update).toContain("`openwiki_inspect_claims`");
+    expect(update).toContain("`openwiki_resolve_claims`");
   });
 
   test("uses the lifecycle language for authored prose", async () => {
@@ -270,7 +284,12 @@ describe("canonical OpenWiki host skill", () => {
       ),
     ].sort();
 
-    expect(toolNames).toEqual(["openwiki_begin", "openwiki_finish"]);
+    expect(toolNames).toEqual([
+      "openwiki_begin",
+      "openwiki_finish",
+      "openwiki_inspect_claims",
+      "openwiki_resolve_claims",
+    ]);
   });
 
   test("provides a valid OKF frontmatter example", async () => {

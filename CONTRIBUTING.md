@@ -48,10 +48,10 @@ or after switching Node installations.
 
 ## Adding a coding-agent integration
 
-OpenWiki host integrations share one canonical skill and the two-tool
-`openwiki_begin` / `openwiki_finish` MCP lifecycle. Add host-specific behavior
-to the registry and config boundary rather than copying the skill or adding
-host-specific lifecycle tools.
+OpenWiki host integrations share one canonical skill and four MCP tools:
+`openwiki_begin`, `openwiki_inspect_claims`, `openwiki_resolve_claims`, and
+`openwiki_finish`. Add host-specific behavior to the registry and config
+boundary rather than copying the skill or adding host-specific tools.
 
 1. Confirm the host discovers repository skills and local stdio MCP servers.
    Document the supported user and project paths; use `null` for an unsupported

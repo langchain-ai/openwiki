@@ -7,20 +7,24 @@ import type { ProtocolTool } from "../core/protocol.js";
 /**
  * Host guidance advertised during MCP initialization.
  */
-const INSTRUCTIONS = `OpenWiki exposes deterministic lifecycle bookends.
+const INSTRUCTIONS = `OpenWiki exposes deterministic lifecycle and Grounded Claims tools.
 Resolve the absolute Git top-level, then call openwiki_begin with that root
-before investigating or authoring. Use the host's native repository tools to
-inspect source code and author wiki pages in the middle.
+before investigating or authoring. Pass its runId to every later OpenWiki tool.
+Before materially editing an existing factual page, inspect its Claims with
+openwiki_inspect_claims. Establish or reconcile material repository-supported
+propositions with openwiki_resolve_claims. Use the host's native repository tools
+to inspect source code and author wiki pages.
 Call openwiki_finish after authoring. If the run cannot be completed, leave it
 interrupted; a later begin supersedes it. Do not directly edit OpenWiki-owned
-indexes, logs, provenance, run metadata, setup blocks, or scheduled workflows.
+Claims sidecars, indexes, logs, provenance, run metadata, setup blocks, or
+scheduled workflows.
 The host may author the temporary openwiki/_plan.md and openwiki/_skeleton.md
 required by its installed workflow; finalization removes those files.`;
 
 /**
  * Minimal lifecycle capability required by the MCP transport adapter.
  */
-export interface HostLifecycleToolProvider {
+export interface HostToolProvider {
   /**
    * Returns the complete transport-neutral lifecycle tool set.
    *
@@ -35,9 +39,7 @@ export interface HostLifecycleToolProvider {
  * @param provider - Rootless lifecycle tool provider.
  * @returns Unconnected MCP server exposing the provider's tools.
  */
-export function createOpenWikiMcpServer(
-  provider: HostLifecycleToolProvider,
-): McpServer {
+export function createOpenWikiMcpServer(provider: HostToolProvider): McpServer {
   const server = new McpServer(
     { name: "openwiki", version: OPENWIKI_VERSION },
     { instructions: INSTRUCTIONS },

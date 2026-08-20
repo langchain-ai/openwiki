@@ -15,8 +15,9 @@ token stores, environment values, browser state, or Git private metadata.
 
 Use native host tools only for factual Markdown below `openwiki/` and the
 temporary `_skeleton.md` or `_plan.md` required by the selected workflow. Never
-edit indexes, logs, provenance, run metadata, root setup blocks, or scheduled
-workflows. Do not modify application source while fulfilling a
+edit `openwiki/.claims`, indexes, logs, provenance, run metadata, root setup
+blocks, or scheduled workflows. Maintain Claims only through the active run's
+Claims tools. Do not modify application source while fulfilling a
 documentation-only request.
 
 ## Safe failure

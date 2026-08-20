@@ -14,6 +14,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { HostIntegrationError } from "../../src/integrations/core/errors.ts";
 import { HostSessionManager } from "../../src/integrations/core/session-manager.ts";
 import { getHostTarget } from "../../src/integrations/install/registry.ts";
+import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
 
 const RUN_TIMESTAMP = "2026-08-20T08:15:00.000Z";
 const temporaryRoots: string[] = [];
@@ -145,6 +146,7 @@ describe("HostSessionManager lifecycle", () => {
       language: "fr",
       lastUpdate: null,
       ignoredPatterns: 1,
+      claimsIssueCount: 0,
     });
     expect(manager.getRun(started.runId)).toMatchObject({
       id: started.runId,
@@ -220,6 +222,88 @@ describe("HostSessionManager lifecycle", () => {
       status: "complete",
     });
     expect(() => manager.getRun(started.runId)).toThrow(HostIntegrationError);
+  });
+
+  test("inspects, resolves, refreshes, and cleans Claims for native host edits", async () => {
+    const root = await createRepository();
+    const wikiRoot = path.join(root, "openwiki");
+    const sourcePath = path.join(root, "README.md");
+    const page = "/openwiki/page.md";
+    await writeFile(sourcePath, "# Repository\n", "utf8");
+
+    const manager = createManager();
+    const initialized = await manager.begin({ root, mode: "init" });
+    const resolved = (await manager.resolveClaims({
+      runId: initialized.runId,
+      pages: [
+        {
+          page,
+          operations: [
+            {
+              op: "add",
+              statement: "The repository has a README.",
+              evidence: [{ resource: "repo://README.md" }],
+            },
+          ],
+        },
+      ],
+    })) as {
+      pages: Array<{ results: Array<{ id: string }> }>;
+    };
+    const claimId = resolved.pages[0]?.results[0]?.id;
+    expect(claimId).toMatch(/^claim_/u);
+    await mkdir(wikiRoot, { recursive: true });
+    await writeFile(
+      path.join(wikiRoot, "page.md"),
+      concept("Page", "The repository includes a README."),
+      "utf8",
+    );
+
+    await expect(manager.finish({ runId: initialized.runId })).resolves.toEqual(
+      { status: "complete" },
+    );
+    const store = new ClaimsStore(root);
+    await expect(store.loadPage(page)).resolves.toMatchObject({
+      claims: [{ id: claimId, statement: "The repository has a README." }],
+    });
+
+    await writeFile(sourcePath, "# Repository\n\nUpdated.\n", "utf8");
+    const updating = await manager.begin({ root, mode: "update" });
+    expect(updating.claimsIssueCount).toBe(1);
+    await expect(
+      manager.inspectClaims({ runId: updating.runId, ids: [claimId ?? ""] }),
+    ).resolves.toMatchObject({
+      pages: [
+        {
+          page,
+          claims: [
+            {
+              id: claimId,
+              issue: { kind: "stale", resources: ["repo://README.md"] },
+            },
+          ],
+        },
+      ],
+    });
+    await expect(
+      manager.resolveClaims({
+        runId: updating.runId,
+        pages: [
+          {
+            page,
+            operations: [{ op: "confirm", id: claimId ?? "" }],
+          },
+        ],
+      }),
+    ).resolves.toMatchObject({
+      pages: [{ results: [{ op: "confirm", id: claimId }] }],
+    });
+    await manager.finish({ runId: updating.runId });
+
+    const deleting = await manager.begin({ root, mode: "update" });
+    await rm(path.join(wikiRoot, "page.md"));
+    await manager.finish({ runId: deleting.runId });
+    await expect(store.loadPage(page)).resolves.toBeNull();
   });
 
   test("retains interrupted state and the active session for a finish retry", async () => {

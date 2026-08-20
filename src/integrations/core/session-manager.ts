@@ -22,14 +22,33 @@ import {
   resolveConceptTypeLabel,
   resolveIndexLabels,
 } from "../../okf/index-labels.js";
+import {
+  ClaimSessionError,
+  EvidenceResourceError,
+} from "../../claims/core/errors.js";
+import {
+  inspectClaims as inspectClaimsOperation,
+  INSPECT_CLAIMS_DESCRIPTION,
+  resolveClaims as resolveClaimsOperation,
+  RESOLVE_CLAIMS_DESCRIPTION,
+} from "../../claims/brains/code/tools.js";
+import {
+  prepareClaimsRuntime,
+  type ClaimsRuntime,
+} from "../../claims/brains/code/runtime.js";
+import { ClaimsStore } from "../../claims/brains/code/store.js";
 import { HostIntegrationError } from "./errors.js";
 import {
   BeginInput,
+  InspectClaimsInput,
+  ResolveClaimsInput,
   RunInput,
   isValidHostId,
   type BeginRequest,
   type HostRunMode,
+  type InspectClaimsRequest,
   type ProtocolTool,
+  type ResolveClaimsRequest,
   type RunRequest,
 } from "./protocol.js";
 import { resolveRepositoryRoot } from "./repository-root.js";
@@ -105,6 +124,11 @@ export interface BeginResult {
    * Number of active `.openwikiignore` patterns.
    */
   ignoredPatterns: number;
+
+  /**
+   * Number of stale or unresolved Claims detected before host authoring.
+   */
+  claimsIssueCount: number;
 }
 
 /**
@@ -115,6 +139,13 @@ export interface FinishResult {
    * Durable lifecycle outcome.
    */
   status: "complete";
+
+  /**
+   * Non-fatal page-local Claims persistence warnings.
+   *
+   * @default undefined - Claims finalization completed without warnings.
+   */
+  warnings?: string[];
 }
 
 /**
@@ -170,6 +201,16 @@ interface ActiveSession extends HostRunView {
    * Deterministic state captured immediately before host authoring.
    */
   preparedWiki: PreparedWikiState;
+
+  /**
+   * Run-scoped Claims state shared by inspection, mutation, and finalization.
+   */
+  claimsRuntime: ClaimsRuntime;
+
+  /**
+   * Non-fatal Claims warnings accumulated during finalization.
+   */
+  claimsWarnings: string[];
 }
 
 /**
@@ -285,6 +326,17 @@ export class HostSessionManager {
         timeout: 120,
         virtualMode: true,
       });
+      const claimsWarnings: string[] = [];
+      const claimsRuntime = await prepareClaimsRuntime(
+        input.mode,
+        "repository",
+        root,
+        ignore,
+        (warning) => claimsWarnings.push(warning),
+      );
+      if (!claimsRuntime) {
+        throw new Error("Repository Claims runtime was not prepared.");
+      }
 
       await writeLastUpdateMetadata(
         input.mode,
@@ -310,6 +362,8 @@ export class HostSessionManager {
         backend,
         beforeContentSnapshot,
         preparedWiki,
+        claimsRuntime,
+        claimsWarnings,
       };
 
       return {
@@ -321,6 +375,7 @@ export class HostSessionManager {
         wikiGoal: context.wikiGoal,
         updatePreflight,
         ignoredPatterns: ignore.patterns.length,
+        claimsIssueCount: claimsRuntime.issueCount,
       };
     } catch (error) {
       this.active = supersededSession;
@@ -352,6 +407,8 @@ export class HostSessionManager {
         at: session.startedAt,
         producerActor: this.producerActor,
       });
+      await reconcileDeletedClaimPages(session);
+      await session.claimsRuntime.finalize();
       await persistRunMetadataIfChanged(
         session.mode,
         session.root,
@@ -363,7 +420,9 @@ export class HostSessionManager {
       );
 
       this.active = null;
-      return { status: "complete" };
+      return session.claimsWarnings.length > 0
+        ? { status: "complete", warnings: [...session.claimsWarnings] }
+        : { status: "complete" };
     } finally {
       this.operationInProgress = false;
     }
@@ -380,7 +439,48 @@ export class HostSessionManager {
   }
 
   /**
-   * Returns the complete V1 transport-neutral lifecycle tool set.
+   * Inspects selected Claims without creating a write obligation.
+   *
+   * @param input - Active run selector and exact Claims selector.
+   * @returns Selected Claims grouped by their owning wiki page.
+   */
+  async inspectClaims(input: InspectClaimsRequest): Promise<unknown> {
+    this.startOperation();
+    try {
+      const session = this.requireSession(input.runId);
+      return await inspectClaimsOperation(session.claimsRuntime.session, {
+        ids: input.ids,
+        pages: input.pages,
+      });
+    } catch (error) {
+      throw mapClaimsError(error);
+    } finally {
+      this.operationInProgress = false;
+    }
+  }
+
+  /**
+   * Applies one cross-page Claims mutation batch to the active run.
+   *
+   * @param input - Active run selector and page-local Claims operations.
+   * @returns Applied mutation identifiers grouped by wiki page.
+   */
+  async resolveClaims(input: ResolveClaimsRequest): Promise<unknown> {
+    this.startOperation();
+    try {
+      const session = this.requireSession(input.runId);
+      return await resolveClaimsOperation(session.claimsRuntime.session, {
+        pages: input.pages,
+      });
+    } catch (error) {
+      throw mapClaimsError(error);
+    } finally {
+      this.operationInProgress = false;
+    }
+  }
+
+  /**
+   * Returns the complete transport-neutral host authoring tool set.
    *
    * @returns Begin and finish tools bound to this manager.
    */
@@ -392,6 +492,20 @@ export class HostSessionManager {
           "Run deterministic OpenWiki preparation before the host agent authors documentation.",
         schema: BeginInput,
         handle: async (input) => this.begin(BeginInput.parse(input)),
+      },
+      {
+        name: "openwiki_inspect_claims",
+        description: INSPECT_CLAIMS_DESCRIPTION,
+        schema: InspectClaimsInput,
+        handle: async (input) =>
+          this.inspectClaims(InspectClaimsInput.parse(input)),
+      },
+      {
+        name: "openwiki_resolve_claims",
+        description: RESOLVE_CLAIMS_DESCRIPTION,
+        schema: ResolveClaimsInput,
+        handle: async (input) =>
+          this.resolveClaims(ResolveClaimsInput.parse(input)),
       },
       {
         name: "openwiki_finish",
@@ -431,6 +545,36 @@ export class HostSessionManager {
     }
     this.operationInProgress = true;
   }
+}
+
+/**
+ * Records sidecars whose Markdown pages were deleted with native host tools.
+ *
+ * @param session - Active host run with repository and Claims state.
+ */
+async function reconcileDeletedClaimPages(
+  session: ActiveSession,
+): Promise<void> {
+  const store = new ClaimsStore(session.root);
+  const currentPages = new Set(await store.discoverPages());
+  for (const page of await store.discoverSidecarPages()) {
+    if (!currentPages.has(page)) {
+      await session.claimsRuntime.session.recordDeletion(page);
+    }
+  }
+}
+
+/**
+ * Converts model-correctable Claims failures into bounded MCP domain errors.
+ *
+ * @param error - Claims or unexpected operation failure.
+ * @returns Safe host error for correctable input, or the original failure.
+ */
+function mapClaimsError(error: unknown): unknown {
+  return error instanceof ClaimSessionError ||
+    error instanceof EvidenceResourceError
+    ? new HostIntegrationError("invalid_input", error.message)
+    : error;
 }
 
 /**

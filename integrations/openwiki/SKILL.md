@@ -25,14 +25,19 @@ tools and host-native delegation.
    - Update: [references/update.md](references/update.md)
 4. Read [references/methodology.md](references/methodology.md).
 5. Execute every planning, evidence, authoring, and review gate in the selected
-   workflow. Use host-native subagents only as that workflow directs; keep
-   factual edits in the main agent.
+   workflow. Pass the returned `runId` to `openwiki_inspect_claims` and
+   `openwiki_resolve_claims` as the workflow directs, use host-native subagents
+   only as that workflow directs, and keep Claims and factual edits in the main
+   agent.
 6. Call `openwiki_finish` with the returned `runId`. Correct actionable failures
    and retry finish.
 
 ## Non-negotiable rules
 
 - Never report success before `openwiki_finish` returns `complete`.
+- Never edit `openwiki/.claims` directly. Inspect and maintain factual
+  propositions only through `openwiki_inspect_claims` and
+  `openwiki_resolve_claims` with the active `runId`.
 - Never begin against an inferred, relative, home, or filesystem root.
 - Never edit indexes, logs, provenance, or run metadata. OpenWiki owns them.
 - Never edit the OpenWiki-managed blocks in root `AGENTS.md` or `CLAUDE.md`, or

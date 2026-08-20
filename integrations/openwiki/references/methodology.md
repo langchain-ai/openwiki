@@ -3,6 +3,7 @@
 ## Contents
 
 - [Authority and evidence](#authority-and-evidence)
+- [Grounded Claims](#grounded-claims)
 - [Output language](#output-language)
 - [Page design](#page-design)
 - [OKF frontmatter](#okf-frontmatter)
@@ -15,6 +16,28 @@
 Treat source code and tests as authoritative. Use existing documentation as
 context, then verify material facts against implementation. State genuine
 unknowns narrowly instead of inferring behavior.
+
+## Grounded Claims
+
+Claims are concise, independently falsifiable propositions that form each
+factual page's evidence-backed foundation. Capture material behavior,
+responsibilities, ownership, relationships, data and control flow, invariants,
+lifecycle and failure semantics, configuration, security, persistence,
+operations, and extension seams. Do not create Claims merely for symbol
+existence, paths, signatures, types, or inheritance unless those facts
+materially change how the system is understood or safely changed.
+
+Use `openwiki_resolve_claims` before writing new material factual prose. Cite
+the narrowest sufficient repository evidence with `repo://path#L10-L24`; use
+`repo://path` only when the whole file is necessary. Use `confirm` when a
+proposition remains true, `update` when its statement or evidence changes,
+`retract` when it is obsolete, and `add` for a new material fact.
+
+On update, inspect every materially affected existing page through
+`openwiki_inspect_claims` before editing it. Resolve only Claims relevant to the
+task and leave unrelated pages unchanged. Normal Markdown reads, stylistic
+edits, structural indexes, logs, and temporary plans do not require Claims.
+Claims currently support repository evidence only.
 
 ## Output language
 
