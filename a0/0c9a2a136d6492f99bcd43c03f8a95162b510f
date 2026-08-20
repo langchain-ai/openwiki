@@ -1,0 +1,14 @@
+test/agent/run-metadata.test.ts
+  h_f78d33d4280f3f 232-234
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a00c9a2a136d6492f99bcd43c03f8a95162b510f",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

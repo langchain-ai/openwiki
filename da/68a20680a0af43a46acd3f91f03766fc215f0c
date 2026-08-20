@@ -1,0 +1,23 @@
+.changeset/paged-mcp-tool-lists.md
+  s_b7a9f39aa7a050::t_34cdb7fe94b15d 1-5
+src/connectors/mcp-client.ts
+  s_b7a9f39aa7a050::t_34cdb7fe94b15d 10-12,381-430,516-518,664-666
+test/connectors/mcp-client.test.ts
+  s_b7a9f39aa7a050::t_abb872827272a5 1097-1238
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "da68a20680a0af43a46acd3f91f03766fc215f0c",
+  "prompts": {},
+  "sessions": {
+    "s_b7a9f39aa7a050": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6df1b475-f278-450d-9c60-e6461fcc65e7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

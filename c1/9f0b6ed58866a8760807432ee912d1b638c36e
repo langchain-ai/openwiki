@@ -1,0 +1,24 @@
+package.json
+  s_464015dc89b99a::t_a8578c195cade4 44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "c19f0b6ed58866a8760807432ee912d1b638c36e",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_464015dc89b99a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe7ba-63f6-7b61-93e7-cbf1d2cdefdc",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

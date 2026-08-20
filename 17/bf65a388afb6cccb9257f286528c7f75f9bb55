@@ -1,0 +1,69 @@
+test/claims/brains/code/store.test.ts
+  s_f7d425ab7dd1a0::t_1fbb8bdb79d195 16-19,319,338,341
+test/claims/core/errors.test.ts
+  s_f7d425ab7dd1a0::t_fe6461a032231a 4,21-24,49-52
+  s_f7d425ab7dd1a0::t_a6e5968a578989 6,8,11,20,25-27,33-37,48,53-60
+src/claims/evidence/repository/tree-sitter-adapter.ts
+  s_f7d425ab7dd1a0::t_eb891baa377ce9 3,330,372,378,421
+src/claims/evidence/repository/resolver.ts
+  s_f7d425ab7dd1a0::t_eb891baa377ce9 6,9,44-50,79-88,98,146,160,189-201,244,251-282,284-290
+  s_f7d425ab7dd1a0::t_772ad009500371 283
+  s_f7d425ab7dd1a0::t_fea0afea9b0a6a 16-19,178,185,188
+src/claims/brains/code/store.ts
+  s_f7d425ab7dd1a0::t_fe6461a032231a 15,212
+  s_f7d425ab7dd1a0::t_8818c2ff00f609 16-18,328-333,363-368,388,407-412,461,476
+  s_f7d425ab7dd1a0::t_01cd0b2b3072d2 14
+src/claims/brains/code/runtime.ts
+  s_f7d425ab7dd1a0::t_fdf356780a8cbe 74,91,95-112
+  s_f7d425ab7dd1a0::t_c4055aa2e6d37a 41,49,59,72-73,75,89-90,92
+  s_f7d425ab7dd1a0::t_5c341963371b54 113
+src/claims/brains/code/types.ts
+  s_f7d425ab7dd1a0::t_df78b34074cc18 61-69
+  s_f7d425ab7dd1a0::t_9555a651854323 60
+test/claims/evidence/repository/resolver.test.ts
+  s_f7d425ab7dd1a0::t_a6e5968a578989 9,146,148-155,157-180,227
+  s_f7d425ab7dd1a0::t_52a67f5aeabdc6 12-15,184-204,206
+  s_f7d425ab7dd1a0::t_772ad009500371 181-183
+src/agent/index.ts
+  s_f7d425ab7dd1a0::t_fdf356780a8cbe 1049-1058
+  s_f7d425ab7dd1a0::t_c4055aa2e6d37a 186-193,388,1038-1048
+  s_f7d425ab7dd1a0::t_1c35bab9f5c22f 1059-1060
+test/claims/evidence/repository/tree-sitter-adapter.test.ts
+  s_f7d425ab7dd1a0::t_a6e5968a578989 4,330
+src/claims/core/errors.ts
+  s_f7d425ab7dd1a0::t_eb891baa377ce9 21,32-43,64-82
+  s_f7d425ab7dd1a0::t_fe6461a032231a 22-31
+  s_f7d425ab7dd1a0::t_4238f90e054633 83
+src/claims/brains/code/preflight.ts
+  s_f7d425ab7dd1a0::t_1fbb8bdb79d195 29-31
+test/agent/claims-run-lifecycle.test.ts
+  s_f7d425ab7dd1a0::t_cf6af8587af434 36
+  s_f7d425ab7dd1a0::t_d68d52e5c48bf2 348,350,359-363,367-373,378
+src/claims/brains/code/session.ts
+  s_f7d425ab7dd1a0::t_977956d8387ea9 351
+  s_f7d425ab7dd1a0::t_1fbb8bdb79d195 574
+  s_f7d425ab7dd1a0::t_fe6461a032231a 4,304,323-330,342-350
+  s_f7d425ab7dd1a0::t_df78b34074cc18 2-3,5-8,16,301,303,316-322,331,335-341,352,356-363,367-379,381-382,544-573,575
+src/claims/brains/code/tools.ts
+  s_f7d425ab7dd1a0::t_1fbb8bdb79d195 323-324
+test/claims/brains/code/session.test.ts
+  s_f7d425ab7dd1a0::t_39365fd4e06858 423-439
+  s_f7d425ab7dd1a0::t_aaf8465eaf7277 5,347,349,351-352,354-355,357-368,371-372,374,376-380,384-385,387-391,393-403,407-421
+  s_f7d425ab7dd1a0::t_648bc6194dc2de 422
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "17bf65a388afb6cccb9257f286528c7f75f9bb55",
+  "prompts": {},
+  "sessions": {
+    "s_f7d425ab7dd1a0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01602-767f-7130-baed-cc9be690395f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

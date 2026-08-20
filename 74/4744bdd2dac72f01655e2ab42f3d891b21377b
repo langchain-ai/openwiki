@@ -1,0 +1,23 @@
+src/agent/plan-ledger.ts
+  s_e3e935f3300670::t_7cb63982016c07 35,243,247,313,315-322,324,329-331,353-354,400-404,406-412,415,417,419,507,510
+src/agent/repo-inventory.ts
+  s_e3e935f3300670::t_3d337e2e260c3d 117-146,181-197,199,204-218,225
+test/agent/plan-ledger.test.ts
+  s_e3e935f3300670::t_aa226d704b82f0 72-109,136-138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "744744bdd2dac72f01655e2ab42f3d891b21377b",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+src/agent/prompts/code.ts
+  s_e3e935f3300670::t_4b3114a2689345 146-147,155-162
+src/claims/brains/code/tools.ts
+  s_7d2cc6ba2ae3cb::t_bcb013e37e574a 8,15,134,227,325-401
+test/agent/prompt.test.ts
+  s_9b220869d1ee0a::t_91abc92d46cf19 363
+test/claims/brains/code/tools.test.ts
+  s_e3e935f3300670::t_7dc36a1354a8d1 77-88,328-335,362,372-427
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "45240b346e36c110084346bb9d3a45f7b24d3a68",
+  "prompts": {},
+  "sessions": {
+    "s_7d2cc6ba2ae3cb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "877aa1ed-129a-479d-8467-9ed5f2152bed",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    },
+    "s_9b220869d1ee0a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed580239-bcf5-4316-af7f-dcfd52d692a0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    },
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

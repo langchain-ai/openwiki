@@ -1,0 +1,49 @@
+test/stamp-build-channel.test.ts
+  s_9df199bc4d57fc::t_f6c0e28025df33 1-75,79-85,89-100
+  s_9df199bc4d57fc::t_f989548726e686 76-78,86-88
+src/telemetry/senders.ts
+  s_9df199bc4d57fc::t_c48c08c45757ec 149
+  s_9df199bc4d57fc::t_0160525f9cdc78 40-46
+  s_9df199bc4d57fc::t_12bd9ecd4d69c6 9,16
+  s_9df199bc4d57fc::t_2d279daa36c16d 105-109
+  s_9df199bc4d57fc::t_bd18b8acd33215 39
+src/telemetry/gates.ts
+  s_9df199bc4d57fc::t_e587d21ffc080c 6-14,16-19
+  s_9df199bc4d57fc::t_b4f0546ae9d683 3-5,15,20-24
+.github/workflows/release.yml
+  s_9df199bc4d57fc::t_2f8428dfb4158b 66-72
+test/telemetry.test.ts
+  s_9df199bc4d57fc::t_03da2791c7676f 1342-1345
+  s_9df199bc4d57fc::t_ab313d00e25017 45
+  s_9df199bc4d57fc::t_2db11909128dce 1288
+  s_9df199bc4d57fc::t_9c3054823a0b04 1177-1201
+  s_9df199bc4d57fc::t_f0c08e8e3bfcd2 1075
+src/telemetry/types.ts
+  s_9df199bc4d57fc::t_9b4ec18f4fe395 57-65
+  s_9df199bc4d57fc::t_da7e9026ad240a 56
+scripts/stamp-build-channel.cjs
+  s_9df199bc4d57fc::t_9b6ad1e0182f9a 1-91
+package.json
+  s_9df199bc4d57fc::t_f1962caf0fc7a2 49-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "90fd2c3dfe95dd61fbf1843dd671e9d87a048833",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,83 @@
+src/cli/app/app.tsx
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 73-79,81-85,137-139,177-185,306,399,472,478,513-542,599-600,605,614,628,909
+test/cli/run-log/tool-input.test.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 1-25
+src/cli/components/chat.tsx
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 54,56,73-76,78,84
+test/agent/parse-stream-event.test.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 16,28,30,34,80-85,352-370
+  s_081e0b6f2df1e9::t_09df23beac34ff 371-373
+src/cli/app/run-state.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 41
+src/cli/run-log/summary.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 1-14,20-58,60-77,82-120,128-151,155-156,158,163-169,174-197
+  s_081e0b6f2df1e9::t_262e68cf19bd02 15-19,59,78-81,121-127,152-154,157,159-162,170-173
+test/cli/run-log/activity.test.ts
+  s_081e0b6f2df1e9::t_d5a8a657f7f4ad 42-57
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 1-41,58-94
+src/cli/components/run-view.tsx
+  s_081e0b6f2df1e9::t_262e68cf19bd02 222,224-232,240-242,249-253,260-262,271-275,332-340,441,455-457
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 6-17,23-26,28,30-33,35-40,59-61,63-68,70-73,77-79,84-93,98-100,106-107,114,118-120,133-139,141-145,147-174,185,187-201,203-206,208,210,214-215,217-221,223,233-237,239,245-248,254-259,263-264,267-270,276-277,279-282,284-310,313-320,323-331,341-349,359-409,411-413,415-416,419-429,434-440,442-454,458-472
+  s_081e0b6f2df1e9::t_5e36868d71ff66 244,311-312,321-322,350-358
+  s_081e0b6f2df1e9::t_6c1894b83ca549 238,243
+test/cli/format.test.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 3,14-20
+src/agent/types.ts
+  s_081e0b6f2df1e9::t_5c67ca07ebc970 12
+test/cli/run-log/summary.test.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 1-29,46-61,76-77
+  s_081e0b6f2df1e9::t_d5a8a657f7f4ad 30-45,62-75
+src/agent/index.ts
+  s_081e0b6f2df1e9::t_5c67ca07ebc970 1600
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 1610,1617-1619,1630,1972-1978
+  s_081e0b6f2df1e9::t_026a6cdd60f725 1979-1980
+.changeset/common-bats-sleep.md
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 1-5
+test/agent/stream-redaction.test.ts
+  s_081e0b6f2df1e9::t_fd92d0231d45d1 16
+  s_081e0b6f2df1e9::t_fc6a8561d58e87 4-7
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 72-83
+src/cli/format.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 18,20-23,25
+src/cli/run-log/reducer.ts
+  s_081e0b6f2df1e9::t_262e68cf19bd02 12-26,102-104,128,134,173,186,226,229,241,253,255,257,259,270,272,274-277,280-285,287-297
+  s_081e0b6f2df1e9::t_c9c3224e4e2857 254,258
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 3-9,27-29,36-41,52-56,58-76,79-83,87-89,91,96-101,105-126,129-133,135-152,155,159-161,163,174-182,184-185,187-217,221,223-224,230-233,239-240,242-247,252,260-265,298,302-303,305-312,316,318-322,324-341,343-355,358-367,369-370,372-376
+src/cli/components/types.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 10-12,14-17,21-23,27-34,36-41,43-48,50-53
+test/cli/components/run-view.test.tsx
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 54,56-67,74,83-89,95-116,142,150-154,158,169-218,250-276,278-286
+  s_081e0b6f2df1e9::t_d5a8a657f7f4ad 118-141,219-243,245-249
+  s_081e0b6f2df1e9::t_ce54bead785bc7 244
+  s_081e0b6f2df1e9::t_dad6b3575af6bf 117
+src/cli/run-log/types.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 2,5-46,48-73,76-85,88,90-91,93-96,98,100,103-108,115,117,122,124,126,143,145,147,150,152,154,157,159,161,164,166,168-181,183-188
+  s_081e0b6f2df1e9::t_262e68cf19bd02 4,129,131,133,136,138,140
+test/cli/components/chat.test.tsx
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 46-61,72-73,82,95-130
+  s_081e0b6f2df1e9::t_bce496a48168bb 131
+src/cli/run-log/tool-input.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 1-45
+test/cli/run-log/reducer.test.ts
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 50-72,176-301,334-376,384-392,395-481
+  s_081e0b6f2df1e9::t_d5a8a657f7f4ad 302-333,377-383,393-394
+src/cli/run-log/activity.ts
+  s_081e0b6f2df1e9::t_262e68cf19bd02 113-116
+  s_081e0b6f2df1e9::t_1b8a02ee983ad2 1-112,117-282
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f1fb297804f8e54522ced3075c8ddfd424104d73",
+  "prompts": {},
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

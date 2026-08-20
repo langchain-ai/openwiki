@@ -1,0 +1,14 @@
+src/agent/prompts/code.ts
+  h_3e3c9c8a17c7af 142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "77360744b1e946a0c50128778ef21e245ffb7c4d",
+  "prompts": {},
+  "humans": {
+    "h_3e3c9c8a17c7af": {
+      "author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

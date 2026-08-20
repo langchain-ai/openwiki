@@ -1,0 +1,46 @@
+src/config/constants.ts
+  s_1ce705c602c6af::t_a5b4834c8eaccc 32,958,982,988
+  s_1ce705c602c6af::t_16720fd413de0f 59,915-925,929-957,959-973
+README.md
+  s_1ce705c602c6af::t_4f89c5b1d6484b 334-342,348
+src/config/env.ts
+  s_1ce705c602c6af::t_a5b4834c8eaccc 394-395
+  s_1ce705c602c6af::t_a8e2a095e0ff4e 47,63-64,122,391-393,454,521-531
+  s_1ce705c602c6af::t_c91adbdf932a65 532-534
+test/config/env.test.ts
+  s_1ce705c602c6af::t_f674cdde891f8b 128-131
+src/agent/index.ts
+  s_1ce705c602c6af::t_a5b4834c8eaccc 1140
+  s_1ce705c602c6af::t_be7e3b6114a6ab 114,2223-2224
+  s_1ce705c602c6af::t_499733bf4106b7 1329-1357,1373,1409
+  s_1ce705c602c6af::t_88a8c28183f142 91,126,1145-1147,1175,1181-1184,1189,1209-1211,1240-1242,1251-1253,1269-1271,1370,1374-1378,1406,1422-1424,1445-1447
+  s_1ce705c602c6af::t_821e80e7ee0306 116
+  s_1ce705c602c6af::t_301f7c9adb6e74 1328
+test/agent/create-model.test.ts
+  s_1ce705c602c6af::t_a66f93b6cad074 14,31,36,39,45,57,149,153,155,160,181-186,188-220,277,284,289,292,298,319-326
+  s_1ce705c602c6af::t_a5b4834c8eaccc 271-273
+  s_1ce705c602c6af::t_82f9de3e677cf5 20-27,118,187,243,245,250,253,259
+  s_1ce705c602c6af::t_3e404ca9246a11 97-117,119-120,241-242,244,246-249,251-252,254-258,260-270,274-276,327
+  s_1ce705c602c6af::t_9a52935d747a6b 278
+  s_1ce705c602c6af::t_629b1cdcb22038 328
+test/config/constants.test.ts
+  s_1ce705c602c6af::t_2b3ac9ed84013a 31,339-367,369
+  s_1ce705c602c6af::t_f695f62abbd809 368
+  s_1ce705c602c6af::t_3e92b089bd4959 370-371
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "bd92a91f7f9172ea7a03683debf3d4048b263016",
+  "prompts": {},
+  "sessions": {
+    "s_1ce705c602c6af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a00874-b159-7d22-9347-610c3769ff44",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

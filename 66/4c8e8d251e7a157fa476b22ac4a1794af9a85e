@@ -1,0 +1,51 @@
+src/connectors/tools.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 39,45,59,69,97,146,176
+test/connectors/sources/mcp.test.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 175-208
+test/connectors/tools.test.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 73,96
+src/connectors/registry.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 12,28-36
+test/ingestion/ingestion.test.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 79
+.changeset/custom-mcp-source.md
+  s_b7a9f39aa7a050::t_cf578312c720be 1-5
+src/connectors/types.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 2
+src/ingestion/ingestion.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 377-381
+src/connectors/sources/mcp.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 14,35,42,46,121-144
+skills/write-connector/SKILL.md
+  s_b7a9f39aa7a050::t_cf578312c720be 10-19,38
+src/setup/credentials/constants.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 31,42,133-146
+test/connectors/mcp-runtime.test.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 75,77,164-178
+README.md
+  s_b7a9f39aa7a050::t_cf578312c720be 26
+src/setup/onboarding.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 461
+src/agent/prompts/personal.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 23,151,379
+test/connectors/sources/custom-mcp.test.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 1-24
+src/connectors/mcp-runtime.ts
+  s_b7a9f39aa7a050::t_cf578312c720be 21,39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "664c8e8d251e7a157fa476b22ac4a1794af9a85e",
+  "prompts": {},
+  "sessions": {
+    "s_b7a9f39aa7a050": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6df1b475-f278-450d-9c60-e6461fcc65e7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

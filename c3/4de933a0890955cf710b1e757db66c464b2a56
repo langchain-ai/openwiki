@@ -1,0 +1,72 @@
+evals/ledger/evaluator/evidence-map.test.ts
+  s_a78e1243cf0b12::t_2f42a7ebae656a 1-77
+evals/ledger/run/persistence.test.ts
+  s_a78e1243cf0b12::t_171e6416f15af7 306-309
+evals/ledger/evaluator/evidence-map.ts
+  s_a78e1243cf0b12::t_ae33b0d05983d3 1-61,70-86,90-127
+  s_a78e1243cf0b12::t_c40a7ee3df9e19 62-69,87-89
+evals/ledger/run/runner.ts
+  s_a78e1243cf0b12::t_ae33b0d05983d3 248
+evals/ledger/evaluator/model-backend.ts
+  s_a78e1243cf0b12::t_ae33b0d05983d3 206
+evals/ledger/benchmark/benchmark.test.ts
+  s_a78e1243cf0b12::t_2f42a7ebae656a 78-82
+  s_a78e1243cf0b12::t_9b4da28d076f9b 109-119
+evals/ledger/benchmark/validation.test.ts
+  s_a78e1243cf0b12::t_efdab4ed78dc76 13-15
+  s_a78e1243cf0b12::t_2f42a7ebae656a 94-119,136-151
+  s_a78e1243cf0b12::t_2d902b59b12179 3-7,120-135
+evals/ledger/run/evaluator-e2e.test.ts
+  s_a78e1243cf0b12::t_efdab4ed78dc76 367
+evals/ledger/benchmarks/taskflow/surface.test.ts
+  s_a78e1243cf0b12::t_80b70192359cb3 8-13,82,95
+evals/ledger/benchmark/validation.ts
+  s_a78e1243cf0b12::t_9b4da28d076f9b 1-2,5,44-91,97
+  s_a78e1243cf0b12::t_2d902b59b12179 132-140,146-153
+  s_a78e1243cf0b12::t_ec6bd344f0fec1 43,92-96,98-131,141-145,154-197
+evals/ledger/run/reevaluator.test.ts
+  s_a78e1243cf0b12::t_72e4b611803d76 33-34,44-46,86-94
+  s_a78e1243cf0b12::t_2b28f45d14178e 260-263
+evals/ledger/benchmarks/calc/benchmark.json
+  s_a78e1243cf0b12::t_1963b25f3a5452 6-28
+evals/ledger/README.md
+  s_a78e1243cf0b12::t_2d902b59b12179 106-107
+  s_a78e1243cf0b12::t_efdab4ed78dc76 58-61,77-101,104-105,108-127
+evals/ledger/benchmarks/taskflow/benchmark.json
+  s_a78e1243cf0b12::t_c40a7ee3df9e19 98-102
+  s_a78e1243cf0b12::t_1963b25f3a5452 6-97,103-129
+evals/ledger/run/runner.test.ts
+  s_a78e1243cf0b12::t_72e4b611803d76 54-55,57-59,175-183,203,207,226-229
+evals/ledger/benchmark/benchmark.ts
+  s_a78e1243cf0b12::t_9b4da28d076f9b 162-164
+  s_a78e1243cf0b12::t_ec6bd344f0fec1 89-94,155
+  s_a78e1243cf0b12::t_4ac7187006043b 7
+evals/ledger/core/types.ts
+  s_a78e1243cf0b12::t_ec6bd344f0fec1 42-70,108-113,1052-1056
+  s_a78e1243cf0b12::t_be27552a1928e4 1057
+evals/ledger/run/evaluate-checkpoint.ts
+  s_a78e1243cf0b12::t_ae33b0d05983d3 17,111-113,185,227
+evals/ledger/evaluator/precision.ts
+  s_a78e1243cf0b12::t_ae33b0d05983d3 36-39,331-342,377-379,1008,1034,1496-1499,1526,1538-1540,1545,1551,1558-1561
+  s_a78e1243cf0b12::t_855b4b7ceed6c8 35
+evals/ledger/run/reevaluator.ts
+  s_a78e1243cf0b12::t_ae33b0d05983d3 187
+evals/ledger/evaluator/precision.test.ts
+  s_a78e1243cf0b12::t_2f42a7ebae656a 339-403
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "c34de933a0890955cf710b1e757db66c464b2a56",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

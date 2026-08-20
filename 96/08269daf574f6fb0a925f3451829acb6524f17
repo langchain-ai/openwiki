@@ -1,0 +1,57 @@
+.changeset/openai-compatible-streaming.md
+  s_a311bef6ebf7f9::t_7176607f4b403d 1-5
+.changeset/soft-tools-refresh.md
+  s_a311bef6ebf7f9::t_65ec1df52321d4 1-5
+README.md
+  s_a311bef6ebf7f9::t_7ab25d8505d400 318-325
+openwiki/.last-update.json
+  s_a311bef6ebf7f9::t_c32c648070e09d 2,4
+openwiki/agent/workflow.md
+  s_a311bef6ebf7f9::t_9fc9ed0e83c674 24,113,161,167
+openwiki/architecture/overview.md
+  s_a311bef6ebf7f9::t_46e37259fccc3a 101,148
+openwiki/cli/usage.md
+  s_a311bef6ebf7f9::t_3e57b783095b52 25,156-157,260,263-265,271,287-288,307,331
+openwiki/operations/credentials-and-updates.md
+  s_a311bef6ebf7f9::t_7bed9063664fa4 46,214
+openwiki/quickstart.md
+  s_a311bef6ebf7f9::t_90aaa392f09c4a 22,24,28,48-49,58,94,96,125,180
+src/agent/utils.ts
+  s_a311bef6ebf7f9::t_e90e448f8b78bf 41-49,172,212-217
+src/config/constants.ts
+  s_a311bef6ebf7f9::t_20e35f9f8194f2 17-18,474-481,963-985
+src/config/env.ts
+  s_a311bef6ebf7f9::t_10c91e5481cdcb 37,116,394-395,465
+src/ingestion/code-mode.ts
+  s_a311bef6ebf7f9::t_2b6def4afb927c 6,10,312-319
+test/agent/run-metadata.test.ts
+  s_a311bef6ebf7f9::t_4d3ef0e34f0268 123,141-142,155-158,182,189-190,199-203,206,221-222,231-234
+test/agent/update-noop.test.ts
+  s_a311bef6ebf7f9::t_ab2e6a1f7c5385 1,11,199-273
+test/config/constants.test.ts
+  s_a311bef6ebf7f9::t_1edec7de42f5f9 31,33,401-461
+test/config/env-behavior.test.ts
+  s_a311bef6ebf7f9::t_c44c59bab65f53 19,61,565-602
+test/ingestion/code-mode.test.ts
+  s_a311bef6ebf7f9::t_34282ac493f374 318-334
+test/openai-compatible-streaming.test.ts
+  s_a311bef6ebf7f9::t_cbdee9b4bd3017 1-67
+src/agent/index.ts
+  s_a311bef6ebf7f9::t_668271967614e9 107,119,142,194-210,1216-1220,2128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "9608269daf574f6fb0a925f3451829acb6524f17",
+  "prompts": {},
+  "sessions": {
+    "s_a311bef6ebf7f9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6745ef6c-5dea-4cf1-8f3f-15248fec13c6",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

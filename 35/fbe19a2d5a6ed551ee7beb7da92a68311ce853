@@ -1,0 +1,26 @@
+evals/keb/evaluator/prompts.ts
+  s_464015dc89b99a::t_a8970b85ed112d 2-3,8,10-30,32-51,53-72,75,77-90,93,95-110,113-114,116-127,130,132,134,136-142,146,148,150,152-157,162-163,165,179-184
+evals/keb/evaluator/retrieval.ts
+  s_464015dc89b99a::t_fd1c33b7d797e5 106-117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "35fbe19a2d5a6ed551ee7beb7da92a68311ce853",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_464015dc89b99a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe7ba-63f6-7b61-93e7-cbf1d2cdefdc",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

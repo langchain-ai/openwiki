@@ -1,0 +1,32 @@
+evals/keb/evaluator/coverage.ts
+  s_464015dc89b99a::t_5c244cc1734d2c 58-62,253,261,271,325,350
+evals/keb/evaluator/forgetting.ts
+  s_464015dc89b99a::t_c615b57c8baaa3 61-65,264,272,282,336,363
+evals/keb/evaluator/model-backend.ts
+  s_464015dc89b99a::t_6b21f95c56a500 51-57,78-79,91,110,117,124
+evals/keb/evaluator/precision.ts
+  s_464015dc89b99a::t_eb6bd30ff9463c 92-96,269,484
+evals/keb/run/evaluator-e2e.test.ts
+  s_464015dc89b99a::t_a5f66b412e6f8a 1-586
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "50e07fb6f85fb3640164f51843c72f3015c34cf5",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_464015dc89b99a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe7ba-63f6-7b61-93e7-cbf1d2cdefdc",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

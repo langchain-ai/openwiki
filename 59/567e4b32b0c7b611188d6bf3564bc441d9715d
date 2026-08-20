@@ -1,0 +1,90 @@
+.changeset/common-bats-sleep.md
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 1-5
+src/agent/types.ts
+  s_081e0b6f2df1e9::t_c4120d0d9e857f 12
+src/agent/index.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 1600,1610,1617-1619,1630,1972-1978
+  s_081e0b6f2df1e9::t_5031d516ac35c5 1979-1980
+test/cli/run-log/activity.test.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 1-78
+src/agent/okf-middleware.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 10-14,32-33,48-49,61-65,108-121
+src/cli/format.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 18,20-23,25
+src/agent/prompts/personal.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 108,115,117,300,307,309,528,535,537
+src/okf/generated-provenance.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 1-196
+.changeset/tidy-books-prove.md
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 1-5
+test/cli/components/chat.test.tsx
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 46-61,72-73,82,95-130
+  s_081e0b6f2df1e9::t_556ab575f9c547 131
+test/cli/components/run-view.test.tsx
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 54,56-67,74,83-89,95-118,126-130,134,145-221,223-231
+src/cli/run-log/activity.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 1-278
+src/cli/components/types.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 10-12,14-17,21-23,27-34,36-41,43-48,50-53
+test/agent/parse-stream-event.test.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 16,28,30,34,80-85,352-370
+  s_081e0b6f2df1e9::t_f7aed5b5513063 11-12,73-74,77
+  s_081e0b6f2df1e9::t_4bf8a888bf9fcd 371-373
+test/agent/prompt-okf.test.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 42
+test/cli/run-log/tool-input.test.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 1-25
+test/cli/format.test.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 3,14-20
+src/cli/run-log/types.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 2,4-56,58-73,76-85,88,90-100,103,105,108,115,117,122,124,126,129,131,133,136,138,140,143,145,147,150,152,154,157-158,160,162,165,167,169-174
+README.md
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 162
+src/cli/components/chat.tsx
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 54,56,73-76,78,84
+src/cli/app/run-state.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 41
+src/cli/components/run-view.tsx
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 6-17,23-26,28,30-33,35-40,59-61,63-68,70-73,77-79,84-93,98-100,106-107,114,118-120,133-139,141-145,147-174,185,187-193,195-206,208,210,214-215,217-244,247-253,255-258,260-365,367-369,371-372,375-385,390-425
+src/okf/index-sync.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 87-88,92-118
+  s_081e0b6f2df1e9::t_d95d9ad165f0f1 119-120
+test/agent/stream-redaction.test.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 4-7,16,72-81
+  s_081e0b6f2df1e9::t_41f4428b86afc7 82-83
+test/cli/run-log/reducer.test.ts
+  s_081e0b6f2df1e9::t_c4120d0d9e857f 22,28-33
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 57-79,183-448
+  s_081e0b6f2df1e9::t_2e37c2b0be1acd 34
+src/cli/run-log/tool-input.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 1-45
+src/agent/prompts/code.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 76,83,85,195,332,339,341
+test/cli/run-log/summary.test.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 1-47
+src/cli/app/app.tsx
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 73-79,81-85,137-139,177-185,306,399,472,478,513-542,599-600,605,614,628,909
+src/cli/run-log/reducer.ts
+  s_081e0b6f2df1e9::t_c4120d0d9e857f 153-163,176,216,242
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 3-9,12-14,21-26,37-41,43-61,64-68,72-74,76,81-108,110-132,135,139-141,143,164-172,174-175,177-207,211,213-214,219-222,228-235,240,243-248,253-254,256,260-263,267,269-272,275-292,294-306,309-318,320,323-327
+src/cli/run-log/summary.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 1-170
+test/agent/index-middleware.test.ts
+  s_081e0b6f2df1e9::t_2874f3ec8bc991 41-68,451,471,490-491,505,518-519,527,531,566,575,583-596,618,626,637-667,680,686,688,693,705,719-726,740,748,757-778,787-790,796-798,801-807,809-810
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "59567e4b32b0c7b611188d6bf3564bc441d9715d",
+  "prompts": {},
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

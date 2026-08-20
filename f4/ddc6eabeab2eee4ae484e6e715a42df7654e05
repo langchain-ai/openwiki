@@ -1,0 +1,35 @@
+evals/ledger/evaluator/schemas.ts
+  s_c8fd8da1bbefea::t_c033e940d1e385 38-41,48-49
+  s_c8fd8da1bbefea::t_64ac48e8cc57c3 56-59,65
+  s_c8fd8da1bbefea::t_196c2231906b5b 121-127,131,133
+  s_c8fd8da1bbefea::t_9d19fba57e0cce 17-20,27-28
+evals/ledger/evaluator/fixtures/precision-gold.json
+  s_c8fd8da1bbefea::t_70cdef200e68bb 2
+  s_c8fd8da1bbefea::t_bcd14e032a77c9 277-477
+evals/ledger/evaluator/prompts.ts
+  s_c8fd8da1bbefea::t_cd510c16fe3909 168-172
+  s_c8fd8da1bbefea::t_e435bec09894c7 299-307,314-318,328
+  s_c8fd8da1bbefea::t_18d6c4cfc8cde5 270-272
+  s_c8fd8da1bbefea::t_c50f940e77011b 197-201
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "f4ddc6eabeab2eee4ae484e6e715a42df7654e05",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_c8fd8da1bbefea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7a2ddc30-9130-4920-b846-bb51dd3c63bc",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

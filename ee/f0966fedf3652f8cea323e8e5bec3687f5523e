@@ -1,0 +1,42 @@
+test/agent/create-openwiki-agent.test.ts
+  s_9df199bc4d57fc::t_d21294f097caca 1-44
+test/agent/wiki-link-validator.test.ts
+  s_9df199bc4d57fc::t_d21294f097caca 1-446
+test/agent/crash-guard.test.ts
+  s_9df199bc4d57fc::t_d21294f097caca 1-173
+test/visualize/visualize-graph.test.ts
+  s_9df199bc4d57fc::t_d21294f097caca 1-124
+test/agent/wiki-link-validator-dogfood.test.ts
+  s_9df199bc4d57fc::t_d21294f097caca 1-21
+test/agent/openwiki-ignore.test.ts
+  s_9df199bc4d57fc::t_d21294f097caca 1-237
+test/cli/visualize-command.test.ts
+  s_9df199bc4d57fc::t_d21294f097caca 1-52
+test/agent/conversation-history-offload.test.ts
+  s_9df199bc4d57fc::t_d21294f097caca 1-166
+test/agent/tool-args-formatting.test.ts
+  s_9df199bc4d57fc::t_d21294f097caca 1-52
+test/visualize/visualize-client-lib.test.ts
+  s_9df199bc4d57fc::t_d21294f097caca 1-138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "eef0966fedf3652f8cea323e8e5bec3687f5523e",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_9df199bc4d57fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ca4b352-12a3-4858-b3c5-ebc94e15b96a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

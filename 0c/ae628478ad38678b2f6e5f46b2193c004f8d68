@@ -1,0 +1,38 @@
+evals/keb/evaluator/retrieval.ts
+  h_f78d33d4280f3f 1-152
+evals/keb/evaluator/direct-model.test.ts
+  s_464015dc89b99a::t_fce448074d96ca 1-260
+evals/keb/evaluator/direct-model.ts
+  s_464015dc89b99a::t_eeb3533c78ffe5 1-184
+evals/keb/evaluator/documents.test.ts
+  s_464015dc89b99a::t_6cfef7a3c45805 1-154
+evals/keb/evaluator/documents.ts
+  s_464015dc89b99a::t_9005ad4ef3e7cc 1-298
+evals/keb/evaluator/retrieval.test.ts
+  s_464015dc89b99a::t_c44185e9e9a075 1-126
+evals/keb/evaluator/agent-backend-config.test.ts
+  h_f78d33d4280f3f 1-32
+evals/keb/evaluator/agent-backend.ts
+  h_f78d33d4280f3f 56-66,78,81-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "0cae628478ad38678b2f6e5f46b2193c004f8d68",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_464015dc89b99a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe7ba-63f6-7b61-93e7-cbf1d2cdefdc",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

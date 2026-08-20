@@ -1,0 +1,27 @@
+src/agent/boundary-pass.ts
+  s_e3e935f3300670::t_1ca70088a6b61f 1-114
+src/agent/index.ts
+  s_e3e935f3300670::t_3d9a969d0378cd 51,531
+src/agent/prompts/code.ts
+  s_e3e935f3300670::t_bde2b769f45504 153-155,159
+test/agent/boundary-pass.test.ts
+  s_e3e935f3300670::t_004c20c507ce24 1-80
+test/agent/prompt.test.ts
+  s_e3e935f3300670::t_a64c603fb56dc8 369
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "084861a344737f42de0e07785839aa0a49ab63dd",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

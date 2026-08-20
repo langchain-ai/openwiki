@@ -1,0 +1,19 @@
+.changeset/sour-cycles-ask.md
+  s_c3fe33d4273e99::t_62cf1951f9f3d1 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f5bfc0d1e668130768dfa6d9ca530f4109aea619",
+  "prompts": {},
+  "sessions": {
+    "s_c3fe33d4273e99": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "65d1d830-4be0-462f-8240-2bcbe84c12ed",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

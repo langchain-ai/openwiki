@@ -1,0 +1,42 @@
+test/claims/evidence/repository/resolver.test.ts
+  s_1ce705c602c6af::t_3c02ec3fc1c313 115,118,120,124-139
+package.json
+  s_1ce705c602c6af::t_3677e89b9740f5 83-87,89-94,135-139,141-146
+src/claims/evidence/repository/tree-sitter-adapter.ts
+  s_1ce705c602c6af::t_a4fc3dc7072bde 69-95,97-101,103,255-265,281-293,317-318,325,335,344,359-360,367,382-386,405-424
+  s_1ce705c602c6af::t_db49e57a70dd3e 425,561,619,621-698
+  s_1ce705c602c6af::t_dbba6fd7c0ef02 453,499
+  s_1ce705c602c6af::t_f4fa60e5c86e9d 96,324,326-334
+  s_1ce705c602c6af::t_08f63102f26b74 710-713,720-724,731-735,741-745,751-752,758-759,765-766,772-776,782-783,789-790,796-797,803-804,810-815,821
+  s_1ce705c602c6af::t_371091cf651c77 822
+  s_1ce705c602c6af::t_30db0ffbb72113 459,470,472-474,504,506,511,519-534,541-560
+  s_1ce705c602c6af::t_2608280b8cb392 535-540,610-618,699,708-709,718-719,729-730,736-740,746-750,753-757,760-764,767-771,777-781,784-788,791-795,798-802,805-809,816-820
+  s_1ce705c602c6af::t_9cc87d0bc852a3 104-236
+  s_1ce705c602c6af::t_6bbcc1ebdfffc5 102,313-316
+  s_1ce705c602c6af::t_56a4f8240b36df 319-320
+  s_1ce705c602c6af::t_3a839d5e7c62a4 562
+  s_1ce705c602c6af::t_f2bc838ea98790 620
+test/claims/evidence/repository/tree-sitter-adapter.test.ts
+  s_1ce705c602c6af::t_d02656bfe4f1b6 81-87,89-93,95-111,113-190,357-375
+  s_1ce705c602c6af::t_047e00ad80a0ef 88,94,112
+src/claims/evidence/repository/resolver.ts
+  s_1ce705c602c6af::t_75caaebda27009 36
+pnpm-lock.yaml
+  s_1ce705c602c6af::t_912ddde98f61a6 87-104,108-122,2673-2720,2729-2768,5659-5701,5709-5743
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e270c061926501664d723c333e973b2fdbd20898",
+  "prompts": {},
+  "sessions": {
+    "s_1ce705c602c6af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a00874-b159-7d22-9347-610c3769ff44",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

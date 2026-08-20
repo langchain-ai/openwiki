@@ -1,0 +1,31 @@
+src/agent/author-write.ts
+  s_e3e935f3300670::t_ba07cd7f718c7f 2,4-7,9-13,90-95
+src/agent/authoring-pool.ts
+  s_e3e935f3300670::t_d1121e0c5b48e3 52-55,187-188,192-194
+src/agent/plan-ledger.ts
+  s_e3e935f3300670::t_9655ff6b91e550 19-21,24-27,179-184,314-315,317-319,356-361,460-465
+src/agent/plan-store.ts
+  s_e3e935f3300670::t_8bacb2fe7ee825 11-15,19-20,26-31,33-35,121-124,138
+src/agent/repo-inventory.ts
+  s_e3e935f3300670::t_873debe0b7d59f 185-187
+src/agent/subagent-dispatch.ts
+  s_e3e935f3300670::t_ebbedf60665fbe 9-13,15-16
+src/agent/wiki-verification.ts
+  s_e3e935f3300670::t_264cf1d20ec38f 4-7,9-10,56-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "9ece2c5a51957de5d92632d15f28f09cf46372e7",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

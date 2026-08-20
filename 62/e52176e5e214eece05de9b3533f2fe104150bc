@@ -1,0 +1,24 @@
+src/model-availability.ts
+  s_a2c301d3fc897f::t_03614f9172474f 1
+  s_a2c301d3fc897f::t_2ebe2b07baf669 2-85
+src/agent/index.ts
+  s_a2c301d3fc897f::t_420c0e32bd2979 44,285-303
+test/model-availability.test.ts
+  s_a2c301d3fc897f::t_c2c7abe5d3e11c 1-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "62e52176e5e214eece05de9b3533f2fe104150bc",
+  "prompts": {},
+  "sessions": {
+    "s_a2c301d3fc897f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bcfe960b-3a32-4c64-822c-1fa77c156f84",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}

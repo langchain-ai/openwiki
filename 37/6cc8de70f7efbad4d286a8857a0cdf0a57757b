@@ -1,0 +1,35 @@
+src/claims/brains/code/tools.ts
+  s_7d2cc6ba2ae3cb::t_dcb92b5895dbf4 7-11,392-415,451-455,459-462,474-478
+src/claims/core/errors.ts
+  s_e3e935f3300670::t_0354b8a673cb07 41-64
+src/claims/evidence/repository/tree-sitter-adapter.ts
+  s_e3e935f3300670::t_4da53034e93109 3,372,378
+test/claims/brains/code/tools.test.ts
+  s_e3e935f3300670::t_a576469eb68153 3-6,433-537
+test/claims/evidence/repository/tree-sitter-adapter.test.ts
+  s_e3e935f3300670::t_82eaacccd0449f 4,334-349
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "376cc8de70f7efbad4d286a8857a0cdf0a57757b",
+  "prompts": {},
+  "sessions": {
+    "s_7d2cc6ba2ae3cb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "877aa1ed-129a-479d-8467-9ed5f2152bed",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    },
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

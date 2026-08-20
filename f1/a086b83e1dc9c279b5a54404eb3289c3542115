@@ -1,0 +1,63 @@
+src/okf/frontmatter.ts
+  s_698f7c54a0589a::t_e8694cb3d71a84 594-599
+  s_698f7c54a0589a::t_2bfebaac0c3aae 420-423
+  s_698f7c54a0589a::t_27b8f5af0fdf23 402-419,424-458
+  s_698f7c54a0589a::t_73fd5f894bb1a7 50,401,474-486
+  s_698f7c54a0589a::t_5fa52fcc683935 487-496
+  s_698f7c54a0589a::t_c88c11b1be2e38 51-61
+src/agent/prompts/personal.ts
+  s_698f7c54a0589a::t_e6eec90da7afd1 115,307,535
+  s_698f7c54a0589a::t_9da203a5423340 108,300,528
+src/agent/index.ts
+  s_698f7c54a0589a::t_0c7ccc1ca01b57 366-368
+  s_698f7c54a0589a::t_051340a9e2585e 413
+test/agent/prompt-okf.test.ts
+  s_698f7c54a0589a::t_b27f508d8cd908 26,35-39,41-43,49,51
+.changeset/adopt-okf-v0-2.md
+  h_f78d33d4280f3f 5
+src/version.ts
+  s_698f7c54a0589a::t_015a8157d9907e 74-81
+src/agent/prompts/code.ts
+  s_698f7c54a0589a::t_9da203a5423340 74,195,318
+  s_698f7c54a0589a::t_9f05fdbc1db426 200
+  s_698f7c54a0589a::t_ab81d21c34c4d8 81,325
+test/okf/frontmatter.test.ts
+  s_698f7c54a0589a::t_2bfebaac0c3aae 183-187
+  s_698f7c54a0589a::t_79d48a42cc9de0 4,12
+  s_698f7c54a0589a::t_36dc3059b97f46 124-182,188-229
+test/agent/index-middleware.test.ts
+  s_698f7c54a0589a::t_5bd24c093cda7a 637,647-648,652-667,673,676,686,690-691,694-696,698-700
+  s_698f7c54a0589a::t_d3743f7f829936 537,540-541,553
+  s_698f7c54a0589a::t_4845cf1c2a7caf 520-536,538-539,542-552,554-636,638-646,649-651,668-672,674-675,677-685,687-689,692-693,697,701-702
+  s_698f7c54a0589a::t_edb21823dbf4c2 1,6-9
+  s_698f7c54a0589a::t_0633177038939a 11
+src/agent/okf-middleware.ts
+  s_698f7c54a0589a::t_2bfebaac0c3aae 171-174,210-213
+  s_698f7c54a0589a::t_8ecb85e2e048e9 30-38,45
+  s_698f7c54a0589a::t_c5a54580eef05b 22
+  s_698f7c54a0589a::t_7d725a62d6f42f 7-9
+  s_698f7c54a0589a::t_f162e0dfc36e3c 73-79,83-92
+  s_698f7c54a0589a::t_88f65d573b7356 149-170,175-209,214-226,235-253
+  s_698f7c54a0589a::t_b78dbcebd4350b 227-234
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f1a086b83e1dc9c279b5a54404eb3289c3542115",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_698f7c54a0589a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "04384f29-c040-4a5c-b862-40914dae6148",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+src/visualize/styles.css
+  s_dd84697da6a0d4::t_9dbd2c62cea8a8 319-321,323-324,335-336,343
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "0236327882c6ca7becd48a068dd84678e168d73b",
+  "prompts": {},
+  "sessions": {
+    "s_dd84697da6a0d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b46-9ce8-7043-8c72-216c8b9006a6",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+evals/ledger/README.md
+  s_a78e1243cf0b12::t_8f09587f9886f9 5-6
+  s_a78e1243cf0b12::t_99b45d4d587441 3-4,147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a0ad2f9c5826a571f1bb878e8851e73adc1376fa",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

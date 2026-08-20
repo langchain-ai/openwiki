@@ -1,0 +1,36 @@
+src/host-integrations/core/session-manager.ts
+  s_081e0b6f2df1e9::t_efa1f346f162e2 1-28,30-31,33-235,237-315,317-363,365-370,372-436
+  s_081e0b6f2df1e9::t_538f297aae1164 29,32,236,316
+  s_081e0b6f2df1e9::t_22723be2262f7d 364,371
+src/host-integrations/core/protocol.ts
+  s_081e0b6f2df1e9::t_efa1f346f162e2 1-13,41-42,44-52,54-85
+  s_081e0b6f2df1e9::t_538f297aae1164 14-40,43,53
+src/host-integrations/core/errors.ts
+  s_081e0b6f2df1e9::t_efa1f346f162e2 1-4,6-27
+  s_081e0b6f2df1e9::t_1c82270b843135 5
+test/host-integrations/protocol.test.ts
+  s_081e0b6f2df1e9::t_d0d15872677a51 65-67,73-75
+  s_081e0b6f2df1e9::t_9f2a4a345a2d3f 1-64,68-72,76-82
+test/host-integrations/session-manager.test.ts
+  s_081e0b6f2df1e9::t_22723be2262f7d 6,127,135,148
+  s_081e0b6f2df1e9::t_9f2a4a345a2d3f 1-5,7-11,13-108,110-126,128-129,132-134,136-147,149-161,163-298,300-301,304-307,310-311
+  s_081e0b6f2df1e9::t_d0d15872677a51 130
+  s_081e0b6f2df1e9::t_5ba4ca6ebc0add 299,302-303,308-309
+  s_081e0b6f2df1e9::t_538f297aae1164 12,109,131,162
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f625f98cfd93f04bb00c82449492ff82566c356e",
+  "prompts": {},
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

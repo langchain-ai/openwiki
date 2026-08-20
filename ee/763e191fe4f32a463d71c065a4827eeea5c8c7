@@ -1,0 +1,27 @@
+openwiki/agent/workflow.md
+  s_47a5929aee9930::t_9c9985a27a5dfb 6,137,197
+openwiki/architecture/overview.md
+  s_47a5929aee9930::t_0b5a383afc2d4e 6,95
+openwiki/cli/usage.md
+  s_47a5929aee9930::t_9fc06ffcb41d07 6,78-84
+openwiki/operations/credentials-and-updates.md
+  s_47a5929aee9930::t_06c2fe1e4aa222 6
+openwiki/quickstart.md
+  s_47a5929aee9930::t_ff956eee729bc0 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "ee763e191fe4f32a463d71c065a4827eeea5c8c7",
+  "prompts": {},
+  "sessions": {
+    "s_47a5929aee9930": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01fc9-9c3e-79b3-af77-8ae99fb45a7b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

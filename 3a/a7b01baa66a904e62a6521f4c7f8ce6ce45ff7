@@ -1,0 +1,19 @@
+README.md
+  s_823bb75273ea75::t_119dad33395aa8 33-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "3aa7b01baa66a904e62a6521f4c7f8ce6ce45ff7",
+  "prompts": {},
+  "sessions": {
+    "s_823bb75273ea75": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1f227ea5-affb-45a9-9756-fe9ea5b397fa",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

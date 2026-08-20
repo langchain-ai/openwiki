@@ -1,0 +1,29 @@
+test/agent/index-middleware.test.ts
+  s_698f7c54a0589a::t_2161ea07a1e7f1 702-743
+src/agent/okf-middleware.ts
+  s_698f7c54a0589a::t_96a4483dac7f78 160-168,188-190,192-194,196-210
+  s_698f7c54a0589a::t_8f72a5d95f8dac 20
+package.json
+  h_f78d33d4280f3f 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "7967390c8e087ce5c24772ada87b2349258ba4c3",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_698f7c54a0589a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "04384f29-c040-4a5c-b862-40914dae6148",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

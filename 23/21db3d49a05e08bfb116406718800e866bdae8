@@ -1,0 +1,43 @@
+src/agent/authoring-pool.ts
+  s_e3e935f3300670::t_fb26be04d358d3 59
+src/agent/index.ts
+  s_9b220869d1ee0a::t_e16d1c8a441bd1 74,540-542
+src/agent/plan-ledger.ts
+  s_e3e935f3300670::t_141601d3d3268e 2,4,6-9,11-27,33-37,40-41,44-45,53-54,57,62,64-65,69-70,73,76,78,80,82-83,85,90,93,96-110,124,126-131,136-147,149,154,157,159,167-238,243,246,251,254,256,262,272-274,294,309,316,323-330
+src/agent/prompts/code.ts
+  s_9b220869d1ee0a::t_60f0b7979c1bc8 138,140,142
+src/agent/repo-inventory.ts
+  s_e3e935f3300670::t_e57c6a2af8c15c 2,4-10,12-21,26,46,48-51,53-64,66-68,70-71,74-79,83,85-86,88-89,93-98,100-101,103,105-108,110-139
+src/agent/repo-surveyor.ts
+  s_9b220869d1ee0a::t_f307e034a41c7a 1-77
+test/agent/claims-agent-integration.test.ts
+  s_e3e935f3300670::t_720d6de2c75fd1 142,152,169
+test/agent/plan-ledger.test.ts
+  s_9b220869d1ee0a::t_96f8057bdeede1 4,10,13,17-18,20-22,25,30-36,39,42-45,47,49-65,69-87,91,101-104,108-109,111,125-143,146-172,174,176-188,191-201,203-204,207-209,214,224
+test/agent/prompt.test.ts
+  s_9b220869d1ee0a::t_7c4a5350033f44 370-371
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "2321db3d49a05e08bfb116406718800e866bdae8",
+  "prompts": {},
+  "sessions": {
+    "s_9b220869d1ee0a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed580239-bcf5-4316-af7f-dcfd52d692a0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    },
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

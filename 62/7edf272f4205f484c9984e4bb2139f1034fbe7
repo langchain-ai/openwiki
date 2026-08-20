@@ -1,0 +1,80 @@
+evals/ledger/core/types.ts
+  s_a78e1243cf0b12::t_68fa269cff3e0c 784,786
+  s_a78e1243cf0b12::t_2ef755b37869c6 894-896,903-912
+  s_a78e1243cf0b12::t_1540e990951d78 913-914
+evals/ledger/system/openwiki-system-run.test.ts
+  s_a78e1243cf0b12::t_5132c5c7e16000 88,105,112
+evals/ledger/run/summary.ts
+  s_a78e1243cf0b12::t_583ec21e2e1829 2,29-31,37-43
+  s_a78e1243cf0b12::t_f5fd03ae8cf9d5 35-36
+  s_a78e1243cf0b12::t_03b84a37ec3aef 32-34
+evals/ledger/run/progress-events.ts
+  s_a78e1243cf0b12::t_583ec21e2e1829 34
+evals/ledger/run/format.ts
+  s_a78e1243cf0b12::t_583ec21e2e1829 50-69
+  s_a78e1243cf0b12::t_d04bd7d8f8de75 49
+src/agent/index.ts
+  s_a78e1243cf0b12::t_5132c5c7e16000 142,503,511,637
+evals/ledger/run/persistence.test.ts
+  s_a78e1243cf0b12::t_03b84a37ec3aef 41
+evals/ledger/run/runner.ts
+  s_a78e1243cf0b12::t_2ef755b37869c6 5,273
+  s_a78e1243cf0b12::t_583ec21e2e1829 196
+evals/ledger/run/saved-run.test.ts
+  s_a78e1243cf0b12::t_03b84a37ec3aef 40
+evals/ledger/run/summary.test.ts
+  s_a78e1243cf0b12::t_f5fd03ae8cf9d5 5-7
+  s_a78e1243cf0b12::t_03b84a37ec3aef 39,49-51
+  s_a78e1243cf0b12::t_5a7ecb99899669 8-30,52-73
+src/agent/types.ts
+  s_a78e1243cf0b12::t_5132c5c7e16000 8
+evals/ledger/run/runner.test.ts
+  s_a78e1243cf0b12::t_5a7ecb99899669 31,37,313,316
+  s_a78e1243cf0b12::t_3b04286ff9b647 318-320
+evals/ledger/metrics/score.ts
+  s_a78e1243cf0b12::t_f5fd03ae8cf9d5 40-41
+  s_a78e1243cf0b12::t_2ef755b37869c6 1-39,42-50
+evals/ledger/run/reevaluator.ts
+  s_a78e1243cf0b12::t_2ef755b37869c6 14,208
+evals/ledger/README.md
+  s_a78e1243cf0b12::t_5a7ecb99899669 7,115-132,141,145,150,170-173
+  s_a78e1243cf0b12::t_d51a8a401f6d67 174
+test/agent/token-usage.test.ts
+  s_a78e1243cf0b12::t_b33821f996b4a1 40,60-74
+  s_a78e1243cf0b12::t_5132c5c7e16000 1-39,41-59,75-76
+evals/ledger/run/report.test.ts
+  s_a78e1243cf0b12::t_03b84a37ec3aef 5,49-53,69-71
+evals/ledger/run/report.ts
+  s_a78e1243cf0b12::t_583ec21e2e1829 65-68,71,74,79
+evals/ledger/run/progress.ts
+  s_a78e1243cf0b12::t_583ec21e2e1829 1-4,109,241-244,246
+evals/ledger/metrics/score.test.ts
+  s_a78e1243cf0b12::t_f5fd03ae8cf9d5 53,57-61,65-67
+  s_a78e1243cf0b12::t_2ef755b37869c6 1-52,54-56,62-64,68-69
+src/agent/token-usage.ts
+  s_a78e1243cf0b12::t_b33821f996b4a1 71,82-84,86-88,91
+  s_a78e1243cf0b12::t_5132c5c7e16000 1-70,72-81,85,89-90,92-93
+evals/ledger/system/openwiki-system.ts
+  s_a78e1243cf0b12::t_5132c5c7e16000 84-85
+evals/ledger/run/reevaluator.test.ts
+  s_a78e1243cf0b12::t_03b84a37ec3aef 140
+  s_a78e1243cf0b12::t_3b04286ff9b647 257-261
+evals/ledger/run/progress.test.ts
+  s_a78e1243cf0b12::t_5a7ecb99899669 7,21-27,50,53-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "627edf272f4205f484c9984e4bb2139f1034fbe7",
+  "prompts": {},
+  "sessions": {
+    "s_a78e1243cf0b12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff28c-aded-7c91-b729-a01c7e944075",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

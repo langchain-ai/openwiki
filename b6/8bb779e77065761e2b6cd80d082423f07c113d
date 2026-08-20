@@ -1,0 +1,36 @@
+test/config/env-behavior.test.ts
+  s_76906187b9050b::t_d4c282685f6412 336
+test/visualize-command.test.ts
+  s_76906187b9050b::t_373b040d20b1c4 2
+src/telemetry/with-run-telemetry.ts
+  s_76906187b9050b::t_5305c0c270800f 2
+src/agent/openwiki-ignore.ts
+  s_76906187b9050b::t_f3c08495a9214c 3
+src/config/constants.ts
+  s_76906187b9050b::t_82d4cd9e138847 931
+test/agent/update-noop.test.ts
+  s_76906187b9050b::t_816337ff3647bb 7
+test/agent/parse-stream-event.test.ts
+  s_76906187b9050b::t_f0f3b3099c461f 387,397-399
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "b68bb779e77065761e2b6cd80d082423f07c113d",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_76906187b9050b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "391a4eba-570c-4f91-964a-03cc9764868e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

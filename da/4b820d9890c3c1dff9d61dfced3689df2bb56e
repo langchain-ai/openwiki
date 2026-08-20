@@ -1,0 +1,45 @@
+test/host-integrations/package-contents.test.ts
+  s_081e0b6f2df1e9::t_d9464609db8260 33-39,41-42,44-48,51-64,66-68,70-73
+  s_081e0b6f2df1e9::t_c36ade8a38e491 50
+  s_081e0b6f2df1e9::t_ed395d6b580651 1-32,40,43,49,65,69,74-108
+src/cli/commands.ts
+  s_081e0b6f2df1e9::t_21c1de152e60f0 98
+  s_081e0b6f2df1e9::t_bd00f39ab3a24b 10-14,35-97,99,101,167-174,527-733,1060-1077,1101,1169-1183,1279-1281
+  s_081e0b6f2df1e9::t_7edf7b3019994f 1102-1103
+test/cli/host-integration-runners.test.ts
+  s_081e0b6f2df1e9::t_86fd03cbe2d007 1-209
+test/host-integrations/cli-dogfood.test.ts
+  s_081e0b6f2df1e9::t_540e55176e0f63 1-121
+package.json
+  s_081e0b6f2df1e9::t_330abbe1d55119 23
+src/cli/host-integrations.ts
+  s_081e0b6f2df1e9::t_e0bfe28a04ae57 1-85
+test/cli/host-integration-commands.test.ts
+  s_081e0b6f2df1e9::t_c36ade8a38e491 101-104,114-115,168-171
+  s_081e0b6f2df1e9::t_692f4823169de1 1-49,51-63,65-74,76-100,105-113,116-167,172-186
+  s_081e0b6f2df1e9::t_d9464609db8260 50,64,75
+src/cli/cli.tsx
+  s_081e0b6f2df1e9::t_0b965a5ffefca9 8,38-45,47-50,52-58,60-63,65-93
+  s_081e0b6f2df1e9::t_21c1de152e60f0 28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "da4b820d9890c3c1dff9d61dfced3689df2bb56e",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

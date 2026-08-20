@@ -1,0 +1,24 @@
+.changeset/ripe-areas-pull.md
+  s_34a2eeddc159ff::t_06651b3886733b 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "f9dc2f95f90e44465b4be4e064da1df173c626bc",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_34a2eeddc159ff": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3e24fed4-5d09-4a65-8b96-b6118dd7bb4c",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

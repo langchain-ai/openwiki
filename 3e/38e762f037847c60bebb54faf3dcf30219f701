@@ -1,0 +1,36 @@
+test/integrations/installer.test.ts
+  s_fee2a42a3ba928::t_5126c532e2ceb8 391,442
+test/cli/integrations-runners.test.ts
+  s_fee2a42a3ba928::t_cf54cb6a85aa6b 80
+  s_fee2a42a3ba928::t_5126c532e2ceb8 67,82,163,165-166,174,180,183
+CONTRIBUTING.md
+  s_fee2a42a3ba928::t_5126c532e2ceb8 40,45
+test/cli/integrations-commands.test.ts
+  s_fee2a42a3ba928::t_5126c532e2ceb8 186
+README.md
+  s_fee2a42a3ba928::t_5126c532e2ceb8 26,34,74,88,430-431
+scripts/install-local-integration.mjs
+  s_fee2a42a3ba928::t_5126c532e2ceb8 19
+src/integrations/install/types.ts
+  s_fee2a42a3ba928::t_5126c532e2ceb8 4
+test/integrations/session-manager.test.ts
+  s_fee2a42a3ba928::t_5126c532e2ceb8 273
+test/integrations/cli-dogfood.test.ts
+  s_fee2a42a3ba928::t_cf54cb6a85aa6b 82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "3e38e762f037847c60bebb54faf3dcf30219f701",
+  "prompts": {},
+  "sessions": {
+    "s_fee2a42a3ba928": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01ff5-40a2-79e0-80b5-a42a8f887439",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

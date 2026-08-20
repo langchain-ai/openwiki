@@ -1,0 +1,27 @@
+src/agent/authoring-pool.ts
+  s_e3e935f3300670::t_09745b7d72d6e3 205
+src/agent/plan-ledger.ts
+  s_e3e935f3300670::t_eff5306c9553c1 396-400,403,425,597,600,618-637,643-644,655-667,683-684
+src/agent/wiki-verification.ts
+  s_e3e935f3300670::t_97c8829548e67b 179-199
+test/agent/plan-ledger.test.ts
+  s_e3e935f3300670::t_9849838ea6771d 72-105,626-627
+test/agent/wiki-verification.test.ts
+  s_e3e935f3300670::t_b8dc035499870c 144-155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "129c07d3a8d70dc775e23635a732bf2f42402e16",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

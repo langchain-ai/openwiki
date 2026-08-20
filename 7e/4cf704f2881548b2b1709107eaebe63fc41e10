@@ -1,0 +1,60 @@
+src/cli.tsx
+  s_2479b872a59cf8::t_18679f0c88ac7b 39
+  s_2479b872a59cf8::t_c713ef2445d7da 104-108
+test/telemetry.test.ts
+  s_2479b872a59cf8::t_23dae1b7b3338d 935-966
+  s_2479b872a59cf8::t_10ffc4b696a82c 1273
+  s_2479b872a59cf8::t_e89016e95fa649 221-413
+  s_2479b872a59cf8::t_683afac8e9a7e8 1136-1140
+  s_2479b872a59cf8::t_0f3f999f491ac6 31,34,36
+  s_2479b872a59cf8::t_cb66c8ccc29376 532-534,541
+test/crash-guard.test.ts
+  s_2479b872a59cf8::t_b21ab6e87467ac 1-9
+  s_2479b872a59cf8::t_39a0bfec4bb069 10-14,17-51,54-173
+  s_2479b872a59cf8::t_feed0fa7646f43 52-53
+  s_2479b872a59cf8::t_b8c65f897f5ccc 15-16
+src/telemetry/senders.ts
+  s_2479b872a59cf8::t_3da9e2b13e2881 89-92
+src/telemetry/record-run-safe.ts
+  s_2479b872a59cf8::t_42e1e830abe136 66
+  s_2479b872a59cf8::t_3eb48d546f3d78 47
+.changeset/telemetry-agent-error-visibility.md
+  s_2479b872a59cf8::t_11464ef4506126 1-5
+src/agent/index.ts
+  s_2479b872a59cf8::t_7bbe7ad97f8bf4 512-525
+  s_2479b872a59cf8::t_f49ed6b29482da 130
+  s_2479b872a59cf8::t_d6c6e370a49499 581
+src/agent/crash-guard.ts
+  s_2479b872a59cf8::t_6040a423774a4b 1-179
+src/telemetry/errors.ts
+  s_2479b872a59cf8::t_d382122701519f 265,490,492-520,524-531,552-555,557
+  s_2479b872a59cf8::t_83918c80ad95e6 64-76,78-127,130-153
+  s_2479b872a59cf8::t_6a7fa237b3e015 266-281
+  s_2479b872a59cf8::t_83400bd56dd8bf 481-489
+  s_2479b872a59cf8::t_2ea4c108754c8e 491
+  s_2479b872a59cf8::t_83f6daa3d571da 556
+src/telemetry/types.ts
+  s_2479b872a59cf8::t_b33c57d4b71a02 121-130
+  s_2479b872a59cf8::t_92c7f952e7f2a2 120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "7e4cf704f2881548b2b1709107eaebe63fc41e10",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_2479b872a59cf8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e650e15e-cfe6-4300-9140-e6ee2cdb8dd0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

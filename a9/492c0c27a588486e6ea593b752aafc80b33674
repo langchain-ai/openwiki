@@ -1,0 +1,56 @@
+integrations/openwiki/references/reviewers.md
+  s_081e0b6f2df1e9::t_cc09330f915b6b 1-106
+integrations/openwiki/references/init.md
+  s_081e0b6f2df1e9::t_cc09330f915b6b 10-48,55-59
+integrations/openwiki/references/update.md
+  s_081e0b6f2df1e9::t_cc09330f915b6b 10-14,19-20,22-24,26-27,29,31-33,35-36,41,45-46
+  s_081e0b6f2df1e9::t_6f1c6f0a10ebc8 15-18,21,25,28,30,34,37,40
+  s_081e0b6f2df1e9::t_9024727b9f1cc3 38-39
+test/agent/run-metadata.test.ts
+  s_081e0b6f2df1e9::t_0699c8587875b0 8,253,255-256,258-259,261-264,266,268-270,272-275
+src/host-integrations/core/session-manager.ts
+  s_081e0b6f2df1e9::t_0699c8587875b0 11,314
+  s_081e0b6f2df1e9::t_6f1c6f0a10ebc8 5,234-236
+test/host-integrations/session-manager.test.ts
+  s_081e0b6f2df1e9::t_6f1c6f0a10ebc8 160-171,252-268
+  s_081e0b6f2df1e9::t_0699c8587875b0 194-197,218
+  s_081e0b6f2df1e9::t_565ed7c522c45e 269-270
+integrations/openwiki/SKILL.md
+  s_081e0b6f2df1e9::t_cc09330f915b6b 9-10,23,27-30,37,40-42
+  s_081e0b6f2df1e9::t_6f1c6f0a10ebc8 38-39
+integrations/openwiki/references/methodology.md
+  s_081e0b6f2df1e9::t_6f1c6f0a10ebc8 6,19-24
+  s_081e0b6f2df1e9::t_6722b216c560d9 25
+src/agent/utils.ts
+  s_081e0b6f2df1e9::t_0699c8587875b0 32-33,246-250,252,255-266,269-270,408
+test/agent/utils.test.ts
+  s_081e0b6f2df1e9::t_0699c8587875b0 10,93,104
+test/host-integrations/skill.test.ts
+  s_081e0b6f2df1e9::t_477e6e08d7b885 103,107-108,113-116,176
+  s_081e0b6f2df1e9::t_6f1c6f0a10ebc8 151-153,230-245
+  s_081e0b6f2df1e9::t_d0cb03a7f45dbe 206-208
+  s_081e0b6f2df1e9::t_a557eb6987e66d 5,13,137,144-145,148-150,154-175,177-205,209-229
+src/agent/index.ts
+  s_081e0b6f2df1e9::t_0699c8587875b0 144,650,652,705,734,744,747-749
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a9492c0c27a588486e6ea593b752aafc80b33674",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
