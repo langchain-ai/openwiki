@@ -1,0 +1,23 @@
+src/agent/author-write.ts
+  s_e3e935f3300670::t_2a20b4221342e9 42,51-57,59,62-76,96-109,113,115,119,121-122,131,134-136,139-150,152-157,160-161,164-167,170,172-173,176-177
+src/agent/page-author.ts
+  s_e3e935f3300670::t_a796425472d0d2 27,72,97,99-100,102-103,164-167
+test/agent/claims-agent-integration.test.ts
+  s_e3e935f3300670::t_1035916fa6bfbb 178-179
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "52484362080eda78e82b3f6bc8f108dd35438ba4",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
