@@ -1,0 +1,56 @@
+src/host-integrations/install/skill-bundle.ts
+  s_081e0b6f2df1e9::t_6e496d6d0eef2b 6-10,39-45,178,184,191,271,277-278,287-289,294-326
+  s_081e0b6f2df1e9::t_ace529932974f2 327
+src/host-integrations/install/config-toml.ts
+  s_081e0b6f2df1e9::t_2ce20956faba0e 28-29,34-35,38,41-42,48-59,78,83,89,109,114,122,154,157,160-161
+  s_081e0b6f2df1e9::t_c8d8141a2ee1f5 4
+src/host-integrations/install/types.ts
+  s_081e0b6f2df1e9::t_eb76d6ca694a29 17-30,111-124
+  s_081e0b6f2df1e9::t_68a2b5da27504d 16
+src/host-integrations/install/config-json.ts
+  s_081e0b6f2df1e9::t_add01b4f93ffc5 11
+  s_081e0b6f2df1e9::t_c8d8141a2ee1f5 4,156
+  s_081e0b6f2df1e9::t_dc7b0e5c4ace80 16-17,24-29,51,81
+src/host-integrations/install/installer.ts
+  s_081e0b6f2df1e9::t_2c2a10f3acd21e 34,203-207,214,223,235
+  s_081e0b6f2df1e9::t_149e42f3cfb943 208-210
+  s_081e0b6f2df1e9::t_42d2c08cb39450 268-271,286,335-341
+  s_081e0b6f2df1e9::t_c4c88b1d95c445 39,160-161,222,234,358-359,368-369,382-383,543,548-550,563-564,571-572,575-576,595-596,615-616
+  s_081e0b6f2df1e9::t_0927b7f85b8d22 585,592,605,612,617-648
+  s_081e0b6f2df1e9::t_fdd69c1b24be3a 185
+scripts/install-local-integration.mjs
+  s_081e0b6f2df1e9::t_8b5bd843ab0d31 1-2,4-9,11-15,27-51
+  s_081e0b6f2df1e9::t_b28c5dabd7a69a 3
+  s_081e0b6f2df1e9::t_0a624cbee28b61 10,16-26,52-56
+test/host-integrations/config-adapters.test.ts
+  s_081e0b6f2df1e9::t_936f6b6eade43c 147-167,248-266
+  s_081e0b6f2df1e9::t_14eb4d3fef5fd7 24,26,30-33,177-179,184,187-192,206-208,217-219,231,234,243-245
+package.json
+  s_081e0b6f2df1e9::t_8b5bd843ab0d31 49
+test/host-integrations/installer.test.ts
+  s_081e0b6f2df1e9::t_b3f0edab758d40 21,503-508,510-512,514-527,531-534
+  s_081e0b6f2df1e9::t_764eae9423d99c 537-547
+  s_081e0b6f2df1e9::t_3d07b2e88d2a1f 479,535-536,548-554
+  s_081e0b6f2df1e9::t_c8d8141a2ee1f5 509,528-530
+  s_081e0b6f2df1e9::t_dcebdc654ad5bd 205-216,513
+  s_081e0b6f2df1e9::t_4f2ff57610215d 204
+  s_081e0b6f2df1e9::t_105942fe4329d8 555-556
+CONTRIBUTING.md
+  s_081e0b6f2df1e9::t_6c10c972d440fe 35-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "546b8f81b49e1728797e8f2254cb39e6abae608f",
+  "prompts": {},
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
