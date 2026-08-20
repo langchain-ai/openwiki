@@ -3,12 +3,12 @@ import {
   getHostIntegrationStatus,
   installHostIntegration,
   uninstallHostIntegration,
-} from "../host-integrations/install/installer.js";
+} from "../integrations/install/installer.js";
 import {
   getHostTarget,
   listHostTargets,
-} from "../host-integrations/install/registry.js";
-import { runOpenWikiMcp } from "../host-integrations/mcp/stdio.js";
+} from "../integrations/install/registry.js";
+import { runOpenWikiMcp } from "../integrations/mcp/stdio.js";
 import { getErrorMessage } from "../platform/diagnostics.js";
 import type { CliCommand } from "./commands.js";
 

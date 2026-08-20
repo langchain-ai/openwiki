@@ -10,18 +10,18 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import { writeTextAtomic } from "../../src/host-integrations/install/atomic-file.ts";
+import { writeTextAtomic } from "../../src/integrations/install/atomic-file.ts";
 import {
   getJsonMcpEntryStatus,
   installJsonMcpEntry,
   uninstallJsonMcpEntry,
-} from "../../src/host-integrations/install/config-json.ts";
+} from "../../src/integrations/install/config-json.ts";
 import {
   getCodexMcpBlockStatus,
   installCodexMcpBlock,
   uninstallCodexMcpBlock,
-} from "../../src/host-integrations/install/config-toml.ts";
-import type { HostMcpServerCommand } from "../../src/host-integrations/install/types.ts";
+} from "../../src/integrations/install/config-toml.ts";
+import type { HostMcpServerCommand } from "../../src/integrations/install/types.ts";
 
 const ENTRY: HostMcpServerCommand = {
   command: "openwiki",

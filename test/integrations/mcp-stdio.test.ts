@@ -20,7 +20,7 @@ vi.mock("@modelcontextprotocol/sdk/server/stdio.js", () => ({
   },
 }));
 
-import { runOpenWikiMcp } from "../../src/host-integrations/mcp/stdio.ts";
+import { runOpenWikiMcp } from "../../src/integrations/mcp/stdio.ts";
 
 afterEach(() => {
   vi.restoreAllMocks();

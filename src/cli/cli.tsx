@@ -26,7 +26,7 @@ import {
   runPrintCommand,
   runVisualizeCommand,
 } from "./runners.js";
-import { runIntegrationsCommand, runMcpCommand } from "./host-integrations.js";
+import { runIntegrationsCommand, runMcpCommand } from "./integrations.js";
 
 /**
  * Commands handled by the native OpenWiki startup and rendering pipeline.

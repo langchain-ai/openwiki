@@ -22,19 +22,19 @@ import {
   HostIntegrationInstaller,
   resolveCanonicalSkillBundle,
   type HostIntegrationInstallerOperations,
-} from "../../src/host-integrations/install/installer.ts";
-import { removeEmptySkillParents } from "../../src/host-integrations/install/install-paths.ts";
+} from "../../src/integrations/install/installer.ts";
+import { removeEmptySkillParents } from "../../src/integrations/install/install-paths.ts";
 import {
   defaultMcpServerCommand,
   getHostTarget,
   HOST_TARGETS,
   listHostTargets,
-} from "../../src/host-integrations/install/registry.ts";
+} from "../../src/integrations/install/registry.ts";
 import type {
   HostIntegrationScope,
   HostTarget,
   InstallOptions,
-} from "../../src/host-integrations/install/types.ts";
+} from "../../src/integrations/install/types.ts";
 import { OPENWIKI_VERSION } from "../../src/version.ts";
 
 const RECEIPT_FILE = ".openwiki-install.json";
@@ -915,10 +915,10 @@ describe("canonical skill bundle resolution", () => {
     const packageRoot = process.cwd();
     const expected = path.join(packageRoot, "integrations/openwiki");
     const sourceUrl = pathToFileURL(
-      path.join(packageRoot, "src/host-integrations/install/installer.ts"),
+      path.join(packageRoot, "src/integrations/install/installer.ts"),
     ).href;
     const builtUrl = pathToFileURL(
-      path.join(packageRoot, "dist/host-integrations/install/installer.js"),
+      path.join(packageRoot, "dist/integrations/install/installer.js"),
     ).href;
 
     expect(resolveCanonicalSkillBundle(sourceUrl)).toBe(expected);

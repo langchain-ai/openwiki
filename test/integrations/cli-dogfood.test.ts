@@ -11,7 +11,7 @@ import {
   test,
   vi,
 } from "vitest";
-import { runIntegrationsCommand } from "../../src/cli/host-integrations.ts";
+import { runIntegrationsCommand } from "../../src/cli/integrations.ts";
 
 let projectRoot: string;
 let stdoutSpy: MockInstance<typeof process.stdout.write>;

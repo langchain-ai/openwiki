@@ -10,12 +10,12 @@ import {
 import {
   getHostTarget,
   listHostTargets,
-} from "../host-integrations/install/registry.js";
+} from "../integrations/install/registry.js";
 import type {
   HostIntegrationScope,
   HostTargetId,
-} from "../host-integrations/install/types.js";
-import { isValidHostId } from "../host-integrations/core/protocol.js";
+} from "../integrations/install/types.js";
+import { isValidHostId } from "../integrations/core/protocol.js";
 
 export type HelpRow = {
   label: string;

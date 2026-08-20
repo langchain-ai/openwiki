@@ -5,7 +5,7 @@ import {
   getHelpText,
   parseCommand,
 } from "../../src/cli/commands.ts";
-import { listHostTargets } from "../../src/host-integrations/install/registry.ts";
+import { listHostTargets } from "../../src/integrations/install/registry.ts";
 
 describe("parseCommand host integrations", () => {
   test("parses list with global default or explicit project scope", () => {

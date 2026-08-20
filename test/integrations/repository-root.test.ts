@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { resolveRepositoryRoot } from "../../src/host-integrations/core/repository-root.ts";
+import { resolveRepositoryRoot } from "../../src/integrations/core/repository-root.ts";
 
 const temporaryRoots: string[] = [];
 

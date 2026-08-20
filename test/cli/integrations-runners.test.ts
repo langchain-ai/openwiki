@@ -9,12 +9,12 @@ import {
   vi,
 } from "vitest";
 
-vi.mock("../../src/host-integrations/install/installer.ts", () => ({
+vi.mock("../../src/integrations/install/installer.ts", () => ({
   getHostIntegrationStatus: vi.fn(),
   installHostIntegration: vi.fn(),
   uninstallHostIntegration: vi.fn(),
 }));
-vi.mock("../../src/host-integrations/mcp/stdio.ts", () => ({
+vi.mock("../../src/integrations/mcp/stdio.ts", () => ({
   runOpenWikiMcp: vi.fn(),
 }));
 
@@ -22,12 +22,12 @@ import {
   getHostIntegrationStatus,
   installHostIntegration,
   uninstallHostIntegration,
-} from "../../src/host-integrations/install/installer.ts";
-import { runOpenWikiMcp } from "../../src/host-integrations/mcp/stdio.ts";
+} from "../../src/integrations/install/installer.ts";
+import { runOpenWikiMcp } from "../../src/integrations/mcp/stdio.ts";
 import {
   runIntegrationsCommand,
   runMcpCommand,
-} from "../../src/cli/host-integrations.ts";
+} from "../../src/cli/integrations.ts";
 
 let stdoutSpy: MockInstance<typeof process.stdout.write>;
 let stderrSpy: MockInstance<typeof process.stderr.write>;

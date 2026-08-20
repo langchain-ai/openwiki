@@ -88,6 +88,9 @@ Host-driven runs currently support repository code wikis, not personal brains. T
 
 Use `openwiki integrations list` to inspect user-level installation status or `openwiki integrations uninstall <host>` to remove an integration safely. Add `--project [path]` to `list`, `install`, or `uninstall` for repository-scoped state; DCode requires this option.
 
+Contributors adding another coding agent should follow
+[Adding a coding-agent integration](CONTRIBUTING.md#adding-a-coding-agent-integration).
+
 ## Two modes
 
 OpenWiki runs in one of two modes. Bare `openwiki`, `openwiki --init`, and `openwiki --update` default to **code** mode; add the `personal` positional (or `--mode personal`) for the personal brain.

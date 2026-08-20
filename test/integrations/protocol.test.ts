@@ -3,14 +3,11 @@ import { mkdtemp, realpath, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import {
-  BeginInput,
-  RunInput,
-} from "../../src/host-integrations/core/protocol.ts";
+import { BeginInput, RunInput } from "../../src/integrations/core/protocol.ts";
 import {
   type BeginResult,
   HostSessionManager,
-} from "../../src/host-integrations/core/session-manager.ts";
+} from "../../src/integrations/core/session-manager.ts";
 
 const temporaryRoots: string[] = [];
 

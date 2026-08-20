@@ -7,13 +7,13 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { z } from "zod";
-import { HostIntegrationError } from "../../src/host-integrations/core/errors.ts";
-import type { ProtocolTool } from "../../src/host-integrations/core/protocol.ts";
-import { HostSessionManager } from "../../src/host-integrations/core/session-manager.ts";
+import { HostIntegrationError } from "../../src/integrations/core/errors.ts";
+import type { ProtocolTool } from "../../src/integrations/core/protocol.ts";
+import { HostSessionManager } from "../../src/integrations/core/session-manager.ts";
 import {
   createOpenWikiMcpServer,
   type HostLifecycleToolProvider,
-} from "../../src/host-integrations/mcp/server.ts";
+} from "../../src/integrations/mcp/server.ts";
 
 const temporaryRoots: string[] = [];
 

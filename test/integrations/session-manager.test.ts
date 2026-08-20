@@ -11,9 +11,9 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { HostIntegrationError } from "../../src/host-integrations/core/errors.ts";
-import { HostSessionManager } from "../../src/host-integrations/core/session-manager.ts";
-import { getHostTarget } from "../../src/host-integrations/install/registry.ts";
+import { HostIntegrationError } from "../../src/integrations/core/errors.ts";
+import { HostSessionManager } from "../../src/integrations/core/session-manager.ts";
+import { getHostTarget } from "../../src/integrations/install/registry.ts";
 
 const RUN_TIMESTAMP = "2026-08-20T08:15:00.000Z";
 const temporaryRoots: string[] = [];

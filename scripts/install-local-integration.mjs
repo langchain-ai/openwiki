@@ -3,8 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { installHostIntegration } from "../dist/host-integrations/install/installer.js";
-import { getHostTarget } from "../dist/host-integrations/install/registry.js";
+import { installHostIntegration } from "../dist/integrations/install/installer.js";
+import { getHostTarget } from "../dist/integrations/install/registry.js";
 import { getErrorMessage } from "../dist/platform/diagnostics.js";
 
 /**
@@ -16,7 +16,7 @@ async function main() {
   const hostId = process.argv[2];
   const target = hostId ? getHostTarget(hostId) : undefined;
   if (!target || process.argv.length !== 3) {
-    throw new Error("Usage: pnpm integration:dev <codex|claude|dcode>");
+    throw new Error("Usage: pnpm integrations:dev <codex|claude|dcode>");
   }
 
   const repositoryRoot = await realpath(
