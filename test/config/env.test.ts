@@ -146,6 +146,7 @@ describe("MANAGED_ENV_KEYS", () => {
   test("manages hosted OpenAI-compatible provider base URLs", () => {
     expect(MANAGED_ENV_KEYS).toContain("BASETEN_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("FIREWORKS_BASE_URL");
+    expect(MANAGED_ENV_KEYS).toContain("MISTRAL_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("NVIDIA_BASE_URL");
   });
 
