@@ -1,0 +1,27 @@
+openwiki/.last-update.json
+  s_440ba4f2540c30::t_69174c85939254 2,4
+openwiki/quickstart.md
+  s_440ba4f2540c30::t_69174c85939254 6,34,56-57,75,82,87,105,108,139,187,194
+openwiki/architecture/overview.md
+  s_440ba4f2540c30::t_69174c85939254 6,95,133,179
+openwiki/agent/workflow.md
+  s_440ba4f2540c30::t_69174c85939254 6,131,133-140,142,197,214-216
+openwiki/cli/usage.md
+  s_440ba4f2540c30::t_69174c85939254 6,61,67-87,305,313-314,352,369-371,385-386
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "9654f0670f57d4ecf382c3685dab18c0c17d1161",
+  "prompts": {},
+  "sessions": {
+    "s_440ba4f2540c30": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a020ed-85d9-7901-b33a-4977e8492461",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
