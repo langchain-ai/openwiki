@@ -1,0 +1,70 @@
+src/agent/plan-ledger.ts
+  s_edb12cd325a6ca::t_b477f029dc336d 357-358,360,364-365,371-376,379-387,743,777-778,812,844-848,862,987
+  s_edb12cd325a6ca::t_12be1d36378074 40-41,95-141,148,157,169-186,742,783,817,851,861,934-935,938-941,944,957,972,992
+  s_edb12cd325a6ca::t_a08f070a5b251e 571,580-584,588,592,605-618,621,623-627,631-633,635-636,639,641,643-644,925
+  s_edb12cd325a6ca::t_4b7547de6f3ef1 361-363,406,728,731,744,749,754,791
+  s_e3e935f3300670::t_22c5f7391cfebc 187-194,199,218,272-275,278-280,330,333,353,359,398,402-405,407-412,509,634,637-638,640,642,645-656,691-694,707-712,715-720,726,729-730,732-741,745-748,750-753,755-771,773-775,779,781-782,784-785,787-788,790,792-811,813,815-816,818-820,822-836,838-843,849,858,860,863-866,868-869,871-873,875-917,919-924,926-933,936-937,942-943,945-956,958-971,973-981,985,988-989,991,993,995-996,1005-1008,1020,1022-1024,1027,1030,1048-1064,1067,1069-1070,1072,1086,1089,1141-1148,1150-1152,1154,1157,1159,1165,1167-1168,1170-1174,1179,1184-1186,1214-1223,1225,1279,1303-1308
+test/agent/plan-ledger.test.ts
+  s_edb12cd325a6ca::t_04ef0c75b54f2f 1241-1252,1254-1255,1258-1268,1270,1273-1274,1276-1282,1284,1286,1289,1291,1293-1299,1301,1306-1349,1351,1353-1357,1359,1364-1372,1375-1376,1378-1380,1383-1405,1409-1417
+  s_e3e935f3300670::t_aacb206a639fdb 8-11,350-354,421-430,501-503,562-564,652-824,876-880,963-1223,1225,1227-1236,1418-1423,1426-1434,1437-1448,1450-1453,1455-1464,1467-1481
+src/agent/plan-store.ts
+  s_edb12cd325a6ca::t_f2bd732c27ad04 63-95,98-103,109,114,116-118,120-139,144-145
+src/agent/index.ts
+  s_3e428c7178dc9f::t_d0ef3c32f2cfb7 518-519,523
+src/agent/page-author.ts
+  s_edb12cd325a6ca::t_05b9f1368140d8 165
+src/agent/prompts/code.ts
+  s_e3e935f3300670::t_63cf3ec986940c 138,140
+src/agent/repo-inventory.ts
+  s_edb12cd325a6ca::t_b079829cdd6547 132-154
+src/agent/skeleton-critic.ts
+  s_3e428c7178dc9f::t_bd79281a49e209 5,22-26,42,57
+src/agent/subagent-dispatch.ts
+  s_edb12cd325a6ca::t_b406a1b70b1763 58-59
+src/agent/wiki-verification.ts
+  s_edb12cd325a6ca::t_db4142eec85c8a 33,214-218
+src/claims/brains/code/tools.ts
+  s_edb12cd325a6ca::t_fdbb900f6c6d5e 452,472
+test/agent/authoring-pool.test.ts
+  s_edb12cd325a6ca::t_84f9d734b1136b 33-35,105,118,124-126,138,175
+test/agent/claims-agent-integration.test.ts
+  s_edb12cd325a6ca::t_3736da20c8e50c 137-139
+test/agent/docs-only-backend.test.ts
+  s_edb12cd325a6ca::t_892ef86b14cc9a 46-48
+test/agent/wiki-verification.test.ts
+  s_edb12cd325a6ca::t_6095b71e67588c 27-29,44-51,62-65,68-73,152-154,188-193
+test/claims/brains/code/tools.test.ts
+  s_edb12cd325a6ca::t_0e086d19ef8cb2 499-501
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "bd21f956dc60e89170db68139d80b33f94bc2f37",
+  "prompts": {},
+  "sessions": {
+    "s_3e428c7178dc9f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2d4b512f-2dda-4fc7-ba27-032607d70127",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    },
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    },
+    "s_edb12cd325a6ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02002-092d-7bc1-84e6-e7a7b9f679de",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
