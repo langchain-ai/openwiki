@@ -1,0 +1,33 @@
+test/agent/index-middleware.test.ts
+  s_081e0b6f2df1e9::t_cd122059f57c44 637,653,662-689,693
+README.md
+  s_081e0b6f2df1e9::t_cd122059f57c44 162
+.changeset/tidy-books-prove.md
+  s_081e0b6f2df1e9::t_cd122059f57c44 5
+src/agent/okf-middleware.ts
+  s_081e0b6f2df1e9::t_cd122059f57c44 32
+src/okf/generated-provenance.ts
+  s_081e0b6f2df1e9::t_cd122059f57c44 18,23,35,78-80,138-139,145-146
+src/agent/prompts/code.ts
+  s_081e0b6f2df1e9::t_972e84665dc73e 74,81,83,195,318,325,327
+src/agent/prompts/personal.ts
+  s_081e0b6f2df1e9::t_972e84665dc73e 108,115,117,300,307,309,528,535,537
+test/agent/prompt-okf.test.ts
+  s_081e0b6f2df1e9::t_cd122059f57c44 42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "45739cf0655186dba8b5d3854c7a9cb77445f2ac",
+  "prompts": {},
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
