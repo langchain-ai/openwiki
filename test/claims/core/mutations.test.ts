@@ -166,6 +166,25 @@ describe("applyClaimOperations", () => {
     });
   });
 
+  test("passes the prior opaque version when refreshing existing evidence", async () => {
+    const calls: Array<{ resource: string; previousVersion?: string }> = [];
+    const resource = "memory://reminders/weekly";
+    const resolver: EvidenceResolver = {
+      resolve(resourceInput, previousVersion) {
+        calls.push({ resource: resourceInput, previousVersion });
+        return Promise.resolve(memoryEvidence(resourceInput, "revision:2"));
+      },
+    };
+
+    await applyClaimOperations({
+      claims: EXISTING_CLAIMS,
+      operations: [{ op: "confirm", id: "claim_existing" }],
+      resolver,
+    });
+
+    expect(calls).toEqual([{ resource, previousVersion: "revision:1" }]);
+  });
+
   test("statement-only updates retain resources and refresh their versions", async () => {
     const resource = "memory://reminders/weekly";
     const result = await applyClaimOperations({

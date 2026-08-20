@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { PAGE } from "../../src/visualize/page.ts";
+import { PAGE, STATIC_PAGE } from "../../src/visualize/page.ts";
 
 /**
  * The browser libraries the page loads from the jsdelivr CDN, pinned to exact
@@ -30,6 +30,15 @@ describe("visualizer PAGE", () => {
   test("is a full HTML document", () => {
     expect(PAGE.startsWith("<!doctype html>")).toBe(true);
     expect(PAGE).toContain("<title>OpenWiki visualizer</title>");
+  });
+
+  test("loads styles from an external stylesheet in both modes", () => {
+    expect(PAGE).toContain('<link rel="stylesheet" href="/styles.css" />');
+    expect(STATIC_PAGE).toContain(
+      '<link rel="stylesheet" href="./styles.css" />',
+    );
+    expect(PAGE).not.toMatch(/<style\b/u);
+    expect(STATIC_PAGE).not.toMatch(/<style\b/u);
   });
 
   test.each(PINNED_CDN_SCRIPTS)(

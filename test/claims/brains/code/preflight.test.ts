@@ -121,9 +121,9 @@ describe("runClaimsPreflight", () => {
 
   test("classifies stale and unresolved claims with unresolved precedence", async () => {
     const page = "/openwiki/page.md";
-    const staleResource = "repo://src/stale.ts#value";
+    const staleResource = "repo://src/stale.ts#L10-L20";
     const staleFileResource = "repo://src/stale-file.ts";
-    const missingResource = "repo://src/missing.ts#value";
+    const missingResource = "repo://src/missing.ts#L10-L20";
     await writePage(page, "# Page\n");
     const store = new ClaimsStore(rootDir);
     await store.writePage(
@@ -190,9 +190,45 @@ describe("runClaimsPreflight", () => {
     );
   });
 
+  test("resolves shared resources separately when their prior versions differ", async () => {
+    const page = "/openwiki/page.md";
+    const resource = "repo://src/shared.ts#L1-L2";
+    await writePage(page, "# Page\n");
+    const store = new ClaimsStore(rootDir);
+    await store.writePage(
+      page,
+      await pageClaims(store, page, [
+        {
+          id: "claim_first",
+          statement: "The first fact.",
+          evidence: [{ resource, version: "anchor:first" }],
+        },
+        {
+          id: "claim_second",
+          statement: "The second fact.",
+          evidence: [{ resource, version: "anchor:second" }],
+        },
+      ]),
+    );
+    const versions: Array<string | undefined> = [];
+    const resolver: EvidenceResolver = {
+      resolve(resourceInput, previousVersion) {
+        versions.push(previousVersion);
+        return Promise.resolve(
+          resolvedEvidence(resourceInput, previousVersion ?? "missing"),
+        );
+      },
+    };
+
+    const result = await runClaimsPreflight(store, resolver);
+
+    expect(result.issues).toEqual([]);
+    expect(versions).toEqual(["anchor:first", "anchor:second"]);
+  });
+
   test("propagates resolver failures instead of treating them as unresolved", async () => {
     const page = "/openwiki/page.md";
-    const resource = "repo://src/broken.ts#value";
+    const resource = "repo://src/broken.ts#L10-L20";
     await writePage(page, "# Page\n");
     const store = new ClaimsStore(rootDir);
     await store.writePage(
@@ -205,7 +241,7 @@ describe("runClaimsPreflight", () => {
         },
       ]),
     );
-    const failure = new Error("parser unavailable");
+    const failure = new Error("evidence unavailable");
 
     await expect(
       runClaimsPreflight(store, createResolver(new Map([[resource, failure]]))),
@@ -254,7 +290,7 @@ describe("runClaimsPreflight", () => {
   test("returns issues in stable page, kind, and claim order", async () => {
     const alpha = "/openwiki/alpha.md";
     const zeta = "/openwiki/zeta.md";
-    const zetaResource = "repo://src/zeta.ts#value";
+    const zetaResource = "repo://src/zeta.ts#L10-L20";
     await writePage(zeta, "# Zeta\n");
     await writePage(alpha, "# Alpha\n");
     const store = new ClaimsStore(rootDir);

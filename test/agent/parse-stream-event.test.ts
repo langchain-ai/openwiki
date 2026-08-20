@@ -8,12 +8,12 @@ import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 // "tool activity", and "ignore" must hold up against malformed and adversarial
 // shapes. stream-redaction.test.ts already covers content-block suppression on
 // the `messages` tuple path; these cases exercise the remaining discrimination
-// branches (protocol guard, nested/serialized message shapes, delta variants,
-// and the whole `tools` branch) that path never hits.
+// branches (protocol guard, subgraph tagging, nested/serialized message
+// shapes, delta variants, and the whole `tools` branch) that path never hits.
 
 /**
  * Wraps a `messages` payload in the normalized protocol-event envelope that
- * isProtocolStreamEvent() accepts.
+ * isProtocolStreamEvent() accepts. Any non-empty namespace marks a subgraph.
  */
 function messagesChunk(data: unknown, namespace: unknown[] = []): unknown {
   return {
@@ -25,13 +25,13 @@ function messagesChunk(data: unknown, namespace: unknown[] = []): unknown {
 
 /**
  * Wraps a `tools` payload (the tool lifecycle record) in the protocol-event
- * envelope. The tools branch never reads `namespace`, so it is omitted here.
+ * envelope.
  */
-function toolsChunk(data: unknown): unknown {
+function toolsChunk(data: unknown, namespace: unknown[] = []): unknown {
   return {
     type: "event",
     method: "tools",
-    params: { data },
+    params: { data, namespace },
   };
 }
 
@@ -70,12 +70,18 @@ function toolsChunkWithMethod(method: string): unknown {
   return { type: "event", method, params: { data: {}, namespace: [] } };
 }
 
-describe("parseStreamEvent – message normalization", () => {
-  test("normalizes a top-level message event", () => {
+describe("parseStreamEvent – messages source tagging", () => {
+  test("top-level namespace tags the event as coming from the main graph", () => {
     const event = parseStreamEvent(messagesChunk("hello from main", []));
 
-    expect(event).toMatchObject({ type: "text" });
+    expect(event).toMatchObject({ source: "main", type: "text" });
     expect(expectText(event)).toBe("hello from main");
+  });
+
+  test("a nested namespace tags the event as coming from a subgraph", () => {
+    const event = parseStreamEvent(messagesChunk("hello from sub", ["task"]));
+
+    expect(event).toMatchObject({ source: "subgraph", type: "text" });
   });
 });
 
@@ -340,6 +346,28 @@ describe("parseStreamEvent – tools branch", () => {
       id: "c3",
       name: "write_file",
       status: "finished",
+    });
+  });
+
+  test("preserves tool activity emitted by a subgraph", () => {
+    const event = parseStreamEvent(
+      toolsChunk(
+        {
+          event: "on_tool_start",
+          name: "read_file",
+          toolCallId: "nested-read",
+          input: { path: "/src/agent/index.ts" },
+        },
+        ["task"],
+      ),
+    );
+
+    expect(event).toEqual({
+      type: "tool_start",
+      call: 'read_file(path="/src/agent/index.ts")',
+      id: "nested-read",
+      input: { path: "/src/agent/index.ts" },
+      name: "read_file",
     });
   });
 

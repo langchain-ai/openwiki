@@ -4,11 +4,7 @@ import {
 } from "@langchain/core/tools";
 import type { DeleteResult } from "deepagents";
 import { z } from "zod";
-import {
-  ClaimSessionError,
-  EvidenceParseError,
-  EvidenceResourceError,
-} from "../../core/errors.js";
+import { ClaimSessionError, EvidenceResourceError } from "../../core/errors.js";
 import type { ClaimOperation } from "../../core/types.js";
 import {
   isGroundedWikiPage,
@@ -135,7 +131,7 @@ export function createClaimsTools(
     new DynamicStructuredTool({
       name: "resolve_claims",
       description:
-        "Maintain material factual propositions for one or more wiki pages in one call. Put every affected page in pages - a whole authoring or repair phase belongs in one call, and calling this once per page in a loop is always wrong. Each page's operations are applied atomically and each page succeeds or fails on its own: successful pages come back under pages, and any page that failed comes back under failed with its own error, so retry only those and never replay a page that already succeeded. Keep each statement to one concise, atomic proposition—not an excerpt, list, compound summary, or paragraph. Split compound facts into separate claims. Use confirm when a claim remains true, update to change its statement or evidence, retract when it is obsolete, and add for a new material fact. Normal Markdown edits need no Claims call. Evidence uses repo://path or repo://path#symbol resources.",
+        "Maintain substantive system truths for one or more wiki pages in one call. Prioritize behavior, responsibilities, architecture and ownership, cross-component relationships, data/control flow, invariants, lifecycle and failure semantics, configuration, security, persistence, operations, and extension seams. Atomic means one coherent falsifiable idea, not one symbol or source line: a claim may connect multiple components and cite multiple evidence resources. Omit low-value facts about symbol existence, paths, signatures, return types, or inheritance unless they materially affect understanding, operation, or safe change. Ensure every material, source-dependent proposition the wiki relies on is represented; completeness takes priority over minimizing Claim count, and distinct truths remain distinct even when the same function or component supports them. Put every affected page in pages - a whole authoring or repair phase belongs in one call, and calling this once per page in a loop is always wrong. Each page's operations are applied atomically and each page succeeds or fails on its own: successful pages come back under pages, and any page that failed comes back under failed with its own error, so retry only those and never replay a page that already succeeded. Keep each statement concise—not an excerpt, list, compound summary, or paragraph—and remove semantic duplicates only after establishing coverage. Use confirm when a claim remains true, update to change its statement or evidence, retract when it is obsolete, and add for a new material fact. Normal Markdown edits need no Claims call. Claims currently support repository evidence only; do not invent repository evidence for connector-derived facts, and leave LangSmith-only facts unclaimed. Cite bounded language-agnostic line ranges as repo://path#L10-L24. Use repo://path only when the whole file is the evidence.",
       schema: {
         type: "object",
         properties: {
@@ -320,8 +316,8 @@ export function createClaimsDeleteFileTool(
 /**
  * Executes a model-facing Claims operation with recoverable input failures.
  *
- * Operational evidence, filesystem, parser, and unexpected failures are
- * intentionally rethrown so they cannot be mistaken for agent input errors.
+ * Non-fallback evidence, filesystem, and unexpected failures are intentionally
+ * rethrown so they cannot be mistaken for agent input errors.
  *
  * @param operation - Parsed Claims operation to execute.
  * @returns Compact JSON for either success or a retryable input failure.
@@ -448,18 +444,10 @@ async function runClaimsTool(
  */
 function isRecoverableClaimsToolError(
   error: unknown,
-): error is
-  | ClaimSessionError
-  | EvidenceResourceError
-  | EvidenceParseError
-  | z.ZodError {
+): error is ClaimSessionError | EvidenceResourceError | z.ZodError {
   return (
     error instanceof ClaimSessionError ||
     error instanceof EvidenceResourceError ||
-    // One unparseable file, not a broken resolver. Its own page's claims are
-    // lost and the model can cite the path without a #symbol or cite something
-    // else; the other pages in the call have nothing to do with it.
-    error instanceof EvidenceParseError ||
     error instanceof z.ZodError
   );
 }
@@ -471,11 +459,7 @@ function isRecoverableClaimsToolError(
  * @returns Human-readable correction guidance.
  */
 function formatRecoverableClaimsToolError(
-  error:
-    | ClaimSessionError
-    | EvidenceResourceError
-    | EvidenceParseError
-    | z.ZodError,
+  error: ClaimSessionError | EvidenceResourceError | z.ZodError,
 ): string {
   if (error instanceof z.ZodError) {
     return error.issues

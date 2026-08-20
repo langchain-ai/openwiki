@@ -35,7 +35,7 @@
   ],
   "scripts": {
     "openwiki": "node dist/cli/cli.js",
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs",
     "changeset:version": "changeset version",
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
@@ -80,20 +80,6 @@
     "marked": "^18.0.5",
     "posthog-node": "^5.39.4",
     "react": "^18.3.1",
-    "tree-sitter": "0.21.1",
-    "tree-sitter-bash": "0.23.3",
-    "tree-sitter-c": "0.23.2",
-    "tree-sitter-c-sharp": "0.23.1",
-    "tree-sitter-cpp": "0.23.4",
-    "tree-sitter-go": "0.23.4",
-    "tree-sitter-java": "0.23.5",
-    "tree-sitter-javascript": "0.23.1",
-    "tree-sitter-php": "0.23.11",
-    "tree-sitter-python": "0.23.4",
-    "tree-sitter-ruby": "0.23.1",
-    "tree-sitter-rust": "0.23.1",
-    "tree-sitter-scala": "0.24.0",
-    "tree-sitter-typescript": "0.23.2",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
@@ -131,21 +117,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "better-sqlite3",
-      "esbuild",
-      "tree-sitter",
-      "tree-sitter-bash",
-      "tree-sitter-c",
-      "tree-sitter-c-sharp",
-      "tree-sitter-cpp",
-      "tree-sitter-go",
-      "tree-sitter-javascript",
-      "tree-sitter-java",
-      "tree-sitter-php",
-      "tree-sitter-python",
-      "tree-sitter-ruby",
-      "tree-sitter-rust",
-      "tree-sitter-scala",
-      "tree-sitter-typescript"
+      "esbuild"
     ]
   },
   "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8"

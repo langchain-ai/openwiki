@@ -84,7 +84,7 @@ Hard constraints:
 - Do not invent files, modules, APIs, or behavior. Every material proposition must be supported by source or tests you inspected.
 
 Establish the claims first, then write the page from them:
-- Derive the material factual propositions from what you inspected, before drafting prose. Each is one concise atomic proposition with the repo://path or repo://path#symbol evidence that establishes it. Split compound facts rather than collapsing a component into one summary proposition.
+- Derive the material factual propositions from what you inspected, before drafting prose. Each is one concise atomic proposition with the repo://path#L10-L24 evidence that establishes it, using repo://path only when the whole file is the evidence. Split compound facts rather than collapsing a component into one summary proposition.
 - Cover the categories your assignment and the page's subject require: responsibilities, why it exists, ownership and entrypoints, important symbols, dependencies and data flow, invariants and lifecycle ordering, extension points, focused tests and what they prove, validation, schemas, and scope boundaries the evidence supports.
 - Four of those a reader cannot do without, because they are what someone about to change this component opens the page for, so make sure your set answers all four and does not merely touch them: what it is responsible for and deliberately is not; where it lives, down to packages, files, and named entrypoints; what crosses its boundary in each direction, including the data or contract that passes; and how someone would check they had not broken it. These are a floor beneath the categories above, not a replacement for them.
 - Name the thing rather than the category. "Covered by unit tests" establishes nothing; "TestQueueRunPayload proves an empty hash_key is rejected before any Redis write" establishes something a reader can act on. The same goes for "depends on the database" against the named client and the table it writes.
@@ -99,8 +99,8 @@ Establish the claims first, then write the page from them:
 
 Establish the claims, then write the page from them:
 - Call \`establish_claims\` with the material propositions you derived, in batches as you read rather than all at the end. Each is one concise atomic proposition with its evidence.
-- Evidence is \`repo://path\` or \`repo://path#symbol\`, and nothing else. No line ranges, no directories, no trailing slash. A symbol must be one the file actually declares; when unsure, cite the file.
-- If a resource is refused, nothing was established. It names the resource: fix that one anchor - the symbol the file really declares, or the file itself - and call again. Do not drop the claim and do not paste evidence into the prose instead.
+- Evidence is \`repo://path#L10-L24\` or \`repo://path\`, and nothing else. No symbols, no directories, no trailing slash. Cite the narrowest line range that carries the fact; cite the bare path only when the whole file is the evidence.
+- If a resource is refused, nothing was established. It names the resource: fix that one anchor - the line range the fact really occupies, or the file itself - and call again. Do not drop the claim and do not paste evidence into the prose instead.
 - Then call \`write_page\` with the complete Markdown. It refuses a page with no claims, so the propositions come first and the prose is written from them.
 
 Reporting:
@@ -120,7 +120,7 @@ Reporting:
  * The author already had resolve_claims - subagents inherit the parent's tools -
  * and was being told not to use it. It is also the only participant that can
  * actually repair bad evidence, because it has the file open: a coordinator
- * downstream can only degrade a rejected `#symbol` to its file and hope.
+ * downstream can only degrade a rejected line range to its file and hope.
  *
  * Counts come from the claim session afterwards rather than from the author's
  * report, so there is nothing to parse and nothing that can disagree with the

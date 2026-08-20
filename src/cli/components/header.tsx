@@ -5,6 +5,7 @@ import {
   getDefaultModelId,
   getProviderLabel,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_REASONING_EFFORT_ENV_KEY,
   OPENWIKI_VERSION,
   resolveConfiguredProvider,
 } from "../../config/constants.js";
@@ -51,9 +52,9 @@ interface HeaderProps {
 }
 
 /**
- * The session header showing OpenWiki version, provider, model, directory, and
- * LangSmith tracing state. Renders a compact single-line variant or the full
- * bordered form with logo. All interpolated values pass through
+ * The session header showing OpenWiki version, provider, model, optional
+ * reasoning effort, directory, and LangSmith tracing state. Renders a compact
+ * single-line variant or the full bordered form with logo. All interpolated values pass through
  * sanitizeHeaderValue so control characters cannot reach the terminal.
  */
 export function Header({
@@ -69,6 +70,14 @@ export function Header({
       getDefaultModelId(resolveConfiguredProvider()),
     Math.max(8, terminalColumns - 12),
   );
+  const configuredReasoningEffort =
+    process.env[OPENWIKI_REASONING_EFFORT_ENV_KEY]?.trim();
+  const displayReasoningEffort = configuredReasoningEffort
+    ? sanitizeHeaderValue(
+        configuredReasoningEffort,
+        Math.max(8, terminalColumns - 20),
+      )
+    : null;
   const configuredProvider = resolveConfiguredProvider();
   const displayProvider = getProviderLabel(configuredProvider);
   const chatGptAccount =
@@ -101,6 +110,12 @@ export function Header({
           ) : null}
           <Text color="gray">model: </Text>
           <Text color="white">{displayModelId}</Text>
+          {displayReasoningEffort ? (
+            <>
+              <Text color="gray"> effort: </Text>
+              <Text color="white">{displayReasoningEffort}</Text>
+            </>
+          ) : null}
         </Text>
         <Text>
           <Text color={tracingEnabled ? "green" : "gray"}>
@@ -154,6 +169,12 @@ export function Header({
           <Text color="gray">model: </Text>
           <Text color="white">{displayModelId}</Text>
         </Text>
+        {displayReasoningEffort ? (
+          <Text>
+            <Text color="gray">reasoning effort: </Text>
+            <Text color="white">{displayReasoningEffort}</Text>
+          </Text>
+        ) : null}
         <Text>
           <Text color="gray">directory: </Text>
           <Text color="white">{displayDirectory}</Text>

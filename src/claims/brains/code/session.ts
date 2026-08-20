@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { ClaimSessionError } from "../../core/errors.js";
+import {
+  ClaimsError,
+  ClaimsPageMissingError,
+  ClaimsPersistenceSecurityError,
+  ClaimSessionError,
+  EvidenceSecurityError,
+} from "../../core/errors.js";
 import { applyClaimOperations, cloneClaims } from "../../core/mutations.js";
 import { cacheEvidenceResolver } from "../../core/resolver-cache.js";
 import type { Claim, EvidenceResolver } from "../../core/types.js";
@@ -7,6 +13,7 @@ import { normalizeWikiPagePath } from "./paths.js";
 import { ClaimsStore } from "./store.js";
 import {
   CODE_CLAIMS_SCHEMA_VERSION,
+  type ClaimsFinalizeResult,
   type GroundingIssue,
   type InspectedClaim,
   type InspectedPageClaims,
@@ -291,8 +298,10 @@ export class ClaimSession {
    *
    * @param store - OpenWiki-owned Claims persistence.
    */
-  async finalize(store: ClaimsStore): Promise<void> {
+  async finalize(store: ClaimsStore): Promise<ClaimsFinalizeResult> {
     const resolver = cacheEvidenceResolver(this.resolver);
+    const warnings: string[] = [];
+    const missingPages: string[] = [];
     const ready: Array<{
       page: string;
       state: WorkingPageState;
@@ -304,26 +313,73 @@ export class ClaimSession {
       if (state.deleted || !state.dirty) {
         continue;
       }
-      await this.assertEvidenceStillCurrent(page, state.claims, resolver);
-      ready.push({ page, state, hash: await store.hashPage(page) });
+      try {
+        await this.assertEvidenceStillCurrent(page, state.claims, resolver);
+        ready.push({ page, state, hash: await store.hashPage(page) });
+      } catch (error) {
+        if (!isRecoverableFinalizationError(error)) {
+          throw error;
+        }
+        if (error instanceof ClaimsPageMissingError) {
+          missingPages.push(page);
+          warnings.push(
+            `Could not verify Claims for ${page} because its Markdown disappeared; its sidecar will be removed: ${error.message}`,
+          );
+        } else {
+          warnings.push(formatFinalizationWarning(page, "verify", error));
+        }
+      }
     }
 
     for (const orphan of this.orphanPages) {
-      await store.deletePage(orphan);
+      try {
+        await store.deletePage(orphan);
+      } catch (error) {
+        if (!isRecoverableFinalizationError(error)) {
+          throw error;
+        }
+        warnings.push(formatFinalizationWarning(orphan, "clean up", error));
+      }
+    }
+    for (const missingPage of missingPages) {
+      try {
+        await store.deletePage(missingPage);
+      } catch (error) {
+        if (!isRecoverableFinalizationError(error)) {
+          throw error;
+        }
+        warnings.push(formatFinalizationWarning(missingPage, "remove", error));
+      }
     }
     for (const [page, state] of this.pages) {
       if (state.deleted) {
-        await store.deletePage(page);
+        try {
+          await store.deletePage(page);
+        } catch (error) {
+          if (!isRecoverableFinalizationError(error)) {
+            throw error;
+          }
+          warnings.push(formatFinalizationWarning(page, "remove", error));
+        }
       }
     }
     for (const { page, state, hash } of ready) {
-      await store.writePage(page, {
-        schemaVersion: CODE_CLAIMS_SCHEMA_VERSION,
-        pageVersion: hash,
-        claims: cloneClaims(state.claims),
-      });
-      state.dirty = false;
+      try {
+        await store.writePage(page, {
+          schemaVersion: CODE_CLAIMS_SCHEMA_VERSION,
+          pageVersion: hash,
+          claims: cloneClaims(state.claims),
+        });
+        state.dirty = false;
+      } catch (error) {
+        if (!isRecoverableFinalizationError(error)) {
+          throw error;
+        }
+        warnings.push(formatFinalizationWarning(page, "persist", error));
+      }
     }
+
+    return { warnings };
   }
 
   /**
@@ -340,7 +396,10 @@ export class ClaimSession {
   ): Promise<void> {
     for (const claim of claims) {
       for (const evidence of claim.evidence) {
-        const current = await resolver.resolve(evidence.resource);
+        const current = await resolver.resolve(
+          evidence.resource,
+          evidence.version,
+        );
         if (!current) {
           throw new ClaimSessionError(
             `Evidence disappeared before finalizing ${page}: ${evidence.resource}`,
@@ -484,4 +543,36 @@ function toInspectedClaim(
  */
 function cloneGroundingIssue(issue: GroundingIssue): GroundingIssue {
   return { ...issue, resources: [...issue.resources] };
+}
+
+/**
+ * Identifies page-local Claims failures that can be safely deferred.
+ *
+ * Security failures and unexpected programmer errors remain fatal.
+ *
+ * @param error - Unknown finalization failure.
+ * @returns Whether finalization may skip the affected page.
+ */
+function isRecoverableFinalizationError(error: unknown): error is ClaimsError {
+  return (
+    error instanceof ClaimsError &&
+    !(error instanceof ClaimsPersistenceSecurityError) &&
+    !(error instanceof EvidenceSecurityError)
+  );
+}
+
+/**
+ * Formats one page-local finalization warning.
+ *
+ * @param page - Canonical generated page.
+ * @param action - Finalization action that was skipped.
+ * @param error - Recoverable Claims failure.
+ * @returns User-facing warning text.
+ */
+function formatFinalizationWarning(
+  page: string,
+  action: string,
+  error: ClaimsError,
+): string {
+  return `Could not ${action} Claims for ${page}; its Claims sidecar was left unchanged: ${error.message}`;
 }

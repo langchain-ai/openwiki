@@ -13,7 +13,10 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { ClaimsStore } from "../../../../src/claims/brains/code/store.ts";
 import { CODE_CLAIMS_SCHEMA_VERSION } from "../../../../src/claims/brains/code/types.ts";
 import type { PageClaims } from "../../../../src/claims/brains/code/types.ts";
-import { ClaimsPersistenceError } from "../../../../src/claims/core/errors.ts";
+import {
+  ClaimsPersistenceError,
+  ClaimsPersistenceSecurityError,
+} from "../../../../src/claims/core/errors.ts";
 
 /**
  * Valid deterministic page hash used by validation fixtures.
@@ -72,8 +75,8 @@ describe("ClaimsStore", () => {
           statement: "The fixture is enabled.",
           evidence: [
             {
-              resource: "repo://src/fixture.ts#enabled",
-              version: "tree-sitter-typescript-v1:sha256:fixture",
+              resource: "repo://src/fixture.ts#L1-L4",
+              version: "repo-lines-v1:sha256:fixture",
             },
           ],
         },
@@ -313,7 +316,7 @@ describe("ClaimsStore", () => {
 
     await expect(
       store.writePage("/openwiki/page.md", pageClaims),
-    ).rejects.toThrow(ClaimsPersistenceError);
+    ).rejects.toThrow(ClaimsPersistenceSecurityError);
     await expect(readdir(outsideDir)).resolves.toEqual([]);
   });
 
@@ -332,10 +335,10 @@ describe("ClaimsStore", () => {
     const store = new ClaimsStore(rootDir);
 
     await expect(store.hashPage("/openwiki/page.md")).rejects.toThrow(
-      ClaimsPersistenceError,
+      ClaimsPersistenceSecurityError,
     );
     await expect(store.loadPage("/openwiki/page.md")).rejects.toThrow(
-      ClaimsPersistenceError,
+      ClaimsPersistenceSecurityError,
     );
   });
 

@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { ClaimsPersistenceSecurityError } from "../../../../src/claims/core/errors.ts";
 import { ClaimSession } from "../../../../src/claims/brains/code/session.ts";
 import { ClaimsStore } from "../../../../src/claims/brains/code/store.ts";
 import type { PageClaims } from "../../../../src/claims/brains/code/types.ts";
@@ -343,35 +344,98 @@ describe("ClaimSession", () => {
 
   test.each([
     ["disappears", null, "Evidence disappeared"],
-    ["changes", resolved("memory://feature", "revision:3"), "Evidence changed"],
+    ["changes", resolved("memory://bad", "revision:3"), "Evidence changed"],
   ])(
-    "does not mutate any sidecar when evidence %s before finalization",
+    "isolates one page when its evidence %s before finalization",
     async (_condition, finalOutcome, expected) => {
-      const page = "/openwiki/page.md";
+      const badPage = "/openwiki/bad.md";
+      const goodPage = "/openwiki/good.md";
       const orphan = "/openwiki/orphan.md";
-      await writePage(page);
+      await writePage(badPage);
+      await writePage(goodPage);
       const store = new ClaimsStore(rootDir);
+      const badClaim: Claim = {
+        id: "claim_bad",
+        statement: "Bad evidence may change.",
+        evidence: [{ resource: "memory://bad", version: "revision:1" }],
+      };
+      const goodClaim: Claim = {
+        id: "claim_good",
+        statement: "Good evidence remains current.",
+        evidence: [{ resource: "memory://good", version: "revision:1" }],
+      };
+      await store.writePage(badPage, persisted([badClaim]));
+      await store.writePage(goodPage, persisted([goodClaim]));
       await store.writePage(orphan, persisted([]));
       const outcomes = new Map<string, ResolvedEvidence | null>([
-        ["memory://feature", resolved("memory://feature", "revision:2")],
+        ["memory://bad", resolved("memory://bad", "revision:2")],
+        ["memory://good", resolved("memory://good", "revision:2")],
       ]);
-      const session = createSession({
+      const session = new ClaimSession({
         resolver: createResolver(outcomes),
+        persisted: new Map([
+          [badPage, persisted([badClaim])],
+          [goodPage, persisted([goodClaim])],
+        ]),
+        issues: [],
         orphanPages: [orphan],
       });
       await session.resolveClaims({
-        page,
-        operations: [{ op: "confirm", id: "claim_existing" }],
+        page: badPage,
+        operations: [{ op: "confirm", id: "claim_bad" }],
       });
-      outcomes.set("memory://feature", finalOutcome);
-      const writeSidecar = vi.spyOn(store, "writePage");
-      const deleteSidecar = vi.spyOn(store, "deletePage");
+      await session.resolveClaims({
+        page: goodPage,
+        operations: [{ op: "confirm", id: "claim_good" }],
+      });
+      outcomes.set("memory://bad", finalOutcome);
 
-      await expect(session.finalize(store)).rejects.toThrow(expected);
-      expect(writeSidecar).not.toHaveBeenCalled();
-      expect(deleteSidecar).not.toHaveBeenCalled();
+      const result = await session.finalize(store);
+
+      expect(result.warnings).toHaveLength(1);
+      expect(result.warnings[0]).toContain(expected);
+      expect(
+        (await store.loadPage(badPage))?.claims[0]?.evidence[0]?.version,
+      ).toBe("revision:1");
+      expect(
+        (await store.loadPage(goodPage))?.claims[0]?.evidence[0]?.version,
+      ).toBe("revision:2");
+      await expect(store.loadPage(orphan)).resolves.toBeNull();
     },
   );
+
+  test("keeps unsafe finalization paths fatal", async () => {
+    const page = "/openwiki/page.md";
+    await writePage(page);
+    const store = new ClaimsStore(rootDir);
+    const session = createSession();
+    await session.resolveClaims({
+      page,
+      operations: [{ op: "confirm", id: "claim_existing" }],
+    });
+    vi.spyOn(store, "hashPage").mockRejectedValueOnce(
+      new ClaimsPersistenceSecurityError("unsafe claims path"),
+    );
+
+    await expect(session.finalize(store)).rejects.toThrow("unsafe claims path");
+  });
+
+  test("removes a sidecar when its dirty Markdown page disappeared", async () => {
+    const page = "/openwiki/page.md";
+    const store = new ClaimsStore(rootDir);
+    await store.writePage(page, persisted([CLAIM]));
+    const session = createSession();
+    await session.resolveClaims({
+      page,
+      operations: [{ op: "confirm", id: "claim_existing" }],
+    });
+
+    const result = await session.finalize(store);
+
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toContain("Markdown disappeared");
+    await expect(store.loadPage(page)).resolves.toBeNull();
+  });
 
   test("shares evidence resolution across dirty pages during finalization", async () => {
     const resource = "memory://feature";

@@ -7,7 +7,7 @@ import type { EvidenceResolver, ResolvedEvidence } from "./types.js";
  * finalization pass so caching never crosses a freshness boundary.
  *
  * @param resolver - Underlying evidence resolver.
- * @returns Resolver that resolves each resource at most once.
+ * @returns Resolver that resolves each resource and prior-version pair at most once.
  */
 export function cacheEvidenceResolver(
   resolver: EvidenceResolver,
@@ -15,11 +15,15 @@ export function cacheEvidenceResolver(
   const cache = new Map<string, Promise<ResolvedEvidence | null>>();
 
   return {
-    resolve(resource: string): Promise<ResolvedEvidence | null> {
-      const cached = cache.get(resource);
+    resolve(
+      resource: string,
+      previousVersion?: string,
+    ): Promise<ResolvedEvidence | null> {
+      const key = JSON.stringify([resource, previousVersion]);
+      const cached = cache.get(key);
       if (cached) return cached;
-      const pending = resolver.resolve(resource);
-      cache.set(resource, pending);
+      const pending = resolver.resolve(resource, previousVersion);
+      cache.set(key, pending);
       return pending;
     },
   };

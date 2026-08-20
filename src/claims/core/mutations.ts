@@ -6,6 +6,7 @@ import type {
   ClaimOperation,
   Evidence,
   EvidenceResolver,
+  ProposedEvidence,
 } from "./types.js";
 
 /**
@@ -90,7 +91,7 @@ export async function applyClaimOperations(
       const proposed =
         operation.op === "update" && operation.evidence !== undefined
           ? operation.evidence
-          : current.evidence.map(({ resource }) => ({ resource }));
+          : current.evidence;
       resolvedByOperation.set(index, await resolveEvidence(proposed, resolver));
     }
   }
@@ -130,28 +131,27 @@ export async function applyClaimOperations(
 /**
  * Resolves and validates one complete proposed evidence set.
  *
- * @param proposedEvidence - Resolver-owned identities proposed for one claim.
+ * @param evidenceInputs - Proposed identities or persisted evidence to resolve.
  * @param resolver - Cached resolver for the owning evidence namespace.
  * @returns Canonical evidence identities and their current versions.
  */
 async function resolveEvidence(
-  proposedEvidence: readonly { resource: string }[],
+  evidenceInputs: readonly (ProposedEvidence | Evidence)[],
   resolver: EvidenceResolver,
 ): Promise<Evidence[]> {
   const evidence: Evidence[] = [];
-  const resources = new Set<string>();
+  const inputResources = new Set<string>();
   const resolvedResources = new Set<string>();
-  for (const proposed of proposedEvidence) {
-    if (resources.has(proposed.resource)) {
-      throw new ClaimSessionError(
-        `Claim evidence repeats ${proposed.resource}`,
-      );
+  for (const input of evidenceInputs) {
+    if (inputResources.has(input.resource)) {
+      throw new ClaimSessionError(`Claim evidence repeats ${input.resource}`);
     }
-    resources.add(proposed.resource);
-    const resolved = await resolver.resolve(proposed.resource);
+    inputResources.add(input.resource);
+    const previousVersion = "version" in input ? input.version : undefined;
+    const resolved = await resolver.resolve(input.resource, previousVersion);
     if (!resolved) {
       throw new ClaimSessionError(
-        `Evidence does not resolve: ${proposed.resource}`,
+        `Evidence does not resolve: ${input.resource}`,
       );
     }
     validateEvidence(resolved.evidence, "Resolved evidence");

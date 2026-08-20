@@ -94,8 +94,8 @@ Security and privacy rules:
 
 Front matter requirements (OKF):
 - Every non-reserved Markdown concept file you create or update under ~/.openwiki/wiki (the current virtual filesystem root /), including the temporary /_plan.md file, MUST begin with OKF-compliant YAML front matter.
-- The front matter MUST follow the Google Knowledge Catalog OKF v0.1 schema.
-- \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.1"\` front matter.
+- The front matter MUST follow the Google Knowledge Catalog OKF v0.2 schema.
+- \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.2"\` front matter.
 - Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:
 
 <okf_front_matter>
@@ -105,16 +105,16 @@ title: <Optional display name>
 description: <Optional one to two sentence summary (optimized for search & retrieval)>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
-timestamp: <Optional ISO 8601 datetime>
+# OpenWiki stamps generated provenance (last body change) deterministically; do not write it.
 # Producer-defined extension fields are allowed.
 ---
 </okf_front_matter>
 
 - Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
 - Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
-- \`timestamp\` is an optional ISO 8601 datetime for the last meaningful change.
+- \`generated\` records the content's last body change (\`by\` names the producing actor, \`at\` is an ISO 8601 datetime). OpenWiki owns this field: it stamps and updates \`generated\` deterministically after every run whenever any part of a page's body changes, including whitespace, and drops the superseded legacy \`timestamp\` at the same time. Do not author, edit, or remove \`generated\` or \`timestamp\` yourself; leave any existing values in place.
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
-- Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
+- Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or body content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
 
 - When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
@@ -286,8 +286,8 @@ OKF relationship modeling:
 
 Front matter requirements (OKF):
 - Every non-reserved Markdown concept file you create or update under ~/.openwiki/wiki (the current virtual filesystem root /), including the temporary /_plan.md file, MUST begin with OKF-compliant YAML front matter.
-- The front matter MUST follow the Google Knowledge Catalog OKF v0.1 schema.
-- \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.1"\` front matter.
+- The front matter MUST follow the Google Knowledge Catalog OKF v0.2 schema.
+- \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.2"\` front matter.
 - Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:
 
 <okf_front_matter>
@@ -297,16 +297,16 @@ title: <Optional display name>
 description: <Optional one to two sentence summary (optimized for search & retrieval)>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
-timestamp: <Optional ISO 8601 datetime>
+# OpenWiki stamps generated provenance (last body change) deterministically; do not write it.
 # Producer-defined extension fields are allowed.
 ---
 </okf_front_matter>
 
 - Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
 - Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
-- \`timestamp\` is an optional ISO 8601 datetime for the last meaningful change.
+- \`generated\` records the content's last body change (\`by\` names the producing actor, \`at\` is an ISO 8601 datetime). OpenWiki owns this field: it stamps and updates \`generated\` deterministically after every run whenever any part of a page's body changes, including whitespace, and drops the superseded legacy \`timestamp\` at the same time. Do not author, edit, or remove \`generated\` or \`timestamp\` yourself; leave any existing values in place.
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
-- Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
+- Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or body content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
 
 - When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
@@ -514,8 +514,8 @@ OKF relationship modeling:
 
 Front matter requirements (OKF):
 - Every non-reserved Markdown concept file you create or update under ~/.openwiki/wiki (the current virtual filesystem root /), including the temporary /_plan.md file, MUST begin with OKF-compliant YAML front matter.
-- The front matter MUST follow the Google Knowledge Catalog OKF v0.1 schema.
-- \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.1"\` front matter.
+- The front matter MUST follow the Google Knowledge Catalog OKF v0.2 schema.
+- \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.2"\` front matter.
 - Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:
 
 <okf_front_matter>
@@ -525,16 +525,16 @@ title: <Optional display name>
 description: <Optional one to two sentence summary (optimized for search & retrieval)>
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
-timestamp: <Optional ISO 8601 datetime>
+# OpenWiki stamps generated provenance (last body change) deterministically; do not write it.
 # Producer-defined extension fields are allowed.
 ---
 </okf_front_matter>
 
 - Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
 - Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
-- \`timestamp\` is an optional ISO 8601 datetime for the last meaningful change.
+- \`generated\` records the content's last body change (\`by\` names the producing actor, \`at\` is an ISO 8601 datetime). OpenWiki owns this field: it stamps and updates \`generated\` deterministically after every run whenever any part of a page's body changes, including whitespace, and drops the superseded legacy \`timestamp\` at the same time. Do not author, edit, or remove \`generated\` or \`timestamp\` yourself; leave any existing values in place.
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
-- Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or meaningful content changes.
+- Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or body content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
 
 - When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.

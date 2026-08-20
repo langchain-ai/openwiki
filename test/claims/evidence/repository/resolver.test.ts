@@ -6,27 +6,9 @@ import { OpenWikiIgnore } from "../../../../src/agent/openwiki-ignore.ts";
 import {
   EvidenceResolutionError,
   EvidenceResourceError,
+  EvidenceSecurityError,
 } from "../../../../src/claims/core/errors.ts";
 import { RepositoryEvidenceResolver } from "../../../../src/claims/evidence/repository/resolver.ts";
-import type { LanguageEvidenceAdapter } from "../../../../src/claims/evidence/repository/tree-sitter-adapter.ts";
-
-/**
- * Creates a minimal injected language adapter for registration tests.
- *
- * @param id - Stable adapter identifier.
- * @param extensions - Extensions registered by the adapter.
- * @returns Synchronous adapter that reports every symbol as unresolved.
- */
-function createTestAdapter(
-  id: string,
-  extensions: readonly string[],
-): LanguageEvidenceAdapter {
-  return {
-    id,
-    extensions,
-    resolveSymbol: () => null,
-  };
-}
 
 describe("RepositoryEvidenceResolver", () => {
   let rootDir: string;
@@ -60,7 +42,7 @@ describe("RepositoryEvidenceResolver", () => {
     await writeFile(absolutePath, content, "utf8");
   }
 
-  test("hashes whole files deterministically", async () => {
+  test("hashes explicit whole-file evidence deterministically", async () => {
     await writeFixture("notes.txt", "stable evidence\n");
     const resolver = new RepositoryEvidenceResolver({ rootDir });
 
@@ -75,98 +57,196 @@ describe("RepositoryEvidenceResolver", () => {
     expect(first?.content).toBe("stable evidence\n");
   });
 
-  test("keeps symbol versions stable across formatting-only edits", async () => {
-    await writeFixture("fixture.ts", "const TOKEN_TTL =\n  24;\n");
+  test("resolves exact line ranges for any text-file extension", async () => {
+    await writeFixture(
+      "fixture.unknown-language",
+      "header\nfirst evidence\nsecond evidence\nfooter\n",
+    );
     const resolver = new RepositoryEvidenceResolver({ rootDir });
-    const before = await resolver.resolve("repo://fixture.ts#TOKEN_TTL");
 
-    await writeFixture("fixture.ts", "const TOKEN_TTL = 24;\n");
-    const reformatted = await resolver.resolve("repo://fixture.ts#TOKEN_TTL");
-    await writeFixture("fixture.ts", "const TOKEN_TTL = 12;\n");
-    const changed = await resolver.resolve("repo://fixture.ts#TOKEN_TTL");
+    const resolved = await resolver.resolve(
+      "repo://fixture.unknown-language#L2-L3",
+    );
 
-    expect(reformatted?.evidence.version).toBe(before?.evidence.version);
-    expect(reformatted?.content).not.toBe(before?.content);
+    expect(resolved?.evidence.resource).toBe(
+      "repo://fixture.unknown-language#L2-L3",
+    );
+    expect(resolved?.evidence.version).toMatch(
+      /^repo-lines-v1:sha256:[a-f0-9]{64}:[A-Za-z0-9_-]+$/u,
+    );
+    expect(resolved?.content).toBe("first evidence\nsecond evidence\n");
+  });
+
+  test("canonicalizes single-line range identities", async () => {
+    await writeFixture("fixture.txt", "first\nsecond\n");
+    const resolver = new RepositoryEvidenceResolver({ rootDir });
+
+    const resolved = await resolver.resolve("repo://fixture.txt#L2");
+
+    expect(resolved?.evidence.resource).toBe("repo://fixture.txt#L2-L2");
+    expect(resolved?.content).toBe("second\n");
+  });
+
+  test("returns null for missing files, directories, and invalid current ranges", async () => {
+    await mkdir(path.join(rootDir, "directory"));
+    await writeFixture("fixture.txt", "only one line\n");
+    const resolver = new RepositoryEvidenceResolver({ rootDir });
+
+    await expect(resolver.resolve("repo://missing.txt")).resolves.toBeNull();
+    await expect(resolver.resolve("repo://directory")).resolves.toBeNull();
+    await expect(
+      resolver.resolve("repo://fixture.txt#L1-L2"),
+    ).resolves.toBeNull();
+  });
+
+  test("keeps unchanged evidence fresh when lines move", async () => {
+    const original =
+      "before one\nbefore two\nbefore three\ntarget one\ntarget two\nafter one\nafter two\nafter three\n";
+    await writeFixture("fixture.any", original);
+    const resolver = new RepositoryEvidenceResolver({ rootDir });
+    const before = await resolver.resolve("repo://fixture.any#L4-L5");
+
+    await writeFixture(
+      "fixture.any",
+      `inserted one\ninserted two\n${original}`,
+    );
+    const moved = await resolver.resolve(
+      "repo://fixture.any#L4-L5",
+      before?.evidence.version,
+    );
+
+    expect(moved?.content).toBe("target one\ntarget two\n");
+    expect(moved?.evidence.version).toBe(before?.evidence.version);
+  });
+
+  test("ignores unrelated edits outside an unchanged selected range", async () => {
+    await writeFixture(
+      "fixture.any",
+      "before one\nbefore two\nbefore three\ntarget one\ntarget two\nafter one\nafter two\nafter three\n",
+    );
+    const resolver = new RepositoryEvidenceResolver({ rootDir });
+    const before = await resolver.resolve("repo://fixture.any#L4-L5");
+
+    await writeFixture(
+      "fixture.any",
+      "changed before\nbefore two\nbefore three\ntarget one\ntarget two\nafter one\nafter two\nchanged after\n",
+    );
+    const current = await resolver.resolve(
+      "repo://fixture.any#L4-L5",
+      before?.evidence.version,
+    );
+
+    expect(current?.evidence.version).toBe(before?.evidence.version);
+    expect(current?.content).toBe("target one\ntarget two\n");
+  });
+
+  test("marks edits inside a uniquely anchored range stale", async () => {
+    await writeFixture(
+      "fixture.any",
+      "before one\nbefore two\nbefore three\ntarget one\ntarget two\nafter one\nafter two\nafter three\n",
+    );
+    const resolver = new RepositoryEvidenceResolver({ rootDir });
+    const before = await resolver.resolve("repo://fixture.any#L4-L5");
+
+    await writeFixture(
+      "fixture.any",
+      "before one\nbefore two\nbefore three\ntarget changed\ntarget two\nafter one\nafter two\nafter three\n",
+    );
+    const changed = await resolver.resolve(
+      "repo://fixture.any#L4-L5",
+      before?.evidence.version,
+    );
+
+    expect(changed?.content).toBe("target changed\ntarget two\n");
     expect(changed?.evidence.version).not.toBe(before?.evidence.version);
   });
 
-  test("returns null for missing files and directories", async () => {
-    await mkdir(path.join(rootDir, "directory"));
-    const resolver = new RepositoryEvidenceResolver({ rootDir });
-
-    await expect(resolver.resolve("repo://missing.ts")).resolves.toBeNull();
-    await expect(resolver.resolve("repo://directory")).resolves.toBeNull();
-  });
-
-  test("does not fall back when a supported symbol is missing or ambiguous", async () => {
+  test("relocates a changed range whose line count grows", async () => {
     await writeFixture(
-      "fixture.ts",
-      "class First { run() {} } class Second { run() {} }",
+      "fixture.any",
+      "before one\nbefore two\nbefore three\ntarget one\ntarget two\nafter one\nafter two\nafter three\n",
     );
     const resolver = new RepositoryEvidenceResolver({ rootDir });
+    const before = await resolver.resolve("repo://fixture.any#L4-L5");
+
+    await writeFixture(
+      "fixture.any",
+      "before one\nbefore two\nbefore three\ntarget one\nnew target line\ntarget two\nafter one\nafter two\nafter three\n",
+    );
+    const changed = await resolver.resolve(
+      "repo://fixture.any#L4-L5",
+      before?.evidence.version,
+    );
+
+    expect(changed?.content).toBe("target one\nnew target line\ntarget two\n");
+    expect(changed?.evidence.version).not.toBe(before?.evidence.version);
+  });
+
+  test("returns null when an anchored range is deleted", async () => {
+    await writeFixture(
+      "fixture.any",
+      "before one\nbefore two\nbefore three\ntarget one\ntarget two\nafter one\nafter two\nafter three\n",
+    );
+    const resolver = new RepositoryEvidenceResolver({ rootDir });
+    const before = await resolver.resolve("repo://fixture.any#L4-L5");
+
+    await writeFixture(
+      "fixture.any",
+      "before one\nbefore two\nbefore three\nafter one\nafter two\nafter three\n",
+    );
 
     await expect(
-      resolver.resolve("repo://fixture.ts#missing"),
+      resolver.resolve("repo://fixture.any#L4-L5", before?.evidence.version),
     ).resolves.toBeNull();
-    await expect(resolver.resolve("repo://fixture.ts#run")).resolves.toBeNull();
   });
 
-  test("falls back to whole-file evidence for unsupported languages", async () => {
-    await writeFixture("fixture.h", "struct Service { int value; };\n");
+  test("returns null instead of guessing between ambiguous anchors", async () => {
+    const context =
+      "before one\nbefore two\nbefore three\nTARGET\nafter one\nafter two\nafter three\n";
+    await writeFixture("fixture.any", context);
     const resolver = new RepositoryEvidenceResolver({ rootDir });
+    const before = await resolver.resolve("repo://fixture.any#L4-L4");
 
-    const resolved = await resolver.resolve("repo://fixture.h#Service");
+    const changedBlock = context.replace("TARGET\n", "CHANGED\n");
+    await writeFixture("fixture.any", `${changedBlock}${changedBlock}`);
 
-    expect(resolved?.evidence.resource).toBe("repo://fixture.h#Service");
-    expect(resolved?.evidence.version).toMatch(
-      /^repo-file-v1:sha256:[a-f0-9]{64}$/u,
-    );
-    expect(resolved?.content).toBe("struct Service { int value; };\n");
+    await expect(
+      resolver.resolve("repo://fixture.any#L4-L4", before?.evidence.version),
+    ).resolves.toBeNull();
   });
 
-  test("resolves symbols with a newly registered built-in grammar", async () => {
-    await writeFixture(
-      "fixture.py",
-      "class Service:\n    def run(self):\n        return 1\n",
-    );
+  test("falls back to the current line hint for an unknown prior version", async () => {
+    await writeFixture("fixture.any", "first\nsecond\nthird\n");
     const resolver = new RepositoryEvidenceResolver({ rootDir });
 
-    const resolved = await resolver.resolve("repo://fixture.py#Service.run");
-
-    expect(resolved?.evidence.version).toMatch(
-      /^tree-sitter-python-v1:sha256:[a-f0-9]{64}$/u,
+    const resolved = await resolver.resolve(
+      "repo://fixture.any#L2-L2",
+      "unknown-version",
     );
-    expect(resolved?.content).toContain("def run");
-  });
 
-  test("rejects malformed supported source", async () => {
-    await writeFixture("fixture.ts", "export const broken =");
-    const resolver = new RepositoryEvidenceResolver({ rootDir });
-
-    await expect(resolver.resolve("repo://fixture.ts#broken")).rejects.toThrow(
-      EvidenceResolutionError,
-    );
+    expect(resolved?.content).toBe("second\n");
+    expect(resolved?.evidence.version).toMatch(/^repo-lines-v1:/u);
   });
 
   test("rejects ignored evidence", async () => {
-    await writeFixture("private/secret.ts", "export const secret = true;");
+    await writeFixture("private/secret.lang", "secret\n");
     const resolver = new RepositoryEvidenceResolver({
       rootDir,
       openWikiIgnore: new OpenWikiIgnore(["private/"]),
     });
 
     await expect(
-      resolver.resolve("repo://private/secret.ts#secret"),
+      resolver.resolve("repo://private/secret.lang#L1-L1"),
     ).rejects.toThrow(EvidenceResourceError);
   });
 
   test("rejects direct symbolic links", async () => {
-    await writeFixture("target.ts", "export const target = true;");
-    await symlink("target.ts", path.join(rootDir, "link.ts"));
+    await writeFixture("target.lang", "target\n");
+    await symlink("target.lang", path.join(rootDir, "link.lang"));
     const resolver = new RepositoryEvidenceResolver({ rootDir });
 
-    await expect(resolver.resolve("repo://link.ts#target")).rejects.toThrow(
-      EvidenceResolutionError,
+    await expect(resolver.resolve("repo://link.lang#L1-L1")).rejects.toThrow(
+      EvidenceSecurityError,
     );
   });
 
@@ -175,45 +255,39 @@ describe("RepositoryEvidenceResolver", () => {
       path.join(tmpdir(), "openwiki-claims-outside-"),
     );
     cleanupDirectories.push(outsideDir);
-    await writeFile(
-      path.join(outsideDir, "secret.ts"),
-      "export const secret = true;",
-      "utf8",
-    );
+    await writeFile(path.join(outsideDir, "secret.lang"), "secret\n", "utf8");
     await symlink(outsideDir, path.join(rootDir, "escape"), "dir");
     const resolver = new RepositoryEvidenceResolver({ rootDir });
 
     await expect(
-      resolver.resolve("repo://escape/secret.ts#secret"),
+      resolver.resolve("repo://escape/secret.lang#L1-L1"),
     ).rejects.toThrow(EvidenceResolutionError);
   });
 
-  test("rejects parent symbolic links even when they remain inside the repository", async () => {
-    await writeFixture("actual/value.ts", "export const value = true;");
+  test("rejects parent symbolic links even inside the repository", async () => {
+    await writeFixture("actual/value.lang", "value\n");
     await symlink("actual", path.join(rootDir, "alias"), "dir");
     const resolver = new RepositoryEvidenceResolver({ rootDir });
 
     await expect(
-      resolver.resolve("repo://alias/value.ts#value"),
+      resolver.resolve("repo://alias/value.lang#L1-L1"),
     ).rejects.toThrow(EvidenceResolutionError);
   });
 
-  test("rejects alternate-case filesystem aliases when the filesystem resolves them", async () => {
-    await writeFixture("CaseSensitive.ts", "export const value = true;");
+  test("rejects alternate-case filesystem aliases when they resolve", async () => {
+    await writeFixture("CaseSensitive.lang", "value\n");
     const resolver = new RepositoryEvidenceResolver({ rootDir });
-    const aliasResource = "repo://casesensitive.ts#value";
+    const aliasResource = "repo://casesensitive.lang#L1-L1";
     let aliasExists = true;
     try {
-      await writeFile(path.join(rootDir, "casesensitive.ts"), "", {
+      await writeFile(path.join(rootDir, "casesensitive.lang"), "", {
         flag: "ax",
       });
       aliasExists = false;
-      await rm(path.join(rootDir, "casesensitive.ts"));
+      await rm(path.join(rootDir, "casesensitive.lang"));
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code;
-      if (code !== "EEXIST") {
-        throw error;
-      }
+      if (code !== "EEXIST") throw error;
     }
 
     if (aliasExists) {
@@ -225,86 +299,19 @@ describe("RepositoryEvidenceResolver", () => {
     }
   });
 
-  test("supports normalized synchronous and asynchronous custom adapters", async () => {
-    await writeFixture("one.CUSTOM", "first");
-    await writeFixture("two.async", "second");
-    const synchronous: LanguageEvidenceAdapter = {
-      id: "sync-v1",
-      extensions: [" .CUSTOM "],
-      resolveSymbol: ({ source }) => ({ content: source, normalized: source }),
-    };
-    const asynchronous: LanguageEvidenceAdapter = {
-      id: "async-v1",
-      extensions: [".async"],
-      resolveSymbol: ({ source }) =>
-        Promise.resolve({
-          content: source,
-          normalized: source,
-        }),
-    };
-    const resolver = new RepositoryEvidenceResolver({
-      rootDir,
-      adapters: [synchronous, asynchronous],
-    });
-
-    const syncResult = await resolver.resolve("repo://one.CUSTOM#value");
-    const asyncResult = await resolver.resolve("repo://two.async#value");
-
-    expect(syncResult?.content).toBe("first");
-    expect(asyncResult?.content).toBe("second");
-  });
-
-  test("rejects invalid and duplicate normalized adapter registrations", () => {
-    expect(
-      () =>
-        new RepositoryEvidenceResolver({
-          rootDir,
-          adapters: [
-            createTestAdapter("first-v1", [".X"]),
-            createTestAdapter("second-v1", [" .x "]),
-          ],
-        }),
-    ).toThrow(EvidenceResourceError);
-    expect(
-      () =>
-        new RepositoryEvidenceResolver({
-          rootDir,
-          adapters: [createTestAdapter(" ", [".x"])],
-        }),
-    ).toThrow(EvidenceResourceError);
-    expect(
-      () =>
-        new RepositoryEvidenceResolver({
-          rootDir,
-          adapters: [createTestAdapter("empty-v1", [])],
-        }),
-    ).toThrow(EvidenceResourceError);
-    expect(
-      () =>
-        new RepositoryEvidenceResolver({
-          rootDir,
-          adapters: [createTestAdapter("invalid-v1", ["typescript"])],
-        }),
-    ).toThrow(EvidenceResourceError);
-  });
-
   test("persists canonical repository resource identities", async () => {
-    await writeFixture("src/value.txt", "evidence");
+    await writeFixture("src/value.txt", "evidence\n");
     const resolver = new RepositoryEvidenceResolver({ rootDir });
 
-    const resolved = await resolver.resolve(
-      "repo://src\\value%2Etxt#Thing%23member",
-    );
+    const resolved = await resolver.resolve("repo://src\\value%2Etxt#L1");
 
-    expect(resolved?.evidence.resource).toBe(
-      "repo://src/value.txt#Thing%23member",
-    );
+    expect(resolved?.evidence.resource).toBe("repo://src/value.txt#L1-L1");
   });
 
   test("rejects lexical traversal before touching the filesystem", async () => {
     const resolver = new RepositoryEvidenceResolver({ rootDir });
 
-    await expect(resolver.resolve("repo://../secret.ts")).rejects.toThrow(
+    await expect(resolver.resolve("repo://../secret.lang")).rejects.toThrow(
       EvidenceResourceError,
     );
   });

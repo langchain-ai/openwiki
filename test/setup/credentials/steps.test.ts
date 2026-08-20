@@ -34,6 +34,8 @@ import {
   getNextStepAfterSecretKey,
   getRunModeName,
   getRunModeSelectionIndex,
+  getReasoningEffortSelectionIndex,
+  getReasoningEffortSelectionOptions,
   getSourceOption,
   getWizardManagedEnvKeys,
   hasValidStoredToken,
@@ -113,6 +115,7 @@ const SPINE_BY_PROVIDER: Record<string, string[]> = {
 const MANAGED_KEYS = [
   "OPENWIKI_PROVIDER",
   "OPENWIKI_MODEL_ID",
+  "OPENWIKI_REASONING_EFFORT",
   "LANGSMITH_API_KEY",
   "LANGCHAIN_TRACING_V2",
   "OPENAI_CHATGPT_ACCESS_TOKEN",
@@ -190,6 +193,33 @@ describe("orderedSetupSteps", () => {
     // not also be appended by the later project-key branch.
     const steps = orderedSetupSteps("gemini-enterprise", "personal", false);
     expect(steps.filter((step) => step === "gcp-project")).toHaveLength(1);
+  });
+});
+
+describe("reasoning effort selection", () => {
+  test("offers provider default plus the selected model's supported values", () => {
+    expect(
+      getReasoningEffortSelectionOptions("openai", "gpt-5.6-luna"),
+    ).toEqual([
+      { label: "Provider default", value: "" },
+      { label: "none", value: "none" },
+      { label: "low", value: "low" },
+      { label: "medium", value: "medium" },
+      { label: "high", value: "high" },
+      { label: "xhigh", value: "xhigh" },
+      { label: "max", value: "max" },
+    ]);
+  });
+
+  test("returns no options for unsupported models and falls back to default", () => {
+    expect(getReasoningEffortSelectionOptions("openai", "gpt-5.5")).toEqual([]);
+    expect(
+      getReasoningEffortSelectionIndex(
+        "nvidia",
+        "nvidia/nemotron-3-super-120b-a12b",
+        "max",
+      ),
+    ).toBe(0);
   });
 });
 

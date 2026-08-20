@@ -8,6 +8,7 @@ import {
   getProviderSecretKeyEnvKey,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_REASONING_EFFORT_ENV_KEY,
 } from "../../config/constants.js";
 import type { CompleteSetupOptions } from "./types.js";
 
@@ -38,6 +39,7 @@ export function buildCredentialEnvUpdates(
     nextGcpProject,
     nextLangSmithKey,
     nextModelId,
+    nextReasoningEffort = null,
     nextOAuthTokens,
     nextProvider,
     nextRegion,
@@ -104,6 +106,10 @@ export function buildCredentialEnvUpdates(
 
   if (nextModelId !== null) {
     updates[OPENWIKI_MODEL_ID_ENV_KEY] = nextModelId;
+  }
+
+  if (nextReasoningEffort !== null) {
+    updates[OPENWIKI_REASONING_EFFORT_ENV_KEY] = nextReasoningEffort;
   }
 
   if (nextLangSmithKey !== null) {

@@ -38,6 +38,7 @@ export interface ClaimsRuntime {
  * @param outputMode - Current output target.
  * @param cwd - Absolute repository root.
  * @param openWikiIgnore - Repository read-boundary rules.
+ * @param onWarning - Optional sink for non-fatal Claims degradation.
  * @returns Prepared Claims runtime, or `undefined` outside code generation.
  */
 export async function prepareClaimsRuntime(
@@ -45,6 +46,7 @@ export async function prepareClaimsRuntime(
   outputMode: OpenWikiOutputMode,
   cwd: string,
   openWikiIgnore: OpenWikiIgnore,
+  onWarning: (message: string) => void = () => undefined,
 ): Promise<ClaimsRuntime | undefined> {
   if (outputMode !== "repository" || command === "chat") {
     return undefined;
@@ -66,7 +68,10 @@ export async function prepareClaimsRuntime(
     return {
       session,
       issueCount: 0,
-      finalize: () => session.finalize(store),
+      finalize: async () => {
+        const result = await session.finalize(store);
+        reportWarnings(result.warnings, onWarning);
+      },
     };
   }
 
@@ -80,6 +85,28 @@ export async function prepareClaimsRuntime(
   return {
     session,
     issueCount: preflight.issues.length,
-    finalize: () => session.finalize(store),
+    finalize: async () => {
+      const result = await session.finalize(store);
+      reportWarnings(result.warnings, onWarning);
+    },
   };
+}
+
+/**
+ * Delivers best-effort warnings without allowing a diagnostic sink to fail a run.
+ *
+ * @param warnings - Finalization warnings in stable processing order.
+ * @param onWarning - Optional caller-owned warning sink.
+ */
+function reportWarnings(
+  warnings: readonly string[],
+  onWarning: (message: string) => void,
+): void {
+  for (const warning of warnings) {
+    try {
+      onWarning(warning);
+    } catch {
+      // Diagnostics must not turn successful fallback into a failed run.
+    }
+  }
 }

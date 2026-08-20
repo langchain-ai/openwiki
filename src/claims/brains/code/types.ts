@@ -58,6 +58,16 @@ export interface ResolveClaimsResult {
 }
 
 /**
+ * Best-effort persistence result for one completed Claims run.
+ */
+export interface ClaimsFinalizeResult {
+  /**
+   * Page-local failures that were isolated instead of aborting the run.
+   */
+  warnings: string[];
+}
+
+/**
  * Deterministic reason an existing claim may need attention.
  */
 export type GroundingIssueKind = "stale" | "unresolved";

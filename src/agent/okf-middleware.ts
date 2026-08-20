@@ -7,6 +7,11 @@ import {
   validatePersistedFile,
   type FrontmatterIssue,
 } from "../okf/frontmatter.js";
+import {
+  finalizeGeneratedProvenance,
+  snapshotGeneratedProvenance,
+  type GeneratedProvenanceSnapshot,
+} from "../okf/generated-provenance.js";
 import { migrateWikiToOkf, synchronizeWikiIndexes } from "../okf/index-sync.js";
 import {
   ENGLISH_CONCEPT_TYPE,
@@ -23,15 +28,25 @@ const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
 
 /**
  * Creates middleware that keeps the wiki OKF-conformant around a run. It
- * migrates existing pages to valid front matter before the agent starts
- * and synchronizes indexes after the run.
+ * migrates existing pages to valid front matter before the agent starts,
+ * snapshots their exact bodies, synchronizes indexes after the run, and
+ * stamps final code-owned `generated` provenance on every new or changed page.
+ *
+ * `now` is the run's single stamp time (an ISO 8601 datetime), computed once by
+ * the caller and threaded in so every page written in one run shares one
+ * `generated.at` and the stamping stays deterministic under test. It defaults to
+ * the current time so callers that do not stamp (or tests exercising only the
+ * index passes) need not supply one.
  */
 export function createOpenWikiIndexMiddleware(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   labels: IndexLabels = ENGLISH_INDEX_LABELS,
   conceptType: string = ENGLISH_CONCEPT_TYPE,
+  now: string = new Date().toISOString(),
 ) {
+  let initialConcepts: GeneratedProvenanceSnapshot | undefined;
+
   return createMiddleware({
     name: "OpenWikiIndexMiddleware",
     beforeAgent: async () => {
@@ -42,6 +57,11 @@ export function createOpenWikiIndexMiddleware(
         "build",
         () => migrateWikiToOkf(backend, outputMode, conceptType),
         { errorClass: "okf_error", errorDetail: "migrate" },
+      );
+      initialConcepts = await inStage(
+        "build",
+        () => snapshotGeneratedProvenance(backend, outputMode),
+        { errorClass: "okf_error", errorDetail: "provenance_snapshot" },
       );
     },
     // Telemetry guard: this wrap only *decorates a successful* tool result with a
@@ -58,13 +78,15 @@ export function createOpenWikiIndexMiddleware(
     //     become `tool_error`.
     // Do not turn this into a catch that rethrows: that would make every recoverable
     // tool error fatal and record otherwise-successful runs as failures.
-    wrapToolCall: async (request, handler) =>
-      addFrontmatterWarning(
-        await handler(request),
+    wrapToolCall: async (request, handler) => {
+      const result = await handler(request);
+      return addFrontmatterWarning(
+        result,
         backend,
         outputMode,
         request.toolCall.name,
-      ),
+      );
+    },
     afterAgent: async () => {
       await inStage(
         "finalize",
@@ -83,6 +105,20 @@ export function createOpenWikiIndexMiddleware(
         () => validateWikiInternalLinks(backend, outputMode),
         { errorClass: "okf_error", errorDetail: "link_validation" },
       );
+      const conceptsBeforeRun = initialConcepts;
+      if (conceptsBeforeRun) {
+        await inStage(
+          "finalize",
+          () =>
+            finalizeGeneratedProvenance(
+              backend,
+              outputMode,
+              conceptsBeforeRun,
+              now,
+            ),
+          { errorClass: "okf_error", errorDetail: "generated_provenance" },
+        );
+      }
     },
   });
 }

@@ -29,7 +29,7 @@ interface PageWriteBackend {
 const EvidenceSchema = z
   .string()
   .min(1)
-  .describe("repo://path or repo://path#symbol");
+  .describe("repo://path#L10-L24, or repo://path for whole-file evidence");
 
 const EstablishClaimsSchema = z.object({
   page: z.string().min(1).describe("The page path you were assigned."),
@@ -130,7 +130,7 @@ export function createAuthorWriteTools(
     {
       name: "establish_claims",
       description:
-        "Establish your page's material propositions, before writing it. Each is one concise atomic proposition with repo://path or repo://path#symbol evidence - no line ranges, no directories, and a symbol the file actually declares; cite the file when unsure. Call it in batches as you work rather than once at the end. write_page refuses a page with no claims, so this comes first.",
+        "Establish your page's material propositions, before writing it. Each is one concise atomic proposition with repo://path#L10-L24 evidence - no symbols, no directories, and the narrowest line range that carries the fact; cite the bare repo://path only when the whole file is the evidence. Call it in batches as you work rather than once at the end. write_page refuses a page with no claims, so this comes first.",
       schema: EstablishClaimsSchema,
     },
   );

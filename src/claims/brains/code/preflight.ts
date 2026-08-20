@@ -26,9 +26,8 @@ export interface ClaimsPreflightResult {
 /**
  * Runs global claim freshness checks without creating mandatory agent work.
  *
- * Each evidence resource resolves once per preflight. Resolution errors are
- * intentionally allowed to propagate so a parser or filesystem failure cannot
- * be mistaken for deleted evidence.
+ * Each evidence resource and prior version resolves once per preflight.
+ * Resolution errors propagate so they cannot be mistaken for deleted evidence.
  *
  * @param store - Repository claim persistence.
  * @param resolver - Repository evidence resolver.
@@ -58,7 +57,10 @@ export async function runClaimsPreflight(
       const unresolvedResources: string[] = [];
 
       for (const evidence of claim.evidence) {
-        const current = await cachedResolver.resolve(evidence.resource);
+        const current = await cachedResolver.resolve(
+          evidence.resource,
+          evidence.version,
+        );
         if (!current) {
           unresolvedResources.push(evidence.resource);
         } else if (current.evidence.version !== evidence.version) {

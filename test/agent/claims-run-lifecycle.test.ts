@@ -33,6 +33,7 @@ vi.mock("../../src/config/env.js", async (importOriginal) => ({
 }));
 
 import { runOpenWikiAgent } from "../../src/agent/index.ts";
+import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 import { ClaimSession } from "../../src/claims/brains/code/session.ts";
 import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
 import {
@@ -344,8 +345,9 @@ describe("Claims production run lifecycle", () => {
     ).resolves.toEqual(expect.objectContaining({ status: "interrupted" }));
   });
 
-  test("interrupts without advancing sidecars when evidence changes during the run", async () => {
+  test("warns without advancing a sidecar when evidence changes during the run", async () => {
     const cwd = await createRepository();
+    const events: OpenWikiRunEvent[] = [];
     graphHarness.streamBehavior.mockImplementation(
       async (options: CapturedGraphOptions) => {
         await groundAndWritePage(options, "/openwiki/page.md");
@@ -354,16 +356,26 @@ describe("Claims production run lifecycle", () => {
     );
 
     await expect(
-      runOpenWikiAgent("init", cwd, { outputMode: "repository" }),
-    ).rejects.toThrow("Evidence changed before finalizing");
+      runOpenWikiAgent("init", cwd, {
+        onEvent: (event) => events.push(event),
+        outputMode: "repository",
+      }),
+    ).resolves.toEqual(expect.objectContaining({ command: "init" }));
 
     const store = new ClaimsStore(cwd);
     await expect(store.loadPage("/openwiki/page.md")).resolves.toBeNull();
+    expect(
+      events.some(
+        (event) =>
+          event.type === "text" &&
+          event.text.includes("Evidence changed before finalizing"),
+      ),
+    ).toBe(true);
     await expect(
       readFile(path.join(cwd, "openwiki/.last-update.json"), "utf8").then(
         JSON.parse,
       ),
-    ).resolves.toEqual(expect.objectContaining({ status: "interrupted" }));
+    ).resolves.toEqual(expect.objectContaining({ status: "complete" }));
   });
 
   test("never advances sidecars when the agent stream fails", async () => {

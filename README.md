@@ -26,7 +26,7 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 - **Built-in connectors** for Custom MCP, Notion, Slack, Gmail, X, Web Search, Hacker News, and local git repositories.
 - **An interactive visualizer** that turns any wiki into a live, explorable node graph.
 - **Self-updating** through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
-- **Open Knowledge Format** ([OKF v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)) output with validated Mermaid diagrams.
+- **Open Knowledge Format** ([OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)) output with validated Mermaid diagrams.
 
 ## 🎉 What's new
 
@@ -156,12 +156,14 @@ Everything OpenWiki writes is plain Markdown you own and version alongside your 
 
 ## Open Knowledge Format
 
-OpenWiki emits [Google Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundles in both modes, so your wiki is portable to any OKF-aware tool.
+OpenWiki emits [Google Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundles in both modes, so your wiki is portable to any OKF-aware tool.
 
 - Every concept document carries YAML front matter with a non-empty `type`; all other standard fields are optional.
+- Pages record their last body change as `generated: {by, at}`; any body change, including whitespace, advances the stamp, while front-matter-only changes do not. The legacy v0.1 `timestamp` field is still tolerated on existing pages.
+- The optional v0.2 provenance, trust, and lifecycle families (`sources`, `verified`, `status`, `stale_after`) are validated when present.
 - Standard Markdown links between concept documents express their relationships.
-- `index.md` and `log.md` are reserved documents rather than concepts. The root index declares `okf_version: "0.1"`.
-- Valid `timestamp` values and producer-defined extension fields are preserved across updates and migrations.
+- `index.md` and `log.md` are reserved documents rather than concepts. The root index declares `okf_version: "0.2"`.
+- Producer-defined extension fields are preserved across updates and migrations.
 
 ## Diagrams
 
@@ -315,6 +317,14 @@ OPENWIKI_MODEL_ID=your-loaded-model-id
 
 Some local servers ignore the API key value, but OpenWiki still requires `OPENAI_COMPATIBLE_API_KEY` because the client expects one.
 
+**Streaming-only gateways.** Some gateways serve only the streaming transport: a non-streaming request is either rejected outright (`Stream must be set to true`) or answered with HTTP 200 and empty content, which leaves you with a blank wiki and no error. OpenWiki issues non-streaming requests internally, so force the streaming transport for those endpoints:
+
+```bash
+OPENWIKI_OPENAI_COMPATIBLE_STREAMING=true
+```
+
+It stays off by default because this provider points at arbitrary third-party endpoints, where SSE is not guaranteed to survive proxies and load balancers. Enabling it also makes the client report estimated rather than server-reported token counts.
+
 </details>
 
 <details>
@@ -355,6 +365,12 @@ OPENWIKI_OPENROUTER_MAX_TOKENS=8192
 The OpenRouter-specific setting takes precedence over `OPENWIKI_MAX_OUTPUT_TOKENS` for OpenRouter runs. A cap trades those hard 402 failures for possible truncation when a long wiki generation genuinely needs more output tokens, so prefer the largest value your balance allows.
 
 **Retry attempts.** OpenWiki uses LangChain's retry handling for transient provider errors. Override the retry count (default 3) with `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3` (a positive integer).
+
+**Model output token limit.** Set `OPENWIKI_MAX_OUTPUT_TOKENS` (a positive integer) to override the maximum number of tokens generated in a model response, for example `OPENWIKI_MAX_OUTPUT_TOKENS=8192`. If unset, OpenWiki does not override the model client's output token limit. Provider and model limits still apply; unsupported values may be rejected, while very small values can truncate responses or tool calls.
+
+**Bedrock stream idle timeout.** For the Bedrock provider, set `OPENWIKI_STREAM_IDLE_TIMEOUT` to control how long the client waits for the first or next streamed response chunk, for example `OPENWIKI_STREAM_IDLE_TIMEOUT=300000`. The value is milliseconds and must be an integer from `0` to `2147483647`. Set it to `0` to disable the watchdog. If unset, OpenWiki preserves the `@langchain/aws` provider default. Prefer a sufficiently long finite timeout over disabling the watchdog so a stalled stream cannot hang forever.
+
+**Reasoning effort.** Set `OPENWIKI_REASONING_EFFORT` to configure reasoning for a supported provider and model. OpenAI GPT-5.6 models use the Responses API values `none`, `low`, `medium`, `high`, `xhigh`, and `max`. NVIDIA NIM's Nemotron 3 Super supports `none`, `low`, and `high`. In an interactive chat, use `/effort` to choose an available value or `/effort default` to restore the provider default. Leave the variable unset to preserve the provider default; invalid provider, model, or effort combinations fail before a request is sent.
 
 </details>
 

@@ -11,7 +11,11 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { ClaimsPersistenceError } from "../../core/errors.js";
+import {
+  ClaimsPageMissingError,
+  ClaimsPersistenceError,
+  ClaimsPersistenceSecurityError,
+} from "../../core/errors.js";
 import {
   CLAIMS_DIRECTORY,
   isGroundedWikiPage,
@@ -205,7 +209,7 @@ export class ClaimsStore {
     const pagePath = path.join(this.rootDir, toRepositoryPagePath(page));
     const physicalPage = await this.resolveExistingRegularFile(pagePath);
     if (!physicalPage) {
-      throw new ClaimsPersistenceError(
+      throw new ClaimsPageMissingError(
         `Unable to hash ${normalizeWikiPagePath(page)}: file does not exist`,
       );
     }
@@ -321,7 +325,12 @@ export class ClaimsStore {
         `Unable to inspect ${this.displayPath(absolutePath)}: ${toErrorMessage(error)}`,
       );
     }
-    if (metadata.isSymbolicLink() || !metadata.isFile()) {
+    if (metadata.isSymbolicLink()) {
+      throw new ClaimsPersistenceSecurityError(
+        `Claims path cannot be a symbolic link: ${this.displayPath(absolutePath)}`,
+      );
+    }
+    if (!metadata.isFile()) {
       throw new ClaimsPersistenceError(
         `Claims path is not a regular file: ${this.displayPath(absolutePath)}`,
       );
@@ -351,7 +360,12 @@ export class ClaimsStore {
         `Unable to inspect ${this.displayPath(absolutePath)}: ${toErrorMessage(error)}`,
       );
     }
-    if (metadata.isSymbolicLink() || !metadata.isDirectory()) {
+    if (metadata.isSymbolicLink()) {
+      throw new ClaimsPersistenceSecurityError(
+        `Claims path cannot be a symbolic link: ${this.displayPath(absolutePath)}`,
+      );
+    }
+    if (!metadata.isDirectory()) {
       throw new ClaimsPersistenceError(
         `Claims path is not a directory: ${this.displayPath(absolutePath)}`,
       );
@@ -371,7 +385,7 @@ export class ClaimsStore {
   ): Promise<string> {
     const relative = path.relative(this.rootDir, absolutePath);
     if (!isPathInside(this.rootDir, absolutePath)) {
-      throw new ClaimsPersistenceError(
+      throw new ClaimsPersistenceSecurityError(
         `Claims directory escapes the repository: ${relative}`,
       );
     }
@@ -390,7 +404,12 @@ export class ClaimsStore {
           `Unable to inspect ${this.displayPath(current)}: ${toErrorMessage(error)}`,
         );
       }
-      if (metadata.isSymbolicLink() || !metadata.isDirectory()) {
+      if (metadata.isSymbolicLink()) {
+        throw new ClaimsPersistenceSecurityError(
+          `Claims path cannot be a symbolic link: ${this.displayPath(current)}`,
+        );
+      }
+      if (!metadata.isDirectory()) {
         throw new ClaimsPersistenceError(
           `Claims path is not a directory: ${this.displayPath(current)}`,
         );
@@ -439,7 +458,7 @@ export class ClaimsStore {
       !isPathInside(realRootDir, physicalPath) ||
       physicalPath !== expectedPath
     ) {
-      throw new ClaimsPersistenceError(
+      throw new ClaimsPersistenceSecurityError(
         `Claims path traverses a symbolic link or filesystem alias: ${this.displayPath(absolutePath)}`,
       );
     }
@@ -454,7 +473,7 @@ export class ClaimsStore {
   private async getRealRootDir(): Promise<string> {
     this.realRootDirPromise ??= realpath(this.rootDir).catch(
       (error: unknown) => {
-        throw new ClaimsPersistenceError(
+        throw new ClaimsPersistenceSecurityError(
           `Unable to resolve claims root ${this.rootDir}: ${toErrorMessage(error)}`,
         );
       },

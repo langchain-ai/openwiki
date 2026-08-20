@@ -8,7 +8,7 @@ export interface Evidence {
   resource: string;
 
   /**
-   * Opaque resolver-owned fingerprint observed when the claim was established.
+   * Opaque resolver-owned version token observed when the claim was established.
    */
   version: string;
 }
@@ -154,7 +154,11 @@ export interface EvidenceResolver {
    * Resolves the current source identity and version, or `null` when it no longer exists.
    *
    * @param resource - Stable resolver-owned source identity.
+   * @param previousVersion - Prior opaque version available for resolver-specific relocation.
    * @returns Current resolved evidence, or `null` for a missing resource.
    */
-  resolve(resource: string): Promise<ResolvedEvidence | null>;
+  resolve(
+    resource: string,
+    previousVersion?: string,
+  ): Promise<ResolvedEvidence | null>;
 }

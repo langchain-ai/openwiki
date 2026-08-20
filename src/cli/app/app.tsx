@@ -15,11 +15,18 @@ import {
   getProviderModelOptions,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_REASONING_EFFORT_ENV_KEY,
   resolveConfiguredProvider,
   type OpenWikiProvider,
 } from "../../config/constants.js";
 import {
+  getReasoningCapability,
+  isReasoningEffort,
+  type ReasoningEffort,
+} from "../../config/reasoning.js";
+import {
   getCredentialDiagnostics,
+  getShellEnvValue,
   saveOpenWikiEnv,
   type CredentialDiagnostic,
 } from "../../config/env.js";
@@ -41,7 +48,11 @@ import { DryRunView } from "../components/panels.js";
 import { ErrorDiagnosticsPanel } from "../components/panels.js";
 import { HelpView } from "../components/panels.js";
 import { Header } from "../components/header.js";
-import { ChatHistory, ChatInput } from "../components/chat.js";
+import {
+  ChatHistory,
+  ChatInput,
+  type ReasoningEffortSelectionResult,
+} from "../components/chat.js";
 import { IngestionSummary, RunView } from "../components/run-view.js";
 import { PromptBlock, StatusLine } from "../components/primitives.js";
 import type { CompletedRun } from "../components/types.js";
@@ -59,9 +70,41 @@ import {
 import { updateRunningCredentialDiagnostics } from "./run-state.js";
 import type { RunState } from "./run-state.js";
 
-type AppProps = {
+/**
+ * Props for the interactive OpenWiki application shell.
+ */
+interface AppProps {
+  /**
+   * Parsed CLI command that configures the application session.
+   */
   command: CliCommand;
-};
+}
+
+// Coalesce bursts of tool lifecycle events so Ink redraws at most four times
+// per second while preserving the final in-memory log immediately.
+const RUN_LOG_RENDER_DELAY_MS = 250;
+
+function getConfiguredReasoningEffort(): ReasoningEffort | null {
+  const effort = process.env[OPENWIKI_REASONING_EFFORT_ENV_KEY]?.trim();
+
+  return effort && isReasoningEffort(effort) ? effort : null;
+}
+
+function shouldClearReasoningEffort(
+  provider: OpenWikiProvider,
+  modelId: string | null,
+  effort: string | null,
+): boolean {
+  if (effort === null) {
+    return false;
+  }
+
+  if (!modelId || !isReasoningEffort(effort)) {
+    return true;
+  }
+
+  return !getReasoningCapability(provider, modelId)?.values.includes(effort);
+}
 
 export function App({ command }: AppProps) {
   const app = useApp();
@@ -78,6 +121,8 @@ export function App({ command }: AppProps) {
   const [sessionModelId, setSessionModelId] = useState<string | null>(
     startupModelId,
   );
+  const [sessionReasoningEffort, setSessionReasoningEffort] =
+    useState<ReasoningEffort | null>(getConfiguredReasoningEffort);
   const activeRunId = useRef(0);
   const agentRunInFlight = useRef(false);
   const sessionThreadId = useRef(createOpenWikiThreadId(runtimeCwd));
@@ -89,6 +134,9 @@ export function App({ command }: AppProps) {
     CredentialDiagnostic[] | undefined
   >(undefined);
   const activeRunLog = useRef<RunLogItem[]>([]);
+  const activeRunRenderTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [runState, setRunState] = useState<RunState>({ status: "idle" });
   const [completedRuns, setCompletedRuns] = useState<CompletedRun[]>([]);
   const [activeUserMessage, setActiveUserMessage] = useState<string | null>(
@@ -125,6 +173,15 @@ export function App({ command }: AppProps) {
     (needsCredentialSetup(sessionModelId, runMode) ||
       (isInitCommand && !initWizardConsumed));
   const displayModelId = sessionModelId ?? startupModelId;
+
+  function cancelPendingRunLogRender(): void {
+    if (activeRunRenderTimer.current === null) {
+      return;
+    }
+
+    clearTimeout(activeRunRenderTimer.current);
+    activeRunRenderTimer.current = null;
+  }
 
   function submitChatMessage(message: string) {
     if (isExitMessage(message)) {
@@ -246,6 +303,7 @@ export function App({ command }: AppProps) {
   }
 
   function clearSession() {
+    cancelPendingRunLogRender();
     activeRunId.current += 1;
     sessionThreadId.current = createOpenWikiThreadId(runtimeCwd);
     activeRunCredentialDiagnostics.current = undefined;
@@ -260,10 +318,21 @@ export function App({ command }: AppProps) {
   }
 
   async function selectModel(modelId: string) {
+    const clearReasoningEffort = shouldClearReasoningEffort(
+      sessionProvider,
+      modelId,
+      sessionReasoningEffort,
+    );
     await saveOpenWikiEnv({
       [OPENWIKI_MODEL_ID_ENV_KEY]: modelId,
+      ...(clearReasoningEffort
+        ? { [OPENWIKI_REASONING_EFFORT_ENV_KEY]: "" }
+        : {}),
     });
     setSessionModelId(modelId);
+    if (clearReasoningEffort) {
+      setSessionReasoningEffort(null);
+    }
   }
 
   async function selectProvider(provider: OpenWikiProvider) {
@@ -271,19 +340,63 @@ export function App({ command }: AppProps) {
       getProviderModelOptions(provider).length > 0
         ? getDefaultModelId(provider)
         : null;
+    const clearReasoningEffort = shouldClearReasoningEffort(
+      provider,
+      modelId,
+      sessionReasoningEffort,
+    );
 
     await saveOpenWikiEnv({
       [OPENWIKI_PROVIDER_ENV_KEY]: provider,
       ...(modelId ? { [OPENWIKI_MODEL_ID_ENV_KEY]: modelId } : {}),
+      ...(clearReasoningEffort
+        ? { [OPENWIKI_REASONING_EFFORT_ENV_KEY]: "" }
+        : {}),
     });
     setSessionProvider(provider);
     setSessionModelId(modelId);
+    if (clearReasoningEffort) {
+      setSessionReasoningEffort(null);
+    }
+  }
+
+  async function selectReasoningEffort(
+    effort: ReasoningEffort | null,
+  ): Promise<ReasoningEffortSelectionResult> {
+    const modelId = getDisplayModelId(displayModelId);
+    const capability = getReasoningCapability(sessionProvider, modelId);
+
+    if (!capability) {
+      throw new Error(
+        `Reasoning effort is not supported for ${getProviderLabel(sessionProvider)} model ${modelId}.`,
+      );
+    }
+
+    if (effort !== null && !capability.values.includes(effort)) {
+      throw new Error(
+        `Unsupported reasoning effort "${effort}". Available values: ${capability.values.join(", ")}.`,
+      );
+    }
+
+    await saveOpenWikiEnv({
+      [OPENWIKI_REASONING_EFFORT_ENV_KEY]: effort ?? "",
+    });
+    const isShadowedByShell =
+      getShellEnvValue(OPENWIKI_REASONING_EFFORT_ENV_KEY) !== undefined;
+
+    // Keep the header, menu, completed-run metadata, and actual request on the
+    // same value. A saved preference cannot replace a shell export until the
+    // next process starts without that export.
+    setSessionReasoningEffort(getConfiguredReasoningEffort());
+
+    return { isShadowedByShell };
   }
 
   useEffect(() => {
     mountedRef.current = true;
 
     return () => {
+      cancelPendingRunLogRender();
       mountedRef.current = false;
     };
   }, []);
@@ -356,10 +469,13 @@ export function App({ command }: AppProps) {
     agentRunInFlight.current = true;
 
     const runId = activeRunId.current + 1;
+    const runStartedAt = performance.now();
     const runMessage = activeUserMessage;
+    const runReasoningEffort = sessionReasoningEffort;
 
     activeRunId.current = runId;
     activeRunCredentialDiagnostics.current = undefined;
+    cancelPendingRunLogRender();
     activeRunLog.current = [];
     setRunState({
       status: "running",
@@ -394,19 +510,36 @@ export function App({ command }: AppProps) {
         return;
       }
 
-      activeRunLog.current = appendRunLogEvent(
-        activeRunLog.current,
-        event,
-        nextLogId,
-      );
-      setRunState((currentState) =>
-        currentState.status === "running"
-          ? {
-              ...currentState,
-              log: activeRunLog.current,
-            }
-          : currentState,
-      );
+      const nextLog = appendRunLogEvent(activeRunLog.current, event, nextLogId);
+      activeRunLog.current = nextLog;
+
+      // Assistant tokens are retained for the final response, but they do not
+      // redraw the live Ink tree. Tool lifecycle events provide the stable,
+      // structured progress signal while the model is working.
+      if (event.type === "text") {
+        return;
+      }
+
+      if (activeRunRenderTimer.current !== null) {
+        return;
+      }
+
+      activeRunRenderTimer.current = setTimeout(() => {
+        activeRunRenderTimer.current = null;
+
+        if (!mountedRef.current || activeRunId.current !== runId) {
+          return;
+        }
+
+        setRunState((currentState) =>
+          currentState.status === "running"
+            ? {
+                ...currentState,
+                log: activeRunLog.current,
+              }
+            : currentState,
+        );
+      }, RUN_LOG_RENDER_DELAY_MS);
     };
 
     const runOptions: OpenWikiRunOptions = {
@@ -463,10 +596,13 @@ export function App({ command }: AppProps) {
           return;
         }
 
+        cancelPendingRunLogRender();
+        const durationMs = performance.now() - runStartedAt;
         setRunState({
           status: "success",
           result,
           log: activeRunLog.current,
+          durationMs,
           credentialDiagnostics: activeRunCredentialDiagnostics.current,
         });
         setCompletedRuns((runs) => [
@@ -475,8 +611,10 @@ export function App({ command }: AppProps) {
             id: nextCompletedRunId.current,
             command: result.command,
             credentialDiagnostics: activeRunCredentialDiagnostics.current,
+            durationMs,
             log: activeRunLog.current,
             message: runMessage,
+            reasoningEffort: runReasoningEffort,
             result,
           },
         ]);
@@ -487,6 +625,7 @@ export function App({ command }: AppProps) {
           return;
         }
 
+        cancelPendingRunLogRender();
         const errorDiagnostics = getErrorDiagnostics(error);
         const message = getErrorMessage(error);
         const authFix = getAuthFix(error, message, sessionProvider);
@@ -536,6 +675,7 @@ export function App({ command }: AppProps) {
     runtimeOutputMode,
     sessionModelId,
     sessionProvider,
+    sessionReasoningEffort,
     shouldRunInteractiveCredentialSetup,
   ]);
 
@@ -625,6 +765,7 @@ export function App({ command }: AppProps) {
           if (result.provider) {
             setSessionProvider(result.provider);
           }
+          setSessionReasoningEffort(getConfiguredReasoningEffort());
 
           if (!result.shouldContinueToRun) {
             activeRunId.current += 1;
@@ -765,6 +906,7 @@ export function App({ command }: AppProps) {
           command={runState.result.command}
           credentialDiagnostics={runState.credentialDiagnostics}
           done
+          durationMs={runState.durationMs}
           log={runState.log}
           message={activeUserMessage}
           modelId={runState.result.model}
@@ -782,10 +924,12 @@ export function App({ command }: AppProps) {
         <ChatInput
           currentModelId={getDisplayModelId(displayModelId)}
           currentProvider={sessionProvider}
+          currentReasoningEffort={sessionReasoningEffort}
           onClear={clearSession}
           onCommandRun={submitCommandRun}
           onModelSelect={selectModel}
           onProviderSelect={selectProvider}
+          onReasoningEffortSelect={selectReasoningEffort}
           onSubmit={submitChatMessage}
         />
       </Box>
@@ -827,10 +971,12 @@ export function App({ command }: AppProps) {
       <ChatInput
         currentModelId={getDisplayModelId(displayModelId)}
         currentProvider={sessionProvider}
+        currentReasoningEffort={sessionReasoningEffort}
         onClear={clearSession}
         onCommandRun={submitCommandRun}
         onModelSelect={selectModel}
         onProviderSelect={selectProvider}
+        onReasoningEffortSelect={selectReasoningEffort}
         onSubmit={submitChatMessage}
       />
     </Box>

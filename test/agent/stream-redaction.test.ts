@@ -1,7 +1,10 @@
 import { describe, expect, test } from "vitest";
 import { parseAgentStreamChunk } from "../../src/agent/index.ts";
 
-function makeChunk(contentBlocks: unknown[]): unknown {
+function makeChunk(
+  contentBlocks: unknown[],
+  namespace: string[] = [],
+): unknown {
   const message = {
     content: contentBlocks,
     role: "assistant",
@@ -10,7 +13,7 @@ function makeChunk(contentBlocks: unknown[]): unknown {
     langgraph_node: "agent",
     run_id: "fake-run-id",
   };
-  return [[], "messages", [message, metadata]];
+  return [namespace, "messages", [message, metadata]];
 }
 
 describe("parseAgentStreamChunk", () => {
@@ -64,6 +67,18 @@ describe("parseAgentStreamChunk", () => {
     const event = parseAgentStreamChunk(chunk);
 
     expect(event).toBeNull();
+  });
+
+  test("preserves nested task output", () => {
+    const event = parseAgentStreamChunk(
+      makeChunk([{ type: "text", text: "Task output" }], ["task"]),
+    );
+
+    expect(event).toMatchObject({
+      source: "subgraph",
+      text: "Task output",
+      type: "text",
+    });
   });
 
   test("normalizes tool lifecycle events", () => {
