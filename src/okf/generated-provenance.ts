@@ -15,12 +15,12 @@ import { listWikiConceptPaths } from "./index-sync.js";
  */
 interface GeneratedEvent {
   /**
-   * Producer actor responsible for the prior meaningful change.
+   * Producer actor responsible for the prior body change.
    */
   by: string;
 
   /**
-   * Producer-recorded time of the prior meaningful change.
+   * Producer-recorded time of the prior body change.
    *
    * @default undefined - the prior event did not record a time.
    */
@@ -32,7 +32,7 @@ interface GeneratedEvent {
  */
 interface ConceptSnapshot {
   /**
-   * Hash of the normalized Markdown body, excluding front matter.
+   * Hash of the exact Markdown body, excluding front matter.
    */
   bodyHash: string;
 
@@ -75,9 +75,9 @@ export async function snapshotGeneratedProvenance(
 
 /**
  * Reconciles producer provenance against the final post-processed wiki.
- * New or meaningfully changed bodies receive the run stamp. An unchanged page
- * receives its prior stamp back when an agent rewrite removed or altered it;
- * pages that were previously unstamped remain unstamped.
+ * New pages and pages whose bodies changed in any way receive the run stamp.
+ * An unchanged body receives its prior stamp back when an agent rewrite removed
+ * or altered it; pages that were previously unstamped remain unstamped.
  *
  * @param backend - Active wiki filesystem abstraction.
  * @param outputMode - Current wiki target.
@@ -135,17 +135,15 @@ async function readRequiredContent(
 }
 
 /**
- * Hashes the meaningful Markdown body while ignoring front matter and
- * insignificant whitespace, matching the existing generated-event semantics.
+ * Hashes the exact Markdown body while excluding front matter. Whitespace is
+ * retained so any body change advances the generated event.
  *
  * @param content - Complete concept document.
  * @returns Stable SHA-256 body fingerprint.
  */
 function hashConceptBody(content: string): string {
-  const normalized = splitFrontmatter(content)
-    .body.replace(/\s+/gu, " ")
-    .trim();
-  return createHash("sha256").update(normalized).digest("hex");
+  const body = splitFrontmatter(content).body;
+  return createHash("sha256").update(body).digest("hex");
 }
 
 /**

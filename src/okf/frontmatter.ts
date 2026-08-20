@@ -438,25 +438,6 @@ export function setGeneratedEvent(
 }
 
 /**
- * Reports whether two documents have the same concept body, ignoring their
- * front-matter blocks and treating a run of whitespace as equal to a single
- * space. This is the "meaningful change" test that gates {@link setGeneratedEvent}:
- * a write that only reshuffles front matter or reflows whitespace does not bump
- * the recorded change time.
- */
-export function conceptBodiesEqual(before: string, after: string): boolean {
-  return normalizeBody(before) === normalizeBody(after);
-}
-
-/**
- * Strips a document's front matter and collapses whitespace so two bodies that
- * differ only in spacing or blank lines compare equal.
- */
-function normalizeBody(content: string): string {
-  return splitFrontmatter(content).body.replace(/\s+/gu, " ").trim();
-}
-
-/**
  * Removes a single field from a page's front matter, preserving every other line
  * byte-for-byte, and returns the content unchanged when the field is absent. If
  * the field was the block's only line, the now-empty block is dropped entirely.

@@ -29,7 +29,7 @@ const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
 /**
  * Creates middleware that keeps the wiki OKF-conformant around a run. It
  * migrates existing pages to valid front matter before the agent starts,
- * snapshots their meaningful bodies, synchronizes indexes after the run, and
+ * snapshots their exact bodies, synchronizes indexes after the run, and
  * stamps final code-owned `generated` provenance on every new or changed page.
  *
  * `now` is the run's single stamp time (an ISO 8601 datetime), computed once by

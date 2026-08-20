@@ -634,7 +634,7 @@ describe("createOpenWikiIndexMiddleware generated finalization", () => {
     expect(page.match(/^generated:/gmu)).toHaveLength(1);
   });
 
-  test("does not bump generated when only the body whitespace changes", async () => {
+  test("bumps generated when only the body whitespace changes", async () => {
     const { backend, rootDir } = await setup();
     const middleware = createOpenWikiIndexMiddleware(
       backend,
@@ -650,7 +650,7 @@ describe("createOpenWikiIndexMiddleware generated finalization", () => {
     await runBeforeAgent(middleware);
 
     // A full-file rewrite omits the code-owned field and only reflows body
-    // whitespace. Finalization must restore the old event without advancing it.
+    // whitespace. That is still a body change and must advance the event.
     await driveWrite(
       middleware,
       backend,
@@ -660,8 +660,37 @@ describe("createOpenWikiIndexMiddleware generated finalization", () => {
     await runAfterAgent(middleware);
 
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(page).toContain(`at: "${LATER}"`);
+    expect(page).not.toContain(NOW);
+  });
+
+  test("does not bump generated when only front matter changes", async () => {
+    const { backend, rootDir } = await setup();
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      LATER,
+    );
+    await backend.write(
+      "/openwiki/page.md",
+      `---\ntype: Reference\ngenerated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}"}\n---\n\n# Page\n\nSame body.\n`,
+    );
+    await runBeforeAgent(middleware);
+
+    await driveWrite(
+      middleware,
+      backend,
+      "/openwiki/page.md",
+      "---\ntype: Guide\ntitle: Page\n---\n\n# Page\n\nSame body.\n",
+    );
+    await runAfterAgent(middleware);
+
+    const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(page).toContain(`at: "${NOW}"`);
     expect(page).not.toContain(LATER);
+    expect(page).toContain("type: Guide");
   });
 
   test("stamps a nested concept but never a reserved document", async () => {
