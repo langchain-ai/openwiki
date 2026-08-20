@@ -1,0 +1,33 @@
+integrations/openwiki/references/init.md
+  s_081e0b6f2df1e9::t_177e4845978020 1-28
+integrations/openwiki/references/security.md
+  s_081e0b6f2df1e9::t_177e4845978020 1-24
+integrations/openwiki/references/methodology.md
+  s_081e0b6f2df1e9::t_177e4845978020 1-57
+integrations/openwiki/references/update.md
+  s_081e0b6f2df1e9::t_177e4845978020 1-23
+integrations/openwiki/agents/openai.yaml
+  s_081e0b6f2df1e9::t_177e4845978020 1-4
+test/host-integrations/skill.test.ts
+  s_081e0b6f2df1e9::t_0fd20050b6fee6 36-44,140
+  s_081e0b6f2df1e9::t_0346fc182eff00 165-167,169-173
+  s_081e0b6f2df1e9::t_57f35b3e1714ce 1-35,45-139,141-164,168,174-177
+integrations/openwiki/SKILL.md
+  s_081e0b6f2df1e9::t_177e4845978020 1-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "6fbcfd2ea49bf0ba3f4485f99dcf9774bcadc0c7",
+  "prompts": {},
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
