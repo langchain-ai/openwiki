@@ -85,6 +85,8 @@ Update this repository's OpenWiki for changes since its last successful run.
 
 Host-driven runs currently support repository code wikis, not personal brains. They use the coding agent's authenticated model session, so OpenWiki provider credentials are not required. OpenWiki still owns deterministic setup and finalization; the coding agent owns research, planning, factual authoring, and semantic review.
 
+External coding-agent integrations currently use repository source and tests only. Connector-sourced context, including LangSmith, is not yet supported.
+
 The integration exposes lifecycle bookends plus Grounded Claims inspection and resolution. Codex or Claude authors Markdown with native repository tools while OpenWiki validates and persists the evidence-backed propositions behind factual pages.
 
 Use `openwiki integrations list` to inspect user-level installation status or `openwiki integrations uninstall <host>` to remove an integration safely. Add `--project [path]` to `list`, `install`, or `uninstall` for repository-scoped state.
