@@ -1,0 +1,311 @@
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import { HostIntegrationError } from "../../src/host-integrations/core/errors.ts";
+import { HostSessionManager } from "../../src/host-integrations/core/session-manager.ts";
+import { OPENWIKI_VERSION } from "../../src/version.ts";
+
+const RUN_TIMESTAMP = "2026-08-20T08:15:00.000Z";
+const temporaryRoots: string[] = [];
+
+/**
+ * Persisted subset asserted by host lifecycle tests.
+ */
+interface PersistedRunMetadata {
+  /**
+   * Command associated with the metadata event.
+   */
+  command?: string;
+
+  /**
+   * Resolved wiki language.
+   */
+  language?: string;
+
+  /**
+   * Host-agent identity stored in the existing model field.
+   */
+  model?: string;
+
+  /**
+   * Durable lifecycle status.
+   */
+  status?: string;
+}
+
+/**
+ * Creates an isolated repository root for a lifecycle test.
+ *
+ * @returns Absolute temporary repository path.
+ */
+async function createRepository(): Promise<string> {
+  const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-session-"));
+  temporaryRoots.push(root);
+  return root;
+}
+
+/**
+ * Creates a manager with a deterministic run timestamp.
+ *
+ * @param root - Temporary repository root.
+ * @param host - Host identifier written to metadata.
+ * @returns Validated lifecycle manager.
+ */
+async function createManager(
+  root: string,
+  host = "codex",
+): Promise<HostSessionManager> {
+  return HostSessionManager.create({
+    root,
+    host,
+    now: () => new Date(RUN_TIMESTAMP),
+  });
+}
+
+/**
+ * Reads the repository-mode run metadata.
+ *
+ * @param root - Temporary repository root.
+ * @returns Parsed persisted metadata.
+ */
+async function readMetadata(root: string): Promise<PersistedRunMetadata> {
+  return JSON.parse(
+    await readFile(path.join(root, "openwiki/.last-update.json"), "utf8"),
+  ) as PersistedRunMetadata;
+}
+
+/**
+ * Renders a valid concept page without code-owned provenance.
+ *
+ * @param title - Concept title and H1 text.
+ * @param body - Concept body below the H1.
+ * @returns Complete Markdown document.
+ */
+function concept(title: string, body: string): string {
+  return [
+    "---",
+    "type: Guide",
+    `title: ${title}`,
+    `description: ${title} documentation.`,
+    "---",
+    "",
+    `# ${title}`,
+    "",
+    body,
+    "",
+  ].join("\n");
+}
+
+afterEach(async () => {
+  vi.unstubAllEnvs();
+  await Promise.all(
+    temporaryRoots.splice(0).map((root) =>
+      rm(root, {
+        recursive: true,
+        force: true,
+      }),
+    ),
+  );
+});
+
+describe("HostSessionManager lifecycle", () => {
+  test("prepares, permits native authoring, and durably finalizes a run", async () => {
+    const root = await createRepository();
+    const wikiRoot = path.join(root, "openwiki");
+    await mkdir(wikiRoot, { recursive: true });
+    await writeFile(
+      path.join(wikiRoot, "legacy.md"),
+      "# Ancien\n\nPAGE_BODY_SENTINEL\n",
+      "utf8",
+    );
+    await writeFile(path.join(root, ".openwikiignore"), "private/**\n", "utf8");
+    vi.stubEnv("OPENWIKI_HOST_TEST_SECRET", "ENV_VALUE_SENTINEL");
+
+    const manager = await createManager(root);
+    const started = await manager.begin({ mode: "init", language: "fr" });
+    const canonicalRoot = await realpath(root);
+
+    const migrated = await readFile(path.join(wikiRoot, "legacy.md"), "utf8");
+    expect(migrated).toContain('type: "Référence"');
+    expect(migrated).toContain("openwiki_generated: true");
+    expect(started).toMatchObject({
+      mode: "init",
+      language: "fr",
+      lastUpdate: null,
+      ignoredPatterns: 1,
+    });
+    expect(manager.getRun(started.runId)).toMatchObject({
+      id: started.runId,
+      root: canonicalRoot,
+      host: "codex",
+      startedAt: RUN_TIMESTAMP,
+    });
+    expect(await readMetadata(root)).toMatchObject({
+      command: "init",
+      language: "fr",
+      model: "host-agent/codex",
+      status: "interrupted",
+    });
+
+    const sensitiveBody = "PAGE_BODY_SENTINEL";
+    expect(JSON.stringify(started)).not.toContain(sensitiveBody);
+    expect(JSON.stringify(started)).not.toContain("private/**");
+    expect(JSON.stringify(started)).not.toContain("ENV_VALUE_SENTINEL");
+    await writeFile(
+      path.join(wikiRoot, "quickstart.md"),
+      concept("Quickstart", sensitiveBody),
+      "utf8",
+    );
+    await writeFile(
+      path.join(wikiRoot, "legacy.md"),
+      concept("Ancien", "Contenu révisé."),
+      "utf8",
+    );
+    await writeFile(
+      path.join(wikiRoot, "deleted.md"),
+      concept("Deleted", "Temporary."),
+      "utf8",
+    );
+    await rm(path.join(wikiRoot, "deleted.md"));
+    await writeFile(path.join(wikiRoot, "_plan.md"), "Temporary plan.\n");
+
+    await expect(manager.finish({ runId: started.runId })).resolves.toEqual({
+      status: "complete",
+    });
+
+    const quickstart = await readFile(
+      path.join(wikiRoot, "quickstart.md"),
+      "utf8",
+    );
+    const legacy = await readFile(path.join(wikiRoot, "legacy.md"), "utf8");
+    const index = await readFile(path.join(wikiRoot, "index.md"), "utf8");
+    const generated =
+      `generated: {by: "openwiki/${OPENWIKI_VERSION}", ` +
+      `at: "${RUN_TIMESTAMP}"}`;
+    expect(quickstart).toContain(generated);
+    expect(legacy).toContain(generated);
+    expect(index).toContain("# Fichiers");
+    expect(index).toContain("[Quickstart](quickstart.md)");
+    await expect(access(path.join(wikiRoot, "deleted.md"))).rejects.toThrow();
+    await expect(access(path.join(wikiRoot, "_plan.md"))).rejects.toThrow();
+    expect(await readMetadata(root)).toMatchObject({
+      model: "host-agent/codex",
+      status: "complete",
+    });
+    expect(() => manager.getRun(started.runId)).toThrow(HostIntegrationError);
+  });
+
+  test("retains interrupted state and the active session for a finish retry", async () => {
+    const root = await createRepository();
+    const wikiRoot = path.join(root, "openwiki");
+    await mkdir(wikiRoot, { recursive: true });
+    await writeFile(
+      path.join(wikiRoot, "page.md"),
+      concept("Page", "Body."),
+      "utf8",
+    );
+    const manager = await createManager(root);
+    const started = await manager.begin({ mode: "init" });
+
+    const blockingIndex = path.join(wikiRoot, "index.md");
+    await mkdir(blockingIndex);
+    await expect(manager.finish({ runId: started.runId })).rejects.toThrow();
+
+    expect(await readMetadata(root)).toMatchObject({ status: "interrupted" });
+    expect(manager.getRun(started.runId).id).toBe(started.runId);
+
+    await rm(blockingIndex, { recursive: true, force: true });
+    await expect(manager.finish({ runId: started.runId })).resolves.toEqual({
+      status: "complete",
+    });
+    expect(await readMetadata(root)).toMatchObject({ status: "complete" });
+  });
+
+  test("a second begin supersedes the old session without reverting Markdown", async () => {
+    const root = await createRepository();
+    const wikiRoot = path.join(root, "openwiki");
+    const manager = await createManager(root);
+    const first = await manager.begin({ mode: "init" });
+    await writeFile(
+      path.join(wikiRoot, "preserved.md"),
+      concept("Preserved", "Authored before replacement."),
+      "utf8",
+    );
+
+    const second = await manager.begin({ mode: "init" });
+
+    expect(second.runId).not.toBe(first.runId);
+    expect(() => manager.getRun(first.runId)).toThrow(HostIntegrationError);
+    await expect(
+      readFile(path.join(wikiRoot, "preserved.md"), "utf8"),
+    ).resolves.toContain("Authored before replacement.");
+    expect(await readMetadata(root)).toMatchObject({ status: "interrupted" });
+    await manager.finish({ runId: second.runId });
+  });
+
+  test("a new manager recovers interrupted metadata and authored Markdown", async () => {
+    const root = await createRepository();
+    const wikiRoot = path.join(root, "openwiki");
+    const abandonedManager = await createManager(root, "codex");
+    await abandonedManager.begin({ mode: "init" });
+    await writeFile(
+      path.join(wikiRoot, "recovered.md"),
+      concept("Recovered", "Survives process exit."),
+      "utf8",
+    );
+
+    const recoveryManager = await createManager(root, "claude-code");
+    const recovered = await recoveryManager.begin({ mode: "update" });
+
+    expect(recovered.lastUpdate).toMatchObject({ status: "interrupted" });
+    await expect(
+      readFile(path.join(wikiRoot, "recovered.md"), "utf8"),
+    ).resolves.toContain("Survives process exit.");
+    await recoveryManager.finish({ runId: recovered.runId });
+    expect(await readMetadata(root)).toMatchObject({
+      model: "host-agent/claude-code",
+      status: "complete",
+    });
+  });
+});
+
+describe("HostSessionManager validation", () => {
+  test("rejects invalid host identifiers with a bounded error", async () => {
+    const root = await createRepository();
+
+    await expect(
+      HostSessionManager.create({ root, host: "Codex Agent" }),
+    ).rejects.toMatchObject({
+      name: "HostIntegrationError",
+      code: "invalid_input",
+      message:
+        "The host ID must contain lowercase letters, digits, or hyphens.",
+    });
+  });
+
+  test("rejects invalid roots without exposing the candidate path", async () => {
+    const root = await createRepository();
+    const missing = path.join(root, "private-root-name");
+
+    const error: unknown = await HostSessionManager.create({
+      root: missing,
+      host: "codex",
+    }).catch((reason: unknown) => reason);
+    expect(error).toMatchObject({
+      name: "HostIntegrationError",
+      code: "invalid_input",
+      message: "The OpenWiki root must be an existing directory.",
+    });
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).not.toContain("private-root-name");
+  });
+});
