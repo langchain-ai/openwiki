@@ -1,0 +1,115 @@
+src/host-integrations/mcp/stdio.ts
+  s_081e0b6f2df1e9::t_eed596f9c0c833 6,18
+  s_081e0b6f2df1e9::t_8a3174e327875b 23
+.changeset/bright-hosts-connect.md
+  h_f78d33d4280f3f 2,5
+  s_081e0b6f2df1e9::t_330abbe1d55119 1,3-4
+src/host-integrations/install/installer.ts
+  s_081e0b6f2df1e9::t_ac73288aed58f8 147,161,208,227,234-238,262-266,302,307,309-313,316,350-354
+  s_081e0b6f2df1e9::t_7d62376a4a0a73 154-158
+  s_081e0b6f2df1e9::t_0618846e7690a8 37,462,476,490,495,497,529,535,538,547,553,556,565,571,574
+  s_081e0b6f2df1e9::t_0c9b4f7f860b1d 290-292
+integrations/openwiki/SKILL.md
+  s_081e0b6f2df1e9::t_5c56d68190b481 13-22,25-30,35
+test/host-integrations/session-manager.test.ts
+  s_081e0b6f2df1e9::t_28edf5695c6e18 289-292
+  s_081e0b6f2df1e9::t_8a3174e327875b 64,130,218,239,262,270,301
+  s_081e0b6f2df1e9::t_7529ccfadb3ca2 1
+  s_081e0b6f2df1e9::t_4ff25c2bd53a05 235,237,247,250
+  s_081e0b6f2df1e9::t_91e87a465bf9aa 54,131-135,219,240,263,271,302-304
+  s_081e0b6f2df1e9::t_164f4fb9ee48dc 142
+  s_081e0b6f2df1e9::t_b12f0f6e14b0b6 286-288,293-294
+test/cli/host-integration-runners.test.ts
+  s_081e0b6f2df1e9::t_9a9850025b3d93 151-154,159-161
+  s_081e0b6f2df1e9::t_e2c4b9053a0fba 1,75-76,86-89,97,108,115,134,146-147,167,178,187,201,213
+src/cli/commands.ts
+  s_081e0b6f2df1e9::t_6beecbd651557f 1122-1124,1191,1193,1196,1198,1201,1203
+  s_081e0b6f2df1e9::t_a89e8c9100fe75 70
+  s_081e0b6f2df1e9::t_ddbd6cf7848e9b 14-17,63,65-69,71-72,568-573,593-625,633-637,645,652,695,708-710
+test/host-integrations/repository-root.test.ts
+  s_081e0b6f2df1e9::t_164f4fb9ee48dc 1,3-15,19-44,47-79
+  s_081e0b6f2df1e9::t_0c9b4f7f860b1d 45-46
+  s_081e0b6f2df1e9::t_bf18fc50de5213 2,16-18
+src/host-integrations/core/repository-root.ts
+  s_081e0b6f2df1e9::t_0c9b4f7f860b1d 20-22,69-72,74-75,93-96
+  s_081e0b6f2df1e9::t_eed596f9c0c833 1-19,23-68,73,76-92,97-103,109-133
+  s_081e0b6f2df1e9::t_b12f0f6e14b0b6 104-108
+src/host-integrations/install/install-paths.ts
+  s_081e0b6f2df1e9::t_0c9b4f7f860b1d 218,302
+  s_081e0b6f2df1e9::t_c122b45deea7ab 12-16,47,49-54,70-73,77,80-81,83-84,88-89,92-94,249,263,269,277
+  s_081e0b6f2df1e9::t_8f85ce8e3506cf 100,104,107-108,210,214,222-223,236,258,260,283,285,291,298,301,305
+test/host-integrations/mcp-server.test.ts
+  s_081e0b6f2df1e9::t_7529ccfadb3ca2 1
+  s_081e0b6f2df1e9::t_e23b4a515f64ce 43,285
+  s_081e0b6f2df1e9::t_8a3174e327875b 273
+  s_081e0b6f2df1e9::t_2c3ec836a15ced 133-136
+test/host-integrations/protocol.test.ts
+  s_081e0b6f2df1e9::t_0c9b4f7f860b1d 43-47,87-90
+  s_081e0b6f2df1e9::t_e23b4a515f64ce 2
+  s_081e0b6f2df1e9::t_770d788aa731fc 25,42,48-49,53,84,91
+  s_081e0b6f2df1e9::t_7529ccfadb3ca2 1
+  s_081e0b6f2df1e9::t_8a3174e327875b 67
+test/cli/host-integration-commands.test.ts
+  s_081e0b6f2df1e9::t_28edf5695c6e18 103
+  s_081e0b6f2df1e9::t_0c9b4f7f860b1d 130,135,170
+  s_081e0b6f2df1e9::t_0a9534b41bb9c8 11,17-18,21-23,28,32-36,48,55,60-66,72,79,81-88,91,136-139,169,175,193
+  s_081e0b6f2df1e9::t_154e0ef8b79f4f 97-102,104-109
+src/host-integrations/core/session-manager.ts
+  s_081e0b6f2df1e9::t_9283859a0ab481 188
+  s_081e0b6f2df1e9::t_b12f0f6e14b0b6 204
+  s_081e0b6f2df1e9::t_eed596f9c0c833 33,38,63-67,169,193,199,201,232-233,235,242,245,253,260,274,286,318,321
+test/host-integrations/skill.test.ts
+  s_081e0b6f2df1e9::t_e3d1dfdec1010d 116-125,129-133
+  s_081e0b6f2df1e9::t_0c9b4f7f860b1d 126-128
+src/host-integrations/install/types.ts
+  s_081e0b6f2df1e9::t_9283859a0ab481 11-15,26,31-45,61,63,66,68,81-86,88,103,105-110,122-125
+  s_081e0b6f2df1e9::t_88aed46f3d780a 126
+src/host-integrations/install/registry.ts
+  s_081e0b6f2df1e9::t_bc5417fd150af4 10-22,29-36,42-54
+src/host-integrations/mcp/server.ts
+  s_081e0b6f2df1e9::t_bf18fc50de5213 13
+  s_081e0b6f2df1e9::t_7479a1dcbb6888 16
+  s_081e0b6f2df1e9::t_5c56d68190b481 11-12,17,34
+test/host-integrations/mcp-stdio.test.ts
+  s_081e0b6f2df1e9::t_bf18fc50de5213 25
+  s_081e0b6f2df1e9::t_e23b4a515f64ce 36
+test/host-integrations/installer.test.ts
+  s_081e0b6f2df1e9::t_0c9b4f7f860b1d 432-434,475-477,615-617,697
+  s_081e0b6f2df1e9::t_e22866cdb3a995 436,439,444-446,468,472,483,493,499,502
+  s_081e0b6f2df1e9::t_19674f07ef1e98 291,311,340,343-355,359-366,369-381,392-394
+  s_081e0b6f2df1e9::t_a7e012a00d1d27 625,632,635-637,640,645-648,651-653,659,662-664,666,674,679
+  s_081e0b6f2df1e9::t_62d1b7ebaba27c 524,529,538-540,542,545,555,573,594,605
+  s_081e0b6f2df1e9::t_51d664b0653df8 30-34,62-67,77-102,115,137
+  s_081e0b6f2df1e9::t_3f103d0c861071 399-427,685-696,698-702
+  s_081e0b6f2df1e9::t_331815058c41ea 703-704
+test/host-integrations/cli-dogfood.test.ts
+  s_081e0b6f2df1e9::t_06b1a967fce2c2 55,75,91,103,118
+src/host-integrations/core/protocol.ts
+  s_081e0b6f2df1e9::t_eed596f9c0c833 18-21,50
+  s_081e0b6f2df1e9::t_d8c2de573c7710 17
+src/cli/host-integrations.ts
+  s_081e0b6f2df1e9::t_cb73cbee651d49 1
+  s_081e0b6f2df1e9::t_0c9b4f7f860b1d 25
+  s_081e0b6f2df1e9::t_6beecbd651557f 24,28-31,45-46,50-51,62-65,69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "4b8f75c8867703a77a79b5898e9f8f1b1366ceac",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
