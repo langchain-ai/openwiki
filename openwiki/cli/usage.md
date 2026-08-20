@@ -3,6 +3,7 @@ type: CLI reference
 title: OpenWiki CLI usage
 description: Reference for OpenWiki command-line usage, including interactive and non-interactive runs, initialization and update modes, connector operations, and authentication setup. Covers provider configuration, model selection, validation, and the source files to update when changing CLI behavior.
 tags: [openwiki, cli, commands, configuration, authentication]
+generated: {by: "openwiki/0.3.3", at: "2026-08-20T08:11:55.370Z"}
 ---
 
 # CLI usage
@@ -57,11 +58,32 @@ If stdin is not a TTY (e.g. CI), or `--print` is used, the CLI requires the prov
 - `init` / `update` command launches (including from `/init` and `/update` slash commands),
 - provider and model selection during the session (`/provider`, `/model`, `/effort` for reasoning-capable models),
 - interactive credential setup when required (including for init/update, not just chat),
-- streaming agent text and tool events (tool-call strings are redacted via `sanitizeDiagnosticText()` before display; subagent lifecycle is shown as "task" start/finish labels),
+- streaming agent text and tool events (tool-call strings are redacted via `sanitizeDiagnosticText()` before display; subagent lifecycle is shown as "task" start/finish labels), folded into a bounded progress model (see [Run lifecycle display](#run-lifecycle-display)),
 - completed-run history and error display,
 - exit handling for help, errors, and explicit `/exit` messages.
 
 The UI persists provider and model selection back to `~/.openwiki/.env` through `saveOpenWikiEnv()`.
+
+### Run lifecycle display
+
+Init and update runs render a bounded progress model rather than a raw streaming transcript. `src/cli/run-log/reducer.ts` folds each `OpenWikiRunEvent` (from `parseAgentStreamChunk()` in `src/agent/index.ts`) into a fixed set of log items:
+
+- **`RunToolLogItem`** — one aggregate summary per run (not one line per tool call). It accumulates categorized counts (`actionCount`, `readCount`, `searchCount`, `writeCount`, `taskCount`, `errorCount`) and the set of `activeToolCallIds` still running. When a new tool starts, earlier main-agent narration is discarded because a later tool call proves that prose was narration rather than the final answer; the summary is updated in place rather than appending a line. On completion it settles to `status: "done"` or `"error"` and records unique `writtenPaths` (persistent OpenWiki `.md` pages, excluding `_plan.md`).
+- **`RunActivityLogItem`** — one per exact filesystem path touched by a `read_file`/`write_file`/`glob`/`grep`/`ls` call. `src/cli/run-log/activity.ts` (`getToolPathActivities()`) normalizes the path to repository-relative form, classifies the operation (`read`/`search`/`write`) and scope (`openwiki`/`repository`), and `buildActivityTreeLines()` merges shared ancestry into a familiar tree shape without rendering inactive files. Each activity tracks its lifecycle (`active` → `recent`/`error`) as the owning tool call completes; `boundActivityLog()` keeps the log bounded to a recent-activity window.
+- **`RunTextLogItem`** — the main agent's final text response, accumulated as one replaceable buffer.
+- **`RunDebugLogItem`** — bounded diagnostic notices (max 20), shown as `- <message>` lines.
+
+`src/cli/components/run-view.tsx` renders this model. While a run is live it shows a slow heartbeat spinner (`RunSpinner`), a stage label derived from active activities (`getRunStage()`: "Exploring the repository" / "Tracing affected documentation" / "Writing documentation"), the aggregate counts, and the activity tree split into sections ("Reading repository", "Reading OpenWiki", "Writing OpenWiki", "Writing repository") plus a bounded "Recent activity" list. On completion (`done`) it renders an outcome-first title via `formatRunCompletionTitle()` in `src/cli/run-log/summary.ts` — e.g. `Generated 2 OpenWiki pages in 3s` or `OpenWiki is up to date in <1s` — followed by up to 5 written page paths, secondary counts (writes omitted because the title already reports unique pages), diagnostics, and the final assistant text.
+
+| Module | Role | Focused tests |
+| --- | --- | --- |
+| `src/cli/run-log/reducer.ts` | `appendRunLogEvent()` event folder; tool start/end; activity activation/completion | `test/cli/run-log/reducer.test.ts` ("appendRunLogEvent text handling", "appendRunLogEvent tool grouping") |
+| `src/cli/run-log/activity.ts` | Path extraction, normalization, scope/operation classification, tree builder | `test/cli/run-log/activity.test.ts` ("getToolPathActivities", "isOpenWikiPagePath", "buildActivityTreeLines") |
+| `src/cli/run-log/summary.ts` | Count formatting and completion-title builder | `test/cli/run-log/summary.test.ts` ("formatRunCompletionTitle", "formatCompletedRunCounts") |
+| `src/cli/run-log/tool-input.ts` | Stringified-JSON tool arg parsing and target counting | `test/cli/run-log/tool-input.test.ts` ("parseToolInput", "countToolTargets") |
+| `src/cli/components/run-view.tsx` | `RunView` Ink component (live + completed states) | `test/cli/components/run-view.test.tsx` ("RunView") |
+
+When changing the run view, the reducer is the single fold point: new event types or display fields start there, then `run-view.tsx` renders them. `src/cli/format.ts` now exports only `formatCount()` (singular/plural noun formatting) and display helpers — the older `truncateLogOutput()`/`getSpinnerFrame()` helpers were removed when the raw transcript display was replaced by the bounded model.
 
 ## Credentials and onboarding
 
@@ -280,7 +302,7 @@ openwiki visualize openwiki --no-open    # do not open the browser automatically
 openwiki visualize openwiki --export docs/openwiki-visualizer  # write a static visualizer directory
 ```
 
-`--export <dir>` writes a self-contained static visualizer directory instead of starting the server (`src/visualize/static-export.ts`, `exportStaticVisualizer`). The directory contains `index.html`, `client.js`, `client-lib.js`, and `graph.json` — a snapshot of the graph at export time. The static client reads `./graph.json` and never opens an SSE connection (no live reload), so the directory can be hosted by GitHub Pages, MkDocs, or any other static host without OpenWiki running. The parser rejects `--export` combined with `--port` or `--no-open` (`--export cannot be combined with --port or --no-open.`), and rejects `--export` without a directory argument. On success the runner prints `Exported static visualizer to <dir> (<pages> pages, <links> links).` and exits.
+`--export <dir>` writes a self-contained static visualizer directory instead of starting the server (`src/visualize/static-export.ts`, `exportStaticVisualizer`). The directory contains `index.html`, `client.js`, `client-lib.js`, `styles.css`, and `graph.json` — a snapshot of the graph at export time. The static client reads `./graph.json` and never opens an SSE connection (no live reload), so the directory can be hosted by GitHub Pages, MkDocs, or any other static host without OpenWiki running. The parser rejects `--export` combined with `--port` or `--no-open` (`--export cannot be combined with --port or --no-open.`), and rejects `--export` without a directory argument. On success the runner prints `Exported static visualizer to <dir> (<pages> pages, <links> links).` and exits.
 
 Behavior and bounds, from `src/visualize/server.ts` and `src/visualize/page.ts`:
 
@@ -288,7 +310,8 @@ Behavior and bounds, from `src/visualize/server.ts` and `src/visualize/page.ts`:
 - A positional path selects the wiki directory (default `openwiki`). If the directory is missing, the server fails fast with a message directing you to run `openwiki --init` first.
 - `buildGraph()` in `src/visualize/graph.ts` parses the wiki into nodes (concept pages) and edges (Markdown links), exposing them at `/api/graph`.
 - A recursive file watcher (`startWatch`) debounces changes (150 ms) and rebuilds the graph; connected browsers receive a reload event over an SSE stream at `/events`, so edits to the wiki files refresh the live graph and reader while the server runs.
-- The page (`src/visualize/page.ts`) and client (`src/visualize/client.ts`) are server-owned static assets served at fixed routes (`/`, `/client.js`, `/client-lib.js`). The page is rendered by `renderPage(staticExport)`: the live page (`PAGE`) loads client modules from absolute routes; the static page (`STATIC_PAGE`) loads `./client.js` and carries a CSP `<meta>` tag so the exported HTML keeps the same script restrictions without a server header. The browser loads Mermaid and the graph/Markdown libraries from a pinned jsdelivr CDN, so an internet connection is required even though the server is local. The shared `CSP` pins script sources to `'self'` and the CDN origin; no `req.url` path is ever used to read a file from disk. The compiled browser modules are read once via `loadVisualizerAssets()` (shared between the live server and the static exporter).
+- The page (`src/visualize/page.ts`), client (`src/visualize/client.ts`), and stylesheet (`src/visualize/styles.css`) are server-owned static assets served at fixed routes (`/`, `/client.js`, `/client-lib.js`, `/styles.css`). The page is rendered by `renderPage(staticExport)`: the live page (`PAGE`) loads client modules and the stylesheet from absolute routes; the static page (`STATIC_PAGE`) loads `./client.js` and `./styles.css` and carries a CSP `<meta>` tag so the exported HTML keeps the same script restrictions without a server header. The browser loads Mermaid and the graph/Markdown libraries from a pinned jsdelivr CDN, so an internet connection is required even though the server is local. The shared `CSP` pins script sources to `'self'` and the CDN origin; `style-src` keeps `'unsafe-inline'` because `client.ts` writes inline `style=` attributes for legend swatches and sidebar dots; no `req.url` path is ever used to read a file from disk. The compiled browser assets are read once via `loadVisualizerAssets()` (shared between the live server and the static exporter). Since `tsc` does not copy non-TypeScript files, `scripts/copy-visualize-assets.cjs` (appended to `npm run build`) copies `styles.css` into `dist/visualize/` and fails the build if the source is missing or the result lands empty.
+- The graph panel is resizable and collapsible: a draggable splitter between the graph and the reader adjusts the graph width (persisted as a percentage in `localStorage`), and a topbar toggle button collapses the graph entirely so the reader takes the full width (also persisted). The splitter's hit area is wider than its visible line to prevent a near-miss press from landing on the canvas, where force-graph would read a stationary press+release as a background click that deselects the open page; pointer events on the canvas are suppressed for the duration of a drag.
 - Press Ctrl-C (SIGINT) to stop the server.
 
 ## Multilingual wikis
@@ -326,7 +349,7 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - To require a user-supplied base URL (a provider with no default endpoint, like `openai-compatible`), also set `requiresBaseUrl: true`. `ensureProviderBaseUrl()` in `src/agent/index.ts` enforces it at runtime, and the interactive setup adds a base-URL step for such providers.
 - To change agent streaming behavior per provider, edit the `streamMessagesEnabled`/`streamModes` resolution in `src/agent/index.ts` (the `openai-compatible` provider already gates `messages` vs `updates` there via `resolveOpenAiCompatibleStreamMessages()` in `src/config/constants.ts`) and the `managedEnvKeys`/diagnostics entry for any new opt-in env key; update `test/agent/stream-modes.test.ts` and `test/agent/stream-redaction.test.ts`. The HTTP-transport opt-in `OPENWIKI_OPENAI_COMPATIBLE_STREAMING` is a separate axis (`providerUsesStreaming()` in `src/config/constants.ts`, forwarded into the CI workflow by `createWorkflowProviderEnv()` in `src/ingestion/code-mode.ts`); update `test/openai-compatible-streaming.test.ts` and `test/ingestion/code-mode.test.ts` when changing it.
 - To add reasoning-effort support for a provider/model, add a `ReasoningCapability` to `REASONING_CAPABILITIES` in `src/config/reasoning.ts`, wire the transport into the `createModel()` branch (`responsesReasoningOptions` for Responses-API models, `chatCompletionsReasoningOptions` for chat-completions `reasoning_effort`), and add an interactive `/effort` row via `getReasoningEffortMenuOptions()` in `src/cli/input/menu.ts` (which derives from the same capability table). The onboarding `reasoning-effort` step in `src/setup/credentials/steps.ts` and `use-init-setup.ts` walks after the model step. Update `test/agent/create-model.test.ts` ("createModel reasoning configuration"), `test/config/constants.test.ts` ("reasoning capabilities"), and `test/cli/components/chat.test.tsx`.
-- Re-check the `package.json` bin entry and scripts if the entrypoint changes. The bin entry is `./dist/cli/cli.js`; a `postbuild` script restores its executable bit (`chmod 0o755`) so `npm link` installs survive rebuilds.
+- Re-check the `package.json` bin entry and scripts if the entrypoint changes. The bin entry is `./dist/cli/cli.js`; a `postbuild` script restores its executable bit (`chmod 0o755`) so `npm link` installs survive rebuilds. The `build` script also runs `scripts/copy-visualize-assets.cjs` after `tsc` to copy `src/visualize/styles.css` into `dist/visualize/` (tsc does not emit non-TypeScript assets); when adding a new browser asset to the visualizer, add it to the `ASSETS` list in that script so the build copies and verifies it.
 
 ## Source map
 
@@ -343,6 +366,9 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - `src/config/env.ts`
 - `src/cli/input/menu.ts`
 - `src/cli/components/chat.tsx`
+- `src/cli/components/run-view.tsx`
+- `src/cli/run-log/` (`reducer.ts`, `activity.ts`, `summary.ts`, `tool-input.ts`, `types.ts`)
+- `src/cli/format.ts`
 - `src/agent/index.ts`
 - `src/agent/openai-chatgpt-oauth.ts`
 - `src/auth/oauth.ts`
@@ -356,5 +382,7 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - `src/visualize/graph.ts`
 - `src/visualize/page.ts`
 - `src/visualize/client.ts`
+- `src/visualize/styles.css`
+- `scripts/copy-visualize-assets.cjs`
 - `README.md`
 - `package.json`

@@ -3,6 +3,7 @@ type: Quickstart Guide
 title: OpenWiki Quickstart
 description: Quickstart reference for the OpenWiki TypeScript CLI, including documentation-generation workflows, supported model providers, and the primary source files. Use it to navigate the repository's architecture, commands, agent runtime, operations, and connectors.
 tags: [openwiki, quickstart, cli, documentation]
+generated: {by: "openwiki/0.3.3", at: "2026-08-20T08:11:55.370Z"}
 ---
 
 # OpenWiki quickstart
@@ -30,7 +31,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - Configures reasoning effort with `OPENWIKI_REASONING_EFFORT` for supported OpenAI GPT-5.6 models (Responses API `none`/`low`/`medium`/`high`/`xhigh`/`max`) and NVIDIA NIM Nemotron 3 Super (`none`/`low`/`high` via chat-completions `reasoning_effort`), selectable interactively via `/effort`; invalid provider/model/effort combinations fail before a request is sent.
 - Refreshes `openwiki/.last-update.json` on every non-chat run (not only when content changed) so freshness checks reflect the actual last run, while still scoping the git change summary and interrupted-status recovery with the content snapshot.
 - Offers a built-in `custom-mcp` connector so a personal-wiki run can ingest from any read-only MCP server without a dedicated connector, and gates all connector tools to personal/local-wiki runs so code-mode runs never make credentialed external fetches.
-- Emits OKF v0.2 concept front matter and stamps the code-owned `generated: {by: openwiki/<version>, at: <run time>}` provenance event deterministically on every concept write whose body meaningfully changes, dropping the superseded legacy `timestamp` at the same time; the v0.2 provenance/trust/lifecycle families (`generated`, `verified`, `sources`, `status`, `stale_after`) are validated when present (the legacy `timestamp` stays tolerated).
+- Emits OKF v0.2 concept front matter and stamps the code-owned `generated: {by: openwiki/<version>, at: <run time>}` provenance event deterministically on every concept whose body changes in any way (including whitespace), finalized after post-processing so a full-file rewrite that drops the field still gets an accurate stamp; the v0.2 provenance/trust/lifecycle families (`generated`, `verified`, `sources`, `status`, `stale_after`) are validated when present (the legacy `timestamp` stays tolerated).
 
 ## Start here
 
@@ -52,6 +53,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli/runners.ts` — non-interactive runners for auth, ngrok, cron, ingest, visualize (live server and `--export` static export), and print commands.
 - `src/cli/startup.ts` — `resolveStartupCommand()` and startup gating helpers, including `canSkipCleanUpdateBeforeCredentials()` which calls `getUpdateNoopStatus()` with the requested language so a `--language` switch is not skipped before credentials are even checked.
 - `src/cli/diagnostics/` — `error-diagnostics.ts`, `sanitize.ts`, and `auth-fix.ts` for the `--debug` diagnostics panel and auth-failure fix guidance.
+- `src/cli/run-log/` — bounded progress model for init/update terminal output: `reducer.ts` folds run events into one summary + activity tree + final text, `activity.ts` derives path operations and builds the tree, `summary.ts` formats counts and completion titles, `tool-input.ts` parses stringified tool args, and `types.ts` defines the `RunLogItem` union.
+- `src/cli/components/run-view.tsx` — `RunView` Ink component rendering the live activity tree, run stage, and completed-run outcome (written pages, counts, final assistant text).
 - `src/agent/index.ts` — agent runtime, provider-specific model creation (including ChatGPT OAuth), OpenAI model-availability pre-check, fallback, and metadata writes.
 - `src/agent/prompt.ts` — prompt assembler: selects a template by output mode and substitutes placeholders.
 - `src/agent/prompts/code.ts` — `CODE_SYSTEM_PROMPTS`/`CODE_USER_PROMPTS` for repository runs (init/update/chat contracts, including the skeleton-critic and wiki-QA verification workflow).
@@ -69,18 +72,19 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/auth/configure.ts` — `openwiki auth configure <provider>` flow for creating local connector configs.
 - `src/auth/ngrok.ts` — Slack HTTPS callback tunnel via ngrok.
 - `src/auth/tokens.ts` — token refresh and validation helpers for connector OAuth.
-- `src/agent/okf-middleware.ts` — OKF front-matter migration, deterministic `generated` provenance stamping on concept writes, and index synchronization middleware; its finalize stage also validates Mermaid fences and internal wiki links.
+- `src/agent/okf-middleware.ts` — OKF front-matter migration, write validation, and index synchronization middleware; its `beforeAgent` snapshots concept bodies and its `afterAgent` finalize stage finalizes `generated` provenance (via `src/okf/generated-provenance.ts`), validates Mermaid fences, synchronizes indexes, and validates internal wiki links.
 - `src/agent/wiki-link-validator.ts` — validates internal links repo-wide (not just the `openwiki/` subtree) and GitHub-style heading anchors on Markdown targets after generation, stamping broken links inline instead of failing the run.
 - `src/agent/translation-middleware.ts` — wiki translation middleware for output-language switching.
 - `src/agent/vertex-surface.ts` — Vertex AI model routing for the gemini-enterprise provider.
 - `src/agent/skills.ts` — bundles and syncs the `/skills/` directory into the agent runtime.
 - `src/auth/external-cli-auth.ts` — GitHub CLI-based credential resolution for the copilot provider.
 - `src/platform/diagnostics.ts` — secret redaction and credential diagnostics.
-- `src/okf/` — OKF front-matter validation (v0.2 provenance/trust/lifecycle families), index-label localization, and deterministic index synchronization.
+- `src/okf/` — OKF front-matter validation (v0.2 provenance/trust/lifecycle families), index-label localization, deterministic index synchronization, and `generated-provenance.ts` (snapshot/finalize stamping with exact body hashing).
 - `src/version.ts` — `OPENWIKI_VERSION` read from `package.json` at runtime, and `OPENWIKI_PRODUCER_ACTOR` (`openwiki/<version>`) stamped as the `by` actor on OKF v0.2 `generated` provenance events.
 - `src/mermaid/` — Mermaid fence extraction, validation, and wiki repair.
 - `src/telemetry/` — anonymous usage telemetry with PostHog, opt-out, CI sentinel IDs, error classification/fingerprinting, and a baked-in `build_channel` stamp.
 - `scripts/stamp-build-channel.cjs` — release-only build-time rewrite of `BUILD_CHANNEL` in `src/telemetry/gates.ts` from `"community"` to `"official"` for npm-published upstream builds, driven by `OPENWIKI_BUILD_CHANNEL` in `.github/workflows/release.yml`.
+- `scripts/copy-visualize-assets.cjs` — build step appended to `npm run build` that copies `src/visualize/styles.css` into `dist/visualize/` (tsc does not emit non-TypeScript assets); fails the build when the source is missing or the copy lands empty.
 - `src/connectors/` — connector registry, MCP client/runtime, source-specific ingestion (git-repo, gmail, hackernews, langsmith, slack, web-search, x), and tool definitions.
 - `src/ingestion/ingestion.ts` — orchestrates source ingestion runs across configured connectors.
 - `src/ingestion/code-mode.ts` — `openwiki code` setup: creates the GitHub Actions workflow only when missing (preserving customizations on update) and refreshes AGENTS.md (full instructions) and CLAUDE.md (a pointer to AGENTS.md) snippets.
@@ -98,9 +102,10 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `evals/ledger/reevaluate.ts` — re-evaluates a completed LEDGER run without re-invoking OpenWiki.
 - `evals/ledger/system/openwiki-system.ts` — `OpenWikiSystem` adapter that drives `runOpenWikiAgent` (`init`/`update`, `outputMode: "repository"`) against each replayed checkpoint.
 - `src/visualize/server.ts` — local loopback HTTP server for `openwiki visualize` (node graph + live reader, SSE reload).
-- `src/visualize/static-export.ts` — `exportStaticVisualizer()` writes a self-contained static visualizer directory (`index.html`, `client.js`, `client-lib.js`, `graph.json`) for `openwiki visualize --export <dir>`. Also exports `loadVisualizerAssets()`, the shared reader for the compiled browser modules used by both the live server and the static exporter.
+- `src/visualize/static-export.ts` — `exportStaticVisualizer()` writes a self-contained static visualizer directory (`index.html`, `client.js`, `client-lib.js`, `styles.css`, `graph.json`) for `openwiki visualize --export <dir>`. Also exports `loadVisualizerAssets()`, the shared reader for the compiled browser assets used by both the live server and the static exporter.
 - `src/visualize/graph.ts` — parses the wiki into concept nodes and Markdown-link edges for the visualizer.
 - `src/visualize/page.ts` — branded single-page visualizer app HTML; `renderPage(staticExport)` produces both the live `PAGE` and the static-export `STATIC_PAGE` (with a CSP `<meta>` and sibling `./client.js`), backed by the shared exported `CSP`.
+- `src/visualize/styles.css` — standalone stylesheet served at `/styles.css` (live) or `./styles.css` (static export); copied into `dist/visualize/` by `scripts/copy-visualize-assets.cjs` since tsc does not emit non-TypeScript files.
 - `src/agent/openwiki-ignore.ts` — `.openwikiignore` parsing and gitignore-compatible matching (read boundary for doc runs).
 - `src/platform/language.ts` — `resolveLanguage()` BCP-47 validation/canonicalization for `--language`.
 
@@ -131,6 +136,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli/runners.ts`
 - `src/cli/startup.ts`
 - `src/cli/diagnostics/` (`error-diagnostics.ts`, `sanitize.ts`, `auth-fix.ts`)
+- `src/cli/run-log/` (`reducer.ts`, `activity.ts`, `summary.ts`, `tool-input.ts`, `types.ts`) — bounded progress model that folds run events into one summary, an activity tree of touched paths, and final outcome text for the terminal run view.
 - `src/agent/index.ts`
 - `src/model-availability.ts`
 - `src/agent/prompt.ts`
@@ -178,13 +184,13 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/platform/diagnostics.ts`
 - `src/platform/utils.ts`
 - `src/platform/language.ts`
-- `src/okf/` (frontmatter.ts, index-labels.ts, index-sync.ts)
+- `src/okf/` (frontmatter.ts, index-labels.ts, index-sync.ts, generated-provenance.ts)
 - `src/mermaid/` (dom-shim.ts, fences.ts, validate.ts, wiki.ts)
 - `src/telemetry/`
 - `scripts/stamp-build-channel.cjs`
 - `examples/openwiki-update.yml`
 - `examples/openwiki-update.gitlab-ci.yml`
 - `examples/openwiki-update.bitbucket-pipelines.yml`
-- `src/visualize/` (server.ts, static-export.ts, graph.ts, page.ts, client.ts, client-lib.ts)
+- `src/visualize/` (server.ts, static-export.ts, graph.ts, page.ts, client.ts, client-lib.ts, styles.css)
 - `src/agent/openwiki-ignore.ts`
 - `src/scheduling/schedules.ts`
