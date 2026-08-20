@@ -88,6 +88,30 @@ describe("prepareWikiForAuthoring", () => {
 });
 
 describe("finalizeWikiArtifacts", () => {
+  test("rejects an empty producer before running finalization operations", async () => {
+    const { backend } = await setupWiki();
+    const prepared = await prepareWikiForAuthoring({
+      backend,
+      outputMode: "repository",
+    });
+    const operations: WikiFinalizerOperation[] = [];
+
+    await expect(
+      finalizeWikiArtifacts({
+        backend,
+        outputMode: "repository",
+        prepared,
+        at: RUN_TIMESTAMP,
+        producerActor: "   ",
+        runOperation: async (operation, task) => {
+          operations.push(operation);
+          return task();
+        },
+      }),
+    ).rejects.toThrow("Wiki finalization requires a non-empty producer actor.");
+    expect(operations).toEqual([]);
+  });
+
   test("runs finalization operations in internal-agent order", async () => {
     const { backend } = await setupWiki();
     const prepared = await prepareWikiForAuthoring({

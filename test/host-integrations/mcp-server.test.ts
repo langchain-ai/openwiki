@@ -129,15 +129,14 @@ describe("OpenWiki MCP adapter", () => {
       expect(listed.tools.map((tool) => tool.name)).not.toEqual(
         expect.arrayContaining(["read_file", "write_file", "edit_file"]),
       );
-      expect(fixture.client.getInstructions()).toContain(
-        "Use the host's native repository tools",
+      const instructions = fixture.client.getInstructions();
+      expect(instructions).toContain("Use the host's native repository tools");
+      expect(instructions).toContain("Resolve the absolute Git top-level");
+      expect(instructions).toContain("Call openwiki_finish after authoring");
+      expect(instructions).toContain(
+        "host may author the temporary plan or skeleton",
       );
-      expect(fixture.client.getInstructions()).toContain(
-        "Resolve the absolute Git top-level",
-      );
-      expect(fixture.client.getInstructions()).toContain(
-        "Call openwiki_finish after authoring",
-      );
+      expect(instructions).not.toContain("logs, plans, or skeletons");
     } finally {
       await close(fixture.client, fixture.server);
     }

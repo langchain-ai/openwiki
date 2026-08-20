@@ -1,4 +1,8 @@
-import type { HostTarget, HostTargetId } from "./types.js";
+import type {
+  HostMcpServerCommand,
+  HostTarget,
+  HostTargetId,
+} from "./types.js";
 
 /**
  * Complete immutable registry of supported host installation targets.
@@ -7,6 +11,7 @@ export const HOST_TARGETS = {
   codex: {
     id: "codex",
     displayName: "Codex",
+    producerActor: "codex",
     user: {
       skillDirectory: ".agents/skills/openwiki",
       mcpConfig: {
@@ -26,6 +31,7 @@ export const HOST_TARGETS = {
   claude: {
     id: "claude",
     displayName: "Claude Code",
+    producerActor: "claude-code",
     user: {
       skillDirectory: ".claude/skills/openwiki",
       mcpConfig: { kind: "json", relativePath: ".claude.json" },
@@ -39,6 +45,7 @@ export const HOST_TARGETS = {
   dcode: {
     id: "dcode",
     displayName: "Deep Agents Code",
+    producerActor: "dcode",
     user: {
       skillDirectory: ".deepagents/skills/openwiki",
       mcpConfig: {
@@ -74,4 +81,19 @@ export function getHostTarget(id: string): HostTarget | undefined {
  */
 export function listHostTargets(): HostTarget[] {
   return Object.values(HOST_TARGETS);
+}
+
+/**
+ * Creates the default managed MCP command for one host.
+ *
+ * @param target - Stable host identifier passed to the MCP process.
+ * @returns Portable executable invocation used by published installations.
+ */
+export function defaultMcpServerCommand(
+  target: HostTargetId,
+): HostMcpServerCommand {
+  return {
+    command: "openwiki",
+    args: ["mcp", "--host", target],
+  };
 }

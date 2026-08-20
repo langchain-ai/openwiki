@@ -9,6 +9,7 @@ import {
   commandEmitsTelemetry,
   parseCommand,
   shouldRunNonInteractively,
+  type CliCommand,
 } from "./commands.js";
 import {
   FirstRunNotice,
@@ -27,6 +28,14 @@ import {
 } from "./runners.js";
 import { runIntegrationsCommand, runMcpCommand } from "./host-integrations.js";
 
+/**
+ * Commands handled by the native OpenWiki startup and rendering pipeline.
+ */
+type StandardCliCommand = Exclude<
+  CliCommand,
+  { kind: "integrations" } | { kind: "mcp" }
+>;
+
 // Register the last-resort handlers before any run starts, so a rejection that
 // escapes every catch (e.g. a subagent error surfacing on the microtask queue) is
 // recorded and stamped instead of hard-killing the process with no telemetry.
@@ -40,6 +49,17 @@ if (parsedCommand.kind === "integrations") {
 } else if (parsedCommand.kind === "mcp") {
   await runMcpCommand(parsedCommand);
 } else {
+  await runStandardCommand(parsedCommand);
+}
+
+/**
+ * Runs commands that use the native OpenWiki model and application surfaces.
+ *
+ * @param parsedCommand - Parsed command outside the host-integration surface.
+ */
+async function runStandardCommand(
+  parsedCommand: StandardCliCommand,
+): Promise<void> {
   if (commandLoadsEnvironment(parsedCommand)) {
     await loadOpenWikiEnv();
   }

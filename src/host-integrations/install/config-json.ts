@@ -137,13 +137,13 @@ function asObject(
   filePath: string,
 ): Record<string, unknown> {
   if (value === undefined && label === "mcpServers") return {};
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (!isRecord(value)) {
     throw new HostIntegrationError(
       "invalid_input",
       `${label} must be an object in ${filePath}.`,
     );
   }
-  return { ...(value as Record<string, unknown>) };
+  return { ...value };
 }
 
 /**
@@ -154,15 +154,22 @@ function asObject(
  * @returns Whether the value is structurally identical to the managed entry.
  */
 function matchesEntry(value: unknown, expected: HostMcpServerCommand): boolean {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-  const candidate = value as Record<string, unknown>;
+  if (!isRecord(value)) return false;
   return (
-    Object.keys(candidate).length === 2 &&
-    candidate.command === expected.command &&
-    Array.isArray(candidate.args) &&
-    candidate.args.length === expected.args.length &&
-    candidate.args.every((argument, index) => argument === expected.args[index])
+    Object.keys(value).length === 2 &&
+    value.command === expected.command &&
+    Array.isArray(value.args) &&
+    value.args.length === expected.args.length &&
+    value.args.every((argument, index) => argument === expected.args[index])
   );
+}
+
+/**
+ * Narrows an unknown value to a non-array object.
+ *
+ * @param value - Candidate object value.
+ * @returns Whether the value is a string-keyed record.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

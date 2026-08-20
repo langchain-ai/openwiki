@@ -1,18 +1,12 @@
+import { realpath } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import {
-  defaultMcpServerCommand,
-  installHostIntegration,
-} from "../dist/host-integrations/install/installer.js";
+import { installHostIntegration } from "../dist/host-integrations/install/installer.js";
 import { getHostTarget } from "../dist/host-integrations/install/registry.js";
 import { getErrorMessage } from "../dist/platform/diagnostics.js";
 
-const repositoryRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-);
 /**
  * Installs one global host integration backed by this source checkout.
  *
@@ -25,10 +19,13 @@ async function main() {
     throw new Error("Usage: pnpm integration:dev <codex|claude|dcode>");
   }
 
+  const repositoryRoot = await realpath(
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
+  );
   const mcpServerCommand = {
-    command: process.execPath,
+    command: await realpath(process.execPath),
     args: [
-      path.join(repositoryRoot, "dist", "cli", "cli.js"),
+      await realpath(path.join(repositoryRoot, "dist", "cli", "cli.js")),
       "mcp",
       "--host",
       target.id,
@@ -38,7 +35,6 @@ async function main() {
     scope: "user",
     root: os.homedir(),
     mcpServerCommand,
-    replaceMcpServerCommand: defaultMcpServerCommand(target),
   });
 
   process.stdout.write(

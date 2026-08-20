@@ -42,5 +42,6 @@ structure and prose that did not change.
 
 If the requested language changes, translate factual pages consistently in the
 same run. An interrupted prior run is actionable even when Git is unchanged.
-Work in the main agent; do not delegate update work unless the user explicitly
-requests subagents.
+Work in the main agent by default. For a broad update spanning independent
+documentation areas, delegate bounded evidence or review tasks when parallelism
+materially helps. Keep the impact plan and all factual edits in the main agent.

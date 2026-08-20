@@ -13,14 +13,9 @@ const RECEIPT_FILE = ".openwiki-install.json";
 const ALLOWED_BUNDLE_ROOTS = new Set(["SKILL.md", "agents", "references"]);
 
 /**
- * Versioned ownership receipt stored inside one installed skill directory.
+ * Ownership receipt stored inside one installed skill directory.
  */
 export interface SkillReceipt {
-  /**
-   * Receipt format version.
-   */
-  schemaVersion: 1;
-
   /**
    * Package that owns the installed files.
    */
@@ -38,10 +33,8 @@ export interface SkillReceipt {
 
   /**
    * Exact MCP server invocation installed alongside the skill.
-   *
-   * @default undefined - legacy receipt using the default `openwiki` command.
    */
-  mcpServerCommand?: HostMcpServerCommand;
+  mcpServerCommand: HostMcpServerCommand;
 
   /**
    * SHA-256 hashes keyed by installed relative path.
@@ -184,7 +177,6 @@ export async function writeReceipt(
   mcpServerCommand: HostMcpServerCommand,
 ): Promise<void> {
   const receipt: SkillReceipt = {
-    schemaVersion: 1,
     package: "openwiki",
     version: OPENWIKI_VERSION,
     target,
@@ -269,57 +261,49 @@ async function readReceipt(
   if (!isRecord(parsed)) throw new Error("Invalid skill receipt.");
   if (
     !hasExpectedReceiptKeys(parsed) ||
-    parsed.schemaVersion !== 1 ||
     parsed.package !== "openwiki" ||
     typeof parsed.version !== "string" ||
     !parsed.version ||
     parsed.target !== target ||
     !isHashRecord(parsed.files) ||
-    !isOptionalMcpServerCommand(parsed.mcpServerCommand)
+    !isMcpServerCommand(parsed.mcpServerCommand)
   ) {
     throw new Error("Invalid skill receipt.");
   }
   return {
-    schemaVersion: 1,
     package: "openwiki",
     version: parsed.version,
     target,
-    ...(parsed.mcpServerCommand
-      ? { mcpServerCommand: parsed.mcpServerCommand }
-      : {}),
+    mcpServerCommand: parsed.mcpServerCommand,
     files: parsed.files,
   };
 }
 
 /**
- * Accepts current receipts and legacy receipts created before command tracking.
+ * Accepts only the current strict receipt shape.
  *
  * @param value - Parsed receipt object.
- * @returns Whether the object contains exactly one supported key set.
+ * @returns Whether the object contains exactly the supported keys.
  */
 function hasExpectedReceiptKeys(value: Record<string, unknown>): boolean {
-  const keys = Object.keys(value).sort().join(",");
   return (
-    keys === "files,mcpServerCommand,package,schemaVersion,target,version" ||
-    keys === "files,package,schemaVersion,target,version"
+    Object.keys(value).sort().join(",") ===
+    "files,mcpServerCommand,package,target,version"
   );
 }
 
 /**
- * Validates an optional exact MCP server invocation.
+ * Validates an exact MCP server invocation.
  *
  * @param value - Candidate receipt field.
- * @returns Whether the field is absent or contains only a command and arguments.
+ * @returns Whether the value contains only a command and ordered arguments.
  */
-function isOptionalMcpServerCommand(
-  value: unknown,
-): value is HostMcpServerCommand | undefined {
-  if (value === undefined) return true;
+function isMcpServerCommand(value: unknown): value is HostMcpServerCommand {
   if (!isRecord(value)) return false;
   return (
     Object.keys(value).sort().join(",") === "args,command" &&
     typeof value.command === "string" &&
-    value.command.length > 0 &&
+    value.command.trim().length > 0 &&
     Array.isArray(value.args) &&
     value.args.every((argument) => typeof argument === "string")
   );

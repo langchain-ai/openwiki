@@ -26,14 +26,13 @@ import { HostIntegrationError } from "./errors.js";
 import {
   BeginInput,
   RunInput,
+  isValidHostId,
   type BeginRequest,
   type HostRunMode,
   type ProtocolTool,
   type RunRequest,
 } from "./protocol.js";
 import { resolveRepositoryRoot } from "./repository-root.js";
-
-const HOST_ID_PATTERN = /^[a-z0-9-]{1,64}$/u;
 
 /**
  * Construction options for one host lifecycle manager.
@@ -43,6 +42,13 @@ export interface HostSessionManagerOptions {
    * Stable lowercase host identifier used in run metadata.
    */
   host: string;
+
+  /**
+   * Stable OKF producer actor for host-authored page bodies.
+   *
+   * @default host
+   */
+  producerActor?: string;
 
   /**
    * Injectable clock used to make run timestamps deterministic in tests.
@@ -176,9 +182,19 @@ export class HostSessionManager {
   private active: ActiveSession | null = null;
 
   /**
+   * Whether a mutating lifecycle operation currently owns the manager.
+   */
+  private operationInProgress = false;
+
+  /**
    * Stable host identifier written to run metadata.
    */
   private readonly host: string;
+
+  /**
+   * Stable producer stamped on host-authored page bodies.
+   */
+  private readonly producerActor: string;
 
   /**
    * Clock used to create deterministic run timestamps.
@@ -189,10 +205,12 @@ export class HostSessionManager {
    * Creates a rootless manager after host configuration validation.
    *
    * @param host - Stable host identifier.
+   * @param producerActor - Stable generated-provenance producer.
    * @param now - Run timestamp source.
    */
-  private constructor(host: string, now: () => Date) {
+  private constructor(host: string, producerActor: string, now: () => Date) {
     this.host = host;
+    this.producerActor = producerActor;
     this.now = now;
   }
 
@@ -203,15 +221,23 @@ export class HostSessionManager {
    * @returns Validated lifecycle manager.
    */
   static create(options: HostSessionManagerOptions): HostSessionManager {
-    if (!HOST_ID_PATTERN.test(options.host)) {
+    if (!isValidHostId(options.host)) {
       throw new HostIntegrationError(
         "invalid_input",
         "The host ID must contain lowercase letters, digits, or hyphens.",
       );
     }
+    const producerActor = options.producerActor ?? options.host;
+    if (!isValidHostId(producerActor)) {
+      throw new HostIntegrationError(
+        "invalid_input",
+        "The producer actor must contain lowercase letters, digits, or hyphens.",
+      );
+    }
 
     return new HostSessionManager(
       options.host,
+      producerActor,
       options.now ?? (() => new Date()),
     );
   }
@@ -224,12 +250,13 @@ export class HostSessionManager {
    * @returns Safe run context and opaque run identifier.
    */
   async begin(input: BeginRequest): Promise<BeginResult> {
+    this.startOperation();
+    const supersededSession = this.active;
     this.active = null;
 
-    const runId = randomUUID();
-    const runTimestamp = this.now().toISOString();
-
     try {
+      const runId = randomUUID();
+      const runTimestamp = this.now().toISOString();
       const root = await resolveRepositoryRoot(input.root);
       await ensureCodeModeRepoSetup(root, {
         createWorkflow: input.mode === "init",
@@ -296,8 +323,10 @@ export class HostSessionManager {
         ignoredPatterns: ignore.patterns.length,
       };
     } catch (error) {
-      this.active = null;
+      this.active = supersededSession;
       throw error;
+    } finally {
+      this.operationInProgress = false;
     }
   }
 
@@ -309,30 +338,35 @@ export class HostSessionManager {
    * @returns Durable completion result.
    */
   async finish(input: RunRequest): Promise<FinishResult> {
-    const session = this.requireSession(input.runId);
+    this.startOperation();
+    try {
+      const session = this.requireSession(input.runId);
 
-    await removeTemporaryWorkingFiles(session.root, "repository");
-    await finalizeWikiArtifacts({
-      backend: session.backend,
-      outputMode: "repository",
-      labels: resolveIndexLabels(session.language),
-      conceptType: resolveConceptTypeLabel(session.language),
-      prepared: session.preparedWiki,
-      at: session.startedAt,
-      producerActor: getHostProducerActor(session.host),
-    });
-    await persistRunMetadataIfChanged(
-      session.mode,
-      session.root,
-      getHostAgentIdentity(session.host),
-      "repository",
-      session.beforeContentSnapshot,
-      "complete",
-      session.language,
-    );
+      await removeTemporaryWorkingFiles(session.root, "repository");
+      await finalizeWikiArtifacts({
+        backend: session.backend,
+        outputMode: "repository",
+        labels: resolveIndexLabels(session.language),
+        conceptType: resolveConceptTypeLabel(session.language),
+        prepared: session.preparedWiki,
+        at: session.startedAt,
+        producerActor: this.producerActor,
+      });
+      await persistRunMetadataIfChanged(
+        session.mode,
+        session.root,
+        getHostAgentIdentity(session.host),
+        "repository",
+        session.beforeContentSnapshot,
+        "complete",
+        session.language,
+      );
 
-    this.active = null;
-    return { status: "complete" };
+      this.active = null;
+      return { status: "complete" };
+    } finally {
+      this.operationInProgress = false;
+    }
   }
 
   /**
@@ -384,6 +418,19 @@ export class HostSessionManager {
     }
     return this.active;
   }
+
+  /**
+   * Claims the manager for one mutating lifecycle operation.
+   */
+  private startOperation(): void {
+    if (this.operationInProgress) {
+      throw new HostIntegrationError(
+        "invalid_state",
+        "Another OpenWiki lifecycle operation is already in progress.",
+      );
+    }
+    this.operationInProgress = true;
+  }
 }
 
 /**
@@ -411,16 +458,4 @@ function toView(session: ActiveSession): HostRunView {
  */
 function getHostAgentIdentity(host: string): string {
   return `host-agent/${host}`;
-}
-
-/**
- * Resolves the user-facing coding agent responsible for authored page bodies.
- * Installer IDs remain terse and stable; Claude's product name is expanded in
- * provenance so it is not confused with another Claude-based host.
- *
- * @param host - Validated lowercase host identifier.
- * @returns Stable generated-provenance actor.
- */
-function getHostProducerActor(host: string): string {
-  return host === "claude" ? "claude-code" : host;
 }

@@ -10,6 +10,13 @@ export interface RunOpenWikiMcpOptions {
    * Stable host identifier written to run metadata.
    */
   host: string;
+
+  /**
+   * Stable OKF producer actor for host-authored page bodies.
+   *
+   * @default host
+   */
+  producerActor?: string;
 }
 
 /**
@@ -20,7 +27,7 @@ export interface RunOpenWikiMcpOptions {
 export async function runOpenWikiMcp(
   options: RunOpenWikiMcpOptions,
 ): Promise<void> {
-  const manager = HostSessionManager.create({ host: options.host });
+  const manager = HostSessionManager.create(options);
   const server = createOpenWikiMcpServer(manager);
   await server.connect(new StdioServerTransport());
 }

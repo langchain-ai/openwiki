@@ -13,6 +13,7 @@ import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { HostIntegrationError } from "../../src/host-integrations/core/errors.ts";
 import { HostSessionManager } from "../../src/host-integrations/core/session-manager.ts";
+import { getHostTarget } from "../../src/host-integrations/install/registry.ts";
 
 const RUN_TIMESTAMP = "2026-08-20T08:15:00.000Z";
 const temporaryRoots: string[] = [];
@@ -63,6 +64,7 @@ async function createRepository(): Promise<string> {
 function createManager(host = "codex"): HostSessionManager {
   return HostSessionManager.create({
     host,
+    producerActor: getHostTarget(host)?.producerActor,
     now: () => new Date(RUN_TIMESTAMP),
   });
 }
@@ -310,6 +312,61 @@ describe("HostSessionManager lifecycle", () => {
     await manager.finish({ runId: second.runId });
   });
 
+  test("a failed replacement begin preserves the active run", async () => {
+    const root = await createRepository();
+    const manager = createManager();
+    const active = await manager.begin({ root, mode: "init" });
+
+    await expect(
+      manager.begin({ root: path.join(root, "missing"), mode: "update" }),
+    ).rejects.toMatchObject({ code: "invalid_input" });
+
+    expect(manager.getRun(active.runId).id).toBe(active.runId);
+    await expect(manager.finish({ runId: active.runId })).resolves.toEqual({
+      status: "complete",
+    });
+  });
+
+  test("rejects overlapping lifecycle operations", async () => {
+    const root = await createRepository();
+    const manager = createManager();
+
+    const beginning = manager.begin({ root, mode: "init" });
+    await expect(manager.begin({ root, mode: "update" })).rejects.toMatchObject(
+      {
+        code: "invalid_state",
+        message: "Another OpenWiki lifecycle operation is already in progress.",
+      },
+    );
+    const active = await beginning;
+
+    const finishing = manager.finish({ runId: active.runId });
+    await expect(manager.finish({ runId: active.runId })).rejects.toMatchObject(
+      {
+        code: "invalid_state",
+      },
+    );
+    await expect(finishing).resolves.toEqual({ status: "complete" });
+  });
+
+  test("releases the lifecycle lock when run initialization throws", async () => {
+    const root = await createRepository();
+    let clockCalls = 0;
+    const manager = HostSessionManager.create({
+      host: "codex",
+      now: () =>
+        clockCalls++ === 0 ? new Date(Number.NaN) : new Date(RUN_TIMESTAMP),
+    });
+
+    await expect(manager.begin({ root, mode: "init" })).rejects.toThrow(
+      RangeError,
+    );
+    const active = await manager.begin({ root, mode: "init" });
+    await expect(manager.finish({ runId: active.runId })).resolves.toEqual({
+      status: "complete",
+    });
+  });
+
   test("a new manager recovers interrupted metadata and authored Markdown", async () => {
     const root = await createRepository();
     const wikiRoot = path.join(root, "openwiki");
@@ -344,6 +401,18 @@ describe("HostSessionManager validation", () => {
         code: "invalid_input",
         message:
           "The host ID must contain lowercase letters, digits, or hyphens.",
+      }),
+    );
+    expect(() =>
+      HostSessionManager.create({
+        host: "codex",
+        producerActor: "Codex Agent",
+      }),
+    ).toThrow(
+      expect.objectContaining({
+        code: "invalid_input",
+        message:
+          "The producer actor must contain lowercase letters, digits, or hyphens.",
       }),
     );
   });

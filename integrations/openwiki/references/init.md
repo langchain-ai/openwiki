@@ -23,6 +23,8 @@ flows, files, symbols, focused tests, and operations.
    Inspect its entrypoint, primary implementation, important types or schemas,
    state or persistence, an upstream caller, a downstream dependency,
    representative tests, and relevant operational or generated contracts.
+   Delegate independent briefs in parallel when the host supports it, then have
+   the main agent reconcile their evidence before authoring.
 6. Read [reviewers.md](reviewers.md), then run the skeleton critic through the
    host's native delegation mechanism. Reviewers are read-only; the main agent
    owns the skeleton and all wiki edits.

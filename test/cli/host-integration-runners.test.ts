@@ -210,17 +210,24 @@ describe("runIntegrationsCommand", () => {
 });
 
 describe("runMcpCommand", () => {
-  test("starts a rootless MCP server with the host identifier", async () => {
-    vi.mocked(runOpenWikiMcp).mockResolvedValue(undefined);
+  test.each([
+    ["claude", "claude-code"],
+    ["custom-host", "custom-host"],
+  ])(
+    "starts a rootless %s MCP server with producer %s",
+    async (host, actor) => {
+      vi.mocked(runOpenWikiMcp).mockResolvedValue(undefined);
 
-    await runMcpCommand({
-      kind: "mcp",
-      exitCode: 0,
-      host: "custom-host",
-    });
+      await runMcpCommand({
+        kind: "mcp",
+        exitCode: 0,
+        host,
+      });
 
-    expect(runOpenWikiMcp).toHaveBeenCalledWith({
-      host: "custom-host",
-    });
-  });
+      expect(runOpenWikiMcp).toHaveBeenCalledWith({
+        host,
+        producerActor: actor,
+      });
+    },
+  );
 });

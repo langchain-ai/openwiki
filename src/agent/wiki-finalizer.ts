@@ -193,6 +193,9 @@ export async function finalizeWikiArtifacts({
   producerActor = OPENWIKI_PRODUCER_ACTOR,
   runOperation = runWikiOperation,
 }: WikiFinalizerOptions): Promise<void> {
+  if (producerActor.trim().length === 0) {
+    throw new Error("Wiki finalization requires a non-empty producer actor.");
+  }
   await runOperation("mermaid", () => validateWikiMermaid(backend, outputMode));
   await runOperation("index_sync", () =>
     synchronizeWikiIndexes(backend, outputMode, labels, conceptType),

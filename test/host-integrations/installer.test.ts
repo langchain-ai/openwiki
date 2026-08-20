@@ -18,12 +18,12 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, test } from "vitest";
 import {
-  defaultMcpServerCommand,
   HostIntegrationInstaller,
   resolveCanonicalSkillBundle,
   type HostIntegrationInstallerOperations,
 } from "../../src/host-integrations/install/installer.ts";
 import {
+  defaultMcpServerCommand,
   getHostTarget,
   HOST_TARGETS,
   listHostTargets,
@@ -202,19 +202,6 @@ async function markReceiptOld(directory: string): Promise<void> {
 }
 
 /**
- * Removes command tracking to simulate an installation from before dev mode.
- *
- * @param directory - Installed managed skill directory.
- */
-async function markReceiptLegacy(directory: string): Promise<void> {
-  const receiptPath = path.join(directory, RECEIPT_FILE);
-  const receipt: unknown = JSON.parse(await readFile(receiptPath, "utf8"));
-  if (!isRecord(receipt)) throw new Error("Expected a receipt object.");
-  delete receipt.mcpServerCommand;
-  await writeFile(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
-}
-
-/**
  * Narrows an unknown value to a non-array object.
  *
  * @param value - Unknown parsed JSON value.
@@ -354,6 +341,7 @@ describe("host integration registry", () => {
   test("defines user and project destinations for all supported hosts", () => {
     expect(HOST_TARGETS).toMatchObject({
       codex: {
+        producerActor: "codex",
         user: {
           skillDirectory: ".agents/skills/openwiki",
           mcpConfig: {
@@ -370,6 +358,7 @@ describe("host integration registry", () => {
         },
       },
       claude: {
+        producerActor: "claude-code",
         user: {
           skillDirectory: ".claude/skills/openwiki",
           mcpConfig: { kind: "json", relativePath: ".claude.json" },
@@ -380,6 +369,7 @@ describe("host integration registry", () => {
         },
       },
       dcode: {
+        producerActor: "dcode",
         user: {
           skillDirectory: ".deepagents/skills/openwiki",
           mcpConfig: {
@@ -410,6 +400,48 @@ describe("host integration registry", () => {
 });
 
 describe.each(TARGETS)("$displayName host integration", (target) => {
+  test("rejects an empty MCP executable before writing files", async () => {
+    const root = await createProject();
+    const installer = new HostIntegrationInstaller();
+
+    await expect(
+      installer.install(target, {
+        ...projectOptions(root),
+        mcpServerCommand: { command: "   ", args: [] },
+      }),
+    ).rejects.toMatchObject({
+      code: "invalid_input",
+      message: "The MCP server command must not be empty.",
+    });
+    await expect(access(skillPath(root, target))).rejects.toThrow();
+    await expect(access(configPath(root, target))).rejects.toThrow();
+  });
+
+  test("treats a whitespace-only executable in the receipt as modified", async () => {
+    const root = await createProject();
+    const options = projectOptions(root);
+    const installer = new HostIntegrationInstaller();
+    await installer.install(target, options);
+
+    const receiptPath = path.join(skillPath(root, target), RECEIPT_FILE);
+    const receipt: unknown = JSON.parse(await readFile(receiptPath, "utf8"));
+    if (!isRecord(receipt) || !isRecord(receipt.mcpServerCommand)) {
+      throw new Error("Expected a receipt command object.");
+    }
+    receipt.mcpServerCommand.command = "   ";
+    await writeFile(
+      receiptPath,
+      `${JSON.stringify(receipt, null, 2)}\n`,
+      "utf8",
+    );
+
+    await expect(installer.status(target, options)).resolves.toBe("modified");
+    await expect(installer.uninstall(target, options)).rejects.toMatchObject({
+      code: "conflict",
+    });
+    await expect(access(skillPath(root, target))).resolves.toBeUndefined();
+  });
+
   test("installs, reports, reinstalls, and uninstalls at user scope", async () => {
     const fakeHome = await createProject();
     const installer = new HostIntegrationInstaller();
@@ -472,12 +504,12 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     expect(receiptText).not.toContain(CONFIG_SENTINEL);
     const receipt: unknown = JSON.parse(receiptText ?? "");
     expect(receipt).toMatchObject({
-      schemaVersion: 1,
       package: "openwiki",
       version: OPENWIKI_VERSION,
       target: target.id,
-      mcpServerCommand: defaultMcpServerCommand(target),
+      mcpServerCommand: defaultMcpServerCommand(target.id),
     });
+    expect(receipt).not.toHaveProperty("schemaVersion");
 
     await expect(
       installer.install(target, projectOptions(root)),
@@ -510,12 +542,10 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     };
 
     await installer.install(target, options);
-    await markReceiptLegacy(skillPath(root, target));
     await expect(
       installer.install(target, {
         ...options,
         mcpServerCommand: localCommand,
-        replaceMcpServerCommand: defaultMcpServerCommand(target),
       }),
     ).resolves.toMatchObject({ changed: true });
 
@@ -541,7 +571,6 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
           ...localCommand,
           command: "/opt/new-node/bin/node",
         },
-        replaceMcpServerCommand: defaultMcpServerCommand(target),
       }),
     ).resolves.toMatchObject({ changed: true });
     await expect(installer.status(target, options)).resolves.toBe("installed");

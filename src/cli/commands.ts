@@ -15,6 +15,7 @@ import type {
   HostIntegrationScope,
   HostTargetId,
 } from "../host-integrations/install/types.js";
+import { isValidHostId } from "../host-integrations/core/protocol.js";
 
 export type HelpRow = {
   label: string;
@@ -662,14 +663,22 @@ function parseMcpCommand(argv: string[]): CliCommand {
     const arg = argv[index];
     if (arg === "--host" || arg.startsWith("--host=")) {
       if (sawHost) {
-        return repeatedMcpOption("--host");
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--host may only be specified once.",
+        };
       }
       const value =
         arg === "--host" ? argv[index + 1] : arg.slice("--host=".length);
       if (!value || value.startsWith("-")) {
-        return mcpValueError("--host", "a host identifier");
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--host requires a host identifier.",
+        };
       }
-      if (!/^[a-z0-9-]{1,64}$/u.test(value)) {
+      if (!isValidHostId(value)) {
         return {
           kind: "error",
           exitCode: 1,
@@ -721,35 +730,6 @@ function formatSupportedHostTargets(separator = ", "): string {
   return listHostTargets()
     .map((target) => target.id)
     .join(separator);
-}
-
-/**
- * Builds a missing-value error for an MCP option.
- *
- * @param option - Option requiring a value.
- * @param expected - Human-readable expected value.
- * @returns Stable CLI error.
- */
-function mcpValueError(option: string, expected: string): CliCommand {
-  return {
-    kind: "error",
-    exitCode: 1,
-    message: `${option} requires ${expected}.`,
-  };
-}
-
-/**
- * Builds a repeated MCP option error.
- *
- * @param option - Option supplied more than once.
- * @returns Stable CLI error.
- */
-function repeatedMcpOption(option: string): CliCommand {
-  return {
-    kind: "error",
-    exitCode: 1,
-    message: `${option} may only be specified once.`,
-  };
 }
 
 function parseRunCommand(

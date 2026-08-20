@@ -33,6 +33,7 @@ import {
   writeReceipt,
   type SkillReceipt,
 } from "./skill-bundle.js";
+import { defaultMcpServerCommand } from "./registry.js";
 import type {
   HostIntegrationScope,
   HostIntegrationStatus,
@@ -158,11 +159,44 @@ export class HostIntegrationInstaller {
       options.root,
     );
     const mcpServerCommand =
-      options.mcpServerCommand ?? defaultMcpServerCommand(target);
+      options.mcpServerCommand ?? defaultMcpServerCommand(target.id);
+    assertMcpServerCommand(mcpServerCommand);
     const canonical = await inventorySkill(this.bundleDirectory, false);
+    const inspection = await inspectInstallation(
+      context.skillDirectory,
+      target.id,
+    );
+    if (inspection.status === "modified" && !options.force) {
+      throw new HostIntegrationError(
+        "conflict",
+        `An unmanaged or modified skill already exists at ${context.skillDirectory}.`,
+      );
+    }
+
+    const installedCommand = installedMcpServerCommand(
+      target,
+      inspection.receipt,
+    );
+    const replaceMcpServerCommand =
+      inspection.status === "installed" ? installedCommand : undefined;
+    const current =
+      inspection.status === "installed" &&
+      inspection.receipt?.version === OPENWIKI_VERSION &&
+      sameMcpServerCommand(installedCommand, mcpServerCommand) &&
+      sameFiles(inspection.receipt.files, canonical.files);
+    if (current) {
+      const configChanged = await installManagedConfig(
+        target,
+        context.scope,
+        context.mcpConfig,
+        mcpServerCommand,
+        replaceMcpServerCommand,
+      );
+      return resultFor(target, context, configChanged);
+    }
+
     await mkdir(path.dirname(context.skillDirectory), { recursive: true });
     await assertNoSymlinkComponents(context.root, context.skillDirectory);
-
     const staging = siblingPath(
       context.skillDirectory,
       "staging",
@@ -186,43 +220,6 @@ export class HostIntegrationInstaller {
     } catch (error) {
       await this.operations.removeDirectory(staging).catch(() => undefined);
       throw error;
-    }
-
-    const inspection = await inspectInstallation(
-      context.skillDirectory,
-      target.id,
-    );
-    if (inspection.status === "modified" && !options.force) {
-      await this.operations.removeDirectory(staging);
-      throw new HostIntegrationError(
-        "conflict",
-        `An unmanaged or modified skill already exists at ${context.skillDirectory}.`,
-      );
-    }
-
-    const installedCommand = installedMcpServerCommand(
-      target,
-      inspection.receipt,
-    );
-    const replaceMcpServerCommand =
-      inspection.status === "installed"
-        ? installedCommand
-        : options.replaceMcpServerCommand;
-    const current =
-      inspection.status === "installed" &&
-      inspection.receipt?.version === OPENWIKI_VERSION &&
-      sameMcpServerCommand(installedCommand, mcpServerCommand) &&
-      sameFiles(inspection.receipt.files, canonical.files);
-    if (current) {
-      await this.operations.removeDirectory(staging);
-      const configChanged = await installManagedConfig(
-        target,
-        context.scope,
-        context.mcpConfig,
-        mcpServerCommand,
-        replaceMcpServerCommand,
-      );
-      return resultFor(target, context, configChanged);
     }
 
     return this.commitInstall(
@@ -540,21 +537,6 @@ export function resolveCanonicalSkillBundle(
 }
 
 /**
- * Creates the default managed MCP command for one host.
- *
- * @param target - Registry target receiving the MCP entry.
- * @returns Managed command and ordered arguments.
- */
-export function defaultMcpServerCommand(
-  target: HostTarget,
-): HostMcpServerCommand {
-  return {
-    command: "openwiki",
-    args: ["mcp", "--host", target.id],
-  };
-}
-
-/**
  * Installs the registry-selected MCP config representation.
  *
  * @param target - Registry target selecting the adapter.
@@ -627,7 +609,7 @@ function installedMcpServerCommand(
   target: HostTarget,
   receipt: SkillReceipt | undefined,
 ): HostMcpServerCommand {
-  return receipt?.mcpServerCommand ?? defaultMcpServerCommand(target);
+  return receipt?.mcpServerCommand ?? defaultMcpServerCommand(target.id);
 }
 
 /**
@@ -646,4 +628,28 @@ function sameMcpServerCommand(
     left.args.length === right.args.length &&
     left.args.every((argument, index) => argument === right.args[index])
   );
+}
+
+/**
+ * Rejects unusable executable overrides before any installer mutation.
+ *
+ * @param entry - Candidate MCP server invocation.
+ */
+function assertMcpServerCommand(entry: HostMcpServerCommand): void {
+  if (
+    typeof entry.command !== "string" ||
+    !Array.isArray(entry.args) ||
+    !entry.args.every((argument) => typeof argument === "string")
+  ) {
+    throw new HostIntegrationError(
+      "invalid_input",
+      "The MCP server command must contain a string executable and arguments.",
+    );
+  }
+  if (entry.command.trim().length === 0) {
+    throw new HostIntegrationError(
+      "invalid_input",
+      "The MCP server command must not be empty.",
+    );
+  }
 }

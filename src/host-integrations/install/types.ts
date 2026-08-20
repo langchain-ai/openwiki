@@ -73,6 +73,11 @@ export interface HostTarget {
   readonly displayName: string;
 
   /**
+   * Stable OKF producer stamped on page bodies authored by this host.
+   */
+  readonly producerActor: string;
+
+  /**
    * User-level destinations relative to the user's home directory.
    */
   readonly user: HostInstallationPaths;
@@ -115,13 +120,6 @@ export interface InstallOptions {
    * @default undefined - launch the installed `openwiki` executable.
    */
   mcpServerCommand?: HostMcpServerCommand;
-
-  /**
-   * Exact prior command that may be replaced by `mcpServerCommand`.
-   *
-   * @default undefined - refuse to replace a different MCP command.
-   */
-  replaceMcpServerCommand?: HostMcpServerCommand;
 }
 
 /**

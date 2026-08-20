@@ -113,7 +113,7 @@ describe("canonical OpenWiki host skill", () => {
     expect(workflowIndex).toBeGreaterThan(beginIndex);
     expect(finishIndex).toBeGreaterThan(workflowIndex);
     expect(requiredSequence).toContain("host-native subagents");
-    expect(requiredSequence).toContain("keep factual edits in the main agent");
+    expect(requiredSequence).toMatch(/keep\s+factual edits in the main agent/u);
   });
 
   test("resolves and passes an explicit Git root before begin", async () => {
@@ -225,9 +225,9 @@ describe("canonical OpenWiki host skill", () => {
     expect(nativeUpdate).toContain(
       "avoid subagents unless the user explicitly requests them",
     );
-    expect(update).toContain(
-      "do not delegate update work unless the user explicitly\nrequests subagents",
-    );
+    expect(update).toContain("Work in the main agent by default");
+    expect(update).toContain("delegate bounded evidence or review tasks");
+    expect(update).toContain("Keep the impact plan and all factual edits");
     expect(update).toContain("`updatePreflight.shouldSkip` is `true`");
     expect(update).toContain("call `openwiki_finish`\n   immediately");
   });

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const HOST_ID_PATTERN = /^[a-z0-9-]{1,64}$/u;
+
 /**
  * Lifecycle modes supported by host-authored repository runs.
  */
@@ -61,6 +63,16 @@ export const RunInput: z.ZodType<RunRequest> = z
     runId: z.string().uuid(),
   })
   .strict();
+
+/**
+ * Validates the bounded identifier used for host metadata and provenance.
+ *
+ * @param value - Candidate host identifier.
+ * @returns Whether the identifier is safe and protocol-compatible.
+ */
+export function isValidHostId(value: string): boolean {
+  return HOST_ID_PATTERN.test(value);
+}
 
 /**
  * Transport-neutral tool exposed by the host lifecycle core.

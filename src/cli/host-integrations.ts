@@ -24,15 +24,17 @@ export async function runIntegrationsCommand(
     const root =
       command.scope === "user" ? os.homedir() : (command.projectRoot ?? ".");
     if (command.action === "list") {
-      for (const target of listHostTargets()) {
-        const status = await getHostIntegrationStatus(target, {
-          scope: command.scope,
-          root,
-        });
-        process.stdout.write(
-          `${target.id}\t${status}\t${target.displayName}\n`,
-        );
-      }
+      const targets = listHostTargets();
+      const rows = await Promise.all(
+        targets.map(async (target) => {
+          const status = await getHostIntegrationStatus(target, {
+            scope: command.scope,
+            root,
+          });
+          return `${target.id}\t${status}\t${target.displayName}`;
+        }),
+      );
+      process.stdout.write(`${rows.join("\n")}\n`);
       process.exitCode = 0;
       return;
     }
@@ -86,7 +88,9 @@ export async function runIntegrationsCommand(
 export async function runMcpCommand(
   command: Extract<CliCommand, { kind: "mcp" }>,
 ): Promise<void> {
+  const target = getHostTarget(command.host);
   await runOpenWikiMcp({
     host: command.host,
+    producerActor: target?.producerActor ?? command.host,
   });
 }

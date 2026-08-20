@@ -43,7 +43,8 @@ pnpm integration:dev <codex|claude|dcode>
 The command builds OpenWiki, refreshes the host skill, and records absolute
 paths to the current Node executable and `dist/cli/cli.js`. Restart the coding
 agent after installation. Later source changes only require `pnpm build` unless
-the bundled skill itself changes; rerun `integration:dev` to refresh the skill.
+the bundled skill itself changes. Rerun `integration:dev` to refresh the skill
+or after switching Node installations.
 
 If your change should ship in a release, also add a changeset (see below).
 

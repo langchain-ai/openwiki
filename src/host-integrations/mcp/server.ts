@@ -1,8 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { OPENWIKI_VERSION } from "../../version.js";
 import { HostIntegrationError } from "../core/errors.js";
 import type { ProtocolTool } from "../core/protocol.js";
-import { OPENWIKI_VERSION } from "../../version.js";
 
 /**
  * Host guidance advertised during MCP initialization.
@@ -13,8 +13,9 @@ before investigating or authoring. Use the host's native repository tools to
 inspect source code and author wiki pages in the middle.
 Call openwiki_finish after authoring. If the run cannot be completed, leave it
 interrupted; a later begin supersedes it. Do not directly edit OpenWiki-owned
-indexes, metadata,
-logs, plans, or skeletons.`;
+indexes, logs, provenance, run metadata, setup blocks, or scheduled workflows.
+The host may author the temporary plan or skeleton required by its installed
+OpenWiki workflow; finalization removes those files.`;
 
 /**
  * Minimal lifecycle capability required by the MCP transport adapter.
