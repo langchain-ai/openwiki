@@ -68,6 +68,7 @@
     "@langchain/openrouter": "^0.4.3",
     "@langchain/protocol": "^0.0.18",
     "@langchain/tavily": "1.2.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "ci-info": "^4.4.0",
     "cron-parser": "5.6.1",
     "cronstrue": "3.24.0",
