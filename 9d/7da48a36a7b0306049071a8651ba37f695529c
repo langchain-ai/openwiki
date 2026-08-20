@@ -1,0 +1,113 @@
+integrations/openwiki/references/security.md
+  s_081e0b6f2df1e9::t_2a65c5c4076e3d 16-20
+src/host-integrations/core/session-manager.ts
+  s_081e0b6f2df1e9::t_3f001243f19e87 254,326
+  s_081e0b6f2df1e9::t_fe875c9d1bbc77 46,184-188,194,253,328-329,341-343,345-352,354-369,421-432
+  s_081e0b6f2df1e9::t_6abef9094e5247 258-259
+  s_081e0b6f2df1e9::t_5d1a3e21be8068 47-52,195-198,208,211,213,230-236,240,353
+  s_081e0b6f2df1e9::t_5ea07e3d5b8975 29,224
+  s_081e0b6f2df1e9::t_175d4e2fc5748c 433
+test/host-integrations/skill.test.ts
+  s_081e0b6f2df1e9::t_a5d29121fb791a 116
+  s_081e0b6f2df1e9::t_c6442378848b35 228-230
+src/host-integrations/install/types.ts
+  s_081e0b6f2df1e9::t_5d1a3e21be8068 76-79
+  s_081e0b6f2df1e9::t_2db2cd65eeb0fd 75
+integrations/openwiki/SKILL.md
+  s_081e0b6f2df1e9::t_2a65c5c4076e3d 28-29
+src/host-integrations/install/skill-bundle.ts
+  s_081e0b6f2df1e9::t_379df52b00d2e9 37,296,299,301
+  s_fee2a42a3ba928::t_1cf82d5b2930ce 306
+  s_fee2a42a3ba928::t_26a903bffe1ff9 16,269,277,283,286,290-291
+src/host-integrations/install/registry.ts
+  s_081e0b6f2df1e9::t_5d1a3e21be8068 14,34,48
+  s_081e0b6f2df1e9::t_b17c632a1bf9f5 1-5,85-98
+  s_081e0b6f2df1e9::t_c3a7282be12556 99
+src/host-integrations/install/installer.ts
+  s_081e0b6f2df1e9::t_b17c632a1bf9f5 36,162,181,612
+  s_081e0b6f2df1e9::t_b11f56623b9dbd 639-648
+  s_081e0b6f2df1e9::t_6a018de8e26618 163,632-638,649-654
+  s_081e0b6f2df1e9::t_d6cdbbb2b690b9 198-222
+  s_081e0b6f2df1e9::t_c9f58cbe517a11 223-224
+  s_081e0b6f2df1e9::t_51b6a8366f3ff7 655
+test/agent/wiki-finalizer.test.ts
+  s_081e0b6f2df1e9::t_0b0045ed8c8c71 91-114
+test/host-integrations/session-manager.test.ts
+  s_081e0b6f2df1e9::t_7ae2e09ac6b0a8 352-369
+  s_081e0b6f2df1e9::t_3f001243f19e87 315-329
+  s_081e0b6f2df1e9::t_fe875c9d1bbc77 330-351
+  s_081e0b6f2df1e9::t_0981619ab84533 406-417
+  s_081e0b6f2df1e9::t_d18ab9052bca5d 16,67
+src/host-integrations/mcp/stdio.ts
+  s_081e0b6f2df1e9::t_5d1a3e21be8068 13-19,30
+src/cli/cli.tsx
+  s_081e0b6f2df1e9::t_afd251351517ff 12,52-60,62
+  s_081e0b6f2df1e9::t_bef8276de61abe 31-33
+  s_081e0b6f2df1e9::t_0436cd02a81dd7 34-38,61
+src/host-integrations/core/protocol.ts
+  s_081e0b6f2df1e9::t_5ea07e3d5b8975 3-4,67-75
+  s_081e0b6f2df1e9::t_8b9ec7f7c9f9bb 76
+test/cli/host-integration-runners.test.ts
+  s_081e0b6f2df1e9::t_d18ab9052bca5d 213-215
+  s_081e0b6f2df1e9::t_d173b4e2a61fc4 216-232
+src/host-integrations/mcp/server.ts
+  s_081e0b6f2df1e9::t_2a65c5c4076e3d 3,16-18
+test/host-integrations/installer.test.ts
+  s_fee2a42a3ba928::t_1cf82d5b2930ce 420-444
+  s_fee2a42a3ba928::t_26a903bffe1ff9 512
+  s_081e0b6f2df1e9::t_b17c632a1bf9f5 26,510
+  s_081e0b6f2df1e9::t_6a018de8e26618 403-419
+  s_081e0b6f2df1e9::t_d18ab9052bca5d 344,361,372
+integrations/openwiki/references/init.md
+  s_081e0b6f2df1e9::t_2a65c5c4076e3d 26-27
+src/host-integrations/install/config-json.ts
+  s_081e0b6f2df1e9::t_125c0547e2bf07 140,146,157,159-163,166-174
+  s_081e0b6f2df1e9::t_859c8315059013 175
+src/agent/wiki-finalizer.ts
+  s_081e0b6f2df1e9::t_0b0045ed8c8c71 196-198
+CONTRIBUTING.md
+  s_081e0b6f2df1e9::t_dc1511ceabf2b6 46-47
+src/cli/commands.ts
+  s_081e0b6f2df1e9::t_5ea07e3d5b8975 18,681
+  s_081e0b6f2df1e9::t_14297926c54584 666-670,675-679
+src/cli/host-integrations.ts
+  s_081e0b6f2df1e9::t_4036dfd1ff318c 28-35,37
+  s_081e0b6f2df1e9::t_afd251351517ff 27,36
+  s_081e0b6f2df1e9::t_5d1a3e21be8068 91,94
+test/host-integrations/mcp-server.test.ts
+  s_081e0b6f2df1e9::t_0e8a627a8d3edd 132-137,139
+scripts/install-local-integration.mjs
+  s_081e0b6f2df1e9::t_64a45bc9c6c0e8 1,22-24,26,28
+  s_081e0b6f2df1e9::t_b17c632a1bf9f5 6
+integrations/openwiki/references/update.md
+  s_081e0b6f2df1e9::t_2a65c5c4076e3d 45-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "9d7da48a36a7b0306049071a8651ba37f695529c",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_fee2a42a3ba928": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01ff5-40a2-79e0-80b5-a42a8f887439",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
