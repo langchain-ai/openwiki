@@ -8,19 +8,14 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { HostIntegrationError } from "../core/errors.js";
+import { resolveRepositoryRoot } from "../core/repository-root.js";
 import { writeTextAtomic } from "./atomic-file.js";
 import type {
+  HostMcpConfig,
   HostIntegrationScope,
   HostTarget,
   InstallResult,
 } from "./types.js";
-
-const PROTECTED_HOST_DIRECTORIES = [
-  ".agents",
-  ".codex",
-  ".claude",
-  ".deepagents",
-];
 
 /**
  * Exact pre-mutation state of one optional UTF-8 config file.
@@ -62,6 +57,11 @@ export interface InstallContext {
    * Absolute host-owned MCP config path.
    */
   mcpConfig: string;
+
+  /**
+   * Config representation selected by the registry for this scope.
+   */
+  mcpConfigKind: HostMcpConfig["kind"];
 }
 
 /**
@@ -77,8 +77,17 @@ export async function resolveInstallContext(
   scope: HostIntegrationScope,
   candidateRoot: string,
 ): Promise<InstallContext> {
-  const root = await resolveInstallRoot(candidateRoot);
   const destinations = target[scope];
+  if (!destinations) {
+    throw new HostIntegrationError(
+      "invalid_input",
+      `${target.displayName} supports project-scoped integrations only. Re-run with --project.`,
+    );
+  }
+  const root =
+    scope === "project"
+      ? await resolveRepositoryRoot(path.resolve(candidateRoot))
+      : await resolveInstallRoot(candidateRoot);
   const skillDirectory = resolveInside(
     root,
     destinations.skillDirectory,
@@ -91,7 +100,13 @@ export async function resolveInstallContext(
   );
   await assertNoSymlinkComponents(root, skillDirectory);
   await assertNoSymlinkComponents(root, mcpConfig);
-  return { scope, root, skillDirectory, mcpConfig };
+  return {
+    scope,
+    root,
+    skillDirectory,
+    mcpConfig,
+    mcpConfigKind: destinations.mcpConfig.kind,
+  };
 }
 
 /**
@@ -214,14 +229,13 @@ export async function removeEmptySkillParents(
   root: string,
   skillDirectory: string,
 ): Promise<void> {
-  const protectedPaths = new Set(
-    PROTECTED_HOST_DIRECTORIES.map((directory) => path.join(root, directory)),
-  );
+  const [hostDirectory] = path.relative(root, skillDirectory).split(path.sep);
+  const protectedHostPath = path.join(root, hostDirectory ?? "");
   let current = path.dirname(skillDirectory);
   while (
     current !== root &&
     current.startsWith(`${root}${path.sep}`) &&
-    !protectedPaths.has(current)
+    current !== protectedHostPath
   ) {
     if ((await readdir(current)).length > 0) return;
     await rmdir(current);

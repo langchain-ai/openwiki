@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import {
   access,
   chmod,
@@ -22,6 +23,7 @@ import {
   resolveCanonicalSkillBundle,
   type HostIntegrationInstallerOperations,
 } from "../../src/host-integrations/install/installer.ts";
+import { removeEmptySkillParents } from "../../src/host-integrations/install/install-paths.ts";
 import {
   defaultMcpServerCommand,
   getHostTarget,
@@ -46,6 +48,17 @@ const temporaryRoots: string[] = [];
  * @returns Absolute temporary project path.
  */
 async function createProject(): Promise<string> {
+  const root = await createDirectory();
+  execFileSync("git", ["init", "--quiet", root]);
+  return root;
+}
+
+/**
+ * Creates one isolated directory without initializing a Git repository.
+ *
+ * @returns Absolute temporary directory path.
+ */
+async function createDirectory(): Promise<string> {
   const root = await realpath(
     await mkdtemp(path.join(os.tmpdir(), "openwiki-installer-")),
   );
@@ -65,7 +78,9 @@ function skillPath(
   target: HostTarget,
   scope: HostIntegrationScope = "project",
 ): string {
-  return path.join(root, target[scope].skillDirectory);
+  const destinations = target[scope];
+  if (!destinations) throw new Error(`${target.id} does not support ${scope}.`);
+  return path.join(root, destinations.skillDirectory);
 }
 
 /**
@@ -80,7 +95,9 @@ function configPath(
   target: HostTarget,
   scope: HostIntegrationScope = "project",
 ): string {
-  return path.join(root, target[scope].mcpConfig.relativePath);
+  const destinations = target[scope];
+  if (!destinations) throw new Error(`${target.id} does not support ${scope}.`);
+  return path.join(root, destinations.mcpConfig.relativePath);
 }
 
 /**
@@ -370,13 +387,7 @@ describe("host integration registry", () => {
       },
       dcode: {
         producerActor: "dcode",
-        user: {
-          skillDirectory: ".deepagents/skills/openwiki",
-          mcpConfig: {
-            kind: "json",
-            relativePath: ".deepagents/.mcp.json",
-          },
-        },
+        user: null,
         project: {
           skillDirectory: ".deepagents/skills/openwiki",
           mcpConfig: {
@@ -393,9 +404,10 @@ describe("host integration registry", () => {
       "claude",
       "dcode",
     ]);
+    const userTargets = TARGETS.filter((target) => target.user !== null);
     expect(
-      new Set(TARGETS.map((target) => target.user.skillDirectory)).size,
-    ).toBe(TARGETS.length);
+      new Set(userTargets.map((target) => target.user?.skillDirectory)).size,
+    ).toBe(userTargets.length);
   });
 });
 
@@ -442,10 +454,25 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     await expect(access(skillPath(root, target))).resolves.toBeUndefined();
   });
 
-  test("installs, reports, reinstalls, and uninstalls at user scope", async () => {
+  test("supports only registry-declared user scope", async () => {
     const fakeHome = await createProject();
     const installer = new HostIntegrationInstaller();
     const options = userOptions(fakeHome);
+
+    if (!target.user) {
+      await expect(installer.status(target, options)).resolves.toBe(
+        "unsupported",
+      );
+      await expect(installer.install(target, options)).rejects.toMatchObject({
+        code: "invalid_input",
+        message:
+          "Deep Agents Code supports project-scoped integrations only. Re-run with --project.",
+      });
+      await expect(
+        access(path.join(fakeHome, ".deepagents")),
+      ).rejects.toThrow();
+      return;
+    }
 
     await expect(installer.status(target, options)).resolves.toBe(
       "not-installed",
@@ -766,9 +793,44 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     await access(skillPath(root, target));
   });
 
+  test("uninstall removes an orphaned managed config entry", async () => {
+    const root = await createProject();
+    const options = projectOptions(root);
+    const installer = new HostIntegrationInstaller();
+    await installer.install(target, options);
+    await rm(skillPath(root, target), { force: true, recursive: true });
+
+    await expect(installer.status(target, options)).resolves.toBe("modified");
+    await expect(installer.uninstall(target, options)).resolves.toMatchObject({
+      changed: true,
+    });
+    const content = await readFile(configPath(root, target), "utf8");
+    expect(content).not.toContain("openwiki");
+    await expect(installer.status(target, options)).resolves.toBe(
+      "not-installed",
+    );
+  });
+
+  test("uninstall removes an orphaned managed skill", async () => {
+    const root = await createProject();
+    const options = projectOptions(root);
+    const installer = new HostIntegrationInstaller();
+    await installer.install(target, options);
+    await rm(configPath(root, target), { force: true });
+
+    await expect(installer.status(target, options)).resolves.toBe("modified");
+    await expect(installer.uninstall(target, options)).resolves.toMatchObject({
+      changed: true,
+    });
+    await expect(access(skillPath(root, target))).rejects.toThrow();
+    await expect(installer.status(target, options)).resolves.toBe(
+      "not-installed",
+    );
+  });
+
   test("rejects symlinked destination components", async () => {
     const root = await createProject();
-    const outside = await createProject();
+    const outside = await createDirectory();
     const topLevel = target.project.skillDirectory.split("/", 1)[0] ?? "";
     await symlink(outside, path.join(root, topLevel));
     const installer = new HostIntegrationInstaller();
@@ -782,9 +844,10 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
 
 describe("host integration scope ownership", () => {
   test("keeps user and project installations independent", async () => {
-    const fakeHome = await createProject();
+    const fakeHome = await createDirectory();
     const projectRoot = path.join(fakeHome, "project");
     await mkdir(projectRoot);
+    execFileSync("git", ["init", "--quiet", projectRoot]);
     const target = HOST_TARGETS.codex;
     const installer = new HostIntegrationInstaller();
 
@@ -797,6 +860,53 @@ describe("host integration scope ownership", () => {
       installer.status(target, projectOptions(projectRoot)),
     ).resolves.toBe("installed");
     await access(skillPath(projectRoot, target, "project"));
+  });
+});
+
+describe("project integration root resolution", () => {
+  test("installs from a subdirectory at the Git repository root", async () => {
+    const root = await createProject();
+    const nested = path.join(root, "packages", "example");
+    await mkdir(nested, { recursive: true });
+    const target = HOST_TARGETS.codex;
+    const installer = new HostIntegrationInstaller();
+
+    const result = await installer.install(target, projectOptions(nested));
+
+    expect(result.skillDirectory).toBe(skillPath(root, target));
+    expect(result.mcpConfig).toBe(configPath(root, target));
+    await access(skillPath(root, target));
+    await expect(
+      access(path.join(nested, target.project.skillDirectory)),
+    ).rejects.toThrow();
+  });
+
+  test("rejects project installation outside a Git repository", async () => {
+    const directory = await createDirectory();
+    const installer = new HostIntegrationInstaller();
+
+    await expect(
+      installer.install(HOST_TARGETS.codex, projectOptions(directory)),
+    ).rejects.toMatchObject({
+      code: "invalid_input",
+      message: "The OpenWiki root must be inside a Git repository.",
+    });
+    await expect(access(path.join(directory, ".agents"))).rejects.toThrow();
+  });
+});
+
+describe("host directory cleanup", () => {
+  test("preserves the host directory derived from the skill path", async () => {
+    const root = await createDirectory();
+    const hostRoot = path.join(root, ".future-host");
+    const skillDirectory = path.join(hostRoot, "nested", "skills", "openwiki");
+    await mkdir(skillDirectory, { recursive: true });
+    await rm(skillDirectory, { recursive: true });
+
+    await removeEmptySkillParents(root, skillDirectory);
+
+    await expect(access(hostRoot)).resolves.toBeUndefined();
+    await expect(access(path.join(hostRoot, "nested"))).rejects.toThrow();
   });
 });
 

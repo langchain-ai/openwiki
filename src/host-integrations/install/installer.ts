@@ -35,7 +35,6 @@ import {
 } from "./skill-bundle.js";
 import { defaultMcpServerCommand } from "./registry.js";
 import type {
-  HostIntegrationScope,
   HostIntegrationStatus,
   HostMcpServerCommand,
   HostTarget,
@@ -186,8 +185,7 @@ export class HostIntegrationInstaller {
       sameFiles(inspection.receipt.files, canonical.files);
     if (current) {
       const configChanged = await installManagedConfig(
-        target,
-        context.scope,
+        context.mcpConfigKind,
         context.mcpConfig,
         mcpServerCommand,
         replaceMcpServerCommand,
@@ -253,9 +251,6 @@ export class HostIntegrationInstaller {
       context.skillDirectory,
       target.id,
     );
-    if (inspection.status === "not-installed") {
-      return resultFor(target, context, false);
-    }
     if (inspection.status === "modified") {
       throw new HostIntegrationError(
         "conflict",
@@ -266,8 +261,27 @@ export class HostIntegrationInstaller {
       target,
       inspection.receipt,
     );
+    const configStatus = await getManagedConfigStatus(
+      context.mcpConfigKind,
+      context.mcpConfig,
+      mcpServerCommand,
+    );
+    if (configStatus === "modified") {
+      throw new HostIntegrationError(
+        "conflict",
+        `Refusing to remove modified or unmanaged MCP config from ${context.mcpConfig}.`,
+      );
+    }
 
-    const configSnapshot = await snapshotTextFile(context.mcpConfig);
+    const hasSkill = inspection.status === "installed";
+    const hasConfig = configStatus === "installed";
+    if (!hasSkill && !hasConfig) {
+      return resultFor(target, context, false);
+    }
+
+    const configSnapshot = hasConfig
+      ? await snapshotTextFile(context.mcpConfig)
+      : undefined;
     let configChanged = false;
     const cleanupBackup = siblingPath(
       context.skillDirectory,
@@ -276,15 +290,18 @@ export class HostIntegrationInstaller {
     );
 
     try {
-      configChanged = await uninstallManagedConfig(
-        target,
-        context.scope,
-        context.mcpConfig,
-        mcpServerCommand,
-      );
-      await this.operations.move(context.skillDirectory, cleanupBackup);
+      if (hasConfig) {
+        configChanged = await uninstallManagedConfig(
+          context.mcpConfigKind,
+          context.mcpConfig,
+          mcpServerCommand,
+        );
+      }
+      if (hasSkill) {
+        await this.operations.move(context.skillDirectory, cleanupBackup);
+      }
     } catch (error) {
-      if (configChanged) {
+      if (configChanged && configSnapshot) {
         try {
           await restoreTextFile(context.mcpConfig, configSnapshot);
         } catch (rollbackError) {
@@ -299,10 +316,12 @@ export class HostIntegrationInstaller {
     }
 
     let backupPath: string | undefined;
-    try {
-      await this.operations.removeDirectory(cleanupBackup);
-    } catch {
-      backupPath = cleanupBackup;
+    if (hasSkill) {
+      try {
+        await this.operations.removeDirectory(cleanupBackup);
+      } catch {
+        backupPath = cleanupBackup;
+      }
     }
     if (!backupPath) {
       await removeEmptySkillParents(context.root, context.skillDirectory).catch(
@@ -324,6 +343,7 @@ export class HostIntegrationInstaller {
     target: HostTarget,
     options: UninstallOptions,
   ): Promise<HostIntegrationStatus> {
+    if (!target[options.scope]) return "unsupported";
     const context = await resolveInstallContext(
       target,
       options.scope,
@@ -331,8 +351,7 @@ export class HostIntegrationInstaller {
     );
     const skill = await inspectInstallation(context.skillDirectory, target.id);
     const config = await getManagedConfigStatus(
-      target,
-      context.scope,
+      context.mcpConfigKind,
       context.mcpConfig,
       installedMcpServerCommand(target, skill.receipt),
     );
@@ -373,8 +392,7 @@ export class HostIntegrationInstaller {
 
     try {
       configChanged = await installManagedConfig(
-        target,
-        context.scope,
+        context.mcpConfigKind,
         context.mcpConfig,
         mcpServerCommand,
         replaceMcpServerCommand,
@@ -539,21 +557,19 @@ export function resolveCanonicalSkillBundle(
 /**
  * Installs the registry-selected MCP config representation.
  *
- * @param target - Registry target selecting the adapter.
- * @param scope - User or project config scope.
+ * @param kind - Registry-selected config adapter.
  * @param filePath - Absolute host config path.
  * @param entry - Exact executable invocation to install.
  * @param replaceableEntry - Exact prior invocation that may be replaced.
  * @returns Whether config changed.
  */
 async function installManagedConfig(
-  target: HostTarget,
-  scope: HostIntegrationScope,
+  kind: InstallContext["mcpConfigKind"],
   filePath: string,
   entry: HostMcpServerCommand,
   replaceableEntry?: HostMcpServerCommand,
 ): Promise<boolean> {
-  return target[scope].mcpConfig.kind === "json"
+  return kind === "json"
     ? installJsonMcpEntry(filePath, entry, replaceableEntry)
     : installCodexMcpBlock(filePath, entry, replaceableEntry);
 }
@@ -561,19 +577,17 @@ async function installManagedConfig(
 /**
  * Removes the registry-selected exact MCP config representation.
  *
- * @param target - Registry target selecting the adapter.
- * @param scope - User or project config scope.
+ * @param kind - Registry-selected config adapter.
  * @param filePath - Absolute host config path.
  * @param entry - Exact executable invocation owned by the installed skill.
  * @returns Whether config changed.
  */
 async function uninstallManagedConfig(
-  target: HostTarget,
-  scope: HostIntegrationScope,
+  kind: InstallContext["mcpConfigKind"],
   filePath: string,
   entry: HostMcpServerCommand,
 ): Promise<boolean> {
-  return target[scope].mcpConfig.kind === "json"
+  return kind === "json"
     ? uninstallJsonMcpEntry(filePath, entry)
     : uninstallCodexMcpBlock(filePath, entry);
 }
@@ -581,19 +595,17 @@ async function uninstallManagedConfig(
 /**
  * Reports the registry-selected MCP config representation state.
  *
- * @param target - Registry target selecting the adapter.
- * @param scope - User or project config scope.
+ * @param kind - Registry-selected config adapter.
  * @param filePath - Absolute host config path.
  * @param entry - Exact executable invocation expected by the installed skill.
  * @returns Absent, intact, or modified managed config state.
  */
 async function getManagedConfigStatus(
-  target: HostTarget,
-  scope: HostIntegrationScope,
+  kind: InstallContext["mcpConfigKind"],
   filePath: string,
   entry: HostMcpServerCommand,
 ): Promise<HostIntegrationStatus> {
-  return target[scope].mcpConfig.kind === "json"
+  return kind === "json"
     ? getJsonMcpEntryStatus(filePath, entry)
     : getCodexMcpBlockStatus(filePath, entry);
 }

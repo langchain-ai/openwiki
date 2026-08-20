@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -21,6 +22,7 @@ let savedExitCode: typeof process.exitCode;
 
 beforeEach(async () => {
   projectRoot = await mkdtemp(path.join(os.tmpdir(), "openwiki-cli-dogfood-"));
+  execFileSync("git", ["init", "--quiet", projectRoot]);
   stdout = [];
   stderr = [];
   savedExitCode = process.exitCode;

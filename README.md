@@ -69,10 +69,10 @@ Install the integration for your coding agent (choose one):
 ```sh
 openwiki integrations install codex
 openwiki integrations install claude
-openwiki integrations install dcode
+openwiki integrations install dcode --project
 ```
 
-The supported targets are **Codex**, **Claude Code**, and **dcode**. Installation is user-level by default: it installs the OpenWiki skill and MCP configuration once, so it works from any Git repository. Restart the coding agent after installation, open a repository, and ask:
+The supported targets are **Codex**, **Claude Code**, and **dcode**. Codex and Claude Code install at user level by default, so one installation works from any Git repository. DCode currently supports project installation only because it does not discover skills from a user-level directory. Project paths are resolved to their Git repository root. Restart the coding agent after installation, open the repository, and ask:
 
 ```text
 Initialize this repository's OpenWiki from the current source and tests.
@@ -86,7 +86,7 @@ Update this repository's OpenWiki for changes since its last successful run.
 
 Host-driven runs currently support repository code wikis, not personal brains. They use the coding agent's authenticated model session, so OpenWiki provider credentials are not required. OpenWiki still owns deterministic setup and finalization; the coding agent owns research, planning, factual authoring, and semantic review.
 
-Use `openwiki integrations list` to inspect installation status or `openwiki integrations uninstall <host>` to remove an integration safely. To install only for one repository, add `--project [path]` to `list`, `install`, or `uninstall`.
+Use `openwiki integrations list` to inspect user-level installation status or `openwiki integrations uninstall <host>` to remove an integration safely. Add `--project [path]` to `list`, `install`, or `uninstall` for repository-scoped state; DCode requires this option.
 
 ## Two modes
 
@@ -433,8 +433,8 @@ openwiki visualize openwiki --export docs/openwiki-visualizer  # static graph + 
 openwiki auth <provider>         # authenticate a connector (slack, gmail, x, notion)
 openwiki ingest <source>         # run connector ingestion (all, or a connector/instance)
 openwiki integrations list       # show installed coding-agent integrations
-openwiki integrations install <codex|claude|dcode>
-openwiki integrations uninstall <codex|claude|dcode>
+openwiki integrations install <codex|claude|dcode> [--project [path]]
+openwiki integrations uninstall <codex|claude|dcode> [--project [path]]
 openwiki --help                  # full help
 ```
 

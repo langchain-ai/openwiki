@@ -65,7 +65,7 @@ describe("runIntegrationsCommand", () => {
     vi.mocked(getHostIntegrationStatus)
       .mockResolvedValueOnce("installed")
       .mockResolvedValueOnce("modified")
-      .mockResolvedValueOnce("not-installed");
+      .mockResolvedValueOnce("unsupported");
 
     await runIntegrationsCommand({
       kind: "integrations",
@@ -80,7 +80,7 @@ describe("runIntegrationsCommand", () => {
     expect(stdout.join("")).toBe(
       "codex\tinstalled\tCodex\n" +
         "claude\tmodified\tClaude Code\n" +
-        "dcode\tnot-installed\tDeep Agents Code\n",
+        "dcode\tunsupported\tDeep Agents Code\n",
     );
     expect(getHostIntegrationStatus).toHaveBeenCalledTimes(3);
     expect(getHostIntegrationStatus).toHaveBeenCalledWith(

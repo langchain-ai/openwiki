@@ -6,7 +6,8 @@ export type HostTargetId = "codex" | "claude" | "dcode";
 /**
  * Current managed installation states exposed to callers.
  */
-export type HostIntegrationStatus = "installed" | "modified" | "not-installed";
+export type HostIntegrationStatus =
+  "installed" | "modified" | "not-installed" | "unsupported";
 
 /**
  * Supported ownership scopes for host integration files.
@@ -80,7 +81,7 @@ export interface HostTarget {
   /**
    * User-level destinations relative to the user's home directory.
    */
-  readonly user: HostInstallationPaths;
+  readonly user: HostInstallationPaths | null;
 
   /**
    * Project-level destinations relative to the target repository.

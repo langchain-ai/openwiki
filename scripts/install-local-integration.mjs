@@ -8,7 +8,7 @@ import { getHostTarget } from "../dist/host-integrations/install/registry.js";
 import { getErrorMessage } from "../dist/platform/diagnostics.js";
 
 /**
- * Installs one global host integration backed by this source checkout.
+ * Installs one host integration backed by this source checkout.
  *
  * @returns {Promise<void>} Completion after the skill and MCP config are installed.
  */
@@ -32,8 +32,8 @@ async function main() {
     ],
   };
   const result = await installHostIntegration(target, {
-    scope: "user",
-    root: os.homedir(),
+    scope: target.user ? "user" : "project",
+    root: target.user ? os.homedir() : repositoryRoot,
     mcpServerCommand,
   });
 
@@ -42,7 +42,7 @@ async function main() {
       `skill: ${result.skillDirectory}\n` +
       `mcp: ${result.mcpConfig}\n` +
       `server: ${mcpServerCommand.command} ${mcpServerCommand.args.join(" ")}\n` +
-      `\nRestart ${target.displayName} to use this checkout.\n`,
+      `\nRestart ${target.displayName}${target.user ? "" : " in this repository"} to use this checkout.\n`,
   );
 }
 

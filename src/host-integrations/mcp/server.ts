@@ -14,8 +14,8 @@ inspect source code and author wiki pages in the middle.
 Call openwiki_finish after authoring. If the run cannot be completed, leave it
 interrupted; a later begin supersedes it. Do not directly edit OpenWiki-owned
 indexes, logs, provenance, run metadata, setup blocks, or scheduled workflows.
-The host may author the temporary plan or skeleton required by its installed
-OpenWiki workflow; finalization removes those files.`;
+The host may author the temporary openwiki/_plan.md and openwiki/_skeleton.md
+required by its installed workflow; finalization removes those files.`;
 
 /**
  * Minimal lifecycle capability required by the MCP transport adapter.

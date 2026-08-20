@@ -136,6 +136,10 @@ describe("canonical OpenWiki host skill", () => {
 
   test("separates temporary agent artifacts from deterministic output", async () => {
     const skill = await readFile(SKILL_PATH, "utf8");
+    const security = await readFile(
+      path.join(SKILL_ROOT, "references/security.md"),
+      "utf8",
+    );
 
     expect(skill).toContain(
       "Use OpenWiki for deterministic preparation and finalization.",
@@ -155,6 +159,10 @@ describe("canonical OpenWiki host skill", () => {
         "  `openwiki/_plan.md`",
     );
     expect(skill).toContain("OpenWiki removes them during finalization.");
+    expect(security).toContain(
+      "temporary `_skeleton.md` or `_plan.md` required by the selected workflow",
+    );
+    expect(security).not.toMatch(/never edit[^.]*plans?[^.]*skeletons?/iu);
   });
 
   test("mirrors native init orchestration gates", async () => {

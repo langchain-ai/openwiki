@@ -46,13 +46,7 @@ export const HOST_TARGETS = {
     id: "dcode",
     displayName: "Deep Agents Code",
     producerActor: "dcode",
-    user: {
-      skillDirectory: ".deepagents/skills/openwiki",
-      mcpConfig: {
-        kind: "json",
-        relativePath: ".deepagents/.mcp.json",
-      },
-    },
+    user: null,
     project: {
       skillDirectory: ".deepagents/skills/openwiki",
       mcpConfig: {
