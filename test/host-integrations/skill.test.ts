@@ -2,6 +2,7 @@ import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 import { parse } from "yaml";
+import { CODE_SYSTEM_PROMPTS } from "../../src/agent/prompts/code.ts";
 import { validateOkfFrontmatter } from "../../src/okf/frontmatter.ts";
 
 const SKILL_ROOT = path.join(process.cwd(), "integrations/openwiki");
@@ -9,6 +10,7 @@ const SKILL_PATH = path.join(SKILL_ROOT, "SKILL.md");
 const REFERENCE_PATHS = [
   "references/init.md",
   "references/methodology.md",
+  "references/reviewers.md",
   "references/security.md",
   "references/update.md",
 ] as const;
@@ -98,19 +100,20 @@ describe("canonical OpenWiki host skill", () => {
     expect(methodology).toContain("## Contents");
   });
 
-  test("places native host authoring between begin and finish", async () => {
+  test("places the host workflow between begin and finish", async () => {
     const skill = await readFile(SKILL_PATH, "utf8");
     const requiredSequence = section(skill, "Required sequence");
     const beginIndex = requiredSequence.indexOf("`openwiki_begin`");
-    const authoringIndex = requiredSequence.indexOf(
-      "Create, edit, or delete factual pages",
+    const workflowIndex = requiredSequence.indexOf(
+      "Execute every planning, evidence, authoring, and review gate",
     );
     const finishIndex = requiredSequence.indexOf("`openwiki_finish`");
 
     expect(beginIndex).toBeGreaterThanOrEqual(0);
-    expect(authoringIndex).toBeGreaterThan(beginIndex);
-    expect(finishIndex).toBeGreaterThan(authoringIndex);
-    expect(requiredSequence).toContain("with native tools");
+    expect(workflowIndex).toBeGreaterThan(beginIndex);
+    expect(finishIndex).toBeGreaterThan(workflowIndex);
+    expect(requiredSequence).toContain("host-native subagents");
+    expect(requiredSequence).toContain("keep factual edits in the main agent");
   });
 
   test("resolves and passes an explicit Git root before begin", async () => {
@@ -131,17 +134,115 @@ describe("canonical OpenWiki host skill", () => {
     expect(requiredSequence).toContain("stop and ask the user");
   });
 
-  test("keeps deterministic work and reserved artifacts code-owned", async () => {
+  test("separates temporary agent artifacts from deterministic output", async () => {
     const skill = await readFile(SKILL_PATH, "utf8");
 
     expect(skill).toContain(
       "Use OpenWiki for deterministic preparation and finalization.",
     );
     expect(skill).toContain(
-      "Perform repository\ninvestigation and factual Markdown authoring with native host tools.",
+      "investigation, planning, review, and factual Markdown authoring with native host\n" +
+        "tools and host-native delegation.",
     );
     expect(skill).toContain(
-      "Never edit indexes, logs, metadata, plans, or skeleton files.",
+      "Never edit indexes, logs, provenance, or run metadata.",
+    );
+    expect(skill).toContain(
+      "Never edit the OpenWiki-managed blocks in root `AGENTS.md` or `CLAUDE.md`",
+    );
+    expect(skill).toContain(
+      "may author the temporary `openwiki/_skeleton.md` and\n" +
+        "  `openwiki/_plan.md`",
+    );
+    expect(skill).toContain("OpenWiki removes them during finalization.");
+  });
+
+  test("mirrors native init orchestration gates", async () => {
+    const init = await readFile(
+      path.join(SKILL_ROOT, "references/init.md"),
+      "utf8",
+    );
+    const reviewers = await readFile(
+      path.join(SKILL_ROOT, "references/reviewers.md"),
+      "utf8",
+    );
+    const nativeInit = CODE_SYSTEM_PROMPTS.init;
+
+    expect(nativeInit).toContain("/openwiki/_skeleton.md");
+    expect(init).toContain("`openwiki/_skeleton.md`");
+    expect(nativeInit).toContain("'skeleton_critic' subagent");
+    expect(init).toContain("run the skeleton critic");
+    expect(nativeInit).toContain("Re-invoke 'skeleton_critic' exactly once");
+    expect(init).toContain("critic exactly once more");
+    expect(nativeInit).toContain("unknown-unknown pass");
+    expect(init).toContain("unknown-unknown pass");
+    expect(nativeInit).toContain("'wiki_question_finder'");
+    expect(init).toContain("invoke the question\n    finder");
+    expect(nativeInit).toContain("'wiki_answer_verifier'");
+    expect(init).toContain("launch verifier batches");
+    expect(nativeInit).toContain("batches of 2–3");
+    expect(reviewers).toContain("batches of two or three");
+    expect(nativeInit).toContain("PARTIAL or FAIL");
+    expect(init).toContain("`PARTIAL` and `FAIL`");
+    expect(nativeInit).toContain("write the /openwiki/quickstart.md file");
+    expect(init).toContain("Write `openwiki/quickstart.md` last");
+  });
+
+  test("preserves native reviewer evidence isolation", async () => {
+    const reviewers = await readFile(
+      path.join(SKILL_ROOT, "references/reviewers.md"),
+      "utf8",
+    );
+
+    expect(reviewers).toContain(
+      "Independently map the repository before reading `openwiki/_skeleton.md`",
+    );
+    expect(reviewers).toContain(
+      "Read repository source and tests only; never read `openwiki/`",
+    );
+    expect(reviewers).toContain(
+      "Read `openwiki/` only; never inspect source or tests",
+    );
+    expect(reviewers).toContain(
+      "Never\nlet a reviewer edit the skeleton or wiki.",
+    );
+  });
+
+  test("mirrors native update planning discipline", async () => {
+    const update = await readFile(
+      path.join(SKILL_ROOT, "references/update.md"),
+      "utf8",
+    );
+    const nativeUpdate = CODE_SYSTEM_PROMPTS.update;
+
+    expect(nativeUpdate).toContain("/openwiki/_plan.md");
+    expect(update).toContain("`openwiki/_plan.md`");
+    expect(nativeUpdate).toContain(
+      "Revisit the plan after initial discovery and again after drafting",
+    );
+    expect(update).toContain("Revisit the plan after discovery");
+    expect(update).toContain("Revisit the plan after drafting");
+    expect(nativeUpdate).toContain(
+      "avoid subagents unless the user explicitly requests them",
+    );
+    expect(update).toContain(
+      "do not delegate update work unless the user explicitly\nrequests subagents",
+    );
+    expect(update).toContain("`updatePreflight.shouldSkip` is `true`");
+    expect(update).toContain("call `openwiki_finish`\n   immediately");
+  });
+
+  test("uses the lifecycle language for authored prose", async () => {
+    const methodology = await readFile(
+      path.join(SKILL_ROOT, "references/methodology.md"),
+      "utf8",
+    );
+
+    expect(methodology).toContain(
+      "Write factual prose in the `language` returned by `openwiki_begin`",
+    );
+    expect(methodology).toContain(
+      "On an explicit language switch,\ntranslate every factual page",
     );
   });
 

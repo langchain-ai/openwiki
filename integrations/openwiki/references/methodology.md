@@ -3,6 +3,7 @@
 ## Contents
 
 - [Authority and evidence](#authority-and-evidence)
+- [Output language](#output-language)
 - [Page design](#page-design)
 - [OKF frontmatter](#okf-frontmatter)
 - [Relationships](#relationships)
@@ -14,6 +15,13 @@
 Treat source code and tests as authoritative. Use existing documentation as
 context, then verify material facts against implementation. State genuine
 unknowns narrowly instead of inferring behavior.
+
+## Output language
+
+Write factual prose in the `language` returned by `openwiki_begin`. Preserve
+code identifiers, paths, commands, API names, URLs, and code blocks when
+translation would reduce technical accuracy. On an explicit language switch,
+translate every factual page consistently in the same update.
 
 ## Page design
 

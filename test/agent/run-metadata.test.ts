@@ -5,7 +5,7 @@ import { describe, expect, test } from "vitest";
 import {
   createOpenWikiContentSnapshot,
   persistRunMetadataIfChanged,
-  removeTemporaryPlanFile,
+  removeTemporaryWorkingFiles,
 } from "../../src/agent/utils.ts";
 import type { OpenWikiOutputMode } from "../../src/agent/types.ts";
 
@@ -250,25 +250,29 @@ describe("persistRunMetadataIfChanged", () => {
   });
 });
 
-describe("removeTemporaryPlanFile", () => {
+describe("removeTemporaryWorkingFiles", () => {
   test.each([
-    ["repository", path.join("openwiki", "_plan.md")],
-    ["local-wiki", "_plan.md"],
+    ["repository", "openwiki"],
+    ["local-wiki", ""],
   ] as const)(
-    "removes the temporary plan file in %s mode",
-    async (outputMode: OpenWikiOutputMode, relativePlanPath: string) => {
+    "removes temporary planning artifacts in %s mode",
+    async (outputMode: OpenWikiOutputMode, relativeWikiRoot: string) => {
       const cwd = await createTempRepo();
-      const planPath = path.join(cwd, relativePlanPath);
-      await mkdir(path.dirname(planPath), { recursive: true });
+      const wikiRoot = path.join(cwd, relativeWikiRoot);
+      const planPath = path.join(wikiRoot, "_plan.md");
+      const skeletonPath = path.join(wikiRoot, "_skeleton.md");
+      await mkdir(wikiRoot, { recursive: true });
       await writeFile(planPath, "# Temporary plan\n", "utf8");
+      await writeFile(skeletonPath, "# Temporary skeleton\n", "utf8");
 
-      await expect(removeTemporaryPlanFile(cwd, outputMode)).resolves.toBe(
-        true,
-      );
+      await expect(
+        removeTemporaryWorkingFiles(cwd, outputMode),
+      ).resolves.toEqual(["_plan.md", "_skeleton.md"]);
       await expect(readFile(planPath, "utf8")).rejects.toThrow();
-      await expect(removeTemporaryPlanFile(cwd, outputMode)).resolves.toBe(
-        false,
-      );
+      await expect(readFile(skeletonPath, "utf8")).rejects.toThrow();
+      await expect(
+        removeTemporaryWorkingFiles(cwd, outputMode),
+      ).resolves.toEqual([]);
     },
   );
 });

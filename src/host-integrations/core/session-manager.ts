@@ -2,12 +2,13 @@ import { randomUUID } from "node:crypto";
 import { OpenWikiLocalShellBackend } from "../../agent/docs-only-backend.js";
 import { OpenWikiIgnore } from "../../agent/openwiki-ignore.js";
 import type { RunContext } from "../../agent/types.js";
+import { ensureCodeModeRepoSetup } from "../../ingestion/code-mode.js";
 import {
   createOpenWikiContentSnapshot,
   createRunContext,
   getUpdateNoopStatus,
   persistRunMetadataIfChanged,
-  removeTemporaryPlanFile,
+  removeTemporaryWorkingFiles,
   type OpenWikiContentSnapshot,
   type UpdateNoopStatus,
   writeLastUpdateMetadata,
@@ -230,6 +231,9 @@ export class HostSessionManager {
 
     try {
       const root = await resolveRepositoryRoot(input.root);
+      await ensureCodeModeRepoSetup(root, {
+        createWorkflow: input.mode === "init",
+      });
       const ignore = await OpenWikiIgnore.load(root);
       const context = await createRunContext(
         root,
@@ -307,6 +311,7 @@ export class HostSessionManager {
   async finish(input: RunRequest): Promise<FinishResult> {
     const session = this.requireSession(input.runId);
 
+    await removeTemporaryWorkingFiles(session.root, "repository");
     await finalizeWikiArtifacts({
       backend: session.backend,
       outputMode: "repository",
@@ -315,7 +320,6 @@ export class HostSessionManager {
       prepared: session.preparedWiki,
       at: session.startedAt,
     });
-    await removeTemporaryPlanFile(session.root, "repository");
     await persistRunMetadataIfChanged(
       session.mode,
       session.root,

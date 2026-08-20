@@ -157,6 +157,18 @@ describe("HostSessionManager lifecycle", () => {
       model: "host-agent/codex",
       status: "interrupted",
     });
+    await expect(
+      readFile(path.join(root, "AGENTS.md"), "utf8"),
+    ).resolves.toContain("<!-- OPENWIKI:START -->");
+    await expect(
+      readFile(path.join(root, "CLAUDE.md"), "utf8"),
+    ).resolves.toContain("See [AGENTS.md](AGENTS.md)");
+    await expect(
+      readFile(
+        path.join(root, ".github/workflows/openwiki-update.yml"),
+        "utf8",
+      ),
+    ).resolves.toContain("run: openwiki code --update --print");
 
     const sensitiveBody = "PAGE_BODY_SENTINEL";
     expect(JSON.stringify(started)).not.toContain(sensitiveBody);
@@ -179,6 +191,10 @@ describe("HostSessionManager lifecycle", () => {
     );
     await rm(path.join(wikiRoot, "deleted.md"));
     await writeFile(path.join(wikiRoot, "_plan.md"), "Temporary plan.\n");
+    await writeFile(
+      path.join(wikiRoot, "_skeleton.md"),
+      "Temporary skeleton.\n",
+    );
 
     await expect(manager.finish({ runId: started.runId })).resolves.toEqual({
       status: "complete",
@@ -199,6 +215,7 @@ describe("HostSessionManager lifecycle", () => {
     expect(index).toContain("[Quickstart](quickstart.md)");
     await expect(access(path.join(wikiRoot, "deleted.md"))).rejects.toThrow();
     await expect(access(path.join(wikiRoot, "_plan.md"))).rejects.toThrow();
+    await expect(access(path.join(wikiRoot, "_skeleton.md"))).rejects.toThrow();
     expect(await readMetadata(root)).toMatchObject({
       model: "host-agent/codex",
       status: "complete",
@@ -230,6 +247,25 @@ describe("HostSessionManager lifecycle", () => {
       status: "complete",
     });
     expect(await readMetadata(root)).toMatchObject({ status: "complete" });
+  });
+
+  test("refreshes agent instructions on update without creating a workflow", async () => {
+    const root = await createRepository();
+    const manager = createManager();
+
+    const started = await manager.begin({ root, mode: "update" });
+
+    await expect(
+      readFile(path.join(root, "AGENTS.md"), "utf8"),
+    ).resolves.toContain("<!-- OPENWIKI:START -->");
+    await expect(
+      readFile(path.join(root, "CLAUDE.md"), "utf8"),
+    ).resolves.toContain("See [AGENTS.md](AGENTS.md)");
+    await expect(
+      access(path.join(root, ".github/workflows/openwiki-update.yml")),
+    ).rejects.toThrow();
+
+    await manager.finish({ runId: started.runId });
   });
 
   test("a second begin may select a new root without reverting old Markdown", async () => {
