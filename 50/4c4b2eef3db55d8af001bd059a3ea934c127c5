@@ -1,0 +1,73 @@
+test/integrations/session-manager.test.ts
+  s_fee2a42a3ba928::t_0e016bbe6e400c 17,149,227-306
+  s_fee2a42a3ba928::t_8c28e31735a499 307-308
+integrations/openwiki/references/methodology.md
+  s_fee2a42a3ba928::t_81c516e24014c8 6,20-40
+  s_fee2a42a3ba928::t_634480f7737e75 41
+integrations/openwiki/references/init.md
+  s_fee2a42a3ba928::t_fe9cf12f457112 19-23,25-26,29-35,43,45-52,58-60
+  s_fee2a42a3ba928::t_81c516e24014c8 36-42,54-57,61-62
+src/integrations/core/session-manager.ts
+  s_fee2a42a3ba928::t_dab0e018f78c12 451
+  s_fee2a42a3ba928::t_e6b7d03956b16e 25-39,43-44,49,51,127-131,142-148,204-213,329-339,365-366,378,410-411,423-425,442-450,455-471,475-483,496-509,550-578
+  s_fee2a42a3ba928::t_1f3ef4449ef3c8 452-454
+  s_fee2a42a3ba928::t_18a26411082541 472-474
+  s_fee2a42a3ba928::t_8bd858d673a4f3 579
+integrations/openwiki/SKILL.md
+  s_fee2a42a3ba928::t_758da32c118ba6 28-29
+  s_fee2a42a3ba928::t_81c516e24014c8 30-31,38-40
+src/integrations/mcp/server.ts
+  s_fee2a42a3ba928::t_18a26411082541 42
+  s_fee2a42a3ba928::t_fc881ce049d88b 10,12-14,19-20,27
+  s_fee2a42a3ba928::t_fe9cf12f457112 15-16
+test/integrations/skill.test.ts
+  s_fee2a42a3ba928::t_c6b60ac413946c 198
+  s_fee2a42a3ba928::t_d84bb9824b4718 191,193,197,199,205-206
+  s_fee2a42a3ba928::t_758da32c118ba6 116-118,173-174,207-208,251-254,287-292
+  s_fee2a42a3ba928::t_1cd66423e120a8 204
+  s_fee2a42a3ba928::t_9e0e5693f5c816 226
+  s_fee2a42a3ba928::t_fe9cf12f457112 189-190,218
+  s_fee2a42a3ba928::t_18a26411082541 119-124
+integrations/openwiki/references/reviewers.md
+  s_fee2a42a3ba928::t_fe9cf12f457112 6,17,20,41
+README.md
+  s_fee2a42a3ba928::t_81c516e24014c8 88-89
+test/integrations/protocol.test.ts
+  s_fee2a42a3ba928::t_ed604d585880de 2,6-11,43,65-82,85,87,93-94,97,103-108,111-112,123-130,156-161
+  s_fee2a42a3ba928::t_9e0e5693f5c816 132-149
+  s_fee2a42a3ba928::t_e8d60f6363597e 131,150-155
+test/integrations/mcp-server.test.ts
+  s_fee2a42a3ba928::t_18a26411082541 318
+  s_fee2a42a3ba928::t_0fb64e68b9a73d 15,17,54,65,103,105-106,116-127,142-143,152-153,290,298-299,312-317,319-341,373-377
+src/integrations/core/protocol.ts
+  s_fee2a42a3ba928::t_0cd8fb835b8cff 2-5,17-21,75-106
+  s_fee2a42a3ba928::t_a129145df9677c 107
+CONTRIBUTING.md
+  s_fee2a42a3ba928::t_81c516e24014c8 51-54
+src/claims/brains/code/tools.ts
+  s_fee2a42a3ba928::t_acf773baf10c52 84,90,99-103,105-110,143,220,224,241,246-286,288-291,297-298
+  s_fee2a42a3ba928::t_18a26411082541 292-296
+  s_fee2a42a3ba928::t_9e0e5693f5c816 287,356
+  s_fee2a42a3ba928::t_1f3ef4449ef3c8 104
+  s_fee2a42a3ba928::t_ef46dd7b6b84cd 299
+integrations/openwiki/references/security.md
+  s_fee2a42a3ba928::t_81c516e24014c8 18-20
+integrations/openwiki/references/update.md
+  s_fee2a42a3ba928::t_81c516e24014c8 28-30,33-40,47-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "504c4b2eef3db55d8af001bd059a3ea934c127c5",
+  "prompts": {},
+  "sessions": {
+    "s_fee2a42a3ba928": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01ff5-40a2-79e0-80b5-a42a8f887439",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
