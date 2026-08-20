@@ -1,0 +1,53 @@
+import type { HostTarget, HostTargetId } from "./types.js";
+
+/**
+ * Complete immutable registry of supported host installation targets.
+ */
+export const HOST_TARGETS = {
+  codex: {
+    id: "codex",
+    displayName: "Codex",
+    skillDirectory: ".agents/skills/openwiki",
+    mcpConfig: {
+      kind: "codex-toml",
+      relativePath: ".codex/config.toml",
+    },
+    documentationUrl: "https://learn.chatgpt.com/docs/extend/mcp",
+  },
+  claude: {
+    id: "claude",
+    displayName: "Claude Code",
+    skillDirectory: ".claude/skills/openwiki",
+    mcpConfig: { kind: "json", relativePath: ".mcp.json" },
+    documentationUrl: "https://docs.anthropic.com/en/docs/claude-code/mcp",
+  },
+  dcode: {
+    id: "dcode",
+    displayName: "Deep Agents Code",
+    skillDirectory: ".deepagents/skills/openwiki",
+    mcpConfig: {
+      kind: "json",
+      relativePath: ".deepagents/.mcp.json",
+    },
+    documentationUrl: "https://docs.langchain.com/oss/python/deepagents/code",
+  },
+} as const satisfies Record<HostTargetId, HostTarget>;
+
+/**
+ * Resolves a host registry entry from untrusted CLI text.
+ *
+ * @param id - Candidate host identifier.
+ * @returns Matching host target, or `undefined` when unsupported.
+ */
+export function getHostTarget(id: string): HostTarget | undefined {
+  return HOST_TARGETS[id as HostTargetId];
+}
+
+/**
+ * Lists supported host targets in registry order.
+ *
+ * @returns Independent array of host registry entries.
+ */
+export function listHostTargets(): HostTarget[] {
+  return Object.values(HOST_TARGETS);
+}
