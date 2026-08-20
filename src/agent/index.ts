@@ -1442,6 +1442,8 @@ const HTTP_STATUS_SERVICE_UNAVAILABLE = 503;
 const HTTP_STATUS_GATEWAY_TIMEOUT = 504;
 const RETRY_AFTER_HEADER_NAME = "retry-after";
 const ABORT_ERROR_NAME = "AbortError";
+const ABORT_ERROR_MESSAGE = "The operation was aborted";
+const ABORT_EVENT_NAME = "abort";
 const MILLISECONDS_PER_SECOND = 1000;
 const DEFAULT_PROVIDER_RETRY_DELAY_MS = 1000;
 const MAX_PROVIDER_RETRY_DELAY_MS = 60_000;
@@ -1487,7 +1489,7 @@ function createProviderRetryFetch(
           throw error;
         }
 
-        await sleep(DEFAULT_PROVIDER_RETRY_DELAY_MS);
+        await sleep(DEFAULT_PROVIDER_RETRY_DELAY_MS, init?.signal);
         continue;
       }
 
@@ -1498,7 +1500,8 @@ function createProviderRetryFetch(
         return response;
       }
 
-      await sleep(resolveProviderRetryDelayMs(response));
+      await discardProviderResponse(response);
+      await sleep(resolveProviderRetryDelayMs(response), init?.signal);
     }
   };
 }
@@ -1542,8 +1545,38 @@ function resolveProviderRetryDelayMs(response: Response): number {
   );
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function discardProviderResponse(response: Response): Promise<void> {
+  if (response.body && !response.body.locked) {
+    try {
+      await response.body.cancel();
+    } catch {
+      // Cleanup is best-effort: the retryable HTTP response remains the
+      // actionable failure, and a stream cancellation error must not replace it.
+    }
+  }
+}
+
+function sleep(ms: number, signal?: AbortSignal | null): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(
+      new DOMException(ABORT_ERROR_MESSAGE, ABORT_ERROR_NAME),
+    );
+  }
+
+  let handleAbort: (() => void) | undefined;
+
+  return new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(resolve, ms);
+    handleAbort = () => {
+      clearTimeout(timeout);
+      reject(new DOMException(ABORT_ERROR_MESSAGE, ABORT_ERROR_NAME));
+    };
+    signal?.addEventListener(ABORT_EVENT_NAME, handleAbort, { once: true });
+  }).finally(() => {
+    if (handleAbort) {
+      signal?.removeEventListener(ABORT_EVENT_NAME, handleAbort);
+    }
+  });
 }
 
 const CHATGPT_LOGIN_INCOMPLETE_MESSAGE =
