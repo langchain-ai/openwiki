@@ -1,0 +1,32 @@
+src/agent/plan-ledger.ts
+  s_eb189fb9626ca8::t_831a95095b5c7c 485,487-496,498-517,535-538,547-554,654-655,657
+  s_eb189fb9626ca8::t_d1b99e5456bb74 264-266,387,540-541,543
+src/claims/brains/code/tools.ts
+  s_eb189fb9626ca8::t_d1b99e5456bb74 134
+  s_eb189fb9626ca8::t_fb812d03da26e6 8,135-136
+src/agent/page-author.ts
+  s_eb189fb9626ca8::t_d1b99e5456bb74 165
+src/agent/repo-inventory.ts
+  s_eb189fb9626ca8::t_d2eab1987b428c 135
+test/claims/brains/code/tools.test.ts
+  s_eb189fb9626ca8::t_f81ed16f0c0ed1 4,97-105
+  s_eb189fb9626ca8::t_d1b99e5456bb74 447-449
+src/agent/code-interpreter.ts
+  s_eb189fb9626ca8::t_a2fa4c82f41645 87-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "21008662605f479b7cb1a0125fe12e4688ac0215",
+  "prompts": {},
+  "sessions": {
+    "s_eb189fb9626ca8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b06effba-032e-4381-b45a-b95c621c59a0",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
