@@ -16,10 +16,8 @@
  * page and is handed its edges, so it states its relationships without having
  * read its neighbours.
  *
- * Claims keep the merge honest. An author returns the propositions it
- * established with repo:// evidence rather than prose to be trusted, and the
- * coordinator establishes them through resolve_claims - which means nothing
- * reaches a page's claim set because a subagent asserted it.
+ * Each author establishes its own propositions with repo:// evidence before it
+ * writes, so evidence failures can be repaired while the source is still open.
  */
 
 import type { SubAgent } from "deepagents";
@@ -33,31 +31,12 @@ import {
 import type { OpenWikiCommand, OpenWikiOutputMode } from "./types.js";
 
 /**
- * Filesystem tools an author gets.
- *
- * The reviewers' read/search set plus the two mutating tools, and deliberately
- * not `execute`. Path permissions cannot constrain a shell-capable backend, so
- * the tool surface is where that boundary has to hold - the same reasoning
- * review-subagents.ts applies to reviewers.
- *
- * Confinement to the wiki comes free from the shared backend: `docsOnly` limits
- * writes to the openwiki/ tree and `.openwikiignore` gates every path, so an
- * author cannot touch repository source or read a secret even though it can
- * write. What is NOT enforced is confinement to its own page - deepagents
- * resolves a subagent's permissions once at construction, so a per-assignment
- * path rule is not expressible. Authors are held to their assignment by the
- * coordinator's instruction, and the state backend merges concurrent page
- * writes rather than losing them.
- */
-/**
  * The author's filesystem surface.
  *
- * `write_file` is deliberately absent. An author that can write prose directly
- * will: given resolve_claims and told to use it, a graded run wrote 68 pages,
- * established zero claims, and put `Evidence: repo://...` in the Markdown.
- * Creating a page goes through write_claimed_page, which establishes its claims
- * in the same operation, so ungrounded prose is not a thing the author can
- * produce. `edit_file` stays for refining a page that already has claims.
+ * `execute` is absent because path permissions cannot constrain a shell.
+ * `write_file` is absent so new pages must go through `write_page`, after
+ * `establish_claims`; `edit_file` remains for refining a grounded page. The
+ * shared backend confines edits to OpenWiki and enforces `.openwikiignore`.
  */
 export const AUTHOR_FILESYSTEM_TOOLS = [
   "read_file",
@@ -94,12 +73,10 @@ Establish the claims first, then write the page from them:
 - A passing mention, directory list, source-map row, or concise overview is not substantive coverage. A path or symbol points at evidence; it never substitutes for stating what that evidence says.
 - An agent or human should be able to understand this component and its workflows from your page without reading a single line of code outside the wiki.
 - State each supplied relationship in the prose that explains it, linking the target page by the path you were given. Do not invent link targets: another author may not have written that page yet, and a guessed path is a broken link.
-- Begin the file with OKF v0.1 front matter as your assignment specifies.
+- Begin the file with valid OKF v0.2 concept front matter. Include \`type\`; add \`title\` and \`description\` when useful for retrieval. Never write \`generated\` or the superseded \`timestamp\`: OpenWiki owns provenance.
 - Claims are structured data passed to establish_claims, never text in the page. A line reading "Evidence: repo://..." in the Markdown is not a claim and grounds nothing.
 
-Establish the claims, then write the page from them:
-- Call \`establish_claims\` with the material propositions you derived, in batches as you read rather than all at the end. Each is one concise atomic proposition with its evidence.
-- Evidence is \`repo://path#L10-L24\` or \`repo://path\`, and nothing else. No symbols, no directories, no trailing slash. Cite the narrowest line range that carries the fact; cite the bare path only when the whole file is the evidence.
+Use \`establish_claims\` in batches as you read, then write the page:
 - If a resource is refused, nothing was established. It names the resource: fix that one anchor - the line range the fact really occupies, or the file itself - and call again. Do not drop the claim and do not paste evidence into the prose instead.
 - Then call \`write_page\` with the complete Markdown. It refuses a page with no claims, so the propositions come first and the prose is written from them.
 

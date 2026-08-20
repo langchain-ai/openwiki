@@ -134,7 +134,9 @@ describe("Claims agent graph integration", () => {
           "author_pages",
         ]);
       } else {
-        expect(middlewareNames).not.toContain("OpenWikiAuthoringPoolMiddleware");
+        expect(middlewareNames).not.toContain(
+          "OpenWikiAuthoringPoolMiddleware",
+        );
       }
       expect(
         options.middleware.map((middleware) => middleware.name),
@@ -177,6 +179,8 @@ describe("Claims agent graph integration", () => {
         // operation and no separate write on its surface.
         expect(promptFor("page-author")).toContain("establish_claims");
         expect(promptFor("page-author")).toContain("write_page");
+        expect(promptFor("page-author")).toContain("OKF v0.2");
+        expect(promptFor("page-author")).not.toContain("OKF v0.1");
       }
     },
   );

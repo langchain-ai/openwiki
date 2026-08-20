@@ -4,7 +4,7 @@ import type { OpenWikiCommand, OpenWikiOutputMode } from "./types.js";
 const WIKI_QUESTION_FINDER: SubAgent = {
   name: "wiki-question-finder",
   description:
-    "Inspects repository source and tests, never /openwiki, to generate detailed source-grounded questions with stable IDs, acceptance criteria, and evidence anchors. It is read-only and never authors Claims or Markdown. It returns TEXT - one [Q-NN] entry per question, with acceptance criteria and source evidence beneath it - so read the IDs and criteria out of that block. A responseSchema does not reliably change that: deepagents recompiles the subagent with that response format, but when it answers in the format above nothing populates the structured response and you receive the text with no error raised.",
+    "Read-only source and test reviewer used by verify_wiki. Returns one [Q-NN] text entry per source-grounded question, with acceptance criteria and evidence anchors.",
   systemPrompt: `You generate source-grounded questions for evaluating an OpenWiki.
 
 You are a read-only reviewer. Read repository source and tests only. Never read files under /openwiki and never write or modify files. Never call or propose Claims mutations; the parent agent owns them.
@@ -31,7 +31,7 @@ Return only the question set.`,
 const WIKI_ANSWER_VERIFIER: SubAgent = {
   name: "wiki-answer-verifier",
   description:
-    "Verifies a related batch of up to three source-derived questions using only /openwiki and returns a compact PASS, PARTIAL, or FAIL result for each question. It is read-only and never repairs pages itself. It returns TEXT - a <results> block with one <result id status> and <missing> per supplied question - so read the statuses out of that block. A responseSchema does not reliably change that: deepagents recompiles the subagent with that response format, but when it answers in the format above nothing populates the structured response and you receive the text with no error raised.",
+    "Read-only wiki reviewer used by verify_wiki. Returns a <results> text block with one PASS, PARTIAL, or FAIL result per supplied question.",
   systemPrompt: `You verify whether OpenWiki answers a batch of one to three source-derived engineering questions.
 
 You are a read-only reviewer. Search only files under /openwiki. Never inspect repository source or files outside /openwiki. Never write or modify files. Never call or propose Claims mutations; report gaps to the parent agent, which owns Claims and Markdown repairs.

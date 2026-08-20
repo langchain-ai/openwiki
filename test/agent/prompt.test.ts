@@ -387,9 +387,11 @@ describe("createSystemPrompt Claims workflow", () => {
         expect(prompt).toContain("submit_plan");
         expect(prompt).toContain("list_repository_directories");
         expect(prompt).toContain("submit_plan");
-        // The coordinator is the single Claims writer. Each subagent is told so
-        // in its own system prompt, asserted in claims-agent-integration.
-        expect(prompt).toContain("every Claims operation");
+        expect(prompt).toContain("Authors own one page and its Claims each");
+        expect(prompt).not.toContain("every Claims operation");
+        expect(prompt).not.toContain("pagesWithNoClaims");
+        expect(prompt).not.toContain("Only `page-author` returns JSON");
+        expect(prompt).not.toContain("delete /openwiki/_plan.md");
       } else {
         expect(prompt).not.toContain("skeleton-critic");
         expect(prompt).not.toContain("wiki-question-finder");
