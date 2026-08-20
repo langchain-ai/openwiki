@@ -19,6 +19,7 @@ import {
   type GlobResult,
 } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
+import { createReasoningMemoryTool } from "./reasoning-memory-tool.js";
 import {
   DEBUG_ENV_KEYS,
   loadOpenWikiEnv,
@@ -369,6 +370,8 @@ export type OpenWikiAgentOptions = {
   model: BaseChatModel;
   onEvent?: (event: OpenWikiRunEvent) => void;
   outputMode: OpenWikiOutputMode;
+  /** Optional read-only reasoning-memory recall supplied by the host. */
+  recallReasoningMemory?: (query: string) => Promise<string>;
 };
 
 /** Creates an OpenWiki DeepAgent graph from an already-initialized chat model. */
@@ -441,7 +444,15 @@ function createOpenWikiAgentGraph(
 
   return createDeepAgent({
     model: options.model,
-    tools: createOpenWikiConnectorTools(options.outputMode),
+    // The reasoning-memory tool is added beside — never through — the
+    // connector factory: the repository-mode connector gate stays intact,
+    // and code-mode runs gain only this single read-only recall.
+    tools: [
+      ...createOpenWikiConnectorTools(options.outputMode),
+      ...(options.recallReasoningMemory
+        ? [createReasoningMemoryTool(options.recallReasoningMemory)]
+        : []),
+    ],
     checkpointer: options.checkpointer,
     backend,
     middleware:
@@ -565,6 +576,7 @@ async function runOpenWikiAgentCore(
         model,
         onEvent: options.onEvent,
         outputMode,
+        recallReasoningMemory: options.recallReasoningMemory,
         checkpointer,
         context,
         openWikiIgnore,

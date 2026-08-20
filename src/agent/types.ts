@@ -45,6 +45,12 @@ export type OpenWikiRunOptions = {
    */
   onRawStreamChunk?: (chunk: unknown) => void | Promise<void>;
   outputMode?: OpenWikiOutputMode;
+  /**
+   * Read-only recall into externally stored reasoning memory, exposed to the
+   * agent as the recall_reasoning_memory tool. Supplied by the host
+   * integration; when absent the tool is not added and behavior is unchanged.
+   */
+  recallReasoningMemory?: (query: string) => Promise<string>;
   threadId?: string;
   userMessage?: string | null;
   telemetryFile?: string;
