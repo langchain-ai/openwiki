@@ -1,0 +1,21 @@
+src/cli/components/run-view.tsx
+  s_081e0b6f2df1e9::t_044672dd8aefcf 171-173
+test/cli/components/run-view.test.tsx
+  s_081e0b6f2df1e9::t_044672dd8aefcf 128-130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "38b7771abc233b695a695072ab876c4459dacedf",
+  "prompts": {},
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
