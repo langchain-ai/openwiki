@@ -1,0 +1,53 @@
+test/integrations/protocol.test.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-5,7-93
+  s_fee2a42a3ba928::t_c7c815778b2b09 6
+test/integrations/mcp-server.test.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-325
+test/integrations/installer.test.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-927
+package.json
+  s_fee2a42a3ba928::t_3955d32bde65bc 49
+test/cli/integrations-commands.test.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-214
+test/integrations/config-adapters.test.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-267
+test/integrations/session-manager.test.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-436
+test/cli/integrations-runners.test.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-233
+test/integrations/cli-dogfood.test.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-128
+src/cli/integrations.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-96
+src/cli/cli.tsx
+  s_fee2a42a3ba928::t_3955d32bde65bc 29
+CONTRIBUTING.md
+  s_fee2a42a3ba928::t_5746faaa58a787 50-60,62,64-69,71-78
+  s_fee2a42a3ba928::t_3955d32bde65bc 40,47,61,63,70
+test/integrations/repository-root.test.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-79
+test/integrations/mcp-stdio.test.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 1-41
+README.md
+  s_fee2a42a3ba928::t_5746faaa58a787 91-93
+src/cli/commands.ts
+  s_fee2a42a3ba928::t_3955d32bde65bc 13,17-18
+scripts/install-local-integration.mjs
+  s_fee2a42a3ba928::t_3955d32bde65bc 6-7,19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "66c2b68c64a67c899fe28289793f8a839e2a59e2",
+  "prompts": {},
+  "sessions": {
+    "s_fee2a42a3ba928": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01ff5-40a2-79e0-80b5-a42a8f887439",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
