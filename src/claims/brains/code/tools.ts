@@ -5,6 +5,7 @@ import {
 import type { DeleteResult } from "deepagents";
 import { z } from "zod";
 import { ClaimSessionError, EvidenceResourceError } from "../../core/errors.js";
+import { CLAIMS_SUBSTANCE_GUIDANCE } from "../../guidance.js";
 import type { ClaimOperation } from "../../core/types.js";
 import {
   isGroundedWikiPage,
@@ -130,8 +131,9 @@ export function createClaimsTools(
   return [
     new DynamicStructuredTool({
       name: "resolve_claims",
-      description:
-        "Maintain substantive system truths for one or more wiki pages in one call. Prioritize behavior, responsibilities, architecture and ownership, cross-component relationships, data/control flow, invariants, lifecycle and failure semantics, configuration, security, persistence, operations, and extension seams. Atomic means one coherent falsifiable idea, not one symbol or source line: a claim may connect multiple components and cite multiple evidence resources. Omit low-value facts about symbol existence, paths, signatures, return types, or inheritance unless they materially affect understanding, operation, or safe change. Ensure every material, source-dependent proposition the wiki relies on is represented; completeness takes priority over minimizing Claim count, and distinct truths remain distinct even when the same function or component supports them. Put every affected page in pages - a whole authoring or repair phase belongs in one call, and calling this once per page in a loop is always wrong. Each page's operations are applied atomically and each page succeeds or fails on its own: successful pages come back under pages, and any page that failed comes back under failed with its own error, so retry only those and never replay a page that already succeeded. Keep each statement concise—not an excerpt, list, compound summary, or paragraph—and remove semantic duplicates only after establishing coverage. Use confirm when a claim remains true, update to change its statement or evidence, retract when it is obsolete, and add for a new material fact. Normal Markdown edits need no Claims call. Claims currently support repository evidence only; do not invent repository evidence for connector-derived facts, and leave LangSmith-only facts unclaimed. Cite bounded language-agnostic line ranges as repo://path#L10-L24. Use repo://path only when the whole file is the evidence.",
+      description: `${CLAIMS_SUBSTANCE_GUIDANCE}
+
+Maintain those Claims for one or more wiki pages in one call. Put every affected page in pages: a whole authoring or repair phase is one call, and calling this once per page in a loop is always wrong. Each page's operations apply atomically and each page succeeds or fails on its own - successful pages come back under pages, failures under failed with their own error - so retry only the failures and never replay a page that already succeeded. Each statement is one concise proposition, not an excerpt, list, compound summary, or paragraph. Use add for a new material fact, confirm when a claim remains true, update to change its statement or evidence, and retract when it is obsolete. Normal Markdown edits need no Claims call. Claims support repository evidence only: cite the narrowest sufficient span as repo://path#L10-L24, or repo://path when the whole file is the evidence. Do not invent repository evidence for connector-derived facts, and leave LangSmith-only facts unclaimed.`,
       schema: {
         type: "object",
         properties: {

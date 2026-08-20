@@ -162,10 +162,7 @@ export function resolvePageAuthorSubagents(
       // An author writes one page and grounds it. It has no use for
       // inspect_claims or delete_file, and the filesystem middleware below
       // supplies the rest of its surface.
-      tools: createAuthorWriteTools(
-        session,
-        backend,
-      ),
+      tools: createAuthorWriteTools(session, backend),
       middleware: [
         ...(PAGE_AUTHOR_SUBAGENT.middleware ?? []),
         createFilesystemMiddleware({

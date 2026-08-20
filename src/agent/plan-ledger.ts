@@ -175,26 +175,6 @@ function describeSchemaFailure(
 }
 
 /**
- * Normalizes a page path to exactly one wiki-root prefix.
- *
- * finalize_wiki compares plan paths against a walk of the wiki tree, and the
- * two sources spell the same page differently: a plan may say
- * `architecture/overview.md` where the walk yields
- * `openwiki/architecture/overview.md`. Comparing them unnormalized matches
- * nothing, which reads as every planned page being missing. Both sides
- * normalize through here.
- *
- * @param page - Page path as planned or as found on disk.
- * @param wikiRoot - Directory generated pages live under.
- * @returns Path rooted at the wiki directory, without a leading slash.
- */
-export function normalizeWikiPage(page: string, wikiRoot = "/openwiki"): string {
-  const root = wikiRoot.replace(/^\/+/u, "").replace(/\/+$/u, "");
-  const bare = page.replace(/^\/+/u, "");
-  return bare === root || bare.startsWith(`${root}/`) ? bare : `${root}/${bare}`;
-}
-
-/**
  * Validates a ledger against the directories that must be accounted for.
  *
  * @param entries - Plan entries, one per surveyed directory.
@@ -281,7 +261,9 @@ export function blockingProblems(
       const owner = owners.get(key);
       if (owner && owner !== entry.directory) {
         // Two entries owning one page is two authors racing on one write.
-        problems.push(`${key} is owned by both ${owner} and ${entry.directory}`);
+        problems.push(
+          `${key} is owned by both ${owner} and ${entry.directory}`,
+        );
       }
       owners.set(key, entry.directory);
     }
@@ -402,8 +384,7 @@ export function advisoryProblems(
     // "/" as a prefix, not "//": the root entry's descendants are every rooted
     // path, and building the prefix by concatenation made none of them match, so
     // the root subtracted nothing and appeared to own the whole repository.
-    const prefix =
-      entry.directory === "/" ? "/" : `${entry.directory}/`;
+    const prefix = entry.directory === "/" ? "/" : `${entry.directory}/`;
     const beneath = tree.filter(
       (directory) =>
         directory.startsWith(prefix) &&
@@ -501,13 +482,39 @@ interface LedgerBackend extends ListingBackend {
 }
 
 /**
- * Creates the survey, plan, and finalization middleware.
+ * Splits a plan's problems into the two classes that differ in consequence.
  *
- * @param backend - Repository filesystem backend.
- * @param qaGate - Shared QA state, consulted when finishing.
- * @param wikiRoot - Directory generated pages live under.
- * @returns Middleware exposing survey_repository, submit_plan, finalize_wiki.
+ * submit_plan and the authoring gate both ask this, and they must answer it
+ * identically. Asking separately is what once made submit_plan blind to exactly
+ * what author_pages would refuse: it validated without the source counts, so
+ * volume read as zero, every area passed, and the coordinator was told its plan
+ * was accepted with nothing pending.
+ *
+ * @param entries - Every recorded entry.
+ * @param backend - Repository backend, for the coverage walk.
+ * @param view - Planning view the caller has already collected.
+ * @returns Blocking problems, which stop authoring, and shortfalls, which do not.
  */
+async function splitPlanProblems(
+  entries: PlanEntry[],
+  backend: LedgerBackend,
+  view: { directories: string[]; sourceFiles: ReadonlyMap<string, number> },
+): Promise<{ blocking: string[]; shortfall: string[] }> {
+  const uncovered = await findUncoveredDirectories(
+    backend,
+    entries.map((entry) => entry.directory),
+  );
+  // Two classes, and the difference is whether the wiki comes out wrong or
+  // merely coarse. A directory no entry covers is wrong: that subtree is absent
+  // from the result and nothing downstream can tell. A thin plan is coarse, and
+  // refusing to author over it is what once left a run with a complete plan and
+  // one page on disk, so it travels back as a shortfall instead.
+  return {
+    blocking: blockingProblems(entries, uncovered),
+    shortfall: advisoryProblems(entries, view.directories, view.sourceFiles),
+  };
+}
+
 /**
  * Reports why the recorded plan cannot be authored from yet.
  *
@@ -525,24 +532,26 @@ export async function planReadiness(
 ): Promise<{ blocking: string[]; shortfall: string[] }> {
   const entries = store.get()?.entries ?? [];
   if (entries.length === 0) {
-    return { blocking: ["No plan recorded; call submit_plan first."], shortfall: [] };
+    return {
+      blocking: ["No plan recorded; call submit_plan first."],
+      shortfall: [],
+    };
   }
-  const uncovered = await findUncoveredDirectories(
+  return splitPlanProblems(
+    entries,
     backend,
-    entries.map((entry) => entry.directory),
+    await collectPlanningView(backend),
   );
-  // Two classes, and the difference is whether the wiki comes out wrong or
-  // merely coarse. A directory no entry covers is wrong: that subtree is absent
-  // from the result and nothing downstream can tell. A thin plan is coarse, and
-  // refusing to author over it is what once left a run with a complete plan and
-  // one page on disk, so it travels back as a shortfall instead.
-  const view = await collectPlanningView(backend);
-  return {
-    blocking: blockingProblems(entries, uncovered),
-    shortfall: advisoryProblems(entries, view.directories, view.sourceFiles),
-  };
 }
 
+/**
+ * Creates the survey, plan, and finalization middleware.
+ *
+ * @param backend - Repository filesystem backend.
+ * @param qaGate - Shared QA state, consulted when finishing.
+ * @param wikiRoot - Directory generated pages live under.
+ * @returns Middleware exposing survey_repository, submit_plan, finalize_wiki.
+ */
 export function createOpenWikiPlanLedgerMiddleware(
   backend: LedgerBackend,
   store: PlanStore,
@@ -642,12 +651,11 @@ export function createOpenWikiPlanLedgerMiddleware(
       }
 
       const entries = [...merged.values()];
-      const uncovered = await findUncoveredDirectories(
+      const { blocking, shortfall } = await splitPlanProblems(
+        entries,
         backend,
-        entries.map((entry) => entry.directory),
+        view,
       );
-      const blocking = blockingProblems(entries, uncovered);
-      const shortfall = advisoryProblems(entries, tree, view.sourceFiles);
       await setLedger(entries);
       const documented = entries.filter(
         (entry) => entry.disposition === "document",

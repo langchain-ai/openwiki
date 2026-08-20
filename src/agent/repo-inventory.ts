@@ -63,7 +63,6 @@ const TEST_DIRECTORIES = new Set([
   "test",
   "tests",
   "testdata",
-  "tests",
   "spec",
   "specs",
   "fixture",
@@ -133,6 +132,7 @@ const PLANNING_VIEWS = new WeakMap<
 >();
 
 /** Extensions counted as documentable source. */
+// prettier-ignore
 const SOURCE_EXTENSIONS = new Set([
   ".go", ".py", ".ts", ".tsx", ".js", ".jsx", ".rs", ".java", ".kt", ".scala",
   ".rb", ".php", ".cs", ".swift", ".m", ".c", ".cc", ".cpp", ".h", ".hpp",

@@ -84,9 +84,9 @@ import { createCodeInterpreterMiddleware } from "@langchain/quickjs";
  *
  * That last part outlived itself: authors DO establish their own claims now,
  * because an author is the only participant holding the file when the resolver
- * refuses a symbol. resolve_claims stays here for the coordinator's own pages,
- * such as the quickstart, and page-author asks for it by name in its own spec
- * rather than inheriting it.
+ * refuses its evidence. resolve_claims stays here for the coordinator's own
+ * pages, such as the quickstart, and page-author asks for it by name in its own
+ * spec rather than inheriting it.
  */
 const PTC_TOOLS = [
   "ls",

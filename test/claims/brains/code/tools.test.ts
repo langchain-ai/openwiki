@@ -1,6 +1,7 @@
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { describe, expect, test, vi } from "vitest";
 import { EvidenceResolutionError } from "../../../../src/claims/core/errors.ts";
+import { CLAIMS_SUBSTANCE_GUIDANCE } from "../../../../src/claims/guidance.ts";
 import type {
   EvidenceResolver,
   ResolvedEvidence,
@@ -93,26 +94,15 @@ describe("createClaimsTools", () => {
       "resolve_claims",
       "inspect_claims",
     ]);
-    expect(getTool(tools, "resolve_claims").description).toContain("confirm");
-    expect(getTool(tools, "resolve_claims").description).toContain(
-      "substantive system truths",
-    );
-    expect(getTool(tools, "resolve_claims").description).toContain(
-      "not one symbol or source line",
-    );
-    expect(getTool(tools, "resolve_claims").description).toContain(
-      "connect multiple components",
-    );
-    expect(getTool(tools, "resolve_claims").description).toContain(
-      "completeness takes priority over minimizing Claim count",
-    );
-    expect(getTool(tools, "resolve_claims").description).toContain(
-      "only after establishing coverage",
-    );
-    expect(getTool(tools, "resolve_claims").description).toContain(
-      "repository evidence only",
-    );
-    expect(getTool(tools, "resolve_claims").description).toContain(
+    const resolveDescription = getTool(tools, "resolve_claims").description;
+    // The substance standard is carried verbatim rather than paraphrased, so a
+    // reworded guidance constant cannot silently leave this description behind.
+    expect(resolveDescription).toContain(CLAIMS_SUBSTANCE_GUIDANCE);
+    // What the description owns on its own: this tool's operational contract.
+    expect(resolveDescription).toContain("confirm");
+    expect(resolveDescription).toContain("repository evidence only");
+    expect(resolveDescription).toContain("repo://path#L10-L24");
+    expect(resolveDescription).toContain(
       "leave LangSmith-only facts unclaimed",
     );
     expect(getTool(tools, "inspect_claims").description).toContain(
@@ -454,7 +444,9 @@ describe("createClaimsTools", () => {
       resolver: {
         resolve: (resource: string) =>
           resource.includes("broken")
-            ? Promise.reject(new EvidenceResolutionError("resolver unavailable"))
+            ? Promise.reject(
+                new EvidenceResolutionError("resolver unavailable"),
+              )
             : Promise.resolve({
                 evidence: { resource, version: "revision:2" },
                 content: "c",

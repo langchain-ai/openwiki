@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
   createOpenWikiPlanLedgerMiddleware,
-  normalizeWikiPage,
   renderPlanMarkdown,
   advisoryProblems,
   blockingProblems,
@@ -469,18 +468,6 @@ describe("plan validation", () => {
     }
   });
 
-  test("normalizes a page path to one wiki-root prefix", () => {
-    // The bug this prevents: the plan said architecture/overview.md, the disk
-    // walk said openwiki/architecture/overview.md, nothing matched, and a run
-    // that had written 72 pages was told all 70 planned ones were missing.
-    expect(normalizeWikiPage("architecture/overview.md")).toBe(
-      "openwiki/architecture/overview.md",
-    );
-    expect(normalizeWikiPage("/openwiki/architecture/overview.md")).toBe(
-      "openwiki/architecture/overview.md",
-    );
-    expect(normalizeWikiPage("openwiki/a.md")).toBe("openwiki/a.md");
-  });
 });
 
 describe("coverage walk", () => {
