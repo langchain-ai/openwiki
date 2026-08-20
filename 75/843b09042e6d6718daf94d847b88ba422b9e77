@@ -1,0 +1,49 @@
+src/agent/index.ts
+  s_e3e935f3300670::t_1f1260b74ebd7a 518-519,530-534
+src/agent/page-author.ts
+  s_e3e935f3300670::t_0d642d75a9af86 165
+src/agent/plan-ledger.ts
+  s_e3e935f3300670::t_db7ca82dabe103 40-41,95-141,148,157,169-196,198-199,217-218,272-275,278-280,336,339,359,363-371,377-382,385-393,404-413,415-416,515,575-578,586-590,594,598,612-663,697-700,712-718,720-727,731-1004,1011-1014,1026-1033,1036,1054-1081,1089-1095,1118,1133,1148-1166,1171-1180,1185,1190-1192,1220-1229,1231,1285,1309-1314
+src/agent/plan-store.ts
+  s_e3e935f3300670::t_06526b46ec25e5 63-95,98-103,109,113-140,144-145
+src/agent/prompts/code.ts
+  s_e3e935f3300670::t_272022c98774cc 138,140
+src/agent/repo-inventory.ts
+  s_e3e935f3300670::t_f9b0a5c3d422f3 137-159
+src/agent/skeleton-critic.ts
+  s_e3e935f3300670::t_0e1b842e6496fe 5,22-26,42,57
+src/agent/subagent-dispatch.ts
+  s_e3e935f3300670::t_8d46d9c8886061 58-59
+src/agent/wiki-verification.ts
+  s_e3e935f3300670::t_cbf9b89a548027 33,214-218
+src/claims/brains/code/tools.ts
+  s_e3e935f3300670::t_583e3f2c00e2fa 452,472
+test/agent/authoring-pool.test.ts
+  s_e3e935f3300670::t_a25df65224f872 33-35,105,118,124-126,138,175
+test/agent/claims-agent-integration.test.ts
+  s_e3e935f3300670::t_2ce7cb229e1211 137-139
+test/agent/docs-only-backend.test.ts
+  s_e3e935f3300670::t_e2ebf5defbdf49 46-48
+test/agent/plan-ledger.test.ts
+  s_e3e935f3300670::t_33feb80b440f91 8-11,376-380,447-456,527-529,588-590,678-850,902-906,989-1510
+test/agent/wiki-verification.test.ts
+  s_e3e935f3300670::t_b8bd8a0839bbf5 27-29,44-51,62-65,68-73,152-154,188-193
+test/claims/brains/code/tools.test.ts
+  s_e3e935f3300670::t_7f6e92b4bd95e3 499-501
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "75843b09042e6d6718daf94d847b88ba422b9e77",
+  "prompts": {},
+  "sessions": {
+    "s_e3e935f3300670": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b063eee2-f6d9-4857-96f2-a2ce3ad1ea84",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
