@@ -70,9 +70,19 @@ import {
 import { updateRunningCredentialDiagnostics } from "./run-state.js";
 import type { RunState } from "./run-state.js";
 
-type AppProps = {
+/**
+ * Props for the interactive OpenWiki application shell.
+ */
+interface AppProps {
+  /**
+   * Parsed CLI command that configures the application session.
+   */
   command: CliCommand;
-};
+}
+
+// Coalesce bursts of tool lifecycle events so Ink redraws at most four times
+// per second while preserving the final in-memory log immediately.
+const RUN_LOG_RENDER_DELAY_MS = 250;
 
 function getConfiguredReasoningEffort(): ReasoningEffort | null {
   const effort = process.env[OPENWIKI_REASONING_EFFORT_ENV_KEY]?.trim();
@@ -124,6 +134,9 @@ export function App({ command }: AppProps) {
     CredentialDiagnostic[] | undefined
   >(undefined);
   const activeRunLog = useRef<RunLogItem[]>([]);
+  const activeRunRenderTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [runState, setRunState] = useState<RunState>({ status: "idle" });
   const [completedRuns, setCompletedRuns] = useState<CompletedRun[]>([]);
   const [activeUserMessage, setActiveUserMessage] = useState<string | null>(
@@ -160,6 +173,15 @@ export function App({ command }: AppProps) {
     (needsCredentialSetup(sessionModelId, runMode) ||
       (isInitCommand && !initWizardConsumed));
   const displayModelId = sessionModelId ?? startupModelId;
+
+  function cancelPendingRunLogRender(): void {
+    if (activeRunRenderTimer.current === null) {
+      return;
+    }
+
+    clearTimeout(activeRunRenderTimer.current);
+    activeRunRenderTimer.current = null;
+  }
 
   function submitChatMessage(message: string) {
     if (isExitMessage(message)) {
@@ -281,6 +303,7 @@ export function App({ command }: AppProps) {
   }
 
   function clearSession() {
+    cancelPendingRunLogRender();
     activeRunId.current += 1;
     sessionThreadId.current = createOpenWikiThreadId(runtimeCwd);
     activeRunCredentialDiagnostics.current = undefined;
@@ -373,6 +396,7 @@ export function App({ command }: AppProps) {
     mountedRef.current = true;
 
     return () => {
+      cancelPendingRunLogRender();
       mountedRef.current = false;
     };
   }, []);
@@ -445,11 +469,13 @@ export function App({ command }: AppProps) {
     agentRunInFlight.current = true;
 
     const runId = activeRunId.current + 1;
+    const runStartedAt = performance.now();
     const runMessage = activeUserMessage;
     const runReasoningEffort = sessionReasoningEffort;
 
     activeRunId.current = runId;
     activeRunCredentialDiagnostics.current = undefined;
+    cancelPendingRunLogRender();
     activeRunLog.current = [];
     setRunState({
       status: "running",
@@ -484,19 +510,36 @@ export function App({ command }: AppProps) {
         return;
       }
 
-      activeRunLog.current = appendRunLogEvent(
-        activeRunLog.current,
-        event,
-        nextLogId,
-      );
-      setRunState((currentState) =>
-        currentState.status === "running"
-          ? {
-              ...currentState,
-              log: activeRunLog.current,
-            }
-          : currentState,
-      );
+      const nextLog = appendRunLogEvent(activeRunLog.current, event, nextLogId);
+      activeRunLog.current = nextLog;
+
+      // Assistant tokens are retained for the final response, but they do not
+      // redraw the live Ink tree. Tool lifecycle events provide the stable,
+      // structured progress signal while the model is working.
+      if (event.type === "text") {
+        return;
+      }
+
+      if (activeRunRenderTimer.current !== null) {
+        return;
+      }
+
+      activeRunRenderTimer.current = setTimeout(() => {
+        activeRunRenderTimer.current = null;
+
+        if (!mountedRef.current || activeRunId.current !== runId) {
+          return;
+        }
+
+        setRunState((currentState) =>
+          currentState.status === "running"
+            ? {
+                ...currentState,
+                log: activeRunLog.current,
+              }
+            : currentState,
+        );
+      }, RUN_LOG_RENDER_DELAY_MS);
     };
 
     const runOptions: OpenWikiRunOptions = {
@@ -553,10 +596,13 @@ export function App({ command }: AppProps) {
           return;
         }
 
+        cancelPendingRunLogRender();
+        const durationMs = performance.now() - runStartedAt;
         setRunState({
           status: "success",
           result,
           log: activeRunLog.current,
+          durationMs,
           credentialDiagnostics: activeRunCredentialDiagnostics.current,
         });
         setCompletedRuns((runs) => [
@@ -565,6 +611,7 @@ export function App({ command }: AppProps) {
             id: nextCompletedRunId.current,
             command: result.command,
             credentialDiagnostics: activeRunCredentialDiagnostics.current,
+            durationMs,
             log: activeRunLog.current,
             message: runMessage,
             reasoningEffort: runReasoningEffort,
@@ -578,6 +625,7 @@ export function App({ command }: AppProps) {
           return;
         }
 
+        cancelPendingRunLogRender();
         const errorDiagnostics = getErrorDiagnostics(error);
         const message = getErrorMessage(error);
         const authFix = getAuthFix(error, message, sessionProvider);
@@ -858,6 +906,7 @@ export function App({ command }: AppProps) {
           command={runState.result.command}
           credentialDiagnostics={runState.credentialDiagnostics}
           done
+          durationMs={runState.durationMs}
           log={runState.log}
           message={activeUserMessage}
           modelId={runState.result.model}

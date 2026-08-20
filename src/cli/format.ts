@@ -15,46 +15,14 @@ export function isExitMessage(message: string): boolean {
 }
 
 /**
- * Truncates tool output to fit beside its label on the current terminal,
- * budgeting for the label width and reserving a small margin.
+ * Formats a count with the appropriate singular or plural noun.
  */
-export function truncateLogOutput(content: string, label: string): string {
-  const terminalColumns = process.stdout.columns ?? 80;
-  const availableColumns = Math.max(24, terminalColumns - label.length - 7);
-
-  return truncateToDisplayLines(content, 2, availableColumns);
-}
-
-/**
- * Collapses whitespace and wraps `content` to at most `maxLines` lines of
- * `maxColumns`, marking the final line with an ellipsis when text remains.
- */
-export function truncateToDisplayLines(
-  content: string,
-  maxLines: number,
-  maxColumns: number,
+export function formatCount(
+  count: number,
+  singular: string,
+  plural: string,
 ): string {
-  const normalizedContent = content.replace(/\s+/gu, " ").trim();
-
-  if (normalizedContent.length <= maxColumns) {
-    return normalizedContent;
-  }
-
-  const lines: string[] = [];
-  let remaining = normalizedContent;
-
-  while (remaining.length > 0 && lines.length < maxLines) {
-    lines.push(remaining.slice(0, maxColumns));
-    remaining = remaining.slice(maxColumns);
-  }
-
-  if (remaining.length > 0 && lines.length > 0) {
-    const lastLine = lines[lines.length - 1];
-    lines[lines.length - 1] =
-      lastLine.length > 3 ? `${lastLine.slice(0, -3)}...` : "...";
-  }
-
-  return lines.join("\n");
+  return `${count} ${count === 1 ? singular : plural}`;
 }
 
 /**
@@ -81,13 +49,4 @@ export function getDisplayModelId(modelId: string | null): string {
     process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
     getDefaultModelId(resolveConfiguredProvider())
   );
-}
-
-/**
- * Returns the spinner glyph for an animation frame, cycling through the frames.
- */
-export function getSpinnerFrame(frame: number): string {
-  const frames = ["-", "\\", "|", "/"];
-
-  return frames[frame % frames.length] ?? "-";
 }

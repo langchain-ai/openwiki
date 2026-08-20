@@ -38,6 +38,34 @@ async function setup(outputMode: "local-wiki" | "repository" = "repository") {
   return { backend, rootDir };
 }
 
+/**
+ * Runs the middleware's pre-agent lifecycle hook.
+ */
+async function runBeforeAgent(
+  middleware: ReturnType<typeof createOpenWikiIndexMiddleware>,
+): Promise<void> {
+  const hook =
+    typeof middleware.beforeAgent === "function"
+      ? middleware.beforeAgent
+      : middleware.beforeAgent?.hook;
+  expect(hook).toBeTypeOf("function");
+  await (hook as () => Promise<unknown>)();
+}
+
+/**
+ * Runs the middleware's post-agent lifecycle hook.
+ */
+async function runAfterAgent(
+  middleware: ReturnType<typeof createOpenWikiIndexMiddleware>,
+): Promise<void> {
+  const hook =
+    typeof middleware.afterAgent === "function"
+      ? middleware.afterAgent
+      : middleware.afterAgent?.hook;
+  expect(hook).toBeTypeOf("function");
+  await (hook as () => Promise<unknown>)();
+}
+
 describe("synchronizeWikiIndexes", () => {
   test("creates deterministic indexes for every directory", async () => {
     const { backend, rootDir } = await setup();
@@ -420,12 +448,7 @@ describe("createOpenWikiIndexMiddleware beforeAgent", () => {
     await backend.write("/openwiki/legacy.md", "# Legacy\n\nBody.\n");
 
     const middleware = createOpenWikiIndexMiddleware(backend, "repository");
-    const beforeAgent =
-      typeof middleware.beforeAgent === "function"
-        ? middleware.beforeAgent
-        : middleware.beforeAgent?.hook;
-    expect(beforeAgent).toBeTypeOf("function");
-    await (beforeAgent as () => Promise<unknown>)();
+    await runBeforeAgent(middleware);
 
     const legacy = await readFile(
       path.join(rootDir, "openwiki/legacy.md"),
@@ -445,12 +468,7 @@ describe("createOpenWikiIndexMiddleware beforeAgent", () => {
       ENGLISH_INDEX_LABELS,
       "Referenca",
     );
-    const beforeAgent =
-      typeof middleware.beforeAgent === "function"
-        ? middleware.beforeAgent
-        : middleware.beforeAgent?.hook;
-    expect(beforeAgent).toBeTypeOf("function");
-    await (beforeAgent as () => Promise<unknown>)();
+    await runBeforeAgent(middleware);
 
     const legacy = await readFile(
       path.join(rootDir, "openwiki/legacy.md"),
@@ -469,12 +487,8 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     );
 
     const middleware = createOpenWikiIndexMiddleware(backend, "repository");
-    const afterAgent =
-      typeof middleware.afterAgent === "function"
-        ? middleware.afterAgent
-        : middleware.afterAgent?.hook;
-    expect(afterAgent).toBeTypeOf("function");
-    await (afterAgent as () => Promise<unknown>)();
+    await runBeforeAgent(middleware);
+    await runAfterAgent(middleware);
 
     const page = await readFile(
       path.join(rootDir, "openwiki/quickstart.md"),
@@ -488,6 +502,7 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     // The mermaid pass ran: the broken fence is now a degraded text fence.
     expect(page).toContain("```text");
     expect(page).toContain("openwiki: mermaid parse failed");
+    expect(page).toContain("generated:");
     // The index pass also ran over the same tree.
     expect(index).toContain("- [Quickstart](quickstart.md) - Start here.");
   });
@@ -500,14 +515,8 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     );
 
     const middleware = createOpenWikiIndexMiddleware(backend, "repository");
-    const afterAgent =
-      typeof middleware.afterAgent === "function"
-        ? middleware.afterAgent
-        : middleware.afterAgent?.hook;
-    expect(afterAgent).toBeTypeOf("function");
-    await expect(
-      (afterAgent as () => Promise<unknown>)(),
-    ).resolves.toBeUndefined();
+    await runBeforeAgent(middleware);
+    await expect(runAfterAgent(middleware)).resolves.toBeUndefined();
 
     const page = await readFile(
       path.join(rootDir, "openwiki/quickstart.md"),
@@ -515,10 +524,11 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     );
     expect(page).toContain("openwiki: broken internal link [./missing.md]");
     expect(page).toContain("See [missing](./missing.md).");
+    expect(page).toContain("generated:");
   });
 });
 
-describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => {
+describe("createOpenWikiIndexMiddleware generated finalization", () => {
   const NOW = "2026-08-18T09:00:00.000Z";
   const LATER = "2026-08-19T10:00:00.000Z";
 
@@ -553,7 +563,7 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
     return wrap(request, handler);
   }
 
-  test("stamps a run-timed generated event on a newly created concept", async () => {
+  test("stamps a newly created concept after its final full-file rewrite", async () => {
     const { backend, rootDir } = await setup();
     const middleware = createOpenWikiIndexMiddleware(
       backend,
@@ -562,6 +572,7 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
       "Reference",
       NOW,
     );
+    await runBeforeAgent(middleware);
 
     await driveWrite(
       middleware,
@@ -569,6 +580,20 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
       "/openwiki/page.md",
       "---\ntype: Reference\ntitle: Page\n---\n\n# Page\n\nBody.\n",
     );
+    await driveWrite(
+      middleware,
+      backend,
+      "/openwiki/page.md",
+      "---\ntype: Reference\ntitle: Page\n---\n\n# Page\n\nBody.\n",
+    );
+
+    const beforeFinalization = await readFile(
+      path.join(rootDir, "openwiki/page.md"),
+      "utf8",
+    );
+    expect(beforeFinalization).not.toContain("generated:");
+
+    await runAfterAgent(middleware);
 
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(page).toContain(
@@ -590,6 +615,7 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
       "/openwiki/page.md",
       '---\ntype: Reference\ntitle: Page\ntimestamp: "2026-07-16T20:00:00Z"\n---\n\n# Page\n\nOld body.\n',
     );
+    await runBeforeAgent(middleware);
 
     await driveWrite(
       middleware,
@@ -597,6 +623,7 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
       "/openwiki/page.md",
       '---\ntype: Reference\ntitle: Page\ntimestamp: "2026-07-16T20:00:00Z"\n---\n\n# Page\n\nNew body.\n',
     );
+    await runAfterAgent(middleware);
 
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(page).toContain(
@@ -607,7 +634,7 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
     expect(page.match(/^generated:/gmu)).toHaveLength(1);
   });
 
-  test("does not bump generated when only the body whitespace changes", async () => {
+  test("bumps generated when only the body whitespace changes", async () => {
     const { backend, rootDir } = await setup();
     const middleware = createOpenWikiIndexMiddleware(
       backend,
@@ -620,18 +647,50 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
       "/openwiki/page.md",
       `---\ntype: Reference\ngenerated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}"}\n---\n\n# Page\n\nSame body.\n`,
     );
+    await runBeforeAgent(middleware);
 
-    // Only the body's whitespace is reflowed; the meaning is unchanged.
+    // A full-file rewrite omits the code-owned field and only reflows body
+    // whitespace. That is still a body change and must advance the event.
     await driveWrite(
       middleware,
       backend,
       "/openwiki/page.md",
-      `---\ntype: Reference\ngenerated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}"}\n---\n\n#   Page\n\n\nSame   body.\n`,
+      "---\ntype: Reference\n---\n\n#   Page\n\n\nSame   body.\n",
     );
+    await runAfterAgent(middleware);
+
+    const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(page).toContain(`at: "${LATER}"`);
+    expect(page).not.toContain(NOW);
+  });
+
+  test("does not bump generated when only front matter changes", async () => {
+    const { backend, rootDir } = await setup();
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      LATER,
+    );
+    await backend.write(
+      "/openwiki/page.md",
+      `---\ntype: Reference\ngenerated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}"}\n---\n\n# Page\n\nSame body.\n`,
+    );
+    await runBeforeAgent(middleware);
+
+    await driveWrite(
+      middleware,
+      backend,
+      "/openwiki/page.md",
+      "---\ntype: Guide\ntitle: Page\n---\n\n# Page\n\nSame body.\n",
+    );
+    await runAfterAgent(middleware);
 
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(page).toContain(`at: "${NOW}"`);
     expect(page).not.toContain(LATER);
+    expect(page).toContain("type: Guide");
   });
 
   test("stamps a nested concept but never a reserved document", async () => {
@@ -643,34 +702,30 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
       "Reference",
       NOW,
     );
+    await runBeforeAgent(middleware);
 
-    // A nested concept IS stamped (one handler write plus one stamp write).
-    const nestedWrites = vi.spyOn(backend, "write");
     await driveWrite(
       middleware,
       backend,
       "/openwiki/notes/scratch.md",
       "---\ntype: Reference\n---\n\n# Scratch\n\nBody.\n",
     );
-    const nested = await readFile(
-      path.join(rootDir, "openwiki/notes/scratch.md"),
-      "utf8",
-    );
-    expect(nested).toContain(`at: "${NOW}"`);
-    expect(nestedWrites).toHaveBeenCalledTimes(2);
-
-    // A reserved document is skipped: only the handler's own write happens.
-    const reservedWrites = vi.spyOn(backend, "write");
-    reservedWrites.mockClear();
     await driveWrite(
       middleware,
       backend,
       "/openwiki/log.md",
       "# Directory Update Log\n\n## 2026-08-18\n- Changed page.\n",
     );
+    await runAfterAgent(middleware);
+
+    const nested = await readFile(
+      path.join(rootDir, "openwiki/notes/scratch.md"),
+      "utf8",
+    );
+    expect(nested).toContain(`at: "${NOW}"`);
+
     const log = await readFile(path.join(rootDir, "openwiki/log.md"), "utf8");
     expect(log).not.toContain("generated:");
-    expect(reservedWrites).toHaveBeenCalledTimes(1);
   });
 
   test("does not stamp a non-Markdown file written under the wiki", async () => {
@@ -682,26 +737,29 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
       "Reference",
       NOW,
     );
+    await runBeforeAgent(middleware);
 
-    const writes = vi.spyOn(backend, "write");
     await driveWrite(
       middleware,
       backend,
       "/openwiki/data.json",
       '{"stamped": false}\n',
     );
+    await runAfterAgent(middleware);
 
     const data = await readFile(
       path.join(rootDir, "openwiki/data.json"),
       "utf8",
     );
     expect(data).not.toContain("generated:");
-    // Only the handler's own write; the stamp path is skipped for non-.md files.
-    expect(writes).toHaveBeenCalledTimes(1);
   });
 
-  test("keeps an otherwise-successful write when the stamp write fails", async () => {
+  test("leaves a preserved unstamped page unstamped", async () => {
     const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/page.md",
+      "---\ntype: Reference\n---\n\n# Page\n\nStable body.\n",
+    );
     const middleware = createOpenWikiIndexMiddleware(
       backend,
       "repository",
@@ -710,33 +768,46 @@ describe("createOpenWikiIndexMiddleware wrapToolCall generated stamping", () => 
       NOW,
     );
 
-    // The handler's own write (call 1) persists the page; the stamp's write
-    // (call 2) fails. Stamping is best-effort, so the failure must be logged
-    // and swallowed rather than propagate out of wrapToolCall as a fatal error.
+    await runBeforeAgent(middleware);
+    await runAfterAgent(middleware);
+
+    const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(page).not.toContain("generated:");
+  });
+
+  test("fails finalization when the generated event cannot be persisted", async () => {
+    const { backend, rootDir } = await setup();
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      NOW,
+    );
+    await runBeforeAgent(middleware);
+
+    const body = "---\ntype: Reference\ntitle: Page\n---\n\n# Page\n\nBody.\n";
+    await driveWrite(middleware, backend, "/openwiki/page.md", body);
+
     const realWrite = backend.write.bind(backend);
-    let calls = 0;
     const writeSpy = vi
       .spyOn(backend, "write")
       .mockImplementation(async (p: string, c: string) => {
-        calls += 1;
-        if (calls === 1) return realWrite(p, c);
-        throw new Error("disk full");
+        return p === "/openwiki/page.md" && c.includes("generated:")
+          ? { error: "disk full" }
+          : realWrite(p, c);
       });
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const body = "---\ntype: Reference\ntitle: Page\n---\n\n# Page\n\nBody.\n";
-    await expect(
-      driveWrite(middleware, backend, "/openwiki/page.md", body),
-    ).resolves.toBeInstanceOf(ToolMessage);
+    try {
+      await expect(runAfterAgent(middleware)).rejects.toThrow(
+        "Unable to finalize generated provenance for /openwiki/page.md: disk full",
+      );
+    } finally {
+      writeSpy.mockRestore();
+    }
 
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("could not stamp generated provenance"),
-    );
-    writeSpy.mockRestore();
-    errorSpy.mockRestore();
-
-    // The content the handler wrote survives; the page is simply left unstamped
-    // for a later body-changing update to pick up.
+    // The model-authored content survives, but the run cannot claim successful
+    // finalization while its code-owned provenance is absent.
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(page).toBe(body);
     expect(page).not.toContain("generated:");

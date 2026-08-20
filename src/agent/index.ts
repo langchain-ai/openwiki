@@ -1597,7 +1597,7 @@ export function parseAgentStreamChunk(chunk: unknown): OpenWikiRunEvent | null {
     return null;
   }
 
-  const [, mode, payload] = chunk;
+  const [namespace, mode, payload] = chunk;
 
   if (mode === "tools") {
     return parseToolStreamEvent(payload);
@@ -1607,13 +1607,16 @@ export function parseAgentStreamChunk(chunk: unknown): OpenWikiRunEvent | null {
 
   return text.length > 0
     ? {
+        source: getStreamSource(namespace),
         type: "text",
         text,
       }
     : null;
 }
 
-/** Parses the Agent Protocol event shape exposed by the public agent factory. */
+/**
+ * Parses the Agent Protocol event shape exposed by the public agent factory.
+ */
 export function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
   if (!isProtocolStreamEvent(chunk)) {
     return null;
@@ -1624,6 +1627,7 @@ export function parseStreamEvent(chunk: unknown): OpenWikiRunEvent | null {
 
     return text.length > 0
       ? {
+          source: getStreamSource(chunk.params.namespace),
           type: "text",
           text,
         }
@@ -1963,6 +1967,15 @@ function parseToolStreamEvent(payload: unknown): OpenWikiRunEvent | null {
   }
 
   return null;
+}
+
+/**
+ * Classifies a stream namespace. LangGraph reserves the empty namespace for
+ * the root graph; even a single namespace segment therefore belongs to a
+ * subgraph.
+ */
+function getStreamSource(namespace: unknown): "main" | "subgraph" {
+  return Array.isArray(namespace) && namespace.length > 0 ? "subgraph" : "main";
 }
 
 function formatToolCallName(name: string): string {

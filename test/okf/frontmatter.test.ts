@@ -1,7 +1,6 @@
 import type { BackendProtocolV2 } from "deepagents";
 import { describe, expect, test, vi } from "vitest";
 import {
-  conceptBodiesEqual,
   deriveMinimalFrontmatter,
   normalizeConceptContent,
   parseFrontmatterFields,
@@ -197,35 +196,6 @@ describe("setGeneratedEvent", () => {
       "2026-08-18T09:00:00.000Z",
     );
     expect(validateOkfFrontmatter(stamped)).toEqual({ valid: true });
-  });
-});
-
-describe("conceptBodiesEqual", () => {
-  test("ignores front-matter differences", () => {
-    expect(
-      conceptBodiesEqual(
-        "---\ntype: Reference\n---\n\n# Page\n\nSame body.\n",
-        "---\ntype: Reference\ngenerated: {by: openwiki/0.3.1}\n---\n\n# Page\n\nSame body.\n",
-      ),
-    ).toBe(true);
-  });
-
-  test("ignores whitespace-only reflows in the body", () => {
-    expect(
-      conceptBodiesEqual(
-        "---\ntype: Reference\n---\n\n# Page\n\nSame body.\n",
-        "---\ntype: Reference\n---\n\n#   Page\n\n\nSame   body.\n\n",
-      ),
-    ).toBe(true);
-  });
-
-  test("detects a meaningful body change", () => {
-    expect(
-      conceptBodiesEqual(
-        "---\ntype: Reference\n---\n\n# Page\n\nOld body.\n",
-        "---\ntype: Reference\n---\n\n# Page\n\nNew body.\n",
-      ),
-    ).toBe(false);
   });
 });
 

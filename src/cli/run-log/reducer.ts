@@ -1,21 +1,29 @@
 import type React from "react";
 import type { OpenWikiRunEvent } from "../../agent/types.js";
-import { createToolDisplay, formatCount } from "./tool-display.js";
-import type { RunLogItem } from "./types.js";
+import { getToolPathActivities, isOpenWikiPagePath } from "./activity.js";
+import { findRunSummary, formatRunCounts } from "./summary.js";
+import { countToolTargets } from "./tool-input.js";
+import type { RunLogItem, RunToolLogItem } from "./types.js";
+
+const MAX_DEBUG_ITEMS = 20;
+const MAX_RECENT_ACTIVITIES = 8;
 
 /**
- * Folds a single run event into the activity log, returning the next log.
- * Empty text events are dropped, tool events update the tool group in place,
- * and consecutive assistant text is concatenated onto the last line; other
- * events append a new line and advance `nextLogId`.
+ * Folds a run event into a bounded progress model. Main-agent prose is kept as
+ * one replaceable buffer, subgraph prose is discarded, and filesystem tools
+ * contribute exact path activity without exposing their transcript.
  */
 export function appendRunLogEvent(
   log: RunLogItem[],
   event: OpenWikiRunEvent,
   nextLogId: React.MutableRefObject<number>,
 ): RunLogItem[] {
-  if (event.type === "text" && event.text.length === 0) {
-    return log;
+  if (event.type === "text") {
+    if (event.source === "subgraph" || event.text.length === 0) {
+      return log;
+    }
+
+    return appendAssistantText(log, event.text, nextLogId);
   }
 
   if (event.type === "tool_start") {
@@ -26,91 +34,113 @@ export function appendRunLogEvent(
     return completeToolLogItem(log, event);
   }
 
-  const nextLog = [...log];
-  const content = event.type === "text" ? event.text : event.message;
-  const previous = nextLog.at(-1);
-
-  if (event.type === "text" && previous?.type === "text") {
-    nextLog[nextLog.length - 1] = {
-      ...previous,
-      content: `${previous.content}${content}`,
-    };
-  } else {
-    nextLog.push({
-      id: nextLogId.current,
-      type: event.type,
-      content,
-    });
-    nextLogId.current += 1;
-  }
-
-  return nextLog;
-}
-
-/**
- * Appends a starting tool call to the log, merging it into the previous line
- * when that line is already a tool group (bumping its action count) or starting
- * a fresh tool line otherwise.
- */
-export function appendToolStartLogItem(
-  log: RunLogItem[],
-  event: Extract<OpenWikiRunEvent, { type: "tool_start" }>,
-  nextLogId: React.MutableRefObject<number>,
-): RunLogItem[] {
-  const toolDisplay = createToolDisplay(event);
-  const nextLog = [...log];
-  const previous = nextLog.at(-1);
-
-  if (previous?.type === "tool") {
-    const actionCount = (previous.actionCount ?? 1) + 1;
-    const errorCount = previous.errorCount ?? 0;
-    const latestDoneContent = toolDisplay.done;
-
-    nextLog[nextLog.length - 1] = {
-      ...previous,
-      actionCount,
-      activeToolCallIds: [...getActiveToolCallIds(previous), event.id],
-      call: toolDisplay.showDetail ? event.call : undefined,
-      content: formatToolGroupRunning(actionCount, toolDisplay.running),
-      doneContent: formatToolGroupDone(
-        actionCount,
-        errorCount,
-        latestDoneContent,
-      ),
-      errorCount,
-      latestDoneContent,
-      status: "running",
-      toolCallId: event.id,
-      toolName: event.name,
-    };
-
-    return nextLog;
-  }
+  const debugItems = log.filter((item) => item.type === "debug");
+  const withoutOldestDebug =
+    debugItems.length >= MAX_DEBUG_ITEMS
+      ? removeItemById(log, debugItems[0]?.id)
+      : log;
 
   return [
-    ...log,
+    ...withoutOldestDebug,
     {
-      actionCount: 1,
-      activeToolCallIds: [event.id],
-      call: toolDisplay.showDetail ? event.call : undefined,
-      content: toolDisplay.running,
-      doneContent: toolDisplay.done,
-      errorCount: 0,
       id: nextLogId.current++,
-      latestDoneContent: toolDisplay.done,
-      status: "running",
-      toolCallId: event.id,
-      toolName: event.name,
-      type: "tool",
+      type: "debug",
+      content: event.message,
     },
   ];
 }
 
+function appendAssistantText(
+  log: RunLogItem[],
+  text: string,
+  nextLogId: React.MutableRefObject<number>,
+): RunLogItem[] {
+  const existingText = log.find((item) => item.type === "text");
+
+  if (!existingText) {
+    return [...log, { id: nextLogId.current++, type: "text", content: text }];
+  }
+
+  return log.map((item) =>
+    item.type === "text"
+      ? { ...item, content: `${item.content}${text}` }
+      : item,
+  );
+}
+
 /**
- * Marks the tool call identified by `event.id` complete within its group,
- * leaving the log unchanged when no matching running line is found.
+ * Records a tool action in the single run summary and activates any explicit
+ * filesystem paths carried by the call. Earlier prose is discarded because a
+ * later tool call proves that prose was narration rather than the final answer.
  */
-export function completeToolLogItem(
+function appendToolStartLogItem(
+  log: RunLogItem[],
+  event: Extract<OpenWikiRunEvent, { type: "tool_start" }>,
+  nextLogId: React.MutableRefObject<number>,
+): RunLogItem[] {
+  const withoutNarration = log.filter((item) => item.type !== "text");
+  const previousSummary = findRunSummary(withoutNarration);
+  const summaryIndex = previousSummary
+    ? withoutNarration.indexOf(previousSummary)
+    : -1;
+  const actionCount = (previousSummary?.actionCount ?? 0) + 1;
+  const readCount =
+    (previousSummary?.readCount ?? 0) + (event.name === "read_file" ? 1 : 0);
+  const searchCount =
+    (previousSummary?.searchCount ?? 0) +
+    (["glob", "grep", "ls"].includes(event.name) ? 1 : 0);
+  const taskCount =
+    (previousSummary?.taskCount ?? 0) +
+    (event.name === "task"
+      ? countToolTargets(event.input, ["tasks", "subagents", "agents", "items"])
+      : 0);
+  const writeCount =
+    (previousSummary?.writeCount ?? 0) +
+    (["edit_file", "write_file"].includes(event.name) ? 1 : 0);
+  const activeToolCallIds = [
+    ...getActiveToolCallIds(previousSummary),
+    event.id,
+  ];
+  const summary: RunLogItem = {
+    ...previousSummary,
+    actionCount,
+    activeToolCallIds,
+    content: formatRunCounts({
+      actionCount,
+      readCount,
+      searchCount,
+      taskCount,
+      writeCount,
+    }),
+    errorCount: previousSummary?.errorCount ?? 0,
+    id: previousSummary?.id ?? nextLogId.current++,
+    readCount,
+    searchCount,
+    status: "running",
+    taskCount,
+    type: "tool",
+    writeCount,
+  };
+  let nextLog: RunLogItem[] =
+    summaryIndex === -1
+      ? [summary, ...withoutNarration]
+      : withoutNarration.map((item, index) =>
+          index === summaryIndex ? summary : item,
+        );
+
+  for (const activity of getToolPathActivities(event)) {
+    nextLog = activatePath(nextLog, activity, event.id, nextLogId);
+  }
+
+  return boundActivityLog(nextLog);
+}
+
+/**
+ * Completes a tool in both the aggregate progress summary and every path it
+ * activated. Unknown completions are ignored because providers may omit a
+ * matching start event.
+ */
+function completeToolLogItem(
   log: RunLogItem[],
   event: Extract<OpenWikiRunEvent, { type: "tool_end" }>,
 ): RunLogItem[] {
@@ -120,153 +150,179 @@ export function completeToolLogItem(
     return log;
   }
 
-  return log.map((item, index) =>
-    index === matchingIndex ? completeToolGroupItem(item, event) : item,
+  const writtenPaths =
+    event.status === "finished"
+      ? log.flatMap((item) =>
+          item.type === "activity" &&
+          item.activityOperation === "write" &&
+          isOpenWikiPagePath(item.activityPath) &&
+          getActiveToolCallIds(item).includes(event.id)
+            ? [item.activityPath]
+            : [],
+        )
+      : [];
+
+  const touchedActivityIds = new Set(
+    log
+      .filter(
+        (item) =>
+          item.type === "activity" &&
+          getActiveToolCallIds(item).includes(event.id),
+      )
+      .map((item) => item.id),
   );
+  const completed = log.map((item, index): RunLogItem => {
+    if (index === matchingIndex && item.type === "tool") {
+      return completeToolGroupItem(item, event, writtenPaths);
+    }
+
+    if (
+      item.type !== "activity" ||
+      !getActiveToolCallIds(item).includes(event.id)
+    ) {
+      return item;
+    }
+
+    const activeToolCallIds = getActiveToolCallIds(item).filter(
+      (id) => id !== event.id,
+    );
+
+    return {
+      ...item,
+      activeToolCallIds,
+      activityStatus:
+        activeToolCallIds.length > 0
+          ? "active"
+          : event.status === "error"
+            ? "error"
+            : "recent",
+    };
+  });
+
+  const reordered = [
+    ...completed.filter((item) => !touchedActivityIds.has(item.id)),
+    ...completed.filter((item) => touchedActivityIds.has(item.id)),
+  ];
+
+  return boundActivityLog(reordered);
 }
 
 /**
- * Applies a tool completion to its group line: drops the finished call id,
- * tallies failures, and stays `running` while sibling calls remain, otherwise
- * settles to `done` or `error`.
+ * Applies one completion to the aggregate run summary.
  */
-export function completeToolGroupItem(
-  item: RunLogItem,
+function completeToolGroupItem(
+  item: RunToolLogItem,
   event: Extract<OpenWikiRunEvent, { type: "tool_end" }>,
+  writtenPaths: string[] = [],
 ): RunLogItem {
   const actionCount = item.actionCount ?? 1;
+  const readCount = item.readCount ?? 0;
+  const searchCount = item.searchCount ?? 0;
+  const taskCount = item.taskCount ?? 0;
+  const writeCount = item.writeCount ?? 0;
   const activeToolCallIds = getActiveToolCallIds(item).filter(
     (id) => id !== event.id,
   );
   const errorCount =
     (item.errorCount ?? 0) + (event.status === "error" ? 1 : 0);
-  const latestDoneContent = item.latestDoneContent ?? item.doneContent;
-
-  if (activeToolCallIds.length > 0) {
-    return {
-      ...item,
-      activeToolCallIds,
-      call: undefined,
-      content: formatToolGroupRunning(actionCount, null),
-      doneContent: formatToolGroupDone(
-        actionCount,
-        errorCount,
-        latestDoneContent,
-      ),
-      errorCount,
-      status: "running",
-    };
-  }
+  const counts = formatRunCounts({
+    actionCount,
+    errorCount,
+    readCount,
+    searchCount,
+    taskCount,
+    writeCount,
+  });
 
   return {
     ...item,
     activeToolCallIds,
-    call: undefined,
-    content: formatToolGroupDone(actionCount, errorCount, latestDoneContent),
-    doneContent: formatToolGroupDone(
-      actionCount,
-      errorCount,
-      latestDoneContent,
-    ),
+    content: counts,
     errorCount,
-    status: errorCount > 0 ? "error" : "done",
+    writtenPaths: [...new Set([...(item.writtenPaths ?? []), ...writtenPaths])],
+    status:
+      activeToolCallIds.length > 0
+        ? "running"
+        : errorCount > 0
+          ? "error"
+          : "done",
   };
 }
 
 /**
- * Finds the index of the most recent still-running tool line that owns
- * `toolCallId`, or -1 when none does.
+ * Finds the run summary that owns a still-active tool id, or -1 when the start
+ * event was not observed.
  */
-export function findLastToolLogItemIndex(
+function findLastToolLogItemIndex(
   log: RunLogItem[],
   toolCallId: string,
 ): number {
-  for (let index = log.length - 1; index >= 0; index -= 1) {
-    const item = log[index];
-
-    if (
-      item.type === "tool" &&
-      item.status === "running" &&
-      getActiveToolCallIds(item).includes(toolCallId)
-    ) {
-      return index;
-    }
-  }
-
-  return -1;
+  return log.findIndex(
+    (item) =>
+      item.type === "tool" && getActiveToolCallIds(item).includes(toolCallId),
+  );
 }
 
 /**
- * Returns the id of the most recent still-running tool line, or null when no
- * tool is currently running.
+ * Returns all active call ids recorded on a log item.
  */
-export function getActiveRunningToolLogId(log: RunLogItem[]): number | null {
-  for (let index = log.length - 1; index >= 0; index -= 1) {
-    const item = log[index];
-
-    if (item.type === "tool" && item.status === "running") {
-      return item.id;
-    }
-  }
-
-  return null;
+function getActiveToolCallIds(item?: RunLogItem): string[] {
+  return item?.type === "activity" || item?.type === "tool"
+    ? (item.activeToolCallIds ?? [])
+    : [];
 }
 
-/**
- * Returns the running tool call ids for a line, falling back to the single
- * `toolCallId` for legacy running lines and an empty list otherwise.
- */
-export function getActiveToolCallIds(item: RunLogItem): string[] {
-  if (item.activeToolCallIds) {
-    return item.activeToolCallIds;
-  }
+function activatePath(
+  log: RunLogItem[],
+  activity: ReturnType<typeof getToolPathActivities>[number],
+  toolCallId: string,
+  nextLogId: React.MutableRefObject<number>,
+): RunLogItem[] {
+  const matching = log.find(
+    (item) =>
+      item.type === "activity" &&
+      item.activityOperation === activity.operation &&
+      item.activityPath === activity.path,
+  );
+  const withoutMatching = matching
+    ? log.filter((item) => item.id !== matching.id)
+    : log;
+  const activeToolCallIds = [
+    ...new Set([...getActiveToolCallIds(matching), toolCallId]),
+  ];
 
-  if (item.status === "running" && item.toolCallId) {
-    return [item.toolCallId];
-  }
-
-  return [];
+  return [
+    ...withoutMatching,
+    {
+      ...matching,
+      activeToolCallIds,
+      activityOperation: activity.operation,
+      activityPath: activity.path,
+      activityScope: activity.scope,
+      activityStatus: "active",
+      id: matching?.id ?? nextLogId.current++,
+      type: "activity",
+    },
+  ];
 }
 
-/**
- * Formats the in-progress label for a tool group, naming the current action
- * and, for groups, the number of actions underway.
- */
-export function formatToolGroupRunning(
-  actionCount: number,
-  currentAction: string | null,
-): string {
-  if (actionCount <= 1) {
-    return currentAction ?? "Running 1 action";
-  }
+function boundActivityLog(log: RunLogItem[]): RunLogItem[] {
+  const nonActivities = log.filter((item) => item.type !== "activity");
+  const activeActivities = log.filter(
+    (item) => item.type === "activity" && item.activityStatus === "active",
+  );
+  const recentActivities = log
+    .filter(
+      (item) => item.type === "activity" && item.activityStatus !== "active",
+    )
+    .slice(-MAX_RECENT_ACTIVITIES);
 
-  if (currentAction) {
-    return `Running ${formatCount(actionCount, "action", "actions")}: ${currentAction}`;
-  }
-
-  return `Running ${formatCount(actionCount, "action", "actions")}`;
+  return [...nonActivities, ...activeActivities, ...recentActivities];
 }
 
-/**
- * Formats the completed label for a tool group, surfacing the failure count
- * when any action failed and the latest completed action for singletons.
- */
-export function formatToolGroupDone(
-  actionCount: number,
-  errorCount: number,
-  latestDoneContent?: string,
-): string {
-  if (actionCount <= 1 && errorCount === 0) {
-    return latestDoneContent ?? "Ran 1 action";
-  }
-
-  if (errorCount > 0) {
-    return `Ran ${formatCount(actionCount, "action", "actions")} with ${formatCount(
-      errorCount,
-      "failure",
-      "failures",
-    )}`;
-  }
-
-  return `Ran ${formatCount(actionCount, "action", "actions")}`;
+function removeItemById(
+  log: RunLogItem[],
+  id: number | undefined,
+): RunLogItem[] {
+  return id === undefined ? log : log.filter((item) => item.id !== id);
 }

@@ -39,7 +39,7 @@ describe("createSystemPrompt OKF guidance", () => {
       expect(prompt).not.toContain("by: openwiki/");
       expect(prompt).not.toContain("{OKF_PRODUCER_ACTOR}");
       expect(prompt).toContain(
-        "OpenWiki stamps generated provenance (last meaningful change) deterministically",
+        "OpenWiki stamps generated provenance (last body change) deterministically",
       );
     }
     expect(init).toContain("valid OKF v0.2 YAML front matter");
