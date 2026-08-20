@@ -1,0 +1,43 @@
+src/okf/index-sync.ts
+  s_081e0b6f2df1e9::t_ad49e1b263641d 87-88,92-118
+  s_081e0b6f2df1e9::t_ae9dd6f651c7bf 119-120
+.changeset/tidy-books-prove.md
+  s_081e0b6f2df1e9::t_785a787b17a0eb 1-4
+  h_f78d33d4280f3f 5
+src/agent/okf-middleware.ts
+  s_081e0b6f2df1e9::t_ad49e1b263641d 32-33,49,61-62,64,110-115,117-121
+  s_081e0b6f2df1e9::t_02c4b20da05e49 108-109,116
+  s_081e0b6f2df1e9::t_35b0297e17a233 11-14,48,63
+  s_081e0b6f2df1e9::t_c2ad62072bf906 10
+  s_081e0b6f2df1e9::t_0cb568a2fea095 65
+test/agent/index-middleware.test.ts
+  s_081e0b6f2df1e9::t_9392570e9db8e4 566,772-778
+  s_081e0b6f2df1e9::t_2163d2b5d03dc7 41-68
+  s_081e0b6f2df1e9::t_afd2e2c499878c 451,471,490-491,505,518-519,527
+  s_081e0b6f2df1e9::t_c6075eb2c4dce1 728,730-733,742-762,767-769,780-781
+  s_081e0b6f2df1e9::t_6b6e35cafeb9c2 531,575,577-582,590-597,618,626,650,652-653,658,660,676,690-697,711,719
+src/okf/generated-provenance.ts
+  s_081e0b6f2df1e9::t_35b0297e17a233 1-49,51-198
+  s_081e0b6f2df1e9::t_d5d14bf246277c 50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a2fcdf4c7cb461d74ffb17d4936e7c3790ecc26e",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_081e0b6f2df1e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01b94-d264-7883-85e4-10c27d42bdb7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
