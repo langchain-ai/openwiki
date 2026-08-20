@@ -13,7 +13,6 @@ import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { HostIntegrationError } from "../../src/host-integrations/core/errors.ts";
 import { HostSessionManager } from "../../src/host-integrations/core/session-manager.ts";
-import { OPENWIKI_VERSION } from "../../src/version.ts";
 
 const RUN_TIMESTAMP = "2026-08-20T08:15:00.000Z";
 const temporaryRoots: string[] = [];
@@ -206,9 +205,7 @@ describe("HostSessionManager lifecycle", () => {
     );
     const legacy = await readFile(path.join(wikiRoot, "legacy.md"), "utf8");
     const index = await readFile(path.join(wikiRoot, "index.md"), "utf8");
-    const generated =
-      `generated: {by: "openwiki/${OPENWIKI_VERSION}", ` +
-      `at: "${RUN_TIMESTAMP}"}`;
+    const generated = `generated: {by: "codex", ` + `at: "${RUN_TIMESTAMP}"}`;
     expect(quickstart).toContain(generated);
     expect(legacy).toContain(generated);
     expect(index).toContain("# Fichiers");
@@ -266,6 +263,27 @@ describe("HostSessionManager lifecycle", () => {
     ).rejects.toThrow();
 
     await manager.finish({ runId: started.runId });
+  });
+
+  test.each([
+    ["codex", "codex"],
+    ["claude", "claude-code"],
+    ["dcode", "dcode"],
+  ])("stamps %s-authored bodies with the %s actor", async (host, actor) => {
+    const root = await createRepository();
+    const manager = createManager(host);
+    const started = await manager.begin({ root, mode: "init" });
+    await writeFile(
+      path.join(root, "openwiki/page.md"),
+      concept("Page", "Host-authored body."),
+      "utf8",
+    );
+
+    await manager.finish({ runId: started.runId });
+
+    await expect(
+      readFile(path.join(root, "openwiki/page.md"), "utf8"),
+    ).resolves.toContain(`generated: {by: "${actor}"`);
   });
 
   test("a second begin may select a new root without reverting old Markdown", async () => {

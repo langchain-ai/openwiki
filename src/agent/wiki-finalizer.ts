@@ -11,6 +11,7 @@ import {
   ENGLISH_INDEX_LABELS,
   type IndexLabels,
 } from "../okf/index-labels.js";
+import { OPENWIKI_PRODUCER_ACTOR } from "../version.js";
 import type { OpenWikiOutputMode } from "./types.js";
 import { validateWikiInternalLinks } from "./wiki-link-validator.js";
 
@@ -139,6 +140,14 @@ export interface WikiFinalizerOptions extends WikiLifecycleOptions {
   at: string;
 
   /**
+   * Producer responsible for authored body changes in this run.
+   *
+   * @default OPENWIKI_PRODUCER_ACTOR - the native OpenWiki agent authored the
+   * changed prose.
+   */
+  producerActor?: string;
+
+  /**
    * Optional telemetry wrapper for individual finalization operations.
    *
    * @default direct task execution
@@ -181,6 +190,7 @@ export async function finalizeWikiArtifacts({
   conceptType = ENGLISH_CONCEPT_TYPE,
   prepared,
   at,
+  producerActor = OPENWIKI_PRODUCER_ACTOR,
   runOperation = runWikiOperation,
 }: WikiFinalizerOptions): Promise<void> {
   await runOperation("mermaid", () => validateWikiMermaid(backend, outputMode));
@@ -196,6 +206,7 @@ export async function finalizeWikiArtifacts({
       outputMode,
       prepared.generatedProvenance,
       at,
+      producerActor,
     ),
   );
 }

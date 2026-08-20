@@ -11,7 +11,6 @@ import {
   type WikiPreparationOperation,
   type WikiPreparationOperationRunner,
 } from "../../src/agent/wiki-finalizer.ts";
-import { OPENWIKI_VERSION } from "../../src/version.ts";
 
 const RUN_TIMESTAMP = "2026-08-19T18:30:00.000Z";
 
@@ -149,6 +148,7 @@ describe("finalizeWikiArtifacts", () => {
       outputMode: "repository",
       prepared,
       at: RUN_TIMESTAMP,
+      producerActor: "host-agent/test",
     });
 
     const page = await readFile(
@@ -163,8 +163,49 @@ describe("finalizeWikiArtifacts", () => {
     expect(page).toContain("```text");
     expect(page).toContain("openwiki: broken internal link [./missing.md]");
     expect(page).toContain(
-      `generated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${RUN_TIMESTAMP}"}`,
+      `generated: {by: "host-agent/test", at: "${RUN_TIMESTAMP}"}`,
     );
     expect(index).toContain("[Quickstart](quickstart.md) - Start here.");
+  });
+
+  test("preserves the prior producer when a host run leaves the body unchanged", async () => {
+    const { backend, rootDir } = await setupWiki();
+    const previousTimestamp = "2026-08-18T10:00:00.000Z";
+    await backend.write(
+      "/openwiki/existing.md",
+      [
+        "---",
+        "type: Guide",
+        `generated: {by: "openwiki/0.3.2", at: "${previousTimestamp}"}`,
+        "---",
+        "",
+        "# Existing",
+        "",
+        "Unchanged body.",
+        "",
+      ].join("\n"),
+    );
+    const prepared = await prepareWikiForAuthoring({
+      backend,
+      outputMode: "repository",
+    });
+
+    await finalizeWikiArtifacts({
+      backend,
+      outputMode: "repository",
+      prepared,
+      at: RUN_TIMESTAMP,
+      producerActor: "host-agent/codex",
+    });
+
+    const page = await readFile(
+      path.join(rootDir, "openwiki/existing.md"),
+      "utf8",
+    );
+    expect(page).toContain(
+      `generated: {by: "openwiki/0.3.2", at: "${previousTimestamp}"}`,
+    );
+    expect(page).not.toContain("host-agent/codex");
+    expect(page).not.toContain(RUN_TIMESTAMP);
   });
 });

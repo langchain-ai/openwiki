@@ -262,7 +262,7 @@ export class HostSessionManager {
       await writeLastUpdateMetadata(
         input.mode,
         root,
-        `host-agent/${this.host}`,
+        getHostAgentIdentity(this.host),
         "repository",
         "interrupted",
         language,
@@ -319,11 +319,12 @@ export class HostSessionManager {
       conceptType: resolveConceptTypeLabel(session.language),
       prepared: session.preparedWiki,
       at: session.startedAt,
+      producerActor: getHostProducerActor(session.host),
     });
     await persistRunMetadataIfChanged(
       session.mode,
       session.root,
-      `host-agent/${session.host}`,
+      getHostAgentIdentity(session.host),
       "repository",
       session.beforeContentSnapshot,
       "complete",
@@ -400,4 +401,26 @@ function toView(session: ActiveSession): HostRunView {
     language: session.language,
     startedAt: session.startedAt,
   };
+}
+
+/**
+ * Formats the stable actor shared by host-authored provenance and run metadata.
+ *
+ * @param host - Validated lowercase host identifier.
+ * @returns Stable host-agent actor.
+ */
+function getHostAgentIdentity(host: string): string {
+  return `host-agent/${host}`;
+}
+
+/**
+ * Resolves the user-facing coding agent responsible for authored page bodies.
+ * Installer IDs remain terse and stable; Claude's product name is expanded in
+ * provenance so it is not confused with another Claude-based host.
+ *
+ * @param host - Validated lowercase host identifier.
+ * @returns Stable generated-provenance actor.
+ */
+function getHostProducerActor(host: string): string {
+  return host === "claude" ? "claude-code" : host;
 }
