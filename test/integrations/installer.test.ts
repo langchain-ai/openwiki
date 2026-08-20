@@ -385,25 +385,10 @@ describe("host integration registry", () => {
           mcpConfig: { kind: "json", relativePath: ".mcp.json" },
         },
       },
-      dcode: {
-        producerActor: "dcode",
-        user: null,
-        project: {
-          skillDirectory: ".deepagents/skills/openwiki",
-          mcpConfig: {
-            kind: "json",
-            relativePath: ".deepagents/.mcp.json",
-          },
-        },
-      },
     });
     expect(getHostTarget("codex")).toBe(HOST_TARGETS.codex);
     expect(getHostTarget("unsupported")).toBeUndefined();
-    expect(TARGETS.map((target) => target.id)).toEqual([
-      "codex",
-      "claude",
-      "dcode",
-    ]);
+    expect(TARGETS.map((target) => target.id)).toEqual(["codex", "claude"]);
     const userTargets = TARGETS.filter((target) => target.user !== null);
     expect(
       new Set(userTargets.map((target) => target.user?.skillDirectory)).size,
@@ -454,25 +439,10 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     await expect(access(skillPath(root, target))).resolves.toBeUndefined();
   });
 
-  test("supports only registry-declared user scope", async () => {
+  test("supports user scope", async () => {
     const fakeHome = await createProject();
     const installer = new HostIntegrationInstaller();
     const options = userOptions(fakeHome);
-
-    if (!target.user) {
-      await expect(installer.status(target, options)).resolves.toBe(
-        "unsupported",
-      );
-      await expect(installer.install(target, options)).rejects.toMatchObject({
-        code: "invalid_input",
-        message:
-          "Deep Agents Code supports project-scoped integrations only. Re-run with --project.",
-      });
-      await expect(
-        access(path.join(fakeHome, ".deepagents")),
-      ).rejects.toThrow();
-      return;
-    }
 
     await expect(installer.status(target, options)).resolves.toBe(
       "not-installed",

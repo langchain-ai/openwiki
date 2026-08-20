@@ -79,9 +79,7 @@ describe("host integration CLI dogfood", () => {
       force: false,
     });
     expect(stdout.join("")).toBe(
-      "codex\tinstalled\tCodex\n" +
-        "claude\tnot-installed\tClaude Code\n" +
-        "dcode\tnot-installed\tDeep Agents Code\n",
+      "codex\tinstalled\tCodex\n" + "claude\tnot-installed\tClaude Code\n",
     );
 
     stdout = [];

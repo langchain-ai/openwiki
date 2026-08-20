@@ -37,13 +37,12 @@ typechecks, builds, and runs the Vitest suite with coverage.
 Install an integration backed by the current checkout with:
 
 ```sh
-pnpm integrations:dev <codex|claude|dcode>
+pnpm integrations:dev <codex|claude>
 ```
 
 The command builds OpenWiki, refreshes the host skill, and records absolute
 paths to the current Node executable and `dist/cli/cli.js`. Restart the coding
-agent after installation. Codex and Claude Code install at user scope; DCode
-installs at project scope in this checkout. Later source changes only require `pnpm build` unless
+agent after installation. Codex and Claude Code install at user scope. Later source changes only require `pnpm build` unless
 the bundled skill itself changes. Rerun `integrations:dev` to refresh the skill
 or after switching Node installations.
 

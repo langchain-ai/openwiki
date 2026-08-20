@@ -64,8 +64,7 @@ describe("runIntegrationsCommand", () => {
   test("lists every registry host with a stable tabular status", async () => {
     vi.mocked(getHostIntegrationStatus)
       .mockResolvedValueOnce("installed")
-      .mockResolvedValueOnce("modified")
-      .mockResolvedValueOnce("unsupported");
+      .mockResolvedValueOnce("modified");
 
     await runIntegrationsCommand({
       kind: "integrations",
@@ -78,11 +77,9 @@ describe("runIntegrationsCommand", () => {
     });
 
     expect(stdout.join("")).toBe(
-      "codex\tinstalled\tCodex\n" +
-        "claude\tmodified\tClaude Code\n" +
-        "dcode\tunsupported\tDeep Agents Code\n",
+      "codex\tinstalled\tCodex\n" + "claude\tmodified\tClaude Code\n",
     );
-    expect(getHostIntegrationStatus).toHaveBeenCalledTimes(3);
+    expect(getHostIntegrationStatus).toHaveBeenCalledTimes(2);
     expect(getHostIntegrationStatus).toHaveBeenCalledWith(
       expect.objectContaining({ id: "codex" }),
       { scope: "user", root: os.homedir() },
@@ -163,10 +160,10 @@ describe("runIntegrationsCommand", () => {
 
   test("uninstalls without printing install next steps", async () => {
     vi.mocked(uninstallHostIntegration).mockResolvedValue({
-      target: "dcode",
+      target: "claude",
       scope: "project",
-      skillDirectory: "/repo/.deepagents/skills/openwiki",
-      mcpConfig: "/repo/.deepagents/.mcp.json",
+      skillDirectory: "/repo/.claude/skills/openwiki",
+      mcpConfig: "/repo/.mcp.json",
       changed: true,
     });
 
@@ -174,16 +171,16 @@ describe("runIntegrationsCommand", () => {
       kind: "integrations",
       action: "uninstall",
       exitCode: 0,
-      target: "dcode",
+      target: "claude",
       scope: "project",
       projectRoot: "/repo",
       force: false,
     });
 
-    expect(stdout.join("")).toContain("uninstall Deep Agents Code\n");
+    expect(stdout.join("")).toContain("uninstall Claude Code\n");
     expect(stdout.join("")).not.toContain("Next:");
     expect(uninstallHostIntegration).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "dcode" }),
+      expect.objectContaining({ id: "claude" }),
       { scope: "project", root: "/repo" },
     );
   });

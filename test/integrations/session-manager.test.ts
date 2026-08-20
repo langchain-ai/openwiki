@@ -270,7 +270,7 @@ describe("HostSessionManager lifecycle", () => {
   test.each([
     ["codex", "codex"],
     ["claude", "claude-code"],
-    ["dcode", "dcode"],
+    ["custom-host", "custom-host"],
   ])("stamps %s-authored bodies with the %s actor", async (host, actor) => {
     const root = await createRepository();
     const manager = createManager(host);

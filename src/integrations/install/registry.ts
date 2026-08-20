@@ -42,20 +42,6 @@ export const HOST_TARGETS = {
     },
     documentationUrl: "https://docs.anthropic.com/en/docs/claude-code/mcp",
   },
-  dcode: {
-    id: "dcode",
-    displayName: "Deep Agents Code",
-    producerActor: "dcode",
-    user: null,
-    project: {
-      skillDirectory: ".deepagents/skills/openwiki",
-      mcpConfig: {
-        kind: "json",
-        relativePath: ".deepagents/.mcp.json",
-      },
-    },
-    documentationUrl: "https://docs.langchain.com/oss/python/deepagents/code",
-  },
 } as const satisfies Record<HostTargetId, HostTarget>;
 
 /**

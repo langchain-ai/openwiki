@@ -183,7 +183,7 @@ describe("parseCommand MCP", () => {
     [["mcp", "--host"], /--host requires a host identifier/u],
     [["mcp", "--host="], /--host requires a host identifier/u],
     [
-      ["mcp", "--host", "codex", "--host=dcode"],
+      ["mcp", "--host", "codex", "--host=other"],
       /--host may only be specified once/u,
     ],
     [["mcp", "--host", "Claude"], /--host must contain/u],
