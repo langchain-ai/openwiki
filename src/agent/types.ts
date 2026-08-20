@@ -43,7 +43,12 @@ export type OpenWikiRunOptions = {
   telemetryFile?: string;
 };
 
-export type UpdateRunStatus = "complete" | "interrupted";
+/**
+ * "ended_early": the agent's final turn ended cleanly but the run left
+ * verifiable work-in-progress behind (e.g. a leftover _skeleton.md), so the
+ * wiki must not be treated as finished (#653).
+ */
+export type UpdateRunStatus = "complete" | "interrupted" | "ended_early";
 
 export type UpdateMetadata = {
   updatedAt: string;

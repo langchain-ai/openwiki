@@ -101,15 +101,25 @@ export async function runVisualizeServer(
     }),
   );
 
+  let watchState: WatchState | undefined;
+  let shuttingDown = false;
+
   return new Promise<void>((resolve) => {
     process.once("SIGINT", () => {
+      // End live SSE responses and close the watcher first: server.close()
+      // waits for open connections, and an open /events response plus the
+      // recursive fs watcher both keep the process alive after Ctrl-C (#623).
+      shuttingDown = true;
       process.stdout.write("\n  stopped.\n");
-      server.close(() => resolve());
+      void shutdownVisualizer({ sseClients, watchState, server }).then(resolve);
     });
     listen(server, options.port, PORT_ATTEMPTS, (boundPort) => {
       const url = `http://${HOST}:${boundPort}`;
       void rebuild("initial scan").then(() => {
-        startWatch(wikiRoot, rebuild);
+        // SIGINT may land while the initial scan is still running; do not
+        // start a fresh watcher after shutdown has begun.
+        if (shuttingDown) return;
+        watchState = startWatch(wikiRoot, rebuild);
         printBanner(wikiRoot, url);
         if (options.open) openBrowser(url);
       });
@@ -255,15 +265,24 @@ function listen(
 }
 
 /**
+ * Disposer for the live-reload watcher: closes the fs watcher and cancels any
+ * pending debounce timer.
+ */
+export interface WatchState {
+  close(): void;
+}
+
+/**
  * Debounced recursive watch of the wiki directory.
  */
-function startWatch(
+export function startWatch(
   wikiRoot: string,
   rebuild: (reason: string) => Promise<void>,
-): void {
+): WatchState {
   let timer: NodeJS.Timeout | undefined;
+  let watcher: ReturnType<typeof watch> | undefined;
   try {
-    watch(wikiRoot, { recursive: true }, () => {
+    watcher = watch(wikiRoot, { recursive: true }, () => {
       clearTimeout(timer);
       timer = setTimeout(
         () => void rebuild("change detected"),
@@ -273,6 +292,35 @@ function startWatch(
   } catch {
     process.stdout.write("  (live watch unavailable on this platform)\n");
   }
+  return {
+    close() {
+      clearTimeout(timer);
+      timer = undefined;
+      watcher?.close();
+    },
+  };
+}
+
+/**
+ * Tear down everything that keeps the visualizer process alive: end the
+ * tracked SSE responses (their open connections hold server.close() back),
+ * close the watcher with its pending debounce timer, then stop the HTTP
+ * server. Resolves once the server has closed.
+ */
+export function shutdownVisualizer(deps: {
+  sseClients: Set<ServerResponse>;
+  watchState: WatchState | undefined;
+  server: Server;
+}): Promise<void> {
+  const { sseClients, watchState, server } = deps;
+  for (const res of sseClients) {
+    sseClients.delete(res);
+    res.end();
+  }
+  watchState?.close();
+  return new Promise<void>((resolve) => {
+    server.close(() => resolve());
+  });
 }
 
 /**

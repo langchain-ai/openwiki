@@ -75,6 +75,7 @@ import type {
   OpenWikiRunOptions,
   OpenWikiRunResult,
   RunContext,
+  UpdateRunStatus,
 } from "./types.js";
 import {
   ANTHROPIC_BASE_URL_ENV_KEY,
@@ -97,6 +98,7 @@ import {
   getProviderSecretKeyEnvKey,
   getProvidersForKnownModelId,
   isModelIdForOtherProvider,
+  DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_VERTEX_LOCATION,
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
   isValidModelId,
@@ -140,6 +142,7 @@ import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
   createRunContext,
+  hasLeftoverSkeletonFile,
   persistRunMetadataIfChanged,
   removeTemporaryPlanFile,
   shouldCheckUpdateNoop,
@@ -698,6 +701,29 @@ async function runOpenWikiAgentCore(
     );
   }
 
+  // A clean exit is not proof the wiki was finished: the agent may have ended
+  // its final turn on a plan or a question with the working skeleton still on
+  // disk. Gate "complete" on that verifiable state so downstream consumers
+  // (resume logic, CI docs jobs, batch scripts, the no-op check) can trust the
+  // status field (#653).
+  const finalStatus: UpdateRunStatus = (await hasLeftoverSkeletonFile(
+    cwd,
+    outputMode,
+  ))
+    ? "ended_early"
+    : "complete";
+
+  if (finalStatus === "ended_early") {
+    const message =
+      "Run ended before finishing: openwiki/_skeleton.md is still present, so the wiki is recorded as ended_early and the next update will not be skipped.";
+    emitDebug(options, "update.status=ended_early reason=skeleton-present");
+    options.onEvent?.({ type: "text", text: `Warning: ${message}` });
+    // Also emit to stderr so the warning survives on failure, where the TUI
+    // re-renders the log away and --print discards buffered streamed text.
+    process.stderr.write(`Warning: ${message}
+`);
+  }
+
   // Stage-only tag: a write failure here classifies from the raw error (a
   // filesystem code becomes filesystem_error), and deriveOwner's finalize
   // exception routes that to openwiki since the run reached our own persistence.
@@ -709,7 +735,7 @@ async function runOpenWikiAgentCore(
       modelId,
       outputMode,
       openWikiSnapshotBefore,
-      "complete",
+      finalStatus,
       context.language,
     );
   });
@@ -1919,11 +1945,20 @@ type OpenRouterResponseSummary = {
 const OPENROUTER_DEBUG_PROPERTY = "openRouterDebug";
 const OPENROUTER_DEBUG_BODY_LIMIT = 4_000;
 
-function installOpenRouterDebugFetch(
+export function installOpenRouterDebugFetch(
   options: OpenWikiRunOptions,
 ): OpenRouterFetchCapture {
   const originalFetch = globalThis.fetch;
   let lastFailure: OpenRouterFetchFailure | null = null;
+
+  // Resolved tolerantly: run-config validation reports invalid env values with
+  // the proper `config` stage attribution, so the wrapper only needs a number.
+  let retryAttempts = DEFAULT_PROVIDER_RETRY_ATTEMPTS;
+  try {
+    retryAttempts = resolveProviderRetryAttempts();
+  } catch {
+    // Leave the default; resolveRunConfig will surface the env error.
+  }
 
   globalThis.fetch = (async (input, init) => {
     if (!isOpenRouterFetchInput(input)) {
@@ -1932,28 +1967,21 @@ function installOpenRouterDebugFetch(
 
     const request = summarizeOpenRouterRequest(input, init);
 
+    // Retrying requires re-sending the body; the OpenAI-compatible clients send
+    // string JSON bodies via `init` (or none), but a stream body — or a Request
+    // object carrying one — can only be consumed once, so leave those untouched.
+    const inputCarriesConsumedBody =
+      typeof Request !== "undefined" &&
+      input instanceof Request &&
+      input.body !== null;
+    const bodyResendable =
+      !inputCarriesConsumedBody &&
+      (init?.body === undefined || typeof init.body === "string");
+
+    let response: Response;
+
     try {
-      const response = await originalFetch(input, init);
-
-      if (!response.ok) {
-        lastFailure = {
-          request,
-          response: {
-            bodyPreview: await readResponseBodyPreview(response),
-            headers: getSafeResponseHeaders(response.headers),
-            status: response.status,
-            statusText: response.statusText,
-          },
-        };
-        emitDebug(
-          options,
-          `openrouter.http status=${response.status} statusText=${JSON.stringify(
-            response.statusText,
-          )}`,
-        );
-      }
-
-      return response;
+      response = await originalFetch(input, init);
     } catch (error) {
       lastFailure = {
         fetchError: error instanceof Error ? error.message : String(error),
@@ -1961,6 +1989,57 @@ function installOpenRouterDebugFetch(
       };
       throw error;
     }
+
+    // OpenRouter's platform-side 429s (e.g. free-models-per-min) carry no
+    // Retry-After, which the LangChain AsyncCaller classifies as
+    // non-retryable capacity and turns into an immediate abort —
+    // OPENWIKI_PROVIDER_RETRY_ATTEMPTS never applies (#664). Retry here, at
+    // the fetch boundary the diagnostics wrapper already owns.
+    for (
+      let attempt = 1;
+      response.status === 429 &&
+      bodyResendable &&
+      attempt <= retryAttempts &&
+      !init?.signal?.aborted;
+      attempt += 1
+    ) {
+      const delayMs = computeOpenRouterRetryDelayMs(response, attempt);
+      emitDebug(
+        options,
+        `openrouter.retry attempt=${attempt}/${retryAttempts} delayMs=${delayMs}`,
+      );
+      await sleepUnlessAborted(delayMs, init?.signal);
+
+      try {
+        response = await originalFetch(input, init);
+      } catch (error) {
+        lastFailure = {
+          fetchError: error instanceof Error ? error.message : String(error),
+          request,
+        };
+        throw error;
+      }
+    }
+
+    if (!response.ok) {
+      lastFailure = {
+        request,
+        response: {
+          bodyPreview: await readResponseBodyPreview(response),
+          headers: getSafeResponseHeaders(response.headers),
+          status: response.status,
+          statusText: response.statusText,
+        },
+      };
+      emitDebug(
+        options,
+        `openrouter.http status=${response.status} statusText=${JSON.stringify(
+          response.statusText,
+        )}`,
+      );
+    }
+
+    return response;
   }) satisfies typeof fetch;
 
   return {
@@ -1972,6 +2051,78 @@ function installOpenRouterDebugFetch(
       globalThis.fetch = originalFetch;
     },
   };
+}
+
+/**
+ * Delay before the next OpenRouter retry, honouring the response's own hints:
+ * `Retry-After` (seconds or HTTP-date) first, then OpenRouter's
+ * `X-RateLimit-Reset` epoch (milliseconds, or seconds for providers that send
+ * it that way), and finally exponential backoff so a handful of attempts can
+ * ride out a per-minute window. Header-derived waits are capped defensively.
+ */
+export function computeOpenRouterRetryDelayMs(
+  response: Response,
+  attempt: number,
+): number {
+  const retryAfter = response.headers.get("retry-after");
+
+  if (retryAfter !== null && retryAfter.trim() !== "") {
+    const seconds = Number(retryAfter);
+
+    if (Number.isFinite(seconds) && seconds >= 0) {
+      return clampDelay(seconds * 1_000, 300_000);
+    }
+
+    const httpDate = Date.parse(retryAfter);
+
+    if (!Number.isNaN(httpDate)) {
+      return clampDelay(httpDate - Date.now(), 300_000);
+    }
+  }
+
+  const resetRaw = response.headers.get("x-ratelimit-reset");
+
+  if (resetRaw !== null && resetRaw.trim() !== "") {
+    const resetValue = Number(resetRaw);
+
+    if (Number.isFinite(resetValue) && resetValue > 0) {
+      // Values below ~2001-09-09 in ms are unix seconds, not milliseconds.
+      const resetEpochMs = resetValue < 1e12 ? resetValue * 1_000 : resetValue;
+      // Small margin so the retry lands after the window actually resets.
+      return clampDelay(resetEpochMs - Date.now() + 250, 300_000);
+    }
+  }
+
+  return clampDelay(1_000 * 2 ** (attempt - 1), 30_000);
+}
+
+function clampDelay(delayMs: number, maxMs: number): number {
+  if (!Number.isFinite(delayMs) || delayMs < 0) {
+    return 0;
+  }
+
+  return Math.min(delayMs, maxMs);
+}
+
+function sleepUnlessAborted(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(signal.reason ?? new Error("Aborted"));
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal?.reason ?? new Error("Aborted"));
+    };
+
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 function attachOpenRouterDebugInfo(

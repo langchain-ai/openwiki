@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
+import { access } from "node:fs/promises";
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -115,6 +116,13 @@ export async function getUpdateNoopStatus(
 
   if (lastUpdate.status === "interrupted") {
     return { shouldSkip: false, reason: "previous update was interrupted" };
+  }
+
+  if (lastUpdate.status === "ended_early") {
+    return {
+      shouldSkip: false,
+      reason: "previous run ended before finishing the wiki",
+    };
   }
 
   const resolvedRequestedLanguage = resolveLanguage(requestedLanguage).language;
@@ -280,7 +288,7 @@ export async function createOpenWikiContentSnapshot(
 /**
  * Reads prior run metadata if it exists and is structurally valid.
  */
-async function readLastUpdate(
+export async function readLastUpdate(
   cwd: string,
   outputMode: OpenWikiOutputMode,
 ): Promise<UpdateMetadata | null> {
@@ -306,7 +314,11 @@ async function readLastUpdate(
         // Metadata written before the status field existed is treated as
         // complete so upgrades do not force a spurious re-run.
         status:
-          parsedMetadata.status === "interrupted" ? "interrupted" : "complete",
+          parsedMetadata.status === "interrupted"
+            ? "interrupted"
+            : parsedMetadata.status === "ended_early"
+              ? "ended_early"
+              : "complete",
         language:
           typeof parsedMetadata.language === "string"
             ? parsedMetadata.language
@@ -389,6 +401,26 @@ function getTemporaryPlanFilePath(
   outputMode: OpenWikiOutputMode,
 ): string {
   return path.join(getWikiContentRoot(cwd, outputMode), TEMPORARY_PLAN_FILE);
+}
+
+/**
+ * Whether the run's working skeleton is still on disk. The agent is instructed
+ * to delete `_skeleton.md` once every wiki file has been written, so a leftover
+ * skeleton means the run ended before finishing even when the final turn exited
+ * cleanly (#653).
+ */
+export async function hasLeftoverSkeletonFile(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): Promise<boolean> {
+  const skeletonPath = path.join(getWikiContentRoot(cwd, outputMode), "_skeleton.md");
+
+  try {
+    await access(skeletonPath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function getMetadataFilePath(
