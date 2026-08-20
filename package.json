@@ -46,6 +46,7 @@
     "eval:ledger:typecheck": "tsc --noEmit -p evals/ledger/tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "integration:dev": "pnpm run build && node scripts/install-local-integration.mjs",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
     "postbuild": "node -e \"require('fs').chmodSync('dist/cli/cli.js', 0o755)\"",

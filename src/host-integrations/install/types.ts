@@ -14,6 +14,21 @@ export type HostIntegrationStatus = "installed" | "modified" | "not-installed";
 export type HostIntegrationScope = "user" | "project";
 
 /**
+ * Executable invocation used to start the OpenWiki MCP server.
+ */
+export interface HostMcpServerCommand {
+  /**
+   * Executable launched directly by the coding host.
+   */
+  readonly command: string;
+
+  /**
+   * Ordered arguments passed to the executable.
+   */
+  readonly args: readonly string[];
+}
+
+/**
  * Host-owned MCP configuration destination.
  */
 export interface HostMcpConfig {
@@ -93,6 +108,20 @@ export interface InstallOptions {
    * @default false
    */
   force?: boolean;
+
+  /**
+   * Internal executable override used by repository development tooling.
+   *
+   * @default undefined - launch the installed `openwiki` executable.
+   */
+  mcpServerCommand?: HostMcpServerCommand;
+
+  /**
+   * Exact prior command that may be replaced by `mcpServerCommand`.
+   *
+   * @default undefined - refuse to replace a different MCP command.
+   */
+  replaceMcpServerCommand?: HostMcpServerCommand;
 }
 
 /**

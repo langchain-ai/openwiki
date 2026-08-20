@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { HostIntegrationError } from "../core/errors.js";
 import { writeTextAtomic } from "./atomic-file.js";
-import type { HostIntegrationStatus } from "./types.js";
+import type { HostIntegrationStatus, HostMcpServerCommand } from "./types.js";
 
 const START = "# OPENWIKI:MCP:START";
 const END = "# OPENWIKI:MCP:END";
@@ -25,27 +25,38 @@ interface MarkerRange {
  * Installs an exact managed OpenWiki TOML block.
  *
  * @param filePath - Absolute Codex TOML config path.
- * @param host - Registry-owned host identifier.
+ * @param entry - Exact executable invocation to install.
+ * @param replaceableEntry - Exact prior invocation that may be replaced.
  * @returns Whether the config changed.
  */
 export async function installCodexMcpBlock(
   filePath: string,
-  host: string,
+  entry: HostMcpServerCommand,
+  replaceableEntry?: HostMcpServerCommand,
 ): Promise<boolean> {
   const current = await readOptional(filePath);
-  const block = renderBlock(host);
+  const block = renderBlock(entry);
   const range = markerRange(current);
   if (range) {
-    if (
-      current.slice(range.start, range.end) !== block ||
-      hasUnmanagedOpenWikiTable(current, range)
-    ) {
+    const existing = current.slice(range.start, range.end);
+    if (hasUnmanagedOpenWikiTable(current, range)) {
       throw new HostIntegrationError(
         "conflict",
         `Refusing to replace a modified OpenWiki MCP block in ${filePath}.`,
       );
     }
-    return false;
+    if (existing === block) return false;
+    if (!replaceableEntry || existing !== renderBlock(replaceableEntry)) {
+      throw new HostIntegrationError(
+        "conflict",
+        `Refusing to replace a modified OpenWiki MCP block in ${filePath}.`,
+      );
+    }
+    await writeTextAtomic(
+      filePath,
+      `${current.slice(0, range.start)}${block}${current.slice(range.end)}`,
+    );
+    return true;
   }
   if (hasUnmanagedOpenWikiTable(current)) {
     throw new HostIntegrationError(
@@ -64,18 +75,18 @@ export async function installCodexMcpBlock(
  * Removes only the exact managed OpenWiki TOML block.
  *
  * @param filePath - Absolute Codex TOML config path.
- * @param host - Registry-owned host identifier.
+ * @param entry - Exact executable invocation owned by OpenWiki.
  * @returns Whether the config changed.
  */
 export async function uninstallCodexMcpBlock(
   filePath: string,
-  host: string,
+  entry: HostMcpServerCommand,
 ): Promise<boolean> {
   const current = await readOptional(filePath);
   const range = markerRange(current);
   if (!range) return false;
   if (
-    current.slice(range.start, range.end) !== renderBlock(host) ||
+    current.slice(range.start, range.end) !== renderBlock(entry) ||
     hasUnmanagedOpenWikiTable(current, range)
   ) {
     throw new HostIntegrationError(
@@ -95,12 +106,12 @@ export async function uninstallCodexMcpBlock(
  * Reports whether the exact managed Codex block is absent, intact, or modified.
  *
  * @param filePath - Absolute Codex TOML config path.
- * @param host - Registry-owned host identifier.
+ * @param entry - Exact executable invocation expected in the managed block.
  * @returns Current managed-block state.
  */
 export async function getCodexMcpBlockStatus(
   filePath: string,
-  host: string,
+  entry: HostMcpServerCommand,
 ): Promise<HostIntegrationStatus> {
   try {
     const current = await readOptional(filePath);
@@ -108,7 +119,7 @@ export async function getCodexMcpBlockStatus(
     if (!range) {
       return hasUnmanagedOpenWikiTable(current) ? "modified" : "not-installed";
     }
-    return current.slice(range.start, range.end) === renderBlock(host) &&
+    return current.slice(range.start, range.end) === renderBlock(entry) &&
       !hasUnmanagedOpenWikiTable(current, range)
       ? "installed"
       : "modified";
@@ -140,14 +151,14 @@ function hasUnmanagedOpenWikiTable(
 /**
  * Renders the canonical managed TOML block.
  *
- * @param host - Registry-owned host identifier.
+ * @param entry - Exact executable invocation to render.
  * @returns Complete marker-delimited TOML block.
  */
-function renderBlock(host: string): string {
+function renderBlock(entry: HostMcpServerCommand): string {
   return `${START}
 [mcp_servers.openwiki]
-command = "openwiki"
-args = ["mcp", "--host", ${JSON.stringify(host)}]
+command = ${JSON.stringify(entry.command)}
+args = [${entry.args.map((argument) => JSON.stringify(argument)).join(", ")}]
 ${END}
 `;
 }

@@ -1,39 +1,32 @@
 import { readFile } from "node:fs/promises";
 import { HostIntegrationError } from "../core/errors.js";
 import { writeTextAtomic } from "./atomic-file.js";
-import type { HostIntegrationStatus } from "./types.js";
-
-/**
- * Managed JSON MCP server command owned by OpenWiki.
- */
-export interface JsonMcpEntry {
-  /**
-   * Executable used to start the MCP server.
-   */
-  command: string;
-
-  /**
-   * Ordered command arguments.
-   */
-  args: string[];
-}
+import type { HostIntegrationStatus, HostMcpServerCommand } from "./types.js";
 
 /**
  * Installs the managed OpenWiki entry without discarding unrelated config.
  *
  * @param filePath - Absolute JSON config path.
  * @param entry - Exact registry-derived entry to own.
+ * @param replaceableEntry - Exact prior entry that may be replaced.
  * @returns Whether the config changed.
  */
 export async function installJsonMcpEntry(
   filePath: string,
-  entry: JsonMcpEntry,
+  entry: HostMcpServerCommand,
+  replaceableEntry?: HostMcpServerCommand,
 ): Promise<boolean> {
   const root = (await readJsonObject(filePath)) ?? {};
   const servers = asObject(root.mcpServers, "mcpServers", filePath);
   const existing = servers.openwiki;
   if (existing !== undefined) {
     if (matchesEntry(existing, entry)) return false;
+    if (replaceableEntry && matchesEntry(existing, replaceableEntry)) {
+      servers.openwiki = entry;
+      root.mcpServers = servers;
+      await writeTextAtomic(filePath, `${JSON.stringify(root, null, 2)}\n`);
+      return true;
+    }
     throw new HostIntegrationError(
       "conflict",
       `An openwiki MCP server already exists in ${filePath}.`,
@@ -55,7 +48,7 @@ export async function installJsonMcpEntry(
  */
 export async function uninstallJsonMcpEntry(
   filePath: string,
-  expected: JsonMcpEntry,
+  expected: HostMcpServerCommand,
 ): Promise<boolean> {
   const root = await readJsonObject(filePath, true);
   if (root === null) return false;
@@ -85,7 +78,7 @@ export async function uninstallJsonMcpEntry(
  */
 export async function getJsonMcpEntryStatus(
   filePath: string,
-  expected: JsonMcpEntry,
+  expected: HostMcpServerCommand,
 ): Promise<HostIntegrationStatus> {
   try {
     const root = await readJsonObject(filePath, true);
@@ -160,7 +153,7 @@ function asObject(
  * @param expected - Registry-derived managed entry.
  * @returns Whether the value is structurally identical to the managed entry.
  */
-function matchesEntry(value: unknown, expected: JsonMcpEntry): boolean {
+function matchesEntry(value: unknown, expected: HostMcpServerCommand): boolean {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return false;
   }

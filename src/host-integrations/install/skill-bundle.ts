@@ -3,7 +3,11 @@ import { lstat, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { OPENWIKI_VERSION } from "../../version.js";
-import type { HostIntegrationStatus, HostTargetId } from "./types.js";
+import type {
+  HostIntegrationStatus,
+  HostMcpServerCommand,
+  HostTargetId,
+} from "./types.js";
 
 const RECEIPT_FILE = ".openwiki-install.json";
 const ALLOWED_BUNDLE_ROOTS = new Set(["SKILL.md", "agents", "references"]);
@@ -31,6 +35,13 @@ export interface SkillReceipt {
    * Host target that owns the destination directory.
    */
   target: HostTargetId;
+
+  /**
+   * Exact MCP server invocation installed alongside the skill.
+   *
+   * @default undefined - legacy receipt using the default `openwiki` command.
+   */
+  mcpServerCommand?: HostMcpServerCommand;
 
   /**
    * SHA-256 hashes keyed by installed relative path.
@@ -164,17 +175,20 @@ export async function inventorySkill(
  * @param directory - Staged skill directory.
  * @param target - Registry host owning the destination.
  * @param files - Canonical file hashes copied into staging.
+ * @param mcpServerCommand - Exact MCP server invocation installed with the skill.
  */
 export async function writeReceipt(
   directory: string,
   target: HostTargetId,
   files: Record<string, string>,
+  mcpServerCommand: HostMcpServerCommand,
 ): Promise<void> {
   const receipt: SkillReceipt = {
     schemaVersion: 1,
     package: "openwiki",
     version: OPENWIKI_VERSION,
     target,
+    mcpServerCommand,
     files,
   };
   await writeFile(
@@ -254,14 +268,14 @@ async function readReceipt(
   );
   if (!isRecord(parsed)) throw new Error("Invalid skill receipt.");
   if (
-    Object.keys(parsed).sort().join(",") !==
-      "files,package,schemaVersion,target,version" ||
+    !hasExpectedReceiptKeys(parsed) ||
     parsed.schemaVersion !== 1 ||
     parsed.package !== "openwiki" ||
     typeof parsed.version !== "string" ||
     !parsed.version ||
     parsed.target !== target ||
-    !isHashRecord(parsed.files)
+    !isHashRecord(parsed.files) ||
+    !isOptionalMcpServerCommand(parsed.mcpServerCommand)
   ) {
     throw new Error("Invalid skill receipt.");
   }
@@ -270,8 +284,45 @@ async function readReceipt(
     package: "openwiki",
     version: parsed.version,
     target,
+    ...(parsed.mcpServerCommand
+      ? { mcpServerCommand: parsed.mcpServerCommand }
+      : {}),
     files: parsed.files,
   };
+}
+
+/**
+ * Accepts current receipts and legacy receipts created before command tracking.
+ *
+ * @param value - Parsed receipt object.
+ * @returns Whether the object contains exactly one supported key set.
+ */
+function hasExpectedReceiptKeys(value: Record<string, unknown>): boolean {
+  const keys = Object.keys(value).sort().join(",");
+  return (
+    keys === "files,mcpServerCommand,package,schemaVersion,target,version" ||
+    keys === "files,package,schemaVersion,target,version"
+  );
+}
+
+/**
+ * Validates an optional exact MCP server invocation.
+ *
+ * @param value - Candidate receipt field.
+ * @returns Whether the field is absent or contains only a command and arguments.
+ */
+function isOptionalMcpServerCommand(
+  value: unknown,
+): value is HostMcpServerCommand | undefined {
+  if (value === undefined) return true;
+  if (!isRecord(value)) return false;
+  return (
+    Object.keys(value).sort().join(",") === "args,command" &&
+    typeof value.command === "string" &&
+    value.command.length > 0 &&
+    Array.isArray(value.args) &&
+    value.args.every((argument) => typeof argument === "string")
+  );
 }
 
 /**

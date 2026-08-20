@@ -18,6 +18,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, test } from "vitest";
 import {
+  defaultMcpServerCommand,
   HostIntegrationInstaller,
   resolveCanonicalSkillBundle,
   type HostIntegrationInstallerOperations,
@@ -197,6 +198,19 @@ async function markReceiptOld(directory: string): Promise<void> {
   const receipt: unknown = JSON.parse(await readFile(receiptPath, "utf8"));
   if (!isRecord(receipt)) throw new Error("Expected a receipt object.");
   receipt.version = "0.0.0-test";
+  await writeFile(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
+}
+
+/**
+ * Removes command tracking to simulate an installation from before dev mode.
+ *
+ * @param directory - Installed managed skill directory.
+ */
+async function markReceiptLegacy(directory: string): Promise<void> {
+  const receiptPath = path.join(directory, RECEIPT_FILE);
+  const receipt: unknown = JSON.parse(await readFile(receiptPath, "utf8"));
+  if (!isRecord(receipt)) throw new Error("Expected a receipt object.");
+  delete receipt.mcpServerCommand;
   await writeFile(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
 }
 
@@ -462,6 +476,7 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
       package: "openwiki",
       version: OPENWIKI_VERSION,
       target: target.id,
+      mcpServerCommand: defaultMcpServerCommand(target),
     });
 
     await expect(
@@ -483,6 +498,60 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
       target.project.skillDirectory.split("/", 1)[0] ?? "",
     );
     expect((await lstat(protectedDirectory)).isDirectory()).toBe(true);
+  });
+
+  test("replaces the default MCP command with a local development command", async () => {
+    const root = await createProject();
+    const installer = new HostIntegrationInstaller();
+    const options = projectOptions(root);
+    const localCommand = {
+      command: "/opt/node/bin/node",
+      args: ["/repo/dist/cli/cli.js", "mcp", "--host", target.id],
+    };
+
+    await installer.install(target, options);
+    await markReceiptLegacy(skillPath(root, target));
+    await expect(
+      installer.install(target, {
+        ...options,
+        mcpServerCommand: localCommand,
+        replaceMcpServerCommand: defaultMcpServerCommand(target),
+      }),
+    ).resolves.toMatchObject({ changed: true });
+
+    const content = await readFile(configPath(root, target), "utf8");
+    if (target.project.mcpConfig.kind === "json") {
+      expect(JSON.parse(content)).toMatchObject({
+        mcpServers: { openwiki: localCommand },
+      });
+    } else {
+      expect(content).toContain(
+        `command = ${JSON.stringify(localCommand.command)}`,
+      );
+      expect(content).toContain(
+        `args = [${localCommand.args.map((argument) => JSON.stringify(argument)).join(", ")}]`,
+      );
+    }
+
+    await expect(installer.status(target, options)).resolves.toBe("installed");
+    await expect(
+      installer.install(target, {
+        ...options,
+        mcpServerCommand: {
+          ...localCommand,
+          command: "/opt/new-node/bin/node",
+        },
+        replaceMcpServerCommand: defaultMcpServerCommand(target),
+      }),
+    ).resolves.toMatchObject({ changed: true });
+    await expect(installer.status(target, options)).resolves.toBe("installed");
+    await expect(installer.install(target, options)).resolves.toMatchObject({
+      changed: true,
+    });
+    await expect(installer.status(target, options)).resolves.toBe("installed");
+    await expect(installer.uninstall(target, options)).resolves.toMatchObject({
+      changed: true,
+    });
   });
 
   test("creates a missing config and performs a managed upgrade", async () => {

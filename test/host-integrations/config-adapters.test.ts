@@ -15,17 +15,21 @@ import {
   getJsonMcpEntryStatus,
   installJsonMcpEntry,
   uninstallJsonMcpEntry,
-  type JsonMcpEntry,
 } from "../../src/host-integrations/install/config-json.ts";
 import {
   getCodexMcpBlockStatus,
   installCodexMcpBlock,
   uninstallCodexMcpBlock,
 } from "../../src/host-integrations/install/config-toml.ts";
+import type { HostMcpServerCommand } from "../../src/host-integrations/install/types.ts";
 
-const ENTRY: JsonMcpEntry = {
+const ENTRY: HostMcpServerCommand = {
   command: "openwiki",
   args: ["mcp", "--host", "claude"],
+};
+const CODEX_ENTRY: HostMcpServerCommand = {
+  command: "openwiki",
+  args: ["mcp", "--host", "codex"],
 };
 const temporaryRoots: string[] = [];
 
@@ -140,6 +144,27 @@ describe("JSON MCP config ownership", () => {
       "modified",
     );
   });
+
+  test("replaces only an explicitly recognized prior entry", async () => {
+    const root = await createRoot();
+    const filePath = path.join(root, ".mcp.json");
+    const localEntry: HostMcpServerCommand = {
+      command: "/opt/node/bin/node",
+      args: ["/repo/dist/cli/cli.js", "mcp", "--host", "claude"],
+    };
+    await writeFile(
+      filePath,
+      `${JSON.stringify({ mcpServers: { openwiki: ENTRY } })}\n`,
+      "utf8",
+    );
+
+    await expect(
+      installJsonMcpEntry(filePath, localEntry, ENTRY),
+    ).resolves.toBe(true);
+    expect(JSON.parse(await readFile(filePath, "utf8"))).toMatchObject({
+      mcpServers: { openwiki: localEntry },
+    });
+  });
 });
 
 describe("Codex TOML MCP block ownership", () => {
@@ -149,16 +174,22 @@ describe("Codex TOML MCP block ownership", () => {
     const prefix = 'model = "gpt-5"\n\n';
     await writeFile(filePath, prefix, "utf8");
 
-    await expect(installCodexMcpBlock(filePath, "codex")).resolves.toBe(true);
+    await expect(installCodexMcpBlock(filePath, CODEX_ENTRY)).resolves.toBe(
+      true,
+    );
     const installed = await readFile(filePath, "utf8");
     expect(installed.startsWith(prefix)).toBe(true);
     expect(installed).toContain('[mcp_servers.openwiki]\ncommand = "openwiki"');
     expect(installed).toContain('args = ["mcp", "--host", "codex"]');
-    await expect(getCodexMcpBlockStatus(filePath, "codex")).resolves.toBe(
+    await expect(getCodexMcpBlockStatus(filePath, CODEX_ENTRY)).resolves.toBe(
       "installed",
     );
-    await expect(installCodexMcpBlock(filePath, "codex")).resolves.toBe(false);
-    await expect(uninstallCodexMcpBlock(filePath, "codex")).resolves.toBe(true);
+    await expect(installCodexMcpBlock(filePath, CODEX_ENTRY)).resolves.toBe(
+      false,
+    );
+    await expect(uninstallCodexMcpBlock(filePath, CODEX_ENTRY)).resolves.toBe(
+      true,
+    );
     expect(await readFile(filePath, "utf8")).toBe(prefix);
   });
 
@@ -172,9 +203,9 @@ describe("Codex TOML MCP block ownership", () => {
     const filePath = path.join(root, "config.toml");
     await writeFile(filePath, content, "utf8");
 
-    await expect(installCodexMcpBlock(filePath, "codex")).rejects.toMatchObject(
-      { code: "invalid_input" },
-    );
+    await expect(
+      installCodexMcpBlock(filePath, CODEX_ENTRY),
+    ).rejects.toMatchObject({ code: "invalid_input" });
     expect(await readFile(filePath, "utf8")).toBe(content);
   });
 
@@ -183,9 +214,9 @@ describe("Codex TOML MCP block ownership", () => {
     const filePath = path.join(root, "config.toml");
     const unmanaged = '[mcp_servers.openwiki]\ncommand = "custom"\n';
     await writeFile(filePath, unmanaged, "utf8");
-    await expect(installCodexMcpBlock(filePath, "codex")).rejects.toMatchObject(
-      { code: "conflict" },
-    );
+    await expect(
+      installCodexMcpBlock(filePath, CODEX_ENTRY),
+    ).rejects.toMatchObject({ code: "conflict" });
 
     const modified = [
       "# OPENWIKI:MCP:START",
@@ -197,10 +228,10 @@ describe("Codex TOML MCP block ownership", () => {
     ].join("\n");
     await writeFile(filePath, modified, "utf8");
     await expect(
-      uninstallCodexMcpBlock(filePath, "codex"),
+      uninstallCodexMcpBlock(filePath, CODEX_ENTRY),
     ).rejects.toMatchObject({ code: "conflict" });
     expect(await readFile(filePath, "utf8")).toBe(modified);
-    await expect(getCodexMcpBlockStatus(filePath, "codex")).resolves.toBe(
+    await expect(getCodexMcpBlockStatus(filePath, CODEX_ENTRY)).resolves.toBe(
       "modified",
     );
 
@@ -209,9 +240,28 @@ describe("Codex TOML MCP block ownership", () => {
       'command = "openwiki"',
     )}\n[mcp_servers.openwiki]\ncommand = "shadow"\n`;
     await writeFile(filePath, duplicateTable, "utf8");
-    await expect(installCodexMcpBlock(filePath, "codex")).rejects.toMatchObject(
-      { code: "conflict" },
-    );
+    await expect(
+      installCodexMcpBlock(filePath, CODEX_ENTRY),
+    ).rejects.toMatchObject({ code: "conflict" });
     expect(await readFile(filePath, "utf8")).toBe(duplicateTable);
+  });
+
+  test("replaces only an explicitly recognized prior block", async () => {
+    const root = await createRoot();
+    const filePath = path.join(root, "config.toml");
+    const localEntry: HostMcpServerCommand = {
+      command: "/opt/node/bin/node",
+      args: ["/repo/dist/cli/cli.js", "mcp", "--host", "codex"],
+    };
+
+    await installCodexMcpBlock(filePath, CODEX_ENTRY);
+    await expect(
+      installCodexMcpBlock(filePath, localEntry, CODEX_ENTRY),
+    ).resolves.toBe(true);
+    const installed = await readFile(filePath, "utf8");
+    expect(installed).toContain('command = "/opt/node/bin/node"');
+    expect(installed).toContain(
+      'args = ["/repo/dist/cli/cli.js", "mcp", "--host", "codex"]',
+    );
   });
 });

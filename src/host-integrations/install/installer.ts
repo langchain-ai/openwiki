@@ -7,7 +7,6 @@ import {
   getJsonMcpEntryStatus,
   installJsonMcpEntry,
   uninstallJsonMcpEntry,
-  type JsonMcpEntry,
 } from "./config-json.js";
 import {
   getCodexMcpBlockStatus,
@@ -32,10 +31,12 @@ import {
   resolveCanonicalSkillBundle as resolveSkillBundle,
   sameFiles,
   writeReceipt,
+  type SkillReceipt,
 } from "./skill-bundle.js";
 import type {
   HostIntegrationScope,
   HostIntegrationStatus,
+  HostMcpServerCommand,
   HostTarget,
   InstallOptions,
   InstallResult,
@@ -156,6 +157,8 @@ export class HostIntegrationInstaller {
       options.scope,
       options.root,
     );
+    const mcpServerCommand =
+      options.mcpServerCommand ?? defaultMcpServerCommand(target);
     const canonical = await inventorySkill(this.bundleDirectory, false);
     await mkdir(path.dirname(context.skillDirectory), { recursive: true });
     await assertNoSymlinkComponents(context.root, context.skillDirectory);
@@ -179,7 +182,7 @@ export class HostIntegrationInstaller {
           "The staged OpenWiki skill does not match the canonical bundle.",
         );
       }
-      await writeReceipt(staging, target.id, copied.files);
+      await writeReceipt(staging, target.id, copied.files, mcpServerCommand);
     } catch (error) {
       await this.operations.removeDirectory(staging).catch(() => undefined);
       throw error;
@@ -197,9 +200,18 @@ export class HostIntegrationInstaller {
       );
     }
 
+    const installedCommand = installedMcpServerCommand(
+      target,
+      inspection.receipt,
+    );
+    const replaceMcpServerCommand =
+      inspection.status === "installed"
+        ? installedCommand
+        : options.replaceMcpServerCommand;
     const current =
       inspection.status === "installed" &&
       inspection.receipt?.version === OPENWIKI_VERSION &&
+      sameMcpServerCommand(installedCommand, mcpServerCommand) &&
       sameFiles(inspection.receipt.files, canonical.files);
     if (current) {
       await this.operations.removeDirectory(staging);
@@ -207,6 +219,8 @@ export class HostIntegrationInstaller {
         target,
         context.scope,
         context.mcpConfig,
+        mcpServerCommand,
+        replaceMcpServerCommand,
       );
       return resultFor(target, context, configChanged);
     }
@@ -217,6 +231,8 @@ export class HostIntegrationInstaller {
       staging,
       inspection.status !== "not-installed",
       Boolean(options.force),
+      mcpServerCommand,
+      replaceMcpServerCommand,
     );
   }
 
@@ -249,6 +265,10 @@ export class HostIntegrationInstaller {
         `Refusing to remove a modified skill from ${context.skillDirectory}.`,
       );
     }
+    const mcpServerCommand = installedMcpServerCommand(
+      target,
+      inspection.receipt,
+    );
 
     const configSnapshot = await snapshotTextFile(context.mcpConfig);
     let configChanged = false;
@@ -263,6 +283,7 @@ export class HostIntegrationInstaller {
         target,
         context.scope,
         context.mcpConfig,
+        mcpServerCommand,
       );
       await this.operations.move(context.skillDirectory, cleanupBackup);
     } catch (error) {
@@ -311,10 +332,13 @@ export class HostIntegrationInstaller {
       options.scope,
       options.root,
     );
-    const [skill, config] = await Promise.all([
-      inspectInstallation(context.skillDirectory, target.id),
-      getManagedConfigStatus(target, context.scope, context.mcpConfig),
-    ]);
+    const skill = await inspectInstallation(context.skillDirectory, target.id);
+    const config = await getManagedConfigStatus(
+      target,
+      context.scope,
+      context.mcpConfig,
+      installedMcpServerCommand(target, skill.receipt),
+    );
     if (skill.status === "not-installed" && config === "not-installed") {
       return "not-installed";
     }
@@ -331,6 +355,8 @@ export class HostIntegrationInstaller {
    * @param staging - Fully inventoried staged skill directory.
    * @param hasPriorSkill - Whether a destination must be moved aside.
    * @param force - Whether the prior skill must be retained as a backup.
+   * @param mcpServerCommand - Exact MCP server invocation to install.
+   * @param replaceMcpServerCommand - Exact prior invocation that may be replaced.
    * @returns Committed installation result.
    */
   private async commitInstall(
@@ -339,6 +365,8 @@ export class HostIntegrationInstaller {
     staging: string,
     hasPriorSkill: boolean,
     force: boolean,
+    mcpServerCommand: HostMcpServerCommand,
+    replaceMcpServerCommand: HostMcpServerCommand | undefined,
   ): Promise<InstallResult> {
     const configSnapshot = await snapshotTextFile(context.mcpConfig);
     let configChanged = false;
@@ -351,6 +379,8 @@ export class HostIntegrationInstaller {
         target,
         context.scope,
         context.mcpConfig,
+        mcpServerCommand,
+        replaceMcpServerCommand,
       );
       if (hasPriorSkill) {
         priorSkill = force
@@ -510,12 +540,14 @@ export function resolveCanonicalSkillBundle(
 }
 
 /**
- * Creates the exact managed JSON command for one host.
+ * Creates the default managed MCP command for one host.
  *
  * @param target - Registry target receiving the MCP entry.
  * @returns Managed command and ordered arguments.
  */
-function jsonEntry(target: HostTarget): JsonMcpEntry {
+export function defaultMcpServerCommand(
+  target: HostTarget,
+): HostMcpServerCommand {
   return {
     command: "openwiki",
     args: ["mcp", "--host", target.id],
@@ -528,16 +560,20 @@ function jsonEntry(target: HostTarget): JsonMcpEntry {
  * @param target - Registry target selecting the adapter.
  * @param scope - User or project config scope.
  * @param filePath - Absolute host config path.
+ * @param entry - Exact executable invocation to install.
+ * @param replaceableEntry - Exact prior invocation that may be replaced.
  * @returns Whether config changed.
  */
 async function installManagedConfig(
   target: HostTarget,
   scope: HostIntegrationScope,
   filePath: string,
+  entry: HostMcpServerCommand,
+  replaceableEntry?: HostMcpServerCommand,
 ): Promise<boolean> {
   return target[scope].mcpConfig.kind === "json"
-    ? installJsonMcpEntry(filePath, jsonEntry(target))
-    : installCodexMcpBlock(filePath, target.id);
+    ? installJsonMcpEntry(filePath, entry, replaceableEntry)
+    : installCodexMcpBlock(filePath, entry, replaceableEntry);
 }
 
 /**
@@ -546,16 +582,18 @@ async function installManagedConfig(
  * @param target - Registry target selecting the adapter.
  * @param scope - User or project config scope.
  * @param filePath - Absolute host config path.
+ * @param entry - Exact executable invocation owned by the installed skill.
  * @returns Whether config changed.
  */
 async function uninstallManagedConfig(
   target: HostTarget,
   scope: HostIntegrationScope,
   filePath: string,
+  entry: HostMcpServerCommand,
 ): Promise<boolean> {
   return target[scope].mcpConfig.kind === "json"
-    ? uninstallJsonMcpEntry(filePath, jsonEntry(target))
-    : uninstallCodexMcpBlock(filePath, target.id);
+    ? uninstallJsonMcpEntry(filePath, entry)
+    : uninstallCodexMcpBlock(filePath, entry);
 }
 
 /**
@@ -564,14 +602,48 @@ async function uninstallManagedConfig(
  * @param target - Registry target selecting the adapter.
  * @param scope - User or project config scope.
  * @param filePath - Absolute host config path.
+ * @param entry - Exact executable invocation expected by the installed skill.
  * @returns Absent, intact, or modified managed config state.
  */
 async function getManagedConfigStatus(
   target: HostTarget,
   scope: HostIntegrationScope,
   filePath: string,
+  entry: HostMcpServerCommand,
 ): Promise<HostIntegrationStatus> {
   return target[scope].mcpConfig.kind === "json"
-    ? getJsonMcpEntryStatus(filePath, jsonEntry(target))
-    : getCodexMcpBlockStatus(filePath, target.id);
+    ? getJsonMcpEntryStatus(filePath, entry)
+    : getCodexMcpBlockStatus(filePath, entry);
+}
+
+/**
+ * Resolves the command recorded by an installed skill receipt.
+ *
+ * @param target - Registry host owning the installation.
+ * @param receipt - Intact receipt, when a managed skill is installed.
+ * @returns Recorded command, or the legacy default command.
+ */
+function installedMcpServerCommand(
+  target: HostTarget,
+  receipt: SkillReceipt | undefined,
+): HostMcpServerCommand {
+  return receipt?.mcpServerCommand ?? defaultMcpServerCommand(target);
+}
+
+/**
+ * Compares two exact MCP server invocations.
+ *
+ * @param left - First executable invocation.
+ * @param right - Second executable invocation.
+ * @returns Whether command and ordered arguments are identical.
+ */
+function sameMcpServerCommand(
+  left: HostMcpServerCommand,
+  right: HostMcpServerCommand,
+): boolean {
+  return (
+    left.command === right.command &&
+    left.args.length === right.args.length &&
+    left.args.every((argument, index) => argument === right.args[index])
+  );
 }
