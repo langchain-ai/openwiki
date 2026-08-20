@@ -241,6 +241,24 @@ export async function persistRunMetadataIfChanged(
   return true;
 }
 
+/** Reads the observable planning artifact before run finalization removes it. */
+export async function readTemporaryPlanFile(
+  cwd: string,
+  outputMode: OpenWikiOutputMode,
+): Promise<string | null> {
+  const planFile = getTemporaryPlanFilePath(cwd, outputMode);
+
+  try {
+    return await readFile(planFile, "utf8");
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
 /**
  * Removes the temporary planning file the agent creates during init/update runs.
  */
