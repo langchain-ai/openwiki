@@ -1,3 +1,4 @@
+import { mkdtemp, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
@@ -88,6 +89,39 @@ describe("resolveOpenWikiHomeDir", () => {
     expect(PERSONAL_SYSTEM_PROMPTS.chat).toContain(
       `${path.resolve("C:/openwiki-state")}/wiki`,
     );
+  });
+
+  test("initializes configured state without consulting the home directory", async () => {
+    const tempDir = await mkdtemp(
+      path.join(os.tmpdir(), "openwiki-config-dir-"),
+    );
+    const configuredDir = path.join(tempDir, "state");
+    process.env.OPENWIKI_CONFIG_DIR = configuredDir;
+    const homedirSpy = vi.spyOn(os, "homedir").mockImplementation(() => {
+      throw new Error("home directory is unavailable");
+    });
+    vi.resetModules();
+
+    try {
+      const home = await import("../src/config/openwiki-home.ts");
+      expect(home.openWikiHomeDir).toBe(configuredDir);
+
+      await home.ensureOpenWikiHome();
+
+      for (const directory of [
+        home.openWikiHomeDir,
+        home.openWikiConnectorsDir,
+        home.openWikiConversationHistoryDir,
+        home.openWikiLocalWikiDir,
+        home.openWikiSkillsDir,
+      ]) {
+        expect((await stat(directory)).isDirectory()).toBe(true);
+      }
+      expect(homedirSpy).not.toHaveBeenCalled();
+    } finally {
+      homedirSpy.mockRestore();
+      await rm(tempDir, { force: true, recursive: true });
+    }
   });
 });
 
