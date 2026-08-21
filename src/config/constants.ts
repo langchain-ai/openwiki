@@ -633,6 +633,38 @@ export function resolveProviderBaseUrl(
   return config.baseURL;
 }
 
+/**
+ * Reports whether the provider points at a user-supplied endpoint rather than
+ * its built-in default. Compares the resolved base URL against
+ * {@link ProviderConfig.baseURL} instead of testing whether the environment
+ * variable is set, so a user who pins the default value explicitly is not
+ * mistaken for a self-hosted deployment.
+ */
+export function providerBaseUrlIsCustom(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  const resolved = resolveProviderBaseUrl(provider, env);
+
+  if (!resolved) {
+    return false;
+  }
+
+  const defaultBaseUrl = getProviderConfig(provider).baseURL;
+  if (!defaultBaseUrl) {
+    return true;
+  }
+
+  return (
+    normalizeBaseUrlForComparison(resolved) !==
+    normalizeBaseUrlForComparison(defaultBaseUrl)
+  );
+}
+
+function normalizeBaseUrlForComparison(value: string): string {
+  return value.trim().replace(/\/+$/u, "");
+}
+
 export function getProviderBaseUrlEnvKey(
   provider: OpenWikiProvider,
 ): string | undefined {
