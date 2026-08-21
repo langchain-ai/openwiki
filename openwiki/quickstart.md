@@ -3,7 +3,27 @@ type: Quickstart Guide
 title: OpenWiki Quickstart
 description: Quickstart reference for the OpenWiki TypeScript CLI, including documentation-generation workflows, supported model providers, and the primary source files. Use it to navigate the repository's architecture, commands, agent runtime, operations, and connectors.
 tags: [openwiki, quickstart, cli, documentation]
-generated: { by: "openwiki/0.3.3", at: "2026-08-20T08:11:55.370Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z"}
+sources:
+  - id: openwiki-source-a953060a04ccefcf777de48e
+    resource: repo://src/agent/index.ts
+  - id: openwiki-source-6fd9c8ed42336141de43b3c2
+    resource: repo://src/agent/okf-middleware.ts
+  - id: openwiki-source-e6e6ad50adcacff30c80660c
+    resource: repo://src/agent/prompts/code.ts
+  - id: openwiki-source-21ff9512e70f21e9b1cd2d0f
+    resource: repo://src/agent/review-subagents.ts
+  - id: openwiki-source-adcadc660c1888613ec50f9a
+    resource: repo://src/agent/wiki-finalizer.ts
+  - id: openwiki-source-239b2968fb2bcd073e89cedc
+    resource: repo://src/claims/brains/code/runtime.ts
+  - id: openwiki-source-3fc16f0371ced4d94330f06c
+    resource: repo://src/cli/commands.ts
+  - id: openwiki-source-6f06cc988142430d18f2233e
+    resource: repo://src/integrations/mcp/stdio.ts
+verified:
+  - by: openwiki/0.3.3
+    at: 2026-08-21T08:12:50.745Z
 ---
 
 # OpenWiki quickstart
@@ -19,6 +39,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
 - Auto-exits after successful `--init` or `--update` runs in an interactive terminal, so the CLI works as both a one-shot and interactive tool.
 - Optionally schedules automated updates through GitHub Actions, GitLab CI, or Bitbucket Pipelines.
+- Maintains page-owned, evidence-backed factual propositions (Grounded Claims) as JSON sidecars under `openwiki/.claims/`, exposing `resolve_claims` and `inspect_claims` tools to the agent and projecting evidence and verification into OKF `sources` and `verified` front matter.
+- Serves as an MCP tool server for external coding agents (Codex, Claude Code) via `openwiki integrations install <codex|claude>` and `openwiki mcp --host <id>`, exposing a begin/inspect_claims/resolve_claims/finish lifecycle protocol so host agents author wikis with the same Claims discipline as the native CLI.
 - Ships two sibling evaluation harnesses: a paired DeepSWE evaluation harness (`evals/deepswe/`) that measures OpenWiki's documentation leverage on a Codex coding agent, and a LEDGER longitudinal benchmark (`evals/ledger/`) that replays a source repository's Git checkpoints, runs OpenWiki at each, and evaluates every current factual claim as supported, stale, hallucinated, or unverified.
 - Serves an interactive node-graph visualizer (`openwiki visualize`) for an already-generated wiki, with live edits refreshed over SSE, and can export a self-contained static visualizer directory (`openwiki visualize --export <dir>`) hostable on any static host.
 - Honors a repo-root `.openwikiignore` file as a read boundary that keeps private/generated paths out of doc runs.
@@ -40,6 +62,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - [Agent workflow](./agent/workflow.md) — how documentation runs are assembled and persisted.
 - [Credentials and updates](./operations/credentials-and-updates.md) — local env storage, metadata, and scheduled updates.
 - [Connectors](./integrations/connectors.md) — built-in connector architecture, the nine connectors (including the generic Custom MCP source), and ingestion orchestration.
+- [Coding-agent integrations](./integrations/coding-agents.md) — MCP skill+server installation for Codex and Claude Code, the begin/finish lifecycle protocol, and the transactional installer.
+- [Grounded Claims](./claims/grounded-claims.md) — page-owned factual propositions with evidence resolution, mutation operations, and OKF `sources`/`verified` projection.
 - [DeepSWE evaluation harness](./evals/deepswe-harness.md) — paired DeepSWE benchmark harness that measures OpenWiki's documentation leverage on Codex.
 - [LEDGER longitudinal benchmark](./evals/ledger-harness.md) — source-grounded benchmark that replays Git checkpoints, runs OpenWiki at each, and scores per-claim grounding and forgetting.
 
@@ -57,10 +81,11 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/cli/components/run-view.tsx` — `RunView` Ink component rendering the live activity tree, run stage, and completed-run outcome (written pages, counts, final assistant text).
 - `src/agent/index.ts` — agent runtime, provider-specific model creation (including ChatGPT OAuth), OpenAI model-availability pre-check, fallback, and metadata writes.
 - `src/agent/prompt.ts` — prompt assembler: selects a template by output mode and substitutes placeholders.
-- `src/agent/prompts/code.ts` — `CODE_SYSTEM_PROMPTS`/`CODE_USER_PROMPTS` for repository runs (init/update/chat contracts, including the skeleton-critic and wiki-QA verification workflow).
+- `src/agent/prompts/code.ts` — `CODE_SYSTEM_PROMPTS`/`CODE_USER_PROMPTS` for repository runs (init/update/chat contracts, including the Claims-first authoring workflow and the skeleton-critic and wiki-QA verification subagents).
 - `src/agent/prompts/personal.ts` — `PERSONAL_SYSTEM_PROMPTS`/`PERSONAL_USER_PROMPTS` for local personal-brain runs.
-- `src/agent/skeleton_critic.ts` — `skeleton_critic` init-only subagent that reviews the proposed wiki skeleton against the repository.
-- `src/agent/wiki_qa_subagents.ts` — `wiki_question_finder` and `wiki_answer_verifier` init-only subagents that verify the completed wiki answers source-grounded questions.
+- `src/agent/review-subagents.ts` — `resolveRepositoryReviewSubagents()` consolidates the init-only `skeleton-critic`, `wiki-question-finder`, and `wiki-answer-verifier` subagents, wrapping each with a read-only filesystem middleware (read_file, ls, glob, grep only).
+- `src/agent/skeleton-critic.ts` — `skeleton_critic` init-only subagent that reviews the proposed wiki plan against the repository.
+- `src/agent/wiki-qa-subagents.ts` — `wiki_question_finder` and `wiki_answer_verifier` init-only subagents that verify the completed wiki answers source-grounded questions.
 - `src/agent/crash-guard.ts` — process-wide `installCrashGuard()` + `registerActiveRun`/`handleFatal` that records and stamps an escaped rejection as an interrupted run; `handleFatal` claims the active run synchronously so a burst of escaped rejections records one crash.
 - `src/agent/utils.ts` — run context, content snapshot, and `.last-update.json` handling; `getUpdateNoopStatus()` (now language-aware) decides whether an update can skip.
 - `src/agent/types.ts` — shared agent types (`OpenWikiCommand`, `RunContext`, `UpdateMetadata`, run options/events).
@@ -72,14 +97,17 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/auth/configure.ts` — `openwiki auth configure <provider>` flow for creating local connector configs.
 - `src/auth/ngrok.ts` — Slack HTTPS callback tunnel via ngrok.
 - `src/auth/tokens.ts` — token refresh and validation helpers for connector OAuth.
-- `src/agent/okf-middleware.ts` — OKF front-matter migration, write validation, and index synchronization middleware; its `beforeAgent` snapshots concept bodies and its `afterAgent` finalize stage finalizes `generated` provenance (via `src/okf/generated-provenance.ts`), validates Mermaid fences, synchronizes indexes, and validates internal wiki links.
+- `src/agent/okf-middleware.ts` — OKF front-matter migration, write validation, and index synchronization middleware; its `beforeAgent` snapshots concept bodies and its `afterAgent` finalize stage finalizes `generated` provenance (via `src/agent/wiki-finalizer.ts`), validates Mermaid fences, synchronizes indexes, validates internal wiki links, and projects Claims evidence into OKF `sources`.
+- `src/agent/wiki-finalizer.ts` — `prepareWikiForAuthoring()` and `finalizeWikiArtifacts()`, the shared deterministic wiki lifecycle pipeline used by both the OKF middleware and the MCP host session manager (migrate, provenance snapshot, Mermaid, index sync, link validation, claims sources, generated provenance).
 - `src/agent/wiki-link-validator.ts` — validates internal links repo-wide (not just the `openwiki/` subtree) and GitHub-style heading anchors on Markdown targets after generation, stamping broken links inline instead of failing the run.
 - `src/agent/translation-middleware.ts` — wiki translation middleware for output-language switching.
 - `src/agent/vertex-surface.ts` — Vertex AI model routing for the gemini-enterprise provider.
 - `src/agent/skills.ts` — bundles and syncs the `/skills/` directory into the agent runtime.
 - `src/auth/external-cli-auth.ts` — GitHub CLI-based credential resolution for the copilot provider.
 - `src/platform/diagnostics.ts` — secret redaction and credential diagnostics.
-- `src/okf/` — OKF front-matter validation (v0.2 provenance/trust/lifecycle families), index-label localization, deterministic index synchronization, and `generated-provenance.ts` (snapshot/finalize stamping with exact body hashing).
+- `src/okf/` — OKF front-matter validation (v0.2 provenance/trust/lifecycle families), index-label localization, deterministic index synchronization, `generated-provenance.ts` (snapshot/finalize stamping with exact body hashing), `claim-sources.ts` (Projects Claims evidence into OKF `sources`), and `claims-verification.ts` (Projects Claims verification into OKF `verified`).
+- `src/claims/` — Grounded Claims system: core types and mutations (`core/`), repository evidence resolver (`evidence/repository/`), and the code brain (`brains/code/`) with session, store, tools, middleware, preflight, runtime, and integration wiring.
+- `src/integrations/` — Coding-agent integrations: host lifecycle protocol and session manager (`core/`), transactional skill+MCP installer (`install/`), and stdio MCP server (`mcp/`).
 - `src/version.ts` — `OPENWIKI_VERSION` read from `package.json` at runtime, and `OPENWIKI_PRODUCER_ACTOR` (`openwiki/<version>`) stamped as the `by` actor on OKF v0.2 `generated` provenance events.
 - `src/mermaid/` — Mermaid fence extraction, validation, and wiki repair.
 - `src/telemetry/` — anonymous usage telemetry with PostHog, opt-out, CI sentinel IDs, error classification/fingerprinting, and a baked-in `build_channel` stamp.
@@ -116,6 +144,8 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - [Agent](./agent/workflow.md)
 - [Operations](./operations/credentials-and-updates.md)
 - [Connectors](./integrations/connectors.md)
+- [Coding-agent integrations](./integrations/coding-agents.md)
+- [Grounded Claims](./claims/grounded-claims.md)
 - [DeepSWE evaluation harness](./evals/deepswe-harness.md)
 - [LEDGER longitudinal benchmark](./evals/ledger-harness.md)
 
@@ -142,8 +172,10 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/agent/prompt.ts`
 - `src/agent/prompts/code.ts`
 - `src/agent/prompts/personal.ts`
-- `src/agent/skeleton_critic.ts`
-- `src/agent/wiki_qa_subagents.ts`
+- `src/agent/skeleton-critic.ts`
+- `src/agent/wiki-qa-subagents.ts`
+- `src/agent/review-subagents.ts`
+- `src/agent/wiki-finalizer.ts`
 - `src/agent/crash-guard.ts`
 - `src/agent/utils.ts`
 - `src/agent/types.ts`
@@ -184,7 +216,10 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 - `src/platform/diagnostics.ts`
 - `src/platform/utils.ts`
 - `src/platform/language.ts`
-- `src/okf/` (frontmatter.ts, index-labels.ts, index-sync.ts, generated-provenance.ts)
+- `src/okf/` (frontmatter.ts, index-labels.ts, index-sync.ts, generated-provenance.ts, claim-sources.ts, claims-verification.ts)
+- `src/claims/` (guidance.ts, core/types.ts, core/mutations.ts, core/errors.ts, core/resolver-cache.ts, evidence/repository/resolver.ts, evidence/repository/resource.ts, brains/code/types.ts, brains/code/session.ts, brains/code/store.ts, brains/code/tools.ts, brains/code/middleware.ts, brains/code/preflight.ts, brains/code/runtime.ts, brains/code/integration.ts, brains/code/paths.ts)
+- `src/integrations/` (core/protocol.ts, core/session-manager.ts, core/errors.ts, core/repository-root.ts, install/installer.ts, install/registry.ts, install/types.ts, install/skill-bundle.ts, install/install-paths.ts, install/config-json.ts, install/config-toml.ts, install/atomic-file.ts, mcp/server.ts, mcp/stdio.ts)
+- `src/cli/integrations.ts`
 - `src/mermaid/` (dom-shim.ts, fences.ts, validate.ts, wiki.ts)
 - `src/telemetry/`
 - `scripts/stamp-build-channel.cjs`

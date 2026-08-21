@@ -10,6 +10,7 @@ okf_version: "0.2"
 
 - [agent](agent/)
 - [architecture](architecture/)
+- [claims](claims/)
 - [cli](cli/)
 - [evals](evals/)
 - [integrations](integrations/)

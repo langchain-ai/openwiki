@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:b0d6ef7dd395340c633ea74a343f7cea98d6df8a21464c1b5c08743499f58855",
+  "claims": [
+    {
+      "id": "claim_9279cd249cdb4258962eacd9aee67a6d",
+      "statement": "The Grounded Claims system (src/claims/) is a new architectural layer that maintains page-owned factual propositions, wired into the agent runtime for repository init/update runs and shared with the MCP host session manager.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/runtime.ts#L49-L59",
+          "version": "repo-lines-v1:sha256:fc31380cd583aeb6c1b302c6816dc55e06d9486f4e288961733e7b8e1b6bd613:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMGJhNzMyM2I5ZTU5MTFlNTU4YjA4YzlhMzlmMTc4YzAxYTExZTJkYTdjZTJlNDAyMGFjZThlMWU2NjAwNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1YWYzZTE0ZjUyYzllNmIwNTFjYjRlODYwODUyYjYyYzJlZWMyYjM4YjNjMTQxZDBkNTI3YjRkYmFmZTI5ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MTQ2NTgwNjlhYzUzZDdlZTY1ZTE4ZTVjM2FlNGFlYzVkNjNjNTQyOWQwMDU2NWRiNjg1ZWI2OWUyZTllNWEifQ"
+        },
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L329-L339",
+          "version": "repo-lines-v1:sha256:8a179e113279edced7a89460faeb87fb6be2f1eead389b49583fc5b2c65bc5a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzZjZGQwNjZlOTIwZjcwNDBiZDM5NmI1OGY4YTM5MDNiYWUxNzc3MDMwOWYxODFjZDA5NDkyMzMzY2MyMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxMGQzMWM3NWY4NDBkYWJmYjM5OTg0YThjNjg3YzBiNjIxNTU3ZjljYjY0ZjFmZmU1YTRiNzhkOGNmN2U3MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYmJjODFlMDBhNmZmYTQ2YThjZDE5MWU0NDNmZDY4MTViMDk1MTVkMmI1YjRlNjZmYWE2OTFjMDUyMThhNGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a87690dbbe54e88b68511bf3ab5b64e",
+      "statement": "The coding-agent integrations system (src/integrations/) exposes OpenWiki's lifecycle and Claims tools to external coding agents through a stdio MCP server, with a transactional installer for skill and MCP config deployment.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/mcp/stdio.ts#L27-L33",
+          "version": "repo-lines-v1:sha256:f8c8350444bffd5fcf42be3e5d9c0c76e39ae7d7bd5ea76ed831c46ec74031d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZjNiNmYyN2Y2MDdiZTQxZDg2MWQwYzdkNjZmNTZjMmJmOTYxMjFlNWFkMWMzZDEzNTA1MWJjMzA2ZGU1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODEyNjY1OTY5NDEyZTRjNTA5NWI2ZTY0OTI3YzYxNjVjMzExMGZjNTViYWNkYjIzNDA1YzY2NTUxODc0NjFmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/integrations/install/installer.ts#L109-L150",
+          "version": "repo-lines-v1:sha256:42271cc82683ab32119c51550286387e0b0480bcc6c4f7803579f0059bf0be0d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3Yjg4M2M3Y2QyYTY2NGJiOWJhOTliNjYxNzJlOGMxYWQ2ZTU2N2UxN2Y3MWYwZjY0YWY3NjhlY2FjMDFlMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNzExMjdmN2Y1ZjE3MTdiOTZlN2U5NzY5MGE3ZDE4MWE1MDcyMzdmY2FkMTg4NDBiYmIwOTM0MDIyYTkyMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmZTFlNDk2NTM3NDJkMDljYTM3ZGYzMDVmYTI0MDljYTE1ZDMyNzgyZjA5ZTIxMDA1ZTA4ZGZkZDJmYTIwZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzMTgwMmE5YWZhYjkyZjQ2MjBkYTliMmZmZTZmZGFlZTlmOTczYzkxYzIwODcyODJlNGY2MTdmNmJmZThiOWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab5f29793c3846119f4be1a7851e0c20",
+      "statement": "The OKF index middleware now delegates preparation and finalization to the shared wiki-finalizer module (src/agent/wiki-finalizer.ts), which adds a claims_sources projection step before generated provenance reconciliation.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/okf-middleware.ts#L53-L75",
+          "version": "repo-lines-v1:sha256:ca8e9080d5ffdade314c1f0ddb0636ed3e9d516f7f5bff3309c893eb5ea088ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MmQ5ZDg2YThkMDVkMDI5M2ZmYjhhNTMzNjU2YWIyNzA3YzRiMjQyZGRmZDk5NWM0ZjAwMTg3OGNmNDllNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0YjMyMzQ4NjNlYzc1MWIwMDQxYzM0ODhlMTU1ZmQ1MTE1MzVkYjBiMzI4ZTYxZGI4ZDZjYTAwMzRmMzVkYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlNGMyYmUyNDM5YWVlM2IzYWQ3YmUzMWJkMzMyODE0ZjExM2UyODZjYTVmZWNiZWRhNWVkMTY3NWMwMzhhYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmOThiYmZlMzcxNmVhY2E4OTY0YTMwYzdiNjhmMWIxMWMzODY2ZDZjNDFjMzQwMjg3MTI4NWE0NzRlYWYxMjMifQ"
+        },
+        {
+          "resource": "repo://src/agent/wiki-finalizer.ts#L202-L237",
+          "version": "repo-lines-v1:sha256:d6aa768c4748a072a266d28e99bfa3440698b2ad0430c66d8749d28f1562428d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMGNiYTZiODUxOTVjMGZhMWZiZmYyMWI3NWFlMWRiYWFmZTBmODg2ODQ1YzI5MmFiYmMzNGI4OWE4MDA5NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3OWI3OTNmYTYyNzA1MGQ2ODhmOTdlYzk0YjA5OGQ1NzI0YmU5MmMyYmUxZmY2MTliMmU1MjhmYjQ0MDk1YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYWE0MTcwY2M2YTMyNjcyNmFmNmI1MWRmMTI0Njc2YTUyNDNhN2M4YjNmMGMzNmY2N2NhM2I5YTI0NmJmMmUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-21T08:12:50.745Z"
+  }
+}
