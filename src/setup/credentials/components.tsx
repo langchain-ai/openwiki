@@ -1,5 +1,6 @@
 import type React from "react";
 import { Box, Text } from "ink";
+import { openWikiEnvDisplayPath } from "../../config/openwiki-home.js";
 import {
   DEFAULT_PROVIDER,
   DEFAULT_VERTEX_LOCATION,
@@ -706,7 +707,7 @@ export function Prompt({
         <Text>LangSmith API key for this workspace.</Text>
         <Text color="gray">
           The connector&apos;s own read key (not your app&apos;s tracing key).
-          Saved to ~/.openwiki/.env as {apiKeyEnv}, never committed.
+          Saved to {openWikiEnvDisplayPath} as {apiKeyEnv}, never committed.
         </Text>
         <BorderedInput
           maxDisplayWidth={inputDisplayWidth}

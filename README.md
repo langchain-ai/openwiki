@@ -117,6 +117,16 @@ OpenWiki runs in one of two modes. Bare `openwiki`, `openwiki --init`, and `open
 
 By default the CLI stays open after a run so you can send follow-up messages. Add `-p` / `--print` for a one-shot, non-interactive run that prints the final output and exits. `--init` and `--update` auto-exit on success in an interactive terminal, so the same command works one-shot or interactively.
 
+### Local state directory
+
+OpenWiki stores local credentials, the personal wiki, connector data, conversation history, and skills under `~/.openwiki` by default. Set `OPENWIKI_CONFIG_DIR` before starting OpenWiki to use a different writable directory, such as a mounted container volume:
+
+```sh
+OPENWIKI_CONFIG_DIR=/data/openwiki openwiki personal --init
+```
+
+The override selects a separate state directory; OpenWiki does not move or delete an existing `~/.openwiki` directory. Copy any state you want to preserve yourself, and point the variable at a dedicated directory because OpenWiki restricts its permissions for the current user.
+
 ## Explore your wiki
 
 Turn any wiki into an interactive node graph with a live, side-by-side Markdown reader:

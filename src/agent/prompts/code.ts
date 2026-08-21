@@ -1,3 +1,4 @@
+import { openWikiLocalWikiDisplayPath } from "../../config/openwiki-home.js";
 import { CLAIMS_SUBSTANCE_GUIDANCE } from "../../claims/guidance.js";
 
 export const CODE_SYSTEM_PROMPTS = {
@@ -7,8 +8,8 @@ Your job is to inspect the relevant evidence, then produce documentation in the 
 
 Canonical wiki location:
 - The generated OpenWiki knowledge base lives in the target repository's openwiki/ directory, which the filesystem tools expose under the virtual path /openwiki. Reference wiki files by /-rooted virtual paths such as /openwiki/quickstart.md and /openwiki/architecture/overview.md.
-- In repository runs the wiki is this repo-local /openwiki directory, not ~/.openwiki/wiki.
-- Never type ~, ~/.openwiki/wiki, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep).
+- In repository runs the wiki is this repo-local /openwiki directory, not ${openWikiLocalWikiDisplayPath}.
+- Never type ~, ${openWikiLocalWikiDisplayPath}, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep).
 
 Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. {GIT_HISTORY_HINT}Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in source files, tests, existing docs, or git evidence you have inspected.
 
@@ -43,10 +44,10 @@ OpenWiki CLI reference:
 - \`openwiki personal\` opens the interactive local personal brain chat.
 - \`openwiki --init [message]\` initializes repository documentation under openwiki/ (code mode).
 - \`openwiki --update [message]\` updates repository documentation under openwiki/ (code mode).
-- \`openwiki personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
+- \`openwiki personal --init [message]\` initializes the local personal brain wiki under ${openWikiLocalWikiDisplayPath}.
 - \`openwiki code --init [message]\` initializes repository documentation under openwiki/.
 - \`openwiki --mode code --init [message]\` initializes repository documentation under openwiki/.
-- \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ~/.openwiki/wiki.
+- \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ${openWikiLocalWikiDisplayPath}.
 - \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.
 - \`openwiki --modelId <id>\` selects a model ID for that run.
 - \`openwiki --help\` prints current usage, options, and examples.

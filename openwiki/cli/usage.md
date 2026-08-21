@@ -3,7 +3,15 @@ type: CLI reference
 title: OpenWiki CLI usage
 description: Reference for OpenWiki command-line usage, including interactive and non-interactive runs, initialization and update modes, connector operations, and authentication setup. Covers provider configuration, model selection, validation, and the source files to update when changing CLI behavior.
 tags: [openwiki, cli, commands, configuration, authentication]
-generated: { by: "openwiki/0.3.3", at: "2026-08-20T08:11:55.370Z" }
+generated: { by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z" }
+sources:
+  - id: openwiki-source-3fc16f0371ced4d94330f06c
+    resource: repo://src/cli/commands.ts
+  - id: openwiki-source-ada18c62d92003b613355e30
+    resource: repo://src/cli/integrations.ts
+verified:
+  - by: openwiki/0.3.3
+    at: 2026-08-21T08:12:50.745Z
 ---
 
 # CLI usage
@@ -39,6 +47,10 @@ From `src/cli/commands.ts` and `README.md`, the supported entry patterns are:
 - `openwiki cron resume <source|all>` — reinstall paused launchd job(s) and reconcile `pmset` wake window.
 - `openwiki cron delete <source|all>` — unload and remove schedule metadata (does not remove auth, config, raw data, or wiki content).
 - `openwiki ingest [target]` — run source-specific ingestion for configured connectors.
+- `openwiki integrations install <codex|claude> [--scope user|project] [--force]` — install the OpenWiki skill bundle and MCP server configuration into a coding agent. See [Coding-agent integrations](../integrations/coding-agents.md).
+- `openwiki integrations list` — show supported coding-agent hosts and their installation status.
+- `openwiki integrations uninstall <codex|claude> [--scope user|project]` — remove the OpenWiki skill and MCP configuration from a coding agent.
+- `openwiki mcp --host <codex|claude>` — start the stdio MCP server exposing the OpenWiki lifecycle protocol for a coding agent host.
 
 The parser rejects incompatible combinations such as `--init` and `--update` together, and it requires a message or command when `--print` is used.
 
@@ -349,6 +361,7 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - To require a user-supplied base URL (a provider with no default endpoint, like `openai-compatible`), also set `requiresBaseUrl: true`. `ensureProviderBaseUrl()` in `src/agent/index.ts` enforces it at runtime, and the interactive setup adds a base-URL step for such providers.
 - To change agent streaming behavior per provider, edit the `streamMessagesEnabled`/`streamModes` resolution in `src/agent/index.ts` (the `openai-compatible` provider already gates `messages` vs `updates` there via `resolveOpenAiCompatibleStreamMessages()` in `src/config/constants.ts`) and the `managedEnvKeys`/diagnostics entry for any new opt-in env key; update `test/agent/stream-modes.test.ts` and `test/agent/stream-redaction.test.ts`. The HTTP-transport opt-in `OPENWIKI_OPENAI_COMPATIBLE_STREAMING` is a separate axis (`providerUsesStreaming()` in `src/config/constants.ts`, forwarded into the CI workflow by `createWorkflowProviderEnv()` in `src/ingestion/code-mode.ts`); update `test/openai-compatible-streaming.test.ts` and `test/ingestion/code-mode.test.ts` when changing it.
 - To add reasoning-effort support for a provider/model, add a `ReasoningCapability` to `REASONING_CAPABILITIES` in `src/config/reasoning.ts`, wire the transport into the `createModel()` branch (`responsesReasoningOptions` for Responses-API models, `chatCompletionsReasoningOptions` for chat-completions `reasoning_effort`), and add an interactive `/effort` row via `getReasoningEffortMenuOptions()` in `src/cli/input/menu.ts` (which derives from the same capability table). The onboarding `reasoning-effort` step in `src/setup/credentials/steps.ts` and `use-init-setup.ts` walks after the model step. Update `test/agent/create-model.test.ts` ("createModel reasoning configuration"), `test/config/constants.test.ts` ("reasoning capabilities"), and `test/cli/components/chat.test.tsx`.
+- To add a new coding-agent host, extend `HOST_TARGETS` in `src/integrations/install/registry.ts`, add a config adapter in `src/integrations/install/` if the host's MCP config format differs from JSON or Codex TOML, and add the host to the CLI parser's integration command list in `src/cli/commands.ts`. See [Coding-agent integrations](../integrations/coding-agents.md).
 - Re-check the `package.json` bin entry and scripts if the entrypoint changes. The bin entry is `./dist/cli/cli.js`; a `postbuild` script restores its executable bit (`chmod 0o755`) so `npm link` installs survive rebuilds. The `build` script also runs `scripts/copy-visualize-assets.cjs` after `tsc` to copy `src/visualize/styles.css` into `dist/visualize/` (tsc does not emit non-TypeScript assets); when adding a new browser asset to the visualizer, add it to the `ASSETS` list in that script so the build copies and verifies it.
 
 ## Source map
@@ -356,6 +369,7 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - `src/cli/cli.tsx`
 - `src/cli/app/app.tsx`
 - `src/cli/commands.ts`
+- `src/cli/integrations.ts`
 - `src/cli/runners.ts`
 - `src/cli/diagnostics/error-diagnostics.ts`
 - `src/cli/diagnostics/sanitize.ts`
