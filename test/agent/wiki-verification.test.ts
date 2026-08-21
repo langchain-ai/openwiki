@@ -24,7 +24,9 @@ function results(entries: [string, string, string][]) {
 }
 
 /** Wires the middleware to a scripted subagent, the way the agent supplies it. */
-function verifyWith(respond: (type: string, description: string) => Promise<string>) {
+function verifyWith(
+  respond: (type: string, description: string) => Promise<string>,
+) {
   const gate = createQaGate("full");
   const middleware = createOpenWikiVerificationMiddleware(gate);
   const calls: string[] = [];
@@ -39,9 +41,14 @@ function verifyWith(respond: (type: string, description: string) => Promise<stri
       return respond(subagent_type, description);
     },
   };
-  const tools = (middleware as { tools: { invoke: (i: unknown) => Promise<unknown> }[] }).tools;
-  (middleware as { wrapModelCall: (r: unknown, h: (r: unknown) => unknown) => unknown })
-    .wrapModelCall({ tools: [task] }, (r) => r);
+  const tools = (
+    middleware as { tools: { invoke: (i: unknown) => Promise<unknown> }[] }
+  ).tools;
+  (
+    middleware as {
+      wrapModelCall: (r: unknown, h: (r: unknown) => unknown) => unknown;
+    }
+  ).wrapModelCall({ tools: [task] }, (r) => r);
   return {
     gate,
     calls,
@@ -52,11 +59,18 @@ function verifyWith(respond: (type: string, description: string) => Promise<stri
 
 describe("verify_wiki", () => {
   test("parses questions and verdicts out of their documented text blocks", () => {
-    expect(parseQuestions(QUESTIONS).map((q) => q.id)).toEqual(["Q-01", "Q-02"]);
+    expect(parseQuestions(QUESTIONS).map((q) => q.id)).toEqual([
+      "Q-01",
+      "Q-02",
+    ]);
     expect(parseQuestions("no questions here")).toEqual([]);
     expect(
-      parseVerdicts(results([["Q-01", "PARTIAL", "missing /openwiki/a.md bit"]])),
-    ).toEqual([{ id: "Q-01", status: "PARTIAL", missing: "missing /openwiki/a.md bit" }]);
+      parseVerdicts(
+        results([["Q-01", "PARTIAL", "missing /openwiki/a.md bit"]]),
+      ),
+    ).toEqual([
+      { id: "Q-01", status: "PARTIAL", missing: "missing /openwiki/a.md bit" },
+    ]);
   });
 
   test("passes when every question resolves", async () => {
@@ -135,7 +149,9 @@ describe("verify_wiki", () => {
   });
 
   test("records unparseable questions as infrastructure, not a defect", async () => {
-    const h = verifyWith(() => Promise.resolve("I could not generate questions."));
+    const h = verifyWith(() =>
+      Promise.resolve("I could not generate questions."),
+    );
     const out = await h.run();
     expect(out.status).toBe("infrastructure_error");
     expect(h.gate.status).toBe("infrastructure_error");
@@ -169,8 +185,12 @@ describe("verify_wiki", () => {
   test("off mode never triggers and never blocks", async () => {
     const gate = createQaGate("off");
     const middleware = createOpenWikiVerificationMiddleware(gate);
-    const tools = (middleware as { tools: { invoke: (i: unknown) => Promise<unknown> }[] }).tools;
-    const out = JSON.parse(String(await tools[0].invoke({}))) as { status: string };
+    const tools = (
+      middleware as { tools: { invoke: (i: unknown) => Promise<unknown> }[] }
+    ).tools;
+    const out = JSON.parse(String(await tools[0].invoke({}))) as {
+      status: string;
+    };
     expect(out.status).toBe("not_triggered");
     expect(gate.status).toBe("not_triggered");
   });

@@ -55,9 +55,8 @@ export function unwrapSubagentResult(result: unknown): string {
   if (typeof result === "string") {
     return result;
   }
-  const messages = (
-    result as { update?: { messages?: unknown[] } } | null
-  )?.update?.messages;
+  const messages = (result as { update?: { messages?: unknown[] } } | null)
+    ?.update?.messages;
   const last = Array.isArray(messages) ? messages[messages.length - 1] : null;
   const content = (last as { content?: unknown } | null)?.content;
   if (typeof content === "string") {

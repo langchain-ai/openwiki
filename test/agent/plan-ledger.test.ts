@@ -42,7 +42,11 @@ describe("plan validation", () => {
     // one page and authored three.
     expect(
       validateEntry(
-        { disposition: "document", directory: "/invented", pages: [page("openwiki/a.md")] },
+        {
+          disposition: "document",
+          directory: "/invented",
+          pages: [page("openwiki/a.md")],
+        },
         TREE,
       ).join(" "),
     ).toContain("not a directory list_repository_directories returned");
@@ -122,7 +126,12 @@ describe("plan validation", () => {
     // typo there hides a real area behind a page that looks planned.
     expect(
       validateEntry(
-        { disposition: "covered_by", directory: "/typo", page: "openwiki/a.md", reason: "x" },
+        {
+          disposition: "covered_by",
+          directory: "/typo",
+          page: "openwiki/a.md",
+          reason: "x",
+        },
         TREE,
       ).join(" "),
     ).toContain("not a directory list_repository_directories returned");
@@ -368,7 +377,11 @@ describe("plan validation", () => {
     expect(
       validatePlanShape(
         [
-          { disposition: "document", directory: "/", pages: [page("shared.md")] },
+          {
+            disposition: "document",
+            directory: "/",
+            pages: [page("shared.md")],
+          },
           {
             disposition: "document",
             directory: "/smith-go",
@@ -435,11 +448,17 @@ describe("plan validation", () => {
           {
             disposition: "document",
             directory: "/",
-            pages: [page("openwiki/a.md", [
-              { page: "openwiki/ghost.md", relationship: "calls it" },
-            ])],
+            pages: [
+              page("openwiki/a.md", [
+                { page: "openwiki/ghost.md", relationship: "calls it" },
+              ]),
+            ],
           },
-          { disposition: "exclude", directory: "/smith-go", reason: "fixtures" },
+          {
+            disposition: "exclude",
+            directory: "/smith-go",
+            reason: "fixtures",
+          },
           {
             disposition: "exclude",
             directory: "/smith-backend",
@@ -467,7 +486,6 @@ describe("plan validation", () => {
       );
     }
   });
-
 });
 
 describe("coverage walk", () => {
@@ -497,9 +515,9 @@ describe("coverage walk", () => {
   test("an entry covers everything beneath it, at any depth", async () => {
     // /deep covers /deep/a/b/c/svc without naming it, which is why depth costs
     // the plan nothing: coverage is inherited.
-    expect(await findUncoveredDirectories(nested, ["/", "/deep", "/flat"])).toEqual(
-      [],
-    );
+    expect(
+      await findUncoveredDirectories(nested, ["/", "/deep", "/flat"]),
+    ).toEqual([]);
   });
 
   test("an entry on the root covers only the root's own files", async () => {
@@ -558,7 +576,9 @@ function stubBackend(wikiFiles: string[]) {
         });
       }
       if (clean === "/smith-go") {
-        return Promise.resolve({ files: [{ path: "smith-go/api", is_dir: true }] });
+        return Promise.resolve({
+          files: [{ path: "smith-go/api", is_dir: true }],
+        });
       }
       if (clean === "/openwiki") {
         return Promise.resolve({
@@ -697,7 +717,11 @@ describe("finalize_wiki", () => {
             directory: "/",
             pages: [page("openwiki/a.md")],
           },
-          { disposition: "exclude", directory: "/smith-go", reason: "fixtures" },
+          {
+            disposition: "exclude",
+            directory: "/smith-go",
+            reason: "fixtures",
+          },
         ],
       });
       return call("finalize_wiki");

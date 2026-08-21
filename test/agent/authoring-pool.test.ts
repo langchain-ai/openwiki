@@ -30,7 +30,9 @@ function stubStore(paths: string[]) {
 function stubSession(claimsByPage: Record<string, number> = {}) {
   return {
     inspectClaims: (page: string) =>
-      Array.from({ length: claimsByPage[page] ?? 0 }, (_, i) => ({ id: `c${i}` })),
+      Array.from({ length: claimsByPage[page] ?? 0 }, (_, i) => ({
+        id: `c${i}`,
+      })),
   } as unknown as Parameters<typeof createOpenWikiAuthoringPoolMiddleware>[0];
 }
 
@@ -100,10 +102,7 @@ describe("author_pages", () => {
       stubSession({ "/openwiki/a.md": 41, "/openwiki/b.md": 12 }),
     );
     const out = await h.run({
-      assignments: [
-        { page: "a.md" },
-        { page: "openwiki/b.md" },
-      ],
+      assignments: [{ page: "a.md" }, { page: "openwiki/b.md" }],
     });
     expect(out.authored).toBe(2);
     expect(out.claimsEstablished).toBe(53);
@@ -116,16 +115,15 @@ describe("author_pages", () => {
     // already produced nothing is how a run spent 136 author calls on 68 pages.
     const h = authorPagesWith(ok, stubSession({ "/openwiki/a.md": 30 }));
     const out = await h.run({
-      assignments: [
-        { page: "a.md" },
-        { page: "b.md" },
-      ],
+      assignments: [{ page: "a.md" }, { page: "b.md" }],
     });
     expect(out.authored).toBe(1);
     expect(out.claimsEstablished).toBe(30);
     const failed = out.failed as { page: string; error: string }[];
     expect(failed[0].page).toBe("/openwiki/b.md");
-    expect(failed[0].error).toContain("Do not re-dispatch this brief unchanged");
+    expect(failed[0].error).toContain(
+      "Do not re-dispatch this brief unchanged",
+    );
   });
 
   test("one author's failure costs its page, not the pool", async () => {
@@ -137,11 +135,7 @@ describe("author_pages", () => {
       stubSession({ "/openwiki/a.md": 5, "/openwiki/c.md": 5 }),
     );
     const out = await h.run({
-      assignments: [
-        { page: "a.md" },
-        { page: "b.md" },
-        { page: "c.md" },
-      ],
+      assignments: [{ page: "a.md" }, { page: "b.md" }, { page: "c.md" }],
     });
     expect(out.authored).toBe(2);
     expect((out.failed as { page: string }[])[0].page).toBe("/openwiki/b.md");
@@ -178,10 +172,7 @@ describe("author_pages", () => {
     // Two authors on one page race on write_file and the loser's work is gone.
     const h = authorPagesWith(ok, stubSession());
     const out = await h.run({
-      assignments: [
-        { page: "a.md" },
-        { page: "a.md" },
-      ],
+      assignments: [{ page: "a.md" }, { page: "a.md" }],
     });
     expect(h.seen).toHaveLength(1);
     expect(h.seen[0]).toContain("Write the OpenWiki page openwiki/a.md");

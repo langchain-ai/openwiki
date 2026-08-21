@@ -577,7 +577,8 @@ function createOpenWikiAgentGraph(
             createOpenWikiCodeInterpreterMiddleware(),
             // Registered after it, because the REPL reads its ptc list from
             // request.tools and author_pages has to be on the request by then.
-            ...(options.command === "init" && options.outputMode === "repository"
+            ...(options.command === "init" &&
+            options.outputMode === "repository"
               ? [
                   createOpenWikiAuthoringPoolMiddleware(
                     planStore,
@@ -588,7 +589,11 @@ function createOpenWikiAgentGraph(
                   // the ledger: breadth stops being something the workflow asks
                   // for and becomes something it cannot skip.
                   createOpenWikiVerificationMiddleware(qaGate),
-                  createOpenWikiPlanLedgerMiddleware(wikiBackend, planStore, qaGate),
+                  createOpenWikiPlanLedgerMiddleware(
+                    wikiBackend,
+                    planStore,
+                    qaGate,
+                  ),
                 ]
               : []),
             ...(claimsIntegration?.middleware ?? []),

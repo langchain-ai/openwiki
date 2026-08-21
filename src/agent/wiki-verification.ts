@@ -30,10 +30,7 @@ import { dispatchSubagent, type TaskToolLike } from "./subagent-dispatch.js";
 
 /** How a run's semantic QA ended. Distinct so zero QA cannot read as success. */
 export type QaStatus =
-  | "not_triggered"
-  | "passed"
-  | "failed"
-  | "infrastructure_error";
+  "not_triggered" | "passed" | "failed" | "infrastructure_error";
 
 /** Shared between the verifier and the completion gate. */
 export interface QaGate {
@@ -214,7 +211,11 @@ export function createOpenWikiVerificationMiddleware(gate: QaGate) {
         gate.unresolved.includes(question.id),
       );
       const batches: Question[][] = [];
-      for (let index = 0; index < pending.length; index += QUESTIONS_PER_BATCH) {
+      for (
+        let index = 0;
+        index < pending.length;
+        index += QUESTIONS_PER_BATCH
+      ) {
         batches.push(pending.slice(index, index + QUESTIONS_PER_BATCH));
       }
 

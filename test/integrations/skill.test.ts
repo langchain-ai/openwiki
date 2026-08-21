@@ -186,26 +186,34 @@ describe("canonical OpenWiki host skill", () => {
     );
     const nativeInit = CODE_SYSTEM_PROMPTS.init;
 
-    expect(nativeInit).toContain("/openwiki/_plan.md");
+    // The native agent keeps its accepted plan in a host-owned store, while
+    // integrations use a temporary Markdown plan because they do not expose
+    // the native submit_plan tool. Assert the shared gates, not identical tool
+    // names for two different transports.
+    expect(nativeInit).toContain("`submit_plan`");
     expect(init).toContain("`openwiki/_plan.md`");
-    expect(nativeInit).toContain("`skeleton-critic` subagent");
+    expect(nativeInit).toContain(
+      "`skeleton-critic` remains a direct subagent call",
+    );
     expect(init).toContain("run the skeleton critic");
-    expect(nativeInit).toContain("Invoke `skeleton-critic` exactly once more");
+    expect(nativeInit).toContain("then invoke it once more");
     expect(init).toContain("critic exactly once more");
-    expect(nativeInit).toContain("unknown-unknown pass");
+    expect(nativeInit).toContain("Unknown-unknown pass");
     expect(init).toContain("unknown-unknown pass");
-    expect(nativeInit).toContain("`wiki-question-finder`");
+    expect(nativeInit).toContain("Call `verify_wiki`");
     expect(init).toContain("Invoke the question finder");
-    expect(nativeInit).toContain("`wiki-answer-verifier`");
+    expect(nativeInit).toContain("dispatches every verifier concurrently");
     expect(init).toContain("launch verifier batches");
-    expect(nativeInit).toContain("batches of 2–3");
+    expect(nativeInit).toContain("Two waves is the whole budget");
     expect(reviewers).toContain("batches of two or three");
-    expect(nativeInit).toContain("PARTIAL or FAIL");
+    expect(nativeInit).toContain("returns defects grouped by canonical page");
     expect(init).toContain("`PARTIAL` or `FAIL`");
     expect(nativeInit).toContain("write /openwiki/quickstart.md");
     expect(init).toContain("`openwiki/quickstart.md`, then write it last");
-    expect(nativeInit).toContain("through resolve_claims");
+    expect(nativeInit).toContain("Authors own one page and its Claims each");
     expect(init).toContain("`openwiki_resolve_claims`");
+    expect(nativeInit).toContain("Call `finalize_wiki`");
+    expect(init).toContain("Call `openwiki_finish`");
   });
 
   test("preserves native reviewer evidence isolation", async () => {

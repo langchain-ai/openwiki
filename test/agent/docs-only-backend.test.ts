@@ -43,7 +43,9 @@ describe("OpenWikiLocalShellBackend", () => {
   });
 
   test("recognizes the tool-result offload directory without widening it", () => {
-    expect(isLargeToolResultPath("/large_tool_results/call_abc.txt")).toBe(true);
+    expect(isLargeToolResultPath("/large_tool_results/call_abc.txt")).toBe(
+      true,
+    );
     expect(isLargeToolResultPath("large_tool_results/call_abc.txt")).toBe(true);
     expect(isLargeToolResultPath("/large_tool_results")).toBe(true);
     // The exemption cannot be borrowed to reach the repository.
