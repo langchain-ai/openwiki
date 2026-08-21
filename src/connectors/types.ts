@@ -1,10 +1,13 @@
 export type ConnectorId =
   | "custom-mcp"
+  | "github"
   | "git-repo"
   | "google"
   | "hackernews"
   | "langsmith"
+  | "newrelic"
   | "notion"
+  | "sentry"
   | "slack"
   | "web-search"
   | "x";
