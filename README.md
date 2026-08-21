@@ -65,7 +65,7 @@ Keep it current automatically by adding a scheduled CI job that opens a docs PR 
 OpenWiki can run inside an existing coding agent instead of launching its own model. The coding agent investigates the repository, plans and writes the documentation, and uses its native tools and subagents when helpful. OpenWiki provides the MCP lifecycle that prepares the repository, constrains the run, and deterministically finalizes indexes, provenance, setup files, and metadata.
 
 <div align="center">
-  <a href="./static/openwiki-codex.mp4"><img alt="Watch Codex initialize an OpenWiki for a repository." src="./static/openwiki-codex.jpg" width="880"></a>
+  <img alt="Codex initializes an OpenWiki for a repository." src="./static/openwiki-codex.gif" width="880">
 </div>
 
 Install the integration for your coding agent (choose one):
