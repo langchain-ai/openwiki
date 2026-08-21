@@ -26,7 +26,7 @@ sources:
     resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-6f06cc988142430d18f2233e
     resource: repo://src/integrations/mcp/stdio.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-21T08:12:50.745Z
@@ -43,10 +43,10 @@ The `openwiki integrations install <codex|claude>` command installs two things i
 1. **Skill bundle** — the `integrations/openwiki/` directory (SKILL.md plus reference docs) is copied into the host's skill directory, giving the host agent workflow instructions for init and update runs.
 2. **MCP server config** — an entry pointing at `openwiki mcp --host <id>` is added to the host's MCP configuration file, so the host starts OpenWiki's stdio MCP server on demand.
 
-| Host | Skill directory | MCP config (user scope) | MCP config (project scope) |
-| --- | --- | --- | --- |
-| Codex | `.agents/skills/openwiki` | `.codex/config.toml` | `.codex/config.toml` |
-| Claude Code | `.claude/skills/openwiki` | `.claude.json` | `.mcp.json` |
+| Host        | Skill directory           | MCP config (user scope) | MCP config (project scope) |
+| ----------- | ------------------------- | ----------------------- | -------------------------- |
+| Codex       | `.agents/skills/openwiki` | `.codex/config.toml`    | `.codex/config.toml`       |
+| Claude Code | `.claude/skills/openwiki` | `.claude.json`          | `.mcp.json`                |
 
 The registry is defined in `HOST_TARGETS` in `src/integrations/install/registry.ts`. Adding a new host means adding a `HostTarget` entry with its skill path, MCP config adapter (`json` or `codex-toml`), and producer actor.
 
@@ -92,12 +92,12 @@ sequenceDiagram
     Session-->>Host: { status: "complete", warnings? }
 ```
 
-| Tool | Purpose | Key input |
-| --- | --- | --- |
-| `openwiki_begin` | Prepare the wiki before authoring | `root` (absolute Git root), `mode` (`init`/`update`), optional `language` |
-| `openwiki_inspect_claims` | Read Claims without a write obligation | `runId` + `ids` or `pages` (exactly one) |
-| `openwiki_resolve_claims` | Establish or reconcile Claims | `runId` + `pages[]` with operations |
-| `openwiki_finish` | Finalize and complete the run | `runId` |
+| Tool                      | Purpose                                | Key input                                                                 |
+| ------------------------- | -------------------------------------- | ------------------------------------------------------------------------- |
+| `openwiki_begin`          | Prepare the wiki before authoring      | `root` (absolute Git root), `mode` (`init`/`update`), optional `language` |
+| `openwiki_inspect_claims` | Read Claims without a write obligation | `runId` + `ids` or `pages` (exactly one)                                  |
+| `openwiki_resolve_claims` | Establish or reconcile Claims          | `runId` + `pages[]` with operations                                       |
+| `openwiki_finish`         | Finalize and complete the run          | `runId`                                                                   |
 
 The protocol is transport-neutral: `ProtocolTool` in `src/integrations/core/protocol.ts` defines the tool name, description, Zod schema, and handler. The MCP adapter in `src/integrations/mcp/server.ts` registers each tool with the MCP SDK's `McpServer`. The stdio transport is started by `runOpenWikiMcp()` in `src/integrations/mcp/stdio.ts`.
 
@@ -152,42 +152,42 @@ Non-negotiable rules include: never report success before `openwiki_finish` retu
 
 ## Key source files
 
-| File | Role |
-| --- | --- |
-| `src/integrations/core/protocol.ts` | `ProtocolTool`, Zod schemas, `HostRunMode` |
-| `src/integrations/core/session-manager.ts` | `HostSessionManager` — begin/finish/inspect/resolve lifecycle |
-| `src/integrations/core/repository-root.ts` | `resolveRepositoryRoot()` — Git root resolution |
-| `src/integrations/core/errors.ts` | `HostIntegrationError` with bounded codes |
-| `src/integrations/install/registry.ts` | `HOST_TARGETS`, `getHostTarget()`, `defaultMcpServerCommand()` |
-| `src/integrations/install/installer.ts` | `HostIntegrationInstaller` — transactional install/uninstall |
-| `src/integrations/install/skill-bundle.ts` | Skill bundle resolution, inventory, receipt |
-| `src/integrations/install/config-json.ts` | JSON MCP config adapter (Claude) |
-| `src/integrations/install/config-toml.ts` | Codex TOML MCP config adapter |
-| `src/integrations/install/install-paths.ts` | Path resolution, symlink assertions, backup/restore |
-| `src/integrations/install/types.ts` | `HostTargetId`, `HostIntegrationScope`, `HostTarget` |
-| `src/integrations/mcp/server.ts` | `createOpenWikiMcpServer()` — MCP SDK adapter |
-| `src/integrations/mcp/stdio.ts` | `runOpenWikiMcp()` — stdio transport |
-| `src/cli/integrations.ts` | `runIntegrationsCommand()`, `runMcpCommand()` |
-| `src/cli/commands.ts` | `integrations` and `mcp` subcommand parsing |
-| `integrations/openwiki/SKILL.md` | Installed skill instructions |
-| `scripts/install-local-integration.mjs` | Dev helper for local-checkout installs |
+| File                                        | Role                                                           |
+| ------------------------------------------- | -------------------------------------------------------------- |
+| `src/integrations/core/protocol.ts`         | `ProtocolTool`, Zod schemas, `HostRunMode`                     |
+| `src/integrations/core/session-manager.ts`  | `HostSessionManager` — begin/finish/inspect/resolve lifecycle  |
+| `src/integrations/core/repository-root.ts`  | `resolveRepositoryRoot()` — Git root resolution                |
+| `src/integrations/core/errors.ts`           | `HostIntegrationError` with bounded codes                      |
+| `src/integrations/install/registry.ts`      | `HOST_TARGETS`, `getHostTarget()`, `defaultMcpServerCommand()` |
+| `src/integrations/install/installer.ts`     | `HostIntegrationInstaller` — transactional install/uninstall   |
+| `src/integrations/install/skill-bundle.ts`  | Skill bundle resolution, inventory, receipt                    |
+| `src/integrations/install/config-json.ts`   | JSON MCP config adapter (Claude)                               |
+| `src/integrations/install/config-toml.ts`   | Codex TOML MCP config adapter                                  |
+| `src/integrations/install/install-paths.ts` | Path resolution, symlink assertions, backup/restore            |
+| `src/integrations/install/types.ts`         | `HostTargetId`, `HostIntegrationScope`, `HostTarget`           |
+| `src/integrations/mcp/server.ts`            | `createOpenWikiMcpServer()` — MCP SDK adapter                  |
+| `src/integrations/mcp/stdio.ts`             | `runOpenWikiMcp()` — stdio transport                           |
+| `src/cli/integrations.ts`                   | `runIntegrationsCommand()`, `runMcpCommand()`                  |
+| `src/cli/commands.ts`                       | `integrations` and `mcp` subcommand parsing                    |
+| `integrations/openwiki/SKILL.md`            | Installed skill instructions                                   |
+| `scripts/install-local-integration.mjs`     | Dev helper for local-checkout installs                         |
 
 ## Focused tests
 
-| Test file | Coverage |
-| --- | --- |
-| `test/integrations/session-manager.test.ts` | begin/finish lifecycle, supersession, retry |
-| `test/integrations/installer.test.ts` | Transactional install/uninstall, rollback, force |
-| `test/integrations/protocol.test.ts` | Tool schemas, input validation |
-| `test/integrations/mcp-server.test.ts` | MCP tool registration and execution |
-| `test/integrations/mcp-stdio.test.ts` | Stdio server startup |
-| `test/integrations/config-adapters.test.ts` | JSON and TOML MCP config writing |
-| `test/integrations/repository-root.test.ts` | Git root resolution |
-| `test/integrations/skill.test.ts` | Skill bundle inventory |
-| `test/integrations/package-contents.test.ts` | Published package includes skill bundle |
-| `test/integrations/cli-dogfood.test.ts` | CLI install/list/uninstall end-to-end |
-| `test/cli/integrations-commands.test.ts` | Command parsing |
-| `test/cli/integrations-runners.test.ts` | Runner execution |
+| Test file                                    | Coverage                                         |
+| -------------------------------------------- | ------------------------------------------------ |
+| `test/integrations/session-manager.test.ts`  | begin/finish lifecycle, supersession, retry      |
+| `test/integrations/installer.test.ts`        | Transactional install/uninstall, rollback, force |
+| `test/integrations/protocol.test.ts`         | Tool schemas, input validation                   |
+| `test/integrations/mcp-server.test.ts`       | MCP tool registration and execution              |
+| `test/integrations/mcp-stdio.test.ts`        | Stdio server startup                             |
+| `test/integrations/config-adapters.test.ts`  | JSON and TOML MCP config writing                 |
+| `test/integrations/repository-root.test.ts`  | Git root resolution                              |
+| `test/integrations/skill.test.ts`            | Skill bundle inventory                           |
+| `test/integrations/package-contents.test.ts` | Published package includes skill bundle          |
+| `test/integrations/cli-dogfood.test.ts`      | CLI install/list/uninstall end-to-end            |
+| `test/cli/integrations-commands.test.ts`     | Command parsing                                  |
+| `test/cli/integrations-runners.test.ts`      | Runner execution                                 |
 
 ## Things to watch when changing integrations
 

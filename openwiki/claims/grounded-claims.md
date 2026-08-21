@@ -40,7 +40,7 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-21T08:12:50.745Z
@@ -81,22 +81,22 @@ After the agent finishes, `ClaimsRuntime.finalize()` persists dirty sidecars, re
 
 A Claim is an atomic factual proposition with a stable OpenWiki-generated identifier:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `id` | `string` | Stable `claim_`-prefixed UUID, allocated by OpenWiki |
-| `statement` | `string` | One concise, falsifiable proposition |
-| `evidence` | `Evidence[]` | One or more source resources with version tokens |
+| Field       | Type         | Description                                          |
+| ----------- | ------------ | ---------------------------------------------------- |
+| `id`        | `string`     | Stable `claim_`-prefixed UUID, allocated by OpenWiki |
+| `statement` | `string`     | One concise, falsifiable proposition                 |
+| `evidence`  | `Evidence[]` | One or more source resources with version tokens     |
 
 Each `Evidence` carries a `resource` (a resolver-owned source identity such as `repo://src/agent/index.ts#L195-L210`) and a `version` (an opaque resolver-owned token observed when the claim was established). The version lets the resolver detect whether the source changed and, for line ranges, relocate the evidence rather than treating a shifted range as stale.
 
 Sidecars live at `openwiki/.claims/<page-path>.json` and follow the `PageClaims` schema:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `schemaVersion` | `1` | Sidecar format version |
-| `pageVersion` | `string` | `sha256:<hex>` hash of the generated Markdown |
-| `claims` | `Claim[]` | Complete proposition set owned by the page |
-| `verification` | `{by, at}?` | Last successful complete Claims reconciliation |
+| Field           | Type        | Description                                    |
+| --------------- | ----------- | ---------------------------------------------- |
+| `schemaVersion` | `1`         | Sidecar format version                         |
+| `pageVersion`   | `string`    | `sha256:<hex>` hash of the generated Markdown  |
+| `claims`        | `Claim[]`   | Complete proposition set owned by the page     |
+| `verification`  | `{by, at}?` | Last successful complete Claims reconciliation |
 
 The `ClaimsStore` in `src/claims/brains/code/store.ts` owns all sidecar I/O: it resolves paths through a physical containment gate (using `realpath` to prevent symlink-based escapes), validates every sidecar against a strict Zod schema on load, and writes atomically. Reserved wiki files (`index.md`, `log.md`, `instructions.md`, `_plan.md`) and the `.claims` directory itself are excluded from Claims ownership by `isGroundedWikiPage()` in `src/claims/brains/code/paths.ts`.
 
@@ -104,12 +104,12 @@ The `ClaimsStore` in `src/claims/brains/code/store.ts` owns all sidecar I/O: it 
 
 `resolve_claims` accepts an array of pages, each with an ordered list of atomic operations applied in sequence. The four operation types:
 
-| Operation | Purpose | Requires |
-| --- | --- | --- |
-| `add` | Add a new claim; OpenWiki allocates the id | `statement`, `evidence` |
-| `confirm` | Reaffirm an existing claim against current evidence | `id` |
-| `update` | Revise a claim's statement and/or evidence | `id` + (`statement` or `evidence`) |
-| `retract` | Remove an obsolete claim | `id` |
+| Operation | Purpose                                             | Requires                           |
+| --------- | --------------------------------------------------- | ---------------------------------- |
+| `add`     | Add a new claim; OpenWiki allocates the id          | `statement`, `evidence`            |
+| `confirm` | Reaffirm an existing claim against current evidence | `id`                               |
+| `update`  | Revise a claim's statement and/or evidence          | `id` + (`statement` or `evidence`) |
+| `retract` | Remove an obsolete claim                            | `id`                               |
 
 `applyClaimOperations()` in `src/claims/core/mutations.ts` validates the full starting claim set, resolves all evidence through the resolver, and then applies operations — **atomically per page**. If any operation fails (unknown id, duplicate id targeting, evidence that does not resolve, duplicate evidence resource), the entire batch throws without partial changes. The resolver is memoized per batch via `cacheEvidenceResolver()` so a resource shared across operations resolves once.
 
@@ -179,44 +179,44 @@ The init workflow instructs the agent to establish Claims **before** writing fac
 
 ## Key source files
 
-| File | Role |
-| --- | --- |
-| `src/claims/core/types.ts` | `Claim`, `Evidence`, `ClaimOperation`, `EvidenceResolver` interfaces |
-| `src/claims/core/mutations.ts` | `applyClaimOperations()` — atomic batch validation and application |
-| `src/claims/core/errors.ts` | `ClaimsError` hierarchy (session, persistence, evidence, security) |
-| `src/claims/core/resolver-cache.ts` | `cacheEvidenceResolver()` — per-phase memoization |
+| File                                         | Role                                                                           |
+| -------------------------------------------- | ------------------------------------------------------------------------------ |
+| `src/claims/core/types.ts`                   | `Claim`, `Evidence`, `ClaimOperation`, `EvidenceResolver` interfaces           |
+| `src/claims/core/mutations.ts`               | `applyClaimOperations()` — atomic batch validation and application             |
+| `src/claims/core/errors.ts`                  | `ClaimsError` hierarchy (session, persistence, evidence, security)             |
+| `src/claims/core/resolver-cache.ts`          | `cacheEvidenceResolver()` — per-phase memoization                              |
 | `src/claims/evidence/repository/resolver.ts` | `RepositoryEvidenceResolver` — `repo://` resolution with line-range relocation |
-| `src/claims/evidence/repository/resource.ts` | `repo://path#Lx-Ly` URI parse/format |
-| `src/claims/brains/code/types.ts` | `PageClaims`, `ResolveClaimsInput`, `GroundingIssue` |
-| `src/claims/brains/code/runtime.ts` | `prepareClaimsRuntime()` — run preparation |
-| `src/claims/brains/code/session.ts` | `ClaimSession` — run-scoped state, mutation, inspection, finalization |
-| `src/claims/brains/code/store.ts` | `ClaimsStore` — sidecar persistence with path containment |
-| `src/claims/brains/code/tools.ts` | `resolve_claims`, `inspect_claims`, Claims-aware `delete_file` |
-| `src/claims/brains/code/middleware.ts` | Claims read-note middleware |
-| `src/claims/brains/code/preflight.ts` | `runClaimsPreflight()` — stale/unresolved detection |
-| `src/claims/brains/code/paths.ts` | Path canonicalization, reserved-file exclusion |
-| `src/claims/brains/code/integration.ts` | `createClaimsIntegration()` — wires tools + middleware |
-| `src/claims/guidance.ts` | `CLAIMS_SUBSTANCE_GUIDANCE` — shared substance standard |
-| `src/okf/claim-sources.ts` | `synchronizeClaimSources()` — OKF `sources` projection |
-| `src/okf/claims-verification.ts` | `synchronizeClaimsVerification()` — OKF `verified` projection |
+| `src/claims/evidence/repository/resource.ts` | `repo://path#Lx-Ly` URI parse/format                                           |
+| `src/claims/brains/code/types.ts`            | `PageClaims`, `ResolveClaimsInput`, `GroundingIssue`                           |
+| `src/claims/brains/code/runtime.ts`          | `prepareClaimsRuntime()` — run preparation                                     |
+| `src/claims/brains/code/session.ts`          | `ClaimSession` — run-scoped state, mutation, inspection, finalization          |
+| `src/claims/brains/code/store.ts`            | `ClaimsStore` — sidecar persistence with path containment                      |
+| `src/claims/brains/code/tools.ts`            | `resolve_claims`, `inspect_claims`, Claims-aware `delete_file`                 |
+| `src/claims/brains/code/middleware.ts`       | Claims read-note middleware                                                    |
+| `src/claims/brains/code/preflight.ts`        | `runClaimsPreflight()` — stale/unresolved detection                            |
+| `src/claims/brains/code/paths.ts`            | Path canonicalization, reserved-file exclusion                                 |
+| `src/claims/brains/code/integration.ts`      | `createClaimsIntegration()` — wires tools + middleware                         |
+| `src/claims/guidance.ts`                     | `CLAIMS_SUBSTANCE_GUIDANCE` — shared substance standard                        |
+| `src/okf/claim-sources.ts`                   | `synchronizeClaimSources()` — OKF `sources` projection                         |
+| `src/okf/claims-verification.ts`             | `synchronizeClaimsVerification()` — OKF `verified` projection                  |
 
 ## Focused tests
 
-| Test file | Coverage |
-| --- | --- |
-| `test/claims/brains/code/session.test.ts` | Mutation batches, claim ownership, finalization, deletion |
-| `test/claims/brains/code/store.test.ts` | Sidecar load/write, path containment, orphan discovery |
-| `test/claims/brains/code/tools.test.ts` | Tool schema validation, cross-page batching, delete_file gating |
-| `test/claims/brains/code/preflight.test.ts` | Stale/unresolved classification, issue ordering |
-| `test/claims/brains/code/middleware.test.ts` | Read-note decoration, failed-read handling |
-| `test/claims/brains/code/runtime.test.ts` | Init vs update preparation, finalization warnings |
-| `test/claims/core/mutations.test.ts` | Atomic application, duplicate detection, evidence resolution |
-| `test/claims/evidence/repository/resolver.test.ts` | Line-range relocation, path containment, `.openwikiignore` |
-| `test/claims/evidence/repository/resource.test.ts` | URI round-trip, normalization, percent encoding |
-| `test/okf/claim-sources.test.ts` | Source projection, producer entry retention, deduplication |
-| `test/okf/claims-verification.test.ts` | Verification projection, actor filtering, list normalization |
-| `test/agent/claims-agent-integration.test.ts` | End-to-end agent run with Claims |
-| `test/agent/claims-run-lifecycle.test.ts` | Claims runtime lifecycle in a full run |
+| Test file                                          | Coverage                                                        |
+| -------------------------------------------------- | --------------------------------------------------------------- |
+| `test/claims/brains/code/session.test.ts`          | Mutation batches, claim ownership, finalization, deletion       |
+| `test/claims/brains/code/store.test.ts`            | Sidecar load/write, path containment, orphan discovery          |
+| `test/claims/brains/code/tools.test.ts`            | Tool schema validation, cross-page batching, delete_file gating |
+| `test/claims/brains/code/preflight.test.ts`        | Stale/unresolved classification, issue ordering                 |
+| `test/claims/brains/code/middleware.test.ts`       | Read-note decoration, failed-read handling                      |
+| `test/claims/brains/code/runtime.test.ts`          | Init vs update preparation, finalization warnings               |
+| `test/claims/core/mutations.test.ts`               | Atomic application, duplicate detection, evidence resolution    |
+| `test/claims/evidence/repository/resolver.test.ts` | Line-range relocation, path containment, `.openwikiignore`      |
+| `test/claims/evidence/repository/resource.test.ts` | URI round-trip, normalization, percent encoding                 |
+| `test/okf/claim-sources.test.ts`                   | Source projection, producer entry retention, deduplication      |
+| `test/okf/claims-verification.test.ts`             | Verification projection, actor filtering, list normalization    |
+| `test/agent/claims-agent-integration.test.ts`      | End-to-end agent run with Claims                                |
+| `test/agent/claims-run-lifecycle.test.ts`          | Claims runtime lifecycle in a full run                          |
 
 ## Things to watch when changing Claims
 

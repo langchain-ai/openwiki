@@ -3,7 +3,7 @@ type: Quickstart Guide
 title: OpenWiki Quickstart
 description: Quickstart reference for the OpenWiki TypeScript CLI, including documentation-generation workflows, supported model providers, and the primary source files. Use it to navigate the repository's architecture, commands, agent runtime, operations, and connectors.
 tags: [openwiki, quickstart, cli, documentation]
-generated: {by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z" }
 sources:
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
