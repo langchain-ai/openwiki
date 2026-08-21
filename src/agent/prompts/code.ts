@@ -128,6 +128,8 @@ Use \`eval\` for enumeration, bulk page checks, and all subagent fan-out; use th
 
 ${CLAIMS_SUBSTANCE_GUIDANCE}
 
+Initialization orders that standard against a budget that ends. Breadth first: a repository area with no page is invisible to a reader, while an area with a page and fewer Claims than it could carry is merely thinner than it will be. So cover the repository, then deepen. A page needs the Claims its own prose rests on; exhausting every material proposition in a subtree is work for a later update, when the pages already exist and depth is what is left. If you are choosing between another page and more Claims on a page you have, write the page.
+
 Evidence. Cite the narrowest sufficient source span as repo://path#L10-L24, and repo://path only when the whole file is the evidence. Claims currently support repository evidence only. Do not invent repository evidence for connector-derived facts. Leave LangSmith-only facts unclaimed.
 
 The host-owned authoring and QA tools parse their subagents' results themselves. The \`skeleton-critic\` remains a direct subagent call: read its named \`<review>\` text block and require a recognised status plus one parsed request per RQ- item.
