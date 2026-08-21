@@ -1,0 +1,31 @@
+openwiki/agent/workflow.md
+  s_96713f38077d66::t_6c97126669064f 6
+openwiki/claims/grounded-claims.md
+  s_96713f38077d66::t_6c97126669064f 43,84-88,94-99,107-112,182-187,189-201,205-219
+openwiki/architecture/overview.md
+  s_96713f38077d66::t_6c97126669064f 6
+openwiki/operations/credentials-and-updates.md
+  s_96713f38077d66::t_6c97126669064f 6
+openwiki/quickstart.md
+  s_96713f38077d66::t_6c97126669064f 6
+openwiki/integrations/coding-agents.md
+  s_96713f38077d66::t_6c97126669064f 29,46-49,95-100,155-173,177-190
+openwiki/cli/usage.md
+  s_96713f38077d66::t_6c97126669064f 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "0c1024895fc1b66400ccd44b6be24379d346d58a",
+  "prompts": {},
+  "sessions": {
+    "s_96713f38077d66": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02508-3963-7e32-97f1-987a2b4fd251",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
