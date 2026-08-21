@@ -1,0 +1,25 @@
+.changeset/grounded-sources-flow.md
+  h_f78d33d4280f3f 2,5
+  s_a0502f85e6b3fb::t_2836be67b1b2a1 1,3-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "d9da61eb14be3293acfa5f3a4fcfacd9982762cc",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a0502f85e6b3fb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02162-ef78-7710-bbe5-5f72aa396791",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
