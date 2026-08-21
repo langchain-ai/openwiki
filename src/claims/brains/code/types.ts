@@ -6,6 +6,21 @@ import type { Claim, ClaimOperation } from "../../core/types.js";
 export const CODE_CLAIMS_SCHEMA_VERSION = 1;
 
 /**
+ * Durable OpenWiki verification event for one page's complete Claims set.
+ */
+export interface ClaimsVerificationEvent {
+  /**
+   * Versioned producer actor that completed the verification.
+   */
+  by: string;
+
+  /**
+   * ISO 8601 time of the successful Claims reconciliation.
+   */
+  at: string;
+}
+
+/**
  * OpenWiki-owned grounding state for one generated Markdown page.
  */
 export interface PageClaims {
@@ -25,6 +40,14 @@ export interface PageClaims {
    * Complete material proposition set owned by the page.
    */
   claims: Claim[];
+
+  /**
+   * Last successful complete Claims reconciliation for this page.
+   *
+   * Older schema-v1 sidecars omit this optional field and remain unverified
+   * until the page actively participates in `resolve_claims`.
+   */
+  verification?: ClaimsVerificationEvent;
 }
 
 /**
@@ -63,6 +86,27 @@ export interface ResolveClaimsResult {
 export interface ClaimsFinalizeResult {
   /**
    * Page-local failures that were isolated instead of aborting the run.
+   */
+  warnings: string[];
+
+  /**
+   * Active machine verification per current Claims page. A `null` value means
+   * the page is currently ineligible, including evidence debt and empty Claims.
+   */
+  verificationByPage: ReadonlyMap<string, ClaimsVerificationEvent | null>;
+}
+
+/**
+ * Best-effort page-version refresh after verification front matter is written.
+ */
+export interface ClaimsPageVersionRefreshResult {
+  /**
+   * Pages whose sidecar could not be synchronized to the projected Markdown.
+   */
+  failedPages: string[];
+
+  /**
+   * Page-local persistence failures isolated from the rest of finalization.
    */
   warnings: string[];
 }

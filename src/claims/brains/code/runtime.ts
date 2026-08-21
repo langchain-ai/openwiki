@@ -3,6 +3,11 @@ import type {
   OpenWikiOutputMode,
 } from "../../../agent/types.js";
 import { OpenWikiIgnore } from "../../../agent/openwiki-ignore.js";
+import {
+  rollbackClaimsVerification,
+  synchronizeClaimsVerification,
+} from "../../../okf/claims-verification.js";
+import { OPENWIKI_PRODUCER_ACTOR } from "../../../version.js";
 import { RepositoryEvidenceResolver } from "../../evidence/repository/resolver.js";
 import { runClaimsPreflight } from "./preflight.js";
 import { ClaimSession } from "./session.js";
@@ -23,9 +28,9 @@ export interface ClaimsRuntime {
   issueCount: number;
 
   /**
-   * Persists dirty claim pages and removes deleted or orphaned sidecars.
+   * Persists dirty Claims, projects durable verification, and cleans orphans.
    */
-  finalize(): Promise<void>;
+  finalize(at?: string): Promise<void>;
 }
 
 /**
@@ -64,13 +69,23 @@ export async function prepareClaimsRuntime(
       persisted: new Map(),
       issues: [],
       orphanPages: await store.discoverSidecarPages(),
+      ungroundedPages: [],
     });
     return {
       session,
       issueCount: 0,
-      finalize: async () => {
-        const result = await session.finalize(store);
+      finalize: async (at = new Date().toISOString()) => {
+        const result = await session.finalize(store, {
+          by: OPENWIKI_PRODUCER_ACTOR,
+          at,
+        });
         reportWarnings(result.warnings, onWarning);
+        await finalizeVerificationProjection(
+          session,
+          store,
+          result.verificationByPage,
+          onWarning,
+        );
       },
     };
   }
@@ -81,15 +96,53 @@ export async function prepareClaimsRuntime(
     persisted: preflight.persisted,
     issues: preflight.issues,
     orphanPages: preflight.orphanPages,
+    ungroundedPages: preflight.ungroundedPages,
   });
   return {
     session,
     issueCount: preflight.issues.length,
-    finalize: async () => {
-      const result = await session.finalize(store);
+    finalize: async (at = new Date().toISOString()) => {
+      const result = await session.finalize(store, {
+        by: OPENWIKI_PRODUCER_ACTOR,
+        at,
+      });
       reportWarnings(result.warnings, onWarning);
+      await finalizeVerificationProjection(
+        session,
+        store,
+        result.verificationByPage,
+        onWarning,
+      );
     },
   };
+}
+
+/**
+ * Projects durable verification, synchronizes affected sidecar page hashes,
+ * and restores exact Markdown when a page-local hash refresh cannot persist.
+ */
+async function finalizeVerificationProjection(
+  session: ClaimSession,
+  store: ClaimsStore,
+  verificationByPage: Parameters<typeof synchronizeClaimsVerification>[1],
+  onWarning: (message: string) => void,
+): Promise<void> {
+  const originals = await synchronizeClaimsVerification(
+    store,
+    verificationByPage,
+  );
+  const refreshed = await session.refreshPageVersions(store, [
+    ...originals.keys(),
+  ]);
+  const unsafeStamps = refreshed.failedPages.filter(
+    (page) =>
+      verificationByPage.get(page) !== null &&
+      verificationByPage.get(page) !== undefined,
+  );
+  if (unsafeStamps.length > 0) {
+    await rollbackClaimsVerification(store, originals, unsafeStamps);
+  }
+  reportWarnings(refreshed.warnings, onWarning);
 }
 
 /**

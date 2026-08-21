@@ -105,6 +105,12 @@ describe("createClaimsTools", () => {
     expect(resolveDescription).toContain(
       "leave LangSmith-only facts unclaimed",
     );
+    expect(getTool(tools, "resolve_claims").description).toContain(
+      "before writing the corresponding new or materially changed factual prose",
+    );
+    expect(getTool(tools, "resolve_claims").description).toContain(
+      "rather than backfilling untouched prose",
+    );
     expect(getTool(tools, "inspect_claims").description).toContain(
       "without creating a write obligation",
     );

@@ -14,6 +14,8 @@ import { ClaimsStore } from "./store.js";
 import {
   CODE_CLAIMS_SCHEMA_VERSION,
   type ClaimsFinalizeResult,
+  type ClaimsPageVersionRefreshResult,
+  type ClaimsVerificationEvent,
   type GroundingIssue,
   type InspectedClaim,
   type InspectedPageClaims,
@@ -47,6 +49,16 @@ export interface ClaimSessionOptions {
   orphanPages: string[];
 
   /**
+   * Current Markdown pages with no non-empty Claims set.
+   *
+   * The marker is lazy, in-memory guidance only; it does not create a sidecar
+   * or a finalization obligation.
+   *
+   * @default []
+   */
+  ungroundedPages?: string[];
+
+  /**
    * Identifier factory used for newly added claims.
    *
    * @default A `claim_`-prefixed cryptographically random UUID.
@@ -62,6 +74,16 @@ interface WorkingPageState {
    * Complete current proposition set.
    */
   claims: Claim[];
+
+  /**
+   * Last successfully persisted complete reconciliation event.
+   */
+  verification?: ClaimsVerificationEvent;
+
+  /**
+   * Whether this working page currently has a persisted sidecar.
+   */
+  persisted: boolean;
 
   /**
    * Completion gate for the latest queued mutation.
@@ -109,6 +131,11 @@ export class ClaimSession {
   private readonly orphanPages: string[];
 
   /**
+   * Current pages that should receive lazy first-Claims guidance when read.
+   */
+  private readonly ungroundedPages: Set<string>;
+
+  /**
    * OpenWiki-owned identifier factory.
    */
   private readonly createClaimId: () => string;
@@ -123,6 +150,9 @@ export class ClaimSession {
     this.orphanPages = [
       ...new Set(options.orphanPages.map(normalizeWikiPagePath)),
     ].sort((left, right) => left.localeCompare(right));
+    this.ungroundedPages = new Set(
+      (options.ungroundedPages ?? []).map(normalizeWikiPagePath),
+    );
     this.createClaimId =
       options.createClaimId ??
       (() => `claim_${randomUUID().replaceAll("-", "")}`);
@@ -138,6 +168,10 @@ export class ClaimSession {
       }
       this.pages.set(page, {
         claims: cloneClaims(persisted.claims),
+        ...(persisted.verification
+          ? { verification: { ...persisted.verification } }
+          : {}),
+        persisted: true,
         pendingMutation: Promise.resolve(),
         dirty: false,
         deleted: false,
@@ -145,6 +179,11 @@ export class ClaimSession {
           .filter((issue) => normalizeWikiPagePath(issue.page) === page)
           .map(cloneGroundingIssue),
       });
+      if (persisted.claims.length === 0) {
+        this.ungroundedPages.add(page);
+      } else {
+        this.ungroundedPages.delete(page);
+      }
     }
   }
 
@@ -179,6 +218,11 @@ export class ClaimSession {
       this.assertClaimOwnershipAvailable(page, nextClaims);
       this.replaceClaimOwnership(page, previousClaims, nextClaims);
       state.claims = nextClaims;
+      if (nextClaims.length === 0) {
+        this.ungroundedPages.add(page);
+      } else {
+        this.ungroundedPages.delete(page);
+      }
       const allocatedIds = nextClaims
         .map(({ id }) => id)
         .filter((id) => !existingIds.has(id));
@@ -244,6 +288,36 @@ export class ClaimSession {
   }
 
   /**
+   * Returns the complete current evidence-resource projection for every page
+   * represented in this Claims session.
+   *
+   * Resources are deduplicated and sorted per page so OKF provenance output is
+   * deterministic. Deleted pages are omitted; an empty Claims set remains in
+   * the map so a prior code-owned `sources` projection can be removed.
+   *
+   * @returns Detached page-to-resource state for deterministic finalizers.
+   */
+  getEvidenceResourcesByPage(): ReadonlyMap<string, readonly string[]> {
+    const result = new Map<string, readonly string[]>();
+    const pages = [...this.pages.entries()].sort(([left], [right]) =>
+      left.localeCompare(right),
+    );
+    for (const [page, state] of pages) {
+      if (state.deleted) continue;
+      const resources = state.claims.flatMap((claim) =>
+        claim.evidence.map(({ resource }) => resource),
+      );
+      result.set(
+        page,
+        [...new Set(resources)].sort((left, right) =>
+          left.localeCompare(right),
+        ),
+      );
+    }
+    return result;
+  }
+
+  /**
    * Formats a non-persisted read note for page-local evidence debt.
    *
    * @param pageInput - Virtual generated-page path.
@@ -252,13 +326,16 @@ export class ClaimSession {
   getReadNote(pageInput: string): string | undefined {
     const page = normalizeWikiPagePath(pageInput);
     const issues = this.pages.get(page)?.issues ?? [];
-    if (issues.length === 0) {
-      return undefined;
+    if (issues.length > 0) {
+      const summary = issues
+        .map((issue) => `${issue.claimId} (${issue.kind})`)
+        .join(", ");
+      return `[OpenWiki Claims: ${summary}. Inspect and resolve only claims relevant to this task; this note is not part of the file.]`;
     }
-    const summary = issues
-      .map((issue) => `${issue.claimId} (${issue.kind})`)
-      .join(", ");
-    return `[OpenWiki Claims: ${summary}. Inspect and resolve only claims relevant to this task; this note is not part of the file.]`;
+    if (this.ungroundedPages.has(page)) {
+      return "[OpenWiki Claims: this page has no Claims yet. Before adding or materially changing factual prose, call resolve_claims for only the facts introduced or changed by this update, then write the page. Do not backfill unrelated existing prose. Style- or navigation-only edits require no Claims call. This note is not part of the file.]";
+    }
+    return undefined;
   }
 
   /**
@@ -288,6 +365,7 @@ export class ClaimSession {
     state.deleted = true;
     state.dirty = false;
     state.issues = [];
+    this.ungroundedPages.delete(page);
   }
 
   /**
@@ -298,9 +376,16 @@ export class ClaimSession {
    *
    * @param store - OpenWiki-owned Claims persistence.
    */
-  async finalize(store: ClaimsStore): Promise<ClaimsFinalizeResult> {
+  async finalize(
+    store: ClaimsStore,
+    verification: ClaimsVerificationEvent,
+  ): Promise<ClaimsFinalizeResult> {
     const resolver = cacheEvidenceResolver(this.resolver);
     const warnings: string[] = [];
+    const verificationByPage = new Map<
+      string,
+      ClaimsVerificationEvent | null
+    >();
     const missingPages: string[] = [];
     const ready: Array<{
       page: string;
@@ -314,6 +399,11 @@ export class ClaimSession {
         continue;
       }
       try {
+        if (state.issues.length > 0) {
+          throw new ClaimSessionError(
+            `Unresolved evidence debt remains for ${page}`,
+          );
+        }
         await this.assertEvidenceStillCurrent(page, state.claims, resolver);
         ready.push({ page, state, hash: await store.hashPage(page) });
       } catch (error) {
@@ -364,12 +454,17 @@ export class ClaimSession {
       }
     }
     for (const { page, state, hash } of ready) {
+      const nextVerification =
+        state.claims.length > 0 ? { ...verification } : undefined;
       try {
         await store.writePage(page, {
           schemaVersion: CODE_CLAIMS_SCHEMA_VERSION,
           pageVersion: hash,
           claims: cloneClaims(state.claims),
+          ...(nextVerification ? { verification: nextVerification } : {}),
         });
+        state.verification = nextVerification;
+        state.persisted = true;
         state.dirty = false;
       } catch (error) {
         if (!isRecoverableFinalizationError(error)) {
@@ -379,7 +474,65 @@ export class ClaimSession {
       }
     }
 
-    return { warnings };
+    for (const [page, state] of this.pages) {
+      if (state.deleted) continue;
+      const eligible =
+        state.persisted &&
+        !state.dirty &&
+        state.claims.length > 0 &&
+        state.issues.length === 0 &&
+        state.verification !== undefined;
+      verificationByPage.set(
+        page,
+        eligible ? { ...state.verification! } : null,
+      );
+    }
+
+    return { verificationByPage, warnings };
+  }
+
+  /**
+   * Refreshes persisted page hashes after OKF verification projection.
+   *
+   * A failed refresh is reported per page so the caller can roll back a newly
+   * exposed machine stamp. Debt-driven removals remain removed even when their
+   * historical sidecar hash cannot be refreshed.
+   *
+   * @param store - OpenWiki-owned Claims persistence.
+   * @param pages - Pages whose Markdown changed during projection.
+   */
+  async refreshPageVersions(
+    store: ClaimsStore,
+    pages: readonly string[],
+  ): Promise<ClaimsPageVersionRefreshResult> {
+    const warnings: string[] = [];
+    const failedPages: string[] = [];
+
+    for (const pageInput of [...new Set(pages)].sort((left, right) =>
+      left.localeCompare(right),
+    )) {
+      const page = normalizeWikiPagePath(pageInput);
+      const state = this.pages.get(page);
+      if (!state || !state.persisted || state.deleted || state.dirty) continue;
+      try {
+        await store.writePage(page, {
+          schemaVersion: CODE_CLAIMS_SCHEMA_VERSION,
+          pageVersion: await store.hashPage(page),
+          claims: cloneClaims(state.claims),
+          ...(state.verification
+            ? { verification: { ...state.verification } }
+            : {}),
+        });
+      } catch (error) {
+        if (!isRecoverableFinalizationError(error)) {
+          throw error;
+        }
+        failedPages.push(page);
+        warnings.push(formatFinalizationWarning(page, "synchronize", error));
+      }
+    }
+
+    return { failedPages, warnings };
   }
 
   /**
@@ -427,6 +580,7 @@ export class ClaimSession {
     }
     const created: WorkingPageState = {
       claims: [],
+      persisted: false,
       pendingMutation: Promise.resolve(),
       dirty: false,
       deleted: false,

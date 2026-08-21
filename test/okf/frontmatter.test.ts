@@ -9,6 +9,8 @@ import {
   renderFrontmatter,
   setFrontmatterField,
   setGeneratedEvent,
+  setOkfSources,
+  setOkfVerified,
   splitFrontmatter,
   validateOkfFrontmatter,
   validatePersistedFile,
@@ -138,6 +140,87 @@ describe("normalizeConceptContent", () => {
     );
     // The carried event is still valid OKF on the rebuilt page.
     expect(validateOkfFrontmatter(result.content)).toEqual({ valid: true });
+  });
+
+  test("carries a multiline sources list across a regeneration", () => {
+    const result = normalizeConceptContent(
+      "---\ntitle: Orphan\nsources:\n  - id: repo-readme\n    resource: repo://README.md\n---\n\n# Orphan\n",
+      PATH,
+    );
+
+    expect(result.changed).toBe(true);
+    expect(result.content).toContain("sources:\n  - id: repo-readme");
+    expect(result.content).toContain("resource: repo://README.md");
+    expect(validateOkfFrontmatter(result.content)).toEqual({ valid: true });
+  });
+
+  test("carries a multiline verified list across a regeneration", () => {
+    const result = normalizeConceptContent(
+      "---\ntitle: Orphan\nverified:\n  - by: human:reviewer\n    at: 2026-08-20T12:00:00.000Z\n---\n\n# Orphan\n",
+      PATH,
+    );
+
+    expect(result.content).toContain("verified:\n  - by: human:reviewer");
+    expect(validateOkfFrontmatter(result.content)).toEqual({ valid: true });
+  });
+});
+
+describe("setOkfSources", () => {
+  test("adds a structured sources list without rewriting sibling fields", () => {
+    const result = setOkfSources(
+      '---\ntype: Reference\ngenerated: {by: "openwiki/0.3.3"}\ncustom: keep\n---\n\n# Page\n',
+      [
+        {
+          id: "openwiki-source-one",
+          resource: "repo://src/page.ts#L1-L4",
+        },
+      ],
+    );
+
+    expect(result).toContain(
+      'generated: {by: "openwiki/0.3.3"}\ncustom: keep\nsources:',
+    );
+    expect(parseFrontmatterFields(result)?.sources).toEqual([
+      {
+        id: "openwiki-source-one",
+        resource: "repo://src/page.ts#L1-L4",
+      },
+    ]);
+    expect(validateOkfFrontmatter(result)).toEqual({ valid: true });
+  });
+
+  test("replaces every continuation line and removes an empty list", () => {
+    const original =
+      "---\ntype: Reference\nsources:\n  - id: old\n    resource: repo://old.ts\ntitle: Page\n---\n\n# Page\n";
+    const replaced = setOkfSources(original, [
+      { id: "new", resource: "repo://new.ts" },
+    ]);
+
+    expect(replaced).not.toContain("repo://old.ts");
+    expect(replaced).toContain("repo://new.ts");
+    expect(replaced).toContain("title: Page");
+    expect(setOkfSources(replaced, [])).toBe(
+      "---\ntype: Reference\ntitle: Page\n---\n\n# Page\n",
+    );
+  });
+});
+
+describe("setOkfVerified", () => {
+  test("replaces a multiline event list without rewriting sibling fields", () => {
+    const original =
+      "---\ntype: Reference\nverified:\n  - by: openwiki/0.3.2\n    at: old\ncustom: keep\n---\n\n# Page\n";
+    const result = setOkfVerified(original, [
+      { by: "human:reviewer", at: "2026-08-20T11:00:00.000Z" },
+      { by: "openwiki/0.3.3", at: "2026-08-20T12:00:00.000Z" },
+    ]);
+
+    expect(result).not.toContain("openwiki/0.3.2");
+    expect(result).toContain("custom: keep");
+    expect(parseFrontmatterFields(result)?.verified).toEqual([
+      { by: "human:reviewer", at: "2026-08-20T11:00:00.000Z" },
+      { by: "openwiki/0.3.3", at: "2026-08-20T12:00:00.000Z" },
+    ]);
+    expect(setOkfVerified(result, [])).not.toContain("verified:");
   });
 });
 

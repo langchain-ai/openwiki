@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import type { BackendProtocolV2 } from "deepagents";
 import type { OpenWikiOutputMode } from "../agent/types.js";
-import { OPENWIKI_PRODUCER_ACTOR } from "../version.js";
 import {
   parseFrontmatterFields,
   removeFrontmatterField,
@@ -83,13 +82,21 @@ export async function snapshotGeneratedProvenance(
  * @param outputMode - Current wiki target.
  * @param initialConcepts - Pre-run state keyed by virtual page path.
  * @param now - Shared run timestamp used for new generated events.
+ * @param producerActor - Producer responsible for body changes in this run.
  */
 export async function finalizeGeneratedProvenance(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   initialConcepts: GeneratedProvenanceSnapshot,
   now: string,
+  producerActor: string,
 ): Promise<void> {
+  if (producerActor.trim().length === 0) {
+    throw new Error(
+      "Generated provenance requires a non-empty producer actor.",
+    );
+  }
+
   for (const page of await listWikiConceptPaths(backend, outputMode)) {
     const content = await readRequiredContent(backend, page);
     const initial = initialConcepts.get(page);
@@ -97,7 +104,7 @@ export async function finalizeGeneratedProvenance(
       initial === undefined || initial.bodyHash !== hashConceptBody(content);
     const reconciled = bodyChanged
       ? removeFrontmatterField(
-          setGeneratedEvent(content, OPENWIKI_PRODUCER_ACTOR, now),
+          setGeneratedEvent(content, producerActor, now),
           "timestamp",
         )
       : restoreGeneratedEvent(content, initial.generated);

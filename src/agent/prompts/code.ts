@@ -84,21 +84,6 @@ tags: [<tag>, <tag>, …]            # Optional
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
 - Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or body content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
-- Use the optional namespaced \`openwiki\` producer extension when source evidence supports it. Keep values concise and omit empty keys:
-
-<openwiki_extension>
-openwiki:
-  roles: [architecture, domain] # One or more of architecture, delivery, domain, integration, operations, repository, testing, workflow
-  change_kinds: [lifecycle, public-api] # Short kebab-case routing facets
-  source_paths: [path/to/canonical-source.ts]
-  symbols: [PublicSymbol, owningInternalSymbol]
-  test_paths: [path/to/focused.test.ts]
-  invariants: [A concise externally observable contract.]
-  validation_commands: [the narrowest non-destructive check]
-</openwiki_extension>
-
-- Use \`type\` as a free-form human concept kind. Use \`openwiki.roles\` for stable retrieval roles and \`tags\` for specific domain facets; do not use generic shared tags as a substitute for explicit concept links.
-- Treat \`source_paths\`, \`test_paths\`, invariants, and validation commands as evidence-backed routing metadata, not exhaustive requirements. Never place secrets, credentials, or commands that expose them in metadata.
 - When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
 - OpenWiki repairs front matter deterministically after every run, so a page is never rejected for missing or invalid front matter. If a page's front matter contains \`openwiki_generated: true\`, that metadata was code-derived as a fallback: replace it with an accurate \`type\`, \`title\`, and \`description\` grounded in the page body, then remove the \`openwiki_generated\` field.
 - If a page's front matter contains an \`openwiki_translation_pending\` field, ignore it: it is a translation-system marker that OpenWiki manages automatically. Do not add, edit, remove, or act on it.
@@ -171,12 +156,17 @@ title: <display name>
 description: <one or two retrieval-optimized sentences>
 resource: <optional canonical URI>
 tags: [<specific-domain-tag>]
+# OpenWiki stamps generated provenance (last body change) deterministically; do not write it.
+# OpenWiki projects Claims evidence into sources deterministically; do not write it.
+# OpenWiki stamps verified only after complete Claims reconciliation; do not write it.
 ---
 \`\`\`
 
-Only \`type\` is required by OKF; title and description aid retrieval. index.md and log.md are reserved and take no concept front matter. Never write \`generated\` or the superseded legacy \`timestamp\`: OpenWiki stamps generated provenance (last body change) deterministically after the run.
-
-Links are relationships, not navigation. Place a link in the prose that explains the runtime, dependency, ownership, data-flow, or lifecycle relationship it stands for; a quickstart entry is not a substitute.
+Only \`type\` is required by OKF; add accurate title and description for retrieval. index.md and log.md are reserved and take no concept front matter.
+- Never write \`generated\` or the superseded legacy \`timestamp\`; OpenWiki stamps generated provenance (last body change) deterministically after the run.
+- Do not write \`sources\`; OpenWiki derives repository provenance from the page's resolved Claims evidence after the run.
+- Do not write \`verified\`; OpenWiki owns its machine verification event and stamps it only after the page's complete Claims set is successfully reconciled and persisted.
+- Treat Markdown links between concept pages as semantic relationships. Put links in the prose that explains runtime, dependency, ownership, data-flow, lifecycle, or user-flow relationships; quickstart navigation alone is not a substitute.
 
 Diagrams. Add grounded Mermaid diagrams for significant runtime flows, lifecycles, and data models, every participant and relationship supported by inspected source. Prefer a few substantive diagrams over decorative ones, and consult the mermaid-diagrams skill for syntax.`,
 
@@ -213,9 +203,10 @@ Repository mapping discipline:
 
 Claim maintenance:
 ${CLAIMS_SUBSTANCE_GUIDANCE}
-- Claims are page-owned factual propositions, not exact excerpts or a mandatory authoring transaction. Keep each new or updated statement to one concise, atomic proposition. Split lists, compound summaries, and multi-fact sentences into separate claims.
+- Claims are page-owned factual propositions, not exact excerpts. Keep each new or updated statement to one concise, atomic proposition. Split lists, compound summaries, and multi-fact sentences into separate claims.
 - Claims currently support repository evidence only. Do not invent repository evidence for connector-derived facts. Leave LangSmith-only facts unclaimed.
-- Normal Markdown reads and writes require no Claims call. Do not inspect or rewrite Claims for stylistic edits or unrelated work.
+- Markdown reads and edits limited to style or navigation require no Claims call. Do not inspect or rewrite Claims for stylistic edits or unrelated work.
+- For new or materially changed factual prose, resolve_claims is a required authoring step: add or update the corresponding material propositions and their verified repository evidence before the first write_file or edit_file call for that page. Never defer this until after writing. On an existing page, scope this work to facts introduced or changed by the update. Do not backfill Claims for unrelated existing prose.
 - A page read may include a non-persisted OpenWiki Claims note listing potentially stale or unresolved claim IDs. Inspect and resolve only IDs relevant to the current task; the note is not part of the Markdown.
 - Pass relevant note IDs from every affected page together in one inspect_claims call. Use the pages selector only as a fallback when you need complete page claim sets and do not have IDs.
 - Use resolve_claims to confirm a still-correct proposition, partially update its statement or evidence, retract an obsolete proposition, or add a new material fact.
@@ -303,6 +294,8 @@ description: <Optional one to two sentence summary (optimized for search & retri
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
 # OpenWiki stamps generated provenance (last body change) deterministically; do not write it.
+# OpenWiki projects Claims evidence into sources deterministically; do not write it.
+# OpenWiki stamps verified only after complete Claims reconciliation; do not write it.
 # Producer-defined extension fields are allowed.
 ---
 </okf_front_matter>
@@ -310,24 +303,11 @@ tags: [<tag>, <tag>, …]            # Optional
 - Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
 - Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
 - \`generated\` records the content's last body change (\`by\` names the producing actor, \`at\` is an ISO 8601 datetime). OpenWiki owns this field: it stamps and updates \`generated\` deterministically after every run whenever any part of a page's body changes, including whitespace, and drops the superseded legacy \`timestamp\` at the same time. Do not author, edit, or remove \`generated\` or \`timestamp\` yourself; leave any existing values in place.
+- \`sources\` records the repository materials behind the page's Claims. Do not write \`sources\` yourself: OpenWiki owns its Claims-derived entries and projects them deterministically after every run. Independently authored non-Claims sources are preserved.
+- \`verified\` records trust events. Do not write \`verified\` or OpenWiki's machine event yourself: OpenWiki stamps it only after the page actively reconciles its complete Claims set, the final evidence recheck passes, and the sidecar persists. Human and other process events are preserved.
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
 - Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or body content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.
-- Use the optional namespaced \`openwiki\` producer extension when source evidence supports it. Keep values concise and omit empty keys:
-
-<openwiki_extension>
-openwiki:
-  roles: [architecture, domain] # One or more of architecture, delivery, domain, integration, operations, repository, testing, workflow
-  change_kinds: [lifecycle, public-api] # Short kebab-case routing facets
-  source_paths: [path/to/canonical-source.ts]
-  symbols: [PublicSymbol, owningInternalSymbol]
-  test_paths: [path/to/focused.test.ts]
-  invariants: [A concise externally observable contract.]
-  validation_commands: [the narrowest non-destructive check]
-</openwiki_extension>
-
-- Use \`type\` as a free-form human concept kind. Use \`openwiki.roles\` for stable retrieval roles and \`tags\` for specific domain facets; do not use generic shared tags as a substitute for explicit concept links.
-- Treat \`source_paths\`, \`test_paths\`, invariants, and validation commands as evidence-backed routing metadata, not exhaustive requirements. Never place secrets, credentials, or commands that expose them in metadata.
 - When updating an existing Markdown concept, preserve accurate body content and correct its opening front matter only when needed for compliance or accuracy.
 - OpenWiki repairs front matter deterministically after every run, so a page is never rejected for missing or invalid front matter. If a page's front matter contains \`openwiki_generated: true\`, that metadata was code-derived as a fallback: replace it with an accurate \`type\`, \`title\`, and \`description\` grounded in the page body, then remove the \`openwiki_generated\` field.
 - If a page's front matter contains an \`openwiki_translation_pending\` field, ignore it: it is a translation-system marker that OpenWiki manages automatically. Do not add, edit, remove, or act on it.
@@ -374,6 +354,7 @@ Mode-specific behavior:
 - Use repository changes and source evidence for this update; connector ingestion is outside this repository run.
 - Run \`git rev-parse HEAD\` to identify the current commit. When the metadata contains a different \`gitHead\`, inspect \`git log <gitHead>..HEAD --name-status --oneline\` and the relevant diff for that range to understand every change since the wiki was last updated. If no prior \`gitHead\` exists, inspect recent history selectively. If shell execution is restricted, compare current source and tests against the existing wiki without bypassing that restriction.
 - Before editing, build a docs impact plan from the changed source files: source change -> docs affected -> edit needed -> why. If a page cannot be tied to a relevant source, workflow, product, or existing-doc change, do not edit it.
+- For each planned page edit, identify the material source-dependent facts the edit will introduce or change. Call resolve_claims for those facts before the page's first write_file or edit_file call, then write the grounded prose. Do not write first and reconcile Claims afterward, and do not migrate facts in untouched existing prose.
 - Update every page needed to keep the wiki accurate, complete, and correctly linked. There is no preset limit on the number of pages or sections an update may change or add.
 - Preserve useful existing structure and wording when it remains accurate, and avoid unrelated formatting or prose churn.
 - Add or expand pages when changed evidence exposes an undocumented component, workflow, contract, or relationship. An update may improve incomplete coverage discovered during the run even when that work spans multiple pages.
@@ -403,7 +384,7 @@ Wiki brief:
 {RUNTIME_CONTEXT}`,
   update: `Update the existing OpenWiki documentation for this repository.
 
-Read /openwiki/.last-update.json and inspect the relevant Git history and diff. Determine the affected documentation from repository changes rather than from Claims debt. Update every page needed to keep the wiki accurate, complete, and correctly linked. If a page you read includes an OpenWiki Claims note, inspect and resolve only affected propositions relevant to this task. Preserve unrelated accurate content and avoid formatting-only changes. If the wiki is already current, do not edit files. The CLI will update /openwiki/.last-update.json only when OpenWiki content changes.
+Read /openwiki/.last-update.json and inspect the relevant Git history and diff. Determine the affected documentation from repository changes rather than from Claims debt. Update every page needed to keep the wiki accurate, complete, and correctly linked. Before writing material facts introduced or changed by the update, establish their propositions and repository evidence with resolve_claims; never write the factual prose first or backfill unrelated existing prose. If a page you read includes an OpenWiki Claims note, inspect and resolve only affected propositions relevant to this task. Preserve unrelated accurate content and avoid formatting-only changes. If the wiki is already current, do not edit files. The CLI will update /openwiki/.last-update.json only when OpenWiki content changes.
 
 Wiki brief:
 {WIKI_GOAL}

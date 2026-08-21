@@ -349,8 +349,20 @@ describe("createSystemPrompt Claims workflow", () => {
       if (command === "update") {
         expect(prompt).toContain("inspect_claims");
         expect(prompt).toContain(
-          "Normal Markdown reads and writes require no Claims call",
+          "edits limited to style or navigation require no Claims call",
         );
+        expect(prompt).toContain("resolve_claims is a required authoring step");
+        expect(prompt).toContain(
+          "before the first write_file or edit_file call for that page",
+        );
+        expect(prompt).toContain("Never defer this until after writing");
+        expect(prompt).toContain(
+          "Do not backfill Claims for unrelated existing prose",
+        );
+        expect(prompt).toContain(
+          "Do not write first and reconcile Claims afterward",
+        );
+        expect(prompt).not.toContain("lazily migrate");
         expect(prompt).toContain(
           "Inspect and resolve only IDs relevant to the current task",
         );
