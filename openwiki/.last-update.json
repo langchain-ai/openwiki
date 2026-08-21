@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-08-14T08:29:15.643Z",
+  "updatedAt": "2026-08-21T08:28:22.486Z",
   "command": "update",
-  "gitHead": "355f4f68e71bd024631cdcff7aa871c3e72435da",
+  "gitHead": "ecec08c35c3673d55dfb638437f569ca3e1e2fb1",
   "model": "z-ai/glm-5.2",
   "status": "complete",
   "language": "en"

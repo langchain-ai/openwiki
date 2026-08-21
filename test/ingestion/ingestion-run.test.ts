@@ -52,6 +52,22 @@ vi.mock("../../src/agent/index.ts", () => ({
   runOpenWikiAgent: vi.fn(),
 }));
 
+vi.mock("../../src/telemetry/index.ts", async (importActual) => {
+  const actual =
+    await importActual<typeof import("../../src/telemetry/index.ts")>();
+  return {
+    ...actual,
+    withRunTelemetry: vi.fn(
+      (
+        _command: unknown,
+        _options: unknown,
+        _context: unknown,
+        run: () => Promise<unknown>,
+      ) => run(),
+    ),
+  };
+});
+
 import { readOpenWikiOnboardingConfig } from "../../src/setup/onboarding.ts";
 import { createConnectorRegistry } from "../../src/connectors/registry.ts";
 import { getConnectorConfigPath } from "../../src/config/openwiki-home.ts";

@@ -315,6 +315,23 @@ describe("ensureCodeModeRepoSetup workflow provider block", () => {
     );
   });
 
+  test("carries the streaming opt-in into the scheduled run", async () => {
+    // A gateway that only serves SSE would otherwise return empty content in
+    // CI and commit a blank wiki, with the local run still looking healthy.
+    const optedIn = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-compatible",
+      OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "true",
+    });
+
+    expect(optedIn).toContain('OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "true"');
+
+    const notOptedIn = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-compatible",
+    });
+
+    expect(notOptedIn).not.toContain("OPENWIKI_OPENAI_COMPATIBLE_STREAMING");
+  });
+
   test("pairs both AWS credentials and the region for Bedrock", async () => {
     const workflow = await generateWorkflow({ OPENWIKI_PROVIDER: "bedrock" });
 

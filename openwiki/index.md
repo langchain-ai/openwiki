@@ -1,5 +1,5 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
 ---
 
 # Files
@@ -10,6 +10,7 @@ okf_version: "0.1"
 
 - [agent](agent/)
 - [architecture](architecture/)
+- [claims](claims/)
 - [cli](cli/)
 - [evals](evals/)
 - [integrations](integrations/)

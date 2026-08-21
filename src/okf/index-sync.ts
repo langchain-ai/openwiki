@@ -84,26 +84,38 @@ export async function migrateWikiToOkf(
   outputMode: OpenWikiOutputMode,
   conceptType: string = ENGLISH_CONCEPT_TYPE,
 ): Promise<void> {
-  const root = outputMode === "local-wiki" ? "/" : "/openwiki";
-  for (const directory of await collectDirectories(backend, root, true)) {
-    for (const entry of directory.entries) {
-      const name = entryName(entry);
-      if (
-        entry.is_dir ||
-        !name ||
-        name.startsWith(".") ||
-        path.posix.extname(name).toLowerCase() !== ".md" ||
-        EXCLUDED_FILES.has(name)
-      ) {
-        continue;
-      }
-      await normalizeConceptFile(
-        backend,
-        path.posix.join(directory.path, name),
-        conceptType,
-      );
-    }
+  for (const filePath of await listWikiConceptPaths(backend, outputMode)) {
+    await normalizeConceptFile(backend, filePath, conceptType);
   }
+}
+
+/**
+ * Lists the non-structural Markdown concepts currently present in the wiki.
+ *
+ * @param backend - Filesystem abstraction rooted at the active wiki target.
+ * @param outputMode - Whether the wiki lives at `/` or `/openwiki`.
+ * @returns Stable, sorted virtual paths for every concept page.
+ */
+export async function listWikiConceptPaths(
+  backend: BackendProtocolV2,
+  outputMode: OpenWikiOutputMode,
+): Promise<string[]> {
+  const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+  const directories = await collectDirectories(backend, root, true);
+  return directories
+    .flatMap((directory) =>
+      directory.entries.flatMap((entry) => {
+        const name = entryName(entry);
+        return !entry.is_dir &&
+          name &&
+          !name.startsWith(".") &&
+          path.posix.extname(name).toLowerCase() === ".md" &&
+          !EXCLUDED_FILES.has(name)
+          ? [path.posix.join(directory.path, name)]
+          : [];
+      }),
+    )
+    .sort((left, right) => left.localeCompare(right));
 }
 
 /**
@@ -233,7 +245,7 @@ function renderIndex(
   ]
     .filter(Boolean)
     .join("\n\n");
-  const version = isRoot ? '---\nokf_version: "0.1"\n---\n\n' : "";
+  const version = isRoot ? '---\nokf_version: "0.2"\n---\n\n' : "";
   return `${version}${sections || `# ${labels.files}`}\n`;
 }
 

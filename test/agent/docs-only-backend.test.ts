@@ -3,12 +3,24 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 import {
+  isClaimsStatePath,
   isOpenWikiDocsPath,
   MUTATION_PATH_METADATA_KEY,
   OpenWikiLocalShellBackend,
 } from "../../src/agent/docs-only-backend.ts";
 
 describe("OpenWikiLocalShellBackend", () => {
+  test("recognizes canonical Claims state paths without reserving lookalikes", () => {
+    expect(isClaimsStatePath("/openwiki/.claims/page.json")).toBe(true);
+    expect(isClaimsStatePath("/OPENWIKI/.CLAIMS/page.json")).toBe(true);
+    expect(isClaimsStatePath("\\OpenWiki\\.Claims\\page.json")).toBe(true);
+    expect(isClaimsStatePath("openwiki/section/../.claims/page.json")).toBe(
+      true,
+    );
+    expect(isClaimsStatePath("/openwiki/.claims-other/page.json")).toBe(false);
+    expect(isClaimsStatePath("/.claims/page.json")).toBe(false);
+  });
+
   test("recognizes only openwiki virtual paths as docs paths", () => {
     expect(isOpenWikiDocsPath("/openwiki/architecture.md")).toBe(true);
     expect(isOpenWikiDocsPath("openwiki/architecture.md")).toBe(true);
@@ -121,5 +133,112 @@ describe("OpenWikiLocalShellBackend", () => {
     await expect(backend.glob("**/*.ts", "/src")).resolves.toEqual({
       files: [expect.objectContaining({ path: "/index.ts", is_dir: false })],
     });
+  });
+
+  test("hides repository Claims state while preserving ordinary shell inspection", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const claimsDir = path.join(rootDir, "openwiki/.claims");
+    await mkdir(claimsDir, { recursive: true });
+    await writeFile(
+      path.join(claimsDir, "page.json"),
+      '{"private":"claims-marker"}\n',
+      "utf8",
+    );
+    await writeFile(path.join(rootDir, "openwiki/page.md"), "# Page\n", "utf8");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+    });
+
+    const read = await backend.read("/openwiki/.claims/page.json");
+    expect(read.error).toContain("Claims state");
+    const mixedCaseRead = await backend.read("/openwiki/.CLAIMS/page.json");
+    expect(mixedCaseRead.error).toContain("Claims state");
+    const readRaw = await backend.readRaw("/openwiki/.claims/page.json");
+    expect(readRaw.error).toContain("Claims state");
+    const write = await backend.write("/openwiki/.claims/new.json", "bad");
+    expect(write.error).toContain("Claims state");
+    const edit = await backend.edit(
+      "/openwiki/.claims/page.json",
+      "claims-marker",
+      "changed",
+    );
+    expect(edit.error).toContain("Claims state");
+    const deletion = await backend.delete("/openwiki/.claims/page.json");
+    expect(deletion.error).toContain("Claims state");
+    await expect(
+      backend.uploadFiles([
+        ["/openwiki/.claims/upload.json", new Uint8Array([1])],
+      ]),
+    ).resolves.toEqual([
+      expect.objectContaining({ error: "permission_denied" }),
+    ]);
+    await expect(
+      backend.downloadFiles(["/openwiki/.claims/page.json"]),
+    ).resolves.toEqual([
+      expect.objectContaining({ error: "permission_denied", content: null }),
+    ]);
+
+    const listing = await backend.ls("/openwiki");
+    expect(listing.files?.map((file) => file.path)).toEqual([
+      "/openwiki/page.md",
+    ]);
+    const glob = await backend.glob("**/*", "/openwiki");
+    expect(glob.files?.map((file) => file.path)).toEqual(["/page.md"]);
+    await expect(backend.grep("claims-marker", "/openwiki")).resolves.toEqual({
+      matches: [],
+    });
+
+    const inspection = await backend.execute("pwd");
+    expect(inspection.exitCode).toBe(0);
+    expect(inspection.output).toContain(rootDir);
+    const claimsInspection = await backend.execute(
+      "cat openwiki/.claims/page.json",
+    );
+    expect(claimsInspection.exitCode).toBe(1);
+    expect(claimsInspection.output).toContain("Claims state");
+    const mixedCaseInspection = await backend.execute(
+      "cat OPENWIKI/.CLAIMS/page.json",
+    );
+    expect(mixedCaseInspection.exitCode).toBe(1);
+    expect(mixedCaseInspection.output).toContain("Claims state");
+  });
+
+  test("does not reserve personal-brain .claims paths", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "local-wiki",
+      rootDir,
+      virtualMode: true,
+    });
+
+    await expect(
+      backend.write("/.claims/note.md", "personal"),
+    ).resolves.toEqual(expect.objectContaining({ path: "/.claims/note.md" }));
+  });
+
+  test("records successful delete mutations for authoring middleware", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await mkdir(path.join(rootDir, "openwiki"));
+    await writeFile(path.join(rootDir, "openwiki/page.md"), "# Page\n", "utf8");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    const result = await backend.delete("/openwiki/page.md");
+
+    expect(result).toEqual(
+      expect.objectContaining({ path: "/openwiki/page.md" }),
+    );
+    expect(
+      (result as { metadata?: Record<string, unknown> }).metadata?.[
+        MUTATION_PATH_METADATA_KEY
+      ],
+    ).toBe("/openwiki/page.md");
   });
 });

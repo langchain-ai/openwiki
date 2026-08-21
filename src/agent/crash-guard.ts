@@ -91,7 +91,7 @@ export function getActiveRun(): ActiveRunRecord | undefined {
  * a failure in it never blocks the stamp or the exit.
  *
  * A rejection that reaches here would otherwise kill the process with a raw stack, no
- * stamp, and no telemetry. Recording it means an escaped subagent rejection finally
+ * stamp, and no telemetry. Recording it means an escaped runtime rejection finally
  * appears in the data, classified and (when residual) fingerprinted by the same
  * boundary as every other failure; stamping it `interrupted` means the next
  * scheduled update retries instead of no-opping against a half-written wiki.
@@ -105,7 +105,7 @@ export async function handleFatal(
   error: unknown,
 ): Promise<void> {
   // Claim the active run synchronously, before any await. The installer fires one
-  // `void handleFatal(...)` per escaped rejection, and a burst of subagent rejections
+  // `void handleFatal(...)` per escaped rejection, and a burst of runtime rejections
   // lands on the microtask queue together; reading and clearing here with no await
   // between the two statements makes the claim atomic for the event loop, so the first
   // handler owns the crash and every later one sees `undefined` and only exits. Do not

@@ -9,6 +9,7 @@ describe("parseCommand visualize", () => {
       wikiDir: "openwiki",
       port: 4321,
       open: true,
+      exportDir: null,
     });
   });
 
@@ -21,12 +22,51 @@ describe("parseCommand visualize", () => {
       wikiDir: "docs/wiki",
       port: 4400,
       open: false,
+      exportDir: null,
     });
   });
 
   test("supports --port=NNNN form", () => {
     const command = parseCommand(["visualize", "--port=5000"]);
     expect(command.kind === "visualize" && command.port).toBe(5000);
+    expect(command.kind === "visualize" && command.exportDir).toBeNull();
+  });
+
+  test("accepts a static export directory", () => {
+    expect(
+      parseCommand(["visualize", "openwiki", "--export", "docs/visualizer"]),
+    ).toEqual({
+      kind: "visualize",
+      exitCode: 0,
+      wikiDir: "openwiki",
+      port: 4321,
+      open: true,
+      exportDir: "docs/visualizer",
+    });
+  });
+
+  test("rejects an export without a directory", () => {
+    expect(parseCommand(["visualize", "--export"])).toEqual({
+      kind: "error",
+      exitCode: 1,
+      message: "--export requires a directory.",
+    });
+  });
+
+  test("rejects server options with a static export", () => {
+    expect(
+      parseCommand([
+        "visualize",
+        "--export",
+        "docs/visualizer",
+        "--port",
+        "4400",
+      ]),
+    ).toEqual({
+      kind: "error",
+      exitCode: 1,
+      message: "--export cannot be combined with --port or --no-open.",
+    });
   });
 
   test("rejects an out-of-range port", () => {

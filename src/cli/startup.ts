@@ -14,6 +14,7 @@ import {
   type OpenWikiProvider,
 } from "../config/constants.js";
 import { resolveExternalCliCredential } from "../auth/external-cli-auth.js";
+import { OpenWikiIgnore } from "../agent/openwiki-ignore.js";
 
 type ResolveStartupCommandOptions = {
   cwd?: string;
@@ -132,7 +133,12 @@ async function canSkipCleanUpdateBeforeCredentials(
   }
 
   try {
-    const noopStatus = await getUpdateNoopStatus(cwd);
+    const openWikiIgnore = await OpenWikiIgnore.load(cwd);
+    const noopStatus = await getUpdateNoopStatus(
+      cwd,
+      openWikiIgnore,
+      command.language,
+    );
 
     return noopStatus.shouldSkip;
   } catch {

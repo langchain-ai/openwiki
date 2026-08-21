@@ -17,6 +17,7 @@ import {
   getProviderSecretKeyEnvKey,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_REASONING_EFFORT_ENV_KEY,
   type OpenWikiProvider,
   providerUsesExternalCliAuth,
   resolveConfiguredProvider,
@@ -73,6 +74,8 @@ import {
   getLangsmithRegionSelectionIndex,
   getModelSelectionIndex,
   getModelSelectionOptions,
+  getReasoningEffortSelectionIndex,
+  getReasoningEffortSelectionOptions,
   getNextStepAfterApiKey,
   getNextStepAfterBaseUrl,
   getNextStepAfterGcpLocation,
@@ -123,6 +126,7 @@ import type {
   LangsmithWorkspaceDraft,
   PromptInputKey,
   PromptStep,
+  ReasoningEffortSelection,
   SourceSetupOption,
   SourceSetupState,
 } from "./types.js";
@@ -176,6 +180,8 @@ export function useInitSetup({
   const [gcpProject, setGcpProject] = useState<string | null>(null);
   const [gcpLocation, setGcpLocation] = useState<string | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
+  const [reasoningEffort, setReasoningEffort] =
+    useState<ReasoningEffortSelection | null>(null);
   const [langSmithKey, setLangSmithKey] = useState<string | null>(null);
   // LangSmith workspaces as the wizard edits them (region + key + projects),
   // seeded from the committed config; committed on completion.
@@ -221,6 +227,8 @@ export function useInitSetup({
         getDefaultModelId(initialProvider),
     ),
   );
+  const [reasoningEffortSelectionIndex, setReasoningEffortSelectionIndex] =
+    useState(0);
   const [runModeSelectionIndex, setRunModeSelectionIndex] = useState(() =>
     getRunModeSelectionIndex(mode),
   );
@@ -588,6 +596,25 @@ export function useInitSetup({
         );
         break;
       }
+      case "reasoning-effort": {
+        const selectedModelId =
+          modelId ??
+          modelIdOverride ??
+          getSavedEnvValue(OPENWIKI_MODEL_ID_ENV_KEY) ??
+          getDefaultModelId(provider);
+        const selectedEffort =
+          reasoningEffort ??
+          getSavedEnvValue(OPENWIKI_REASONING_EFFORT_ENV_KEY) ??
+          "";
+        setReasoningEffortSelectionIndex(
+          getReasoningEffortSelectionIndex(
+            provider,
+            selectedModelId,
+            selectedEffort,
+          ),
+        );
+        break;
+      }
       case "api-key": {
         const envKey = getProviderApiKeyEnvKey(provider);
         setInput(apiKey ?? (envKey ? (getSavedEnvValue(envKey) ?? "") : ""));
@@ -857,6 +884,21 @@ export function useInitSetup({
             key.upArrow ? -1 : 1,
             getModelSelectionOptions(provider).length,
           ),
+        ),
+      );
+      return;
+    }
+
+    if (step === "reasoning-effort") {
+      const selectedModelId =
+        modelId ?? modelIdOverride ?? getDefaultModelId(provider);
+      const optionCount = getReasoningEffortSelectionOptions(
+        provider,
+        selectedModelId,
+      ).length;
+      handleMenuInput(key, () =>
+        setReasoningEffortSelectionIndex((index) =>
+          moveSelectionIndex(index, key.upArrow ? -1 : 1, optionCount),
         ),
       );
       return;
@@ -1183,6 +1225,8 @@ export function useInitSetup({
         setGcpLocation(null);
         setOauthTokens(null);
         setModelId(null);
+        setReasoningEffort(null);
+        setReasoningEffortSelectionIndex(0);
       }
 
       setProviderSelectionIndex(getProviderSelectionIndex(selectedProvider));
@@ -1579,37 +1623,43 @@ export function useInitSetup({
       setInput("");
       setIsCustomModelInput(false);
 
-      // LangSmith is the next spine step, but it is optional: once the user has
-      // recorded a tracing decision (LANGCHAIN_TRACING_V2 set, or a key present)
-      // do not re-prompt on a later setup pass. An explicit --init re-walk
-      // (walkAllSteps) still visits it so the whole setup can be reconfigured.
-      // getInitialStep guards direct entry at the step; this guards the forward
-      // walk, which every no-region provider reaches through the model step.
-      if (walkAllSteps || needsLangSmithStep()) {
-        // Seed from state so a key entered earlier and stepped past is not
-        // dropped.
-        seedInputForStep("langsmith");
-        setStep("langsmith");
+      const reasoningEffortOptions = getReasoningEffortSelectionOptions(
+        provider,
+        selectedModelId,
+      );
+      if (reasoningEffortOptions.length > 0) {
+        const selectedEffort =
+          reasoningEffort ??
+          getSavedEnvValue(OPENWIKI_REASONING_EFFORT_ENV_KEY) ??
+          "";
+        setReasoningEffortSelectionIndex(
+          getReasoningEffortSelectionIndex(
+            provider,
+            selectedModelId,
+            selectedEffort,
+          ),
+        );
+        setStep("reasoning-effort");
         return;
       }
 
-      // Skip straight to the credential save, preserving the recorded decision
-      // (nextLangSmithKey: langSmithKey, never rewritten) and using the freshly
-      // selected model id, since the setModelId state update above is not yet
-      // visible in this closure.
-      await continueAfterCredentials({
-        nextApiKey: apiKey,
-        nextBaseUrl: baseUrl,
-        nextSecretKey: secretKey,
-        nextRegion: region,
-        nextGcpLocation: gcpLocation,
-        nextGcpProject: gcpProject,
-        nextLangSmithKey: langSmithKey,
-        nextModelId: selectedModelId,
-        nextOAuthTokens: oauthTokens,
-        nextProvider: provider,
-        runMode: selectedMode,
-      });
+      // One setting is shared across providers/models. Clear a previous choice
+      // when the newly selected model has no compatible reasoning-effort API.
+      setReasoningEffort("");
+      await continueAfterModel(selectedModelId, "");
+      return;
+    }
+
+    if (step === "reasoning-effort") {
+      const selectedModelId =
+        modelId ?? modelIdOverride ?? getDefaultModelId(provider);
+      const selectedEffort =
+        getReasoningEffortSelectionOptions(provider, selectedModelId)[
+          reasoningEffortSelectionIndex
+        ]?.value ?? "";
+
+      setReasoningEffort(selectedEffort);
+      await continueAfterModel(selectedModelId, selectedEffort);
       return;
     }
 
@@ -1628,6 +1678,7 @@ export function useInitSetup({
         nextGcpProject: gcpProject,
         nextLangSmithKey,
         nextModelId: modelId,
+        nextReasoningEffort: reasoningEffort,
         nextOAuthTokens: oauthTokens,
         nextProvider: provider,
         runMode: selectedMode,
@@ -2050,6 +2101,36 @@ export function useInitSetup({
     }));
     setInput("");
     returnToSourceMenu();
+  }
+
+  async function continueAfterModel(
+    nextModelId: string,
+    nextReasoningEffort: ReasoningEffortSelection,
+  ): Promise<void> {
+    // LangSmith is the next spine step, but it is optional: once the user has
+    // recorded a tracing decision (LANGCHAIN_TRACING_V2 set, or a key present)
+    // do not re-prompt on a later setup pass. An explicit --init re-walk
+    // (walkAllSteps) still visits it so the whole setup can be reconfigured.
+    if (walkAllSteps || needsLangSmithStep()) {
+      seedInputForStep("langsmith");
+      setStep("langsmith");
+      return;
+    }
+
+    await continueAfterCredentials({
+      nextApiKey: apiKey,
+      nextBaseUrl: baseUrl,
+      nextSecretKey: secretKey,
+      nextRegion: region,
+      nextGcpLocation: gcpLocation,
+      nextGcpProject: gcpProject,
+      nextLangSmithKey: langSmithKey,
+      nextModelId,
+      nextReasoningEffort,
+      nextOAuthTokens: oauthTokens,
+      nextProvider: provider,
+      runMode: selectedMode,
+    });
   }
 
   async function continueAfterCredentials(options: CompleteSetupOptions) {
@@ -2517,6 +2598,7 @@ export function useInitSetup({
     region,
     modelId,
     modelIdOverride,
+    reasoningEffort,
     langSmithKey,
     onboardingConfig,
     copied,
@@ -2536,6 +2618,7 @@ export function useInitSetup({
     langsmithWorkspaceSelectionIndex,
     langsmithWorkspaces,
     modelSelectionIndex,
+    reasoningEffortSelectionIndex,
     powerModeSelectionIndex,
     providerSelectionIndex,
     runModeSelectionIndex,
