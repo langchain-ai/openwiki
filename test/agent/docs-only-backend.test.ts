@@ -42,12 +42,25 @@ describe("OpenWikiLocalShellBackend", () => {
     expect(isOpenWikiDocsPath("/openwiki/sub/../architecture.md")).toBe(true);
   });
 
-  test("recognizes the tool-result offload directory without widening it", () => {
+  test("recognizes the tool-result offload shape without widening it", () => {
     expect(isLargeToolResultPath("/large_tool_results/call_abc.txt")).toBe(
       true,
     );
     expect(isLargeToolResultPath("large_tool_results/call_abc.txt")).toBe(true);
-    expect(isLargeToolResultPath("/large_tool_results")).toBe(true);
+    // Provider ids are not charset-restricted: refusing one would destroy the
+    // result the exemption exists to preserve.
+    expect(isLargeToolResultPath("/large_tool_results/toolu-01A.b#c.txt")).toBe(
+      true,
+    );
+    // Only the flat `.txt` shape the middleware writes.
+    expect(isLargeToolResultPath("/large_tool_results")).toBe(false);
+    expect(isLargeToolResultPath("/large_tool_results/sub/evil.txt")).toBe(
+      false,
+    );
+    expect(isLargeToolResultPath("/large_tool_results/evil.md")).toBe(false);
+    expect(isLargeToolResultPath("/large_tool_results/.bashrc.txt")).toBe(
+      false,
+    );
     // The exemption cannot be borrowed to reach the repository.
     expect(isLargeToolResultPath("/large_tool_results/../AGENTS.md")).toBe(
       false,
@@ -82,6 +95,38 @@ describe("OpenWikiLocalShellBackend", () => {
       "bad",
     );
     expect(escape.error).toContain("Refused path:");
+
+    const nested = await backend.write(
+      "/large_tool_results/sub/evil.txt",
+      "bad",
+    );
+    expect(nested.error).toContain("Refused path:");
+  });
+
+  test("keeps the offload exemption off the model's edit and delete tools", async () => {
+    // write, edit, and delete all reach the model as tools. The middleware only
+    // ever writes, so only write opts into the exemption; the other two stay
+    // confined to /openwiki/ even for a path the offload write just created.
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    const offloadPath = "/large_tool_results/call_abc.txt";
+    expect((await backend.write(offloadPath, "big")).error).toBeUndefined();
+
+    const edit = await backend.edit(offloadPath, "big", "tampered");
+    expect(edit.error).toContain(`Refused path: ${offloadPath}`);
+
+    const removal = await backend.delete(offloadPath);
+    expect(removal.error).toContain(`Refused path: ${offloadPath}`);
+
+    // The offloaded result is intact.
+    await expect(
+      readFile(path.join(rootDir, "large_tool_results/call_abc.txt"), "utf8"),
+    ).resolves.toBe("big");
   });
 
   test("refuses init/update writes outside openwiki", async () => {

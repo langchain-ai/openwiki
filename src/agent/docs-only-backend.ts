@@ -225,7 +225,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     const error =
       this.getIgnoredPathError(filePath) ??
       this.getClaimsOwnershipError(filePath) ??
-      this.getDocsOnlyWriteError(filePath);
+      this.getDocsOnlyWriteError(filePath, { allowToolResultOffload: true });
 
     if (error) {
       return { error };
@@ -491,13 +491,27 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * Return a refusal message when a write escapes the docs tree in docs-only
    * mode, or `null` if the write is allowed. Always allows in `local-wiki` mode
    * or when the path is under `openwiki/`.
+   *
+   * The tool-result offload exemption is opt-in per call site rather than a
+   * property of the path. `write`, `edit`, and `delete` are all reachable
+   * through model-facing tools, so exempting the path itself handed the model
+   * the middleware's escape hatch. Only `write` needs it, and only `write`
+   * asks for it.
+   *
+   * @param filePath - Virtual path the caller wants to mutate.
+   * @param options - `allowToolResultOffload` permits the one path shape the
+   *   DeepAgents middleware writes when offloading an over-limit tool result.
    */
-  private getDocsOnlyWriteError(filePath: string): string | null {
+  private getDocsOnlyWriteError(
+    filePath: string,
+    options: { allowToolResultOffload?: boolean } = {},
+  ): string | null {
     if (
       !this.docsOnly ||
       this.outputMode === "local-wiki" ||
       isOpenWikiDocsPath(filePath) ||
-      isLargeToolResultPath(filePath)
+      (options.allowToolResultOffload === true &&
+        isLargeToolResultPath(filePath))
     ) {
       return null;
     }
@@ -637,15 +651,22 @@ export function isClaimsStatePath(filePath: string): boolean {
  * never learned which of ~50 planned pages had been written, and finished with
  * 33 of 62 pages for the run's worst score.
  *
- * Allowing it does not weaken what docs-only protects. This is harness-owned
- * scratch outside the repository tree, written by the middleware rather than by
- * anything the model authored, and nothing under it is source, wiki, or
- * agent-instruction content.
+ * The directory resolves under the backend's `rootDir`, so in repository mode it
+ * lands at the repository root rather than outside the tree. It stays untracked
+ * scratch: nothing under it is source, wiki, or agent-instruction content, and
+ * {@link isLargeToolResultPath} keeps the exemption to the flat `.txt` shape the
+ * middleware actually writes.
  */
 const LARGE_TOOL_RESULTS_DIR = "large_tool_results";
 
 /**
- * Reports whether a path is the offload directory or something inside it.
+ * Reports whether a path is exactly the file shape the offload middleware writes.
+ *
+ * Scoped to `large_tool_results/<name>.txt` — one level deep, `.txt`, no dotfile
+ * segment — because `write` is also a model-facing tool and the exemption should
+ * not stretch any further than the middleware needs. The charset is left open on
+ * purpose: refusing an unexpected provider tool-call id would destroy the result
+ * rather than truncate it, which is the failure this exemption exists to avoid.
  *
  * Normalized the same way as the docs check, so `/large_tool_results/../etc`
  * cannot borrow the exemption.
@@ -654,11 +675,13 @@ const LARGE_TOOL_RESULTS_DIR = "large_tool_results";
  * @returns Whether the write targets offloaded tool-result storage.
  */
 export function isLargeToolResultPath(filePath: string): boolean {
+  const prefix = `${LARGE_TOOL_RESULTS_DIR}/`;
   const virtualPath = normalizeVirtualPath(filePath);
-  return (
-    virtualPath === LARGE_TOOL_RESULTS_DIR ||
-    virtualPath.startsWith(`${LARGE_TOOL_RESULTS_DIR}/`)
-  );
+  if (!virtualPath.startsWith(prefix)) {
+    return false;
+  }
+
+  return /^[^./][^/]*\.txt$/u.test(virtualPath.slice(prefix.length));
 }
 
 /**
