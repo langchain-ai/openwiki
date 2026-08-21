@@ -193,11 +193,15 @@ description: <one or two retrieval-optimized sentences>
 resource: <optional canonical URI>
 tags: [<specific-domain-tag>]
 # OpenWiki stamps generated provenance (last body change) deterministically; do not write it.
+# OpenWiki projects Claims evidence into sources deterministically; do not write it.
+# OpenWiki stamps verified only after complete Claims reconciliation; do not write it.
 ---
 \`\`\`
 
 - Only type is required by OKF, but add accurate title and description for retrieval.
 - Do not write \`generated\` or the superseded legacy \`timestamp\` field; OpenWiki stamps \`generated\` deterministically after the run.
+- Do not write \`sources\`; OpenWiki derives repository provenance from the page's resolved Claims evidence after the run.
+- Do not write \`verified\`; OpenWiki owns its machine verification event and stamps it only after the page's complete Claims set is successfully reconciled and persisted.
 - Treat Markdown links between concept pages as semantic relationships. Put links in the prose that explains runtime, dependency, ownership, data-flow, lifecycle, or user-flow relationships; quickstart navigation alone is not a substitute.
 
 Diagrams:
@@ -330,6 +334,8 @@ description: <Optional one to two sentence summary (optimized for search & retri
 resource: <Optional canonical URI for the underlying asset>
 tags: [<tag>, <tag>, …]            # Optional
 # OpenWiki stamps generated provenance (last body change) deterministically; do not write it.
+# OpenWiki projects Claims evidence into sources deterministically; do not write it.
+# OpenWiki stamps verified only after complete Claims reconciliation; do not write it.
 # Producer-defined extension fields are allowed.
 ---
 </okf_front_matter>
@@ -337,6 +343,8 @@ tags: [<tag>, <tag>, …]            # Optional
 - Only \`type\` is required. Choose a short, descriptive, self-explanatory concept kind, such as \`BigQuery Table\`, \`BigQuery Dataset\`, \`API Endpoint\`, \`Metric\`, \`Playbook\`, or \`Reference\`. Type values are not centrally registered, so do not restrict them to a fixed list.
 - Recommended fields, in priority order, are: \`title\`, a human-readable display name; \`description\`, a one to two sentence summary optimized for search and retrieval; \`resource\`, the canonical URI of the underlying asset when one exists; and \`tags\`, a YAML list of short cross-cutting category strings.
 - \`generated\` records the content's last body change (\`by\` names the producing actor, \`at\` is an ISO 8601 datetime). OpenWiki owns this field: it stamps and updates \`generated\` deterministically after every run whenever any part of a page's body changes, including whitespace, and drops the superseded legacy \`timestamp\` at the same time. Do not author, edit, or remove \`generated\` or \`timestamp\` yourself; leave any existing values in place.
+- \`sources\` records the repository materials behind the page's Claims. Do not write \`sources\` yourself: OpenWiki owns its Claims-derived entries and projects them deterministically after every run. Independently authored non-Claims sources are preserved.
+- \`verified\` records trust events. Do not write \`verified\` or OpenWiki's machine event yourself: OpenWiki stamps it only after the page actively reconciles its complete Claims set, the final evidence recheck passes, and the sidecar persists. Human and other process events are preserved.
 - Produce valid YAML. Do not leave placeholder text or explanatory comments in written files.
 - Preserve all existing producer-defined front matter fields when updating a concept. Unknown extension fields are valid OKF and must survive round trips. Change metadata only when the underlying fact or body content changes.
 - The description field is especially useful for retrieval tools. When present, make it clear, detailed, and optimized for search.

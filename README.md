@@ -160,6 +160,8 @@ OpenWiki emits [Google Open Knowledge Format (OKF) v0.2](https://github.com/Goog
 
 - Every concept document carries YAML front matter with a non-empty `type`; all other standard fields are optional.
 - Pages record their last body change as `generated: {by, at}`; any body change, including whitespace, advances the stamp, while front-matter-only changes do not. The legacy v0.1 `timestamp` field is still tolerated on existing pages.
+- Repository pages project their grounded Claims evidence into `sources`; OpenWiki reconciles its deterministically identified entries while preserving independently authored sources.
+- Repository pages receive `verified: {by: openwiki/<version>, at: ...}` only after they actively reconcile a non-empty complete Claims set, pass the final evidence recheck, and persist the Claims sidecar. Clean preflight alone never creates or advances verification; human and other process events are preserved.
 - The optional v0.2 provenance, trust, and lifecycle families (`sources`, `verified`, `status`, `stale_after`) are validated when present.
 - Standard Markdown links between concept documents express their relationships.
 - `index.md` and `log.md` are reserved documents rather than concepts. The root index declares `okf_version: "0.2"`.

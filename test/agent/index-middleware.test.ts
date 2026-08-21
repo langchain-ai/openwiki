@@ -1,4 +1,5 @@
 import { ToolMessage } from "@langchain/core/messages";
+import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -9,6 +10,7 @@ import {
 } from "../../src/agent/docs-only-backend.ts";
 import { createOpenWikiIndexMiddleware } from "../../src/agent/okf-middleware.ts";
 import { OPENWIKI_VERSION } from "../../src/version.ts";
+import { parseFrontmatterFields } from "../../src/okf/frontmatter.ts";
 import { ENGLISH_INDEX_LABELS } from "../../src/okf/index-labels.ts";
 import {
   migrateWikiToOkf,
@@ -25,6 +27,13 @@ const BROKEN_MERMAID = [
 
 function document(title: string, description: string): string {
   return `---\ntype: Reference\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(description)}\n---\n\n# ${title}\n`;
+}
+
+/**
+ * Mirrors the stable public ID expected for one projected resource.
+ */
+function claimSourceId(resource: string): string {
+  return `openwiki-claims-${createHash("sha256").update(resource).digest("hex").slice(0, 24)}`;
 }
 
 async function setup(outputMode: "local-wiki" | "repository" = "repository") {
@@ -525,6 +534,44 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     expect(page).toContain("openwiki: broken internal link [./missing.md]");
     expect(page).toContain("See [missing](./missing.md).");
     expect(page).toContain("generated:");
+  });
+
+  test("projects final Claims evidence into OKF sources", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/page.md",
+      document("Page", "Grounded page."),
+    );
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      "2026-08-20T00:00:00.000Z",
+      () =>
+        new Map([
+          [
+            "/openwiki/page.md",
+            ["repo://src/page.ts#L1-L8", "repo://package.json"],
+          ],
+        ]),
+    );
+
+    await runBeforeAgent(middleware);
+    await runAfterAgent(middleware);
+
+    const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(parseFrontmatterFields(page)?.sources).toEqual([
+      {
+        id: claimSourceId("repo://package.json"),
+        resource: "repo://package.json",
+      },
+      {
+        id: claimSourceId("repo://src/page.ts#L1-L8"),
+        resource: "repo://src/page.ts#L1-L8",
+      },
+    ]);
+    expect(page).not.toContain("generated:");
   });
 });
 

@@ -4,6 +4,10 @@ import { createMiddleware } from "langchain";
 import path from "node:path";
 import { validateWikiMermaid } from "../mermaid/wiki.js";
 import {
+  synchronizeClaimSources,
+  type ClaimEvidenceResources,
+} from "../okf/claim-sources.js";
+import {
   validatePersistedFile,
   type FrontmatterIssue,
 } from "../okf/frontmatter.js";
@@ -37,6 +41,9 @@ const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
  * `generated.at` and the stamping stays deterministic under test. It defaults to
  * the current time so callers that do not stamp (or tests exercising only the
  * index passes) need not supply one.
+ *
+ * `claimSources`, when supplied by a repository Claims runtime, is read only
+ * during finalization so it reflects every mutation accepted during the run.
  */
 export function createOpenWikiIndexMiddleware(
   backend: BackendProtocolV2,
@@ -44,6 +51,7 @@ export function createOpenWikiIndexMiddleware(
   labels: IndexLabels = ENGLISH_INDEX_LABELS,
   conceptType: string = ENGLISH_CONCEPT_TYPE,
   now: string = new Date().toISOString(),
+  claimSources?: () => ClaimEvidenceResources,
 ) {
   let initialConcepts: GeneratedProvenanceSnapshot | undefined;
 
@@ -105,6 +113,13 @@ export function createOpenWikiIndexMiddleware(
         () => validateWikiInternalLinks(backend, outputMode),
         { errorClass: "okf_error", errorDetail: "link_validation" },
       );
+      if (claimSources) {
+        await inStage(
+          "finalize",
+          () => synchronizeClaimSources(backend, outputMode, claimSources()),
+          { errorClass: "okf_error", errorDetail: "claims_sources" },
+        );
+      }
       const conceptsBeforeRun = initialConcepts;
       if (conceptsBeforeRun) {
         await inStage(

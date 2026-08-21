@@ -164,6 +164,7 @@ export async function runOpenWikiAgent(
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
   const runtimeCwd = options.outputMode ? cwd : openWikiLocalWikiDir;
+  const runTimestamp = new Date().toISOString();
 
   emitDebug(options, `command=${command}`);
   emitDebug(options, `cwd=${runtimeCwd}`);
@@ -215,7 +216,7 @@ export async function runOpenWikiAgent(
     );
 
     if (noopStatus.shouldSkip) {
-      await claimsRuntime?.finalize();
+      await claimsRuntime?.finalize(runTimestamp);
       const message =
         "No repository changes detected since the last OpenWiki update; skipping agent run.";
       emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
@@ -277,6 +278,7 @@ export async function runOpenWikiAgent(
       config.streamIdleTimeout,
       openWikiIgnore,
       claimsRuntime,
+      runTimestamp,
     );
   } catch (error) {
     // Enrich the error for the CLI's debug/auth UI, then rethrow. The telemetry
@@ -441,6 +443,7 @@ export async function createOpenWikiAgent(
     context,
     openWikiIgnore,
     claimsRuntime,
+    runTimestamp: new Date().toISOString(),
   });
 }
 
@@ -466,6 +469,11 @@ type OpenWikiAgentGraphOptions = OpenWikiAgentOptions & {
    * @default undefined for chat and personal-brain runs.
    */
   claimsRuntime?: ClaimsRuntime;
+
+  /**
+   * Single provenance time shared by generated and verified events.
+   */
+  runTimestamp: string;
 };
 
 function createOpenWikiAgentGraph(
@@ -484,6 +492,7 @@ function createOpenWikiAgentGraph(
   const claimsIntegration = options.claimsRuntime
     ? createClaimsIntegration(options.claimsRuntime, wikiBackend)
     : undefined;
+  const claimsSession = options.claimsRuntime?.session;
   // An update inherits the wiki's persisted language unless --language requests a
   // different one. The plan drives a beforeAgent pass that, on a switch,
   // retranslates every page so the incremental update does not leave a mix of the
@@ -499,10 +508,8 @@ function createOpenWikiAgentGraph(
   // back to English for any language not in the static maps.
   const indexLabels = resolveIndexLabels(options.context.language);
   const conceptType = resolveConceptTypeLabel(options.context.language);
-  // One stamp time for the whole run, so every page whose body changes shares a
-  // single deterministic `generated.at` rather than drifting across writes.
-  const runTimestamp = new Date().toISOString();
-
+  // The caller supplies one stamp time for the whole run, shared by generated
+  // provenance here and Claims verification at successful-run finalization.
   return createDeepAgent({
     model: options.model,
     tools: [
@@ -551,7 +558,10 @@ function createOpenWikiAgentGraph(
               options.outputMode,
               indexLabels,
               conceptType,
-              runTimestamp,
+              options.runTimestamp,
+              claimsSession
+                ? () => claimsSession.getEvidenceResourcesByPage()
+                : undefined,
             ),
           ],
     skills: ["/skills/"],
@@ -581,6 +591,7 @@ async function runOpenWikiAgentCore(
   streamIdleTimeout: number | undefined,
   openWikiIgnore: OpenWikiIgnore,
   claimsRuntime: ClaimsRuntime | undefined,
+  runTimestamp: string,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
   const context = await inStage(
@@ -640,6 +651,7 @@ async function runOpenWikiAgentCore(
         context,
         openWikiIgnore,
         claimsRuntime,
+        runTimestamp,
       }),
     { errorClass: "build_error", errorDetail: "agent" },
   );
@@ -777,7 +789,7 @@ async function runOpenWikiAgentCore(
   try {
     metadataWritten = await inStage("finalize", async () => {
       await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
-      await claimsRuntime?.finalize();
+      await claimsRuntime?.finalize(runTimestamp);
       return persistRunMetadataIfChanged(
         command,
         cwd,

@@ -121,6 +121,10 @@ describe("ClaimsStore", () => {
     const store = new ClaimsStore(rootDir);
     const page = "/openwiki/concepts/claims.md";
     const pageClaims = await createPageClaims(store, page);
+    pageClaims.verification = {
+      by: "openwiki/0.3.3",
+      at: "2026-08-20T12:00:00.000Z",
+    };
 
     await store.writePage(page, pageClaims);
 
@@ -211,6 +215,18 @@ describe("ClaimsStore", () => {
         pageVersion: VALID_PAGE_VERSION,
         claims: [],
         unknown: true,
+      },
+      {
+        schemaVersion: 1,
+        pageVersion: VALID_PAGE_VERSION,
+        claims: [],
+        verification: { by: "", at: "2026-08-20T12:00:00.000Z" },
+      },
+      {
+        schemaVersion: 1,
+        pageVersion: VALID_PAGE_VERSION,
+        claims: [],
+        verification: { by: "openwiki/0.3.3" },
       },
     ];
 

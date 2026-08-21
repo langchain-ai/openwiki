@@ -233,7 +233,10 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
         session,
       ),
     );
-    await session.finalize(store);
+    await session.finalize(store, {
+      by: "openwiki/0.3.3",
+      at: "2026-08-20T12:00:00.000Z",
+    });
 
     expect(calls).toHaveLength(1);
     expect(calls[0].system).toContain('"id": "claim_translation"');

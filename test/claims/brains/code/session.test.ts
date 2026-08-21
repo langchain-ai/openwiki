@@ -2,7 +2,10 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { ClaimsPersistenceSecurityError } from "../../../../src/claims/core/errors.ts";
+import {
+  ClaimsPersistenceError,
+  ClaimsPersistenceSecurityError,
+} from "../../../../src/claims/core/errors.ts";
 import { ClaimSession } from "../../../../src/claims/brains/code/session.ts";
 import { ClaimsStore } from "../../../../src/claims/brains/code/store.ts";
 import type { PageClaims } from "../../../../src/claims/brains/code/types.ts";
@@ -13,6 +16,10 @@ import type {
 } from "../../../../src/claims/core/types.ts";
 
 const PAGE_VERSION = `sha256:${"a".repeat(64)}`;
+const VERIFICATION = {
+  by: "openwiki/0.3.3",
+  at: "2026-08-20T12:00:00.000Z",
+};
 const CLAIM: Claim = {
   id: "claim_existing",
   statement: "The feature is enabled.",
@@ -114,6 +121,31 @@ describe("ClaimSession", () => {
     expect(() => session.inspectClaimsByIds(["claim_missing"])).toThrow(
       "Unknown claim id",
     );
+  });
+
+  test("projects deterministic unique evidence resources by page", () => {
+    const repeated: Claim = {
+      id: "claim_repeated",
+      statement: "The feature is reused.",
+      evidence: [
+        { resource: "memory://zeta", version: "revision:1" },
+        { resource: "memory://feature", version: "revision:1" },
+      ],
+    };
+    const session = new ClaimSession({
+      resolver: createResolver(new Map()),
+      persisted: new Map([
+        ["/openwiki/page.md", persisted([CLAIM, repeated])],
+        ["/openwiki/empty.md", persisted([])],
+      ]),
+      issues: [],
+      orphanPages: [],
+    });
+
+    expect([...session.getEvidenceResourcesByPage()]).toEqual([
+      ["/openwiki/empty.md", []],
+      ["/openwiki/page.md", ["memory://feature", "memory://zeta"]],
+    ]);
   });
 
   test("groups ID inspection across owning pages", () => {
@@ -304,14 +336,14 @@ describe("ClaimSession", () => {
     const session = createSession();
     const writeSidecar = vi.spyOn(store, "writePage");
 
-    await session.finalize(store);
+    await session.finalize(store, VERIFICATION);
     expect(writeSidecar).not.toHaveBeenCalled();
 
     await session.resolveClaims({
       page,
       operations: [{ op: "confirm", id: "claim_existing" }],
     });
-    await session.finalize(store);
+    await session.finalize(store, VERIFICATION);
     expect(writeSidecar).toHaveBeenCalledTimes(1);
     expect((await store.loadPage(page))?.claims[0]?.evidence[0]?.version).toBe(
       "revision:2",
@@ -319,6 +351,108 @@ describe("ClaimSession", () => {
     expect((await store.loadPage(page))?.pageVersion).toBe(
       await store.hashPage(page),
     );
+    expect((await store.loadPage(page))?.verification).toEqual(VERIFICATION);
+  });
+
+  test("does not create verification from a clean preflight", async () => {
+    const page = "/openwiki/page.md";
+    await writePage(page);
+    const store = new ClaimsStore(rootDir);
+    const session = createSession();
+
+    const result = await session.finalize(store, VERIFICATION);
+
+    expect(result.verificationByPage.get(page)).toBeNull();
+    expect(await store.loadPage(page)).toBeNull();
+  });
+
+  test("retains a prior durable verification without advancing it", async () => {
+    const page = "/openwiki/page.md";
+    const prior = {
+      by: "openwiki/0.3.2",
+      at: "2026-08-19T12:00:00.000Z",
+    };
+    const session = new ClaimSession({
+      resolver: createResolver(new Map()),
+      persisted: new Map([
+        [page, { ...persisted([CLAIM]), verification: prior }],
+      ]),
+      issues: [],
+      orphanPages: [],
+    });
+
+    const result = await session.finalize(
+      new ClaimsStore(rootDir),
+      VERIFICATION,
+    );
+
+    expect(result.verificationByPage.get(page)).toEqual(prior);
+  });
+
+  test("withholds verification while any preflight debt remains", async () => {
+    const page = "/openwiki/page.md";
+    const session = createSession({
+      issues: [
+        {
+          page,
+          kind: "stale",
+          claimId: "claim_existing",
+          resources: ["memory://feature"],
+        },
+      ],
+    });
+
+    const result = await session.finalize(
+      new ClaimsStore(rootDir),
+      VERIFICATION,
+    );
+
+    expect(result.verificationByPage.get(page)).toBeNull();
+  });
+
+  test("does not expose a new event when sidecar persistence fails", async () => {
+    const page = "/openwiki/page.md";
+    await writePage(page);
+    const store = new ClaimsStore(rootDir);
+    const session = createSession();
+    await session.resolveClaims({
+      page,
+      operations: [{ op: "confirm", id: "claim_existing" }],
+    });
+    vi.spyOn(store, "writePage").mockRejectedValueOnce(
+      new ClaimsPersistenceError("disk unavailable"),
+    );
+
+    const result = await session.finalize(store, VERIFICATION);
+
+    expect(result.warnings).toHaveLength(1);
+    expect(result.verificationByPage.get(page)).toBeNull();
+  });
+
+  test("removes durable verification when reconciliation leaves no Claims", async () => {
+    const page = "/openwiki/page.md";
+    await writePage(page);
+    const store = new ClaimsStore(rootDir);
+    const session = new ClaimSession({
+      resolver: createResolver(new Map()),
+      persisted: new Map([
+        [page, { ...persisted([CLAIM]), verification: { ...VERIFICATION } }],
+      ]),
+      issues: [],
+      orphanPages: [],
+    });
+    await session.resolveClaims({
+      page,
+      operations: [{ op: "retract", id: "claim_existing" }],
+    });
+
+    const result = await session.finalize(store, {
+      ...VERIFICATION,
+      at: "2026-08-20T13:00:00.000Z",
+    });
+
+    expect(result.verificationByPage.get(page)).toBeNull();
+    expect((await store.loadPage(page))?.verification).toBeUndefined();
   });
 
   test("page deletion removes a non-empty sidecar without retractions", async () => {
@@ -328,7 +462,7 @@ describe("ClaimSession", () => {
     const session = createSession();
 
     await session.recordDeletion(page);
-    await session.finalize(store);
+    await session.finalize(store, VERIFICATION);
     await expect(store.loadPage(page)).resolves.toBeNull();
   });
 
@@ -338,7 +472,7 @@ describe("ClaimSession", () => {
     await store.writePage(orphan, persisted([]));
     const session = createSession({ orphanPages: [orphan] });
 
-    await session.finalize(store);
+    await session.finalize(store, VERIFICATION);
     await expect(store.loadPage(orphan)).resolves.toBeNull();
   });
 
@@ -390,7 +524,7 @@ describe("ClaimSession", () => {
       });
       outcomes.set("memory://bad", finalOutcome);
 
-      const result = await session.finalize(store);
+      const result = await session.finalize(store, VERIFICATION);
 
       expect(result.warnings).toHaveLength(1);
       expect(result.warnings[0]).toContain(expected);
@@ -417,7 +551,9 @@ describe("ClaimSession", () => {
       new ClaimsPersistenceSecurityError("unsafe claims path"),
     );
 
-    await expect(session.finalize(store)).rejects.toThrow("unsafe claims path");
+    await expect(session.finalize(store, VERIFICATION)).rejects.toThrow(
+      "unsafe claims path",
+    );
   });
 
   test("removes a sidecar when its dirty Markdown page disappeared", async () => {
@@ -430,7 +566,7 @@ describe("ClaimSession", () => {
       operations: [{ op: "confirm", id: "claim_existing" }],
     });
 
-    const result = await session.finalize(store);
+    const result = await session.finalize(store, VERIFICATION);
 
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings[0]).toContain("Markdown disappeared");
@@ -464,7 +600,7 @@ describe("ClaimSession", () => {
       });
     }
     calls.length = 0;
-    await session.finalize(new ClaimsStore(rootDir));
+    await session.finalize(new ClaimsStore(rootDir), VERIFICATION);
     expect(calls).toEqual([resource]);
   });
 

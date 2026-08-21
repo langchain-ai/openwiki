@@ -43,6 +43,22 @@ describe("createSystemPrompt OKF guidance", () => {
       );
     }
     expect(init).toContain("valid OKF v0.2 YAML front matter");
+    for (const prompt of [init, update]) {
+      expect(prompt).toContain(
+        "OpenWiki projects Claims evidence into sources deterministically",
+      );
+      expect(prompt).toContain("Do not write `sources`");
+      expect(prompt).toContain(
+        "OpenWiki stamps verified only after complete Claims reconciliation",
+      );
+      expect(prompt).toContain("Do not write `verified`");
+    }
+    expect(personalUpdate).not.toContain(
+      "OpenWiki projects Claims evidence into sources deterministically",
+    );
+    expect(personalUpdate).not.toContain(
+      "OpenWiki stamps verified only after complete Claims reconciliation",
+    );
     for (const prompt of [update, personalUpdate]) {
       expect(prompt).toContain("Google Knowledge Catalog OKF v0.2 schema");
       expect(prompt).toContain('okf_version: "0.2"');

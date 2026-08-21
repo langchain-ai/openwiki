@@ -57,6 +57,16 @@ const ClaimSchema = z
   .strict();
 
 /**
+ * Runtime validator for one durable machine-verification event.
+ */
+const VerificationSchema = z
+  .object({
+    by: CanonicalNonEmptyStringSchema,
+    at: CanonicalNonEmptyStringSchema,
+  })
+  .strict();
+
+/**
  * Runtime validator for one V1 page sidecar.
  */
 const PageClaimsSchema = z
@@ -64,6 +74,7 @@ const PageClaimsSchema = z
     schemaVersion: z.literal(CODE_CLAIMS_SCHEMA_VERSION),
     pageVersion: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
     claims: z.array(ClaimSchema),
+    verification: VerificationSchema.optional(),
   })
   .strict();
 
@@ -219,6 +230,57 @@ export class ClaimsStore {
     } catch (error) {
       throw new ClaimsPersistenceError(
         `Unable to hash ${normalizeWikiPagePath(page)}: ${toErrorMessage(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Reads one generated Markdown page through the Claims path-containment gate.
+   *
+   * @param page - Virtual generated-page path.
+   * @returns Exact UTF-8 Markdown bytes as text.
+   */
+  async readMarkdown(page: string): Promise<string> {
+    const normalizedPage = normalizeWikiPagePath(page);
+    const pagePath = path.join(this.rootDir, toRepositoryPagePath(page));
+    const physicalPage = await this.resolveExistingRegularFile(pagePath);
+    if (!physicalPage) {
+      throw new ClaimsPageMissingError(
+        `Unable to read ${normalizedPage}: file does not exist`,
+      );
+    }
+    try {
+      return await readFile(physicalPage, "utf8");
+    } catch (error) {
+      throw new ClaimsPersistenceError(
+        `Unable to read ${normalizedPage}: ${toErrorMessage(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Writes one existing generated Markdown page after resolving it through the
+   * Claims path-containment gate. Writing the resolved regular file directly
+   * preserves its permissions and prevents path aliases from redirecting the
+   * projection outside the repository.
+   *
+   * @param page - Virtual generated-page path.
+   * @param content - Complete replacement Markdown.
+   */
+  async writeMarkdown(page: string, content: string): Promise<void> {
+    const normalizedPage = normalizeWikiPagePath(page);
+    const pagePath = path.join(this.rootDir, toRepositoryPagePath(page));
+    const physicalPage = await this.resolveExistingRegularFile(pagePath);
+    if (!physicalPage) {
+      throw new ClaimsPageMissingError(
+        `Unable to write ${normalizedPage}: file does not exist`,
+      );
+    }
+    try {
+      await writeFile(physicalPage, content, "utf8");
+    } catch (error) {
+      throw new ClaimsPersistenceError(
+        `Unable to write ${normalizedPage}: ${toErrorMessage(error)}`,
       );
     }
   }
