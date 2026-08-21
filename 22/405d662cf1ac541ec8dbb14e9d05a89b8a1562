@@ -1,0 +1,23 @@
+test/agent/docs-only-backend.test.ts
+  s_109cbe11c8136c::t_8c853c726b67f6 45,50-63,98-129
+src/agent/docs-only-backend.ts
+  s_109cbe11c8136c::t_b3d132bc589734 228,494-503,505-508,513-514,654-658,663-669,678,680-684
+.changeset/tame-hounds-listen.md
+  s_109cbe11c8136c::t_1e9e3dc8671af0 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "22405d662cf1ac541ec8dbb14e9d05a89b8a1562",
+  "prompts": {},
+  "sessions": {
+    "s_109cbe11c8136c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c3f8d7f4-6cc1-41e6-ae06-39bd7af25271",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
