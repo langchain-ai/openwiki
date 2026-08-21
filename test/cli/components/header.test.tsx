@@ -4,20 +4,24 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { Header } from "../../../src/cli/components/header.tsx";
 import { stripAnsi as plain } from "./ansi.ts";
 
-const TRACING_KEYS = ["LANGCHAIN_TRACING_V2", "LANGSMITH_API_KEY"] as const;
+const HEADER_ENV_KEYS = [
+  "LANGCHAIN_TRACING_V2",
+  "LANGSMITH_API_KEY",
+  "OPENWIKI_REASONING_EFFORT",
+] as const;
 
 describe("Header", () => {
   const saved: Record<string, string | undefined> = {};
 
   beforeEach(() => {
-    for (const key of TRACING_KEYS) {
+    for (const key of HEADER_ENV_KEYS) {
       saved[key] = process.env[key];
       delete process.env[key];
     }
   });
 
   afterEach(() => {
-    for (const key of TRACING_KEYS) {
+    for (const key of HEADER_ENV_KEYS) {
       if (saved[key] === undefined) {
         delete process.env[key];
       } else {
@@ -63,6 +67,16 @@ describe("Header", () => {
 
     const { lastFrame } = render(<Header compact modelId="m" subtitle="s" />);
     expect(plain(lastFrame())).toContain("LangSmith tracing enabled");
+  });
+
+  test("shows a saved reasoning effort in both header layouts", () => {
+    process.env.OPENWIKI_REASONING_EFFORT = "medium";
+
+    const compact = render(<Header compact modelId="m" subtitle="s" />);
+    expect(plain(compact.lastFrame())).toContain("effort: medium");
+
+    const full = render(<Header modelId="m" showLogo={false} subtitle="s" />);
+    expect(plain(full.lastFrame())).toContain("reasoning effort: medium");
   });
 
   test("sanitizes control characters out of the model id", () => {

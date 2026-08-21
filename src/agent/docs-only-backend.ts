@@ -1,6 +1,7 @@
 import path from "node:path";
 import {
   LocalShellBackend,
+  type DeleteResult,
   type EditResult,
   type ExecuteResponse,
   type FileDownloadResponse,
@@ -120,10 +121,27 @@ function isWorktreeGitScandirError(error: unknown): boolean {
 }
 
 /**
+ * Determines whether a shell command explicitly references repository Claims state.
+ *
+ * This is defense in depth for state already hidden from filesystem discovery,
+ * not a general-purpose shell parser.
+ *
+ * @param command - Shell command requested by the model.
+ * @returns Whether the command names the OpenWiki Claims directory.
+ */
+function referencesClaimsState(command: string): boolean {
+  const normalized = command.replaceAll("\\", "/").toLowerCase();
+
+  return /(?:^|[/\s'"`=;|&()])openwiki\/\.claims(?:\/|[\s'"`=;|&()]|$)/u.test(
+    normalized,
+  );
+}
+
+/**
  * Filesystem/shell backend that enforces OpenWiki's access boundaries for the
  * doc-generation agent.
  *
- * It wraps the deepagents `LocalShellBackend` and layers on two independent
+ * It wraps the deepagents `LocalShellBackend` and layers on three independent
  * constraints:
  *
  * 1. `.openwikiignore` exclusion: reads/writes/edits of an ignored path are hard
@@ -132,8 +150,10 @@ function isWorktreeGitScandirError(error: unknown): boolean {
  *    `execute` is restricted to a small allowlist while any rule is active.
  * 2. Docs-only confinement (`docsOnly`): in repository mode, writes are limited
  *    to the `openwiki/` tree via {@link isOpenWikiDocsPath}.
+ * 3. Claims ownership: repository `.claims` sidecars are hidden from generic
+ *    tools and may only be accessed by OpenWiki's direct persistence layer.
  *
- * Both are security boundaries against an agent that may be prompt-injected via
+ * All three are security boundaries against an agent that may be prompt-injected via
  * untrusted repository content, so path checks canonicalize before matching.
  */
 export class OpenWikiLocalShellBackend extends LocalShellBackend {
@@ -167,7 +187,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     offset?: number,
     limit?: number,
   ): Promise<ReadResult> {
-    const error = this.getIgnoredPathError(filePath);
+    const error =
+      this.getIgnoredPathError(filePath) ??
+      this.getClaimsOwnershipError(filePath);
 
     if (error) {
       return { error };
@@ -180,7 +202,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * Read raw bytes, hard-denying the read if the path is excluded by `.openwikiignore`.
    */
   override async readRaw(filePath: string): Promise<ReadRawResult> {
-    const error = this.getIgnoredPathError(filePath);
+    const error =
+      this.getIgnoredPathError(filePath) ??
+      this.getClaimsOwnershipError(filePath);
 
     if (error) {
       return { error };
@@ -200,6 +224,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   ): Promise<WriteResult> {
     const error =
       this.getIgnoredPathError(filePath) ??
+      this.getClaimsOwnershipError(filePath) ??
       this.getDocsOnlyWriteError(filePath);
 
     if (error) {
@@ -221,6 +246,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   ): Promise<EditResult> {
     const error =
       this.getIgnoredPathError(filePath) ??
+      this.getClaimsOwnershipError(filePath) ??
       this.getDocsOnlyWriteError(filePath);
 
     if (error) {
@@ -234,11 +260,30 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   }
 
   /**
+   * Deletes a generated file while enforcing ignore, ownership, and docs-only rules.
+   *
+   * @param filePath - Virtual file path to delete.
+   * @returns Backend deletion result with mutation metadata on success.
+   */
+  override async delete(filePath: string): Promise<DeleteResult> {
+    const error =
+      this.getIgnoredPathError(filePath) ??
+      this.getClaimsOwnershipError(filePath) ??
+      this.getDocsOnlyWriteError(filePath);
+    if (error) {
+      return { error };
+    }
+    return markMutation(await super.delete(filePath), filePath);
+  }
+
+  /**
    * List a directory, denying if the directory itself is excluded and otherwise
    * filtering out any ignored entries so they never surface to the agent.
    */
   override async ls(dirPath: string): Promise<LsResult> {
-    const error = this.getIgnoredPathError(dirPath, true);
+    const error =
+      this.getIgnoredPathError(dirPath, true) ??
+      this.getClaimsOwnershipError(dirPath);
 
     if (error) {
       return { error };
@@ -249,7 +294,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return {
       ...result,
       files: result.files?.filter(
-        (file) => !this.openWikiIgnore.ignores(file.path, file.is_dir === true),
+        (file) =>
+          !this.openWikiIgnore.ignores(file.path, file.is_dir === true) &&
+          !this.isClaimsPath(file.path),
       ),
     };
   }
@@ -263,7 +310,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     dirPath?: string | null,
     glob?: string | null,
   ): Promise<GrepResult> {
-    if (dirPath && this.openWikiIgnore.ignores(dirPath, true)) {
+    if (
+      dirPath &&
+      (this.openWikiIgnore.ignores(dirPath, true) || this.isClaimsPath(dirPath))
+    ) {
       return { matches: [] };
     }
 
@@ -272,7 +322,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return {
       ...result,
       matches: result.matches?.filter(
-        (match) => !this.openWikiIgnore.ignores(match.path),
+        (match) =>
+          !this.openWikiIgnore.ignores(match.path) &&
+          !this.isClaimsPath(match.path),
       ),
     };
   }
@@ -299,6 +351,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       };
     }
 
+    if (searchPath && this.isClaimsPath(searchPath)) {
+      return { files: [] };
+    }
+
     if (searchPath && this.openWikiIgnore.ignores(searchPath, true)) {
       return { files: [] };
     }
@@ -321,7 +377,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return {
       ...result,
       files: result.files?.filter(
-        (file) => !this.openWikiIgnore.ignores(file.path, file.is_dir === true),
+        (file) =>
+          !this.openWikiIgnore.ignores(file.path, file.is_dir === true) &&
+          !this.isClaimsDiscoveryPath(file.path, searchPath),
       ),
     };
   }
@@ -368,7 +426,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     paths: string[],
   ): Promise<FileDownloadResponse[]> {
     const allowedPaths = paths.filter(
-      (filePath) => !this.openWikiIgnore.ignores(filePath),
+      (filePath) =>
+        !this.openWikiIgnore.ignores(filePath) && !this.isClaimsPath(filePath),
     );
 
     if (allowedPaths.length === paths.length) {
@@ -381,7 +440,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     );
 
     return paths.map((filePath) => {
-      if (this.openWikiIgnore.ignores(filePath)) {
+      if (
+        this.openWikiIgnore.ignores(filePath) ||
+        this.isClaimsPath(filePath)
+      ) {
         return { content: null, error: "permission_denied", path: filePath };
       }
 
@@ -402,6 +464,15 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * since arbitrary shell cannot be proven not to read an ignored path.
    */
   override async execute(command: string): Promise<ExecuteResponse> {
+    if (this.outputMode === "repository" && referencesClaimsState(command)) {
+      return {
+        exitCode: 1,
+        output:
+          "OpenWiki Claims state is implementation-owned and unavailable to shell execute. Use inspect_claims and resolve_claims.",
+        truncated: false,
+      };
+    }
+
     if (
       this.openWikiIgnore.isActive &&
       !isAllowedShellCommandWithIgnore(command)
@@ -449,6 +520,53 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   }
 
   /**
+   * Returns a refusal when a repository path resolves inside Claims state.
+   *
+   * @param filePath - Candidate virtual repository path.
+   * @returns Ownership error, or `null` when generic access is allowed.
+   */
+  private getClaimsOwnershipError(filePath: string): string | null {
+    if (!this.isClaimsPath(filePath)) {
+      return null;
+    }
+
+    return `OpenWiki Claims state is implementation-owned: ${filePath}`;
+  }
+
+  /**
+   * Determines whether a path is reserved Claims state for this output mode.
+   *
+   * @param filePath - Candidate virtual path.
+   * @returns Whether the repository Claims boundary applies.
+   */
+  private isClaimsPath(filePath: string): boolean {
+    return this.outputMode === "repository" && isClaimsStatePath(filePath);
+  }
+
+  /**
+   * Resolves search-relative glob results before checking Claims ownership.
+   *
+   * @param filePath - Path returned by the underlying discovery operation.
+   * @param searchPath - Virtual discovery root.
+   * @returns Whether the discovered entry belongs to Claims state.
+   */
+  private isClaimsDiscoveryPath(
+    filePath: string,
+    searchPath?: string,
+  ): boolean {
+    if (this.isClaimsPath(filePath)) {
+      return true;
+    }
+    if (!searchPath || searchPath === "/") {
+      return false;
+    }
+
+    return this.isClaimsPath(
+      path.posix.join(searchPath.replaceAll("\\", "/"), filePath),
+    );
+  }
+
+  /**
    * Whether writing to a path is disallowed, combining the `.openwikiignore`
    * exclusion and the docs-only confinement checks that {@link write} and
    * {@link edit} apply. Used by batch write paths that cannot short-circuit on a
@@ -457,6 +575,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   private isWriteBlocked(filePath: string): boolean {
     return (
       this.openWikiIgnore.ignores(filePath) ||
+      this.isClaimsPath(filePath) ||
       this.getDocsOnlyWriteError(filePath) !== null
     );
   }
@@ -465,17 +584,38 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
 /**
  * Carries a successful mutation's file path into the ToolMessage metadata used by the validator.
  */
-function markMutation<Result extends WriteResult | EditResult>(
+function markMutation<Result extends WriteResult | EditResult | DeleteResult>(
   result: Result,
   filePath: string,
 ): Result {
+  const mutableResult = result as Result & {
+    metadata?: Record<string, unknown>;
+  };
   if (!result.error) {
-    result.metadata = {
-      ...result.metadata,
+    mutableResult.metadata = {
+      ...mutableResult.metadata,
       [MUTATION_PATH_METADATA_KEY]: result.path ?? filePath,
     };
   }
-  return result;
+  return mutableResult;
+}
+
+/**
+ * Determines whether a virtual path resolves inside OpenWiki-owned Claims state.
+ *
+ * @param filePath - Candidate virtual repository path.
+ * @returns Whether the normalized path is the Claims directory or its descendant.
+ */
+export function isClaimsStatePath(filePath: string): boolean {
+  const normalized = path.posix
+    .normalize(filePath.replaceAll("\\", "/"))
+    .toLowerCase();
+  const absolute = normalized.startsWith("/") ? normalized : `/${normalized}`;
+
+  return (
+    absolute === "/openwiki/.claims" ||
+    absolute.startsWith("/openwiki/.claims/")
+  );
 }
 
 /**

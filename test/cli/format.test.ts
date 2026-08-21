@@ -1,17 +1,22 @@
 import { afterEach, describe, expect, test } from "vitest";
 import {
+  formatCount,
   formatCwd,
   getDisplayModelId,
-  getSpinnerFrame,
   isExitMessage,
-  truncateLogOutput,
-  truncateToDisplayLines,
 } from "../../src/cli/format.ts";
 import {
   getDefaultModelId,
   OPENWIKI_MODEL_ID_ENV_KEY,
   resolveConfiguredProvider,
 } from "../../src/config/constants.ts";
+
+describe("formatCount", () => {
+  test("selects the singular noun only for one", () => {
+    expect(formatCount(1, "task", "tasks")).toBe("1 task");
+    expect(formatCount(2, "task", "tasks")).toBe("2 tasks");
+  });
+});
 
 describe("isExitMessage", () => {
   test("matches /exit ignoring whitespace and case", () => {
@@ -24,40 +29,6 @@ describe("isExitMessage", () => {
     expect(isExitMessage("/exits")).toBe(false);
     expect(isExitMessage("exit")).toBe(false);
     expect(isExitMessage("")).toBe(false);
-  });
-});
-
-describe("truncateToDisplayLines", () => {
-  test("collapses whitespace and returns short content unchanged", () => {
-    expect(truncateToDisplayLines("a   b\n\tc", 2, 80)).toBe("a b c");
-  });
-
-  test("wraps to at most maxLines and marks the tail with an ellipsis", () => {
-    const result = truncateToDisplayLines("abcdefghij", 2, 4);
-
-    const lines = result.split("\n");
-    expect(lines.length).toBe(2);
-    expect(lines[0]).toBe("abcd");
-    expect(lines[1].endsWith("...")).toBe(true);
-  });
-
-  test("does not add an ellipsis when everything fits within the lines", () => {
-    const result = truncateToDisplayLines("abcdefgh", 2, 4);
-
-    expect(result).toBe("abcd\nefgh");
-  });
-});
-
-describe("truncateLogOutput", () => {
-  test("keeps short output on a single line", () => {
-    expect(truncateLogOutput("hello world", "label")).toBe("hello world");
-  });
-
-  test("truncates long output to two display lines", () => {
-    const content = "x".repeat(500);
-
-    const result = truncateLogOutput(content, "label");
-    expect(result.split("\n").length).toBeLessThanOrEqual(2);
   });
 });
 
@@ -120,15 +91,5 @@ describe("getDisplayModelId", () => {
     expect(getDisplayModelId(null)).toBe(
       getDefaultModelId(resolveConfiguredProvider()),
     );
-  });
-});
-
-describe("getSpinnerFrame", () => {
-  test("cycles through the four frames", () => {
-    expect(getSpinnerFrame(0)).toBe("-");
-    expect(getSpinnerFrame(1)).toBe("\\");
-    expect(getSpinnerFrame(2)).toBe("|");
-    expect(getSpinnerFrame(3)).toBe("/");
-    expect(getSpinnerFrame(4)).toBe("-");
   });
 });

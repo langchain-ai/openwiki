@@ -3,9 +3,11 @@ import path from "node:path";
 import {
   getProviderAuthMethod,
   getProviderConfig,
+  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_VERSION,
   resolveConfiguredProvider,
+  resolveOpenAiCompatibleStreaming,
 } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { createConnectorRegistry } from "../connectors/registry.js";
@@ -152,7 +154,7 @@ function emitText(
   onEvent: ((event: OpenWikiRunEvent) => void) | undefined,
   text: string,
 ): void {
-  onEvent?.({ source: "main", text, type: "text" });
+  onEvent?.({ text, type: "text" });
 }
 
 /**
@@ -305,6 +307,14 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
     // Quoted because model IDs are not all plain YAML scalars: Cloudflare
     // Workers AI IDs lead with "@", a reserved indicator that fails to parse.
     lines.push(`${OPENWIKI_MODEL_ID_ENV_KEY}: ${JSON.stringify(modelId)}`);
+  }
+
+  // Not part of the provider config because it is a transport override rather
+  // than a credential, but it has to survive into the scheduled run: a gateway
+  // that only serves SSE would otherwise return empty content unattended and
+  // commit a blank wiki. Emitted only when the author opted in locally.
+  if (resolveOpenAiCompatibleStreaming(env)) {
+    lines.push(`${OPENAI_COMPATIBLE_STREAMING_ENV_KEY}: "true"`);
   }
 
   return lines.join("\n          ");

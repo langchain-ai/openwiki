@@ -17,8 +17,9 @@ const WATCH_DEBOUNCE_MS = 150; // collapse a burst of file-change events into on
 
 // The client JS is an external module (/client.js), so scripts need only 'self' plus the
 // jsdelivr CDN origin for the three browser libraries (whose integrity is pinned by the SRI
-// hashes on the <script> tags in page.ts) - no 'unsafe-inline' for scripts. The page still
-// carries one inline <style>, so style-src keeps 'unsafe-inline'.
+// hashes on the <script> tags in page.ts) - no 'unsafe-inline' for scripts. The stylesheet is
+// a same-origin asset (/styles.css), which 'self' covers; style-src still keeps 'unsafe-inline'
+// because client.ts writes inline style= attributes for legend swatches and sidebar dots.
 
 /**
  * Inputs for a single visualizer server run. Every field is required: the CLI parser
@@ -68,10 +69,10 @@ export async function runVisualizeServer(
   };
   const sseClients = new Set<ServerResponse>();
 
-  // The compiled client modules sit beside this file in dist/visualize/. They are static,
-  // server-owned build artifacts (no user input, never evaluated), read once at startup and
-  // served verbatim at fixed routes.
-  const { clientJs, clientLibJs } = await loadVisualizerAssets();
+  // The compiled client modules and the stylesheet sit beside this file in dist/visualize/.
+  // They are static, server-owned build artifacts (no user input, never evaluated), read once
+  // at startup and served verbatim at fixed routes.
+  const { clientJs, clientLibJs, stylesCss } = await loadVisualizerAssets();
 
   const broadcastReload = (): void => {
     for (const res of sseClients) res.write("event: reload\ndata: 1\n\n");
@@ -95,6 +96,7 @@ export async function runVisualizeServer(
       getGraph: () => graph,
       clientJs,
       clientLibJs,
+      stylesCss,
       sseClients,
     }),
   );
@@ -140,6 +142,11 @@ export interface RequestHandlerDeps {
   clientLibJs: string;
 
   /**
+   * Visualizer stylesheet, served verbatim at `/styles.css`.
+   */
+  stylesCss: string;
+
+  /**
    * Live set of open Server-Sent-Events responses; the handler registers new
    * `/events` subscribers here and drops them when the connection closes.
    */
@@ -148,14 +155,14 @@ export interface RequestHandlerDeps {
 
 /**
  * Build the visualizer HTTP request handler. Routing is locked to a fixed set of
- * routes (`/`, `/index.html`, `/client.js`, `/client-lib.js`, `/api/graph`,
- * `/events`); no filesystem path is ever derived from `req.url`, and `/` carries
- * the strict Content-Security-Policy. Any other path is a 404.
+ * routes (`/`, `/index.html`, `/client.js`, `/client-lib.js`, `/styles.css`,
+ * `/api/graph`, `/events`); no filesystem path is ever derived from `req.url`, and
+ * `/` carries the strict Content-Security-Policy. Any other path is a 404.
  */
 export function createRequestHandler(
   deps: RequestHandlerDeps,
 ): (req: IncomingMessage, res: ServerResponse) => void {
-  const { getGraph, clientJs, clientLibJs, sseClients } = deps;
+  const { getGraph, clientJs, clientLibJs, stylesCss, sseClients } = deps;
 
   return (req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? "/";
@@ -175,6 +182,11 @@ export function createRequestHandler(
     if (url === "/client-lib.js") {
       res.writeHead(200, { "content-type": "text/javascript; charset=utf-8" });
       res.end(clientLibJs);
+      return;
+    }
+    if (url === "/styles.css") {
+      res.writeHead(200, { "content-type": "text/css; charset=utf-8" });
+      res.end(stylesCss);
       return;
     }
     if (url === "/api/graph") {

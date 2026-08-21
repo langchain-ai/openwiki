@@ -71,3 +71,11 @@ function readOwnVersion(): string {
  * stays in lockstep with releases without a hardcoded constant to maintain.
  */
 export const OPENWIKI_VERSION = readOwnVersion();
+
+/**
+ * OpenWiki's OKF producer actor, the `by` value stamped on code-owned
+ * `generated` and `verified` events (OKF v0.2 §7 `<producer>/<version>`
+ * convention). Every deterministic provenance and trust projection derives
+ * from this single source so actor identity cannot drift.
+ */
+export const OPENWIKI_PRODUCER_ACTOR = `openwiki/${OPENWIKI_VERSION}`;

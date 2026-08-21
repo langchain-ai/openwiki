@@ -23,6 +23,7 @@ import {
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
 } from "../../src/config/constants.ts";
+import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
 
 const execFileAsync = promisify(execFile);
 const MANAGED_ENV_KEYS = [
@@ -64,6 +65,12 @@ async function createRepoWithOpenWiki(): Promise<string> {
     "# Quickstart\n",
     "utf8",
   );
+  const store = new ClaimsStore(repo);
+  await store.writePage("/openwiki/quickstart.md", {
+    schemaVersion: 1,
+    pageVersion: await store.hashPage("/openwiki/quickstart.md"),
+    claims: [],
+  });
   await git(repo, ["add", "."]);
   await git(repo, ["commit", "-m", "initial"]);
   return repo;
@@ -211,6 +218,27 @@ describe("resolveStartupCommand", () => {
     if (result.kind === "error") {
       expect(result.message).toContain("OPENROUTER_API_KEY is required");
     }
+  });
+
+  test("skips credentials when only the stored page hash has drifted", async () => {
+    const repo = await createRepoWithOpenWiki();
+    await writeFile(
+      path.join(repo, "openwiki", "quickstart.md"),
+      "# Quickstart\nChanged outside Claims\n",
+      "utf8",
+    );
+    await git(repo, ["add", "openwiki/quickstart.md"]);
+    await git(repo, ["commit", "-m", "desynchronize wiki page"]);
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+
+    const command = updatePrintCommand();
+    const result = await resolveStartupCommand(command, {
+      cwd: repo,
+      isStdinTTY: false,
+    });
+
+    expect(result).toBe(command);
   });
 
   test("still requires credentials when an update message is supplied", async () => {

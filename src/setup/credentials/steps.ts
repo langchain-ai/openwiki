@@ -27,9 +27,11 @@ import {
   normalizeProvider,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_REASONING_EFFORT_ENV_KEY,
   SELECTABLE_OPENWIKI_PROVIDERS,
   type OpenWikiProvider,
 } from "../../config/constants.js";
+import { getReasoningCapability } from "../../config/reasoning.js";
 import {
   readCodexTokensFromEnv,
   isChatGptTokenExpired,
@@ -49,6 +51,7 @@ import type {
   ModelSelectionOption,
   SourceSecretInput,
   PromptInputKey,
+  ReasoningEffortSelection,
 } from "./types.js";
 import {
   ONBOARDING_TEMPLATES,
@@ -150,8 +153,41 @@ export function getWizardManagedEnvKeys(provider: OpenWikiProvider): string[] {
     getProviderBaseUrlEnvKey(provider),
     getProviderRegionEnvKey(provider),
     OPENWIKI_MODEL_ID_ENV_KEY,
+    OPENWIKI_REASONING_EFFORT_ENV_KEY,
     "LANGSMITH_API_KEY",
   ].filter((key): key is string => key !== undefined);
+}
+
+export type ReasoningEffortSelectionOption = {
+  label: string;
+  value: ReasoningEffortSelection;
+};
+
+export function getReasoningEffortSelectionOptions(
+  provider: OpenWikiProvider,
+  modelId: string,
+): ReasoningEffortSelectionOption[] {
+  const capability = getReasoningCapability(provider, modelId);
+
+  if (!capability) {
+    return [];
+  }
+
+  return [
+    { label: "Provider default", value: "" },
+    ...capability.values.map((value) => ({ label: value, value })),
+  ];
+}
+
+export function getReasoningEffortSelectionIndex(
+  provider: OpenWikiProvider,
+  modelId: string,
+  value: string | undefined,
+): number {
+  const options = getReasoningEffortSelectionOptions(provider, modelId);
+  const index = options.findIndex((option) => option.value === value);
+
+  return index >= 0 ? index : 0;
 }
 
 /**

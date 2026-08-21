@@ -16,11 +16,14 @@ import {
   FIREWORKS_BASE_URL_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
 } from "../../src/config/constants.ts";
 
 // `loadOpenWikiEnv`, `saveOpenWikiEnv`, and `getCredentialDiagnostics` all read
@@ -57,11 +60,14 @@ const KEYS_UNDER_TEST = [
   FIREWORKS_BASE_URL_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
   // Deprecated / recently un-deprecated OpenAI keys. Cleared in each hook so the
   // developer's ambient shell (which may export OPENAI_BASE_URL) cannot leak
   // into these tests, and a loaded value cannot leak back out to other tests.
@@ -505,6 +511,67 @@ describe("getCredentialDiagnostics", () => {
     expect(entry?.warnings).toContain("invalid provider");
   });
 
+  test("surfaces and validates the output token limit as non-secret", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY]: "0",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"0"');
+    expect(entry?.warnings).toContain("invalid output token limit");
+  });
+
+  test("surfaces and validates the stream idle timeout as non-secret", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_PROVIDER_ENV_KEY]: "bedrock",
+      [OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY]: "-1",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"-1"');
+    expect(entry?.warnings).toContain("invalid stream idle timeout");
+  });
+
+  test("accepts zero as a stream idle timeout that disables the watchdog", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_PROVIDER_ENV_KEY]: "bedrock",
+      [OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY]: "0",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"0"');
+    expect(entry?.warnings).toContain(
+      "stream watchdog disabled; stalled streams may hang indefinitely",
+    );
+  });
+
+  test("does not warn about an inactive Bedrock stream timeout", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_PROVIDER_ENV_KEY]: "openai",
+      [OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY]: "0",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"0"');
+    expect(entry?.warnings).toEqual([]);
+  });
+
   test("flags an OpenAI-compatible chat completions endpoint as a base URL warning", async () => {
     await env.saveOpenWikiEnv({
       [OPENAI_COMPATIBLE_BASE_URL_ENV_KEY]:
@@ -554,6 +621,44 @@ describe("getCredentialDiagnostics", () => {
     diagnostics = await env.getCredentialDiagnostics();
     entry = diagnostics.find(
       (item) => item.key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe(JSON.stringify(MALFORMED_BOOLEAN_ENV_VALUE));
+    expect(entry?.warnings).toContain(INVALID_BOOLEAN_WARNING);
+  });
+
+  test("surfaces and validates the OpenAI-compatible streaming opt-in", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENAI_COMPATIBLE_STREAMING_ENV_KEY]: BOOLEAN_TRUE_ENV_VALUE,
+    });
+
+    let diagnostics = await env.getCredentialDiagnostics();
+    let entry = diagnostics.find(
+      (item) => item.key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe(JSON.stringify(BOOLEAN_TRUE_ENV_VALUE));
+    expect(entry?.warnings).toEqual([]);
+
+    await env.saveOpenWikiEnv({
+      [OPENAI_COMPATIBLE_STREAMING_ENV_KEY]: BOOLEAN_FALSE_ENV_VALUE,
+    });
+
+    diagnostics = await env.getCredentialDiagnostics();
+    entry = diagnostics.find(
+      (item) => item.key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe(JSON.stringify(BOOLEAN_FALSE_ENV_VALUE));
+    expect(entry?.warnings).toEqual([]);
+
+    await env.saveOpenWikiEnv({
+      [OPENAI_COMPATIBLE_STREAMING_ENV_KEY]: MALFORMED_BOOLEAN_ENV_VALUE,
+    });
+
+    diagnostics = await env.getCredentialDiagnostics();
+    entry = diagnostics.find(
+      (item) => item.key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
     );
 
     expect(entry?.preview).toBe(JSON.stringify(MALFORMED_BOOLEAN_ENV_VALUE));

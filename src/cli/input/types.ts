@@ -1,4 +1,5 @@
 import type { OpenWikiProvider } from "../../config/constants.js";
+import type { ReasoningEffort } from "../../config/reasoning.js";
 
 /**
  * The editable state of the chat text input: the current `value` and the
@@ -53,6 +54,7 @@ export interface SecretInputMode {
  */
 export type ChatInputMenuState =
   | { kind: "commands"; selectedIndex: number }
+  | { kind: "effort"; selectedIndex: number }
   | { kind: "model"; selectedIndex: number }
   | { kind: "provider"; selectedIndex: number }
   | { kind: "none" };
@@ -63,6 +65,7 @@ export type ChatInputMenuState =
 export type SlashCommandId =
   | "api-key"
   | "clear"
+  | "effort"
   | "exit"
   | "help"
   | "init"
@@ -90,6 +93,18 @@ export interface SlashCommandOption {
    */
   label: string;
 }
+
+/** A row in the reasoning-effort selection menu. */
+export type ReasoningEffortMenuOption =
+  | {
+      kind: "default";
+      label: "Provider default";
+    }
+  | {
+      effort: ReasoningEffort;
+      kind: "effort";
+      label: ReasoningEffort;
+    };
 
 /**
  * A row in the model-selection menu: either a concrete `model` id or the

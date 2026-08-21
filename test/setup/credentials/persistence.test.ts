@@ -99,6 +99,26 @@ describe("buildCredentialEnvUpdates", () => {
     expect(updates.OPENWIKI_MODEL_ID).toBe("claude-x");
   });
 
+  test("writes or clears an explicitly selected reasoning effort", () => {
+    const selected = buildCredentialEnvUpdates(
+      makeOptions({
+        nextProvider: "openai",
+        nextReasoningEffort: "max",
+      }),
+      makeEnv({ OPENWIKI_PROVIDER: "openai" }),
+    );
+    expect(selected.OPENWIKI_REASONING_EFFORT).toBe("max");
+
+    const providerDefault = buildCredentialEnvUpdates(
+      makeOptions({
+        nextProvider: "openai",
+        nextReasoningEffort: "",
+      }),
+      makeEnv({ OPENWIKI_PROVIDER: "openai" }),
+    );
+    expect(providerDefault.OPENWIKI_REASONING_EFFORT).toBe("");
+  });
+
   test("turns tracing on and pins the project for a non-empty langsmith key", () => {
     const updates = buildCredentialEnvUpdates(
       makeOptions({ nextProvider: "anthropic", nextLangSmithKey: "ls-key" }),

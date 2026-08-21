@@ -253,6 +253,12 @@ describe("sanitizeDiagnosticText", () => {
 });
 
 describe("formatEnvironmentDebugValue", () => {
+  test("previews the non-secret stream idle timeout", () => {
+    expect(
+      formatEnvironmentDebugValue("OPENWIKI_STREAM_IDLE_TIMEOUT", "300000"),
+    ).toBe('set(value="300000")');
+  });
+
   test.each([
     ["BEDROCK_AWS_ACCESS_KEY_ID", "bedrock-access-id-123"],
     ["BEDROCK_AWS_SECRET_ACCESS_KEY", "bedrock-secret-abcdef123456"],
