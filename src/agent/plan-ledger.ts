@@ -684,7 +684,7 @@ export function createOpenWikiPlanLedgerMiddleware(
     {
       name: "submit_plan",
       description: [
-        "Record part or all of the plan. Calls accumulate: an entry replaces the one for the same directory and everything else is kept. An entry that is individually invalid is rejected by itself and the rest are still recorded, so send as many areas per call as you have evidence for - ten or more - rather than a few at a time. Every call carries the whole conversation again, so twenty small calls cost several times what six larger ones do, and there is no longer a penalty for a big payload: one bad entry no longer discards the others.",
+        "Record part or all of the plan. Calls accumulate: an entry replaces the one for the same directory and everything else is kept, so build the plan up a few areas at a time rather than sending it whole. An entry that is individually invalid is rejected by itself and the rest are still recorded.",
         "Every directory from list_repository_directories must be covered before you can author, and entries may nest - a directory belongs to its deepest entry. An entry on / covers only the repository's own files.",
         "An entry is one of three shapes, and nothing else:",
         '  {"disposition":"document","directory":"/smith-go","pages":[<page>, ...]}',
