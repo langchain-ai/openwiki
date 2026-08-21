@@ -76,7 +76,8 @@ Establish the claims first, then write the page from them:
 - Begin the file with valid OKF v0.2 concept front matter. Include \`type\`; add \`title\` and \`description\` when useful for retrieval. Never write \`generated\` or the superseded \`timestamp\`: OpenWiki owns provenance.
 - Claims are structured data passed to establish_claims, never text in the page. A line reading "Evidence: repo://..." in the Markdown is not a claim and grounds nothing.
 
-Use \`establish_claims\` in batches as you read, then write the page:
+Read the evidence first, then establish your claims in one call - two if the page is large - and write the page:
+- One call, not one per file: every call replays everything you have read, so a call per file costs several times what one costs and records the same propositions.
 - If a resource is refused, nothing was established. It names the resource: fix that one anchor - the line range the fact really occupies, or the file itself - and call again. Do not drop the claim and do not paste evidence into the prose instead.
 - Then call \`write_page\` with the complete Markdown. It refuses a page with no claims, so the propositions come first and the prose is written from them.
 

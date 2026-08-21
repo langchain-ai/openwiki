@@ -130,7 +130,7 @@ export function createAuthorWriteTools(
     {
       name: "establish_claims",
       description:
-        "Establish your page's material propositions, before writing it. Each is one concise atomic proposition with repo://path#L10-L24 evidence - no symbols, no directories, and the narrowest line range that carries the fact; cite the bare repo://path only when the whole file is the evidence. Call it in batches as you work rather than once at the end. write_page refuses a page with no claims, so this comes first.",
+        "Establish your page's material propositions in one call, before writing it - two if the page is large, since every call replays everything you have read. Each is one concise atomic proposition with repo://path#L10-L24 evidence - no symbols, no directories, and the narrowest line range that carries the fact; cite the bare repo://path only when the whole file is the evidence. Call it in batches as you work rather than once at the end. write_page refuses a page with no claims, so this comes first.",
       schema: EstablishClaimsSchema,
     },
   );
