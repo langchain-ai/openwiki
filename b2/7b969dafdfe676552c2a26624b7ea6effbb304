@@ -1,0 +1,19 @@
+README.md
+  s_ff8ab5f91f8279::t_9331ac7d31e264 68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "b27b969dafdfe676552c2a26624b7ea6effbb304",
+  "prompts": {},
+  "sessions": {
+    "s_ff8ab5f91f8279": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02298-eb96-7292-804f-7384da08f0bc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

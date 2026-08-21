@@ -1,0 +1,130 @@
+test/integrations/installer.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-897
+integrations/openwiki/SKILL.md
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-55
+src/claims/brains/code/tools.ts
+  s_52e7fb1f8c1226::t_dacea55f924085 104
+  s_52e7fb1f8c1226::t_d1c22fc410d104 84,90,99-103,105-110,143,220,224,241,246-299,356
+src/integrations/install/config-toml.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-211
+integrations/openwiki/references/reviewers.md
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-106
+src/integrations/install/installer.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-667
+src/integrations/install/registry.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-79
+src/integrations/core/session-manager.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-408,411-412,414-607
+  s_52e7fb1f8c1226::t_8e8b0c2d3f31ee 409-410,413
+test/integrations/mcp-stdio.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-41
+.changeset/bright-hosts-connect.md
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-5
+test/integrations/mcp-server.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-382
+src/okf/generated-provenance.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 85,92,94-99,107
+scripts/install-local-integration.mjs
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-52
+package.json
+  s_52e7fb1f8c1226::t_d1c22fc410d104 23,49,73
+src/cli/commands.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 10-18,39-105,107,173-180,533-734,1061-1078,1102-1104,1170-1184,1280-1282
+integrations/openwiki/agents/openai.yaml
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-4
+integrations/openwiki/references/security.md
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-27
+test/agent/index-middleware.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 19,79-95,506-519,610-631
+  s_52e7fb1f8c1226::t_dacea55f924085 609
+  s_52e7fb1f8c1226::t_44b3b2821e765d 520
+  s_52e7fb1f8c1226::t_ecf0f4e06ac59e 632
+test/agent/wiki-finalizer.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-235
+src/integrations/install/skill-bundle.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-353
+test/agent/run-metadata.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 8,253,255-256,258-259,261-264,266,268-270,272-275
+test/integrations/package-contents.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-108
+src/cli/cli.tsx
+  s_52e7fb1f8c1226::t_d1c22fc410d104 8,12,29-37,47-52,55-65,67-70,72-78,80-113
+test/integrations/protocol.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-166
+src/cli/integrations.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-96
+src/integrations/core/protocol.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-144
+src/integrations/install/install-paths.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-323
+integrations/openwiki/references/methodology.md
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-88
+integrations/openwiki/references/update.md
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-54
+src/agent/index.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 150,733,735,791,837,847,850-852
+test/integrations/repository-root.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-79
+test/integrations/config-adapters.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-267
+test/integrations/session-manager.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-17,20-270,284-535
+  s_52e7fb1f8c1226::t_9f7bae1179edb8 18-19,271-283
+src/integrations/install/config-json.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-175
+test/cli/integrations-runners.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-230
+src/agent/utils.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 32-33,251-255,257,260-271,274-275,413
+README.md
+  s_52e7fb1f8c1226::t_d1c22fc410d104 25-28,35-38,42,54,63-108,144,151,167,171,187,196,200,203,205,208,456-458
+  s_52e7fb1f8c1226::t_dacea55f924085 213
+src/integrations/mcp/stdio.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-33
+test/agent/utils.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 10,93,104
+src/integrations/install/atomic-file.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-34
+src/integrations/core/errors.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-27
+test/integrations/cli-dogfood.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-269
+CONTRIBUTING.md
+  s_52e7fb1f8c1226::t_d1c22fc410d104 35-77
+src/agent/wiki-finalizer.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-7,12-30,36-156,165-209,211-222,228-251
+  s_52e7fb1f8c1226::t_8e8b0c2d3f31ee 8-11,31-35,157-164,210,223-227
+test/cli/integrations-commands.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-214
+test/integrations/skill.test.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-323
+integrations/openwiki/references/init.md
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-73
+src/agent/okf-middleware.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 16,18-22,42-46,48,58,66-76,102-103,105-111,113-118
+  s_52e7fb1f8c1226::t_dacea55f924085 5,41,47,112
+src/integrations/core/repository-root.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-133
+src/integrations/install/types.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-176
+src/integrations/mcp/server.ts
+  s_52e7fb1f8c1226::t_d1c22fc410d104 1-110
+pnpm-lock.yaml
+  s_52e7fb1f8c1226::t_4770d29be51b7c 51-53,614-619,761-770,1165-1168,1183-1190,1194-1196,1265-1268,1286-1297,1340-1351,1359-1370,1602-1605,1625-1628,1632-1634,1638-1641,1657-1664,1668-1671,1683-1685,1744-1747,1758-1761,1770-1779,1802-1804,1832-1835,1855-1862,1879-1881,1894-1901,1925-1928,1939-1950,1958-1961,2035-2042,2075-2077,2143-2148,2327-2330,2334-2341,2353-2360,2401-2404,2427-2434,2439-2442,2538-2541,2557-2559,2582-2585,2625-2628,2636-2639,2646-2653,2703-2706,2731-2741,2750-2765,2814-2817,2895-2898,2942-2945,2972-2975,2986-2989,3156-3160,3745-3748,3926-3949,4382-4386,4395-4398,4406-4412,4472-4485,4503-4514,4544-4549,4554-4562,4818-4819,4834-4839,4844-4845,4848-4849,4863-4866,4869-4872,4906-4907,4982-4983,4990-4993,4998-5038,5059-5060,5084-5094,5116-5119,5137-5138,5157-5174,5207-5208,5215-5222,5231-5238,5313-5316,5337-5338,5418-5421,5570-5571,5574-5577,5609-5614,5639-5640,5657-5660,5663-5666,5749-5750,5759-5760,5773-5774,5813-5817,5825-5829,5834-5842,5914-5923,5944-5970,5977-6004,6051-6052,6125-6126,6163-6168,6190-6191,6200-6201,6305-6308
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "4c875690ef88499636f04422a2893c7e49f5c248",
+  "prompts": {},
+  "sessions": {
+    "s_52e7fb1f8c1226": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a022c2-e82d-7703-b22a-c5fdfd39a305",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
