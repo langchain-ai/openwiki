@@ -51,9 +51,19 @@ Generate a wiki for the current repository. The first run walks you through pick
 openwiki --init
 ```
 
-Keep it current automatically by adding a scheduled CI job that opens a docs PR on every change:
+Keep it current automatically with the reusable GitHub Action. `openwiki code --init` can create the scheduled workflow, or add this step to an existing workflow and pin it to the latest OpenWiki release tag:
 
-- **GitHub Actions:** copy [`openwiki-update.yml`](./examples/openwiki-update.yml) into `.github/workflows/openwiki-update.yml`.
+```yaml
+- name: Update OpenWiki
+  uses: langchain-ai/openwiki@<release-tag>
+  with:
+    provider: openrouter
+    api-key: ${{ secrets.OPENROUTER_API_KEY }}
+    model-id: z-ai/glm-5.2
+```
+
+The workflow needs `contents: write` and `pull-requests: write` permissions. The action checks out full history, installs its matching OpenWiki package release, updates the wiki, and opens or refreshes the `openwiki/update` pull request. See [`action.yml`](./action.yml) for PR customization inputs and outputs, or the [scheduled example](./examples/openwiki-update.yml) for a complete caller.
+
 - **GitLab CI:** copy [`openwiki-update.gitlab-ci.yml`](./examples/openwiki-update.gitlab-ci.yml) into `.gitlab-ci.yml` or include it from your pipeline.
 - **Bitbucket Pipelines:** copy [`openwiki-update.bitbucket-pipelines.yml`](./examples/openwiki-update.bitbucket-pipelines.yml) into `bitbucket-pipelines.yml`, then schedule the `openwiki-update` pipeline.
 

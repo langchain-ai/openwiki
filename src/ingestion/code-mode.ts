@@ -1,9 +1,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
+  BEDROCK_AWS_SESSION_TOKEN_ENV_KEY,
   getProviderAuthMethod,
   getProviderConfig,
-  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_VERSION,
   resolveConfiguredProvider,
@@ -257,19 +257,19 @@ async function prepareCodeModeAgentSnippet(
 }
 
 /**
- * The provider half of the generated workflow's `env:` block, derived from the
- * provider the operator configured during setup. A fixed provider block here
- * authenticates only the default setup: every other one silently ships a
- * workflow whose first scheduled run fails on a credential the repo never had.
+ * The provider inputs for the reusable action, derived from the provider the
+ * operator configured during setup. A fixed provider block here authenticates
+ * only the default setup: every other one silently ships a workflow whose first
+ * scheduled run fails on a credential the repo never had.
  *
  * Only what the provider config actually pins down is emitted. Secrets go
  * through `secrets.`, non-sensitive settings (endpoint, project, region)
  * through `vars.`, so neither has to be reverse-engineered from a stack trace.
  */
-function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
+function createWorkflowProviderInputs(env: NodeJS.ProcessEnv): string {
   const provider = resolveConfiguredProvider(env);
   const config = getProviderConfig(provider);
-  const lines = [`OPENWIKI_PROVIDER: ${provider}`];
+  const lines = [`provider: ${provider}`];
 
   if (getProviderAuthMethod(provider) === "oauth") {
     // The stored access token is short-lived and refreshed in place, so
@@ -279,24 +279,28 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
       "# unattended equivalent. Supply CI credentials for it yourself.",
     );
   } else if (config.apiKeyEnvKey !== undefined) {
-    lines.push(
-      `${config.apiKeyEnvKey}: \${{ secrets.${config.apiKeyEnvKey} }}`,
-    );
+    lines.push(`api-key: \${{ secrets.${config.apiKeyEnvKey} }}`);
     if (config.secretKeyEnvKey !== undefined) {
-      lines.push(
-        `${config.secretKeyEnvKey}: \${{ secrets.${config.secretKeyEnvKey} }}`,
-      );
+      lines.push(`secret-key: \${{ secrets.${config.secretKeyEnvKey} }}`);
     }
   }
 
-  if (config.requiresBaseUrl && config.baseUrlEnvKey !== undefined) {
-    lines.push(`${config.baseUrlEnvKey}: \${{ vars.${config.baseUrlEnvKey} }}`);
+  if (provider === "bedrock") {
+    lines.push(
+      `session-token: \${{ secrets.${BEDROCK_AWS_SESSION_TOKEN_ENV_KEY} }}`,
+    );
+  }
+  if (config.baseUrlEnvKey !== undefined) {
+    lines.push(`base-url: \${{ vars.${config.baseUrlEnvKey} }}`);
   }
   if (config.projectEnvKey !== undefined) {
-    lines.push(`${config.projectEnvKey}: \${{ vars.${config.projectEnvKey} }}`);
+    lines.push(`project: \${{ vars.${config.projectEnvKey} }}`);
+  }
+  if (config.locationEnvKey !== undefined) {
+    lines.push(`location: \${{ vars.${config.locationEnvKey} }}`);
   }
   if (config.requiresRegion && config.regionEnvKey !== undefined) {
-    lines.push(`${config.regionEnvKey}: \${{ vars.${config.regionEnvKey} }}`);
+    lines.push(`region: \${{ vars.${config.regionEnvKey} }}`);
   }
 
   // Bedrock ships no preset model list because entitlements are account- and
@@ -306,7 +310,7 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
   if (modelId !== undefined) {
     // Quoted because model IDs are not all plain YAML scalars: Cloudflare
     // Workers AI IDs lead with "@", a reserved indicator that fails to parse.
-    lines.push(`${OPENWIKI_MODEL_ID_ENV_KEY}: ${JSON.stringify(modelId)}`);
+    lines.push(`model-id: ${JSON.stringify(modelId)}`);
   }
 
   // Not part of the provider config because it is a transport override rather
@@ -314,7 +318,7 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
   // that only serves SSE would otherwise return empty content unattended and
   // commit a blank wiki. Emitted only when the author opted in locally.
   if (resolveOpenAiCompatibleStreaming(env)) {
-    lines.push(`${OPENAI_COMPATIBLE_STREAMING_ENV_KEY}: "true"`);
+    lines.push(`openai-compatible-streaming: "true"`);
   }
 
   return lines.join("\n          ");
@@ -339,51 +343,14 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Update OpenWiki
+        uses: langchain-ai/openwiki@v${OPENWIKI_VERSION}
         with:
-          # Full history so \`openwiki code --update\` can diff HEAD against the
-          # commit it last documented; a shallow clone hides that commit and the
-          # update runs against an empty change summary.
-          fetch-depth: 0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: "22"
-
-      - name: Install OpenWiki
-        # mermaid + jsdom are optional; they add high-fidelity validation of Mermaid diagrams. Remove if your wiki has none.
-        run: npm install --global openwiki@${OPENWIKI_VERSION} mermaid@11.16.0 jsdom@29.1.1
-
-      - name: Run OpenWiki
-        run: openwiki code --update --print
-        env:
-          ${createWorkflowProviderEnv(env)}
-          # Required for the LangSmith connector's code-mode pull to authenticate.
-          # For extra workspaces, add OPENWIKI_LANGSMITH_API_KEY_2, _3, ... as repo
-          # secrets and env entries here.
-          OPENWIKI_LANGSMITH_API_KEY: \${{ secrets.OPENWIKI_LANGSMITH_API_KEY }}
-          # Optional: also trace this workflow's own OpenWiki run to LangSmith.
-          LANGSMITH_API_KEY: \${{ secrets.LANGSMITH_API_KEY }}
-          LANGCHAIN_PROJECT: openwiki
-          LANGCHAIN_TRACING_V2: "true"
-
-      - name: Create OpenWiki update pull request
-        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
-        with:
-          add-paths: |
-            openwiki
-            AGENTS.md
-            CLAUDE.md
-            .github/workflows/openwiki-update.yml
-          branch: openwiki/update
-          commit-message: "docs: update OpenWiki"
-          title: "docs: update OpenWiki"
-          body: |
-            Automated OpenWiki documentation update.
-
-            This PR was generated by the scheduled OpenWiki workflow.
+          ${createWorkflowProviderInputs(env)}
+          openwiki-langsmith-api-key: \${{ secrets.OPENWIKI_LANGSMITH_API_KEY }}
+          langsmith-api-key: \${{ secrets.LANGSMITH_API_KEY }}
+          langchain-project: openwiki
+          langchain-tracing-v2: "true"
 `;
 }
 

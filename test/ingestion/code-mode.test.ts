@@ -2,11 +2,13 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
+import { parse } from "yaml";
 import {
   ensureCodeModeRepoSetup,
   runCodeModeConnectors,
 } from "../../src/ingestion/code-mode.ts";
 import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
+import { OPENWIKI_VERSION } from "../../src/config/constants.ts";
 
 const SNIPPET_START = "<!-- OPENWIKI:START -->";
 const SNIPPET_END = "<!-- OPENWIKI:END -->";
@@ -183,7 +185,7 @@ ${SNIPPET_END}
 });
 
 describe("ensureCodeModeRepoSetup workflow", () => {
-  test("generated PR includes agent files and the workflow in add-paths", async () => {
+  test("delegates the update and pull request to the reusable action", async () => {
     const repo = await createTempRepo();
 
     await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
@@ -191,19 +193,18 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     const workflow = await readIfPresent(
       path.join(repo, ".github", "workflows", "openwiki-update.yml"),
     );
-    expect(workflow).not.toBeNull();
-    expect(workflow).toContain("add-paths: |");
-    for (const managedPath of [
-      "openwiki",
-      "AGENTS.md",
-      "CLAUDE.md",
-      ".github/workflows/openwiki-update.yml",
-    ]) {
-      expect(workflow).toContain(managedPath);
-    }
+    expect(workflow).toContain(
+      `uses: langchain-ai/openwiki@v${OPENWIKI_VERSION}`,
+    );
+    expect(workflow).not.toContain("npm install --global");
+    expect(workflow).not.toContain("peter-evans/create-pull-request");
+    const parsed = parse(workflow ?? "") as {
+      jobs: { update: { steps: { with: { provider: string } }[] } };
+    };
+    expect(parsed.jobs.update.steps[0]?.with.provider).toBe("openai");
   });
 
-  test("wires the LangSmith connector read key into the workflow env", async () => {
+  test("wires the LangSmith connector read key into the action inputs", async () => {
     const repo = await createTempRepo();
 
     await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
@@ -214,11 +215,11 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     // Without this, the scheduled code-mode pull has no connector key in CI and
     // the LangSmith pull skips every run (the key is the connector's requiredEnv).
     expect(workflow).toContain(
-      "OPENWIKI_LANGSMITH_API_KEY: ${{ secrets.OPENWIKI_LANGSMITH_API_KEY }}",
+      "openwiki-langsmith-api-key: ${{ secrets.OPENWIKI_LANGSMITH_API_KEY }}",
     );
   });
 
-  test("pins the openwiki install to a specific version, never unpinned", async () => {
+  test("pins the reusable action to the matching package release", async () => {
     const repo = await createTempRepo();
 
     await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
@@ -226,10 +227,10 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     const workflow = await readIfPresent(
       path.join(repo, ".github", "workflows", "openwiki-update.yml"),
     );
-    // Installing an unpinned package in a privileged CI context is a supply-chain
-    // risk; the generated workflow must pin openwiki to the shipping version.
-    expect(workflow).toMatch(/npm install --global openwiki@\d+\.\d+\.\d+ /u);
-    expect(workflow).not.toMatch(/--global openwiki(?![@\d])/u);
+    expect(workflow).toContain(
+      `uses: langchain-ai/openwiki@v${OPENWIKI_VERSION}`,
+    );
+    expect(workflow).not.toContain("langchain-ai/openwiki@main");
   });
 
   test("does not create a workflow unless explicitly requested", async () => {
@@ -293,11 +294,9 @@ describe("ensureCodeModeRepoSetup workflow provider block", () => {
 
     // A fixed provider block ships every non-default setup a workflow whose
     // first scheduled run fails on a secret the repo was never told about.
-    expect(workflow).toContain("OPENWIKI_PROVIDER: copilot");
-    expect(workflow).toContain(
-      "COPILOT_API_KEY: ${{ secrets.COPILOT_API_KEY }}",
-    );
-    expect(workflow).toContain('OPENWIKI_MODEL_ID: "gpt-5.6-terra"');
+    expect(workflow).toContain("provider: copilot");
+    expect(workflow).toContain("api-key: ${{ secrets.COPILOT_API_KEY }}");
+    expect(workflow).toContain('model-id: "gpt-5.6-terra"');
     expect(workflow).not.toContain("OPENROUTER_API_KEY");
   });
 
@@ -308,11 +307,19 @@ describe("ensureCodeModeRepoSetup workflow provider block", () => {
 
     // The gateway endpoint is required but is configuration, not a credential.
     expect(workflow).toContain(
-      "OPENAI_COMPATIBLE_BASE_URL: ${{ vars.OPENAI_COMPATIBLE_BASE_URL }}",
+      "base-url: ${{ vars.OPENAI_COMPATIBLE_BASE_URL }}",
     );
     expect(workflow).toContain(
-      "OPENAI_COMPATIBLE_API_KEY: ${{ secrets.OPENAI_COMPATIBLE_API_KEY }}",
+      "api-key: ${{ secrets.OPENAI_COMPATIBLE_API_KEY }}",
     );
+  });
+
+  test("carries optional provider base URLs into the scheduled run", async () => {
+    const workflow = await generateWorkflow({
+      OPENWIKI_PROVIDER: "anthropic",
+    });
+
+    expect(workflow).toContain("base-url: ${{ vars.ANTHROPIC_BASE_URL }}");
   });
 
   test("carries the streaming opt-in into the scheduled run", async () => {
@@ -323,27 +330,28 @@ describe("ensureCodeModeRepoSetup workflow provider block", () => {
       OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "true",
     });
 
-    expect(optedIn).toContain('OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "true"');
+    expect(optedIn).toContain('openai-compatible-streaming: "true"');
 
     const notOptedIn = await generateWorkflow({
       OPENWIKI_PROVIDER: "openai-compatible",
     });
 
-    expect(notOptedIn).not.toContain("OPENWIKI_OPENAI_COMPATIBLE_STREAMING");
+    expect(notOptedIn).not.toContain("openai-compatible-streaming");
   });
 
   test("pairs both AWS credentials and the region for Bedrock", async () => {
     const workflow = await generateWorkflow({ OPENWIKI_PROVIDER: "bedrock" });
 
     expect(workflow).toContain(
-      "BEDROCK_AWS_SECRET_ACCESS_KEY: ${{ secrets.BEDROCK_AWS_SECRET_ACCESS_KEY }}",
+      "secret-key: ${{ secrets.BEDROCK_AWS_SECRET_ACCESS_KEY }}",
     );
+    expect(workflow).toContain("region: ${{ vars.BEDROCK_AWS_REGION }}");
     expect(workflow).toContain(
-      "BEDROCK_AWS_REGION: ${{ vars.BEDROCK_AWS_REGION }}",
+      "session-token: ${{ secrets.BEDROCK_AWS_SESSION_TOKEN }}",
     );
     // Bedrock model availability is account- and region-specific, so there is
     // no preset to suggest and a guessed ID would fail at runtime.
-    expect(workflow).not.toContain("OPENWIKI_MODEL_ID");
+    expect(workflow).not.toContain("model-id");
   });
 
   test("does not pin a rotating browser-login token as a secret", async () => {
@@ -351,7 +359,7 @@ describe("ensureCodeModeRepoSetup workflow provider block", () => {
       OPENWIKI_PROVIDER: "openai-chatgpt",
     });
 
-    expect(workflow).toContain("OPENWIKI_PROVIDER: openai-chatgpt");
+    expect(workflow).toContain("provider: openai-chatgpt");
     // The stored access token is refreshed in place, so a repo secret holding
     // it breaks on the first rotation rather than authenticating the run.
     expect(workflow).not.toContain("secrets.OPENAI_CHATGPT_ACCESS_TOKEN");
@@ -366,9 +374,7 @@ describe("ensureCodeModeRepoSetup workflow provider block", () => {
 
     // A leading "@" is a reserved YAML indicator: unquoted, the workflow fails
     // to parse and the scheduled run never starts.
-    expect(workflow).toContain(
-      'OPENWIKI_MODEL_ID: "@cf/meta/llama-3.1-8b-instruct"',
-    );
+    expect(workflow).toContain('model-id: "@cf/meta/llama-3.1-8b-instruct"');
   });
 });
 
