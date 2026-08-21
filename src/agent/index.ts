@@ -59,6 +59,7 @@ import {
   createQaGate,
 } from "./wiki-verification.js";
 import { createOpenWikiCodeInterpreterMiddleware } from "./code-interpreter.js";
+import { createOpenWikiGeneralPurposeGuardMiddleware } from "./general-purpose-guard.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
 import {
   createWikiTranslationMiddleware,
@@ -581,6 +582,13 @@ function createOpenWikiAgentGraph(
             ...(options.command === "init" &&
             options.outputMode === "repository"
               ? [
+                  // Scoped here because this is where the named subagents are:
+                  // an update or a local-wiki run has general-purpose and
+                  // nothing else, and refusing it there would leave `task()`
+                  // with no target rather than a better one. Position in this
+                  // list does not matter - the guard patches the shared task
+                  // tool rather than the request.
+                  createOpenWikiGeneralPurposeGuardMiddleware(),
                   createOpenWikiAuthoringPoolMiddleware(
                     planStore,
                     () => planReadiness(planStore, wikiBackend),

@@ -133,9 +133,21 @@ describe("Claims agent graph integration", () => {
         expect(pool.tools.map((pooled) => pooled.name)).toEqual([
           "author_pages",
         ]);
+        // DeepAgents adds general-purpose unless a harness profile disables it,
+        // and profiles resolve off the model instance for only some providers.
+        // Nothing fails when the guard is missing - the run simply regains a
+        // subagent that authors without a brief or claims - so assert it here.
+        expect(middlewareNames).toContain(
+          "OpenWikiGeneralPurposeGuardMiddleware",
+        );
       } else {
         expect(middlewareNames).not.toContain(
           "OpenWikiAuthoringPoolMiddleware",
+        );
+        // An update has no named subagents at all, so refusing general-purpose
+        // would leave `task()` with no target rather than a better one.
+        expect(middlewareNames).not.toContain(
+          "OpenWikiGeneralPurposeGuardMiddleware",
         );
       }
       expect(
