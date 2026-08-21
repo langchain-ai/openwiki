@@ -25,6 +25,7 @@ artifacts/
 results/
 summaries/
 __pycache__/
+.venv/
 *.pyc
 
 # KEB: run output and checked-out benchmark source repos are never committed.

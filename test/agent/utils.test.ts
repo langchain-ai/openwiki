@@ -7,7 +7,7 @@ import { describe, expect, test } from "vitest";
 import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
-  removeTemporaryPlanFile,
+  removeTemporaryWorkingFiles,
 } from "../../src/agent/utils.ts";
 
 // These cover the branches of utils.ts that the sibling run-context,
@@ -90,7 +90,7 @@ describe("getUpdateNoopStatus degenerate cases", () => {
   });
 });
 
-describe("removeTemporaryPlanFile error handling", () => {
+describe("removeTemporaryWorkingFiles error handling", () => {
   test("propagates unexpected errors instead of swallowing them", async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-utils-plan-"));
 
@@ -101,7 +101,7 @@ describe("removeTemporaryPlanFile error handling", () => {
       await mkdir(path.join(cwd, "openwiki", "_plan.md"), { recursive: true });
 
       await expect(
-        removeTemporaryPlanFile(cwd, "repository"),
+        removeTemporaryWorkingFiles(cwd, "repository"),
       ).rejects.toThrow();
     } finally {
       await rm(cwd, { recursive: true, force: true });
@@ -131,6 +131,33 @@ describe("createOpenWikiContentSnapshot recursion", () => {
       // A change buried in a subdirectory must still alter the hash, proving the
       // walk recurses rather than only hashing the top level.
       expect(after).not.toBe(before);
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  test("includes claim sidecars while excluding run metadata", async () => {
+    const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-utils-claims-"));
+
+    try {
+      const claimsDir = path.join(cwd, "openwiki", ".claims");
+      await mkdir(claimsDir, { recursive: true });
+      await writeFile(path.join(cwd, "openwiki", "page.md"), "# Page\n");
+      await writeFile(path.join(claimsDir, "page.json"), '{"revision":1}\n');
+      const before = await createOpenWikiContentSnapshot(cwd, "repository");
+
+      await writeFile(
+        path.join(cwd, "openwiki", ".last-update.json"),
+        '{"status":"complete"}\n',
+      );
+      expect(await createOpenWikiContentSnapshot(cwd, "repository")).toBe(
+        before,
+      );
+
+      await writeFile(path.join(claimsDir, "page.json"), '{"revision":2}\n');
+      expect(await createOpenWikiContentSnapshot(cwd, "repository")).not.toBe(
+        before,
+      );
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }

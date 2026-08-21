@@ -3,7 +3,6 @@ import { render } from "ink-testing-library";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   IngestionSummary,
-  RunLogLine,
   RunView,
 } from "../../../src/cli/components/run-view.tsx";
 import type { OpenWikiIngestionResult } from "../../../src/ingestion/ingestion.ts";
@@ -51,90 +50,28 @@ describe("IngestionSummary", () => {
   });
 });
 
-describe("RunLogLine", () => {
-  test("renders a running tool with its call detail when active", () => {
-    const item: RunLogItem = {
-      content: "read_file",
-      id: 1,
-      type: "tool",
-      status: "running",
-      call: "read_file(path=README.md)",
-    };
-
-    const { lastFrame } = render(
-      <RunLogLine activeRunningToolId={1} animationFrame={0} item={item} />,
-    );
-    const frame = plain(lastFrame());
-
-    expect(frame).toContain("read_file");
-    expect(frame).toContain("read_file(path=README.md)");
-  });
-
-  test("renders an errored tool with the !! marker", () => {
-    const item: RunLogItem = {
-      content: "write_file failed",
-      id: 2,
-      type: "tool",
-      status: "error",
-    };
-
-    const { lastFrame } = render(<RunLogLine item={item} />);
-    const frame = plain(lastFrame());
-
-    expect(frame).toContain("!!");
-    expect(frame).toContain("write_file failed");
-  });
-
-  test("renders a debug line with a dash marker", () => {
-    const item: RunLogItem = {
-      content: "thinking about the plan",
-      id: 3,
-      type: "debug",
-    };
-
-    const { lastFrame } = render(<RunLogLine item={item} />);
-    expect(plain(lastFrame())).toContain("thinking about the plan");
-  });
-
-  test("renders assistant text as markdown", () => {
-    const item: RunLogItem = {
-      content: "**done** with the docs",
-      id: 4,
-      type: "text",
-    };
-
-    const { lastFrame } = render(<RunLogLine item={item} />);
-    const frame = plain(lastFrame());
-    expect(frame).toContain("done");
-    expect(frame).toContain("with the docs");
-  });
-
-  test("renders a completed (done) tool with a green marker", () => {
-    const item: RunLogItem = {
-      content: "read_file",
-      id: 5,
-      type: "tool",
-      status: "done",
-    };
-
-    const { lastFrame } = render(<RunLogLine item={item} />);
-    const frame = plain(lastFrame());
-
-    expect(frame).toContain("*");
-    expect(frame).toContain("read_file");
-  });
-});
-
 describe("RunView", () => {
-  test("renders a completed run header, prompt echo, and log", () => {
+  test("renders a completed init outcome, duration, paths, and useful counts", () => {
     const log: RunLogItem[] = [
-      { content: "Generated 3 pages.", id: 1, type: "text" },
+      {
+        actionCount: 9,
+        content: "3 reads · 4 searches · 2 writes",
+        id: 1,
+        readCount: 3,
+        searchCount: 4,
+        status: "done",
+        type: "tool",
+        writeCount: 2,
+        writtenPaths: ["openwiki/quickstart.md", "openwiki/cli/usage.md"],
+      },
+      { content: "Generated 3 pages.", id: 2, type: "text" },
     ];
 
     const { lastFrame, unmount } = render(
       <RunView
         command="init"
         done
+        durationMs={3_200}
         log={log}
         message="document the parser"
         modelId="opus"
@@ -143,14 +80,42 @@ describe("RunView", () => {
     const frame = plain(lastFrame());
 
     expect(frame).toContain("Run complete");
-    expect(frame).toContain("Complete");
-    expect(frame).toContain("openwiki init");
+    expect(frame).toContain("Generated 2 OpenWiki pages in 3s");
+    expect(frame).toContain("✓");
+    expect(frame).toContain("openwiki/quickstart.md");
+    expect(frame).toContain("openwiki/cli/usage.md");
+    expect(frame).toContain("3 reads · 4 searches");
+    expect(frame).toMatch(/openwiki\/cli\/usage\.md\n\s*\n\s+3 reads/u);
+    expect(frame).not.toContain("2 writes");
     expect(frame).toContain("document the parser");
     expect(frame).toContain("Generated 3 pages.");
     unmount();
   });
 
-  test("shows a waiting placeholder while a live run has no log yet", () => {
+  test("renders a no-write update as up to date", () => {
+    const log: RunLogItem[] = [
+      {
+        actionCount: 2,
+        content: "1 read · 1 search",
+        id: 1,
+        readCount: 1,
+        searchCount: 1,
+        status: "done",
+        type: "tool",
+      },
+    ];
+
+    const { lastFrame, unmount } = render(
+      <RunView command="update" done durationMs={780} log={log} />,
+    );
+    const frame = plain(lastFrame());
+
+    expect(frame).toContain("OpenWiki is up to date in <1s");
+    expect(frame).toContain("1 read · 1 search");
+    unmount();
+  });
+
+  test("shows a stable preparation state while a live run has no activity", () => {
     const { lastFrame, unmount } = render(
       <RunView command="update" log={[]} />,
     );
@@ -158,14 +123,15 @@ describe("RunView", () => {
 
     expect(frame).toContain("Working");
     expect(frame).toContain("openwiki update");
-    expect(frame).toContain("Waiting for model output...");
+    expect(frame).toContain("Tracing affected documentation");
+    expect(frame).toContain("Preparing the run...");
+    expect(frame).toMatch(
+      /Tracing affected documentation\n\s{4,}Preparing the run\.\.\./u,
+    );
     unmount();
   });
 
-  test("animates the spinner while a live run has a running tool", () => {
-    // A live run (done=false) with a still-running tool starts the animation
-    // interval; advancing time exercises the frame tick and the cleanup on
-    // unmount clears the interval.
+  test("keeps a stable progress indicator while a tool is running", async () => {
     vi.useFakeTimers();
     const log: RunLogItem[] = [
       { content: "read_file", id: 1, type: "tool", status: "running" },
@@ -176,9 +142,93 @@ describe("RunView", () => {
     );
 
     expect(plain(lastFrame())).toContain("read_file");
-    vi.advanceTimersByTime(140);
-    expect(plain(lastFrame())).toContain("read_file");
+    expect(plain(lastFrame())).toContain("◐");
+    expect(plain(lastFrame())).toMatch(
+      /Tracing affected documentation\n\s{4,}read_file/u,
+    );
+    await vi.advanceTimersByTimeAsync(600);
+    expect(plain(lastFrame())).toContain("◓");
 
+    unmount();
+  });
+
+  test("renders repository and OpenWiki activity as stacked trees", () => {
+    const log: RunLogItem[] = [
+      {
+        actionCount: 2,
+        activeToolCallIds: ["read", "write"],
+        content: "2 actions",
+        id: 1,
+        status: "running",
+        type: "tool",
+      },
+      {
+        activityOperation: "read",
+        activityPath: "src/agent/index.ts",
+        activityScope: "repository",
+        activityStatus: "active",
+        id: 2,
+        type: "activity",
+      },
+      {
+        activityOperation: "write",
+        activityPath: "openwiki/agent/workflow.md",
+        activityScope: "openwiki",
+        activityStatus: "active",
+        id: 3,
+        type: "activity",
+      },
+    ];
+
+    const { lastFrame, unmount } = render(
+      <RunView command="update" log={log} />,
+    );
+    const frame = plain(lastFrame());
+
+    expect(frame).toContain("Reading repository");
+    expect(frame).toContain("src/");
+    expect(frame).toContain("index.ts");
+    expect(frame).toContain("Writing OpenWiki");
+    expect(frame).toContain("openwiki/");
+    expect(frame).toContain("workflow.md");
+    expect(frame).not.toContain("streaming");
+    unmount();
+  });
+
+  test("shows recent actions with verbs and no unexplained overflow", () => {
+    const log: RunLogItem[] = [
+      {
+        actionCount: 5,
+        content: "4 reads · 1 write",
+        id: 1,
+        status: "done",
+        type: "tool",
+      },
+      ...Array.from({ length: 5 }, (_, index): RunLogItem => ({
+        activityOperation: index === 4 ? "write" : "read",
+        activityPath:
+          index === 4 ? "openwiki/cli/usage.md" : `src/file-${index}.ts`,
+        activityScope: index === 4 ? "openwiki" : "repository",
+        activityStatus: "recent",
+        id: index + 2,
+        type: "activity",
+      })),
+    ];
+
+    const { lastFrame, unmount } = render(
+      <RunView command="update" log={log} />,
+    );
+    const frame = plain(lastFrame());
+
+    expect(frame).toContain("Recent activity");
+    expect(frame).toContain("wrote");
+    expect(frame).toContain("openwiki/cli/usage.md");
+    expect(frame).toContain("read");
+    expect(frame).not.toContain("file-0.ts");
+    expect(frame).not.toContain("more");
+    expect(frame).toMatch(/\n {2}Tracing affected documentation/u);
+    expect(frame).toMatch(/\n {2}Recent activity/u);
+    expect(frame).toMatch(/Recent activity\n\s{4,}wrote/u);
     unmount();
   });
 });

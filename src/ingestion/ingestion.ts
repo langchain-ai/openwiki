@@ -438,7 +438,6 @@ function emitText(
   text: string,
 ): void {
   emit?.({
-    source: "main",
     text,
     type: "text",
   });

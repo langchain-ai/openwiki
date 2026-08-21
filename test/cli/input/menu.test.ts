@@ -4,8 +4,10 @@ import {
   clampMenuIndex,
   getCommandOptionIndex,
   getCurrentModelOptionIndex,
+  getCurrentReasoningEffortOptionIndex,
   getCurrentProviderOptionIndex,
   getModelMenuOptions,
+  getReasoningEffortMenuOptions,
   isMenuDownInput,
   isMenuUpInput,
   moveMenuSelection,
@@ -62,6 +64,17 @@ describe("syncMenuStateForInput", () => {
       PROVIDER,
     );
     expect(state.kind).toBe("model");
+  });
+
+  test("opens the capability-gated effort menu for /effort", () => {
+    const state = syncMenuStateForInput(
+      "/effort",
+      { kind: "none" },
+      "gpt-5.6-terra",
+      "openai",
+      "medium",
+    );
+    expect(state).toEqual({ kind: "effort", selectedIndex: 3 });
   });
 
   test("opens the command menu for any other slash input", () => {
@@ -166,6 +179,32 @@ describe("getCurrentModelOptionIndex", () => {
     const index = getCurrentModelOptionIndex(MODEL, PROVIDER);
     const options = getModelMenuOptions(MODEL, PROVIDER);
     expect(options[index]).toMatchObject({ kind: "model", modelId: MODEL });
+  });
+});
+
+describe("getReasoningEffortMenuOptions", () => {
+  test("lists provider default plus only supported effort values", () => {
+    expect(
+      getReasoningEffortMenuOptions(
+        "nvidia",
+        "nvidia/nemotron-3-super-120b-a12b",
+      ),
+    ).toEqual([
+      { kind: "default", label: "Provider default" },
+      { effort: "none", kind: "effort", label: "none" },
+      { effort: "low", kind: "effort", label: "low" },
+      { effort: "high", kind: "effort", label: "high" },
+    ]);
+    expect(getReasoningEffortMenuOptions("openai", "gpt-5.5")).toEqual([]);
+  });
+
+  test("finds the existing effort or falls back to provider default", () => {
+    expect(
+      getCurrentReasoningEffortOptionIndex("openai", "gpt-5.6-terra", "xhigh"),
+    ).toBe(5);
+    expect(
+      getCurrentReasoningEffortOptionIndex("openai", "gpt-5.5", "high"),
+    ).toBe(0);
   });
 });
 

@@ -1,12 +1,14 @@
 import { Box, Text } from "ink";
 import {
   DEFAULT_VERTEX_LOCATION,
+  getDefaultModelId,
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderLabel,
   getProviderLocationEnvKey,
   getProviderProjectEnvKey,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_REASONING_EFFORT_ENV_KEY,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
   providerRequiresRegion,
@@ -23,6 +25,7 @@ import {
   credentialStep,
   getConnectedSourceCount,
   getModelSetupDetail,
+  getReasoningEffortSelectionOptions,
   getRunModeName,
   getWizardManagedEnvKeys,
   hasValidConfiguredProvider,
@@ -106,6 +109,9 @@ export interface InitSetupViewProps {
   /** Model ID forced by the caller (`--model`), or null when not overridden. */
   modelIdOverride: string | null;
 
+  /** Reasoning effort selected this session, or null when not collected. */
+  reasoningEffort?: string | null;
+
   /** LangSmith key entered this session, or null when none was typed. */
   langSmithKey: string | null;
 
@@ -162,6 +168,9 @@ export interface InitSetupViewProps {
 
   /** Selection cursor for the model menu. */
   modelSelectionIndex: number;
+
+  /** Selection cursor for the reasoning effort menu. */
+  reasoningEffortSelectionIndex?: number;
 
   /** Selection cursor for the power-mode menu. */
   powerModeSelectionIndex: number;
@@ -245,6 +254,7 @@ export function InitSetupView({
   region,
   modelId,
   modelIdOverride,
+  reasoningEffort = null,
   langSmithKey,
   onboardingConfig,
   copied,
@@ -264,6 +274,7 @@ export function InitSetupView({
   langsmithWorkspaceSelectionIndex,
   langsmithWorkspaces,
   modelSelectionIndex,
+  reasoningEffortSelectionIndex = 0,
   powerModeSelectionIndex,
   providerSelectionIndex,
   runModeSelectionIndex,
@@ -298,6 +309,15 @@ export function InitSetupView({
   const primaryCredentialStep = credentialStep(provider);
   const projectEnvKey = getProviderProjectEnvKey(provider);
   const locationEnvKey = getProviderLocationEnvKey(provider);
+  const selectedModelId =
+    modelId ??
+    modelIdOverride ??
+    process.env[OPENWIKI_MODEL_ID_ENV_KEY] ??
+    getDefaultModelId(provider);
+  const reasoningEffortOptions = getReasoningEffortSelectionOptions(
+    provider,
+    selectedModelId,
+  );
 
   // A shell export wins over saved config at runtime. List any wizard-managed
   // keys present in the shell so their precedence is not a surprise and the
@@ -478,6 +498,23 @@ export function InitSetupView({
             )}
             detail={modelId ?? getModelSetupDetail(modelIdOverride, provider)}
           />
+          {reasoningEffortOptions.length > 0 ? (
+            <SetupStep
+              label="Reasoning effort"
+              state={resolveStepStatus(
+                "reasoning-effort",
+                step,
+                reasoningEffort !== null ||
+                  process.env[OPENWIKI_REASONING_EFFORT_ENV_KEY] !== undefined,
+                "optional",
+              )}
+              detail={
+                reasoningEffort ??
+                process.env[OPENWIKI_REASONING_EFFORT_ENV_KEY] ??
+                "provider default"
+              }
+            />
+          ) : null}
           <SetupStep
             label="LangSmith"
             state={resolveStepStatus(
@@ -582,6 +619,8 @@ export function InitSetupView({
               }
               langsmithWorkspaces={langsmithWorkspaces}
               modelSelectionIndex={modelSelectionIndex}
+              reasoningEffortOptions={reasoningEffortOptions}
+              reasoningEffortSelectionIndex={reasoningEffortSelectionIndex}
               onboardingConfig={onboardingConfig}
               powerModeSelectionIndex={powerModeSelectionIndex}
               provider={provider}

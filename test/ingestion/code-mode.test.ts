@@ -50,6 +50,25 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     }
   });
 
+  test("CLAUDE.md is a simple reference to AGENTS.md, not a copy of its full content", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const claudeContent = await readIfPresent(path.join(repo, "CLAUDE.md"));
+    const agentsContent = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(claudeContent).not.toBeNull();
+    expect(agentsContent).not.toBeNull();
+
+    // CLAUDE.md should reference AGENTS.md rather than duplicate its instructions.
+    expect(claudeContent).toContain("AGENTS.md");
+    // CLAUDE.md should be shorter than AGENTS.md because it is a pointer, not a copy.
+    expect((claudeContent ?? "").length).toBeLessThan(
+      (agentsContent ?? "").length,
+    );
+  });
+
   test("refreshes the OpenWiki block in place and preserves surrounding content", async () => {
     const repo = await createTempRepo();
     const existing = `# My Project
@@ -294,6 +313,23 @@ describe("ensureCodeModeRepoSetup workflow provider block", () => {
     expect(workflow).toContain(
       "OPENAI_COMPATIBLE_API_KEY: ${{ secrets.OPENAI_COMPATIBLE_API_KEY }}",
     );
+  });
+
+  test("carries the streaming opt-in into the scheduled run", async () => {
+    // A gateway that only serves SSE would otherwise return empty content in
+    // CI and commit a blank wiki, with the local run still looking healthy.
+    const optedIn = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-compatible",
+      OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "true",
+    });
+
+    expect(optedIn).toContain('OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "true"');
+
+    const notOptedIn = await generateWorkflow({
+      OPENWIKI_PROVIDER: "openai-compatible",
+    });
+
+    expect(notOptedIn).not.toContain("OPENWIKI_OPENAI_COMPATIBLE_STREAMING");
   });
 
   test("pairs both AWS credentials and the region for Bedrock", async () => {

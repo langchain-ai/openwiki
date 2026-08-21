@@ -3,9 +3,11 @@ import path from "node:path";
 import {
   getProviderAuthMethod,
   getProviderConfig,
+  OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_VERSION,
   resolveConfiguredProvider,
+  resolveOpenAiCompatibleStreaming,
 } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { createConnectorRegistry } from "../connectors/registry.js";
@@ -152,7 +154,7 @@ function emitText(
   onEvent: ((event: OpenWikiRunEvent) => void) | undefined,
   text: string,
 ): void {
-  onEvent?.({ source: "main", text, type: "text" });
+  onEvent?.({ text, type: "text" });
 }
 
 /**
@@ -187,12 +189,20 @@ async function readLastUpdatedAt(
 }
 
 async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
-  const snippet = createCodeModeAgentsSnippet();
+  const agentsSnippet = createCodeModeAgentsSnippet();
+  const claudeSnippet = createCodeModeClaudeSnippet();
+  const snippetByFile: Record<string, string> = {
+    "AGENTS.md": agentsSnippet,
+    "CLAUDE.md": claudeSnippet,
+  };
   // Prepare and validate both files before writing either one. If one file has
   // malformed markers, setup fails without partially refreshing its sibling.
   const updates = await Promise.all(
     CODE_MODE_AGENT_FILES.map((fileName) =>
-      prepareCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
+      prepareCodeModeAgentSnippet(
+        path.join(cwd, fileName),
+        snippetByFile[fileName] ?? agentsSnippet,
+      ),
     ),
   );
 
@@ -299,6 +309,14 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
     lines.push(`${OPENWIKI_MODEL_ID_ENV_KEY}: ${JSON.stringify(modelId)}`);
   }
 
+  // Not part of the provider config because it is a transport override rather
+  // than a credential, but it has to survive into the scheduled run: a gateway
+  // that only serves SSE would otherwise return empty content unattended and
+  // commit a blank wiki. Emitted only when the author opted in locally.
+  if (resolveOpenAiCompatibleStreaming(env)) {
+    lines.push(`${OPENAI_COMPATIBLE_STREAMING_ENV_KEY}: "true"`);
+  }
+
   return lines.join("\n          ");
 }
 
@@ -380,6 +398,22 @@ This repository has a generated \`openwiki/\` evidence index. It is optional jus
 - Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
 
 The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+
+${OPENWIKI_AGENTS_SNIPPET_END}`;
+}
+
+/**
+ * The snippet placed inside CLAUDE.md's managed block. It is intentionally
+ * minimal -- a single pointer to AGENTS.md -- so that one file remains the
+ * canonical source of agent instructions while Claude Code still has a file
+ * it reads at startup.
+ */
+function createCodeModeClaudeSnippet(): string {
+  return `${OPENWIKI_AGENTS_SNIPPET_START}
+
+## OpenWiki
+
+See [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.
 
 ${OPENWIKI_AGENTS_SNIPPET_END}`;
 }

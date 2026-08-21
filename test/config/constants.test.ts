@@ -28,14 +28,25 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  resolveConfiguredMaxOutputTokens,
+  providerUsesStreaming,
   resolveConfiguredProvider,
+  resolveMaxOutputTokens,
+  resolveOpenAiCompatibleStreaming,
+  resolveOpenAiCompatibleUseResponsesApi,
   resolveOpenRouterMaxTokens,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
   resolveProviderRetryAttempts,
+  resolveStreamIdleTimeout,
+  resolveStreamIdleTimeoutForProvider,
 } from "../../src/config/constants.ts";
+import {
+  getReasoningCapability,
+  resolveReasoningConfig,
+} from "../../src/config/reasoning.ts";
 
 describe("isValidModelId", () => {
   test("accepts normal provider/model ids", () => {
@@ -285,6 +296,165 @@ describe("resolveProviderRetryAttempts", () => {
   });
 });
 
+describe("resolveMaxOutputTokens", () => {
+  test("uses no explicit limit when no override is set", () => {
+    expect(resolveMaxOutputTokens({})).toBeUndefined();
+  });
+
+  test("accepts positive integer output token limits", () => {
+    expect(
+      resolveMaxOutputTokens({
+        OPENWIKI_MAX_OUTPUT_TOKENS: "1",
+      }),
+    ).toBe(1);
+    expect(
+      resolveMaxOutputTokens({
+        OPENWIKI_MAX_OUTPUT_TOKENS: " 8192 ",
+      }),
+    ).toBe(8192);
+  });
+
+  test("rejects invalid output token limits", () => {
+    for (const value of [
+      "",
+      "   ",
+      "0",
+      "-1",
+      "1.5",
+      "abc",
+      "1e2",
+      "9007199254740992",
+    ]) {
+      expect(() =>
+        resolveMaxOutputTokens({
+          OPENWIKI_MAX_OUTPUT_TOKENS: value,
+        }),
+      ).toThrow(/OPENWIKI_MAX_OUTPUT_TOKENS/u);
+    }
+  });
+});
+
+describe("resolveStreamIdleTimeout", () => {
+  test("uses the provider default when no override is set", () => {
+    expect(resolveStreamIdleTimeout({})).toBeUndefined();
+  });
+
+  test("accepts zero to disable the watchdog and positive millisecond values", () => {
+    expect(
+      resolveStreamIdleTimeout({
+        OPENWIKI_STREAM_IDLE_TIMEOUT: " 0 ",
+      }),
+    ).toBe(0);
+    expect(
+      resolveStreamIdleTimeout({
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "300000",
+      }),
+    ).toBe(300000);
+    expect(
+      resolveStreamIdleTimeout({
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "2147483647",
+      }),
+    ).toBe(2147483647);
+  });
+
+  test("rejects invalid stream idle timeouts", () => {
+    for (const value of [
+      "",
+      "   ",
+      "-1",
+      "1.5",
+      "abc",
+      "1e2",
+      "2147483648",
+      "9007199254740992",
+    ]) {
+      expect(() =>
+        resolveStreamIdleTimeout({
+          OPENWIKI_STREAM_IDLE_TIMEOUT: value,
+        }),
+      ).toThrow(/OPENWIKI_STREAM_IDLE_TIMEOUT/u);
+    }
+  });
+});
+
+describe("resolveStreamIdleTimeoutForProvider", () => {
+  test("ignores a stale Bedrock timeout for other providers", () => {
+    expect(
+      resolveStreamIdleTimeoutForProvider("openai", {
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "invalid",
+      }),
+    ).toBeUndefined();
+  });
+
+  test("validates the timeout when Bedrock is active", () => {
+    expect(
+      resolveStreamIdleTimeoutForProvider("bedrock", {
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "300000",
+      }),
+    ).toBe(300000);
+    expect(() =>
+      resolveStreamIdleTimeoutForProvider("bedrock", {
+        OPENWIKI_STREAM_IDLE_TIMEOUT: "invalid",
+      }),
+    ).toThrow(/OPENWIKI_STREAM_IDLE_TIMEOUT/u);
+  });
+});
+
+describe("reasoning capabilities", () => {
+  test("returns the configured capability for the initial OpenAI and NVIDIA models", () => {
+    expect(getReasoningCapability("openai", "gpt-5.6-luna")).toEqual({
+      transport: "responses-reasoning",
+      values: ["none", "low", "medium", "high", "xhigh", "max"],
+    });
+    expect(
+      getReasoningCapability("nvidia", "nvidia/nemotron-3-super-120b-a12b"),
+    ).toEqual({
+      transport: "chat-completions-reasoning-effort",
+      values: ["none", "low", "high"],
+    });
+  });
+
+  test("leaves reasoning unset when the environment variable is absent", () => {
+    expect(
+      resolveReasoningConfig("openai", "gpt-5.6-luna", {}),
+    ).toBeUndefined();
+  });
+
+  test("resolves supported values for OpenAI and NVIDIA NIM", () => {
+    expect(
+      resolveReasoningConfig("openai-chatgpt", "gpt-5.6-luna", {
+        OPENWIKI_REASONING_EFFORT: " max ",
+      }),
+    ).toEqual({ effort: "max", transport: "responses-reasoning" });
+    expect(
+      resolveReasoningConfig("nvidia", "nvidia/nemotron-3-super-120b-a12b", {
+        OPENWIKI_REASONING_EFFORT: "high",
+      }),
+    ).toEqual({
+      effort: "high",
+      transport: "chat-completions-reasoning-effort",
+    });
+  });
+
+  test("rejects invalid or unsupported reasoning effort settings before a request", () => {
+    expect(() =>
+      resolveReasoningConfig("openai", "gpt-5.6-luna", {
+        OPENWIKI_REASONING_EFFORT: "fast",
+      }),
+    ).toThrow(/Invalid OPENWIKI_REASONING_EFFORT/u);
+    expect(() =>
+      resolveReasoningConfig("nvidia", "nvidia/nemotron-3-super-120b-a12b", {
+        OPENWIKI_REASONING_EFFORT: "max",
+      }),
+    ).toThrow(/Supported values: none, low, high/u);
+    expect(() =>
+      resolveReasoningConfig("nvidia", "openai/gpt-oss-120b", {
+        OPENWIKI_REASONING_EFFORT: "high",
+      }),
+    ).toThrow(/not supported/u);
+  });
+});
+
 describe("resolveOpenRouterProviderOnly", () => {
   test("returns undefined when no provider pin is configured", () => {
     expect(resolveOpenRouterProviderOnly({})).toBeUndefined();
@@ -312,6 +482,91 @@ describe("resolveOpenRouterProviderOnly", () => {
   });
 });
 
+describe("resolveOpenAiCompatibleUseResponsesApi", () => {
+  test("defaults to chat completions compatibility", () => {
+    expect(resolveOpenAiCompatibleUseResponsesApi({})).toBe(false);
+  });
+
+  test("only enables responses API for an explicit true opt-in", () => {
+    expect(
+      resolveOpenAiCompatibleUseResponsesApi({
+        OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: "true",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleUseResponsesApi({
+        OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: " TRUE ",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleUseResponsesApi({
+        OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: "false",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("resolveOpenAiCompatibleStreaming", () => {
+  test("leaves the transport at the client default", () => {
+    expect(resolveOpenAiCompatibleStreaming({})).toBe(false);
+  });
+
+  test("only forces streaming for an explicit true opt-in", () => {
+    expect(
+      resolveOpenAiCompatibleStreaming({
+        OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "true",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleStreaming({
+        OPENWIKI_OPENAI_COMPATIBLE_STREAMING: " TRUE ",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleStreaming({
+        OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "false",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("providerUsesStreaming", () => {
+  test("stays off for openai-compatible without the opt-in", () => {
+    delete process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING;
+
+    expect(providerUsesStreaming("openai-compatible")).toBe(false);
+  });
+
+  test("forces streaming for openai-compatible when opted in", () => {
+    process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING = "true";
+
+    try {
+      expect(providerUsesStreaming("openai-compatible")).toBe(true);
+    } finally {
+      delete process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING;
+    }
+  });
+
+  test("never applies to the other providers sharing the ChatOpenAI branch", () => {
+    process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING = "true";
+
+    try {
+      for (const provider of [
+        "openai",
+        "baseten",
+        "copilot",
+        "fireworks",
+        "nebius",
+        "nvidia",
+      ] as const) {
+        expect(providerUsesStreaming(provider)).toBe(false);
+      }
+    } finally {
+      delete process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING;
+    }
+  });
+});
+
 describe("resolveOpenRouterMaxTokens", () => {
   test("returns undefined when no cap is configured", () => {
     expect(resolveOpenRouterMaxTokens({})).toBeUndefined();
@@ -331,6 +586,39 @@ describe("resolveOpenRouterMaxTokens", () => {
       expect(() =>
         resolveOpenRouterMaxTokens({ OPENWIKI_OPENROUTER_MAX_TOKENS: value }),
       ).toThrow(/OPENWIKI_OPENROUTER_MAX_TOKENS/u);
+    }
+  });
+});
+
+describe("resolveConfiguredMaxOutputTokens", () => {
+  test("returns undefined when no provider-neutral limit is configured", () => {
+    expect(resolveConfiguredMaxOutputTokens("anthropic", {})).toBeUndefined();
+  });
+
+  test("parses one provider-neutral limit for any selected provider", () => {
+    const env = { OPENWIKI_MAX_OUTPUT_TOKENS: " 16384 " };
+
+    expect(resolveConfiguredMaxOutputTokens("anthropic", env)).toBe(16_384);
+    expect(resolveConfiguredMaxOutputTokens("gemini", env)).toBe(16_384);
+    expect(resolveConfiguredMaxOutputTokens("openai", env)).toBe(16_384);
+  });
+
+  test("preserves the OpenRouter-specific override precedence", () => {
+    expect(
+      resolveConfiguredMaxOutputTokens("openrouter", {
+        OPENWIKI_MAX_OUTPUT_TOKENS: "16384",
+        OPENWIKI_OPENROUTER_MAX_TOKENS: "8192",
+      }),
+    ).toBe(8192);
+  });
+
+  test("rejects invalid provider-neutral limits", () => {
+    for (const value of ["0", "-1", "1.5", "abc", "", "1e3"]) {
+      expect(() =>
+        resolveConfiguredMaxOutputTokens("openai", {
+          OPENWIKI_MAX_OUTPUT_TOKENS: value,
+        }),
+      ).toThrow(/OPENWIKI_MAX_OUTPUT_TOKENS/u);
     }
   });
 });

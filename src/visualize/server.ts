@@ -5,10 +5,11 @@ import {
   type ServerResponse,
 } from "node:http";
 import { watch } from "node:fs";
-import { readFile, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { buildGraph, type WikiGraph } from "./graph.js";
-import { PAGE } from "./page.js";
+import { CSP, PAGE } from "./page.js";
+import { loadVisualizerAssets } from "./static-export.js";
 
 const HOST = "127.0.0.1"; // loopback only (never expose the wiki on the network)
 const PORT_ATTEMPTS = 20; // ports to try before giving up when the preferred one is busy
@@ -16,19 +17,9 @@ const WATCH_DEBOUNCE_MS = 150; // collapse a burst of file-change events into on
 
 // The client JS is an external module (/client.js), so scripts need only 'self' plus the
 // jsdelivr CDN origin for the three browser libraries (whose integrity is pinned by the SRI
-// hashes on the <script> tags in page.ts) - no 'unsafe-inline' for scripts. The page still
-// carries one inline <style>, so style-src keeps 'unsafe-inline'.
-const CDN = "https://cdn.jsdelivr.net";
-const CSP = [
-  "default-src 'none'",
-  `script-src 'self' ${CDN}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "base-uri 'none'",
-  "form-action 'none'",
-].join("; ");
+// hashes on the <script> tags in page.ts) - no 'unsafe-inline' for scripts. The stylesheet is
+// a same-origin asset (/styles.css), which 'self' covers; style-src still keeps 'unsafe-inline'
+// because client.ts writes inline style= attributes for legend swatches and sidebar dots.
 
 /**
  * Inputs for a single visualizer server run. Every field is required: the CLI parser
@@ -78,17 +69,10 @@ export async function runVisualizeServer(
   };
   const sseClients = new Set<ServerResponse>();
 
-  // The compiled client modules sit beside this file in dist/visualize/. They are static,
-  // server-owned build artifacts (no user input, never evaluated), read once at startup and
-  // served verbatim at fixed routes.
-  const clientJs = await readFile(
-    new URL("./client.js", import.meta.url),
-    "utf8",
-  );
-  const clientLibJs = await readFile(
-    new URL("./client-lib.js", import.meta.url),
-    "utf8",
-  );
+  // The compiled client modules and the stylesheet sit beside this file in dist/visualize/.
+  // They are static, server-owned build artifacts (no user input, never evaluated), read once
+  // at startup and served verbatim at fixed routes.
+  const { clientJs, clientLibJs, stylesCss } = await loadVisualizerAssets();
 
   const broadcastReload = (): void => {
     for (const res of sseClients) res.write("event: reload\ndata: 1\n\n");
@@ -112,6 +96,7 @@ export async function runVisualizeServer(
       getGraph: () => graph,
       clientJs,
       clientLibJs,
+      stylesCss,
       sseClients,
     }),
   );
@@ -157,6 +142,11 @@ export interface RequestHandlerDeps {
   clientLibJs: string;
 
   /**
+   * Visualizer stylesheet, served verbatim at `/styles.css`.
+   */
+  stylesCss: string;
+
+  /**
    * Live set of open Server-Sent-Events responses; the handler registers new
    * `/events` subscribers here and drops them when the connection closes.
    */
@@ -165,14 +155,14 @@ export interface RequestHandlerDeps {
 
 /**
  * Build the visualizer HTTP request handler. Routing is locked to a fixed set of
- * routes (`/`, `/index.html`, `/client.js`, `/client-lib.js`, `/api/graph`,
- * `/events`); no filesystem path is ever derived from `req.url`, and `/` carries
- * the strict Content-Security-Policy. Any other path is a 404.
+ * routes (`/`, `/index.html`, `/client.js`, `/client-lib.js`, `/styles.css`,
+ * `/api/graph`, `/events`); no filesystem path is ever derived from `req.url`, and
+ * `/` carries the strict Content-Security-Policy. Any other path is a 404.
  */
 export function createRequestHandler(
   deps: RequestHandlerDeps,
 ): (req: IncomingMessage, res: ServerResponse) => void {
-  const { getGraph, clientJs, clientLibJs, sseClients } = deps;
+  const { getGraph, clientJs, clientLibJs, stylesCss, sseClients } = deps;
 
   return (req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? "/";
@@ -192,6 +182,11 @@ export function createRequestHandler(
     if (url === "/client-lib.js") {
       res.writeHead(200, { "content-type": "text/javascript; charset=utf-8" });
       res.end(clientLibJs);
+      return;
+    }
+    if (url === "/styles.css") {
+      res.writeHead(200, { "content-type": "text/css; charset=utf-8" });
+      res.end(stylesCss);
       return;
     }
     if (url === "/api/graph") {

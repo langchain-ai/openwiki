@@ -2,48 +2,78 @@ import { ToolMessage } from "@langchain/core/messages";
 import type { BackendProtocolV2 } from "deepagents";
 import { createMiddleware } from "langchain";
 import path from "node:path";
-import { validateWikiMermaid } from "../mermaid/wiki.js";
+import type { ClaimEvidenceResources } from "../okf/claim-sources.js";
 import {
   validatePersistedFile,
   type FrontmatterIssue,
 } from "../okf/frontmatter.js";
-import { migrateWikiToOkf, synchronizeWikiIndexes } from "../okf/index-sync.js";
 import {
   ENGLISH_CONCEPT_TYPE,
   ENGLISH_INDEX_LABELS,
   type IndexLabels,
 } from "../okf/index-labels.js";
-import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
 import { inStage } from "../telemetry/index.js";
-import { validateWikiSourceCitations } from "./source-citation-validator.js";
+import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
 import type { OpenWikiOutputMode } from "./types.js";
-import { validateWikiInternalLinks } from "./wiki-link-validator.js";
+import {
+  finalizeWikiArtifacts,
+  prepareWikiForAuthoring,
+  type PreparedWikiState,
+} from "./wiki-finalizer.js";
 
 const OKF_RESERVED_FILES = new Set(["index.md", "log.md"]);
 const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
 
 /**
  * Creates middleware that keeps the wiki OKF-conformant around a run. It
- * migrates existing pages to valid front matter before the agent starts
- * and synchronizes indexes after the run.
+ * migrates existing pages to valid front matter before the agent starts,
+ * snapshots their exact bodies, synchronizes indexes after the run, and
+ * stamps final code-owned `generated` provenance on every new or changed page.
+ *
+ * `now` is the run's single stamp time (an ISO 8601 datetime), computed once by
+ * the caller and threaded in so every page written in one run shares one
+ * `generated.at` and the stamping stays deterministic under test. It defaults to
+ * the current time so callers that do not stamp (or tests exercising only the
+ * index passes) need not supply one.
+ *
+ * `claimSources`, when supplied by a repository Claims runtime, is read only
+ * during finalization so it reflects every mutation accepted during the run.
+ *
+ * @param backend - Filesystem abstraction rooted to the active wiki target.
+ * @param outputMode - Repository or local-wiki output layout.
+ * @param labels - Localized labels used by generated indexes.
+ * @param conceptType - Fallback OKF concept type used during migration.
+ * @param now - Shared ISO 8601 timestamp for generated provenance events.
+ * @param claimSources - Optional deferred Claims evidence projection.
+ * @returns LangChain middleware for the deterministic wiki lifecycle.
  */
 export function createOpenWikiIndexMiddleware(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   labels: IndexLabels = ENGLISH_INDEX_LABELS,
   conceptType: string = ENGLISH_CONCEPT_TYPE,
+  now: string = new Date().toISOString(),
+  claimSources?: () => ClaimEvidenceResources,
 ) {
+  let preparedWiki: PreparedWikiState | undefined;
+
   return createMiddleware({
     name: "OpenWikiIndexMiddleware",
     beforeAgent: async () => {
       // Owned OKF pass: a throw here is our conformance code failing, not the
       // model. Tag class+detail at the origin so it does not fall to the run
       // stage's raw classifier (which would read agent_error).
-      await inStage(
-        "build",
-        () => migrateWikiToOkf(backend, outputMode, conceptType),
-        { errorClass: "okf_error", errorDetail: "migrate" },
-      );
+      preparedWiki = undefined;
+      preparedWiki = await prepareWikiForAuthoring({
+        backend,
+        outputMode,
+        conceptType,
+        runOperation: (operation, task) =>
+          inStage("build", task, {
+            errorClass: "okf_error",
+            errorDetail: operation,
+          }),
+      });
     },
     // Telemetry guard: this wrap only *decorates a successful* tool result with a
     // front-matter warning; it deliberately does not catch tool throws. LangChain's
@@ -59,38 +89,33 @@ export function createOpenWikiIndexMiddleware(
     //     become `tool_error`.
     // Do not turn this into a catch that rethrows: that would make every recoverable
     // tool error fatal and record otherwise-successful runs as failures.
-    wrapToolCall: async (request, handler) =>
-      addFrontmatterWarning(
-        await handler(request),
+    wrapToolCall: async (request, handler) => {
+      const result = await handler(request);
+      return addFrontmatterWarning(
+        result,
         backend,
         outputMode,
         request.toolCall.name,
-      ),
+      );
+    },
     afterAgent: async () => {
-      await inStage(
-        "finalize",
-        () => validateWikiMermaid(backend, outputMode),
-        { errorClass: "okf_error", errorDetail: "mermaid" },
-      );
-      await inStage(
-        "finalize",
-        () => synchronizeWikiIndexes(backend, outputMode, labels, conceptType),
-        { errorClass: "okf_error", errorDetail: "index_sync" },
-      );
-      // Stamp broken internal links in place (do not fail the run) so a later
-      // update can repair them from the inline openwiki comments.
-      await inStage(
-        "finalize",
-        () => validateWikiInternalLinks(backend, outputMode),
-        { errorClass: "okf_error", errorDetail: "link_validation" },
-      );
-      // Same contract for prose citations of repository files, which a
-      // reorganization invalidates without touching the wiki.
-      await inStage(
-        "finalize",
-        () => validateWikiSourceCitations(backend, outputMode),
-        { errorClass: "okf_error", errorDetail: "source_citation_validation" },
-      );
+      if (!preparedWiki) {
+        throw new Error("Wiki finalization requires prepared run state.");
+      }
+      await finalizeWikiArtifacts({
+        backend,
+        outputMode,
+        labels,
+        conceptType,
+        prepared: preparedWiki,
+        at: now,
+        claimSources: claimSources?.(),
+        runOperation: (operation, task) =>
+          inStage("finalize", task, {
+            errorClass: "okf_error",
+            errorDetail: operation,
+          }),
+      });
     },
   });
 }

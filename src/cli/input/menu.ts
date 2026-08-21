@@ -4,9 +4,11 @@ import {
   SELECTABLE_OPENWIKI_PROVIDERS,
   type OpenWikiProvider,
 } from "../../config/constants.js";
+import { getReasoningCapability } from "../../config/reasoning.js";
 import type {
   ChatInputMenuState,
   ModelMenuOption,
+  ReasoningEffortMenuOption,
   SlashCommandOption,
 } from "./types.js";
 
@@ -23,6 +25,11 @@ export const slashCommandOptions: SlashCommandOption[] = [
     description: "Switch the current provider model",
     id: "model",
     label: "/model",
+  },
+  {
+    description: "Set reasoning effort for the current model",
+    id: "effort",
+    label: "/effort",
   },
   {
     description: "Set the API key for the current provider",
@@ -72,6 +79,7 @@ export function syncMenuStateForInput(
   currentState: ChatInputMenuState,
   currentModelId: string,
   currentProvider: OpenWikiProvider,
+  currentReasoningEffort: string | null = null,
 ): ChatInputMenuState {
   if (input.startsWith("/provider")) {
     const selectedIndex =
@@ -100,6 +108,30 @@ export function syncMenuStateForInput(
         selectedIndex,
         getModelMenuOptions(currentModelId, currentProvider).length,
       ),
+    };
+  }
+
+  if (input.startsWith("/effort")) {
+    const effortOptions = getReasoningEffortMenuOptions(
+      currentProvider,
+      currentModelId,
+    );
+    if (effortOptions.length === 0) {
+      return { kind: "none" };
+    }
+
+    const selectedIndex =
+      currentState.kind === "effort"
+        ? currentState.selectedIndex
+        : getCurrentReasoningEffortOptionIndex(
+            currentProvider,
+            currentModelId,
+            currentReasoningEffort,
+          );
+
+    return {
+      kind: "effort",
+      selectedIndex: clampMenuIndex(selectedIndex, effortOptions.length),
     };
   }
 
@@ -135,9 +167,11 @@ export function moveMenuSelection(
   const itemCount =
     menuState.kind === "model"
       ? getModelMenuOptions(currentModelId, currentProvider).length
-      : menuState.kind === "provider"
-        ? SELECTABLE_OPENWIKI_PROVIDERS.length
-        : slashCommandOptions.length;
+      : menuState.kind === "effort"
+        ? getReasoningEffortMenuOptions(currentProvider, currentModelId).length
+        : menuState.kind === "provider"
+          ? SELECTABLE_OPENWIKI_PROVIDERS.length
+          : slashCommandOptions.length;
 
   return {
     ...menuState,
@@ -224,6 +258,47 @@ export function getModelMenuOptions(
       label: "Custom model ID",
     },
   ];
+}
+
+/**
+ * Builds the capability-gated reasoning-effort rows for a provider and model.
+ * Unsupported combinations return no rows, so callers can show an explanation
+ * instead of offering a value that would fail before a request is sent.
+ */
+export function getReasoningEffortMenuOptions(
+  provider: OpenWikiProvider,
+  modelId: string,
+): ReasoningEffortMenuOption[] {
+  const capability = getReasoningCapability(provider, modelId);
+
+  if (!capability) {
+    return [];
+  }
+
+  return [
+    { kind: "default", label: "Provider default" },
+    ...capability.values.map((effort) => ({
+      effort,
+      kind: "effort" as const,
+      label: effort,
+    })),
+  ];
+}
+
+/** Finds the selected reasoning-effort row, falling back to provider default. */
+export function getCurrentReasoningEffortOptionIndex(
+  provider: OpenWikiProvider,
+  modelId: string,
+  currentReasoningEffort: string | null,
+): number {
+  const options = getReasoningEffortMenuOptions(provider, modelId);
+  const selectedIndex = options.findIndex(
+    (option) =>
+      (option.kind === "default" && currentReasoningEffort === null) ||
+      (option.kind === "effort" && option.effort === currentReasoningEffort),
+  );
+
+  return selectedIndex === -1 ? 0 : selectedIndex;
 }
 
 /**

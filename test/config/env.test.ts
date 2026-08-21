@@ -125,6 +125,14 @@ describe("formatEnv", () => {
 });
 
 describe("MANAGED_ENV_KEYS", () => {
+  test("manages the model output token limit", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_MAX_OUTPUT_TOKENS");
+  });
+
+  test("manages the Bedrock stream idle timeout", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_STREAM_IDLE_TIMEOUT");
+  });
+
   test("manages the Google Cloud settings for the gemini-enterprise provider", () => {
     expect(MANAGED_ENV_KEYS).toContain("GOOGLE_CLOUD_PROJECT");
     expect(MANAGED_ENV_KEYS).toContain("GOOGLE_CLOUD_LOCATION");
@@ -139,6 +147,10 @@ describe("MANAGED_ENV_KEYS", () => {
     expect(MANAGED_ENV_KEYS).toContain("BASETEN_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("FIREWORKS_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("NVIDIA_BASE_URL");
+  });
+
+  test("manages the reasoning effort setting", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_REASONING_EFFORT");
   });
 });
 
