@@ -60,6 +60,16 @@ const MAX_AUTHOR_CONCURRENCY = 32;
 const MAX_BLOCKED_ATTEMPTS = 6;
 
 /**
+ * Chances to improve a thin plan before authoring proceeds anyway.
+ *
+ * The floor reuses the plan ledger's generic source-volume guidance; this bound
+ * controls only how long it may delay useful output. Two returns give the
+ * coordinator a deterministic opportunity to add substantive pages without
+ * recreating the hard gate that once left runs with no wiki at all.
+ */
+const MAX_SHORTFALL_DEFERRALS = 2;
+
+/**
  * Runs `worker` over `items` as a refilling pool rather than as batches.
  *
  * Each slot takes the next unstarted item the moment it settles, so one slow
@@ -138,6 +148,8 @@ export function createOpenWikiAuthoringPoolMiddleware(
   // shapes without `invoke` and this only ever calls one tool by name.
   let taskTool: TaskToolLike | null = null;
   let blockedAttempts = 0;
+  let shortfallDeferrals = 0;
+  let authoringStarted = false;
 
   const authorPages = tool(
     async (rawInput, config) => {
@@ -190,11 +202,7 @@ export function createOpenWikiAuthoringPoolMiddleware(
         ? await readiness()
         : { blocking: [], shortfall: [] };
       // A directory no entry covers still stops authoring, bounded: that subtree
-      // is absent from the result and no later step can tell. Under-decomposition
-      // does not, because refusing over it is what once left a run with a
-      // complete plan and one page on disk - it travels back with the pages that
-      // were written, and finalize_wiki is where it has to be answered, by which
-      // point holding the run costs a turn rather than the wiki.
+      // is absent from the result and no later step can tell.
       if (state.blocking.length > 0) {
         blockedAttempts += 1;
         if (blockedAttempts <= MAX_BLOCKED_ATTEMPTS) {
@@ -208,6 +216,25 @@ export function createOpenWikiAuthoringPoolMiddleware(
       }
       const shortfall =
         state.shortfall.length > 0 ? state.shortfall : undefined;
+      // A thin plan gets a small deterministic correction window before the
+      // expensive author pool starts. The same advisoryProblems that already
+      // produced the guidance defines the floor; there is no repository-sized
+      // target here. This gate is bounded and only applies before any author has
+      // launched, so a coordinator that cannot satisfy it still gets a wiki and
+      // later repair waves are never delayed.
+      if (
+        shortfall &&
+        !authoringStarted &&
+        shortfallDeferrals < MAX_SHORTFALL_DEFERRALS
+      ) {
+        shortfallDeferrals += 1;
+        return JSON.stringify({
+          authored: 0,
+          planShortfall: shortfall,
+          attemptsLeft: MAX_SHORTFALL_DEFERRALS - shortfallDeferrals,
+          hint: "No authors were launched. Add substantive pages for the named thin areas through submit_plan, then call author_pages again. Do not add placeholder pages. This floor yields after two deferrals, so wiki generation will proceed even if the guidance remains unresolved.",
+        });
+      }
       const dispatchable: { page: string; brief: string }[] = [];
       const undispatchable: { page: string; error: string }[] = [];
       for (const assignment of assignments) {
@@ -235,6 +262,9 @@ export function createOpenWikiAuthoringPoolMiddleware(
         });
       }
 
+      if (dispatchable.length > 0) {
+        authoringStarted = true;
+      }
       const outcomes = await pool(dispatchable, limit, async (assignment) => {
         const output = await dispatchSubagent(
           dispatch,
@@ -306,7 +336,7 @@ export function createOpenWikiAuthoringPoolMiddleware(
     {
       name: "author_pages",
       description:
-        "Dispatch one page-author per assignment as a refilling pool of twenty and return each page's outcome. Pass the whole phase - initial authoring or one repair wave - in a single call: it pools, refills as each author settles, dedupes repeated pages, and reports a failed author against its own page rather than losing the pool. Each author writes its page and establishes its own Claims, so you do not call resolve_claims for these pages; the counts come back from the claim store itself. An author that establishes no claims is returned under failed and wrote nothing. Each assignment is just {page}, plus {defect} when re-authoring: the brief is rendered from that page's plan entry, so its evidence, tests, and relationship edges reach the author without you composing anything, and only the pages it has an edge to are named as link targets. A page absent from the plan, or missing an anchor, entrypoint, or focused test, comes back under failed rather than being dispatched with a gap. Never call this once per page and never run two calls covering the same page at once.",
+        "Dispatch one page-author per assignment as a refilling pool of twenty and return each page's outcome. Before the first author launches, the tool may return the existing planShortfall guidance without dispatching, at most twice; add substantive pages through submit_plan and call again. The gate then yields automatically, so it cannot prevent wiki generation. Pass the whole phase - initial authoring or one repair wave - in a single call: it pools, refills as each author settles, dedupes repeated pages, and reports a failed author against its own page rather than losing the pool. Each author writes its page and establishes its own Claims, so you do not call resolve_claims for these pages; the counts come back from the claim store itself. An author that establishes no claims is returned under failed and wrote nothing. Each assignment is just {page}, plus {defect} when re-authoring: the brief is rendered from that page's plan entry, so its evidence, tests, and relationship edges reach the author without you composing anything, and only the pages it has an edge to are named as link targets. A page absent from the plan, or missing an anchor, entrypoint, or focused test, comes back under failed rather than being dispatched with a gap. Never call this once per page and never run two calls covering the same page at once.",
       schema: AuthorPagesInputSchema,
     },
   );

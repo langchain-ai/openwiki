@@ -78,7 +78,7 @@ Establish the claims first, then write the page from them:
 
 Read the evidence first, then establish your claims in one call - two if the page is large - and write the page:
 - One call, not one per file: every call replays everything you have read, so a call per file costs several times what one costs and records the same propositions.
-- If a resource is refused, nothing was established. It names the resource: fix that one anchor - the line range the fact really occupies, or the file itself - and call again. Do not drop the claim and do not paste evidence into the prose instead.
+- If a claim is refused, the result names its number, statement, and error while keeping valid neighbors established. Retry only that rejected claim with the line range the fact really occupies, or omit that fact from the page. Never resend accepted claims, write a rejected fact into Markdown, or paste evidence into the prose instead.
 - Then call \`write_page\` with the complete Markdown. It refuses a page with no claims, so the propositions come first and the prose is written from them.
 
 Reporting:

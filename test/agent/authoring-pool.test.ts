@@ -213,11 +213,11 @@ describe("author_pages readiness gate", () => {
 });
 
 describe("author_pages and a thin plan", () => {
-  test("authors the pages anyway and reports the shortfall", async () => {
-    // The failure this guards: with decomposition refusing here, a plan short of
-    // what the repository holds produced ten runs that wrote one page each. A
-    // refusal at authoring cannot be undone - nothing reaches disk - so the
-    // shortfall travels back with the pages and finalize_wiki answers for it.
+  test("defers twice, then authors anyway and reports the shortfall", async () => {
+    // The existing source-volume guidance gets two deterministic chances to
+    // raise the floor. The bound preserves the fail-open behavior: a coordinator
+    // that cannot improve its plan still produces a wiki on the third call.
+    let dispatched = 0;
     const middleware = createOpenWikiAuthoringPoolMiddleware(
       stubStore(["openwiki/a.md"]),
       () =>
@@ -235,14 +235,71 @@ describe("author_pages and a thin plan", () => {
         wrapModelCall: (r: unknown, h: (r: unknown) => unknown) => unknown;
       }
     ).wrapModelCall(
+      {
+        tools: [
+          {
+            name: "task",
+            invoke: () => {
+              dispatched += 1;
+              return Promise.resolve("ok");
+            },
+          },
+        ],
+      },
+      (r) => r,
+    );
+    const call = async () =>
+      JSON.parse(
+        String(await tools[0].invoke({ assignments: [{ page: "a.md" }] })),
+      ) as Record<string, unknown>;
+
+    const first = await call();
+    expect(first.authored).toBe(0);
+    expect(first.attemptsLeft).toBe(1);
+    expect(String(first.planShortfall)).toContain("1537 source files");
+    expect(dispatched).toBe(0);
+
+    const second = await call();
+    expect(second.authored).toBe(0);
+    expect(second.attemptsLeft).toBe(0);
+    expect(dispatched).toBe(0);
+
+    const out = await call();
+    expect(out.authored).toBe(1);
+    expect(String(out.planShortfall)).toContain("1537 source files");
+    expect(dispatched).toBe(1);
+  });
+
+  test("authors immediately once the existing shortfall clears", async () => {
+    let thin = true;
+    const middleware = createOpenWikiAuthoringPoolMiddleware(
+      stubStore(["openwiki/a.md"]),
+      () =>
+        Promise.resolve({
+          blocking: [],
+          shortfall: thin ? ["/big plans 2 page(s) for 1537 source files"] : [],
+        }),
+      stubSession({ "/openwiki/a.md": 7 }),
+    );
+    const tools = (
+      middleware as { tools: { invoke: (i: unknown) => Promise<unknown> }[] }
+    ).tools;
+    (
+      middleware as {
+        wrapModelCall: (r: unknown, h: (r: unknown) => unknown) => unknown;
+      }
+    ).wrapModelCall(
       { tools: [{ name: "task", invoke: () => Promise.resolve("ok") }] },
       (r) => r,
     );
-    const out = JSON.parse(
-      String(await tools[0].invoke({ assignments: [{ page: "a.md" }] })),
-    ) as Record<string, unknown>;
-    expect(out.authored).toBe(1);
-    expect(String(out.planShortfall)).toContain("1537 source files");
+    const call = async () =>
+      JSON.parse(
+        String(await tools[0].invoke({ assignments: [{ page: "a.md" }] })),
+      ) as Record<string, unknown>;
+
+    expect((await call()).authored).toBe(0);
+    thin = false;
+    expect((await call()).authored).toBe(1);
   });
 });
 

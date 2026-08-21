@@ -17,6 +17,7 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import type { ClaimSession } from "../claims/brains/code/session.js";
 import type { ClaimOperation } from "../claims/core/types.js";
+import { sanitizeDiagnosticText } from "../platform/diagnostics.js";
 
 /** Backend capability this needs: one page write. */
 interface PageWriteBackend {
@@ -69,9 +70,10 @@ function canonicalPage(page: string): string {
 /**
  * Normalizes an author-supplied evidence resource.
  *
- * Line ranges, triple slashes, and trailing slashes are syntax the resolver
- * rejects and the author did not mean, so they are corrected rather than
- * bounced: 15 of 66 claim failures in one run were exactly these.
+ * Triple slashes and trailing slashes are syntax the resolver rejects and the
+ * author did not mean, so they are corrected rather than bounced. Line ranges
+ * are preserved: the repository resolver supports them, and erasing two ranges
+ * into the same whole-file identity manufactured duplicate-evidence failures.
  *
  * @param resource - Resource as written.
  * @returns Normalized resource.
@@ -80,8 +82,13 @@ export function normalizeEvidence(resource: string): string {
   return resource
     .trim()
     .replace(/^repo:\/{3,}/u, "repo://")
-    .replace(/#L\d+(?:-L?\d+)?$/u, "")
     .replace(/\/+$/u, "");
+}
+
+/** Return a bounded, redacted diagnostic suitable for a model-facing result. */
+function diagnostic(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return sanitizeDiagnosticText(message).slice(0, 500);
 }
 
 /**
@@ -115,22 +122,48 @@ export function createAuthorWriteTools(
       }));
       try {
         await session.resolveClaims({ page, operations });
-      } catch (error) {
         return JSON.stringify({
-          established: 0,
-          error: error instanceof Error ? error.message : String(error),
-          hint: "Nothing was established. Fix the resource this names - cite the symbol the file declares, or the file itself - and call again.",
+          page,
+          accepted: operations.length,
+          established: session.inspectClaims(page).length,
+        });
+      } catch (batchError) {
+        // The page batch is atomic, so its failure applied nothing. Authoring
+        // operations are independent adds, unlike resolve_claims maintenance
+        // batches that may combine dependent updates and retractions. Salvage
+        // each add here and tell the author exactly which facts were refused.
+        const rejected: Array<{
+          claim: number;
+          statement: string;
+          error: string;
+        }> = [];
+        let accepted = 0;
+        for (const [index, operation] of operations.entries()) {
+          try {
+            await session.resolveClaims({ page, operations: [operation] });
+            accepted += 1;
+          } catch (error) {
+            rejected.push({
+              claim: index + 1,
+              statement: input.claims[index].statement.slice(0, 240),
+              error: diagnostic(error),
+            });
+          }
+        }
+        return JSON.stringify({
+          page,
+          accepted,
+          established: session.inspectClaims(page).length,
+          rejected,
+          batchError: diagnostic(batchError),
+          hint: "The accepted claims remain established. Retry only rejected claims with corrected evidence, or omit those facts from the page. Do not write rejected facts into Markdown and do not resend accepted claims.",
         });
       }
-      return JSON.stringify({
-        page,
-        established: session.inspectClaims(page).length,
-      });
     },
     {
       name: "establish_claims",
       description:
-        "Establish your page's material propositions in one call, before writing it - two if the page is large, since every call replays everything you have read. Each is one concise atomic proposition with repo://path#L10-L24 evidence - no symbols, no directories, and the narrowest line range that carries the fact; cite the bare repo://path only when the whole file is the evidence. Call it in batches as you work rather than once at the end. write_page refuses a page with no claims, so this comes first.",
+        "Establish your page's material propositions in one call, before writing it - two if the page is large, since every call replays everything you have read. Each is one concise atomic proposition with repo://path#L10-L24 evidence - no symbols, no directories, and the narrowest line range that carries the fact; cite the bare repo://path only when the whole file is the evidence. Valid claims remain established when a neighbor is rejected; the result names rejected claims, so retry only those with corrected evidence or omit those facts from the page. Never resend accepted claims. Call it in batches as you work rather than once at the end. write_page refuses a page with no claims, so this comes first.",
       schema: EstablishClaimsSchema,
     },
   );
