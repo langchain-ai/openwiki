@@ -1,0 +1,97 @@
+src/claims/brains/code/session.ts
+  s_a0502f85e6b3fb::t_c91fa72c744137 284-286
+  s_a0502f85e6b3fb::t_b2f943f3036e21 263-283,287-291
+  s_a0502f85e6b3fb::t_3d2cebd514075e 465-467
+  s_a0502f85e6b3fb::t_1ee967d0366ae4 17-18,68-77,153-156,262,347-350,353-356,370-374,425-426,432,434-435,445-464,468-503,551
+src/agent/index.ts
+  s_a0502f85e6b3fb::t_2836be67b1b2a1 495,562-563
+  s_a0502f85e6b3fb::t_7c6e5c2a5d7b7b 167,219,281,446,472-476,561,594,654,792
+  s_a0502f85e6b3fb::t_a4b60b37a363c3 511-512
+  s_a0502f85e6b3fb::t_949660d83e3e61 564
+src/claims/brains/code/store.ts
+  s_a0502f85e6b3fb::t_a3425cd4a9a2ea 237-287
+  s_a0502f85e6b3fb::t_1ee967d0366ae4 60-68,77
+  s_a0502f85e6b3fb::t_c5fcf51f72ed16 59
+test/agent/translation-middleware.test.ts
+  s_a0502f85e6b3fb::t_82bdbdc6631213 236-239
+src/okf/claims-verification.ts
+  s_a0502f85e6b3fb::t_a3425cd4a9a2ea 1-110
+  s_a0502f85e6b3fb::t_80c90283567a85 111-113
+test/claims/brains/code/session.test.ts
+  s_a0502f85e6b3fb::t_e03da37b6a7a06 432-455
+  s_a0502f85e6b3fb::t_405b585c355d31 126-150
+  s_a0502f85e6b3fb::t_7b8648db8bb2c9 354-422,424-430,465,555,569
+  s_a0502f85e6b3fb::t_243a5b69f10bb4 5-8,423
+  s_a0502f85e6b3fb::t_e5ac503d030b2b 19-22,339,346
+  s_a0502f85e6b3fb::t_b913f8fd00e7aa 431
+  s_a0502f85e6b3fb::t_dff76acfd0dd65 554
+  s_a0502f85e6b3fb::t_2969d4de77904e 556
+src/okf/claim-sources.ts
+  s_a0502f85e6b3fb::t_2e16e226db8ec3 1-15,17-49,54-115,120-145
+  s_a0502f85e6b3fb::t_c91fa72c744137 16,50-53,116-119
+README.md
+  s_a0502f85e6b3fb::t_a94d96bdac29b5 163
+  s_a0502f85e6b3fb::t_82bdbdc6631213 164
+test/agent/prompt-okf.test.ts
+  s_a0502f85e6b3fb::t_82bdbdc6631213 51-54,58-60
+  s_a0502f85e6b3fb::t_ec43a3ac74cb39 46-50,55-57,61
+src/claims/brains/code/types.ts
+  s_a0502f85e6b3fb::t_1ee967d0366ae4 8-22,43-50,91-110
+  s_a0502f85e6b3fb::t_0bf29be2ab8615 111
+src/claims/brains/code/runtime.ts
+  s_a0502f85e6b3fb::t_a4b60b37a363c3 31
+  s_a0502f85e6b3fb::t_7c6e5c2a5d7b7b 6-10,33,76-80,82-87,102-106,108-113,118-136,143-144
+  s_a0502f85e6b3fb::t_3d2cebd514075e 137-142
+  s_a0502f85e6b3fb::t_50aaccfb5bb44a 145
+test/okf/claims-verification.test.ts
+  s_a0502f85e6b3fb::t_dded29d0b876b1 1-98
+test/claims/brains/code/store.test.ts
+  s_a0502f85e6b3fb::t_348da8cbcb7e70 124-127,219-230
+test/agent/index-middleware.test.ts
+  s_a0502f85e6b3fb::t_63cf0bc7f99057 13,538-565,567-569,571-574
+  s_a0502f85e6b3fb::t_d3e0e8d1e42e44 2,32-38,566,570
+  s_a0502f85e6b3fb::t_022b9bb0a21d30 575
+src/agent/prompts/code.ts
+  s_a0502f85e6b3fb::t_63cf0bc7f99057 346
+  s_a0502f85e6b3fb::t_cff91d015580c6 196,203,337
+  s_a0502f85e6b3fb::t_82bdbdc6631213 197,204,338
+  s_a0502f85e6b3fb::t_39feffae5b151b 347
+test/okf/frontmatter.test.ts
+  s_a0502f85e6b3fb::t_d569dfddc85233 12,144-155,166-204
+  s_a0502f85e6b3fb::t_dded29d0b876b1 13,156-165,205-224
+src/agent/okf-middleware.ts
+  s_a0502f85e6b3fb::t_949660d83e3e61 7-9,44-46,54,116-122
+  s_a0502f85e6b3fb::t_0c7e5daee94665 6
+src/okf/frontmatter.ts
+  s_a0502f85e6b3fb::t_7414dc8b1cad8d 2,440-465,492-495,520-524,532,535-568,573-577,678-680
+  s_a0502f85e6b3fb::t_2836be67b1b2a1 54,56-58,512-515,528-530
+  s_a0502f85e6b3fb::t_a3425cd4a9a2ea 60,466-491
+  s_a0502f85e6b3fb::t_c91fa72c744137 517,569-572
+test/okf/claim-sources.test.ts
+  s_a0502f85e6b3fb::t_d3e0e8d1e42e44 1,24-30,74,78
+  s_a0502f85e6b3fb::t_48ea27b8745084 2-23,31-73,75-77,79-124
+test/claims/brains/code/runtime.test.ts
+  s_a0502f85e6b3fb::t_e03da37b6a7a06 160-163,191-194,202-209,211-217
+  s_a0502f85e6b3fb::t_529ce6415fb872 282-303
+  s_a0502f85e6b3fb::t_d3f8b03e2ff470 1,8-12,37-40,156-159,164-190,195-201,210,218-281,304-305
+  s_a0502f85e6b3fb::t_94e6b6574330d6 152-155
+  s_a0502f85e6b3fb::t_349a6892da8019 306-308
+src/version.ts
+  s_a0502f85e6b3fb::t_a4b60b37a363c3 76-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "ab14866239a1457809b67e270fdc443e03124936",
+  "prompts": {},
+  "sessions": {
+    "s_a0502f85e6b3fb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02162-ef78-7710-bbe5-5f72aa396791",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
