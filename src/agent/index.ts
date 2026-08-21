@@ -147,7 +147,7 @@ import {
   getUpdateNoopStatus,
   createRunContext,
   persistRunMetadataIfChanged,
-  removeTemporaryPlanFile,
+  removeTemporaryWorkingFiles,
   shouldCheckUpdateNoop,
   writeLastUpdateMetadata,
 } from "./utils.js";
@@ -730,9 +730,9 @@ async function runOpenWikiAgentCore(
   } catch (error) {
     tagErrorStage(error, "run");
 
-    await cleanupTemporaryPlanFile(command, cwd, outputMode, options).catch(
+    await cleanupTemporaryWorkingFiles(command, cwd, outputMode, options).catch(
       () => {
-        emitDebug(options, "plan.cleanup=failed");
+        emitDebug(options, "working-files.cleanup=failed");
       },
     );
 
@@ -788,7 +788,7 @@ async function runOpenWikiAgentCore(
 
   try {
     metadataWritten = await inStage("finalize", async () => {
-      await cleanupTemporaryPlanFile(command, cwd, outputMode, options);
+      await cleanupTemporaryWorkingFiles(command, cwd, outputMode, options);
       await claimsRuntime?.finalize(runTimestamp);
       return persistRunMetadataIfChanged(
         command,
@@ -834,7 +834,7 @@ async function runOpenWikiAgentCore(
   };
 }
 
-async function cleanupTemporaryPlanFile(
+async function cleanupTemporaryWorkingFiles(
   command: OpenWikiCommand,
   cwd: string,
   outputMode: OpenWikiOutputMode,
@@ -844,10 +844,12 @@ async function cleanupTemporaryPlanFile(
     return;
   }
 
-  const removed = await removeTemporaryPlanFile(cwd, outputMode);
+  const removed = await removeTemporaryWorkingFiles(cwd, outputMode);
   emitDebug(
     options,
-    removed ? "plan.cleanup=removed" : "plan.cleanup=skipped missing",
+    removed.length > 0
+      ? `working-files.cleanup=removed ${removed.join(",")}`
+      : "working-files.cleanup=skipped missing",
   );
 }
 

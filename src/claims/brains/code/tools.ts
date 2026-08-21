@@ -81,13 +81,13 @@ const ResolveClaimsPageSchema = z
 /**
  * Runtime validator for one cross-page `resolve_claims` call.
  */
-const ResolveClaimsInputSchema = z
+export const ResolveClaimsInputSchema = z
   .object({ pages: z.array(ResolveClaimsPageSchema).min(1) })
   .strict();
 /**
  * Runtime validator for `inspect_claims` input.
  */
-const InspectClaimsInputSchema = z
+export const InspectClaimsInputSchema = z
   .object({
     ids: z.array(CanonicalNonEmptyStringSchema).min(1).optional(),
     pages: z.array(CanonicalNonEmptyStringSchema).min(1).optional(),
@@ -96,6 +96,18 @@ const InspectClaimsInputSchema = z
   .refine(({ ids, pages }) => (ids === undefined) !== (pages === undefined), {
     message: "Pass exactly one of ids or pages",
   });
+
+/**
+ * Shared model guidance for Claims mutation tools across agent transports.
+ */
+export const RESOLVE_CLAIMS_DESCRIPTION =
+  "Maintain substantive system truths for one or more wiki pages in one call. Prioritize behavior, responsibilities, architecture and ownership, cross-component relationships, data/control flow, invariants, lifecycle and failure semantics, configuration, security, persistence, operations, and extension seams. Atomic means one coherent falsifiable idea, not one symbol or source line: a claim may connect multiple components and cite multiple evidence resources. Omit low-value facts about symbol existence, paths, signatures, return types, or inheritance unless they materially affect understanding, operation, or safe change. Ensure every material, source-dependent proposition the wiki relies on is represented; completeness takes priority over minimizing Claim count, and distinct truths remain distinct even when the same function or component supports them. Put every affected page in pages; each page's operations are applied atomically. Keep each statement concise—not an excerpt, list, compound summary, or paragraph—and remove semantic duplicates only after establishing coverage. Use confirm when a claim remains true, update to change its statement or evidence, retract when it is obsolete, and add for a new material fact. For an update, call this tool before writing the corresponding new or materially changed factual prose; scope an existing page to facts changed by the update rather than backfilling untouched prose. Style- or navigation-only edits need no Claims call. Claims currently support repository evidence only; do not invent repository evidence for connector-derived facts, and leave LangSmith-only facts unclaimed. Cite bounded language-agnostic line ranges as repo://path#L10-L24. Use repo://path only when the whole file is the evidence.";
+
+/**
+ * Shared model guidance for Claims inspection tools across agent transports.
+ */
+export const INSPECT_CLAIMS_DESCRIPTION =
+  "Inspect material factual propositions without creating a write obligation. Pass ids from one or more OpenWiki Claims read notes for targeted cross-page inspection. Pass pages only as a fallback when complete page claim sets are needed. Pass exactly one selector; results are grouped by owning page.";
 /**
  * Runtime validator for the DeepAgents-compatible `delete_file` input.
  */
@@ -128,8 +140,7 @@ export function createClaimsTools(
   return [
     new DynamicStructuredTool({
       name: "resolve_claims",
-      description:
-        "Maintain substantive system truths for one or more wiki pages in one call. Prioritize behavior, responsibilities, architecture and ownership, cross-component relationships, data/control flow, invariants, lifecycle and failure semantics, configuration, security, persistence, operations, and extension seams. Atomic means one coherent falsifiable idea, not one symbol or source line: a claim may connect multiple components and cite multiple evidence resources. Omit low-value facts about symbol existence, paths, signatures, return types, or inheritance unless they materially affect understanding, operation, or safe change. Ensure every material, source-dependent proposition the wiki relies on is represented; completeness takes priority over minimizing Claim count, and distinct truths remain distinct even when the same function or component supports them. Put every affected page in pages; each page's operations are applied atomically. Keep each statement concise—not an excerpt, list, compound summary, or paragraph—and remove semantic duplicates only after establishing coverage. Use confirm when a claim remains true, update to change its statement or evidence, retract when it is obsolete, and add for a new material fact. For an update, call this tool before writing the corresponding new or materially changed factual prose; scope an existing page to facts changed by the update rather than backfilling untouched prose. Style- or navigation-only edits need no Claims call. Claims currently support repository evidence only; do not invent repository evidence for connector-derived facts, and leave LangSmith-only facts unclaimed. Cite bounded language-agnostic line ranges as repo://path#L10-L24. Use repo://path only when the whole file is the evidence.",
+      description: RESOLVE_CLAIMS_DESCRIPTION,
       schema: {
         type: "object",
         properties: {
@@ -206,35 +217,11 @@ export function createClaimsTools(
         required: ["pages"],
         additionalProperties: false,
       } as const,
-      func: (input) =>
-        runClaimsTool(async () => {
-          const parsed = ResolveClaimsInputSchema.parse(input);
-          const operationsByPage = new Map<
-            string,
-            (typeof parsed.pages)[number]["operations"]
-          >();
-          for (const pageInput of parsed.pages) {
-            const page = normalizeClaimsToolPagePath(pageInput.page);
-            const operations = operationsByPage.get(page);
-            if (operations) {
-              operations.push(...pageInput.operations);
-            } else {
-              operationsByPage.set(page, [...pageInput.operations]);
-            }
-          }
-          return {
-            pages: await Promise.all(
-              [...operationsByPage].map(([page, operations]) =>
-                session.resolveClaims({ page, operations }),
-              ),
-            ),
-          };
-        }),
+      func: (input) => runClaimsTool(() => resolveClaims(session, input)),
     }),
     new DynamicStructuredTool({
       name: "inspect_claims",
-      description:
-        "Inspect material factual propositions without creating a write obligation. Pass ids from one or more OpenWiki Claims read notes for targeted cross-page inspection. Pass pages only as a fallback when complete page claim sets are needed. Pass exactly one selector; results are grouped by owning page.",
+      description: INSPECT_CLAIMS_DESCRIPTION,
       schema: {
         type: "object",
         properties: {
@@ -251,23 +238,63 @@ export function createClaimsTools(
         },
         additionalProperties: false,
       } as const,
-      func: (input) =>
-        runClaimsTool(() => {
-          const parsed = InspectClaimsInputSchema.parse(input);
-          return Promise.resolve({
-            pages: parsed.ids
-              ? session.inspectClaimsByIds(parsed.ids)
-              : [
-                  ...new Set(
-                    (parsed.pages ?? []).map(normalizeClaimsToolPagePath),
-                  ),
-                ].map((page) => {
-                  return { page, claims: session.inspectClaims(page) };
-                }),
-          });
-        }),
+      func: (input) => runClaimsTool(() => inspectClaims(session, input)),
     }),
   ];
+}
+
+/**
+ * Applies one validated cross-page Claims mutation through a run session.
+ *
+ * @param session - Run-scoped authoritative claim state.
+ * @param input - Untrusted Claims mutation payload.
+ * @returns Per-page mutation results in first-page order.
+ */
+export async function resolveClaims(
+  session: ClaimSession,
+  input: unknown,
+): Promise<unknown> {
+  const parsed = ResolveClaimsInputSchema.parse(input);
+  const operationsByPage = new Map<
+    string,
+    (typeof parsed.pages)[number]["operations"]
+  >();
+  for (const pageInput of parsed.pages) {
+    const page = normalizeClaimsToolPagePath(pageInput.page);
+    const operations = operationsByPage.get(page);
+    if (operations) {
+      operations.push(...pageInput.operations);
+    } else {
+      operationsByPage.set(page, [...pageInput.operations]);
+    }
+  }
+  return {
+    pages: await Promise.all(
+      [...operationsByPage].map(([page, operations]) =>
+        session.resolveClaims({ page, operations }),
+      ),
+    ),
+  };
+}
+
+/**
+ * Reads selected Claims through a run session without creating write debt.
+ *
+ * @param session - Run-scoped authoritative claim state.
+ * @param input - Untrusted Claims selector payload.
+ * @returns Selected Claims grouped by owning page.
+ */
+export function inspectClaims(session: ClaimSession, input: unknown): unknown {
+  const parsed = InspectClaimsInputSchema.parse(input);
+  return {
+    pages: parsed.ids
+      ? session.inspectClaimsByIds(parsed.ids)
+      : [...new Set((parsed.pages ?? []).map(normalizeClaimsToolPagePath))].map(
+          (page) => {
+            return { page, claims: session.inspectClaims(page) };
+          },
+        ),
+  };
 }
 
 /**
@@ -326,9 +353,7 @@ export function createClaimsDeleteFileTool(
  * @param operation - Parsed Claims operation to execute.
  * @returns Compact JSON for either success or a retryable input failure.
  */
-async function runClaimsTool(
-  operation: () => Promise<unknown>,
-): Promise<string> {
+async function runClaimsTool(operation: () => unknown): Promise<string> {
   try {
     return JSON.stringify(await operation());
   } catch (error) {

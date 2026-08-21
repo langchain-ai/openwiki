@@ -7,7 +7,7 @@ import { describe, expect, test } from "vitest";
 import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
-  removeTemporaryPlanFile,
+  removeTemporaryWorkingFiles,
 } from "../../src/agent/utils.ts";
 
 // These cover the branches of utils.ts that the sibling run-context,
@@ -90,7 +90,7 @@ describe("getUpdateNoopStatus degenerate cases", () => {
   });
 });
 
-describe("removeTemporaryPlanFile error handling", () => {
+describe("removeTemporaryWorkingFiles error handling", () => {
   test("propagates unexpected errors instead of swallowing them", async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-utils-plan-"));
 
@@ -101,7 +101,7 @@ describe("removeTemporaryPlanFile error handling", () => {
       await mkdir(path.join(cwd, "openwiki", "_plan.md"), { recursive: true });
 
       await expect(
-        removeTemporaryPlanFile(cwd, "repository"),
+        removeTemporaryWorkingFiles(cwd, "repository"),
       ).rejects.toThrow();
     } finally {
       await rm(cwd, { recursive: true, force: true });

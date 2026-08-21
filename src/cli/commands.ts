@@ -7,6 +7,15 @@ import {
   parseIngestionTarget,
   type IngestionTarget,
 } from "../ingestion/ingestion.js";
+import {
+  getHostTarget,
+  listHostTargets,
+} from "../integrations/install/registry.js";
+import type {
+  HostIntegrationScope,
+  HostTargetId,
+} from "../integrations/install/types.js";
+import { isValidHostId } from "../integrations/core/protocol.js";
 
 export type HelpRow = {
   label: string;
@@ -27,7 +36,75 @@ export type HelpContent = {
   developmentExamples: string[];
 };
 
+/**
+ * Parsed host-integration installation command.
+ */
+export interface IntegrationsCliCommand {
+  /**
+   * CLI dispatch discriminator.
+   */
+  kind: "integrations";
+
+  /**
+   * Registry operation requested by the user.
+   */
+  action: "install" | "list" | "uninstall";
+
+  /**
+   * Initial process exit code.
+   */
+  exitCode: 0;
+
+  /**
+   * Selected host, or `null` for the list action.
+   */
+  target: HostTargetId | null;
+
+  /**
+   * Ownership scope selected for the operation.
+   */
+  scope: HostIntegrationScope;
+
+  /**
+   * Optional project root supplied with `--project`.
+   *
+   * @default null - user scope is selected and the user's home is used.
+   */
+  projectRoot: string | null;
+
+  /**
+   * Whether install may replace unmanaged skill content.
+   */
+  force: boolean;
+}
+
+/**
+ * Parsed internal MCP server command.
+ */
+export interface McpCliCommand {
+  /**
+   * CLI dispatch discriminator.
+   */
+  kind: "mcp";
+
+  /**
+   * Initial process exit code.
+   */
+  exitCode: 0;
+
+  /**
+   * Host identifier written to run metadata.
+   */
+  host: string;
+}
+
+/**
+ * Host-integration commands added to the root CLI union.
+ */
+export type HostIntegrationCliCommand = IntegrationsCliCommand | McpCliCommand;
+
 export type CliCommand =
+  | HostIntegrationCliCommand
   | {
       kind: "auth";
       action: "configure" | "list" | "oauth" | "tools";
@@ -91,6 +168,14 @@ export type OpenWikiRunModeSource = "default" | "option" | "positional";
 export function parseCommand(argv: string[]): CliCommand {
   if (argv[0] === "--help" || argv[0] === "-h") {
     return { kind: "help", exitCode: 0 };
+  }
+
+  if (argv[0] === "integrations") {
+    return parseIntegrationsCommand(argv.slice(1));
+  }
+
+  if (argv[0] === "mcp") {
+    return parseMcpCommand(argv.slice(1));
   }
 
   if (argv[0] === "auth") {
@@ -445,6 +530,208 @@ export function parseCommand(argv: string[]): CliCommand {
   return parseRunCommand(argv, "code", "default");
 }
 
+/**
+ * Parses one registry-driven host integration command.
+ *
+ * @param argv - Arguments following the `integrations` command.
+ * @returns Parsed integration command or a stable CLI error.
+ */
+function parseIntegrationsCommand(argv: string[]): CliCommand {
+  const action = argv[0];
+  if (action !== "install" && action !== "list" && action !== "uninstall") {
+    return integrationUsageError();
+  }
+
+  let target: HostTargetId | null = null;
+  let argumentIndex = 1;
+  if (action !== "list") {
+    const rawTarget = argv[1];
+    if (!rawTarget || rawTarget.startsWith("-")) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Integration target is required. Supported targets: ${formatSupportedHostTargets()}.`,
+      };
+    }
+    const resolvedTarget = getHostTarget(rawTarget);
+    if (!resolvedTarget) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Unknown integration target: ${rawTarget}. Supported targets: ${formatSupportedHostTargets()}.`,
+      };
+    }
+    target = resolvedTarget.id;
+    argumentIndex = 2;
+  }
+
+  let force = false;
+  let scope: HostIntegrationScope = "user";
+  let projectRoot: string | null = null;
+  let sawProject = false;
+  const options = argv.slice(argumentIndex);
+  for (let index = 0; index < options.length; index += 1) {
+    const arg = options[index];
+    if (arg === "--force") {
+      if (action !== "install") {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--force is only valid for integrations install.",
+        };
+      }
+      if (force) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--force may only be specified once.",
+        };
+      }
+      force = true;
+      continue;
+    }
+
+    if (arg === "--project" || arg.startsWith("--project=")) {
+      if (sawProject) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--project may only be specified once.",
+        };
+      }
+      sawProject = true;
+      scope = "project";
+      if (arg.startsWith("--project=")) {
+        const value = arg.slice("--project=".length);
+        if (!value) {
+          return {
+            kind: "error",
+            exitCode: 1,
+            message: "--project= requires a path.",
+          };
+        }
+        projectRoot = value;
+        continue;
+      }
+
+      const value = options[index + 1];
+      if (value && !value.startsWith("-")) {
+        projectRoot = value;
+        index += 1;
+      } else {
+        projectRoot = ".";
+      }
+      continue;
+    }
+
+    if (arg.startsWith("-")) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Unknown option for integrations: ${arg}`,
+      };
+    }
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "Project paths must follow --project.",
+    };
+  }
+
+  return {
+    kind: "integrations",
+    action,
+    exitCode: 0,
+    target,
+    scope,
+    projectRoot,
+    force,
+  };
+}
+
+/**
+ * Parses the internal rootless MCP server command.
+ *
+ * @param argv - Arguments following the `mcp` command.
+ * @returns Parsed MCP command or a stable CLI error.
+ */
+function parseMcpCommand(argv: string[]): CliCommand {
+  let host = "unknown";
+  let sawHost = false;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--host" || arg.startsWith("--host=")) {
+      if (sawHost) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--host may only be specified once.",
+        };
+      }
+      const value =
+        arg === "--host" ? argv[index + 1] : arg.slice("--host=".length);
+      if (!value || value.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--host requires a host identifier.",
+        };
+      }
+      if (!isValidHostId(value)) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message:
+            "--host must contain 1-64 lowercase letters, digits, or hyphens.",
+        };
+      }
+      host = value;
+      sawHost = true;
+      if (arg === "--host") index += 1;
+      continue;
+    }
+
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: arg.startsWith("-")
+        ? `Unknown option for mcp: ${arg}`
+        : `Unexpected argument for mcp: ${arg}`,
+    };
+  }
+
+  return { kind: "mcp", exitCode: 0, host };
+}
+
+/**
+ * Builds the registry-derived integration usage error.
+ *
+ * @returns CLI error containing every currently supported host target.
+ */
+function integrationUsageError(): CliCommand {
+  return {
+    kind: "error",
+    exitCode: 1,
+    message:
+      "Usage: openwiki integrations list [--project [path]] | " +
+      `install <${formatSupportedHostTargets("|")}> [--force] [--project [path]] | ` +
+      `uninstall <${formatSupportedHostTargets("|")}> [--project [path]]`,
+  };
+}
+
+/**
+ * Formats supported host IDs directly from the installation registry.
+ *
+ * @param separator - Text placed between host identifiers.
+ * @returns Registry host IDs in stable display order.
+ */
+function formatSupportedHostTargets(separator = ", "): string {
+  return listHostTargets()
+    .map((target) => target.id)
+    .join(separator);
+}
+
 function parseRunCommand(
   argv: string[],
   initialMode: OpenWikiRunMode,
@@ -771,6 +1058,24 @@ export function commandEmitsTelemetry(command: CliCommand): boolean {
   );
 }
 
+/**
+ * True when a command needs credentials from OpenWiki's private environment.
+ * Host integration and MCP commands deliberately use the host's authenticated
+ * session and never load OpenWiki model credentials.
+ *
+ * @param command - Parsed command to inspect.
+ * @returns Whether the CLI should load the OpenWiki environment.
+ */
+export function commandLoadsEnvironment(command: CliCommand): boolean {
+  return (
+    (command.kind === "run" && !command.dryRun) ||
+    command.kind === "auth" ||
+    command.kind === "cron" ||
+    command.kind === "ingest" ||
+    command.kind === "ngrok"
+  );
+}
+
 export const helpContent: HelpContent = {
   title: "OpenWiki",
   description:
@@ -794,6 +1099,9 @@ export const helpContent: HelpContent = {
     "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
     "openwiki visualize [path] [--port <port>] [--no-open] [--export <dir>]",
+    "openwiki integrations list [--project [path]]",
+    `openwiki integrations install <${formatSupportedHostTargets("|")}> [--force] [--project [path]]`,
+    `openwiki integrations uninstall <${formatSupportedHostTargets("|")}> [--project [path]]`,
   ],
   commands: [
     {
@@ -858,6 +1166,21 @@ export const helpContent: HelpContent = {
       label: "openwiki visualize [path] [--export <dir>]",
       description:
         "Serve a live graph and reader, or export a static graph for web hosting (defaults to ./openwiki).",
+    },
+    {
+      label: "openwiki integrations list [--project [path]]",
+      description:
+        "Show user-level OpenWiki installation status, or project status with --project.",
+    },
+    {
+      label: "openwiki integrations install <host> [--project [path]]",
+      description:
+        "Install the OpenWiki skill and MCP config globally, or into one project with --project.",
+    },
+    {
+      label: "openwiki integrations uninstall <host> [--project [path]]",
+      description:
+        "Safely remove a global integration, or a project integration with --project.",
     },
   ],
   options: [
@@ -954,6 +1277,9 @@ export const helpContent: HelpContent = {
     "openwiki visualize",
     "openwiki visualize openwiki --port 4400 --no-open",
     "openwiki visualize openwiki --export docs/openwiki-visualizer",
+    "openwiki integrations list",
+    "openwiki integrations install codex",
+    "openwiki integrations uninstall codex",
   ],
   developmentExamples: ["openwiki --dry-run"],
 };

@@ -16,6 +16,7 @@ import {
   migrateWikiToOkf,
   synchronizeWikiIndexes,
 } from "../../src/okf/index-sync.ts";
+import { describeErrorForTelemetry } from "../../src/telemetry/index.ts";
 
 // A flowchart node named `end` is reserved, so this fence fails to parse.
 const BROKEN_MERMAID = [
@@ -73,6 +74,23 @@ async function runAfterAgent(
       : middleware.afterAgent?.hook;
   expect(hook).toBeTypeOf("function");
   await (hook as () => Promise<unknown>)();
+}
+
+/**
+ * Captures the error from an operation expected to reject.
+ *
+ * @param task - Operation whose failure should be inspected.
+ * @returns Rejected value from the operation.
+ */
+async function captureError(task: () => Promise<unknown>): Promise<unknown> {
+  let caught: unknown;
+  try {
+    await task();
+  } catch (error) {
+    caught = error;
+  }
+  expect(caught).toBeDefined();
+  return caught;
 }
 
 describe("synchronizeWikiIndexes", () => {
@@ -485,6 +503,21 @@ describe("createOpenWikiIndexMiddleware beforeAgent", () => {
     );
     expect(legacy).toContain('type: "Referenca"');
   });
+
+  test("preserves migration telemetry classification", async () => {
+    const { backend } = await setup();
+    await backend.write("/openwiki/legacy.md", "# Legacy\n\nBody.\n");
+    vi.spyOn(backend, "edit").mockResolvedValue({ error: "disk full" });
+
+    const middleware = createOpenWikiIndexMiddleware(backend, "repository");
+    const error = await captureError(() => runBeforeAgent(middleware));
+
+    expect(describeErrorForTelemetry(error)).toMatchObject({
+      errorClass: "okf_error",
+      errorDetail: "migrate",
+      errorStage: "build",
+    });
+  });
 });
 
 describe("createOpenWikiIndexMiddleware afterAgent", () => {
@@ -572,6 +605,30 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
       },
     ]);
     expect(page).not.toContain("generated:");
+  });
+
+  test("preserves finalization telemetry classification", async () => {
+    const { backend } = await setup();
+    await backend.write(
+      "/openwiki/quickstart.md",
+      document("Quickstart", "Start here."),
+    );
+    const middleware = createOpenWikiIndexMiddleware(backend, "repository");
+    await runBeforeAgent(middleware);
+
+    const realWrite = backend.write.bind(backend);
+    vi.spyOn(backend, "write").mockImplementation(async (filePath, content) =>
+      filePath === "/openwiki/index.md"
+        ? { error: "disk full" }
+        : realWrite(filePath, content),
+    );
+    const error = await captureError(() => runAfterAgent(middleware));
+
+    expect(describeErrorForTelemetry(error)).toMatchObject({
+      errorClass: "okf_error",
+      errorDetail: "index_sync",
+      errorStage: "finalize",
+    });
   });
 });
 
