@@ -1,0 +1,21 @@
+test/agent/docs-only-backend.test.ts
+  s_109cbe11c8136c::t_8c853c726b67f6 45,50-63,98-129
+src/agent/docs-only-backend.ts
+  s_109cbe11c8136c::t_b3d132bc589734 228,494-503,505-508,513-514,654-658,663-669,678,680-684
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "4650f0dcb5756f854af2c015588d6767e4b2f152",
+  "prompts": {},
+  "sessions": {
+    "s_109cbe11c8136c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c3f8d7f4-6cc1-41e6-ae06-39bd7af25271",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

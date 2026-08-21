@@ -1,0 +1,19 @@
+.changeset/heavy-donkeys-rebuild.md
+  s_109cbe11c8136c::t_75f8487e660541 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "a78608c64a4a8970d3781de6754514e4ab165e9b",
+  "prompts": {},
+  "sessions": {
+    "s_109cbe11c8136c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c3f8d7f4-6cc1-41e6-ae06-39bd7af25271",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
