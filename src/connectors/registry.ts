@@ -10,14 +10,17 @@ import type { ConnectorId, ConnectorRuntime } from "./types.js";
 
 export const CONNECTOR_IDS = [
   "custom-mcp",
+  "github",
   "git-repo",
-  "notion",
-  "x",
   "google",
-  "web-search",
   "hackernews",
   "langsmith",
+  "newrelic",
+  "notion",
+  "sentry",
   "slack",
+  "web-search",
+  "x",
 ] as const satisfies readonly ConnectorId[];
 
 export function createConnectorRegistry(): Record<
@@ -34,16 +37,40 @@ export function createConnectorRegistry(): Record<
       // Different MCP servers need different credentials, so none are hard-required.
       requiredEnv: [],
     }),
+    github: createMcpConnector({
+      description:
+        "GitHub connector backed by a read-only MCP server. Configure the transport in ~/.openwiki/connectors/github/config.json to ingest issues, pull requests, and repository activity.",
+      displayName: "GitHub",
+      id: "github",
+      // Secrets are referenced by env var name in transport.headers / transport.env.
+      requiredEnv: [],
+    }),
     "git-repo": createGitRepoConnector(),
     google: createGmailConnector(),
     hackernews: createHackerNewsConnector(),
     langsmith: createLangSmithConnector(),
+    newrelic: createMcpConnector({
+      description:
+        "New Relic connector backed by a read-only MCP server. Configure the transport in ~/.openwiki/connectors/newrelic/config.json to ingest alerts, APM metrics, and error traces.",
+      displayName: "New Relic",
+      id: "newrelic",
+      // Secrets are referenced by env var name in transport.headers / transport.env.
+      requiredEnv: [],
+    }),
     notion: createMcpConnector({
       description:
         "Notion connector backed by the hosted Notion MCP server or another configured read-only MCP server.",
       displayName: "Notion",
       id: "notion",
       requiredEnv: ["OPENWIKI_NOTION_MCP_ACCESS_TOKEN"],
+    }),
+    sentry: createMcpConnector({
+      description:
+        "Sentry connector backed by a read-only MCP server. Configure the transport in ~/.openwiki/connectors/sentry/config.json to ingest unresolved issues, events, and release health.",
+      displayName: "Sentry",
+      id: "sentry",
+      // Secrets are referenced by env var name in transport.headers / transport.env.
+      requiredEnv: [],
     }),
     slack: createSlackConnector(),
     "web-search": createWebSearchConnector(),
