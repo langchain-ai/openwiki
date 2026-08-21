@@ -1,0 +1,19 @@
+test/integrations/cli-dogfood.test.ts
+  s_f1f2f955bc806f::t_cf2e829b79e953 2,15-19,131-157,159-269
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "34f3a8e2dfbb9bffb6c2525cd8adec8c4d39d25f",
+  "prompts": {},
+  "sessions": {
+    "s_f1f2f955bc806f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a021ea-a30d-78f2-a76b-828652d55943",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

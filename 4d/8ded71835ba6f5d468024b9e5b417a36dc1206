@@ -1,0 +1,43 @@
+src/agent/prompts/code.ts
+  s_8873f54eb9a7d6::t_2ef473a96b4f5e 133,139,143,146
+  s_f623db688a8d72::t_e3fdab8055e7f6 156,158-161
+test/agent/prompt.test.ts
+  s_f623db688a8d72::t_0cf8c0081834f2 391-394
+  s_8873f54eb9a7d6::t_65982e2eb88148 390
+src/agent/wiki-qa-subagents.ts
+  s_f623db688a8d72::t_ef9f624f865365 7,34
+src/agent/skeleton-critic.ts
+  s_f623db688a8d72::t_896bf03cae63a4 5,48-53,55,57
+src/agent/page-author.ts
+  s_8873f54eb9a7d6::t_16dccf3419d08c 19-20,36-39,79
+  s_f623db688a8d72::t_ef9f624f865365 76
+test/agent/claims-agent-integration.test.ts
+  s_f623db688a8d72::t_54388eaa6c4eed 137-139
+  s_f623db688a8d72::t_0cf8c0081834f2 182-183
+src/agent/authoring-pool.ts
+  s_8873f54eb9a7d6::t_2e4ff9e68589da 309
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "4d8ded71835ba6f5d468024b9e5b417a36dc1206",
+  "prompts": {},
+  "sessions": {
+    "s_8873f54eb9a7d6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a020d6-7480-7f92-a337-30b9a4659758",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    },
+    "s_f623db688a8d72": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a020d9-ba5c-7db2-a50e-232a207546e7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
