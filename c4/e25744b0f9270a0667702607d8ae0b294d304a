@@ -1,0 +1,34 @@
+src/scheduling/schedules.ts
+  s_04773fdacd6274::t_1a2c5cf943ba7f 10,12,171,183-185,817,823,834-841,853
+test/openwiki-home.test.ts
+  s_04773fdacd6274::t_1a2c5cf943ba7f 1,93-124
+  s_04773fdacd6274::t_812c9570cfd9a3 125
+test/scheduling/schedules-launchd.test.ts
+  s_04773fdacd6274::t_1a2c5cf943ba7f 65,122-123,233,243-258
+  s_04773fdacd6274::t_4aa9097506760e 259-260
+test/cli/diagnostics/auth-fix.test.ts
+  s_04773fdacd6274::t_2351191b9c3e4a 68
+  s_04773fdacd6274::t_1a2c5cf943ba7f 1-2,10-17,56-59,62-67,69-72
+  s_04773fdacd6274::t_012b583bc055c4 60-61
+  s_04773fdacd6274::t_35e7c50c55804d 73
+README.md
+  s_04773fdacd6274::t_1a2c5cf943ba7f 120-129,174
+src/cli/diagnostics/auth-fix.ts
+  s_04773fdacd6274::t_1a2c5cf943ba7f 7,26,77,85,91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "c4e25744b0f9270a0667702607d8ae0b294d304a",
+  "prompts": {},
+  "sessions": {
+    "s_04773fdacd6274": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02521-1d53-7a21-b190-dd67905d6c20",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
