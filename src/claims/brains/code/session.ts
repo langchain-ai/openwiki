@@ -49,6 +49,16 @@ export interface ClaimSessionOptions {
   orphanPages: string[];
 
   /**
+   * Current Markdown pages with no non-empty Claims set.
+   *
+   * The marker is lazy, in-memory guidance only; it does not create a sidecar
+   * or a finalization obligation.
+   *
+   * @default []
+   */
+  ungroundedPages?: string[];
+
+  /**
    * Identifier factory used for newly added claims.
    *
    * @default A `claim_`-prefixed cryptographically random UUID.
@@ -121,6 +131,11 @@ export class ClaimSession {
   private readonly orphanPages: string[];
 
   /**
+   * Current pages that should receive lazy first-Claims guidance when read.
+   */
+  private readonly ungroundedPages: Set<string>;
+
+  /**
    * OpenWiki-owned identifier factory.
    */
   private readonly createClaimId: () => string;
@@ -135,6 +150,9 @@ export class ClaimSession {
     this.orphanPages = [
       ...new Set(options.orphanPages.map(normalizeWikiPagePath)),
     ].sort((left, right) => left.localeCompare(right));
+    this.ungroundedPages = new Set(
+      (options.ungroundedPages ?? []).map(normalizeWikiPagePath),
+    );
     this.createClaimId =
       options.createClaimId ??
       (() => `claim_${randomUUID().replaceAll("-", "")}`);
@@ -161,6 +179,11 @@ export class ClaimSession {
           .filter((issue) => normalizeWikiPagePath(issue.page) === page)
           .map(cloneGroundingIssue),
       });
+      if (persisted.claims.length === 0) {
+        this.ungroundedPages.add(page);
+      } else {
+        this.ungroundedPages.delete(page);
+      }
     }
   }
 
@@ -195,6 +218,11 @@ export class ClaimSession {
       this.assertClaimOwnershipAvailable(page, nextClaims);
       this.replaceClaimOwnership(page, previousClaims, nextClaims);
       state.claims = nextClaims;
+      if (nextClaims.length === 0) {
+        this.ungroundedPages.add(page);
+      } else {
+        this.ungroundedPages.delete(page);
+      }
       const allocatedIds = nextClaims
         .map(({ id }) => id)
         .filter((id) => !existingIds.has(id));
@@ -298,13 +326,16 @@ export class ClaimSession {
   getReadNote(pageInput: string): string | undefined {
     const page = normalizeWikiPagePath(pageInput);
     const issues = this.pages.get(page)?.issues ?? [];
-    if (issues.length === 0) {
-      return undefined;
+    if (issues.length > 0) {
+      const summary = issues
+        .map((issue) => `${issue.claimId} (${issue.kind})`)
+        .join(", ");
+      return `[OpenWiki Claims: ${summary}. Inspect and resolve only claims relevant to this task; this note is not part of the file.]`;
     }
-    const summary = issues
-      .map((issue) => `${issue.claimId} (${issue.kind})`)
-      .join(", ");
-    return `[OpenWiki Claims: ${summary}. Inspect and resolve only claims relevant to this task; this note is not part of the file.]`;
+    if (this.ungroundedPages.has(page)) {
+      return "[OpenWiki Claims: this page has no Claims yet. Before adding or materially changing factual prose, call resolve_claims for only the facts introduced or changed by this update, then write the page. Do not backfill unrelated existing prose. Style- or navigation-only edits require no Claims call. This note is not part of the file.]";
+    }
+    return undefined;
   }
 
   /**
@@ -334,6 +365,7 @@ export class ClaimSession {
     state.deleted = true;
     state.dirty = false;
     state.issues = [];
+    this.ungroundedPages.delete(page);
   }
 
   /**

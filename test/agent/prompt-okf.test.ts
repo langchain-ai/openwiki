@@ -2,6 +2,15 @@ import { describe, expect, test } from "vitest";
 import { createSystemPrompt } from "../../src/agent/prompt.ts";
 
 describe("createSystemPrompt OKF guidance", () => {
+  test("does not emit the retired OpenWiki producer extension", () => {
+    for (const command of ["chat", "init", "update"] as const) {
+      const prompt = createSystemPrompt(command, "repository");
+      expect(prompt).not.toContain("<openwiki_extension>");
+      expect(prompt).not.toContain("openwiki.roles");
+      expect(prompt).not.toContain("change_kinds:");
+    }
+  });
+
   test("keeps init requirements compact and update preservation explicit", () => {
     const init = createSystemPrompt("init", "repository");
     const update = createSystemPrompt("update", "repository");

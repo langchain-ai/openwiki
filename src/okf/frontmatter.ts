@@ -20,9 +20,12 @@ const OKF_STRING_FIELDS = [
 const OKF_STATUS_VALUES = ["draft", "stable", "deprecated"];
 
 /**
- * Matches the absolute `YYYY-MM-DD` date `stale_after` requires (§5.5).
+ * Matches the ISO 8601 datetime shape OKF requires for timestamp-valued keys.
+ * A trailing `Z` or numeric offset is mandatory so freshness comparisons never
+ * depend on a consumer's local timezone.
  */
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/u;
+const ISO_DATETIME_WITH_OFFSET =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-](\d{2}):(\d{2}))$/u;
 
 /**
  * Extension field flagging front matter OpenWiki derived deterministically.
@@ -190,7 +193,7 @@ function validateTrustFamilies(
     issues.push(
       issue(
         "invalid_generated",
-        "Field `generated` must be a mapping with a non-empty string `by` (actor) and an optional string `at` (ISO 8601 datetime).",
+        "Field `generated` must be a mapping with a non-empty string `by` (actor) and an optional `at` ISO 8601 datetime with an explicit UTC offset.",
       ),
     );
   }
@@ -203,7 +206,7 @@ function validateTrustFamilies(
       issues.push(
         issue(
           "invalid_verified",
-          "Field `verified` must be a `{by, at}` mapping or a YAML list of them, each with a non-empty string `by` (actor).",
+          "Field `verified` must be a `{by, at}` mapping or a YAML list of them, each with a non-empty string `by` (actor) and any `at` value as an ISO 8601 datetime with an explicit UTC offset.",
         ),
       );
     }
@@ -237,12 +240,12 @@ function validateTrustFamilies(
   if (
     Object.hasOwn(fields, "stale_after") &&
     (typeof fields.stale_after !== "string" ||
-      !ISO_DATE.test(fields.stale_after))
+      !isIsoDateTimeWithOffset(fields.stale_after))
   ) {
     issues.push(
       issue(
         "invalid_stale_after",
-        "Field `stale_after` must be an absolute `YYYY-MM-DD` date.",
+        "Field `stale_after` must be an ISO 8601 datetime with an explicit UTC offset.",
       ),
     );
   }
@@ -250,14 +253,60 @@ function validateTrustFamilies(
 
 /**
  * Narrows a value to an OKF `{by, at}` event: a mapping whose `by` is a
- * non-empty actor string and whose `at`, when present, is a non-empty string.
+ * non-empty actor string and whose `at`, when present, is an absolute ISO 8601
+ * datetime.
  */
 function isActorEvent(value: unknown): boolean {
   return (
     isRecord(value) &&
     isNonEmptyString(value.by) &&
-    (!Object.hasOwn(value, "at") || isNonEmptyString(value.at))
+    (!Object.hasOwn(value, "at") ||
+      (isNonEmptyString(value.at) && isIsoDateTimeWithOffset(value.at)))
   );
+}
+
+/**
+ * Validates an ISO 8601 datetime with a required UTC offset and real calendar
+ * components rather than accepting regex-shaped but impossible timestamps.
+ */
+function isIsoDateTimeWithOffset(value: string): boolean {
+  const match = ISO_DATETIME_WITH_OFFSET.exec(value);
+  if (!match) return false;
+
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText] =
+    match;
+  const offsetHourText = match[7];
+  const offsetMinuteText = match[8];
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+  const offsetHour = offsetHourText === undefined ? 0 : Number(offsetHourText);
+  const offsetMinute =
+    offsetMinuteText === undefined ? 0 : Number(offsetMinuteText);
+
+  return (
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= daysInMonth(year, month) &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    offsetHour <= 23 &&
+    offsetMinute <= 59
+  );
+}
+
+/** Returns the number of days in one Gregorian calendar month. */
+function daysInMonth(year: number, month: number): number {
+  if (month === 2) {
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    return leap ? 29 : 28;
+  }
+  return [4, 6, 9, 11].includes(month) ? 30 : 31;
 }
 
 /**

@@ -24,8 +24,8 @@ async function setup() {
 /**
  * Mirrors the stable public ID expected for one projected resource.
  */
-function claimSourceId(resource: string): string {
-  return `openwiki-claims-${createHash("sha256").update(resource).digest("hex").slice(0, 24)}`;
+function openWikiSourceId(resource: string): string {
+  return `openwiki-source-${createHash("sha256").update(resource).digest("hex").slice(0, 24)}`;
 }
 
 describe("synchronizeClaimSources", () => {
@@ -54,7 +54,12 @@ describe("synchronizeClaimSources", () => {
       new Map([
         [
           "/openwiki/page.md",
-          ["repo://src/z.ts#L4-L8", "repo://src/a.ts", "repo://src/a.ts"],
+          [
+            "repo://src/z.ts#L4-L8",
+            "repo://src/z.ts#L20-L22",
+            "repo://src/a.ts",
+            "repo://src/a.ts#L1-L2",
+          ],
         ],
       ]),
     );
@@ -71,12 +76,12 @@ describe("synchronizeClaimSources", () => {
         resource: "https://example.com/policy",
       },
       {
-        id: claimSourceId("repo://src/a.ts"),
+        id: openWikiSourceId("repo://src/a.ts"),
         resource: "repo://src/a.ts",
       },
       {
-        id: claimSourceId("repo://src/z.ts#L4-L8"),
-        resource: "repo://src/z.ts#L4-L8",
+        id: openWikiSourceId("repo://src/z.ts"),
+        resource: "repo://src/z.ts",
       },
     ]);
     expect(content).toContain(
@@ -89,7 +94,7 @@ describe("synchronizeClaimSources", () => {
     const { backend, rootDir } = await setup();
     await backend.write(
       "/openwiki/page.md",
-      "---\ntype: Reference\nsources:\n  - id: manual\n    resource: repo://manual.ts\n  - id: openwiki-claims-old\n    resource: repo://old.ts\n---\n\n# Page\n",
+      "---\ntype: Reference\nsources:\n  - id: manual\n    resource: repo://manual.ts\n  - id: openwiki-source-old\n    resource: repo://old.ts\n---\n\n# Page\n",
     );
     const resources = new Map([
       ["/openwiki/page.md", ["repo://new.ts"] as const],

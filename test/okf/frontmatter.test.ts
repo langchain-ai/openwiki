@@ -171,7 +171,7 @@ describe("setOkfSources", () => {
       '---\ntype: Reference\ngenerated: {by: "openwiki/0.3.3"}\ncustom: keep\n---\n\n# Page\n',
       [
         {
-          id: "openwiki-claims-one",
+          id: "openwiki-source-one",
           resource: "repo://src/page.ts#L1-L4",
         },
       ],
@@ -182,7 +182,7 @@ describe("setOkfSources", () => {
     );
     expect(parseFrontmatterFields(result)?.sources).toEqual([
       {
-        id: "openwiki-claims-one",
+        id: "openwiki-source-one",
         resource: "repo://src/page.ts#L1-L4",
       },
     ]);

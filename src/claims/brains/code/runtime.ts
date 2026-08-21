@@ -69,6 +69,7 @@ export async function prepareClaimsRuntime(
       persisted: new Map(),
       issues: [],
       orphanPages: await store.discoverSidecarPages(),
+      ungroundedPages: [],
     });
     return {
       session,
@@ -95,6 +96,7 @@ export async function prepareClaimsRuntime(
     persisted: preflight.persisted,
     issues: preflight.issues,
     orphanPages: preflight.orphanPages,
+    ungroundedPages: preflight.ungroundedPages,
   });
   return {
     session,

@@ -2,13 +2,17 @@ import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import type { BackendProtocolV2 } from "deepagents";
 import type { OpenWikiOutputMode } from "../agent/types.js";
+import {
+  formatRepositoryEvidenceResource,
+  parseRepositoryEvidenceResource,
+} from "../claims/evidence/repository/resource.js";
 import { parseFrontmatterFields, setOkfSources } from "./frontmatter.js";
 import { listWikiConceptPaths } from "./index-sync.js";
 
 /**
  * Stable prefix identifying source entries owned by the Claims projection.
  */
-const CLAIM_SOURCE_ID_PREFIX = "openwiki-claims-";
+const OPENWIKI_SOURCE_ID_PREFIX = "openwiki-source-";
 
 /**
  * Page-local repository evidence resources keyed by virtual concept path.
@@ -16,7 +20,7 @@ const CLAIM_SOURCE_ID_PREFIX = "openwiki-claims-";
 export type ClaimEvidenceResources = ReadonlyMap<string, readonly string[]>;
 
 /**
- * Projects page-owned Claims evidence into OKF `sources` front matter.
+ * Projects page-owned Claims evidence files into OKF `sources` front matter.
  *
  * Existing producer-authored source entries are retained. OpenWiki-owned
  * entries receive deterministic IDs derived from their resource, allowing a
@@ -66,20 +70,29 @@ function mergeClaimSources(
   current: readonly Record<string, unknown>[],
   resources: readonly string[],
 ): Record<string, unknown>[] {
-  const retained = current.filter((entry) => !isClaimSource(entry));
+  const retained = current.filter((entry) => !isOpenWikiSource(entry));
   const retainedResources = new Set(
     retained.flatMap((entry) =>
       typeof entry.resource === "string" ? [entry.resource] : [],
     ),
   );
-  const projected = [...new Set(resources)]
+  const projected = [...new Set(resources.map(toWholeFileRepositoryResource))]
     .sort((left, right) => left.localeCompare(right))
     .filter((resource) => !retainedResources.has(resource))
     .map((resource) => ({
-      id: claimSourceId(resource),
+      id: openWikiSourceId(resource),
       resource,
     }));
   return [...retained, ...projected];
+}
+
+/**
+ * Keeps precise line ranges in Claims state while exposing page-level source
+ * files through OKF provenance.
+ */
+function toWholeFileRepositoryResource(resource: string): string {
+  const parsed = parseRepositoryEvidenceResource(resource);
+  return formatRepositoryEvidenceResource({ path: parsed.path });
 }
 
 /**
@@ -103,21 +116,22 @@ function readSourceEntries(content: string): Record<string, unknown>[] {
 /**
  * Identifies one source entry emitted by this Claims projection.
  */
-function isClaimSource(entry: Record<string, unknown>): boolean {
+function isOpenWikiSource(entry: Record<string, unknown>): boolean {
   return (
-    typeof entry.id === "string" && entry.id.startsWith(CLAIM_SOURCE_ID_PREFIX)
+    typeof entry.id === "string" &&
+    entry.id.startsWith(OPENWIKI_SOURCE_ID_PREFIX)
   );
 }
 
 /**
  * Derives a stable, portable source ID suitable for later footnote joins.
  */
-function claimSourceId(resource: string): string {
+function openWikiSourceId(resource: string): string {
   const digest = createHash("sha256")
     .update(resource)
     .digest("hex")
     .slice(0, 24);
-  return `${CLAIM_SOURCE_ID_PREFIX}${digest}`;
+  return `${OPENWIKI_SOURCE_ID_PREFIX}${digest}`;
 }
 
 /**

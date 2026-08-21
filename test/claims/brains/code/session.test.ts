@@ -69,6 +69,7 @@ describe("ClaimSession", () => {
   function createSession(options?: {
     issues?: ConstructorParameters<typeof ClaimSession>[0]["issues"];
     orphanPages?: string[];
+    ungroundedPages?: string[];
     resolver?: EvidenceResolver;
     createClaimId?: () => string;
   }): ClaimSession {
@@ -84,6 +85,7 @@ describe("ClaimSession", () => {
       persisted: new Map([[page, persisted([CLAIM])]]),
       issues: options?.issues ?? [],
       orphanPages: options?.orphanPages ?? [],
+      ungroundedPages: options?.ungroundedPages,
       createClaimId: options?.createClaimId,
     });
   }
@@ -253,6 +255,57 @@ describe("ClaimSession", () => {
     expect(session.inspectClaims("/openwiki/page.md")[0]?.evidence).toEqual([
       "memory://feature",
     ]);
+  });
+
+  test("surfaces missing Claims lazily until the page gains a Claim", async () => {
+    const page = "/openwiki/ungrounded.md";
+    const session = new ClaimSession({
+      resolver: createResolver(
+        new Map([
+          ["memory://feature", resolved("memory://feature", "revision:1")],
+        ]),
+      ),
+      persisted: new Map(),
+      issues: [],
+      orphanPages: [],
+      ungroundedPages: [page],
+      createClaimId: () => "claim_new",
+    });
+
+    expect(session.getReadNote(page)).toContain("this page has no Claims yet");
+    expect(session.getReadNote(page)).toContain(
+      "only the facts introduced or changed by this update",
+    );
+    expect(session.getReadNote(page)).toContain(
+      "Do not backfill unrelated existing prose",
+    );
+
+    await session.resolveClaims({
+      page,
+      operations: [
+        {
+          op: "add",
+          statement: "The feature exists.",
+          evidence: [{ resource: "memory://feature" }],
+        },
+      ],
+    });
+
+    expect(session.getReadNote(page)).toBeUndefined();
+  });
+
+  test("treats an empty persisted Claims set as ungrounded", async () => {
+    const page = "/openwiki/empty.md";
+    const session = new ClaimSession({
+      resolver: createResolver(new Map()),
+      persisted: new Map([[page, persisted([])]]),
+      issues: [],
+      orphanPages: [],
+    });
+
+    expect(session.getReadNote(page)).toContain("this page has no Claims yet");
+    await session.recordDeletion(page);
+    expect(session.getReadNote(page)).toBeUndefined();
   });
 
   test("returns compact operation results including allocated IDs", async () => {

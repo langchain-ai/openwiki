@@ -38,6 +38,16 @@ function createSession(): ClaimSession {
   });
 }
 
+function createUngroundedSession(): ClaimSession {
+  return new ClaimSession({
+    resolver: { resolve: () => Promise.resolve(null) },
+    persisted: new Map(),
+    issues: [],
+    orphanPages: [],
+    ungroundedPages: ["/openwiki/page.md"],
+  });
+}
+
 async function invokeMiddleware(
   middleware: ClaimsMiddleware,
   toolName: string,
@@ -80,6 +90,24 @@ describe("createClaimsReadNoteMiddleware", () => {
     expect(message.content).toContain("# Page");
     expect(message.content).toContain("claim_stale (stale)");
     expect(message.content).toContain("not part of the file");
+  });
+
+  test("appends lazy guidance when a read page has no Claims", async () => {
+    const middleware = createClaimsReadNoteMiddleware(
+      createUngroundedSession(),
+    );
+    const message = new ToolMessage({
+      content: "# Page\n",
+      tool_call_id: "read-1",
+    });
+
+    await invokeMiddleware(middleware, "read_file", "/openwiki/page.md", () =>
+      Promise.resolve(message),
+    );
+
+    expect(message.content).toContain("this page has no Claims yet");
+    expect(message.content).toContain("Before");
+    expect(message.content).toContain("Do not backfill");
   });
 
   test("supports Command-like read results", async () => {

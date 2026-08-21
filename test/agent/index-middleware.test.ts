@@ -32,8 +32,8 @@ function document(title: string, description: string): string {
 /**
  * Mirrors the stable public ID expected for one projected resource.
  */
-function claimSourceId(resource: string): string {
-  return `openwiki-claims-${createHash("sha256").update(resource).digest("hex").slice(0, 24)}`;
+function openWikiSourceId(resource: string): string {
+  return `openwiki-source-${createHash("sha256").update(resource).digest("hex").slice(0, 24)}`;
 }
 
 async function setup(outputMode: "local-wiki" | "repository" = "repository") {
@@ -563,12 +563,12 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(parseFrontmatterFields(page)?.sources).toEqual([
       {
-        id: claimSourceId("repo://package.json"),
+        id: openWikiSourceId("repo://package.json"),
         resource: "repo://package.json",
       },
       {
-        id: claimSourceId("repo://src/page.ts#L1-L8"),
-        resource: "repo://src/page.ts#L1-L8",
+        id: openWikiSourceId("repo://src/page.ts"),
+        resource: "repo://src/page.ts",
       },
     ]);
     expect(page).not.toContain("generated:");

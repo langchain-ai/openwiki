@@ -73,9 +73,10 @@ describe("prepareClaimsRuntime", () => {
     await expect(store.loadPage(orphanPage)).resolves.toBeNull();
   });
 
-  test("does not seed mandatory work for pages without sidecars", async () => {
+  test("surfaces pages without sidecars lazily without creating mandatory work", async () => {
     const page = "/openwiki/page.md";
     await writePage(page, "# Page\n");
+    const store = new ClaimsStore(rootDir);
 
     const runtime = await prepareClaimsRuntime(
       "update",
@@ -86,6 +87,11 @@ describe("prepareClaimsRuntime", () => {
 
     expect(runtime?.issueCount).toBe(0);
     expect(runtime?.session.inspectClaims(page)).toEqual([]);
+    expect(runtime?.session.getReadNote(page)).toContain(
+      "this page has no Claims yet",
+    );
+    await runtime?.finalize();
+    await expect(store.loadPage(page)).resolves.toBeNull();
   });
 
   test("loads synchronized persisted claims into update working state", async () => {
@@ -149,6 +155,9 @@ describe("prepareClaimsRuntime", () => {
     );
 
     expect(runtime?.issueCount).toBe(0);
+    expect(runtime?.session.getReadNote(page)).toContain(
+      "this page has no Claims yet",
+    );
     await runtime?.finalize("2026-08-20T12:00:00.000Z");
     expect(
       parseFrontmatterFields(await readPage(page))?.verified,
