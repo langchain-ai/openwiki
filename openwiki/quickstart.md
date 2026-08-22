@@ -12,7 +12,7 @@ sources:
     resource: repo://src/agent/types.ts
   - id: openwiki-source-3fc16f0371ced4d94330f06c
     resource: repo://src/cli/commands.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -45,26 +45,27 @@ sequenceDiagram
     Run-->>CLI: streamed events
     Run->>Run: finalize OKF provenance and Claims
 ```
-*End-to-end lifecycle of an OpenWiki agent run.*
+
+_End-to-end lifecycle of an OpenWiki agent run._
 
 For the full lifecycle, output modes, and transactional wiki replacement, see [architecture/overview.md](architecture/overview.md).
 
 ## Subsystem map
 
-| Domain | Pages | What it covers |
-| --- | --- | --- |
-| Architecture | [overview](architecture/overview.md), [configuration](architecture/configuration.md) | Run lifecycle, output modes, no-op detection, crash guard; OpenWiki home, `OPENWIKI_*` vars, ignore boundary |
-| CLI | [overview](cli/overview.md), [TUI](cli/tui.md), [runners](cli/runners.md) | Command parsing/dispatch, startup guards, the Ink app and run log, subcommand runners |
-| Agent | [overview](agent/overview.md), [model providers](agent/model-providers.md), [backend](agent/backend.md), [middleware](agent/middleware.md), [prompts](agent/prompts.md) | Deep Agent graph, providers, docs-only backend, middleware pipeline, prompts and subagents |
-| Claims | [overview](claims/overview.md), [runtime & store](claims/runtime-and-store.md), [evidence](claims/evidence.md), [agent integration](claims/agent-integration.md) | Grounded Claims concept, persistence, `repo://` evidence, agent tools/middleware |
-| OKF | [overview](okf/overview.md) | OKF front matter, provenance, verification stamping |
-| Connectors | [overview](connectors/overview.md), [sources](connectors/sources.md), [LangSmith](connectors/langsmith.md) | Registry and runtime, per-source connectors, the code-mode LangSmith connector |
-| Ingestion | [overview](ingestion/overview.md) | Personal ingestion orchestration and code-mode repo setup/connectors |
-| Integrations | [overview](integrations/overview.md), [install](integrations/install.md) | Coding-agent MCP lifecycle and host installer |
-| Auth & onboarding | [auth](auth-and-onboarding/auth.md), [onboarding](auth-and-onboarding/onboarding.md) | OAuth/token flows and providers; first-run credential/onboarding wizard |
-| Operations | [scheduling](operations/scheduling.md), [telemetry](operations/telemetry.md), [visualizer](operations/visualizer.md) | Cron/launchd/CI schedules, anonymous telemetry, the wiki visualizer |
-| Evals | [LEDGER](evals/ledger.md), [DeepSWE](evals/deepswe.md) | Longitudinal grounding harness and the paired DeepSWE experiment |
-| Reference | [mermaid](reference/mermaid.md), [platform](reference/platform.md) | Mermaid validation/degradation; platform utils and secret redaction |
+| Domain            | Pages                                                                                                                                                                   | What it covers                                                                                               |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Architecture      | [overview](architecture/overview.md), [configuration](architecture/configuration.md)                                                                                    | Run lifecycle, output modes, no-op detection, crash guard; OpenWiki home, `OPENWIKI_*` vars, ignore boundary |
+| CLI               | [overview](cli/overview.md), [TUI](cli/tui.md), [runners](cli/runners.md)                                                                                               | Command parsing/dispatch, startup guards, the Ink app and run log, subcommand runners                        |
+| Agent             | [overview](agent/overview.md), [model providers](agent/model-providers.md), [backend](agent/backend.md), [middleware](agent/middleware.md), [prompts](agent/prompts.md) | Deep Agent graph, providers, docs-only backend, middleware pipeline, prompts and subagents                   |
+| Claims            | [overview](claims/overview.md), [runtime & store](claims/runtime-and-store.md), [evidence](claims/evidence.md), [agent integration](claims/agent-integration.md)        | Grounded Claims concept, persistence, `repo://` evidence, agent tools/middleware                             |
+| OKF               | [overview](okf/overview.md)                                                                                                                                             | OKF front matter, provenance, verification stamping                                                          |
+| Connectors        | [overview](connectors/overview.md), [sources](connectors/sources.md), [LangSmith](connectors/langsmith.md)                                                              | Registry and runtime, per-source connectors, the code-mode LangSmith connector                               |
+| Ingestion         | [overview](ingestion/overview.md)                                                                                                                                       | Personal ingestion orchestration and code-mode repo setup/connectors                                         |
+| Integrations      | [overview](integrations/overview.md), [install](integrations/install.md)                                                                                                | Coding-agent MCP lifecycle and host installer                                                                |
+| Auth & onboarding | [auth](auth-and-onboarding/auth.md), [onboarding](auth-and-onboarding/onboarding.md)                                                                                    | OAuth/token flows and providers; first-run credential/onboarding wizard                                      |
+| Operations        | [scheduling](operations/scheduling.md), [telemetry](operations/telemetry.md), [visualizer](operations/visualizer.md)                                                    | Cron/launchd/CI schedules, anonymous telemetry, the wiki visualizer                                          |
+| Evals             | [LEDGER](evals/ledger.md), [DeepSWE](evals/deepswe.md)                                                                                                                  | Longitudinal grounding harness and the paired DeepSWE experiment                                             |
+| Reference         | [mermaid](reference/mermaid.md), [platform](reference/platform.md)                                                                                                      | Mermaid validation/degradation; platform utils and secret redaction                                          |
 
 ## Task routing
 

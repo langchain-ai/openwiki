@@ -14,7 +14,7 @@ sources:
     resource: repo://src/config/constants.ts
   - id: openwiki-source-f1dd0edb129e50f253618ff4
     resource: repo://src/config/reasoning.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -57,15 +57,15 @@ proceeds, since a custom endpoint or gateway may legitimately serve it.
 
 `createModel` dispatches per provider to the correct LangChain client:
 
-| Provider | Client | Notes |
-| --- | --- | --- |
-| `gemini` | `ChatGoogle` (`gai`) | streaming disabled, `outputVersion: v0` |
-| `gemini-enterprise` | Vertex builder | surface chosen by model id |
-| `anthropic` | `ChatAnthropic` | modern-Claude token default |
-| `openai-chatgpt` | `ChatOpenAI` → Codex backend | OAuth, Responses API |
-| `openrouter` | `ChatOpenRouter` | optional provider allowlist |
-| `bedrock` | `ChatBedrockConverse` | AWS SDK credentials + region |
-| others | `ChatOpenAI` | OpenAI-compatible endpoints |
+| Provider            | Client                       | Notes                                   |
+| ------------------- | ---------------------------- | --------------------------------------- |
+| `gemini`            | `ChatGoogle` (`gai`)         | streaming disabled, `outputVersion: v0` |
+| `gemini-enterprise` | Vertex builder               | surface chosen by model id              |
+| `anthropic`         | `ChatAnthropic`              | modern-Claude token default             |
+| `openai-chatgpt`    | `ChatOpenAI` → Codex backend | OAuth, Responses API                    |
+| `openrouter`        | `ChatOpenRouter`             | optional provider allowlist             |
+| `bedrock`           | `ChatBedrockConverse`        | AWS SDK credentials + region            |
+| others              | `ChatOpenAI`                 | OpenAI-compatible endpoints             |
 
 ### Reasoning effort
 

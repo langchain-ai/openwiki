@@ -10,7 +10,7 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-3603986778b0b5f63cbdb37d
     resource: repo://src/visualize/static-export.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -33,7 +33,8 @@ flowchart LR
     Server -->|"SSE"| Browser["browser client"]
     Browser -->|"reload on change"| Browser
 ```
-*Loopback server with live reload.*
+
+_Loopback server with live reload._
 
 The server binds **loopback-only** (`127.0.0.1`) and never exposes the wiki on the network. It retries a busy preferred port by incrementing across a bounded number of attempts. While running, it watches the wiki directory, debounces bursts of file changes into one rebuild, and pushes updates to connected browsers over **server-sent events** for live reload. The browser client is served as an external module under a strict Content-Security-Policy that pins CDN libraries by SRI and avoids `unsafe-inline` for scripts.
 

@@ -20,7 +20,7 @@ sources:
     resource: repo://src/cli/run-log/summary.ts
   - id: openwiki-source-80451f737481427280452b95
     resource: repo://src/cli/run-log/types.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -47,7 +47,8 @@ stateDiagram-v2
     success --> [*]
     error --> [*]
 ```
-*App run lifecycle; states omit the credential-diagnostics carried alongside them.*
+
+_App run lifecycle; states omit the credential-diagnostics carried alongside them._
 
 Opt-in credential diagnostics (from `--debug`) are folded into a live run only while it is still `running`; a late diagnostics resolution can never resurrect a settled run.
 
@@ -60,7 +61,7 @@ Opt-in credential diagnostics (from `--debug`) are folded into a live run only w
 - Filesystem tool calls contribute **exact path activity** entries (read/search/write, scoped `openwiki` vs `repository`) without exposing the tool transcript.
 - **Debug** items are retained only when opted in and are capped, evicting the oldest beyond the limit.
 
-This makes the live view show *what the agent is doing to which files*, plus counts, rather than a scrolling transcript. Activity paths are merged into a compact tree via shared ancestry.
+This makes the live view show _what the agent is doing to which files_, plus counts, rather than a scrolling transcript. Activity paths are merged into a compact tree via shared ancestry.
 
 ## Relationship to the run
 

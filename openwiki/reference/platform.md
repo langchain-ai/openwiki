@@ -12,7 +12,7 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-27fbd70857f0fae28185fe91
     resource: repo://src/platform/windows-acl.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z

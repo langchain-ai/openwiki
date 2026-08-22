@@ -14,7 +14,7 @@ sources:
     resource: repo://src/cli/runners.ts
   - id: openwiki-source-47858a188b6094caa3d1f9ed
     resource: repo://src/cli/schedule-format.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -26,18 +26,18 @@ Each non-app CLI command is handled by a dedicated runner in `runners.ts` (plus 
 
 ## Runner responsibilities
 
-| Command | Runner | What it does |
-| --- | --- | --- |
-| `ngrok start` | `runNgrokCommand` | Starts an ngrok tunnel for OAuth callback delivery |
-| `visualize` | `runVisualizeCommand` | Serves the visualizer, or exports a static bundle when `--export` is set |
-| `cron` | `runCronCommand` | Lists/pauses/resumes/deletes connector schedules and re-prints the resulting schedule set |
-| `ingest` | `runIngestCommand` | Runs personal ingestion and prints a per-source summary; exit 1 if any source errored |
-| `auth` | `runAuthCommand` | Lists providers, or configures / OAuths / discovers tools for one provider |
-| `run` (`-p`) | `runPrintCommand` | Non-interactive `chat`/`init`/`update` |
+| Command       | Runner                | What it does                                                                              |
+| ------------- | --------------------- | ----------------------------------------------------------------------------------------- |
+| `ngrok start` | `runNgrokCommand`     | Starts an ngrok tunnel for OAuth callback delivery                                        |
+| `visualize`   | `runVisualizeCommand` | Serves the visualizer, or exports a static bundle when `--export` is set                  |
+| `cron`        | `runCronCommand`      | Lists/pauses/resumes/deletes connector schedules and re-prints the resulting schedule set |
+| `ingest`      | `runIngestCommand`    | Runs personal ingestion and prints a per-source summary; exit 1 if any source errored     |
+| `auth`        | `runAuthCommand`      | Lists providers, or configures / OAuths / discovers tools for one provider                |
+| `run` (`-p`)  | `runPrintCommand`     | Non-interactive `chat`/`init`/`update`                                                    |
 
 ## Print mode mirrors interactive
 
-`runPrintCommand` runs a generative command with no TUI but the *same* pre-agent steps as interactive. It resolves the run-mode cwd and output mode, then wraps everything in `withRunTelemetry` — the single boundary that records the run — so a throw in repository setup or the connector pull is recorded, not just printed to stderr.
+`runPrintCommand` runs a generative command with no TUI but the _same_ pre-agent steps as interactive. It resolves the run-mode cwd and output mode, then wraps everything in `withRunTelemetry` — the single boundary that records the run — so a throw in repository setup or the connector pull is recorded, not just printed to stderr.
 
 ```mermaid
 flowchart TD
@@ -52,9 +52,10 @@ flowchart TD
     Agent --> Out["collect text events → stdout"]
     Tel -.->|throw| Diag["auth-fix + error diagnostics → stderr"]
 ```
-*Print-mode run through the telemetry boundary.*
 
-In code mode, `ensureCodeModeRepoSetup` runs first (creating the workflow only on `init`), and for non-chat code runs the code-mode connectors pull their evidence and *augment the agent's user message* before the run — so `--print` behaves exactly like interactive. Only `text` events are collected and flushed to stdout.
+_Print-mode run through the telemetry boundary._
+
+In code mode, `ensureCodeModeRepoSetup` runs first (creating the workflow only on `init`), and for non-chat code runs the code-mode connectors pull their evidence and _augment the agent's user message_ before the run — so `--print` behaves exactly like interactive. Only `text` events are collected and flushed to stdout.
 
 ## Non-interactive diagnostics
 

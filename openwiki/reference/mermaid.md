@@ -8,7 +8,7 @@ sources:
     resource: repo://src/mermaid/validate.ts
   - id: openwiki-source-3fe3d5f6fe125af314c54067
     resource: repo://src/mermaid/wiki.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -35,7 +35,8 @@ flowchart TD
     Parse -- no --> Comment["insert HTML comment with sanitized error"]
     Comment --> Text["rewrite fence as text, content preserved"]
 ```
-*Invalid-fence degradation.*
+
+_Invalid-fence degradation._
 
 An invalid fence is degraded to a plain `text` fence so its content survives and no broken diagram reaches a renderer; rewrites happen bottom-up so earlier line indices stay valid. Each degraded fence is preceded by an HTML comment carrying the sanitized parser error and instructions to fix and restore it — that comment is the marker a later update run finds to repair the diagram. The embedded error is first passed through the codebase secret-redaction boundary, flattened to one line keeping the diagnosis, made HTML-comment-safe by collapsing `--`, and length-capped.
 

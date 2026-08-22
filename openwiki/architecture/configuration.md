@@ -8,7 +8,7 @@ sources:
     resource: repo://src/agent/index.ts
   - id: openwiki-source-7d433875b0854d0b8b951be0
     resource: repo://src/config/openwiki-home.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -24,13 +24,13 @@ The home directory defaults to `~/.openwiki`. It can be relocated by setting `OP
 
 The home contains dedicated subdirectories, and the credentials `.env` lives at its root:
 
-| Path | Purpose |
-| --- | --- |
-| `connectors/` | Per-connector config, state, raw data, and logs |
-| `conversation_history/` | Offloaded conversation history |
-| `wiki/` | The local (personal) wiki |
-| `skills/` | Synced bundled skills |
-| `.env` | Persisted credentials and settings |
+| Path                    | Purpose                                         |
+| ----------------------- | ----------------------------------------------- |
+| `connectors/`           | Per-connector config, state, raw data, and logs |
+| `conversation_history/` | Offloaded conversation history                  |
+| `wiki/`                 | The local (personal) wiki                       |
+| `skills/`               | Synced bundled skills                           |
+| `.env`                  | Persisted credentials and settings              |
 
 Per-connector paths are derived under `connectors/<connectorId>/` (`config.json`, `state.json`, `raw/`, `logs/`).
 

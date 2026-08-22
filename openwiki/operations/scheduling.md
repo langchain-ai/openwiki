@@ -10,7 +10,7 @@ sources:
     resource: repo://src/ingestion/code-mode.ts
   - id: openwiki-source-c923e23504de7a6af7799a24
     resource: repo://src/scheduling/schedules.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -39,7 +39,8 @@ flowchart TD
     Cal -- yes --> Write["write 0600 plist to LaunchAgents"]
     Write --> Load["launchctl bootstrap"]
 ```
-*Native schedule installation.*
+
+_Native schedule installation._
 
 On non-darwin platforms the schedule is saved with a warning, and a cron expression too complex for a launchd calendar interval is also saved with a warning instead of installed. Installing writes a launchd plist with `0600` permissions into the LaunchAgents directory, propagates the OpenWiki config-dir override, then reloads it via `launchctl bootstrap`.
 

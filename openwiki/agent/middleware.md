@@ -14,7 +14,7 @@ sources:
     resource: repo://src/agent/wiki-finalizer.ts
   - id: openwiki-source-0a92e09462f540e5e005c7e4
     resource: repo://src/agent/wiki-link-validator.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -42,7 +42,7 @@ OKF-conformant across a run using three hooks:
 - **`beforeAgent`** — `prepareWikiForAuthoring` migrates existing pages to valid
   front matter and snapshots their exact bodies (for later provenance
   reconciliation).
-- **`wrapToolCall`** — decorates a *successful* `write_file`/`edit_file` result
+- **`wrapToolCall`** — decorates a _successful_ `write_file`/`edit_file` result
   with a front-matter warning when the mutated wiki page has invalid YAML. It
   deliberately does **not** catch tool throws: LangChain feeds thrown tool
   errors back to the model as a `ToolMessage` for recovery, so turning this into

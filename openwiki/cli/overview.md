@@ -12,7 +12,7 @@ sources:
     resource: repo://src/cli/run-mode.ts
   - id: openwiki-source-d80f123259efa4712b198b63
     resource: repo://src/cli/startup.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -24,7 +24,7 @@ The `openwiki` binary turns process arguments into one typed command, applies st
 
 ## Entry pipeline
 
-`cli.tsx` is the process entrypoint. It installs the crash guard *before any run starts* so an escaped rejection is still recorded and stamped rather than hard-killing the process with no telemetry. It then parses argv and dispatches the host-integration commands (`integrations`, `mcp`) separately from the standard command surface.
+`cli.tsx` is the process entrypoint. It installs the crash guard _before any run starts_ so an escaped rejection is still recorded and stamped rather than hard-killing the process with no telemetry. It then parses argv and dispatches the host-integration commands (`integrations`, `mcp`) separately from the standard command surface.
 
 ```mermaid
 flowchart TD
@@ -41,7 +41,8 @@ flowchart TD
     Kind -->|run non-interactive| Print["runPrintCommand"]
     Kind -->|run interactive| App["render Ink App"]
 ```
-*Argument parsing through command dispatch.*
+
+_Argument parsing through command dispatch._
 
 ## The command union
 

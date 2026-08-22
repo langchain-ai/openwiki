@@ -10,7 +10,7 @@ sources:
     resource: repo://src/setup/credentials/steps.ts
   - id: openwiki-source-14d4f389b56575bb7afd1310
     resource: repo://src/setup/onboarding.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -30,10 +30,10 @@ Onboarding state is a versioned `onboarding.json` under the OpenWiki home, along
 
 Whether the primary credential is still needed depends on the provider type:
 
-| Provider type | Credential considered present when… |
-| --- | --- |
-| OAuth | a valid, non-expired stored token exists |
-| API-key | a key has been pasted |
+| Provider type                    | Credential considered present when…               |
+| -------------------------------- | ------------------------------------------------- |
+| OAuth                            | a valid, non-expired stored token exists          |
+| API-key                          | a key has been pasted                             |
 | Keyless (e.g. gemini-enterprise) | required config such as the GCP project id is set |
 
 ## Collecting and persisting

@@ -16,7 +16,7 @@ sources:
     resource: repo://src/claims/core/mutations.ts
   - id: openwiki-source-e92e45c28fa79eaef316e968
     resource: repo://src/claims/core/resolver-cache.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -49,7 +49,8 @@ flowchart TD
     Rollback -- no --> Done["done"]
     Roll --> Done
 ```
-*Runtime preparation and finalization for init and update runs.*
+
+_Runtime preparation and finalization for init and update runs._
 
 ## Finalization
 
@@ -76,12 +77,12 @@ Sidecars are written **atomically** — a randomized temporary file is written a
 
 `applyClaimOperations` is all-or-nothing: it validates every operation and **pre-resolves all evidence** before touching a cloned claim set. A batch is rejected if it targets the same existing claim id more than once, or references an unknown id.
 
-| Operation | Behavior |
-| --- | --- |
-| `add` | Allocates a fresh unique id (default `claim_`-prefixed hex UUID) and stores the trimmed statement + resolved evidence |
-| `confirm` | Re-resolves an existing claim's evidence at current versions |
-| `update` | Replaces statement and/or evidence, defaulting each unspecified field to the current value |
-| `retract` | Removes the claim |
+| Operation | Behavior                                                                                                              |
+| --------- | --------------------------------------------------------------------------------------------------------------------- |
+| `add`     | Allocates a fresh unique id (default `claim_`-prefixed hex UUID) and stores the trimmed statement + resolved evidence |
+| `confirm` | Re-resolves an existing claim's evidence at current versions                                                          |
+| `update`  | Replaces statement and/or evidence, defaulting each unspecified field to the current value                            |
+| `retract` | Removes the claim                                                                                                     |
 
 Evidence resolution rejects a proposed set that **repeats a resource** or resolves two identities to the **same canonical resource**, and rejects any resource that does not resolve at all.
 
@@ -93,7 +94,7 @@ Evidence resolution rejects a proposed set that **repeats a resource** or resolv
 
 On update, preflight resolves each claim's evidence at its stored version (once per run, via the cache) and records a per-claim issue:
 
-- **unresolved** when *any* evidence resource cannot be located, otherwise
+- **unresolved** when _any_ evidence resource cannot be located, otherwise
 - **stale** when a resolved resource's current version has drifted from the stored one.
 
 Resolution **errors propagate** rather than being treated as deleted evidence, so a transient read failure is never mistaken for a retired claim. Pages that are current but carry no material claims (**ungrounded pages**) are tracked in memory only, as lazy guidance — they never create empty sidecars or mandatory global work.

@@ -10,7 +10,7 @@ sources:
     resource: repo://src/agent/index.ts
   - id: openwiki-source-5d1891104d4c886504a5cc7d
     resource: repo://src/agent/types.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -40,17 +40,18 @@ flowchart TD
     Run --> MW["middleware pipeline"]
     MW --> OKF["OKF finalization"]
 ```
-*The major subsystems wired into a single agent run.*
 
-| Subsystem | Responsibility | Page |
-| --- | --- | --- |
-| Model providers | Resolve provider and model, apply reasoning and retries | [agent/model-providers.md](../agent/model-providers.md) |
-| Connectors | Ingest external and repository sources as agent tools | [connectors/overview.md](../connectors/overview.md) |
-| Grounded Claims | Ground facts in versioned evidence; detect staleness | [claims/overview.md](../claims/overview.md) |
-| Docs-only backend | Confine writes to the wiki; enforce the ignore boundary | [agent/backend.md](../agent/backend.md) |
-| Middleware | OKF indexing, translation, link validation, finalization | [agent/middleware.md](../agent/middleware.md) |
-| OKF | Front matter, provenance, verification stamping | [okf/overview.md](../okf/overview.md) |
-| Configuration | OpenWiki home, env, ignore boundary | [configuration.md](configuration.md) |
+_The major subsystems wired into a single agent run._
+
+| Subsystem         | Responsibility                                           | Page                                                    |
+| ----------------- | -------------------------------------------------------- | ------------------------------------------------------- |
+| Model providers   | Resolve provider and model, apply reasoning and retries  | [agent/model-providers.md](../agent/model-providers.md) |
+| Connectors        | Ingest external and repository sources as agent tools    | [connectors/overview.md](../connectors/overview.md)     |
+| Grounded Claims   | Ground facts in versioned evidence; detect staleness     | [claims/overview.md](../claims/overview.md)             |
+| Docs-only backend | Confine writes to the wiki; enforce the ignore boundary  | [agent/backend.md](../agent/backend.md)                 |
+| Middleware        | OKF indexing, translation, link validation, finalization | [agent/middleware.md](../agent/middleware.md)           |
+| OKF               | Front matter, provenance, verification stamping          | [okf/overview.md](../okf/overview.md)                   |
+| Configuration     | OpenWiki home, env, ignore boundary                      | [configuration.md](configuration.md)                    |
 
 ## Where to go next
 

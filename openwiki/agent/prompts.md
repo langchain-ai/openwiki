@@ -14,7 +14,7 @@ sources:
     resource: repo://src/agent/skills.ts
   - id: openwiki-source-39b6c0fb623c976111044a7a
     resource: repo://src/agent/wiki-qa-subagents.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z

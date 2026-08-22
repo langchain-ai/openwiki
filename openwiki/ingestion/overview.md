@@ -8,7 +8,7 @@ sources:
     resource: repo://src/ingestion/code-mode.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -41,7 +41,8 @@ flowchart TD
     Fail --> Loop
     Done --> Loop
 ```
-*Two-phase personal ingestion per source.*
+
+_Two-phase personal ingestion per source._
 
 A deterministic pull that errors **with no raw files** short-circuits that source to an `error` status without running the agent; otherwise the agent run marks the source `agent-updated`. Each per-source update run is wrapped in a `withRunTelemetry` boundary so ingestion runs land in telemetry like the CLI paths. The pull window is fixed at **24 hours**.
 

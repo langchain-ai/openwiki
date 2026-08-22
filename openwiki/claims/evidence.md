@@ -10,7 +10,7 @@ sources:
     resource: repo://src/claims/evidence/repository/resolver.ts
   - id: openwiki-source-cd8d06edadee75de8637208c
     resource: repo://src/claims/evidence/repository/resource.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -53,7 +53,8 @@ flowchart TD
     Locate -- moved --> New["re-anchor + new version"]
     Locate -- gone --> Null
 ```
-*Resolving one repo:// resource to current evidence.*
+
+_Resolving one repo:// resource to current evidence._
 
 ## Range relocation
 

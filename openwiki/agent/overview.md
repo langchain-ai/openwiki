@@ -12,7 +12,7 @@ sources:
     resource: repo://src/agent/types.ts
   - id: openwiki-source-9697823032111d36e2d4caa9
     resource: repo://src/agent/wiki-replacement.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z

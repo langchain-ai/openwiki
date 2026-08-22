@@ -18,7 +18,7 @@ sources:
     resource: repo://src/connectors/tools.ts
   - id: openwiki-source-d66b21ba71e9866a0b433226
     resource: repo://src/connectors/types.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -30,7 +30,7 @@ Connectors pull external knowledge (Slack, Gmail, X, Notion, Hacker News, web se
 
 ## Registry and identity
 
-`createConnectorRegistry` returns a fixed map of nine connector ids to `ConnectorRuntime` instances. Each runtime is a `ConnectorDefinition` (id, display name, backend, `code`/`personal` mode, required env, agentic-discovery support) plus an `ingest` function. The registry is also the source of truth for which connectors are *configured* — those whose required env vars are all set — which telemetry uses as an adoption signal.
+`createConnectorRegistry` returns a fixed map of nine connector ids to `ConnectorRuntime` instances. Each runtime is a `ConnectorDefinition` (id, display name, backend, `code`/`personal` mode, required env, agentic-discovery support) plus an `ingest` function. The registry is also the source of truth for which connectors are _configured_ — those whose required env vars are all set — which telemetry uses as an adoption signal.
 
 ## Ingest contract and home state
 
@@ -60,7 +60,8 @@ flowchart LR
     Runtime --> Raw["<home>/connectors/&lt;id&gt;/raw"]
     Runtime --> State["<home>/connectors/&lt;id&gt;/state.json"]
 ```
-*Connector ingestion flow from agent tools to raw data and state.*
+
+_Connector ingestion flow from agent tools to raw data and state._
 
 ## Code vs personal scoping
 

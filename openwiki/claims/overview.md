@@ -14,7 +14,7 @@ sources:
     resource: repo://src/claims/core/types.ts
   - id: openwiki-source-638173446de4138fa3a622a8
     resource: repo://src/claims/guidance.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -34,12 +34,12 @@ Each **Evidence** entry pairs a stable, resolver-owned `resource` identity with 
 
 Claims are mutated through four operations:
 
-| Operation | Effect |
-| --- | --- |
-| `add` | Creates a claim; OpenWiki allocates its identifier |
+| Operation | Effect                                                         |
+| --------- | -------------------------------------------------------------- |
+| `add`     | Creates a claim; OpenWiki allocates its identifier             |
 | `confirm` | Re-affirms an existing claim against current evidence versions |
-| `update` | Revises the statement and/or evidence of an existing claim |
-| `retract` | Removes an obsolete claim |
+| `update`  | Revises the statement and/or evidence of an existing claim     |
+| `retract` | Removes an obsolete claim                                      |
 
 `confirm`, `update`, and `retract` target an existing claim by its stable `id`; only `add` allocates a new one.
 
@@ -54,7 +54,8 @@ stateDiagram-v2
     Unresolved --> Current: update
     Current --> [*]: retract
 ```
-*Claim states and the operations that move between them.*
+
+_Claim states and the operations that move between them._
 
 ## Staleness
 

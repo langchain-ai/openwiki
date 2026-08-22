@@ -12,7 +12,7 @@ sources:
     resource: repo://src/okf/frontmatter.ts
   - id: openwiki-source-bed0edb2a7279f0e40a56c2f
     resource: repo://src/okf/generated-provenance.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -50,7 +50,8 @@ flowchart TD
     E -->|yes| F["restore prior stamp"]
     E -->|no| G["leave unstamped"]
 ```
-*How generation provenance is reconciled after a run.*
+
+_How generation provenance is reconciled after a run._
 
 ## Validation and repair
 

@@ -10,7 +10,7 @@ sources:
     resource: repo://src/integrations/install/installer.ts
   - id: openwiki-source-c194ba7f94bf86a83012a7b4
     resource: repo://src/integrations/install/registry.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -24,10 +24,10 @@ The installer places OpenWiki's host skill and a managed MCP server entry into a
 
 Two host targets are supported:
 
-| Host | Config kind | Config path | Skill directory |
-| --- | --- | --- | --- |
-| `codex` (Codex) | TOML | `.codex/config.toml` | `.agents/skills/openwiki` |
-| `claude` (Claude Code) | JSON | `.claude.json` (user) / `.mcp.json` (project) | `.claude/skills/openwiki` |
+| Host                   | Config kind | Config path                                   | Skill directory           |
+| ---------------------- | ----------- | --------------------------------------------- | ------------------------- |
+| `codex` (Codex)        | TOML        | `.codex/config.toml`                          | `.agents/skills/openwiki` |
+| `claude` (Claude Code) | JSON        | `.claude.json` (user) / `.mcp.json` (project) | `.claude/skills/openwiki` |
 
 Each target carries its own producer actor. The default managed MCP command launches the `openwiki` binary as `openwiki mcp --host <target>`.
 
@@ -48,7 +48,8 @@ flowchart TD
     Fail -- no --> Commit["atomically commit into place"]
     Commit --> Config["reconcile managed MCP config"]
 ```
-*Transactional skill install.*
+
+_Transactional skill install._
 
 The bundle is copied into a private staging sibling, verified against the canonical inventory, receipted, and only then atomically committed into place, with staging removed on any failure. Install also refuses to proceed through a symlinked path component in the skill directory.
 

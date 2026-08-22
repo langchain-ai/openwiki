@@ -12,7 +12,7 @@ sources:
     resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-eab9328975981f427c4218d0
     resource: repo://src/integrations/mcp/server.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -49,7 +49,8 @@ sequenceDiagram
     Mgr->>Mgr: finalize artifacts, Claims, metadata
     Mgr-->>Host: complete (+ warnings)
 ```
-*Host-driven begin/finish lifecycle.*
+
+_Host-driven begin/finish lifecycle._
 
 `begin` resolves the repository root, ensures code-mode setup (creating the workflow only on init), prepares the guarded docs-only backend and the Claims runtime, stamps `interrupted` run metadata, and returns an opaque `runId` plus safe context. `resolveRepositoryRoot` canonicalizes the candidate to its Git worktree top-level and refuses a non-absolute path, the filesystem root, and the user's home directory, so an ambiguous launch directory is never treated as a wiki repository.
 

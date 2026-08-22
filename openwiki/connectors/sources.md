@@ -22,7 +22,7 @@ sources:
     resource: repo://src/connectors/sources/web-search.ts
   - id: openwiki-source-bdb4edab7b339f62867857bf
     resource: repo://src/connectors/sources/x.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -60,13 +60,13 @@ Both are built by the shared MCP connector factory over the `mcp-stdio` backend 
 
 `direct-api` connector that fetches Hacker News feeds and query results through the public Hacker News APIs. It requires no credentials.
 
-| Connector | Backend | Required env | Agentic discovery |
-| --- | --- | --- | --- |
-| `git-repo` | local-git | none | yes |
-| `custom-mcp` | mcp-stdio | none | yes |
-| `notion` | mcp-stdio | Notion MCP token | yes |
-| `x` | direct-api | X access token | no |
-| `google` | direct-api | Gmail access + refresh token | no |
-| `slack` | direct-api | Slack user token | no |
-| `web-search` | direct-api | Tavily API key | no |
-| `hackernews` | direct-api | none | no |
+| Connector    | Backend    | Required env                 | Agentic discovery |
+| ------------ | ---------- | ---------------------------- | ----------------- |
+| `git-repo`   | local-git  | none                         | yes               |
+| `custom-mcp` | mcp-stdio  | none                         | yes               |
+| `notion`     | mcp-stdio  | Notion MCP token             | yes               |
+| `x`          | direct-api | X access token               | no                |
+| `google`     | direct-api | Gmail access + refresh token | no                |
+| `slack`      | direct-api | Slack user token             | no                |
+| `web-search` | direct-api | Tavily API key               | no                |
+| `hackernews` | direct-api | none                         | no                |

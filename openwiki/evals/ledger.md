@@ -10,7 +10,7 @@ sources:
     resource: repo://evals/ledger/reevaluate.ts
   - id: openwiki-source-bdd14aa92ae4a01628e282cd
     resource: repo://evals/ledger/run.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -24,12 +24,12 @@ LEDGER (Longitudinal Evaluation of Documentation Grounding, Evolution, and Revis
 
 At each checkpoint the evaluator extracts atomic factual claims from every generated Markdown document — ignoring navigation, opinions, instructions, and wiki self-description — and classifies each current-tense claim into one of four states:
 
-| State | Meaning |
-| --- | --- |
-| `supported` | Current source establishes the claim |
-| `stale` | Current source contradicts it and history establishes it was formerly true |
-| `invented` | Current source contradicts it and history does not establish it |
-| `unverified` | Supplied evidence neither establishes nor contradicts it |
+| State        | Meaning                                                                    |
+| ------------ | -------------------------------------------------------------------------- |
+| `supported`  | Current source establishes the claim                                       |
+| `stale`      | Current source contradicts it and history establishes it was formerly true |
+| `invented`   | Current source contradicts it and history does not establish it            |
+| `unverified` | Supplied evidence neither establishes nor contradicts it                   |
 
 All four rates share the count of current claims as their denominator, and each checkpoint **recomputes** the partition from the entire current wiki rather than as a delta or average.
 
@@ -47,7 +47,8 @@ flowchart TD
     Hist -- no --> Invented["invented"]
     Label -- "not addressed" --> Unv["unverified"]
 ```
-*The claim evaluation pipeline.*
+
+_The claim evaluation pipeline._
 
 ## Running
 

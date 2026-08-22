@@ -10,7 +10,7 @@ sources:
     resource: repo://src/agent/index.ts
   - id: openwiki-source-a34c01da72fb3c9bee4f3cb9
     resource: repo://src/agent/openwiki-ignore.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -70,7 +70,7 @@ above the repository root (`../foo` collapses to `foo`).
 
 In `docs-only` repository runs (every command except `chat`), writes and edits
 are refused unless the path is under `openwiki/`. `local-wiki` mode relaxes this
-check entirely, since the local wiki *is* the whole write target.
+check entirely, since the local wiki _is_ the whole write target.
 
 ### 3. Claims ownership
 
@@ -105,7 +105,7 @@ The graph composes two **read-only** virtual filesystems over the wiki backend
   history offload, routed under `~/.openwiki/conversation_history`.
 
 Routing the history offload into `~/.openwiki` keeps it out of the documented
-repository *and* out of the docs-only guard's refusal path; without that, the
+repository _and_ out of the docs-only guard's refusal path; without that, the
 docs-only guard would refuse the offload write and silently degrade
 summarization (narrowing coverage on large repositories).
 

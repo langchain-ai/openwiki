@@ -16,7 +16,7 @@ sources:
     resource: repo://src/claims/brains/code/session.ts
   - id: openwiki-source-07acfad90f4763f6baef7925
     resource: repo://src/claims/brains/code/tools.ts
-generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
+generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
@@ -43,7 +43,8 @@ flowchart LR
     INT --> MW["read-note middleware"]
     DEL & RES & INS & MW --> Graph["createDeepAgent"]
 ```
-*Claims tools and middleware wired into the agent graph.*
+
+_Claims tools and middleware wired into the agent graph._
 
 ## Tools
 
