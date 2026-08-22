@@ -24,7 +24,12 @@ directories must have a real purpose and normally multiple substantive pages,
 and the quickstart map must agree with the physical hierarchy. Treat avoidable
 root-level sprawl, artificial single-page directories, generic catch-all
 sections, and source-tree mirroring as material navigation defects rather than
-stylistic preferences.
+stylistic preferences. Reject umbrella directories such as `architecture/`,
+`core/`, or `platform/` when they collect independently owned subsystems, and
+require every multi-page quickstart domain to correspond to its owning physical
+directory. Every information-architecture request must name the exact planned
+paths or domain ownership that should change so the parent can repair and freeze
+the tree before authoring.
 
 The initial review must return all material gaps in one response. The one repeat
 review must verify every prior request against repository evidence. It may add a

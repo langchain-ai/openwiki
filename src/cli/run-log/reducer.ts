@@ -161,6 +161,17 @@ function completeToolLogItem(
             : [],
         )
       : [];
+  const exploredPaths =
+    event.status === "finished"
+      ? log.flatMap((item) =>
+          item.type === "activity" &&
+          item.activityOperation === "read" &&
+          item.activityScope === "repository" &&
+          getActiveToolCallIds(item).includes(event.id)
+            ? [item.activityPath]
+            : [],
+        )
+      : [];
 
   const touchedActivityIds = new Set(
     log
@@ -173,7 +184,7 @@ function completeToolLogItem(
   );
   const completed = log.map((item, index): RunLogItem => {
     if (index === matchingIndex && item.type === "tool") {
-      return completeToolGroupItem(item, event, writtenPaths);
+      return completeToolGroupItem(item, event, writtenPaths, exploredPaths);
     }
 
     if (
@@ -214,6 +225,7 @@ function completeToolGroupItem(
   item: RunToolLogItem,
   event: Extract<OpenWikiRunEvent, { type: "tool_end" }>,
   writtenPaths: string[] = [],
+  exploredPaths: string[] = [],
 ): RunLogItem {
   const actionCount = item.actionCount ?? 1;
   const readCount = item.readCount ?? 0;
@@ -239,6 +251,9 @@ function completeToolGroupItem(
     activeToolCallIds,
     content: counts,
     errorCount,
+    exploredPaths: [
+      ...new Set([...(item.exploredPaths ?? []), ...exploredPaths]),
+    ],
     writtenPaths: [...new Set([...(item.writtenPaths ?? []), ...writtenPaths])],
     status:
       activeToolCallIds.length > 0

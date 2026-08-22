@@ -1,5 +1,11 @@
 # Initialize OpenWiki
 
+## Contents
+
+- [Goal](#goal)
+- [Workflow](#workflow)
+- [Coverage check](#coverage-check)
+
 ## Goal
 
 Build a durable engineering map from an intent to the owning systems, runtime
@@ -29,14 +35,23 @@ Claims sidecars, indexes, and run metadata are unavailable; the user-authored
    Keep the root focused on `quickstart.md` and genuinely repository-wide
    concepts. Group related pages into meaningful domain directories instead of
    leaving a flat collection of Markdown files. Avoid artificial single-page
-   directories, generic catch-all sections, and thin landing pages. Do not force
-   hierarchy onto a genuinely small wiki.
+   directories, generic catch-all sections, and thin landing pages. Each
+   quickstart domain containing multiple pages should correspond to the physical
+   directory that owns those pages. Do not use umbrella names such as
+   `architecture/`, `core/`, or `platform/` to collect independently owned
+   subsystems; reserve them for material that genuinely spans those domains. Do
+   not force hierarchy onto a genuinely small wiki. Treat every planned page
+   path as final: do not draft pages at the root for later reorganization,
+   because Claims are owned by their canonical page paths.
 5. Read [reviewers.md](reviewers.md), then run the skeleton critic through the
    host's native delegation mechanism. Reviewers are read-only; the main agent
    owns the plan and all wiki edits.
 6. Create one TODO for every critic request, revise the plan, then run the
    critic exactly once more with the complete request ledger and resolutions.
-   Address any remaining item directly; do not invoke a third critic review.
+   Address any remaining item directly; do not invoke a third critic review. Do
+   not begin substantive page research, Claims resolution, or prose authoring
+   until every taxonomy request is resolved in the plan and exact final paths
+   are frozen.
 7. Only after the critic gate, author every planned page. For each factual page,
    first build an evidence brief by inspecting its entrypoint, primary
    implementation, important types or schemas, state or persistence, an
@@ -54,10 +69,15 @@ Claims sidecars, indexes, and run metadata are unavailable; the user-authored
 8. Perform an unknown-unknown pass over uncovered manifest-backed or high-ranked
    clusters, one-hop dependencies, and cross-system workflows exposed during
    writing. Expand the plan and wiki for real gaps, applying the same evidence
-   and Claims discipline to every added page.
+   and Claims discipline to every added page. Before authoring it, add its exact
+   final path to the existing taxonomy and verify that it does not introduce
+   root-level sprawl, an artificial single-page directory, or a generic
+   catch-all. Never introduce an ad-hoc path absent from the plan.
 9. Reconcile the physical wiki tree against the reviewed domain taxonomy and
    inventory. Relocate root-level orphans, collapse unjustified single-page
-   directories, and ensure each section has a coherent purpose. Establish the
+   directories, split generic umbrellas that mix independently owned
+   subsystems, and ensure each multi-page quickstart domain maps to its physical
+   directory. Establish the
    complete Claims set for `openwiki/quickstart.md`, then write it last with
    links to every major concept and a compact task-routing map from engineering
    intent to pages, source entrypoints and symbols, focused tests, and narrow

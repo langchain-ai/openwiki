@@ -126,6 +126,15 @@ export interface RunToolLogItem extends RunLogItemBase {
   errorCount?: number;
 
   /**
+   * Unique repository files successfully read during this run. The live view
+   * uses these paths to build a cumulative exploration map without treating
+   * search matches as explored files.
+   *
+   * @default undefined - no repository files have completed reading.
+   */
+  exploredPaths?: string[];
+
+  /**
    * How many explicit file-read tools started.
    *
    * @default undefined - treated as zero reads.

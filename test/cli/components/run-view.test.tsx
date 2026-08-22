@@ -9,6 +9,12 @@ import type { OpenWikiIngestionResult } from "../../../src/ingestion/ingestion.t
 import type { RunLogItem } from "../../../src/cli/run-log/types.ts";
 import { stripAnsi as plain } from "./ansi.ts";
 
+async function flush(): Promise<void> {
+  await Promise.resolve();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await Promise.resolve();
+}
+
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -152,12 +158,16 @@ describe("RunView", () => {
     unmount();
   });
 
-  test("renders repository and OpenWiki activity as stacked trees", () => {
+  test("renders every explored repository file", () => {
     const log: RunLogItem[] = [
       {
         actionCount: 2,
         activeToolCallIds: ["read", "write"],
         content: "2 actions",
+        exploredPaths: [
+          "src/agent/index.ts",
+          "src/integrations/core/protocol.ts",
+        ],
         id: 1,
         status: "running",
         type: "tool",
@@ -185,14 +195,95 @@ describe("RunView", () => {
     );
     const frame = plain(lastFrame());
 
-    expect(frame).toContain("Reading repository");
+    expect(frame).toContain("Exploration map");
     expect(frame).toContain("src/");
+    expect(frame).toContain("agent/");
     expect(frame).toContain("index.ts");
+    expect(frame).toContain("1–4 of 6");
     expect(frame).toContain("Writing OpenWiki");
     expect(frame).toContain("openwiki/");
     expect(frame).toContain("workflow.md");
     expect(frame).not.toContain("streaming");
     unmount();
+  });
+
+  test("keeps the exploration map below recent activity", () => {
+    const log: RunLogItem[] = [
+      {
+        actionCount: 2,
+        content: "1 read · 1 search",
+        exploredPaths: ["src/agent/index.ts"],
+        id: 1,
+        status: "running",
+        type: "tool",
+      },
+      {
+        activityOperation: "read",
+        activityPath: "src/agent/index.ts",
+        activityScope: "repository",
+        activityStatus: "recent",
+        id: 2,
+        type: "activity",
+      },
+    ];
+
+    const { lastFrame, unmount } = render(<RunView command="init" log={log} />);
+    const frame = plain(lastFrame());
+
+    expect(frame.indexOf("Recent activity")).toBeLessThan(
+      frame.indexOf("Exploration map"),
+    );
+    expect(frame).toContain("src/");
+    expect(frame).toContain("index.ts");
+    expect(frame).toContain("read     src/agent/index.ts");
+    unmount();
+  });
+
+  test("windows a long exploration map and supports manual scrolling", async () => {
+    const exploredPaths = Array.from(
+      { length: 12 },
+      (_, index) => `src/file-${String(index).padStart(2, "0")}.ts`,
+    );
+    const log: RunLogItem[] = [
+      {
+        actionCount: 12,
+        activeToolCallIds: ["read"],
+        content: "12 reads",
+        exploredPaths,
+        id: 1,
+        status: "running",
+        type: "tool",
+      },
+      {
+        activityOperation: "read",
+        activityPath: "src/file-11.ts",
+        activityScope: "repository",
+        activityStatus: "active",
+        id: 2,
+        type: "activity",
+      },
+    ];
+
+    const utils = render(<RunView command="init" log={log} />);
+    await flush();
+
+    const followingFrame = plain(utils.lastFrame());
+    expect(followingFrame).toContain("file-11.ts");
+    expect(followingFrame).toContain("↑/↓ or j/k scroll");
+    expect(followingFrame.split("\n").length).toBeLessThan(24);
+
+    utils.stdin.write("\u001b[A");
+    await flush();
+
+    expect(plain(utils.lastFrame())).toContain("file-10.ts");
+    expect(plain(utils.lastFrame())).not.toContain("file-11.ts");
+
+    utils.stdin.write("f");
+    await flush();
+
+    expect(plain(utils.lastFrame())).toContain("file-11.ts");
+    expect(plain(utils.lastFrame())).toContain("following");
+    utils.unmount();
   });
 
   test("shows recent actions with verbs and no unexplained overflow", () => {

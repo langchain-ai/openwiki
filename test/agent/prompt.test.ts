@@ -408,6 +408,21 @@ describe("createSystemPrompt Claims workflow", () => {
         expect(prompt).toContain(
           "collapse unjustified single-page directories",
         );
+        expect(prompt).toContain(
+          "A named domain containing multiple pages should normally be a directory",
+        );
+        expect(prompt).toContain(
+          "Do not use generic umbrella directories such as architecture/",
+        );
+        expect(prompt).toContain(
+          "Treat every path in the approved tree as the page's final path",
+        );
+        expect(prompt).toContain(
+          "until every taxonomy request is resolved in /openwiki/_plan.md",
+        );
+        expect(prompt).toContain(
+          "Never introduce an ad-hoc page path that is absent from the plan",
+        );
         expect(prompt).toContain("wiki-question-finder");
         expect(prompt).toContain("wiki-answer-verifier");
         expect(prompt).toContain(

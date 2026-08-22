@@ -239,6 +239,42 @@ describe("appendRunLogEvent tool grouping", () => {
     expect(
       log.find((item) => item.activityPath === "src/agent/index.ts"),
     ).toMatchObject({ activityStatus: "recent", activeToolCallIds: [] });
+    expect(log.find((item) => item.type === "tool")?.exploredPaths).toEqual([
+      "src/agent/index.ts",
+    ]);
+  });
+
+  test("records only unique successful repository reads as explored", () => {
+    const ref = idRef();
+    let log: RunLogItem[] = [];
+
+    for (const [id, activityPath, status] of [
+      ["read-1", "/src/agent/index.ts", "finished"],
+      ["read-2", "/src/agent/index.ts", "finished"],
+      ["read-wiki", "/openwiki/quickstart.md", "finished"],
+      ["read-failed", "/src/agent/prompt.ts", "error"],
+    ] as const) {
+      log = appendRunLogEvent(
+        log,
+        {
+          type: "tool_start",
+          call: `read_file(path=${activityPath})`,
+          id,
+          input: { path: activityPath },
+          name: "read_file",
+        },
+        ref,
+      );
+      log = appendRunLogEvent(
+        log,
+        { type: "tool_end", id, name: "read_file", status },
+        ref,
+      );
+    }
+
+    expect(log.find((item) => item.type === "tool")?.exploredPaths).toEqual([
+      "src/agent/index.ts",
+    ]);
   });
 
   test("records unique persistent OpenWiki pages after successful writes", () => {

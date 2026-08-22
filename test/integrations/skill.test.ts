@@ -210,8 +210,21 @@ describe("canonical OpenWiki host skill", () => {
     expect(nativeInit).toContain("This is a brand-new generation");
     expect(init).toContain("Information architecture section");
     expect(init).toContain("flat collection of Markdown files");
+    expect(init).toContain(
+      "quickstart domain containing multiple pages should correspond",
+    );
+    expect(init).toContain("Do not use umbrella names such as");
+    expect(init).toContain("Treat every planned page");
+    expect(init).toContain("until every taxonomy request is resolved");
+    expect(init).toContain(
+      "Never introduce an ad-hoc path absent from the plan",
+    );
     expect(reviewers).toContain("durable information architecture");
     expect(reviewers).toContain("root must not be a dumping ground");
+    expect(reviewers).toContain("Reject umbrella directories such as");
+    expect(reviewers).toContain(
+      "Every information-architecture request must name the exact planned",
+    );
   });
 
   test("preserves native reviewer evidence isolation", async () => {
