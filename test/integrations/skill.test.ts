@@ -113,6 +113,9 @@ describe("canonical OpenWiki host skill", () => {
     expect(workflowIndex).toBeGreaterThan(beginIndex);
     expect(finishIndex).toBeGreaterThan(workflowIndex);
     expect(requiredSequence).toContain("host-native subagents");
+    expect(requiredSequence).toContain(
+      "never delegate the same domain's research\n   twice",
+    );
     expect(requiredSequence).toMatch(
       /keep Claims and factual edits in the main\s+agent/u,
     );
@@ -216,6 +219,23 @@ describe("canonical OpenWiki host skill", () => {
     expect(init).toContain("Do not use umbrella names such as");
     expect(init).toContain("Treat every planned page");
     expect(init).toContain("until every taxonomy request is resolved");
+    expect(init).toContain("skeleton critic is the only delegated role");
+    expect(init).toContain(
+      "Do not launch standalone domain\n   research or evidence-brief subagents during planning",
+    );
+    expect(init).toContain(
+      "at most nine host-native evidence\n   subagents total",
+    );
+    expect(init).toContain(
+      "Do not create a separate repository-wide evidence-brief phase",
+    );
+    expect(init).toContain("delegate the\n   same domain twice");
+    expect(init).toContain(
+      "performs only narrow source verification needed to establish Claims",
+    );
+    expect(init).toContain(
+      "do not wait for a second evidence pass over the complete inventory",
+    );
     expect(init).toContain(
       "Never introduce an ad-hoc path absent from the plan",
     );

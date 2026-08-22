@@ -51,13 +51,22 @@ Claims sidecars, indexes, and run metadata are unavailable; the user-authored
    Address any remaining item directly; do not invoke a third critic review. Do
    not begin substantive page research, Claims resolution, or prose authoring
    until every taxonomy request is resolved in the plan and exact final paths
-   are frozen.
+   are frozen. Before then, the main agent owns inventory and plan revision; the
+   skeleton critic is the only delegated role. Do not launch standalone domain
+   research or evidence-brief subagents during planning.
 7. Only after the critic gate, author every planned page. For each factual page,
-   first build an evidence brief by inspecting its entrypoint, primary
+   complete one domain-local evidence pass by inspecting its entrypoint, primary
    implementation, important types or schemas, state or persistence, an
    upstream caller, a downstream dependency, representative tests, and relevant
-   operational or generated contracts. Delegate independent briefs in parallel
-   when the host supports it, then have the main agent reconcile their evidence.
+   operational or generated contracts. When the host supports delegation,
+   assign each coherent domain once to at most nine host-native evidence
+   subagents total, with one disjoint set of exact planned paths per invocation.
+   Do not create a separate repository-wide evidence-brief phase, delegate the
+   same domain twice, or follow a research task with a second authoring/research
+   task for that domain. Reuse each returned brief directly; the main agent
+   performs only narrow source verification needed to establish Claims, rather
+   than repeating the domain inventory. The main agent retains ownership of all
+   Claims mutations and factual Markdown edits.
    Establish every material repository-supported proposition with
    `openwiki_resolve_claims`, passing the active `runId`, the page, and bounded
    `repo://path#L10-L24` evidence where practical. Batch multiple pages in one
@@ -65,7 +74,8 @@ Claims sidecars, indexes, and run metadata are unavailable; the user-authored
    grounded in those propositions. Explain ownership, behavior, relationships,
    invariants, extension surfaces, failures, focused tests, and primary
    evidence. Do not treat a source map or passing mention as substantive
-   coverage.
+   coverage. Begin writing once the assigned domain's evidence pass is complete;
+   do not wait for a second evidence pass over the complete inventory.
 8. Perform an unknown-unknown pass over uncovered manifest-backed or high-ranked
    clusters, one-hop dependencies, and cross-system workflows exposed during
    writing. Expand the plan and wiki for real gaps, applying the same evidence

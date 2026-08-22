@@ -128,11 +128,13 @@ Init workflow:
   a) Create one TODO for every returned RQ item and revise the plan to resolve each evidence-backed gap.
   b) Invoke \`skeleton-critic\` exactly once more with the complete prior-request ledger and how each item was addressed. Resolve any remaining item directly without a third critic call.
   c) Do not begin substantive page research, resolve Claims, or write wiki prose until every taxonomy request is resolved in /openwiki/_plan.md and the exact final paths are frozen.
+  d) Before the final paths are frozen, the top-level agent owns inventory and plan revision. Do not invoke general-purpose subagents for standalone research or evidence briefs; the read-only \`skeleton-critic\` is the only review delegation in this phase.
 4. For each planned factual page:
-  a) Research its source and tests.
+  a) Research its source and tests. After the taxonomy is frozen, you may delegate end-to-end authoring for coherent domains to at most nine general-purpose subagents total. Give each invocation one disjoint set of exact planned paths and require it to research, establish Claims, and write those pages in the same invocation.
   b) Establish every material repository-supported factual proposition through resolve_claims. Cite the narrowest sufficient source span as repo://path#L10-L24; use repo://path only when the whole file is the evidence. Claims currently support repository evidence only. Do not invent repository evidence for connector-derived facts. Leave LangSmith-only facts unclaimed.
   c) Write the page as complete explanatory prose grounded in the researched evidence. The established propositions are the material facts to state accurately and keep grounded; they are not a content budget or a ceiling on what to write. Beyond recording them, fully explain how the system works: responsibilities, owning entrypoints and symbols, mechanisms and control flow, important relationships and invariants, lifecycle and ordering, extension points, focused tests, worked examples, and primary evidence where they aid understanding. A passing mention, directory list, source-map row, or concise overview is not substantive coverage.
   d) Ensure EVERY substantial service, API endpoint, and major workflow is documented. An agent or human should be able to use the wiki to fully understand the codebase and its systems and workflows without needing to read a single line of code outside of the wiki; if the wiki alone cannot convey that complete understanding, the documentation is insufficient.
+  e) Never split one domain into a standalone general-purpose research task followed by a separate authoring task, and never ask a second general-purpose subagent to repeat research for a domain already assigned. The authoring invocation performs the domain's evidence pass once and carries that evidence directly into Claims and prose.
 5. Perform one top-level unknown-unknown pass over uncovered high-ranked clusters, one-hop dependencies, and cross-system workflows. Expand the plan only for real gaps. Before authoring an added page, place its exact final path into the existing taxonomy and verify that it does not create root-level sprawl, an artificial single-page directory, or a generic catch-all; then author it with the same evidence discipline. Never introduce an ad-hoc page path that is absent from the plan.
 6. Reconcile the physical wiki tree against the reviewed domain taxonomy and inventory. Relocate root-level orphans, collapse unjustified single-page directories, split generic umbrella sections that mix independently owned subsystems, and ensure every multi-page domain in quickstart maps to its physical directory; then write /openwiki/quickstart.md using its own complete Claims set.
 7. Verify the completed wiki with the read-only \`wiki-question-finder\` and \`wiki-answer-verifier\` subagents:
@@ -165,7 +167,7 @@ IMPORTANT: This section should be followed EXACTLY when navigating the codebase 
   - E.g. a frontend application should likely have one main page describing its contents and architecture, but for each page within the app, or larger page collections (e.g. settings pages like /settings/users, /settings/admin, /settings/billing) should have their own unique page(s) to documents contents, design, and relationships between other pages/components.
 - Reading test files is highly encouraged as a great way to understand how components are used, validated and what the developer cares/focuses on the most.
 
-Do not draft wiki prose until every planned substantive page has an evidence brief. For each major component or domain, inspect:
+Before drafting a domain's wiki prose, the top-level agent or that domain's single assigned author must complete one evidence pass for the pages it owns. Do not create a separate repository-wide evidence-brief phase. For each major component or domain, inspect:
 - its runtime entrypoint and registration/composition surface;
 - the primary implementation behind that entrypoint;
 - its important public types, schemas, and configuration;
@@ -176,7 +178,7 @@ Do not draft wiki prose until every planned substantive page has an evidence bri
 
 - Manifests, READMEs, directory listings, imports, and the first portion of a composition root are discovery evidence, not sufficient implementation evidence. You MUST gather more details about specific components, services, and their relationships before writing documentation.
 - Once a canonical file is identified, read the complete relevant functions, types, and adjacent tests. Follow calls and data across at least one boundary in each direction. Do not merely collect filenames or test names: understand what behavior and invariant each test proves.
-- Only begin writing after this evidence gate is satisfied for the complete inventory. Do not start with quickstart prose while major components still have only manifest- or README-level understanding.
+- Begin writing a domain after this evidence gate is satisfied for that domain; do not wait for or commission a separate evidence pass over the complete inventory. Do not start with quickstart prose while major components still have only manifest- or README-level understanding.
 
 Metadata and links (OKF):
 - Every non-reserved Markdown concept must begin with valid OKF v0.2 YAML front matter. index.md and log.md are reserved and must not receive concept front matter.

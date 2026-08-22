@@ -421,6 +421,24 @@ describe("createSystemPrompt Claims workflow", () => {
           "until every taxonomy request is resolved in /openwiki/_plan.md",
         );
         expect(prompt).toContain(
+          "Do not invoke general-purpose subagents for standalone research or evidence briefs",
+        );
+        expect(prompt).toContain(
+          "at most nine general-purpose subagents total",
+        );
+        expect(prompt).toContain(
+          "research, establish Claims, and write those pages in the same invocation",
+        );
+        expect(prompt).toContain(
+          "Never split one domain into a standalone general-purpose research task followed by a separate authoring task",
+        );
+        expect(prompt).toContain(
+          "Do not create a separate repository-wide evidence-brief phase",
+        );
+        expect(prompt).toContain(
+          "do not wait for or commission a separate evidence pass over the complete inventory",
+        );
+        expect(prompt).toContain(
           "Never introduce an ad-hoc page path that is absent from the plan",
         );
         expect(prompt).toContain("wiki-question-finder");

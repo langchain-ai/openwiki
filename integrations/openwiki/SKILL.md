@@ -27,8 +27,8 @@ tools and host-native delegation.
 5. Execute every planning, evidence, authoring, and review gate in the selected
    workflow. Pass the returned `runId` to `openwiki_inspect_claims` and
    `openwiki_resolve_claims` as the workflow directs, use host-native subagents
-   only as that workflow directs, and keep Claims and factual edits in the main
-   agent.
+   only as that workflow directs, never delegate the same domain's research
+   twice, and keep Claims and factual edits in the main agent.
 6. Call `openwiki_finish` with the returned `runId`. Correct actionable failures
    and retry finish.
 
