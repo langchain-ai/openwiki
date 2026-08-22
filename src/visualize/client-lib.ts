@@ -154,3 +154,35 @@ export function normalize(baseDir: string, rel: string): string {
   }
   return out.join("/");
 }
+
+/**
+ * Replace Open Knowledge Format wikilinks — `[[target]]` and `[[target|label]]`
+ * — before a page body reaches marked, which does not know the syntax and would
+ * render them as literal brackets. `resolve` maps a target to a node id; a
+ * resolved wikilink becomes a standard markdown link to `<id>.md` (rooted at the
+ * wiki, so the anchor-rewrite pass can upgrade it to in-app navigation), while
+ * an unresolved one degrades to its label as plain text rather than a dead link.
+ * Backtick code spans and fences are passed through untouched — a lexer-free
+ * approximation that covers the generator's output, though exotic fences (tilde
+ * or four-plus-backtick) are not recognised.
+ */
+export function resolveWikilinks(
+  body: string,
+  resolve: (target: string) => string | undefined,
+): string {
+  // Odd-index chunks are the captured code spans/fences; even-index are prose.
+  return body
+    .split(/(```[\s\S]*?(?:```|$)|`[^`\n]*`)/g)
+    .map((chunk, i) => {
+      if (i % 2 === 1) return chunk;
+      return chunk.replace(
+        /\[\[([^[\]|\n]+)(?:\|([^[\]\n]*))?\]\]/g,
+        (_match, target: string, label?: string) => {
+          const text = (label ?? "").trim() || target.trim();
+          const id = resolve(target.trim());
+          return id ? `[${text}](${id}.md)` : text;
+        },
+      );
+    })
+    .join("");
+}
