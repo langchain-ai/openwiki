@@ -5,6 +5,10 @@
 Build a durable engineering map from an intent to the owning systems, runtime
 flows, files, symbols, focused tests, and operations.
 
+`openwiki_begin` starts init from a blank generated wiki. Prior generated pages,
+Claims sidecars, indexes, and run metadata are unavailable; the user-authored
+`openwiki/INSTRUCTIONS.md` brief is preserved when present.
+
 ## Workflow
 
 1. Read repository-level instructions, `openwiki/INSTRUCTIONS.md`, and

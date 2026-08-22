@@ -122,10 +122,25 @@ describe("HostSessionManager lifecycle", () => {
   test("prepares, permits native authoring, and durably finalizes a run", async () => {
     const root = await createRepository();
     const wikiRoot = path.join(root, "openwiki");
-    await mkdir(wikiRoot, { recursive: true });
+    await mkdir(path.join(wikiRoot, ".claims"), { recursive: true });
+    await writeFile(
+      path.join(wikiRoot, "INSTRUCTIONS.md"),
+      "# Preserve this brief\n",
+      "utf8",
+    );
     await writeFile(
       path.join(wikiRoot, "legacy.md"),
       "# Ancien\n\nPAGE_BODY_SENTINEL\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(wikiRoot, ".claims/legacy.json"),
+      "not-json\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(wikiRoot, ".last-update.json"),
+      '{"status":"complete","old":true}\n',
       "utf8",
     );
     await writeFile(path.join(root, ".openwikiignore"), "private/**\n", "utf8");
@@ -139,9 +154,15 @@ describe("HostSessionManager lifecycle", () => {
     });
     const canonicalRoot = await realpath(root);
 
-    const migrated = await readFile(path.join(wikiRoot, "legacy.md"), "utf8");
-    expect(migrated).toContain('type: "Référence"');
-    expect(migrated).toContain("openwiki_generated: true");
+    await expect(
+      readFile(path.join(wikiRoot, "INSTRUCTIONS.md"), "utf8"),
+    ).resolves.toBe("# Preserve this brief\n");
+    await expect(
+      readFile(path.join(wikiRoot, "legacy.md"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      readFile(path.join(wikiRoot, ".claims/legacy.json"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
     expect(started).toMatchObject({
       root: canonicalRoot,
       mode: "init",
@@ -185,8 +206,8 @@ describe("HostSessionManager lifecycle", () => {
       "utf8",
     );
     await writeFile(
-      path.join(wikiRoot, "legacy.md"),
-      concept("Ancien", "Contenu révisé."),
+      path.join(wikiRoot, "architecture.md"),
+      concept("Architecture", "Contenu neuf."),
       "utf8",
     );
     await writeFile(
@@ -209,13 +230,22 @@ describe("HostSessionManager lifecycle", () => {
       path.join(wikiRoot, "quickstart.md"),
       "utf8",
     );
-    const legacy = await readFile(path.join(wikiRoot, "legacy.md"), "utf8");
+    const architecture = await readFile(
+      path.join(wikiRoot, "architecture.md"),
+      "utf8",
+    );
     const index = await readFile(path.join(wikiRoot, "index.md"), "utf8");
     const generated = `generated: {by: "codex", ` + `at: "${RUN_TIMESTAMP}"}`;
     expect(quickstart).toContain(generated);
-    expect(legacy).toContain(generated);
+    expect(architecture).toContain(generated);
     expect(index).toContain("# Fichiers");
     expect(index).toContain("[Quickstart](quickstart.md)");
+    await expect(
+      readFile(path.join(wikiRoot, "legacy.md"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      readFile(path.join(wikiRoot, "INSTRUCTIONS.md"), "utf8"),
+    ).resolves.toBe("# Preserve this brief\n");
     await expect(access(path.join(wikiRoot, "deleted.md"))).rejects.toThrow();
     await expect(access(path.join(wikiRoot, "_plan.md"))).rejects.toThrow();
     await expect(access(path.join(wikiRoot, "_skeleton.md"))).rejects.toThrow();
@@ -466,11 +496,11 @@ describe("HostSessionManager lifecycle", () => {
     });
   });
 
-  test("a new manager recovers interrupted metadata and authored Markdown", async () => {
+  test("a new manager recovers interrupted update metadata and authored Markdown", async () => {
     const root = await createRepository();
     const wikiRoot = path.join(root, "openwiki");
     const abandonedManager = createManager("codex");
-    await abandonedManager.begin({ root, mode: "init" });
+    await abandonedManager.begin({ root, mode: "update" });
     await writeFile(
       path.join(wikiRoot, "recovered.md"),
       concept("Recovered", "Survives process exit."),

@@ -2,6 +2,10 @@ import { randomUUID } from "node:crypto";
 import { OpenWikiLocalShellBackend } from "../../agent/docs-only-backend.js";
 import { OpenWikiIgnore } from "../../agent/openwiki-ignore.js";
 import type { RunContext } from "../../agent/types.js";
+import {
+  beginRepositoryWikiReplacement,
+  type RepositoryWikiReplacement,
+} from "../../agent/wiki-replacement.js";
 import { ensureCodeModeRepoSetup } from "../../ingestion/code-mode.js";
 import {
   createOpenWikiContentSnapshot,
@@ -211,6 +215,13 @@ interface ActiveSession extends HostRunView {
    * Non-fatal Claims warnings accumulated during finalization.
    */
   claimsWarnings: string[];
+
+  /**
+   * Recoverable replacement retained until a successful init finish.
+   *
+   * @default undefined for update runs.
+   */
+  wikiReplacement?: RepositoryWikiReplacement;
 }
 
 /**
@@ -294,6 +305,7 @@ export class HostSessionManager {
     this.startOperation();
     const supersededSession = this.active;
     this.active = null;
+    let wikiReplacement: RepositoryWikiReplacement | undefined;
 
     try {
       const runId = randomUUID();
@@ -303,6 +315,9 @@ export class HostSessionManager {
         createWorkflow: input.mode === "init",
       });
       const ignore = await OpenWikiIgnore.load(root);
+      if (input.mode === "init") {
+        wikiReplacement = await beginRepositoryWikiReplacement(root);
+      }
       const context = await createRunContext(
         root,
         "repository",
@@ -352,7 +367,7 @@ export class HostSessionManager {
         conceptType: resolveConceptTypeLabel(language),
       });
 
-      this.active = {
+      const nextSession: ActiveSession = {
         id: runId,
         root,
         host: this.host,
@@ -364,7 +379,14 @@ export class HostSessionManager {
         preparedWiki,
         claimsRuntime,
         claimsWarnings,
+        wikiReplacement,
       };
+
+      // A later begin deliberately supersedes an interrupted host run. Preserve
+      // the authored state from that run, matching the existing recovery
+      // behavior, while releasing any init backup it still owns.
+      await supersededSession?.wikiReplacement?.commit();
+      this.active = nextSession;
 
       return {
         runId,
@@ -379,6 +401,17 @@ export class HostSessionManager {
       };
     } catch (error) {
       this.active = supersededSession;
+      if (wikiReplacement) {
+        try {
+          await wikiReplacement.rollback();
+        } catch (rollbackError) {
+          throw new AggregateError(
+            [error, rollbackError],
+            "Coding-agent wiki init failed and the previous wiki could not be fully restored.",
+            { cause: rollbackError },
+          );
+        }
+      }
       throw error;
     } finally {
       this.operationInProgress = false;
@@ -420,6 +453,7 @@ export class HostSessionManager {
         "complete",
         session.language,
       );
+      await session.wikiReplacement?.commit();
 
       this.active = null;
       return session.claimsWarnings.length > 0

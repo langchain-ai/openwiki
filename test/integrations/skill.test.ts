@@ -206,6 +206,8 @@ describe("canonical OpenWiki host skill", () => {
     expect(init).toContain("`openwiki/quickstart.md`, then write it last");
     expect(nativeInit).toContain("through resolve_claims");
     expect(init).toContain("`openwiki_resolve_claims`");
+    expect(init).toContain("starts init from a blank generated wiki");
+    expect(nativeInit).toContain("This is a brand-new generation");
   });
 
   test("preserves native reviewer evidence isolation", async () => {
