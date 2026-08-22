@@ -48,17 +48,6 @@ import {
 } from "../okf/index-labels.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { getSelectedModelAvailability } from "../model-availability.js";
-import { createOpenWikiAuthoringPoolMiddleware } from "./authoring-pool.js";
-import {
-  createOpenWikiPlanLedgerMiddleware,
-  planReadiness,
-} from "./plan-ledger.js";
-import { createPlanStore } from "./plan-store.js";
-import {
-  createOpenWikiVerificationMiddleware,
-  createQaGate,
-} from "./wiki-verification.js";
-import { createOpenWikiCodeInterpreterMiddleware } from "./code-interpreter.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
 import {
   createWikiTranslationMiddleware,
@@ -75,7 +64,6 @@ import {
 } from "./openai-chatgpt-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import { resolveRepositoryReviewSubagents } from "./review-subagents.js";
-import { resolvePageAuthorSubagents } from "./page-author.js";
 import { syncBundledSkills } from "./skills.js";
 import {
   createVertexAuthFetch,
@@ -502,14 +490,6 @@ function createOpenWikiAgentGraph(
     virtualMode: true,
   });
   const backend = createAgentBackend(wikiBackend);
-  // One gate shared by verify_wiki and finalize_wiki. OPENWIKI_QA_MODE=off
-  // turns semantic QA into a no-op that still finalizes, which is the control
-  // arm for measuring whether it earns its cost.
-  // One plan, shared by the tool that accepts it and the tools that consume it.
-  const planStore = createPlanStore();
-  const qaGate = createQaGate(
-    process.env.OPENWIKI_QA_MODE === "off" ? "off" : "full",
-  );
   const claimsIntegration = options.claimsRuntime
     ? createClaimsIntegration(options.claimsRuntime, wikiBackend)
     : undefined;
@@ -573,30 +553,6 @@ function createOpenWikiAgentGraph(
                   ),
                 ]
               : []),
-            // Exploration and fan-out move inside the REPL, so the
-            // orchestrator's turn count stops scaling with repository size.
-            createOpenWikiCodeInterpreterMiddleware(),
-            // Registered after it, because the REPL reads its ptc list from
-            // request.tools and author_pages has to be on the request by then.
-            ...(options.command === "init" &&
-            options.outputMode === "repository"
-              ? [
-                  createOpenWikiAuthoringPoolMiddleware(
-                    planStore,
-                    () => planReadiness(planStore, wikiBackend),
-                    options.claimsRuntime?.session,
-                  ),
-                  // Enumeration, the ledger it feeds, and the gate that reads
-                  // the ledger: breadth stops being something the workflow asks
-                  // for and becomes something it cannot skip.
-                  createOpenWikiVerificationMiddleware(qaGate),
-                  createOpenWikiPlanLedgerMiddleware(
-                    wikiBackend,
-                    planStore,
-                    qaGate,
-                  ),
-                ]
-              : []),
             ...(claimsIntegration?.middleware ?? []),
             createOpenWikiIndexMiddleware(
               wikiBackend,
@@ -610,23 +566,11 @@ function createOpenWikiAgentGraph(
             ),
           ],
     skills: ["/skills/"],
-    subagents: [
-      ...resolveRepositoryReviewSubagents(
-        options.command,
-        options.outputMode,
-        backend,
-      ),
-      // Authoring is the run's dominant cost and the only phase that cannot move
-      // into the REPL, so it scales by fanning out instead.
-      ...(options.claimsRuntime
-        ? resolvePageAuthorSubagents(
-            options.command,
-            options.outputMode,
-            backend,
-            options.claimsRuntime.session,
-          )
-        : []),
-    ],
+    subagents: resolveRepositoryReviewSubagents(
+      options.command,
+      options.outputMode,
+      backend,
+    ),
     permissions: AGENT_FILESYSTEM_PERMISSIONS,
     systemPrompt: createSystemPrompt(
       options.command,

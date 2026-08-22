@@ -117,31 +117,10 @@ describe("Claims agent graph integration", () => {
       expect(options.middleware.map((middleware) => middleware.name)).toContain(
         "OpenWikiClaimsReadNoteMiddleware",
       );
-      // The REPL resolves its ptc list by name and SILENTLY drops a name that
-      // matches no registered tool, which would turn author_pages back into
-      // model-written scheduling with nothing failing. So the registration is
-      // asserted here, per command, rather than trusted.
-      const middlewareNames = options.middleware.map(
-        (middleware: { name: string }) => middleware.name,
-      );
-      if (command === "init") {
-        expect(middlewareNames).toContain("OpenWikiAuthoringPoolMiddleware");
-        const pool = options.middleware.find(
-          (middleware: { name: string }) =>
-            middleware.name === "OpenWikiAuthoringPoolMiddleware",
-        ) as { tools: { name: string }[] };
-        expect(pool.tools.map((pooled) => pooled.name)).toEqual([
-          "author_pages",
-        ]);
-      } else {
-        expect(middlewareNames).not.toContain(
-          "OpenWikiAuthoringPoolMiddleware",
-        );
-      }
       expect(
         options.middleware.map((middleware) => middleware.name),
       ).not.toContain("OpenWikiClaimsCompletionMiddleware");
-      expect(options.subagents).toHaveLength(command === "init" ? 4 : 0);
+      expect(options.subagents).toHaveLength(command === "init" ? 3 : 0);
       if (command === "init") {
         expect(
           options.subagents.map(
@@ -151,36 +130,7 @@ describe("Claims agent graph integration", () => {
           "skeleton-critic",
           "wiki-question-finder",
           "wiki-answer-verifier",
-          "page-author",
         ]);
-        // The coordinator is the single Claims writer, and every subagent is
-        // told so in its own system prompt. The init prompt used to carry this
-        // as one blanket sentence; it moved here when the prompt was trimmed,
-        // where it is checked per subagent instead of asserted once in prose.
-        const promptFor = (name: string) =>
-          (
-            options.subagents.find(
-              (subagent) => (subagent as { name: string }).name === name,
-            ) as { systemPrompt: string }
-          ).systemPrompt;
-        for (const name of [
-          "skeleton-critic",
-          "wiki-question-finder",
-          "wiki-answer-verifier",
-        ]) {
-          expect(promptFor(name)).toContain(
-            "Never call or propose Claims mutations",
-          );
-        }
-        // The author establishes its own page's claims now: it is the only
-        // participant that can repair bad evidence, because it has the file
-        // open. The read-only reviewers above still may not touch Claims.
-        // The author cannot write prose without claims: there is one atomic
-        // operation and no separate write on its surface.
-        expect(promptFor("page-author")).toContain("establish_claims");
-        expect(promptFor("page-author")).toContain("write_page");
-        expect(promptFor("page-author")).toContain("OKF v0.2");
-        expect(promptFor("page-author")).not.toContain("OKF v0.1");
       }
     },
   );

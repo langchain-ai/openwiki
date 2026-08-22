@@ -5,15 +5,12 @@ import {
 import type { DeleteResult } from "deepagents";
 import { z } from "zod";
 import { ClaimSessionError, EvidenceResourceError } from "../../core/errors.js";
-import { CLAIMS_SUBSTANCE_GUIDANCE } from "../../guidance.js";
-import type { ClaimOperation } from "../../core/types.js";
 import {
   isGroundedWikiPage,
   normalizeClaimsToolPagePath,
   normalizeWikiToolPagePath,
 } from "./paths.js";
 import { ClaimSession } from "./session.js";
-import type { ResolveClaimsResult } from "./types.js";
 
 /**
  * Runtime validator for canonical non-empty identity strings.
@@ -103,9 +100,8 @@ export const InspectClaimsInputSchema = z
 /**
  * Shared model guidance for Claims mutation tools across agent transports.
  */
-export const RESOLVE_CLAIMS_DESCRIPTION = `${CLAIMS_SUBSTANCE_GUIDANCE}
-
-Maintain those Claims for one or more wiki pages in one call. Put every affected page in pages: a whole authoring or repair phase is one call, and calling this once per page in a loop is always wrong. Each page's operations apply atomically and each page succeeds or fails on its own - successful pages come back under pages, failures under failed with their own error - so retry only the failures and never replay a page that already succeeded. Keep each statement concise, not an excerpt, list, compound summary, or paragraph. Use confirm when a claim remains true, update to change its statement or evidence, retract when it is obsolete, and add for a new material fact. For an update, call this tool before writing the corresponding new or materially changed factual prose; scope an existing page to facts changed by the update rather than backfilling untouched prose. Style- or navigation-only edits need no Claims call. Claims currently support repository evidence only; do not invent repository evidence for connector-derived facts, and leave LangSmith-only facts unclaimed. Cite bounded language-agnostic line ranges as repo://path#L10-L24. Use repo://path only when the whole file is the evidence.`;
+export const RESOLVE_CLAIMS_DESCRIPTION =
+  "Maintain substantive system truths for one or more wiki pages in one call. Prioritize behavior, responsibilities, architecture and ownership, cross-component relationships, data/control flow, invariants, lifecycle and failure semantics, configuration, security, persistence, operations, and extension seams. Atomic means one coherent falsifiable idea, not one symbol or source line: a claim may connect multiple components and cite multiple evidence resources. Omit low-value facts about symbol existence, paths, signatures, return types, or inheritance unless they materially affect understanding, operation, or safe change. Ensure every material, source-dependent proposition the wiki relies on is represented; completeness takes priority over minimizing Claim count, and distinct truths remain distinct even when the same function or component supports them. Put every affected page in pages; each page's operations are applied atomically. Keep each statement concise—not an excerpt, list, compound summary, or paragraph—and remove semantic duplicates only after establishing coverage. Use confirm when a claim remains true, update to change its statement or evidence, retract when it is obsolete, and add for a new material fact. For an update, call this tool before writing the corresponding new or materially changed factual prose; scope an existing page to facts changed by the update rather than backfilling untouched prose. Style- or navigation-only edits need no Claims call. Claims currently support repository evidence only; do not invent repository evidence for connector-derived facts, and leave LangSmith-only facts unclaimed. Cite bounded language-agnostic line ranges as repo://path#L10-L24. Use repo://path only when the whole file is the evidence.";
 
 /**
  * Shared model guidance for Claims inspection tools across agent transports.
@@ -272,7 +268,13 @@ export async function resolveClaims(
       operationsByPage.set(page, [...pageInput.operations]);
     }
   }
-  return resolvePagesIndependently(session, [...operationsByPage]);
+  return {
+    pages: await Promise.all(
+      [...operationsByPage].map(([page, operations]) =>
+        session.resolveClaims({ page, operations }),
+      ),
+    ),
+  };
 }
 
 /**
@@ -351,104 +353,6 @@ export function createClaimsDeleteFileTool(
  * @param operation - Parsed Claims operation to execute.
  * @returns Compact JSON for either success or a retryable input failure.
  */
-/**
- * Pages a single `resolve_claims` call may resolve at once.
- *
- * Every page's operations resolve their evidence against the repository, so an
- * unbounded fan-out over a large monorepo's worth of pages puts one resolver
- * request in flight per page. Eight keeps a phase-sized call - the batching the
- * tool description asks for - from becoming a thundering herd, while still
- * finishing a 60-page phase in eight rounds rather than sixty.
- */
-const RESOLVE_CLAIMS_PAGE_CONCURRENCY = 8;
-
-/**
- * Resolves each page independently, so one page's failure is one page's failure.
- *
- * `Promise.all` rejected the whole call when any single page did, and
- * `runClaimsTool` then turned that into one batch-wide `{error, retryable}`.
- * The pages that had already succeeded were invisible in that response while
- * their mutations had in fact applied, so the model could neither tell which
- * page was at fault nor safely retry: replaying the batch duplicated every add
- * that worked the first time.
- *
- * The coordinator's answer, observed in a graded run, was to stop batching -
- * `for (const p of payloads) await resolveClaims({pages: [p]})`, one call per
- * page, 108 calls where 8 would do, with a hand-rolled evidence filter in the
- * catch. It was not wrong to do that: per-page calls were the only way to learn
- * which page failed. Reporting per page removes the reason.
- *
- * Per-page atomicity is unchanged and comes from the session, which serializes
- * each page's mutations and swaps its claim set in one step.
- *
- * @param session - Run-scoped authoritative claim state.
- * @param entries - Deduplicated page and operation pairs from one call.
- * @returns Successful pages under `pages`, and any failures under `failed`.
- */
-export async function resolvePagesIndependently(
-  session: ClaimSession,
-  entries: readonly [string, ClaimOperation[]][],
-): Promise<{
-  pages: ResolveClaimsResult[];
-  failed?: { page: string; error: string; retryable: boolean }[];
-}> {
-  const pages: ResolveClaimsResult[] = [];
-  const failed: { page: string; error: string; retryable: boolean }[] = [];
-  for (
-    let index = 0;
-    index < entries.length;
-    index += RESOLVE_CLAIMS_PAGE_CONCURRENCY
-  ) {
-    const window = entries.slice(
-      index,
-      index + RESOLVE_CLAIMS_PAGE_CONCURRENCY,
-    );
-    const settled = await Promise.allSettled(
-      window.map(([page, operations]) =>
-        session.resolveClaims({ page, operations }),
-      ),
-    );
-    for (const [offset, outcome] of settled.entries()) {
-      if (outcome.status === "fulfilled") {
-        pages.push(outcome.value);
-        continue;
-      }
-      if (!isRecoverableClaimsToolError(outcome.reason)) {
-        // An operational failure - a missing grammar, an unreadable tree - is
-        // not a result to report, and rethrowing is how it stays visible rather
-        // than becoming quietly ungrounded pages. But throwing discards every
-        // page in `pages`, and those pages' mutations HAVE applied: the session
-        // swapped their claim sets before this one failed. Reporting a total
-        // failure over applied state is the same lie the batch-wide error told.
-        //
-        // So it only throws when nothing succeeded, which is the shape a real
-        // operational failure has anyway - a broken resolver fails every page,
-        // not the third one. A partial failure is reported, marked not
-        // retryable so the model does not replay it expecting a different
-        // answer.
-        if (pages.length === 0) {
-          throw outcome.reason;
-        }
-        failed.push({
-          page: window[offset][0],
-          error:
-            outcome.reason instanceof Error
-              ? outcome.reason.message
-              : String(outcome.reason),
-          retryable: false,
-        });
-        continue;
-      }
-      failed.push({
-        page: window[offset][0],
-        error: formatRecoverableClaimsToolError(outcome.reason),
-        retryable: true,
-      });
-    }
-  }
-  return failed.length > 0 ? { pages, failed } : { pages };
-}
-
 async function runClaimsTool(operation: () => unknown): Promise<string> {
   try {
     return JSON.stringify(await operation());

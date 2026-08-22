@@ -376,34 +376,18 @@ describe("createSystemPrompt Claims workflow", () => {
           "every page and its operations into one resolve_claims call",
         );
       }
-      // Same rule in both, worded for each: the init trim states it as a
-      // boundary rather than a prohibition, and update keeps the longer form.
       expect(prompt).toContain(
-        command === "init"
-          ? "Use shell execute only to inspect source, never to mutate wiki files"
-          : "Never use execute to create, edit, move, or delete generated wiki files",
+        "Never use execute to create, edit, move, or delete generated wiki files",
       );
       expect(prompt).not.toContain("_skeleton.md");
       if (command === "init") {
         expect(prompt).toContain("skeleton-critic");
         expect(prompt).toContain("wiki-question-finder");
         expect(prompt).toContain("wiki-answer-verifier");
-        expect(prompt).toContain("page-author");
-        // Claims for pooled pages are established inside author_pages now, so
-        // the prompt's job is to stop the coordinator doing it a second time.
         expect(prompt).toContain(
-          "Each author establishes its own page's Claims",
+          "Maintain affected propositions with resolve_claims",
         );
-        expect(prompt).toContain("finalize_wiki");
-        expect(prompt).toContain("verify_wiki");
-        expect(prompt).toContain("submit_plan");
-        expect(prompt).toContain("list_repository_directories");
-        expect(prompt).toContain("submit_plan");
-        expect(prompt).toContain("Authors own one page and its Claims each");
-        expect(prompt).not.toContain("every Claims operation");
-        expect(prompt).not.toContain("pagesWithNoClaims");
-        expect(prompt).not.toContain("Only `page-author` returns JSON");
-        expect(prompt).not.toContain("delete /openwiki/_plan.md");
+        expect(prompt).toContain("subagents never mutate Claims or Markdown");
       } else {
         expect(prompt).not.toContain("skeleton-critic");
         expect(prompt).not.toContain("wiki-question-finder");

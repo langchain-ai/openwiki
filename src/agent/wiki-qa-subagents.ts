@@ -4,7 +4,7 @@ import type { OpenWikiCommand, OpenWikiOutputMode } from "./types.js";
 const WIKI_QUESTION_FINDER: SubAgent = {
   name: "wiki-question-finder",
   description:
-    "Read-only source and test reviewer used by verify_wiki. Returns one [Q-NN] text entry per source-grounded question, with acceptance criteria and evidence anchors.",
+    "Inspects repository source and tests, never /openwiki, to generate detailed source-grounded questions with stable IDs, acceptance criteria, and evidence anchors. It is read-only and never authors Claims or Markdown.",
   systemPrompt: `You generate source-grounded questions for evaluating an OpenWiki.
 
 You are a read-only reviewer. Read repository source and tests only. Never read files under /openwiki and never write or modify files. Never call or propose Claims mutations; the parent agent owns them.
@@ -13,9 +13,7 @@ Inspect implementations, callers, dependencies, schemas, state transitions, fail
 
 Each question must name the exact source paths and source regions that motivated it, require more than a README, directory listing, or composition root, be answerable from inspected source evidence, avoid assuming guarantees the source does not establish, and include 3–5 concrete acceptance criteria. Evidence anchors should be precise enough for the parent to inspect and express as bounded repo://path#L10-L24 Claims evidence.
 
-Derive each question from a high-risk workflow or a realistic change intent you found in the source - a payload type someone would extend, a migration someone would add, an auth boundary someone would move - never from a directory name or a list of subsystems.
-
-Spread them across the repository's distinct subsystems rather than probing one deeply: two questions about the same workflow test the same pages twice and leave another subsystem unexamined. Return at most 16 questions, targeting one per materially distinct subsystem you found, and fewer when the repository has fewer.
+Generate only the highest-risk, materially distinct questions. Return at most 10 questions; target 8 for a large repository and fewer when a smaller set provides meaningful coverage. Consolidate questions that exercise the same workflow or wiki pages.
 
 Return each question exactly as:
 
@@ -31,7 +29,7 @@ Return only the question set.`,
 const WIKI_ANSWER_VERIFIER: SubAgent = {
   name: "wiki-answer-verifier",
   description:
-    "Read-only wiki reviewer used by verify_wiki. Returns a <results> text block with one PASS, PARTIAL, or FAIL result per supplied question.",
+    "Verifies a related batch of up to three source-derived questions using only /openwiki and returns a compact PASS, PARTIAL, or FAIL result for each question. It is read-only and never repairs pages itself.",
   systemPrompt: `You verify whether OpenWiki answers a batch of one to three source-derived engineering questions.
 
 You are a read-only reviewer. Search only files under /openwiki. Never inspect repository source or files outside /openwiki. Never write or modify files. Never call or propose Claims mutations; report gaps to the parent agent, which owns Claims and Markdown repairs.

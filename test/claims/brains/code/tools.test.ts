@@ -1,7 +1,6 @@
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { describe, expect, test, vi } from "vitest";
 import { EvidenceResolutionError } from "../../../../src/claims/core/errors.ts";
-import { CLAIMS_SUBSTANCE_GUIDANCE } from "../../../../src/claims/guidance.ts";
 import type {
   EvidenceResolver,
   ResolvedEvidence,
@@ -75,18 +74,6 @@ function parse(output: unknown): Record<string, unknown> {
   return JSON.parse(String(output)) as Record<string, unknown>;
 }
 
-/** Shape `resolve_claims` returns: successes per page, failures per page. */
-interface ResolveToolOutput {
-  pages?: { page: string }[];
-  failed?: { page: string; error: string; retryable: boolean }[];
-  error?: string;
-  retryable?: boolean;
-}
-
-function parseResolve(output: unknown): ResolveToolOutput {
-  return JSON.parse(String(output)) as ResolveToolOutput;
-}
-
 describe("createClaimsTools", () => {
   test("exposes the compact resolve and inspect API", () => {
     const tools = createClaimsTools(createSession());
@@ -94,15 +81,26 @@ describe("createClaimsTools", () => {
       "resolve_claims",
       "inspect_claims",
     ]);
-    const resolveDescription = getTool(tools, "resolve_claims").description;
-    // The substance standard is carried verbatim rather than paraphrased, so a
-    // reworded guidance constant cannot silently leave this description behind.
-    expect(resolveDescription).toContain(CLAIMS_SUBSTANCE_GUIDANCE);
-    // What the description owns on its own: this tool's operational contract.
-    expect(resolveDescription).toContain("confirm");
-    expect(resolveDescription).toContain("repository evidence only");
-    expect(resolveDescription).toContain("repo://path#L10-L24");
-    expect(resolveDescription).toContain(
+    expect(getTool(tools, "resolve_claims").description).toContain("confirm");
+    expect(getTool(tools, "resolve_claims").description).toContain(
+      "substantive system truths",
+    );
+    expect(getTool(tools, "resolve_claims").description).toContain(
+      "not one symbol or source line",
+    );
+    expect(getTool(tools, "resolve_claims").description).toContain(
+      "connect multiple components",
+    );
+    expect(getTool(tools, "resolve_claims").description).toContain(
+      "completeness takes priority over minimizing Claim count",
+    );
+    expect(getTool(tools, "resolve_claims").description).toContain(
+      "only after establishing coverage",
+    );
+    expect(getTool(tools, "resolve_claims").description).toContain(
+      "repository evidence only",
+    );
+    expect(getTool(tools, "resolve_claims").description).toContain(
       "leave LangSmith-only facts unclaimed",
     );
     expect(getTool(tools, "resolve_claims").description).toContain(
@@ -338,14 +336,9 @@ describe("createClaimsTools", () => {
       createClaimsTools(createSession()),
       "resolve_claims",
     );
-    const output = parseResolve(await resolve.invoke(input));
-    // A page path that will not normalize fails the whole call, because there is
-    // no page to attribute it to. Anything that fails while resolving one page's
-    // operations is reported against that page, so the other pages in the call
-    // keep their results and the model can retry just the one.
-    expect(
-      output.retryable === true || output.failed?.[0]?.retryable === true,
-    ).toBe(true);
+    expect(parse(await resolve.invoke(input))).toMatchObject({
+      retryable: true,
+    });
   });
 
   test("rejects an empty partial update through the public schema", async () => {
@@ -372,7 +365,7 @@ describe("createClaimsTools", () => {
       ),
       "resolve_claims",
     );
-    const output = parseResolve(
+    const output = parse(
       await resolve.invoke({
         pages: [
           {
@@ -382,113 +375,8 @@ describe("createClaimsTools", () => {
         ],
       }),
     );
-    expect(output.pages).toEqual([]);
-    expect(output.failed).toHaveLength(1);
-    expect(output.failed?.[0]).toMatchObject({ page: PAGE, retryable: true });
-    expect(output.failed?.[0]?.error).toContain("Evidence does not resolve");
-  });
-
-  test("one page's evidence failure leaves the other pages resolved", async () => {
-    // The batch-wide error this replaced is why a graded coordinator abandoned
-    // batching and called the tool once per page, 108 times in one run: a single
-    // failure hid every success, so per-page calls were the only way to learn
-    // which page was at fault.
-    const other = "/openwiki/other.md";
-    const session = createSession({
-      resolver: {
-        resolve: (resource: string) =>
-          Promise.resolve(
-            resource.includes("missing")
-              ? null
-              : { evidence: { resource, version: "revision:2" }, content: "c" },
-          ),
-      },
-    });
-    const resolve = getTool(createClaimsTools(session), "resolve_claims");
-    const output = parseResolve(
-      await resolve.invoke({
-        pages: [
-          {
-            page: PAGE,
-            operations: [
-              {
-                op: "add",
-                statement: "The resolvable page states one fact.",
-                evidence: [{ resource: "repo://src/present.ts" }],
-              },
-            ],
-          },
-          {
-            page: other,
-            operations: [
-              {
-                op: "add",
-                statement: "This one cites evidence that does not resolve.",
-                evidence: [{ resource: "repo://src/missing.ts" }],
-              },
-            ],
-          },
-        ],
-      }),
-    );
-    expect(output.pages).toHaveLength(1);
-    expect(output.pages?.[0]?.page).toBe(PAGE);
-    expect(output.failed).toHaveLength(1);
-    expect(output.failed?.[0]).toMatchObject({ page: other, retryable: true });
-    // The seeded claim plus the one this call added: the successful page's
-    // mutation applied even though its neighbour in the same call failed.
-    expect(session.inspectClaims(PAGE)).toHaveLength(2);
-  });
-
-  test("keeps applied pages when a later page fails operationally", async () => {
-    // Throwing would discard `pages`, whose mutations already applied. A total
-    // failure reported over applied state is the same lie the batch-wide error
-    // told, so a partial failure is reported instead - not retryable, because
-    // replaying it will not produce a different answer.
-    const other = "/openwiki/other.md";
-    const session = createSession({
-      resolver: {
-        resolve: (resource: string) =>
-          resource.includes("broken")
-            ? Promise.reject(
-                new EvidenceResolutionError("resolver unavailable"),
-              )
-            : Promise.resolve({
-                evidence: { resource, version: "revision:2" },
-                content: "c",
-              }),
-      },
-    });
-    const resolve = getTool(createClaimsTools(session), "resolve_claims");
-    const output = parseResolve(
-      await resolve.invoke({
-        pages: [
-          {
-            page: PAGE,
-            operations: [
-              {
-                op: "add",
-                statement: "This page resolved before the resolver went down.",
-                evidence: [{ resource: "repo://src/fine.ts" }],
-              },
-            ],
-          },
-          {
-            page: other,
-            operations: [
-              {
-                op: "add",
-                statement: "This one hit the failure.",
-                evidence: [{ resource: "repo://src/broken.ts" }],
-              },
-            ],
-          },
-        ],
-      }),
-    );
-    expect(output.pages).toHaveLength(1);
-    expect(output.failed?.[0]).toMatchObject({ page: other, retryable: false });
-    expect(session.inspectClaims(PAGE)).toHaveLength(2);
+    expect(output).toMatchObject({ retryable: true });
+    expect(output.error).toContain("Evidence does not resolve");
   });
 
   test("does not hide operational resolver failures", async () => {

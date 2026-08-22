@@ -15,13 +15,7 @@ describe("createSystemPrompt OKF guidance", () => {
     const init = createSystemPrompt("init", "repository");
     const update = createSystemPrompt("update", "repository");
 
-    expect(init).toContain("Only `type` is required by OKF");
-    // init moved to OKF v0.2 with the merge: `generated` is code-owned and the
-    // legacy `timestamp` is superseded, so init forbids writing either instead
-    // of documenting a field the formatter now owns. update still spells out
-    // the full provenance contract.
-    expect(init).toContain("Never write `generated`");
-    expect(init).not.toContain("timestamp: <Optional ISO 8601 datetime>");
+    expect(init).toContain("Only type is required by OKF");
     expect(init).toContain("index.md and log.md are reserved");
     expect(init).not.toContain(
       "Preserve all existing producer-defined front matter fields",
