@@ -26,10 +26,10 @@ sources:
     resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-6f06cc988142430d18f2233e
     resource: repo://src/integrations/mcp/stdio.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:06:14.226Z"}
 verified:
   - by: openwiki/0.3.3
-    at: 2026-08-21T08:12:50.745Z
+    at: 2026-08-22T08:06:14.226Z
 ---
 
 # Coding-agent integrations
@@ -75,7 +75,7 @@ sequenceDiagram
     participant Session as HostSessionManager
     Host->>MCP: openwiki_begin(root, mode, language?)
     MCP->>Session: begin()
-    Session->>Session: resolve Git root, prepare wiki + Claims
+    Session->>Session: resolve Git root, replace wiki (init), prepare wiki + Claims
     Session->>Session: stamp interrupted metadata
     Session-->>Host: runId, root, mode, lastUpdate, claimsIssueCount
     Host->>MCP: openwiki_inspect_claims(runId, ids|pages)
@@ -103,13 +103,13 @@ The protocol is transport-neutral: `ProtocolTool` in `src/integrations/core/prot
 
 ### begin
 
-`begin()` resolves the Git repository root (via `resolveRepositoryRoot()`, which runs `git rev-parse --show-toplevel`), creates the code-mode repo setup (GitHub Actions workflow, AGENTS.md/CLAUDE.md snippets), loads `.openwikiignore`, creates a run context, checks the update no-op status (for updates), snapshots the current wiki content, creates the docs-only backend, prepares the Claims runtime, stamps interrupted metadata (so a crash leaves a recoverable state), and prepares the wiki for authoring. It returns the `runId`, root, mode, language, last update metadata, wiki goal, update preflight, ignore pattern count, and Claims issue count.
+`begin()` resolves the Git repository root (via `resolveRepositoryRoot()`, which runs `git rev-parse --show-toplevel`), creates the code-mode repo setup (GitHub Actions workflow, AGENTS.md/CLAUDE.md snippets), loads `.openwikiignore`, and — for `init` runs — starts a recoverable wiki replacement via `beginRepositoryWikiReplacement()` (see [Agent workflow § Wiki replacement on init](../agent/workflow.md#wiki-replacement-on-init)) that backs up the existing wiki, removes all generated content except `openwiki/INSTRUCTIONS.md`, and returns a `RepositoryWikiReplacement` transaction retained on the session. It then creates a run context, checks the update no-op status (for updates), snapshots the current wiki content, creates the docs-only backend, prepares the Claims runtime, stamps interrupted metadata (so a crash leaves a recoverable state), and prepares the wiki for authoring. It returns the `runId`, root, mode, language, last update metadata, wiki goal, update preflight, ignore pattern count, and Claims issue count.
 
-A new `begin` **supersedes** any abandoned run: the prior session is discarded and its metadata is left as `interrupted`.
+A new `begin` **supersedes** any abandoned run: the prior session is discarded and its metadata is left as `interrupted`. Before supersession, the prior session's pending wiki replacement is committed (the backup is discarded) so a later `begin` does not leak a held backup directory.
 
 ### finish
 
-`finish()` removes temporary working files (`_plan.md`, `_skeleton.md`), runs `finalizeWikiArtifacts()` (Mermaid, index sync, link validation, Claims sources projection, generated provenance), reconciles deleted Claim pages, finalizes the Claims runtime, and persists complete run metadata. The session remains active if any pre-commit step fails, allowing retry.
+`finish()` removes temporary working files (`_plan.md`, `_skeleton.md`), runs `finalizeWikiArtifacts()` (Mermaid, index sync, link validation, Claims sources projection, generated provenance), reconciles deleted Claim pages, finalizes the Claims runtime, commits the wiki replacement transaction (discarding the init backup so the new wiki wins), and persists complete run metadata. The session remains active if any pre-commit step fails, allowing retry.
 
 ### inspect_claims and resolve_claims
 
@@ -134,6 +134,7 @@ The host session manager reuses the same finalization pipeline as the native Ope
 
 - `prepareWikiForAuthoring()` — migrates OKF front matter and snapshots generated provenance.
 - `finalizeWikiArtifacts()` — validates Mermaid, synchronizes indexes, validates links, projects Claims sources, and reconciles generated provenance.
+- `beginRepositoryWikiReplacement()` — for `init` runs, backs up and replaces the existing wiki transactionally with the same commit/rollback and SIGINT-recovery semantics as the native agent.
 
 Both are defined in `src/agent/wiki-finalizer.ts` and shared with the OKF middleware. The host stamps its own `producerActor` (e.g. `codex`, `claude-code`) into the generated provenance, so host-authored page bodies are distinguishable from native OpenWiki agent runs.
 
@@ -192,7 +193,7 @@ Non-negotiable rules include: never report success before `openwiki_finish` retu
 ## Things to watch when changing integrations
 
 - `HostSessionManager` holds **one active run at a time**. A new `begin` supersedes the prior run. If you add concurrency, the `operationInProgress` guard serializes mutating operations.
-- The host session manager reuses `prepareClaimsRuntime` and `finalizeWikiArtifacts` from the native agent. Changes to those functions affect host-authored runs as well — see [Grounded Claims](../claims/grounded-claims.md) and [Agent workflow](../agent/workflow.md).
+- The host session manager reuses `prepareClaimsRuntime`, `finalizeWikiArtifacts`, and `beginRepositoryWikiReplacement` from the native agent. Changes to those functions affect host-authored runs as well — see [Grounded Claims](../claims/grounded-claims.md) and [Agent workflow](../agent/workflow.md). Init runs commit the replacement on `finish` and roll back on a failed `begin`; a superseding `begin` commits the prior session's replacement so a held backup is not leaked.
 - The MCP server instructions in `src/integrations/mcp/server.ts` are advertised during MCP initialization. Keep them aligned with the SKILL.md non-negotiable rules.
 - The installer's path containment uses `assertNoSymlinkComponents()`. If you change install paths, keep the symlink assertion so a crafted skill path cannot escape the install scope.
 - `defaultMcpServerCommand()` returns `openwiki mcp --host <target>`. The dev helper (`scripts/install-local-integration.mjs`) overrides this with a direct `node dist/cli/cli.js` invocation. Both paths must stay in sync with the `mcp` subcommand's `--host` parsing.

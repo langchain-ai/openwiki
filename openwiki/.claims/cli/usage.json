@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fc989ef980405c31bfcec1ddc18886e522315bb2243934e5674c96c5cbf95b81",
+  "pageVersion": "sha256:9491c3b2a2e93547da78dd035d796374db36d442065840bef9e1d6852eb29857",
   "claims": [
     {
       "id": "claim_784051c66bbc4c91b80cf24b011ae789",
@@ -15,10 +15,56 @@
           "version": "repo-lines-v1:sha256:482263e723c55932fdc14a705821cb73b6a34e27618a6ba3ceb3d8aac8533a6d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MDI5YWNiYmRjZTRiNmE0OGU1OTY4Mzc4MjcyMTBlZTI2OTFjZGViZGM5MDk1MDAzOTk3MDViYjAyMzYxYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0ZjZjYzIzZWRkZmY3YzRiMWY1NWQzNTJiNjUzOTA3YmFhYzFhZTY2ZDAwZTIzMjkwNDhmY2NmODdlMmQ5N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_223eaeabc8054c0c9fc3e9055043d28b",
+      "statement": "The interactive Ink app renders with exitOnCtrlC: false, and a Ctrl-C input handler calls requestProcessInterrupt(restoreTerminal) which restores the terminal first and then emits SIGINT on the next tick so any active wiki-replacement rollback handler runs, or exits with code 130 when no handler owns SIGINT.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/app/app.tsx#L188-L196",
+          "version": "repo-lines-v1:sha256:c445d1bbf5ff47426e1c0da92f5bc47e9ca22add3d10f7e10a8979e3ea6ca9fd:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUzNjI4ZTQ5Yjk2ZGM3NThiOGMyNDFkZWM0NjkxMTdjNDk2Yzk5ODMwZDRkYmNhNTkwOTRhOTNkYTMwMGU3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUxMjQyNWRkNzVlNzNkY2ViMDViOGJhZDlhZTM4MjFlNzQ2ZDg1Y2NiZTc1OGM0OThiNTJjNWMzNzBiOTNiMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTE4NWYxOWFmZGRmNDhhMmQwNjZiN2U1OTAwMzBhMmZiZjE3MmZkM2NhNTM1NzZkYzBmMjIwN2IwYWNkMzgxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzY5Y2UwNTU0M2RlYmYzY2I2NmU1ZjViODYxNzBlYTEyNjI4MzI0Y2Y5ZDQ1MDFhM2UwZDM2ZmEyZWNjZjMxZiJ9"
+        },
+        {
+          "resource": "repo://src/cli/process-interrupt.ts#L18-L29",
+          "version": "repo-lines-v1:sha256:d8d3abe03d924f9e59968a45f8767ec75cbc8093ad62137700186524d9a1e994:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNzRjNDJhNWVkMzFhYjBiMjgwNTRhYmJiYzk0YTBiYWJhOTlmN2VjYWE5N2ViYTA4NDZhMWU5MDc1YzllNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4NWUxOGQ0N2MzNGM5MjBmNTFkOGI5MGRkMzA0ZjI2Y2NiZmY5MzYxNDk2MDdmMzkxZDA1NGEwZTFlNzQ3ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/cli/cli.tsx#L110-L114",
+          "version": "repo-lines-v1:sha256:c41f8cc7976bf9660eb443c4f8f211e212c831338f47457a1cf6903c22159e87:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY1NzI4YzBmYjdlMjI3Njc2YTkxMzhhYzgxNGI1YzM1OWU2YWRhOGZjZmQ5NTNlYjA4Mjc0YzM4MWVkZjlkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODRlNDIwOGNkNmZmYjhjNGEzNTQ3YjJmNTRhZGExOTk3OGMzZjM2NWU3OGY5NTAyZWY1MTQ1Y2RkMmFhODU0MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGY2M2IxYmMxZDEwZDNhNDY0MzY3YTk2YWZiYWFjMjBhMjBmNTY0ZDQ0ZTBhYWY1YWVjMGI1YzgyYWU4NWY1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGY3MzlhMDZjMWNiYjEyNDRlMzM2M2QzOGJjZjlmYTUwY2U4NGZlZDM5OWMyMTkzYTNjN2YwOGQ1OTkxOGIyYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8ff2e50c086a4b4d8b5879e5a91ec1df",
+      "statement": "The RunView live activity section now renders an ExplorationMap: a cumulative directory map of every successfully read repository file, built by buildExplorationTreeLines in src/cli/run-log/activity.ts from exploredPaths accumulated by the reducer, with a follow-the-active-file viewport, j/k and arrow/pgup/pgdn scrolling, and an f key to resume following.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/components/run-view.tsx#L340-L470",
+          "version": "repo-lines-v1:sha256:dd6703739380dc2b5e784e9f2b7c5f92ec77f15b511276c0b25a44cd3f86d152:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2ZGE1OTNlYjgzYzc5ZmU5YzZkMjY4ZDFjMWI4Nzg3YTA5MjgxMDg2MmIyMWZlOGExZDE2MmY0ZjFkMWYzMTFhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwM2M0NTQxZWZmMTE3ZDQxMzFmMWE5MGIwZWVjMGZmMTljM2UxYWFjNTc4NWNlY2MxZTNiM2M5YzgwOTE4NzdmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxMDFkYjEwMmMyODg1NzZjYzMwZjRhZTVkMGRkN2E3YTM2NDU1ZTY2MmI0NzljYTk4ZTQ1YzMzNTcyMDM4NzE5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NjUzMzI2YTFmMWE1OTZkNWM1ZGY2OThmYzMzMGU5MWUzNTBmZGM0ZDRhMTEzMzFiZTAzMzNmNzc0ZGY1NDRkIn0"
+        },
+        {
+          "resource": "repo://src/cli/run-log/activity.ts#L179-L202",
+          "version": "repo-lines-v1:sha256:85c2efa5c38057666e6960f7016f59ab434f6ce414429d925e57b6a28b35e71c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZTgyOTM3YmY0N2I0YTMxZWMxMzRjNzlmMDUyY2IzNTE4NzE1NzNjYTA5ZjVkOTFkNzk5NzMzZGY1YjA0ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwMjYwZTcxNmRmOWM5NTdiNDZlZjBmOTI1ZmIyNDQ5ZTJiOTUxMTYyMjllYzI0NzgxZGU3OTZmZGJhMGRhOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4NjQ4Njc3NTZkOWM2Njg2N2Q0MmNhMTU1ZjczODQyZWJiMGQ3MTQ2YWJmZDczYjllNTZhZTUzZTNiNmFhNTgifQ"
+        },
+        {
+          "resource": "repo://src/cli/run-log/reducer.ts#L161-L255",
+          "version": "repo-lines-v1:sha256:15466e0e4ab42dd102f24adc8bcfb61fcedf270f578de6b16082d94021fb8a3e:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZDNmZmY5OTRjYzlkZDBmNzU0NTk1YTkyMGU2Nzc4MGQ0ZWUyOWE1ZTkxNzEzMzQ2ZmI0NmY0Nzg0MjE3NzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYjdmODk4ODU2ODEzMDU4MmU3YzkyNDk1NTk4OGJlMmE1NTUwNzU0YzY3MzM5NGE2NmUwY2Q2NmVjYTdjNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllMzk3MDdkNjIxNWE1NDA4YWVkN2RmMjZkZmVlYjVhOGI4YThmMTk3NGY5ZmZlYjJlMzJjMjRjZDk4NjllZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxYzUyNTdiZGE1ZGFmN2RmM2E3ZjI0Yjk3NWQzMDdiMjc1YmRjNjQ1YjRjNzNhM2I1ZDgwYzE5MGI2YzdmNjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ff93ebd5d36d4974a0166129f7cd44c1",
+      "statement": "The --init command help describes generating repository documentation from scratch, replacing an existing generated wiki while preserving openwiki/INSTRUCTIONS.md.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L1188-L1191",
+          "version": "repo-lines-v1:sha256:758f4de12ed49c3238e74c0d787cc63cf3df8b3e3cc6edf743f9c7e69bf4f8c6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc4N2Y2NDhiNWM0NTY3ZGIzMjNlMmRjNjZjM2RlYjgwNGQ0ZDk1OTQ1ODA5NWNkYzdhNzFiMjMyOTU5ZDk3ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYwY2RiOTcyYTdiZmI3ZWQyNDZmOWZmNjcyMzg1ZTU1ZjQ5NjhmYzExMDQzZGM1YjY4NGQ1MWRmYTMxZGJjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODM3NWIwZWZhMjNmMGFjODNiYWYxNTJmODEyNWE3MTg2MWFlZDFmNGZiNmY4ODI0YTcwODM2YzBmYTJkNWQ2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjY3ZmM5OWMzNjAwYTY0MjhiOTAyNDA3YzYzYjVkZGJmZmMxYTFmZGJiMWU3OTg1YmRhMjgzMzZiOWJhMDVkNCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.3.3",
-    "at": "2026-08-21T08:12:50.745Z"
+    "at": "2026-08-22T08:06:14.226Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:499b097abacdaeaa0fad2d89daef07e114e572a0f393c6d96df6a1ee7f8a37e8",
+  "pageVersion": "sha256:7f8ccb03624c330285a8c5015102730fe0791ca686cf5329c900eaaaadcabf8f",
   "claims": [
     {
       "id": "claim_3b16d9d7b57340e795acfab5b93ae27a",
@@ -63,10 +63,28 @@
           "version": "repo-lines-v1:sha256:0d10059a7aa51895da0d410ba5d0a88d82648f6d7862f10725a579d185f02751:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQxMDA1OWE3YWE1MTg5NWRhMGQ0MTBiYTVkMGE4OGQ4MjY0OGY2ZDc4NjJmMTA3MjVhNTc5ZDE4NWYwMjc1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQxMDA1OWE3YWE1MTg5NWRhMGQ0MTBiYTVkMGE4OGQ4MjY0OGY2ZDc4NjJmMTA3MjVhNTc5ZDE4NWYwMjc1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGY3MzliMzIxNzFjZDQ5OTlmYzMyOWRjYzM5YTJhNzQ2NTQyM2I4OTI3NDVlMzYyOWIyOGVkYjU0MTk4MzFmMiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_20539481750445c2a16b8c7a55e02912",
+      "statement": "Running openwiki --init again regenerates the repository wiki from scratch: it replaces the existing generated wiki (pages, Claims sidecars, indexes, run metadata) with a brand-new generation while preserving the user-authored openwiki/INSTRUCTIONS.md, and restores the previous wiki if generation fails or is cancelled.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L51-L54",
+          "version": "repo-lines-v1:sha256:391d09c9eb1927041af16a640d130a66f9494c768c23fdabb605feb856188063:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VlNzEyODAxODM1ZDE0YjMxNmNmMzVlYjkxNjIyNjRiZjI5NDdiNTNlZTVjM2E4YjE5NmZiMDFhOGFhODkwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWI1MDBjZDA4NzI5M2U2ZjY0MWVjZmUwZWMwZGUwNTIzZjNkODhhOGY2MGI1MzI3MDI4MWNmNWY0MTlhMGFjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGVlNzQ4ZDQ0MmI3MDUwNWFlYWM5NjBmN2I1OTkxMjM0ZDI2ZTg5NDVjYTNiMjkzYjhjMmQ4OWZhY2EzYWUzZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmEwMmY4Y2FhZDdlNTUxYmQ4MWFkNmZlMTdlZTA4MTAyOGI3NDcwYjViZmE1MzY3ZWY5OGExYjcyZjk1NmY2ZSJ9"
+        },
+        {
+          "resource": "repo://src/agent/wiki-replacement.ts#L42-L204",
+          "version": "repo-lines-v1:sha256:d86c1c9670f1ad73b189c765d446a023fd84c2f680f528fd4e2f46836ed4d2f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwOGQxYWQ4YTJmNTIzMDA4ZTg5NmEyY2JmOTc0MjJhOTQzNjdiZTBkNzE4MGYxZmQ0ZWFiNzg1MmMxNWQ0MzBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNDY3YTQwMzBjMGIxZjJhYjg2NGNhYjI2NjViNWFiNzY2ZTkzZDBlN2I2ZTgzMjBiNGNkYTY2Y2IwNjNhMDFmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L281-L335",
+          "version": "repo-lines-v1:sha256:de25d86533878a43735ed1578db79daaf8f56cbecd3991808905027477d7ef05:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjYTU1MGEyMTJkY2FjYjEyMzVhNDQxM2FmM2ZhZDU3ZmUyMGM3MjRhN2VmM2YxNmRjZGU4MjQwZGM5ZmUwZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzM5NzI2N2E5MWE3OTA4MmY2MmE5NThhZDdmYzFiNzY5OTNkOTZjYWIyN2ExZGQ3NjA1NjVjMDU5YWFlZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZTgwMjU3YThkODIxMzVjM2EzOGVlZTY0MzgwM2IxNDQ2YmRmMzNkMjI3ODM3MjA0ZjllMDEyOTdmZTRhZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhOWQ1ZTA4Y2M5Zjc0MWIxZDU1ZDg2MmE4Y2YwMWZlNWQyZGY2ZGFlYzRhNDcyYWU4NDlhZGUzYTZmZTg2N2UifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.3.3",
-    "at": "2026-08-21T08:12:50.745Z"
+    "at": "2026-08-22T08:06:14.226Z"
   }
 }

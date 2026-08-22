@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:381cc36b4235bcdad5cc90b37817eea6f28a69c37eb105aedd3c7dc729112f05",
+  "pageVersion": "sha256:7035bea05b3cf22acf3769b45d6669efcad1160875486cce7e3f137ed8c8192b",
   "claims": [
     {
       "id": "claim_f9f42335512140e685f1587cc36609c3",
@@ -42,15 +42,11 @@
     },
     {
       "id": "claim_e3f44b73ec8d4855a85fec7dbd921965",
-      "statement": "The HostSessionManager owns one in-process begin/finish lifecycle: begin resolves the Git root, prepares the wiki and Claims runtime, stamps interrupted metadata, and returns an opaque runId; finish finalizes wiki artifacts and Claims, then persists complete metadata; a new begin supersedes any abandoned run.",
+      "statement": "The HostSessionManager owns one in-process begin/finish lifecycle: begin resolves the Git root, starts the wiki replacement (for init), prepares the wiki and Claims runtime, stamps interrupted metadata, and returns an opaque runId; finish commits the replacement and finalizes wiki artifacts and Claims, then persists complete metadata; a new begin commits the superseded session's replacement and supersedes the run.",
       "evidence": [
         {
-          "resource": "repo://src/integrations/core/session-manager.ts#L293-L386",
-          "version": "repo-lines-v1:sha256:c7c958b1c9de4083bc628d0bf861f01f20e40b7eed03369e7b97c3960aa58bf6:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZTEwN2NiZjhkMDRjMTA0MWUyNDA4MDQyZGU2ODZlMDExYTQwYjdmNWU3MzQxN2NhNmVmNGZhNTYwZjVkNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZGJkZGJkNzc2MDJjMDdiNDBkZGMxMTdmY2U0MzFiOTU0NWUzNjZhMGE1MGU1NGE4ZjNkMjAyYzQ3YmQzYWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyM2U5MTcyMDE0MGNmZWRmZTNkMjk5M2Y1MzY3ZTkyMGE0MmE2ODZiZjBkNDNkZGE4NzUzYTQzMjkxMjIxMjgifQ"
-        },
-        {
-          "resource": "repo://src/integrations/core/session-manager.ts#L395-L431",
-          "version": "repo-lines-v1:sha256:b3e9ed257d81b0a32b671a0194b31279c8cd5147d360e4e699920df5b24a2fe9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMmNkZjJiZTA4ODZjMjE3ODI4YzE4YTAxNDk5MTMyYzY1NDI3ZDI3OGVlNDFlOGM0Yzc4YTMzNDgxODBhOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMjFmN2MyOTJjZWRiNGRmMGE2OGVlYjk2YmU1MGU1MzkxMWRlYTBhY2Q0MDYyMGM1MDQ0YTYwMGE3ZWNhMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhMWZkYjhkNWFlMzY2MjNkMmNjZmY3OWM2YjllYjIyY2FkNzc4ZDFiNzQwM2ZlOGQ1YTE3ZTNiMmM1OGZiMjAifQ"
+          "resource": "repo://src/integrations/core/session-manager.ts#L293-L460",
+          "version": "repo-lines-v1:sha256:d23cfa4eee9e914b2eadfd978adba7f1190134304bc396d9e3382e514c22942d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMTVkMGI4NTA3MmM3NzY3ODY0ZjcwMDg0NjAwNTcxZWJmOGI5MjA5MDJmYzI0ZGUxMTFhZjQ2ZGRjNGI0ZTc0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5YWQ1NzQxYzk3MWJkZTNhNmRlMzQ5YTRjZGEyMzU5MWIyMjY5NTVkOTczZTg5ZjhiNmJiZTk0OWEzMjAxOWU4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjNWYzZmVjZWJlZTI3MDAwZTc1NDAxZDljOTM5M2UxNzFkZDk0Y2Q1MzFiZjRjOGY4OTM1NzEzODM4MmNjYTlkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyZjQ4Y2Y3ZDdmZTliZWRjZDViZGM1OGEwOTE4OWUxZTcxOWU3YzU2MmU5YWFhMGEzM2Q2M2I4MmM2YzEyYmYwIn0"
         }
       ]
     },
@@ -90,11 +86,11 @@
     },
     {
       "id": "claim_bba40ebaa325458eb5949f17971ab1d5",
-      "statement": "The host session manager reuses the same Claims runtime (prepareClaimsRuntime) and wiki finalizer (prepareWikiForAuthoring/finalizeWikiArtifacts) as the native OpenWiki agent, so host-authored wikis get the same OKF sources, verified, and generated provenance projection.",
+      "statement": "The host session manager reuses the same Claims runtime (prepareClaimsRuntime), wiki finalizer (prepareWikiForAuthoring/finalizeWikiArtifacts), and repository wiki replacement (beginRepositoryWikiReplacement) as the native OpenWiki agent, so host-authored wikis get the same OKF sources, verified, and generated provenance projection and the same init replacement recovery.",
       "evidence": [
         {
-          "resource": "repo://src/integrations/core/session-manager.ts#L329-L413",
-          "version": "repo-lines-v1:sha256:02615f6dcdd97e281a027f3a5b1eb2592879bd94efd9ba22f2107d7a4bc1b97b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzZjZGQwNjZlOTIwZjcwNDBiZDM5NmI1OGY4YTM5MDNiYWUxNzc3MDMwOWYxODFjZDA5NDkyMzMzY2MyMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4NzQ3MTdiM2M1NzRlNWRkZjkxNTBlNmIzM2E0MTY1YmEzNDY1ZjNlY2M1YTNhM2M4MjhjMjJkMWUxZDMyYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxMGQzMWM3NWY4NDBkYWJmYjM5OTg0YThjNjg3YzBiNjIxNTU3ZjljYjY0ZjFmZmU1YTRiNzhkOGNmN2U3MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4ZDhmZDgxNjg0NzlhYmI0MTBhMzliOTllNzhkNTUyZDc2ZWM5MWFmNGRmZDVlOTA5OGE4ZDYxYzNkNzEyYzQifQ"
+          "resource": "repo://src/integrations/core/session-manager.ts#L215-L460",
+          "version": "repo-lines-v1:sha256:05397a43e60e15f5deff0a56a7c342fdad760c9c075f438b873b8f5292310f16:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQ2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3YTFlZDU2MjU4NGI3ZGVjMzAyNDBjMjViODJlODVmYmYxZDZjMmMxNjE3YTg3YmYwY2QxMjE2M2Y2N2U0MjE4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5YWQ1NzQxYzk3MWJkZTNhNmRlMzQ5YTRjZGEyMzU5MWIyMjY5NTVkOTczZTg5ZjhiNmJiZTk0OWEzMjAxOWU4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYTUwNWQyNTdiYzg5MWY2OTFhZmRmNjBjMzJjMDE3ZjA5NGJjMmZkYzNiYmI0MDc4YjQ4ZDgxODc0M2UzNWIyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyZjQ4Y2Y3ZDdmZTliZWRjZDViZGM1OGEwOTE4OWUxZTcxOWU3YzU2MmU5YWFhMGEzM2Q2M2I4MmM2YzEyYmYwIn0"
         },
         {
           "resource": "repo://src/agent/wiki-finalizer.ts#L180-L237",
@@ -104,11 +100,11 @@
     },
     {
       "id": "claim_9b7901bb43fc41938f2e48c997dcc80a",
-      "statement": "The installed skill bundle (integrations/openwiki/SKILL.md and references/) instructs the host agent to follow a required sequence: resolve the Git root, call openwiki_begin, read the matching workflow reference (init or update), read methodology.md, execute every planning/evidence/authoring/review gate, and call openwiki_finish.",
+      "statement": "The installed skill bundle instructs the host agent to follow a required sequence: resolve the Git root, call openwiki_begin, read the matching workflow reference (init or update), read methodology.md, execute every planning/evidence/authoring/review gate, and call openwiki_finish.",
       "evidence": [
         {
           "resource": "repo://integrations/openwiki/SKILL.md#L12-L33",
-          "version": "repo-lines-v1:sha256:8cb852dc9a57943ac99feb885bd1b14014009190dd0b6a5d8d2c5d95b1d9bd26:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNDFhOWI2MTY4YjUyODdhYTNmNWZkM2FmOTJkOTExNTA5YjY1ZDUxMTQ1Y2U4MzI3YjM0YWZhZDU4MWUxOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5MWVjNzhkYzNjYzA2NTMxNWFkOTU5YzU3NjI5MDM2NDhjZDlmYjAxYjQ5M2MxZmIxYjg4NzY5MjNhMDA5ZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwMDg0ZmQ1OWI0OTA5Y2RiYjNjYjBmN2UxMTk0ZGM0ODU3ODcxNzg3MWZkNjg1NTU1Y2MxODcwNzk4ZGM2ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMTFmMTI5NDAxOTIzNzMyYmViNGIwYzQ4OTZhMTA0OTI0ODkwZmRlNmIxZjBhOTBkYWRiYzNhNDYzNWJhN2UifQ"
+          "version": "repo-lines-v1:sha256:1a924e9a9ef96776bbbbdc722e0cdae5f83e3074f3de6a795d0d077212cf8dec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNDFhOWI2MTY4YjUyODdhYTNmNWZkM2FmOTJkOTExNTA5YjY1ZDUxMTQ1Y2U4MzI3YjM0YWZhZDU4MWUxOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5MWVjNzhkYzNjYzA2NTMxNWFkOTU5YzU3NjI5MDM2NDhjZDlmYjAxYjQ5M2MxZmIxYjg4NzY5MjNhMDA5ZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwMDg0ZmQ1OWI0OTA5Y2RiYjNjYjBmN2UxMTk0ZGM0ODU3ODcxNzg3MWZkNjg1NTU1Y2MxODcwNzk4ZGM2ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMTFmMTI5NDAxOTIzNzMyYmViNGIwYzQ4OTZhMTA0OTI0ODkwZmRlNmIxZjBhOTBkYWRiYzNhNDYzNWJhN2UifQ"
         }
       ]
     },
@@ -139,6 +135,6 @@
   ],
   "verification": {
     "by": "openwiki/0.3.3",
-    "at": "2026-08-21T08:12:50.745Z"
+    "at": "2026-08-22T08:06:14.226Z"
   }
 }

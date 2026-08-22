@@ -3,7 +3,7 @@ type: Technical documentation
 title: Agent workflow
 description: Explains the OpenWiki documentation agent's command flow, provider and model setup, prompting rules, and update metadata behavior. Documents the agent's Git-grounded workflow, content snapshot safeguards, and source implementation map for maintaining agent behavior.
 tags: [agent, workflow, documentation, providers, update-metadata]
-generated: { by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:06:14.226Z"}
 sources:
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
@@ -11,15 +11,17 @@ sources:
     resource: repo://src/agent/prompts/code.ts
   - id: openwiki-source-21ff9512e70f21e9b1cd2d0f
     resource: repo://src/agent/review-subagents.ts
+  - id: openwiki-source-730d078d29d9c52de238a424
+    resource: repo://src/agent/skeleton-critic.ts
   - id: openwiki-source-adcadc660c1888613ec50f9a
     resource: repo://src/agent/wiki-finalizer.ts
-  - id: openwiki-source-750216a45d34f8d897e4d77b
-    resource: repo://src/claims/brains/code/integration.ts
+  - id: openwiki-source-9697823032111d36e2d4caa9
+    resource: repo://src/agent/wiki-replacement.ts
   - id: openwiki-source-239b2968fb2bcd073e89cedc
     resource: repo://src/claims/brains/code/runtime.ts
 verified:
   - by: openwiki/0.3.3
-    at: 2026-08-21T08:12:50.745Z
+    at: 2026-08-22T08:06:14.226Z
 ---
 
 # Agent workflow
@@ -33,7 +35,7 @@ The documentation agent is implemented in `src/agent/`. It takes a command (`cha
 1. Load `~/.openwiki/.env` into `process.env`.
 2. Resolve the provider via `resolveConfiguredProvider()` and ensure the provider's API key exists.
 3. Resolve the model ID from CLI input, `OPENWIKI_MODEL_ID`, or the provider's default model, then validate the selected model's availability against the provider's catalogue via `getSelectedModelAvailability()` in `src/model-availability.ts`. For the `openai` provider (with an API key and the default OpenAI endpoint), this queries `GET https://api.openai.com/v1/models` and aborts the run with a clear message when the model is `unavailable`; a `unknown` result (non-OpenAI providers, custom OpenAI-compatible endpoints, a missing API key, or a lookup failure) is logged to the debug stream and proceeds to inference.
-4. Prepare the [Grounded Claims](../claims/grounded-claims.md) runtime via `prepareClaimsRuntime()` in `src/claims/brains/code/runtime.ts` — for repository init/update runs only (chat and personal-brain runs get no Claims). For `update`, preflight detects stale or unresolved evidence debt and surfaces it lazily as read notes without blocking the update no-op skip. The Claims issue count is emitted to the debug stream. If the update is a no-op (clean tree, same language), the Claims runtime is still finalized (persisting any prior session state and cleaning orphans) before the skip.
+4. Prepare the [Grounded Claims](../claims/grounded-claims.md) runtime via `prepareClaimsRuntime()` in `src/claims/brains/code/runtime.ts` — for repository init/update runs only (chat and personal-brain runs get no Claims). The timing now depends on the command: for `update`, the Claims runtime is prepared before the no-op skip check so preflight can detect stale or unresolved evidence debt and surface it lazily as read notes without blocking the skip (the issue count is emitted to the debug stream, and a no-op update still finalizes the runtime to persist prior session state and clean orphans). For `init`, the Claims runtime is **deferred until after the wiki replacement transaction starts** (see [Wiki replacement on init](#wiki-replacement-on-init)), so old sidecars cannot be read into the brand-new wiki or collide with pages regenerated at the same path.
 5. Create a run context from prior update metadata, persisted language, and the wiki brief. `createRunContext()` in `src/agent/utils.ts` no longer builds a Git summary: the agent runs `git` itself during the run per the prompt's Git-history instructions (the update prompt tells it to run `git rev-parse HEAD`, `git log <gitHead>..HEAD --name-status --oneline`, and `git diff` to scope changes). `RunContext` carries `lastUpdate`, `language`, and `wikiGoal` only.
 6. Snapshot the current `openwiki/` content hash (before the run).
 7. Build the system prompt and user prompt. `createSystemPrompt()` and `createUserPrompt()` in `src/agent/prompt.ts` select a prompt template by output mode — `CODE_SYSTEM_PROMPTS`/`CODE_USER_PROMPTS` from `src/agent/prompts/code.ts` for repository runs, `PERSONAL_SYSTEM_PROMPTS`/`PERSONAL_USER_PROMPTS` from `src/agent/prompts/personal.ts` for local-wiki runs — then substitute placeholders for language, Git-history hint, discovery instruction, `.openwikiignore` instructions, and runtime context. The repository system prompt now embeds `CLAIMS_SUBSTANCE_GUIDANCE` from `src/claims/guidance.ts` so the agent's authoring standard stays consistent with the `resolve_claims` tool description. The user prompt's runtime context block (`{RUNTIME_CONTEXT}`) is produced by `formatRuntimeContext()` and carries the runtime root label and path (the `formatRuntimeRootInstruction()` helper moved here from `index.ts`).
@@ -75,7 +77,7 @@ Provider retry attempts are resolved through `resolveProviderRetryAttempts()` an
 
 `src/agent/prompt.ts` is the prompt assembler. It selects a template by output mode and substitutes placeholders; the prompt text itself lives in two sibling modules so the long product rules are kept out of the assembler:
 
-- `src/agent/prompts/code.ts` — `CODE_SYSTEM_PROMPTS` / `CODE_USER_PROMPTS` for repository (`code`) runs. The `init` template drives a structured init workflow: build a `/openwiki/_skeleton.md` inventory, invoke the `skeleton_critic` subagent, resolve every requested change, fill the wiki, then verify with the `wiki_question_finder` and `wiki_answer_verifier` subagents, and finally write `quickstart.md`. The `update` template is the maintenance-update run contract (this wiki's own update prompt is the `CODE_USER_PROMPTS.update` template). The `chat` template steers wiki-first question answering.
+- `src/agent/prompts/code.ts` — `CODE_SYSTEM_PROMPTS` / `CODE_USER_PROMPTS` for repository (`code`) runs. The `init` template drives a structured init workflow that treats the generation as brand-new (prior generated pages and Claims are unavailable; `INSTRUCTIONS.md` is preserved): build a `/openwiki/_plan.md` beginning with an Information architecture section and a repository-specific domain taxonomy, invoke the `skeleton_critic` subagent, resolve every requested change and freeze the exact final paths, then author each page (optionally delegating end-to-end authoring for coherent domains to at most nine general-purpose subagents), verify with the `wiki_question_finder` and `wiki_answer_verifier` subagents, and finally write `quickstart.md`. The `update` template is the maintenance-update run contract (this wiki's own update prompt is the `CODE_USER_PROMPTS.update` template). The `chat` template steers wiki-first question answering.
 - `src/agent/prompts/personal.ts` — `PERSONAL_SYSTEM_PROMPTS` / `PERSONAL_USER_PROMPTS` for `local-wiki` (personal brain) runs, including the canonical-file discipline (`/open-questions.md`, `/themes.md`, `/commitments.md`, `/personal-logistics.md`, `/sources/<connector>.md`) and contested-knowledge handling.
 
 `createSystemPrompt()` substitutes `{OUTPUT_LANGUAGE_INSTRUCTIONS}`, `{GIT_HISTORY_HINT}`, `{DISCOVERY_INSTRUCTION}`, and `{OPENWIKIIGNORE_INSTRUCTIONS}`. For non-chat commands it appends link-integrity instructions. `createUserPrompt()` substitutes `{USER_MESSAGE}`, `{WIKI_GOAL}`, `{LAST_UPDATE}`, `{ADDITIONAL_USER_REQUEST}`, and `{RUNTIME_CONTEXT}` (the runtime context block, produced by `formatRuntimeContext()` in `prompt.ts`, carries the runtime root label and the `formatRuntimeRootInstruction()` path note).
@@ -164,11 +166,40 @@ After wiki artifact finalization (Mermaid, index sync, links, sources, generated
 
 The Claims runtime is prepared before the agent runs and finalized after; the same runtime is shared by the native agent and the [MCP host session manager](../integrations/coding-agents.md#mcp-lifecycle-protocol), so host-authored wikis get the same Claims discipline.
 
+## Wiki replacement on init
+
+A repository `init` run regenerates the wiki from scratch rather than incrementally editing the existing one. `runOpenWikiAgent` wraps the init run in a recoverable replacement transaction owned by `src/agent/wiki-replacement.ts`:
+
+```mermaid
+flowchart TD
+    A["beginRepositoryWikiReplacement(rootDir)"] --> B{"openwiki/ exists?"}
+    B -- no --> N["no-op transaction"]
+    B -- yes --> C["copy openwiki/ to private temp backup"]
+    C --> D["install SIGINT/SIGTERM handlers"]
+    D --> E["remove generated content; preserve INSTRUCTIONS.md"]
+    E --> F{"init I/O OK?"}
+    F -- no --> R["rollback: restore backup, rethrow"]
+    F -- yes --> G["prepare Claims runtime"]
+    G --> H["run agent core"]
+    H --> I{"run succeeds?"}
+    I -- yes --> K["commit: discard backup"]
+    I -- no --> R
+    K --> L["finalize Claims + metadata"]
+```
+
+`beginRepositoryWikiReplacement(rootDir)` backs up the existing `openwiki/` directory to a private temp directory, removes all generated state (pages, `.claims/` sidecars, `index.md`, `.last-update.json`), and copies the user-authored `openwiki/INSTRUCTIONS.md` back into the blanked target. It returns a `RepositoryWikiReplacement` transaction with two operations: `commit()` discards the backup (the new wiki wins), and `rollback()` restores the exact prior wiki. A first `init` with no `openwiki/` directory returns a no-op transaction (both resolve immediately) so the existing partial-run recovery path is unchanged.
+
+The transaction installs `SIGINT` and `SIGTERM` handlers that roll the backup back before exiting with the signal's conventional exit code (`130` for SIGINT, `143` for SIGTERM). A signal arriving while replacement I/O is pending waits for that I/O to settle before restoring, so an operator cancellation never leaves a partial replacement wiki. In the interactive CLI, Ctrl-C is routed through `requestProcessInterrupt()` in `src/cli/process-interrupt.ts`, which restores the Ink terminal first and then emits `SIGINT` on the next tick so the replacement handler runs (see [CLI usage § Run view and interrupts](../cli/usage.md#run-view-and-interrupts)).
+
+`runOpenWikiAgent` starts the replacement before the Claims runtime (so the brand-new wiki cannot read stale sidecars), commits on a successful run inside the `finalize` stage, and rolls back on any thrown error — including a Claims-finalization failure — rethrowing the original error, wrapped in an `AggregateError` when the rollback itself also fails. The replacement behavior is covered by `test/agent/wiki-replacement.test.ts` (preserve `INSTRUCTIONS.md`, rollback, SIGINT recovery, first-init no-op, symlink refusal) and `test/agent/claims-run-lifecycle.test.ts` ("starts an existing repository init from only the user-owned brief", "restores the exact existing wiki when the init stream fails", "restores the existing wiki when Claims finalization fails").
+
+The same transaction is wired into the [MCP host session manager](../integrations/coding-agents.md#mcp-lifecycle-protocol), so host-authored init runs regenerate the wiki with the same recovery semantics.
+
 ## Init subagents
 
 Repository `init` runs register read-only DeepAgents subagents through `resolveRepositoryReviewSubagents()` in `src/agent/review-subagents.ts`, gated by `command === "init" && outputMode === "repository"`. The consolidator wraps each reviewer with a read-only filesystem middleware (`createFilesystemMiddleware` with `REVIEWER_FILESYSTEM_TOOLS = ["read_file", "ls", "glob", "grep"]`) that has the same name as DeepAgents' default filesystem middleware, so DeepAgents replaces the default for these subagents instead of exposing write, edit, or execute alongside it. Reviewers can discover source broadly but never author content or execute commands.
 
-- **`skeleton_critic`** (`src/agent/skeleton-critic.ts`, `resolveSkeletonCriticSubagents()`): an independent coverage reviewer. After the main agent researches the codebase and writes `/openwiki/_plan.md`, it invokes this subagent, which maps the repository itself before reading the plan and returns either `PASS` or `CHANGES_REQUESTED` with evidence-backed gaps. The main agent creates one TODO per returned `RQ` item, resolves them, then re-invokes the critic exactly once with the prior-request ledger. A third invocation is not allowed; any still-unresolved item is addressed directly.
+- **`skeleton_critic`** (`src/agent/skeleton-critic.ts`, `resolveSkeletonCriticSubagents()`): an independent coverage and information-architecture reviewer. After the main agent researches the codebase and writes `/openwiki/_plan.md` (which now begins with an Information architecture section showing the proposed wiki tree and repository-specific domain taxonomy), it invokes this subagent, which maps the repository itself before reading the plan and returns either `PASS` or `CHANGES_REQUESTED` with evidence-backed gaps. The critic now also audits the plan as a durable information architecture: it flags artificial single-page directories, generic catch-all sections (`architecture/`, `core/`, `platform/`), root-level sprawl, and taxonomies that merely mirror source folders, and it requires every quickstart domain containing multiple pages to correspond to its physical directory. The main agent creates one TODO per returned `RQ` item, resolves them, then re-invokes the critic exactly once with the prior-request ledger. A third invocation is not allowed; any still-unresolved item is addressed directly. Substantive page research, Claims resolution, and wiki prose must not begin until every taxonomy request is resolved and the exact final paths are frozen in `/openwiki/_plan.md`.
 - **`wiki_question_finder`** and **`wiki_answer_verifier`** (`src/agent/wiki-qa-subagents.ts`, `resolveWikiQaSubagents()`): a QA pair. The finder inspects repository source and tests (never `/openwiki`) and returns at most ~10 source-grounded questions with stable IDs, acceptance criteria, and motivating evidence. The main agent groups questions that share wiki pages into batches of 2–3, launches all batches for a wave in one parallel tool-call message, and the verifier checks each batch using only `/openwiki`, returning `PASS`, `PARTIAL`, or `FAIL` per question. For `PARTIAL`/`FAIL` results the main agent inspects the reported gap's source and tests, maintains affected propositions through `resolve_claims`, then repairs the canonical wiki pages and re-verifies only the failing IDs with the changed pages (no resent criteria). This runs after the wiki is written.
 
 Both subagents are read-only: they never create, edit, move, or delete files. They surface to the agent graph through the `subagents` option of `createDeepAgent`, and their output streams back as `source: "subgraph"` text/tool events via `parseAgentStreamChunk()`.
@@ -215,6 +246,7 @@ The same agent runtime is the wiki-generation backend invoked by two sibling eva
 - The live run streams via `agent.stream({ streamMode, subgraphs: true })`. For most providers `streamMode` is `["messages", "tools"]`; for `openai-compatible` it defaults to `["updates", "tools"]` to avoid the `messages`-mode `ChatMessageChunk` validator crash (#659), with `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES=true` opting back into `messages`. Separately, `OPENWIKI_OPENAI_COMPATIBLE_STREAMING=true` forces the HTTP streaming transport (a different axis: whether the request itself is SSE, not how LangGraph surfaces the run in the TUI) for gateways that only serve the streaming transport. If you change streaming, update `parseAgentStreamChunk()` and `test/agent/stream-modes.test.ts` / `test/agent/stream-redaction.test.ts`, not the protocol parser. `parseStreamEvent()` remains for the public agent factory's Agent Protocol v3 event shape only.
 - Connector tools are gated to personal/local-wiki runs: `createOpenWikiConnectorTools(options.outputMode)` returns `[]` for `repository` runs, so a code-mode run is never handed connector ingestion tools (which would otherwise throw on missing credentials and waste tokens). If you change that gating in `src/connectors/tools.ts`, update `test/connectors/raw-connector-tools.test.ts` ("connector tool run-mode gating (#444)").
 - Init-only subagents are gated by `resolveSkeletonCriticSubagents()` and `resolveWikiQaSubagents()` (both `init` + `repository` only). Adding or changing the init verification loop means editing `src/agent/skeleton_critic.ts` / `src/agent/wiki_qa_subagents.ts` and the `CODE_SYSTEM_PROMPTS.init` template that drives them.
+- Repository init runs regenerate the wiki through `beginRepositoryWikiReplacement()` in `src/agent/wiki-replacement.ts`. The replacement is wired into both `runOpenWikiAgent` (`src/agent/index.ts`) and the [MCP host session manager](../integrations/coding-agents.md#mcp-lifecycle-protocol) (`src/integrations/core/session-manager.ts`); changing the transaction's commit/rollback or signal-recovery semantics requires keeping both call sites in sync. The init Claims runtime is deliberately prepared _after_ the replacement starts so stale sidecars are never read into the new wiki — keep the `replacesRepositoryWiki` ordering if you touch the Claims build stage. The Ctrl-C path in the interactive CLI routes through `requestProcessInterrupt()` in `src/cli/process-interrupt.ts` so the replacement's SIGINT rollback handler runs before the exit.
 - The crash guard registers the active run only for the stream-consumption window; if you move streaming or add earlier fatal paths, ensure `registerActiveRun()`/`clearActiveRun()` still bracket the window a subagent rejection can escape through. Inside `handleFatal()`, the `getActiveRun()`/`clearActiveRun()` claim must stay synchronous (no `await` before or between them): it is the guard against a burst of escaped rejections producing one crash event rather than hundreds — asserted by `test/agent/crash-guard.test.ts` ("a burst of concurrent fatal signals records the crash exactly once").
 - When adding a reasoning-capable provider/model, add a `ReasoningCapability` entry to `REASONING_CAPABILITIES` in `src/config/reasoning.ts` (choosing `responses-reasoning` or `chat-completions-reasoning-effort` transport), then wire the transport into the corresponding `createModel()` branch (`responsesReasoningOptions` or `chatCompletionsReasoningOptions`). `resolveReasoningConfig()` is the single validation gate; the interactive menu (`getReasoningEffortMenuOptions()` in `src/cli/input/menu.ts`) derives its rows from the same capability table so an unsupported combination offers no value. Add a focused test under `test/agent/create-model.test.ts` ("createModel reasoning configuration") and `test/config/constants.test.ts` ("reasoning capabilities").
 - The OKF v0.2 `generated` provenance field is code-owned, not model-authored. Do not add prompt text that tells the model to write `generated: {by, ...}` or `timestamp`; both are owned by `finalizeGeneratedProvenance()` in `src/okf/generated-provenance.ts`, run from the OKF middleware's `afterAgent` hook. The producer actor must derive from `OPENWIKI_PRODUCER_ACTOR` in `src/version.ts` (single source) so the prompt and the stamp can never drift — `test/agent/prompt-okf.test.ts` asserts the prompt never contains the resolved actor or a `generated: {by:` template. The body-change test is an exact SHA-256 hash of the post-front-matter body (whitespace retained), so any body edit — including a whitespace-only reflow — advances `generated.at`; a front-matter-only change does not. Finalization runs _after_ Mermaid/link/index post-processing so an agent's full-file rewrite (which typically drops the code-owned field) is reconciled against the pre-run snapshot: new/changed bodies get the run stamp, unchanged bodies get their prior event restored. Unlike the earlier per-write path, finalization throws on a persist failure (not swallowed) — asserted by "fails finalization when the generated event cannot be persisted".
@@ -228,6 +260,7 @@ The same agent runtime is the wiki-generation backend invoked by two sibling eva
 - `src/agent/prompts/personal.ts`
 - `src/agent/skeleton_critic.ts`
 - `src/agent/wiki_qa_subagents.ts`
+- `src/agent/wiki-replacement.ts`
 - `src/agent/crash-guard.ts`
 - `src/agent/utils.ts`
 - `src/agent/types.ts`

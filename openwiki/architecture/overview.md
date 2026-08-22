@@ -3,7 +3,7 @@ type: Architecture overview
 title: OpenWiki Architecture Overview
 description: Explains OpenWiki's layered CLI, agent, provider, connector, authentication, and ingestion architecture, including runtime execution and persistence. Identifies core source modules, extension points, and operational considerations for maintaining OpenWiki.
 tags: [architecture, cli, agent, providers, connectors, ingestion]
-generated: { by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z"}
 sources:
   - id: openwiki-source-6fd9c8ed42336141de43b3c2
     resource: repo://src/agent/okf-middleware.ts

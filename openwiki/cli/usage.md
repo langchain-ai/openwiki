@@ -3,15 +3,27 @@ type: CLI reference
 title: OpenWiki CLI usage
 description: Reference for OpenWiki command-line usage, including interactive and non-interactive runs, initialization and update modes, connector operations, and authentication setup. Covers provider configuration, model selection, validation, and the source files to update when changing CLI behavior.
 tags: [openwiki, cli, commands, configuration, authentication]
-generated: { by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:06:14.226Z"}
 sources:
+  - id: openwiki-source-5f52dc71fb07ef4892914c46
+    resource: repo://src/cli/app/app.tsx
+  - id: openwiki-source-5c43e3fe562cf274dd6a5564
+    resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
     resource: repo://src/cli/commands.ts
+  - id: openwiki-source-d69fe13a277d6c30caeb9f5b
+    resource: repo://src/cli/components/run-view.tsx
   - id: openwiki-source-ada18c62d92003b613355e30
     resource: repo://src/cli/integrations.ts
+  - id: openwiki-source-24b29a3a3f5a64c0fe376c76
+    resource: repo://src/cli/process-interrupt.ts
+  - id: openwiki-source-5533fa23fc222780d009da1b
+    resource: repo://src/cli/run-log/activity.ts
+  - id: openwiki-source-093863c0390c8bcc175fd22b
+    resource: repo://src/cli/run-log/reducer.ts
 verified:
   - by: openwiki/0.3.3
-    at: 2026-08-21T08:12:50.745Z
+    at: 2026-08-22T08:06:14.226Z
 ---
 
 # CLI usage
@@ -25,7 +37,7 @@ From `src/cli/commands.ts` and `README.md`, the supported entry patterns are:
 - `openwiki` — open the interactive chat UI.
 - `openwiki "message"` — send a chat message immediately, then stay open.
 - `openwiki personal --init [message]` — generate initial local personal brain wiki documentation.
-- `openwiki code --init [message]` — generate initial repository documentation.
+- `openwiki code --init [message]` — generate initial repository documentation from scratch (replacing any existing generated wiki while preserving `openwiki/INSTRUCTIONS.md`; see [Agent workflow § Wiki replacement on init](../agent/workflow.md#wiki-replacement-on-init)).
 - `openwiki --update [message]` — refresh existing OpenWiki documentation.
 - `openwiki -p, --print` — run once and print the final assistant output (non-interactive).
 - `openwiki --modelId <id>` / `--model-id <id>` — choose a model ID for the run.
@@ -85,7 +97,7 @@ Init and update runs render a bounded progress model rather than a raw streaming
 - **`RunTextLogItem`** — the main agent's final text response, accumulated as one replaceable buffer.
 - **`RunDebugLogItem`** — bounded diagnostic notices (max 20), shown as `- <message>` lines.
 
-`src/cli/components/run-view.tsx` renders this model. While a run is live it shows a slow heartbeat spinner (`RunSpinner`), a stage label derived from active activities (`getRunStage()`: "Exploring the repository" / "Tracing affected documentation" / "Writing documentation"), the aggregate counts, and the activity tree split into sections ("Reading repository", "Reading OpenWiki", "Writing OpenWiki", "Writing repository") plus a bounded "Recent activity" list. On completion (`done`) it renders an outcome-first title via `formatRunCompletionTitle()` in `src/cli/run-log/summary.ts` — e.g. `Generated 2 OpenWiki pages in 3s` or `OpenWiki is up to date in <1s` — followed by up to 5 written page paths, secondary counts (writes omitted because the title already reports unique pages), diagnostics, and the final assistant text.
+`src/cli/components/run-view.tsx` renders this model. While a run is live it shows a slow heartbeat spinner (`RunSpinner`), a stage label derived from active activities (`getRunStage()`: "Exploring the repository" / "Tracing affected documentation" / "Writing documentation"), the aggregate counts, and the activity tree split into sections ("Reading OpenWiki", "Writing OpenWiki", "Writing repository") plus a bounded "Recent activity" list and a cumulative **Exploration map** of every successfully read repository file. On completion (`done`) it renders an outcome-first title via `formatRunCompletionTitle()` in `src/cli/run-log/summary.ts` — e.g. `Generated 2 OpenWiki pages in 3s` or `OpenWiki is up to date in <1s` — followed by up to 5 written page paths, secondary counts (writes omitted because the title already reports unique pages), diagnostics, and the final assistant text.
 
 | Module                            | Role                                                                               | Focused tests                                                                                                 |
 | --------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -96,6 +108,14 @@ Init and update runs render a bounded progress model rather than a raw streaming
 | `src/cli/components/run-view.tsx` | `RunView` Ink component (live + completed states)                                  | `test/cli/components/run-view.test.tsx` ("RunView")                                                           |
 
 When changing the run view, the reducer is the single fold point: new event types or display fields start there, then `run-view.tsx` renders them. `src/cli/format.ts` now exports only `formatCount()` (singular/plural noun formatting) and display helpers — the older `truncateLogOutput()`/`getSpinnerFrame()` helpers were removed when the raw transcript display was replaced by the bounded model.
+
+### Exploration map
+
+While a run is live, `RunView` renders a cumulative **Exploration map** (`ExplorationMap` in `src/cli/components/run-view.tsx`) showing every successfully read repository file as a directory tree. The reducer accumulates `exploredPaths` on each `read_file` completion in `RunToolLogItem`; `buildExplorationTreeLines()` in `src/cli/run-log/activity.ts` de-duplicates those paths and merges shared ancestry into tree branches, highlighting the file currently being read. The map occupies a viewport sized to the terminal height (clamped to 3–14 lines) and defaults to following the active file; `j`/`k` or arrow keys scroll, `PgUp`/`PgDn` jump, and `f` resumes following. It appears only while the agent is actively reading repository source, not while writing or reading OpenWiki pages.
+
+### Run view and interrupts
+
+The interactive Ink app renders with `{ exitOnCtrlC: false }`, so the default Ctrl-C exit is suppressed. Instead, the `App` component registers a `useInput` handler for Ctrl-C that sets `process.exitCode = 130`, cancels pending run-log render timers, and calls `requestProcessInterrupt()` in `src/cli/process-interrupt.ts`. That helper restores the Ink terminal first and then emits `SIGINT` on the next tick via `setImmediate`; if a recovery handler owns `SIGINT` (a repository init replacement rollback — see [Agent workflow § Wiki replacement on init](../agent/workflow.md#wiki-replacement-on-init)), the handler runs before the exit; otherwise the process exits immediately with code `130`. This keeps an operator cancellation from corrupting a transactional init while still exiting promptly for non-recovery commands. The interrupt behavior is covered by `test/cli/process-interrupt.test.ts` and `test/cli/components/run-view.test.tsx`.
 
 ## Credentials and onboarding
 
@@ -381,6 +401,7 @@ The help content is centralized in `src/cli/commands.ts` and is used by the CLI 
 - `src/cli/input/menu.ts`
 - `src/cli/components/chat.tsx`
 - `src/cli/components/run-view.tsx`
+- `src/cli/process-interrupt.ts`
 - `src/cli/run-log/` (`reducer.ts`, `activity.ts`, `summary.ts`, `tool-input.ts`, `types.ts`)
 - `src/cli/format.ts`
 - `src/agent/index.ts`

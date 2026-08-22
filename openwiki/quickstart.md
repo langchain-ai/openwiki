@@ -3,8 +3,10 @@ type: Quickstart Guide
 title: OpenWiki Quickstart
 description: Quickstart reference for the OpenWiki TypeScript CLI, including documentation-generation workflows, supported model providers, and the primary source files. Use it to navigate the repository's architecture, commands, agent runtime, operations, and connectors.
 tags: [openwiki, quickstart, cli, documentation]
-generated: { by: "openwiki/0.3.3", at: "2026-08-21T08:12:50.745Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:06:14.226Z"}
 sources:
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-6fd9c8ed42336141de43b3c2
@@ -15,6 +17,8 @@ sources:
     resource: repo://src/agent/review-subagents.ts
   - id: openwiki-source-adcadc660c1888613ec50f9a
     resource: repo://src/agent/wiki-finalizer.ts
+  - id: openwiki-source-9697823032111d36e2d4caa9
+    resource: repo://src/agent/wiki-replacement.ts
   - id: openwiki-source-239b2968fb2bcd073e89cedc
     resource: repo://src/claims/brains/code/runtime.ts
   - id: openwiki-source-3fc16f0371ced4d94330f06c
@@ -23,7 +27,7 @@ sources:
     resource: repo://src/integrations/mcp/stdio.ts
 verified:
   - by: openwiki/0.3.3
-    at: 2026-08-21T08:12:50.745Z
+    at: 2026-08-22T08:06:14.226Z
 ---
 
 # OpenWiki quickstart
@@ -33,7 +37,7 @@ OpenWiki is a TypeScript CLI that writes and maintains documentation for a repos
 ## What this repository does
 
 - Launches an interactive Ink-based terminal app for chatting with the OpenWiki agent.
-- Supports one-shot documentation runs with `--init`, `--update`, and `--print`.
+- Supports one-shot documentation runs with `--init`, `--update`, and `--print`. Running `--init` again regenerates the repository wiki from scratch, replacing the existing generated wiki (pages, Claims sidecars, indexes, run metadata) with a brand-new generation while preserving the user-authored `openwiki/INSTRUCTIONS.md` and restoring the previous wiki if generation fails or is cancelled — see [Agent workflow § Wiki replacement on init](./agent/workflow.md#wiki-replacement-on-init).
 - Supports multiple model providers — OpenAI (default, API key or ChatGPT OAuth login), GitHub Copilot (via GitHub CLI), OpenRouter, Anthropic, Gemini (AI Studio), Gemini Enterprise (Vertex AI, keyless via Google ADC), AWS Bedrock, Nebius Token Factory, Baseten, Fireworks, NVIDIA NIM, and any OpenAI-compatible gateway — each with their own credentials and model list (Gemini Enterprise uses Google ADC instead of an API key; Bedrock uses AWS access/secret keys and region; Copilot uses the GitHub CLI for auth).
 - Uses a DeepAgents local shell backend with virtual filesystem paths rooted at the target repository.
 - Creates or refreshes documentation under the target repository's `openwiki/` directory.
