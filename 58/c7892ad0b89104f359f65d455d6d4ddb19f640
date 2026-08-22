@@ -1,0 +1,33 @@
+integrations/openwiki/SKILL.md
+  s_d593a29b637c1e::t_db7b85d3572bb4 30-31
+integrations/openwiki/references/init.md
+  s_d593a29b637c1e::t_db7b85d3572bb4 54-56,58,61-69,77-78
+src/agent/prompts/code.ts
+  s_d593a29b637c1e::t_3910a8fb9dafdf 131,133,137,170,181
+test/agent/prompt.test.ts
+  s_d593a29b637c1e::t_3910a8fb9dafdf 423-440
+test/integrations/skill.test.ts
+  s_d593a29b637c1e::t_db7b85d3572bb4 116-118,223-238
+  s_d593a29b637c1e::t_4c2278daa95da1 222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "58c7892ad0b89104f359f65d455d6d4ddb19f640",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_d593a29b637c1e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a025c2-ea0c-7430-8cf4-ae9b12186f07",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
