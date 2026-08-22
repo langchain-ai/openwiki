@@ -1,0 +1,52 @@
+openwiki/operations/telemetry.md
+  s_d593a29b637c1e::t_4c2278daa95da1 17
+  s_d593a29b637c1e::t_66c43c4d9af1f4 14-16
+  s_d593a29b637c1e::t_8c1f9c86139077 18-20
+openwiki/operations/scheduling.md
+  s_d593a29b637c1e::t_4c2278daa95da1 13
+  s_d593a29b637c1e::t_e20458e28d8256 10-12
+  s_d593a29b637c1e::t_618e2cb5c7eee7 14-16
+openwiki/connectors/langsmith.md
+  s_d593a29b637c1e::t_4c2278daa95da1 17-36
+  s_d593a29b637c1e::t_8235905a930192 14-16
+  s_d593a29b637c1e::t_d280147fb0077d 37-39
+openwiki/connectors/overview.md
+  s_d593a29b637c1e::t_4c2278daa95da1 23-63
+  s_d593a29b637c1e::t_b1184b818fd61a 20-22
+  s_d593a29b637c1e::t_d9024c0d9b5a70 64-66
+openwiki/claims/overview.md
+  s_d593a29b637c1e::t_4c2278daa95da1 21-69
+  s_d593a29b637c1e::t_8561e05f5179c9 18-20
+  s_d593a29b637c1e::t_9e1736870737b0 70-72
+openwiki/cli/overview.md
+  s_d593a29b637c1e::t_4c2278daa95da1 15
+  s_d593a29b637c1e::t_8694c89ccc9e0a 12-14
+  s_d593a29b637c1e::t_8e99499af59a62 16-18
+openwiki/cli/tui.md
+  s_d593a29b637c1e::t_4c2278daa95da1 27-63
+  s_d593a29b637c1e::t_959d95de5e1ff0 24-26
+  s_d593a29b637c1e::t_700a52ddc45574 64-66
+openwiki/evals/deepswe.md
+  s_d593a29b637c1e::t_b42dc2b152d1e2 1-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "3c9aeec351e7495634bd03b27aee4fa997c51583",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_d593a29b637c1e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a025c2-ea0c-7430-8cf4-ae9b12186f07",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
