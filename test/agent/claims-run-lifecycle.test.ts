@@ -275,6 +275,132 @@ describe("Claims production run lifecycle", () => {
     );
   });
 
+  test("regenerates an existing wiki without reading its pages or Claims", async () => {
+    const cwd = await createRepository();
+    await mkdir(path.join(cwd, "openwiki/.claims"), { recursive: true });
+    await writeFile(
+      path.join(cwd, "openwiki/INSTRUCTIONS.md"),
+      "# Keep this brief\n",
+    );
+    await writeFile(path.join(cwd, "openwiki/old.md"), "# Old page\n");
+    await writeFile(path.join(cwd, "openwiki/index.md"), "# Old index\n");
+    await writeFile(path.join(cwd, "openwiki/.claims/old.json"), "not-json\n");
+    await writeFile(
+      path.join(cwd, "openwiki/.last-update.json"),
+      '{"status":"complete","old":true}\n',
+    );
+    graphHarness.streamBehavior.mockImplementation(
+      async (options: CapturedGraphOptions) => {
+        await expect(
+          readFile(path.join(cwd, "openwiki/INSTRUCTIONS.md"), "utf8"),
+        ).resolves.toBe("# Keep this brief\n");
+        await expect(
+          readFile(path.join(cwd, "openwiki/old.md"), "utf8"),
+        ).rejects.toMatchObject({ code: "ENOENT" });
+        await expect(
+          readFile(path.join(cwd, "openwiki/.claims/old.json"), "utf8"),
+        ).rejects.toMatchObject({ code: "ENOENT" });
+        await expect(
+          readFile(path.join(cwd, "openwiki/.last-update.json"), "utf8"),
+        ).rejects.toMatchObject({ code: "ENOENT" });
+        await groundAndWritePage(options, "/openwiki/new.md");
+      },
+    );
+
+    await expect(
+      runOpenWikiAgent("init", cwd, { outputMode: "repository" }),
+    ).resolves.toEqual(expect.objectContaining({ command: "init" }));
+
+    await expect(
+      readFile(path.join(cwd, "openwiki/INSTRUCTIONS.md"), "utf8"),
+    ).resolves.toBe("# Keep this brief\n");
+    await expect(
+      readFile(path.join(cwd, "openwiki/old.md"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      readFile(path.join(cwd, "openwiki/index.md"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    const store = new ClaimsStore(cwd);
+    await expect(store.loadPage("/openwiki/new.md")).resolves.toEqual(
+      expect.objectContaining({
+        claims: [
+          expect.objectContaining({
+            statement: "The repository has a README.",
+          }),
+        ],
+      }),
+    );
+  });
+
+  test("restores the exact existing wiki when the init stream fails", async () => {
+    const cwd = await createRepository();
+    await mkdir(path.join(cwd, "openwiki/.claims"), { recursive: true });
+    await writeFile(path.join(cwd, "openwiki/old.md"), "# Old page\n");
+    await writeFile(
+      path.join(cwd, "openwiki/.claims/old.json"),
+      "old claims\n",
+    );
+    await writeFile(
+      path.join(cwd, "openwiki/.last-update.json"),
+      "old metadata\n",
+    );
+    graphHarness.streamBehavior.mockImplementation(
+      async (options: CapturedGraphOptions) => {
+        await options.backend.write("/openwiki/partial.md", "# Partial\n");
+        throw new Error("stream failed during replacement");
+      },
+    );
+
+    await expect(
+      runOpenWikiAgent("init", cwd, { outputMode: "repository" }),
+    ).rejects.toThrow("stream failed during replacement");
+
+    await expect(
+      readFile(path.join(cwd, "openwiki/old.md"), "utf8"),
+    ).resolves.toBe("# Old page\n");
+    await expect(
+      readFile(path.join(cwd, "openwiki/.claims/old.json"), "utf8"),
+    ).resolves.toBe("old claims\n");
+    await expect(
+      readFile(path.join(cwd, "openwiki/.last-update.json"), "utf8"),
+    ).resolves.toBe("old metadata\n");
+    await expect(
+      readFile(path.join(cwd, "openwiki/partial.md"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  test("restores the existing wiki when Claims finalization fails", async () => {
+    const cwd = await createRepository();
+    await mkdir(path.join(cwd, "openwiki/.claims"), { recursive: true });
+    await writeFile(path.join(cwd, "openwiki/old.md"), "# Old page\n");
+    await writeFile(
+      path.join(cwd, "openwiki/.claims/old.json"),
+      "old claims\n",
+    );
+    graphHarness.streamBehavior.mockImplementation(
+      async (options: CapturedGraphOptions) => {
+        await options.backend.write("/openwiki/partial.md", "# Partial\n");
+      },
+    );
+    vi.spyOn(ClaimSession.prototype, "finalize").mockRejectedValueOnce(
+      new Error("claims finalize failed during replacement"),
+    );
+
+    await expect(
+      runOpenWikiAgent("init", cwd, { outputMode: "repository" }),
+    ).rejects.toThrow("claims finalize failed during replacement");
+
+    await expect(
+      readFile(path.join(cwd, "openwiki/old.md"), "utf8"),
+    ).resolves.toBe("# Old page\n");
+    await expect(
+      readFile(path.join(cwd, "openwiki/.claims/old.json"), "utf8"),
+    ).resolves.toBe("old claims\n");
+    await expect(
+      readFile(path.join(cwd, "openwiki/partial.md"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
   test("does not turn unrelated ungrounded pages into unfinished work", async () => {
     const cwd = await createRepository();
     const completedPage = "/openwiki/completed.md";

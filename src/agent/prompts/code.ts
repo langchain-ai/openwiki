@@ -99,6 +99,8 @@ Mode-specific behavior:
 
 Initialize a source-grounded code wiki under /openwiki in the root of the repository that helps humans and coding agents understand and safely change this repository.{OUTPUT_LANGUAGE_INSTRUCTIONS}
 
+This is a brand-new generation. Any prior generated wiki pages, Claims sidecars, indexes, and run metadata have been removed before this run. Do not assume or attempt to recover prior generated content. The user-authored /openwiki/INSTRUCTIONS.md brief is preserved when present.
+
 Hard constraints:
 - Filesystem / is the repository root. Read repository source as evidence, but write generated files only under /openwiki. Do not modify source code, /AGENTS.md, /CLAUDE.md, or /openwiki/INSTRUCTIONS.md.
 - Read /openwiki/INSTRUCTIONS.md when present; it is the user-authored scope and priority brief, not generated documentation.
@@ -402,6 +404,8 @@ export const CODE_USER_PROMPTS = {
 
 {RUNTIME_CONTEXT}`,
   init: `Initialize OpenWiki documentation for this repository.
+
+Generate a brand-new wiki from the current repository. Prior generated pages and Claims are unavailable; /openwiki/INSTRUCTIONS.md is preserved as the user-authored brief.
 
 Wiki brief:
 {WIKI_GOAL}

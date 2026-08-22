@@ -238,6 +238,25 @@ describe("createUserPrompt", () => {
     expect(prompt).not.toContain("Additional user instruction:");
   });
 
+  test("repository init describes a brand-new generation", () => {
+    const userPrompt = createUserPrompt(
+      "init",
+      emptyContext(),
+      null,
+      "repository",
+    );
+    const systemPrompt = createSystemPrompt("init", "repository");
+
+    expect(userPrompt).toContain("Generate a brand-new wiki");
+    expect(userPrompt).toContain(
+      "Prior generated pages and Claims are unavailable",
+    );
+    expect(systemPrompt).toContain("This is a brand-new generation");
+    expect(systemPrompt).toContain(
+      "The user-authored /openwiki/INSTRUCTIONS.md brief is preserved",
+    );
+  });
+
   test("init uses the personal-brain subject label in local-wiki mode", () => {
     const prompt = createUserPrompt("init", emptyContext(), null, "local-wiki");
 

@@ -65,6 +65,7 @@ import {
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import { resolveRepositoryReviewSubagents } from "./review-subagents.js";
 import { syncBundledSkills } from "./skills.js";
+import { beginRepositoryWikiReplacement } from "./wiki-replacement.js";
 import {
   createVertexAuthFetch,
   resolveVertexSurface,
@@ -190,24 +191,36 @@ export async function runOpenWikiAgent(
     `openwikiignore.patterns=${openWikiIgnore.patterns.length}`,
   );
 
-  const claimsRuntime = await inStage(
-    "build",
-    () =>
-      prepareClaimsRuntime(
-        command,
-        outputMode,
-        runtimeCwd,
-        openWikiIgnore,
-        (message) => emitClaimsWarning(options, message),
-      ),
-    { errorClass: "build_error", errorDetail: "claims_preflight" },
-  );
-  emitDebug(
-    options,
-    claimsRuntime
-      ? `claims.issues=${claimsRuntime.issueCount}`
-      : "claims=disabled",
-  );
+  const replacesRepositoryWiki =
+    command === "init" && outputMode === "repository";
+  const prepareRunClaims = () =>
+    inStage(
+      "build",
+      () =>
+        prepareClaimsRuntime(
+          command,
+          outputMode,
+          runtimeCwd,
+          openWikiIgnore,
+          (message) => emitClaimsWarning(options, message),
+        ),
+      { errorClass: "build_error", errorDetail: "claims_preflight" },
+    );
+
+  // Updates retain fail-fast Claims validation. Repository init instead creates
+  // its Claims session after replacement starts, so old sidecars cannot be read
+  // into the brand-new wiki or collide with pages regenerated at the same path.
+  let claimsRuntime: ClaimsRuntime | undefined = replacesRepositoryWiki
+    ? undefined
+    : await prepareRunClaims();
+  if (!replacesRepositoryWiki) {
+    emitDebug(
+      options,
+      claimsRuntime
+        ? `claims.issues=${claimsRuntime.issueCount}`
+        : "claims=disabled",
+    );
+  }
 
   if (command === "update" && shouldCheckUpdateNoop(options)) {
     const noopStatus = await getUpdateNoopStatus(
@@ -268,19 +281,59 @@ export async function runOpenWikiAgent(
       telemetryContext.provider = resolved;
     });
 
-    return await runOpenWikiAgentCore(
-      command,
-      runtimeCwd,
-      options,
-      config.provider,
-      config.modelId,
-      config.providerRetryAttempts,
-      config.maxOutputTokens,
-      config.streamIdleTimeout,
-      openWikiIgnore,
-      claimsRuntime,
-      runTimestamp,
-    );
+    const replacement = replacesRepositoryWiki
+      ? await inStage(
+          "build",
+          () => beginRepositoryWikiReplacement(runtimeCwd),
+          { errorClass: "build_error", errorDetail: "wiki_replacement" },
+        )
+      : undefined;
+    if (replacement) emitDebug(options, "wiki.replacement=started");
+
+    try {
+      if (replacesRepositoryWiki) {
+        claimsRuntime = await prepareRunClaims();
+        emitDebug(
+          options,
+          claimsRuntime
+            ? `claims.issues=${claimsRuntime.issueCount}`
+            : "claims=disabled",
+        );
+      }
+
+      const result = await runOpenWikiAgentCore(
+        command,
+        runtimeCwd,
+        options,
+        config.provider,
+        config.modelId,
+        config.providerRetryAttempts,
+        config.maxOutputTokens,
+        config.streamIdleTimeout,
+        openWikiIgnore,
+        claimsRuntime,
+        runTimestamp,
+      );
+      if (replacement) {
+        await inStage("finalize", () => replacement.commit());
+        emitDebug(options, "wiki.replacement=committed");
+      }
+      return result;
+    } catch (error) {
+      if (replacement) {
+        try {
+          await replacement.rollback();
+          emitDebug(options, "wiki.replacement=rolledBack");
+        } catch (rollbackError) {
+          throw new AggregateError(
+            [error, rollbackError],
+            "Repository wiki init failed and the previous wiki could not be fully restored.",
+            { cause: rollbackError },
+          );
+        }
+      }
+      throw error;
+    }
   } catch (error) {
     // Enrich the error for the CLI's debug/auth UI, then rethrow. The telemetry
     // record is owned by withRunTelemetry, which reads the stage/class tags this
