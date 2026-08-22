@@ -1,0 +1,19 @@
+.changeset/disable-general-purpose-subagent.md
+  s_f37d16796e0812::t_13868eadc23216 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "915d6dec6fdcf90299a9316cd3cfcd551f9d9e4d",
+  "prompts": {},
+  "sessions": {
+    "s_f37d16796e0812": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c4872674-a70f-4ba8-a914-7fe79ef31b30",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+src/agent/index.ts
+  s_440ba4f2540c30::t_d9bb61bf85aa07 580-581,592-596
+test/agent/plan-ledger.test.ts
+  s_440ba4f2540c30::t_d9bb61bf85aa07 45-49,129-134,380-384,451-460,518-520,579-581,720-724
+src/agent/subagent-dispatch.ts
+  s_440ba4f2540c30::t_d9bb61bf85aa07 58-59
+test/agent/authoring-pool.test.ts
+  s_440ba4f2540c30::t_d9bb61bf85aa07 33-35,105,118,124-126,138,175
+test/agent/wiki-verification.test.ts
+  s_440ba4f2540c30::t_d9bb61bf85aa07 27-29,44-51,62-65,68-73,152-154,188-193
+test/integrations/skill.test.ts
+  s_440ba4f2540c30::t_6f3242b872d0bc 189-193,195-197,199,203,205,207,209,213,215-216
+  s_440ba4f2540c30::t_0699ddaf93ea00 201
+src/agent/wiki-verification.ts
+  s_440ba4f2540c30::t_d9bb61bf85aa07 33,214-218
+test/agent/docs-only-backend.test.ts
+  s_440ba4f2540c30::t_d9bb61bf85aa07 46-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "7474fbe66e538623391692f564a955fcb097e7e4",
+  "prompts": {},
+  "sessions": {
+    "s_440ba4f2540c30": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a020ed-85d9-7901-b33a-4977e8492461",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

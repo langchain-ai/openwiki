@@ -1,0 +1,112 @@
+src/connectors/sources/gmail.ts
+  s_109cbe11c8136c::t_56914b94827544 11,110,113,182
+src/config/env.ts
+  s_109cbe11c8136c::t_56914b94827544 75,78,85,427,435
+src/connectors/sources/slack.ts
+  s_109cbe11c8136c::t_56914b94827544 4,196,208,362
+openwiki/index.md
+  s_109cbe11c8136c::t_56914b94827544 13
+openwiki/cli/usage.md
+  s_109cbe11c8136c::t_56914b94827544 6-14,50-53,364,372
+src/cli/components/panels.tsx
+  s_109cbe11c8136c::t_56914b94827544 4,104-108
+openwiki/.claims/claims/grounded-claims.json
+  s_109cbe11c8136c::t_56914b94827544 1-196
+src/agent/prompts/code.ts
+  s_109cbe11c8136c::t_68a5974903f0a9 1,11-12,47,50
+src/connectors/sources/langsmith/index.ts
+  s_109cbe11c8136c::t_56914b94827544 3-5,49,196-198
+  s_109cbe11c8136c::t_4cb8461d794d42 2
+.changeset/fix-openwiki-config-dir-display-path.md
+  s_109cbe11c8136c::t_56914b94827544 1-5
+src/connectors/sources/x.ts
+  s_109cbe11c8136c::t_56914b94827544 16-19,93,96,108,189
+openwiki/.claims/agent/workflow.json
+  s_109cbe11c8136c::t_56914b94827544 1-68
+src/agent/index.ts
+  s_109cbe11c8136c::t_56914b94827544 40,193
+src/cli/commands.ts
+  s_109cbe11c8136c::t_56914b94827544 2,1115
+src/auth/configure.ts
+  s_109cbe11c8136c::t_56914b94827544 6,147
+src/connectors/sources/web-search.ts
+  s_109cbe11c8136c::t_56914b94827544 12,83,86,99,109,112,173
+openwiki/.claims/cli/usage.json
+  s_109cbe11c8136c::t_56914b94827544 1-24
+src/agent/prompts/personal.ts
+  s_109cbe11c8136c::t_56914b94827544 1-5,9,12-13,18,24,31,81,84,95-96,101,137,140-141,146,152,159,269-270,293,325,353,365,368-369,374,380,387,497-498,521,553,581,603,613
+test/scheduling/schedules-launchd.test.ts
+  s_109cbe11c8136c::t_56914b94827544 65,122-123,233,243-258
+  s_109cbe11c8136c::t_d58c70c80b283a 259-260
+src/connectors/sources/mcp.ts
+  s_109cbe11c8136c::t_56914b94827544 9,53,56,181
+src/cli/components/chat.tsx
+  s_109cbe11c8136c::t_56914b94827544 4,434
+src/setup/credentials/components.tsx
+  s_109cbe11c8136c::t_56914b94827544 3,710
+src/connectors/sources/hackernews.ts
+  s_109cbe11c8136c::t_56914b94827544 11,122,125,258
+openwiki/agent/workflow.md
+  s_109cbe11c8136c::t_56914b94827544 6-22,36-43,148,152,161-166,169,171-172
+openwiki/integrations/index.md
+  s_109cbe11c8136c::t_56914b94827544 3
+src/connectors/sources/git-repo.ts
+  s_109cbe11c8136c::t_56914b94827544 12,72,75,125
+src/ingestion/ingestion.ts
+  s_109cbe11c8136c::t_56914b94827544 19,21,313-314,343
+src/scheduling/schedules.ts
+  s_109cbe11c8136c::t_56914b94827544 10,12,171,183-185,817,823,834-841,853
+src/setup/credentials/constants.ts
+  s_109cbe11c8136c::t_56914b94827544 7-11,59,151,153
+openwiki/.last-update.json
+  s_109cbe11c8136c::t_56914b94827544 2,4
+src/connectors/registry.ts
+  s_109cbe11c8136c::t_56914b94827544 9,30
+openwiki/integrations/coding-agents.md
+  s_109cbe11c8136c::t_56914b94827544 1-198
+src/cli/diagnostics/auth-fix.ts
+  s_109cbe11c8136c::t_56914b94827544 7,26,77,85,91
+test/cli/diagnostics/auth-fix.test.ts
+  s_109cbe11c8136c::t_56914b94827544 1-2,10-17,56-72
+  s_109cbe11c8136c::t_9b3e442aacb767 73
+openwiki/architecture/overview.md
+  s_109cbe11c8136c::t_56914b94827544 6-22,44-46,114,152-153,158,169-171,189-192,205-208
+openwiki/.claims/integrations/coding-agents.json
+  s_109cbe11c8136c::t_56914b94827544 1-144
+openwiki/claims/index.md
+  s_109cbe11c8136c::t_56914b94827544 1-3
+test/openwiki-home.test.ts
+  s_109cbe11c8136c::t_56914b94827544 1-222
+src/connectors/tools.ts
+  s_109cbe11c8136c::t_56914b94827544 12,51,70,100,148,177
+src/telemetry/config.ts
+  s_109cbe11c8136c::t_56914b94827544 3-6,39
+src/config/openwiki-home.ts
+  s_109cbe11c8136c::t_56914b94827544 6-40,48-51
+openwiki/.claims/quickstart.json
+  s_109cbe11c8136c::t_56914b94827544 1-72
+openwiki/claims/grounded-claims.md
+  s_109cbe11c8136c::t_56914b94827544 1-228
+openwiki/quickstart.md
+  s_109cbe11c8136c::t_56914b94827544 6-26,42-43,65-66,84,86-88,100-101,108-110,147-148,175-178,219-222
+README.md
+  s_109cbe11c8136c::t_56914b94827544 120-129
+openwiki/.claims/architecture/overview.json
+  s_109cbe11c8136c::t_56914b94827544 1-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "95abb413802b65f71e3032895720cfbf319b477f",
+  "prompts": {},
+  "sessions": {
+    "s_109cbe11c8136c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c3f8d7f4-6cc1-41e6-ae06-39bd7af25271",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+src/agent/page-author.ts
+  s_590ba8ec9447c8::t_a7582fec1dccce 81
+test/agent/author-write.test.ts
+  s_590ba8ec9447c8::t_86f7179b46169a 3-6,84,92
+  s_590ba8ec9447c8::t_a7582fec1dccce 1-2,7-83,85-91,93-94
+src/agent/author-write.ts
+  s_590ba8ec9447c8::t_9131b22e7f7689 130,158
+  s_590ba8ec9447c8::t_a7582fec1dccce 20,73-76,88-93,126-129,131-157,166
+  s_590ba8ec9447c8::t_86f7179b46169a 159
+src/agent/authoring-pool.ts
+  s_590ba8ec9447c8::t_a3794da78b335f 63-71,151-152,205,219-237,265-267,339
+  s_590ba8ec9447c8::t_6ee737742fc133 62
+test/agent/authoring-pool.test.ts
+  s_590ba8ec9447c8::t_a3794da78b335f 216-220,238-248,251-267,270-279,281-302
+  s_590ba8ec9447c8::t_55793eb40c160e 280
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "d7c09346fc275f7136242fc8b297dff529e66ac4",
+  "prompts": {},
+  "sessions": {
+    "s_590ba8ec9447c8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02519-13f2-7942-a6a3-a7e3d483aa2d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+test/agent/claims-agent-integration.test.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 123
+src/agent/wiki-qa-subagents.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 7,16,32
+src/agent/index.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 569-573
+test/claims/brains/code/tools.test.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 84-103,339-341,368,378-379
+src/agent/docs-only-backend.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 228,495,499
+test/agent/prompt-okf.test.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 18
+src/agent/prompts/code.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 100-109,111,116-172,176,187-188,193-196,198-199
+test/integrations/skill.test.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 189,191,193,195,197,199,201,203,207
+test/agent/prompt.test.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 380,388,390
+src/claims/brains/code/tools.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 103-104,271-277
+src/agent/skeleton-critic.ts
+  s_d593a29b637c1e::t_8c5bcf93db0c18 5,20-22,34,42-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "ff024cbc0c79fda4d712fecd55d018c2b5101ae0",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_d593a29b637c1e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a025c2-ea0c-7430-8cf4-ae9b12186f07",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

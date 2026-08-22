@@ -1,0 +1,178 @@
+test/agent/utils.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 10,93,104
+integrations/openwiki/references/update.md
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-54
+.changeset/grounded-sources-flow.md
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-5
+test/agent/prompt.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 352,354-365
+src/integrations/install/installer.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-667
+src/claims/brains/code/store.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 60-68,77,237-286
+  s_440ba4f2540c30::t_80cf12a6a808c4 59,287
+test/cli/integrations-runners.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-230
+integrations/openwiki/SKILL.md
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-55
+src/claims/brains/code/tools.ts
+  s_440ba4f2540c30::t_7594eb1ff34af8 108-109,275
+  s_440ba4f2540c30::t_ee0a078d8f86cc 106
+  s_440ba4f2540c30::t_1d7217f6d1fdee 87,93,102-105,107,110-114,147,224,228,245,250-274,276-297,452
+CONTRIBUTING.md
+  s_440ba4f2540c30::t_1d7217f6d1fdee 35-77
+scripts/install-local-integration.mjs
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-52
+src/cli/cli.tsx
+  s_440ba4f2540c30::t_1d7217f6d1fdee 8,12,29-37,47-52,55-65,67-70,72-78,80-113
+test/agent/translation-middleware.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 236-239
+test/claims/brains/code/middleware.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 41-50,95-111
+  s_440ba4f2540c30::t_b2bd4dddd1023e 112
+test/okf/frontmatter.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 12-13,144-224
+src/agent/index.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 162,179,231,293,458,484-488,515,531-532,600-603,645,705,784,786,842-843,888,898,901-903
+src/integrations/core/session-manager.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-607
+src/okf/claim-sources.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-159
+src/integrations/install/types.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-176
+test/agent/wiki-finalizer.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-235
+test/integrations/installer.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-897
+src/cli/commands.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 10-18,39-105,107,173-180,533-734,1061-1078,1102-1104,1170-1184,1280-1282
+src/integrations/mcp/stdio.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-33
+test/integrations/skill.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-323
+src/cli/integrations.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-96
+src/okf/generated-provenance.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 85,92,94-99,107
+test/integrations/mcp-server.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-382
+test/cli/integrations-commands.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-214
+test/integrations/config-adapters.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-267
+src/integrations/install/install-paths.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-323
+integrations/openwiki/references/reviewers.md
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-106
+src/integrations/install/config-json.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-175
+test/integrations/mcp-stdio.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-41
+test/okf/claim-sources.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-129
+test/integrations/package-contents.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-108
+integrations/openwiki/references/init.md
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-73
+test/okf/claims-verification.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-98
+test/integrations/cli-dogfood.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-269
+src/integrations/install/skill-bundle.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-353
+test/claims/brains/code/session.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 5-8,19-22,72,88,128-152,260-310,392,399,407-508,518,528,580,607-609,622,656
+README.md
+  s_440ba4f2540c30::t_1d7217f6d1fdee 25-28,35-38,42,54,63-108,144,151,167,171,187,196,200,203,205,208,213-215,456-458
+integrations/openwiki/agents/openai.yaml
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-4
+integrations/openwiki/references/security.md
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-27
+src/claims/brains/code/runtime.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 6-10,31,33,72,77-81,83-88,99,104-108,110-115,120-145
+  s_440ba4f2540c30::t_fc9b59706d032e 146-147
+package.json
+  s_440ba4f2540c30::t_1d7217f6d1fdee 23,49,74
+src/claims/brains/code/types.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 8-22,43-50,91-110
+  s_440ba4f2540c30::t_07b41a5953261e 111
+src/okf/claims-verification.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-114
+test/agent/run-metadata.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 8,253,255-256,258-259,261-264,266,268-270,272-275
+integrations/openwiki/references/methodology.md
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-88
+test/agent/frontmatter-validator.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 88-89,91,109-151
+  s_440ba4f2540c30::t_267792091b0146 152
+src/agent/utils.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 32-33,251-255,257,260-271,274-275,413
+src/integrations/core/repository-root.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-133
+test/claims/brains/code/tools.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 108-113
+src/integrations/mcp/server.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-110
+test/integrations/session-manager.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-535
+src/integrations/install/registry.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-79
+src/integrations/install/config-toml.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-211
+src/integrations/install/atomic-file.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-34
+src/version.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 76-79
+src/agent/prompts/code.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 159-161,167-169,206,208-209,297-298,306-307,357,387
+  s_440ba4f2540c30::t_7594eb1ff34af8 165-166
+src/claims/brains/code/session.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 17-18,51-60,78-87,133-137,153-155,171-174,182-186,221-225,290-319,329-333,335-338,368,379-382,385-388,402-406,457-458,464,466-467,477-535,583
+src/okf/frontmatter.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 2,23-25,27-28,57,59-61,63,196,209,243,248,256-257,263-264,268-311,489-544,561-564,566,569-573,577-579,581,584-626,727-729
+test/claims/brains/code/runtime.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1,8-12,37-40,76,79,90-94,158-321
+test/integrations/repository-root.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-79
+test/integrations/protocol.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-166
+src/integrations/core/protocol.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-144
+src/claims/brains/code/preflight.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 21-27,54-56,102,107
+  s_440ba4f2540c30::t_f986e77b90b96b 20
+test/claims/brains/code/store.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 124-127,219-230
+.changeset/bright-hosts-connect.md
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-5
+src/agent/wiki-finalizer.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-251
+test/agent/prompt-okf.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 5-13,61-76
+src/integrations/core/errors.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 1-27
+test/claims/brains/code/preflight.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 103,121-122,187,273
+src/agent/okf-middleware.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 5,16,18-22,38-48,56,58,66-76,102-103,105-118
+test/agent/index-middleware.test.ts
+  s_440ba4f2540c30::t_1d7217f6d1fdee 2,13,19,33-39,79-95,506-520,571-632
+pnpm-lock.yaml
+  s_440ba4f2540c30::t_25da687ceee288 54-56,621-626,794-803,1206-1209,1224-1231,1235-1237,1306-1309,1327-1338,1381-1392,1400-1411,1651-1654,1674-1677,1681-1683,1687-1690,1706-1713,1717-1720,1732-1734,1793-1796,1807-1810,1819-1828,1851-1853,1881-1884,1904-1911,1928-1930,1943-1950,1974-1977,1988-1999,2007-2010,2084-2091,2124-2126,2197-2202,2387-2390,2394-2401,2413-2420,2461-2464,2487-2494,2499-2502,2598-2601,2617-2619,2642-2645,2685-2688,2696-2699,2713-2720,2770-2773,2798-2808,2817-2832,2881-2884,2962-2965,3009-3012,3039-3042,3053-3056,3223-3227,3818-3821,4039-4062,4501-4505,4514-4517,4525-4531,4591-4604,4622-4633,4663-4668,4673-4681,4939-4940,4955-4960,4965-4966,4969-4970,4984-4987,4990-4993,5027-5028,5103-5104,5111-5114,5119-5159,5180-5181,5205-5215,5237-5240,5258-5259,5278-5295,5328-5329,5336-5343,5352-5359,5434-5437,5458-5459,5551-5554,5709-5710,5713-5716,5748-5753,5778-5779,5796-5799,5802-5805,5888-5889,5898-5899,5912-5913,5952-5956,5964-5968,5985-5993,6065-6074,6095-6121,6128-6155,6202-6203,6276-6277,6314-6319,6341-6342,6351-6352,6456-6459
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "d357c5fa17b6a01d4abc31c1da8b57b1235202dd",
+  "prompts": {},
+  "sessions": {
+    "s_440ba4f2540c30": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a020ed-85d9-7901-b33a-4977e8492461",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}

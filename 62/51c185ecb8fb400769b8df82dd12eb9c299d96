@@ -1,0 +1,51 @@
+test/agent/prompt.test.ts
+  s_d593a29b637c1e::t_5442d6bfacba7c 230,414-416,418-421
+  s_d593a29b637c1e::t_fa59004bf88ed7 417
+  s_d593a29b637c1e::t_ab243ab87376aa 422
+src/agent/index.ts
+  s_d593a29b637c1e::t_1ad8ce4cf6b6a8 216-219
+  s_d593a29b637c1e::t_8d45e6c281109e 80,206-215,220-237,298-351
+.changeset/fresh-wikis-rebuild.md
+  s_d593a29b637c1e::t_119d2787feae5c 1-5
+README.md
+  s_d593a29b637c1e::t_ea539ccc906b31 120-121
+src/agent/prompts/code.ts
+  s_d593a29b637c1e::t_ea539ccc906b31 45,100,105,379-381
+src/cli/commands.ts
+  s_d593a29b637c1e::t_ea539ccc906b31 1190
+test/agent/wiki-replacement.test.ts
+  s_d593a29b637c1e::t_fa59004bf88ed7 60-63
+  s_d593a29b637c1e::t_c89a46c44b951b 1-59,64-103
+test/claims/brains/code/runtime.test.ts
+  s_d593a29b637c1e::t_6ef31a6fe6aa76 84-85
+  s_d593a29b637c1e::t_c5eb970d57c284 76-83,86-92
+test/agent/claims-run-lifecycle.test.ts
+  s_d593a29b637c1e::t_c5eb970d57c284 348,363-365,380-390,392-408,413,415-451
+  s_d593a29b637c1e::t_a4b0fd737570c2 409-412,414
+  s_d593a29b637c1e::t_04fef6f930f7a0 453-479
+  s_d593a29b637c1e::t_fa59004bf88ed7 391
+  s_d593a29b637c1e::t_d96678324c719c 452
+src/agent/wiki-replacement.ts
+  s_d593a29b637c1e::t_a4b0fd737570c2 135-136
+  s_d593a29b637c1e::t_a1cdbe03116e95 1-134,137-138
+src/claims/brains/code/runtime.ts
+  s_d593a29b637c1e::t_1ad8ce4cf6b6a8 37-47,59,68,103-105
+  s_d593a29b637c1e::t_f1d625afeb1f60 11,137-191
+  s_d593a29b637c1e::t_5164023e2ef893 192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "6251c185ecb8fb400769b8df82dd12eb9c299d96",
+  "prompts": {},
+  "sessions": {
+    "s_d593a29b637c1e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a025c2-ea0c-7430-8cf4-ae9b12186f07",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
