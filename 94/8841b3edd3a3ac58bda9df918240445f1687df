@@ -1,0 +1,74 @@
+openwiki/agent/backend.md
+  h_f78d33d4280f3f 13,73,108
+openwiki/agent/middleware.md
+  h_f78d33d4280f3f 17,45
+openwiki/agent/model-providers.md
+  h_f78d33d4280f3f 17,60-68
+openwiki/agent/overview.md
+  h_f78d33d4280f3f 15
+openwiki/agent/prompts.md
+  h_f78d33d4280f3f 17
+openwiki/architecture/configuration.md
+  h_f78d33d4280f3f 11,27-33
+openwiki/architecture/overview.md
+  h_f78d33d4280f3f 13,43-54
+openwiki/auth-and-onboarding/auth.md
+  h_f78d33d4280f3f 19,48-49
+openwiki/auth-and-onboarding/onboarding.md
+  h_f78d33d4280f3f 13,33-36
+openwiki/claims/agent-integration.md
+  h_f78d33d4280f3f 19,46-47
+openwiki/claims/evidence.md
+  h_f78d33d4280f3f 13,56-57
+openwiki/claims/overview.md
+  h_f78d33d4280f3f 17,37-39,41-42,57-58
+openwiki/claims/runtime-and-store.md
+  h_f78d33d4280f3f 19,52-53,80-85,97
+openwiki/cli/overview.md
+  h_f78d33d4280f3f 15,27,44-45
+openwiki/cli/runners.md
+  h_f78d33d4280f3f 17,29-36,40,56-58
+openwiki/cli/tui.md
+  h_f78d33d4280f3f 23,50-51,64
+openwiki/connectors/langsmith.md
+  h_f78d33d4280f3f 19
+openwiki/connectors/overview.md
+  h_f78d33d4280f3f 21,33,63-64
+openwiki/connectors/sources.md
+  h_f78d33d4280f3f 25,63-72
+openwiki/evals/deepswe.md
+  h_f78d33d4280f3f 13
+openwiki/evals/ledger.md
+  h_f78d33d4280f3f 13,27-32,50-51
+openwiki/ingestion/overview.md
+  h_f78d33d4280f3f 11,44-45
+openwiki/integrations/install.md
+  h_f78d33d4280f3f 13,27-30,51-52
+openwiki/integrations/overview.md
+  h_f78d33d4280f3f 15,52-53
+openwiki/okf/overview.md
+  h_f78d33d4280f3f 15,53-54
+openwiki/operations/scheduling.md
+  h_f78d33d4280f3f 13,42-43
+openwiki/operations/telemetry.md
+  h_f78d33d4280f3f 17
+openwiki/operations/visualizer.md
+  h_f78d33d4280f3f 13,36-37
+openwiki/quickstart.md
+  h_f78d33d4280f3f 15,48-49,55-68
+openwiki/reference/mermaid.md
+  h_f78d33d4280f3f 11,38-39
+openwiki/reference/platform.md
+  h_f78d33d4280f3f 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "948841b3edd3a3ac58bda9df918240445f1687df",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
