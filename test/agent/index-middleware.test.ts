@@ -916,4 +916,33 @@ describe("createOpenWikiIndexMiddleware generated finalization", () => {
     expect(page).toBe(body);
     expect(page).not.toContain("generated:");
   });
+
+  test("stamps a moved source reference without failing the run", async () => {
+    const { backend, rootDir } = await setup();
+    await mkdir(path.join(rootDir, "src/cli"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "src/cli/commands.ts"),
+      "export const parsed = true;\n",
+      "utf8",
+    );
+    await backend.write(
+      "/openwiki/quickstart.md",
+      `${document("Quickstart", "Start here.")}\nParsing lives in \`src/commands.ts\`.\n`,
+    );
+
+    const middleware = createOpenWikiIndexMiddleware(backend, "repository");
+    await runBeforeAgent(middleware);
+    await expect(runAfterAgent(middleware)).resolves.toBeUndefined();
+
+    const page = await readFile(
+      path.join(rootDir, "openwiki/quickstart.md"),
+      "utf8",
+    );
+    expect(page).toContain(
+      "openwiki: stale source reference [src/commands.ts]",
+    );
+    expect(page).toContain('now at "src/cli/commands.ts"');
+    expect(page).toContain("Parsing lives in `src/commands.ts`.");
+    expect(page).toContain("generated:");
+  });
 });

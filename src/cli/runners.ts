@@ -9,6 +9,7 @@ import { formatAuthProviderList, runOAuthAuth } from "../auth/oauth.js";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "../agent/index.js";
 import type { OpenWikiRunEvent, OpenWikiRunOptions } from "../agent/types.js";
 import { resolveConfiguredProvider } from "../config/constants.js";
+import { runWikiDoctor } from "../doctor/doctor.js";
 import {
   ensureCodeModeRepoSetup,
   runCodeModeConnectors,
@@ -83,6 +84,21 @@ export async function runVisualizeCommand(
       port: command.port,
       open: command.open,
     });
+  } catch (error) {
+    process.stderr.write(`${getErrorMessage(error)}\n`);
+    process.exitCode = 1;
+  }
+}
+
+/**
+ * Report the repository wiki's source-reference health. Exits non-zero when a
+ * cited file is missing, so CI can gate on it.
+ */
+export async function runDoctorCommand(): Promise<void> {
+  try {
+    const result = await runWikiDoctor(process.cwd());
+    process.stdout.write(result.report);
+    process.exitCode = result.hasIssues ? 1 : 0;
   } catch (error) {
     process.stderr.write(`${getErrorMessage(error)}\n`);
     process.exitCode = 1;

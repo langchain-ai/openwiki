@@ -127,6 +127,7 @@ export function createLinkIntegrityInstructions(): string {
 Link integrity:
 - Prefer relative Markdown links to existing wiki pages and stable heading anchors. Do not invent destinations that are not written in the same run.
 - OpenWiki validates relative internal links and heading anchors after the run. Broken links are left in place and marked with an HTML comment starting with "openwiki: broken internal link", so the run completes and a later update can self-correct. If you find such a comment, repair the href or restore the target page using the reason in the comment, then delete the comment.
+- Cite a repository file by writing its path from the repository root in an inline code span, so the claim stays checkable. OpenWiki resolves those paths after the run and marks any that no longer exist with an HTML comment starting with "openwiki: stale source reference", naming where a file of that name now lives. If you find such a comment, treat it as a moved or deleted file: read the replacement, correct the path, revise any surrounding claim the move invalidated, then delete the comment.
 `;
 }
 

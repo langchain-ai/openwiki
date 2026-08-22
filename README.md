@@ -243,6 +243,20 @@ After each run, OpenWiki validates every `mermaid` fence. A diagram that fails v
 > npm install mermaid jsdom
 > ```
 
+## Source references
+
+A wiki's most common factual claim is "this behavior lives in this file", and a refactor invalidates every one of those claims without touching the wiki. Readers then follow a path that no longer exists, and an agent using the wiki as memory falls back to crawling the repository — the expensive behavior the wiki was meant to replace.
+
+After each run, OpenWiki resolves the repository paths your pages cite. When a cited file has moved, the citation is marked in place with a short comment naming where the file now lives, and the next `--update` uses that comment to repair the path and revise whatever claim the move invalidated.
+
+To check the same thing yourself, or in CI on every pull request:
+
+```sh
+openwiki doctor
+```
+
+It reports each stale reference with its likely new location, lists the pages whose cited files have changed since the commit the wiki last documented, and exits non-zero when a reference is stale. It reads only the wiki text and git, so it is fast, free, and makes no model calls.
+
 ## Model providers
 
 The onboarding default is OpenAI with `gpt-5.6-terra`. Every provider includes preset model options plus support for custom model IDs, and stores its credentials in `~/.openwiki/.env`.
@@ -463,6 +477,7 @@ openwiki --init                  # initialize code docs (personal: openwiki pers
 openwiki --update                # update code docs (personal: openwiki personal --update)
 openwiki visualize               # interactive graph + live reader
 openwiki visualize openwiki --export docs/openwiki-visualizer  # static graph + reader
+openwiki doctor                  # check source references; no model calls
 openwiki auth <provider>         # authenticate a connector (slack, gmail, x, notion)
 openwiki ingest <source>         # run connector ingestion (all, or a connector/instance)
 openwiki integrations list       # show installed coding-agent integrations
