@@ -18,7 +18,13 @@ Independently map the repository before reading `openwiki/_plan.md`. Inspect
 manifests, entrypoints, public APIs, domains, state ownership, operations,
 cross-system flows, and representative implementation and tests. Then compare
 that inventory with the plan and identify every material missing or shallow
-canonical home.
+canonical home. Audit the proposed paths as a durable information architecture:
+the root must not be a dumping ground when coherent domain groups exist, section
+directories must have a real purpose and normally multiple substantive pages,
+and the quickstart map must agree with the physical hierarchy. Treat avoidable
+root-level sprawl, artificial single-page directories, generic catch-all
+sections, and source-tree mirroring as material navigation defects rather than
+stylistic preferences.
 
 The initial review must return all material gaps in one response. The one repeat
 review must verify every prior request against repository evidence. It may add a

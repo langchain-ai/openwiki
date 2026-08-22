@@ -401,6 +401,13 @@ describe("createSystemPrompt Claims workflow", () => {
       expect(prompt).not.toContain("_skeleton.md");
       if (command === "init") {
         expect(prompt).toContain("skeleton-critic");
+        expect(prompt).toContain("Information architecture");
+        expect(prompt).toContain(
+          "A flat root containing pages from several coherent domains is not acceptable",
+        );
+        expect(prompt).toContain(
+          "collapse unjustified single-page directories",
+        );
         expect(prompt).toContain("wiki-question-finder");
         expect(prompt).toContain("wiki-answer-verifier");
         expect(prompt).toContain(

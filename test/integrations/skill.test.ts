@@ -208,6 +208,10 @@ describe("canonical OpenWiki host skill", () => {
     expect(init).toContain("`openwiki_resolve_claims`");
     expect(init).toContain("starts init from a blank generated wiki");
     expect(nativeInit).toContain("This is a brand-new generation");
+    expect(init).toContain("Information architecture section");
+    expect(init).toContain("flat collection of Markdown files");
+    expect(reviewers).toContain("durable information architecture");
+    expect(reviewers).toContain("root must not be a dumping ground");
   });
 
   test("preserves native reviewer evidence isolation", async () => {

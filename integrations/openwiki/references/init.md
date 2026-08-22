@@ -20,10 +20,17 @@ Claims sidecars, indexes, and run metadata are unavailable; the user-authored
    and test ownership.
 3. Group files into systems and cross-system workflows using imports, symbols,
    calls, shared data, tests, and history. Do not mirror the directory tree.
-4. Write the complete proposed structure to `openwiki/_plan.md`. Map every
-   substantial component and workflow to its canonical page, primary source
-   paths and symbols, focused tests, and disposition. Do not mirror the
-   directory tree.
+4. Write the complete proposed structure to `openwiki/_plan.md`. Begin with an
+   Information architecture section containing the proposed wiki tree and its
+   stable, repository-specific domain taxonomy. Map every substantial component
+   and workflow to its canonical page, primary source paths and symbols, focused
+   tests, and disposition. Organize around runtime domains, owned subsystems,
+   and cross-system workflows; do not mirror the source directory tree.
+   Keep the root focused on `quickstart.md` and genuinely repository-wide
+   concepts. Group related pages into meaningful domain directories instead of
+   leaving a flat collection of Markdown files. Avoid artificial single-page
+   directories, generic catch-all sections, and thin landing pages. Do not force
+   hierarchy onto a genuinely small wiki.
 5. Read [reviewers.md](reviewers.md), then run the skeleton critic through the
    host's native delegation mechanism. Reviewers are read-only; the main agent
    owns the plan and all wiki edits.
@@ -48,11 +55,13 @@ Claims sidecars, indexes, and run metadata are unavailable; the user-authored
    clusters, one-hop dependencies, and cross-system workflows exposed during
    writing. Expand the plan and wiki for real gaps, applying the same evidence
    and Claims discipline to every added page.
-9. Reconcile the wiki tree against the reviewed plan and inventory. Establish
-   the complete Claims set for `openwiki/quickstart.md`, then write it last with
+9. Reconcile the physical wiki tree against the reviewed domain taxonomy and
+   inventory. Relocate root-level orphans, collapse unjustified single-page
+   directories, and ensure each section has a coherent purpose. Establish the
+   complete Claims set for `openwiki/quickstart.md`, then write it last with
    links to every major concept and a compact task-routing map from engineering
    intent to pages, source entrypoints and symbols, focused tests, and narrow
-   validation.
+   validation. Its semantic map must match the physical directory hierarchy.
 10. Invoke the question finder and create one TODO for every returned question.
 11. Batch related questions in groups of two or three and launch verifier batches
     together. For every `PARTIAL` or `FAIL`, reconcile the affected propositions

@@ -75,6 +75,12 @@ describe("repository review subagents", () => {
     }
 
     expect(reviewers[0]?.systemPrompt).toContain("/openwiki/_plan.md");
+    expect(reviewers[0]?.systemPrompt).toContain(
+      "durable information architecture",
+    );
+    expect(reviewers[0]?.systemPrompt).toContain(
+      "root must not be a dumping ground",
+    );
     expect(reviewers[0]?.systemPrompt).not.toContain("_skeleton.md");
   });
 
