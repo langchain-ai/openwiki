@@ -1,0 +1,19 @@
+src/agent/page-author.ts
+  s_911659be8d8aea::t_917c7bffe578b5 54-68,78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "1b91368e85ea18d7d66d8e4d8f2086be96ae5a4f",
+  "prompts": {},
+  "sessions": {
+    "s_911659be8d8aea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3ed4d2d4-bef9-4ce3-8809-e159f139c458",
+        "model": "claude-opus-5"
+      },
+      "human_author": "nick-hollon-lc <nick.hollon@langchain.dev>"
+    }
+  }
+}
