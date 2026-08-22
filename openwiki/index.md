@@ -4,14 +4,19 @@ okf_version: "0.2"
 
 # Files
 
-- [OpenWiki Quickstart](quickstart.md) - Quickstart reference for the OpenWiki TypeScript CLI, including documentation-generation workflows, supported model providers, and the primary source files. Use it to navigate the repository's architecture, commands, agent runtime, operations, and connectors.
+- [OpenWiki Quickstart & Domain Map](quickstart.md) - Entry point for the OpenWiki repository wiki, covering what OpenWiki is, how a run works end to end, the subsystem map, and where to go for each engineering task.
 
 # Directories
 
 - [agent](agent/)
 - [architecture](architecture/)
+- [auth-and-onboarding](auth-and-onboarding/)
 - [claims](claims/)
 - [cli](cli/)
+- [connectors](connectors/)
 - [evals](evals/)
+- [ingestion](ingestion/)
 - [integrations](integrations/)
+- [okf](okf/)
 - [operations](operations/)
+- [reference](reference/)
