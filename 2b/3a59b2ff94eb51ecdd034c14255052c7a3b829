@@ -1,0 +1,30 @@
+src/integrations/core/session-manager.ts
+  s_d593a29b637c1e::t_8a004a0719638f 5-8,218-224,308,318-320,370,382,385-390,404-414,456
+test/integrations/skill.test.ts
+  s_d593a29b637c1e::t_cfec1b9036e782 209-210
+test/integrations/session-manager.test.ts
+  s_d593a29b637c1e::t_8a004a0719638f 125-130,136-145,157-165,209-210,233-236,240,243-248,499,503
+integrations/openwiki/references/init.md
+  s_d593a29b637c1e::t_8a004a0719638f 8-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "2b3a59b2ff94eb51ecdd034c14255052c7a3b829",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_d593a29b637c1e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a025c2-ea0c-7430-8cf4-ae9b12186f07",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
