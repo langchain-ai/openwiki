@@ -50,8 +50,11 @@ export function createCodexFetch(
   fetchImpl: typeof fetch = globalThis.fetch,
 ): typeof fetch {
   return async (input, init) => {
-    const useLunaProtocol =
-      modelId === CODEX_LUNA_MODEL_ID && isCodexResponsesRequest(input);
+    const isCodexRequest = isCodexResponsesRequest(input);
+    const useLunaProtocol = modelId === CODEX_LUNA_MODEL_ID && isCodexRequest;
+    const omitPromptCacheRetention =
+      (modelId === "gpt-5.6" || modelId.startsWith("gpt-5.6-")) &&
+      isCodexRequest;
 
     if (init?.body != null && typeof init.body === "string") {
       try {
@@ -62,6 +65,14 @@ export function createCodexFetch(
         }
 
         let changed = false;
+
+        // The ChatGPT-backed Codex endpoint rejects this LangChain Responses
+        // option for GPT-5.6 models. Strip it at the final request boundary so
+        // `zdrEnabled` can still independently enforce the required store:false.
+        if (omitPromptCacheRetention && "prompt_cache_retention" in payload) {
+          delete payload.prompt_cache_retention;
+          changed = true;
+        }
 
         if (Array.isArray(payload.input)) {
           for (const item of payload.input) {
