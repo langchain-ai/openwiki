@@ -1,0 +1,89 @@
+src/cli/run-log/activity.ts
+  s_d593a29b637c1e::t_f400a2dabfdb1c 183-184,190-192,194,197-200
+  s_d593a29b637c1e::t_b7ad9bb98fef38 48-62,182,185-189,193,195-196,201
+  s_d593a29b637c1e::t_825f814f44d108 202
+integrations/openwiki/references/reviewers.md
+  s_d593a29b637c1e::t_43d3f01921c962 30-32
+  s_d593a29b637c1e::t_255e091ab3daae 27-29
+src/cli/components/run-view.tsx
+  s_d593a29b637c1e::t_de94cfd0101c0b 2,29,361,368-384,386-420,424-429,431,434,441-442,445-447,452-470
+  s_d593a29b637c1e::t_b7ad9bb98fef38 8-10,169-172,284,287,330-331,349-359,421-423,432-433,436-440,471
+  s_d593a29b637c1e::t_f273b8e66e0d58 444
+  s_d593a29b637c1e::t_5e552284b739e5 385
+  s_d593a29b637c1e::t_bb568288ea7b6f 31
+  s_d593a29b637c1e::t_5b4f5c317c6196 325-328
+  s_d593a29b637c1e::t_0cdf3c7daebf6a 321-324,329
+  s_d593a29b637c1e::t_fdcb08eb9c7854 30,32,362-367,435,443,502,520
+  s_d593a29b637c1e::t_f400a2dabfdb1c 343-348,360,430
+  s_d593a29b637c1e::t_e1e96d727581c0 7
+  s_d593a29b637c1e::t_92e3d3348a7487 472
+integrations/openwiki/references/init.md
+  s_d593a29b637c1e::t_43d3f01921c962 43-45,51-54,72-75
+  s_d593a29b637c1e::t_51d7444c9df8cc 3-8
+  s_d593a29b637c1e::t_255e091ab3daae 38-42,78-80
+test/cli/run-log/reducer.test.ts
+  s_d593a29b637c1e::t_b7ad9bb98fef38 242-277
+test/integrations/skill.test.ts
+  s_d593a29b637c1e::t_255e091ab3daae 213-216,224
+  s_d593a29b637c1e::t_6089dfbbb08e4f 217-221,225-227
+test/cli/run-log/activity.test.ts
+  s_d593a29b637c1e::t_b7ad9bb98fef38 5,80-81,83-93
+  s_d593a29b637c1e::t_f400a2dabfdb1c 82,94-104
+  s_d593a29b637c1e::t_1eda9adab7aa89 105-107
+src/cli/run-log/reducer.ts
+  s_d593a29b637c1e::t_b7ad9bb98fef38 164-174,187,228,254-256
+src/cli/app/app.tsx
+  s_d593a29b637c1e::t_ad30b139863b38 2,63,128,188-197
+  s_d593a29b637c1e::t_4ec19efeeaa1f9 198
+test/agent/prompt.test.ts
+  s_d593a29b637c1e::t_6089dfbbb08e4f 417-425
+  s_d593a29b637c1e::t_255e091ab3daae 411-416
+src/cli/run-log/types.ts
+  s_d593a29b637c1e::t_b7ad9bb98fef38 129-136
+  s_d593a29b637c1e::t_66a725ff0ab750 128
+src/cli/cli.tsx
+  s_d593a29b637c1e::t_ad30b139863b38 113
+test/agent/review-subagents.test.ts
+  s_d593a29b637c1e::t_6089dfbbb08e4f 90-92
+  s_d593a29b637c1e::t_255e091ab3daae 84-89
+test/cli/process-interrupt.test.ts
+  s_d593a29b637c1e::t_ad30b139863b38 1-39
+test/cli/components/run-view.test.tsx
+  s_d593a29b637c1e::t_f400a2dabfdb1c 161,210,233-234,236-237
+  s_d593a29b637c1e::t_de94cfd0101c0b 12-17,240-269,274-287
+  s_d593a29b637c1e::t_997041586b1e4a 230
+  s_d593a29b637c1e::t_fdcb08eb9c7854 270-272
+  s_d593a29b637c1e::t_ecdaa7003144f6 202,273
+  s_d593a29b637c1e::t_b7ad9bb98fef38 167-170,198,200,211-229,231-232,235,238
+  s_d593a29b637c1e::t_367f7bbcecd641 239
+  s_d593a29b637c1e::t_c58cc13e860a70 288
+src/cli/process-interrupt.ts
+  s_d593a29b637c1e::t_ad30b139863b38 1-29
+src/agent/skeleton-critic.ts
+  s_d593a29b637c1e::t_255e091ab3daae 20
+  s_d593a29b637c1e::t_d73f9d5caad004 50
+src/agent/prompts/code.ts
+  s_d593a29b637c1e::t_255e091ab3daae 123-125,137
+  s_d593a29b637c1e::t_d73f9d5caad004 126,130,136,151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "a074df7f5c135548e250ab2b62fed935a0ab4b95",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_d593a29b637c1e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a025c2-ea0c-7430-8cf4-ae9b12186f07",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
