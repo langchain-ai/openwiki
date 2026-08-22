@@ -7,7 +7,7 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatBedrockConverse } from "@langchain/aws";
 import { ChatGoogle } from "@langchain/google/node";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatOpenAI, type ClientOptions } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
@@ -1339,6 +1339,7 @@ export function createModel(
     reasoningConfig?.transport === "chat-completions-reasoning-effort"
       ? { modelKwargs: { reasoning_effort: reasoningConfig.effort } }
       : {};
+  const fetchRetryOptions = { maxRetries: DISABLE_LANGCHAIN_FETCH_RETRIES };
 
   if (provider === "gemini") {
     return new ChatGoogle({
@@ -1415,8 +1416,8 @@ export function createModel(
       streaming: true,
       ...maxTokensOptions,
       ...responsesReasoningOptions,
-      ...retryOptions,
-      configuration: {
+      ...fetchRetryOptions,
+      configuration: withProviderRetryFetch(providerRetryAttempts, {
         baseURL: CODEX_RESPONSES_BASE_URL,
         defaultHeaders: {
           "chatgpt-account-id": tokens.accountId,
@@ -1424,7 +1425,7 @@ export function createModel(
           "OpenAI-Beta": "responses=experimental",
         },
         fetch: createCodexFetch(modelId),
-      },
+      }),
     });
   }
 
@@ -1460,11 +1461,14 @@ export function createModel(
 
   return new ChatOpenAI({
     apiKey: getProviderApiKey(provider),
-    configuration: baseURL
-      ? {
-          baseURL,
-        }
-      : undefined,
+    configuration: withProviderRetryFetch(
+      providerRetryAttempts,
+      baseURL
+        ? {
+            baseURL,
+          }
+        : undefined,
+    ),
     model: modelId,
     useResponsesApi: providerUsesResponsesApi(provider, modelId),
     ...maxTokensOptions,
@@ -1475,7 +1479,155 @@ export function createModel(
     // than assigning a boolean: `streaming: false` is not the same as omitting
     // the key, because LangChain turns it into `disableStreaming`.
     ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
-    ...retryOptions,
+    ...fetchRetryOptions,
+  });
+}
+
+type ProviderFetch = typeof globalThis.fetch;
+
+const HTTP_STATUS_REQUEST_TIMEOUT = 408;
+const HTTP_STATUS_CONFLICT = 409;
+const HTTP_STATUS_TOO_MANY_REQUESTS = 429;
+const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
+const HTTP_STATUS_BAD_GATEWAY = 502;
+const HTTP_STATUS_SERVICE_UNAVAILABLE = 503;
+const HTTP_STATUS_GATEWAY_TIMEOUT = 504;
+const RETRY_AFTER_HEADER_NAME = "retry-after";
+const ABORT_ERROR_NAME = "AbortError";
+const ABORT_ERROR_MESSAGE = "The operation was aborted";
+const ABORT_EVENT_NAME = "abort";
+const MILLISECONDS_PER_SECOND = 1000;
+const DEFAULT_PROVIDER_RETRY_DELAY_MS = 1000;
+const MAX_PROVIDER_RETRY_DELAY_MS = 60_000;
+const DISABLE_LANGCHAIN_FETCH_RETRIES = 0;
+const PROVIDER_RETRYABLE_STATUSES = new Set<number>([
+  HTTP_STATUS_REQUEST_TIMEOUT,
+  HTTP_STATUS_CONFLICT,
+  HTTP_STATUS_TOO_MANY_REQUESTS,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR,
+  HTTP_STATUS_BAD_GATEWAY,
+  HTTP_STATUS_SERVICE_UNAVAILABLE,
+  HTTP_STATUS_GATEWAY_TIMEOUT,
+]);
+
+function withProviderRetryFetch(
+  providerRetryAttempts: number,
+  configuration: ClientOptions | undefined,
+): ClientOptions {
+  return {
+    ...configuration,
+    fetch: createProviderRetryFetch(
+      providerRetryAttempts,
+      configuration?.fetch,
+    ),
+  };
+}
+
+function createProviderRetryFetch(
+  providerRetryAttempts: number,
+  fetchImpl: ProviderFetch = globalThis.fetch,
+): ProviderFetch {
+  return async (input, init) => {
+    for (let attempt = 0; ; attempt += 1) {
+      let response: Response;
+
+      try {
+        response = await fetchImpl(cloneFetchInput(input), init);
+      } catch (error) {
+        if (
+          attempt >= providerRetryAttempts ||
+          isProviderRetryAbortError(error)
+        ) {
+          throw error;
+        }
+
+        await sleep(DEFAULT_PROVIDER_RETRY_DELAY_MS, init?.signal);
+        continue;
+      }
+
+      if (
+        attempt >= providerRetryAttempts ||
+        !PROVIDER_RETRYABLE_STATUSES.has(response.status)
+      ) {
+        return response;
+      }
+
+      await discardProviderResponse(response);
+      await sleep(resolveProviderRetryDelayMs(response), init?.signal);
+    }
+  };
+}
+
+function cloneFetchInput(input: Parameters<ProviderFetch>[0]) {
+  return input instanceof Request ? input.clone() : input;
+}
+
+function isProviderRetryAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException || error instanceof Error) &&
+    error.name === ABORT_ERROR_NAME
+  );
+}
+
+function resolveProviderRetryDelayMs(response: Response): number {
+  const retryAfter = response.headers.get(RETRY_AFTER_HEADER_NAME);
+
+  if (!retryAfter) {
+    return DEFAULT_PROVIDER_RETRY_DELAY_MS;
+  }
+
+  const retryAfterSeconds = Number(retryAfter);
+
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0) {
+    return Math.min(
+      retryAfterSeconds * MILLISECONDS_PER_SECOND,
+      MAX_PROVIDER_RETRY_DELAY_MS,
+    );
+  }
+
+  const retryAtMs = Date.parse(retryAfter);
+
+  if (!Number.isFinite(retryAtMs)) {
+    return DEFAULT_PROVIDER_RETRY_DELAY_MS;
+  }
+
+  return Math.min(
+    Math.max(retryAtMs - Date.now(), 0),
+    MAX_PROVIDER_RETRY_DELAY_MS,
+  );
+}
+
+async function discardProviderResponse(response: Response): Promise<void> {
+  if (response.body && !response.body.locked) {
+    try {
+      await response.body.cancel();
+    } catch {
+      // Cleanup is best-effort: the retryable HTTP response remains the
+      // actionable failure, and a stream cancellation error must not replace it.
+    }
+  }
+}
+
+function sleep(ms: number, signal?: AbortSignal | null): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(
+      new DOMException(ABORT_ERROR_MESSAGE, ABORT_ERROR_NAME),
+    );
+  }
+
+  let handleAbort: (() => void) | undefined;
+
+  return new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(resolve, ms);
+    handleAbort = () => {
+      clearTimeout(timeout);
+      reject(new DOMException(ABORT_ERROR_MESSAGE, ABORT_ERROR_NAME));
+    };
+    signal?.addEventListener(ABORT_EVENT_NAME, handleAbort, { once: true });
+  }).finally(() => {
+    if (handleAbort) {
+      signal?.removeEventListener(ABORT_EVENT_NAME, handleAbort);
+    }
   });
 }
 
@@ -1624,13 +1776,13 @@ function createGeminiEnterpriseModel(
       // `apiKey` is a placeholder because that header is overwritten.
       return new ChatOpenAI({
         apiKey: VERTEX_ADC_PLACEHOLDER_KEY,
-        configuration: {
+        configuration: withProviderRetryFetch(retryOptions.maxRetries, {
           baseURL: vertexOpenAIBaseUrl(projectId, location),
           fetch: createVertexAuthFetch(),
-        },
+        }),
         model: toVertexPublisherModel(modelId),
         ...maxTokensOptions,
-        ...retryOptions,
+        maxRetries: DISABLE_LANGCHAIN_FETCH_RETRIES,
       });
 
     default:
