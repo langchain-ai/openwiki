@@ -3,7 +3,7 @@ import {
   type StructuredToolInterface,
 } from "@langchain/core/tools";
 import { constants as fsConstants } from "node:fs";
-import { lstat, open, readdir, stat } from "node:fs/promises";
+import { lstat, open, readdir, stat, type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import type { OpenWikiOutputMode } from "../agent/types.js";
 import {
@@ -313,6 +313,9 @@ async function listRawItems(connectorId: ConnectorId) {
   };
 }
 
+const RAW_ITEM_READ_ENOENT_MAX_ATTEMPTS = 5;
+const RAW_ITEM_READ_ENOENT_INITIAL_DELAY_MS = 25;
+
 async function readRawItem(
   connectorId: ConnectorId,
   relativePath: string,
@@ -320,8 +323,7 @@ async function readRawItem(
 ) {
   const rawDir = getConnectorRawDir(connectorId);
   const filePath = resolveConnectorRawPath(connectorId, relativePath);
-  await assertRawItemPathHasNoSymlinks(rawDir, filePath);
-  const fileHandle = await open(filePath, getRawItemOpenFlags());
+  const fileHandle = await openRawItemWithEnoentRetry(rawDir, filePath);
 
   try {
     const fileStat = await fileHandle.stat();
@@ -342,6 +344,43 @@ async function readRawItem(
   } finally {
     await fileHandle.close();
   }
+}
+
+/**
+ * Opens a raw item, retrying briefly on ENOENT with bounded exponential
+ * backoff. Connectors report raw dump paths the moment ingestion finishes and
+ * the synthesis agent reads them immediately afterwards, so a transient ENOENT
+ * on a just-written path is retryable rather than fatal; without the retry the
+ * read either crashes the run or silently drops captures.
+ */
+async function openRawItemWithEnoentRetry(
+  rawDir: string,
+  filePath: string,
+): Promise<FileHandle> {
+  let delayMs = RAW_ITEM_READ_ENOENT_INITIAL_DELAY_MS;
+
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await assertRawItemPathHasNoSymlinks(rawDir, filePath);
+      return await open(filePath, getRawItemOpenFlags());
+    } catch (error) {
+      if (
+        !isFileNotFoundError(error) ||
+        attempt >= RAW_ITEM_READ_ENOENT_MAX_ATTEMPTS
+      ) {
+        throw error;
+      }
+    }
+
+    await sleep(delayMs);
+    delayMs *= 2;
+  }
+}
+
+function sleep(durationMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, durationMs);
+  });
 }
 
 async function listFiles(
