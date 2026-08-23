@@ -1,0 +1,29 @@
+test/ingestion/code-mode.test.ts
+  s_0547425c89aafb::t_d4134813494d5f 64-65,67-70
+  s_0547425c89aafb::t_bfdd1c27e0f117 66,71
+AGENTS.md
+  s_0547425c89aafb::t_ed31a24cf28862 19
+src/ingestion/code-mode.ts
+  s_0547425c89aafb::t_d4134813494d5f 397
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "3a903a4bc157557c18165a886ce64f4687df8967",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_0547425c89aafb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02d16-9f1a-7e50-9635-ee8e247d8bf9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
