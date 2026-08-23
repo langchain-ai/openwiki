@@ -1,0 +1,147 @@
+test/integrations/mcp-server.test.ts
+  s_66d011c6fe6662::t_dbe6d8f50bafd4 54
+  s_66d011c6fe6662::t_b040951f12c7da 49-53,55-82,139,146-151,183,193-195,335,344,351-361
+  s_66d011c6fe6662::t_6e3efdc5cf1077 48
+  s_66d011c6fe6662::t_286981aa14cd2b 362
+test/integrations/skill.test.ts
+  s_66d011c6fe6662::t_b844f2da54247d 51-55,58-62
+  s_66d011c6fe6662::t_c6943d12537870 56-57
+  s_66d011c6fe6662::t_1926664dbbcbc0 322,340
+openwiki/knowledge/catalog.json
+  s_66d011c6fe6662::t_dbe6d8f50bafd4 1-1386
+openwiki/tools/context.mjs
+  s_66d011c6fe6662::t_dbe6d8f50bafd4 1-213
+openwiki/quickstart.md
+  s_66d011c6fe6662::t_dbe6d8f50bafd4 2-5,8,10-12,14,16-22,24,26-46,48,50-57,59-61,63,65-80,82-87
+src/integrations/context/retrieval.ts
+  s_66d011c6fe6662::t_ec0fe8f5586f84 1-5,7-11,15,39-40,42,55-61,63-157,159-219,221-233,237-242,244-278,281-425
+  s_66d011c6fe6662::t_dbe1996f6a168f 220,234-236,279-280
+  s_66d011c6fe6662::t_f939af534a5b38 6,28
+  s_66d011c6fe6662::t_3245c32757c362 243
+  s_66d011c6fe6662::t_3613a2f25abf37 12-13,16-27,29-38,41,43-44,46-52,54,62,158
+  s_66d011c6fe6662::t_4a509197fbc776 45,53
+  s_66d011c6fe6662::t_dbe6d8f50bafd4 14
+src/ingestion/code-mode.ts
+  s_66d011c6fe6662::t_9cae0e2775f482 397
+openwiki/integrations/context-retrieval.md
+  s_66d011c6fe6662::t_dbe6d8f50bafd4 1-65
+openwiki/information-architecture.md
+  s_66d011c6fe6662::t_dbe6d8f50bafd4 1-92
+openwiki/README.md
+  s_66d011c6fe6662::t_dbe6d8f50bafd4 1-13,19-26
+  s_66d011c6fe6662::t_74ebe9df0d5330 14-18
+test/integrations/context-retrieval.test.ts
+  s_66d011c6fe6662::t_a532346366c1ff 1,10-47,49-69,73-81,83-115,119-206,209-211,213-215,217-240,242-256
+  s_66d011c6fe6662::t_dbe6d8f50bafd4 82,118,212,216,241
+  s_66d011c6fe6662::t_dbe1996f6a168f 207-208
+  s_66d011c6fe6662::t_3245c32757c362 2-9,70-72
+  s_66d011c6fe6662::t_3613a2f25abf37 48,116-117
+README.md
+  s_66d011c6fe6662::t_0a63d82c9a2a28 99-101
+  s_66d011c6fe6662::t_9cae0e2775f482 92-98,102
+src/integrations/core/protocol.ts
+  s_66d011c6fe6662::t_ec0fe8f5586f84 18,56-101,122-148
+  s_66d011c6fe6662::t_74d84858751667 15
+  s_66d011c6fe6662::t_e7b87280003ecb 149-151
+src/integrations/mcp/server.ts
+  s_66d011c6fe6662::t_74d84858751667 29,33,43,67,69
+  s_66d011c6fe6662::t_8335829afadcfc 10-16
+test/ingestion/code-mode.test.ts
+  s_66d011c6fe6662::t_b844f2da54247d 51-56
+openwiki/tools/validate.mjs
+  s_66d011c6fe6662::t_dbe6d8f50bafd4 1-262
+src/integrations/core/session-manager.ts
+  s_66d011c6fe6662::t_abc27065ad9edc 44,48,54,522,524-531,538-544
+  s_66d011c6fe6662::t_74d84858751667 532-534
+test/integrations/protocol.test.ts
+  s_66d011c6fe6662::t_b4340bbc994600 139
+  s_66d011c6fe6662::t_a7d25d4ef08ef6 8,45-70,119,125,130
+integrations/openwiki/SKILL.md
+  s_66d011c6fe6662::t_9cae0e2775f482 3,12-26
+  s_66d011c6fe6662::t_b6cd790687ba34 27
+openwiki/agent/authoring-pipeline.md
+  s_66d011c6fe6662::t_ead6d7fd737d06 1-55
+openwiki/agent/providers.md
+  s_66d011c6fe6662::t_32a8efb31e4f52 1-56
+openwiki/agent/runtime.md
+  s_66d011c6fe6662::t_627a8f9d799f4c 2-5,8,10-13,15,17-21,23-26,28,30,32-34,36-38,40,42-45,47-59
+openwiki/claims/evidence-and-persistence.md
+  s_66d011c6fe6662::t_a94edbd58843fd 1-70
+openwiki/claims/model-and-runtime.md
+  s_66d011c6fe6662::t_302503e369e0f6 2-5,8-82
+openwiki/cli/runtime.md
+  s_66d011c6fe6662::t_8b3de2c22e1759 1-54
+openwiki/data/connectors.md
+  s_66d011c6fe6662::t_ad8cc50e71c147 2-5,8,10-15,17,19-22,24-28,30,32-42,44,46-55,57-61,63,65-73
+openwiki/data/ingestion.md
+  s_66d011c6fe6662::t_1de5d82e128103 2-5,8,10-12,14,16-18,22-26,29-33,35-39,41,43-46,48-52,54,56-66
+openwiki/development/build-release-and-packaging.md
+  s_66d011c6fe6662::t_791f9a96198d73 2-5,8-59
+openwiki/identity/auth-and-credentials.md
+  s_66d011c6fe6662::t_724187d66cb296 2-5,8,10-13,15,17-22,24-29,31,33-38,40-42,44,46-50,52-54,56,58-60,62-64
+openwiki/integrations/host-lifecycle.md
+  s_66d011c6fe6662::t_34aa72e7163f11 2-5,8-77
+openwiki/integrations/installation.md
+  s_66d011c6fe6662::t_e438adf5716701 2-5,8-56
+openwiki/knowledge/okf.md
+  s_66d011c6fe6662::t_ec9f0706519d53 1-63
+openwiki/operations/scheduling.md
+  s_66d011c6fe6662::t_a0cf93cded0ae3 2-4,8,10-11,13,15-18,22-26,29-34,36-38,40,42-46,48-51
+openwiki/operations/telemetry.md
+  s_66d011c6fe6662::t_06418f99c24b1a 2-5,8,10-12,14,16-21,23,25-27,29-32,34,36-38,40-44,46,48-50
+openwiki/operations/visualization.md
+  s_66d011c6fe6662::t_d5f0526c3bef30 2-5,8,10-12,14,16-19,21-26,28-30,32-38,41-45,48-51,53,55-58
+openwiki/platform/runtime-and-portability.md
+  s_66d011c6fe6662::t_3ed3c5dd4352ad 2-5,8,10-13,15,17-25,27,29-32,34-37,39,41-43,45-48,50-51
+openwiki/playbooks/change-recipes.md
+  s_66d011c6fe6662::t_1845e44b175315 1-73
+openwiki/quality/evals.md
+  s_66d011c6fe6662::t_9ed9b33c053162 2-5,8-58
+openwiki/quality/testing.md
+  s_66d011c6fe6662::t_1b2e25ed9f848e 2-5,8-52
+openwiki/repository-map.md
+  s_66d011c6fe6662::t_7091677fc35d13 2-5,8-51
+openwiki/system/run-lifecycle.md
+  s_66d011c6fe6662::t_1b496d7c52f1ff 2-5,8,10-12,14,16-19,21-25,27,29-34,36,39-49,52-64,66,68-73,75,77-92
+openwiki/system/security-and-failures.md
+  s_66d011c6fe6662::t_6c0da26bf71642 1-73
+openwiki/context/openwiki-context-v2.md
+  s_66d011c6fe6662::t_0d94fd1ddd3028 1-113
+openwiki/examples/strict-claims-context.md
+  s_66d011c6fe6662::t_d5e144e459c34c 1-63
+openwiki/knowledge-model.md
+  s_66d011c6fe6662::t_38b2cb71f77e0d 1-61
+openwiki/system/architecture.md
+  s_66d011c6fe6662::t_8d4d7a729d73f1 2-5,8,10-14,16,18,20-24,26-28,30,34-42,45-89
+openwiki/system/configuration-and-state.md
+  s_2e3296d41854f1::t_2dd4a8144a693d 2-5,8-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "2c45c3db4baf1ec49a0c70821e92d00c8f2ec834",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_2e3296d41854f1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02dde-ec7f-7db3-ad92-c128dca7b46c",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_66d011c6fe6662": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02dcf-3c38-7541-8eda-bdb978f498ec",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
