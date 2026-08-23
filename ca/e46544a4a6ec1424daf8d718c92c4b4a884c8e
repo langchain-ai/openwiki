@@ -1,0 +1,61 @@
+src/agent/generation/contracts.ts
+  s_66d011c6fe6662::t_665f744fabee6c 422-424,432-440
+  s_66d011c6fe6662::t_e9194106b9fec7 441
+test/agent/claims-run-lifecycle.test.ts
+  s_66d011c6fe6662::t_08b95dbeaf210d 392,394,397,399-415,609-643,648-676,680-691,698-702,704-708,710-770
+  s_66d011c6fe6662::t_b476163b56f9a2 5,97-100,644-647,677-679,697
+  s_66d011c6fe6662::t_c45d54bf28244f 171-174,184
+  s_66d011c6fe6662::t_26b7a32412f8be 118-146,149-152,156-157
+  s_66d011c6fe6662::t_3ae5dde304754b 204,692-696,703,709
+  s_66d011c6fe6662::t_1b807d89b55af2 25-44,147-148,153-155,158-170,175-183,185-192,427,430-435
+  s_66d011c6fe6662::t_c5e1cf44e95053 20-24,45-87,95-96,101-117,295-314,375-391,426,429,486-488,510-511,528-529,542,584-585,780-781,855-856,877-879,910-912
+  s_66d011c6fe6662::t_cb2c6d44a67dfd 558,571,583,587,593,907,909,913,919
+  s_66d011c6fe6662::t_4e0d28535cf16a 193,393,395-396,398,771
+src/agent/generation/prompts.ts
+  s_66d011c6fe6662::t_315a10b7b2ae60 197-296
+test/agent/generation/coordinator.test.ts
+  s_66d011c6fe6662::t_b476163b56f9a2 113,115,132,136
+  s_66d011c6fe6662::t_54e0928c491246 1-112,114,116-118,130-131,133-135,137-170,174-180,189-351
+  s_66d011c6fe6662::t_26b7a32412f8be 119-129,171-173,181-188
+README.md
+  s_66d011c6fe6662::t_a70bbe037065d3 23,56
+  s_66d011c6fe6662::t_b29ad2eda21238 57
+src/agent/generation/coordinator.ts
+  s_66d011c6fe6662::t_6e9e6a04b8874a 30-68,247-258,260,263-278,285-287,297-310
+  s_66d011c6fe6662::t_26b7a32412f8be 150,384,446,555
+  s_66d011c6fe6662::t_315a10b7b2ae60 1-29,70-149,151-229,312-383,385-445,447-554,568,578-583,585-597,599-609,611-621
+  s_66d011c6fe6662::t_0cbcabae53ce36 556-567,569-577,584
+  s_66d011c6fe6662::t_c4f46ab5fbdfaf 598,610
+  s_66d011c6fe6662::t_8a6ec34f783fbb 69,230-246,259,261-262,279-284,288-296,311
+src/agent/index.ts
+  s_66d011c6fe6662::t_26b7a32412f8be 1075,1097-1099
+  s_66d011c6fe6662::t_a31e2884847970 50-56,76-79,691-711,923-1074,1076-1096,1100-1128
+  s_66d011c6fe6662::t_6eedf4499e081d 1129
+test/agent/generation/taxonomy.test.ts
+  s_66d011c6fe6662::t_54e0928c491246 168-170,172-175
+test/agent/generation/author.test.ts
+  s_66d011c6fe6662::t_54e0928c491246 720-727
+test/agent/generation/contracts.test.ts
+  s_66d011c6fe6662::t_0cbcabae53ce36 97-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "cae46544a4a6ec1424daf8d718c92c4b4a884c8e",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_66d011c6fe6662": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02dcf-3c38-7541-8eda-bdb978f498ec",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
