@@ -56,6 +56,8 @@ describe("published host integration bundle", () => {
             file.startsWith(".agents/") ||
             file.startsWith(".claude/") ||
             file.startsWith(".codex/") ||
+            file.startsWith(".opencode/") ||
+            file.startsWith(".config/") ||
             file.startsWith(".deepagents/") ||
             file.includes("staging") ||
             file.includes("rollback") ||

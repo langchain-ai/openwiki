@@ -1,7 +1,7 @@
 /**
  * Supported host identifiers used by CLI parsing and installation.
  */
-export type HostTargetId = "codex" | "claude";
+export type HostTargetId = "codex" | "claude" | "opencode";
 
 /**
  * Current managed installation states exposed to callers.
@@ -36,7 +36,7 @@ export interface HostMcpConfig {
   /**
    * Config adapter required by the host.
    */
-  readonly kind: "json" | "codex-toml";
+  readonly kind: "json" | "codex-toml" | "opencode-json";
 
   /**
    * Config path relative to the selected scope root.
