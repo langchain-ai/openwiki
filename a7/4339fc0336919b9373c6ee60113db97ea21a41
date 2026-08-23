@@ -1,0 +1,86 @@
+test/integrations/protocol.test.ts
+  s_0547425c89aafb::t_9d553a960abbe7 138-146,150
+  s_0547425c89aafb::t_42e097b0b738b4 8,60-79,113,119,124,147-149
+  s_0547425c89aafb::t_bf6bfad326b07d 106,133
+src/integrations/core/session-manager.ts
+  s_0547425c89aafb::t_6d97bd0e86646c 531-536
+  s_0547425c89aafb::t_62d32828636652 552
+  s_0547425c89aafb::t_aea49e418ca26b 44-47,51,57,525-530,546-548,550-551,553
+  s_0547425c89aafb::t_61bcc7c52a0dfe 540,542,549
+  s_0547425c89aafb::t_2955079f73e412 537-539
+src/integrations/core/protocol.ts
+  s_0547425c89aafb::t_61bcc7c52a0dfe 15
+  s_0547425c89aafb::t_267185a606c0f9 18,24-50,103-107,119-123,200-207
+  s_0547425c89aafb::t_28404bd7ccc816 125-127
+  s_0547425c89aafb::t_38293624f3e44e 108-118,124
+  s_0547425c89aafb::t_bdd658c19ecd65 128-130
+test/ingestion/code-mode.test.ts
+  s_0547425c89aafb::t_9e449573a9aa48 63
+  s_0547425c89aafb::t_62d32828636652 64-66
+test/claims/evidence/repository/resolver.test.ts
+  s_0547425c89aafb::t_7ad9b43a14c354 119,183
+src/claims/evidence/repository/resolver.ts
+  s_0547425c89aafb::t_38a84da2473ae9 320,389,396-414
+  s_0547425c89aafb::t_b1ccc896ce4b2c 415-416
+src/integrations/mcp/server.ts
+  s_0547425c89aafb::t_61bcc7c52a0dfe 15-16,32,36,46,70
+  s_0547425c89aafb::t_7ec4f387a16547 10-14,17-19,83-88
+test/integrations/context-retriever.test.ts
+  s_0547425c89aafb::t_aeeff123ae503e 362
+  s_0547425c89aafb::t_62d32828636652 77-78,97-99,114,150-154,167-168,252-256,264-268
+  s_0547425c89aafb::t_4b5be92aa7379f 1-76,79-96,100-113,115-149,155-166,169-251,257-263,269-286,327-361,363-394
+  s_0547425c89aafb::t_38293624f3e44e 287-326
+test/integrations/mcp-server.test.ts
+  s_0547425c89aafb::t_62d32828636652 118,217
+  s_0547425c89aafb::t_c020582c23984f 357-362,364
+  s_0547425c89aafb::t_1cee873631d12e 104-106,113-117,119,151,162-163,206-216,218-235,340,347-356
+  s_0547425c89aafb::t_3d85f462507a38 164
+  s_0547425c89aafb::t_4e832364c251d1 363
+  s_0547425c89aafb::t_0a086d8ef9c800 365
+integrations/openwiki/SKILL.md
+  s_0547425c89aafb::t_9e449573a9aa48 12-21
+src/integrations/context/lexical-search.ts
+  s_0547425c89aafb::t_c6e2e5bc7c441f 1-93,95-107,110-198
+  s_0547425c89aafb::t_af4ac0f023714e 94,108-109
+src/integrations/context/types.ts
+  s_0547425c89aafb::t_c6e2e5bc7c441f 1-157
+src/ingestion/code-mode.ts
+  s_0547425c89aafb::t_9e449573a9aa48 397
+src/integrations/context/retriever.ts
+  s_0547425c89aafb::t_38293624f3e44e 7-10,320-323
+  s_0547425c89aafb::t_28404bd7ccc816 360
+  s_0547425c89aafb::t_335ad08da9b70f 1-6,16-23,48-92,94-101,103-117,131-148,160-161,163,165-319,324-347,350-359,362-381,383-386,394-411,413-433,435-581,583-606,609-645,655-685,688-731,758-821
+  s_0547425c89aafb::t_62d32828636652 11-15,93,102,118-130,387-393,582,607-608,646-654,686-687,732-757
+  s_0547425c89aafb::t_61bcc7c52a0dfe 361,382,412,434
+  s_0547425c89aafb::t_a8ee1c7665f2af 149-159,162,164
+  s_0547425c89aafb::t_5d975a9786aac4 24-47
+  s_0547425c89aafb::t_6d97bd0e86646c 348-349
+README.md
+  s_0547425c89aafb::t_61bcc7c52a0dfe 94
+  s_0547425c89aafb::t_9e449573a9aa48 96-102
+test/integrations/skill.test.ts
+  s_0547425c89aafb::t_9e449573a9aa48 328
+.changeset/calm-wikis-retrieve.md
+  s_0547425c89aafb::t_9e449573a9aa48 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "a74339fc0336919b9373c6ee60113db97ea21a41",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_0547425c89aafb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02d16-9f1a-7e50-9635-ee8e247d8bf9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
