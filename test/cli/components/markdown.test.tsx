@@ -42,6 +42,16 @@ describe("MarkdownText", () => {
     expect(frame).toContain("2. second");
   });
 
+  test("preserves an ordered list that starts at zero", () => {
+    const { lastFrame } = render(
+      <MarkdownText markdown={"0. first\n1. second"} />,
+    );
+
+    const frame = plain(lastFrame());
+    expect(frame).toContain("0. first");
+    expect(frame).toContain("1. second");
+  });
+
   test("strips raw HTML tags so no markup reaches the terminal", () => {
     const { lastFrame } = render(
       <MarkdownText markdown={"before <script>alert(1)</script> after"} />,
