@@ -1,0 +1,39 @@
+test/agent/generation/work-queue.test.ts
+  s_66d011c6fe6662::t_28f7c96544969f 1-140
+src/agent/generation/contracts.ts
+  s_66d011c6fe6662::t_c066b1ebc09247 116-119,121-124,285-297,299-302,423,450,489,493
+  s_66d011c6fe6662::t_e3fb40ac37d3de 1-97,100-115,125-282,303-422,424-428,431-449,451-477,480-488,490-492,494-502,505-665
+  s_66d011c6fe6662::t_04515ac06b332f 98-99,283-284,429-430,478-479,503-504
+  s_66d011c6fe6662::t_7ca66ae7fc4491 120,298
+test/agent/generation/fixtures.ts
+  s_66d011c6fe6662::t_7ca66ae7fc4491 21-22,96-97
+  s_66d011c6fe6662::t_28f7c96544969f 1-20,23-95,98-109
+src/agent/generation/work-queue.ts
+  s_66d011c6fe6662::t_04515ac06b332f 15,235-238
+  s_66d011c6fe6662::t_bafe2babed24ac 1-14,16-234,239-245
+test/agent/generation/contracts.test.ts
+  s_66d011c6fe6662::t_28f7c96544969f 1-9,11-34,36-45,47-54,56-63,65-72,74-81,83-88,90-104,106-116,118-123,125-129,131-137,139-143,145-149,151-155,157-176
+  s_66d011c6fe6662::t_7ca66ae7fc4491 10
+  s_66d011c6fe6662::t_64c5bac36b4a9d 35,46,55,64,73,82,89,105,117,124,130,138,144,150,156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "5d5603f78aa82cc35f61401fc2b1b86926b42aa1",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_66d011c6fe6662": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02dcf-3c38-7541-8eda-bdb978f498ec",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
