@@ -1,0 +1,36 @@
+test/agent/generation/author.test.ts
+  s_66d011c6fe6662::t_863481a3c978b8 1-11,13-123,125-287,289-297,299-357,362-380,385-410,412-562,564-568,614-732
+  s_66d011c6fe6662::t_fc572a87209ca4 12,124,288,298,358-360,563
+  s_66d011c6fe6662::t_a6e1a89bb0c007 381-384,569-589,591-613
+  s_66d011c6fe6662::t_9f19db8431ca57 361,411
+  s_66d011c6fe6662::t_b50a8f0ce5659a 590
+src/agent/generation/author.ts
+  s_66d011c6fe6662::t_fc572a87209ca4 3,74,159-161
+  s_66d011c6fe6662::t_f77c872415a9ea 19,71
+  s_66d011c6fe6662::t_609955800aa665 1-2,4-18,20-70,72-73,75-158,162-681
+src/agent/generation/prompts.ts
+  s_66d011c6fe6662::t_609955800aa665 106-157,159-196
+  s_66d011c6fe6662::t_85a0ef8a4124c1 1-6
+  s_66d011c6fe6662::t_f77c872415a9ea 158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "45b4a9c7d13140e93955ca328a41c1a7adac86e5",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_66d011c6fe6662": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02dcf-3c38-7541-8eda-bdb978f498ec",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
