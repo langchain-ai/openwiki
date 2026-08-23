@@ -1,0 +1,101 @@
+src/integrations/core/protocol.ts
+  s_0547425c89aafb::t_eb962f11e3c6e9 27,46,126
+src/integrations/context/lexical-search.ts
+  s_0547425c89aafb::t_3291976c4d0439 49,56
+  s_0547425c89aafb::t_019c1811b595e8 67,106-108,151,153,160
+  s_0547425c89aafb::t_b5024071a24bc5 1,69,72-83,85-88,136-139
+  s_0547425c89aafb::t_fbc99de7cf22c2 37-48,50-55,57-66,68,71,84,89-105,109-110,122-135,140-150,152,154-159,161-200,313-336
+  s_0547425c89aafb::t_352d6adbfd48de 70
+  s_0547425c89aafb::t_2989ff6d2c5aff 337
+test/integrations/mcp-server.test.ts
+  s_0547425c89aafb::t_68b1a9fcfbd748 364
+src/cli/check.ts
+  s_699bce28c1c822::t_e0bcc9e3d32b0c 1-54
+.changeset/calm-wikis-retrieve.md
+  s_0547425c89aafb::t_cb6ca66b976d4a 5
+integrations/openwiki/SKILL.md
+  s_0547425c89aafb::t_cb6ca66b976d4a 14-22
+test/cli/commands.test.ts
+  s_699bce28c1c822::t_a97233be823d0e 3,76-113
+  s_699bce28c1c822::t_7828567e22405d 114-115
+src/cli/cli.tsx
+  s_699bce28c1c822::t_e0bcc9e3d32b0c 30,86-88
+test/integrations/protocol.test.ts
+  s_0547425c89aafb::t_eb962f11e3c6e9 68
+  s_0547425c89aafb::t_68b1a9fcfbd748 150
+test/cli/check.test.ts
+  s_699bce28c1c822::t_a97233be823d0e 1,3-74,76-85,87-101,103-104,106-112,114-116
+  s_699bce28c1c822::t_e20ab517b4b188 2,102,113
+  s_699bce28c1c822::t_e61508e52190e6 75,86,105
+test/integrations/context-retriever.test.ts
+  s_0547425c89aafb::t_68b1a9fcfbd748 187-191,367-368,370-471,537-584
+  s_0547425c89aafb::t_da2d13febc791e 194,611
+  s_0547425c89aafb::t_adeac346062934 472-533,535-536
+  s_0547425c89aafb::t_305ad65196352c 369
+  s_0547425c89aafb::t_d8b56a7843a6b7 534
+src/integrations/mcp/server.ts
+  s_0547425c89aafb::t_75d821dfd302b2 11-17
+src/integrations/core/session-manager.ts
+  s_0547425c89aafb::t_75d821dfd302b2 549
+src/cli/commands.ts
+  s_699bce28c1c822::t_e20ab517b4b188 1133-1134
+  s_699bce28c1c822::t_a97233be823d0e 558-561,573-576
+  s_699bce28c1c822::t_e0bcc9e3d32b0c 107-114,117,191-194,547-557,562-572,577-600,1155,1178-1182,1262-1270,1337-1338
+  s_699bce28c1c822::t_ac85d13d9b2014 601
+README.md
+  s_699bce28c1c822::t_e0bcc9e3d32b0c 128-129,472
+src/cli/run-mode.ts
+  s_699bce28c1c822::t_e0bcc9e3d32b0c 13-16,30
+src/integrations/context/types.ts
+  s_0547425c89aafb::t_de5311643611cc 3-57,137-145,166-167
+  s_0547425c89aafb::t_fa73d9d65d6270 168
+src/integrations/context/retriever.ts
+  s_0547425c89aafb::t_352d6adbfd48de 848
+  s_0547425c89aafb::t_45027793224892 501
+  s_0547425c89aafb::t_3291976c4d0439 86-90,305-310,314,396-408,415-419,424-434
+  s_0547425c89aafb::t_ac93bc4fc3e320 741-754,756-841,845-847,849-856,860-861,867-868,874-878,882-886
+  s_0547425c89aafb::t_b5024071a24bc5 455,463,527,561-563,603-607,614-618,755,842-844,857-859,862-866,869-873,879-881,1208-1210
+  s_0547425c89aafb::t_179d40cb07b803 278-280,285
+  s_0547425c89aafb::t_442e3ea53e7dc8 37
+  s_0547425c89aafb::t_4cb6edcfda2432 70,233,481,485,487,491-493,498-499,502-503,526,528
+  s_0547425c89aafb::t_895f7653b803d9 692-694,696
+  s_0547425c89aafb::t_bebcbd1edb2103 1350-1376
+  s_0547425c89aafb::t_bf916bea450e26 26-28,31,36,39,41,58-59,61,69,85,91-102
+  s_0547425c89aafb::t_ae0dcabeb521bd 1040,1076-1078,1087-1090
+  s_0547425c89aafb::t_081a586a4987b3 232
+  s_0547425c89aafb::t_019c1811b595e8 577-579,583-587,595-602,608-613,619-621
+  s_0547425c89aafb::t_f808363d4a7cb1 261-277,281-284,286-304,311-313,315-395,409-414,420-423,435-454,456-462,464-480,482-484,486,488-490,494-497,500,504-525,529-560,564-576,580-582,588-594,622-681
+  s_0547425c89aafb::t_6a16fbea1f9961 103,260,740,976-978,985-1012,1017,1019-1023,1025-1030,1032-1039,1041-1042,1044-1062,1065-1073,1075,1079-1085,1091-1094,1097-1099,1104,1140,1143-1144,1146,1148-1156,1160,1162-1163,1165-1180,1182-1207,1211-1227,1230-1248,1252,1255,1260,1262,1285,1287-1288,1290-1297,1299-1347,1349
+  s_0547425c89aafb::t_3a0d25b0650a5d 126-131,133-162,165-167,186-191,193-195
+  s_0547425c89aafb::t_1c2dca8aa6b0af 104
+  s_0547425c89aafb::t_ab35f6be23959b 1348
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "2973400e22e45f7b2bb9bb23ec3063fd30aa0586",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_0547425c89aafb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02d16-9f1a-7e50-9635-ee8e247d8bf9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_699bce28c1c822": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02da1-2e64-7932-84de-7254d9d227b9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
