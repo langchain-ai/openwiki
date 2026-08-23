@@ -1,0 +1,30 @@
+src/agent/generation/taxonomy.ts
+  s_66d011c6fe6662::t_2e53a55363febb 2,84,120
+  s_66d011c6fe6662::t_e09ab636760e11 72-83,85-96
+  s_66d011c6fe6662::t_be597efddd3041 1,3-71,97-119,121-157
+test/agent/generation/taxonomy.test.ts
+  s_66d011c6fe6662::t_ecdf5bac0bde87 1-180
+src/agent/generation/prompts.ts
+  s_66d011c6fe6662::t_be597efddd3041 1-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "10e3773937f3bf628432a374b26fd89c68ab2f38",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_66d011c6fe6662": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02dcf-3c38-7541-8eda-bdb978f498ec",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
