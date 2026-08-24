@@ -1,0 +1,33 @@
+test/agent/repository-runner.test.ts
+  s_a5fa05fa15457a::t_ad06e531e1976c 579-584
+test/generation/repository-run.test.ts
+  s_a5fa05fa15457a::t_ad06e531e1976c 625-627
+  s_a5fa05fa15457a::t_3bf73e1194f81a 624
+src/agent/repository-runner.ts
+  s_a5fa05fa15457a::t_ad06e531e1976c 191,203,236
+test/cli/components/run-view.test.tsx
+  s_a5fa05fa15457a::t_ad06e531e1976c 114
+src/cli/run-log/progress.ts
+  s_a5fa05fa15457a::t_ad06e531e1976c 39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "4ef361ff6916ecb78a417fc7d499dd95bc5cab15",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a5fa05fa15457a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03441-f5d6-70b2-b433-feb529211f2b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
