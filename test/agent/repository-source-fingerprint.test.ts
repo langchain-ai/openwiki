@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import type { Mode, PathLike } from "node:fs";
 import {
   chmod,
   mkdir,
@@ -10,12 +11,40 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
 import {
   createRepositorySourceFingerprint,
   getRepositoryChangedPaths,
 } from "../../src/agent/utils.ts";
+
+const fingerprintRace = vi.hoisted(() => ({
+  replacementPath: null as string | null,
+  symlinkTarget: null as string | null,
+}));
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return {
+    ...actual,
+    async open(filePath: PathLike, flags: string | number, mode?: Mode) {
+      if (
+        typeof filePath === "string" &&
+        filePath === fingerprintRace.replacementPath
+      ) {
+        const symlinkTarget = fingerprintRace.symlinkTarget;
+        fingerprintRace.replacementPath = null;
+        fingerprintRace.symlinkTarget = null;
+        if (!symlinkTarget) {
+          throw new Error("Expected a symlink target for the injected race.");
+        }
+        await actual.rm(filePath);
+        await actual.symlink(symlinkTarget, filePath);
+      }
+      return actual.open(filePath, flags, mode);
+    },
+  };
+});
 
 const execFileAsync = promisify(execFile);
 let repositoryRoot: string;
@@ -81,10 +110,14 @@ async function createRepository(): Promise<string> {
 }
 
 beforeEach(async () => {
+  fingerprintRace.replacementPath = null;
+  fingerprintRace.symlinkTarget = null;
   await createRepository();
 });
 
 afterEach(async () => {
+  fingerprintRace.replacementPath = null;
+  fingerprintRace.symlinkTarget = null;
   await rm(repositoryRoot, { recursive: true, force: true });
 });
 
@@ -165,6 +198,29 @@ describe("createRepositorySourceFingerprint", () => {
       await rm(link);
       await symlink(secondTarget, link);
       expect(await fingerprint()).not.toBe(before);
+    } finally {
+      await rm(outside, { recursive: true, force: true });
+    }
+  });
+
+  test("fails closed when an inspected file becomes a symlink before opening", async () => {
+    const outside = await mkdtemp(
+      path.join(tmpdir(), "openwiki-fingerprint-race-target-"),
+    );
+    const outsideTarget = path.join(outside, "outside.txt");
+
+    try {
+      await writeFile(outsideTarget, "must not be read\n", "utf8");
+      fingerprintRace.replacementPath = path.join(
+        repositoryRoot,
+        "src",
+        "tracked.ts",
+      );
+      fingerprintRace.symlinkTarget = outsideTarget;
+
+      await expect(fingerprint()).rejects.toThrow(
+        /Unable to safely open source path|Source path changed while fingerprinting/u,
+      );
     } finally {
       await rm(outside, { recursive: true, force: true });
     }

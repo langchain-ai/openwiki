@@ -1,8 +1,14 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  constants as fsConstants,
+  type BigIntStats,
+  type Dirent,
+} from "node:fs";
+import {
   lstat,
   mkdir,
+  open,
   readdir,
   readFile,
   readlink,
@@ -32,8 +38,6 @@ import type {
   UpdateMetadata,
   UpdateRunStatus,
 } from "./types.js";
-import type { Dirent } from "node:fs";
-
 const execFileAsync = promisify(execFile);
 const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
 const REPOSITORY_RUN_STATE_BASENAME = ".run.json";
@@ -495,9 +499,9 @@ async function updateFingerprintSourceEntry(
 
   updateFingerprintField(hash, "path", sourcePath);
 
-  let stats;
+  let stats: BigIntStats;
   try {
-    stats = await lstat(absolutePath);
+    stats = await lstat(absolutePath, { bigint: true });
   } catch (error) {
     if (tracked && isFileNotFoundError(error)) {
       updateFingerprintField(hash, "kind", "tracked-missing");
@@ -508,10 +512,22 @@ async function updateFingerprintSourceEntry(
     });
   }
 
+  if (stats.isFile()) {
+    const file = await readFingerprintRegularFile(
+      absolutePath,
+      sourcePath,
+      stats,
+    );
+    updateFingerprintField(hash, "executable", file.executable ? "yes" : "no");
+    updateFingerprintField(hash, "kind", "file");
+    updateFingerprintField(hash, "bytes", file.bytes);
+    return;
+  }
+
   updateFingerprintField(
     hash,
     "executable",
-    (stats.mode & 0o111) !== 0 ? "yes" : "no",
+    (stats.mode & 0o111n) !== 0n ? "yes" : "no",
   );
   if (stats.isSymbolicLink()) {
     updateFingerprintField(hash, "kind", "symlink");
@@ -522,11 +538,6 @@ async function updateFingerprintSourceEntry(
     );
     return;
   }
-  if (stats.isFile()) {
-    updateFingerprintField(hash, "kind", "file");
-    updateFingerprintField(hash, "bytes", await readFile(absolutePath));
-    return;
-  }
   if (stats.isDirectory()) {
     // A tracked gitlink is represented by its repository path, HEAD/index
     // status, and directory kind. Normal untracked directories are expanded by
@@ -535,6 +546,67 @@ async function updateFingerprintSourceEntry(
     return;
   }
   throw new Error(`Unsupported source entry type at ${sourcePath}.`);
+}
+
+/**
+ * Reads one regular source file through a verified, non-following descriptor.
+ *
+ * The descriptor identity must match the entry inspected by `lstat`. This
+ * closes the check/read window even when the platform does not expose
+ * `O_NOFOLLOW`: a replacement symlink may be opened, but its target bytes are
+ * never read because its device/inode identity cannot match the inspected file.
+ *
+ * @param absolutePath - Absolute repository path selected for fingerprinting.
+ * @param sourcePath - Repository-relative path used in bounded errors.
+ * @param inspectedStats - Non-following metadata captured before opening.
+ * @returns Raw bytes and executable state from the verified descriptor.
+ */
+async function readFingerprintRegularFile(
+  absolutePath: string,
+  sourcePath: string,
+  inspectedStats: BigIntStats,
+): Promise<{ bytes: Buffer; executable: boolean }> {
+  let fileHandle;
+  try {
+    fileHandle = await open(absolutePath, getFingerprintFileOpenFlags());
+  } catch (error) {
+    throw new Error(`Unable to safely open source path ${sourcePath}.`, {
+      cause: error,
+    });
+  }
+
+  try {
+    const openedStats = await fileHandle.stat({ bigint: true });
+    if (
+      !openedStats.isFile() ||
+      openedStats.dev !== inspectedStats.dev ||
+      openedStats.ino !== inspectedStats.ino
+    ) {
+      throw new Error(
+        `Source path changed while fingerprinting ${sourcePath}.`,
+      );
+    }
+
+    return {
+      bytes: await fileHandle.readFile(),
+      executable: (openedStats.mode & 0o111n) !== 0n,
+    };
+  } finally {
+    await fileHandle.close();
+  }
+}
+
+/**
+ * Builds read-only file flags that reject a final-component symlink when the
+ * host platform supports that guarantee.
+ *
+ * @returns Numeric flags for opening a fingerprint source file.
+ */
+function getFingerprintFileOpenFlags(): number {
+  return (
+    fsConstants.O_RDONLY |
+    (typeof fsConstants.O_NOFOLLOW === "number" ? fsConstants.O_NOFOLLOW : 0)
+  );
 }
 
 /**
