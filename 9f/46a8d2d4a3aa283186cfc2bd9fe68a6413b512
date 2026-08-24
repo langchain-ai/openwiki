@@ -1,0 +1,40 @@
+src/claims/brains/code/runtime.ts
+  s_a5fa05fa15457a::t_3558e5ba8a22b1 163-165,167
+src/generation/repository-run.ts
+  s_a5fa05fa15457a::t_808bc9e37975de 242
+  s_a5fa05fa15457a::t_fb3d13aaafc143 372-373,405-406
+  s_a5fa05fa15457a::t_5d8997b9870e69 1-3,6-44,46-241,243-371,374-384,387-404,407-411,416-471,475-583,586-635,646-684,692-748,759-784,788-854,856-857,859-864,866-902,923-945,949-1039,1042-1047,1049-1052,1054,1056-1147
+  s_a5fa05fa15457a::t_1187472aaee249 636-645,855,858,865,903-922,1048
+  s_a5fa05fa15457a::t_1befd360c4bcca 385-386,412-415,472-474,584-585,785-787,946-948,1040-1041,1053,1055
+  s_a5fa05fa15457a::t_e680413a1909bf 4
+  s_a5fa05fa15457a::t_5b3a443337103e 5
+  s_a5fa05fa15457a::t_159952dc652f06 45,685-691,749-758
+test/generation/repository-run.test.ts
+  s_a5fa05fa15457a::t_5bc0398a617a5d 691-719
+  s_a5fa05fa15457a::t_527953a743bada 61,600,607
+  s_a5fa05fa15457a::t_ae0de6ea01e725 1,3-14,17-31,34-60,62-169,173-408,432-486,528-550,552-553,555,557-599,601-606,608-631,633-663,689-690,720-771
+  s_a5fa05fa15457a::t_fc5f7b73381965 409-431,487-527,664-688
+  s_a5fa05fa15457a::t_8f126fae396586 551,554,556
+  s_a5fa05fa15457a::t_adae852fa37b10 2,15-16,32-33,170-172,632
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "9f46a8d2d4a3aa283186cfc2bd9fe68a6413b512",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a5fa05fa15457a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03441-f5d6-70b2-b433-feb529211f2b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
