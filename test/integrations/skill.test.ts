@@ -89,6 +89,17 @@ describe("canonical OpenWiki host skill", () => {
     expect(skill).toContain("Never reuse the invalidated plan.");
   });
 
+  test("requires grounded exploration and a navigable taxonomy", async () => {
+    const skill = await readFile(SKILL_PATH, "utf8");
+    const required = section(skill, "Required sequence");
+    expect(required).toContain("trace representative end-to-end flows");
+    expect(required).toContain("focused tests and neighboring implementations");
+    expect(required).toContain("use hierarchical paths");
+    expect(required).toContain("instead of a flat dump");
+    expect(required).toContain("populate `relatedPages`");
+    expect(required).toContain("avoid exhaustive file-by-file inventory");
+  });
+
   test("defines page, Claim, and code-owned artifact boundaries", async () => {
     const skill = await readFile(SKILL_PATH, "utf8");
     expect(skill).toContain("write exactly the assigned Markdown page");
@@ -97,6 +108,8 @@ describe("canonical OpenWiki host skill", () => {
     expect(skill).toContain(
       "requires at least one material repository-grounded Claim",
     );
+    expect(skill).toContain("Every resource\nMUST begin with repo://");
+    expect(skill).toContain("never submit a bare\npath such as src/auth.ts");
     expect(skill).toContain("Never directly edit openwiki/.claims");
     expect(skill).toContain(
       "Never create or edit a wiki page other than the current",

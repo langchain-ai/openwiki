@@ -1,3 +1,4 @@
+import { ToolMessage } from "@langchain/core/messages";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 type HarnessPage = {
@@ -68,7 +69,13 @@ const harness = vi.hoisted(() => ({
   driftOnce: false,
   filesystemTools: [] as string[][],
   finishCalls: 0,
+  invalidPageSubmissions: 0,
+  invalidPlanSubmissions: 0,
   noop: false,
+  pageSubmissionCalls: 0,
+  pageToolResults: [] as unknown[],
+  planSubmissionCalls: 0,
+  planToolResults: [] as unknown[],
   planPaths: ["/openwiki/quickstart.md", "/openwiki/architecture.md"],
   resumed: false,
 }));
@@ -143,6 +150,46 @@ vi.mock("deepagents", async (importOriginal) => {
                   toolCallId: `${toolName}-write-${page}`,
                 },
               ];
+            }
+
+            if (
+              toolName === "submit_page" &&
+              harness.invalidPageSubmissions > 0
+            ) {
+              const rejection = await completionTool.invoke({
+                name: toolName,
+                id: `${toolName}-invalid`,
+                type: "tool_call",
+                args: {
+                  claims: [
+                    {
+                      statement: "The repository has an agent runtime.",
+                      evidence: [{ resource: "src/agent/index.ts" }],
+                    },
+                  ],
+                },
+              });
+              harness.pageToolResults.push(rejection);
+            }
+            if (
+              toolName === "submit_plan" &&
+              harness.invalidPlanSubmissions > 0
+            ) {
+              const rejection = await completionTool.invoke({
+                name: toolName,
+                id: `${toolName}-invalid`,
+                type: "tool_call",
+                args: {
+                  pages: [
+                    {
+                      path: "/openwiki/_plan.md",
+                      title: "Invalid",
+                      purpose: "Exercise plan correction.",
+                    },
+                  ],
+                },
+              });
+              harness.planToolResults.push(rejection);
             }
 
             const input =
@@ -220,7 +267,17 @@ vi.mock("../../src/generation/repository-run.js", () => ({
       },
     });
   },
-  submitRepositoryPlan(run: HarnessRun, input: HarnessPlanInput) {
+  async submitRepositoryPlan(run: HarnessRun, input: HarnessPlanInput) {
+    harness.planSubmissionCalls += 1;
+    if (harness.invalidPlanSubmissions > 0) {
+      harness.invalidPlanSubmissions -= 1;
+      const { RepositoryRunError } =
+        await import("../../src/generation/errors.js");
+      throw new RepositoryRunError(
+        "invalid_input",
+        "Invalid or reserved OpenWiki page path: /openwiki/_plan.md",
+      );
+    }
     run.state.phase = "generating";
     run.state.plan = {
       pages: input.pages.map((page, index) => ({
@@ -256,7 +313,17 @@ vi.mock("../../src/generation/repository-run.js", () => ({
         : { status: "complete" },
     );
   },
-  submitRepositoryPage(run: HarnessRun, input: { jobId: string }) {
+  async submitRepositoryPage(run: HarnessRun, input: { jobId: string }) {
+    harness.pageSubmissionCalls += 1;
+    if (harness.invalidPageSubmissions > 0) {
+      harness.invalidPageSubmissions -= 1;
+      const { RepositoryRunError } =
+        await import("../../src/generation/errors.js");
+      throw new RepositoryRunError(
+        "invalid_input",
+        "Unsupported evidence resource: src/agent/index.ts",
+      );
+    }
     const job = run.state.plan?.pages.find(({ id }) => id === input.jobId);
     if (!job) throw new Error("Expected the current harness page job.");
     job.status = "complete";
@@ -314,7 +381,13 @@ beforeEach(() => {
   harness.driftOnce = false;
   harness.filesystemTools = [];
   harness.finishCalls = 0;
+  harness.invalidPageSubmissions = 0;
+  harness.invalidPlanSubmissions = 0;
   harness.noop = false;
+  harness.pageSubmissionCalls = 0;
+  harness.pageToolResults = [];
+  harness.planSubmissionCalls = 0;
+  harness.planToolResults = [];
   harness.planPaths = ["/openwiki/quickstart.md", "/openwiki/architecture.md"];
   harness.resumed = false;
 });
@@ -372,6 +445,54 @@ describe("runNativeRepositoryGeneration", () => {
     expect(String(harness.agentOptions[1]?.systemPrompt)).toContain(
       "You own exactly /openwiki/new-feature.md",
     );
+  });
+
+  test("returns invalid page submissions as tool errors for correction and retry", async () => {
+    harness.invalidPageSubmissions = 1;
+    harness.planPaths = ["/openwiki/agent-runtime.md"];
+
+    await expect(runHarness()).resolves.toBeDefined();
+
+    expect(harness.pageSubmissionCalls).toBe(2);
+    const [rejection] = harness.pageToolResults;
+    expect(ToolMessage.isInstance(rejection)).toBe(true);
+    if (!ToolMessage.isInstance(rejection)) {
+      throw new Error("Expected submit_page to return a ToolMessage.");
+    }
+    expect(rejection.name).toBe("submit_page");
+    expect(rejection.status).toBe("error");
+    expect(rejection.tool_call_id).toBe("submit_page-invalid");
+    expect(rejection.text).toContain(
+      '"message":"Unsupported evidence resource: src/agent/index.ts"',
+    );
+    expect(rejection.text).toContain(
+      '"retry":"Correct the assigned page or complete Claim payload and call submit_page again."',
+    );
+    expect(harness.finishCalls).toBe(1);
+  });
+
+  test("returns invalid plans as tool errors for correction and retry", async () => {
+    harness.invalidPlanSubmissions = 1;
+    harness.planPaths = ["/openwiki/quickstart.md"];
+
+    await expect(runHarness()).resolves.toBeDefined();
+
+    expect(harness.planSubmissionCalls).toBe(2);
+    const [rejection] = harness.planToolResults;
+    expect(ToolMessage.isInstance(rejection)).toBe(true);
+    if (!ToolMessage.isInstance(rejection)) {
+      throw new Error("Expected submit_plan to return a ToolMessage.");
+    }
+    expect(rejection.name).toBe("submit_plan");
+    expect(rejection.status).toBe("error");
+    expect(rejection.tool_call_id).toBe("submit_plan-invalid");
+    expect(rejection.text).toContain(
+      '"message":"Invalid or reserved OpenWiki page path: /openwiki/_plan.md"',
+    );
+    expect(rejection.text).toContain(
+      '"retry":"Correct the plan and call submit_plan again."',
+    );
+    expect(harness.finishCalls).toBe(1);
   });
 
   test("filters DeepAgents' automatic task capability at the model boundary", async () => {

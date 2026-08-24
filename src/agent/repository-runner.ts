@@ -1,5 +1,6 @@
 import { scheduler } from "node:timers/promises";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { ToolMessage } from "@langchain/core/messages";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
 import { createMiddleware } from "langchain";
@@ -86,6 +87,38 @@ type PendingPageJob = Extract<
   NextRepositoryPageResult,
   { status: "pending" }
 >["job"];
+
+/**
+ * Converts a correctable submission rejection into a failed tool result.
+ *
+ * @param toolName - Completion tool that rejected the model payload.
+ * @param error - Validated repository input error returned by the lifecycle.
+ * @param retry - Concrete correction instruction shown to the worker.
+ * @param toolCallId - LangChain identifier for the active tool call.
+ * @returns Error-status tool message that keeps the worker loop active.
+ */
+function createSubmissionRejection(
+  toolName: "submit_plan" | "submit_page",
+  error: RepositoryRunError,
+  retry: string,
+  toolCallId: string | undefined,
+): ToolMessage {
+  if (!toolCallId) {
+    throw new Error(`${toolName} rejection requires an active tool call id.`);
+  }
+
+  return new ToolMessage({
+    name: toolName,
+    tool_call_id: toolCallId,
+    status: "error",
+    content: JSON.stringify({
+      status: "rejected",
+      code: error.code,
+      message: error.message,
+      retry,
+    }),
+  });
+}
 
 /**
  * Inputs for one native repository-generation command.
@@ -260,15 +293,31 @@ async function runPlanningAgent(
     description:
       "Submit the final canonical OpenWiki page plan. This is the only completion action for planning.",
     schema: PlanSchema,
-    func: async (input) => {
+    func: async (input, _runManager, config) => {
       if (submitted) {
         throw new Error(
           "submit_plan was already called for this planning worker.",
         );
       }
-      const result = await submitRepositoryPlan(run, input);
-      submitted = true;
-      return JSON.stringify(result);
+      try {
+        const result = await submitRepositoryPlan(run, input);
+        submitted = true;
+        return JSON.stringify(result);
+      } catch (error) {
+        if (
+          error instanceof RepositoryRunError &&
+          error.code === "invalid_input"
+        ) {
+          return createSubmissionRejection(
+            "submit_plan",
+            error,
+            "Correct the plan and call submit_plan again.",
+            (config as { toolCall?: { id?: string } } | undefined)?.toolCall
+              ?.id,
+          );
+        }
+        throw error;
+      }
     },
   });
 
@@ -364,18 +413,34 @@ async function runPageAgent(
   const submitPageTool = new DynamicStructuredTool({
     name: "submit_page",
     description:
-      "Complete the assigned page after writing it by submitting its complete intended material repository-grounded Claim set.",
+      "Complete the assigned page after writing it by submitting its complete intended material Claim set. Every evidence resource must use repo://<repository-relative-path>, optionally with #Lx-Ly.",
     schema: z.object({ claims: z.array(ClaimSchema).min(1) }).strict(),
-    func: async ({ claims }) => {
+    func: async ({ claims }, _runManager, config) => {
       if (submitted) {
         throw new Error("submit_page was already called for this page worker.");
       }
-      const result = await submitRepositoryPage(run, {
-        jobId: job.id,
-        claims,
-      });
-      submitted = true;
-      return JSON.stringify(result);
+      try {
+        const result = await submitRepositoryPage(run, {
+          jobId: job.id,
+          claims,
+        });
+        submitted = true;
+        return JSON.stringify(result);
+      } catch (error) {
+        if (
+          error instanceof RepositoryRunError &&
+          error.code === "invalid_input"
+        ) {
+          return createSubmissionRejection(
+            "submit_page",
+            error,
+            "Correct the assigned page or complete Claim payload and call submit_page again.",
+            (config as { toolCall?: { id?: string } } | undefined)?.toolCall
+              ?.id,
+          );
+        }
+        throw error;
+      }
     },
   });
 

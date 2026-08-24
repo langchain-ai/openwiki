@@ -85,6 +85,10 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("claim_auth (stale)");
     expect(prompt).toContain("Prioritize operator safety.");
     expect(prompt).toContain("instructions array");
+    expect(prompt).toContain("Use hierarchical paths");
+    expect(prompt).toContain("Populate relatedPages");
+    expect(prompt).toContain("trace representative end-to-end control");
+    expect(prompt).toContain("focused tests and neighboring");
     expect(prompt).not.toContain("force flag");
   });
 
@@ -101,6 +105,14 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("repo://src/auth.ts");
     expect(prompt).toContain("Write only /openwiki/auth.md");
     expect(prompt).toContain("COMPLETE intended material Claim set");
+    expect(prompt).toContain("repo://src/agent/index.ts");
+    expect(prompt).toMatch(
+      /a bare path such\s+as src\/agent\/index\.ts is invalid/u,
+    );
+    expect(prompt).toContain("callers,");
+    expect(prompt).toContain(
+      "Do not turn the page into a source-file inventory",
+    );
     expect(prompt).not.toContain("execute");
   });
 

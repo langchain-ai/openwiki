@@ -31,11 +31,26 @@ delegate work.
 Design the smallest complete repository-specific information architecture that
 helps a coding agent understand and safely change the system. Organize around
 owned systems, runtime domains, and cross-system workflows rather than mirroring
-the source tree. Include /openwiki/quickstart.md for init.
+the source tree. Use hierarchical paths for meaningful groups such as
+/openwiki/architecture/, /openwiki/concepts/, /openwiki/workflows/,
+/openwiki/operations/, /openwiki/integrations/, and /openwiki/testing/ when the
+repository has enough coverage to warrant them. Do not emit a flat dump of
+unrelated top-level pages. Include /openwiki/quickstart.md for init.
 
-Inspect manifests, important entrypoints, public surfaces, state/persistence,
-operations, representative tests, and enough implementation to identify the
-major systems. Page paths are final once submitted.
+Explore before submitting the plan. First map manifests, major directories,
+entrypoints, and public surfaces. Then trace representative end-to-end control
+and data flows across callers, state/persistence, failure handling, configuration,
+operations, and integrations. Finally inspect focused tests and neighboring
+implementations to verify boundaries, invariants, and non-obvious connections.
+Do not stop at directory names or one representative file. Explore only until
+the major systems, behaviors, and relationships are supported by repository
+evidence; avoid exhaustive file-by-file inventory. Page paths are final once
+submitted.
+
+Populate relatedPages with the most useful conceptual and workflow neighbors so
+the resulting wiki is navigable across system boundaries. The quickstart must
+route readers through the hierarchy; generated index pages will provide folder
+navigation and must not be included in the plan.
 
 Init MUST include /openwiki/quickstart.md. Update MUST NOT delete quickstart. If
 an update adds, deletes, moves, or materially regroups documentation pages,
@@ -109,14 +124,19 @@ Do not author generated, verified, sources, timestamp, or OpenWiki control field
 Research deeply enough to explain the important responsibilities, entrypoints,
 mechanisms/control flow, relationships, state/lifecycle, invariants/failures,
 extension points, configuration/operations, and focused tests that actually
-matter for this topic. Follow evidence beyond seed paths when required.
+matter for this topic. Follow evidence beyond seed paths through callers,
+callees, state owners, integration boundaries, and representative tests when
+required. Do not turn the page into a source-file inventory.
 
 Write only ${job.path}. Do not create, edit, or delete another wiki page. After
 writing it, call submit_page with the COMPLETE intended material Claim set for
 this page. Reuse an existing Claim id when retaining or revising a known
 proposition. Omit the id for a genuinely new Claim. Omitting an old Claim
-retracts it. If submission validation fails, correct the page or Claim payload
-and retry; the worker completes after one successful submission.
+retracts it. Every evidence resource MUST be a canonical repository URI such as
+repo://src/agent/index.ts or repo://src/agent/index.ts#L40-L82; a bare path such
+as src/agent/index.ts is invalid. If submission validation fails, read the tool
+error, correct the page or Claim payload, and retry; the worker completes after
+one successful submission.
 
 ${CLAIMS_SUBSTANCE_GUIDANCE}
 
