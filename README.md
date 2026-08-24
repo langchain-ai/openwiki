@@ -32,6 +32,7 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 
 ## 🎉 What's new
 
+- **Resumable page-job architecture:** repository generation now follows `begin → submit_plan → next_page → submit_page → … → finish`, with a durable ordered page queue, focused per-page workers, strict Claims persistence, and whole-plan invalidation when repository source changes. Interrupted runs can resume when the same checkout persists; ephemeral CI runners do not retain uncommitted run state after failure.
 - **Grounded Claims:** material facts in code wikis now carry versioned source evidence. When that evidence changes or disappears, OpenWiki knows exactly which propositions need to be confirmed, rewritten, or retired.
 - **OpenWiki integrations:** run OpenWiki directly inside Codex or Claude Code, using the coding agent's authenticated model and native repository tools while OpenWiki manages the documentation lifecycle.
 - **OKF v0.2:** every wiki is a portable Open Knowledge Format bundle with deterministic generation provenance and validated trust and lifecycle metadata.
@@ -51,7 +52,13 @@ Generate a wiki for the current repository. The first run walks you through pick
 openwiki --init
 ```
 
-Running `openwiki --init` again replaces the existing generated repository wiki and Claims with a brand-new generation. OpenWiki preserves the user-authored `openwiki/INSTRUCTIONS.md` brief and restores the previous wiki if generation fails or is cancelled.
+Running `openwiki --init` again replaces the existing generated repository wiki and Claims with a brand-new generation while preserving the user-authored `openwiki/INSTRUCTIONS.md` brief. On a persistent checkout, OpenWiki records in-progress repository generation in `openwiki/.run.json`, so rerunning the same command after an interruption resumes the durable page queue. Ephemeral CI runners start fresh after failure unless their workspace is preserved. A setup failure before the new run state is durable restores the previous wiki.
+
+Update an existing wiki from repository changes since its last successful run and any stale Claims:
+
+```sh
+openwiki --update
+```
 
 Keep it current automatically by adding a scheduled CI job that opens a docs PR whenever the wiki changes:
 
@@ -64,7 +71,7 @@ Keep it current automatically by adding a scheduled CI job that opens a docs PR 
 
 ## Coding-agent integrations
 
-OpenWiki can run inside an existing coding agent instead of launching its own model. The coding agent investigates the repository, plans and writes the documentation, and uses its native tools and subagents when helpful. OpenWiki provides the MCP lifecycle that prepares the repository, constrains the run, and deterministically finalizes indexes, provenance, setup files, and metadata.
+OpenWiki can run inside an existing coding agent instead of launching its own model. The coding agent investigates the repository, plans the wiki, and writes each assigned page sequentially with its native repository tools. OpenWiki provides the durable MCP page-job lifecycle, validates each completion, and deterministically finalizes Claims, indexes, provenance, setup files, and metadata.
 
 <div align="center">
   <img alt="Codex initializes an OpenWiki for a repository." src="./static/openwiki-codex.gif" width="880">
@@ -89,11 +96,11 @@ For an existing wiki, ask:
 Update this repository's OpenWiki for changes since its last successful run.
 ```
 
-Host-driven runs currently support repository code wikis, not personal brains. They use the coding agent's authenticated model session, so OpenWiki provider credentials are not required. OpenWiki still owns deterministic setup and finalization; the coding agent owns research, planning, factual authoring, and semantic review.
+Host-driven runs currently support repository code wikis, not personal brains. They use the coding agent's authenticated model session, so OpenWiki provider credentials are not required. OpenWiki owns the durable queue, Claims validation and persistence, source-drift handling, and deterministic finalization; the coding agent owns repository research, planning, and factual authoring.
 
 External coding-agent integrations currently use repository source and tests only. Connector-sourced context, including LangSmith, is not yet supported.
 
-The integration exposes lifecycle bookends plus Grounded Claims inspection and resolution. Codex or Claude authors Markdown with native repository tools while OpenWiki validates and persists the evidence-backed propositions behind factual pages.
+The integration exposes the same five operations as native generation: `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, `openwiki_submit_page`, and `openwiki_finish`. Codex or Claude submits the complete intended Claim set with each page; OpenWiki internally preserves, updates, creates, or retracts Claims and refuses to finish until the final state is durable.
 
 Use `openwiki integrations list` to inspect user-level installation status or `openwiki integrations uninstall <host>` to remove an integration safely. Add `--project [path]` to `list`, `install`, or `uninstall` for repository-scoped state.
 
@@ -104,7 +111,9 @@ Contributors adding another coding agent should follow
 
 OpenWiki makes code wikis self-correcting by tracking the material propositions behind factual pages—not just when a Markdown file was last generated. Claims cover the truths future agents rely on: behavior, responsibilities, architecture, data flow, invariants, failure semantics, configuration, and security boundaries. Each one points to exact repository evidence such as `repo://src/server.ts#L40-L82`, with the evidence version OpenWiki observed when the claim was established.
 
-Before an update, OpenWiki checks those evidence versions. If source lines changed or disappeared, the affected claim becomes stale or unresolved. That debt stays quiet until the relevant page is read, then the agent can inspect it and confirm, revise, or retract the proposition. The Markdown stays clean; structured claim state lives alongside it under `openwiki/.claims/`.
+Before an update, OpenWiki checks every persisted evidence version, before even deciding whether the repository is a no-op. A stale or unresolved Claim requires work for its owning page even if the planner omits it. The page worker receives the complete existing Claim set and submits the complete intended replacement set: unchanged Claims keep their IDs and refresh their evidence versions, revised Claims update in place, genuinely new Claims receive new IDs, and omitted Claims are retracted. The Markdown stays clean; structured Claim state lives alongside it under `openwiki/.claims/`.
+
+Page completion is a durability boundary. OpenWiki persists the reconciled Claims, projects verification, synchronizes the sidecar's page version, and proves the complete result before marking that page's job complete. Finalization repeats the whole-run proof before deleting `openwiki/.run.json`.
 
 Grounded Claims currently apply to repository code wikis and repository evidence. Connector-derived facts, including LangSmith-only observations, are not claimed.
 
@@ -222,9 +231,9 @@ Your wiki stays in the repository as plain Markdown you own, with OpenWiki-manag
 OpenWiki emits [Google Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundles in both modes, so your wiki is portable to any OKF-aware tool.
 
 - Every concept document carries YAML front matter with a non-empty `type`; all other standard fields are optional.
-- Pages record their last body change as `generated: {by, at}`; any body change, including whitespace, advances the stamp, while front-matter-only changes do not. The producer is stamped as `openwiki/<version>` (or the coding-agent host), making provenance explicit. The legacy v0.1 `timestamp` field is still tolerated on existing pages.
+- New and freshly initialized pages receive `generated: {by, at}`. During updates, any body change, including whitespace, advances the stamp; an unchanged body retains its prior event, and front-matter-only changes do not advance it. The producer is stamped as `openwiki/<version>` (or the coding-agent host), making provenance explicit. The legacy v0.1 `timestamp` field is still tolerated on existing pages.
 - Repository pages project their grounded Claims evidence into `sources`; OpenWiki reconciles its deterministically identified entries while preserving independently authored sources.
-- Repository pages receive `verified: {by: openwiki/<version>, at: ...}` only after they actively reconcile a non-empty complete Claims set, pass the final evidence recheck, and persist the Claims sidecar. Clean preflight alone never creates or advances verification; human and other process events are preserved.
+- Repository pages receive `verified: {by: openwiki/<version>, at: ...}` only after a successful page submission reconciles a non-empty complete Claims set, passes the final evidence recheck, and persists the Claims sidecar. Clean preflight alone never creates or advances verification; human and other process events are preserved.
 - The optional v0.2 provenance, trust, and lifecycle families (`sources`, `verified`, `status`, `stale_after`) are validated when present.
 - Standard Markdown links between concept documents express their relationships.
 - `index.md` and `log.md` are reserved documents rather than concepts. The root index declares `okf_version: "0.2"`.
