@@ -69,7 +69,6 @@ describe("ClaimSession", () => {
   function createSession(options?: {
     issues?: ConstructorParameters<typeof ClaimSession>[0]["issues"];
     orphanPages?: string[];
-    ungroundedPages?: string[];
     resolver?: EvidenceResolver;
     createClaimId?: () => string;
   }): ClaimSession {
@@ -85,12 +84,11 @@ describe("ClaimSession", () => {
       persisted: new Map([[page, persisted([CLAIM])]]),
       issues: options?.issues ?? [],
       orphanPages: options?.orphanPages ?? [],
-      ungroundedPages: options?.ungroundedPages,
       createClaimId: options?.createClaimId,
     });
   }
 
-  test("inspects compact cloned state by globally unique ID", () => {
+  test("inspects compact cloned page state with deterministic issues", () => {
     const session = createSession({
       issues: [
         {
@@ -102,26 +100,18 @@ describe("ClaimSession", () => {
       ],
     });
 
-    const pages = session.inspectClaimsByIds(["claim_existing"]);
-    expect(pages).toEqual([
+    const claims = session.inspectClaims("/openwiki/page.md");
+    expect(claims).toEqual([
       {
-        page: "/openwiki/page.md",
-        claims: [
-          {
-            id: "claim_existing",
-            statement: "The feature is enabled.",
-            evidence: ["memory://feature"],
-            issue: { kind: "stale", resources: ["memory://feature"] },
-          },
-        ],
+        id: "claim_existing",
+        statement: "The feature is enabled.",
+        evidence: ["memory://feature"],
+        issue: { kind: "stale", resources: ["memory://feature"] },
       },
     ]);
-    pages[0].claims[0].statement = "mutated";
+    claims[0].statement = "mutated";
     expect(session.inspectClaims("/openwiki/page.md")[0]?.statement).toBe(
       "The feature is enabled.",
-    );
-    expect(() => session.inspectClaimsByIds(["claim_missing"])).toThrow(
-      "Unknown claim id",
     );
   });
 
@@ -147,48 +137,6 @@ describe("ClaimSession", () => {
     expect([...session.getEvidenceResourcesByPage()]).toEqual([
       ["/openwiki/empty.md", []],
       ["/openwiki/page.md", ["memory://feature", "memory://zeta"]],
-    ]);
-  });
-
-  test("groups ID inspection across owning pages", () => {
-    const secondClaim: Claim = {
-      id: "claim_second",
-      statement: "The second feature exists.",
-      evidence: [{ resource: "memory://second", version: "revision:1" }],
-    };
-    const session = new ClaimSession({
-      resolver: createResolver(new Map()),
-      persisted: new Map([
-        ["/openwiki/page.md", persisted([CLAIM])],
-        ["/openwiki/second.md", persisted([secondClaim])],
-      ]),
-      issues: [],
-      orphanPages: [],
-    });
-
-    expect(
-      session.inspectClaimsByIds(["claim_second", "claim_existing"]),
-    ).toEqual([
-      {
-        page: "/openwiki/second.md",
-        claims: [
-          {
-            id: "claim_second",
-            statement: "The second feature exists.",
-            evidence: ["memory://second"],
-          },
-        ],
-      },
-      {
-        page: "/openwiki/page.md",
-        claims: [
-          {
-            id: "claim_existing",
-            statement: "The feature is enabled.",
-            evidence: ["memory://feature"],
-          },
-        ],
-      },
     ]);
   });
 
@@ -219,93 +167,15 @@ describe("ClaimSession", () => {
         },
       ],
     });
-    expect(session.inspectClaimsByIds(["claim_new"])[0]?.page).toBe(
-      "/openwiki/second.md",
+    expect(session.inspectClaims("/openwiki/second.md")[0]?.id).toBe(
+      "claim_new",
     );
 
     await session.resolveClaims({
       page: "/openwiki/second.md",
       operations: [{ op: "retract", id: "claim_new" }],
     });
-    expect(() => session.inspectClaimsByIds(["claim_new"])).toThrow(
-      "Unknown claim id",
-    );
-  });
-
-  test("surfaces page-local debt only until the claim is resolved", async () => {
-    const session = createSession({
-      issues: [
-        {
-          page: "/openwiki/page.md",
-          kind: "stale",
-          claimId: "claim_existing",
-          resources: ["memory://feature"],
-        },
-      ],
-    });
-
-    expect(session.getReadNote("/openwiki/page.md")).toContain(
-      "claim_existing (stale)",
-    );
-    await session.resolveClaims({
-      page: "/openwiki/page.md",
-      operations: [{ op: "confirm", id: "claim_existing" }],
-    });
-    expect(session.getReadNote("/openwiki/page.md")).toBeUndefined();
-    expect(session.inspectClaims("/openwiki/page.md")[0]?.evidence).toEqual([
-      "memory://feature",
-    ]);
-  });
-
-  test("surfaces missing Claims lazily until the page gains a Claim", async () => {
-    const page = "/openwiki/ungrounded.md";
-    const session = new ClaimSession({
-      resolver: createResolver(
-        new Map([
-          ["memory://feature", resolved("memory://feature", "revision:1")],
-        ]),
-      ),
-      persisted: new Map(),
-      issues: [],
-      orphanPages: [],
-      ungroundedPages: [page],
-      createClaimId: () => "claim_new",
-    });
-
-    expect(session.getReadNote(page)).toContain("this page has no Claims yet");
-    expect(session.getReadNote(page)).toContain(
-      "only the facts introduced or changed by this update",
-    );
-    expect(session.getReadNote(page)).toContain(
-      "Do not backfill unrelated existing prose",
-    );
-
-    await session.resolveClaims({
-      page,
-      operations: [
-        {
-          op: "add",
-          statement: "The feature exists.",
-          evidence: [{ resource: "memory://feature" }],
-        },
-      ],
-    });
-
-    expect(session.getReadNote(page)).toBeUndefined();
-  });
-
-  test("treats an empty persisted Claims set as ungrounded", async () => {
-    const page = "/openwiki/empty.md";
-    const session = new ClaimSession({
-      resolver: createResolver(new Map()),
-      persisted: new Map([[page, persisted([])]]),
-      issues: [],
-      orphanPages: [],
-    });
-
-    expect(session.getReadNote(page)).toContain("this page has no Claims yet");
-    await session.recordDeletion(page);
-    expect(session.getReadNote(page)).toBeUndefined();
+    expect(session.inspectClaims("/openwiki/second.md")).toEqual([]);
   });
 
   test("returns compact operation results including allocated IDs", async () => {
@@ -655,21 +525,5 @@ describe("ClaimSession", () => {
     calls.length = 0;
     await session.finalize(new ClaimsStore(rootDir), VERIFICATION);
     expect(calls).toEqual([resource]);
-  });
-
-  test("translations may use claims even when their evidence is stale", () => {
-    const session = createSession({
-      issues: [
-        {
-          page: "/openwiki/page.md",
-          kind: "stale",
-          claimId: "claim_existing",
-          resources: ["memory://feature"],
-        },
-      ],
-    });
-    expect(session.getOwnedTranslationClaims("/openwiki/page.md")).toEqual([
-      CLAIM,
-    ]);
   });
 });

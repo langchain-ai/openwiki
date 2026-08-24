@@ -7,12 +7,7 @@ import { degradeInvalidMermaidFences } from "./validate.js";
 /**
  * Reserved or control files that never carry generated diagrams.
  */
-const EXCLUDED_FILES = new Set([
-  "index.md",
-  "log.md",
-  "_plan.md",
-  "INSTRUCTIONS.md",
-]);
+const EXCLUDED_FILES = new Set(["index.md", "log.md", "INSTRUCTIONS.md"]);
 
 /**
  * Summary of one mermaid validation pass over a generated wiki.

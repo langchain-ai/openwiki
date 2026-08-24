@@ -18,6 +18,25 @@ export function appendRunLogEvent(
   event: OpenWikiRunEvent,
   nextLogId: React.MutableRefObject<number>,
 ): RunLogItem[] {
+  if (event.type === "repository_progress") {
+    const existing = log.find((item) => item.type === "repository_progress");
+    const progress: RunLogItem = {
+      id: existing?.id ?? nextLogId.current++,
+      type: "repository_progress",
+      stage: event.stage,
+      ...(event.resumed === undefined ? {} : { resumed: event.resumed }),
+      ...(event.page === undefined ? {} : { page: event.page }),
+      ...(event.pageIndex === undefined ? {} : { pageIndex: event.pageIndex }),
+      ...(event.pageCount === undefined ? {} : { pageCount: event.pageCount }),
+    };
+
+    return existing
+      ? log.map((item) =>
+          item.type === "repository_progress" ? progress : item,
+        )
+      : [progress, ...log];
+  }
+
   if (event.type === "text") {
     if (event.source === "subgraph" || event.text.length === 0) {
       return log;

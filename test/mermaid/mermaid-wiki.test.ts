@@ -110,7 +110,6 @@ describe("validateWikiMermaid", () => {
     for (const name of [
       "index.md",
       "log.md",
-      "_plan.md",
       "INSTRUCTIONS.md",
       ".secret.md",
     ]) {

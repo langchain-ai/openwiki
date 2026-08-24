@@ -15,6 +15,5 @@ describe("formatRuntimeRootInstruction", () => {
 
     expect(instruction).toContain("local wiki directory");
     expect(instruction).toContain("/quickstart.md");
-    expect(instruction).toContain("/_plan.md");
   });
 });

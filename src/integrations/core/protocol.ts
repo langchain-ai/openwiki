@@ -1,10 +1,7 @@
 import { z } from "zod";
-import {
-  InspectClaimsInputSchema as ClaimsInspectPayloadInput,
-  ResolveClaimsInputSchema as ClaimsResolvePayloadInput,
-} from "../../claims/brains/code/tools.js";
 
 const HOST_ID_PATTERN = /^[a-z0-9-]{1,64}$/u;
+const CanonicalString = z.string().trim().min(1);
 
 /**
  * Lifecycle modes supported by host-authored repository runs.
@@ -12,59 +9,64 @@ const HOST_ID_PATTERN = /^[a-z0-9-]{1,64}$/u;
 export type HostRunMode = "init" | "update";
 
 /**
- * Stable names in the complete V1 host lifecycle tool set.
+ * The complete 0.4 repository-generation MCP tool set.
  */
 export type ProtocolToolName =
   | "openwiki_begin"
-  | "openwiki_inspect_claims"
-  | "openwiki_resolve_claims"
+  | "openwiki_submit_plan"
+  | "openwiki_next_page"
+  | "openwiki_submit_page"
   | "openwiki_finish";
 
 /**
- * Validated request accepted by `openwiki_begin`.
+ * Validated host request to start or resume a repository run.
  */
 export interface BeginRequest {
   /**
-   * Absolute path inside the Git repository to document.
+   * User-supplied path resolved to an absolute Git repository root.
    */
   root: string;
 
   /**
-   * Lifecycle mode selected for the run.
+   * Repository generation command to start or resume.
    */
   mode: HostRunMode;
 
   /**
-   * Optional requested BCP-47 wiki language.
-   *
-   * @default undefined - inherit the prior language or use English.
+   * Optional requested documentation language.
    */
   language?: string;
+
+  /**
+   * Whether update no-op detection must be bypassed.
+   */
+  force?: boolean;
 }
 
 /**
- * Validated run selector accepted by `openwiki_finish`.
+ * Validated request addressing one active durable run.
  */
 export interface RunRequest {
   /**
-   * Opaque identifier returned by the matching begin request.
+   * Stable UUID returned by `openwiki_begin` for the active run.
    */
   runId: string;
 }
 
 /**
- * Validated input accepted by `openwiki_begin`.
+ * Strict MCP schema for `openwiki_begin`.
  */
 export const BeginInput: z.ZodType<BeginRequest> = z
   .object({
-    root: z.string().trim().min(1),
+    root: CanonicalString,
     mode: z.enum(["init", "update"]),
-    language: z.string().trim().min(1).optional(),
+    language: CanonicalString.optional(),
+    force: z.boolean().optional(),
   })
   .strict();
 
 /**
- * Validated run selector accepted by `openwiki_finish`.
+ * Strict run-identity schema shared by next/finish operations.
  */
 export const RunInput: z.ZodType<RunRequest> = z
   .object({
@@ -73,72 +75,111 @@ export const RunInput: z.ZodType<RunRequest> = z
   .strict();
 
 /**
- * Validated request accepted by `openwiki_inspect_claims`.
+ * Strict model/host proposal for one final factual page.
  */
-export const InspectClaimsInput = z
+export const PlanPageInput = z
   .object({
-    runId: z.string().uuid(),
-    ...ClaimsInspectPayloadInput.shape,
-  })
-  .strict()
-  .refine(({ ids, pages }) => (ids === undefined) !== (pages === undefined), {
-    message: "Pass exactly one of ids or pages",
-  });
-
-/**
- * Validated request accepted by `openwiki_resolve_claims`.
- */
-export const ResolveClaimsInput = z
-  .object({
-    runId: z.string().uuid(),
-    ...ClaimsResolvePayloadInput.shape,
+    path: CanonicalString,
+    title: CanonicalString,
+    purpose: CanonicalString,
+    seedPaths: z.array(CanonicalString).optional(),
+    relatedPages: z.array(CanonicalString).optional(),
+    instructions: z.array(CanonicalString).optional(),
   })
   .strict();
 
 /**
- * Strict host Claims inspection request inferred from the shared schema.
+ * Strict MCP schema for `openwiki_submit_plan`.
  */
-export type InspectClaimsRequest = z.infer<typeof InspectClaimsInput>;
+export const SubmitPlanInput = z
+  .object({
+    runId: z.string().uuid(),
+    // Empty is valid for an update that has no documentation page work or only
+    // planned deletions. Init validation still requires quickstart downstream.
+    pages: z.array(PlanPageInput),
+    deletePages: z.array(CanonicalString).optional(),
+  })
+  .strict();
 
 /**
- * Strict host Claims mutation request inferred from the shared schema.
+ * Strict MCP schema for `openwiki_next_page`.
  */
-export type ResolveClaimsRequest = z.infer<typeof ResolveClaimsInput>;
+export const NextPageInput = RunInput;
 
 /**
- * Validates the bounded identifier used for host metadata and provenance.
+ * Strict proposed material Claim with code-owned version omitted.
+ */
+export const ProposedPageClaimInput = z
+  .object({
+    id: CanonicalString.optional(),
+    statement: CanonicalString,
+    evidence: z.array(z.object({ resource: CanonicalString }).strict()).min(1),
+  })
+  .strict();
+
+/**
+ * Strict MCP schema for `openwiki_submit_page`.
+ */
+export const SubmitPageInput = z
+  .object({
+    runId: z.string().uuid(),
+    jobId: z.string().uuid(),
+    // Every PageJob is a factual concept page. Structural index pages are
+    // deterministic and never become jobs, so a completed page must establish
+    // at least one material repository-grounded Claim.
+    claims: z.array(ProposedPageClaimInput).min(1),
+  })
+  .strict();
+
+/**
+ * Validated plan submission payload.
+ */
+export type SubmitPlanRequest = z.infer<typeof SubmitPlanInput>;
+
+/**
+ * Validated next-page request payload.
+ */
+export type NextPageRequest = z.infer<typeof NextPageInput>;
+
+/**
+ * Validated page completion payload.
+ */
+export type SubmitPageRequest = z.infer<typeof SubmitPageInput>;
+
+/**
+ * Returns whether a host/producer identifier is safe for protocol metadata.
  *
- * @param value - Candidate host identifier.
- * @returns Whether the identifier is safe and protocol-compatible.
+ * @param value - Candidate host or producer identifier.
+ * @returns Whether the identifier is canonical and bounded.
  */
 export function isValidHostId(value: string): boolean {
   return HOST_ID_PATTERN.test(value);
 }
 
 /**
- * Transport-neutral tool exposed by the host lifecycle core.
+ * One of the complete five MCP tools exposed by OpenWiki 0.4.
  */
 export interface ProtocolTool {
   /**
-   * Stable transport-visible tool name.
+   * Canonical MCP lifecycle tool name.
    */
   name: ProtocolToolName;
 
   /**
-   * Human-readable model guidance for the tool.
+   * Model-facing description of the lifecycle operation.
    */
   description: string;
 
   /**
-   * Runtime input validator and JSON Schema source.
+   * Strict runtime schema for the tool input.
    */
   schema: z.ZodType;
 
   /**
-   * Executes the validated transport-neutral operation.
+   * Validates and executes one lifecycle operation.
    *
-   * @param input - Untrusted candidate input to validate at the boundary.
-   * @returns Structured JSON-compatible operation result.
+   * @param input - Untrusted transport input.
+   * @returns The structured lifecycle result.
    */
   handle(input: unknown): Promise<unknown>;
 }

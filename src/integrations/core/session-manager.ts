@@ -1,264 +1,84 @@
-import { randomUUID } from "node:crypto";
-import { OpenWikiLocalShellBackend } from "../../agent/docs-only-backend.js";
-import { OpenWikiIgnore } from "../../agent/openwiki-ignore.js";
-import type { RunContext } from "../../agent/types.js";
+import { RepositoryRunError } from "../../generation/errors.js";
 import {
-  beginRepositoryWikiReplacement,
-  type RepositoryWikiReplacement,
-} from "../../agent/wiki-replacement.js";
-import { ensureCodeModeRepoSetup } from "../../ingestion/code-mode.js";
-import {
-  createOpenWikiContentSnapshot,
-  createRunContext,
-  getUpdateNoopStatus,
-  persistRunMetadataIfChanged,
-  removeTemporaryWorkingFiles,
-  type OpenWikiContentSnapshot,
-  type UpdateNoopStatus,
-  writeLastUpdateMetadata,
-} from "../../agent/utils.js";
-import {
-  finalizeWikiArtifacts,
-  prepareWikiForAuthoring,
-  type PreparedWikiState,
-} from "../../agent/wiki-finalizer.js";
-import {
-  resolveConceptTypeLabel,
-  resolveIndexLabels,
-} from "../../okf/index-labels.js";
-import {
-  ClaimSessionError,
-  EvidenceResourceError,
-} from "../../claims/core/errors.js";
-import {
-  inspectClaims as inspectClaimsOperation,
-  INSPECT_CLAIMS_DESCRIPTION,
-  resolveClaims as resolveClaimsOperation,
-  RESOLVE_CLAIMS_DESCRIPTION,
-} from "../../claims/brains/code/tools.js";
-import {
-  prepareClaimsRuntime,
-  type ClaimsRuntime,
-} from "../../claims/brains/code/runtime.js";
-import { ClaimsStore } from "../../claims/brains/code/store.js";
+  beginRepositoryRun,
+  finishRepositoryRun,
+  nextRepositoryPage,
+  submitRepositoryPage,
+  submitRepositoryPlan,
+  type ActiveRepositoryRun,
+} from "../../generation/repository-run.js";
 import { HostIntegrationError } from "./errors.js";
 import {
   BeginInput,
-  InspectClaimsInput,
-  ResolveClaimsInput,
+  NextPageInput,
   RunInput,
+  SubmitPageInput,
+  SubmitPlanInput,
   isValidHostId,
   type BeginRequest,
-  type HostRunMode,
-  type InspectClaimsRequest,
+  type NextPageRequest,
   type ProtocolTool,
-  type ResolveClaimsRequest,
   type RunRequest,
+  type SubmitPageRequest,
+  type SubmitPlanRequest,
 } from "./protocol.js";
 import { resolveRepositoryRoot } from "./repository-root.js";
 
 /**
- * Construction options for one host lifecycle manager.
+ * Stable host identity and optional deterministic clock for the MCP adapter.
  */
 export interface HostSessionManagerOptions {
   /**
-   * Stable lowercase host identifier used in run metadata.
+   * Stable lowercase host identity used in protocol metadata.
    */
   host: string;
 
   /**
-   * Stable OKF producer actor for host-authored page bodies.
-   *
-   * @default host
+   * Provenance actor, defaulting to the host identity when omitted.
    */
   producerActor?: string;
 
   /**
-   * Injectable clock used to make run timestamps deterministic in tests.
-   *
-   * @default () => new Date()
+   * Optional deterministic clock used by production metadata and tests.
    */
   now?: () => Date;
 }
 
 /**
- * Safe context returned to a host after preparation succeeds.
- */
-export interface BeginResult {
-  /**
-   * Opaque identifier required by the matching finish call.
-   */
-  runId: string;
-
-  /**
-   * Canonical Git repository root locked to this run.
-   */
-  root: string;
-
-  /**
-   * Lifecycle mode selected for this run.
-   */
-  mode: HostRunMode;
-
-  /**
-   * Resolved wiki output language.
-   */
-  language: string;
-
-  /**
-   * Persisted context from the previous run.
-   */
-  lastUpdate: RunContext["lastUpdate"];
-
-  /**
-   * Existing repository wiki goal, when one is available.
-   *
-   * @default undefined - no prior wiki goal exists.
-   */
-  wikiGoal?: string;
-
-  /**
-   * Update no-op analysis supplied only for update runs.
-   *
-   * @default undefined - the run is an init.
-   */
-  updatePreflight?: UpdateNoopStatus;
-
-  /**
-   * Number of active `.openwikiignore` patterns.
-   */
-  ignoredPatterns: number;
-
-  /**
-   * Number of stale or unresolved Claims detected before host authoring.
-   */
-  claimsIssueCount: number;
-}
-
-/**
- * Successful terminal result of a host-authored wiki run.
- */
-export interface FinishResult {
-  /**
-   * Durable lifecycle outcome.
-   */
-  status: "complete";
-
-  /**
-   * Non-fatal page-local Claims persistence warnings.
-   *
-   * @default undefined - Claims finalization completed without warnings.
-   */
-  warnings?: string[];
-}
-
-/**
- * Public, non-sensitive view of one active host run.
- */
-export interface HostRunView {
-  /**
-   * Opaque run identifier.
-   */
-  id: string;
-
-  /**
-   * Canonical repository root.
-   */
-  root: string;
-
-  /**
-   * Stable host identifier.
-   */
-  host: string;
-
-  /**
-   * Lifecycle mode selected for this run.
-   */
-  mode: HostRunMode;
-
-  /**
-   * Resolved wiki output language.
-   */
-  language: string;
-
-  /**
-   * ISO 8601 time at which the run began.
-   */
-  startedAt: string;
-}
-
-/**
- * Private state retained between begin and finish.
- */
-interface ActiveSession extends HostRunView {
-  /**
-   * Guarded documentation filesystem used by deterministic finalizers.
-   */
-  backend: OpenWikiLocalShellBackend;
-
-  /**
-   * Content baseline used by complete-run metadata persistence.
-   */
-  beforeContentSnapshot: OpenWikiContentSnapshot;
-
-  /**
-   * Deterministic state captured immediately before host authoring.
-   */
-  preparedWiki: PreparedWikiState;
-
-  /**
-   * Run-scoped Claims state shared by inspection, mutation, and finalization.
-   */
-  claimsRuntime: ClaimsRuntime;
-
-  /**
-   * Non-fatal Claims warnings accumulated during finalization.
-   */
-  claimsWarnings: string[];
-
-  /**
-   * Recoverable replacement retained until a successful init finish.
-   *
-   * @default undefined for update runs.
-   */
-  wikiReplacement?: RepositoryWikiReplacement;
-}
-
-/**
- * Owns one in-process begin/finish lifecycle for a host process.
+ * Thin single-run MCP adapter over the transport-neutral lifecycle core.
  */
 export class HostSessionManager {
   /**
-   * Current retryable run, or `null` when no run is active.
+   * Current process-local runtime for the active durable run.
    */
-  private active: ActiveSession | null = null;
+  private active: ActiveRepositoryRun | null = null;
 
   /**
-   * Whether a mutating lifecycle operation currently owns the manager.
+   * Whether one lifecycle operation currently owns this adapter.
    */
   private operationInProgress = false;
 
   /**
-   * Stable host identifier written to run metadata.
+   * Validated host identity recorded in run metadata.
    */
   private readonly host: string;
 
   /**
-   * Stable producer stamped on host-authored page bodies.
+   * Validated producer identity recorded in generated provenance.
    */
   private readonly producerActor: string;
 
   /**
-   * Clock used to create deterministic run timestamps.
+   * Clock forwarded to the repository lifecycle core.
    */
   private readonly now: () => Date;
 
   /**
-   * Creates a rootless manager after host configuration validation.
+   * Stores validated host identity and clock dependencies for one adapter.
    *
-   * @param host - Stable host identifier.
-   * @param producerActor - Stable generated-provenance producer.
-   * @param now - Run timestamp source.
+   * @param host - Validated host identity.
+   * @param producerActor - Validated generated-content producer identity.
+   * @param now - Clock used by repository lifecycle operations.
    */
   private constructor(host: string, producerActor: string, now: () => Date) {
     this.host = host;
@@ -267,10 +87,10 @@ export class HostSessionManager {
   }
 
   /**
-   * Validates configuration and creates a rootless host manager.
+   * Validates host identity and creates an empty single-run adapter.
    *
-   * @param options - Host ID and optional clock.
-   * @returns Validated lifecycle manager.
+   * @param options - Host identity, optional producer, and optional clock.
+   * @returns A validated rootless session manager.
    */
   static create(options: HostSessionManagerOptions): HostSessionManager {
     if (!isValidHostId(options.host)) {
@@ -279,6 +99,7 @@ export class HostSessionManager {
         "The host ID must contain lowercase letters, digits, or hyphens.",
       );
     }
+
     const producerActor = options.producerActor ?? options.host;
     if (!isValidHostId(producerActor)) {
       throw new HostIntegrationError(
@@ -295,258 +116,135 @@ export class HostSessionManager {
   }
 
   /**
-   * Supersedes any abandoned run, marks metadata interrupted, and prepares the
-   * wiki before returning authoring context to the host.
+   * Starts or resumes the addressed repository run.
    *
-   * @param input - Validated init or update request.
-   * @returns Safe run context and opaque run identifier.
+   * @param input - Validated repository and generation mode.
+   * @returns Active run context or a proven update no-op.
    */
-  async begin(input: BeginRequest): Promise<BeginResult> {
-    this.startOperation();
-    const supersededSession = this.active;
-    this.active = null;
-    let wikiReplacement: RepositoryWikiReplacement | undefined;
-
-    try {
-      const runId = randomUUID();
-      const runTimestamp = this.now().toISOString();
+  async begin(input: BeginRequest): Promise<unknown> {
+    return this.runOperation(async () => {
       const root = await resolveRepositoryRoot(input.root);
-      await ensureCodeModeRepoSetup(root, {
-        createWorkflow: input.mode === "init",
-      });
-      const ignore = await OpenWikiIgnore.load(root);
-      if (input.mode === "init") {
-        wikiReplacement = await beginRepositoryWikiReplacement(root);
-      }
-      const context = await createRunContext(
-        root,
-        "repository",
-        input.language,
-      );
-      const language = context.language ?? "en";
-      const updatePreflight =
-        input.mode === "update"
-          ? await getUpdateNoopStatus(root, ignore, input.language)
-          : undefined;
-      const beforeContentSnapshot = await createOpenWikiContentSnapshot(
-        root,
-        "repository",
-      );
-      const backend = new OpenWikiLocalShellBackend({
-        docsOnly: true,
-        maxOutputBytes: 100_000,
-        openWikiIgnore: ignore,
-        outputMode: "repository",
-        rootDir: root,
-        timeout: 120,
-        virtualMode: true,
-      });
-      const claimsWarnings: string[] = [];
-      const claimsRuntime = await prepareClaimsRuntime(
-        input.mode,
-        "repository",
-        root,
-        ignore,
-        (warning) => claimsWarnings.push(warning),
-      );
-      if (!claimsRuntime) {
-        throw new Error("Repository Claims runtime was not prepared.");
-      }
-
-      await writeLastUpdateMetadata(
-        input.mode,
-        root,
-        getHostAgentIdentity(this.host),
-        "repository",
-        "interrupted",
-        language,
-      );
-      const preparedWiki = await prepareWikiForAuthoring({
-        backend,
-        outputMode: "repository",
-        conceptType: resolveConceptTypeLabel(language),
-      });
-
-      const nextSession: ActiveSession = {
-        id: runId,
-        root,
-        host: this.host,
-        mode: input.mode,
-        language,
-        startedAt: runTimestamp,
-        backend,
-        beforeContentSnapshot,
-        preparedWiki,
-        claimsRuntime,
-        claimsWarnings,
-        wikiReplacement,
-      };
-
-      // A later begin deliberately supersedes an interrupted host run. Preserve
-      // the authored state from that run, matching the existing recovery
-      // behavior, while releasing any init backup it still owns.
-      await supersededSession?.wikiReplacement?.commit();
-      this.active = nextSession;
-
-      return {
-        runId,
+      const result = await beginRepositoryRun({
         root,
         mode: input.mode,
-        language,
-        lastUpdate: context.lastUpdate,
-        wikiGoal: context.wikiGoal,
-        updatePreflight,
-        ignoredPatterns: ignore.patterns.length,
-        claimsIssueCount: claimsRuntime.issueCount,
-      };
-    } catch (error) {
-      this.active = supersededSession;
-      if (wikiReplacement) {
-        try {
-          await wikiReplacement.rollback();
-        } catch (rollbackError) {
-          throw new AggregateError(
-            [error, rollbackError],
-            "Coding-agent wiki init failed and the previous wiki could not be fully restored.",
-            { cause: rollbackError },
-          );
-        }
+        language: input.language,
+        force: input.force,
+        actor: {
+          producerActor: this.producerActor,
+          metadataModel: getHostAgentIdentity(this.host),
+        },
+        now: this.now,
+      });
+
+      if (!("run" in result)) {
+        this.active = null;
+        return result.view;
       }
-      throw error;
-    } finally {
-      this.operationInProgress = false;
-    }
+
+      this.active = result.run;
+      return result.view;
+    });
   }
 
   /**
-   * Finalizes the active host-authored wiki and persists complete metadata.
-   * The session remains active when any pre-commit step fails, allowing retry.
+   * Validates and persists the active run's canonical plan.
    *
-   * @param input - Validated selector for the active run.
-   * @returns Durable completion result.
+   * @param input - Run identity and complete proposed plan.
+   * @returns The accepted queue size.
    */
-  async finish(input: RunRequest): Promise<FinishResult> {
-    this.startOperation();
-    try {
-      const session = this.requireSession(input.runId);
-
-      await removeTemporaryWorkingFiles(session.root, "repository");
-      await finalizeWikiArtifacts({
-        backend: session.backend,
-        outputMode: "repository",
-        labels: resolveIndexLabels(session.language),
-        conceptType: resolveConceptTypeLabel(session.language),
-        prepared: session.preparedWiki,
-        at: session.startedAt,
-        producerActor: this.producerActor,
-        claimSources:
-          session.claimsRuntime.session.getEvidenceResourcesByPage(),
+  async submitPlan(input: SubmitPlanRequest): Promise<unknown> {
+    return this.runOperation(async () => {
+      const run = this.requireSession(input.runId);
+      return submitRepositoryPlan(run, {
+        pages: input.pages,
+        deletePages: input.deletePages,
       });
-      await reconcileDeletedClaimPages(session);
-      await session.claimsRuntime.finalize(session.startedAt);
-      await persistRunMetadataIfChanged(
-        session.mode,
-        session.root,
-        getHostAgentIdentity(session.host),
-        "repository",
-        session.beforeContentSnapshot,
-        "complete",
-        session.language,
-      );
-      await session.wikiReplacement?.commit();
+    });
+  }
 
+  /**
+   * Returns the active run's first pending page job.
+   *
+   * @param input - Exact active run identity.
+   * @returns Current pending page context or queue completion.
+   */
+  async nextPage(input: NextPageRequest): Promise<unknown> {
+    return this.runOperation(async () => {
+      const run = this.requireSession(input.runId);
+      return nextRepositoryPage(run);
+    });
+  }
+
+  /**
+   * Submits the active job's complete material Claim set.
+   *
+   * @param input - Active job identity and complete intended Claims.
+   * @returns Completed page and remaining queue size.
+   */
+  async submitPage(input: SubmitPageRequest): Promise<unknown> {
+    return this.runOperation(async () => {
+      const run = this.requireSession(input.runId);
+      return submitRepositoryPage(run, {
+        jobId: input.jobId,
+        claims: input.claims,
+      });
+    });
+  }
+
+  /**
+   * Strictly finalizes the active run and clears process-local state.
+   *
+   * @param input - Exact active run identity.
+   * @returns Successful durable completion result.
+   */
+  async finish(input: RunRequest): Promise<unknown> {
+    return this.runOperation(async () => {
+      const run = this.requireSession(input.runId);
+      const result = await finishRepositoryRun(run);
       this.active = null;
-      return session.claimsWarnings.length > 0
-        ? { status: "complete", warnings: [...session.claimsWarnings] }
-        : { status: "complete" };
-    } finally {
-      this.operationInProgress = false;
-    }
+      return result;
+    });
   }
 
   /**
-   * Returns the safe view of a matching active run.
+   * Returns exactly the five OpenWiki 0.4 lifecycle tools.
    *
-   * @param runId - Opaque active run identifier.
-   * @returns Public run view without page contents or environment data.
-   */
-  getRun(runId: string): HostRunView {
-    return toView(this.requireSession(runId));
-  }
-
-  /**
-   * Inspects selected Claims without creating a write obligation.
-   *
-   * @param input - Active run selector and exact Claims selector.
-   * @returns Selected Claims grouped by their owning wiki page.
-   */
-  async inspectClaims(input: InspectClaimsRequest): Promise<unknown> {
-    this.startOperation();
-    try {
-      const session = this.requireSession(input.runId);
-      return await inspectClaimsOperation(session.claimsRuntime.session, {
-        ids: input.ids,
-        pages: input.pages,
-      });
-    } catch (error) {
-      throw mapClaimsError(error);
-    } finally {
-      this.operationInProgress = false;
-    }
-  }
-
-  /**
-   * Applies one cross-page Claims mutation batch to the active run.
-   *
-   * @param input - Active run selector and page-local Claims operations.
-   * @returns Applied mutation identifiers grouped by wiki page.
-   */
-  async resolveClaims(input: ResolveClaimsRequest): Promise<unknown> {
-    this.startOperation();
-    try {
-      const session = this.requireSession(input.runId);
-      return await resolveClaimsOperation(session.claimsRuntime.session, {
-        pages: input.pages,
-      });
-    } catch (error) {
-      throw mapClaimsError(error);
-    } finally {
-      this.operationInProgress = false;
-    }
-  }
-
-  /**
-   * Returns the complete transport-neutral host authoring tool set.
-   *
-   * @returns Begin and finish tools bound to this manager.
+   * @returns Ordered transport-neutral tool definitions.
    */
   tools(): readonly ProtocolTool[] {
     return [
       {
         name: "openwiki_begin",
         description:
-          "Run deterministic OpenWiki preparation before the host agent authors documentation.",
+          "Start or resume OpenWiki repository generation. Returns status=noop for a clean update, otherwise the durable planning/generation run state.",
         schema: BeginInput,
         handle: async (input) => this.begin(BeginInput.parse(input)),
       },
       {
-        name: "openwiki_inspect_claims",
-        description: INSPECT_CLAIMS_DESCRIPTION,
-        schema: InspectClaimsInput,
-        handle: async (input) =>
-          this.inspectClaims(InspectClaimsInput.parse(input)),
+        name: "openwiki_submit_plan",
+        description:
+          "Submit the final canonical page plan. OpenWiki validates it and durably persists the ordered PageJob queue before accepting it.",
+        schema: SubmitPlanInput,
+        handle: async (input) => this.submitPlan(SubmitPlanInput.parse(input)),
       },
       {
-        name: "openwiki_resolve_claims",
-        description: RESOLVE_CLAIMS_DESCRIPTION,
-        schema: ResolveClaimsInput,
-        handle: async (input) =>
-          this.resolveClaims(ResolveClaimsInput.parse(input)),
+        name: "openwiki_next_page",
+        description:
+          "Return the first pending page job and its current Claims, or status=complete when no jobs remain.",
+        schema: NextPageInput,
+        handle: async (input) => this.nextPage(NextPageInput.parse(input)),
+      },
+      {
+        name: "openwiki_submit_page",
+        description:
+          "Complete the current page job after its Markdown is written by submitting that page's complete intended repository-grounded Claim set.",
+        schema: SubmitPageInput,
+        handle: async (input) => this.submitPage(SubmitPageInput.parse(input)),
       },
       {
         name: "openwiki_finish",
         description:
-          "Run deterministic OpenWiki finalization after host authoring and complete the run.",
+          "Finish only after every PageJob is complete. Runs deterministic deletion, validation, indexing, provenance, Claims finalization, and complete metadata persistence.",
         schema: RunInput,
         handle: async (input) => this.finish(RunInput.parse(input)),
       },
@@ -554,23 +252,40 @@ export class HostSessionManager {
   }
 
   /**
-   * Resolves an active run or raises a safe lifecycle error.
+   * Returns the process-local run only when the durable run ID matches.
    *
-   * @param runId - Opaque active run identifier.
-   * @returns Matching private session state.
+   * @param runId - Run identity supplied by the host operation.
+   * @returns Matching process-local repository runtime.
    */
-  private requireSession(runId: string): ActiveSession {
-    if (!this.active || this.active.id !== runId) {
+  private requireSession(runId: string): ActiveRepositoryRun {
+    if (!this.active || this.active.state.runId !== runId) {
       throw new HostIntegrationError(
         "invalid_state",
-        "No matching OpenWiki run is active.",
+        "No matching OpenWiki run is active. Call openwiki_begin to start or resume the durable run first.",
       );
     }
     return this.active;
   }
 
   /**
-   * Claims the manager for one mutating lifecycle operation.
+   * Serializes one adapter operation and maps lifecycle errors at its boundary.
+   *
+   * @param task - Lifecycle operation that requires exclusive adapter access.
+   * @returns The operation result.
+   */
+  private async runOperation<T>(task: () => Promise<T>): Promise<T> {
+    this.startOperation();
+    try {
+      return await task();
+    } catch (error) {
+      throw mapRepositoryRunError(error);
+    } finally {
+      this.operationInProgress = false;
+    }
+  }
+
+  /**
+   * Acquires the adapter's single-operation guard or rejects concurrent work.
    */
   private startOperation(): void {
     if (this.operationInProgress) {
@@ -584,57 +299,30 @@ export class HostSessionManager {
 }
 
 /**
- * Records sidecars whose Markdown pages were deleted with native host tools.
+ * Converts lifecycle-domain errors into stable host integration errors.
  *
- * @param session - Active host run with repository and Claims state.
+ * @param error - Unknown error leaving the repository lifecycle core.
+ * @returns The mapped integration error or the original unknown error.
  */
-async function reconcileDeletedClaimPages(
-  session: ActiveSession,
-): Promise<void> {
-  const store = new ClaimsStore(session.root);
-  const currentPages = new Set(await store.discoverPages());
-  for (const page of await store.discoverSidecarPages()) {
-    if (!currentPages.has(page)) {
-      await session.claimsRuntime.session.recordDeletion(page);
-    }
+function mapRepositoryRunError(error: unknown): unknown {
+  if (!(error instanceof RepositoryRunError)) return error;
+
+  switch (error.code) {
+    case "conflict":
+      return new HostIntegrationError("conflict", error.message);
+    case "invalid_input":
+    case "not_found":
+      return new HostIntegrationError("invalid_input", error.message);
+    case "invalid_state":
+      return new HostIntegrationError("invalid_state", error.message);
   }
 }
 
 /**
- * Converts model-correctable Claims failures into bounded MCP domain errors.
+ * Derives the metadata model identity for one validated host.
  *
- * @param error - Claims or unexpected operation failure.
- * @returns Safe host error for correctable input, or the original failure.
- */
-function mapClaimsError(error: unknown): unknown {
-  return error instanceof ClaimSessionError ||
-    error instanceof EvidenceResourceError
-    ? new HostIntegrationError("invalid_input", error.message)
-    : error;
-}
-
-/**
- * Projects private session state into the public non-sensitive view.
- *
- * @param session - Active private session state.
- * @returns Safe run view.
- */
-function toView(session: ActiveSession): HostRunView {
-  return {
-    id: session.id,
-    root: session.root,
-    host: session.host,
-    mode: session.mode,
-    language: session.language,
-    startedAt: session.startedAt,
-  };
-}
-
-/**
- * Formats the stable actor shared by host-authored provenance and run metadata.
- *
- * @param host - Validated lowercase host identifier.
- * @returns Stable host-agent actor.
+ * @param host - Validated host identity.
+ * @returns Stable metadata model identity.
  */
 function getHostAgentIdentity(host: string): string {
   return `host-agent/${host}`;

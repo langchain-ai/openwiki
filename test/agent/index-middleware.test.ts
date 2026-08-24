@@ -226,7 +226,6 @@ describe("synchronizeWikiIndexes", () => {
       document("Page", "Current description."),
     );
     await backend.write("/openwiki/INSTRUCTIONS.md", "No front matter.");
-    await backend.write("/openwiki/_plan.md", "Temporary plan.");
     await synchronizeWikiIndexes(backend, "repository");
 
     const indexPath = "/openwiki/index.md";
@@ -243,7 +242,6 @@ describe("synchronizeWikiIndexes", () => {
     );
     expect(repaired).toContain("Current description.");
     expect(repaired).not.toContain("INSTRUCTIONS.md");
-    expect(repaired).not.toContain("_plan.md");
   });
 
   test("does not index the reserved OKF log document", async () => {
@@ -428,7 +426,6 @@ describe("migrateWikiToOkf", () => {
     for (const name of [
       "index.md",
       "log.md",
-      "_plan.md",
       "INSTRUCTIONS.md",
       ".secret.md",
     ]) {

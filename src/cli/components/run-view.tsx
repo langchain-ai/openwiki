@@ -9,6 +9,10 @@ import {
   buildExplorationTreeLines,
 } from "../run-log/activity.js";
 import {
+  findRepositoryProgress,
+  formatRepositoryProgress,
+} from "../run-log/progress.js";
+import {
   findRunSummary,
   formatCompletedRunCounts,
   formatRunCompletionTitle,
@@ -123,6 +127,7 @@ export function RunView({
   modelId = null,
 }: RunViewProps) {
   const summary = findRunSummary(log);
+  const repositoryProgress = findRepositoryProgress(log);
   const activities = log.filter((item) => item.type === "activity");
   const debugItems = log.filter((item) => item.type === "debug");
 
@@ -155,7 +160,11 @@ export function RunView({
         <Box flexDirection="column" marginLeft={2} marginTop={1}>
           {!done ? (
             <Text>
-              <Text bold>{getRunStage(command, activities)}</Text>
+              <Text bold>
+                {repositoryProgress
+                  ? formatRepositoryProgress(repositoryProgress, command)
+                  : getRunStage(command, activities)}
+              </Text>
             </Text>
           ) : null}
           {!done && summary ? (
@@ -176,8 +185,11 @@ export function RunView({
                 <DebugLogLine item={item} key={item.id} />
               ))
             : null}
-          {done ? <CompletedRunDetails log={log} /> : null}
-          {!done && !summary && activities.length === 0 ? (
+          {done ? <CompletedRunDetails command={command} log={log} /> : null}
+          {!done &&
+          !repositoryProgress &&
+          !summary &&
+          activities.length === 0 ? (
             <Box marginLeft={2}>
               <Text color="gray">Preparing the run...</Text>
             </Box>
@@ -215,6 +227,11 @@ function RunSpinner() {
  */
 interface CompletedRunDetailsProps {
   /**
+   * OpenWiki operation represented by the completed run.
+   */
+  command: OpenWikiCommand;
+
+  /**
    * Bounded run log containing summary counts, written paths, and final text.
    */
   log: RunLogItem[];
@@ -224,8 +241,12 @@ interface CompletedRunDetailsProps {
  * Renders written pages, aggregate counts, diagnostics, and the final assistant
  * response for a completed run.
  */
-export function CompletedRunDetails({ log }: CompletedRunDetailsProps) {
+export function CompletedRunDetails({
+  command,
+  log,
+}: CompletedRunDetailsProps) {
   const summary = findRunSummary(log);
+  const repositoryProgress = findRepositoryProgress(log);
   const assistantText = log.find((item) => item.type === "text");
   const debugItems = log.filter((item) => item.type === "debug");
   const writtenPaths = summary?.writtenPaths ?? [];
@@ -235,6 +256,11 @@ export function CompletedRunDetails({ log }: CompletedRunDetailsProps) {
 
   return (
     <Box flexDirection="column">
+      {repositoryProgress?.stage === "noop" ? (
+        <Text color="gray">
+          {formatRepositoryProgress(repositoryProgress, command)}
+        </Text>
+      ) : null}
       {visiblePaths.map((path) => (
         <Text color="gray" key={path}>
           {path}

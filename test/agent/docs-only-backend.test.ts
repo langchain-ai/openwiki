@@ -241,4 +241,69 @@ describe("OpenWikiLocalShellBackend", () => {
       ],
     ).toBe("/openwiki/page.md");
   });
+
+  test("makes planner backends read-only across every mutation path", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await mkdir(path.join(rootDir, "openwiki"));
+    await writeFile(path.join(rootDir, "openwiki/page.md"), "before", "utf8");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+      writableWikiPages: [],
+    });
+
+    const write = await backend.write("/openwiki/new.md", "bad");
+    expect(write.error).toContain("may not modify");
+    const edit = await backend.edit("/openwiki/page.md", "before", "after");
+    expect(edit.error).toContain("may not modify");
+    const deletion = await backend.delete("/openwiki/page.md");
+    expect(deletion.error).toContain("may not modify");
+    await expect(
+      backend.uploadFiles([
+        ["/openwiki/upload.md", new TextEncoder().encode("bad")],
+      ]),
+    ).resolves.toEqual([
+      expect.objectContaining({ error: "permission_denied" }),
+    ]);
+    await expect(
+      readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
+    ).resolves.toBe("before");
+  });
+
+  test("canonicalizes alternate spellings before enforcing one assigned page", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+      writableWikiPages: ["/openwiki/page.md"],
+    });
+
+    const write = await backend.write("/openwiki//page.md", "before");
+    expect(write.error).toBeUndefined();
+    const edit = await backend.edit("/openwiki/page.md", "before", "after");
+    expect(edit.error).toBeUndefined();
+
+    const platformAlternate = await backend.write(
+      "openwiki\\page.md",
+      "must not become a second file",
+    );
+    expect(platformAlternate.error).toBeUndefined();
+
+    for (const deniedPath of [
+      "/openwiki/other.md",
+      "/openwiki/page.md/../other.md",
+      "/openwiki/page.md.backup",
+      "/openwiki/../AGENTS.md",
+    ]) {
+      const denied = await backend.write(deniedPath, "bad");
+      expect(denied.error).toBeDefined();
+    }
+    await expect(
+      readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
+    ).resolves.toBe("must not become a second file");
+  });
 });

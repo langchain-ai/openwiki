@@ -1,9 +1,12 @@
 import type { BackendProtocolV2 } from "deepagents";
 import { validateWikiMermaid } from "../mermaid/wiki.js";
 import {
+  deserializeGeneratedProvenance,
   finalizeGeneratedProvenance,
+  serializeGeneratedProvenance,
   snapshotGeneratedProvenance,
   type GeneratedProvenanceSnapshot,
+  type PersistedGeneratedProvenanceSnapshot,
 } from "../okf/generated-provenance.js";
 import {
   synchronizeClaimSources,
@@ -124,6 +127,42 @@ export interface PreparedWikiState {
    * Exact pre-authoring body hashes and prior generated events.
    */
   generatedProvenance: GeneratedProvenanceSnapshot;
+}
+
+/**
+ * JSON-safe deterministic preparation state stored in `.run.json`.
+ */
+export interface PersistedPreparedWikiState {
+  /**
+   * Exact pre-authoring provenance baseline used during finalization.
+   */
+  generatedProvenance: PersistedGeneratedProvenanceSnapshot;
+}
+
+/**
+ * Serializes the preparation state required by deterministic finalization.
+ */
+export function serializePreparedWikiState(
+  prepared: PreparedWikiState,
+): PersistedPreparedWikiState {
+  return {
+    generatedProvenance: serializeGeneratedProvenance(
+      prepared.generatedProvenance,
+    ),
+  };
+}
+
+/**
+ * Recreates deterministic finalization state after process restart.
+ */
+export function deserializePreparedWikiState(
+  persisted: PersistedPreparedWikiState,
+): PreparedWikiState {
+  return {
+    generatedProvenance: deserializeGeneratedProvenance(
+      persisted.generatedProvenance,
+    ),
+  };
 }
 
 /**
