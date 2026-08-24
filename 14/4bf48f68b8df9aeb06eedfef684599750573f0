@@ -1,0 +1,26 @@
+README.md
+  s_a5fa05fa15457a::t_98bfd1b5b5d46f 35,55
+  s_a5fa05fa15457a::t_699067458a3ae1 57-61,74,99,103,114-116,234,236
+  s_a5fa05fa15457a::t_4628291e7231fa 56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "144bf48f68b8df9aeb06eedfef684599750573f0",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a5fa05fa15457a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03441-f5d6-70b2-b433-feb529211f2b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
