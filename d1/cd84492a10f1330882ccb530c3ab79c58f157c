@@ -1,0 +1,52 @@
+src/agent/wiki-finalizer.ts
+  s_a5fa05fa15457a::t_2cbbfc2ca7808b 4,6,9,132-166
+  s_a5fa05fa15457a::t_dfdd63275cc6b1 167
+test/agent/utils.test.ts
+  s_a5fa05fa15457a::t_4dad52f9648b80 157-164
+test/generation/run-state.test.ts
+  s_a5fa05fa15457a::t_d308637b2f2eed 1-8
+  s_a5fa05fa15457a::t_032fec73d75552 9-169
+src/okf/generated-provenance.ts
+  s_a5fa05fa15457a::t_b6cea0e6550532 94
+  s_a5fa05fa15457a::t_a3430b95fd8601 51-93,95-125
+src/agent/utils.ts
+  s_a5fa05fa15457a::t_b6cea0e6550532 834
+  s_a5fa05fa15457a::t_b0889682e1d9b5 789-833,835-856
+  s_a5fa05fa15457a::t_b546da91e23504 302-594
+  s_a5fa05fa15457a::t_6b34276f17bea7 3-11,27,40,711-713,718
+test/agent/repository-source-fingerprint.test.ts
+  s_a5fa05fa15457a::t_f6488f9721e345 213-237
+  s_a5fa05fa15457a::t_59251513966ef6 1-212,238-318
+test/agent/wiki-prepared-state.test.ts
+  s_a5fa05fa15457a::t_b6cea0e6550532 52-53
+  s_a5fa05fa15457a::t_5c09cf2f9537c3 1-51,54,56-83,86-87
+  s_a5fa05fa15457a::t_23c1e16f06228c 55
+  s_a5fa05fa15457a::t_d308637b2f2eed 84-85
+src/generation/run-state.ts
+  s_a5fa05fa15457a::t_97a53f805e28f2 303
+  s_a5fa05fa15457a::t_7b68783cf5e551 1-302,304-347
+src/generation/errors.ts
+  s_a5fa05fa15457a::t_bfc7ed17608024 1-4,6-24
+  s_a5fa05fa15457a::t_59524a879710cf 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "d1cd84492a10f1330882ccb530c3ab79c58f157c",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a5fa05fa15457a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03441-f5d6-70b2-b433-feb529211f2b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
