@@ -1,10 +1,11 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { OpenWikiIgnore } from "../../../../src/agent/openwiki-ignore.ts";
 import { prepareClaimsRuntime } from "../../../../src/claims/brains/code/runtime.ts";
 import { ClaimsStore } from "../../../../src/claims/brains/code/store.ts";
+import { ClaimsPersistenceError } from "../../../../src/claims/core/errors.ts";
 import {
   parseFrontmatterFields,
   setOkfVerified,
@@ -19,6 +20,7 @@ describe("prepareClaimsRuntime", () => {
   });
 
   afterEach(async () => {
+    vi.restoreAllMocks();
     await rm(rootDir, { force: true, recursive: true });
   });
 
@@ -34,6 +36,12 @@ describe("prepareClaimsRuntime", () => {
     await writeFile(absolute, content, "utf8");
   }
 
+  /**
+   * Reads one generated Markdown page.
+   *
+   * @param page - Virtual generated-page path.
+   * @returns Complete UTF-8 Markdown contents.
+   */
   async function readPage(page: string): Promise<string> {
     return readFile(path.join(rootDir, page.replace(/^\/+/, "")), "utf8");
   }
@@ -69,11 +77,13 @@ describe("prepareClaimsRuntime", () => {
     );
 
     expect(runtime?.issueCount).toBe(0);
+    expect(runtime?.issues).toEqual([]);
+    expect(runtime?.session.inspectClaims(orphanPage)).toEqual([]);
     await runtime?.finalize();
     await expect(store.loadPage(orphanPage)).resolves.toBeNull();
   });
 
-  test("surfaces pages without sidecars lazily without creating mandatory work", async () => {
+  test("does not turn pages without sidecars into mandatory or lazy work", async () => {
     const page = "/openwiki/page.md";
     await writePage(page, "# Page\n");
     const store = new ClaimsStore(rootDir);
@@ -87,9 +97,7 @@ describe("prepareClaimsRuntime", () => {
 
     expect(runtime?.issueCount).toBe(0);
     expect(runtime?.session.inspectClaims(page)).toEqual([]);
-    expect(runtime?.session.getReadNote(page)).toContain(
-      "this page has no Claims yet",
-    );
+    expect(runtime?.session.getReadNote(page)).toBeUndefined();
     await runtime?.finalize();
     await expect(store.loadPage(page)).resolves.toBeNull();
   });
@@ -319,5 +327,255 @@ describe("prepareClaimsRuntime", () => {
         at: "2026-08-20T13:00:00.000Z",
       },
     ]);
+  });
+
+  test("loads persisted Claims when resuming an interrupted init", async () => {
+    const page = "/openwiki/page.md";
+    await writePage(page, "# Page\n");
+    await writeFile(
+      path.join(rootDir, "source.ts"),
+      "export const value = 1;\n",
+    );
+    const store = new ClaimsStore(rootDir);
+    await store.writePage(page, {
+      schemaVersion: 1,
+      pageVersion: await store.hashPage(page),
+      claims: [
+        {
+          id: "claim_resumed",
+          statement: "The source exports a value.",
+          evidence: [
+            {
+              resource: "repo://source.ts",
+              version: "repo-file-v1:sha256:outdated",
+            },
+          ],
+        },
+      ],
+    });
+
+    const runtime = await prepareClaimsRuntime(
+      "init",
+      "repository",
+      rootDir,
+      new OpenWikiIgnore([]),
+      () => undefined,
+      { resumeInit: true },
+    );
+
+    expect(runtime?.session.inspectClaims(page)).toEqual([
+      {
+        id: "claim_resumed",
+        statement: "The source exports a value.",
+        evidence: ["repo://source.ts"],
+        issue: {
+          kind: "stale",
+          resources: ["repo://source.ts"],
+        },
+      },
+    ]);
+    expect(runtime?.issues).toEqual([
+      {
+        page,
+        kind: "stale",
+        claimId: "claim_resumed",
+        resources: ["repo://source.ts"],
+      },
+    ]);
+    expect(runtime?.issueCount).toBe(1);
+  });
+
+  test("rejects persistence warnings, notifies the sink, and supports retry", async () => {
+    const page = "/openwiki/page.md";
+    await writePage(page, "---\ntype: Reference\n---\n\n# Page\n");
+    await writeFile(
+      path.join(rootDir, "source.ts"),
+      "export const value = 1;\n",
+    );
+    const warnings: string[] = [];
+    const runtime = await prepareClaimsRuntime(
+      "init",
+      "repository",
+      rootDir,
+      new OpenWikiIgnore([]),
+      (warning) => warnings.push(warning),
+    );
+    await runtime?.session.resolveClaims({
+      page,
+      operations: [
+        {
+          op: "add",
+          statement: "The source exports a value.",
+          evidence: [{ resource: "repo://source.ts" }],
+        },
+      ],
+    });
+    vi.spyOn(ClaimsStore.prototype, "writePage").mockRejectedValueOnce(
+      new ClaimsPersistenceError("disk unavailable"),
+    );
+
+    await expect(runtime?.finalize("2026-08-20T12:00:00.000Z")).rejects.toThrow(
+      ClaimsPersistenceError,
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("persist Claims for /openwiki/page.md");
+
+    await expect(
+      runtime?.finalize("2026-08-20T12:30:00.000Z"),
+    ).resolves.toBeUndefined();
+    const store = new ClaimsStore(rootDir);
+    expect((await store.loadPage(page))?.verification?.at).toBe(
+      "2026-08-20T12:30:00.000Z",
+    );
+  });
+
+  test("rejects verification projection failure and remains retryable", async () => {
+    const page = "/openwiki/page.md";
+    const content = setOkfVerified("---\ntype: Reference\n---\n\n# Page\n", [
+      {
+        by: OPENWIKI_PRODUCER_ACTOR,
+        at: "2026-08-19T12:00:00.000Z",
+      },
+    ]);
+    await writePage(page, content);
+    const runtime = await prepareClaimsRuntime(
+      "update",
+      "repository",
+      rootDir,
+      new OpenWikiIgnore([]),
+    );
+    vi.spyOn(ClaimsStore.prototype, "writeMarkdown").mockRejectedValueOnce(
+      new ClaimsPersistenceError("projection unavailable"),
+    );
+
+    await expect(runtime?.finalize()).rejects.toThrow("projection unavailable");
+    expect(await readPage(page)).toBe(content);
+
+    await expect(runtime?.finalize()).resolves.toBeUndefined();
+    expect(
+      parseFrontmatterFields(await readPage(page))?.verified,
+    ).toBeUndefined();
+  });
+
+  test("rolls back verification when page-version refresh fails and resumes safely", async () => {
+    const page = "/openwiki/page.md";
+    const originalContent = "---\ntype: Reference\n---\n\n# Page\n";
+    await writePage(page, originalContent);
+    await writeFile(
+      path.join(rootDir, "source.ts"),
+      "export const value = 1;\n",
+    );
+    const runtime = await prepareClaimsRuntime(
+      "init",
+      "repository",
+      rootDir,
+      new OpenWikiIgnore([]),
+    );
+    await runtime?.session.resolveClaims({
+      page,
+      operations: [
+        {
+          op: "add",
+          statement: "The source exports a value.",
+          evidence: [{ resource: "repo://source.ts" }],
+        },
+      ],
+    });
+
+    const originalStore = new ClaimsStore(rootDir);
+    const originalWritePage = originalStore.writePage.bind(originalStore);
+    let writeCount = 0;
+    const writeSpy = vi
+      .spyOn(ClaimsStore.prototype, "writePage")
+      .mockImplementation(async function (pageInput, state) {
+        writeCount += 1;
+        if (writeCount === 2) {
+          throw new ClaimsPersistenceError("refresh unavailable");
+        }
+        return originalWritePage(pageInput, state);
+      });
+
+    await expect(runtime?.finalize("2026-08-20T12:00:00.000Z")).rejects.toThrow(
+      ClaimsPersistenceError,
+    );
+    expect(await readPage(page)).toBe(originalContent);
+    const store = new ClaimsStore(rootDir);
+    expect((await store.loadPage(page))?.verification?.at).toBe(
+      "2026-08-20T12:00:00.000Z",
+    );
+
+    writeSpy.mockRestore();
+    const resumed = await prepareClaimsRuntime(
+      "init",
+      "repository",
+      rootDir,
+      new OpenWikiIgnore([]),
+      () => undefined,
+      { resumeInit: true },
+    );
+    await resumed?.finalize("2026-08-20T12:30:00.000Z");
+
+    expect(parseFrontmatterFields(await readPage(page))?.verified).toEqual([
+      {
+        by: OPENWIKI_PRODUCER_ACTOR,
+        at: "2026-08-20T12:00:00.000Z",
+      },
+    ]);
+    expect((await store.loadPage(page))?.pageVersion).toBe(
+      await store.hashPage(page),
+    );
+  });
+
+  test("rejects orphan cleanup failure and removes the sidecar on retry", async () => {
+    const orphanPage = "/openwiki/orphan.md";
+    const store = new ClaimsStore(rootDir);
+    await store.writePage(orphanPage, {
+      schemaVersion: 1,
+      pageVersion: `sha256:${"a".repeat(64)}`,
+      claims: [],
+    });
+    const runtime = await prepareClaimsRuntime(
+      "init",
+      "repository",
+      rootDir,
+      new OpenWikiIgnore([]),
+    );
+    vi.spyOn(ClaimsStore.prototype, "deletePage").mockRejectedValueOnce(
+      new ClaimsPersistenceError("cleanup unavailable"),
+    );
+
+    await expect(runtime?.finalize()).rejects.toThrow(ClaimsPersistenceError);
+    await expect(store.loadPage(orphanPage)).resolves.not.toBeNull();
+
+    await expect(runtime?.finalize()).resolves.toBeUndefined();
+    await expect(store.loadPage(orphanPage)).resolves.toBeNull();
+  });
+
+  test("rejects deleted-page cleanup failure and removes the sidecar on retry", async () => {
+    const page = "/openwiki/deleted.md";
+    await writePage(page, "# Deleted\n");
+    const store = new ClaimsStore(rootDir);
+    await store.writePage(page, {
+      schemaVersion: 1,
+      pageVersion: await store.hashPage(page),
+      claims: [],
+    });
+    const runtime = await prepareClaimsRuntime(
+      "update",
+      "repository",
+      rootDir,
+      new OpenWikiIgnore([]),
+    );
+    await runtime?.session.recordDeletion(page);
+    await rm(path.join(rootDir, "openwiki", "deleted.md"));
+    vi.spyOn(ClaimsStore.prototype, "deletePage").mockRejectedValueOnce(
+      new ClaimsPersistenceError("deletion cleanup unavailable"),
+    );
+
+    await expect(runtime?.finalize()).rejects.toThrow(ClaimsPersistenceError);
+    await expect(store.loadPage(page)).resolves.not.toBeNull();
+
+    await expect(runtime?.finalize()).resolves.toBeUndefined();
+    await expect(store.loadPage(page)).resolves.toBeNull();
   });
 });
