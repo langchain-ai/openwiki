@@ -160,8 +160,11 @@ async function finalizeVerificationProjection(
     store,
     verificationByPage,
   );
+  // Deterministic finalizers may have changed code-owned frontmatter without
+  // changing the verification event. Refresh every represented page so Claims
+  // sidecars always describe the final Markdown bytes.
   const refreshed = await session.refreshPageVersions(store, [
-    ...originals.keys(),
+    ...verificationByPage.keys(),
   ]);
   const unsafeStamps = refreshed.failedPages.filter(
     (page) =>
