@@ -622,6 +622,10 @@ describe("finishRepositoryRun", () => {
       by: OPENWIKI_PRODUCER_ACTOR,
       at: STARTED_AT,
     });
+    expect(fields?.generated).toEqual({
+      by: ACTOR.producerActor,
+      at: STARTED_AT,
+    });
     expect(fields?.sources).toEqual([
       expect.objectContaining({ resource: "repo://README.md" }),
     ]);

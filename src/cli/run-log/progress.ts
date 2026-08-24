@@ -36,7 +36,7 @@ export function formatRepositoryProgress(
         ? "Resuming repository wiki planning"
         : "Planning repository wiki";
     case "replanning":
-      return "Repository source changed · replanning wiki";
+      return "Repository changed during generation · rebuilding the plan";
     case "generating":
       return formatPageProgress(progress);
     case "finalizing":

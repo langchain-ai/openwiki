@@ -188,6 +188,7 @@ export async function runNativeRepositoryGeneration(
   options: NativeRepositoryGenerationOptions,
 ): Promise<NativeRepositoryGenerationResult> {
   let begun = await beginNativeRepositoryRun(options);
+  let replanningAfterSourceDrift = false;
 
   while (true) {
     if (!("run" in begun)) {
@@ -199,7 +200,7 @@ export async function runNativeRepositoryGeneration(
     if (run.state.phase === "planning") {
       options.onEvent?.({
         type: "repository_progress",
-        stage: "planning",
+        stage: replanningAfterSourceDrift ? "replanning" : "planning",
         resumed: view.resumed,
       });
       await runPlanningAgent(
@@ -232,6 +233,7 @@ export async function runNativeRepositoryGeneration(
         stage: "replanning",
         resumed: true,
       });
+      replanningAfterSourceDrift = true;
       begun = await beginNativeRepositoryRun(options);
     }
   }

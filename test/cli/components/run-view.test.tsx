@@ -111,7 +111,7 @@ describe("RunView", () => {
     ];
     const active = render(<RunView command="update" log={replanning} />);
     expect(plain(active.lastFrame())).toContain(
-      "Repository source changed · replanning wiki",
+      "Repository changed during generation · rebuilding the plan",
     );
     active.unmount();
 

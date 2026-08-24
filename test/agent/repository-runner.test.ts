@@ -576,6 +576,12 @@ describe("runNativeRepositoryGeneration", () => {
         (event) =>
           event.type === "repository_progress" && event.stage === "planning",
       ),
+    ).toHaveLength(1);
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "repository_progress" && event.stage === "replanning",
+      ),
     ).toHaveLength(2);
   });
 
