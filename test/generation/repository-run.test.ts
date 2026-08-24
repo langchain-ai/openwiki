@@ -286,6 +286,9 @@ describe("beginRepositoryRun", () => {
       updatePreflight: { shouldSkip: true },
     });
     expect(await readRepositoryRunState(root)).toBeNull();
+    await expect(
+      readFile(repositoryRunStatePath(root), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   test("Claims preflight prevents a Git-clean update from skipping", async () => {
@@ -330,6 +333,18 @@ describe("beginRepositoryRun", () => {
     await expect(readRepositoryRunState(root)).resolves.toMatchObject({
       phase: "planning",
     });
+
+    await expect(submitRepositoryPlan(run, { pages: [] })).resolves.toEqual({
+      status: "accepted",
+      totalPages: 1,
+    });
+    expect(run.state.plan?.pages).toEqual([
+      expect.objectContaining({
+        path: "/openwiki/quickstart.md",
+        seedPaths: ["README.md"],
+        status: "pending",
+      }),
+    ]);
   });
 
   test("resumes the same owner while rejecting mode, language, and producer conflicts", async () => {
@@ -718,7 +733,11 @@ describe("finishRepositoryRun", () => {
   });
 
   test("applies explicit existing-page deletions with Claims cleanup", async () => {
-    const root = await createRepository(["delete-me.md"]);
+    const root = await createRepository(["delete-me.md", "keep-me.md"]);
+    const keptBefore = await readFile(
+      path.join(root, "openwiki", "keep-me.md"),
+      "utf8",
+    );
     const store = new ClaimsStore(root);
     await store.writePage("/openwiki/delete-me.md", {
       schemaVersion: 1,
@@ -737,6 +756,9 @@ describe("finishRepositoryRun", () => {
       readFile(path.join(root, "openwiki", "delete-me.md"), "utf8"),
     ).rejects.toMatchObject({ code: "ENOENT" });
     await expect(store.loadPage("/openwiki/delete-me.md")).resolves.toBeNull();
+    await expect(
+      readFile(path.join(root, "openwiki", "keep-me.md"), "utf8"),
+    ).resolves.toBe(keptBefore);
   });
 
   test("leaves a fully finalized run resumable when final state removal fails", async () => {
@@ -767,5 +789,252 @@ describe("finishRepositoryRun", () => {
       status: "complete",
     });
     expect(await readRepositoryRunState(root)).toBeNull();
+  });
+});
+
+describe("update hardening", () => {
+  test("creates a planned page for a new source file and completes it durably", async () => {
+    const root = await createRepository();
+    await mkdir(path.join(root, "src"), { recursive: true });
+    await writeFile(
+      path.join(root, "src", "new-feature.ts"),
+      "export const newFeature = true;\n",
+      "utf8",
+    );
+
+    const result = await beginRepositoryRun({
+      root,
+      mode: "update",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+    const run = requireActiveRun(result);
+    expect(result.view).toMatchObject({
+      status: "active",
+      changedPaths: ["src/new-feature.ts"],
+    });
+    await submitRepositoryPlan(run, {
+      pages: [
+        {
+          path: "/openwiki/new-feature.md",
+          title: "New Feature",
+          purpose: "Document the newly added feature source.",
+          seedPaths: ["src/new-feature.ts"],
+        },
+      ],
+    });
+    const next = await nextRepositoryPage(run);
+    if (next.status !== "pending") {
+      throw new Error("Expected the new feature page job.");
+    }
+    expect(next.job).toMatchObject({
+      path: "/openwiki/new-feature.md",
+      existing: false,
+      seedPaths: ["src/new-feature.ts"],
+    });
+    await run.backend.write(next.job.path, validPage("New Feature"));
+    await submitRepositoryPage(run, {
+      jobId: next.job.id,
+      claims: [
+        {
+          statement: "The repository exports a new feature flag.",
+          evidence: [{ resource: "repo://src/new-feature.ts" }],
+        },
+      ],
+    });
+
+    await expect(finishRepositoryRun(run)).resolves.toEqual({
+      status: "complete",
+    });
+    await expect(
+      readFile(path.join(root, "openwiki", "new-feature.md"), "utf8"),
+    ).resolves.toContain("# New Feature");
+    await expect(
+      new ClaimsStore(root).loadPage("/openwiki/new-feature.md"),
+    ).resolves.toMatchObject({
+      claims: [
+        expect.objectContaining({
+          statement: "The repository exports a new feature flag.",
+        }),
+      ],
+    });
+  });
+
+  test("queues the owning page when deleted source makes a Claim unresolved", async () => {
+    const root = await createRepository();
+    const store = new ClaimsStore(root);
+    await store.writePage("/openwiki/quickstart.md", {
+      schemaVersion: 1,
+      pageVersion: await store.hashPage("/openwiki/quickstart.md"),
+      claims: [
+        {
+          id: "claim_deleted_source",
+          statement: "The repository has a README.",
+          evidence: [
+            {
+              resource: "repo://README.md",
+              version: "repo-file-v1:sha256:previous",
+            },
+          ],
+        },
+      ],
+    });
+    await rm(path.join(root, "README.md"));
+
+    const result = await beginRepositoryRun({
+      root,
+      mode: "update",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+    const run = requireActiveRun(result);
+    expect(result.view).toMatchObject({
+      changedPaths: ["README.md"],
+      claimIssues: [
+        {
+          page: "/openwiki/quickstart.md",
+          claimId: "claim_deleted_source",
+          kind: "unresolved",
+          resources: ["repo://README.md"],
+        },
+      ],
+    });
+
+    await expect(submitRepositoryPlan(run, { pages: [] })).resolves.toEqual({
+      status: "accepted",
+      totalPages: 1,
+    });
+    expect(run.state.plan?.pages).toEqual([
+      expect.objectContaining({
+        path: "/openwiki/quickstart.md",
+        seedPaths: ["README.md"],
+        status: "pending",
+      }),
+    ]);
+  });
+
+  test("adds every existing factual page to a language-change rewrite queue", async () => {
+    const root = await createRepository(["architecture.md"]);
+
+    const result = await beginRepositoryRun({
+      root,
+      mode: "update",
+      language: "fr",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+    const run = requireActiveRun(result);
+    expect(result.view).toMatchObject({
+      status: "active",
+      language: "fr",
+      languageChanged: true,
+    });
+    await expect(submitRepositoryPlan(run, { pages: [] })).resolves.toEqual({
+      status: "accepted",
+      totalPages: 2,
+    });
+    expect(run.state.plan?.pages.map(({ path: page }) => page)).toEqual([
+      "/openwiki/architecture.md",
+      "/openwiki/quickstart.md",
+    ]);
+    expect(
+      run.state.plan?.pages.every(({ purpose }) =>
+        purpose.includes("target language"),
+      ),
+    ).toBe(true);
+
+    await completeCurrentPage(run, "Architecture");
+    await completeCurrentPage(run, "Quickstart");
+    await finishRepositoryRun(run);
+
+    await expect(
+      readFile(path.join(root, "openwiki", ".last-update.json"), "utf8").then(
+        JSON.parse,
+      ),
+    ).resolves.toMatchObject({ status: "complete", language: "fr" });
+  });
+
+  test("leaves an unaffected page byte-for-byte unchanged", async () => {
+    const root = await createRepository(["unaffected.md"]);
+    const unaffectedPath = path.join(root, "openwiki", "unaffected.md");
+    const before = await readFile(unaffectedPath, "utf8");
+    await writeFile(
+      path.join(root, "README.md"),
+      "# Repository\n\nUpdated source context.\n",
+      "utf8",
+    );
+    const result = await beginRepositoryRun({
+      root,
+      mode: "update",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+    const run = requireActiveRun(result);
+    expect(result.view).toMatchObject({ changedPaths: ["README.md"] });
+    await submitRepositoryPlan(run, {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Refresh only the repository entry point.",
+        },
+      ],
+    });
+    await completeCurrentPage(run, "Quickstart");
+    await finishRepositoryRun(run);
+
+    await expect(readFile(unaffectedPath, "utf8")).resolves.toBe(before);
+  });
+
+  test("resumes an interrupted update from its first pending page", async () => {
+    const root = await createRepository(["second.md"]);
+    const initial = await beginForcedUpdate(root);
+    await submitRepositoryPlan(initial, {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Refresh the repository entry point.",
+        },
+        {
+          path: "/openwiki/second.md",
+          title: "Second",
+          purpose: "Refresh the secondary guide.",
+        },
+      ],
+    });
+    await completeCurrentPage(initial, "Second");
+    const completedJobId = initial.state.plan?.pages[0]?.id;
+
+    const resumedResult = await beginRepositoryRun({
+      root,
+      mode: "update",
+      actor: ACTOR,
+    });
+    const resumed = requireActiveRun(resumedResult);
+    expect(resumedResult.view).toMatchObject({
+      status: "active",
+      phase: "generating",
+      resumed: true,
+      completedPages: 1,
+      totalPages: 2,
+    });
+    const next = await nextRepositoryPage(resumed);
+    if (next.status !== "pending") {
+      throw new Error("Expected the remaining quickstart job.");
+    }
+    expect(next.job).toMatchObject({
+      path: "/openwiki/quickstart.md",
+      status: "pending",
+    });
+    expect(next.job.id).not.toBe(completedJobId);
+
+    await completeCurrentPage(resumed, "Quickstart");
+    await expect(nextRepositoryPage(resumed)).resolves.toEqual({
+      status: "complete",
+    });
+    await expect(finishRepositoryRun(resumed)).resolves.toEqual({
+      status: "complete",
+    });
   });
 });

@@ -63,6 +63,7 @@ type HarnessPlanInput = {
 const harness = vi.hoisted(() => ({
   agentOptions: [] as CapturedAgentOptions[],
   beginCalls: 0,
+  changedPaths: ["README.md"],
   currentRun: undefined as HarnessRun | undefined,
   driftOnce: false,
   filesystemTools: [] as string[][],
@@ -210,7 +211,7 @@ vi.mock("../../src/generation/repository-run.js", () => ({
         phase: run.state.phase,
         resumed: harness.resumed || harness.beginCalls > 1,
         lastUpdate: null,
-        changedPaths: ["README.md"],
+        changedPaths: [...harness.changedPaths],
         claimIssues: [],
         completedPages:
           run.state.plan?.pages.filter(({ status }) => status === "complete")
@@ -308,6 +309,7 @@ async function runHarness(): Promise<OpenWikiRunEvent[]> {
 beforeEach(() => {
   harness.agentOptions = [];
   harness.beginCalls = 0;
+  harness.changedPaths = ["README.md"];
   harness.currentRun = undefined;
   harness.driftOnce = false;
   harness.filesystemTools = [];
@@ -355,6 +357,20 @@ describe("runNativeRepositoryGeneration", () => {
     expect(events.some((event) => event.type === "text")).toBe(false);
     expect(events).toContainEqual(
       expect.objectContaining({ type: "tool_start", name: "write_file" }),
+    );
+  });
+
+  test("maps a newly changed source path through planning into a new page job", async () => {
+    harness.changedPaths = ["src/new-feature.ts"];
+    harness.planPaths = ["/openwiki/new-feature.md"];
+
+    await runHarness();
+
+    expect(String(harness.agentOptions[0]?.systemPrompt)).toContain(
+      "src/new-feature.ts",
+    );
+    expect(String(harness.agentOptions[1]?.systemPrompt)).toContain(
+      "You own exactly /openwiki/new-feature.md",
     );
   });
 
