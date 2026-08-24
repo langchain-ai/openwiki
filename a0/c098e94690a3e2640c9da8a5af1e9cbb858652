@@ -1,0 +1,29 @@
+.changeset/bright-opencode-integration.md
+  h_f78d33d4280f3f 5
+  s_a5fa05fa15457a::t_44eebb086b0400 2
+README.md
+  s_a5fa05fa15457a::t_44eebb086b0400 35,55-61,74,100,104,115-117,235,237
+CONTRIBUTING.md
+  s_a5fa05fa15457a::t_44eebb086b0400 45-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "a0c098e94690a3e2640c9da8a5af1e9cbb858652",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a5fa05fa15457a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03441-f5d6-70b2-b433-feb529211f2b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
