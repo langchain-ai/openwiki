@@ -13,7 +13,7 @@ import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 
 /**
  * Wraps a `messages` payload in the normalized protocol-event envelope that
- * isProtocolStreamEvent() accepts. `namespace` length > 1 marks a subgraph.
+ * isProtocolStreamEvent() accepts. Any non-empty namespace marks a subgraph.
  */
 function messagesChunk(data: unknown, namespace: unknown[] = []): unknown {
   return {
@@ -25,13 +25,13 @@ function messagesChunk(data: unknown, namespace: unknown[] = []): unknown {
 
 /**
  * Wraps a `tools` payload (the tool lifecycle record) in the protocol-event
- * envelope. The tools branch never reads `namespace`, so it is omitted here.
+ * envelope.
  */
-function toolsChunk(data: unknown): unknown {
+function toolsChunk(data: unknown, namespace: unknown[] = []): unknown {
   return {
     type: "event",
     method: "tools",
-    params: { data },
+    params: { data, namespace },
   };
 }
 
@@ -79,11 +79,7 @@ describe("parseStreamEvent – messages source tagging", () => {
   });
 
   test("a nested namespace tags the event as coming from a subgraph", () => {
-    // isSubgraphProtocolEvent keys off namespace.length > 1, so a two-segment
-    // namespace routes streamed text through the subgraph label.
-    const event = parseStreamEvent(
-      messagesChunk("hello from sub", ["parent", "child"]),
-    );
+    const event = parseStreamEvent(messagesChunk("hello from sub", ["task"]));
 
     expect(event).toMatchObject({ source: "subgraph", type: "text" });
   });
@@ -350,6 +346,28 @@ describe("parseStreamEvent – tools branch", () => {
       id: "c3",
       name: "write_file",
       status: "finished",
+    });
+  });
+
+  test("preserves tool activity emitted by a subgraph", () => {
+    const event = parseStreamEvent(
+      toolsChunk(
+        {
+          event: "on_tool_start",
+          name: "read_file",
+          toolCallId: "nested-read",
+          input: { path: "/src/agent/index.ts" },
+        },
+        ["task"],
+      ),
+    );
+
+    expect(event).toEqual({
+      type: "tool_start",
+      call: 'read_file(path="/src/agent/index.ts")',
+      id: "nested-read",
+      input: { path: "/src/agent/index.ts" },
+      name: "read_file",
     });
   });
 

@@ -238,6 +238,25 @@ describe("createUserPrompt", () => {
     expect(prompt).not.toContain("Additional user instruction:");
   });
 
+  test("repository init describes a brand-new generation", () => {
+    const userPrompt = createUserPrompt(
+      "init",
+      emptyContext(),
+      null,
+      "repository",
+    );
+    const systemPrompt = createSystemPrompt("init", "repository");
+
+    expect(userPrompt).toContain("Generate a brand-new wiki");
+    expect(userPrompt).toContain(
+      "Prior generated pages and Claims are unavailable",
+    );
+    expect(systemPrompt).toContain("This is a brand-new generation");
+    expect(systemPrompt).toContain(
+      "The user-authored /openwiki/INSTRUCTIONS.md brief is preserved",
+    );
+  });
+
   test("init uses the personal-brain subject label in local-wiki mode", () => {
     const prompt = createUserPrompt("init", emptyContext(), null, "local-wiki");
 
@@ -288,6 +307,152 @@ describe("createUserPrompt", () => {
     expect(prompt).toContain("focus on auth");
     // The block is trimmed, so no leading/trailing whitespace leaks through.
     expect(prompt).not.toContain("  focus on auth  ");
+  });
+
+  test("does not inject global Claims debt into repository updates", () => {
+    const prompt = createUserPrompt(
+      "update",
+      emptyContext(),
+      null,
+      "repository",
+      "/repo",
+    );
+
+    expect(prompt).not.toContain("Grounding issues that must be reconciled:");
+    expect(prompt).toContain(
+      "Determine the affected documentation from repository changes rather than from Claims debt",
+    );
+  });
+
+  test("explains that page-local Claims notes are relevant-only", () => {
+    const prompt = createUserPrompt(
+      "update",
+      emptyContext(),
+      null,
+      "repository",
+      "/repo",
+    );
+
+    expect(prompt).toContain(
+      "inspect and resolve only affected propositions relevant to this task",
+    );
+  });
+});
+
+describe("createSystemPrompt Claims workflow", () => {
+  test("combines Claims authoring with init-only breadth and QA reviewers", () => {
+    for (const command of ["init", "update"] as const) {
+      const prompt = createSystemPrompt(command, "repository");
+
+      expect(prompt).toContain("resolve_claims");
+      expect(prompt).toContain(
+        "Claims currently support repository evidence only",
+      );
+      expect(prompt).toContain(
+        "Do not invent repository evidence for connector-derived facts",
+      );
+      expect(prompt).toContain("Leave LangSmith-only facts unclaimed");
+      expect(prompt).toContain("substantive system truth");
+      expect(prompt).toContain("connect multiple components");
+      expect(prompt).toContain("materiality test");
+      expect(prompt).toContain("architectural model");
+      expect(prompt).toContain(
+        "Completeness takes priority over minimizing Claim count",
+      );
+      expect(prompt).toContain(
+        "same function or component already supports another Claim",
+      );
+      expect(prompt).toContain("semantically duplicate Claims");
+      expect(prompt).not.toContain("update_claims");
+      expect(prompt).not.toContain("fetch_claims");
+      if (command === "update") {
+        expect(prompt).toContain("inspect_claims");
+        expect(prompt).toContain(
+          "edits limited to style or navigation require no Claims call",
+        );
+        expect(prompt).toContain("resolve_claims is a required authoring step");
+        expect(prompt).toContain(
+          "before the first write_file or edit_file call for that page",
+        );
+        expect(prompt).toContain("Never defer this until after writing");
+        expect(prompt).toContain(
+          "Do not backfill Claims for unrelated existing prose",
+        );
+        expect(prompt).toContain(
+          "Do not write first and reconcile Claims afterward",
+        );
+        expect(prompt).not.toContain("lazily migrate");
+        expect(prompt).toContain(
+          "Inspect and resolve only IDs relevant to the current task",
+        );
+        expect(prompt).toContain("one concise, atomic proposition");
+        expect(prompt).toContain("Split lists, compound summaries");
+        expect(prompt).toContain(
+          "note IDs from every affected page together in one inspect_claims call",
+        );
+        expect(prompt).toContain("Use the pages selector only as a fallback");
+        expect(prompt).toContain(
+          "every page and its operations into one resolve_claims call",
+        );
+      }
+      expect(prompt).toContain(
+        "Never use execute to create, edit, move, or delete generated wiki files",
+      );
+      expect(prompt).not.toContain("_skeleton.md");
+      if (command === "init") {
+        expect(prompt).toContain("skeleton-critic");
+        expect(prompt).toContain("Information architecture");
+        expect(prompt).toContain(
+          "A flat root containing pages from several coherent domains is not acceptable",
+        );
+        expect(prompt).toContain(
+          "collapse unjustified single-page directories",
+        );
+        expect(prompt).toContain(
+          "A named domain containing multiple pages should normally be a directory",
+        );
+        expect(prompt).toContain(
+          "Do not use generic umbrella directories such as architecture/",
+        );
+        expect(prompt).toContain(
+          "Treat every path in the approved tree as the page's final path",
+        );
+        expect(prompt).toContain(
+          "until every taxonomy request is resolved in /openwiki/_plan.md",
+        );
+        expect(prompt).toContain(
+          "Do not invoke general-purpose subagents for standalone research or evidence briefs",
+        );
+        expect(prompt).toContain(
+          "at most nine general-purpose subagents total",
+        );
+        expect(prompt).toContain(
+          "research, establish Claims, and write those pages in the same invocation",
+        );
+        expect(prompt).toContain(
+          "Never split one domain into a standalone general-purpose research task followed by a separate authoring task",
+        );
+        expect(prompt).toContain(
+          "Do not create a separate repository-wide evidence-brief phase",
+        );
+        expect(prompt).toContain(
+          "do not wait for or commission a separate evidence pass over the complete inventory",
+        );
+        expect(prompt).toContain(
+          "Never introduce an ad-hoc page path that is absent from the plan",
+        );
+        expect(prompt).toContain("wiki-question-finder");
+        expect(prompt).toContain("wiki-answer-verifier");
+        expect(prompt).toContain(
+          "Maintain affected propositions with resolve_claims",
+        );
+        expect(prompt).toContain("subagents never mutate Claims or Markdown");
+      } else {
+        expect(prompt).not.toContain("skeleton-critic");
+        expect(prompt).not.toContain("wiki-question-finder");
+        expect(prompt).not.toContain("wiki-answer-verifier");
+      }
+    }
   });
 });
 

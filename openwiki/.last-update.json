@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-08-18T08:17:35.950Z",
+  "updatedAt": "2026-08-24T08:15:21.900Z",
   "command": "update",
-  "gitHead": "21746ce996f3a69898883da58b122770f7dbd668",
-  "model": "z-ai/glm-5.2",
+  "gitHead": "a525ed88fe1f189d08e0f0acf12f42caec2b600e",
+  "model": "claude-opus-4-8",
   "status": "complete",
   "language": "en"
 }

@@ -154,7 +154,7 @@ function emitText(
   onEvent: ((event: OpenWikiRunEvent) => void) | undefined,
   text: string,
 ): void {
-  onEvent?.({ source: "main", text, type: "text" });
+  onEvent?.({ text, type: "text" });
 }
 
 /**

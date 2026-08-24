@@ -35,6 +35,7 @@ export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
   "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
 export const OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY =
   "OPENWIKI_OPENROUTER_MAX_TOKENS";
+export const OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY = "OPENWIKI_MAX_OUTPUT_TOKENS";
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
   "BEDROCK_AWS_SECRET_ACCESS_KEY";
@@ -57,7 +58,6 @@ export const GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY =
 export const DEFAULT_VERTEX_LOCATION = "global";
 export const OPENWIKI_PROVIDER_ENV_KEY = "OPENWIKI_PROVIDER";
 export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
-export const OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY = "OPENWIKI_MAX_OUTPUT_TOKENS";
 export const OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY =
   "OPENWIKI_STREAM_IDLE_TIMEOUT";
 const MAX_STREAM_IDLE_TIMEOUT_MS = 2_147_483_647;
@@ -66,6 +66,7 @@ export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
 export const OPENWIKI_REASONING_EFFORT_ENV_KEY = "OPENWIKI_REASONING_EFFORT";
 export const DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3;
+export const DEFAULT_ANTHROPIC_MAX_OUTPUT_TOKENS = 16_384;
 const TRUE_ENV_VALUE = "true";
 export const OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY =
   "OPENWIKI_GOOGLE_ACCESS_TOKEN";
@@ -1059,10 +1060,65 @@ export function resolveOpenAiCompatibleStreaming(
 // rejects the request with 402 when the balance can't cover that worst case.
 // Setting a cap trades those hard 402 failures for possible truncation
 // (finish_reason "length") when a generation genuinely needs more tokens.
+/**
+ * Resolves the legacy OpenRouter-specific output-token cap.
+ *
+ * This setting remains supported so existing installations keep their
+ * provider-specific credit limit. New configuration should use
+ * {@link OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY} unless OpenRouter intentionally
+ * needs a different cap from every other provider.
+ *
+ * @param env - Environment containing the optional legacy setting.
+ * @returns The configured positive integer, or `undefined` when unset.
+ */
 export function resolveOpenRouterMaxTokens(
   env: NodeJS.ProcessEnv = process.env,
 ): number | undefined {
-  const rawMaxTokens = env[OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY];
+  return resolvePositiveIntegerSetting(
+    OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY,
+    env,
+  );
+}
+
+/**
+ * Resolves the per-request output-token cap for the selected provider.
+ *
+ * OpenWiki exposes one provider-neutral setting because a run constructs only
+ * one model. The model factory translates the returned value to each SDK's
+ * field name. OpenRouter's older provider-specific setting takes precedence on
+ * OpenRouter runs so existing low-balance configurations remain unchanged.
+ *
+ * @param provider - Provider selected for the current run.
+ * @param env - Environment containing optional output-token settings.
+ * @returns The configured positive integer, or `undefined` when unset.
+ */
+export function resolveConfiguredMaxOutputTokens(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  if (
+    provider === "openrouter" &&
+    env[OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY] !== undefined
+  ) {
+    return resolveOpenRouterMaxTokens(env);
+  }
+
+  return resolveMaxOutputTokens(env);
+}
+
+/**
+ * Parses an optional positive-integer environment setting without accepting
+ * alternate numeric spellings such as fractions, exponents, or hexadecimal.
+ *
+ * @param envKey - Environment variable being parsed for error reporting.
+ * @param env - Environment containing the optional setting.
+ * @returns The parsed safe integer, or `undefined` when unset.
+ */
+function resolvePositiveIntegerSetting(
+  envKey: string,
+  env: NodeJS.ProcessEnv,
+): number | undefined {
+  const rawMaxTokens = env[envKey];
 
   if (rawMaxTokens === undefined) {
     return undefined;
@@ -1071,17 +1127,13 @@ export function resolveOpenRouterMaxTokens(
   const maxTokens = rawMaxTokens.trim();
 
   if (!/^[1-9]\d*$/u.test(maxTokens)) {
-    throw new Error(
-      `Invalid ${OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY}. Expected a positive integer.`,
-    );
+    throw new Error(`Invalid ${envKey}. Expected a positive integer.`);
   }
 
   const parsedMaxTokens = Number(maxTokens);
 
   if (!Number.isSafeInteger(parsedMaxTokens)) {
-    throw new Error(
-      `Invalid ${OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY}. Expected a positive integer.`,
-    );
+    throw new Error(`Invalid ${envKey}. Expected a positive integer.`);
   }
 
   return parsedMaxTokens;

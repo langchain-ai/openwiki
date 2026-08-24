@@ -28,6 +28,7 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  resolveConfiguredMaxOutputTokens,
   providerUsesStreaming,
   resolveConfiguredProvider,
   resolveMaxOutputTokens,
@@ -585,6 +586,39 @@ describe("resolveOpenRouterMaxTokens", () => {
       expect(() =>
         resolveOpenRouterMaxTokens({ OPENWIKI_OPENROUTER_MAX_TOKENS: value }),
       ).toThrow(/OPENWIKI_OPENROUTER_MAX_TOKENS/u);
+    }
+  });
+});
+
+describe("resolveConfiguredMaxOutputTokens", () => {
+  test("returns undefined when no provider-neutral limit is configured", () => {
+    expect(resolveConfiguredMaxOutputTokens("anthropic", {})).toBeUndefined();
+  });
+
+  test("parses one provider-neutral limit for any selected provider", () => {
+    const env = { OPENWIKI_MAX_OUTPUT_TOKENS: " 16384 " };
+
+    expect(resolveConfiguredMaxOutputTokens("anthropic", env)).toBe(16_384);
+    expect(resolveConfiguredMaxOutputTokens("gemini", env)).toBe(16_384);
+    expect(resolveConfiguredMaxOutputTokens("openai", env)).toBe(16_384);
+  });
+
+  test("preserves the OpenRouter-specific override precedence", () => {
+    expect(
+      resolveConfiguredMaxOutputTokens("openrouter", {
+        OPENWIKI_MAX_OUTPUT_TOKENS: "16384",
+        OPENWIKI_OPENROUTER_MAX_TOKENS: "8192",
+      }),
+    ).toBe(8192);
+  });
+
+  test("rejects invalid provider-neutral limits", () => {
+    for (const value of ["0", "-1", "1.5", "abc", "", "1e3"]) {
+      expect(() =>
+        resolveConfiguredMaxOutputTokens("openai", {
+          OPENWIKI_MAX_OUTPUT_TOKENS: value,
+        }),
+      ).toThrow(/OPENWIKI_MAX_OUTPUT_TOKENS/u);
     }
   });
 });

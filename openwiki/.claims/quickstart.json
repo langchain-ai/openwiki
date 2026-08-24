@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:e664d75bd728b1b7637d0401102960579412cc95b40211712aaa1d26cac55f9b",
+  "claims": [
+    {
+      "id": "claim_dca20f62715646a4a60d4225519a501a",
+      "statement": "An OpenWiki run is one of three commands — chat, init, or update — all driven through runOpenWikiAgent, which is the single entry point for generation and maintenance runs.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L161-L166",
+          "version": "repo-lines-v1:sha256:af1ecf4c5cf45ae4c5f249a6ecc43d25ea6f192a6e6935e081fae118c01901ab:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzYxZmFmMjAxOWY2NmUyNzAzNzRmNTRmMjI0NDNmYTM3NjJmNjYwMzc3MDFkMmRkN2M5NGI5OGMwMDA4Yzg3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmRkN2RkMDY3NDhkNzA4ZjI1Y2MyZWJhM2ZlZjM5ZDAzYTg5ZWVlODg3ZWEyZTJhNjM4ODI4NTc2OTJlZGY4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2EzMTIxYWE0NmNkZTJjZmU1M2E0OTc5ZmQ0NjdiNGU2ZTFkNmY5ODM5Y2E4ZDgwYTU2ZGM5MTkxODM1ZGMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmM2ZWNkNjY5ZjczYjNkYjUyZDYzMGUwMzU3ZWM1ODU4MDE3MGZiYzA3ZTI0Yjg3OWYwNzk1NWI5OWJmY2VmYiJ9"
+        },
+        {
+          "resource": "repo://src/agent/types.ts#L1-L6",
+          "version": "repo-lines-v1:sha256:347bb69bcae719f036a6506b1a8c653fbfef4645ea6a27d79b13eafa065aa1dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZjYTNkZmYxZmJjMWY3ODA5YjM3ZjRiZTdlYmYyZjQzYzE5YWMyNjU5YjM3MDExNDlkYzhkM2EzYjRjYTVhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNlM2VmNTUzY2Y1YmQ4MGEwYTMzZmNjNzYxMTI2YjZmZGVlNGEwNjI0NzliNDY3M2Q3ZDE3ZWIwYjRiYjFiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2ZkNzIwNTM5ZjcyOTQyMWMxZTBmMGVlZDUwZjZiMmQzMmU5NjQ1YWM3YjZjNzNmMGNmMTM5NTcwZjg4N2ZjMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_003b4a6d42c048b08ad9d97f0171ee35",
+      "statement": "runOpenWikiAgent loads the OpenWiki home .env, syncs bundled skills, and in repository mode loads the .openwikiignore read boundary before preparing Claims and building the agent graph.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L180-L215",
+          "version": "repo-lines-v1:sha256:ef98fa403e4bef2ba0af7a485810bb52ae6737be34a7a9b16be8300dd62ed27d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyOTljMDUwZDZmMjQ5ZDNlNjM5NTE4NTM2NWYzN2ViYzQwMDcwYjdjYmZiODlhMWY2NThiNjZiMzI1OWY1YzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZGQ3Mjk4YzFmMGFkYjI5NmIzZmUxZWI1ZWU2NmM5MmFjNDNjOGYyMThlODgxNWU2MTdlYzVlMGE3YjBiYjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwOTBjZmQ4ZDViOGNjNDRjOWY1NGE4MWY3Yjc2ZmZiYWQ1ZGE1NTBjNGI5ZmMyN2YyOTkwYzgxZjA0YzhhNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGNkYmJiNzE4ODIwZmZiYjMxOGM3OGY1NzhkYTQyOWNmMzRlMzI5YmE2MTBiMmIwZGUwYmViNDZlZmRiYTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a11b29451384a209111c88d960b1a2d",
+      "statement": "OpenWiki runs in either code mode (documenting the current repository into openwiki/) or personal mode (documenting connected sources into the local wiki home), with code mode as the CLI default.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L111-L120",
+          "version": "repo-lines-v1:sha256:d05099463f7dd61e7ae5a049e2131bdd2a22ca268ee6c666f9e41504ffe96dd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNzI1YmFjZTViYWYxYjQ5MTA1ZDM5OWU1OWIwOTM1NTg3OWYxNmJiOGY0Njk2MGI1ZTA3YWVhNGM2ZDE0NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4YTNjYWMyNjI1MTFhZTYyNThlMzNhZWFjMjM4YWY0ZjNkNmY2ZGNhNTY2YTM3NzRiNTBiOGVkMzAxNDgxOWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjJkM2Y3NTMxMmJiNjU2NjU5ODk5Y2M2MTNiMTgxYmM3ZjM0YjVjN2FlMWFiOGEwYmE4OTQwMjExN2UzNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0NzhiNzZjYzcxN2ZjNTM4Y2EzMTBlOGJiMTZiMjk0MjhlNzExMWNmYjIzMzFmYjM4ZWI0YTM3OTJjOGQ0NWQifQ"
+        },
+        {
+          "resource": "repo://src/cli/commands.ts#L26-L26",
+          "version": "repo-lines-v1:sha256:5fbf660a3481165dcac9b1673584bdb7ddf8429aa1e161ab446c960ab321ed37:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiZjY2MGEzNDgxMTY1ZGNhYzliMTY3MzU4NGJkYjdkZGY4NDI5YWExZTE2MWFiNDQ2Yzk2MGFiMzIxZWQzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiZjY2MGEzNDgxMTY1ZGNhYzliMTY3MzU4NGJkYjdkZGY4NDI5YWExZTE2MWFiNDQ2Yzk2MGFiMzIxZWQzNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA0YTVjOGIwMzFhODQzZmViNmIxMDRmNDFhY2RjNjllNGIwMTE1NjI3ZGEwOTYxYjk2NmVlNTNiOTVkNDJlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTI1YjA1MWRjODEyZDFjNmJkNjBhMTNkYzllZDRiZWM3YzI1MWQ3M2Q3NzU1YTU1MjY3ODliZmU2MTVmMzM4OCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-22T08:02:55.052Z"
+  }
+}

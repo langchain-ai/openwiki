@@ -38,6 +38,7 @@ export type RunState =
       status: "success";
       result: OpenWikiRunResult;
       log: RunLogItem[];
+      durationMs: number;
       credentialDiagnostics?: CredentialDiagnostic[];
     }
   | {

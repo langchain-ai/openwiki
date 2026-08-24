@@ -1,4 +1,4 @@
 # Files
 
-- [DeepSWE OpenWiki evaluation harness](deepswe-harness.md) - Paired DeepSWE benchmark harness that compares a baseline Codex agent against an OpenWiki-augmented Codex agent to measure documentation leverage. Documents the run.py CLI, paired conditions, task suites, wiki caching, LangSmith integration, Codex adapters, and the direct-overhead analyzer.
-- [LEDGER longitudinal wiki-grounding benchmark](ledger-harness.md) - Source-grounded TypeScript benchmark that replays a source repository's Git checkpoints, runs OpenWiki (init then update) at each, freezes the generated wiki, and evaluates every current factual claim as supported, stale, hallucinated, or unverified. Documents the run.ts CLI, benchmark contract, evidence maps, claim pipeline, forgetting model, scoring, re-evaluation, and tests.
+- [DeepSWE Evaluation Harness](deepswe.md) - The Python DeepSWE harness that pairs a baseline Codex run against an OpenWiki-augmented run, its isolation and credential-safety model, LangSmith wiring, and usage analysis.
+- [LEDGER Evaluation Harness](ledger.md) - The TypeScript LEDGER harness that replays Git checkpoints, runs OpenWiki, and scores each frozen wiki's factual claims as supported, stale, invented, or unverified.

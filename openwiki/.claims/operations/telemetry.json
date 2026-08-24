@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:30092d378495b16157a2092f7fa06c5b98f151a7bdd5c0bae31709f588260397",
+  "claims": [
+    {
+      "id": "claim_2dc61c5cf5ea48208f26d4f336f41078",
+      "statement": "withRunTelemetry is the single boundary that records exactly one openwiki_run event, wrapping the whole setup->connectors->agent sequence so a failure anywhere in it is recorded once, and rethrowing so the CLI still owns the failure UX.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/with-run-telemetry.ts#L39-L85",
+          "version": "repo-lines-v1:sha256:1d8f62ee9ca7860a6fd35f59943bd1800202523be70135050759354f151f3a98:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYzhmNDYwNmI4ZWY1NWM3YjUyZDg2YzdhMDc3YzYxMDdhYTdmMzdkNWQwOGE4OWJlOTUzMDVhOGUxZjhmNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_85bcfc1da9a24dfdaaafeaa666037c04",
+      "statement": "A mutable RunTelemetryContext lets the boundary sit outside the agent while still attributing the provider and a noop short-circuit that are only knowable inside the agent, which writes those facts as they become known.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/with-run-telemetry.ts#L7-L37",
+          "version": "repo-lines-v1:sha256:bd6216e8629846d93bfac5394e5456b381b993a9b5bc334d00444f6a39c97efc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwZGY3YWMxM2ZkNjFjNzQzYmEwODcwNmRhNGY1MmM0OWVjYTdkMmFmY2JjZTE2N2Y5ZTY2YTY0NTc4OTMwMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4NWYxNWU1NTcyMjk1OTg5ZmI3NTYyMzk4OTRhZDIxZDhjMDc4ODMzOTkyYjE5MTkwZWJhMmQ5YmNiN2Q4YTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef6a5efea01b4a2c9273a0a3a7bd94a1",
+      "statement": "A clean return records the agent's outcome defaulting to success, while a throw records failure with anonymous diagnostics from describeErrorForTelemetry.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/with-run-telemetry.ts#L65-L83",
+          "version": "repo-lines-v1:sha256:d7a153be844ba09cf48090ff8e87e96b17c8d8081b369073d66fa59ba1e50a64:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMzE2MDEzZmUyYWQ4MzRkZTc5MmY3NTc0ZDliZTI0MzA5NzhkODE4YjlmMDk4NDJlNzRkZjJlZDhkNjFlNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmNGViYWMyMTgxNWI4YmI0NTk1ZTI4ZjJjOGM1ODhiMjY4YmQ5NTkwZDk4MGI1ZWY2ZTU5YWVlOGI3OWJjY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8805b1d7054644dbb4bb2a03b7c957e8",
+      "statement": "Only init and update runs are recorded; chat is dropped because it is interactive and would emit an event per turn.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/record-run-safe.ts#L49-L53",
+          "version": "repo-lines-v1:sha256:eb4fc6df19a013a4300070cd514e43c577835b6bbbef99abaa8179bdbfa243f2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2QxMTk5MjFhZjdmZTc2NTA1YTM3YzBjYjIyZjE5MmM3NDE1ZjU0YWNhM2YzZjJiMjY5YTNiZjFhMWM3NzUyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2EwOWE1NGM4MDFhNGEwYmMzZWI4ODJiZDIzMGFhOWE1YzFkODJiYTllN2MwZDdjMzIyM2IxYTdkZWZhZThiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2FmYjlkMTA1ZjU3MTQ5NjA2MTBmZjRiZmZjOGY4MGQ0MDY0Njg4YTk2YzM4MzZmMGQ4ZGU4Mjc3MzkxMmI2MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_817b17aab569485897ec588d2a30b4eb",
+      "statement": "Setup choices (brain mode, resolved provider, configured connectors) are attached on init only, the configuration moment, and omitted from updates.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/record-run-safe.ts#L57-L75",
+          "version": "repo-lines-v1:sha256:193852dfdad397605de1b688663a9d537ad4dbf13a195acfd7ac9df015a4a9a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NGEzYjc0YjM2NzU5NjUwYmViODYzNzA3MTA5ZThiM2E2M2M5ZWRlYzIwMmNkNjI3ZDhjZTBmYzE0MGRhNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhZmI5ZDEwNWY1NzE0OTYwNjEwZmY0YmZmYzhmODBkNDA2NDY4OGE5NmMzODM2ZjBkOGRlODI3NzM5MTJiNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_82a09b2bd1864b6b924b48dd710e4a1b",
+      "statement": "Telemetry sending is opt-out: it is disabled when OPENWIKI_TELEMETRY_DISABLED or DO_NOT_TRACK is set.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/gates.ts#L28-L33",
+          "version": "repo-lines-v1:sha256:a582173d04b3e3aade9403c9664e6b5cd46c14544935cebd134a64949c60422a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzE5MWVlYjAxOGI3Y2UxNGQxN2YyNTJiZDY0ZDU3Njc2YmExMjZiZjEzOTY1NmRkYWEyZDI3MjQ5ODIyNTgyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWY5NTM5ZDg5NzUyZGU3MTRiMGIzY2RkMzkwNWMwNDlkY2Y3ZDNiYTIxNDJlNTQ1ZWUxMDAzNTNlODkwYjBkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJjNTk4ZjcyYjJhN2ZlNDRjMTIyMmE3NWU5YTgzYzJmNThhZTdjY2M5NzAzYjIzNjM4YjBiNTkxZDhjM2FlOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6535ce55c2124b1cae6e0cd51ffb161b",
+      "statement": "CI and scheduled runs are still sent but collapsed to a per-provider sentinel id so ephemeral runners never inflate human install counts.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/gates.ts#L35-L59",
+          "version": "repo-lines-v1:sha256:d54e4b0034cf2992d5718bca2ba4d45c628a33c60474eb03757d7ed65c4f371d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiY2FhYzQ3OThkNzk1NjY0YWZlNTA5OGMwZGFmYTIyYWYzOWMwY2JlYTFmOTliODA0ZmJkMGYzY2U1Yzg1NmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_904b6cc18be74bf29999b95162cb6fea",
+      "statement": "Every event is stamped with a build channel (only npm-published upstream builds report official) and a production flag derived from running out of dist, so fork and local/dev usage can be filtered from the official signal.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/gates.ts#L5-L23",
+          "version": "repo-lines-v1:sha256:ab6129f5a74ecafd12fb278240cd6479c5e90e9a9fcda47a0d474339082fd560:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5Zjk0NmMwZmFkNmIzNjlhNGI1YjUxOWRkMGQ5ZmVjNmJmZjYyZDA5NjQzMmUyYzQwYmYyMTM0MWMyMTI1YWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MGUzMGY3MmE2MTUyMTRlZTc3NjU0NTg4NmI3YTFjMzM3ZjM0MjJmYmQ2MzU0ZDdiMmQ3NTgxNTFhZGU5YTYifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/gates.ts#L70-L79",
+          "version": "repo-lines-v1:sha256:225c29d217354a3bb74505c86539648f6466fb563c5ac8b5c1b67ae003acaca7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYzQ5YzI3OWNiNWYxYmRiZjMyZjYyYWY5NTI1MzA4ZDEyMzU2ZGM5MmU5MDAxMjFkYjhkNDg0M2IzOTM3ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyOGE0YTFhYmJlMzI0MTQyMDQ5MGJjZTAzYWU4ZTY3MDQyZDZmMDUwMzU1MWViYjY1MTcwNzA1MDJmMmQ3ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b25f35b494d843058b0f4c423c8d6e6b",
+      "statement": "The install id is a random UUID with no relationship to user, machine, or repository, created on first use with 0600 permissions; its just-minted state is the only signal for the one-time first-run notice.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/install-id.ts#L8-L38",
+          "version": "repo-lines-v1:sha256:0bffa590d524b8fb2439fa321bc20ddcd3c9ebb0c6df72f464a6c73bba818e44:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NmQwMjAyYTFkNzRlYmQwZjRlMDBmYWQwMmNlNDEyMjIwNGVjMTk2Y2M0NTJiYTczYWQ5NzcwYWRhZDYwZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMDM5NWZjZTkzZDdhYmE2MjllMmI0MDhmYmEzNjVmMzFjZDUwMTVjMWYzZGFiZTAwNjI0Njg3YTJlNWZmYjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b3d829fad27e44e78739aa7e7df47f1c",
+      "statement": "The first-run notice is suppressed (and no id minted) when opted out or in CI, and its check never throws so telemetry cannot break a run.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/install-id.ts#L40-L59",
+          "version": "repo-lines-v1:sha256:ddf0ef75a718f8b0f18b3130732adc3e7e1e2a5b6328267b98dbf86998979be8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1N2JjYWJhOTVhMWFmN2U2ZTM0N2UxZjg1ZWJjYTVhZDE5MTg3NWU2YjJhM2I3OTA2Njg5MGM3ZWJjMTM1NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NzNkZWM1MWIwYjgxODRiNmEzOWI2M2Y4ZTgxZmRiNzRiYmQyNDljMTk3NTRmMjVhOTkwYzljYTI5MGY2MzQifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/gates.ts#L61-L68",
+          "version": "repo-lines-v1:sha256:3ce729df72a9a10aec58d4b8dbf8b70eb52aad807a128f2fc4bf150ef0be9481:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDE4ZmFjYzMyNjcyODYwMmIzZDNlNWQwOTk2MmY2MGQ2OWM5N2VhOTFjMTVmYTgxZmZiMDExMjQzMjUyMTM3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2VlOGJkY2IwODBlMTYzMmZjNjVhZmNmMzc0OWE4N2E0N2M4YTg2YTA4YTgzOWFiMzU0NTJjZDU1ODQ1ZjJiMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6e34c541fdad41dd9886793599fb98ac",
+      "statement": "Error telemetry is anonymized by a hardcoded per-family errorDetail allowlist: any detail not named for its family is dropped to undefined so only hand-named words leave the process.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/taxonomy.ts#L7-L52",
+          "version": "repo-lines-v1:sha256:918fd5391870fcee881f076dee5c94971f9dc1475758a73faa825b0451f10dd6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNzkwMjc2ODk4ODNjOTg5MjczZWYzNmFkOWE0MzVmMzVjNDViZmRjNDlkMjI0ZjYzNTNiODc1NDAxYzVlNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlOWQyYjcyNTYzZGRjYmY4MDE4Mzg5NDQ5NDNlZDY0MjdjNGNjNDM3NjE4MTEyMGQ1ZjBkOTRjNDE5ZTkyZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b198190e56bc4745aca456933404e066",
+      "statement": "connector_error and tool_error detail is a registry id validated at the tag site against the known connector/tool set rather than a fixed word allowlist.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/taxonomy.ts#L14-L17",
+          "version": "repo-lines-v1:sha256:cda6231e04602f0d4f7b2e906bc86758afd70aa43c1a03510d40ac891023524a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDVhMmFlNzZkYWMyZDAxNzM3NWNmNTIwN2Y0YjJjYjg5ZTA3NWQ3OTk2MmU3YzkyZWE3MTU0M2I2ZGVmYjVjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTUyZTZiMTZlYzM4NTg3ZDRkMmFkYzAwZWNkZTZkYTQ1NTM5M2VkODAwZDNkZWQzMzI0NjEzNzQ5MjQ5M2NlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWM0YjM4NWRlZmM0MDQyMjVjMDY2Y2M4ZTNlY2NmYjJhZDM1NWNkZjlkNmMyODVhZDgzMDM4MzM3MmE5NzZlNiJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/taxonomy.ts#L54-L60",
+          "version": "repo-lines-v1:sha256:8536e9cabf64be42c8526ea8f9b548a57b794a688998e89d0d0bc0fbee3dcdde:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZjOTg5MGVhYzUxMjRjNDJkNTg1ZmNmZDQxNzc4NDhhNzVhMDEwZTRkNzZlNzU1ODM4NDE1NmYwZGQ5NmFjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGFjYjgyODFmNGMwNTcyMTBmZTI5MGI4NGJkNWIxNDBjYTkzOTFjNTIyM2JiNDQ2OTllZDk3NmNjNmUyYTk1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjk3NzQ4MzNhNTZmYTU0MWQ5YzZiNzI1NWZjY2ZjYzBmMjhiN2JjMzA1MWIyNGMyNGExNDAxMjY4ZTliN2MxMCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-22T08:02:55.052Z"
+  }
+}

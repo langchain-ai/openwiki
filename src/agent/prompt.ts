@@ -50,6 +50,16 @@ export function createSystemPrompt(
     : `${prompt}\n\n${createLinkIntegrityInstructions()}`.trim();
 }
 
+/**
+ * Builds the command-specific user prompt.
+ *
+ * @param command - Current OpenWiki command.
+ * @param context - Persisted run context.
+ * @param userMessage - Optional user instruction.
+ * @param outputMode - Current output target.
+ * @param runtimeRoot - Optional host runtime root.
+ * @returns Fully substituted user prompt.
+ */
 export function createUserPrompt(
   command: OpenWikiCommand,
   context: RunContext,

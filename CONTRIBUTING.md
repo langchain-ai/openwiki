@@ -32,6 +32,49 @@ pnpm test
 `format` and `lint` match the checks that run on every PR, and `test`
 typechecks, builds, and runs the Vitest suite with coverage.
 
+## Testing coding-agent integrations locally
+
+Install an integration backed by the current checkout with:
+
+```sh
+pnpm integrations:dev <codex|claude>
+```
+
+The command builds OpenWiki, refreshes the host skill, and records absolute
+paths to the current Node executable and `dist/cli/cli.js`. Restart the coding
+agent after installation. Codex and Claude Code install at user scope. Later source changes only require `pnpm build` unless
+the bundled skill itself changes. Rerun `integrations:dev` to refresh the skill
+or after switching Node installations.
+
+## Adding a coding-agent integration
+
+OpenWiki host integrations share one canonical skill and four MCP tools:
+`openwiki_begin`, `openwiki_inspect_claims`, `openwiki_resolve_claims`, and
+`openwiki_finish`. Add host-specific behavior to the registry and config
+boundary rather than copying the skill or adding host-specific tools.
+
+1. Confirm the host discovers repository skills and local stdio MCP servers.
+   Document the supported user and project paths; use `null` for an unsupported
+   user scope rather than inventing a global skill location.
+2. Add the host ID to `HostTargetId` in
+   `src/integrations/install/types.ts`, then add its display name,
+   provenance actor, supported paths, MCP config kind, and documentation URL to
+   `HOST_TARGETS` in `src/integrations/install/registry.ts`.
+3. Reuse the JSON or Codex TOML config adapter when possible. Add a focused
+   adapter only when the host uses a genuinely different config format, while
+   preserving unrelated user config and exact ownership checks.
+4. Add focused registry, install/status/uninstall, config-conflict, packaging,
+   and provenance tests. Pin unsupported scopes and verify project installs
+   resolve to the Git root.
+5. Run `pnpm integrations:dev <host>` for a real host smoke test, then run
+   `pnpm test`, `pnpm run lint:check`, and `pnpm run format:check`.
+6. Update the README usage examples and add a changeset for user-visible
+   support.
+
+Keep the v1 boundary narrow: host agents use their native repository tools for
+investigation and Markdown authoring; OpenWiki owns deterministic preparation,
+finalization, metadata, provenance, and managed setup files.
+
 If your change should ship in a release, also add a changeset (see below).
 
 ## Changesets

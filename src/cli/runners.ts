@@ -157,7 +157,7 @@ export async function runIngestCommand(
       scheduledOnly: command.scheduledOnly,
       target: command.target,
       onEvent: (event) => {
-        if (event.type === "text" && event.source !== "subgraph") {
+        if (event.type === "text") {
           process.stdout.write(event.text);
         }
       },
@@ -267,7 +267,7 @@ export async function runPrintCommand(
     const runtimeOutputMode = getRunModeOutputMode(command.mode);
 
     const handlePrintEvent = (event: OpenWikiRunEvent): void => {
-      if (event.type === "text" && event.source !== "subgraph") {
+      if (event.type === "text") {
         output.push(event.text);
       }
     };

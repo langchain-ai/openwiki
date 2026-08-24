@@ -1,84 +1,183 @@
 /**
- * A single line in a run's activity log: streamed assistant text, a debug
- * notice, or a tool action (which may be collapsed into a group of several
- * actions sharing one line).
+ * Filesystem operation represented in the live activity tree.
  */
-export interface RunLogItem {
+export type RunActivityOperation = "read" | "search" | "write";
+
+/**
+ * Side of the run to which an activity path belongs.
+ */
+export type RunActivityScope = "openwiki" | "repository";
+
+/**
+ * Lifecycle state used to color and group an activity path.
+ */
+export type RunActivityStatus = "active" | "error" | "recent";
+
+/**
+ * Fields shared by every retained run-log item.
+ */
+interface RunLogItemBase {
   /**
-   * The rendered text for the line in its current state.
+   * The line's identity, stable across in-place updates.
+   */
+  id: number;
+}
+
+/**
+ * One exact filesystem path shown in the live activity view.
+ */
+export interface RunActivityLogItem extends RunLogItemBase {
+  /**
+   * Discriminator for an exact filesystem activity entry.
+   */
+  type: "activity";
+
+  /**
+   * Tool-call ids that are still operating on this path.
+   *
+   * @default undefined - no tool calls are currently active on the path.
+   */
+  activeToolCallIds?: string[];
+
+  /**
+   * Kind of filesystem operation performed on the path.
+   */
+  activityOperation: RunActivityOperation;
+
+  /**
+   * Normalized repository-relative path or search scope.
+   */
+  activityPath: string;
+
+  /**
+   * Whether the path belongs to source material or generated OpenWiki data.
+   */
+  activityScope: RunActivityScope;
+
+  /**
+   * Current display lifecycle for the path.
+   */
+  activityStatus: RunActivityStatus;
+}
+
+/**
+ * One opt-in diagnostic line retained with the run.
+ */
+export interface RunDebugLogItem extends RunLogItemBase {
+  /**
+   * Discriminator for an opt-in diagnostic entry.
+   */
+  type: "debug";
+
+  /**
+   * Sanitized diagnostic text safe to display in the terminal.
+   */
+  content: string;
+}
+
+/**
+ * The main agent's final text response.
+ */
+interface RunTextLogItem extends RunLogItemBase {
+  /**
+   * Discriminator for the main agent's final text.
+   */
+  type: "text";
+
+  /**
+   * Accumulated main-agent response text.
+   */
+  content: string;
+}
+
+/**
+ * Aggregate tool activity and outcome data for one run.
+ */
+export interface RunToolLogItem extends RunLogItemBase {
+  /**
+   * Discriminator for the aggregate tool summary.
+   */
+  type: "tool";
+
+  /**
+   * Preformatted live activity counts.
    */
   content: string;
 
   /**
-   * The line's identity, stable across in-place updates as a tool progresses.
-   */
-  id: number;
-
-  /**
-   * Which kind of line this is, selecting how it renders.
-   */
-  type: "debug" | "text" | "tool";
-
-  /**
-   * How many tool actions are collapsed into this line.
+   * How many tool actions started during the run.
    *
    * @default undefined - treated as a single action.
    */
   actionCount?: number;
 
   /**
-   * The ids of the tool calls in this group that are still running.
+   * The ids of tool calls that are still running.
    *
-   * @default undefined - fall back to `toolCallId` when the line is running.
+   * @default undefined - the summary has no active calls.
    */
   activeToolCallIds?: string[];
 
   /**
-   * The tool's raw call string, shown only when the display opts into detail.
-   *
-   * @default undefined - no call detail is shown.
-   */
-  call?: string;
-
-  /**
-   * The text to render once the line has finished.
-   *
-   * @default undefined - the line has no distinct completed form yet.
-   */
-  doneContent?: string;
-
-  /**
-   * How many actions in this group failed.
+   * How many actions failed.
    *
    * @default undefined - treated as zero failures.
    */
   errorCount?: number;
 
   /**
-   * The completed text of the most recently finished action in the group.
+   * Unique repository files successfully read during this run. The live view
+   * uses these paths to build a cumulative exploration map without treating
+   * search matches as explored files.
    *
-   * @default undefined - falls back to `doneContent`.
+   * @default undefined - no repository files have completed reading.
    */
-  latestDoneContent?: string;
+  exploredPaths?: string[];
 
   /**
-   * The line's lifecycle state (tool lines only).
+   * How many explicit file-read tools started.
    *
-   * @default undefined - the line is not a tracked tool action.
+   * @default undefined - treated as zero reads.
    */
-  status?: "done" | "error" | "running";
+  readCount?: number;
 
   /**
-   * The id of the tool call this line most recently represents.
+   * How many explicit repository-search tools started.
    *
-   * @default undefined - the line is not a tool action.
+   * @default undefined - treated as zero searches.
    */
-  toolCallId?: string;
+  searchCount?: number;
 
   /**
-   * The name of the tool this line most recently represents.
+   * How many agent tasks started.
    *
-   * @default undefined - the line is not a tool action.
+   * @default undefined - treated as zero tasks.
    */
-  toolName?: string;
+  taskCount?: number;
+
+  /**
+   * How many explicit file-write tools started.
+   *
+   * @default undefined - treated as zero writes.
+   */
+  writeCount?: number;
+
+  /**
+   * Unique persistent OpenWiki pages successfully written. Repeated writes to
+   * the same page are recorded once.
+   *
+   * @default undefined - no successful OpenWiki writes completed.
+   */
+  writtenPaths?: string[];
+
+  /**
+   * The aggregate tool lifecycle state.
+   */
+  status: "done" | "error" | "running";
 }
+
+/**
+ * One bounded entry in a run's progress and final-result model.
+ */
+export type RunLogItem =
+  RunActivityLogItem | RunDebugLogItem | RunTextLogItem | RunToolLogItem;

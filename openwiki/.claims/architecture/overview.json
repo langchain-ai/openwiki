@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:fd33f2caffb7f8e7c5102c7cbd145e222e763044b1b1a681ec88f3cb6760d5de",
+  "claims": [
+    {
+      "id": "claim_74c1a7f1406d4c23b8e48b958516d276",
+      "statement": "OpenWiki is a Node/TypeScript CLI that uses a Deep Agents documentation agent to generate and maintain a wiki, operating in either a repository code mode or a personal knowledge mode.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/types.ts#L1-L2",
+          "version": "repo-lines-v1:sha256:8a3223ea77d42b973d1d435d4bd309ace6dbdaf5df40513c68b3ebbd3df8abdb:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZjYTNkZmYxZmJjMWY3ODA5YjM3ZjRiZTdlYmYyZjQzYzE5YWMyNjU5YjM3MDExNDlkYzhkM2EzYjRjYTVhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc2ZTAyMjYyYTZiY2MyNDRjNDRiYTA2MmQ0NWQyMjAxMDMxN2Q2NDk5ZjhhNzMxN2NlMTkxMTExNzc1MTZjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZiM2YwOTBhNzQ2MTM3NzA2N2Q4ZTBkNjU1YzA4YTE4MzQ0MzQyM2FmYTdjYjVjN2FiMGUzMzk5ZGEwMjIxOSJ9"
+        },
+        {
+          "resource": "repo://README.md#L19-L31",
+          "version": "repo-lines-v1:sha256:8dad8abd346c6122e829f2add5bd497e6d22f76e3ab683569ed363edc439af64:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyMGI5ZmJjOGY1OGZlYjFlNThkODVkYmMxZTkyNzU1ZjljYzczMjJiY2VjNDFiN2VkOGM5ZTQ0MTU3NjM3NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliOGY0MTRlZmU5N2QyZWE3YWU4OWMxYTkwOGY3ZDRkN2Q2NGRmNzdmYjYxZjhmMmYxMjhkNTMxMmI1ZmRkOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMmMyNmU1NmRkMjEwYzI5ZWE4NWFjNzUwZTFiY2I4MzdmNzgyMTFhZjAxN2MzNjFjMjkwYzhlMjY5YjE5ZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NDg1ZDAzYjljYmU3ZDRiN2UyMjVmOWY1M2IzYzFiY2M4MzQwZGI2ZmQ4NTkwNmRiOGQ2NGM2YTlhZDQ5ZDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cbd3ddf8130143e5b1652103b7116fa2",
+      "statement": "A run has two output modes, local-wiki and repository, and defaults to local-wiki when no output mode is supplied.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/types.ts#L2-L2",
+          "version": "repo-lines-v1:sha256:a76e02262a6bcc244c44ba062d45d22010317d6499f8a7317ce19111177516c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc2ZTAyMjYyYTZiY2MyNDRjNDRiYTA2MmQ0NWQyMjAxMDMxN2Q2NDk5ZjhhNzMxN2NlMTkxMTExNzc1MTZjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc2ZTAyMjYyYTZiY2MyNDRjNDRiYTA2MmQ0NWQyMjAxMDMxN2Q2NDk5ZjhhNzMxN2NlMTkxMTExNzc1MTZjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjEsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzZjYTNkZmYxZmJjMWY3ODA5YjM3ZjRiZTdlYmYyZjQzYzE5YWMyNjU5YjM3MDExNDlkYzhkM2EzYjRjYTVhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZiM2YwOTBhNzQ2MTM3NzA2N2Q4ZTBkNjU1YzA4YTE4MzQ0MzQyM2FmYTdjYjVjN2FiMGUzMzk5ZGEwMjIxOSJ9"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L167-L168",
+          "version": "repo-lines-v1:sha256:2dd9d3852bee93e8d74c37be874e59488d4d38ac22e519028ac163bcfb375ba1:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRlZDc1ZTQxNTQ5Yjk0ZTBiYTBiN2U2N2RjZWE0MGEzODYwMzM1ZmI1Mzc0NmEyZDIzMDAxYjc0M2VjMDhjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdkMzRkZmVmMDI0OWQ5ZWM4ODc4OTAzNmYwNTY1NzA2ZjU0NWExNWRhOWFjODdmNDg4YWI1ZWI5NWRlM2I2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzkwZGIyYTI0YjI2MmMwZWRiMDEyZmI1YjBiNjAxZmM2MDhjNTFiZDk2ODQ5M2E2ODViM2QyODAzZTNhMDk2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWZhM2ZiZmUyMmMzZDJkMTVjMTI5ODA2MmZkNDA3N2MwMjM2YmI5MmMyOGIzYmZjNzIxNzkyYjM5NmM1NTVlZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_29ed1e11c5a84969b970a2e3e9361140",
+      "statement": "The agent graph is composed from a model provider layer, connector tools, a Grounded Claims subsystem, a docs-only sandbox backend, a middleware pipeline, and the OKF finalization layer, each owned by a separate subsystem.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L533-L635",
+          "version": "repo-lines-v1:sha256:d8c21a9617cf1c7de0308afe1b934199865a577aca86fee0f372b20d4f9e9aa4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhZWE4MTMzMzAxY2EyZDBhYTRiMWQ4MjlkYTU3YjI4MGM1OWU4NjgwNDNmZjRiOTI5MGExOWM3ODg2MzE2OGViIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNThmOTYyMTE0MDBkN2U1ZDAyNTQ2NDY3YjM3NDE0MjAyNGM0ZDdiMzdlMmQ3OGM0ZDc4YzY0MGZjZDE4N2I0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5N2E4OGE4MGI2ZjNlZWQxYjEzOTg2MTljY2UwMDRjNDA5ZDE3MzcxZjY3YWNhNmQ1OGU2ODEwNzE2MDZlZTUzIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-22T08:02:55.052Z"
+  }
+}

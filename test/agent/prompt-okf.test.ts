@@ -2,6 +2,15 @@ import { describe, expect, test } from "vitest";
 import { createSystemPrompt } from "../../src/agent/prompt.ts";
 
 describe("createSystemPrompt OKF guidance", () => {
+  test("does not emit the retired OpenWiki producer extension", () => {
+    for (const command of ["chat", "init", "update"] as const) {
+      const prompt = createSystemPrompt(command, "repository");
+      expect(prompt).not.toContain("<openwiki_extension>");
+      expect(prompt).not.toContain("openwiki.roles");
+      expect(prompt).not.toContain("change_kinds:");
+    }
+  });
+
   test("keeps init requirements compact and update preservation explicit", () => {
     const init = createSystemPrompt("init", "repository");
     const update = createSystemPrompt("update", "repository");
@@ -39,10 +48,26 @@ describe("createSystemPrompt OKF guidance", () => {
       expect(prompt).not.toContain("by: openwiki/");
       expect(prompt).not.toContain("{OKF_PRODUCER_ACTOR}");
       expect(prompt).toContain(
-        "OpenWiki stamps generated provenance (last meaningful change) deterministically",
+        "OpenWiki stamps generated provenance (last body change) deterministically",
       );
     }
     expect(init).toContain("valid OKF v0.2 YAML front matter");
+    for (const prompt of [init, update]) {
+      expect(prompt).toContain(
+        "OpenWiki projects Claims evidence into sources deterministically",
+      );
+      expect(prompt).toContain("Do not write `sources`");
+      expect(prompt).toContain(
+        "OpenWiki stamps verified only after complete Claims reconciliation",
+      );
+      expect(prompt).toContain("Do not write `verified`");
+    }
+    expect(personalUpdate).not.toContain(
+      "OpenWiki projects Claims evidence into sources deterministically",
+    );
+    expect(personalUpdate).not.toContain(
+      "OpenWiki stamps verified only after complete Claims reconciliation",
+    );
     for (const prompt of [update, personalUpdate]) {
       expect(prompt).toContain("Google Knowledge Catalog OKF v0.2 schema");
       expect(prompt).toContain('okf_version: "0.2"');

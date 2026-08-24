@@ -2,26 +2,24 @@ import { ToolMessage } from "@langchain/core/messages";
 import type { BackendProtocolV2 } from "deepagents";
 import { createMiddleware } from "langchain";
 import path from "node:path";
-import { validateWikiMermaid } from "../mermaid/wiki.js";
+import type { ClaimEvidenceResources } from "../okf/claim-sources.js";
 import {
-  conceptBodiesEqual,
-  removeFrontmatterField,
-  setGeneratedEvent,
   validatePersistedFile,
   type FrontmatterIssue,
 } from "../okf/frontmatter.js";
-import { migrateWikiToOkf, synchronizeWikiIndexes } from "../okf/index-sync.js";
 import {
   ENGLISH_CONCEPT_TYPE,
   ENGLISH_INDEX_LABELS,
   type IndexLabels,
 } from "../okf/index-labels.js";
-import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
-import { sanitizeDiagnosticText } from "../platform/diagnostics.js";
 import { inStage } from "../telemetry/index.js";
+import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
 import type { OpenWikiOutputMode } from "./types.js";
-import { OPENWIKI_PRODUCER_ACTOR } from "../version.js";
-import { validateWikiInternalLinks } from "./wiki-link-validator.js";
+import {
+  finalizeWikiArtifacts,
+  prepareWikiForAuthoring,
+  type PreparedWikiState,
+} from "./wiki-finalizer.js";
 
 const OKF_RESERVED_FILES = new Set(["index.md", "log.md"]);
 const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
@@ -29,14 +27,25 @@ const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
 /**
  * Creates middleware that keeps the wiki OKF-conformant around a run. It
  * migrates existing pages to valid front matter before the agent starts,
- * stamps the code-owned `generated` provenance event on concept writes whose
- * body meaningfully changed, and synchronizes indexes after the run.
+ * snapshots their exact bodies, synchronizes indexes after the run, and
+ * stamps final code-owned `generated` provenance on every new or changed page.
  *
  * `now` is the run's single stamp time (an ISO 8601 datetime), computed once by
  * the caller and threaded in so every page written in one run shares one
  * `generated.at` and the stamping stays deterministic under test. It defaults to
  * the current time so callers that do not stamp (or tests exercising only the
  * index passes) need not supply one.
+ *
+ * `claimSources`, when supplied by a repository Claims runtime, is read only
+ * during finalization so it reflects every mutation accepted during the run.
+ *
+ * @param backend - Filesystem abstraction rooted to the active wiki target.
+ * @param outputMode - Repository or local-wiki output layout.
+ * @param labels - Localized labels used by generated indexes.
+ * @param conceptType - Fallback OKF concept type used during migration.
+ * @param now - Shared ISO 8601 timestamp for generated provenance events.
+ * @param claimSources - Optional deferred Claims evidence projection.
+ * @returns LangChain middleware for the deterministic wiki lifecycle.
  */
 export function createOpenWikiIndexMiddleware(
   backend: BackendProtocolV2,
@@ -44,18 +53,27 @@ export function createOpenWikiIndexMiddleware(
   labels: IndexLabels = ENGLISH_INDEX_LABELS,
   conceptType: string = ENGLISH_CONCEPT_TYPE,
   now: string = new Date().toISOString(),
+  claimSources?: () => ClaimEvidenceResources,
 ) {
+  let preparedWiki: PreparedWikiState | undefined;
+
   return createMiddleware({
     name: "OpenWikiIndexMiddleware",
     beforeAgent: async () => {
       // Owned OKF pass: a throw here is our conformance code failing, not the
       // model. Tag class+detail at the origin so it does not fall to the run
       // stage's raw classifier (which would read agent_error).
-      await inStage(
-        "build",
-        () => migrateWikiToOkf(backend, outputMode, conceptType),
-        { errorClass: "okf_error", errorDetail: "migrate" },
-      );
+      preparedWiki = undefined;
+      preparedWiki = await prepareWikiForAuthoring({
+        backend,
+        outputMode,
+        conceptType,
+        runOperation: (operation, task) =>
+          inStage("build", task, {
+            errorClass: "okf_error",
+            errorDetail: operation,
+          }),
+      });
     },
     // Telemetry guard: this wrap only *decorates a successful* tool result with a
     // front-matter warning; it deliberately does not catch tool throws. LangChain's
@@ -72,18 +90,7 @@ export function createOpenWikiIndexMiddleware(
     // Do not turn this into a catch that rethrows: that would make every recoverable
     // tool error fatal and record otherwise-successful runs as failures.
     wrapToolCall: async (request, handler) => {
-      // Read the target's body just before the write so we can tell a
-      // meaningful content change from a metadata-only or whitespace edit.
-      const before = await readConceptContent(request, backend, outputMode);
       const result = await handler(request);
-      await stampGeneratedProvenance(
-        result,
-        backend,
-        outputMode,
-        request.toolCall.name,
-        before,
-        now,
-      );
       return addFrontmatterWarning(
         result,
         backend,
@@ -92,23 +99,23 @@ export function createOpenWikiIndexMiddleware(
       );
     },
     afterAgent: async () => {
-      await inStage(
-        "finalize",
-        () => validateWikiMermaid(backend, outputMode),
-        { errorClass: "okf_error", errorDetail: "mermaid" },
-      );
-      await inStage(
-        "finalize",
-        () => synchronizeWikiIndexes(backend, outputMode, labels, conceptType),
-        { errorClass: "okf_error", errorDetail: "index_sync" },
-      );
-      // Stamp broken internal links in place (do not fail the run) so a later
-      // update can repair them from the inline openwiki comments.
-      await inStage(
-        "finalize",
-        () => validateWikiInternalLinks(backend, outputMode),
-        { errorClass: "okf_error", errorDetail: "link_validation" },
-      );
+      if (!preparedWiki) {
+        throw new Error("Wiki finalization requires prepared run state.");
+      }
+      await finalizeWikiArtifacts({
+        backend,
+        outputMode,
+        labels,
+        conceptType,
+        prepared: preparedWiki,
+        at: now,
+        claimSources: claimSources?.(),
+        runOperation: (operation, task) =>
+          inStage("finalize", task, {
+            errorClass: "okf_error",
+            errorDetail: operation,
+          }),
+      });
     },
   });
 }
@@ -145,128 +152,6 @@ export async function addFrontmatterWarning<Result>(
       ? `${mutation.message.content}\n\n${warning}`
       : [...mutation.message.content, { text: warning, type: "text" }];
   return result;
-}
-
-/**
- * Stamps the code-owned OKF `generated` provenance event on a concept write
- * whose body meaningfully changed (SPEC §5.1). OpenWiki owns this field end to
- * end: the model never authors it, so freshness never rests on a hallucinated
- * date. A newly created concept (no `before` content) is always stamped; a write
- * that only reshuffles front matter or whitespace leaves `generated` alone.
- *
- * The stamp writes `generated: {by: openwiki/<version>, at: <run time>}` and
- * drops any superseded legacy `timestamp` on the same page. Reserved documents
- * (`index.md`/`log.md`) and non-wiki paths are skipped by {@link isWikiMarkdownPath}.
- *
- * Stamping is best-effort. The tool's own write has already persisted the page
- * body by the time this runs, so a stamp failure must never take the run down
- * with it: any error is logged and swallowed, leaving the page validly unstamped
- * (`generated` is optional in OKF v0.2) for a later body-changing update to
- * stamp. This guard is load-bearing, not cosmetic: the tool node re-raises a
- * throw from `wrapToolCall` as a fatal `MiddlewareError` rather than feeding it
- * back to the model, so without it a failed provenance write would fail an
- * otherwise-successful run.
- */
-async function stampGeneratedProvenance(
-  result: unknown,
-  backend: BackendProtocolV2,
-  outputMode: OpenWikiOutputMode,
-  toolName: string,
-  before: string | undefined,
-  now: string,
-): Promise<void> {
-  if (!WRITE_TOOLS.has(toolName)) return;
-
-  const mutationPath = getMutationPath(result);
-  if (
-    mutationPath === undefined ||
-    !isWikiMarkdownPath(mutationPath, outputMode)
-  ) {
-    return;
-  }
-
-  try {
-    const after = await readContent(backend, mutationPath);
-    if (after === undefined) return;
-
-    // An unchanged body must not bump the recorded change time. A brand-new page
-    // (no `before`) has no prior body to match, so it always stamps.
-    if (before !== undefined && conceptBodiesEqual(before, after)) return;
-
-    const stamped = removeFrontmatterField(
-      setGeneratedEvent(after, OPENWIKI_PRODUCER_ACTOR, now),
-      "timestamp",
-    );
-    // Re-stamping within one run (same `now`, no `timestamp`) is a no-op; skip the
-    // redundant write so idempotent rewrites do not churn the file.
-    if (stamped !== after) {
-      await backend.write(mutationPath, stamped);
-    }
-  } catch (error) {
-    console.error(
-      `OpenWiki: could not stamp generated provenance on "${mutationPath}": ${sanitizeDiagnosticText(
-        error instanceof Error ? error.message : String(error),
-      )}`,
-    );
-  }
-}
-
-/**
- * Reads the target concept's current content just before a write, or undefined
- * when the request targets no readable wiki concept path (so the caller treats
- * the write as a new file). Path resolution mirrors the deepagents write tools,
- * which key the target as `file_path` (tolerating `path`).
- */
-async function readConceptContent(
-  request: { toolCall: { args?: unknown } },
-  backend: BackendProtocolV2,
-  outputMode: OpenWikiOutputMode,
-): Promise<string | undefined> {
-  const args = request.toolCall.args;
-  if (!isRecord(args)) return undefined;
-  const filePath = args.file_path ?? args.path;
-  if (
-    typeof filePath !== "string" ||
-    !isWikiMarkdownPath(filePath, outputMode)
-  ) {
-    return undefined;
-  }
-  return readContent(backend, filePath);
-}
-
-/**
- * Reads a file's text through the backend, returning undefined when it is
- * missing, unreadable, or binary.
- */
-async function readContent(
-  backend: BackendProtocolV2,
-  filePath: string,
-): Promise<string | undefined> {
-  let read: Awaited<ReturnType<BackendProtocolV2["readRaw"]>>;
-  try {
-    // A not-yet-created file throws rather than returning an error result; that
-    // is the new-file case, where there is no prior body to compare against.
-    read = await backend.readRaw(filePath);
-  } catch {
-    return undefined;
-  }
-  const content = read.data?.content;
-  if (read.error || content === undefined || content instanceof Uint8Array) {
-    return undefined;
-  }
-  return Array.isArray(content) ? content.join("\n") : content;
-}
-
-/**
- * Resolves the persisted path a write tool mutated, from the mutation metadata
- * the docs-only backend stamps on its tool messages.
- */
-function getMutationPath(result: unknown): string | undefined {
-  for (const message of getToolMessages(result)) {
-    const path = message.metadata?.[MUTATION_PATH_METADATA_KEY];
-    if (typeof path === "string") return path;
-  }
-  return undefined;
 }
 
 /**

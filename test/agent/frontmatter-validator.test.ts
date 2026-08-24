@@ -85,10 +85,10 @@ describe("validateOkfFrontmatter", () => {
             "    resource: https://example.com/spec",
             "    author: team:docs",
             "    usage_count: 5000",
-            "    last_modified: 2026-05-30",
-            "usage_window: {from: 2026-06-01, to: 2026-06-30}",
+            "    last_modified: 2026-05-30T00:00:00Z",
+            "usage_window: {from: 2026-06-01T00:00:00Z, to: 2026-06-30T00:00:00Z}",
             "status: stable",
-            "stale_after: 2026-09-23",
+            "stale_after: 2026-09-23T00:00:00-07:00",
           ].join("\n"),
         ),
       ),
@@ -104,6 +104,50 @@ describe("validateOkfFrontmatter", () => {
         ),
       ),
     ).toEqual({ valid: true });
+  });
+
+  test("rejects timestamps without an explicit UTC offset", () => {
+    const result = validateOkfFrontmatter(
+      markdown(
+        [
+          "type: Reference",
+          "generated: {by: openwiki/0.3.0, at: 2026-08-04}",
+          "verified: {by: human:ahormati, at: 2026-08-05T09:00:00}",
+          "stale_after: 2026-09-23",
+        ].join("\n"),
+      ),
+    );
+
+    expect(result).toMatchObject({
+      issues: [
+        { code: "invalid_generated" },
+        { code: "invalid_verified" },
+        { code: "invalid_stale_after" },
+      ],
+      valid: false,
+    });
+  });
+
+  test("rejects impossible ISO-shaped timestamps", () => {
+    const result = validateOkfFrontmatter(
+      markdown(
+        [
+          "type: Reference",
+          "generated: {by: openwiki/0.3.0, at: 2026-02-30T09:00:00Z}",
+          "verified: {by: human:ahormati, at: 2026-08-05T25:00:00Z}",
+          "stale_after: 2026-09-23T00:00:00+24:00",
+        ].join("\n"),
+      ),
+    );
+
+    expect(result).toMatchObject({
+      issues: [
+        { code: "invalid_generated" },
+        { code: "invalid_verified" },
+        { code: "invalid_stale_after" },
+      ],
+      valid: false,
+    });
   });
 
   test("reports malformed v0.2 family fields", () => {

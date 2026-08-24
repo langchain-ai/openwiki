@@ -29,7 +29,8 @@ import type { Dirent } from "node:fs";
 
 const execFileAsync = promisify(execFile);
 const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
-const TEMPORARY_PLAN_FILE = "_plan.md";
+const TEMPORARY_WORKING_FILES = ["_plan.md", "_skeleton.md"] as const;
+const TEMPORARY_WORKING_FILE_SET = new Set<string>(TEMPORARY_WORKING_FILES);
 
 export type OpenWikiContentSnapshot = string;
 
@@ -92,7 +93,7 @@ async function readRunWikiGoal(
 }
 
 /**
- * Decides whether an `update` run can be skipped because nothing meaningful changed.
+ * Decides whether an update can skip its model invocation.
  *
  * An explicit request whose primary language differs from the persisted wiki
  * language is meaningful even on a clean tree, because the translation pass
@@ -101,6 +102,11 @@ async function readRunWikiGoal(
  * Working-tree and committed changes that only touch `openwiki/` or paths
  * excluded by `openWikiIgnore` do not count as meaningful, so an ignored path
  * changing on its own never forces a rebuild.
+ *
+ * @param cwd - Absolute repository root.
+ * @param openWikiIgnore - Active repository read boundary.
+ * @param requestedLanguage - Optional output language requested for this run.
+ * @returns Skip decision and diagnostic reason.
  */
 export async function getUpdateNoopStatus(
   cwd: string,
@@ -242,24 +248,31 @@ export async function persistRunMetadataIfChanged(
 }
 
 /**
- * Removes the temporary planning file the agent creates during init/update runs.
+ * Removes temporary planning artifacts created during init and update runs.
+ *
+ * @param cwd - Repository root or local-wiki root.
+ * @param outputMode - Active wiki output layout.
+ * @returns Basenames of the artifacts that existed and were removed.
  */
-export async function removeTemporaryPlanFile(
+export async function removeTemporaryWorkingFiles(
   cwd: string,
   outputMode: OpenWikiOutputMode,
-): Promise<boolean> {
-  const planFile = getTemporaryPlanFilePath(cwd, outputMode);
+): Promise<string[]> {
+  const wikiRoot = getWikiContentRoot(cwd, outputMode);
+  const removed: string[] = [];
 
-  try {
-    await rm(planFile);
-    return true;
-  } catch (error) {
-    if (isFileNotFoundError(error)) {
-      return false;
+  for (const basename of TEMPORARY_WORKING_FILES) {
+    try {
+      await rm(path.join(wikiRoot, basename));
+      removed.push(basename);
+    } catch (error) {
+      if (!isFileNotFoundError(error)) {
+        throw error;
+      }
     }
-
-    throw error;
   }
+
+  return removed;
 }
 
 /**
@@ -384,13 +397,6 @@ function getWikiContentRoot(
   return outputMode === "local-wiki" ? cwd : path.join(cwd, OPEN_WIKI_DIR);
 }
 
-function getTemporaryPlanFilePath(
-  cwd: string,
-  outputMode: OpenWikiOutputMode,
-): string {
-  return path.join(getWikiContentRoot(cwd, outputMode), TEMPORARY_PLAN_FILE);
-}
-
 function getMetadataFilePath(
   cwd: string,
   outputMode: OpenWikiOutputMode,
@@ -404,7 +410,7 @@ function isIgnoredSnapshotPath(relativePath: string): boolean {
   return (
     relativePath === path.basename(UPDATE_METADATA_PATH) ||
     relativePath === LOCAL_WIKI_METADATA_PATH ||
-    relativePath === TEMPORARY_PLAN_FILE
+    TEMPORARY_WORKING_FILE_SET.has(relativePath)
   );
 }
 

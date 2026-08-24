@@ -20,6 +20,7 @@
   "homepage": "https://github.com/langchain-ai/openwiki#readme",
   "files": [
     "dist",
+    "integrations",
     "skills",
     "README.md",
     "LICENSE"
@@ -35,7 +36,7 @@
   ],
   "scripts": {
     "openwiki": "node dist/cli/cli.js",
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs",
     "changeset:version": "changeset version",
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
@@ -45,6 +46,7 @@
     "eval:ledger:typecheck": "tsc --noEmit -p evals/ledger/tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "integrations:dev": "pnpm run build && node scripts/install-local-integration.mjs",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
     "postbuild": "node -e \"require('fs').chmodSync('dist/cli/cli.js', 0o755)\"",
@@ -68,6 +70,7 @@
     "@langchain/openrouter": "^0.4.3",
     "@langchain/protocol": "^0.0.18",
     "@langchain/tavily": "1.2.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "ci-info": "^4.4.0",
     "cron-parser": "5.6.1",
     "cronstrue": "3.24.0",

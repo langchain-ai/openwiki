@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import type { OpenWikiCommand } from "../../agent/types.js";
+import { openWikiLocalWikiDisplayPath } from "../../config/openwiki-home.js";
 import {
   getDefaultModelId,
   resolveConfiguredProvider,
@@ -100,7 +101,11 @@ export function DryRunView({
         />
         <StatusLine tone="muted" label="Agent" value="not invoked" />
         <StatusLine tone="muted" label="Writes" value="no files or metadata" />
-        <StatusLine tone="muted" label="Output" value="~/.openwiki/wiki" />
+        <StatusLine
+          tone="muted"
+          label="Output"
+          value={openWikiLocalWikiDisplayPath}
+        />
         <StatusLine
           tone="muted"
           label="Startup"
