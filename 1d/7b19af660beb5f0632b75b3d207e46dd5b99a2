@@ -1,0 +1,30 @@
+test/agent/repository-source-fingerprint.test.ts
+  s_a5fa05fa15457a::t_49fa8a12c942b4 2,14,21-48,113-114,119-120,206-223
+  s_a5fa05fa15457a::t_8071463f9d15a5 224-226
+  s_a5fa05fa15457a::t_5e2c6cb8200999 227-228
+src/agent/utils.ts
+  s_a5fa05fa15457a::t_df87f7fac5ceb6 521
+  s_a5fa05fa15457a::t_0d8190c67ee912 4-7,11,502,504,515-520,522-526,530,551-610
+  s_a5fa05fa15457a::t_8d0fde2e045a62 3,611
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "1d7b19af660beb5f0632b75b3d207e46dd5b99a2",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a5fa05fa15457a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03441-f5d6-70b2-b433-feb529211f2b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
