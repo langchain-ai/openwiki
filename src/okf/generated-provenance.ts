@@ -49,6 +49,81 @@ interface ConceptSnapshot {
 export type GeneratedProvenanceSnapshot = ReadonlyMap<string, ConceptSnapshot>;
 
 /**
+ * JSON-safe representation of one pre-run generated-page baseline.
+ */
+export interface PersistedGeneratedProvenanceEntry {
+  /**
+   * Canonical virtual path of the generated Markdown page.
+   */
+  page: string;
+
+  /**
+   * Hash of the page body before this run began authoring.
+   */
+  bodyHash: string;
+
+  /**
+   * Existing generated-provenance metadata, when the page had it.
+   */
+  generated?: {
+    /**
+     * Producer recorded in the page's generated metadata.
+     */
+    by: string;
+
+    /**
+     * Generation timestamp recorded by the prior successful run.
+     */
+    at?: string;
+  };
+}
+
+/**
+ * Deterministically ordered persisted provenance baseline.
+ */
+export type PersistedGeneratedProvenanceSnapshot =
+  PersistedGeneratedProvenanceEntry[];
+
+/**
+ * Serializes the exact pre-authoring baseline without changing its meaning.
+ */
+export function serializeGeneratedProvenance(
+  snapshot: GeneratedProvenanceSnapshot,
+): PersistedGeneratedProvenanceSnapshot {
+  return [...snapshot.entries()]
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+    .map(([page, value]) => ({
+      page,
+      bodyHash: value.bodyHash,
+      ...(value.generated
+        ? {
+            generated: {
+              by: value.generated.by,
+              ...(value.generated.at ? { at: value.generated.at } : {}),
+            },
+          }
+        : {}),
+    }));
+}
+
+/**
+ * Recreates the in-memory provenance baseline after process restart.
+ */
+export function deserializeGeneratedProvenance(
+  persisted: PersistedGeneratedProvenanceSnapshot,
+): GeneratedProvenanceSnapshot {
+  return new Map(
+    persisted.map(({ page, bodyHash, generated }) => [
+      page,
+      {
+        bodyHash,
+        ...(generated ? { generated: { ...generated } } : {}),
+      },
+    ]),
+  );
+}
+
+/**
  * Captures finalization inputs for every concept present before the agent runs.
  * Only hashes and the prior producer event are retained, keeping the snapshot
  * bounded without creating temporary files beside generated documentation.

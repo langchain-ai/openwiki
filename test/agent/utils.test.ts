@@ -154,6 +154,14 @@ describe("createOpenWikiContentSnapshot recursion", () => {
         before,
       );
 
+      await writeFile(
+        path.join(cwd, "openwiki", ".run.json"),
+        '{"phase":"generating"}\n',
+      );
+      expect(await createOpenWikiContentSnapshot(cwd, "repository")).toBe(
+        before,
+      );
+
       await writeFile(path.join(claimsDir, "page.json"), '{"revision":2}\n');
       expect(await createOpenWikiContentSnapshot(cwd, "repository")).not.toBe(
         before,
