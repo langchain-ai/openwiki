@@ -1,166 +1,123 @@
-import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
-import { afterEach, describe, expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import {
   BeginInput,
-  InspectClaimsInput,
-  ResolveClaimsInput,
+  NextPageInput,
+  PlanPageInput,
+  ProposedPageClaimInput,
   RunInput,
+  SubmitPageInput,
+  SubmitPlanInput,
+  isValidHostId,
 } from "../../src/integrations/core/protocol.ts";
-import {
-  type BeginResult,
-  HostSessionManager,
-} from "../../src/integrations/core/session-manager.ts";
 
-const temporaryRoots: string[] = [];
+const RUN_ID = "123e4567-e89b-42d3-a456-426614174000";
+const JOB_ID = "123e4567-e89b-42d3-a456-426614174001";
 
-/**
- * Creates an isolated repository root for a protocol test.
- *
- * @returns Absolute temporary repository path.
- */
-async function createRepository(): Promise<string> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-protocol-"));
-  temporaryRoots.push(root);
-  execFileSync("git", ["init", "--quiet", root]);
-  return root;
-}
-
-afterEach(async () => {
-  await Promise.all(
-    temporaryRoots.splice(0).map((root) =>
-      rm(root, {
-        recursive: true,
-        force: true,
-      }),
-    ),
-  );
-});
-
-describe("host lifecycle protocol", () => {
-  test("validates strict lifecycle and Claims inputs", () => {
+describe("OpenWiki host protocol", () => {
+  test("validates strict begin and run inputs", () => {
     expect(
       BeginInput.parse({
-        root: "/tmp/repository",
-        mode: "init",
+        root: " /tmp/repository ",
+        mode: "update",
         language: " fr ",
+        force: true,
       }),
     ).toEqual({
       root: "/tmp/repository",
-      mode: "init",
+      mode: "update",
       language: "fr",
+      force: true,
     });
-    expect(() => BeginInput.parse({ mode: "init" })).toThrow();
-    expect(() => BeginInput.parse({ mode: "chat" })).toThrow();
-    expect(() => BeginInput.parse({ mode: "init", extra: true })).toThrow();
-    expect(() => RunInput.parse({ runId: "not-a-uuid" })).toThrow();
+    expect(() => BeginInput.parse({ root: "/tmp", mode: "chat" })).toThrow();
     expect(() =>
-      RunInput.parse({
-        runId: "123e4567-e89b-42d3-a456-426614174000",
+      BeginInput.parse({ root: "/tmp", mode: "init", extra: true }),
+    ).toThrow();
+    expect(RunInput).toBe(NextPageInput);
+    expect(() => RunInput.parse({ runId: "not-a-uuid" })).toThrow();
+    expect(() => RunInput.parse({ runId: RUN_ID, extra: true })).toThrow();
+  });
+
+  test("validates complete strict plan payloads", () => {
+    expect(
+      PlanPageInput.parse({
+        path: " /openwiki/runtime.md ",
+        title: " Runtime ",
+        purpose: " Explain execution. ",
+        seedPaths: [" src/runtime.ts "],
+        relatedPages: [" /openwiki/quickstart.md "],
+        instructions: [" Preserve terminology. "],
+      }),
+    ).toEqual({
+      path: "/openwiki/runtime.md",
+      title: "Runtime",
+      purpose: "Explain execution.",
+      seedPaths: ["src/runtime.ts"],
+      relatedPages: ["/openwiki/quickstart.md"],
+      instructions: ["Preserve terminology."],
+    });
+    expect(SubmitPlanInput.parse({ runId: RUN_ID, pages: [] })).toEqual({
+      runId: RUN_ID,
+      pages: [],
+    });
+    expect(() =>
+      SubmitPlanInput.parse({
+        runId: RUN_ID,
+        pages: [{ path: "page.md", title: "Page", purpose: "Purpose" }],
         extra: true,
       }),
     ).toThrow();
     expect(() =>
-      InspectClaimsInput.parse({
-        runId: "123e4567-e89b-42d3-a456-426614174000",
-      }),
-    ).toThrow();
-    expect(() =>
-      InspectClaimsInput.parse({
-        runId: "123e4567-e89b-42d3-a456-426614174000",
-        ids: ["claim_1"],
-        pages: ["openwiki/page.md"],
-      }),
-    ).toThrow();
-    expect(() =>
-      ResolveClaimsInput.parse({
-        runId: "123e4567-e89b-42d3-a456-426614174000",
-        pages: [],
+      PlanPageInput.parse({
+        path: "page.md",
+        title: "Page",
+        purpose: "Purpose",
+        extra: true,
       }),
     ).toThrow();
   });
 
-  test("exposes lifecycle and Claims tools through one active run", async () => {
-    const root = await createRepository();
-    await writeFile(path.join(root, "README.md"), "# Repository\n", "utf8");
-    const manager = HostSessionManager.create({ host: "codex" });
-    const tools = manager.tools();
-
-    expect(tools.map((tool) => tool.name)).toEqual([
-      "openwiki_begin",
-      "openwiki_inspect_claims",
-      "openwiki_resolve_claims",
-      "openwiki_finish",
-    ]);
-    expect(tools).toHaveLength(4);
+  test("requires a non-empty complete Claim set for page submission", () => {
     expect(
-      tools.some((tool) => /read|write|edit|delete/u.test(tool.name)),
-    ).toBe(false);
-
-    const begin = tools.find((tool) => tool.name === "openwiki_begin");
-    const inspect = tools.find(
-      (tool) => tool.name === "openwiki_inspect_claims",
-    );
-    const resolve = tools.find(
-      (tool) => tool.name === "openwiki_resolve_claims",
-    );
-    const finish = tools.find((tool) => tool.name === "openwiki_finish");
-    expect(begin).toBeDefined();
-    expect(inspect).toBeDefined();
-    expect(resolve).toBeDefined();
-    expect(finish).toBeDefined();
-    await expect(
-      begin?.handle({ root, mode: "init", extra: true }),
-    ).rejects.toThrow();
-
-    const started = (await begin?.handle({
-      root,
-      mode: "init",
-    })) as BeginResult;
-    expect(started.root).toBe(await realpath(root));
-    await expect(
-      inspect?.handle({
-        runId: started.runId,
-        pages: ["openwiki/page.md"],
+      ProposedPageClaimInput.parse({
+        id: " claim_existing ",
+        statement: " The runtime starts from the CLI. ",
+        evidence: [{ resource: " repo://src/cli.ts#L1-L20 " }],
       }),
-    ).resolves.toEqual({
-      pages: [{ page: "/openwiki/page.md", claims: [] }],
+    ).toEqual({
+      id: "claim_existing",
+      statement: "The runtime starts from the CLI.",
+      evidence: [{ resource: "repo://src/cli.ts#L1-L20" }],
     });
-    const resolved = (await resolve?.handle({
-      runId: started.runId,
-      pages: [
-        {
-          page: "openwiki/page.md",
-          operations: [
-            {
-              op: "add",
-              statement: "The repository has a README.",
-              evidence: [{ resource: "repo://README.md" }],
-            },
-          ],
-        },
-      ],
-    })) as {
-      pages: Array<{
-        page: string;
-        results: Array<{ op: string; id: string }>;
-      }>;
-    };
-    expect(resolved.pages).toHaveLength(1);
-    expect(resolved.pages[0]?.page).toBe("/openwiki/page.md");
-    expect(resolved.pages[0]?.results).toHaveLength(1);
-    expect(resolved.pages[0]?.results[0]).toMatchObject({ op: "add" });
-    expect(resolved.pages[0]?.results[0]?.id).toMatch(/^claim_/u);
-    await mkdir(path.join(root, "openwiki"), { recursive: true });
-    await writeFile(
-      path.join(root, "openwiki/page.md"),
-      "---\ntype: Guide\ntitle: Page\ndescription: Page.\n---\n\n# Page\n",
-      "utf8",
-    );
-    await expect(finish?.handle({ runId: started.runId })).resolves.toEqual({
-      status: "complete",
-    });
+    expect(() =>
+      SubmitPageInput.parse({ runId: RUN_ID, jobId: JOB_ID, claims: [] }),
+    ).toThrow();
+    expect(() =>
+      SubmitPageInput.parse({
+        runId: RUN_ID,
+        jobId: JOB_ID,
+        claims: [{ statement: "Claim", evidence: [] }],
+      }),
+    ).toThrow();
+    expect(() =>
+      SubmitPageInput.parse({
+        runId: RUN_ID,
+        jobId: JOB_ID,
+        claims: [
+          {
+            statement: "Claim",
+            evidence: [{ resource: "repo://README.md", version: "owned" }],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  test("accepts only bounded canonical host identities", () => {
+    expect(isValidHostId("codex")).toBe(true);
+    expect(isValidHostId("claude-code")).toBe(true);
+    expect(isValidHostId("a".repeat(64))).toBe(true);
+    expect(isValidHostId("Codex")).toBe(false);
+    expect(isValidHostId("codex_agent")).toBe(false);
+    expect(isValidHostId("a".repeat(65))).toBe(false);
   });
 });
