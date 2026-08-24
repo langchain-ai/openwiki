@@ -82,7 +82,7 @@ export function ChatHistory({ runs }: { runs: CompletedRun[] }) {
           </Text>
           <Box flexDirection="column" marginLeft={2} marginTop={1}>
             {run.log.length > 0 ? (
-              <CompletedRunDetails log={run.log} />
+              <CompletedRunDetails command="chat" log={run.log} />
             ) : (
               <Text color="gray">No assistant output captured.</Text>
             )}

@@ -48,6 +48,14 @@ type OpenWikiBackendOptions = LocalShellBackendOptions & {
    * @default "repository"
    */
   outputMode?: OpenWikiOutputMode;
+
+  /**
+   * Exact generated pages this backend may mutate in repository docs-only mode.
+   *
+   * `undefined` preserves the existing repository writer behavior. An empty
+   * array creates a read-only generated-docs backend.
+   */
+  writableWikiPages?: readonly string[];
 };
 
 /**
@@ -172,11 +180,19 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    */
   private readonly outputMode: OpenWikiOutputMode;
 
+  /**
+   * Canonical generated pages this worker may mutate, when explicitly scoped.
+   */
+  private readonly writableWikiPages?: ReadonlySet<string>;
+
   constructor(options: OpenWikiBackendOptions) {
     super(options);
     this.docsOnly = options.docsOnly === true;
     this.openWikiIgnore = options.openWikiIgnore ?? new OpenWikiIgnore([]);
     this.outputMode = options.outputMode ?? "repository";
+    this.writableWikiPages = options.writableWikiPages
+      ? new Set(options.writableWikiPages.map(normalizeVirtualPath))
+      : undefined;
   }
 
   /**
@@ -222,6 +238,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     filePath: string,
     content: string,
   ): Promise<WriteResult> {
+    const normalizedPath = normalizeVirtualPath(filePath);
     const error =
       this.getIgnoredPathError(filePath) ??
       this.getClaimsOwnershipError(filePath) ??
@@ -231,7 +248,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return markMutation(await super.write(filePath, content), filePath);
+    return markMutation(
+      await super.write(normalizedPath, content),
+      normalizedPath,
+    );
   }
 
   /**
@@ -244,6 +264,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     newString: string,
     replaceAll?: boolean,
   ): Promise<EditResult> {
+    const normalizedPath = normalizeVirtualPath(filePath);
     const error =
       this.getIgnoredPathError(filePath) ??
       this.getClaimsOwnershipError(filePath) ??
@@ -254,8 +275,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     }
 
     return markMutation(
-      await super.edit(filePath, oldString, newString, replaceAll),
-      filePath,
+      await super.edit(normalizedPath, oldString, newString, replaceAll),
+      normalizedPath,
     );
   }
 
@@ -266,6 +287,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * @returns Backend deletion result with mutation metadata on success.
    */
   override async delete(filePath: string): Promise<DeleteResult> {
+    const normalizedPath = normalizeVirtualPath(filePath);
     const error =
       this.getIgnoredPathError(filePath) ??
       this.getClaimsOwnershipError(filePath) ??
@@ -273,7 +295,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     if (error) {
       return { error };
     }
-    return markMutation(await super.delete(filePath), filePath);
+    return markMutation(await super.delete(normalizedPath), normalizedPath);
   }
 
   /**
@@ -468,7 +490,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return {
         exitCode: 1,
         output:
-          "OpenWiki Claims state is implementation-owned and unavailable to shell execute. Use inspect_claims and resolve_claims.",
+          "OpenWiki Claims state is implementation-owned and unavailable to shell execute.",
         truncated: false,
       };
     }
@@ -493,15 +515,22 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * or when the path is under `openwiki/`.
    */
   private getDocsOnlyWriteError(filePath: string): string | null {
-    if (
-      !this.docsOnly ||
-      this.outputMode === "local-wiki" ||
-      isOpenWikiDocsPath(filePath)
-    ) {
+    if (!this.docsOnly || this.outputMode === "local-wiki") {
       return null;
     }
 
-    return `OpenWiki repository init/update runs may only write under /${OPEN_WIKI_DIR}/. Refused path: ${filePath}`;
+    if (!isOpenWikiDocsPath(filePath)) {
+      return `OpenWiki repository init/update runs may only write under /${OPEN_WIKI_DIR}/. Refused path: ${filePath}`;
+    }
+
+    if (
+      this.writableWikiPages !== undefined &&
+      !this.writableWikiPages.has(normalizeVirtualPath(filePath))
+    ) {
+      return `This OpenWiki worker may not modify ${filePath}.`;
+    }
+
+    return null;
   }
 
   /**
@@ -635,6 +664,17 @@ export function isOpenWikiDocsPath(filePath: string): boolean {
   return (
     virtualPath === OPEN_WIKI_DIR || virtualPath.startsWith(`${OPEN_WIKI_DIR}/`)
   );
+}
+
+/**
+ * Converts a model-facing path into one canonical absolute virtual path.
+ *
+ * @param filePath - Relative, absolute, or backslash-separated virtual path.
+ * @returns Canonical absolute POSIX virtual path.
+ */
+function normalizeVirtualPath(filePath: string): string {
+  const slashed = filePath.trim().replaceAll("\\", "/");
+  return path.posix.normalize(`/${slashed.replace(/^\/+/, "")}`);
 }
 
 /**

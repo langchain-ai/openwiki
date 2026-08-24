@@ -57,6 +57,76 @@ describe("IngestionSummary", () => {
 });
 
 describe("RunView", () => {
+  test("renders native planning, page position, and finalization progress", () => {
+    const states: RunLogItem[][] = [
+      [
+        {
+          id: 1,
+          type: "repository_progress",
+          stage: "planning",
+          resumed: true,
+        },
+      ],
+      [
+        {
+          id: 1,
+          type: "repository_progress",
+          stage: "generating",
+          page: "/openwiki/architecture.md",
+          pageIndex: 2,
+          pageCount: 4,
+        },
+      ],
+      [
+        {
+          id: 1,
+          type: "repository_progress",
+          stage: "finalizing",
+        },
+      ],
+    ];
+    const { lastFrame, rerender, unmount } = render(
+      <RunView command="update" log={states[0]} />,
+    );
+    expect(plain(lastFrame())).toContain("Resuming repository wiki planning");
+
+    rerender(<RunView command="update" log={states[1]} />);
+    expect(plain(lastFrame())).toContain(
+      "Documenting page 2 of 4 · /openwiki/architecture.md",
+    );
+
+    rerender(<RunView command="update" log={states[2]} />);
+    expect(plain(lastFrame())).toContain("Finalizing repository wiki");
+    unmount();
+  });
+
+  test("renders replanning and completed no-op states", () => {
+    const replanning: RunLogItem[] = [
+      {
+        id: 1,
+        type: "repository_progress",
+        stage: "replanning",
+        resumed: true,
+      },
+    ];
+    const active = render(<RunView command="update" log={replanning} />);
+    expect(plain(active.lastFrame())).toContain(
+      "Repository source changed · replanning wiki",
+    );
+    active.unmount();
+
+    const noop: RunLogItem[] = [
+      { id: 1, type: "repository_progress", stage: "noop" },
+    ];
+    const complete = render(
+      <RunView command="update" done durationMs={10} log={noop} />,
+    );
+    expect(plain(complete.lastFrame())).toContain(
+      "Repository wiki is already current",
+    );
+    complete.unmount();
+  });
+
   test("renders a completed init outcome, duration, paths, and useful counts", () => {
     const log: RunLogItem[] = [
       {

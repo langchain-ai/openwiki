@@ -96,42 +96,22 @@ describe("Claims agent graph integration", () => {
   });
 
   test.each(["init", "update"] as const)(
-    "registers Claims tools and middleware for repository %s",
+    "keeps repository %s outside the shared graph",
     async (command) => {
       const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-claims-agent-"));
       temporaryDirectories.push(cwd);
 
-      await createOpenWikiAgent({
-        command,
-        cwd,
-        model: new FakeListChatModel({ responses: ["done"] }),
-        outputMode: "repository",
-      });
-
-      const options = latestGraphOptions();
-      expect(options.tools.map((tool) => tool.name)).toEqual([
-        "delete_file",
-        "resolve_claims",
-        "inspect_claims",
-      ]);
-      expect(options.middleware.map((middleware) => middleware.name)).toContain(
-        "OpenWikiClaimsReadNoteMiddleware",
+      await expect(
+        createOpenWikiAgent({
+          command,
+          cwd,
+          model: new FakeListChatModel({ responses: ["done"] }),
+          outputMode: "repository",
+        }),
+      ).rejects.toThrow(
+        "Repository init/update use the OpenWiki page-job runner",
       );
-      expect(
-        options.middleware.map((middleware) => middleware.name),
-      ).not.toContain("OpenWikiClaimsCompletionMiddleware");
-      expect(options.subagents).toHaveLength(command === "init" ? 3 : 0);
-      if (command === "init") {
-        expect(
-          options.subagents.map(
-            (subagent) => (subagent as { name: string }).name,
-          ),
-        ).toEqual([
-          "skeleton-critic",
-          "wiki-question-finder",
-          "wiki-answer-verifier",
-        ]);
-      }
+      expect(createDeepAgent).not.toHaveBeenCalled();
     },
   );
 

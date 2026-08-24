@@ -24,6 +24,49 @@ interface RunLogItemBase {
 }
 
 /**
+ * Current native repository-generation lifecycle retained by the run view.
+ */
+export interface RunRepositoryProgressLogItem extends RunLogItemBase {
+  /**
+   * Discriminator for structured repository lifecycle progress.
+   */
+  type: "repository_progress";
+
+  /**
+   * Current native repository-generation lifecycle stage.
+   */
+  stage: "planning" | "generating" | "finalizing" | "replanning" | "noop";
+
+  /**
+   * Whether this stage continues an interrupted durable run.
+   *
+   * @default false
+   */
+  resumed?: boolean;
+
+  /**
+   * Canonical page currently owned by the active worker.
+   *
+   * @default undefined outside generation
+   */
+  page?: string;
+
+  /**
+   * One-based page position in the persisted ordered queue.
+   *
+   * @default undefined outside generation
+   */
+  pageIndex?: number;
+
+  /**
+   * Total page count in the persisted ordered queue.
+   *
+   * @default undefined until planning completes
+   */
+  pageCount?: number;
+}
+
+/**
  * One exact filesystem path shown in the live activity view.
  */
 export interface RunActivityLogItem extends RunLogItemBase {
@@ -180,4 +223,8 @@ export interface RunToolLogItem extends RunLogItemBase {
  * One bounded entry in a run's progress and final-result model.
  */
 export type RunLogItem =
-  RunActivityLogItem | RunDebugLogItem | RunTextLogItem | RunToolLogItem;
+  | RunActivityLogItem
+  | RunDebugLogItem
+  | RunRepositoryProgressLogItem
+  | RunTextLogItem
+  | RunToolLogItem;

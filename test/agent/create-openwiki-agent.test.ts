@@ -27,6 +27,24 @@ describe("createOpenWikiAgent", () => {
     ).rejects.toThrow("OpenWiki agent cwd must be an absolute path.");
   });
 
+  test("rejects repository generation before constructing the legacy graph", async () => {
+    const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-agent-"));
+    temporaryDirectories.push(cwd);
+
+    for (const command of ["init", "update"] as const) {
+      await expect(
+        createOpenWikiAgent({
+          command,
+          cwd,
+          model: new FakeListChatModel({ responses: ["done"] }),
+          outputMode: "repository",
+        }),
+      ).rejects.toThrow(
+        "Repository init/update use the OpenWiki page-job runner",
+      );
+    }
+  });
+
   test("constructs a graph from an initialized chat model", async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-agent-"));
     temporaryDirectories.push(cwd);

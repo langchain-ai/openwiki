@@ -11,19 +11,8 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import {
-  CompositeBackend,
-  createDeepAgent,
-  FilesystemBackend,
-  type FilesystemPermission,
-  type GlobResult,
-} from "deepagents";
+import { createDeepAgent } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
-import { createClaimsIntegration } from "../claims/brains/code/integration.js";
-import {
-  prepareClaimsRuntime,
-  type ClaimsRuntime,
-} from "../claims/brains/code/runtime.js";
 import {
   DEBUG_ENV_KEYS,
   loadOpenWikiEnv,
@@ -36,10 +25,8 @@ import {
   SECRET_KEY_PATTERN_SOURCE,
 } from "../platform/diagnostics.js";
 import {
-  openWikiConversationHistoryDir,
   openWikiHomeDisplayPath,
   openWikiLocalWikiDir,
-  openWikiSkillsDir,
 } from "../config/openwiki-home.js";
 import { resolveLanguage } from "../platform/language.js";
 import {
@@ -63,9 +50,13 @@ import {
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
-import { resolveRepositoryReviewSubagents } from "./review-subagents.js";
 import { syncBundledSkills } from "./skills.js";
-import { beginRepositoryWikiReplacement } from "./wiki-replacement.js";
+import {
+  AGENT_FILESYSTEM_PERMISSIONS,
+  CONVERSATION_HISTORY_MOUNT,
+  createAgentBackend,
+} from "./agent-backend.js";
+import { runNativeRepositoryGeneration } from "./repository-runner.js";
 import {
   createVertexAuthFetch,
   resolveVertexSurface,
@@ -146,17 +137,20 @@ import {
 } from "../auth/external-cli-auth.js";
 import {
   createOpenWikiContentSnapshot,
-  getUpdateNoopStatus,
   createRunContext,
   persistRunMetadataIfChanged,
   removeTemporaryWorkingFiles,
-  shouldCheckUpdateNoop,
-  writeLastUpdateMetadata,
 } from "./utils.js";
 import { clearActiveRun, registerActiveRun } from "./crash-guard.js";
 import { inStage, inStageSync, tagErrorStage } from "../telemetry/index.js";
 import type { RunTelemetryContext } from "../telemetry/index.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
+
+export {
+  AGENT_FILESYSTEM_PERMISSIONS,
+  CONVERSATION_HISTORY_MOUNT,
+  createAgentBackend,
+};
 
 export async function runOpenWikiAgent(
   command: OpenWikiCommand,
@@ -182,6 +176,60 @@ export async function runOpenWikiAgent(
   emitDebug(options, `env=loaded ${openWikiHomeDisplayPath}/.env`);
   emitDebug(options, `env.afterLoad ${formatEnvironmentDebug()}`);
 
+  const isRepositoryGeneration =
+    outputMode === "repository" && (command === "init" || command === "update");
+
+  if (isRepositoryGeneration) {
+    const debugFetchCapture = installOpenRouterDebugFetch(options);
+    try {
+      const config = await resolveRunConfig(options, (resolved) => {
+        telemetryContext.provider = resolved;
+      });
+      const model = inStageSync(
+        "build",
+        () =>
+          createModel(
+            config.provider,
+            config.modelId,
+            config.providerRetryAttempts,
+            config.maxOutputTokens,
+            config.streamIdleTimeout,
+          ),
+        { errorClass: "build_error", errorDetail: "model" },
+      );
+      const generation = await inStage(
+        "run",
+        () =>
+          runNativeRepositoryGeneration({
+            root: runtimeCwd,
+            mode: command,
+            language: options.language,
+            force: Boolean(options.userMessage?.trim()),
+            planningContext: options.userMessage,
+            modelId: config.modelId,
+            model,
+            onEvent: options.onEvent,
+          }),
+        { errorClass: "agent_error" },
+      );
+
+      if (generation.skipped) {
+        telemetryContext.outcome = "noop";
+      }
+
+      return {
+        command,
+        model: config.modelId,
+        ...(generation.skipped ? { skipped: true } : {}),
+      };
+    } catch (error) {
+      attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());
+      throw error;
+    } finally {
+      debugFetchCapture.restore();
+    }
+  }
+
   const openWikiIgnore =
     outputMode === "repository"
       ? await OpenWikiIgnore.load(runtimeCwd)
@@ -190,85 +238,6 @@ export async function runOpenWikiAgent(
     options,
     `openwikiignore.patterns=${openWikiIgnore.patterns.length}`,
   );
-
-  const replacesRepositoryWiki =
-    command === "init" && outputMode === "repository";
-  const prepareRunClaims = () =>
-    inStage(
-      "build",
-      () =>
-        prepareClaimsRuntime(
-          command,
-          outputMode,
-          runtimeCwd,
-          openWikiIgnore,
-          (message) => emitClaimsWarning(options, message),
-        ),
-      { errorClass: "build_error", errorDetail: "claims_preflight" },
-    );
-
-  // Updates retain fail-fast Claims validation. Repository init instead creates
-  // its Claims session after replacement starts, so old sidecars cannot be read
-  // into the brand-new wiki or collide with pages regenerated at the same path.
-  let claimsRuntime: ClaimsRuntime | undefined = replacesRepositoryWiki
-    ? undefined
-    : await prepareRunClaims();
-  if (!replacesRepositoryWiki) {
-    emitDebug(
-      options,
-      claimsRuntime
-        ? `claims.issues=${claimsRuntime.issueCount}`
-        : "claims=disabled",
-    );
-  }
-
-  if (command === "update" && shouldCheckUpdateNoop(options)) {
-    const noopStatus = await getUpdateNoopStatus(
-      runtimeCwd,
-      openWikiIgnore,
-      options.language,
-    );
-
-    if (noopStatus.shouldSkip) {
-      await claimsRuntime?.finalize(runTimestamp);
-      const message =
-        "No repository changes detected since the last OpenWiki update; skipping agent run.";
-      emitDebug(options, `update.noop gitHead=${noopStatus.gitHead}`);
-      options.onEvent?.({ type: "text", text: message });
-
-      // Refresh .last-update.json even on a fast-skip no-op so freshness
-      // checks reflect the actual last run, not the last content change.
-      // The persisted language is carried through so a non-English wiki keeps
-      // its marker; dropping it would make the next real update revert to "en".
-      try {
-        await writeLastUpdateMetadata(
-          command,
-          cwd,
-          noopStatus.model ?? "",
-          options.outputMode ?? "local-wiki",
-          "complete",
-          noopStatus.language,
-        );
-      } catch {
-        // Best-effort: a metadata refresh must never block the no-op path.
-      }
-
-      // The single telemetry boundary (withRunTelemetry) owns the record; publish
-      // the short-circuit outcome and provider onto the shared context and return.
-      telemetryContext.provider = resolveConfiguredProvider();
-      telemetryContext.outcome = "noop";
-
-      return {
-        command,
-        model: noopStatus.model,
-        skipped: true,
-      };
-    }
-
-    emitDebug(options, `update.noop=false reason=${noopStatus.reason}`);
-  } else if (command === "update") {
-    emitDebug(options, "update.noop=false reason=user message provided");
-  }
 
   const debugFetchCapture = installOpenRouterDebugFetch(options);
 
@@ -281,59 +250,18 @@ export async function runOpenWikiAgent(
       telemetryContext.provider = resolved;
     });
 
-    const replacement = replacesRepositoryWiki
-      ? await inStage(
-          "build",
-          () => beginRepositoryWikiReplacement(runtimeCwd),
-          { errorClass: "build_error", errorDetail: "wiki_replacement" },
-        )
-      : undefined;
-    if (replacement) emitDebug(options, "wiki.replacement=started");
-
-    try {
-      if (replacesRepositoryWiki) {
-        claimsRuntime = await prepareRunClaims();
-        emitDebug(
-          options,
-          claimsRuntime
-            ? `claims.issues=${claimsRuntime.issueCount}`
-            : "claims=disabled",
-        );
-      }
-
-      const result = await runOpenWikiAgentCore(
-        command,
-        runtimeCwd,
-        options,
-        config.provider,
-        config.modelId,
-        config.providerRetryAttempts,
-        config.maxOutputTokens,
-        config.streamIdleTimeout,
-        openWikiIgnore,
-        claimsRuntime,
-        runTimestamp,
-      );
-      if (replacement) {
-        await inStage("finalize", () => replacement.commit());
-        emitDebug(options, "wiki.replacement=committed");
-      }
-      return result;
-    } catch (error) {
-      if (replacement) {
-        try {
-          await replacement.rollback();
-          emitDebug(options, "wiki.replacement=rolledBack");
-        } catch (rollbackError) {
-          throw new AggregateError(
-            [error, rollbackError],
-            "Repository wiki init failed and the previous wiki could not be fully restored.",
-            { cause: rollbackError },
-          );
-        }
-      }
-      throw error;
-    }
+    return await runOpenWikiAgentCore(
+      command,
+      runtimeCwd,
+      options,
+      config.provider,
+      config.modelId,
+      config.providerRetryAttempts,
+      config.maxOutputTokens,
+      config.streamIdleTimeout,
+      openWikiIgnore,
+      runTimestamp,
+    );
   } catch (error) {
     // Enrich the error for the CLI's debug/auth UI, then rethrow. The telemetry
     // record is owned by withRunTelemetry, which reads the stage/class tags this
@@ -470,6 +398,12 @@ export async function createOpenWikiAgent(
     throw new Error("OpenWiki agent cwd must be an absolute path.");
   }
 
+  if (options.outputMode === "repository" && options.command !== "chat") {
+    throw new Error(
+      "Repository init/update use the OpenWiki page-job runner; call runOpenWikiAgent instead of createOpenWikiAgent.",
+    );
+  }
+
   await syncBundledSkills();
   const openWikiIgnore =
     options.outputMode === "repository"
@@ -480,13 +414,6 @@ export async function createOpenWikiAgent(
     options.outputMode,
     options.language,
   );
-  const claimsRuntime = await prepareClaimsRuntime(
-    options.command,
-    options.outputMode,
-    options.cwd,
-    openWikiIgnore,
-    (message) => emitClaimsWarning(options, message),
-  );
   const checkpointer = await createCheckpointer(
     resolveCheckpointTarget(options.command),
   );
@@ -496,7 +423,6 @@ export async function createOpenWikiAgent(
     checkpointer,
     context,
     openWikiIgnore,
-    claimsRuntime,
     runTimestamp: new Date().toISOString(),
   });
 }
@@ -518,13 +444,6 @@ type OpenWikiAgentGraphOptions = OpenWikiAgentOptions & {
   openWikiIgnore: OpenWikiIgnore;
 
   /**
-   * Repository Claims state for init/update.
-   *
-   * @default undefined for chat and personal-brain runs.
-   */
-  claimsRuntime?: ClaimsRuntime;
-
-  /**
    * Single provenance time shared by generated and verified events.
    */
   runTimestamp: string;
@@ -543,10 +462,6 @@ function createOpenWikiAgentGraph(
     virtualMode: true,
   });
   const backend = createAgentBackend(wikiBackend);
-  const claimsIntegration = options.claimsRuntime
-    ? createClaimsIntegration(options.claimsRuntime, wikiBackend)
-    : undefined;
-  const claimsSession = options.claimsRuntime?.session;
   // An update inherits the wiki's persisted language unless --language requests a
   // different one. The plan drives a beforeAgent pass that, on a switch,
   // retranslates every page so the incremental update does not leave a mix of the
@@ -566,10 +481,7 @@ function createOpenWikiAgentGraph(
   // provenance here and Claims verification at successful-run finalization.
   return createDeepAgent({
     model: options.model,
-    tools: [
-      ...createOpenWikiConnectorTools(options.outputMode),
-      ...(claimsIntegration?.tools ?? []),
-    ],
+    tools: createOpenWikiConnectorTools(options.outputMode),
     checkpointer: options.checkpointer,
     backend,
     middleware:
@@ -602,28 +514,19 @@ function createOpenWikiAgentGraph(
                         text: `${message}\n\n`,
                       });
                     },
-                    options.claimsRuntime?.session,
                   ),
                 ]
               : []),
-            ...(claimsIntegration?.middleware ?? []),
             createOpenWikiIndexMiddleware(
               wikiBackend,
               options.outputMode,
               indexLabels,
               conceptType,
               options.runTimestamp,
-              claimsSession
-                ? () => claimsSession.getEvidenceResourcesByPage()
-                : undefined,
             ),
           ],
     skills: ["/skills/"],
-    subagents: resolveRepositoryReviewSubagents(
-      options.command,
-      options.outputMode,
-      backend,
-    ),
+    subagents: [],
     permissions: AGENT_FILESYSTEM_PERMISSIONS,
     systemPrompt: createSystemPrompt(
       options.command,
@@ -644,7 +547,6 @@ async function runOpenWikiAgentCore(
   maxOutputTokens: number | undefined,
   streamIdleTimeout: number | undefined,
   openWikiIgnore: OpenWikiIgnore,
-  claimsRuntime: ClaimsRuntime | undefined,
   runTimestamp: string,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
@@ -704,7 +606,6 @@ async function runOpenWikiAgentCore(
         checkpointer,
         context,
         openWikiIgnore,
-        claimsRuntime,
         runTimestamp,
       }),
     { errorClass: "build_error", errorDetail: "agent" },
@@ -843,7 +744,6 @@ async function runOpenWikiAgentCore(
   try {
     metadataWritten = await inStage("finalize", async () => {
       await cleanupTemporaryWorkingFiles(command, cwd, outputMode, options);
-      await claimsRuntime?.finalize(runTimestamp);
       return persistRunMetadataIfChanged(
         command,
         cwd,
@@ -914,7 +814,6 @@ async function cleanupTemporaryWorkingFiles(
  * @param cwd - Absolute runtime root.
  * @param context - Persisted run context.
  * @param options - User-supplied run options.
- * @param claimsRuntime - Optional repository Claims runtime.
  * @returns Follow-up text or a fully populated command prompt.
  */
 function createRunUserMessage(
@@ -942,87 +841,6 @@ export type CheckpointTarget = {
   connString: string;
   persistent: boolean;
 };
-
-/**
- * deepagents' summarization middleware offloads conversation history to
- * `<historyPathPrefix>/<session>.md` through the agent's backend, and
- * `createDeepAgent` exposes no way to override the `"/conversation_history"`
- * default. Keep this mount prefix in sync with that default.
- */
-export const CONVERSATION_HISTORY_MOUNT = "/conversation_history/";
-
-/**
- * Agent-layer filesystem permissions. Both virtual mounts are read-only for
- * the model's filesystem tools:
- *
- * - `/skills/**` — skills are installed by the CLI, never by the agent.
- * - `/conversation_history/**` — only the summarization middleware may
- *   write here. It writes directly through the backend, which agent-layer
- *   permissions do not affect, so denying tool writes closes the door on
- *   prompt-injected content being persisted into future sessions' context
- *   without touching the offload itself.
- */
-export const AGENT_FILESYSTEM_PERMISSIONS: FilesystemPermission[] = [
-  { operations: ["write"], paths: ["/skills/**"], mode: "deny" },
-  {
-    operations: ["write"],
-    paths: [`${CONVERSATION_HISTORY_MOUNT}**`],
-    mode: "deny",
-  },
-];
-
-/**
- * Wraps the wiki backend with the virtual mounts every agent run layers on
- * top of the documented repository (or local wiki):
- *
- * - `/skills/` — the bundled and user skills under ~/.openwiki/skills.
- * - `/conversation_history/` — the summarization middleware's history
- *   offload, routed to ~/.openwiki/conversation_history. Routing it there
- *   keeps the offload out of the documented repository and, on docs-only
- *   init/update runs, keeps the docs-only guard from refusing the write —
- *   that refusal is non-fatal but silently degrades summarization and
- *   narrows coverage on large repositories (#496).
- *
- * `historyDir` and `skillsDir` are injectable for tests.
- */
-export function createAgentBackend(
-  wikiBackend: OpenWikiLocalShellBackend,
-  {
-    historyDir = openWikiConversationHistoryDir,
-    skillsDir = openWikiSkillsDir,
-  }: { historyDir?: string; skillsDir?: string } = {},
-): CompositeBackend {
-  return new OpenWikiCompositeBackend(wikiBackend, {
-    [CONVERSATION_HISTORY_MOUNT]: new FilesystemBackend({
-      rootDir: historyDir,
-      virtualMode: true,
-    }),
-    "/skills/": new FilesystemBackend({
-      rootDir: skillsDir,
-      virtualMode: true,
-    }),
-  });
-}
-
-class OpenWikiCompositeBackend extends CompositeBackend {
-  override async glob(pattern: string, path = "/"): Promise<GlobResult> {
-    try {
-      return await super.glob(pattern, path);
-    } catch (error) {
-      if (
-        error instanceof RangeError &&
-        error.message === "Maximum call stack size exceeded"
-      ) {
-        return {
-          error:
-            "Glob search was too broad. Retry with a narrower path or pattern.",
-        };
-      }
-
-      throw error;
-    }
-  }
-}
 
 async function createCheckpointer(
   target: CheckpointTarget,
@@ -1158,29 +976,6 @@ function emitDebug(options: OpenWikiRunOptions, message: string): void {
     type: "debug",
     message,
   });
-}
-
-/**
- * Surfaces non-fatal Claims degradation without exposing credential text.
- *
- * @param options - Current run callbacks.
- * @param message - Claims-owned warning detail.
- */
-function emitClaimsWarning(
-  options: Pick<OpenWikiRunOptions, "onEvent">,
-  message: string,
-): void {
-  const warning = `OpenWiki Claims warning: ${sanitizeDiagnosticText(message)}`;
-  try {
-    options.onEvent?.({ type: "text", text: `${warning}\n` });
-  } catch {
-    // A user-owned event callback must not make safe Claims fallback fatal.
-  }
-  try {
-    process.stderr.write(`${warning}\n`);
-  } catch {
-    // Closed diagnostic streams do not change Claims correctness.
-  }
 }
 
 function ensureProviderCredentials(provider: OpenWikiProvider): void {
