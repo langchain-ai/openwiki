@@ -1,0 +1,102 @@
+src/cli/run-log/progress.ts
+  s_a5fa05fa15457a::t_935c8432c598d7 1-4,6-29,31-71,73-79
+  s_a5fa05fa15457a::t_24d6994ad96e38 5
+  s_a5fa05fa15457a::t_13655d3cf66cea 30
+  s_a5fa05fa15457a::t_2c0dea7386dbb5 72
+src/cli/run-log/reducer.ts
+  s_a5fa05fa15457a::t_307f297f76a53b 21-39
+test/agent/prompt-okf.test.ts
+  s_a5fa05fa15457a::t_d130fe4946bcbc 18,56
+  s_a5fa05fa15457a::t_9774e9073cdf17 22
+  s_a5fa05fa15457a::t_a9d869290bd9e3 19-21
+  s_a5fa05fa15457a::t_d9e7f394a60195 15-16,38-39,57-58,61
+test/agent/run-openwiki-agent-routing.test.ts
+  s_a5fa05fa15457a::t_545dfdca6d7814 29-36
+  s_a5fa05fa15457a::t_a17e7273756fe0 112
+  s_a5fa05fa15457a::t_2d25230fe4c5d5 55-56,97,99-102,126-127,129-130
+  s_a5fa05fa15457a::t_ea950738de46f7 1,6,8,13-17,43-45,48,50,52-54,57-58,61-68,70,72-77,79-89,91-94,96,103,105-107,109-111,115-117,119,122-124,132-133
+src/agent/docs-only-backend.ts
+  s_a5fa05fa15457a::t_935c8432c598d7 51-58,183-187,193-195,493,518-525,527-528,530,533,669-677
+  s_a5fa05fa15457a::t_3579bc45f3f2db 241,251-254,267,278-279,290,298
+  s_a5fa05fa15457a::t_6d92591400b5d1 678-679
+src/cli/run-log/types.ts
+  s_a5fa05fa15457a::t_307f297f76a53b 226-230
+  s_a5fa05fa15457a::t_935c8432c598d7 27-37,39-68
+  s_a5fa05fa15457a::t_0505b169a2c660 26
+  s_a5fa05fa15457a::t_2a94beb5edc364 38
+src/cli/components/run-view.tsx
+  s_a5fa05fa15457a::t_65e9b280d2509c 12-14,130,163-167,188-192,229-233,244-247,249,259-263
+  s_a5fa05fa15457a::t_e16d4f76f94094 11
+test/agent/prompt.test.ts
+  s_a5fa05fa15457a::t_962b63fbe16241 222,230-232,235,244-246,287,292,301,310-311
+  s_a5fa05fa15457a::t_83a878575949a6 24,56,70,129,145,162
+  s_a5fa05fa15457a::t_9741c6e3c0125e 316-317,321-325
+test/agent/claims-agent-integration.test.ts
+  s_a5fa05fa15457a::t_8ecbf060373825 99,104-112,114
+src/agent/repository-runner.ts
+  s_a5fa05fa15457a::t_b36f6ce08f7fce 1-499,501-513
+  s_a5fa05fa15457a::t_43505e53373916 500
+test/cli/runners.test.ts
+  s_a5fa05fa15457a::t_bc34656113dd15 486-545
+src/agent/prompts/code.ts
+  s_a5fa05fa15457a::t_5905efcd47e37f 97-98,105-106
+test/cli/components/run-view.test.tsx
+  s_a5fa05fa15457a::t_bc34656113dd15 60-88,90-92,94-97,99-129
+  s_a5fa05fa15457a::t_3a0dc992c8d40f 89,93,98
+src/cli/runners.ts
+  s_a5fa05fa15457a::t_65e9b280d2509c 40,273-274
+src/cli/components/chat.tsx
+  s_a5fa05fa15457a::t_993dbac2309607 85
+src/agent/repository-prompts.ts
+  s_a5fa05fa15457a::t_a5b5efed03b6a2 1-163
+src/agent/index.ts
+  s_a5fa05fa15457a::t_e79235f3232943 149-154
+  s_a5fa05fa15457a::t_3dac6cb5309a18 14,54-59
+  s_a5fa05fa15457a::t_ba185af1085df8 179-180,182-214,216-217,222-223,225-229,233-241,253-264
+  s_a5fa05fa15457a::t_6878610c728445 401-406,484,529
+test/agent/repository-prompts.test.ts
+  s_a5fa05fa15457a::t_311867b9a89379 1-113,115,117-120
+  s_a5fa05fa15457a::t_3a0dc992c8d40f 114,116
+test/agent/docs-only-backend.test.ts
+  s_a5fa05fa15457a::t_3a0dc992c8d40f 257-262
+  s_a5fa05fa15457a::t_6d874baa922286 291,296-300
+  s_a5fa05fa15457a::t_cffd81080bd8e5 244-256,263-285,287-290,292-295,302-308
+  s_a5fa05fa15457a::t_9774e9073cdf17 301
+  s_a5fa05fa15457a::t_d130fe4946bcbc 286
+test/cli/run-log/reducer.test.ts
+  s_a5fa05fa15457a::t_bc34656113dd15 82-142
+src/agent/types.ts
+  s_a5fa05fa15457a::t_935c8432c598d7 10-21,23-52,54
+  s_a5fa05fa15457a::t_55a45d626521e3 22
+test/agent/repository-runner.test.ts
+  s_a5fa05fa15457a::t_4019ebeb37af82 3-62,64,66,79-83,87,90-93,175,178,186,201,216-217,220,222,225,235-238,240,258-260,262-266,268
+  s_a5fa05fa15457a::t_2d25230fe4c5d5 94-96,102-104,109-113,117-118,122-168,218,241-256,273-274,316,363-366,368,374,451
+  s_a5fa05fa15457a::t_db4ddf64b49e11 1-2,63,65,67-78,84-86,88-89,97-101,105-108,114-116,119-121,169-174,176-177,179-185,187-200,202-215,219,221,223-224,226-234,239,257,261,267,269-272,275-315,317-362,367,369,372-373,375-450,452-487
+  s_a5fa05fa15457a::t_a17e7273756fe0 370-371
+src/agent/agent-backend.ts
+  s_a5fa05fa15457a::t_a5b5efed03b6a2 1-99
+test/agent/create-openwiki-agent.test.ts
+  s_a5fa05fa15457a::t_b0fce36aa9c8c8 30-45,47
+  s_a5fa05fa15457a::t_b60201db408a6d 46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "59750283c0bb29798b0636ccf7987d1975cdab1c",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_a5fa05fa15457a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03441-f5d6-70b2-b433-feb529211f2b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
