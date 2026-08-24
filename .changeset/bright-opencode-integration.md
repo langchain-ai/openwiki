@@ -1,5 +1,5 @@
 ---
-"openwiki": minor
+"openwiki": patch
 ---
 
-Install the OpenWiki skill and MCP server for OpenCode with `openwiki integrations install opencode`.
+feat: add opencode coding-agent integration target

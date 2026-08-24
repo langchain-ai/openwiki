@@ -42,9 +42,10 @@ pnpm integrations:dev <codex|claude|opencode>
 
 The command builds OpenWiki, refreshes the host skill, and records absolute
 paths to the current Node executable and `dist/cli/cli.js`. Restart the coding
-agent after installation. Codex, Claude Code, and OpenCode install at user scope. Later source changes only require `pnpm build` unless
-the bundled skill itself changes. Rerun `integrations:dev` to refresh the skill
-or after switching Node installations.
+agent after installation. Codex, Claude Code, and OpenCode install at user
+scope. Later source changes only require `pnpm build` unless the bundled skill
+itself changes. Rerun `integrations:dev` to refresh the skill or after switching
+Node installations.
 
 User-scope destinations match each host's own conventions: Codex writes under
 `~/.agents` and `~/.codex`, Claude Code under `~/.claude`, and OpenCode under
