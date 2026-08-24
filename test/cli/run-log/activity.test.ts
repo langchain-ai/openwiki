@@ -52,7 +52,6 @@ describe("getToolPathActivities", () => {
 describe("isOpenWikiPagePath", () => {
   test("includes persistent Markdown pages only", () => {
     expect(isOpenWikiPagePath("openwiki/quickstart.md")).toBe(true);
-    expect(isOpenWikiPagePath("openwiki/_plan.md")).toBe(false);
     expect(isOpenWikiPagePath("openwiki/.last-update.json")).toBe(false);
     expect(isOpenWikiPagePath(".claims/quickstart.json")).toBe(false);
   });

@@ -74,7 +74,6 @@ type OpenWikiBackendOptions = LocalShellBackendOptions & {
 const allowedIgnoredShellCommands = [
   /^pwd$/u,
   /^git\s+(?:--no-pager\s+)?rev-parse\s+HEAD$/u,
-  /^rm\s+-f\s+(?:\.\/)?openwiki\/_plan\.md$/u,
 ];
 
 /**

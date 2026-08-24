@@ -123,7 +123,7 @@ export interface RetractClaimOperation {
 }
 
 /**
- * One atomic mutation accepted by `resolve_claims`.
+ * One atomic mutation accepted by the Claims reconciliation boundary.
  */
 export type ClaimOperation =
   | AddClaimOperation

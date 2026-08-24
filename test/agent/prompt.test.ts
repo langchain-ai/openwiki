@@ -219,31 +219,21 @@ describe("createUserPrompt", () => {
     );
   });
 
-  test("repository init is guarded from the legacy user-prompt path", () => {
-    const prompt = createUserPrompt(
-      "init",
-      emptyContext({ wikiGoal: "Explain the CLI" }),
-      null,
-      "repository",
-    );
-
-    expect(prompt).toBe(
-      "Repository init is executed by the page-job runner and must not use the legacy repository agent prompt.",
-    );
+  test("rejects repository init before building a user prompt", () => {
+    expect(() =>
+      createUserPrompt(
+        "init",
+        emptyContext({ wikiGoal: "Explain the CLI" }),
+        null,
+        "repository",
+      ),
+    ).toThrow("Repository generation does not use shared agent prompts.");
   });
 
-  test("repository system init is guarded from the legacy agent path", () => {
-    const userPrompt = createUserPrompt(
-      "init",
-      emptyContext(),
-      null,
-      "repository",
+  test("rejects repository init before building a system prompt", () => {
+    expect(() => createSystemPrompt("init", "repository")).toThrow(
+      "Repository generation does not use shared agent prompts.",
     );
-    const systemPrompt = createSystemPrompt("init", "repository");
-
-    expect(userPrompt).toContain("page-job runner");
-    expect(systemPrompt).toContain("page-job runner");
-    expect(systemPrompt).not.toContain("resolve_claims");
   });
 
   test("init uses the personal-brain subject label in local-wiki mode", () => {
@@ -298,31 +288,19 @@ describe("createUserPrompt", () => {
     expect(prompt).not.toContain("  focus on auth  ");
   });
 
-  test("repository update is guarded from the legacy user-prompt path", () => {
-    const prompt = createUserPrompt(
-      "update",
-      emptyContext(),
-      null,
-      "repository",
-      "/repo",
-    );
-
-    expect(prompt).toBe(
-      "Repository update is executed by the page-job runner and must not use the legacy repository agent prompt.",
-    );
+  test("rejects repository update before building a user prompt", () => {
+    expect(() =>
+      createUserPrompt("update", emptyContext(), null, "repository", "/repo"),
+    ).toThrow("Repository generation does not use shared agent prompts.");
   });
 });
 
 describe("createSystemPrompt repository generation guards", () => {
-  test("keeps legacy repository generation architecture unreachable", () => {
+  test("rejects repository init and update", () => {
     for (const command of ["init", "update"] as const) {
-      const prompt = createSystemPrompt(command, "repository");
-
-      expect(prompt).toContain("page-job runner");
-      expect(prompt).not.toContain("resolve_claims");
-      expect(prompt).not.toContain("skeleton-critic");
-      expect(prompt).not.toContain("wiki-question-finder");
-      expect(prompt).not.toContain("wiki-answer-verifier");
+      expect(() => createSystemPrompt(command, "repository")).toThrow(
+        "Repository generation does not use shared agent prompts.",
+      );
     }
   });
 });

@@ -97,7 +97,6 @@ describe("prepareClaimsRuntime", () => {
 
     expect(runtime?.issueCount).toBe(0);
     expect(runtime?.session.inspectClaims(page)).toEqual([]);
-    expect(runtime?.session.getReadNote(page)).toBeUndefined();
     await runtime?.finalize();
     await expect(store.loadPage(page)).resolves.toBeNull();
   });
@@ -163,9 +162,6 @@ describe("prepareClaimsRuntime", () => {
     );
 
     expect(runtime?.issueCount).toBe(0);
-    expect(runtime?.session.getReadNote(page)).toContain(
-      "this page has no Claims yet",
-    );
     await runtime?.finalize("2026-08-20T12:00:00.000Z");
     expect(
       parseFrontmatterFields(await readPage(page))?.verified,

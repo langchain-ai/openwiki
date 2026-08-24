@@ -139,7 +139,6 @@ import {
   createOpenWikiContentSnapshot,
   createRunContext,
   persistRunMetadataIfChanged,
-  removeTemporaryWorkingFiles,
 } from "./utils.js";
 import { clearActiveRun, registerActiveRun } from "./crash-guard.js";
 import { inStage, inStageSync, tagErrorStage } from "../telemetry/index.js";
@@ -685,12 +684,6 @@ async function runOpenWikiAgentCore(
   } catch (error) {
     tagErrorStage(error, "run");
 
-    await cleanupTemporaryWorkingFiles(command, cwd, outputMode, options).catch(
-      () => {
-        emitDebug(options, "working-files.cleanup=failed");
-      },
-    );
-
     // Persist metadata even when the stream fails late, so content that was
     // already generated stays diffable by future updates. The run is recorded
     // as interrupted so the next update is not skipped as a no-op against a
@@ -743,7 +736,6 @@ async function runOpenWikiAgentCore(
 
   try {
     metadataWritten = await inStage("finalize", async () => {
-      await cleanupTemporaryWorkingFiles(command, cwd, outputMode, options);
       return persistRunMetadataIfChanged(
         command,
         cwd,
@@ -786,25 +778,6 @@ async function runOpenWikiAgentCore(
     command,
     model: modelId,
   };
-}
-
-async function cleanupTemporaryWorkingFiles(
-  command: OpenWikiCommand,
-  cwd: string,
-  outputMode: OpenWikiOutputMode,
-  options: OpenWikiRunOptions,
-): Promise<void> {
-  if (command === "chat") {
-    return;
-  }
-
-  const removed = await removeTemporaryWorkingFiles(cwd, outputMode);
-  emitDebug(
-    options,
-    removed.length > 0
-      ? `working-files.cleanup=removed ${removed.join(",")}`
-      : "working-files.cleanup=skipped missing",
-  );
 }
 
 /**

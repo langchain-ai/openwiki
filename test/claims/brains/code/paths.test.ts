@@ -40,7 +40,7 @@ describe("code-brain claim paths", () => {
     expect(toClaimsSidecarRelativePath(page)).toBe("guides/configuration.json");
   });
 
-  test.each(["_plan.md", "index.md", "/openwiki/INSTRUCTIONS.md"])(
+  test.each(["index.md", "/openwiki/INSTRUCTIONS.md"])(
     "canonicalizes structural tool path %s without assigning Claims",
     (page) => {
       const normalized = normalizeWikiToolPagePath(page);
@@ -52,7 +52,6 @@ describe("code-brain claim paths", () => {
   test("recognizes factual Markdown pages", () => {
     expect(isGroundedWikiPage("/openwiki/quickstart.md")).toBe(true);
     expect(isGroundedWikiPage("/openwiki/architecture/overview.md")).toBe(true);
-    expect(isGroundedWikiPage("/openwiki/_skeleton.md")).toBe(true);
     expect(isGroundedWikiPage("/openwiki/architecture/overview.txt")).toBe(
       false,
     );
@@ -64,7 +63,6 @@ describe("code-brain claim paths", () => {
     "/openwiki/nested/Index.md",
     "/openwiki/log.md",
     "/openwiki/INSTRUCTIONS.md",
-    "/openwiki/_plan.md",
     "/openwiki/.claims/page.md",
     "/openwiki/.CLAIMS/page.md",
     "/openwiki/nested/.claims/page.md",

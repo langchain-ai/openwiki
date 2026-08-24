@@ -202,15 +202,10 @@ export function buildExplorationTreeLines(
 
 /**
  * Returns whether a normalized activity path is a persistent OpenWiki page.
- * Temporary planning files and non-Markdown sidecars are deliberately
- * excluded from completion page counts.
+ * Non-Markdown sidecars are deliberately excluded from completion page counts.
  */
 export function isOpenWikiPagePath(activityPath: string): boolean {
-  return (
-    activityPath.startsWith("openwiki/") &&
-    activityPath.endsWith(".md") &&
-    path.posix.basename(activityPath) !== "_plan.md"
-  );
+  return activityPath.startsWith("openwiki/") && activityPath.endsWith(".md");
 }
 
 function appendTreeLines(

@@ -6,7 +6,6 @@ import {
   readdir,
   readFile,
   readlink,
-  rm,
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
@@ -38,8 +37,6 @@ import type { Dirent } from "node:fs";
 const execFileAsync = promisify(execFile);
 const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
 const REPOSITORY_RUN_STATE_BASENAME = ".run.json";
-const TEMPORARY_WORKING_FILES = ["_plan.md", "_skeleton.md"] as const;
-const TEMPORARY_WORKING_FILE_SET = new Set<string>(TEMPORARY_WORKING_FILES);
 
 export type OpenWikiContentSnapshot = string;
 
@@ -254,34 +251,6 @@ export async function persistRunMetadataIfChanged(
   );
 
   return true;
-}
-
-/**
- * Removes temporary planning artifacts created during init and update runs.
- *
- * @param cwd - Repository root or local-wiki root.
- * @param outputMode - Active wiki output layout.
- * @returns Basenames of the artifacts that existed and were removed.
- */
-export async function removeTemporaryWorkingFiles(
-  cwd: string,
-  outputMode: OpenWikiOutputMode,
-): Promise<string[]> {
-  const wikiRoot = getWikiContentRoot(cwd, outputMode);
-  const removed: string[] = [];
-
-  for (const basename of TEMPORARY_WORKING_FILES) {
-    try {
-      await rm(path.join(wikiRoot, basename));
-      removed.push(basename);
-    } catch (error) {
-      if (!isFileNotFoundError(error)) {
-        throw error;
-      }
-    }
-  }
-
-  return removed;
 }
 
 /**
@@ -709,14 +678,13 @@ function getMetadataFilePath(
 }
 
 /**
- * Excludes OpenWiki-owned metadata and working files from content snapshots.
+ * Excludes OpenWiki-owned metadata from content snapshots.
  */
 function isIgnoredSnapshotPath(relativePath: string): boolean {
   return (
     relativePath === path.basename(UPDATE_METADATA_PATH) ||
     relativePath === LOCAL_WIKI_METADATA_PATH ||
-    relativePath === REPOSITORY_RUN_STATE_BASENAME ||
-    TEMPORARY_WORKING_FILE_SET.has(relativePath)
+    relativePath === REPOSITORY_RUN_STATE_BASENAME
   );
 }
 

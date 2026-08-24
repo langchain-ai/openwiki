@@ -18,7 +18,6 @@ import {
   type ClaimsVerificationEvent,
   type GroundingIssue,
   type InspectedClaim,
-  type InspectedPageClaims,
   type PageClaims,
   type ResolveClaimsInput,
   type ResolveClaimsResult,
@@ -47,16 +46,6 @@ export interface ClaimSessionOptions {
    * Sidecars whose generated Markdown pages no longer exist.
    */
   orphanPages: string[];
-
-  /**
-   * Current Markdown pages with no non-empty Claims set.
-   *
-   * The marker is lazy, in-memory guidance only; it does not create a sidecar
-   * or a finalization obligation.
-   *
-   * @default []
-   */
-  ungroundedPages?: string[];
 
   /**
    * Identifier factory used for newly added claims.
@@ -131,11 +120,6 @@ export class ClaimSession {
   private readonly orphanPages: string[];
 
   /**
-   * Current pages that should receive lazy first-Claims guidance when read.
-   */
-  private readonly ungroundedPages: Set<string>;
-
-  /**
    * OpenWiki-owned identifier factory.
    */
   private readonly createClaimId: () => string;
@@ -150,9 +134,6 @@ export class ClaimSession {
     this.orphanPages = [
       ...new Set(options.orphanPages.map(normalizeWikiPagePath)),
     ].sort((left, right) => left.localeCompare(right));
-    this.ungroundedPages = new Set(
-      (options.ungroundedPages ?? []).map(normalizeWikiPagePath),
-    );
     this.createClaimId =
       options.createClaimId ??
       (() => `claim_${randomUUID().replaceAll("-", "")}`);
@@ -179,11 +160,6 @@ export class ClaimSession {
           .filter((issue) => normalizeWikiPagePath(issue.page) === page)
           .map(cloneGroundingIssue),
       });
-      if (persisted.claims.length === 0) {
-        this.ungroundedPages.add(page);
-      } else {
-        this.ungroundedPages.delete(page);
-      }
     }
   }
 
@@ -218,11 +194,6 @@ export class ClaimSession {
       this.assertClaimOwnershipAvailable(page, nextClaims);
       this.replaceClaimOwnership(page, previousClaims, nextClaims);
       state.claims = nextClaims;
-      if (nextClaims.length === 0) {
-        this.ungroundedPages.add(page);
-      } else {
-        this.ungroundedPages.delete(page);
-      }
       const allocatedIds = nextClaims
         .map(({ id }) => id)
         .filter((id) => !existingIds.has(id));
@@ -262,32 +233,6 @@ export class ClaimSession {
   }
 
   /**
-   * Returns selected Claims by globally unique identifier, grouped by owner.
-   *
-   * The first occurrence of each identifier determines response order. Repeated
-   * identifiers are ignored so an accidental duplicate does not enlarge the
-   * model-facing payload.
-   *
-   * @param ids - Stable claim identifiers from one or more page read notes.
-   * @returns Selected Claims grouped under their canonical generated pages.
-   */
-  inspectClaimsByIds(ids: readonly string[]): InspectedPageClaims[] {
-    const grouped = new Map<string, InspectedClaim[]>();
-    for (const id of new Set(ids)) {
-      const page = this.claimOwners.get(id);
-      const state = page ? this.pages.get(page) : undefined;
-      const claim = state?.claims.find((candidate) => candidate.id === id);
-      if (!page || !state || state.deleted || !claim) {
-        throw new ClaimSessionError(`Unknown claim id: ${id}`);
-      }
-      const claims = grouped.get(page) ?? [];
-      claims.push(toInspectedClaim(claim, state.issues));
-      grouped.set(page, claims);
-    }
-    return [...grouped].map(([page, claims]) => ({ page, claims }));
-  }
-
-  /**
    * Returns the complete current evidence-resource projection for every page
    * represented in this Claims session.
    *
@@ -318,41 +263,6 @@ export class ClaimSession {
   }
 
   /**
-   * Formats a non-persisted read note for page-local evidence debt.
-   *
-   * @param pageInput - Virtual generated-page path.
-   * @returns Compact note for the model, or `undefined` when no issue remains.
-   */
-  getReadNote(pageInput: string): string | undefined {
-    const page = normalizeWikiPagePath(pageInput);
-    const issues = this.pages.get(page)?.issues ?? [];
-    if (issues.length > 0) {
-      const summary = issues
-        .map((issue) => `${issue.claimId} (${issue.kind})`)
-        .join(", ");
-      return `[OpenWiki Claims: ${summary}. Inspect and resolve only claims relevant to this task; this note is not part of the file.]`;
-    }
-    if (this.ungroundedPages.has(page)) {
-      return "[OpenWiki Claims: this page has no Claims yet. Before adding or materially changing factual prose, call resolve_claims for only the facts introduced or changed by this update, then write the page. Do not backfill unrelated existing prose. Style- or navigation-only edits require no Claims call. This note is not part of the file.]";
-    }
-    return undefined;
-  }
-
-  /**
-   * Returns existing factual constraints for deterministic translation.
-   *
-   * Translation may use claims with lazy evidence debt because it changes
-   * language rather than repository facts.
-   *
-   * @param pageInput - Virtual generated-page path.
-   * @returns Cloned claims, or `null` when the page has no claim state.
-   */
-  getOwnedTranslationClaims(pageInput: string): Claim[] | null {
-    const state = this.pages.get(normalizeWikiPagePath(pageInput));
-    return state && !state.deleted ? cloneClaims(state.claims) : null;
-  }
-
-  /**
    * Records a successful Markdown deletion so its sidecar follows automatically.
    *
    * @param pageInput - Virtual generated-page path confirmed by the backend.
@@ -365,7 +275,6 @@ export class ClaimSession {
     state.deleted = true;
     state.dirty = false;
     state.issues = [];
-    this.ungroundedPages.delete(page);
   }
 
   /**

@@ -10,7 +10,6 @@ import {
   getRepositoryChangedPaths,
   getUpdateNoopStatus,
   persistRunMetadataIfChanged,
-  removeTemporaryWorkingFiles,
   writeLastUpdateMetadata,
 } from "../agent/utils.js";
 import {
@@ -1022,7 +1021,6 @@ export async function finishRepositoryRun(
   await applyAbandonedGeneratedPageDeletions(run, plan);
   await applyPlannedDeletions(run, plan.deletePages);
   await reconcileDeletedClaimPages(run);
-  await removeTemporaryWorkingFiles(run.root, "repository");
 
   await finalizeWikiArtifacts({
     backend: run.backend,

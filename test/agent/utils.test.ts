@@ -7,13 +7,11 @@ import { describe, expect, test } from "vitest";
 import {
   createOpenWikiContentSnapshot,
   getUpdateNoopStatus,
-  removeTemporaryWorkingFiles,
 } from "../../src/agent/utils.ts";
 
 // These cover the branches of utils.ts that the sibling run-context,
 // run-metadata, and update-noop suites do not reach: the degenerate no-op
-// paths, the snapshot recursion, and the unexpected-error path of plan-file
-// removal. (createRunContext's own behavior is covered by run-context.test.ts;
+// paths and snapshot recursion. (createRunContext's own behavior is covered by run-context.test.ts;
 // it no longer computes a git summary in code — the agent runs git itself.)
 
 const execFileAsync = promisify(execFile);
@@ -86,25 +84,6 @@ describe("getUpdateNoopStatus degenerate cases", () => {
       });
     } finally {
       await rm(repo, { recursive: true, force: true });
-    }
-  });
-});
-
-describe("removeTemporaryWorkingFiles error handling", () => {
-  test("propagates unexpected errors instead of swallowing them", async () => {
-    const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-utils-plan-"));
-
-    try {
-      // A directory where the plan file is expected makes rm fail with a
-      // non-ENOENT error. That is not the tolerated "already gone" case, so it
-      // must surface rather than be reported as a benign "nothing removed".
-      await mkdir(path.join(cwd, "openwiki", "_plan.md"), { recursive: true });
-
-      await expect(
-        removeTemporaryWorkingFiles(cwd, "repository"),
-      ).rejects.toThrow();
-    } finally {
-      await rm(cwd, { recursive: true, force: true });
     }
   });
 });

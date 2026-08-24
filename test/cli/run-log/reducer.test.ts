@@ -345,7 +345,6 @@ describe("appendRunLogEvent tool grouping", () => {
     for (const [id, activityPath] of [
       ["write-1", "/openwiki/quickstart.md"],
       ["write-2", "/openwiki/quickstart.md"],
-      ["write-plan", "/openwiki/_plan.md"],
     ]) {
       log = appendRunLogEvent(
         log,

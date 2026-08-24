@@ -137,7 +137,7 @@ type RawMeta = Record<string, string | string[]>;
 /**
  * Pages that are generation scaffolding, not real wiki content.
  */
-const EXCLUDED_FILES = new Set(["INSTRUCTIONS.md", "log.md", "_plan.md"]);
+const EXCLUDED_FILES = new Set(["INSTRUCTIONS.md", "log.md"]);
 
 /**
  * Matches a relative markdown link target (`foo.md`, optionally with an `#anchor`).

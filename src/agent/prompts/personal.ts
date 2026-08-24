@@ -15,7 +15,7 @@ Canonical wiki location:
 Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use connector evidence and configured source metadata when history matters. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in connector raw data, configured sources, or existing wiki evidence you have inspected.
 
 Run discipline:
-- Filesystem tools are rooted at ${openWikiLocalWikiDisplayPath}. Use virtual paths such as /quickstart.md, /sources/gmail.md, /topics/ai-research.md, and /_plan.md. Do not create a nested /openwiki directory.
+- Filesystem tools are rooted at ${openWikiLocalWikiDisplayPath}. Use virtual paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md. Do not create a nested /openwiki directory.
 - Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
 - Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path.
 - Do not call glob with **/* from the root. Inspect the existing wiki and only the source-specific connector or configured repository paths relevant to the task.
@@ -98,7 +98,7 @@ Security and privacy rules:
 
 
 Front matter requirements (OKF):
-- Every non-reserved Markdown concept file you create or update under ${openWikiLocalWikiDisplayPath} (the current virtual filesystem root /), including the temporary /_plan.md file, MUST begin with OKF-compliant YAML front matter.
+- Every non-reserved Markdown concept file you create or update under ${openWikiLocalWikiDisplayPath} (the current virtual filesystem root /) MUST begin with OKF-compliant YAML front matter.
 - The front matter MUST follow the Google Knowledge Catalog OKF v0.2 schema.
 - \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.2"\` front matter.
 - Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:
@@ -143,7 +143,7 @@ Canonical wiki location:
 Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use connector evidence and configured source metadata when history matters. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in connector raw data, configured sources, or existing wiki evidence you have inspected.
 
 Run discipline:
-- Filesystem tools are rooted at ${openWikiLocalWikiDisplayPath}. Use virtual paths such as /quickstart.md, /sources/gmail.md, /topics/ai-research.md, and /_plan.md. Do not create a nested /openwiki directory.
+- Filesystem tools are rooted at ${openWikiLocalWikiDisplayPath}. Use virtual paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md. Do not create a nested /openwiki directory.
 - Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
 - Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path.
 - Do not call glob with **/* from the root. Inspect the existing wiki and only the source-specific connector or configured repository paths relevant to the task.
@@ -239,12 +239,6 @@ Local knowledge synthesis discipline:
 
 
 
-Planning discipline:
-- After discovery and before writing final documentation, create the temporary /_plan.md file. Inventory the important knowledge domains, sources, entities, and open questions; list intended wiki pages and evidence; and record whether each area is documented, covered by another page, or deferred.
-- Record each relationship as source concept -> relationship meaning -> target concept so cross-links are designed before pages are written.
-- Revisit the plan after initial discovery and again after drafting. Expand or reorganize it when evidence reveals additional systems, workflows, relationships, contradictions, or gaps.
-- Use /_plan.md with filesystem tools. It is removed automatically after the run, so do not delete it or link to it from wiki pages.
-
 Index discipline:
 - Directory index.md files are generated deterministically after the run. Do not create or edit them yourself.
 
@@ -290,7 +284,7 @@ OKF relationship modeling:
 
 
 Front matter requirements (OKF):
-- Every non-reserved Markdown concept file you create or update under ${openWikiLocalWikiDisplayPath} (the current virtual filesystem root /), including the temporary /_plan.md file, MUST begin with OKF-compliant YAML front matter.
+- Every non-reserved Markdown concept file you create or update under ${openWikiLocalWikiDisplayPath} (the current virtual filesystem root /) MUST begin with OKF-compliant YAML front matter.
 - The front matter MUST follow the Google Knowledge Catalog OKF v0.2 schema.
 - \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.2"\` front matter.
 - Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:
@@ -371,7 +365,7 @@ Canonical wiki location:
 Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use connector evidence and configured source metadata when history matters. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in connector raw data, configured sources, or existing wiki evidence you have inspected.
 
 Run discipline:
-- Filesystem tools are rooted at ${openWikiLocalWikiDisplayPath}. Use virtual paths such as /quickstart.md, /sources/gmail.md, /topics/ai-research.md, and /_plan.md. Do not create a nested /openwiki directory.
+- Filesystem tools are rooted at ${openWikiLocalWikiDisplayPath}. Use virtual paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md. Do not create a nested /openwiki directory.
 - Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
 - Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path.
 - Do not call glob with **/* from the root. Inspect the existing wiki and only the source-specific connector or configured repository paths relevant to the task.
@@ -467,12 +461,6 @@ Local knowledge synthesis discipline:
 
 
 
-Planning discipline:
-- After discovery and before writing final documentation, create the temporary /_plan.md file. Inventory the important knowledge domains, sources, entities, and open questions; list intended wiki pages and evidence; and record whether each area is documented, covered by another page, or deferred.
-- Record each relationship as source concept -> relationship meaning -> target concept so cross-links are designed before pages are written.
-- Revisit the plan after initial discovery and again after drafting. Expand or reorganize it when evidence reveals additional systems, workflows, relationships, contradictions, or gaps.
-- Use /_plan.md with filesystem tools. It is removed automatically after the run, so do not delete it or link to it from wiki pages.
-
 Index discipline:
 - Directory index.md files are generated deterministically after the run. Do not create or edit them yourself.
 
@@ -518,7 +506,7 @@ OKF relationship modeling:
 
 
 Front matter requirements (OKF):
-- Every non-reserved Markdown concept file you create or update under ${openWikiLocalWikiDisplayPath} (the current virtual filesystem root /), including the temporary /_plan.md file, MUST begin with OKF-compliant YAML front matter.
+- Every non-reserved Markdown concept file you create or update under ${openWikiLocalWikiDisplayPath} (the current virtual filesystem root /) MUST begin with OKF-compliant YAML front matter.
 - The front matter MUST follow the Google Knowledge Catalog OKF v0.2 schema.
 - \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.2"\` front matter.
 - Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:

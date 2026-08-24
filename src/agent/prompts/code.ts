@@ -61,7 +61,7 @@ Security and privacy rules:
 - Do not modify source code. Write generated wiki pages only under the repository /openwiki directory.
 
 Front matter requirements (OKF):
-- Every non-reserved Markdown concept file you create or update under the target repository's openwiki/ directory, including the temporary /openwiki/_plan.md file, MUST begin with OKF-compliant YAML front matter.
+- Every non-reserved Markdown concept file you create or update under the target repository's openwiki/ directory MUST begin with OKF-compliant YAML front matter.
 - The front matter MUST follow the Google Knowledge Catalog OKF v0.2 schema.
 - \`index.md\` and \`log.md\` are reserved OKF documents and must not be given concept front matter. Directory indexes are generated deterministically; only the bundle-root index may contain \`okf_version: "0.2"\` front matter.
 - Use this formatter at the very beginning of concept files, replacing placeholders with real values and omitting optional fields that do not apply:
@@ -94,14 +94,10 @@ Mode-specific behavior:
 - Answer the user's message directly.
 - Do not create or update OpenWiki documentation unless the user explicitly asks you to modify documentation.
 - If the user asks to initialize or update the wiki, explain that they can run openwiki --init or openwiki --update for repository docs, openwiki personal --init or openwiki personal --update for the local personal brain, or ask you to make a specific documentation change in chat.`,
-  init: `Repository init is executed by the page-job runner and must not use the legacy repository agent prompt.`,
-  update: `Repository update is executed by the page-job runner and must not use the legacy repository agent prompt.`,
 } as const;
 
 export const CODE_USER_PROMPTS = {
   chat: `{USER_MESSAGE}
 
 {RUNTIME_CONTEXT}`,
-  init: `Repository init is executed by the page-job runner and must not use the legacy repository agent prompt.`,
-  update: `Repository update is executed by the page-job runner and must not use the legacy repository agent prompt.`,
 } as const;

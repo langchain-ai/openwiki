@@ -39,6 +39,21 @@ vi.mock("../../src/setup/onboarding.js", () => ({
 import { createOpenWikiAgent } from "../../src/agent/index.ts";
 
 /**
+ * Captured tool registered on the shared graph.
+ */
+interface CapturedGraphTool {
+  /**
+   * Stable model-facing tool name.
+   */
+  name: string;
+
+  /**
+   * Model-facing tool invocation boundary.
+   */
+  invoke(input: unknown): Promise<unknown>;
+}
+
+/**
  * Captured subset of the DeepAgents graph configuration.
  */
 interface CapturedGraphOptions {
@@ -55,10 +70,7 @@ interface CapturedGraphOptions {
   /**
    * Explicit tools registered alongside filesystem tools.
    */
-  tools: Array<{
-    name: string;
-    invoke(input: unknown): Promise<unknown>;
-  }>;
+  tools: CapturedGraphTool[];
 }
 
 /**

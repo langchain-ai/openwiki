@@ -3,8 +3,12 @@ import { createSystemPrompt } from "../../src/agent/prompt.ts";
 
 describe("createSystemPrompt OKF guidance", () => {
   test("does not emit the retired OpenWiki producer extension", () => {
-    for (const command of ["chat", "init", "update"] as const) {
-      const prompt = createSystemPrompt(command, "repository");
+    const prompts = [
+      createSystemPrompt("chat", "repository"),
+      createSystemPrompt("init", "local-wiki"),
+      createSystemPrompt("update", "local-wiki"),
+    ];
+    for (const prompt of prompts) {
       expect(prompt).not.toContain("<openwiki_extension>");
       expect(prompt).not.toContain("openwiki.roles");
       expect(prompt).not.toContain("change_kinds:");

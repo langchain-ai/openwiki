@@ -126,7 +126,7 @@ describe("createRepositoryPlan", () => {
   });
 
   test("rejects structural and reserved working pages", () => {
-    for (const page of ["index.md", "_plan.md", "nested/_draft.md"]) {
+    for (const page of ["index.md", "nested/_draft.md"]) {
       expect(() =>
         createRepositoryPlan("update", { pages: [proposedPage(page)] }, []),
       ).toThrow(RepositoryRunError);
