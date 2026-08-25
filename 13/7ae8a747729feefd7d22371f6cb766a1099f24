@@ -1,0 +1,32 @@
+src/generation/page-manifest.ts
+  s_e50f401e02400a::t_0a827663e93783 295-302,308,317-329
+  s_e50f401e02400a::t_cb3eed98112b77 1-34,36-56,58-294,303-307,309-316,330-337,339-356
+  s_e50f401e02400a::t_eb2ba985663340 35,57,338
+test/generation/page-manifest.test.ts
+  s_e50f401e02400a::t_eb2ba985663340 16,33
+  s_e50f401e02400a::t_0a827663e93783 131-143
+  s_e50f401e02400a::t_4110590b7607b1 1-15,17-32,34-130,144-384
+src/config/constants.ts
+  s_e50f401e02400a::t_cb3eed98112b77 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "137ae8a747729feefd7d22371f6cb766a1099f24",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_e50f401e02400a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03aec-8e8b-7ba0-98d8-1458ff7d5408",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
