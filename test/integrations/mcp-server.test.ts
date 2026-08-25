@@ -147,6 +147,10 @@ describe("OpenWiki MCP adapter", () => {
       expect(instructions).toContain("openwiki_submit_plan");
       expect(instructions).toContain("openwiki_next_page");
       expect(instructions).toContain("openwiki_submit_page");
+      expect(instructions).toContain("same Claim id and statement verbatim");
+      expect(instructions).toContain(
+        "stale or unresolved marker as a requirement to recheck",
+      );
       expect(instructions).toContain("Never report\nsuccess before finish");
       expect(instructions).toContain("source\ndrift invalidated the plan");
       expect(instructions).not.toContain("openwiki_inspect_claims");

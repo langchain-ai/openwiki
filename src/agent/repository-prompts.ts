@@ -1,5 +1,8 @@
 import type { InspectedClaim } from "../claims/brains/code/types.js";
-import { CLAIMS_SUBSTANCE_GUIDANCE } from "../claims/guidance.js";
+import {
+  CLAIMS_RECONCILIATION_GUIDANCE,
+  CLAIMS_SUBSTANCE_GUIDANCE,
+} from "../claims/guidance.js";
 import type { ActiveBeginView } from "../generation/repository-run.js";
 import type { PageJob } from "../generation/run-state.js";
 
@@ -139,6 +142,8 @@ error, correct the page or Claim payload, and retry; the worker completes after
 one successful submission.
 
 ${CLAIMS_SUBSTANCE_GUIDANCE}
+
+${CLAIMS_RECONCILIATION_GUIDANCE}
 
 Existing Claims:\n${JSON.stringify(job.existingClaims, null, 2)}
 

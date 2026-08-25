@@ -105,6 +105,13 @@ describe("canonical OpenWiki host skill", () => {
     expect(skill).toContain("write exactly the assigned Markdown page");
     expect(skill).toContain("complete intended set of material");
     expect(skill).toContain("Reuse an existing Claim `id`");
+    expect(skill).toContain("same `id` and statement verbatim");
+    expect(skill).toContain(
+      "`stale` or `unresolved` marker as a requirement to recheck",
+    );
+    expect(skill).toContain(
+      "final page body and complete submitted Claim set consistent",
+    );
     expect(skill).toContain(
       "requires at least one material repository-grounded Claim",
     );

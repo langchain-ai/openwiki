@@ -105,6 +105,13 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("repo://src/auth.ts");
     expect(prompt).toContain("Write only /openwiki/auth.md");
     expect(prompt).toContain("COMPLETE intended material Claim set");
+    expect(prompt).toContain("same Claim id and statement verbatim");
+    expect(prompt).toContain(
+      "stale or unresolved marker as a requirement to recheck",
+    );
+    expect(prompt).toContain(
+      "final page body and complete submitted Claim set must agree",
+    );
     expect(prompt).toContain("repo://src/agent/index.ts");
     expect(prompt).toMatch(
       /a bare path such\s+as src\/agent\/index\.ts is invalid/u,

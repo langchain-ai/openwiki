@@ -237,7 +237,7 @@ export class HostSessionManager {
       {
         name: "openwiki_submit_page",
         description:
-          "Complete the current page job after its Markdown is written by submitting that page's complete intended repository-grounded Claim set.",
+          "Complete the current page job after its Markdown is written by submitting that page's complete intended repository-grounded Claim set. Preserve the id, exact statement, and evidence resource values of each unchanged existing Claim; reuse its id for a necessary revision; omit it to retract it; and omit id for a genuinely new Claim. The final page and Claim set must agree.",
         schema: SubmitPageInput,
         handle: async (input) => this.submitPage(SubmitPageInput.parse(input)),
       },
