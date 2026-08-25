@@ -10,7 +10,7 @@ sources:
     resource: repo://src/ingestion/code-mode.ts
   - id: openwiki-source-c923e23504de7a6af7799a24
     resource: repo://src/scheduling/schedules.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z

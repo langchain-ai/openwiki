@@ -18,7 +18,7 @@ sources:
     resource: repo://src/connectors/tools.ts
   - id: openwiki-source-d66b21ba71e9866a0b433226
     resource: repo://src/connectors/types.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z

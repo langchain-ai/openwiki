@@ -1,84 +1,60 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:10dea3c3fdfed646da0340a26e762a12db6ed9ae2d9f9013a8f73f5add75d60b",
+  "pageVersion": "sha256:1e75cfff37c03490c14f210eeb958e628830d1bea9a6b8f4aff63999146ba884",
   "claims": [
     {
-      "id": "claim_85e405a3fc9a46979d42df8457d5dc04",
-      "statement": "CLI runners follow one contract: perform the operation, print human output to stdout, and on failure write getErrorMessage to stderr and set process.exitCode to 1, otherwise 0.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/runners.ts#L47-L90",
-          "version": "repo-lines-v1:sha256:6cea1b020aa7e4a4293bf703aaef272d284b98451322310d1af4cbaf8d959d84:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNTA2MGExY2U1MDU5N2RmNjkwYWVlMGI1ZjhiNGJhZDVlMTA5NTkzNzJjYjhlOWMxODk4ZmQ3Mjg5ZTg0MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZDFmMTM2ZThmMGIzZWJmYzI2OTQ3YmZjMmE0N2NjNTMxZGM1MzM2ZmU2MDBiNzdkMTc3OWQ4NDk3OGU5ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmMmVjM2ZlNmM5NDRlY2NjNDc0YTE4NTEwNTZkMTQ2ZDkxNTE3ODEwMjY2MzNiZTc1NjM4OGMxOGU0ODJiMzcifQ"
-        },
-        {
-          "resource": "repo://src/cli/runners.ts#L185-L254",
-          "version": "repo-lines-v1:sha256:f5df221e57df6c09d041f5a5ef4aecb9eefaa495c77ca12253760121fcd42b18:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYWQ1YTEyNTUyY2IxMjA1MjQ4NGJjN2U4NzM0NWZjM2MzOTMyMzA3Yjc2YWNiY2RkOWVjZGY5Yjg5MGExNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyMTIwNmI3YWEzNzQzZGE4NjExNWU5MTMzNGJiODkyM2NkZjY4NWFmZDc4OGQ0NjAwZTA2NDM4Nzc5OTdiMTIifQ"
-        }
-      ]
-    },
-    {
       "id": "claim_2dcbc141c0354d8882140563908729db",
-      "statement": "runPrintCommand is the non-interactive twin of the TUI run path: in code mode it ensures repo setup and pulls code-mode connector evidence into the agent message before runOpenWikiAgent, all wrapped in withRunTelemetry, then prints only collected text output.",
+      "statement": "runPrintCommand is the non-interactive twin of the TUI run path: it builds run options (threadId from the cwd, outputMode, debug, model, language, telemetry file), then inside a single withRunTelemetry boundary runs code-mode repo setup, the code-mode connector pull that augments the agent message (for non-chat runs), and runOpenWikiAgent, collecting text and repository_progress events into one buffer flushed to stdout.",
       "evidence": [
         {
-          "resource": "repo://src/cli/runners.ts#L260-L337",
-          "version": "repo-lines-v1:sha256:af7032dbc4a06aec0c0f7c5b49698581d207464acdf75cda247690ae7c167fef:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNGJiZGEzN2E5NmI2YzgyOGM4YzdkODhmZmUzY2Y4ZDU0OTcxMzNlYzFhOGRiNWJmZjY4ZGVjMjdmM2M2YzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5YzVlMjYzNmQ1ODZhNzRhMWExOWFkNWQxNGUyMzRhM2RkOGIxNDEzOWJjZmY5OTQ4ZDBmMDNjNjViNTdiMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMGY5N2NlMjgwNGQ0OGU5YzU4OGI2OWUxYTNlNzQ3NWY4NmFiNWVlODUyODQzZmU3OTc2ZTE0NGM5ODE4N2IifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_d8f162edf52145cd9cac9fb8f6bdd6c2",
-      "statement": "On a print-run failure the runner additionally emits the auth how-to-fix guidance and error diagnostics to stderr in addition to the error message.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/runners.ts#L330-L349",
-          "version": "repo-lines-v1:sha256:03fa7b51716a0b2973bf471dae2277d6fceceb03e08a00b9f63745886c34c206:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlZGJmODM4NzUzNjg5NjZmMzEzYWU2Mzk1MzljNDAzNzAwNDViYTUzZTJlMmNlZTkzYmI2N2Q1ZGExN2I5ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MWY2OGIwNjg1MjQwYjBjODVkYmExMWQ4ODE4OGZiZTI0NjFlNzlmNzM1NjgyMTRkMzY5ODMyNTFlMmIwNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkYmEzZGI3NmU3ODA3OGQ5YTY4NjI2ZmRjOTUzMmM2YTA0MTA2OThhMGZiOTQ1MDMzYmNjMGU1MzA4Y2ZlYjEifQ"
+          "resource": "repo://src/cli/runners.ts#L261-L340",
+          "version": "repo-lines-v1:sha256:bcffd1cef21310f9bdbb47523f412a2706144b7584bb2822dbcd9ca978032a5c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNGJiZGEzN2E5NmI2YzgyOGM4YzdkODhmZmUzY2Y4ZDU0OTcxMzNlYzFhOGRiNWJmZjY4ZGVjMjdmM2M2YzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5YzVlMjYzNmQ1ODZhNzRhMWExOWFkNWQxNGUyMzRhM2RkOGIxNDEzOWJjZmY5OTQ4ZDBmMDNjNjViNTdiMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMGY5N2NlMjgwNGQ0OGU5YzU4OGI2OWUxYTNlNzQ3NWY4NmFiNWVlODUyODQzZmU3OTc2ZTE0NGM5ODE4N2IifQ"
         }
       ]
     },
     {
       "id": "claim_53d323789bfc4da9808428bdefeffc51",
-      "statement": "runAuthCommand handles list, configure, tools, and OAuth actions; the OAuth path saves auth values, configures the provider, and attempts MCP tool discovery for providers where shouldDiscoverToolsAfterAuth is true, degrading gracefully on discovery failure.",
+      "statement": "runAuthCommand handles list, configure, tools, and OAuth actions; the OAuth path saves auth values, configures the provider, and attempts MCP tool discovery for providers where shouldDiscoverToolsAfterAuth is true, degrading gracefully by printing a 'MCP tool discovery skipped' message on discovery failure rather than failing the command.",
       "evidence": [
         {
-          "resource": "repo://src/cli/runners.ts#L185-L254",
+          "resource": "repo://src/cli/runners.ts#L186-L255",
           "version": "repo-lines-v1:sha256:f5df221e57df6c09d041f5a5ef4aecb9eefaa495c77ca12253760121fcd42b18:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYWQ1YTEyNTUyY2IxMjA1MjQ4NGJjN2U4NzM0NWZjM2MzOTMyMzA3Yjc2YWNiY2RkOWVjZGY5Yjg5MGExNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyMTIwNmI3YWEzNzQzZGE4NjExNWU5MTMzNGJiODkyM2NkZjY4NWFmZDc4OGQ0NjAwZTA2NDM4Nzc5OTdiMTIifQ"
         }
       ]
     },
     {
       "id": "claim_8adac32b4d714aeda6f9d842bb750817",
-      "statement": "runIngestCommand streams text events to stdout, prints a per-source status and raw-file-count summary, and exits non-zero if any source errored.",
+      "statement": "runIngestCommand streams text events to stdout, prints a per-source status and raw-file-count summary, and exits non-zero if any source errored; on a thrown error it also writes error diagnostics to stderr.",
       "evidence": [
         {
-          "resource": "repo://src/cli/runners.ts#L150-L183",
+          "resource": "repo://src/cli/runners.ts#L151-L184",
           "version": "repo-lines-v1:sha256:f33ddf50cb6e30c0585fe81f2383e4348a40f98a639ceb4a811597e9a860c50f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4ZGY3NGQ5OTVkMTA1ZDA4NzFkNjhjNGQ4MDQ0MGQzMjIwZTI4YzY4NDAzZjFiN2UzZTk0YWVjMWVmMjQxNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjOTQ0ZWQ0YjE5Y2ZhNDE2ZWRiZjlkY2M4MWE5ZGU3ZmJlOGNkMDk5NDdhOGM2YTRmN2ZlMDcxNjFmOWJlZTkifQ"
         }
       ]
     },
     {
       "id": "claim_790c60d07d244d889b6373981e1b98de",
-      "statement": "runCronCommand reads the onboarding config, applies a pause, resume, or delete mutation and persists the updated config, then prints the schedule listing.",
+      "statement": "runCronCommand reads the onboarding config, requires a target for pause/resume/delete, applies the mutation and persists the updated config, then prints the schedule listing; for list it prints schedules and the Mac wake status directly.",
       "evidence": [
         {
-          "resource": "repo://src/cli/runners.ts#L92-L148",
+          "resource": "repo://src/cli/runners.ts#L93-L149",
           "version": "repo-lines-v1:sha256:af54883c38f775f31aec81a6954d36eb6a7ac9cf14d243765e32f9589ae44f78:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNTIxNTM2NWU5Zjk0YjZiNjM2ZTI5YWIzMWRhODYyMzkzODFhZGExYzk5OTQ0MjA0NGRlYjgzNDU3MGRhY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmYWJjNmNjMDFmYjRmNTZkNDgxOGFiYjAwMThjMTg4OGJmMzk4ZDI4OTcyNDdlY2MyZDQwM2Y0MTFkYWUzZTUifQ"
         }
       ]
     },
     {
       "id": "claim_b00847addb09435c8a7d9eae30926b08",
-      "statement": "runVisualizeCommand either exports a static visualizer (printing output path and node/link counts) or starts the live visualizer server, resolving the wiki directory relative to the current directory.",
+      "statement": "runVisualizeCommand either exports a static visualizer bundle when an export directory is set (printing output path and node/link counts) or starts the live visualizer server, resolving the wiki directory relative to the current directory.",
       "evidence": [
         {
-          "resource": "repo://src/cli/runners.ts#L65-L90",
+          "resource": "repo://src/cli/runners.ts#L66-L91",
           "version": "repo-lines-v1:sha256:05560178885276acab86deeded1942db9672dbe1805d1a01b7440448967b7bf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNWM4MGNkOGViYzgwMWM2N2ExNTFjMjkzNzViM2IxNzZkODI3MGZjZDIwNTcyYThhMTlkMDVjMmJkZDI2NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmY2JkNGE4Mzg1YmNmZGRjMDgyYmUxZTk0NTUwZTE1NTQ3MjA1OTViYmQwNjY1NDc1MTQ0ZGUxNzg0ZTlhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmMmVjM2ZlNmM5NDRlY2NjNDc0YTE4NTEwNTZkMTQ2ZDkxNTE3ODEwMjY2MzNiZTc1NjM4OGMxOGU0ODJiMzcifQ"
         }
       ]
     },
     {
       "id": "claim_a2fe36fe84e64b548b384bf5244be3b9",
-      "statement": "runIntegrationsCommand resolves the install root from scope (user home or project root) then lists, installs, or uninstalls a host target, printing the skill directory, MCP config path, backup, and post-install restart guidance.",
+      "statement": "runIntegrationsCommand resolves the install root from scope (user home directory or project root), then lists (with per-target status), installs, or uninstalls a host target, printing the skill directory, MCP config path, backup, and post-install restart guidance scoped to the host.",
       "evidence": [
         {
           "resource": "repo://src/cli/integrations.ts#L20-L81",
@@ -88,7 +64,7 @@
     },
     {
       "id": "claim_ecb0a9eef6a4443592e5018d25be37b6",
-      "statement": "runMcpCommand starts the local stdio MCP server for the resolved host using the registry target's producer actor.",
+      "statement": "runMcpCommand resolves the host target from the integration registry and starts the local stdio MCP server (runOpenWikiMcp) for that host, passing the target's producerActor (falling back to the host id).",
       "evidence": [
         {
           "resource": "repo://src/cli/integrations.ts#L88-L96",
@@ -101,72 +77,40 @@
       "statement": "getAuthFix returns, only when the failure looks like an auth error, the failing provider's API-key env-var name and whether it came from the shell, performing existence checks only and never reading the secret value.",
       "evidence": [
         {
-          "resource": "repo://src/cli/diagnostics/auth-fix.ts#L37-L49",
-          "version": "repo-lines-v1:sha256:6151eb87e95c5cb613067595f9e15aea9ea6d02220ccef738bffccc06cb7f396:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2OGNiYWNjMzk4ZmExNGJiYmZkMjM0MmQyMGYxZWUzNWRmZTUyZDQ5NjZlYzc3MTMwZDhkZjBhNWYxZjU4MmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxN2VmYmM1N2U1Y2UzNjIyZmFmYmY3MDFkYTIxN2FlZjA2YzkzMWU5M2Y3M2FmMmQwOWIyMTVmYjlmMzEyN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2NTRjZDJkZmU0ZTkzYmFjM2E3MzJlZGFlMTkzZTY3MTM2ZTkxZTY4OTZmNjZjZTA0ZDg4NzRjYjA0MzBmZjYifQ"
-        },
-        {
           "resource": "repo://src/cli/diagnostics/auth-fix.ts#L10-L35",
           "version": "repo-lines-v1:sha256:5b89ccc10ccf9d017958459a3b40a8762bba7e317455d5c433dde074193afc80:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4OGQ3OGMxZWFhMzNhZDBmZDA4YTRiYzdmZmY2YzcyMjEzNjVlY2ZiNTc5NzljM2FiYzUxMGJhNzMyZGJkNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkOWQzN2NkNDA1YTkzNDI2MWI4ODk2NzE3MDQ2Y2IxMjE3MDZhN2I0YzA1ZjM5MjE1OWRlNDRjMDU5N2RhZDAifQ"
+        },
+        {
+          "resource": "repo://src/cli/diagnostics/auth-fix.ts#L43-L61",
+          "version": "repo-lines-v1:sha256:31afbb62a869e088f70dbf4fd6762dc74a942bad6e6f47c48b5b67349315fa79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNGQ0MDU5NzhkZGQ5NTY2NmUxODFhMTJlMzdjNGRkZTZjM2NiNjAyODUyNmMyZTYxYzhkZjE4Nzg5MTIzMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4ODI5ZWQyMjY0NmI2MjA3YzFlMmU2NjFhNDI1Y2I4MzVkYzYxMzQ0ZmIzZDkyMGVhMDQzNzQ0NGJhMzJkOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhOGNkZmU3YmJmMzJmM2MyMzVmMGUyNWRkZWE0YWQ5NDk1ODkxNzEyNTZhMDM5NzNiOTVhYTgyZTZkNjA0MmEifQ"
         }
       ]
     },
     {
       "id": "claim_5c6b1a00fbe84cd7bbe388456fbca59b",
-      "statement": "getErrorDiagnostics extracts a deduped list of allowlisted non-secret error fields for the --debug panel, sanitizing every value through sanitizeDiagnosticText and redacting secret-like keys so raw secret material never leaves.",
+      "statement": "getErrorDiagnostics extracts a deduped list of allowlisted non-secret error fields for the --debug panel, walking the error, its OpenRouter metadata, attached openRouterDebug payload, and (in debug mode) cause/error/response nesting; it sanitizes every value through sanitizeDiagnosticText and redacts secret-like keys so raw secret material never leaves.",
       "evidence": [
         {
-          "resource": "repo://src/cli/diagnostics/error-diagnostics.ts#L28-L60",
-          "version": "repo-lines-v1:sha256:556b3c5f6a1bc510ecfe71e7a2f880226ecdaded44a4c50c66fab8af94fba6f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4YTYxMmIxZTRmMTZmNjkzZmZhNjUwNzVjMWVmYTUwYzMzMTI2MTUyOGQwNjQyM2Q5NTlhZmNkNjE4MDNmMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiYTZiOTNjYTkyZjc2MDcxZGUxN2IyNjg1ODlmNjU2ODdjMzFhMDQzNjViNjA4NDFhMDM0OTFhYzQ5YzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjZjg5OGNiY2NlZjRhMDYwZDczZWVmMmM5ZGY4MzQ1NDg1MjI4NGIyMWM4NjM3NDIwZWRhZmEyMzMyYTJkYjgifQ"
+          "resource": "repo://src/cli/diagnostics/error-diagnostics.ts#L36-L71",
+          "version": "repo-lines-v1:sha256:0e40c8dbca11f084d6e51dbc3ccd062e10724d104a9684d6b08882cecd68de66:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMWYwYWJhZDc4ZGY0ZWRmZDYyYjNmMTU4MjlhYjc1YTc2YTE3ZWMwNDQ0YTEyMDlmMTU4YWM0NmM2NDA4Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyODkxMzkxNDQwM2UxYTBhNTk5YWRlZTQzNDdkOGE4NmYxYTk0MzkyZTcyYTNhNzk4YzI0OTNlNTNkZmNkZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlZGFhMzBlZDJiMmNmNDAwNmM1YTAyOTZhN2EzMDdjM2MyYTBhNzM0NzU1MTRkOGY4NjlkNTU4ZGNlMDhlNGMifQ"
+        },
+        {
+          "resource": "repo://src/cli/diagnostics/error-diagnostics.ts#L89-L133",
+          "version": "repo-lines-v1:sha256:c362f33efe32a1189ca81a54e82ba022e3a2f28fc104b5654c3d6ebe4ee73c73:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlOWExZDM2YTNmYmJkOWNiZGE2YTFjMzIzZDFhZWU0NzA1MmNkNTFkNjc3NzhjNDc2MzJmNmUxM2YxMWY3NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjMWE0YWVhMjA3ODY2NjE5MTllMjIyYTZiZjVjMTk3Zjg5MGEyZmY4YjUyYmQwODU0YTEzZWQ5YzRhMmQ3OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2MWRhNzI5ZWViNGJjODI1NGZhMmEwMjhhYmRkZDY2MmIzZDhiZGNhMTg1OTVhYTViNDk0ODZiMjQ0OWI5YWUifQ"
         }
       ]
     },
     {
       "id": "claim_40bdf94bda994bcfa8350260ab8290ff",
-      "statement": "schedule-format formats cron output: the mutation summary of changed and skipped connectors with warnings and Mac wake status, the listing header, and per-connector status.",
+      "statement": "schedule-format formats cron output: the mutation summary of changed and skipped connectors with warnings and Mac wake status, the listing header, the Mac wake window section, and per-connector status describing cron expression and launchd install state.",
       "evidence": [
         {
           "resource": "repo://src/cli/schedule-format.ts#L7-L50",
           "version": "repo-lines-v1:sha256:bc2619a2d15a284ab807245a9d25d2921ce91b1e940ef48fd71a5e04d31bcaea:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwNjhiOGFmNzQ1OWQ4MjBhODk3YWMzMTgyMWQzNDdhM2I4YzllMjNiZTZlY2ZkMDQwZmU3YmVjNGRkYjcwMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3MTE1ZGE5YjYxMGVmMjM1ZmFiOWUzN2ZhNWYxMDE0ZjkzZmI5NmRhMzE2ZGIzZDg1ZjQxMWJlNmMxZDgxNjMifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_6699e89c6417417aaed130032107195c",
-      "statement": "The visualize runner exports a static visualizer bundle when an export directory is set and otherwise serves the visualizer over HTTP.",
-      "evidence": [
+        },
         {
-          "resource": "repo://src/cli/runners.ts#L65-L90",
-          "version": "repo-lines-v1:sha256:05560178885276acab86deeded1942db9672dbe1805d1a01b7440448967b7bf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNWM4MGNkOGViYzgwMWM2N2ExNTFjMjkzNzViM2IxNzZkODI3MGZjZDIwNTcyYThhMTlkMDVjMmJkZDI2NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmY2JkNGE4Mzg1YmNmZGRjMDgyYmUxZTk0NTUwZTE1NTQ3MjA1OTViYmQwNjY1NDc1MTQ0ZGUxNzg0ZTlhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmMmVjM2ZlNmM5NDRlY2NjNDc0YTE4NTEwNTZkMTQ2ZDkxNTE3ODEwMjY2MzNiZTc1NjM4OGMxOGU0ODJiMzcifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_4541fc805aca4f88a41c1d1891df1741",
-      "statement": "The cron runner reads onboarding config, applies the pause/resume/delete/list action to connector schedules, saves the resulting config, and re-prints the schedule set.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/runners.ts#L92-L148",
-          "version": "repo-lines-v1:sha256:af54883c38f775f31aec81a6954d36eb6a7ac9cf14d243765e32f9589ae44f78:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNTIxNTM2NWU5Zjk0YjZiNjM2ZTI5YWIzMWRhODYyMzkzODFhZGExYzk5OTQ0MjA0NGRlYjgzNDU3MGRhY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmYWJjNmNjMDFmYjRmNTZkNDgxOGFiYjAwMThjMTg4OGJmMzk4ZDI4OTcyNDdlY2MyZDQwM2Y0MTFkYWUzZTUifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_68238070f44c4b30a403f803f324d4b6",
-      "statement": "The ingest runner runs personal ingestion, prints a per-source summary, and exits non-zero when any source reported an error status.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/runners.ts#L150-L183",
-          "version": "repo-lines-v1:sha256:f33ddf50cb6e30c0585fe81f2383e4348a40f98a639ceb4a811597e9a860c50f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4ZGY3NGQ5OTVkMTA1ZDA4NzFkNjhjNGQ4MDQ0MGQzMjIwZTI4YzY4NDAzZjFiN2UzZTk0YWVjMWVmMjQxNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjOTQ0ZWQ0YjE5Y2ZhNDE2ZWRiZjlkY2M4MWE5ZGU3ZmJlOGNkMDk5NDdhOGM2YTRmN2ZlMDcxNjFmOWJlZTkifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_05e0c8bff8074868becc0007ea6afe13",
-      "statement": "The auth runner lists providers, or for one provider writes its config, runs OAuth and then configures it, or discovers its MCP tools; after OAuth it optionally discovers tools without failing the command if discovery throws.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/runners.ts#L185-L254",
-          "version": "repo-lines-v1:sha256:f5df221e57df6c09d041f5a5ef4aecb9eefaa495c77ca12253760121fcd42b18:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYWQ1YTEyNTUyY2IxMjA1MjQ4NGJjN2U4NzM0NWZjM2MzOTMyMzA3Yjc2YWNiY2RkOWVjZGY5Yjg5MGExNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyMTIwNmI3YWEzNzQzZGE4NjExNWU5MTMzNGJiODkyM2NkZjY4NWFmZDc4OGQ0NjAwZTA2NDM4Nzc5OTdiMTIifQ"
+          "resource": "repo://src/cli/schedule-format.ts#L72-L150",
+          "version": "repo-lines-v1:sha256:a157f4ad6eb6244fff466609fba6706417fbbec3251897ca5075d51e42a65427:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMTc1NDQ2MjE0YzVjODExMDVkMzBmNjBhNDM2YzQ3NGRmYjk2YzE5ZmI0MDE5ZWFmZTdhODQ4YzE2NWM1Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzMjkyOGE3OTczZTY5MjYyNDc5ZWNjMzg3OGM1OTJkODcyZGQwNjA1MjY2YjY3ZTViNGIyNjFiNTkyY2QxYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0NThhNGI1ZjgzYTFiNDg2OGFlNTAxZTdkNDYwYmFkMDU4NDc3ZDcxZTJjNDFlMjJhNjdkM2I1YzU0ZjA5Y2UifQ"
         }
       ]
     },
@@ -175,44 +119,88 @@
       "statement": "runPrintCommand wraps repository setup, the connector pull, and the agent in a single withRunTelemetry boundary so a throw in any pre-agent step is recorded rather than only surfaced on stderr.",
       "evidence": [
         {
-          "resource": "repo://src/cli/runners.ts#L286-L321",
+          "resource": "repo://src/cli/runners.ts#L289-L324",
           "version": "repo-lines-v1:sha256:aa5f9929c2247768ce67eff8d85d2a8405cf2f209f496af2a4b741def8633010:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMzdjODQ2MWM0YTkxODJkMTg4MDYxMmMyMWE1ZWExMTk4ZTU1MjAwNGU5ZGQyZTMzYzE2MGQwZWRmODMxNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YjM3NGQ3MDMwZmUxODU1ZDVmOGEzZTZlZWVmOGQ1YzFiM2I4YTk0M2I3YTliNzU5OTFkNjI0NmM4M2ZjZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkYjczZjRiNTUwZjkxMzVhZjM5YWFkMTllMjkyYWQ2ODIxYmRlMTIyOTcxMTZlY2RiNGRhMjRlMmI4MmE5ZWEifQ"
         }
       ]
     },
     {
       "id": "claim_a118c6a45ab5464ea4a8b9c6b427246c",
-      "statement": "In code mode, print runs first ensure repository setup (creating the workflow only on init), and non-chat code runs pull code-mode connectors that augment the agent user message before the run so print behaves exactly like interactive.",
+      "statement": "In code mode, print runs first ensure repository setup via ensureCodeModeRepoSetup (creating the workflow only on init), and non-chat code runs pull code-mode connectors whose evidence augments the agent user message before the run, so --print behaves exactly like interactive.",
       "evidence": [
         {
-          "resource": "repo://src/cli/runners.ts#L296-L319",
+          "resource": "repo://src/cli/runners.ts#L299-L322",
           "version": "repo-lines-v1:sha256:cf6d24d78a4a675c97f5be1a2a09c94c1db2be63efaa73264e72e5c5afcf4976:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiOTU5MjVlMDY3MjcyMzZjMmNlMjY1ZTIwNDQ3ZDU3YTc1NzMzN2NkZmJjZmZmNzJmNWRhYjUwMWQ0YjliNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzVjNzBkOTQ2MzYyNWUxMDc5ZmQ4ZmM4ZWU2MmFkMmU5MmM0MmJlYWFiZmQ4NWI3OGQ4ZTBhNDk3OWI5NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxNjVjZDA4NjExOWM4YmFiNTRiYjVlMzk1N2I5ZmJiOWY0ZDE5NzRlODk4MzgwNzhiMGVmYzFiNGVjMzlmNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzMmMyMDI0MmMwZjI3YjNjOWY3NThkOTcxN2IzNjlhYmYyZjRiMjJlY2ZkMmQ0NDk0YTRhOTcxMzYyZmE1MTYifQ"
         }
       ]
     },
     {
-      "id": "claim_99dafe43d6364399af7e572780835887",
-      "statement": "Print mode collects only text events and flushes the trimmed combined output to stdout.",
+      "id": "claim_8f6eec01e7814880b00962507ba71068",
+      "statement": "On a print-mode (or ingest) failure the runner additionally emits key-name-only auth how-to-fix guidance via writePrintAuthFix and labeled error diagnostics via writePrintErrorDiagnostics to stderr, each a no-op when it has nothing to add.",
       "evidence": [
         {
-          "resource": "repo://src/cli/runners.ts#L269-L327",
-          "version": "repo-lines-v1:sha256:8798d159726ceff360e38ab30a950f461d0a995fc352d83c4aa15c8de3249c12:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYTQ3YTVmOGJlMWE4OTgyMWY2OWMxM2RhZWQxZTZiZTNjM2FjZDQwODZiODFiZmNhNDA3NDhkYzYzNjFhMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3MmI4YmVjNTA5YzJkOTBlM2QzMmNhZjQ2OGYzMWRkYTBkZDNjNzc0M2Q5NjMxNzNlZTc4MjM3NDZhZmQ0MzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5MGFjMDgzZjE5NGQ1ZDE0ZDhjMGEwZTBmMTRjMWNiYTk3YmRjNmYyMmZlNDlhNjE5NWIxZDRiNmU3MGFlYmMifQ"
+          "resource": "repo://src/cli/runners.ts#L179-L183",
+          "version": "repo-lines-v1:sha256:beab477c4c82af699cf411fdd0be36826e10573e464a216c02d24afad9c441a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGVkYmY4Mzg3NTM2ODk2NmYzMTNhZTYzOTUzOWM0MDM3MDA0NWJhNTNlMmUyY2VlOTNiYjY3ZDVkYTE3Yjk4MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZlZTgyM2E5MzFjN2RjNjZjNjFkOTY4M2E0MmEyOWEzMTIxMDM4NjhjZWEwMGVkZmYxYzAyNjNkODg3YjZmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQyY2IwNzFhMzBlN2Q3MDdhODkzY2U5OGI4ZGViMzlmNjI1Y2UzZGNkM2FhMjMwM2Q1YjA0ZjMxMzc1ZTA4NSJ9"
+        },
+        {
+          "resource": "repo://src/cli/runners.ts#L333-L339",
+          "version": "repo-lines-v1:sha256:1140741516e0e226a0eb0feb53ef640ec58dfab717cb268bbbd50822bf8b1760:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGVkYmY4Mzg3NTM2ODk2NmYzMTNhZTYzOTUzOWM0MDM3MDA0NWJhNTNlMmUyY2VlOTNiYjY3ZDVkYTE3Yjk4MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDYxZjY4YjA2ODUyNDBiMGM4NWRiYTExZDg4MTg4ZmJlMjQ2MWU3OWY3MzU2ODIxNGQzNjk4MzI1MWUyYjA0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
+        },
+        {
+          "resource": "repo://src/cli/runners.ts#L347-L378",
+          "version": "repo-lines-v1:sha256:c9bb6cc5e806887c7bd99751bfbc5f43296e9dfd169f77a634fc5abb85b89345:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlODc2MmJhYTY1NGNjNzUzYjliYmMxNTZlNDVmOGYxOTg4ZWRkZmEwNTA4OWNmNGNhNGNjZTgxY2Y4NzQ0NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlYjllZDk3YzRjOTFhYmM0MzQ3NGE2ZDRhMjY4ODdmYjY0NDljYTY2MmIxZDI3ODYzYjhjMzQ1YjIyNGQ4ZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
-      "id": "claim_8f6eec01e7814880b00962507ba71068",
-      "statement": "On a print-mode failure the runner mirrors interactive help by writing key-name-only auth-fix steps when the error looks like an auth error and labeled error diagnostics, each a no-op when it has nothing to add.",
+      "id": "claim_584c59272a1b41578188673d629f6975",
+      "statement": "CLI runners follow one contract: perform the operation, print human output to stdout, and on failure write getErrorMessage to stderr and set process.exitCode to 1, otherwise 0.",
       "evidence": [
         {
-          "resource": "repo://src/cli/runners.ts#L330-L375",
-          "version": "repo-lines-v1:sha256:1e920c2ce33a1eb32b15bb94e9997413ccb3fa0c810b5a9328bb718ed2910bc1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlZGJmODM4NzUzNjg5NjZmMzEzYWU2Mzk1MzljNDAzNzAwNDViYTUzZTJlMmNlZTkzYmI2N2Q1ZGExN2I5ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MWY2OGIwNjg1MjQwYjBjODVkYmExMWQ4ODE4OGZiZTI0NjFlNzlmNzM1NjgyMTRkMzY5ODMyNTFlMmIwNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/cli/integrations.ts#L20-L81",
+          "version": "repo-lines-v1:sha256:eca7e31933259707d44ecfd74d077d11e72cdb4bb1547511a207f872f53886a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MDI5YWNiYmRjZTRiNmE0OGU1OTY4Mzc4MjcyMTBlZTI2OTFjZGViZGM5MDk1MDAzOTk3MDViYjAyMzYxYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0ZjZjYzIzZWRkZmY3YzRiMWY1NWQzNTJiNjUzOTA3YmFhYzFhZTY2ZDAwZTIzMjkwNDhmY2NmODdlMmQ5N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlZGI3OTg0ZWZkNzAzOTAwYTRlYWU4NWZjYWJlYzA2OGFjN2E3MTI4OTRjZmE1MGY4MjA5MDIyOTBjNWE4MzAifQ"
+        },
+        {
+          "resource": "repo://src/cli/runners.ts#L185-L254",
+          "version": "repo-lines-v1:sha256:72717e1d4af4290b971dec24579e31d10d2490dcdf9c35e24a678a77126de430:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxMTNkMjFjMWI2NzAyMmQ2ZmEyZTg2NzlhMTY2ZDgwYjc2NzZmZjZlOWM5NzMzNmJjNDQ2M2NiZTFkNTllNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://src/cli/runners.ts#L47-L90",
+          "version": "repo-lines-v1:sha256:51876dff20795ee91e2321cff2f1d2dff8adf1446c32bbdbe9ec807c12690379:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlNjUwZDllMzlkOTE4NzgwMTIxMzJmMTAwZDU4Y2Y5NzViMGE5YjI5YzYzOWI0YjdiN2I0N2E5ZTZmZjJmODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyMjdiZjI5ZTljNzRiM2JiOWYwNTUxOWY1NjExODE2YWI5ZDZjYjhhNzBlZjkwM2E3MDBkMThiMDE5MWU0M2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_69d46aa9d1674754a713021115a42c8d",
+      "statement": "runPrintCommand's print event handler collects both text events and repository_progress events (the latter formatted via formatRepositoryPrintProgress into concise lifecycle lines) into a single output buffer and flushes the trimmed combined output to stdout.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/run-log/progress.ts#L52-L60",
+          "version": "repo-lines-v1:sha256:9cf53ddbac063e2bef6ab76b6ea1229cf215bf213311b4d0059264036239cefc:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM3OGIyNmJhYzNiOTQzNTliN2ZjZDg0YTUzNzMyN2E2NjNmNDJhZGRjYWM2ZDQxZmMwOGJkYmMyMTBmOGNkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjRhMmJmNzk1ZGUyYzRiNmVlZjY3MjQzMWZhMGFiMWU2MmZkNTYzZGUxMjAxNTI4MWZlYzg3ZDI1NGU1OWZmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWM4NzcyN2JlY2NkMDEwMGNmYjBhOGM2YjI1YzJjNzc2Zjk1NzMzNTE2OTQ4YTNhM2ZmZDAyMzAzYjJjMzU2NyJ9"
+        },
+        {
+          "resource": "repo://src/cli/runners.ts#L270-L276",
+          "version": "repo-lines-v1:sha256:cc623e4c9b8b54dc32c6ad3ea585122fedd7201e362ede89a4296fdc7e9ad53b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTBhNDdhNWY4YmUxYTg5ODIxZjY5YzEzZGFlZDFlNmJlM2MzYWNkNDA4NmI4MWJmY2E0MDc0OGRjNjM2MWExNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzcyYjhiZWM1MDljMmQ5MGUzZDMyY2FmNDY4ZjMxZGRhMGRkM2M3NzQzZDk2MzE3M2VlNzgyMzc0NmFmZDQzOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTNmMDMyNGVlOTc4Y2UwZDljMTIyNzU4ZmQ4ZWFmOGVmOTE1YzQyOGUwZTBiMThhNWE4ODkzZWFkOTI3YTE3MCJ9"
+        },
+        {
+          "resource": "repo://src/cli/runners.ts#L326-L330",
+          "version": "repo-lines-v1:sha256:cca57cfade958720e83888a7d44e2df0455c38c8236068afd08897181ab36c6b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWMyYWQ1MTkyMDkwNjcwYzM4M2M3YjEyZDUyZmExYzA1NWI4OWQ4NWEzNzczYzhjMmJmYjgzMjU5ZmM1NDg0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTMyYzIwMjQyYzBmMjdiM2M5Zjc1OGQ5NzE3YjM2OWFiZjJmNGIyMmVjZmQyZDQ0OTRhNGE5NzEzNjJmYTUxNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzkwYWMwODNmMTk0ZDVkMTRkOGMwYTBlMGYxNGMxY2JhOTdiZGM2ZjIyZmU0OWE2MTk1YjFkNGI2ZTcwYWViYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_06a57d68c9d24904bea22c925b461806",
+      "statement": "getAuthFixSteps tailors remediation to the provider: AWS-SDK credential-chain providers get aws sts / credential-chain / bearer-token guidance, while key-based providers get 'unset the shadowing shell export' when the key came from the shell plus a re-enter-your-key fallback.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/diagnostics/auth-fix.ts#L69-L95",
+          "version": "repo-lines-v1:sha256:a94b83649e673cc8afa090e74d91baad9358d8be3ffa207256cc15d60ec47598:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmQwMmFjYmQ4OTcwNDUxZjNjYjE3ODVhYmIyNWUzYTE5Mjg2MGVhYTE4YWQ0NGY1ZTBmY2EwNzBlMjYzZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczOGMyODRiOTBhMTdiMTZiYmE1NDcwMjg4MTU1Njg0MzhhMWQ0MjNmYzU2YzYxNmU1YjBlZDMzM2ZkZDA5YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.3.3",
-    "at": "2026-08-22T08:02:55.052Z"
+    "at": "2026-08-24T23:37:28.906Z"
   }
 }

@@ -10,7 +10,7 @@ sources:
     resource: repo://evals/deepswe/deepswe_langsmith.py
   - id: openwiki-source-c45a528335f5cf7306567dc9
     resource: repo://evals/deepswe/README.md
-generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z

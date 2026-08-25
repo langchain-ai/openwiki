@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fd33f2caffb7f8e7c5102c7cbd145e222e763044b1b1a681ec88f3cb6760d5de",
+  "pageVersion": "sha256:dcef0cd55db9cac572fd360f662c2d6967b10f3c29c655aec21e8c54f9d9f0f8",
   "claims": [
     {
       "id": "claim_74c1a7f1406d4c23b8e48b958516d276",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://README.md#L19-L31",
-          "version": "repo-lines-v1:sha256:8dad8abd346c6122e829f2add5bd497e6d22f76e3ab683569ed363edc439af64:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyMGI5ZmJjOGY1OGZlYjFlNThkODVkYmMxZTkyNzU1ZjljYzczMjJiY2VjNDFiN2VkOGM5ZTQ0MTU3NjM3NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliOGY0MTRlZmU5N2QyZWE3YWU4OWMxYTkwOGY3ZDRkN2Q2NGRmNzdmYjYxZjhmMmYxMjhkNTMxMmI1ZmRkOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMmMyNmU1NmRkMjEwYzI5ZWE4NWFjNzUwZTFiY2I4MzdmNzgyMTFhZjAxN2MzNjFjMjkwYzhlMjY5YjE5ZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NDg1ZDAzYjljYmU3ZDRiN2UyMjVmOWY1M2IzYzFiY2M4MzQwZGI2ZmQ4NTkwNmRiOGQ2NGM2YTlhZDQ5ZDcifQ"
+          "version": "repo-lines-v1:sha256:047da2441179df9b3e2d054440f8dc0cd637b76c14a2940c4e2607fed58d1c01:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyMGI5ZmJjOGY1OGZlYjFlNThkODVkYmMxZTkyNzU1ZjljYzczMjJiY2VjNDFiN2VkOGM5ZTQ0MTU3NjM3NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliOGY0MTRlZmU5N2QyZWE3YWU4OWMxYTkwOGY3ZDRkN2Q2NGRmNzdmYjYxZjhmMmYxMjhkNTMxMmI1ZmRkOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMmMyNmU1NmRkMjEwYzI5ZWE4NWFjNzUwZTFiY2I4MzdmNzgyMTFhZjAxN2MzNjFjMjkwYzhlMjY5YjE5ZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NDg1ZDAzYjljYmU3ZDRiN2UyMjVmOWY1M2IzYzFiY2M4MzQwZGI2ZmQ4NTkwNmRiOGQ2NGM2YTlhZDQ5ZDcifQ"
         }
       ]
     },
@@ -21,28 +21,102 @@
       "statement": "A run has two output modes, local-wiki and repository, and defaults to local-wiki when no output mode is supplied.",
       "evidence": [
         {
-          "resource": "repo://src/agent/types.ts#L2-L2",
-          "version": "repo-lines-v1:sha256:a76e02262a6bcc244c44ba062d45d22010317d6499f8a7317ce19111177516c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc2ZTAyMjYyYTZiY2MyNDRjNDRiYTA2MmQ0NWQyMjAxMDMxN2Q2NDk5ZjhhNzMxN2NlMTkxMTExNzc1MTZjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc2ZTAyMjYyYTZiY2MyNDRjNDRiYTA2MmQ0NWQyMjAxMDMxN2Q2NDk5ZjhhNzMxN2NlMTkxMTExNzc1MTZjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjEsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzZjYTNkZmYxZmJjMWY3ODA5YjM3ZjRiZTdlYmYyZjQzYzE5YWMyNjU5YjM3MDExNDlkYzhkM2EzYjRjYTVhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZiM2YwOTBhNzQ2MTM3NzA2N2Q4ZTBkNjU1YzA4YTE4MzQ0MzQyM2FmYTdjYjVjN2FiMGUzMzk5ZGEwMjIxOSJ9"
+          "resource": "repo://src/agent/index.ts#L160-L161",
+          "version": "repo-lines-v1:sha256:2dd9d3852bee93e8d74c37be874e59488d4d38ac22e519028ac163bcfb375ba1:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRlZDc1ZTQxNTQ5Yjk0ZTBiYTBiN2U2N2RjZWE0MGEzODYwMzM1ZmI1Mzc0NmEyZDIzMDAxYjc0M2VjMDhjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdkMzRkZmVmMDI0OWQ5ZWM4ODc4OTAzNmYwNTY1NzA2ZjU0NWExNWRhOWFjODdmNDg4YWI1ZWI5NWRlM2I2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzkwZGIyYTI0YjI2MmMwZWRiMDEyZmI1YjBiNjAxZmM2MDhjNTFiZDk2ODQ5M2E2ODViM2QyODAzZTNhMDk2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWZhM2ZiZmUyMmMzZDJkMTVjMTI5ODA2MmZkNDA3N2MwMjM2YmI5MmMyOGIzYmZjNzIxNzkyYjM5NmM1NTVlZSJ9"
         },
         {
-          "resource": "repo://src/agent/index.ts#L167-L168",
-          "version": "repo-lines-v1:sha256:2dd9d3852bee93e8d74c37be874e59488d4d38ac22e519028ac163bcfb375ba1:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRlZDc1ZTQxNTQ5Yjk0ZTBiYTBiN2U2N2RjZWE0MGEzODYwMzM1ZmI1Mzc0NmEyZDIzMDAxYjc0M2VjMDhjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdkMzRkZmVmMDI0OWQ5ZWM4ODc4OTAzNmYwNTY1NzA2ZjU0NWExNWRhOWFjODdmNDg4YWI1ZWI5NWRlM2I2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzkwZGIyYTI0YjI2MmMwZWRiMDEyZmI1YjBiNjAxZmM2MDhjNTFiZDk2ODQ5M2E2ODViM2QyODAzZTNhMDk2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWZhM2ZiZmUyMmMzZDJkMTVjMTI5ODA2MmZkNDA3N2MwMjM2YmI5MmMyOGIzYmZjNzIxNzkyYjM5NmM1NTVlZSJ9"
+          "resource": "repo://src/agent/types.ts#L2-L2",
+          "version": "repo-lines-v1:sha256:a76e02262a6bcc244c44ba062d45d22010317d6499f8a7317ce19111177516c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc2ZTAyMjYyYTZiY2MyNDRjNDRiYTA2MmQ0NWQyMjAxMDMxN2Q2NDk5ZjhhNzMxN2NlMTkxMTExNzc1MTZjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc2ZTAyMjYyYTZiY2MyNDRjNDRiYTA2MmQ0NWQyMjAxMDMxN2Q2NDk5ZjhhNzMxN2NlMTkxMTExNzc1MTZjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjEsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzZjYTNkZmYxZmJjMWY3ODA5YjM3ZjRiZTdlYmYyZjQzYzE5YWMyNjU5YjM3MDExNDlkYzhkM2EzYjRjYTVhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZiM2YwOTBhNzQ2MTM3NzA2N2Q4ZTBkNjU1YzA4YTE4MzQ0MzQyM2FmYTdjYjVjN2FiMGUzMzk5ZGEwMjIxOSJ9"
         }
       ]
     },
     {
-      "id": "claim_29ed1e11c5a84969b970a2e3e9361140",
-      "statement": "The agent graph is composed from a model provider layer, connector tools, a Grounded Claims subsystem, a docs-only sandbox backend, a middleware pipeline, and the OKF finalization layer, each owned by a separate subsystem.",
+      "id": "claim_fd72d6842f4546aa8b984e0593ab9d5e",
+      "statement": "runOpenWikiAgent dispatches between two generation paths: repository init/update go through runNativeRepositoryGeneration, while chat and local-wiki (and repository chat) go through the shared runOpenWikiAgentCore via createOpenWikiAgentGraph.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L533-L635",
-          "version": "repo-lines-v1:sha256:d8c21a9617cf1c7de0308afe1b934199865a577aca86fee0f372b20d4f9e9aa4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhZWE4MTMzMzAxY2EyZDBhYTRiMWQ4MjlkYTU3YjI4MGM1OWU4NjgwNDNmZjRiOTI5MGExOWM3ODg2MzE2OGViIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNThmOTYyMTE0MDBkN2U1ZDAyNTQ2NDY3YjM3NDE0MjAyNGM0ZDdiMzdlMmQ3OGM0ZDc4YzY0MGZjZDE4N2I0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5N2E4OGE4MGI2ZjNlZWQxYjEzOTg2MTljY2UwMDRjNDA5ZDE3MzcxZjY3YWNhNmQ1OGU2ODEwNzE2MDZlZTUzIn0"
+          "resource": "repo://src/agent/index.ts#L178-L230",
+          "version": "repo-lines-v1:sha256:d7d4365042c224b932808fb37bbbb760775ab1a4cf8717637cc7fee873eacdb5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MDVlNzA4ZTc3ODQ1MjhjMTZlMmYyMmIwYjEzMTg1ODBiMDI2OTBmY2Y5YjZmY2FiODk0OGMyN2FhYzVkOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4OGViNTI4YzExZWQ3NDUyNWUyNWQ4ZTMyMzE0MmM5N2ZjY2M1NmJjNjY2ZWI1ZjVlYjhhMDAzMDk3YWQwZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YTExNDdiZTY3MDg0NjFkNjM5OWI1MDU1NzY0ZDFjODY0ZTY5NGQwNDFmZWMwODg3MzJiZDM1OWNkYjEwMmIifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L252-L263",
+          "version": "repo-lines-v1:sha256:8c9682bf78fc09d96707c97a04133b1051644bb15e2c4ebdade85c3ec8291406:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwYjIzYjM1NTQyZTBlYjM3YTIzZmI3YjA5ZTg2NzUwNGFkOTIwOTZlNDQxMmM0ZWYyZjYwOWZkOTZjMjcyMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxMmZlYmI5NDA2OThlY2Q3NGQyZTQyZWYwMTM4ZmUyOWE2N2VlOTQxZTUxN2JmYzliODcyNGFiNTA1OTIyZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0MTM2OGE4NjAxNWQyZGEyYzI1MDhiZTc5MGZkNWNhNTcwZGUwYzM0ZTk2NzQwNzIxOTU5MjAyZTc1ZjE2MzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9578793593b840a3be4b9955918356a2",
+      "statement": "runNativeRepositoryGeneration drives a durable page-job lifecycle: one planner worker submits a single plan via submit_plan, then one fresh page worker runs per ordered queue job and must call submit_page before exiting, with a durable checkpoint in openwiki/.run.json that can resume on a persistent checkout.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L187-L240",
+          "version": "repo-lines-v1:sha256:7eb3e6740a55e1e2e203820475cf7bbc00d7c480034bde2403de58524e16d3f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1OGU5MmJkYzc4OTAyNzg5YmE5N2Y5OWNiY2VhMTNiOTA1NDA1MTk3YzE1MmI0OGEwNDJiZDQwYWQ0YzY1YjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkZDAxNDUzMWEyNjQzNjExYzI4YTdjNjI3Y2ZjYThjNGQwYWRiNjM4YmVjMDgwZjI4NTM5ZGQwMWI4ZDIwMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlNjA1MGE5NGUzZDI3YjQ5NWIzZDJlZDBhMTQxZGJkYTJmOWUxMTViYmY4NWY1NTU2NjZkYmU5ZGQxNzJjZDEifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L273-L354",
+          "version": "repo-lines-v1:sha256:dd61aebe1d4e2694e1c4110ccb81eac4aa5384319ec6cc49a4f34b0fea1ac4e4:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZjRhODE1MGMyYTE2MTkyYmVjYzRlMGUxODliNGY0MTVjZTUxZjhmZDYxNzI3MTI1ZTFmYjNmNThiMTc1MGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjYzIxZWNmZjQ5ZGFlZmRlZWVlNjJlMTQ0YjI2NWMxMjk5ZDY5NzU3YTBmZjBkZDcxNDUyZjM2OTJmMDM5NjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmMjUxODNlYjQzZjMxYjRmMjg2YWE2MGQ0NjcxNDg3MWQ3NWQ3YTk5NjNkMTcwMzk5ZWIwZTI3NDM3MmY4NzIifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L364-L386",
+          "version": "repo-lines-v1:sha256:6c690a59ae35da5d3c17eddacb1c3d68e83c431e799b6f4724015f9990eb557e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzOTE2YjZmMGFjOTBiYTAxZjhkMzQ2NjEyZGNhMTAxMDYxOGQ3Njg2YWMwYzhiOTdlY2FjOGNlYTA3ZWJkNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0YWIwYjk1YTY5NmMzNGM2OTMwZjJhYTMwMDE5NmIwYzUzOWMxZDk5YWE1ZjUyYTAwNmMwMWNhOTBlNzY0NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4N2FiOTA3NGVhOTgwMjUwZDU5NTAwMDBkMWI4ZTE1ODNhMjgwMGFkOWY4OWZhZjE5ODA4NWM1MDBkMmUyYTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ce79b12955e0429383676d674c6e6ad4",
+      "statement": "Repository planner and page workers are deliberately non-delegating: they are bounded to filesystem tools (read-only for the planner, read+write for pages) plus a single completion tool, and NO_DELEGATION_MIDDLEWARE strips the general-purpose task tool so no subagents can be spawned.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L326-L343",
+          "version": "repo-lines-v1:sha256:a3bec9d178a88bd433ba712d261a4ffba999ed02b86144af54e4abde309ffd38:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NWJkY2MyOWJiMTJiODM1NDFlODJkYjAzZDQwNzk4NmI3OGZiMWRjMDMxMTE3NDliMzEzZjg4NWU1ZWU1YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5Y2QzM2E0OWNjY2FjYWQyN2VmMWI0MWMyMmQ2MmMyMjliY2I3NGM0N2MyNzc0OTJkYjgzNDVjZGRkYjhhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0MjQxODYxMGI2NTQzNjdmNzFiMDNhOGYzNjQ2OTZiMTc1NDM0Y2U4NzNhZjUyNDI0NDE3ZGE0YWEzNjlmMjUifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L449-L471",
+          "version": "repo-lines-v1:sha256:18fb3a74a8543d3abcf1117e38ee44105898c592b9317b4e700c720b890d508d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NWJkY2MyOWJiMTJiODM1NDFlODJkYjAzZDQwNzk4NmI3OGZiMWRjMDMxMTE3NDliMzEzZjg4NWU1ZWU1YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5Y2QzM2E0OWNjY2FjYWQyN2VmMWI0MWMyMmQ2MmMyMjliY2I3NGM0N2MyNzc0OTJkYjgzNDVjZGRkYjhhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1N2I0NmIxMDVjOTI3N2RhMjk3ZDA5NWU0ZWRkNmYwZTFjODhlZWY1NGZiYjE5OTNkMmZlMTgwZWJiY2NkMzcifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L62-L84",
+          "version": "repo-lines-v1:sha256:44f2365aa5afb2b03926448372aa223f12300ade3a9515f9426786b7c512f6ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMGQ5ZjQyMTkxZjU2MDM1MDIzN2U5N2Q0NGYyYzJhZWQyOTBkNzE3Y2M1N2MyNDZmNmMwZTQ4YzUyZjBkYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkMzRjZWYxOTg0NDJhMzViZjM5NDU2ZTdlNTA3NTFiOGE5YjlhZDU2ZjQ0ZTRhY2VmMjcxYzdlYzIwNjdjOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1MjVjYTAwMmVjZjlhNjc4MTllYjViNzM3MjcyOTVlNzBhMWE0ZmQ3NTRlNDAzNjYzOThiODBlMTMwZDI1NWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4678902298164fcda7d1d9c4860a8731",
+      "statement": "createOpenWikiAgentGraph composes the shared DeepAgent core from a model, connector tools, a docs-only sandbox backend, and an OKF/translation middleware pipeline; createOpenWikiAgent refuses repository init/update and directs callers to runOpenWikiAgent so the page-job runner is the only entry point for repository generation.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L393-L404",
+          "version": "repo-lines-v1:sha256:bfe4c2f9db641f49afff8fba9954b76119e71c1185084e8fcb05e2f6d54dfb06:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyNTM5MTAzZGM4MzdiOWExYmE3NDE2NTJjNGE5MjgzOTBlNjczNTQ2MjkwYmE4Y2E1ZmJlNTZkMGYyNmFhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjNDQxN2IyMmY3NDk4NmRiMTg3MjY5MTVmNzVmNDBkY2U0YTZhM2IzMzI0NmQ0ZjUyOWQwNTg2MGY2ODU1MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4M2UzNTMwZDk3NWE1MGJmYWIzYzljYzBlMjgwZTZiYTI3MWIzMDA2ZDNjMzVjMDZlNGQ3NGU4MWQyNmViNjAifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L451-L537",
+          "version": "repo-lines-v1:sha256:2caf3467cdcaba5ef42b2996a4203997fe04c5089be89fce7d62c209cc48a23a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlYTgxMzMzMDFjYTJkMGFhNGIxZDgyOWRhNTdiMjgwYzU5ZTg2ODA0M2ZmNGI5MjkwYTE5Yzc4ODYzMTY4ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1OGY5NjIxMTQwMGQ3ZTVkMDI1NDY0NjdiMzc0MTQyMDI0YzRkN2IzN2UyZDc4YzRkNzhjNjQwZmNkMTg3YjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3YTg4YTgwYjZmM2VlZDFiMTM5ODYxOWNjZTAwNGM0MDlkMTczNzFmNjdhY2E2ZDU4ZTY4MTA3MTYwNmVlNTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d38cffd20794b708d9b17095c71dd61",
+      "statement": "Connector tools are a personal/local-wiki capability only: createOpenWikiConnectorTools returns an empty array for repository output mode, so code-mode repository workers never receive connector ingestion, LangSmith, or other credentialed external sources.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/tools.ts#L25-L35",
+          "version": "repo-lines-v1:sha256:3ecf9092e8d5bbb22b6b5118173bec56d80a39f68913ef6fc1ebc14f92fd2b6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzY2NWM4ZTkzNWFjODdmZjJiYjkzYTY4NjU0NWJhMzAyNzBkYmY0MDMxMjVjNGZmZjEyY2I3NjMzOTJmMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMjk0OWRjMTljOTNhZDQyMTRmZDMyMzc4NDczNDJiMTI1NjgxZTYyMGFmNGU1Yzc4YzE3ZmJhOWRjNDExMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2ZWYwMjI5MDk2MGJiOTA1MGIzZWY1OTcxZDBjZGU0ZGU1MThhMjY0OTRlNzdkMDE5ZmMyYjY3YjgyMjNmNTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b89c7c97674d4a94ab7239859514c0cc",
+      "statement": "External coding-agent integrations (Codex, Claude Code, OpenCode) drive the same five durable page-job operations as native repository generation while OpenWiki owns the queue, Claims validation and persistence, source-drift handling, and deterministic finalization.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L100-L104",
+          "version": "repo-lines-v1:sha256:75a180125bfbda47d0206164ce48580cd7799acb52941ca05b32b8e0ad28e293:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI4NGFmMjYzYjg0ZTlkOGRjNzcyYjEzNjU4ODYyNjZlNzBiZGQyYzUwMTBlNDI1NGQyZWEzZjQ1ZDEzZGFlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGJmNjI5ZDc2MzFiZTAxNjI0NTFjMjM3Mjc1YmQ2ZDI5NDIyYTExMDIyYjNkZmI2Yjc4ODk2MzdmYWY4ZmZiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTIxNmM2ZTk4Zjk1NzRkMjUxMGRmNThhNDI5MDgzNTMxMjZlZDUzNDMyNjM4ZmVlZjY0ODVkMTdjNzU5YzUxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWU5ZTQ2NGQ3MDA5ZjRiNDdhNTM4ZDFjM2M2NTBjZjQ0NTFkMjU0OWE5ODI1MTNmZWZkYTFlYzEwYzQ4YTEyZiJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.3.3",
-    "at": "2026-08-22T08:02:55.052Z"
+    "at": "2026-08-24T23:37:28.906Z"
   }
 }

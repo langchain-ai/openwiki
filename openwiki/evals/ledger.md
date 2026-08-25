@@ -10,7 +10,7 @@ sources:
     resource: repo://evals/ledger/reevaluate.ts
   - id: openwiki-source-bdd14aa92ae4a01628e282cd
     resource: repo://evals/ledger/run.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z

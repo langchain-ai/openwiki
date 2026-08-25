@@ -10,7 +10,7 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-3603986778b0b5f63cbdb37d
     resource: repo://src/visualize/static-export.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z

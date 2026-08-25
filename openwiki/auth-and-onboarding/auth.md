@@ -16,7 +16,7 @@ sources:
     resource: repo://src/auth/providers.ts
   - id: openwiki-source-aa47a7769472ab8bf5ec822d
     resource: repo://src/auth/tokens.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z

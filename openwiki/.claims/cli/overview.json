@@ -1,41 +1,7 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a051140ef78dbf6deb7e79ed45ecd34c935cea97d179ff6e793775e39313b1c0",
+  "pageVersion": "sha256:b3a860083024f831232c6acaf55269f70e3eed3ce3cde1ab78e7ad8550ba3346",
   "claims": [
-    {
-      "id": "claim_137a9682f63a4934acf2926042b27f17",
-      "statement": "The openwiki entrypoint installs the crash guard before any run starts so a rejection that escapes every catch is recorded with telemetry instead of hard-killing the process.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/cli.tsx#L39-L43",
-          "version": "repo-lines-v1:sha256:cd892baa149a28c308f61366ed1346fc49c3fe3e5c526f04ccf317edbfd250f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZkMmEyOTZiNDQ3NGQxODgxNzEyZTYwZmYxN2E3MGQzMjQ3ZTc3YzZhMTYyYjVhYWE3NmZiZTRmMjkwMGQ4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjc0YTM2Yzk4ZDkzZWRhYzM5ODJhY2NhMWIzM2Y4Y2Y1MjY5MGRmOWRkNTlmM2M2MTQ2Y2QyYzlkNTk1YTEzOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDJkMjZhYmEzZDI3OGY1ZjRlNGJkMTUxZmY1NzcxNjllMWY1ODY3ZjBjZTQxYmUxZWQyYTEzYzE0ODhlNGYxYiJ9"
-        }
-      ]
-    },
-    {
-      "id": "claim_28651b78467248df82b3a918b4b0e0bb",
-      "statement": "The entrypoint parses argv once and dispatches integrations and mcp commands to host-integration handlers while all other commands go through the standard command path.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/cli.tsx#L44-L53",
-          "version": "repo-lines-v1:sha256:4888f57d5b9eb35c837750492c04d9c0bd1d8d76bfd654ad929f2c8069826bd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MDVhMzQwMGM5Njg0YmI5OWMwYjA2N2JiMjFkZjYwZGM2MWEzM2ZiNDczN2QzZDZhMjQ3OThjMDdkMDE5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNWQxNGIwYzIzMjJjZjY3YzBhODM3YzQzMmQyODFhMWFjOGQyNjdkYzFlNDk1ZDg0YTVhNjlkYTMyNjNjM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhMWE0ZTQyZDY5OTBkNThiNmMxZGNmMTUxMWNlNjVhYTMzZDQ5YjQwN2Y4NjRjZDA2NzhjODliYTY1NWM1ODIifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_a022e19bd85743d6b3e51fac4aed4d07",
-      "statement": "parseCommand returns a discriminated CliCommand union keyed by kind, and every parse failure is represented as an error variant with exitCode 1 and a message rather than a thrown exception.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/commands.ts#L107-L165",
-          "version": "repo-lines-v1:sha256:228e1c0e10690c88e3cba37ffadc0e2bbeffd4ca0f4c21c9e50a22db263c5d89:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmOTU4MjYzYTk0OTgyNzBjOTI3ZTA4NjllN2ExYmZkMGE4NzNiYmYwNjU2MDg2MjZkNzllMDUwMzI3ZjViZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MTMwNjI4MGYxYzY3OGQ4YTE1ZjM0YTA1NjhjZmEyMDQ5NTE4ZGRjMGUxNzU4YzZjYTVhZjdkYmJkNWU1ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyZjBiYjQ5YTNiNGJjYjIwYzBjNWU3ZjJjNjYzNWRjOTE2OTVmYjkwZjU0ZjY5MGIwNGY0YzE3NTM1Mjg3ZDgifQ"
-        },
-        {
-          "resource": "repo://src/cli/commands.ts#L169-L180",
-          "version": "repo-lines-v1:sha256:19993973b20fc64595cdcff57c9c859edc28189c52c635a19a6ba1752aff0f89:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZmY1YWU1NzIyNWZhMWY0OTE2OWY1Yjc0YmQxZTFhZGRhNGU4YzQ0YjFjOTI5YzdlMzk2ODE4YjcyOTAzZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyZjBiYjQ5YTNiNGJjYjIwYzBjNWU3ZjJjNjYzNWRjOTE2OTVmYjkwZjU0ZjY5MGIwNGY0YzE3NTM1Mjg3ZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyNGNmOGNjMjJlZmU3Yzc1NGM2OWJiODUyYjAxYmZhMjIyZjdmYTVhYzFmNDI3MzgwNDhiOTk3NzFiM2I0NTMifQ"
-        }
-      ]
-    },
     {
       "id": "claim_b74fe66bcc564e4eb2e4a9d392cd71de",
       "statement": "integrations and mcp commands are handled before the standard path and deliberately do not load OpenWiki model credentials because they use the host coding agent's authenticated session.",
@@ -76,31 +42,17 @@
     },
     {
       "id": "claim_af046463c8db43fbb082470acedc7078",
-      "statement": "--dry-run is accepted only in development mode and --debug sets OPENWIKI_DEBUG at parse time to opt into full diagnostics.",
+      "statement": "--debug sets OPENWIKI_DEBUG=1 at parse time to opt into full credential/error diagnostics before any run starts.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L759-L782",
-          "version": "repo-lines-v1:sha256:da4a93614481a80a846bcaea96e9a7dbc261147e8e31f39f4925813e9ef27d8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NzFjZGQ5ZmE5OWIwMzQ2ZjBmNDU4ODc4Y2NjYzM1Y2RjYWVhMDQzNzc4YTI0MzE3ZDVhNDI4ZjZhNjNlODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjYThkOWI0NTcwOWUzODVkOGUxNjcyMWE4MzAxNTcxMzQzMDM4ZGRhMGY1YmZkY2FlNmE4MjhlZDkxZTE3ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZmViNDM0OGVlZmYxYjQ3YjU5N2ZmNTFlNzZlMTc5NjljMmQwYzNjM2YzZWFjODBiNDAxZGFhMzM1MjJkZjIifQ"
-        },
-        {
-          "resource": "repo://src/cli/commands.ts#L1043-L1047",
-          "version": "repo-lines-v1:sha256:a2fb82464f1722740c42f4e6760c96aad5d53a8fa2b393d2638c6698b2687750:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTJiZjJjMDk5ZWViODgxZTFlZDNlNjlkM2M0MGFhNmZmNDIxNTdmMDQ4OWU1MmMyYjM0ZmQ5MTQ2YmVhMDc4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDk0ZmMwYzE3M2QxZWMzZmM1MDFkN2RmYTkyODU1MDFjNTI3Y2ZiNDcxMjU4M2RhM2NjMzYxODA1NjZiNGJlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWIzNjFlZDdhMTgyY2UxMGMxYWM0YzFiYmY1NTk5N2Q3N2NkMDQ2NzU5OTM2YmZjZDNiYjk0MWE5NmE3ZjAzMCJ9"
-        }
-      ]
-    },
-    {
-      "id": "claim_2777fd5213f4472eb39ff15f5e448d4a",
-      "statement": "resolveStartupCommand can rewrite a run command into an error before any subsystem runs: interactive chat without a message requires a TTY, a starting non-interactive run must have resolvable provider credentials, and an empty user message is rejected.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/startup.ts#L24-L93",
-          "version": "repo-lines-v1:sha256:96bcd2389a0a920eed6c334fdea62ae70958ec89f7d8b76909d34b882efa1ae9:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZDIzY2U4NDViNTNjOWZjYzQ2YmI3MmNkYWVkYzE3ZDdhOGQ4MmRhZjRjNzVjODBlZDhjODgxNWIyMjQyMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhYzUxNzIzNjI1ZTgwNjYxYTk0N2U3MjUyYTVhNzcxMzQwZjVkZjI5MzVmNDIzMGMwZDRmNTQwNWI3OTkyZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxNGYzNTc4ZGUzODdiODY3MGM4Y2IwN2M0NzBiNTgwNjgxNzE4MGM5MDExY2MyMTIxMTQxMTg1Yzk5ZmY3NDMifQ"
+          "resource": "repo://src/cli/commands.ts#L777-L782",
+          "version": "repo-lines-v1:sha256:30d2c6fb1e2ed9b9e7521a21c83bacb396434d57da9c6e3bec4963d361166785:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjJhYTZhNTg3NTVlOGNmZjdjZjlmZjRmMjQ4NjVkMDQ0N2RkNWVhODBiNzhmZDY5YTk5MTUxNzExODYxMjc4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzdmN2M2ZjFhMWMwY2M5ZTJmYjQ4NjNiY2EwMTJlMzBmZjI2MzA5Zjk1NmEzZDVjMjAzMTEwOWM5YjE0MmRlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmZmZWI0MzQ4ZWVmZjFiNDdiNTk3ZmY1MWU3NmUxNzk2OWMyZDBjM2MzZjNlYWM4MGI0MDFkYWEzMzUyMmRmMiJ9"
         }
       ]
     },
     {
       "id": "claim_d0e9d2ef956c4b34a979e62041e1bad3",
-      "statement": "A clean update that a no-op check proves would change nothing is allowed to proceed even without credentials on the non-interactive path.",
+      "statement": "A clean update that a no-op check proves would change nothing is allowed to proceed even without credentials on the non-interactive path; the check loads OpenWikiIgnore and asks getUpdateNoopStatus whether the update should be skipped.",
       "evidence": [
         {
           "resource": "repo://src/cli/startup.ts#L56-L66",
@@ -133,16 +85,6 @@
       ]
     },
     {
-      "id": "claim_0fc6ff4e2d8c4052bba5e315f8d98431",
-      "statement": "Run mode maps working directory and output mode: code mode uses the code runtime cwd and writes repository output, personal mode uses the local wiki dir and writes local-wiki.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/run-mode.ts#L40-L55",
-          "version": "repo-lines-v1:sha256:3dc154c21bf62f7f577b528b2d47906481081f32777386596dd8cba256dc5e0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiOTc0NjhkMDEyM2M1ZTc4YmU0ZDk3YmQ0NjVmYTI3YTQ5ODJlZTg5ZDRmOWM0MmI1OGU0ODEwYWU3M2VlZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxMTg2NGYwZWQ0NmVhMzMxMmRkMjAwYjZkNjI1N2IwMjc2ZWY4MjgyYjEyMzgyMzE2NDAyZjE4ZjEzN2UxYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMjFmOGQ1NjY2ZGQyZWQwMDJlZjhmMjBkOWIwOGEwODdjNzczMjQ3ZDI1YWM1ZDU4OTY3OTRiZWRjNTY0MjMifQ"
-        }
-      ]
-    },
-    {
       "id": "claim_0918dadcbb1c48f4b9baf6b99a8eac0a",
       "statement": "shouldAutoExitStartupRun marks a real non-dry-run non-print init or update run that was asked to start so the UI exits automatically when it finishes.",
       "evidence": [
@@ -164,7 +106,7 @@
     },
     {
       "id": "claim_a173bc29ea084a4e904f7223beeb420b",
-      "statement": "The CLI splits dispatch into host-integration commands (integrations, mcp) handled by dedicated runners and all other standard commands handled by runStandardCommand.",
+      "statement": "The CLI splits dispatch into host-integration commands (integrations, mcp) handled by dedicated runners in integrations.ts and all other standard commands handled by runStandardCommand.",
       "evidence": [
         {
           "resource": "repo://src/cli/cli.tsx#L44-L53",
@@ -178,7 +120,7 @@
     },
     {
       "id": "claim_caee1fabfcfd460f97f21486689aa097",
-      "statement": "parseCommand returns one discriminated CliCommand whose kind covers integrations, mcp, auth, ngrok, visualize, ingest, cron, help, run, and error.",
+      "statement": "parseCommand returns one discriminated CliCommand whose kind covers integrations, mcp, auth, ngrok, visualize, ingest, cron, help, run, and error, and every parse failure is represented as an error variant with exitCode 1 rather than a thrown exception.",
       "evidence": [
         {
           "resource": "repo://src/cli/commands.ts#L107-L165",
@@ -192,18 +134,22 @@
     },
     {
       "id": "claim_acb716ca87844bc1b1c6dd95f2000a08",
-      "statement": "A run command records the OpenWiki command plus run mode, mode source, dryRun, print, shouldStart, language, modelId, and userMessage.",
+      "statement": "A run command records the OpenWiki command plus run mode, mode source, dryRun, print, shouldStart, language, languageWarning, modelId, userMessage, and telemetryFile.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L146-L167",
-          "version": "repo-lines-v1:sha256:8deaa57433ad06c3b3a36d4305f6cf3cddc5b5065071da7eb211a271c20bd648:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZjA3ZjQ4OTI5NDMxMjkwNWM5Y2MxOTI0Y2RiNmJkZDE3NWNjMTIwMDM2MjhlZGRiYTk5YzNkZWIxYjY4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNTMxMGFlZDliYzJhODVjYjU1NzE5OWYxZTkwYTI4MTIyYjQ3MDUyYmM1NzU1MzUwMDZhOTNlNDJmZGEwYTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2MDU5MDI0ZDQ1NjRhZTBmZWJhNWQ3MzhlM2I0OTUxNTczMGY1Mjg5OTdhOTM1ZWQ3ZGNmMDBkODQxNWRkYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMTc5YTNhMWU5YjRhMTYwOGY4NGJhNmQ1ZTBkOTIwNzYwNzVkZTNjOTliZDgyZThjZDkyODNjMzY5NzQ2YmQifQ"
+          "resource": "repo://src/cli/commands.ts#L146-L165",
+          "version": "repo-lines-v1:sha256:5826e28566fb9fd41ec77b6facb888383f504407419e3f9407a4d05ec4c3730d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZjA3ZjQ4OTI5NDMxMjkwNWM5Y2MxOTI0Y2RiNmJkZDE3NWNjMTIwMDM2MjhlZGRiYTk5YzNkZWIxYjY4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2MDU5MDI0ZDQ1NjRhZTBmZWJhNWQ3MzhlM2I0OTUxNTczMGY1Mjg5OTdhOTM1ZWQ3ZGNmMDBkODQxNWRkYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyZjBiYjQ5YTNiNGJjYjIwYzBjNWU3ZjJjNjYzNWRjOTE2OTVmYjkwZjU0ZjY5MGIwNGY0YzE3NTM1Mjg3ZDgifQ"
         }
       ]
     },
     {
       "id": "claim_1e067facbcee494b8a9282c855654386",
-      "statement": "The CLI parser rejects combining --init and --update and only accepts --dry-run in development mode.",
+      "statement": "The CLI parser rejects combining --init and --update, and only accepts --dry-run in development mode (NODE_ENV=development or OPENWIKI_DEV=1).",
       "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L1043-L1047",
+          "version": "repo-lines-v1:sha256:a2fb82464f1722740c42f4e6760c96aad5d53a8fa2b393d2638c6698b2687750:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTJiZjJjMDk5ZWViODgxZTFlZDNlNjlkM2M0MGFhNmZmNDIxNTdmMDQ4OWU1MmMyYjM0ZmQ5MTQ2YmVhMDc4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDk0ZmMwYzE3M2QxZWMzZmM1MDFkN2RmYTkyODU1MDFjNTI3Y2ZiNDcxMjU4M2RhM2NjMzYxODA1NjZiNGJlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWIzNjFlZDdhMTgyY2UxMGMxYWM0YzFiYmY1NTk5N2Q3N2NkMDQ2NzU5OTM2YmZjZDNiYjk0MWE5NmE3ZjAzMCJ9"
+        },
         {
           "resource": "repo://src/cli/commands.ts#L759-L797",
           "version": "repo-lines-v1:sha256:a14c6640a726674d8b9b8b2e6538b58dea75d54468f3fb886d11dfab14c81f80:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NzFjZGQ5ZmE5OWIwMzQ2ZjBmNDU4ODc4Y2NjYzM1Y2RjYWVhMDQzNzc4YTI0MzE3ZDVhNDI4ZjZhNjNlODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjYThkOWI0NTcwOWUzODVkOGUxNjcyMWE4MzAxNTcxMzQzMDM4ZGRhMGY1YmZkY2FlNmE4MjhlZDkxZTE3ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyOWE1Y2NkNGE4Y2IyMzdkNzk2MGRlMDJhZjE3ODRkYWM0YmMxMWY4M2I5ZTQyYTJlNmE5OGIzNzE0MWE5ZjYifQ"
@@ -232,11 +178,15 @@
     },
     {
       "id": "claim_d06f6818ab484ffa9721e89b6e64b607",
-      "statement": "runStandardCommand loads the OpenWiki env only when the command requires it and decides once whether this is the first run (minting the install id) before any telemetry event is sent.",
+      "statement": "runStandardCommand loads the OpenWiki env only when commandLoadsEnvironment is true and decides once whether this is the first run (minting the install id) before any telemetry event is sent, but only for commands that emit telemetry (non-dry-run init/update).",
       "evidence": [
         {
           "resource": "repo://src/cli/cli.tsx#L60-L78",
           "version": "repo-lines-v1:sha256:285ae2eb5571421241850513ae7af3e534bc38c02d6f2330a39eb739ede69417:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMGM4ODRkYjNiZjQwOTk4ODNmYjZhOTg0ZTgwZmM3OGU0YTcwZjE5MDQ1YzlmMmRkZjFlZjU0N2VkMjY3ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzMjUwZWQ5NDIwZjE2YTYyOTgzNzAxZWVjYmY0YzIwNmY4Y2MzY2ZhMGVjZGQ5NTQyYjY4MTJiYzg2ZDc5YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyM2Y1ZjliNmYyNjk2YzZjZDJiZGFmMTM3OWMxYzJiNjUzOGI5NWMyYzBkM2QzNGRjNWQ5YWY0ZTEwMGQ4MjEifQ"
+        },
+        {
+          "resource": "repo://src/cli/commands.ts#L1054-L1060",
+          "version": "repo-lines-v1:sha256:8bc4fd202d34df826bc8a5dd33464f2e14368c412352c1d6d9617def6c4173e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDczYjc5MWFjZGI4ZDAxY2E3YzQ1ODhjN2JjOTkxMGNiOTc5NDBhMTEzMGNlNzNhMDFhZDc2YmVlNDExZjg3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2Y3Njk3ZGFkNDcwZWY1YTI3NmUzMjA3YjVjYjY4NGQyNGE2ZTYwZGQxOWY5M2E2MTFhNTc0Zjc5YTNlMjRmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWFlZWIwZjAyZGRkMjRkMDg1YWI3Mjg2MzZjYjcxZDA4YjU0ZjhhMTIwYTNkYjVlZWZmM2JmMzBlNjU5MDNiNyJ9"
         }
       ]
     },
@@ -253,10 +203,52 @@
           "version": "repo-lines-v1:sha256:70786581185d44edcc2d49d0f8cf0bc8b29597d81a898bf3ffc7a860e86c1e6b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2OGRlYzc1OTBhNDVmZGM3Mzk2YTY3YTg0NDdiMGZjZTg4NTNlMDQzZjRkMjE2ZTA5NDE2ZjczNDdjYzUzZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjMDViZjBhMDQwODFmODllYTVlMzBlZjRjYjc0NGRiMzljY2I4OGZiM2EyMjI0OWIyYTA5MjkzMGVhYzA0OTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyMzllNzM4NTAyZDM1NGRiNDg4MDI1YzgzODEzNmZlNDc2OWI3ODdlZTU0YzFhODdiZjI5ZGQyYWJlY2E1ZGYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_7b80bb60176e43c58542b011961f563b",
+      "statement": "runIntegrationsCommand resolves a user (home) or project scope root and performs a registry-driven list, install, or uninstall, reporting per-target status and a transactional skill + managed-MCP install/uninstall result to stdout.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/integrations.ts#L20-L81",
+          "version": "repo-lines-v1:sha256:eca7e31933259707d44ecfd74d077d11e72cdb4bb1547511a207f872f53886a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MDI5YWNiYmRjZTRiNmE0OGU1OTY4Mzc4MjcyMTBlZTI2OTFjZGViZGM5MDk1MDAzOTk3MDViYjAyMzYxYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0ZjZjYzIzZWRkZmY3YzRiMWY1NWQzNTJiNjUzOTA3YmFhYzFhZTY2ZDAwZTIzMjkwNDhmY2NmODdlMmQ5N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlZGI3OTg0ZWZkNzAzOTAwYTRlYWU4NWZjYWJlYzA2OGFjN2E3MTI4OTRjZmE1MGY4MjA5MDIyOTBjNWE4MzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_05de71c1f8bb4cbca9b25966d580d4e7",
+      "statement": "parseMcpCommand validates the --host identifier as 1-64 lowercase letters, digits, or hyphens, and runMcpCommand resolves the host target and launches runOpenWikiMcp with the target's producer actor.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L659-L706",
+          "version": "repo-lines-v1:sha256:bffda03dc81a277590d358e36a0e2a0928159370e039deef8d417303ae6035cb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhODViYjY4NjIxOTc5NzNmNDliZmY0ZGY5NzE0YWU5ZTk4NTI3NjkwNjc0NTZhYTU0N2MxNzIzNzQxMDU0NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkZWJjZTI4YjM0NzYzZWJhNDdhNWY5ZjI5MWUxNTkyMTFiYWY5ZTRmYzdlNmViNDU4YWQ5NTEzZmIwN2RhOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5OGQwOTQxMGY4NzY5ZmEyZDMxYWU1MGE5ZTc3MzcyYzlkNTZkM2FhZDFhNTM4Y2E1MzBkZGY2YmYwMTQ4MTIifQ"
+        },
+        {
+          "resource": "repo://src/cli/integrations.ts#L88-L96",
+          "version": "repo-lines-v1:sha256:414476f52228bf79ca5fb2a3f60fdbe43c03c0e5192e1ff74a6eaca1c43d940b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE1N2JmMDkwMGIzNzMyODg0OGZkYTljNGRkM2YxNTNhZTg0NzFmNDdiODU5MmY1NWFiZmY2MWI0NDhkN2M5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGRkNGYzZWJjMjRlNDliM2U2NGIxNjI1NGM5NGEyMzJkYjMwY2Q4NTIzYWRkMDRiNGZmZWExNGVlMjY4MGYzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d73c276700864003bfb330fe48521bf9",
+      "statement": "Both render paths call runOpenWikiAgent; when the resolved output mode is repository and the command is init or update, runOpenWikiAgent routes to runNativeRepositoryGeneration (the native repository generation lifecycle) instead of the chat agent core, making the CLI run-mode to output-mode mapping the dispatch boundary that selects repository generation.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L154-L230",
+          "version": "repo-lines-v1:sha256:519f8722d82bc24225726e5bb8eac98ca196aa8ee4e07b44608a0f60a2b0d604:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2MWZhZjIwMTlmNjZlMjcwMzc0ZjU0ZjIyNDQzZmEzNzYyZjY2MDM3NzAxZDJkZDdjOTRiOThjMDAwOGM4N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViZTdmODNkY2FjOTQ5ZTEzNzhhYjgyMTUzNTFiN2Y4MDIzOGUxYjY0NGQ5ZWQyMTY3MWRlNjM5YTZhYzBiYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YTExNDdiZTY3MDg0NjFkNjM5OWI1MDU1NzY0ZDFjODY0ZTY5NGQwNDFmZWMwODg3MzJiZDM1OWNkYjEwMmIifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L178-L184",
+          "version": "repo-lines-v1:sha256:3f18de9d667fe2f950419faca22d40162f0a4bc8a2632eb300f1c4277f15ec14:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjkwNWU3MDhlNzc4NDUyOGMxNmUyZjIyYjBiMTMxODU4MGIwMjY5MGZjZjliNmZjYWI4OTQ4YzI3YWFjNWQ4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2MwOWM4Njc1N2RjOTFjM2YxOTY5N2YyZjZhZTJhZTk2NGI5NDgyMzc2NzZmYTgwMDFhOTUxYzFlODY5YmRiNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDg4ZWI1MjhjMTFlZDc0NTI1ZTI1ZDhlMzIzMTQyYzk3ZmNjYzU2YmM2NjZlYjVmNWViOGEwMDMwOTdhZDBmOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGMwMTFmNGRmYjNiZjk1ZWViMTM4NDNhNTAyNGE5NjY2NmZkOGNiNGUwNTY4YTZhZWNlM2UwNTNmMzUzYThhMiJ9"
+        },
+        {
+          "resource": "repo://src/cli/run-mode.ts#L40-L55",
+          "version": "repo-lines-v1:sha256:3dc154c21bf62f7f577b528b2d47906481081f32777386596dd8cba256dc5e0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiOTc0NjhkMDEyM2M1ZTc4YmU0ZDk3YmQ0NjVmYTI3YTQ5ODJlZTg5ZDRmOWM0MmI1OGU0ODEwYWU3M2VlZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxMTg2NGYwZWQ0NmVhMzMxMmRkMjAwYjZkNjI1N2IwMjc2ZWY4MjgyYjEyMzgyMzE2NDAyZjE4ZjEzN2UxYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMjFmOGQ1NjY2ZGQyZWQwMDJlZjhmMjBkOWIwOGEwODdjNzczMjQ3ZDI1YWM1ZDU4OTY3OTRiZWRjNTY0MjMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.3.3",
-    "at": "2026-08-22T08:02:55.052Z"
+    "at": "2026-08-24T23:37:28.906Z"
   }
 }

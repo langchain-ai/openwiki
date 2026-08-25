@@ -1,84 +1,168 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1e2ea5f71f0772c3b7bd2625f0b07df095b83d7f4252ace08f63c0795b9a6e0a",
+  "pageVersion": "sha256:9c27b72f3807cd91cac0acb68cfb5b43d13d6a23e0eaf7d3108d256172ed074e",
   "claims": [
     {
       "id": "claim_f5293dc3d82c4d4cab811f4b2d61336d",
-      "statement": "validateWikiMermaid walks the generated wiki through the backend virtual filesystem (rooted at / for local-wiki and /openwiki for code) so writes stay inside the docs-only boundary, and leaves files with no failing fences byte-for-byte unchanged to avoid diff noise.",
+      "statement": "validateWikiMermaid walks the generated wiki through the backend virtual filesystem (rooted at / for local-wiki and /openwiki for repository) so writes stay inside the docs-only boundary, and leaves files with no failing fences byte-for-byte unchanged (no edit call) to avoid diff noise; only files that actually degrade are rewritten via backend.edit.",
       "evidence": [
         {
-          "resource": "repo://src/mermaid/wiki.ts#L42-L60",
-          "version": "repo-lines-v1:sha256:1a1f9d6e5a70930a56522b5f6560b9573a2f0b7f6904dbc5e2562ca51a81d191:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmOTkxMGVhNjQ0MmQ0MTFlOGRjZmFhNzQ5YTQ4MmJlN2I1NDk5OTU3MTY3YWE2NDM3N2JkOTQzZGYwMmFkZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmNzFlN2ZmZDlkODgwMDBhZTIyMWMxMzVlMjljYTNlMjM1YTcxYzk4OGUyOTJlODI2MTUwZTU0OWE0OGE0OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0NDZlODQ3N2MxZWNlNTZhMGNkMGE5NjVkNjk3MjlhZjIyMGJiNjA0MzA3YWZjZGVhOGYxOTFkMTUyNmY0NWYifQ"
+          "resource": "repo://src/agent/wiki-finalizer.ts#L255-L255",
+          "version": "repo-lines-v1:sha256:5455831929377721853eb0181065819c2de4d9be20c5f6ee5435e42ea0690991:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ1NTgzMTkyOTM3NzcyMTg1M2ViMDE4MTA2NTgxOWMyZGU0ZDliZTIwYzVmNmVlNTQzNWU0MmVhMDY5MDk5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ1NTgzMTkyOTM3NzcyMTg1M2ViMDE4MTA2NTgxOWMyZGU0ZDliZTIwYzVmNmVlNTQzNWU0MmVhMDY5MDk5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2IwOWQzNDM4MjAwNjk0N2VlODk2MjNmYjA0OTAxMzVmODhlZjE4ZDBjZGY3NGVkZGM2NTc3NDFmYWZkODQ5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2I0YWRiMzc2NTVlMzVlMzg5ZWM5NzQxOGE3ZThiY2Y5ZTM3NmExOTk2MTA5ZTlkZDRmMjY5NDlmZTJkOGUyNSJ9"
+        },
+        {
+          "resource": "repo://src/mermaid/wiki.ts#L42-L78",
+          "version": "repo-lines-v1:sha256:970b6ebafed18648e75f5ffaea22293f74190d812de4be44b307f1221340a5a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlYzk5NzRjN2U2MDNiZDI5ZmE2MjY4NDdkOGRjYmVjM2ZlYzcxNTE4YThlN2FiZGE1ZTUzMjk0YWM5NTNlMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZDg4YzM0M2JiYTBiYjg4M2QwMjM1NTc3ZDg5ZDYxNGU3Zjc1NzM5OWQ5OGYwOGExZWVmYzg4OWM5NTVlNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjYWQwYTA0MDE3ODVhODE1ZTliZmIxZDU0YzEzYTYxODc5MzBkNmY3YzcxMWJjMWEwZjM4Zjg1M2Q3MTc0NTQifQ"
         }
       ]
     },
     {
       "id": "claim_b44f50a7f4b04ecaa97b67d4f17e5b15",
-      "statement": "The mermaid pass excludes reserved control files (index.md, log.md, _plan.md, INSTRUCTIONS.md) from scanning.",
+      "statement": "The mermaid pass excludes reserved control files (index.md, log.md, INSTRUCTIONS.md) and dotfiles/dot-directories from scanning; _plan.md is not excluded.",
       "evidence": [
         {
-          "resource": "repo://src/mermaid/wiki.ts#L7-L15",
-          "version": "repo-lines-v1:sha256:fe137708f0f52d82006ec493c032235e022841e4ca22bedb41156750eb273394:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVlMjZjZDkyMzY2ZjYwZDhlZDkyZDAyMzlmMDdmZWY3NGNhYzE0YWE2OWFkZGY5YzJjYzBkMTFlYjAwYTQ2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmMyZDFmMmQzY2NmYTNmYjU1MjRjNmRjOGU2YmM2Y2ViNzA1YjVmM2UxMGZhNTE4ZGRjMjU1ZjFlZGY1N2IyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYzOGNmNTViZTI2MzA0YTA1NDg3NzI3ODgwNGZlZTY1MjVjMTM3MTYwODJlNWZhYTZkYjYzN2UxNGQ1MzIwNiJ9"
+          "resource": "repo://src/mermaid/wiki.ts#L7-L10",
+          "version": "repo-lines-v1:sha256:a65a809d11add9086f1acce6bf429f9cd8a3d0c86bbe916529b8427cc9b88335:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTBjOTY1ODlmYzE2YzhiY2FhN2EzMWUxYTRiMzhlNTllZGI4N2Y2YTNiOTI5NjExMzM1YTg3N2VlYTY1ZmM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmMyZDFmMmQzY2NmYTNmYjU1MjRjNmRjOGU2YmM2Y2ViNzA1YjVmM2UxMGZhNTE4ZGRjMjU1ZjFlZGY1N2IyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYzOGNmNTViZTI2MzA0YTA1NDg3NzI3ODgwNGZlZTY1MjVjMTM3MTYwODJlNWZhYTZkYjYzN2UxNGQ1MzIwNiJ9"
+        },
+        {
+          "resource": "repo://src/mermaid/wiki.ts#L96-L111",
+          "version": "repo-lines-v1:sha256:6f287dbf3b586e586dacac1178e662530cd6d19d23e2b58503b086c579a1d304:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlODNjOGRmNDBhYTZmZDU2ZWU0MTNkZTBiNjVhMmFhMTBlNzRhMmVlZDI2YmNmMTU2ZDliNzE4M2Q4ZTJjMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjZTUyZDcyZjJjMjUyM2IxY2FkYTlhZDBlY2ZjZDQyNzViZDdhMzEyNDRiYTlmYTc0NDI1ZGIxYTU4ODVmM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3NzdiZDg5YTEyZjRkOGY0Yjg0MmIyYjkxNmY4NjI4ZGJjMGU2MWQxZTMyNzFhZDJlMDU3ZThjM2JlMjcwY2UifQ"
+        },
+        {
+          "resource": "repo://test/mermaid/mermaid-wiki.test.ts#L106-L129",
+          "version": "repo-lines-v1:sha256:b65be565b4142f9a08b27ab47d4b34c98c06ee6a189176b7c60bcbaf217beb12:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NWRlOThiNjg2YjlmZmJiOGZhZGJjODI1NTVkZTRjMDZhNDZmMzYyYWZiNjY3MzhiZDI5ZDM5NDA4ZWJlMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3NjQ4ODdmOTg1YThkMWYzOWQ5ZTBlNjEyMzBmYzEzOGI3ZjJhNzc1NGE3YjkyMDE4ODA3OGQzN2VmNGQxMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYjJjZjc2YWFjMmU1ZGQ0MWU1MDI2NTBhOGIwZGI3Y2QyMzE5OTNkM2NmZmU2MDExMWQzODU2ZGFjYWJiYjgifQ"
         }
       ]
     },
     {
       "id": "claim_407f6a3901f4407ba0b77c3a70b6bd9d",
-      "statement": "mermaid and jsdom are optional peer dependencies loaded lazily and memoized; when installed the authoritative parser validates fences, and when absent validation falls back to a conservative heuristic rather than crashing the run.",
+      "statement": "mermaid and jsdom are optional peer dependencies loaded lazily and memoized; when installed the authoritative parser validates fences, and when absent (ERR_MODULE_NOT_FOUND/MODULE_NOT_FOUND) validation falls back to a conservative heuristic rather than crashing the run.",
       "evidence": [
         {
           "resource": "repo://src/mermaid/validate.ts#L45-L86",
           "version": "repo-lines-v1:sha256:5c6123da48b6e650d3c771eb292f0160538270b645aeee1db05ab054b169af6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZGU0YTg2ZjNlZDQyMDBmNjIwNWZmMGU4ZTVlYjNhMWIwMDA3YjdhMmVmMDllMjQxZjI4ZDc3YjFiMjZiNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViZDA3NDcxMjJhNTJhZDQ4ZmNkNDBiNTg2NjlhNzFlZmQwOTc3NDM5Mzk4NjEyYjBkYzdkMmVmZDk2ODNkZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlN2RiZTJkNjc1MWUzNWQ3ODgwMWVkYTM1MWM5MDhmYzczMjNmMWYwMzczNGQxZGRmNWNiYTBiZGRkMzg5MzQifQ"
         },
         {
-          "resource": "repo://src/mermaid/validate.ts#L89-L125",
-          "version": "repo-lines-v1:sha256:c0be0bcd7ccc4c4e76d56b8602b239845157b8005c85024d502236ea911c37a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMzkwYTBmYTI3YWY2NjAxNmQ0YmJjMDI3ZGI5OTA2YjFjZGYwYWIxZTJlNzI2MWEzNTg2ZTVkMGU2ZjFkZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MWU5NzFiMTE0OTAyODI1NWJiOGMyOWY4MjI3YTQ3YzRmNjc0ZWM1ZjNjNDhkZDQ5ZTJlMmE2MjUwNmYwYzQifQ"
+          "resource": "repo://src/mermaid/validate.ts#L94-L125",
+          "version": "repo-lines-v1:sha256:b7ff63afd0cc64c527336201c96f262ced53aaae93f548d37fd56d0d9c0a7a76:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZGRjZTBlNjc4NjEzNjE5YmRmZmYyYzBiMzIwZTkwNDQ3NDZkNzJlZTUwYjI0OWE2N2Y1MmNlNGJiM2VlYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkMTRlMzQwNDFkN2ZmYzU3ODBlZjVlOTA0M2RmMTVhYzdmYzEwMGRjNDU2MTI2NTQ3ZDJmYWJjMDZlMDA5ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MWU5NzFiMTE0OTAyODI1NWJiOGMyOWY4MjI3YTQ3YzRmNjc0ZWM1ZjNjNDhkZDQ5ZTJlMmE2MjUwNmYwYzQifQ"
         }
       ]
     },
     {
       "id": "claim_75e20a5309b14f7fb11ae2af46fb4ba5",
-      "statement": "The heuristic fallback is deliberately conservative, flagging only near-certain breakages (a reserved end flowchart node id, a semicolon in a label, an unescaped angle bracket in a label) so a valid diagram is never degraded.",
+      "statement": "The heuristic fallback is deliberately conservative, flagging only near-certain breakages (a reserved end flowchart node id, restricted to flowcharts; a semicolon in a label; an unescaped angle bracket in a label) so a valid diagram is never degraded; it therefore misses errors the real parser catches.",
       "evidence": [
         {
           "resource": "repo://src/mermaid/validate.ts#L127-L163",
           "version": "repo-lines-v1:sha256:f9e8932cff70ee3c8ed2155bc8f75933364605dba0cb55acb8e70b39354cc889:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzM2QyODVhZjRlYzhmZjQwZmVjNjZkZTcxNzdkNjNjZDE5Mjk3NTkzYjA3NDJjYWU5NzM1MDE5ODhhNWQ4ZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NWQxZTJjM2FjNTkxNzI2MGEwZGFlNThlZmNlMzU4MmQyZTAxODVjNGY3YTIyM2RhMjFmZjkwZmVjZTE3MjEifQ"
+        },
+        {
+          "resource": "repo://test/mermaid/mermaid-validate.test.ts#L166-L211",
+          "version": "repo-lines-v1:sha256:485789088b6b332714149343ee1e3761120ddb3d688de9f923788171c9a1edc8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4YzBmZDM5YzBlYjk5YjE5YjUyMGEwZjA5NmEyNzZiNWY2ZjBlNThmZDA2OGEzMWQ1MDNkZmEzMzZmOGFkNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         }
       ]
     },
     {
       "id": "claim_3a23f35f3eec47928394978e88e7bacf",
-      "statement": "An invalid mermaid fence is degraded to a plain text fence so its content survives and no broken diagram reaches a renderer, rewriting bottom-up so earlier line indices stay valid.",
+      "statement": "An invalid mermaid fence is degraded to a plain text fence so its content survives and no broken diagram reaches a renderer, rewriting bottom-up (errors reversed) so earlier line indices stay valid as lines are spliced.",
       "evidence": [
         {
           "resource": "repo://src/mermaid/validate.ts#L165-L200",
           "version": "repo-lines-v1:sha256:93404afd29b86e97b6a1231357db748f08d067d68e42f71144dd7e922e3a7fc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2Yjg1ZGI4ZTI4YjI4ODZlMzExMmRjZDJhZjgzNzA5NjYzNjEwOWFkNjdkNzQyZDhlZDY5ZDg1MDVmM2JhYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhMDhmNjhhZGM4YzM3Yjg3MGJiMzNlODMxOTRjMGQzYWEzYWVhNzg4Mjg5NDQ3ZDQzZTkzMmNhMmQyYjgyNmYifQ"
+        },
+        {
+          "resource": "repo://test/mermaid/mermaid-validate.test.ts#L76-L101",
+          "version": "repo-lines-v1:sha256:1a5aad71cc50713a3aaaedbc77e78b36af821acfc71f72b08e945fc230e5123b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZWJlZDI5ZjU4NTQxZDJjOTk0ZGM5MTc1NDhiOThlOTZhM2VhYzJlYzRjMzk4YjdjN2RiYmM5ZmMzYTEzYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhOTA3NWY4NmZlMWEyMThlM2UzZmUxMDVlZDYxMmUwZDZjNDY5NWY0YmI4ZWYwOTViYmExMDhmMTFmYTE1NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiZWExNGVmNDFmYjcwNGM4YTY4MDA3ZjNmNjQxNjM2ZGE3OTQyY2I5NzhlYzg1NWQ0YmQ0Zjg5OTc4ZjkyNjcifQ"
         }
       ]
     },
     {
       "id": "claim_fa547bc4e1734c0ebc26aef5250da0d1",
-      "statement": "Each degraded fence is preceded by an HTML comment carrying the sanitized parser error and instructions to fix and restore it, which is the marker a later update run finds to repair the diagram.",
+      "statement": "Each degraded fence is preceded by an HTML comment (starting 'openwiki: mermaid parse failed') carrying the sanitized parser error and instructions to fix and restore it, which is the marker a later update run finds to repair the diagram.",
       "evidence": [
         {
           "resource": "repo://src/mermaid/validate.ts#L184-L197",
           "version": "repo-lines-v1:sha256:79e7d405d00372cb39684521d4f29e5e6d5c3981eb52a8569ccd075a3108b7f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyYmVmMzkwMmMxMmI5M2NlMzhkZTA3MmQyY2NiMzE3NzEwOWQwM2IzYjlmZDlkMDNiZjU3NjQ3OGNmMjBjMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllMGU3NDQ1ZGM2YzU5YWQ4YTg4OTJjN2EzZTJmOTA2YmVlOTM0YTI4YWQzNzFlODY4ZGQ0NzNiMGM1ZmVkMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkMGE0MTkxYzc4NWI2OWMxY2FjNmQyYTVmNjZhYzg2NGQzNjExMWY5NjMyMGUzODUwNWM4M2YyODA5ODJhMzEifQ"
+        },
+        {
+          "resource": "repo://test/mermaid/mermaid-wiki.test.ts#L97-L104",
+          "version": "repo-lines-v1:sha256:30285adb7a86a0a107505a3c1eeb104c586f47684a8270f11bf6e68852234089:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzdkYzIyZDdhMmUxYTIzNGZkZDg1Y2Y4YTY1OGY1YWUyZWYyY2Q5NWU0YTFlODVjN2RmYWVkYzZjYmQwNWE4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTQwZjFhZmI0MTEyZGQzZjRhMmE1YjFiYmVlY2JlYzM1NDQ2NTY2NjAwMWM3ZWI3M2NkNDRjNmEzNzI5NzgzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzlkNmI5YzdmNDg1YTk2MDg1MTFkMGJlM2VmNDJlNDI3ZTMxNWMzYTdjNWQ1ZGM0ZjEyOTZhMTg4ODM4ZTI4NiJ9"
         }
       ]
     },
     {
       "id": "claim_b7810c0ced4646748973d10910b5aaa7",
-      "statement": "The parser error embedded in the degradation comment is first passed through the codebase secret-redaction boundary, flattened to one line keeping the diagnosis, made HTML-comment-safe by collapsing --, and length-capped.",
+      "statement": "The parser error embedded in the degradation comment is first passed through the codebase secret-redaction boundary (sanitizeDiagnosticText), flattened to one line keeping the diagnosis while dropping caret-underline noise, made HTML-comment-safe by collapsing --, and length-capped at 400 characters.",
       "evidence": [
         {
-          "resource": "repo://src/mermaid/validate.ts#L202-L218",
-          "version": "repo-lines-v1:sha256:786334be7e6d28bdbcc494771997fad731eb11f48c23d838a61a9211243ce074:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2NDY4ZDhhNmJjY2QxZTU5OTAwMzI1YjFiZWZiZTQ0NjE1ODAxODdhMDQ2ODZhNjIwMWNkMzI3YzdhZTk3OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlNzdhYjUxNjgyMzQ0ZGE4ZDU0MGVhYmU1ZTAwMGI5YjkwZDg1YmIyZmQwZDVhYjE3MDE2Y2Q4NTE2MzIwZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0MDc5MTdiOWFmOWQzNWY4MmM0ZWRiMmY1ZTA0OWFlNjAxMjRhYWFmZTBhNDFhNTM0ZmM3YmU2ZDU3NmM5OTEifQ"
+          "resource": "repo://src/mermaid/validate.ts#L202-L226",
+          "version": "repo-lines-v1:sha256:2c65e9f00e35947548c9f842516c09b057c9e110c113bd90fc397dcaef279209:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlNzdhYjUxNjgyMzQ0ZGE4ZDU0MGVhYmU1ZTAwMGI5YjkwZDg1YmIyZmQwZDVhYjE3MDE2Y2Q4NTE2MzIwZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMmJjNzk3MTY4NGQ3MGRiNWQwYTE0ZmEyOGMyNWNjMDlmZTZiZjAwMWQ2NzYzOTIxNzVhNTYzMzRmMjM4ZmQifQ"
+        },
+        {
+          "resource": "repo://test/mermaid/mermaid-validate.test.ts#L104-L163",
+          "version": "repo-lines-v1:sha256:cc19a644e3ff176edfce43762c581466e14f4ac2dd82f59c8c413e6e9facb915:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2M2JjZTkwM2MyN2RiN2Y5ZDA4N2JhY2M1NWUyNDUxYjAzNmUwMzBhOTk2ZWUzY2IwZTE3M2E2YTAwZTkxYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliZTAwMzFmZWY4MzBjYjJiYmZkN2UxOTY2YmIwNmMwMjUxZjkwYmUyMTFlYzdlZjBhYjhmNmQ5M2I5YTJlMzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6b63a6ff9cee4f0ab99ac57f3a80544f",
+      "statement": "ensureDomGlobals installs a jsdom window/document so Mermaid's DOMPurify-dependent flowchart and state parsers work headless; ordering is an invariant: the DOM globals must exist before mermaid is first imported, so mermaid must be loaded only via loadMermaid() (which calls ensureDomGlobals first) and never imported directly elsewhere.",
+      "evidence": [
+        {
+          "resource": "repo://src/mermaid/dom-shim.ts#L1-L32",
+          "version": "repo-lines-v1:sha256:fd06de1e5281963ce31a3b72d4ffd9f4c62c43ee5246eb8ede5f2d1a13ba0bd4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/mermaid/validate.ts#L47-L75",
+          "version": "repo-lines-v1:sha256:4272736ce4b332cbb7cc9775045a63077ca0a7883c8f5a3a3e04d94630201db8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhY2Y5MWYyOGQ3NzU1NjJkZTA5NDRiYjMzM2I4ZjdkMTkzYTdiZmUwYzUxMGJjMmM1OGUxNmQ0NDJlNDc3YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0YTQyODMzZWU4NzhjZTQ2NzMzMjRhMjdhZTU2MzMzZGMxZDczZmIwM2EwYjhlMmRlZDQyNDgxZmIwZmU2OWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7be5e13b57ca4043997d879e19447b7d",
+      "statement": "extractMermaidFences ignores a mermaid block nested inside a longer generic fence (e.g. a markdown example quoting a diagram) so documentation showing a snippet is not mistaken for a live diagram, and preserves the opening fence indentation so fences inside list items round-trip on rewrite.",
+      "evidence": [
+        {
+          "resource": "repo://src/mermaid/fences.ts#L46-L96",
+          "version": "repo-lines-v1:sha256:55019beae02066c643db2f721119145b7599ce8b5acf3916869ed21a43fd7355:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5NzJjMGMwMGU5MGMzZDYzMGNmYTUxMmVjYjBkZDZlODNmMTU2YmQ0MDBkM2RkODEzNWY1YzBjOTU1M2UwMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://test/mermaid/mermaid-fences.test.ts#L48-L58",
+          "version": "repo-lines-v1:sha256:a766bd50f0b70ab009aefcc235a8d9b53187e6f075419fa4c12ecfa2186d36cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZWI4M2E4NWE5MDUzZmZjZmUwZWJmYjJjNjIzNDk4N2VjNDNjNjkxMjMyMDMwY2UyNmQyY2Q2MjQ2NTdkOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjNmI0ZWU3MzZmMTcyNTJkZWJjODJkYmJlMzkzMzg0MzdjOTgwYWFhZmQ5ODFkMDBlZDBmNDEzZDc5YTE0NmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4ZmJlM2QzZDcwY2I0MDU0MzhmZGY5MWZjYzA5ZTE5ZmM5OGZhNmY1ZDRiMmIyOTUxYWU3YTY2NGRmNGEzYjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aef5fc6a09f543f3bca66e30913bd5cf",
+      "statement": "The mermaid validation pass runs as the deterministic 'mermaid' operation inside finalizeWikiArtifacts, before index synchronization and link validation, so in-place degradation rewrites are settled before later finalization steps see the text.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/wiki-finalizer.ts#L241-L261",
+          "version": "repo-lines-v1:sha256:f2f2a3c4d15d0df1858af32a5a4b0811d904f9d2d81512abd8c14263408c3118:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMGNiYTZiODUxOTVjMGZhMWZiZmYyMWI3NWFlMWRiYWFmZTBmODg2ODQ1YzI5MmFiYmMzNGI4OWE4MDA5NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3OWI3OTNmYTYyNzA1MGQ2ODhmOTdlYzk0YjA5OGQ1NzI0YmU5MmMyYmUxZmY2MTliMmU1MjhmYjQ0MDk1YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1NjdiMWQ1ODJlMzgxNmUzMWNiNzFjYjA1NjM4ZDNmNTdmZGI1ZmNmNDcwOTQ0Mjg5MjY4NGExYWFiYzNlNzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f0d3f8d074e7472280c983bfe239aab8",
+      "statement": "validateWikiMermaid treats a missing wiki root or a directory whose listing fails as an empty scan rather than throwing, matching the index middleware's tolerance, and joins array-shaped file content to text before scanning.",
+      "evidence": [
+        {
+          "resource": "repo://src/mermaid/wiki.ts#L119-L137",
+          "version": "repo-lines-v1:sha256:02935e4f9c9bc2952d388cd5d1963fb1e0b152c1c63b39176e9bf59349733669:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNDdlNWVlMTU1YzNlNWZhZmYzOWRlZjdmMTIxNmRmZTBiNmViMjZjYTA4MDQ1Y2UyODFkNWRmZTBiNTIwNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhNjYyYzJiNjA3YWYzYTliODEwODhhM2EyZTAzMzQzN2ZkNTEwYjE0YmNlMWJmMzJlMGFkZjVlYWQ5ZGZmMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxNjliZmQyMzI0ZjVmZDA0YjI0ZWI0NzIyODZkNDhkYTRkMGY5MGQ2YjdjMWE1NDRkNDNkYzdkZmY5NTk2MjYifQ"
+        },
+        {
+          "resource": "repo://src/mermaid/wiki.ts#L86-L94",
+          "version": "repo-lines-v1:sha256:ae73ad85621a19a6ba9c4d8472c5eca47d8184e236e814fd235c92c2e011b1a4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzJiOTI1MGZhMTcwY2RiZWFlYmUxODQ2NDk0MDEzMTYyNzBmMTU1MjAwYWJhZDA2ODA0YWU5N2JlMWViN2Q1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGQ2ZmUxNDkxZTliODA5OGMzMTYxOTI4MGY5MDY5ODBhMmZkMDAwNzRhODFmNTZkNzhhZDNhYjJmMmE5MmQzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAyMGU3NTc0ZDhkYzUyZmRhMjE3NDQyMDFmY2FiYTU2NzZiYzdiYjU2MzE1MDljZDc2NGYyZjViZTUxMmRlNCJ9"
+        },
+        {
+          "resource": "repo://test/mermaid/mermaid-wiki.test.ts#L149-L197",
+          "version": "repo-lines-v1:sha256:2592cc351f64f3bd9c0c1c4cb200ad34881ec71bf58a5c92c70a5d7f1eb94727:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5OGQ5ODllMjlhYTYyMDY2MjI1NGYyNWEwMmY2ODExZmQ1Y2UwOTU5ZTQ3MTRhMmRiOGU0ZmJiYTllZDFkNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkMGI4MjZkYzFhZWUxMmUyMWVhNDI4YzEwNjE1M2Y5MmZjZTFmZGMyODFlNDQxYWQ4YTE0OTEyZmVjNGQ3OTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxNTUxYTk5NTA0NTAwOWNiZGZkMTkzNjA3NTUxOGZlZTEyZTdkMWVhYjZkN2U1MTM1NDkyNDFlZDIxMDA1YWYifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.3.3",
-    "at": "2026-08-22T08:02:55.052Z"
+    "at": "2026-08-24T23:37:28.906Z"
   }
 }

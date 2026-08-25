@@ -4,7 +4,7 @@ okf_version: "0.2"
 
 # Files
 
-- [OpenWiki Quickstart & Domain Map](quickstart.md) - Entry point for the OpenWiki repository wiki, covering what OpenWiki is, how a run works end to end, the subsystem map, and where to go for each engineering task.
+- [OpenWiki Quickstart & Domain Map](quickstart.md) - Entry point for the OpenWiki repository wiki, covering what OpenWiki is, how a run works end to end including the resumable page-job lifecycle, the subsystem map, and where to go for each engineering task.
 
 # Directories
 
@@ -15,6 +15,7 @@ okf_version: "0.2"
 - [cli](cli/)
 - [connectors](connectors/)
 - [evals](evals/)
+- [generation](generation/)
 - [ingestion](ingestion/)
 - [integrations](integrations/)
 - [okf](okf/)

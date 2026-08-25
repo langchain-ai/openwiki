@@ -3,21 +3,23 @@ type: Component reference
 title: Model Providers
 description: How OpenWiki resolves a provider and model, validates credentials, and builds the concrete LangChain chat model across thirteen providers including ChatGPT OAuth and Vertex AI.
 tags: [agent, model, providers, vertex, oauth]
+verified:
+  - by: openwiki/0.3.3
+    at: 2026-08-24T23:37:28.906Z
 sources:
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-91bd3ea533c00a8366f8d420
     resource: repo://src/agent/openai-chatgpt-oauth.ts
+  - id: openwiki-source-6cb3236b8c1412a26d832fcf
+    resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-06902db4574f065a9a6ad95d
     resource: repo://src/agent/vertex-surface.ts
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
   - id: openwiki-source-f1dd0edb129e50f253618ff4
     resource: repo://src/config/reasoning.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-22T08:02:55.052Z
+generated: {by: "openwiki/0.3.3", at: "2026-08-24T23:37:28.906Z"}
 ---
 
 # Model Providers
@@ -53,6 +55,23 @@ and none was configured. If the id is a **known model of a different provider**
 emits a non-fatal mismatch warning to the event stream and stderr and still
 proceeds, since a custom endpoint or gateway may legitimately serve it.
 
+## Repository generation: one model, reused across workers
+
+For repository generation (`init`/`update`), the model is resolved **once** and
+reused for the whole run rather than rebuilt per worker. `runOpenWikiAgent`
+calls `resolveRunConfig` to fix the provider/model/credentials, then builds the
+single `BaseChatModel` via `createModel` (under the `build` stage), and passes
+that initialized model into `runNativeRepositoryGeneration`. The runner threads
+the same model instance through both phases of the durable lifecycle:
+
+- the **planner** (`runPlanningAgent`) receives `options.model`, and
+- every **page worker** (`runPendingPageAgents` → `runPageAgent`) receives the
+  same `model`, so a fresh agent per page still shares one configured client.
+
+No repository-generation checkpointer or worker state survives beyond the
+durable core, but the model itself is shared — it is not re-resolved between the
+plan and page phases, and it is not rebuilt on a source-drift replan.
+
 ## Building the model
 
 `createModel` dispatches per provider to the correct LangChain client:
@@ -72,7 +91,10 @@ proceeds, since a custom endpoint or gateway may legitimately serve it.
 Reasoning is opt-in via `OPENWIKI_REASONING_EFFORT` and applies only to models
 that declare a reasoning capability in `src/config/reasoning.ts`. Depending on
 the capability's transport it is sent either as a Responses-API
-`reasoning.effort` field or as a chat-completions `reasoning_effort` kwarg.
+`reasoning.effort` field or as a chat-completions `reasoning_effort` kwarg. The
+GPT-5.6 family declares the Responses-API transport and accepts the full effort
+range including `max`; the value is cast at the `ChatOpenAI` constructor
+boundary because some OpenAI SDK type unions do not yet include `max`.
 
 ### Anthropic output tokens
 
@@ -92,6 +114,19 @@ Responses backend (`https://chatgpt.com/backend-api/codex`) with:
 - `streaming: true` (the Codex backend rejects non-streaming requests), and
 - a Codex fetch wrapper injecting the `chatgpt-account-id`, `originator`, and
   `OpenAI-Beta` headers.
+
+### GPT-5.6 prompt-cache-retention fix
+
+The Codex fetch wrapper (`createCodexFetch`) adapts each request at the final
+fetch boundary. For any model id equal to `gpt-5.6` or starting with `gpt-5.6-`
+that targets a Codex Responses request, it **strips `prompt_cache_retention`**
+from the outbound JSON body. The ChatGPT-backed Codex endpoint rejects that
+LangChain Responses option for GPT-5.6 models; removing it at the request
+boundary lets `zdrEnabled` still independently enforce the required
+`store: false` without the unsupported field leaking through. (The same wrapper
+also rewrites `system` input items to `developer` for the Codex identity, and
+applies a separate Luna/Responses-Lite protocol when the model is
+`gpt-5.6-luna`.)
 
 Tokens are refreshed **once at run startup** when expired or near-expiry and
 written back to `~/.openwiki/.env` (which also updates `process.env`). This

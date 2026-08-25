@@ -10,7 +10,7 @@ sources:
     resource: repo://src/setup/credentials/steps.ts
   - id: openwiki-source-14d4f389b56575bb7afd1310
     resource: repo://src/setup/onboarding.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-22T08:02:55.052Z"}
 verified:
   - by: openwiki/0.3.3
     at: 2026-08-22T08:02:55.052Z
