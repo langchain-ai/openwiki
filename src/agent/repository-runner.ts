@@ -74,6 +74,16 @@ const WORKER_TOOL_NAMES = new Set<string>([
   "submit_page",
 ]);
 
+/**
+ * Smoke-branch-only completed-page threshold for deliberate CI failure.
+ *
+ * Delete this gate before any production merge.
+ */
+const SMOKE_FAIL_AFTER_COMPLETED_PAGES = Number.parseInt(
+  process.env.OPENWIKI_SMOKE_FAIL_AFTER_COMPLETED_PAGES ?? "0",
+  10,
+);
+
 // DeepAgents 1.12 adds a general-purpose task tool even when subagents is
 // empty. Repository workers are deliberately non-delegating, so remove that
 // model-facing capability after all tool-contributing middleware has run.
@@ -388,6 +398,17 @@ async function runPendingPageAgents(
     let workerError: unknown;
     try {
       await runPageAgent(run, next.job, model, onEvent);
+      const completedPages =
+        run.state.plan?.pages.filter(({ status }) => status === "complete")
+          .length ?? 0;
+      if (
+        SMOKE_FAIL_AFTER_COMPLETED_PAGES > 0 &&
+        completedPages >= SMOKE_FAIL_AFTER_COMPLETED_PAGES
+      ) {
+        throw new Error(
+          `Injected smoke failure after ${completedPages} completed page(s).`,
+        );
+      }
     } catch (error) {
       workerError = error;
     }
