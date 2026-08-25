@@ -1,48 +1,144 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e664d75bd728b1b7637d0401102960579412cc95b40211712aaa1d26cac55f9b",
+  "pageVersion": "sha256:e7be2ba77b6596579986bb2ed13182ebec81ff23710ff68027982e601b6f768e",
   "claims": [
     {
-      "id": "claim_dca20f62715646a4a60d4225519a501a",
-      "statement": "An OpenWiki run is one of three commands — chat, init, or update — all driven through runOpenWikiAgent, which is the single entry point for generation and maintenance runs.",
+      "id": "claim_5836585e22d244e79875961ea0a09258",
+      "statement": "OpenWiki is a Node.js (>=22) CLI published as the `openwiki` npm package whose binary resolves to `dist/cli/cli.js`, described as a CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L161-L166",
-          "version": "repo-lines-v1:sha256:af1ecf4c5cf45ae4c5f249a6ecc43d25ea6f192a6e6935e081fae118c01901ab:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzYxZmFmMjAxOWY2NmUyNzAzNzRmNTRmMjI0NDNmYTM3NjJmNjYwMzc3MDFkMmRkN2M5NGI5OGMwMDA4Yzg3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmRkN2RkMDY3NDhkNzA4ZjI1Y2MyZWJhM2ZlZjM5ZDAzYTg5ZWVlODg3ZWEyZTJhNjM4ODI4NTc2OTJlZGY4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2EzMTIxYWE0NmNkZTJjZmU1M2E0OTc5ZmQ0NjdiNGU2ZTFkNmY5ODM5Y2E4ZDgwYTU2ZGM5MTkxODM1ZGMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmM2ZWNkNjY5ZjczYjNkYjUyZDYzMGUwMzU3ZWM1ODU4MDE3MGZiYzA3ZTI0Yjg3OWYwNzk1NWI5OWJmY2VmYiJ9"
+          "resource": "repo://package.json#L1-L12",
+          "version": "repo-lines-v1:sha256:3e49ad7456ebc193d7158c3652b4142a19125184376b1949a792b314ba629e12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYTZkODI3ZjYzOGU0NjRlYzQ2MTcwMDVjMjEyODhkODkzNzBlYTc3MDJiMjJhMDMxOTU1ZjZiMWMwNTFkNmYifQ"
         },
         {
-          "resource": "repo://src/agent/types.ts#L1-L6",
-          "version": "repo-lines-v1:sha256:347bb69bcae719f036a6506b1a8c653fbfef4645ea6a27d79b13eafa065aa1dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZjYTNkZmYxZmJjMWY3ODA5YjM3ZjRiZTdlYmYyZjQzYzE5YWMyNjU5YjM3MDExNDlkYzhkM2EzYjRjYTVhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNlM2VmNTUzY2Y1YmQ4MGEwYTMzZmNjNzYxMTI2YjZmZGVlNGEwNjI0NzliNDY3M2Q3ZDE3ZWIwYjRiYjFiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2ZkNzIwNTM5ZjcyOTQyMWMxZTBmMGVlZDUwZjZiMmQzMmU5NjQ1YWM3YjZjNzNmMGNmMTM5NTcwZjg4N2ZjMSJ9"
+          "resource": "repo://package.json#L37-L60",
+          "version": "repo-lines-v1:sha256:b68abe11093efa46445482915cdbc028ef4230de3612d3f650912efb2aae06a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ODMzZDU5NDljMDNhNDBjYTk1MjQ5MTYxMGE2NjU5NjQ0YjNhYTQ2NjM2MmY3OTkwMjBkYmYxOTgxNTQ3ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2MmRhZjMzM2RlNTUyNTNiZGVjYjRiODMwZTNkODZiODdhYTJhZGU4NzhhMTVlNTA0ZGIxYTg5ZTVmN2FjN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzNDkwMzQyMWEwOGZlZDM4ZmJkOTRlMTRjYjMwMjc1MWU5NjI0ODdkNzQ1ZTY1MjllOTM2MWM5OGRmZWNiNDUifQ"
         }
       ]
     },
     {
-      "id": "claim_003b4a6d42c048b08ad9d97f0171ee35",
-      "statement": "runOpenWikiAgent loads the OpenWiki home .env, syncs bundled skills, and in repository mode loads the .openwikiignore read boundary before preparing Claims and building the agent graph.",
+      "id": "claim_350789084a1745e09acf3c8d4a4d33ec",
+      "statement": "OpenWiki runs in two modes: a default `code` mode that documents the current repository and writes to `openwiki/` in the repo, and a `personal` mode that documents connected sources and writes to `~/.openwiki/wiki`.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L180-L215",
-          "version": "repo-lines-v1:sha256:ef98fa403e4bef2ba0af7a485810bb52ae6737be34a7a9b16be8300dd62ed27d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyOTljMDUwZDZmMjQ5ZDNlNjM5NTE4NTM2NWYzN2ViYzQwMDcwYjdjYmZiODlhMWY2NThiNjZiMzI1OWY1YzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZGQ3Mjk4YzFmMGFkYjI5NmIzZmUxZWI1ZWU2NmM5MmFjNDNjOGYyMThlODgxNWU2MTdlYzVlMGE3YjBiYjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwOTBjZmQ4ZDViOGNjNDRjOWY1NGE4MWY3Yjc2ZmZiYWQ1ZGE1NTBjNGI5ZmMyN2YyOTkwYzgxZjA0YzhhNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmOGNkYmJiNzE4ODIwZmZiYjMxOGM3OGY1NzhkYTQyOWNmMzRlMzI5YmE2MTBiMmIwZGUwYmViNDZlZmRiYTEifQ"
+          "resource": "repo://README.md#L121-L131",
+          "version": "repo-lines-v1:sha256:9e71f39b171752b9dd30eeca39fde71ef4ad956de21e2373018abad1d27fb384:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNzI1YmFjZTViYWYxYjQ5MTA1ZDM5OWU1OWIwOTM1NTg3OWYxNmJiOGY0Njk2MGI1ZTA3YWVhNGM2ZDE0NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjJkM2Y3NTMxMmJiNjU2NjU5ODk5Y2M2MTNiMTgxYmM3ZjM0YjVjN2FlMWFiOGEwYmE4OTQwMjExN2UzNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0ZTBlZTI4MDY4N2VhZmE5MDI2ZDI0ZmMwYWY2MzQzNzkxMDFmMDY0NGFjM2E4ODc4ZGQ0YmIxMTViODRlZDQifQ"
+        },
+        {
+          "resource": "repo://src/cli/commands.ts#L26-L27",
+          "version": "repo-lines-v1:sha256:0d45d1fbb620cb5ebf55b9e586dcb016cd21c6cac77c658702cb3c14990c311a:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiZjY2MGEzNDgxMTY1ZGNhYzliMTY3MzU4NGJkYjdkZGY4NDI5YWExZTE2MWFiNDQ2Yzk2MGFiMzIxZWQzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ0OTdlOGUxNjRlNTY5MDYzNGRjNTU5MGRjZWZkNWM0NTgwMjdiM2RjY2U5YjlhYjkyMDkzZWRhZGNlMWY4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA0YTVjOGIwMzFhODQzZmViNmIxMDRmNDFhY2RjNjllNGIwMTE1NjI3ZGEwOTYxYjk2NmVlNTNiOTVkNDJlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTkzNjRjZDM0ODg3OGE3MTBkNDllYjE1NzI5YTIzYmY1YTJkNWM5MjM3MDBlZjI4OTYxZDYwNmU0Y2E5NGVhMCJ9"
         }
       ]
     },
     {
-      "id": "claim_9a11b29451384a209111c88d960b1a2d",
-      "statement": "OpenWiki runs in either code mode (documenting the current repository into openwiki/) or personal mode (documenting connected sources into the local wiki home), with code mode as the CLI default.",
+      "id": "claim_46e85af3fff24bc8ba2321400c531c97",
+      "statement": "The process entrypoint `src/cli/cli.tsx` installs a crash guard before any run, parses argv into a command, routes `integrations` and `mcp` commands to the host-integration surface, and dispatches all other commands to the native pipeline that loads environment, resolves the startup command, and then prints a startup error, runs non-interactively (print mode), or renders the interactive Ink `App`.",
       "evidence": [
         {
-          "resource": "repo://README.md#L111-L120",
-          "version": "repo-lines-v1:sha256:d05099463f7dd61e7ae5a049e2131bdd2a22ca268ee6c666f9e41504ffe96dd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNzI1YmFjZTViYWYxYjQ5MTA1ZDM5OWU1OWIwOTM1NTg3OWYxNmJiOGY0Njk2MGI1ZTA3YWVhNGM2ZDE0NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4YTNjYWMyNjI1MTFhZTYyNThlMzNhZWFjMjM4YWY0ZjNkNmY2ZGNhNTY2YTM3NzRiNTBiOGVkMzAxNDgxOWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjJkM2Y3NTMxMmJiNjU2NjU5ODk5Y2M2MTNiMTgxYmM3ZjM0YjVjN2FlMWFiOGEwYmE4OTQwMjExN2UzNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0NzhiNzZjYzcxN2ZjNTM4Y2EzMTBlOGJiMTZiMjk0MjhlNzExMWNmYjIzMzFmYjM4ZWI0YTM3OTJjOGQ0NWQifQ"
+          "resource": "repo://src/cli/cli.tsx#L39-L53",
+          "version": "repo-lines-v1:sha256:af68bb3a6800a0160efdc193ab101741f30da4937c4da79286027112ba202d17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZDJhMjk2YjQ0NzRkMTg4MTcxMmU2MGZmMTdhNzBkMzI0N2U3N2M2YTE2MmI1YWFhNzZmYmU0ZjI5MDBkODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3NGEzNmM5OGQ5M2VkYWMzOTgyYWNjYTFiMzNmOGNmNTI2OTBkZjlkZDU5ZjNjNjE0NmNkMmM5ZDU5NWExMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhMWE0ZTQyZDY5OTBkNThiNmMxZGNmMTUxMWNlNjVhYTMzZDQ5YjQwN2Y4NjRjZDA2NzhjODliYTY1NWM1ODIifQ"
         },
         {
-          "resource": "repo://src/cli/commands.ts#L26-L26",
-          "version": "repo-lines-v1:sha256:5fbf660a3481165dcac9b1673584bdb7ddf8429aa1e161ab446c960ab321ed37:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiZjY2MGEzNDgxMTY1ZGNhYzliMTY3MzU4NGJkYjdkZGY4NDI5YWExZTE2MWFiNDQ2Yzk2MGFiMzIxZWQzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiZjY2MGEzNDgxMTY1ZGNhYzliMTY3MzU4NGJkYjdkZGY4NDI5YWExZTE2MWFiNDQ2Yzk2MGFiMzIxZWQzNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA0YTVjOGIwMzFhODQzZmViNmIxMDRmNDFhY2RjNjllNGIwMTE1NjI3ZGEwOTYxYjk2NmVlNTNiOTVkNDJlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTI1YjA1MWRjODEyZDFjNmJkNjBhMTNkYzllZDRiZWM3YzI1MWQ3M2Q3NzU1YTU1MjY3ODliZmU2MTVmMzM4OCJ9"
+          "resource": "repo://src/cli/cli.tsx#L60-L115",
+          "version": "repo-lines-v1:sha256:1ede7137e57590a6084b1b695080a34231c69f6a5e224124cc2e27873cfda387:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMGM4ODRkYjNiZjQwOTk4ODNmYjZhOTg0ZTgwZmM3OGU0YTcwZjE5MDQ1YzlmMmRkZjFlZjU0N2VkMjY3ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzMjUwZWQ5NDIwZjE2YTYyOTgzNzAxZWVjYmY0YzIwNmY4Y2MzY2ZhMGVjZGQ5NTQyYjY4MTJiYzg2ZDc5YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e304a784b440475d8a151a3335b741fe",
+      "statement": "The `dev` script runs the CLI from TypeScript source with `tsx` (`src/cli/cli.tsx`) while the shipped `openwiki` binary and `start` script run the compiled `dist/cli/cli.js`, so development and released behavior share the same entrypoint code.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L10-L12",
+          "version": "repo-lines-v1:sha256:73222e93d7a59960a04ad2d04e2047d3d382e90bdcb1b2837d88709fe306cb63:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZjMTQ3NTdiOGUxZTlkNmE3ZGVlOTkwMmU5MDQwN2FkOGNmNjczYjNlOGQ3NjNlMjc5NTBkMTlkMDY3OGQ2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTA5ZWUyYWJiZmRlNjc1ZWM2YmE2ZDQxOGMxM2QzM2M0ZDhiOGI2NWNiYTY5NWY1N2NkNjViODMyYWQwOWI3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRhNmQ4MjdmNjM4ZTQ2NGVjNDYxNzAwNWMyMTI4OGQ4OTM3MGVhNzcwMmIyMmEwMzE5NTVmNmIxYzA1MWQ2ZiJ9"
+        },
+        {
+          "resource": "repo://package.json#L43-L57",
+          "version": "repo-lines-v1:sha256:70ba7bcbee8af573cd1150af6423f9c500b44d6298a807951068403f5b2c6e81:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxYzhmZGU5NTRiY2Y5ZTUwODk1MGQ4Yjk5OTQ3N2E5MDM1OTdiM2IwYWZlNWI5YTNhNDljNGE1NzVjOTM5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhMzk5NTgwYmY5OTI5M2NlNDQwMWNlM2UzMmJhODE0ODljYTg5MWRkOWVjM2YyYjFmMjIyNzI4NmFkNjQ3ZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzNDQ2YzI1NTZjZmVlODI0ZWViNGE5YWFkNDJkMmY4MTY2MWNiOTE2NjU4YzlkYzI0YjYwZDNjYjk1MGZkYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4NjQ3NWExYjZhNWMwMDE2ZWViZTE4MWNkNzg3NGFiYjBmYWRmZDEzZDhjMTU1MTdhZmM4Mzg2OWRmNjI0ODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c531273cb8074d9eb83baf7dbe5e1d33",
+      "statement": "The developer build produced by `pnpm run build` compiles both the server and client TypeScript projects and copies visualizer assets, and `pnpm test` gates changes by typechecking, building, and running the Vitest suite with coverage.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L37-L59",
+          "version": "repo-lines-v1:sha256:9eccf76d99849eb97c50d9f9a6b5704ab27b3faa8e5200cc29bf0885714bec19:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ODMzZDU5NDljMDNhNDBjYTk1MjQ5MTYxMGE2NjU5NjQ0YjNhYTQ2NjM2MmY3OTkwMjBkYmYxOTgxNTQ3ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhYTk4NzI5NTI4MGUxNTgzMzAyMDZmMGQzOTkzNjY3MWQ3NGRlYTkzOTY3Zjg4Yjk3YmQ5ZTVjMjdiODFmMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2MmRhZjMzM2RlNTUyNTNiZGVjYjRiODMwZTNkODZiODdhYTJhZGU4NzhhMTVlNTA0ZGIxYTg5ZTVmN2FjN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYzc1MzE1ZmFhNWRiY2FhYTNlZTM0MGQ0MjExOTZkNDQwN2FlMzAxMjgzOWE3ZWYzNjAzZTAwNGJkZDdiYmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dbca527d85984a5c82f445d59fc8499d",
+      "statement": "Contributors are expected to run `pnpm run format`, `pnpm run lint`, and `pnpm test` before opening a PR, matching the per-PR checks; `test` typechecks, builds, and runs Vitest with coverage.",
+      "evidence": [
+        {
+          "resource": "repo://CONTRIBUTING.md#L22-L33",
+          "version": "repo-lines-v1:sha256:46aaca34a177075c03e49c0d74ce8088bfb65ed8b21f00c82ace3e70435a92b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNWI2YTZkZjdjYmNhY2E1MDZiMGVlOWIzZTNlYWQyOTkxNTM4NDBjMDk4ZjVmMDZkYjk1OWMzNDFhZWZjZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNGU5Y2Y2ZTdmMThjZDczYWY2OGFhZjQwNTk5M2E4MTgyYTFkOWE5MDdmM2UyNjNlM2NhODFmNzM1YWFmM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0NWUxYWEzNWJmNzEwOGRmMTJiYjhiZWEzMzVjYWI0YzhhY2ViZTg5MGRmZGFhNzc4YWY4YTE4OTE5ZjM0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NzE5MTVjYjMzN2E3MGEwMzcxM2E2MWYzNzFjY2M3NmYyNzZmZDYzOWEwZTMzMzdlZjViNDY0YzlkOTBiNjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9631663b2fe443a1a42fe6b0af6d70ab",
+      "statement": "OpenWiki stores local credentials, the personal wiki, connector data, conversation history, and skills under `~/.openwiki` by default, and the `OPENWIKI_CONFIG_DIR` environment variable selects a different writable state directory without moving or deleting the existing `~/.openwiki`.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L132-L140",
+          "version": "repo-lines-v1:sha256:3f31457af9df772b6a622043c51c26df377b3be126f82d7cd7b51028773deac4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2FjYTRjYmExMzdjZmYwNTIzYTBjMGE4NTk0YTAzYzA0MGM1OTg4YjkwNWZjZGJkNDAzOThkM2YwMTNiNGQwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJjNjQ4MDkxMDk0MmFjZWUwMzgxYjQ5MzRhODZlOGIyZWU5MzhmMzAyODExMjk3MTRjNDlkZGE0OTE0MjVkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzBiYzhjMTdlZjAwNWQzZWZjNGI0MzQ3ZWE2MTJkYjE0MDI5ZWE5NGQzZDIwOWZhNmYwNDEzMmM1N2IwNWE1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGViOGExZmUyMjc1MjRkZGMxNTM4NDQ4NDU2MmZkZWJhMTJjNTkxOTM4ZTkzN2YxYTE3MjQ5NzljODU4ZWVhNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f7a959d8fc474a5580100ced32c2ee72",
+      "statement": "Repository (code) generation follows the resumable page-job flow `begin → submit_plan → next_page → submit_page → … → finish` with a durable ordered page queue; in-progress runs are recorded in `openwiki/.run.json` so an interrupted run on a persistent checkout resumes, while ephemeral CI runners start fresh after failure unless their workspace is preserved.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L35-L35",
+          "version": "repo-lines-v1:sha256:44c7c8051e83998d969e749a3c21a3c7d7d8ced5a7cd597a3a9fb42b80e6e487:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjN2M4MDUxZTgzOTk4ZDk2OWU3NDlhM2MyMWEzYzdkN2Q4Y2VkNWE3Y2Q1OTdhM2E5ZmI0MmI4MGU2ZTQ4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjN2M4MDUxZTgzOTk4ZDk2OWU3NDlhM2MyMWEzYzdkN2Q4Y2VkNWE3Y2Q1OTdhM2E5ZmI0MmI4MGU2ZTQ4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDY0ODVkMDNiOWNiZTdkNGI3ZTIyNWY5ZjUzYjNjMWJjYzgzNDBkYjZmZDg1OTA2ZGI4ZDY0YzZhOWFkNDlkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTJjMGM5OGU5YjJiZDI3YzBkZmQ1NjkxMDA0MzczMmI4YThhMGRlYjU5MDMzODc5MDJiODY3NTY2ZjMzZmI4MCJ9"
+        },
+        {
+          "resource": "repo://README.md#L49-L55",
+          "version": "repo-lines-v1:sha256:fe5e67c3af66813753862af5be235673c04f301ce620939f993dfcd4c6794620:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRmODA2NGE5NDMxM2FmZDk1MTY4NTkzMjFlNGNkNWZiZjY0ZjkyMTVjN2Q3NzZlMzA5MGE4OGU3ZWEzZjRhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmY3Y2IxYTk0MmJjNDQ0ZDdjN2ExNzA3MGE4MzQ0NWYxNTE3MGE5ZTBkMjQyNzhkNGJjYzc2ZjY2ZjlkMWRjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThlOTZiNzQ1ZTg5NDg0ZWM3YzcwNmVjOTVjNDZkMWI5MDc2YWIzODA2OTgyNTc3MTkwYmE1ZmIwZjA2MTc5MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c5b6828ef06a41998fe5e907fdb1618f",
+      "statement": "Grounded Claims are material propositions that point to exact repository evidence such as `repo://src/server.ts#L40-L82` with the observed evidence version; the clean Markdown is kept separate from structured Claim state stored under `openwiki/.claims/`, and Claims currently apply only to repository code wikis, not connector-derived facts.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L111-L119",
+          "version": "repo-lines-v1:sha256:2de17fd56b6aa6ff6b92a5fb8178999e9171e7b5d7586ef7e04d8c9535fbdee5:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjg1ZjY2MzhlOWI4MDg2ZjhjODg5ZmYwYWZhZjY0MzYwZjMxOWM1ZjdhMTJmYWE2ZjYwNDJkYmU3NGU2ZTI3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTczMjk1OGFhYzJmNjM1YzUzODMyNjU3OGE0MmVkYmFlMTkxNjg4NzdkZmNhMTQ4MDA1ZjQ2OWE2MDNhOTAyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRhZThhZmE2Zjk0NmJjY2QyYWEyOTA1NDQ4Njk0YzRjN2MyMGZmOThhMDcxOTk4NTY1YjkyYzRlMWMwZjZhMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAzMDk1NjQ0MzkxYThlNzU2ZGM4NGZjOTVkMzI4MDYxNTc3YTI1YmE4OGExNTkxZGUwODY0MjQ4NzllYjE4NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b9320b4df81b4ddaba8fe4f27d1dfa33",
+      "statement": "OpenWiki can run inside a host coding agent (Codex, Claude Code, or OpenCode) via a shared canonical skill and five MCP tools (`openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, `openwiki_submit_page`, `openwiki_finish`), where the host owns repository research, planning, and authoring while OpenWiki owns the durable queue, Claims reconciliation, and deterministic finalization.",
+      "evidence": [
+        {
+          "resource": "repo://CONTRIBUTING.md#L55-L63",
+          "version": "repo-lines-v1:sha256:6e178e875ad1e75a1b2d4780786e5b42e2fb37b1685bb21bb489c6b19ab9f992:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU2OTM4ZWMzZDQ4ZWQzM2E3NTU5NGExM2E4OWE3OTc3MGE0ZTAwZDNiNzk0YmI5Njk3ZGY4OWI3NjY2OTgxYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQxNjQxY2JkOTVmMmRiN2Y3YTk3OWI2YzViMWRkNDAwMWRlZGQ2OTcxMGNkNTM2YjliNjM3ZDIwMDFlMDU2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjJkZGFmOTdmNGJlZDk3YTAwNjRlYTA0ODNkNWRjODhjN2M0Yjg5YmM2MGMxZjY5YjdjYjlmODQ4ODZiODJlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWUwYjcwNTMxZTdkYTAxMTgzMDRkNGNkZDY2MjNhZmM4NjhlYzJlMzk3OWEwMTg1M2Y1Y2Q4MmM3MWNiZmZiYiJ9"
+        },
+        {
+          "resource": "repo://README.md#L72-L106",
+          "version": "repo-lines-v1:sha256:33c6bcedb1b00c1c93e3a04374fa8c4d78f003be16397f64b96de0ce4c5c24f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMzE5YjA0NzU5NzJhZDUyOWQ1YjllODhhMDU3ZDE2ODNmNDAzMGRjZWE0NTcxNjBhYTMyNDM3ZDE0ZWRhOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhMjMxMmUxNzk5NTAwNGQ4ZDRiZWM0ZjIyZDYxNTEwMDA2YTc5NTliNWM3YTJiZWYyNWRiZWNhZTllN2VmMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyN2U2ZDlhOWY0ZGVjYzMxMDgwY2ZlYzdkMmVlZjAxYTI3M2ZhYWEzNjBhOTk0N2RhMzczMDc3YzMzZTUyYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyZmRjZDRmMGI5NWZjYzA1YmVjMmJhMDdkOTZmNDJmOWVjZGQ3YThiNDEzOGQ3ZDEyNjg0NDllZmE5YThlNzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_42a5499df9064fe686b4282ad799756f",
+      "statement": "The AGENTS.md guidance directs contributors to read the OpenWiki quickstart at `openwiki/quickstart.md` first and then follow its links to the relevant architecture, workflow, domain, operation, and testing notes, establishing this page as the wiki's entry point.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L1-L12",
+          "version": "repo-lines-v1:sha256:7a8ab221c5c17f59b02aa3e79426dfb44bc44200c8567042d6151f8d346626fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ODM2ZWQ3ZTAwNTM3NzVhMGE5NjZjZTg2MTM0YjIzNDdkODUxYTdiMDJmNDgxMmJlYjJjNTlkMWM2OGQ1MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YjQ4YzFjOTNhZjYzMmQwZDU0ZjM3NWYzNGJlNjNiZmUwODRkYTIxZGJmOThkODlmMmM1MTc0ZjRmNTY2ZWEifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.3.3",
-    "at": "2026-08-22T08:02:55.052Z"
+    "at": "2026-08-25T02:14:25.283Z"
   }
 }

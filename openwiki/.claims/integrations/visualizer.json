@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4d91c9e6bd11a43641d321bc208f35ef2652a28e009a3e269e39387dcd7049ff",
+  "claims": [
+    {
+      "id": "claim_cecbf09a48a44444b2ef62cbac04bd3b",
+      "statement": "The `openwiki visualize` command runs in two modes from one entrypoint: a live loopback HTTP server, or a static export selected by `--export`; `runVisualizeCommand` dispatches to `exportStaticVisualizer` when an export directory is set and otherwise to `runVisualizeServer`.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/runners.ts#L63-L91",
+          "version": "repo-lines-v1:sha256:fade2ae620024cb614bfd49bf8507c5735a0a4cec3ab97e5bb2f801662032487:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmMmVjM2ZlNmM5NDRlY2NjNDc0YTE4NTEwNTZkMTQ2ZDkxNTE3ODEwMjY2MzNiZTc1NjM4OGMxOGU0ODJiMzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0cad892ca044ad18413d4ef909b4532",
+      "statement": "The visualize CLI parser defaults the wiki path to `openwiki`, defaults `--port` to 4321 (validated to 1024-65535), opens the browser unless `--no-open` is given, and rejects combining `--export` with `--port` or `--no-open`.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L306-L402",
+          "version": "repo-lines-v1:sha256:bd5742440e7f2c255170b0d79802b27c82ac22aed14eaf4075d9a2f8519fc682:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MmJlMzI0Mjk5NWQyZjAyNTdlMDdhOWZjODNkOTBkYTkyY2ZkNjg4YjE5OWNlYmUxOGIyMDRhOTFmYTQ0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiODNjZWVmMmQ4ODIxM2NlZDE3YTFjNTY1OTg4YzhkOGJiYmYzNzA5YzY1OWI1ZGI0MGFhNzZjZGJlOWMzNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZWVmZGQ1MTEzZDk5MDU2ZjFlMTlkZTFiN2Q1YmVkZTZlMGEzMDFmOWU4ZjdiZTRlYWQzZjhmOGRhODY2YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0MjE1MzdiODIzMTc5MDYxYmQzZDZjYmJlYjM2NDljYjYyZDRkMzE2OGI3ZGJhOTY4M2EwYzgzNzRkMzI3MjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a871c00536ac40da8a3b36c898508682",
+      "statement": "`buildGraph(wikiRoot)` is the shared graph builder for both live and static modes: it collects Markdown files, reads them into nodes, resolves links into edges, and returns a WikiGraph with root basename, ISO generatedAt timestamp, sorted distinct types, nodes, and edges.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/graph.ts#L322-L338",
+          "version": "repo-lines-v1:sha256:ac7b350435f15aac26a929bbcc534b43f459872cd2565daa5225602679743bc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhZGY3YmU0NWRjNWU1ODg5ZDRmMDgwYjIxMTNhMTQwYWVlNGUwZTgyYzZiYWZkNGVlNTY3ZDI2NTVjNzc3NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f19a5fe56b944e1ae71c99e7ba64ad4",
+      "statement": "A node's id is its path relative to the wiki root with the `.md` suffix stripped, giving a stable identifier independent of absolute filesystem location.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/graph.ts#L219-L227",
+          "version": "repo-lines-v1:sha256:f0f2272c3c99d8dca22d171e51b3e2f69903ee1cdda5de386168adbdadc83c4c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmRiNTdmOGJmMTNjMWM4MzU3OWNmMDBkM2NmMGZjMmJjODZlNThhNmFiMDU0MWY4Nzc4ZTE5YjkzMjdjMjk5YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ0OTJkMmQzN2NhYzk5ZWM1ZmM3YzQwODgwZWNjNWI2ZGZjZjBmMGI2M2JkNmUyOWY5MDMwYzNjNjY3MDUxZiJ9"
+        },
+        {
+          "resource": "repo://src/visualize/graph.ts#L275-L295",
+          "version": "repo-lines-v1:sha256:0f4d2a9a29886b4cb3d286523b0a30ed844c6914f9536c86a25c111693178622:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZjg5Y2NiMTkwMjE3YTFmMTk0Y2EyNjY4NTZlNzZhYWEwZmFhNWNkZDBhYWY5NDNjZjhmOGNhOWYzMjAwZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzMzMwYTVjMTU3MjgwYzg1NmMwODg4NjZiOWU3OTlmMzA1MjdmMTFlMzgxZWIzN2E1M2QxNzNhOTExZTBjMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4MWQwMDE1NjQxNDg0YzcwODZmMWFlNWI4MzIzNzcxMDE2ZDM2Yjc0YjFjMDQ4MmY0ZDlhMTVlNGFjOTQ1NTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0bba8c8d68314da4ab818b5399ca4e60",
+      "statement": "Node metadata is read from the OKF frontmatter fields type, title, description, and tags, with deterministic fallbacks: title resolves from frontmatter, then section name for index.md or first H1, then filename; type defaults to `Section` for index.md pages and `Reference` otherwise.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/graph.ts#L201-L210",
+          "version": "repo-lines-v1:sha256:ddd3bbd760ac3177d1c5fcae5101f0f8a9e632ea438eed4c2cf8368e0fc1a07c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NTEwNWI2NTQ2OWZlOTY3MzFjNzZjY2E0MzY5MDBhN2Y0MWUxNjYyOWNmYzljN2M0MmY4OTNkNGFhYjJjMmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyN2FmZDZlMWE4YjUxMjk1YmM2NTBkN2NmZTY3OTgwZjFkNDc3ZWRlMWRmMDJmZGVkZTU2YTlmM2NiYzBkNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MWMxM2Y0NWYyYTY0YjUzOTJjNzhkMDQ5ZGFkNzE1YmM3ODA3Mzk4MTY5NzY1NGVmMmVhY2NlMjNkODA0YTAifQ"
+        },
+        {
+          "resource": "repo://src/visualize/graph.ts#L275-L295",
+          "version": "repo-lines-v1:sha256:0f4d2a9a29886b4cb3d286523b0a30ed844c6914f9536c86a25c111693178622:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZjg5Y2NiMTkwMjE3YTFmMTk0Y2EyNjY4NTZlNzZhYWEwZmFhNWNkZDBhYWY5NDNjZjhmOGNhOWYzMjAwZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzMzMwYTVjMTU3MjgwYzg1NmMwODg4NjZiOWU3OTlmMzA1MjdmMTFlMzgxZWIzN2E1M2QxNzNhOTExZTBjMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4MWQwMDE1NjQxNDg0YzcwODZmMWFlNWI4MzIzNzcxMDE2ZDM2Yjc0YjFjMDQ4MmY0ZDlhMTVlNGFjOTQ1NTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b4e48e7712d4271a10fcded6c12351f",
+      "statement": "`splitFrontmatter` parses only the small YAML subset OpenWiki emits (scalar values, inline `[a, b]` arrays, and dashed lists) and returns the frontmatter map plus the body with the frontmatter block removed.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/graph.ts#L156-L196",
+          "version": "repo-lines-v1:sha256:8094144e83d0f8873f8c11d749bbe3381fdcab61cbbc3cb279c277e43b6f1930:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3MTllZGI0YzY1OGJlYWJiYmE4MTViNDExNjcyMGQ3MmY4NWUyYmRkYWRlMjVjYTExOWU5OTBlMGE5OTY4MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4Y2U1ZDcwMGRmOWI0MGNhMzMyNGM1YzAyMzgzMDI2OWY4NGI5MTc4MjViYjcyODM3NjRjM2Y4NDEzMjlkN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1MmY4ZWZjZmNmNGEwNWYxOTk2YmRmZTM4YjZmYTgxNzkwYjI4ZDVmNTZmMjJiNDU4MWRmMmQ0ODBmOGYyNmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b0941e9ef43f4b0ab3ed20221aeef814",
+      "statement": "Edges are derived from relative Markdown `.md` links resolved against the linking page's directory into node ids; self-links, links to pages not present in the graph, and duplicate edges are dropped, and each edge also records a reciprocal backlink on the target node.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/graph.ts#L143-L145",
+          "version": "repo-lines-v1:sha256:3c1bf21fad43ca1784e5d547da6b69a14a082b2617368681b16fb6db64fce0e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ5ZWZkMDNlZmJmZmQ5NjBkZjAxNTc2NTQ3MTVkNmUyOTA1MjQzN2E1ZjI2ZWQ4MjQ3ZWRhMmJkNzA1NDg5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTc3Y2RhNzQ1ZDZiZGY3OTJjMWM2YmRmY2FjYmNhNTcwYjVkODkyYjI5ODcxNzExNmI1OTVjYjI1OTRmOWY0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGJmMTUwYmFlN2FiOTRlZDNkZGE4ODkzZDhhYTdhMjVlYjM3YWMxYjJjMTEwNjIxMjE0YjM5NTNmOGVjZDc0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg3NzQxYjhlMjQ4YmZhNmExYjg3NTM4YjA1NjJhNTE5MjUwN2I3NTQ0ZGI2OWRjYThjNjEzZjk1Nzg2NjM2ZSJ9"
+        },
+        {
+          "resource": "repo://src/visualize/graph.ts#L297-L320",
+          "version": "repo-lines-v1:sha256:0863ac3ac2e0678928ffc5032fc2378db92951fca6e0151fd40f11ef4c6c2beb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlNWZlM2ZhNzM2YTQzNzRhZjQ0MTIzNWUxNTI0YWE2ZGJkYmFiZDAwNWYwZmY3Zjg0NDcwMjY0ZTgyZjEyODUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e744bcf61474bae9268ae237bad399c",
+      "statement": "The Markdown walk is confined to the wiki: paths resolving outside wikiRoot are skipped, symlink dirents (neither file nor directory) are never followed, and the scaffolding files INSTRUCTIONS.md and log.md are excluded from the graph.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/graph.ts#L137-L140",
+          "version": "repo-lines-v1:sha256:edac987d0e6af2d8bb9ac081ccf6b5cbb174770f5fcbee909336a02022e986c7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE0ZWZkOGNmMzBmZDQzNTcxNGY4NmY0MTczN2I5YmQ4NDZkYTdlM2MzYzdjMWNkNzkwODJjOWY2MDM4OTE1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGI1ODNjYzg3MDg2MjIzZGEyYTIxYjJkM2U5ZjZlNjUxMDM0NDYwZDVmNmUxNTZkMmU0YWNhNzI4MzY4NDBiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjJjYmZlMDg4MjQ1MmYyOTZhYTRkZTFiMTA2MWY3YTI3YmU3ZDA0OTVmY2I5MzI4OTJkOWM2MDI4ZTU2OWVjMiJ9"
+        },
+        {
+          "resource": "repo://src/visualize/graph.ts#L245-L270",
+          "version": "repo-lines-v1:sha256:1ab1f1a01814bc09cd6d9651525f2d88ef6795c4d935e89b6202e7040ab9aa1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiOGQyMDkxMTVkZjUzYTE4NWNiYzRmZWEwNjNkMTY4OGM5YTBhNTdiMGQzYWRiMTY5NTcxZmJlNTRmYmE5NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2MTFmNzMwZTgwNjMyYTBlNDBjN2IyOGM1ZmY2MTU2YmNjNzI4MGRlODIxNWU0MmM5NjJiZDM3ZDgwNDBiNWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f0de12bcd544beb8bad45b1de365279",
+      "statement": "The live server binds only to the loopback address 127.0.0.1 and tries the preferred port, incrementing on EADDRINUSE for up to 20 attempts before exiting, so the wiki is never exposed on the network.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/server.ts#L14-L16",
+          "version": "repo-lines-v1:sha256:a4e9ba462c36957abfe7d3b929041a503debd36e55f348804c12e36d598d0aac:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDIzNTg2Y2I5MDc3NTdkMGRmYTdlOWNlYzRkODY5YjY0OWQ3M2NmNTk5YjJjOWFjNzE5NDMzODI0OThlOTAyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDMwZDhmN2FmOTAxOTZiOGZhNjBjYTNlY2ExYzQ3Zjk3YzNkNTc4MDdjYTZhYjExYzczZGQyYWIwYWNkMjRjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdhNDBkMmM1N2MzNmYxNDA5NWE0NDBiYWMxNjk1ZWY1MDVmNjg1YjVjMjYzOTk5OWFlM2M1YmE0MDkwZDg3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTc1M2E5MzQ4NTViMWNjYWEzYzFjMDhkZWRkZDFiMjA4MzM2Yzc4N2RiMmY4OWY2NjM3MTViYmQxZTVmYzk3NyJ9"
+        },
+        {
+          "resource": "repo://src/visualize/server.ts#L233-L255",
+          "version": "repo-lines-v1:sha256:e7b14bdad0cb88f7a32e1ca31b2b9ef48f33df28190e29a0129cb0089416c5f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NTdjZDFjMjY4YzE1Nzg5YjZlNWUyYzJlMTIwYWUyODU5ODhkYjRhZjlmYzJiMzU1ODZmMGY4YTc3YWE5ZDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1639df79fc6b4795b82535b6e325f05e",
+      "statement": "The HTTP handler is a pure router over a fixed route set (`/`, `/index.html`, `/client.js`, `/client-lib.js`, `/styles.css`, `/api/graph`, `/events`) that returns 404 for any other path and never derives a filesystem path from the request URL, eliminating path traversal.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/server.ts#L156-L214",
+          "version": "repo-lines-v1:sha256:f542da320343ff758f8b194b40c3e97f9341c1159ba3191b565ac2c33e68288d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkMzI3NmUzZDE3MWE2NzE5MzY3MzFkYTdjYTViZGNiNWIwOGVmNDliOTU5YjYyMTdhNmUxZGRiMDMzMzlmODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlZDBmNzJiNDAyYWQ2ZDcxZGM1NjAwZTc4ZGJmMDU5YmI5YTgwMzg5NjM0MGQxMThmMzg2MjljZGU0NTZhZDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2ecd9ad923a9421d9fe17eaefe4c82e0",
+      "statement": "The `/` and `/index.html` responses carry a strict Content-Security-Policy that allows scripts only from self and the jsdelivr CDN and forbids inline scripts, while the graph is exposed as JSON at `/api/graph`.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/page.ts#L8-L18",
+          "version": "repo-lines-v1:sha256:db11e909cbfb896ecbc1bc7428061ec3a31baf9540dca77a0a265d7146b5267a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllODkyZjk2YzY1ZTZlMGM0ZDM4NDFhNDliNTQyOGUzZGEzMDI1ZWY1ODQ3NDU3NWI0NjhhZjA3YzRkMjYwMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3N2IyOWY0ZTcyZmZlMTU5ZThhYmM1YmI0ZGQ2YjM2YjMyMDBiMDNkNThlY2I0NDJhZjRjODY5MTE3OGEwMGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyYjA5MTMwNThmMGU0MTgyOGE5ZDY3MTE5MmFiMDVhZjA2OGQwOWEyMThhNjkzODY1ZDMxNzYxOWM1YTczOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwMTQyMWExYTIwY2U4MWE3ZDNjYjRhNTFkNmZjYmEyMzBkZGMyNmYyMjYxMDEyZWU3YzVlZWI2ZDQ4YjA4ZmMifQ"
+        },
+        {
+          "resource": "repo://src/visualize/server.ts#L167-L198",
+          "version": "repo-lines-v1:sha256:8704fb0e751671eb4c8a118bcc51367d83e1c471a7c4cbebec1ccee223cd4476:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1N2FjMGVmNTRlZjVmNGEyMDA3OTQzZDRhMjViMzQ5ODU4ZGQ0ODZiMTY3MWFhNzQxNzk3ZmJhNzhmMTg5NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5NTg1Njk1YmIzOTY0MDJiYTA2OTU0MjlmY2ZhZTA0OGE2ZjY5ZWY2ZjA5NjYzODQxODYwNTY0MjhlODk0OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjOGIwZDE5NzFhMGE4OTg4MzYxN2Q5MjI1NmFhYjU3ODhmYWEyOGM5ZGY5ZDUxZWZlMTM5MWRlNjcxZjY4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0461109e3ebd4611b2743d546e24785e",
+      "statement": "The request handler reads the graph through a getter rather than a captured value because the server reassigns the graph on every rebuild, so each request serves the latest graph.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/server.ts#L126-L154",
+          "version": "repo-lines-v1:sha256:5dbb23c808c85a8f0b6f5d8df025f67ed2cbf554940d33a6ad609a50259ef00a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyZjNmZWEwMThhMmI1OWRkMjdlOWJkNzM5MjRlNjRmMzUwM2JlZjFjNzQwNzk2YTRmZGMxYWRmODUyMWI3NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzYzhkYzRkYjkyMTg4YjZjNGVkMTNlYTNjYzIxMGVhOTA0ODRjNTIxNjQ0YjU2ZTJiOGViOWE3ZWM4ODg1M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2OGQ3MWNlMjI2MGI3OTJhNDFlZGFkM2VmYzY2NDgxODM2ZWViM2M2NzYwYTExMjAyNTZhYTlhMjUzZjI2YmIifQ"
+        },
+        {
+          "resource": "repo://src/visualize/server.ts#L92-L102",
+          "version": "repo-lines-v1:sha256:07ae6f84dc5af2719064f1fa6fbcc2b3a57b320d1c2c1986eafb5bd42299046d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNDQ3MTEzYzA0ZTFkYzYyNWI4YmJjMjY4NmU0NmVkNjkyNmU2ZGQ4ZDIwNDIwYWVjODJiYTRhN2YyYTg4MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxZTM3MjVkYTAwMmI0NmVkOGI0ZGU4ODAwM2FkOTcxMGRjYWYxOGQ1N2M0NzAxZGMzYmVmZjBiMmM1Y2IxM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNjA2OGE2MGFjNmY2NDhlMjRiMjJjMjEzNjRlYTgzY2JmZjcyNzM3NWNlODA1NDcxZGVmNTczZjk5YmYxYTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8cbd931cd2244329a0c365a17de1ed3b",
+      "statement": "Live reload works by a debounced (150 ms) recursive filesystem watch: a wiki change triggers a rebuild, and on success the server broadcasts an SSE `reload` event to every open `/events` subscriber; a rebuild failure is logged without crashing the server.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/server.ts#L199-L209",
+          "version": "repo-lines-v1:sha256:d5d95bbba1eaafb5f9bc766519037de2b87ae9b7b58490014690d09e7d975518:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMjcxYTI1Y2JkMWVlZjg4ZTFjYjQyYWY5MmQ1OWYzZjQyNjIxYjI0OWY2N2UxNGJmMmE0MzMyZDMwYWQ3MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlY2YwYjM5ZjgyMTE4ZDEwOWE2OWExMjZlZTgzZWFkMDY1MTFlNGJiYzE5M2Q0NTJiNWZkZWE4ODU3YWE3MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NjMxM2I5Y2ZjYjk0YTk4ZTYxOGJjMGEzZjcxZjI0NjNiNDcyYWIyODExNjJiZjQwMjlmYjZmNTJlYmE0Y2EifQ"
+        },
+        {
+          "resource": "repo://src/visualize/server.ts#L257-L276",
+          "version": "repo-lines-v1:sha256:3572b22156676e9ba9fc0c4bbc9418db0467e11f7c69ae87c3507b64036f9d03:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZmI0MDk1OTAyZTgxYjFiMjBjYzE3MDYwNmFiOTU4OTk0MWZjNzE1Yzk3ODBkMzQyYzk3MTJmMTZkYzhmYmQifQ"
+        },
+        {
+          "resource": "repo://src/visualize/server.ts#L77-L90",
+          "version": "repo-lines-v1:sha256:03ec49cfabc75106ebf5d5caa474997e2ded9066f39fdacf464a3cfe5565ed4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NzFiMzNkODY2ZDQxNTUwY2I3NzljOTU5M2U5NWNiNDlkM2FhNDc4ODhlNWY3MTY5Njk4YzYzOGM1ZTI1N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyNzc4OTZhYzJjYTk0N2Q2OTRiM2NmZjBjNGM5NDdlMmUxNmNlYzkyY2U0NTM5ZDk5ODU4OGY4MTU2N2JkMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4Yzk1MGY1MjZiMjgyMTlhMDkxYjBjOTE0NjZjZjZiMTExYzc0NTVjMTY1MDM4MTE4ODU3ZjI3Y2IxZWVlZjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_61cf53c1b3d44e84833fadcfded5dc86",
+      "statement": "Pure request routing is extracted into `createRequestHandler` so it is unit-testable without a live server, while the lifecycle glue (listen/retry, watch, browser launch) is excluded from coverage; tests exercise the handler with a fake ServerResponse.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/server.ts#L45-L52",
+          "version": "repo-lines-v1:sha256:104de55c23a7d95d3b24f6be1aeafe350ee05e56e443e22440016584a63d1f72:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODczMjc3NWVlZTc3MDAxOGRiN2Q3OWQwMzVhMDE2MzAxNWEwMTZkZTE3ZWJiZjg4ODQ5MDJlYzZkMWQ5ZmNmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU5ZjFhMzY4ZmQwOTA2OTBiNmNjM2Q1ZDFmNzIwY2ZhZTE4YjA5OTdhYWYxZWExZWVkZmQ3OGRhMGI3OWViNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTkzZTFkYWJkYjNmNGNmNjg2ZWYxYmYzYzExZDkzMWQ4NGU3OTE1ZTBlZWRkY2Y0YmMyOWFiY2Y5YWY5NDc1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTAwNzkwMzZkNjBlNjdkZjI1YTllMWQ0MDY3MGMwYTY4YjYyYzA4YjBmMzI0ZDZhOWU5YmI1NThlNGVjODNmYyJ9"
+        },
+        {
+          "resource": "repo://test/visualize/server.test.ts#L1-L59",
+          "version": "repo-lines-v1:sha256:1de3d73d63857e57371970d5a589190156b12d2f5691d44582d3ba5216bf7de8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmYzUwNTMxYmE0NjVkNDcyMzY2NWM3YWU3MDVlMTc2ZmJlNmNiYzY3ZmFlMDM2NWYxMTVjYmM3YzliYjBmNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMTliMzlmOTcwMjRjMjU2YjU0MjUwODcxYWRmMzliMWFmNzEwYThhNmI3MTc3ZDJhZmFhZjMyYjk0MDU4ZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_17b7f91da2b64294b8b1aefa168a3783",
+      "statement": "The browser client renders three coordinated views from the graph — the force-directed canvas, a type/color legend, and a per-type sidebar page index — and selecting a node opens it in the reader without moving the camera.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client.ts#L404-L470",
+          "version": "repo-lines-v1:sha256:3b79a616649bad7f5c8db3bc3376d859f03692b1a762115f2ef49f2b93034671:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMjI3ODk4YmUyYzQ1ZTIyMzkxMGE0NzViZDczYjFhZGI3NjRkYTRlM2E1MmQwMGNmOWZmNDE0M2I0MGNiMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhZDI3ODcwNzA0Y2JmYjU3N2Y4NzhlMDgzYTgzZDNkMzQwYTE3NWM1NTk1NmZiNGM1OGQ5MzUxNGFjYmI1MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliNzgzMGY4M2ExMTI2YzQyOTRjYzkyYzAxMjE1MzBmNjdmODU3ZTM0ODYxZmE4ODc2NzcxNDQ5ZjRhNWUyY2UifQ"
+        },
+        {
+          "resource": "repo://src/visualize/client.ts#L653-L665",
+          "version": "repo-lines-v1:sha256:5eb3c3e3ee8cd4689303af2a98dd7e0f27b9161aff34801f999ebfaa914f1fae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ZWZmOWQ5OWE5MzBhNmQ5OTA4M2M5YzM5OTc3MmM1YzM0ZDc3Y2Q5ZmQwZTM5MTEwMTIyYTU0ZjZjMjU4Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljNjY2ZjBjMTQxYmM4YmI0ZjY1OWEwMjI0NjhiNjEwNzk0MzZhNjdhYWUyMjY1YWQ1MzU0ZjhmMDU5MTdlNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2Y2ZhZjhlM2Q2NDBlMzdiNDE0ZTBhZjhjOTVlOTIxMDI3YTRjYzY0NWFlZmY1YjQ4YTg1NTQyMjNiMTgxYjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_df164bdeeae748d08b818a6af1511b93",
+      "statement": "The reader renders page bodies as Markdown and sanitizes the result with DOMPurify before assigning to innerHTML (defense in depth over the CSP), while all scalar wiki fields are HTML-escaped by `escapeHtml`, the single XSS gate for wiki text.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client-lib.ts#L58-L64",
+          "version": "repo-lines-v1:sha256:1621f652fec1548ccb7f740eae8450cfc702e4ac6f3b3a74aaa0e1325c48855b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjI1ZTNjOTg2MDFkM2Q4ODJjNmEwYjFlZjk3ZTI3YTQ0MmU3MmJiMGRjZmYyMTc5YWFhNGNkYjIxYTBlZmUyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDgyZDE5NjgwM2YzNGRlMTFiZGRjZjExNDM4Yjc0ZmU0MmFmODFiMDVkMzMzZTI0YWJkNzYyODNiMGM5Njc1YSJ9"
+        },
+        {
+          "resource": "repo://src/visualize/client.ts#L703-L714",
+          "version": "repo-lines-v1:sha256:87efe0d1508cf40cdcdc3a76ade3bb3f2536852225ef44f4bbd04388a0dfea9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkN2U1NjEwY2ZiYjBlZThjN2NhN2RlMmY5NmIxZjkzYjgxOTViZDgwZTc4OGVhNmU3NGMwNmQ0YmY1NWIwNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NTU1Njg5MWYxNmYwYjk2MzQ5MjQyODNhNDFlNzhmMTMzMmM1ZTg0YmU0NzMwNGEzZWJiOTA2MDA1OTZmNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzNzk2N2UwNzZmNmRjNjlmNDBhZDY4YjgwOTY4NWI3M2MxYmIyMTBjMDMxZDg2OGNjOTE5Y2YxYTYwYWExNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3NTRjZGNkMTdiNjhhMmFhNGNhYzhlYTQzOThhNTc5Mjg4MWJlYzk5N2Q2ZTBhZGNmZmFkZGI4MmFmZmI0YTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d540b0068697409e92b3a1e1def1f770",
+      "statement": "In-page Markdown links whose targets resolve to a known node are rewritten into in-app navigation, and fenced mermaid code blocks in the reader are upgraded into rendered diagrams.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client-lib.ts#L142-L156",
+          "version": "repo-lines-v1:sha256:d893a04d4d2c91a51b7473c73d0dd3df5995b041dab40d12de825805bf8d16c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhY2Y1YTQ0MjliNjYzN2M0NGI3ZWYwYjRmM2I3ZDJmOTUxYzdhYmU1MjAwYzJiNGI0MTI1OTU1MDliYTMxMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/visualize/client.ts#L729-L773",
+          "version": "repo-lines-v1:sha256:c084058bd89a237ecb46c5067cc51155779b21e8c554030116e1f6f4e9ecc4f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4NTUyZDYxYTg4OTVjYTQ2OWQzNTEwMTZmMzdlYjE0NGI1NjlkNTIyZjA0MTkwODk2ZWJhMDVjN2Q2N2FlYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3ODI2YTgyZGM2MTBmY2IzNmFlNjcxOGU3M2E3ODIyMzFiNGUxZTA2MmJmNGNmNzExOTUyNDU2MWI3OWY4MjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f2223092c3b42a7bb5d9b51019988e2",
+      "statement": "The client preserves layout and viewport across live reloads by comparing a topology `signature` (node ids plus directed edges): unchanged topology leaves the scene untouched, and changed topology re-feeds data while reusing persisted per-id node objects.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client-lib.ts#L115-L130",
+          "version": "repo-lines-v1:sha256:f20376e3510bd2c18733b94b600eeaf1426d67dda5c7d60be58643d172062e09:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3MWNmMWE0Mzk2OWIwMWM3YWY5NTczZDNlNTU4MGU2MDc4MGE1MWJjYzQ0NzkyMmMxYTU1MDg3YTJkMDcwNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlNjU3ZDczOTJjZjU2YTQ0MTUzMDFjNzdjYTc2NWNlYzE1Nzg1YzAwNWY0NzZiNmM2MmY3NGZiY2ZiODBjNjkifQ"
+        },
+        {
+          "resource": "repo://src/visualize/client.ts#L798-L871",
+          "version": "repo-lines-v1:sha256:690ea0a2be732895eb7ae1530f747ac01cfad1499f6838f6715209197575febf:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzOTlkOGUwZDVlNzhkZDZjYzU1OTMzMjc3ZjE3M2EyNmRiOTk1N2UyMDc4MzMxYmIzNGZhN2NlNTQ0NGE0NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxMmMwOWVhYTBlODhmYzcxZGEyYWYyZmQ3YTgzY2JlMjExODRlNWVhMTZmMjMxYjQ3YjNlNmQ3OTdkMTYxYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1M2FmYWM0ZjFlY2Q3MWIzYjRhYzU4MDY0YWIyYmEyNjhhYTRjMWM1ZGE4NWIxMzIwODJmYTMzOTZhOGY4MjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_92680aeb992e4004b23a27b3bee0cee3",
+      "statement": "The client detects static-export mode from the document element's `data-static-export` attribute: static exports fetch `./graph.json` and never open an SSE connection, while live mode fetches `/api/graph` and subscribes to `/events`.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client.ts#L332-L336",
+          "version": "repo-lines-v1:sha256:29753b1b63a3add2763f48d9b4ed04e6812a191ce5d4b021c75e67424c792ce8:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDc0OTU1ZTk3OWMyZGQ4YzZlZWRkNGM1ZGU5YTZjNmJlMTY2Y2FjZjNmZDhmYzUxZjZmZDk4OGNhNGE4ZWVhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM0NzVkMDYxNDcyYjlkYTg1NmNlOWMzZmQ3YWNmMWVmOGYxODBjMzIxNjM1NGE2ODY2YmQwNjA5ODc1MWRjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjY2ODg1NmE5ZjdmOTUxYzY3N2Y2ZjhjZDk0ODU1NTdkYmE4MzNiYWMxMWE1ODRjNWU3YTgwN2VmZjNmZjc2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmU3MjM3Y2VjYjkzNjA3Y2I3NDc1Zjk3M2U2OTFlNjRlN2NiYjA3MzJmMTgxNzRlOGJhNDQyZTUyZDFiZTE0MSJ9"
+        },
+        {
+          "resource": "repo://src/visualize/client.ts#L970-L979",
+          "version": "repo-lines-v1:sha256:ba5de929b0b85eb5a65dc5a8ce1bfbd2e9c753f9c54603a6ab4d7042fe5fa897:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZjgwOWVjN2YzOGJiMDgwZmE2ZTAwMTM3YzYzODkwZjk1ZjMyMTc5MTViOTA0NGM2YzViZmQ4NWRlMjA4YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6b724c29868642bd9180cdd3e3e05c14",
+      "statement": "Node colors are assigned by mapping each distinct page type to a palette entry by its position, so the graph canvas and the legend always agree and colors stay stable across reloads.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client-lib.ts#L66-L79",
+          "version": "repo-lines-v1:sha256:0d00643bcc2ed6b08a584064267622f6df1fb06e8d684f997325c12ae0b3e1a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1ODIwY2E5ODM5N2MzMTI1OTlkMzhhNzk2ZTlmMjY4MGFjNjBjOWQxZWFjOWI1YzE3ZDU1MWNhZGM4ODA3OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyYWFmMzdiY2QyZjg1NWM1NDQ1NTU0OTUzOGFiMmI0YWQ5ZDcyZTQ3MzU2NjgzY2YzOGI0ZTk4ZTA4ZjBhMmQifQ"
+        },
+        {
+          "resource": "repo://src/visualize/client.ts#L406-L423",
+          "version": "repo-lines-v1:sha256:ea257a88f8a5947ac9d68de4d217d65e1182b83e2037fb55333d99856ead16e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjlmNGJlYzA3NzA2NmFiNWRjYzFiMDM1OWZhZmFjZDMzNDE0OGI3M2IzZDEyMDk2NjUyYmYzMDA4ODE4YjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzOGE4Y2FjNDAwNzY0MDhhMTFkZmQ0Y2Y4ODk3ZmE2MDZiM2JjNTQ2NTEyMzFmNTY1ZGY2OWE3MzA2OTMyOTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_29e0770df00e467099e8d6fa48bd2503",
+      "statement": "Pure DOM-independent client helpers (escapeHtml, colorsForTypes, nodeRadius, signature, matchesFilter, normalize, stripFrontmatter, hexA) are isolated in client-lib.ts so they can be unit-tested without a browser.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client-lib.ts#L47-L156",
+          "version": "repo-lines-v1:sha256:47df5f3d54631cf42bc2b23c2fddd848bdbf95f3a3fbc23df14769d4663de5b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MGFhN2JjMTJhM2ViOTI2MWQxNmEwMmRkMGM1MmI4YmY5NjI1ODZiMThmYjIxNDBiZjVlYTM4NzZlMTBmOTQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://test/visualize/visualize-client-lib.test.ts",
+          "version": "repo-file-v1:sha256:a2090389e887f89957a26c973659a70b24b5a48cdd018fda9815be8577aedfac"
+        }
+      ]
+    },
+    {
+      "id": "claim_b46abeebe586482497c809a502a680e2",
+      "statement": "`exportStaticVisualizer` writes a self-contained hostable directory containing index.html, client.js, client-lib.js, styles.css, and a pretty-printed graph.json, requiring no running server.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/static-export.ts#L42-L79",
+          "version": "repo-lines-v1:sha256:99948f64825eeefe7a933cff7fa94da7a6dc08fb7f2c591fb6f781780d03da42:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNzJiOWE2YTFhZDFjMzY1NDYxMGE2MDMxMjE5NDg4NDYyMWUxNzEwOWU1NWEwZDVkOTg4YzdlYjRiNjk3MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxN2UwOTkzZjdhNjY4YmEyNmQwMzZhMGVmYWE2NDc5Y2VjOGU4ZjRjM2M1NTRkNmQ5OWU2Njg4MWU1OTJkZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://test/visualize/static-export.test.ts#L28-L50",
+          "version": "repo-lines-v1:sha256:cc5eb3327c99520d82731e849185667dbcc83ea84c94570d8c8533647bf15f4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1MDZmNWY2YzcyNGI1ODBhNzZmMWNmYWVlNThjNTIxNGE3OTc5NjhmODQ4ZTJlMjU2NTRlMTFmNWM0MThmZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkMzc4NWUzODRkMWJiOGY5NDg2OWRhNjFjYmUwYThiZWJhYjMyYWVmMTZmNmMxMGQ0OTIyNmVjMTQ3NTNlMmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4197487294264009ac3d44d699f7c886",
+      "statement": "A single `renderPage` function produces the HTML for both live and static modes, differing only in asset URLs (absolute routes versus sibling `./` paths), CSP delivery (header versus meta tag), and the live/static indicator.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/page.ts#L20-L95",
+          "version": "repo-lines-v1:sha256:2013a593716d5ebe6ae35eaa408d6bdb8a8bd684823f746e50580c3683e7cc95:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZmIzZmY3MGRmOTBiYjA5MmEzNDNkYzEwNmViMmQ2NTBkNzFkOTk4ZWY5ZGEzMWQ0NTdjYzFjMDc2ZjJmNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNGIyYTFiZTJhNDcxODk0YjhhN2EzYmRhNzU2M2ExYjY3NjI1MGE1OWI3NGQ5OTFiYTI3NmJlODUxYTM5YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxOGU3OTcyYzgzMjdlMDQwYzg1Y2I4YWM5ZjYxMmE3MDMxOTZkN2E0M2U1NjU5OGY3MzA4MjdkMjZjZGQ5YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_84124d66d5c94ea8a23529cd9134cec4",
+      "statement": "The three browser libraries (force-graph, marked, DOMPurify) plus mermaid load from cdn.jsdelivr.net at pinned exact versions with Subresource Integrity hashes.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/page.ts#L38-L57",
+          "version": "repo-lines-v1:sha256:2143d52b0eac79ffc6f7ad87d88bc331c4d50b87244c58f70509fc29375ad36d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMzkxYTY2MzQzMjNkNjFmNjBjOWNjZDgyNGI1MDMxZTUzYzE3YjUwOWQ1NTZjMWRmZWYxNjAwMmZlNWY5YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzYWU1MWM5NTY4NGVlMGYzNDYxMGE1NjRlNzA1YjhkZDA1ZDVlZTZlYTkyOTRlNDk1ZTc5M2Q2OWI0OTg1M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjODhiMGM1ZmIzZjQ2MGZmMTgxNTYyZDIzY2NjMjZlMDJiZTlmYjBjMzRmNTMzOGI2N2ViNTU0ZjJjYTNlMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1N2EzZTEwZDNhZDY4YjhiMDgzZjY0NDI1OGRkZWM5NjI2NjA5NTBiZDY5OGQzNDJlZjMzMzI5MTViMjY3NTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_641f7a7cfe40491d836cf977aa19886d",
+      "statement": "The client is compiled separately via tsconfig.client.json (with DOM libs) as part of the build pipeline `tsc -p tsconfig.json && tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs`.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L39-L39",
+          "version": "repo-lines-v1:sha256:cd5733702726d1aa56fef9aaaaebe0335554087ecb7cbc1f9a32d4f297f28368:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q1NzMzNzAyNzI2ZDFhYTU2ZmVmOWFhYWFlYmUwMzM1NTU0MDg3ZWNiN2NiYzFmOWEzMmQ0ZjI5N2YyODM2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q1NzMzNzAyNzI2ZDFhYTU2ZmVmOWFhYWFlYmUwMzM1NTU0MDg3ZWNiN2NiYzFmOWEzMmQ0ZjI5N2YyODM2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTk5ZTViYmIxNjA0OTgwZjI0Nzg0MTM3YmQ0N2M4NzhiZTM1OTAxOGFjZDg1ZGIzZDhiNzI3MTZmZDRmNjZmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDM0NDZjMjU1NmNmZWU4MjRlZWI0YTlhYWQ0MmQyZjgxNjYxY2I5MTY2NThjOWRjMjRiNjBkM2NiOTUwZmRhYiJ9"
+        },
+        {
+          "resource": "repo://tsconfig.client.json#L1-L9",
+          "version": "repo-lines-v1:sha256:35c1ff70e09df87610ed9fea3294477f371257a215b7ade4f00d75318ac4beb2:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_92d3d026b40a4bdca383b8514ae8bdcf",
+      "statement": "`copy-visualize-assets.cjs` copies the hand-authored styles.css into dist/visualize because TypeScript does not emit it, and fails the build if the source is missing, the dist/visualize directory does not exist, or the copied file is missing or empty.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/copy-visualize-assets.cjs#L1-L46",
+          "version": "repo-lines-v1:sha256:25ed3ae53e0924cf165a8ea99dcd419060aff73935db6007471df4eabc6bb2d6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2Y2FkODFlYzhkNzRhMzE3OWJmY2E2MDMzNWVkZWY4YjNkNzA3ZDI3ODNmNGY2ZmFlMTM4ZWVjNGZhMmE2NjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_57691296faf243d4b15746cca1e7048a",
+      "statement": "At runtime the server and exporter load the compiled client.js, client-lib.js, and styles.css from beside the compiled module in dist via `loadVisualizerAssets`, so the asset copy step must run before the stylesheet can be served.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/server.ts#L72-L75",
+          "version": "repo-lines-v1:sha256:6871e5a12ef13fd7dc5221101e18daf348eed63f66b701661b926b14b2d54cbc:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzE2ODZmYWVkMTllZTlmNjg3NWRkMzA2OGMxMzU4ZDc2ZjViODA1ODJhNWUzNmRiNmVhYmRmYTNlNGVhNTBiOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFlNTk0YTVmNjNkNTRlMDQwNTVjZTUyZmE5MGNmYTNjYTFjNmYxNTc4M2ZkOGIyYjIwZDAzNGI2NTQ4YTI2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzEwY2NmMmEzZjA4MzdjOWI0MDdkYWY2YWI3ZjZjOWQ1M2Y3ZDk4ZTZkOTc0NmU4ZWI0NTBmYjdmOTk5MzU5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODAxM2JkMTVhZTllYWI1NThhNDg1ZmY2NDZkNmVkNTZiZGQ2MmZlZDAzNzk5ZjRjMWQxMWFiNTMzNGFjODMzMSJ9"
+        },
+        {
+          "resource": "repo://src/visualize/static-export.ts#L32-L40",
+          "version": "repo-lines-v1:sha256:eb684a13c94c10aca3ac4d085acdeafa32c97924e68d320f14d9d442d4688d02:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcxMDFhYzZhOTBlMDBiY2VkNzkzZDE3ZjE1ODVhMWQ3NzZlYjJlYzdkOGI2NTYzOWM5MmZhNmI5NzljMTBlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMWIwOTlhNDFhYjY3OTgwNWE1MGU5YzlmNjEwMmE2Nzc5ZmJkMjQxMmY5NzAzZmZiOTg2ZWJjYWRmNWRmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZkNjY3NjY0YjlhNGEyYzYxY2EzZDYwNWVkMWE4ZDQ4ZTYyYjQxODg5ZTRkNjRhYjM2NDA4N2E2MjZlYjI0NCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-25T02:14:25.283Z"
+  }
+}

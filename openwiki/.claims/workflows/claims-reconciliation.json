@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:c71bcb4df52d45be13ce9729d6b960e49770bce166a53ff8cd8671125b9feb6e",
+  "claims": [
+    {
+      "id": "claim_b4fc5fda11a9482d91f562eef48a86f6",
+      "statement": "Each persisted Claim evidence record pairs a canonical resource identity with an opaque resolver-owned version token observed when the Claim was established, and reconciliation compares these tokens for equality without interpreting them.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/store.ts#L38-L57",
+          "version": "repo-lines-v1:sha256:2db17ac762b8e9c032ba01fd74e61ca204c6833e58ae242cf6fe6679a81a951e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTI1YzJiMTg0OWJhZTcwNjVjZDM2Y2Y5NzYwZWVjOGMyODY0N2NlMDc3MmU1NTU3NWY3OWU3NDdiY2I2NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlMjU3OTcwYjEyOTcxNjEwMjVlZGQwNDMyMjEwNzk4MmQzNDczZmM3Yzg2YTU5ZmU4OTg4ZThmYTQwMWZmMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyMThlYTYwMzU0MTM1NDg0NWYwYWQ1M2I4NmZhMGM1ZDAwNzBhYmU2NzA5MmM4ZjkwY2U3Y2QzY2FmZTg1ZDAifQ"
+        },
+        {
+          "resource": "repo://src/claims/core/types.ts#L1-L14",
+          "version": "repo-lines-v1:sha256:0eb302045a2df3644a20715c99e69e312543125138a8d248d09eb83887cc42fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZGI1OGFjNzI1NjVlOWFiYjBhNDI0YTAzMzNmNGZlNjNkNDI4M2NkZDg0ZjcxZTIxNzYxNmFiOWRlODIzMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_beb94e00bead4c4f8c3d7fdfa743c731",
+      "statement": "runClaimsPreflight loads every persisted page sidecar and resolves each Claim evidence resource against its recorded version once per preflight, classifying resources as unresolved when the resolver returns nothing and as changed when it returns a different version token.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/preflight.ts#L36-L96",
+          "version": "repo-lines-v1:sha256:430a13695e7411b3b50f082079680087233e0bed28ff1a7a30013bd51a932465:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyZjYxN2JmYWU2ZjU1Mjk3NTcwNjcxZmIzNGFjMDNkZDcwMzllZDU0ZTMyZjExMGI0ZjhhODRiNTI1MjBlODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0N2MzYzQwMzgwODU2Nzc3OTVjMTFhYzkwNGZlNjJjYmNkM2YxYjZlZmM2OWUxMmI4OGRmMGIxYWI2NjhlZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiODczOTlhMmJjMTJhODc2YjE2ODUxM2JjYTg3YjQ1NWViZGY3MjMzZTU4MTk2OTg1Mjg1ZjdiYmY4YjFhMGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5830f30c712a48f2ae1e6041b871f5e2",
+      "statement": "A persisted Claim with any unresolved resource emits an 'unresolved' GroundingIssue while a Claim with only changed resources emits a 'stale' issue, and preflight sorts its issues deterministically by page, kind, and claim id.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/preflight.ts#L55-L96",
+          "version": "repo-lines-v1:sha256:390f231c293586b6a812a21c4ab57f18fd8e676653df5f079054abfb0e9b3ef8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMmI5ZDdhYzQxYWI3NzM3MjFkYzI1M2Y4ODEyZTJkZDdkYjc3ZmIzMDViYjViNGFhMmJjMTIxMmEwMThmMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiODczOTlhMmJjMTJhODc2YjE2ODUxM2JjYTg3YjQ1NWViZGY3MjMzZTU4MTk2OTg1Mjg1ZjdiYmY4YjFhMGQifQ"
+        },
+        {
+          "resource": "repo://src/claims/brains/code/preflight.ts#L98-L114",
+          "version": "repo-lines-v1:sha256:8eef8ba4f0ea6f163c66966a022a6de085ec555a4ed8aa8105034a5aaf876224:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c70ade2984d43cd93c418521092512f",
+      "statement": "Preflight lets evidence resolution errors propagate rather than swallowing them so a transient failure is never mistaken for deleted evidence, and it inventories orphan sidecars whose generated pages no longer exist.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/preflight.ts#L26-L45",
+          "version": "repo-lines-v1:sha256:24e729fbc843665e706646023fcdedd53e58dcea9832028687d42a0de2e00dae:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNjVjNDkzNWViZDczYmY3NzM2OTM5ZjdkY2M5MzZhMDMzZTk1MWFlYzdjZDRkZmFjMGNiN2JhZTE2NDYyNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMzdiZTJkNTY5YjJhZjcxZDAwMWZlYWI0YTM5ZGM1MGM0MGU4OTdjZDdjMDZmMjU0ODBlYThkMGFhN2YyYmMifQ"
+        },
+        {
+          "resource": "repo://src/claims/brains/code/preflight.ts#L59-L69",
+          "version": "repo-lines-v1:sha256:816ce096bab78617e755ce40445a984a88a484d4063a5ad4486b389580ea043e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiZTE4OWM4YzI0NmY0NjI2MjNjOWU5Y2NjNzgxOGVhZWNlYTA4ZDFiNjJlNTNlYTliMjE2ODQ0OTA3NjY1MzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1ZmVlNjQyYmM1ZGQ1OGY2ZmNiN2JlNDc5OTA5OTQ1Mzg3OWQ2YzBjM2I4NmQyNWU3NjEzOWQzZjdkZjhkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4MzE5NjM5YzYzYWUwMGFiNTQ4YzI0Y2ZiYzNlNGIyNDUwZjY1NDE3NTI2NjI4OGQ1OTZlMGM4NzFjMzBhMWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b89298a1a144e9380d2fd9d5251b969",
+      "statement": "getUpdateNoopStatus refuses to skip an update when there is no previous update git head, when the previous run was interrupted, when the requested output language differs from the persisted wiki language, when the working tree has meaningful changes, or when committed changes since the last update touch source outside openwiki/ and outside the openWikiIgnore boundary.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/utils.ts#L121-L190",
+          "version": "repo-lines-v1:sha256:040505be27a5d479b923909f3c2a6ee61f7f5d397e51cd93fdb47ad5f0672af5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNmZlZjQwNjBkNTVjMDI4YWY0ODk1MTU1MmZhNDAwZjYwYWQyMDA5ODBkNjhjYTIxNzliYjBkZmE5YmZmNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3OGNjYjA0ZjQwZjQ3NmUzMzRkOTk5NzIyMmY4NjI5NmMzMTJlMDAxZDY2YWZmOTcxOWQzNmVjYzkwZTM4NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMmY2ZGI0ZjIxNmFkMzFjMWYwYzI0ZWYwZWJmODU0MTY4NGY3ODY4ZTkwZjlmNzUxN2YyNjZjNzQ1NDI1ZDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_92bea1b295a449d897e50c42c698aee7",
+      "statement": "The repository run performs Claims validation before update no-op detection and skips a run only when getUpdateNoopStatus reports shouldSkip and the Claims runtime reports issueCount === 0, so stale or unresolved Claims force an update to proceed even on an otherwise clean tree.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/runtime.ts#L118-L122",
+          "version": "repo-lines-v1:sha256:9373390007e6ea7bdb4e25584f67c0a9b134d6cb2338231493a5d287c834609d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTZjMDBlM2VmMjM4N2JjNmYzMWJkMDQ3NjA1ZTg4YWQ2NjhjMTk5MGM5MWE2YzQ1OTYxOWZjOTkyODRiZWQ2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBmYjg3ZTBmYTJkNzlmZDVmNjRiOTYxNTY3ZDgzODQ5YjVkOGVjMWQ3MTBlMmUyNzYxNzFlMjRkNDllOTZjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTIxYzFjZTY3MTFhMDU4ODA4YjdhMzJkODc3ZmIzMDExZTFhYTE1YTM1YzNhN2Q4Y2E4YzAwNzEwZDhhOWJlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTE4ODE4MTk5NWM0ODY0NjJjZTNlZjA2MTVmNDY0OTQ0Y2NkNGExYjk4YTE5YTNjNzY1N2JjM2ZkZGI5ZDVkNSJ9"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L299-L327",
+          "version": "repo-lines-v1:sha256:48ad95bfabc36b447467bafd4dc26236ffecce5b3587e9d935bc279f1469f0bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkOTkzYzcwNzZjNTVkMjhmOTQxZjZlYTI2ODk3NzM4MjdlY2JhODc3OTY5NGEzMzI5NGI5NzU0ZDhmMzA0YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkYjFlYTk2NjIzY2E3ZWJmZDk3M2FhODFhNjIwYjRlMmJiMmU3NzM1MjRjM2I5ODBiMDEwZGQwNTkyNTNiZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4MGQwYTQ2OGNiMjYwYTcyODU4ZDA1OThkYTFjNzJjNDQyOTlmMWE3NWZmYjRkM2M0MDlkZWRkN2Q0YmI1MjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f3c72f04e35c464dadfa68cd0535585c",
+      "statement": "When both the Git preflight and a zero issue count allow a skip, the run finalizes Claims to refresh sidecars and rewrites last-update metadata before returning a noop result.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/repository-run.ts#L307-L326",
+          "version": "repo-lines-v1:sha256:b00888f45b6ecd20fa00c42cf41ead22d571853be72011783d5da9ab49524a21:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2YTk4MzJkYWFhY2Y2ODg3YTkxMTcxMGQwMTUxYTM1YTU1YzkwZTU3NWRiMjE0NWMwODQ5NzU3YWEwODE5NmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4ZmFmNDUwNDE4ZDY5YmFjNTQyNTVhZjQ3NjllMGU2NDFkMDRjYWEwNjBkMjJkZTQxNjMxMjk2NTUyN2ZkMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMWEyMDdkNDcyNGFmM2UwMGMwZGJiN2RlNzVhZmIxZmNlYjU5Zjc2ZDI0YTU0NjAyNzlmZmI0MzVjNGI4ZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9f1c81bfd9c943bcb009021b16a58126",
+      "statement": "During plan normalization addRequiredClaimIssueJobs groups outstanding grounding issues by page and inserts a pending page job for any affected page not already planned or deleted, deriving that job's seed paths from the issue resources by stripping the repo:// scheme and #Lx-Ly line fragment.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L238-L272",
+          "version": "repo-lines-v1:sha256:8e56116f78f76d9409033de3d470a42a58010fcd6479773677d0f91caec9c657:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZDM1OGY3YWQxOTNjNDdjY2VkZDhmMDNmZWEwNGQwZDNhMjEzZTVlNzM4ZTUwZTVlOTdkM2VhZDUyYTQ3OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZDk3ZTQxY2FhN2I1ZGY1OWRmMGMzNTIyODhhNjQ1MjZkYzI2NDU5MTRjZjY1MGNlM2Y5MGYyNmZmMjQ2YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmYTFiZmZlNzI4YTNhOTZiM2FkOGRlMThlNDMyOTQxZTk1ODFmMDNmNTMyZjM0NWI3MmZmZDIxYzdmMTM2OTAifQ"
+        },
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L324-L333",
+          "version": "repo-lines-v1:sha256:06022db6975a80ffa98cfacbecadbb47975c9720c63d28165882a6f769fb411a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyOWQyMzhiNjg1YzVlZWU3NjhhN2ZiZDA2NmI0ZmQxNTE3YTA4MTdlN2RmMzZjYmZlZWZlNmM5NTBjNDg0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5NzFhNjc4ZDNlZWJiOTMxOTQ5NmM1MzAyOWM2MGI0YTgyZmVhZDBkM2ZhYTc2OTQ3YzBlOWM2OGI4MWExNGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b144c8584e7d466fabb111656b391c6d",
+      "statement": "The required-page job inserted for stale or unresolved Claims instructs the worker to reconcile those Claims and update the page from current repository evidence while preserving unaffected accurate content, so a staleness marker triggers a source recheck rather than an automatic retraction.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L252-L269",
+          "version": "repo-lines-v1:sha256:0f8884c174264a494e754a898e071f9da4ab43228d428919f839598b09c20787:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNzZiNWRkZDAzNDZmOWRiMzdiNDA4NTJkZDY3MGJiMGY4MTViOGRlYzU4NTBiZmQzZTU5OWNhYWE5MzhhMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNDM1YmRkYjExMGYxMDc5ZmM4NGQ1NThkOWVmY2Q3Njc0MTZlYzMyOGUzODZlYTgwNzAyODg2M2YwMGU3NzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNjYxYjgzZTVkZGJmYTAzM2E3YTQ1MzE1MDBjOGJmNzAzZTFmMjRiNzg0YTdjZWU2YTc2N2E0NDgwOWVmNzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_53bb4c5b6ec741e990f19c0b6110e08d",
+      "statement": "When a page worker submits its finished page, the repository run validates front matter and then calls replacePageClaims with the worker's complete intended Claim set for that page.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L382-L386",
+          "version": "repo-lines-v1:sha256:a9b8ccdb43341f1b24d710249e7a864854ce347b26840b50cf177a6fd14aedc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDM3ZDc1MmM4NjBiN2VjZGY1ZGY2ZGM2NTliYTZiYmExMmU1MDU0OTY3MWEwMTlhYTNjY2MzYjdmNWVhMjNhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTY5NDFlNDY3M2VlMzNmYmVlNTE4YmJhMDljY2ExM2JmNjVjMGRjMmZjMTJkMmM5ODY3NmI2YzYyZDRjMGM5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTE2M2E1ZGE3YjYzNzU3ZDk2NmFlNjYzYTkwYzdiZWQ2ZDYzM2UyODk5ODk3MjljMWQ5YzU0ODVhY2FmYjUwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjVmZDVjMTBkNGQzMDA0MWJlMDgzOWY2YjFlZmUxYWNhNDM0N2U2NzUxZjIyOTAyMzBkOTUwMjE4NGZhYTkxMSJ9"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L764-L795",
+          "version": "repo-lines-v1:sha256:aa0d467486bf764ee486250add16b80cf6fd930db7111511a752d66e7e8d8484:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NzA4NjQ2OGZjMzc2Mjk3NGI4MDg1MzM2ZjQwZmNlYTZiOTJmMGZhOTE2ODBlODgyNzRlYTc3NDI1ODBkOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmNTA1ZTljYWEwYTM0MTc5NDUzNmVlNWQyOGYxZTc5N2FlMmE1MjRmZWE3MjBmNmFjNzgzZjdjZjdjZjUzYjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5de6b6dcbb32489288c1cf2bed25634a",
+      "statement": "replacePageClaims normalizes each proposed Claim by trimming its statement and trimming, deduplicating, and sorting its evidence resources so evidence is compared as an order-independent set, and it rejects a page whose proposals contain two identical statement-plus-evidence fingerprints.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L394-L403",
+          "version": "repo-lines-v1:sha256:8bb84a7180fb14640b3a90c196d88a238f87a01474dbfd790a69cf18e871fdda:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzN2U3NDdjMzg1OGFhOWIwNmM3YmVlMzY5NTFlYWY1MzFhMmFkMWM5M2EzMDI2MWViZTViNmUzNDc2Y2FhNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1Y2VjN2JlODQxMDdhOWNlMmQwYWE3MGU1MjM0MGJmNGZkNjA3YjY4OTQ1OTgyMjE0ODFkNjViNjMwZmUyNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3OTMxNWRjODE4YmIwZTlkYWJkYjIzYTEzODMwNjdiZTI2OWM5NjYzZjQzODM4OTY0NTg2ZDVmY2Q3Yzg3NDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2NzFjZTVkMDk5NDA1YjZlYTVkOTAxY2Y4ZGRhMWY4ZDMzOTlmNmNkYjNkM2E1ZDgwZDU5ZGJmNWE3OTg4NjAifQ"
+        },
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L472-L497",
+          "version": "repo-lines-v1:sha256:d133c3f92eb142d6aca880268a05ae74e04c5161a325d44daebfda07f2116b68:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzMzNiZDk2ZjVhOWI1NWNkMDI2YmFiYjcwNTg0OGE2OTFjNjljZTE4YWI5YWFlYWNmYmI3MjhiNGZlOTAwYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhMTFmMGU2ZmVlZDU3MzkwZjJiN2E3MTk4Mzk5MDNkYTg5N2FkMjYwZjliMjI1MmQyNzVkYzM3MmUwYTQ3NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4ZTM4Yzc0ZTI5OTJiZjY4ZDBhMGYxZDZlNjNhNTExOTY3YzhhNTQ1MTU5YWViY2Q4OGE1ZDk5YWY2MzRlNTEifQ"
+        },
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L523-L549",
+          "version": "repo-lines-v1:sha256:1c2df620f5bc3b9d854835d53c62c159bd83378b6fad819fd4e27ff63841e670:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhOWU5ZWFhZTJiYzQ0NWNlNjdlZTUxOGI2ZjYwNDJkNjFkZWJjZDRkMDU2NjhlZDZkZWQ4YmY0OWVmOWNkNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4ZDQ1YzM5NTdiYTRhMTU2NWYyNmQxNzk0ZGE1N2ExMTQ4NTBiNzM2YjFjYTQ0NDJiMDVlYjY4ZWQwMGNhYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b16020c6c4b4803a3aad26cd64bb3cc",
+      "statement": "A proposal that reuses an existing Claim id with unchanged statement and evidence, or an id-less proposal whose content exactly matches an unused existing Claim, is reconciled to a confirm operation that preserves the stable id.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L405-L453",
+          "version": "repo-lines-v1:sha256:838124096360abcccc64d75fcd78589f38cfd692def1da1f16fd5f4f1d734855:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNmQ4NDMwOWQ0ODNlNjgzNzQ3ZjJhOTJkOWFmOWIwZjEzZGRhNWFmYWE3NGE1NTI0ZmFlODQwYWQyOTAwYWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmYTNjYTdlYjNkYmE4ODAyMzIxMGE5MTcwODA0OTE2Y2U1Zjk0MzMxZDA5NmZlZDM4ZTM4M2EwYzQ2ZjgyZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2MGY1NDRjMThmNWM2OTJmOTg4N2U2NjE4YTkxYmJhOGViNzMxYTUwZTQzNjBhYzMwNzE5YjY4ZDYwZjFmOGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1f84356a0c604769965ffbd57f54be61",
+      "statement": "A confirm or an update that retains evidence re-resolves the Claim's current evidence resources, which refreshes the persisted version tokens to current source.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/core/mutations.ts#L86-L97",
+          "version": "repo-lines-v1:sha256:937255e96e49648489ee1c99a6662a081be59185f42abe87ece09bb4b084e2c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwM2FiOTYyY2MxYjgxNjJiZGE1ZGI0ZWI3NzM0YmI5NjQ4NmZjYWVkMzEwNjFiMjkxMWE1NGM3NmRiYzNlMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyOWQ2MTk2NmZkMjI3MzZiNDNkYThhMWZmYmU3YzUyMTgwMjFhOGNmZGZjZDY1NWUzMTNjNTNlNThlMWYxMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzOTg4MmEzMjJhMmQwYjE3YWU4OTMwZGY1ZWIyNWY0YmYxNGM4MDBmMDJlNWMyODBiYjIxZmVhMDI0OWYyZmYifQ"
+        },
+        {
+          "resource": "repo://src/claims/core/types.ts#L102-L108",
+          "version": "repo-lines-v1:sha256:b6fffed8d0c670f8b82d53b9310909009e6a41b5911bf00f162ee643f8207945:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYyYTJmOTk2ZjA4ZTY4MGJkMjkyMTM1YTZmYTQ5NzhiZGEyNmU2MDJkODRmMzNjYjFkNTk0Nzc1ZDQzMDRiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWJmMTAzNGQ1MDZlYjEzM2YxNDY0YWZkMzczYmIwMDI3ZDE3MDM0MWM5ZDlkNDc4YjBlYzU4MDM2MGVmYmQ0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRlNmI1MjdkMzg3NzY5YzI5NzM5ZTQ0ZDAwYWZiYmNjMzQ5ZWUyYmE0ZDc0OWNlMmYxNGY4NzU0NDUxOTQ2ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_610d0a37b03b40c7b502d75f0a59e532",
+      "statement": "A proposal that reuses an existing id but changed its statement, evidence, or both is reconciled to an update carrying only the changed fields, preserving the Claim id.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L421-L436",
+          "version": "repo-lines-v1:sha256:aebd2d1afb964124fbc61506c52809c20b10c9822136480adf036453af149d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczMjY3Njg3NzRlYjZiYTRkNTVhNDY2ODljOTk5ZTIyNGU2Y2VkMmI5MThlYWVlNTkwZjgwZWQ3ZGZhYjAwNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzYjU0YTRlYmMzMDRhNTM2ZTM5MGZlNDFkMWMxYTliODk5ODVmNzg3YzFhYjI3YTZkOTliMWRlMDQ4OTZlMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiY2UxNGQ1ODdlM2FhZjY4ZGY4NDc3ZjFiNjM1MGU2NWQzYTZiYzcxMjM5MjRlMjc4YzIxYWEzODM5ZDBmOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2OWRiNWUxMTJkNjUyNDlkMzdiYjE5MmY0ZTBmMGNiNzI4ODk2MzZmODA0Y2QxMTEwYzY0NDE4NTMwMmQ3ZWMifQ"
+        },
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L423-L435",
+          "version": "repo-lines-v1:sha256:eaf698eb7d7a6dc58fa904ee5bae90acdf3f736d6c58bfa204c1912e83b408fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMDliMjYxNDlhNzI0Y2E5ZGQ0ODJkOGZhMTc4YThiOGZhMDA0NzAzMjBhOGVlY2Y0YzRlZDU4Njk5ZTExNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4MzRlYzM5NTMwNjEzNWZkOTVjMjg1NThhNDU5ODAwNDU5OTI1N2NiZTc5M2MzYjJlYzFjNzliYjQ4NjhiMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d166d5feff3458c86a8c1a35e1d5b2a",
+      "statement": "A proposal with no id and no exact match to an existing Claim is reconciled to an add operation for which OpenWiki allocates a fresh globally unique identifier.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/session.ts#L502-L521",
+          "version": "repo-lines-v1:sha256:6418372a7b4771f7297b84ff0148169943122c55f76f99450e53f9161a3adced:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlYzI1MjIyN2NkZmYzYzAwMjVhMjlhNWFlZWVmMzQ0MGMyZmIxYmFjM2Y0MTVmNjRmMjk5YTQ4MjFmYmZiOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5OWU5OGI2Zjc0NmM4ODBjMDZhMmE5NjBlZDIyOTYxYzNkMDkxMDgxZTZlZjRhY2FkYzMwMjBiZjVlYjBjMWYifQ"
+        },
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L439-L453",
+          "version": "repo-lines-v1:sha256:2312059cc8f7e648448c275526b312c359e9eeecbcb9fdec810c042f9a27a1f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjNjdkMmZhZDYzYzk3OTAxM2E4NWUwOTA0NGRiNzgyM2VkNGQ3YTZmN2UzN2VjOWI4MjExYzM3NDZhNWZjMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2MGY1NDRjMThmNWM2OTJmOTg4N2U2NjE4YTkxYmJhOGViNzMxYTUwZTQzNjBhYzMwNzE5YjY4ZDYwZjFmOGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c05302aa12b40e2a195056ba06308c5",
+      "statement": "Every existing page Claim not matched by any proposal in the intended set is reconciled to a retract operation, so omitting a Claim from the complete intended set removes it.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L455-L459",
+          "version": "repo-lines-v1:sha256:1b742dd59e6c27278756a7b64f84bbc8bbcfc892d4d86dd7a3598cd8cedcb312:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcxNTBkM2Y2YWJmODU5M2EyN2I1ZTFiMjZmNjkzNWNmZjI0ZmI2NDY0ZjlhNjRlOTk1NzQxYzc4NGEwYWRiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQwMjI5MDg3MDhhOGVhYjFhMjRlYTRmY2Q4ZTg4YTcxMjA3MjViM2I0NmVkMTVhNDNjOWFhODAyMWM0NTAwNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f74b54ccc3bb4d739273544580042c47",
+      "statement": "replacePageClaims rejects a proposal that names a Claim id not owned by the page or that reuses the same existing id twice, and it performs no session mutation when no operations result.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L405-L419",
+          "version": "repo-lines-v1:sha256:ab483d0b914201d846ed9a91c9e72dc23cfb3a0da9bc1088dc5e4802bc517d18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNmQ4NDMwOWQ0ODNlNjgzNzQ3ZjJhOTJkOWFmOWIwZjEzZGRhNWFmYWE3NGE1NTI0ZmFlODQwYWQyOTAwYWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkOGQ4ZWQ2NWJjNDJiNDM3YmIzM2QyMzFlYWVmNjgxZjNiN2FhYTE0YTI1MTZlOTI5ZGFhZDM0M2M2OGQ2N2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmYTNjYTdlYjNkYmE4ODAyMzIxMGE5MTcwODA0OTE2Y2U1Zjk0MzMxZDA5NmZlZDM4ZTM4M2EwYzQ2ZjgyZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4MzRlYzM5NTMwNjEzNWZkOTVjMjg1NThhNDU5ODAwNDU5OTI1N2NiZTc5M2MzYjJlYzFjNzliYjQ4NjhiMDQifQ"
+        },
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L461-L463",
+          "version": "repo-lines-v1:sha256:651518ee9db799a6727e9b37d3cc5d62fba5c883ff1123ca29cb9aed6c078336:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmQxZTQxMTYxNjM5MWVmZThjN2ExOGEwMWRhYWY3YmRlZTMxOGNkNzhjY2ZjOTdlNTE5ZmVlOTQ0MTY1OWU1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fad65d8c730249db9097fc8bd6c94dd9",
+      "statement": "applyClaimOperations is an all-or-nothing mutation boundary that validates operations first, rejects unknown ids and any id targeted more than once per batch, pre-resolves all evidence before touching a cloned working set, and returns updated claims only on success so a mid-batch resolution failure leaves session state unchanged.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/core/mutations.ts#L45-L129",
+          "version": "repo-lines-v1:sha256:d9ea4b3377240f2ac4dd3a1fcff0cb7baf466d4ffb1e345b5a7e75d1f6eacac2:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViMmYwNGI5MzQ1ZjQzZTM5YTVkZjlkMDJiY2M5MjY4YTQ3YzEzNDA3NWM3ODlmMzExZDExMTZhMzVjNDUwMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhZjc4OGZkYmQyNDFhNjRiNGNkOTI4OWQ1NDdjOGJjMWQ3OTg0YjJjZTI1NWYzOWMwNGQ4NjVjNjk0NjNhYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxNjhkOGFmMTdhMTQ4ZWY1OGY3ZmY1MjNjMzhhYzI2Yzc2OTczZjA1MjUxODc5MzcyMjAxMDUzYzhjOGQ1NjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56331954fcf04f4caf4494e64e1c155e",
+      "statement": "Focused tests pin the reconciliation contract: one call keeps, revises, adds, and retracts Claims with stable ids preserved; a whitespace-trimmed and deduplicated id-less proposal is preserved rather than duplicated; duplicate complete proposals are rejected; and a proposal naming another page's id is rejected.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/page-jobs.test.ts#L260-L336",
+          "version": "repo-lines-v1:sha256:f37ec003c518648ce2eb0c1fd1cc2c9fcddf8c52c4003f28d434204ef8296a6f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1OWEwOGYyMzhhYmQ2OGY1ZDcwODY4MGI2YmMxOWJmMDMyMjk0YTgxM2ZlMDFkYWE3YWEyYmJkYjM4M2E0MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MTkwMjhkOWExMjA4NTYwMzNmMmE1NTA3MDhhYzhmYTUwYjNjZTgxYjc5MzkyNTU3MjRiZGMyYThhYzgyMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4ZTFjZjQwZGIwNmZkMjUxMjg0Mjk5YmVkM2I0N2YyNjNhYzhjMTk3OTZhYzQ2NDMyNWVmYjM0YWZiNjg2YmMifQ"
+        },
+        {
+          "resource": "repo://test/generation/page-jobs.test.ts#L357-L382",
+          "version": "repo-lines-v1:sha256:3e86621647c7b7592e39762bf8487d346210a2defbe9b143c10899b847e1afb7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZDM1MDE1YmMwNGJjMmY4MGRmOWE5MzEyYjY0ZGI2NTc3MGJkN2Q4Y2QyYjE5MDc1YjAxMmZkOTI1MmZmZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3MjdkNWJlNTFlMzQyNzg4ZWE3NjhiMGQwMzkyZmQxYzIzYWE2M2M5NTU0MWIxYjU3ODdkOTAzYzM2YWE1Y2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyOTQ3MjFkNWNlODE5MjA1ODliMjkxNWQxYzVhNDQ3ZGY0OGYwMjIzODIxYjM1NTlmNDI5YTU3MzZkMTA5MDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_99182d8df9fb4ae2970cec5181e54c3c",
+      "statement": "After reconciliation the run finalizes Claims for the page and asserts durability before advancing the queue, and finalize persists only dirty pages, refuses to persist a page carrying unresolved evidence debt, and rechecks each dirty page's evidence against current source and re-hashes its Markdown before writing the sidecar.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/session.ts#L288-L401",
+          "version": "repo-lines-v1:sha256:a2ad8608424dae76123a7b53176546d68f0684af22f7fbc4bd23bac250307fd0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YjcyZjVlYzE5ZjI1Y2ViODQzMmE0Yjc5YzJhYTQ2NTk3NjNlYzMzYzJlNDY2MWVhNTQzM2ExYmZjODE4NjUyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyN2U1Nzg4ZDVkOWQ3M2QyNGE4MWRiYzBhNWE3NGJmYTgyYzljM2IzYWY5OWU1MmFmNzk2ZTkwYjQ2OGE4YTNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzYThlNjYyZDljYjFmOWFkMTRmN2MwNTI2ZjM1ZjExNTY1YmU2MDAxMmEzODRlMDliZWIzNzFlZDhlNGY4MDFiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjYmJmNjUxYmNlZmFjYmU4YjljMDYwZTg2YTUzMjk1YmM1ZmQxN2IzMWJmYjM3MWQ4ZmVkMTBmYWMyNzRlNWJhIn0"
+        },
+        {
+          "resource": "repo://src/claims/brains/code/session.ts#L447-L477",
+          "version": "repo-lines-v1:sha256:1242aa9e4f9a39328ca371547e9f997a67517cbce8853ed64218562e849816f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlZDM5MjM1MTljMzRlNGJlNDczNzExMDUzZDA5NDM2YzJkYmE3N2RiMWRhMTU0ZDMzYmRmZDFkMGMwZDk3YTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMTA4ZDA3OWI4NTA4NWNiYzU0OWMyOTcxZGFkNTMwMTIxM2I5MjQ2NWY0ZjdmOTNhZDY5ZTNhZTdiYTcwOGUifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L784-L795",
+          "version": "repo-lines-v1:sha256:42ac360e9aeb121114f6f9fe93bd5bd2efe8f2e0d867231d846d1c06e0fb7d41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNmFkYjEyNDdmYjFhNTAyZDhhNjI3Y2M1NWQ2YzRmNzQ2NzlhY2NkMjE4NDE4OGZkNDM1ZWVmYWViNWQ5YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhZWYxZTU4Yzg0NGI2ZTI3NThmNGFhNTVkM2RiZTE2MmJlNzdjZDliZjFmZDA2NGU5N2QzYzUyZmExNTdmNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmNTA1ZTljYWEwYTM0MTc5NDUzNmVlNWQyOGYxZTc5N2FlMmE1MjRmZWE3MjBmNmFjNzgzZjdjZjdjZjUzYjEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-25T02:14:25.283Z"
+  }
+}

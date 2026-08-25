@@ -4,19 +4,13 @@ okf_version: "0.2"
 
 # Files
 
-- [OpenWiki Quickstart & Domain Map](quickstart.md) - Entry point for the OpenWiki repository wiki, covering what OpenWiki is, how a run works end to end, the subsystem map, and where to go for each engineering task.
+- [OpenWiki Quickstart](quickstart.md) - Entry-point orientation for a coding agent working on the OpenWiki CLI codebase, with a task-routing map into the architecture, workflow, concept, operations, integration, and testing pages.
 
 # Directories
 
-- [agent](agent/)
 - [architecture](architecture/)
-- [auth-and-onboarding](auth-and-onboarding/)
-- [claims](claims/)
-- [cli](cli/)
-- [connectors](connectors/)
-- [evals](evals/)
-- [ingestion](ingestion/)
+- [concepts](concepts/)
 - [integrations](integrations/)
-- [okf](okf/)
 - [operations](operations/)
-- [reference](reference/)
+- [testing](testing/)
+- [workflows](workflows/)

@@ -1,0 +1,7 @@
+# Files
+
+- [Claims Reconciliation on Update](claims-reconciliation.md) - How an OpenWiki update checks persisted evidence versions before deciding a no-op, and how the page worker turns a complete intended Claim set into confirm, update, add, and retract operations that keep stable identifiers and refresh code-owned evidence versions.
+- [Onboarding and Setup](onboarding.md) - How OpenWiki's first-run setup selects a provider and model, captures credentials, chooses a run mode, and bootstraps code-mode repositories, plus the layout and permissions of the ~/.openwiki state directory.
+- [Personal Mode Ingestion](personal-ingestion.md) - How personal-mode ingestion resolves an ingestion target to configured source instances, pulls connector data within a 24-hour window, and drives per-source agent update runs that synthesize the local personal wiki.
+- [Repository Generation Lifecycle](repository-generation.md) - How OpenWiki drives resumable repository wiki generation through the five durable operations begin, submit_plan, next_page, submit_page, and finish, backed by an ordered PageJob queue in openwiki/.run.json and source-fingerprint invalidation.
+- [Wiki Finalization and Link Integrity](wiki-finalization.md) - How OpenWiki deterministically finalizes a run — persisting Claims, projecting them into OKF sources, synchronizing indexes and generated provenance, validating internal wiki links, and re-proving the whole run before deleting .run.json.
