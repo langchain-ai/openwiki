@@ -1,5 +1,53 @@
 # openwiki
 
+## 0.4.0
+
+### Minor Changes
+
+- [#581](https://github.com/langchain-ai/openwiki/pull/581) [`fab0a3f`](https://github.com/langchain-ai/openwiki/commit/fab0a3f607a8e193f32672f9f837505c0fc7b6bc) Thanks [@JHSeo-git](https://github.com/JHSeo-git)! - feat: adopt okf v0.2 with code-owned generated provenance
+
+- [#638](https://github.com/langchain-ai/openwiki/pull/638) [`c1ca21b`](https://github.com/langchain-ai/openwiki/commit/c1ca21be797987ff0ce5c6164e34368d1892f839) Thanks [@colifran](https://github.com/colifran)! - feat: add grounded claims for self-correcting code wikis
+
+- [#713](https://github.com/langchain-ai/openwiki/pull/713) [`4882ba3`](https://github.com/langchain-ai/openwiki/commit/4882ba33d89b7fe7499a908606cc818c193adeec) Thanks [@colifran](https://github.com/colifran)! - feat: replace repository generation with a resumable page-job lifecycle
+
+### Patch Changes
+
+- [#685](https://github.com/langchain-ai/openwiki/pull/685) [`392de6f`](https://github.com/langchain-ai/openwiki/commit/392de6fab7ae9820cfdcda7f7e4e255bffe2039c) Thanks [@colifran](https://github.com/colifran)! - feat: add openwiki integrations for coding agents
+
+- [#711](https://github.com/langchain-ai/openwiki/pull/711) [`1c70d0f`](https://github.com/langchain-ai/openwiki/commit/1c70d0f2ba001422964e0397632ef610762472a0) Thanks [@kido5217](https://github.com/kido5217)! - feat: add opencode coding-agent integration target
+
+- [#675](https://github.com/langchain-ai/openwiki/pull/675) [`6ffa7b6`](https://github.com/langchain-ai/openwiki/commit/6ffa7b6debaed25422398c73ccc4d21ad1438795) Thanks [@green3sf](https://github.com/green3sf)! - fix: omit unsupported prompt cache retention from GPT-5.6 ChatGPT requests
+
+- [#674](https://github.com/langchain-ai/openwiki/pull/674) [`da87fa0`](https://github.com/langchain-ai/openwiki/commit/da87fa072ca9b6a1dc9a57f14d7a42afd7993327) Thanks [@BenjiKo14](https://github.com/BenjiKo14)! - feat: add a resizable, collapsible graph panel to the visualizer
+
+- [#682](https://github.com/langchain-ai/openwiki/pull/682) [`04511de`](https://github.com/langchain-ai/openwiki/commit/04511defa728f37cfae81abbdbddbbe3ca632f72) Thanks [@colifran](https://github.com/colifran)! - chore: improve init and update terminal ux
+
+- [#459](https://github.com/langchain-ai/openwiki/pull/459) [`21746ce`](https://github.com/langchain-ai/openwiki/commit/21746ce996f3a69898883da58b122770f7dbd668) Thanks [@geonwoo-jeong](https://github.com/geonwoo-jeong)! - feat: configure model output and bedrock stream limits
+
+- [#548](https://github.com/langchain-ai/openwiki/pull/548) [`31dddea`](https://github.com/langchain-ai/openwiki/commit/31dddea4b6d5f3ebdec639d21ca48bcd2a1744e3) Thanks [@GautamSharma99](https://github.com/GautamSharma99)! - fix: run clean updates when the requested output language changes
+
+- [#274](https://github.com/langchain-ai/openwiki/pull/274) [`98ccf03`](https://github.com/langchain-ai/openwiki/commit/98ccf03eba2a0d8eef93a4a2e2b4e00cbf57a5db) Thanks [@akyourowngames](https://github.com/akyourowngames)! - feat: support OPENWIKI_CONFIG_DIR env var and display configurable paths
+
+- [#634](https://github.com/langchain-ai/openwiki/pull/634) [`a943efb`](https://github.com/langchain-ai/openwiki/commit/a943efba15ab81d92ce532cd1228e37ff7b66a75) Thanks [@jyje](https://github.com/jyje)! - feat: add configurable reasoning effort via OPENWIKI_REASONING_EFFORT for supported OpenAI GPT-5.6 and NVIDIA NIM models
+
+- [#692](https://github.com/langchain-ai/openwiki/pull/692) [`ecec08c`](https://github.com/langchain-ai/openwiki/commit/ecec08c35c3673d55dfb638437f569ca3e1e2fb1) Thanks [@colifran](https://github.com/colifran)! - feat: project claims evidence into okf v0.2 sources front matter and stamp durable machine verification after complete claims reconciliation
+
+- [#715](https://github.com/langchain-ai/openwiki/pull/715) [`dee5272`](https://github.com/langchain-ai/openwiki/commit/dee527240630b980efb8bfae68e04e7508595ea5) Thanks [@colifran](https://github.com/colifran)! - chore: implement better claims reconciliation guidance
+
+- [#660](https://github.com/langchain-ai/openwiki/pull/660) [`bbae2dd`](https://github.com/langchain-ai/openwiki/commit/bbae2dda52de60b23339d3234ee9f8ae57b71c61) Thanks [@JayDataEngineer](https://github.com/JayDataEngineer)! - fix: stream updates instead of messages for openai-compatible providers
+
+- [#656](https://github.com/langchain-ai/openwiki/pull/656) [`f37c70d`](https://github.com/langchain-ai/openwiki/commit/f37c70dbd1949a1b42e06f4218396d373d10baf1) Thanks [@Amzp](https://github.com/Amzp)! - feat: add OPENWIKI_OPENAI_COMPATIBLE_STREAMING=true to force the streaming transport for openai-compatible gateways that return empty content for non-streaming requests
+
+- [#678](https://github.com/langchain-ai/openwiki/pull/678) [`ea80ddc`](https://github.com/langchain-ai/openwiki/commit/ea80ddc3e010ed66202bab159fc95ebb7cb6daee) Thanks [@timaxorum](https://github.com/timaxorum)! - chore: serve the visualizer styles as a standalone stylesheet
+
+- [#657](https://github.com/langchain-ai/openwiki/pull/657) [`e155526`](https://github.com/langchain-ai/openwiki/commit/e15552657e1ce043f8340d89176a2dc4241c1d6b) Thanks [@Aveek-Saha](https://github.com/Aveek-Saha)! - feat: add static export to openwiki visualizer
+
+- [#647](https://github.com/langchain-ai/openwiki/pull/647) [`46d437a`](https://github.com/langchain-ai/openwiki/commit/46d437a4a2a0ad1d212698a75ec1ddd163c9218f) Thanks [@IstPlayer](https://github.com/IstPlayer)! - fix: refresh .last-update.json timestamp on no-op updates so freshness checks reflect the actual last run, preserving the wiki's persisted language across the refresh
+
+- [#699](https://github.com/langchain-ai/openwiki/pull/699) [`337f890`](https://github.com/langchain-ai/openwiki/commit/337f890cf5004f45742e9f41028ef51d84a1d013) Thanks [@colifran](https://github.com/colifran)! - feat: regenerate repository wikis from scratch on init
+
+- [#684](https://github.com/langchain-ai/openwiki/pull/684) [`46c0a3d`](https://github.com/langchain-ai/openwiki/commit/46c0a3d53011a1f4916052187288dc5b4651c292) Thanks [@colifran](https://github.com/colifran)! - fix: finalize OKF generated provenance after wiki post-processing so every body change, including whitespace, receives an accurate stamp while front-matter-only changes preserve the prior stamp
+
 ## 0.3.3
 
 ### Patch Changes
