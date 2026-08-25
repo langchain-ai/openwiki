@@ -1,0 +1,32 @@
+.github/workflows/openwiki-update.yml
+  s_e50f401e02400a::t_8ab00049864a24 50-51,75,78-81,83,97-105
+examples/openwiki-update.yml
+  s_e50f401e02400a::t_8ab00049864a24 36-37,52-55,57,71-79
+src/ingestion/code-mode.ts
+  s_e50f401e02400a::t_8ab00049864a24 360-361,374-377,379,393-401
+test/ingestion/code-mode.test.ts
+  s_e50f401e02400a::t_663e3e9ff3bf01 5,17-26,41-84,86-98,100-112,289-328
+  s_e50f401e02400a::t_9f0e79fb95f156 85,99
+  s_e50f401e02400a::t_c06fe2beaee1c3 329-330
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "8e60470b05752956b0b44b0dac62589cff90a029",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_e50f401e02400a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03aec-8e8b-7ba0-98d8-1458ff7d5408",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
