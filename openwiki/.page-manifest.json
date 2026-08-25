@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "pages": {
+    "/openwiki/architecture/agent-runtime.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:f011b2af1b9532912f76d60e38c1edc00eda267c9199848a374b74717310a9fe"
+    },
+    "/openwiki/architecture/overview.md": {
+      "pageVersion": "sha256:e15ee65c4b5b7b4efa62f938f8d3876ff0e2c9652e22c0efaabffbe610fc85a4",
+      "gitHead": "59ba96c61937b401cc034cbb9ffa81e0790157e2",
+      "sourceFingerprint": "sha256:585840c0fb1e4d915c678179efa2f184fafca453cc80dc631a58d49271573aaf"
+    },
+    "/openwiki/architecture/source-map.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:571237c43d798b68bf1926373f64b1e4180e746f4882109c9d7f4b99158eec76"
+    },
+    "/openwiki/concepts/grounded-claims.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:8de5906e1478cb23189172284e1fa1cbc9d3da8088a6b7f7ba5ab4dc65e1e43b"
+    },
+    "/openwiki/concepts/model-providers.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:7184f4f9896e5ddd001bafc00558e5bfac684857918eadf98910366e7dad98cb"
+    },
+    "/openwiki/concepts/okf-output.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:0d42eec7f061dbc74392bd9cf2b0cf5af3f05f3ad71d508ba0ce670aa4f3702f"
+    },
+    "/openwiki/concepts/two-modes.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:1f20b2d0755187863b358f1e9e0b404e29376f56fbad9876d9d66024546b7b61"
+    },
+    "/openwiki/integrations/coding-agents.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:78c632e9d37c4f456dae10fdf49844f3bae0d51d22ed1a33144b35af00a2033f"
+    },
+    "/openwiki/integrations/connectors.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:7ae63c5949a7a323e6f5cc77f9f4c0c8a8a312da456532695d1d714e327e0c41"
+    },
+    "/openwiki/integrations/visualizer.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:4cbc7bb5b32b063cd028349cf6fb4a2756ff1f522043a1268fe35004ce806b9f"
+    },
+    "/openwiki/operations/ci-scheduling.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:38f046ab807a29746f784f2fbeb25ad70fa8a25d0055eddfb578759271004f95"
+    },
+    "/openwiki/operations/cli-reference.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:9d35ba815d632b4513bbe3eb03baf420d8d147c9930bdec90a72f41f78404512"
+    },
+    "/openwiki/operations/configuration.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:be8435e051eb6053eb241c190be58890f208fbcebb0c437faee0828f0e1465f4"
+    },
+    "/openwiki/operations/telemetry.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:d9fec99a602b674accda34271a6c6d39ab9e7d18dc07d95c343cb772f5216f3a"
+    },
+    "/openwiki/quickstart.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:8389b89d6a8a4793d825b89ac7a92d3aebab1796d240737b42ca87825f6bd091"
+    },
+    "/openwiki/testing/overview.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:fee9fc49517815bbe71687ae39517991067939308add35caf75d3ad2d795ae99"
+    },
+    "/openwiki/workflows/claims-reconciliation.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:fcffaa6e47393d75c04b33dc65310f23a228c7e0184118aef3a8bb384f9e03f0"
+    },
+    "/openwiki/workflows/onboarding.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:3769548dc7a8f126e79237db19d4a17a52691067607e82276477a75fd0ae0020"
+    },
+    "/openwiki/workflows/personal-ingestion.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:bf8bf3823081b84a0e7366c6fe1b278f325279f39358d2e905ed063dbd31e858"
+    },
+    "/openwiki/workflows/repository-generation.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:165e7f2e00f43fbbc5a0c8f01c6f3547ea60b6b4d322b941b7788531a23f2577"
+    },
+    "/openwiki/workflows/wiki-finalization.md": {
+      "gitHead": "ca52dbc3c5cc1e14146059bdb9817bf76be15b85",
+      "pageVersion": "sha256:6e2371c68a70d3c057ae2ae770682069dc642fa9cb34901831781afe87290430"
+    }
+  }
+}

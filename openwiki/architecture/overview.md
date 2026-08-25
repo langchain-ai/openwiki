@@ -15,8 +15,8 @@ tags:
     visualizer,
   ]
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.0
+    at: 2026-08-25T23:48:53.097Z
 sources:
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
@@ -133,16 +133,23 @@ page-job runner. More detail lives in
 integrations use, but with OpenWiki's own model. It begins or resumes a run,
 runs a bounded planner when the run is in the planning phase, runs one fresh
 per-page worker for each pending page job, and finalizes. Each worker is a
-non-delegating DeepAgent: the planner gets read-only filesystem tools plus
-`submit_plan`; page workers additionally get `write_file`/`edit_file` plus
-`submit_page`, and the general-purpose `task` delegation tool is stripped so
-workers cannot spawn subagents.
+non-delegating DeepAgent: the planner gets read-only filesystem tools
+(`read_file`, `ls`, `glob`, `grep`) plus `submit_plan`; page workers
+additionally get `write_file`/`edit_file` plus `submit_page`. DeepAgents 1.12
+injects a general-purpose `task` tool even when `subagents` is empty, so the
+runner applies a `NO_DELEGATION_MIDDLEWARE` that filters `task` out of the
+model-facing tool list on every model call, after all tool-contributing
+middleware has run. Workers therefore cannot spawn subagents.
 
 The lifecycle is resumable and self-correcting. If finalization detects that
 repository source drifted underneath the plan, the run replans and repeats.
 Correctable submission rejections are returned to the worker as error-status
-tool messages so it can fix and resubmit rather than aborting the run. The
-end-to-end flow is documented in
+tool messages so it can fix and resubmit rather than aborting the run. A
+temporary CI smoke gate, `SMOKE_FAIL_AFTER_COMPLETED_PAGES` (read from
+`OPENWIKI_SMOKE_FAIL_AFTER_COMPLETED_PAGES`, default `0`/disabled), can inject
+a deliberate failure once a configured number of pages have completed; it is
+intended to be removed before any production merge. The end-to-end flow is
+documented in
 [Repository generation workflow](../workflows/repository-generation.md).
 
 ## Host-driven (coding-agent) generation

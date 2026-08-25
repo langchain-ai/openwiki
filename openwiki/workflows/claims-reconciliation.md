@@ -13,9 +13,6 @@ tags:
     provenance,
     repository,
   ]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-69abc6f0f641147820a274bc
     resource: repo://src/agent/utils.ts
