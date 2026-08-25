@@ -1,0 +1,48 @@
+test/agent/repository-runner.test.ts
+  s_e50f401e02400a::t_a330a2086e0df8 311-317
+src/agent/repository-prompts.ts
+  s_e50f401e02400a::t_41ec68fc536b1a 6-9,25-36,203-225
+  s_e50f401e02400a::t_f6e13550621a8e 226
+test/generation/repository-run.test.ts
+  s_e50f401e02400a::t_f44d43f4061651 599
+  s_e50f401e02400a::t_f114c32636fc1c 14,40-49,291,595-596,622-644,737-738,1324-1345
+  s_e50f401e02400a::t_4952788c9eb79d 709-712
+  s_e50f401e02400a::t_edfa2038980a8e 597-598,600-621
+  s_e50f401e02400a::t_8115c209426d07 1146-1148,1154-1194,1208-1209,1295-1301
+  s_e50f401e02400a::t_a5e076f9d416b1 1195-1207
+  s_e50f401e02400a::t_9e115bc36e652a 9,33-39,50,286,565-594,645-708,713-736,1291-1294,1302-1323,1346-1350
+  s_e50f401e02400a::t_ec66f24fba9220 1149-1153
+  s_e50f401e02400a::t_a330a2086e0df8 186-197
+  s_e50f401e02400a::t_17a86161ee1ff1 867,898-900
+test/agent/repository-prompts.test.ts
+  s_e50f401e02400a::t_a330a2086e0df8 29-36,93-95,106-121
+  s_e50f401e02400a::t_84b98ff929a0af 122-123
+src/generation/repository-run.ts
+  s_e50f401e02400a::t_9ca1dbb1570a7e 367-370,386
+  s_e50f401e02400a::t_41ec68fc536b1a 48,50,140-166,226-229,388,390,392,394-398,400,402,422,685-695,707-708,715-753,1230-1235
+  s_e50f401e02400a::t_fc83ccee229a21 371-372,383-385,387
+  s_e50f401e02400a::t_f44d43f4061651 373
+  s_e50f401e02400a::t_29b31feb93e81a 399,401,403-421,1236-1238
+  s_e50f401e02400a::t_315a9c8118256b 230
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "61968546aeb98985a359638a834e7b22bc01822e",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_e50f401e02400a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03aec-8e8b-7ba0-98d8-1458ff7d5408",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
