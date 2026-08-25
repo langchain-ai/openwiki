@@ -1,0 +1,39 @@
+test/integrations/mcp-server.test.ts
+  s_bf1aa6313615a4::t_0911d9e9c0a978 150-153
+src/integrations/mcp/server.ts
+  s_bf1aa6313615a4::t_0911d9e9c0a978 3,23
+test/agent/repository-prompts.test.ts
+  s_bf1aa6313615a4::t_0911d9e9c0a978 108-114
+src/claims/guidance.ts
+  s_bf1aa6313615a4::t_0911d9e9c0a978 14-28
+src/agent/repository-prompts.ts
+  s_bf1aa6313615a4::t_0911d9e9c0a978 2-5,146
+  s_bf1aa6313615a4::t_10c8687271ae9a 147
+src/integrations/core/session-manager.ts
+  s_bf1aa6313615a4::t_0911d9e9c0a978 240
+test/integrations/skill.test.ts
+  s_bf1aa6313615a4::t_0911d9e9c0a978 108-114
+integrations/openwiki/SKILL.md
+  s_bf1aa6313615a4::t_0911d9e9c0a978 114-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "71412f9be3e26d7f94fc5c2daa177bcc9091f96c",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_bf1aa6313615a4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03624-f87d-7683-8b54-753d2c231d92",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
