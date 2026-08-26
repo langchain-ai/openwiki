@@ -1,4 +1,6 @@
 import { describe, expect, test } from "vitest";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { PAGE, STATIC_PAGE } from "../../src/visualize/page.ts";
 
 /**
@@ -64,5 +66,53 @@ describe("visualizer PAGE", () => {
     const integrityCount = PAGE.split("integrity=").length - 1;
     expect(cdnScriptCount).toBe(PINNED_CDN_SCRIPTS.length);
     expect(integrityCount).toBe(PINNED_CDN_SCRIPTS.length);
+  });
+
+  // Regression: the hint + legend overlays used to be direct children of
+  // .main with `position: absolute`, which resolved against the viewport and
+  // let a many-type legend grow into a full-width bar covering the sidebar,
+  // the graph, and the reader (issue #670). They must live inside #graph so
+  // they are capped to the graph panel's own box.
+  test("hint and legend are anchored inside the graph panel, not .main", () => {
+    for (const doc of [PAGE, STATIC_PAGE]) {
+      const mainStart = doc.indexOf('<div class="main" id="main">');
+      const detailStart = doc.indexOf('<div class="detail" id="detail">');
+      const mainRegion = doc.slice(mainStart, detailStart);
+
+      // The graph panel hosts the overlay...
+      const graphStart = doc.indexOf('<div id="graph">');
+      const overlayStart = doc.indexOf(
+        '<div class="graph-overlay" id="graph-overlay">',
+      );
+      expect(graphStart).toBeGreaterThan(-1);
+      expect(overlayStart).toBeGreaterThan(graphStart);
+
+      // ...and neither element may appear in .main outside #graph.
+      expect(mainRegion).toContain('id="graph-overlay"');
+      expect(mainRegion).toContain('id="legend"');
+      expect(mainRegion).toContain('id="hint"');
+      expect(doc.indexOf('id="legend"')).toBeGreaterThan(overlayStart);
+      expect(doc.indexOf('id="hint"')).toBeGreaterThan(overlayStart);
+    }
+  });
+
+  test("the overlay stack is capped to the graph panel and scrolls", () => {
+    // The stylesheet must keep the overlay height-capped with a scrollable
+    // legend, otherwise a wiki with many page types regrows the overlapping
+    // bottom bar from issue #670.
+    const css = readFileSync(
+      path.join(import.meta.dirname, "../../src/visualize/styles.css"),
+      "utf8",
+    );
+    const overlayBlock = css.match(/\.graph-overlay\s*\{[^}]*\}/u);
+    expect(overlayBlock).toBeTruthy();
+    expect(overlayBlock![0]).toContain("position: absolute");
+    expect(overlayBlock![0]).toContain("max-height:");
+
+    const legendBlock = css.match(/\.legend\s*\{[^}]*\}/u);
+    expect(legendBlock).toBeTruthy();
+    // Scrollable within the cap, and no longer viewport-anchored.
+    expect(legendBlock![0]).toContain("overflow-y: auto");
+    expect(legendBlock![0]).not.toContain("position: absolute");
   });
 });

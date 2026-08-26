@@ -385,21 +385,43 @@ input.search::placeholder {
   border-radius: 8px;
 }
 
-/* Legend */
-.legend {
+/* Bottom-left graph overlay: the controls hint stacked above the type legend.
+   It is anchored inside #graph (position:relative), so it can only ever cover
+   the graph canvas — never the page index or the reader. The stack is capped
+   to the panel's box; a legend with many types scrolls within that cap instead
+   of growing into a full-width bar over neighbouring panels. */
+.graph-overlay {
   position: absolute;
   left: 20px;
   bottom: 18px;
   z-index: 1;
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: calc(100% - 40px);
+  max-height: calc(100% - 36px);
+  min-height: 0;
+}
+.legend {
+  display: flex;
   flex-wrap: wrap;
   gap: 6px 14px;
-  max-width: 60%;
   padding: 12px 14px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--panel) 88%, transparent);
   border: 1px solid var(--edge);
   backdrop-filter: blur(6px);
+  max-width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+.legend::-webkit-scrollbar {
+  width: 10px;
+}
+.legend::-webkit-scrollbar-thumb {
+  background: var(--edge);
+  border-radius: 8px;
 }
 .legend .item {
   display: flex;
@@ -646,12 +668,8 @@ hr.rule {
   color: rgba(3, 7, 16, 0.62);
 }
 
-/* Controls hint, stacked above the legend */
+/* Controls hint, stacked above the legend inside .graph-overlay */
 .graph-hint {
-  position: absolute;
-  left: 20px;
-  bottom: 72px;
-  z-index: 1;
   pointer-events: none;
   font-size: 11px;
   letter-spacing: 0.02em;
