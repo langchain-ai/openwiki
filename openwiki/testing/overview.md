@@ -3,9 +3,6 @@ type: testing-guide
 title: Testing Guide
 description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, and how to scope the narrowest validation that proves a change per subsystem.
 tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow]
-verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
 sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
@@ -45,9 +42,16 @@ sources:
     resource: repo://test/okf/frontmatter.test.ts
   - id: openwiki-source-2b788920f8a5c721b3430f6c
     resource: repo://test/openwiki-home.test.ts
+  - id: openwiki-source-e3be493bc871948f42420690
+    resource: repo://test/visualize/client-interaction.test.ts
+  - id: openwiki-source-1904eaebd82125a3a3881dac
+    resource: repo://test/visualize/page.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T21:47:08.385Z" }
+verified:
+  - by: openwiki/0.4.0
+    at: 2026-08-26T21:47:08.385Z
 ---
 
 # Testing Guide
@@ -142,20 +146,20 @@ matching path. The most important mappings:
 
 | Test directory                                                                                                                                            | Source subsystem it validates                                                                                 |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts, streaming, redaction, the repository runner, OKF middleware, frontmatter validation, and the wiki finalizer |
+| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts, streaming, redaction, the native repository runner (worker-exits-without-submit recovery), OKF middleware, frontmatter validation, and the wiki finalizer |
 | `test/claims/`                                                                                                                                            | `src/claims/` — grounded-claim core, the code claim brain, and evidence resolution                            |
 | `test/connectors/`                                                                                                                                        | `src/connectors/` — connector config, resilient fetch, MCP client/runtime, and per-source ingestion           |
-| `test/generation/`                                                                                                                                        | `src/generation/` — repository planning, page jobs, and run-state persistence                                 |
+| `test/generation/`                                                                                                                                        | `src/generation/` — repository planning, page jobs, run-state persistence, and page skip/restore semantics (snapshot capture, Markdown/Claims restoration, resume-reset-to-pending, interrupted-metadata finish) |
 | `test/okf/`                                                                                                                                              | `src/okf/` — OKF frontmatter parsing/normalization/repair/validation and index labels/sync |
 | `test/integrations/`                                                                                                                                      | `src/integrations/` — host installers, config adapters, the MCP server, and packaged skill/protocol contracts |
 | `test/cli/`                                                                                                                                               | `src/cli/` — CLI wiring and Ink components                                                                    |
 | `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard                                                                   |
-| `test/config/`, `test/mermaid/`, `test/visualize/`, `test/scheduling/`, `test/telemetry/`, `test/auth/`, `test/ingestion/`, `test/platform/` | the matching `src/` subsystem                                                                                 |
+| `test/config/`, `test/mermaid/`, `test/visualize/`, `test/scheduling/`, `test/telemetry/`, `test/auth/`, `test/ingestion/`, `test/platform/` | the matching `src/` subsystem (`test/visualize/` guards the rendered HTML shell's #670 overlay anchoring and the jsdom client's no-background-click regression) |
 
 Related architecture and subsystem pages: the
 [source map](../architecture/source-map.md),
 [grounded claims](../concepts/grounded-claims.md),
-[coding-agent integrations](../integrations/coding-agents.md), and the
+[visualizer integration](../integrations/visualizer.md), and the
 [repository generation workflow](../workflows/repository-generation.md).
 
 ### Agent: middleware, frontmatter, and finalizer
@@ -237,6 +241,12 @@ index labels, index-sync error paths, and claims verification/source projection.
 - **DOM shim for Mermaid.** Tests that touch Mermaid validation call
   `ensureDomGlobals()` from `src/mermaid/dom-shim.ts` to install jsdom's
   window/document globals.
+- **jsdom for browser-only client glue.** The browser-only
+  `src/visualize/client.ts` (excluded from coverage because it touches the DOM
+  at import time) is tested under `@vitest-environment jsdom` with
+  `ForceGraph`/`marked`/`DOMPurify`/`mermaid`/`fetch` replaced by recording
+  `vi.stubGlobal` stubs, so the suite can assert on the handlers the client
+  registers without a real browser or network.
 
 ### The repository-run lifecycle test
 
@@ -244,16 +254,77 @@ index labels, index-sync error paths, and claims verification/source projection.
 the repository generation workflow. It imports `parseFrontmatterFields` and
 `validateOkfFrontmatter` from `src/okf/frontmatter.ts`, plus the run lifecycle
 (`beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
-`submitRepositoryPage`, `finishRepositoryRun`) from
-`src/generation/repository-run.ts`, and drives the full begin → submit_plan →
-next_page → submit_page → finish lifecycle against a temporary Git repository.
-A `failureHarness` created with `vi.hoisted` wraps the real `src/agent/utils.js`
-and `src/generation/run-state.js` modules to inject failures on selected
+`submitRepositoryPage`, `skipRepositoryPage`, `captureRepositoryPageSnapshot`,
+`finishRepositoryRun`) from `src/generation/repository-run.ts`, and drives the
+full begin → submit_plan → next_page → submit_page → skip → finish lifecycle
+against a temporary Git repository. A `failureHarness` created with
+`vi.hoisted` wraps the real `src/agent/utils.js` and
+`src/generation/run-state.js` modules via `vi.mock` to inject
+metadata-write, run-state-write, and run-state-removal failures on selected
 calls while otherwise delegating to the real implementation. Each test creates a
-committed Git repository (via the `git`/`createRepository` helpers), optionally
-arms the failure counters in `beforeEach`, and removes the temporary directories
-in `afterEach`, so the run's recovery and rollback paths are exercised against a
+committed Git repository (via the `git`/`createRepository` helpers), arms the
+failure counters in `beforeEach`, and removes the temporary directories in
+`afterEach`, so the run's recovery and rollback paths are exercised against a
 real repository without leaving state behind.
+
+The skip/restore coverage is central to the test's value. The
+`restores the exact pending Markdown and Claims snapshot` test captures a
+snapshot before the page and Claims store are mutated, then calls
+`skipRepositoryPage(run, snapshot)` and asserts that the on-disk Markdown and
+the `ClaimsStore` page are restored to their snapshot bytes, the plan job's
+status becomes `skipped`, and `nextRepositoryPage` reports the run complete.
+Finishing the run with `{ skippedPageSnapshots: [snapshot] }` then asserts the
+Markdown/Claims stay restored, the run-state file is removed, and the
+`.last-update.json` metadata is rewritten with `status: "interrupted"` (and the
+prior `gitHead`) so a later update knows the run did not finish cleanly. The
+`resets an interrupted skipped job to pending on resume` test proves that a
+page left `skipped` by an interrupted run is reset back to `pending` when the
+same repository is resumed, so the deferred page is reconsidered on the next
+update rather than silently dropped.
+
+### The native repository runner test
+
+`test/agent/repository_runner.test.ts` exercises
+`runNativeRepositoryGeneration` (the native, non-CLI repository runner) against a
+`vi.mock` harness that replaces `deepagents` and the whole
+`src/generation/repository-run.js` lifecycle with recording stubs, so it can
+drive the worker loop, plan/page submission, and drift/replan flows without a
+real model or repository. The `workerExitsWithoutSubmit` test arms a flag that
+makes the mocked agent's `submit_page` worker stream run to completion without
+ever calling the completion tool; it then asserts that `skipRepositoryPage` is
+invoked exactly once (`harness.restoreCalls === 1`), the skipped page stays
+`skipped` while the later page still completes (`finishRepositoryRun` is called
+once), the run still spawns a worker for each of the three agent turns (planning
+plus the two pages), and the runner emits a deferred-page warning `text` event
+containing "reconsidered on the next update". This guards the regression where a
+worker that exits without submitting would otherwise leave the page neither
+completed nor explicitly deferred.
+
+### Visualizer tests
+
+`test/visualize/` guards both the rendered HTML shell and the browser client's
+interaction wiring. `test/visualize/page.test.ts` reads the `PAGE`/`STATIC_PAGE`
+strings exported from `src/visualize/page.ts` and asserts that the hint/legend
+overlay is anchored **inside** `#graph` rather than as a direct child of `.main`
+— the overlays and the `legend`/`hint` elements must appear within the graph
+panel region, after the `graph-overlay` element — and reads
+`src/visualize/styles.css` to assert the `.graph-overlay` block is height-capped
+(`max-height`) while the `.legend` block scrolls (`overflow-y: auto`) and is no
+longer `position: absolute`. Together these pin the issue #670 fix where a
+many-type legend grew into a full-width bar covering the sidebar, graph, and
+reader.
+
+`test/visualize/client-interaction.test.ts` is a `@vitest-environment jsdom`
+suite that imports the browser-only `src/visualize/client.ts` (which touches the
+DOM at import time) with `ForceGraph`, `marked`, `DOMPurify`, and `mermaid`
+replaced by recording stubs. It mounts a DOM mirroring the post-#670 layout,
+drives the static-export bootstrap path, and asserts on the handlers the client
+registers — in particular that **no** `onBackgroundClick` handler is registered
+(`handlers.backgroundClickHandler` is `undefined`), the regression for issue
+#670 where clicking blank graph space used to clear the reader. A companion test
+confirms that after a node click the reader content stays open with no `.empty`
+state reappearing, since the only former path to the empty state was the
+background click.
 
 ## Choosing the narrowest validation per subsystem
 

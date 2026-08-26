@@ -10,6 +10,8 @@ sources:
     resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-239b2968fb2bcd073e89cedc
     resource: repo://src/claims/brains/code/runtime.ts
+  - id: openwiki-source-2408f48009166e2b2c4a2aac
+    resource: repo://src/claims/brains/code/session.ts
   - id: openwiki-source-2b28ddc861d155a44b3cc432
     resource: repo://src/claims/brains/code/store.ts
   - id: openwiki-source-75ba41da829774fe72b7a0af
@@ -50,10 +52,10 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T21:47:08.385Z" }
 verified:
   - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
+    at: 2026-08-26T21:47:08.385Z
 ---
 
 # Source Map
@@ -89,9 +91,15 @@ before anything else.
 - **`src/generation/repository-run.ts`** owns the repository-generation
   lifecycle. It drives the plan-then-page workflow with `beginRepositoryRun`,
   `submitRepositoryPlan`, `nextRepositoryPage`, `submitRepositoryPage`, and
-  `finishRepositoryRun`, wiring together the run state, claims runtime, wiki
-  finalizer, and OKF frontmatter validation — including deterministic
-  frontmatter repair (`repairPersistedFile`) before a page job is accepted.
+  `finishRepositoryRun`, and owns the skip/restore machinery that lets a page
+  worker fail gracefully: `captureRepositoryPageSnapshot` captures the current
+  pending page and its Claims sidecar before model-owned work,
+  `skipRepositoryPage` rolls a failed page worker back from that snapshot
+  without aborting the run, and `finishRepositoryRun` reconciles every skipped
+  job against its captured snapshot before finalizing. It wires together the run
+  state, claims runtime, wiki finalizer, and OKF frontmatter validation —
+  including deterministic frontmatter repair (`repairPersistedFile`) before a
+  page job is accepted.
 
 ## Subsystems
 
@@ -100,8 +108,13 @@ before anything else.
 Owns model/provider wiring, the agent tool loop, and the machinery that turns a
 run into wiki pages. Principal entry: `src/agent/index.ts`. Supporting owners
 include `src/agent/repository-runner.ts` (the native plan/page tool loop that
-calls into `generation/repository-run.ts`), `src/agent/docs-only-backend.ts`
-(the sandboxed shell/filesystem backend), the OKF and translation middleware
+calls into `generation/repository-run.ts`). The page worker in
+`repository-runner.ts` captures a snapshot of the current pending page before
+any model-owned work via `captureRepositoryPageSnapshot`; if the worker exits
+without calling `submit_page`, the runner skips (rather than aborts) that page
+worker via `skipRepositoryPage`, restoring the page and its Claims sidecar from
+the snapshot so the rest of the run continues. Other supporting owners include
+`src/agent/docs-only-backend.ts` (the sandboxed shell/filesystem backend), the OKF and translation middleware
 (`okf-middleware.ts`, `translation-middleware.ts`), the prompt builders
 (`prompt.ts`, `repository-prompts.ts`), read-boundary enforcement
 (`openwiki-ignore.ts`), wiki post-processing (`wiki-finalizer.ts`,
@@ -113,8 +126,15 @@ surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`).
 Orchestrates a full repository wiki build. Principal entry:
 `src/generation/repository-run.ts`. `src/generation/run-state.ts` owns the
 durable on-disk checkpoint (`.run.json`, schema-versioned, with `planning`/
-`generating` phases and `pending`/`complete` page-job statuses) so runs resume
-after interruption. `src/generation/page-jobs.ts` builds the plan
+`generating` phases and `pending`/`skipped`/`complete` page-job statuses —
+`PageJobStatus = "pending" | "skipped" | "complete"`, where `skipped` is the
+durable state for a worker that exited without submitting) so runs resume after
+interruption. On resume, any previously `skipped` page jobs are reset to
+`pending` for reconsideration. `src/generation/repository-run.ts` owns the five
+core lifecycle operations plus `captureRepositoryPageSnapshot`,
+`skipRepositoryPage`, and finish-time skipped-snapshot reconciliation, which
+requires every skipped job to carry its original snapshot before the run can
+finish. `src/generation/page-jobs.ts` builds the plan
 (`createRepositoryPlan`) and replaces per-page claims (`replacePageClaims`).
 `src/generation/errors.ts` defines `RepositoryRunError`.
 
@@ -122,13 +142,18 @@ after interruption. `src/generation/page-jobs.ts` builds the plan
 
 Owns the grounded-claims model: strict per-page claim sidecars and the evidence
 that backs them. `src/claims/brains/code/runtime.ts` (`prepareClaimsRuntime`)
-assembles process-local claims state used by a repository run;
-`src/claims/brains/code/store.ts` (`ClaimsStore`) validates and persists claim
-sidecars with a schema version; `session.ts` inspects and replaces page claims;
-`preflight.ts` computes stable grounding issues. `src/claims/core/` holds
-mutations, error types, and the resolver cache. `src/claims/evidence/repository/`
-resolves and relocates `repo://` evidence resources (`resolver.ts`,
-`resource.ts`), including opaque line-range relocation metadata.
+assembles process-local claims state used by a repository run, and its
+`ClaimsRuntime.finalize` accepts an `excludedPages` set so skipped pages are
+excluded from the strict whole-run Claims proof and from the verification
+projection synchronized at finish; `src/claims/brains/code/store.ts`
+(`ClaimsStore`) validates and persists claim sidecars with a schema version;
+`session.ts` (`ClaimSession`) inspects and replaces page claims and carries the
+`excludedPages`-aware finalize that skips persisted/orphan/deleted/verification
+loops for those pages; `preflight.ts` computes stable grounding issues.
+`src/claims/core/` holds mutations, error types, and the resolver cache.
+`src/claims/evidence/repository/` resolves and relocates `repo://` evidence
+resources (`resolver.ts`, `resource.ts`), including opaque line-range
+relocation metadata.
 
 ### okf — Open Knowledge Format frontmatter, indexing, and verification
 

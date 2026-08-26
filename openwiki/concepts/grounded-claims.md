@@ -3,6 +3,9 @@ type: concept
 title: Grounded Claims
 description: How OpenWiki grounds generated wiki pages in versioned repository evidence through the Claims model, including the store, session, and runtime split, evidence resolution and staleness detection, and the durability boundary reached at page completion.
 tags: [claims, evidence, grounding, provenance, verification, repository, okf]
+verified:
+  - by: openwiki/0.4.0
+    at: 2026-08-26T21:47:08.385Z
 sources:
   - id: openwiki-source-4abcc99d4dad36b191736bb7
     resource: repo://src/claims/brains/code/paths.ts
@@ -30,10 +33,7 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
-verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T21:47:08.385Z" }
 ---
 
 # Grounded Claims
@@ -62,8 +62,8 @@ working state, and lifecycle orchestration into three cooperating layers.
   debt, and finalizes durable state through the store.
 - **Runtime** (`prepareClaimsRuntime` / `ClaimsRuntime`) wires a store, a
   repository evidence resolver, and preflight results into a session, and
-  exposes a single `finalize` entrypoint that persists Claims and synchronizes
-  OKF projections.
+  exposes a single `finalize` entrypoint — `finalize(at?, excludedPages?)` —
+  that persists Claims and synchronizes OKF projections.
 
 ```mermaid
 stateDiagram-v2
@@ -172,27 +172,42 @@ creating a write obligation.
 
 ## The durability boundary at page completion
 
-`ClaimSession.finalize` is the boundary where run-scoped Claim state becomes
-durable. It only touches pages that actually changed, and each such page must
-pass two gates before its sidecar is written:
+`ClaimSession.finalize(store, verification, excludedPages)` is the boundary
+where run-scoped Claim state becomes durable. It only touches pages that actually
+changed, and each such page must pass two gates before its sidecar is written:
 
 1. **No evidence debt** — a page with unresolved grounding issues is refused, so
    stale or unresolved Claims cannot be silently persisted as verified.
-2. **Evidence still current** — every Claim's evidence is re-resolved one final
-   time; if any resource disappeared or changed version since the mutation was
-   accepted, the page is not persisted.
+2. **Evidence still current** — `assertEvidenceStillCurrent` re-resolves every
+   Claim's evidence one final time; if any resource disappeared or changed
+   version since the mutation was accepted, the page is not persisted.
+
+The `excludedPages` set is honored at every persistence, deletion, and
+verification-projection step. Pages in `excludedPages` are skipped entirely: a
+dirty excluded page is not rechecked, an orphaned excluded sidecar is not
+deleted, and excluded pages are not written or reported in the verification map
+(their projection is `null`). This lets a caller preserve the pre-existing
+Claims of pages it could not process: when a repository finish resumes after
+failed page jobs, the skipped jobs' pages are passed as `excludedPages` so the
+runtime leaves their sidecars untouched rather than rechecking or deleting them.
 
 Finalization also removes orphaned sidecars (whose pages no longer exist),
 deletes sidecars for pages whose Markdown vanished, and removes sidecars for
-pages recorded as deleted. Each page's Markdown is hashed before its sidecar is
-written so the persisted `pageVersion` describes the exact bytes on disk. A page
-finalized with a non-empty Claim set receives a durable `verification` event; a
-page whose Claims were fully retracted is persisted without one.
+pages recorded as deleted — each of those cleanup loops likewise skips
+`excludedPages`. Each page's Markdown is hashed before its sidecar is written so
+the persisted `pageVersion` describes the exact bytes on disk. A page finalized
+with a non-empty Claim set receives a durable `verification` event; a page whose
+Claims were fully retracted is persisted without one.
 
-Finalization is best-effort per page: recoverable per-page failures are isolated
-as warnings rather than aborting the run, but the runtime treats any warning as a
-durability failure and rejects, so an incomplete finalization does not pass
-silently.
+Finalization is best-effort per page. Recoverable per-page failures are
+isolated as warnings rather than aborting the whole run: a missing page
+(`ClaimsPageMissingError`) is recorded so its sidecar is later removed, a
+verification mismatch leaves the sidecar unchanged, and a persistence failure
+leaves the sidecar unchanged — while security failures and unexpected programmer
+errors (non-recoverable) still throw. The runtime accumulates every warning —
+including those from the post-finalize verification projection and page-version
+refresh — and treats any non-empty warning set as a durability failure that
+rejects the run, so an incomplete finalization does not pass silently.
 
 ## OKF projection: sources and verification
 
@@ -216,9 +231,10 @@ for a machine stamp.
 
 The projection can rewrite code-owned front matter, which changes the Markdown
 bytes and therefore the page hash. To keep sidecars consistent with the final
-bytes, `refreshPageVersions` re-hashes represented pages after projection; if a
-page whose stamp was newly exposed cannot be refreshed, the verification stamp is
-rolled back so a stamp never outlives an accurate `pageVersion`.
+bytes, the runtime calls `refreshPageVersions` to re-hash represented pages
+after projection; if a page whose stamp was newly exposed cannot be refreshed,
+the verification stamp is rolled back (via `rollbackClaimsVerification`) so a
+stamp never outlives an accurate `pageVersion`.
 
 ## Preparation, resolver caching, and configuration
 
@@ -237,6 +253,6 @@ never caching across a freshness boundary.
 ## Related pages
 
 - [Source Map](/openwiki/architecture/source-map.md)
-- [OKF Output](/openwiki/concepts/okf-output.md)
 - [Claims Reconciliation](/openwiki/workflows/claims-reconciliation.md)
 - [Repository Generation](/openwiki/workflows/repository-generation.md)
+- [Wiki Finalization](/openwiki/workflows/wiki-finalization.md)

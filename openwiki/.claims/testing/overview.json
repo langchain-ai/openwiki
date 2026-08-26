@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ab3b2e89c6dbd1393f5528b01287167211e5642982679258e789d0b4dd1f8140",
+  "pageVersion": "sha256:e2a4bf8b569f7b920a899f812fa209edc4c042d3300ab50a391665ab7c5c897b",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -135,8 +135,8 @@
       "statement": "Tests import source modules directly by relative path (e.g. ../../src/...), so a source module can be unit-tested through Vitest's transform without first building dist/.",
       "evidence": [
         {
-          "resource": "repo://test/generation/repository-run.test.ts#L57-L73",
-          "version": "repo-lines-v1:sha256:2a8f98f8d601cb84fbce4c9cc066385c98d9a88a3057a241d98024f406c24861:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZTgzOTc3Y2E0MDRhYmMyNzA2ZmEwZGNiMTM2YTQ2ZGNkYzIyZmVkOWFjY2MwNTExODY3NDIwZjcwNWE0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MTg4MjRkZGMzNmNjMGQ1NjY3YTA0YjRlMDQ3N2M0M2ZlMTdhZGE0ZTMyZjZkNjJjNTZiNjI5ZjJmMjAyMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjI1ZDY0NjQ4ZmQ3ZmJlNWQwZGExZjRmN2NmODAwZDE1Y2JhOWMyNzBkOTJiOTZiMWE4YWVmOWY1MzU4YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxZjZjODFiZDc3MzE0NWQzNTdkOWUzYjM4YjVkZDFkMWZlMzFjNzVmZGVhMDE3YzBkNTBlNjViOGViMzEyMjEifQ"
+          "resource": "repo://test/generation/repository-run.test.ts#L57-L79",
+          "version": "repo-lines-v1:sha256:e9404b10c07e96b7c0822b61d1a24e1a96be126a7373ea5feea9536c0eac239c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZTgzOTc3Y2E0MDRhYmMyNzA2ZmEwZGNiMTM2YTQ2ZGNkYzIyZmVkOWFjY2MwNTExODY3NDIwZjcwNWE0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkYTdlZWE0OWRlZDZmNmE4ZjhiNDk0NDdiNTg1MDlkM2ZiNzk3NzVkOTAyNGI4N2FkYmZiYmE0NzZmNjIzYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjI1ZDY0NjQ4ZmQ3ZmJlNWQwZGExZjRmN2NmODAwZDE1Y2JhOWMyNzBkOTJiOTZiMWE4YWVmOWY1MzU4YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhYjM2OTA1NGU2MGRjYTFiOGM0YWY5MmE4NjQ1OWIzYTFjODllNDFmYWVkMTkzODE4NGQxZDNiMWNlYjY5YmMifQ"
         },
         {
           "resource": "repo://test/openwiki-home.test.ts#L5-L9",
@@ -268,21 +268,109 @@
     },
     {
       "id": "claim_eba7cb76264f4d279e90756b4e4405aa",
-      "statement": "test/generation/repository-run.test.ts is the end-to-end integration test for the repository generation workflow: it imports parseFrontmatterFields and validateOkfFrontmatter from src/okf/frontmatter.ts and the beginRepositoryRun/submitRepositoryPlan/nextRepositoryPage/submitRepositoryPage/finishRepositoryRun lifecycle from src/generation/repository-run.ts, and drives the full begin→submit_plan→next_page→submit_page→finish lifecycle against a temporary committed Git repository, arming the failure harness in beforeEach and removing temp directories in afterEach.",
+      "statement": "test/generation/repository-run.test.ts is the end-to-end integration test for the repository generation workflow: it imports parseFrontmatterFields and validateOkfFrontmatter from src/okf/frontmatter.ts and the beginRepositoryRun/submitRepositoryPlan/nextRepositoryPage/submitRepositoryPage/skipRepositoryPage/captureRepositoryPageSnapshot/finishRepositoryRun lifecycle from src/generation/repository-run.ts, and drives the full begin→submit_plan→next_page→submit_page→skip→finish lifecycle against a temporary committed Git repository, arming the failure harness in beforeEach and removing temp directories in afterEach.",
       "evidence": [
         {
-          "resource": "repo://test/generation/repository-run.test.ts#L57-L73",
-          "version": "repo-lines-v1:sha256:2a8f98f8d601cb84fbce4c9cc066385c98d9a88a3057a241d98024f406c24861:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZTgzOTc3Y2E0MDRhYmMyNzA2ZmEwZGNiMTM2YTQ2ZGNkYzIyZmVkOWFjY2MwNTExODY3NDIwZjcwNWE0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MTg4MjRkZGMzNmNjMGQ1NjY3YTA0YjRlMDQ3N2M0M2ZlMTdhZGE0ZTMyZjZkNjJjNTZiNjI5ZjJmMjAyMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjI1ZDY0NjQ4ZmQ3ZmJlNWQwZGExZjRmN2NmODAwZDE1Y2JhOWMyNzBkOTJiOTZiMWE4YWVmOWY1MzU4YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxZjZjODFiZDc3MzE0NWQzNTdkOWUzYjM4YjVkZDFkMWZlMzFjNzVmZGVhMDE3YzBkNTBlNjViOGViMzEyMjEifQ"
+          "resource": "repo://test/generation/repository-run.test.ts#L308-L321",
+          "version": "repo-lines-v1:sha256:b9250198ba83943ad6b60b811401a597826a1925afb82625980ed57bb65e5e4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhNDFmM2M5ZTdlMTAwNTRiY2Y2YjAxYTE3NGRiMzUxMGI3NDJiZDZjZGQ0ZTcwOTExZjhkOTJiZWRmN2Q0ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzN2NjMmU5ZjM1MmQwMzJlNjczMzg1ZGI5ZTM5MmZmMTE5OGQ1N2I5ZTU0NTZhY2ZjMTE3NTM5MTc1Y2QwYzUifQ"
         },
         {
-          "resource": "repo://test/generation/repository-run.test.ts#L599-L625",
-          "version": "repo-lines-v1:sha256:5144f16fc362c601d4a6627fb65469f04d48a0fb461e033dd52b4d90a5bee5cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MGY2YjlkMWExMDY0MzcyYTU5NzAxOWM5MWMxMDIzYmI3ZTVjMmFhYjU1MzM1MDRkMjFhYWJlZDczOWU5MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ZWEzYThkZWI0ZGQ5ZmU1NWM3MzU1ZTJmMWQ1YjlmMzA0MWVkOWM3MjQxNzdkOGQyOGQwYjAwNmI2NTllYzAifQ"
+          "resource": "repo://test/generation/repository-run.test.ts#L57-L79",
+          "version": "repo-lines-v1:sha256:e9404b10c07e96b7c0822b61d1a24e1a96be126a7373ea5feea9536c0eac239c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZTgzOTc3Y2E0MDRhYmMyNzA2ZmEwZGNiMTM2YTQ2ZGNkYzIyZmVkOWFjY2MwNTExODY3NDIwZjcwNWE0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkYTdlZWE0OWRlZDZmNmE4ZjhiNDk0NDdiNTg1MDlkM2ZiNzk3NzVkOTAyNGI4N2FkYmZiYmE0NzZmNjIzYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjI1ZDY0NjQ4ZmQ3ZmJlNWQwZGExZjRmN2NmODAwZDE1Y2JhOWMyNzBkOTJiOTZiMWE4YWVmOWY1MzU4YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhYjM2OTA1NGU2MGRjYTFiOGM0YWY5MmE4NjQ1OWIzYTFjODllNDFmYWVkMTkzODE4NGQxZDNiMWNlYjY5YmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9764e5431fcc40798e972a2c5fd531f9",
+      "statement": "test/generation/repository-run.test.ts's restores-the-snapshot test captures a RepositoryPageSnapshot before mutating a page and its ClaimsStore entry, then calls skipRepositoryPage(run, snapshot) and asserts the on-disk Markdown and ClaimsStore page are restored to their snapshot bytes, the plan job's status becomes skipped, and nextRepositoryPage reports the run complete.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L240-L289",
+          "version": "repo-lines-v1:sha256:c7466bd53a5aaf2367f88cfa2c4dc013857df2060f757511801e737c55f13f84:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiZjhlODlkNGIyNjdjZmU5ZTBmMTU1ZDRjMzhjZmFmMmU2YTYwYjM4N2UxNDI0M2ZkYzQ0OWFmYmE2YjgwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhMzNjNGFlMTNiNjQ2ZmNhZWNjMGM1YzNiZWM4Mjc0MDQ3ODhiMGI4MGZlNzEyNzkxNDliMzAzNTM0YTRkYTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4ZTE1NTkzYzQyZjI0NDJmOTU2Yzk4ZTM4ZjcyYTM4MWVkODQxYjlkMTc3Mjc2MDZlNDU2YjU3NGU0MTIyZDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_646ac9de9b7148d88c2342a8e64d002e",
+      "statement": "In test/generation/repository-run.test.ts, finishing a run with { skippedPageSnapshots: [snapshot] } asserts the skipped page's Markdown and Claims stay restored, the run-state file is removed (readRepositoryRunState is null), and .last-update.json is rewritten with status: \"interrupted\" retaining the prior gitHead, so a later update knows the run did not finish cleanly.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L291-L305",
+          "version": "repo-lines-v1:sha256:027b2fe71a3ae9bfce30463e2b486695e985f105c9b3c12d693503b6b5499d96:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MWNiNWMzNzM0ZDhiMjk2NTExZTVjMmYxZGZkMWY5MmJmM2M3N2E3ZWZkNzdkNmU1ZjRmNDFkMzIzMmIxM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4OWIzZjNlNjU2MDc1ZGY3MTA1OTBiZmU1YzhiMDhiZWFlNmU5MjQxZjNlMGU4ODBiNjg5MzcyODNlM2UzZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3Zjk3MGU3ODNhOWQ0M2FlZDM4MjIyNzdlZDllMDIzZTQ3MTYzNDgyNTViMWQxY2JmMTJjZWYwOGUxY2ExZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_103055cc4f9c48689ba7da0a7d2ebcbf",
+      "statement": "test/generation/repository-run.test.ts's resume-reset test proves that a page left skipped by an interrupted run is reset back to pending when the same repository is resumed via beginRepositoryRun, so the deferred page is reconsidered on the next update rather than silently dropped.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L470-L502",
+          "version": "repo-lines-v1:sha256:11cd1545f9746be3ccb026ae7e3f3786bff8a2067c7767e48f8d0346e22e0f22:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjYjE3NjNhNzUxNGNjZjQ2ZjZmMjJkODVmOTc3OGFhYjMyY2RiNmE2M2JkZDQyNjlhMDRmMWMyOTY3YjBjOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljNTQ1MjFiNGIwYTNhZDlmODk0YzhhMDU3MTk2NWE1YmM0ZDliM2EyYTE1MTJhNjNjZGFlNTM1ODZiZWIwMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxOTJmMjNjMTQ3OWZmMmE0Y2NjYTFjNGM0MjM1ZjVkOTNiMjEyYTJlOGMxYzgyZTAyNTkyZWZiNzFmOGNiNjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f2be03780614b758a310ccaf5f2c508",
+      "statement": "test/agent/repository_runner.test.ts exercises runNativeRepositoryGeneration (the native, non-CLI repository runner) against a vi.mock harness that replaces deepagents and the whole src/generation/repository-run.js lifecycle with recording stubs, so it can drive the worker loop, plan/page submission, and drift/replan flows without a real model or repository.",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/repository-runner.test.ts#L230-L373",
+          "version": "repo-lines-v1:sha256:8e5d24665bec650b28cafa73e8d1718d87dd795b7d6e75c2c947bbab09e314ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5NDAwMWRjZWM2ZmNjNjU0NzJhMDU1OTAxZmJkMzM2Njc0ZjRlOTljZTdjMzA2OTA2YjkyYzNhYzQxNmJiNDU3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1Yjc0MWQyYzA4ZTZmNTEwYjdlOWEyNjRmMzc4ZjljZTAwNDlhNTA0ZTBlN2VmNWQ2N2NkM2VhODEzZjg1NDc0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ZDIyNWQ2NDY0OGZkN2ZiZTVkMGRhMWY0ZjdjZjgwMGQxNWNiYTljMjcwZDkyYjk2YjFhOGFlZjlmNTM1OGE3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxYWQ0ZWFkMWI5N2ZjYTZkM2EyOTI4ODMwMGNhZjQ3NjE1ZGVhOGI3M2QyMmMzMjFjYzljZmMwMTBiM2UyODM1In0"
+        },
+        {
+          "resource": "repo://test/agent/repository-runner.test.ts#L64-L228",
+          "version": "repo-lines-v1:sha256:1f8273db527a91572e62eb17773d634e316b3d23e4eaca5e324a139d365a0932:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMTc4ZmIyMDFiZWRmZGI0YzU0Njk2ODgyYmM2MmZlNTk4ZWQ4M2M0MWEwYTE3ZDc5YzYwMTdlZTNmN2M4OTMzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjMGY3YjE1NWYxOWM1ZGEwNjgxMzVjNzQ2ZDNkMzE2OTdkYmI5NjMzNzk0YTU5YzZlZmQ1M2EzMzM5OWFkNDY5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxZmRhZGU4MjhiMmM1M2E1YzQ1NmUyNjdkYmM0NGNjMDA5NzRiZTdhNjczOTFmMGU3NDFjZDU3MTYzMGQ5NjI5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_93bf1e57a2354970b32c420e5b973158",
+      "statement": "test/agent/repository_runner.test.ts's workerExitsWithoutSubmit test arms a flag making the mocked submit_page worker stream run to completion without calling the completion tool, then asserts skipRepositoryPage is invoked exactly once (harness.restoreCalls === 1), the skipped page stays skipped while the later page completes (finishRepositoryRun called once), three agent turns still spawn, and a deferred-page warning text event containing \"reconsidered on the next update\" is emitted.",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/repository-runner.test.ts#L613-L631",
+          "version": "repo-lines-v1:sha256:8d4e359f105a484cf57149dca583a92495d984a0e36d5340ff9615356ab33067:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzYTMxODA1YjQ0YTQ2YWUyZWE3YmUzODJlM2I4NGJiMWQxYjA1NDI3NDVhMWFlMDdmNjA0YjVhZWFiZDk0YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMGE4ZjMwYzkxNjQ0MDQxYWViNmI1ZmRmZjMxZTRlMTc0Mzg2NGFmN2RkOTljY2I5YTczMmM3OWM4ZjYxM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjN2UwZTY0NDliZDJkNjljMTcwM2EyMTk3NjkzYTJjYzU2NThiMDI4OGYwMGU2YzI0OTkyM2Y3NzlkMzIxMDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9ab6e84d472542f6aa2580f482abf680",
+      "statement": "test/visualize/page.test.ts asserts the hint/legend overlay is anchored inside #graph (not as a direct child of .main): the graph-overlay, legend, and hint elements must appear within the .main region after the #graph panel, and reads src/visualize/styles.css to assert the .graph-overlay block is height-capped with max-height while the .legend block scrolls with overflow-y: auto and is no longer position: absolute.",
+      "evidence": [
+        {
+          "resource": "repo://test/visualize/page.test.ts#L71-L117",
+          "version": "repo-lines-v1:sha256:8793d737f9a955020a2f85f2542c82b35af055f143aa5a1f499b67a3dbd8e6bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwMjA3MDE2Y2ZmMWI1M2U4NTU5ZDVhNTM2MmY1NGY5MTZlOGVkZDZmYjQ1ZDI3ZDUzNDU0Mzk5MmQ5NmRhZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMjU3N2VmNzRiMTBjN2E5MDhjNzM4OTdmNTE1NTY4ZDA3ZTU2YWJjMzUwYmM1Nzc4ZWM0OGNjZmNhMmE5ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc17b46f0c1a43d3a1906fccb671ecf4",
+      "statement": "test/visualize/client-interaction.test.ts is a @vitest-environment jsdom suite that imports the browser-only src/visualize/client.ts with ForceGraph, marked, DOMPurify, mermaid, and fetch replaced by recording vi.stubGlobal stubs, and asserts that no onBackgroundClick handler is registered (handlers.backgroundClickHandler is undefined) — the issue #670 regression where clicking blank graph space used to clear the reader.",
+      "evidence": [
+        {
+          "resource": "repo://test/visualize/client-interaction.test.ts#L1-L14",
+          "version": "repo-lines-v1:sha256:8050b0b9665bf2ad2542dc0e52ca5b4c2134bd6252014b9e7a755c490f08faec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNTE3MjMxODg0ZjVhZWU3NWRkM2IwNTA5ZjEwYjMxOGM4N2QxOWY3ZjNkNDlhNDUyZjg2ZWM1ODNiMzgxY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNWFmZWQ2MjdiM2U5MDAzYTExNjkwYTQxNGRkYjdlOGI4NDA4ZTU2MmFhZDU4YjBlYjcxZmVmNDVhMDU0MzQifQ"
+        },
+        {
+          "resource": "repo://test/visualize/client-interaction.test.ts#L153-L179",
+          "version": "repo-lines-v1:sha256:f865142cb6cc09c98659d07a17df2e3f89a7236a02a3a32795b51ca9e88ae027:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMzI5YjI2NTdjOTY3ZTVhOWM0OWU1Mzc2Mzc2NTM0MTViYzY1MzgzMDYwNTQ4OTM2YTc4MDQzNTdiYWQxZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxN2FkMGRhNjUzNDkzOTAwZGRlMTUxMjdlMjVlODZmMmU3ZDA1ZmUxNTA3MzliM2Y2NzY5NDZkODgzNWNhMmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a16af4f70b4a42578a1c18a6c07a8329",
+      "statement": "test/visualize/client-interaction.test.ts confirms that after a node click the reader content stays open with no .empty state reappearing, since the only former path to the empty state was the background click that is now unwired.",
+      "evidence": [
+        {
+          "resource": "repo://test/visualize/client-interaction.test.ts#L181-L197",
+          "version": "repo-lines-v1:sha256:e96da975cd38da08e5df0ae6be26115a72073ebb3e0ac291ee0f1856661bdfae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxNWUzZWE0NTMyM2RiOTU2YjdmZjA2NTllYzM1OGJhNjY2MzRlNzRlZGU1OWFlNWY0MzA2OThkNDY3ZjViOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmZWMyOGRmNmZmZjk3MWMzN2Y3YTM1NjFhYzY1ZjM4ZDdkMGNmNjZiNWFiMjk5NTg2OTFhYTg3ODg3ZGI5NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.4.0",
-    "at": "2026-08-26T20:17:27.397Z"
+    "at": "2026-08-26T21:47:08.385Z"
   }
 }

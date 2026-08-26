@@ -34,10 +34,10 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T21:47:08.385Z" }
 verified:
   - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
+    at: 2026-08-26T21:47:08.385Z
 ---
 
 # Claims Reconciliation on Update
@@ -241,6 +241,29 @@ Markdown before writing the sidecar. Orphan and deleted-page sidecars are remove
 in the same pass. This is the point at which refreshed evidence versions become
 durable, so a subsequent update's preflight sees current tokens and can correctly
 report the page as no longer stale.
+
+### Excluded pages: leaving skipped pages untouched
+
+`finalize` accepts an `excludedPages` set and honors it at every persistence,
+deletion, and verification-projection step. The repository lifecycle is the only
+caller that passes a non-empty set: `finishRepositoryRun` collects the pages of
+every job left in the `skipped` status — a worker that exited without calling
+`submit_page` — and passes them as `excludedPages` to the run's
+`claimsRuntime.finalize`. Inside `finalize`, an excluded page is skipped
+entirely: a dirty excluded page is never rechecked or written, an orphaned or
+deleted excluded sidecar is never removed, and excluded pages are omitted from
+the returned verification map (their projection is `null`).
+
+The whole-run durability proof (`assertRepositoryClaimsDurable`) receives the
+same `excludedPages` set, so a skipped page is also excluded from the strict
+final proof that every Claim set is durable and matches its Markdown. This is
+the mechanism that lets a skipped page keep its prior Claims untouched across
+`finish`: because the run never rechecked or rewrote them, their sidecars
+remain exactly as the pre-work snapshot restored them, and the next update's
+preflight will treat them as current (or flag them stale) on their own merits.
+Skipped jobs are not silently lost — `beginRepositoryRun` resets any `skipped`
+job back to `pending` on resume so it is retried — but within a single finish
+their Claims are preserved rather than rechecked or retracted.
 
 ## Related pages
 

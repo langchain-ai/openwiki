@@ -15,8 +15,8 @@ tags:
     visualizer,
   ]
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.0
+    at: 2026-08-26T21:47:08.385Z
 sources:
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
@@ -34,13 +34,15 @@ sources:
     resource: repo://src/cli/runners.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-080c4525024a9b689e361cbb
+    resource: repo://src/generation/run-state.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T21:47:08.385Z" }
 ---
 
 # Architecture Overview
@@ -131,17 +133,41 @@ page-job runner. More detail lives in
 
 `runNativeRepositoryGeneration` drives the same durable lifecycle the host
 integrations use, but with OpenWiki's own model. It begins or resumes a run,
-runs a bounded planner when the run is in the planning phase, runs one fresh
-per-page worker for each pending page job, and finalizes. Each worker is a
-non-delegating DeepAgent: the planner gets read-only filesystem tools plus
-`submit_plan`; page workers additionally get `write_file`/`edit_file` plus
-`submit_page`, and the general-purpose `task` delegation tool is stripped so
-workers cannot spawn subagents.
+runs a bounded planner when the run is in the planning phase, and then runs one
+fresh per-page worker for each remaining pending page job before finalizing. No
+DeepAgents checkpointer or worker state survives between workers — the model is
+reused, but each page worker is a fresh, isolated graph bounded to its assigned
+page. Each worker is non-delegating: the planner gets read-only filesystem
+tools plus `submit_plan`; page workers additionally get `write_file`/`edit_file`
+plus `submit_page`, and the general-purpose `task` delegation tool is stripped
+so workers cannot spawn subagents.
 
-The lifecycle is resumable and self-correcting. If finalization detects that
-repository source drifted underneath the plan, the run replans and repeats.
-Correctable submission rejections are returned to the worker as error-status
-tool messages so it can fix and resubmit rather than aborting the run. The
+The run is failure-resilient at the page level. `runPageAgent` captures a
+pre-work snapshot of the pending page's Markdown and Claims sidecar via
+`captureRepositoryPageSnapshot` before the worker does any model-owned work. If
+the worker exits without calling `submit_page` — either by returning without
+submitting or by failing with a non-fatal error — `runPageAgent` calls
+`skipRepositoryPage(run, snapshot)`, which restores the page's Markdown and
+Claims to the pre-work snapshot, marks the page job `skipped`, and rebuilds the
+Claims runtime. It then emits a deferred-page warning that the page was skipped
+for this update and will be reconsidered on the next update. The skipped
+snapshot is carried forward to `finishRepositoryRun`, which requires every
+skipped job to be paired with its original snapshot, restores those pages after
+finalization, and records the run as `interrupted` rather than `complete` when
+any pages were skipped. On resume, `beginRepositoryRun` resets `skipped` page
+jobs back to `pending` so they are retried. A worker is never silently lost, and
+a single misbehaving page cannot abort the whole run.
+
+Only a fatal, non-correctable failure rethrows: a `submit_page` rejection that
+is not a correctable `invalid_input` error sets `fatalSubmissionFailure` and
+propagates, while correctable `invalid_input` rejections are returned to the
+worker as error-status tool messages carrying the error code and a retry
+instruction so it can fix and resubmit rather than aborting.
+
+The lifecycle is also self-correcting against source drift. If
+`finishRepositoryRun` reports that repository source changed underneath the
+plan (a finish-time `conflict`), the runner begins the run again and repeats
+the full lifecycle — re-plan, regenerate, re-finalize — in a loop. The
 end-to-end flow is documented in
 [Repository generation workflow](../workflows/repository-generation.md).
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4cbc7bb5b32b063cd028349cf6fb4a2756ff1f522043a1268fe35004ce806b9f",
+  "pageVersion": "sha256:f0c4a116079040b4e1eff8efc6596a2f34e0dfbcaf95f94a99159588a0e1e8c5",
   "claims": [
     {
       "id": "claim_cecbf09a48a44444b2ef62cbac04bd3b",
@@ -296,11 +296,11 @@
     },
     {
       "id": "claim_4197487294264009ac3d44d699f7c886",
-      "statement": "A single `renderPage` function produces the HTML for both live and static modes, differing only in asset URLs (absolute routes versus sibling `./` paths), CSP delivery (header versus meta tag), and the live/static indicator.",
+      "statement": "A single `renderPage` function produces the HTML for both live and static modes, differing only in asset URLs (absolute routes versus sibling `./` paths), CSP delivery (header versus meta tag), and the live/static indicator; it lays out a fixed structure of topbar, a `.main` row with the sidebar, the `#graph` panel (which contains the `.graph-overlay` hint/legend stack), a splitter, and the `#detail` reader.",
       "evidence": [
         {
           "resource": "repo://src/visualize/page.ts#L20-L95",
-          "version": "repo-lines-v1:sha256:2013a593716d5ebe6ae35eaa408d6bdb8a8bd684823f746e50580c3683e7cc95:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZmIzZmY3MGRmOTBiYjA5MmEzNDNkYzEwNmViMmQ2NTBkNzFkOTk4ZWY5ZGEzMWQ0NTdjYzFjMDc2ZjJmNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNGIyYTFiZTJhNDcxODk0YjhhN2EzYmRhNzU2M2ExYjY3NjI1MGE1OWI3NGQ5OTFiYTI3NmJlODUxYTM5YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxOGU3OTcyYzgzMjdlMDQwYzg1Y2I4YWM5ZjYxMmE3MDMxOTZkN2E0M2U1NjU5OGY3MzA4MjdkMjZjZGQ5YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:9dbd18acc64b47fa3e4f78c19268e16d44a9053907261975a047bb8ddf57a032:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZmIzZmY3MGRmOTBiYjA5MmEzNDNkYzEwNmViMmQ2NTBkNzFkOTk4ZWY5ZGEzMWQ0NTdjYzFjMDc2ZjJmNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNGIyYTFiZTJhNDcxODk0YjhhN2EzYmRhNzU2M2ExYjY3NjI1MGE1OWI3NGQ5OTFiYTI3NmJlODUxYTM5YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxOGU3OTcyYzgzMjdlMDQwYzg1Y2I4YWM5ZjYxMmE3MDMxOTZkN2E0M2U1NjU5OGY3MzA4MjdkMjZjZGQ5YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -351,10 +351,52 @@
           "version": "repo-lines-v1:sha256:eb684a13c94c10aca3ac4d085acdeafa32c97924e68d320f14d9d442d4688d02:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcxMDFhYzZhOTBlMDBiY2VkNzkzZDE3ZjE1ODVhMWQ3NzZlYjJlYzdkOGI2NTYzOWM5MmZhNmI5NzljMTBlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMWIwOTlhNDFhYjY3OTgwNWE1MGU5YzlmNjEwMmE2Nzc5ZmJkMjQxMmY5NzAzZmZiOTg2ZWJjYWRmNWRmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZkNjY3NjY0YjlhNGEyYzYxY2EzZDYwNWVkMWE4ZDQ4ZTYyYjQxODg5ZTRkNjRhYjM2NDA4N2E2MjZlYjI0NCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_77d4b40757174c76847ff6b4c2b05223",
+      "statement": "renderPage emits the controls hint and type legend as a single `.graph-overlay` container nested inside the `#graph` panel (not as direct children of `.main`); because `#graph` is `position: relative`, the absolutely positioned overlay is capped to the graph panel's own box and cannot cover the sidebar or reader.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/page.ts#L74-L83",
+          "version": "repo-lines-v1:sha256:39c226f40b9a35c70f9a89c626ff8f906feeaa6b1cf27f283fc76fe23b5c6f67:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZTNhMGQxOTA0YzI5YTNhYWM0YzlhMTM4MDY4OWMyNmZiNDI1NTZhZmU4NTAzNzQ4YTRkZDA5MDc0MDFmZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiNDE2MzY3NmY2OWViOTE4NTRlNTgyODEyZTE5YTQ3MTE2ZTExNTgyNjBjNjI0YzFmNjJkNzQ0ZDAzOTg1M2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhY2RjYzZkMzBlNjJiNjgyYWExYTYyOTdiZTZkZTk0NjRlZDljOWFiZTc0NDczYmE4ZDg5ZWUyMGUxZjM2YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NzNhMDFlZDExZDgwYjNjMDJlNmFmNmNjNTQ3OWExNjIyNTlmYTEzOTNmNjQ1NDkyM2UwM2EyMTM1MThkNzkifQ"
+        },
+        {
+          "resource": "repo://src/visualize/styles.css#L388-L405",
+          "version": "repo-lines-v1:sha256:f07628a102dc18338bea9cb1da0f53962075712b1b38cea4e16513c380487970:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYTQyYjBjYjAwMjhhMWIwOTlkMDlmZTgzMWQ5ZjM5MDNiM2E5YmJmYTIyMTY5YWFkNDczYmZhNDBiMjZlNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxZDc0NTFjYzBjYzZkYTM4YzIxODMyYzQ0NzA0MjM3OGI3YjU4YjhkN2MzNzg5MjA2YTc1MDY3NzZmNzI2YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNDM4MDZmYWI5YjVhZDRhNWZkZDdmYTUyNGViYzBjMmM1ZjkwOTQyMDczMWJiMDAyMjZlNDE1NGQ4OTExNmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_22f75cbcc0a84cfc9346e5bc0d6a2e51",
+      "statement": "The `.graph-overlay` stack is height-capped with `max-height` and the `.legend` scrolls within it (`overflow-y: auto`) rather than being viewport-anchored, so a wiki with many page types scrolls the legend instead of regrowing a full-width bar over neighbouring panels (issue #670).",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/styles.css#L388-L425",
+          "version": "repo-lines-v1:sha256:edc3a210900afba57e7ecc91b2a680ff42c20256db8e758376590bcf7afb0ee6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYTQyYjBjYjAwMjhhMWIwOTlkMDlmZTgzMWQ5ZjM5MDNiM2E5YmJmYTIyMTY5YWFkNDczYmZhNDBiMjZlNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxZDc0NTFjYzBjYzZkYTM4YzIxODMyYzQ0NzA0MjM3OGI3YjU4YjhkN2MzNzg5MjA2YTc1MDY3NzZmNzI2YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxNjNjYTFhNDVmM2NkNDY4NDg3MWFmYWI4ZDcyNzFiZGRmMWJjMGI0NGMwOWNjNzZkODZmMTFiZTg1YjVmOGIifQ"
+        },
+        {
+          "resource": "repo://test/visualize/page.test.ts#L99-L117",
+          "version": "repo-lines-v1:sha256:535b4ce9a7433325e138a50a1ebd03fb7049deac574ef8d443b28eac5700bbb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwZjNiOTViYjJjM2Q1NzVhMDMwOWNiNzIyNWQ2N2QyZTA3NmZmNTQ2ZTFkOGI1YjBmYjdmMjg1ODZlNWE1MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9bb4f4ec107545779047da28b5372b94",
+      "statement": "The client registers only `onNodeClick` and `onNodeHover` on the force-graph instance and deliberately registers NO `onBackgroundClick` handler, so clicking empty graph space is a no-op that does not clear the reader selection (the issue #670 regression).",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client.ts#L527-L531",
+          "version": "repo-lines-v1:sha256:42ba775af37ceedb2fee5d93c4faba7991a2c58c98437755d891ed41c7c36aa3:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjUyMjQ0M2M2N2IyMDc2MGFlNTUzOGViODFjYjg5NmM0ODZjNzQ2ZGRkNzQwMzI4Y2VhNzIxZWI0ZjE5OTYyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWEwMWUyZTI2ZGMzZDdlZTQ2NzkxOWMxZWVhMDJhZmNmOTEwYjUwNjI1ZjEwNmI3NjUyY2Q2OTUxOGIxOGNmZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWNmOTAwMGQxZDQyYTgwOTNhNjk1M2IxZTJhMTEyOTU4OTY0NGFkMmI3ZDVjMTM3Nzg3NjJjMjhlZDI0ZGJjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2M5NTUwY2Q1MWI1ZjQ2ZmJkZjg0NWZmZmVlMzU2NmQzMjI0MTlkMjAzNGU1ZTQ4YjljOWNmYmEwMjU1YjQwMyJ9"
+        },
+        {
+          "resource": "repo://test/visualize/client-interaction.test.ts#L176-L190",
+          "version": "repo-lines-v1:sha256:b13138f3f5bd73d42c1d82e8f4edb69a604633d72c4f8c763675c4110d27ca62:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYjA4NTlmYjkwZGU1Y2IwYTNmM2MzNDAzYzBmNDhlNTExMGQ2MDM3ZTcxYmZiZTdlZTFlYTIzYzU4M2IzZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmNWNkN2M1M2YyOGRhMGFiMjQ0MmIyZDMyMTk4NDY2MTI1OTA2YmZiZDNkZjY2MTVhMTdiOGMzODFkYTAyMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzNjE5MGNiMTFiMGYyMWUzZjY2NDJjNmQzYzc4MDI3MDJjYjFiMWE5N2VjNWQzYTc3MGJhZDBmMTZiNTljNDEifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.0",
+    "at": "2026-08-26T21:47:08.385Z"
   }
 }
