@@ -187,7 +187,7 @@ describe("finalizeWikiArtifacts", () => {
     expect(page).toContain("```text");
     expect(page).toContain("openwiki: broken internal link [./missing.md]");
     expect(page).toContain(
-      `generated: {by: "host-agent/test", at: "${RUN_TIMESTAMP}"}`,
+      `generated: { by: "host-agent/test", at: "${RUN_TIMESTAMP}" }`,
     );
     expect(index).toContain("[Quickstart](quickstart.md) - Start here.");
   });
@@ -231,5 +231,108 @@ describe("finalizeWikiArtifacts", () => {
     );
     expect(page).not.toContain("host-agent/codex");
     expect(page).not.toContain(RUN_TIMESTAMP);
+  });
+
+  test("replaces multiline generated metadata without invalidating the page", async () => {
+    const { backend, rootDir } = await setupWiki();
+    await backend.write(
+      "/openwiki/existing.md",
+      '---\ntype: Guide\ngenerated:\n  by: openwiki/0.3.2\n  at: "2026-08-18T10:00:00.000Z"\n---\n\n# Existing\n\nOld body.\n',
+    );
+    const prepared = await prepareWikiForAuthoring({
+      backend,
+      outputMode: "repository",
+    });
+    await backend.write(
+      "/openwiki/existing.md",
+      '---\ntype: Guide\ngenerated:\n  by: openwiki/0.3.2\n  at: "2026-08-18T10:00:00.000Z"\n---\n\n# Existing\n\nNew body.\n',
+    );
+
+    await expect(
+      finalizeWikiArtifacts({
+        backend,
+        outputMode: "repository",
+        prepared,
+        at: RUN_TIMESTAMP,
+        producerActor: "host-agent/codex",
+      }),
+    ).resolves.toBeUndefined();
+
+    const page = await readFile(
+      path.join(rootDir, "openwiki/existing.md"),
+      "utf8",
+    );
+    expect(page).toContain(
+      `generated: { by: "host-agent/codex", at: "${RUN_TIMESTAMP}" }`,
+    );
+    expect(page).not.toContain("\n  by: openwiki/0.3.2");
+  });
+
+  test("preserves a semantically unchanged generated event byte-for-byte", async () => {
+    const { backend, rootDir } = await setupWiki();
+    const previousTimestamp = "2026-08-18T10:00:00.000Z";
+    const original = [
+      "---",
+      "type: Guide",
+      "generated:",
+      "  by: openwiki/0.3.2",
+      `  at: ${previousTimestamp}`,
+      "---",
+      "",
+      "# Existing",
+      "",
+      "Unchanged body.",
+      "",
+    ].join("\n");
+    await backend.write("/openwiki/existing.md", original);
+    const prepared = await prepareWikiForAuthoring({
+      backend,
+      outputMode: "repository",
+    });
+
+    await finalizeWikiArtifacts({
+      backend,
+      outputMode: "repository",
+      prepared,
+      at: RUN_TIMESTAMP,
+      producerActor: "host-agent/codex",
+    });
+
+    await expect(
+      readFile(path.join(rootDir, "openwiki/existing.md"), "utf8"),
+    ).resolves.toBe(original);
+  });
+
+  test("canonicalizes changed concepts once and remains idempotent", async () => {
+    const { backend, rootDir } = await setupWiki();
+    const prepared = await prepareWikiForAuthoring({
+      backend,
+      outputMode: "repository",
+    });
+    await backend.write(
+      "/openwiki/new.md",
+      "---\ntype: Guide\n---\n\n# New\n\nBody.\n\n\n",
+    );
+
+    const options = {
+      backend,
+      outputMode: "repository" as const,
+      prepared,
+      at: RUN_TIMESTAMP,
+      producerActor: "host-agent/codex",
+    };
+    await finalizeWikiArtifacts(options);
+    const first = await readFile(path.join(rootDir, "openwiki/new.md"), "utf8");
+    await finalizeWikiArtifacts(options);
+    const second = await readFile(
+      path.join(rootDir, "openwiki/new.md"),
+      "utf8",
+    );
+
+    expect(first).toContain(
+      `generated: { by: "host-agent/codex", at: "${RUN_TIMESTAMP}" }`,
+    );
+    expect(first).toMatch(/[^\n]\n$/u);
+    expect(second).toBe(first);
   });
 });

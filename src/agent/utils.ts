@@ -205,12 +205,16 @@ export async function writeLastUpdateMetadata(
   outputMode: OpenWikiOutputMode = "repository",
   status: UpdateRunStatus = "complete",
   language?: string,
+  gitHeadOverride?: string,
 ): Promise<void> {
   const metadataFile = getMetadataFilePath(cwd, outputMode);
   const metadata: UpdateMetadata = {
     updatedAt: new Date().toISOString(),
     command,
-    gitHead: outputMode === "repository" ? await getGitHead(cwd) : undefined,
+    gitHead:
+      outputMode === "repository"
+        ? (gitHeadOverride ?? (await getGitHead(cwd)))
+        : undefined,
     model: modelId,
     status,
     ...(language ? { language } : {}),

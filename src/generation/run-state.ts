@@ -31,7 +31,7 @@ export type RepositoryRunPhase = "planning" | "generating";
 /**
  * Persisted completion state for one ordered page job.
  */
-export type PageJobStatus = "pending" | "complete";
+export type PageJobStatus = "pending" | "skipped" | "complete";
 
 /**
  * Stable producer and metadata identities retained across resume.
@@ -243,7 +243,7 @@ const PageJobSchema = z
     seedPaths: z.array(z.string()),
     relatedPages: z.array(z.string()),
     instructions: z.array(z.string().trim().min(1)),
-    status: z.enum(["pending", "complete"]),
+    status: z.enum(["pending", "skipped", "complete"]),
   })
   .strict();
 

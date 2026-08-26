@@ -3,17 +3,15 @@ type: architecture
 title: Agent Runtime, Models, and Middleware
 description: How OpenWiki builds and runs its DeepAgents documentation agent — resolving a model provider and model id, instantiating the right LangChain chat model, mounting a sandboxed docs-only filesystem backend, and running the OKF, translation, and crash-guard middleware around each run.
 tags:
-  [
-    agent-runtime,
-    model-providers,
-    middleware,
-    deepagents,
-    filesystem-sandbox,
-    langchain,
-  ]
+  - agent-runtime
+  - model-providers
+  - middleware
+  - deepagents
+  - filesystem-sandbox
+  - langchain
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.0
+    at: 2026-08-26T20:17:27.397Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -37,7 +35,7 @@ sources:
     resource: repo://src/config/reasoning.ts
   - id: openwiki-source-ebe194cbeaa2594a6699f9a1
     resource: repo://src/model-availability.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -60,7 +58,7 @@ flowchart TD
   Load --> Repo{"repository init or update"}
   Repo -->|yes| Native["resolveRunConfig then createModel then runNativeRepositoryGeneration"]
   Repo -->|no| Core["runOpenWikiAgentCore"]
-  Core --> Cfg["resolveRunConfig: provider, credentials, modelId"]
+  Core --> Cfg["resolveRunConfig: provider, credentials, modelId, limits"]
   Cfg --> Model["createModel builds LangChain chat model"]
   Model --> Graph["createOpenWikiAgentGraph: backend, middleware, prompt, checkpointer"]
   Graph --> Stream["agent.stream with messages or updates mode"]
@@ -78,6 +76,8 @@ Provider selection is `resolveConfiguredProvider`: an explicit `OPENWIKI_PROVIDE
 
 The model id comes from `resolveModelId`: it prefers an explicit option or `OPENWIKI_MODEL_ID`, else the provider's default; a provider with no built-in model options requires the id to be set. The id is normalized and validated, and if it is a known model of a different provider a non-fatal mismatch warning is emitted (the run still proceeds, since a custom gateway may serve it). Resolution also queries `getSelectedModelAvailability`, which aborts the run when a model is provably `unavailable`, but treats an `unknown` result as fine — a catalogue lookup failure is not proof a model cannot be invoked, and only the direct `openai` provider (with an API key and no custom base URL) is actually checked.
 
+After model resolution, `resolveRunConfig` resolves three provider-neutral operational settings that flow into `createModel`: the retry count (`OPENWIKI_PROVIDER_RETRY_ATTEMPTS`), the per-request output-token cap (`OPENWIKI_MAX_OUTPUT_TOKENS`, translated to each SDK's field name), and — for `bedrock` only — the stream idle-timeout watchdog (`OPENWIKI_STREAM_IDLE_TIMEOUT`). These are reported through the debug log so a run's effective limits are observable.
+
 ## The provider matrix and model instantiation
 
 `createModel` maps the resolved provider and model id onto a concrete LangChain chat model. The provider enum spans direct API-key providers (`anthropic`, `openai`, `gemini`, plus OpenAI-compatible gateways `baseten`/`fireworks`/`nebius`/`nvidia`/`openai-compatible`), OAuth (`openai-chatgpt`, `copilot`), AWS-SDK (`bedrock`), a routing gateway (`openrouter`), and Google Vertex (`gemini-enterprise`).
@@ -88,9 +88,11 @@ Each branch constructs a purpose-built client:
 - **Gemini (AI Studio)** builds `ChatGoogle` with `platformType: "gai"`, disabling streaming and pinning `outputVersion: "v0"` so Gemini 3.x thought-signatures round-trip correctly across tool-calling turns.
 - **Gemini Enterprise (Vertex)** delegates to `createGeminiEnterpriseModel`, which picks the client from the model family: Claude via the Anthropic Vertex SDK, partner/open-weight models over Vertex's OpenAI-compatible MaaS surface, and Gemini/Gemma over native `generateContent`. Auth is uniform ADC + project + region; only the transport differs.
 - **ChatGPT OAuth** reuses `ChatOpenAI` against the Codex Responses backend with `useResponsesApi`, `zdrEnabled` (forcing `store: false`), forced streaming, and the account/originator/beta headers the Codex backend requires.
-- **OpenRouter** builds `ChatOpenRouter` against the OpenRouter base URL, optionally pinning an upstream provider allowlist.
-- **Bedrock** builds `ChatBedrockConverse` with the resolved AWS region and an optional stream idle-timeout watchdog.
-- **OpenAI and all OpenAI-compatible gateways** fall through to a shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, and forces streaming for gateways that only serve the streaming transport.
+- **OpenRouter** builds `ChatOpenRouter` against the OpenRouter base URL, optionally pinning an upstream provider allowlist; a legacy OpenRouter-specific output cap still takes precedence there over the provider-neutral cap.
+- **Bedrock** builds `ChatBedrockConverse` with the resolved AWS region and, when `OPENWIKI_STREAM_IDLE_TIMEOUT` is set, a stream idle-timeout watchdog that aborts a generation stalled waiting for its first or next chunk (0 disables it).
+- **OpenAI and all OpenAI-compatible gateways** fall through to a shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, and forces the streaming HTTP transport for gateways that only serve SSE.
+
+The provider-neutral output limit is the single `OPENWIKI_MAX_OUTPUT_TOKENS` setting: because a run constructs only one model, one value is mapped to each SDK's field name (`maxTokens` for OpenAI/Anthropic/MaaS, `maxOutputTokens` for Gemini), with OpenRouter's older `OPENWIKI_OPENROUTER_MAX_TOKENS` cap retained for backward compatibility and taking precedence on OpenRouter runs. When unset the limit is omitted so the provider default applies (Anthropic's modern-Claude default aside).
 
 `createModel` also threads a resolved reasoning config: `OPENWIKI_REASONING_EFFORT` is applied only to models that declare a reasoning capability, and it is sent either as a Responses-API `reasoning.effort` payload or as a chat-completions `reasoning_effort` kwarg depending on the model's declared transport; an unsupported provider/model or an invalid effort value throws.
 
@@ -104,7 +106,7 @@ For `gemini-enterprise`, the API surface is a function of the model id, not the 
 
 The composite backend (`createAgentBackend`) mounts two additional read-only virtual filesystems alongside the wiki backend: `/conversation_history/` for DeepAgents' history offload and `/skills/` for the bundled skills. A shared filesystem permission set additionally denies writes under both `/skills/**` and the conversation-history mount, and the composite backend converts a known upstream broad-glob recursion overflow into a bounded, model-facing "narrow your search" error instead of crashing the run.
 
-The agent is streamed with `subgraphs: true`. Stream mode is normally `messages` + `tools`, but the `openai-compatible` provider defaults to the safer `updates` + `tools` mode because arbitrary endpoints (e.g. GLM emitting reasoning deltas before the first assistant delta) can aggregate to a chunk the agent loop rejects; a known-good endpoint can opt back into `messages` mode.
+The agent is streamed with `subgraphs: true`. Stream mode is normally `messages` + `tools`, but the `openai-compatible` provider defaults to the safer `updates` + `tools` mode because arbitrary endpoints (e.g. GLM emitting reasoning deltas before the first assistant delta) can aggregate to a chunk the agent loop rejects; a known-good endpoint can opt back into `messages` mode with `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES`.
 
 ## The docs-only filesystem backend
 
@@ -123,7 +125,7 @@ These boundaries exist because the agent may be prompt-injected via untrusted re
 Chat runs use no middleware. For non-chat runs, `createOpenWikiAgentGraph` mounts, in order:
 
 1. **Translation middleware** (updates only, and only when a translation plan is resolved). Its `beforeAgent` hook brings every existing page into the run's target language before the agent starts, so an incremental update never leaves a mix of old and new language. `resolveTranslationPlan` returns a plan for every `update`: a real language switch (different primary subtag) retranslates every page, while a plain update only retries pages a prior run marked `openwiki_translation_pending`, and a sweep with nothing to do makes zero model calls. A single page's failure never aborts the run — the page keeps its previous language, is stamped pending for the next update, and the failure is reported through a sanitized warning sink. Translation model calls are tagged `langsmith:nostream` so their raw Markdown stays out of the token stream; one status line is shown instead.
-2. **OKF index middleware** (always, for non-chat runs). Its `beforeAgent` hook migrates existing pages to valid OKF front matter and snapshots their bodies; its `wrapToolCall` decorates successful write results with front-matter warnings without catching tool throws; and its `afterAgent` hook synchronizes the deterministic directory indexes and stamps code-owned `generated` provenance on every new or changed page, using the single run timestamp threaded through the run.
+2. **OKF index middleware** (always, for non-chat runs). Its `beforeAgent` hook migrates existing pages to valid OKF front matter and snapshots their bodies; its `wrapToolCall` decorates successful write/edit results with a front-matter warning without catching tool throws (LangChain's tool node already converts a thrown tool error into a recoverable `ToolMessage`, so catching and rethrowing here would make every recoverable tool error fatal); and its `afterAgent` hook synchronizes the deterministic directory indexes and stamps code-owned `generated` provenance on every new or changed page, using the single run timestamp threaded through the run. A deferred `claimSources` projection supplied by a repository Claims runtime is read only during finalization, so it reflects every mutation accepted during the run.
 
 Both middleware hooks operate purely on file text read and written through the sandboxed docs-only backend; model output is never executed.
 

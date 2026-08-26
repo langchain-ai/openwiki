@@ -3,9 +3,6 @@ type: concept
 title: Grounded Claims
 description: How OpenWiki grounds generated wiki pages in versioned repository evidence through the Claims model, including the store, session, and runtime split, evidence resolution and staleness detection, and the durability boundary reached at page completion.
 tags: [claims, evidence, grounding, provenance, verification, repository, okf]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-4abcc99d4dad36b191736bb7
     resource: repo://src/claims/brains/code/paths.ts
@@ -33,7 +30,10 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+verified:
+  - by: openwiki/0.4.0
+    at: 2026-08-26T20:17:27.397Z
 ---
 
 # Grounded Claims
@@ -204,10 +204,15 @@ derived from the resource, and independently authored producer `sources` are
 retained.
 
 Durable verification is projected into the OKF `verified` field
-(`synchronizeClaimsVerification`): only events in the `openwiki/<version>` actor
-family are OpenWiki-owned, so human and other producer events survive. Only a
-page that is persisted, clean, non-empty, free of evidence debt, and carrying a
-verification event is eligible for a machine stamp.
+(`synchronizeClaimsVerification`). For every grounded page it keeps all
+producer-authored events whose `by` actor is not in the `openwiki/<version>`
+family, then appends at most one active durable verification event from Claims
+state (or none, when the page is ineligible). Bare verifier mappings are
+normalized to the canonical list form when the field is touched, and the
+projector records the pre-projection Markdown for each changed page so a failed
+hash refresh can roll the field back. Only a page that is persisted, clean,
+non-empty, free of evidence debt, and carrying a verification event is eligible
+for a machine stamp.
 
 The projection can rewrite code-owned front matter, which changes the Markdown
 bytes and therefore the page hash. To keep sidecars consistent with the final

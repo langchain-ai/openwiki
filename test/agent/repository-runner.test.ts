@@ -9,7 +9,7 @@ type HarnessPage = {
   seedPaths: string[];
   relatedPages: string[];
   instructions: string[];
-  status: "pending" | "complete";
+  status: "pending" | "skipped" | "complete";
 };
 
 type HarnessPlan = {
@@ -78,6 +78,8 @@ const harness = vi.hoisted(() => ({
   planToolResults: [] as unknown[],
   planPaths: ["/openwiki/quickstart.md", "/openwiki/architecture.md"],
   resumed: false,
+  restoreCalls: 0,
+  workerExitsWithoutSubmit: false,
 }));
 
 vi.mock("deepagents", async (importOriginal) => {
@@ -210,7 +212,13 @@ vi.mock("deepagents", async (importOriginal) => {
                       },
                     ],
                   };
-            await completionTool.invoke(input);
+            const exitWithoutSubmit =
+              toolName === "submit_page" && harness.workerExitsWithoutSubmit;
+            if (exitWithoutSubmit) {
+              harness.workerExitsWithoutSubmit = false;
+            } else {
+              await completionTool.invoke(input);
+            }
           },
         }),
       );
@@ -220,6 +228,21 @@ vi.mock("deepagents", async (importOriginal) => {
 });
 
 vi.mock("../../src/generation/repository-run.js", () => ({
+  captureRepositoryPageSnapshot(_run: HarnessRun, jobId: string) {
+    return Promise.resolve({
+      jobId,
+      path: "/openwiki/snapshot.md",
+      markdown: "original\n",
+      claims: null,
+    });
+  },
+  skipRepositoryPage(run: HarnessRun, snapshot: { jobId: string }) {
+    harness.restoreCalls += 1;
+    const job = run.state.plan?.pages.find(({ id }) => id === snapshot.jobId);
+    if (!job) throw new Error("Expected skipped harness page job.");
+    job.status = "skipped";
+    return Promise.resolve();
+  },
   beginRepositoryRun() {
     harness.beginCalls += 1;
     if (harness.noop) {
@@ -390,6 +413,8 @@ beforeEach(() => {
   harness.planToolResults = [];
   harness.planPaths = ["/openwiki/quickstart.md", "/openwiki/architecture.md"];
   harness.resumed = false;
+  harness.restoreCalls = 0;
+  harness.workerExitsWithoutSubmit = false;
 });
 
 describe("runNativeRepositoryGeneration", () => {
@@ -583,6 +608,26 @@ describe("runNativeRepositoryGeneration", () => {
           event.type === "repository_progress" && event.stage === "replanning",
       ),
     ).toHaveLength(2);
+  });
+
+  test("restores and leaves a page pending when its worker does not submit", async () => {
+    harness.workerExitsWithoutSubmit = true;
+    harness.planPaths = ["/openwiki/testing.md", "/openwiki/later.md"];
+
+    const events = await runHarness();
+
+    expect(harness.restoreCalls).toBe(1);
+    expect(harness.finishCalls).toBe(1);
+    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("skipped");
+    expect(harness.currentRun?.state.plan?.pages[1]?.status).toBe("complete");
+    expect(harness.agentOptions).toHaveLength(3);
+    expect(
+      events.some(
+        (event) =>
+          event.type === "text" &&
+          event.text.includes("reconsidered on the next update"),
+      ),
+    ).toBe(true);
   });
 
   test("reports strict no-op without constructing a worker", async () => {

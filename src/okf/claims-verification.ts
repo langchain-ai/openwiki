@@ -1,6 +1,10 @@
 import { isDeepStrictEqual } from "node:util";
 import type { ClaimsVerificationEvent } from "../claims/brains/code/types.js";
-import { parseFrontmatterFields, setOkfVerified } from "./frontmatter.js";
+import {
+  parseFrontmatterFields,
+  repairOkfFrontmatter,
+  setOkfVerified,
+} from "./frontmatter.js";
 
 /**
  * Minimal generated-page storage required by the verification projector.
@@ -36,15 +40,16 @@ export async function synchronizeClaimsVerification(
 
   for (const page of await store.discoverPages()) {
     const content = await store.readMarkdown(page);
-    const current = readVerificationEvents(content);
+    const repaired = repairOkfFrontmatter(content, page).content;
+    const current = readVerificationEvents(repaired);
     const retained = current.filter((event) => !isOpenWikiActor(event.by));
     const active = verificationByPage.get(page);
     const next = active ? [...retained, { ...active }] : retained;
 
-    if (isDeepStrictEqual(current, next) && isCanonicalList(content)) continue;
-    if (current.length === 0 && next.length === 0) continue;
-
-    const projected = setOkfVerified(content, next);
+    const projected =
+      isDeepStrictEqual(current, next) && isCanonicalList(repaired)
+        ? repaired
+        : repairOkfFrontmatter(setOkfVerified(repaired, next), page).content;
     if (projected === content) continue;
     await store.writeMarkdown(page, projected);
     changes.set(page, content);

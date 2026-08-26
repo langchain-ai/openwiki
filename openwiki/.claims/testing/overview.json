@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fee9fc49517815bbe71687ae39517991067939308add35caf75d3ad2d795ae99",
+  "pageVersion": "sha256:ab3b2e89c6dbd1393f5528b01287167211e5642982679258e789d0b4dd1f8140",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -114,7 +114,7 @@
     },
     {
       "id": "claim_05b99fc700b745d5a0abfe04878ab606",
-      "statement": "The test/ tree mirrors the src/ tree directory-for-directory, so each subsystem's tests live at the path matching its source (e.g. test/agent for src/agent, test/connectors for src/connectors, test/generation for src/generation, test/integrations for src/integrations).",
+      "statement": "The test/ tree mirrors the src/ tree directory-for-directory, so each subsystem's tests live at the path matching its source (e.g. test/agent for src/agent, test/connectors for src/connectors, test/generation for src/generation, test/okf for src/okf, test/integrations for src/integrations).",
       "evidence": [
         {
           "resource": "repo://test/agent/repository-runner.test.ts#L1-L6",
@@ -135,12 +135,12 @@
       "statement": "Tests import source modules directly by relative path (e.g. ../../src/...), so a source module can be unit-tested through Vitest's transform without first building dist/.",
       "evidence": [
         {
-          "resource": "repo://test/openwiki-home.test.ts#L5-L9",
-          "version": "repo-lines-v1:sha256:6dc6dd1e50a3260f05939b9fadd4859f2bc3e0244a055837f15920e1cf4a3474:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgyMDA5NjRhOTc4NjM1NTIyYjJhYjA5MGM2NTA2NWQ4ZWY4ZTg1YzQ3MzBiYjJlYjA0NjBkMzRjNjc3ZGRiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhhYTQzZTcxMTIyYzdjZTNhZTNiMjFmODkwN2E4MWY3MzhkMTA3ZDg2MTk3YjJjZWI4MWMzMzI0ZDFkYmVkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDQ2ZjA0YjhkYjZjZDVhMzBkMDZkNTlhNGEyMjUwYjJlODlhYjQ2YjdkNDE2MGRiYzQ0NDhhYWYxZGQ2M2NmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGMyZjkyNDBkODQwZTM3NDRhNmI4NTIzMmY1Y2YwNzUzMzhlMWVlMTBiMjcxODBlNjk0ODlhOGU2OTg5OGUxMSJ9"
+          "resource": "repo://test/generation/repository-run.test.ts#L57-L73",
+          "version": "repo-lines-v1:sha256:2a8f98f8d601cb84fbce4c9cc066385c98d9a88a3057a241d98024f406c24861:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZTgzOTc3Y2E0MDRhYmMyNzA2ZmEwZGNiMTM2YTQ2ZGNkYzIyZmVkOWFjY2MwNTExODY3NDIwZjcwNWE0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MTg4MjRkZGMzNmNjMGQ1NjY3YTA0YjRlMDQ3N2M0M2ZlMTdhZGE0ZTMyZjZkNjJjNTZiNjI5ZjJmMjAyMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjI1ZDY0NjQ4ZmQ3ZmJlNWQwZGExZjRmN2NmODAwZDE1Y2JhOWMyNzBkOTJiOTZiMWE4YWVmOWY1MzU4YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxZjZjODFiZDc3MzE0NWQzNTdkOWUzYjM4YjVkZDFkMWZlMzFjNzVmZGVhMDE3YzBkNTBlNjViOGViMzEyMjEifQ"
         },
         {
-          "resource": "repo://test/generation/repository-run.test.ts#L57-L60",
-          "version": "repo-lines-v1:sha256:801b0629b7ea274c0f76ab45a6d0c6d08dd3744c587d3fd41e91d7129bed3ec0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBlODM5NzdjYTQwNGFiYzI3MDZmYTBkY2IxMzZhNDZkY2RjMjJmZWQ5YWNjYzA1MTE4Njc0MjBmNzA1YTQxYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUyNmE0ZWY3ZGZjOTVmNGEyOWU3NTk2ZWM5YjAyYzkxMWUxYWJjOGY0OTBmZmRkMjU2YjQxNzk4YWVjMmU4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQyMjVkNjQ2NDhmZDdmYmU1ZDBkYTFmNGY3Y2Y4MDBkMTVjYmE5YzI3MGQ5MmI5NmIxYThhZWY5ZjUzNThhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGY2MDczOWU4OWYzYzliN2I2OWE2NzIxZjJmNzQ5YmIwMzY3OWNhMDA3ZDg3NjQxOTUwODlmOWJjOGIwYmI5NyJ9"
+          "resource": "repo://test/openwiki-home.test.ts#L5-L9",
+          "version": "repo-lines-v1:sha256:6dc6dd1e50a3260f05939b9fadd4859f2bc3e0244a055837f15920e1cf4a3474:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgyMDA5NjRhOTc4NjM1NTIyYjJhYjA5MGM2NTA2NWQ4ZWY4ZTg1YzQ3MzBiYjJlYjA0NjBkMzRjNjc3ZGRiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhhYTQzZTcxMTIyYzdjZTNhZTNiMjFmODkwN2E4MWY3MzhkMTA3ZDg2MTk3YjJjZWI4MWMzMzI0ZDFkYmVkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDQ2ZjA0YjhkYjZjZDVhMzBkMDZkNTlhNGEyMjUwYjJlODlhYjQ2YjdkNDE2MGRiYzQ0NDhhYWYxZGQ2M2NmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGMyZjkyNDBkODQwZTM3NDRhNmI4NTIzMmY1Y2YwNzUzMzhlMWVlMTBiMjcxODBlNjk0ODlhOGU2OTg5OGUxMSJ9"
         }
       ]
     },
@@ -149,8 +149,8 @@
       "statement": "The claims tests are split by the claims subsystem's internal boundaries: test/claims/core (resolver-agnostic mutation and error model), test/claims/brains/code (the code claim brain: paths, preflight, runtime, session, store), and test/claims/evidence/repository (repository evidence resource and resolver).",
       "evidence": [
         {
-          "resource": "repo://test/claims/brains/code/store.test.ts",
-          "version": "repo-file-v1:sha256:895b504408fa892a27da401bdc1fc557631ba9a4c86333f6faba5e182614a6bc"
+          "resource": "repo://test/claims/brains/code/store.test.ts#L1-L15",
+          "version": "repo-lines-v1:sha256:8a24323656567045ecb248573d26bfbc0bd3dceb8ff3cfc7e91eefec728b94d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjAwOTY0YTk3ODYzNTUyMmIyYWIwOTBjNjUwNjVkOGVmOGU4NWM0NzMwYmIyZWIwNDYwZDM0YzY3N2RkYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxODY4N2VkNTg2ODZhNTVlYmFkYTFiNGE1NGRiODY5NjYyYTg5ZTY3MGQyZTc3NTNlMmVlMmRiMGUwYThiZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkNWQ3ZmFhMDA5MDA3NGM3YjU4MmQ3ZTU5NjAwNWRmN2JkNjhmMDI5ZWRiMjM1NzJlOTVjMjM1YWFkOTNlNzUifQ"
         },
         {
           "resource": "repo://test/claims/core/mutations.test.ts#L1-L11",
@@ -192,7 +192,7 @@
     },
     {
       "id": "claim_3a4dd876dbaf4ff9a91a47e18e48d2ff",
-      "statement": "Failure-path tests inject faults with vi.mock plus a vi.hoisted counter that wraps the real module and throws on selected calls while otherwise delegating to the real implementation, as when the repository run test injects metadata-write and run-state write/removal failures.",
+      "statement": "Failure-path tests inject faults with vi.mock plus a vi.hoisted counter that wraps the real module and throws on selected calls while otherwise delegating to the real implementation, as when the repository run test intercepts writeLastUpdateMetadata, writeRepositoryRunState, and removeRepositoryRunState to inject metadata-write and run-state write/removal failures.",
       "evidence": [
         {
           "resource": "repo://test/generation/repository-run.test.ts#L8-L55",
@@ -237,10 +237,52 @@
           "version": "repo-lines-v1:sha256:c82e452a76126e80ac7364943d521d7ccb0902f7192e6edb17fe310ebaf8afb8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMjA1MTY4MGVhODYzMjM2OTE4ZWJkZWJiMDkwYWYyMzhiODM3OWQyNjk0ZmM2ZTVkNTRlMTA2Y2RhNjZiN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NTY2MzhjMzFkZjgxYWNmMzJhODFhNDE4NWViNDAyODc0YjU0MWNlOGYxNDUwYWUzYjBmMTUwYjljNWIzZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5Zjc2MmEwYWQ2ZDEzNTY1ZDkzNjhhMjA4YzFmMDkyZGNhZjJkZmFiNzdlODBjODI0NWYzZGQ4MGRiMzNmNjQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_24a9a1a0426c42478d99862ba6ad6033",
+      "statement": "The agent subsystem directory holds three OKF-authoring-pipeline test files added in the v0.4.0 cycle: frontmatter-validator.test.ts exercises validateOkfFrontmatter in isolation against accepted/rejected frontmatter families, index-middleware.test.ts drives createOpenWikiIndexMiddleware against a real OpenWikiLocalShellBackend in an mkdtemp dir (including broken-Mermaid failure paths), and wiki-finalizer.test.ts exercises prepareWikiForAuthoring and finalizeWikiArtifacts against an isolated repository-mode backend.",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/frontmatter-validator.test.ts#L1-L10",
+          "version": "repo-lines-v1:sha256:66439b9336343bc9b6942211b5b40a6ebc43ec989652a685ec4b35f49c55bb34:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMGRhOWVkODUxYTBlNGIyYjMyN2Q1NzU0MmViMGQ5MWNkYmVhMmRlMDlhMWJhMDFjMmQ3NDhkZWFiMWE3YzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlMDFkYzljOGI3NmFmODZhZTNkZDMyMjBmZjRmZjQ2MjRhOTdjNThmNDE1YjIwYWUyOThkYjE1ZjdkMzc1MjMifQ"
+        },
+        {
+          "resource": "repo://test/agent/index-middleware.test.ts#L1-L27",
+          "version": "repo-lines-v1:sha256:12e026644df197b70d147594dc149c512a0b5baa337e1f3b0aeda02f9b546c94:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMGRhOWVkODUxYTBlNGIyYjMyN2Q1NzU0MmViMGQ5MWNkYmVhMmRlMDlhMWJhMDFjMmQ3NDhkZWFiMWE3YzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0N2MyODU1OWM3NGE2MjQ5M2MxMmI2MmRlZWVmZmM0YmFiYWI1ZTRkNTkwOTk4NmVkM2U4MzhiYjllNTNlZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5ZTE0YjA2ZjM1ZGYzMDQyZDlhN2Q5YWY3ZDU3M2RkMTNkNzM5Y2NjMGEzOGUxZmY3ZWNjOTIwMTg0MDdkMDkifQ"
+        },
+        {
+          "resource": "repo://test/agent/wiki-finalizer.test.ts#L1-L60",
+          "version": "repo-lines-v1:sha256:a9d5022cfba34acb30fef9f56141152b42b124af2228e798c60aaab19bf2ca0b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NWQxNDQzY2ZkMmY1ODYxYTNiZTBmNTBjZWUxMDc2YTFhYWU0ZmQ3MGRlMGE1MDI1ZTA4NDYwNWQzZGY3OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxOWJmMDQ2Y2UxODBhNWQ1MTFlZDRmMDQwOGY5YmU3OTE1NzcyMTYzZWE5ZDY3YjUyZDEyNGQzZGU4MWIwZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3NmU2ZjMwYzJmZDFjZmFmMDE2MGRlOGY5MmZiMzEwMTM4MjAyYTljOTJkZmUxNjc2MGNiMjQ2ZDY5MDIxZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5fe2f267f67541489cc5692b7ddd6525",
+      "statement": "test/okf/frontmatter.test.ts is the broadest OKF frontmatter suite, covering normalizeConceptContent (regenerating frontmatter for bare pages, repairing optional fields while preserving producer-defined extensions, stamping a localized concept type) and the parseFrontmatterFields/renderFrontmatter/validateOkfFrontmatter/repairOkfFrontmatter/validatePersistedFile helpers, mirroring src/okf/frontmatter.ts.",
+      "evidence": [
+        {
+          "resource": "repo://test/okf/frontmatter.test.ts#L1-L60",
+          "version": "repo-lines-v1:sha256:04f67cfee94ae4107381d55e6393f4d8740dcc8f922bca83215efe333dfcb2a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmZTE1ZTI2OWMyZGFiYWJiNTdiODFlY2I5ZDVjZTJjYjkzNmQyYTYzNzFjNWQ4Nzg3NzU0YzI2ZDUzYzcxYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZmIyMWM3ZWFmNGEzZmM5ZjdhYmZjYmQ0Mjg2ZWI0ZDY0OWM1NGY3NDU0ZDIxZGJkZTUxMWY0MzJhYWFjYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1NTA1NGUzOGZjNjM1YWY2ZDkzMDMwZjc0MzMwMWZhNDRjMjdhMmVhMTE2ZGM2NTAxNjg4ZWI0M2QwNjQzZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eba7cb76264f4d279e90756b4e4405aa",
+      "statement": "test/generation/repository-run.test.ts is the end-to-end integration test for the repository generation workflow: it imports parseFrontmatterFields and validateOkfFrontmatter from src/okf/frontmatter.ts and the beginRepositoryRun/submitRepositoryPlan/nextRepositoryPage/submitRepositoryPage/finishRepositoryRun lifecycle from src/generation/repository-run.ts, and drives the full begin→submit_plan→next_page→submit_page→finish lifecycle against a temporary committed Git repository, arming the failure harness in beforeEach and removing temp directories in afterEach.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L57-L73",
+          "version": "repo-lines-v1:sha256:2a8f98f8d601cb84fbce4c9cc066385c98d9a88a3057a241d98024f406c24861:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZTgzOTc3Y2E0MDRhYmMyNzA2ZmEwZGNiMTM2YTQ2ZGNkYzIyZmVkOWFjY2MwNTExODY3NDIwZjcwNWE0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MTg4MjRkZGMzNmNjMGQ1NjY3YTA0YjRlMDQ3N2M0M2ZlMTdhZGE0ZTMyZjZkNjJjNTZiNjI5ZjJmMjAyMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjI1ZDY0NjQ4ZmQ3ZmJlNWQwZGExZjRmN2NmODAwZDE1Y2JhOWMyNzBkOTJiOTZiMWE4YWVmOWY1MzU4YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxZjZjODFiZDc3MzE0NWQzNTdkOWUzYjM4YjVkZDFkMWZlMzFjNzVmZGVhMDE3YzBkNTBlNjViOGViMzEyMjEifQ"
+        },
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L599-L625",
+          "version": "repo-lines-v1:sha256:5144f16fc362c601d4a6627fb65469f04d48a0fb461e033dd52b4d90a5bee5cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MGY2YjlkMWExMDY0MzcyYTU5NzAxOWM5MWMxMDIzYmI3ZTVjMmFhYjU1MzM1MDRkMjFhYWJlZDczOWU5MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ZWEzYThkZWI0ZGQ5ZmU1NWM3MzU1ZTJmMWQ1YjlmMzA0MWVkOWM3MjQxNzdkOGQyOGQwYjAwNmI2NTllYzAifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.0",
+    "at": "2026-08-26T20:17:27.397Z"
   }
 }

@@ -330,7 +330,7 @@ describe("synchronizeWikiIndexes", () => {
     ["[one, two]", "{ text: nested }"],
     ["{ text: nested }", ""],
   ])(
-    "falls back when optional title and description are not usable strings: %s / %s",
+    "repairs optional title and description when they are not usable strings: %s / %s",
     async (title, description) => {
       const { backend, rootDir } = await setup();
       await backend.write(
@@ -344,7 +344,7 @@ describe("synchronizeWikiIndexes", () => {
         path.join(rootDir, "openwiki/index.md"),
         "utf8",
       );
-      expect(index).toContain("- [page](page.md)\n");
+      expect(index).toContain("- [Page](page.md)\n");
       expect(index).not.toContain(" - ");
     },
   );
@@ -698,7 +698,7 @@ describe("createOpenWikiIndexMiddleware generated finalization", () => {
 
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(page).toContain(
-      `generated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}"}`,
+      `generated: { by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}" }`,
     );
   });
 
@@ -728,7 +728,7 @@ describe("createOpenWikiIndexMiddleware generated finalization", () => {
 
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(page).toContain(
-      `generated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${LATER}"}`,
+      `generated: { by: "openwiki/${OPENWIKI_VERSION}", at: "${LATER}" }`,
     );
     expect(page).not.toContain("timestamp:");
     // Exactly one generated event, not a duplicated field.
@@ -876,7 +876,7 @@ describe("createOpenWikiIndexMiddleware generated finalization", () => {
     expect(page).not.toContain("generated:");
   });
 
-  test("fails finalization when the generated event cannot be persisted", async () => {
+  test("keeps authored content when generated provenance cannot be persisted", async () => {
     const { backend, rootDir } = await setup();
     const middleware = createOpenWikiIndexMiddleware(
       backend,
@@ -900,15 +900,13 @@ describe("createOpenWikiIndexMiddleware generated finalization", () => {
       });
 
     try {
-      await expect(runAfterAgent(middleware)).rejects.toThrow(
-        "Unable to finalize generated provenance for /openwiki/page.md: disk full",
-      );
+      await expect(runAfterAgent(middleware)).resolves.toBeUndefined();
     } finally {
       writeSpy.mockRestore();
     }
 
-    // The model-authored content survives, but the run cannot claim successful
-    // finalization while its code-owned provenance is absent.
+    // Provenance degrades to absent while the useful model-authored page and
+    // the rest of the run survive.
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(page).toBe(body);
     expect(page).not.toContain("generated:");

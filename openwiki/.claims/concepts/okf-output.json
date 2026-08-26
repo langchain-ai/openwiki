@@ -1,14 +1,18 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0d42eec7f061dbc74392bd9cf2b0cf5af3f05f3ad71d508ba0ce670aa4f3702f",
+  "pageVersion": "sha256:ffd27ccf92f1fc05e01d31a26c4d02f7ad3ec4c71ad6a834109665e4d357651d",
   "claims": [
     {
       "id": "claim_015f68c61f874418879c6446644e49d5",
       "statement": "validateOkfFrontmatter parses the leading `---` block and returns structured issues (each with a stable code, optional line, and message) rather than throwing, so callers get machine-readable validation results.",
       "evidence": [
         {
-          "resource": "repo://src/okf/frontmatter.ts#L88-L181",
-          "version": "repo-lines-v1:sha256:dcdaac79299f04c0fb98fc9fea6fddaa0ed10efb0662eef878a61ac7f121638f:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YzE4ZjgxODIzYjM0ZGE4OTAyNmYzNjIyYjhkMzUyYTk1ZmNmZGRhZGZjMGMxM2ViMDJjMTIwMmQxODNmMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjZmM4MWM0MjRmZjRkOTYyN2RiNGRlZjJiMjliZjVjMGVmODFjNjgwMTc1NjcyNDI3ZTczYTY0ZDU3ZWFiMzMifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L118-L183",
+          "version": "repo-lines-v1:sha256:624cfee626a42ff5b0a1a8a9521a72635f6ab4dae9313cc0ba8791f7fb13f936:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MGY3NDY2NGQ4ZTk1MGI5NzY5NzI5NWM4YWNkZjk0OTYzZDQ5YjU4MmQ5MTM1YjZjNzRiNzI3NTVhM2Q1NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzODk0ZWE5MmU4OGQwZTg3NGJkYTk1NmNlM2Y1MjMxYzNkNGY5ZTg2M2Q4ZjcwNTQ5ZGRmNDBmMTczZDgwNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjZmM4MWM0MjRmZjRkOTYyN2RiNGRlZjJiMjliZjVjMGVmODFjNjgwMTc1NjcyNDI3ZTczYTY0ZDU3ZWFiMzMifQ"
+        },
+        {
+          "resource": "repo://src/okf/frontmatter.ts#L74-L95",
+          "version": "repo-lines-v1:sha256:fc9552a8d62d16c738bb770f6218a870a82f30541097fc8bb257c29a357252eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkMzRhMGYzYzMwNTI4NzhkZWE5NjIxM2VhOWJhYzcwZGYyMzAyOGM2Y2Y0NDkxODE4NzY0YTQ0OTQ0ODMzMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0Y2JjNGI4NjI4NjM4NGY1MmZkODAyYTRiMzk0NjliYWM5MGI5ODMxNmZmNjg1MzEyMjQ4YzQ0ZDEwZmY2MzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NzFhMGY0YjQ3MDZhZjY1YzE1NWNjZmFhNjE2MTQ4NzU3ODVlNjg1ZWQwYzkzYzkyZWJjMmJmNDQxNWM4NmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhMmM4MzY5MjE5NWQxNjFmYjM2YWZjYWVmZjBhYWQ4MTkwN2UwOTMxYTMxZWZlMDY3NjMwYzZiM2ZhMDA3OGYifQ"
         }
       ]
     },
@@ -17,12 +21,12 @@
       "statement": "`type` is the only required OKF frontmatter field; its absence produces a `missing_type` validation issue, while `title`, `description`, `resource`, and the tolerated legacy `timestamp` are only checked to be non-empty strings when present.",
       "evidence": [
         {
-          "resource": "repo://src/okf/frontmatter.ts#L150-L165",
-          "version": "repo-lines-v1:sha256:affac5f86857e0efc942cdd6700af9653a60ce2d1d7525af579b3c2ddc3d28d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmOWQ2ZWY5ZTJiMGYxZjdhYTc5MGY0YzRhYWY3MzlhNmI3ZTM4YWEzMWMwMzc5MWMxMjYwYzVmNGFhMTQzZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhY2YzNGNjZDBkMDE1ZjQ0MWQ2NmVkZGZmNDk2ZDA1NmQ2MDUxMzRlMGRhNDdjZDg5YWEyNWFjNTUxZThiYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwNmYwZDg2NjZiYjU3YmYwNmMxNzljOTAyNTdmYjMxYmJkYWRhOTk3MDk5NGIwNWU1MzE5MjMyYjY0MjY4NmEifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L150-L167",
+          "version": "repo-lines-v1:sha256:876a5504f7de8b2fdc739a977266774d1c28f0483a3b02f6155e7053e35f07a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyZjg5ZWZhNDg5OWIxZTJkMzUyNjM5OGJlOWM0NmNlYWRlNGMyZjNmYTM0YzMxY2VlM2IwZDY4N2YyMTlmYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1MDcwMWIxMjUwY2MxNjJjMTY2MTBlZGMwZDFhNTlmNWQ5ZDdlOTlmMjljN2ZiZmJkOTlkZjk0NTRkYTFmZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwNmYwZDg2NjZiYjU3YmYwNmMxNzljOTAyNTdmYjMxYmJkYWRhOTk3MDk5NGIwNWU1MzE5MjMyYjY0MjY4NmEifQ"
         },
         {
           "resource": "repo://src/okf/frontmatter.ts#L9-L15",
-          "version": "repo-lines-v1:sha256:43a28a24af02f29c5af83e494b0c09d676ea2db12c0c1ae8e1d1a65a1092a0b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjg2MDU3ZjhlNjU0MjJhNmVlMWViZDc1YzM1YjlmOWIxNjY5MDU4ZTc5MDliZjM2YWNkNDFlODA2Yjc4ZTE2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAyZDJjMGQ2ZGM1ZTc0ZDkyZmExNGI5MWRiZWEyNjQwOTBiZWIzNWZkYjkxODhkOWIzNDExODFkY2U5ZjRjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA0NWVhYmQyNmQ1ZWM0ZmQzOThmZTg1NzY1NjMyMWMwM2QwMDg5OWZjNDE1NTI1ZTBhOGMzMDk1NjNhNzgzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDUzZmQ2ZTUzYTQwMGY0MjM5MmM2NjMwYzI4NmZiMmIxMTAwYzdkY2M1Y2ZiMzJjMzdjOTY2ZTZiZGJiZTY3NiJ9"
+          "version": "repo-lines-v1:sha256:43a28a24af02f29c5af83e494b0c09d676ea2db12c0c1ae8e1d1a65a1092a0b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjg2MDU3ZjhlNjU0MjJhNmVlMWViZDc1YzM1YjlmOWIxNjY5MDU4ZTc5MDliZjM2YWNkNDFlODA2Yjc4ZTE2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAyZDJjMGQ2ZGM1ZTc0ZDkyZmExNGI5MWRiZWEyNjQwOTBiZWIzNWZkYjkxODhkOWIzNDExODFkY2U5ZjRjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA0NWVhYmQyNmQ1ZWM0ZmQzOThmZTg1NzY1NjMyMWMwM2QwMDg5OWZjNDE1NTI1ZTBhOGMzMDk1NjNhNzgzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGNhNWQ5YzFiOWY0MDQyODIwN2M3NGJmZGQ0NTFiMmIwM2M5NWExMWIxODg4YTA3MjQwZjYzODhhNzhmNTlkYSJ9"
         }
       ]
     },
@@ -31,7 +35,7 @@
       "statement": "When present, `tags` must be a YAML list of non-empty strings or validation reports `invalid_tags`.",
       "evidence": [
         {
-          "resource": "repo://src/okf/frontmatter.ts#L166-L177",
+          "resource": "repo://src/okf/frontmatter.ts#L168-L179",
           "version": "repo-lines-v1:sha256:3ff7dcdfcb14c7e67f52ecb2fbbe30ae6794a6644a528ee5e393c2f5ef4bd74b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NzY1MzcxYWVhMWNjN2Q0NmVjNmVmY2NiYmU5ZTllNzNjOTE4OTRmMGQwNmM3MWYxMjVhYzhiZTI1NWI3YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjNzk1YmI1M2I3MDI0MTcyMWNhN2EwZGJkYTExZGQ5NDMyMGZmZDFlNTBjOTlkMmNjOGE0ODA1YTZlMzgwMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliY2M5ZTAwZjQyZWYyZGY4NGZjODM2YmVmZDQ1MzNjYWI1Y2E4MzU0OGEwNTQ0MGYxZjg4MzExYmYzZWIwZWYifQ"
         }
       ]
@@ -41,8 +45,8 @@
       "statement": "validateOkfFrontmatter validates the OKF v0.2 provenance/trust/lifecycle families when present: `generated` as a `{by, at}` actor event, `verified` as one such event or a list of them, `sources` as a list of mappings each with a non-empty `resource`, `status` as one of draft/stable/deprecated, and `stale_after` as an ISO 8601 datetime with an explicit offset.",
       "evidence": [
         {
-          "resource": "repo://src/okf/frontmatter.ts#L183-L252",
-          "version": "repo-lines-v1:sha256:e141ae4517577ea59bf97925526d68a72ba8ccd9b4fd79de4ca39038e7bfaa69:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4YmJkNzdkZDA3OGJmNDM5NmQzYTY4ZmViNjA3YjhkOTdmNWM5YWZmNzVhNzg0YjFmODVjOWQ4ODY1ZDM4OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1ZTk2ZjgzNjJmMzBmMDlhYTEwZjYyOGNlYTY0YmRhZDU5ZTU3ZWUxYzJjZWQxNzAzODQ5YjVhMDg5NGJkZDYifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L183-L254",
+          "version": "repo-lines-v1:sha256:ce9472b7f27455a30b63d69c012d3496c2e2c0d7be9c49353b77fa8cefc04bc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliY2M5ZTAwZjQyZWYyZGY4NGZjODM2YmVmZDQ1MzNjYWI1Y2E4MzU0OGEwNTQ0MGYxZjg4MzExYmYzZWIwZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1ZTk2ZjgzNjJmMzBmMDlhYTEwZjYyOGNlYTY0YmRhZDU5ZTU3ZWUxYzJjZWQxNzAzODQ5YjVhMDg5NGJkZDYifQ"
         }
       ]
     },
@@ -51,26 +55,26 @@
       "statement": "OKF timestamp-valued fields require an explicit UTC offset and are validated against real calendar components (not just a regex shape) so freshness comparisons never depend on a consumer's local timezone.",
       "evidence": [
         {
-          "resource": "repo://src/okf/frontmatter.ts#L22-L28",
-          "version": "repo-lines-v1:sha256:2d8c7fd17ca515f740e6f6d9257065d3eba52b44b61893a3b72e21cac292c856:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFlNTY4NDkwYmJkZTc5ZWQyOTc4YTI0MWNkYWU5NmJkNzFhZjNhZGJkMDI5YWQwZjYwMzg4YjYwYzA5NTQ0ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTRiNWUyMzNkMTNjMGVlZTUyZWY2NzJlZDcwYjQ1ODQ3MWJjMWE3N2MwZjgzZDJhOThjMTE0MGJjM2QzNTBiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGNkMTdjMzc1N2RiZjNlYjNiNTcxNjEzYzg3ZjZiZTk5NmQ2NDFlYmY5NzQ5MjYxNGRkNWFlZTAxZmZlNzVhMyJ9"
+          "resource": "repo://src/okf/frontmatter.ts#L261-L312",
+          "version": "repo-lines-v1:sha256:b2428b741d606f9e358fc2ed1bcaf20ec38a988a14fc0114686a0d9d755ce962:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NTFkN2U4OTdkNmQ1MmVkMjA1MzdhZDdmZWVmY2YyNGViYjU4MTZiYzhiN2IzMmY4OWExY2NkNzlhNTIwZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxNTZhMjk3NThiZjI5NjEzYjIxZTEyNjdmMTU5Y2MwNTIzMWFkMTJjZmNhYWQ4OThhMmM5ZWNjZjVkODE2NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZTkzNTBiMWEyMWQyNGY1YjZiZTllMDllNjU3MzcwMGE4ZTMxMjA5Y2MxMTExNTRkYzEzYmI5ZmQ1ZDYwOGIifQ"
         },
         {
-          "resource": "repo://src/okf/frontmatter.ts#L268-L310",
-          "version": "repo-lines-v1:sha256:e2351cb6f76cb14f308a4de43f04f719afee091a482a66e3e3335376bfa54cc7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZTkzNTBiMWEyMWQyNGY1YjZiZTllMDllNjU3MzcwMGE4ZTMxMjA5Y2MxMTExNTRkYzEzYmI5ZmQ1ZDYwOGIifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L29-L34",
+          "version": "repo-lines-v1:sha256:ed9384dccb11c21e55f99198968df08c938b5289867c3d4f2aa1eb60d471245e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEzOTk5Yjg0M2E4MzM1OGI5ZDVlZjkyM2ZiZTQ0YTdjZDQ1ZGFjMmJlODI1ZWQ2Nzc2M2ViNDJhOTJhZjAyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFlNTY4NDkwYmJkZTc5ZWQyOTc4YTI0MWNkYWU5NmJkNzFhZjNhZGJkMDI5YWQwZjYwMzg4YjYwYzA5NTQ0ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWIyMTYxZDE4MDNjZDliOGQzOTlmNjJhODNiODQ2ODc0OGFmZGZiYTA2NjE1YzVmNjc3ZmEwODNhZjZmNGZiOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGNkMTdjMzc1N2RiZjNlYjNiNTcxNjEzYzg3ZjZiZTk5NmQ2NDFlYmY5NzQ5MjYxNGRkNWFlZTAxZmZlNzVhMyJ9"
         }
       ]
     },
     {
       "id": "claim_1d3dc739ff1349c68eb25bb04c0bf1cb",
-      "statement": "normalizeConceptContent leaves a page byte-for-byte unchanged when its frontmatter parses and has a non-empty `type`; only pages with no frontmatter, unparseable YAML, or a missing `type` get a rebuilt minimal block tagged `openwiki_generated: true`.",
+      "statement": "normalizeConceptContent delegates to repairOkfFrontmatter, which leaves a page byte-for-byte unchanged when its frontmatter parses and validates. For parseable-but-invalid YAML it edits only the offending recognized field through line-preserving setters; for unparseable or still-invalid YAML it falls back to a minimal block (type, title, and `openwiki_generated: true` via OPENWIKI_GENERATED_FIELD) emitted by renderFrontmatter.",
       "evidence": [
         {
-          "resource": "repo://src/okf/frontmatter.ts#L677-L690",
-          "version": "repo-lines-v1:sha256:5bb7df0921baf13614c69bf5ff6d5a8d0c8d6e37945ea09b2db382d976c216e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4MjdlZDFlMDdmM2NlMmI4NDU0MDM3MGIxZWYzNmQ3ODc4MmNjYjhlYWMzY2EwZTIxM2Y0ZWIwNmZjNzE2MTAifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L698-L722",
+          "version": "repo-lines-v1:sha256:16d098669d7422bf85a16bbc7d653a93ac7413d0f71832535831a1569c688d84:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ODhiZDAzODE1MDViOThlMTNjZDliMWY3MmVmNTA3ZGVlYTQwOTcxZmI5ZDg3M2MyNDc1ZWU4NGJhZGJjMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzMGFiNjA3MGMzMjdhOWQ3YWFiYWYzZTRmYTZjMTg2M2VjN2M2NGQ5Zjc1MGEwNjUxMGQzY2YzYjQ3NjAzNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4MjdlZDFlMDdmM2NlMmI4NDU0MDM3MGIxZWYzNmQ3ODc4MmNjYjhlYWMzY2EwZTIxM2Y0ZWIwNmZjNzE2MTAifQ"
         },
         {
-          "resource": "repo://src/okf/frontmatter.ts#L692-L746",
-          "version": "repo-lines-v1:sha256:cdd0db7b8b43c06cd3e0c2ff85fe9e7379205bf1205d5d7d0564eb7075469b28:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwMTMwNjBhMzJmNGY1Mzc4OTQyMmVlZDVjZDQ3MDcxYWVmOWE4Y2ExMWRmNzY4ZTI0NzI4OTM2NGE5MzBjODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L736-L844",
+          "version": "repo-lines-v1:sha256:81a3281eb0a0e2c52159031002f6d38f67388e5586af57863e8bd0f0bc92e81e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMTU3OWNjMTExZjBkZmEzY2U3NTZmY2JkZDk0ZDZjOWM1YzZhY2UxMjk0N2RkMDNjZmY3MDEzNzhkNjA3Mjk3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3ZjNmOTM1ZGY3OGMzOGQ1NTRiZDgxZWNkMGZkODI5ZTQyZjNhNWNmY2FkN2EzNjExY2Y1MDY1MjE3Mzk2ZTlkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwZjU1OTA3NDY2OTlmNmZhYTU4Zjc2YjVhMTAyN2QzN2FmMmQ1ZjYxNzUyNzMwZTE4MzA0ODM2OWY0ZWQ1NWQzIn0"
         }
       ]
     },
@@ -79,44 +83,44 @@
       "statement": "deriveMinimalFrontmatter supplies only a `type` (defaulting to the localized \"Reference\") and a `title` taken from the first H1 or the filename, deliberately omitting `description` because a code-guessed description is usually poor.",
       "evidence": [
         {
-          "resource": "repo://src/okf/frontmatter.ts#L660-L675",
-          "version": "repo-lines-v1:sha256:c190f6ce193520d12f2fe73426779a5a00f6258c8366c3b620752df27c4761c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkNzdlNmM3NDJiZWJkYjAyNWE3MjdiZGRiY2ZiY2M0MjllNDZiZjJmZDliNDY4ZjgwZTU3MjRjZjdiZTlkYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMTQ0NTFmMzhiZTJhZGRiZDU4OTE5YjNlNjU5OTE1Njc4NzI4Y2I4NzJjM2VmMGVlZmEwNWUxOTRhNGFhZDIifQ"
-        },
-        {
-          "resource": "repo://src/okf/frontmatter.ts#L70-L85",
-          "version": "repo-lines-v1:sha256:416b98dc263289d3072fb8407067c37db3b805bc35e711f2094f856fb456e33e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlOGFkZTM4NjMzODM2ODNjOTNjZjE4MmQyOTkxMDA1YjJlMmQ5NDhhZmFjOTdjNzkzYTMxZDNjZTFlMGMyMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3ZTgwYzM1NDUzYzE3YmUyMTI2ZmQ5MzI1Yzk1NzNhMzlkNmQwMjNhNzY3ZWZkZDIzNTMyMjdiMjU4NmVjNjkifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L676-L707",
+          "version": "repo-lines-v1:sha256:ba2036cdb410af18ecd8ea8c4b533f1876c70a656cfec3513c20daae7efa9daf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMTVmNjU1NzU0ZWUxNjA5YWUwZmRmNmY4ZTE1NjQ3ZWNlNzMxNWI1ZGY1NGUzYzNlOTJhYzcxOTdjZGUwZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMTQ0NTFmMzhiZTJhZGRiZDU4OTE5YjNlNjU5OTE1Njc4NzI4Y2I4NzJjM2VmMGVlZmEwNWUxOTRhNGFhZDIifQ"
         }
       ]
     },
     {
       "id": "claim_7a91c8eec1ca4cc19ec5459844e133ea",
-      "statement": "The deterministic frontmatter rebuild carries forward scalar extension fields (such as openwiki_translation_pending) and copies the structured provenance families `generated`, `verified`, and `sources` across verbatim as complete raw fields, so control markers and provenance are not lost during repair.",
+      "statement": "repairOkfFrontmatter preserves producer extension fields (such as openwiki_translation_pending) and valid provenance families byte-for-byte during the surgical repair path, because only recognized invalid fields are touched through line-preserving setters; the minimal-rebuild fallback (unparseable or unrepairable YAML) discards all frontmatter except derived type/title plus the openwiki_generated marker, so extensions and prior provenance are lost only in that last-resort case.",
       "evidence": [
         {
-          "resource": "repo://src/okf/frontmatter.ts#L43-L63",
-          "version": "repo-lines-v1:sha256:d0f7098b784fd9e7f668ad225e2d74067bfc8e804b45ef5a7c0b83f196923cb7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNzE0Y2EwNjBkMTQ4YzkxNTU0ODJhZDkwZDA3NWJhMWU0ZmE0NmM5OTdmOGVjMjEyMjhhOGJjYzJlZGQ5OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVlNWEyNWRlMTZhOTVkMTBjYzI3MTAyOGM5MTM4OWUxYmI2Njg3ODU3MmY5NjJlYjQzMGYyMTM2NDc4ZmFkZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjNTJkNzU3ZTVmOWZlNDhhNDM4YWY0YmU5MzY2Mjg0NjYxOTUxMTVhNWMzNzc5Y2Y2OWRkMDBkMDkxMTY1YWYifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L43-L47",
+          "version": "repo-lines-v1:sha256:163c8823970d48eeecce94671905d8e6fcf754cdada4ede1f42e10a9161cdfe2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmNlN2EyY2Y0NWI2MzdiMThjOWZmOWJiODI0NGViYWMwNWY5MTExY2I4ZjE0ZGJlMzQ5MWRhNTM4N2E2YjJkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTZhOTQ4ZWM3NWM4MTA2ZGExMjNhMmMyNmE4YTM0NjU2ZGQ0YmE3Zjk4YWVjOTEyYmRjZDY4M2Q4NDFjNzU1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWRkNzZhYjdjNDQ2MTU0YWUzMWYxZjJiNzc5MDg5ZmIwYjA3MjQyYmUzMWYzOWY1MDI2NmU2MzM5NzViZjFiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGM1MmQ3NTdlNWY5ZmU0OGE0MzhhZjRiZTkzNjYyODQ2NjE5NTExNWE1YzM3NzljZjY5ZGQwMGQwOTExNjVhZiJ9"
         },
         {
-          "resource": "repo://src/okf/frontmatter.ts#L719-L731",
-          "version": "repo-lines-v1:sha256:028c96cb83e1b56c25fcdb6ab42894fc2a84b37316d9e8b59db867125a52265f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNDlkNDU1MzNmM2I1NjBkNmM5NmFmMTM0ZTU1YWIzYTlhMGI2NWIzYjhjMzdlYTRiZTczZjg0MmRiNWFjY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2ZTE0ZmM1MjYyZWEwNGZhOTc0OTM3MTI3MDc5NjZkM2QwMDhiYTllMWY0N2Y0ZGM4NGViMTVjNzJjOGZmNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhZDVkNzcxY2I1MTkzZmNjM2M2MTQwYzNiYjIyOGZhNWM2YTk3Y2NiZWU0OWRmYjkzODhlZWI1ZGI3MGVhZDAifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L759-L844",
+          "version": "repo-lines-v1:sha256:2a0bbf9cd091f1b77f9b2da0f5ca035b75827c7269e435e86c0149b123c81972:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkMzUxMTRlOTZmOGIyMjc4ODQxNTgzYTEzZGE0MjlkOWZmMzIyZmY2YWNjMjJkYzkwMWU3ZjQyNGFmNTM5NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwNjhiYmUwOWYzYTQ2M2M5ZTU1ODQyM2NiYzVmNDAzM2E4OWJjNzM4Njg0MDA2YTI5MDQ5ZTQzNGViOTIxMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNTU5MDc0NjY5OWY2ZmFhNThmNzZiNWExMDI3ZDM3YWYyZDVmNjE3NTI3MzBlMTgzMDQ4MzY5ZjRlZDU1ZDMifQ"
+        },
+        {
+          "resource": "repo://src/okf/frontmatter.ts#L847-L854",
+          "version": "repo-lines-v1:sha256:777f5a2700dd7397d959acc6d1d854adfdf5b7fa377eb063afb190123ecff389:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY5MTFhZjAxOWYyMjgxNzc3YWNlZTA5ZmViNjBmMzYzNTJmNjZiYTE0OWJiZmI0NTBmOTk2NjRjM2E4M2UxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmIxMTNlZDIyNzMwZjkwZjM5MDNlZDFhNDllNmM4NTc3NTQ2MWVlMzFiNTA0ZGRmNmY1MTY5N2UyYWFiZDI1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
     {
       "id": "claim_c08adfb451d345a1a8f5b886ecf2d905",
-      "statement": "Frontmatter writers edit the raw block line-by-line (setFrontmatterField, setGeneratedEvent, setOkfSources, setOkfVerified, removeFrontmatterField) rather than parsing and re-rendering, preserving every unrelated line byte-for-byte so producer-authored extensions are never dropped.",
+      "statement": "Frontmatter writers edit the raw block line-by-line (setFrontmatterField, setGeneratedEvent, setOkfSources, setOkfVerified, removeFrontmatterField) rather than parsing and re-rendering, preserving every unrelated line byte-for-byte so producer-authored extensions are never dropped; replaceFrontmatterFieldBlock locates one top-level field plus its indented continuation lines and splices only that span.",
       "evidence": [
         {
-          "resource": "repo://src/okf/frontmatter.ts#L419-L448",
-          "version": "repo-lines-v1:sha256:7483bca4cb94fadc5fd1ab579c04f3fef9c74516ac73352cb5556f68aa87c76f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0NDVjZTZmOWM4ODAyYzIzNDA3NjczMWQzNGUzNmJjNTM4ODM5ZmFkMjlhOThhODM3ZmQ0MDNkZTY1N2Q2NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwNWRkNTI3NzQ0YzAwYjQxNWM1ZTcwMjM1N2E3OTI3NjRlOWMxNjljY2NhMmIxMTM4NzhmZTVkNTk3MTIwNTcifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L506-L540",
+          "version": "repo-lines-v1:sha256:5b9e4d07d706887d212f4b10559094cfedbf987e411b9022b7b3e9717f87132e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkNzE1ZjEzNmU0MGQ4ODBmNDEzNWY1NTcyMjgwMjVjODZhMjVlODU4NmE3YjZiYjg5Mjk1MmQzNWViZDFhMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5Nzk3ZDBkYzAxY2UzODY0ZmQxMTUxOGRiMDZhNjZhNzUzNzBkNjE1NTUxNjMyMTg2YjJiZmQ3OTM2NmFkNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjMWFmY2YzYzhkZmNhMjBlOTdkNTcwMmZkYWJhODUxZDk3ZmM0NmRjNDUxN2Q0ZTRkMWQ0Y2Y1YTU3YzI0NjAifQ"
         },
         {
-          "resource": "repo://src/okf/frontmatter.ts#L489-L558",
-          "version": "repo-lines-v1:sha256:c75c429044fcf6c554992793b82913e4d4739dca9ef03df21e3ec06dcf32702e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiNWJhYmY4YjI3ZWQ4MmU4ZjQyYTVlZDMyYjIxMjAzOTNkNmM5NWEzMTNlNDNiNGZjMDc3ODZjNWI1ZWYxNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYjIyNjc4ODJmNTM0YzIxZDFiMThmNWE1MWY4ZTI4MTIwMzdlZTVlM2Y4NzAzZjY5YTUzMDFlMzQwNjMzY2QifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L554-L605",
+          "version": "repo-lines-v1:sha256:2e7edfbe247979ceca36813c4f7a982eafcab9e1ef15c6cd67376b23867a8265:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNmRjNTk0NzNjOWE3NzIzYWU1OGZhYjMzMjFkNTUxYzI0YWFjMDI0Y2ExZDIyNTg5MTY0MDJjYzIyY2Y2MGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxYmYwNjM1NzBjYzk3MWQ3ZDJhNmNmYTZmMTNmYTk2MDhmZmVjODEwY2UyNDNmOWM0ZjMwNjEzYzk4NjJkY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiNDgxMDM1OTY0YTMwNmU3NTk5MWE0MGU4M2YzZTEwMTk2Nzg2NjBlNDdlOWYyNzgwNDMyODZiZGE3MDU0NjMifQ"
         },
         {
-          "resource": "repo://src/okf/frontmatter.ts#L560-L613",
-          "version": "repo-lines-v1:sha256:30f186c489c8f77f70d23537040123f4e038f135c8577adc09f102730e23aafb:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMzYzMTI4OWY3ODdmNDI1NmY0ZmVhMmFhNGJjZGMwMjUyM2RmMzI3OGNhYjgxNWM1MTk0NGM5ZDFiYjRiNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4MzE2NTgzYzgyOGE3NmVjZTkwOTU3ZjE4ZjM2OTRiZWRmOGRkYmU2MmM4NmZiNDA0MGJmYzY5NmVkNjBmNjcifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L611-L633",
+          "version": "repo-lines-v1:sha256:7d7fe9b1251e64bbbac28ea386ac5d642303c78c6a7f550ec0f1ccb69c3280be:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjODFjOTM4ZGQ5NjA4YjQ5N2FlMjI2ZWRmZDc0ZWIxODhkYjIyZDZlMDZkZDQ2ZmE0YzgwNzVjMjU4ZjhkMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4MWY3NWEzMWVjNTNlNjU5YWZjZmE1NGRjYzk1Y2Y3OTFjMWQ3ZThlNzEwMGNkZDMzYmZiZWE2YjE1NzkxODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiOTdhMWQ5M2JlMmYzZGNlNWM0OWY2ZWZjY2FjZDY3ZTRiMGQ2MzlmNTA2NDg5YmRhMzAyMTc5NGFiYjYxZjYifQ"
         }
       ]
     },
@@ -125,30 +129,30 @@
       "statement": "snapshotGeneratedProvenance records, before authoring, a SHA-256 hash of each concept's exact Markdown body (frontmatter excluded, whitespace retained) plus the prior valid `generated` event, and serializes it in deterministic sorted order so it survives a process restart between phases.",
       "evidence": [
         {
-          "resource": "repo://src/okf/generated-provenance.ts#L126-L148",
-          "version": "repo-lines-v1:sha256:9222bdd12dec73f339bdd103e4e027b84bb24d5d5b4edf0da3585a6ad22eeed0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlOGQ1NDRhMDE1Zjc3NjNiYjA4NGJjMTM3YmI1ZjJiNmVmYWY0NzY5MjFhZTE1YjIxYTFmNWI2YmEwODViNzIifQ"
+          "resource": "repo://src/okf/generated-provenance.ts#L136-L148",
+          "version": "repo-lines-v1:sha256:c73fe723ae500d548c1cdaad160d568b43a20a9bed95caa6818434cf37eca258:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0MTdiMzUyZjkxNDRlMWE4MDM2ZDk0NDcxMDM4ZTI5NjdiZDU5YmJiMjk3ZjBjODM4NzU3OGQ3MTc0YWQwNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4YWFhMTIwMzUyYmI3YzcwOWJjYmU1Nzg0OWI3MmE0Y2UwY2QyODU3MjY4YzhkYzMwYTc3YzQwNWJhNThkMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4NzIzYmE0MjQ5MGQxMDRiMDMxYTExNjM4NzBhZWM5MTMwN2MxZDRhMzdiYmQ0NjBmMDJmYzBlNGE1YzZmNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
         },
         {
-          "resource": "repo://src/okf/generated-provenance.ts#L219-L252",
-          "version": "repo-lines-v1:sha256:97d2f2ace11351c2732bcf1a5b49b314326a3bb61833ab69a07d6f8e5b0c2d01:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5ODY5ODUyMmVjZDIxYWE0NDFkYzFlY2U5NTA5NzI4ODVjMTk3YmI1NjBmOWUyYjIxMTU2MzM4ZTBlZWQ5ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyYTk0N2RhZDEyOWRlMDc0YThkYmViZmFkYjQyNWU5NjYyOWE3OWE4ZDI5NTNhNjZlZDA2YjZhMWVhNDEwMzcifQ"
+          "resource": "repo://src/okf/generated-provenance.ts#L252-L255",
+          "version": "repo-lines-v1:sha256:eca3ba2a47dbff8603eac08484d0aac7e72dddbeaaac65365ac66f8c006392bc:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzNjNDY3NDBkNGE3YzY0Mzg0NWM5MWQ1NmM1YmUwNDM0N2ExZjAxMjc2MWZlMzdjZmU5MzEyM2RiN2FmZDQ0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2I2YzI1ZDJmMjRiYTViNjQyMzY5NGE5NzUwMmViNGI1NjFkNzcwYmFmNGZiNWQ4MTI1MzU3NTc3MzQ0NjcyOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDhkNzE2MWJhY2IyYmEyOWMxYmU5OWRkMmM4NjM2YTY5NzZkMzIyYWE1MGU4YWJiNjY5NTI5MWVjZGIwZTI2MCJ9"
         },
         {
-          "resource": "repo://src/okf/generated-provenance.ts#L88-L124",
-          "version": "repo-lines-v1:sha256:04026e7d5ec4c8596ffb5af91c72b54dec28bf5ebc5e0a7a1fbbd385398e8284:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiYzFiMWExNzBlNDMyOTFjMjVlMjFlY2RjNzkwNzUxYjMxMmVmYzIzMzZmZTllMjgwZGM2YTNlODMxZmMxYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZDM1NjAyNDJkZWJjYjZjZTE0YmI2ZDNlZWFjYTlhN2QzNDFkMzVhMzJkYjBmMGJmOWI0NzU5MzA5OTA1MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNTY5YWE3NDljMDRjZWQyMDg1MWM5NTRhYmE4ZmYyNzkyYjEyNWE5MTE2MWE3ZmNhOWI5ZmYzYzQ1ZWRlZjkifQ"
+          "resource": "repo://src/okf/generated-provenance.ts#L91-L108",
+          "version": "repo-lines-v1:sha256:b0cfa223a248c669760dd3eb8d938b2d3e1b9b600e11e19cda906270ac75562e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjYTg4M2Y2YzRiMTJkOGU5ZTljNjgzZDE0MjdlNmRmZWQ1NDgwODI3NDkxZGViN2M0YmJjMTA5YmI1NjNmMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2OGU1NDE3MzBlZmMwMzJjOWY0YmQzYzcyZDQ5M2RkMjJhMmVmZTEwOGEzOTk4NWFlNDQ1ZTU2OTk0MjU5ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyMDE5Mjc3NTIzYzg2ZjcwMTUwOWNmMjg2MzA5MzUzN2E2MDM0ODFlYjZiNjc2ODNhMzY0YmNjZTBhMjdiNjAifQ"
         }
       ]
     },
     {
       "id": "claim_357444583a024a048e312e3b5984ea3e",
-      "statement": "finalizeGeneratedProvenance stamps the run's `generated` event on new pages and any page whose body hash changed (removing the legacy `timestamp`), restores the prior event on unchanged bodies, leaves previously-unstamped unchanged pages unstamped, and refuses to run with an empty producer actor.",
+      "statement": "finalizeGeneratedProvenance stamps the run's `generated` event on new pages and any page whose body hash changed (removing the legacy `timestamp`), restores the prior event on unchanged bodies without advancing its timestamp, leaves previously-unstamped unchanged pages unstamped, and refuses to run with an empty producer actor.",
       "evidence": [
         {
-          "resource": "repo://src/okf/generated-provenance.ts#L150-L196",
-          "version": "repo-lines-v1:sha256:72aa060c04ceb19d12cf0e64c5020b2f174af952ad5fe408ba91bb1c2a84006b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmNzg3YjcyN2I1MzIzOWE0NTA1MTAzYjIyMGUyYTU3MTNkMmI4YWM5NmQ0NzBkZTAzYTBiNGI4MTIyYjliMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0ZTU5MzA3N2Y4N2Y4ODAwODUwYWQ2ODA0MzZkMzAwOTljNDFkMWFkZjM1ZDg0MjE2ZDgwYzdiOGUzNGI3OTMifQ"
+          "resource": "repo://src/okf/generated-provenance.ts#L163-L207",
+          "version": "repo-lines-v1:sha256:2169918c5d2168a199e41121dd9548d74f327ec456266795db3b183430542234:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5ODA2NzYwMzI2NzU5M2NjZjJhYzM0ZTI3MGRmNTY2ZWY5ZjFiMWJiNjdiYjM2YjgwZTAwMjE1MDhiOGM0M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjMjg4ZDlkOGRkZWY1ZTdmOTRiNjdmYWRjZWIwMDVhNWIxZWVlZGMxOThhMWQ0ZTU1NmVkZDczMWM3ZDUwODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlYTZlODU4NGRjNzExYTRjNmFiYzQ5NTE0Zjk3MGUwNzBiODJkOGJhNzI2YjZhNWM4YzdiNDY4OWVlMWNiZWQifQ"
         },
         {
-          "resource": "repo://src/okf/generated-provenance.ts#L254-L268",
-          "version": "repo-lines-v1:sha256:82614b21292f882bd68680ff8476b024cd5720e5ae9e5919a2514bcd7322089b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjZDNjMjU3M2Y0MmE2MGY3NzUzMjhlMDQ3Yzg5M2M4ZTM2NGNkYWQyNDQwZWI1Yzc4MWIxZmM4ZmZhZDM2NzEifQ"
+          "resource": "repo://src/okf/generated-provenance.ts#L263-L297",
+          "version": "repo-lines-v1:sha256:77c581d930c87351d68f61ba323bbe010cc928e6bf041428216e8eb79fba5892:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NDM3Zjk3Y2NjYWYyZDExM2FkNzA2ODVlMmExODYzMmE2ZjE1MmM3NzBkYTc4NzdiMjFmZDlmNjZjMTgyYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMTJhZWNkYTA2MGI2NmEzZTkyMDlhNzZhYWU0MTJkZGRhODVjOGE5MmYzY2EyMWM5YjNkOTJhYmU0OTA1OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMmY5OTBjM2YxYjIwNzQ4ZTVkODRiODAyYTA4ZTY1MDNjMTg0YjNlOTAyM2M2MmMxZWFiZjM1Y2RkOWY5ODQifQ"
         }
       ]
     },
@@ -157,16 +161,16 @@
       "statement": "synchronizeWikiIndexes renders a deterministic index.md for every directory, listing concept files (link label from the page `title` falling back to the basename, caption from its `description`) and subdirectories, excluding index.md/log.md/INSTRUCTIONS.md and hidden entries.",
       "evidence": [
         {
-          "resource": "repo://src/okf/index-sync.ts#L168-L226",
-          "version": "repo-lines-v1:sha256:9e5d1f43739248f53e843ed4e0df2e2069fa9f7d0cefcf8b5e761c2d0cde25d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0YWRiZDRhYWUxNWVjMzI1NGQxN2Y5YTA1MWQ2M2EyM2E3Zjc5Zjc2NDc2MTM4Y2YwNzZjYjM0MzQyZDFjNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkOWIzOTliMjg1ODUyOTIxODc4MjQ2Mjg4NTQ2ZTFiN2JkZDhkZDMwZDUxNzY4ZjRkMDJhMjI3Y2MyMjRkZDQifQ"
+          "resource": "repo://src/okf/index-sync.ts#L171-L226",
+          "version": "repo-lines-v1:sha256:0932728144eb0ff96babe3b9cc1e11fc1f4e79cc9edae675b8b693e2bc93c08e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlYzRiNGQyMTJmMTQ5MzcxZjBjMzdkOTY2Y2EzM2M2Yzg2OGZjYTk3MmFlNzYzNDZkZDJjMzIzMWZkNTIyMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmNzAyM2MwODNhOGY2YzAyMjlkZTRlODExNDg5MTU1MzljMmQ5NzlkYjRkYmU3MzI5YTMzNjQ1ZTE1YWM2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkOWIzOTliMjg1ODUyOTIxODc4MjQ2Mjg4NTQ2ZTFiN2JkZDhkZDMwZDUxNzY4ZjRkMDJhMjI3Y2MyMjRkZDQifQ"
         },
         {
           "resource": "repo://src/okf/index-sync.ts#L266-L289",
           "version": "repo-lines-v1:sha256:933ffd907488a059868bdda36ceaf2475d3e99537f773cd8fbf7d3b2c6adcb5a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3YTAxODQzODEzM2NiZGRjZGFhYWZlOGY3M2NmNDExZGVkNTMwZjcxYjgyMjQ2MDk1YTQ2MDUzMjQ0ZTFlYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NWQxMTU2Mzc3Yzk1MmIxZTM1NTg1MWUyZTIyNGIzMmFmNGVlMjNkODk3OWRkMDE3MjQ2NDQzNTM0YzljOTAifQ"
         },
         {
-          "resource": "repo://src/okf/index-sync.ts#L53-L66",
-          "version": "repo-lines-v1:sha256:c1ebb86bfb40722fefb928ae84c202330bcea07ee5bb4852db43778beea0f41f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5MTZmNTYzYjJjYjZiMDhhMDdiMzQzN2QyYmFiMWE5ZWExN2RlODQzOTliNzE0MDBhYmM2MGNhYWY1MjBhNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyZmJlZjM0YzA2N2I3ZmUzZGNhYWNmNDlmMWUyNmYwYjMxYzU2ZjFjODRiODI2YmVmNDNkYzY5NTQxYjI0OTkifQ"
+          "resource": "repo://src/okf/index-sync.ts#L56-L66",
+          "version": "repo-lines-v1:sha256:27a12e372a868d81b50d5895d0d6477a18284e147bc4a4293d3b4d74c181f969:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MmUzOTdmOTk2ZTNlNTYzMTM4YTZmODEyY2YzYThiZWE3Njg3MGVlOWQxMDExODQxMzEzMDVmZDA2OGU0MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyZDI0NjVjYTRiYmFkMjk0MDU4YTNlNTllNTA4NDQ4ZTI4Y2FhYTkzZWE0ODllNGUxZWY1MzNhY2VkNTNmMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyZmJlZjM0YzA2N2I3ZmUzZGNhYWNmNDlmMWUyNmYwYjMxYzU2ZjFjODRiODI2YmVmNDNkYzY5NTQxYjI0OTkifQ"
         }
       ]
     },
@@ -175,12 +179,12 @@
       "statement": "An index is written only when its rendered content differs from the existing file, so unchanged indexes produce no diff noise; index synchronization also normalizes each concept file it visits so it can read clean metadata.",
       "evidence": [
         {
-          "resource": "repo://src/okf/index-sync.ts#L116-L137",
-          "version": "repo-lines-v1:sha256:962c7ad03805aa1ab1eea22ad8e18856f40db8caa578aa05949de276106f984e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0OGY1MWYwZTcyZTdiN2VlMDY3OGZhZDUzNmI2MjY2MDJkMzEzNjA1OTljOThkOWY2YmY3YjUxNTRkZTc1YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzMjE0Nzk1MGQ5NTRlN2U3OTMzNmVkZGQxZDBhMjZmYjI1ZTkyYTg3NWJmZTY2NDU4NGM4NDMxOTYzNjg4YzIifQ"
-        },
-        {
           "resource": "repo://src/okf/index-sync.ts#L196-L226",
           "version": "repo-lines-v1:sha256:4453b004da25c04134f641b6dc6856f0ffc582503109a888ce061d7913597f11:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1OTgyZTA5YTYzNDMzZDk0Zjc0NWUxODhlY2YwM2NjNzlkMTg1MjExOGRmMTc1OTc0ZDk4Y2MzMzgwNzIyMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkOWIzOTliMjg1ODUyOTIxODc4MjQ2Mjg4NTQ2ZTFiN2JkZDhkZDMwZDUxNzY4ZjRkMDJhMjI3Y2MyMjRkZDQifQ"
+        },
+        {
+          "resource": "repo://src/okf/index-sync.ts#L269-L289",
+          "version": "repo-lines-v1:sha256:180306ce8708cf9b303ec3ffa9c6f904b72de791291a9b2ab7cfd32e65c08f4e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMzA3ZDc1MzUyMTE0NTI3NjdmZTNkMzZkMjdlMDYxM2M3NjAzY2IzYjBlOTY5N2FkNTAyOTZiOWNlNjM1ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmNzI0ZDZiMzg0YTI5ZmZiODcwODU4YzI5NzA4Y2M1M2FiMWMwZDZhNDQ1MGRlMjUzYmY0MzgwZmM3YzI0NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NWQxMTU2Mzc3Yzk1MmIxZTM1NTg1MWUyZTIyNGIzMmFmNGVlMjNkODk3OWRkMDE3MjQ2NDQzNTM0YzljOTAifQ"
         }
       ]
     },
@@ -306,7 +310,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.0",
+    "at": "2026-08-26T20:17:27.397Z"
   }
 }
