@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8de5906e1478cb23189172284e1fa1cbc9d3da8088a6b7f7ba5ab4dc65e1e43b",
+  "pageVersion": "sha256:a4f00dfb6732501463a26e93822d61324c0dce05e5fc3ed8ba3988919986294c",
   "claims": [
     {
       "id": "claim_35bcc7d94294470cbce1e5d06f9fb26f",
@@ -323,26 +323,26 @@
       "statement": "Durable Claims evidence is projected into OKF sources front matter, collapsing precise line ranges to whole-file repo:// resources, assigning OpenWiki-owned entries deterministic ids derived from the resource, and retaining independently authored producer sources.",
       "evidence": [
         {
-          "resource": "repo://src/okf/claim-sources.ts#L119-L135",
-          "version": "repo-lines-v1:sha256:69fd914ec1ee37f58ba0f0931d91be1a906b32605a6e0e4c23578bf4b107e398:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NWFmMzA1NjQxNzAyZjBiYmM0NTUzNmRmNTNhNDBlOWQzYmRhYzgzMWQ4ZTkwYmU1OGJhNDk2M2ZkYjAyYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExOTE4MTNlMDkyYjRlMDAzNTRlNGM5OWI4YzAwMDBjOGI3M2ViOGJjMzczNGQyYWE4NDNjYjhhOGY4MWVkZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhZDEzMWRkNTQ3OTViYzI1YjY3YTJiZGY5MjY1MTM4OGUyMzRiNWZjYTZhOGVkOTM4MDE0NGQ0NDgzODE3NTYifQ"
+          "resource": "repo://src/okf/claim-sources.ts#L38-L69",
+          "version": "repo-lines-v1:sha256:7385c5dd15d035031f1fcc6a21198cdc96902f3a235e8854f818194a545abdcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmYmIwZDk3OWRlNzAxMGY2MzliMzVhOWE0ZjBiOGEwYjU1ZTExYWZjZjEzZWZlNTlmMjIwN2QxMTQ2Mjc0MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjN2QyZjI0NDg0MWI5NTVhMzEzYmJiNDdiMmFkNWUxZmIxNjQxZTRmOTM3ZGRlZGM2ZDU4ZDNiZWE1OGFkYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
         },
         {
-          "resource": "repo://src/okf/claim-sources.ts#L34-L96",
-          "version": "repo-lines-v1:sha256:c06cd0fec2677db51e3cb9a311931a15a5634f6cd18fee6412806de2520abf69:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmYmIwZDk3OWRlNzAxMGY2MzliMzVhOWE0ZjBiOGEwYjU1ZTExYWZjZjEzZWZlNTlmMjIwN2QxMTQ2Mjc0MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjN2QyZjI0NDg0MWI5NTVhMzEzYmJiNDdiMmFkNWUxZmIxNjQxZTRmOTM3ZGRlZGM2ZDU4ZDNiZWE1OGFkYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjMmE0MTJhMTYyYjU4ODcxNzQyNDNjMDdmMDZlMzNiMGQwMGFhOTIxMGE2ZjJkYzEyZWVkOWMxZTA3M2E0MDMifQ"
+          "resource": "repo://src/okf/claim-sources.ts#L75-L92",
+          "version": "repo-lines-v1:sha256:841ea9368949e1c4dd80cce3569da01e5467580af1f6544bee6ccf470e8810c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0YjFjMTkxYjU5NmM2YWM3MGJjNGI0Zjc1MWM2NzZhNzgyOWE2MmNlY2Y3NTkwMDU2MWVmYzQ0MzkzY2IxNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3ZGJiOTc3ZGI0NjNkNDIwNTAxZGE1MjU3YWNkNGI4YTgyN2ZiZWJjNjQ1M2U3MGNkY2RiMWRjN2YyZDQxYjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZjY1YzMyNzdlNzBjOThkNzUwNmUxMjZlYTlkZWJiNTA1MGEwZDRhODAzMzg1MTQ4MmY0NzY4MTM3ZjNhMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
         }
       ]
     },
     {
       "id": "claim_24dfde7fc29a4875b495b98463e60304",
-      "statement": "Durable verification is projected into the OKF verified field where only events in the openwiki/<version> actor family are OpenWiki-owned, so human and other producer verification events survive reconciliation.",
+      "statement": "Durable verification is projected into the OKF verified field by retaining all producer-authored events whose by actor is not in the openwiki/<version> family, then appending at most one active durable Claims verification event per page (or none when ineligible), normalizing bare mappings to canonical list form, and recording pre-projection Markdown so a failed hash refresh can roll the field back.",
       "evidence": [
         {
-          "resource": "repo://src/okf/claims-verification.ts#L102-L107",
-          "version": "repo-lines-v1:sha256:ae3a55ba552d8f75ad0d3f390c215c5faa24738932658c57a8985de493b4a2d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGJkYmEyMjM3MWI4Y2M5MmE4MzFlMTVmMzQ2MDljYzA3YTI5YzU5ZWRlMzQxOWMwYjVmNjE1YjQyMjI5YjViZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTNiOWQxNmY1MmIwN2FkM2E4MDI0MDc1M2I3OWMwZWM5MTVjODQ1YTY5MjdkNWQzZTBhMzdhYmQ5OTRhMzkyMSJ9"
+          "resource": "repo://src/okf/claims-verification.ts#L102-L112",
+          "version": "repo-lines-v1:sha256:c72ac4daf277d912ad58f14e5c94cd30c44d1ba893283eaff4627b1ebc15959e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmNmI0MDhkNjI1NTM3ZGIwNDljZTlkNzlmMDQxNGYxZTMxNjM4YTcyNmZlMzJjODBiZDFjYzIwZDU0ZmI1MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwZDZjOWNiYmU3NzlkNTNjODg0YjZlMDMzYWFlOWI3YThkM2ZjZjBkZmU4MzEwMGZhY2MzODlmMDE2YWI4MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzYjlkMTZmNTJiMDdhZDNhODAyNDA3NTNiNzljMGVjOTE1Yzg0NWE2OTI3ZDVkM2UwYTM3YWJkOTk0YTM5MjEifQ"
         },
         {
-          "resource": "repo://src/okf/claims-verification.ts#L31-L54",
-          "version": "repo-lines-v1:sha256:45700bdb8d20c93bdce00df25df793c8320af8d1aa51d76a3e90fc942db86d9b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YTE2OTRkMzhlYTNmNjRhYzcwNDY0MTI2NmI3MTRmMTY5NGQxZTQwN2Y3NTgzODY0NGRiMmZlZWE3MWIyMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2MzIwM2ZiYzVhYzRmMWY1YmI5OWU2MDdmMjExMjE1MDNmMDU1ODNmNTRkYmViM2NlNTAyZmJiZDhmNTY4NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5YWIwMzYzMGMwNzg0NGRlMWQ0NGY1YzA5NGRlZTg2ODVkYTA1NjRmMWI1ZGE5ODI5YTExODNmNTY3YzNiMDgifQ"
+          "resource": "repo://src/okf/claims-verification.ts#L35-L59",
+          "version": "repo-lines-v1:sha256:d096b83929b1b8ae3255921a72ea1165671bf7de47aad1fc01b13c7e6a5b1ca6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YTE2OTRkMzhlYTNmNjRhYzcwNDY0MTI2NmI3MTRmMTY5NGQxZTQwN2Y3NTgzODY0NGRiMmZlZWE3MWIyMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2MzIwM2ZiYzVhYzRmMWY1YmI5OWU2MDdmMjExMjE1MDNmMDU1ODNmNTRkYmViM2NlNTAyZmJiZDhmNTY4NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5YWIwMzYzMGMwNzg0NGRlMWQ0NGY1YzA5NGRlZTg2ODVkYTA1NjRmMWI1ZGE5ODI5YTExODNmNTY3YzNiMDgifQ"
         }
       ]
     },
@@ -414,7 +414,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.0",
+    "at": "2026-08-26T20:17:27.397Z"
   }
 }

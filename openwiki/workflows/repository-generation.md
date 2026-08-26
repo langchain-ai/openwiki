@@ -12,9 +12,6 @@ tags:
     source-fingerprint,
     claims,
   ]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
@@ -33,6 +30,9 @@ sources:
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
 generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+verified:
+  - by: openwiki/0.4.0
+    at: 2026-08-26T20:17:27.397Z
 ---
 
 # Repository Generation Lifecycle

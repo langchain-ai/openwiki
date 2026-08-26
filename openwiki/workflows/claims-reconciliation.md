@@ -13,9 +13,6 @@ tags:
     provenance,
     repository,
   ]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-69abc6f0f641147820a274bc
     resource: repo://src/agent/utils.ts
@@ -38,6 +35,9 @@ sources:
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
 generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+verified:
+  - by: openwiki/0.4.0
+    at: 2026-08-26T20:17:27.397Z
 ---
 
 # Claims Reconciliation on Update

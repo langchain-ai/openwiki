@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fcffaa6e47393d75c04b33dc65310f23a228c7e0184118aef3a8bb384f9e03f0",
+  "pageVersion": "sha256:b17709d19affa9d9ba18eea584ddc732074d20e0fd679748de24d6d5a193a747",
   "claims": [
     {
       "id": "claim_b4fc5fda11a9482d91f562eef48a86f6",
@@ -114,15 +114,15 @@
     },
     {
       "id": "claim_53bb4c5b6ec741e990f19c0b6110e08d",
-      "statement": "When a page worker submits its finished page, the repository run validates front matter and then calls replacePageClaims with the worker's complete intended Claim set for that page.",
+      "statement": "When a page worker submits its finished page, the repository run repairs and validates front matter, then calls replacePageClaims with the worker's complete intended Claim set, persists the page's dirty Claim state via finalize with the run's startedAt timestamp, and asserts the page's Claims are durable via assertPageClaimsDurable before advancing the queue; any failure is wrapped in a RepositoryRunError with invalid_input.",
       "evidence": [
         {
           "resource": "repo://src/generation/page-jobs.ts#L382-L386",
           "version": "repo-lines-v1:sha256:a9b8ccdb43341f1b24d710249e7a864854ce347b26840b50cf177a6fd14aedc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDM3ZDc1MmM4NjBiN2VjZGY1ZGY2ZGM2NTliYTZiYmExMmU1MDU0OTY3MWEwMTlhYTNjY2MzYjdmNWVhMjNhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTY5NDFlNDY3M2VlMzNmYmVlNTE4YmJhMDljY2ExM2JmNjVjMGRjMmZjMTJkMmM5ODY3NmI2YzYyZDRjMGM5YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTE2M2E1ZGE3YjYzNzU3ZDk2NmFlNjYzYTkwYzdiZWQ2ZDYzM2UyODk5ODk3MjljMWQ5YzU0ODVhY2FmYjUwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjVmZDVjMTBkNGQzMDA0MWJlMDgzOWY2YjFlZmUxYWNhNDM0N2U2NzUxZjIyOTAyMzBkOTUwMjE4NGZhYTkxMSJ9"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L764-L795",
-          "version": "repo-lines-v1:sha256:aa0d467486bf764ee486250add16b80cf6fd930db7111511a752d66e7e8d8484:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NzA4NjQ2OGZjMzc2Mjk3NGI4MDg1MzM2ZjQwZmNlYTZiOTJmMGZhOTE2ODBlODgyNzRlYTc3NDI1ODBkOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmNTA1ZTljYWEwYTM0MTc5NDUzNmVlNWQyOGYxZTc5N2FlMmE1MjRmZWE3MjBmNmFjNzgzZjdjZjdjZjUzYjEifQ"
+          "resource": "repo://src/generation/repository-run.ts#L764-L799",
+          "version": "repo-lines-v1:sha256:8d4993f1986152ff1674236d223efa5ec3716a79ee26dd89596849b1ac8fe46c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4OGE0NTM5MTI0ZWFlYjNiNjBhZWMwM2QwNWVmNzU4NDcwZDc1N2I4MDczNTYzYjI0NjAzOTVhZGI1MGIzYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmNTA1ZTljYWEwYTM0MTc5NDUzNmVlNWQyOGYxZTc5N2FlMmE1MjRmZWE3MjBmNmFjNzgzZjdjZjdjZjUzYjEifQ"
         }
       ]
     },
@@ -175,10 +175,6 @@
         {
           "resource": "repo://src/generation/page-jobs.ts#L421-L436",
           "version": "repo-lines-v1:sha256:aebd2d1afb964124fbc61506c52809c20b10c9822136480adf036453af149d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczMjY3Njg3NzRlYjZiYTRkNTVhNDY2ODljOTk5ZTIyNGU2Y2VkMmI5MThlYWVlNTkwZjgwZWQ3ZGZhYjAwNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzYjU0YTRlYmMzMDRhNTM2ZTM5MGZlNDFkMWMxYTliODk5ODVmNzg3YzFhYjI3YTZkOTliMWRlMDQ4OTZlMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiY2UxNGQ1ODdlM2FhZjY4ZGY4NDc3ZjFiNjM1MGU2NWQzYTZiYzcxMjM5MjRlMjc4YzIxYWEzODM5ZDBmOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2OWRiNWUxMTJkNjUyNDlkMzdiYjE5MmY0ZTBmMGNiNzI4ODk2MzZmODA0Y2QxMTEwYzY0NDE4NTMwMmQ3ZWMifQ"
-        },
-        {
-          "resource": "repo://src/generation/page-jobs.ts#L423-L435",
-          "version": "repo-lines-v1:sha256:eaf698eb7d7a6dc58fa904ee5bae90acdf3f736d6c58bfa204c1912e83b408fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMDliMjYxNDlhNzI0Y2E5ZGQ0ODJkOGZhMTc4YThiOGZhMDA0NzAzMjBhOGVlY2Y0YzRlZDU4Njk5ZTExNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4MzRlYzM5NTMwNjEzNWZkOTVjMjg1NThhNDU5ODAwNDU5OTI1N2NiZTc5M2MzYjJlYzFjNzliYjQ4NjhiMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAifQ"
         }
       ]
     },
@@ -264,7 +260,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.0",
+    "at": "2026-08-26T20:17:27.397Z"
   }
 }

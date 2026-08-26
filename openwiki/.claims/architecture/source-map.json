@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:571237c43d798b68bf1926373f64b1e4180e746f4882109c9d7f4b99158eec76",
+  "pageVersion": "sha256:86c66005c0dacd0356a463945d3f912540706af937c07926b9aacd5440f7e69d",
   "claims": [
     {
       "id": "claim_b3bcf02b8ac0428c909611ba967f994a",
@@ -74,11 +74,15 @@
     },
     {
       "id": "claim_a44b2c1f9ea84beb8fbe5d7d1f84c6a8",
-      "statement": "The repository lifecycle in generation wires together run state, the claims runtime and store, the wiki finalizer, and OKF frontmatter validation.",
+      "statement": "The repository lifecycle in generation wires together run state, the claims runtime and store, the wiki finalizer, and OKF frontmatter validation, importing parseFrontmatterFields and repairPersistedFile from okf/frontmatter.js and index-label resolution from okf/index-labels.js.",
       "evidence": [
         {
           "resource": "repo://src/generation/repository-run.ts#L15-L60",
-          "version": "repo-lines-v1:sha256:5ee7a4a4ed4946b8b07cdfeabfadf4a69330b8f41cf31fd6a89b74b0819dd0b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjAwOTY0YTk3ODYzNTUyMmIyYWIwOTBjNjUwNjVkOGVmOGU4NWM0NzMwYmIyZWIwNDYwZDM0YzY3N2RkYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYmMwMWY3YmY5ODU0MDUwOTljY2E1ODNiNDQ2NWQ1YjM2MWVkNmNhMzI0NWZkMDAzZDgzZTMzYjI5NjkxZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMzAzNWQ4YTdlYjRiYWJjNDNjMjM4YjJiNjk4MWEzYWFmNTBhYzg4ODNhN2I0YWU0MDI0M2E1MGE2NzRjOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyY2ZkMzkzMWEwNGRiNTA5NzIxMmQxNGVmNWEwYWE5MmJiNjk4MTc1Y2JkZGE1YWI5YmJjYzhhZDc4ZDU0NmUifQ"
+          "version": "repo-lines-v1:sha256:d1b1c4ff03db9d01f3807ada4c8463638a61cfc2a1218d70bcb1778e143c4752:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjAwOTY0YTk3ODYzNTUyMmIyYWIwOTBjNjUwNjVkOGVmOGU4NWM0NzMwYmIyZWIwNDYwZDM0YzY3N2RkYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYmMwMWY3YmY5ODU0MDUwOTljY2E1ODNiNDQ2NWQ1YjM2MWVkNmNhMzI0NWZkMDAzZDgzZTMzYjI5NjkxZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMzAzNWQ4YTdlYjRiYWJjNDNjMjM4YjJiNjk4MWEzYWFmNTBhYzg4ODNhN2I0YWU0MDI0M2E1MGE2NzRjOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyY2ZkMzkzMWEwNGRiNTA5NzIxMmQxNGVmNWEwYWE5MmJiNjk4MTc1Y2JkZGE1YWI5YmJjYzhhZDc4ZDU0NmUifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L764-L768",
+          "version": "repo-lines-v1:sha256:cc4baa1266f0392ca05a1f6115d7c7e4f8b2a56b39c227e9363c2ac45f4a5f91:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDg4YTQ1MzkxMjRlYWViM2I2MGFlYzAzZDA1ZWY3NTg0NzBkNzU3YjgwNzM1NjNiMjQ2MDM5NWFkYjUwYjNiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRiM2U3Y2QwYzNhNjIzMDQ3NjY4MTYxZDEwNGU5OWQ4NjIwOWNhM2U3NzU0YTI1YjExOWE0OTA3ODc4MDQyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWRhMjQ3OWE4NTZlODVmMWU3MDFiNzIxNGMyMDMyYjdjMTdmZWQ2NDQ2MDc2NWY0MWNjNDJlY2U4MDhhNmQ3MyJ9"
         }
       ]
     },
@@ -132,15 +136,19 @@
     },
     {
       "id": "claim_2e6588d619ba44b2ad02b1468455d664",
-      "statement": "src/okf/frontmatter.ts owns OKF concept-page frontmatter: it validates frontmatter (validateOkfFrontmatter) and stamps producer-owned control fields (setGeneratedEvent, setOkfSources, setOkfVerified).",
+      "statement": "src/okf/frontmatter.ts owns OKF concept-page frontmatter: it validates frontmatter and the OKF v0.2 trust families (generated, verified, sources, status, stale_after) via validateOkfFrontmatter/validateTrustFamilies, reads/writes individual fields byte-for-byte (parseFrontmatterFields, readFrontmatterField, setFrontmatterField), and stamps producer-owned control fields (setGeneratedEvent, setOkfSources, setOkfVerified); it also deterministically repairs persisted pages (repairOkfFrontmatter, repairPersistedFile) which the repository lifecycle invokes before accepting a page.",
       "evidence": [
         {
-          "resource": "repo://src/okf/frontmatter.ts#L116-L116",
-          "version": "repo-lines-v1:sha256:f50f74664d8e950b97697295c8acdf94963d49b582d9135b6c74b72755a3d563:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUwZjc0NjY0ZDhlOTUwYjk3Njk3Mjk1YzhhY2RmOTQ5NjNkNDliNTgyZDkxMzViNmM3NGI3Mjc1NWEzZDU2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUwZjc0NjY0ZDhlOTUwYjk3Njk3Mjk1YzhhY2RmOTQ5NjNkNDliNTgyZDkxMzViNmM3NGI3Mjc1NWEzZDU2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTM4OTRlYTkyZTg4ZDBlODc0YmRhOTU2Y2UzZjUyMzFjM2Q0ZjllODYzZDhmNzA1NDlkZGY0MGYxNzNkODA0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQ4NzRjMDk5ZjRmNDQzNzljMWU3YThlZGI1ZjhiZTNkMmE4YzU0Mzc1ZWRhZjM4YzYwZTkxMjE2YTFmNTg3YiJ9"
+          "resource": "repo://src/okf/frontmatter.ts#L116-L183",
+          "version": "repo-lines-v1:sha256:cb7f07ed1943e775b5104500d7f40c5b9115636023b77ca6d7d8a3fe94f66b2b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5Yzk3ODRhZDU5ZDA5MjE1YmZjMmI5YzZkZTExZjg1ZDVmOGUyNjZhYzA2ZDhiMWVmM2NjYmQ4NDA2NDQ0NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjZmM4MWM0MjRmZjRkOTYyN2RiNGRlZjJiMjliZjVjMGVmODFjNjgwMTc1NjcyNDI3ZTczYTY0ZDU3ZWFiMzMifQ"
         },
         {
-          "resource": "repo://src/okf/frontmatter.ts#L464-L550",
-          "version": "repo-lines-v1:sha256:b48d1d0c4043ec7bbc249407d6c8ad0830e55be31c1e7132a7e68318a7374b8b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjZDg2MWE5ZWE3M2ZkNDFjYjk3YzY5NjRjNTg4OWYzZWZhZWUyMWQ1MWY5ZWMxOTM3ZmZlYTM3MDhkMjhkMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0ODg2ODE4NmQ5N2JkZDdjNDAyZjBjYmM5ZTJjMmQ3ZjY3NTVhYTQ1ZDBlZmE3ZWMzY2E2OGI5ZmE4ZjI0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1YWRhNmYxZWJlZGE0MjUyNGY4NGEzYzZlZjZkZTk4YzljNzlhOThhY2VjZGQyNjhjZTgxNDVkYzRmMGFlNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlMWZlOGVmYTc0MDAxYjFmYjUyZTU2MWJlYjc3MzlhNTc0YzY3OTc4NTQxYzhlZGRmMzA3YWQ5Yzc5MTE3MDEifQ"
+          "resource": "repo://src/okf/frontmatter.ts#L354-L414",
+          "version": "repo-lines-v1:sha256:f83ef61a11f29df934dd3307720dcf6e23d8edeae66c5237348c8584a172ab71:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4ZTBhZmZhYmY2Y2Y3ZTEyNGEyYWI1OWQ5OThjMmYzMmM0NDdlMzgyOTQ3MDZkMGU3OTZhYWEyMDUwYTllOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3MzY4N2U3YjY2ZTVkNDc0Mjk1MGYzODQ4NmQ5M2Q1NjFkNGRmOGNlNWQwYWZkOWI2NTc2ZWZlNWZlYWU2OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1NTg5YjY5NzIyZjZkOTdmMTQ2OGJlYTY2OGIwZjU5NDQ0YzFlZmVkY2UyMWZjOTc3NzM4ODg2Y2MwY2Y4ZWQifQ"
+        },
+        {
+          "resource": "repo://src/okf/frontmatter.ts#L463-L596",
+          "version": "repo-lines-v1:sha256:6897aa67c6912b5443f3c6e937ffd748360d4a5dabcf7eb119f44505c9856a2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNTI5NGI2MjM0ODJhN2VkMmQ2ZTE5MDNiODI4OTNjZWYwY2Q5MGY1ODE5NTYzMGEwYTM0OTFiZjMwMDVmZDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MzJhZTcyZmI2MGM0NDM0ZWQ0MDBkNGVmODQwMTA0Mjc4OWJkYzE1ODAyNTk0ZDY2NzIyZmI0ZjMyOTY5ZDY0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MTFjMDRjZjk1NzVmNWY4MGM3MGM4NDIwMzJkNDk4YTQ4NDU1OTJjNTFiMDVhMTU3YjA2MWRjMjIxMTdiMDlhIn0"
         }
       ]
     },
@@ -288,7 +296,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.0",
+    "at": "2026-08-26T20:17:27.397Z"
   }
 }

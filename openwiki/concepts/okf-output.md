@@ -3,9 +3,6 @@ type: concept
 title: Open Knowledge Format Output
 description: How OpenWiki produces OKF-compliant pages — validated YAML frontmatter, code-owned generation provenance, synchronized directory indexes, and Mermaid diagrams that are validated and degraded before they reach a renderer.
 tags: [okf, frontmatter, provenance, index, mermaid, wiki-finalization]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-adcadc660c1888613ec50f9a
     resource: repo://src/agent/wiki-finalizer.ts
@@ -25,7 +22,10 @@ sources:
     resource: repo://src/okf/index-labels.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+verified:
+  - by: openwiki/0.4.0
+    at: 2026-08-26T20:17:27.397Z
 ---
 
 # Open Knowledge Format Output
@@ -73,21 +73,34 @@ and writes them deterministically — pages should not hand-author them.
 ## Repairing non-conformant pages
 
 Before the agent runs, `migrateWikiToOkf` normalizes every concept page so the
-agent operates over an already-conformant wiki. `normalizeConceptContent` applies
-a conservative rule: if the frontmatter parses and has a non-empty `type`, the
-page is left byte-for-byte unchanged; otherwise (no frontmatter, unparseable
-YAML, or a missing `type`) the block is rebuilt from a minimal derived block and
-tagged `openwiki_generated: true` for later agent review. `deriveMinimalFrontmatter`
-supplies only `type` (defaulting to a localized "Reference") and a `title` taken
-from the first H1 or the filename; it deliberately omits `description`, since a
-code-guessed one is usually poor.
+agent operates over an already-conformant wiki. `normalizeConceptContent`
+delegates to `repairOkfFrontmatter`, which applies a conservative rule: if the
+frontmatter already parses and validates, the page is left byte-for-byte
+unchanged. When the YAML mapping is parseable but a recognized field is invalid,
+the repair is surgical — only the offending recognized field is rewritten or
+removed through the line-preserving setters, so every unrelated line (including
+producer extension fields such as `openwiki_translation_pending`) survives
+byte-for-byte. A missing `type` receives the localized fallback and stamps
+`openwiki_generated: true` (via `OPENWIKI_GENERATED_FIELD`) so the agent knows
+the metadata was code-derived; an invalid `title` is re-derived from the first
+H1 or filename; invalid optional scalars are removed; non-conformant `verified`
+and `sources` entries are filtered to the conformant subset and re-rendered;
+and unprovable trust assertions (`generated`, `status`, `stale_after`) are
+removed rather than rewritten into a false assertion.
 
-The rebuild carries forward fields that would otherwise be lost: scalar
-extensions such as `openwiki_translation_pending`, and structured
-provenance families `generated`, `verified`, and `sources`, which are copied
-across verbatim as complete raw fields rather than re-quoted. This keeps a page
-that is simultaneously non-conformant and, say, pending translation from losing
-its control markers.
+Only when the YAML mapping itself is unparseable, or the surgical repair still
+cannot produce a valid block, does `repairOkfFrontmatter` fall back to
+`rebuildMinimalConcept`: the entire frontmatter is discarded and replaced with
+the smallest truthful valid block — just `type`, `title`, and
+`openwiki_generated: true`, emitted by `renderFrontmatter` — prepended to the
+original body. In this fallback path producer extensions and prior provenance
+are lost, which is why it is reserved for genuinely unusable YAML. `renderFrontmatter`
+emits the `openwiki_generated: true` marker through `OPENWIKI_GENERATED_FIELD`
+so the flag is named consistently with the surgical path.
+
+`deriveMinimalFrontmatter` supplies only `type` (defaulting to a localized
+"Reference") and a `title` taken from the first H1 or the filename; it
+deliberately omits `description`, since a code-guessed one is usually poor.
 
 Because a page that already declares a usable `type` is never rewritten, an
 author's custom `type` and producer-defined fields are preserved even when

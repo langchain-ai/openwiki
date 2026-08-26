@@ -4,15 +4,21 @@ title: Testing Guide
 description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, and how to scope the narrowest validation that proves a change per subsystem.
 tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow]
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.0
+    at: 2026-08-26T20:17:27.397Z
 sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
+  - id: openwiki-source-6cc520117b0eb03bfd36a7c8
+    resource: repo://test/agent/frontmatter-validator.test.ts
   - id: openwiki-source-e25b880bed632d812ac9f1a8
     resource: repo://test/agent/gemini-enterprise-claude.e2e.test.ts
+  - id: openwiki-source-8826337e8c8799af4371a0e5
+    resource: repo://test/agent/index-middleware.test.ts
   - id: openwiki-source-ec5a58d1a89689ead79b8150
     resource: repo://test/agent/repository-runner.test.ts
+  - id: openwiki-source-10e644b1d94ea2cd8435efb2
+    resource: repo://test/agent/wiki-finalizer.test.ts
   - id: openwiki-source-60f74aa845439889d9b5e391
     resource: repo://test/claims/brains/code/store.test.ts
   - id: openwiki-source-07638dd09c03aa66a99013cf
@@ -35,11 +41,13 @@ sources:
     resource: repo://test/generation/repository-run.test.ts
   - id: openwiki-source-5c504746431185b33e3c7f39
     resource: repo://test/mermaid/dom-shim.test.ts
+  - id: openwiki-source-43240ab040106a6f63192176
+    resource: repo://test/okf/frontmatter.test.ts
   - id: openwiki-source-2b788920f8a5c721b3430f6c
     resource: repo://test/openwiki-home.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
 ---
 
 # Testing Guide
@@ -134,20 +142,42 @@ matching path. The most important mappings:
 
 | Test directory                                                                                                                                            | Source subsystem it validates                                                                                 |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts, streaming, redaction, the repository runner               |
+| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts, streaming, redaction, the repository runner, OKF middleware, frontmatter validation, and the wiki finalizer |
 | `test/claims/`                                                                                                                                            | `src/claims/` — grounded-claim core, the code claim brain, and evidence resolution                            |
 | `test/connectors/`                                                                                                                                        | `src/connectors/` — connector config, resilient fetch, MCP client/runtime, and per-source ingestion           |
 | `test/generation/`                                                                                                                                        | `src/generation/` — repository planning, page jobs, and run-state persistence                                 |
+| `test/okf/`                                                                                                                                              | `src/okf/` — OKF frontmatter parsing/normalization/repair/validation and index labels/sync |
 | `test/integrations/`                                                                                                                                      | `src/integrations/` — host installers, config adapters, the MCP server, and packaged skill/protocol contracts |
 | `test/cli/`                                                                                                                                               | `src/cli/` — CLI wiring and Ink components                                                                    |
 | `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard                                                                   |
-| `test/config/`, `test/okf/`, `test/mermaid/`, `test/visualize/`, `test/scheduling/`, `test/telemetry/`, `test/auth/`, `test/ingestion/`, `test/platform/` | the matching `src/` subsystem                                                                                 |
+| `test/config/`, `test/mermaid/`, `test/visualize/`, `test/scheduling/`, `test/telemetry/`, `test/auth/`, `test/ingestion/`, `test/platform/` | the matching `src/` subsystem                                                                                 |
 
 Related architecture and subsystem pages: the
 [source map](../architecture/source-map.md),
 [grounded claims](../concepts/grounded-claims.md),
 [coding-agent integrations](../integrations/coding-agents.md), and the
 [repository generation workflow](../workflows/repository-generation.md).
+
+### Agent: middleware, frontmatter, and finalizer
+
+The agent subsystem directory holds a broad set of tests, including several that
+guard the OKF authoring pipeline added in the v0.4.0 cycle:
+
+- `test/agent/frontmatter-validator.test.ts` exercises `validateOkfFrontmatter`
+  in isolation, asserting which OKF frontmatter families are accepted (required
+  `type`, optional `title`/`description`/`resource`/`tags`, the legacy v0.1
+  `timestamp`/producer extensions, and the v0.2 provenance/trust/lifecycle
+  families) and which malformed inputs are rejected (timestamps without an
+  explicit UTC offset, impossible ISO-shaped timestamps).
+- `test/agent/index-middleware.test.ts` drives `createOpenWikiIndexMiddleware`
+  against a real `OpenWikiLocalShellBackend` rooted in an `mkdtemp` directory. It
+  runs the middleware's `beforeAgent`/`afterAgent` lifecycle hooks, asserts the
+  projected source IDs and index labels, and feeds broken Mermaid blocks to prove
+  index sync fails on unparseable diagrams.
+- `test/agent/wiki-finalizer.test.ts` exercises `prepareWikiForAuthoring` and
+  `finalizeWikiArtifacts` against an isolated repository-mode backend, capturing
+  the operation sequence (`migrate`, `provenance_snapshot`) and asserting on the
+  persisted content written to the real filesystem.
 
 ### Claims: nested layout
 
@@ -173,14 +203,30 @@ dump it writes to disk — no real network call or OAuth token is involved. To a
 a new connector, use the `write-connector` skill and add a matching test under
 `test/connectors/sources/`.
 
+### OKF: frontmatter and index
+
+`test/okf/` mirrors `src/okf/`. `test/okf/frontmatter.test.ts` is the broadest
+OKF frontmatter suite: it covers `normalizeConceptContent` (regenerating
+frontmatter for bare pages, repairing optional fields while preserving
+producer-defined extensions, stamping a localized concept type), and the
+`parseFrontmatterFields`/`renderFrontmatter`/`validateOkfFrontmatter`/
+`repairOkfFrontmatter`/`validatePersistedFile` helpers. Sibling files
+(`test/okf/index-labels.test.ts`, `test/okf/index-sync-errors.test.ts`,
+`test/okf/claims-verification.test.ts`, `test/okf/claim-sources.test.ts`) cover
+index labels, index-sync error paths, and claims verification/source projection.
+
 ## Testing patterns you will reuse
 
 - **Dependency injection via `vi.mock` + `vi.hoisted`.** Failure-path tests
   wrap a real module with `vi.mock(..., importOriginal)` and use a hoisted
   counter to inject a failure on the Nth call while otherwise delegating to the
   real implementation. `test/generation/repository-run.test.ts`, for example,
-  injects metadata-write and run-state write/removal failures this way to prove
-  the runner's recovery behavior.
+  intercepts `writeLastUpdateMetadata`, `writeRepositoryRunState`, and
+  `removeRepositoryRunState` this way to inject metadata-write and run-state
+  write/removal failures and prove the runner's recovery behavior. These tests
+  import the source modules directly (e.g. `../../src/okf/frontmatter.ts`,
+  `../../src/generation/repository-run.ts`) so the run lifecycle is exercised
+  through Vitest's transform without first building `dist/`.
 - **Real filesystem in a temp dir.** Tests that exercise on-disk behavior create
   an OS temp directory (`mkdtemp`), redirect `$HOME`/`USERPROFILE` or
   `OPENWIKI_CONFIG_DIR` into it, and clean up in `afterEach`. This keeps the
@@ -191,6 +237,23 @@ a new connector, use the `write-connector` skill and add a matching test under
 - **DOM shim for Mermaid.** Tests that touch Mermaid validation call
   `ensureDomGlobals()` from `src/mermaid/dom-shim.ts` to install jsdom's
   window/document globals.
+
+### The repository-run lifecycle test
+
+`test/generation/repository-run.test.ts` is the end-to-end integration test for
+the repository generation workflow. It imports `parseFrontmatterFields` and
+`validateOkfFrontmatter` from `src/okf/frontmatter.ts`, plus the run lifecycle
+(`beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
+`submitRepositoryPage`, `finishRepositoryRun`) from
+`src/generation/repository-run.ts`, and drives the full begin → submit_plan →
+next_page → submit_page → finish lifecycle against a temporary Git repository.
+A `failureHarness` created with `vi.hoisted` wraps the real `src/agent/utils.js`
+and `src/generation/run-state.js` modules to inject failures on selected
+calls while otherwise delegating to the real implementation. Each test creates a
+committed Git repository (via the `git`/`createRepository` helpers), optionally
+arms the failure counters in `beforeEach`, and removes the temporary directories
+in `afterEach`, so the run's recovery and rollback paths are exercised against a
+real repository without leaving state behind.
 
 ## Choosing the narrowest validation per subsystem
 
