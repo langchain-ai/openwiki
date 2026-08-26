@@ -514,8 +514,8 @@ export function setFrontmatterField(
 
 /**
  * Stamps the code-owned OKF `generated` provenance event on a page (SPEC §5.1),
- * setting or replacing a `generated: {by, at}` flow mapping and preserving every
- * other front-matter line byte-for-byte.
+ * setting or replacing a `generated: { by, at }` flow mapping and preserving
+ * every other front-matter line byte-for-byte.
  *
  * `generated` is a mapping, not a scalar, so it cannot go through
  * {@link setFrontmatterField}. The value is emitted as a single-line flow
@@ -535,7 +535,7 @@ export function setGeneratedEvent(
     at === undefined
       ? `by: ${JSON.stringify(by)}`
       : `by: ${JSON.stringify(by)}, at: ${JSON.stringify(at)}`;
-  const line = `generated: {${members}}`;
+  const line = `generated: { ${members} }`;
   return replaceFrontmatterFieldBlock(content, "generated", [line]);
 }
 

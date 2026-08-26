@@ -207,16 +207,22 @@ async function beginForcedUpdate(
  *
  * @param run - Active run with a persisted one-page plan.
  * @param title - Final page title.
+ * @param terminalNewline - Whether the authored page includes a final newline.
  */
 async function completeCurrentPage(
   run: ActiveRepositoryRun,
   title: string,
+  terminalNewline = true,
 ): Promise<void> {
   const next = await nextRepositoryPage(run);
   if (next.status !== "pending") {
     throw new Error("Expected a pending page job.");
   }
-  const write = await run.backend.write(next.job.path, validPage(title));
+  const content = validPage(title);
+  const write = await run.backend.write(
+    next.job.path,
+    terminalNewline ? content : content.replace(/\n$/u, ""),
+  );
   if (write.error) throw new Error(write.error);
   await submitRepositoryPage(run, {
     jobId: next.job.id,
@@ -591,7 +597,7 @@ describe("repository page queue", () => {
 });
 
 describe("finishRepositoryRun", () => {
-  test("completes init with final Claims, sources, versions, and metadata durable", async () => {
+  test("completes init with canonical bytes and final Claims durable", async () => {
     const root = await createRepository(["old.md"]);
     const result = await beginRepositoryRun({
       root,
@@ -612,7 +618,7 @@ describe("finishRepositoryRun", () => {
         },
       ],
     });
-    await completeCurrentPage(run, "Quickstart");
+    await completeCurrentPage(run, "Quickstart", false);
 
     await expect(finishRepositoryRun(run)).resolves.toEqual({
       status: "complete",
@@ -623,6 +629,14 @@ describe("finishRepositoryRun", () => {
       readFile(path.join(root, "openwiki", "old.md"), "utf8"),
     ).rejects.toMatchObject({ code: "ENOENT" });
     const store = new ClaimsStore(root);
+    const markdown = await readFile(
+      path.join(root, "openwiki", "quickstart.md"),
+      "utf8",
+    );
+    expect(markdown).toMatch(/[^\n]\n$/u);
+    expect(markdown).toContain(
+      `generated: { by: "${ACTOR.producerActor}", at: "${STARTED_AT}" }`,
+    );
     const sidecar = await store.loadPage("/openwiki/quickstart.md");
     expect(sidecar?.pageVersion).toBe(
       await store.hashPage("/openwiki/quickstart.md"),
@@ -631,9 +645,7 @@ describe("finishRepositoryRun", () => {
       by: OPENWIKI_PRODUCER_ACTOR,
       at: STARTED_AT,
     });
-    const fields = parseFrontmatterFields(
-      await readFile(path.join(root, "openwiki", "quickstart.md"), "utf8"),
-    );
+    const fields = parseFrontmatterFields(markdown);
     expect(fields?.verified).toContainEqual({
       by: OPENWIKI_PRODUCER_ACTOR,
       at: STARTED_AT,

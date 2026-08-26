@@ -187,9 +187,11 @@ export async function finalizeGeneratedProvenance(
     const bodyChanged =
       initial === undefined || initial.bodyHash !== hashConceptBody(content);
     const candidate = bodyChanged
-      ? removeFrontmatterField(
-          setGeneratedEvent(content, producerActor, now),
-          "timestamp",
+      ? canonicalizeChangedConcept(
+          removeFrontmatterField(
+            setGeneratedEvent(content, producerActor, now),
+            "timestamp",
+          ),
         )
       : restoreGeneratedEvent(content, initial.generated);
     const reconciled = repairOkfFrontmatter(candidate, page).content;
@@ -202,6 +204,21 @@ export async function finalizeGeneratedProvenance(
       if (result.error) continue;
     }
   }
+}
+
+/**
+ * Applies OpenWiki's minimal byte-level format to a concept changed this run.
+ *
+ * Only terminal line endings are canonicalized. Prose wrapping, indentation,
+ * tables, and every other producer-authored Markdown choice remain untouched.
+ * Existing no-op pages never pass through this function, preserving their
+ * bytes exactly.
+ *
+ * @param content - Changed or newly created concept content.
+ * @returns Content ending in exactly one LF line ending.
+ */
+function canonicalizeChangedConcept(content: string): string {
+  return `${content.replace(/[\r\n]*$/u, "")}\n`;
 }
 
 /**
@@ -271,9 +288,22 @@ function restoreGeneratedEvent(
   content: string,
   generated?: GeneratedEvent,
 ): string {
+  if (generated && sameGeneratedEvent(readGeneratedEvent(content), generated)) {
+    return content;
+  }
   return generated
     ? setGeneratedEvent(content, generated.by, generated.at)
     : removeFrontmatterField(content, "generated");
+}
+
+/**
+ * Compares two valid producer events by meaning rather than YAML formatting.
+ */
+function sameGeneratedEvent(
+  left: GeneratedEvent | undefined,
+  right: GeneratedEvent,
+): boolean {
+  return left?.by === right.by && left.at === right.at;
 }
 
 /**

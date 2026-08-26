@@ -335,7 +335,7 @@ describe("setGeneratedEvent", () => {
         "2026-08-18T09:00:00.000Z",
       ),
     ).toBe(
-      '---\ntype: Reference\ntitle: Page\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\n---\n\n# Page\n',
+      '---\ntype: Reference\ntitle: Page\ngenerated: { by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z" }\n---\n\n# Page\n',
     );
   });
 
@@ -347,7 +347,7 @@ describe("setGeneratedEvent", () => {
         "2026-08-18T09:00:00.000Z",
       ),
     ).toBe(
-      '---\ntype: Reference\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\ntitle: Page\n---\n\n# Page\n',
+      '---\ntype: Reference\ngenerated: { by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z" }\ntitle: Page\n---\n\n# Page\n',
     );
   });
 
@@ -359,7 +359,7 @@ describe("setGeneratedEvent", () => {
     );
 
     expect(stamped).toBe(
-      '---\ntype: Reference\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\ntitle: Page\n---\n\n# Page\n',
+      '---\ntype: Reference\ngenerated: { by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z" }\ntitle: Page\n---\n\n# Page\n',
     );
     expect(validateOkfFrontmatter(stamped)).toEqual({ valid: true });
   });
@@ -371,7 +371,7 @@ describe("setGeneratedEvent", () => {
         "openwiki/0.3.1",
       ),
     ).toBe(
-      '---\ntype: Reference\ngenerated: {by: "openwiki/0.3.1"}\n---\n\n# Page\n',
+      '---\ntype: Reference\ngenerated: { by: "openwiki/0.3.1" }\n---\n\n# Page\n',
     );
   });
 
@@ -383,7 +383,7 @@ describe("setGeneratedEvent", () => {
         "2026-08-18T09:00:00.000Z",
       ),
     ).toBe(
-      '---\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\n---\n\n# Page\nBody.\n',
+      '---\ngenerated: { by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z" }\n---\n\n# Page\nBody.\n',
     );
   });
 

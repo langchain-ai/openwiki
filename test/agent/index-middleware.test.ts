@@ -698,7 +698,7 @@ describe("createOpenWikiIndexMiddleware generated finalization", () => {
 
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(page).toContain(
-      `generated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}"}`,
+      `generated: { by: "openwiki/${OPENWIKI_VERSION}", at: "${NOW}" }`,
     );
   });
 
@@ -728,7 +728,7 @@ describe("createOpenWikiIndexMiddleware generated finalization", () => {
 
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(page).toContain(
-      `generated: {by: "openwiki/${OPENWIKI_VERSION}", at: "${LATER}"}`,
+      `generated: { by: "openwiki/${OPENWIKI_VERSION}", at: "${LATER}" }`,
     );
     expect(page).not.toContain("timestamp:");
     // Exactly one generated event, not a duplicated field.
