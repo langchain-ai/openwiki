@@ -50,10 +50,10 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
 verified:
   - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
+    at: 2026-08-26T22:32:29.466Z
 ---
 
 # Source Map
@@ -91,7 +91,12 @@ before anything else.
   `submitRepositoryPlan`, `nextRepositoryPage`, `submitRepositoryPage`, and
   `finishRepositoryRun`, wiring together the run state, claims runtime, wiki
   finalizer, and OKF frontmatter validation — including deterministic
-  frontmatter repair (`repairPersistedFile`) before a page job is accepted.
+  frontmatter repair (`repairPersistedFile`) before a page job is accepted. It
+  also owns the skip-failed-page-workers path: `captureRepositoryPageSnapshot`
+  records the pending page and its claims sidecar before a worker runs,
+  `skipRepositoryPage` rolls a failed worker back (restoring the page markdown
+  and sidecar, marking the job `skipped`), and `restoreRepositoryPageMarkdown`
+  re-applies the snapshot during `finishRepositoryRun` for every skipped job.
 
 ## Subsystems
 
@@ -107,16 +112,26 @@ calls into `generation/repository-run.ts`), `src/agent/docs-only-backend.ts`
 (`openwiki-ignore.ts`), wiki post-processing (`wiki-finalizer.ts`,
 `wiki-link-validator.ts`, `wiki-replacement.ts`), and the ChatGPT/Vertex auth
 surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`).
+`repository_runner.ts` runs one fresh shell-free worker per pending page; on a
+worker that exits without submitting, it captures a `RepositoryPageSnapshot`
+via `captureRepositoryPageSnapshot`, calls `skipRepositoryPage` to restore the
+page and mark it `skipped`, collects those snapshots, and passes them to
+`finishRepositoryRun` so skipped pages are reconsidered on the next update.
 
 ### generation — repository run lifecycle and page jobs
 
 Orchestrates a full repository wiki build. Principal entry:
 `src/generation/repository-run.ts`. `src/generation/run-state.ts` owns the
 durable on-disk checkpoint (`.run.json`, schema-versioned, with `planning`/
-`generating` phases and `pending`/`complete` page-job statuses) so runs resume
-after interruption. `src/generation/page-jobs.ts` builds the plan
+`generating` phases and `pending`/`skipped`/`complete` page-job statuses) so
+runs resume after interruption. `src/generation/page-jobs.ts` builds the plan
 (`createRepositoryPlan`) and replaces per-page claims (`replacePageClaims`).
-`src/generation/errors.ts` defines `RepositoryRunError`.
+`src/generation/errors.ts` defines `RepositoryRunError`. The lifecycle's
+snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,
+`skipRepositoryPage`, `restoreRepositoryPageMarkdown`) let a failed page worker
+be rolled back to its pre-work state and marked `skipped` rather than failing
+the whole run; `finishRepositoryRun` requires a snapshot for every skipped job
+and re-applies those snapshots before finalizing.
 
 ### claims — grounded-claim persistence and evidence resolution
 

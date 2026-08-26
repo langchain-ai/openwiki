@@ -3,9 +3,6 @@ type: integration
 title: Interactive Visualizer
 description: How the `openwiki visualize` command builds a link graph from wiki Markdown and OKF frontmatter, serves a live single-page reader over loopback HTTP, and exports a self-contained static site for hosting.
 tags: [visualizer, graph, static-export, cli, server, markdown-reader]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
@@ -27,6 +24,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-3603986778b0b5f63cbdb37d
     resource: repo://src/visualize/static-export.ts
+  - id: openwiki-source-e3be493bc871948f42420690
+    resource: repo://test/visualize/client-interaction.test.ts
+  - id: openwiki-source-1904eaebd82125a3a3881dac
+    resource: repo://test/visualize/page.test.ts
   - id: openwiki-source-6b177c090fb1c7574a23496e
     resource: repo://test/visualize/server.test.ts
   - id: openwiki-source-2e48ab40ab957bcc05e92de0
@@ -35,7 +36,10 @@ sources:
     resource: repo://test/visualize/visualize-client-lib.test.ts
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+verified:
+  - by: openwiki/0.4.0
+    at: 2026-08-26T22:32:29.466Z
 ---
 
 # Interactive Visualizer
@@ -153,7 +157,19 @@ coordinated views: the force-directed graph canvas, a type/color legend, and a
 sidebar index of every page grouped by type. Clicking a node — on the canvas, in
 the sidebar, via a backlink chip, or through an in-page wiki link — opens that page
 in the reader without moving the camera, so reading never yanks the graph out from
-under you.
+under you. The hint and legend are not standalone panels: `renderPage` nests the
+`#graph-overlay` (the `#hint` line plus the `#legend`) directly inside the `#graph`
+div, and the stylesheet caps that overlay with `position: absolute` and a
+`max-height` against the graph panel's own box. Anchoring the overlay to `#graph`
+rather than to `.main` keeps it confined to the graph column, so a wiki with many
+page types can no longer grow the legend into a full-width bar that covers the
+sidebar, the graph, and the reader.
+
+Clicking empty graph space is deliberately a no-op. The graph instance registers
+only `onNodeClick` and `onNodeHover`; there is no `onBackgroundClick` handler, so a
+stray click on blank canvas never clears the selection or the reader. This is the
+issue #670 regression fix — the former background-click handler wiped the page the
+user was reading.
 
 The reader renders the page body as Markdown. Because `marked` passes raw HTML
 through, the output is sanitized with DOMPurify before assignment to `innerHTML`,
@@ -193,10 +209,12 @@ no live server and no SSE — the live/stale pill simply reads "Static".
 The HTML for both modes is produced by a single `renderPage` function in
 `src/visualize/page.ts`, parameterized by whether it is a static export; this keeps
 the live and exported apps identical apart from asset URLs, the CSP delivery
-mechanism, and the live indicator. The three browser libraries (force-graph,
-marked, DOMPurify) plus mermaid load from `cdn.jsdelivr.net` at pinned exact
-versions with Subresource Integrity hashes, and the CSP forbids inline scripts, so
-the reader stays locked down even while rendering arbitrary wiki Markdown.
+mechanism, and the live indicator — including the shared DOM layout, where the
+hint-plus-legend overlay lives inside the `#graph` panel rather than as a sibling of
+it. The three browser libraries (force-graph, marked, DOMPurify) plus mermaid load
+from `cdn.jsdelivr.net` at pinned exact versions with Subresource Integrity hashes,
+and the CSP forbids inline scripts, so the reader stays locked down even while
+rendering arbitrary wiki Markdown.
 
 ## Build pipeline and assets
 

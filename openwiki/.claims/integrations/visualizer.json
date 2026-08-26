@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4cbc7bb5b32b063cd028349cf6fb4a2756ff1f522043a1268fe35004ce806b9f",
+  "pageVersion": "sha256:316b06ac0e020cbf8d00d253245b293aa04cc74502b99b8de4f13910a88d8d3a",
   "claims": [
     {
       "id": "claim_cecbf09a48a44444b2ef62cbac04bd3b",
@@ -300,7 +300,7 @@
       "evidence": [
         {
           "resource": "repo://src/visualize/page.ts#L20-L95",
-          "version": "repo-lines-v1:sha256:2013a593716d5ebe6ae35eaa408d6bdb8a8bd684823f746e50580c3683e7cc95:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZmIzZmY3MGRmOTBiYjA5MmEzNDNkYzEwNmViMmQ2NTBkNzFkOTk4ZWY5ZGEzMWQ0NTdjYzFjMDc2ZjJmNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNGIyYTFiZTJhNDcxODk0YjhhN2EzYmRhNzU2M2ExYjY3NjI1MGE1OWI3NGQ5OTFiYTI3NmJlODUxYTM5YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxOGU3OTcyYzgzMjdlMDQwYzg1Y2I4YWM5ZjYxMmE3MDMxOTZkN2E0M2U1NjU5OGY3MzA4MjdkMjZjZGQ5YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:9dbd18acc64b47fa3e4f78c19268e16d44a9053907261975a047bb8ddf57a032:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZmIzZmY3MGRmOTBiYjA5MmEzNDNkYzEwNmViMmQ2NTBkNzFkOTk4ZWY5ZGEzMWQ0NTdjYzFjMDc2ZjJmNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNGIyYTFiZTJhNDcxODk0YjhhN2EzYmRhNzU2M2ExYjY3NjI1MGE1OWI3NGQ5OTFiYTI3NmJlODUxYTM5YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxOGU3OTcyYzgzMjdlMDQwYzg1Y2I4YWM5ZjYxMmE3MDMxOTZkN2E0M2U1NjU5OGY3MzA4MjdkMjZjZGQ5YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -351,10 +351,38 @@
           "version": "repo-lines-v1:sha256:eb684a13c94c10aca3ac4d085acdeafa32c97924e68d320f14d9d442d4688d02:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcxMDFhYzZhOTBlMDBiY2VkNzkzZDE3ZjE1ODVhMWQ3NzZlYjJlYzdkOGI2NTYzOWM5MmZhNmI5NzljMTBlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMWIwOTlhNDFhYjY3OTgwNWE1MGU5YzlmNjEwMmE2Nzc5ZmJkMjQxMmY5NzAzZmZiOTg2ZWJjYWRmNWRmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZkNjY3NjY0YjlhNGEyYzYxY2EzZDYwNWVkMWE4ZDQ4ZTYyYjQxODg5ZTRkNjRhYjM2NDA4N2E2MjZlYjI0NCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_2af7f01b34724df38c4a4f350f6f177e",
+      "statement": "`renderPage` nests the hint-plus-legend overlay (`#graph-overlay` containing `#hint` and `#legend`) directly inside the `#graph` panel rather than as a sibling under `.main`, and the stylesheet caps the overlay with `position: absolute` and a `max-height` against the graph panel's own box, so a wiki with many page types can no longer grow the legend into a full-width bar covering the sidebar, graph, and reader (issue #670).",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/page.ts#L72-L83",
+          "version": "repo-lines-v1:sha256:aac8401b7b9f7c9395c8e8aca2900565086330f0d1083ae385f09ea12d7ae4fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkZmM2OTc1OTI0MTU5MDNlMWE3M2ZmNzVmNWM5ZWQ0OTZlYzI2MTkwNTJhMzQ0YTEyMjM1YmQ3YTNmYWMwYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiNDE2MzY3NmY2OWViOTE4NTRlNTgyODEyZTE5YTQ3MTE2ZTExNTgyNjBjNjI0YzFmNjJkNzQ0ZDAzOTg1M2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyYjc1YWY5NjdjODViMmI3OGVjMWJkYzZlYTI4NTM5Yjc5ZWRmNWRlNmMyZjc2NjgyMzgzMDMyOWI3ZTVmMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NzNhMDFlZDExZDgwYjNjMDJlNmFmNmNjNTQ3OWExNjIyNTlmYTEzOTNmNjQ1NDkyM2UwM2EyMTM1MThkNzkifQ"
+        },
+        {
+          "resource": "repo://test/visualize/page.test.ts#L71-L117",
+          "version": "repo-lines-v1:sha256:8793d737f9a955020a2f85f2542c82b35af055f143aa5a1f499b67a3dbd8e6bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwMjA3MDE2Y2ZmMWI1M2U4NTU5ZDVhNTM2MmY1NGY5MTZlOGVkZDZmYjQ1ZDI3ZDUzNDU0Mzk5MmQ5NmRhZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMjU3N2VmNzRiMTBjN2E5MDhjNzM4OTdmNTE1NTY4ZDA3ZTU2YWJjMzUwYmM1Nzc4ZWM0OGNjZmNhMmE5ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_659deb9eb12a43958a7156ef97eb889b",
+      "statement": "The graph instance registers only `onNodeClick` and `onNodeHover` and deliberately has no `onBackgroundClick` handler, so clicking empty graph space is a no-op that never clears the selection or the reader; this is the issue #670 regression fix for the former background-click handler that wiped the open page.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client.ts#L527-L531",
+          "version": "repo-lines-v1:sha256:42ba775af37ceedb2fee5d93c4faba7991a2c58c98437755d891ed41c7c36aa3:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjUyMjQ0M2M2N2IyMDc2MGFlNTUzOGViODFjYjg5NmM0ODZjNzQ2ZGRkNzQwMzI4Y2VhNzIxZWI0ZjE5OTYyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWEwMWUyZTI2ZGMzZDdlZTQ2NzkxOWMxZWVhMDJhZmNmOTEwYjUwNjI1ZjEwNmI3NjUyY2Q2OTUxOGIxOGNmZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWNmOTAwMGQxZDQyYTgwOTNhNjk1M2IxZTJhMTEyOTU4OTY0NGFkMmI3ZDVjMTM3Nzg3NjJjMjhlZDI0ZGJjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2M5NTUwY2Q1MWI1ZjQ2ZmJkZjg0NWZmZmVlMzU2NmQzMjI0MTlkMjAzNGU1ZTQ4YjljOWNmYmEwMjU1YjQwMyJ9"
+        },
+        {
+          "resource": "repo://test/visualize/client-interaction.test.ts#L173-L190",
+          "version": "repo-lines-v1:sha256:a2630875b35b8cfecb7fd67f126b0b6432af3e7545b5ef2365f2f4329c2cc65f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiOGU0Zjg1YzJiMmVmMDI5ODczYzExMDFiMzVmZTdkOTY5OTkwYWIzZTJjOTAwZGQ5NWFhNzQxMWE2ODVlNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyMzM2YTE5Y2E1MDlhMjI4ZGRkMGQyNmRhYTAwMmZlMjdiYTA5OWNlY2FjZTdhYjE5M2IyMWJhZGUxZWE0MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzNjE5MGNiMTFiMGYyMWUzZjY2NDJjNmQzYzc4MDI3MDJjYjFiMWE5N2VjNWQzYTc3MGJhZDBmMTZiNTljNDEifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.0",
+    "at": "2026-08-26T22:32:29.466Z"
   }
 }

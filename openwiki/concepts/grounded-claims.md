@@ -26,14 +26,16 @@ sources:
     resource: repo://src/claims/evidence/repository/resolver.ts
   - id: openwiki-source-cd8d06edadee75de8637208c
     resource: repo://src/claims/evidence/repository/resource.ts
+  - id: openwiki-source-7c5ecb56558cc061dab24f9d
+    resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-9bac7069736f3ea19ed36748
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
 verified:
   - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
+    at: 2026-08-26T22:32:29.466Z
 ---
 
 # Grounded Claims
@@ -69,6 +71,7 @@ working state, and lifecycle orchestration into three cooperating layers.
 stateDiagram-v2
     [*] --> Persisted
     Persisted --> Loaded: preflight loadPages
+    Persisted --> Excluded: finalize skipped page
     Loaded --> Stale: evidence version changed
     Loaded --> Unresolved: evidence missing
     Loaded --> Clean: evidence current
@@ -79,13 +82,15 @@ stateDiagram-v2
     Loaded --> Dirty: add mutation
     Dirty --> Verified: finalize recheck and write
     Dirty --> Retained: not dirty or blocked by debt
+    Excluded --> [*]
     Verified --> [*]
     Reconciled --> Retracted: retract or page deleted
     Retracted --> [*]
 ```
 
 Claim lifecycle and state transitions from persisted sidecar through preflight
-classification, reconciliation, and durable finalization.
+classification, reconciliation, and durable finalization. An `Excluded` page is
+one passed in `finalize`'s `excludedPages` set and is left untouched.
 
 ## Where Claim state persists
 
@@ -173,8 +178,11 @@ creating a write obligation.
 ## The durability boundary at page completion
 
 `ClaimSession.finalize` is the boundary where run-scoped Claim state becomes
-durable. It only touches pages that actually changed, and each such page must
-pass two gates before its sidecar is written:
+durable. It accepts an `excludedPages` set — pages whose generation jobs were
+skipped during an interrupted run — and leaves those pages untouched: it neither
+persists, rechecks, nor deletes their sidecars. For every other page, finalization
+only touches pages that actually changed, and each such page must pass two gates
+before its sidecar is written:
 
 1. **No evidence debt** — a page with unresolved grounding issues is refused, so
    stale or unresolved Claims cannot be silently persisted as verified.
@@ -182,12 +190,20 @@ pass two gates before its sidecar is written:
    time; if any resource disappeared or changed version since the mutation was
    accepted, the page is not persisted.
 
+The runtime exposes this through `ClaimsRuntime.finalize(at, excludedPages)`,
+which builds the OpenWiki producer verification event and forwards the skipped
+set. When a repository run finishes, it derives `skippedPages` from skipped jobs
+and passes them both to `finalize` and to the post-run durability assertion, so
+skipped pages are exempt from Claims persistence and from the "no orphan
+sidecar" / "every claimed page is durable" checks that gate the run.
+
 Finalization also removes orphaned sidecars (whose pages no longer exist),
-deletes sidecars for pages whose Markdown vanished, and removes sidecars for
-pages recorded as deleted. Each page's Markdown is hashed before its sidecar is
-written so the persisted `pageVersion` describes the exact bytes on disk. A page
-finalized with a non-empty Claim set receives a durable `verification` event; a
-page whose Claims were fully retracted is persisted without one.
+deletes sidecars for pages whose Markdown vanished during the run, and removes
+sidecars for pages recorded as deleted. Each page's Markdown is hashed before
+its sidecar is written so the persisted `pageVersion` describes the exact bytes on
+disk. A page finalized with a non-empty Claim set receives a durable
+`verification` event; a page whose Claims were fully retracted is persisted
+without one.
 
 Finalization is best-effort per page: recoverable per-page failures are isolated
 as warnings rather than aborting the run, but the runtime treats any warning as a

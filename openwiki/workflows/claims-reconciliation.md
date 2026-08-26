@@ -34,10 +34,10 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
 verified:
   - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
+    at: 2026-08-26T22:32:29.466Z
 ---
 
 # Claims Reconciliation on Update
@@ -232,15 +232,29 @@ Lifecycle of a page Claim across one reconciliation pass.
 
 ## Durability at page completion
 
-After reconciliation, the run finalizes Claims for the page before recording job
-completion, and asserts the page's Claims are durable before advancing the queue.
-Finalization persists only pages whose Claim state actually changed (`dirty`),
-refuses to persist a page that still carries unresolved evidence debt, and
-rechecks every dirty page's evidence against current source and re-hashes its
-Markdown before writing the sidecar. Orphan and deleted-page sidecars are removed
-in the same pass. This is the point at which refreshed evidence versions become
-durable, so a subsequent update's preflight sees current tokens and can correctly
-report the page as no longer stale.
+Durability is enforced at two points. When a page worker submits its finished
+page, the run calls `finalize` with the run's `startedAt` timestamp and then
+`assertPageClaimsDurable` for that page before recording the job complete and
+advancing the queue. When the whole queue is finished, `finishRepositoryRun`
+calls `finalize` and `assertRepositoryClaimsDurable` once more for the
+whole-run proof.
+
+`finalize` accepts an `excludedPages` set (empty by default) and skips every
+page it names across all of its work, so callers can exclude pages whose
+Markdown was not regenerated. The per-page submit path omits it. The finish
+path passes the set of skipped page paths as `excludedPages`, and passes the
+same set to `assertRepositoryClaimsDurable`, so skipped pages are excluded from
+both final Claims persistence and the whole-run durability proof.
+
+Within a non-excluded page, finalization persists only pages whose Claim state
+actually changed (`dirty`), refuses to persist a page that still carries
+unresolved evidence debt, and rechecks every dirty page's evidence against
+current source and re-hashes its Markdown before writing the sidecar. Orphan
+and deleted-page sidecars are removed in the same pass. This is the point at
+which refreshed evidence versions become durable, so a subsequent update's
+preflight sees current tokens and can correctly report the page as no longer
+stale. A run that finishes with skipped pages records itself as `interrupted`
+rather than `complete`, so the next update resumes rather than no-ops.
 
 ## Related pages
 

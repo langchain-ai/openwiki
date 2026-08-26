@@ -15,8 +15,8 @@ tags:
     visualizer,
   ]
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.0
+    at: 2026-08-26T22:32:29.466Z
 sources:
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
@@ -40,7 +40,7 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
 ---
 
 # Architecture Overview
@@ -84,8 +84,13 @@ flowchart TD
   Host --> McpServer["MCP server session-manager"]
   McpServer --> Lifecycle
   Core --> Connectors["connector tools"]
-  Lifecycle --> Claims["Claims runtime"]
-  Lifecycle --> Finalize["finalizeWikiArtifacts"]
+  Lifecycle --> Snapshot["snapshot pending page and Claims"]
+  Snapshot --> PageWorker["page worker"]
+  PageWorker -->|"fails or exits without submit"| Skip["skipRepositoryPage restores snapshot and marks skipped"]
+  Skip --> Lifecycle
+  PageWorker -->|"submit_page"| Lifecycle
+  Lifecycle -->|"source drift"| NativeRun
+  Lifecycle --> Finalize["finishRepositoryRun restores skipped pages and finalizes"]
   Finalize --> Wiki["OKF wiki output"]
   Wiki --> Viz["visualize server or static export"]
 ```
@@ -138,11 +143,20 @@ non-delegating DeepAgent: the planner gets read-only filesystem tools plus
 `submit_page`, and the general-purpose `task` delegation tool is stripped so
 workers cannot spawn subagents.
 
-The lifecycle is resumable and self-correcting. If finalization detects that
-repository source drifted underneath the plan, the run replans and repeats.
-Correctable submission rejections are returned to the worker as error-status
-tool messages so it can fix and resubmit rather than aborting the run. The
-end-to-end flow is documented in
+The lifecycle is resumable and self-correcting. Before a page worker runs, its
+pending page and Claims sidecar are snapshotted (`captureRepositoryPageSnapshot`).
+If the worker fails or exits without submitting, `skipRepositoryPage` restores
+the page and Claims from that snapshot, marks the job `skipped`, and the run
+continues with the next page rather than aborting; the page is reconsidered on a
+later update. `runPendingPageAgents` collects every skipped-page snapshot and
+passes them to `finishRepositoryRun`, which restores the skipped pages' Markdown
+after finalization, finalizes Claims with those pages excluded, and persists
+`interrupted` update metadata so the run is honestly recorded as partial.
+
+If finalization detects that repository source drifted underneath the plan, the
+run replans and repeats. Correctable submission rejections are returned to the
+worker as error-status tool messages so it can fix and resubmit rather than
+aborting the run. The end-to-end flow is documented in
 [Repository generation workflow](../workflows/repository-generation.md).
 
 ## Host-driven (coding-agent) generation

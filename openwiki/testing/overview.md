@@ -3,9 +3,6 @@ type: testing-guide
 title: Testing Guide
 description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, and how to scope the narrowest validation that proves a change per subsystem.
 tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow]
-verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
 sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
@@ -45,9 +42,16 @@ sources:
     resource: repo://test/okf/frontmatter.test.ts
   - id: openwiki-source-2b788920f8a5c721b3430f6c
     resource: repo://test/openwiki-home.test.ts
+  - id: openwiki-source-e3be493bc871948f42420690
+    resource: repo://test/visualize/client-interaction.test.ts
+  - id: openwiki-source-1904eaebd82125a3a3881dac
+    resource: repo://test/visualize/page.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+verified:
+  - by: openwiki/0.4.0
+    at: 2026-08-26T22:32:29.466Z
 ---
 
 # Testing Guide
@@ -150,7 +154,8 @@ matching path. The most important mappings:
 | `test/integrations/`                                                                                                                                      | `src/integrations/` — host installers, config adapters, the MCP server, and packaged skill/protocol contracts |
 | `test/cli/`                                                                                                                                               | `src/cli/` — CLI wiring and Ink components                                                                    |
 | `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard                                                                   |
-| `test/config/`, `test/mermaid/`, `test/visualize/`, `test/scheduling/`, `test/telemetry/`, `test/auth/`, `test/ingestion/`, `test/platform/` | the matching `src/` subsystem                                                                                 |
+| `test/visualize/`                                                                                                                                          | `src/visualize/` — the live-server/static-export HTML page, graph payload, server, static export, client-lib pure logic, and browser client interaction wiring |
+| `test/config/`, `test/mermaid/`, `test/scheduling/`, `test/telemetry/`, `test/auth/`, `test/ingestion/`, `test/platform/` | the matching `src/` subsystem                                                                                 |
 
 Related architecture and subsystem pages: the
 [source map](../architecture/source-map.md),
@@ -178,6 +183,16 @@ guard the OKF authoring pipeline added in the v0.4.0 cycle:
   `finalizeWikiArtifacts` against an isolated repository-mode backend, capturing
   the operation sequence (`migrate`, `provenance_snapshot`) and asserting on the
   persisted content written to the real filesystem.
+- `test/agent/repository-runner.test.ts` drives `runNativeRepositoryGeneration`
+  through a `deepagents`/`repository-run.js` mock harness. It asserts the
+  shell-free tool surface and one fresh worker per page, and includes the
+  worker-exit/skip regression `restores and leaves a page pending when its
+  worker does not submit`: when a page worker exits without calling
+  `submit_page`, the runner invokes `captureRepositoryPageSnapshot`/
+  `skipRepositoryPage` to restore the captured snapshot, marks that page
+  `skipped`, finishes the run, and emits a `text` event telling the user the
+  page will be "reconsidered on the next update" — leaving the skipped page to
+  be re-queued as `pending` on resume.
 
 ### Claims: nested layout
 
@@ -215,6 +230,31 @@ producer-defined extensions, stamping a localized concept type), and the
 `test/okf/claims-verification.test.ts`, `test/okf/claim-sources.test.ts`) cover
 index labels, index-sync error paths, and claims verification/source projection.
 
+### Visualize: page, graph, and client interaction
+
+`test/visualize/` mirrors `src/visualize/`. It splits the visualizer into the
+parts that can run in plain Node and the browser-only client glue that cannot:
+
+- `test/visualize/page.test.ts` asserts on the rendered `PAGE`/`STATIC_PAGE`
+  HTML documents exported by `src/visualize/page.ts`. It pins the exact CDN
+  script versions (force-graph, marked, dompurify, mermaid) and requires each
+  `<script>` tag to carry an SRI `integrity` plus `crossorigin="anonymous"`
+  attribute, so a version bump is forced through this test with a fresh hash
+  review rather than silently trusting the CDN. It also guards the issue #670
+  overlay-layout regression: the hint and legend must live inside the `#graph`
+  panel (not direct children of `.main`) and the stylesheet must height-cap
+  `.graph-overlay` with a scrollable `.legend`.
+- `test/visualize/client-interaction.test.ts` is a `@vitest-environment jsdom`
+  suite for the browser-only `src/visualize/client.ts` interaction wiring.
+  Because `client.ts` touches the DOM and CDN globals at import time, the test
+  mounts a minimal DOM matching `page.ts`'s post-#670 layout, replaces the
+  third-party globals (`ForceGraph`, `marked`, `DOMPurify`, `mermaid`,
+  `ResizeObserver`, `fetch`) with recording stubs, imports the client under
+  `data-static-export`, and asserts on the handlers it registers. Its primary
+  target is the issue #670 regression: background clicks must not be wired to
+  any handler, so clicking blank graph space never clears the reader, while
+  node clicks select a page and highlight its sidebar entry.
+
 ## Testing patterns you will reuse
 
 - **Dependency injection via `vi.mock` + `vi.hoisted`.** Failure-path tests
@@ -244,7 +284,8 @@ index labels, index-sync error paths, and claims verification/source projection.
 the repository generation workflow. It imports `parseFrontmatterFields` and
 `validateOkfFrontmatter` from `src/okf/frontmatter.ts`, plus the run lifecycle
 (`beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
-`submitRepositoryPage`, `finishRepositoryRun`) from
+`submitRepositoryPage`, `finishRepositoryRun`) and the skip primitives
+(`captureRepositoryPageSnapshot`, `skipRepositoryPage`) from
 `src/generation/repository-run.ts`, and drives the full begin → submit_plan →
 next_page → submit_page → finish lifecycle against a temporary Git repository.
 A `failureHarness` created with `vi.hoisted` wraps the real `src/agent/utils.js`
@@ -254,6 +295,17 @@ committed Git repository (via the `git`/`createRepository` helpers), optionally
 arms the failure counters in `beforeEach`, and removes the temporary directories
 in `afterEach`, so the run's recovery and rollback paths are exercised against a
 real repository without leaving state behind.
+
+The suite also covers the **skip path** for a page whose worker does not submit:
+`captureRepositoryPageSnapshot` snapshots the on-disk Markdown and Claims before
+the page is mutated, `skipRepositoryPage` restores that snapshot and marks the
+page `skipped` (the `restores the exact pending Markdown and Claims snapshot`
+test), and `finishRepositoryRun` accepts a `skippedPageSnapshots` list so a
+finish-after-skip leaves the original content and Claims in place, drops run
+state, and stamps an `interrupted` last-update status. A separate
+`resets an interrupted skipped job to pending on resume` test proves that
+resuming a run whose first page was skipped re-queues that page as `pending`
+rather than carrying the skipped status forward.
 
 ## Choosing the narrowest validation per subsystem
 
@@ -267,6 +319,9 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **A single connector source:** `pnpm exec vitest run test/connectors/sources/slack.test.ts`.
 - **A single named test:** `pnpm exec vitest run test/config -t "treats whitespace-only overrides as unset"`.
 - **Ink components:** `pnpm exec vitest run test/cli/components/`.
+- **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`) or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
+- **Agent worker-exit/skip path:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "restores and leaves a page pending when its worker does not submit"`.
+- **Visualizer client interaction regression:** `pnpm exec vitest run test/visualize/client-interaction.test.ts` (jsdom; run `test/visualize/` for the full page/graph/client-lib slice).
 
 Because tests import `src/` directly, a focused Vitest run does not require a
 prior `pnpm build`. Reserve the full `pnpm test` (typecheck + build + coverage)

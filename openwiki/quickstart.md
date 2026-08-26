@@ -16,10 +16,14 @@ sources:
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
     resource: repo://src/cli/commands.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+  - id: openwiki-source-7c5ecb56558cc061dab24f9d
+    resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-080c4525024a9b689e361cbb
+    resource: repo://src/generation/run-state.ts
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
 verified:
   - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
+    at: 2026-08-26T22:32:29.466Z
 ---
 
 # OpenWiki Quickstart
@@ -91,11 +95,11 @@ Find your task on the left, then read the page on the right.
 
 ### Understand the system
 
-| I want to…                                                                                         | Read                                                                             |
-| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Get the top-level picture of how the CLI, agent, modes, and finalization fit together              | [Architecture Overview](/openwiki/architecture/overview.md)                      |
-| Understand how the DeepAgents documentation agent is built (models, backends, prompts, middleware) | [Agent Runtime, Models, and Middleware](/openwiki/architecture/agent-runtime.md) |
-| Find which subsystem lives where under `/src`                                                      | [Source Map](/openwiki/architecture/source-map.md)                               |
+| I want to…                                                                                                          | Read                                                                             |
+| ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Get the top-level picture of how the CLI, agent, modes, resumable generation, and finalization fit together          | [Architecture Overview](/openwiki/architecture/overview.md)                      |
+| Understand how the DeepAgents documentation agent is built (models, backends, prompts, middleware)                  | [Agent Runtime, Models, and Middleware](/openwiki/architecture/agent-runtime.md) |
+| Find which subsystem lives where under `/src`                                                                        | [Source Map](/openwiki/architecture/source-map.md)                               |
 
 ### Learn the core concepts
 
@@ -108,13 +112,14 @@ Find your task on the left, then read the page on the right.
 
 ### Follow a workflow end to end
 
-| I want to…                                                                                              | Read                                                                             |
-| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Set up OpenWiki for the first time (provider/model, credentials, repo setup)                            | [Onboarding and Setup](/openwiki/workflows/onboarding.md)                        |
-| Trace the resumable page-job generation flow (`begin → submit_plan → next_page → submit_page → finish`) | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md)  |
-| Understand how Claims are reconciled on update and how a page submits its full Claim set                | [Claims Reconciliation on Update](/openwiki/workflows/claims-reconciliation.md)  |
-| Understand deterministic finalization, index/provenance sync, and link validation                       | [Wiki Finalization and Link Integrity](/openwiki/workflows/wiki-finalization.md) |
-| Trace how personal-mode ingestion pulls connector sources and updates the brain                         | [Personal Mode Ingestion](/openwiki/workflows/personal-ingestion.md)             |
+| I want to…                                                                                                              | Read                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Set up OpenWiki for the first time (provider/model, credentials, repo setup)                                            | [Onboarding and Setup](/openwiki/workflows/onboarding.md)                        |
+| Trace the resumable page-job generation flow (`begin → submit_plan → next_page → submit_page → finish`)                  | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md)  |
+| Understand how a failing or early-exiting page worker is skipped and restored without losing completed pages            | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md)  |
+| Understand how Claims are reconciled on update and how a page submits its full Claim set                                | [Claims Reconciliation on Update](/openwiki/workflows/claims-reconciliation.md)  |
+| Understand deterministic finalization, index/provenance sync, link validation, and skipped-page handling on finish      | [Wiki Finalization and Link Integrity](/openwiki/workflows/wiki-finalization.md) |
+| Trace how personal-mode ingestion pulls connector sources and updates the brain                                          | [Personal Mode Ingestion](/openwiki/workflows/personal-ingestion.md)             |
 
 ### Operate and configure it
 
@@ -148,6 +153,13 @@ Find your task on the left, then read the page on the right.
   history, and skills live under `~/.openwiki` by default; set
   `OPENWIKI_CONFIG_DIR` to relocate to a different writable directory.
 
-On a persistent checkout, an interrupted `openwiki --init` can resume the durable
-page queue by rerunning the same command; ephemeral CI runners start fresh after
-failure unless their workspace is preserved.
+Repository (code) generation follows the resumable page-job flow
+`begin → submit_plan → next_page → submit_page → … → finish`. Each page job has
+a `PageJobStatus` of `pending`, `skipped`, or `complete`. A worker that fails or
+exits without submitting its page is marked `skipped` and rolled back to its
+pre-worker state so completed pages are not lost; the run can still `finish` once
+every remaining job is `complete` or `skipped`, and a later run re-attempts the
+skipped pages. In-progress runs are recorded in `openwiki/.run.json`; on a
+persistent checkout, an interrupted `openwiki --init` resumes the durable page
+queue by rerunning the same command, while ephemeral CI runners start fresh
+after failure unless their workspace is preserved.

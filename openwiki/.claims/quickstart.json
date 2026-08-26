@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f7aec45e477af5d45b6340aea7869c7dfb765dd336fde5443f2fcbe5d726b932",
+  "pageVersion": "sha256:edfc29007eb31cedc2eb9a4ed563459cfd26ceb3042b67bc905268dc67630579",
   "claims": [
     {
       "id": "claim_5836585e22d244e79875961ea0a09258",
@@ -60,7 +60,7 @@
     },
     {
       "id": "claim_c531273cb8074d9eb83baf7dbe5e1d33",
-      "statement": "The developer build produced by `pnpm run build` compiles both the server and client TypeScript projects and copies visualizer assets, and `pnpm test` gates changes by typechecking, building, and running the Vitest suite with coverage.",
+      "statement": "The developer build produced by `pnpm run build` compiles both the server and client TypeScript project and copies visualizer assets, and `pnpm test` gates changes by typechecking, building, and running the Vitest suite with coverage.",
       "evidence": [
         {
           "resource": "repo://package.json#L37-L59",
@@ -135,10 +135,28 @@
           "version": "repo-lines-v1:sha256:7a8ab221c5c17f59b02aa3e79426dfb44bc44200c8567042d6151f8d346626fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ODM2ZWQ3ZTAwNTM3NzVhMGE5NjZjZTg2MTM0YjIzNDdkODUxYTdiMDJmNDgxMmJlYjJjNTlkMWM2OGQ1MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YjQ4YzFjOTNhZjYzMmQwZDU0ZjM3NWYzNGJlNjNiZmUwODRkYTIxZGJmOThkODlmMmM1MTc0ZjRmNTY2ZWEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9e01e5570d7b44939297f2f884217852",
+      "statement": "Each repository page job has a `PageJobStatus` of `pending`, `skipped`, or `complete`; `skipped` is a third durable status (distinct from `complete`) that records a page worker that failed or exited without calling `submit_page`, rolls the page back to its pre-worker state so completed pages are not lost, lets the run `finish` once every remaining job is `complete` or `skipped`, and is reset to `pending` when the run resumes.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/repository-run.ts#L1183-L1195",
+          "version": "repo-lines-v1:sha256:b04ee181fe67bdbc1229dca3beda312347910ba24f82e2bf99e1688d0e1ca2a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzdlYzc4NzgwNDg4MTk4MDc2M2YyOWMzMzNlNmE1MjEyNjMwN2ViYThmNmUwZTI5MjdhNDJkYTI4Y2M4MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyOTc3YjZmMTFjM2YzZDE1NjVlMWRmYzAzNTA2ZmQ0NzE5Mzg0NDA4MGIwNTM0NzNkZDQ2MmYzM2NlOWZiNTIifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L470-L471",
+          "version": "repo-lines-v1:sha256:a826e5bb206e83eac9ffea5e4043f5b2aca26493b7afd191c994453c916246e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3ZjVjNDUwM2MyOWUzZDk4ZWJhNzQ0YWQyNGJkYjc3MjA5ZGNmZGUzOTM2YmIzYzEyYmY4NTlhZDg4MzczNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDUyYjRkMGJhMjVmMjQzYWFmY2RkZTMyOGQzY2ZiMDE3NjYwYzExYWNkMDZlNzZhNDA0NjNiOWYyMGEwODlhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjFjYzM2YTZkMmYyZWNlODhiYjY0ZDZjM2FlN2VjZWQyMzNkY2NkMGQwNmYyMTJjOTYzN2ZkYjQwNDk0OTI0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjg1OTk2NTY2YTY5Nzk2YjA4MmM4ZWFmYzVjYjJhOGU3MDEwNGEwNjA1YjY4YTIzY2FmYmYxYjVhN2E4YmM4ZCJ9"
+        },
+        {
+          "resource": "repo://src/generation/run-state.ts#L34-L34",
+          "version": "repo-lines-v1:sha256:303f79f315f50dbc90f9fbbadb69ef3defcf4d56c3e1b3c3b98d95cd21c87d68:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzAzZjc5ZjMxNWY1MGRiYzkwZjlmYmJhZGI2OWVmM2RlZmNmNGQ1NmMzZTFiM2MzYjk4ZDk1Y2QyMWM4N2Q2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzAzZjc5ZjMxNWY1MGRiYzkwZjlmYmJhZGI2OWVmM2RlZmNmNGQ1NmMzZTFiM2MzYjk4ZDk1Y2QyMWM4N2Q2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTM4YTAzNmNhY2M4ZTU1NTc5YzVlNWQ3YmIwOWRkZWNiZWJmOGJmODc0ZTlhOWE5MTI1YWE5NDc0ZDZlZjFjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODUyMDBmZmIwZTBmNjdkZDRhNmYxY2U3NjI1YWRhMTA4ODU0MTQzZjg4ZGJmM2I2N2Y3OGNkODNmMGI0MTQ5MSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.4.0",
-    "at": "2026-08-26T20:17:27.397Z"
+    "at": "2026-08-26T22:32:29.466Z"
   }
 }
