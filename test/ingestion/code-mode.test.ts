@@ -1,4 +1,13 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  link,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -202,6 +211,108 @@ Trailing notes that must survive.
     const second = await readIfPresent(path.join(repo, "CLAUDE.md"));
 
     expect(second).toEqual(first);
+  });
+
+  test("writes a symlinked CLAUDE.md target once using the canonical AGENTS.md snippet", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    const existing = "# Existing instructions\n\nKeep this guidance.\n";
+    await writeFile(agentsPath, existing, "utf8");
+    await symlink("AGENTS.md", claudePath);
+
+    await ensureCodeModeRepoSetup(repo);
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readFile(agentsPath, "utf8");
+    expect((await lstat(claudePath)).isSymbolicLink()).toBe(true);
+    expect(await readFile(claudePath, "utf8")).toBe(content);
+    expect(content).toContain("Keep this guidance.");
+    expect(content).toContain("Treat source code and tests as authoritative.");
+    expect(content).not.toContain(
+      "See [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.",
+    );
+    expect(content.match(new RegExp(SNIPPET_START, "g"))).toHaveLength(1);
+    expect(content.match(new RegExp(SNIPPET_END, "g"))).toHaveLength(1);
+  });
+
+  test("deduplicates a dangling CLAUDE.md symlink before creating AGENTS.md", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    await symlink("AGENTS.md", claudePath);
+
+    await ensureCodeModeRepoSetup(repo);
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readFile(agentsPath, "utf8");
+    expect((await lstat(claudePath)).isSymbolicLink()).toBe(true);
+    expect(await readFile(claudePath, "utf8")).toBe(content);
+    expect(content).toContain("Treat source code and tests as authoritative.");
+    expect(content).not.toContain(
+      "See [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.",
+    );
+    expect(content.match(new RegExp(SNIPPET_START, "g"))).toHaveLength(1);
+    expect(content.match(new RegExp(SNIPPET_END, "g"))).toHaveLength(1);
+  });
+
+  test("writes hard-linked agent files once using the canonical AGENTS.md snippet", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    await writeFile(agentsPath, "# Shared instructions\n", "utf8");
+    await link(agentsPath, claudePath);
+
+    await ensureCodeModeRepoSetup(repo);
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readFile(agentsPath, "utf8");
+    expect(await readFile(claudePath, "utf8")).toBe(content);
+    expect(content).toContain("Treat source code and tests as authoritative.");
+    expect(content).not.toContain(
+      "See [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.",
+    );
+    expect(content.match(new RegExp(SNIPPET_START, "g"))).toHaveLength(1);
+    expect(content.match(new RegExp(SNIPPET_END, "g"))).toHaveLength(1);
+  });
+
+  test("rejects a symbolic link cycle without replacing either link", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    await symlink("CLAUDE.md", agentsPath);
+    await symlink("AGENTS.md", claudePath);
+
+    await expect(ensureCodeModeRepoSetup(repo)).rejects.toThrow(
+      /symbolic link chain contains a cycle/u,
+    );
+
+    expect((await lstat(agentsPath)).isSymbolicLink()).toBe(true);
+    expect((await lstat(claudePath)).isSymbolicLink()).toBe(true);
+  });
+
+  test("leaves a malformed shared target unchanged", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    const existing = `# Existing instructions
+
+${SNIPPET_START}
+first managed block
+${SNIPPET_END}
+${SNIPPET_END}
+`;
+    await writeFile(agentsPath, existing, "utf8");
+    await symlink("AGENTS.md", claudePath);
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await expect(ensureCodeModeRepoSetup(repo)).rejects.toThrow(
+        /AGENTS\.md.*managed markers are malformed or duplicated/u,
+      );
+    }
+
+    expect(await readFile(agentsPath, "utf8")).toBe(existing);
+    expect((await lstat(claudePath)).isSymbolicLink()).toBe(true);
   });
 
   for (const [name, existing] of [

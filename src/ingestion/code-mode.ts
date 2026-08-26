@@ -1,4 +1,11 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  readFile,
+  readlink,
+  realpath,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import {
   getProviderAuthMethod,
@@ -195,14 +202,35 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
     "AGENTS.md": agentsSnippet,
     "CLAUDE.md": claudeSnippet,
   };
-  // Prepare and validate both files before writing either one. If one file has
-  // malformed markers, setup fails without partially refreshing its sibling.
+  const targets = await Promise.all(
+    CODE_MODE_AGENT_FILES.map(async (fileName) => {
+      const agentsPath = path.join(cwd, fileName);
+      return {
+        agentsPath,
+        fileIdentity: await resolveCodeModeAgentFileIdentity(agentsPath),
+        snippet: snippetByFile[fileName] ?? agentsSnippet,
+      };
+    }),
+  );
+
+  // AGENTS.md is first intentionally: when another managed path is a symlink or
+  // hard link to it, the canonical full snippet wins and the shared file is
+  // prepared and written only once.
+  const seenFileIdentities = new Set<string>();
+  const uniqueTargets = targets.filter(({ fileIdentity }) => {
+    if (seenFileIdentities.has(fileIdentity)) {
+      return false;
+    }
+    seenFileIdentities.add(fileIdentity);
+    return true;
+  });
+
+  // Prepare and validate every distinct file before writing any of them. If one
+  // file has malformed markers, setup fails without partially refreshing its
+  // sibling.
   const updates = await Promise.all(
-    CODE_MODE_AGENT_FILES.map((fileName) =>
-      prepareCodeModeAgentSnippet(
-        path.join(cwd, fileName),
-        snippetByFile[fileName] ?? agentsSnippet,
-      ),
+    uniqueTargets.map(({ agentsPath, snippet }) =>
+      prepareCodeModeAgentSnippet(agentsPath, snippet),
     ),
   );
 
@@ -211,6 +239,52 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
       writeFile(agentsPath, nextContent, "utf8"),
     ),
   );
+}
+
+async function resolveCodeModeAgentFileIdentity(
+  agentsPath: string,
+  visitedPaths = new Set<string>(),
+): Promise<string> {
+  const absolutePath = path.resolve(agentsPath);
+  try {
+    const fileStats = await lstat(absolutePath, { bigint: true });
+    if (fileStats.isSymbolicLink()) {
+      if (visitedPaths.has(absolutePath)) {
+        throw new Error(
+          `Cannot update ${path.basename(agentsPath)} because its symbolic link chain contains a cycle.`,
+        );
+      }
+      visitedPaths.add(absolutePath);
+      const target = await readlink(absolutePath);
+      return resolveCodeModeAgentFileIdentity(
+        path.resolve(path.dirname(absolutePath), target),
+        visitedPaths,
+      );
+    }
+
+    // Device/inode identifies both regular paths and hard links. Some platforms
+    // report no useful inode, where the canonical real path is the stable
+    // fallback for an existing entry.
+    return fileStats.ino === 0n
+      ? `path:${await realpath(absolutePath)}`
+      : `inode:${fileStats.dev}:${fileStats.ino}`;
+  } catch (error) {
+    if (!isFileNotFoundError(error)) {
+      throw error;
+    }
+    // A missing target has no inode yet. Resolve its existing parent so a
+    // dangling symlink and the path it names still receive the same identity.
+    let canonicalParent: string;
+    try {
+      canonicalParent = await realpath(path.dirname(absolutePath));
+    } catch (parentError) {
+      if (!isFileNotFoundError(parentError)) {
+        throw parentError;
+      }
+      canonicalParent = path.resolve(path.dirname(absolutePath));
+    }
+    return `path:${path.join(canonicalParent, path.basename(absolutePath))}`;
+  }
 }
 
 async function prepareCodeModeAgentSnippet(
