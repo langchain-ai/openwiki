@@ -1,0 +1,14 @@
+.changeset/some-shirts-prove.md
+  h_f78d33d4280f3f 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "06306d23a90cec05ed2b54a9ffbfdae5d970b4b5",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
