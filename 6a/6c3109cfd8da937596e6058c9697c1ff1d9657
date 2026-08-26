@@ -1,0 +1,24 @@
+.changeset/bright-hints-stay.md
+  s_809e904f8d6c26::t_15bfccedfbf2de 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "6a6c3109cfd8da937596e6058c9697c1ff1d9657",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_809e904f8d6c26": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03f01-9142-7c23-b8cd-4562f05ec6e8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
