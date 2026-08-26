@@ -1,5 +1,17 @@
 # openwiki
 
+## 0.4.1
+
+### Patch Changes
+
+- [#724](https://github.com/langchain-ai/openwiki/pull/724) [`57948ad`](https://github.com/langchain-ai/openwiki/commit/57948ad646f5d97cd1512362421bc629365d902a) Thanks [@akyourowngames](https://github.com/akyourowngames)! - fix: keep hint/legend overlay inside the graph panel and make background clicks no longer clear the reader
+
+- [#730](https://github.com/langchain-ai/openwiki/pull/730) [`9f95289`](https://github.com/langchain-ai/openwiki/commit/9f95289d7c301c98c908422c24a94877fd9efa41) Thanks [@colifran](https://github.com/colifran)! - fix: stabilize generated wiki formatting and claims hashes
+
+- [#728](https://github.com/langchain-ai/openwiki/pull/728) [`d219653`](https://github.com/langchain-ai/openwiki/commit/d219653dd9d38d5645725da142527319224c392c) Thanks [@colifran](https://github.com/colifran)! - fix: prevent invalid optional OKF metadata from aborting wiki generation by repairing or removing it deterministically
+
+- [#732](https://github.com/langchain-ai/openwiki/pull/732) [`ca4e21b`](https://github.com/langchain-ai/openwiki/commit/ca4e21bdf57e962d6c45d5e170cf8742991ab9f4) Thanks [@colifran](https://github.com/colifran)! - fix: skip failed page workers without aborting updates
+
 ## 0.4.0
 
 ### Minor Changes
