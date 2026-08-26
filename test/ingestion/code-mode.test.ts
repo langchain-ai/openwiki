@@ -1,4 +1,11 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -119,6 +126,47 @@ Trailing notes that must survive.
     const second = await readIfPresent(path.join(repo, "CLAUDE.md"));
 
     expect(second).toEqual(first);
+  });
+
+  test("keeps a CLAUDE.md symlinked to AGENTS.md intact and well-formed", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    const policy = "DO NOT DELETE: hand-written project policy";
+    await writeFile(
+      agentsPath,
+      `# Project instructions\n\n${policy}\n`,
+      "utf8",
+    );
+    // One canonical guide, read under both names.
+    await symlink("AGENTS.md", claudePath);
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readIfPresent(agentsPath);
+    expect(content).toContain(policy);
+    // Writing both snippets through the symlink would race two payloads onto
+    // one file and duplicate the markers.
+    expect(content?.split(SNIPPET_START).length).toBe(2);
+    expect(content?.split(SNIPPET_END).length).toBe(2);
+    // AGENTS.md keeps the full snippet rather than CLAUDE.md's pointer.
+    expect(content).not.toContain("See [AGENTS.md](AGENTS.md)");
+    expect(await readIfPresent(claudePath)).toBe(content);
+  });
+
+  test("stays idempotent across runs when CLAUDE.md is a symlink to AGENTS.md", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    await writeFile(agentsPath, "# Project instructions\n", "utf8");
+    await symlink("AGENTS.md", path.join(repo, "CLAUDE.md"));
+
+    await ensureCodeModeRepoSetup(repo);
+    const first = await readIfPresent(agentsPath);
+    // A corrupted first pass leaves duplicated markers, which makes the second
+    // pass reject the file instead of refreshing it.
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(agentsPath)).toEqual(first);
   });
 
   for (const [name, existing] of [

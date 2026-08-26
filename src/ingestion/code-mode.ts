@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, realpath, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   getProviderAuthMethod,
@@ -195,10 +195,12 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
     "AGENTS.md": agentsSnippet,
     "CLAUDE.md": claudeSnippet,
   };
+  const targetFiles = await resolveDistinctAgentFiles(cwd);
+
   // Prepare and validate both files before writing either one. If one file has
   // malformed markers, setup fails without partially refreshing its sibling.
   const updates = await Promise.all(
-    CODE_MODE_AGENT_FILES.map((fileName) =>
+    targetFiles.map((fileName) =>
       prepareCodeModeAgentSnippet(
         path.join(cwd, fileName),
         snippetByFile[fileName] ?? agentsSnippet,
@@ -211,6 +213,49 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
       writeFile(agentsPath, nextContent, "utf8"),
     ),
   );
+}
+
+/**
+ * The managed agent files to write, with names that resolve to the same file
+ * collapsed to the first one.
+ *
+ * Two entries in {@link CODE_MODE_AGENT_FILES} can name a single file: repos
+ * that keep one canonical guide often symlink `CLAUDE.md` to `AGENTS.md`. Each
+ * entry gets a *different* snippet, and every update is prepared from the
+ * pre-write content before any of them is written, so writing both would race
+ * two payloads onto one inode and leave a mangled block behind. That block then
+ * has duplicated markers, which makes the next run reject the file outright.
+ *
+ * Order is preserved and the first name wins, so `AGENTS.md` keeps the full
+ * snippet and the `CLAUDE.md` pointer is skipped rather than the reverse: the
+ * symlink already gives that host the canonical instructions.
+ *
+ * A name that does not resolve is kept as its own target — it will be created
+ * at exactly that path, so the unresolved path is already its identity.
+ */
+async function resolveDistinctAgentFiles(cwd: string): Promise<string[]> {
+  const distinctFiles: string[] = [];
+  const seenRealPaths = new Set<string>();
+
+  for (const fileName of CODE_MODE_AGENT_FILES) {
+    const filePath = path.join(cwd, fileName);
+    let resolvedPath = filePath;
+    try {
+      resolvedPath = await realpath(filePath);
+    } catch (error) {
+      if (!isFileNotFoundError(error)) {
+        throw error;
+      }
+    }
+
+    if (seenRealPaths.has(resolvedPath)) {
+      continue;
+    }
+    seenRealPaths.add(resolvedPath);
+    distinctFiles.push(fileName);
+  }
+
+  return distinctFiles;
 }
 
 async function prepareCodeModeAgentSnippet(
