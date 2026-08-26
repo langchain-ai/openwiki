@@ -33,7 +33,7 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z"}
 ---
 
 # Grounded Claims

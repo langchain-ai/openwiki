@@ -45,7 +45,7 @@ sources:
     resource: repo://src/connectors/tools.ts
   - id: openwiki-source-d66b21ba71e9866a0b433226
     resource: repo://src/connectors/types.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z"}
 ---
 
 # Source Connectors

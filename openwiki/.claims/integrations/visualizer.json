@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4cbc7bb5b32b063cd028349cf6fb4a2756ff1f522043a1268fe35004ce806b9f",
+  "pageVersion": "sha256:279514efabbdfd92192bc943683b4520499fabea6d337973acd174b28d5e65fe",
   "claims": [
     {
       "id": "claim_cecbf09a48a44444b2ef62cbac04bd3b",
@@ -351,10 +351,48 @@
           "version": "repo-lines-v1:sha256:eb684a13c94c10aca3ac4d085acdeafa32c97924e68d320f14d9d442d4688d02:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcxMDFhYzZhOTBlMDBiY2VkNzkzZDE3ZjE1ODVhMWQ3NzZlYjJlYzdkOGI2NTYzOWM5MmZhNmI5NzljMTBlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxMWIwOTlhNDFhYjY3OTgwNWE1MGU5YzlmNjEwMmE2Nzc5ZmJkMjQxMmY5NzAzZmZiOTg2ZWJjYWRmNWRmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZkNjY3NjY0YjlhNGEyYzYxY2EzZDYwNWVkMWE4ZDQ4ZTYyYjQxODg5ZTRkNjRhYjM2NDA4N2E2MjZlYjI0NCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_006626c905774b71b3093bdda3ac0b2d",
+      "statement": "Dragging the `#splitter` resizes the graph column, with the width clamped between an 80 px minimum and `available - 260 px` maximum and stored as a percentage of the main row's full width (sidebar included) rather than raw pixels, so the split stays correct across window resizes; the width is persisted to localStorage under `openwiki-graph-width` on mouseup.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client.ts#L937-L968",
+          "version": "repo-lines-v1:sha256:3560654e0db3ce27b24d0639758581440cd06a31a98416686b8bb16edf723913:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZDZlZDYxYjM5Yjk3YTliNmQ3MWQxMmI3OWNkYTYyMGU1YjhkNTVlMjgzNmEyMTNmMjc5NGJmMzM0MDM5MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NjdlYjU0NDhkODc0M2FjMzcxMjkxODFkYmM3NTE3NWFmZWVkOWVmMjJmOThmM2YzYWQ1MjFkYjJmZmE3YjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzZjYzOWZhODFiZmFmNzA1ZTMwZjEzZDE5ZWUxYWNlY2U2ZmNlMzk3ZTYxZTUwZjhlNGEyMWUwMjRkN2ViZDIifQ"
+        },
+        {
+          "resource": "repo://src/visualize/styles.css#L307-L318",
+          "version": "repo-lines-v1:sha256:bbf24e153b3d12266553d3c22ffb75326b7d07b7ba850341da1a5b488c45ce8c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxNzJhMjRlZjJlOTI2ODBhN2FmY2UxYWJkNmRlMDhjMDk0ZTk5ZmIwNTliZDFiYmI5ZTFkZGFlODJhNjQwZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiZDM5N2I5N2E5M2E1ZjhkYmFiY2M3ZTljZTk2NmY4YWVmYmUyMjViNTEzYmNlOTg4MDAyYTU5YmQ4Y2VlYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YzBiNjViZDVlZWI4NTkzNmQ4ODVmNzE5Mzc2NWU2OTc4NjMyMWVhYjZmYmM5ZmQxZGEwNzQ0YTMxZGQ3NDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2a2cf9288bf5424db95900ad18bf50d8",
+      "statement": "The `#toggle-graph` button and a double-click on the splitter both toggle graph-panel collapse: collapsing sets the graph column to 0px, hides the splitter, legend, and hint, marks the toggle button active, and lets the reader take the full width; the collapsed state is persisted in localStorage under `openwiki-graph-collapsed` and both the collapsed state and last width are restored on the next load.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client.ts#L909-L937",
+          "version": "repo-lines-v1:sha256:4eac07361fbfe002f51b262f478a644639555295809b1adc78d27e83ccf5395c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMzQ0YWM5ZmJmNWRmOGE0Yzc0NDcxYjE3ZTUxYjgwMjBjNjdhY2ZiZTA2MTFiMzhhYjljMGE2ZDY2NjRlMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2ZDZlZDYxYjM5Yjk3YTliNmQ3MWQxMmI3OWNkYTYyMGU1YjhkNTVlMjgzNmEyMTNmMjc5NGJmMzM0MDM5MzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMDM5NjBkMTgyYmVmYWM2NGMxYzA5NjcyNDNjYWIwMzkwOTFmOTI3YzNmMzA4YWZmMGY4MTRkZjlkNmZkYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3ZDM0NDQ3YWMzMWY4YWQ5MzBlY2U0MTVkNjA1MjQzMjZmZGM5NTQ5ZDc3OWMxZDdhMWZjZjdlYWRlNzcyMjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7557376622e04cf6bd58874a285c8d30",
+      "statement": "The splitter is a 2 px element that sits flush with both panels: its `::after` overlay bleeds 12 px over each neighbour to give a generous drag target without introducing a transparent gutter, and its `::before` draws the divider line that turns blue on hover or while dragging; the `#graph` panel uses `flex: 0 0 auto` with `min-width: 0` so a percentage width flexes, and while dragging `.main.dragging` sets `pointer-events: none` on the canvas so it never receives the drag or its release.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/styles.css#L319-L362",
+          "version": "repo-lines-v1:sha256:a223540a6b2d9d106053b485c98f860c60e43dff76fefefa33b2ba4eb267e12b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ZTAyMTllNWVmM2UxMzAwZGYyM2U0ZDQ1MWEwNThmOGQ0YTBhY2VmNmI2MDYxNzZkMGE4ZjNmZTQ2MDM5ZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjNzE4ZDVjNTEyZmJjNGIyNTE4Y2Q2ZTA2ZDYyOWQ5ZDQ4NWYyZDAyYjZhYzdiNTQyOGJhZWJhYTc1ZWMxMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljNjhmZGY2MTVkM2NmYTE4YWYxMDk3ZDAwYjMwNmYxZTE0OTY0ZGEzMmRlYzg0YzI0OGU5ZjU5OTE0OGU5YWQifQ"
+        },
+        {
+          "resource": "repo://src/visualize/styles.css#L367-L379",
+          "version": "repo-lines-v1:sha256:cfecfc431f3f0ea079a4ecdd85a04e59de484bf0ba59cca345998148c0566373:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNTZmZjAxMDFlMjcwMTliNWVjYTNlOWQ4MmRiZjZjM2QzN2YwNWJiZTA1MzVjODRjODY2YTFlZDhlNTc0MDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiYTI2MTQyZDk2MTQ2YmJkMTJmODIzZmI4MTU2MTQ0ZGZhMzc1ZDk3MmZmNTY3OTcxNmNhZjVhOTBlYTNmOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1MWY4MGJjNjBkMDM1ZDQ5Mzk1Mzg0M2M2ZjlmZDA4YWZhNGY5ZTdmMGI1NmFiNjM1YTlmODE0MTc3MTllZDgifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.0",
+    "at": "2026-08-26T17:22:53.864Z"
   }
 }

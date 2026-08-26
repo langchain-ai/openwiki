@@ -37,7 +37,7 @@ sources:
     resource: repo://src/config/reasoning.ts
   - id: openwiki-source-ebe194cbeaa2594a6699f9a1
     resource: repo://src/model-availability.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z"}
 ---
 
 # Agent Runtime, Models, and Middleware

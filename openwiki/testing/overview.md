@@ -1,12 +1,36 @@
 ---
 type: testing-guide
 title: Testing Guide
-description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, and how to scope the narrowest validation that proves a change per subsystem.
-tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow]
+description: How the OpenWiki Vitest suite is laid out, the pnpm test pipeline, coverage configuration, test discovery, per-subsystem test mappings, and the evaluation harnesses (LEDGER and DeepSWE).
+tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow, evaluation]
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.0
+    at: 2026-08-26T17:22:53.864Z
 sources:
+  - id: openwiki-source-c45a528335f5cf7306567dc9
+    resource: repo://evals/deepswe/README.md
+  - id: openwiki-source-a0ae0064681def9d035f11b2
+    resource: repo://evals/deepswe/run.py
+  - id: openwiki-source-6ad47cf13ce77f0839b358ec
+    resource: repo://evals/deepswe/tests/test_run.py
+  - id: openwiki-source-1613bad502de3edacc6bd53f
+    resource: repo://evals/ledger/benchmark/benchmark.ts
+  - id: openwiki-source-76e853181e8d02ef777bc0fe
+    resource: repo://evals/ledger/benchmark/source-repo.ts
+  - id: openwiki-source-d7466a5cc8e2ee56e79afaf9
+    resource: repo://evals/ledger/benchmarks/calc/benchmark.json
+  - id: openwiki-source-949522a1dfce74920badb2b6
+    resource: repo://evals/ledger/README.md
+  - id: openwiki-source-8fe49b679bb29b6d5403548c
+    resource: repo://evals/ledger/reevaluate.ts
+  - id: openwiki-source-bdd14aa92ae4a01628e282cd
+    resource: repo://evals/ledger/run.ts
+  - id: openwiki-source-9ed6b8f20e8834ac914a4c18
+    resource: repo://evals/ledger/run/report.test.ts
+  - id: openwiki-source-2dc719639f40452478188d6b
+    resource: repo://evals/ledger/system/openwiki-system.ts
+  - id: openwiki-source-33844b1c2c98eca457fd6142
+    resource: repo://evals/ledger/tsconfig.json
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
   - id: openwiki-source-e25b880bed632d812ac9f1a8
@@ -39,7 +63,7 @@ sources:
     resource: repo://test/openwiki-home.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.4.0", at: "2026-08-26T17:22:53.864Z"}
 ---
 
 # Testing Guide
@@ -50,6 +74,11 @@ mirrors the `src/` tree directory-for-directory so that the tests for a subsyste
 live at the matching path. This page explains the tooling, the full `pnpm test`
 pipeline, and — for each subsystem — the narrowest command that proves a change
 while preserving complete failure output.
+
+A separate pair of **evaluation harnesses** live under `evals/` and are not part
+of the Vitest suite: LEDGER measures documentation grounding over time, and
+DeepSWE measures whether a generated OpenWiki helps a coding agent on real tasks.
+They are described in their own section below.
 
 ## Tooling
 
@@ -121,11 +150,15 @@ excluded glue. The coverage reporters are `text`, `text-summary`, `html`,
 ## Test discovery
 
 Vitest keeps its default discovery globs and adds exactly one exclusion:
-`**/benchmarks/*/repo/**`. A KEB benchmark under `evals/keb/benchmarks/` can
+`**/benchmarks/*/repo/**`. A LEDGER benchmark under
+`evals/ledger/benchmarks/` (the checked-in `calc` and `taskflow` benchmarks) can
 rebuild an upstream project's source tree into a `repo/` directory that carries
-that project's own `*.test.ts` files. Those belong to the fixture under test, not
-to OpenWiki, so the exclusion guarantees that a benchmark whose `repo/` happens
-to be present on disk cannot pollute this project's suite.
+that project's own `*.test.ts` files — for example `evals/ledger/benchmarks/taskflow/repo/surface.test.ts`
+belongs to the fixture under test, not to OpenWiki. The exclusion guarantees that
+a benchmark whose `repo/` happens to be present on disk cannot pollute this
+project's suite. The pattern is path-agnostic (`**/benchmarks/*/repo/**`), so it
+still applies even though the exclusion comment in `vitest.config.ts` itself
+references the older `evals/keb/` path.
 
 ## Test layout maps to source subsystems
 
@@ -192,38 +225,91 @@ a new connector, use the `write-connector` skill and add a matching test under
   `ensureDomGlobals()` from `src/mermaid/dom-shim.ts` to install jsdom's
   window/document globals.
 
+## Evaluation harnesses
+
+The two evaluation suites under `evals/` are **separate from the Vitest unit
+suite**. They measure OpenWiki's output quality end-to-end, not individual source
+modules, and each has its own runner and language/toolchain.
+
+```mermaid
+flowchart TD
+  E["evals/"] --> L["LEDGER  evals/ledger/"]
+  E --> D["DeepSWE  evals/deepswe/"]
+  L --> L1["pnpm run eval:ledger  (tsx evals/ledger/run.ts)"]
+  D --> D1["python3 evals/deepswe/run.py paired"]
+  L1 --> L2["replay Git checkpoints, run OpenWiki, score claim states"]
+  D1 --> D2["baseline Codex vs Codex plus OpenWiki on DeepSWE tasks"]
+```
+
+The two eval suites under `evals/`, their entry points, and what each measures.
+
+### LEDGER
+
+LEDGER (Longitudinal Evaluation of Documentation Grounding, Evolution, and
+Revision) lives under `evals/ledger/` and runs through `pnpm run eval:ledger`
+(`tsx evals/ledger/run.ts`). It replays a benchmark's Git checkpoints, runs
+OpenWiki against each frozen source snapshot, and evaluates the resulting wiki for
+claim states. Every current-tense factual claim ends in exactly one state:
+`supported` (current source establishes it), `stale` (current source contradicts
+it but it was formerly true), `invented` (the CLI prints this as `hallucinated`;
+current source contradicts and history never established it), or `unverified`
+(the supplied evidence neither establishes nor contradicts it). The run-level
+LEDGER score is opportunity-weighted claim health: `supported / all current
+claims across checkpoints`.
+
+The LEDGER harness drives OpenWiki through its real `runOpenWikiAgent` entrypoint
+with `outputMode: "repository"`, so an `init` runs at the first checkpoint and an
+`update` at each later one, with change detection driven purely by the real
+source deltas between checkpoints. A `ModelEvaluationBackend` performs the
+claim extraction and grounding judgments.
+
+Each benchmark is a directory under `evals/ledger/benchmarks/` containing a
+`benchmark.json` manifest (name, difficulty, an ordered list of pinned checkpoint
+commits, and an optional reviewer-provided semantic evidence map) plus a
+`repo.bundle` carrying the benchmark's Git history. The checked-in benchmarks are
+`evals/ledger/benchmarks/calc/` and `evals/ledger/benchmarks/taskflow/`. The
+manifest's `sourceRepo` (e.g. `"./repo"`) points at a gitignored working tree
+that `ensureSourceRepoAvailable` reconstructs from `repo.bundle` when a fresh
+checkout leaves it absent — this is the reconstruction that creates the `repo/`
+subdirectory the Vitest discovery exclusion guards against.
+
+LEDGER is TypeScript with its own `evals/ledger/tsconfig.json` (extending the
+root `tsconfig.json` with `noEmit`) and a dedicated typecheck script
+`pnpm run eval:ledger:typecheck`. It also has a `reevaluate` mode
+(`pnpm run eval:ledger:reevaluate`, `evals/ledger/reevaluate.ts`) that re-scores a
+saved run without invoking OpenWiki again, and its own Vitest tests under
+`evals/ledger/` (run with `pnpm exec vitest run evals/ledger`). The normal suite
+is offline and substitutes deterministic evaluator and system implementations;
+live evaluator calibration is opt-in through `LEDGER_LIVE=1`.
+
+### DeepSWE
+
+DeepSWE lives under `evals/deepswe/` and is a **Python** paired
+baseline-vs-OpenWiki harness (`python3 evals/deepswe/run.py`). It runs Codex on
+DeepSWE coding tasks under two conditions with the same tasks, seed, model,
+reasoning effort, attempts, and Harbor environment:
+
+- `baseline`: Codex receives only the DeepSWE task and repository.
+- `openwiki`: the adapter restores or generates an OpenWiki in an isolated clone,
+  merges OpenWiki's managed instructions into the repository's root `AGENTS.md`,
+  and copies both `AGENTS.md` and `openwiki/` into `/app` before the same Codex
+  adapter solves the unchanged DeepSWE task.
+
+The `run.py` CLI exposes `prepare`, `baseline`, `openwiki`, `paired`, and
+`summarize` subcommands. `paired` runs both arms and summarizes them. The harness
+pins reproducibility artifacts — the DeepSWE commit, `harbor[langsmith]`,
+`litellm`, the Codex CLI version, and a locally packed copy of the current
+OpenWiki checkout — and records results to LangSmith via Harbor's official
+`langsmith` plugin (baseline and OpenWiki share a dataset but create separate
+experiments). Its own tests are Python `unittest` tests under
+`evals/deepswe/tests/`, run in the pinned Harbor environment rather than through
+Vitest. Because it is Python, it has no role in `pnpm test` or the Vitest
+coverage run.
+
 ## Choosing the narrowest validation per subsystem
 
 Run the smallest slice that would fail if your change is wrong, then run the full
 `pnpm test` gate before finishing. Use `pnpm exec vitest run <path>` to scope by
-file or directory, or `-t "<name>"` to scope by test name.
-
-- **A single subsystem:** `pnpm exec vitest run test/generation/` (swap in the
-  matching directory from the table above).
-- **A single file:** `pnpm exec vitest run test/agent/repository-runner.test.ts`.
-- **A single connector source:** `pnpm exec vitest run test/connectors/sources/slack.test.ts`.
-- **A single named test:** `pnpm exec vitest run test/config -t "treats whitespace-only overrides as unset"`.
-- **Ink components:** `pnpm exec vitest run test/cli/components/`.
-
-Because tests import `src/` directly, a focused Vitest run does not require a
-prior `pnpm build`. Reserve the full `pnpm test` (typecheck + build + coverage)
-for confirming the change end-to-end.
-
-### Preserve complete failure output
-
-When a scoped run fails, capture the **entire** Vitest failure block — the failed
-test name, the full assertion diff (expected vs. received), and the complete stack
-trace — not a summarized line. The diff and stack are what let a reviewer or
-follow-up run locate the regression. Do not truncate an assertion diff or drop
-stack frames when reporting a failure.
-
-## End-to-end and gated tests
-
-Most of the suite is offline unit and integration tests. A small number of files
-are named `*.e2e.test.ts` (for example
-`test/agent/gemini-enterprise-claude.e2e.test.ts`) and exercise a real vendor SDK
-path rather than a mock — that test drives the real Anthropic Vertex SDK plus the
-real Mermaid DOM shim to guard the browser-guard workaround, using a throwaway
-offline credentials file so no real token or network request is involved. These
-still run in the default suite; they are named to signal that they cross an
-integration boundary rather than testing a unit in isolation.
+file or directory, or `-t "<name>"` to scope by test name. For evaluation
+harness changes, use the harness-specific commands above (`pnpm run eval:ledger`,
+`python3 evals/deepswe/run.py …`) rather than the unit suite.

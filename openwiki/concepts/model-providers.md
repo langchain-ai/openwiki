@@ -21,7 +21,7 @@ sources:
     resource: repo://src/config/env.ts
   - id: openwiki-source-c35800ddf00768a1fa848d13
     resource: repo://src/setup/credentials/persistence.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z"}
 ---
 
 # Model Providers and Credentials

@@ -53,7 +53,7 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z"}
 ---
 
 # Source Map

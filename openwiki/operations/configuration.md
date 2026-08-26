@@ -28,7 +28,7 @@ sources:
     resource: repo://src/platform/diagnostics.ts
   - id: openwiki-source-27fbd70857f0fae28185fe91
     resource: repo://src/platform/windows-acl.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z"}
 ---
 
 # Configuration and Environment

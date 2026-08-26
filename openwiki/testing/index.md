@@ -1,3 +1,3 @@
 # Files
 
-- [Testing Guide](overview.md) - How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, and how to scope the narrowest validation that proves a change per subsystem.
+- [Testing Guide](overview.md) - How the OpenWiki Vitest suite is laid out, the pnpm test pipeline, coverage configuration, test discovery, per-subsystem test mappings, and the evaluation harnesses (LEDGER and DeepSWE).

@@ -4,8 +4,8 @@ title: Interactive Visualizer
 description: How the `openwiki visualize` command builds a link graph from wiki Markdown and OKF frontmatter, serves a live single-page reader over loopback HTTP, and exports a self-contained static site for hosting.
 tags: [visualizer, graph, static-export, cli, server, markdown-reader]
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.0
+    at: 2026-08-26T17:22:53.864Z
 sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
@@ -27,6 +27,8 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-3603986778b0b5f63cbdb37d
     resource: repo://src/visualize/static-export.ts
+  - id: openwiki-source-6f421b25bc36977e02cf94f2
+    resource: repo://src/visualize/styles.css
   - id: openwiki-source-6b177c090fb1c7574a23496e
     resource: repo://test/visualize/server.test.ts
   - id: openwiki-source-2e48ab40ab957bcc05e92de0
@@ -35,7 +37,7 @@ sources:
     resource: repo://test/visualize/visualize-client-lib.test.ts
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.4.0", at: "2026-08-26T17:22:53.864Z"}
 ---
 
 # Interactive Visualizer
@@ -179,6 +181,64 @@ The pure, DOM-independent helpers used by the client — `escapeHtml`,
 `colorsForTypes`, `nodeRadius`, `signature`, `matchesFilter`, `normalize`,
 `stripFrontmatter`, and `hexA` — live in `src/visualize/client-lib.ts` so they can
 be unit-tested directly without a browser.
+
+### Resizable, collapsible graph panel
+
+The graph and reader share a single flex row (`#main`): the left sidebar, the
+`#graph` canvas, a 2 px `#splitter` divider, the `#legend` overlay, the `#hint`
+overlay, and the `#detail` reader. Since v0.4.0 the graph column is resizable and
+collapsible so you can give the reader the full width when you are not exploring
+the graph. `initGraphPanelControls` in `src/visualize/client.ts` wires this up at
+bootstrap, reading persisted state before the first paint.
+
+Dragging the `#splitter` resizes the graph column. The drag clamps the graph width
+between an 80 px minimum and `available - 260 px` so the reader always keeps room
+to be usable. Crucially the width is stored as a **percentage of the main row's
+full width** (sidebar included), not raw pixels: the browser resolves a percentage
+against the flex container's total width, so dividing the pixel offset by that same
+basis keeps the graph from silently overshooting into the reader as the sidebar
+eats a bigger share of the row. The percentage also makes the split behave sanely
+when the window is later resized. On `mouseup` the resulting width is persisted to
+`localStorage` under the key `openwiki-graph-width`.
+
+The panel can also be collapsed entirely. The `#toggle-graph` button in the topbar
+and a double-click on the splitter both flip the collapsed state. Collapsing sets
+the graph column to `0px`, hides the splitter, legend, and hint, marks the toggle
+button active, and lets the reader take the full width; the collapsed state is
+persisted under `openwiki-graph-collapsed` (`"1"` / `"0"`). Both keys are restored
+on the next load, so the chosen layout survives reloads and live rebuilds.
+
+```mermaid
+stateDiagram-v2
+  [*] --> Expanded: restore openwiki-graph-collapsed = 0
+  [*] --> Collapsed: restore openwiki-graph-collapsed = 1
+  Expanded --> Expanded: drag splitter (clamp 80px to avail minus 260px)
+  Expanded --> Collapsed: toggle button or splitter double-click
+  Collapsed --> Expanded: toggle button or splitter double-click
+  note right of Expanded
+    width = openwiki-graph-width (%)
+    splitter, legend, hint visible
+  end note
+  note right of Collapsed
+    graph width = 0px
+    splitter, legend, hint hidden
+    reader takes full width
+  end note
+```
+
+Graph panel resize and collapse state transitions, persisted in localStorage.
+
+The CSS in `src/visualize/styles.css` makes the splitter occupy only the visible
+2 px line so it sits flush with both panels: its `::after` overlay bleeds ±12 px
+over both neighbours to preserve a generous drag target without introducing a
+transparent gutter into the layout, and its `::before` draws the divider line,
+which turns blue on hover or while dragging. The `#graph` panel uses
+`flex: 0 0 auto` with `min-width: 0` so a percentage width flexes cleanly, and the
+`.detail` reader owns its side of the boundary (no left border, since the splitter
+already draws the line) at `z-index: 2` to mask graph overlays that extend beyond a
+narrow panel. While dragging, `.main.dragging` sets a column-resize cursor, disables
+text selection, and sets `pointer-events: none` on `#graph` so the canvas never
+sees the pointer — not even the release — during a resize.
 
 ## Static export
 

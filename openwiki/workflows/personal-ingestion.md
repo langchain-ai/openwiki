@@ -27,7 +27,7 @@ sources:
     resource: repo://src/ingestion/ingestion.ts
   - id: openwiki-source-578c3bdefeb989094f3d457f
     resource: repo://test/ingestion/ingestion.test.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z"}
 ---
 
 # Personal Mode Ingestion

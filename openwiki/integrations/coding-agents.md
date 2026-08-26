@@ -43,7 +43,7 @@ sources:
     resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-6f06cc988142430d18f2233e
     resource: repo://src/integrations/mcp/stdio.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z"}
 ---
 
 # Coding-Agent Integrations (Codex/Claude/OpenCode)

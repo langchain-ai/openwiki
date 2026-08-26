@@ -4,8 +4,8 @@ title: Wiki Finalization and Link Integrity
 description: How OpenWiki deterministically finalizes a run — persisting Claims, projecting them into OKF sources, synchronizing indexes and generated provenance, validating internal wiki links, and re-proving the whole run before deleting .run.json.
 tags: [finalization, wiki, okf, link-validation, provenance, claims]
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.0
+    at: 2026-08-26T17:22:53.864Z
 sources:
   - id: openwiki-source-adcadc660c1888613ec50f9a
     resource: repo://src/agent/wiki-finalizer.ts
@@ -19,7 +19,7 @@ sources:
     resource: repo://src/okf/generated-provenance.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.4.0", at: "2026-08-26T17:22:53.864Z"}
 ---
 
 # Wiki Finalization and Link Integrity
@@ -61,21 +61,19 @@ operations in a fixed internal order: `"mermaid"`, `"index_sync"`,
 `"link_validation"`, an optional `"claims_sources"`, and finally
 `"generated_provenance"`.
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 12: ...y indexes Fin->>Links: stamp broken Expecting '+', '-', '()', 'ACTOR', got 'links' -->
-
-```text
+```mermaid
 sequenceDiagram
     participant Caller as finishRepositoryRun
     participant Fin as finalizeWikiArtifacts
     participant Mermaid as validateWikiMermaid
     participant Index as synchronizeWikiIndexes
-    participant Links as validateWikiInternalLinks
+    participant LinkVal as validateWikiInternalLinks
     participant Sources as synchronizeClaimSources
     participant Prov as finalizeGeneratedProvenance
     Caller->>Fin: prepared baseline, at, producerActor, claimSources
     Fin->>Mermaid: validate fenced diagrams
     Fin->>Index: rebuild directory indexes
-    Fin->>Links: stamp broken internal links
+    Fin->>LinkVal: stamp broken internal links
     Fin->>Sources: project Claims evidence into OKF sources
     Fin->>Prov: reconcile generated stamps vs baseline
 ```

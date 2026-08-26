@@ -23,7 +23,7 @@ sources:
     resource: repo://src/cli/schedule-format.ts
   - id: openwiki-source-d80f123259efa4712b198b63
     resource: repo://src/cli/startup.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: {by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z"}
 ---
 
 # CLI Commands and Flags

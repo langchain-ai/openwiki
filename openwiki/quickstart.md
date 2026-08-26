@@ -4,22 +4,42 @@ title: OpenWiki Quickstart
 description: Entry-point orientation for a coding agent working on the OpenWiki CLI codebase, with a task-routing map into the architecture, workflow, concept, operations, integration, and testing pages.
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.0
+    at: 2026-08-26T17:22:53.864Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
+  - id: openwiki-source-a0ae0064681def9d035f11b2
+    resource: repo://evals/deepswe/run.py
+  - id: openwiki-source-bdd14aa92ae4a01628e282cd
+    resource: repo://evals/ledger/run.ts
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-adcadc660c1888613ec50f9a
+    resource: repo://src/agent/wiki-finalizer.ts
+  - id: openwiki-source-0a92e09462f540e5e005c7e4
+    resource: repo://src/agent/wiki-link-validator.ts
   - id: openwiki-source-5c43e3fe562cf274dd6a5564
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
     resource: repo://src/cli/commands.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+  - id: openwiki-source-7c5ecb56558cc061dab24f9d
+    resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-610ff51ff8da46ab065496a5
+    resource: repo://src/visualize/client.ts
+  - id: openwiki-source-d92f623adbf6b31c3542d58d
+    resource: repo://src/visualize/graph.ts
+  - id: openwiki-source-4d856d692c32be213c8c46b4
+    resource: repo://src/visualize/server.ts
+  - id: openwiki-source-3603986778b0b5f63cbdb37d
+    resource: repo://src/visualize/static-export.ts
+  - id: openwiki-source-fbadcd8591b65031efaaedce
+    resource: repo://vitest.config.ts
+generated: {by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z"}
 ---
 
 # OpenWiki Quickstart

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8389b89d6a8a4793d825b89ac7a92d3aebab1796d240737b42ca87825f6bd091",
+  "pageVersion": "sha256:461eb861b1dc617e0fc1ac76818368e71421ea973639ccc0f4d6526193752efb",
   "claims": [
     {
       "id": "claim_5836585e22d244e79875961ea0a09258",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://package.json#L1-L12",
-          "version": "repo-lines-v1:sha256:3e49ad7456ebc193d7158c3652b4142a19125184376b1949a792b314ba629e12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYTZkODI3ZjYzOGU0NjRlYzQ2MTcwMDVjMjEyODhkODkzNzBlYTc3MDJiMjJhMDMxOTU1ZjZiMWMwNTFkNmYifQ"
+          "version": "repo-lines-v1:sha256:c713bbffd7554e0e671651375c1b0ac5281a44e8576b99e146ae8c6f1c945992:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYTZkODI3ZjYzOGU0NjRlYzQ2MTcwMDVjMjEyODhkODkzNzBlYTc3MDJiMjJhMDMxOTU1ZjZiMWMwNTFkNmYifQ"
         },
         {
           "resource": "repo://package.json#L37-L60",
@@ -135,10 +135,82 @@
           "version": "repo-lines-v1:sha256:7a8ab221c5c17f59b02aa3e79426dfb44bc44200c8567042d6151f8d346626fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ODM2ZWQ3ZTAwNTM3NzVhMGE5NjZjZTg2MTM0YjIzNDdkODUxYTdiMDJmNDgxMmJlYjJjNTlkMWM2OGQ1MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YjQ4YzFjOTNhZjYzMmQwZDU0ZjM3NWYzNGJlNjNiZmUwODRkYTIxZGJmOThkODlmMmM1MTc0ZjRmNTY2ZWEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b8dc4fdc950c49c18d95ebc59a8d532d",
+      "statement": "Since v0.4.0 the visualizer's graph panel is resizable and collapsible: `initGraphPanelControls` in `src/visualize/client.ts` persists the graph-column width (as a percentage of the main row) under `openwiki-graph-width` and the collapsed state under `openwiki-graph-collapsed`, and collapsing hides the splitter, legend, and hint so the reader takes the full width.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client.ts#L909-L968",
+          "version": "repo-lines-v1:sha256:6141ae1a0499284410b2514cc5076575781cd47b5a8ad9aa20dcdd610068d1a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMzQ0YWM5ZmJmNWRmOGE0Yzc0NDcxYjE3ZTUxYjgwMjBjNjdhY2ZiZTA2MTFiMzhhYjljMGE2ZDY2NjRlMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMDM5NjBkMTgyYmVmYWM2NGMxYzA5NjcyNDNjYWIwMzkwOTFmOTI3YzNmMzA4YWZmMGY4MTRkZjlkNmZkYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzZjYzOWZhODFiZmFmNzA1ZTMwZjEzZDE5ZWUxYWNlY2U2ZmNlMzk3ZTYxZTUwZjhlNGEyMWUwMjRkN2ViZDIifQ"
+        },
+        {
+          "resource": "repo://src/visualize/client.ts#L970-L975",
+          "version": "repo-lines-v1:sha256:ddfd2657d3f604cf4948784ad1ae5aeab0ed34007ac0ce9c17229889dde8bfe7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhmODA5ZWM3ZjM4YmIwODBmYTZlMDAxMzdjNjM4OTBmOTVmMzIxNzkxNWI5MDQ0YzZjNWJmZDg1ZGUyMDhhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWRjZWRhNzVjMGFjNTg4NjQ5ZGQzNDBhYzE2MTJlNjVmZjJiNzk5MWM5MjViNmEwZWUzMjcwOTMyZmZkOWQ2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmQwZjJkM2EzYWFkYTI3NTg2NDU3OGQwYTQzOTE1NjM4ZDU0M2ZlY2EyYzk0ODU4ZGI5NDEyMTFlODZjZWYyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjAwNzkxNjFlYmQ1MTk2ODI3NjcwMThjYjA0NWU0YjJkYTVhMWIzNDExZmEwMzJiNDVmYzhlNDdkOGViNjRhMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5f17dac8a7f747dc8acb6fde1f102c36",
+      "statement": "`openwiki visualize` builds a link graph from wiki Markdown and OKF frontmatter (`buildGraph` in `src/visualize/graph.ts`), serves a live single-page reader over loopback HTTP (`127.0.0.1` only) with SSE-driven live reload, and via `--export` writes a self-contained static site whose client reads a sibling `graph.json` and uses no server or SSE.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/graph.ts",
+          "version": "repo-file-v1:sha256:4785d0f852ca6187f5b052923a4e303128c24bfadd465745ec6dd890754def4a"
+        },
+        {
+          "resource": "repo://src/visualize/server.ts",
+          "version": "repo-file-v1:sha256:dc9bbb2ed0bdd555eefdfadfbef795a22c3b7fa09efe1cbf654acb5e93a85ed1"
+        },
+        {
+          "resource": "repo://src/visualize/static-export.ts",
+          "version": "repo-file-v1:sha256:24150fd20915fe6502943e6c37d93a473c9994b3d84a2aa49056f449b67d4016"
+        }
+      ]
+    },
+    {
+      "id": "claim_54d93da833014ace90e6a7934cacda34",
+      "statement": "Finalization is a deterministic, model-free post-authoring phase: `finalizeWikiArtifacts` runs ordered operations (Mermaid validation, index sync, link validation, optional Claims-source projection, then generated-provenance reconciliation), and `finishRepositoryRun` re-checks the repository source fingerprint after finalization to close the check/use race before deleting `openwiki/.run.json` last, so the run is never marked complete until the finalized wiki is re-proven durable.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/wiki-finalizer.ts",
+          "version": "repo-file-v1:sha256:552f3791704a278c05da91af967d68ac0b735836180a0eeb83eee8c490fae5a5"
+        },
+        {
+          "resource": "repo://src/agent/wiki-link-validator.ts",
+          "version": "repo-file-v1:sha256:a7ce8b2be38594c14d13f926f3bfcc807443c14e08715e9dfc8019bcd3abbfd7"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts",
+          "version": "repo-file-v1:sha256:33a27babffa837184328bc3f73fcea23e4b2f95413b21c10d040e687bdd595b8"
+        }
+      ]
+    },
+    {
+      "id": "claim_deb1a7d3a2e24b00b6a55055d7b25ee7",
+      "statement": "The OpenWiki test suite is a single Vitest suite under `test/` that mirrors the `src/` tree directory-for-directory, and `pnpm test` is a three-stage gate (typecheck, build, then `vitest run --coverage` with the V8 provider and `all: true`); two separate evaluation harnesses under `evals/` — LEDGER (TypeScript, documentation grounding over Git checkpoints) and DeepSWE (Python, paired baseline-vs-OpenWiki coding tasks) — are not part of the Vitest suite or `pnpm test`.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/run.py",
+          "version": "repo-file-v1:sha256:8e8469cff53767cf10d4c59a856ffb458e6d8a18b088e4979009620d98834ae6"
+        },
+        {
+          "resource": "repo://evals/ledger/run.ts",
+          "version": "repo-file-v1:sha256:974cbea4daca8602b395950fc3a17072373dd774ad59954f77bbc7e6b9a8cdb2"
+        },
+        {
+          "resource": "repo://package.json#L37-L59",
+          "version": "repo-lines-v1:sha256:9eccf76d99849eb97c50d9f9a6b5704ab27b3faa8e5200cc29bf0885714bec19:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ODMzZDU5NDljMDNhNDBjYTk1MjQ5MTYxMGE2NjU5NjQ0YjNhYTQ2NjM2MmY3OTkwMjBkYmYxOTgxNTQ3ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhYTk4NzI5NTI4MGUxNTgzMzAyMDZmMGQzOTkzNjY3MWQ3NGRlYTkzOTY3Zjg4Yjk3YmQ5ZTVjMjdiODFmMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2MmRhZjMzM2RlNTUyNTNiZGVjYjRiODMwZTNkODZiODdhYTJhZGU4NzhhMTVlNTA0ZGIxYTg5ZTVmN2FjN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYzc1MzE1ZmFhNWRiY2FhYTNlZTM0MGQ0MjExOTZkNDQwN2FlMzAxMjgzOWE3ZWYzNjAzZTAwNGJkZDdiYmIifQ"
+        },
+        {
+          "resource": "repo://vitest.config.ts",
+          "version": "repo-file-v1:sha256:848d1b6e452b1d9ac7c1266de89851ec65ba104f259ce395d751bc52ad57e0ac"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.0",
+    "at": "2026-08-26T17:22:53.864Z"
   }
 }
