@@ -232,4 +232,39 @@ describe("finalizeWikiArtifacts", () => {
     expect(page).not.toContain("host-agent/codex");
     expect(page).not.toContain(RUN_TIMESTAMP);
   });
+
+  test("replaces multiline generated metadata without invalidating the page", async () => {
+    const { backend, rootDir } = await setupWiki();
+    await backend.write(
+      "/openwiki/existing.md",
+      '---\ntype: Guide\ngenerated:\n  by: openwiki/0.3.2\n  at: "2026-08-18T10:00:00.000Z"\n---\n\n# Existing\n\nOld body.\n',
+    );
+    const prepared = await prepareWikiForAuthoring({
+      backend,
+      outputMode: "repository",
+    });
+    await backend.write(
+      "/openwiki/existing.md",
+      '---\ntype: Guide\ngenerated:\n  by: openwiki/0.3.2\n  at: "2026-08-18T10:00:00.000Z"\n---\n\n# Existing\n\nNew body.\n',
+    );
+
+    await expect(
+      finalizeWikiArtifacts({
+        backend,
+        outputMode: "repository",
+        prepared,
+        at: RUN_TIMESTAMP,
+        producerActor: "host-agent/codex",
+      }),
+    ).resolves.toBeUndefined();
+
+    const page = await readFile(
+      path.join(rootDir, "openwiki/existing.md"),
+      "utf8",
+    );
+    expect(page).toContain(
+      `generated: {by: "host-agent/codex", at: "${RUN_TIMESTAMP}"}`,
+    );
+    expect(page).not.toContain("\n  by: openwiki/0.3.2");
+  });
 });

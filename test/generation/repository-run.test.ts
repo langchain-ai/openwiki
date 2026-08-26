@@ -57,7 +57,10 @@ vi.mock("../../src/generation/run-state.js", async (importOriginal) => {
 import { ensureCodeModeRepoSetup } from "../../src/ingestion/code-mode.ts";
 import { ClaimsPersistenceError } from "../../src/claims/core/errors.ts";
 import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
-import { parseFrontmatterFields } from "../../src/okf/frontmatter.ts";
+import {
+  parseFrontmatterFields,
+  validateOkfFrontmatter,
+} from "../../src/okf/frontmatter.ts";
 import { OPENWIKI_PRODUCER_ACTOR } from "../../src/version.ts";
 import {
   beginRepositoryRun,
@@ -543,7 +546,7 @@ describe("repository page queue", () => {
     ).resolves.toMatchObject({ status: "complete", remaining: 0 });
   });
 
-  test("rejects out-of-order submission and invalid final frontmatter", async () => {
+  test("rejects out-of-order submission but repairs invalid frontmatter", async () => {
     const root = await createRepository(["second.md"]);
     const run = await beginForcedUpdate(root);
     await submitRepositoryPlan(run, {
@@ -568,9 +571,22 @@ describe("repository page queue", () => {
 
     await run.backend.write(jobs[0].path, "# Missing frontmatter\n");
     await expect(
-      submitRepositoryPage(run, { jobId: jobs[0].id, claims: [] }),
-    ).rejects.toThrow("Fix invalid front matter");
-    expect(run.state.plan?.pages[0]?.status).toBe("pending");
+      submitRepositoryPage(run, {
+        jobId: jobs[0].id,
+        claims: [
+          {
+            statement: "The repository has a README.",
+            evidence: [{ resource: "repo://README.md" }],
+          },
+        ],
+      }),
+    ).resolves.toMatchObject({ status: "complete" });
+    const repaired = await readFile(
+      path.join(root, jobs[0].path.replace(/^\//u, "")),
+      "utf8",
+    );
+    expect(validateOkfFrontmatter(repaired)).toEqual({ valid: true });
+    expect(repaired).toContain("# Missing frontmatter");
   });
 });
 
@@ -634,6 +650,106 @@ describe("finishRepositoryRun", () => {
         JSON.parse,
       ),
     ).resolves.toMatchObject({ status: "complete", model: "test-model" });
+  });
+
+  test("finishes with multiline generated metadata instead of corrupting verification", async () => {
+    const root = await createRepository();
+    const run = await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Refresh quickstart.",
+        },
+      ],
+    });
+    const next = await nextRepositoryPage(run);
+    if (next.status !== "pending") throw new Error("Expected page job.");
+    await run.backend.write(
+      next.job.path,
+      '---\ntype: Guide\ntitle: Quickstart\ngenerated:\n  by: openwiki/0.4.0\n  at: "2026-08-23T12:00:00.000Z"\n---\n\n# Quickstart\n\nUpdated.\n',
+    );
+    await submitRepositoryPage(run, {
+      jobId: next.job.id,
+      claims: [
+        {
+          statement: "The repository has a README.",
+          evidence: [{ resource: "repo://README.md" }],
+        },
+      ],
+    });
+
+    await expect(finishRepositoryRun(run)).resolves.toEqual({
+      status: "complete",
+    });
+
+    const content = await readFile(
+      path.join(root, "openwiki", "quickstart.md"),
+      "utf8",
+    );
+    expect(parseFrontmatterFields(content)).toMatchObject({
+      generated: { by: ACTOR.producerActor, at: STARTED_AT },
+      verified: [{ by: OPENWIKI_PRODUCER_ACTOR, at: STARTED_AT }],
+    });
+  });
+
+  test("finishes after deterministically degrading every invalid optional OKF family", async () => {
+    const root = await createRepository();
+    const run = await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Refresh quickstart.",
+        },
+      ],
+    });
+    const next = await nextRepositoryPage(run);
+    if (next.status !== "pending") throw new Error("Expected page job.");
+    await run.backend.write(
+      next.job.path,
+      "---\ntype: Guide\ntitle: 9\ndescription: []\nresource: {}\ntimestamp: []\ntags: [docs, 7]\ngenerated: someday\nverified: [{at: someday}]\nsources: [{id: missing-resource}]\nstatus: reviewed\nstale_after: later\nproducer_extension: keep\n---\n\n# Quickstart\n\nUpdated.\n",
+    );
+    await submitRepositoryPage(run, {
+      jobId: next.job.id,
+      claims: [
+        {
+          statement: "The repository has a README.",
+          evidence: [{ resource: "repo://README.md" }],
+        },
+      ],
+    });
+
+    await expect(finishRepositoryRun(run)).resolves.toEqual({
+      status: "complete",
+    });
+
+    const content = await readFile(
+      path.join(root, "openwiki", "quickstart.md"),
+      "utf8",
+    );
+    const fields = parseFrontmatterFields(content);
+    expect(validateOkfFrontmatter(content)).toEqual({ valid: true });
+    expect(fields).toMatchObject({
+      generated: { by: ACTOR.producerActor, at: STARTED_AT },
+      producer_extension: "keep",
+      sources: [expect.objectContaining({ resource: "repo://README.md" })],
+      tags: ["docs"],
+      title: "Quickstart",
+      type: "Guide",
+      verified: [{ by: OPENWIKI_PRODUCER_ACTOR, at: STARTED_AT }],
+    });
+    for (const field of [
+      "description",
+      "resource",
+      "timestamp",
+      "status",
+      "stale_after",
+    ]) {
+      expect(fields).not.toHaveProperty(field);
+    }
   });
 
   test("invalidates the whole plan on drift and removes only abandoned new pages", async () => {

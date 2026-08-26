@@ -3,6 +3,7 @@ import type { BackendProtocolV2 } from "deepagents";
 import type { OpenWikiOutputMode } from "../agent/types.js";
 import {
   parseFrontmatterFields,
+  repairOkfFrontmatter,
   removeFrontmatterField,
   setGeneratedEvent,
   splitFrontmatter,
@@ -173,24 +174,32 @@ export async function finalizeGeneratedProvenance(
   }
 
   for (const page of await listWikiConceptPaths(backend, outputMode)) {
-    const content = await readRequiredContent(backend, page);
+    let content: string;
+    try {
+      content = await readRequiredContent(backend, page);
+    } catch {
+      // Generated provenance is optional trust metadata. If a page cannot be
+      // read during this best-effort pass, preserve the rest of the finalized
+      // wiki instead of failing the complete run.
+      continue;
+    }
     const initial = initialConcepts.get(page);
     const bodyChanged =
       initial === undefined || initial.bodyHash !== hashConceptBody(content);
-    const reconciled = bodyChanged
+    const candidate = bodyChanged
       ? removeFrontmatterField(
           setGeneratedEvent(content, producerActor, now),
           "timestamp",
         )
       : restoreGeneratedEvent(content, initial.generated);
+    const reconciled = repairOkfFrontmatter(candidate, page).content;
 
     if (reconciled !== content) {
       const result = await backend.write(page, reconciled);
-      if (result.error) {
-        throw new Error(
-          `Unable to finalize generated provenance for ${page}: ${result.error}`,
-        );
-      }
+      // A provenance write is useful but not essential page content. The
+      // deterministic fallback is the already-persisted unstamped/stale page;
+      // later finalizers can still synchronize Claims against those bytes.
+      if (result.error) continue;
     }
   }
 }

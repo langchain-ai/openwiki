@@ -31,7 +31,7 @@ import type {
 import { ensureCodeModeRepoSetup } from "../ingestion/code-mode.js";
 import {
   parseFrontmatterFields,
-  validatePersistedFile,
+  repairPersistedFile,
 } from "../okf/frontmatter.js";
 import {
   resolveConceptTypeLabel,
@@ -761,9 +761,13 @@ export async function submitRepositoryPage(
     );
   }
 
-  const frontmatter = await validatePersistedFile(run.backend, current.path);
-  if (!frontmatter.valid) {
-    const details = frontmatter.issues
+  const frontmatter = await repairPersistedFile(
+    run.backend,
+    current.path,
+    resolveConceptTypeLabel(run.state.language),
+  );
+  if (!frontmatter.validation.valid) {
+    const details = frontmatter.validation.issues
       .map(
         ({ code, line, message }) =>
           `[${code}]${line ? ` line ${line}:` : ""} ${message}`,
@@ -771,7 +775,7 @@ export async function submitRepositoryPage(
       .join("; ");
     throw new RepositoryRunError(
       "invalid_input",
-      `Fix invalid front matter in ${current.path} before submission: ${details}`,
+      `Could not deterministically repair front matter in ${current.path}: ${details}`,
     );
   }
 
