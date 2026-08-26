@@ -1,0 +1,57 @@
+src/generation/run-state.ts
+  s_809e904f8d6c26::t_d1a82b28b7b099 34,246
+test/generation/repository-run.test.ts
+  s_809e904f8d6c26::t_25e767b1ba22f4 70,282,288-297
+  s_809e904f8d6c26::t_d76f0c5abb1e16 67,240-242,253-281,283-287,306
+  s_809e904f8d6c26::t_927a4e6c9c1278 243-245,251-252,298-305
+  s_809e904f8d6c26::t_3f9142120dc5ba 246-250
+  s_809e904f8d6c26::t_b3356cbdfdeed2 470-503
+  s_809e904f8d6c26::t_86c3fc3f116435 307
+src/claims/brains/code/session.ts
+  s_809e904f8d6c26::t_ec0cf833391e16 291,307,336,347,358,392
+src/claims/brains/code/runtime.ts
+  s_809e904f8d6c26::t_ec0cf833391e16 127-134
+  s_809e904f8d6c26::t_d1a82b28b7b099 40,123-126
+test/agent/repository-runner.test.ts
+  s_809e904f8d6c26::t_353469d9740eba 624-627,629-630
+  s_809e904f8d6c26::t_cab09272571d6d 613-619,631-632
+  s_809e904f8d6c26::t_fc90e0532c97cb 81-82,220-221,231-238,240,244-245,416-417
+  s_809e904f8d6c26::t_33bc6bda317c03 12,215-219,239,241-243,620-623,628
+src/generation/repository-run.ts
+  s_809e904f8d6c26::t_ef616bfc35b27f 30,133-142,729-753,755-771,773-775,778,780-789,791-810
+  s_809e904f8d6c26::t_afffc1af41cdb0 811-820
+  s_809e904f8d6c26::t_ea371f2276f19a 776,779,790,825-826,835-854
+  s_809e904f8d6c26::t_993c35f56881d3 470-471,478-489,504,772,821-824,827-834,1088,1109,1162-1164,1175,1183-1189,1191-1198,1214-1219,1223-1243
+  s_809e904f8d6c26::t_f7184540d81030 777,1190
+  s_809e904f8d6c26::t_8c5494125a2ebd 754
+  s_809e904f8d6c26::t_22d9c102aed31e 855
+src/agent/utils.ts
+  s_809e904f8d6c26::t_afffc1af41cdb0 208,214-217
+src/agent/repository-runner.ts
+  s_809e904f8d6c26::t_725d6b43f53a9c 11,219-223,412,485-496,500,503,505,507,509-517,519
+  s_809e904f8d6c26::t_afed2dc9e9a9a7 14,21,218,232,377-378,381,394,411,497,499,501,504,506,508
+  s_809e904f8d6c26::t_f7184540d81030 393
+  s_809e904f8d6c26::t_7946dcb0736163 426,456,498
+  s_809e904f8d6c26::t_9ff990e06ae4fa 518
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "ca1b1b29deee972931fa592a7b4eb0738382c953",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_809e904f8d6c26": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03f01-9142-7c23-b8cd-4562f05ec6e8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
