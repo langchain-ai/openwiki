@@ -1,0 +1,68 @@
+src/okf/claim-sources.ts
+  s_809e904f8d6c26::t_25565b6aa4ae2d 9-13,51-52,57-58,61,63
+  s_809e904f8d6c26::t_953d9d7ace6dc1 59-60
+src/okf/claims-verification.ts
+  s_809e904f8d6c26::t_953d9d7ace6dc1 52
+  s_809e904f8d6c26::t_2325a61ec9b265 3-7,43-44,49-51
+test/agent/frontmatter-validator.test.ts
+  s_809e904f8d6c26::t_b646218ff511a1 11-12,14,23-26,251,253,256-265,269,271,319,322-323
+  s_809e904f8d6c26::t_953d9d7ace6dc1 254,266,320
+  s_809e904f8d6c26::t_229fcd5b79438e 27
+  s_809e904f8d6c26::t_a47c07eb2a74c7 255
+src/okf/generated-provenance.ts
+  s_809e904f8d6c26::t_fc7a8c0278befa 177-185,189,199-202
+  s_809e904f8d6c26::t_39e08039d34e87 6,195
+src/generation/repository-run.ts
+  s_809e904f8d6c26::t_5edebb654f1326 34,764-770,778
+test/agent/wiki-finalizer.test.ts
+  s_809e904f8d6c26::t_d329d04dfb848e 240,248
+  s_809e904f8d6c26::t_fc7a8c0278befa 235-239,241-247,249-269
+test/agent/index-middleware.test.ts
+  s_809e904f8d6c26::t_744f811ca25924 333,347
+  s_809e904f8d6c26::t_fc7a8c0278befa 879,903,908-909
+src/agent/okf-middleware.ts
+  s_809e904f8d6c26::t_953d9d7ace6dc1 149
+  s_809e904f8d6c26::t_7edb185f433e27 7,99,125-126,133,150,152,202
+src/okf/frontmatter.ts
+  s_809e904f8d6c26::t_8d8520ed646b6f 17-22,97-114,349-415,512,635-645,741-764,767-768,773-776,779-781,786,788-790,793-843,846-853
+  s_809e904f8d6c26::t_5f7083eff27cc7 727-730
+  s_809e904f8d6c26::t_953d9d7ace6dc1 770-772
+  s_809e904f8d6c26::t_fc7a8c0278befa 539,604
+  s_809e904f8d6c26::t_78636d4e7a1ab8 328-336
+  s_809e904f8d6c26::t_ceca6b9655e781 777-778,782-785
+  s_809e904f8d6c26::t_931ef52a028fe1 646
+test/okf/frontmatter.test.ts
+  s_809e904f8d6c26::t_576e081423b2b0 179-183
+  s_809e904f8d6c26::t_a166a802360eb0 9-10,49,54-60,62,174-178,184-216,218,220-223,225-266,649-672
+  s_809e904f8d6c26::t_953d9d7ace6dc1 217,219,224
+  s_809e904f8d6c26::t_fc7a8c0278befa 267,354-366,459-466,673
+  s_809e904f8d6c26::t_780c4727470527 268-269
+  s_809e904f8d6c26::t_bfa15b5c08e99c 467
+  s_809e904f8d6c26::t_0376e8c7ea4224 674-675
+test/generation/repository-run.test.ts
+  s_809e904f8d6c26::t_9651fe1f6fb045 549,574-589
+  s_809e904f8d6c26::t_fc7a8c0278befa 655-696
+  s_809e904f8d6c26::t_78c7f96b0d07a9 697-754
+  s_809e904f8d6c26::t_b7bcf17a66d5d3 60-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "2860f0fb594d754feee6ea5e92b2c488d6bd6b93",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_809e904f8d6c26": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03f01-9142-7c23-b8cd-4562f05ec6e8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
