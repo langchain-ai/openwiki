@@ -37,7 +37,7 @@ export interface ClaimsRuntime {
   /**
    * Persists Claims and synchronizes verification/page versions or rejects.
    */
-  finalize(at?: string): Promise<void>;
+  finalize(at?: string, excludedPages?: ReadonlySet<string>): Promise<void>;
 }
 
 /**
@@ -120,11 +120,18 @@ function buildClaimsRuntime(
     session,
     issueCount: issues.length,
     issues: [...issues],
-    finalize: async (at = new Date().toISOString()) => {
-      const result = await session.finalize(store, {
-        by: OPENWIKI_PRODUCER_ACTOR,
-        at,
-      });
+    finalize: async (
+      at = new Date().toISOString(),
+      excludedPages: ReadonlySet<string> = new Set(),
+    ) => {
+      const result = await session.finalize(
+        store,
+        {
+          by: OPENWIKI_PRODUCER_ACTOR,
+          at,
+        },
+        excludedPages,
+      );
       const warnings = [...result.warnings];
       warnings.push(
         ...(await finalizeVerificationProjection(

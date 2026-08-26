@@ -288,6 +288,7 @@ export class ClaimSession {
   async finalize(
     store: ClaimsStore,
     verification: ClaimsVerificationEvent,
+    excludedPages: ReadonlySet<string> = new Set(),
   ): Promise<ClaimsFinalizeResult> {
     const resolver = cacheEvidenceResolver(this.resolver);
     const warnings: string[] = [];
@@ -303,6 +304,7 @@ export class ClaimSession {
     }> = [];
 
     for (const [page, state] of this.pages) {
+      if (excludedPages.has(page)) continue;
       await state.pendingMutation;
       if (state.deleted || !state.dirty) {
         continue;
@@ -331,6 +333,7 @@ export class ClaimSession {
     }
 
     for (const orphan of this.orphanPages) {
+      if (excludedPages.has(orphan)) continue;
       try {
         await store.deletePage(orphan);
       } catch (error) {
@@ -341,6 +344,7 @@ export class ClaimSession {
       }
     }
     for (const missingPage of missingPages) {
+      if (excludedPages.has(missingPage)) continue;
       try {
         await store.deletePage(missingPage);
       } catch (error) {
@@ -351,6 +355,7 @@ export class ClaimSession {
       }
     }
     for (const [page, state] of this.pages) {
+      if (excludedPages.has(page)) continue;
       if (state.deleted) {
         try {
           await store.deletePage(page);
@@ -384,6 +389,7 @@ export class ClaimSession {
     }
 
     for (const [page, state] of this.pages) {
+      if (excludedPages.has(page)) continue;
       if (state.deleted) continue;
       const eligible =
         state.persisted &&

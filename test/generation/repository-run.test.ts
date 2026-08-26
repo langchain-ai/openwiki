@@ -64,8 +64,10 @@ import {
 import { OPENWIKI_PRODUCER_ACTOR } from "../../src/version.ts";
 import {
   beginRepositoryRun,
+  captureRepositoryPageSnapshot,
   finishRepositoryRun,
   nextRepositoryPage,
+  skipRepositoryPage,
   submitRepositoryPage,
   submitRepositoryPlan,
   type ActiveRepositoryRun,
@@ -235,6 +237,74 @@ async function completeCurrentPage(
   });
 }
 
+test("restores the exact pending Markdown and Claims snapshot", async () => {
+  const root = await createRepository(["testing.md"]);
+  const page = "/openwiki/testing.md";
+  const successfulMetadata = JSON.parse(
+    await readFile(path.join(root, "openwiki/.last-update.json"), "utf8"),
+  ) as { gitHead: string };
+  await writeFile(
+    path.join(root, "README.md"),
+    "# Changed repository\n",
+    "utf8",
+  );
+  await git(root, ["add", "README.md"]);
+  await git(root, ["commit", "--quiet", "-m", "change source"]);
+  const store = new ClaimsStore(root);
+  const originalClaims = {
+    schemaVersion: 1 as const,
+    pageVersion: await store.hashPage(page),
+    claims: [],
+  };
+  await store.writePage(page, originalClaims);
+
+  const run = await beginForcedUpdate(root);
+  await submitRepositoryPlan(run, {
+    pages: [
+      {
+        path: page,
+        title: "Testing",
+        purpose: "Update testing documentation.",
+      },
+    ],
+  });
+  const next = await nextRepositoryPage(run);
+  if (next.status !== "pending") throw new Error("Expected pending page.");
+  const snapshot = await captureRepositoryPageSnapshot(run, next.job.id);
+
+  await run.backend.write(page, validPage("Changed"));
+  await store.writePage(page, {
+    schemaVersion: 1,
+    pageVersion: await store.hashPage(page),
+    claims: [],
+  });
+
+  await skipRepositoryPage(run, snapshot);
+
+  expect(await readFile(path.join(root, "openwiki/testing.md"), "utf8")).toBe(
+    validPage("testing"),
+  );
+  expect(await store.loadPage(page)).toEqual(originalClaims);
+  expect(run.state.plan?.pages[0]?.status).toBe("skipped");
+  expect((await nextRepositoryPage(run)).status).toBe("complete");
+
+  await finishRepositoryRun(run, { skippedPageSnapshots: [snapshot] });
+
+  expect(await readFile(path.join(root, "openwiki/testing.md"), "utf8")).toBe(
+    validPage("testing"),
+  );
+  expect(await store.loadPage(page)).toEqual(originalClaims);
+  expect(await readRepositoryRunState(root)).toBeNull();
+  expect(
+    JSON.parse(
+      await readFile(path.join(root, "openwiki/.last-update.json"), "utf8"),
+    ),
+  ).toMatchObject({
+    gitHead: successfulMetadata.gitHead,
+    status: "interrupted",
+  });
+});
+
 beforeEach(() => {
   failureHarness.metadataWrites = 0;
   failureHarness.stateWrites = 0;
@@ -397,6 +467,40 @@ describe("beginRepositoryRun", () => {
 });
 
 describe("repository page queue", () => {
+  test("resets an interrupted skipped job to pending on resume", async () => {
+    const root = await createRepository(["second.md"]);
+    const initial = await beginForcedUpdate(root);
+    await submitRepositoryPlan(initial, {
+      pages: [
+        {
+          path: "/openwiki/second.md",
+          title: "Second",
+          purpose: "Refresh the secondary guide.",
+        },
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Refresh the repository entry point.",
+        },
+      ],
+    });
+    const next = await nextRepositoryPage(initial);
+    if (next.status !== "pending") throw new Error("Expected pending page.");
+    const snapshot = await captureRepositoryPageSnapshot(initial, next.job.id);
+    await initial.backend.write(next.job.path, validPage("Partial"));
+    await skipRepositoryPage(initial, snapshot);
+
+    const resumed = requireActiveRun(
+      await beginRepositoryRun({ root, mode: "update", actor: ACTOR }),
+    );
+
+    expect(resumed.state.plan?.pages[0]?.status).toBe("pending");
+    await expect(nextRepositoryPage(resumed)).resolves.toMatchObject({
+      status: "pending",
+      job: { id: next.job.id, path: next.job.path },
+    });
+  });
+
   test("keeps in-memory state unchanged until plan persistence succeeds", async () => {
     const root = await createRepository();
     const run = await beginForcedUpdate(root);
