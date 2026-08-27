@@ -1,5 +1,11 @@
 # openwiki
 
+## 0.4.2
+
+### Patch Changes
+
+- [#737](https://github.com/langchain-ai/openwiki/pull/737) [`d9e958b`](https://github.com/langchain-ai/openwiki/commit/d9e958bfcf798b1dcc9d0e6240c186b127d045ee) Thanks [@colifran](https://github.com/colifran)! - fix: allow init and update runs to snapshot pages that do not exist yet
+
 ## 0.4.1
 
 ### Patch Changes
