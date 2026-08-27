@@ -21,9 +21,6 @@ sources:
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
 generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
-verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
 ---
 
 # OpenWiki Quickstart

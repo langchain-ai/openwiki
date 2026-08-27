@@ -15,8 +15,8 @@ tags:
     visualizer,
   ]
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T21:01:58.235Z
 sources:
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
@@ -89,8 +89,9 @@ flowchart TD
   PageWorker -->|"fails or exits without submit"| Skip["skipRepositoryPage restores snapshot and marks skipped"]
   Skip --> Lifecycle
   PageWorker -->|"submit_page"| Lifecycle
-  Lifecycle -->|"source drift"| NativeRun
-  Lifecycle --> Finalize["finishRepositoryRun restores skipped pages and finalizes"]
+  Lifecycle -->|"source drift: finalize once, leave checkpoint"| Finalize
+  Finalize["finishRepositoryRun restores skipped pages and finalizes"]
+  Finalize --> Reconcile["next --update replans from un-advanced checkpoint"]
   Finalize --> Wiki["OKF wiki output"]
   Wiki --> Viz["visualize server or static export"]
 ```
@@ -153,10 +154,19 @@ passes them to `finishRepositoryRun`, which restores the skipped pages' Markdown
 after finalization, finalizes Claims with those pages excluded, and persists
 `interrupted` update metadata so the run is honestly recorded as partial.
 
-If finalization detects that repository source drifted underneath the plan, the
-run replans and repeats. Correctable submission rejections are returned to the
-worker as error-status tool messages so it can fix and resubmit rather than
-aborting the run. The end-to-end flow is documented in
+If repository source drifts underneath the plan while a run is in progress,
+OpenWiki finalizes once rather than replanning and repeating. `finishRepositoryRun`
+records `sourceChanged=true`, finalizes the wiki, and leaves the source
+checkpoint un-advanced — the page manifest keeps the fingerprint the plan was
+built against — so the run honestly persists `interrupted` update metadata. The
+runner surfaces a single message instructing the user to run
+`openwiki --update` to reconcile the changes; the next `begin` compares the
+current source to that un-advanced checkpoint, detects the drift, and re-enters
+the planning phase, reconsidering any skipped pages. So mid-run source changes
+do not restart the loop in-process — they leave an explicit, honest
+"finalize now, reconcile later" state. Correctable submission rejections are
+returned to the worker as error-status tool messages so it can fix and resubmit
+rather than aborting the run. The end-to-end flow is documented in
 [Repository generation workflow](../workflows/repository-generation.md).
 
 ## Host-driven (coding-agent) generation

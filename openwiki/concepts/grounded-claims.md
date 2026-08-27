@@ -34,8 +34,8 @@ sources:
     resource: repo://src/okf/claims-verification.ts
 generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T21:01:58.235Z
 ---
 
 # Grounded Claims
@@ -192,10 +192,19 @@ before its sidecar is written:
 
 The runtime exposes this through `ClaimsRuntime.finalize(at, excludedPages)`,
 which builds the OpenWiki producer verification event and forwards the skipped
-set. When a repository run finishes, it derives `skippedPages` from skipped jobs
-and passes them both to `finalize` and to the post-run durability assertion, so
-skipped pages are exempt from Claims persistence and from the "no orphan
-sidecar" / "every claimed page is durable" checks that gate the run.
+set. When a repository run finishes, it derives `skippedPages` from skipped
+jobs and passes them both to `finalize` and to the whole-run durability
+assertion, so skipped pages are exempt from Claims persistence and from the "no
+orphan sidecar" / "every claimed page is durable" checks that gate the run.
+
+A page job does not wait for the whole run to prove durability. `submitRepositoryPage`
+persists the page's Claims eagerly: it calls `replacePageClaims` (which diffs the
+proposed set against the inspected existing Claims and emits `confirm`, `update`,
+`add`, and `retract` operations), finalizes the session to write the sidecar and
+project verification, then runs `assertPageClaimsDurable` to prove that one page
+before advancing the job queue. Per-page finalization and whole-run finalization
+share the same `ClaimsRuntime.finalize`, so a page proved at submit time and a
+page proved at finish time pass the same gates.
 
 Finalization also removes orphaned sidecars (whose pages no longer exist),
 deletes sidecars for pages whose Markdown vanished during the run, and removes
@@ -209,6 +218,21 @@ Finalization is best-effort per page: recoverable per-page failures are isolated
 as warnings rather than aborting the run, but the runtime treats any warning as a
 durability failure and rejects, so an incomplete finalization does not pass
 silently.
+
+### Durability assertions
+
+Two assertion passes close the loop between Claims state and the bytes on disk.
+`assertPageClaimsDurable` proves one page by reloading its sidecar from a fresh
+`ClaimsStore` and checking four invariants: the sidecar was persisted; its
+`pageVersion` still equals the current Markdown hash; a `verification` event was
+recorded; and that event is actually projected into the page's `verified` front
+matter. It then compares every session-inspected Claim against the persisted
+set, rejecting when any statement or evidence-resource set differs. This runs
+once per submitted page (named `submit_page`) and again for every non-empty
+claimed page at finish (named `finish`). `assertRepositoryClaimsDurable` is the
+strict whole-run proof: it fails on any sidecar whose page no longer exists and
+re-runs `assertPageClaimsDurable` for every non-empty claimed page not in the
+`excludedPages` set.
 
 ## OKF projection: sources and verification
 
