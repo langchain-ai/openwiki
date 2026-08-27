@@ -47,6 +47,12 @@ afterEach(async () => {
 /**
  * Runs the stamp script against the temp target with `channel` as the env value
  * (omitted entirely when undefined), then returns the rewritten file contents.
+ *
+ * stderr is captured rather than forwarded: `execFileSync` pipes a child's
+ * stderr to the parent's by default, which would print the drift-detection
+ * test's *expected* failure into the suite output and read as a real problem.
+ * Capturing it also appends the child's stderr to the thrown error's message,
+ * so the failure case can assert on the diagnostic the release would show.
  */
 function stamp(channel: string | undefined): void {
   const env = { ...process.env };
@@ -55,7 +61,11 @@ function stamp(channel: string | undefined): void {
   } else {
     env.OPENWIKI_BUILD_CHANNEL = channel;
   }
-  execFileSync(process.execPath, [SCRIPT, target], { env, encoding: "utf8" });
+  execFileSync(process.execPath, [SCRIPT, target], {
+    env,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
 }
 
 describe("stamp-build-channel", () => {
@@ -92,7 +102,12 @@ describe("stamp-build-channel", () => {
   test("a source missing the assignment fails loudly and is left unchanged", async () => {
     await writeFile(target, "const something = 1;\n", "utf8");
 
-    expect(() => stamp("official")).toThrow();
+    // A drifted gates.ts must abort the release with an actionable reason, not
+    // publish an unstamped build, so assert the diagnostic and not just the
+    // non-zero exit.
+    expect(() => stamp("official")).toThrow(
+      /expected exactly one BUILD_CHANNEL assignment to stamp, found 0/u,
+    );
 
     const result = await readFile(target, "utf8");
     expect(result).toBe("const something = 1;\n");
