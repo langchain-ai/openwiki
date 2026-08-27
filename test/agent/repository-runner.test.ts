@@ -356,17 +356,10 @@ vi.mock("../../src/generation/repository-run.js", () => ({
       remaining: 0,
     });
   },
-  async finishRepositoryRun(run: HarnessRun) {
+  finishRepositoryRun() {
     harness.finishCalls += 1;
     if (harness.driftOnce && harness.finishCalls === 1) {
-      run.state.phase = "planning";
-      delete run.state.plan;
-      const { RepositoryRunError } =
-        await import("../../src/generation/errors.js");
-      throw new RepositoryRunError(
-        "conflict",
-        "Repository source changed during this OpenWiki run. The old plan was invalidated; call begin and submit a replacement plan.",
-      );
+      return { status: "complete", sourceChanged: true };
     }
     return { status: "complete" };
   },
@@ -580,22 +573,15 @@ describe("runNativeRepositoryGeneration", () => {
     );
   });
 
-  test("re-begins and replans after finish-time source drift", async () => {
+  test("finalizes once and warns after finish-time source drift", async () => {
     harness.driftOnce = true;
     harness.planPaths = ["/openwiki/quickstart.md"];
 
     const events = await runHarness();
 
-    expect(harness.beginCalls).toBe(2);
-    expect(harness.finishCalls).toBe(2);
-    expect(harness.agentOptions).toHaveLength(4);
-    expect(events).toContainEqual(
-      expect.objectContaining({
-        type: "repository_progress",
-        stage: "replanning",
-        resumed: true,
-      }),
-    );
+    expect(harness.beginCalls).toBe(1);
+    expect(harness.finishCalls).toBe(1);
+    expect(harness.agentOptions).toHaveLength(2);
     expect(
       events.filter(
         (event) =>
@@ -603,11 +589,12 @@ describe("runNativeRepositoryGeneration", () => {
       ),
     ).toHaveLength(1);
     expect(
-      events.filter(
+      events.some(
         (event) =>
-          event.type === "repository_progress" && event.stage === "replanning",
+          event.type === "text" &&
+          event.text.includes("finalized without advancing"),
       ),
-    ).toHaveLength(2);
+    ).toBe(true);
   });
 
   test("restores and leaves a page pending when its worker does not submit", async () => {

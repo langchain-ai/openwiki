@@ -244,7 +244,7 @@ export class HostSessionManager {
       {
         name: "openwiki_finish",
         description:
-          "Finish only after every PageJob is complete. Runs deterministic deletion, validation, indexing, provenance, Claims finalization, and complete metadata persistence.",
+          "Finish only after every PageJob is complete. Runs deterministic deletion, validation, indexing, provenance, Claims finalization, and run metadata persistence.",
         schema: RunInput,
         handle: async (input) => this.finish(RunInput.parse(input)),
       },

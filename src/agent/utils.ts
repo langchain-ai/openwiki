@@ -197,6 +197,8 @@ export function shouldCheckUpdateNoop(options: OpenWikiRunOptions): boolean {
  * Records an init/update run so future updates can diff from this git head.
  * Interrupted runs are recorded with status "interrupted" so the update
  * no-op check knows the wiki may be partial and does not skip the retry.
+ * A `null` override deliberately omits the checkpoint when no successful
+ * repository baseline exists.
  */
 export async function writeLastUpdateMetadata(
   command: OpenWikiCommand,
@@ -205,16 +207,19 @@ export async function writeLastUpdateMetadata(
   outputMode: OpenWikiOutputMode = "repository",
   status: UpdateRunStatus = "complete",
   language?: string,
-  gitHeadOverride?: string,
+  gitHeadOverride?: string | null,
 ): Promise<void> {
   const metadataFile = getMetadataFilePath(cwd, outputMode);
+  const gitHead =
+    outputMode !== "repository"
+      ? undefined
+      : gitHeadOverride === null
+        ? undefined
+        : (gitHeadOverride ?? (await getGitHead(cwd)));
   const metadata: UpdateMetadata = {
     updatedAt: new Date().toISOString(),
     command,
-    gitHead:
-      outputMode === "repository"
-        ? (gitHeadOverride ?? (await getGitHead(cwd)))
-        : undefined,
+    gitHead,
     model: modelId,
     status,
     ...(language ? { language } : {}),

@@ -148,7 +148,7 @@ export interface NativeRepositoryGenerationOptions {
   force?: boolean;
 
   /**
-   * Actual user and connector context supplied to planning and replanning.
+   * Actual user and connector context supplied to planning.
    */
   planningContext?: string | null;
 
@@ -176,6 +176,11 @@ export interface NativeRepositoryGenerationResult {
    * Whether strict preflight proved that an update required no generation.
    */
   skipped: boolean;
+
+  /**
+   * Whether the repository changed after planning, leaving a later update due.
+   */
+  sourceChanged?: true;
 }
 
 /**
@@ -185,66 +190,57 @@ export interface NativeRepositoryGenerationResult {
  * worker state survives beyond the durable core.
  *
  * @param options - Repository, model, planning context, and event consumer.
- * @returns Whether the command completed through the strict no-op path.
+ * @returns No-op status and whether a later update remains due to source drift.
  */
 export async function runNativeRepositoryGeneration(
   options: NativeRepositoryGenerationOptions,
 ): Promise<NativeRepositoryGenerationResult> {
-  let begun = await beginNativeRepositoryRun(options);
-  let replanningAfterSourceDrift = false;
+  const begun = await beginNativeRepositoryRun(options);
+  if (!("run" in begun)) {
+    options.onEvent?.({ type: "repository_progress", stage: "noop" });
+    return { skipped: true };
+  }
 
-  while (true) {
-    if (!("run" in begun)) {
-      options.onEvent?.({ type: "repository_progress", stage: "noop" });
-      return { skipped: true };
-    }
-
-    const { run, view } = begun;
-    if (run.state.phase === "planning") {
-      options.onEvent?.({
-        type: "repository_progress",
-        stage: replanningAfterSourceDrift ? "replanning" : "planning",
-        resumed: view.resumed,
-      });
-      await runPlanningAgent(
-        run,
-        view,
-        options.model,
-        run.state.planningContext,
-        options.onEvent,
-      );
-    }
-
-    const skippedPageSnapshots = await runPendingPageAgents(
-      run,
-      options.model,
-      options.onEvent,
-      view,
-    );
+  const { run, view } = begun;
+  if (run.state.phase === "planning") {
     options.onEvent?.({
       type: "repository_progress",
-      stage: "finalizing",
+      stage: "planning",
       resumed: view.resumed,
-      pageCount: run.state.plan?.pages.length,
     });
-
-    try {
-      await finishRepositoryRun(run, { skippedPageSnapshots });
-      return { skipped: false };
-    } catch (error) {
-      if (!isSourceDriftInvalidation(error)) {
-        throw error;
-      }
-
-      options.onEvent?.({
-        type: "repository_progress",
-        stage: "replanning",
-        resumed: true,
-      });
-      replanningAfterSourceDrift = true;
-      begun = await beginNativeRepositoryRun(options);
-    }
+    await runPlanningAgent(
+      run,
+      view,
+      options.model,
+      run.state.planningContext,
+      options.onEvent,
+    );
   }
+
+  const skippedPageSnapshots = await runPendingPageAgents(
+    run,
+    options.model,
+    options.onEvent,
+    view,
+  );
+  options.onEvent?.({
+    type: "repository_progress",
+    stage: "finalizing",
+    resumed: view.resumed,
+    pageCount: run.state.plan?.pages.length,
+  });
+
+  const result = await finishRepositoryRun(run, { skippedPageSnapshots });
+  if (result.sourceChanged) {
+    options.onEvent?.({
+      type: "text",
+      source: "main",
+      text: "Repository source changed while OpenWiki was running. The wiki was finalized without advancing its source checkpoint; run openwiki --update to reconcile the changes.\n",
+    });
+  }
+  return result.sourceChanged
+    ? { skipped: false, sourceChanged: true }
+    : { skipped: false };
 }
 
 /**
@@ -585,22 +581,6 @@ export function parseWorkerToolEvent(chunk: unknown): OpenWikiRunEvent | null {
   }
 
   return null;
-}
-
-/**
- * Identifies the durable core's explicit whole-plan source-drift invalidation.
- *
- * @param error - Unknown finish failure.
- * @returns Whether the runner must rebuild runtime context and replan.
- */
-function isSourceDriftInvalidation(error: unknown): boolean {
-  return (
-    error instanceof RepositoryRunError &&
-    error.code === "conflict" &&
-    error.message.startsWith(
-      "Repository source changed during this OpenWiki run.",
-    )
-  );
 }
 
 /**

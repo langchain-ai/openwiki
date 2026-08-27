@@ -390,6 +390,7 @@ export async function beginRepositoryRun(
       "repository",
       "interrupted",
       language,
+      context.lastUpdate?.gitHead ?? null,
     );
 
     // Critical: do NOT hold the old init backup until finish. Once the run state
@@ -822,7 +823,7 @@ export async function skipRepositoryPage(
     "repository",
     "interrupted",
     run.state.language,
-    run.state.baseGitHead,
+    run.state.baseGitHead ?? null,
   );
 
   const nextState: RepositoryRunState = {
@@ -1156,7 +1157,7 @@ function sameResourceSet(
 }
 
 /**
- * Deterministically finalizes a complete source-stable run.
+ * Deterministically finalizes a complete run and records any source drift.
  *
  * `.run.json` is removed last; every earlier failure leaves the run resumable.
  *
@@ -1168,9 +1169,7 @@ export async function finishRepositoryRun(
   options: {
     skippedPageSnapshots?: readonly RepositoryPageSnapshot[];
   } = {},
-): Promise<{ status: "complete" }> {
-  await requireStableSourceFingerprint(run);
-
+): Promise<{ status: "complete"; sourceChanged?: true }> {
   const plan = run.state.plan;
   if (!plan) {
     throw new RepositoryRunError(
@@ -1201,6 +1200,7 @@ export async function finishRepositoryRun(
     );
   }
   const skippedPages = new Set(skippedJobs.map(({ path }) => path));
+  const sourceChangedBeforeFinish = await hasRepositorySourceChanged(run);
 
   await applyAbandonedGeneratedPageDeletions(run, plan);
   await applyPlannedDeletions(run, plan.deletePages);
@@ -1223,10 +1223,9 @@ export async function finishRepositoryRun(
 
   await run.claimsRuntime.finalize(run.state.startedAt, skippedPages);
   await assertRepositoryClaimsDurable(run, skippedPages);
-  // Close the check/use race: source must remain unchanged across the entire
-  // deterministic finish window, not only at its start.
-  await requireStableSourceFingerprint(run);
-  if (skippedPages.size > 0) {
+  const sourceChanged =
+    sourceChangedBeforeFinish || (await hasRepositorySourceChanged(run));
+  if (skippedPages.size > 0 || sourceChanged) {
     await writeLastUpdateMetadata(
       run.state.mode,
       run.root,
@@ -1234,7 +1233,7 @@ export async function finishRepositoryRun(
       "repository",
       "interrupted",
       run.state.language,
-      run.state.baseGitHead,
+      run.state.baseGitHead ?? null,
     );
   } else {
     await persistRunMetadataIfChanged(
@@ -1251,32 +1250,22 @@ export async function finishRepositoryRun(
   // Delete this LAST. If anything above fails, begin() can reconstruct and retry.
   await removeRepositoryRunState(run.root);
 
-  return { status: "complete" };
+  return sourceChanged
+    ? { status: "complete", sourceChanged: true }
+    : { status: "complete" };
 }
 
 /**
- * Invalidates and persists the whole plan when repository source has drifted.
+ * Checks whether model-visible repository source changed after planning.
  *
- * @param run - Active run whose source fingerprint must still match.
+ * @param run - Active run carrying the source fingerprint used by its plan.
+ * @returns Whether the current repository differs from the planned source.
  */
-async function requireStableSourceFingerprint(
+async function hasRepositorySourceChanged(
   run: ActiveRepositoryRun,
-): Promise<void> {
+): Promise<boolean> {
   const current = await createRepositorySourceFingerprint(run.root, run.ignore);
-  if (current === run.state.sourceFingerprint) return;
-
-  const nextState: RepositoryRunState = {
-    ...run.state,
-    phase: "planning",
-    sourceFingerprint: current,
-  };
-  delete nextState.plan;
-  await writeRepositoryRunState(run.root, nextState);
-  run.state = nextState;
-  throw new RepositoryRunError(
-    "conflict",
-    "Repository source changed during this OpenWiki run. The old plan was invalidated; call begin and submit a replacement plan.",
-  );
+  return current !== run.state.sourceFingerprint;
 }
 
 /**
