@@ -1,0 +1,40 @@
+test/generation/repository-run.test.ts
+  s_1c388bff20162b::t_a7fac6e7497bbf 1427,1429-1430,1439,1446-1448,1450,1454,1458-1464,1476,1485,1488,1492-1494,1496,1513-1515,1517,1522-1559
+  s_1c388bff20162b::t_54e380b6942de2 1468-1471,1473,1629,1635-1637,1640
+test/agent/repository-runner.test.ts
+  s_1c388bff20162b::t_a7fac6e7497bbf 380,383,622,628-630,638,640-641,643
+CHANGELOG.md
+  s_1c388bff20162b::t_a7fac6e7497bbf 3-8
+src/agent/repository-runner.ts
+  s_1c388bff20162b::t_a7fac6e7497bbf 151,179-183,193,198-202,204-205,208,211-218,220-231,233-239,241-243
+src/agent/utils.ts
+  s_1c388bff20162b::t_a7fac6e7497bbf 204-205,214,217-222,226
+src/generation/repository-run.ts
+  s_1c388bff20162b::t_a7fac6e7497bbf 486,1008,1348,1360,1391,1421-1423,1431,1448-1450,1454,1456-1457,1459,1461
+  s_1c388bff20162b::t_54e380b6942de2 1463
+src/integrations/core/session-manager.ts
+  s_1c388bff20162b::t_a7fac6e7497bbf 247
+package.json
+  s_1c388bff20162b::t_a7fac6e7497bbf 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "f291e77f8efd5fceef2dd770fc1ecede097f90a8",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_1c388bff20162b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04478-dda9-79f2-bc10-f812eb7e8bb1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
