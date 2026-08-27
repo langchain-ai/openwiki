@@ -1,0 +1,29 @@
+src/generation/repository-run.ts
+  s_809e904f8d6c26::t_354843cec0b46e 746-764,770
+test/generation/repository-run.test.ts
+  s_809e904f8d6c26::t_fbec81b8f40d13 311-331,333,335-341,343,345-350
+  s_809e904f8d6c26::t_354843cec0b46e 308-310,332,334,342,344,351
+.changeset/fresh-pages-snapshot.md
+  s_809e904f8d6c26::t_208add8bf712bb 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "ced259709b2f8054c9ffed44fa13cd87ca392dec",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_809e904f8d6c26": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03f01-9142-7c23-b8cd-4562f05ec6e8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
