@@ -1,5 +1,11 @@
 # openwiki
 
+## 0.4.3
+
+### Patch Changes
+
+- [#740](https://github.com/langchain-ai/openwiki/pull/740) [`ec95f45`](https://github.com/langchain-ai/openwiki/commit/ec95f453f60e59ef64bd78a63775ddfd2ceea864) Thanks [@colifran](https://github.com/colifran)! - fix: finalize repository generation once when source changes during a run
+
 ## 0.4.2
 
 ### Patch Changes
