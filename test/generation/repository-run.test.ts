@@ -305,6 +305,50 @@ test("restores the exact pending Markdown and Claims snapshot", async () => {
   });
 });
 
+test.each([
+  { mode: "init" as const, page: "/openwiki/quickstart.md" },
+  { mode: "update" as const, page: "/openwiki/new-page.md" },
+])(
+  "treats an absent $mode page as a restorable snapshot",
+  async ({ mode, page }) => {
+    const root = await createRepository();
+    const run =
+      mode === "init"
+        ? requireActiveRun(
+            await beginRepositoryRun({ root, mode: "init", actor: ACTOR }),
+          )
+        : await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, {
+      pages: [
+        {
+          path: page,
+          title: "New Page",
+          purpose: "Document a newly planned page.",
+        },
+      ],
+    });
+    const next = await nextRepositoryPage(run);
+    if (next.status !== "pending") throw new Error("Expected pending page.");
+
+    const snapshot = await captureRepositoryPageSnapshot(run, next.job.id);
+
+    expect(snapshot).toMatchObject({
+      path: page,
+      markdown: null,
+      claims: null,
+    });
+    const write = await run.backend.write(page, validPage("Partial"));
+    if (write.error) throw new Error(write.error);
+
+    await skipRepositoryPage(run, snapshot);
+
+    await expect(
+      readFile(path.join(root, page.replace(/^\//u, "")), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    expect(run.state.plan?.pages[0]?.status).toBe("skipped");
+  },
+);
+
 beforeEach(() => {
   failureHarness.metadataWrites = 0;
   failureHarness.stateWrites = 0;

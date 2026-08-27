@@ -743,25 +743,31 @@ export async function captureRepositoryPageSnapshot(
     );
   }
 
-  const read = await run.backend.readRaw(current.path);
-  if (read.error && read.error !== "file_not_found") {
-    throw new RepositoryRunError(
-      "invalid_state",
-      `Could not snapshot ${current.path}: ${read.error}`,
-    );
-  }
-  const content = read.data?.content;
-  if (content !== undefined && typeof content !== "string") {
-    throw new RepositoryRunError(
-      "invalid_state",
-      `Could not snapshot non-text Markdown page ${current.path}.`,
-    );
+  let markdown: string | null = null;
+  try {
+    const read = await run.backend.readRaw(current.path);
+    if (read.error && read.error !== "file_not_found") {
+      throw new RepositoryRunError(
+        "invalid_state",
+        `Could not snapshot ${current.path}: ${read.error}`,
+      );
+    }
+    const content = read.data?.content;
+    if (content !== undefined && typeof content !== "string") {
+      throw new RepositoryRunError(
+        "invalid_state",
+        `Could not snapshot non-text Markdown page ${current.path}.`,
+      );
+    }
+    markdown = content ?? null;
+  } catch (error) {
+    if (!isFileNotFoundError(error)) throw error;
   }
 
   return {
     jobId: current.id,
     path: current.path,
-    markdown: content ?? null,
+    markdown,
     claims: await new ClaimsStore(run.root).loadPage(current.path),
   };
 }
