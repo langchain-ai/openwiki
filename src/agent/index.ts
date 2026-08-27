@@ -1215,10 +1215,17 @@ export function createModel(
   }
 
   if (provider === "bedrock") {
+    const bedrockMaxTokens = resolveBedrockMaxOutputTokens(
+      modelId,
+      configuredMaxOutputTokens,
+    );
+
     return new ChatBedrockConverse({
       model: modelId,
       region: resolveProviderRegion(provider),
-      ...maxTokensOptions,
+      ...(bedrockMaxTokens !== undefined
+        ? { maxTokens: bedrockMaxTokens }
+        : {}),
       ...streamIdleTimeoutOptions,
       ...retryOptions,
     });
@@ -1297,6 +1304,21 @@ const GEMINI_THOUGHT_SIGNATURE_OPTIONS = {
   outputVersion: "v0",
 } as const;
 
+// Matches the modern Claude families whose output window is wide enough for
+// OpenWiki's 16,384-token default. Deliberately excludes Claude 3.x
+// (`claude-3-5-sonnet-…`, `claude-3-haiku-…`), which expose a smaller ceiling,
+// and any custom or unrecognized ID.
+const MODERN_CLAUDE_MODEL_PATTERN =
+  /^claude-(?:haiku|sonnet|opus)-(?:4|5)(?:[-.@]|$)/u;
+
+// Bedrock qualifies foundation-model IDs with the vendor, e.g.
+// `anthropic.claude-sonnet-5-20260101-v1:0`.
+const BEDROCK_ANTHROPIC_VENDOR_PREFIX = "anthropic.";
+
+// Cross-region inference profiles prefix the vendor-qualified ID with a geo
+// code, e.g. `us.anthropic.claude-sonnet-5-20260101-v1:0`.
+const BEDROCK_INFERENCE_PROFILE_GEO_PATTERN = /^(?:us-gov|apac|us|eu)\./u;
+
 /**
  * Chooses the Anthropic request limit without imposing a modern limit on older
  * or custom Claude models that may expose a smaller output window.
@@ -1318,10 +1340,57 @@ function resolveAnthropicMaxOutputTokens(
     return configuredMaxOutputTokens;
   }
 
-  const normalizedModelId = stripPublisherPath(modelId);
+  return MODERN_CLAUDE_MODEL_PATTERN.test(stripPublisherPath(modelId))
+    ? DEFAULT_ANTHROPIC_MAX_OUTPUT_TOKENS
+    : undefined;
+}
 
-  return /^claude-(?:haiku|sonnet|opus)-(?:4|5)(?:[-.@]|$)/u.test(
-    normalizedModelId,
+/**
+ * Reduces a Bedrock model ID to its bare vendor-qualified form, e.g.
+ * `arn:aws:bedrock:us-east-1:1234:inference-profile/us.anthropic.claude-sonnet-5`
+ * -> `anthropic.claude-sonnet-5`. ARN and inference-profile forms address the
+ * same foundation model as the bare ID, so the output ceiling must not depend
+ * on which form the operator pasted. Bare IDs pass through unchanged.
+ */
+function normalizeBedrockModelId(modelId: string): string {
+  const segments = modelId.split("/");
+  const bareModelId = segments[segments.length - 1] ?? modelId;
+
+  return bareModelId.replace(BEDROCK_INFERENCE_PROFILE_GEO_PATTERN, "");
+}
+
+/**
+ * Chooses the Bedrock request limit, mirroring the direct Anthropic path so the
+ * same Claude model produces the same ceiling however it is reached.
+ *
+ * `ChatBedrockConverse` sends no `inferenceConfig` when nothing is configured,
+ * so the Converse API applies its own 4,096-token default and truncates long
+ * pages mid-`write_file`. Bedrock serves every vendor through this one client,
+ * though, and a ceiling above a model's own maximum is a `ValidationException` —
+ * so the default is raised only for the modern Anthropic families known to
+ * accept it, leaving every other model on the provider default it works with
+ * today. An explicit setting always wins.
+ *
+ * @param modelId - Bare, inference-profile, or ARN-qualified Bedrock model ID.
+ * @param configuredMaxOutputTokens - Explicit OpenWiki setting, when present.
+ * @returns The explicit limit, modern-Claude default, or `undefined`.
+ */
+function resolveBedrockMaxOutputTokens(
+  modelId: string,
+  configuredMaxOutputTokens: number | undefined,
+): number | undefined {
+  if (configuredMaxOutputTokens !== undefined) {
+    return configuredMaxOutputTokens;
+  }
+
+  const normalizedModelId = normalizeBedrockModelId(modelId);
+
+  if (!normalizedModelId.startsWith(BEDROCK_ANTHROPIC_VENDOR_PREFIX)) {
+    return undefined;
+  }
+
+  return MODERN_CLAUDE_MODEL_PATTERN.test(
+    normalizedModelId.slice(BEDROCK_ANTHROPIC_VENDOR_PREFIX.length),
   )
     ? DEFAULT_ANTHROPIC_MAX_OUTPUT_TOKENS
     : undefined;
