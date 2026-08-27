@@ -64,6 +64,7 @@ jobs:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
           LANGCHAIN_PROJECT: openwiki
           LANGCHAIN_TRACING_V2: "true"
+          OPENWIKI_SMOKE_FAIL_AFTER_COMPLETED_PAGES: "3"
 
       - name: Restore protected workflow file
         # `openwiki code --update` regenerates this file from its internal
@@ -88,7 +89,8 @@ jobs:
             AGENTS.md
             CLAUDE.md
             .github/workflows/openwiki-update.yml
-          branch: openwiki/update
+          base: smoke/resumability-two-cycle-20260827
+          branch: openwiki/smoke-resumability-cycle-${{ github.run_id }}
           commit-message: "docs: update OpenWiki"
           title: "docs: update OpenWiki"
           body: |
