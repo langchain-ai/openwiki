@@ -1,134 +1,221 @@
 ---
-type: Architecture overview
-title: OpenWiki Architecture Overview
-description: Explains OpenWiki's layered CLI, agent, provider, connector, authentication, and ingestion architecture, including runtime execution and persistence. Identifies core source modules, extension points, and operational considerations for maintaining OpenWiki.
-tags: [architecture, cli, agent, providers, connectors, ingestion]
+type: architecture-overview
+title: Architecture Overview
+description: Top-level map of OpenWiki - the CLI entrypoint, the DeepAgents runtime, the code vs personal modes, native vs host-driven generation, and how Claims, OKF finalization, connectors, and the visualizer fit together.
+tags:
+  [
+    architecture,
+    cli,
+    agent-runtime,
+    code-mode,
+    personal-mode,
+    claims,
+    okf,
+    connectors,
+    visualizer,
+  ]
+verified:
+  - by: openwiki/0.4.0
+    at: 2026-08-26T22:32:29.466Z
+sources:
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+  - id: openwiki-source-a953060a04ccefcf777de48e
+    resource: repo://src/agent/index.ts
+  - id: openwiki-source-6cb3236b8c1412a26d832fcf
+    resource: repo://src/agent/repository-runner.ts
+  - id: openwiki-source-adcadc660c1888613ec50f9a
+    resource: repo://src/agent/wiki-finalizer.ts
+  - id: openwiki-source-5c43e3fe562cf274dd6a5564
+    resource: repo://src/cli/cli.tsx
+  - id: openwiki-source-3fc16f0371ced4d94330f06c
+    resource: repo://src/cli/commands.ts
+  - id: openwiki-source-106c72a9cb6dd904077fc747
+    resource: repo://src/cli/runners.ts
+  - id: openwiki-source-7c5ecb56558cc061dab24f9d
+    resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-c6189f89b3f67d0cbf87739f
+    resource: repo://src/ingestion/ingestion.ts
+  - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
+    resource: repo://src/integrations/core/protocol.ts
+  - id: openwiki-source-58835b77ce38a0dd1fed8d09
+    resource: repo://src/integrations/core/session-manager.ts
+generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
 ---
 
-# Architecture overview
+# Architecture Overview
 
-OpenWiki has a small but layered architecture:
+OpenWiki is a CLI that writes and maintains a Markdown wiki for a code
+repository or for a person's connected knowledge sources. An agent reads the
+sources, synthesizes a linked wiki the user owns, and keeps it current. This
+page maps the top-level pieces and the two axes that shape almost every runtime
+decision: **which mode** (code vs personal) and **which driver** (OpenWiki's own
+model vs a host coding agent). Deeper mechanisms live in the related pages linked
+throughout.
 
-1. `src/cli.tsx` provides the interactive terminal application and orchestrates runs, including auto-exit for init/update.
-2. `src/commands.ts` parses argv and defines help text and supported options, including `auth`, `ngrok`, `cron`, and `ingest` subcommands.
-3. `src/credentials.tsx` manages interactive onboarding for provider selection, API keys, model selection, and optional LangSmith tracing.
-4. `src/env.ts` reads and writes `~/.openwiki/.env` and surfaces credential diagnostics for all supported providers.
-5. `src/agent/index.ts` runs the documentation agent, resolves the provider, creates the appropriate model client, collects Git context, and writes update metadata.
-6. `src/agent/prompt.ts` builds the system and user prompts that tell the model how to behave.
-7. `src/agent/utils.ts` gathers Git evidence, computes an OpenWiki content snapshot, and records `.last-update.json` after successful init/update runs.
-8. `src/agent/docs-only-backend.ts` provides `OpenWikiLocalShellBackend`, extending DeepAgents `LocalShellBackend` with docs-only write guards and output-mode awareness.
-9. `src/agent/openai-chatgpt-oauth.ts` implements the ChatGPT OAuth login flow, token persistence, and refresh for the `openai-chatgpt` provider.
-10. `src/auth/` contains the connector OAuth system: `oauth.ts` (generic runner), `providers.ts` (provider configs), `configure.ts` (`openwiki auth configure`), `ngrok.ts` (Slack HTTPS tunnel), `tokens.ts` (refresh/validation), and `types.ts`.
-11. `src/connectors/` contains the connector registry, MCP client/runtime, a shared resilient HTTP helper (`http.ts`), source-specific ingestion modules (git-repo, gmail, hackernews, slack, web-search, x), and tool definitions exposed to the agent.
-12. `src/ingestion.ts` orchestrates source ingestion runs across configured connectors.
-13. `src/code-mode.ts` handles `openwiki code` setup: creates a GitHub Actions workflow only when it does not already exist (so operator customizations survive `--update` runs), and refreshes AGENTS.md/CLAUDE.md snippets in place.
-14. `src/constants.ts` centralizes provider configs, model options, environment keys, validation helpers, and the wiki directory names.
-15. `src/agent/types.ts` defines shared types: `OpenWikiCommand`, `RunContext`, `UpdateMetadata`, and run option/event interfaces.
+## The two axes
 
-## Runtime shape
+OpenWiki's behavior is organized along two independent distinctions.
 
-The CLI starts in `src/cli.tsx`, parses the command, and then either:
+**Mode** decides what is documented and where output lands. `code` mode
+documents the current Git repository and writes to `openwiki/` in that repo;
+`personal` mode documents connected sources and writes to `~/.openwiki/wiki`.
+The CLI defaults to `code`; the `personal` positional or `--mode personal`
+selects the personal brain. See [Two modes](../concepts/two-modes.md).
 
-- prints help and exits,
-- opens the interactive chat UI,
-- runs an init/update command against the current repository, or
-- performs a dry-run in development mode.
+**Driver** decides which model and tools do the authoring. In _native_
+generation, OpenWiki resolves a configured provider, builds its own chat model,
+and runs its own DeepAgents workers. In _host-driven_ generation, a coding agent
+(Codex, Claude Code, or OpenCode) uses its own authenticated model and native
+repository tools, while OpenWiki exposes the durable page-job lifecycle over MCP
+and owns validation and finalization. Host-driven runs currently support only
+repository code wikis, not personal brains.
 
-For non-chat runs, the agent receives a `RunContext` that includes last-update metadata and a Git summary generated from:
+```mermaid
+flowchart TD
+  CLI["cli.tsx entrypoint"] --> Parse["parseCommand"]
+  Parse --> Std["standard commands"]
+  Parse --> Host["integrations and mcp commands"]
+  Std --> RunAgent["runOpenWikiAgent"]
+  RunAgent --> RepoGen{"repository init or update"}
+  RepoGen -->|yes| NativeRun["runNativeRepositoryGeneration"]
+  RepoGen -->|no| Core["runOpenWikiAgentCore DeepAgent"]
+  NativeRun --> Lifecycle["durable page-job lifecycle"]
+  Host --> McpServer["MCP server session-manager"]
+  McpServer --> Lifecycle
+  Core --> Connectors["connector tools"]
+  Lifecycle --> Snapshot["snapshot pending page and Claims"]
+  Snapshot --> PageWorker["page worker"]
+  PageWorker -->|"fails or exits without submit"| Skip["skipRepositoryPage restores snapshot and marks skipped"]
+  Skip --> Lifecycle
+  PageWorker -->|"submit_page"| Lifecycle
+  Lifecycle -->|"source drift"| NativeRun
+  Lifecycle --> Finalize["finishRepositoryRun restores skipped pages and finalizes"]
+  Finalize --> Wiki["OKF wiki output"]
+  Wiki --> Viz["visualize server or static export"]
+```
 
-- `git status --short`
-- `git rev-parse HEAD`
-- `git log --max-count=20 --name-status --oneline` (init, or update without prior metadata)
-- `git log <lastHead>..HEAD --name-status --oneline` (update with a recorded `gitHead`)
-- `git log --since <updatedAt> --name-status --oneline` (update with only a timestamp)
-- `git diff --name-status HEAD`
+Caption: High-level component relationships from the CLI through native and
+host-driven generation to OKF output and the visualizer.
 
-### Provider and model resolution
+## CLI entrypoint
 
-The agent runtime resolves the provider via `resolveConfiguredProvider()` in `src/constants.ts`:
+The executable `cli.tsx` registers a crash guard, parses `process.argv` with
+`parseCommand`, and dispatches. Integration and MCP commands are handled
+separately from the standard rendering pipeline; everything else flows through
+`runStandardCommand`, which optionally loads the OpenWiki environment, resolves
+the effective startup command, and then either runs auth, ngrok, cron, ingest,
+or visualize handlers, prints a startup error, runs non-interactively in print
+mode, or renders the interactive Ink TUI.
 
-1. If `OPENWIKI_PROVIDER` is set and valid, use it.
-2. Otherwise, use the first available provider API key in this order: OpenAI, OpenAI-compatible, OpenRouter, Anthropic, Baseten, Fireworks, Nebius, NVIDIA, then Bedrock.
-3. Otherwise, fall back to `DEFAULT_PROVIDER` (`openai`) and its default model (`gpt-5.6-terra`).
+`parseCommand` produces a discriminated `CliCommand` union whose `run` variant
+carries the resolved `command` (`init`, `update`, `chat`), `mode`
+(`personal` or `code`), model id, print flag, and user message. Auth, ingest,
+cron, visualize, integrations, and mcp are distinct command kinds routed to
+their own runners.
 
-Model creation branches by provider in `src/agent/index.ts` (`createModel`):
+## Agent runtime
 
-- **gemini** → `ChatGoogle` with `platformType: "gai"` (AI Studio), using the Gemini API key. Includes Gemini 3.x thought-signature round-trip options.
-- **gemini-enterprise** → `createGeminiEnterpriseModel()`, which routes by model family via `resolveVertexSurface()` in `src/agent/vertex-surface.ts`: Claude models use `ChatAnthropic` with a custom `AnthropicVertex` client (`@anthropic-ai/vertex-sdk`), partner/open-weight models use `ChatOpenAI` against Vertex's OpenAI-compatible MaaS endpoint with a per-request ADC auth fetch, and Gemini/Gemma models use `ChatGoogle` with Google ADC (keyless, `apiKey: ""` to block `GOOGLE_API_KEY` fallback). Auth is Google Application Default Credentials; `GOOGLE_CLOUD_PROJECT` is required and `GOOGLE_CLOUD_LOCATION` is optional (defaults to `global`).
-- **anthropic** → `ChatAnthropic` with the Anthropic API key.
-- **openai-chatgpt** → `ChatOpenAI` with `useResponsesApi: true`, `zdrEnabled: true`, `streaming: true`, pointed at the Codex backend (`CODEX_RESPONSES_BASE_URL`) with account-id/originator/beta headers. Tokens are refreshed before model creation via `ensureFreshChatGptTokens()`.
-- **openrouter** → `ChatOpenRouter` with the selected model ID.
-- **bedrock** → `ChatBedrockConverse` (`@langchain/aws`) with AWS access key ID, secret access key, and a required region.
-- **openai** → `ChatOpenAI` with `useResponsesApi: true`.
-- **baseten / fireworks / nebius / nvidia / openai-compatible** → `ChatOpenAI` with the provider's API key and optional custom `baseURL` from `PROVIDER_CONFIGS`.
+`runOpenWikiAgent` is the shared entrypoint for model-driven work. It loads the
+`~/.openwiki/.env` environment, syncs bundled skills, and then branches on
+whether this is a repository generation run — `outputMode === "repository"`
+combined with an `init` or `update` command. Repository generation is delegated
+to `runNativeRepositoryGeneration`; every other case (personal-mode runs,
+chat, ingestion synthesis) builds a DeepAgents graph via the core path.
 
-Credential gating before model creation uses `getMissingProviderEnvKey()` in `src/constants.ts`, which requires the provider's API key — or `GOOGLE_CLOUD_PROJECT` for gemini-enterprise — and powers the same check in the CLI's non-interactive gates and the onboarding flow.
+The core path resolves run configuration (provider, credentials, model id,
+retry count, output-token and stream-idle limits) before constructing a model,
+so credential and availability failures are tagged to the config stage and
+surface before any agent starts. `createOpenWikiAgent` is the lower-level
+factory that assembles a DeepAgent graph from an already-initialized model; it
+refuses repository `init`/`update` because those must go through the durable
+page-job runner. More detail lives in
+[Agent runtime](agent-runtime.md).
 
-### DeepAgents backend
+## Native repository generation
 
-The agent uses a DeepAgents `LocalShellBackend` rooted at the repository, configured with `virtualMode: true`, `maxOutputBytes: 100_000`, and a 120 second timeout. A SQLite checkpointer (`~/.openwiki/openwiki.sqlite`) persists conversation threads keyed by a hash of the repository path.
+`runNativeRepositoryGeneration` drives the same durable lifecycle the host
+integrations use, but with OpenWiki's own model. It begins or resumes a run,
+runs a bounded planner when the run is in the planning phase, runs one fresh
+per-page worker for each pending page job, and finalizes. Each worker is a
+non-delegating DeepAgent: the planner gets read-only filesystem tools plus
+`submit_plan`; page workers additionally get `write_file`/`edit_file` plus
+`submit_page`, and the general-purpose `task` delegation tool is stripped so
+workers cannot spawn subagents.
 
-### Content snapshot and metadata writes
+The lifecycle is resumable and self-correcting. Before a page worker runs, its
+pending page and Claims sidecar are snapshotted (`captureRepositoryPageSnapshot`).
+If the worker fails or exits without submitting, `skipRepositoryPage` restores
+the page and Claims from that snapshot, marks the job `skipped`, and the run
+continues with the next page rather than aborting; the page is reconsidered on a
+later update. `runPendingPageAgents` collects every skipped-page snapshot and
+passes them to `finishRepositoryRun`, which restores the skipped pages' Markdown
+after finalization, finalizes Claims with those pages excluded, and persists
+`interrupted` update metadata so the run is honestly recorded as partial.
 
-After a non-chat run completes, `src/agent/utils.ts` computes a SHA-256 snapshot of the `openwiki/` directory (excluding `.last-update.json`). Metadata is written **only if the snapshot changed** — a no-op update that leaves docs untouched will not update `.last-update.json`. This prevents endless update loops in scheduled workflows.
+If finalization detects that repository source drifted underneath the plan, the
+run replans and repeats. Correctable submission rejections are returned to the
+worker as error-status tool messages so it can fix and resubmit rather than
+aborting the run. The end-to-end flow is documented in
+[Repository generation workflow](../workflows/repository-generation.md).
 
-### Auto-exit behavior
+## Host-driven (coding-agent) generation
 
-`shouldAutoExitStartupRun()` in `src/cli.tsx` determines whether a startup run should exit automatically on success. This applies to `--init` and `--update` commands (without `--print`) when run in a TTY: the CLI launches the run, renders streaming output, and exits with code 0 on success. Chat runs and `--print` runs are unaffected.
+An installed coding-agent integration runs the same lifecycle over MCP instead
+of launching an OpenWiki model. The MCP server exposes exactly five
+transport-neutral tools — `openwiki_begin`, `openwiki_submit_plan`,
+`openwiki_next_page`, `openwiki_submit_page`, and `openwiki_finish` — backed by
+a session manager that holds at most one active process-local run and rejects
+any operation whose `runId` does not match. The coding agent owns repository
+research, planning, and factual authoring; OpenWiki owns the durable queue,
+Claims validation and persistence, source-drift handling, and deterministic
+finalization. Host-driven runs use only repository source and tests; connector
+context is not yet available to them.
 
-## Why the architecture is shaped this way
+## Claims
 
-The current design reflects a documentation product rather than a general-purpose agent framework:
+For repository code wikis, OpenWiki tracks the material propositions behind
+each page, not just when the Markdown was regenerated. A run rebuilds a strict
+process-local Claims runtime from durable state; each page worker receives the
+complete existing Claim set and submits the complete intended replacement set,
+so unchanged Claims keep their IDs and refresh evidence versions, revised
+Claims update in place, new Claims get IDs, and omitted Claims are retracted.
+Claim state is persisted alongside the Markdown under `openwiki/.claims/`, and
+page completion is a durability boundary that persists reconciled Claims before
+marking the job done. Grounded Claims apply to repository evidence only.
 
-- The CLI owns user experience and credential bootstrap so the tool is install-and-run friendly.
-- Git evidence is collected in the host process before the agent starts so the model sees stable repository context.
-- Provider support is centralized in `src/constants.ts` so adding a provider is a single-config change plus a model-creation branch.
-- Model execution is provider-stable: transient request failures can retry through the selected LangChain model client, but OpenWiki surfaces the final error instead of continuing with another model.
-- The content-snapshot check prevents metadata churn when an update run produces no documentation changes, which is important for scheduled CI workflows.
-- Auto-exit for init/update makes the CLI usable in both interactive and one-shot contexts without requiring `--print`.
+## OKF output and finalization
 
-## Major extension points
+Every wiki is an Open Knowledge Format bundle. Each page begins with concept
+frontmatter, and finalization is deterministic: `finalizeWikiArtifacts`
+validates Mermaid fences (degrading unparseable ones to text), synchronizes wiki
+indexes, validates internal links, synchronizes Claim sources, and finalizes
+generated provenance with a producer actor and timestamp. See
+[OKF output](../concepts/okf-output.md).
 
-- Add or refine CLI commands in `src/commands.ts` and the corresponding UI behavior in `src/cli.tsx`.
-- Change onboarding or local credential storage in `src/credentials.tsx` and `src/env.ts`.
-- Add a new model provider by extending `PROVIDER_CONFIGS` and `OpenWikiProvider` in `src/constants.ts`, then adding a branch in `createModel` in `src/agent/index.ts`.
-- Adjust model defaults, validation, or fallback lists in `src/constants.ts`.
-- Extend the documentation prompt or Git evidence in `src/agent/prompt.ts` and `src/agent/utils.ts`.
-- Modify run persistence or snapshot behavior in `src/agent/utils.ts`.
+## Connectors and personal-mode ingestion
 
-## Things to watch when editing
+In personal mode, `runOpenWikiIngestion` walks the configured source instances
+from onboarding config, runs each connector, and synthesizes the wiki. For
+deterministic connectors it first pulls raw data and manifests under
+`~/.openwiki/connectors/<connector>/raw/`, then runs a source-specific agent
+that writes into `~/.openwiki/wiki`. The same connector type can be configured
+multiple times as separate instances (for example `web-search-1` and
+`web-search-2`). Connectors ingest over a rolling window and can be run for all
+sources or one target at a time.
 
-- `src/cli.tsx` and `src/commands.ts` must stay aligned; help text and parser behavior are intentionally coupled.
-- Credential setup writes to a real home-directory file, so permission handling matters.
-- The agent is expected to work from repository-local virtual paths like `/README.md` and `/openwiki/quickstart.md`; the prompt explicitly warns about this.
-- `openwiki/` in the target repository is both the docs output location and the metadata location for `.last-update.json`.
-- When adding a provider, update `managedEnvKeys` in `src/env.ts` so diagnostics and env formatting cover the new key.
-- The content-snapshot logic excludes `.last-update.json`; if new metadata files are added under `openwiki/`, decide whether they should be excluded too.
+## Visualization
 
-## Source map
+`openwiki visualize` turns any wiki into an interactive node graph beside a live
+Markdown reader. Without `--export` it serves the wiki directory on a local
+loopback address with live reload; with `--export` it writes a self-contained
+static site (`index.html`, `client.js`, `client-lib.js`, `styles.css`,
+`graph.json`) suitable for GitHub Pages or any static host.
 
-- `src/cli.tsx`
-- `src/commands.ts`
-- `src/credentials.tsx`
-- `src/env.ts`
-- `src/agent/index.ts`
-- `src/agent/prompt.ts`
-- `src/agent/utils.ts`
-- `src/agent/types.ts`
-- `src/agent/docs-only-backend.ts`
-- `src/agent/openai-chatgpt-oauth.ts`
-- `src/auth/oauth.ts`
-- `src/auth/providers.ts`
-- `src/auth/configure.ts`
-- `src/auth/ngrok.ts`
-- `src/auth/tokens.ts`
-- `src/auth/types.ts`
-- `src/connectors/registry.ts`
-- `src/connectors/tools.ts`
-- `src/connectors/types.ts`
-- `src/connectors/http.ts`
-- `src/ingestion.ts`
-- `src/code-mode.ts`
-- `src/constants.ts`
-- `package.json`
-- Git evidence: commits `ceded10`, `f89b05d`, `fd3a702`, `8278c36`, `0fa1430`
+## Where to go next
+
+- [Agent runtime](agent-runtime.md) — model resolution, DeepAgent graph, workers.
+- [Source map](source-map.md) — file-level orientation.
+- [Two modes](../concepts/two-modes.md) — code vs personal in detail.
+- [OKF output](../concepts/okf-output.md) — the output format and finalization.
+- [Repository generation workflow](../workflows/repository-generation.md) — the durable lifecycle end to end.

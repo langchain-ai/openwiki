@@ -4,47 +4,35 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 /**
- * The orchestrator drives runs through the extracted runOne wrapper and does its
- * once-per-process setup via loadOpenWikiEnv / syncBundledSkills /
- * ensureCodeModeRepoSetup / resolveRunModel / refreshChatGptTokensIfNeeded. We
- * mock all of those to record call order and counts without touching a model.
+ * The orchestrator drives each run through runOpenWikiAgent and does its
+ * once-up-front setup via loadOpenWikiEnv / syncBundledSkills /
+ * ensureCodeModeRepoSetup. We mock all of those to record call order and counts
+ * without touching a model. Model resolution now happens INSIDE runOpenWikiAgent
+ * per run (cheap, no network), so there is no separate resolveRunModel/refresh
+ * step to observe here.
  */
 const calls: string[] = [];
 
-const defaultRunOneImpl = (
+const defaultRunImpl = (
   command: string,
   cwd: string,
   options: { recursionRole?: string },
 ): Promise<{ command: string; model: string }> => {
-  calls.push(`runOne:${options.recursionRole ?? "none"}:${cwd}`);
+  calls.push(`run:${options.recursionRole ?? "none"}:${cwd}`);
   return Promise.resolve({ command, model: "test-model" });
 };
 
-const runOneMock = vi.fn(defaultRunOneImpl);
-const resolveRunModelMock = vi.fn(() => {
-  calls.push("resolveRunModel");
-  return {
-    provider: "openai",
-    modelId: "test-model",
-    providerRetryAttempts: 0,
-  };
-});
-const refreshMock = vi.fn((): Promise<void> => {
-  calls.push("refreshChatGpt");
-  return Promise.resolve();
-});
+const runAgentMock = vi.fn(defaultRunImpl);
 
 vi.mock("../src/agent/index.ts", () => ({
-  runOne: runOneMock,
-  resolveRunModel: resolveRunModelMock,
-  refreshChatGptTokensIfNeeded: refreshMock,
+  runOpenWikiAgent: runAgentMock,
 }));
 
 const loadEnvMock = vi.fn((): Promise<void> => {
   calls.push("loadOpenWikiEnv");
   return Promise.resolve();
 });
-vi.mock("../src/env.ts", () => ({
+vi.mock("../src/config/env.ts", () => ({
   loadOpenWikiEnv: loadEnvMock,
 }));
 
@@ -60,7 +48,7 @@ const ensureSetupMock = vi.fn((): Promise<void> => {
   calls.push("ensureCodeModeRepoSetup");
   return Promise.resolve();
 });
-vi.mock("../src/code-mode.ts", () => ({
+vi.mock("../src/ingestion/code-mode.ts", () => ({
   ensureCodeModeRepoSetup: ensureSetupMock,
 }));
 
@@ -86,7 +74,7 @@ async function createMonorepo(): Promise<string> {
 }
 
 beforeEach(() => {
-  runOneMock.mockImplementation(defaultRunOneImpl);
+  runAgentMock.mockImplementation(defaultRunImpl);
 });
 
 afterEach(async () => {
@@ -116,20 +104,18 @@ describe("runRecursiveOpenWiki ordering", () => {
     expect(loadEnvMock).toHaveBeenCalledTimes(1);
     expect(syncSkillsMock).toHaveBeenCalledTimes(1);
     expect(ensureSetupMock).toHaveBeenCalledTimes(1);
-    expect(resolveRunModelMock).toHaveBeenCalledTimes(1);
-    expect(refreshMock).toHaveBeenCalledTimes(1);
 
     // Order: setup → subproject a → subproject b → root.
-    const runOrder = calls.filter((c) => c.startsWith("runOne"));
+    const runOrder = calls.filter((c) => c.startsWith("run:"));
     expect(runOrder).toEqual([
-      `runOne:subproject:${path.join(repo, "packages/a")}`,
-      `runOne:subproject:${path.join(repo, "packages/b")}`,
-      `runOne:root:${repo}`,
+      `run:subproject:${path.join(repo, "packages/a")}`,
+      `run:subproject:${path.join(repo, "packages/b")}`,
+      `run:root:${repo}`,
     ]);
 
-    // resolveRunModel and the refresh precede the first run.
-    expect(calls.indexOf("resolveRunModel")).toBeLessThan(
-      calls.findIndex((c) => c.startsWith("runOne")),
+    // Shared setup precedes the first run.
+    expect(calls.indexOf("ensureCodeModeRepoSetup")).toBeLessThan(
+      calls.findIndex((c) => c.startsWith("run:")),
     );
 
     expect(result.subprojectResults).toHaveLength(2);
@@ -139,9 +125,9 @@ describe("runRecursiveOpenWiki ordering", () => {
   test("writes openwiki/workspaces.md BEFORE the root run", async () => {
     const repo = await createMonorepo();
 
-    // Instrument runOne so we can observe the filesystem state at the root run.
+    // Instrument the run so we can observe the filesystem state at the root run.
     let workspacesMdExistedAtRootRun = false;
-    runOneMock.mockImplementation(
+    runAgentMock.mockImplementation(
       async (
         command: string,
         cwd: string,
@@ -179,8 +165,8 @@ describe("runRecursiveOpenWiki ordering", () => {
       { version: 1, workspaces: [] },
     );
 
-    const runOrder = calls.filter((c) => c.startsWith("runOne"));
-    expect(runOrder).toEqual([`runOne:none:${repo}`]);
+    const runOrder = calls.filter((c) => c.startsWith("run:"));
+    expect(runOrder).toEqual([`run:none:${repo}`]);
     expect(result.subprojectResults).toHaveLength(0);
   });
 
@@ -199,10 +185,10 @@ describe("runRecursiveOpenWiki ordering", () => {
     );
 
     const runOrder = calls.filter(
-      (c) => c.startsWith("runOne") && c.includes("subproject"),
+      (c) => c.startsWith("run:") && c.includes("subproject"),
     );
     expect(runOrder).toEqual([
-      `runOne:subproject:${path.join(repo, "packages/a")}`,
+      `run:subproject:${path.join(repo, "packages/a")}`,
     ]);
     expect(result.skippedWorkspaces.map((w) => w.path)).toEqual([
       "packages/empty",
@@ -213,13 +199,13 @@ describe("runRecursiveOpenWiki ordering", () => {
     const repo = await createMonorepo();
 
     // Fail the FIRST subproject (packages/a); packages/b and root must still run.
-    runOneMock.mockImplementation(
+    runAgentMock.mockImplementation(
       (
         command: string,
         cwd: string,
         options: { recursionRole?: string },
       ): Promise<{ command: string; model: string }> => {
-        calls.push(`runOne:${options.recursionRole ?? "none"}:${cwd}`);
+        calls.push(`run:${options.recursionRole ?? "none"}:${cwd}`);
         if (cwd === path.join(repo, "packages/a")) {
           return Promise.reject(new Error("boom in a"));
         }
@@ -243,11 +229,11 @@ describe("runRecursiveOpenWiki ordering", () => {
     ]);
     // packages/b succeeded and the root still ran.
     expect(result.subprojectResults).toHaveLength(1);
-    const runOrder = calls.filter((c) => c.startsWith("runOne"));
+    const runOrder = calls.filter((c) => c.startsWith("run:"));
     expect(runOrder).toContain(
-      `runOne:subproject:${path.join(repo, "packages/b")}`,
+      `run:subproject:${path.join(repo, "packages/b")}`,
     );
-    expect(runOrder).toContain(`runOne:root:${repo}`);
+    expect(runOrder).toContain(`run:root:${repo}`);
 
     // Aggregation was written and excludes the failed subproject.
     const workspacesMd = await readFile(

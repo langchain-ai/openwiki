@@ -2,6 +2,11 @@ import type { BackendProtocolV2, FileInfo } from "deepagents";
 import path from "node:path";
 import type { OpenWikiOutputMode } from "../agent/types.js";
 import {
+  ENGLISH_CONCEPT_TYPE,
+  ENGLISH_INDEX_LABELS,
+  type IndexLabels,
+} from "./index-labels.js";
+import {
   normalizeConceptContent,
   parseFrontmatterFields,
 } from "./frontmatter.js";
@@ -11,8 +16,8 @@ const LOG_FILE = "log.md";
 const EXCLUDED_FILES = new Set([
   INDEX_FILE,
   LOG_FILE,
-  "_plan.md",
   "INSTRUCTIONS.md",
+  // Monorepo recursion state files — internal bookkeeping, never indexed.
   "workspaces.json",
   ".workspaces-state.json",
 ]);
@@ -58,10 +63,12 @@ interface Link {
 export async function synchronizeWikiIndexes(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
+  labels: IndexLabels = ENGLISH_INDEX_LABELS,
+  conceptType: string = ENGLISH_CONCEPT_TYPE,
 ): Promise<void> {
   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
   for (const directory of await collectDirectories(backend, root, true)) {
-    await synchronizeDirectory(backend, directory, root);
+    await synchronizeDirectory(backend, directory, root, labels, conceptType);
   }
 }
 
@@ -77,26 +84,40 @@ export async function synchronizeWikiIndexes(
 export async function migrateWikiToOkf(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
+  conceptType: string = ENGLISH_CONCEPT_TYPE,
 ): Promise<void> {
-  const root = outputMode === "local-wiki" ? "/" : "/openwiki";
-  for (const directory of await collectDirectories(backend, root, true)) {
-    for (const entry of directory.entries) {
-      const name = entryName(entry);
-      if (
-        entry.is_dir ||
-        !name ||
-        name.startsWith(".") ||
-        path.posix.extname(name).toLowerCase() !== ".md" ||
-        EXCLUDED_FILES.has(name)
-      ) {
-        continue;
-      }
-      await normalizeConceptFile(
-        backend,
-        path.posix.join(directory.path, name),
-      );
-    }
+  for (const filePath of await listWikiConceptPaths(backend, outputMode)) {
+    await normalizeConceptFile(backend, filePath, conceptType);
   }
+}
+
+/**
+ * Lists the non-structural Markdown concepts currently present in the wiki.
+ *
+ * @param backend - Filesystem abstraction rooted at the active wiki target.
+ * @param outputMode - Whether the wiki lives at `/` or `/openwiki`.
+ * @returns Stable, sorted virtual paths for every concept page.
+ */
+export async function listWikiConceptPaths(
+  backend: BackendProtocolV2,
+  outputMode: OpenWikiOutputMode,
+): Promise<string[]> {
+  const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+  const directories = await collectDirectories(backend, root, true);
+  return directories
+    .flatMap((directory) =>
+      directory.entries.flatMap((entry) => {
+        const name = entryName(entry);
+        return !entry.is_dir &&
+          name &&
+          !name.startsWith(".") &&
+          path.posix.extname(name).toLowerCase() === ".md" &&
+          !EXCLUDED_FILES.has(name)
+          ? [path.posix.join(directory.path, name)]
+          : [];
+      }),
+    )
+    .sort((left, right) => left.localeCompare(right));
 }
 
 /**
@@ -109,9 +130,10 @@ export async function migrateWikiToOkf(
 async function normalizeConceptFile(
   backend: BackendProtocolV2,
   filePath: string,
+  conceptType: string = ENGLISH_CONCEPT_TYPE,
 ): Promise<string> {
   const original = await readText(backend, filePath);
-  const normalized = normalizeConceptContent(original, filePath);
+  const normalized = normalizeConceptContent(original, filePath, conceptType);
   if (normalized.changed) {
     const result = await backend.edit(filePath, original, normalized.content);
     if (result.error) {
@@ -157,6 +179,8 @@ async function synchronizeDirectory(
   backend: BackendProtocolV2,
   directory: Directory,
   root: string,
+  labels: IndexLabels,
+  conceptType: string,
 ): Promise<void> {
   const files: Link[] = [];
   const directories: Link[] = [];
@@ -177,7 +201,7 @@ async function synchronizeDirectory(
     }
 
     const filePath = path.posix.join(directory.path, name);
-    const content = await normalizeConceptFile(backend, filePath);
+    const content = await normalizeConceptFile(backend, filePath, conceptType);
     const metadata = readIndexMetadata(content);
     files.push({
       description: metadata.description,
@@ -187,7 +211,12 @@ async function synchronizeDirectory(
   }
 
   const indexPath = path.posix.join(directory.path, INDEX_FILE);
-  const content = renderIndex(files, directories, directory.path === root);
+  const content = renderIndex(
+    files,
+    directories,
+    directory.path === root,
+    labels,
+  );
   const existing = directory.entries.some(
     (entry) => !entry.is_dir && entryName(entry) === INDEX_FILE,
   )
@@ -210,15 +239,16 @@ function renderIndex(
   files: Link[],
   directories: Link[],
   isRoot: boolean,
+  labels: IndexLabels,
 ): string {
   const sections = [
-    renderLinks("Files", files, true),
-    renderLinks("Directories", directories, false),
+    renderLinks(labels.files, files, true),
+    renderLinks(labels.directories, directories, false),
   ]
     .filter(Boolean)
     .join("\n\n");
-  const version = isRoot ? '---\nokf_version: "0.1"\n---\n\n' : "";
-  return `${version}${sections || "# Files"}\n`;
+  const version = isRoot ? '---\nokf_version: "0.2"\n---\n\n' : "";
+  return `${version}${sections || `# ${labels.files}`}\n`;
 }
 
 /**

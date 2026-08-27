@@ -2,10 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import {
-  createOpenWikiContentSnapshot,
-  persistRunMetadataIfChanged,
-} from "../src/agent/utils.ts";
+import { createOpenWikiContentSnapshot } from "../src/agent/utils.ts";
 import { OpenWikiLocalShellBackend } from "../src/agent/docs-only-backend.ts";
 import { synchronizeWikiIndexes } from "../src/okf/index-sync.ts";
 import {
@@ -43,18 +40,14 @@ describe(".workspaces-state.json exclusion", () => {
       workspaces: { "packages/a": { gitHead: "abc", updatedAt: "now" } },
     });
 
+    // The core guarantee: writing .workspaces-state.json leaves the wiki content
+    // snapshot byte-identical, so a recursive update's per-subproject state write
+    // is never mistaken for a wiki change. (persistRunMetadataIfChanged now
+    // always refreshes the .last-update.json timestamp for non-chat runs — see
+    // the no-op timestamp refresh in src/agent/utils.ts — so it is no longer a
+    // proxy for "content changed" and is not asserted here.)
     const after = await createOpenWikiContentSnapshot(repo, "repository");
     expect(after).toBe(before);
-
-    // And persistRunMetadataIfChanged treats the wiki as unchanged.
-    const written = await persistRunMetadataIfChanged(
-      "update",
-      repo,
-      "test-model",
-      "repository",
-      before,
-    );
-    expect(written).toBe(false);
   });
 
   test("is not linked into the generated openwiki/index.md", async () => {

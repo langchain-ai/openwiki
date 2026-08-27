@@ -1,6 +1,7 @@
-import { OPENWIKI_SLACK_USER_TOKEN_ENV_KEY } from "../../constants.js";
+import { OPENWIKI_SLACK_USER_TOKEN_ENV_KEY } from "../../config/constants.js";
 import { getOAuthAccessToken } from "../../auth/tokens.js";
 import { normalizeStringArray } from "../config.js";
+import { openWikiConnectorsDisplayPath } from "../../config/openwiki-home.js";
 import {
   createRunId,
   readConnectorConfig,
@@ -192,7 +193,7 @@ async function ingest(
         "Slack connector is not enabled. Run openwiki auth configure slack --force to generate the direct Slack API config.",
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/slack/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/slack/state.json`,
       status: "skipped",
       warnings,
     };
@@ -204,7 +205,7 @@ async function ingest(
       message: `${OPENWIKI_SLACK_USER_TOKEN_ENV_KEY} is required for Slack ingestion.`,
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/slack/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/slack/state.json`,
       status: "error",
       warnings,
     };
@@ -358,7 +359,7 @@ async function ingest(
     message: `Fetched ${rawFiles.length} Slack dump(s).`,
     rawFiles,
     runId,
-    statePath: "~/.openwiki/connectors/slack/state.json",
+    statePath: `${openWikiConnectorsDisplayPath}/slack/state.json`,
     status: rawFiles.length > 0 ? "success" : "skipped",
     warnings,
   };

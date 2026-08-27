@@ -1,27 +1,22 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
-import {
-  refreshChatGptTokensIfNeeded,
-  resolveRunModel,
-  runOne,
-} from "../agent/index.js";
-import { loadOpenWikiEnv } from "../env.js";
+import { runOpenWikiAgent } from "../agent/index.js";
+import { loadOpenWikiEnv } from "../config/env.js";
 import { syncBundledSkills } from "../agent/skills.js";
-import { ensureCodeModeRepoSetup } from "../code-mode.js";
-import { readRepositoryWikiInstructions } from "../onboarding.js";
+import { ensureCodeModeRepoSetup } from "../ingestion/code-mode.js";
 import type {
   OpenWikiCommand,
   OpenWikiRunOptions,
   OpenWikiRunResult,
 } from "../agent/types.js";
+import type { RunTelemetryContext } from "../telemetry/index.js";
 import {
   getWorkspaceSkipReason,
   readWorkspacesState,
   resolveWorkspaceRuns,
   writeWorkspacesState,
   type ResolvedWorkspacePlan,
-  type ResolvedWorkspaceRun,
   type WorkspaceManifest,
   type WorkspacesState,
 } from "./workspaces.js";
@@ -43,13 +38,22 @@ export interface RecursiveRunResult {
 
 /**
  * Runs OpenWiki recursively across a monorepo: one run per subproject (rooted at
- * that subproject, scoped git evidence, subproject prompt role), then the
- * generated aggregation page, then the root run last (so the root's index-sync
- * middleware picks up openwiki/workspaces.md), reusing ONE resolved model and a
- * single ChatGPT token refresh across every run.
+ * that subproject, subproject prompt role), then the generated aggregation page,
+ * then the root run last (so the root's index-sync middleware picks up
+ * openwiki/workspaces.md).
  *
- * Runs are SEQUENTIAL by design: they share one bundled-skills directory and one
- * resolved model, and the root run must observe the completed sub-wikis.
+ * Each run goes through the standard {@link runOpenWikiAgent} entry with
+ * `outputMode: "repository"` and a per-run `recursionRole`/`wikiGoalOverride`.
+ * Because the page-job lifecycle roots the filesystem backend at the run's own
+ * directory, a SUBPROJECT run is physically isolated to its own subtree — it
+ * cannot read or write siblings or the repository root. Model construction is
+ * cheap (no network) and ChatGPT token refresh is cached, so resolving per run
+ * is equivalent to the previous "resolve once" path without duplicating the
+ * env/telemetry orchestration that runOpenWikiAgent already owns.
+ *
+ * Runs are SEQUENTIAL by design: they share one bundled-skills directory, and
+ * the root run must observe the completed sub-wikis before it links down to
+ * them.
  *
  * A subproject run that throws is RESILIENT: the failure is collected in
  * `failedWorkspaces` and the pass continues, so one broken subproject does not
@@ -57,14 +61,18 @@ export interface RecursiveRunResult {
  * for the subprojects that succeeded. The root run still executes; the caller
  * decides how to surface `failedWorkspaces`.
  *
- * Update model: each subproject is evaluated INDEPENDENTLY. Its no-op check
- * (inside runOne, via getUpdateNoopStatus) diffs only that subproject's own
- * subtree against the gitHead in its own openwiki/.last-update.json, so a
- * subproject regenerates only when files under its path changed, and the root
- * run always executes. There is NO dependency cascade: a change to a shared
- * subproject refreshes only that sub-wiki (and the root), not the sibling
+ * Update model: each subproject is evaluated INDEPENDENTLY. Its no-op check runs
+ * inside the durable lifecycle (beginRepositoryRun) rooted at that subproject,
+ * so a subproject regenerates only when files under its own path changed, and
+ * the root run always executes. There is NO dependency cascade: a change to a
+ * shared subproject refreshes only that sub-wiki (and the root), not the sibling
  * subprojects that depend on it. Dependency-aware invalidation is intentionally
  * out of scope here; see the "no dependency cascade" note in README.md.
+ *
+ * The ROOT run is rooted at the repository root and so can physically see the
+ * generated nested openwiki/ sub-wikis; it is kept from re-documenting them by
+ * the "root" prompt role (link DOWN, do not deep-document subprojects) rather
+ * than by hard filesystem/git scoping. See NOTE in the code below.
  *
  * The run set comes from resolveWorkspaceRuns, which applies the manifest's
  * `overrides` map: a path marked `exclude: true` produces NO run here (it is
@@ -79,11 +87,13 @@ export async function runRecursiveOpenWiki(
   repoRoot: string,
   options: OpenWikiRunOptions,
   manifest: WorkspaceManifest,
+  telemetryContext: RunTelemetryContext = {},
 ): Promise<RecursiveRunResult> {
   const plan = resolveWorkspaceRuns(repoRoot, manifest);
 
-  // Once-per-process setup, mirroring runOpenWikiAgent but hoisted so every run
-  // in the loop shares it (avoids a skills-dir race and repeated model builds).
+  // Load env + bundled skills once up front. runOpenWikiAgent repeats both per
+  // run (they are idempotent), but ensureCodeModeRepoSetup runs before any agent
+  // call, and doing it here keeps the sequential skills-dir writes race-free.
   await loadOpenWikiEnv();
   await syncBundledSkills();
   // Recursive runs scaffold a workflow that reruns with --recursive so scheduled
@@ -95,12 +105,15 @@ export async function runRecursiveOpenWiki(
     recursive: true,
   });
 
-  const model = resolveRunModel(options);
-  await refreshChatGptTokensIfNeeded(model.provider, options);
-
   if (plan.runs.length === 0) {
-    // Empty manifest: fall back to a plain single run (NOT the root role).
-    const rootResult = await runOne(command, repoRoot, options, model);
+    // Empty manifest: fall back to a plain single run (NOT the root role). This
+    // is the run the caller's telemetry boundary records.
+    const rootResult = await runOpenWikiAgent(
+      command,
+      repoRoot,
+      { ...options, outputMode: "repository", skipRepoSetup: true },
+      telemetryContext,
+    );
     return {
       subprojectResults: [],
       rootResult,
@@ -131,20 +144,19 @@ export async function runRecursiveOpenWiki(
     );
 
     try {
-      const subprojectGoal = await resolveSubprojectGoal(run);
-      const result = await runOne(
-        command,
-        run.absolutePath,
-        {
-          ...options,
-          recursionRole: "subproject",
-          // Each run gets a distinct thread; never reuse the top-level threadId.
-          threadId: undefined,
-          wikiGoalOverride: subprojectGoal,
-        },
-        model,
-        { mode: "subproject" },
-      );
+      const result = await runOpenWikiAgent(command, run.absolutePath, {
+        ...options,
+        outputMode: "repository",
+        recursionRole: "subproject",
+        // Each run gets a distinct thread; never reuse the top-level threadId.
+        threadId: undefined,
+        // Manifest goal wins; beginRepositoryRun falls back to this subproject's
+        // own openwiki/INSTRUCTIONS.md when the override is undefined.
+        wikiGoalOverride: run.goal,
+        // The orchestrator already ran repo setup once at the root; subprojects
+        // must not scaffold their own (dead) nested workflow.
+        skipRepoSetup: true,
+      });
       subprojectResults.push(result);
 
       // Record the subproject's git HEAD so future runs can reason about which
@@ -182,35 +194,27 @@ export async function runRecursiveOpenWiki(
   await writeRootAggregation(repoRoot, documentedPlan);
 
   emitBoundary(options, "OpenWiki root wiki");
-  const rootResult = await runOne(
+  // NOTE: unlike the old git-scoped path, the root run is rooted at repoRoot and
+  // can physically read the nested sub-wikis. It is kept from re-documenting them
+  // by the "root" recursion role guidance (link DOWN, do not deep-document), not
+  // by hard scoping. See runRecursiveOpenWiki doc comment.
+  const rootResult = await runOpenWikiAgent(
     command,
     repoRoot,
     {
       ...options,
+      outputMode: "repository",
       recursionRole: "root",
       threadId: undefined,
       wikiGoalOverride: plan.rootGoal,
+      // Repo setup already ran once above; don't repeat it per sub-run.
+      skipRepoSetup: true,
     },
-    model,
-    { mode: "root-excluding-nested" },
+    // The root run is the one the caller's telemetry boundary records.
+    telemetryContext,
   );
 
   return { subprojectResults, rootResult, skippedWorkspaces, failedWorkspaces };
-}
-
-/**
- * Resolves a subproject's wiki brief with the approved precedence: the
- * manifest-supplied goal wins, then the subproject's own
- * openwiki/INSTRUCTIONS.md, then none.
- */
-async function resolveSubprojectGoal(
-  run: ResolvedWorkspaceRun,
-): Promise<string | undefined> {
-  if (run.goal) {
-    return run.goal;
-  }
-
-  return readRepositoryWikiInstructions(run.absolutePath);
 }
 
 /**

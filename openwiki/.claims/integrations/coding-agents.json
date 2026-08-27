@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:78c632e9d37c4f456dae10fdf49844f3bae0d51d22ed1a33144b35af00a2033f",
+  "claims": [
+    {
+      "id": "claim_244d2a0a18984ed9bfac7bdabf596487",
+      "statement": "The coding-agent integration keeps a narrow ownership boundary: the host model researches and authors only the current PageJob, while OpenWiki owns durable run state, the page queue, Claims validation/reconciliation, indexes, provenance, finalization, and managed setup files.",
+      "evidence": [
+        {
+          "resource": "repo://integrations/openwiki/SKILL.md#L8-L10",
+          "version": "repo-lines-v1:sha256:122ab161bc94e1f41ed421649ab4909354748eb1230c423ab6638dbf9f9c75a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2QzMGMzZWFhZTRiZDIyYjIyMWMyMmU2MjQzMWQ4YmVhN2ZhZjkwYzIwYWEzZjQ4YzVkYTkyMDU5NTFhY2VjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmMmUxNDhlZmE4NjIzMTU0MjQ3MDJjOWMyZjRkZWMzZTQ1NzY3MDcxZTQ5ODZmNWQ4NWQxMjVjNDI0ODZmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjAxZDNjODk0OWI5ZDQ4MTgzZTU0NTQwZDQ1MTA5MzRhYzdmNWM5YjkwZDJjZmFhNjc4YzZlY2EwMGM0MzhhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzlhZmNmZjM2ZjIwYTEzODY0MjE4NGFmZTk3ZWUyM2YwOGQ2NTAyNDcyOTU3MDczNjhjNTg2YTg3NzZhZjEzZCJ9"
+        },
+        {
+          "resource": "repo://src/integrations/mcp/server.ts#L11-L28",
+          "version": "repo-lines-v1:sha256:fd811f068df88df87c2c82b3ce10c08d768cb18dce2abcf7b63a500cc67ffe30:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MTQ0ZDdmYThhOTU3ODBlN2Y0YTU2YjBlODEzOWNmZDA0NDU3YjIwZjRiNGM2MDQwM2Q3MTk2YmFlZjAzNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZDYwOTI1MzgyZDA0YzVkYTc4M2UzZDVhMTMxMTIyYWZkMGIxNmJiMjUxZmRjYTY2YjQ2MGU1MWNmOTdiYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YTJlOGIwMzNjMzE5NzNkYjg1ZDcwNDkwNWE0YzU1NzgxN2ZlNjZlMzcwZjJlY2I0YTk1ZGUxNmVlMGY0ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1MzQxZGYyNTUzMmYzNDFjZWYzNGNiMzQ4ZTA1MmQ2MDYwNzM2YTQzZGRiY2QxMmU3MDVjZjcxZmU5NzcwODAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_92b504c61045404dbfea7c8d75fd8c90",
+      "statement": "HostSessionManager.tools() exposes exactly five transport-neutral lifecycle tools in order — openwiki_begin, openwiki_submit_plan, openwiki_next_page, openwiki_submit_page, openwiki_finish — each parsing its input against a strict schema before delegating to the repository-generation core.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/protocol.ts#L14-L19",
+          "version": "repo-lines-v1:sha256:ad62edc7705e84a38de9a86e832034b9ee10fb39e5ed7f50a0cce7c74e0b34a2:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNhMWNjMWU1NjEzNTM0NDA3NTU0NmFkYTg0ODZjZTMzMDA5MGQyMzQ3NDA5MDMyZGM1NjU3OWFhOTA1ZTViOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc3MzRjMzc3N2U0ZWIxNDQ2NmVhYWRmNWMzNDIxZTk1M2Y4YzcyZmFlNjRjNzY2Y2NmYWM4Zjk2MjI3ZGEyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGJmMmYxYjNlMTVkMWU5MjMzMWUwODBjYWVjM2YwNTc4YjlkMzg1NWEwYmY0MzhiYjgxNzBlZGU3MDU1NGNlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRjZWEyNGQ3NDgyMzY2OTVhMmRhOGE0OGU2YTUyNmE3ZjczZjY1Y2Y5MDQxZjc4MGNiNzI2MDRjM2QyNTA4ZCJ9"
+        },
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L214-L252",
+          "version": "repo-lines-v1:sha256:1311bc2f715bdffd7310511d19c7fae2f6080ef614395864caaf67521862db2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5ZjE3MzRhNjk0ZWVjZDFmMzFiMWNmYTdjYzY4OTZlZjdkOTZmYzY1OTYyMDAwZjUzOTQ3NjBhYzkyMmVmMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1MGQ3ZmRlNjc4YWEwOTU2MDBlYTE0OTg0Mjc3ZjYyNThhNWEzMjNhYzQ3NDY0ZTcyZmFkZTk2ZGE4NzUzZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhOTBlZjcyMzRmYWY2MGU1OGI5YjI2MTRiYmY5YTgyYzc3OTI3M2EyOWIxZTdjNmI4ODA1YjA5NjM5NTRkOGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d0a3c0e9d3914c7dbac8a2b6b0bc8dd2",
+      "statement": "openwiki_begin resolves the host-supplied path to a Git root and either records the active run or returns a proven update no-op (status=noop) with no active run, so a clean update run stops without page work.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L124-L147",
+          "version": "repo-lines-v1:sha256:2944724d439a65d5a6b12402baa5d359356d58dbb634bc526d1c29d92a6006bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMTU3YjAzYWI1YjJlZWNhNjUxMDczODAyZTY4NDNmYTM2NjhhMTE4NTA3YTVlM2QzY2NmOGYwMjdjMzg3NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4ZjU5OGFiNzMwYzRlZTc2OTNmMWZhY2M0NTI3MmQ5MWU2YzM0N2RiMDU4ZDAxZDUyMjU5YzQyNTk3OTY1ZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzODE2YjlkYzk3ZDZjMTExYzcxNDlkNmJiYzYwODA5MzVkYzQyMTQ1MTQwN2U2OTZmM2MxZTBhYzllMDdiMjYifQ"
+        },
+        {
+          "resource": "repo://src/integrations/mcp/server.ts#L11-L14",
+          "version": "repo-lines-v1:sha256:301545f5ecf0d93fdae96586ffa2faffa3f92d1e50f3180d76af043ad4011370:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUxNDRkN2ZhOGE5NTc4MGU3ZjRhNTZiMGU4MTM5Y2ZkMDQ0NTdiMjBmNGI0YzYwNDAzZDcxOTZiYWVmMDM0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODQ1ZmMyYzc1N2VhNjJmZjE4ZmNiNTQxOTQwMTY0NDVjZjExNGFhNTIzMjk4OTUyYjg1ZGRkYWQ0ODM1ZWU5MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTZhMmU4YjAzM2MzMTk3M2RiODVkNzA0OTA1YTRjNTU3ODE3ZmU2NmUzNzBmMmVjYjRhOTVkZTE2ZWUwZjRlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjUwZTQyYzYzNzkzOTg1YTQyMTBkMzY4NTgzZGZhM2E2MjRmNmY5NGY3NGE4M2RjNGU3OTcyMDI5ZmM1YzdkYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e3efad76042d4024901c523030de5062",
+      "statement": "openwiki_submit_plan accepts an empty pages array (a valid update with no page work or only deletions) plus optional deletePages, and openwiki_submit_page requires at least one material Claim because deterministic index.md pages are never PageJobs.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/protocol.ts#L94-L132",
+          "version": "repo-lines-v1:sha256:b011a84a119b1f2fe1d0aa81030ff409ddb4d4ca817f730d09c481b8693e7b58:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZjA2OTUyMGYzMmFjZjlhMjliN2IxOGMyZmNhNzIxMWJjNDVmZjU0ZmU0NmU3Njc2NGI0OThlZTA1ZjMyYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTI1YzJiMTg0OWJhZTcwNjVjZDM2Y2Y5NzYwZWVjOGMyODY0N2NlMDc3MmU1NTU3NWY3OWU3NDdiY2I2NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNGZhYjc0ZThjZmZlNzhmZjA4M2U0MTNlYTM0MDc1NjE3NjRiZjQ3YzA1NmE0ZTYxYzQ2NzljYWI5ZTk3MWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwYTZjZWNkYzZmNjY0NTlkMzY5Y2NhMWUxOGYwY2FmN2FjYzY1NzgzOWE5YmEyM2IwOWVhZDU4NzFmYzI3MDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7337073d66a742e1a0e8bff4b88b5b79",
+      "statement": "openwiki_next_page returns the first pending page job with its current Claims or status=complete when the queue is drained, and openwiki_finish finalizes only after every job is complete by running deletion, validation, indexing, provenance, Claims finalization, and metadata persistence.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L165-L207",
+          "version": "repo-lines-v1:sha256:6bea0bdfb28dee7a5119289b8d7815c2182efd6b10afdf2cf3c55f7f9e485694:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhMGZkNDZkNjQ4NWVkMzA0NDI2ZGY4MGQ0MjBkOGFkYzFlY2Y1NjRiMTUwNmIyM2MyOWNmY2JjMDk2N2U5YjUifQ"
+        },
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L230-L250",
+          "version": "repo-lines-v1:sha256:ddd625b747229c3c1873c52996a8cf0f8586fef3b71775227ad9fb2a72b0cf0a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NWI4YzViZjg2Mzc0MzY3MWRlZjNmNjMwZWIyMzJkNTlhN2E2MzRhMDcwZmM0MzZlZWMzN2E4Njc0ZTZjMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3NTYzYzgwNWM5OWZlMmY3NDNjYzZmYjFjZmRjYjBjNGQxNjc5YTQyZjA0ODBhMDk3ZDQ2MjJmM2Y2ZTZhOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyNjE3MDZmOWE1NzgwYzQ5NDQzNmE3MzBlNzY0NjdkMTk3YjYwM2EwM2Y2YWMxZTM5MGJhZjhmM2M1ODllY2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4aea913639b944cf8c06cb2ee3199346",
+      "statement": "HostSessionManager is a single-run adapter: requireSession rejects any operation whose runId does not match the currently active run with an invalid_state error, begin sets/clears the active run, and finish clears it on success.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L200-L207",
+          "version": "repo-lines-v1:sha256:34feb0ea87a08cdd59c99fc820cca0a497b19cd7c74197b830e929ddac015aed:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzYwZjdjNWUwN2U2ZmFhZDU0ZWE3YjIxOGNhOTNlZjFlYzQwOGVkYjczZWQwNzlhZTU2N2Y2MmM0MTkzMWZkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGEwMzUwZTE1ZGFkZDBlMjA2Njg5MmRhZDJjZThjYzZiNTkxYTg4OTMzZTZlYmE5MzRiZDExYTVlZjAwOTc4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWEwZmQ0NmQ2NDg1ZWQzMDQ0MjZkZjgwZDQyMGQ4YWRjMWVjZjU2NGIxNTA2YjIzYzI5Y2ZjYmMwOTY3ZTliNSJ9"
+        },
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L254-L268",
+          "version": "repo-lines-v1:sha256:bd929ab4c97bfd416b4fbaf348dd8677426e28ff158cb8413e0d55c3bb3d2b16:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyNjE3MDZmOWE1NzgwYzQ5NDQzNmE3MzBlNzY0NjdkMTk3YjYwM2EwM2Y2YWMxZTM5MGJhZjhmM2M1ODllY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMmE4YTUzMjgzZmU4Y2FjMDU1NTUzYWVkYWQ5ODM4OWE5NDg4NjVjZWY3NTIxN2JhMWI2YWQ1ZTA3NGY1NDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7498a5ac58dd4de089be3ea244ae3458",
+      "statement": "HostSessionManager serializes lifecycle operations with a single-operation guard that rejects concurrent calls with invalid_state and is always released, and maps internal RepositoryRunError codes to stable HostIntegrationError codes (conflict, invalid_input, invalid_state) at the boundary.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L276-L298",
+          "version": "repo-lines-v1:sha256:933f936b01af90a9f043a721e6e1246309da78870f41e52a94b9face589a51c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MzIxMTY3ODFlNzU3NzI1NDY0NTBlMWE2MDEwMGE3YTEzNzIxYmM5OTgxOGM5NTA4YjUwMmZkOTMxYmNjMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMjdkMTY3YjdhNWU0YTY3OTkzMWY0YTk1YTQwZWQ0MTc5OWQyYTllOTUwODU2YjhhZTBkMDUzZTZjYjIyNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L307-L319",
+          "version": "repo-lines-v1:sha256:f729dac5fb2c34b6d6c59fe099925976ee4972bf46151c1598c383549c9574c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhN2U3MTM3OGZlODM0OTg0MzRhZjljMzhkNGUzNDI0YzhhMjk4NGNiMDIwNGE5ZmVlNDA4Y2Y1MmIyMzY5YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjMGI0MTZlYTZmMTllMzI3YmFjZjMyMzgyMjU2MGRlZGI0NmQ0OGU2ZTk1OWVkODg1ZDUyNWQ2MzM1OTNmNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlODhiYzIxMWE0NjM3YzY2ZWUwNmZkYThmZGMzZTBlYmFmZWEyYTkxODQxMjUwMGQyZmFkZThhZDRmNTc0MGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_45aa38c8bf1d416693d3f2b269448fc5",
+      "statement": "HostSessionManager.create validates the host identity against a lowercase [a-z0-9-]{1,64} pattern, defaults the producer actor to the host id, and derives the run metadata model identity as host-agent/<host>.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/protocol.ts#L3-L3",
+          "version": "repo-lines-v1:sha256:d029517c4235143d2d3c3488ef293e342491370c416f16c2a18cfc4e850176fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDAyOTUxN2M0MjM1MTQzZDJkM2MzNDg4ZWYyOTNlMzQyNDkxMzcwYzQxNmYxNmMyYTE4Y2ZjNGU4NTAxNzZmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDAyOTUxN2M0MjM1MTQzZDJkM2MzNDg4ZWYyOTNlMzQyNDkxMzcwYzQxNmYxNmMyYTE4Y2ZjNGU4NTAxNzZmZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTI4YjBjYzA0NWQ3NTI2ZDFjZGIyMjU4ZGEwYTE2YTQ1YTBkNWFhOWI2NGU4ZDIyYWExZTRhNDlkNzg1ZWRmOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGVlNGYxMzljNjE0NWM4YTQ0MzFlZjNiNTE2MmE0YjcxNDY2ZWZiY2MzMjZjNTY1YWU1MTgxY2UyNjA2MTEwNyJ9"
+        },
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L321-L329",
+          "version": "repo-lines-v1:sha256:39362b39dac487eac2afdb838c78cd6bc3f7db853e3719d5770f9b0ff4e2f857:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L95-L116",
+          "version": "repo-lines-v1:sha256:80ed485de895fb01a3fa02c2fb6e996ab3483cf90241678a04706118c6866014:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhOTA5NzFiYTkwOGIyNzM2NDM1ZDk3OGYyNzM2YThjMDY2YTNlZmVlZjNlZjM0ZGFkYzkxZjk3NjE0NDVjMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxNDY3OTk0OTg5MjdjNGY2ZWIwY2EzNGQ0MWU0ZTc4ZTExYTE3YTQ0YzM1OTExODBmZTk4YTY3ODkzMDZjMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiOWI5MGJhMGM4ZDAzNTA5MWNhYjY4OTVmNGNhMjJmODQ3M2EwZmQ1NTBmNGIyNzhlZWUxNTk4ODExMWEwMzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c94cd09d45544c18b40bae1f4d0fcad0",
+      "statement": "resolveRepositoryRoot canonicalizes an absolute path, asks Git for the top-level worktree via a bounded read-only rev-parse --show-toplevel query, and refuses the filesystem root and the user's home directory so a global integration cannot treat an ambiguous launch directory as a wiki repository; all failures surface as invalid_input without exposing the path.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/repository-root.ts#L117-L133",
+          "version": "repo-lines-v1:sha256:bfa84d82377d09e4338e8f6137533971982931a651516cc6982902a4033d8d16:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/integrations/core/repository-root.ts#L20-L34",
+          "version": "repo-lines-v1:sha256:77bfbe0dae81af69202f704b794805dc5948c29bd7f1e2609b8034361a017d4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMDA1MzFlODczODJiNzNhNzVhMGQ4Y2M2NWMxZjllZDBjNmViMGEwNDYzMjg3NWMwMWIyNDI5MThjNDBkMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZTU2ZjYwZjlkZjM3MDU0NDUxMjdjZGE3NzZhOTcyNGM3NzU0NmNiNDJiMDRhNTQ4YjdhMzE1YTI4NTY2OTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhZTE2M2Q3MWYzYzRiYTYwMDc1OWRjNmY1YWRkNTgwZGE4YWM4ZmZhN2VhYmZhYTE1M2NjODYzNzZmOTY1MWIifQ"
+        },
+        {
+          "resource": "repo://src/integrations/core/repository-root.ts#L67-L84",
+          "version": "repo-lines-v1:sha256:e07c21a36217793b6e1411df914d230f664ec85ddf72a4a595c7d2fcbc3e4375:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYTllYTM3OTRlZGNlZDA3ZDkzMGVhYjU0NWE1NDVmYmJmZTQyYTE2ZDkyZThmNmExMDhhYzhjZjRiYjg2ZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlM2NkYzQ2ZDY2OWQwZjBkNzUxOTVlOTJlODYwZTY4ZGMyZTI4MWFlODZjMjI0ZGEzMzdkYzdlNGJhZTBhZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5NTNiNzhjNGZjNmEzNWQyZmI4NDZjMjZkZDg3ZDE3ZWQ0YzMwNDU0ZGMyZGNhNGZmMThiOTllYTI5NTY3MGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_beb973ebaeca4f9384323f17e8465fd7",
+      "statement": "Connector context is not supported in the host integration path: the repository-generation core accepts an optional planningContext, but HostSessionManager.begin forwards only root, mode, language, force, and actor identities.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/repository-run.ts#L86-L94",
+          "version": "repo-lines-v1:sha256:8765e7dcff647883ddf1382e01d2d0c2743605b055ff10ed047fe03b0eed0a62:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYyYTJmOTk2ZjA4ZTY4MGJkMjkyMTM1YTZmYTQ5NzhiZGEyNmU2MDJkODRmMzNjYjFkNTk0Nzc1ZDQzMDRiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM4MDNkNmEwMWQ5OTEyYjIxNDJkYWRkMTIxZmE5NmMyYmM0NGJkNDQ1NzQ4YTA5NGM4ZDgyNjFiMjE3OTNmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmFlZmVkYjEwNWNlMGM2OTI3MjU4ZTI5ZWM0YWVhN2MxMGJkY2Y3YTc3NTY0YzY3MGI4MzgwZTE2YjE3YTIzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA5YjRkOWIwMWU0MjdmOWQwY2M2NmY2OGIyNDZlYTAxYTVkZGIyNDkxY2JhZWIzYTJhYzQxMjk2ZjlkMWFmMiJ9"
+        },
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L124-L146",
+          "version": "repo-lines-v1:sha256:0979f126a4f06d10767911f45bef33c3166465d120e9e70efcd51e6b8afd98bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMTU3YjAzYWI1YjJlZWNhNjUxMDczODAyZTY4NDNmYTM2NjhhMTE4NTA3YTVlM2QzY2NmOGYwMjdjMzg3NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4ZjU5OGFiNzMwYzRlZTc2OTNmMWZhY2M0NTI3MmQ5MWU2YzM0N2RiMDU4ZDAxZDUyMjU5YzQyNTk3OTY1ZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhOTI5M2ZkODA1NGI2ZTQ3MjQ4MzczZjM5ZjRkZDc3ODAwMTA1ZWI3NTgzNDg2ODcyNTQyODVjZDEyODJiNzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_938c2ce943c1417b92c6131ec3f7c65c",
+      "statement": "runOpenWikiMcp starts the local stdio MCP server by creating a HostSessionManager, building the server with createOpenWikiMcpServer, and connecting a StdioServerTransport; the CLI's openwiki mcp --host command supplies the correct provenance actor from the host registry.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/integrations.ts#L88-L96",
+          "version": "repo-lines-v1:sha256:414476f52228bf79ca5fb2a3f60fdbe43c03c0e5192e1ff74a6eaca1c43d940b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE1N2JmMDkwMGIzNzMyODg0OGZkYTljNGRkM2YxNTNhZTg0NzFmNDdiODU5MmY1NWFiZmY2MWI0NDhkN2M5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGRkNGYzZWJjMjRlNDliM2U2NGIxNjI1NGM5NGEyMzJkYjMwY2Q4NTIzYWRkMDRiNGZmZWExNGVlMjY4MGYzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/integrations/mcp/stdio.ts#L27-L33",
+          "version": "repo-lines-v1:sha256:f8c8350444bffd5fcf42be3e5d9c0c76e39ae7d7bd5ea76ed831c46ec74031d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZjNiNmYyN2Y2MDdiZTQxZDg2MWQwYzdkNjZmNTZjMmJmOTYxMjFlNWFkMWMzZDEzNTA1MWJjMzA2ZGU1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODEyNjY1OTY5NDEyZTRjNTA5NWI2ZTY0OTI3YzYxNjVjMzExMGZjNTViYWNkYjIzNDA1YzY2NTUxODc0NjFmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_76d9770a210446b0881b937ff086116c",
+      "statement": "The MCP transport wraps any non-HostIntegrationError as a generic \"OpenWiki MCP operation failed.\" so unexpected exception detail never leaks through the transport, while HostIntegrationErrors are projected with their stable code and message.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/errors.ts#L1-L26",
+          "version": "repo-lines-v1:sha256:e6369b935eb0a0f0e3cc164b988c624fc4cd6304d5dde8e6abc431b7cec136ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://src/integrations/mcp/server.ts#L75-L106",
+          "version": "repo-lines-v1:sha256:c7744148871902a8a969356b6794c12cf4b1d3fe4a7d9a94245ac6bea219d69f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxYTNkNTEwYzVjOGJkYTU1YjIzYzdiNGNkYTI4MDc3MjZhNmUxNDkyMmY2MWNmNGM5ZTAyOWM2M2IxZmM3MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkMjc4YzJlNTdkOWIyOGFkNTFmMWNhZjU4NTZlMWU4MGRhZTVmZGQwYmNmZjRhYzc1NTMzZjg4YzUxZGIxYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjMDkxZDNkMmE5NmQzNTA5NjMzMmY0M2QyYWQ1YmIyODZkYTAwMmMyYThhZGVlMzBmNTdjMDhiMzY0ZGFjNzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5a1894ce8f96451ca6f1879cda0b7abf",
+      "statement": "HOST_TARGETS is the immutable registry of supported hosts (Codex, Claude Code, OpenCode), each declaring per-scope skill directory and MCP config kind: Codex uses .codex/config.toml (codex-toml), Claude Code uses .claude.json/.mcp.json (json), and OpenCode uses opencode.jsonc files (opencode-json).",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/install/registry.ts#L10-L65",
+          "version": "repo-lines-v1:sha256:a684b7b9e76e9365d90ad39b06db30fbd536372af98b2d095d69fbcf5fee881d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3ZWRmM2ZhZTlkZWQwN2NhNDNhNDA0ZjQwMmU0MTU5ZDU3NjQ4NTgxYTViYTFmYjAwNzA3ZGJlMjZjZTY0NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiN2M4NzgzMDdhYjA3ZjNhMzJhZjRlNWIyNDMxZWViZGM3M2RlZDM2YTc2NTkxN2I5MmY1NGZhYmRjNjRhNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0MGY2MzAzNDUyODA5NTZlZGRhZGM2MjEzNTNhMzE2NTVjMjBmYTFlNjc4ODAzOTQzMDI0ODg5NjI5NzBjZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0OTMwNzRkMDhjNDY3N2ExNmIzOWRmNTJkNzVkZTRmYTgyNzk4ZWFjNWVlMWEwYThlZWIzOTEyZWJhMjlkMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a5b908d4a62f4c9cb9ad891981ff9a99",
+      "statement": "defaultMcpServerCommand produces the published installed invocation `openwiki mcp --host <target>`, which is the command written into managed host config entries.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/install/registry.ts#L92-L99",
+          "version": "repo-lines-v1:sha256:1bb85cb2659661e2a67fbc27b29f63083e37ef19089da5fde39b5c9653a775ed:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjllOGYwMGY0NWRlYmUzMmFmMzlmOTg5NTNjMzUyNzI4OWViZDY4NDUyZTgyMzhlYzMyZTAyNzhkMDQwZmNmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjUxMzcwZGNmNmE5MzlkNmViMmJiNDgzNDg0MmM5M2FjMzkwM2Q5ZWNjYzBlMGM0M2Y3ZDg3ZmVjY2ZiOWZmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_aefa4d81d3e54fc4b76c901533c99140",
+      "statement": "Each config adapter owns exactly one managed OpenWiki entry while preserving unrelated user config: the JSON adapter manages mcpServers.openwiki, the Codex TOML adapter manages a block fenced by # OPENWIKI:MCP:START / # OPENWIKI:MCP:END, and the OpenCode adapter edits mcp.openwiki in JSONC; each refuses to overwrite or remove content it did not author.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/install/config-json.ts#L14-L70",
+          "version": "repo-lines-v1:sha256:3f032826a0dde57886c5ee7b9e7cb2682bd9470588f2af742d14137fde702cdc:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmM2YxMTE5NzhiN2IwODFkNzkwNDkwYWQxZjY5MjNkMzAxODgzY2ZlNzZkMTY2OGM2NjJmZjNkZWEwM2Q2M2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmMDUyOTBmYjY4YTM3NTllYTQxYmQ0ZTlmNzM3NjNmNDA4Zjg2NzZkYTZjY2ZlNWQ3Mzc1ZTBiMDVjOWRlZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMjJmZmE0ZWM2MTliMGI4ZmEwZDViMTJiY2NjZmUzZDk3OGI3YjBlZGI3MGM4MmJmZDkyN2U4NDJkOTA3MmQifQ"
+        },
+        {
+          "resource": "repo://src/integrations/install/config-opencode.ts#L6-L60",
+          "version": "repo-lines-v1:sha256:849dd881d6616eedb5a65b1e6f620a05c2fab6dbe2d84ec2566062788b9c2206:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1NjBlNWVjNGVjOTAxYjc5Njk0MmUyY2EwM2VlNTJmNmMzMTY4ZmYwYWRjYTYzOGQ2YjllZjg0NWExODQzODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmMTNkYTAyYzIyZDQwNzMxNmU5Y2M4Y2UxZmVlYjliMzcwNDFhN2QxNzBjYzczZjk4M2YwMWEzZjUzNzk5MTAifQ"
+        },
+        {
+          "resource": "repo://src/integrations/install/config-toml.ts#L6-L60",
+          "version": "repo-lines-v1:sha256:7d848dce4ad0cab0b2774bb963ac425a09adb72b4e98b0a4f5da435fdd0e7abb:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyYzgzOGRjZjFmMjFlYmI4NTQxYjZhZWQ4OWI3YTIxYzA5OWVlMTVlZDgwMGY4NzRjZDk2MzYzMDU4MjI4YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1YTAwOTUzNzM3ZDBmMmI4MGUyM2ZiNTk0ODA4NmFkMTViYTNjYWI5ZTIxOTY4YTBjMWVlNzAxMWIzYjhmZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4NTYzOTVjZDhiOTYxODAzN2ZhZTNlMWZiMjJiMjU0NTU4ZDI1NDY0MTFjYjRkOTA2ZjU5OWNlYTQ3YzM2NjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9ac5503138144eccab656b02d470574e",
+      "statement": "Installation writes a .openwiki-install.json ownership receipt recording the owning package, OpenWiki version, host target, installed MCP command, and per-file SHA-256 hashes; inspectInstallation uses it to classify a skill destination as not-installed, installed (intact), or modified.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/install/skill-bundle.ts#L12-L70",
+          "version": "repo-lines-v1:sha256:9f4a2205f52c621c146728ec92e84ad520e540d3c2cc94d5b32f8009d895acb0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYjNmNmRmZTY5YzI2YmRhZWQxZjg5Zjc2ODEyYTM3MjY5Y2JlOTljN2Y4Y2VlYTNjZGU0ZmZkOWIyMGYxZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxOTAwMzgwYTYwMmQ2NmRjMTljNTYzMmY1ZjA5NjM0NWU1ZjUzYTMxY2M2NTkyYjdiNmFmODk2MTY5OTJhYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1NTYyZTc5OTdlZTQ5Y2U5NzEyNzczMjE2ZDJlZTM2ZjEyNjlmMWUxZmQyY2Y2NjVlNTdhZDk1ZWM1Y2EzODgifQ"
+        },
+        {
+          "resource": "repo://src/integrations/install/skill-bundle.ts#L93-L108",
+          "version": "repo-lines-v1:sha256:cad6a1c29137db4b0426022a48bb9bf094abc92fa4dc15151f3e2bedaaa23309:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3MWFkYzVlMGMwZjRiMTk5OGMwOWI1ZDFkNTM4NzBlOGEzNjYyZGRiM2QzM2UxYTU1NDljYWJkOWQ3ZTk0NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3YWUyNTQzNzliNTE1NGY0ZTgxNWQ3YjU3ZDlmMzc0OTZjYjBhNjZhZDVmOGU5ZmI3MDM3ZGZjNjdhYWEwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNGQzMzgwMDc5YmRiN2FhODA1MmQwZDBkMWExNzNhYjkyYWZlNjgyNzNkZTZiNWVlYzJlNzdiMTY5MTlmOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aae8d2afafe14af69b5dbe8efb0f24d1",
+      "statement": "The installer performs installs transactionally: it stages the canonical bundle into a private sibling, verifies the staged copy matches the canonical inventory, writes the receipt, snapshots and mutates config, moves any prior skill aside, atomically moves the staged skill into place, and rolls back config and prior skill on failure (raising AggregateError when rollback is incomplete).",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/install/installer.ts#L156-L237",
+          "version": "repo-lines-v1:sha256:daa53131eb87873fa4d47bdf058aefa5ec69bc4a60014b2f5ce0a9a26eb2c604:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMWM3OWM0MGRiYzliM2I4MDQ3ODc4MzUyYWU1ZDUwZDIwNWJlNDIwMTg4MzM1ZjRhOGYxMDVkOWY5Yjc3NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzMDY5NWVlZWQzYTVkMjk4OTg4NTg2OTdjNzM2ZTFiZjc4YTg4NGJhODE4ZjY3NTQxMmQxN2ZjZmJiNjRkNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwNDI4MGFmYmE5MmY0NDE3MTc5ZjYyNDEwOTM3MDUwNmJlMDhmODgzOWVhNDVlMmQ0MDJlNWRiMWVjZGRmMjAifQ"
+        },
+        {
+          "resource": "repo://src/integrations/install/installer.ts#L383-L503",
+          "version": "repo-lines-v1:sha256:5fef58c8e2a0aba587b06dbfeab6f48ac6d25a1c654ca9a5c76a60ea9e84f2db:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMWYzMGE3OTVjOWQ1NmYzMWVlMzJjMjA1NTZhNWJmNTVlODJjYWY1YWJmMWIwYzAxNDcxYTk2ZWQ0MWU5YWNmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyN2U1Nzg4ZDVkOWQ3M2QyNGE4MWRiYzBhNWE3NGJmYTgyYzljM2IzYWY5OWU1MmFmNzk2ZTkwYjQ2OGE4YTNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5NTNhMTEyOWUxMDIyYjQ0ZmVmOGQwN2NkNTk1NzljNjYwYjU1OGIxZmY2ODA2OWQ0NmUzODU5OTViNzMyZmUwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2QwM2JiNzI0Yzk4ZGIzOWQ3YzIyYTNjMzllNDdjNjVlOWE1OWQ4NDliODNlM2RiMTRhNTJjZWRhNDhhOWQyIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8da3e9530134d18b09962884935c7ec",
+      "statement": "A modified skill destination is refused on install unless --force, which preserves the prior skill as a timestamped backup; uninstall refuses to remove a modified skill or a modified/unmanaged config entry and cleans up empty skill parents.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/install/installer.ts#L173-L178",
+          "version": "repo-lines-v1:sha256:523d6896161e85bcfc770e5d3d80a952f1e0305215013eaa5999f49a0c770dc9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTA0ZjhhMGM3ZTk1MWQwNDQwZGJkOTk4OWYzMjA3MDk1OGYzYWQ5YmRlYjdhZTQ0Y2UzNTNjYWYwYWRmMDg2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjZmYmFmNzhkNmYyNzI0NzU5NDdmNjVkODdhNDJjNjI3Y2NlMGVhODg3MjA0ZTA5ZmY2MGMzODA2MGE2Y2UyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWRjZjFiZDc3YjFjYWNmNzI4MDE0MmM1YmJhMjU4MmExNWYwM2ZjZjI4MjQ3ZDQ2NzRjNjViOTAzZWMzMzJmOSJ9"
+        },
+        {
+          "resource": "repo://src/integrations/install/installer.ts#L246-L338",
+          "version": "repo-lines-v1:sha256:d5fff5c776ed257d864d218b0d794721159243003010ddb56e949510f047d391:eyJzZWxlY3RlZExpbmVDb3VudCI6OTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyN2FjY2RhODFmOWJiYTFmZGZkYjgxNjBjNjY3ODM0YjBiNjkzZWViZDQwOWNhZWM0M2M1MjJkYWVjYWVjNWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiYzNjODliY2Y0MTZhNjcyZDkxZTYxMjJiZWU1NWZiZWFiZTk5ZWZiZGIzY2Y1MjljYTc5YzdhNmVkYWM3YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NWVjMmM4YjM2MzMwYTFlN2Y2OGYwZGI1NGEzOGM4YzU2MzM5NTE4NjI3NGY5ZjE1ZDk4OTI0ZTY5MWJiN2YifQ"
+        },
+        {
+          "resource": "repo://src/integrations/install/installer.ts#L446-L458",
+          "version": "repo-lines-v1:sha256:55604e9597f3886369292897ed8989a79520fd92483db6dca42c4cd9f027cde5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhMGIxOWQ1ODZiMTQ3ZTc4MTQwNWE0NmUzODEzMWM2OTdjYTY3ZTQ2ZTRlMGI4MzliNmM3MGEzNTczZTU0MzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzMTBmYWJiNzdjNGQ4MGFjOTVhNzcwZWVjOWRhMDZlNjZhODYwZjRlNzU0ZTUzZjI0YTJmZmU4OWRkMGY3ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyMDQ4NjllZjE3M2Y5OGNhZjg1YmY5ZjAzMWEyY2RkOWQxZmQ3OTg1MGJmZGY4MmMxNGNiN2Y3ZWE0OTVhNTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_da8c02588fac4788bbc03e86f37fcb66",
+      "statement": "getHostIntegrationStatus reports installed only when both the skill and the config entry are intact, modified when either is partially present, and unsupported when the requested scope does not exist for the host.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/install/installer.ts#L347-L369",
+          "version": "repo-lines-v1:sha256:e637663282c437c534cc66771f75782a8dc4653e10263153500394d3063f1062:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZmIyNDViMjVmZjNlNzQ5MDFjYzk4ZDhiMDI2NWFjZGUyOGI5MWQzOGQ0YmIyZDZjNGQ4NmMyMGZlZGE0YTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwMmRjYjIwMTNjYmE4YzliOGU2NzQ0NTBmYmZmNjIzM2VjMzgxYTE4ZGE5ZWZlOGY2NDgwZjZhZjA2ZDExMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZmQ4MTNjYTc1NTZhNWY1ZTE5MzU2YmE2NTUwZTk0MjIxNzU5MWRkYmI5NzZkNTEwOGQ2YTQ3OTRkMjNkMDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9f5ace83ff1485ba9d2298c9ea90ea1",
+      "statement": "Every host supports project scope while user scope is optional; project-scope installs resolve their root through resolveRepositoryRoot to the Git worktree root, and an unsupported scope raises an invalid_input error directing the user to re-run with --project.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/install/install-paths.ts#L75-L110",
+          "version": "repo-lines-v1:sha256:8a7cb33018e455a164d284119c16fb81d3c914937c8ea8aa2120269debdc6d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MjMyMzcxYWRlZmE3NzFiYTFhNTg3NWQ0OGZkOGE5N2EzMzMwOTcxYzNmMTQyMTdhMmIyMGRkOWIyNzlhNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YzczNjFiMjhiYzhkZGE5YThhOTM4OGM0M2Y3MzE2N2U1MDRhZjUwNDAzNGIzZDM1MWYxMzQ3YmUwMmYyOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3NWMyOWQ0ZTZhZGM1NzA5NDEwZGQxNjcxM2E3MTAyOTgyYzcwMjNmY2FjMTIwY2Q4ZThmMzk4YjlhOWQ0YmUifQ"
+        },
+        {
+          "resource": "repo://src/integrations/install/types.ts#L82-L95",
+          "version": "repo-lines-v1:sha256:3f96c8e050d9d55188e43a203a2372d482f16489f0ac916baaf380cb15bf2fa1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2OWFjZGZiNGViMDk5YzE4NmZkNjUzN2MyMDNlMDUwNjc4MjFmMDM4ZDQ2YmIyYWExYzZjM2Y5MjE2YTBmOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwOTI3ZTg1ZGY2OGNmYTE4MDJjNmQ0MTllYTRlMzMzMzE1MTU5ZWYyYTUzYzEyZDc4Y2M5MmE4YTBjNjEwYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4YmQ3NTVkZWNkMWM0ZGZlYjhkNTJlNDg4OWU4MzIxYWZhZDVkMzg1OGU3MjNmZjIxZTVkZmVkZGJlNGQzMDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f51d96921ab409a99f51e7a14f81783",
+      "statement": "Adding a new host is a registry-and-config change rather than a new skill or new tools — hosts share one canonical skill and the five MCP tools — with the full procedure and the local dogfood command pnpm integrations:dev documented in CONTRIBUTING.md.",
+      "evidence": [
+        {
+          "resource": "repo://CONTRIBUTING.md#L35-L48",
+          "version": "repo-lines-v1:sha256:2431addae8db3affe8febe2dabcded84f56602e1f8414df43a8d6b4023911fec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZjE2OWQwZDAwZjJjNjc0ODg5NTk3MTI4NTA3ZDlkNDcxZjg5ZGI4MzY3YWE0YmEwNzQwY2JiYmZiYjc2ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYzk1MGFkNjczOTExMWU4MWY2ODRkODk2M2QzY2JjODY4ZDc3ZjlmZjBlZWE0MGMxZTFhYTZkMmMzMjk5YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkZTY4NzM1ZGYzZTgxZGNiNjBhNzFmZGQ4MTM5MWViMjUwMTlkNDY1NDc2N2UzOThjYmEzMGI3MDhkOWVmYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1Y2MzYmY1MDM2MmViYmM4YzI4MzRmMmQyY2U5YzZhYWUzNThjMTQ5YTRjMjEyOWUxNzAyOGQyNjc5YzdlMjEifQ"
+        },
+        {
+          "resource": "repo://CONTRIBUTING.md#L55-L85",
+          "version": "repo-lines-v1:sha256:fb6c748e75a8f1504c3ff432ef45e0358c96fa2a5bfc2f1dc7320ba732ca5be3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNjkzOGVjM2Q0OGVkMzNhNzU1OTRhMTNhODlhNzk3NzBhNGUwMGQzYjc5NGJiOTY5N2RmODliNzY2Njk4MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MTY0MWNiZDk1ZjJkYjdmN2E5NzliNmM1YjFkZDQwMDFkZWRkNjk3MTBjZDUzNmI5YjYzN2QyMDAxZTA1NmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyZGRhZjk3ZjRiZWQ5N2EwMDY0ZWEwNDgzZDVkYzg4YzdjNGI4OWJjNjBjMWY2OWI3Y2I5Zjg0ODg2YjgyZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3MzViMjM3NDM3YmQ5NGY3Nzk2NzhhYTEyYTIzNTdiMDJhM2ZiNDA3YzFlODA5MmJlMTFlOTU0YTA4MjU5NmUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-25T02:14:25.283Z"
+  }
+}

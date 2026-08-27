@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    # Upstream releases run by default. Forks must explicitly opt in because
+    # this job can create release PRs, push tags, and publish to npm.
+    if: github.repository == 'langchain-ai/openwiki' || vars.OPENWIKI_ENABLE_RELEASE == 'true'
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the "version packages" PR branch and git tags
+      pull-requests: write # open/update the "version packages" PR
+      id-token: write # npm OIDC trusted publishing + provenance
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      # Trusted publishing performs the OIDC token exchange in the npm CLI, which
+      # requires npm >= 11.5.1. Pinned to an exact version (not the mutable
+      # `latest` dist-tag) so a compromised future npm release cannot run inside
+      # this privileged job (id-token/contents/pull-requests write).
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@11.5.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # When changesets exist on main, this opens/updates a "chore: version
+      # packages" PR (bumping package.json + CHANGELOG). When that PR merges and
+      # no changesets remain, it runs `publish` instead: `pnpm release` builds
+      # then `changeset publish` -> `npm publish`. Auth is tokenless: npm
+      # exchanges the GitHub OIDC id-token for a short-lived publish credential
+      # (configure openwiki's trusted publisher on npmjs.com). Provenance is
+      # emitted via NPM_CONFIG_PROVENANCE.
+      - name: Create release PR or publish
+        id: changesets
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        with:
+          version: pnpm run changeset:version
+          publish: pnpm release
+          title: "chore: version packages"
+          commit: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+          # Bake the distribution channel into the published build. Only the
+          # upstream repo stamps "official"; a fork that opts into releasing
+          # (OPENWIKI_ENABLE_RELEASE) still publishes "community", so its
+          # telemetry stays filterable. The stamp runs inside `pnpm release`
+          # (publish path only), never on the version-PR path, so it is never
+          # committed back to the repo.
+          OPENWIKI_BUILD_CHANNEL: ${{ github.repository == 'langchain-ai/openwiki' && 'official' || 'community' }}

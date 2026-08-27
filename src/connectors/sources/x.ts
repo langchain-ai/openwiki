@@ -12,7 +12,11 @@ import type {
   ConnectorIngestResult,
   ConnectorRuntime,
 } from "../types.js";
-import { OPENWIKI_X_ACCESS_TOKEN_ENV_KEY } from "../../constants.js";
+import { OPENWIKI_X_ACCESS_TOKEN_ENV_KEY } from "../../config/constants.js";
+import {
+  openWikiConnectorsDisplayPath,
+  openWikiEnvDisplayPath,
+} from "../../config/openwiki-home.js";
 import { getOAuthAccessToken } from "../../auth/tokens.js";
 import { fetchWithResilience } from "../http.js";
 import { normalizeStringArray } from "../config.js";
@@ -86,11 +90,10 @@ async function ingest(
   if (!config.enabled) {
     return {
       connectorId: "x",
-      message:
-        "X connector is not enabled. Configure ~/.openwiki/connectors/x/config.json and set OPENWIKI_X_ACCESS_TOKEN in ~/.openwiki/.env.",
+      message: `X connector is not enabled. Configure ${openWikiConnectorsDisplayPath}/x/config.json and set OPENWIKI_X_ACCESS_TOKEN in ${openWikiEnvDisplayPath}.`,
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/x/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/x/state.json`,
       status: "skipped",
       warnings,
     };
@@ -102,7 +105,7 @@ async function ingest(
       message: `${OPENWIKI_X_ACCESS_TOKEN_ENV_KEY} is required for X ingestion.`,
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/x/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/x/state.json`,
       status: "error",
       warnings,
     };
@@ -183,7 +186,7 @@ async function ingest(
     message: `Fetched ${rawFiles.length} X stream dump(s).`,
     rawFiles,
     runId,
-    statePath: "~/.openwiki/connectors/x/state.json",
+    statePath: `${openWikiConnectorsDisplayPath}/x/state.json`,
     status: rawFiles.length > 0 ? "success" : "skipped",
     warnings,
   };

@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:be8435e051eb6053eb241c190be58890f208fbcebb0c437faee0828f0e1465f4",
+  "claims": [
+    {
+      "id": "claim_f6ee1be411cc44af8ce963e1af7842d1",
+      "statement": "OpenWiki resolves its state/home directory to ~/.openwiki by default (os.homedir() joined with .openwiki), but OPENWIKI_CONFIG_DIR overrides it, with manual tilde expansion because path.resolve does not expand a leading ~.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L6-L29",
+          "version": "repo-lines-v1:sha256:6d53d46f788c607d5c467b436b0a39563dd562bf5120b0823c98735275d42ed0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ZWEzMTQ1OWFiOGQzYWYyNmVlMzU2NjEwMGU3ZTg5ZjBkOTQwNWJiNDY4MjMzNzE3MWEyYjg4MjljMmM5ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlODhiNmFmYjBiZjA0MTNhZDU1MGVhZWFjMzUzZGIyZDk3NjhkMDE2ZDYxYjJiNGZjZmM1MTRjZTUyNzVmMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ODYzZGQxODFhYjgxMjBkM2I5OGRlYTQ0ZjA2ZTM4YTQyOGE1M2NkN2Q1NGNhODUzZDgzMGE0OTcxYTllMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c658260b008e4ec9a4b29d70a01a9971",
+      "statement": "ensureOpenWikiHome creates the home directory plus its connectors, conversation_history, wiki, and skills subdirectories with owner-only 0o700 permissions.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L39-L81",
+          "version": "repo-lines-v1:sha256:bb1359fd671db3df8f03aa2c6aa4478cc444129e57a828e16002b123d9466169:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhNWY2OWJlNDVkOTlkNjA4M2I4YzAwMDhmZGEyYTEyY2QwZDlmYWE5NTI3NWM0OWJjNjdhZDU4ZTZiNWIwNzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2NmQ1MWFkYjcyODFhZDQ0OTZkNWJiZDVmNDI4ZDg3MDM4MmNjZmNjM2Q3YWFiMGRhNmNhZjUzZjdmNTk5Y2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyMmE3MDI4MDc4ZTJjY2IyYmIzN2UzMWU5NWU3NjNhMTQ3MmIwMzgzZWNjNTFjN2Y5NzllNDQ1M2UxOWQ3OTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f4ef7c1493945d0971e054bd27c999a",
+      "statement": "The persisted environment file lives at <home>/.env (openWikiEnvPath), displayed to users as ~/.openwiki/.env, and openWikiEnvDir equals the resolved home directory.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L78-L79",
+          "version": "repo-lines-v1:sha256:a2ffa84893c018b2aa12449c6459b02d00e466196c96449c3fd5d87af8809da7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThkYzE3NzY1OGY3ODIwNTg0ZTdjMjczZWI0ZmY2MDMzZTlkYTQ5YmEwZDI2YWQwMDA2MmM4MWRkYTBlYWQ3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUxZTM2OWFlM2ZkZGUyYWE4OWRjYjNlYTRhZTYwODkwN2NkOTkzNjkwY2EwZGVlNjRlMTk0MzhjNzcyYjAwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg2MmVkYzlkMjc0MDU0ZmY3NTExNWI5OGI4YjlkOGQyODI2M2U2YjQ1ZTY3NWIyMmZlZWQ2ZTAzZTIyMWM2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTEzNzZhNGMwOWE3MTU0MmIxNmRiM2ExYzM3ZDc4MTRlZDNlMzg2ZGNhNTQyMTNkODVkZDQ0MTAxNGNlZjliNCJ9"
+        },
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L39-L51",
+          "version": "repo-lines-v1:sha256:f713ee58f5a9e675191e71a3739b9aa1cca70ed16ba9b54facbb634396f48669:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhNWY2OWJlNDVkOTlkNjA4M2I4YzAwMDhmZGEyYTEyY2QwZDlmYWE5NTI3NWM0OWJjNjdhZDU4ZTZiNWIwNzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxNzcxNWMyZjVhZGI3Mzk1OGMxNGYxYmYyNjVlNGQ4ZjIxY2I5ZDc4OWE5N2FhNjcyOTAzYmJmYjYwZGE1MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2NmQ1MWFkYjcyODFhZDQ0OTZkNWJiZDVmNDI4ZDg3MDM4MmNjZmNjM2Q3YWFiMGRhNmNhZjUzZjdmNTk5Y2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZjQ1YjU1Yjg4MGNmMzc5NWY4ZDljODE0ZThiMzcwZGI1MGVhNTMxOTExNWU2MTYzNWRmZjMzNjUyNjY5NWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c7222afd2ef4f7c9f2f0a0ff0168251",
+      "statement": "On Windows, restrictDirToCurrentUser enforces owner-only intent with icacls by granting full control to the current user and the SYSTEM SID (*S-1-5-18) then removing inherited ACEs, because fs.chmod only toggles the read-only attribute on Windows; it is best-effort (returns false instead of throwing) and a no-op on non-Windows platforms.",
+      "evidence": [
+        {
+          "resource": "repo://src/platform/windows-acl.ts#L7-L41",
+          "version": "repo-lines-v1:sha256:b81904d348420626c3ad5408bf6eacfc3a228ece09f1399aee4fdda6ac602de5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMDg0MzIzNzJlZTI3ZDM2Mzg4ODQzNDM5ZWI4M2UwNGZmZjJjMDdiYjA1ZGE4YmE5YTQwNDI0M2I2MTVmOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwOGFiMThlNWIxYzdlNDFlODk3ZGU0MzI5ZGI5MzE4ZDQ1NTk4ZmUyMjgwOWM1YTUzNDM3YjZkMDM3MTM2YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_98a382f5d37c41d0b574e14989feb4e5",
+      "statement": "The state directory is protected by restrictDirToCurrentUser on both directory creation (ensureOpenWikiHome) and env save (saveOpenWikiEnvLocked), applying the Windows ACL restriction alongside the 0o700 mode.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L335-L340",
+          "version": "repo-lines-v1:sha256:78c461194a1f8ba74ba50d2a7176a7971904b35069b1af96f3fe000cd82d0647:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTExZDBmYWVhOTBlNmExMGY1MjkzMjlmNTA5NGI0YmFiOTVkM2NkOTZlOTczNTc3ODQ0YWY1NWMzOGU5ZmU0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2FmZmI4ZjAxYTNmNjcyODhjMTVmYzIwZjM4MGNkMDg0NTJkYzEyYzU0NGEwN2ViMDNkOTQ1Y2RjYmQyNGIzNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmI0ZjM3ZDU2OTU5ODIxN2U0N2RjOTU3OTMxZjJhZDE4ODJlZTE2MzIyZmZkNWJkZDc2YTZjYzU1MGJmMWY5NSJ9"
+        },
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L73-L81",
+          "version": "repo-lines-v1:sha256:460af70b5568be4695957d2a82c31a2eef290dc9116701b475346aba60dfe6c7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQyM2YwYWJlZWIwOTIwM2U4ZmU0YTQ2MTkyNWJhZTY3NTY4MDk0N2Q0MjdhNDdhYTk0NWQxZjRhMjIyYjc2YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmVhYmUzYjQ2ZDMwYWEyMGJiNjBiMTcyYmE4NWJjNzc4MTBiN2MwMzAyNjIyNWRmYjBhZDJjZjM5MWVmMmU5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjIyYTcwMjgwNzhlMmNjYjJiYjM3ZTMxZTk1ZTc2M2ExNDcyYjAzODNlY2M1MWM3Zjk3OWU0NDUzZTE5ZDc5NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8ab56cdd3884818ab3dfeb904fbefdc",
+      "statement": "MANAGED_ENV_KEYS is the single source of truth for every env var OpenWiki reads or persists, in file-write order, and both CREDENTIAL_DIAGNOSTIC_ENV_KEYS and DEBUG_ENV_KEYS are derived from it by filtering so they cannot drift out of sync when a new managed key is added.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L91-L194",
+          "version": "repo-lines-v1:sha256:77507c089ae50dd450cf94d2062df89586b82854c0e15ff9f53e82a93a51bae2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiMDJkMmMwZDZkYzVlNzRkOTJmYTE0YjkxZGJlYTI2NDA5MGJlYjM1ZmRiOTE4OGQ5YjM0MTE4MWRjZTlmNGNlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYjU5MTBhYTA1NjU4OGE3ZTA0YWVkYzA5MmM5YTlmOTg1YWQ4MTQ4YzcyZGZiM2E2MTAyOGRiZjMzMmFlYjA3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwZDI2ODRjZDcxYTA0YzA2ZDE0Y2NmMDM1ZjM1ZGQ1MDRjNzRjYWY3MTI3ZWYxYWYxYjc4NjkyN2JkNTFjNWY0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_89b79c7df2ca46d1952c1281d382fdfe",
+      "statement": "LangChain project/tracing settings (LANGCHAIN_PROJECT, LANGCHAIN_TRACING_V2) are managed but excluded from the credential diagnostics panel via NON_CREDENTIAL_ENV_KEYS.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L165-L184",
+          "version": "repo-lines-v1:sha256:fc157244b2688ab47b19f848b01b778064df0ba3707dbd50595de81b2e63806f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjYzhhZTQyOTBhOGM5ODBhMmVjNzI0YmQ3MDM5NWZiODlmMDVjN2YxNmM2ZDM2YTk2NzFjZGE4ZjM1MTIzNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxZmNhMDM4YmZhNTdmYTk1MmNkYzA3N2MzZDcwZGUzNTRiYTdlMDg3YWYxMTQxYmY3MDFiODFlYjg1M2EzOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhNzc0NDBkMGIyMjRhOGExOGE0Y2M1NzQ1ZGRjODMyNmRhYjk3NmY0ZjMyMzU3ZjhjODdmYTJiZWRiZDBhZWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2c6bfc0079a4181965f71c38c003ac8",
+      "statement": "loadOpenWikiEnv reads ~/.openwiki/.env and copies each value into process.env only when the key is not already set, so a shell export wins over the saved file at runtime; deprecated keys are skipped and a missing file yields an empty map.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L262-L282",
+          "version": "repo-lines-v1:sha256:4ce3eee4b2e02fb6ee325498a6d091d09aad3b4d891c4c532d98ef7573c23bac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZmEyMzE4YTllZjlmNjgwNjM2MzI4NTZmYjU2MzE3YWMzOTZjYTZjNDVhOWZmNjE5ZDkzNDE1OWY0NmRiYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxODBlM2I3ODBkNjM0ZjI5ZjIwZTYxMmJmYmMwOTRhOGU3YWFmMWExNDhlNTgwNGM0ZDFlODU0ZmYxMTFjM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYjg0NDliYjgwZmQxOTEyODJjNGQzM2NhMDljMjFlYTM1YzgyZDIxYjU2NDczM2RiNzhhYWU4ZTAzODlhZjgifQ"
+        },
+        {
+          "resource": "repo://src/config/env.ts#L603-L613",
+          "version": "repo-lines-v1:sha256:44dcb5a574895946389832c9a95a614721c03f597d251db9fb90a4cfeca3a241:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyOGE4MjI5ZWI2OWNlMWU4ODcyMjlkNmU1ZDlkZmU0NjIyNDI0OTMxMjZhYTJmMjM1MDBjMTc0OWIzNTAxM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1Zjk5MjBhZmQxMzBlMjhmZjBlZjM3MjcwMGE5ZTZlMmM3MTY4YzkyM2UxNTAwMzJhMTlkMjFhN2RjODA0ZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjODc0YzcxMWI3Y2EzYWY1Nzc3NDQ2ZTZlMmZhM2UzYzdmYjNlMjM4YmFmMmNiYjRhZDQyNDA1Mjc1Nzc4MDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a8a113778b64ec0b3629464fee0328b",
+      "statement": "OpenWiki keeps two in-memory startup snapshots — the shell's values for managed keys (captureShellEnv/getShellEnvValue, idempotent so the first call wins) and the saved file's values (savedEnvAtStartup/getSavedEnvValue) — both never persisted or logged, so the setup wizard can distinguish shell overrides from saved config.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L202-L260",
+          "version": "repo-lines-v1:sha256:c484764ab963ab9f3fb9df79cd2a028d8bea8e4077740c9105df5b110281d75c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkMDY0MzY5NzdiNzUwYTQ2NTlhNjFjNTcxYjMyNTcyOTFiNTVmMGUyZTdkNDZkMGYxNjViMTJkZmE2MzBjOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmYTIwMmYyNTA2N2EzNDYzODc2Mzk5ODJjNjUzNmFkNGYzY2Y0ZWVjNzk3NWE2NjM4MGJlNzE2OTUyOTE4N2EifQ"
+        },
+        {
+          "resource": "repo://src/config/env.ts#L267-L269",
+          "version": "repo-lines-v1:sha256:578bf61eb506e558078a2a8856e85412bd89a6b6ace1bf5fcf8cb2c991b5d1ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjA0NDM0MTBlNjEwNTdhODAxOGQxYjQzMWViYThiMzI3NjlkMGYwYTNiYWUzNjY3MDU5ODUxOWZjMjZmNjhiNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTBkN2Y5OTk5Y2Q0YjMyMDZlZGY3MGYwNTYxM2FjNGIwM2FjM2ViODgwYTc1ZTBhMjEyNDA1NmFmYTU2Y2RlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWIwNTQ1N2JhZGI0Y2RiOTQ0OTBjN2E2YjdlMzc1NzBjZGVjOTNlZmQwYTAwYmM4MmM2YzdkMmY5OWJkMGMyNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8d88761dca44abcaf3abb50a2fb4312",
+      "statement": "saveOpenWikiEnv serializes all writes through a promise queue so concurrent saves cannot interleave, and a rejected save is swallowed in the queue chain so it does not permanently block later saves while the caller still receives the original error.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L298-L311",
+          "version": "repo-lines-v1:sha256:6964e1f6743444490299e30a5ca5453d7db93c5797d99b4bce01f5232fa78e6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNzUxZDljMDg0ZGVkYzJkMGFiNDNmM2QzNWMxMmIwYzY1YjNlN2I3OGJmMzI4YzFmOGYxM2JlMDcxNmY1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2OGIzYmU5NWZkMWY5MzcxNjg5ZTA0NWZkMGEyZjg3OWZlMWUzZTRiMDkyMzEyN2M2NDk3MWUwMjVjMzM3YjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7cfcc605127d43e3badbff773fc7c076",
+      "statement": "saveOpenWikiEnvLocked writes the env file atomically by writing to a uniquely named temp file (mode 0o600) in the same directory and renaming it into place, avoiding the O_TRUNC data-loss window of a plain writeFile that could truncate ~/.openwiki/.env and lose saved tokens on a mid-write failure.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L342-L353",
+          "version": "repo-lines-v1:sha256:bf89586e76611db81233b7eb3e4789b97995974c653e23338d10b309153b2f6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzM2VhNzUzYmU0Mzk5MjRkNmMyNDNkNTUwZWE2ZTU0YzIxNTZiMTBkZGFiMzMyYzNlNWRkMDVmOWNjNTc4ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2OGQwMWQwMmEyZGE3MjNhZjNkOGIzNTc4ZTU1NGIzY2U5NzJjMTJhMTNkNjhjYzlkOTA2OWJhZTIyYzcxOTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMjZlZTBmNGI5OWQxODI3MGU0YTY3ZTc3MTI5MWE3MGUxMzI0ZGM3Y2UzNzA2YTliZmFiNzM5YjI1MGZhZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxNWRkNjU0YzU4ZTMyZjE0MjhhODhmZTk3MzA3MmRmOWQ4NGU5YTBjNjhkZmJlYWU0NTJhYjcwY2Q5MGIyMzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c32885067b064c12a35961c9dd8d5c96",
+      "statement": "On save, keys with an empty value are dropped rather than persisted as KEY=\"\" (which would read back as configured), deprecated keys are removed, and process.env is updated to mirror the file except for keys whose value came from a shell export at startup, which are left untouched.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L313-L369",
+          "version": "repo-lines-v1:sha256:fa35b4d645a170f7602cd05b8e2aec6c6105bedfb110ce0bf79be72feaa11f2b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1MzJmNjg5MWMxN2VkZjliYzAyYWFhN2Q3NjdkOWFjN2RhMmEyMGI1ODY5NzEwYjU3MjE4ZWFlOGYwY2JlY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4MTgxNjc0OGRhN2Y5OTM4N2MwYzI4Njk0OTkyODcxMWFhMDFlMjRjMTI1YTE4MGEyNTk2N2YwZWE5OGI5ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4MWI0Zjg0OWNmMWE4ZDgxZDFmMzAzMjMyODcxNThiNGMyNjZiZjg0ZGM5ZTk3MDA3ZjU2YjA5NjU2NzJlNWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4b58a4ef74f54cd7afcf902d35431eb9",
+      "statement": "formatEnv writes managed keys first in MANAGED_ENV_KEYS order followed by other keys sorted alphabetically, always double-quoting and escaping values; parseEnv reads them back, ignoring blanks and # comments, accepting an optional export prefix, requiring UPPER_SNAKE_CASE keys, and unescaping quoted values.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L615-L680",
+          "version": "repo-lines-v1:sha256:4b6407d1354987b31d2e7b3593751ebfe6e77e2e8975d9b4daf2f0c062988c76:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YTMzMjIxNDI0ZmQzOThiZTU3Y2YwNDc3YWNiM2NhZGI0MTJhZWY5MzNiYWQ1YWMwYjI2ZTgxMzYyZmQyZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc6d8961cfc742c6a7297971636f843e",
+      "statement": "When OPENWIKI_PROVIDER is unset, resolveConfiguredProvider infers the provider from whichever credential env var is present in a fixed check order and falls back to DEFAULT_PROVIDER (openai).",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L819-L851",
+          "version": "repo-lines-v1:sha256:ca82aaa4beb3360ddd9733313caf40608f675311ba0e811d6db7cac2cc9b51df:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4YTAxMWI2NWI1YTk2MzBmZTU5YmU0MDU0MjM0ZmFiZmM5MTA4NTBmMWNmNWRmOWJlNTJlNGE4NzViN2JkZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MTJjMzg1NDEwYWMyMDA0Mzc4MDZhNDY5YjMzZGI5MTUzZDEyNDc2NGZkN2ZjYzU0YWMwZjQ0YWRkZTQ0NGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhODcxNjg3YTI4YTlkYTdkNzUxYzdiYjE4ZWRkZjExNGY1MGM5Y2E4ZmMxZDM3YWIzYjc3ZGQwYTk5MDdkYWUifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L99-L99",
+          "version": "repo-lines-v1:sha256:6e24dd433647f55f39004d4399349b92c931bc08c09d355bc02b73d7bb92aa47:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmUyNGRkNDMzNjQ3ZjU1ZjM5MDA0ZDQzOTkzNDliOTJjOTMxYmMwOGMwOWQzNTViYzAyYjczZDdiYjkyYWE0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmUyNGRkNDMzNjQ3ZjU1ZjM5MDA0ZDQzOTkzNDliOTJjOTMxYmMwOGMwOWQzNTViYzAyYjczZDdiYjkyYWE0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2ViNGQ4ZTg3OTU1YWE4MzM0MWFhZmZiZTYyNjQ3OTRkY2M5NTI0MzNhODNmNzE2N2ZhNWQ5ZTJmMzUxNzZjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTc3M2M0N2Q1N2RkZjNiMDNlOTZjNDVkODdkYmIzZmEzOTI4ZGFkNTgwMzg1MWQ3MWJiMTRlZTFkZjFiNmM0YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a1b8fcab2d64f6e9fcad26134f21ebe",
+      "statement": "OPENWIKI_MAX_OUTPUT_TOKENS is the provider-neutral output-token cap parsed as a positive safe integer, while OPENWIKI_OPENROUTER_MAX_TOKENS is a legacy OpenRouter-specific cap; resolveConfiguredMaxOutputTokens prefers the legacy setting on OpenRouter runs when set and otherwise uses the neutral one.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L1074-L1107",
+          "version": "repo-lines-v1:sha256:f7b116fef61514fcc1f243355dcd09a65c1711aff4a5900c51a14061aca37ace:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMjk0OWQ5NDgwY2ZiY2I0MTRiNmY3YWE5ZTc4NDI3OGQzZDJmM2U1NzY4OTVjYjU4ZmM2NTcwMmFlNDQ5MGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlZmRkYmZkMjBkZjBkNzg5ZTAwYTY1MDY4MDgxZjY1MzRiMmFhZGVkZmIxYjQxODU3NWY5ZGNjMmUyOGYxZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNzA2OWRkN2IyNmMxOWU1MmNjZjM2ZDg3OTFkZWFhZGIxMTFjNmZkZTgyMWVkNmNhYmYyMTljYjQxZWIzYTgifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L893-L919",
+          "version": "repo-lines-v1:sha256:6805188db43cc280400c6e29c4c5f54d0191f75d79b16c059898a9f853dee53a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZDlhMzVjNzU4Y2YyZTJmZGY3YWY2OGY1NmE2ZGNkZmVkNTQ1NDJkNzdhODBmOTQ3MDBlMmY0MjNkMjM0NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmOTFmODE5ZTU4NTNiM2U4NTQyMTc2ODYzZTRlZjdhYzExMmE4YzljMWNkZjFkNjk1OGQ5MmNhMGU1NjY4N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhOGU3MDY3ZDZjMGQ2YjA4ZjFkZGI4ZWRiM2Y2ZjE4ZTA4MDBmYTU1NjJlYjc1ZTA4OGJkNzlkNDViZjZiZDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f79cc2eab01a4cd282787ef34fffcbf4",
+      "statement": "The openai-compatible provider exposes two independent boolean toggles (true only when the value trims to \"true\"): OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API routes through the Responses API, and OPENWIKI_OPENAI_COMPATIBLE_STREAMING forces the SSE streaming HTTP transport for gateways that only serve streaming.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L1005-L1056",
+          "version": "repo-lines-v1:sha256:ab6aece9b5d1aec4d8595afe8ad522759727723186a5f9878ca25b789df2cb09:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkYmNmODAwZmY3OWJkNDRmMGJkZjA1M2FhOTBhNDI3YWIxMzRlYmU5Mzk2ZmU1YmEyYjEwMjc2YWMwYTVjOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwNWNlZjVkYTQzOThhMWJmOTFlNGQ3ZDRkZWQwZjdiMDQ4MjZlNGNlNWU4YjA0Zjc1OTMwMmIyN2E3OWE3MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ODA4OGNkMTU3ZDUwMGRiOTk1NDQ4NTY2OTE3YzM1ZjI3NDY3YzRlY2I0OWIwN2RkY2ViZjE3ZjViMGU2MGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_27d0e95554d14cd493d54b59594ae95b",
+      "statement": "OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES is a distinct axis from the streaming HTTP transport: it controls how LangGraph surfaces a run in the TUI (the \"messages\" stream mode) rather than whether the request is sent as SSE.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L1014-L1033",
+          "version": "repo-lines-v1:sha256:7ee90b9761ea57358c9816896505bfa341d8736ad0175e30c7acc61c15680292:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NjVjNThjNWZhMzY5NWE4ZTFlZWM2ZTVjYjYxZDE2ZTFhN2FkZjVmYjBhM2I1MjhjZTc5YzY1NTY3Nzc5NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiMmI5OWRjMWNkMzYwNjczMmUzM2E1ODcwNjIwNmU4ZmVhNTJhMjg4Y2E2NDViNTE0MDU0MjljMDMyMGQ2YzkifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L1035-L1056",
+          "version": "repo-lines-v1:sha256:847c27d3179c9878da589161d41bed5f96e7ae22e06f7fb5a27806acef3c0f81:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MWQzNmVhYmRiYzBjY2I1OTNjMGE0MjRhMDk1YmIxZGIwZTU2OTkwYWMzNGUwOTJiZjg2YzYxMWRiMzdjMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ODA4OGNkMTU3ZDUwMGRiOTk1NDQ4NTY2OTE3YzM1ZjI3NDY3YzRlY2I0OWIwN2RkY2ViZjE3ZjViMGU2MGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab1f7367542f46a8ad30185e10f8ecfa",
+      "statement": "OPENWIKI_STREAM_IDLE_TIMEOUT sets the milliseconds to wait for the first or next Bedrock stream chunk and is applied only to the bedrock provider by resolveStreamIdleTimeoutForProvider, with 0 disabling the stream watchdog so stalled streams may hang indefinitely.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L921-L958",
+          "version": "repo-lines-v1:sha256:410f3c4191614997751e0ef334e9ca5781ddc569e9293ad56bee3b76061e9e8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkNDc3MmVkMjY2NmQ2ZWEwZGFkNTlkYTZmNjM1YWNmMDM0MTVhYTczNWRiMWJjODYwOWJiZjkwMTY0ZGU3NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0Mjg1OTc1NTcwOGQ4ZGE4ZGI2Y2Q5MzMyMzEzZDdlOWY1M2IwZTVhMzRlNjYyZGM3MjhiZGYxNzQwNmE0NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3MzM1NjM0ODFjOWMzZjdmNjdiZGVkZDMwYzRmMzcxNjcwOWMzMDhjNmVmZTFkNzAzYmY5ODFjZTU1ZWRiODkifQ"
+        },
+        {
+          "resource": "repo://src/config/env.ts#L578-L597",
+          "version": "repo-lines-v1:sha256:161581db8cad7f6e8b1e5a4cd061cdd8c49733e06312e58bb161f7c977027e88:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiYzU0ZGUyYTU1ZTgxNmQ0OWUxN2NkYTE1YjAyNzM1MDBjYjE3MDNhMzk4ODU1ZTA0MmUwYWQ2MDQwMDA5MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwOTdhMmQ0ZjQ3NTc3MTgzOTRhNmY5ZmNjZTNkYTJlZThiNjlhMWJlYzQ5ZDRkN2NlNzE4MTY2ODEzMmQ3ODkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_359359fbb87b4cd7b223a64ba0972766",
+      "statement": "OPENWIKI_PROVIDER_RETRY_ATTEMPTS sets provider retry attempts as a positive integer, defaulting to DEFAULT_PROVIDER_RETRY_ATTEMPTS (3) when unset.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L68-L68",
+          "version": "repo-lines-v1:sha256:683a2888b2383076362a2611cb2435e448b33ade9c9ae4f279a4df49a9a54a45:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgzYTI4ODhiMjM4MzA3NjM2MmEyNjExY2IyNDM1ZTQ0OGIzM2FkZTljOWFlNGYyNzlhNGRmNDlhOWE1NGE0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgzYTI4ODhiMjM4MzA3NjM2MmEyNjExY2IyNDM1ZTQ0OGIzM2FkZTljOWFlNGYyNzlhNGRmNDlhOWE1NGE0NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRhMjI5ZGY4NTkwNDcwN2U3MGMwZDY2N2ExNDM1ODBiNjg3ZjNiOThlNzg5YTM2N2I4ZmRjYTEzMzVhYTE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGQ0OGEwYTc0NGJmNjAxZmZkMjQyZTNmNmViMzFjMjQ4MjFhZjQxNjE4MTFmMDVmYWJhNmE1MmU0OWExODIwNSJ9"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L960-L986",
+          "version": "repo-lines-v1:sha256:bce0e5ba23b0acb60bd7fb7dc795a03eb9604a7f3d31908bacbccd7ca079d506:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2YWZmMjcwNTU4ODk2OTc5ZWI5MmY4ZTg3ZGM2OTc5ZTE4NDZlOGNhOWQ5YWM2MDgwZmZkZDhiMmQ4YTdmZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwMDUzZTQyNDkzZWE1ZDZlM2ExNzNkYTllMDNhMTg4ZTE5ODhmMzc4YWQ0ODE1M2FkNjE0NTNkNzNjZTI1NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZDY3NTFhODI1OTBkNzk5ZDU4MGYyMGY0MDJjMjdmMTQ2OThhMjk1OWY0NmJlNWM0YWU4NmRmOGFlZjg4NGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9b57c89629b447b797222edd9f0dfb73",
+      "statement": "OPENWIKI_REASONING_EFFORT accepts one of none/low/medium/high/xhigh/max; resolveReasoningConfig returns undefined when unset but throws for an invalid value, for a provider/model with no reasoning capability, or for a value outside that capability's supported values, and each capability carries the transport used to send it.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/reasoning.ts#L6-L101",
+          "version": "repo-lines-v1:sha256:de8d3bcd57c4be4e02ffc2b70802aa3c1943732ac487035522d882c048e6f377:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZjcyMjFlNmUzZWQ2ODI2MGUwZTY4NzAyZDZjNzNkZjMwYjVhMWVkMTlhYzcwMzgzMTczZjFlYmJhMGVjMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwNWZlNWFlMDEwZGE2OWVhNTIxZTAwNWEzZmQ5YzM5ZjM4YjFiOGMwMjczNWEyYjljMWYwZGIxMThkMzViY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b199ff634c134a8dbf6c31d18f832bac",
+      "statement": "getCredentialDiagnostics builds one diagnostic per key reporting its source (process.env, the env file, process.env over the file, or unset), a masked preview for secrets (verbatim for non-secret settings), and per-key validation warnings such as invalid provider, model, token limits, boolean, reasoning effort, or a disabled Bedrock stream watchdog.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L284-L296",
+          "version": "repo-lines-v1:sha256:acd9eb08daf4ccd61b4fb6e7b4451e256a641525d30cfff6c779086213780624:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjOTQ1ZDRhMjBlMjMwNWQ4MzcyNDBlNzM2M2FkZjFkNTJlYjk1Y2M4NzRkNTUwNjIwNTY5MTU4ODg4MGI3MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2NDdmNWZhMWJiZWJjMDYzNDJjNDM0ZDQzYzYwMTIwMDg2Mjk1ZWU0YWVhODYwYTlkZTM4YjJmNjU5YWIxZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyOWMwYjIxZTA5OTYwMjM5NDQ4YmM2MjhiYjEzNTA5NTY4Y2UzMDA3MjQ3ZjYwMDVkNzA4NDk2MWU1ZDhmMTQifQ"
+        },
+        {
+          "resource": "repo://src/config/env.ts#L372-L504",
+          "version": "repo-lines-v1:sha256:921a434d319d75f77e8512456837293f57ac211ad93034a31f8748ec76892c02:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2ODFkM2ZkZWUzNDZkZGJlZWQ1MGQ4ZDY4NDQ0YTE1ZWUzZmY0NmJmZjM0NDNmNDM2NWUxNmJhOGNlYTU5NGVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYjU4MGU5NjRmODNhNDczZjQzZDQ0Mzg0NjI5NDlkNjhiNTYwMGZkYTc4N2YxNjM3NDVkMDBkZTg5Y2JmMzZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiNjI0MmIzZDMxZDE5OTJiMzk2ODAzMWVmYzk0NTg2MTNjYTU3YjYxZTJjYTNjZTgyM2M4MGU0ODk5YzlkZDNmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_f7ee3691f88f4729812284e513312fe9",
+      "statement": "sanitizeDiagnosticText is the security boundary that redacts secrets before any text is shown or logged: it replaces the exact values of secrets currently set in the environment plus known token shapes (sk- keys, Bearer headers, LangSmith ls tokens, and the Incorrect API key phrasing), and getErrorMessage routes user-facing errors through it.",
+      "evidence": [
+        {
+          "resource": "repo://src/platform/diagnostics.ts#L120-L133",
+          "version": "repo-lines-v1:sha256:71f36f02b8accdffc5f226c4161d980a2433d86e73b764ed195deb474ff03088:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2NmYwYjFhZmUwMzUzZTdlYzM0ODVlNjZkYmEwMzlkMGNiY2RjYTZjMDIyMjA1NjU2NzQwNjdmMGE3ZDYxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmOWM1NDhjM2RmNDM2YmQ4MTRmMzAyODkxNGY5ZWVhM2ZkMjIyNjhhZDkzZTVmMGM0YWIyYWM4ZjVmNTRjN2MifQ"
+        },
+        {
+          "resource": "repo://src/platform/diagnostics.ts#L22-L71",
+          "version": "repo-lines-v1:sha256:ebb179a5d999ae09c8bcfc211b53e701bb983152a47fdb0e5346f21444777487:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmZTA3ZDg4NjIwZTYwN2JhZjczMWJkNjE4ZDU5ZDcxMTdlMmQwNmMxNjRjZGI1NDhlMDk2YWUxZjBjYzk0YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxOGVhOWRiYzhlMDdlZjZlMmEwNDY3MTY3OTY1YzJjMDVjYzJhZDk1YWFjZWRiYzVjMjcyNGM4MGNkNGRkNTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_15a83f82ea38444689237df019b774d0",
+      "statement": "isSecretLikeKey, backed by the shared SECRET_KEY_PATTERN_SOURCE, is the single source of truth for deciding whether a key name is secret-bearing, so diagnostics, OpenRouter response bodies, and MCP tool args/results all redact the same keys.",
+      "evidence": [
+        {
+          "resource": "repo://src/platform/diagnostics.ts#L82-L92",
+          "version": "repo-lines-v1:sha256:124ce026b7000ae2b3a4a6f20dd7e2af8f35a03c42adc081227e3f519fc7776b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZDQzZDRlODE3MzE4MGI0NzdmOGEzZDAxNTAzNzEwYWVmZmE4MjhiNTU5YjYyN2M4ZTAwYjBmNTU3MTM5MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4NzdlZGFhMmJhZDAyNmRiNzA3NmRhNjE4ODEzNTRjY2M2MWE3MTkxOGFlZjA5NTkyNmJhOTI5NDE1NDMxNWQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-25T02:14:25.283Z"
+  }
+}

@@ -1,9 +1,10 @@
 import { chmod, readFile, writeFile } from "node:fs/promises";
-import { OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY } from "../constants.js";
+import { OPENWIKI_NOTION_MCP_ACCESS_TOKEN_ENV_KEY } from "../config/constants.js";
 import {
   ensureConnectorHome,
   getConnectorConfigPath,
-} from "../openwiki-home.js";
+  openWikiEnvDisplayPath,
+} from "../config/openwiki-home.js";
 import {
   discoverMcpConnectorTools,
   isMcpConnectorId,
@@ -143,7 +144,7 @@ function getDefaultConfig(provider: AuthProviderId): unknown {
         "Date",
         "Message-ID",
       ],
-      note: "Direct Gmail API ingestion. Tokens stay in ~/.openwiki/.env. query defaults to the last day of mail.",
+      note: `Direct Gmail API ingestion. Tokens stay in ${openWikiEnvDisplayPath}. query defaults to the last day of mail.`,
       pageSize: 100,
       provider: "gmail",
       query: "newer_than:1d",

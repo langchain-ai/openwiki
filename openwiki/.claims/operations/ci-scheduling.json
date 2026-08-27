@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:38f046ab807a29746f784f2fbeb25ad70fa8a25d0055eddfb578759271004f95",
+  "claims": [
+    {
+      "id": "claim_4f1bb9562e1846dc92e1f9ba3ad68ed8",
+      "statement": "validateCronExpression normalizes a cron expression (trim and collapse whitespace), rejects an empty result with the guidance message \"Enter a cron expression like 0 2 * * *.\", parses it with cron-parser's CronExpressionParser.parse (returning the parser error on failure), and on success attaches a human-readable description.",
+      "evidence": [
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L576-L578",
+          "version": "repo-lines-v1:sha256:f7a7c1c911f269b4c518f740419bffff03aa2185ff382505560df8c43995bd83:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIxMWE5ZGE3ZjdhMWNhMTg1MzIyN2IyOGM4M2UxYzA3M2Y1NTVmOTBmNWVmMjc3MWM3ZjExNjJmN2ZlNGQ4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2ExZDkxMzQxMGVhNjJkMzk5NTk2ZGJkMGI1NGIyOWE5Y2UxYzUyZmFjY2M2MDZjMjY1MWY4M2YyOTJmZTMyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzcwYjE4M2I0MTI2MzRiMTQyYTYzYTk1ZTI2NzBmMjg3YzUyOWVmNzk1NGJhYjg0ZDgyYmQyYzE4YWJjYzRiNiJ9"
+        },
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L88-L115",
+          "version": "repo-lines-v1:sha256:aee6229897dfe4bdc72c6b99b6299d34fbc544ef942308130c7d9966e819eddf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5YTdkYzFkNTRkNmQ3ODBhZDEzMjU2NWZlZjI3NTZmZWQ2MDQyZGVkM2U5YmQxOTBhYzZkZDFjYWU1ZTU2ZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzOWI1YjI0NjU0Mjc0YTgxYjkwZGQ0MzU5N2MxZDg4NzQ3MmY5MjY0NzZiNDA2NjBjNjQ0MmRkODU2NTNmZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5NDg3M2RlNDUzNDA5NzY4MmVhY2U0OWExMmZiMzA0NDYxZDc0ZDRhNjg1ZTYxZDMzYzFiMGFhMDY3ZDU2NzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1fa3d898f5264751afdc7659fab55d15",
+      "statement": "describeCronExpression renders a cron expression as human-readable twelve-hour text using cronstrue, configured to throw on parse errors rather than return junk.",
+      "evidence": [
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L117-L122",
+          "version": "repo-lines-v1:sha256:8c0bd9025330eeadc27769bfc677e3be0244cdafc48e956f52acbe9d2d4a75f4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODM1Mzg5NzZhNmJmYmY2N2RlNTVlZmIxZDc4NGE1N2QyNjJmY2Q5ZjhkODQyZWI0MjE2N2FkZmFlM2MxZmE3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmM5NzVlNmEzNjY5YWEzZGIxM2I1NDUyNGUwYjNkOTk0YzNmMzU5NWIzMDlkYzEwYWVhYmEyYThlNzY5ZDNmMSJ9"
+        },
+        {
+          "resource": "repo://test/scheduling/schedules.test.ts#L75-L83",
+          "version": "repo-lines-v1:sha256:bfa796df9edde5a4c7387d1baf7485c36ec7b93ea1e7c9a3f3f84623cc0fb914:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ0NGEzMjI4NzU3ZmY0ZTFlMWE0NmJmMWY3ZGFkZGUyODJkNzU5NTZmOWNjMDAzZTdlN2E2NjNjMTBhNTQwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjc3OWQxMThkNmUzY2JmNDUwNTM5NzQ4ZGVlN2E0MzA3YWNiZTY0NDZjYmEyOTdmMjc2MGZhNWQwYmJhMWJjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzFlZGFlOGUyOWMzNzNmOTMxNTRlYjEwMjBmYjZjN2Y0MDQzNzk1MmY5ZTViMDVlOGI3MThjODI4NGFjYjEwYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_eee2a26e54b546ef84c18b3b462428a7",
+      "statement": "getSuggestedCronExpression returns the saved ingestion schedule expression when one exists and otherwise defaults to \"0 2 * * *\" (2 AM daily).",
+      "evidence": [
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L124-L130",
+          "version": "repo-lines-v1:sha256:048de207d8dff8b3ec00021c9834f8dc22a09be2067853399cfa444af24cd1a8:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzM3YWFlZDg2Y2JkYWQ4MTNhNzcxMzY4ZmI0NzVlOTQ3NTM4NzZkYTY3MGRmMmY5MmMxZDYxYzFlZjkwZGU5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmQwZjJkM2EzYWFkYTI3NTg2NDU3OGQwYTQzOTE1NjM4ZDU0M2ZlY2EyYzk0ODU4ZGI5NDEyMTFlODZjZWYyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGMwMDdjM2Q5MjhkY2Q4YTU2NzJjMzM4MDRmNzgzNzcyYjc1MGZhNjE4N2Y3ODkyYTVhYWNjYjcwMDQ3ODc4ZCJ9"
+        },
+        {
+          "resource": "repo://test/scheduling/schedules.test.ts#L54-L73",
+          "version": "repo-lines-v1:sha256:378aaec0e6745f4d0d439e0aae37c220696c41a25398f5927af72974ad6c5a5a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZjI3OGNjYzNhYWZlYzJjNmUyZjdhNzgxMmU4ZWIxYjU1Mjk4N2IzNjYyYzBmNzg5ZDdjZGExMGMyZjg3ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3OGI3NGI0Y2U5YWFlMGE4YmE0NmMxMzk2Yzg2Nzk2NmY2OGRhNGM4MDk1MzhlMzQ5MDg1MDZjZTk2MzkwOTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d78bd03ec75a4d8aafcca662209b4ce9",
+      "statement": "installConnectorSchedule installs a macOS launchd LaunchAgent that runs `openwiki ingest all --scheduled --print`, writing the plist to ~/Library/LaunchAgents/com.openwiki.ingestion.plist and reloading it by bootout-ing any existing agent then bootstrap-ing the plist into the per-user GUI launchd domain via launchctl.",
+      "evidence": [
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L132-L203",
+          "version": "repo-lines-v1:sha256:289d077b84b2f6d381d855232c9be25961b317732e3b3f39ca21f2256b9f164e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmOGNkMjYyZmVhNjYzMWIxNzA0MDAxODJkODU3ODU0NDZjYmVjMGM0MTZhNWM3MjgxNDYzNDU1ZmRjM2FjZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwM2RhMDMxYWIyODUzNmY1NjQ0MjJkM2M1OTI4YmZkODgwNDU2MjEzZDNlMWQyZmY1NWY1MDA5NzQ0YzdmZTcifQ"
+        },
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L812-L899",
+          "version": "repo-lines-v1:sha256:23b0359748d1f69b9ebd535473f86e0b2b6ad83c444e06bd6b8e38cafedf8833:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2Y2ZmZDg3ZDZhOWZlZDM4ZTc5NjZmYTNkNzJhY2I3MmQyNjgxN2QzNjQ5ZWI3Mjk4M2MxNWIwOWI0YTIxMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmNmY3NThkZTdiYzM2NmYzYWI5NDYxMGI5ZDI3NjdiMWE3MjcwZDliNGNiNGY1YjE0NjUxZDI4OWZjOGMxMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0MDFmYTY0M2NiOTAyY2QzM2MyYWQ0ZmI0NDliODBiY2YzMGRjY2EyOGUyMzkyNDAwNDJkMTNkN2QyMjE3YWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_87bce3ff9552441d8d89b1f1ea25e702",
+      "statement": "installConnectorSchedule degrades gracefully instead of installing a wrong timer: on non-macOS platforms it saves the schedule but warns installation is macOS-only, and when the cron expression cannot be represented as a single StartCalendarInterval it saves the schedule but warns it is too complex for launchd.",
+      "evidence": [
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L147-L164",
+          "version": "repo-lines-v1:sha256:c22fdd36e59a6ecae1bed12bc8d2785628c9b59f27940953ce851c3ffcb74753:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MzQyMGU1YWZiNDgzMDU2MTkwZmVkZjE5ZWYwMTcyYTVhNzA5OGQyYzFjZTA5NzY5MWM5OWNhMzg3MzE4NzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4OTdhZDI3M2FmNWU3OTIyMmFjNDdkNTg4OTE0NGFlMGFhZDNkMmRhNzllYWNiYzk2N2ViYzZhNDZiODA5NjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1NjdkZTM1MTBjYTY2MGRhYzliMDQxMzM4YzNhYzBiNjU0NGMwY2UzYzBmNjM0OGU1Yjk2M2RmMTNmYTg3MmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b333c814fbb14a2fb9a0b60588de0668",
+      "statement": "parseLaunchdCalendarInterval rejects cron expressions that restrict both day-of-month and day-of-week because cron ORs those fields while launchd ANDs every StartCalendarInterval field, so emitting the plist would fire far less often than intended (often never); it also rejects any field it cannot reduce to a single in-range integer.",
+      "evidence": [
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L585-L645",
+          "version": "repo-lines-v1:sha256:dd561fe667efaac52c204f47ffcc0462b12311684ffc4b7a28109bbd8b332d0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNzU5MDFmYmFkYjY2NzMzZjA0MmVmNGEyYzUyZDljN2I1YTQ1YTE2OGU2NzdmN2M4YTM0NmM1NDQ3ZmIwOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjZTQ0NmI3OWU5ODQ1ODA4ZTBlMjU2NjBjMTQxYWNiYzRhODcyYjM4ZjFlODQ0YTdjMDYxOGVjNDgzZWVkMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5ZjBmZjJiNWIxZGMyMTE4ZWVlMjlhZWY5OTNhZjEzNWMyY2U4NGJlOTBkZTNkMzdmODY4OWJlZWY4M2I2MjkifQ"
+        },
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L800-L810",
+          "version": "repo-lines-v1:sha256:cb057789798384f115402fd7ee50be5df3410933ad13e5fdcfbf615a5299764d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ZDlkMTgwNDFjNThlZTE5MmNkY2U5ODJkODg3OTgxNDBhYzIyOTg1OTA4YzNiYjYxOTZhNjJmZTFhNjljMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmYzAyMzJkZjEwY2U2YTk5NGEyYmFiZThhM2RmZDMzMDFkNWRkZmU1ZmNjMThhNzExZTM2NTc3OTJlY2Y2YzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0YmRjNjI3YThmNTkyZGZkNGQ5ZDNiZmNkZTc2ODMxN2UxM2QyNDY0YWVmNWQ1OWZiMzAyNjYzNjM4N2FkMmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9c4250c920f5411abfa4b12ec778675e",
+      "statement": "The CLI `cron` subcommand (runCronCommand) manages a single \"all ingestion\" schedule by dispatching to the scheduling module's list, pause, resume, and delete helpers, saving the updated config and reconciling the Mac wake window after each mutation.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/runners.ts#L93-L149",
+          "version": "repo-lines-v1:sha256:af54883c38f775f31aec81a6954d36eb6a7ac9cf14d243765e32f9589ae44f78:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNTIxNTM2NWU5Zjk0YjZiNjM2ZTI5YWIzMWRhODYyMzkzODFhZGExYzk5OTQ0MjA0NGRlYjgzNDU3MGRhY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmYWJjNmNjMDFmYjRmNTZkNDgxOGFiYjAwMThjMTg4OGJmMzk4ZDI4OTcyNDdlY2MyZDQwM2Y0MTFkYWUzZTUifQ"
+        },
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L205-L355",
+          "version": "repo-lines-v1:sha256:fe84dbd1c5deb6cd80dd90f99329c8ca67b67e331c23dd78f25c12b6109b5f87:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiZDFjNzIxNzZkODQxMDExZjllZTZmZGQ4NWFkYTc4OTFlYjAzNGRlMTQyNzZmMTRhMmNiYWJhMGFjOWY2NzEwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MjA0MGUwOTVhOTRlMmFkYTc0ZTQyMWYzNzE4NzUxYTkxYTgxMGJmZDY2ZjQ4ZjRlOTM5YzdiNzQ4MGViNjcwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNDgwNGFmMzFhMDFiMTFhZWVkMmJhMTFkMmFkYzU1ODQ4ZmRiZjBkODU4NzBhZmI1MTc5ZjBlOGE2MmE2YTllIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_887cd69060e04c409f11f6ce32dc9166",
+      "statement": "The cron CLI parser only accepts the target `all` for pause, resume, and delete; any other target or extra arguments returns a usage error.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L489-L525",
+          "version": "repo-lines-v1:sha256:aaafa859d907ece31edf3ca5047d73f9186586bd24b421fde03e0335b3381c31:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NDk3Mjg4YjQ4MTAzMGE5Nzk3ODEwODM1NjgyMTFiNDQwNDkwZWNlMjEyMjE1NTg3MGY0YzQ3MTNhYmRhNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZWVmZGQ1MTEzZDk5MDU2ZjFlMTlkZTFiN2Q1YmVkZTZlMGEzMDFmOWU4ZjdiZTRlYWQzZjhmOGRhODY2YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1YmE2NmYwYzI1NjkyNmU4OWZhM2Q4Yjg0YTdjZGI2YjIyZWIyOTEwMGNmODUwMDUyOTEzZjZlY2I2NzNiOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_77b6eebf875646d0958450e92b256e21",
+      "statement": "pauseConnectorSchedules marks the schedule pausedAt and unloads the LaunchAgent while leaving the plist in place, while deleteConnectorSchedules removes the schedule from config, unloads the agent, and deletes the plist.",
+      "evidence": [
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L234-L272",
+          "version": "repo-lines-v1:sha256:c1b171f927a2d804cf7256e461920372ec320ceed2268e4fb5f5b32cc99c581e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NTBiYTRiMjQwOTJkYjU2MmVhMzI3YmQ4NjdlODgwNDA5ZmU5ZmQ1MzhlOTI3NTFiMWY3ZTE1OGIzMTBkMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0MDA1MjRmZDJjOWUwNzVhNzQ2YjM3MTc0M2EwMjFmNDY0ODlkNjYwYTMxNjA1YjkzNTA2MjcyODZjM2M2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4OTQyY2IwZGUxNTE5MGEwYzI3ZmRjZWVmNTQ1ZTlmMDNlMTE4YmY4MjRmMjQ1ZGE2NjNhMjYyNGE0MTU1NzYifQ"
+        },
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L327-L355",
+          "version": "repo-lines-v1:sha256:663604ff7b5305b7411280ebd18baedfb65bd91bd2f575a4f3db1df14d9413d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5ZjNkMWM1NmFjMjQ0MDYyOTFmZjI2Y2Q3NjIwOTliYWI3OGRmZmYwMTRmNjk4NjUwMzRlNjdjMzkxMzY4YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0ODA0YWYzMWEwMWIxMWFlZWQyYmExMWQyYWRjNTU4NDhmZGJmMGQ4NTg3MGFmYjUxNzlmMGU4YTYyYTZhOWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1ee5a33f2a2d44b485366ea2ce2ce448",
+      "statement": "reconcileOpenWikiPowerSchedule keeps a macOS pmset repeat wake/sleep window in sync with the active ingestion schedule after every mutation, installing a window when an active schedule exists and canceling it otherwise; the window is derived from the schedule's earliest and latest run times and is skipped with a warning when the schedule cannot be represented as a simple single-day repeat window.",
+      "evidence": [
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L433-L528",
+          "version": "repo-lines-v1:sha256:634d144c150b12a8313460f7d6fd0caabac318d54924a33582656a5358b31af8:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNjVhMzBmYjgzMzdmOTBlYzNlMTExMmRkNzJjM2QyM2M2MGE0YzU5M2E2MGYzMjZkYTkyMTM2OTliMmI4ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0YTc0NGZmOTE5MjY4OTExMjkwMWQ0YjcyMjdjZWEzNjY5MGIwYjQ3OWY4NGM5OTUzZmRlMWU3M2Q4MzlmODgifQ"
+        },
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L669-L705",
+          "version": "repo-lines-v1:sha256:a77bda33345383b98fdb34d83d455d17c3d6af9202893e2e45380acda0f1cc36:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NDk4ZjlkMDE4YjA5MjA3ODlhMTM2YTY3NjIxZmFlOGJkNzAxYmE1YWUwY2NiMjdlNWYyZThkNzg0OTlkOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0MjlkNWI0NmEyNWZlNDZiOWMzNTc5MWM4ZjBiZWFiYTk2OThlNTJlOTExMzY5OTY1MzBkNTA1ZDdkMzk5NDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fa5988aa5bd41958c224cccf847d5a9",
+      "statement": "installOpenWikiPowerSchedule invokes pmset through osascript with administrator privileges and warns that macOS supports only one repeat power schedule, which OpenWiki overwrites to cover the currently saved schedule; power scheduling is macOS-only.",
+      "evidence": [
+        {
+          "resource": "repo://src/scheduling/schedules.ts#L357-L412",
+          "version": "repo-lines-v1:sha256:a1f78358344ee261b30d920d17645d0c6bf3eaca210a468842940a2c9bd9d522:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNGY1N2Q2YmIxZWM4Y2QzYTMwM2E3NDE1MzM0Zjg5ZWU2ZjAxZTQ1NjFkMWZjNmRiYjBmNmY1NjEzZTVmMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZDBkMjc2MDJkMDRmMzc2NDllMjYwNTYyMGY1MmUxOTA1YTU5ZWYxZDVkNDI0ODc4MDYxODc2ODE0Y2U5Y2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4e62c1df52e7450baec044b2184e4ead",
+      "statement": "All three CI self-update examples force a full (non-shallow) clone so `openwiki code --update` can diff HEAD against the last-documented commit; a shallow clone hides that commit and the update runs against an empty change summary.",
+      "evidence": [
+        {
+          "resource": "repo://examples/openwiki-update.bitbucket-pipelines.yml#L10-L14",
+          "version": "repo-lines-v1:sha256:e4d1164e7b127f46b934bdf1adc5c6b8934944ae0fc49f2aeac3348809683565:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQ2ODgyNDE1ZTdjYmFmNjM5ZTUwYzkzOWRhNjRkMTRiOTE1NGFkOGY1NTQwOTdkMWRiOTY1M2YxZDc5MjgyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY0YWNmOTZkNjRmNTgzYmM4NzRiZGI4MzIxOGM5YWZmNDE0NDNlMmEwZjZjMzFjZjE3ZDQ2NzhmM2E1ZmUxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTEyNWVhZmM0NTQ1YWI3NjEwMWE5Zjg0ZThhZTJhYTcxYmNhNjRjYjZkOWNmYmVjZjM3MTA2OTM3NTAxZWQxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzJjOThlYTZhNjdjZWQ3ZmZkNjU3ZmMyMTFmNDUzMGE1M2UyZDhlNzBiYjM4ZTc4NDhhZDI0ZmUyMGI0NDE0YSJ9"
+        },
+        {
+          "resource": "repo://examples/openwiki-update.gitlab-ci.yml#L33-L37",
+          "version": "repo-lines-v1:sha256:c43d48e62b1c9cd7cca5853866811b0fe158343fad0c9309de4b015154890866:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmY0YTQwOTFkYjAwN2FjMzY3MThhMTc1YjQxNzBiZWI5OTgyZGZmMGU4NjVlY2ViMzVjZTZmNjc3ZDUzZTYxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTk1YzA3NTVhNTg1ZGVlMmZhMzYwNzcxN2U2NGI1N2ZjODZiOWQ2NzBiMDkzNDY1ZDM4Yjk2YTdhYzAzZmRhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg5NjQ2MjJiNjRlZDk1NmEzY2Y0MmQ5OGFlOWIwMTY1MjY5ODMxNWUwNzg2M2EzMzA5NTlhNjI0NzUwNmEyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzBhYzU0NGEwMjgzZGRmODk4NDEyYzM2NzgxMjlmMGFjNzNjZjkyNmM1M2NhMGI1N2Y3YWI1NTM2Y2Q1NDdiZCJ9"
+        },
+        {
+          "resource": "repo://examples/openwiki-update.yml#L17-L24",
+          "version": "repo-lines-v1:sha256:0cd97cd1ae24b9a35172425f4752aa4c3f7ba3280a2908c576420238814c1fb2:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDVkNmNmN2Q0MjhjYTgxMTVmYzRiYWJiNjgwNzM5MDIzMzI3YTdhOWQ5MTYzZjcwNmEyNzY4N2RkNTE2ZjM5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMwOTc1YzdlMjBlYmE4ODU3ZWZkMzFlNjJiNjY1Zjc4N2U1MTY0MTk1MWE2NjA3ODlmYmE5MzNhNjM0NzIxNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWM1YTg5Mjc3MGFlNGY1MzMzZmQ3YzllMTJlMGE2YmM0NWIyNmI1YmI3NzUzZTAzOWRmOGVkNDljOTdiOTYwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2VmMTZlM2M4YjU0ZTJiMjA0ODE5NmFiYjRjZDgwZDIyYTUwOGVjZDYwNzQ2MTI0YTJlYTJkY2MzNDE3OTlkMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f97b20344a7f46d9aeb539253f97f8a6",
+      "statement": "The scheduled CI job installs openwiki globally, runs `openwiki code --update --print` with provider/model supplied via environment variables and secrets, and opens a docs pull/merge request scoped to the paths openwiki, AGENTS.md, CLAUDE.md, and the workflow file with the commit and title \"docs: update OpenWiki\".",
+      "evidence": [
+        {
+          "resource": "repo://examples/openwiki-update.bitbucket-pipelines.yml#L15-L37",
+          "version": "repo-lines-v1:sha256:638968c76fc24d1ff16df4ce92afca721eafa8130531ef241d38d0983502bd1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiOTc0OGUxMWRmYmZjNDEyYzAwYzNlNDRjY2RkZDg5YmE5Y2NiNDE0YWViYTkwNTIyNjE1YmM3MzA1YzA3ZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNzlhMmYxMGM4MDM5NDNkZjg0YzZiZGIxYjM4ZGM4ZGQzZGQ0NTcxNmEyMzI0MDU4MDA1ZWJhM2U4NTkwYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NTdjOGYzZDgwZTlmZmNmZjhiMzFiMzY1OGNjYjI4N2ExMWZjNTU0MjNkZmRmOGZkOGQ4Y2U5NjhiYmFhNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyODU4MzU3MjgzMTM2YmU4NmE1NmFlYjI1ODQ2ZjEwNTAzMDhiNWI4OTY2NDg3YTk4MmU4NGNjNDc5ZmRkNTkifQ"
+        },
+        {
+          "resource": "repo://examples/openwiki-update.gitlab-ci.yml#L7-L32",
+          "version": "repo-lines-v1:sha256:6c143f4c2bda61b7abbf1abf05cc3d52cfb9e69ce11ae7a66c64591d8915114d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxZGFmM2QwMThlMWFlZjAzNTVlM2JhNzZjNmJlYmM2NTllNTRjY2I5YzZlY2UzNTkwZmVkNzA0OTVkZjk0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNjA1OTI4NjlmN2U4ZmJhYTMxYjlkNmMzNTc1YmE3MjA1M2EzYTVjOGJhMjU1OTE2NjczOTk5MTA0Njk3OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNmMwYTZjMmMyZTI4OThkMGY3ODQwODI2ZjE4NDRlMjc2ZWUxZTJhYzc2N2E3ZTg3NTZmYjg1ZTQ0ODExN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliYzc5NTMyMGVhY2Y5YjYzM2E3OTYxZWNhYzA1OWE0NjZmZTc4NWJlOTAzNmM0ODAzNjdiMzVmNzk3OGUwNjUifQ"
+        },
+        {
+          "resource": "repo://examples/openwiki-update.yml#L31-L64",
+          "version": "repo-lines-v1:sha256:f21d36220693e7e6deaf9f01ed486006b9a6634a3acc6e7771cbce4a9b11c718:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2Y2UwYjBkM2IzODEyMmJjMjc1MTVhOGQ5Njk2MTVkOWUxMGUyODA2NDRmNzYxMjIxZDA0NDc5YWQyNTM5M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0Nzc5NmQzMTczMmZiY2U4OTk4YTJmN2U3YjFiYjk3NTVjMjNlNTg1MDMyMGI5MDkzN2Q4MmMzZmQwZTYyYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzZjNiODgwMmIzMTBmZjJhZGQwMDI2YjgyZWUyZTllNTcxNTkxMmVhZjA4MWFmODZjZTExMGRkNjQyZmMxYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_985c5c291ccc4a48993405d41c025d48",
+      "statement": "The GitLab and Bitbucket examples only open a PR when the wiki changed: they run `git diff --quiet` over the documentation paths and exit early with \"OpenWiki is already up to date.\" when there is no diff, otherwise creating a branch, committing, pushing, and opening a merge/pull request through the provider's REST API.",
+      "evidence": [
+        {
+          "resource": "repo://examples/openwiki-update.bitbucket-pipelines.yml#L21-L37",
+          "version": "repo-lines-v1:sha256:c7449a8da99e9d663c04dbef5e5b5f15a3056d3c27b5fd022eaf4ddeb661495f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwODczYzgwNTA2YTFkNTg5Zjc1NTU1OWU1ZjdmNTk3MzFmNzJmNzdhM2MwNWI2M2JiNDJkNTQ5NDNiZWFmNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNzlhMmYxMGM4MDM5NDNkZjg0YzZiZGIxYjM4ZGM4ZGQzZGQ0NTcxNmEyMzI0MDU4MDA1ZWJhM2U4NTkwYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzOGMxYzk3YmM0YzYxZTUwYzVmMWUwMTliZTgyZTUxNzI4NjU3N2YzZWEzMGNkZWVmOTNkODBlMjAyNDk0NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyODU4MzU3MjgzMTM2YmU4NmE1NmFlYjI1ODQ2ZjEwNTAzMDhiNWI4OTY2NDg3YTk4MmU4NGNjNDc5ZmRkNTkifQ"
+        },
+        {
+          "resource": "repo://examples/openwiki-update.gitlab-ci.yml#L13-L32",
+          "version": "repo-lines-v1:sha256:c10c65273f793f3fe28fa42db98b2e1fd1723d129adcc5f4c6c9fff23412404a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhNDE5OTQ2NGQxOWVkOTZmY2EyNGY2Y2E3NjI4MTljOWJkNzE3Y2ZlYWEzZDlmODA4ZmI1NDJjODU5Njk1ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNjA1OTI4NjlmN2U4ZmJhYTMxYjlkNmMzNTc1YmE3MjA1M2EzYTVjOGJhMjU1OTE2NjczOTk5MTA0Njk3OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkMGVhZjExYmVmNDdjZjA1ZmNiNDU5MmY5MGNhYWQwNDVmNzhlMzQ1MzA1YzMyNzM0M2JmNDNlOGNkNTM0ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliYzc5NTMyMGVhY2Y5YjYzM2E3OTYxZWNhYzA1OWE0NjZmZTc4NWJlOTAzNmM0ODAzNjdiMzVmNzk3OGUwNjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d272e2e86e664caabb33f3ad6f117c68",
+      "statement": "The GitHub Actions example triggers on a UTC daily cron (0 8 * * *) and workflow_dispatch, and uses peter-evans/create-pull-request which no-ops when nothing changed.",
+      "evidence": [
+        {
+          "resource": "repo://examples/openwiki-update.yml#L3-L7",
+          "version": "repo-lines-v1:sha256:f85bdfd7954ff5617292b34d02c83de4510d7f1dc18cbdc099a6cba72aa18082:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk2ZGM0ODE0OWY1YTgzZDFlZDZkYmIzOWJiYzdlMmI5MDJhYTNkMzRkNmJkNWFlNGIyOTFiNjhkZjBjYTc5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTNhZWQ1MDJhNWFkZWU3YmIwY2FkZDQ2Y2Q3NDYzYjUzMjBjNmNjZWU0NDgwZDY2ODU0ODg0MzEwNjM3NjExOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzViMWYyNGU2MTgwNWVlMWE5YmM3ODA0N2UxZTRiM2Q4NjE1N2Q2ZTM3ZDhhYzBiY2JlYmQ1ZTY1ZTVlZjFhYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzk0NjJkNWYyYzIwN2U2YjRmODI4NDNkOTE1NGZmMGJiYWQwMzQzOTI0YjJjM2M0YmFiZDk5Yjg3Y2NkNGI4MiJ9"
+        },
+        {
+          "resource": "repo://examples/openwiki-update.yml#L50-L64",
+          "version": "repo-lines-v1:sha256:2507faafa9faf9e43981bd485c049cc5f2131c782c9588d50641b6b05c8b5686:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2ZmNGFkMzNiYTkxYjE0OGUxYjFiODI5MGI4ZmZmMjdiMjAzZmFiZmVlNTg3MDI4MmRlMzY3MzgzYjFiZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0Nzc5NmQzMTczMmZiY2U4OTk4YTJmN2U3YjFiYjk3NTVjMjNlNTg1MDMyMGI5MDkzN2Q4MmMzZmQwZTYyYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxOTEzNzMyNTgyYzNlNjAzNTkwNzg2Yzg2ODM2OTUxZmYzNWU5YjJkMGY4ZDMxMDY3ZDRmNGM4NzQzZGIyYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_77c64fbfaa9647298425e325789c0050",
+      "statement": "The live repository workflow gates scheduled runs so they only fire in the origin repo (langchain-ai/openwiki) or when a fork opts in via the OPENWIKI_ENABLE_SCHEDULED_UPDATE repository variable, while workflow_dispatch always remains available, preventing contributor forks from silently arming a daily job that needs a provider secret.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L14-L19",
+          "version": "repo-lines-v1:sha256:71b89b4b76e8135ed4e00e8af36a1c9e0a63855db547c7c344135ebfb7e23594:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzIxZmZlYTU4MTA0NWRiNzUyZjk0NmE1NWUxMWE2ZDYyMjQ3MWQ1M2E3NGQ4NTZmMDE2MzE3NjM2ZWY4NjljNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmYyN2MzMWJhYzUyZmJmMmVhYWEwZmUwNTFiNGM1ZjBjNDJhMmQ4N2FmZjkzMmZlZmVkNjY4NTA0ZWE1NGU3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2JhNWFmZmQ4MjMxYzBlODFiYmNkNDIxNTRhMWNjOTBlODZlZmY2NjM1NWMwNDhjZTU1YjMyMzdiZGFjM2ExZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjY0MDRiMDhmZTYzMmQ2MjFiYjg5YWY1MjFkMmE0MGU5MDU3YzRmZWUxYmI3MDkyMjI2MzhjNDM4Yzc4M2VkMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_91bbfcd16ebf4a67a2f65e5fda3c2911",
+      "statement": "The live GitHub workflow builds OpenWiki from the checked-out source and runs `node dist/cli/cli.js code --update` (rather than the published package) to dogfood unreleased changes, and restores the protected workflow file after the run because `code --update` regenerates it from an internal template and would otherwise drop the fork guard.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L46-L74",
+          "version": "repo-lines-v1:sha256:01dea59d34bdc40170dc0e649a42a15e9bb248fc1547304e6d7183b0a8a33bee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjOTQ2NDJmZjIyNWM4OGE1MjRlMzZjYzY1YTYzOWIxMzFjM2JlOTlkZGFiOTVjNzVmMTMwMDE1Mzk0ODRmMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NjAwZTdiNjQ2MWE3ZDFkOGJjZWJlN2FmZWRiZjRhNzc3YTRhY2JlNWVlYWNkMmExNjcwMjk2NzUzNjhkMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNDQzZGZkMTliZGM2YWUxYzI2ZWY1NDRjMDYzMzQ4ZjZhOWVmOTI2NDg3YTg2MTUwYzc4M2VjYjVhNDE1NGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMGZkODJlZjUyZjI5MTNjOWJkMjU2MDBhOGZmYzlhMzA2NzgxNWFlNDk1NGMxODczMzM5MDJlZWI1ZmNmNmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5983c989ac8344fea13e3db6330ab01a",
+      "statement": "Repository generation/update is resumable via durable run state recorded in openwiki/.run.json only when the same checkout persists across a rerun; ephemeral CI runners discard their workspace after a job, so a failed scheduled CI run does not retain uncommitted run state and the next run starts fresh rather than resuming.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L35-L35",
+          "version": "repo-lines-v1:sha256:44c7c8051e83998d969e749a3c21a3c7d7d8ced5a7cd597a3a9fb42b80e6e487:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjN2M4MDUxZTgzOTk4ZDk2OWU3NDlhM2MyMWEzYzdkN2Q4Y2VkNWE3Y2Q1OTdhM2E5ZmI0MmI4MGU2ZTQ4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjN2M4MDUxZTgzOTk4ZDk2OWU3NDlhM2MyMWEzYzdkN2Q4Y2VkNWE3Y2Q1OTdhM2E5ZmI0MmI4MGU2ZTQ4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDY0ODVkMDNiOWNiZTdkNGI3ZTIyNWY5ZjUzYjNjMWJjYzgzNDBkYjZmZDg1OTA2ZGI4ZDY0YzZhOWFkNDlkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTJjMGM5OGU5YjJiZDI3YzBkZmQ1NjkxMDA0MzczMmI4YThhMGRlYjU5MDMzODc5MDJiODY3NTY2ZjMzZmI4MCJ9"
+        },
+        {
+          "resource": "repo://README.md#L55-L55",
+          "version": "repo-lines-v1:sha256:8c14e665e35950919d64b14e39d29156ccabac889d7c08fa09d47ff748f58ec7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTc5ZGRkZTViNzViMGIzODQ4ZGZjMzgyYTZmYTIwMjdhMjNiNTkxNzVlYjcwMWU1YTczMmRmMGEwMjczYjZhNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThlOTZiNzQ1ZTg5NDg0ZWM3YzcwNmVjOTVjNDZkMWI5MDc2YWIzODA2OTgyNTc3MTkwYmE1ZmIwZjA2MTc5MSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-25T02:14:25.283Z"
+  }
+}

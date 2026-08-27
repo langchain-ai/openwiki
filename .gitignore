@@ -19,3 +19,15 @@ token.json
 *.jks
 
 large_tool_results/
+
+.cache/
+artifacts/
+results/
+summaries/
+__pycache__/
+.venv/
+*.pyc
+
+# KEB: run output and checked-out benchmark source repos are never committed.
+evals/ledger/.results/
+evals/ledger/benchmarks/*/repo/
