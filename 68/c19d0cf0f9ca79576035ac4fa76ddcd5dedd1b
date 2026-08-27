@@ -1,0 +1,20 @@
+README.md
+  s_1c388bff20162b::t_441fb6e8f696df 35,123-125
+  s_1c388bff20162b::t_07b84cbcb4237d 126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "68c19d0cf0f9ca79576035ac4fa76ddcd5dedd1b",
+  "prompts": {},
+  "sessions": {
+    "s_1c388bff20162b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04478-dda9-79f2-bc10-f812eb7e8bb1",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
