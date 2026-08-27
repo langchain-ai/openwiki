@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:75508a3f5ff695fb0a06563aaf99fd952e2f0c6c21fe11f3fd6a03c2874afedd",
+  "pageVersion": "sha256:43c05396f76cdd1c25b220c4fffc5d5c660d7425590d4444906d1b996ab21b82",
   "claims": [
     {
       "id": "claim_b135795717474452be15e901f67a507f",
@@ -469,10 +469,42 @@
           "version": "repo-lines-v1:sha256:410f3c4191614997751e0ef334e9ca5781ddc569e9293ad56bee3b76061e9e8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkNDc3MmVkMjY2NmQ2ZWEwZGFkNTlkYTZmNjM1YWNmMDM0MTVhYTczNWRiMWJjODYwOWJiZjkwMTY0ZGU3NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0Mjg1OTc1NTcwOGQ4ZGE4ZGI2Y2Q5MzMyMzEzZDdlOWY1M2IwZTVhMzRlNjYyZGM3MjhiZGYxNzQwNmE0NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3MzM1NjM0ODFjOWMzZjdmNjdiZGVkZDMwYzRmMzcxNjcwOWMzMDhjNmVmZTFkNzAzYmY5ODFjZTU1ZWRiODkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_18e53938818249cb8a8de5f21f7ea7ff",
+      "statement": "Repository planner and page workers are deliberately non-delegating (subagents: []), and inject NO_DELEGATION_MIDDLEWARE whose wrapModelCall strips the generic DeepAgents task tool from every outbound tool list after createFilesystemMiddleware has contributed its tools, so the model never sees a delegation surface even though DeepAgents 1.12 adds the task tool regardless of subagents.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L340-L357",
+          "version": "repo-lines-v1:sha256:a3bec9d178a88bd433ba712d261a4ffba999ed02b86144af54e4abde309ffd38:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NWJkY2MyOWJiMTJiODM1NDFlODJkYjAzZDQwNzk4NmI3OGZiMWRjMDMxMTE3NDliMzEzZjg4NWU1ZWU1YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5Y2QzM2E0OWNjY2FjYWQyN2VmMWI0MWMyMmQ2MmMyMjliY2I3NGM0N2MyNzc0OTJkYjgzNDVjZGRkYjhhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0MjQxODYxMGI2NTQzNjdmNzFiMDNhOGYzNjQ2OTZiMTc1NDM0Y2U4NzNhZjUyNDI0NDE3ZGE0YWEzNjlmMjUifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L478-L500",
+          "version": "repo-lines-v1:sha256:dcff5c795db2e7a475da5f01313ca70276f922fbfcee124063c379c010524258:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0MGUyY2ZiMTQ3ZTFmYmRiMzcyMDM4MmZlOGYwNDUxZTZhZmI2M2QxNjMxZDIxYzNiZThhODFiZTJjZWIxZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2ODgzNjk3OThjZjlhY2NjYTkzZDcwZjQ1ZDFkZGFmNDAwMmY3ZWI3NWMxNDJkZjYzOWU3OTc3NjM0NjYwYzAifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L87-L97",
+          "version": "repo-lines-v1:sha256:6c714fc8bd2c12a5f5518a4212803a1358a487edad2d41d87f16d3ccb517e20f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhYzllYjYxMDliNTNlYmQwZTYwMjI3NDAyZWVkMWRjZTkxM2RjYjNjMTAwYTYwZjEzOTFjZTA3MTdlNzJiOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkYjRlOTAyMjRlZGRiZWVlOTIwMGIyNTg0NDY5NGM2Nzc4YzA5NzYzZGFjZTkzZmVlNmRhYWVmMzQ1NjBiZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1MjVjYTAwMmVjZjlhNjc4MTllYjViNzM3MjcyOTVlNzBhMWE0ZmQ3NTRlNDAzNjYzOThiODBlMTMwZDI1NWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_afb09aaf72f74f3ba0a48e1a8df15dc4",
+      "statement": "runPendingPageAgents walks the persisted page queue and, after each page completes, enforces SMOKE_FAIL_AFTER_COMPLETED_PAGES (parsed from OPENWIKI_SMOKE_FAIL_AFTER_COMPLETED_PAGES): when the count of complete-status pages reaches a positive threshold it throws an injected smoke failure that aborts the run for CI resumability testing, while a zero/unset value leaves normal runs untouched; the source marks the gate for deletion before any production merge.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L378-L413",
+          "version": "repo-lines-v1:sha256:730758505e58250caed99cabd68489b46029820ea03c70e3db4620f61f3b035d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzOTE2YjZmMGFjOTBiYTAxZjhkMzQ2NjEyZGNhMTAxMDYxOGQ3Njg2YWMwYzhiOTdlY2FjOGNlYTA3ZWJkNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0YWIwYjk1YTY5NmMzNGM2OTMwZjJhYTMwMDE5NmIwYzUzOWMxZDk5YWE1ZjUyYTAwNmMwMWNhOTBlNzY0NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4N2FiOTA3NGVhOTgwMjUwZDU5NTAwMDBkMWI4ZTE1ODNhMjgwMGFkOWY4OWZhZjE5ODA4NWM1MDBkMmUyYTIifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L77-L85",
+          "version": "repo-lines-v1:sha256:8dfe3b947c96bed6af7350f026563342f47df8321449eaccce7a29e2e8391363:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDk5NjdlYzFlZDM4MzZmOGViMTdhZmYxNzJiNWJmZWY3ZGU2MDQ4NWE0MzljNmNhMTFjNTkxZTE3NTU3MzlhZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWUwYzk1ZjE0ODI4ZWMwZWM4MTI1NzlhM2I1OWUzOTk0MzliNjMyNzZiYWZlYTBhMDJmZTgxZWMxNGJiNTJhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDg3ZTQzNmJhZDJjN2NlNzBkZjQ5MzQ1OWE5YzgxZTAxNmI2MzQ3MzIyODg0NmVmN2Q2MjI4MDUzNjY3YjllOCJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.0",
-    "at": "2026-08-26T20:17:27.397Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-27T22:28:02.719Z"
   }
 }
