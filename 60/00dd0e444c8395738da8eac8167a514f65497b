@@ -1,0 +1,21 @@
+src/generation/repository-run.ts
+  s_1c388bff20162b::t_b63c41d645a484 384-387
+test/generation/repository-run.test.ts
+  s_1c388bff20162b::t_6e58038b2da873 966
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "6000dd0e444c8395738da8eac8167a514f65497b",
+  "prompts": {},
+  "sessions": {
+    "s_1c388bff20162b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04478-dda9-79f2-bc10-f812eb7e8bb1",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
