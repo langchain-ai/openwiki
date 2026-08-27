@@ -3,9 +3,6 @@ type: workflow
 title: Onboarding and Setup
 description: How OpenWiki's first-run setup selects a provider and model, captures credentials, chooses a run mode, and bootstraps code-mode repositories, plus the layout and permissions of the ~/.openwiki state directory.
 tags: [onboarding, setup, credentials, code-mode, openwiki-home, configuration]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-a34c01da72fb3c9bee4f3cb9
     resource: repo://src/agent/openwiki-ignore.ts

@@ -35,9 +35,6 @@ sources:
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
 generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
-verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
 ---
 
 # Claims Reconciliation on Update

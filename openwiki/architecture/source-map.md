@@ -52,8 +52,8 @@ sources:
     resource: repo://src/visualize/server.ts
 generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T21:01:58.235Z
 ---
 
 # Source Map
@@ -82,10 +82,11 @@ before anything else.
   agent events into `OpenWikiRunEvent`s (`parseStreamEvent`,
   `parseAgentStreamChunk`).
 - **`src/config/constants.ts`** is the single large registry of stable strings:
-  the `openwiki` directory name and update-metadata path, and the provider
-  environment-variable key names and defaults (`OPENAI_API_KEY_ENV_KEY`,
-  `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex keys, and provider lookup helpers).
-  Nearly every subsystem imports its identifiers from here.
+  the `openwiki` directory name, the page-manifest and update-metadata paths,
+  and the provider environment-variable key names and defaults
+  (`OPENAI_API_KEY_ENV_KEY`, `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex keys,
+  and provider lookup helpers). Nearly every subsystem imports its identifiers
+  from here.
 - **`src/generation/repository-run.ts`** owns the repository-generation
   lifecycle. It drives the plan-then-page workflow with `beginRepositoryRun`,
   `submitRepositoryPlan`, `nextRepositoryPage`, `submitRepositoryPage`, and
@@ -97,6 +98,11 @@ before anything else.
   `skipRepositoryPage` rolls a failed worker back (restoring the page markdown
   and sidecar, marking the job `skipped`), and `restoreRepositoryPageMarkdown`
   re-applies the snapshot during `finishRepositoryRun` for every skipped job.
+  `finishRepositoryRun` finalizes once on source change: it records a
+  `sourceChangedBeforeFinish` flag before deletions and finalization, then
+  re-checks the source afterwards, so any drift during the run leaves the wiki
+  finalized without advancing its source checkpoint and marks the update
+  `interrupted` for the next reconciliation.
 
 ## Subsystems
 
@@ -112,26 +118,32 @@ calls into `generation/repository-run.ts`), `src/agent/docs-only-backend.ts`
 (`openwiki-ignore.ts`), wiki post-processing (`wiki-finalizer.ts`,
 `wiki-link-validator.ts`, `wiki-replacement.ts`), and the ChatGPT/Vertex auth
 surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`).
-`repository_runner.ts` runs one fresh shell-free worker per pending page; on a
+`repository-runner.ts` runs one fresh shell-free worker per pending page; on a
 worker that exits without submitting, it captures a `RepositoryPageSnapshot`
 via `captureRepositoryPageSnapshot`, calls `skipRepositoryPage` to restore the
-page and mark it `skipped`, collects those snapshots, and passes them to
-`finishRepositoryRun` so skipped pages are reconsidered on the next update.
+page and mark it `skipped`, collects those snapshots from the page loop, and
+passes them to `finishRepositoryRun` so skipped pages are reconsidered on the
+next update.
 
 ### generation — repository run lifecycle and page jobs
 
 Orchestrates a full repository wiki build. Principal entry:
 `src/generation/repository-run.ts`. `src/generation/run-state.ts` owns the
 durable on-disk checkpoint (`.run.json`, schema-versioned, with `planning`/
-`generating` phases and `pending`/`skipped`/`complete` page-job statuses) so
-runs resume after interruption. `src/generation/page-jobs.ts` builds the plan
-(`createRepositoryPlan`) and replaces per-page claims (`replacePageClaims`).
-`src/generation/errors.ts` defines `RepositoryRunError`. The lifecycle's
-snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,
-`skipRepositoryPage`, `restoreRepositoryPageMarkdown`) let a failed page worker
-be rolled back to its pre-work state and marked `skipped` rather than failing
-the whole run; `finishRepositoryRun` requires a snapshot for every skipped job
-and re-applies those snapshots before finalizing.
+`generating` phases and `pending`/`skipped`/`complete` page-job statuses, plus
+a `completedBy` producer field on each `PageJob`) so runs resume after
+interruption. `src/generation/page-manifest.ts` is the durable page-correctness
+ledger: each `RepositoryPageManifestEntry` records the source checkpoint, page
+version hash, and per-page producer provenance (`completedBy` and
+`completedRunId`) used to decide which pages a later update must recheck.
+`src/generation/page-jobs.ts` builds the plan (`createRepositoryPlan`) and
+replaces per-page claims (`replacePageClaims`). `src/generation/errors.ts`
+defines `RepositoryRunError`. The lifecycle's snapshot/skip/restore operations
+(`captureRepositoryPageSnapshot`, `skipRepositoryPage`,
+`restoreRepositoryPageMarkdown`) let a failed page worker be rolled back to its
+pre-work state and marked `skipped` rather than failing the whole run;
+`finishRepositoryRun` requires a snapshot for every skipped job (matching
+jobId and path) and re-applies those snapshots before finalizing.
 
 ### claims — grounded-claim persistence and evidence resolution
 
@@ -203,8 +215,12 @@ resolves the home/wiki directories; `reasoning.ts` resolves reasoning settings.
 ### integrations — host-tool integration and MCP server surface
 
 Owns embedding OpenWiki into external hosts. `src/integrations/core/` provides
-the integration protocol, session manager, and repository-root resolution;
-`src/integrations/mcp/server.ts` exposes OpenWiki over MCP (stdio in
+the integration protocol, repository-root resolution, and
+`HostSessionManager`, a thin single-run adapter over the transport-neutral
+lifecycle core that exposes exactly five MCP lifecycle tools
+(`openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
+`openwiki_submit_page`, `openwiki_finish`) and serializes one operation at a
+time. `src/integrations/mcp/server.ts` exposes OpenWiki over MCP (stdio in
 `stdio.ts`); `src/integrations/install/` handles host installation.
 
 ### visualize — local graph viewer
@@ -254,6 +270,7 @@ flowchart TD
   Agent --> Runner["agent/repository-runner.ts plan and page loop"]
   Runner --> Gen["generation/repository-run.ts lifecycle"]
   Gen --> State["generation/run-state.ts durable checkpoint"]
+  Gen --> Manifest["generation/page-manifest.ts page provenance"]
   Gen --> Claims["claims runtime and store"]
   Gen --> OKF["okf/frontmatter.ts validation"]
   Agent --> Connectors["connectors/tools.ts source tools"]
@@ -262,4 +279,5 @@ flowchart TD
 ```
 
 Caption: Control flow from the CLI through the agent into the repository
-generation lifecycle, with config identifiers shared across subsystems.
+generation lifecycle, with config identifiers shared across subsystems and the
+page manifest recording per-page producer provenance.

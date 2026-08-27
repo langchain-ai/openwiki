@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "pages": {
+    "/openwiki/architecture/agent-runtime.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:75508a3f5ff695fb0a06563aaf99fd952e2f0c6c21fe11f3fd6a03c2874afedd"
+    },
+    "/openwiki/architecture/overview.md": {
+      "gitHead": "58a22da7a55c4b2521d669669205ee163a7e8213",
+      "sourceFingerprint": "sha256:6f5d24a9e965bd347892bd8338eb28bdf9d536387f4f2ed2752af8b81b622e7d",
+      "pageVersion": "sha256:f2e6dacc22ec678c0c15ec992f19de00892e4ddbf6bb79ea40de25d6286158f8",
+      "completedBy": "openwiki/0.4.3",
+      "completedRunId": "b7a46ade-5eec-4e0c-8404-87451bd3a46a"
+    },
+    "/openwiki/architecture/source-map.md": {
+      "gitHead": "58a22da7a55c4b2521d669669205ee163a7e8213",
+      "sourceFingerprint": "sha256:6f5d24a9e965bd347892bd8338eb28bdf9d536387f4f2ed2752af8b81b622e7d",
+      "pageVersion": "sha256:8065513e1d181237cb17f62765afdabfd6562e2532e66fded9fe60b112246be0",
+      "completedBy": "openwiki/0.4.3",
+      "completedRunId": "b7a46ade-5eec-4e0c-8404-87451bd3a46a"
+    },
+    "/openwiki/concepts/grounded-claims.md": {
+      "pageVersion": "sha256:4e545fbfb05d02ea035051654fdd3007836af09ca3083727fb56f0b46dabd75b",
+      "completedBy": "openwiki/0.4.3",
+      "completedRunId": "b7a46ade-5eec-4e0c-8404-87451bd3a46a",
+      "gitHead": "58a22da7a55c4b2521d669669205ee163a7e8213",
+      "sourceFingerprint": "sha256:6f5d24a9e965bd347892bd8338eb28bdf9d536387f4f2ed2752af8b81b622e7d"
+    },
+    "/openwiki/concepts/model-providers.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:7184f4f9896e5ddd001bafc00558e5bfac684857918eadf98910366e7dad98cb"
+    },
+    "/openwiki/concepts/okf-output.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:ffd27ccf92f1fc05e01d31a26c4d02f7ad3ec4c71ad6a834109665e4d357651d"
+    },
+    "/openwiki/concepts/two-modes.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:1f20b2d0755187863b358f1e9e0b404e29376f56fbad9876d9d66024546b7b61"
+    },
+    "/openwiki/integrations/coding-agents.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:78c632e9d37c4f456dae10fdf49844f3bae0d51d22ed1a33144b35af00a2033f"
+    },
+    "/openwiki/integrations/connectors.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:7ae63c5949a7a323e6f5cc77f9f4c0c8a8a312da456532695d1d714e327e0c41"
+    },
+    "/openwiki/integrations/visualizer.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:316b06ac0e020cbf8d00d253245b293aa04cc74502b99b8de4f13910a88d8d3a"
+    },
+    "/openwiki/operations/ci-scheduling.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:38f046ab807a29746f784f2fbeb25ad70fa8a25d0055eddfb578759271004f95"
+    },
+    "/openwiki/operations/cli-reference.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:9d35ba815d632b4513bbe3eb03baf420d8d147c9930bdec90a72f41f78404512"
+    },
+    "/openwiki/operations/configuration.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:be8435e051eb6053eb241c190be58890f208fbcebb0c437faee0828f0e1465f4"
+    },
+    "/openwiki/operations/telemetry.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:d9fec99a602b674accda34271a6c6d39ab9e7d18dc07d95c343cb772f5216f3a"
+    },
+    "/openwiki/quickstart.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:edfc29007eb31cedc2eb9a4ed563459cfd26ceb3042b67bc905268dc67630579"
+    },
+    "/openwiki/testing/overview.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:9e1a30e1c95aa3c4747be42902ba5500fd76cf51537ee5fbd43593ef08a70adc"
+    },
+    "/openwiki/workflows/claims-reconciliation.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:45d9f1eeffbd9d423ef3d1f0b5fe120c9080917192105703a37d8437064ed1bb"
+    },
+    "/openwiki/workflows/onboarding.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:3769548dc7a8f126e79237db19d4a17a52691067607e82276477a75fd0ae0020"
+    },
+    "/openwiki/workflows/personal-ingestion.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:bf8bf3823081b84a0e7366c6fe1b278f325279f39358d2e905ed063dbd31e858"
+    },
+    "/openwiki/workflows/repository-generation.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:c442a0d9f01908c54952c12a022109a2449d8dd0d9902ea7e4359f231eb5fd4e"
+    },
+    "/openwiki/workflows/wiki-finalization.md": {
+      "gitHead": "57948ad646f5d97cd1512362421bc629365d902a",
+      "pageVersion": "sha256:aa24075dfe4b3d2f5b20a62622d85ae5d5e1e629d2e32ccc4807d87c79e85446"
+    }
+  }
+}
