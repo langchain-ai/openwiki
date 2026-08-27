@@ -41,6 +41,9 @@ sources:
   - id: openwiki-source-6f06cc988142430d18f2233e
     resource: repo://src/integrations/mcp/stdio.ts
 generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T21:21:31.408Z
 ---
 
 # Coding-Agent Integrations (Codex/Claude/OpenCode)
@@ -56,8 +59,10 @@ This page documents the protocol operations, the divided ownership of research
 versus finalization, repository-root resolution, install/uninstall mechanics,
 and the scope model. For the internal generation engine these tools drive, see
 [Repository generation workflow](/openwiki/workflows/repository-generation.md)
-and [Architecture overview](/openwiki/architecture/overview.md). For the
-`openwiki mcp` and `openwiki integrations` commands, see the
+and the deterministic finalization pipeline in
+[Wiki finalization](/openwiki/workflows/wiki-finalization.md); for the two
+run modes, see [Code vs Personal modes](/openwiki/concepts/two-modes.md), and
+for the `openwiki mcp` and `openwiki integrations` commands, see the
 [CLI reference](/openwiki/operations/cli-reference.md).
 
 > Note: This is the **host integration** path. It is unrelated to the
@@ -98,7 +103,9 @@ a strict Zod schema before delegating to the repository-generation core.
   generated deterministically and never become jobs.
 - **`openwiki_finish`** — Finalizes the run only after every job is complete:
   deletion, validation, indexing, provenance, Claims finalization, and metadata
-  persistence, then clears process-local state.
+  persistence, then clears process-local state. `.run.json` is removed last so a
+  pre-finish failure stays resumable; a finish-time source drift completes once
+  as `interrupted` rather than failing.
 
 ```mermaid
 sequenceDiagram
@@ -106,8 +113,14 @@ sequenceDiagram
     participant SM as HostSessionManager
     participant Core as Repository Run Core
     Host->>SM: openwiki_begin(root, mode)
-    SM->>Core: resolve root + beginRepositoryRun
-    Core-->>Host: noop OR planning run
+    SM->>Core: resolve root + read .run.json
+    alt interrupted run exists
+        Core-->>Host: resumed planning or generation view
+    else clean update
+        Core-->>Host: status=noop, no active run
+    else fresh run
+        Core-->>Host: active planning view
+    end
     Host->>SM: openwiki_submit_plan(pages, deletePages)
     SM->>Core: submitRepositoryPlan
     loop until complete
@@ -119,10 +132,11 @@ sequenceDiagram
     end
     Host->>SM: openwiki_finish
     SM->>Core: finishRepositoryRun
-    Core-->>Host: complete
+    Core-->>Host: complete (interrupted if source drifted)
 ```
 
-The MCP page-job lifecycle a host agent drives end to end.
+The MCP page-job lifecycle a host agent drives end to end, including resume of an
+interrupted durable run and the finalize-once semantics on source drift.
 
 ## Session lifecycle and invariants
 
@@ -148,6 +162,35 @@ several invariants:
 identity as `host-agent/<host>`; the producer actor defaults to the host id when
 not supplied.
 
+## Page-level resumability and the single finalization
+
+The host adapter holds no durable state of its own. The process-local
+`ActiveRepositoryRun` it keeps is always a reconstruction of a single durable
+checkpoint, `openwiki/.run.json` (`RepositoryRunState`), written by the
+generation core. This is the same checkpoint the native agent runner and CI
+self-update use, so a run begun by one driver can be resumed by another:
+
+- `openwiki_begin` reads `.run.json` first; if one exists, it calls
+  `resumeRepositoryRun` rather than starting fresh. Resume validates that the
+  requested `mode` and `language` match the interrupted run (mismatches are
+  `conflict` errors), refreshes the actor identities from the current host, and
+  re-derives the source fingerprint.
+- On source drift since the interrupted plan, resume discards the plan and
+  returns the run to `planning`, so the host must submit a replacement plan; the
+  SKILL and MCP instructions tell the host to call `openwiki_begin` again and
+  never reuse an invalidated plan. When the source is unchanged, resume
+  reconciles the queue against the on-disk page manifest and re-promotes any
+  manifest-proven jobs to `complete`.
+- `openwiki_finish` finalizes exactly once per run. It requires the plan present
+  and every job non-pending, then runs the deterministic finalization pipeline
+  (deletion, validation, indexing, provenance, Claims finalization, manifest
+  rewrite). `.run.json` is deleted **last**: every earlier failure leaves the run
+  resumable, so a subsequent `openwiki_begin` reconstructs and retries. If the
+  host mutates source mid-run, finish still completes once — it records the drift
+  by writing `interrupted` metadata and returning
+  `{ status: "complete", sourceChanged: true }` rather than failing, so the next
+  scheduled/host begin starts a fresh planning pass against the new source.
+
 ## Repository-root resolution and safety
 
 `resolveRepositoryRoot` turns a host-supplied path into a canonical Git worktree
@@ -161,11 +204,16 @@ without exposing the offending path.
 
 ## Connector context is not yet supported here
 
-The repository-generation core accepts an optional `planningContext` (user and
-connector context) for planning and replanning, but `HostSessionManager.begin`
-does not forward one — it passes only `root`, `mode`, `language`, `force`, and
-actor identities. Host-driven runs therefore run without connector context in
-this path today.
+The repository-generation core accepts an optional `planningContext` (actual
+user/connector context used for planning and replanning) as a field of
+`BeginRepositoryRunInput`, alongside `root`, `mode`, `language`, `force`,
+`actor`, and the optional `now` clock. On resume, when the durable state has no
+plan, the core persists a supplied `planningContext` so a later planner can use
+it. The host MCP path never supplies one, however: `BeginInput`/`BeginRequest`
+carries only `root`, `mode`, `language`, and `force`, and
+`HostSessionManager.begin` forwards exactly those plus the actor identities and
+the `now` clock — never a `planningContext`. Host-driven runs therefore plan
+without connector context in this path today.
 
 ## The MCP transport
 

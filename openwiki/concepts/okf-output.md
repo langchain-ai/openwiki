@@ -23,6 +23,9 @@ sources:
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
 generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T21:21:31.408Z
 ---
 
 # Open Knowledge Format Output
@@ -35,13 +38,14 @@ broken, degraded) before the wiki is finalized. These guarantees are applied by
 deterministic post-authoring passes rather than by the authoring agent, so the
 persisted wiki is conformant regardless of what the agent wrote.
 
-These passes run in a fixed order inside the wiki finalizer: a pre-run
-preparation phase migrates existing pages to OKF and snapshots provenance, and a
-post-authoring phase validates Mermaid, synchronizes indexes, validates internal
-links, synchronizes claim sources, and finalizes generated provenance. See
-[wiki finalization](../workflows/wiki-finalization.md) for the surrounding
-lifecycle and [architecture overview](../architecture/overview.md) for where OKF
-output sits in the system.
+These passes run in a fixed order inside the wiki finalizer. A pre-run
+preparation phase migrates existing pages to OKF and snapshots provenance. After
+authoring, `finalizeWikiArtifacts` runs six ordered operations: it validates
+Mermaid, synchronizes indexes, validates internal links, projects claim sources
+into OKF `sources` (only when `claimSources` are supplied), and finally
+reconciles generated provenance. See [wiki finalization](../workflows/wiki-finalization.md)
+for the surrounding lifecycle and [architecture overview](../architecture/overview.md)
+for where OKF output sits in the system.
 
 ## Frontmatter fields and validation
 
@@ -130,9 +134,17 @@ compares body hashes: a new page or any page whose body changed receives the run
 stamp (`{by: producerActor, at: now}`, and any legacy `timestamp` field is
 removed); an unchanged body has its prior stamp restored, so an agent rewrite
 that removed or altered the event cannot spuriously advance it, and a page that
-was previously unstamped stays unstamped. The finalizer refuses to run with an
-empty producer actor. The snapshot is serialized in a deterministic sorted order
-so it survives a process restart between the two phases.
+was previously unstamped stays unstamped. The candidate content for each page is
+then passed through `repairOkfFrontmatter`, and the reconciled bytes are written
+only when they actually differ from what is persisted.
+
+The finalizer refuses to run with an empty producer actor, and it likewise
+rejects any empty per-page override in `producerActorsByPage`. Provenance is
+optional trust metadata, so the pass is best-effort about page I/O: if a page
+cannot be read, or a provenance write returns an error, that page is skipped and
+the rest of the wiki is still finalized. The snapshot is serialized in a
+deterministic sorted order so it survives a process restart between the two
+phases.
 
 ```mermaid
 sequenceDiagram
@@ -150,6 +162,21 @@ sequenceDiagram
 ```
 
 Provenance is reconciled by comparing pre-run and post-run body hashes.
+
+## Claim sources projection
+
+When Claims evidence is supplied, `synchronizeClaimSources` projects each
+page-owned evidence set into the OKF `sources` family before generated
+provenance is reconciled. It runs only over concepts that exist in the wiki,
+reads each page, repairs its frontmatter, and merges the current `sources`
+entries with the projected ones. OpenWiki-owned entries are tagged with a
+deterministic `openwiki-source-<sha>` id derived from their resource, so a later
+reconciliation can replace or remove only its own projection while
+producer-authored source entries are retained untouched. Projected resources are
+normalized to whole-file repository URIs (line ranges stripped), de-duplicated,
+and sorted; if the merged set is byte-identical to the existing field the page is
+left unchanged, and a write error aborts the pass rather than leaving a partial
+projection.
 
 ## Index synchronization
 

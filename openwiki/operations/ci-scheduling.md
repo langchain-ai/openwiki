@@ -34,6 +34,9 @@ sources:
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
 generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T21:21:31.408Z
 ---
 
 # CI Scheduling and Self-Update
@@ -185,18 +188,26 @@ Every example follows the same shape:
    documented; a shallow clone hides that commit and the update runs against an
    empty change summary.
 2. **Install and run OpenWiki.** The examples install `openwiki` globally (plus
-   optional `mermaid` and `jsdom` for high-fidelity Mermaid validation) and run
-   `openwiki code --update --print`. Provider and model are supplied through
-   environment variables/secrets (for example `OPENWIKI_PROVIDER`,
-   `OPENROUTER_API_KEY`, `OPENWIKI_MODEL_ID`), with LangSmith tracing variables
-   set for observability.
-3. **Open a docs PR only on change.** The GitHub example uses
-   `peter-evans/create-pull-request`, which no-ops when nothing changed. The
+   optional `mermaid@11.16.0` and `jsdom@29.1.1` for high-fidelity Mermaid
+   validation) and run `openwiki code --update --print` with `continue-on-error`
+   set so a run failure still proceeds to the PR step. Provider and model are
+   supplied through environment variables/secrets (for example
+   `OPENWIKI_PROVIDER`, `OPENROUTER_API_KEY`, `OPENWIKI_MODEL_ID`), with
+   LangSmith tracing variables set for observability.
+3. **Clean up transient run state.** When the job was not cancelled the examples
+   remove `openwiki/.run.json` (the in-progress run-state file) so it is never
+   committed alongside the documentation.
+4. **Open a docs PR only on change.** The GitHub example uses
+   `peter-evans/create-pull-request@v7`, which no-ops when nothing changed. The
    GitLab and Bitbucket examples make the change check explicit: they run
    `git diff --quiet` over the documentation paths (`openwiki`, `AGENTS.md`,
    `CLAUDE.md`, and the workflow file) and exit early with "OpenWiki is already up
    to date." when there is no diff; otherwise they create a branch, commit,
    push, and open a merge/pull request through the provider's REST API.
+5. **Propagate failure.** The GitHub example ends with an `exit 1` step gated on
+   `steps.openwiki.outcome == 'failure'`, so a failed run still opens a PR
+   preserving the pages completed before the failure but marks the workflow run
+   itself as failed.
 
 The PR is scoped to the documentation paths (`openwiki`, `AGENTS.md`, `CLAUDE.md`,
 and the workflow file), branched under `openwiki/update` (GitHub) or
@@ -217,11 +228,44 @@ and the workflow file), branched under `openwiki/update` (GitHub) or
 - **Bitbucket Pipelines** likewise relies on a repository Pipeline schedule that
   invokes the `openwiki-update` custom pipeline.
 
-The live GitHub workflow also builds OpenWiki from the checked-out source and
-runs `node dist/cli/cli.js code --update` rather than the published package, so
-the daily run dogfoods unreleased changes; it additionally restores the protected
-workflow file after the run because `code --update` regenerates that file from an
-internal template and would otherwise drop the fork guard.
+### The live repository workflow
+
+The live workflow in `.github/workflows/openwiki-update.yml` differs from the
+example because it dogfoods OpenWiki's own unreleased code rather than the
+published package:
+
+- It installs dependencies with `pnpm install --frozen-lockfile` and builds
+  OpenWiki from the checked-out source (`pnpm build`), then runs
+  `node dist/cli/cli.js code --update --print` instead of the globally installed
+  CLI, so the daily run exercises unreleased agent, middleware, and output-format
+  changes.
+- It sets `OPENWIKI_SMOKE_FAIL_AFTER_COMPLETED_PAGES` to force a deliberate
+  failure after a small number of completed pages, exercising the resumable
+  two-cycle smoke branch.
+- After the run it restores the protected workflow file via
+  `git checkout -- .github/workflows/openwiki-update.yml`. `code --update`
+  regenerates that file from an internal template on every run, which would
+  silently drop the fork guard (see the workflow comment and issue #423);
+  discarding whatever the agent just wrote keeps the guard intact regardless of
+  whether the run succeeded or failed.
+
+```mermaid
+flowchart TD
+  A["schedule or dispatch fires"] --> B{"origin repo or OPENWIKI_ENABLE_SCHEDULED_UPDATE?"}
+  B -->|no| Z["skipped for forks"]
+  B -->|yes| C["checkout full history, set up Node and pnpm"]
+  C --> D["pnpm install --frozen-lockfile"]
+  D --> E["pnpm build"]
+  E --> F["node dist/cli/cli.js code --update --print, continue-on-error"]
+  F --> G["git checkout -- .github/workflows/openwiki-update.yml"]
+  G --> H["rm -f openwiki/.run.json"]
+  H --> I["peter-evans/create-pull-request"]
+  I --> J{"openwiki outcome failure?"}
+  J -->|yes| K["exit 1"]
+  J -->|no| L["workflow succeeds"]
+```
+
+Live repository self-update workflow control flow.
 
 ### Ephemeral-runner resume caveat
 
@@ -231,8 +275,10 @@ checkout persists across a rerun. **CI runners are ephemeral** — their workspa
 is discarded after the job ends — so a scheduled CI run that fails does not retain
 uncommitted run state and the next run starts fresh rather than resuming. Resume
 only helps on a persistent checkout (for example a developer's machine). This is
-why the CI examples treat each run as a full pass and rely on the committed wiki,
-plus full git history, as the only durable state carried between runs.
+why the CI examples treat each run as a full pass — the GitHub example even
+removes `openwiki/.run.json` before opening the PR so transient run state is never
+committed — and rely on the committed wiki, plus full git history, as the only
+durable state carried between runs.
 
 ## Related pages
 

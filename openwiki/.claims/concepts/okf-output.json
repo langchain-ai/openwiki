@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5e7b16aaf960cba96ffd3099d3b6b6209a2956b47eadcdfbf1b24afbf04d4a12",
+  "pageVersion": "sha256:ee7cdfcb6cb93ea6153ff87d4dcf13b50106afd12c93fce0b18f9174f39e87a7",
   "claims": [
     {
       "id": "claim_015f68c61f874418879c6446644e49d5",
@@ -144,15 +144,15 @@
     },
     {
       "id": "claim_357444583a024a048e312e3b5984ea3e",
-      "statement": "finalizeGeneratedProvenance stamps the run's `generated` event on new pages and any page whose body hash changed (removing the legacy `timestamp`), restores the prior event on unchanged bodies without advancing its timestamp, leaves previously-unstamped unchanged pages unstamped, and refuses to run with an empty producer actor.",
+      "statement": "finalizeGeneratedProvenance rejects an empty producer actor and any empty per-page override in producerActorsByPage, rehashes each concept body, stamps changed/new pages with the run actor+time while dropping the legacy `timestamp`, restores the prior `generated` event for unchanged bodies (leaving previously-unstamped pages unstamped), runs repairOkfFrontmatter on the candidate before writing, and best-effort continues (skipping the write) when a page cannot be read or a provenance write errors.",
       "evidence": [
         {
           "resource": "repo://src/okf/generated-provenance.ts#L163-L207",
-          "version": "repo-lines-v1:sha256:2169918c5d2168a199e41121dd9548d74f327ec456266795db3b183430542234:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5ODA2NzYwMzI2NzU5M2NjZjJhYzM0ZTI3MGRmNTY2ZWY5ZjFiMWJiNjdiYjM2YjgwZTAwMjE1MDhiOGM0M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjMjg4ZDlkOGRkZWY1ZTdmOTRiNjdmYWRjZWIwMDVhNWIxZWVlZGMxOThhMWQ0ZTU1NmVkZDczMWM3ZDUwODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlYTZlODU4NGRjNzExYTRjNmFiYzQ5NTE0Zjk3MGUwNzBiODJkOGJhNzI2YjZhNWM4YzdiNDY4OWVlMWNiZWQifQ"
+          "version": "repo-lines-v1:sha256:14d9bcb183b8bc14f405e971b56d79127c84b6c57ee4414fd95838b3257d1089:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2Mzk2MmY4OTZjNDg3ZGU2ZDJlNDg4MjM2MTVmZGE3ZmIyZmYyYmU1ODA2Mjc1NWYzYTczYmNkYmE3ZThhNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2YzUwYzU5NzIzZjk5OGRmYjJmZjIyYmU3NGMxZDcyZDg4MGQ4NGJhYjhlZWY1ZDQ4YTczM2MyYjM1NmVhZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmNjI2YjkyMWJkNjg0OTRjY2QxMzM3NGExYjgxMDIzNThhYmY0NzkwYzAxNGZhZTJkNjQzZDA1YTQ2NDVjYzMifQ"
         },
         {
-          "resource": "repo://src/okf/generated-provenance.ts#L263-L297",
-          "version": "repo-lines-v1:sha256:77c581d930c87351d68f61ba323bbe010cc928e6bf041428216e8eb79fba5892:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NDM3Zjk3Y2NjYWYyZDExM2FkNzA2ODVlMmExODYzMmE2ZjE1MmM3NzBkYTc4NzdiMjFmZDlmNjZjMTgyYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMTJhZWNkYTA2MGI2NmEzZTkyMDlhNzZhYWU0MTJkZGRhODVjOGE5MmYzY2EyMWM5YjNkOTJhYmU0OTA1OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMmY5OTBjM2YxYjIwNzQ4ZTVkODRiODAyYTA4ZTY1MDNjMTg0YjNlOTAyM2M2MmMxZWFiZjM1Y2RkOWY5ODQifQ"
+          "resource": "repo://src/okf/generated-provenance.ts#L297-L307",
+          "version": "repo-lines-v1:sha256:679278ea83fc07ac35ade4e462e06ca1beaa79029554b26e61270bad1a2d737c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhMzQ1MDAxMDRkY2JjYzMwMzEwYjg3ODI3YWYyMjk5NzcyMGFhMjIwNjlmZTNiMDQ5ZTQxNThjODI0Mzc2MjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2NDQzMzg3YzA3ZWIzMjUxODYxYjVlZTYxM2M2OTdmODQzMjI2Nzg3ODViMTI0OTM5YWFhNzk2ODAxZjM5YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMmY5OTBjM2YxYjIwNzQ4ZTVkODRiODAyYTA4ZTY1MDNjMTg0YjNlOTAyM2M2MmMxZWFiZjM1Y2RkOWY5ODQifQ"
         }
       ]
     },
@@ -296,21 +296,43 @@
     },
     {
       "id": "claim_cfcc720874a74ff8ad9769658febeb9b",
-      "statement": "The OKF output passes run in a fixed finalizer order: preparation migrates pages to OKF and snapshots provenance, then finalization validates Mermaid, synchronizes indexes, validates internal links, synchronizes claim sources, and finalizes generated provenance.",
+      "statement": "The OKF output passes run in a fixed finalizer order: preparation migrates pages to OKF and snapshots provenance, then finalizeWikiArtifacts runs six ordered operations — mermaid, index_sync, link_validation, claims_sources (only when claimSources are supplied), then generated_provenance — each dispatched through a stable named operation identifier.",
       "evidence": [
         {
-          "resource": "repo://src/agent/wiki-finalizer.ts#L224-L233",
-          "version": "repo-lines-v1:sha256:84a8da8a5180410fdbf107b3f9030f29219d7b339ab37bd3aa012f004b78e284:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1OGZiY2Y1YjE1ZmViYmFjMmVhOTdmYWYxMmU1OGRiZTY3ZGM4YTA3ZWM0Y2JkNzg2N2UzMDg4MjI3ODE3NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZGYzZGVmZjI0MDNmZGM0ZjVhNWIyMjU1ZThlM2M0ZDIzMzBkYjI2ZWU2NzA5YTc5NTM3N2Y1NGU0YjY5MjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2YzE1YzA2YjQ1ZDQ2MmUwOWEyYzkyYTEyMDM3NWQwMzQyNmY5ZmRkNWZiNDJlYTNkMWMzNjAyZmZlMWE3ZTkifQ"
+          "resource": "repo://src/agent/wiki-finalizer.ts#L226-L240",
+          "version": "repo-lines-v1:sha256:9a6c65f382d7556813616527dbe0850f0942d564608bc7fd8874fe15399884d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZGE0ZjkzYjFiMTE0ZjFjYjQ0NGQ5ZTZlYjNmODJkZTc4NjRmMWJkOGRlMjhhMzU3YmRiMGY1ODE0YWM3NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzY2E1NjZkNWE3ZDdmNmQwZjNkZmIzNTY1MzE3N2NjNjczZjE2Nzc1YTdkNmFhNDYxODlkN2U5YWI0NDcwN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2YzE1YzA2YjQ1ZDQ2MmUwOWEyYzkyYTEyMDM3NWQwMzQyNmY5ZmRkNWZiNDJlYTNkMWMzNjAyZmZlMWE3ZTkifQ"
         },
         {
-          "resource": "repo://src/agent/wiki-finalizer.ts#L241-L276",
-          "version": "repo-lines-v1:sha256:d6aa768c4748a072a266d28e99bfa3440698b2ad0430c66d8749d28f1562428d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMGNiYTZiODUxOTVjMGZhMWZiZmYyMWI3NWFlMWRiYWFmZTBmODg2ODQ1YzI5MmFiYmMzNGI4OWE4MDA5NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3OWI3OTNmYTYyNzA1MGQ2ODhmOTdlYzk0YjA5OGQ1NzI0YmU5MmMyYmUxZmY2MTliMmU1MjhmYjQ0MDk1YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYWE0MTcwY2M2YTMyNjcyNmFmNmI1MWRmMTI0Njc2YTUyNDNhN2M4YjNmMGMzNmY2N2NhM2I5YTI0NmJmMmUifQ"
+          "resource": "repo://src/agent/wiki-finalizer.ts#L260-L285",
+          "version": "repo-lines-v1:sha256:6d8529c8d911a93234ca5b94cba7f36a268cbcfab0cc1837d17b9c0c1e116022:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNTY1NjZhNWRiZDEzNDVhZDFmNjYxMDFjYWI3ZDA4YTJiZDk4NWY2M2I1ZjI1ODkwNmU5MDJlYTY3NmE1YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1NTI0NDk0OTkzMTU0MDE4OTVmMjRkNzdiNWM3NDE5NGRhZmI1NDk5NTc0YjNlOGUyMWRlNWIzNmMwMTJkZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYWE0MTcwY2M2YTMyNjcyNmFmNmI1MWRmMTI0Njc2YTUyNDNhN2M4YjNmMGMzNmY2N2NhM2I5YTI0NmJmMmUifQ"
+        },
+        {
+          "resource": "repo://src/agent/wiki-finalizer.ts#L33-L38",
+          "version": "repo-lines-v1:sha256:2de1c6d5ff6183ee9b92278c63fe07183cd09affcf110a90b376a0d9c25b3a0d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGVmMjNkZjU0YzNjOTkxNWIyZmJmNDVmZjJiZjZkMGIwNTg1MmE5Zjk2NTgxMmU4ZjJjYmNlNWNlNGIwODQxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhjYzY2NTlmYWIyY2NmYjU2NzY3YTVmMTUyM2RlOGM4ZGQ3NTA3MTBlOThmZTI4OTc5NDFmM2M5ZGFkOWJmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2U1NjJkYmVlZjQ2Y2M3MThmZDFlNmFmYjkyMDIzZmVmNWQ4ZTMwNmYxMzBkYWRjMzE5OGRiOTNlOTlmMjM1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzZjMTgzZDc4ZjFiMGVhOTIxODYwYWVlMTZjNGQwMzAwNmViZTE1MzU4ODU5NTY1NzVmMTMxM2ViZTU5NDY3MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b673c33c930a445f92c41277f339a82d",
+      "statement": "synchronizeClaimSources projects page-owned Claims evidence into the OKF `sources` family: it retains producer-authored source entries, tags OpenWiki-owned entries with a deterministic `openwiki-source-<sha>` id derived from the resource so later reconciliation can replace only its own projection, normalizes projected resources to whole-file repository URIs (stripping line ranges), de-duplicates and sorts them, writes only when the merged field differs, and aborts the pass on a write error rather than leaving a partial projection.",
+      "evidence": [
+        {
+          "resource": "repo://src/okf/claim-sources.ts#L125-L141",
+          "version": "repo-lines-v1:sha256:69fd914ec1ee37f58ba0f0931d91be1a906b32605a6e0e4c23578bf4b107e398:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NWFmMzA1NjQxNzAyZjBiYmM0NTUzNmRmNTNhNDBlOWQzYmRhYzgzMWQ4ZTkwYmU1OGJhNDk2M2ZkYjAyYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExOTE4MTNlMDkyYjRlMDAzNTRlNGM5OWI4YzAwMDBjOGI3M2ViOGJjMzczNGQyYWE4NDNjYjhhOGY4MWVkZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhZDEzMWRkNTQ3OTViYzI1YjY3YTJiZGY5MjY1MTM4OGUyMzRiNWZjYTZhOGVkOTM4MDE0NGQ0NDgzODE3NTYifQ"
+        },
+        {
+          "resource": "repo://src/okf/claim-sources.ts#L38-L70",
+          "version": "repo-lines-v1:sha256:f5faa0cf14a4f864b3cb3537b6bb2f1b8f7591223798eda1f7424df4db21c816:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmYmIwZDk3OWRlNzAxMGY2MzliMzVhOWE0ZjBiOGEwYjU1ZTExYWZjZjEzZWZlNTlmMjIwN2QxMTQ2Mjc0MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjN2QyZjI0NDg0MWI5NTVhMzEzYmJiNDdiMmFkNWUxZmIxNjQxZTRmOTM3ZGRlZGM2ZDU4ZDNiZWE1OGFkYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlNTZhYzBhZmY0YzQyYzcwNDgwYWMyNjE4ZGYwOWE5MDBkMjkzZWM5YTY4Nzk5ZmRlN2MxMDZiNGFmNTU3NGEifQ"
+        },
+        {
+          "resource": "repo://src/okf/claim-sources.ts#L75-L102",
+          "version": "repo-lines-v1:sha256:7bb3dd83b6e7f4072e9de379af852aefa9b8a20628f1a8eec537f010ad9670db:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0YjFjMTkxYjU5NmM2YWM3MGJjNGI0Zjc1MWM2NzZhNzgyOWE2MmNlY2Y3NTkwMDU2MWVmYzQ0MzkzY2IxNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZjY1YzMyNzdlNzBjOThkNzUwNmUxMjZlYTlkZWJiNTA1MGEwZDRhODAzMzg1MTQ4MmY0NzY4MTM3ZjNhMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjMmE0MTJhMTYyYjU4ODcxNzQyNDNjMDdmMDZlMzNiMGQwMGFhOTIxMGE2ZjJkYzEyZWVkOWMxZTA3M2E0MDMifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.0",
-    "at": "2026-08-26T20:17:27.397Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-27T21:21:31.408Z"
   }
 }
