@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f5bb8260efc50aa119b48db79c845c4f589b8e254514ca85631eb97a0ad5927c",
+  "pageVersion": "sha256:a4209588581ba7bb10468abc93af26a119a0abe87a00ffd5c29a71ba51586886",
   "claims": [
     {
       "id": "claim_35bcc7d94294470cbce1e5d06f9fb26f",
@@ -430,7 +430,7 @@
     },
     {
       "id": "claim_eab72e6bca834e98942f1e576f484ab6",
-      "statement": "finalize accepts an excludedPages set of pages whose jobs were skipped during an interrupted run and leaves them untouched, skipping their persistence, evidence recheck, and sidecar deletion; finishRepositoryRun derives this set from skipped jobs and passes it both to finalize and to the post-run durability assertion so skipped pages are exempt from Claims persistence and the no-orphan/durable-page checks.",
+      "statement": "finalize accepts an excludedPages set of pages whose jobs were skipped during an interrupted run and leaves them untouched, skipping their persistence, evidence recheck, and sidecar deletion; finishRepositoryRun validates that every skipped job carries its original page snapshot, derives skippedPages from the skipped jobs, and passes the set both to finalize and to the post-run durability assertion so skipped pages are exempt from Claims persistence and the no-orphan/durable-page checks.",
       "evidence": [
         {
           "resource": "repo://src/claims/brains/code/session.ts#L288-L292",
@@ -445,14 +445,14 @@
           "version": "repo-lines-v1:sha256:9eea345f80a0936bda069bf78e14266ed677def286a055f5e6b58f8490d29410:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzYWRkYzJkOTU0YTEzMWVlNWQ1MmM4YmU1YzhjOTlkM2FmMzM3M2JlYzgzNzM4MTk4MWU0NjdjZDQ5MDQ5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YjlhMGIxNmI5OTEwYmFhNWQwYTRkY2FmZjhhNjBjNDI5NjMzYmYyYWUzY2JhY2M4MjAyOTA3NTgwZDEwY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlMjBmODM0MWE1YTdjOWQ1ZmZkYzkwOWZmN2Y1NDAwN2I4ZjY4ZTE0ODVhMTdiMWFjZWU0OGY1MzU3YjhhOTAifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1197-L1219",
-          "version": "repo-lines-v1:sha256:08e2cb16ea3b4f370e225523e7cc893bc3c532ad8b8a7c8ea290f57ba28926ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNDBhZDJiOWZhY2NkYjNlZmQyNmEyY2I5ODE4NmRmMTJhNDUxNDNkOWRlYjY0NTM5YTY4MmYzNGZkYTJjMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmRjMmE4NzllM2FjM2IyZTMyNTE3ZjY5NzliZjg1MDA2Nzc4M2JhNGMxMWI0ZDFmNWY1NTUwOWM4OWZmZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwNzUzYTdlYTQ1MmIxMzRkMzczOTFjMjM5ZjAzMWE2YzlhMmI2MTQzNzQ2MzdjOTk0MDlmYWQ4Yzk4Y2ZiODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2ZmRhMmZiMGI4NzViM2RlMTE4ODRiYTdiZTUzMDBhYmUyNDYzMTZlNTBlMDllODVlMTJhNzYyZmQ0OTkwNjEifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1188-L1225",
+          "version": "repo-lines-v1:sha256:bb5a250dd5b18369574eb64b2970356c4cc9803ce44f3c03faac6f56b1b33ee4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzdlYzc4NzgwNDg4MTk4MDc2M2YyOWMzMzNlNmE1MjEyNjMwN2ViYThmNmUwZTI5MjdhNDJkYTI4Y2M4MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmRjMmE4NzllM2FjM2IyZTMyNTE3ZjY5NzliZjg1MDA2Nzc4M2JhNGMxMWI0ZDFmNWY1NTUwOWM4OWZmZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0ODQ0OTJmOTgwMDIwMDhmODRkNzg4MDgyNTk0MjcxNzllZmNlNDAxYzk5NGYxZGU2MzMwMmRiOTE4OTNkMTgifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.0",
-    "at": "2026-08-26T22:32:29.466Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-27T11:21:51.032Z"
   }
 }

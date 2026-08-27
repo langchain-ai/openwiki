@@ -50,10 +50,10 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T11:21:51.032Z
 ---
 
 # Source Map
@@ -112,9 +112,12 @@ calls into `generation/repository-run.ts`), `src/agent/docs-only-backend.ts`
 (`openwiki-ignore.ts`), wiki post-processing (`wiki-finalizer.ts`,
 `wiki-link-validator.ts`, `wiki-replacement.ts`), and the ChatGPT/Vertex auth
 surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`).
-`repository_runner.ts` runs one fresh shell-free worker per pending page; on a
-worker that exits without submitting, it captures a `RepositoryPageSnapshot`
-via `captureRepositoryPageSnapshot`, calls `skipRepositoryPage` to restore the
+`runNativeRepositoryGeneration` drives the full loop: it begins the run, runs
+the planning agent, then calls `runPendingPageAgents` to spawn one fresh
+shell-free worker per pending page, collecting skipped-page snapshots and
+passing them to `finishRepositoryRun`. On a worker that exits without
+submitting, `runPageAgent` captures a `RepositoryPageSnapshot` via
+`captureRepositoryPageSnapshot`, calls `skipRepositoryPage` to restore the
 page and mark it `skipped`, collects those snapshots, and passes them to
 `finishRepositoryRun` so skipped pages are reconsidered on the next update.
 
@@ -202,8 +205,17 @@ resolves the home/wiki directories; `reasoning.ts` resolves reasoning settings.
 
 ### integrations — host-tool integration and MCP server surface
 
-Owns embedding OpenWiki into external hosts. `src/integrations/core/` provides
-the integration protocol, session manager, and repository-root resolution;
+Owns embedding OpenWiki into external hosts. `src/integrations/core/session-manager.ts`
+is the principal entry: `HostSessionManager` is a thin single-run MCP adapter over
+the transport-neutral lifecycle core, serializing one lifecycle operation at a time
+(`runOperation`) and mapping `RepositoryRunError` codes into stable
+`HostIntegrationError`s at the boundary. Its `begin`, `submitPlan`, `nextPage`,
+`submitPage`, and `finish` methods delegate to the `generation/repository-run.ts`
+lifecycle, and `tools()` returns exactly the five OpenWiki lifecycle tools
+(`openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
+`openwiki_submit_page`, `openwiki_finish`) for an MCP transport to expose.
+`src/integrations/core/protocol.ts` defines the tool input schemas and host-id
+validation; `repository-root.ts` resolves the repository root.
 `src/integrations/mcp/server.ts` exposes OpenWiki over MCP (stdio in
 `stdio.ts`); `src/integrations/install/` handles host installation.
 

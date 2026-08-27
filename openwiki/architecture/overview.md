@@ -15,8 +15,8 @@ tags:
     visualizer,
   ]
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T11:21:51.032Z
 sources:
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
@@ -40,7 +40,7 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
 ---
 
 # Architecture Overview
@@ -89,14 +89,17 @@ flowchart TD
   PageWorker -->|"fails or exits without submit"| Skip["skipRepositoryPage restores snapshot and marks skipped"]
   Skip --> Lifecycle
   PageWorker -->|"submit_page"| Lifecycle
-  Lifecycle -->|"source drift"| NativeRun
+  Lifecycle -->|"source drift at finish"| Report["runner reports drift and returns sourceChanged=true"]
+  Report --> LaterUpdate["next --update resumes and invalidates the plan"]
   Lifecycle --> Finalize["finishRepositoryRun restores skipped pages and finalizes"]
   Finalize --> Wiki["OKF wiki output"]
   Wiki --> Viz["visualize server or static export"]
 ```
 
 Caption: High-level component relationships from the CLI through native and
-host-driven generation to OKF output and the visualizer.
+host-driven generation to OKF output and the visualizer. A finish-time source
+drift does not abort the run: `runNativeRepositoryGeneration` finalizes
+honestly and returns, leaving a later `--update` to reconcile.
 
 ## CLI entrypoint
 
@@ -153,10 +156,18 @@ passes them to `finishRepositoryRun`, which restores the skipped pages' Markdown
 after finalization, finalizes Claims with those pages excluded, and persists
 `interrupted` update metadata so the run is honestly recorded as partial.
 
-If finalization detects that repository source drifted underneath the plan, the
-run replans and repeats. Correctable submission rejections are returned to the
-worker as error-status tool messages so it can fix and resubmit rather than
-aborting the run. The end-to-end flow is documented in
+If finalization detects that repository source drifted underneath the plan,
+the run does not abort or auto-replan. `finishRepositoryRun` re-checks the
+source fingerprint at both ends of its deterministic window, finalizes the
+wiki honestly with `interrupted` metadata when needed, and returns
+`{ status: "complete", sourceChanged: true }`. The native runner then emits a
+notice telling the user to run `openwiki --update` and returns; it does not
+loop. Reconciliation happens on the next `--update`: `begin` resumes the
+durable run, the changed fingerprint invalidates the whole plan (phase resets
+to `planning`, the plan is deleted), and the lifecycle replans from the new
+source. Correctable submission rejections are returned to the worker as
+error-status tool messages so it can fix and resubmit rather than aborting the
+run. The end-to-end flow is documented in
 [Repository generation workflow](../workflows/repository-generation.md).
 
 ## Host-driven (coding-agent) generation

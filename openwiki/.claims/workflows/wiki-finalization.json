@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:aa24075dfe4b3d2f5b20a62622d85ae5d5e1e629d2e32ccc4807d87c79e85446",
+  "pageVersion": "sha256:4bbd286b968c1c282b39bc98ab5b8f1a5f4db0bf3f1080c2efbfc103dc509bd0",
   "claims": [
     {
       "id": "claim_9fea18d761f54f39a632b03243af4a9d",
@@ -87,8 +87,8 @@
           "version": "repo-lines-v1:sha256:9272497be65b7ac1e24ba67308811cf1bc9fa50f02e7d91c7cb3592722331ef0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODg0NGFmMmIzNmNiYmU5NmQxNDUwZjgwMzY5ZDQzOTc5ZTY5MGM5ZGZhMDExZmY4ZjYzZDVjYzY2NGNiMmI5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdiNzdjMTI2ZmE0MDdhZGFjZTQ5YjIzMTlmYmM4Nzg3Y2U4ZWFkZWMxYTU5MzdiNDM1ZjE3ODc0NDQzMDkxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjFmZTA2ZWY4NGVjMTQ3MjQ3MjA3MGQ1MTU2MjkwYWMyZDQ3NTZjMTM1MTE1ZGQzNTBkNWIyM2ExNzAzYjcwNCJ9"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1025-L1034",
-          "version": "repo-lines-v1:sha256:378a2797280f5f1e5e84dbbfbd397bb7bda72a5d12ae2ce69b38bd0ea07717ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzMzM4ZDhkOTRiNGZmMjliZTc5YmViN2E2ZWYxMmZmNGY2YTc0OTdiNzFiNWY0ZTNkNGMzNzZmMDA0Y2NhZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YzQyMDIzNTVkYmYyODhlZDFkZGU3N2NmOTZlMDk1OWQ1OWYxNDBkNDdkYzdmNzZlMzQyOTVjZDMxNWNmZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzNzQ5Y2Y5YTFhMWQzMDM4YjVmNDAzZTYwODUwN2I0ZTRmYzhiNzM4Njc2OTBiYWUxODgwNDVkMTFmOTExZGYifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1217-L1218",
+          "version": "repo-lines-v1:sha256:ae86d8b8b30c31fc7692182646ac3c0121fdf953b23393d3289ffe90a5945295:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWFhMDNjMTE1OTU5OTVlNTcwMTNlM2NhMWY5ZDZlZWZhZTIzNzllNzllYWNjNDY5ZTM1ZjBlMWQ4ZGI5ZDA4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2M3MDNhNDc4OWI4NDAyZWJkMTI4NDkzZjk4NmVjMDBhMTFmNGFjODA5OWNhMzg1NjUzNmIxMDFmZmIxMWUwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzdjMzE3ODNhODNiZTYyMTllNDg0MTNhODIyOGE2MGIwNGMxNjM3ZjUxMWQ3NmZkYmUwMzUxYjE2ZmYxYjczYiJ9"
         }
       ]
     },
@@ -244,21 +244,29 @@
     },
     {
       "id": "claim_7fcec1cd6a8e449b8e9bdbf877d7e2b2",
-      "statement": "finishRepositoryRun wraps finalization in a strict whole-run durability proof that waits until every page job is complete or skipped: it runs finalizeWikiArtifacts, finalizes the Claims runtime with excludedPages set to the skipped pages, and calls assertRepositoryClaimsDurable (also excluding skipped pages) to confirm no orphaned sidecars remain and every non-empty Claim set matches a durable sidecar and the final Markdown bytes.",
+      "statement": "finishRepositoryRun wraps finalization in a strict whole-run durability proof that waits until every page job is complete or skipped: it refuses to run without a plan or with pending jobs, validates the skipped-page-snapshot contract, runs finalizeWikiArtifacts, restores skipped-page Markdown, finalizes the Claims runtime with excludedPages set to the skipped pages, and calls assertRepositoryClaimsDurable (also excluding skipped pages) to confirm no orphaned sidecars remain and every non-empty Claim set matches a durable sidecar and the final Markdown bytes.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L1160-L1219",
-          "version": "repo-lines-v1:sha256:13e91bb7bbca8cae65c887ddb4cf85da8bc774398e9b2f245671d58bc69463d6:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExYThlOTQxNzkzMTQxOTJiODE0N2YxYWI3MTA0Y2IxMDRhNTc5YTU0ZjQ2OTk2ZWYwZjQ5MWNiNTEwYzVkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmRjMmE4NzllM2FjM2IyZTMyNTE3ZjY5NzliZjg1MDA2Nzc4M2JhNGMxMWI0ZDFmNWY1NTUwOWM4OWZmZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzYWY2ZDBlMjAxOTFiNDQwZjdlNTMwZTBkMzA1NTlkNmFlY2I3ODA2ZGU3MzM1ZDI5M2QzODI4NzRkYjUxYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2ZmRhMmZiMGI4NzViM2RlMTE4ODRiYTdiZTUzMDBhYmUyNDYzMTZlNTBlMDllODVlMTJhNzYyZmQ0OTkwNjEifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1167-L1225",
+          "version": "repo-lines-v1:sha256:77e5055e3907d27bd5748aa0abf90fb058b36ac26ea466c4d136282fbdbcc69b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExYThlOTQxNzkzMTQxOTJiODE0N2YxYWI3MTA0Y2IxMDRhNTc5YTU0ZjQ2OTk2ZWYwZjQ5MWNiNTEwYzVkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmRjMmE4NzllM2FjM2IyZTMyNTE3ZjY5NzliZjg1MDA2Nzc4M2JhNGMxMWI0ZDFmNWY1NTUwOWM4OWZmZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzYWY2ZDBlMjAxOTFiNDQwZjdlNTMwZTBkMzA1NTlkNmFlY2I3ODA2ZGU3MzM1ZDI5M2QzODI4NzRkYjUxYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0ODQ0OTJmOTgwMDIwMDhmODRkNzg4MDgyNTk0MjcxNzllZmNlNDAxYzk5NGYxZGU2MzMwMmRiOTE4OTNkMTgifQ"
         }
       ]
     },
     {
       "id": "claim_0bb060131b474e24acf81bed126dc28d",
-      "statement": "finishRepositoryRun verifies the repository source fingerprint again after finalization to close a check/use race, requiring source to stay unchanged across the whole deterministic finish window; if it drifted the plan is invalidated and the run must re-plan.",
+      "statement": "finishRepositoryRun records source drift rather than rejecting it: it calls hasRepositorySourceChanged once before finalization (sourceChangedBeforeFinish) and once again after the durability proof, OR-ing the two into a final sourceChanged flag. Source drift never throws or re-plans the run; the run still completes and returns { status: 'complete', sourceChanged: true } so the native runner can tell the user to run openwiki --update to reconcile the drifted source.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L1220-L1222",
-          "version": "repo-lines-v1:sha256:b6fda2fb0b875b3de11884ba7be5300abe246316e50e09e85e12a762fd499061:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWVmNmY0MzE2M2M2YWU5Mjk1OThlYjE3ZGNkNGEyZjdlZDI4MzQ1NWE5NWYxOTY3Yjg5YjAyNDAzYWVjY2ZmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAzODUwNDIyYTM2NGMyNjBiOGM4NzgxMjYxOWE4ODlkMjgzYThhYzgxN2YxMDdhNWU4NjUyMGE3OTc5M2RiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODhmMjRjYzA3NTdjNDJlN2M2MzJjMWY3NTI1NDYwZjU2NzMxZTk1ZTAzZTAxNzgwOTkxOTQ3ZTJjM2NmZmQwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmI5NGEwOWU0MjM5NjQ4NzAxNzg0MzdkNTcxODFkN2UyOGYzMzI2YzU4YTcwMDI5M2FkNmIzMzFmNmU5NmZmZiJ9"
+          "resource": "repo://src/agent/repository-runner.ts#L233-L243",
+          "version": "repo-lines-v1:sha256:57612433d1582dcc4c07ac4487b4e5eb9d5af889edb690a30acc77254cecb669:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MmRlODk3ZmEzNDNhZTY3Mzc3ODg3NGI5ZWY5MGZjYjRmNGYwZDZkMjE5MjVlYTU3NzJkYmJiMzJhMTFhNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxYzIxMjIzZjAxZjdhYjE0YWVhYjk2Y2QxNjMzZjZkNWVjYThmNzM2NjZlYjg5MjdjOWJhMGE2N2I4NjkzYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwMWNhNGJkMjM4Zjc4MGI0NDg5ZDViYzk0Mjk0NjNhYjQ5NjUxNmY0Zjg3ZWI4NDE0ZWNhYmUwMGYyZWI1OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L1203-L1228",
+          "version": "repo-lines-v1:sha256:751ac58742869f81ebdbec3da3b0eec5b6da149d531881626f45a4fe35646ef2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzM2I3YTBhN2RlYTQ2NGY5OGUyM2ZmZTQyNDRkZjMxYTI2NTYwZWM0N2NhZTEyMjA0OTBkNmM2YmI5MzkxOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YjQ2MWRlZTY0NjQyNmVhZjFlNzNmMjdmYzQ2MTk2NTRiNmMyZTAxMWU5Yzg2OWUwN2QzODBiODZiYzgyODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhMTM5Y2ZjMzY0ZjA4N2ZlNjYzNjY1NmE3OTM0NTE5OWVkMjExYTM4YWFiODQ4ZmFjOThmOTAzYzQ4YzMxYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMDZmYTZjOTA2ODNhYjYwM2Q2ZDQ2ODQxYmY3MGI3Y2JiMWRjZjkxOTJkYjgzODBjNTM4ZGQwOGNhY2M2MTEifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L1253-L1256",
+          "version": "repo-lines-v1:sha256:49ffb170ac42b19d69fb3aa34aca3b55e0a2d6ae0c2089ec7a1f81a37d44281d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDVmNzhiMzRlYWRlMDRhMDU0ZjFhZjlmMDhiMzQ2Zjk3MTUwOTYwMDIyYWRmNTlkZjE3M2M5OTE1MDYyNjM4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWQ0OGVkOTMxNTYyZjU0MTM0ZTFjNmUxMzE0YTdlMWQ2MDk3M2IxYjZmM2Q1MGM0OGU4NzFmYTBhYWZiNDljNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWMwNTNmNTA2YTY4M2Q2NmNiZDZkNGEyNjgzNjFlYWRhN2RjOTE2MDNlMzAzOWIxYWM0Y2I1YWM1NGEyN2U2NCJ9"
         }
       ]
     },
@@ -267,8 +275,12 @@
       "statement": "finishRepositoryRun deletes .run.json last, only after all durability gates pass, so any earlier failure leaves run state on disk and begin() can reconstruct and retry.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L1245-L1247",
-          "version": "repo-lines-v1:sha256:5d48ed931562f54134e1c6e1314a7e1d60973b1b6f3d50c48e871fa0aafb49c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODQ3MzJkOTdhYmY2Njc2MGI0NjYyYmE2MDY1NjZiODZjNDM4ZTA1ZjBlNTBlYmNlYzUyNjc5NzVhNTU5N2FhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRiM2U3Y2QwYzNhNjIzMDQ3NjY4MTYxZDEwNGU5OWQ4NjIwOWNhM2U3NzU0YTI1YjExOWE0OTA3ODc4MDQyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGY0ZTMyZjBlOTVkOGQ3Mjc2OWE0M2RlNmJiNDZlZDg0N2YyYTVkY2RlZjI0ODdmOWE0OWVjZjA1NzFmYjRhMyJ9"
+          "resource": "repo://src/generation/repository-run.ts#L1250-L1256",
+          "version": "repo-lines-v1:sha256:544593e6643025a8168d2b322c808fda3bdefcf1489562a8fb203698784a7c48:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODQ3MzJkOTdhYmY2Njc2MGI0NjYyYmE2MDY1NjZiODZjNDM4ZTA1ZjBlNTBlYmNlYzUyNjc5NzVhNTU5N2FhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRiM2U3Y2QwYzNhNjIzMDQ3NjY4MTYxZDEwNGU5OWQ4NjIwOWNhM2U3NzU0YTI1YjExOWE0OTA3ODc4MDQyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWMwNTNmNTA2YTY4M2Q2NmNiZDZkNGEyNjgzNjFlYWRhN2RjOTE2MDNlMzAzOWIxYWM0Y2I1YWM1NGEyN2U2NCJ9"
+        },
+        {
+          "resource": "repo://src/generation/run-state.ts#L345-L347",
+          "version": "repo-lines-v1:sha256:7302b654a3473bd11deb58eeaf24f9d08a1d5a960358afdedcb1b26cd0c6f1e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ0ZjljMjczYWU1NDVjY2MxOWEyMTM4NzZmZjdkODRmYTMxY2YzNGNlNDhlNzAyNzhiY2U5Mzg4M2UzNjczMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjA5OTI0ODMxMGRlYmE4Mzc1YTBmODMyNmNkNjQ5NzgzYmFkY2JmMjAzZTUwNDY5ZTgzNTgwMDA0YjczOTc3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
@@ -277,12 +289,12 @@
       "statement": "Each submit_page persists and proves an individual page's Claims match its Markdown bytes via assertPageClaimsDurable, but this per-page proof is distinct from the strict whole-run proof that runs only once every page job is complete.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L783-L792",
-          "version": "repo-lines-v1:sha256:13c8fb855c828711fc2b4a18b094fe26e0628a116adeab9e627e8bd45a9bb025:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NmYwMTBjZDhmMGE2ZGY5MjM0MGI0OTZlNTUzNzgxYmQ3MTcyNmRiZDg4ZTEzMjRlNWQ2YzA4ZmZjNDEzNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYWE2OGJmNTdmZDhiZTJiNTM4YjRlNWU4NmI4MjAzNTcxN2RhMzNhZjBmN2FhNDFjNjA2MjhjODdjODc2M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzMDY3M2ZhMDYzYjhhM2M1ZTM1YjU3MmRmYmVmOThhYzc1NDkzMzU5YjMxYjdiMThmOWIxZGYyZjM4MWIzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNDc2MWE0ZGU4MWMwNTgyNDNkYTlmNjQ3MGM5YzhmZDEyNGI5MWMyNGUzYWE4ZThiMTRjNzYxMzZjY2Q1ZTMifQ"
+          "resource": "repo://src/generation/repository-run.ts#L942-L953",
+          "version": "repo-lines-v1:sha256:ee197a42eabe69361cae7590fd246e3d6d6deeba7829510aaf8217b0af0480a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlZGJmODM4NzUzNjg5NjZmMzEzYWU2Mzk1MzljNDAzNzAwNDViYTUzZTJlMmNlZTkzYmI2N2Q1ZGExN2I5ODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmNTMzZGJjYWFkMTgwNjkzZjRkODQ1N2YwZWJkYjZkODU0YmY0MWMyMDkwNmQzNzNkMmM1N2QxM2M3ZmRiOWYifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L829-L906",
-          "version": "repo-lines-v1:sha256:868fb413687bc5c8a454a4bf8c959e1cf76e547dad84f1a35b5a79908578587c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5Yjg2MTIzZTE5M2FkYWMzYzZlNDg4MmVkN2M1Mjg1OGU0YzUyMjRjNDg4MmU2NmRiMzY0NWViMDUyNWM4ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwMDdkZjJmZDdhM2RhNTYyNGU4NDBiM2M3Y2M2ZGIxODQzOTgyZTUyMmIwMzg5NjUxYjc4ZjY1YTk3MjVlMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMmE4ZTMwZTkwNGJlYmUxMDM0ZWQ5ZjBhNGM2NmNhMTY3NmNiYTk3MmNkMDg0ZjUwYzFlMmZiZTI2ZmM0MjgifQ"
+          "resource": "repo://src/generation/repository-run.ts#L989-L1024",
+          "version": "repo-lines-v1:sha256:d31ddf15e4adcbf22a15b1786919b2bbfafbdab76d4f147d4b1538d262715d7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5Yjg2MTIzZTE5M2FkYWMzYzZlNDg4MmVkN2M1Mjg1OGU0YzUyMjRjNDg4MmU2NmRiMzY0NWViMDUyNWM4ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZGI0ZWVhNmM3NWY0MjQxMzRkMDA5ODA5ZmYyNjZhMzg4ZDFmMzc1NjBjZjIzYzI2M2I5N2M5OWNhMjczY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwMDdkZjJmZDdhM2RhNTYyNGU4NDBiM2M3Y2M2ZGIxODQzOTgyZTUyMmIwMzg5NjUxYjc4ZjY1YTk3MjVlMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkMzllMzZlYWE3NmUxY2MxYjQ5MWIzYWJjODFhMGQ4YTA0NDRkMmViOTcwNDBjNTRhNDA3ZjRlODllYTg4M2UifQ"
         }
       ]
     },
@@ -291,38 +303,38 @@
       "statement": "finishRepositoryRun validates the skipped-page-snapshot contract before touching any wiki bytes: it requires exactly one snapshot per skipped page job, each matching the job by jobId and path, or the run fails, ensuring the pre-worker Markdown and Claims sidecar needed to restore skipped pages are available at finish.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L1183-L1196",
-          "version": "repo-lines-v1:sha256:c35c57a9dbdaac89a5e879f7fa75c97e009a7520d403936699d0316dc06e01e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzdlYzc4NzgwNDg4MTk4MDc2M2YyOWMzMzNlNmE1MjEyNjMwN2ViYThmNmUwZTI5MjdhNDJkYTI4Y2M4MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1NDQ1MDlhMTJhYTQ0MjU2YmE1YjIyZjgxNTBjZTc5ZWQyNDdiODkwNTE0ZmVmZTg2ZGZlN2Y4MGIxOTVkN2EifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1188-L1201",
+          "version": "repo-lines-v1:sha256:c35c57a9dbdaac89a5e879f7fa75c97e009a7520d403936699d0316dc06e01e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzdlYzc4NzgwNDg4MTk4MDc2M2YyOWMzMzNlNmE1MjEyNjMwN2ViYThmNmUwZTI5MjdhNDJkYTI4Y2M4MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlZmRjYjNmN2QwMDU1ZTZiNzdlM2FiZGJkYjVjYmU1OTZkMDZkNGExNDA4YmRkOGIyMWY5NjAwNjQ5ODNmMDAifQ"
         }
       ]
     },
     {
       "id": "claim_e1f90592cc594d448c49ceba3b8c2f9a",
-      "statement": "After finalizeWikiArtifacts, finishRepositoryRun restores each skipped page's Markdown from its snapshot (writing the original bytes back, or deleting the file when the snapshot Markdown is null) before finalizing Claims, so skipped pages return to their pre-worker state after the deterministic wiki structure has been computed.",
+      "statement": "After finalizeWikiArtifacts, finishRepositoryRun restores each skipped page's Markdown from its snapshot (writing the original bytes back, or deleting the file when the snapshot Markdown is null, tolerating a file_not_found on that delete) before finalizing Claims, so skipped pages return to their pre-worker state after the deterministic wiki structure has been computed.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L1214-L1218",
-          "version": "repo-lines-v1:sha256:59a4b3bb9de31582b442eb88de305c089a9bb5dab3fcb917120d0afd97575652:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmQ4MGM4YmQzNjZhNThlMjE2YTc4MzgwYTA5MDJkMGVhYzBlOTczZjJkNjdkYzUwYTJhMjg0MjdlY2NmYjFhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODgwNTU4OGM1ODlmNTgyYjYzNzBiZWIwMmNiMDZiM2M5YjlmN2Q1Y2JkOTlmYjk5ZTA5NDVkZGVmMjE5ZTA0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyNzY0NWY2MmM2ZjVlMDBmZmE2NmZjMGEwMjEzZjA2YjE0MTkzMDMyODg5NTY3YjYyZGNhMzkzOGNmMGJhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjY5NjkzNjAzNWE1YTRkNDU3MzZjMzQ0YjdiY2E2NjY0YTcxZTFkYjI4NjcwZDcxNzkxNTJkYTA0ZGE2Mzg1ZCJ9"
+          "resource": "repo://src/generation/repository-run.ts#L1220-L1222",
+          "version": "repo-lines-v1:sha256:8096b60d56777b1cc03e532ad0693b76b2470723b70ce38b1e5e8de324aff58e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmQ4MGM4YmQzNjZhNThlMjE2YTc4MzgwYTA5MDJkMGVhYzBlOTczZjJkNjdkYzUwYTJhMjg0MjdlY2NmYjFhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyNzY0NWY2MmM2ZjVlMDBmZmE2NmZjMGEwMjEzZjA2YjE0MTkzMDMyODg5NTY3YjYyZGNhMzkzOGNmMGJhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODhmMjRjYzA3NTdjNDJlN2M2MzJjMWY3NTI1NDYwZjU2NzMxZTk1ZTAzZTAxNzgwOTkxOTQ3ZTJjM2NmZmQwOCJ9"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L837-L854",
+          "resource": "repo://src/generation/repository-run.ts#L844-L861",
           "version": "repo-lines-v1:sha256:9e43b326d1f5c386fc4dcc6634489c0379eacd8f8c4ac628f79057a96fad718c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZDM2MWQ4ZDcwNmMxZmM4YzYxMzEwNjVjYjI5YzE4NTZmZDBkMTMzMjNhMzJiNjM3Njg4NWUxZDU1OGIyNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhNGEyNDBlMGJkMzg4NWExZGFhMDAxMzZmODljMzA1M2UzNDlhNjZjZTM2MzdiZTZkMjU0NjI2OGY5OGY4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzZmZmZTc2MzJjNmNjZDdkZmNhNThmNDBjZDUzODhkNjliMmU3Y2U2YTk5YTRkZGE1YjQ4Y2U5ZTYwYjlmNGMifQ"
         }
       ]
     },
     {
       "id": "claim_12770eea20fe4a68b633a05f56ff8c41",
-      "statement": "finishRepositoryRun writes 'interrupted' run metadata (via writeLastUpdateMetadata, without a content snapshot so a later update no-op check will not skip a retry) when any pages were skipped, and 'complete' metadata (via persistRunMetadataIfChanged against the pre-run content snapshot, clearing a prior interrupted status) when none were skipped.",
+      "statement": "finishRepositoryRun writes 'interrupted' run metadata (via writeLastUpdateMetadata, without a content snapshot so a later update no-op check will not skip a retry) when any pages were skipped OR the repository source drifted, and 'complete' metadata (via persistRunMetadataIfChanged against the pre-run content snapshot, clearing a prior interrupted status) only when no pages were skipped and the source stayed stable.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L1223-L1243",
-          "version": "repo-lines-v1:sha256:369e5d29349ed656f7f18766c6a913eeb5029315ab2b2d7e711e8e94138a075f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNjUzNzIwN2NmNmU0M2IyMTVlODJhYTc3ZDQ0Mjk5ZmIyYjM1ZWZlYTBjZDgzYTdkN2FmNDgwM2Q2YTQ3OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2ZmRhMmZiMGI4NzViM2RlMTE4ODRiYTdiZTUzMDBhYmUyNDYzMTZlNTBlMDllODVlMTJhNzYyZmQ0OTkwNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3OGE3NzkwZDU5OGFiOGNlNGJhMjdjNjM0MmZhMTJjYjc3ZTdiMzBmNjVjYWI4NjFiNjEzNzJlYTMwNjEwNTQifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1226-L1248",
+          "version": "repo-lines-v1:sha256:afbcd23e66a5d9cdce2b18f9e06d3754d6576cde3cda3d8b450432953482f7d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMzYxODNkNTlhNTc0OGNkM2RkZGFhY2NiNzA3MjI3ZGEwMDZmYjhmNjAxNjc0NGU1MTZlYjczOWMzNzdjNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4ZjI0Y2MwNzU3YzQyZTdjNjMyYzFmNzUyNTQ2MGY1NjczMWU5NWUwM2UwMTc4MDk5MTk0N2UyYzNjZmZkMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3OGE3NzkwZDU5OGFiOGNlNGJhMjdjNjM0MmZhMTJjYjc3ZTdiMzBmNjVjYWI4NjFiNjEzNzJlYTMwNjEwNTQifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.0",
-    "at": "2026-08-26T22:32:29.466Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-27T11:21:51.032Z"
   }
 }

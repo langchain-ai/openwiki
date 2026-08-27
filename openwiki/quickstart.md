@@ -3,6 +3,9 @@ type: orientation-guide
 title: OpenWiki Quickstart
 description: Entry-point orientation for a coding agent working on the OpenWiki CLI codebase, with a task-routing map into the architecture, workflow, concept, operations, integration, and testing pages.
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T11:21:51.032Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -12,6 +15,8 @@ sources:
     resource: repo://package.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-6cb3236b8c1412a26d832fcf
+    resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-5c43e3fe562cf274dd6a5564
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
@@ -20,10 +25,7 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
-verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
 ---
 
 # OpenWiki Quickstart
@@ -117,8 +119,9 @@ Find your task on the left, then read the page on the right.
 | Set up OpenWiki for the first time (provider/model, credentials, repo setup)                                            | [Onboarding and Setup](/openwiki/workflows/onboarding.md)                        |
 | Trace the resumable page-job generation flow (`begin → submit_plan → next_page → submit_page → finish`)                  | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md)  |
 | Understand how a failing or early-exiting page worker is skipped and restored without losing completed pages            | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md)  |
+| Understand how repository source drift during a run is detected and why the run finalizes without advancing the source checkpoint | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md)  |
 | Understand how Claims are reconciled on update and how a page submits its full Claim set                                | [Claims Reconciliation on Update](/openwiki/workflows/claims-reconciliation.md)  |
-| Understand deterministic finalization, index/provenance sync, link validation, and skipped-page handling on finish      | [Wiki Finalization and Link Integrity](/openwiki/workflows/wiki-finalization.md) |
+| Understand deterministic finalize-once finalization, index/provenance sync, link validation, and skipped-page restore on finish | [Wiki Finalization and Link Integrity](/openwiki/workflows/wiki-finalization.md) |
 | Trace how personal-mode ingestion pulls connector sources and updates the brain                                          | [Personal Mode Ingestion](/openwiki/workflows/personal-ingestion.md)             |
 
 ### Operate and configure it
@@ -163,3 +166,14 @@ skipped pages. In-progress runs are recorded in `openwiki/.run.json`; on a
 persistent checkout, an interrupted `openwiki --init` resumes the durable page
 queue by rerunning the same command, while ephemeral CI runners start fresh
 after failure unless their workspace is preserved.
+
+Finalization is deterministic and runs once. `finishRepositoryRun` refuses to
+finish while any page job is still `pending`, validates that every `skipped` job
+has its original page snapshot, restores skipped pages to their pre-worker
+Markdown and Claims, persists and proves the reconciled Claims durable, and only
+then removes `openwiki/.run.json` — so any earlier failure leaves the run
+resumable. If repository source changed while OpenWiki was running (detected by
+re-fingerprinting the source before and after finalization), the run finalizes
+without advancing the source checkpoint and writes `interrupted` update metadata
+instead of `complete`, prompting a follow-up `openwiki --update` to reconcile the
+drift.

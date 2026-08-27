@@ -4,22 +4,26 @@ title: Wiki Finalization and Link Integrity
 description: How OpenWiki deterministically finalizes a run — persisting Claims, projecting them into OKF sources, synchronizing indexes and generated provenance, validating internal wiki links, and re-proving the whole run before deleting .run.json.
 tags: [finalization, wiki, okf, link-validation, provenance, claims]
 sources:
+  - id: openwiki-source-6cb3236b8c1412a26d832fcf
+    resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-adcadc660c1888613ec50f9a
     resource: repo://src/agent/wiki-finalizer.ts
   - id: openwiki-source-0a92e09462f540e5e005c7e4
     resource: repo://src/agent/wiki-link-validator.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-080c4525024a9b689e361cbb
+    resource: repo://src/generation/run-state.ts
   - id: openwiki-source-9bac7069736f3ea19ed36748
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-bed0edb2a7279f0e40a56c2f
     resource: repo://src/okf/generated-provenance.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T11:21:51.032Z
 ---
 
 # Wiki Finalization and Link Integrity
@@ -70,7 +74,7 @@ sequenceDiagram
     participant LinkVal as validateWikiInternalLinks
     participant Claims as synchronizeClaimSources
     participant Prov as finalizeGeneratedProvenance
-    Caller->>Caller: requireStableSourceFingerprint
+    Caller->>Caller: hasRepositorySourceChanged before finish
     Caller->>Caller: validate skipped jobs match snapshots
     Caller->>Caller: apply deletions and reconcile deleted claims
     Caller->>Fin: prepared baseline, at, producerActor, claimSources
@@ -82,7 +86,7 @@ sequenceDiagram
     Caller->>Caller: restore skipped page Markdown from snapshots
     Caller->>Caller: finalize Claims with excludedPages=skippedPages
     Caller->>Caller: assertRepositoryClaimsDurable (excludes skipped)
-    Caller->>Caller: requireStableSourceFingerprint again
+    Caller->>Caller: hasRepositorySourceChanged again
     Caller->>Caller: write interrupted or complete metadata
     Caller->>Caller: remove .run.json last
 ```
@@ -173,12 +177,13 @@ Finalization is invoked from `finishRepositoryRun`
 proof. Each `submit_page` already persists and proves that one page's Claims
 match its Markdown bytes (`assertPageClaimsDurable`), but the strict whole-run
 proof deliberately waits until every page job is complete — every job is
-`complete` or `skipped`, with none left `pending`.
+`complete` or `skipped`, with none left `pending` — before running once more
+across the whole wiki.
 
 At finish, the sequence is:
 
-1. **Verify the repository source fingerprint is unchanged**
-   (`requireStableSourceFingerprint`) before any finalization runs.
+1. **Refuse without a plan or with pending jobs.** `finishRepositoryRun` throws
+   if no plan was submitted or if any page job is still `pending`.
 2. **Validate the skipped-page-snapshot contract.** A page job may be `skipped`
    (via `skipRepositoryPage`, which rolls a failed worker back from its
    `RepositoryPageSnapshot` and writes `"interrupted"` metadata). `finish`
@@ -189,43 +194,57 @@ At finish, the sequence is:
    original page snapshot before finish."* before any wiki bytes are touched.
    The snapshot carries the page's pre-worker Markdown (or `null` when it did not
    exist) and its pre-worker Claims sidecar.
-3. **Apply deletions and reconcile deleted Claims.** Abandoned generated pages
+3. **Record the pre-finish source state.** `hasRepositorySourceChanged`
+   recomputes the model-visible repository source fingerprint and compares it
+   against the planned fingerprint, capturing `sourceChangedBeforeFinish`
+   before any finalization runs. This is a *recording* check, not a gate: it
+   never throws.
+4. **Apply deletions and reconcile deleted Claims.** Abandoned generated pages
    and the plan's explicit `deletePages` are removed, and
    `reconcileDeletedClaimPages` records deletions for any sidecar whose Markdown
    page no longer exists.
-4. **Run `finalizeWikiArtifacts`** against the rehydrated pre-authoring
+5. **Run `finalizeWikiArtifacts`** against the rehydrated pre-authoring
    baseline, the run timestamp, the producer actor, and the session's per-page
    evidence resources.
-5. **Restore skipped page Markdown.** After finalization, each skipped job's
+6. **Restore skipped page Markdown.** After finalization, each skipped job's
    snapshot is replayed through `restoreRepositoryPageMarkdown`, writing the
-   original bytes back (or deleting the file when the snapshot is `null`). This
-   runs _after_ `finalizeWikiArtifacts` so index synchronization and provenance
-   stamping see the final wiki structure; the skipped pages are then returned to
-   their pre-worker state, which is the structure the snapshot contract
-   guaranteed.
-6. **Finalize the Claims runtime** with `excludedPages` set to the skipped
+   original bytes back (or deleting the file when the snapshot Markdown is
+   `null`; a missing file on delete is tolerated). This runs _after_
+   `finalizeWikiArtifacts` so index synchronization and provenance stamping see
+   the final wiki structure; the skipped pages are then returned to their
+   pre-worker state, which is the structure the snapshot contract guaranteed.
+   Only the Markdown is restored here — the Claims sidecar was already restored
+   by `skipRepositoryPage`, and the Claims runtime is re-prepared to drop the
+   skipped pages from the authoritative set.
+7. **Finalize the Claims runtime** with `excludedPages` set to the skipped
    pages, so skipped pages are dropped from the authoritative Claim set rather
    than verified against bytes that were just restored.
-7. **`assertRepositoryClaimsDurable`** (also excluding the skipped pages) confirms
+8. **`assertRepositoryClaimsDurable`** (also excluding the skipped pages) confirms
    no orphaned Claims sidecars remain and that every non-empty Claim set matches
    a durable sidecar and the final Markdown bytes exactly.
-8. **Re-verify the source fingerprint** to close the check/use race: source must
-   stay unchanged across the entire deterministic finish window, not only at its
-   start. If it drifted, the plan is invalidated and the run must re-plan.
-9. **Write run metadata.** When any pages were skipped, `writeLastUpdateMetadata`
-   records `"interrupted"` (no content snapshot, so the next update's no-op check
-   will not skip a retry). When nothing was skipped,
-   `persistRunMetadataIfChanged` records `"complete"` against the pre-run
-   content snapshot, clearing any prior interrupted status.
-10. **Delete `.run.json` last** (`removeRepositoryRunState`).
+9. **Recompute source drift after finalization.** `hasRepositorySourceChanged`
+   runs a second time; the final `sourceChanged` is
+   `sourceChangedBeforeFinish || <changed after finalization>`. Source drift
+   does **not** fail or re-plan the run — the run still completes, but records
+   `"interrupted"` metadata (below) and returns `{ status: "complete",
+   sourceChanged: true }` so the native runner can surface a message telling the
+   user to run `openwiki --update` to reconcile the drifted source.
+10. **Write run metadata.** When any pages were skipped **or** the source
+    drifted, `writeLastUpdateMetadata` records `"interrupted"` (no content
+    snapshot, so the next update's no-op check will not skip a retry). Otherwise
+    `persistRunMetadataIfChanged` records `"complete"` against the pre-run
+    content snapshot, clearing any prior interrupted status.
+11. **Delete `.run.json` last** (`removeRepositoryRunState`).
 
 The **source fingerprint is checked twice** — before finalization and again
-after the durability proof — so the plan cannot be validated against one source
-state while the wiki is finalized against another. Crucially, `.run.json` is
-removed only after every gate passes. Any earlier failure leaves the run state
-on disk, so `begin()` can reconstruct and retry. This ordering is what makes
-finalization crash-safe: the run is never marked complete until the finalized
-wiki has been re-proven durable.
+after the durability proof — so a run cannot finalize against one source state
+while the model-visible source has since drifted without that drift being
+recorded. The run always completes; drift is reported through the return value
+and the `"interrupted"` checkpoint rather than by re-planning. Crucially,
+`.run.json` is removed only after every gate passes. Any earlier failure leaves
+the run state on disk, so `begin()` can reconstruct and retry. This ordering is
+what makes finalization crash-safe: the run is never marked complete until the
+finalized wiki has been re-proven durable.
 
 ## Related
 

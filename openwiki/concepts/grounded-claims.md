@@ -32,10 +32,10 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T11:21:51.032Z
 ---
 
 # Grounded Claims
@@ -192,10 +192,14 @@ before its sidecar is written:
 
 The runtime exposes this through `ClaimsRuntime.finalize(at, excludedPages)`,
 which builds the OpenWiki producer verification event and forwards the skipped
-set. When a repository run finishes, it derives `skippedPages` from skipped jobs
-and passes them both to `finalize` and to the post-run durability assertion, so
-skipped pages are exempt from Claims persistence and from the "no orphan
-sidecar" / "every claimed page is durable" checks that gate the run.
+set. When a repository run finishes, `finishRepositoryRun` first validates that
+every skipped page job carries its original `captureRepositoryPageSnapshot`
+capture, refusing to finish if any skipped job is missing its snapshot or its
+path no longer matches the job. It then derives `skippedPages` from the skipped
+jobs and passes the set both to `finalize` and to the post-run durability
+assertion (`assertRepositoryClaimsDurable`), so skipped pages are exempt from
+Claims persistence and from the "no orphan sidecar" / "every claimed page is
+durable" checks that gate the run.
 
 Finalization also removes orphaned sidecars (whose pages no longer exist),
 deletes sidecars for pages whose Markdown vanished during the run, and removes

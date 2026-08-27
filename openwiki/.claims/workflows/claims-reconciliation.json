@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:45d9f1eeffbd9d423ef3d1f0b5fe120c9080917192105703a37d8437064ed1bb",
+  "pageVersion": "sha256:57aeed99042ba9a23192e72a7c4edd63363d0892205a5f3310b4e7fc170c63f8",
   "claims": [
     {
       "id": "claim_b4fc5fda11a9482d91f562eef48a86f6",
@@ -260,19 +260,19 @@
     },
     {
       "id": "claim_9e273c9dd3904476ac548e49e7b15c31",
-      "statement": "finishRepositoryRun passes the set of skipped page paths as excludedPages to both finalize and assertRepositoryClaimsDurable, excluding skipped pages from final Claims persistence and the whole-run durability proof, and records the run as interrupted rather than complete when any pages were skipped.",
+      "statement": "finishRepositoryRun validates that every skipped page job has exactly one matching original page snapshot (by job id and path) before any work, throwing invalid_state otherwise, then derives skippedPages from those jobs; it restores skipped-page Markdown from snapshots first and only afterward calls finalize and assertRepositoryClaimsDurable with skippedPages as excludedPages, so skipped pages are excluded from final Claims persistence and the whole-run durability proof, and records the run as interrupted rather than complete when any pages were skipped or source drifted.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L1086-L1117",
-          "version": "repo-lines-v1:sha256:0c73c49209c7945592fe00cfc2b5a9a0c2e315ca537ff15084027b4c679c029f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViM2Q3OTc5NTMxMGY3YmNjZDMyMDUzNDdlODIxMDA0NjA4YjRiODBmNGQyNjUyNTA0ZjBjNmU4Y2JmN2JlZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjNGFkMjRkNTQ4Y2QyMmUwNzljZDUwOTM4NDUxNDc1YjliMDEzNTM2YWJlYThkOTVmYWRlMmNkZmJmMWI5ZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5NTdkMmU5MWUwYjZjYzkxZmZlNDY4NTc4ZmM4ZWY1Mzg5OGUyZWJlNDk4MWYyNmRiMDkwNTIwMGJiMTQwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1093-L1126",
+          "version": "repo-lines-v1:sha256:c8c0ffd3fd7d6cdb03931f257359adc19e307bd16810a4d602e0ec14512dd6a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViM2Q3OTc5NTMxMGY3YmNjZDMyMDUzNDdlODIxMDA0NjA4YjRiODBmNGQyNjUyNTA0ZjBjNmU4Y2JmN2JlZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5NTdkMmU5MWUwYjZjYzkxZmZlNDY4NTc4ZmM4ZWY1Mzg5OGUyZWJlNDk4MWYyNmRiMDkwNTIwMGJiMTQwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5NjA4NjllYzI4NTNiMmM5ZTRmMTc0ZWIyNGZiNDBkZDQ2NDIxMTMzZTUyODhmMGY4MTI4OTBjOWI3ZjFlNWEifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1197-L1219",
-          "version": "repo-lines-v1:sha256:08e2cb16ea3b4f370e225523e7cc893bc3c532ad8b8a7c8ea290f57ba28926ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNDBhZDJiOWZhY2NkYjNlZmQyNmEyY2I5ODE4NmRmMTJhNDUxNDNkOWRlYjY0NTM5YTY4MmYzNGZkYTJjMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmRjMmE4NzllM2FjM2IyZTMyNTE3ZjY5NzliZjg1MDA2Nzc4M2JhNGMxMWI0ZDFmNWY1NTUwOWM4OWZmZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwNzUzYTdlYTQ1MmIxMzRkMzczOTFjMjM5ZjAzMWE2YzlhMmI2MTQzNzQ2MzdjOTk0MDlmYWQ4Yzk4Y2ZiODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2ZmRhMmZiMGI4NzViM2RlMTE4ODRiYTdiZTUzMDBhYmUyNDYzMTZlNTBlMDllODVlMTJhNzYyZmQ0OTkwNjEifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1188-L1201",
+          "version": "repo-lines-v1:sha256:c35c57a9dbdaac89a5e879f7fa75c97e009a7520d403936699d0316dc06e01e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzdlYzc4NzgwNDg4MTk4MDc2M2YyOWMzMzNlNmE1MjEyNjMwN2ViYThmNmUwZTI5MjdhNDJkYTI4Y2M4MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlZmRjYjNmN2QwMDU1ZTZiNzdlM2FiZGJkYjVjYmU1OTZkMDZkNGExNDA4YmRkOGIyMWY5NjAwNjQ5ODNmMDAifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1223-L1242",
-          "version": "repo-lines-v1:sha256:863bec5e8a1e2d312e04f9e7e1a2b4069f650a6d000760d774fb40556876668a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNjUzNzIwN2NmNmU0M2IyMTVlODJhYTc3ZDQ0Mjk5ZmIyYjM1ZWZlYTBjZDgzYTdkN2FmNDgwM2Q2YTQ3OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2ZmRhMmZiMGI4NzViM2RlMTE4ODRiYTdiZTUzMDBhYmUyNDYzMTZlNTBlMDllODVlMTJhNzYyZmQ0OTkwNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0NTYzYzFjMmEwOTM5NGZmOGI2NjFmMDk4YTExOTBlMTliOGYxZDJlMTUxYzczY2U0ZmM5NWUxYWNkZDc5ZmYifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1202-L1248",
+          "version": "repo-lines-v1:sha256:a326c2698d3639fde5d860cbfcac7bbae1115c4dcc93722fd4bf9cc8663dd36b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNDBhZDJiOWZhY2NkYjNlZmQyNmEyY2I5ODE4NmRmMTJhNDUxNDNkOWRlYjY0NTM5YTY4MmYzNGZkYTJjMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwNzUzYTdlYTQ1MmIxMzRkMzczOTFjMjM5ZjAzMWE2YzlhMmI2MTQzNzQ2MzdjOTk0MDlmYWQ4Yzk4Y2ZiODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3OGE3NzkwZDU5OGFiOGNlNGJhMjdjNjM0MmZhMTJjYjc3ZTdiMzBmNjVjYWI4NjFiNjEzNzJlYTMwNjEwNTQifQ"
         }
       ]
     },
@@ -288,7 +288,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.0",
-    "at": "2026-08-26T22:32:29.466Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-27T11:21:51.032Z"
   }
 }

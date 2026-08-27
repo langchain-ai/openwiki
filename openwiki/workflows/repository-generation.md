@@ -33,10 +33,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T11:21:51.032Z
 ---
 
 # Repository Generation Lifecycle
@@ -76,7 +76,6 @@ stateDiagram-v2
     generating --> generating: next_page then submit_page per job
     generating --> skipped: worker fails or exits without submit_page
     skipped --> pending: resume resets skipped jobs
-    generating --> planning: source drift on finish
     generating --> done: finish after every job complete or skipped
     planning --> noop: clean update preflight
     noop --> [*]
@@ -85,6 +84,7 @@ stateDiagram-v2
 
 Lifecycle phases and per-job status transitions of one repository-generation run.
 A `skipped` job is not a terminal run state — resume resets it to `pending`.
+Source drift during finish finalizes the wiki and records a later update due rather than resetting to planning.
 
 ## Durable run state: openwiki/.run.json
 
@@ -198,8 +198,8 @@ Before any model-owned work runs, the runner captures a `RepositoryPageSnapshot`
 via `captureRepositoryPageSnapshot`, which records the current pending job id, the
 page path, the pre-worker Markdown (or `null` if the page does not yet exist),
 and the page's existing Claims sidecar (or `null`). Snapshotting is itself
-strict: only the current pending job may be snapshotted, and a snapshot of a
-non-text page rejects with `invalid_state`.
+strict: only the current pending job may be snapshotted, and the page must be
+text (a snapshot of a non-text page rejects with `invalid_state`).
 
 When a worker must be skipped, the runner calls `skipRepositoryPage` with that
 snapshot. `skipRepositoryPage` verifies the caller still owns the current pending
@@ -227,10 +227,10 @@ its snapshot, so the finalized wiki reflects the pre-worker page rather than
 partial worker output. It then finalizes Claims while excluding the skipped page
 set and runs the whole-repository durability proof excluding those pages, so a
 skipped page is never required to have durable Claims. If at least one page was
-skipped, finish writes `interrupted` metadata instead of `complete` metadata, and
-then removes `openwiki/.run.json` last as usual. The run therefore completes
-deterministically, but the persisted `interrupted` status tells a later `begin`
-that work remains.
+skipped or source changed during the finish window, finish writes `interrupted`
+metadata instead of `complete` metadata, and then removes `openwiki/.run.json`
+last as usual. The run therefore completes deterministically, but the persisted
+`interrupted` status tells a later `begin` that work remains.
 
 ### Resume resets skipped jobs to pending
 
@@ -285,39 +285,45 @@ jobs are reset to pending before this drift check, but a source change always
 wins: when source has drifted the plan is deleted regardless of skipped status.
 
 `finishRepositoryRun` guards the same drift at both ends of its deterministic
-window: it re-checks the fingerprint before doing any finalization and again after
-Claims are finalized, closing the check/use race so source cannot change midway.
-Any drift resets the run to `planning`, clears the plan, and raises a `conflict`
-telling the caller to `begin` and submit a replacement plan.
+window: it re-checks the fingerprint before doing any finalization and again
+after Claims are finalized, closing the check/use race so source cannot change
+midway. When source has drifted, finish does **not** raise a conflict or reset
+the plan. It persists `interrupted` metadata (so a later `begin` sees work
+remains), removes `openwiki/.run.json`, and returns `sourceChanged: true` so the
+caller can inform the user that a later update reconciles the drift.
 
 ## finish: deterministic finalization
 
 `finishRepositoryRun` refuses to run while any job is still `pending` (skipped
-jobs are permitted and handled as above). Once the queue has no pending work and
-source is stable, it deletes pages abandoned by a superseded plan (never touching
-`initialPages`), applies the plan's explicit deletions, reconciles Claims sidecars
-for deleted pages, finalizes wiki artifacts (indexes and provenance), restores any
-skipped pages, finalizes Claims (excluding skipped pages), and proves the whole
-repository has no orphaned or partially durable Claims via
-`assertRepositoryClaimsDurable` (also excluding skipped pages). It then persists
-completion metadata — `interrupted` when any page was skipped, otherwise
-`complete` — and, last of all, removes `openwiki/.run.json`. The checkpoint is
-deleted last on purpose: every earlier failure leaves the run resumable so `begin`
-can reconstruct and retry.
+jobs are permitted and handled as above). Once the queue has no pending work, it
+checks the source fingerprint before and after finalization to close the
+check/use race. It then deletes pages abandoned by a superseded plan (never
+touching `initialPages`), applies the plan's explicit deletions, reconciles
+Claims sidecars for deleted pages, finalizes wiki artifacts (indexes and
+provenance), restores any skipped pages, finalizes Claims (excluding skipped
+pages), and proves the whole repository has no orphaned or partially durable
+Claims via `assertRepositoryClaimsDurable` (also excluding skipped pages). It
+then persists completion metadata — `interrupted` when any page was skipped or
+source changed during the finish window, otherwise `complete` — and, last of
+all, removes `openwiki/.run.json`. The checkpoint is deleted last on purpose:
+every earlier failure leaves the run resumable so `begin` can reconstruct and
+retry.
 
 ## One lifecycle, two drivers
 
 Both entrypoints drive the identical durable core.
 
 The **native runner** (`runNativeRepositoryGeneration`) begins the run with a
-stable OpenWiki producer actor, then loops: it runs a bounded planning agent when
-the phase is `planning`, runs one fresh non-delegating page worker per pending job
-(each bounded to writing only its assigned page and calling `submit_page`), and
-then calls `finish`. The page loop collects a `RepositoryPageSnapshot` for every
-worker it skips and passes them all to `finishRepositoryRun`. If `finish` reports
-the specific source-drift invalidation `conflict`, the runner rebuilds context,
-re-begins, and replans automatically. Workers reuse the supplied model but keep
-no repository-generation state beyond the durable core.
+stable OpenWiki producer actor, then loops: it runs a bounded planning agent
+when the phase is `planning`, runs one fresh non-delegating page worker per
+pending job (each bounded to writing only its assigned page and calling
+`submit_page`), and then calls `finish`. The page loop collects a
+`RepositoryPageSnapshot` for every worker it skips and passes them all to
+`finishRepositoryRun`. When `finish` reports `sourceChanged: true`, the runner
+emits a user-facing message explaining that the wiki was finalized without
+advancing the source checkpoint and a later `--update` will reconcile the
+drift. Workers reuse the supplied model but keep no repository-generation state
+beyond the durable core.
 
 The **host integration** (`HostSessionManager`) exposes the same five operations
 as the OpenWiki MCP tools. It holds one active `ActiveRepositoryRun`, requires the
@@ -335,9 +341,12 @@ the missing-snapshot `invalid_state` unless the host supplies snapshots itself.
 
 Lifecycle failures are reported with stable `RepositoryRunError` codes —
 `invalid_input`, `invalid_state`, `conflict`, and `not_found` — that the host
-adapter maps to protocol errors and the native runner uses to drive replanning.
-Correctable input rejections (bad plan or bad Claim payload) are returned to
-workers as failed tool results so their loop stays active, while `invalid_state`
-and `conflict` protect the durable invariants: submit in phase order, submit only
-the current pending job, never finish over changed source, and never finish a
-skipped job without its snapshot.
+adapter maps to protocol errors and the native runner uses to drive worker
+retries. Correctable input rejections (bad plan or bad Claim payload) are
+returned to workers as failed tool results so their loop stays active, while
+`invalid_state` and `conflict` protect the durable invariants: submit in phase
+order, submit only the current pending job, never finish with pending jobs or
+without covering skipped-job snapshots, and never resume a run owned by a
+different mode, language, or producer. Source drift detected at finish time is
+not a failure: the wiki is finalized, `interrupted` metadata is persisted, and
+`sourceChanged: true` tells the caller a later update is due.

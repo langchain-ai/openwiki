@@ -34,10 +34,10 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T11:21:51.032Z
 ---
 
 # Claims Reconciliation on Update
@@ -239,6 +239,34 @@ advancing the queue. When the whole queue is finished, `finishRepositoryRun`
 calls `finalize` and `assertRepositoryClaimsDurable` once more for the
 whole-run proof.
 
+`finishRepositoryRun` guards the finish path with a **skipped-snapshot
+validation**: before any work, it requires exactly one page snapshot for every
+skipped page job, matched by job id and path, and throws an `invalid_state`
+error if a skipped job lacks its original snapshot. The skipped page paths form
+the `skippedPages` set that flows into both `finalize` and
+`assertRepositoryClaimsDurable`.
+
+### Snapshot restore precedes claims finalization
+
+The finish path runs its steps in a deliberate order:
+
+1. Apply abandoned-page deletions, planned deletions, and deleted-claim-page
+   reconciliation.
+2. `finalizeWikiArtifacts` — the deterministic index/concept wiring using the
+   session's current evidence map.
+3. **Restore each skipped page's Markdown** from its snapshot — reverting
+   skipped pages to their pre-run content.
+4. `finalize` and `assertRepositoryClaimsDurable` with `skippedPages` — the
+   Claims persistence and whole-run durability proof run **after** the snapshot
+   restore, so skipped pages are excluded from persistence but their restored
+   Markdown is already in place when the durability proof reads the working
+   tree.
+
+This ordering matters because `assertRepositoryClaimsDurable` discovers current
+pages from the working tree: by restoring skipped-page Markdown first, the
+durability proof does not mistake a skipped page's absent Markdown for a
+missing page and fail the run.
+
 `finalize` accepts an `excludedPages` set (empty by default) and skips every
 page it names across all of its work, so callers can exclude pages whose
 Markdown was not regenerated. The per-page submit path omits it. The finish
@@ -253,8 +281,9 @@ current source and re-hashes its Markdown before writing the sidecar. Orphan
 and deleted-page sidecars are removed in the same pass. This is the point at
 which refreshed evidence versions become durable, so a subsequent update's
 preflight sees current tokens and can correctly report the page as no longer
-stale. A run that finishes with skipped pages records itself as `interrupted`
-rather than `complete`, so the next update resumes rather than no-ops.
+stale. A run that finishes with skipped pages (or any detected source drift)
+records itself as `interrupted` rather than `complete`, so the next update
+resumes rather than no-ops.
 
 ## Related pages
 

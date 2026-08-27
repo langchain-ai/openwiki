@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:edfc29007eb31cedc2eb9a4ed563459cfd26ceb3042b67bc905268dc67630579",
+  "pageVersion": "sha256:67475195375b56c2c8a111e63648db181ca51b526892f769db6a77ee06fe6f89",
   "claims": [
     {
       "id": "claim_5836585e22d244e79875961ea0a09258",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://package.json#L1-L12",
-          "version": "repo-lines-v1:sha256:c713bbffd7554e0e671651375c1b0ac5281a44e8576b99e146ae8c6f1c945992:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYTZkODI3ZjYzOGU0NjRlYzQ2MTcwMDVjMjEyODhkODkzNzBlYTc3MDJiMjJhMDMxOTU1ZjZiMWMwNTFkNmYifQ"
+          "version": "repo-lines-v1:sha256:ae9dfbafe56a722746818f9b2d2c7e08f767edcf957e23a4e3f31483527d8a4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYTZkODI3ZjYzOGU0NjRlYzQ2MTcwMDVjMjEyODhkODkzNzBlYTc3MDJiMjJhMDMxOTU1ZjZiMWMwNTFkNmYifQ"
         },
         {
           "resource": "repo://package.json#L37-L60",
@@ -49,8 +49,8 @@
       "statement": "The `dev` script runs the CLI from TypeScript source with `tsx` (`src/cli/cli.tsx`) while the shipped `openwiki` binary and `start` script run the compiled `dist/cli/cli.js`, so development and released behavior share the same entrypoint code.",
       "evidence": [
         {
-          "resource": "repo://package.json#L10-L12",
-          "version": "repo-lines-v1:sha256:73222e93d7a59960a04ad2d04e2047d3d382e90bdcb1b2837d88709fe306cb63:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZjMTQ3NTdiOGUxZTlkNmE3ZGVlOTkwMmU5MDQwN2FkOGNmNjczYjNlOGQ3NjNlMjc5NTBkMTlkMDY3OGQ2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTA5ZWUyYWJiZmRlNjc1ZWM2YmE2ZDQxOGMxM2QzM2M0ZDhiOGI2NWNiYTY5NWY1N2NkNjViODMyYWQwOWI3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRhNmQ4MjdmNjM4ZTQ2NGVjNDYxNzAwNWMyMTI4OGQ4OTM3MGVhNzcwMmIyMmEwMzE5NTVmNmIxYzA1MWQ2ZiJ9"
+          "resource": "repo://package.json#L37-L59",
+          "version": "repo-lines-v1:sha256:9eccf76d99849eb97c50d9f9a6b5704ab27b3faa8e5200cc29bf0885714bec19:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ODMzZDU5NDljMDNhNDBjYTk1MjQ5MTYxMGE2NjU5NjQ0YjNhYTQ2NjM2MmY3OTkwMjBkYmYxOTgxNTQ3ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhYTk4NzI5NTI4MGUxNTgzMzAyMDZmMGQzOTkzNjY3MWQ3NGRlYTkzOTY3Zjg4Yjk3YmQ5ZTVjMjdiODFmMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2MmRhZjMzM2RlNTUyNTNiZGVjYjRiODMwZTNkODZiODdhYTJhZGU4NzhhMTVlNTA0ZGIxYTg5ZTVmN2FjN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYzc1MzE1ZmFhNWRiY2FhYTNlZTM0MGQ0MjExOTZkNDQwN2FlMzAxMjgzOWE3ZWYzNjAzZTAwNGJkZDdiYmIifQ"
         },
         {
           "resource": "repo://package.json#L43-L57",
@@ -92,10 +92,6 @@
       "id": "claim_f7a959d8fc474a5580100ced32c2ee72",
       "statement": "Repository (code) generation follows the resumable page-job flow `begin → submit_plan → next_page → submit_page → … → finish` with a durable ordered page queue; in-progress runs are recorded in `openwiki/.run.json` so an interrupted run on a persistent checkout resumes, while ephemeral CI runners start fresh after failure unless their workspace is preserved.",
       "evidence": [
-        {
-          "resource": "repo://README.md#L35-L35",
-          "version": "repo-lines-v1:sha256:44c7c8051e83998d969e749a3c21a3c7d7d8ced5a7cd597a3a9fb42b80e6e487:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjN2M4MDUxZTgzOTk4ZDk2OWU3NDlhM2MyMWEzYzdkN2Q4Y2VkNWE3Y2Q1OTdhM2E5ZmI0MmI4MGU2ZTQ4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjN2M4MDUxZTgzOTk4ZDk2OWU3NDlhM2MyMWEzYzdkN2Q4Y2VkNWE3Y2Q1OTdhM2E5ZmI0MmI4MGU2ZTQ4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDY0ODVkMDNiOWNiZTdkNGI3ZTIyNWY5ZjUzYjNjMWJjYzgzNDBkYjZmZDg1OTA2ZGI4ZDY0YzZhOWFkNDlkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTJjMGM5OGU5YjJiZDI3YzBkZmQ1NjkxMDA0MzczMmI4YThhMGRlYjU5MDMzODc5MDJiODY3NTY2ZjMzZmI4MCJ9"
-        },
         {
           "resource": "repo://README.md#L49-L55",
           "version": "repo-lines-v1:sha256:fe5e67c3af66813753862af5be235673c04f301ce620939f993dfcd4c6794620:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRmODA2NGE5NDMxM2FmZDk1MTY4NTkzMjFlNGNkNWZiZjY0ZjkyMTVjN2Q3NzZlMzA5MGE4OGU3ZWEzZjRhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmY3Y2IxYTk0MmJjNDQ0ZDdjN2ExNzA3MGE4MzQ0NWYxNTE3MGE5ZTBkMjQyNzhkNGJjYzc2ZjY2ZjlkMWRjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThlOTZiNzQ1ZTg5NDg0ZWM3YzcwNmVjOTVjNDZkMWI5MDc2YWIzODA2OTgyNTc3MTkwYmE1ZmIwZjA2MTc5MSJ9"
@@ -141,22 +137,40 @@
       "statement": "Each repository page job has a `PageJobStatus` of `pending`, `skipped`, or `complete`; `skipped` is a third durable status (distinct from `complete`) that records a page worker that failed or exited without calling `submit_page`, rolls the page back to its pre-worker state so completed pages are not lost, lets the run `finish` once every remaining job is `complete` or `skipped`, and is reset to `pending` when the run resumes.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L1183-L1195",
-          "version": "repo-lines-v1:sha256:b04ee181fe67bdbc1229dca3beda312347910ba24f82e2bf99e1688d0e1ca2a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzdlYzc4NzgwNDg4MTk4MDc2M2YyOWMzMzNlNmE1MjEyNjMwN2ViYThmNmUwZTI5MjdhNDJkYTI4Y2M4MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyOTc3YjZmMTFjM2YzZDE1NjVlMWRmYzAzNTA2ZmQ0NzE5Mzg0NDA4MGIwNTM0NzNkZDQ2MmYzM2NlOWZiNTIifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1180-L1202",
+          "version": "repo-lines-v1:sha256:55dabfc7ce78d87a8628796f10da7169d7c97e0b671209292697b0116ca272f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjYzlhYzUyNDFkZmMyZWJjYzVhMjc0ZTI1ZTZlOGRhZTAwMWVhZDRkNDM5NDc3MGRmNjRlZDE3NTlmMDFlOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNDBhZDJiOWZhY2NkYjNlZmQyNmEyY2I5ODE4NmRmMTJhNDUxNDNkOWRlYjY0NTM5YTY4MmYzNGZkYTJjMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5OTExNGIzNjY0ZGVlZGU1NjdkMDYyNzFlZTJkZTQzZTgxZTEyMjQ2Y2Y0MmRhODZjNjhjNTkwODI1Nzc2ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMjIzMmVjMTliYzQ2ZWE1NmM3ZmNjOWNhNDExMmExNTFiOGZkZTBkYzVmNGI3MTZkNmE0ZTU3MmMxMGEyYTQifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L470-L471",
-          "version": "repo-lines-v1:sha256:a826e5bb206e83eac9ffea5e4043f5b2aca26493b7afd191c994453c916246e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3ZjVjNDUwM2MyOWUzZDk4ZWJhNzQ0YWQyNGJkYjc3MjA5ZGNmZGUzOTM2YmIzYzEyYmY4NTlhZDg4MzczNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDUyYjRkMGJhMjVmMjQzYWFmY2RkZTMyOGQzY2ZiMDE3NjYwYzExYWNkMDZlNzZhNDA0NjNiOWYyMGEwODlhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjFjYzM2YTZkMmYyZWNlODhiYjY0ZDZjM2FlN2VjZWQyMzNkY2NkMGQwNmYyMTJjOTYzN2ZkYjQwNDk0OTI0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjg1OTk2NTY2YTY5Nzk2YjA4MmM4ZWFmYzVjYjJhOGU3MDEwNGEwNjA1YjY4YTIzY2FmYmYxYjVhN2E4YmM4ZCJ9"
+          "resource": "repo://src/generation/repository-run.ts#L470-L472",
+          "version": "repo-lines-v1:sha256:2c798db20a6cac4a9bfd4886f1d4c00df87cd78a1f04eac8437d0c395e75d254:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM2YTQ2OTM1NTNmMjdjOTYxNmNmZTE5YjY3YzhjYTRlMGQzOTFlMDQ0MDEyMWEwOThhNjViYTZlN2I0MTI5ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDUyYjRkMGJhMjVmMjQzYWFmY2RkZTMyOGQzY2ZiMDE3NjYwYzExYWNkMDZlNzZhNDA0NjNiOWYyMGEwODlhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWNjZWEzYjczMjNiYjczZjdkZWRkNTMyM2FlYTUzNDk2ODUwZGI0NWI5NjkwYTkyYmM1YzM3NmE4NmJhYzZkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjg1OTk2NTY2YTY5Nzk2YjA4MmM4ZWFmYzVjYjJhOGU3MDEwNGEwNjA1YjY4YTIzY2FmYmYxYjVhN2E4YmM4ZCJ9"
         },
         {
-          "resource": "repo://src/generation/run-state.ts#L34-L34",
-          "version": "repo-lines-v1:sha256:303f79f315f50dbc90f9fbbadb69ef3defcf4d56c3e1b3c3b98d95cd21c87d68:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzAzZjc5ZjMxNWY1MGRiYzkwZjlmYmJhZGI2OWVmM2RlZmNmNGQ1NmMzZTFiM2MzYjk4ZDk1Y2QyMWM4N2Q2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzAzZjc5ZjMxNWY1MGRiYzkwZjlmYmJhZGI2OWVmM2RlZmNmNGQ1NmMzZTFiM2MzYjk4ZDk1Y2QyMWM4N2Q2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTM4YTAzNmNhY2M4ZTU1NTc5YzVlNWQ3YmIwOWRkZWNiZWJmOGJmODc0ZTlhOWE5MTI1YWE5NDc0ZDZlZjFjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODUyMDBmZmIwZTBmNjdkZDRhNmYxY2U3NjI1YWRhMTA4ODU0MTQzZjg4ZGJmM2I2N2Y3OGNkODNmMGI0MTQ5MSJ9"
+          "resource": "repo://src/generation/run-state.ts#L32-L34",
+          "version": "repo-lines-v1:sha256:354e3b17e4131ab6f2eb4b0069b1c11cc5ad4f7d6066d424d3e17092ad9842cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTIyOTQ0ZjEwMWI4MmNiNGI0ZTE0OWY0NzkyZTU2NGUxMTFmODQwODBjN2ZlMzhhMjYyMjFlZTliZDMzYjQ2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzAzZjc5ZjMxNWY1MGRiYzkwZjlmYmJhZGI2OWVmM2RlZmNmNGQ1NmMzZTFiM2MzYjk4ZDk1Y2QyMWM4N2Q2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGE2YzM1ODU4ZmQzZmRmNWUwNDhlY2ZhMDNhN2Y0MzIzZWVlOTc1MTk2YmUyZWYxYTkwYWVhYWUxNmUyNGI3MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODUyMDBmZmIwZTBmNjdkZDRhNmYxY2U3NjI1YWRhMTA4ODU0MTQzZjg4ZGJmM2I2N2Y3OGNkODNmMGI0MTQ5MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_27ff3024eb244ff3bd8366d34e46033b",
+      "statement": "Finalization is deterministic and runs once: `finishRepositoryRun` refuses to finish while any page job is still `pending`, validates that every `skipped` job carries its original page snapshot, restores skipped pages to their pre-worker Markdown and Claims, persists and proves the reconciled Claims durable, and removes `openwiki/.run.json` last so any earlier failure leaves the run resumable; when repository source changed during the run (detected by re-fingerprinting source before and after finalization), the run finalizes without advancing the source checkpoint and writes `interrupted` update metadata instead of `complete`.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L220-L244",
+          "version": "repo-lines-v1:sha256:4bfc93acd2c7764595eb9d1464520dfa14d5d06bbba81b23f6d266f0e315f487:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlZjgxZTQwNjYyYzA1OWUxZDhlNTE0MWVkMWQ4OWVjOTZmN2QyMDJjM2Y4N2UwMjU2M2M3OTFkZDkwM2RmZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlNjA1MGE5NGUzZDI3YjQ5NWIzZDJlZDBhMTQxZGJkYTJmOWUxMTViYmY4NWY1NTU2NjZkYmU5ZGQxNzJjZDEifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L1167-L1256",
+          "version": "repo-lines-v1:sha256:a04234b262867a05fb204152475c3478c3ad59703d8523d04df5e962b90b886e:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExYThlOTQxNzkzMTQxOTJiODE0N2YxYWI3MTA0Y2IxMDRhNTc5YTU0ZjQ2OTk2ZWYwZjQ5MWNiNTEwYzVkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzYWY2ZDBlMjAxOTFiNDQwZjdlNTMwZTBkMzA1NTlkNmFlY2I3ODA2ZGU3MzM1ZDI5M2QzODI4NzRkYjUxYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMDUzZjUwNmE2ODNkNjZjYmQ2ZDRhMjY4MzYxZWFkYTdkYzkxNjAzZTMwMzliMWFjNGNiNWFjNTRhMjdlNjQifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L1264-L1269",
+          "version": "repo-lines-v1:sha256:9d8ce1c0dd2d2b934f6c1384c5ff513389c72fc457484b15d1c0b2edb79d49f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA1MmNjZmJmNDUxOTAxNWI4NDAxNDA2NGUwOGZjNjg0ZTUyNTc0MWJkMGU5NDBiNGM1YmE5N2IwZjBlZmFiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2M0ZDI4MmMwNjllNDQzOGJjMDM0YjI5MDQ4ZDYxYjdlMGFhZTU5N2ExOWM3YmU4YTk4NzBmOGE3YWExZjVkMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTA2YmVhMTBhYzg5NjQ4ZDU3NzM4YzUxNDlmYTVlODNhMDgyNzk5Mjk1YWFiYzhkMjBmODJlMzgxN2QxZTFjNiJ9"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.0",
-    "at": "2026-08-26T22:32:29.466Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-27T11:21:51.032Z"
   }
 }
