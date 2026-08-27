@@ -1,0 +1,61 @@
+test/generation/repository-run.test.ts
+  s_1c388bff20162b::t_a4beca7234b532 2,1249-1282
+  s_1c388bff20162b::t_d64b4d5d4e9f34 667
+  s_1c388bff20162b::t_6d46f702e4c2a6 1112
+  s_1c388bff20162b::t_38a01274e099e1 633-656,658-666,668-674
+  s_1c388bff20162b::t_53fc848ae40667 1381
+  s_1c388bff20162b::t_2f71ef03df9662 1394-1401
+  s_1c388bff20162b::t_03e3d28222c720 1210
+  s_1c388bff20162b::t_7b6ac6dc8e9315 131-134,588,606-607,610,612-614,629,1111,1207,1211,1283,1350-1380,1382-1393,1402-1403
+  s_1c388bff20162b::t_6550c18c3cd423 657
+  s_1c388bff20162b::t_540ee113d0af78 1284
+integrations/openwiki/SKILL.md
+  s_1c388bff20162b::t_ad8fb93c4468d2 17-18
+src/generation/page-manifest.ts
+  s_1c388bff20162b::t_77ec5e93b50287 310
+  s_1c388bff20162b::t_1ef6f1dc5bdaa4 40-46,78,181,190,194-198,200,257,261,269,292-309,315,318,323,326-327,329,339,348,370
+  s_1c388bff20162b::t_001bf76ad8968a 47-53,79,182,191,199,270,340,349,371
+src/generation/run-state.ts
+  s_1c388bff20162b::t_1ef6f1dc5bdaa4 37,41,94-100,185,261
+src/okf/generated-provenance.ts
+  s_1c388bff20162b::t_03e3d28222c720 198
+  s_1c388bff20162b::t_a4ad79d07a73ca 162,170,177-183,202
+test/generation/page-manifest.test.ts
+  s_1c388bff20162b::t_7b6ac6dc8e9315 328-332
+src/agent/wiki-finalizer.ts
+  s_1c388bff20162b::t_a4ad79d07a73ca 198-203,256,282
+  s_1c388bff20162b::t_e9e64c78682dc9 197
+test/integrations/session-manager.test.ts
+  s_1c388bff20162b::t_9c8cfcd316509b 44,47,49,152-154,159-206,213-214
+  s_1c388bff20162b::t_bd2f8c96709f6a 155-158,207-212
+.changeset/smooth-host-handoffs.md
+  s_1c388bff20162b::t_ad8fb93c4468d2 1-5
+src/generation/repository-run.ts
+  s_1c388bff20162b::t_0ce244da997072 673-677,679-680
+  s_1c388bff20162b::t_c7d26e7d86708f 48,561,588-592,643,650,660-664,666,685-695,1175,1182-1188,1449
+  s_1c388bff20162b::t_b69e775cf1c1f9 101
+  s_1c388bff20162b::t_7f4c60f86e3d48 636,1428-1431,1435
+  s_1c388bff20162b::t_a4beca7234b532 668-672,681-684
+  s_1c388bff20162b::t_001bf76ad8968a 665,678,1176,1432-1434
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "6ba64c9285384d00a9cea1d7f458261f57129a28",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_1c388bff20162b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04478-dda9-79f2-bc10-f812eb7e8bb1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
