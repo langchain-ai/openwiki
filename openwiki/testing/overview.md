@@ -49,9 +49,6 @@ sources:
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
 generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
-verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
 ---
 
 # Testing Guide

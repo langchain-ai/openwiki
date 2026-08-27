@@ -14,9 +14,6 @@ tags:
     connectors,
     visualizer,
   ]
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
 sources:
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
@@ -41,6 +38,9 @@ sources:
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
 generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T22:28:02.719Z
 ---
 
 # Architecture Overview
@@ -139,22 +139,24 @@ page-job runner. More detail lives in
 
 `runNativeRepositoryGeneration` drives the same durable lifecycle the host
 integrations use, but with OpenWiki's own model. It begins or resumes a run,
-runs a bounded planner when the run is in the planning phase, runs one fresh
-per-page worker for each pending page job, and finalizes. Each worker is a
-non-delegating DeepAgent: the planner gets read-only filesystem tools plus
-`submit_plan`; page workers additionally get `write_file`/`edit_file` plus
-`submit_page`, and the general-purpose `task` delegation tool is stripped so
-workers cannot spawn subagents.
+runs a bounded planner when the run is in the planning phase, then
+`runPendingPageAgents` spawns one fresh, shell-free worker per pending page
+job, and finalizes. Each worker is a non-delegating DeepAgent: the planner gets
+read-only filesystem tools plus `submit_plan`; page workers additionally get
+`write_file`/`edit_file` plus `submit_page`, and the general-purpose `task`
+delegation tool is stripped so workers cannot spawn subagents.
 
 The lifecycle is resumable and self-correcting. Before a page worker runs, its
 pending page and Claims sidecar are snapshotted (`captureRepositoryPageSnapshot`).
 If the worker fails or exits without submitting, `skipRepositoryPage` restores
 the page and Claims from that snapshot, marks the job `skipped`, and the run
 continues with the next page rather than aborting; the page is reconsidered on a
-later update. `runPendingPageAgents` collects every skipped-page snapshot and
-passes them to `finishRepositoryRun`, which restores the skipped pages' Markdown
-after finalization, finalizes Claims with those pages excluded, and persists
-`interrupted` update metadata so the run is honestly recorded as partial.
+later update (resume resets `skipped` jobs back to `pending`). `runPendingPageAgents`
+collects every skipped-page snapshot and passes them to `finishRepositoryRun`,
+which restores the skipped pages' Markdown *after* `finalizeWikiArtifacts`,
+finalizes Claims with those pages excluded, and re-proves the whole run before
+deleting run state, persisting `interrupted` update metadata so the run is
+honestly recorded as partial.
 
 If finalization detects that repository source drifted underneath the plan,
 the run does not abort or auto-replan. `finishRepositoryRun` re-checks the
@@ -191,18 +193,38 @@ process-local Claims runtime from durable state; each page worker receives the
 complete existing Claim set and submits the complete intended replacement set,
 so unchanged Claims keep their IDs and refresh evidence versions, revised
 Claims update in place, new Claims get IDs, and omitted Claims are retracted.
-Claim state is persisted alongside the Markdown under `openwiki/.claims/`, and
-page completion is a durability boundary that persists reconciled Claims before
-marking the job done. Grounded Claims apply to repository evidence only.
+Claim state is persisted alongside the Markdown under `openwiki/.claims/`.
+
+Page completion is a durability boundary with a strict ordering. `submit_page`
+first repairs and validates frontmatter, replaces the page's Claims in the
+session, persists them with `claimsRuntime.finalize`, and then re-proves the
+result with `assertPageClaimsDurable` — checking that the sidecar exists, its
+`pageVersion` matches the current Markdown bytes, and a verification event is
+projected. Only after that proof does it record the page's completion into
+`openwiki/.page-manifest.json` via `recordRepositoryPageCompletion`, and only
+after the manifest entry is durable does it advance the job queue by writing
+the next run state. The strict whole-run proof is deferred to finalization.
+Grounded Claims apply to repository evidence only.
 
 ## OKF output and finalization
 
 Every wiki is an Open Knowledge Format bundle. Each page begins with concept
-frontmatter, and finalization is deterministic: `finalizeWikiArtifacts`
-validates Mermaid fences (degrading unparseable ones to text), synchronizes wiki
-indexes, validates internal links, synchronizes Claim sources, and finalizes
-generated provenance with a producer actor and timestamp. See
-[OKF output](../concepts/okf-output.md).
+frontmatter, and finalization is deterministic. `finalizeWikiArtifacts` runs its
+post-authoring steps in a fixed internal-agent order: validate Mermaid fences
+(degrading unparseable ones to text), synchronize wiki indexes, validate
+internal links, then — only when Claim sources are supplied — synchronize Claim
+sources, and finally reconcile generated provenance with a non-empty producer
+actor and timestamp. See [OKF output](../concepts/okf-output.md).
+
+`finishRepositoryRun` brackets that finalization with skipped-page restore and
+whole-run Claims durability. After applying planned and abandoned-page
+deletions, it calls `finalizeWikiArtifacts`, then restores each skipped page's
+Markdown from its snapshot, persists the final Claims (excluding skipped pages)
+with `claimsRuntime.finalize`, and re-proves the entire repository with
+`assertRepositoryClaimsDurable` — confirming no orphaned sidecars remain and
+every non-empty claimed page matches its durable sidecar and Markdown bytes —
+before replacing the page manifest and deleting `openwiki/.run.json` last, so a
+failure above leaves a resumable run.
 
 ## Connectors and personal-mode ingestion
 

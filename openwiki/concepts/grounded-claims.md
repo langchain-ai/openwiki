@@ -35,7 +35,7 @@ sources:
 generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
+    at: 2026-08-27T22:28:02.719Z
 ---
 
 # Grounded Claims
@@ -200,6 +200,36 @@ jobs and passes the set both to `finalize` and to the post-run durability
 assertion (`assertRepositoryClaimsDurable`), so skipped pages are exempt from
 Claims persistence and from the "no orphan sidecar" / "every claimed page is
 durable" checks that gate the run.
+
+### The per-page durability boundary
+
+Finalization is reached once per page, not just once per run. When a page job is
+submitted (`submitRepositoryPage`), the runner writes the page Markdown, repairs
+its front matter, and then `replacePageClaims` installs the submitted Claim set
+into the session. Immediately after, the runner calls
+`claimsRuntime.finalize(startedAt)` to persist that page's dirty state, and then
+`assertPageClaimsDurable` proves the persistence was real before the job is
+allowed to complete.
+
+`assertPageClaimsDurable` reloads the page's sidecar from a fresh `ClaimsStore`,
+so it reads what is actually on disk rather than the in-memory session, and
+checks four things:
+
+- the sidecar **exists** (Claims were durably persisted);
+- its `pageVersion` **equals** a fresh SHA-256 of the current Markdown bytes, so
+  the persisted hash describes the exact file the runner just wrote;
+- it carries a `verification` event, and that event is **projected** into the
+  page's OKF `verified` front matter (matching `by` and `at`), so the machine
+  stamp is visible in the generated page, not only in the sidecar; and
+- every Claim the session expects for the page is present in the sidecar with a
+  matching `statement` and the same evidence resource set, so a partial write
+  cannot pass.
+
+If any check fails the runner throws an `invalid_state` error naming
+`submit_page` as the retry operation, leaving the job pending so `begin` can
+reconstruct and retry. This per-page proof is what lets the run advance one page
+at a time while the final whole-run proof (`assertRepositoryClaimsDurable`)
+only has to confirm global invariants.
 
 Finalization also removes orphaned sidecars (whose pages no longer exist),
 deletes sidecars for pages whose Markdown vanished during the run, and removes

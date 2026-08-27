@@ -21,9 +21,6 @@ sources:
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
 generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
 ---
 
 # Wiki Finalization and Link Integrity

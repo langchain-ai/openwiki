@@ -10,8 +10,8 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T22:28:02.719Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -136,3 +136,9 @@ Both middleware hooks operate purely on file text read and written through the s
 On success it persists run metadata as `complete` (skipping the write when content is unchanged, or always for chat) and locks down a persistent checkpoint file. If the stream throws, it persists metadata as `interrupted` — best-effort, swallowing persistence errors so the original run error propagates — so the next scheduled update does not no-op against a possibly partial wiki.
 
 The crash guard is the last-resort boundary for failures that escape every `catch`. `installCrashGuard` registers idempotent `unhandledRejection` and `uncaughtException` handlers once at startup. `handleFatal` claims the single registered active run synchronously before any `await` — making the claim atomic against a burst of rejections so one crash produces one record, not hundreds — then best-effort records the crash as a telemetry failure, stamps the run `interrupted`, prints the raw error to the user's stderr, and exits non-zero. OpenWiki runs one run per process, so a single module-level active-run slot is sufficient.
+
+## Repository worker loop
+
+`runNativeRepositoryGeneration` drives the durable repository lifecycle with a one-shot planner followed by one fresh page worker per pending page job (the full begin/plan/submit/finish lifecycle is described in [Repository Generation](/openwiki/workflows/repository-generation.md)). Both the planner and each page worker construct their own `OpenWikiLocalShellBackend` (docs-only, `virtualMode`, page workers pinned to a single `writableWikiPages` entry) and a `createDeepAgent` graph with `subagents: []`. Because the repository workers are deliberately non-delegating, they inject `NO_DELEGATION_MIDDLEWARE`, a `wrapModelCall` that strips the generic `task` tool from every outbound tool list — DeepAgents 1.12 adds that general-purpose task tool even when `subagents` is empty, and this middleware removes the model-facing delegation capability after all tool-contributing middleware has contributed its tools. The middleware runs after `createFilesystemMiddleware`, so the filesystem tools themselves are unaffected; only the task-delegation surface is hidden from the model.
+
+`runPendingPageAgents` walks the persisted page queue and, after each page job completes, checks `SMOKE_FAIL_AFTER_COMPLETED_PAGES` (read from `OPENWIKI_SMOKE_FAIL_AFTER_COMPLETED_PAGES`). When that threshold is positive and the count of `complete`-status pages reaches it, the worker throws an injected "smoke failure" — a deliberate, CI-only circuit breaker (the source is explicitly marked for deletion before any production merge) that aborts the run after a bounded number of completed pages so the durable lifecycle's resumability can be exercised; a zero or unset value leaves normal runs untouched.
