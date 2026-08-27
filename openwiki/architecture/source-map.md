@@ -51,6 +51,9 @@ sources:
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
 generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T22:46:45.432Z
 ---
 
 # Source Map
@@ -79,16 +82,22 @@ before anything else.
   agent events into `OpenWikiRunEvent`s (`parseStreamEvent`,
   `parseAgentStreamChunk`).
 - **`src/config/constants.ts`** is the single large registry of stable strings:
-  the `openwiki` directory name and update-metadata path, and the provider
-  environment-variable key names and defaults (`OPENAI_API_KEY_ENV_KEY`,
-  `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex keys, and provider lookup helpers).
+  the `openwiki` directory name, page-manifest path, and update-metadata path
+  (`OPEN_WIKI_DIR`, `PAGE_MANIFEST_PATH`, `UPDATE_METADATA_PATH`), and the
+  provider environment-variable key names and defaults (`OPENAI_API_KEY_ENV_KEY`,
+  `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex/Google keys, connector-token keys,
+  `DEFAULT_PROVIDER = "openai"`, and `DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3`).
   Nearly every subsystem imports its identifiers from here.
 - **`src/generation/repository-run.ts`** owns the repository-generation
   lifecycle. It drives the plan-then-page workflow with `beginRepositoryRun`,
   `submitRepositoryPlan`, `nextRepositoryPage`, `submitRepositoryPage`, and
-  `finishRepositoryRun`, wiring together the run state, claims runtime, wiki
-  finalizer, and OKF frontmatter validation — including deterministic
-  frontmatter repair (`repairPersistedFile`) before a page job is accepted. It
+  `finishRepositoryRun`, wiring together the run state, claims runtime and store,
+  the wiki finalizer, and OKF frontmatter validation — including deterministic
+  frontmatter repair (`repairPersistedFile`) before a page job is accepted. Its
+  import surface spans the agent backend, wiki finalizer and replacement,
+  `prepareClaimsRuntime`/`ClaimsStore`, `parseFrontmatterFields`/
+  `repairPersistedFile` from `okf/frontmatter.js`, index-label resolution from
+  `okf/index-labels.js`, and the page-manifest and run-state checkpoints. It
   also owns the skip-failed-page-workers path: `captureRepositoryPageSnapshot`
   records the pending page and its claims sidecar before a worker runs,
   `skipRepositoryPage` rolls a failed worker back (restoring the page markdown
@@ -122,16 +131,22 @@ page and mark it `skipped`, collects those snapshots, and passes them to
 
 Orchestrates a full repository wiki build. Principal entry:
 `src/generation/repository-run.ts`. `src/generation/run-state.ts` owns the
-durable on-disk checkpoint (`.run.json`, schema-versioned, with `planning`/
-`generating` phases and `pending`/`skipped`/`complete` page-job statuses) so
+durable on-disk checkpoint (`.run.json`, schema-versioned, with `init`/`update`
+modes, `planning`/`generating` phases, and `pending`/`skipped`/`complete`
+page-job statuses, plus the `RepositoryRunActor` producer/metadata identity) so
 runs resume after interruption. `src/generation/page-jobs.ts` builds the plan
 (`createRepositoryPlan`) and replaces per-page claims (`replacePageClaims`).
-`src/generation/errors.ts` defines `RepositoryRunError`. The lifecycle's
-snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,
+`src/generation/page-manifest.ts` records per-page source checkpoints and
+completion provenance. `src/generation/errors.ts` defines `RepositoryRunError`.
+The lifecycle's snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,
 `skipRepositoryPage`, `restoreRepositoryPageMarkdown`) let a failed page worker
 be rolled back to its pre-work state and marked `skipped` rather than failing
 the whole run; `finishRepositoryRun` requires a snapshot for every skipped job
-and re-applies those snapshots before finalizing.
+(matching `jobId` and `path`) and re-applies those snapshots before finalizing.
+Per-page acceptance runs a durability proof: `submitRepositoryPage` calls
+`repairPersistedFile`, `replacePageClaims`, `claimsRuntime.finalize`, and
+`assertPageClaimsDurable` before `recordRepositoryPageCompletion` advances the
+job to `complete`; the whole-run proof waits until every page job is complete.
 
 ### claims — grounded-claim persistence and evidence resolution
 

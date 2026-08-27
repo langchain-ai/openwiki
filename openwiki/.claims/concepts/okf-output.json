@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5e7b16aaf960cba96ffd3099d3b6b6209a2956b47eadcdfbf1b24afbf04d4a12",
+  "pageVersion": "sha256:4aa22461fd3c43e48291b2db96068d0faf0c3817de141c9dd2156673a6fc377e",
   "claims": [
     {
       "id": "claim_015f68c61f874418879c6446644e49d5",
@@ -129,12 +129,12 @@
       "statement": "snapshotGeneratedProvenance records, before authoring, a SHA-256 hash of each concept's exact Markdown body (frontmatter excluded, whitespace retained) plus the prior valid `generated` event, and serializes it in deterministic sorted order so it survives a process restart between phases.",
       "evidence": [
         {
-          "resource": "repo://src/okf/generated-provenance.ts#L136-L148",
-          "version": "repo-lines-v1:sha256:c73fe723ae500d548c1cdaad160d568b43a20a9bed95caa6818434cf37eca258:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0MTdiMzUyZjkxNDRlMWE4MDM2ZDk0NDcxMDM4ZTI5NjdiZDU5YmJiMjk3ZjBjODM4NzU3OGQ3MTc0YWQwNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4YWFhMTIwMzUyYmI3YzcwOWJjYmU1Nzg0OWI3MmE0Y2UwY2QyODU3MjY4YzhkYzMwYTc3YzQwNWJhNThkMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4NzIzYmE0MjQ5MGQxMDRiMDMxYTExNjM4NzBhZWM5MTMwN2MxZDRhMzdiYmQ0NjBmMDJmYzBlNGE1YzZmNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+          "resource": "repo://src/okf/generated-provenance.ts#L1-L50",
+          "version": "repo-lines-v1:sha256:58a592bb7f468d03fa9cbe3bff26f28db23a5ee4b6ca5ce32c7862d671a423e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNTNhZTcwOWRiNTcyOTA5ZWQ4YjRjNjdhNzViYjE2ODkwMWFkNzk2ZDllYjQ2MzVmYTEyZjU5ZWIxNzI1MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjYmJhMzYxNTU1ZTQ5NzFjZTBlMjcwZjJiNmQ5MDk5M2UwMGUyMTIzNmQ3ZWE4ZDhhMzEwZDNmOGIyY2RkNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2M2Y5YjIwOGE5NGI0YjM1NDE1OTcyOTM1MmQxNDE4NzEyMjE5NTVkZjRhNDQ0YTY2ODY2ZmU4YzcwY2Q2OWYifQ"
         },
         {
-          "resource": "repo://src/okf/generated-provenance.ts#L252-L255",
-          "version": "repo-lines-v1:sha256:eca3ba2a47dbff8603eac08484d0aac7e72dddbeaaac65365ac66f8c006392bc:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzNjNDY3NDBkNGE3YzY0Mzg0NWM5MWQ1NmM1YmUwNDM0N2ExZjAxMjc2MWZlMzdjZmU5MzEyM2RiN2FmZDQ0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2I2YzI1ZDJmMjRiYTViNjQyMzY5NGE5NzUwMmViNGI1NjFkNzcwYmFmNGZiNWQ4MTI1MzU3NTc3MzQ0NjcyOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDhkNzE2MWJhY2IyYmEyOWMxYmU5OWRkMmM4NjM2YTY5NzZkMzIyYWE1MGU4YWJiNjY5NTI5MWVjZGIwZTI2MCJ9"
+          "resource": "repo://src/okf/generated-provenance.ts#L136-L148",
+          "version": "repo-lines-v1:sha256:c73fe723ae500d548c1cdaad160d568b43a20a9bed95caa6818434cf37eca258:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0MTdiMzUyZjkxNDRlMWE4MDM2ZDk0NDcxMDM4ZTI5NjdiZDU5YmJiMjk3ZjBjODM4NzU3OGQ3MTc0YWQwNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4YWFhMTIwMzUyYmI3YzcwOWJjYmU1Nzg0OWI3MmE0Y2UwY2QyODU3MjY4YzhkYzMwYTc3YzQwNWJhNThkMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4NzIzYmE0MjQ5MGQxMDRiMDMxYTExNjM4NzBhZWM5MTMwN2MxZDRhMzdiYmQ0NjBmMDJmYzBlNGE1YzZmNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
         },
         {
           "resource": "repo://src/okf/generated-provenance.ts#L91-L108",
@@ -144,15 +144,19 @@
     },
     {
       "id": "claim_357444583a024a048e312e3b5984ea3e",
-      "statement": "finalizeGeneratedProvenance stamps the run's `generated` event on new pages and any page whose body hash changed (removing the legacy `timestamp`), restores the prior event on unchanged bodies without advancing its timestamp, leaves previously-unstamped unchanged pages unstamped, and refuses to run with an empty producer actor.",
+      "statement": "finalizeGeneratedProvenance stamps the run's `generated` event on new pages and any page whose body hash changed (removing the legacy `timestamp` and canonicalizing terminal line endings), restores the prior event on unchanged bodies without advancing its timestamp, leaves previously-unstamped unchanged pages unstamped, and refuses to run with an empty producer actor or any empty per-page producer override.",
       "evidence": [
         {
-          "resource": "repo://src/okf/generated-provenance.ts#L163-L207",
-          "version": "repo-lines-v1:sha256:2169918c5d2168a199e41121dd9548d74f327ec456266795db3b183430542234:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5ODA2NzYwMzI2NzU5M2NjZjJhYzM0ZTI3MGRmNTY2ZWY5ZjFiMWJiNjdiYjM2YjgwZTAwMjE1MDhiOGM0M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjMjg4ZDlkOGRkZWY1ZTdmOTRiNjdmYWRjZWIwMDVhNWIxZWVlZGMxOThhMWQ0ZTU1NmVkZDczMWM3ZDUwODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlYTZlODU4NGRjNzExYTRjNmFiYzQ5NTE0Zjk3MGUwNzBiODJkOGJhNzI2YjZhNWM4YzdiNDY4OWVlMWNiZWQifQ"
+          "resource": "repo://src/okf/generated-provenance.ts#L163-L217",
+          "version": "repo-lines-v1:sha256:7906bff2e727942e1d9b8f9f870daa5500a49e1a05a12f468d74dd9918530147:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2YzUwYzU5NzIzZjk5OGRmYjJmZjIyYmU3NGMxZDcyZDg4MGQ4NGJhYjhlZWY1ZDQ4YTczM2MyYjM1NmVhZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlYTZlODU4NGRjNzExYTRjNmFiYzQ5NTE0Zjk3MGUwNzBiODJkOGJhNzI2YjZhNWM4YzdiNDY4OWVlMWNiZWQifQ"
         },
         {
-          "resource": "repo://src/okf/generated-provenance.ts#L263-L297",
-          "version": "repo-lines-v1:sha256:77c581d930c87351d68f61ba323bbe010cc928e6bf041428216e8eb79fba5892:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NDM3Zjk3Y2NjYWYyZDExM2FkNzA2ODVlMmExODYzMmE2ZjE1MmM3NzBkYTc4NzdiMjFmZDlmNjZjMTgyYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMTJhZWNkYTA2MGI2NmEzZTkyMDlhNzZhYWU0MTJkZGRhODVjOGE5MmYzY2EyMWM5YjNkOTJhYmU0OTA1OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMmY5OTBjM2YxYjIwNzQ4ZTVkODRiODAyYTA4ZTY1MDNjMTg0YjNlOTAyM2M2MmMxZWFiZjM1Y2RkOWY5ODQifQ"
+          "resource": "repo://src/okf/generated-provenance.ts#L229-L232",
+          "version": "repo-lines-v1:sha256:92322b3d56031a666ea8fcad984b64231665314d0066779c867423dd0de973c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjM5NmZlOWY5ZDRmMjUyYzNhNWE2MDQ2MjhlZjJhNjJlZWJkY2Q0MjIzN2E0NTgyZTM4Y2VmYzU4MmIzNDRmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjRlNTkzMDc3Zjg3Zjg4MDA4NTBhZDY4MDQzNmQzMDA5OWM0MWQxYWRmMzVkODQyMTZkODBjN2I4ZTM0Yjc5MyJ9"
+        },
+        {
+          "resource": "repo://src/okf/generated-provenance.ts#L290-L307",
+          "version": "repo-lines-v1:sha256:8b3032b86abdc2a66fd5fdb6e50046a6845f1277cb5b89f1661f75618d07f406:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMmY5OTBjM2YxYjIwNzQ4ZTVkODRiODAyYTA4ZTY1MDNjMTg0YjNlOTAyM2M2MmMxZWFiZjM1Y2RkOWY5ODQifQ"
         }
       ]
     },
@@ -176,8 +180,12 @@
     },
     {
       "id": "claim_924ab2540a9b4fa698b98c10a1fb0bc8",
-      "statement": "An index is written only when its rendered content differs from the existing file, so unchanged indexes produce no diff noise; index synchronization also normalizes each concept file it visits so it can read clean metadata.",
+      "statement": "An index is written only when its rendered content differs from the existing file, so unchanged indexes produce no diff noise; index synchronization also normalizes each concept file it visits (via normalizeConceptContent) so it can read clean metadata.",
       "evidence": [
+        {
+          "resource": "repo://src/okf/index-sync.ts#L123-L137",
+          "version": "repo-lines-v1:sha256:8c9ef1afd5148aeb763cb28880e1805d944cc19877f5c399b608d74c586fd971:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiODk2YTYwYjUyZDcwOWFkNGFkZjI5ZmNiMTYxMTE2N2QyMzdiYWIyZmQzMzNjY2Y3OTY4ZWU4NGYyNTQ1ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjM2E3ZTViMThhOWZlZjkwZTc4ZThlYWVlZmVlMTM1YjlmNDZmMWZmZDQwMzQ3MWZjZDM0NzEyMzA5MjhjYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzMjE0Nzk1MGQ5NTRlN2U3OTMzNmVkZGQxZDBhMjZmYjI1ZTkyYTg3NWJmZTY2NDU4NGM4NDMxOTYzNjg4YzIifQ"
+        },
         {
           "resource": "repo://src/okf/index-sync.ts#L196-L226",
           "version": "repo-lines-v1:sha256:4453b004da25c04134f641b6dc6856f0ffc582503109a888ce061d7913597f11:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1OTgyZTA5YTYzNDMzZDk0Zjc0NWUxODhlY2YwM2NjNzlkMTg1MjExOGRmMTc1OTc0ZDk4Y2MzMzgwNzIyMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkOWIzOTliMjg1ODUyOTIxODc4MjQ2Mjg4NTQ2ZTFiN2JkZDhkZDMwZDUxNzY4ZjRkMDJhMjI3Y2MyMjRkZDQifQ"
@@ -296,21 +304,45 @@
     },
     {
       "id": "claim_cfcc720874a74ff8ad9769658febeb9b",
-      "statement": "The OKF output passes run in a fixed finalizer order: preparation migrates pages to OKF and snapshots provenance, then finalization validates Mermaid, synchronizes indexes, validates internal links, synchronizes claim sources, and finalizes generated provenance.",
+      "statement": "The OKF output passes run in a fixed finalizer order: prepareWikiForAuthoring migrates pages to OKF and snapshots provenance, then finalizeWikiArtifacts validates Mermaid, synchronizes indexes, validates internal links, synchronizes claim sources, and finalizes generated provenance; the finalizer throws before running if the producer actor is empty.",
       "evidence": [
         {
-          "resource": "repo://src/agent/wiki-finalizer.ts#L224-L233",
-          "version": "repo-lines-v1:sha256:84a8da8a5180410fdbf107b3f9030f29219d7b339ab37bd3aa012f004b78e284:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1OGZiY2Y1YjE1ZmViYmFjMmVhOTdmYWYxMmU1OGRiZTY3ZGM4YTA3ZWM0Y2JkNzg2N2UzMDg4MjI3ODE3NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZGYzZGVmZjI0MDNmZGM0ZjVhNWIyMjU1ZThlM2M0ZDIzMzBkYjI2ZWU2NzA5YTc5NTM3N2Y1NGU0YjY5MjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2YzE1YzA2YjQ1ZDQ2MmUwOWEyYzkyYTEyMDM3NWQwMzQyNmY5ZmRkNWZiNDJlYTNkMWMzNjAyZmZlMWE3ZTkifQ"
+          "resource": "repo://src/agent/wiki-finalizer.ts#L226-L240",
+          "version": "repo-lines-v1:sha256:9a6c65f382d7556813616527dbe0850f0942d564608bc7fd8874fe15399884d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZGE0ZjkzYjFiMTE0ZjFjYjQ0NGQ5ZTZlYjNmODJkZTc4NjRmMWJkOGRlMjhhMzU3YmRiMGY1ODE0YWM3NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzY2E1NjZkNWE3ZDdmNmQwZjNkZmIzNTY1MzE3N2NjNjczZjE2Nzc1YTdkNmFhNDYxODlkN2U5YWI0NDcwN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2YzE1YzA2YjQ1ZDQ2MmUwOWEyYzkyYTEyMDM3NWQwMzQyNmY5ZmRkNWZiNDJlYTNkMWMzNjAyZmZlMWE3ZTkifQ"
         },
         {
-          "resource": "repo://src/agent/wiki-finalizer.ts#L241-L276",
-          "version": "repo-lines-v1:sha256:d6aa768c4748a072a266d28e99bfa3440698b2ad0430c66d8749d28f1562428d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMGNiYTZiODUxOTVjMGZhMWZiZmYyMWI3NWFlMWRiYWFmZTBmODg2ODQ1YzI5MmFiYmMzNGI4OWE4MDA5NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3OWI3OTNmYTYyNzA1MGQ2ODhmOTdlYzk0YjA5OGQ1NzI0YmU5MmMyYmUxZmY2MTliMmU1MjhmYjQ0MDk1YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYWE0MTcwY2M2YTMyNjcyNmFmNmI1MWRmMTI0Njc2YTUyNDNhN2M4YjNmMGMzNmY2N2NhM2I5YTI0NmJmMmUifQ"
+          "resource": "repo://src/agent/wiki-finalizer.ts#L248-L285",
+          "version": "repo-lines-v1:sha256:cfb2290596a06239e83112a3ab83540ac3bb56acdf93a4da1133a7a7d0454a70:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMGNiYTZiODUxOTVjMGZhMWZiZmYyMWI3NWFlMWRiYWFmZTBmODg2ODQ1YzI5MmFiYmMzNGI4OWE4MDA5NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3OWI3OTNmYTYyNzA1MGQ2ODhmOTdlYzk0YjA5OGQ1NzI0YmU5MmMyYmUxZmY2MTliMmU1MjhmYjQ0MDk1YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYWE0MTcwY2M2YTMyNjcyNmFmNmI1MWRmMTI0Njc2YTUyNDNhN2M4YjNmMGMzNmY2N2NhM2I5YTI0NmJmMmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b6c98029a934b4eb9518c450228f072",
+      "statement": "finalizeGeneratedProvenance supports per-page producer actor overrides via producerActorsByPage so bodies completed by different sessions attribute their changes to the correct producer; the chosen actor (override or run default) is the `by` of the stamped generated event, and the candidate content is re-run through repairOkfFrontmatter so the reconciled result is guaranteed valid OKF.",
+      "evidence": [
+        {
+          "resource": "repo://src/okf/generated-provenance.ts#L171-L207",
+          "version": "repo-lines-v1:sha256:313d96151b0f60a96f0821e9e34b0ba8a8e8c56e1a28df410137aed0de7749c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2OTQxZTQ2NzNlZTMzZmJlZTUxOGJiYTA5Y2NhMTNiZjY1YzBkYzJmYzEyZDJjOTg2NzZiNmM2MmQ0YzBjOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2Mzk2MmY4OTZjNDg3ZGU2ZDJlNDg4MjM2MTVmZGE3ZmIyZmYyYmU1ODA2Mjc1NWYzYTczYmNkYmE3ZThhNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZDYxZGJhZDk0ZjI5ZjMyZmRmMTRkOGM2ODE3ZWYzNDRhNTE2Yjg5ZjQ5MGY3MjU4N2MyYzU4Yzc3NjlhMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmNjI2YjkyMWJkNjg0OTRjY2QxMzM3NGExYjgxMDIzNThhYmY0NzkwYzAxNGZhZTJkNjQzZDA1YTQ2NDVjYzMifQ"
+        },
+        {
+          "resource": "repo://src/okf/generated-provenance.ts#L185-L216",
+          "version": "repo-lines-v1:sha256:41bcd6bf0d208ff39852ff926c0ec9efe17551953e0f3e6c21742eb47947fb49:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZGI4MTMxNzY4OTMzN2NjNzE1Mzk4NGNmNGNiNjkyZjM3ZjJhMGY2MzU2NzcyMDE2MzFlZjUzNWIwZmJkZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_225c2a0e9fb0440eac6433610d75d933",
+      "statement": "finalizeGeneratedProvenance is best-effort at the file boundary: a concept that cannot be read is skipped so the rest of the wiki still finalizes, and a provenance write that fails is skipped rather than failing the run, leaving the already-persisted bytes in place for later Claim synchronization.",
+      "evidence": [
+        {
+          "resource": "repo://src/okf/generated-provenance.ts#L185-L216",
+          "version": "repo-lines-v1:sha256:41bcd6bf0d208ff39852ff926c0ec9efe17551953e0f3e6c21742eb47947fb49:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZGI4MTMxNzY4OTMzN2NjNzE1Mzk4NGNmNGNiNjkyZjM3ZjJhMGY2MzU2NzcyMDE2MzFlZjUzNWIwZmJkZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.0",
-    "at": "2026-08-26T20:17:27.397Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-27T22:46:45.432Z"
   }
 }

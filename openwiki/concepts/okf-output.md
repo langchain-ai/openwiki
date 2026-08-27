@@ -3,26 +3,9 @@ type: concept
 title: Open Knowledge Format Output
 description: How OpenWiki produces OKF-compliant pages — validated YAML frontmatter, code-owned generation provenance, synchronized directory indexes, and Mermaid diagrams that are validated and degraded before they reach a renderer.
 tags: [okf, frontmatter, provenance, index, mermaid, wiki-finalization]
-sources:
-  - id: openwiki-source-adcadc660c1888613ec50f9a
-    resource: repo://src/agent/wiki-finalizer.ts
-  - id: openwiki-source-1324a62ac93d0625148b498e
-    resource: repo://src/mermaid/dom-shim.ts
-  - id: openwiki-source-4fbeebe90bb8c6910ecd1b3d
-    resource: repo://src/mermaid/fences.ts
-  - id: openwiki-source-3a971b24f14be56fa16b8e4b
-    resource: repo://src/mermaid/validate.ts
-  - id: openwiki-source-3fe3d5f6fe125af314c54067
-    resource: repo://src/mermaid/wiki.ts
-  - id: openwiki-source-54432f9303757678a104d85f
-    resource: repo://src/okf/frontmatter.ts
-  - id: openwiki-source-bed0edb2a7279f0e40a56c2f
-    resource: repo://src/okf/generated-provenance.ts
-  - id: openwiki-source-e7e998b0add0bd5faea5e634
-    resource: repo://src/okf/index-labels.ts
-  - id: openwiki-source-5835357b69a5869be210533b
-    resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T22:46:45.432Z
 ---
 
 # Open Knowledge Format Output
@@ -36,9 +19,10 @@ deterministic post-authoring passes rather than by the authoring agent, so the
 persisted wiki is conformant regardless of what the agent wrote.
 
 These passes run in a fixed order inside the wiki finalizer: a pre-run
-preparation phase migrates existing pages to OKF and snapshots provenance, and a
-post-authoring phase validates Mermaid, synchronizes indexes, validates internal
-links, synchronizes claim sources, and finalizes generated provenance. See
+preparation phase (`prepareWikiForAuthoring`) migrates existing pages to OKF and
+snapshots provenance, and a post-authoring phase (`finalizeWikiArtifacts`)
+validates Mermaid, synchronizes indexes, validates internal links, synchronizes
+claim sources, and finalizes generated provenance. See
 [wiki finalization](../workflows/wiki-finalization.md) for the surrounding
 lifecycle and [architecture overview](../architecture/overview.md) for where OKF
 output sits in the system.
@@ -126,13 +110,28 @@ every existing concept, a SHA-256 hash of the exact Markdown body (frontmatter
 excluded, whitespace retained) and the prior valid `generated` event.
 
 After authoring, `finalizeGeneratedProvenance` walks every concept again and
-compares body hashes: a new page or any page whose body changed receives the run
-stamp (`{by: producerActor, at: now}`, and any legacy `timestamp` field is
-removed); an unchanged body has its prior stamp restored, so an agent rewrite
-that removed or altered the event cannot spuriously advance it, and a page that
-was previously unstamped stays unstamped. The finalizer refuses to run with an
-empty producer actor. The snapshot is serialized in a deterministic sorted order
-so it survives a process restart between the two phases.
+compares body hashes: a new page (absent from the snapshot) or any page whose
+body changed receives the run stamp — `{by: producerActor, at: now}` written by
+`setGeneratedEvent`, the legacy `timestamp` field removed, and terminal line
+endings canonicalized to a single trailing LF through `canonicalizeChangedConcept`
+(prose wrapping, indentation, and all other Markdown choices stay untouched). An
+unchanged body has its prior stamp restored via `restoreGeneratedEvent`, so an
+agent rewrite that removed or altered the event cannot spuriously advance it; a
+page that was previously unstamped stays unstamped (the `generated` field is
+removed rather than invented). The producer actor for a changed body may be
+overridden per page through `producerActorsByPage`, letting bodies completed by
+different sessions attribute their changes to the correct producer; both the run
+default and every per-page override must be non-empty or the finalizer throws
+before touching any page.
+
+The pass is best-effort at the file boundary: a concept that cannot be read is
+skipped so the rest of the wiki still finalizes, and a provenance write that
+fails is skipped rather than failing the run, leaving the already-persisted
+(page-possibly-unstamped) bytes in place for later Claim synchronization. The
+candidate content is always re-run through `repairOkfFrontmatter` before writing,
+so the reconciled result is guaranteed valid OKF. The snapshot is serialized in a
+deterministic sorted order so it survives a process restart between the two
+phases.
 
 ```mermaid
 sequenceDiagram
@@ -180,9 +179,9 @@ Diagrams embedded in generated pages pass through a validation pipeline before
 the wiki is finalized, so a broken diagram never reaches a renderer.
 
 `extractMermaidFences` scans a Markdown document line-by-line and returns every
-fenced `mermaid block, recording line indices, indentation, and the backtick
+fenced ```mermaid block, recording line indices, indentation, and the backtick
 marker so fences round-trip on rewrite. It tracks generic fences too, so a
-`mermaid example nested inside a longer ````markdown fence is ignored rather
+```mermaid example nested inside a longer ````markdown fence is ignored rather
 than mistaken for a real diagram.
 
 `findInvalidMermaidFences` parses each extracted fence. When the optional
@@ -218,8 +217,8 @@ flowchart TD
 Fence extraction feeds parser or heuristic validation, and only invalid fences are degraded.
 
 When a fence is invalid, `degradeInvalidMermaidFences` rewrites the document
-bottom-up (so earlier line indices stay valid), replacing each broken `mermaid
-fence with a plain `text fence carrying the original body, preceded by an HTML
+bottom-up (so earlier line indices stay valid), replacing each broken ```mermaid
+fence with a plain ```text fence carrying the original body, preceded by an HTML
 comment beginning `openwiki: mermaid parse failed` that embeds the parser error.
 The comment lets a later update run find the degraded diagram inline and repair
 it. A document whose every fence parses is returned unchanged. Parser errors are

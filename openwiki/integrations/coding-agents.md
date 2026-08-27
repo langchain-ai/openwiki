@@ -41,6 +41,9 @@ sources:
   - id: openwiki-source-6f06cc988142430d18f2233e
     resource: repo://src/integrations/mcp/stdio.ts
 generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T22:46:45.432Z
 ---
 
 # Coding-Agent Integrations (Codex/Claude/OpenCode)
@@ -161,11 +164,12 @@ without exposing the offending path.
 
 ## Connector context is not yet supported here
 
-The repository-generation core accepts an optional `planningContext` (user and
-connector context) for planning and replanning, but `HostSessionManager.begin`
-does not forward one — it passes only `root`, `mode`, `language`, `force`, and
-actor identities. Host-driven runs therefore run without connector context in
-this path today.
+The repository-generation core's `BeginRepositoryRunInput` accepts an optional
+`planningContext` (user and connector context) alongside `root`, `mode`,
+`language`, `force`, `actor`, and `now`. `HostSessionManager.begin` does not
+forward one, however — it passes only `root`, `mode`, `language`, `force`, the
+derived `actor` identities, and `now`. Host-driven runs therefore run without
+connector context in this path today.
 
 ## The MCP transport
 
