@@ -1,0 +1,129 @@
+src/agent/okf-middleware.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 7,99,125-126,133,149-150,152,202
+src/agent/repository-runner.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 11,14,21,218-223,232,377-378,381,393-394,411-412,426,456,485-501,503-519
+openwiki/concepts/okf-output.md
+  s_809e904f8d6c26::t_4612cfb4feca08 25-28,76-99,101-103
+src/claims/brains/code/session.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 291,307,336,347,358,392
+src/claims/brains/code/runtime.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 40,123-134
+src/okf/claim-sources.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 9-13,51-52,57-61,63
+test/generation/repository-run.test.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 100-103,107,110,268,273,279-283,296-360,399,413-458,916-949,1215,1240-1255,1260,1281,1292-1299,1308,1327-1425
+  s_809e904f8d6c26::t_de2781acca2824 361-398,400-412
+  s_809e904f8d6c26::t_5e60e6d39ca210 1426
+openwiki/architecture/overview.md
+  s_809e904f8d6c26::t_4612cfb4feca08 18-19,43,87-93,146-159
+openwiki/.claims/workflows/wiki-finalization.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,128-129,132-133,136,143,146-147,150-151,154-155,161,164-165,168-169,178-179,247,250-251,260-261,270-271,280-305,308-319,325-326
+openwiki/.claims/concepts/grounded-claims.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,20-25,32-33,60-61,234-235,268-273,282-287,293,296-297,300-301,310-311,324-329,332-333,342-343,346-347,353,356-357,360-361,370-371,380,384-385,422-423,430-451,455-456
+openwiki/.last-update.json
+  s_809e904f8d6c26::t_4612cfb4feca08 2,4-5
+openwiki/workflows/wiki-finalization.md
+  s_809e904f8d6c26::t_4612cfb4feca08 19-22,64,70-71,73-75,79-80,82-87,90-93,175-228
+openwiki/architecture/source-map.md
+  s_809e904f8d6c26::t_4612cfb4feca08 53-56,93-99,115-119,126-127,129-134,151-162
+src/agent/utils.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 212,218-221
+src/okf/claims-verification.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 3-7,43-44,49-52
+src/visualize/client.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 528-531,894,906
+test/okf/frontmatter.test.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 9-10,49,54-60,62,174-269,338,350-362,364,374,386,459-467,649-673
+  s_809e904f8d6c26::t_d93f8676359fe3 674-675
+src/generation/page-manifest.ts
+  s_809e904f8d6c26::t_c1e87577291814 222,228,231-232,235-239
+openwiki/workflows/claims-reconciliation.md
+  s_809e904f8d6c26::t_4612cfb4feca08 37-40,235-257
+openwiki/.claims/testing/overview.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,117,138-139,142-143,152-153,195,240-345,349-350
+openwiki/.claims/workflows/repository-generation.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,10-11,14,18,22-23,26-27,75,78-79,82-87,96,152-153,157,166-167,176,186-187,193,196-197,206-207,210-211,248-249,262,292-293,302-303,309,312-317,326-331,334,341,344-345,348-349,358-359,369,372-377,380-381,384,394-395,408-409,422-423,434-535,539-540
+src/generation/repository-run.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 30,35,169-177,563-564,571-582,911-1043,1105-1111,1119,1282,1303,1356-1358,1369,1377-1392,1408-1413,1427-1447
+  s_809e904f8d6c26::t_bb084acb8e3d4b 168,1422
+test/agent/frontmatter-validator.test.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 11-12,14,23-27,251,253-266,269,271,319-320,322-323
+openwiki/concepts/grounded-claims.md
+  s_809e904f8d6c26::t_4612cfb4feca08 29-30,35-38,74,85,92-93,181-185,193-199,201-206,223-231
+src/okf/frontmatter.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 17-22,97-114,328-336,349-415,512,517-518,538-539,604,635-646,727-730,741-764,767-768,770-786,788-790,793-843,846-853
+src/visualize/styles.css
+  s_809e904f8d6c26::t_4612cfb4feca08 388-393,398-406,415-424,671
+openwiki/testing/overview.md
+  s_809e904f8d6c26::t_4612cfb4feca08 9-10,13-14,17-18,41-42,45-48,51-54,149,153,157-158,166-196,221-257,264-269,281-309,322-324
+test/agent/index-middleware.test.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 333,347,701,731,879,903,908-909
+test/agent/repository-runner.test.ts
+  s_809e904f8d6c26::t_dcd2d8df27a29c 228-234,546,548,550,552-555,562,564,566
+  s_809e904f8d6c26::t_4612cfb4feca08 12,83-84,222-227,245-258,439-440,659-676
+  s_809e904f8d6c26::t_701735a9542729 677-678
+package.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3
+.prettierignore
+  s_809e904f8d6c26::t_4612cfb4feca08 6
+src/okf/generated-provenance.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 6,177-185,189-194,197,201-204,209-223,291-293,299-306
+  s_809e904f8d6c26::t_186e89beb538b3 307-308
+openwiki/integrations/visualizer.md
+  s_809e904f8d6c26::t_4612cfb4feca08 27-30,39-42,160-172,212-217
+test/visualize/client-interaction.test.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 1-198
+src/visualize/page.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 74-83
+test/visualize/page.test.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 2-3,70-117
+openwiki/workflows/repository-generation.md
+  s_809e904f8d6c26::t_4612cfb4feca08 4,32-39,62-63,77-78,80,86-87,122-123,137-138,145-159,172-244,268-269,283-285,295-306,316-320,329-332,342-343
+test/agent/wiki-finalizer.test.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 190,235-337
+src/generation/run-state.ts
+  s_809e904f8d6c26::t_4612cfb4feca08 34,253
+openwiki/quickstart.md
+  s_809e904f8d6c26::t_4612cfb4feca08 19-26,98-102,115-122,156-165
+openwiki/workflows/index.md
+  s_809e904f8d6c26::t_4612cfb4feca08 6
+openwiki/.claims/integrations/visualizer.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,303,354-381,385-386
+openwiki/.claims/workflows/claims-reconciliation.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,117,124-125,186-187,245-263,266-267,270-271,274-285,291-292
+openwiki/.claims/concepts/okf-output.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,10-15,24-25,29,38,48-49,58-59,62-63,69,72-73,76-77,86-87,93,96-101,104-105,111,114-115,118-119,122-123,132-133,136-137,140-141,147,150-151,154-155,164-165,172-173,184-187,313-314
+openwiki/.claims/architecture/agent-runtime.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,45,165,170-173,255,260-263,385,387-390,393,426-471,475-476
+openwiki/.claims/architecture/source-map.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,63,66-67,70-71,77,81-85,91,95,115,119,124-127,143,146-147,150-155,293,297-315,321-322
+openwiki/.claims/architecture/overview.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,117,121-125,131,134-143,219,278-291,295-296
+openwiki/.claims/quickstart.json
+  s_809e904f8d6c26::t_4612cfb4feca08 3,11,63,138-155,159-160
+openwiki/architecture/agent-runtime.md
+  s_809e904f8d6c26::t_4612cfb4feca08 6-11,13-14,38,61,79-80,91-95,109,128
+CHANGELOG.md
+  s_809e904f8d6c26::t_4612cfb4feca08 3-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "3d2cc1c9ec793f2e8d906004cfe000497d2b44a5",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_809e904f8d6c26": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03f01-9142-7c23-b8cd-4562f05ec6e8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
