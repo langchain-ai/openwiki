@@ -1,0 +1,19 @@
+AGENTS.md
+  s_f485c61dd078af::t_d4f7fea4588e1c 3,5-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "94970afcc95798fdca6c3b2e8229503a6864c1e5",
+  "prompts": {},
+  "sessions": {
+    "s_f485c61dd078af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0497a-1397-77d1-a767-36bd9fb0506f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
