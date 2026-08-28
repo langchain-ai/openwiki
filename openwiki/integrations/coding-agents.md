@@ -1,11 +1,8 @@
 ---
 type: integration guide
-title: Coding-Agent Integrations (Codex/Claude/OpenCode)
+title: Coding-Agent Integrations (Codex/Claude/OpenCode/Cursor)
 description: How OpenWiki runs inside a host coding agent through the five-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
 tags: [integrations, mcp, coding-agents, installation, page-job, host]
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
 sources:
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
@@ -43,13 +40,16 @@ sources:
     resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-6f06cc988142430d18f2233e
     resource: repo://src/integrations/mcp/stdio.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-28T03:39:43.412Z
 ---
 
-# Coding-Agent Integrations (Codex/Claude/OpenCode)
+# Coding-Agent Integrations (Codex/Claude/OpenCode/Cursor)
 
-OpenWiki can run _inside_ a host coding agent (Codex, Claude Code, or OpenCode)
-instead of as a standalone process. The host agent supplies the model, native
+OpenWiki can run _inside_ a host coding agent (Codex, Claude Code, OpenCode, or
+Cursor) instead of as a standalone process. The host agent supplies the model, native
 repository tools, and Markdown authoring; OpenWiki supplies a deterministic,
 resumable **page-job lifecycle** over the Model Context Protocol (MCP). The two
 sides communicate through exactly five MCP tools, and installation wires a local
@@ -193,12 +193,18 @@ registry of supported hosts. Each entry declares its display name, provenance
 actor, per-scope skill directory and MCP config, and a documentation URL:
 
 - **Codex** — `.codex/config.toml` (`codex-toml`), skill under
-  `.agents/skills/openwiki`, at both user and project scope.
+  `.agents/skills/openwiki`, at both user and project scope; `producerActor`
+  `codex`.
 - **Claude Code** — user config `.claude.json` and project config `.mcp.json`
-  (both `json`), skill under `.claude/skills/openwiki`.
+  (both `json`), skill under `.claude/skills/openwiki`;
+  `producerActor` `claude-code`.
 - **OpenCode** — user config `.config/opencode/opencode.jsonc` and project config
   `opencode.jsonc` (both `opencode-json`), with distinct user/project skill
-  directories (`.config/opencode/...` vs `.opencode/...`).
+  directories (`.config/opencode/skills/openwiki` vs `.opencode/skills/openwiki`);
+  `producerActor` `opencode`.
+- **Cursor** — `.cursor/mcp.json` (`json`), skill under
+  `.cursor/skills/openwiki`, at both user and project scope;
+  `producerActor` `cursor`.
 
 `defaultMcpServerCommand(target)` produces the published invocation
 `openwiki mcp --host <target>`, which is what installed configs launch.
@@ -252,7 +258,7 @@ requested scope does not exist for the host.
 ## User-level vs project scope
 
 Every host supports **project** scope; user scope is optional (`user` may be
-`null` in the registry, though all three current hosts support both). For
+`null` in the registry, though all four current hosts support both). For
 **project** scope the installer resolves the root through the same
 `resolveRepositoryRoot` used by runs, so a project install always lands at the
 Git worktree root; for **user** scope it anchors at the home directory. When a
@@ -267,7 +273,11 @@ config adapter when possible (add a focused one only for a genuinely different
 format), and add focused registry/install/status/uninstall/config-conflict tests.
 The full procedure, including the local dogfooding command
 `pnpm integrations:dev <host>`, lives in `CONTRIBUTING.md` §"Adding a
-coding-agent integration".
+coding-agent integration". `pnpm integrations:dev` builds OpenWiki, refreshes
+the host skill, and records absolute paths to the current Node executable and
+`dist/cli/cli.js`; the four current hosts all install at user scope, and later
+source changes only require `pnpm build` unless the bundled skill itself
+changes.
 
 ## Focused tests
 

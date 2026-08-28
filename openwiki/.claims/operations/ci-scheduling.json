@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:38f046ab807a29746f784f2fbeb25ad70fa8a25d0055eddfb578759271004f95",
+  "pageVersion": "sha256:13a7bd8b25d2aa664a022595503ded6425137099a80ca3d2fbf43820bd887272",
   "claims": [
     {
       "id": "claim_4f1bb9562e1846dc92e1f9ba3ad68ed8",
@@ -55,16 +55,6 @@
         {
           "resource": "repo://src/scheduling/schedules.ts#L812-L899",
           "version": "repo-lines-v1:sha256:23b0359748d1f69b9ebd535473f86e0b2b6ad83c444e06bd6b8e38cafedf8833:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2Y2ZmZDg3ZDZhOWZlZDM4ZTc5NjZmYTNkNzJhY2I3MmQyNjgxN2QzNjQ5ZWI3Mjk4M2MxNWIwOWI0YTIxMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmNmY3NThkZTdiYzM2NmYzYWI5NDYxMGI5ZDI3NjdiMWE3MjcwZDliNGNiNGY1YjE0NjUxZDI4OWZjOGMxMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0MDFmYTY0M2NiOTAyY2QzM2MyYWQ0ZmI0NDliODBiY2YzMGRjY2EyOGUyMzkyNDAwNDJkMTNkN2QyMjE3YWIifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_87bce3ff9552441d8d89b1f1ea25e702",
-      "statement": "installConnectorSchedule degrades gracefully instead of installing a wrong timer: on non-macOS platforms it saves the schedule but warns installation is macOS-only, and when the cron expression cannot be represented as a single StartCalendarInterval it saves the schedule but warns it is too complex for launchd.",
-      "evidence": [
-        {
-          "resource": "repo://src/scheduling/schedules.ts#L147-L164",
-          "version": "repo-lines-v1:sha256:c22fdd36e59a6ecae1bed12bc8d2785628c9b59f27940953ce851c3ffcb74753:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MzQyMGU1YWZiNDgzMDU2MTkwZmVkZjE5ZWYwMTcyYTVhNzA5OGQyYzFjZTA5NzY5MWM5OWNhMzg3MzE4NzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4OTdhZDI3M2FmNWU3OTIyMmFjNDdkNTg4OTE0NGFlMGFhZDNkMmRhNzllYWNiYzk2N2ViYzZhNDZiODA5NjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1NjdkZTM1MTBjYTY2MGRhYzliMDQxMzM4YzNhYzBiNjU0NGMwY2UzYzBmNjM0OGU1Yjk2M2RmMTNmYTg3MmMifQ"
         }
       ]
     },
@@ -164,7 +154,7 @@
     },
     {
       "id": "claim_f97b20344a7f46d9aeb539253f97f8a6",
-      "statement": "The scheduled CI job installs openwiki globally, runs `openwiki code --update --print` with provider/model supplied via environment variables and secrets, and opens a docs pull/merge request scoped to the paths openwiki, AGENTS.md, CLAUDE.md, and the workflow file with the commit and title \"docs: update OpenWiki\".",
+      "statement": "The scheduled CI job installs openwiki globally, runs `openwiki code --update --print` with provider/model supplied via environment variables and secrets, and opens a docs pull/merge request scoped to the paths openwiki, AGENTS.md, CLAUDE.md, and the workflow file with the commit and title \"docs: update OpenWiki\". The GitHub example runs the update step with continue-on-error, deletes transient openwiki/.run.json before the PR, and uses a trailing Propagate OpenWiki failure step (exit 1 when outcome is failure) so a partial-progress PR is still opened but the job fails on real errors.",
       "evidence": [
         {
           "resource": "repo://examples/openwiki-update.bitbucket-pipelines.yml#L15-L37",
@@ -175,8 +165,8 @@
           "version": "repo-lines-v1:sha256:6c143f4c2bda61b7abbf1abf05cc3d52cfb9e69ce11ae7a66c64591d8915114d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxZGFmM2QwMThlMWFlZjAzNTVlM2JhNzZjNmJlYmM2NTllNTRjY2I5YzZlY2UzNTkwZmVkNzA0OTVkZjk0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNjA1OTI4NjlmN2U4ZmJhYTMxYjlkNmMzNTc1YmE3MjA1M2EzYTVjOGJhMjU1OTE2NjczOTk5MTA0Njk3OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNmMwYTZjMmMyZTI4OThkMGY3ODQwODI2ZjE4NDRlMjc2ZWUxZTJhYzc2N2E3ZTg3NTZmYjg1ZTQ0ODExN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliYzc5NTMyMGVhY2Y5YjYzM2E3OTYxZWNhYzA1OWE0NjZmZTc4NWJlOTAzNmM0ODAzNjdiMzVmNzk3OGUwNjUifQ"
         },
         {
-          "resource": "repo://examples/openwiki-update.yml#L31-L64",
-          "version": "repo-lines-v1:sha256:f21d36220693e7e6deaf9f01ed486006b9a6634a3acc6e7771cbce4a9b11c718:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2Y2UwYjBkM2IzODEyMmJjMjc1MTVhOGQ5Njk2MTVkOWUxMGUyODA2NDRmNzYxMjIxZDA0NDc5YWQyNTM5M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0Nzc5NmQzMTczMmZiY2U4OTk4YTJmN2U3YjFiYjk3NTVjMjNlNTg1MDMyMGI5MDkzN2Q4MmMzZmQwZTYyYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzZjNiODgwMmIzMTBmZjJhZGQwMDI2YjgyZWUyZTllNTcxNTkxMmVhZjA4MWFmODZjZTExMGRkNjQyZmMxYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://examples/openwiki-update.yml#L31-L79",
+          "version": "repo-lines-v1:sha256:c7b1e74e21c177e87cddf94d565eeed6e090d56a2082623f4ea5abc77e890c08:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2Y2UwYjBkM2IzODEyMmJjMjc1MTVhOGQ5Njk2MTVkOWUxMGUyODA2NDRmNzYxMjIxZDA0NDc5YWQyNTM5M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzZjNiODgwMmIzMTBmZjJhZGQwMDI2YjgyZWUyZTllNTcxNTkxMmVhZjA4MWFmODZjZTExMGRkNjQyZmMxYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -203,8 +193,8 @@
           "version": "repo-lines-v1:sha256:f85bdfd7954ff5617292b34d02c83de4510d7f1dc18cbdc099a6cba72aa18082:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk2ZGM0ODE0OWY1YTgzZDFlZDZkYmIzOWJiYzdlMmI5MDJhYTNkMzRkNmJkNWFlNGIyOTFiNjhkZjBjYTc5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTNhZWQ1MDJhNWFkZWU3YmIwY2FkZDQ2Y2Q3NDYzYjUzMjBjNmNjZWU0NDgwZDY2ODU0ODg0MzEwNjM3NjExOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzViMWYyNGU2MTgwNWVlMWE5YmM3ODA0N2UxZTRiM2Q4NjE1N2Q2ZTM3ZDhhYzBiY2JlYmQ1ZTY1ZTVlZjFhYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzk0NjJkNWYyYzIwN2U2YjRmODI4NDNkOTE1NGZmMGJiYWQwMzQzOTI0YjJjM2M0YmFiZDk5Yjg3Y2NkNGI4MiJ9"
         },
         {
-          "resource": "repo://examples/openwiki-update.yml#L50-L64",
-          "version": "repo-lines-v1:sha256:2507faafa9faf9e43981bd485c049cc5f2131c782c9588d50641b6b05c8b5686:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2ZmNGFkMzNiYTkxYjE0OGUxYjFiODI5MGI4ZmZmMjdiMjAzZmFiZmVlNTg3MDI4MmRlMzY3MzgzYjFiZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0Nzc5NmQzMTczMmZiY2U4OTk4YTJmN2U3YjFiYjk3NTVjMjNlNTg1MDMyMGI5MDkzN2Q4MmMzZmQwZTYyYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxOTEzNzMyNTgyYzNlNjAzNTkwNzg2Yzg2ODM2OTUxZmYzNWU5YjJkMGY4ZDMxMDY3ZDRmNGM4NzQzZGIyYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://examples/openwiki-update.yml#L52-L79",
+          "version": "repo-lines-v1:sha256:d51f0040449194558ad6ab1ae46dd0a0d54fac780c4f3d02edc3834aaafc5bb7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3OWM4ODBmNjJkNDIyNTM4YmNhODRjYjU1ZWNlOGZlMTBlOTY1OGIwNjExMTVjM2ZhYmNkYzdiM2JlY2Y0NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxOTEzNzMyNTgyYzNlNjAzNTkwNzg2Yzg2ODM2OTUxZmYzNWU5YjJkMGY4ZDMxMDY3ZDRmNGM4NzQzZGIyYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -220,11 +210,15 @@
     },
     {
       "id": "claim_91bbfcd16ebf4a67a2f65e5fda3c2911",
-      "statement": "The live GitHub workflow builds OpenWiki from the checked-out source and runs `node dist/cli/cli.js code --update` (rather than the published package) to dogfood unreleased changes, and restores the protected workflow file after the run because `code --update` regenerates it from an internal template and would otherwise drop the fork guard.",
+      "statement": "The live GitHub workflow builds OpenWiki from the checked-out source (pnpm install --frozen-lockfile && pnpm build) and runs `node dist/cli/cli.js code --update` rather than the published package to dogfood unreleased changes; the published-package example workflow instead installs openwiki globally via npm. After the run it restores the protected workflow file with `git checkout -- .github/workflows/openwiki-update.yml` (guarded by if: !cancelled()) because `code --update` regenerates that file from an internal template and would otherwise drop the fork guard, deletes transient openwiki/.run.json, and opens a PR whose add-paths include openwiki, AGENTS.md, CLAUDE.md, and the workflow file.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/openwiki-update.yml#L46-L74",
-          "version": "repo-lines-v1:sha256:01dea59d34bdc40170dc0e649a42a15e9bb248fc1547304e6d7183b0a8a33bee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjOTQ2NDJmZjIyNWM4OGE1MjRlMzZjYzY1YTYzOWIxMzFjM2JlOTlkZGFiOTVjNzVmMTMwMDE1Mzk0ODRmMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NjAwZTdiNjQ2MWE3ZDFkOGJjZWJlN2FmZWRiZjRhNzc3YTRhY2JlNWVlYWNkMmExNjcwMjk2NzUzNjhkMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNDQzZGZkMTliZGM2YWUxYzI2ZWY1NDRjMDYzMzQ4ZjZhOWVmOTI2NDg3YTg2MTUwYzc4M2VjYjVhNDE1NGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMGZkODJlZjUyZjI5MTNjOWJkMjU2MDBhOGZmYzlhMzA2NzgxNWFlNDk1NGMxODczMzM5MDJlZWI1ZmNmNmYifQ"
+          "resource": "repo://.github/workflows/openwiki-update.yml#L43-L90",
+          "version": "repo-lines-v1:sha256:3a9f674ca0157d2365f496d0145a068a3e6ad543ce5963e9efef962c56bfb94f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYmQ0MWQ5MWI3YzdlZWUzMTI4MDM5OGE3MTI1OTk2MDEzODQ2MTk2MDI4OTUzMWU5YWQxNWQ4NDIyZGRmNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhY2ZmZTRiODViOGI1MmZmYzJmOTY5Y2MwOTE5Mjk2MjE0MDQzM2Y5ZTZjM2VhN2Q3Nzg0NmIwN2VmMjNmZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNTlmZWJlZDUzYjg4ZWQxZmQ3MTIzN2VlMWQ5MjY1ZjBkYjg2YmM1OGMwMjUyYzExNTJlMjFmNzdhNTU3OGIifQ"
+        },
+        {
+          "resource": "repo://examples/openwiki-update.yml#L31-L33",
+          "version": "repo-lines-v1:sha256:f7c401dca2f8a8d300c402aa2e07132d88e510775d6294ad189474ce54aaf8d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODZjZTBiMGQzYjM4MTIyYmMyNzUxNWE4ZDk2OTYxNWQ5ZTEwZTI4MDY0NGY3NjEyMjFkMDQ0NzlhZDI1MzkzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZThmZjQyYjlhMzAzZWZmNzM5MGE1MjI1OTliMzIyMzlmMzk4N2I0MjI0ODBjMTVjZDJmNjZiODAyODc0OGI2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNmM2I4ODAyYjMxMGZmMmFkZDAwMjZiODJlZTJlOWU1NzE1OTEyZWFmMDgxYWY4NmNlMTEwZGQ2NDJmYzFhMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTM3NjlkMjkyYWFhMDBjMmQzZDAyNzBkZmM5MjIzODZhMGRlNGRhMzhjOTA3MDA1NThlYjIzMmI4ZGIyYjdiNyJ9"
         }
       ]
     },
@@ -233,8 +227,8 @@
       "statement": "Repository generation/update is resumable via durable run state recorded in openwiki/.run.json only when the same checkout persists across a rerun; ephemeral CI runners discard their workspace after a job, so a failed scheduled CI run does not retain uncommitted run state and the next run starts fresh rather than resuming.",
       "evidence": [
         {
-          "resource": "repo://README.md#L35-L35",
-          "version": "repo-lines-v1:sha256:44c7c8051e83998d969e749a3c21a3c7d7d8ced5a7cd597a3a9fb42b80e6e487:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjN2M4MDUxZTgzOTk4ZDk2OWU3NDlhM2MyMWEzYzdkN2Q4Y2VkNWE3Y2Q1OTdhM2E5ZmI0MmI4MGU2ZTQ4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjN2M4MDUxZTgzOTk4ZDk2OWU3NDlhM2MyMWEzYzdkN2Q4Y2VkNWE3Y2Q1OTdhM2E5ZmI0MmI4MGU2ZTQ4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDY0ODVkMDNiOWNiZTdkNGI3ZTIyNWY5ZjUzYjNjMWJjYzgzNDBkYjZmZDg1OTA2ZGI4ZDY0YzZhOWFkNDlkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTJjMGM5OGU5YjJiZDI3YzBkZmQ1NjkxMDA0MzczMmI4YThhMGRlYjU5MDMzODc5MDJiODY3NTY2ZjMzZmI4MCJ9"
+          "resource": "repo://README.md#L35-L36",
+          "version": "repo-lines-v1:sha256:b581e87c8e82e9dc26e7ca2bcd8d73dab3bd43916524663ca61c4369c644e48f:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWUzNWE1NWRhMjZjMzI5NWIxYzcxZTdhNzYyMTY4NjRlZTQ2NzAwMTFlMzBhM2ZjZTM5YjYxOWM2MmVhZjY2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFhY2EzZDJmZmQzYWEyNTU4OGU0ODhiOTVkYzljMGQ4ZTczMWNjN2MyODc0MzJlMDkwODA5MjBmYWI4NWNkOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDY0ODVkMDNiOWNiZTdkNGI3ZTIyNWY5ZjUzYjNjMWJjYzgzNDBkYjZmZDg1OTA2ZGI4ZDY0YzZhOWFkNDlkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTZmYjZmMjBiNTNlZmQwNDFmNjJkMWM1MWRkOTg2NjU3MDYzOWQzYzlkMTBkYmRmZTQ4MjI1NTY3ZjI0NzU4ZSJ9"
         },
         {
           "resource": "repo://README.md#L55-L55",
@@ -244,7 +238,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T03:39:43.412Z"
   }
 }

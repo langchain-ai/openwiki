@@ -24,8 +24,8 @@ sources:
     resource: repo://src/okf/index-sync.ts
 generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
+  - by: openwiki/0.4.3
+    at: 2026-08-28T03:39:43.412Z
 ---
 
 # Open Knowledge Format Output

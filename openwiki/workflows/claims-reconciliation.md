@@ -34,10 +34,10 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
+    at: 2026-08-28T03:39:43.412Z
 ---
 
 # Claims Reconciliation on Update
@@ -117,25 +117,48 @@ source outside `openwiki/` and outside the `openWikiIgnore` boundary. Changes
 that only touch generated wiki state or ignored paths do not count as
 meaningful.
 
-The repository run wires these two signals together, and **Claims validation
-precedes update no-op detection**: a run is skipped only when the Git-based
-preflight says `shouldSkip` **and** the Claims runtime reports
-`issueCount === 0`. A clean Git status therefore cannot hide stale or unresolved
-grounding state — if preflight found any stale or unresolved Claim, the run
-proceeds even on an otherwise unchanged tree. When both conditions hold, the run
-finalizes Claims (refreshing sidecars) and rewrites the last-update metadata
-before returning a `noop` result.
+The repository run wires these signals together, and **Claims validation
+precedes update no-op detection**. Before the no-op is even considered, the run
+seeds the page manifest from the last successful git baseline and fast-forwards
+coverage for unchanged pages, then computes `hasCompleteBaselineCoverage` —
+true only when every initial page already has a manifest entry. A run is skipped
+only when all three hold: the Git-based preflight says `shouldSkip`, the Claims
+runtime reports `issueCount === 0`, **and** baseline coverage is complete. A
+`force` request bypasses the whole gate and always proceeds to planning.
+
+A clean Git status therefore cannot hide stale or unresolved grounding state —
+if preflight found any stale or unresolved Claim, the run proceeds even on an
+otherwise unchanged tree. The same is true of incomplete baseline coverage: a
+legacy page lacking a manifest entry is routed to full review rather than
+promoted by the no-op.
+
+When all three conditions hold, the no-op path still proves its own stability
+before returning. It snapshots the current source, finalizes Claims (refreshing
+sidecars), and snapshots the source again; only if the fingerprint is unchanged
+does it replace the page manifest with the stable checkpoint and snapshot once
+more. Only if that published fingerprint still matches does it rewrite the
+last-update metadata and return a `noop` result. Any concurrent source drift
+falls out of the no-op and the run proceeds to planning instead.
 
 ```mermaid
 flowchart TD
-  A["update run"] --> B{"getUpdateNoopStatus shouldSkip?"}
+  A["update run, force !== true"] --> B{"getUpdateNoopStatus shouldSkip?"}
   B -->|"no"| P["proceed with planning and page work"]
   B -->|"yes"| C{"claimsRuntime issueCount == 0?"}
   C -->|"no, stale or unresolved"| P
-  C -->|"yes"| D["finalize Claims and write metadata, return noop"]
+  C -->|"yes"| E{"hasCompleteBaselineCoverage?"}
+  E -->|"no"| P
+  E -->|"yes"| F["snapshot source, finalize Claims"]
+  F --> G{"source fingerprint stable?"}
+  G -->|"no"| P
+  G -->|"yes"| H["replace page manifest, re-snapshot"]
+  H --> I{"published fingerprint stable?"}
+  I -->|"no"| P
+  I -->|"yes"| D["write last-update metadata, return noop"]
 ```
 
-Stale or unresolved Claims override an otherwise skippable update.
+Stale or unresolved Claims, and incomplete baseline coverage, override an
+otherwise skippable update.
 
 ## Turning issues into required page jobs
 

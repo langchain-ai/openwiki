@@ -33,10 +33,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
+    at: 2026-08-28T03:39:43.412Z
 ---
 
 # Repository Generation Lifecycle
@@ -249,9 +249,10 @@ runner re-runs a fresh worker for it.
 fresh.
 
 For a fresh **update**, Claims preflight runs before Git-status no-op detection:
-if the working tree is clean _and_ there are zero grounding issues, `begin`
-returns a `noop` view without creating any run. A clean Git status alone cannot
-hide stale or unresolved grounding state.
+`begin` returns a `noop` view only when the working tree is clean, there are
+zero grounding issues, _and_ every existing page has complete baseline coverage
+in the page manifest — so a clean Git status alone cannot hide stale grounding
+state or partial prior-run page coverage.
 
 For a fresh **init**, the existing wiki is first replaced with a blank target via
 a recoverable transaction that backs up `openwiki/`, preserves user-owned
@@ -270,11 +271,12 @@ also carries forward the caller's current `metadataModel` and planning context.
 
 ## Resume on the same checkout and source-fingerprint invalidation
 
-`createRepositorySourceFingerprint` hashes every model-visible repository source
-input for the active plan — Git HEAD, tracked and untracked source files, and
-porcelain status — while excluding generated OpenWiki state and ignored paths.
-Git, stat, symlink, and read failures reject, because the fingerprint is a
-correctness gate rather than a hint.
+`createRepositorySourceSnapshot` (wrapped by `createRepositorySourceFingerprint`)
+hashes every model-visible repository source input for the active plan — Git
+HEAD, tracked and untracked source files, and porcelain status — while
+excluding generated OpenWiki state and ignored paths. Git, stat, symlink, and
+read failures reject, because the fingerprint is a correctness gate rather than
+a hint.
 
 The fingerprint makes resume safe only on the same checkout. When `begin` resumes
 and the current fingerprint differs from the checkpoint's, the whole plan is

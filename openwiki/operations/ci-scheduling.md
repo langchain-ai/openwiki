@@ -14,9 +14,6 @@ tags:
     launchd,
     pmset,
   ]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
     resource: repo://.github/workflows/openwiki-update.yml
@@ -36,7 +33,10 @@ sources:
     resource: repo://src/scheduling/schedules.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-28T03:39:43.412Z
 ---
 
 # CI Scheduling and Self-Update
@@ -206,6 +206,18 @@ and the workflow file), branched under `openwiki/update` (GitHub) or
 `openwiki/update-<pipeline id>` (GitLab/Bitbucket), with the commit and title
 `docs: update OpenWiki`.
 
+The GitHub example also models a **failure-tolerant** run. The `openwiki code
+--update` step sets `continue-on-error: true` so a failed generation does not
+abort the job; the PR step still runs (`if: ${{ !cancelled() }}`) and its body
+reports `steps.openwiki.outcome`. When the outcome is `failure`, the PR
+intentionally preserves only the pages completed before the failure, so merging
+it makes that partial progress the baseline for the next scheduled run. A
+trailing **"Propagate OpenWiki failure"** step (`exit 1` when the outcome is
+`failure`) then fails the job so a real error is not hidden by the partial PR.
+Both the example and the live workflow delete the transient `openwiki/.run.json`
+run-state file before creating the PR, so the partial progress that survives is
+the committed wiki, not leftover in-process state.
+
 ### Scheduling and gating
 
 - **GitHub Actions** triggers on `schedule` (`cron: "0 8 * * *"`, interpreted in
@@ -222,9 +234,17 @@ and the workflow file), branched under `openwiki/update` (GitHub) or
 
 The live GitHub workflow also builds OpenWiki from the checked-out source and
 runs `node dist/cli/cli.js code --update` rather than the published package, so
-the daily run dogfoods unreleased changes; it additionally restores the protected
-workflow file after the run because `code --update` regenerates that file from an
-internal template and would otherwise drop the fork guard.
+the daily run dogfoods unreleased changes. This is the key difference between the
+two GitHub workflows: `examples/openwiki-update.yml` installs the published
+`openwiki` package globally (`npm install --global openwiki …`) and is what an
+external repository should copy, whereas `.github/workflows/openwiki-update.yml`
+runs `pnpm install --frozen-lockfile && pnpm build` against the checked-out
+OpenWiki source to dogfood main. The live workflow additionally restores the
+protected workflow file with `git checkout -- .github/workflows/openwiki-update.yml`
+after the run because `code --update` regenerates that file from an internal
+template and would otherwise drop the fork guard; the discard runs
+`if: ${{ !cancelled() }}` so the guard survives whether the run succeeded or
+failed.
 
 ### Ephemeral-runner resume caveat
 

@@ -10,6 +10,8 @@ sources:
     resource: repo://src/agent/wiki-finalizer.ts
   - id: openwiki-source-0a92e09462f540e5e005c7e4
     resource: repo://src/agent/wiki-link-validator.ts
+  - id: openwiki-source-674d6e5badef7368ab04f064
+    resource: repo://src/generation/page-manifest.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
@@ -20,10 +22,10 @@ sources:
     resource: repo://src/okf/generated-provenance.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
+    at: 2026-08-28T03:39:43.412Z
+generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
 ---
 
 # Wiki Finalization and Link Integrity
@@ -74,10 +76,11 @@ sequenceDiagram
     participant LinkVal as validateWikiInternalLinks
     participant Claims as synchronizeClaimSources
     participant Prov as finalizeGeneratedProvenance
-    Caller->>Caller: hasRepositorySourceChanged before finish
     Caller->>Caller: validate skipped jobs match snapshots
+    Caller->>Caller: hasRepositorySourceChanged before finish
+    Caller->>Caller: build producerActorsByPage from manifest
     Caller->>Caller: apply deletions and reconcile deleted claims
-    Caller->>Fin: prepared baseline, at, producerActor, claimSources
+    Caller->>Fin: prepared baseline, at, producerActor, producerActorsByPage, claimSources
     Fin->>Mermaid: validate fenced diagrams
     Fin->>Index: rebuild directory indexes
     Fin->>LinkVal: stamp broken internal links
@@ -86,6 +89,7 @@ sequenceDiagram
     Caller->>Caller: restore skipped page Markdown from snapshots
     Caller->>Caller: finalize Claims with excludedPages=skippedPages
     Caller->>Caller: assertRepositoryClaimsDurable (excludes skipped)
+    Caller->>Caller: replaceRepositoryPageManifest (preserve skipped)
     Caller->>Caller: hasRepositorySourceChanged again
     Caller->>Caller: write interrupted or complete metadata
     Caller->>Caller: remove .run.json last
@@ -94,7 +98,7 @@ sequenceDiagram
 Whole-run finish sequence. `finalizeWikiArtifacts` runs the five ordered
 deterministic operations shown in the middle; `finishRepositoryRun` brackets it
 with skipped-page validation, Markdown restore, Claims finalization, the
-whole-run durability proof, and metadata.
+whole-run durability proof, manifest rebuild, and metadata.
 
 The order matters. Mermaid and index synchronization can rewrite page and index
 bytes; link validation then runs over the final structure, including the
@@ -135,6 +139,18 @@ the `generated` field on a body it did not otherwise change, the pre-run event i
 restored (or removed if the page was previously unstamped) so provenance never
 advances for a no-op edit. Body hashing excludes front matter and retains
 whitespace, so any real prose change advances the stamp.
+
+For a multi-session run, `finishRepositoryRun` builds a per-page producer-actor
+map (`producerActorsByPage`) from the page manifest, recording the actor that
+actually completed each page in this run. `finalizeGeneratedProvenance` uses that
+map to stamp each changed page with its completing actor, falling back to the
+run-level `producerActor` when no page-specific override exists.
+
+Provenance finalization is best-effort: if a page cannot be read during the pass,
+the rest of the finalized wiki is preserved rather than failing the complete run,
+since generated provenance is optional trust metadata. For changed pages, only
+terminal line endings are canonicalized; prose wrapping, indentation, and every
+other producer-authored Markdown choice remain untouched.
 
 ## Link-validation invariants
 
@@ -194,18 +210,21 @@ At finish, the sequence is:
    original page snapshot before finish."* before any wiki bytes are touched.
    The snapshot carries the page's pre-worker Markdown (or `null` when it did not
    exist) and its pre-worker Claims sidecar.
-3. **Record the pre-finish source state.** `hasRepositorySourceChanged`
-   recomputes the model-visible repository source fingerprint and compares it
-   against the planned fingerprint, capturing `sourceChangedBeforeFinish`
-   before any finalization runs. This is a *recording* check, not a gate: it
-   never throws.
+3. **Record the pre-finish source state and build per-page producers.**
+   `hasRepositorySourceChanged` recomputes the model-visible repository source
+   fingerprint and compares it against the planned fingerprint, capturing
+   `sourceChangedBeforeFinish` before any finalization runs. This is a *recording*
+   check, not a gate: it never throws. `finishRepositoryRun` then reads the page
+   manifest and builds `producerActorsByPage`, mapping each page completed in this
+   run to the actor that completed it, so provenance stamps record the actual
+   completing session.
 4. **Apply deletions and reconcile deleted Claims.** Abandoned generated pages
    and the plan's explicit `deletePages` are removed, and
    `reconcileDeletedClaimPages` records deletions for any sidecar whose Markdown
    page no longer exists.
 5. **Run `finalizeWikiArtifacts`** against the rehydrated pre-authoring
-   baseline, the run timestamp, the producer actor, and the session's per-page
-   evidence resources.
+   baseline, the run timestamp, the producer actor, the per-page producer-actor
+   map, and the session's per-page evidence resources.
 6. **Restore skipped page Markdown.** After finalization, each skipped job's
    snapshot is replayed through `restoreRepositoryPageMarkdown`, writing the
    original bytes back (or deleting the file when the snapshot Markdown is
@@ -222,19 +241,23 @@ At finish, the sequence is:
 8. **`assertRepositoryClaimsDurable`** (also excluding the skipped pages) confirms
    no orphaned Claims sidecars remain and that every non-empty Claim set matches
    a durable sidecar and the final Markdown bytes exactly.
-9. **Recompute source drift after finalization.** `hasRepositorySourceChanged`
-   runs a second time; the final `sourceChanged` is
-   `sourceChangedBeforeFinish || <changed after finalization>`. Source drift
-   does **not** fail or re-plan the run — the run still completes, but records
-   `"interrupted"` metadata (below) and returns `{ status: "complete",
-   sourceChanged: true }` so the native runner can surface a message telling the
-   user to run `openwiki --update` to reconcile the drifted source.
-10. **Write run metadata.** When any pages were skipped **or** the source
+9. **Rebuild the page manifest.** `replaceRepositoryPageManifest` rebuilds the
+   manifest from the surviving pages discovered by the Claims store, preserving
+   skipped pages' prior coverage so a later update can fast-forward them. The
+   current run's source checkpoint anchors the rebuilt entries.
+10. **Recompute source drift after finalization.** `hasRepositorySourceChanged`
+    runs a second time; the final `sourceChanged` is
+    `sourceChangedBeforeFinish || <changed after finalization>`. Source drift
+    does **not** fail or re-plan the run — the run still completes, but records
+    `"interrupted"` metadata (below) and returns `{ status: "complete",
+    sourceChanged: true }` so the native runner can surface a message telling the
+    user to run `openwiki --update` to reconcile the drifted source.
+11. **Write run metadata.** When any pages were skipped **or** the source
     drifted, `writeLastUpdateMetadata` records `"interrupted"` (no content
     snapshot, so the next update's no-op check will not skip a retry). Otherwise
     `persistRunMetadataIfChanged` records `"complete"` against the pre-run
     content snapshot, clearing any prior interrupted status.
-11. **Delete `.run.json` last** (`removeRepositoryRunState`).
+12. **Delete `.run.json` last** (`removeRepositoryRunState`).
 
 The **source fingerprint is checked twice** — before finalization and again
 after the durability proof — so a run cannot finalize against one source state

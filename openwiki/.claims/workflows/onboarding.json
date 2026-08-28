@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3769548dc7a8f126e79237db19d4a17a52691067607e82276477a75fd0ae0020",
+  "pageVersion": "sha256:af3ccdea8e494d703dc433f5a45a51f38d36c1b3e0f78a3971a5a3b9b7146be9",
   "claims": [
     {
       "id": "claim_019ff3d6f68b436e8dcedd62adaddc34",
@@ -258,21 +258,21 @@
     },
     {
       "id": "claim_7735d03eb66e4a7a9e20befe0ff49fd1",
-      "statement": "The generated workflow runs openwiki code --update --print on a cron schedule (default 0 8 * * *), checks out full git history, installs the pinned OpenWiki version, and opens a pull request scoped to openwiki, AGENTS.md, CLAUDE.md, and the workflow file.",
+      "statement": "createCodeModeWorkflow emits a workflow_dispatch-plus-scheduled GitHub Actions job running openwiki code --update --print on a default cron of 0 8 * * *, with contents/pull-requests write permissions; it pins actions to commit SHAs (actions/checkout v4 with fetch-depth 0, actions/setup-node v4 on Node 22, peter-evans/create-pull-request v7), installs openwiki plus optional mermaid/jsdom, runs with continue-on-error so a page failure does not abort, deletes openwiki/.run.json, opens a PR scoped to openwiki/AGENTS.md/CLAUDE.md/the workflow file even on failure, and a final step exits 1 when steps.openwiki.outcome == 'failure' to propagate the failure.",
       "evidence": [
         {
           "resource": "repo://src/ingestion/code-mode.ts#L20-L20",
           "version": "repo-lines-v1:sha256:571c98fac2ff49e5aa6313fb45505bdc24fd7d310b51331ad9cdd3032fd12b79:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTcxYzk4ZmFjMmZmNDllNWFhNjMxM2ZiNDU1MDViZGMyNGZkN2QzMTBiNTEzMzFhZDljZGQzMDMyZmQxMmI3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTcxYzk4ZmFjMmZmNDllNWFhNjMxM2ZiNDU1MDViZGMyNGZkN2QzMTBiNTEzMzFhZDljZGQzMDMyZmQxMmI3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTViYjVmNDJlNDk2OTMyNzQxMzk4NjhlZmY0ZTcxY2VmMjQyZWYxZDc4ZDlhM2Y3YmMzMWZiNjNjNmY5YmI3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRkYTRiYjgxMDZhYmMwMTE1ZTM4ZWNhYWQyMDIxZTM0YWVjMzEzYjBhZjRmNDBiOThmYzZkNmNiNmJiZDk4ZCJ9"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L323-L388",
-          "version": "repo-lines-v1:sha256:e09b503d7f63dabc0f2d773532540d0e2b2cc82d83832cdecb59f0c3cc7ad3ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NWUwMDZmMmE4YTJlZDc5MmRiMWFkNzkyM2ZiNzA4ZjgxMDRiMzVlNDczNzFiZDQ5MDUwN2Q0ZjQ0NDdmNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxODQ1ZjZlNGEyYjkzODdmMDRmZmJkOWY5ZTI2MWZjOTMwMTU1Y2IyNjc3OGNkMDhiZTY5MGE3MTExNzc5MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MWI5OWFlNjY0YzAwNjdiODUwN2ZkM2FhODAxOTJhZTQ2ODYyNmIwODA4MWE5MGY5NGQ1NWMyN2JmMDcyMDQifQ"
+          "resource": "repo://src/ingestion/code-mode.ts#L323-L402",
+          "version": "repo-lines-v1:sha256:69b0a610cc49ad09d0dbca99274ebf7e8bcc5e09193b57571a34972a63eb0348:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NWUwMDZmMmE4YTJlZDc5MmRiMWFkNzkyM2ZiNzA4ZjgxMDRiMzVlNDczNzFiZDQ5MDUwN2Q0ZjQ0NDdmNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZDI5NTI1MzZmYzYwMDBhZDkxNTY2YmQ5NTNmMjViYzk1OTYxMGU4MTFhNTI5YTliZWY4YjRmMDdjMWM4Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxODQ1ZjZlNGEyYjkzODdmMDRmZmJkOWY5ZTI2MWZjOTMwMTU1Y2IyNjc3OGNkMDhiZTY5MGE3MTExNzc5MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkZjRkNzBhZGQ5ODdiMmY4NDBhNTE5MGZhN2FmOWZkMzQyOWNlYTllYjdhMDgyYTU1NzViODA2OTMzNjlkM2QifQ"
         }
       ]
     },
     {
       "id": "claim_9579377838cc4264a0f94e5fdf6b74b3",
-      "statement": "createWorkflowProviderEnv derives the workflow provider env block from the operator's configured provider, wiring secrets through secrets., non-sensitive settings (base URL, project, region) through vars., and emitting a comment for OAuth providers instead of pinning a short-lived rotated token.",
+      "statement": "createWorkflowProviderEnv derives the workflow provider env block from the operator's configured provider, wiring secrets through secrets., non-sensitive settings (base URL, project, region) through vars., quoting the model id (some IDs like Cloudflare Workers AI's leading @ are not plain YAML scalars), and emitting a comment for OAuth providers instead of pinning a short-lived rotated token; an opted-in OPENAI_COMPATIBLE_STREAMING override is also propagated.",
       "evidence": [
         {
           "resource": "repo://src/ingestion/code-mode.ts#L259-L321",
@@ -316,7 +316,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T03:39:43.412Z"
   }
 }
